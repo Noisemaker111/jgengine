@@ -1,0 +1,36 @@
+{
+  "recordedAtUTC": "2026-10-04T03:58:33.928618+00:00",
+  "source": "Parent root direct session report, accompanied by three exact frozen successful check logs.",
+  "initialColdDetachedPreflight": {
+    "observation": "node_modules missing; ts-morph/native-preview incomplete; detached HEAD refused.",
+    "rawLog": "No durable raw log was created; session tool output only. No reconstructed raw log or independently reproduced failure claimed.",
+    "classification": "Environment/setup failure preceding bootstrap, not consumer/motor regression."
+  },
+  "afterBootstrap": {
+    "localHead": "2f51c8e45164e4f1bda70173ad6b45bed0be914f",
+    "tree": "8860834db39d26a04c6c9730db5292a741a67407",
+    "releaseFragmentGrammar": "Validated",
+    "shipPreflight": "PASS",
+    "files": [
+      {
+        "path": "/workspace/JGengine/.scratch/characters/discontinuity-integrated-checks/release-worktree-bootstrap.log",
+        "bytes": 4798,
+        "sha256": "657475e549c52058606c18b71f01c5afb759645e00b2cc8ba922d4027adc7cfd",
+        "bundled": true
+      },
+      {
+        "path": "/workspace/JGengine/.scratch/characters/discontinuity-integrated-checks/release-fragment-check.log",
+        "bytes": 106,
+        "sha256": "855f076ef2e0d9979981a57ca25239131b6b0bb6be937b1f09d19580011f739b",
+        "bundled": true
+      },
+      {
+        "path": "/workspace/JGengine/.scratch/characters/discontinuity-integrated-checks/release-correction-preflight.log",
+        "bytes": 58,
+        "sha256": "ce7b8b6faabbef24c675152b6fafed50b4104fb1a3dde1c2e40de76412138a23",
+        "bundled": true
+      }
+    ]
+  },
+  "cohortLimit": "Corrected head differs from d355 built cohort only at release fragment; no package rerun, binary relabel or new consumer replay."
+}

@@ -1,0 +1,36 @@
+{
+  "builtCohort": "d355677d708092afff9e211e4a36d28f790276bd",
+  "sourceCommit": "36c455f5f0ed12b6112fb16404647cd81a44857a",
+  "remoteHead": "6df71eff3211884f7f10d04b6a354c9a3a38776d",
+  "tree": "3a55e1bc52b2ea9fb5f5703d520e02eb75c983d0",
+  "consumerArtifactHashesVerified": 47,
+  "trackedSourceFilesVerified": 4036,
+  "cleanBuildStagesVerified": 27,
+  "cleanBuiltTarballsVerified": 13,
+  "tarFilesVerified": 2413,
+  "compiledFilesVerified": 2379,
+  "installedPackagesVerified": 9,
+  "installedFilesVerified": 2342,
+  "originalGameSourceHashesVerified": 212,
+  "exactExtractedEngineSourceFiles": 8,
+  "executedBeforeAndAfterEntryRunnerOriginalInputAndInstalledModuleHashesVerified": true,
+  "rigBytesVerified": 2,
+  "releaseFragmentOnlyCorrectionVerified": {
+    "localHead": "2f51c8e45164e4f1bda70173ad6b45bed0be914f",
+    "tree": "8860834db39d26a04c6c9730db5292a741a67407",
+    "blob": "eb4b1c44088d492d1d4cbe91e169382245f55e23",
+    "path": "changes/character-discontinuities.md",
+    "onlyDifferenceFromBuiltTree": [
+      "changes/character-discontinuities.md"
+    ],
+    "originalRuntimeAndPublishedInputsUnchanged": true,
+    "builtHead": "d355677d708092afff9e211e4a36d28f790276bd",
+    "buildNotRelabeled": true,
+    "remoteHead": "8851ca4e3d0e2984a5da15e1472690d1eb5d242c"
+  },
+  "limits": [
+    "Read-only byte verification of frozen provenance, not rebuild or rerun.",
+    "Exact changed engine files are included; full tracked source SHA ledger verified against retained Git commit.",
+    "Manual React/Fiber runtime records are not native appearance, interaction feel or hardware FPS evidence."
+  ]
+}

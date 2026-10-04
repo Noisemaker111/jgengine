@@ -1,0 +1,11 @@
+{
+  "bundle": "/workspace/JGengine/.scratch/characters/eighth-archive/eighth-proof.tar.gz",
+  "sha256": "f5297f375c6e410cfe258d7308f44077939688cf87292689717925d9e8c9b0de",
+  "bytes": 15000393,
+  "gitBlobSha": "5aeb7a6d79311cb2c00738b170e753467e688777",
+  "regularFilesIncludingLedger": 923,
+  "allTarMemberHashesVerified": true,
+  "sourceTree": "3a55e1bc52b2ea9fb5f5703d520e02eb75c983d0",
+  "CI": "First-head required changelog failure; final receipt pending, no claimed green CI.",
+  "publication": "Unreleased candidate built package verification; no published adoption or native appearance claim."
+}

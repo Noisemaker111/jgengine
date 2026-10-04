@@ -1,0 +1,84 @@
+{
+  "before": {
+    "heading": 0,
+    "facing": 0,
+    "voxelBody": null,
+    "motion": {
+      "horizontalVelocityX": 0,
+      "horizontalVelocityZ": 0,
+      "verticalVelocity": 6.699999999999999,
+      "jumpOffset": 0.11166666666666665,
+      "grounded": false,
+      "jumpHeld": true,
+      "clockMs": 16.666666666666668,
+      "groundedAtMs": null,
+      "landedAtMs": null,
+      "jumpRising": true,
+      "wasAirborne": true
+    },
+    "flight": null,
+    "controller": null,
+    "controllerJumpHeld": false,
+    "jumpBuffer": {
+      "windowMs": 0,
+      "actions": {
+        "jump": {
+          "pressedAt": 16.666666666666668,
+          "previousPressAt": null,
+          "releasedAt": null,
+          "consumed": true
+        }
+      }
+    },
+    "heightfieldHeight": 1.8,
+    "heightfieldEntityId": "a"
+  },
+  "retainedAfterReentrantRespawn": {
+    "heading": 0,
+    "facing": 0,
+    "voxelBody": null,
+    "motion": {
+      "horizontalVelocityX": 0,
+      "horizontalVelocityZ": 0,
+      "verticalVelocity": 6.699999999999999,
+      "jumpOffset": 0.11166666666666665,
+      "grounded": false,
+      "jumpHeld": true,
+      "clockMs": 16.666666666666668,
+      "groundedAtMs": null,
+      "landedAtMs": null,
+      "jumpRising": true,
+      "wasAirborne": true
+    },
+    "flight": null,
+    "controller": null,
+    "controllerJumpHeld": false,
+    "jumpBuffer": {
+      "windowMs": 0,
+      "actions": {
+        "jump": {
+          "pressedAt": 16.666666666666668,
+          "previousPressAt": null,
+          "releasedAt": null,
+          "consumed": true
+        }
+      }
+    },
+    "heightfieldHeight": 1.8,
+    "heightfieldEntityId": "a"
+  },
+  "newActorAfterIdle": [
+    0,
+    0.10499999999999997,
+    0
+  ],
+  "telemetry": {
+    "grounded": false,
+    "verticalVelocity": 6.299999999999999,
+    "crouching": false,
+    "collisionHeight": 1.8,
+    "requestedCollisionHeight": 1.8,
+    "collisionHeightBlocked": false
+  },
+  "limitation": "Numerical public callback reproduction, not game/native appearance evidence"
+}

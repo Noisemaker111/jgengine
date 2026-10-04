@@ -1,0 +1,402 @@
+{
+  "status": "Complete frozen public package evidence authorized for archive; first source CI changelog failure preserved separately, final CI pending",
+  "archivePrefix": "pr-shots/shared-characters/character-discontinuities/",
+  "frozenConsumerReportSha256": "4984a398e9e9749376fd056151c564862378c32218d1219e8060653a7b265c08",
+  "builtCohort": {
+    "commit": "d355677d708092afff9e211e4a36d28f790276bd",
+    "tree": "3a55e1bc52b2ea9fb5f5703d520e02eb75c983d0",
+    "base": "76f1da353570ca530595387ec455c458dbdc3371",
+    "manifestSha256": "16936771899fe78b2f3905910c1762ac5b726f415b0d568f806d3da827686cab",
+    "sourceGameCommit": "45a50523cae2021c412aa83ce50589d806dd96d9",
+    "cohortDirectory": "/workspace/JGengine/.scratch/characters/packages/clean-d355677d-20261004"
+  },
+  "consumerArtifactHashesVerified": 47,
+  "frozenArtifactFiles": [
+    {
+      "local": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/character-discontinuities-consumer-evidence.json",
+      "bytes": 27127,
+      "sha256": "4984a398e9e9749376fd056151c564862378c32218d1219e8060653a7b265c08",
+      "gitBlobSha": "ba23e9848d1516d63709773b436ad0aa897195b0"
+    },
+    {
+      "local": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/candidate-package-manifest.json",
+      "bytes": 4358,
+      "sha256": "16936771899fe78b2f3905910c1762ac5b726f415b0d568f806d3da827686cab",
+      "gitBlobSha": "33f066a1fd306d42b7dbf482d66b75330209323e"
+    },
+    {
+      "local": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/installed-package-verification.json",
+      "bytes": 2193,
+      "sha256": "f8633def61853ef5e5d292899d44ab7b3c558dcc5746452f527f649636365ee3",
+      "gitBlobSha": "170029071e29d1763e17432b2ebcb87913715173"
+    },
+    {
+      "local": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/original-source-provenance.json",
+      "bytes": 33092,
+      "sha256": "67e8072056d556782fcd144233c99ced29c1a84ff8684fe20a8c24edc5128143",
+      "gitBlobSha": "c202311588a8683de45e106200e46955b966ab92"
+    },
+    {
+      "local": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/original-additional-content-inputs.json",
+      "bytes": 838,
+      "sha256": "4cc696b4c26f995b6347746e1eea5b2b14686dee5d9037c84bed3d063237c96b",
+      "gitBlobSha": "d25ec3ca4c6384d295bbc44cfaa7654de4e40264"
+    },
+    {
+      "local": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/baseline-control-input-ledger.json",
+      "bytes": 1589,
+      "sha256": "7bb4bc454fb9d034400a35989e17fdc536ceb1d7f55986a631e0cfe6d24de6c7",
+      "gitBlobSha": "b4ba01ce16f3592989f357db5abccdf9ae65bc58"
+    },
+    {
+      "local": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/jump-authoring-controls.ts",
+      "bytes": 8402,
+      "sha256": "352c3a1aebd18a52246ebdfaa3b246ec076f48b36086440e025dcde4af1cda53",
+      "gitBlobSha": "dd58fc3199a8b2998bc1ec8da4c0115080c01814"
+    },
+    {
+      "local": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/baseline-e112-jump-authoring-after.json",
+      "bytes": 194353,
+      "sha256": "11d2c90381326b3d8ddd830846fce04959bf606dcb0b983fc77060f6edb3b10b",
+      "gitBlobSha": "8efe4230eabc2218ed048eebefc1ae4d9c6a13f1"
+    },
+    {
+      "local": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/jump-authoring-after.json",
+      "bytes": 194371,
+      "sha256": "a629d6b42940a7274226a6516cb64d46e0bc321dedcc1c9e85fa40bc5961199c",
+      "gitBlobSha": "c3666979c91f5b598cedbdd31be47e204f0fe93f"
+    },
+    {
+      "local": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/jump-authoring-after.log",
+      "bytes": 2410,
+      "sha256": "27ca4aea2bf04e42dd5c6afeab64ec019eda99c2e92ebc983e117eb63a39d4a5",
+      "gitBlobSha": "30df05a8876b8bf9dbd72507822898e2eed5da76"
+    },
+    {
+      "local": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/ordinary-controls-comparison.json",
+      "bytes": 2973,
+      "sha256": "423ed0fa179be29dd5e9738faa2b2253fed71cd16111b3bdc57b57e110483caa",
+      "gitBlobSha": "a86b0993024099f7e62a9dd265ea258362fab6e4"
+    },
+    {
+      "local": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/ordinary-controls-comparison.log",
+      "bytes": 183,
+      "sha256": "8eb7c0d0f3341c316a6e138a13a317bb2a8a7c891c3b6c4f88123c4439ce8ed5",
+      "gitBlobSha": "fb676eed7d05f7d7902ef7068a019c92e377a7a0"
+    },
+    {
+      "local": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/discontinuities-controls-compare.ts",
+      "bytes": 2318,
+      "sha256": "c3ab300272276707e7278848ab540148916473396f9172169358b5c56c5ba480",
+      "gitBlobSha": "1adb6168f7a3ab51d072e7b5cbc9d6cff0e24f08"
+    },
+    {
+      "local": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/lifecycle-after.json",
+      "bytes": 12120,
+      "sha256": "a9f7c8f50c9f25f52d734f8817feea31cb685d881095363c5781fb08fe5052de",
+      "gitBlobSha": "1ba6adb28bcbb7af1cc0226101390f63e85f19c7"
+    },
+    {
+      "local": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/lifecycle-after.log",
+      "bytes": 1242,
+      "sha256": "1c6e33feb7b82291d0a218be666a45b8523666cff38b09ca0d1373956296aa97",
+      "gitBlobSha": "f27d00e9885fbdd4e6da4bb9fdac4ee79bc2acde"
+    },
+    {
+      "local": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/lifecycle-discontinuities-after.ts",
+      "bytes": 7403,
+      "sha256": "e23f5aae9e353524de631ee22ab94d62557206c57ddbcdef1c8e557785e2d0f9",
+      "gitBlobSha": "b4bb7bb8f66f44a906d4f97513364d0c98ba4728"
+    },
+    {
+      "local": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/lifecycle-after-initial-source.ts",
+      "bytes": 7369,
+      "sha256": "7df358331ca71a8b5ee5255c6c3975bc6e921002924c4ef05cdcec556122f40d",
+      "gitBlobSha": "5a7c4146204f91adaee2b369402d80dfe4657d54"
+    },
+    {
+      "local": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/lifecycle-after-initial-failure.json",
+      "bytes": 251,
+      "sha256": "a201a0265f06ebb84b6bfbd7493bab0f90f736e5bccc0890104b04b188fb2b8d",
+      "gitBlobSha": "e4bacc7be42f36fd7e4dfb2e5ebb6220ad6d6564"
+    },
+    {
+      "local": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/lifecycle-after-initial-failure.log",
+      "bytes": 2220,
+      "sha256": "dfb130bf9bc5d695a8e4be933312f5c985b0288b392e5630bc4c151855d9da30",
+      "gitBlobSha": "924a066ddcfa3794924c2c38bed3155301b4024b"
+    },
+    {
+      "local": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/fixture-missing-provenance-types.log",
+      "bytes": 1198,
+      "sha256": "d094dcd309391f1fc70d27d6a67635f2f4c39948718bf4ee436d78a682fa12fa",
+      "gitBlobSha": "573b9ff94f61c4e8591adc7eaf7f848e8ee061e3"
+    },
+    {
+      "local": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/fixture-missing-provenance-build.log",
+      "bytes": 977,
+      "sha256": "1a8b7a172e696204a7b072597962d9d402ae3402bb002eaf1bc9463175c25976",
+      "gitBlobSha": "286f779138a7bd3ef98ed98e047033df01d75363"
+    },
+    {
+      "local": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/original-scrap-signal-build.log",
+      "bytes": 1176,
+      "sha256": "0ecf9be2407dff0166d9972a11a3f792303870e6f7d20c844c9b2d1b45270433",
+      "gitBlobSha": "c609ea0de977fafe8c5449ea597ce855f37211ae"
+    },
+    {
+      "local": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/original-lantern-reach-build.log",
+      "bytes": 1176,
+      "sha256": "2acc484c78a5ba070729d4409df017f7cf4eb2d1d4ca973bee3e15e643441cc8",
+      "gitBlobSha": "f65347034d2091c6e51726b5bb98132775a828dc"
+    },
+    {
+      "local": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/original-scrap-signal-types.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "gitBlobSha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
+    },
+    {
+      "local": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/original-lantern-reach-types.log",
+      "bytes": 834,
+      "sha256": "51d0662939bac99822986ac0dcfd3cc4108885c63afd68be9ee309f7d1668b38",
+      "gitBlobSha": "419d5c4b3ebad957760a20c928b1f68a95a9d3f9"
+    },
+    {
+      "local": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/jump-authoring-scrap-cut-saved.json",
+      "bytes": 763,
+      "sha256": "2aa567b0683e880a5b7fde2a034bbfa8b86c77a10ac52e927cb608a5f60ddd1b",
+      "gitBlobSha": "596a8d5811000513a8ea3ecec27dbadc650637ba"
+    },
+    {
+      "local": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/jump-authoring-scrap-recovery-saved.json",
+      "bytes": 805,
+      "sha256": "5ee53bef4b5d2ce88fe03b50b48945d6df4b426d7461bed224372db2d28e22a7",
+      "gitBlobSha": "1a92386599e3c82d38295a3736d683ee553e4d80"
+    },
+    {
+      "local": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/jump-authoring-lantern-cut-saved.json",
+      "bytes": 756,
+      "sha256": "2a2370e5126f268f558a2eaa65077744076126ca368ac0bc67168acdc1767980",
+      "gitBlobSha": "240c6f0e0043212f5980ed5e737db2722211b512"
+    },
+    {
+      "local": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/jump-authoring-lantern-recovery-saved.json",
+      "bytes": 798,
+      "sha256": "9e9d8b0a5270a8a17492bebc0e347b89bf6bdcc212d1b710b3dccb1cec24b856",
+      "gitBlobSha": "0ccb545049ae73ed9d50c17a4463e02426b75871"
+    },
+    {
+      "local": "/workspace/JGengine/.scratch/characters/packages/clean-d355677d-20261004/build-provenance.json",
+      "bytes": 18775,
+      "sha256": "efaa461ec242f95b6488fdc1194b3f22b0d70339011919ea7db3eec4059ce6d4",
+      "gitBlobSha": "589359cbf8c117538e69ce6ea7223ace9d27da71"
+    },
+    {
+      "local": "/workspace/JGengine/.scratch/characters/packages/clean-d355677d-20261004/compiled-files.json",
+      "bytes": 370579,
+      "sha256": "b579694d0efbf77c60009b1f8357d57cb4e7d33ce448f9ab7f11e7ee0a1830c9",
+      "gitBlobSha": "9ee7f60e75bf788f9477a893dd97dde665daa789"
+    },
+    {
+      "local": "/workspace/JGengine/.scratch/characters/packages/clean-d355677d-20261004/package-files.json",
+      "bytes": 387382,
+      "sha256": "f9e562206aa7e16d28795c3ca0bf11702995b3bebb56da6027ba03a376bef94a",
+      "gitBlobSha": "655f292e5be3c1617aefb6164c622b2e235a17d3"
+    },
+    {
+      "local": "/workspace/JGengine/.scratch/characters/packages/clean-d355677d-20261004/source-files.json",
+      "bytes": 702521,
+      "sha256": "05b5732e79caf25a9b7c61ba887a3db08241ae80f63a96ca05605747013fba85",
+      "gitBlobSha": "4d470b70b61fa87445205c3cde89eb5c68a5a1ac"
+    },
+    {
+      "local": "/workspace/JGengine/.scratch/characters/discontinuity-after/public-cross-cohort-proof.json",
+      "bytes": 3703,
+      "sha256": "899c30baec7e5feb8627a85cda6127c8ec6c586ba34d319de1f99a13a0731253",
+      "gitBlobSha": "81b7d43fa1d8938bcde1bb29b246165647a28ba0"
+    },
+    {
+      "local": "/workspace/JGengine/.scratch/characters/discontinuity-after/lantern-public-result.json",
+      "bytes": 22818,
+      "sha256": "51da88d719f71ff34d0a32bb22b65e04714a5c167bbceea831e063e3dee45d43",
+      "gitBlobSha": "752ba4476e40def87536bb0f49e1111d42a3df31"
+    },
+    {
+      "local": "/workspace/JGengine/.scratch/characters/discontinuity-after/scrap-public-result.json",
+      "bytes": 190643,
+      "sha256": "8fdbabc123ba9a9f18ccdfb2c4092ea40f8b759a1ce26c9df1346ea4e564f0c2",
+      "gitBlobSha": "7405e035ba17dfaee8747e3b62d00b0597934073"
+    },
+    {
+      "local": "/workspace/JGengine/.scratch/characters/discontinuity-after/lantern-executed-source-provenance.json",
+      "bytes": 1929,
+      "sha256": "85274d52e127b9cf55e0847bf1f584d593c5f16f4f7ffb8760724f359d0d6156",
+      "gitBlobSha": "513470e5790bbc0618c8e0b3ad239680e028a9cd"
+    },
+    {
+      "local": "/workspace/JGengine/.scratch/characters/discontinuity-after/scrap-executed-source-provenance.json",
+      "bytes": 1929,
+      "sha256": "c55661f02c3bc3947f8fd12c1297429e7269691685b44035c44c1ce62363fc27",
+      "gitBlobSha": "15a2119132d399c935d0283b6300b6cc97e52ae0"
+    },
+    {
+      "local": "/workspace/JGengine/.scratch/characters/discontinuity-after/original-game-copy-hashes.json",
+      "bytes": 23300,
+      "sha256": "0bab9b19f1bb0a1730cfac11078ea5bc07221aa1f7b1c814868b685a62e83397",
+      "gitBlobSha": "6d38a3f63038e92a06d92fe5bd404d10490dc767"
+    },
+    {
+      "local": "/workspace/JGengine/.scratch/characters/discontinuity-after/fixture-lantern.tsx",
+      "bytes": 4130,
+      "sha256": "d239c75df8e5048ca66d3d867b75311882ca0a220caf2170cdb5a88f79aded14",
+      "gitBlobSha": "5e892a4db50e68786f7a9093ce2c65f087493455"
+    },
+    {
+      "local": "/workspace/JGengine/.scratch/characters/discontinuity-after/fixture-scrap.tsx",
+      "bytes": 5096,
+      "sha256": "d3a301da3bc1f2d97f40d5d8d40133f5780f045766b8d12148f21cdbb8cffefd",
+      "gitBlobSha": "e4ce223f2734ef29d2d202d0460e746d7087493f"
+    },
+    {
+      "local": "/workspace/JGengine/.scratch/characters/discontinuity-after/run.ts",
+      "bytes": 4484,
+      "sha256": "9c801027d2a8ebe70cdff82726dcbfc89c3eabbc7de8ddae5d486928632d4331",
+      "gitBlobSha": "b702a3d4bf0777054af2d0742b239a081d09bd1b"
+    },
+    {
+      "local": "/workspace/JGengine/.scratch/characters/discontinuity-after/lantern.log",
+      "bytes": 643,
+      "sha256": "966368bbf4f46e2c94fc9019ccb458d5d1daf57209d57333df679d8b13e9f9a0",
+      "gitBlobSha": "39464f72c15b179295c63fbd7a8c7630d840bfff"
+    },
+    {
+      "local": "/workspace/JGengine/.scratch/characters/discontinuity-after/scrap.log",
+      "bytes": 635,
+      "sha256": "e9994fe38d97f80efeedab313a4943c4e11288ea442ed1f61fd1760a8b294622",
+      "gitBlobSha": "70308e5b6b65ce47f2b53366db9c643495cc8894"
+    },
+    {
+      "local": "/workspace/JGengine/.scratch/characters/discontinuity-control-e4ac/lantern-public-result.json",
+      "bytes": 23138,
+      "sha256": "4b2b77dde6db6a4e3b3fa7193e2396dbfeec9840d6f301776ca6942940387f68",
+      "gitBlobSha": "4e6262fa9cc95ed2b1f11aeba1135087705f6277"
+    },
+    {
+      "local": "/workspace/JGengine/.scratch/characters/discontinuity-control-e4ac/scrap-public-result.json",
+      "bytes": 190959,
+      "sha256": "e820e59304d0068104d1bd349801be3f582a4c1d024b176ddf2144cb71c8a6fe",
+      "gitBlobSha": "08d2372c700231b1d172d7f692172dee50f0ce35"
+    },
+    {
+      "local": "/workspace/JGengine/.scratch/characters/discontinuity-control-e4ac/lantern-executed-source-provenance.json",
+      "bytes": 1894,
+      "sha256": "87038a01fbb878860c0800d5ff70bdbb83b270502c55620dad7ebdc0a9751481",
+      "gitBlobSha": "80b3edb5f20604ced2236b0bb1b8d900b34ea00f"
+    },
+    {
+      "local": "/workspace/JGengine/.scratch/characters/discontinuity-control-e4ac/scrap-executed-source-provenance.json",
+      "bytes": 1894,
+      "sha256": "417d0a5e08e2648ab4aed35fa1838fc511638e001aa5d7ca8ac0eb437ccecb06",
+      "gitBlobSha": "fa8eaa78d4038327b1b42b1fcf7ac3a4186ebb41"
+    },
+    {
+      "local": "/workspace/JGengine/.scratch/characters/movement-lifetime-reentrant-review.json",
+      "bytes": 2037,
+      "sha256": "0ce0b511b78695716ec78ff56197eaf2e60c7dbdd41b8e683bbab09348f5050b",
+      "gitBlobSha": "815f1e77bbfbcfcb5a700d56818ce695c73e8a4a"
+    }
+  ],
+  "remainingConsumerLimitations": [
+    "No native appearance, interaction feel, full rendered gameplay loop or hardware FPS proof claimed. Hook proof uses real React/Fiber callbacks with manual frame advancement.",
+    "Full original Lantern document still has unsupported dawn environment preset; unchanged existing limitation, no full original-document save/reload claim.",
+    "Lantern retains four existing dispatch Promise-result type errors; relevant UI source untouched.",
+    "Actual game player routes do not expose terminal-death animation, so no terminal-reset consumer claim. Owning focused hook regressions cover that separate contract.",
+    "Raw position update movement policy intentionally remains unchanged; lifecycle proof is membership despawn/spawn.",
+    "Tarball installation is isolated unreleased candidate testing, not registry publication or game adoption."
+  ],
+  "additionalLifetimeLimitation": {
+    "status": "Unsupported, untraced public-API reentrant edge",
+    "case": "An earlier synchronous entity membership listener respawns the same id during despawn notification; the later motor listener never observes absence and retains prior jump state.",
+    "reproduction": "movement-lifetime-reentrant-review.json",
+    "observedNewActorFirstIdle": {
+      "position": [
+        0,
+        0.10499999999999997,
+        0
+      ],
+      "grounded": false,
+      "verticalVelocity": 6.299999999999999
+    },
+    "consumerTracing": "No use of subscribeMembership was found in the bounded Scrap/Lantern/Deepward source search; no existing adopter reproduction claimed.",
+    "ownership": "No source/store edits; coordinator-owned notification/lifecycle seam left untouched."
+  },
+  "sourceProvenancePending": false,
+  "CIPending": true,
+  "upload": false,
+  "publication": "Unreleased built-package consumer verification only; no registry publication or released adoption/native appearance claim.",
+  "sourceProvenance": {
+    "localHead": "36c455f5f0ed12b6112fb16404647cd81a44857a",
+    "tree": "3a55e1bc52b2ea9fb5f5703d520e02eb75c983d0",
+    "base": "0318b0872edce92037d810f1a7fa5017869ee273",
+    "builtHead": "d355677d708092afff9e211e4a36d28f790276bd",
+    "builtTree": "3a55e1bc52b2ea9fb5f5703d520e02eb75c983d0",
+    "files": [
+      {
+        "path": ".claude/skills/jgengine-world/api.md",
+        "sha": "7f506957d5e08893e36fb7eb1dd94dcfb573277c",
+        "size": 818120
+      },
+      {
+        "path": ".claude/skills/jgengine-world/recipes/character-animation.md",
+        "sha": "d5bc27715b1143f5e19f13b31365254556c19ff9",
+        "size": 15797
+      },
+      {
+        "path": ".claude/skills/jgengine-world/reference.md",
+        "sha": "ae13d5baa9bee9d0c601fa1988d45f44473120e1",
+        "size": 112966
+      },
+      {
+        "path": "changes/character-discontinuities.md",
+        "sha": "409239b3092eda8bbddfacd3a0ae4b96e3813389",
+        "size": 342
+      },
+      {
+        "path": "packages/core/src/movement/playerMovement.test.ts",
+        "sha": "aec3b195f61f811a9984953fe5016d521ea66711",
+        "size": 84391
+      },
+      {
+        "path": "packages/core/src/movement/playerMovement.ts",
+        "sha": "2a7493e02ab614738b99190c8e5249b49d1f1168",
+        "size": 50954
+      },
+      {
+        "path": "packages/shell/src/render/modelAnimationHook.test.ts",
+        "sha": "879e46bf6c35ae0277ba4e3f22c292367a1d29ca",
+        "size": 19705
+      },
+      {
+        "path": "packages/shell/src/render/useModelAnimation.ts",
+        "sha": "768187ad79acbbc96d09ae0d267e58755cf25225",
+        "size": 20836
+      }
+    ],
+    "remoteHead": "6df71eff3211884f7f10d04b6a354c9a3a38776d",
+    "delivery": "GitData exact tree after standalone git push HTTP401",
+    "releaseFragmentCorrection": {
+      "localHead": "2f51c8e45164e4f1bda70173ad6b45bed0be914f",
+      "tree": "8860834db39d26a04c6c9730db5292a741a67407",
+      "blob": "eb4b1c44088d492d1d4cbe91e169382245f55e23",
+      "path": "changes/character-discontinuities.md",
+      "onlyDifferenceFromBuiltTree": [
+        "changes/character-discontinuities.md"
+      ],
+      "originalRuntimeAndPublishedInputsUnchanged": true,
+      "builtHead": "d355677d708092afff9e211e4a36d28f790276bd",
+      "buildNotRelabeled": true,
+      "remoteHead": "8851ca4e3d0e2984a5da15e1472690d1eb5d242c"
+    }
+  }
+}

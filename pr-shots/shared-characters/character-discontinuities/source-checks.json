@@ -1,0 +1,56 @@
+{
+  "head": "d355677d708092afff9e211e4a36d28f790276bd",
+  "tree": "3a55e1bc52b2ea9fb5f5703d520e02eb75c983d0",
+  "clean": true,
+  "beforeGeneration": {
+    "head": "2fe435dd3da5864975348cc7e1320efc92729077",
+    "tree": "95569779a76cf9a90c979575dcc003a714ab8eba",
+    "sourceHashes": {
+      "packages/shell/src/render/useModelAnimation.ts": "d8e5195480a47f68684b05b02fc35aa3d2b22a03d72a0a8ce1321e4d60c1c164",
+      "packages/shell/src/render/modelAnimationHook.test.ts": "84a21c0941b0e6e885d468fba283105c346a463143a3af0e99fc04481690a301",
+      "packages/core/src/movement/playerMovement.ts": "b0d7cd340d4c8b172161d6dcae6a4083c92adc6dd2d4df2834820ba004664973",
+      "packages/core/src/movement/playerMovement.test.ts": "eba830f4386f8d2e9390e48090503b6e42990f8b283a4765cff8dab83e4743eb"
+    }
+  },
+  "sourceHashes": {
+    "packages/shell/src/render/useModelAnimation.ts": "d8e5195480a47f68684b05b02fc35aa3d2b22a03d72a0a8ce1321e4d60c1c164",
+    "packages/shell/src/render/modelAnimationHook.test.ts": "84a21c0941b0e6e885d468fba283105c346a463143a3af0e99fc04481690a301",
+    "packages/core/src/movement/playerMovement.ts": "b0d7cd340d4c8b172161d6dcae6a4083c92adc6dd2d4df2834820ba004664973",
+    "packages/core/src/movement/playerMovement.test.ts": "eba830f4386f8d2e9390e48090503b6e42990f8b283a4765cff8dab83e4743eb"
+  },
+  "checks": {
+    "gen": {
+      "command": "bun run gen",
+      "exit": 0,
+      "log": ".scratch/characters/discontinuity-integrated-checks/gen.log"
+    },
+    "export-tarball": {
+      "command": "bun test scripts/exportManifest.test.ts scripts/tarballInstall.test.ts",
+      "exit": 0,
+      "log": ".scratch/characters/discontinuity-integrated-checks/export-tarball.log"
+    },
+    "generated-gates": {
+      "command": "bun run check-artifacts && bun run check-capabilities && bun run check-export-manifest && bun run check-skills && bun run check-skill-api",
+      "exit": 0,
+      "log": ".scratch/characters/discontinuity-integrated-checks/generated-gates.log"
+    },
+    "preflight": {
+      "command": "bun run ship:preflight",
+      "exit": 0,
+      "log": ".scratch/characters/discontinuity-integrated-checks/preflight.log"
+    }
+  },
+  "exportTests": {
+    "pass": 34,
+    "fail": 0,
+    "assertions": 99
+  },
+  "generatedCommit": {
+    "paths": [
+      ".claude/skills/jgengine-world/api.md"
+    ],
+    "description": "restorePlayerMovement pending-state/despawn JSDoc only"
+  },
+  "owningEvidence": ".scratch/characters/discontinuity-checks/source-check-summary.json",
+  "evidenceBoundary": "Engine source and built package exports verified; actual two-game AFTER awaits fresh verified installed cohort. No release/game adoption claimed."
+}

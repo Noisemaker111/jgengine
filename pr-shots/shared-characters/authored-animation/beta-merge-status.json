@@ -1,0 +1,30 @@
+{
+  "checkedAtUTC": "2026-10-04T03:55:42.139129+00:00",
+  "pr": 1964,
+  "mergedCommit": "0318b0872edce92037d810f1a7fa5017869ee273",
+  "mergedAtUTC": "2026-10-04T03:37:50Z",
+  "exactPRCI": {
+    "head": "532ef9756007c602496df398f4a2bf8b55080baf",
+    "run": 37172738036,
+    "attempt": 1,
+    "allSixChecks": "PASS",
+    "evidencePreserved": "ci-final.json at prior frozen archive"
+  },
+  "subsequentBetaPushCI": {
+    "run": 37174621127,
+    "commit": "0318b0872edce92037d810f1a7fa5017869ee273",
+    "test": "FAIL",
+    "observedFailure": "CreatorApp.test.ts:171 paused seconds expected 0.05, received 0.0703; first two CreatorApp tests passed.",
+    "testCounters": {
+      "pass": 9684,
+      "skip": 2,
+      "fail": 1
+    },
+    "rawLogSHA256": "43e2c66b0512be51deec1ce824bece996020ca4c5cf1ff99d7679c7d1f6a44e1",
+    "rawLogBytes": 1953700,
+    "compressedLog": "beta-merge-failed.log.gz",
+    "interpretation": "Observed test failure only; no inferred flakiness, cause or recovery.",
+    "reruns": 0
+  },
+  "actions": "Archive-only follow-up receipt. No source changes, old reports rewritten or native attempts."
+}

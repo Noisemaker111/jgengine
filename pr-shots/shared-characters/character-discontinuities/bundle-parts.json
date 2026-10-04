@@ -1,0 +1,25 @@
+{
+  "format": "Concatenate binary parts in listed order to reconstruct eighth-proof.tar.gz. Parts are complete file ranges, not independently decompressible.",
+  "bundleBytes": 15000393,
+  "bundleSha256": "f5297f375c6e410cfe258d7308f44077939688cf87292689717925d9e8c9b0de",
+  "bundleGitBlobSha": "5aeb7a6d79311cb2c00738b170e753467e688777",
+  "parts": [
+    {
+      "path": "pr-shots/shared-characters/character-discontinuities/eighth-proof.tar.gz.part-01",
+      "bytes": 5242880,
+      "sha256": "e01871e4e21294f3a81e608f80b2e3d42503cfa67996d07e3152448e4de6cc31"
+    },
+    {
+      "path": "pr-shots/shared-characters/character-discontinuities/eighth-proof.tar.gz.part-02",
+      "bytes": 5242880,
+      "sha256": "9233deccb93de98feda9d590becd58a454ee1b839c37dfedf7ab652ae9d8e60d"
+    },
+    {
+      "path": "pr-shots/shared-characters/character-discontinuities/eighth-proof.tar.gz.part-03",
+      "bytes": 4514633,
+      "sha256": "31b5c7dacaf4e26353d13bd34aac91b8480137fc43978ee909f3a7d45ff90ad6"
+    }
+  ],
+  "verification": "Whole bundle and every tar member verified before split; concatenated parts verified equal original bytes.",
+  "regularTarFilesIncludingLedger": 923
+}

@@ -1,0 +1,99 @@
+{
+  "source": {
+    "commit": "d355677d708092afff9e211e4a36d28f790276bd",
+    "tree": "3a55e1bc52b2ea9fb5f5703d520e02eb75c983d0",
+    "manifestSha256": "16936771899fe78b2f3905910c1762ac5b726f415b0d568f806d3da827686cab"
+  },
+  "baseline": {
+    "commit": "e4ac65ede2e1f97fe493114ac111b68e8ac53079",
+    "tree": "091bbd1595967f9586f8859e0d54d7fb57652661",
+    "label": "unreleased clean-built character candidate; no registry publication or shipped game adoption"
+  },
+  "candidateStatus": "Unreleased candidate includes pending seventh authored-reader source at this tree; registry publication/game adoption not claimed.",
+  "layer": "Installed public SDK, actual original45a game commands and imported rigs through real React/Fiber hook; no native appearance, input feel, or hardware performance claim.",
+  "comparisons": {
+    "lantern": {
+      "warpMeters": 359.7867423905445,
+      "beforeFirstClip": [
+        {
+          "clip": "Running_A",
+          "weight": 1,
+          "time": 0.5166666666666666
+        }
+      ],
+      "afterFirstClip": [
+        {
+          "clip": "Idle",
+          "weight": 1,
+          "time": 0.5166666666666666
+        }
+      ],
+      "stationaryControlSamplesEqual": 30,
+      "normalMovementPoseVelocityActionSamplesEqual": 0,
+      "preWarpSnapshotEqual": true,
+      "allPostWarpPosesAndVelocitiesEqual": true,
+      "sameRigAndConfig": true,
+      "sameFixtureAndRunnerBytes": true,
+      "cleanupDuringRelocation": 0,
+      "subscriptionsAfterUnmount": 0,
+      "lastIdleActionTimeEqual": 0.2999998331069871,
+      "results": {
+        "before": ".scratch/characters/discontinuity-control-e4ac/lantern-public-result.json",
+        "after": ".scratch/characters/discontinuity-after/lantern-public-result.json"
+      }
+    },
+    "scrap": {
+      "warpMeters": 26.28889504446863,
+      "beforeFirstClip": [
+        {
+          "clip": "Running_A",
+          "weight": 1,
+          "time": 0.1166665712992172
+        }
+      ],
+      "afterFirstClip": [
+        {
+          "clip": "Idle",
+          "weight": 1,
+          "time": 0.1166663328806381
+        }
+      ],
+      "stationaryControlSamplesEqual": 30,
+      "normalMovementPoseVelocityActionSamplesEqual": 360,
+      "preWarpSnapshotEqual": true,
+      "allPostWarpPosesAndVelocitiesEqual": true,
+      "sameRigAndConfig": true,
+      "sameFixtureAndRunnerBytes": true,
+      "cleanupDuringRelocation": 0,
+      "subscriptionsAfterUnmount": 0,
+      "lastIdleActionTimeEqual": 0.9666662216187039,
+      "results": {
+        "before": ".scratch/characters/discontinuity-control-e4ac/scrap-public-result.json",
+        "after": ".scratch/characters/discontinuity-after/scrap-public-result.json"
+      }
+    }
+  },
+  "checks": {
+    "discontinuity-control-e4ac/lantern": {
+      "exit": 0,
+      "log": ".scratch/characters/discontinuity-control-e4ac/lantern.log"
+    },
+    "discontinuity-control-e4ac/scrap": {
+      "exit": 0,
+      "log": ".scratch/characters/discontinuity-control-e4ac/scrap.log"
+    },
+    "discontinuity-after/lantern": {
+      "exit": 0,
+      "log": ".scratch/characters/discontinuity-after/lantern.log"
+    },
+    "discontinuity-after/scrap": {
+      "exit": 0,
+      "log": ".scratch/characters/discontinuity-after/scrap.log"
+    }
+  },
+  "additionalOwningRegressionEvidence": ".scratch/characters/discontinuity-checks/source-check-summary.json",
+  "limitations": [
+    "Actual game routes do not emit a supported player terminal-death animation, so no player terminal-reset claim.",
+    "Pending-trigger, terminal-state, vertical-only relocation, Infinity retune and fast continuous movement preservation were verified by owning real imported Knight hook regressions."
+  ]
+}

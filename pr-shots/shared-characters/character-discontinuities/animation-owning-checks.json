@@ -1,0 +1,57 @@
+{
+  "sourceBase": "ec53acd41a3de603b301c40d699656a67fe091df",
+  "sourceScope": "uncommitted owned hook/test only; final committed public package proof pending",
+  "sourceHashes": {
+    "packages/shell/src/render/useModelAnimation.ts": "d8e5195480a47f68684b05b02fc35aa3d2b22a03d72a0a8ce1321e4d60c1c164",
+    "packages/shell/src/render/modelAnimationHook.test.ts": "84a21c0941b0e6e885d468fba283105c346a463143a3af0e99fc04481690a301"
+  },
+  "checks": {
+    "before-tests": {
+      "command": "bun test packages/shell/src/render/modelAnimationHook.test.ts (before source patch)",
+      "exit": 1,
+      "log": ".scratch/characters/discontinuity-checks/before-tests.log"
+    },
+    "shell-build": {
+      "command": "bun --cwd=packages/shell run build",
+      "exit": 0,
+      "log": ".scratch/characters/discontinuity-checks/shell-build.log"
+    },
+    "hook-tests": {
+      "command": "bun test packages/shell/src/render/modelAnimationHook.test.ts",
+      "exit": 0,
+      "log": ".scratch/characters/discontinuity-checks/hook-tests.log"
+    },
+    "adjacent-tests": {
+      "command": "bun test packages/shell/src/render/animationPlayback.test.ts packages/shell/src/render/createGraphPose.test.ts packages/shell/src/render/takeRootMotion.test.ts",
+      "exit": 0,
+      "log": ".scratch/characters/discontinuity-checks/adjacent-tests.log"
+    },
+    "shell-types": {
+      "command": "bun --cwd=packages/shell run check-types",
+      "exit": 0,
+      "log": ".scratch/characters/discontinuity-checks/shell-types.log"
+    }
+  },
+  "counts": {
+    "before": {
+      "pass": 7,
+      "fail": 2,
+      "assertions": 55
+    },
+    "afterHook": {
+      "pass": 9,
+      "fail": 0,
+      "assertions": 68
+    },
+    "adjacent": {
+      "pass": 16,
+      "fail": 0,
+      "assertions": 1501
+    }
+  },
+  "actualBeforeCohort": "e4ac65ede2e1f97fe493114ac111b68e8ac53079",
+  "actualBefore": [
+    ".scratch/characters/teleport-animation-triage/lantern-portal-before.json",
+    ".scratch/characters/teleport-animation-triage/scrap-reconstruction-before.json"
+  ]
+}

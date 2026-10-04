@@ -1,0 +1,425 @@
+{
+  "label": "unreleased installed public package lifecycle regression; no registry adoption or native claim",
+  "cohort": "d355677d708092afff9e211e4a36d28f790276bd",
+  "tree": "3a55e1bc52b2ea9fb5f5703d520e02eb75c983d0",
+  "executedSourceSha256": "e23f5aae9e353524de631ee22ab94d62557206c57ddbcdef1c8e557785e2d0f9",
+  "packageManifestSha256": "16936771899fe78b2f3905910c1762ac5b726f415b0d568f806d3da827686cab",
+  "installedVerificationSha256": "f8633def61853ef5e5d292899d44ab7b3c558dcc5746452f527f649636365ee3",
+  "originalGameSource": "45a50523cae2021c412aa83ce50589d806dd96d9",
+  "modulePaths": {
+    "runtime/gameContext": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/node_modules/@jgengine/core/dist/runtime/gameContext.js",
+    "movement/playerMovement": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/node_modules/@jgengine/core/dist/movement/playerMovement.js",
+    "scene/entityStore": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/node_modules/@jgengine/core/dist/scene/entityStore.js"
+  },
+  "moduleHashes": {
+    "runtime/gameContext": "509fb073e0d4922f5a5131a2a7b3ba8b03c7eaaca8f37faa7817311aa36640b7",
+    "movement/playerMovement": "6906628fbfa7952dfed8f7d77f84ab1291c7301257f63842ebe51834715c81a3",
+    "scene/entityStore": "5eabcf127ebed1f16776ad7ac9ca53d1041d67b6f830414ad95be91538c1e1d0"
+  },
+  "preservedBeforeCohort": "e11224cd752c7cc5936e0e69a1ccca68074a0f13",
+  "preservedBeforeSha256": "c7f9e4b022b0c3df3189946851116e01adc7016ccf9f697ec026d71f7bd6839c",
+  "previousIdleRise": 0.09111111111111114,
+  "compiledMotorChanged": true,
+  "cases": [
+    {
+      "kind": "original-spawn",
+      "initial": {
+        "id": "lifecycle-lantern",
+        "name": "player_hero",
+        "position": [
+          0,
+          7.244763548770163,
+          -275
+        ],
+        "rotationY": 0,
+        "rotationX": 0,
+        "rotationZ": 0,
+        "velocity": [
+          0,
+          0,
+          0
+        ],
+        "role": "prop",
+        "movement": {
+          "walkSpeed": 7
+        },
+        "behaviors": []
+      },
+      "previous": {
+        "entity": {
+          "id": "lifecycle-lantern",
+          "name": "player_hero",
+          "position": [
+            0,
+            7.340319104325719,
+            -274.8937194621979
+          ],
+          "rotationY": 0,
+          "rotationX": 0,
+          "rotationZ": 0,
+          "velocity": [
+            0,
+            5.733333333333324,
+            2.0690504453955327
+          ],
+          "role": "prop",
+          "movement": {
+            "walkSpeed": 7
+          },
+          "behaviors": []
+        },
+        "telemetry": {
+          "grounded": false,
+          "verticalVelocity": 5.733333333333333,
+          "crouching": false,
+          "collisionHeight": 1.8,
+          "requestedCollisionHeight": 1.8,
+          "collisionHeightBlocked": false
+        },
+        "snapshot": {
+          "heading": 0,
+          "facing": 0,
+          "voxelBody": null,
+          "motion": {
+            "horizontalVelocityX": 0,
+            "horizontalVelocityZ": 2.0690504453962206,
+            "verticalVelocity": 5.733333333333333,
+            "jumpOffset": 0.0955555555555554,
+            "grounded": false,
+            "jumpHeld": true,
+            "clockMs": 1033.3333333333323,
+            "groundedAtMs": null,
+            "landedAtMs": null,
+            "jumpRising": true,
+            "wasAirborne": true
+          },
+          "flight": null,
+          "controller": null,
+          "controllerJumpHeld": false,
+          "jumpBuffer": {
+            "windowMs": 0,
+            "actions": {
+              "jump": {
+                "pressedAt": 1033.3333333333323,
+                "previousPressAt": null,
+                "releasedAt": null,
+                "consumed": true
+              }
+            }
+          },
+          "heightfieldHeight": 1.8,
+          "heightfieldEntityId": "lifecycle-lantern"
+        }
+      },
+      "target": {
+        "source": "original normal player spawn",
+        "xz": [
+          0,
+          -275
+        ]
+      },
+      "membershipObservations": [
+        {
+          "exists": false,
+          "telemetry": null,
+          "movement": null
+        },
+        {
+          "exists": true,
+          "telemetry": null,
+          "movement": null
+        }
+      ],
+      "born": {
+        "entity": {
+          "id": "lifecycle-lantern",
+          "name": "player_hero",
+          "position": [
+            0,
+            7.244763548770163,
+            -275
+          ],
+          "rotationY": 0,
+          "rotationX": 0,
+          "rotationZ": 0,
+          "velocity": [
+            0,
+            0,
+            0
+          ],
+          "role": "prop",
+          "movement": {
+            "walkSpeed": 7
+          },
+          "behaviors": []
+        },
+        "telemetry": null,
+        "snapshot": null
+      },
+      "after": {
+        "entity": {
+          "id": "lifecycle-lantern",
+          "name": "player_hero",
+          "position": [
+            0,
+            7.244763548770163,
+            -275
+          ],
+          "rotationY": 0,
+          "rotationX": 0,
+          "rotationZ": 0,
+          "velocity": [
+            0,
+            0,
+            0
+          ],
+          "role": "prop",
+          "movement": {
+            "walkSpeed": 7
+          },
+          "behaviors": []
+        },
+        "telemetry": {
+          "grounded": true,
+          "verticalVelocity": 0,
+          "crouching": false,
+          "collisionHeight": 1.8,
+          "requestedCollisionHeight": 1.8,
+          "collisionHeightBlocked": false
+        },
+        "snapshot": {
+          "heading": 0,
+          "facing": 0,
+          "voxelBody": null,
+          "motion": {
+            "horizontalVelocityX": 0,
+            "horizontalVelocityZ": 0,
+            "verticalVelocity": 0,
+            "jumpOffset": 0,
+            "grounded": true,
+            "jumpHeld": false,
+            "clockMs": 16.666666666666668,
+            "groundedAtMs": 16.666666666666668,
+            "landedAtMs": null,
+            "jumpRising": false,
+            "wasAirborne": false
+          },
+          "flight": null,
+          "controller": null,
+          "controllerJumpHeld": false,
+          "jumpBuffer": {
+            "windowMs": 0,
+            "actions": {}
+          },
+          "heightfieldHeight": 1.8,
+          "heightfieldEntityId": "lifecycle-lantern"
+        }
+      },
+      "heldStatsPreserved": true,
+      "otherEntityCount": 427,
+      "otherEntitiesPreserved": true,
+      "ordinaryHydrationPreserved": true
+    },
+    {
+      "kind": "dungeon.enter",
+      "initial": {
+        "id": "lifecycle-lantern-dungeon",
+        "name": "player_hero",
+        "position": [
+          0,
+          7.244763548770163,
+          -275
+        ],
+        "rotationY": 0,
+        "rotationX": 0,
+        "rotationZ": 0,
+        "velocity": [
+          0,
+          0,
+          0
+        ],
+        "role": "prop",
+        "movement": {
+          "walkSpeed": 7
+        },
+        "behaviors": []
+      },
+      "previous": {
+        "entity": {
+          "id": "lifecycle-lantern-dungeon",
+          "name": "player_hero",
+          "position": [
+            0,
+            7.340319104325719,
+            -274.8937194621979
+          ],
+          "rotationY": 0,
+          "rotationX": 0,
+          "rotationZ": 0,
+          "velocity": [
+            0,
+            5.733333333333324,
+            2.0690504453955327
+          ],
+          "role": "prop",
+          "movement": {
+            "walkSpeed": 7
+          },
+          "behaviors": []
+        },
+        "telemetry": {
+          "grounded": false,
+          "verticalVelocity": 5.733333333333333,
+          "crouching": false,
+          "collisionHeight": 1.8,
+          "requestedCollisionHeight": 1.8,
+          "collisionHeightBlocked": false
+        },
+        "snapshot": {
+          "heading": 0,
+          "facing": 0,
+          "voxelBody": null,
+          "motion": {
+            "horizontalVelocityX": 0,
+            "horizontalVelocityZ": 2.0690504453962206,
+            "verticalVelocity": 5.733333333333333,
+            "jumpOffset": 0.0955555555555554,
+            "grounded": false,
+            "jumpHeld": true,
+            "clockMs": 1033.3333333333323,
+            "groundedAtMs": null,
+            "landedAtMs": null,
+            "jumpRising": true,
+            "wasAirborne": true
+          },
+          "flight": null,
+          "controller": null,
+          "controllerJumpHeld": false,
+          "jumpBuffer": {
+            "windowMs": 0,
+            "actions": {
+              "jump": {
+                "pressedAt": 1033.3333333333323,
+                "previousPressAt": null,
+                "releasedAt": null,
+                "consumed": true
+              }
+            }
+          },
+          "heightfieldHeight": 1.8,
+          "heightfieldEntityId": "lifecycle-lantern-dungeon"
+        }
+      },
+      "target": {
+        "source": "original authored dungeon marker resolved by actual registered command",
+        "dungeonId": "hollow_crypt",
+        "xz": [
+          105.4,
+          388.2
+        ]
+      },
+      "membershipObservations": [
+        {
+          "exists": false,
+          "telemetry": null,
+          "movement": null
+        },
+        {
+          "exists": true,
+          "telemetry": null,
+          "movement": null
+        }
+      ],
+      "born": {
+        "entity": {
+          "id": "lifecycle-lantern-dungeon",
+          "name": "player_hero",
+          "position": [
+            105.4,
+            11.920336663736665,
+            388.2
+          ],
+          "rotationY": 0,
+          "rotationX": 0,
+          "rotationZ": 0,
+          "velocity": [
+            0,
+            0,
+            0
+          ],
+          "role": "prop",
+          "movement": {
+            "walkSpeed": 7
+          },
+          "behaviors": []
+        },
+        "telemetry": null,
+        "snapshot": null
+      },
+      "after": {
+        "entity": {
+          "id": "lifecycle-lantern-dungeon",
+          "name": "player_hero",
+          "position": [
+            105.4,
+            11.920336663736665,
+            388.2
+          ],
+          "rotationY": 0,
+          "rotationX": 0,
+          "rotationZ": 0,
+          "velocity": [
+            0,
+            0,
+            0
+          ],
+          "role": "prop",
+          "movement": {
+            "walkSpeed": 7
+          },
+          "behaviors": []
+        },
+        "telemetry": {
+          "grounded": true,
+          "verticalVelocity": 0,
+          "crouching": false,
+          "collisionHeight": 1.8,
+          "requestedCollisionHeight": 1.8,
+          "collisionHeightBlocked": false
+        },
+        "snapshot": {
+          "heading": 0,
+          "facing": 0,
+          "voxelBody": null,
+          "motion": {
+            "horizontalVelocityX": 0,
+            "horizontalVelocityZ": 0,
+            "verticalVelocity": 0,
+            "jumpOffset": 0,
+            "grounded": true,
+            "jumpHeld": false,
+            "clockMs": 16.666666666666668,
+            "groundedAtMs": 16.666666666666668,
+            "landedAtMs": null,
+            "jumpRising": false,
+            "wasAirborne": false
+          },
+          "flight": null,
+          "controller": null,
+          "controllerJumpHeld": false,
+          "jumpBuffer": {
+            "windowMs": 0,
+            "actions": {}
+          },
+          "heightfieldHeight": 1.8,
+          "heightfieldEntityId": "lifecycle-lantern-dungeon"
+        }
+      },
+      "heldStatsPreserved": true,
+      "otherEntityCount": 427,
+      "otherEntitiesPreserved": true,
+      "ordinaryHydrationPreserved": true
+    }
+  ],
+  "limitations": "Actual Scrap reconstruction uses raw position update and remains deliberate game policy; this fix does not infer physical teleports from distance. Actor replacement without a membership removal is outside this lifecycle seam. No custom world placement, direct actor pose writes, native appearance, control-feel or hardware performance claim."
+}

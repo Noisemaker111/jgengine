@@ -1,0 +1,105 @@
+{
+  "label": "unreleased clean-built character candidate; no registry publication or shipped game adoption",
+  "commit": "d355677d708092afff9e211e4a36d28f790276bd",
+  "tree": "3a55e1bc52b2ea9fb5f5703d520e02eb75c983d0",
+  "base": "76f1da353570ca530595387ec455c458dbdc3371",
+  "dirty": false,
+  "packages": [
+    {
+      "name": "@jgengine/core",
+      "version": "0.19.0",
+      "path": "/workspace/JGengine/.scratch/characters/packages/clean-d355677d-20261004/jgengine-core-0.19.0.tgz",
+      "sha256": "3a2a1fd7c89a7c41c59103fb4b736524901a6d11854a3813804403920e9c1227",
+      "files": 1211
+    },
+    {
+      "name": "@jgengine/rapier",
+      "version": "0.19.0",
+      "path": "/workspace/JGengine/.scratch/characters/packages/clean-d355677d-20261004/jgengine-rapier-0.19.0.tgz",
+      "sha256": "74de8beeb37d6aceee8fa40dc7de8e83bdb0e235bda813c1e934e87201cea33c",
+      "files": 6
+    },
+    {
+      "name": "@jgengine/ws",
+      "version": "0.19.0",
+      "path": "/workspace/JGengine/.scratch/characters/packages/clean-d355677d-20261004/jgengine-ws-0.19.0.tgz",
+      "sha256": "d7e2301b14af1c81b15e044a308d9738fb3b0e93d8f7f182641741239a026995",
+      "files": 29
+    },
+    {
+      "name": "@jgengine/sql",
+      "version": "0.19.0",
+      "path": "/workspace/JGengine/.scratch/characters/packages/clean-d355677d-20261004/jgengine-sql-0.19.0.tgz",
+      "sha256": "afa66ad7fba962c837b8604a0b836189401badc3392f13d93666673b8bd16664",
+      "files": 9
+    },
+    {
+      "name": "@jgengine/navbake",
+      "version": "0.19.0",
+      "path": "/workspace/JGengine/.scratch/characters/packages/clean-d355677d-20261004/jgengine-navbake-0.19.0.tgz",
+      "sha256": "74e758c8ff680bc469b91a7fc7c110b1d867ad0b8f26d19a23be8bc4b57b7d48",
+      "files": 6
+    },
+    {
+      "name": "@jgengine/react",
+      "version": "0.19.0",
+      "path": "/workspace/JGengine/.scratch/characters/packages/clean-d355677d-20261004/jgengine-react-0.19.0.tgz",
+      "sha256": "a072bcebcefc1c42d9ed649f5fdb5a48becddf673cc765e35952145abd9ea5c0",
+      "files": 183
+    },
+    {
+      "name": "@jgengine/convex",
+      "version": "0.19.0",
+      "path": "/workspace/JGengine/.scratch/characters/packages/clean-d355677d-20261004/jgengine-convex-0.19.0.tgz",
+      "sha256": "c5b9df18576ea43ebb889e92eb854d61d405379e24665e16779a4035cdd455f6",
+      "files": 27
+    },
+    {
+      "name": "@jgengine/node",
+      "version": "0.19.0",
+      "path": "/workspace/JGengine/.scratch/characters/packages/clean-d355677d-20261004/jgengine-node-0.19.0.tgz",
+      "sha256": "dfad51875d2df152652dd738dbbf3829de97e4eeef9ebe2b2b8dc414c7f7bbf9",
+      "files": 29
+    },
+    {
+      "name": "@jgengine/shell",
+      "version": "0.19.0",
+      "path": "/workspace/JGengine/.scratch/characters/packages/clean-d355677d-20261004/jgengine-shell-0.19.0.tgz",
+      "sha256": "5f42ddb55fe14d7b9bada4c6d5121f874c9ac3a2384f48d0982cab9796501d57",
+      "files": 515
+    },
+    {
+      "name": "@jgengine/editor",
+      "version": "0.19.0",
+      "path": "/workspace/JGengine/.scratch/characters/packages/clean-d355677d-20261004/jgengine-editor-0.19.0.tgz",
+      "sha256": "cdb9da5d14922649d09da1d6808fa79c6038d9e36dc9f8a71be87f3f9ff1aa0c",
+      "files": 232
+    },
+    {
+      "name": "@jgengine/assets",
+      "version": "0.19.0",
+      "path": "/workspace/JGengine/.scratch/characters/packages/clean-d355677d-20261004/jgengine-assets-0.19.0.tgz",
+      "sha256": "55d691ea99e8a2e7fa3b513969cdffe0919c97dbc521e37cc7d7bc1ab0afb4f0",
+      "files": 81
+    },
+    {
+      "name": "@jgengine/github",
+      "version": "0.6.0",
+      "path": "/workspace/JGengine/.scratch/characters/packages/clean-d355677d-20261004/jgengine-github-0.6.0.tgz",
+      "sha256": "7ef7a1329bdc14646235e6a55c6c7c3e35e2edc3502817510e8e0ee6e497ba5d",
+      "files": 29
+    },
+    {
+      "name": "jgengine",
+      "version": "0.16.0",
+      "path": "/workspace/JGengine/.scratch/characters/packages/clean-d355677d-20261004/jgengine-0.16.0.tgz",
+      "sha256": "95d9fb7d63ddaa2b6b055f08471d873ad0b76a5038b5649f569f073843037876",
+      "files": 56
+    }
+  ],
+  "buildProvenance": "build-provenance.json",
+  "compiledFileLedger": "compiled-files.json",
+  "packageFileLedger": "package-files.json",
+  "sourceFileLedger": "source-files.json",
+  "buildProvenanceSha256": "efaa461ec242f95b6488fdc1194b3f22b0d70339011919ea7db3eec4059ce6d4"
+}

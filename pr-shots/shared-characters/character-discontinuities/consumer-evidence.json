@@ -1,0 +1,611 @@
+{
+  "label": "Unreleased public package character discontinuity candidate, containing animation snap and motor lifecycle fixes plus pending preceding shared character source. Original game composition untouched; no release adoption.",
+  "source": {
+    "commit": "d355677d708092afff9e211e4a36d28f790276bd",
+    "tree": "3a55e1bc52b2ea9fb5f5703d520e02eb75c983d0",
+    "base": "76f1da353570ca530595387ec455c458dbdc3371",
+    "manifestSha256": "16936771899fe78b2f3905910c1762ac5b726f415b0d568f806d3da827686cab",
+    "sourceGameCommit": "45a50523cae2021c412aa83ce50589d806dd96d9",
+    "cohortDirectory": "/workspace/JGengine/.scratch/characters/packages/clean-d355677d-20261004"
+  },
+  "packageBoundary": {
+    "cleanFreshBuilds": 13,
+    "normalNpmPacks": 13,
+    "allTarballsHashesVerified": 13,
+    "actualInstalledPackages": [
+      {
+        "name": "@jgengine/core",
+        "version": "0.19.0",
+        "tarballSha256": "3a2a1fd7c89a7c41c59103fb4b736524901a6d11854a3813804403920e9c1227",
+        "installedFilesByteVerified": 1211
+      },
+      {
+        "name": "@jgengine/ws",
+        "version": "0.19.0",
+        "tarballSha256": "d7e2301b14af1c81b15e044a308d9738fb3b0e93d8f7f182641741239a026995",
+        "installedFilesByteVerified": 29
+      },
+      {
+        "name": "@jgengine/navbake",
+        "version": "0.19.0",
+        "tarballSha256": "74e758c8ff680bc469b91a7fc7c110b1d867ad0b8f26d19a23be8bc4b57b7d48",
+        "installedFilesByteVerified": 6
+      },
+      {
+        "name": "@jgengine/react",
+        "version": "0.19.0",
+        "tarballSha256": "a072bcebcefc1c42d9ed649f5fdb5a48becddf673cc765e35952145abd9ea5c0",
+        "installedFilesByteVerified": 183
+      },
+      {
+        "name": "@jgengine/node",
+        "version": "0.19.0",
+        "tarballSha256": "dfad51875d2df152652dd738dbbf3829de97e4eeef9ebe2b2b8dc414c7f7bbf9",
+        "installedFilesByteVerified": 29
+      },
+      {
+        "name": "@jgengine/shell",
+        "version": "0.19.0",
+        "tarballSha256": "5f42ddb55fe14d7b9bada4c6d5121f874c9ac3a2384f48d0982cab9796501d57",
+        "installedFilesByteVerified": 515
+      },
+      {
+        "name": "@jgengine/editor",
+        "version": "0.19.0",
+        "tarballSha256": "cdb9da5d14922649d09da1d6808fa79c6038d9e36dc9f8a71be87f3f9ff1aa0c",
+        "installedFilesByteVerified": 232
+      },
+      {
+        "name": "@jgengine/assets",
+        "version": "0.19.0",
+        "tarballSha256": "55d691ea99e8a2e7fa3b513969cdffe0919c97dbc521e37cc7d7bc1ab0afb4f0",
+        "installedFilesByteVerified": 81
+      },
+      {
+        "name": "jgengine",
+        "version": "0.16.0",
+        "tarballSha256": "95d9fb7d63ddaa2b6b055f08471d873ad0b76a5038b5649f569f073843037876",
+        "installedFilesByteVerified": 56
+      }
+    ],
+    "uninstalledPackages": [
+      "@jgengine/rapier",
+      "@jgengine/sql",
+      "@jgengine/convex",
+      "@jgengine/github"
+    ],
+    "installedRegularFilesByteEqualTarballs": 2342,
+    "sdkSourceAliases": false,
+    "originalAndCopiedGameSourceFilesVerified": 212,
+    "preparedGameAdapters": false,
+    "centralDependencyConfigurationOrLocksChanged": false
+  },
+  "actualGameAnimationDiscontinuities": {
+    "before": {
+      "commit": "e4ac65ede2e1f97fe493114ac111b68e8ac53079",
+      "tree": "091bbd1595967f9586f8859e0d54d7fb57652661",
+      "label": "unreleased clean-built character candidate; no registry publication or shipped game adoption"
+    },
+    "after": {
+      "commit": "d355677d708092afff9e211e4a36d28f790276bd",
+      "tree": "3a55e1bc52b2ea9fb5f5703d520e02eb75c983d0",
+      "manifestSha256": "16936771899fe78b2f3905910c1762ac5b726f415b0d568f806d3da827686cab"
+    },
+    "layer": "Installed public SDK, actual original45a game commands and imported rigs through real React/Fiber hook; no native appearance, input feel, or hardware performance claim.",
+    "producerSourceSnapshotsAndModulePaths": {
+      "beforeDirectory": "/workspace/JGengine/.scratch/characters/discontinuity-control-e4ac",
+      "afterDirectory": "/workspace/JGengine/.scratch/characters/discontinuity-after"
+    },
+    "comparisons": {
+      "lantern": {
+        "warpMeters": 359.7867423905445,
+        "beforeFirstClip": [
+          {
+            "clip": "Running_A",
+            "weight": 1,
+            "time": 0.5166666666666666
+          }
+        ],
+        "afterFirstClip": [
+          {
+            "clip": "Idle",
+            "weight": 1,
+            "time": 0.5166666666666666
+          }
+        ],
+        "stationaryControlSamplesEqual": 30,
+        "normalMovementPoseVelocityActionSamplesEqual": 0,
+        "preWarpSnapshotEqual": true,
+        "allPostWarpPosesAndVelocitiesEqual": true,
+        "sameRigAndConfig": true,
+        "sameFixtureAndRunnerBytes": true,
+        "cleanupDuringRelocation": 0,
+        "subscriptionsAfterUnmount": 0,
+        "lastIdleActionTimeEqual": 0.2999998331069871,
+        "results": {
+          "before": ".scratch/characters/discontinuity-control-e4ac/lantern-public-result.json",
+          "after": ".scratch/characters/discontinuity-after/lantern-public-result.json"
+        }
+      },
+      "scrap": {
+        "warpMeters": 26.28889504446863,
+        "beforeFirstClip": [
+          {
+            "clip": "Running_A",
+            "weight": 1,
+            "time": 0.1166665712992172
+          }
+        ],
+        "afterFirstClip": [
+          {
+            "clip": "Idle",
+            "weight": 1,
+            "time": 0.1166663328806381
+          }
+        ],
+        "stationaryControlSamplesEqual": 30,
+        "normalMovementPoseVelocityActionSamplesEqual": 360,
+        "preWarpSnapshotEqual": true,
+        "allPostWarpPosesAndVelocitiesEqual": true,
+        "sameRigAndConfig": true,
+        "sameFixtureAndRunnerBytes": true,
+        "cleanupDuringRelocation": 0,
+        "subscriptionsAfterUnmount": 0,
+        "lastIdleActionTimeEqual": 0.9666662216187039,
+        "results": {
+          "before": ".scratch/characters/discontinuity-control-e4ac/scrap-public-result.json",
+          "after": ".scratch/characters/discontinuity-after/scrap-public-result.json"
+        }
+      }
+    },
+    "allOwningRunsExitZero": true,
+    "interpretation": "Actual normal Lantern portal and Scrap reconstruction produce same-id actor relocation. Existing run animation spike on first stationary frame becomes idle through public shell package, with same imported rigs/configurations and normal trajectories/action clocks preserved.",
+    "limitations": [
+      "Actual game routes do not emit a supported player terminal-death animation, so no player terminal-reset claim.",
+      "Pending-trigger, terminal-state, vertical-only relocation, Infinity retune and fast continuous movement preservation were verified by owning real imported Knight hook regressions."
+    ]
+  },
+  "actualLanternMotorLifecycle": {
+    "beforeCohort": "e11224cd752c7cc5936e0e69a1ccca68074a0f13",
+    "beforeReportSha256": "c7f9e4b022b0c3df3189946851116e01adc7016ccf9f697ec026d71f7bd6839c",
+    "previousOneIdleStepRiseMeters": 0.09111111111111114,
+    "compiledMotorChanged": true,
+    "executedSourceSha256": "e23f5aae9e353524de631ee22ab94d62557206c57ddbcdef1c8e557785e2d0f9",
+    "cases": [
+      {
+        "kind": "original-spawn",
+        "target": {
+          "source": "original normal player spawn",
+          "xz": [
+            0,
+            -275
+          ]
+        },
+        "oldMotorBeforeTeleportGrounded": false,
+        "membershipObservations": [
+          {
+            "exists": false,
+            "telemetry": null,
+            "movement": null
+          },
+          {
+            "exists": true,
+            "telemetry": null,
+            "movement": null
+          }
+        ],
+        "bornTelemetry": null,
+        "bornMotorSnapshot": null,
+        "firstIdleTelemetry": {
+          "grounded": true,
+          "verticalVelocity": 0,
+          "crouching": false,
+          "collisionHeight": 1.8,
+          "requestedCollisionHeight": 1.8,
+          "collisionHeightBlocked": false
+        },
+        "firstIdleJumpOffset": 0,
+        "birthAndFirstIdlePositionEqual": true,
+        "heldStatsPreserved": true,
+        "otherEntityCountPreserved": 427,
+        "otherEntitiesPreserved": true,
+        "ordinaryHydrationPreserved": true
+      },
+      {
+        "kind": "dungeon.enter",
+        "target": {
+          "source": "original authored dungeon marker resolved by actual registered command",
+          "dungeonId": "hollow_crypt",
+          "xz": [
+            105.4,
+            388.2
+          ]
+        },
+        "oldMotorBeforeTeleportGrounded": false,
+        "membershipObservations": [
+          {
+            "exists": false,
+            "telemetry": null,
+            "movement": null
+          },
+          {
+            "exists": true,
+            "telemetry": null,
+            "movement": null
+          }
+        ],
+        "bornTelemetry": null,
+        "bornMotorSnapshot": null,
+        "firstIdleTelemetry": {
+          "grounded": true,
+          "verticalVelocity": 0,
+          "crouching": false,
+          "collisionHeight": 1.8,
+          "requestedCollisionHeight": 1.8,
+          "collisionHeightBlocked": false
+        },
+        "firstIdleJumpOffset": 0,
+        "birthAndFirstIdlePositionEqual": true,
+        "heldStatsPreserved": true,
+        "otherEntityCountPreserved": 427,
+        "otherEntitiesPreserved": true,
+        "ordinaryHydrationPreserved": true
+      }
+    ],
+    "interpretation": "Normal same-id despawn/spawn during a jump clears prior motor/telemetry before birth observers; original spawn and actual dungeon.enter next idle step stay grounded with vertical velocity and jump offset zero. Other entities, held stats and continuous ordinary hydration remain unchanged."
+  },
+  "ordinaryControls": {
+    "beforeCohort": "e11224cd752c7cc5936e0e69a1ccca68074a0f13",
+    "afterCohort": "d355677d708092afff9e211e4a36d28f790276bd",
+    "fullRecordsIdentical": 12,
+    "compiledMotorChanged": true,
+    "compiledModuleHashes": {
+      "previous": {
+        "runtime/gameContext": "509fb073e0d4922f5a5131a2a7b3ba8b03c7eaaca8f37faa7817311aa36640b7",
+        "movement/playerMovement": "e9f659e4aaa6e30d0fb0a2b560c8704faf816e734d46b054011b1527bcc49865",
+        "movement/movementModel": "e77bf1fb15b0c6c8ce0f6f2116fcb7a0bc4bf744e559661203d2050450a942d2",
+        "editor/commands": "246f96705073a89eec247c86f8775271a8d03e0c349ba75ac1085bae2bae75ba",
+        "editor/document": "8dacca438ad0c4425eae1f83e88e8dd459275cb7dc05b73d3d3ae600fa371f71",
+        "editor/movementCatalog": "cc72bb8ade12bfd761892db7c61cbb6453dd714771f4a6d39688ec2d586700b2"
+      },
+      "current": {
+        "runtime/gameContext": "509fb073e0d4922f5a5131a2a7b3ba8b03c7eaaca8f37faa7817311aa36640b7",
+        "movement/playerMovement": "6906628fbfa7952dfed8f7d77f84ab1291c7301257f63842ebe51834715c81a3",
+        "movement/movementModel": "e77bf1fb15b0c6c8ce0f6f2116fcb7a0bc4bf744e559661203d2050450a942d2",
+        "editor/commands": "246f96705073a89eec247c86f8775271a8d03e0c349ba75ac1085bae2bae75ba",
+        "editor/document": "8dacca438ad0c4425eae1f83e88e8dd459275cb7dc05b73d3d3ae600fa371f71",
+        "editor/movementCatalog": "cc72bb8ade12bfd761892db7c61cbb6453dd714771f4a6d39688ec2d586700b2"
+      }
+    },
+    "cases": [
+      {
+        "name": "scrap",
+        "profile": "cut",
+        "documentSha256": "2aa567b0683e880a5b7fde2a034bbfa8b86c77a10ac52e927cb608a5f60ddd1b",
+        "allThreeFullPhysicalRecordsIdentical": true,
+        "authoredMatchesDirectRuntime": true
+      },
+      {
+        "name": "scrap",
+        "profile": "recovery",
+        "documentSha256": "5ee53bef4b5d2ce88fe03b50b48945d6df4b426d7461bed224372db2d28e22a7",
+        "allThreeFullPhysicalRecordsIdentical": true,
+        "authoredMatchesDirectRuntime": true
+      },
+      {
+        "name": "lantern",
+        "profile": "cut",
+        "documentSha256": "2a2370e5126f268f558a2eaa65077744076126ca368ac0bc67168acdc1767980",
+        "allThreeFullPhysicalRecordsIdentical": true,
+        "authoredMatchesDirectRuntime": true
+      },
+      {
+        "name": "lantern",
+        "profile": "recovery",
+        "documentSha256": "9e9d8b0a5270a8a17492bebc0e347b89bf6bdcc212d1b710b3dccb1cec24b856",
+        "allThreeFullPhysicalRecordsIdentical": true,
+        "authoredMatchesDirectRuntime": true
+      }
+    ],
+    "interpretation": "Exact unchanged four saved documents and script replay both actual normal players. All twelve default/direct-runtime/authored full physical records match preserved e112 results bit-for-bit; compiled motor bytes intentionally changed."
+  },
+  "checks": [
+    {
+      "game": "scrap-signal",
+      "command": [
+        "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/node_modules/.bin/vite",
+        "build"
+      ],
+      "cwd": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/games/scrap-signal",
+      "exitCode": 0,
+      "secondsFromBuildLog": 41.11,
+      "log": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/original-scrap-signal-build.log"
+    },
+    {
+      "game": "scrap-signal",
+      "command": [
+        "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/node_modules/.bin/tsgo",
+        "--noEmit",
+        "-p",
+        "tsconfig.json"
+      ],
+      "cwd": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/games/scrap-signal",
+      "exitCode": 0,
+      "log": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/original-scrap-signal-types.log",
+      "result": "PASS"
+    },
+    {
+      "game": "lantern-reach",
+      "command": [
+        "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/node_modules/.bin/vite",
+        "build"
+      ],
+      "cwd": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/games/lantern-reach",
+      "exitCode": 0,
+      "secondsFromBuildLog": 26.79,
+      "log": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/original-lantern-reach-build.log"
+    },
+    {
+      "game": "lantern-reach",
+      "command": [
+        "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/node_modules/.bin/tsgo",
+        "--noEmit",
+        "-p",
+        "tsconfig.json"
+      ],
+      "cwd": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/games/lantern-reach",
+      "exitCode": 1,
+      "log": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/original-lantern-reach-types.log",
+      "result": "Only four existing ActionBar.tsx:57 and Dialogue.tsx:68 dispatch Promise result errors."
+    }
+  ],
+  "failureDisclosure": [
+    "Initial fixture preparation omitted original scripts/model-provenance.json required by Lantern assets/scenery. Failed build/type logs preserved; unchanged original script/content inputs copied with hashes, then final checks run. No game source alteration.",
+    "Initial lifecycle proof compared raw undefined meta against JSON-saved record omitting undefined; failed script/log retained. Final harness compares serialized records, no SDK failure claim."
+  ],
+  "remainingLimitations": [
+    "No native appearance, interaction feel, full rendered gameplay loop or hardware FPS proof claimed. Hook proof uses real React/Fiber callbacks with manual frame advancement.",
+    "Full original Lantern document still has unsupported dawn environment preset; unchanged existing limitation, no full original-document save/reload claim.",
+    "Lantern retains four existing dispatch Promise-result type errors; relevant UI source untouched.",
+    "Actual game player routes do not expose terminal-death animation, so no terminal-reset consumer claim. Owning focused hook regressions cover that separate contract.",
+    "Raw position update movement policy intentionally remains unchanged; lifecycle proof is membership despawn/spawn.",
+    "Tarball installation is isolated unreleased candidate testing, not registry publication or game adoption."
+  ],
+  "artifacts": [
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/candidate-package-manifest.json",
+      "sha256": "16936771899fe78b2f3905910c1762ac5b726f415b0d568f806d3da827686cab",
+      "bytes": 4358
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/installed-package-verification.json",
+      "sha256": "f8633def61853ef5e5d292899d44ab7b3c558dcc5746452f527f649636365ee3",
+      "bytes": 2193
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/original-source-provenance.json",
+      "sha256": "67e8072056d556782fcd144233c99ced29c1a84ff8684fe20a8c24edc5128143",
+      "bytes": 33092
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/original-additional-content-inputs.json",
+      "sha256": "4cc696b4c26f995b6347746e1eea5b2b14686dee5d9037c84bed3d063237c96b",
+      "bytes": 838
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/baseline-control-input-ledger.json",
+      "sha256": "7bb4bc454fb9d034400a35989e17fdc536ceb1d7f55986a631e0cfe6d24de6c7",
+      "bytes": 1589
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/jump-authoring-controls.ts",
+      "sha256": "352c3a1aebd18a52246ebdfaa3b246ec076f48b36086440e025dcde4af1cda53",
+      "bytes": 8402
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/baseline-e112-jump-authoring-after.json",
+      "sha256": "11d2c90381326b3d8ddd830846fce04959bf606dcb0b983fc77060f6edb3b10b",
+      "bytes": 194353
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/jump-authoring-after.json",
+      "sha256": "a629d6b42940a7274226a6516cb64d46e0bc321dedcc1c9e85fa40bc5961199c",
+      "bytes": 194371
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/jump-authoring-after.log",
+      "sha256": "27ca4aea2bf04e42dd5c6afeab64ec019eda99c2e92ebc983e117eb63a39d4a5",
+      "bytes": 2410
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/ordinary-controls-comparison.json",
+      "sha256": "423ed0fa179be29dd5e9738faa2b2253fed71cd16111b3bdc57b57e110483caa",
+      "bytes": 2973
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/ordinary-controls-comparison.log",
+      "sha256": "8eb7c0d0f3341c316a6e138a13a317bb2a8a7c891c3b6c4f88123c4439ce8ed5",
+      "bytes": 183
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/discontinuities-controls-compare.ts",
+      "sha256": "c3ab300272276707e7278848ab540148916473396f9172169358b5c56c5ba480",
+      "bytes": 2318
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/lifecycle-after.json",
+      "sha256": "a9f7c8f50c9f25f52d734f8817feea31cb685d881095363c5781fb08fe5052de",
+      "bytes": 12120
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/lifecycle-after.log",
+      "sha256": "1c6e33feb7b82291d0a218be666a45b8523666cff38b09ca0d1373956296aa97",
+      "bytes": 1242
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/lifecycle-discontinuities-after.ts",
+      "sha256": "e23f5aae9e353524de631ee22ab94d62557206c57ddbcdef1c8e557785e2d0f9",
+      "bytes": 7403
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/lifecycle-after-initial-source.ts",
+      "sha256": "7df358331ca71a8b5ee5255c6c3975bc6e921002924c4ef05cdcec556122f40d",
+      "bytes": 7369
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/lifecycle-after-initial-failure.json",
+      "sha256": "a201a0265f06ebb84b6bfbd7493bab0f90f736e5bccc0890104b04b188fb2b8d",
+      "bytes": 251
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/lifecycle-after-initial-failure.log",
+      "sha256": "dfb130bf9bc5d695a8e4be933312f5c985b0288b392e5630bc4c151855d9da30",
+      "bytes": 2220
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/fixture-missing-provenance-types.log",
+      "sha256": "d094dcd309391f1fc70d27d6a67635f2f4c39948718bf4ee436d78a682fa12fa",
+      "bytes": 1198
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/fixture-missing-provenance-build.log",
+      "sha256": "1a8b7a172e696204a7b072597962d9d402ae3402bb002eaf1bc9463175c25976",
+      "bytes": 977
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/original-scrap-signal-build.log",
+      "sha256": "0ecf9be2407dff0166d9972a11a3f792303870e6f7d20c844c9b2d1b45270433",
+      "bytes": 1176
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/original-lantern-reach-build.log",
+      "sha256": "2acc484c78a5ba070729d4409df017f7cf4eb2d1d4ca973bee3e15e643441cc8",
+      "bytes": 1176
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/original-scrap-signal-types.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/original-lantern-reach-types.log",
+      "sha256": "51d0662939bac99822986ac0dcfd3cc4108885c63afd68be9ee309f7d1668b38",
+      "bytes": 834
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/jump-authoring-scrap-cut-saved.json",
+      "sha256": "2aa567b0683e880a5b7fde2a034bbfa8b86c77a10ac52e927cb608a5f60ddd1b",
+      "bytes": 763
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/jump-authoring-scrap-recovery-saved.json",
+      "sha256": "5ee53bef4b5d2ce88fe03b50b48945d6df4b426d7461bed224372db2d28e22a7",
+      "bytes": 805
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/jump-authoring-lantern-cut-saved.json",
+      "sha256": "2a2370e5126f268f558a2eaa65077744076126ca368ac0bc67168acdc1767980",
+      "bytes": 756
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/character-discontinuities/jump-authoring-lantern-recovery-saved.json",
+      "sha256": "9e9d8b0a5270a8a17492bebc0e347b89bf6bdcc212d1b710b3dccb1cec24b856",
+      "bytes": 798
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/packages/clean-d355677d-20261004/build-provenance.json",
+      "sha256": "efaa461ec242f95b6488fdc1194b3f22b0d70339011919ea7db3eec4059ce6d4",
+      "bytes": 18775
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/packages/clean-d355677d-20261004/compiled-files.json",
+      "sha256": "b579694d0efbf77c60009b1f8357d57cb4e7d33ce448f9ab7f11e7ee0a1830c9",
+      "bytes": 370579
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/packages/clean-d355677d-20261004/package-files.json",
+      "sha256": "f9e562206aa7e16d28795c3ca0bf11702995b3bebb56da6027ba03a376bef94a",
+      "bytes": 387382
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/packages/clean-d355677d-20261004/source-files.json",
+      "sha256": "05b5732e79caf25a9b7c61ba887a3db08241ae80f63a96ca05605747013fba85",
+      "bytes": 702521
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/discontinuity-after/public-cross-cohort-proof.json",
+      "sha256": "899c30baec7e5feb8627a85cda6127c8ec6c586ba34d319de1f99a13a0731253",
+      "bytes": 3703
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/discontinuity-after/lantern-public-result.json",
+      "sha256": "51da88d719f71ff34d0a32bb22b65e04714a5c167bbceea831e063e3dee45d43",
+      "bytes": 22818
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/discontinuity-after/scrap-public-result.json",
+      "sha256": "8fdbabc123ba9a9f18ccdfb2c4092ea40f8b759a1ce26c9df1346ea4e564f0c2",
+      "bytes": 190643
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/discontinuity-after/lantern-executed-source-provenance.json",
+      "sha256": "85274d52e127b9cf55e0847bf1f584d593c5f16f4f7ffb8760724f359d0d6156",
+      "bytes": 1929
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/discontinuity-after/scrap-executed-source-provenance.json",
+      "sha256": "c55661f02c3bc3947f8fd12c1297429e7269691685b44035c44c1ce62363fc27",
+      "bytes": 1929
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/discontinuity-after/original-game-copy-hashes.json",
+      "sha256": "0bab9b19f1bb0a1730cfac11078ea5bc07221aa1f7b1c814868b685a62e83397",
+      "bytes": 23300
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/discontinuity-after/fixture-lantern.tsx",
+      "sha256": "d239c75df8e5048ca66d3d867b75311882ca0a220caf2170cdb5a88f79aded14",
+      "bytes": 4130
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/discontinuity-after/fixture-scrap.tsx",
+      "sha256": "d3a301da3bc1f2d97f40d5d8d40133f5780f045766b8d12148f21cdbb8cffefd",
+      "bytes": 5096
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/discontinuity-after/run.ts",
+      "sha256": "9c801027d2a8ebe70cdff82726dcbfc89c3eabbc7de8ddae5d486928632d4331",
+      "bytes": 4484
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/discontinuity-after/lantern.log",
+      "sha256": "966368bbf4f46e2c94fc9019ccb458d5d1daf57209d57333df679d8b13e9f9a0",
+      "bytes": 643
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/discontinuity-after/scrap.log",
+      "sha256": "e9994fe38d97f80efeedab313a4943c4e11288ea442ed1f61fd1760a8b294622",
+      "bytes": 635
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/discontinuity-control-e4ac/lantern-public-result.json",
+      "sha256": "4b2b77dde6db6a4e3b3fa7193e2396dbfeec9840d6f301776ca6942940387f68",
+      "bytes": 23138
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/discontinuity-control-e4ac/scrap-public-result.json",
+      "sha256": "e820e59304d0068104d1bd349801be3f582a4c1d024b176ddf2144cb71c8a6fe",
+      "bytes": 190959
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/discontinuity-control-e4ac/lantern-executed-source-provenance.json",
+      "sha256": "87038a01fbb878860c0800d5ff70bdbb83b270502c55620dad7ebdc0a9751481",
+      "bytes": 1894
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/discontinuity-control-e4ac/scrap-executed-source-provenance.json",
+      "sha256": "417d0a5e08e2648ab4aed35fa1838fc511638e001aa5d7ca8ac0eb437ccecb06",
+      "bytes": 1894
+    }
+  ]
+}
