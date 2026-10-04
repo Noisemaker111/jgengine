@@ -26,6 +26,333 @@ At publish, rename this heading to the new version and mirror the entries into
 `packages/core/src/meta/changelog.ts` (the typed `CHANGELOG` export).
 -->
 
+## 0.20.0
+
+### Migrate
+
+- **Bump lockstep SDK packages to `^0.20.0`:** `@jgengine/{core,rapier,react,ws,node,sql,convex,shell,editor,assets,navbake}`. CLI `jgengine` is `0.17.0`; `@jgengine/github` is `0.7.0`.
+- World health bars and nameplates now hide behind blocking world geometry by default. Use `occlude: false` for intentional reveal overlays; distance is measured from the render camera. Nameplates suppress machine identifiers unless an explicit `resolveName` supplies a display label.
+- Character controller standing and explicit crouch heights must be at least `2 * radius`, and crouch height must not exceed standing height. Invalid dimensions and control ranges now throw with repair guidance instead of creating a capsule below the declared feet.
+- Await `useGame().commands.run(...)` when showing command results: authoritative shells now wait for host acknowledgement; offline calls remain synchronous. Trusted host execution stays on `ctx.game.commands.run` / `runAs`.
+- Remove manual `ctx.time.advance` inside `ctx.sim.advance` callbacks. Simulation advances it once and supplies scaled gameplay time as the callback's third argument; prediction opts out with `{ advanceTime: false }`.
+- Await hosted `save()` and Node `flush()` at persistence boundaries. Games can retire mirrored restore logic after migrating legacy saves; retain projections the UI reads. State never present in an old save cannot be reconstructed automatically.
+- Direct hosted-runner callers must join or resume a member before submitting its input; frames from nonmembers are ignored.
+- `MaterialMaps.ao`, `MaterialMaps.roughness`, and matching terrain roles are optional. Pass the resolved maps directly to material seams or check for a URL before loading it. Native ambientCG pulls no longer advertise unprovided KTX2 maps.
+- Default offline `ctx.game.save` now reports error when local storage is unavailable, denied, or full. Check `status()` before displaying saved; `await save()` alone does not imply success. Explicitly injected backends keep their policy. Choose `persist: { storage: "memory" }` or `memorySaveBackend()` for intentional ephemeral/headless saves.
+- Slot index publication remains a separate operation: a payload may succeed before metadata fails, without cross-key rollback. Use the gameplay device-save-status recipe for checkpoint adoption and truthful UI.
+- Custom `createQuestJournal` reward dependencies and `applyQuestRewards` appliers with multiple item rewards must supply an all-or-reject `grantItems` callback. Legacy single-item callbacks remain supported; multiple items without a batch callback reject before writes.
+- When constructing a complete `StreamingSettings` object, add all required fields: `maxConcurrentLoads: 4`, `maxResidentBytes: Infinity`, and `residentEvictionOrder: "oldest"`. Callers using `Partial<StreamingSettings>` or spreading `DEFAULT_STREAMING_SETTINGS` inherit these defaults. Existing streaming fields remain required in complete objects.
+- `SpatialGrid.forEachPair` now throws `RangeError` for negative or nonfinite distances. Pass a finite, nonnegative distance.
+- Explicit `StreamingSettings` objects need `maxConcurrentLoads` (default 4). Cancelled loads keep a concurrency slot until settlement; loaders must settle after cancellation and an `unload` hook releases stale successful loads.
+- `setEnvironment` now rejects invalid environment data before changing editor state, history, or live revisions. Use supported `day`, `dusk`, or `night` presets and valid authored fields; rejection reports the existing document path diagnostic.
+- Pass the admitted `userId` to direct `WorldGameHost.getServerView()` reads after awaiting `joinServer()`. Reads without successful admission return `null`.
+- `WorldGameHost.stop()` now permanently closes admission and ticks, drains accepted operations and saves. Await its completion and construct a new host to restart; failed saves reject the same repeated stop promise.
+- Consumers asserting an exact GameContext snapshot key set should include the always-on `pursuitBehaviors` key; empty worlds contain `{ version: 1, instances: [] }`. Replace game-local pursuit/home/cooldown maps with the descriptor when its direct movement and target policies match the game.
+- Shaped-grid dimensions must be positive safe integers; footprint cells and placement origins must be finite safe integers. Empty or fractional footprints and invalid quarter-turn rotations reject before overlap checks.
+- Bare APIs keep their existing default discovery behavior. Opt into incremental mode only if every membership/position write reports its ID or invalidates. Subsets with a broader position resolver must report explicit candidate presence; omitted presence asserts membership when the position resolves. Unresolved candidates retain a fallback proportional to their count. Direct runtime entity mutation requires `invalidateSpatial()`.
+- Scene rays require finite origins, direction magnitudes and nonnegative finite `maxDistance`; invalid rays throw `RangeError`. Bound each caller's range instead of passing `Infinity`. World-solid cell sizes must be finite and positive.
+- Use `RegenShield.refill(amount)` for pickups and scripted point gains. Numeric `restore(amount)` remains a deprecated compatibility alias; `restore(state)` loads saved shield state.
+- Custom asset import files now require safe relative POSIX paths, printable roles and plain JSON metadata; `classifyAssetFile` returns `null` for unknown bytes even when the filename has a supported extension.
+
+### Added
+
+- `EditorSession.transaction(commands)` stages heterogeneous authoring commands atomically with indexed validation errors and one undo/redo step.
+- Editor prefabs retain validated static bake settings with local collision solids and named clearance volumes; `set_prefab_static_bake` supports atomic authoring, persistence and undo/redo.
+- `@jgengine/assets/staticPrefabBake` exports pinned static prefab source models with preserved transforms, materials, reachable textures and provenance, plus deterministic budgets and collision metadata.
+- Catalog models and extras support `anchor: "origin"`, preserving composed asset coordinates through shared rendering and collider resolution. Unmapped objects use the same catalog lookup in both paths, allowing origin-only game rendering maps to be removed.
+- Named, versioned player scene saves through injected `CreatorDocumentStorage`, with optimistic revisions, schema validation, catalog permissions and explicit work budgets.
+- Production `GameHost` creator configuration controlled by game-owned menus, with shared Create/Edit/Save/Reopen and fresh isolated document-snapshot playtests.
+- Named particle emitters reuse the existing director, pooled simulation, and shell renderer. Start/stop preserves live particles; burst, seed, bindings, and output remain retunable and serializable. Capacity checks reject standing-emitter overflow explicitly.
+
+- Disc, sphere, and cone spawn volumes compose with the shared force-field sampler. Explicit environment influence shares live wind and physical field envelopes; cosmetic pools follow simulation pause and time scaling. Particle collisions use bounded scene queries and consume-once cosmetic events; bounded child impacts cannot recurse. Graphics settings cap visual pools without changing physical authority.
+
+- The existing renderer supports instanced streaks, flakes, flames, smoke, ribbons, and ground ripples alongside point output. Caller-selected projectile and flock models follow authoritative simulation positions; their existing model owner handles animation and cleanup. Habitat gameplay actors remain game-owned.
+- Scene markers can store `meta.hiddenNodes` as exact node names, shared by runtime props and editor material previews. Omission preserves model defaults; an empty list clears the selection. Nonempty selections keep automatic props on individual renderers, and generic scatter rejects unsupported node hiding before cloning.
+- Optional live travel in `createProjectileSystem` captures launch pose, applies injected environmental acceleration with per-shot response, target masks and force caps, sweeps each authoritative segment, and settles hits, range misses and lifetime expiry once. Active poses and detached snapshot/restore support caller rendering and replay; active and retained-shot budgets bound work and memory. Settlement reports and `projectile.settled` events carry the matching `shotId` and detached actual effect results so game policy can run after contact. Legacy immediate settlement remains available.
+- Shared `physics/forceVolume` sampling covers signed sphere/box attraction, directional forces, independently tuned vortex spin and axial lift, attenuation, target masks and caps without renderer state. Authored physical fields and cosmetic particles reuse the sampler.
+- Authored weather profiles, absolute schedules, transitions and local wind zones share one renderer-free sample with gameplay and precipitation.
+- Persistent bounded surface wetness, snow, heat and exposure support snapshots, restoration, retuning and injected storage.
+- Weather rendering consumes simulation time, clips particles against the nearest 32 authored shelters and supports bounded ground ripple pools.
+- Bind editor-authored reusable material assets to named slots on instanced BuildingKit models, preserving omitted native materials, independent caller styles, and owned resource cleanup.
+- Animation inspector playback rate, hold, single-clip seek and loop controls, and variant selection through existing scene metadata/RPC.
+- Game-chosen movement catalog schemas, partial tuning with repair diagnostics, memoized document readers and stable live bindings that preserve game callbacks and physics policy.
+- Optional live maximum climb grade in caller-declared movement catalog schemas, preserving the game's height sampler and existing default policy.
+- Optional positive heightfield character collision height, authored through ordinary movement catalog controls and live bindings while preserving game policy, model proportions, camera placement and other controller dimensions.
+- `resolveRigNode` (`@jgengine/shell/render/rigNode`) resolves an instance's bone or Object3D slot by unique runtime/original imported name with structured diagnostics. Resolve once per model/slot change, preserving animated hierarchy, local offsets and clone isolation.
+- Supplied-only movement catalog controls for existing jump buffering, coyote grace, jump release, apex/fall gravity and landing recovery. The collapsed Jump response group saves and applies live tuning while preserving game policy, with located diagnostics for invalid values.
+- Shared player movement exposes cached, read-only grounded, vertical velocity and crouch telemetry through indexed possession ownership. Unknown actors and restored movement report no telemetry until a physical step completes.
+- Model graph playback feeds resolved `grounded`, `verticalSpeed` and `crouched` parameters without writing the entity blackboard. `readModelAnimationParams` supplies the same behavior to custom render hosts with a reusable output dictionary; custom movers retain their authored parameters when motor telemetry is unavailable.
+- `playerMovementTelemetry(ctx, entityId)` (`@jgengine/core/movement/playerMovement`) exposes the last shared motor’s grounded, vertical velocity and crouch state through indexed ownership. It reuses a read-only view and returns `null` for unmanaged, unstepped or despawned entities, after restore/forget, and when another authority changes the motor proposal; it does not write animation stores each frame.
+- `suspendPlayControls` composes independent player-control suspension leases across overlapping menus without pausing shared simulation.
+- Anonymous authority fixtures accept validated, separate frontend and realm ports with an explicit frontend websocket endpoint.
+- Relay Courtyard declares a persisted compact or detailed readout through the shared HUD settings framework.
+- Core content reference and declared-source progression validators report located repair guidance across game-owned catalogs. Closed-source analysis detects unavailable prerequisites; intentional seeded cycles remain valid.
+- Native recipe catalog validation checks item/station/unlock references, quantities and duplicate inputs without imposing economic or output-benefit policy.
+- `useDialogBehavior` (`@jgengine/react/dialogBehavior`) shares dialog focus entry, Tab cycling, Escape close requests, and restoration with caller-owned screens; `ModalHost` uses the same behavior.
+- `resolvePeerShellMultiplayer` can host a playable authoritative GameContext world with injected persistence, signaling, peers and tick scheduling; `close()` awaits its save boundary.
+- `createWorldGameHost` supports a serialized `slotsPerServer` player cap while allowing existing members and spectators.
+- `bindCommandTransport` / `dispatchCommand` provide the shared UI command boundary; `possession.ownerOf` resolves unique recorded ownership.
+- A source-owned anonymous authority fixture reports separate compiled frontend and realm revisions and preserves throwaway progress through reload.
+- `GameContext.state()` / `restore()` capture detached authoritative state without an offline save backend; hosted runners expose `state()` and `commit()`.
+- Hosted sessions persist player identity and bounded command retry receipts alongside world state, expose `hasPlayer()` and `persistenceError()`, and accept stable operation ids.
+- `disposeModelScene` (`@jgengine/shell/render/modelRender`) releases a `cloneModelScene` instance's materials and bone textures while preserving loader assets and separately owned attachments.
+- Asset streaming supports a retunable `maxResidentBytes` target and deterministic oldest/largest eviction within the frame unload budget. Pinned and retained assets remain protected; byte pressure overrides idle grace and small-asset caching.
+- Streaming residency diagnostics expose protected and over-budget bytes, unknown-size loads, eviction totals, and record counts. Explicit `forget(id)` removes only settled, inactive, unowned history so demand churn can bound metadata without silently invalidating record consumers.
+- `assets budget` scans custom/imported or pulled GLBs offline and reports per-model bytes, stored triangles, and image dimensions with configurable CI limits and actionable failures.
+- `readGlbMetrics` and Node `createAssetBudgetReport` / `checkAssetBudget` expose the same inspection; reindex records successful inventory in optional `IndexEntry.metrics`.
+- The 3D shell batches compatible authored catalog props above eight placements per spatial cell into instanced model draws, preserving each chosen model, material group, shadow mode, collider measurement and object id for picking. Interactive, custom, animated, composed, transparent and mirrored models retain individual renderers; culled placements leave the submitted instance set.
+- Bounded SFX reservations (default 64 simultaneous playbacks) with configurable total/per-sound caps, priorities, reject/steal policy, injected allocator storage, snapshot/restore, and live retuning.
+- React exports `observeBrowserSuspension` and `useBrowserSuspension` for configurable blur, hidden-page and pointer-lock loss notifications. Games retain their pause and modal policy; listeners detach on cleanup and the hook invokes the latest callback.
+- Compose deterministic timed away missions with pure expedition dispatch, bounded offline settlement, finite supply consumption, death, item capacity, and safe return transitions (`@jgengine/core/work/expedition`). Caller-owned policy and content use a persisted RNG cursor and plain saveable state.
+- Apply caller-authored elapsed-time loot curves with `timeScaledRarity` (`@jgengine/core/game/lootModifiers`), retaining original and effective odds in loot pipeline provenance.
+- Generated item registries accept caller-owned synchronous storage and a saved allocation sequence; `statePages` and `restorePages` stream detached save batches through atomic replacement while preserving the existing whole-state format.
+- `validateQuestCatalog` (`@jgengine/core/game/questCatalog`) checks authored quest ids, references, quantities, and blocked prerequisite dependencies with explicit external unlock and quest-start declarations, optional caller catalog lookups, and located error/warning diagnostics. The `quest-authoring` CLI recipe validates bounded generated batches against caller-owned canonical facts.
+
+- Snapshot and freeze reviewed authoring inputs across async generation so caller or generator mutation cannot replace canon, catalog references, or batch limits.
+- Resolve a bounded staffing snapshot into a production rate with `stationOutputRate` (`@jgengine/core/work/staffedStation`), using caller-owned stats, base output, per-stat scaling, and efficiency. The pure function composes with existing production and serializable game state.
+- Key-value cells and local save backends accept optional storage failure observers and `errorMode: "throw"`, exposing original read/write/remove errors while retaining their legacy fallback defaults.
+- Asset streaming `retune` merges streaming policy; setting concurrency to zero pauses new loads.
+- Pure compatible footprint merge/split with retained source identities and unequal capacities, JSON roundtrip, connected partitions and optional linear work budgets. Grid reservation commits, upgrade pricing and arbitrary cell-cut allocation remain caller-owned.
+- Add read-only native material assignment preflight for selectors, UVs, construction prerequisites and scoped authored texture-role restrictions.
+- `ModelConfig.hiddenNodes` and `useModelInstance` support per-instance named visual subtree selection before placement measurement, retaining imported rigs, clips, textures and cached source visibility. Missing or ambiguous names warn without hiding arbitrary nodes; malformed lists reject before model or texture allocation. Changing the selection replaces only that instance, while equivalent list contents retain its clone.
+- Simple model and authored surface map configs now expose all 20 supported `MaterialTextureRole` URL fields. Composed model dependency discovery preloads advanced physical maps while preserving the seven legacy roles' loader order and ignoring unsupported roles. Authored surface keys include advanced URLs, so retuning reloads them and equivalent map ordering retains owned resources.
+- Declarative `PersistConfig.migrate` forwards the existing runtime-save migration hook, allowing games to convert or reject incompatible old world snapshots before restoration. Matching versions bypass it; omitting migration preserves compatible mismatch loading.
+- `HostRouter.drain()` waits for accepted message handlers and subscription reads; call `close()` first to prevent further work before owned host persistence teardown.
+- `pursue` behavior data schedules bounded target acquisition, solid-aware chase, cooldown effects and return to spawn through the existing behavior lifecycle; optional threat uses the shared threat table.
+- `StaticShapeInstances` batches document-derived boxes/cylinders by PBR, sampler and shadow policy, with owned resources and conservative transform bounds. `AuthoredSurfaceMaterial` and `useAuthoredSurfaceMaterial` compose shared material overrides, cloned texture-role color spaces, configurable wrapping/anisotropy, normal scale and optional metre UVs.
+- `jgengine upgrade --plan/--apply [--to x.y.z]` reviews and updates existing root workspace SDK catalogs from verified published versions, preserving game declarations, editor overrides, and unrelated text; installation and lockfile updates remain a separate step.
+- `jgengine doctor --workspace [root] [--json]` checks installed SDK identities across the root and declared workspace owners with bounded manifest enumeration, explicit incomplete coverage, and separate resolver checks for distinct directories sharing a manifest.
+- Discoverable shaped-grid placement operations and bounded first-fit search with caller-ordered rotations, row-major positions, and distinct no-space/budget results.
+- Bare spatial APIs can opt into notified incremental indexing with `incremental: true` and `updateEntity(id, candidatePresent?)`. An explicit presence flag supports candidate subsets independently of the position resolver. Entity stores offer a committed-ID/membership hook before existing subscribers.
+- `ScrollRail` supplies native horizontal scrolling, visible overflow navigation, and keyboard focus reveal for caller-owned controls.
+- `WorldGameHost.unload(serverId)` explicitly saves and releases idle world references. It refuses players, spectators and resident members, retains a world after save failure, and reloads through the session factory on a later join.
+- `createWorldSolids` supplies optional `inRay` candidates through crossed hash-grid cells, preserving live layers and oversized blockers. Sparse or unrepresentable traversals fall back to cached AABB ray tests without dropping geometry. Optional caller-owned work counters expose cell, entry and bounds costs. Scene queries use it automatically; `inBox`-only adapters remain compatible.
+- Heightfield walking supports an optional `movement.maxClimbGrade` uphill rise/run limit, with axis sliding and accepted-position foot grounding. `movement.climbGradeHeight` preserves game-specific terrain sampling independently of effective ground height. Omitted configuration leaves existing movement unchanged.
+- `jgengine find --json --limit N` returns bounded ranked capability and recipe matches with total, partial-match, and truncation metadata. Invalid options now produce actionable errors.
+- `validateDialogueGraph` diagnoses broken references, duplicate ids, unreachable nodes, and dialogue without a route to an ending using iterative linear traversal. Authoring guidance separates structural validation from story review.
+- `freezeNarrativeCanon` and `validateNarrativeBatch` (`@jgengine/core/game/narrativeAuthoring`) keep reviewed revisions separate from drafts and locate explicit character/fact/chronology and dialogue graph issues within caller batch budgets.
+- `jgengine recipe narrative-authoring` composes detached authoring snapshots, bounded repair attempts and caller-injected generation plus explicit semantic review; it never selects a model or changes canon.
+- Serializable physical material assets, texture metadata and exact named mesh/slot assignments preserve imported materials and maps unless explicitly overridden.
+- Shared physical surface rendering, fuzzy sheen, directional woven appearance, hair-card ribbons and coverage/backscatter approximations; geometry and simulation remain separate.
+- Materials workspace edits six family-specific groups and advanced maps, previews neutral or document lighting, and shares editor undo, save and typed RPC with runtime.
+- Native glTF material inventory and export diagnostics preserve packed channels, extensions and attribution; resource accounting and appearance adapters consume wetness/exposure without changing global lighting.
+- Typed slot-inventory RPC reports actual loaded model prerequisites; opt-in projected-overdraw measurement preserves native coverage and restores rendering resources.
+- Portable `jgengine drive --click-at x,y` sends ordered native left clicks to canvas targets in CSS viewport pixels, with finite nonnegative coordinates checked against device or custom viewport bounds before browser launch.
+- Typed game definitions can inject context-aware projectile sweeps, acceleration and bounded target sources. Each world supplies its own context; custom acceleration overrides the authored sampler, while omitted providers retain existing defaults and engine-owned time.
+- Pursuit can use a live-world `defineGame({ pursuit: { eligible } })` callback to authorize nearest, retained, explicit and forced targets without a game-local brain loop. Cold saves retain progress and receive the loading world's injected policy; the existing player-role default and effect acceptance checks remain unchanged.
+- Core ability kits, item-instance registries, event meters, accumulator meters, and regen shields expose detached `state()` and `restore(state)` contracts for saves and deterministic continuation. Ability HUD views remain compatible; saves preserve retuning, independent cooldowns, allocation sequence, meter latches, and shield grace timing.
+- `EventMeter.tick(dt, decayEnabled)` lets caller-owned visibility policy pause decay and its delay; existing one-argument ticks behave as before.
+- `registerFirstPersonMuzzle(camera, reader)` supplies a custom rig's live presentation muzzle with camera isolation, bounded reader work, and owner-scoped cleanup.
+- `Magazine.retune` changes capacity and reload duration while preserving ammo, shared reserve storage, and elapsed reload time; capacity overflow defaults to atomic rejection with explicit discard/return policies.
+- `ProjectileSystemDeps.rng` supplies deterministic per-pellet spread sampling; `maxPellets` bounds ray work (64 by default, configurable up to 256).
+- `planSolidRoute` (`@jgengine/core/nav/solidRoute`) plans bounded local routes over indexed movement collision boxes, with exact endpoints, caller-owned terrain policy and explicit no-path/budget results.
+- `findPathResult` adds explicit grid search-budget results; grid edges and smoothing accept a caller traversal policy. Existing `findPath` callers retain their return contract.
+- `useModelInstance` (`@jgengine/shell/render/useModelInstance`) owns shared loading, isolated clone cleanup, bind-pose placement and animation for custom R3F renderers; `EntityModel` consumes the same hook.
+- Switch existing camera rigs at runtime with a serializable data overlay, and apply vehicle board/leave patches through shared helpers with explicit rider identity and caller camera policy. Seat occupancy exposes snapshot/restore/reset and an unseated-safe driven-vehicle query.
+
+### Changed
+
+- Root-motion graph states now extract travel and render horizontally in place. The renderer no longer writes entity poses outside the movement/collision authority. Hosts that relied on that behavior must advance the headless graph, transform its `rootDelta` with `takeRootMotion`, and resolve requested movement through their controller. Graph previews can pass `output.rootMotion` to `createGraphPose.apply` for the same policy. This does not provide automatic collision-aware root-motion locomotion or retargeting.
+- Animation graph root-motion flags include influencing outgoing states. Root deltas still sample current-state travel; blended collision-authoritative root travel remains unsupported by the automatic renderer.
+- `GrassField` partitions its existing seeded tuft stream into at most 64 shared-template draws. Each render camera skips offscreen or fully distance-faded chunks while preserving the density/budget prefix, transforms, material and shadow policy. Chunk geometries are disposed on replacement/unmount.
+- GameContext lazily persists pursuit home, targets, cooldown, scheduling, threat and lifecycle state in `pursuitBehaviors`, including cold save/reload and AOI replication. Legacy snapshots without this module remain accepted.
+- Upgrade reports include Rapier and Navbake, reject corrupt installed metadata, and distinguish missing migration notes or an unverified notes target from an up-to-date published SDK.
+- Runtime entity radius/arc queries update individual grid entries after pose and membership writes instead of rebuilding or enumerating the whole population on every query. Cold invalidation and large membership bursts rebuild lazily; save/replication hydration still derives the index from authoritative entities. Immediate subscriber queries observe committed membership and poses.
+- Asset authoring guidance keeps palette selection and visual identity game-owned while reusing catalog, import, validation, and rendering tools.
+- Quest journal kill and collection credit uses active objective indexes instead of scanning the quest catalog. Party credit still reaches nearby members when the killer has no quest; replacement definitions and restored saves refresh indexes. Re-register after editing objective targets, items, or party sharing. Quests activated during credit receive subsequent events.
+- Editor RPC (`decodeEditorBridgeRequest`, `@jgengine/editor`) now rejects any top-level request field the method does not declare with `unknown field "<name>" for method "<verb>"` instead of ignoring it and returning `ok: true`.
+
+### Fixed
+
+- World overlays use camera-to-anchor visibility through the shared object/wall/terrain query, hide depleted health and invisible entities, and bound nearby sampling and occlusion rays per refresh.
+- Editor command patches no longer leave partial edits or multiple live publications when a later command fails. Stable-id upserts and already-current edits succeed without duplicate placements or new revisions.
+- Rejected creator edits leave document history and live-sync publication unchanged; durable save failures remain visible and approved catalog placements avoid persisting raw asset URLs.
+- Edit mode preserves the game's authored models and placement overlay alongside editor guides; save acknowledgements, dirty state and pending failures survive Play/Return.
+- Live authored prop moves/removals update previews while unrelated edits preserve game-initialized prop state.
+- Creator budgets include bounded collision child pools; play clock control preserves native canvas rendering without postprocessing.
+- Player shell replacement, exit and failed initialization dispose the owned runtime context exactly once, including environment resources when game disposal throws.
+- Ballistic sweeps now test complete segment chords, so thin cover between samples blocks projectiles. Translating sphere/box sweeps handle targets crossing a projectile path between endpoint poses; authored cover uses centerline projectiles, with radius-aware collision available through an injected sweep.
+- Headless, hosted and shell authority integrate player movement with scaled game time and retain queued motion while paused or at zero timescale. Fixed owners opt into full authoritative durations for normal, voxel and free-flight movement; standalone movement retains its historical frame clamp. Explicit hosted client prediction retains its input-step duration.
+
+- Fixed-step movement now uses scaled game seconds without the standalone browser-frame clamp; pause keeps queued motion and leaves physics unchanged.
+- Settlement events include matching shot IDs and detached actual effect results, so game-owned policies can settle once on the struck target.
+- Authored primitive surfaces and static shape batches now decode sheen-colour and specular-colour maps as sRGB, using the shared texture-role semantics. Numeric maps remain linear and loader-cached textures remain untouched.
+- Shared precipitation uniforms preserve per-layer wind when the provider has no wind configured.
+- Fire grids restore fuel/heat state, retune live wind/rates and reuse a bounded heat workspace; fire animation supports simulation time.
+- Lightning animation supports authoritative start/time values and seeded flicker for pause and replay.
+
+- Authored runtime state shares the fixed game clock, preserves fire/flock poses on retunes, restores atomically, and publishes explicit appearance signals without renderer ownership.
+- Games select force targets through `installEnvironmentMotion`; caps and masks are game policy, and paused simulation does not queue forces.
+- Fire tools and opted-in rain cooling extinguish burning cells while preserving fuel; authored fire bindings stop spawning when the area stops burning.
+- Typed `get_simulation` / `set_simulation` authoring persists weather, schedules, wind zones, emitters, fields, fire areas and habitats through ordinary undo, save and import/export.
+- Reject numerically unsafe force magnitudes and wind coupling before authority or caller buffers mutate.
+- Forward game-selected visible path kinds so flock/patrol guide routes need not draw as ground roads.
+- Changelog checks validate every existing release fragment before missing-base, skip-marker, or source-free exemptions. Malformed notes now fail CI even when they predate the checked diff; pure refactors still need no new note.
+- Incomplete saved locomotion mappings no longer create an animation graph with undefined clip names. A named single clip remains active while idle is unconfigured; otherwise the rig retains its bind pose. Missing walk mappings hold the explicitly named idle until repaired. Diagnostics report incomplete roles and validate the effective playback mode, including explicit graph precedence.
+- Explicit empty locomotion mappings survive playback edits and clearing the last role, so incomplete characters do not silently switch to the model's first clip. Choosing Single clip still replaces the mapping.
+- Rendered animation variants use independent deterministic streams per model instead of advancing gameplay RNG. Mounting, hiding or culling animated models cannot change gameplay random outcomes. Each remount restarts its visual stream; callers whose clip selection affects gameplay should own a headless animation runtime, injected RNG and saved state.
+- Preserve held-pose playback settings and all one-shot variants when editing an authored character's animation. Graph previews include variant clip durations and retain the shell's in-place root-motion policy.
+- Equivalent freshly created character animation configurations retain mixer playback, pending triggers and per-instance visual variant state across React rerenders. This fixes store-driven custom characters such as Deepward’s imported Fitter restarting their gait on every update. Actual clip, held-frame, mapping or graph edits still reconfigure and clean up the owned mixer; authored one-shot order is preserved.
+- Generated locomotion graphs give death priority and retain its held pose when later hit or attack events arrive. One-shot clip arrays survive graph conversion and JSON parsing; seeded runtime choices are recorded in snapshots.
+- Animation layers keep independent mixer actions when they use the same imported clip. Crossfades keep the outgoing animation advancing at its own rate and loop policy. Full-cycle clip events are retained, multiple missed cycles coalesce, and muted contributions do not emit events.
+- Model animation diagnostics identify missing clips, empty layer masks and unsupported root-track assumptions. Invalid explicit single clips retain the bind pose instead of looping the rig's first clip.
+- The first locomotion edit after single-clip playback seeds the imported rig's semantic roles while preserving authored playback and variants. Editor previews and runtime agree on incomplete idle/walk mappings, with repair hints.
+- PhysicsWorldBackend capsule casts allow separating or tangent motion from machine-scale starting contact, so a valid character proportion can jump and move on its first authored-floor frame. Entering contact, real overlap, walls and ceilings still block movement; the numerical tolerance scales with the struck face's world coordinate.
+- Headroom overlap checks use the same numerical contact tolerance, allowing a restored crouched character at exact floor height to stand and jump immediately while retaining real penetration and low-ceiling blocking.
+- Foot IK rejects missing, ambiguous, overlapping or disconnected leg chains with named diagnostics instead of deforming unrelated rig branches. Automatic pelvis correction now uses the common ancestor of resolved legs; explicit pelvis selection is preserved.
+- Disabling, replacing or unmounting foot IK restores its previous joint corrections without overwriting newer animation poses, and replacement resets pelvis smoothing.
+- Shared heightfield player movement stops jumps at blocking ceiling undersides and lands on crossed object tops, including thin bounds and full authoritative simulation steps. Blocked curb and terrain rises retain valid headroom and recheck alternate-axis wall collision instead of penetrating a roof and ejecting the player sideways.
+- Heightfield descent and landing recovery now follow the accepted terrain/object support rather than prematurely landing at the previous support height. Exact-clearance contacts remain walkable at translated coordinates; explicit height and `beforeCommit` policies retain their authority.
+- Resolve imported attachment slots by a unique original authored name when GLTFLoader sanitizes the runtime name, including `handslot.r` on the supported Knight and Rogue Hooded rigs. Exact runtime names retain priority; missing or ambiguous references report repair guidance instead of attaching to an arbitrary node.
+- Explicit foot-IK joint, pelvis and look-at names use the same original-name fallback. Knight and Rogue authored leg chains retain the same walking corrections as their runtime-name configurations; ambiguous, disconnected and overlapping chains still warn and are skipped.
+- Capsule movement uses the same resolved timestep as its shared jump integrator: standalone stalled frames retain the movement clamp, while authoritative game-time steps integrate in full. Game position callbacks still receive their original frame timestep.
+
+- Supported crouch input now overrides sprint and suppresses jumping. Capsule standing waits for headroom; `CharacterController.setCrouch` preserves standing and jumping on the same frame.
+- Physics-backed capsules share heightfield jump buffering, coyote grace, release shaping, apex/fall gravity and landing recovery. Legacy held-jump saves retain their latch.
+- Resolved movement feel and gravity/jump tuning follow live declaration getters without resetting movement state.
+- Automatic stair stepping requires grounded motion. Near-contact ground casts maintain the configured capsule skin gap.
+- Rapier ramps preserve collider surface normals without stair forgiveness. Character casts exclude the character before choosing a blocker, so its own collider cannot hide a wall.
+- Authored jump graphs can follow physical takeoff, apex, landing and buffered re-jumps rather than playing ground locomotion throughout a jump. Clip choices and transition policies remain game configuration; no rig-independent jump mapping is inferred.
+- Short characters’ default crouch height fits their capsule diameter. Retuning proportions recomputes omitted defaults while preserving explicit crouch height, and live declared capsule field changes retune the shared motor before its next move.
+- Editor clip and graph previews use the shared model-instance placement and cleanup lifecycle, preserving imported character root transforms and releasing instance bone textures without touching cached rigs.
+- Preserve horizontal in-place playback while an outgoing root-motion clip still influences a crossfade, including interrupted fades and restored graph snapshots. Previously a dodge fading into idle could shift the visible rig away from its collision-authoritative entity.
+- Forward authored-object kind exclusions through `defineGame` scene placement, allowing a game-owned player spawn to expose its catalog animation clips without also placing a static actor. Ordinary props and the default mob/boss exclusions retain their existing behavior.
+- Input-owned chase cameras preserve their first acquired target's authored heading instead of starting at zero. The existing `camera.initialYaw` can override that one-time seed; later body turns remain independent of walking input.
+- Shell settings clear held keyboard, pointer and analog input through close, context replacement and unmount, and preserve other owners' suspension.
+- Shop stock preserves live entries when restoring a save with invalid entries or duplicate ids.
+- Colour-grade LUTs survive graphics-quality and post-processing graph rebuilds. Disposing a grade pass releases its loaded LUT and any texture that finishes loading after disposal.
+- Shared game presentations report render failures with an explicit display retry while retaining the live game context and realm connection.
+- Terrain material retry clears only pending exact texture groups owned by the failed presentation, including failures before Suspense commits, while preserving successful caches.
+- Player-facing recovery explains the failure plainly, keeps technical details collapsed, and restores game focus after a committed retry. A recovered draw retires only its handled presentation diagnostic.
+- Keyboard, touch release, control suspension and shell unmount publish input outside the render loop. Discrete intent supersedes older pending input acknowledgements without replaying held controls.
+- Invalid inventory slot indices and non-finite split amounts return a rejection instead of throwing or corrupting saved item counts.
+- HUD-only shells mount the shared settings store, menu, audio volume bridge, and input rebinding runtime.
+- Shell keyboard handlers preserve native HUD focus and button activation while retaining active gameplay bindings.
+- Settings option buttons expose their selected state and group label to assistive technology.
+- Preserve configured settings through the public gameKit definition into HUD and 3D shells, including custom actions, rows, menu layout, quick controls and explicit disabling. Saved player values continue to override configured defaults.
+- Terrain blend authoring adds new layers and paints in one undoable edit; failed brushes preserve the document and redo history. Layer reorder/additions preserve existing blends by id.
+- Terrain RPC rejects invalid brush/dimension/ramp input and oversized allocations with actionable diagnostics.
+- Viewport placement honors grid snap, paths select along their segments, and multi-selection gizmos translate the whole group consistently.
+- Oversized terrain brushes bound work to the actual grid; native standalone editor captures now arm the existing readiness handshake and report load failures.
+- Terrain-only authored scenes now frame their footprint and relief without a dummy marker.
+- Terrain mesh changes invalidate the on-demand viewport so brush/undo/RPC edits appear without another input.
+- Grid placement now resamples the shared ground field after snapping XZ, preventing floating or buried markers, zones and path points on slopes; invalid heights leave authoring unchanged.
+- Editor live-sync clients recover from evicted document history with a revision-preserving snapshot; reverse-channel RPCs replace stale runtime entities after evicted removals.
+- Creator saves reject exhausted revisions before writing, preserving the readable last valid scene and original durable catalog.
+- Catalog-backed editor markers use wireframe spheres and selection halos so their glyphs no longer fill over placed characters. Picking geometry, emphasis and logical marker glyphs stay intact, including legacy catalog bindings.
+- Report existing editor scene/catalog module import errors before opening an editing session or saving. Only an absent optional module resolves to an empty document or catalog.
+- Hosted HUD controls, registered target commands and per-actor input queues route to the authoritative host without mutating replicas before join.
+- Hosted clock snapshots reach client clock hooks; prediction never advances authoritative gameplay time.
+- Remote player and possessed-pawn deaths credit the resolved killer for XP commands, quests and loot.
+- Hosted saves retain economy, clock, pose, progression, simulation and system save modules; client replication stays private. Legacy partial saves retain initialized missing modules.
+- Hosted ticks advance game time. WS commands serialize per world, roll back registered state on rejection/failure, and acknowledge after persistence. Client operation ids avoid collisions between sessions.
+- Async hosted saves and Node `flush()` / `close()` await storage. Convex queries project client state instead of exposing authoritative saves.
+- Model instances retain skeleton and material sharing within each rig, reducing duplicate bone textures and skeleton updates without sharing poses between characters. Entity models, attachments and scatter release their owned resources.
+- Model animation releases mixer bindings on replacement/unmount and skips paused or completed clip updates. Configuration changes refresh demand-rendered poses.
+- Sprite atlas frames change UVs without repeatedly uploading the image.
+- Cascaded shadows release lights, targets, GPU shadow maps and disposed model shader bindings. Streamed meshes retain authored shader hooks without a full-scene material scan each frame.
+- Composed model assets start loading together through the existing cache. Material maps apply before their first GPU upload rather than after the parent model draws.
+- Pointer hits on instanced meshes transform their surface normals through the instance matrix.
+- Cancel pending audio before graph creation and release sample/synth graphs on completion, stealing, stop, failed load, graph construction/start failure, and teardown. Explicit retained-loop start requests can retry stolen/stopped voices. Preserve authored spatial gain without double attenuation and keep nonpositional cues flat.
+- Generated item allocation checks attached storage for id collisions and rejects unsafe allocator sequences or exhausted numeric ids.
+- Standalone `jgengine shoot` / `drive` wait for a declared capture-readiness handshake instead of accepting a canvas while the host is still loading. Legacy pages fail readiness when their canvas stays undersized or has an empty backing store.
+- `jgengine doctor` resolves default and named Bun workspace catalogs before checking SDK version alignment, reports missing or malformed catalog entries, and recognizes hoisted SDK installs.
+- `jgengine upgrade` reads hoisted installed packages, uses resolved catalog pins when packages are not installed, and identifies the workspace catalog that owns an upgrade. The command remains a read-only migration report.
+- Model placement retains imported root transforms and normalizes bind bounds in the same frame used for ground contact and collision triangles.
+- Shell culling retains independent records for always-visible rows, refreshes bounds after visual-scale changes, and prunes removed rows from shell and core tracking.
+- Canvas mouse bindings now deliver brief presses, native mouse chords and held actions through the shared input tracker, release owned buttons on focus loss or suspension, and prevent a claimed mouse gesture from also firing the legacy hotbar action.
+- Press edges survive release before a simulation sample and urgent neutral input arriving before a delayed press; each authoritative host or deterministic replay consumes an edge once.
+- Owner resets always supersede delayed input, including an identical neutral release still carrying an unacknowledged press.
+- Stateless hosted reconstruction retains input admission and pending presses in host-only save state, so replaying stored held intent never fires a consumed press again.
+- Hosted input now compacts elapsed records in memory and retains departed admission marks within a configurable user/TTL window; `inputRetention` sets the policy and `inputStats()` reports retained storage. Explicit future replay edges and standalone input logs remain intact.
+- Shared card and inventory drags resolve touch targets through pointer capture, ignore secondary pointers, finish releases outside, and retire capture/listeners on cancellation or unmount while preserving keyboard move, split, and card rotation.
+- Keep inventory grid, toolbar, and custom HUD keyboard interactions from also triggering gameplay actions in the shell.
+- `FullscreenMap` owns a single pointer, discards canceled route drafts, and retires gestures on close, tool changes and unmount. Native mouse chords and outside release preserve ownership; map clicks place waypoints while custom overlay controls keep their input.
+- `useVoice` reads open-mic transmission from its controller on mount and gates newly captured audio tracks before publication using the current mode and mute state. Explicit voice policy remains consistent across transport readiness and updates with stable route arrays.
+- `PushToTalkButton` owns one primary pointer or Enter/Space activation and releases its hold on cancellation, capture loss, interruption and unmount. Secondary touches, auxiliary mouse buttons and key repeats preserve the owner's session; caller-owned toggle and open-mic policy remain intact.
+- Retire window title-bar drag listeners on blur, capture loss, and unmount, and keep secondary pointers from moving or ending another pointer's window gesture.
+- Pinned generated choices now obey their step's compatibility constraints and backtrack earlier unpinned choices when needed.
+- Material catalog URLs follow pinned source map availability, including absent AO in `ambientcg-metalplates001` and absent roughness in `ambientcg-gravel001`/`ambientcg-concrete001`. Pull rejects archives missing declared maps; terrain skips absent AO/roughness sampling and keeps authored scalar roughness.
+- Strict key-value failures preserve the prior cell and rejected payload writes preserve the stored checkpoint. Save slot metadata failures now report the existing error status and callback, including asynchronous updates after load, instead of reporting saved. Whole-world load/hasSave/slot switches no longer treat a denied read as a successful cached load.
+- Portable `jgengine shoot` and `drive` enable touch and coarse-pointer media queries for mobile device profiles and clear touch emulation for desktop.
+- Portable `drive --click` scrolls text targets into view and requires an unobstructed, enabled point within the viewport and clipping ancestors. Text matching remains case-insensitive.
+- Portable CDP requests time out instead of hanging; `--timeout` bounds screenshot capture as well as frame readiness, and closing a session rejects pending requests.
+
+- Native click targets also resolve accessible labels and allow three stable samples on slower rendered pages within a bounded 15-second settling budget.
+- Built-in quest rewards stage the complete item batch against inventory capacity and kind rules before committing, preventing duplicated earlier rewards on retry. Reentrant turn-in calls reject while rewards are applying.
+- Spatial pair queries include qualifying pairs across every cell covered by the requested distance, including distances larger than the grid cell size.
+- Standalone GameHost now exposes declared capture.probe to the portable playtest driver, with boot-scoped cleanup that cannot read a retired context or remove a replacement host hook.
+- Streaming bounds outstanding loads across frames, cancellation, clear, and same-id retries. Clear releases resident resources, and stale completions cannot overwrite new demand.
+- Host subscription refreshes now serialize reads, coalesce burst notifications, discard obsolete lifecycle completions, and advance world cursors only after sending a frame. Slow initial reads no longer block unsubscribe or commands.
+- Flight gates again read the accepted same-frame stance once. Rejected height edits and thrown gates restore the driven pawn’s exact pose and retain queued motion and existing motor state (#1962).
+- Active interaction prompt edits and replacements now notify subscribers when their content changes, keeping stationary HUD labels and command data current. Equivalent edits, inactive prompt mutations and unchanged frame selections remain silent; selection still recalculates on `resolve`.
+- Scene entity `moveToward` and `moveTowardCommit` now stop at indexed world solids, matching player and walker collision without game-local blockers. Bare `SolidObstacleSource` adapters can inject the same bounded world-solid query.
+- `defineGame` preserves legacy environment sky settings when editor sky fields override part of the sky, including clouds, haze and partial sun/fog values. Explicit game `backdrop.sky` remains authoritative.
+- Editor environment commands store decoded copies of nested fields, preventing later input mutations from changing authored state.
+- The monorepo editor CLI validates the full scene before saving and preserves existing file bytes when validation fails.
+- Node file persistence now rejects chunk-directory read errors other than `ENOENT`, preventing host admission with an empty world when an existing checkpoint cannot be read. A missing directory still means no saved chunks; the same host can retry after backend repair.
+- Agent governance, intake, improvement workflow and new-game briefings require shared SDK adoption or upstream fixes, tracked consumer cleanup and centralized workspace versions while preserving each game's unique content and presentation.
+- Region split now refuses an output identity retained by the opposite partition, keeping successful split results eligible for the existing merge identity gate. Reusing an identity from the same partition remains valid.
+- Distance thinning now collapses blade width and wind displacement along with height. Fully faded blades vanish instead of leaving flat wind-displaced triangles; partially fading blades narrow, while `keep = 1` grass retains its existing appearance. `distanceFade: false` still disables distance rejection.
+- Reject invalid EntityModel assignments before texture allocation and release failed material replacements exactly once without changing imported resources.
+- Release unreturned material clones and promotions when imported shader callbacks fail during asset or rim construction, preserving the original error and borrowed resource ownership.
+- Attempt every owned replacement's cleanup during assignment rollback even when an earlier disposal callback throws.
+- Custom first-person muzzle readers can release registrations during a read without invalidating iteration or revisiting disposed owners; each priority uses a snapshot of its newest 64 candidates.
+- Node world-server shutdown now fences socket intake and ticks, drains accepted router work, and awaits the stopped host's final save. Repeated close calls share completion and persistence failure; interval-only `stop()` remains restartable.
+- Failed WebRTC host offer acceptance now closes and releases its allocated peer connection immediately, while preserving existing peers and the original negotiation error. Hosts can accept a fresh offer after failure without retaining the failed connection until teardown.
+- Failed hosted-world join saves and spectator promotions no longer consume player capacity. Initially resident host members retain their reserved seats; failed callers retain dirty player state for retry and must satisfy capacity again.
+- Closing BroadcastChannel peer signaling now rejects pending offers instead of leaving guest bootstrap unresolved, allowing the shell to release its guest transport. Closed signaling refuses new work and ignores late answer completions; listener replacement and successful exchanges remain supported.
+- Playable peer sessions retry transient world loads, reject unadmitted snapshot reads, and drain accepted router work before the final close save. Hosted-world admission becomes visible after its join save succeeds.
+- Same-ID behavior updates and warm hydration reconcile changed/removed descriptors before subscribers without scanning the world; equal-data updates retain progress and lifecycle. EntityStore exposes `subscribeBehaviors`, and replaced running decision graphs release existing action ownership through an explicit exact-once `abort` lifecycle method.
+- Warm pursuit-module hydration reuses the keyed behavior cache; cold initialization keeps its initial entity discovery.
+- Custom model placement retuning uses the configured bind frame after root animation. Generated asset markers use shared static-shape batching while preserving material defaults and authored transforms; Field Station's bookcase requires only the published package upgrade.
+- `jgengine doctor` now detects private SDK copies reached through linked consumers and SDK dependencies/peers, including distinct copies with identical versions; it reports resolver paths and a root catalog/reinstall action without changing files.
+- Shaped grids reject nonfinite/fractional dimensions, origins, and footprint cells instead of admitting non-discrete placements.
+- Shared settings categories remain reachable on narrow screens and short sidebars; dialogs share focus trapping, Escape policy, and return focus.
+- The floating joystick capture zone yields to interactive HUD panels while touch action buttons retain their layer.
+- Replacing a focused action preserves a keyboard entry point into the action bar.
+- `useDialogBehavior` keeps focus trapping and the original opener when an open dialog replaces its root; portalled children retain focus and return to the replacement parent.
+- WebSocket router joins that finish after disconnect now release their memberships through the reconnect grace period, reclaiming capacity without removing a live reconnect waiting on admission.
+- Scene raycasts now include indexed world solids as physical, non-damage wall hits. Generated and authored cover blocks the same LOS queries as placed objects; existing wall filters, hit acceptance, and projectile obstacle policy apply.
+- Keep compiled hair-card backlight uniforms owned by each cloned material so local environment exposure and baseline resets affect only that instance while preserving the original material and shader composition.
+- Compose hair-card backlighting with Three.js physical lighting across the supported peer versions, including r186's updated diffuse energy compensation, while retaining native lighting and independently owned clone uniforms.
+- Shared grade constraints resolve travel before foot height, avoiding the rejected-neighbor height retained by game-level position interceptors. The restriction also applies during jumps while preserving the vertical arc.
+- Explicit `onDeath` drop rules with `when.reason: "any"` can spawn world items after non-player deaths. Ordinary tables remain suppressed without a player killer, and bag and currency grants still require one. Hosted players and uniquely owned pawns retain their own loot recipient rather than the host's inventory.
+- `createAuctionBook` rejects duplicate explicit IDs with `duplicate-id` and skips occupied generated IDs, preserving active auctions and escrow.
+- `AuctionBook.claimItem` rejects nonpositive and noninteger counts without changing collection items.
+- Listing books preserve occupied listing IDs: generated IDs skip collisions, and explicit duplicates return `duplicate-id` without replacing retained goods.
+- Invalid negative, fractional and non-finite item claims leave collection boxes unchanged; zero-count no-ops and valid integer claims keep their behavior.
+- Resource ledgers preserve positive finite reserves and remainders below `1e-9` through settlement and JSON reload.
+- `createTechTree` consistently uses the last definition for duplicate IDs, preventing prerequisite bypass and obsolete recipe or category exposure.
+- `createUnlockPoints` preserves `__proto__` unlock IDs and paid costs across JSON saves and reloads. Restoration discards invalid saved costs instead of granting free unlocks, while retaining valid fractional and zero-cost unlocks.
+- NaN item wear throws before tracker mutation; nonfinite repair targets return `null` instead of producing repair quotes.
+- `createModularItem` rejects initial parts with unknown slots, incompatible categories, or duplicate occupancy using the same validation as `install`.
+- Model material promotions and shared texture views have explicit ownership and cleanup; unused material-library maps are not loaded.
+- Editor module-load coverage uses a present, nonempty authoring fixture instead of relying on SDK/example imports from an isolated Games checkout.
+- Grid navigation recognizes a reached goal at the exact `maxNodes` expansion budget instead of reporting exhaustion.
+- Created standalone projects pin the exact scaffolding CLI locally, independently of SDK dependency versions.
+- Skill installs check the entire selected set before overwriting, preserve newer and unversioned differing copies unless `--force` is passed, and record portable CLI/SDK version metadata.
+- Doctor reports when the running CLI targets an older SDK minor than the project's installed packages.
+- Standalone 2D and `--no-editor` games omit the unused editor dependency, avoiding its unnecessary package and misleading styling finding.
+- Projectile restore now rejects missing radius-aware collision providers, oversized pellet/sample counts and inconsistent flight counts before replacing active or retained owner state. Compatible cold restores preserve pending impacts, death rewards and every settlement within retention budgets.
+- A supplied pursuit eligibility callback accepts targets only when it returns exactly `true`; missing returns, nulls, objects and Promises deny attacks. An absent callback retains the documented player-role default.
+- Generated building boxes and kit meshes use spatially bounded instance batches, so distant parts no longer keep a whole settlement batch in view. The shell applies the existing resolved graphics draw distance and visibility overrides while retaining material groups, fitted geometry bounds and nearby offscreen shadow casters.
+- AO and depth-of-field scene prepasses reuse the beauty pass's shadow maps instead of redrawing shadow casters; failed prepasses restore shadow update settings and overlay visibility.
+- Depth-of-field resizing and cleanup use the pass lifecycle, fixing a crash on current Three releases and duplicate resource disposal.
+- First-person tracers can start at a custom world-overlay weapon's real muzzle even when the stock viewmodel is disabled. Stock muzzle tracking is camera-scoped; authoritative projectile origins remain unchanged.
+- Scene-backed projectile spread now samples independent cone rays, each respecting its own nearest receiver, hitboxes, line of sight, and cover. Zero-spread pellets hit the nearest receiver instead of cycling through center-ray targets; center-ray prediction and ballistic paths remain unchanged.
+- Projectile firing copies angular aim, explicit ray vectors and selected origin-policy vectors before injected RNG runs; caller reuse cannot redirect delayed settlement.
+- Restoring an earlier living entity into the same context clears its stale death marker, allowing future lethal effects to despawn it and resolve rewards once. Transient depleted victims captured during `entity.died` retain the duplicate-death guard.
+- Composed systems retain each world's schedules and listeners when a definition hosts multiple contexts. Disposal drains all system and classic cleanup once despite errors or reentrancy, then rethrows the first error. Failed installation retires entered systems and acquired listeners while preserving the startup error; schedule/listener reinitialization starts a fresh lifecycle.
+- Validate untrusted custom asset specs and preserve independent game-owned metadata; detect GLB/glTF, KTX2, MP3, WOFF2 and HDR formats from bytes with malformed/truncated header checks.
+- Preserve hidden riders during entity hydration and provide a validated, copied velocity setter so dismounts clear stale movement without rewriting controller algorithms.
+- Chase cameras can set `headingSource: "input"` to keep held strafe and backpedal movement from circling as the body turns. Vehicle body follow remains the default; runtime chase tuning can switch the source, and seat views retain body heading.
+- Vehicle obstacle recovery no longer launches kinematic or force-model cars or reports recovery displacement as crash speed. Clamp results may include permitted `motion` displacement separately from their recovered endpoint; plain tuple callbacks keep their behavior.
+- Atomic vitals bars retain palette fills under `hudThemeVars`, clear inherited skins in nested themes, and honor explicit `fill` colors over bar skins.
+- Skinned model height, grounding, and fitted collision triangles now use the imported skin-applied bind pose. Creature rigs with nonidentity inverse bind transforms no longer render several times larger than their configured height.
+- Retire microphone grants arriving after voice-hook unmount, channel/transport replacement, or a newer permission request. Stop replaced capture tracks, preserve accepted capture on transport changes or failed retries, reject ended audio grants and callbacks retained from retired channels, and handle publication failures without unhandled rejections or stale microphone updates.
+- World bars and nameplates omit the local player's possessed body, including retained health anchors. Shared overlays mounted through a game's `WorldOverlay` now inherit the same renderer visibility context as the built-in overlays while keeping caller markup and explicit through-wall reveal policy.
+
 ## 0.19.0
 
 ### Migrate
