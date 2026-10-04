@@ -75,5 +75,37 @@
   ],
   "publicPackageManifest": ".scratch/characters/packages/final-4004ec17/manifest.json",
   "nativeEligibility": ".scratch/characters/native/heightfield-ceilings/eligibility-review.json",
-  "pr": "https://github.com/Noisemaker111/jgengine/pull/1958"
+  "pr": "https://github.com/Noisemaker111/jgengine/pull/1958",
+  "delivery": {
+    "pr": {
+      "headRefOid": "7647e7dff9e93549e2c665ebbc9c7b5f6bf2918b",
+      "mergeCommit": {
+        "oid": "397025948bd447f2a9106368562b3a4ff4f43200"
+      },
+      "mergedAt": "2026-10-04T00:54:13Z",
+      "state": "MERGED",
+      "url": "https://github.com/Noisemaker111/jgengine/pull/1958"
+    },
+    "ci": {
+      "runId": 37165501942,
+      "runAttempt": 2,
+      "headSha": "7647e7dff9e93549e2c665ebbc9c7b5f6bf2918b",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/Noisemaker111/jgengine/actions/runs/37165501942",
+      "testPass": 9617,
+      "testSkip": 2,
+      "testFail": 0,
+      "assertions": 3506806,
+      "files": 973
+    },
+    "authorizedReruns": 1,
+    "attempt1Failure": "Portable Chromium harness canonical drive scrolled target timed out45000ms; root handed off independent harness failure; no character source fix.",
+    "logs": {
+      "attempt1": ".scratch/characters/ceiling-checks/pr1958-ci-failed.log",
+      "attempt2": ".scratch/characters/ceiling-checks/pr1958-attempt2-test.log",
+      "watch": ".scratch/characters/ceiling-checks/pr1958-attempt2-watch.log"
+    }
+  },
+  "mergeTreeNote": "PR source7647/local4004 tree513bc599 exactly matches tested packages; beta merge397 also includes independently owned9174 model-node-visibility, which these4004 packages do not contain."
 }
