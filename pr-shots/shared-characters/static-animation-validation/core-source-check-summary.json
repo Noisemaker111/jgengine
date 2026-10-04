@@ -1,0 +1,92 @@
+{
+  "head": "ef22f0c41b32949ba6ab162188f1d721851316f0",
+  "tree": "36dac254d448c77dfde6b39d6caaca06eb54c2a3",
+  "status": "four owned core files frozen; parent owns shell/docs/generated integration",
+  "sourceFiles": [
+    {
+      "path": "/workspace/JGengine/.claude/worktrees/character-placement-animation/packages/core/src/world/authoredAnimation.ts",
+      "sha256": "51df0e676f323f23460ee67eded0f99d2c7bf3b587002df06e8c7fe9b2a28d3e",
+      "bytes": 6263
+    },
+    {
+      "path": "/workspace/JGengine/.claude/worktrees/character-placement-animation/packages/core/src/world/authoredAnimation.test.ts",
+      "sha256": "ecd5f05fb5a23ea68e56d01f2964e0209b8e19d8a7e98030f8d34e1fc48e9d3d",
+      "bytes": 9820
+    },
+    {
+      "path": "/workspace/JGengine/.claude/worktrees/character-placement-animation/packages/core/src/world/authoredObjects.ts",
+      "sha256": "d017df4c62f1d9533d027fd050a2b3ce17614e6bcd2cda1744a6dbf7b0d7cad0",
+      "bytes": 10149
+    },
+    {
+      "path": "/workspace/JGengine/.claude/worktrees/character-placement-animation/packages/core/src/world/authoredObjects.test.ts",
+      "sha256": "84974421e25dea05e8641c09d3ffd150310696d6ba164f70836c63c9ef1767a6",
+      "bytes": 14619
+    }
+  ],
+  "checks": [
+    {
+      "name": "core-before",
+      "exit": 1,
+      "log": {
+        "path": "/workspace/JGengine/.claude/worktrees/character-placement-animation/.scratch/static-animation-validation/core-before.log",
+        "sha256": "04d0a6361c6fe5cc68a58e010ef10b21e46268f788e8095efd077d65e55eb486",
+        "bytes": 3780
+      }
+    },
+    {
+      "name": "core-after",
+      "exit": 0,
+      "log": {
+        "path": "/workspace/JGengine/.claude/worktrees/character-placement-animation/.scratch/static-animation-validation/core-after.log",
+        "sha256": "d4894a94a9487d754b6c3dad7e2797a165b3deaf44c5f87283527f0bb908c9ff",
+        "bytes": 3387
+      }
+    },
+    {
+      "name": "core-final",
+      "exit": 0,
+      "log": {
+        "path": "/workspace/JGengine/.claude/worktrees/character-placement-animation/.scratch/static-animation-validation/core-final.log",
+        "sha256": "dc265562941f86e04eba588898acf53bb4302e34cdbd5fd65126bdfad82a900b",
+        "bytes": 5105
+      }
+    },
+    {
+      "name": "core-types",
+      "exit": 0,
+      "log": {
+        "path": "/workspace/JGengine/.claude/worktrees/character-placement-animation/.scratch/static-animation-validation/core-types.log",
+        "sha256": "793b3289aad460c12104600252941dc521578230c52a1216a8d6668b76629cc3",
+        "bytes": 33
+      }
+    },
+    {
+      "name": "core-types-final",
+      "exit": 0,
+      "log": {
+        "path": "/workspace/JGengine/.claude/worktrees/character-placement-animation/.scratch/static-animation-validation/core-types-final.log",
+        "sha256": "793b3289aad460c12104600252941dc521578230c52a1216a8d6668b76629cc3",
+        "bytes": 33
+      }
+    },
+    {
+      "name": "core-build",
+      "exit": 0,
+      "log": {
+        "path": "/workspace/JGengine/.claude/worktrees/character-placement-animation/.scratch/static-animation-validation/core-build.log",
+        "sha256": "cf32e6b32e9974af576b8c5c10cacd0da0112213d2cc4cbced92de205d48e445",
+        "bytes": 200
+      }
+    }
+  ],
+  "counts": {
+    "failFirst": "23pass1fail155assert",
+    "focusedFinal": "44pass0fail281assert3files"
+  },
+  "limits": [
+    "Core source verified only; fresh public13packages pending parent jointfreeze/rebase/pack",
+    "BeforeactualexistingnativeauthoredKnightprop proof is aScrap-based authoredfixture, notshippingpreexistinggameactor",
+    "Locatedbatchstatic diagnostics andomittedinvalidanimation preservebasecatalogdefault; actualshellwarning/publicrenderboundary ownedseparately"
+  ]
+}

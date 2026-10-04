@@ -1,0 +1,40 @@
+{
+  "format": "Concatenate binaryparts in listed order to reconstruct thirteenth-proof.tar.gz; individualparts not decompressible.",
+  "bundleBytes": 29203358,
+  "bundleSha256": "083464578e198251174aa0380eca5e7c4c4982485f7ed17111eb90ecb41a741b",
+  "bundleGitBlobSha": "1fd75ead9a727b82cc09fd29c3c7ddadfca225ac",
+  "regularTarFilesIncludingLedger": 1428,
+  "parts": [
+    {
+      "path": "pr-shots/shared-characters/static-animation-validation/thirteenth-proof.tar.gz.part-01",
+      "bytes": 5242880,
+      "sha256": "c67f608edf06f05cae349b109755a9027c85f2c5816a290e2a35be7538b5fe7b"
+    },
+    {
+      "path": "pr-shots/shared-characters/static-animation-validation/thirteenth-proof.tar.gz.part-02",
+      "bytes": 5242880,
+      "sha256": "7ed91ebeac888f66b5128d7464a58666568d8ba821a480a89bdf28989e891d9a"
+    },
+    {
+      "path": "pr-shots/shared-characters/static-animation-validation/thirteenth-proof.tar.gz.part-03",
+      "bytes": 5242880,
+      "sha256": "bc4098b3c4bbbe327d4d39d7a6664b2f6da4b72fc17c868f1c54c08ad88c62df"
+    },
+    {
+      "path": "pr-shots/shared-characters/static-animation-validation/thirteenth-proof.tar.gz.part-04",
+      "bytes": 5242880,
+      "sha256": "27636a8b87d80673c618f40fa7ad88b3be4f8a4923ab35edd84b709602848279"
+    },
+    {
+      "path": "pr-shots/shared-characters/static-animation-validation/thirteenth-proof.tar.gz.part-05",
+      "bytes": 5242880,
+      "sha256": "d68a7d55024d5aba9d5b9adee73db41d54d04aac6910e0f22f89d3f86e04920b"
+    },
+    {
+      "path": "pr-shots/shared-characters/static-animation-validation/thirteenth-proof.tar.gz.part-06",
+      "bytes": 2988958,
+      "sha256": "22193811c69594ac1ed1eaa9387fcec9fed88f5aaeb59e91d4b7d9966a9206c5"
+    }
+  ],
+  "verification": "Wholebundle/allregularmembers/concatenatedparts byte hashes verified."
+}

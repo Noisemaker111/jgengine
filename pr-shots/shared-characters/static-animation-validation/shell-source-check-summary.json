@@ -1,0 +1,14 @@
+{
+  "status": "PASS",
+  "sourceFiles": {
+    "packages/shell/src/scene/AuthoredScene.tsx": "3bd79dd2a7342b4bdc9deea0530b952e4a3c8be93fbdca378ceddb3b0d062872",
+    "packages/shell/src/scene/AuthoredScenePlacement.test.ts": "d2fd1da10762805ef2245c46d6234f6a1a21ff16f281cb4ba96a45c7131d97ef"
+  },
+  "before": "4pass1fail20assert; missinglocatedwarning only, strictcore alreadybuilt",
+  "focusedBoundary": "29pass63assert; resolveModel +placement",
+  "finalPlacement": "5pass32assert with runtimecontext/store/field rerender and same-document/lift no repeatedwarnings",
+  "checkTypes": 0,
+  "build": 0,
+  "limitations": "Source tests and built owning shell only; native/static importedrig package appearance proof owned root/consumer. No release/adoption claim.",
+  "fixtureCorrection": "Intermediate addedcontext test switched back to old store and expected synchronization to overwrite initialkeep; failurearchived, validedit now uses currentreplacementstore withoutchanging engineplacement policy."
+}

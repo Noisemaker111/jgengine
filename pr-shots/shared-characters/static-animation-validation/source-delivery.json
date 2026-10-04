@@ -1,0 +1,84 @@
+{
+  "head": "ecb938cd8e53c7baad3d076cbae9c26f7d2c0497",
+  "tree": "a52ba2db848cf40980abce7060658a39003bb0fd",
+  "base": "8677b7285773742e73c66319cc4592b7026d303a",
+  "baseTree": "e6c176b01087e3a1518a6720396e6cc8a8e9d927",
+  "files": [
+    {
+      "path": ".claude/skills/jgengine-world/api.md",
+      "sha": "2538a2e8fb56298f1108644d4af2270304eb65a6",
+      "bytes": 818937,
+      "mode": "100644",
+      "type": "blob"
+    },
+    {
+      "path": ".claude/skills/jgengine-world/capabilities.md",
+      "sha": "a7b06729642091af52a00ca5a6eefe45fd3e171f",
+      "bytes": 53320,
+      "mode": "100644",
+      "type": "blob"
+    },
+    {
+      "path": ".claude/skills/jgengine-world/recipes/character-animation.md",
+      "sha": "c3b5876347a149743c9cf1449b4beb28dcd6f2a2",
+      "bytes": 19315,
+      "mode": "100644",
+      "type": "blob"
+    },
+    {
+      "path": "changes/static-animation-validation.md",
+      "sha": "84358a99ed07bb3fb30e26a5abe328e2a03e8ba7",
+      "bytes": 276,
+      "mode": "100644",
+      "type": "blob"
+    },
+    {
+      "path": "packages/core/src/world/authoredAnimation.test.ts",
+      "sha": "80c65ed75723cc3b1e6f7b4106eb0a215540c490",
+      "bytes": 9820,
+      "mode": "100644",
+      "type": "blob"
+    },
+    {
+      "path": "packages/core/src/world/authoredAnimation.ts",
+      "sha": "697a8cf7cd28910ea8f972fb3a3291d857d334e4",
+      "bytes": 6263,
+      "mode": "100644",
+      "type": "blob"
+    },
+    {
+      "path": "packages/core/src/world/authoredObjects.test.ts",
+      "sha": "1fe5c6991d5dc7679939cf78ee30191080a724ac",
+      "bytes": 14619,
+      "mode": "100644",
+      "type": "blob"
+    },
+    {
+      "path": "packages/core/src/world/authoredObjects.ts",
+      "sha": "cdc1c4b9205c95f9c49c9c8708b0a0087b411274",
+      "bytes": 10149,
+      "mode": "100644",
+      "type": "blob"
+    },
+    {
+      "path": "packages/shell/src/scene/AuthoredScene.tsx",
+      "sha": "393227f2b81de0238a2071d1694cd4dcca1b5482",
+      "bytes": 16825,
+      "mode": "100644",
+      "type": "blob"
+    },
+    {
+      "path": "packages/shell/src/scene/AuthoredScenePlacement.test.ts",
+      "sha": "15d25184df18e1db2a0425d22f29b3fe0942ddc9",
+      "bytes": 10931,
+      "mode": "100644",
+      "type": "blob"
+    }
+  ],
+  "remote": "16d497e504950e8c1bfcbc63661f36a0078310ff",
+  "pr": 1972,
+  "preRebase": "2d0bc0ca86e87c5421bdd9b7d0add984b93af48b",
+  "rebasedOnto": "8677b7285773742e73c66319cc4592b7026d303a",
+  "delivery": "Standalone Git push exit1 HTTP401; GitHub connector GitData exact ten blobs and whole tree, no credentials changes",
+  "owningSourceHashesUnchangedByRebase": true
+}

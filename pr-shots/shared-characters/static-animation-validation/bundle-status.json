@@ -1,0 +1,16 @@
+{
+  "bundle": "/workspace/JGengine/.scratch/characters/thirteenth-archive/thirteenth-proof.tar.gz",
+  "bytes": 29203358,
+  "sha256": "083464578e198251174aa0380eca5e7c4c4982485f7ed17111eb90ecb41a741b",
+  "gitBlobSha": "1fd75ead9a727b82cc09fd29c3c7ddadfca225ac",
+  "regularFilesIncludingLedger": 1428,
+  "allTarMemberHashesVerified": true,
+  "all59ConsumerArtifactsVerifiedAndBundled": true,
+  "consumerReportUnchanged": true,
+  "sourceCommit": "ecb938cd8e53c7baad3d076cbae9c26f7d2c0497",
+  "sourceTree": "a52ba2db848cf40980abce7060658a39003bb0fd",
+  "remoteHead": "16d497e504950e8c1bfcbc63661f36a0078310ff",
+  "CIAllSixFirstAttemptPass": true,
+  "rootReviewBundled": true,
+  "publication": "Unreleasedpublicbuiltpackage/savedstaticconfiguration and numericalproof only; no native/rigappearance/feel/FPS/adoption."
+}

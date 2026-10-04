@@ -1,0 +1,105 @@
+{
+  "label": "unreleased clean-built character candidate; no registry publication or shipped game adoption",
+  "commit": "ecb938cd8e53c7baad3d076cbae9c26f7d2c0497",
+  "tree": "a52ba2db848cf40980abce7060658a39003bb0fd",
+  "base": "8677b7285773742e73c66319cc4592b7026d303a",
+  "dirty": false,
+  "packages": [
+    {
+      "name": "@jgengine/core",
+      "version": "0.19.0",
+      "path": "/workspace/JGengine/.claude/worktrees/character-placement-animation/.scratch/characters/packages/clean-static-animation-validation-ecb938cd/jgengine-core-0.19.0.tgz",
+      "sha256": "ef7cbed0a00d4c62cabfe7ceb7535fbaa0269516dea48ebf55f7062e01c36a3f",
+      "files": 1254
+    },
+    {
+      "name": "@jgengine/rapier",
+      "version": "0.19.0",
+      "path": "/workspace/JGengine/.claude/worktrees/character-placement-animation/.scratch/characters/packages/clean-static-animation-validation-ecb938cd/jgengine-rapier-0.19.0.tgz",
+      "sha256": "74de8beeb37d6aceee8fa40dc7de8e83bdb0e235bda813c1e934e87201cea33c",
+      "files": 6
+    },
+    {
+      "name": "@jgengine/ws",
+      "version": "0.19.0",
+      "path": "/workspace/JGengine/.claude/worktrees/character-placement-animation/.scratch/characters/packages/clean-static-animation-validation-ecb938cd/jgengine-ws-0.19.0.tgz",
+      "sha256": "95340f7f138d12502e4d56a6d09afb63112539be63fe70009614b79669f6409a",
+      "files": 39
+    },
+    {
+      "name": "@jgengine/sql",
+      "version": "0.19.0",
+      "path": "/workspace/JGengine/.claude/worktrees/character-placement-animation/.scratch/characters/packages/clean-static-animation-validation-ecb938cd/jgengine-sql-0.19.0.tgz",
+      "sha256": "4f7aab213c8519fb19444a8f4be6145672c9de12e02bdd3b0854e898164aaaa6",
+      "files": 19
+    },
+    {
+      "name": "@jgengine/navbake",
+      "version": "0.19.0",
+      "path": "/workspace/JGengine/.claude/worktrees/character-placement-animation/.scratch/characters/packages/clean-static-animation-validation-ecb938cd/jgengine-navbake-0.19.0.tgz",
+      "sha256": "74e758c8ff680bc469b91a7fc7c110b1d867ad0b8f26d19a23be8bc4b57b7d48",
+      "files": 6
+    },
+    {
+      "name": "@jgengine/react",
+      "version": "0.19.0",
+      "path": "/workspace/JGengine/.claude/worktrees/character-placement-animation/.scratch/characters/packages/clean-static-animation-validation-ecb938cd/jgengine-react-0.19.0.tgz",
+      "sha256": "8ac2dbddcf32f2b071b71e2f4ced03a284b420ead744b103522fed4fdc1d0e2d",
+      "files": 195
+    },
+    {
+      "name": "@jgengine/convex",
+      "version": "0.19.0",
+      "path": "/workspace/JGengine/.claude/worktrees/character-placement-animation/.scratch/characters/packages/clean-static-animation-validation-ecb938cd/jgengine-convex-0.19.0.tgz",
+      "sha256": "6a7d03b12a86cbb7e8dbf3b532b35ecb65052b863cefdc87a1228acf1c1ec6a3",
+      "files": 37
+    },
+    {
+      "name": "@jgengine/node",
+      "version": "0.19.0",
+      "path": "/workspace/JGengine/.claude/worktrees/character-placement-animation/.scratch/characters/packages/clean-static-animation-validation-ecb938cd/jgengine-node-0.19.0.tgz",
+      "sha256": "8521a5a9e175ce6cb25dacceb175b3c53c25dfb344ec027cdfa758f89305fd22",
+      "files": 39
+    },
+    {
+      "name": "@jgengine/shell",
+      "version": "0.19.0",
+      "path": "/workspace/JGengine/.claude/worktrees/character-placement-animation/.scratch/characters/packages/clean-static-animation-validation-ecb938cd/jgengine-shell-0.19.0.tgz",
+      "sha256": "21d426e6ff5cf822c1567178b13b35e3c2607d3332ddbc8abfb2c123c16a0820",
+      "files": 548
+    },
+    {
+      "name": "@jgengine/editor",
+      "version": "0.19.0",
+      "path": "/workspace/JGengine/.claude/worktrees/character-placement-animation/.scratch/characters/packages/clean-static-animation-validation-ecb938cd/jgengine-editor-0.19.0.tgz",
+      "sha256": "30b16cea6cc2e2a71ac43305f7960b00cfc221b8b8de474d2ecf11abe9640c8e",
+      "files": 247
+    },
+    {
+      "name": "@jgengine/assets",
+      "version": "0.19.0",
+      "path": "/workspace/JGengine/.claude/worktrees/character-placement-animation/.scratch/characters/packages/clean-static-animation-validation-ecb938cd/jgengine-assets-0.19.0.tgz",
+      "sha256": "ecff959ab738d1c0885e0bbd8c4a6f95c97eb70352edb58aa4d7e5d7bf305e94",
+      "files": 91
+    },
+    {
+      "name": "@jgengine/github",
+      "version": "0.6.0",
+      "path": "/workspace/JGengine/.claude/worktrees/character-placement-animation/.scratch/characters/packages/clean-static-animation-validation-ecb938cd/jgengine-github-0.6.0.tgz",
+      "sha256": "603e9286bc9cf9fb72e4d60d39d117376cf14693f33f7b92f94810c2ce30a56e",
+      "files": 34
+    },
+    {
+      "name": "jgengine",
+      "version": "0.16.0",
+      "path": "/workspace/JGengine/.claude/worktrees/character-placement-animation/.scratch/characters/packages/clean-static-animation-validation-ecb938cd/jgengine-0.16.0.tgz",
+      "sha256": "37aeadc009772eeeb44c9a99975f7dd9579a0df502273ef13ebcbffff76257c4",
+      "files": 129
+    }
+  ],
+  "buildProvenance": "build-provenance.json",
+  "compiledFileLedger": "compiled-files.json",
+  "packageFileLedger": "package-files.json",
+  "sourceFileLedger": "source-files.json",
+  "buildProvenanceSha256": "f0ccf7a0e34da3fe442ac4b380060972cf0b0575b8435c6fe186d88ac8ca9304"
+}

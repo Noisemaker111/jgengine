@@ -1,0 +1,685 @@
+{
+  "classification": "Pass13 frozen public-package consumer validation/diagnostics evidence; unreleased source candidate, no published adoption or new native claim",
+  "outcome": "Static authored props now use the same strict animation value contract as the editor. Malformed persisted override is omitted at runtime with located repairs, restoring the original catalog/style default while retaining saved metadata. All original two-game placements/default models remain unchanged.",
+  "source": {
+    "commit": "ecb938cd8e53c7baad3d076cbae9c26f7d2c0497",
+    "tree": "a52ba2db848cf40980abce7060658a39003bb0fd",
+    "base": "8677b7285773742e73c66319cc4592b7026d303a",
+    "cleanAtBuild": true,
+    "remoteWholeTreeEquivalentHead": "16d497e504950e8c1bfcbc63661f36a0078310ff",
+    "pr": 1972,
+    "manifest": {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/static-animation-validation/candidate-package-manifest.json",
+      "sha256": "53597cc99d8775d3a499ff32af54bf408e405f4afbeb1dc47af310a66c98de3f",
+      "bytes": 5231
+    },
+    "buildWorkflow": "28fresh ordered build/staging/normalpack stages passed with explicit SDK skills staging and source stability. Immutable compiled/package/source ledgers retained."
+  },
+  "packageBoundary": {
+    "all13TarballsHashed": 13,
+    "installedPackages": [
+      {
+        "name": "@jgengine/core",
+        "version": "0.19.0",
+        "tarballSha256": "ef7cbed0a00d4c62cabfe7ceb7535fbaa0269516dea48ebf55f7062e01c36a3f",
+        "installedFilesByteVerified": 1254
+      },
+      {
+        "name": "@jgengine/ws",
+        "version": "0.19.0",
+        "tarballSha256": "95340f7f138d12502e4d56a6d09afb63112539be63fe70009614b79669f6409a",
+        "installedFilesByteVerified": 39
+      },
+      {
+        "name": "@jgengine/navbake",
+        "version": "0.19.0",
+        "tarballSha256": "74e758c8ff680bc469b91a7fc7c110b1d867ad0b8f26d19a23be8bc4b57b7d48",
+        "installedFilesByteVerified": 6
+      },
+      {
+        "name": "@jgengine/react",
+        "version": "0.19.0",
+        "tarballSha256": "8ac2dbddcf32f2b071b71e2f4ced03a284b420ead744b103522fed4fdc1d0e2d",
+        "installedFilesByteVerified": 195
+      },
+      {
+        "name": "@jgengine/node",
+        "version": "0.19.0",
+        "tarballSha256": "8521a5a9e175ce6cb25dacceb175b3c53c25dfb344ec027cdfa758f89305fd22",
+        "installedFilesByteVerified": 39
+      },
+      {
+        "name": "@jgengine/shell",
+        "version": "0.19.0",
+        "tarballSha256": "21d426e6ff5cf822c1567178b13b35e3c2607d3332ddbc8abfb2c123c16a0820",
+        "installedFilesByteVerified": 548
+      },
+      {
+        "name": "@jgengine/editor",
+        "version": "0.19.0",
+        "tarballSha256": "30b16cea6cc2e2a71ac43305f7960b00cfc221b8b8de474d2ecf11abe9640c8e",
+        "installedFilesByteVerified": 247
+      },
+      {
+        "name": "@jgengine/assets",
+        "version": "0.19.0",
+        "tarballSha256": "ecff959ab738d1c0885e0bbd8c4a6f95c97eb70352edb58aa4d7e5d7bf305e94",
+        "installedFilesByteVerified": 91
+      },
+      {
+        "name": "jgengine",
+        "version": "0.16.0",
+        "tarballSha256": "37aeadc009772eeeb44c9a99975f7dd9579a0df502273ef13ebcbffff76257c4",
+        "installedFilesByteVerified": 129
+      }
+    ],
+    "installedRegularFilesByteCompared": 2548,
+    "uninstalledPackages": [
+      "@jgengine/rapier",
+      "@jgengine/sql",
+      "@jgengine/convex",
+      "@jgengine/github"
+    ],
+    "independentOwnNodeModules": "/workspace/JGengine/.scratch/characters/consumer/static-animation-validation/node_modules",
+    "noSourceAliases": true,
+    "releaseState": "Actual unreleased built tarballs, no registry SDK adoption or version/catalog/lockfile changes."
+  },
+  "originalConsumerControls": {
+    "sourceCommit": "45a50523cae2021c412aa83ce50589d806dd96d9",
+    "sourceFiles": 212,
+    "trackedBuildAndSourceInputs": 228,
+    "sourceLedger": {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/static-animation-validation/original-source-provenance.json",
+      "sha256": "ce5f14475576df35f6c9c28bd2d09579aa6813f6b829d8eaf8e2a6a02e43c126",
+      "bytes": 70440
+    },
+    "baseline": "Frozen12 public99a packages reused read-only in separate copied source scope.",
+    "afterScriptByteExactToBaseline": true,
+    "comparison": {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/static-animation-validation/full-world-comparison.json",
+      "sha256": "df3398ac6b921127876a05d8a42422161ea21f3c65ef0f9344cd35954573ba48",
+      "bytes": 1402
+    },
+    "results": [
+      {
+        "gameId": "scrap-signal",
+        "markers": 438,
+        "resolvedObjects": 403,
+        "lift": 0.5,
+        "allResolvedPlacedModelsAndDefaultMapsBitExact": true,
+        "allDefaultModelIdentitiesRetained": true,
+        "newStrictDiagnostics": []
+      },
+      {
+        "gameId": "lantern-reach",
+        "markers": 86,
+        "resolvedObjects": 40,
+        "lift": 0,
+        "allResolvedPlacedModelsAndDefaultMapsBitExact": true,
+        "allDefaultModelIdentitiesRetained": true,
+        "newStrictDiagnostics": []
+      }
+    ],
+    "preservation": "All full resolved objects, grounded placed positions/rotations/lift, per-object resolved/default models and entire object/entity model maps bit-exact. Cached catalog/style default identities retained. Original mob/boss exclusions unchanged.",
+    "scrapScope": "Full438originalmarkers\u2192403props using original placeLevel .5lift, no newscene content.",
+    "lanternScope": "Full86originalmarkers\u219240props using existing authored-scene layer default0lift. Direct existing public resolution/placement only; original invalidDawn still prevents claiming a full normaleditorSave loop.",
+    "sourceStillUnchanged": true
+  },
+  "malformedProofScope": {
+    "document": {
+      "markerId": "character-proof-knight",
+      "catalogId": "kaykit-adventurers/Knight",
+      "markerCount": 1,
+      "kind": "prop",
+      "position": {
+        "x": -502,
+        "y": 34.27783504754558,
+        "z": 594
+      },
+      "origin": "Previous native-authored exported Knight placement on original Scrap terrain; reused unchanged, no invented placement"
+    },
+    "originalDocument": {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-authored-document.json",
+      "sha256": "8d474aeeb452210ebc8d3c193d252e2aee480ebe932336b2e52ade64a865a8b8",
+      "bytes": 710
+    },
+    "beforeInputHashes": {
+      "before-result.json": {
+        "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/before-result.json",
+        "sha256": "686e1b72fb667738d4cd8ea651ca8933a17e36cd04f49567c484237de583e32d",
+        "bytes": 29108
+      },
+      "invalid-clock-saved-document.json": {
+        "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/invalid-clock-saved-document.json",
+        "sha256": "b2c7686f464a264e1a8f0484a3693d657df49da1eaa0e409bd3777be4b158c3b",
+        "bytes": 740
+      },
+      "invalid-auto-saved-document.json": {
+        "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/invalid-auto-saved-document.json",
+        "sha256": "9798af60840ff82784c8ed68faf1beddb1c3359ba5be16cc56f1f7ab53e71199",
+        "bytes": 734
+      },
+      "invalid-clip-saved-document.json": {
+        "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/invalid-clip-saved-document.json",
+        "sha256": "3f79352f13452f8d35ecf5073c215e67e964c5de6f8c66918f7723f59f2cf117",
+        "bytes": 704
+      }
+    },
+    "actualCatalogDefault": "auto",
+    "explicitSeparation": "Existing earlier native-authored Knight proof prop on Scrap terrain, ONE marker, not a shipping actor or an existing shipping full-scene placement. Never merged into original438Scrap world or changed either originalgame document.",
+    "loadedRig": {
+      "clips": 76,
+      "url": "/models/kaykit-adventurers/Knight.glb"
+    },
+    "asset": {
+      "path": "/workspace/JGengine/apps/dev/public/models/kaykit-adventurers/Knight.glb",
+      "sha256": "60428e3abc09ba83e595d256e3af8c5c976b46cdae599f0802fc82b4a3445168",
+      "bytes": 3659532
+    }
+  },
+  "beforeFailure": {
+    "proof": {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/before-result.json",
+      "sha256": "686e1b72fb667738d4cd8ea651ca8933a17e36cd04f49567c484237de583e32d",
+      "bytes": 29108
+    },
+    "scope": "Exact existing proof prop+savedmalformeddocuments using old99a installedpublicboundaries.",
+    "concreteLimitation": "Strict Inspector blocks malformed clock calendar, auto:false or clip7, but static markerAnimation/raw object cast passed them through and replaced catalogauto. Numeric hook clip7 produced no action/bind matrices; badclock/auto passed preexisting pausedIdle.75 rather than causing a bind-pose failure.",
+    "savedMalformedInputRetained": true
+  },
+  "strictAfter": {
+    "proof": {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-after/executed-ecb938cd/after-result.json",
+      "sha256": "dd2434fc2df696e9ed804b0a7b48614bb97ee19b90d330c018196a86a4d6b7c4",
+      "bytes": 31417
+    },
+    "singlePassPublicApi": "resolveAuthoredObjectsWithDiagnostics returns objects+locateddiagnostics with the shared strict value helper. Invalid per-placement animation omitted as a whole.",
+    "invalidCases": [
+      {
+        "field": "clock",
+        "storedValue": "calendar",
+        "diagnostics": [
+          {
+            "path": "markers[0].meta.animation.clock",
+            "message": "clock must be real or game",
+            "repair": "Use real or game, or remove the animation override to inherit the game setting."
+          }
+        ],
+        "inspectorOrdinaryPlaybackControlsBlocked": true,
+        "strictRuntimeReadRetainsExactCatalogDefault": true,
+        "normalStaticResolverRejectsWholeMalformedOverride": true,
+        "rawMalformedStoredDocumentUnchanged": true,
+        "exactOriginalCatalogModelIdentityAndDefaultRestored": true,
+        "actualLoadedRigDefaultIdleResolved": true,
+        "locatedStaticDiagnosticsMatchStrictEditor": true,
+        "placementAndCatalogUnchanged": true
+      },
+      {
+        "field": "auto",
+        "storedValue": false,
+        "diagnostics": [
+          {
+            "path": "markers[0].meta.animation.auto",
+            "message": "auto must be true when supplied",
+            "repair": "Use true, or omit auto to use explicit configuration, or remove the animation override to inherit the game setting."
+          }
+        ],
+        "inspectorOrdinaryPlaybackControlsBlocked": true,
+        "strictRuntimeReadRetainsExactCatalogDefault": true,
+        "normalStaticResolverRejectsWholeMalformedOverride": true,
+        "rawMalformedStoredDocumentUnchanged": true,
+        "exactOriginalCatalogModelIdentityAndDefaultRestored": true,
+        "actualLoadedRigDefaultIdleResolved": true,
+        "locatedStaticDiagnosticsMatchStrictEditor": true,
+        "placementAndCatalogUnchanged": true
+      },
+      {
+        "field": "clip",
+        "storedValue": 7,
+        "diagnostics": [
+          {
+            "path": "markers[0].meta.animation.clip",
+            "message": "clip must be a string",
+            "repair": "Use a clip-name string, or remove the animation override to inherit the game setting."
+          }
+        ],
+        "inspectorOrdinaryPlaybackControlsBlocked": true,
+        "strictRuntimeReadRetainsExactCatalogDefault": true,
+        "normalStaticResolverRejectsWholeMalformedOverride": true,
+        "rawMalformedStoredDocumentUnchanged": true,
+        "exactOriginalCatalogModelIdentityAndDefaultRestored": true,
+        "actualLoadedRigDefaultIdleResolved": true,
+        "locatedStaticDiagnosticsMatchStrictEditor": true,
+        "placementAndCatalogUnchanged": true
+      }
+    ],
+    "validExistingCases": [
+      "auto",
+      "none",
+      {
+        "states": {}
+      },
+      {
+        "clip": "Idle",
+        "timeScale": -0.5,
+        "oneShots": {},
+        "identity": {
+          "keep": true
+        }
+      }
+    ],
+    "modelContract": "Invalid overrides inherit original cached catalog/default and style model identity, actual loaded76clip defaultIdle resolves. Valid modes/partial and empty states/empty oneShots/signedrate/extensions/order remain authored.",
+    "editorAgreement": "Static located repair diagnostics match existing strict Inspector, whose ordinary invalid playback controls remain blocked.",
+    "savedDocument": "All malformed source metadata persists unchanged until explicit author repair; runtime does not silently rewrite the stored scene."
+  },
+  "actualImportedHook": {
+    "proof": {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-hook-proof/public-cross-cohort-proof.json",
+      "sha256": "3dd1ab07bcb9b028a5f43916419465cdca1d28bde4601d4a801c7c3d97905a9b",
+      "bytes": 2357
+    },
+    "scope": "Actual existing native-authored Knight static proof placement in Scrap-based document, unchanged original Scrap asset catalog and actual76Knight GLB; manual React/Fiber publichook numeric replay. Not shipping actor/adoption/native appearance.",
+    "before": {
+      "commit": "99a01a218e3dca07dcc28f693aa0cae067d02325",
+      "tree": "6d8146788a0a37f59e6a29d2969dc87027c91efa",
+      "numericSha256": "2eccc68aff42ae89233da41918367ee22c05e94b097dc2b6e9d762b66cfece95"
+    },
+    "after": {
+      "commit": "ecb938cd8e53c7baad3d076cbae9c26f7d2c0497",
+      "tree": "a52ba2db848cf40980abce7060658a39003bb0fd",
+      "manifestSha256": "53597cc99d8775d3a499ff32af54bf408e405f4afbeb1dc47af310a66c98de3f",
+      "numericSha256": "47392d36e3077747dc3539d735a4faa8e524a37008bda7a488408a3bbfedfcac"
+    },
+    "sourceFixtureRunnerByteEqual": true,
+    "oldFrozenV2InputsPreserved": true,
+    "results": {
+      "malformedClockAndAutoBefore": "Invalid authored fields passed verbatim; preexisting paused Idle held .75 (not a bind-pose failure).",
+      "malformedClipBefore": "clip7 contributed no action/pose; rig stayed at bind matrices, with missingclip warning.",
+      "allThreeMalformedAfter": "Whole override omitted, exact original catalogauto model/cache identity retained; Idle advances .5 over30 manual frames; finite bone matrices change; no hook warning/error. Located authoring/placement repair proof is separate.",
+      "validOriginalAndSignedEntireNumericRecordsBitExact": true,
+      "originalPausedOrderedPolicy": "Idle held .75 every frame; timeScale .5, loopfalse, ordered attack array and source config identity preserved.",
+      "signedPlayback": "Authored -.5 unchanged, advancing Idle phase .8166667222976693; source override identity, extension and empty oneShots preserved.",
+      "cleanup": "Every constructed mixer uncache1/unmount subscription0; malformedclipbefore createdno mixer.",
+      "poseMetric": "Complete bone world matrices, invariant to quaternion sign."
+    },
+    "interpretation": "Three malformed overrides inherit exact originalauto and Idle advances .5seconds over30manualframes with finite changing full bone world matrices; validheldIdle/orderedmetadata/signed-.5 entire numeric records remain bit-exactold99a. This is manualReact/Fiber actualimportedrig numeric evidence, not visual/native or shippingactor evidence."
+  },
+  "originalGameChecks": {
+    "checks": [
+      {
+        "game": "scrap-signal",
+        "kind": "build",
+        "command": [
+          "/workspace/JGengine/.scratch/characters/consumer/static-animation-validation/node_modules/.bin/vite",
+          "build"
+        ],
+        "cwd": "/workspace/JGengine/.scratch/characters/consumer/static-animation-validation/games/scrap-signal",
+        "exitCode": 0,
+        "durationFromLog": "25.40s",
+        "log": "/workspace/JGengine/.scratch/characters/consumer/static-animation-validation/original-scrap-signal-build.log",
+        "logSha256": "4b08d48c20175d27767d643931de1dced83b2ccce9f35dd87f5a70225ced0b3a"
+      },
+      {
+        "game": "lantern-reach",
+        "kind": "build",
+        "command": [
+          "/workspace/JGengine/.scratch/characters/consumer/static-animation-validation/node_modules/.bin/vite",
+          "build"
+        ],
+        "cwd": "/workspace/JGengine/.scratch/characters/consumer/static-animation-validation/games/lantern-reach",
+        "exitCode": 0,
+        "durationFromLog": "32.91s",
+        "log": "/workspace/JGengine/.scratch/characters/consumer/static-animation-validation/original-lantern-reach-build.log",
+        "logSha256": "c686104676c014d4f5d07e8827f98e140a840b92a16754a01320afc4ca5471cc"
+      },
+      {
+        "game": "scrap-signal",
+        "kind": "types",
+        "command": [
+          "/workspace/JGengine/.scratch/characters/consumer/static-animation-validation/node_modules/.bin/tsgo",
+          "--noEmit",
+          "-p",
+          "tsconfig.json"
+        ],
+        "cwd": "/workspace/JGengine/.scratch/characters/consumer/static-animation-validation/games/scrap-signal",
+        "exitCode": 0,
+        "durationFromLog": null,
+        "log": "/workspace/JGengine/.scratch/characters/consumer/static-animation-validation/original-scrap-signal-types.log",
+        "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "game": "lantern-reach",
+        "kind": "types",
+        "command": [
+          "/workspace/JGengine/.scratch/characters/consumer/static-animation-validation/node_modules/.bin/tsgo",
+          "--noEmit",
+          "-p",
+          "tsconfig.json"
+        ],
+        "cwd": "/workspace/JGengine/.scratch/characters/consumer/static-animation-validation/games/lantern-reach",
+        "exitCode": 1,
+        "durationFromLog": null,
+        "log": "/workspace/JGengine/.scratch/characters/consumer/static-animation-validation/original-lantern-reach-types.log",
+        "logSha256": "51d0662939bac99822986ac0dcfd3cc4108885c63afd68be9ee309f7d1668b38"
+      }
+    ],
+    "originalInputHashesStillEqual": true,
+    "knownLanternTypeFailure": "Four preexisting status/reason Promise command-result errors in ActionBar57/Dialogue68. Scrap Vite25.40s/types0; Lantern Vite32.91s/types1 oldfour. Exactlogs preserved; no gamefixes/adapters introduced."
+  },
+  "ownership": {
+    "core": "Shared strict rawanimation value helper and single-pass authored static object diagnostic resolver.",
+    "shell": "Consumes shared resolver and reports located repairs through owning effect; catalog/style/default identity and asset clip-role resolver unchanged.",
+    "authoring": "Exact existing nativeproof-prop/badsaveddata and strictInspector/publicresolution before/after snapshots.",
+    "animation": "Actual76clip importedKnight manualhook before/after fallback and validsigned/held-policy invariance, cleanup.",
+    "consumerBoundary": "Independent13/9/2548 package-byte checks, original212source/228input ledger, full403+40 prop/default identity controls and original2game checks.",
+    "root": "Sourceintegration/publication/CI; no CI ormerge completion inferred by this report.",
+    "footGrounding": "Independent source/package/evidence archive review and delivery on root authorization."
+  },
+  "limitationsAndDisclosures": [
+    "No new native capture, rigappearance, interactionfeel or hardwareFPS/performance claim. Earlier native provenance supplies this savedproofprop; this pass only uses exactdata and manualnumeric/SSR proof.",
+    "The Knight proof prop is not an adopted shippingactor. Original two-game full-world controls demonstrate unchanged valid consumers; malformed proof remains a separate authored-document requirement.",
+    "Headless importedasset textureblob warning is retained; no materialappearance inference.",
+    "Original fullLanternDawn validation blocker and oldfourtypeerrors remain untouched. Directfullworld resolution is not a successful normalSave loop.",
+    "Original rain/snow camera-volume warnings retained in full-world logs; environment-owned configuration not edited.",
+    "After-authoring receipt has one stale limits text mentioning99a; source/tree/manifest/module provenance and actual newpublicexecution are correctly ecb938cd. Frozen receipt retained without relabelling.",
+    "No SDK version/catalog/rootlock or game source/adapters changed. Candidate is not published package adoption."
+  ],
+  "artifactHashes": [
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/static-animation-validation/candidate-package-manifest.json",
+      "sha256": "53597cc99d8775d3a499ff32af54bf408e405f4afbeb1dc47af310a66c98de3f",
+      "bytes": 5231
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/static-animation-validation/installed-package-verification.json",
+      "sha256": "3ff4fec300522341cb19152fc94086818f45361e59d5658a5fd96e4c5f9a4929",
+      "bytes": 2194
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/static-animation-validation/original-source-provenance.json",
+      "sha256": "ce5f14475576df35f6c9c28bd2d09579aa6813f6b829d8eaf8e2a6a02e43c126",
+      "bytes": 70440
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/static-animation-validation/before-full-world-controls.json",
+      "sha256": "372881eb24f3e2cdcb7e4383488a91be75b44ccf9d684e99a87fd8b18efc3ced",
+      "bytes": 538
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/static-animation-validation/full-world-controls.ts",
+      "sha256": "3f39a71d8d854be49ab1c5412bef8b03019e0849cf9f58482ea4383d73165d88",
+      "bytes": 4883
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/static-animation-validation/full-world-controls.json",
+      "sha256": "51b4ff2e29b453e7785826e49086ccf4372fa46027e6cabdc87c8884ea3cbda1",
+      "bytes": 1181484
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/static-animation-validation/full-world-controls.log",
+      "sha256": "ad5aa3ae67a2f037824f6aceb7c2a57c7268d74dc9a0c7caded7b88f7a2fdaa2",
+      "bytes": 1058
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/static-animation-validation/compare-full-world-controls.py",
+      "sha256": "5d78eee1176a3d24b1e79101a1684c18b3961f6a6557eb0e5dcc8d24bc607b74",
+      "bytes": 2071
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/static-animation-validation/full-world-comparison.json",
+      "sha256": "df3398ac6b921127876a05d8a42422161ea21f3c65ef0f9344cd35954573ba48",
+      "bytes": 1402
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/static-animation-validation/full-world-comparison.log",
+      "sha256": "1610bdf4aeb1ab716d59c62fadcc23255b83c57f0e306c632b1c22f000321b5e",
+      "bytes": 1270
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/static-animation-validation/before-original-checks.json",
+      "sha256": "0333f89f898d0a7ed3db3d5923a313e54e55c4d9aee1e9e890d566247c138875",
+      "bytes": 449
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/static-animation-validation/run-original-checks.py",
+      "sha256": "9cf4746005049ccb30e4a4350139c134b6908f3eb87cb07d4008a1102c136219",
+      "bytes": 2264
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/static-animation-validation/original-prepatch-checks.json",
+      "sha256": "312c51cae7b0b08ff52e8b2c4642c621d53f6e97995a9042bbb620288862150e",
+      "bytes": 3277
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/static-animation-validation/install.log",
+      "sha256": "02c2f2316a528a594f117baf4f67da423f2db1e06a7aaa51928280c3b8f70c4c",
+      "bytes": 1822
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/static-animation-validation/verification.log",
+      "sha256": "4b726a543a0eeed0a09e6cb85580b7df66f318c1e025cf7214abf60ebe7d280e",
+      "bytes": 1850
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/static-animation-validation/original-scrap-signal-build.log",
+      "sha256": "4b08d48c20175d27767d643931de1dced83b2ccce9f35dd87f5a70225ced0b3a",
+      "bytes": 1176
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/static-animation-validation/original-lantern-reach-build.log",
+      "sha256": "c686104676c014d4f5d07e8827f98e140a840b92a16754a01320afc4ca5471cc",
+      "bytes": 1176
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/static-animation-validation/original-scrap-signal-types.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/static-animation-validation/original-lantern-reach-types.log",
+      "sha256": "51d0662939bac99822986ac0dcfd3cc4108885c63afd68be9ee309f7d1668b38",
+      "bytes": 834
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/static-animation-validation/baseline-99a01a21/baseline-freeze.json",
+      "sha256": "2b007f49ce2eb80fd5017859fda03415cb3fd80f2c1d8d1c9493f42764cc2560",
+      "bytes": 2277
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/static-animation-validation/baseline-99a01a21/full-world-controls.ts",
+      "sha256": "3f39a71d8d854be49ab1c5412bef8b03019e0849cf9f58482ea4383d73165d88",
+      "bytes": 4883
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/static-animation-validation/baseline-99a01a21/full-world-controls.json",
+      "sha256": "9673f524a97f2a50b1da726e30b937e93895005648bd67aa9972f6c938c5ecd6",
+      "bytes": 1181479
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/static-animation-validation/baseline-99a01a21/full-world-controls.log",
+      "sha256": "ccd1816531e6778acd2471c80a294905ea640ce3b4902d887c7cffcb751eca33",
+      "bytes": 1058
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/static-animation-validation/baseline-99a01a21/before-execution-provenance.json",
+      "sha256": "32e336874cd6e8269b530704cb2294742e08081838f7117f77d0ae2267089ad9",
+      "bytes": 506
+    },
+    {
+      "path": "/workspace/JGengine/.claude/worktrees/character-placement-animation/.scratch/characters/packages/clean-static-animation-validation-ecb938cd/manifest.json",
+      "sha256": "53597cc99d8775d3a499ff32af54bf408e405f4afbeb1dc47af310a66c98de3f",
+      "bytes": 5231
+    },
+    {
+      "path": "/workspace/JGengine/.claude/worktrees/character-placement-animation/.scratch/characters/packages/clean-static-animation-validation-ecb938cd/build-provenance.json",
+      "sha256": "f0ccf7a0e34da3fe442ac4b380060972cf0b0575b8435c6fe186d88ac8ca9304",
+      "bytes": 21481
+    },
+    {
+      "path": "/workspace/JGengine/.claude/worktrees/character-placement-animation/.scratch/characters/packages/clean-static-animation-validation-ecb938cd/compiled-files.json",
+      "sha256": "17733178bd10904e34d5aae869d5fc6142a39817cf8e5e907c6b60a91edf27ea",
+      "bytes": 370579
+    },
+    {
+      "path": "/workspace/JGengine/.claude/worktrees/character-placement-animation/.scratch/characters/packages/clean-static-animation-validation-ecb938cd/package-files.json",
+      "sha256": "1e5f092203da2423abeb6360c1fb6806ab94ccd0a6d93fb12bb21ef0278071df",
+      "bytes": 427598
+    },
+    {
+      "path": "/workspace/JGengine/.claude/worktrees/character-placement-animation/.scratch/characters/packages/clean-static-animation-validation-ecb938cd/source-files.json",
+      "sha256": "45792f22a0b9a5ecf372507e9298fc64b332ee7df91bf42c54fe33e2cdb2172b",
+      "bytes": 703338
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/before-result.json",
+      "sha256": "686e1b72fb667738d4cd8ea651ca8933a17e36cd04f49567c484237de583e32d",
+      "bytes": 29108
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/executed-public-before.ts",
+      "sha256": "f3e6a3b65b6c19d489a86ed2c25ae1e2ae6eef3b872e7af6e61da414464a962f",
+      "bytes": 9212
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/before-execution-provenance.json",
+      "sha256": "c4a43349bcb548b952ee3990e7ae37f7bb169f75aadcbbfa7b41d596264a41f6",
+      "bytes": 26020
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-authored-document.json",
+      "sha256": "8d474aeeb452210ebc8d3c193d252e2aee480ebe932336b2e52ade64a865a8b8",
+      "bytes": 710
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/invalid-clock-saved-document.json",
+      "sha256": "b2c7686f464a264e1a8f0484a3693d657df49da1eaa0e409bd3777be4b158c3b",
+      "bytes": 740
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/invalid-auto-saved-document.json",
+      "sha256": "9798af60840ff82784c8ed68faf1beddb1c3359ba5be16cc56f1f7ab53e71199",
+      "bytes": 734
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/invalid-clip-saved-document.json",
+      "sha256": "3f79352f13452f8d35ecf5073c215e67e964c5de6f8c66918f7723f59f2cf117",
+      "bytes": 704
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/before-freeze.json",
+      "sha256": "2bcf336728d2db9bfe9f44d6ffda36bc62c64e85131d838a0520492ec2f678db",
+      "bytes": 57618
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-after/executed-ecb938cd/after-result.json",
+      "sha256": "dd2434fc2df696e9ed804b0a7b48614bb97ee19b90d330c018196a86a4d6b7c4",
+      "bytes": 31417
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-after/executed-ecb938cd/executed-public-after.ts",
+      "sha256": "9a7e944f5cff008f0ea54ee1b430a2391a5b0bccb8c68071089f289ab143b0d4",
+      "bytes": 12063
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-after/executed-ecb938cd/before-execution-provenance.json",
+      "sha256": "0c030b03bd38e971ce162710f334c5454edc50245014382d06278c190a05ef94",
+      "bytes": 27811
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-after/executed-ecb938cd/original-authored-document.json",
+      "sha256": "8d474aeeb452210ebc8d3c193d252e2aee480ebe932336b2e52ade64a865a8b8",
+      "bytes": 710
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-after/executed-ecb938cd/invalid-clock-saved-document.json",
+      "sha256": "b2c7686f464a264e1a8f0484a3693d657df49da1eaa0e409bd3777be4b158c3b",
+      "bytes": 740
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-after/executed-ecb938cd/invalid-auto-saved-document.json",
+      "sha256": "9798af60840ff82784c8ed68faf1beddb1c3359ba5be16cc56f1f7ab53e71199",
+      "bytes": 734
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-after/executed-ecb938cd/invalid-clip-saved-document.json",
+      "sha256": "3f79352f13452f8d35ecf5073c215e67e964c5de6f8c66918f7723f59f2cf117",
+      "bytes": 704
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-after/after-freeze.json",
+      "sha256": "3b142f9191ab4f1c2d8b94a618ab49aac556386f926114d6298f94edf8919ec1",
+      "bytes": 31159
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-hook-proof/public-cross-cohort-proof.json",
+      "sha256": "3dd1ab07bcb9b028a5f43916419465cdca1d28bde4601d4a801c7c3d97905a9b",
+      "bytes": 2357
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-hook-proof/proof-hashes.json",
+      "sha256": "dc2a6c1d720aa4c8d302f8dd79907585688ce9ca35ccfd149b20304f4cf83e35",
+      "bytes": 47792
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-hook-proof/before-99a01a21/executed/numeric-records.json",
+      "sha256": "2eccc68aff42ae89233da41918367ee22c05e94b097dc2b6e9d762b66cfece95",
+      "bytes": 3032023
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-hook-proof/before-99a01a21/executed/archive-hashes.json",
+      "sha256": "dbdbdb685179a2b5528b577c1d0fbe1ca62a10bde2f2810978ddcedbdb268b16",
+      "bytes": 10393
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-hook-proof/before-99a01a21/executed/provenance-before-process.json",
+      "sha256": "b3ce1c14fac05d2dea24f4c638b0ef8238145d55c4b9e9f5ce6ca78121001c84",
+      "bytes": 11885
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-hook-proof/before-99a01a21/run.ts",
+      "sha256": "7a7e8f28a01179fe419db64d5c5d011a0cc2f98e7599dc5b721c27b2f6295a9e",
+      "bytes": 5097
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-hook-proof/before-99a01a21/fixture.tsx",
+      "sha256": "fd3bbf7942f26da3391f05bebe0214f755b5d5a0dc3a15025ceb689de95c56f3",
+      "bytes": 4353
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-hook-proof/before-99a01a21/run.log",
+      "sha256": "ea7754ed2f2ccc43e3d5bb388fc45ef3390be6cdcdac40310f80eeaee853dcab",
+      "bytes": 3128
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-hook-proof/after-ecb938cd/executed/numeric-records.json",
+      "sha256": "47392d36e3077747dc3539d735a4faa8e524a37008bda7a488408a3bbfedfcac",
+      "bytes": 3392491
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-hook-proof/after-ecb938cd/executed/archive-hashes.json",
+      "sha256": "36d05cfdabb265d86abfbd8efcb88e6e7777ea91f81b4a614d44c7db8c2ac137",
+      "bytes": 10393
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-hook-proof/after-ecb938cd/executed/provenance-before-process.json",
+      "sha256": "913881a14a4dc6aed80b723f43f1edca4060cf6a04cf8a81434c5aaf11c89d89",
+      "bytes": 11909
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-hook-proof/after-ecb938cd/run.ts",
+      "sha256": "7a7e8f28a01179fe419db64d5c5d011a0cc2f98e7599dc5b721c27b2f6295a9e",
+      "bytes": 5097
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-hook-proof/after-ecb938cd/fixture.tsx",
+      "sha256": "fd3bbf7942f26da3391f05bebe0214f755b5d5a0dc3a15025ceb689de95c56f3",
+      "bytes": 4353
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-hook-proof/after-ecb938cd/run.log",
+      "sha256": "abe27e1dc726d89bc5ea58639a56c94b222a856e45f3418a04b8d4ead82d2173",
+      "bytes": 1275
+    }
+  ],
+  "frozen": true
+}

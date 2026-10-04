@@ -1,0 +1,32 @@
+{
+  "status": "PASS",
+  "scope": "Actual existing native-authored Knight static proof placement in Scrap-based document, unchanged original Scrap asset catalog and actual76Knight GLB; manual React/Fiber publichook numeric replay. Not shipping actor/adoption/native appearance.",
+  "before": {
+    "commit": "99a01a218e3dca07dcc28f693aa0cae067d02325",
+    "tree": "6d8146788a0a37f59e6a29d2969dc87027c91efa",
+    "numericSha256": "2eccc68aff42ae89233da41918367ee22c05e94b097dc2b6e9d762b66cfece95"
+  },
+  "after": {
+    "commit": "ecb938cd8e53c7baad3d076cbae9c26f7d2c0497",
+    "tree": "a52ba2db848cf40980abce7060658a39003bb0fd",
+    "manifestSha256": "53597cc99d8775d3a499ff32af54bf408e405f4afbeb1dc47af310a66c98de3f",
+    "numericSha256": "47392d36e3077747dc3539d735a4faa8e524a37008bda7a488408a3bbfedfcac"
+  },
+  "sameFixtureRunnerBytes": true,
+  "oldFrozenV2InputBytesUntouchedAndEqual": true,
+  "results": {
+    "malformedClockAndAutoBefore": "Invalid authored fields passed verbatim; preexisting paused Idle held .75 (not a bind-pose failure).",
+    "malformedClipBefore": "clip7 contributed no action/pose; rig stayed at bind matrices, with missingclip warning.",
+    "allThreeMalformedAfter": "Whole override omitted, exact original catalogauto model/cache identity retained; Idle advances .5 over30 manual frames; finite bone matrices change; no hook warning/error. Located authoring/placement repair proof is separate.",
+    "validOriginalAndSignedEntireNumericRecordsBitExact": true,
+    "originalPausedOrderedPolicy": "Idle held .75 every frame; timeScale .5, loopfalse, ordered attack array and source config identity preserved.",
+    "signedPlayback": "Authored -.5 unchanged, advancing Idle phase .8166667222976693; source override identity, extension and empty oneShots preserved.",
+    "cleanup": "Every constructed mixer uncache1/unmount subscription0; malformedclipbefore createdno mixer.",
+    "poseMetric": "Complete bone world matrices, invariant to quaternion sign."
+  },
+  "limits": [
+    "Manual React/Fiber numeric importedhook evidence; no native rendered appearance/input feel/hardware FPS claim.",
+    "Existing native-authored Knight proof prop is a Scrap-based validation document, not a shipping gameplay actor or newscene placement.",
+    "Source/candidate built public boundaries only; no npm publication/game adoption."
+  ]
+}

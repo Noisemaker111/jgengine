@@ -1,0 +1,32 @@
+{
+  "classification": "Same immutable original45a full-authored-object/default-model controls across actual built12\u219213packages; direct numerical resolution/placement, no native/save/readiness claim",
+  "beforeCohort": "99a01a218e3dca07dcc28f693aa0cae067d02325",
+  "afterCohort": "ecb938cd8e53c7baad3d076cbae9c26f7d2c0497",
+  "afterTree": "a52ba2db848cf40980abce7060658a39003bb0fd",
+  "beforeInputSha256": "9673f524a97f2a50b1da726e30b937e93895005648bd67aa9972f6c938c5ecd6",
+  "afterOutputSha256": "51b4ff2e29b453e7785826e49086ccf4372fa46027e6cabdc87c8884ea3cbda1",
+  "executedScriptsByteEqual": true,
+  "original212SourceFilesUnchanged": true,
+  "original228TrackedInputsUnchanged": true,
+  "results": [
+    {
+      "gameId": "scrap-signal",
+      "markers": 438,
+      "resolvedObjects": 403,
+      "lift": 0.5,
+      "allResolvedPlacedModelsAndDefaultMapsBitExact": true,
+      "allDefaultModelIdentitiesRetained": true,
+      "newStrictDiagnostics": []
+    },
+    {
+      "gameId": "lantern-reach",
+      "markers": 86,
+      "resolvedObjects": 40,
+      "lift": 0,
+      "allResolvedPlacedModelsAndDefaultMapsBitExact": true,
+      "allDefaultModelIdentitiesRetained": true,
+      "newStrictDiagnostics": []
+    }
+  ],
+  "limits": "Full originalLanterndawn remains invalid for normaleditorSave; no alteration to pass validation. Existing rain/snowwarnings retained, outside character scope."
+}

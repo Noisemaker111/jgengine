@@ -1,0 +1,17 @@
+{
+  "receipt": {
+    "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-after/executed-ecb938cd/after-result.json",
+    "sha256": "dd2434fc2df696e9ed804b0a7b48614bb97ee19b90d330c018196a86a4d6b7c4"
+  },
+  "field": "limits[-1]",
+  "recordedText": "Fresh unreleased99a candidate; no publishedadoption",
+  "correctText": "Fresh unreleased ecb938cd8e53c7baad3d076cbae9c26f7d2c0497 candidate; no published adoption",
+  "source": "ecb938cd8e53c7baad3d076cbae9c26f7d2c0497",
+  "tree": "a52ba2db848cf40980abce7060658a39003bb0fd",
+  "manifest": {
+    "path": "/workspace/JGengine/.scratch/characters/consumer/static-animation-validation/candidate-package-manifest.json",
+    "sha256": "53597cc99d8775d3a499ff32af54bf408e405f4afbeb1dc47af310a66c98de3f",
+    "bytes": 5231
+  },
+  "reason": "Copied BEFORE limitation label survived in AFTER prose; source/tree/manifest/module provenance and executed assertions were correctly attributed to ecb13. Original frozen receipt is unchanged; no rerun or producer/source change."
+}

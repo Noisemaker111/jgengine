@@ -1,0 +1,43 @@
+{
+  "state": "Finalconsumer/source/publicrig/CI audit PASS",
+  "consumerReportSHA256": "0541f22e5a4f0a73d400216a827015a032538114b955e06e7fbd0b9e19a051aa",
+  "artifactHashesVerified": 59,
+  "owningBeforeFrozenFilesVerifiedUnchanged": 212,
+  "owningAfterFrozenFilesVerified": 113,
+  "hookProofLedgerFilesVerified": 387,
+  "actualImportedKnightClipCount": 76,
+  "hookBeforeCases": 5,
+  "hookAfterCases": 5,
+  "onlyBindPoseFailureBefore": "clip7 has no actions, no mixer and unchanged bind matrices",
+  "beforeClockAndAuto": "Existing paused Idle .75 preserved; not bind-pose failures",
+  "threeInvalidAfter": "Whole override omitted; exactcatalogauto default identity, Idle .5 and changing finite bone matrices",
+  "validPausedAndSignedEntireRecordsBitExact": true,
+  "sameHookProducersInputsAndGLBBytes": true,
+  "allConstructedMixersCleanup1Subscriptions0Errors0": true,
+  "originalSourceFilesVerified": 212,
+  "originalTrackedInputsVerified": 228,
+  "originalFullPlacedPropsAndModelMapsBitExact": 443,
+  "originalControlPropsByGame": {
+    "scrap": 403,
+    "lantern": 40
+  },
+  "installedPackages": 9,
+  "installedFilesByteVerified": 2548,
+  "all13TarballHashesVerified": true,
+  "sourceCI": {
+    "head": "16d497e504950e8c1bfcbc63661f36a0078310ff",
+    "run": 37182657573,
+    "attempt": 1,
+    "allSixChecksPass": true
+  },
+  "limits": [
+    "No new native capture, rigappearance, interactionfeel or hardwareFPS/performance claim. Earlier native provenance supplies this savedproofprop; this pass only uses exactdata and manualnumeric/SSR proof.",
+    "The Knight proof prop is not an adopted shippingactor. Original two-game full-world controls demonstrate unchanged valid consumers; malformed proof remains a separate authored-document requirement.",
+    "Headless importedasset textureblob warning is retained; no materialappearance inference.",
+    "Original fullLanternDawn validation blocker and oldfourtypeerrors remain untouched. Directfullworld resolution is not a successful normalSave loop.",
+    "Original rain/snow camera-volume warnings retained in full-world logs; environment-owned configuration not edited.",
+    "After-authoring receipt has one stale limits text mentioning99a; source/tree/manifest/module provenance and actual newpublicexecution are correctly ecb938cd. Frozen receipt retained without relabelling.",
+    "No SDK version/catalog/rootlock or game source/adapters changed. Candidate is not published package adoption."
+  ],
+  "actions": "Read-only storednumeric/Git/file/tar hashes only; no tests/builds/source edits/native captures."
+}

@@ -1,0 +1,1077 @@
+{
+  "source": "99a01a218e3dca07dcc28f693aa0cae067d02325",
+  "tree": "6d8146788a0a37f59e6a29d2969dc87027c91efa",
+  "report": {
+    "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/before-result.json",
+    "sha256": "686e1b72fb667738d4cd8ea651ca8933a17e36cd04f49567c484237de583e32d",
+    "bytes": 29108
+  },
+  "exit": 0,
+  "initialFixtureFailure": {
+    "exit": 1,
+    "reason": "Caller used wrong resolveObjectModel argument order; v2 changes only call order and unique archive, engine source/install unchanged"
+  },
+  "files": [
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/before-v2.exit",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "bytes": 2
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/before-v2.log",
+      "sha256": "aa9edb16c09cd3a50364b37ccd61117a83b91549d3644a6f38441366a7f0925f",
+      "bytes": 1838
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/before.exit",
+      "sha256": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865",
+      "bytes": 2
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/before.log",
+      "sha256": "efe867cf848f82837b4b6bdddec8a80e5bd951020524c456a669c7aad41430f9",
+      "bytes": 937
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/Knight.glb",
+      "sha256": "60428e3abc09ba83e595d256e3af8c5c976b46cdae599f0802fc82b4a3445168",
+      "bytes": 3659532
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/before-execution-provenance.json",
+      "sha256": "dda178e0b953575d3f5616c78510ad8226d775e27c0423dab93306b105ae1d8c",
+      "bytes": 26017
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/candidate-package-manifest.json",
+      "sha256": "fb202289722d8afec79ce6b6fa8ec2e29c9233f739ff56bcd272c63cfa9ef8cb",
+      "bytes": 5127
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/executed-public-before.ts",
+      "sha256": "52212ce7d65429e282a268ff3b1e56d51ee39e0825b3f733f44a241fa16c3652",
+      "bytes": 9209
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/modules/@jgengine__core__editor__commands",
+      "sha256": "246f96705073a89eec247c86f8775271a8d03e0c349ba75ac1085bae2bae75ba",
+      "bytes": 24843
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/modules/@jgengine__core__editor__document",
+      "sha256": "8dacca438ad0c4425eae1f83e88e8dd459275cb7dc05b73d3d3ae600fa371f71",
+      "bytes": 64713
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/modules/@jgengine__core__game__clipRoles",
+      "sha256": "16d922b18d9540491424ec7d497c12749cda976aa1caa2ff05ffa8c4b03c2755",
+      "bytes": 5934
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/modules/@jgengine__core__game__defineGame",
+      "sha256": "30b9173ae2af85691166c0f4db6c6999565ad2b2bfb43bfabd9d24c2d9ff45d7",
+      "bytes": 2691
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/modules/@jgengine__core__runtime__gameContext",
+      "sha256": "509fb073e0d4922f5a5131a2a7b3ba8b03c7eaaca8f37faa7817311aa36640b7",
+      "bytes": 28568
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/modules/@jgengine__core__world__authoredAnimation",
+      "sha256": "9cabe8277c0f8d9c4a9b8d4ac112ccb054ca64a40812346bb579644ad891d94f",
+      "bytes": 4983
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/modules/@jgengine__core__world__authoredObjects",
+      "sha256": "59b8f3cd4ebb7dc9ee65d3713947e431b65251a7e49eae4f5408947db7b49de9",
+      "bytes": 6144
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/modules/@jgengine__editor__InspectorPanel",
+      "sha256": "3b80b50d3fe32a47c1ec9f12629775542d6dc108d664f021b1dddd270b1a70de",
+      "bytes": 51651
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/modules/@jgengine__editor__modelAnimationAuthoring",
+      "sha256": "75fa8b972332072b81e87592da78972bb7aaecbae112bda268bdc9b0fe59ed00",
+      "bytes": 10469
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/modules/@jgengine__editor__uiStore",
+      "sha256": "55cb8bc61cefca750bf17b795bc97a1572d2c4c2a1ca8a0d90c31bc713ac0cba",
+      "bytes": 4970
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/modules/@jgengine__react__provider",
+      "sha256": "b987bca2e8a8b5cc4a90caece62c1e6081d12e33f5c005e9d9205cbab5b95f08",
+      "bytes": 1786
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/modules/@jgengine__shell__render__resolveModel",
+      "sha256": "3a402f9686c81afc6eee1eb5d3a961ce9cda6ac9f95cc895401aa037d9967106",
+      "bytes": 7170
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/modules/react",
+      "sha256": "60caffdecbdc5db3bc4ec4e83df9488345ccb271d07533b9210bf5750918d97e",
+      "bytes": 186
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/modules/react-dom__server",
+      "sha256": "66df58720c7b932800151fdcfd6c494c312ca80b18814a2ee4a39389715f9ce2",
+      "bytes": 559
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/modules/three__examples__jsm__libs__meshopt_decoder.module.js",
+      "sha256": "784315b6959c85459eab77f51776158cc381d7e7d77b919ff7c4935f088a7c5c",
+      "bytes": 24848
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/modules/three__examples__jsm__loaders__GLTFLoader.js",
+      "sha256": "a2d45c28c56774cc789b99154e914c34db3197f9ea2b89fee27600cc2509b14f",
+      "bytes": 114883
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-authored-document.json",
+      "sha256": "8d474aeeb452210ebc8d3c193d252e2aee480ebe932336b2e52ade64a865a8b8",
+      "bytes": 710
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/editor.scene.json",
+      "sha256": "cdd7c8f34d47ba9dfd55f2f436c24fe28cd43dcf31ec6e1fdb138f51c5809266",
+      "bytes": 193782
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/editorLayers.test.ts",
+      "sha256": "653a7dc51b61cfbd2e9b10a3d6f922d29ad8a77b5ed64bc47031da3749aed431",
+      "bytes": 1219
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/editorLayers.ts",
+      "sha256": "37cd5c81eeb54dac4088bbf78b9dbcbe508ceeda085a84861df8d28f10b5f4d6",
+      "bytes": 4007
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/ammo.ts",
+      "sha256": "6748e90f8654aeebe51dafc580dbcf833ad4ca676ab1419d9c3da1bc8e944937",
+      "bytes": 868
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/assets.ts",
+      "sha256": "6f543f7376b3e0b50a6de60402cb9f8c8a4916cfddfb2e9434eb90dd50573bbb",
+      "bytes": 4903
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/audio/catalog.ts",
+      "sha256": "83d6491a692481e2a98633ec3b0d1a5d7ef148e96ede191724a83a595866011e",
+      "bytes": 2195
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/audio/drive.test.ts",
+      "sha256": "32e2d192d8da2c1d6047481dfa4a3ef3c07acfa377d1e7324f96b6283b835dfa",
+      "bytes": 6273
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/audio/drive.ts",
+      "sha256": "9d744659181a72d1bd8dfa29153c23f74d89afbd7226d78a5392f705bf58862b",
+      "bytes": 6431
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/audio/music.ts",
+      "sha256": "2104b95439de2de5f6855188def7502db4683439401b6d1cd992a59cd7afdb8b",
+      "bytes": 2854
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/audio/sfx.ts",
+      "sha256": "d0e025472bd8701f9139d359c919db0df2f3a3d43bec5e2f8a505c90228eb35c",
+      "bytes": 10449
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/characters.test.ts",
+      "sha256": "6ccbb91d97daaf84f3a8d10f05309282a47a48bb052bab490fb5ee8d4b538b73",
+      "bytes": 2080
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/characters.ts",
+      "sha256": "bb02629e114917e0761d7212590cd21aa7defd7b19f5aed5a1e14ab751398661",
+      "bytes": 7553
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/commands.test.ts",
+      "sha256": "a8c3079f7de500d40cd8b5adc31a3ddb7a9195ee1047ded01dce1971e602579b",
+      "bytes": 1913
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/commands.ts",
+      "sha256": "48c4b560f43b50b2cdd6df658da4d2e882f771463284f93bba855f888375526b",
+      "bytes": 16848
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/content.ts",
+      "sha256": "01a6c315457d97246072a132a30f6d16b9db8b88095e5b82bc490baf309b4fd0",
+      "bytes": 3035
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/entities/enemies/ai.ts",
+      "sha256": "fea2a668da8685abc3fbaee3e6c2e48ed70e07b1e9ec3a3495883952ab2201fa",
+      "bytes": 9653
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/entities/enemies/catalog.ts",
+      "sha256": "fdeea7322bf83b917d3da537d6aae8d59c29032d9b5b52521c29bfa662b8f5a8",
+      "bytes": 10378
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/entities/enemies/hazardAura.test.ts",
+      "sha256": "f8a9e62aee4c1897e2074abc1b0efd2b60002f3c5aae3c2522da6e7556d347dc",
+      "bytes": 3309
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/entities/enemies/hazardAura.ts",
+      "sha256": "f3543837a3900bcbf4290cac62164abf9d5dfddda594531455aca43b28796d23",
+      "bytes": 3400
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/entities/enemies/loot-tables.ts",
+      "sha256": "327a8bbb7ad9be5c0ae1cf9b206670028af8df44d5d17fe269b2805acdf4173f",
+      "bytes": 1381
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/entities/players/catalog.ts",
+      "sha256": "8708ecbad190bb24706870aba61e505987676d194e85a0367929cdfcd11e6858",
+      "bytes": 1478
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/feel.test.ts",
+      "sha256": "fc3502fe5fd849806972cfae92b90bacde8c575db043d8b884334456b74007de",
+      "bytes": 2235
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/feel.ts",
+      "sha256": "cab0e47177c960c374b3a22b1642d643170d1e8f012a9dd92173120cf9559ac8",
+      "bytes": 3388
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/handroll/elements.ts",
+      "sha256": "f097dd58e40315522bf2fedcc090334d86ab1c94e97c99e97e6e52597eceeea2",
+      "bytes": 4158
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/handroll/guns.ts",
+      "sha256": "fd631ac2eef6923726af241f849663a3d4b082735433835b18605a0e72dea521",
+      "bytes": 6180
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/handroll/index.ts",
+      "sha256": "146e88d70782e085997f705c0d10bdbe298c8e87a16385e7b762a22528340652",
+      "bytes": 159
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/handroll/magazines.ts",
+      "sha256": "69d10bf8516bf146b20e418b1df7db945f46e0e7cd87add953e2d109d885d6b1",
+      "bytes": 4713
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/handroll/reserve.ts",
+      "sha256": "e85d458794938565c7b42a768f01d6079047640181ddf3b7a0b1f23c114e4536",
+      "bytes": 1983
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/handroll/roll.ts",
+      "sha256": "5c18487e04008ed469b8681e7e67143d3e38bb6852106f821982ebcd254cd1d3",
+      "bytes": 7241
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/handroll/shields.ts",
+      "sha256": "03867d21e5b17a8aa3d816a294b18b64014aede3d18504c0337ba1fcac70481f",
+      "bytes": 3516
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/handroll.test.ts",
+      "sha256": "b20bda425720f0c2c9667bf2788e3db5edc7d5976ddf71457074104ce35369b0",
+      "bytes": 4795
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/inventories.ts",
+      "sha256": "ace5be1d126182fb671d9fabdc871f3bebfee7eb80dbce3551684c44dfcaf8b1",
+      "bytes": 213
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/items/gear/catalog.ts",
+      "sha256": "db987d0a34d5800ca6015441974fffe1bf9307f2a529a417ea1483a5cecd3161",
+      "bytes": 1921
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/items/use-handlers.ts",
+      "sha256": "4c94b898a3268dc4cdc171beaa300086039f83fce5ba5240485ad475fd99bbd6",
+      "bytes": 8272
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/items/weapons/catalog.ts",
+      "sha256": "116b4e7767999564d03bb7c026b995bb5a29f692efaf6e4e249fec9f549fd2a1",
+      "bytes": 339
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/keybinds.ts",
+      "sha256": "381c3f0d747e35cef2588e0826d6f52fb63bee332f838bd825c8456b15a9977a",
+      "bytes": 587
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/loadouts.ts",
+      "sha256": "a1ef2422bd074b1d4f92cdbc8c0b8fe2395df79e696af8d291ce982d16e3feb2",
+      "bytes": 369
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/magazines.test.ts",
+      "sha256": "28d7f8448b90b2496d9f04dbc3eccc6f70fa56a1431f1ccc2545c0a903fed79c",
+      "bytes": 5132
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/objects/catalog.ts",
+      "sha256": "8c3c3d239ff55cd2e9436a48b577421d24ed38ff2cccf9c1482515662fb8d1ab",
+      "bytes": 2222
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/palette.ts",
+      "sha256": "f8cf0b6e79fe755ab51fc3f649dd0572bb627e487c3415c7401a3935dc128123",
+      "bytes": 2975
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/progression/curves.ts",
+      "sha256": "6296c9de28c3d02430ad20a9c0539aa3b556848b0398e7ec8b480917c3df4ec1",
+      "bytes": 928
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/quests/catalog.ts",
+      "sha256": "692a05d57a237298bb4c09ee0bfbab3160a85d99947ec3c367d8438710216d89",
+      "bytes": 6763
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/relay.test.ts",
+      "sha256": "4200eaa30c01a7e18b0ea47aa2abdffab728ba339796a847e2c53f7ddf4f6b1c",
+      "bytes": 4934
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/relay.ts",
+      "sha256": "50e0578406ebc54a5b41c910952b37f4048be0063ebbf9da4210d69968d39751",
+      "bytes": 5432
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/save.test.ts",
+      "sha256": "541e628f20cea5a51a2e642c02793d40ff9e2e32849cf8fed7d56bbd5ae10a93",
+      "bytes": 5218
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/saveCompatibility.ts",
+      "sha256": "f702d7354e718746c023cfb339afffc63631eee612a1a8d7a7b24c20ee980bec",
+      "bytes": 14025
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/session.ts",
+      "sha256": "9eb344d7a269cba27f66533fd9ff65c708e17df1657c9dd1a9e3d47d5a4e0aa6",
+      "bytes": 441
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/shields.test.ts",
+      "sha256": "7190e47f9a7d6187d4c73ac9d8571c36e4184799f20ad0770ba702cd24b2382e",
+      "bytes": 8138
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/stores.ts",
+      "sha256": "9e77d4e54a78250b63a40244e8d4e75f236ea42bfd75b81229ef1c6e57345bfe",
+      "bytes": 1748
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/ui/GameUI.tsx",
+      "sha256": "76d8b5c49ccd51ac9ff9b019d7bb30dc67c6c1ba5bdcef93c785e46aa8c56a7a",
+      "bytes": 3632
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/ui/components/Feedback.tsx",
+      "sha256": "7a97308a027b072f71cdcc90df2cd58698f9e4797631cbb62f083b449d2b5b55",
+      "bytes": 2296
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/ui/components/Mission.tsx",
+      "sha256": "f794e83e1c16e61918df38d8da3a673d077a8554f27dc2d79a8e5e5e340d4fa0",
+      "bytes": 2195
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/ui/components/Operations.tsx",
+      "sha256": "dc623dbdfa4f06abc6b71b4b9bde4c957604923b1417e13f0d3288b007b08faf",
+      "bytes": 7042
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/ui/components/Overlays.tsx",
+      "sha256": "bfe1e725c622a6bd905f68cc3fa0ae46b846cfe0dcd365a627250319d120a688",
+      "bytes": 5985
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/ui/components/Portrait.tsx",
+      "sha256": "f52cef0985d2eab139adb37623f560d3ce8b632418bef544949a51bb6d4f52b6",
+      "bytes": 1733
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/ui/components/Talents.tsx",
+      "sha256": "5a7c113cc79d91b0edeec54172c1649054fffa0daf053b474d9642c6f11260e1",
+      "bytes": 7315
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/ui/components/Vitals.tsx",
+      "sha256": "d2385018fef12e9cec513e757343b3d37cd35a4212f708c668a4d952a71f9a57",
+      "bytes": 2177
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/ui/components/Weapon.tsx",
+      "sha256": "3870994e2eef4f0256a4b1eebef52d471faae1d352c94f140d3da547cdc036c8",
+      "bytes": 6002
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/ui/components/World.tsx",
+      "sha256": "2bf6f6ca0c7a5d722b09451b678d2c62d9d53d8942b70aa421c0225eb477a853",
+      "bytes": 7236
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/world/Relay.tsx",
+      "sha256": "61a3b38e6445d8276e4b258e8f8fb2c43e3b339d5369eae95fe1a925f1c99e17",
+      "bytes": 3833
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/world/Viewmodel.tsx",
+      "sha256": "ce1d475635ab8bf0ddb527e621eb50e6da3b70ccaa963bada8fb58b434d5264e",
+      "bytes": 17970
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/world/air.test.ts",
+      "sha256": "4402ebe376fc9f3700db51bc0c69936425c436bf99b5486dd1a6d64ed3c5ad7e",
+      "bytes": 1210
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/world/air.ts",
+      "sha256": "3665a707dedf44f2116d687c68c8a860fff2e9bcb3b8612fc908c5e01ae263d5",
+      "bytes": 1636
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/world/buildingKit.ts",
+      "sha256": "1ce4061ecc0aeddbdbca7f84030ba5927572cbbbf8b7069ce5bb1173ecd06ce5",
+      "bytes": 3228
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/world/level.test.ts",
+      "sha256": "ba97c8bd757bfacec33bf40de361a1d8a89ef721bf909e717ed327c6acddd3af",
+      "bytes": 5833
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/world/level.ts",
+      "sha256": "5183ae40d93ce3ba31d6d9286f940a7739f8de429a94d46b30e71de31cebea58",
+      "bytes": 8403
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/world/models.ts",
+      "sha256": "a2faf347f83bf2d78ef8b901cc9f3828707da999917558c09935cae21fa0d43f",
+      "bytes": 17594
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/world/robots.ts",
+      "sha256": "56a12c1b98fdb855d7d41f87a46a7993315ef4ef18269807e69389afbcf00d94",
+      "bytes": 5344
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/world/scrap-signal.world.test.ts",
+      "sha256": "e81718a721190e5b2f96b5c7a4151d7489a8745ccbe0e1a16bc9c926842c4c32",
+      "bytes": 10573
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/world/setup.ts",
+      "sha256": "4ad482e91a34f7971bb5a669b5495e03be0b8875073a3da515220ef95a930ced",
+      "bytes": 5505
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/world/sites.ts",
+      "sha256": "0603181cbb09fed963249a5390aa7ad2182f876263baaa8903f00a8785172a10",
+      "bytes": 2275
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game/world/zones.ts",
+      "sha256": "2b9dc5e32c4b5d88b014c1f95e96d1be6b5d159455cc2a0328590567cb8c544f",
+      "bytes": 7659
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/game.config.ts",
+      "sha256": "d28f5d2e28630c562b04513466c44775bddfe08763c6d046178d9501e3fec40e",
+      "bytes": 11160
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/index.css",
+      "sha256": "9a745cb250c270b689b06e763ba2d74ba5e67f728cbd2267d982917531c1bb47",
+      "bytes": 142
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/index.tsx",
+      "sha256": "bbe274246357967f70d43132397682bb1b2e454a37337eabc65100337af65f1f",
+      "bytes": 85
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/loop.ts",
+      "sha256": "0f8f9c43a8023ddf1bd05c578491871467c4057cda2fc80ad3a46bb200dc44d8",
+      "bytes": 12151
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/main.tsx",
+      "sha256": "a14e30b780da627280212b3d78192e74d7bfb9a0cd32b8f3ff4f85d8887a5e6a",
+      "bytes": 407
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/preview.tsx",
+      "sha256": "09152acf889de2a6aa3dfa7067df649e6e483abb7ce1a2aa68d03142274ec3c7",
+      "bytes": 960
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/style.css",
+      "sha256": "387ec000ca471796698c01e024293e31c9b87e96c78cb2f8c74d61f3ab360f00",
+      "bytes": 5913
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21/original-scrap-src/world.ts",
+      "sha256": "7df8791d3ef7aa1ab96f1b23e8bc50f051f75b014b7f67a1a758036a1780446a",
+      "bytes": 12539
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/Knight.glb",
+      "sha256": "60428e3abc09ba83e595d256e3af8c5c976b46cdae599f0802fc82b4a3445168",
+      "bytes": 3659532
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/before-execution-provenance.json",
+      "sha256": "c4a43349bcb548b952ee3990e7ae37f7bb169f75aadcbbfa7b41d596264a41f6",
+      "bytes": 26020
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/before-result.json",
+      "sha256": "686e1b72fb667738d4cd8ea651ca8933a17e36cd04f49567c484237de583e32d",
+      "bytes": 29108
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/candidate-package-manifest.json",
+      "sha256": "fb202289722d8afec79ce6b6fa8ec2e29c9233f739ff56bcd272c63cfa9ef8cb",
+      "bytes": 5127
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/executed-public-before.ts",
+      "sha256": "f3e6a3b65b6c19d489a86ed2c25ae1e2ae6eef3b872e7af6e61da414464a962f",
+      "bytes": 9212
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/invalid-auto-saved-document.json",
+      "sha256": "9798af60840ff82784c8ed68faf1beddb1c3359ba5be16cc56f1f7ab53e71199",
+      "bytes": 734
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/invalid-clip-saved-document.json",
+      "sha256": "3f79352f13452f8d35ecf5073c215e67e964c5de6f8c66918f7723f59f2cf117",
+      "bytes": 704
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/invalid-clock-saved-document.json",
+      "sha256": "b2c7686f464a264e1a8f0484a3693d657df49da1eaa0e409bd3777be4b158c3b",
+      "bytes": 740
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/modules/@jgengine__core__editor__commands",
+      "sha256": "246f96705073a89eec247c86f8775271a8d03e0c349ba75ac1085bae2bae75ba",
+      "bytes": 24843
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/modules/@jgengine__core__editor__document",
+      "sha256": "8dacca438ad0c4425eae1f83e88e8dd459275cb7dc05b73d3d3ae600fa371f71",
+      "bytes": 64713
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/modules/@jgengine__core__game__clipRoles",
+      "sha256": "16d922b18d9540491424ec7d497c12749cda976aa1caa2ff05ffa8c4b03c2755",
+      "bytes": 5934
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/modules/@jgengine__core__game__defineGame",
+      "sha256": "30b9173ae2af85691166c0f4db6c6999565ad2b2bfb43bfabd9d24c2d9ff45d7",
+      "bytes": 2691
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/modules/@jgengine__core__runtime__gameContext",
+      "sha256": "509fb073e0d4922f5a5131a2a7b3ba8b03c7eaaca8f37faa7817311aa36640b7",
+      "bytes": 28568
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/modules/@jgengine__core__world__authoredAnimation",
+      "sha256": "9cabe8277c0f8d9c4a9b8d4ac112ccb054ca64a40812346bb579644ad891d94f",
+      "bytes": 4983
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/modules/@jgengine__core__world__authoredObjects",
+      "sha256": "59b8f3cd4ebb7dc9ee65d3713947e431b65251a7e49eae4f5408947db7b49de9",
+      "bytes": 6144
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/modules/@jgengine__editor__InspectorPanel",
+      "sha256": "3b80b50d3fe32a47c1ec9f12629775542d6dc108d664f021b1dddd270b1a70de",
+      "bytes": 51651
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/modules/@jgengine__editor__modelAnimationAuthoring",
+      "sha256": "75fa8b972332072b81e87592da78972bb7aaecbae112bda268bdc9b0fe59ed00",
+      "bytes": 10469
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/modules/@jgengine__editor__uiStore",
+      "sha256": "55cb8bc61cefca750bf17b795bc97a1572d2c4c2a1ca8a0d90c31bc713ac0cba",
+      "bytes": 4970
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/modules/@jgengine__react__provider",
+      "sha256": "b987bca2e8a8b5cc4a90caece62c1e6081d12e33f5c005e9d9205cbab5b95f08",
+      "bytes": 1786
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/modules/@jgengine__shell__render__resolveModel",
+      "sha256": "3a402f9686c81afc6eee1eb5d3a961ce9cda6ac9f95cc895401aa037d9967106",
+      "bytes": 7170
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/modules/react",
+      "sha256": "60caffdecbdc5db3bc4ec4e83df9488345ccb271d07533b9210bf5750918d97e",
+      "bytes": 186
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/modules/react-dom__server",
+      "sha256": "66df58720c7b932800151fdcfd6c494c312ca80b18814a2ee4a39389715f9ce2",
+      "bytes": 559
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/modules/three__examples__jsm__libs__meshopt_decoder.module.js",
+      "sha256": "784315b6959c85459eab77f51776158cc381d7e7d77b919ff7c4935f088a7c5c",
+      "bytes": 24848
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/modules/three__examples__jsm__loaders__GLTFLoader.js",
+      "sha256": "a2d45c28c56774cc789b99154e914c34db3197f9ea2b89fee27600cc2509b14f",
+      "bytes": 114883
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-authored-document.json",
+      "sha256": "8d474aeeb452210ebc8d3c193d252e2aee480ebe932336b2e52ade64a865a8b8",
+      "bytes": 710
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/editor.scene.json",
+      "sha256": "cdd7c8f34d47ba9dfd55f2f436c24fe28cd43dcf31ec6e1fdb138f51c5809266",
+      "bytes": 193782
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/editorLayers.test.ts",
+      "sha256": "653a7dc51b61cfbd2e9b10a3d6f922d29ad8a77b5ed64bc47031da3749aed431",
+      "bytes": 1219
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/editorLayers.ts",
+      "sha256": "37cd5c81eeb54dac4088bbf78b9dbcbe508ceeda085a84861df8d28f10b5f4d6",
+      "bytes": 4007
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/ammo.ts",
+      "sha256": "6748e90f8654aeebe51dafc580dbcf833ad4ca676ab1419d9c3da1bc8e944937",
+      "bytes": 868
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/assets.ts",
+      "sha256": "6f543f7376b3e0b50a6de60402cb9f8c8a4916cfddfb2e9434eb90dd50573bbb",
+      "bytes": 4903
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/audio/catalog.ts",
+      "sha256": "83d6491a692481e2a98633ec3b0d1a5d7ef148e96ede191724a83a595866011e",
+      "bytes": 2195
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/audio/drive.test.ts",
+      "sha256": "32e2d192d8da2c1d6047481dfa4a3ef3c07acfa377d1e7324f96b6283b835dfa",
+      "bytes": 6273
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/audio/drive.ts",
+      "sha256": "9d744659181a72d1bd8dfa29153c23f74d89afbd7226d78a5392f705bf58862b",
+      "bytes": 6431
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/audio/music.ts",
+      "sha256": "2104b95439de2de5f6855188def7502db4683439401b6d1cd992a59cd7afdb8b",
+      "bytes": 2854
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/audio/sfx.ts",
+      "sha256": "d0e025472bd8701f9139d359c919db0df2f3a3d43bec5e2f8a505c90228eb35c",
+      "bytes": 10449
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/characters.test.ts",
+      "sha256": "6ccbb91d97daaf84f3a8d10f05309282a47a48bb052bab490fb5ee8d4b538b73",
+      "bytes": 2080
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/characters.ts",
+      "sha256": "bb02629e114917e0761d7212590cd21aa7defd7b19f5aed5a1e14ab751398661",
+      "bytes": 7553
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/commands.test.ts",
+      "sha256": "a8c3079f7de500d40cd8b5adc31a3ddb7a9195ee1047ded01dce1971e602579b",
+      "bytes": 1913
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/commands.ts",
+      "sha256": "48c4b560f43b50b2cdd6df658da4d2e882f771463284f93bba855f888375526b",
+      "bytes": 16848
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/content.ts",
+      "sha256": "01a6c315457d97246072a132a30f6d16b9db8b88095e5b82bc490baf309b4fd0",
+      "bytes": 3035
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/entities/enemies/ai.ts",
+      "sha256": "fea2a668da8685abc3fbaee3e6c2e48ed70e07b1e9ec3a3495883952ab2201fa",
+      "bytes": 9653
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/entities/enemies/catalog.ts",
+      "sha256": "fdeea7322bf83b917d3da537d6aae8d59c29032d9b5b52521c29bfa662b8f5a8",
+      "bytes": 10378
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/entities/enemies/hazardAura.test.ts",
+      "sha256": "f8a9e62aee4c1897e2074abc1b0efd2b60002f3c5aae3c2522da6e7556d347dc",
+      "bytes": 3309
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/entities/enemies/hazardAura.ts",
+      "sha256": "f3543837a3900bcbf4290cac62164abf9d5dfddda594531455aca43b28796d23",
+      "bytes": 3400
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/entities/enemies/loot-tables.ts",
+      "sha256": "327a8bbb7ad9be5c0ae1cf9b206670028af8df44d5d17fe269b2805acdf4173f",
+      "bytes": 1381
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/entities/players/catalog.ts",
+      "sha256": "8708ecbad190bb24706870aba61e505987676d194e85a0367929cdfcd11e6858",
+      "bytes": 1478
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/feel.test.ts",
+      "sha256": "fc3502fe5fd849806972cfae92b90bacde8c575db043d8b884334456b74007de",
+      "bytes": 2235
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/feel.ts",
+      "sha256": "cab0e47177c960c374b3a22b1642d643170d1e8f012a9dd92173120cf9559ac8",
+      "bytes": 3388
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/handroll/elements.ts",
+      "sha256": "f097dd58e40315522bf2fedcc090334d86ab1c94e97c99e97e6e52597eceeea2",
+      "bytes": 4158
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/handroll/guns.ts",
+      "sha256": "fd631ac2eef6923726af241f849663a3d4b082735433835b18605a0e72dea521",
+      "bytes": 6180
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/handroll/index.ts",
+      "sha256": "146e88d70782e085997f705c0d10bdbe298c8e87a16385e7b762a22528340652",
+      "bytes": 159
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/handroll/magazines.ts",
+      "sha256": "69d10bf8516bf146b20e418b1df7db945f46e0e7cd87add953e2d109d885d6b1",
+      "bytes": 4713
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/handroll/reserve.ts",
+      "sha256": "e85d458794938565c7b42a768f01d6079047640181ddf3b7a0b1f23c114e4536",
+      "bytes": 1983
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/handroll/roll.ts",
+      "sha256": "5c18487e04008ed469b8681e7e67143d3e38bb6852106f821982ebcd254cd1d3",
+      "bytes": 7241
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/handroll/shields.ts",
+      "sha256": "03867d21e5b17a8aa3d816a294b18b64014aede3d18504c0337ba1fcac70481f",
+      "bytes": 3516
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/handroll.test.ts",
+      "sha256": "b20bda425720f0c2c9667bf2788e3db5edc7d5976ddf71457074104ce35369b0",
+      "bytes": 4795
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/inventories.ts",
+      "sha256": "ace5be1d126182fb671d9fabdc871f3bebfee7eb80dbce3551684c44dfcaf8b1",
+      "bytes": 213
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/items/gear/catalog.ts",
+      "sha256": "db987d0a34d5800ca6015441974fffe1bf9307f2a529a417ea1483a5cecd3161",
+      "bytes": 1921
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/items/use-handlers.ts",
+      "sha256": "4c94b898a3268dc4cdc171beaa300086039f83fce5ba5240485ad475fd99bbd6",
+      "bytes": 8272
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/items/weapons/catalog.ts",
+      "sha256": "116b4e7767999564d03bb7c026b995bb5a29f692efaf6e4e249fec9f549fd2a1",
+      "bytes": 339
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/keybinds.ts",
+      "sha256": "381c3f0d747e35cef2588e0826d6f52fb63bee332f838bd825c8456b15a9977a",
+      "bytes": 587
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/loadouts.ts",
+      "sha256": "a1ef2422bd074b1d4f92cdbc8c0b8fe2395df79e696af8d291ce982d16e3feb2",
+      "bytes": 369
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/magazines.test.ts",
+      "sha256": "28d7f8448b90b2496d9f04dbc3eccc6f70fa56a1431f1ccc2545c0a903fed79c",
+      "bytes": 5132
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/objects/catalog.ts",
+      "sha256": "8c3c3d239ff55cd2e9436a48b577421d24ed38ff2cccf9c1482515662fb8d1ab",
+      "bytes": 2222
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/palette.ts",
+      "sha256": "f8cf0b6e79fe755ab51fc3f649dd0572bb627e487c3415c7401a3935dc128123",
+      "bytes": 2975
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/progression/curves.ts",
+      "sha256": "6296c9de28c3d02430ad20a9c0539aa3b556848b0398e7ec8b480917c3df4ec1",
+      "bytes": 928
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/quests/catalog.ts",
+      "sha256": "692a05d57a237298bb4c09ee0bfbab3160a85d99947ec3c367d8438710216d89",
+      "bytes": 6763
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/relay.test.ts",
+      "sha256": "4200eaa30c01a7e18b0ea47aa2abdffab728ba339796a847e2c53f7ddf4f6b1c",
+      "bytes": 4934
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/relay.ts",
+      "sha256": "50e0578406ebc54a5b41c910952b37f4048be0063ebbf9da4210d69968d39751",
+      "bytes": 5432
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/save.test.ts",
+      "sha256": "541e628f20cea5a51a2e642c02793d40ff9e2e32849cf8fed7d56bbd5ae10a93",
+      "bytes": 5218
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/saveCompatibility.ts",
+      "sha256": "f702d7354e718746c023cfb339afffc63631eee612a1a8d7a7b24c20ee980bec",
+      "bytes": 14025
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/session.ts",
+      "sha256": "9eb344d7a269cba27f66533fd9ff65c708e17df1657c9dd1a9e3d47d5a4e0aa6",
+      "bytes": 441
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/shields.test.ts",
+      "sha256": "7190e47f9a7d6187d4c73ac9d8571c36e4184799f20ad0770ba702cd24b2382e",
+      "bytes": 8138
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/stores.ts",
+      "sha256": "9e77d4e54a78250b63a40244e8d4e75f236ea42bfd75b81229ef1c6e57345bfe",
+      "bytes": 1748
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/ui/GameUI.tsx",
+      "sha256": "76d8b5c49ccd51ac9ff9b019d7bb30dc67c6c1ba5bdcef93c785e46aa8c56a7a",
+      "bytes": 3632
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/ui/components/Feedback.tsx",
+      "sha256": "7a97308a027b072f71cdcc90df2cd58698f9e4797631cbb62f083b449d2b5b55",
+      "bytes": 2296
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/ui/components/Mission.tsx",
+      "sha256": "f794e83e1c16e61918df38d8da3a673d077a8554f27dc2d79a8e5e5e340d4fa0",
+      "bytes": 2195
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/ui/components/Operations.tsx",
+      "sha256": "dc623dbdfa4f06abc6b71b4b9bde4c957604923b1417e13f0d3288b007b08faf",
+      "bytes": 7042
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/ui/components/Overlays.tsx",
+      "sha256": "bfe1e725c622a6bd905f68cc3fa0ae46b846cfe0dcd365a627250319d120a688",
+      "bytes": 5985
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/ui/components/Portrait.tsx",
+      "sha256": "f52cef0985d2eab139adb37623f560d3ce8b632418bef544949a51bb6d4f52b6",
+      "bytes": 1733
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/ui/components/Talents.tsx",
+      "sha256": "5a7c113cc79d91b0edeec54172c1649054fffa0daf053b474d9642c6f11260e1",
+      "bytes": 7315
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/ui/components/Vitals.tsx",
+      "sha256": "d2385018fef12e9cec513e757343b3d37cd35a4212f708c668a4d952a71f9a57",
+      "bytes": 2177
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/ui/components/Weapon.tsx",
+      "sha256": "3870994e2eef4f0256a4b1eebef52d471faae1d352c94f140d3da547cdc036c8",
+      "bytes": 6002
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/ui/components/World.tsx",
+      "sha256": "2bf6f6ca0c7a5d722b09451b678d2c62d9d53d8942b70aa421c0225eb477a853",
+      "bytes": 7236
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/world/Relay.tsx",
+      "sha256": "61a3b38e6445d8276e4b258e8f8fb2c43e3b339d5369eae95fe1a925f1c99e17",
+      "bytes": 3833
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/world/Viewmodel.tsx",
+      "sha256": "ce1d475635ab8bf0ddb527e621eb50e6da3b70ccaa963bada8fb58b434d5264e",
+      "bytes": 17970
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/world/air.test.ts",
+      "sha256": "4402ebe376fc9f3700db51bc0c69936425c436bf99b5486dd1a6d64ed3c5ad7e",
+      "bytes": 1210
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/world/air.ts",
+      "sha256": "3665a707dedf44f2116d687c68c8a860fff2e9bcb3b8612fc908c5e01ae263d5",
+      "bytes": 1636
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/world/buildingKit.ts",
+      "sha256": "1ce4061ecc0aeddbdbca7f84030ba5927572cbbbf8b7069ce5bb1173ecd06ce5",
+      "bytes": 3228
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/world/level.test.ts",
+      "sha256": "ba97c8bd757bfacec33bf40de361a1d8a89ef721bf909e717ed327c6acddd3af",
+      "bytes": 5833
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/world/level.ts",
+      "sha256": "5183ae40d93ce3ba31d6d9286f940a7739f8de429a94d46b30e71de31cebea58",
+      "bytes": 8403
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/world/models.ts",
+      "sha256": "a2faf347f83bf2d78ef8b901cc9f3828707da999917558c09935cae21fa0d43f",
+      "bytes": 17594
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/world/robots.ts",
+      "sha256": "56a12c1b98fdb855d7d41f87a46a7993315ef4ef18269807e69389afbcf00d94",
+      "bytes": 5344
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/world/scrap-signal.world.test.ts",
+      "sha256": "e81718a721190e5b2f96b5c7a4151d7489a8745ccbe0e1a16bc9c926842c4c32",
+      "bytes": 10573
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/world/setup.ts",
+      "sha256": "4ad482e91a34f7971bb5a669b5495e03be0b8875073a3da515220ef95a930ced",
+      "bytes": 5505
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/world/sites.ts",
+      "sha256": "0603181cbb09fed963249a5390aa7ad2182f876263baaa8903f00a8785172a10",
+      "bytes": 2275
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game/world/zones.ts",
+      "sha256": "2b9dc5e32c4b5d88b014c1f95e96d1be6b5d159455cc2a0328590567cb8c544f",
+      "bytes": 7659
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/game.config.ts",
+      "sha256": "d28f5d2e28630c562b04513466c44775bddfe08763c6d046178d9501e3fec40e",
+      "bytes": 11160
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/index.css",
+      "sha256": "9a745cb250c270b689b06e763ba2d74ba5e67f728cbd2267d982917531c1bb47",
+      "bytes": 142
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/index.tsx",
+      "sha256": "bbe274246357967f70d43132397682bb1b2e454a37337eabc65100337af65f1f",
+      "bytes": 85
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/loop.ts",
+      "sha256": "0f8f9c43a8023ddf1bd05c578491871467c4057cda2fc80ad3a46bb200dc44d8",
+      "bytes": 12151
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/main.tsx",
+      "sha256": "a14e30b780da627280212b3d78192e74d7bfb9a0cd32b8f3ff4f85d8887a5e6a",
+      "bytes": 407
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/preview.tsx",
+      "sha256": "09152acf889de2a6aa3dfa7067df649e6e483abb7ce1a2aa68d03142274ec3c7",
+      "bytes": 960
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/style.css",
+      "sha256": "387ec000ca471796698c01e024293e31c9b87e96c78cb2f8c74d61f3ab360f00",
+      "bytes": 5913
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/executed-99a01a21-v2/original-scrap-src/world.ts",
+      "sha256": "7df8791d3ef7aa1ab96f1b23e8bc50f051f75b014b7f67a1a758036a1780446a",
+      "bytes": 12539
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/public-before-v2.ts",
+      "sha256": "f3e6a3b65b6c19d489a86ed2c25ae1e2ae6eef3b872e7af6e61da414464a962f",
+      "bytes": 9212
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-before/public-before.ts",
+      "sha256": "52212ce7d65429e282a268ff3b1e56d51ee39e0825b3f733f44a241fa16c3652",
+      "bytes": 9209
+    }
+  ],
+  "scope": "Existing native-authored Knight proof placement in Scrap-based doc, not a shipping character placement. Fresh public staticresolver/model/playback boundaries and SSRInspector with actual76clip importedKnight; no actualhook/nativeappearance acceptance."
+}

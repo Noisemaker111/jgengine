@@ -1,0 +1,12 @@
+{
+  "remoteHead": "16d497e504950e8c1bfcbc63661f36a0078310ff",
+  "remoteTree": "a52ba2db848cf40980abce7060658a39003bb0fd",
+  "parents": [
+    "8677b7285773742e73c66319cc4592b7026d303a"
+  ],
+  "localBuiltHead": "ecb938cd8e53c7baad3d076cbae9c26f7d2c0497",
+  "localBuiltTree": "a52ba2db848cf40980abce7060658a39003bb0fd",
+  "wholeTreeEqualityVerified": true,
+  "verification": "Read-only GitHub Git commit API and exact frozen local Git tree; no source refs changed.",
+  "limits": "Initial provenance audit only; consumer/rig joins and CI pending, no native appearance or adoption claim."
+}

@@ -1,0 +1,13 @@
+{
+  "reviewUtc": "2026-10-04T06:33:37.966827+00:00",
+  "consumerReportSha256": "0541f22e5a4f0a73d400216a827015a032538114b955e06e7fbd0b9e19a051aa",
+  "allArtifactHashesVerified": 59,
+  "allSavedBeforeAfterFrozenFilesVerified": {
+    "before": 212,
+    "after": 113
+  },
+  "sourceReview": "Root and independent movement review approved; scoped core strict value factoring and static resolver, existing shell warning/placement lifecycle",
+  "owningSourceAtFinalCommit": "ecb938cd8e53c7baad3d076cbae9c26f7d2c0497",
+  "tree": "a52ba2db848cf40980abce7060658a39003bb0fd",
+  "scope": "Configuration/default/diagnostics and manual real-rig numerical proof only; existing authored Knight proof marker separate shipping actors; no native appearance, feel, hardware FPS, release or adoption claim"
+}

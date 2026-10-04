@@ -1,0 +1,114 @@
+{
+  "classification": "Pass13 frozen public-package consumer validation/diagnostics evidence; unreleased source candidate, no published adoption or new native claim",
+  "builtSource": {
+    "commit": "ecb938cd8e53c7baad3d076cbae9c26f7d2c0497",
+    "tree": "a52ba2db848cf40980abce7060658a39003bb0fd",
+    "base": "8677b7285773742e73c66319cc4592b7026d303a",
+    "cleanAtBuild": true,
+    "remoteWholeTreeEquivalentHead": "16d497e504950e8c1bfcbc63661f36a0078310ff",
+    "pr": 1972,
+    "manifest": {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/static-animation-validation/candidate-package-manifest.json",
+      "sha256": "53597cc99d8775d3a499ff32af54bf408e405f4afbeb1dc47af310a66c98de3f",
+      "bytes": 5231
+    },
+    "buildWorkflow": "28fresh ordered build/staging/normalpack stages passed with explicit SDK skills staging and source stability. Immutable compiled/package/source ledgers retained."
+  },
+  "independentAudit": {
+    "state": "Finalconsumer/source/publicrig/CI audit PASS",
+    "consumerReportSHA256": "0541f22e5a4f0a73d400216a827015a032538114b955e06e7fbd0b9e19a051aa",
+    "artifactHashesVerified": 59,
+    "owningBeforeFrozenFilesVerifiedUnchanged": 212,
+    "owningAfterFrozenFilesVerified": 113,
+    "hookProofLedgerFilesVerified": 387,
+    "actualImportedKnightClipCount": 76,
+    "hookBeforeCases": 5,
+    "hookAfterCases": 5,
+    "onlyBindPoseFailureBefore": "clip7 has no actions, no mixer and unchanged bind matrices",
+    "beforeClockAndAuto": "Existing paused Idle .75 preserved; not bind-pose failures",
+    "threeInvalidAfter": "Whole override omitted; exactcatalogauto default identity, Idle .5 and changing finite bone matrices",
+    "validPausedAndSignedEntireRecordsBitExact": true,
+    "sameHookProducersInputsAndGLBBytes": true,
+    "allConstructedMixersCleanup1Subscriptions0Errors0": true,
+    "originalSourceFilesVerified": 212,
+    "originalTrackedInputsVerified": 228,
+    "originalFullPlacedPropsAndModelMapsBitExact": 443,
+    "originalControlPropsByGame": {
+      "scrap": 403,
+      "lantern": 40
+    },
+    "installedPackages": 9,
+    "installedFilesByteVerified": 2548,
+    "all13TarballHashesVerified": true,
+    "sourceCI": {
+      "head": "16d497e504950e8c1bfcbc63661f36a0078310ff",
+      "run": 37182657573,
+      "attempt": 1,
+      "allSixChecksPass": true
+    },
+    "limits": [
+      "No new native capture, rigappearance, interactionfeel or hardwareFPS/performance claim. Earlier native provenance supplies this savedproofprop; this pass only uses exactdata and manualnumeric/SSR proof.",
+      "The Knight proof prop is not an adopted shippingactor. Original two-game full-world controls demonstrate unchanged valid consumers; malformed proof remains a separate authored-document requirement.",
+      "Headless importedasset textureblob warning is retained; no materialappearance inference.",
+      "Original fullLanternDawn validation blocker and oldfourtypeerrors remain untouched. Directfullworld resolution is not a successful normalSave loop.",
+      "Original rain/snow camera-volume warnings retained in full-world logs; environment-owned configuration not edited.",
+      "After-authoring receipt has one stale limits text mentioning99a; source/tree/manifest/module provenance and actual newpublicexecution are correctly ecb938cd. Frozen receipt retained without relabelling.",
+      "No SDK version/catalog/rootlock or game source/adapters changed. Candidate is not published package adoption."
+    ],
+    "actions": "Read-only storednumeric/Git/file/tar hashes only; no tests/builds/source edits/native captures."
+  },
+  "sourcePackageAudit": {
+    "commit": "ecb938cd8e53c7baad3d076cbae9c26f7d2c0497",
+    "tree": "a52ba2db848cf40980abce7060658a39003bb0fd",
+    "wholeTreeEquivalentRemote": "16d497e504950e8c1bfcbc63661f36a0078310ff",
+    "stages": 28,
+    "trackedGitFiles": 4041,
+    "tarballs": 13,
+    "tarEntries": 2644,
+    "compiledEntries": 2379,
+    "skillEntriesStagedAndFrozenGitVerified": 231
+  },
+  "preciseBeforeAndAfter": "Onlyclip7 yields noactions/unchangedbindmatrices before; badclock/auto preserve existingpausedIdle.75. Allthreeinvalidwholeoverrides omitted after, exactcatalogdefaultIdle.5 advances; validpaused/signed/order fullcases bitexact. Manualnumericactual76clipKnight proofprop, notshippingactor or appearanceclaim.",
+  "fullOriginalControls": "All443 resolvedprops/placements/defaultmodelmaps bitexact; only strictDiagnostics null\u2192[] on new supported API. Unchanged212sources/228inputs.",
+  "harnessFailuresPreserved": [
+    "Owningbefore malformedclip negative test failed first, then strictsharedreader integration",
+    "Beforev1 publiccaller wrongresolveObjectModelargumentorder; only harness call corrected in v2, source unchanged",
+    "Intermediate owningstore/context test fixture expected reset via stale oldstore; test corrected to use current replacementstore, placementpolicy unchanged"
+  ],
+  "attributionErratum": {
+    "receipt": {
+      "path": "/workspace/JGengine/.scratch/characters/static-animation-validation-after/executed-ecb938cd/after-result.json",
+      "sha256": "dd2434fc2df696e9ed804b0a7b48614bb97ee19b90d330c018196a86a4d6b7c4"
+    },
+    "field": "limits[-1]",
+    "recordedText": "Fresh unreleased99a candidate; no publishedadoption",
+    "correctText": "Fresh unreleased ecb938cd8e53c7baad3d076cbae9c26f7d2c0497 candidate; no published adoption",
+    "source": "ecb938cd8e53c7baad3d076cbae9c26f7d2c0497",
+    "tree": "a52ba2db848cf40980abce7060658a39003bb0fd",
+    "manifest": {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/static-animation-validation/candidate-package-manifest.json",
+      "sha256": "53597cc99d8775d3a499ff32af54bf408e405f4afbeb1dc47af310a66c98de3f",
+      "bytes": 5231
+    },
+    "reason": "Copied BEFORE limitation label survived in AFTER prose; source/tree/manifest/module provenance and executed assertions were correctly attributed to ecb13. Original frozen receipt is unchanged; no rerun or producer/source change."
+  },
+  "sourceCI": {
+    "head": "16d497e504950e8c1bfcbc63661f36a0078310ff",
+    "run": 37182657573,
+    "attempt": 1,
+    "allSixChecksPass": true,
+    "reportSHA256": "95ed25e6eadf4e493655649ee3bc51ae51071f555cf9f849106d1f14ea5037a8"
+  },
+  "CIReceiptOutsideConsumerReport": "Arrived after reportfreeze; original59hash report retained unchanged.",
+  "rootIndependentReviewIncluded": true,
+  "limitations": [
+    "No new native capture, rigappearance, interactionfeel or hardwareFPS/performance claim. Earlier native provenance supplies this savedproofprop; this pass only uses exactdata and manualnumeric/SSR proof.",
+    "The Knight proof prop is not an adopted shippingactor. Original two-game full-world controls demonstrate unchanged valid consumers; malformed proof remains a separate authored-document requirement.",
+    "Headless importedasset textureblob warning is retained; no materialappearance inference.",
+    "Original fullLanternDawn validation blocker and oldfourtypeerrors remain untouched. Directfullworld resolution is not a successful normalSave loop.",
+    "Original rain/snow camera-volume warnings retained in full-world logs; environment-owned configuration not edited.",
+    "After-authoring receipt has one stale limits text mentioning99a; source/tree/manifest/module provenance and actual newpublicexecution are correctly ecb938cd. Frozen receipt retained without relabelling.",
+    "No SDK version/catalog/rootlock or game source/adapters changed. Candidate is not published package adoption."
+  ],
+  "merge": "Not assumed; separate verified merge receipt follows."
+}

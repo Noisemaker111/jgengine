@@ -1,0 +1,66 @@
+{
+  "copiedOriginalReceipts": {
+    "source-delivery.json": "039128597a5c7efa0fad1a71fd162f298d95163adb51ea8c3cc59d54f7e147af",
+    "source-delivery-local.json": "8d2036f6420c1ba8f767c33e2c6d3ae85e38f0ce341ba9aed2f402362c47e0fb"
+  },
+  "verifiedLocalGitBlobs": [
+    {
+      "path": ".claude/skills/jgengine-world/api.md",
+      "gitBlobSHA": "2538a2e8fb56298f1108644d4af2270304eb65a6",
+      "bytes": 818937
+    },
+    {
+      "path": ".claude/skills/jgengine-world/capabilities.md",
+      "gitBlobSHA": "a7b06729642091af52a00ca5a6eefe45fd3e171f",
+      "bytes": 53320
+    },
+    {
+      "path": ".claude/skills/jgengine-world/recipes/character-animation.md",
+      "gitBlobSHA": "c3b5876347a149743c9cf1449b4beb28dcd6f2a2",
+      "bytes": 19315
+    },
+    {
+      "path": "changes/static-animation-validation.md",
+      "gitBlobSHA": "84358a99ed07bb3fb30e26a5abe328e2a03e8ba7",
+      "bytes": 276
+    },
+    {
+      "path": "packages/core/src/world/authoredAnimation.test.ts",
+      "gitBlobSHA": "80c65ed75723cc3b1e6f7b4106eb0a215540c490",
+      "bytes": 9820
+    },
+    {
+      "path": "packages/core/src/world/authoredAnimation.ts",
+      "gitBlobSHA": "697a8cf7cd28910ea8f972fb3a3291d857d334e4",
+      "bytes": 6263
+    },
+    {
+      "path": "packages/core/src/world/authoredObjects.test.ts",
+      "gitBlobSHA": "1fe5c6991d5dc7679939cf78ee30191080a724ac",
+      "bytes": 14619
+    },
+    {
+      "path": "packages/core/src/world/authoredObjects.ts",
+      "gitBlobSHA": "cdc1c4b9205c95f9c49c9c8708b0a0087b411274",
+      "bytes": 10149
+    },
+    {
+      "path": "packages/shell/src/scene/AuthoredScene.tsx",
+      "gitBlobSHA": "393227f2b81de0238a2071d1694cd4dcca1b5482",
+      "bytes": 16825
+    },
+    {
+      "path": "packages/shell/src/scene/AuthoredScenePlacement.test.ts",
+      "gitBlobSHA": "15d25184df18e1db2a0425d22f29b3fe0942ddc9",
+      "bytes": 10931
+    }
+  ],
+  "verifiedWholeLocalTree": "a52ba2db848cf40980abce7060658a39003bb0fd",
+  "rootReportedStandalonePushExit": 1,
+  "rootReportedStandalonePushFailure": "HTTP401",
+  "originalTerminalRawLog": "Not written here; no invented terminal output",
+  "delivery": "Original receipt records GitHub connector GitData exact10blobs/whole tree; remote16d497/proofactor distinction preserved",
+  "credentials": "No changes reported; none read or changed by this worker",
+  "nativeScope": "No new captures; validation/diagnostic numerical proof only, originalKnight proof marker separate from shipping actor; caps/host blockers unchanged",
+  "actions": "Read-only originals copy and localGit object verification; no push, rerun or source edits"
+}
