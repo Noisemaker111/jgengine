@@ -57,13 +57,15 @@ beforeAll(async () => {
   const { Scanner } = await import(Bun.resolveSync("@tailwindcss/oxide", tailwindImporter));
   const compiled = await compile(await Bun.file(stylePath).text(), { base: resolve(stylePath, ".."), from: stylePath, onDependency: () => {} });
   const css = compiled.build(new Scanner({ sources: compiled.sources }).scan());
-  server = Bun.serve({ hostname: "127.0.0.1", port: 0, fetch: (request) => {
+  server = Bun.serve({ hostname: "127.0.0.1", port: 0, fetch: (request, server) => {
     const path = new URL(request.url).pathname;
     if (path === "/hold-next-save") { holdNextSave = true; return Response.json({ ok: true }); }
     if (path === "/release-failed-save") { releaseFailedSave?.(); releaseFailedSave = null; return Response.json({ ok: true }); }
     if (path === "/save-check") {
       if (!holdNextSave) return Response.json({ ok: true });
       holdNextSave = false;
+      // The test releases this save explicitly; fixture cleanup also drains it.
+      server.timeout(request, 0);
       return new Promise<Response>((done) => { releaseFailedSave = () => done(Response.json({ ok: false, error: "Durable quota rejected" })); });
     }
     if (path === "/fixture.js") return new Response(script, { headers: { "content-type": "text/javascript" } });
