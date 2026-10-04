@@ -214,10 +214,12 @@
 - `AnimEvent` (interface): interface AnimEvent — A named moment inside a clip (foot plant, hit frame, reload point).
 - `AnimGraph` (interface): interface AnimGraph — Serializable animation graph. Clip durations come from the rig at runtime (see {@link AnimGraphClipInfo}).
 - `AnimGraphClipInfo` (type): type AnimGraphClipInfo = Readonly<Record<string, number | { duration: number; rootTrack?: { times: Float32Array; values: Float32Array } }>> — Per-clip duration in seconds, read from the loaded rig.
+- `AnimGraphDiagnostic` (interface): interface AnimGraphDiagnostic — A located, repairable error in an authored animation graph; paths are relative to the graph value.
 - `AnimGraphOutput` (interface): interface AnimGraphOutput — What one advance asks the rig to show.
 - `AnimGraphRuntime` (interface): interface AnimGraphRuntime — The evaluator handle: arm triggers, advance, inspect, snapshot and restore.
 - `AnimGraphRuntimeOptions` (interface): interface AnimGraphRuntimeOptions — Randomness used only when entering a clip state with variants. Omit to choose the first variant.
 - `AnimGraphState` (interface): interface AnimGraphState — Serializable evaluator state.
+- `AnimGraphValidation` (interface): interface AnimGraphValidation — The whole authored graph is retained unchanged only when every supported field is valid.
 - `AnimLayer` (interface): interface AnimLayer — A blend layer with its own state machine. Masked layers apply only to bones whose track names start with a prefix.
 - `AnimParamValue` (type): type AnimParamValue = number | boolean — Parameter value a graph reads: floats for blends and comparisons, booleans for gates.
 - `AnimParams` (type): type AnimParams = Readonly<Record<string, AnimParamValue>> — The parameter set a graph evaluates against each advance.
@@ -226,6 +228,7 @@
 - `createAnimGraphRuntime` (function): function createAnimGraphRuntime(initial: AnimGraph, options: AnimGraphRuntimeOptions = {}): AnimGraphRuntime — Headless animation state machine and blend evaluator. It owns every clip's playback time and weight, so the renderer only seeks and weights actions on a mixer, and headless hosts, replays, and tests advance the same graph without three.js. Transitions are data (parameter comparisons and consumed triggers), layers can be masked or additive, and events fire by clip time, including across loop wraps.
 - `parseAnimGraph` (function): function parseAnimGraph(value: unknown): AnimGraph | undefined — Validates untrusted JSON (a saved scene document, a network payload) as an {@link AnimGraph}. Malformed states, transitions to unknown states, and bad conditions are dropped; a layer whose entry state is missing is dropped; the result is `undefined` when no layer survives.
 - `stateClipWeights` (function): function stateClipWeights(state: AnimState, params: AnimParams): Record<string, number> — Static clip weights of a state at `params`, before any crossfade.
+- `validateAnimGraph` (function): function validateAnimGraph(value: unknown): AnimGraphValidation — Validate an authored graph without dropping broken combat states or weakening transition conditions. Known malformed fields and dangling references reject the whole graph with relative repair locations; valid data, including authored object/array order, is returned unchanged. Unknown extension fields are retained. Clip availability belongs to the imported-rig diagnostics. Use {@link parseAnimGraph} when permissive repair is intentional.
 
 ## @jgengine/core/anim/boneTexture
 
@@ -2960,6 +2963,14 @@
 - `withPathProfiles` (function): function withPathProfiles(base: (x: number, z: number) => number, profiles: readonly TerrainPathProfile[]): (x: number, z: number) => number — Wraps a height sampler so each authored `TerrainPathProfile` reshapes it. Profiles apply in list order (later profiles compose over earlier ones, so an intersection's last profile wins its core); each reads the running height as its surrounding ground and the original `base` for `sample` centerline heights. The returned sampler is pure and deterministic. Degenerate profiles (fewer than two points, non-positive width or length) are skipped; with no usable profile the original `base` is returned unchanged.
 - `world` (function): function world(config: PlaceConfig): PlaceWorldFeature — Declares the place a game is played in: substrate (`ground`) + laws (`physics`, `ground.surface`). The thin default start — `flat` with `Infinity` axes and default physics, `board` for 2D — is a complete world; dressing it (sky, foliage, props, sculpt) is editor-authored scene content. Multiple worlds per game are first-class: declare one `world()` per place, each with its own id, ground, and physics. Games that are not a spatial place (pure UI/rules) omit `world` entirely.
 - `worldSockets` (function): function worldSockets(def: ConnectorPieceDef, piece: PlacedPiece): WorldSocket[] — ⚠ undocumented
+
+## @jgengine/core/world/authoredAnimation
+
+- `AuthoredAnimationDiagnostic` (interface): interface AuthoredAnimationDiagnostic — Rejected saved animation data with a document location and a repair.
+- `AuthoredAnimationDocumentLike` (interface): interface AuthoredAnimationDocumentLike — Structural marker input; immutable editor scene documents satisfy it.
+- `AuthoredAnimationResult` (interface): interface AuthoredAnimationResult — Resolved marker animation or the caller's unchanged default, with rejected-value diagnostics.
+- `createAuthoredAnimationReader` (function): function createAuthoredAnimationReader(getDocument: () => AuthoredAnimationDocumentLike, markerId: string, defaults?: AuthoredAnimation): () => AuthoredAnimationResult — Reads the latest immutable document each call, validating only when document identity changes. The caller owns the marker-to-character association and its asset-specific animation defaults.
+- `readAuthoredAnimation` (function): function readAuthoredAnimation(document: AuthoredAnimationDocumentLike, markerId: string, defaults?: AuthoredAnimation): AuthoredAnimationResult — Resolves a caller-selected marker's animation. Authored configuration replaces game defaults; omitted or malformed data retains the exact default. Partial roles remain available for editing. Asset clip and rig compatibility is diagnosed by the animation renderer.
 
 ## @jgengine/core/world/authoredEntities
 
