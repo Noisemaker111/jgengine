@@ -1,0 +1,32 @@
+{
+  "status": "verified",
+  "cohort": "26199e1960956cc3f1ddbbc63a0325aa98f83609",
+  "tree": "d327c551ddb21312de75464c58ede50c376c7cb2",
+  "packages": 13,
+  "trackedSourceFiles": 4031,
+  "tarFiles": 2411,
+  "compiledDistFiles": 2377,
+  "loggedStages": 27,
+  "sourceLedgerMatchesGitTree": true,
+  "tarBytesMatchCompiledLedger": true,
+  "workflowHashMatches": true,
+  "executedSourcesVerified": 2,
+  "comparisonFieldsVerified": [
+    "configs",
+    "glbSha256",
+    "knightGlbSha256",
+    "metrics",
+    "stable",
+    "fresh",
+    "lanternStable",
+    "lanternFresh",
+    "windup",
+    "errors"
+  ],
+  "limits": [
+    "Read-only hash/archive audit; no build, pack or runtime rerun.",
+    "Caller source/output freeze required; scratch workflow lock is not a global build lock.",
+    "Manual Fiber-frame numerical proof only, no full-loop/native appearance/feel/FPS/release/adoption claim.",
+    "Original BEFOREv3 exact executed source unavailable; original archived provenance gap remains unchanged."
+  ]
+}

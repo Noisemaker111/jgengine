@@ -1,0 +1,19 @@
+{
+  "stage": "exact source archived before first refreshed sixth execution",
+  "cohort": "26199e1960956cc3f1ddbbc63a0325aa98f83609",
+  "origin": [
+    ".scratch/characters/animation-continuity/after-b9dacf46-fixture.tsx",
+    ".scratch/characters/animation-continuity/after-b9dacf46-run.ts"
+  ],
+  "change": "runner game producer import paths point at new verified isolated install; fixture algorithm unchanged",
+  "sources": [
+    {
+      "path": ".scratch/characters/animation-continuity-refreshed/fixture.tsx",
+      "sha256": "75e50bda6c5a8bab12d55a733c32076da19c1d1686c1a76f623faa989544f840"
+    },
+    {
+      "path": ".scratch/characters/animation-continuity-refreshed/run.ts",
+      "sha256": "32021abfe62ecb6dc3f1f6ef1806137e8d52710d3a198d2a7e0cc5b1702b2230"
+    }
+  ]
+}

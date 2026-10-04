@@ -1,0 +1,517 @@
+{
+  "status": "complete",
+  "commit": "26199e1960956cc3f1ddbbc63a0325aa98f83609",
+  "tree": "d327c551ddb21312de75464c58ede50c376c7cb2",
+  "base": "443758e7c9866b493edac1ece84a16e6594dfc03",
+  "startedUtc": "20261004T024725Z",
+  "workflowSha256": "55d176f898ae035039cfc7fb260157b7cbf051e33d1a63fe6a9645f9e6f283ff",
+  "rootBuildScript": "bun scripts/guard.ts 600 'bun scripts/ensure-ready.ts --install-only && bun run --cwd packages/core build && bun run --cwd packages/rapier build && bun run --cwd packages/ws build && bun run --cwd packages/sql build && bun run --cwd packages/navbake build && bun run --cwd packages/react build && bun run --cwd packages/convex build && bun run --cwd packages/node build && bun run --cwd packages/shell build && bun run --cwd packages/editor build && bun run --cwd packages/assets build && bun run --cwd packages/github build && bun run --cwd packages/jgengine build && bun run build:registry'",
+  "packageBuildOrder": [
+    "core",
+    "rapier",
+    "ws",
+    "sql",
+    "navbake",
+    "react",
+    "convex",
+    "node",
+    "shell",
+    "editor",
+    "assets",
+    "github",
+    "jgengine"
+  ],
+  "packageBuildScripts": {
+    "core": "tsgo -p tsconfig.build.json && bun ../../scripts/fix-extensions.ts dist",
+    "rapier": "tsgo -p tsconfig.build.json && bun ../../scripts/fix-extensions.ts dist",
+    "ws": "tsgo -p tsconfig.build.json && bun ../../scripts/fix-extensions.ts dist",
+    "sql": "tsgo -p tsconfig.build.json && bun ../../scripts/fix-extensions.ts dist",
+    "navbake": "tsgo -p tsconfig.build.json && bun ../../scripts/fix-extensions.ts dist",
+    "react": "tsgo -p tsconfig.build.json && bun ../../scripts/fix-extensions.ts dist",
+    "convex": "tsgo -p tsconfig.build.json && bun ../../scripts/fix-extensions.ts dist",
+    "node": "tsgo -p tsconfig.build.json && bun ../../scripts/fix-extensions.ts dist",
+    "shell": "tsgo -p tsconfig.build.json && bun ../../scripts/fix-extensions.ts dist",
+    "editor": "tsgo -p tsconfig.build.json && bun ../../scripts/fix-extensions.ts dist",
+    "assets": "tsgo -p tsconfig.build.json && bun ../../scripts/fix-extensions.ts dist && bun scripts/postbuild.ts",
+    "github": "tsgo -p tsconfig.build.json && bun ../../scripts/fix-extensions.ts dist",
+    "jgengine": "tsgo -p tsconfig.build.json && bun ../../scripts/fix-extensions.ts dist"
+  },
+  "dependencyLockSha256": "63a1a43df6db2b87a15871f6c0fa625cb3223fe820944e08dfb4241a0f493e3c",
+  "toolVersions": {
+    "bun": "1.4.2",
+    "npm": "11.9.0"
+  },
+  "stages": [
+    {
+      "label": "check-staged-skills",
+      "argv": [
+        "bun",
+        "run",
+        "check-stage-skills"
+      ],
+      "cwd": "/workspace/JGengine",
+      "exitCode": 0,
+      "elapsedSeconds": 0.03719463399829692,
+      "stdout": "check-staged-skills.stdout.log",
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr": "check-staged-skills.stderr.log",
+      "stderrSha256": "e9ccecf262ef7e126fa246a37af2a4ba133c675b48e916a1e1edb3eb1a29989a"
+    },
+    {
+      "label": "build-core",
+      "argv": [
+        "bun",
+        "--cwd=packages/core",
+        "run",
+        "build"
+      ],
+      "cwd": "/workspace/JGengine",
+      "exitCode": 0,
+      "elapsedSeconds": 1.6964011890013353,
+      "stdout": "build-core.stdout.log",
+      "stdoutSha256": "98837ecb4998d740b6f98ffda592b04a3a940b1b59eca848705fe9c80d4c7a22",
+      "stderr": "build-core.stderr.log",
+      "stderrSha256": "ca1247f9b09c6199e9b6b486e72c927ff38e0a81365ef7d117bfaeb54d74c4c7"
+    },
+    {
+      "label": "build-rapier",
+      "argv": [
+        "bun",
+        "--cwd=packages/rapier",
+        "run",
+        "build"
+      ],
+      "cwd": "/workspace/JGengine",
+      "exitCode": 0,
+      "elapsedSeconds": 0.15849518999675638,
+      "stdout": "build-rapier.stdout.log",
+      "stdoutSha256": "0d2f14a97f2c46e5833b2423196cdfead462a47f15689af302248a90817ff7ae",
+      "stderr": "build-rapier.stderr.log",
+      "stderrSha256": "ca1247f9b09c6199e9b6b486e72c927ff38e0a81365ef7d117bfaeb54d74c4c7"
+    },
+    {
+      "label": "build-ws",
+      "argv": [
+        "bun",
+        "--cwd=packages/ws",
+        "run",
+        "build"
+      ],
+      "cwd": "/workspace/JGengine",
+      "exitCode": 0,
+      "elapsedSeconds": 0.33456224700057646,
+      "stdout": "build-ws.stdout.log",
+      "stdoutSha256": "dee7bfc4e2a661baa3308464218202c542f3fbf372f49fc8595198461b64813a",
+      "stderr": "build-ws.stderr.log",
+      "stderrSha256": "ca1247f9b09c6199e9b6b486e72c927ff38e0a81365ef7d117bfaeb54d74c4c7"
+    },
+    {
+      "label": "build-sql",
+      "argv": [
+        "bun",
+        "--cwd=packages/sql",
+        "run",
+        "build"
+      ],
+      "cwd": "/workspace/JGengine",
+      "exitCode": 0,
+      "elapsedSeconds": 0.09850932599874795,
+      "stdout": "build-sql.stdout.log",
+      "stdoutSha256": "cb57b1a8c37dc5dbfb15d44cfef6e19aac3ef9e2f7bd90bab4626e71ada8e0f3",
+      "stderr": "build-sql.stderr.log",
+      "stderrSha256": "ca1247f9b09c6199e9b6b486e72c927ff38e0a81365ef7d117bfaeb54d74c4c7"
+    },
+    {
+      "label": "build-navbake",
+      "argv": [
+        "bun",
+        "--cwd=packages/navbake",
+        "run",
+        "build"
+      ],
+      "cwd": "/workspace/JGengine",
+      "exitCode": 0,
+      "elapsedSeconds": 0.14016210200134083,
+      "stdout": "build-navbake.stdout.log",
+      "stdoutSha256": "49f01d66503fc9216ba4700fd68a857238a508eda5ecbf136680a9cb2e6b29d9",
+      "stderr": "build-navbake.stderr.log",
+      "stderrSha256": "ca1247f9b09c6199e9b6b486e72c927ff38e0a81365ef7d117bfaeb54d74c4c7"
+    },
+    {
+      "label": "build-react",
+      "argv": [
+        "bun",
+        "--cwd=packages/react",
+        "run",
+        "build"
+      ],
+      "cwd": "/workspace/JGengine",
+      "exitCode": 0,
+      "elapsedSeconds": 0.9749947150012304,
+      "stdout": "build-react.stdout.log",
+      "stdoutSha256": "bda9072f6509bf217a747dd394bacb874b717d4e47feab53991ae523f2a72e07",
+      "stderr": "build-react.stderr.log",
+      "stderrSha256": "ca1247f9b09c6199e9b6b486e72c927ff38e0a81365ef7d117bfaeb54d74c4c7"
+    },
+    {
+      "label": "build-convex",
+      "argv": [
+        "bun",
+        "--cwd=packages/convex",
+        "run",
+        "build"
+      ],
+      "cwd": "/workspace/JGengine",
+      "exitCode": 0,
+      "elapsedSeconds": 0.4393292000022484,
+      "stdout": "build-convex.stdout.log",
+      "stdoutSha256": "8bbec7726b684e1cb89e3d3829f161cf0e5be1da9bc113c73d395214adb1e15d",
+      "stderr": "build-convex.stderr.log",
+      "stderrSha256": "ca1247f9b09c6199e9b6b486e72c927ff38e0a81365ef7d117bfaeb54d74c4c7"
+    },
+    {
+      "label": "build-node",
+      "argv": [
+        "bun",
+        "--cwd=packages/node",
+        "run",
+        "build"
+      ],
+      "cwd": "/workspace/JGengine",
+      "exitCode": 0,
+      "elapsedSeconds": 0.27790852800171706,
+      "stdout": "build-node.stdout.log",
+      "stdoutSha256": "6807574fa8eea5bb89d55dfe8a162fd556e980253a073ba0ea08f5a586bb72da",
+      "stderr": "build-node.stderr.log",
+      "stderrSha256": "ca1247f9b09c6199e9b6b486e72c927ff38e0a81365ef7d117bfaeb54d74c4c7"
+    },
+    {
+      "label": "build-shell",
+      "argv": [
+        "bun",
+        "--cwd=packages/shell",
+        "run",
+        "build"
+      ],
+      "cwd": "/workspace/JGengine",
+      "exitCode": 0,
+      "elapsedSeconds": 2.2763867230023607,
+      "stdout": "build-shell.stdout.log",
+      "stdoutSha256": "7502d0e390b18631e162458cc5ac62a6ae8d01feff101a5b98518e68b371f593",
+      "stderr": "build-shell.stderr.log",
+      "stderrSha256": "ca1247f9b09c6199e9b6b486e72c927ff38e0a81365ef7d117bfaeb54d74c4c7"
+    },
+    {
+      "label": "build-editor",
+      "argv": [
+        "bun",
+        "--cwd=packages/editor",
+        "run",
+        "build"
+      ],
+      "cwd": "/workspace/JGengine",
+      "exitCode": 0,
+      "elapsedSeconds": 1.1659149410006648,
+      "stdout": "build-editor.stdout.log",
+      "stdoutSha256": "4823f693ffc4597c1c0ee94a9f3b62b2647fc8040572624889d2b18761836c79",
+      "stderr": "build-editor.stderr.log",
+      "stderrSha256": "ca1247f9b09c6199e9b6b486e72c927ff38e0a81365ef7d117bfaeb54d74c4c7"
+    },
+    {
+      "label": "build-assets",
+      "argv": [
+        "bun",
+        "--cwd=packages/assets",
+        "run",
+        "build"
+      ],
+      "cwd": "/workspace/JGengine",
+      "exitCode": 0,
+      "elapsedSeconds": 0.3842499950005731,
+      "stdout": "build-assets.stdout.log",
+      "stdoutSha256": "9e69bf4f1829eb6dbccb1317e5a8b9a3027444ce44a2936d3cb6657bd92711b9",
+      "stderr": "build-assets.stderr.log",
+      "stderrSha256": "6e6e65a7af2f976255c20ee44c2acc93207ad3cb8976dc870d2bf6a6d6e3e1b4"
+    },
+    {
+      "label": "build-github",
+      "argv": [
+        "bun",
+        "--cwd=packages/github",
+        "run",
+        "build"
+      ],
+      "cwd": "/workspace/JGengine",
+      "exitCode": 0,
+      "elapsedSeconds": 0.1427672710015031,
+      "stdout": "build-github.stdout.log",
+      "stdoutSha256": "9bd31f378dad94c7d12ea0426350d6ea53c6b10d2be1366ed57f095961760458",
+      "stderr": "build-github.stderr.log",
+      "stderrSha256": "ca1247f9b09c6199e9b6b486e72c927ff38e0a81365ef7d117bfaeb54d74c4c7"
+    },
+    {
+      "label": "build-jgengine",
+      "argv": [
+        "bun",
+        "--cwd=packages/jgengine",
+        "run",
+        "build"
+      ],
+      "cwd": "/workspace/JGengine",
+      "exitCode": 0,
+      "elapsedSeconds": 0.22001298900067923,
+      "stdout": "build-jgengine.stdout.log",
+      "stdoutSha256": "7c3b31d04b626e01f93c4fe03c503128514e18c676f34264ff24267fe7a1867f",
+      "stderr": "build-jgengine.stderr.log",
+      "stderrSha256": "ca1247f9b09c6199e9b6b486e72c927ff38e0a81365ef7d117bfaeb54d74c4c7"
+    },
+    {
+      "label": "pack-core",
+      "argv": [
+        "npm",
+        "pack",
+        "--json",
+        "--pack-destination",
+        "/workspace/JGengine/.scratch/characters/packages/clean-26199e19-20261004"
+      ],
+      "cwd": "/workspace/JGengine/packages/core",
+      "exitCode": 0,
+      "elapsedSeconds": 1.6567074160011543,
+      "stdout": "pack-core.stdout.log",
+      "stdoutSha256": "0d114359fac02541dafbc6de7b949bcc170233323143a70a7b69a818c7c34289",
+      "stderr": "pack-core.stderr.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "pack-rapier",
+      "argv": [
+        "npm",
+        "pack",
+        "--json",
+        "--pack-destination",
+        "/workspace/JGengine/.scratch/characters/packages/clean-26199e19-20261004"
+      ],
+      "cwd": "/workspace/JGengine/packages/rapier",
+      "exitCode": 0,
+      "elapsedSeconds": 0.3609792679999373,
+      "stdout": "pack-rapier.stdout.log",
+      "stdoutSha256": "19a816f4a18f481b5111dc95d65eac5a553b4973b7c98270a9f19b92711ad822",
+      "stderr": "pack-rapier.stderr.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "pack-ws",
+      "argv": [
+        "npm",
+        "pack",
+        "--json",
+        "--pack-destination",
+        "/workspace/JGengine/.scratch/characters/packages/clean-26199e19-20261004"
+      ],
+      "cwd": "/workspace/JGengine/packages/ws",
+      "exitCode": 0,
+      "elapsedSeconds": 0.471256971002731,
+      "stdout": "pack-ws.stdout.log",
+      "stdoutSha256": "bffdd43b976025ecc95c40eafc33d4454e40a08230aabe595fa801c4ec25cc8c",
+      "stderr": "pack-ws.stderr.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "pack-sql",
+      "argv": [
+        "npm",
+        "pack",
+        "--json",
+        "--pack-destination",
+        "/workspace/JGengine/.scratch/characters/packages/clean-26199e19-20261004"
+      ],
+      "cwd": "/workspace/JGengine/packages/sql",
+      "exitCode": 0,
+      "elapsedSeconds": 0.8244847159985511,
+      "stdout": "pack-sql.stdout.log",
+      "stdoutSha256": "567770b8fd3a73d95d8f4e5e24153eaccfb969ccca214a80b91452b2c5e083cf",
+      "stderr": "pack-sql.stderr.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "pack-navbake",
+      "argv": [
+        "npm",
+        "pack",
+        "--json",
+        "--pack-destination",
+        "/workspace/JGengine/.scratch/characters/packages/clean-26199e19-20261004"
+      ],
+      "cwd": "/workspace/JGengine/packages/navbake",
+      "exitCode": 0,
+      "elapsedSeconds": 1.257340299001953,
+      "stdout": "pack-navbake.stdout.log",
+      "stdoutSha256": "b024663ecebd06545747faaf3efeeee501401bcd22c3b09f04535e4b20aa8cb4",
+      "stderr": "pack-navbake.stderr.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "pack-react",
+      "argv": [
+        "npm",
+        "pack",
+        "--json",
+        "--pack-destination",
+        "/workspace/JGengine/.scratch/characters/packages/clean-26199e19-20261004"
+      ],
+      "cwd": "/workspace/JGengine/packages/react",
+      "exitCode": 0,
+      "elapsedSeconds": 0.6944757519995619,
+      "stdout": "pack-react.stdout.log",
+      "stdoutSha256": "a7eba93c935ae4f35cd92f0218b07484b8221c8677dfcab54f6d9eeb28129d80",
+      "stderr": "pack-react.stderr.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "pack-convex",
+      "argv": [
+        "npm",
+        "pack",
+        "--json",
+        "--pack-destination",
+        "/workspace/JGengine/.scratch/characters/packages/clean-26199e19-20261004"
+      ],
+      "cwd": "/workspace/JGengine/packages/convex",
+      "exitCode": 0,
+      "elapsedSeconds": 0.5784712800013949,
+      "stdout": "pack-convex.stdout.log",
+      "stdoutSha256": "6a8ce66d2ff88cc96170beb57f4be6ba71c2623c9eaf031a40343324f0fb400a",
+      "stderr": "pack-convex.stderr.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "pack-node",
+      "argv": [
+        "npm",
+        "pack",
+        "--json",
+        "--pack-destination",
+        "/workspace/JGengine/.scratch/characters/packages/clean-26199e19-20261004"
+      ],
+      "cwd": "/workspace/JGengine/packages/node",
+      "exitCode": 0,
+      "elapsedSeconds": 0.816744130999723,
+      "stdout": "pack-node.stdout.log",
+      "stdoutSha256": "aca3cc9496ac1af6fb317e00e9defae98181331ff47b74354c4def66d1efb72e",
+      "stderr": "pack-node.stderr.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "pack-shell",
+      "argv": [
+        "npm",
+        "pack",
+        "--json",
+        "--pack-destination",
+        "/workspace/JGengine/.scratch/characters/packages/clean-26199e19-20261004"
+      ],
+      "cwd": "/workspace/JGengine/packages/shell",
+      "exitCode": 0,
+      "elapsedSeconds": 1.4243257569978596,
+      "stdout": "pack-shell.stdout.log",
+      "stdoutSha256": "1452cf5c0940ae01b45607cf845f6aa252ce5cf90469ed88872cfc8e8b49fc01",
+      "stderr": "pack-shell.stderr.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "pack-editor",
+      "argv": [
+        "npm",
+        "pack",
+        "--json",
+        "--pack-destination",
+        "/workspace/JGengine/.scratch/characters/packages/clean-26199e19-20261004"
+      ],
+      "cwd": "/workspace/JGengine/packages/editor",
+      "exitCode": 0,
+      "elapsedSeconds": 1.082001908998791,
+      "stdout": "pack-editor.stdout.log",
+      "stdoutSha256": "f92211bf013c064767bdfee2cc33216dc9aa649b32d3747a5e5a13f0c46741a1",
+      "stderr": "pack-editor.stderr.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "pack-assets",
+      "argv": [
+        "npm",
+        "pack",
+        "--json",
+        "--pack-destination",
+        "/workspace/JGengine/.scratch/characters/packages/clean-26199e19-20261004"
+      ],
+      "cwd": "/workspace/JGengine/packages/assets",
+      "exitCode": 0,
+      "elapsedSeconds": 0.7120684450019326,
+      "stdout": "pack-assets.stdout.log",
+      "stdoutSha256": "fa70f899ddb9f0f2058e948306da208828462a941a897cad59396dabd652b744",
+      "stderr": "pack-assets.stderr.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "pack-github",
+      "argv": [
+        "npm",
+        "pack",
+        "--json",
+        "--pack-destination",
+        "/workspace/JGengine/.scratch/characters/packages/clean-26199e19-20261004"
+      ],
+      "cwd": "/workspace/JGengine/packages/github",
+      "exitCode": 0,
+      "elapsedSeconds": 0.34907061899866676,
+      "stdout": "pack-github.stdout.log",
+      "stdoutSha256": "958d5d3bdd1a1a40a9e6f70b672dc881a0982c0743584de727eb28e6671ad479",
+      "stderr": "pack-github.stderr.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "pack-jgengine",
+      "argv": [
+        "npm",
+        "pack",
+        "--json",
+        "--pack-destination",
+        "/workspace/JGengine/.scratch/characters/packages/clean-26199e19-20261004"
+      ],
+      "cwd": "/workspace/JGengine/packages/jgengine",
+      "exitCode": 0,
+      "elapsedSeconds": 0.6302428730014071,
+      "stdout": "pack-jgengine.stdout.log",
+      "stdoutSha256": "0129c3126afe98bb9f6157f025b4f56e381611f97e0fb7a07d617616c031db57",
+      "stderr": "pack-jgengine.stderr.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "removedDist": [
+    "packages/core/dist",
+    "packages/rapier/dist",
+    "packages/ws/dist",
+    "packages/sql/dist",
+    "packages/navbake/dist",
+    "packages/react/dist",
+    "packages/convex/dist",
+    "packages/node/dist",
+    "packages/shell/dist",
+    "packages/editor/dist",
+    "packages/assets/dist",
+    "packages/github/dist",
+    "packages/jgengine/dist"
+  ],
+  "limitations": [
+    "Caller freezes checkout and prevents concurrent builds/branch switches; scratch lock serializes only this workflow.",
+    "No install/gen/registry build/tests/source edits/release/publication. Owning verification remains separate.",
+    "Uses root13-package order with AGENTS-compatible bun --cwd= syntax.",
+    "Staged skills are checked against source; optional ignored package changelogs must match root. No staging or copying here."
+  ],
+  "completedUtc": "2026-10-04T02:47:47.902267+00:00",
+  "ledgerHashes": {
+    "source-files.json": "86951cfc71a93c60967c503221afbb5276ab17561016de41c28a94aed57b718f",
+    "compiled-files.json": "04e8b6602044041b9f20eb8d280a921eb0c8f310fbf7fe088eab57acde56144e",
+    "package-files.json": "ae1b217dc4a2c4930805f4e87e1ace403e69523dfe2a14f7c6825cafdee00f3b"
+  }
+}

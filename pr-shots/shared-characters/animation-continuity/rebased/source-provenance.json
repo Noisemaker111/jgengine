@@ -1,0 +1,25 @@
+{
+  "localCommit": "26199e1960956cc3f1ddbbc63a0325aa98f83609",
+  "remoteCommit": "9fbecff00b2667017ae04b4b24ecd867df06cab4",
+  "tree": "d327c551ddb21312de75464c58ede50c376c7cb2",
+  "remoteTreeIdentityVerified": true,
+  "base": "443758e7c9866b493edac1ece84a16e6594dfc03",
+  "pr": 1963,
+  "previousCohort": "b9dacf468497633610710eafe226b8ff7a6c25b1",
+  "status": "Frozen refreshed proof; final exact-head CI passed and PR merged to beta",
+  "publication": "Unreleased package proof only, no registry publication or shipped adoption",
+  "originalBaselineArchiveCommit": "0ff11388359c565d2439fd9bce3d157cca293faa",
+  "originalBaselineProvenance": "pr-shots/shared-characters/animation-continuity/baseline-provenance.json",
+  "beforeV3Gap": "Exact executed BEFOREv3 source unavailable, unchanged from original archive; no reconstruction or relabeling.",
+  "limitations": [
+    "Read-only hash/archive audit; no build, pack or runtime rerun.",
+    "Caller source/output freeze required; scratch workflow lock is not a global build lock.",
+    "Manual Fiber-frame numerical proof only, no full-loop/native appearance/feel/FPS/release/adoption claim.",
+    "Original BEFOREv3 exact executed source unavailable; original archived provenance gap remains unchanged."
+  ],
+  "consumerReport": "consumer/refreshed-sixth-consumer-evidence.json",
+  "mergeCommit": "d508016d7a18abeef568c45282a5d28d13ac4ab8",
+  "mergedAt": "2026-10-04T02:55:58Z",
+  "ciRun": 37172189583,
+  "ciAttempt": 1
+}

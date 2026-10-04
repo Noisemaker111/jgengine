@@ -1,0 +1,35 @@
+{
+  "cohort": "26199e1960956cc3f1ddbbc63a0325aa98f83609",
+  "tree": "d327c551ddb21312de75464c58ede50c376c7cb2",
+  "frozenB9Reference": ".scratch/characters/animation-continuity/after-b9dacf46.json",
+  "frozenB9ReferenceSha256": "7a9bf634244d5a81f8b1bafff8855610c6a4faa54e46109199ae1c1a155abb6b",
+  "newReport": ".scratch/characters/animation-continuity-refreshed/after-26199e19.json",
+  "newReportSha256": "4b3862e87182e020b7f8c783d58ee129353298d75fbecd650e2986e392d76721",
+  "fixtureByteIdentical": true,
+  "completeExecutedSourcesManifest": ".scratch/characters/animation-continuity-refreshed/executed-source-manifest.json",
+  "allComparedFieldsBitExact": [
+    "configs",
+    "glbSha256",
+    "knightGlbSha256",
+    "metrics",
+    "stable",
+    "fresh",
+    "lanternStable",
+    "lanternFresh",
+    "windup",
+    "errors"
+  ],
+  "packageExports": [
+    {
+      "name": "@jgengine/shell/render/useModelAnimation",
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-continuity-rebased/node_modules/@jgengine/shell/dist/render/useModelAnimation.js",
+      "sha256": "163454c23bf17d19bbb2ad63f5fc11cf394a7b6690f8f37fb85201e3590475a3"
+    },
+    {
+      "name": "@jgengine/core/anim/animGraph",
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-continuity-rebased/node_modules/@jgengine/core/dist/anim/animGraph.js",
+      "sha256": "9110c1b49fb6887ee11b9bcf3d7ff133b799bbeef9f0a6a61f949ccfe361ff2b"
+    }
+  ],
+  "limitations": "Manual Fiber hook pose frames; no full game-loop, native appearance, hardware FPS or published adoption claim. BEFOREv3 executed source unavailable as explicitly recorded in original source-provenance.json; frozenB9 AFTER complete source is retained."
+}

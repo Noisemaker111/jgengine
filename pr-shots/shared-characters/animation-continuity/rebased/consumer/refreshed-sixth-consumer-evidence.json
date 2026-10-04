@@ -1,0 +1,311 @@
+{
+  "label": "Refreshed sixth unreleased clean-built public package candidate; actual imported producer hook simulation only, no native appearance or published adoption",
+  "cohort": "26199e1960956cc3f1ddbbc63a0325aa98f83609",
+  "tree": "d327c551ddb21312de75464c58ede50c376c7cb2",
+  "base": "443758e7c9866b493edac1ece84a16e6594dfc03",
+  "previousCohort": "b9dacf468497633610710eafe226b8ff7a6c25b1",
+  "cleanBuildPack": {
+    "directory": "../../packages/clean-26199e19-20261004",
+    "freshOrderedPackageBuilds": 13,
+    "normalNpmPacks": 13,
+    "allStagesExit0": true,
+    "trackedSourceIdentityAndBytesStable": true,
+    "provenance": "build-provenance.json",
+    "sourceLedger": "source-files.json",
+    "compiledLedger": "compiled-files.json",
+    "packageLedger": "package-files.json"
+  },
+  "packageBoundary": {
+    "allManifestTarballsShaVerified": 13,
+    "installedPackages": [
+      {
+        "name": "@jgengine/core",
+        "version": "0.19.0",
+        "tarballSha256": "006d370d3863e43fb5c3395f9d5a49b1b421c8e5cd60271ac9f57cf5dc014ec0",
+        "installedFilesByteVerified": 1209
+      },
+      {
+        "name": "@jgengine/ws",
+        "version": "0.19.0",
+        "tarballSha256": "d7e2301b14af1c81b15e044a308d9738fb3b0e93d8f7f182641741239a026995",
+        "installedFilesByteVerified": 29
+      },
+      {
+        "name": "@jgengine/navbake",
+        "version": "0.19.0",
+        "tarballSha256": "74e758c8ff680bc469b91a7fc7c110b1d867ad0b8f26d19a23be8bc4b57b7d48",
+        "installedFilesByteVerified": 6
+      },
+      {
+        "name": "@jgengine/react",
+        "version": "0.19.0",
+        "tarballSha256": "a072bcebcefc1c42d9ed649f5fdb5a48becddf673cc765e35952145abd9ea5c0",
+        "installedFilesByteVerified": 183
+      },
+      {
+        "name": "@jgengine/node",
+        "version": "0.19.0",
+        "tarballSha256": "dfad51875d2df152652dd738dbbf3829de97e4eeef9ebe2b2b8dc414c7f7bbf9",
+        "installedFilesByteVerified": 29
+      },
+      {
+        "name": "@jgengine/shell",
+        "version": "0.19.0",
+        "tarballSha256": "6f250c77a607a7cff4cbcba91279247dc8b565d3753daee1c27dfbba6829987f",
+        "installedFilesByteVerified": 515
+      },
+      {
+        "name": "@jgengine/editor",
+        "version": "0.19.0",
+        "tarballSha256": "cdb9da5d14922649d09da1d6808fa79c6038d9e36dc9f8a71be87f3f9ff1aa0c",
+        "installedFilesByteVerified": 232
+      },
+      {
+        "name": "@jgengine/assets",
+        "version": "0.19.0",
+        "tarballSha256": "55d691ea99e8a2e7fa3b513969cdffe0919c97dbc521e37cc7d7bc1ab0afb4f0",
+        "installedFilesByteVerified": 81
+      },
+      {
+        "name": "jgengine",
+        "version": "0.16.0",
+        "tarballSha256": "95d9fb7d63ddaa2b6b055f08471d873ad0b76a5038b5649f569f073843037876",
+        "installedFilesByteVerified": 56
+      }
+    ],
+    "uninstalledPackages": [
+      "@jgengine/rapier",
+      "@jgengine/sql",
+      "@jgengine/convex",
+      "@jgengine/github"
+    ],
+    "installedWholeFilesByteVerified": 2340,
+    "sdkSourceAliases": false
+  },
+  "originalGameSources": {
+    "commit": "45a50523cae2021c412aa83ce50589d806dd96d9",
+    "filesByteVerified": 165,
+    "provenance": "original-source-provenance.json",
+    "actualImportedRigs": [
+      {
+        "game": "deepward",
+        "url": "/models/imported/deepward/fitter/fitter-salvage-operator.glb",
+        "sha256": "6be2a1e4dfc4588bfcbc3f0a195b6fe13be4e18cbd99363e1d1dabf666546d10",
+        "byteCount": 2743952
+      },
+      {
+        "game": "lantern-reach",
+        "url": "/models/lantern-reach/players/knight.glb",
+        "sha256": "ce0d0a5ec1d67594629ecac20a7576fde22a44456e7628e8eb100891bc6dda97",
+        "byteCount": 1212756
+      }
+    ],
+    "sourceSceneModelsCatalogLocksNoEdits": true
+  },
+  "actualConsumerReplay": {
+    "directory": "../../animation-continuity-refreshed",
+    "proof": "after-26199e19.json",
+    "comparison": "refreshed-comparison.json",
+    "executedSources": "executed-source-manifest.json",
+    "fixtureByteIdenticalToFrozenB9After": true,
+    "runnerChanges": "Only installed producer import/resolution scope; copied exact executed source snapshots before first new run.",
+    "allComparedFieldsBitExact": [
+      "configs",
+      "glbSha256",
+      "knightGlbSha256",
+      "metrics",
+      "stable",
+      "fresh",
+      "lanternStable",
+      "lanternFresh",
+      "windup",
+      "errors"
+    ],
+    "configs": {
+      "lantern": {
+        "states": {
+          "idle": "Idle",
+          "walk": "Walking_A",
+          "run": "Running_A",
+          "runSpeed": 6
+        }
+      },
+      "gait": {
+        "states": {
+          "idle": "idle",
+          "walk": "walk",
+          "walkSpeed": 0.05,
+          "fadeSec": 0.16
+        }
+      },
+      "windups": [
+        {
+          "clip": "windup",
+          "paused": true,
+          "time": 0.09999999999999998,
+          "loop": false
+        },
+        {
+          "clip": "windup",
+          "paused": true,
+          "time": 0.35,
+          "loop": false
+        },
+        {
+          "clip": "windup",
+          "paused": true,
+          "time": 0.6,
+          "loop": false
+        }
+      ]
+    },
+    "frames": 30,
+    "freshFitterDistinctWorldPoses": 29,
+    "freshFitterFinalActions": [
+      {
+        "clip": "idle",
+        "time": 0.016666666666666666,
+        "weight": 0
+      },
+      {
+        "clip": "walk",
+        "time": 0.49999999999999994,
+        "weight": 1
+      }
+    ],
+    "freshLanternFinalActions": [
+      {
+        "clip": "Idle",
+        "time": 0.06666666666666667,
+        "weight": 0
+      },
+      {
+        "clip": "Walking_A",
+        "time": 0.49999999999999994,
+        "weight": 0.9093722590998377
+      },
+      {
+        "clip": "Running_A",
+        "time": 0.49999999999999994,
+        "weight": 0.0906277409001624
+      }
+    ],
+    "metrics": {
+      "stableWorldPoseChange": {
+        "position": 0.02188683468654121,
+        "rotationRadians": 0.08094073733551144
+      },
+      "freshWorldPoseChange": {
+        "position": 0.02188683468654121,
+        "rotationRadians": 0.08094073733551144
+      },
+      "stableFinalVsFirst": 2,
+      "freshFinalVsFirst": 2,
+      "finalStableVsFresh": 0
+    },
+    "subscriptionsAfterUnmount": {
+      "fresh": 0,
+      "stable": 0,
+      "lanternFresh": 0,
+      "lanternStable": 0,
+      "windup": 0
+    },
+    "browserErrors": 0,
+    "publicExports": [
+      {
+        "name": "@jgengine/shell/render/useModelAnimation",
+        "path": "/workspace/JGengine/.scratch/characters/consumer/animation-continuity-rebased/node_modules/@jgengine/shell/dist/render/useModelAnimation.js",
+        "sha256": "163454c23bf17d19bbb2ad63f5fc11cf394a7b6690f8f37fb85201e3590475a3"
+      },
+      {
+        "name": "@jgengine/core/anim/animGraph",
+        "path": "/workspace/JGengine/.scratch/characters/consumer/animation-continuity-rebased/node_modules/@jgengine/core/dist/anim/animGraph.js",
+        "sha256": "9110c1b49fb6887ee11b9bcf3d7ff133b799bbeef9f0a6a61f949ccfe361ff2b"
+      }
+    ]
+  },
+  "consumerChecks": {
+    "deepward": {
+      "types": "PASS",
+      "build": "PASS",
+      "buildSeconds": 21.8
+    },
+    "lantern-reach": {
+      "build": "PASS",
+      "buildSeconds": 31.77,
+      "typeLimitation": "Four known old Promise dispatch errors ActionBar57/Dialogue68 remain; no redundant rerun."
+    }
+  },
+  "limitations": [
+    "Manual Fiber hook pose frames; no full game-loop, native appearance, hardware FPS or published adoption claim. BEFOREv3 executed source unavailable as explicitly recorded in original source-provenance.json; frozenB9 AFTER complete source is retained.",
+    "Uses real hook under React/Fiber context with manual frames and entity poses; does not exercise full game AI/physics/render loop.",
+    "No new native capture, convincing-animation/feel/hardware performance or disposal claim.",
+    "No original game repository source/dependency/catalog/lock changes or registry release/adoption."
+  ],
+  "artifactHashes": [
+    {
+      "path": "candidate-package-manifest.json",
+      "sha256": "90ad1e2b3d6189d098fb125f426d7206b05252fd426e8a5ab47fa4530e02fd08"
+    },
+    {
+      "path": "installed-package-verification.json",
+      "sha256": "1b00698a2d296e3f22b2637073377bb732e7997482330ecd3323f04784e89f86"
+    },
+    {
+      "path": "original-source-provenance.json",
+      "sha256": "5e923ccdebccd81809657405742532392288c6643b9d61514f9c9f08f6e349de"
+    },
+    {
+      "path": "public-deepward-types.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "public-deepward-build.log",
+      "sha256": "3c2c38b17d1197abaa9a3478afe2e3aebfd41e101be0dbc8e4802edd1535c100"
+    },
+    {
+      "path": "public-lantern-reach-build.log",
+      "sha256": "1af459f4aa6d2968607fd77ae29dbe99dad2eb77d3a8ec4e63c10907bc225671"
+    },
+    {
+      "path": "../../animation-continuity-refreshed/after-26199e19.json",
+      "sha256": "4b3862e87182e020b7f8c783d58ee129353298d75fbecd650e2986e392d76721"
+    },
+    {
+      "path": "../../animation-continuity-refreshed/after-26199e19.log",
+      "sha256": "8ea8cd3973bec93b4dec50ee8460a139a60d434b694b00dd6dd6c5d6b25be1d7"
+    },
+    {
+      "path": "../../animation-continuity-refreshed/refreshed-comparison.json",
+      "sha256": "31e159dba7b9e94c7841eccd42a7b7fa87196b0739375e18c914a915af37c797"
+    },
+    {
+      "path": "../../animation-continuity-refreshed/executed-source-manifest.json",
+      "sha256": "18fc85a3919fa695d98ee70d09ca1fee848964fd71723cec868bed6ef7dbbe9f"
+    },
+    {
+      "path": "../../animation-continuity-refreshed/run.ts",
+      "sha256": "32021abfe62ecb6dc3f1f6ef1806137e8d52710d3a198d2a7e0cc5b1702b2230"
+    },
+    {
+      "path": "../../animation-continuity-refreshed/fixture.tsx",
+      "sha256": "75e50bda6c5a8bab12d55a733c32076da19c1d1686c1a76f623faa989544f840"
+    },
+    {
+      "path": "../../packages/clean-26199e19-20261004/build-provenance.json",
+      "sha256": "8dc5b41b438023122dbed0cc86207afd14caa1f5eb822c276ce10383af789353"
+    },
+    {
+      "path": "../../packages/clean-26199e19-20261004/source-files.json",
+      "sha256": "86951cfc71a93c60967c503221afbb5276ab17561016de41c28a94aed57b718f"
+    },
+    {
+      "path": "../../packages/clean-26199e19-20261004/compiled-files.json",
+      "sha256": "04e8b6602044041b9f20eb8d280a921eb0c8f310fbf7fe088eab57acde56144e"
+    },
+    {
+      "path": "../../packages/clean-26199e19-20261004/package-files.json",
+      "sha256": "ae1b217dc4a2c4930805f4e87e1ace403e69523dfe2a14f7c6825cafdee00f3b"
+    }
+  ]
+}

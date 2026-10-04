@@ -1,0 +1,53 @@
+{
+  "head": "26199e1960956cc3f1ddbbc63a0325aa98f83609",
+  "tree": "d327c551ddb21312de75464c58ede50c376c7cb2",
+  "parent": "443758e7c9866b493edac1ece84a16e6594dfc03",
+  "branch": "characters/animation-config-continuity",
+  "clean": true,
+  "generatedDiff": [],
+  "sourceHashes": {
+    "packages/shell/src/render/useModelAnimation.ts": "932ee67d9b2141d851b67ba1874968d7886367e18c8f5a67526cc11bf5596e61",
+    "packages/shell/src/render/modelAnimationHook.test.ts": "45c4996b1a9826d3cf7309298bb2c0c243558f678cd3fc6c34220c970f1bf869",
+    "changes/character-animation-continuity.md": "54c713c3c0725320d89b6a0d64195f91b32209fcde39dec0410580f95444d0de"
+  },
+  "sourceUnchangedAcrossGen": true,
+  "checks": {
+    "gen": {
+      "command": "bun run gen",
+      "exit": 0,
+      "log": ".scratch/characters/sixth-rebased-checks/gen.log"
+    },
+    "hook-tests": {
+      "command": "bun test packages/shell/src/render/modelAnimationHook.test.ts",
+      "exit": 0,
+      "log": ".scratch/characters/sixth-rebased-checks/hook-tests.log"
+    },
+    "adjacent-tests": {
+      "command": "bun test packages/shell/src/render/animationPlayback.test.ts packages/shell/src/render/createGraphPose.test.ts packages/shell/src/render/takeRootMotion.test.ts",
+      "exit": 0,
+      "log": ".scratch/characters/sixth-rebased-checks/adjacent-tests.log"
+    },
+    "shell-types": {
+      "command": "bun --cwd=packages/shell run check-types",
+      "exit": 0,
+      "log": ".scratch/characters/sixth-rebased-checks/shell-types.log"
+    },
+    "ship-preflight": {
+      "command": "bun run ship:preflight",
+      "exit": 0,
+      "log": ".scratch/characters/sixth-rebased-checks/ship-preflight.log"
+    }
+  },
+  "counts": {
+    "hook": {
+      "tests": 5,
+      "assertions": 43,
+      "files": 1
+    },
+    "adjacent": {
+      "tests": 16,
+      "assertions": 1501,
+      "files": 3
+    }
+  }
+}
