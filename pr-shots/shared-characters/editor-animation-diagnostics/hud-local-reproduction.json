@@ -1,0 +1,16 @@
+{
+  "sourceHead": "f7040ce87888d3b7097539826d3af96fdf745987",
+  "sourceTree": "1987015cfaeb9abf29f614ebbeaab5135062090b",
+  "remoteHead": "bfd84d525e34650046a8937c638fa2d82ab0b8b5",
+  "command": "timeout --signal=TERM --kill-after=2s 90s bun test packages/shell/src/hudInputBoundary.test.ts",
+  "exitCode": 0,
+  "pass": 5,
+  "fail": 0,
+  "assertions": 30,
+  "testSeconds": 7.74,
+  "bun": "1.4.2 (744846f84)",
+  "ciBun": "1.3.8",
+  "logSha256": "8476e4e8cd8a5faf7ffc71fc90a223569b480c7eaf1b8116f9a58e5909a2f148",
+  "scope": "single owning fixture after exact CI hook timeouts; no source edits",
+  "interpretation": "Local setup and all assertions pass; this does not establish the cause of CI beforeEach/afterEach hook timeouts. One failed-jobs retry will retain the original failure."
+}

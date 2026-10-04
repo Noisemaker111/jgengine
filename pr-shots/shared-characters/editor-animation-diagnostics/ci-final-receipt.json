@@ -1,0 +1,39 @@
+{
+  "head": "bfd84d525e34650046a8937c638fa2d82ab0b8b5",
+  "localSource": "f7040ce87888d3b7097539826d3af96fdf745987",
+  "tree": "1987015cfaeb9abf29f614ebbeaab5135062090b",
+  "run": 37176683837,
+  "attempt": 2,
+  "allSixChecks": "PASS",
+  "failedJobsReruns": 1,
+  "originalFirstFailure": "Six HUD browser beforeEach/afterEach hook timeouts; preserved at000b archive with exact log/triage.",
+  "boundedLocalReproduction": "Five existing HUD tests passed locally; no full-suite or CI cause established.",
+  "files": [
+    {
+      "path": "ci-wrapped-attempt2.json",
+      "bytes": 13689,
+      "sha256": "a3fdacdedeca46be8f6730ab791f9fdfa7f0cece2e88bc7b302470ec01cfa13e"
+    },
+    {
+      "path": "ci-wrapped-attempt2-watch.json",
+      "bytes": 11263,
+      "sha256": "a4e68df7c228f0da375ac8fbb49832808ab31667c3186332af7b06eb00618229"
+    },
+    {
+      "path": "test-wrapped-attempt2-passed.log",
+      "bytes": 1368362,
+      "sha256": "58e425f4f4d713256308b3f06876131b2be18a98526a3ffc2bf4d09e34e49c27"
+    },
+    {
+      "path": "hud-fixture-local-reproduction.json",
+      "bytes": 787,
+      "sha256": "d45dc15355b0a68d692c90bb3e4eb08cf0dd50a94012bb8bc75bcdbe8dad0de0"
+    },
+    {
+      "path": "hud-fixture-local-f7040ce8.log",
+      "bytes": 594,
+      "sha256": "8476e4e8cd8a5faf7ffc71fc90a223569b480c7eaf1b8116f9a58e5909a2f148"
+    }
+  ],
+  "actions": "Archive-only receipt; no source changes, tests rerun by archivist, native launches, original reports rewritten or merge assumed."
+}
