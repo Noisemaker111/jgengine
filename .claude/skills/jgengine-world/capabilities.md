@@ -32,6 +32,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createAnimGraphRuntime` (function) · `import { createAnimGraphRuntime } from "@jgengine/core/anim/animGraph"`
 - `parseAnimGraph` (function) · `import { parseAnimGraph } from "@jgengine/core/anim/animGraph"`
+- `validateAnimGraph` (function) · `import { validateAnimGraph } from "@jgengine/core/anim/animGraph"`
 
 ## animation — find thigh, shin and foot bones on a humanoid rig for foot IK
 
@@ -105,6 +106,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## audio-voice-budget — bound simultaneous sound playback with per-sound caps, priorities, and deterministic stealing
 
 - `createVoiceAllocator` (function) · `import { createVoiceAllocator } from "@jgengine/core/audio/voiceAllocator"`
+
+## authored-animation — consume live authored character animation with bounded per-frame work
+
+- `createAuthoredAnimationReader` (function) · `import { createAuthoredAnimationReader } from "@jgengine/core/world/authoredAnimation"`
+- `readAuthoredAnimation` (function) · `import { readAuthoredAnimation } from "@jgengine/core/world/authoredAnimation"`
 
 ## authored-entities — spawn authored mob/boss markers from the editor document at runtime
 

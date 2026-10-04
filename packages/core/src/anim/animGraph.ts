@@ -570,3 +570,136 @@ export function parseAnimGraph(value: unknown): AnimGraph | undefined {
     : [];
   return { layers, ...(events.length === 0 ? {} : { events }) };
 }
+
+
+/** A located, repairable error in an authored animation graph; paths are relative to the graph value. */
+export interface AnimGraphDiagnostic {
+  path: string;
+  message: string;
+  repair: string;
+}
+
+/** The whole authored graph is retained unchanged only when every supported field is valid. */
+export interface AnimGraphValidation {
+  graph: AnimGraph | undefined;
+  diagnostics: readonly AnimGraphDiagnostic[];
+}
+
+/**
+ * Validate an authored graph without dropping broken combat states or weakening transition conditions.
+ * Known malformed fields and dangling references reject the whole graph with relative repair locations;
+ * valid data, including authored object/array order, is returned unchanged. Unknown extension fields are
+ * retained. Clip availability belongs to the imported-rig diagnostics. Use {@link parseAnimGraph} when
+ * permissive repair is intentional.
+ * @capability anim-graph validate authored animation graphs with located repair diagnostics without partial fallback
+ */
+export function validateAnimGraph(value: unknown): AnimGraphValidation {
+  const diagnostics: AnimGraphDiagnostic[] = [];
+  const issue = (path: string, message: string, repair: string): void => { diagnostics.push({ path, message, repair }); };
+  const field = (path: string, key: string): string => path === "" ? key : /^[A-Za-z_$][\w$]*$/.test(key) ? `${path}.${key}` : `${path}[${JSON.stringify(key)}]`;
+  const object = (candidate: unknown, path: string): Record<string, unknown> | null => {
+    const raw = record(candidate);
+    if (raw === null) issue(path, "Expected an animation graph object.", "Supply an object with the supported fields.");
+    return raw;
+  };
+  const text = (candidate: unknown, path: string, empty = false): candidate is string => {
+    if (typeof candidate === "string" && (empty || candidate.trim().length > 0)) return true;
+    issue(path, "Expected a nonempty string.", "Set an explicit name from this graph or imported rig.");
+    return false;
+  };
+  const number = (candidate: unknown, path: string, min = -Infinity, max = Infinity): candidate is number => {
+    if (typeof candidate === "number" && Number.isFinite(candidate) && candidate >= min && candidate <= max) return true;
+    issue(path, `Expected a finite number${min === -Infinity && max === Infinity ? "" : max === Infinity ? ` at least ${min}` : ` between ${min} and ${max}`}.`, "Set a finite value in the supported range.");
+    return false;
+  };
+  const boolean = (candidate: unknown, path: string): void => {
+    if (typeof candidate !== "boolean") issue(path, "Expected a boolean.", "Set true or false, or omit the optional field.");
+  };
+  const array = (candidate: unknown, path: string): unknown[] | null => {
+    if (Array.isArray(candidate)) return candidate;
+    issue(path, "Expected an array.", "Supply an array of supported entries.");
+    return null;
+  };
+  const tuple = (candidate: unknown, path: string, numeric: boolean): void => {
+    const entries = array(candidate, path);
+    if (entries === null) return;
+    if (entries.length !== 2) issue(path, "Expected exactly two entries.", "Supply the two blend axes in authored order.");
+    entries.forEach((entry, index) => numeric ? number(entry, `${path}[${index}]`) : text(entry, `${path}[${index}]`));
+  };
+  const state = (candidate: unknown, path: string): void => {
+    const raw = object(candidate, path);
+    if (raw === null) return;
+    if (!["clip", "blend1D", "blend2D"].includes(raw.kind as string)) {
+      issue(`${path}.kind`, "Unknown animation state kind.", "Choose clip, blend1D or blend2D.");
+      return;
+    }
+    if (raw.speed !== undefined) number(raw.speed, `${path}.speed`);
+    for (const key of ["loop", "rootMotion"]) if (raw[key] !== undefined) boolean(raw[key], `${path}.${key}`);
+    const allowed = raw.kind === "clip" ? ["clip", "variants"] : raw.kind === "blend1D" ? ["param", "points"] : ["params", "points"];
+    for (const key of ["clip", "variants", "param", "params", "points"]) if (raw[key] !== undefined && !allowed.includes(key)) {
+      issue(`${path}.${key}`, `Field ${key} is not used by a ${raw.kind} state.`, "Remove the field or choose the matching state kind.");
+    }
+    if (raw.kind === "clip") {
+      text(raw.clip, `${path}.clip`);
+      if (raw.variants !== undefined) array(raw.variants, `${path}.variants`)?.forEach((clip, index) => text(clip, `${path}.variants[${index}]`));
+      return;
+    }
+    if (raw.kind === "blend1D") text(raw.param, `${path}.param`);
+    else tuple(raw.params, `${path}.params`, false);
+    array(raw.points, `${path}.points`)?.forEach((candidate, index) => {
+      const pointPath = `${path}.points[${index}]`, point = object(candidate, pointPath);
+      if (point === null) return;
+      text(point.clip, `${pointPath}.clip`);
+      if (raw.kind === "blend1D") number(point.at, `${pointPath}.at`);
+      else tuple(point.at, `${pointPath}.at`, true);
+    });
+  };
+  const raw = object(value, "");
+  if (raw === null) return { graph: undefined, diagnostics };
+  const layers = array(raw.layers, "layers"), seen = new Set<string>();
+  if (layers?.length === 0) issue("layers", "An animation graph needs at least one layer.", "Add a layer with an entry state.");
+  layers?.forEach((candidate, index) => {
+    const path = `layers[${index}]`, layer = object(candidate, path);
+    if (layer === null) return;
+    if (text(layer.id, `${path}.id`)) {
+      if (seen.has(layer.id)) issue(`${path}.id`, "Layer id is duplicated.", "Give each layer a distinct id.");
+      seen.add(layer.id);
+    }
+    const validEntry = text(layer.entry, `${path}.entry`), states = object(layer.states, `${path}.states`);
+    if (states !== null) {
+      for (const [name, candidate] of Object.entries(states)) {
+        text(name, field(`${path}.states`, name));
+        state(candidate, field(`${path}.states`, name));
+      }
+      if (validEntry && !Object.hasOwn(states, layer.entry as string)) issue(`${path}.entry`, "Entry state does not exist in this layer.", "Choose a state declared in this layer.");
+    }
+    if (layer.weight !== undefined) number(layer.weight, `${path}.weight`, 0, 1);
+    if (layer.additive !== undefined) boolean(layer.additive, `${path}.additive`);
+    if (layer.mask !== undefined) array(layer.mask, `${path}.mask`)?.forEach((prefix, i) => text(prefix, `${path}.mask[${i}]`, true));
+    array(layer.transitions, `${path}.transitions`)?.forEach((candidate, i) => {
+      const edgePath = `${path}.transitions[${i}]`, edge = object(candidate, edgePath);
+      if (edge === null) return;
+      for (const key of ["from", "to"]) if (text(edge[key], `${edgePath}.${key}`) && states !== null && !(key === "from" && edge[key] === "*") && !Object.hasOwn(states, edge[key] as string)) {
+        issue(`${edgePath}.${key}`, "Transition references an unknown state.", "Choose a state declared in this layer; only from may use *.");
+      }
+      if (edge.trigger !== undefined) text(edge.trigger, `${edgePath}.trigger`);
+      if (edge.duration !== undefined) number(edge.duration, `${edgePath}.duration`, 0);
+      if (edge.exitTime !== undefined) number(edge.exitTime, `${edgePath}.exitTime`);
+      if (edge.when !== undefined) array(edge.when, `${edgePath}.when`)?.forEach((candidate, i) => {
+        const conditionPath = `${edgePath}.when[${i}]`, condition = object(candidate, conditionPath);
+        if (condition === null) return;
+        text(condition.param, `${conditionPath}.param`);
+        if (!COMPARES.includes(condition.op as AnimCompare)) issue(`${conditionPath}.op`, "Unknown comparison operator.", "Choose >, <, >=, <=, == or !=.");
+        if (typeof condition.value !== "boolean") number(condition.value, `${conditionPath}.value`);
+      });
+    });
+  });
+  if (raw.events !== undefined) array(raw.events, "events")?.forEach((candidate, index) => {
+    const path = `events[${index}]`, event = object(candidate, path);
+    if (event === null) return;
+    text(event.clip, `${path}.clip`);
+    text(event.name, `${path}.name`);
+    number(event.atSec, `${path}.atSec`, 0);
+  });
+  return { graph: diagnostics.length === 0 ? value as AnimGraph : undefined, diagnostics };
+}

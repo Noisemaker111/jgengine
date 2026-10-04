@@ -517,6 +517,7 @@
     "./work/staffedStation",
     "./work/unitTraining",
     "./world",
+    "./world/authoredAnimation",
     "./world/authoredEntities",
     "./world/authoredObjects",
     "./world/authoredSimulation",
