@@ -1,6 +1,6 @@
 // Gate: every PR that changes published-SDK source (packages/<pkg>/src) must add a note
 // file under changes/ (folded into CHANGELOG.md by `bun run release`), so the notes for the
-// next publish are complete by construction. Editing `## [Unreleased]` directly still passes.
+// next publish are complete by construction. A release may move notes into its new version section.
 // Wired into the PR `quick` job in .github/workflows/ci.yml.
 //
 // Bypass a pure refactor / test-only / internal change with `[skip changelog]` in a
@@ -25,9 +25,9 @@ function git(args: string[]): { status: number; stdout: string } {
   return { status: r.status ?? 1, stdout: r.stdout ?? "" };
 }
 
-function unreleasedBlock(text: string): string {
+function sectionBlock(text: string, heading: string): string {
   const lines = text.split("\n");
-  const start = lines.findIndex((l) => /^## \[Unreleased\]/.test(l));
+  const start = lines.findIndex((l) => l.trim() === heading);
   if (start < 0) return "";
   let end = lines.length;
   for (let i = start + 1; i < lines.length; i++) {
@@ -83,8 +83,34 @@ if (fragments.length > 0) {
 }
 
 const baseChangelog = git(["show", `${base}:CHANGELOG.md`]);
-const before = baseChangelog.status === 0 ? unreleasedBlock(baseChangelog.stdout) : "";
-const after = unreleasedBlock(readFileSync(new URL("../CHANGELOG.md", import.meta.url), "utf8"));
+const before = baseChangelog.status === 0 ? sectionBlock(baseChangelog.stdout, "## [Unreleased]") : "";
+const changelog = readFileSync(new URL("../CHANGELOG.md", import.meta.url), "utf8");
+const after = sectionBlock(changelog, "## [Unreleased]");
+const coreBefore = git(["show", `${base}:packages/core/package.json`]);
+const coreAfter = git(["show", "HEAD:packages/core/package.json"]);
+if (coreBefore.status === 0 && coreAfter.status === 0) {
+  const previous: unknown = JSON.parse(coreBefore.stdout).version;
+  const version: unknown = JSON.parse(coreAfter.stdout).version;
+  const stable = (value: unknown): value is string => typeof value === "string" && /^\d+\.\d+\.\d+$/.test(value);
+  if (stable(previous) && stable(version)) {
+    const oldParts = previous.split(".").map(Number);
+    const parts = version.split(".").map(Number);
+    const changedPart = parts.findIndex((part, i) => part !== oldParts[i]);
+    const heading = `## ${version}`;
+    const release = sectionBlock(changelog, heading);
+    const groups = groupByHeading(release.replace(/<!--[\s\S]*?-->/g, "").split("\n"));
+    const hasConsumerNotes = [...groups].some(([name, body]) =>
+      /^(Migrate|Added|Changed|Fixed|Removed)$/.test(name) && body.some((line) =>
+        /^-\s+\S/.test(line) && !/^-\s+\*?\*?Bump lockstep SDK packages to /.test(line),
+      ),
+    );
+    if (changedPart >= 0 && parts[changedPart]! > oldParts[changedPart]! &&
+        !sectionBlock(baseChangelog.stdout, heading) && hasConsumerNotes) {
+      console.log(`check-changelog ok: ${heading} records the release for ${sourceChanges.length} source file(s).`);
+      process.exit(0);
+    }
+  }
+}
 
 function fail(reason: string): never {
   console.error(
