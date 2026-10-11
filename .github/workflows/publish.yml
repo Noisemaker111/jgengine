@@ -29,7 +29,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "24"
-          registry-url: "https://registry.npmjs.org"
       - run: npm install -g npm@11.19.0
       - uses: actions/cache@v4
         with:
@@ -50,8 +49,6 @@ jobs:
           GAMES_CLONE_TOKEN: ${{ secrets.GAMES_CLONE_TOKEN }}
       - run: bun test packages
       - name: Publish unpublished packages in dependency order
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           for p in core rapier ws sql navbake react convex node shell editor assets github jgengine; do
             name=$(node -p "require('./packages/$p/package.json').name")
@@ -64,6 +61,6 @@ jobs:
               echo "skip $name@$version (already on npm)"
             else
               echo "publish $name@$version --tag $tag"
-              (cd "packages/$p" && npm publish --access public --tag "$tag")
+              (cd "packages/$p" && npm publish --access public --tag "$tag" --loglevel verbose)
             fi
           done

@@ -1,5 +1,5 @@
 /** Installed `@jgengine/core` semver — compare against {@link CHANGELOG} keys when migrating. */
-export const VERSION = "0.20.0";
+export const VERSION = "0.21.0";
 
 /** One release's migrate steps plus added/changed/removed notes (typed mirror of CHANGELOG.md). */
 export interface ChangelogEntry {
@@ -11,6 +11,23 @@ export interface ChangelogEntry {
 
 /** Per-version engine changelog keyed by semver string (e.g. `"0.10.0"`). */
 export const CHANGELOG: Record<string, ChangelogEntry> = {
+  "0.21.0": {
+    migrate: [
+      "Bump lockstep SDK packages to `^0.21.0`: `@jgengine/{core,rapier,react,ws,node,sql,convex,shell,editor,assets,navbake}`. CLI `jgengine` is `0.18.0`; `@jgengine/github` is `0.8.0`.",
+    ],
+    added: [
+      "Imported model animation can explicitly follow game speed controls while preserving the rig's automatic clip roles. Character clock and automatic-role controls survive authored scene edits, undo, save and reload; existing real-time playback remains the default.",
+      "`readAuthoredAnimation` and `createAuthoredAnimationReader` consume saved marker animation for game-owned character mappings, with live document caching and located repairs for invalid configuration. Authored animation replaces game defaults; omitted or invalid overrides retain those defaults.",
+    ],
+    changed: [
+      "Selected game-clock model animation samples locally accepted clock progress, keeping gait and clip time aligned with clamped and fixed simulation steps. Saved clock offsets cannot seek playback; external clocks without the capability receive a repair warning. Real-time playback and unbound previews retain their behavior.",
+      "Entity-bound imported animation holds its graph and mixer while the game clock is paused or has zero timescale, retaining queued triggers and playback for resume. Unbound previews keep playing.",
+      "Clear inferred character gait across placement discontinuities and driven actor motor state on despawn, preserving graph timing, ordinary hydration and pre-spawn restores.",
+      "Character Inspector and Graph panels show located errors in malformed saved animation overrides and wrap long diagnostic paths and block silent partial repair during unrelated edits. Explicit replacement remains undoable, and valid authored extensions and variant order survive editing.",
+      "Static authored character placements use the shared strict animation reader, matching inspector and dynamic-character validation. Malformed saved overrides preserve catalog animation defaults and report located repairs without changing the document or placement.",
+    ],
+    removed: [],
+  },
   "0.20.0": {
     migrate: [
       "Bump lockstep SDK packages to `^0.20.0`: `@jgengine/{core,rapier,react,ws,node,sql,convex,shell,editor,assets,navbake}`. CLI `jgengine` is `0.17.0`; `@jgengine/github` is `0.7.0`.",
