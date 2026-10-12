@@ -19,7 +19,7 @@ export const API_SKILL_DIRS = [
   "jgengine-editor",
 ] as const;
 
-export const DESIGN_SKILL_DIRS = ["game-design", "level-design"] as const;
+export const DESIGN_SKILL_DIRS = ["game-design", "level-design", "game-improvement"] as const;
 
 /** Agent utilities staged with the full skill set (not part of the low-token minimal create install). */
 export const AGENT_UTILITY_SKILLS = ["jgengine-verify", "ce-handoff"] as const;
