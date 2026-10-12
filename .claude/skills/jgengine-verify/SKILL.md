@@ -74,6 +74,8 @@ Portable mobile profiles enable native touch emulation and coarse-pointer media 
 
 **Arbitrary URLs (`shoot --url`):** the page must set `document.documentElement.dataset.jgCapture = "ready"` (HTML `data-jg-capture="ready"`) when the frame is honest; set `data-jg-capture="error"` with `data-jg-capture-error` on failure. Prefer managed game or `--site` targets over a hand-rolled Vite consumer.
 
+Portable key holds restore focus to the game's keyboard wrapper after menu clicks and wait for a rendered frame under the held key, with a bounded grace period. Existing scaffold-owned `scripts/drive.mjs` must be regenerated to receive driver updates; the CLI respects project-owned scripts.
+
 Standalone `shoot` and `drive` honor an observed `data-jg-capture` handshake: set it to `loading` before async scene setup, then `ready` after the frame is honest. A sized canvas cannot bypass a pending handshake, and a timeout reports its last state. Legacy pages without a handshake must provide a sized canvas with a nonempty backing store.
 
 A shot on disk is self-describing: a failed run leaves no file at its path, a re-capture that matches the shot it replaced prints `SAME PICTURE as the shot it replaced` (a no-op change or the wrong view, not a pass), and a blank viewport fails the command. None of that replaces looking.

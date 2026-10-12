@@ -216,7 +216,7 @@ describe.skipIf(!hasChrome)("portable harness in Chromium", () => {
           expect(clicks).toEqual([]);
         } else {
           expect(exit).toBe(0);
-          expect(stdout).toContain("shots/result.png");
+          expect(stdout).toContain(join("shots", "result.png"));
           expect(stdout).not.toContain("SOFTLOCK");
           expect(clicks).toHaveLength(1);
           expect(clicks[0]!.trusted).toBe(true);

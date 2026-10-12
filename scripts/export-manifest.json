@@ -1217,6 +1217,7 @@
     "./templates/driveInput",
     "./templates/editorWorkspace",
     "./templates/gameFiles",
+    "./templates/gameSurfaceFocus",
     "./templates/names",
     "./templates/sharedBuilder",
     "./templates/starterTerrain",
