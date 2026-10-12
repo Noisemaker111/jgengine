@@ -2,7 +2,13 @@
 
 [README.md](README.md) owns stable project truth: repository map, packages, layering, stack, commands, publishing model and license. Read it and whatever the change touches; do not restate its facts here or in skills. Explicit user instructions take precedence over this file and over any skill. If a skill makes you pause, ask for confirmation, or leave requested work unfinished, name and link its SKILL.md and continue with the user's instruction.
 
-Build distinct games by improving one shared framework. Every feature, bugfix, visual pass and interaction starts by identifying its engine owner. Games prove capabilities and expose gaps; they do not accumulate separate implementations of engine behavior. Keep game adapters small while preserving unique rules, content, assets, art direction and feel.
+## Project purpose
+
+JGengine is developed through distinct playable reference games. Playing and inspecting them reveals missing or broken framework capabilities, including layout, input, rendering, asset placement and physics. The purpose of a game review is to improve the shared framework so every applicable game benefits from one correction.
+
+Before fixing a symptom in a game, trace its cause to the installed SDK contract, its adoption or the game's own rules and composition. Reproduce a framework gap upstream, fix its shared owner, verify the packaged behavior in the affected game and a differently composed consumer when applicable, then remove superseded game workarounds. A fix copied into each game is unfinished framework work.
+
+Games own unique rules, content, assets, art direction and composition. Keep those choices distinct and shared behavior configurable. Diagnose the actual cause: an obstructed HUD does not automatically justify game-local CSS, and apparent sinking does not justify a guessed model offset. Report the framework gap resolved and behavior verified, alongside game-specific improvements and remaining gaps.
 
 ## Writing
 
