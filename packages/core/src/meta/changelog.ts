@@ -1,5 +1,5 @@
 /** Installed `@jgengine/core` semver — compare against {@link CHANGELOG} keys when migrating. */
-export const VERSION = "0.21.0";
+export const VERSION = "0.22.0";
 
 /** One release's migrate steps plus added/changed/removed notes (typed mirror of CHANGELOG.md). */
 export interface ChangelogEntry {
@@ -11,6 +11,21 @@ export interface ChangelogEntry {
 
 /** Per-version engine changelog keyed by semver string (e.g. `"0.10.0"`). */
 export const CHANGELOG: Record<string, ChangelogEntry> = {
+  "0.22.0": {
+    migrate: [
+      "Bump lockstep SDK packages to `^0.22.0`: `@jgengine/{core,rapier,react,ws,node,sql,convex,shell,editor,assets,navbake}`. CLI `jgengine` is `0.19.0`; `@jgengine/github` is `0.9.0`.",
+    ],
+    added: [
+      "Editor-authored grass exposes blade width and bend ranges, tuft radius and normal lift, using the same bounded grass renderer as environment fields. Existing scene documents keep their previous shape and lighting defaults.",
+      "The full `jgengine skills` install includes `game-improvement`, with an ordered implementation workflow and checks for meaningful decisions, authored terrain and grass, and proven play quality.",
+    ],
+    changed: [
+      "Grass volumes sample terrain at their authored world position and subtract their placement height once, keeping translated patches rooted on slopes instead of buried underground.",
+      "Authored grass respects spawn, objective and road/path clearances with feathered regrowth outside the usable footing. Diagonal paths keep their own corridor clear without clearing the entire surrounding rectangle.",
+      "Runtime environment ground now renders editor-authored terrain paint surfaces, layer tints, opacity and weighted blends through the same sampler as the editor. Legacy unpainted terrain keeps descriptor shading. Layer texture tiling, roughness and triplanar controls remain serialized authoring metadata; this fix does not add layered PBR texture rendering.",
+    ],
+    removed: [],
+  },
   "0.21.0": {
     migrate: [
       "Bump lockstep SDK packages to `^0.21.0`: `@jgengine/{core,rapier,react,ws,node,sql,convex,shell,editor,assets,navbake}`. CLI `jgengine` is `0.18.0`; `@jgengine/github` is `0.8.0`.",
