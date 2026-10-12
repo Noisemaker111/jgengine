@@ -16,7 +16,7 @@ export const Route = createFileRoute("/")({
   component: Home,
 });
 
-const FEATURED = ["harbor-heat", "scrap-signal", "lantern-reach"];
+const FEATURED = ["harbor-heat", "scrap-signal", "brightway-park"];
 
 const STEPS = [
   {

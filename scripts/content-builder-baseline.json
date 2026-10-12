@@ -7,8 +7,6 @@
   "Games/harbor-heat/src/world.ts:grass",
   "Games/harbor-heat/src/world.ts:ocean",
   "Games/harbor-heat/src/world.ts:road",
-  "Games/lantern-reach/src/world.ts:building",
-  "Games/lantern-reach/src/world.ts:grass",
   "Games/scrap-signal/src/world.ts:building",
   "Games/scrap-signal/src/world.ts:grass",
   "Games/scrap-signal/src/world.ts:road"

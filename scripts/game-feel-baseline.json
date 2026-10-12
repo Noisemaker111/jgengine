@@ -9,16 +9,6 @@
   "ember-command#camera-smoothing",
   "ember-command#combat-feedback",
   "ember-command#input-audio",
-  "field-station#camera-smoothing",
-  "field-station#combat-feedback",
-  "field-station#input-audio",
-  "lantern-reach#camera-smoothing",
-  "lantern-reach#combat-feedback",
   "odd-orbit#camera-smoothing",
-  "odd-orbit#combat-feedback",
-  "resonant-crossing#camera-smoothing",
-  "resonant-crossing#combat-feedback",
-  "wayfarer-deck#camera-smoothing",
-  "wayfarer-deck#combat-feedback",
-  "wayfarer-deck#input-audio"
+  "odd-orbit#combat-feedback"
 ]

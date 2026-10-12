@@ -90,7 +90,7 @@ export function Blueprints() {
         </div>
         <div className="flex min-w-0 flex-col gap-3">
           <CodeBlock code={imports} filename="what the agent imports" />
-          {isGameId(blueprint.gameId) && (
+          {blueprint.gameId !== undefined && isGameId(blueprint.gameId) && (
             <Link
               to="/games/$id"
               params={{ id: blueprint.gameId }}

@@ -8,7 +8,7 @@ export interface Blueprint {
   readonly prompt: string;
   readonly scale: string;
   /** The probe game on /games closest to this pitch (it need not use every block). */
-  readonly gameId: string;
+  readonly gameId?: string;
   readonly blocks: readonly string[];
 }
 
@@ -16,7 +16,6 @@ export const BLUEPRINTS: readonly Blueprint[] = [
   {
     prompt: "is an MMO with raids, quests and talent trees",
     scale: "WoW-scale",
-    gameId: "lantern-reach",
     blocks: [
       "jgengine-combat/ability-bar",
       "jgengine-combat/cast-bar",
