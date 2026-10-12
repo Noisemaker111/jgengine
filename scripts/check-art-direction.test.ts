@@ -1,5 +1,6 @@
+import { spawnSync } from "node:child_process";
 import { describe, expect, test } from "bun:test";
-import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { copyFileSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -35,4 +36,47 @@ describe("check-art-direction", () => {
     rmSync(dir, { recursive: true, force: true });
     expect(result.code).toBe(0);
   });
+});
+
+function fixture(files: Record<string, string>) {
+  const root = mkdtempSync(join(tmpdir(), "jg-art-gate-"));
+  try {
+    mkdirSync(join(root, "scripts"));
+    copyFileSync(join(import.meta.dir, "check-art-direction.ts"), join(root, "scripts/check-art-direction.ts"));
+    writeFileSync(join(root, "scripts/art-direction-baseline.json"), "[]");
+    for (const [file, text] of Object.entries(files)) {
+      const path = join(root, file);
+      mkdirSync(join(path, ".."), { recursive: true });
+      writeFileSync(path, text);
+    }
+    return spawnSync(process.execPath, ["scripts/check-art-direction.ts"], {
+      cwd: root, encoding: "utf8", env: { ...process.env, CI: "true" }, timeout: 10_000,
+    });
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+}
+
+test("art gate ignores helper packages and validates playable game art", () => {
+  const result = fixture({
+    "Games/registry/src/index.ts": "export {};",
+    "Games/shared/src/index.ts": "export {};",
+    "Games/studios/src/index.ts": "export {};",
+    "Games/probe/src/index.tsx": "export {};",
+    "Games/probe/src/art-direction.md": "## Palette\n- Amber against slate.\n",
+  });
+  expect(result.status).toBe(0);
+});
+
+test("art gate requires documents for either game entry and rejects unfinished art", () => {
+  const result = fixture({
+    "Games/entry/src/index.tsx": "export {};",
+    "Games/config/src/game.config.ts": "export {};",
+    "Games/unfinished/src/index.tsx": "export {};",
+    "Games/unfinished/src/art-direction.md": "## Palette\nTODO: fill in\n",
+  });
+  expect(result.status).toBe(1);
+  expect(result.stderr).toContain("entry: missing src/art-direction.md");
+  expect(result.stderr).toContain("config: missing src/art-direction.md");
+  expect(result.stderr).toContain("unfinished: Palette: TODO: fill in");
 });
