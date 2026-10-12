@@ -1,6 +1,7 @@
 import { dispatchClickAt, parseClickAt } from "../clickInput";
 import { escapeHtml } from "../escapeHtml";
 import { driveInputPointExpr, parseDriveFill } from "./driveInput";
+import { focusGameSurface, holdComplete } from "./gameSurfaceFocus";
 import type { EditorSceneDoc, TemplateVariant } from "./types";
 
 const indexHtml = (name: string) => `<!doctype html>
@@ -1001,11 +1002,26 @@ async function fill(session, label, value) {
   await session.send("Input.dispatchKeyEvent", { type: "keyUp", key: "Tab", code: "Tab", windowsVirtualKeyCode: 9 });
 }
 
+const focusGameSurface = ${focusGameSurface.toString()};
+const holdComplete = ${holdComplete.toString()};
+
 async function holdKey(session, code, holdMs) {
+  await session.send("Page.bringToFront");
+  await session.evaluate("(" + focusGameSurface.toString() + ")(document)");
+  await session.evaluate("(() => { if (globalThis.__jgFrames !== undefined) return; globalThis.__jgFrames = 0; const tick = () => { globalThis.__jgFrames++; requestAnimationFrame(tick); }; requestAnimationFrame(tick); })()");
+  const startFrames = await session.evaluate("globalThis.__jgFrames ?? 0");
+  const deadlineMs = Date.now() + holdMs;
   const key = code.startsWith("Key") ? code.slice(3).toLowerCase() : code;
   await session.send("Input.dispatchKeyEvent", { type: "keyDown", code, key });
-  await sleep(holdMs);
-  await session.send("Input.dispatchKeyEvent", { type: "keyUp", code, key });
+  try {
+    for (;;) {
+      await sleep(100);
+      const framesElapsed = (await session.evaluate("globalThis.__jgFrames ?? 0")) - startFrames;
+      if (holdComplete({ nowMs: Date.now(), deadlineMs, hardCapMs: deadlineMs + 20000, framesElapsed })) break;
+    }
+  } finally {
+    await session.send("Input.dispatchKeyEvent", { type: "keyUp", code, key });
+  }
 }
 
 async function rpc(session, json) {
