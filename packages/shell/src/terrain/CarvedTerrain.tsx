@@ -15,6 +15,7 @@ export interface CarvedTerrainProps extends Omit<ThreeElements["mesh"], "args" |
   colors?: FieldGroundOptions["colors"];
   heightRange?: FieldGroundOptions["heightRange"];
   paletteAt?: FieldGroundOptions["paletteAt"];
+  paintColorAt?: FieldGroundOptions["paintColorAt"];
   roughness?: number;
   metalness?: number;
   /** Override the default vertex-colour material (e.g. a procedural detail material). The caller owns its lifecycle; it is not disposed here. */
@@ -36,6 +37,7 @@ export function CarvedTerrain({
   colors,
   heightRange,
   paletteAt,
+  paintColorAt,
   roughness = 0.95,
   metalness = 0,
   surfaceMaterial,
@@ -44,8 +46,8 @@ export function CarvedTerrain({
   ...meshProps
 }: CarvedTerrainProps) {
   const geometry = useDisposable(
-    () => createFieldGroundGeometry(field, { size, segments, center, colors, heightRange, paletteAt }),
-    [field, size, segments, center, colors, heightRange, paletteAt, epoch],
+    () => createFieldGroundGeometry(field, { size, segments, center, colors, heightRange, paletteAt, paintColorAt }),
+    [field, size, segments, center, colors, heightRange, paletteAt, paintColorAt, epoch],
   );
   const defaultMaterial = useDisposable(
     () => new THREE.MeshStandardMaterial({ color: "#ffffff", roughness, metalness, vertexColors: true }),

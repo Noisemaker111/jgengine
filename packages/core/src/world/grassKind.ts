@@ -19,6 +19,16 @@ export interface GrassRules {
   density: number;
   /** Blade height in meters. */
   bladeHeight: number;
+  /** Blade-width range in metres; endpoints are normalized on read. */
+  bladeWidthMin: number;
+  bladeWidthMax: number;
+  /** Bend range, 0..1. */
+  bladeBendMin: number;
+  bladeBendMax: number;
+  /** Spread of blades around each tuft root, in metres. */
+  tuftRadius: number;
+  /** Normal lift toward the sky, 0..1; controls the card lighting response. */
+  normalLift: number;
   /** Base (root) color, hex. */
   colorBase: string;
   /** Tip color, hex. */
@@ -41,6 +51,12 @@ export interface GrassRules {
 export const GRASS_DEFAULTS: GrassRules = {
   density: 12,
   bladeHeight: 0.6,
+  bladeWidthMin: 0.05,
+  bladeWidthMax: 0.1,
+  bladeBendMin: 0.12,
+  bladeBendMax: 0.42,
+  tuftRadius: 0.16,
+  normalLift: 0.6,
   colorBase: "#3f6f37",
   colorTip: "#9ac25a",
   colorVariation: 0.35,
@@ -56,6 +72,12 @@ export const GRASS_SCHEMA: ParamSchema = {
   fields: [
     { type: "range", key: "density", label: "density", min: 0.5, max: 160, step: 0.5, default: GRASS_DEFAULTS.density, unit: "/m²" },
     { type: "range", key: "bladeHeight", label: "blade height", min: 0.1, max: 2, step: 0.05, default: GRASS_DEFAULTS.bladeHeight, unit: "m" },
+    { type: "range", key: "bladeWidthMin", label: "minimum blade width", min: 0.005, max: 0.3, step: 0.005, default: GRASS_DEFAULTS.bladeWidthMin, unit: "m" },
+    { type: "range", key: "bladeWidthMax", label: "maximum blade width", min: 0.005, max: 0.3, step: 0.005, default: GRASS_DEFAULTS.bladeWidthMax, unit: "m" },
+    { type: "range", key: "bladeBendMin", label: "minimum bend", min: 0, max: 1, step: 0.01, default: GRASS_DEFAULTS.bladeBendMin },
+    { type: "range", key: "bladeBendMax", label: "maximum bend", min: 0, max: 1, step: 0.01, default: GRASS_DEFAULTS.bladeBendMax },
+    { type: "range", key: "tuftRadius", label: "tuft radius", min: 0, max: 0.6, step: 0.01, default: GRASS_DEFAULTS.tuftRadius, unit: "m" },
+    { type: "range", key: "normalLift", label: "normal lift", min: 0, max: 1, step: 0.01, default: GRASS_DEFAULTS.normalLift },
     { type: "color", key: "colorBase", label: "base color", default: GRASS_DEFAULTS.colorBase },
     { type: "color", key: "colorTip", label: "tip color", default: GRASS_DEFAULTS.colorTip },
     { type: "range", key: "colorVariation", label: "color variation", min: 0, max: 1, step: 0.02, default: GRASS_DEFAULTS.colorVariation },
@@ -79,9 +101,19 @@ function metaString(meta: Record<string, unknown> | undefined, key: string, fall
 
 /** Parse a volume's `meta` into fully-defaulted grass rules. @internal */
 export function readGrassRules(meta: Record<string, unknown> | undefined): GrassRules {
+  const widthMin = Math.max(0.005, metaNumber(meta, "bladeWidthMin", GRASS_DEFAULTS.bladeWidthMin));
+  const widthMax = Math.max(0.005, metaNumber(meta, "bladeWidthMax", GRASS_DEFAULTS.bladeWidthMax));
+  const bendMin = Math.max(0, Math.min(1, metaNumber(meta, "bladeBendMin", GRASS_DEFAULTS.bladeBendMin)));
+  const bendMax = Math.max(0, Math.min(1, metaNumber(meta, "bladeBendMax", GRASS_DEFAULTS.bladeBendMax)));
   return {
     density: Math.max(0, metaNumber(meta, "density", GRASS_DEFAULTS.density)),
     bladeHeight: Math.max(0.05, metaNumber(meta, "bladeHeight", GRASS_DEFAULTS.bladeHeight)),
+    bladeWidthMin: Math.min(widthMin, widthMax),
+    bladeWidthMax: Math.max(widthMin, widthMax),
+    bladeBendMin: Math.min(bendMin, bendMax),
+    bladeBendMax: Math.max(bendMin, bendMax),
+    tuftRadius: Math.max(0, metaNumber(meta, "tuftRadius", GRASS_DEFAULTS.tuftRadius)),
+    normalLift: Math.max(0, Math.min(1, metaNumber(meta, "normalLift", GRASS_DEFAULTS.normalLift))),
     colorBase: metaString(meta, "colorBase", GRASS_DEFAULTS.colorBase),
     colorTip: metaString(meta, "colorTip", GRASS_DEFAULTS.colorTip),
     colorVariation: metaNumber(meta, "colorVariation", GRASS_DEFAULTS.colorVariation),

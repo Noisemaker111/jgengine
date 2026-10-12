@@ -58,7 +58,7 @@ export interface TerrainMaterialLayer {
   tiling?: number;
   /** Project the material on all three axes to hide stretching on cliffs. */
   triplanar?: boolean;
-  /** Hex color multiplied over the surface color. */
+  /** Authored hex color replacing the default surface palette color in editor and runtime. */
   tint?: string;
   /** Layer master opacity 0..1 — scales this layer's blend weight everywhere. */
   opacity?: number;

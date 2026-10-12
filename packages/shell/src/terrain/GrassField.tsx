@@ -42,6 +42,7 @@ export interface GrassFieldProps extends Omit<ThreeElements["mesh"], "args" | "c
   edgeFeather?: number;
   exclude?: readonly GrassExclusion[];
   heightAt?: TerrainHeightSampler;
+  coverageAt?: TerrainHeightSampler;
   colorBase?: GrassMaterialOptions["colorBase"];
   colorTip?: GrassMaterialOptions["colorTip"];
   colorGround?: GrassMaterialOptions["colorGround"];
@@ -68,6 +69,7 @@ export function GrassField({
   edgeFeather,
   exclude,
   heightAt,
+  coverageAt,
   colorBase,
   colorTip,
   colorGround,
@@ -100,8 +102,9 @@ export function GrassField({
         ...(edgeFeather === undefined ? {} : { edgeFeather }),
         ...(exclude === undefined ? {} : { exclude }),
         heightAt,
+        coverageAt,
       }),
-    [area, bladeBend, bladeHeight, bladeWidth, count, edgeFeather, exclude, heightAt, seed, segments, tuftBlades, tuftRadius],
+    [area, bladeBend, bladeHeight, bladeWidth, count, coverageAt, edgeFeather, exclude, heightAt, seed, segments, tuftBlades, tuftRadius],
   );
   useDisposable(() => chunks.map((chunk) => chunk.geometry), [chunks]);
   const handle = useMemo(

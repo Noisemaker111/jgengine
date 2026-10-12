@@ -172,6 +172,8 @@ export interface FieldGroundOptions {
   paletteAt?: TerrainPaletteSampler;
   /** Slope/noise surface shading over the height lerp. Omit for the default terrain look; pass `{ slopeStrength: 0, mottleStrength: 0 }` for a flat gradient. */
   surface?: TerrainSurfaceColorOptions;
+  /** Authored paint overrides descriptor shading at painted vertices. */
+  paintColorAt?: (x: number, z: number, out: THREE.Color) => boolean;
 }
 
 /**
@@ -190,6 +192,7 @@ export function createFieldGroundGeometry(field: TerrainField, options: FieldGro
     heightRange: options.heightRange,
     paletteAt: options.paletteAt,
     surface: options.surface,
+    paintColorAt: options.paintColorAt,
   });
 }
 
@@ -203,6 +206,7 @@ function buildGroundGeometry(
     heightRange?: readonly [number, number];
     paletteAt?: TerrainPaletteSampler;
     surface?: TerrainSurfaceColorOptions;
+    paintColorAt?: (x: number, z: number, out: THREE.Color) => boolean;
   },
 ): THREE.BufferGeometry {
   const colors = opts.colors;
@@ -256,6 +260,7 @@ function buildGroundGeometry(
         slope01 = grad / (grad + 1);
       }
       applyTerrainSurfaceShading(color, x, z, slope01, surface);
+      opts.paintColorAt?.(x, z, color);
       colorValues[colorIndex] = color.r;
       colorValues[colorIndex + 1] = color.g;
       colorValues[colorIndex + 2] = color.b;

@@ -29,6 +29,8 @@ import {
 } from "@jgengine/core/world/terrain";
 
 import { useDisposable } from "../render/useDisposable";
+import { editableTerrainFromSnapshot, type TerraformSnapshot } from "@jgengine/core/world/terraform";
+import { createTerrainPaintColorSampler } from "../terrain/terrainPaintColor";
 import { GroundPad } from "./GroundPad";
 import { RoadJunctions } from "./RoadJunctions";
 import { buildAuthoredRoadNetwork, RoadRibbons } from "./RoadRibbons";
@@ -52,6 +54,7 @@ interface TerrainGroundLayout {
   colors: CarvedTerrainProps["colors"];
   heightRange: readonly [number, number];
   paletteAt: CarvedTerrainProps["paletteAt"];
+  paintColorAt?: CarvedTerrainProps["paintColorAt"];
   center?: readonly [number, number];
 }
 
@@ -88,6 +91,7 @@ function TexturedTerrainGround({
       colors={layout.colors}
       heightRange={layout.heightRange}
       paletteAt={layout.paletteAt}
+      paintColorAt={layout.paintColorAt}
       center={layout.center}
       roughness={0.94}
       surfaceMaterial={material}
@@ -100,11 +104,14 @@ function TerrainGround({
   terrain,
   field,
   center,
+  sculpt,
 }: {
   terrain: Omit<TerrainEnvironmentDescriptor, "kind">;
   field: TerrainField;
   center?: readonly [number, number];
+  sculpt?: TerraformSnapshot;
 }) {
+  const paintColorAt = useMemo(() => sculpt === undefined ? undefined : createTerrainPaintColorSampler(editableTerrainFromSnapshot(sculpt)), [sculpt]);
   const palette = useMemo(() => resolveTerrainPalette(terrain), [terrain]);
   const paletteAt = useMemo(() => {
     const hasRegions = terrain.materialRegions !== undefined && terrain.materialRegions.length > 0;
@@ -146,7 +153,7 @@ function TerrainGround({
       <PresentationAssetBoundary>
         <TexturedTerrainGround
           detail={resolvedDetail}
-          layout={{ field, size, segments: terrain.segments, colors, heightRange, paletteAt, center }}
+          layout={{ field, size, segments: terrain.segments, colors, heightRange, paletteAt, paintColorAt, center }}
         />
       </PresentationAssetBoundary>
     );
@@ -160,6 +167,7 @@ function TerrainGround({
       colors={colors}
       heightRange={heightRange}
       paletteAt={paletteAt}
+      paintColorAt={paintColorAt}
       center={center}
       roughness={0.94}
       surfaceMaterial={proceduralMaterial}
@@ -222,8 +230,9 @@ function vegetationGroundColor(
   terrain: Omit<TerrainEnvironmentDescriptor, "kind"> | undefined,
   field: TerrainField,
   grass: GrassEnvironmentDescriptor,
+  sculpt?: TerraformSnapshot,
 ): string | undefined {
-  const sampler = terrainGroundColorSampler(terrain, field);
+  const sampler = terrainGroundColorSampler(terrain, field, sculpt);
   if (sampler === undefined) return undefined;
   const [cx, cz] = areaCenter(grass.area);
   return sampler(cx, cz);
@@ -361,9 +370,9 @@ export function EnvironmentScene({ feature }: EnvironmentSceneProps) {
   );
   return (
     <>
-      {feature.terrain !== undefined ? <TerrainGround terrain={feature.terrain} field={field} /> : null}
+      {feature.terrain !== undefined ? <TerrainGround terrain={feature.terrain} field={field} sculpt={feature.sculpt} /> : null}
       {islands.map((entry, index) => (
-        <TerrainGround key={`island-${index}`} terrain={entry} field={field} center={entry.origin} />
+        <TerrainGround key={`island-${index}`} terrain={entry} field={field} center={entry.origin} sculpt={feature.sculpt} />
       ))}
       {water.map((ocean, index) => (
         <Water key={`ocean-${index}`} ocean={ocean} />
@@ -383,7 +392,7 @@ export function EnvironmentScene({ feature }: EnvironmentSceneProps) {
           key={`grass-${index}`}
           grass={grass}
           field={field}
-          groundColor={vegetationGroundColor(feature.terrain, field, grass)}
+          groundColor={vegetationGroundColor(feature.terrain, field, grass, feature.sculpt)}
         />
       ))}
       {feature.weather !== undefined && feature.weather.length > 0 ? (

@@ -92,7 +92,7 @@ function authoredSceneOverlay(
   const terrain = world !== undefined && world.kind === "environment" ? world.terrain : undefined;
   return function AuthoredSceneOverlay(props: WorldOverlayProps) {
     const groundColorAt = useMemo(
-      () => terrainGroundColorSampler(terrain, props.ctx.world.ground),
+      () => terrainGroundColorSampler(terrain, props.ctx.world.ground, document.terrain),
       [props.ctx.world.ground],
     );
     return (
