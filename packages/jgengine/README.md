@@ -30,6 +30,8 @@ Skills ship inside this package under `skills/` and are installed into the proje
 | `editor [dir]` | Open the standalone 3D scene editor on a folder; Ctrl+S writes `editor.scene.json` back |
 | `shoot [...]` | Screenshot the current game headless (WebGL-safe) to `shots/shot.png` (`--device`, `--out`, `--url`, `--settle`, `--timeout`, `--help`); needs Chrome/Chromium |
 | `drive [...]` | Play/test the current game headless — `--click`/`--click-at x,y` (CSS viewport pixels)/`--key`/`--wait`/`--shot` steps, `--rpc`, `--playtest --strict`; `--help` for all flags |
+
+Key holds restore focus to the game's keyboard surface after menu clicks and remain held until at least one rendered frame runs, with a bounded grace period for slow headless rendering. Existing projects with their own `scripts/drive.mjs` keep that script; regenerate it from the updated scaffold to receive driver fixes.
 | `desktop [dir]` | Ship a Windows NSIS installer for a project or `--url` |
 | `skills -p \| -g` | Re-install agent skills (project / global) |
 | `doctor [dir] [--workspace [--json]]` | Game diagnostics by default; opt-in aggregate workspace SDK installation checks |
