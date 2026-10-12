@@ -75,12 +75,12 @@ describe("loadGameLayers", () => {
     ]);
   });
 
-  const studioScene = new URL("../../../../Games/field-station/src/editor.scene.json", import.meta.url);
+  const studioScene = new URL("../../../../Games/brightway-park/src/editor.scene.json", import.meta.url);
   test.skipIf(!existsSync(studioScene) && !process.env.CI)("the pinned real game's authored scene decodes", () => {
     const decoded = decodeGameLayers(JSON.parse(readFileSync(studioScene, "utf8")));
     if (!decoded.ok) throw new Error(JSON.stringify(decoded.errors));
     expect(decoded.document.version).toBe(1);
-    expect(decoded.document.markers.some((marker) => marker.id === "bookcase_1")).toBe(true);
-    expect(decoded.document.paths.some((path) => path.id === "powerline_1")).toBe(true);
+    expect(decoded.document.markers.some((marker) => marker.id === "ride_carousel-1")).toBe(true);
+    expect(decoded.document.paths.some((path) => path.id === "coaster-track")).toBe(true);
   });
 });
