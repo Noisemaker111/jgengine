@@ -4,7 +4,7 @@ import { copyFileSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { foldFragments } from "./changelog-fragments";
-import { parseSections, sectionLines, splitComment } from "./release";
+import { cutChangelog, lockstepBullet, parseSections, sectionLines, splitComment } from "./release";
 
 const MARKDOWN = `# Changelog
 
@@ -46,7 +46,7 @@ test("no fragments leaves the document untouched; a headingless fragment throws"
   expect(() => foldFragments(MARKDOWN, ["- no heading"])).toThrow();
 });
 
-function checkerFixture(fragment: string | null, change: "docs" | "skip" | "source" = "docs") {
+function checkerFixture(fragment: string | null, change: "docs" | "skip" | "source" = "docs", markdown = MARKDOWN) {
   const root = mkdtempSync(join(tmpdir(), "jg-changelog-gate-"));
   const git = (...args: string[]) => {
     const result = spawnSync("git", args, { cwd: root, encoding: "utf8" });
@@ -59,7 +59,9 @@ function checkerFixture(fragment: string | null, change: "docs" | "skip" | "sour
     for (const script of ["check-changelog.ts", "changelog-fragments.ts"]) {
       copyFileSync(join(import.meta.dir, script), join(root, "scripts", script));
     }
-    writeFileSync(join(root, "CHANGELOG.md"), MARKDOWN);
+    writeFileSync(join(root, "CHANGELOG.md"), markdown);
+    mkdirSync(join(root, "packages", "core"), { recursive: true });
+    writeFileSync(join(root, "packages", "core", "package.json"), JSON.stringify({ name: "@jgengine/core", version: "0.17.0" }));
     // The malformed note predates the diff: validating only new/modified notes misses it.
     if (fragment !== null) writeFileSync(join(root, "changes", "existing.md"), fragment);
     git("init", "--quiet");
@@ -98,7 +100,7 @@ for (const scenario of ["docs", "unavailable-base", "skip"] as const) {
     try {
       const result = fixture.run(scenario === "unavailable-base" ? "missing-changelog-base" : undefined);
       expect(result.status).toBe(1);
-      expect(result.stderr).toContain("changes/existing.md");
+      expect(result.stderr).toContain(join("changes", "existing.md"));
       expect(result.stderr).toContain("### Migrate/Added/Changed/Fixed/Removed");
     } finally {
       rmSync(fixture.root, { recursive: true, force: true });
@@ -112,7 +114,7 @@ for (const fragment of ["### Notes\n\n- Unsupported section.\n", "### Added\n\n"
     try {
       const result = fixture.run();
       expect(result.status).toBe(1);
-      expect(result.stderr).toContain("changes/existing.md");
+      expect(result.stderr).toContain(join("changes", "existing.md"));
     } finally {
       rmSync(fixture.root, { recursive: true, force: true });
     }
@@ -148,3 +150,42 @@ test("actual changelog checker still requires a new note for nonexempt SDK chang
     rmSync(fixture.root, { recursive: true, force: true });
   }
 });
+
+
+const RELEASE_BASE = MARKDOWN.replace("### Changed\n\n- Existing note.\n\n", "");
+
+test("actual changelog checker accepts consumer notes folded into an increased SDK release", () => {
+  const fragment = "### Fixed\n\n- Repair game clock animation.\n";
+  const fixture = checkerFixture(fragment, "source", RELEASE_BASE);
+  try {
+    const released = cutChangelog(foldFragments(RELEASE_BASE, [fragment]), "0.18.0", lockstepBullet("0.18.0", "0.15.0", "0.5.0"));
+    writeFileSync(join(fixture.root, "CHANGELOG.md"), released);
+    writeFileSync(join(fixture.root, "packages", "core", "package.json"), JSON.stringify({ name: "@jgengine/core", version: "0.18.0" }));
+    rmSync(join(fixture.root, "changes", "existing.md"));
+    fixture.git("add", ".");
+    fixture.git("commit", "--quiet", "-m", "Release 0.18.0");
+    const result = fixture.run();
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain("## 0.18.0 records the release");
+  } finally {
+    rmSync(fixture.root, { recursive: true, force: true });
+  }
+});
+
+for (const scenario of ["unchanged-version", "decreased-version", "wrong-section", "empty-section", "bump-only", "guidance-only", "unsupported-heading", "existing-section"] as const) {
+  test(`actual changelog checker rejects false release evidence: ${scenario}`, () => {
+    const fixture = checkerFixture(null, "source", scenario === "existing-section" ? RELEASE_BASE.replace("## 0.17.0", "## 0.18.0") : RELEASE_BASE);
+    try {
+      const version = scenario === "unchanged-version" ? "0.17.0" : scenario === "decreased-version" ? "0.16.0" : "0.18.0";
+      const heading = scenario === "wrong-section" ? "0.19.0" : version;
+      const body = scenario === "empty-section" ? "" : scenario === "bump-only" ? `### Migrate\n\n- ${lockstepBullet(version, "0.15.0", "0.5.0")}\n` : scenario === "guidance-only" ? "<!--\n### Fixed\n\n- A guidance example.\n-->" : scenario === "unsupported-heading" ? "### Notes\n\n- Unsupported note.\n" : "### Fixed\n\n- Repair game clock animation.\n";
+      writeFileSync(join(fixture.root, "CHANGELOG.md"), `# Changelog\n\n## [Unreleased]\n\n<!--\nguidance\n-->\n\n## ${heading}\n\n${body}\n`);
+      writeFileSync(join(fixture.root, "packages", "core", "package.json"), JSON.stringify({ name: "@jgengine/core", version }));
+      fixture.git("add", ".");
+      fixture.git("commit", "--quiet", "-m", "Attempt release");
+      expect(fixture.run().status).toBe(1);
+    } finally {
+      rmSync(fixture.root, { recursive: true, force: true });
+    }
+  });
+}
