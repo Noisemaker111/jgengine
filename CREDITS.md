@@ -142,7 +142,7 @@ JGengine's editor-owned world and reusable-package workflow.
 
 Some of the games in `Games/*` are our own take on someone else's idea. We
 credit the originators here, in the game's on-screen HUD (which each game
-renders itself — for example, the World of ClaudeCraft port ships a `CreditLine`
+renders itself — for example, Lantern Reach ships a `CreditLine`
 in its HUD), and on the game's jgengine.com page. Each game declares its own
 attribution via `export const credit` in its `game.config.ts`; the game page
 (`apps/web/src/routes/games.$id.tsx`) renders that credit beneath the runner,
@@ -150,7 +150,7 @@ sourced from the game's config rather than a hand-maintained web registry.
 
 ### Levy Street — *World of ClaudeCraft*
 
-**[World of ClaudeCraft](Games/claudecraft)** is a port of
+**[Lantern Reach](Games/lantern-reach)** began as a port of
 **[world-of-claudecraft](https://github.com/levy-street/world-of-claudecraft)**
 by **[Levy Street](https://github.com/levy-street)** (MIT) — a from-scratch,
 browser-based classic-era MMORPG built almost entirely with AI coding agents:
@@ -163,7 +163,7 @@ tables, and the Gravecaller storyline down to Morthen in the Hollow Crypt —
 credited here and on the game's HUD.
 
 The port's committed 3D art is not upstream's: the `.glb` models under
-[`apps/dev/public/models/claudecraft/`](apps/dev/public/models/claudecraft) —
+[`apps/dev/public/models/lantern-reach/`](apps/dev/public/models/lantern-reach) —
 player classes, weapons, creatures, and enemies — are CC0 **KayKit**
 (adventurer classes, weapons, skeletons) and **Quaternius** (animals, monsters)
 models, renamed to match the roles in upstream's visual manifest. See the

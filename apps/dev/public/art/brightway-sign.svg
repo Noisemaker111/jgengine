@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="320" viewBox="0 0 1024 320">
+<rect x="8" y="8" width="1008" height="304" rx="70" fill="#24444c" stroke="#edbc5c" stroke-width="14"/>
+<path d="M75 238 Q180 18 286 238" fill="none" stroke="#ef7059" stroke-width="14"/>
+<circle cx="180" cy="122" r="67" fill="none" stroke="#fff1cf" stroke-width="8"/>
+<path d="M180 55V189M113 122H247M133 75L227 169M133 169L227 75" stroke="#edbc5c" stroke-width="6"/>
+<text x="625" y="155" text-anchor="middle" font-family="Georgia,serif" font-weight="bold" font-size="95" fill="#fff1cf">Brightway</text>
+<text x="625" y="234" text-anchor="middle" font-family="sans-serif" font-size="39" letter-spacing="18" fill="#edbc5c">PARK • EST. 2026</text>
+</svg>

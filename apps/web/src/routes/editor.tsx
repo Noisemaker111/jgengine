@@ -29,7 +29,7 @@ const STANDALONE_MOUNT = `import { StandaloneEditor } from "@jgengine/editor";
 <StandaloneEditor sceneId="my-scene" />;`;
 
 const RPC = `# headless: drive the live editor from an agent, no clicks
-bun run drive the-robots --mode editor \\
+bun run drive scrap-signal --mode editor \\
   --rpc '{"method":"set_transform","id":"boss","x":-90,"z":-650}' \\
   --rpc '{"method":"export_document"}'`;
 

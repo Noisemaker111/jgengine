@@ -14,7 +14,7 @@ export function gameCredit(id: string): GameCredit | null {
   return GAME_CREDITS[id] ?? null;
 }
 
-/** The README title, else "the-robots" → "The Robots". */
+/** The README title, else "scrap-signal" → "Scrap Signal". */
 export function gameTitle(id: string): string {
   return (
     GAME_META[id]?.title ??

@@ -2,23 +2,9 @@ import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 
 /**
- * Gate: a committed model pack's on-disk texture files must sit where its GLBs
- * point. GLTFLoader resolves each `images[].uri` as a URL relative to the `.glb`,
- * so a texture the GLB names `Bark_NormalTree.png` must exist *beside* the model;
- * if the PNG is stashed under a `Textures/` subfolder (or anywhere the URI does
- * not resolve to) every consuming game 404s that map and renders white/near-black
- * foliage. That exact layout mismatch (`quaternius-stylized-nature`) broke foliage
- * and decor across ~5 games (#1338). The flat "texture beside the model" layout is
- * the pack pipeline's contract — `extractGlbs` normalizes URIs to basenames and
- * writes each referenced map into the pack root — and every other committed pack
- * already follows it. This check parses each GLB's raw image URIs, resolves them
- * the way GLTFLoader would, and fails if any referenced texture is missing on disk,
- * so a nested layout can never silently recommit.
- *
- * Deliberately parses the GLB JSON chunk with the *raw* (unflattened) URI rather
- * than reusing `externalGlbImages` (which flattens to a basename) — the raw URI is
- * what the loader actually resolves, so this catches both a flat URI whose file was
- * nested and a nested URI whose file was flattened.
+ * Audit raw GLB image URIs against each committed pack's files, including authored
+ * subdirectories. A mismatched layout broke foliage across games (#1338).
+ * `externalGlbImages` flattens URIs, so it cannot validate the loader's actual path.
  */
 
 const DEFAULT_MODELS_ROOT = join(process.cwd(), "apps", "dev", "public", "models");
@@ -75,18 +61,28 @@ function auditPack(packDir: string, packName: string): PackReport {
   const missing: string[] = [];
   let referenced = 0;
   let resolved = 0;
-  for (const file of readdirSync(packDir)) {
-    if (!file.toLowerCase().endsWith(".glb")) continue;
-    const glbPath = join(packDir, file);
-    for (const uri of rawGlbImageUris(readFileSync(glbPath))) {
-      referenced += 1;
-      if (existsSync(resolveTexturePath(glbPath, uri))) {
-        resolved += 1;
-      } else {
-        missing.push(`${packName}/${file} -> "${uri}" (expected at ${relative(process.cwd(), resolveTexturePath(glbPath, uri))})`);
+  const walk = (dir: string): void => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const glbPath = join(dir, entry.name);
+      if (entry.isDirectory()) { walk(glbPath); continue; }
+      if (!entry.name.toLowerCase().endsWith(".glb")) continue;
+      const model = `${packName}/${relative(packDir, glbPath).replaceAll("\\", "/")}`;
+      for (const uri of rawGlbImageUris(readFileSync(glbPath))) {
+        referenced += 1;
+        if (decodeURIComponent(uri.replace(/\\/g, "/")).startsWith("/")) {
+          missing.push(`${model} -> "${uri}" (root-relative image URI; use a path relative to the GLB)`);
+          continue;
+        }
+        const texturePath = resolveTexturePath(glbPath, uri);
+        if (existsSync(texturePath)) {
+          resolved += 1;
+        } else {
+          missing.push(`${model} -> "${uri}" (expected at ${relative(process.cwd(), texturePath)})`);
+        }
       }
     }
-  }
+  };
+  walk(packDir);
   return { pack: packName, referenced, resolved, missing };
 }
 
@@ -115,16 +111,15 @@ function main(argv: string[]): number {
     console.error(
       `\ncheck-pack-texture-layout: ${allMissing.length} GLB texture reference(s) do not resolve on disk:\n` +
         allMissing.map((m) => `  - ${m}`).join("\n") +
-        `\n\nRule: GLTFLoader resolves each GLB's images[].uri relative to the .glb file, so every referenced\n` +
-        `texture must sit beside its model (the flat layout extractGlbs / 'assets pull' produce — never a\n` +
-        `nested Textures/ subfolder). A mismatch 404s the map and renders white/near-black foliage in every\n` +
-        `consuming game (#1338). Flatten the pack so each PNG is a sibling of the GLBs that name it.\n`,
+        `\n\nRule: GLTFLoader resolves each GLB's images[].uri relative to the .glb file. Keep generated\n` +
+        `packs flat; authored subdirectories must carry matching relative image URIs. Root-relative\n` +
+        `image paths are not portable between games. A mismatch 404s the map (#1338).\n`,
     );
     return 1;
   }
 
   console.log(
-    `check-pack-texture-layout: clean — ${reports.length} pack(s), ${totalResolved}/${totalReferenced} GLB texture reference(s) resolve beside their models`,
+    `check-pack-texture-layout: clean — ${reports.length} pack(s), ${totalResolved}/${totalReferenced} GLB texture reference(s) resolve relative to their models`,
   );
   return 0;
 }

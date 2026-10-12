@@ -16,7 +16,7 @@ export const BLUEPRINTS: readonly Blueprint[] = [
   {
     prompt: "is an MMO with raids, quests and talent trees",
     scale: "WoW-scale",
-    gameId: "claudecraft",
+    gameId: "lantern-reach",
     blocks: [
       "jgengine-combat/ability-bar",
       "jgengine-combat/cast-bar",
@@ -31,7 +31,7 @@ export const BLUEPRINTS: readonly Blueprint[] = [
   {
     prompt: "is a looter-shooter with procedurally built guns",
     scale: "Borderlands-scale",
-    gameId: "the-robots",
+    gameId: "scrap-signal",
     blocks: [
       "jgengine-combat/weapon-runtime",
       "jgengine-combat/weapon-handling",
@@ -46,7 +46,7 @@ export const BLUEPRINTS: readonly Blueprint[] = [
   {
     prompt: "is an open-world crime sandbox on an island",
     scale: "GTA-scale",
-    gameId: "vice-isle",
+    gameId: "harbor-heat",
     blocks: [
       "jgengine-world/street-generator",
       "jgengine-world/city-generator",

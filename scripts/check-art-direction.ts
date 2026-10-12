@@ -1,12 +1,13 @@
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
-import { join, resolve } from "node:path";
-const root = resolve(new URL("..", import.meta.url).pathname);
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
+const root = fileURLToPath(new URL("..", import.meta.url));
 const gamesRoot = join(root, "Games");
 if (!existsSync(gamesRoot) && process.env.CI === "true") {
   console.error("check-art-direction: Games/ checkout is required in CI — run bun run games:clone first");
   process.exit(1);
 }
-const games = existsSync(gamesRoot) ? readdirSync(gamesRoot, { withFileTypes: true }).filter((e) => e.isDirectory() && !e.name.startsWith(".")).map((e) => join(gamesRoot, e.name)) : [];
+const games = existsSync(gamesRoot) ? readdirSync(gamesRoot, { withFileTypes: true }).filter((e) => e.isDirectory() && !e.name.startsWith(".") && (existsSync(join(gamesRoot, e.name, "src/index.tsx")) || existsSync(join(gamesRoot, e.name, "src/game.config.ts")))).map((e) => join(gamesRoot, e.name)) : [];
 const targets = games.length ? games : (existsSync(join(process.cwd(), "src", "game.config.ts")) ? [process.cwd()] : []);
 const gaps: string[] = [];
 for (const dir of targets) {

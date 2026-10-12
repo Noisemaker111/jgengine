@@ -33,7 +33,7 @@ const loadKnight = () => loadModel("kaykit-adventurers/Knight.glb");
 
 describe("model normalization on an imported skinned creature", () => {
   test("grounds actual skin-applied vertices and keeps collider geometry in that same bind pose", async () => {
-    const gltf = await loadModel("claudecraft/creatures/wild_boar.glb");
+    const gltf = await loadModel("lantern-reach/creatures/wild_boar.glb");
     const instance = cloneModelScene(gltf.scene);
     const second = cloneModelScene(gltf.scene);
     const root = new THREE.Group().add(instance);
