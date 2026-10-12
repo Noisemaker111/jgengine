@@ -53,6 +53,7 @@ Load only rows the target needs. Do not preload every domain.
 | Need | Skill | Owner |
 | --- | --- | --- |
 | player promise, pillars, verbs, loops, economy, progression, balance | `game-design` | experience and rule intent |
+| substantial existing-game improvement across depth, world and presentation | `game-improvement` | ordered improvement plan and per-game completion |
 | metrics, topology, encounters, navigation, spatial pacing | `level-design` | playable space intent |
 | scene placement, terrain painting, paths, asset authoring | `jgengine-editor` | editor document and authoring tools |
 | runtime world, movement, input, interaction, AI, navigation, audio | `jgengine-world` | spatial simulation and world runtime |
