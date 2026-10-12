@@ -1,10 +1,5 @@
 [
-  "Games/beacon-bastion/src/world.ts:grass",
   "Games/brightway-park/src/world.ts:building",
-  "Games/brightway-park/src/world.ts:grass",
-  "Games/brightway-park/src/world.ts:pad",
-  "Games/ember-command/src/world.ts:grass",
-  "Games/harbor-heat/src/world.ts:grass",
   "Games/harbor-heat/src/world.ts:ocean",
   "Games/harbor-heat/src/world.ts:road",
   "Games/scrap-signal/src/world.ts:building",
