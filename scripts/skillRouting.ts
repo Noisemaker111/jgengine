@@ -110,6 +110,7 @@ export const SKILL_DIRS = API_SKILL_DIRS;
 
 export const INTAKE_ROUTES = {
   design: ["game-design", "level-design"],
+  improvement: ["game-improvement", "game-design", "level-design"],
   authoring: ["jgengine-editor", "jgengine-world"],
   world: ["jgengine-world"],
   gameplay: ["jgengine-gameplay"],
