@@ -51,6 +51,13 @@ describe("CUTLIST surface diet", () => {
     expect(existsSync(join(gamesDir, "deepward", "src", "index.tsx"))).toBe(true);
   });
 
+  test("removed games stay out of the playable collection", () => {
+    for (const id of ["wayfarer-deck", "resonant-crossing", "lantern-reach", "field-station"]) {
+      expect(existsSync(join(root, "Games", id, "src", "index.tsx"))).toBe(false);
+      expect(existsSync(join(root, "apps/web/public/covers", `${id}.webp`))).toBe(false);
+    }
+  });
+
   test("README sample uses createGameContext and only real games: scripts", () => {
     const readme = readFileSync(join(root, "README.md"), "utf8");
     const scripts = (JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as { scripts: Record<string, string> }).scripts;
