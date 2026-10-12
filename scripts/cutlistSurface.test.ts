@@ -38,7 +38,7 @@ describe("CUTLIST surface diet", () => {
 
   test("desktop default game id is a tracked real game, not a missing id", () => {
     const desktop = readFileSync(join(root, "apps/desktop/src/main.tsx"), "utf8");
-    expect(desktop).toMatch(/DEFAULT_GAME_ID\s*=\s*"studio-showcase"/);
+    expect(desktop).toMatch(/DEFAULT_GAME_ID\s*=\s*"field-station"/);
     expect(desktop).toMatch(/SHOW_LAUNCHER/);
     expect(desktop).toMatch(/Launcher/);
     expect(desktop).not.toMatch(/"voxel-mine"/);
@@ -47,8 +47,8 @@ describe("CUTLIST surface diet", () => {
       const pkg = join(gamesDir, name, "package.json");
       return existsSync(pkg) && statSync(join(gamesDir, name)).isDirectory();
     });
-    expect(tracked).toContain("studio-showcase");
-    expect(existsSync(join(gamesDir, "studio-showcase", "src", "index.tsx"))).toBe(true);
+    expect(tracked).toContain("field-station");
+    expect(existsSync(join(gamesDir, "field-station", "src", "index.tsx"))).toBe(true);
   });
 
   test("README sample uses createGameContext and only real games: scripts", () => {
@@ -101,9 +101,9 @@ describe("CUTLIST surface diet", () => {
 
   test("flagship hosted path and shell extracts exist", () => {
     const hosted = readFileSync(join(root, "examples/HOSTED.md"), "utf8");
-    expect(hosted).toMatch(/claudecraft/);
+    expect(hosted).toMatch(/lantern-reach/);
     expect(hosted).toMatch(/authority:\s*"server"|authority: "server"/);
-    expect(existsSync(join(root, "Games/claudecraft/package.json"))).toBe(true);
+    expect(existsSync(join(root, "Games/lantern-reach/package.json"))).toBe(true);
     expect(existsSync(join(root, "packages/shell/src/boundActionDispatch.ts"))).toBe(true);
     expect(existsSync(join(root, "packages/shell/src/hotbarActions.ts"))).toBe(true);
     expect(existsSync(join(root, "packages/shell/src/worldSky.ts"))).toBe(true);

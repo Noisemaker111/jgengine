@@ -75,7 +75,7 @@ describe("loadGameLayers", () => {
     ]);
   });
 
-  const studioScene = new URL("../../../../Games/studio-showcase/src/editor.scene.json", import.meta.url);
+  const studioScene = new URL("../../../../Games/field-station/src/editor.scene.json", import.meta.url);
   test.skipIf(!existsSync(studioScene) && !process.env.CI)("the pinned real game's authored scene decodes", () => {
     const decoded = decodeGameLayers(JSON.parse(readFileSync(studioScene, "utf8")));
     if (!decoded.ok) throw new Error(JSON.stringify(decoded.errors));

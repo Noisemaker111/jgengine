@@ -102,7 +102,7 @@ bun run games:clone  # once: clone Noisemaker111/JGengine-games into ephemeral .
 bun run games:update # move an existing clone to the pin; games:bump pins the games repo's latest stable
 bun dev              # jgengine.com locally, games playable at /games/<id> when Games/ is present
 # a cloned game standalone:
-bun run --cwd Games/vice-isle dev
+bun --cwd=Games/harbor-heat run dev
 ```
 
 Windows: if `bun` is not recognized after installing, its install directory is missing from PATH — add `%USERPROFILE%\.bun\bin` (PowerShell: `[Environment]::SetEnvironmentVariable("Path", "$env:Path;$env:USERPROFILE\.bun\bin", "User")`) and reopen the terminal.

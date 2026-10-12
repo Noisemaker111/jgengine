@@ -31,7 +31,7 @@ host-authoritative shared sim use `convex({ topology: "shared", authority: "serv
 [HOSTED.md](../HOSTED.md).
 
 **Flagship WS path (recommended first):** the in-repo multiplayer reference game is
-`claudecraft` (`multiplayer: ws({ authority: "server" })`) with `examples/express-host` —
+`lantern-reach` (`multiplayer: ws({ authority: "server" })`) with `examples/express-host` —
 see [HOSTED.md](../HOSTED.md).
 
 ## Self-hosted Convex (no cloud account)
