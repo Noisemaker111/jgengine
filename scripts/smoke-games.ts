@@ -8,14 +8,14 @@
  * The play-mode capture handshake (apps/dev/src/captureReady.ts) resolves on a
  * <canvas> OR a shape-agnostic `data-jg-frame-ready` marker the shell stamps for
  * hud-presentation games, so this list covers both world/canvas games and a
- * pure-DOM/HUD game (nonogram).
+ * card-game UI (Wayfarer Deck).
  */
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { spawn } from "node:child_process";
 import { resolve } from "node:path";
 
-const GAMES = ["vice-isle", "the-robots", "wreckway", "spire-cards"];
+const GAMES = ["harbor-heat", "scrap-signal", "drift-foundry", "wayfarer-deck"];
 const root = resolve(import.meta.dir, "..");
 
 if (!existsSync(join(root, "Games"))) {

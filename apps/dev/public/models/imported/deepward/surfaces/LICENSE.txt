@@ -1,0 +1,20 @@
+Original Deepward station surface maps
+
+All PNG maps in this directory are original authored material maps created for
+Deepward by the Deepward project contributors. They are generated reproducibly
+by deepward/scripts/build-original-surfaces.py with NumPy and Pillow. No image,
+material scan, or texture from a third party or another game is included. These
+maps depict authored enamel grain/scuffs and mineral floor grain/grease. They
+are not photographed PBR material scans.
+
+To the extent possible under law, the Deepward project contributors have waived
+all copyright and related or neighboring rights to these maps and their source
+generator under CC0 1.0 Universal:
+https://creativecommons.org/publicdomain/zero/1.0/
+
+Each map is tileable, 256x256 pixels, and locally served; dimensions, roles,
+color spaces, file sizes, URLs, and SHA256 hashes are in asset-manifest.json.
+The color maps are neutral and intended to multiply the editor palette.
+Roughness/normal maps are linear; color maps use sRGB. Normal maps use glTF/OpenGL
+positive-Y convention. UV coordinates, repeats, and authored surface placement
+belong to the game, not this asset generator.
