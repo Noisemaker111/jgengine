@@ -42,17 +42,6 @@ export default defineConfig({
   clearScreen: false,
   build: {
     target: "es2022",
-    rollupOptions: {
-      output: {
-        manualChunks: (id) => {
-          if (!id.includes("node_modules")) return undefined;
-          if (id.includes("/three/") || id.includes("three-stdlib")) return "vendor-three";
-          if (id.includes("@react-three")) return "vendor-r3f";
-          if (id.includes("react")) return "vendor-react";
-          return undefined;
-        },
-      },
-    },
   },
   server: {
     host: true,
