@@ -3,6 +3,8 @@ import { useCallback, useMemo } from "react";
 import { resolveGrassObject } from "@jgengine/core/world/grassKind";
 import type { SceneKindObject } from "@jgengine/core/scene/sceneKinds";
 import type { TerrainField } from "@jgengine/core/world/terrain";
+import { clearanceMasksFrom, DEFAULT_CLEARANCE_KINDS } from "@jgengine/core/world/scatterRegion";
+import { masksInfluence } from "@jgengine/core/world/geometry";
 
 import { GrassField } from "../terrain/GrassField";
 import type { GrassExclusion } from "../terrain/grassGeometry";
@@ -57,7 +59,8 @@ function sampleHeight(field: TerrainField, x: number, z: number): number {
  */
 function OneGrass({ object, context }: { object: SceneKindObject; context: SceneKindRenderContext }) {
   const resolved = useMemo(() => resolveGrassObject(object), [object]);
-  const heightAt = useCallback((x: number, z: number) => sampleHeight(context.field, x, z), [context.field]);
+  const heightAt = useCallback((x: number, z: number) => resolved === null ? 0 :
+    sampleHeight(context.field, x + resolved.center[0], z + resolved.center[2]) - resolved.center[1], [context.field, resolved]);
   const area = useMemo<[number, number] | null>(
     () => (resolved === null ? null : [resolved.size[0], resolved.size[1]]),
     [resolved],
@@ -66,6 +69,21 @@ function OneGrass({ object, context }: { object: SceneKindObject; context: Scene
     () => (resolved === null ? null : [resolved.rules.bladeHeight * 0.7, resolved.rules.bladeHeight]),
     [resolved],
   );
+  const bladeWidth = useMemo(() => resolved === null ? undefined : [resolved.rules.bladeWidthMin, resolved.rules.bladeWidthMax] as const, [resolved]);
+  const bladeBend = useMemo(() => resolved === null ? undefined : [resolved.rules.bladeBendMin, resolved.rules.bladeBendMax] as const, [resolved]);
+  const { markers, paths } = context.document;
+  const masks = useMemo(() => {
+    const authored = clearanceMasksFrom(context.document, {
+      kinds: [...DEFAULT_CLEARANCE_KINDS, "road", "walkway", "route", "path"],
+    });
+    // Keep the entire authored footing clear; feather regrowth outside its edge.
+    return {
+      discs: authored.discs.map(zone => ({ ...zone, radius: zone.radius + (zone.feather ?? 0) })),
+      corridors: authored.corridors.map(zone => ({ ...zone, halfWidth: zone.halfWidth + (zone.feather ?? 0) })),
+    };
+  }, [markers, paths, context.document.volumes]);
+  const coverageAt = useCallback((x: number, z: number) => resolved === null ? 0 :
+    1 - masksInfluence(x + resolved.center[0], z + resolved.center[2], masks), [resolved, masks]);
   const wind = useMemo(
     () =>
       resolved === null
@@ -96,6 +114,10 @@ function OneGrass({ object, context }: { object: SceneKindObject; context: Scene
       count={instanceCount}
       density={rules.density}
       bladeHeight={bladeHeight}
+      bladeWidth={bladeWidth}
+      bladeBend={bladeBend}
+      tuftRadius={rules.tuftRadius}
+      normalLift={rules.normalLift}
       colorBase={rules.colorBase}
       colorTip={rules.colorTip}
       colorGround={context.groundColorAt?.(center[0], center[2])}
@@ -103,6 +125,7 @@ function OneGrass({ object, context }: { object: SceneKindObject; context: Scene
       roughness={rules.roughness}
       seed={hashSeed(rules.seed.length > 0 ? rules.seed : object.id)}
       heightAt={heightAt}
+      coverageAt={coverageAt}
       wind={wind}
       edgeFeather={2.2}
       exclude={exclude}

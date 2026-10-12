@@ -36,6 +36,8 @@ export interface GrassBladeGeometryOptions {
   /** Patch-local rectangles kept clear of blades (soil patches, water) with a soft regrow ramp. */
   exclude?: readonly GrassExclusion[];
   heightAt?: TerrainHeightSampler;
+  /** Patch-local coverage, 0..1, composed with explicit rectangular exclusions. */
+  coverageAt?: TerrainHeightSampler;
 }
 
 export interface ResolvedGrassBladeGeometryOptions {
@@ -51,6 +53,7 @@ export interface ResolvedGrassBladeGeometryOptions {
   edgeFeather: number;
   exclude: readonly GrassExclusion[];
   heightAt: TerrainHeightSampler;
+  coverageAt: TerrainHeightSampler;
 }
 
 /** @internal */
@@ -76,6 +79,7 @@ export function resolveGrassBladeGeometryOptions(
     edgeFeather: Math.max(0, options.edgeFeather ?? 1.5),
     exclude: options.exclude ?? [],
     heightAt: options.heightAt ?? (() => 0),
+    coverageAt: options.coverageAt ?? (() => 1),
   };
 }
 
@@ -182,7 +186,7 @@ export function createGrassBladeGeometry(options: GrassBladeGeometryOptions = {}
       const d = Math.max(Math.abs(x - zone.center[0]) - zone.half[0], Math.abs(z - zone.center[1]) - zone.half[1]);
       heightScale *= Math.min(1, Math.max(0, d / Math.max(0.001, zone.feather ?? 1.5)));
     }
-    heights[index] = heightScale;
+    heights[index] = heightScale * Math.max(0, Math.min(1, resolved.coverageAt(x, z)));
     widths[index] = randomRange(random, resolved.width);
     bend[index] = randomRange(random, resolved.bend);
     phase[index] = random() * Math.PI * 2;

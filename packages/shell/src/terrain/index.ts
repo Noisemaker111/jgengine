@@ -58,3 +58,5 @@ export {
   type TerrainField,
   type TerrainNormal,
 } from "@jgengine/core/world/terrain";
+
+export { createTerrainPaintColorSampler, type TerrainPaintColorSampler, type TerrainPaintSource } from "./terrainPaintColor";

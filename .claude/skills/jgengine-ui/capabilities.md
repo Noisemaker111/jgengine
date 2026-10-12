@@ -670,6 +670,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `TalentTree` (function) · `import { TalentTree } from "@jgengine/react"`
 
+## terrain-paint-color — sample authored terrain surfaces and blended layers for shared ground rendering
+
+- `createTerrainPaintColorSampler` (function) · `import { createTerrainPaintColorSampler } from "@jgengine/shell/terrain"`
+
 ## territory-overlay — show footprint ownership, claim cost, and affordability
 
 - `TerritoryOverlay` (function) · `import { TerritoryOverlay } from "@jgengine/shell/TerritoryOverlay"`

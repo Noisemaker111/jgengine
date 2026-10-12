@@ -78,6 +78,9 @@
 - `SplitWorldResult` (interface): interface SplitWorldResult — The result of splitting a document: a manifest plus the shard documents keyed by their file path.
 - `StreamUpdate` (interface): interface StreamUpdate — The residency change produced by one {@link WorldStreamer.update}.
 - `StreamerShard` (interface): interface StreamerShard — The proximity streamer for a sharded world (#985 stage 3): a stateful scheduler that decides, as the camera moves, which shards enter and leave residency. It is pure scheduling — actually reading/merging the shard documents stays the caller's job (compose with `@jgengine/core/editor/world`'s `loadWorldDocument` on each returned delta) — so the streamer has no I/O and stays deterministic and testable. Hysteresis (`loadRadius` < `keepRadius`) stops a shard on a boundary from thrashing load/unload every frame.
+- `TERRAIN_MATERIALS` (const): const TERRAIN_MATERIALS: readonly TerrainMaterial[] — The default terrain paint palette (surface id → color) shared by the panel and the mesh.
+- `TERRAIN_MATERIAL_COLORS` (const): const TERRAIN_MATERIAL_COLORS: Record<string, string> — Maps every default material id to its render color, for the sculpt mesh's per-cell surface tint.
+- `TerrainMaterial` (interface): interface TerrainMaterial — A paintable terrain material layer — a surface id plus the color it renders as.
 - `WELL_KNOWN_MARKER_KINDS` (const): const WELL_KNOWN_MARKER_KINDS: readonly ["player_spawn", "mob", "boss", "vendor", "chest", "travel", "npc", "poi", "prop", "goal", "branch"] — Standard marker kinds recognized with default colors and behavior.
 - `WELL_KNOWN_PATH_KINDS` (const): const WELL_KNOWN_PATH_KINDS: readonly ["road", "corridor", "branch", "route"] — Standard path kinds recognized with default colors and behavior.
 - `WELL_KNOWN_VOLUME_KINDS` (const): const WELL_KNOWN_VOLUME_KINDS: readonly ["zone", "flatten", "cluster", "aggro", "leash", "discover", "capture", "prompt", "poi", "respawn_skip"] — Standard volume kinds recognized with default colors and behavior.
@@ -345,6 +348,12 @@
 - `WorldStreamerConfig` (interface): interface WorldStreamerConfig — Configuration for {@link createWorldStreamer}.
 - `createWorldStreamer` (function): function createWorldStreamer(config: WorldStreamerConfig): WorldStreamer — Creates a proximity streamer over a world's shards. Always-resident shards are resident from the first update onward; each bounded shard loads when the camera comes within `loadRadius` of its footprint and unloads only once the camera passes `keepRadius` (≥ `loadRadius`, clamped up), giving a hysteresis band that prevents boundary thrash. Purely spatial and deterministic; the caller wires each delta to `loadWorldDocument`.
 - `shardDistance` (function): function shardDistance(shard: StreamerShard, center: { x: number; z: number }): number — Distance from a point to a shard's XZ footprint (0 when inside), or 0 for an always-resident shard.
+
+## @jgengine/core/editor/terrainMaterials
+
+- `TERRAIN_MATERIALS` (const): const TERRAIN_MATERIALS: readonly TerrainMaterial[] — The default terrain paint palette (surface id → color) shared by the panel and the mesh.
+- `TERRAIN_MATERIAL_COLORS` (const): const TERRAIN_MATERIAL_COLORS: Record<string, string> — Maps every default material id to its render color, for the sculpt mesh's per-cell surface tint.
+- `TerrainMaterial` (interface): interface TerrainMaterial — A paintable terrain material layer — a surface id plus the color it renders as.
 
 ## @jgengine/core/editor/types
 

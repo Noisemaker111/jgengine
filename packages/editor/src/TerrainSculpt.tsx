@@ -24,13 +24,14 @@ import { useGameContext } from "@jgengine/react/provider";
 import {
   displaceHeightfieldGeometry,
   normalizeHeightBlend,
+  createTerrainPaintColorSampler,
+  type TerrainPaintColorSampler,
   TerraformBrushCursor,
 } from "@jgengine/shell/terrain";
 
 import { editorPerfMarks } from "./perfMarks";
 import type { EditorHostApi } from "./session";
 import {
-  TERRAIN_MATERIAL_COLORS,
   type EditorUiState,
   type EditorUiStore,
   type SculptSettings,
@@ -45,11 +46,6 @@ const HIGH = new THREE.Color("#8f9c66");
 const COLOR_SPAN = 24;
 
 type PaletteSampler = (x: number, z: number) => TerrainPalette;
-
-/** Resolves a material layer to its render color (its tint, else its palette surface color). */
-function layerColor(layer: { surface: string; tint?: string }): string {
-  return layer.tint ?? TERRAIN_MATERIAL_COLORS[layer.surface] ?? "#7c7f86";
-}
 
 /** The game's `environment({ terrain })` descriptor, when the world it declares carries one — the same descriptor `TerrainGround` samples at runtime via `createTerrainPaletteSampler`. */
 function terrainDescriptorOf(world: WorldFeature | undefined): TerrainEnvironmentDescriptor | undefined {
@@ -107,31 +103,12 @@ function editFromSettings(
   };
 }
 
+/** World-unit spacing between topographic relief bands drawn on the sculpt preview. */
+const CONTOUR_INTERVAL = 1.5;
 const BLEND_A = new THREE.Color();
 const BLEND_B = new THREE.Color();
 
-/** Parsed once — `toneAt` runs per vertex, so hex→Color parsing must not. */
-const SURFACE_COLOR_CACHE = new Map<string, THREE.Color>();
-function surfaceColor(hex: string): THREE.Color {
-  let color = SURFACE_COLOR_CACHE.get(hex);
-  if (color === undefined) {
-    color = new THREE.Color(hex);
-    SURFACE_COLOR_CACHE.set(hex, color);
-  }
-  return color;
-}
-
-/** World-unit spacing between topographic relief bands drawn on the sculpt preview. */
-const CONTOUR_INTERVAL = 1.5;
-
-/**
- * Topographic relief baked into a vertex's color so elevation reads from the editor's high camera,
- * where lighting alone leaves gentle hills invisible. Smooth cosine bands every `CONTOUR_INTERVAL`
- * darken slopes toward each band trough (a contour-map look) and higher ground brightens slightly —
- * a `multiply`, so painted grass/dirt/rock keep their hue. Flat ground at a band height (the common
- * unsculpted case at y=0) is left untouched: only varying height shows the bands. `strength` 0 is a
- * no-op.
- */
+/** Multiplicative contour bands preserve painted hue while making elevation readable. */
 function applyRelief(out: THREE.Color, height: number, strength: number): void {
   if (strength <= 0) return;
   const band = 0.5 + 0.5 * Math.cos((height / CONTOUR_INTERVAL) * Math.PI * 2);
@@ -148,44 +125,15 @@ function applyRelief(out: THREE.Color, height: number, strength: number): void {
  * show through in the editor the same way `TerrainGround` renders them at runtime.
  */
 function toneAt(
-  terrain: EditableTerrain,
   x: number,
   z: number,
   height: number,
   out: THREE.Color,
   paletteAt: PaletteSampler | null,
   heightRange: readonly [number, number],
-  layerColors: readonly THREE.Color[],
+  paintColorAt: TerrainPaintColorSampler,
 ): void {
-  const layers = terrain.layers;
-  if (layers.length > 0) {
-    const weights = terrain.weightsAt(x, z);
-    if (weights.length === layers.length) {
-      let total = 0;
-      let r = 0;
-      let g = 0;
-      let b = 0;
-      for (let l = 0; l < layers.length; l += 1) {
-        const w = weights[l]! * (layers[l]!.opacity ?? 1);
-        if (w <= 0) continue;
-        const color = layerColors[l]!;
-        r += color.r * w;
-        g += color.g * w;
-        b += color.b * w;
-        total += w;
-      }
-      if (total > 0) {
-        out.setRGB(r / total, g / total, b / total);
-        return;
-      }
-    }
-  }
-  const surface = terrain.surfaceAt(x, z);
-  const painted = surface === null ? undefined : TERRAIN_MATERIAL_COLORS[surface];
-  if (painted !== undefined) {
-    out.copy(surfaceColor(painted));
-    return;
-  }
+  if (paintColorAt(x, z, out)) return;
   if (paletteAt !== null) {
     const palette = paletteAt(x, z);
     const blend = normalizeHeightBlend(height, heightRange[0], heightRange[1]);
@@ -213,12 +161,12 @@ function displace(
   contourStrength: number,
 ): void {
   const started = performance.now();
-  const layerColors = terrain.layers.map((layer) => surfaceColor(layerColor(layer)));
+  const paintColorAt = createTerrainPaintColorSampler(terrain);
   displaceHeightfieldGeometry(geometry, terrain.sampleHeight, {
     bounds,
     region,
     color: (x, z, height, out) => {
-      toneAt(terrain, x, z, height, out, paletteAt, heightRange, layerColors);
+      toneAt(x, z, height, out, paletteAt, heightRange, paintColorAt);
       applyRelief(out, height, contourStrength);
     },
   });
