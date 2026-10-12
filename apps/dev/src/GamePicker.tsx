@@ -1,6 +1,6 @@
 import { gameRegistry } from "./registries";
 
-const FEATURED_GAMES = ["scrap-signal", "brightway-park", "harbor-heat", "lantern-reach"] as const;
+const FEATURED_GAMES = ["scrap-signal", "brightway-park", "harbor-heat", "ember-command"] as const;
 
 export function GamePicker() {
   const ids = Object.keys(gameRegistry).sort();

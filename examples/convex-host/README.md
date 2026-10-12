@@ -30,9 +30,8 @@ extra wiring on the client or server side. That's presence-only (pose/chat/feeds
 host-authoritative shared sim use `convex({ topology: "shared", authority: "server" })` instead — see
 [HOSTED.md](../HOSTED.md).
 
-**Flagship WS path (recommended first):** the in-repo multiplayer reference game is
-`lantern-reach` (`multiplayer: ws({ authority: "server" })`) with `examples/express-host` —
-see [HOSTED.md](../HOSTED.md).
+For a WS host, register your game runtime with `examples/express-host` and declare
+`multiplayer: ws({ authority: "server" })` in its configuration. See [HOSTED.md](../HOSTED.md).
 
 ## Self-hosted Convex (no cloud account)
 

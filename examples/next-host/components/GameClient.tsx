@@ -11,9 +11,9 @@ const gameRegistry: GameRegistry = {};
 export default function GameClient() {
   return (
     <GamePlayer
-      gameId={process.env.NEXT_PUBLIC_GAME_ID ?? "wayfarer-deck"}
+      gameId={process.env.NEXT_PUBLIC_GAME_ID ?? "deepward"}
       registry={gameRegistry}
-      fallbackGameId="wayfarer-deck"
+      fallbackGameId="deepward"
       loading={
         <div className="flex h-full items-center justify-center bg-neutral-950 text-sm text-neutral-400">
           Loading game…

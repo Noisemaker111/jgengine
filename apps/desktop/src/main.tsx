@@ -27,7 +27,7 @@ const gameRegistry: GameRegistry = {
 };
 
 const urlParams = new URLSearchParams(window.location.search);
-const DEFAULT_GAME_ID = "field-station";
+const DEFAULT_GAME_ID = "deepward";
 const GAME_ID =
   urlParams.get("game") ??
   (import.meta.env.VITE_GAME_ID as string | undefined) ??
