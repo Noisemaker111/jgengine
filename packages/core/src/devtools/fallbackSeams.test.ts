@@ -78,6 +78,22 @@ describe("fallbackSeams collector", () => {
     });
   });
 
+  test("probe output names the unmapped scatter ids alongside the omittedMapping count", () => {
+    armFallbackSeams(true);
+    beginFallbackSeam("scatter");
+    reportFallbackSeam("scatter", "omittedMapping", "rock_small");
+    reportFallbackSeam("scatter", "omittedMapping", "fern");
+    expect(fallbackSeamsSnapshot()).toEqual({
+      scatter: { omittedMapping: 2, omittedIds: ["fern", "rock_small"] },
+    });
+    // A scatter re-tally re-zeros its ids with its counts; a stale species must not survive.
+    beginFallbackSeam("scatter");
+    reportFallbackSeam("scatter", "omittedMapping", "pine");
+    expect(fallbackSeamsSnapshot()).toEqual({
+      scatter: { omittedMapping: 1, omittedIds: ["pine"] },
+    });
+  });
+
   // CRITICAL: production / opt-out path is a pure no-op — snapshot empty, no log line.
   test("disarmed report is a no-op: empty snapshot and no fallback log", () => {
     devtools.logs.clear();

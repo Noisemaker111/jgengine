@@ -18,8 +18,13 @@ export type FallbackCause = "omittedMapping" | "unpulledPack" | "noScene" | "ren
 /** A per-seam, per-cause count table. Serializable, allocation-stable (keys never change). */
 export type FallbackSeamCounts = Record<FallbackSeam, Record<FallbackCause, number>>;
 
-/** Non-zero-only view of {@link FallbackSeamCounts} returned by {@link fallbackSeamsSnapshot}. */
-export type FallbackSeamsReport = Partial<Record<FallbackSeam, Partial<Record<FallbackCause, number>>>>;
+/**
+ * Non-zero-only view of {@link FallbackSeamCounts} returned by {@link fallbackSeamsSnapshot}. A seam's
+ * `omittedIds` lists the item ids behind its `omittedMapping` count, sorted, for seams that name them.
+ */
+export type FallbackSeamsReport = Partial<
+  Record<FallbackSeam, Partial<Record<FallbackCause, number>> & { omittedIds?: string[] }>
+>;
 
 const SEAMS: readonly FallbackSeam[] = ["ground", "entity", "object", "scatter"];
 const CAUSES: readonly FallbackCause[] = ["omittedMapping", "unpulledPack", "noScene", "renderError"];
@@ -39,11 +44,18 @@ function freshCounts(): FallbackSeamCounts {
 // Pre-allocated tables so the report/begin/end hot paths do zero allocation.
 let enabled = false;
 const counts = freshCounts();
+const omittedIds: Record<FallbackSeam, Set<string>> = {
+  ground: new Set(),
+  entity: new Set(),
+  object: new Set(),
+  scatter: new Set(),
+};
 let lastSignature = "";
 
 function zeroSeam(seam: FallbackSeam): void {
   const row = counts[seam];
   for (const cause of CAUSES) row[cause] = 0;
+  omittedIds[seam].clear();
 }
 
 /**
@@ -67,11 +79,13 @@ export function armFallbackSeams(on: boolean): void {
  * its own render/compute, then reports during that same synchronous pass. This is idempotent under
  * React StrictMode / concurrent double-render and keeps seams that re-render independently (entities
  * vs. scatter vs. ground) from clobbering one another. {@link endFallbackPass} only emits the log.
+ * @param id For `omittedMapping`, the unmapped item id; listed in the snapshot's `omittedIds`.
  * @capability render-fallback-diagnostics Report a seam resolving to a placeholder fallback.
  */
-export function reportFallbackSeam(seam: FallbackSeam, cause: FallbackCause): void {
+export function reportFallbackSeam(seam: FallbackSeam, cause: FallbackCause, id?: string): void {
   if (!enabled) return;
   counts[seam][cause] += 1;
+  if (id !== undefined && cause === "omittedMapping") omittedIds[seam].add(id);
 }
 
 /** Zero one seam's tally before it re-reports (per-seam frame boundary). No-op when disarmed. */
@@ -117,16 +131,17 @@ export function endFallbackPass(): void {
 /**
  * Snapshot the current fallback tally as a compact, serializable object (non-zero entries only; empty
  * when nothing fell back). Flows into the devtools `fallbacks` probe and the `debug_snapshot` RPC.
- * @capability render-fallback-diagnostics Read authored-vs-placeholder fallback counts per seam.
+ * @capability render-fallback-diagnostics Read authored-vs-placeholder fallback counts per seam, with unmapped item ids.
  */
 export function fallbackSeamsSnapshot(): FallbackSeamsReport {
   const out: FallbackSeamsReport = {};
   for (const seam of SEAMS) {
-    let row: Partial<Record<FallbackCause, number>> | undefined;
+    let row: NonNullable<FallbackSeamsReport[FallbackSeam]> | undefined;
     for (const cause of CAUSES) {
       const n = counts[seam][cause];
       if (n > 0) (row ??= {})[cause] = n;
     }
+    if (omittedIds[seam].size > 0) (row ??= {}).omittedIds = [...omittedIds[seam]].sort();
     if (row !== undefined) out[seam] = row;
   }
   return out;
