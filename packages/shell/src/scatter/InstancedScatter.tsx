@@ -154,7 +154,7 @@ export function InstancedScatter({
       const resolved = resolveItem?.(batch.item) ?? null;
       if (resolved === null) {
         knownProxy.add(batch.item);
-        reportFallbackSeam("scatter", "omittedMapping");
+        reportFallbackSeam("scatter", "omittedMapping", batch.item);
         proxy.push(batch);
         continue;
       }
