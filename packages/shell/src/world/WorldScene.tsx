@@ -330,7 +330,7 @@ function WorldActors({
     }
     return [{ object, model, custom, style, authored: authoredIds.has(instanceId), catalog: ctx.scene.object.catalog(instanceId) }];
   });
-  const grouped = groupStaticObjects(candidates.map((candidate) => ({ ...candidate, custom: candidate.custom !== undefined && candidate.custom !== null })), 24, batchCache.current);
+  const grouped = groupStaticObjects(candidates.map((candidate) => ({ ...candidate, custom: candidate.custom !== undefined && candidate.custom !== null })), undefined, batchCache.current);
   batchCache.current = new Map(grouped.batches.map((batch) => [batch.key, batch]));
   const candidatesById = new Map(candidates.map((candidate) => [candidate.object.instanceId, candidate]));
   const renderSingle = (object: SceneObject) => {

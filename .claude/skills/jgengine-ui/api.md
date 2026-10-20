@@ -3190,6 +3190,10 @@
 - `pingBobOffset` (function): function pingBobOffset(elapsedSeconds: number, amplitude = 0.18, speedHz = 1.1): number — Vertical bob offset (world units) for a hovering ping arrow at `elapsedSeconds`.
 - `pingOpacity` (function): function pingOpacity(input: PingOpacityInput): number — Alpha for a world ping in `[0, 1]`: ramps up over `fadeInMs` after it appears and ramps back down over `fadeOutMs` before it expires. Pure math so the lifecycle can be unit-tested without an R3F canvas.
 
+## @jgengine/shell/world/staticObjectBatches
+
+- `groupStaticObjects` (function): function groupStaticObjects(candidates: readonly StaticObjectCandidate[], chunkSize = STATIC_BATCH_CHUNK, previous?: ReadonlyMap<string, StaticObjectBatch>): { batches: StaticObjectBatch[]; singles: StaticObjectCandidate[]; } — ⚠ undocumented
+
 ## @jgengine/shell/world/tileLayerInstances
 
 - `TileLayerInstance` (interface): interface TileLayerInstance — One resolved map cell with its world position and atlas UV rectangle.
