@@ -148,7 +148,9 @@ jgCol = mix(jgCol, jgMatColor, uMatStrength * uMatTint);`
     const materialRoughnessGlsl = hasTexture && textures.roughness !== undefined
       ? `
 float jgMatRough = texture2D(uMatRoughness, jgMatUv).g;
-roughnessFactor = mix(roughnessFactor, jgMatRough, uMatStrength);`
+// The map varies the authored roughness rather than replacing it: scanned ground roughness sits
+// near 0.45, which turned matte terrain glossy enough to throw a wet sheen across dry sand.
+roughnessFactor = clamp(roughnessFactor + (jgMatRough - 0.5) * uMatStrength * 0.6, 0.0, 1.0);`
       : "";
 
     const materialNormalGlsl = hasTexture
