@@ -46,7 +46,7 @@ export interface TerrainDetailConfig {
   rockSlopeStart?: number;
   /** World height above which snow appears. Default 26. */
   snowHeight?: number;
-  /** Water level for the sand band; defaults to the terrain's `waterLevel`. */
+  /** Water level for the sand band; defaults to the terrain's `waterLevel`, and no band is drawn when the terrain has none. */
   waterLevel?: number;
   /** Fine detail noise wavelength in world units. Default 5. */
   detailScale?: number;

@@ -652,10 +652,14 @@ const DEFAULT_TERRAIN_MATERIAL_REPEAT = 4;
 const DEFAULT_TERRAIN_MATERIAL_STRENGTH = 1;
 const DEFAULT_TERRAIN_MATERIAL_TINT = 1;
 
-/** Fill a `TerrainDetailConfig` with defaults; `waterLevel` falls back to the terrain's own water level.
+/** Sand-band level for a terrain with no water: far below any ground, so no beach is painted. */
+const NO_WATER_SAND_LEVEL = -1e6;
+
+/** Fill a `TerrainDetailConfig` with defaults; `waterLevel` falls back to the terrain's own water level,
+ * and a terrain without one gets no sand band.
  * @internal
  */
-export function resolveTerrainDetail(config: TerrainDetailConfig, terrainWaterLevel = 0): ResolvedTerrainDetail {
+export function resolveTerrainDetail(config: TerrainDetailConfig, terrainWaterLevel?: number): ResolvedTerrainDetail {
   return {
     rockColor: config.rockColor ?? DEFAULT_TERRAIN_DETAIL.rockColor,
     sandColor: config.sandColor ?? DEFAULT_TERRAIN_DETAIL.sandColor,
@@ -670,7 +674,7 @@ export function resolveTerrainDetail(config: TerrainDetailConfig, terrainWaterLe
       dry: config.sweeps?.dry ?? DEFAULT_TERRAIN_DETAIL.sweeps.dry,
       wet: config.sweeps?.wet ?? DEFAULT_TERRAIN_DETAIL.sweeps.wet,
     },
-    waterLevel: config.waterLevel ?? terrainWaterLevel,
+    waterLevel: config.waterLevel ?? terrainWaterLevel ?? NO_WATER_SAND_LEVEL,
     ...(config.material === undefined
       ? {}
       : {
