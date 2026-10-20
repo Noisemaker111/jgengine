@@ -10,15 +10,17 @@ import type { EnvironmentSource } from "@jgengine/core/render/environment";
 export interface EnvironmentLightingProps {
   /** Optional authored environment map; absent or `gradient` uses the procedural probe. */
   source?: EnvironmentSource;
-  /** IBL intensity. Default 0.35. */
+  /** IBL intensity. Default {@link DEFAULT_IBL_INTENSITY}. */
   intensity?: number;
   /** Upper-hemisphere tint for the procedural sky probe. Default cool daylight. */
   skyColor?: string;
   /** Ground / lower-hemisphere tint. Default soft earth. */
   groundColor?: string;
+  /** Tint the horizon band leans toward, usually the scene's ambient colour so IBL keeps its warmth. Default white. */
+  horizonTint?: string;
   /**
-   * Optional sun direction (world space, not normalized). When set, a bright disc
-   * is baked into the probe so metals pick up a real sun glint that tracks daylight.
+   * Sun direction (world space, not normalized) baked into the probe as an HDR disc plus a broad
+   * lobe, so metals glint and diffuse IBL has a lit side. Default {@link DEFAULT_PROBE_SUN}.
    */
   sunDirection?: readonly [number, number, number];
   /** Sun disc tint. Default warm white. */
@@ -26,9 +28,9 @@ export interface EnvironmentLightingProps {
 }
 
 /**
- * Image-based lighting from a procedural sky/ground probe (not three's stock
- * RoomEnvironment gray studio box). Metals and dielectrics pick up sky color and
- * an optional sun glint; re-render when sky/sun props change so a daylight cycle
+ * Image-based lighting from a procedural sky/horizon/ground probe with an HDR sun (not three's stock
+ * RoomEnvironment gray studio box). Metals and dielectrics pick up sky color, a sun glint and a
+ * directional sky fill; re-render when sky/sun props change so a daylight cycle
  * regenerates the environment map with the authored world.
  *
  * Opt out of cinematic IBL with `look: "flat"` on the shell presentation.
@@ -36,9 +38,10 @@ export interface EnvironmentLightingProps {
  */
 export function EnvironmentLighting({
   source,
-  intensity = 0.35,
+  intensity = DEFAULT_IBL_INTENSITY,
   skyColor = "#87b5e0",
   groundColor = "#3d4a38",
+  horizonTint = "#ffffff",
   sunDirection,
   sunColor = "#fff2d6",
 }: EnvironmentLightingProps): null {
@@ -102,7 +105,7 @@ export function EnvironmentLighting({
           console.warn(`[jgengine] cube environment illumination failed: ${source.urls.join(", ")}`, error);
         });
       } else {
-        const probe = buildSkyProbeScene({ skyColor: effective?.sky ?? skyColor, groundColor: effective?.ground ?? groundColor, sunDirection, sunColor: effective?.sun ?? sunColor });
+        const probe = buildSkyProbeScene({ skyColor: effective?.sky ?? skyColor, groundColor: effective?.ground ?? groundColor, horizonTint, sunDirection, sunColor: effective?.sun ?? sunColor });
         try {
           apply(pmrem.fromScene(probe, 0.04));
         } finally {
@@ -114,26 +117,45 @@ export function EnvironmentLighting({
       throw error;
     }
     return release;
-  }, [gl, scene, source, intensity, skyColor, groundColor, sunColor, sunDirection?.[0], sunDirection?.[1], sunDirection?.[2]]);
+  }, [gl, scene, source, intensity, skyColor, groundColor, horizonTint, sunColor, sunDirection?.[0], sunDirection?.[1], sunDirection?.[2]]);
 
   return null;
 }
 
-function buildSkyProbeScene(options: {
+/** @internal Default IBL strength for the procedural probe: enough sky fill and sun lobe to model forms. */
+export const DEFAULT_IBL_INTENSITY = 0.45;
+
+/** @internal Fallback probe sun when no directional light is authored: high and off to one side. */
+export const DEFAULT_PROBE_SUN: readonly [number, number, number] = [-0.45, 0.8, 0.35];
+
+/**
+ * @internal Procedural sky probe: zenith → brighter horizon → ground bounce, plus an HDR sun disc and
+ * a wide glow lobe. After PMREM the lobe becomes a directional diffuse term, so the IBL alone gives
+ * forms a lit and a shaded side instead of a uniform two-tone wash.
+ */
+export function buildSkyProbeScene(options: {
   skyColor: string;
   groundColor: string;
+  horizonTint?: string;
   sunDirection?: readonly [number, number, number];
   sunColor: string;
 }): THREE.Scene {
   const probe = new THREE.Scene();
-  // Inward-facing sphere: sky above, ground below, so PMREM samples a sky dome not a studio box.
-  const geo = new THREE.SphereGeometry(50, 32, 16);
+  const sun = new THREE.Vector3(...(options.sunDirection ?? DEFAULT_PROBE_SUN));
+  if (sun.lengthSq() < 1e-8) sun.set(...DEFAULT_PROBE_SUN);
+  sun.normalize();
+  const sky = new THREE.Color(options.skyColor);
+  const horizon = sky.clone().lerp(new THREE.Color(options.horizonTint ?? "#ffffff"), 0.35);
+  const geo = new THREE.SphereGeometry(50, 48, 24);
   const mat = new THREE.ShaderMaterial({
     side: THREE.BackSide,
     depthWrite: false,
     uniforms: {
-      sky: { value: new THREE.Color(options.skyColor) },
+      zenith: { value: sky.clone().multiplyScalar(0.85) },
+      horizon: { value: horizon },
       ground: { value: new THREE.Color(options.groundColor) },
+      sunDir: { value: sun },
+      sunColor: { value: new THREE.Color(options.sunColor) },
     },
     vertexShader: /* glsl */ `
       varying vec3 vDir;
@@ -143,36 +165,26 @@ function buildSkyProbeScene(options: {
       }
     `,
     fragmentShader: /* glsl */ `
-      uniform vec3 sky;
+      uniform vec3 zenith;
+      uniform vec3 horizon;
       uniform vec3 ground;
+      uniform vec3 sunDir;
+      uniform vec3 sunColor;
       varying vec3 vDir;
       void main() {
-        float t = clamp(vDir.y * 0.5 + 0.5, 0.0, 1.0);
-        // Soft horizon blend so the equator is not a hard band.
-        float w = smoothstep(0.0, 1.0, t);
-        gl_FragColor = vec4(mix(ground, sky, w), 1.0);
+        vec3 d = normalize(vDir);
+        float up = clamp(d.y, -1.0, 1.0);
+        vec3 col = up >= 0.0
+          ? mix(horizon, zenith, pow(up, 0.6))
+          : mix(horizon * 0.55 + ground * 0.45, ground * 0.7, smoothstep(0.0, 0.5, -up));
+        float facing = max(dot(d, sunDir), 0.0);
+        // Disc for specular glints; the broad lobe is what survives PMREM into the diffuse term.
+        col += sunColor * (pow(facing, 900.0) * 24.0 + pow(facing, 6.0) * 0.6 + pow(facing, 2.0) * 0.1);
+        gl_FragColor = vec4(col, 1.0);
       }
     `,
   });
   probe.add(new THREE.Mesh(geo, mat));
-
-  if (options.sunDirection !== undefined) {
-    const dir = new THREE.Vector3(
-      options.sunDirection[0],
-      options.sunDirection[1],
-      options.sunDirection[2],
-    );
-    if (dir.lengthSq() > 1e-8) {
-      dir.normalize();
-      const sunGeo = new THREE.SphereGeometry(3.5, 16, 12);
-      const sunMat = new THREE.MeshBasicMaterial({ color: options.sunColor });
-      const sun = new THREE.Mesh(sunGeo, sunMat);
-      // Place the disc outside the sky sphere sample so it stays a compact highlight.
-      sun.position.copy(dir.multiplyScalar(42));
-      probe.add(sun);
-    }
-  }
-
   return probe;
 }
 

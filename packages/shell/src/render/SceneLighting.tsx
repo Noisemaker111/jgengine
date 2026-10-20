@@ -10,7 +10,7 @@ import type {
 } from "@jgengine/core/game/playableGame";
 import type { GraphicsProfile } from "@jgengine/core/settings/graphicsProfile";
 
-import { CascadedShadows } from "./CascadedShadows";
+import { CascadedShadows, DEFAULT_SHADOW_RADIUS } from "./CascadedShadows";
 
 const DEFAULT_BACKDROP_FOG_COLOR = "#1a1c22";
 /** Default cap for combined dynamic point and spot lights. */
@@ -87,6 +87,7 @@ function SingleShadowLight({ entry }: { entry: DirectionalLightingConfig }) {
       shadow-camera-far={far}
       shadow-bias={entry.shadowBias ?? -0.0004}
       shadow-normalBias={entry.shadowNormalBias ?? 0.02}
+      shadow-radius={entry.shadowRadius ?? DEFAULT_SHADOW_RADIUS}
     />
   );
 }

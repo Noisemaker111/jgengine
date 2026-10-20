@@ -84,7 +84,7 @@ export function EntityPreview({
       style={{ position: "relative", width: "100%", height: "100%", ...style }}
     >
       <Canvas
-        shadows
+        shadows="percentage"
         dpr={dpr}
         camera={{ position: cameraPosition, fov }}
         gl={{ preserveDrawingBuffer: true }}

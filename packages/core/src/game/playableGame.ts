@@ -339,6 +339,8 @@ export interface DirectionalLightingConfig {
   shadowBias?: number;
   /** Shadow normal bias to fight peter-panning. Default 0.02. */
   shadowNormalBias?: number;
+  /** PCF penumbra width in shadow-map texels; 0 is a hard edge. Default 1.25. */
+  shadowRadius?: number;
 }
 
 export interface HemisphereLightingConfig {
@@ -372,6 +374,16 @@ export interface LightingConfig {
   /** Maximum dynamic point + spot lights mounted by the shell. Default 8. */
   maxDynamicLights?: number;
   hemisphere?: HemisphereLightingConfig;
+  /**
+   * Multiplier on `ambient` intensity while image-based light is on (every look but `"flat"`), so the
+   * shaped sky light carries the fill instead of a flat wash. Default 0.5; 1 keeps the authored value.
+   */
+  iblAmbientScale?: number;
+  /**
+   * With no `directional` entry, the shell adds a soft shadowless key light so forms still get a lit
+   * and a shaded side. Default true; `false` keeps the scene lit by ambient/hemisphere/IBL alone.
+   */
+  fallbackKey?: boolean;
 }
 
 export interface BackdropFogConfig {

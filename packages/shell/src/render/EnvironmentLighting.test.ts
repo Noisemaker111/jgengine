@@ -6,7 +6,7 @@ import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
 import { EXRLoader } from "three/examples/jsm/loaders/EXRLoader.js";
 import { armTextureErrors, textureErrorsSnapshot } from "@jgengine/core/devtools/textureErrors";
 import type { EnvironmentSource } from "@jgengine/core/render/environment";
-import { EnvironmentLighting } from "./EnvironmentLighting";
+import { DEFAULT_PROBE_SUN, EnvironmentLighting, buildSkyProbeScene } from "./EnvironmentLighting";
 
 const roots: ReconcilerRoot<HTMLCanvasElement>[] = [];
 const originals = {
@@ -169,5 +169,27 @@ describe("environment lighting ownership", () => {
     expect(h.scene.environment).toBe(h.originalTexture);
     expect(h.scene.environmentRotation).toBe(edited);
     expect(h.scene.environmentRotation.y).toBe(1.2);
+  });
+});
+
+describe("procedural sky probe", () => {
+  function probeUniforms(sunDirection?: readonly [number, number, number]) {
+    const probe = buildSkyProbeScene({ skyColor: "#87b5e0", groundColor: "#3d4a38", sunColor: "#fff2d6", sunDirection });
+    const mesh = probe.children[0] as THREE.Mesh<THREE.BufferGeometry, THREE.ShaderMaterial>;
+    return mesh.material.uniforms;
+  }
+
+  test("bakes a normalized sun lobe, falling back to a default sun when none is authored", () => {
+    const fallback = probeUniforms().sunDir.value as THREE.Vector3;
+    expect(fallback.length()).toBeCloseTo(1);
+    expect(fallback.toArray()).toEqual(new THREE.Vector3(...DEFAULT_PROBE_SUN).normalize().toArray());
+    expect((probeUniforms([0, 10, 0]).sunDir.value as THREE.Vector3).toArray()).toEqual([0, 1, 0]);
+  });
+
+  test("horizon is brighter than the zenith so the sky fill is not a flat two-tone", () => {
+    const uniforms = probeUniforms();
+    const zenith = uniforms.zenith.value as THREE.Color;
+    const horizon = uniforms.horizon.value as THREE.Color;
+    expect(horizon.r + horizon.g + horizon.b).toBeGreaterThan(zenith.r + zenith.g + zenith.b);
   });
 });

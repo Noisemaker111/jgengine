@@ -114,7 +114,10 @@ export interface PostProcessingConfig {
    */
   aa?: PostAaMode;
   bloom?: BloomConfig | false;
-  /** Ambient occlusion. Heavier than the other stages — omit or `false` on low-end targets. Default off (omitted). */
+  /**
+   * Ambient occlusion (contact shading). Omitted runs {@link DEFAULT_AO} on graphics tiers whose
+   * `postStages.ao` is on (medium and up); `false` turns it off everywhere.
+   */
   ao?: AoConfig | false;
   /** Depth-of-field / bokeh. Heavier stage — omit or `false` to skip. Default off (omitted). */
   dof?: DofConfig | false;
@@ -122,6 +125,9 @@ export interface PostProcessingConfig {
   /** Art-style stage: outlines, cel bands, pixelation. Default off (omitted). */
   stylize?: StylizeConfig | false;
 }
+
+/** Contact shading used when a post chain leaves `ao` unset: soft creases, no dark halos. */
+export const DEFAULT_AO: Readonly<AoConfig> = { radius: 1.3, intensity: 1.3, distanceFalloff: 2.8, blend: 1 };
 
 /**
  * A cinematic "product shot" post preset — the full chain on (contact-AO, soft bloom, a warm film
