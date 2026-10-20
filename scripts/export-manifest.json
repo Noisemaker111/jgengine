@@ -923,6 +923,7 @@
     "./scene/StudioStage",
     "./scene/WaterRenderer",
     "./scene/builtinSceneKindRenderers",
+    "./scene/cityJunctionSurface",
     "./scene/cityWindowMaterial",
     "./scene/sceneKindRenderers",
     "./settings/QuickControls",
