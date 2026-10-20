@@ -118,6 +118,12 @@ export interface GameContextObjectEntry {
   verbs?: readonly ContextVerb[];
   colliders?: EntityColliderSet;
   halfExtents?: readonly [number, number, number];
+  /**
+   * Placed once and left alone (trees, lamps, benches, buildings): runtime placements of this kind
+   * render through shared instanced draws like editor-authored props. Leave unset for objects that
+   * spawn and despawn often, where regrouping would rebuild instance buffers.
+   */
+  scenery?: boolean;
 }
 
 export interface GameContextContent {
