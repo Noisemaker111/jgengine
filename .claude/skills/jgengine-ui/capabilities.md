@@ -210,6 +210,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `useDragLayer` (function) · `import { useDragLayer } from "@jgengine/react"`
 
+## engine-styles — inject the engine stylesheet (jg-* keyframes, interaction states, reduced motion) once
+
+- `useEngineStyles` (function) · `import { useEngineStyles } from "@jgengine/react/engineStyles"`
+
 ## entity-frames — overlay that renders caller-composed frames over on-screen entities
 
 - `EntityFrames` (function) · `import { EntityFrames } from "@jgengine/react"`
@@ -266,6 +270,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `displaceHeightfieldGeometry` (function) · `import { displaceHeightfieldGeometry } from "@jgengine/shell/terrain"`
 
+## hud-button — themed button with hover lift, press scale, focus ring, disabled state, and an interaction cue seam
+
+- `HudButton` (const) · `import { HudButton } from "@jgengine/react/hudButton"`
+
 ## hud-canvas — the HUD root surface — design-resolution scaling plus live panel-placement editing (F2+C)
 
 - `HudCanvas` (function) · `import { HudCanvas } from "@jgengine/react"`
@@ -289,6 +297,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## hud-icons — painted-icon treatment for hotbar/action slots — glyph + gradient + count badge
 
 - `IconSchool` (type) · `import { IconSchool } from "@jgengine/react"`
+
+## hud-interact — one listener for hover/press/activate/open/close from every engine HUD primitive
+
+- `HudInteractProvider` (function) · `import { HudInteractProvider } from "@jgengine/react/hudInteract"`
 
 ## hud-layout — persistent, live-editable HUD panel layout state for `HudCanvas`
 
@@ -326,9 +338,17 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `deriveHudTheme` (function) · `import { deriveHudTheme } from "@jgengine/react"`
 
+## hud-theme-root — apply the default (or a game) HudTheme and the engine stylesheet at the HUD root
+
+- `HudThemeRoot` (function) · `import { HudThemeRoot } from "@jgengine/react/hudThemeRoot"`
+
 ## hud-ticker — re-render a HUD element at a steady hz for time-derived readouts (cooldowns, cast/swing bars) — no hand-rolled setInterval effects
 
 - `useTicker` (function) · `import { useTicker } from "@jgengine/react"`
+
+## hud-tokens — inline-style accessors for the HudTheme type scale, spacing, motion, elevation, and focus ring
+
+- `HudTypeStep` (type) · `import { HudTypeStep } from "@jgengine/react/hudTokens"`
 
 ## hud-vitals — atomic purpose-named vitals bars (token-themed parts, not a finished HUD)
 
@@ -557,6 +577,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `Popover` (function) · `import { Popover } from "@jgengine/react"`
 
+## presence — keep a closing element mounted through its exit transition
+
+- `usePresence` (function) · `import { usePresence } from "@jgengine/react/presence"`
+
 ## projected-overdraw — sample actual mesh/camera fragment overlap with native coverage and explicit depth/blending/transmission limits
 
 - `measureProjectedOverdraw` (function) · `import { measureProjectedOverdraw } from "@jgengine/shell/render/projectedOverdraw"`
@@ -701,6 +725,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## transform-gizmo — in-game select/move/rotate/scale gizmo
 
 - `TransformGizmo` (const) · `import { TransformGizmo } from "@jgengine/shell/structures"`
+
+## tween-number — rolling number readout with an up/down delta flash
+
+- `TweenNumber` (function) · `import { TweenNumber } from "@jgengine/react/tweenNumber"`
+
+## tweened-value — animate a displayed number toward its target, honouring reduced motion
+
+- `useTweenedValue` (function) · `import { useTweenedValue } from "@jgengine/react/tweenNumber"`
 
 ## ui-sound-cues — play click/hover/open/close/confirm/deny/notify UI sounds from any component
 

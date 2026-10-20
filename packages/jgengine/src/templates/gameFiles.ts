@@ -214,6 +214,7 @@ const tsconfigJson = (variant: TemplateVariant) => `${JSON.stringify(
 // (GameHost) mounts @jgengine/editor's chrome into THIS page, so its classes must be scanned here too
 // — omit the editor @source and the summoned editor renders unstyled (all-white, no theme) from day one.
 const indexCss = (variant: TemplateVariant, editor: boolean) => `@import "tailwindcss";
+@import "${variant === "in-repo" ? "../../../packages/react/src/styles.css" : "@jgengine/react/styles.css"}";
 @import "./style.css";
 ${
   variant === "in-repo"

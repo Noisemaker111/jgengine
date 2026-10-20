@@ -1,6 +1,7 @@
 import { type CSSProperties, type ReactNode } from "react";
 
 import { GameIcon, iconForAction, iconForItemId, type GameIconName } from "./gameIcons";
+import { hudType } from "./hudTokens";
 
 /**
  * `IconTreatment` (#1035): a procedural painted-icon face — a glyph over a school-keyed radial
@@ -127,7 +128,7 @@ export function IconTreatment({
       <div style={{ position: "absolute", inset: 0, borderRadius: "inherit", boxShadow: "inset 0 0 12px rgba(0,0,0,0.55)", pointerEvents: "none" }} />
       {content}
       {keycap !== undefined ? (
-        <span style={{ position: "absolute", top: 1, left: 4, fontSize: 9, fontWeight: 700, color: "#fff", opacity: 0.75, textShadow: "0 1px 2px rgba(0,0,0,0.9)" }}>
+        <span style={{ position: "absolute", top: 1, left: 4, fontSize: hudType("xs"), fontWeight: 700, color: "#fff", opacity: 0.75, textShadow: "0 1px 2px rgba(0,0,0,0.9)" }}>
           {keycap}
         </span>
       ) : null}
@@ -138,7 +139,7 @@ export function IconTreatment({
             position: "absolute",
             bottom: 1,
             right: 3,
-            fontSize: 11,
+            fontSize: hudType("xs"),
             fontWeight: 800,
             color: "#fff",
             fontVariantNumeric: "tabular-nums",

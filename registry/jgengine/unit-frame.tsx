@@ -35,7 +35,7 @@ function LevelRosette({ level }: { level: number }) {
       }}
     >
       <span
-        className="font-mono text-[10px] font-bold"
+        className="font-mono text-[length:var(--jg-type-xs,12px)] font-bold"
         style={{ transform: "rotate(-45deg)", color: "var(--jg-accent)" }}
       >
         {level}

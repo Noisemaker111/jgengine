@@ -100,7 +100,7 @@ export function BossBar({
       </div>
       {subLabel !== undefined && (
         <span
-          className="text-[10px] uppercase tracking-[0.18em]"
+          className="text-[length:var(--jg-type-xs,12px)] uppercase tracking-[0.18em]"
           style={{ color: "var(--jg-text-dim)", textShadow: HUD_TEXT_SHADOW }}
         >
           {subLabel}

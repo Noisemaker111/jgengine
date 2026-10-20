@@ -113,3 +113,13 @@ export function usePrefersReducedMotion(): boolean {
     () => false,
   );
 }
+
+/**
+ * True when motion should be skipped: the OS `prefers-reduced-motion` preference, or the nearest
+ * {@link AccessibilityProvider}'s `reducedMotion` setting. Works without a provider.
+ */
+export function useReducedMotion(): boolean {
+  const prefers = usePrefersReducedMotion();
+  const value = useContext(AccessibilityContext);
+  return prefers || value?.state.reducedMotion === true;
+}

@@ -150,7 +150,7 @@ function resolves(pkg: string, sub: string): boolean {
     existsSync(`${base}.ts`) ||
     existsSync(`${base}.tsx`) ||
     existsSync(join(base, "index.ts")) ||
-    (existsSync(base) && statSync(base).isDirectory()) ||
+    existsSync(base) ||
     existsSync(join(root, "packages", pkg, `${sub}.md`))
   );
 }
@@ -160,7 +160,7 @@ for (const file of new Glob("**/*.md").scanSync({ cwd: skillsRoot, absolute: tru
   const name = basename(file);
   if (name === "api.md" || name === "capabilities.md") continue;
   const raw = readFileSync(file, "utf8");
-  for (const match of raw.matchAll(/@jgengine\/(core|react|shell|ws|node|sql|convex|assets|github|jgengine)\/[A-Za-z0-9_/]+/g)) {
+  for (const match of raw.matchAll(/@jgengine\/(core|react|shell|ws|node|sql|convex|assets|github|jgengine)\/[A-Za-z0-9_/]+(?:\.css)?/g)) {
     const ref = match[0];
     if (seenPaths.has(ref) || allowDocRefs.has(ref)) continue;
     seenPaths.add(ref);

@@ -135,7 +135,7 @@ export function DialoguePanel({
       <div className="flex min-w-0 flex-1 flex-col gap-2">
         {speakerLine !== undefined && (
           <span
-            className="absolute -top-2.5 text-[11px] font-bold uppercase tracking-[0.2em]"
+            className="absolute -top-2.5 text-[length:var(--jg-type-xs,12px)] font-bold uppercase tracking-[0.2em]"
             style={{
               left: speakerPortrait !== undefined ? 76 : 14,
               background: "linear-gradient(135deg, var(--jg-accent-deep) 0%, var(--jg-surface-deep) 100%)",
@@ -169,7 +169,7 @@ export function DialoguePanel({
                     <span>{choice.label}</span>
                   </span>
                   {choice.check !== undefined && (
-                    <span className="shrink-0 font-mono text-[11px]" style={{ color: "var(--jg-warning)" }}>
+                    <span className="shrink-0 font-mono text-[length:var(--jg-type-xs,12px)]" style={{ color: "var(--jg-warning)" }}>
                       [{choice.check.label ?? "Check"} DC {choice.check.dc}]
                     </span>
                   )}

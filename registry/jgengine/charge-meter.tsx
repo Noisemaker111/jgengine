@@ -60,7 +60,7 @@ export function ChargeMeter({
       </div>
       {label !== undefined && (
         <div
-          className="mt-[3px] text-[9px] font-bold uppercase tracking-[0.24em]"
+          className="mt-[3px] text-[length:var(--jg-type-xs,12px)] font-bold uppercase tracking-[0.24em]"
           style={{
             color: ready ? "var(--jg-accent)" : "var(--jg-text-dim)",
             textShadow: HUD_TEXT_SHADOW,

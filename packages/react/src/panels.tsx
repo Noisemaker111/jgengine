@@ -23,8 +23,14 @@ import {
   type PanelState,
 } from "@jgengine/core/ui/panelModel";
 
+import { useReducedMotion } from "./accessibility";
+import { HudButton } from "./hudButton";
 import { HudFrame, type HudFrameShape, type HudFrameVariation } from "./hudFrame";
+import { useHudInteract, type HudInteractListener } from "./hudInteract";
+import { HudPanel } from "./hudPanel";
+import { hudType } from "./hudTokens";
 import { observeBrowserSuspension } from "./browserLifecycle";
+import { usePresence } from "./presence";
 
 /**
  * React chrome over the headless panel/window model (`@jgengine/core/ui/panelModel`) — the toggleable,
@@ -237,37 +243,26 @@ const TITLEBAR_STYLE: CSSProperties = {
   alignItems: "center",
   justifyContent: "space-between",
   gap: 8,
-  padding: "6px 8px 6px 10px",
+  padding: "8px 8px 8px 12px",
   cursor: "grab",
   touchAction: "none",
   userSelect: "none",
-  fontSize: 12,
-  fontWeight: 600,
-  letterSpacing: 0.3,
-  borderBottom: "var(--jg-frame-border, 1px solid rgba(255,255,255,0.10))",
+  fontSize: hudType("sm"),
+  fontWeight: 650,
+  letterSpacing: 0.2,
+  borderBottom: "1px solid var(--jg-edge, rgba(255,255,255,0.10))",
 };
 
-const CLOSE_BUTTON_STYLE: CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  width: 20,
-  height: 20,
-  padding: 0,
-  borderRadius: 6,
-  border: "1px solid transparent",
-  background: "transparent",
-  color: "inherit",
-  font: "inherit",
-  lineHeight: 1,
-  cursor: "pointer",
-  opacity: 0.75,
-};
+const CLOSE_BUTTON_STYLE: CSSProperties = { width: 24, height: 24, color: "inherit", opacity: 0.8 };
+
+/** Exit-transition length for windows; matches the stylesheet's `jg-panel-out` at `--jg-motion-fast`. */
+const WINDOW_EXIT_MS = 140;
 
 /** @internal Shared, fully-controlled window view — title bar (drag + close) plus a HudFrame body. */
 function WindowView({
   title,
   ariaLabel,
+  open = true,
   closable,
   onClose,
   onFocus,
@@ -277,12 +272,17 @@ function WindowView({
   width,
   variation,
   shape,
+  cue,
+  onInteract,
   className,
   style,
   bodyStyle,
   children,
 }: {
   title: ReactNode;
+  open?: boolean;
+  cue?: string;
+  onInteract?: HudInteractListener;
   ariaLabel?: string;
   closable: boolean;
   onClose?: () => void;
@@ -300,17 +300,22 @@ function WindowView({
 }) {
   const retireDrag = useRef<(() => void) | null>(null);
   useEffect(() => () => retireDrag.current?.(), []);
+  useEffect(() => {
+    if (!open) retireDrag.current?.();
+  }, [open]);
+  const reduced = useReducedMotion();
+  const presence = usePresence(open, reduced ? 0 : WINDOW_EXIT_MS);
+  const report = useHudInteract("window", cue, onInteract);
+  const reported = useRef<boolean | null>(null);
+  useEffect(() => {
+    if (reported.current === open) return;
+    reported.current = open;
+    report(open ? "open" : "close");
+  }, [open, report]);
+  if (presence === "unmounted") return null;
 
-  return (
-    <div
-      role="dialog"
-      aria-label={ariaLabel}
-      data-jg-window=""
-      className={className}
-      onPointerDown={() => onFocus?.()}
-      style={{ position: "absolute", left: pos.x, top: pos.y, zIndex: z, pointerEvents: "auto", ...style }}
-    >
-      <HudFrame variation={variation} shape={shape} width={width} padding={0} interactive>
+  const frameBody = (
+    <>
         <div
           data-jg-window-titlebar=""
           onPointerDown={(event) => {
@@ -324,24 +329,79 @@ function WindowView({
         >
           <span data-jg-window-title="">{title}</span>
           {closable ? (
-            <button
-              type="button"
+            <HudButton
+              variant="ghost"
+              size="icon"
               data-jg-window-close=""
               aria-label="Close"
+              cue="window-close"
               onClick={onClose}
               onPointerDown={(event) => event.stopPropagation()}
               style={CLOSE_BUTTON_STYLE}
             >
               ✕
-            </button>
+            </HudButton>
           ) : null}
         </div>
-        <div data-jg-window-body="" style={{ padding: 10, ...bodyStyle }}>
+        <div data-jg-window-body="" style={{ padding: 12, ...bodyStyle }}>
           {children}
         </div>
-      </HudFrame>
+    </>
+  );
+
+  return (
+    <div
+      role="dialog"
+      aria-label={ariaLabel}
+      data-jg-window=""
+      data-state={presence}
+      data-jg-cue={cue}
+      className={className}
+      onPointerDown={() => onFocus?.()}
+      style={{ position: "absolute", left: pos.x, top: pos.y, zIndex: z, pointerEvents: "auto", ...style }}
+    >
+      {variation === undefined ? (
+        <HudPanel elevation="modal" padding={0} width={width} style={shape === "square" ? { borderRadius: 0 } : undefined}>
+          {frameBody}
+        </HudPanel>
+      ) : (
+        <HudFrame variation={variation} shape={shape} width={width} padding={0} interactive>
+          {frameBody}
+        </HudFrame>
+      )}
     </div>
   );
+}
+
+/** @internal Keeps just-closed panels rendered (closing) for `exitMs` so their exit transition plays. */
+function useLeavingPanels(open: readonly PanelDef[], exitMs: number): { def: PanelDef; index: number }[] {
+  const previous = useRef<readonly PanelDef[]>(open);
+  const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+  const [leaving, setLeaving] = useState<{ def: PanelDef; index: number }[]>([]);
+  const openKey = open.map((def) => def.id).join("\u0000");
+  useEffect(() => {
+    const openIds = new Set(open.map((def) => def.id));
+    const gone = exitMs <= 0 ? [] : previous.current.map((def, index) => ({ def, index })).filter(({ def }) => !openIds.has(def.id));
+    previous.current = open;
+    for (const id of openIds) {
+      clearTimeout(timers.current.get(id));
+      timers.current.delete(id);
+    }
+    for (const { def } of gone) {
+      timers.current.set(def.id, setTimeout(() => {
+        timers.current.delete(def.id);
+        setLeaving((current) => current.filter((entry) => entry.def.id !== def.id));
+      }, exitMs));
+    }
+    setLeaving((current) => {
+      const kept = current.filter(({ def }) => !openIds.has(def.id) && !gone.some((g) => g.def.id === def.id));
+      return kept.length === 0 && gone.length === 0 && current.length === 0 ? current : [...kept, ...gone];
+    });
+  }, [openKey, exitMs]);
+  useEffect(() => () => {
+    for (const timer of timers.current.values()) clearTimeout(timer);
+  }, []);
+  return leaving;
 }
 
 /** @internal Fallback cascade position for a window whose state has no override yet. */
@@ -376,8 +436,11 @@ export function PanelHost({
   windowClassName,
   windowStyle,
   bodyStyle,
+  onInteract,
 }: {
   manager: PanelsManager;
+  /** Called as windows open and close (`cue` is `panel:<id>`) — the seam a UI sound system hooks. */
+  onInteract?: HudInteractListener;
   /** Content for a panel by id. Takes precedence over `panels`. */
   render?: (id: string) => ReactNode;
   /** Static content map by panel id, used when `render` is omitted. */
@@ -394,17 +457,22 @@ export function PanelHost({
   bodyStyle?: CSSProperties;
 }) {
   const open = orderedOpen(manager.state, manager.defs);
+  const leaving = useLeavingPanels(open, useReducedMotion() ? 0 : WINDOW_EXIT_MS);
   const content = (id: string): ReactNode =>
     render !== undefined ? render(id) : (panels?.[id] ?? null);
+  const windows = [...open.map((def, index) => ({ def, index, open: true })), ...leaving.map((entry) => ({ ...entry, open: false }))];
   return (
     <div
       data-jg-panel-host=""
       className={className}
       style={{ position: "absolute", inset: 0, zIndex: zIndexBase, pointerEvents: "none" }}
     >
-      {open.map((def, index) => (
+      {windows.map(({ def, index, open: isOpenWindow }) => (
         <WindowView
           key={def.id}
+          open={isOpenWindow}
+          cue={`panel:${def.id}`}
+          onInteract={onInteract}
           title={def.title ?? def.id}
           ariaLabel={def.title ?? def.id}
           closable={def.closable !== false}
@@ -450,11 +518,17 @@ export function Window({
   className,
   style,
   bodyStyle,
+  cue,
+  onInteract,
   children,
 }: {
   title: ReactNode;
   ariaLabel?: string;
   closable?: boolean;
+  /** Feedback cue name, rendered as `data-jg-cue` and passed to `onInteract`. */
+  cue?: string;
+  /** Called with `open` when the window mounts — the seam a UI sound system hooks. */
+  onInteract?: HudInteractListener;
   onClose?: () => void;
   /** Initial (uncontrolled) or current (controlled, with `onMove`) x position. Default 56. */
   x?: number;
@@ -496,6 +570,8 @@ export function Window({
       className={className}
       style={style}
       bodyStyle={bodyStyle}
+      cue={cue}
+      onInteract={onInteract}
     >
       {children}
     </WindowView>
