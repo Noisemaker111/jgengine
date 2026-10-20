@@ -93,7 +93,7 @@ test("a material config with textures wires world-tiled color/roughness/normal/a
   expect(shader.fragmentShader).toContain("mix(jgCol, jgMatColor, uMatStrength * uMatTint)");
   // Grain and tint are separable: the luminance term is gated on the tint the caller did NOT spend.
   expect(shader.fragmentShader).toContain("uMatStrength * (1.0 - uMatTint)");
-  expect(shader.fragmentShader).toContain("roughnessFactor = mix(roughnessFactor, jgMatRough, uMatStrength)");
+  expect(shader.fragmentShader).toContain("roughnessFactor = clamp(roughnessFactor + (jgMatRough - 0.5) * uMatStrength * 0.6, 0.0, 1.0)");
   expect(shader.fragmentShader).toContain("normal = normalize(normal + vec3(jgMatNormalXy.x");
   expect(shader.fragmentShader).toContain("reflectedLight.indirectDiffuse *= mix(1.0, jgMatAo, uMatStrength)");
 });
