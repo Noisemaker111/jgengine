@@ -34,7 +34,7 @@ import { createObjectStore, objectVisualScale, type ObjectStore } from "../../sc
 import type { InventorySet, ItemTraits } from "../../inventory/inventoryModel";
 import { createObjectSlots } from "./objectSlots";
 import { createPaintLayer, type PaintLayer } from "../../scene/paintLayer";
-import { createSelectionSet } from "../../scene/selection";
+import { createSelectionSet, type SelectionSet } from "../../scene/selection";
 import {
   createSceneRaycast,
   type SceneRaycastApi,
@@ -78,6 +78,8 @@ export interface SceneSubsystemDeps {
 /** @internal Always-on scene surface: entities, objects, colliders, spatial, raycast, targeting. */
 export interface SceneSubsystem {
   entities: EntityStore;
+  /** The player's selected entities, exposed as `ctx.scene.entity.selection`. */
+  entitySelection: SelectionSet;
   objects: ObjectStore;
   statsByInstance: Map<string, StatValueMap>;
   entityStats: EntityStatsApi;
@@ -134,6 +136,13 @@ export function createSceneSubsystem(d: SceneSubsystemDeps): SceneSubsystem {
   });
   const objects = createObjectStore();
   entities.subscribe(signalNotify);
+  // The player's selected entities (RTS units, picked actors): written by the shell pointer, readable
+  // by game HUDs; mutations notify like every ctx surface, and a despawned id leaves the selection.
+  const entitySelection = notifyAfter(
+    createSelectionSet(),
+    ["add", "remove", "toggle", "replace", "clear"],
+    signalNotify,
+  );
   objects.subscribe(signalNotify);
 
   const statsByInstance = new Map<string, StatValueMap>();
@@ -394,6 +403,7 @@ export function createSceneSubsystem(d: SceneSubsystemDeps): SceneSubsystem {
 
   function despawnEntity(instanceId: string): boolean {
     const existed = entities.despawn(instanceId);
+    if (entitySelection.has(instanceId)) entitySelection.remove(instanceId);
     statsByInstance.delete(instanceId);
     targeting.clearAll(instanceId);
     entityColliders.delete(instanceId);
@@ -484,6 +494,7 @@ export function createSceneSubsystem(d: SceneSubsystemDeps): SceneSubsystem {
 
   return {
     entities,
+    entitySelection,
     objects,
     statsByInstance,
     entityStats,

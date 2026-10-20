@@ -27,7 +27,6 @@ import type { BindingOverrides } from "@jgengine/core/input/bindingOverrides";
 import type { TouchJoystickVariant, TouchScheme, TouchStyle } from "@jgengine/core/input/touchScheme";
 import type { Aim } from "@jgengine/core/scene/spatial";
 import {
-  createSelectionSet,
   isMarquee,
   screenRect,
   selectWithinRect,
@@ -221,7 +220,8 @@ export function Shell3dPresentation({
   const frameTally = useRef<FrameTally>({ frames: 0 }).current;
   const WorldOverlay = playable.WorldOverlay;
   const pointerService = useMemo(() => createPointerService(), []);
-  const selection = useMemo(() => createSelectionSet(), [playable]);
+  // The player's entity selection lives on ctx so game HUDs can read (and write) it.
+  const selection = ctx.scene.entity.selection;
   const controlledEntityId = ctx.player.possession.active(ctx.player.userId);
   const cameraOverride = useSyncExternalStore(ctx.camera.subscribe, ctx.camera.rig, ctx.camera.rig);
   const configuredCamera =
@@ -280,7 +280,8 @@ export function Shell3dPresentation({
   const pointerDownRef = useRef<{ x: number; y: number } | null>(null);
   const marqueeStartRef = useRef<{ x: number; y: number } | null>(null);
   const [marquee, setMarquee] = useState<ScreenRect | null>(null);
-  const [selectedIds, setSelectedIds] = useState<ReadonlySet<string>>(() => new Set());
+  const selectionKey = useSyncExternalStore(ctx.subscribe, () => selection.list().join("\n"), () => selection.list().join("\n"));
+  const selectedIds = useMemo<ReadonlySet<string>>(() => new Set(selectionKey === "" ? [] : selectionKey.split("\n")), [selectionKey]);
   const [contextMenu, setContextMenu] = useState<{ menu: ContextMenu; x: number; y: number } | null>(null);
 
   const localXY = (event: { clientX: number; clientY: number }) => {
@@ -292,7 +293,6 @@ export function Shell3dPresentation({
 
   const commitSelection = (ids: string[]) => {
     selection.replace(ids);
-    setSelectedIds(new Set(ids));
   };
 
   const finishMarquee = (rect: ScreenRect) => {

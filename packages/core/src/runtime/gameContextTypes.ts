@@ -312,6 +312,13 @@ export interface SceneEntityContext {
   vfxInstance: VfxInstanceStore;
   telegraph(input: TelegraphInput): () => void;
   hitReaction(input: HitReactionInput): HitReaction | null;
+  /**
+   * The player's selected entities — the RTS selection the shell pointer writes (`pointer.select`
+   * click / marquee) and the order command receives. Game HUDs read it to show the selected unit's
+   * card or a "3 units selected" summary, and may write it (select-all buttons, control groups).
+   * Mutations bump `ctx.version()`/notify `ctx.subscribe`; despawned ids drop out.
+   */
+  selection: SelectionSet;
   setTarget(fromId: string, toId: string | null): void;
   getTarget(fromId: string): string | null;
   cycleTarget(fromId: string, options?: CycleTargetOptions): string | null;

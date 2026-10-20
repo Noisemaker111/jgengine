@@ -344,6 +344,22 @@ describe("createGameContext", () => {
     unsubscribe();
   });
 
+  test("scene.entity.selection notifies on change and drops despawned entities", () => {
+    const ctx = makeContext();
+    const a = ctx.scene.entity.spawn("dummy", { position: [0, 0, 0] });
+    const b = ctx.scene.entity.spawn("dummy", { position: [1, 0, 0] });
+    let notified = 0;
+    const unsubscribe = ctx.subscribe(() => { notified += 1; });
+    const before = ctx.version();
+    ctx.scene.entity.selection.replace([a, b]);
+    expect(ctx.version()).toBeGreaterThan(before);
+    expect(notified).toBeGreaterThan(0);
+    expect(ctx.scene.entity.selection.list()).toEqual([a, b]);
+    ctx.scene.entity.despawn(a);
+    expect(ctx.scene.entity.selection.list()).toEqual([b]);
+    unsubscribe();
+  });
+
   test("ctx.touch bumps version and notifies subscribers without touching any subsystem", () => {
     const ctx = makeContext();
     let notified = 0;
