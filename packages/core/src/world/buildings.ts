@@ -368,14 +368,8 @@ export const BUILDING_STYLE_PALETTES: Record<BuildingStyle, Record<BuildingPartK
 };
 
 /**
- * Per-style facade-tone family: the wall colours a district spreads across its buildings so
- * neighbours differ in hue and value while the block stays one palette. Index 0 is the palette's
- * own `wall`; the rest fan warmer/cooler and lighter/darker around it.
- */
-/**
- * Facade grammar per style: which parts a style tends to show. A style used to change colour only,
- * so an industrial yard, a ruined block and a coastal strip all read as the same windowed apartment.
- * Unset parts keep the generic probabilities.
+ * Facade part probabilities per style, so an industrial yard, a ruined block and a coastal strip
+ * differ in shape as well as colour. Unset parts keep the generic probabilities.
  */
 export const BUILDING_STYLE_PROBABILITIES: Record<BuildingStyle, Partial<BuildingProbabilities>> = {
   generic: {},
@@ -398,6 +392,11 @@ export function resolveBuildingProbabilities(
   return { ...BUILDING_STYLE_PROBABILITIES[style], ...overrides };
 }
 
+/**
+ * Per-style facade-tone family: the wall colours a district spreads across its buildings so
+ * neighbours differ in hue and value while the block stays one palette. Index 0 is the palette's
+ * own `wall`; the rest fan warmer/cooler and lighter/darker around it.
+ */
 export const BUILDING_STYLE_WALL_TONES: Record<BuildingStyle, readonly string[]> = {
   generic: ["#9c8f80", "#736a60", "#b7a894", "#8b8a80", "#c3ac90", "#635c54", "#a1978c"],
   capital: ["#cfc5ad", "#ac9878", "#e6e0cf", "#a8a698", "#c8b48d", "#847b68", "#ded2b3"],
