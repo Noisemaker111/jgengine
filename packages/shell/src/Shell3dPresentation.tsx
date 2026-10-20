@@ -45,6 +45,7 @@ import {
 import { playControlsActive } from "@jgengine/core/game/controlGate";
 import { sky as resolveSkyDescriptor } from "@jgengine/core/world/features";
 import { resolveGameLook } from "@jgengine/core/render/lookPreset";
+import { balanceLightingForIbl } from "@jgengine/core/render/lightingBalance";
 import type { PresencePoseRow } from "@jgengine/core/runtime/transport";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { GameViewportProvider } from "@jgengine/react/gameViewport";
@@ -103,6 +104,7 @@ import type { RuntimeDiagnostic } from "./diagnostics/RuntimeDiagnostics";
 import { createShellKeyHandlers, ShellDebugOverlays, ShellGameUiChrome } from "./ShellChrome";
 import { CombatPresentation } from "./CombatPresentation";
 import { WorldParticles } from "./world/WorldParticles";
+import { TerrainQualityContext } from "./terrain/terrainQuality";
 import { detectKtx2Support } from "./render/modelLoad";
 import {
   resolvePresentationEffects,
@@ -268,6 +270,7 @@ export function Shell3dPresentation({
   const authoredSky = backdropSky ?? worldSky;
   const lighting = resolvedLook.lighting;
   const sunFromLighting = lighting?.directional?.[0]?.position;
+  const sceneLighting = useMemo(() => (cinematicLook ? balanceLightingForIbl(lighting) : lighting), [cinematicLook, lighting]);
   const effectiveSky = useMemo(
     () =>
       authoredSky === undefined || authoredSky.sun !== undefined || authoredSky.timeOfDay || sunFromLighting === undefined
@@ -569,7 +572,7 @@ export function Shell3dPresentation({
                         far: playable.camera?.frustum?.far ?? CAMERA_FRUSTUM_DEFAULTS.far,
                       }
                 }
-                shadows={graphics.shadows}
+                shadows={graphics.shadows ? "percentage" : false}
                 dpr={[Math.min(1, graphics.dpr), graphics.dpr]}
                 gl={{ preserveDrawingBuffer: true, powerPreference: "high-performance" }}
                 style={{ touchAction: "none" }}
@@ -584,17 +587,18 @@ export function Shell3dPresentation({
                 {cinematicLook ? (
                   <EnvironmentLighting
                     source={playable.environmentSource}
-                    skyColor={lighting?.hemisphere?.skyColor ?? "#87b5e0"}
-                    groundColor={lighting?.hemisphere?.groundColor ?? "#3d4a38"}
-                    sunDirection={lighting?.directional?.[0]?.position}
-                    sunColor={lighting?.directional?.[0]?.color ?? "#fff2d6"}
+                    skyColor={sceneLighting?.hemisphere?.skyColor ?? "#87b5e0"}
+                    groundColor={sceneLighting?.hemisphere?.groundColor ?? "#3d4a38"}
+                    horizonTint={sceneLighting?.ambient?.color}
+                    sunDirection={sceneLighting?.directional?.[0]?.position}
+                    sunColor={sceneLighting?.directional?.[0]?.color ?? "#fff2d6"}
                   />
                 ) : null}
-                {lighting !== undefined ? (
-                  <ConfiguredLighting lighting={lighting} profile={graphics.profile} />
+                {sceneLighting !== undefined ? (
+                  <ConfiguredLighting lighting={sceneLighting} profile={graphics.profile} />
                 ) : effectiveSky === undefined ? (
                   <>
-                    <ambientLight intensity={0.55} />
+                    <ambientLight intensity={cinematicLook ? 0.3 : 0.55} />
                     <directionalLight position={[10, 16, 6]} intensity={1.3} />
                   </>
                 ) : null}
@@ -616,6 +620,7 @@ export function Shell3dPresentation({
                 ) : null}
                 <BackdropFog fog={backdrop?.fog} />
                 <GameProvider context={ctx}>
+                  <TerrainQualityContext.Provider value={graphics.quality}>
                   <BuildingRenderBudget drawDistance={graphics.profile.drawDistance} visibility={playable.visibility} cullingDisabled={splitScreen}>
                   <CullingProvider config={playable.visibility} drawDistance={graphics.profile.drawDistance}>
                     <WorldView
@@ -685,6 +690,7 @@ export function Shell3dPresentation({
                   />
                   <PointerProbe service={pointerService} />
                   </BuildingRenderBudget>
+                  </TerrainQualityContext.Provider>
                 </GameProvider>
                 <RemotePlayers rows={remotePlayers} />
                 <FrameDriver

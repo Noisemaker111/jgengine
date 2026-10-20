@@ -4,6 +4,7 @@ import { expect, test } from "bun:test";
 import * as THREE from "three";
 
 import { createTerrainDetailMaterial, type TerrainDetailMaterialTextures } from "./terrainDetailMaterial";
+import { createTerrainPaintTextures, packTerrainPaintWeights } from "./terrainSurfaces";
 
 function fakeShader() {
   return {
@@ -94,7 +95,7 @@ test("a material config with textures wires world-tiled color/roughness/normal/a
   // Grain and tint are separable: the luminance term is gated on the tint the caller did NOT spend.
   expect(shader.fragmentShader).toContain("uMatStrength * (1.0 - uMatTint)");
   expect(shader.fragmentShader).toContain("roughnessFactor = clamp(roughnessFactor + (jgMatRough - 0.5) * uMatStrength * 0.6, 0.0, 1.0)");
-  expect(shader.fragmentShader).toContain("normal = normalize(normal + vec3(jgMatNormalXy.x");
+  expect(shader.fragmentShader).toContain("normal = normalize(normal + (viewMatrix * vec4(jgMatNormalXy.x, 0.0, jgMatNormalXy.y, 0.0)).xyz");
   expect(shader.fragmentShader).toContain("reflectedLight.indirectDiffuse *= mix(1.0, jgMatAo, uMatStrength)");
 });
 
@@ -165,4 +166,47 @@ test("optional map presence selects distinct compiled shader programs", () => {
     }
   }
   expect(keys.size).toBe(4);
+});
+
+function paintFor(surfaces: string[]) {
+  const packed = packTerrainPaintWeights({
+    layers: surfaces.map(surface => ({ id: surface, surface })),
+    gridBounds: { minX: 0, minZ: 0, maxX: surfaces.length, maxZ: 1 },
+    cols: surfaces.length,
+    rows: 1,
+    surfaceAt: x => surfaces[Math.floor(x)] ?? null,
+    weightsAt: () => [],
+  })!;
+  return createTerrainPaintTextures(packed);
+}
+
+test("painted terrain samples coverage and compiles only the painted surface classes plus rock", () => {
+  const paint = paintFor(["grass", "gravel"]);
+  const { material } = createTerrainDetailMaterial(resolveTerrainDetail(undefined), undefined, { paint });
+  const shader = fakeShader();
+  material.onBeforeCompile?.(shader as never, undefined as never);
+  expect(material.defines?.JG_TERRAIN_PAINT).toBe("");
+  expect(material.defines?.JG_SURFACE_CLASSES).toBe(String((1 << 1) | (1 << 3) | (1 << 4)));
+  expect(shader.uniforms.uPaintA?.value).toBe(paint.uniforms.uPaintA!.value);
+  expect(shader.fragmentShader).toContain("texture2D(uPaintA, jgPaintTexUv)");
+  expect(shader.fragmentShader).toContain("dFdx(jgBumpH)");
+  paint.dispose();
+});
+
+test("the low tier compiles the cheap surface path and an implicit detail has no snow", () => {
+  const detail = resolveTerrainDetail(undefined);
+  expect(detail.snowHeight).toBeGreaterThan(1000);
+  expect(detail.surfaceStrength).toBe(1);
+  const { material } = createTerrainDetailMaterial(detail, undefined, { quality: "low" });
+  expect(material.defines?.JG_SURFACE_LOW).toBe("");
+  expect(material.defines?.JG_TERRAIN_PAINT).toBeUndefined();
+  expect(material.customProgramCacheKey()).toContain("low");
+});
+
+test("editor contour strength is a live uniform", () => {
+  const handle = createTerrainDetailMaterial(resolveTerrainDetail({}), undefined, { contour: 0.45 });
+  const shader = fakeShader();
+  handle.material.onBeforeCompile?.(shader as never, undefined as never);
+  handle.contour.value = 1;
+  expect(shader.uniforms.uContour?.value).toBe(1);
 });

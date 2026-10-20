@@ -39,6 +39,8 @@ import { InstancedBuildings, type InstancedBuildingPlacement } from "../structur
 import { GrassField } from "../terrain/GrassField";
 import { CarvedTerrain, type CarvedTerrainProps } from "../terrain/CarvedTerrain";
 import { createTerrainDetailMaterial } from "../terrain/terrainDetailMaterial";
+import { useTerrainQuality } from "../terrain/terrainQuality";
+import { createTerrainPaintTextures, packTerrainPaintWeights, type TerrainPaintTextures } from "../terrain/terrainSurfaces";
 import { Ocean } from "../water/Ocean";
 import { RainField } from "../weather/RainField";
 import { SnowField } from "../weather/SnowField";
@@ -54,7 +56,7 @@ interface TerrainGroundLayout {
   colors: CarvedTerrainProps["colors"];
   heightRange: readonly [number, number];
   paletteAt: CarvedTerrainProps["paletteAt"];
-  paintColorAt?: CarvedTerrainProps["paintColorAt"];
+  paint?: TerrainPaintTextures;
   center?: readonly [number, number];
 }
 
@@ -80,7 +82,11 @@ function TexturedTerrainGround({
       texture.needsUpdate = true;
     }
   }, [textures]);
-  const material = useDisposable(() => createTerrainDetailMaterial(detail, textures).material, [detail, textures]);
+  const quality = useTerrainQuality();
+  const material = useDisposable(
+    () => createTerrainDetailMaterial(detail, textures, { paint: layout.paint, quality }).material,
+    [detail, textures, layout.paint, quality],
+  );
   return (
     <>
     <PresentationRecoveredDraw />
@@ -91,7 +97,6 @@ function TexturedTerrainGround({
       colors={layout.colors}
       heightRange={layout.heightRange}
       paletteAt={layout.paletteAt}
-      paintColorAt={layout.paintColorAt}
       center={layout.center}
       roughness={0.94}
       surfaceMaterial={material}
@@ -111,7 +116,17 @@ function TerrainGround({
   center?: readonly [number, number];
   sculpt?: TerraformSnapshot;
 }) {
-  const paintColorAt = useMemo(() => sculpt === undefined ? undefined : createTerrainPaintColorSampler(editableTerrainFromSnapshot(sculpt)), [sculpt]);
+  const detailEnabled = terrain.detail !== false;
+  const paint = useMemo(() => {
+    if (!detailEnabled || sculpt === undefined) return undefined;
+    const weights = packTerrainPaintWeights(editableTerrainFromSnapshot(sculpt));
+    return weights === undefined ? undefined : createTerrainPaintTextures(weights);
+  }, [detailEnabled, sculpt]);
+  useEffect(() => () => paint?.dispose(), [paint]);
+  const paintColorAt = useMemo(
+    () => detailEnabled || sculpt === undefined ? undefined : createTerrainPaintColorSampler(editableTerrainFromSnapshot(sculpt)),
+    [detailEnabled, sculpt],
+  );
   const palette = useMemo(() => resolveTerrainPalette(terrain), [terrain]);
   const paletteAt = useMemo(() => {
     const hasRegions = terrain.materialRegions !== undefined && terrain.materialRegions.length > 0;
@@ -136,15 +151,16 @@ function TerrainGround({
     return [base - swing, base + swing] as const;
   }, [terrain.baseHeight, terrain.height]);
   const resolvedDetail = useMemo(
-    () => (terrain.detail === undefined ? undefined : resolveTerrainDetail(terrain.detail, terrain.waterLevel)),
+    () => (terrain.detail === false ? undefined : resolveTerrainDetail(terrain.detail, terrain.waterLevel)),
     [terrain.detail, terrain.waterLevel],
   );
+  const quality = useTerrainQuality();
   const proceduralMaterial = useMemo(
     () =>
       resolvedDetail === undefined || resolvedDetail.material !== undefined
         ? undefined
-        : createTerrainDetailMaterial(resolvedDetail).material,
-    [resolvedDetail],
+        : createTerrainDetailMaterial(resolvedDetail, undefined, { paint, quality }).material,
+    [resolvedDetail, paint, quality],
   );
   useEffect(() => () => proceduralMaterial?.dispose(), [proceduralMaterial]);
 
@@ -153,7 +169,7 @@ function TerrainGround({
       <PresentationAssetBoundary>
         <TexturedTerrainGround
           detail={resolvedDetail}
-          layout={{ field, size, segments: terrain.segments, colors, heightRange, paletteAt, paintColorAt, center }}
+          layout={{ field, size, segments: terrain.segments, colors, heightRange, paletteAt, paint, center }}
         />
       </PresentationAssetBoundary>
     );

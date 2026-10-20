@@ -645,7 +645,15 @@ const DEFAULT_TERRAIN_DETAIL: Omit<ResolvedTerrainDetail, "waterLevel"> = {
   macroScale: 45,
   roughness: 0.9,
   strength: 1,
+  surfaceStrength: 1,
   sweeps: { dry: [1.14, 1.05, 0.76], wet: [0.78, 1.0, 0.86] },
+};
+
+/** Detail for a terrain that declares none: quieter base sweeps and no altitude snow. */
+const IMPLICIT_TERRAIN_DETAIL: TerrainDetailConfig = {
+  strength: 0.6,
+  snowHeight: 1e6,
+  sweeps: { dry: [1.08, 1.03, 0.88], wet: [0.92, 0.98, 0.94] },
 };
 
 const DEFAULT_TERRAIN_MATERIAL_REPEAT = 4;
@@ -656,10 +664,11 @@ const DEFAULT_TERRAIN_MATERIAL_TINT = 1;
 const NO_WATER_SAND_LEVEL = -1e6;
 
 /** Fill a `TerrainDetailConfig` with defaults; `waterLevel` falls back to the terrain's own water level,
- * and a terrain without one gets no sand band.
+ * and a terrain without one gets no sand band. `undefined` resolves the implicit default detail.
  * @internal
  */
-export function resolveTerrainDetail(config: TerrainDetailConfig, terrainWaterLevel?: number): ResolvedTerrainDetail {
+export function resolveTerrainDetail(config: TerrainDetailConfig | undefined, terrainWaterLevel?: number): ResolvedTerrainDetail {
+  if (config === undefined) return resolveTerrainDetail(IMPLICIT_TERRAIN_DETAIL, terrainWaterLevel);
   return {
     rockColor: config.rockColor ?? DEFAULT_TERRAIN_DETAIL.rockColor,
     sandColor: config.sandColor ?? DEFAULT_TERRAIN_DETAIL.sandColor,
@@ -670,6 +679,7 @@ export function resolveTerrainDetail(config: TerrainDetailConfig, terrainWaterLe
     macroScale: config.macroScale ?? DEFAULT_TERRAIN_DETAIL.macroScale,
     roughness: config.roughness ?? DEFAULT_TERRAIN_DETAIL.roughness,
     strength: clamp01(config.strength ?? DEFAULT_TERRAIN_DETAIL.strength),
+    surfaceStrength: clamp01(config.surfaceStrength ?? DEFAULT_TERRAIN_DETAIL.surfaceStrength),
     sweeps: {
       dry: config.sweeps?.dry ?? DEFAULT_TERRAIN_DETAIL.sweeps.dry,
       wet: config.sweeps?.wet ?? DEFAULT_TERRAIN_DETAIL.sweeps.wet,

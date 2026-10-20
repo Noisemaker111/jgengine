@@ -57,6 +57,12 @@ export interface TerrainDetailConfig {
   /** Overall detail intensity 0..1. Default 1. */
   strength?: number;
   /**
+   * Per-surface ground response 0..1 for painted layers: grass, dirt, gravel, rock, sand, mud, snow
+   * and road each draw their own procedural albedo, roughness and micro-normal, meet along
+   * noise-broken edges, and slopes turn to rock. Default 1; 0 keeps flat painted colour.
+   */
+  surfaceStrength?: number;
+  /**
    * RGB multipliers for the two macro colour sweeps painted over the base ground. `dry` tints the
    * sun-bleached patches, `wet` the cooler pockets between them. The defaults ([1.14, 1.05, 0.76]
    * and [0.78, 1.0, 0.86]) suit temperate meadows; the green-leaning `wet` default paints mossy
@@ -224,8 +230,12 @@ export interface TerrainEnvironmentConfig {
   flatten?: readonly TerrainFlattenMask[];
   /** Authored path profiles that flatten/grade/carve the heightfield along a centerline (roads, rivers, ramps) with optional retaining walls. Applied after `flatten`. */
   pathProfiles?: readonly TerrainPathProfile[];
-  /** Procedural detail surface (noise-driven rock/sand/snow over the biome base). Omit for the flat vertex-colour ground. */
-  detail?: TerrainDetailConfig;
+  /**
+   * Procedural detail surface (per-surface painted ground, slope rock, sand and snow over the biome
+   * base). Omitted, the ground still renders with default detail; `false` opts out to the flat
+   * vertex-colour ground.
+   */
+  detail?: TerrainDetailConfig | false;
 }
 
 export interface RainEnvironmentConfig {

@@ -2,7 +2,8 @@ import { expect, test } from "bun:test";
 import * as THREE from "three";
 import { EffectComposer } from "three-stdlib";
 import { BokehPass } from "three/examples/jsm/postprocessing/BokehPass.js";
-import { disposeGraph, syncSize } from "./PostProcessing";
+import { DEFAULT_AO } from "@jgengine/core/render/postProcessing";
+import { disposeGraph, resolveAoStage, syncSize } from "./PostProcessing";
 
 test("graph resizes and disposes the current Three Bokeh through its pass lifecycle", () => {
   const renderer = {
@@ -34,4 +35,12 @@ test("graph resizes and disposes the current Three Bokeh through its pass lifecy
   disposeGraph(graph);
   expect(disposals).toBe(1);
   expect(materialDisposals).toBe(1);
+});
+
+test("AO runs by default where the tier allows it and authored configs pass through untouched", () => {
+  expect(resolveAoStage(undefined, true)).toBe(DEFAULT_AO);
+  expect(resolveAoStage(undefined, false)).toBeNull();
+  expect(resolveAoStage(false, true)).toBeNull();
+  const authored = { intensity: 1.3 };
+  expect(resolveAoStage(authored, true)).toBe(authored);
 });

@@ -29,14 +29,18 @@ export const overworld = world({
 ## Legacy world features
 
 Authored terrain paint carried by `environmentContentFromDocument(document).sculpt` renders on
-the normal environment ground. Single surface IDs use `TERRAIN_MATERIAL_COLORS` from
-`@jgengine/core/editor/terrainMaterials`; a layer's `tint` replaces that default color. Layer
-weights are multiplied by `opacity`, normalized, and blended in linear color space, matching
-the editor. Unpainted cells retain the descriptor palette. Grass roots and soil patch borders
-sample the same authored colors. Paint changes color, never ground height or collision.
-Descriptor-wide terrain detail still overlays the painted ground. Per-layer `roughness`,
-`tiling` and `triplanar` remain serialized authoring metadata; they do not select or configure
-separate runtime materials.
+the normal environment ground through the terrain surface material, in play and in the editor
+viewport alike. Each layer keeps its hue (`tint`, else `TERRAIN_MATERIAL_COLORS`) and draws its
+`surface` type's procedural ground: grass, dirt, gravel, rock, sand, mud, snow and road each get
+their own albedo variation, roughness and micro-normal (`terrainSurfaceClass` maps ids such as
+`path` → dirt or `stone` → rock; unknown ids get generic ground). Layer weights × `opacity` meet
+along noise-warped, height-aware edges, so the 1–2 m paint grid never shows. Steep slopes turn to
+rock, and macro sweeps break up large single-hue fields. Layer `roughness` sets the base roughness
+and `tiling` scales the pattern; `triplanar` is not needed (rock is sampled in 3D). Unpainted cells
+keep the descriptor palette with procedural detail. Paint changes color, never ground height or
+collision. A terrain without `detail` still renders this way; `detail.surfaceStrength: 0` keeps
+flat painted colour, and `detail: false` opts out to the old flat vertex-colour ground. The
+`low` graphics tier draws one cheap mottle per surface and skips micro-normals.
 
 Custom ground consumers can use `createTerrainPaintColorSampler` from `@jgengine/shell/terrain`
 with a `TerrainPaintSource` (an editable terrain's layer/surface/weight channels). The returned

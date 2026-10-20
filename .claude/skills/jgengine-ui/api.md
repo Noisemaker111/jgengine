@@ -37,6 +37,12 @@
 
 - `EnvironmentSource` (type): type EnvironmentSource = | { kind: "gradient"; sky: string; ground: string; sun?: string; intensity?: number } /** Equirectangular HDR or EXR environment map loaded from `url`. */ | { kind: "hdri"; url: string; rotation?: number; intensity?: number } /** Six faces of a cube environment map, in three… — A declarative source for image-based scene lighting.
 
+## @jgengine/core/render/lightingBalance
+
+- `DEFAULT_IBL_AMBIENT_SCALE` (const): const DEFAULT_IBL_AMBIENT_SCALE: 0.5 — Ambient multiplier applied under image-based light when `iblAmbientScale` is unset.
+- `FALLBACK_KEY_LIGHT` (const): const FALLBACK_KEY_LIGHT: Readonly<DirectionalLightingConfig> — Soft key added when authored lighting has no directional light: high, off to one side, shadowless.
+- `balanceLightingForIbl` (function): function balanceLightingForIbl(lighting: LightingConfig | undefined): LightingConfig | undefined — Rebalance authored lighting for a scene that also has image-based light: trim the flat ambient term by `iblAmbientScale` (default 0.5) and, when no directional light is authored, add {@link FALLBACK_KEY_LIGHT} tinted by the ambient colour so forms keep a lit and a shaded side. Returns the input unchanged when there is nothing to adjust.
+
 ## @jgengine/core/render/lookPreset
 
 - `CINEMATIC_POST_PROCESSING` (const): const CINEMATIC_POST_PROCESSING: PostProcessingConfig — Tuned tone-map + bloom + gentle SSAO + vignette/grade stack — the shipped-game post look.
@@ -45,17 +51,19 @@
 - `GameLookInput` (interface): interface GameLookInput — Explicit graphics knobs a game may set; the preset only fills the ones left undefined.
 - `LOOK_PRESETS` (const): const LOOK_PRESETS: readonly LookPreset[] — Every look preset name, for pickers and validating a preset read from a URL or file.
 - `LookPreset` (type): type LookPreset = "neutral" | "photoreal" | "toon" | "comic" | "retro" | "cinematic" | "flat" — Named look preset composing the existing lighting/sky/fog/post knobs into one field. `"neutral"` (the default when unset) keeps presentation unstyled; `"cinematic"` draws a scene lit like a shipped game — a real day sky with a view-following shadow-casting sun + hemisphere fill, a network-free image-based-lighting environment so PBR surfaces catch soft reflections, and a tuned tone-map/bloom/AO/vignette post stack. `"comic"` adds ink outlines and cel bands over a saturated grade (Borderlands-style); `"retro"` pixelates and posterizes the frame. `"flat"` opts out of the sky/IBL/post rig to the bare ambient+directional default (pre-#773). The upgraded default primitive materials — tuned roughness/metalness plus subtle procedural surface detail so un-modeled boxes/capsules stop reading as flat plastic — apply under both presets.
-- `NEUTRAL_POST_PROCESSING` (const): const NEUTRAL_POST_PROCESSING: PostProcessingConfig — Unstyled baseline: a stable linear presentation with no genre-specific grading.
+- `NEUTRAL_POST_PROCESSING` (const): const NEUTRAL_POST_PROCESSING: PostProcessingConfig — Unstyled baseline: no bloom or grade; contact AO stays at the graphics-tier default.
 - `PHOTOREAL_POST_PROCESSING` (const): const PHOTOREAL_POST_PROCESSING: PostProcessingConfig — High-contrast physically based presentation for authored HDR environments.
 - `RETRO_POST_PROCESSING` (const): const RETRO_POST_PROCESSING: PostProcessingConfig — Chunky pixels and posterized colour with no smoothing — a low-resolution retro look.
 - `ResolvedGameLook` (interface): interface ResolvedGameLook — Concrete lighting/backdrop/post the shell renders after the preset has filled unset knobs.
 - `TOON_POST_PROCESSING` (const): const TOON_POST_PROCESSING: PostProcessingConfig — Clean graphic presentation; toon materials remain game-owned while this sets the grade.
-- `resolveGameLook` (function): function resolveGameLook(input: GameLookInput): ResolvedGameLook — Expand a game's `look` into concrete lighting/backdrop/post. The default is `"neutral"`; `"flat"` passes the explicit knobs through untouched. Anything the game authored wins — the preset only fills unset knobs, and it never adds a sky when the world already owns one (so the sky's tuned sun/hemisphere serve as the lighting rig).
+- `mergePostProcessing` (function): function mergePostProcessing(preset: PostProcessingConfig, authored: PostProcessingConfig | undefined): PostProcessingConfig — Deep-merge a game's partial post chain over a preset's. Every field the game set wins, including `false` to drop a stage; fields it left unset come from the preset, and stage objects merge field by field (tuples such as `grade.lift` replace whole).
+- `resolveGameLook` (function): function resolveGameLook(input: GameLookInput): ResolvedGameLook — Expand a game's `look` into concrete lighting/backdrop/post. The default is `"neutral"`; `"flat"` passes the explicit knobs through untouched. Anything the game authored wins — the preset only fills unset knobs, and it never adds a sky when the world already owns one (so the sky's tuned sun/hemisphere serve as the lighting rig). A styled preset's post stages are deep-merged under a partial game `postProcessing` ({@link mergePostProcessing}); under `"neutral"` a game's own chain is used as authored.
 
 ## @jgengine/core/render/postProcessing
 
 - `AoConfig` (interface): interface AoConfig — Ground-truth ambient occlusion stage — darkens contact creases and cavities for depth.
 - `BloomConfig` (interface): interface BloomConfig — UnrealBloom stage — soft HDR glow around bright pixels (sun, glints, emissive).
+- `DEFAULT_AO` (const): const DEFAULT_AO: Readonly<AoConfig> — Contact shading used when a post chain leaves `ao` unset: soft creases, no dark halos.
 - `DofConfig` (interface): interface DofConfig — Depth-of-field (bokeh) stage — throws the fore/background out of focus around a focus distance.
 - `GradeConfig` (interface): interface GradeConfig — Final colour-grade stage: lift/gain/gamma, saturation, vignette, film grain — applied in display space after tone mapping.
 - `OutlineConfig` (interface): interface OutlineConfig — Ink outlines traced from depth and surface-normal edges — silhouettes plus interior creases.
@@ -302,7 +310,7 @@
 - `resizePanelSize` (function): function resizePanelSize(current: HudSize, delta: { dw: number; dh: number }, axes: HudResizeAxes, limits?: { minWidth?: number; maxWidth?: number; minHeight?: number; maxHeight?: number; }): HudSize — Semantic resize: apply pixel deltas only on growable axes, clamped to min/max. Never scales content — callers reflow layout size (track length, list rows).
 - `resolveAction` (function): function resolveAction(def: ActionDef): ResolvedAction — Resolve one {@link ActionDef} into a {@link ResolvedAction}: normalize label, compute `enabled`, and order the blocking `reasons`. Pure — the same input always yields the same view model.
 - `resolveActionCollection` (function): function resolveActionCollection(defs: readonly ActionDef[]): ResolvedAction[] — Resolve an ordered list of actions, preserving input order.
-- `resolveGameLook` (function): function resolveGameLook(input: GameLookInput): ResolvedGameLook — Expand a game's `look` into concrete lighting/backdrop/post. The default is `"neutral"`; `"flat"` passes the explicit knobs through untouched. Anything the game authored wins — the preset only fills unset knobs, and it never adds a sky when the world already owns one (so the sky's tuned sun/hemisphere serve as the lighting rig).
+- `resolveGameLook` (function): function resolveGameLook(input: GameLookInput): ResolvedGameLook — Expand a game's `look` into concrete lighting/backdrop/post. The default is `"neutral"`; `"flat"` passes the explicit knobs through untouched. Anything the game authored wins — the preset only fills unset knobs, and it never adds a sky when the world already owns one (so the sky's tuned sun/hemisphere serve as the lighting rig). A styled preset's post stages are deep-merged under a partial game `postProcessing` ({@link mergePostProcessing}); under `"neutral"` a game's own chain is used as authored.
 - `resolveHudFit` (function): function resolveHudFit(config: HudViewportConfig | undefined, mobile: boolean): Required<HudFitConfig> — ⚠ undocumented
 - `resolveHudPanelLayout` (function): function resolveHudPanelLayout(docPanel: EditorUiPanelLayout | undefined, fallback: HudPanelFallback): ResolvedHudPanelLayout — Resolve a panel's layout: document entry wins field-by-field over TSX fallback. TSX props are fallback-only — the scene document is the source of truth once authored.
 - `resolveOrientationRequirement` (function): function resolveOrientationRequirement(orientation: GameOrientation | undefined, platform: "mobile" | "desktop"): OrientationRequirement — Resolve the game's orientation declaration into a concrete requirement for a platform. Desktop is always unconstrained.
@@ -2801,6 +2809,7 @@
 
 ## @jgengine/shell/terrain
 
+- `ALL_TERRAIN_SURFACE_CLASSES` (const): const ALL_TERRAIN_SURFACE_CLASSES: 511 — Compile every surface response, for an editor viewport whose paint can change to any surface.
 - `CarvedTerrain` (function): function CarvedTerrain({ field, size, segments, center, colors, heightRange, paletteAt, paintColorAt, roughness = 0.95, metalness = 0, surfaceMaterial, receiveShadow = true, epoch = 0, ...meshProps }: CarvedTerrainProps): React.JSX.Element — Renders a `TerrainField` as a deformed ground mesh — the crater/mound view for destructible terrain. Because the geometry samples `field.sampleHeight`, a `CarvableField.carve(...)` shows as a real bowl once `epoch` changes. Pair with `InstancedBodies` to see debris resting in the crater it blasted.
 - `CarvedTerrainProps` (interface): interface CarvedTerrainProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> { field: TerrainField; size?: FieldGroundOptions["size"]; segments?: FieldGroundOptions["segments"]; center?: FieldGroundOptions["center"]; colors?: FieldGroundOptions["colors"]; heightRange?: FieldGroundOptions["heightRange"]; paletteAt?: … — ⚠ undocumented · used by `CarvedTerrain`: Renders a `TerrainField` as a deformed ground mesh — the crater/mound view for destructible terrain.
 - `DEFAULT_GRASS_WIND` (const): const DEFAULT_GRASS_WIND: Required<GrassWindOptions> — ⚠ undocumented
@@ -2819,6 +2828,7 @@
 - `HeightfieldColorFn` (type): type HeightfieldColorFn = (x: number, z: number, height: number, out: THREE.Color) => void — Per-vertex color hook for {@link displaceHeightfieldGeometry}; write the tone into `out`.
 - `HeightfieldDisplaceOptions` (interface): interface HeightfieldDisplaceOptions — Options for {@link displaceHeightfieldGeometry}.
 - `HeightfieldRect` (interface): interface HeightfieldRect — XZ rectangle in world units — matches the shape of a terraform snapshot's `bounds`.
+- `MAX_TERRAIN_PAINT_LAYERS` (const): const MAX_TERRAIN_PAINT_LAYERS: 8 — At most this many distinct paint layers reach the GPU; extra layers fold into the last slot.
 - `NoiseFieldConfig` (interface): interface NoiseFieldConfig — Configuration for {@link noiseField}: seed, amplitude, and fractal noise shaping.
 - `ProceduralGround` (function): function ProceduralGround({ terrain, colors, roughness = 0.94, metalness = 0, receiveShadow = true, ...meshProps }: ProceduralGroundProps): React.JSX.Element — ⚠ undocumented
 - `ProceduralGroundProps` (interface): interface ProceduralGroundProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> { terrain?: ProceduralTerrainConfig; colors?: TerrainVertexColorOptions; roughness?: number; metalness?: number } — ⚠ undocumented
@@ -2829,19 +2839,32 @@
 - `TerraformBrushCursor` (function): function TerraformBrushCursor({ center, y = 0.05, radius, mode }: TerraformBrushCursorProps): React.JSX.Element | null — ⚠ undocumented
 - `TerraformBrushCursorProps` (interface): interface TerraformBrushCursorProps { center: readonly [number, number] | null; y?: number; radius: number; mode: TerraformMode } — ⚠ undocumented
 - `TerrainArea` (type): type TerrainArea = number | readonly [width: number, depth: number] — ⚠ undocumented
+- `TerrainDetailMaterialHandle` (interface): interface TerrainDetailMaterialHandle — The built procedural detail terrain material, ready to mount on the ground mesh.
+- `TerrainDetailMaterialOptions` (interface): interface TerrainDetailMaterialOptions — Surface-pass inputs beyond the resolved detail config.
+- `TerrainDetailMaterialTextures` (interface): interface TerrainDetailMaterialTextures — Loaded PBR textures matching a resolved `ResolvedTerrainDetailMaterial.maps`' roles. The caller (a React component, via `useTexture`/`useLoader`) owns loading and disposal; `core` never touches `THREE.Texture` and this shell function never fetches a URL itself. Omitted AO/roughness skip sampling.
 - `TerrainField` (interface): interface TerrainField — A sampleable ground surface: height and normal at any x/z, with optional bounds and water level.
 - `TerrainHeightSampler` (type): type TerrainHeightSampler = (x: number, z: number) => number — ⚠ undocumented
 - `TerrainNormal` (type): type TerrainNormal = readonly [number, number, number] — A surface normal vector at a terrain sample point.
 - `TerrainPaintColorSampler` (type): type TerrainPaintColorSampler = (x: number, z: number, out: THREE.Color) => boolean — Blends authored paint over the base ground color already in `out`; returns false (leaving `out` untouched) where no painted cell contributes.
+- `TerrainPaintSlot` (interface): interface TerrainPaintSlot — One GPU paint slot: authored hue plus the procedural response it renders with.
 - `TerrainPaintSource` (type): type TerrainPaintSource = Pick<EditableTerrain, "layers" | "weightsAt" | "surfaceAt"> & Partial<Pick<EditableTerrain, "gridBounds" | "cols" | "rows">> — Live authored paint channels needed to sample a terrain's material stack without its heightfield. With the grid fields present, paint is filtered across neighbouring cells instead of snapping to each cell.
+- `TerrainPaintTextures` (interface): interface TerrainPaintTextures — GPU-side paint coverage shared by the terrain surface material; `update` after each paint stroke.
+- `TerrainPaintWeights` (interface): interface TerrainPaintWeights — Per-cell paint coverage packed for the shader: two RGBA8 planes holding up to eight layer weights.
+- `TerrainQualityContext` (const): const TerrainQualityContext: React.Context<GraphicsQuality> — The player's graphics tier as terrain materials see it; the shell provides it, `high` outside one.
 - `TerrainSeed` (type): type TerrainSeed = number | string — ⚠ undocumented
+- `TerrainSurfaceClass` (type): type TerrainSurfaceClass = "ground" | "grass" | "dirt" | "gravel" | "rock" | "sand" | "mud" | "snow" | "road" — Procedural ground response the terrain shader renders for a painted surface id.
 - `TerrainSurfaceColorOptions` (interface): interface TerrainSurfaceColorOptions — Slope/noise surface shading laid over the height lerp so untextured ground reads like terrain instead of a smooth two-tone gradient. All knobs are optional with sane defaults; every field is a pure function of vertex position (+ `seed`), so the coloring is stable across rebuilds and tests.
 - `TerrainVertexColorOptions` (interface): interface TerrainVertexColorOptions { low?: THREE.ColorRepresentation; high?: THREE.ColorRepresentation; waterline?: THREE.ColorRepresentation; waterlineHeight?: number } — ⚠ undocumented
 - `createTerrainPaintColorSampler` (function): function createTerrainPaintColorSampler(terrain: TerrainPaintSource): TerrainPaintColorSampler — Shares layer tint, opacity and linear weighted-color blending between editor and runtime ground. Paint lives on a coarse cell grid; when the source exposes that grid, each sample smoothly blends the four surrounding cell centres (unpainted cells contribute the caller's base color in `out`), so painted paths and clearings get soft edges instead of grid-aligned stair steps.
+- `createTerrainPaintTextures` (function): function createTerrainPaintTextures(weights: TerrainPaintWeights): TerrainPaintTextures — Uploads packed paint coverage ({@link packTerrainPaintWeights}) as two linear-filtered RGBA textures plus per-slot hue, surface class, roughness and pattern scale for the terrain surface material.
 - `displaceHeightfieldGeometry` (function): function displaceHeightfieldGeometry(geometry: THREE.BufferGeometry, sampleHeight: (x: number, z: number) => number, options: HeightfieldDisplaceOptions): void — Re-samples a `PlaneGeometry(width, depth, segments, segments).rotateX(-π/2)` heightfield mesh from a `sampleHeight` field in place: vertex Y, optional vertex color, grid central-difference normals, and an analytically maintained bounding sphere. With a dirty `region`, the work is O(region vertices) — heights/colors update inside the covering vertex window, normals inside the window plus a one-vertex ring — never a whole-mesh `computeVertexNormals`/`computeBoundingSphere` pass, which is what keeps per-frame brush stamps inside the editor's frame budget. The bounding sphere derives from the fixed plane extents plus a running height range kept on `geometry.userData`; partial passes only expand it, a full pass resets it exactly.
+- `packTerrainPaintWeights` (function): function packTerrainPaintWeights(source: TerrainPaintSource, into?: TerrainPaintWeights): TerrainPaintWeights | undefined — Packs a terrain's authored paint (layer stack, blend weights or hard surface ids) into per-cell coverage planes for the terrain surface shader. Returns `undefined` when the source exposes no cell grid. Pass `into` to rewrite an existing buffer in place after a paint stroke.
+- `terrainSurfaceClass` (function): function terrainSurfaceClass(surface: string): TerrainSurfaceClass — Classifies a painted surface id (e.g. `"grass"`, `"dry-grass"`, `"cobble-stone"`) into the procedural ground response the terrain shader draws for it; unknown ids get the generic `"ground"` response.
+- `useTerrainQuality` (function): function useTerrainQuality(): GraphicsQuality — Graphics tier for terrain surface shading (`low` takes the cheap path).
 
 ## @jgengine/shell/terrain
 
+- `ALL_TERRAIN_SURFACE_CLASSES` (const): const ALL_TERRAIN_SURFACE_CLASSES: 511 — Compile every surface response, for an editor viewport whose paint can change to any surface.
 - `CarvedTerrain` (function): function CarvedTerrain({ field, size, segments, center, colors, heightRange, paletteAt, paintColorAt, roughness = 0.95, metalness = 0, surfaceMaterial, receiveShadow = true, epoch = 0, ...meshProps }: CarvedTerrainProps): React.JSX.Element — Renders a `TerrainField` as a deformed ground mesh — the crater/mound view for destructible terrain. Because the geometry samples `field.sampleHeight`, a `CarvableField.carve(...)` shows as a real bowl once `epoch` changes. Pair with `InstancedBodies` to see debris resting in the crater it blasted.
 - `CarvedTerrainProps` (interface): interface CarvedTerrainProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> { field: TerrainField; size?: FieldGroundOptions["size"]; segments?: FieldGroundOptions["segments"]; center?: FieldGroundOptions["center"]; colors?: FieldGroundOptions["colors"]; heightRange?: FieldGroundOptions["heightRange"]; paletteAt?: … — ⚠ undocumented · used by `CarvedTerrain`: Renders a `TerrainField` as a deformed ground mesh — the crater/mound view for destructible terrain.
 - `DEFAULT_GRASS_WIND` (const): const DEFAULT_GRASS_WIND: Required<GrassWindOptions> — ⚠ undocumented
@@ -2860,6 +2883,7 @@
 - `HeightfieldColorFn` (type): type HeightfieldColorFn = (x: number, z: number, height: number, out: THREE.Color) => void — Per-vertex color hook for {@link displaceHeightfieldGeometry}; write the tone into `out`.
 - `HeightfieldDisplaceOptions` (interface): interface HeightfieldDisplaceOptions — Options for {@link displaceHeightfieldGeometry}.
 - `HeightfieldRect` (interface): interface HeightfieldRect — XZ rectangle in world units — matches the shape of a terraform snapshot's `bounds`.
+- `MAX_TERRAIN_PAINT_LAYERS` (const): const MAX_TERRAIN_PAINT_LAYERS: 8 — At most this many distinct paint layers reach the GPU; extra layers fold into the last slot.
 - `NoiseFieldConfig` (interface): interface NoiseFieldConfig — Configuration for {@link noiseField}: seed, amplitude, and fractal noise shaping.
 - `ProceduralGround` (function): function ProceduralGround({ terrain, colors, roughness = 0.94, metalness = 0, receiveShadow = true, ...meshProps }: ProceduralGroundProps): React.JSX.Element — ⚠ undocumented
 - `ProceduralGroundProps` (interface): interface ProceduralGroundProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> { terrain?: ProceduralTerrainConfig; colors?: TerrainVertexColorOptions; roughness?: number; metalness?: number } — ⚠ undocumented
@@ -2870,16 +2894,28 @@
 - `TerraformBrushCursor` (function): function TerraformBrushCursor({ center, y = 0.05, radius, mode }: TerraformBrushCursorProps): React.JSX.Element | null — ⚠ undocumented
 - `TerraformBrushCursorProps` (interface): interface TerraformBrushCursorProps { center: readonly [number, number] | null; y?: number; radius: number; mode: TerraformMode } — ⚠ undocumented
 - `TerrainArea` (type): type TerrainArea = number | readonly [width: number, depth: number] — ⚠ undocumented
+- `TerrainDetailMaterialHandle` (interface): interface TerrainDetailMaterialHandle — The built procedural detail terrain material, ready to mount on the ground mesh.
+- `TerrainDetailMaterialOptions` (interface): interface TerrainDetailMaterialOptions — Surface-pass inputs beyond the resolved detail config.
+- `TerrainDetailMaterialTextures` (interface): interface TerrainDetailMaterialTextures — Loaded PBR textures matching a resolved `ResolvedTerrainDetailMaterial.maps`' roles. The caller (a React component, via `useTexture`/`useLoader`) owns loading and disposal; `core` never touches `THREE.Texture` and this shell function never fetches a URL itself. Omitted AO/roughness skip sampling.
 - `TerrainField` (interface): interface TerrainField — A sampleable ground surface: height and normal at any x/z, with optional bounds and water level.
 - `TerrainHeightSampler` (type): type TerrainHeightSampler = (x: number, z: number) => number — ⚠ undocumented
 - `TerrainNormal` (type): type TerrainNormal = readonly [number, number, number] — A surface normal vector at a terrain sample point.
 - `TerrainPaintColorSampler` (type): type TerrainPaintColorSampler = (x: number, z: number, out: THREE.Color) => boolean — Blends authored paint over the base ground color already in `out`; returns false (leaving `out` untouched) where no painted cell contributes.
+- `TerrainPaintSlot` (interface): interface TerrainPaintSlot — One GPU paint slot: authored hue plus the procedural response it renders with.
 - `TerrainPaintSource` (type): type TerrainPaintSource = Pick<EditableTerrain, "layers" | "weightsAt" | "surfaceAt"> & Partial<Pick<EditableTerrain, "gridBounds" | "cols" | "rows">> — Live authored paint channels needed to sample a terrain's material stack without its heightfield. With the grid fields present, paint is filtered across neighbouring cells instead of snapping to each cell.
+- `TerrainPaintTextures` (interface): interface TerrainPaintTextures — GPU-side paint coverage shared by the terrain surface material; `update` after each paint stroke.
+- `TerrainPaintWeights` (interface): interface TerrainPaintWeights — Per-cell paint coverage packed for the shader: two RGBA8 planes holding up to eight layer weights.
+- `TerrainQualityContext` (const): const TerrainQualityContext: React.Context<GraphicsQuality> — The player's graphics tier as terrain materials see it; the shell provides it, `high` outside one.
 - `TerrainSeed` (type): type TerrainSeed = number | string — ⚠ undocumented
+- `TerrainSurfaceClass` (type): type TerrainSurfaceClass = "ground" | "grass" | "dirt" | "gravel" | "rock" | "sand" | "mud" | "snow" | "road" — Procedural ground response the terrain shader renders for a painted surface id.
 - `TerrainSurfaceColorOptions` (interface): interface TerrainSurfaceColorOptions — Slope/noise surface shading laid over the height lerp so untextured ground reads like terrain instead of a smooth two-tone gradient. All knobs are optional with sane defaults; every field is a pure function of vertex position (+ `seed`), so the coloring is stable across rebuilds and tests.
 - `TerrainVertexColorOptions` (interface): interface TerrainVertexColorOptions { low?: THREE.ColorRepresentation; high?: THREE.ColorRepresentation; waterline?: THREE.ColorRepresentation; waterlineHeight?: number } — ⚠ undocumented
 - `createTerrainPaintColorSampler` (function): function createTerrainPaintColorSampler(terrain: TerrainPaintSource): TerrainPaintColorSampler — Shares layer tint, opacity and linear weighted-color blending between editor and runtime ground. Paint lives on a coarse cell grid; when the source exposes that grid, each sample smoothly blends the four surrounding cell centres (unpainted cells contribute the caller's base color in `out`), so painted paths and clearings get soft edges instead of grid-aligned stair steps.
+- `createTerrainPaintTextures` (function): function createTerrainPaintTextures(weights: TerrainPaintWeights): TerrainPaintTextures — Uploads packed paint coverage ({@link packTerrainPaintWeights}) as two linear-filtered RGBA textures plus per-slot hue, surface class, roughness and pattern scale for the terrain surface material.
 - `displaceHeightfieldGeometry` (function): function displaceHeightfieldGeometry(geometry: THREE.BufferGeometry, sampleHeight: (x: number, z: number) => number, options: HeightfieldDisplaceOptions): void — Re-samples a `PlaneGeometry(width, depth, segments, segments).rotateX(-π/2)` heightfield mesh from a `sampleHeight` field in place: vertex Y, optional vertex color, grid central-difference normals, and an analytically maintained bounding sphere. With a dirty `region`, the work is O(region vertices) — heights/colors update inside the covering vertex window, normals inside the window plus a one-vertex ring — never a whole-mesh `computeVertexNormals`/`computeBoundingSphere` pass, which is what keeps per-frame brush stamps inside the editor's frame budget. The bounding sphere derives from the fixed plane extents plus a running height range kept on `geometry.userData`; partial passes only expand it, a full pass resets it exactly.
+- `packTerrainPaintWeights` (function): function packTerrainPaintWeights(source: TerrainPaintSource, into?: TerrainPaintWeights): TerrainPaintWeights | undefined — Packs a terrain's authored paint (layer stack, blend weights or hard surface ids) into per-cell coverage planes for the terrain surface shader. Returns `undefined` when the source exposes no cell grid. Pass `into` to rewrite an existing buffer in place after a paint stroke.
+- `terrainSurfaceClass` (function): function terrainSurfaceClass(surface: string): TerrainSurfaceClass — Classifies a painted surface id (e.g. `"grass"`, `"dry-grass"`, `"cobble-stone"`) into the procedural ground response the terrain shader draws for it; unknown ids get the generic `"ground"` response.
+- `useTerrainQuality` (function): function useTerrainQuality(): GraphicsQuality — Graphics tier for terrain surface shading (`low` takes the cheap path).
 
 ## @jgengine/shell/terrain/CarvedTerrain
 
@@ -2949,7 +2985,9 @@
 
 ## @jgengine/shell/terrain/terrainDetailMaterial
 
+- `ALL_TERRAIN_SURFACE_CLASSES` (const): const ALL_TERRAIN_SURFACE_CLASSES: 511 — Compile every surface response, for an editor viewport whose paint can change to any surface.
 - `TerrainDetailMaterialHandle` (interface): interface TerrainDetailMaterialHandle — The built procedural detail terrain material, ready to mount on the ground mesh.
+- `TerrainDetailMaterialOptions` (interface): interface TerrainDetailMaterialOptions — Surface-pass inputs beyond the resolved detail config.
 - `TerrainDetailMaterialTextures` (interface): interface TerrainDetailMaterialTextures — Loaded PBR textures matching a resolved `ResolvedTerrainDetailMaterial.maps`' roles. The caller (a React component, via `useTexture`/`useLoader`) owns loading and disposal; `core` never touches `THREE.Texture` and this shell function never fetches a URL itself. Omitted AO/roughness skip sampling.
 
 ## @jgengine/shell/terrain/terrainMath
@@ -2969,6 +3007,27 @@
 - `TerrainPaintColorSampler` (type): type TerrainPaintColorSampler = (x: number, z: number, out: THREE.Color) => boolean — Blends authored paint over the base ground color already in `out`; returns false (leaving `out` untouched) where no painted cell contributes.
 - `TerrainPaintSource` (type): type TerrainPaintSource = Pick<EditableTerrain, "layers" | "weightsAt" | "surfaceAt"> & Partial<Pick<EditableTerrain, "gridBounds" | "cols" | "rows">> — Live authored paint channels needed to sample a terrain's material stack without its heightfield. With the grid fields present, paint is filtered across neighbouring cells instead of snapping to each cell.
 - `createTerrainPaintColorSampler` (function): function createTerrainPaintColorSampler(terrain: TerrainPaintSource): TerrainPaintColorSampler — Shares layer tint, opacity and linear weighted-color blending between editor and runtime ground. Paint lives on a coarse cell grid; when the source exposes that grid, each sample smoothly blends the four surrounding cell centres (unpainted cells contribute the caller's base color in `out`), so painted paths and clearings get soft edges instead of grid-aligned stair steps.
+
+## @jgengine/shell/terrain/terrainQuality
+
+- `TerrainQualityContext` (const): const TerrainQualityContext: React.Context<GraphicsQuality> — The player's graphics tier as terrain materials see it; the shell provides it, `high` outside one.
+- `useTerrainQuality` (function): function useTerrainQuality(): GraphicsQuality — Graphics tier for terrain surface shading (`low` takes the cheap path).
+
+## @jgengine/shell/terrain/terrainSurfaceShader
+
+- `PAINT_PARS_GLSL` (const): const PAINT_PARS_GLSL: "\nuniform sampler2D uPaintA;\nuniform sampler2D uPaintB;\nuniform vec2 uPaintMin;\nuniform vec2 uPaintCell;\nuniform vec2 uPaintGrid;\nuniform float uPaintWarp;\nuniform vec3 uLayerColor[8];\nuniform float uLayerClass[8];\nuniform float uLayerRough[8];\nuniform float uLayerSc… — Paint-coverage uniforms and the warped, smoothed cell lookup.
+- `SURFACE_FUNCTIONS_GLSL` (const): const SURFACE_FUNCTIONS_GLSL: "\nfloat jgFootprint;\nfloat jgFbm2(vec2 p){ return jgVNoise(p) * 0.62 + jgVNoise(p * 2.03 + 17.3) * 0.38; }\nfloat jgFbm3o(vec2 p){ return (jgVNoise(p) * 0.5 + jgVNoise(p * 2.03 + 17.3) * 0.3 + jgVNoise(p * 4.1 + 5.9) * 0.2); }\nfloat jgBand(float freq){ return 1.0 - s… — GLSL for the terrain surface pass: per-surface procedural ground (grass, dirt, gravel, rock, sand, mud, snow, road) and the height-aware blend between painted layers. Needs `NOISE_GLSL` first. Every octave is gated by `jgBand(frequency)` so detail finer than a pixel fades to its mean instead of shimmering at distance.
+
+## @jgengine/shell/terrain/terrainSurfaces
+
+- `MAX_TERRAIN_PAINT_LAYERS` (const): const MAX_TERRAIN_PAINT_LAYERS: 8 — At most this many distinct paint layers reach the GPU; extra layers fold into the last slot.
+- `TerrainPaintSlot` (interface): interface TerrainPaintSlot — One GPU paint slot: authored hue plus the procedural response it renders with.
+- `TerrainPaintTextures` (interface): interface TerrainPaintTextures — GPU-side paint coverage shared by the terrain surface material; `update` after each paint stroke.
+- `TerrainPaintWeights` (interface): interface TerrainPaintWeights — Per-cell paint coverage packed for the shader: two RGBA8 planes holding up to eight layer weights.
+- `TerrainSurfaceClass` (type): type TerrainSurfaceClass = "ground" | "grass" | "dirt" | "gravel" | "rock" | "sand" | "mud" | "snow" | "road" — Procedural ground response the terrain shader renders for a painted surface id.
+- `createTerrainPaintTextures` (function): function createTerrainPaintTextures(weights: TerrainPaintWeights): TerrainPaintTextures — Uploads packed paint coverage ({@link packTerrainPaintWeights}) as two linear-filtered RGBA textures plus per-slot hue, surface class, roughness and pattern scale for the terrain surface material.
+- `packTerrainPaintWeights` (function): function packTerrainPaintWeights(source: TerrainPaintSource, into?: TerrainPaintWeights): TerrainPaintWeights | undefined — Packs a terrain's authored paint (layer stack, blend weights or hard surface ids) into per-cell coverage planes for the terrain surface shader. Returns `undefined` when the source exposes no cell grid. Pass `into` to rewrite an existing buffer in place after a paint stroke.
+- `terrainSurfaceClass` (function): function terrainSurfaceClass(surface: string): TerrainSurfaceClass — Classifies a painted surface id (e.g. `"grass"`, `"dry-grass"`, `"cobble-stone"`) into the procedural ground response the terrain shader draws for it; unknown ids get the generic `"ground"` response.
 
 ## @jgengine/shell/touch/OrientationHint
 
