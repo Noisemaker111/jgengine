@@ -1,9 +1,10 @@
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdtempSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { findUp, readPackageJson } from "./pkg";
+import { cliVersion, findUp, readPackageJson } from "./pkg";
 import { browserLibMjs, driveMjs, shootMjs } from "./templates/gameFiles";
 
 /**
@@ -48,6 +49,11 @@ export function materializeHarness(kind: HarnessKind): string {
   writeFileSync(join(dir, "browser.mjs"), browserLibMjs);
   writeFileSync(join(dir, `${kind}.mjs`), HARNESS_SOURCE[kind]);
   return dir;
+}
+
+/** Short content hash of the bundled harness, printed on every run so a stale copy is visible. @internal */
+export function harnessRevision(kind: HarnessKind): string {
+  return createHash("sha256").update(browserLibMjs).update(HARNESS_SOURCE[kind]).digest("hex").slice(0, 8);
 }
 
 export type HarnessPlan =
@@ -96,8 +102,14 @@ export function runHarness(kind: HarnessKind, argv: string[], cwd: string = proc
     const where =
       plan.source === "project"
         ? `using this project's scripts/${kind}.mjs`
-        : `using the bundled ${kind} harness`;
+        : `using the bundled ${kind} harness (jgengine ${cliVersion()}, harness ${harnessRevision(kind)})`;
     console.error(`jgengine ${kind}: ${where} — cwd ${plan.cwd}`);
+    if (plan.source === "project" && readFileSync(plan.script, "utf8") !== HARNESS_SOURCE[kind]) {
+      console.error(
+        `jgengine ${kind}: warning — scripts/${kind}.mjs differs from this CLI's harness ${harnessRevision(kind)}; ` +
+          `if it is an old scaffold copy, delete scripts/${kind}.mjs and scripts/browser.mjs to use the bundled one`,
+      );
+    }
   }
   const result = spawnSync(process.execPath, [plan.script, ...argv], {
     cwd: plan.cwd,

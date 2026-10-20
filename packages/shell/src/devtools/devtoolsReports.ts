@@ -106,3 +106,48 @@ export function buildFullReport(playable: PlayableGame): DevtoolsSnapshot & { ga
   return { game: playable.game.name, ...devtools.snapshot() };
 }
 
+
+/** Compact `debug_summary` payload: the numbers an agent needs to judge a run, about 1 KB. */
+export interface DebugSummary {
+  game: string;
+  fps: number | null;
+  frameMs: { avg: number; p95: number } | null;
+  simMs: number | null;
+  outsideSimMs: number | null;
+  drawCalls: number | null;
+  triangles: number | null;
+  entities: number | null;
+  longFrames: number;
+  topCulprit: { culprit: string; count: number } | null;
+  topPhase: { name: string; avgMs: number } | null;
+  warnings: number;
+  lastWarnings: string[];
+  why: string | null;
+}
+
+/**
+ * Reduce a lean report to {@link DebugSummary}: no per-frame probe arrays, no control lists, at most
+ * three warning lines of 160 characters. `debug_snapshot` with `detail: "full"` keeps everything.
+ * @internal
+ */
+export function summarizeLeanReport(lean: ReturnType<typeof buildLeanReport>, entities: number | null): DebugSummary {
+  const frame = lean.frame;
+  const logs = lean.logs ?? [];
+  const phase = frame?.phases[0];
+  return {
+    game: lean.game,
+    fps: frame?.fps ?? null,
+    frameMs: frame === null ? null : { avg: frame.avgFrameMs, p95: frame.p95FrameMs },
+    simMs: frame?.avgSimMs ?? null,
+    outsideSimMs: frame?.avgOutsideMs ?? null,
+    drawCalls: lean.render?.drawCalls ?? null,
+    triangles: lean.render?.triangles ?? null,
+    entities,
+    longFrames: lean.longFrameSummary?.count ?? 0,
+    topCulprit: lean.longFrameSummary?.culprits[0] ?? null,
+    topPhase: phase === undefined ? null : { name: phase.name, avgMs: phase.avgMs },
+    warnings: logs.length,
+    lastWarnings: logs.slice(-3).map((entry) => `${entry.level}: ${entry.message}`.slice(0, 160)),
+    why: lean.why === null ? null : lean.why.split(/(?<=[.:])\s/)[0]!.slice(0, 200),
+  };
+}

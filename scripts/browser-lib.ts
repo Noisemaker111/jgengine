@@ -60,8 +60,20 @@ export function scaleProfile(profile: DeviceProfile, size: SizeMode): DeviceProf
   };
 }
 
-export async function applyDevice(session: CdpSession, device: Device, size: SizeMode = "full"): Promise<void> {
-  const profile = scaleProfile(DEVICES[device], size);
+/** Viewport overrides (`--width`/`--height`) in CSS pixels, applied before `--size half` halves them. */
+export interface ViewportOverride {
+  width?: number;
+  height?: number;
+}
+
+/** The device profile a capture actually uses: device defaults, explicit overrides, then size. */
+export function captureProfile(device: Device, size: SizeMode = "full", override: ViewportOverride = {}): DeviceProfile {
+  const base = DEVICES[device];
+  return scaleProfile({ ...base, width: override.width ?? base.width, height: override.height ?? base.height }, size);
+}
+
+export async function applyDevice(session: CdpSession, device: Device, size: SizeMode = "full", override: ViewportOverride = {}): Promise<void> {
+  const profile = captureProfile(device, size, override);
   await session.send("Emulation.setDeviceMetricsOverride", {
     width: profile.width,
     height: profile.height,
@@ -130,6 +142,65 @@ export function chromeGraphicsArgs(
   return software
     ? ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"]
     : ["--ignore-gpu-blocklist"];
+}
+
+/** Software rasterizer a capture Chrome renders WebGL with when no GPU is used. */
+export type SoftwareGl = "llvmpipe" | "swiftshader";
+
+/**
+ * Which software rasterizer to use, or null for the native GPU. On Linux, Mesa llvmpipe (ANGLE on
+ * desktop GL, through an Xvfb display) renders the same frames about 3-4x faster than SwiftShader
+ * (measured on beacon-bastion: 2.4 s vs 9.0 s per frame at 1600x900; 0.85 s vs 2.8 s for a draft
+ * shot). SwiftShader stays the fallback when Xvfb is missing, and `JG_CAPTURE_GL=swiftshader`
+ * forces it.
+ */
+export function softwareGlBackend(
+  env: NodeJS.ProcessEnv = process.env,
+  platform: NodeJS.Platform = process.platform,
+  hasXvfb: boolean = xvfbExecutable() !== null,
+): SoftwareGl | null {
+  if (!chromeGraphicsArgs(env, platform).includes("--use-angle=swiftshader")) return null;
+  if (env.JG_CAPTURE_GL === "swiftshader") return "swiftshader";
+  return platform === "linux" && hasXvfb ? "llvmpipe" : "swiftshader";
+}
+
+/** Chrome flags for a rasterizer choice: llvmpipe runs headful on the Xvfb display, the rest headless. */
+export function chromeRenderArgs(backend: SoftwareGl | null): string[] {
+  if (backend === "llvmpipe") {
+    return ["--ozone-platform=x11", "--use-angle=gl", "--ignore-gpu-blocklist", "--window-size=2560,2560"];
+  }
+  return ["--headless=new", ...(backend === "swiftshader" ? chromeGraphicsArgs({ JG_CAPTURE_SOFTWARE_GL: "1" }) : ["--ignore-gpu-blocklist"])];
+}
+
+function xvfbExecutable(): string | null {
+  for (const dir of (process.env.PATH ?? "/usr/bin").split(":")) {
+    const candidate = join(dir, "Xvfb");
+    if (dir !== "" && existsSync(candidate)) return candidate;
+  }
+  return null;
+}
+
+/**
+ * Start (or reuse) the shared capture X display and return its name, or null when it cannot run.
+ * One display serves every capture on the machine; it costs a few MB idle, so it is left running.
+ */
+export function ensureXvfbDisplay(): string | null {
+  const xvfb = xvfbExecutable();
+  if (xvfb === null) return null;
+  const display = Number(process.env.JG_XVFB_DISPLAY ?? 93);
+  const socket = `/tmp/.X11-unix/X${display}`;
+  if (existsSync(socket)) return `:${display}`;
+  const child = spawn(xvfb, [`:${display}`, "-screen", "0", "2560x2560x24", "-nolisten", "tcp"], {
+    stdio: "ignore",
+    detached: true,
+  });
+  child.unref();
+  const deadline = Date.now() + 5_000;
+  while (Date.now() < deadline) {
+    if (existsSync(socket)) return `:${display}`;
+    spawnSync("sleep", ["0.1"]);
+  }
+  return existsSync(socket) ? `:${display}` : null;
 }
 
 /**
@@ -651,12 +722,15 @@ export function launchChrome(
 ): ChildProcess {
   const chrome = findChromeExecutable();
   const userDataDir = mkdtempSync(join(tmpdir(), prefix));
+  let backend = softwareGlBackend();
+  const display = backend === "llvmpipe" ? ensureXvfbDisplay() : null;
+  if (backend === "llvmpipe" && display === null) backend = "swiftshader";
   return spawn(
     chrome,
     [
       `--remote-debugging-port=${debugPort}`,
       `--user-data-dir=${userDataDir}`,
-      "--headless=new",
+      ...chromeRenderArgs(backend),
       "--no-first-run",
       "--no-default-browser-check",
       "--disable-background-networking",
@@ -672,12 +746,12 @@ export function launchChrome(
       "--disable-default-apps",
       "--mute-audio",
       "--hide-scrollbars",
-      ...chromeGraphicsArgs(),
       "--no-sandbox",
       "--disable-dev-shm-usage",
       "about:blank",
     ],
     {
+      ...(display === null ? {} : { env: { ...process.env, DISPLAY: display } }),
       stdio: "ignore",
       windowsHide: true,
       // A daemon Chrome must outlive the Bun command that starts it. Chrome is a GUI-subsystem
@@ -1147,7 +1221,8 @@ const CAPTURE_READINESS_EXPR = `(() => {
   return {
     status: document.documentElement.dataset.jgCapture ?? null,
     error: document.documentElement.dataset.jgCaptureError ?? null,
-    sizedCanvas: canvas !== null && canvas.clientWidth > 10 && canvas.clientHeight > 10 && canvas.width > 10 && canvas.height > 10
+    sizedCanvas: canvas !== null && canvas.clientWidth > 10 && canvas.clientHeight > 10 && canvas.width > 10 && canvas.height > 10 &&
+      document.querySelector("[data-shell-code-loading]") === null
   };
 })()`;
 
@@ -1266,6 +1341,8 @@ export async function navigateCapturePageWithRetry(
   for (let attempt = 1; ; attempt += 1) {
     try {
       await navigateCapturePage(session, url, timeoutMs, options);
+      const note = await session.evaluate<string | null>(`document.documentElement.dataset.jgCaptureNote ?? null`);
+      if (typeof note === "string" && note.length > 0) console.error(`capture: ${note}`);
       return;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -1303,6 +1380,36 @@ export function parseSizeArg(value: string | undefined): SizeMode {
     throw new Error(`--size must be full or half (got ${value ?? "nothing"})`);
   }
   return value;
+}
+
+/**
+ * `draft` is the iteration profile: half-size viewport and the low graphics tier (`?quality=low`,
+ * pinned for the page only, never persisted). `full` is the untouched honest path for PR evidence.
+ */
+export type CaptureQuality = "full" | "draft";
+
+/** Validate a raw `--quality` argument, throwing the shared usage error. */
+export function parseQualityArg(value: string | undefined): CaptureQuality {
+  if (value !== "full" && value !== "draft") {
+    throw new Error(`--quality must be draft or full (got ${value ?? "nothing"})`);
+  }
+  return value;
+}
+
+/** Size a capture runs at: an explicit `--size` wins, otherwise draft halves the viewport. */
+export function sizeForQuality(quality: CaptureQuality, explicit: SizeMode | undefined): SizeMode {
+  return explicit ?? (quality === "draft" ? "half" : "full");
+}
+
+/** Add the shell's graphics-tier override for a draft capture; full leaves the URL untouched. */
+export function applyCaptureQuality(url: URL, quality: CaptureQuality): URL {
+  if (quality === "draft") url.searchParams.set("quality", "low");
+  return url;
+}
+
+/** Filename suffix marking a draft shot, so it never overwrites or passes for a full one. */
+export function qualitySuffix(quality: CaptureQuality): string {
+  return quality === "draft" ? "-draft" : "";
 }
 
 export interface BrowserSession {

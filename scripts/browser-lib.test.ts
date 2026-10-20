@@ -14,6 +14,8 @@ import {
   captureViewportPng,
   checkoutIdentity,
   chromeGraphicsArgs,
+  chromeRenderArgs,
+  softwareGlBackend,
   closePageTarget,
   navigateCapturePage,
   normalizeLoopbackUrl,
@@ -23,6 +25,10 @@ import {
   regionCarriesPicture,
   screencastCapturesFully,
   windowsPersistentChromeCommand,
+  applyCaptureQuality,
+  parseQualityArg,
+  qualitySuffix,
+  sizeForQuality,
 } from "./browser-lib";
 
 test("browser fixture bundling reads real modules despite runner mocks", async () => {
@@ -492,5 +498,37 @@ describe("captureViewportPng", () => {
     expect(screencastCapturesFully(DEVICES.desktop)).toBe(true);
     expect(screencastCapturesFully(DEVICES.mobile)).toBe(false);
     expect(screencastCapturesFully(DEVICES["mobile-landscape"])).toBe(false);
+  });
+});
+
+describe("capture quality", () => {
+  test("draft halves the viewport unless --size is explicit and pins the low tier", () => {
+    expect(sizeForQuality("draft", undefined)).toBe("half");
+    expect(sizeForQuality("draft", "full")).toBe("full");
+    expect(sizeForQuality("full", undefined)).toBe("full");
+    expect(applyCaptureQuality(new URL("http://x/?game=g"), "draft").searchParams.get("quality")).toBe("low");
+    expect(qualitySuffix("draft")).toBe("-draft");
+  });
+
+  test("full leaves the URL and file name untouched", () => {
+    expect(applyCaptureQuality(new URL("http://x/?game=g"), "full").toString()).toBe("http://x/?game=g");
+    expect(qualitySuffix("full")).toBe("");
+    expect(() => parseQualityArg("low")).toThrow("--quality must be draft or full");
+  });
+});
+
+describe("software GL backend", () => {
+  test("prefers llvmpipe on Linux when Xvfb exists, SwiftShader otherwise", () => {
+    expect(softwareGlBackend({}, "linux", true)).toBe("llvmpipe");
+    expect(softwareGlBackend({}, "linux", false)).toBe("swiftshader");
+    expect(softwareGlBackend({ JG_CAPTURE_GL: "swiftshader" }, "linux", true)).toBe("swiftshader");
+    expect(softwareGlBackend({}, "win32", true)).toBeNull();
+  });
+
+  test("llvmpipe runs headful on ANGLE GL; the others stay headless", () => {
+    expect(chromeRenderArgs("llvmpipe")).toContain("--use-angle=gl");
+    expect(chromeRenderArgs("llvmpipe")).not.toContain("--headless=new");
+    expect(chromeRenderArgs("swiftshader")).toEqual(expect.arrayContaining(["--headless=new", "--use-angle=swiftshader"]));
+    expect(chromeRenderArgs(null)).toEqual(["--headless=new", "--ignore-gpu-blocklist"]);
   });
 });

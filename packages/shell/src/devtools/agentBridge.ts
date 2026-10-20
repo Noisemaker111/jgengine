@@ -13,7 +13,7 @@ import {
   resizePanelSize,
   type EditorUiPanelLayout,
 } from "@jgengine/core/ui/hudDocument";
-import { buildFullReport, buildLeanReport } from "./devtoolsReports";
+import { buildFullReport, buildLeanReport, summarizeLeanReport } from "./devtoolsReports";
 import { advanceSimulation } from "./simStepper";
 
 /** One RPC call into the agent bridge: a verb name plus its verb-specific fields. */
@@ -196,8 +196,16 @@ export function installAgentBridge(options: {
         setDevtoolsOpen(open);
         return { ok: true, open };
       }
-      case "debug_snapshot":
-        return { ok: true, snapshot: { ...buildLeanReport(playable), player: playerPoseReport(getContext()) } };
+      case "debug_summary":
+      case "debug_snapshot": {
+        const ctx = getContext();
+        const lean = buildLeanReport(playable);
+        if (method === "debug_summary" || request.detail === "summary") {
+          const entities = ctx === null ? null : ctx.scene.entity.ids().length;
+          return { ok: true, summary: { ...summarizeLeanReport(lean, entities), player: playerPoseReport(ctx) } };
+        }
+        return { ok: true, snapshot: { ...lean, player: playerPoseReport(ctx) } };
+      }
       case "player_pose": {
         const pose = playerPoseReport(getContext());
         return pose === null ? { ok: false, error: "no local player entity yet" } : { ok: true, ...pose };

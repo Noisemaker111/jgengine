@@ -107,8 +107,10 @@
 - `RENDER_SCALE_STEP` (const): const RENDER_SCALE_STEP: 0.05 — Render-scale slider increment.
 - `applyGraphicsQuality` (function): function applyGraphicsQuality(store: Pick<SettingsStore, "set">, quality: GraphicsQuality, overrides?: GraphicsProfileOverrides): GraphicsProfile — Select a quality tier and re-apply its render scale, texture filtering and stage defaults, so picking a preset resets the individual overrides instead of leaving stale toggles behind.
 - `graphicsPostStageSettingId` (function): function graphicsPostStageSettingId(stage: GraphicsPostStage): string — Setting id that stores one stage toggle (`graphics.post.<stage>`).
+- `parseGraphicsQuality` (function): function parseGraphicsQuality(raw: string | null | undefined): GraphicsQuality | null — Parse a `?quality=` value into a graphics tier, or null when absent or unknown.
 - `readGraphicsQuality` (function): function readGraphicsQuality(store: Pick<SettingsStore, "get">): GraphicsQuality — The stored quality tier, falling back to the default when the value is missing or unknown.
 - `readGraphicsSettings` (function): function readGraphicsSettings(store: Pick<SettingsStore, "get">, overrides?: GraphicsProfileOverrides): GraphicsSettingsState — Resolve the player's graphics state from a settings store. The tier profile (with the game's overrides) supplies every default; a stored render scale or stage toggle replaces its field.
+- `withGraphicsQualityOverride` (function): function withGraphicsQualityOverride(store: SettingsStore, quality: GraphicsQuality, overrides?: GraphicsProfileOverrides): SettingsStore — Wrap a settings store so the graphics tier reads as `quality` for this session only: every graphics field resolves from that tier until the player changes it, and nothing is persisted. Capture hosts use it (`?quality=low`) to render cheap iteration shots without leaving the draft tier in the browser profile for the next full-quality shot.
 
 ## @jgengine/core/settings/settingsModel
 
@@ -2195,6 +2197,10 @@
 
 - `readStoredOverrides` (function): function readStoredOverrides(gameName: string): DevtoolsOverrides | null — ⚠ undocumented
 
+## @jgengine/shell/devtools/devtoolsReports
+
+- `DebugSummary` (interface): interface DebugSummary — Compact `debug_summary` payload: the numbers an agent needs to judge a run, about 1 KB.
+
 ## @jgengine/shell/devtools/panelAtoms
 
 - `SectionLabel` (function): function SectionLabel({ children }: { children: string }): React.JSX.Element — ⚠ undocumented
@@ -2546,6 +2552,7 @@
 - `heavyModels` (function): function heavyModels(): readonly HeavyModelRecord[] — Every model the shared loader resolved whose triangle count exceeds the budget, in load order. A heavy prop is invisible in a screenshot and only shows up as a slow frame, so the loader measures each GLB as it lands and this exposes the verdict for `debug_snapshot` probes and smoke tests to assert against.
 - `modelLoadFallbacks` (function): function modelLoadFallbacks(): readonly { url: string; message: string }[] — Every model the shared loader diagnosed as broken and replaced with a magenta placeholder, in load order.
 - `modelLoadIdleMs` (function): function modelLoadIdleMs(): number — How long the shared GLB loader has been idle, in ms — `0` while any model is still in flight. A capture host reads this to wait for streaming to finish instead of guessing a settle delay: models that pop in after the shot are why an establishing capture used to come back half-empty until someone hand-tuned `--settle`.
+- `modelLoadStarts` (function): function modelLoadStarts(): number — How many times the shared GLB loader has gone from idle to busy since boot. A capture host compares two readings around a rendered frame to tell whether that frame started new model streaming, which an idle reading alone cannot show.
 - `setModelTriangleBudget` (function): function setModelTriangleBudget(triangles: number): void — Retune the per-model triangle budget (a cinematic game may raise it; a mobile target lowers it). Non-finite or non-positive values restore the default.
 
 ## @jgengine/shell/render/modelRender
