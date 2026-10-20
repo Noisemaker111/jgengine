@@ -42,6 +42,16 @@ export function terrainSurfaceClass(surface: string): TerrainSurfaceClass {
   return "ground";
 }
 
+/** Shader index of a surface class (`jgSurface`'s `cls`); bit `1 << index` in a class mask. */
+export function terrainSurfaceClassIndex(cls: TerrainSurfaceClass): number {
+  return CLASS_INDEX[cls];
+}
+
+/** Default roughness the terrain shades a surface class with. */
+export function terrainSurfaceRoughness(cls: TerrainSurfaceClass): number {
+  return CLASS_ROUGHNESS[cls];
+}
+
 /** At most this many distinct paint layers reach the GPU; extra layers fold into the last slot. */
 export const MAX_TERRAIN_PAINT_LAYERS = 8;
 

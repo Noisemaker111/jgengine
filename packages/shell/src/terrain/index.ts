@@ -72,9 +72,21 @@ export {
   MAX_TERRAIN_PAINT_LAYERS,
   packTerrainPaintWeights,
   terrainSurfaceClass,
+  terrainSurfaceClassIndex,
+  terrainSurfaceRoughness,
   type TerrainPaintSlot,
   type TerrainPaintTextures,
   type TerrainPaintWeights,
   type TerrainSurfaceClass,
 } from "./terrainSurfaces";
 export { TerrainQualityContext, useTerrainQuality } from "./terrainQuality";
+export {
+  createSurfaceRibbonMaterial,
+  resolvePathSurface,
+  RIBBON_FRAME_ATTRIBUTE,
+  ribbonEdgeMargin,
+  ribbonSurfaceFrame,
+  useSurfaceRibbonMaterial,
+  type RibbonSurfaceStyle,
+  type SurfaceRibbonMaterialOptions,
+} from "./surfaceRibbonMaterial";

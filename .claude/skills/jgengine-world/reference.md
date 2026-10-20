@@ -42,6 +42,15 @@ collision. A terrain without `detail` still renders this way; `detail.surfaceStr
 flat painted colour, and `detail: false` opts out to the old flat vertex-colour ground. The
 `low` graphics tier draws one cheap mottle per surface and skips micro-normals.
 
+Paths and roads share those surface functions. An authored path (`<AuthoredPaths>`) shades by
+`meta.surface`, else its kind (`road` paves), else dirt: soft ground gets wheel ruts and a
+noise-warped edge that fades into the terrain around the authored width; pavement keeps a crisp
+edge with tyre lanes and cracks. Tune with `meta.edgeSoftness` (0 = hard) and `meta.wear` (0..1);
+`meta.surfaceDetail: false` or `<AuthoredScene pathSurfaceDetail={false}>` keeps flat ribbons.
+`road({ surface })` picks the carriageway surface (default `"road"`, `false` for flat colour), and
+city studio ground takes `meta.surfaceDetail: false` on its volume. Custom ribbons use
+`createSurfaceRibbonMaterial` with `ribbonSurfaceFrame` from `@jgengine/shell/terrain`.
+
 Custom ground consumers can use `createTerrainPaintColorSampler` from `@jgengine/shell/terrain`
 with a `TerrainPaintSource` (an editable terrain's layer/surface/weight channels). The returned
 `TerrainPaintColorSampler` writes a linear `THREE.Color` and returns whether the point is painted;
