@@ -257,15 +257,6 @@ function main(): void {
   const root = fileURLToPath(new URL("..", import.meta.url));
   const failures: string[] = [];
 
-  const extractedPackages = ["core", ...Object.keys(PACKAGE_SKILLS)];
-  const missingDist = extractedPackages.filter((pkg) => !existsSync(join(root, "packages", pkg, "dist")));
-  if (missingDist.length > 0) {
-    console.error(
-      `skill-api refused: missing dist for ${missingDist.join(", ")} — run \`bun run build\` first (extraction silently drops modules that resolve through unbuilt packages)`,
-    );
-    process.exit(1);
-  }
-
   const { skills, undocumented } = collectSkillModules(root);
   const undocumentedSet = new Set(undocumented);
   const baseline = readBaseline(root, BASELINE_PATH);

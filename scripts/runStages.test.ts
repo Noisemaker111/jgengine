@@ -132,13 +132,14 @@ describe("generated-artifact drift", () => {
   test("the gen plan regenerates every committed artifact, barrels first", () => {
     expect((PLANS.gen ?? []).map((stage) => stage.name)).toEqual([
       "ensure-ready",
+      "gen:source-paths",
       "gen:barrels",
       "gen:capabilities",
       "gen:skill-api",
       "gen:export-manifest",
     ]);
     // The three readers all hang off barrels, so one failing generator cannot hide the others.
-    for (const stage of (PLANS.gen ?? []).slice(2)) expect(stage.needs).toEqual(["gen:barrels"]);
+    for (const stage of (PLANS.gen ?? []).slice(3)) expect(stage.needs).toEqual(["gen:barrels"]);
   });
 });
 
@@ -157,7 +158,8 @@ describe("SDK validation ownership", () => {
     expect(sdk.map((stage) => stage.name)).toEqual([
       "ensure-ready", "check-artifacts", "check-release-set", "check-skills", "check-skill-api", "check-orphan-ratchet",
       "check-stateful-ratchet", "check-capabilities", "check-pack-texture-layout", "check-recipes",
-      "check-doc-symbols", "check-hud-tokens", "check-street-rule-parity", "check-types-all",
+      "check-doc-symbols", "check-hud-tokens", "check-street-rule-parity", "check-source-paths",
+      "check-test-spawn-timeouts", "check-types-all",
     ]);
   });
 

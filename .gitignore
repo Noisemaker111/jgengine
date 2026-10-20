@@ -1,4 +1,5 @@
-node_modules/
+# No trailing slash: a worktree's node_modules is a symlink, which `dir/` patterns miss.
+node_modules
 dist/
 *.log
 .DS_Store
@@ -46,7 +47,8 @@ packages/*/skills/
 # Games are now in the separate Noisemaker111/JGengine-games repo.
 # The website clones them at build time into ephemeral ./Games (see scripts/ensure-games.ts).
 # Committed Games/* was removed — keep the directory gitignored so a local clone does not look dirty.
-Games/
+# No trailing slash, so a worktree's Games symlink is ignored too.
+/Games
 
 # agent-bootstrap concurrency guard (never race two bun installs),
 # hook-spawned background log, and killed-install detection marker

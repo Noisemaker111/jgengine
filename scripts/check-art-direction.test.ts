@@ -11,7 +11,7 @@ function run(dir: string): { code: number; output: string } {
   const source = readFileSync(new URL("./check-art-direction.ts", import.meta.url), "utf8");
   const script = join(dir, "check.ts");
   writeFileSync(script, source);
-  const result = Bun.spawnSync([process.execPath, script], { cwd: dir, env: { ...process.env, CI: "" } });
+  const result = Bun.spawnSync([process.execPath, script], { cwd: dir, env: { ...process.env, CI: "" }, timeout: 60_000 });
   return { code: result.exitCode, output: new TextDecoder().decode(result.stdout) + new TextDecoder().decode(result.stderr) };
 }
 

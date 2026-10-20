@@ -54,6 +54,8 @@
     "check-capabilities": "bun scripts/gen-capability-index.ts --check",
     "gen:export-manifest": "bun scripts/gen-export-manifest.ts",
     "check-export-manifest": "bun scripts/gen-export-manifest.ts --check",
+    "gen:source-paths": "bun scripts/sourcePaths.ts",
+    "check-source-paths": "bun scripts/sourcePaths.ts --check",
     "check-game-shape": "bun scripts/check-game-shape.ts",
     "check-content-gate": "bun scripts/check-content-gate.ts",
     "check-asset-availability": "bun scripts/checkAssetAvailability.ts",
@@ -62,13 +64,14 @@
     "check-doc-symbols": "bun scripts/check-doc-symbols.ts",
     "check-hud-tokens": "bun scripts/check-hud-tokens.ts",
     "check-street-rule-parity": "bun scripts/check-street-rule-parity.ts",
+    "check-test-spawn-timeouts": "bun scripts/check-test-spawn-timeouts.ts",
     "check-types": "bun scripts/guard.ts 900 'bun scripts/run-stages.ts check-types'",
     "check-types:sdk": "bun scripts/guard.ts 900 'bun scripts/run-stages.ts check-types:sdk'",
     "build:registry": "bun scripts/build-registry.ts",
     "stage-skills": "bun scripts/stage-skills.ts",
     "check-stage-skills": "bun scripts/stage-skills.ts --check",
-    "test": "bun scripts/guard.ts 300 'bun scripts/ensure-ready.ts && bun test packages apps/dev apps/web apps/desktop scripts'",
-    "test:all": "bun scripts/guard.ts 900 'bun scripts/ensure-ready.ts && bun test packages apps/dev apps/web apps/desktop scripts'",
+    "test": "bun scripts/guard.ts 300 'bun scripts/ensure-ready.ts --install-only && bun test packages apps/dev apps/web apps/desktop scripts'",
+    "test:all": "bun scripts/guard.ts 900 'bun scripts/ensure-ready.ts --install-only && bun test packages apps/dev apps/web apps/desktop scripts'",
     "games:clone": "bun scripts/ensure-games.ts",
     "games:update": "bun scripts/ensure-games.ts --update",
     "games:bump": "bun scripts/ensure-games.ts --bump",
@@ -93,5 +96,5 @@
     "typescript": "^5.9.3",
     "user-attachments": "^2.0.2"
   },
-  "packageManager": "bun@1.3.8"
+  "packageManager": "bun@1.4.2"
 }

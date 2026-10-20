@@ -160,11 +160,11 @@ if (cold && process.env.JG_PARENT_SOURCE_ONLY === "1") {
   const pid = startBootstrap();
   if (pid) {
     notes.push(
-      `Cold checkout: \`bun run agent:bootstrap\` (install + package build, ~2-3 min) was ` +
+      `Cold checkout: \`bun run agent:bootstrap\` (dependency install, ~1-2 min) was ` +
         `auto-started in the background by this hook (log: .agent-bootstrap.log). Do NOT start ` +
         `it again and NEVER kill it — a killed \`bun install\` corrupts node_modules. Recon and ` +
-        `edits are fine right away; before the first command that needs node_modules or package ` +
-        `dist (tests, builds, gate), run \`bun run agent:bootstrap --check\` and wait until it ` +
+        `edits are fine right away; before the first command that needs node_modules ` +
+        `(tests, type-checks, gen), run \`bun run agent:bootstrap --check\` and wait until it ` +
         `reports ready. If cold starts annoy the user, suggest setting this cloud environment's ` +
         `setup script to \`bash scripts/cloud-setup.sh\` (claude.ai/code environment settings) ` +
         `so sessions start from a warm snapshot with zero cold-start.`,
@@ -173,7 +173,7 @@ if (cold && process.env.JG_PARENT_SOURCE_ONLY === "1") {
     notes.push(
       `Cold checkout: node_modules incomplete, and auto-start failed. FIRST ACTION: start ` +
         `\`bun run agent:bootstrap\` as a background Bash task and do recon/edits while it runs ` +
-        `(~2-3 min: install + package build). NEVER kill or re-run-over a slow install — a killed ` +
+        `(~1-2 min: dependency install). NEVER kill or re-run-over a slow install — a killed ` +
         `\`bun install\` leaves half-hardlinked node_modules. Bootstrap is lock-guarded ` +
         `(re-invoking joins the running one) and self-heals a partial tree. If cold starts annoy ` +
         `the user, suggest setting this cloud environment's setup script to ` +
