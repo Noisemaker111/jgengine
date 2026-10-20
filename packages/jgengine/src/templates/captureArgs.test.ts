@@ -13,7 +13,7 @@ export function sampleArgv(entry: CaptureFlag): string[] {
     "--click": "Start", "--double-click": "Tile", "--click-at": "10,20", "--right-click-at": "30,40",
     "--fill": "Name=Ada", "--key": "KeyW+KeyD:250", "--wait": "100", "--shot": "after",
     "--rpc": '{"method":"debug_snapshot"}', "--probe": "p0", "--url": "http://127.0.0.1:5173/", "--port": "5199",
-    "--device": "mobile", "--width": "800", "--height": "600", "--size": "half", "--settle": "500", "--timeout": "90",
+    "--device": "mobile", "--width": "800", "--height": "600", "--size": "half", "--quality": "draft", "--settle": "500", "--timeout": "90",
     "--param": "gamepad=2", "--out": "/tmp/x.png", "--seed": "3", "--sample": "200", "--softlock": "1500",
     "--epsilon": "0.01", "--game": "demo", "--mode": "play", "--state": "two-towers", "--run": "game.start",
     "--view": "hero", "--look": "1,2", "--look-from": "12,5", "--spawn": "1,0,1", "--style": "toon",

@@ -14,6 +14,7 @@ import { join, resolve } from "node:path";
 import {
   type CdpSession,
   DEVICES,
+  applyCaptureQuality,
   applyDevice,
   captureViewportPng,
   checkoutIdentity,
@@ -26,10 +27,14 @@ import {
   isUp,
   navigateCapturePageWithRetry,
   openPageSession,
+  parseQualityArg,
   parseSizeArg,
+  qualitySuffix,
+  sizeForQuality,
   sizeSuffix,
   withBrowserSession,
   writePngAtomic,
+  type CaptureQuality,
   type Device,
   type SizeMode,
 } from "./browser-lib";
@@ -81,6 +86,7 @@ type Args = {
   mode: Mode;
   device: DeviceArg;
   size: SizeMode;
+  quality: CaptureQuality;
   stage?: boolean;
   state?: string;
   preview?: string;
@@ -141,7 +147,8 @@ function parseArgs(argv: string[]): Args {
     game: str("game") ?? parsed.positionals[0] ?? "world-of-warcraft",
     mode: mode as Mode,
     device: (str("device") ?? "desktop") as DeviceArg,
-    size: parseSizeArg(str("size") ?? "full"),
+    quality: parseQualityArg(str("quality") ?? "full"),
+    size: sizeForQuality(parseQualityArg(str("quality") ?? "full"), str("size") === undefined ? undefined : parseSizeArg(str("size"))),
     stage: o.stage === true ? true : undefined,
     state: str("state"),
     preview: str("preview") ?? (mode === "preview" ? "" : undefined),
@@ -188,7 +195,7 @@ function outPathFor(args: Args, device: Device, outDir: string): string {
     if (dot <= 0) return `${resolved}-mobile`;
     return `${resolved.slice(0, dot)}-mobile${resolved.slice(dot)}`;
   }
-  const suffix = `${device === "mobile" ? "-mobile" : ""}${sizeSuffix(args.size)}`;
+  const suffix = `${device === "mobile" ? "-mobile" : ""}${sizeSuffix(args.size)}${qualitySuffix(args.quality)}`;
   if (args.fixture !== undefined && args.fixture.length > 0) {
     const key = args.fixture.replace(/[^A-Za-z0-9._-]+/g, "_");
     return join(outDir, `fixture-${key}${suffix}.png`);
@@ -251,7 +258,7 @@ function targetUrl(args: Args, device: Device, devBase: string): string {
   if (aim !== undefined) {
     for (const [key, value] of Object.entries(lookSearchParams(aim))) url.searchParams.set(key, value);
   }
-  return url.toString();
+  return applyCaptureQuality(url, args.quality).toString();
 }
 
 function shotCommand(): string {
@@ -377,7 +384,7 @@ async function shootOne(
     console.log(outPath);
     mark("score");
     const profile = DEVICES[device];
-    const label = `${device} ${profile.width}x${profile.height}${args.size === "half" ? " (half-res)" : ""}`;
+    const label = `${device} ${profile.width}x${profile.height}${args.size === "half" ? " (half-res)" : ""}${args.quality === "draft" ? " (draft)" : ""}`;
     let ok = true;
     if (overflow !== null) {
       console.error(`HUD OVERFLOW [${label}]: panels escape the viewport — ${overflow}`);

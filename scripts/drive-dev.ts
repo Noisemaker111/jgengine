@@ -19,6 +19,7 @@ import { existsSync, mkdirSync, statSync } from "node:fs";
 import { isAbsolute, join, resolve } from "node:path";
 import {
   CdpSession,
+  applyCaptureQuality,
   applyDevice,
   captureProfile,
   captureViewportPng,
@@ -28,12 +29,16 @@ import {
   isUp,
   navigateCapturePageWithRetry,
   openPageSession,
+  parseQualityArg,
   parseSizeArg,
+  qualitySuffix,
   readCapturePageState,
+  sizeForQuality,
   screencastCapturesFully,
   sizeSuffix,
   withBrowserSession,
   writePngAtomic,
+  type CaptureQuality,
   type SizeMode,
   type Device,
   type ViewportOverride,
@@ -72,6 +77,7 @@ type Args = {
   modeExplicit: boolean;
   device: Device;
   size: SizeMode;
+  quality: CaptureQuality;
   connect?: number;
   keep: boolean;
   help: boolean;
@@ -137,7 +143,8 @@ function parseArgs(argv: string[]): Args {
     mode: str("mode") ?? "play",
     modeExplicit: str("mode") !== undefined,
     device: parseCaptureDevice(str("device") ?? "desktop"),
-    size: parseSizeArg(str("size") ?? "full"),
+    quality: parseQualityArg(str("quality") ?? "full"),
+    size: sizeForQuality(parseQualityArg(str("quality") ?? "full"), str("size") === undefined ? undefined : parseSizeArg(str("size"))),
     connect: num("connect"),
     keep: o.keep === true,
     help: parsed.help,
@@ -538,7 +545,7 @@ if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true });
 const preparedShots = new Map<string, PreviousShot | undefined>();
 for (const step of args.steps) {
   if (step.kind !== "shot") continue;
-  const path = step.out ?? join(outDir, `${args.game}-${step.name}${sizeSuffix(args.size)}.png`);
+  const path = step.out ?? join(outDir, `${args.game}-${step.name}${sizeSuffix(args.size)}${qualitySuffix(args.quality)}.png`);
   if (!preparedShots.has(path)) preparedShots.set(path, clearShotTarget(path));
 }
 
@@ -591,7 +598,7 @@ const exitCode = await withBrowserSession(
       await session.send("Page.enable");
       await session.send("Runtime.enable");
       await applyDevice(session, args.device, args.size, viewport);
-      const url = driveTargetUrl(args, dev.base);
+      const url = applyCaptureQuality(driveTargetUrl(args, dev.base), args.quality);
       url.searchParams.set("capture", "1");
       if (args.spawn !== undefined && args.spawn.length > 0) url.searchParams.set("spawn", args.spawn);
       for (const [key, value] of args.params) url.searchParams.set(key, value);
@@ -713,7 +720,7 @@ const exitCode = await withBrowserSession(
           console.log(JSON.stringify({ probe: step.name, metrics }));
         } else {
           // A recording owns the screencast pump; a shot must not start/stop it underneath.
-          const path = step.out ?? join(outDir, `${args.game}-${step.name}${sizeSuffix(args.size)}.png`);
+          const path = step.out ?? join(outDir, `${args.game}-${step.name}${sizeSuffix(args.size)}${qualitySuffix(args.quality)}.png`);
           const previous = preparedShots.has(path) ? preparedShots.get(path) : clearShotTarget(path);
           preparedShots.delete(path);
           await screenshot(

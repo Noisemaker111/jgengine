@@ -48,6 +48,7 @@ export const CAPTURE_FLAGS: readonly CaptureFlag[] = [
   { flag: "--width", tools: ["shoot", "drive"], value: "required", arg: "<px>", help: "viewport width override in CSS pixels" },
   { flag: "--height", tools: ["shoot", "drive"], value: "required", arg: "<px>", help: "viewport height override in CSS pixels" },
   { flag: "--size", tools: ["shoot", "drive"], value: "required", arg: "<full|half>", help: "half halves both dimensions for cheap judge shots; full for final/PR shots" },
+  { flag: "--quality", tools: ["shoot", "drive"], value: "required", arg: "<full|draft>", engineOnly: RUNNER + " (draft pins ?quality=low and halves the viewport)", help: "draft = fast iteration run: low graphics tier and half size, -draft file names; full (default) for PR evidence" },
   { flag: "--settle", tools: ["shoot", "drive"], value: "required", arg: "<ms>", help: "extra wait after the page reports an honest frame" },
   { flag: "--timeout", tools: ["shoot", "drive"], value: "required", arg: "<s>", help: "readiness/capture timeout in seconds (default 60)" },
   { flag: "--param", tools: ["shoot", "drive"], value: "required", repeat: true, arg: "<key=value>", help: "add a query parameter to the page URL (repeatable)" },
