@@ -152,6 +152,13 @@ const GENERATED_CHECKS: readonly { name: string; args: readonly string[] }[] = [
   { name: "check-source-paths", args: ["scripts/sourcePaths.ts", "--check"] },
 ];
 
+/** The rest of CI's `quick` job: cheap source checks, so preflight fails where `quick` would. */
+const QUICK_CHECKS: readonly { name: string; args: readonly string[] }[] = [
+  { name: "check-stage-skills", args: ["scripts/stage-skills.ts", "--check"] },
+  { name: "check-skills", args: ["scripts/check-skill-sync.ts"] },
+  { name: "check-changelog", args: ["scripts/check-changelog.ts"] },
+];
+
 function runCheck(args: readonly string[]): Promise<{ ok: boolean; output: string }> {
   return new Promise((done) => {
     const child = spawn("bun", [...args], { cwd: root, stdio: ["ignore", "pipe", "pipe"] });
@@ -164,7 +171,13 @@ function runCheck(args: readonly string[]): Promise<{ ok: boolean; output: strin
 }
 
 if (ship) {
-  const results = await Promise.all(GENERATED_CHECKS.map(async (check) => ({ check, ...(await runCheck(check.args)) })));
+  const [results, quick] = await Promise.all([
+    Promise.all(GENERATED_CHECKS.map(async (check) => ({ check, ...(await runCheck(check.args)) }))),
+    Promise.all(QUICK_CHECKS.map(async (check) => ({ check, ...(await runCheck(check.args)) }))),
+  ]);
+  for (const result of quick.filter((entry) => !entry.ok)) {
+    failures.push(`${result.check.name} failed — CI's quick job will too:\n      ${result.output.split("\n").slice(-6).join("\n      ")}`);
+  }
   const stale = results.filter((result) => !result.ok);
   if (stale.length > 0) {
     failures.push(
