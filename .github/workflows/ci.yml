@@ -84,7 +84,9 @@ jobs:
       - run: bun run games:clone
         env:
           GAMES_CLONE_TOKEN: ${{ secrets.GAMES_CLONE_TOKEN }}
-      - run: bun test packages apps/dev scripts
+      # Browser and physics suites cold-start Chromium/WASM; on a loaded runner the first test in a
+      # file can pass Bun's 5 s default and cascade through the file. Tests with their own timeout keep it.
+      - run: bun test --timeout 20000 packages apps/dev scripts
 
   web-build:
     runs-on: ubuntu-latest

@@ -1,13 +1,9 @@
-import { afterAll, afterEach, beforeAll, beforeEach, expect, setDefaultTimeout, test } from "bun:test";
+import { afterAll, afterEach, beforeAll, beforeEach, expect, test } from "bun:test";
 import { execFileSync } from "node:child_process";
 import { mkdir, rm, symlink } from "node:fs/promises";
 import { resolve } from "node:path";
 import { chromium, type Browser, type Page } from "playwright-core";
 import { buildBrowserFixture, findChromeExecutable } from "../../../scripts/browser-lib";
-
-// Real Chromium: the first page load compiles the whole shell bundle, which overruns Bun's 5 s
-// default on a loaded CI runner and then cascades into every later test in the file.
-setDefaultTimeout(20_000);
 
 const scratch = resolve(import.meta.dir, "../../../.scratch/settings-boundary-test");
 let browser: Browser, page: Page, server: ReturnType<typeof Bun.serve>;
