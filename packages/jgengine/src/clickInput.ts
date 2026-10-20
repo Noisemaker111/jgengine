@@ -15,16 +15,20 @@ export function parseClickAt(spec: string, width: number, height: number): Click
   return { x, y };
 }
 
-/** Dispatch a native left click, including pointer movement for canvas hover targets. */
+/**
+ * Dispatch a native click (left by default, `"right"` for RTS move/attack orders and context
+ * actions), including pointer movement for canvas hover targets.
+ */
 export async function dispatchClickAt(
   session: { send(method: string, params: Record<string, unknown>): Promise<unknown> },
   point: ClickPoint,
+  button: "left" | "right" = "left",
 ): Promise<void> {
   for (const type of ["mouseMoved", "mousePressed", "mouseReleased"]) {
     await session.send("Input.dispatchMouseEvent", {
       type, x: point.x, y: point.y,
-      button: type === "mouseMoved" ? "none" : "left",
-      buttons: type === "mousePressed" ? 1 : 0,
+      button: type === "mouseMoved" ? "none" : button,
+      buttons: type === "mousePressed" ? (button === "right" ? 2 : 1) : 0,
       clickCount: type === "mouseMoved" ? 0 : 1,
     });
   }
