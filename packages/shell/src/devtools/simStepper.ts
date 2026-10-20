@@ -18,14 +18,28 @@ export function registerSimStepper(step: SimStep): () => void {
 
 /**
  * Step the registered simulation `seconds` of real time in `step`-second frames (each frame runs
- * the full driver step: input, movement, `onTick`, behaviors, bound actions). Capped at 2400
- * frames per call. Returns the frames run, or `null` when no driver is mounted.
+ * the full driver step: input, movement, `onTick`, behaviors, bound actions). Frames run in
+ * batches of {@link FRAMES_PER_YIELD} with a macrotask between batches, so React commits what the
+ * sim spawned along the way — models for entities created mid-advance mount as they would in play,
+ * instead of one burst the renderer never catches up with. Capped at 2400 frames per call.
+ * Resolves to the frames run, or `null` when no driver is mounted.
  * @internal
  */
-export function advanceSimulation(seconds: number, step = 0.05): number | null {
+export async function advanceSimulation(seconds: number, step = 0.05, yieldToHost: () => Promise<void> = defaultYield): Promise<number | null> {
   if (current === null) return null;
   const frame = Math.min(0.05, Math.max(0.001, step));
   const frames = Math.min(2400, Math.max(0, Math.ceil(seconds / frame)));
-  for (let index = 0; index < frames; index += 1) current(frame);
+  for (let index = 0; index < frames; index += 1) {
+    if (current === null) return index;
+    current(frame);
+    if ((index + 1) % FRAMES_PER_YIELD === 0 && index + 1 < frames) await yieldToHost();
+  }
   return frames;
+}
+
+/** Simulated frames between yields to the host (one game second at 0.05 s frames). @internal */
+export const FRAMES_PER_YIELD = 20;
+
+function defaultYield(): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, 0));
 }
