@@ -48,6 +48,7 @@ import {
   type BuildingPalette,
 } from "@jgengine/core/world/buildings";
 import { hashString } from "@jgengine/core/random/rng";
+import { valueNoise } from "@jgengine/core/world/terrain";
 import type { SceneKindObject } from "@jgengine/core/scene/sceneKinds";
 
 import { buildScatterProxy } from "../scatter/scatterProxies";
@@ -177,6 +178,15 @@ class MeshAccumulator {
     for (let i = 0; i < ribbon.positions.length; i += 1) this.positions.push(ribbon.positions[i]!);
     for (let i = 0; i < ribbon.indices.length; i += 1) this.indices.push(ribbon.indices[i]! + offset);
     this.pushColor(ribbon.positions.length / 3, color);
+  }
+
+  /** Append absolute positions with per-vertex colours (a colored accumulator only). */
+  addColoredMesh(positions: readonly number[], indices: readonly number[], colors: readonly number[]): void {
+    if (positions.length === 0) return;
+    const offset = this.positions.length / 3;
+    for (let i = 0; i < positions.length; i += 1) this.positions.push(positions[i]!);
+    for (let i = 0; i < indices.length; i += 1) this.indices.push(indices[i]! + offset);
+    if (this.colors !== null) for (let i = 0; i < colors.length; i += 1) this.colors.push(colors[i]!);
   }
 
   /** A ground-draped rotated rectangle, grid-subdivided so large patches follow the relief. */
@@ -953,29 +963,49 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
             }
           }
         }
+        // One shared-vertex sheet coloured per vertex from smooth noise: a per-cell roll flipped
+        // neighbouring cells between zone bands and drew a hard checkerboard over the district.
         const fringe = new THREE.Color(FRINGE_COLOR);
         const fabricColor = new THREE.Color();
+        const seed = hashString(`fabric:${resolved.center[0]}:${resolved.center[2]}`);
+        const vertexIndex = new Int32Array(nx * nz).fill(-1);
+        const fabric = { positions: [] as number[], indices: [] as number[], colors: [] as number[] };
+        const vertexAt = (i: number, j: number): number => {
+          const idx = j * nx + i;
+          const existing = vertexIndex[idx]!;
+          if (existing >= 0) return existing;
+          const x = originX + i * cell;
+          const z = originZ + j * cell;
+          const d = field[idx]!;
+          const tone = valueNoise(x / 9, z / 9, seed) * 0.5 + 0.5;
+          if (d < pavedTo) {
+            fabricColor.set(SIDEWALK_COLOR);
+          } else {
+            const band = bandAt(x, z, tone);
+            fabricColor.set(band === "edge" && lawnEdge ? BLOCK_EDGE_GREEN : BLOCK_SURFACE_COLORS[band]);
+            // A block-sized tone over the fine grain: yards, courts and lots, not one poured apron.
+            fabricColor.multiplyScalar(0.8 + (valueNoise(x / 22, z / 22, seed + 1) * 0.5 + 0.5) * 0.42);
+          }
+          fabricColor.multiplyScalar(0.95 + tone * 0.1);
+          if (d > reach - 7) fabricColor.lerp(fringe, Math.min(1, (d - (reach - 7)) / 7));
+          const next = fabric.positions.length / 3;
+          fabric.positions.push(x, sample(x, z) + URBAN_LAYER, z);
+          fabric.colors.push(fabricColor.r, fabricColor.g, fabricColor.b);
+          vertexIndex[idx] = next;
+          return next;
+        };
         for (let j = 0; j + 1 < nz; j += 1) {
           for (let i = 0; i + 1 < nx; i += 1) {
             const d = (field[j * nx + i]! + field[j * nx + i + 1]! + field[(j + 1) * nx + i]! + field[(j + 1) * nx + i + 1]!) / 4;
             if (d > reach) continue;
-            const x = originX + (i + 0.5) * cell;
-            const z = originZ + (j + 0.5) * cell;
-            const tone = (hashString(`fabric:${i}:${j}`) % 256) / 256;
-            if (d < pavedTo) {
-              fabricColor.set(SIDEWALK_COLOR);
-            } else {
-              const band = bandAt(x, z, tone);
-              fabricColor.set(band === "edge" && lawnEdge ? BLOCK_EDGE_GREEN : BLOCK_SURFACE_COLORS[band]);
-              // A block-sized patch tone over the fine per-cell grain: yards, courts and lots,
-              // not one poured apron.
-              fabricColor.multiplyScalar(0.8 + ((hashString(`yard:${Math.floor(x / 22)}:${Math.floor(z / 22)}`) % 256) / 256) * 0.42);
-            }
-            fabricColor.multiplyScalar(0.95 + tone * 0.1);
-            if (d > reach - 7) fabricColor.lerp(fringe, Math.min(1, (d - (reach - 7)) / 7));
-            urban.addPatch([x, z], [cell, cell], 0, sample, URBAN_LAYER, fabricColor);
+            const a = vertexAt(i, j);
+            const b = vertexAt(i + 1, j);
+            const c = vertexAt(i, j + 1);
+            const e = vertexAt(i + 1, j + 1);
+            fabric.indices.push(a, c, b, b, c, e);
           }
         }
+        urban.addColoredMesh(fabric.positions, fabric.indices, fabric.colors);
       }
     }
     // The land ring behind the sidewalk is the block INTERIOR — fill it with a surface read from
