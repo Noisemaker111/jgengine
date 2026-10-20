@@ -1,5 +1,5 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { join, relative, resolve } from "node:path";
 
 import { gameSkeletonRequiredSummary, isAllowedGameSrcEntry } from "./gameShape";
 import { cliVersion, findWorkspaceRoot, readPackageJson, resolveDependencyRange, sdkVersion, type PackageJson } from "./pkg";
@@ -173,6 +173,14 @@ export function diagnose(dir: string): Finding[] {
         fix: 'the F2+E editor mounts into the game page — without its @source, the editor renders unstyled (all-white) — add @source "../node_modules/@jgengine/editor/dist" to src/index.css',
       });
     }
+    const uncovered = aliasedStyleRootsMissingSource(dir, css);
+    if (usesTailwind && uncovered !== null) {
+      findings.push({
+        ok: uncovered.length === 0,
+        label: "Tailwind @source covers aliased component folders",
+        fix: `components imported through a tsconfig path alias are outside src/, so their classes are never generated and they render unstyled — add ${uncovered.map((root) => `@source "${root}"`).join(" and ")} to src/index.css`,
+      });
+    }
   } else {
     findings.push({ ok: false, label: "src/index.css present", fix: "the standalone harness needs src/index.css importing tailwindcss" });
   }
@@ -273,4 +281,51 @@ export function runDoctor(argv: string[]): number {
   const failed = findings.filter((finding) => !finding.ok).length;
   console.log(failed === 0 ? "\ndoctor: all clear" : `\ndoctor: ${failed} problem(s) found`);
   return failed === 0 ? 0 : 1;
+}
+
+/**
+ * Folders reached through `tsconfig` path aliases (e.g. a shared `@/components/ui/*` registry) that
+ * game source imports but `src/index.css` never scans, as paths relative to `src/`. `null` when the
+ * project declares no such alias.
+ */
+function aliasedStyleRootsMissingSource(dir: string, css: string): string[] | null {
+  const tsconfigPath = join(dir, "tsconfig.json");
+  if (!existsSync(tsconfigPath)) return null;
+  let paths: Record<string, string[]> | undefined;
+  try {
+    const text = readFileSync(tsconfigPath, "utf8").replace(/^\s*\/\/.*$/gm, "");
+    paths = (JSON.parse(text) as { compilerOptions?: { paths?: Record<string, string[]> } }).compilerOptions?.paths;
+  } catch {
+    return null;
+  }
+  if (paths === undefined) return null;
+  const srcDir = join(dir, "src");
+  const sources = [...css.matchAll(/@source\s+"([^"]+)"/g)].map((match) => resolve(srcDir, match[1]!));
+  const source = readSourceText(srcDir);
+  const missing: string[] = [];
+  let declared = false;
+  for (const [alias, targets] of Object.entries(paths)) {
+    const target = targets[0];
+    if (target === undefined || !alias.endsWith("/*") || target.includes("node_modules")) continue;
+    const root = resolve(dir, target.replace(/\/\*$/, ""));
+    if (root.startsWith(srcDir)) continue;
+    declared = true;
+    const prefix = alias.slice(0, -1);
+    if (!source.includes(`"${prefix}`) && !source.includes(`'${prefix}`)) continue;
+    if (!sources.some((scanned) => root === scanned || root.startsWith(`${scanned}/`))) missing.push(relative(srcDir, root));
+  }
+  return declared ? missing : null;
+}
+
+function readSourceText(srcDir: string): string {
+  let text = "";
+  const walk = (folder: string) => {
+    for (const entry of readdirSync(folder, { withFileTypes: true })) {
+      const path = join(folder, entry.name);
+      if (entry.isDirectory()) walk(path);
+      else if (/\.(tsx?|jsx?)$/.test(entry.name)) text += readFileSync(path, "utf8");
+    }
+  };
+  if (existsSync(srcDir)) walk(srcDir);
+  return text;
 }
