@@ -31,6 +31,7 @@ export function DevtoolsRendererProbe() {
   useEffect(() => devtools.probes.register("heavyModels", () => heavyModels()), []);
   const gl = useThree((state) => state.gl);
   const lastSampleAt = useRef(0);
+  useEffect(() => devtools.probes.register("shaderPrograms", () => gl.info.programs?.length ?? 0), [gl]);
   useEffect(() => {
     // three resets gl.info after every render() call, so with a multi-pass
     // composer the counters only ever hold the last fullscreen pass. Own the

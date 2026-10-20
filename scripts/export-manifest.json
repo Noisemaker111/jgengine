@@ -916,6 +916,7 @@
     "./render/modelLoad",
     "./render/modelNodeVisibility",
     "./render/modelRender",
+    "./render/modelSurface",
     "./render/projectedOverdraw",
     "./render/resolveModel",
     "./render/rigNode",

@@ -12,6 +12,7 @@ import {
 import { reportTextureLoadError } from "@jgengine/core/devtools/textureErrors";
 
 import { resolveAssetBaseUrl } from "./assetBase";
+import { applyModelSurface } from "./modelSurface";
 
 /** Model containers already covered by the whole-model fallback probe; not "texture" errors. @internal */
 const MODEL_URL_RE = /\.(glb|gltf)(\?|#|$)/i;
@@ -259,6 +260,7 @@ export class DiagnosticGLTFLoader extends GLTFLoader {
       url,
       (gltf: GLTF) => {
         recordModelTriangles(url, countSceneTriangles(gltf.scene));
+        applyModelSurface(gltf.scene);
         onLoad(gltf);
       },
       onProgress,

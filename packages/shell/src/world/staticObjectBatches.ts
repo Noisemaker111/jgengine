@@ -38,7 +38,7 @@ export function isCompatibleStaticObject(object: SceneObject, model: ModelConfig
     (catalog?.breakable === undefined || catalog.breakable === false) && catalog?.slotInventory === undefined &&
     (animation === undefined || animation === "auto" || animation === "none") && model.ik === undefined &&
     (model.scale ?? 1) >= 0 && (model.parts?.length ?? 0) === 0 && (model.attachments?.length ?? 0) === 0 &&
-    model.partMotion === undefined && model.material?.maps === undefined && (model.materialAssignments?.length ?? 0) === 0 &&
+    model.partMotion === undefined && model.surfaceDetail !== false && model.material?.maps === undefined && (model.materialAssignments?.length ?? 0) === 0 &&
     (model.hiddenNodes === undefined || (Array.isArray(model.hiddenNodes) && model.hiddenNodes.length === 0));
 }
 

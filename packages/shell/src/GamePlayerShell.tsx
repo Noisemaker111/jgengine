@@ -49,6 +49,7 @@ import { attachPlaytestProbe } from "./devtools/playtestProbe";
 import { withDevtoolsLatency } from "./devtools/latencyInstrumentation";
 import { resolveRigKind } from "./camera/rigResolve";
 import { contextModels } from "./render/resolveModel";
+import { configureModelSurface } from "./render/modelSurface";
 import type { ShellMultiplayer } from "./multiplayer";
 import type { PlayableGame } from "./registry";
 import { OrientationHint } from "./touch/OrientationHint";
@@ -192,6 +193,7 @@ export function GamePlayerShell({
     tracker.rebind(activeBindingMap);
   }
   const graphics = useGraphicsSettings(settingsStore, playable.shadows ?? true, playable.graphics);
+  useLayoutEffect(() => configureModelSurface(playable.surfaceDetail !== false, graphics.profile.surfaceDetail), [playable.surfaceDetail, graphics.profile.surfaceDetail]);
   const trackPointerAxis = (event: { clientX: number; clientY: number }) => {
     const rect = wrapperRef.current?.getBoundingClientRect();
     if (rect === undefined) return;
