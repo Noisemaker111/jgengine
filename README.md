@@ -100,6 +100,8 @@ bun run test
 bun run gen           # regenerate every committed derived artifact, in dependency order
 bun run games:clone  # once: clone Noisemaker111/JGengine-games into ephemeral ./Games at the pinned commit
 bun run games:update # move an existing clone to the pin; games:bump pins the games repo's latest stable
+bun run games:check  # type-check + test every game in ./Games against THIS checkout's sources (no build, no copying dist)
+                     # games:check <id> for one game; --published re-runs against the games' installed @jgengine/*
 bun dev              # jgengine.com locally, games playable at /games/<id> when Games/ is present
 # a cloned game standalone:
 bun --cwd=Games/harbor-heat run dev

@@ -1,10 +1,10 @@
-import { existsSync, readdirSync } from "node:fs";
+import { existsSync, readdirSync, realpathSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
-import { defineConfig, type ProxyOptions } from "vite";
+import { defineConfig, searchForWorkspaceRoot, type ProxyOptions } from "vite";
 
 import { parseDevProxyTable } from "../../packages/core/src/data/devProxy";
 import { tunableDiscoveryPlugin } from "../../packages/core/src/devtools/transformTunables";
@@ -46,6 +46,9 @@ export default defineConfig({
   server: {
     host: true,
     proxy: devProxy,
+    // `Games` is usually a symlink to a checkout outside this workspace; Vite's default allow-list
+    // would 403 game-local assets (src/**/*.glb) imported by URL.
+    fs: { allow: [searchForWorkspaceRoot(process.cwd()), ...(existsSync(gamesDir) ? [realpathSync(gamesDir)] : [])] },
   },
   resolve: {
     // Games are cloned outside this workspace package during clean hosting builds.
