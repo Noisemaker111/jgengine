@@ -6,7 +6,9 @@ import {
   graphicsPostStageSettingId,
   readGraphicsQuality,
   readGraphicsSettings,
+  parseGraphicsQuality,
   RENDER_SCALE_MAX,
+  withGraphicsQualityOverride,
 } from "./graphicsSettings";
 import { createSettingsStore, SETTING_IDS } from "./settingsModel";
 
@@ -76,5 +78,32 @@ describe("graphicsSettings", () => {
     expect(readGraphicsSettings(store).profile.anisotropy).toBe(DEFAULT_GRAPHICS_PROFILES.high.anisotropy);
     applyGraphicsQuality(store, "ultra");
     expect(readGraphicsSettings(store).profile).toEqual(DEFAULT_GRAPHICS_PROFILES.ultra);
+  });
+});
+
+describe("withGraphicsQualityOverride", () => {
+  test("pins the tier for the session without persisting it", () => {
+    const storage = memStorage();
+    const base = createSettingsStore(storage);
+    applyGraphicsQuality(base, "ultra");
+    const pinned = withGraphicsQualityOverride(base, "low");
+    const { quality, profile } = readGraphicsSettings(pinned);
+    expect(quality).toBe("low");
+    expect(profile.renderScale).toBe(DEFAULT_GRAPHICS_PROFILES.low.renderScale);
+    expect(profile.postStages).toEqual(DEFAULT_GRAPHICS_PROFILES.low.postStages);
+    expect(readGraphicsQuality(createSettingsStore(storage))).toBe("ultra");
+  });
+
+  test("a player change during the session wins over the pin", () => {
+    const pinned = withGraphicsQualityOverride(createSettingsStore(memStorage()), "low");
+    pinned.set(graphicsPostStageSettingId("ao"), true);
+    expect(readGraphicsSettings(pinned).profile.postStages.ao).toBe(true);
+    expect(readGraphicsSettings(pinned).profile.postStages.dof).toBe(false);
+  });
+
+  test("parses only known tiers", () => {
+    expect(parseGraphicsQuality("low")).toBe("low");
+    expect(parseGraphicsQuality("draft")).toBeNull();
+    expect(parseGraphicsQuality(null)).toBeNull();
   });
 });

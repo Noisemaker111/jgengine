@@ -14,6 +14,7 @@ import { join, resolve } from "node:path";
 import {
   type CdpSession,
   DEVICES,
+  applyCaptureQuality,
   applyDevice,
   captureViewportPng,
   checkoutIdentity,
@@ -26,10 +27,14 @@ import {
   isUp,
   navigateCapturePageWithRetry,
   openPageSession,
+  parseQualityArg,
   parseSizeArg,
+  qualitySuffix,
+  sizeForQuality,
   sizeSuffix,
   withBrowserSession,
   writePngAtomic,
+  type CaptureQuality,
   type Device,
   type SizeMode,
 } from "./browser-lib";
@@ -80,6 +85,8 @@ type Args = {
   mode: Mode;
   device: DeviceArg;
   size: SizeMode;
+  sizeExplicit?: SizeMode;
+  quality: CaptureQuality;
   stage?: boolean;
   state?: string;
   preview?: string;
@@ -111,6 +118,10 @@ const HELP = `bun run shoot [game] [options]
   --device <desktop|mobile|mobile-landscape|both>   viewport (default desktop)
   --size <full|half>  half halves both dimensions (~1/4 the pixels) for cheap
                       mid-loop judge shots — use full (default) for final/PR shots
+  --quality <draft|full>  draft = iteration shot: half size (unless --size) and the
+                      low graphics tier (?quality=low), several times faster on
+                      software GL; writes <name>-draft.png. full (default) is
+                      the honest path — use it for PR evidence
   --state <name>      capture.states entry instead of live play
   --preview [key]     preview.tsx state instead of the full shell
   --fixture [name]    capture an exported engine preview fixture (real @jgengine/react
@@ -183,6 +194,7 @@ function parseArgs(argv: string[]): Args {
     mode: "ui",
     device: "desktop",
     size: "full",
+    quality: "full",
     connect: undefined,
     keep: false,
     inspect: false,
@@ -203,7 +215,9 @@ function parseArgs(argv: string[]): Args {
       }
       args.device = device;
     } else if (value === "--size") {
-      args.size = parseSizeArg(argv[++index]);
+      args.sizeExplicit = parseSizeArg(argv[++index]);
+    } else if (value === "--quality") {
+      args.quality = parseQualityArg(argv[++index]);
     } else if (value === "--stage") args.stage = true;
     else if (value === "--state") args.state = argv[++index];
     else if (value === "--preview") {
@@ -261,6 +275,7 @@ function parseArgs(argv: string[]): Args {
     else if (!value.startsWith("--")) args.game = value;
   }
   if (args.mode === "preview" && args.preview === undefined) args.preview = "";
+  args.size = sizeForQuality(args.quality, args.sizeExplicit);
   if (args.site !== undefined && !args.timeoutExplicit) {
     args.timeoutMs = process.platform === "linux" || process.env.CI !== undefined ? 30_000 : 10_000;
   }
@@ -280,7 +295,7 @@ function outPathFor(args: Args, device: Device, outDir: string): string {
     if (dot <= 0) return `${resolved}-mobile`;
     return `${resolved.slice(0, dot)}-mobile${resolved.slice(dot)}`;
   }
-  const suffix = `${device === "mobile" ? "-mobile" : ""}${sizeSuffix(args.size)}`;
+  const suffix = `${device === "mobile" ? "-mobile" : ""}${sizeSuffix(args.size)}${qualitySuffix(args.quality)}`;
   if (args.fixture !== undefined && args.fixture.length > 0) {
     const key = args.fixture.replace(/[^A-Za-z0-9._-]+/g, "_");
     return join(outDir, `fixture-${key}${suffix}.png`);
@@ -343,7 +358,7 @@ function targetUrl(args: Args, device: Device, devBase: string): string {
   if (aim !== undefined) {
     for (const [key, value] of Object.entries(lookSearchParams(aim))) url.searchParams.set(key, value);
   }
-  return url.toString();
+  return applyCaptureQuality(url, args.quality).toString();
 }
 
 function shotCommand(): string {
@@ -466,7 +481,7 @@ async function shootOne(
     console.log(outPath);
     mark("score");
     const profile = DEVICES[device];
-    const label = `${device} ${profile.width}x${profile.height}${args.size === "half" ? " (half-res)" : ""}`;
+    const label = `${device} ${profile.width}x${profile.height}${args.size === "half" ? " (half-res)" : ""}${args.quality === "draft" ? " (draft)" : ""}`;
     let ok = true;
     if (overflow !== null) {
       console.error(`HUD OVERFLOW [${label}]: panels escape the viewport — ${overflow}`);

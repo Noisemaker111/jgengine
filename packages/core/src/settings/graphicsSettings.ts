@@ -4,6 +4,7 @@ import {
   GRAPHICS_QUALITY_OPTIONS,
   SETTING_IDS,
   type GraphicsQuality,
+  type SettingValue,
   type SettingsStore,
 } from "./settingsModel";
 
@@ -116,4 +117,39 @@ export function applyGraphicsQuality(
     store.set(graphicsPostStageSettingId(stage), tier.postStages[stage]);
   }
   return tier;
+}
+
+/**
+ * Wrap a settings store so the graphics tier reads as `quality` for this session only: every
+ * graphics field resolves from that tier until the player changes it, and nothing is persisted.
+ * Capture hosts use it (`?quality=low`) to render cheap iteration shots without leaving the
+ * draft tier in the browser profile for the next full-quality shot.
+ */
+export function withGraphicsQualityOverride(
+  store: SettingsStore,
+  quality: GraphicsQuality,
+  overrides?: GraphicsProfileOverrides,
+): SettingsStore {
+  const tier = resolveGraphicsProfile(quality, overrides?.[quality]);
+  const pinned = new Map<string, SettingValue>([
+    [SETTING_IDS.graphicsQuality, quality],
+    [SETTING_IDS.graphicsRenderScale, tier.renderScale],
+    [SETTING_IDS.graphicsAnisotropy, String(tier.anisotropy)],
+    ...GRAPHICS_POST_STAGES.map((stage): [string, SettingValue] => [graphicsPostStageSettingId(stage), tier.postStages[stage]]),
+  ]);
+  return {
+    get(id, fallback) {
+      return pinned.has(id) ? (pinned.get(id) as typeof fallback) : store.get(id, fallback);
+    },
+    set(id, value) {
+      pinned.delete(id);
+      store.set(id, value);
+    },
+    subscribe: store.subscribe,
+  };
+}
+
+/** Parse a `?quality=` value into a graphics tier, or null when absent or unknown. */
+export function parseGraphicsQuality(raw: string | null | undefined): GraphicsQuality | null {
+  return isGraphicsQuality(raw) ? raw : null;
 }

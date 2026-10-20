@@ -23,6 +23,7 @@ import type { PresencePoseRow } from "@jgengine/core/runtime/transport";
 import { useDisplayProfile } from "@jgengine/react/display";
 import { RotateDeviceScreen } from "@jgengine/react/rotateDevice";
 import { createSettingsStore } from "@jgengine/core/settings/settingsModel";
+import { parseGraphicsQuality, withGraphicsQualityOverride } from "@jgengine/core/settings/graphicsSettings";
 import {
   applyBindingOverrides,
   clearBindingOverride,
@@ -149,7 +150,12 @@ export function GamePlayerShell({
   const primaryClickRef = useRef(false);
   const pointerAxisRef = useRef<PointerAxisState | null>(null);
   const f2HeldRef = useRef(false);
-  const settingsStore = useMemo(() => createSettingsStore(), []);
+  const settingsStore = useMemo(() => {
+    const store = createSettingsStore();
+    // `?quality=<tier>` pins the graphics tier for this page only (capture draft shots); never persisted.
+    const pinned = typeof window === "undefined" ? null : parseGraphicsQuality(new URLSearchParams(window.location.search).get("quality"));
+    return pinned === null ? store : withGraphicsQualityOverride(store, pinned, playable.graphics);
+  }, []);
   const [bindingOverrides, setBindingOverrides] = useState<BindingOverrides>(() =>
     loadBindingOverrides(playable.game.name),
   );

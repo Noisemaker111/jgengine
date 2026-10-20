@@ -20,6 +20,7 @@ import { isAbsolute, join, resolve } from "node:path";
 import {
   CdpSession,
   DEVICES,
+  applyCaptureQuality,
   applyDevice,
   captureViewportPng,
   ensureDevServer,
@@ -28,13 +29,17 @@ import {
   isUp,
   navigateCapturePageWithRetry,
   openPageSession,
+  parseQualityArg,
   parseSizeArg,
+  qualitySuffix,
+  sizeForQuality,
   readCapturePageState,
   scaleProfile,
   screencastCapturesFully,
   sizeSuffix,
   withBrowserSession,
   writePngAtomic,
+  type CaptureQuality,
   type SizeMode,
   type Device,
 } from "./browser-lib";
@@ -80,6 +85,8 @@ type Args = {
   modeExplicit: boolean;
   device: Device;
   size: SizeMode;
+  sizeExplicit?: SizeMode;
+  quality: CaptureQuality;
   connect?: number;
   keep: boolean;
   help: boolean;
@@ -118,6 +125,10 @@ const HELP = `bun run drive <gameId> [options] --click "TEXT" --shot name ...
                       shared shoot viewport/touch/UA profile (default desktop)
   --size <full|half>  half halves both dimensions (~1/4 the pixels) for cheap
                       mid-loop judge shots — use full (default) for final/PR shots
+  --quality <draft|full>  draft = iteration run: half size (unless --size) and the
+                      low graphics tier (?quality=low), several times faster on
+                      software GL; shots get a -draft suffix. full (default) is
+                      the honest path — use it for PR evidence
   --click "<text>"    click the first visible element containing this text (or, for
                       icon-only buttons, this aria-label — e.g. "Settings")
   --double-click "<text>"  double-click an actionable text target
@@ -221,6 +232,7 @@ function parseArgs(argv: string[]): Args {
     modeExplicit: false,
     device: "desktop",
     size: "full",
+    quality: "full",
     connect: undefined,
     keep: false,
     help: false,
@@ -248,7 +260,9 @@ function parseArgs(argv: string[]): Args {
     else if (value === "--state") args.state = argv[++index];
     else if (value === "--device") args.device = parseCaptureDevice(argv[++index]);
     else if (value === "--size") {
-      args.size = parseSizeArg(argv[++index]);
+      args.sizeExplicit = parseSizeArg(argv[++index]);
+    } else if (value === "--quality") {
+      args.quality = parseQualityArg(argv[++index]);
     } else if (value === "--timeout") {
       args.timeoutMs = Number(argv[++index]) * 1000;
       args.timeoutExplicit = true;
@@ -318,6 +332,7 @@ function parseArgs(argv: string[]): Args {
     else throw new Error(`drive: unknown option ${value}; see --help`);
   }
   if (args.help) return args;
+  args.size = sizeForQuality(args.quality, args.sizeExplicit);
   if (args.url !== undefined && (args.site !== undefined || args.game !== "")) {
     throw new Error("drive: --url selects an external target; omit the game id and --site");
   }
@@ -691,7 +706,7 @@ if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true });
 const preparedShots = new Map<string, PreviousShot | undefined>();
 for (const step of args.steps) {
   if (step.kind !== "shot") continue;
-  const path = step.out ?? join(outDir, `${args.game}-${step.name}${sizeSuffix(args.size)}.png`);
+  const path = step.out ?? join(outDir, `${args.game}-${step.name}${sizeSuffix(args.size)}${qualitySuffix(args.quality)}.png`);
   if (!preparedShots.has(path)) preparedShots.set(path, clearShotTarget(path));
 }
 
@@ -735,7 +750,7 @@ const exitCode = await withBrowserSession(
       await session.send("Page.enable");
       await session.send("Runtime.enable");
       await applyDevice(session, args.device, args.size);
-      const url = driveTargetUrl(args, dev.base);
+      const url = applyCaptureQuality(driveTargetUrl(args, dev.base), args.quality);
       url.searchParams.set("capture", "1");
       if (args.spawn !== undefined && args.spawn.length > 0) url.searchParams.set("spawn", args.spawn);
       for (const [key, value] of args.params) url.searchParams.set(key, value);
@@ -847,7 +862,7 @@ const exitCode = await withBrowserSession(
           console.log(JSON.stringify({ probe: step.name, metrics }));
         } else {
           // A recording owns the screencast pump; a shot must not start/stop it underneath.
-          const path = step.out ?? join(outDir, `${args.game}-${step.name}${sizeSuffix(args.size)}.png`);
+          const path = step.out ?? join(outDir, `${args.game}-${step.name}${sizeSuffix(args.size)}${qualitySuffix(args.quality)}.png`);
           const previous = preparedShots.has(path) ? preparedShots.get(path) : clearShotTarget(path);
           preparedShots.delete(path);
           await screenshot(

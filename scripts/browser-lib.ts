@@ -1305,6 +1305,36 @@ export function parseSizeArg(value: string | undefined): SizeMode {
   return value;
 }
 
+/**
+ * `draft` is the iteration profile: half-size viewport and the low graphics tier (`?quality=low`,
+ * pinned for the page only, never persisted). `full` is the untouched honest path for PR evidence.
+ */
+export type CaptureQuality = "full" | "draft";
+
+/** Validate a raw `--quality` argument, throwing the shared usage error. */
+export function parseQualityArg(value: string | undefined): CaptureQuality {
+  if (value !== "full" && value !== "draft") {
+    throw new Error(`--quality must be draft or full (got ${value ?? "nothing"})`);
+  }
+  return value;
+}
+
+/** Size a capture runs at: an explicit `--size` wins, otherwise draft halves the viewport. */
+export function sizeForQuality(quality: CaptureQuality, explicit: SizeMode | undefined): SizeMode {
+  return explicit ?? (quality === "draft" ? "half" : "full");
+}
+
+/** Add the shell's graphics-tier override for a draft capture; full leaves the URL untouched. */
+export function applyCaptureQuality(url: URL, quality: CaptureQuality): URL {
+  if (quality === "draft") url.searchParams.set("quality", "low");
+  return url;
+}
+
+/** Filename suffix marking a draft shot, so it never overwrites or passes for a full one. */
+export function qualitySuffix(quality: CaptureQuality): string {
+  return quality === "draft" ? "-draft" : "";
+}
+
 export interface BrowserSession {
   /** CDP debug port the page target lives on. */
   debugPort: number;
