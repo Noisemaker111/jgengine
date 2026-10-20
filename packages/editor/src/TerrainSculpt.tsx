@@ -8,6 +8,8 @@ import type { Aabb } from "@jgengine/core/world/geometry";
 import {
   createTerrainPaletteSampler,
   raycastHeightField,
+  resolveTerrainDetail,
+  type ResolvedTerrainDetail,
   type TerrainPalette,
 } from "@jgengine/core/world/terrain";
 import {
@@ -24,9 +26,16 @@ import { useGameContext } from "@jgengine/react/provider";
 import {
   displaceHeightfieldGeometry,
   normalizeHeightBlend,
+  ALL_TERRAIN_SURFACE_CLASSES,
+  createTerrainDetailMaterial,
   createTerrainPaintColorSampler,
+  createTerrainPaintTextures,
+  packTerrainPaintWeights,
   type TerrainPaintColorSampler,
+  type TerrainPaintTextures,
+  type TerrainPaintWeights,
   TerraformBrushCursor,
+  useTerrainQuality,
 } from "@jgengine/shell/terrain";
 
 import { editorPerfMarks } from "./perfMarks";
@@ -131,7 +140,7 @@ function toneAt(
   out: THREE.Color,
   paletteAt: PaletteSampler | null,
   heightRange: readonly [number, number],
-  paintColorAt: TerrainPaintColorSampler,
+  paintColorAt: TerrainPaintColorSampler | null,
 ): void {
   if (paletteAt !== null) {
     const palette = paletteAt(x, z);
@@ -141,15 +150,23 @@ function toneAt(
     const t = Math.max(0, Math.min(1, (height + COLOR_SPAN * 0.25) / COLOR_SPAN));
     out.copy(BLEND_A.copy(LOW).lerp(HIGH, t));
   }
-  paintColorAt(x, z, out);
+  paintColorAt?.(x, z, out);
+}
+
+/** GPU paint coverage the shared terrain surface material samples; repacked after every displace. */
+interface SculptSurface {
+  paint: TerrainPaintTextures;
+  weights: TerrainPaintWeights;
 }
 
 /**
  * Re-samples vertex Y, vertex color, and vertex normals from the live terrain via the shared
  * {@link displaceHeightfieldGeometry} primitive. A dirty `region` keeps a brush stamp O(brush
- * footprint) — no whole-mesh normal or bounding pass per stamp. Painted/blended layers win the
- * vertex color; unpainted ground falls back to the runtime terrain palette (or the flat height
- * gradient with no descriptor). Records rebuild time.
+ * footprint) — no whole-mesh normal or bounding pass per stamp. With a `surface`, paint and relief
+ * contours are drawn by the runtime terrain material and vertices carry only the base palette tone;
+ * without one, painted/blended layers and contours are baked into the vertex color. Unpainted ground
+ * falls back to the runtime terrain palette (or the flat height gradient with no descriptor).
+ * Records rebuild time.
  */
 function displace(
   geometry: THREE.BufferGeometry,
@@ -159,15 +176,23 @@ function displace(
   paletteAt: PaletteSampler | null,
   heightRange: readonly [number, number],
   contourStrength: number,
+  surface: SculptSurface | null,
 ): void {
   const started = performance.now();
-  const paintColorAt = createTerrainPaintColorSampler(terrain);
+  if (surface !== null) {
+    const packed = packTerrainPaintWeights(terrain, surface.weights);
+    if (packed !== undefined) {
+      surface.weights = packed;
+      surface.paint.update(packed);
+    }
+  }
+  const paintColorAt = surface === null ? createTerrainPaintColorSampler(terrain) : null;
   displaceHeightfieldGeometry(geometry, terrain.sampleHeight, {
     bounds,
     region,
     color: (x, z, height, out) => {
       toneAt(x, z, height, out, paletteAt, heightRange, paintColorAt);
-      applyRelief(out, height, contourStrength);
+      if (surface === null) applyRelief(out, height, contourStrength);
     },
   });
   editorPerfMarks.record("rebuild", performance.now() - started);
@@ -196,6 +221,7 @@ const SculptMesh = memo(function SculptMesh({
   paletteAt,
   heightRange,
   contourStrength,
+  detail,
 }: {
   terrain: EditableTerrain;
   bounds: Aabb;
@@ -205,6 +231,8 @@ const SculptMesh = memo(function SculptMesh({
   paletteAt: PaletteSampler | null;
   heightRange: readonly [number, number];
   contourStrength: number;
+  /** The game's resolved terrain detail; `null` (detail opted out) keeps the flat vertex-colour preview. */
+  detail: ResolvedTerrainDetail | null;
 }) {
   const invalidate = useThree((state) => state.invalidate);
   const geometry = useMemo(() => {
@@ -217,17 +245,41 @@ const SculptMesh = memo(function SculptMesh({
   }, [boundsKey(bounds, segments)]);
 
   useEffect(() => () => geometry.dispose(), [geometry]);
+  const quality = useTerrainQuality();
+  // The same surface material as play, so painted ground reads identically in the editor viewport.
+  const surface = useMemo<SculptSurface | null>(() => {
+    if (detail === null) return null;
+    const weights = packTerrainPaintWeights(terrain);
+    return weights === undefined ? null : { paint: createTerrainPaintTextures(weights), weights };
+  }, [detail, terrain]);
+  useEffect(() => () => surface?.paint.dispose(), [surface]);
+  const surfaceMaterial = useMemo(
+    () => (detail === null || surface === null ? null : createTerrainDetailMaterial(detail, undefined, { paint: surface.paint, quality, classMask: ALL_TERRAIN_SURFACE_CLASSES })),
+    [detail, surface, quality],
+  );
+  useEffect(() => () => surfaceMaterial?.material.dispose(), [surfaceMaterial]);
+  useEffect(() => {
+    if (surfaceMaterial === null) return;
+    surfaceMaterial.contour.value = contourStrength;
+    surfaceMaterial.material.polygonOffset = true;
+    surfaceMaterial.material.polygonOffsetFactor = -1;
+    surfaceMaterial.material.polygonOffsetUnits = -1;
+    invalidate();
+  }, [surfaceMaterial, contourStrength, invalidate]);
   useEffect(() => {
     // Consume the queued work; a re-run triggered by anything other than a stamp (palette,
     // contour strength, fresh geometry) sees no pending entry and rebuilds the whole mesh.
     const pending = pendingRef.current;
     pendingRef.current = null;
     const region = pending !== null && pending.kind === "region" ? pending.region : null;
-    displace(geometry, terrain, bounds, region, paletteAt, heightRange, contourStrength);
+    displace(geometry, terrain, bounds, region, paletteAt, heightRange, contourStrength, surface);
     invalidate();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [geometry, terrain, revision, paletteAt, heightRange, contourStrength, invalidate]);
+  }, [geometry, terrain, revision, paletteAt, heightRange, contourStrength, surface, invalidate]);
 
+  if (surfaceMaterial !== null) {
+    return <mesh geometry={geometry} material={surfaceMaterial.material} receiveShadow />;
+  }
   return (
     <mesh geometry={geometry} receiveShadow>
       <meshStandardMaterial vertexColors roughness={0.95} metalness={0} polygonOffset polygonOffsetFactor={-1} polygonOffsetUnits={-1} />
@@ -293,6 +345,13 @@ export const TerrainSculpt = memo(function TerrainSculpt({
   const terrainDescriptor = useMemo(() => terrainDescriptorOf(world), [world]);
   const paletteAt = useMemo<PaletteSampler | null>(
     () => (terrainDescriptor === undefined ? null : createTerrainPaletteSampler(terrainDescriptor)),
+    [terrainDescriptor],
+  );
+  const detail = useMemo<ResolvedTerrainDetail | null>(
+    () =>
+      terrainDescriptor?.detail === false
+        ? null
+        : resolveTerrainDetail(terrainDescriptor?.detail, terrainDescriptor?.waterLevel),
     [terrainDescriptor],
   );
   const heightRange = useMemo<readonly [number, number]>(
@@ -538,6 +597,7 @@ export const TerrainSculpt = memo(function TerrainSculpt({
         paletteAt={paletteAt}
         heightRange={heightRange}
         contourStrength={toolActive ? 1 : 0.45}
+        detail={detail}
       />
       {toolActive && cursor !== null ? (
         <TerraformBrushCursor
