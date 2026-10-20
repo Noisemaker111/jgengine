@@ -16,6 +16,7 @@ import type { ShellMultiplayer } from "./multiplayer";
 import type { PlayableGame } from "./registry";
 import { createShellKeyHandlers, ShellDebugOverlays, ShellGameUiChrome } from "./ShellChrome";
 import type { AudioEngine } from "./audio/audioEngine";
+import { resolvePlayableAudio } from "./audio/playableAudio";
 import { AudioSettingsBridge } from "./settings/appliedSettings";
 import { SettingsRuntime } from "./settings/SettingsRuntime";
 import { SettingsChrome } from "./settings/SettingsChrome";
@@ -128,13 +129,13 @@ export function ShellHudPresentation({
 
   return (
     <SettingsProvider store={settingsStore}>
-      <AudioSettingsBridge store={settingsStore} engine={audioEngine} buses={playable.audio?.buses} />
+      <AudioSettingsBridge store={settingsStore} engine={audioEngine} buses={resolvePlayableAudio(playable).buses} />
       <SettingsRuntime
         variant={settingsConfig.variant ?? "panel"}
         surface={settingsDisabled ? false : settingsConfig.surface ?? false}
         actions={settingsActions}
         input={playable.game.input ?? {}}
-        buses={playable.audio?.buses}
+        buses={resolvePlayableAudio(playable).buses}
         extra={settingsConfig.extra ?? []}
         categories={settingsConfig.categories ?? []}
         hide={settingsDisabled ? BUILT_IN_SETTING_CATEGORIES : settingsConfig.hide ?? []}

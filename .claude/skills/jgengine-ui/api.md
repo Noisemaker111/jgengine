@@ -1536,6 +1536,14 @@
 - `PauseMenuProps` (interface): interface PauseMenuProps — Props for {@link PauseMenu}.
 - `useModalStack` (function): function useModalStack(stack: ModalStack): ModalStackView — Subscribe to a modal stack and re-render on every change, returning the active modal and depth.
 
+## @jgengine/react/notices
+
+- `Notice` (interface): interface Notice — A live notice as the HUD renders it.
+- `NoticePlacement` (type): type NoticePlacement = "top" | "center" | "bottom" — Where {@link NoticeStack} sits: below top-edge HUD bars, over the play area, or above bottom action bars.
+- `NoticeStack` (function): function NoticeStack({ feed, placement = "top", scale = 1, renderNotice, }: { /** Defaults to the surrounding game's `ctx.game.notices`. */ feed?: NoticeFeed; placement?: NoticePlacement; /** Multiplies text and spacing (the shell passes the player's UI scale). */ scale?: number; renderNotice?: (not… — Animated, toned notice stack for a {@link NoticeFeed} — the default renderer the shell mounts for `ctx.game.notices`. Uses `--jg-*` theme vars with fallbacks, 14px text, and never takes pointer input.
+- `NoticeTone` (type): type NoticeTone = "info" | "success" | "warn" | "deny" — How a notice reads: neutral info, a win, a caution, or a refused action.
+- `useNoticeList` (function): function useNoticeList(feed: NoticeFeed | null): readonly Notice[] — Live notices of `feed`, re-rendering on change and pruning each one when it expires.
+
 ## @jgengine/react/notifications
 
 - `NotificationBell` (function): function NotificationBell({ store, onClick, icon = "🔔", className, style }: NotificationBellProps): ReactNode — Notification bell — an icon button with an unread-count badge, bound to a notification store. Toggle a {@link NotificationCenter} panel from its click.
@@ -1748,6 +1756,12 @@
 - `TimerRingProps` (interface): interface TimerRingProps — Props for {@link TimerRing}.
 - `formatTimerMs` (function): function formatTimerMs(ms: number, format: TimerFormat = "mm:ss"): string — Format a millisecond duration as digital timer text — `mm:ss` (default), `m:ss.d` (with tenths), or `ss.d` (seconds + tenths). Negative inputs clamp to zero. No genre meaning: the same helper serves a round clock, a respawn countdown, or an ability charge readout.
 - `useTimerRead` (function): function useTimerRead(timer: TimerSet, id: string, active = true): TimerRead | null — Subscribe to a single timer and re-read it every animation frame while mounted, so a HUD readout stays live without the game hand-rolling interval math. Reuses one read object (allocation-aware). Returns `null` for an unknown id. Pass `active={false}` to freeze the per-frame tick (e.g. an off-screen HUD).
+
+## @jgengine/react/uiCues
+
+- `UiCue` (type): type UiCue = "click" | "hover" | "open" | "close" | "confirm" | "deny" | "notify" — Interface sound cues every game gets: press, hover, panel open/close, confirm, refusal, notification.
+- `playUiCue` (function): function playUiCue(ctx: Pick<GameContext, "game"> | null, cue: UiCue): void — Play UI cue `cue` through the game's audio seam (`ui.<cue>` in the shell catalog). No-op outside a game.
+- `useUiCue` (function): function useUiCue(): (cue: UiCue) => void — Returns a stable `cue(name)` that plays a UI sound: click, hover, open, close, confirm, deny, notify. The shell ships soft procedural defaults on the "ui" bus (volume in Settings, muted with master); a game replaces one by declaring `audio.sounds["ui.click"]` or `audio.uiCues`. Safe outside a GameProvider.
 
 ## @jgengine/react/useDebouncedCommit
 

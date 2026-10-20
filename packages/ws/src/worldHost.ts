@@ -159,7 +159,9 @@ export function createWorldGameHost(options: WorldGameHostOptions): WorldGameHos
         }
         const result = entry.session.command(userId, command, input);
         await entry.session.save();
-        if (result.status === "rejected") return { ok: false, reason: result.reason };
+        if (result.status === "rejected") {
+          return result.message === undefined ? { ok: false, reason: result.reason } : { ok: false, reason: result.reason, message: result.message };
+        }
         if (result.status === "unknown-command") return { ok: false, reason: "unknown-command" };
         if (entry.session.revision() !== announcedRevisions.get(serverId)) emit({ type: "server", serverId });
         return { ok: true };

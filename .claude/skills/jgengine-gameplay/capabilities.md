@@ -332,6 +332,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## notice-feed — serializable tone-tagged notice/event feed bounded by count and age (toasts, life events, killfeed)
 
 - `appendFeed` (function) · `import { appendFeed } from "@jgengine/core/gameplay"`
+- `createNoticeFeed` (function) · `import { createNoticeFeed } from "@jgengine/core/game/notices"`
 - `pruneFeed` (function) · `import { pruneFeed } from "@jgengine/core/gameplay"`
 
 ## notification-center — persistent, read-tracked notification log (newest-first, capped, serializable) behind an unread badge — the durable counterpart to transient toasts
@@ -440,6 +441,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## recipe-catalog-validation — locate broken crafting item/station/unlock references, duplicate inputs and invalid authored quantities with repair guidance
 
 - `validateRecipeCatalog` (function) · `import { validateRecipeCatalog } from "@jgengine/core/crafting/recipeCatalog"`
+
+## refusal-feedback — surface a refused command's player-facing message in the notice feed automatically
+
+- `attachRefusalNotices` (function) · `import { attachRefusalNotices } from "@jgengine/core/game/notices"`
 
 ## resolve — the current tier/band label for a keyed or scalar value
 

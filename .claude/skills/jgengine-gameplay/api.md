@@ -502,6 +502,7 @@
 - `CombatTelegraphCancelledEvent` (interface): interface CombatTelegraphCancelledEvent { id: number } — ⚠ undocumented
 - `CombatTelegraphEvent` (interface): interface CombatTelegraphEvent { id: number; shape: TelegraphShape; position: [number, number, number]; dir?: number; windupMs: number; kind: string } — ⚠ undocumented
 - `CombatVfxEvent` (interface): interface CombatVfxEvent — A transient sprite-particle effect the shell renders once and expires — one burst of `kind`, tinted `color`, anchored at `from` (and `to` for travel/beam effects).
+- `CommandRefusedEvent` (interface): interface CommandRefusedEvent — A command run through `ctx.game.commands` (or a bound host) was refused. `reason` is the machine code; `message` is the player-facing text the command's `validate` returned, when it gave one.
 - `CosmeticsChangedEvent` (interface): interface CosmeticsChangedEvent { userId: string; slots: Record<string, string> } — ⚠ undocumented
 - `DeathReason` (type): type DeathReason = | { kind: "player_kill"; killerUserId: string; via?: { item?: string } } | { kind: "environment"; source: string } | { kind: "self"; source: string } — Why an entity died — who or what gets credit, for drop/command rules and the `entity.died` event.
 - `EmotePlayedEvent` (interface): interface EmotePlayedEvent { from: string; emoteId: string; at: readonly [number, number, number]; recipients: readonly string[] } — ⚠ undocumented
@@ -663,6 +664,18 @@
 - `freezeNarrativeCanon` (function): function freezeNarrativeCanon(canon: NarrativeCanon): NarrativeCanon — Detach and freeze reviewed canon before passing it to an asynchronous authoring callback. Duplicate character/event ids and an empty revision throw; facts retain exact caller values.
 - `validateNarrativeBatch` (function): function validateNarrativeBatch(canon: NarrativeCanon, batch: NarrativeBatch, limits: NarrativeBatchLimits): NarrativeIssue[] — Check a typed candidate against caller budgets, canon revision, explicit claims and graph topology. Stops at the first exceeded budget before topology work; stale revisions also stop immediately. Claims check exact fact values and the declared strict event order, never prose, speaker labels, motivations, branch consequences or story quality. O(canon + bounded nodes + choices + claims). Validate/parse external JSON before calling; this is not an untrusted JSON decoder.
 
+## @jgengine/core/game/notices
+
+- `Notice` (interface): interface Notice — A live notice as the HUD renders it.
+- `NoticeFeed` (interface): interface NoticeFeed — A capped, self-expiring, deduping notice list every game reaches through `ctx.game.notices`.
+- `NoticeFeedConfig` (interface): interface NoticeFeedConfig — Tunables for {@link createNoticeFeed}; all retunable at runtime.
+- `NoticeFeedState` (interface): interface NoticeFeedState — Plain JSON state of a {@link NoticeFeed}.
+- `NoticeInput` (interface): interface NoticeInput — What a caller pushes: plain text, or text with a tone, a dedupe key and a lifetime.
+- `NoticeTone` (type): type NoticeTone = "info" | "success" | "warn" | "deny" — How a notice reads: neutral info, a win, a caution, or a refused action.
+- `RefusalNoticeOptions` (interface): interface RefusalNoticeOptions — Options for {@link attachRefusalNotices}.
+- `attachRefusalNotices` (function): function attachRefusalNotices(events: Pick<GameEvents, "on">, notices: Pick<NoticeFeed, "push">, options: RefusalNoticeOptions = {}): () => void — Show every player-facing command refusal (`validate` returned `{ reason, message }`) as a deny notice. Refusals without a `message` stay silent: `reason` is a machine string. Returns the detach function.
+- `createNoticeFeed` (function): function createNoticeFeed(config: NoticeFeedConfig & { now?: () => number } = {}): NoticeFeed — Player-facing notice feed: info/success/warn/deny messages with stacking dedupe and TTL. Pure state with an injected clock, so it runs headless; the shell renders it and plays a UI cue per push.
+
 ## @jgengine/core/game/notifications
 
 - `NotificationCenterOptions` (interface): interface NotificationCenterOptions — Options for {@link createNotificationCenter}.
@@ -771,6 +784,7 @@
 - `ModelRimLight` (interface): interface ModelRimLight — Fresnel rim-light term added on top of a model's lighting — see {@link ModelMaterialOverride.rim}.
 - `MovementCommitFrame` (interface): interface MovementCommitFrame — One frame's movement resolution handed to `PlayerMovementConfig.beforeCommit`.
 - `MovementFeelConfig` (interface): interface MovementFeelConfig — Feel knobs for the built-in walk controller; see {@link PlayerMovementConfig.feel}.
+- `NoticePresentationConfig` (interface): interface NoticePresentationConfig extends NoticeFeedConfig — How the shell presents `ctx.game.notices`; every field is optional.
 - `ObjectStyle` (interface): interface ObjectStyle { color?: string; opacity?: number; hidden?: boolean } — ⚠ undocumented
 - `ObserverCameraConfig` (interface): interface ObserverCameraConfig — Detached spectator/photo cam (#120) — binds to any entity or fixed point, never reads player input.
 - `PlayableGame` (interface): interface PlayableGame<TUi = unknown, TWorldOverlay = unknown, TRenderEntity = never, TRenderObject = never, TViewmodel = unknown, TOverlay = TWorldOverlay> { game: GameDefinition; content: GameContextContent; loop: Required<Omit<GameLoop<GameContext>, "onPlayerLeave">> & Pick<GameLoop<GameContext>, "onPlayerLeave">; GameUI: TUi; presentation?: "3d" | "hud"; WorldOverlay?: TOverlay; environment… — ⚠ undocumented · used by `defineGame` (@jgengine/shell/defineGame): The one public authoring entry point: compose engine fields (systems, world, physics, input) and presentation fields (camera, HUD, audio, au…

@@ -464,6 +464,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `WorldNameplates` (function) · `import { WorldNameplates } from "@jgengine/shell/world/WorldHud"`
 
+## notice-feed — render ctx.game.notices as an animated toned stack (enter/exit motion, ×N stacking)
+
+- `NoticeStack` (function) · `import { NoticeStack } from "@jgengine/react/notices"`
+
 ## notification-bell — icon button with a live unread-count badge over a notification store
 
 - `NotificationBell` (function) · `import { NotificationBell } from "@jgengine/react"`
@@ -697,6 +701,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## transform-gizmo — in-game select/move/rotate/scale gizmo
 
 - `TransformGizmo` (const) · `import { TransformGizmo } from "@jgengine/shell/structures"`
+
+## ui-sound-cues — play click/hover/open/close/confirm/deny/notify UI sounds from any component
+
+- `useUiCue` (function) · `import { useUiCue } from "@jgengine/react/uiCues"`
 
 ## use-camera-shake — React hook binding a camera-shake controller — subscribes for live trauma/kind and can self-drive its decay on a frame loop
 

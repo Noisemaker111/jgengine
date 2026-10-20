@@ -298,6 +298,18 @@ export interface AudioLoopSetEvent {
   highpass?: number;
 }
 
+/**
+ * A command run through `ctx.game.commands` (or a bound host) was refused. `reason` is the machine code;
+ * `message` is the player-facing text the command's `validate` returned, when it gave one.
+ */
+export interface CommandRefusedEvent {
+  command: string;
+  reason: string;
+  message?: string;
+  /** `runAs` actor, or null for a plain `run`. */
+  actor: string | null;
+}
+
 /** Stop and dispose the retained loop `id`; an unknown `id` is ignored (#1051). */
 export interface AudioLoopStopEvent {
   id: string;
@@ -338,6 +350,7 @@ export interface GameEventMap {
   "audio.loopStop": AudioLoopStopEvent;
   "entity.animation": EntityAnimationEvent;
   "animation.event": AnimationClipEvent;
+  "command.refused": CommandRefusedEvent;
 }
 
 export type GameEventHandler<TPayload> = (payload: TPayload) => void;
