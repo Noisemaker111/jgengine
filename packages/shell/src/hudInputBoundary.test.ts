@@ -5,6 +5,7 @@ import { join, resolve } from "node:path";
 import { chromium, type Browser, type BrowserContext, type Page } from "playwright-core";
 import { buildBrowserFixture, findChromeExecutable } from "../../../scripts/browser-lib";
 import { cleanupBrowserFixture } from "../../../scripts/browser-fixture-cleanup";
+import { gotoFixture } from "../../../scripts/browser-test-fixture";
 
 let scratch: string | undefined;
 let browser: Browser | undefined, context: BrowserContext | undefined, page: Page;
@@ -78,9 +79,7 @@ beforeEach(async () => {
   page = await context.newPage();
   const errors: string[] = [];
   page.on("pageerror", error => errors.push(error.message));
-  await page.goto(`http://127.0.0.1:${server!.port}`);
-  try { await page.locator('[data-slot="0"]').waitFor({ timeout: 2000 }); }
-  catch (error) { throw new Error(errors.join("\n") || String(error)); }
+  await gotoFixture(page, `http://127.0.0.1:${server!.port}`, () => page.locator('[data-slot="0"]').waitFor());
   expect(errors).toEqual([]);
 });
 afterEach(async () => { try { await context?.close(); } finally { context = undefined; } });

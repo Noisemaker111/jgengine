@@ -1,9 +1,9 @@
 import { afterAll, beforeAll, expect, test } from "bun:test";
-import { execFileSync } from "node:child_process";
 import { mkdir, rm, symlink } from "node:fs/promises";
 import { resolve } from "node:path";
 import { chromium, type Browser, type Page } from "playwright-core";
 import { buildBrowserFixture, findChromeExecutable } from "../../../scripts/browser-lib";
+import { gotoFixture, installPublicPackages } from "../../../scripts/browser-test-fixture";
 
 const root = resolve(import.meta.dir, "../../..");
 const scratch = `${root}/.scratch/voice-hook-test`;
@@ -12,11 +12,7 @@ beforeAll(async () => {
   await rm(scratch, { recursive: true, force: true });
   await mkdir(`${scratch}/node_modules/@jgengine`, { recursive: true });
   for (const peer of ["react", "react-dom"]) await symlink(`${root}/packages/react/node_modules/${peer}`, `${scratch}/node_modules/${peer}`, "dir");
-  for (const pkg of ["core", "react"]) {
-    const pack = JSON.parse(execFileSync("npm", ["pack", "--ignore-scripts", "--json", "--pack-destination", scratch], { cwd: `${root}/packages/${pkg}`, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }))[0];
-    await mkdir(`${scratch}/node_modules/@jgengine/${pkg}`, { recursive: true });
-    execFileSync("tar", ["-xzf", pack.filename, "-C", `node_modules/@jgengine/${pkg}`, "--strip-components=1"], { cwd: scratch });
-  }
+  await installPublicPackages(scratch, ["core", "react"]);
   await Bun.write(`${scratch}/fixture.tsx`, `
     import React,{useState} from 'react';import {createRoot} from 'react-dom/client';import {flushSync} from 'react-dom';
     import {useVoice} from '@jgengine/react/voice';import {createLocalVoiceTransport} from '@jgengine/core/multiplayer/voiceContract';
@@ -40,8 +36,7 @@ afterAll(async () => {
   Bun.gc(true);
 });
 async function open(mode?: string) {
-  await page.goto(`http://127.0.0.1:${server.port}/${mode === undefined ? "" : `?mode=${mode}`}`);
-  await page.getByRole("button", { name: "Microphone", exact: true }).waitFor({ timeout: 2000 });
+  await gotoFixture(page, `http://127.0.0.1:${server.port}/${mode === undefined ? "" : `?mode=${mode}`}`, () => page.getByRole("button", { name: "Microphone", exact: true }).waitFor());
 }
 async function state() { return page.evaluate(() => (window as any).fixture.state()); }
 async function press(name: string) { await page.getByRole("button", { name, exact: true }).click(); }
@@ -49,13 +44,13 @@ async function transmission(expected: boolean) {
   await page.waitForFunction(expected => {
     const state = (window as any).fixture.state();
     return state.transmitting === expected && state.enabled.every((enabled: boolean) => enabled === expected);
-  }, expected, { timeout: 1000 });
+  }, expected);
   const snapshot = await state(); expect(snapshot.transmitting).toBe(expected);
   for (const enabled of snapshot.enabled) expect(enabled).toBe(expected);
 }
 async function grant() {
   await page.evaluate(() => (window as any).fixture.grant());
-  await page.waitForFunction(() => (window as any).fixture.state().micId !== null, undefined, { timeout: 1000 });
+  await page.waitForFunction(() => (window as any).fixture.state().micId !== null);
 }
 
 test("open mic begins enabled before transport or microphone readiness", async () => {

@@ -429,8 +429,14 @@ describe("budget enforcement and indexing", () => {
 });
 
 const cli = resolve(dirname(fileURLToPath(import.meta.url)), "cli/pull.ts");
+// A sync spawn blocks Bun's test timeout, so the child carries its own deadline: Bun 1.3.8 children
+// occasionally stall while loading this CLI's module graph (about 1 in 600 runs) and hung CI for 13 minutes.
 function runCli(args: string[]) {
-  return spawnSync(process.execPath, [cli, ...args], { encoding: "utf8" });
+  const result = spawnSync(process.execPath, [cli, ...args], { encoding: "utf8", timeout: 15_000, killSignal: "SIGKILL" });
+  if (result.error !== undefined || result.signal !== null) {
+    throw new Error(`assets CLI ${args.join(" ")} did not exit: ${result.error?.message ?? result.signal}\n${result.stderr}`);
+  }
+  return result;
 }
 
 describe("assets budget CLI", () => {

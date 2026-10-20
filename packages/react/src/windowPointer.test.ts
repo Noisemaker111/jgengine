@@ -1,20 +1,16 @@
 import { afterAll, afterEach, beforeAll, beforeEach, expect, test } from "bun:test";
-import { execFileSync } from "node:child_process";
 import { mkdir, rm, symlink } from "node:fs/promises";
 import { resolve } from "node:path";
 import { chromium, type Browser, type CDPSession, type Page } from "playwright-core";
 import { buildBrowserFixture, findChromeExecutable } from "../../../scripts/browser-lib";
+import { gotoFixture, installPublicPackages } from "../../../scripts/browser-test-fixture";
 
 const scratch = resolve(import.meta.dir, "../../../.scratch/window-pointer-test");
 let browser: Browser, page: Page, input: CDPSession, server: ReturnType<typeof Bun.serve>;
 beforeAll(async () => {
   await mkdir(`${scratch}/node_modules/@jgengine`, { recursive: true });
   for (const peer of ["react", "react-dom"]) await symlink(resolve(import.meta.dir, "../node_modules", peer), `${scratch}/node_modules/${peer}`, "dir");
-  for (const pkg of ["core", "react"]) {
-    const pack = JSON.parse(execFileSync("npm", ["pack", "--ignore-scripts", "--json", "--pack-destination", scratch], { cwd: resolve(import.meta.dir, "../../", pkg), encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }))[0];
-    await mkdir(`${scratch}/node_modules/@jgengine/${pkg}`, { recursive: true });
-    execFileSync("tar", ["-xzf", pack.filename, "-C", `node_modules/@jgengine/${pkg}`, "--strip-components=1"], { cwd: scratch });
-  }
+  await installPublicPackages(scratch, ["core", "react"]);
   await Bun.write(`${scratch}/fixture.tsx`, `
     import React,{useState} from 'react';import {createRoot} from 'react-dom/client';import {flushSync} from 'react-dom';
     import {Window,PanelHost,usePanels} from '@jgengine/react/panels';
@@ -40,9 +36,7 @@ beforeEach(async () => {
   input = await page.context().newCDPSession(page);
   const errors: string[] = [];
   page.on("pageerror", error => errors.push(error.message));
-  await page.goto(`http://127.0.0.1:${server.port}`);
-  try { await page.getByRole("dialog", { name: "Inspector" }).waitFor({ timeout: 2000 }); }
-  catch (error) { throw new Error(errors.join("\n") || String(error)); }
+  await gotoFixture(page, `http://127.0.0.1:${server.port}`, () => page.getByRole("dialog", { name: "Inspector" }).waitFor());
   expect(errors).toEqual([]);
 });
 afterEach(async () => { await input?.detach(); await page?.close(); });

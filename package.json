@@ -64,6 +64,7 @@
     "check-doc-symbols": "bun scripts/check-doc-symbols.ts",
     "check-hud-tokens": "bun scripts/check-hud-tokens.ts",
     "check-street-rule-parity": "bun scripts/check-street-rule-parity.ts",
+    "check-test-spawn-timeouts": "bun scripts/check-test-spawn-timeouts.ts",
     "check-types": "bun scripts/guard.ts 900 'bun scripts/run-stages.ts check-types'",
     "check-types:sdk": "bun scripts/guard.ts 900 'bun scripts/run-stages.ts check-types:sdk'",
     "build:registry": "bun scripts/build-registry.ts",
