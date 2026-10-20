@@ -4,6 +4,7 @@ import s_kaykit_adventurers from "./kaykit-adventurers.json" with { type: "json"
 import s_kaykit_city_builder from "./kaykit-city-builder.json" with { type: "json" };
 import s_kaykit_dungeon from "./kaykit-dungeon.json" with { type: "json" };
 import s_kaykit_furniture from "./kaykit-furniture.json" with { type: "json" };
+import s_kaykit_medieval_hexagon from "./kaykit-medieval-hexagon.json" with { type: "json" };
 import s_kaykit_skeletons from "./kaykit-skeletons.json" with { type: "json" };
 import s_kaykit_space_base from "./kaykit-space-base.json" with { type: "json" };
 import s_quaternius_medieval_village from "./quaternius-medieval-village.json" with { type: "json" };
@@ -15,6 +16,7 @@ export const generatedBySource: Record<string, IndexEntry[]> = {
   "kaykit-city-builder": s_kaykit_city_builder as IndexEntry[],
   "kaykit-dungeon": s_kaykit_dungeon as IndexEntry[],
   "kaykit-furniture": s_kaykit_furniture as IndexEntry[],
+  "kaykit-medieval-hexagon": s_kaykit_medieval_hexagon as IndexEntry[],
   "kaykit-skeletons": s_kaykit_skeletons as IndexEntry[],
   "kaykit-space-base": s_kaykit_space_base as IndexEntry[],
   "quaternius-medieval-village": s_quaternius_medieval_village as IndexEntry[],

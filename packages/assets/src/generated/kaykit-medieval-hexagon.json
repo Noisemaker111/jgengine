@@ -1,0 +1,8400 @@
+[
+  {
+    "id": "kaykit-medieval-hexagon/barrel",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "barrel.glb",
+    "metrics": {
+      "glbBytes": 16900,
+      "byteLength": 32683,
+      "triangles": 240,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.20147636532783508,
+        "d": 0.20147637277841568
+      },
+      "center": {
+        "x": -0.0000011026859283447266,
+        "z": -7.078051567077637e-8
+      },
+      "minY": -1.0430813546236095e-8,
+      "maxY": 0.2117120623588562
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/bucket_arrows",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "bucket_arrows.glb",
+    "metrics": {
+      "glbBytes": 17580,
+      "byteLength": 33363,
+      "triangles": 260,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.13999999314546585,
+        "d": 0.14234556257724762
+      },
+      "center": {
+        "x": 3.725290298461914e-9,
+        "z": 0.001172780990600586
+      },
+      "minY": 0.0000021357088826334802,
+      "maxY": 0.2312888503074646
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/bucket_empty",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "bucket_empty.glb",
+    "metrics": {
+      "glbBytes": 8340,
+      "byteLength": 24123,
+      "triangles": 128,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.13999999314546585,
+        "d": 0.14000000059604645
+      },
+      "center": {
+        "x": 3.725290298461914e-9,
+        "z": 0
+      },
+      "minY": 0.0000021357088826334802,
+      "maxY": 0.12500233948230743
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/bucket_water",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "bucket_water.glb",
+    "metrics": {
+      "glbBytes": 8340,
+      "byteLength": 24123,
+      "triangles": 128,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.13999999314546585,
+        "d": 0.14000000059604645
+      },
+      "center": {
+        "x": 3.725290298461914e-9,
+        "z": 0
+      },
+      "minY": 0.0000021357088826334802,
+      "maxY": 0.10500233620405197
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_archeryrange_blue",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_archeryrange_blue.glb",
+    "metrics": {
+      "glbBytes": 203752,
+      "byteLength": 219535,
+      "triangles": 3819,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.6706340312957764,
+        "d": 1.5508158206939697
+      },
+      "center": {
+        "x": 0.03531992435455322,
+        "z": -0.09805828332901001
+      },
+      "minY": 0,
+      "maxY": 1.7917345762252808
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_archeryrange_green",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_archeryrange_green.glb",
+    "metrics": {
+      "glbBytes": 203752,
+      "byteLength": 219535,
+      "triangles": 3819,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.6706340312957764,
+        "d": 1.5508158206939697
+      },
+      "center": {
+        "x": 0.03531992435455322,
+        "z": -0.09805828332901001
+      },
+      "minY": 0,
+      "maxY": 1.7917345762252808
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_archeryrange_red",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_archeryrange_red.glb",
+    "metrics": {
+      "glbBytes": 203748,
+      "byteLength": 219531,
+      "triangles": 3819,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.6706340312957764,
+        "d": 1.5508158206939697
+      },
+      "center": {
+        "x": 0.03531992435455322,
+        "z": -0.09805828332901001
+      },
+      "minY": 0,
+      "maxY": 1.7917345762252808
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_archeryrange_yellow",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_archeryrange_yellow.glb",
+    "metrics": {
+      "glbBytes": 203756,
+      "byteLength": 219539,
+      "triangles": 3819,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.6706340312957764,
+        "d": 1.5508158206939697
+      },
+      "center": {
+        "x": 0.03531992435455322,
+        "z": -0.09805828332901001
+      },
+      "minY": 0,
+      "maxY": 1.7917345762252808
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_barracks_blue",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_barracks_blue.glb",
+    "metrics": {
+      "glbBytes": 231048,
+      "byteLength": 246831,
+      "triangles": 4007,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.4400049448013306,
+        "d": 1.5660751461982727
+      },
+      "center": {
+        "x": 1.1920928955078125e-7,
+        "z": 0.06303533911705017
+      },
+      "minY": 0,
+      "maxY": 1.640052318572998
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_barracks_green",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_barracks_green.glb",
+    "metrics": {
+      "glbBytes": 231048,
+      "byteLength": 246831,
+      "triangles": 4007,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.4400049448013306,
+        "d": 1.5660751461982727
+      },
+      "center": {
+        "x": 1.1920928955078125e-7,
+        "z": 0.06303533911705017
+      },
+      "minY": 0,
+      "maxY": 1.640052318572998
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_barracks_red",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_barracks_red.glb",
+    "metrics": {
+      "glbBytes": 231044,
+      "byteLength": 246827,
+      "triangles": 4007,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.4400049448013306,
+        "d": 1.5660751461982727
+      },
+      "center": {
+        "x": 1.1920928955078125e-7,
+        "z": 0.06303533911705017
+      },
+      "minY": 0,
+      "maxY": 1.640052318572998
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_barracks_yellow",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_barracks_yellow.glb",
+    "metrics": {
+      "glbBytes": 231052,
+      "byteLength": 246835,
+      "triangles": 4007,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.4400049448013306,
+        "d": 1.5660751461982727
+      },
+      "center": {
+        "x": 1.1920928955078125e-7,
+        "z": 0.06303533911705017
+      },
+      "minY": 0,
+      "maxY": 1.640052318572998
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_blacksmith_blue",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_blacksmith_blue.glb",
+    "metrics": {
+      "glbBytes": 124428,
+      "byteLength": 140211,
+      "triangles": 2410,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.2876009941101074,
+        "d": 1.2451500296592712
+      },
+      "center": {
+        "x": 0.013795673847198486,
+        "z": 0.06257548928260803
+      },
+      "minY": -0.005102336406707764,
+      "maxY": 0.9800021648406982
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_blacksmith_green",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_blacksmith_green.glb",
+    "metrics": {
+      "glbBytes": 124432,
+      "byteLength": 140215,
+      "triangles": 2410,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.2876009941101074,
+        "d": 1.2451500296592712
+      },
+      "center": {
+        "x": 0.013795673847198486,
+        "z": 0.06257548928260803
+      },
+      "minY": -0.005102336406707764,
+      "maxY": 0.9800021648406982
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_blacksmith_red",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_blacksmith_red.glb",
+    "metrics": {
+      "glbBytes": 124428,
+      "byteLength": 140211,
+      "triangles": 2410,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.2876009941101074,
+        "d": 1.2451500296592712
+      },
+      "center": {
+        "x": 0.013795673847198486,
+        "z": 0.06257548928260803
+      },
+      "minY": -0.005102336406707764,
+      "maxY": 0.9800021648406982
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_blacksmith_yellow",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_blacksmith_yellow.glb",
+    "metrics": {
+      "glbBytes": 124432,
+      "byteLength": 140215,
+      "triangles": 2410,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.2876009941101074,
+        "d": 1.2451500296592712
+      },
+      "center": {
+        "x": 0.013795673847198486,
+        "z": 0.06257548928260803
+      },
+      "minY": -0.005102336406707764,
+      "maxY": 0.9800021648406982
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_bridge_A",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_bridge_A.glb",
+    "metrics": {
+      "glbBytes": 26912,
+      "byteLength": 42695,
+      "triangles": 604,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.3333312273025513,
+        "d": 1.9244996309280396
+      },
+      "center": {
+        "x": 0.0000011324882507324219,
+        "z": -5.364418029785156e-7
+      },
+      "minY": -1,
+      "maxY": 0.25
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_bridge_B",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_bridge_B.glb",
+    "metrics": {
+      "glbBytes": 26912,
+      "byteLength": 42695,
+      "triangles": 604,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.3333312273025513,
+        "d": 1.9244996309280396
+      },
+      "center": {
+        "x": -0.0000011324882507324219,
+        "z": -5.364418029785156e-7
+      },
+      "minY": -1,
+      "maxY": 0.25
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_castle_blue",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_castle_blue.glb",
+    "metrics": {
+      "glbBytes": 319100,
+      "byteLength": 334883,
+      "triangles": 5659,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.9754132628440857,
+        "d": 2.256254196166992
+      },
+      "center": {
+        "x": -2.9802322387695312e-8,
+        "z": 0
+      },
+      "minY": 0,
+      "maxY": 3.97920560836792
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_castle_green",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_castle_green.glb",
+    "metrics": {
+      "glbBytes": 319100,
+      "byteLength": 334883,
+      "triangles": 5659,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.9754132628440857,
+        "d": 2.256254196166992
+      },
+      "center": {
+        "x": -2.9802322387695312e-8,
+        "z": 0
+      },
+      "minY": 0,
+      "maxY": 3.97920560836792
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_castle_red",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_castle_red.glb",
+    "metrics": {
+      "glbBytes": 319096,
+      "byteLength": 334879,
+      "triangles": 5659,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.9754132628440857,
+        "d": 2.256254196166992
+      },
+      "center": {
+        "x": -2.9802322387695312e-8,
+        "z": 0
+      },
+      "minY": 0,
+      "maxY": 3.97920560836792
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_castle_yellow",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_castle_yellow.glb",
+    "metrics": {
+      "glbBytes": 319104,
+      "byteLength": 334887,
+      "triangles": 5659,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.9754132628440857,
+        "d": 2.256254196166992
+      },
+      "center": {
+        "x": -2.9802322387695312e-8,
+        "z": 0
+      },
+      "minY": 0,
+      "maxY": 3.97920560836792
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_church_blue",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_church_blue.glb",
+    "metrics": {
+      "glbBytes": 91120,
+      "byteLength": 106903,
+      "triangles": 1601,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.0289925932884216,
+        "d": 1.1550020575523376
+      },
+      "center": {
+        "x": -2.9802322387695312e-8,
+        "z": 0.01750323176383972
+      },
+      "minY": -0.000005382299150369363,
+      "maxY": 1.6450307369232178
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_church_green",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_church_green.glb",
+    "metrics": {
+      "glbBytes": 91124,
+      "byteLength": 106907,
+      "triangles": 1601,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.0289925932884216,
+        "d": 1.1550020575523376
+      },
+      "center": {
+        "x": -2.9802322387695312e-8,
+        "z": 0.01750323176383972
+      },
+      "minY": -0.000005382299150369363,
+      "maxY": 1.6450307369232178
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_church_red",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_church_red.glb",
+    "metrics": {
+      "glbBytes": 91120,
+      "byteLength": 106903,
+      "triangles": 1601,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.0289925932884216,
+        "d": 1.1550020575523376
+      },
+      "center": {
+        "x": -2.9802322387695312e-8,
+        "z": 0.01750323176383972
+      },
+      "minY": -0.000005382299150369363,
+      "maxY": 1.6450307369232178
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_church_yellow",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_church_yellow.glb",
+    "metrics": {
+      "glbBytes": 91124,
+      "byteLength": 106907,
+      "triangles": 1601,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.0289925932884216,
+        "d": 1.1550020575523376
+      },
+      "center": {
+        "x": -2.9802322387695312e-8,
+        "z": 0.01750323176383972
+      },
+      "minY": -0.000005382299150369363,
+      "maxY": 1.6450307369232178
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_destroyed",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_destroyed.glb",
+    "metrics": {
+      "glbBytes": 58060,
+      "byteLength": 73843,
+      "triangles": 882,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.5392757654190063,
+        "d": 1.3059175610542297
+      },
+      "center": {
+        "x": 0.05077546834945679,
+        "z": -0.0604766309261322
+      },
+      "minY": -0.01391109824180603,
+      "maxY": 0.9800010323524475
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_dirt",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_dirt.glb",
+    "metrics": {
+      "glbBytes": 8716,
+      "byteLength": 24499,
+      "triangles": 160,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.7948182821273804,
+        "d": 2.006807565689087
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.020000021904706955,
+      "maxY": 0.06659442186355591
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_grain",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_grain.glb",
+    "metrics": {
+      "glbBytes": 14976,
+      "byteLength": 30759,
+      "triangles": 230,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.8736903667449951,
+        "d": 2.093597888946533
+      },
+      "center": {
+        "x": -0.00014775991439819336,
+        "z": 0
+      },
+      "minY": 0,
+      "maxY": 0.3937956392765045
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_home_A_blue",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_home_A_blue.glb",
+    "metrics": {
+      "glbBytes": 56732,
+      "byteLength": 72515,
+      "triangles": 1011,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.791959822177887,
+        "d": 0.8536516427993774
+      },
+      "center": {
+        "x": -2.9802322387695312e-8,
+        "z": -0.04182574152946472
+      },
+      "minY": -2.086162709247219e-8,
+      "maxY": 0.9300001263618469
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_home_A_green",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_home_A_green.glb",
+    "metrics": {
+      "glbBytes": 56732,
+      "byteLength": 72515,
+      "triangles": 1011,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.791959822177887,
+        "d": 0.8536516427993774
+      },
+      "center": {
+        "x": -2.9802322387695312e-8,
+        "z": -0.04182574152946472
+      },
+      "minY": -2.086162709247219e-8,
+      "maxY": 0.9300001263618469
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_home_A_red",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_home_A_red.glb",
+    "metrics": {
+      "glbBytes": 56728,
+      "byteLength": 72511,
+      "triangles": 1011,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.791959822177887,
+        "d": 0.8536516427993774
+      },
+      "center": {
+        "x": -2.9802322387695312e-8,
+        "z": -0.04182574152946472
+      },
+      "minY": -2.086162709247219e-8,
+      "maxY": 0.9300001263618469
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_home_A_yellow",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_home_A_yellow.glb",
+    "metrics": {
+      "glbBytes": 56736,
+      "byteLength": 72519,
+      "triangles": 1011,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.791959822177887,
+        "d": 0.8536516427993774
+      },
+      "center": {
+        "x": -2.9802322387695312e-8,
+        "z": -0.04182574152946472
+      },
+      "minY": -2.086162709247219e-8,
+      "maxY": 0.9300001263618469
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_home_B_blue",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_home_B_blue.glb",
+    "metrics": {
+      "glbBytes": 83504,
+      "byteLength": 99287,
+      "triangles": 1393,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.8749282360076904,
+        "d": 1.0986515283584595
+      },
+      "center": {
+        "x": -0.0012886524200439453,
+        "z": 0.01067417860031128
+      },
+      "minY": -2.086162709247219e-8,
+      "maxY": 1.2800002098083496
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_home_B_green",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_home_B_green.glb",
+    "metrics": {
+      "glbBytes": 83504,
+      "byteLength": 99287,
+      "triangles": 1393,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.8749282360076904,
+        "d": 1.0986515283584595
+      },
+      "center": {
+        "x": -0.0012886524200439453,
+        "z": 0.01067417860031128
+      },
+      "minY": -2.086162709247219e-8,
+      "maxY": 1.2800002098083496
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_home_B_red",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_home_B_red.glb",
+    "metrics": {
+      "glbBytes": 83500,
+      "byteLength": 99283,
+      "triangles": 1393,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.8749282360076904,
+        "d": 1.0986515283584595
+      },
+      "center": {
+        "x": -0.0012886524200439453,
+        "z": 0.01067417860031128
+      },
+      "minY": -2.086162709247219e-8,
+      "maxY": 1.2800002098083496
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_home_B_yellow",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_home_B_yellow.glb",
+    "metrics": {
+      "glbBytes": 83508,
+      "byteLength": 99291,
+      "triangles": 1393,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.8749282360076904,
+        "d": 1.0986515283584595
+      },
+      "center": {
+        "x": -0.0012886524200439453,
+        "z": 0.01067417860031128
+      },
+      "minY": -2.086162709247219e-8,
+      "maxY": 1.2800002098083496
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_lumbermill_blue",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_lumbermill_blue.glb",
+    "metrics": {
+      "glbBytes": 169520,
+      "byteLength": 185303,
+      "triangles": 3170,
+      "primitives": 3,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.3669670820236206,
+        "d": 1.1892331093549728
+      },
+      "center": {
+        "x": -0.0026448965072631836,
+        "z": 0.1353432759642601
+      },
+      "minY": -0.0035033971071243286,
+      "maxY": 1.704322099685669
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_lumbermill_green",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_lumbermill_green.glb",
+    "metrics": {
+      "glbBytes": 169524,
+      "byteLength": 185307,
+      "triangles": 3170,
+      "primitives": 3,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.3669670820236206,
+        "d": 1.1892326474189758
+      },
+      "center": {
+        "x": -0.0026448965072631836,
+        "z": 0.1353430449962616
+      },
+      "minY": -0.0035033971071243286,
+      "maxY": 1.704322099685669
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_lumbermill_red",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_lumbermill_red.glb",
+    "metrics": {
+      "glbBytes": 169512,
+      "byteLength": 185295,
+      "triangles": 3170,
+      "primitives": 3,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.3669670820236206,
+        "d": 1.189233124256134
+      },
+      "center": {
+        "x": -0.0026448965072631836,
+        "z": 0.1353432834148407
+      },
+      "minY": -0.0035033971071243286,
+      "maxY": 1.704322099685669
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_lumbermill_yellow",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_lumbermill_yellow.glb",
+    "metrics": {
+      "glbBytes": 169532,
+      "byteLength": 185315,
+      "triangles": 3170,
+      "primitives": 3,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.3669670820236206,
+        "d": 1.1892336010932922
+      },
+      "center": {
+        "x": -0.0026448965072631836,
+        "z": 0.1353435218334198
+      },
+      "minY": -0.0035033971071243286,
+      "maxY": 1.704322099685669
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_market_blue",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_market_blue.glb",
+    "metrics": {
+      "glbBytes": 153544,
+      "byteLength": 169327,
+      "triangles": 3125,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.7993808388710022,
+        "d": 1.3156024813652039
+      },
+      "center": {
+        "x": -0.0016903579235076904,
+        "z": -0.05719873309135437
+      },
+      "minY": -0.005638472735881805,
+      "maxY": 0.9760011434555054
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_market_green",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_market_green.glb",
+    "metrics": {
+      "glbBytes": 153548,
+      "byteLength": 169331,
+      "triangles": 3125,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.7993808388710022,
+        "d": 1.3156024813652039
+      },
+      "center": {
+        "x": -0.0016903579235076904,
+        "z": -0.05719873309135437
+      },
+      "minY": -0.005638472735881805,
+      "maxY": 0.9760011434555054
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_market_red",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_market_red.glb",
+    "metrics": {
+      "glbBytes": 153544,
+      "byteLength": 169327,
+      "triangles": 3125,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.7993808388710022,
+        "d": 1.3156024813652039
+      },
+      "center": {
+        "x": -0.0016903579235076904,
+        "z": -0.05719873309135437
+      },
+      "minY": -0.005638472735881805,
+      "maxY": 0.9760011434555054
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_market_yellow",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_market_yellow.glb",
+    "metrics": {
+      "glbBytes": 153548,
+      "byteLength": 169331,
+      "triangles": 3125,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.7993808388710022,
+        "d": 1.3156024813652039
+      },
+      "center": {
+        "x": -0.0016903579235076904,
+        "z": -0.05719873309135437
+      },
+      "minY": -0.005638472735881805,
+      "maxY": 0.9760011434555054
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_mine_blue",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_mine_blue.glb",
+    "metrics": {
+      "glbBytes": 67400,
+      "byteLength": 83183,
+      "triangles": 1126,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.6055532097816467,
+        "d": 1.9199600219726562
+      },
+      "center": {
+        "x": -0.013960868120193481,
+        "z": -0.0597681999206543
+      },
+      "minY": -0.00012449533096514642,
+      "maxY": 1.1365101337432861
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_mine_green",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_mine_green.glb",
+    "metrics": {
+      "glbBytes": 67404,
+      "byteLength": 83187,
+      "triangles": 1126,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.6055532097816467,
+        "d": 1.9199600219726562
+      },
+      "center": {
+        "x": -0.013960868120193481,
+        "z": -0.0597681999206543
+      },
+      "minY": -0.00012449533096514642,
+      "maxY": 1.1365101337432861
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_mine_red",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_mine_red.glb",
+    "metrics": {
+      "glbBytes": 67400,
+      "byteLength": 83183,
+      "triangles": 1126,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.6055532097816467,
+        "d": 1.9199600219726562
+      },
+      "center": {
+        "x": -0.013960868120193481,
+        "z": -0.0597681999206543
+      },
+      "minY": -0.00012449533096514642,
+      "maxY": 1.1365101337432861
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_mine_yellow",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_mine_yellow.glb",
+    "metrics": {
+      "glbBytes": 67404,
+      "byteLength": 83187,
+      "triangles": 1126,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.6055532097816467,
+        "d": 1.9199600219726562
+      },
+      "center": {
+        "x": -0.013960868120193481,
+        "z": -0.0597681999206543
+      },
+      "minY": -0.00012449533096514642,
+      "maxY": 1.1365101337432861
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_scaffolding",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_scaffolding.glb",
+    "metrics": {
+      "glbBytes": 166924,
+      "byteLength": 182707,
+      "triangles": 2672,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.9004759788513184,
+        "d": 2.109299898147583
+      },
+      "center": {
+        "x": 0.02176135778427124,
+        "z": -0.03221464157104492
+      },
+      "minY": -0.0026358962059020996,
+      "maxY": 1.2960000038146973
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_stage_A",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_stage_A.glb",
+    "metrics": {
+      "glbBytes": 43168,
+      "byteLength": 58951,
+      "triangles": 784,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.0466980934143066,
+        "d": 0.8750108778476715
+      },
+      "center": {
+        "x": 0.042704761028289795,
+        "z": 0.0951862782239914
+      },
+      "minY": -0.005895562469959259,
+      "maxY": 0.27999743819236755
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_stage_B",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_stage_B.glb",
+    "metrics": {
+      "glbBytes": 50692,
+      "byteLength": 66475,
+      "triangles": 902,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.0205056071281433,
+        "d": 1.1305766701698303
+      },
+      "center": {
+        "x": 0.013986319303512573,
+        "z": -0.009814172983169556
+      },
+      "minY": -0.005895562469959259,
+      "maxY": 0.6299967765808105
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_stage_C",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_stage_C.glb",
+    "metrics": {
+      "glbBytes": 70284,
+      "byteLength": 86067,
+      "triangles": 1218,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.1600090861320496,
+        "d": 1.127082884311676
+      },
+      "center": {
+        "x": 0.08005210757255554,
+        "z": -0.010103493928909302
+      },
+      "minY": -0.005895562469959259,
+      "maxY": 0.9800010323524475
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_tavern_blue",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_tavern_blue.glb",
+    "metrics": {
+      "glbBytes": 172236,
+      "byteLength": 188019,
+      "triangles": 2992,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.1717280745506287,
+        "d": 1.332317590713501
+      },
+      "center": {
+        "x": -0.009114831686019897,
+        "z": -0.036158084869384766
+      },
+      "minY": -0.0000030875205538904993,
+      "maxY": 1.3966469764709473
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_tavern_green",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_tavern_green.glb",
+    "metrics": {
+      "glbBytes": 172240,
+      "byteLength": 188023,
+      "triangles": 2992,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.1717280745506287,
+        "d": 1.332317590713501
+      },
+      "center": {
+        "x": -0.009114831686019897,
+        "z": -0.036158084869384766
+      },
+      "minY": -0.0000030875205538904993,
+      "maxY": 1.3966469764709473
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_tavern_red",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_tavern_red.glb",
+    "metrics": {
+      "glbBytes": 172236,
+      "byteLength": 188019,
+      "triangles": 2992,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.1717280745506287,
+        "d": 1.332317590713501
+      },
+      "center": {
+        "x": -0.009114831686019897,
+        "z": -0.036158084869384766
+      },
+      "minY": -0.0000030875205538904993,
+      "maxY": 1.3966469764709473
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_tavern_yellow",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_tavern_yellow.glb",
+    "metrics": {
+      "glbBytes": 172240,
+      "byteLength": 188023,
+      "triangles": 2992,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.1717280745506287,
+        "d": 1.332317590713501
+      },
+      "center": {
+        "x": -0.009114831686019897,
+        "z": -0.036158084869384766
+      },
+      "minY": -0.0000030875205538904993,
+      "maxY": 1.3966469764709473
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_tower_A_blue",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_tower_A_blue.glb",
+    "metrics": {
+      "glbBytes": 115060,
+      "byteLength": 130843,
+      "triangles": 2138,
+      "primitives": 2,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.9932727813720703,
+        "d": 1.1534662246704102
+      },
+      "center": {
+        "x": -2.9802322387695312e-8,
+        "z": 0.00326693058013916
+      },
+      "minY": 0,
+      "maxY": 2.191734552383423
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_tower_A_green",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_tower_A_green.glb",
+    "metrics": {
+      "glbBytes": 115064,
+      "byteLength": 130847,
+      "triangles": 2138,
+      "primitives": 2,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.9932727813720703,
+        "d": 1.1534662246704102
+      },
+      "center": {
+        "x": -2.9802322387695312e-8,
+        "z": 0.00326693058013916
+      },
+      "minY": 0,
+      "maxY": 2.191734552383423
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_tower_A_red",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_tower_A_red.glb",
+    "metrics": {
+      "glbBytes": 115056,
+      "byteLength": 130839,
+      "triangles": 2138,
+      "primitives": 2,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.9932727813720703,
+        "d": 1.1534662246704102
+      },
+      "center": {
+        "x": -2.9802322387695312e-8,
+        "z": 0.00326693058013916
+      },
+      "minY": 0,
+      "maxY": 2.191734552383423
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_tower_A_yellow",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_tower_A_yellow.glb",
+    "metrics": {
+      "glbBytes": 115068,
+      "byteLength": 130851,
+      "triangles": 2138,
+      "primitives": 2,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.9932727813720703,
+        "d": 1.1534662246704102
+      },
+      "center": {
+        "x": -2.9802322387695312e-8,
+        "z": 0.00326693058013916
+      },
+      "minY": 0,
+      "maxY": 2.191734552383423
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_tower_B_blue",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_tower_B_blue.glb",
+    "metrics": {
+      "glbBytes": 133156,
+      "byteLength": 148939,
+      "triangles": 2418,
+      "primitives": 2,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.1973957419395447,
+        "d": 1.3826332092285156
+      },
+      "center": {
+        "x": -2.9802322387695312e-8,
+        "z": 0
+      },
+      "minY": 0,
+      "maxY": 2.4853649139404297
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_tower_B_green",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_tower_B_green.glb",
+    "metrics": {
+      "glbBytes": 133160,
+      "byteLength": 148943,
+      "triangles": 2418,
+      "primitives": 2,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.1973957419395447,
+        "d": 1.3826332092285156
+      },
+      "center": {
+        "x": -2.9802322387695312e-8,
+        "z": 0
+      },
+      "minY": 0,
+      "maxY": 2.4853649139404297
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_tower_B_red",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_tower_B_red.glb",
+    "metrics": {
+      "glbBytes": 133152,
+      "byteLength": 148935,
+      "triangles": 2418,
+      "primitives": 2,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.1973957419395447,
+        "d": 1.3826332092285156
+      },
+      "center": {
+        "x": -2.9802322387695312e-8,
+        "z": 0
+      },
+      "minY": 0,
+      "maxY": 2.4853649139404297
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_tower_B_yellow",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_tower_B_yellow.glb",
+    "metrics": {
+      "glbBytes": 133164,
+      "byteLength": 148947,
+      "triangles": 2418,
+      "primitives": 2,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.1973957419395447,
+        "d": 1.3826332092285156
+      },
+      "center": {
+        "x": -2.9802322387695312e-8,
+        "z": 0
+      },
+      "minY": 0,
+      "maxY": 2.4853649139404297
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_tower_base_blue",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_tower_base_blue.glb",
+    "metrics": {
+      "glbBytes": 83064,
+      "byteLength": 98847,
+      "triangles": 1538,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.9297925233840942,
+        "d": 1.1111260652542114
+      },
+      "center": {
+        "x": 0,
+        "z": 0.024437010288238525
+      },
+      "minY": 0,
+      "maxY": 1.5
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_tower_base_green",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_tower_base_green.glb",
+    "metrics": {
+      "glbBytes": 83064,
+      "byteLength": 98847,
+      "triangles": 1538,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.9297925233840942,
+        "d": 1.1111260652542114
+      },
+      "center": {
+        "x": 0,
+        "z": 0.024437010288238525
+      },
+      "minY": 0,
+      "maxY": 1.5
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_tower_base_red",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_tower_base_red.glb",
+    "metrics": {
+      "glbBytes": 83060,
+      "byteLength": 98843,
+      "triangles": 1538,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.9297925233840942,
+        "d": 1.1111260652542114
+      },
+      "center": {
+        "x": 0,
+        "z": 0.024437010288238525
+      },
+      "minY": 0,
+      "maxY": 1.5
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_tower_base_yellow",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_tower_base_yellow.glb",
+    "metrics": {
+      "glbBytes": 83068,
+      "byteLength": 98851,
+      "triangles": 1538,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.9297925233840942,
+        "d": 1.1111260652542114
+      },
+      "center": {
+        "x": 0,
+        "z": 0.024437010288238525
+      },
+      "minY": 0,
+      "maxY": 1.5
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_tower_catapult_blue",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_tower_catapult_blue.glb",
+    "metrics": {
+      "glbBytes": 148328,
+      "byteLength": 164111,
+      "triangles": 2864,
+      "primitives": 3,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.9297925233840942,
+        "d": 1.3033305406570435
+      },
+      "center": {
+        "x": 0,
+        "z": -0.07166522741317749
+      },
+      "minY": 0,
+      "maxY": 1.9640908241271973
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_tower_catapult_green",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_tower_catapult_green.glb",
+    "metrics": {
+      "glbBytes": 148332,
+      "byteLength": 164115,
+      "triangles": 2864,
+      "primitives": 3,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.9297925233840942,
+        "d": 1.3033307790756226
+      },
+      "center": {
+        "x": 0,
+        "z": -0.07166534662246704
+      },
+      "minY": 0,
+      "maxY": 1.9640908241271973
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_tower_catapult_red",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_tower_catapult_red.glb",
+    "metrics": {
+      "glbBytes": 148320,
+      "byteLength": 164103,
+      "triangles": 2864,
+      "primitives": 3,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.9297925233840942,
+        "d": 1.3033305406570435
+      },
+      "center": {
+        "x": 0,
+        "z": -0.07166522741317749
+      },
+      "minY": 0,
+      "maxY": 1.9640908241271973
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_tower_catapult_yellow",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_tower_catapult_yellow.glb",
+    "metrics": {
+      "glbBytes": 148340,
+      "byteLength": 164123,
+      "triangles": 2864,
+      "primitives": 3,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.9297925233840942,
+        "d": 1.3033303022384644
+      },
+      "center": {
+        "x": 0,
+        "z": -0.07166510820388794
+      },
+      "minY": 0,
+      "maxY": 1.9640908241271973
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_watermill_blue",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_watermill_blue.glb",
+    "metrics": {
+      "glbBytes": 113644,
+      "byteLength": 129427,
+      "triangles": 1921,
+      "primitives": 2,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.050000011920929,
+        "d": 1.2359639704227448
+      },
+      "center": {
+        "x": 0.000018864870071411133,
+        "z": 0.2480107992887497
+      },
+      "minY": -0.35000041127204895,
+      "maxY": 1.2180038690567017
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_watermill_green",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_watermill_green.glb",
+    "metrics": {
+      "glbBytes": 113648,
+      "byteLength": 129431,
+      "triangles": 1921,
+      "primitives": 2,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.050000011920929,
+        "d": 1.2359639704227448
+      },
+      "center": {
+        "x": 0.000018864870071411133,
+        "z": 0.2480107992887497
+      },
+      "minY": -0.35000041127204895,
+      "maxY": 1.2180038690567017
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_watermill_red",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_watermill_red.glb",
+    "metrics": {
+      "glbBytes": 113640,
+      "byteLength": 129423,
+      "triangles": 1921,
+      "primitives": 2,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.050000011920929,
+        "d": 1.2359639704227448
+      },
+      "center": {
+        "x": 0.000018864870071411133,
+        "z": 0.2480107992887497
+      },
+      "minY": -0.35000041127204895,
+      "maxY": 1.2180038690567017
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_watermill_yellow",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_watermill_yellow.glb",
+    "metrics": {
+      "glbBytes": 113652,
+      "byteLength": 129435,
+      "triangles": 1921,
+      "primitives": 2,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.050000011920929,
+        "d": 1.2359639704227448
+      },
+      "center": {
+        "x": 0.000018864870071411133,
+        "z": 0.2480107992887497
+      },
+      "minY": -0.35000041127204895,
+      "maxY": 1.2180038690567017
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_well_blue",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_well_blue.glb",
+    "metrics": {
+      "glbBytes": 43720,
+      "byteLength": 59503,
+      "triangles": 726,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.6517936587333679,
+        "d": 0.7507236003875732
+      },
+      "center": {
+        "x": 0.010939538478851318,
+        "z": 0
+      },
+      "minY": -0.000001611560833225667,
+      "maxY": 0.8260108828544617
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_well_green",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_well_green.glb",
+    "metrics": {
+      "glbBytes": 43724,
+      "byteLength": 59507,
+      "triangles": 726,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.6517936587333679,
+        "d": 0.7507236003875732
+      },
+      "center": {
+        "x": 0.010939538478851318,
+        "z": 0
+      },
+      "minY": -0.000001611560833225667,
+      "maxY": 0.8260108828544617
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_well_red",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_well_red.glb",
+    "metrics": {
+      "glbBytes": 43720,
+      "byteLength": 59503,
+      "triangles": 726,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.6517936587333679,
+        "d": 0.7507236003875732
+      },
+      "center": {
+        "x": 0.010939538478851318,
+        "z": 0
+      },
+      "minY": -0.000001611560833225667,
+      "maxY": 0.8260108828544617
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_well_yellow",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_well_yellow.glb",
+    "metrics": {
+      "glbBytes": 43724,
+      "byteLength": 59507,
+      "triangles": 726,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.6517936587333679,
+        "d": 0.7507236003875732
+      },
+      "center": {
+        "x": 0.010939538478851318,
+        "z": 0
+      },
+      "minY": -0.000001611560833225667,
+      "maxY": 0.8260108828544617
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_windmill_blue",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_windmill_blue.glb",
+    "metrics": {
+      "glbBytes": 144864,
+      "byteLength": 160647,
+      "triangles": 2653,
+      "primitives": 3,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.1257699131965637,
+        "d": 0.8165210485458374
+      },
+      "center": {
+        "x": 0.00498625636100769,
+        "z": 0.02932092547416687
+      },
+      "minY": -0.000014480118807114195,
+      "maxY": 1.4578647315502167
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_windmill_green",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_windmill_green.glb",
+    "metrics": {
+      "glbBytes": 144868,
+      "byteLength": 160651,
+      "triangles": 2653,
+      "primitives": 3,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.1257699131965637,
+        "d": 0.8165215253829956
+      },
+      "center": {
+        "x": 0.00498625636100769,
+        "z": 0.02932116389274597
+      },
+      "minY": -0.000014480118807114195,
+      "maxY": 1.4578647315502167
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_windmill_red",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_windmill_red.glb",
+    "metrics": {
+      "glbBytes": 144856,
+      "byteLength": 160639,
+      "triangles": 2653,
+      "primitives": 3,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.1257699131965637,
+        "d": 0.8165210485458374
+      },
+      "center": {
+        "x": 0.00498625636100769,
+        "z": 0.02932092547416687
+      },
+      "minY": -0.000014480118807114195,
+      "maxY": 1.4578647315502167
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/building_windmill_yellow",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "building_windmill_yellow.glb",
+    "metrics": {
+      "glbBytes": 144876,
+      "byteLength": 160659,
+      "triangles": 2653,
+      "primitives": 3,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.1257699131965637,
+        "d": 0.8165215253829956
+      },
+      "center": {
+        "x": 0.00498625636100769,
+        "z": 0.02932116389274597
+      },
+      "minY": -0.000014480118807114195,
+      "maxY": 1.4578647315502167
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/cloud_big",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "cloud_big.glb",
+    "metrics": {
+      "glbBytes": 16196,
+      "byteLength": 31979,
+      "triangles": 672,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.607193112373352,
+        "d": 2.2421555519104004
+      },
+      "center": {
+        "x": 0.006164968013763428,
+        "z": 0.0272902250289917
+      },
+      "minY": -0.883822500705719,
+      "maxY": 1.0619432926177979
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/cloud_small",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "cloud_small.glb",
+    "metrics": {
+      "glbBytes": 9468,
+      "byteLength": 25251,
+      "triangles": 366,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.337802767753601,
+        "d": 1.7916778326034546
+      },
+      "center": {
+        "x": 0.006002604961395264,
+        "z": -0.06709009408950806
+      },
+      "minY": -0.9078872203826904,
+      "maxY": 0.9317659735679626
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/crate_A_big",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "crate_A_big.glb",
+    "metrics": {
+      "glbBytes": 8360,
+      "byteLength": 24143,
+      "triangles": 132,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.21000000834465027,
+        "d": 0.21000000834465027
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0.0000010639427046044148,
+      "maxY": 0.21000106632709503
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/crate_A_small",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "crate_A_small.glb",
+    "metrics": {
+      "glbBytes": 8360,
+      "byteLength": 24143,
+      "triangles": 132,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.14000000059604645,
+        "d": 0.14000000059604645
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 8.76188039455883e-7,
+      "maxY": 0.14000087976455688
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/crate_B_big",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "crate_B_big.glb",
+    "metrics": {
+      "glbBytes": 8360,
+      "byteLength": 24143,
+      "triangles": 132,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.21000000834465027,
+        "d": 0.21000000834465027
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0.0000010639427046044148,
+      "maxY": 0.21000106632709503
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/crate_B_small",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "crate_B_small.glb",
+    "metrics": {
+      "glbBytes": 8360,
+      "byteLength": 24143,
+      "triangles": 132,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.14000000059604645,
+        "d": 0.14000000059604645
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 8.76188039455883e-7,
+      "maxY": 0.14000087976455688
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/crate_long_A",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "crate_long_A.glb",
+    "metrics": {
+      "glbBytes": 15548,
+      "byteLength": 31331,
+      "triangles": 522,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.4000000059604645,
+        "d": 0.20000000298023224
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0,
+      "maxY": 0.15000000596046448
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/crate_long_B",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "crate_long_B.glb",
+    "metrics": {
+      "glbBytes": 15548,
+      "byteLength": 31331,
+      "triangles": 522,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.4000000059604645,
+        "d": 0.20000000298023224
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0,
+      "maxY": 0.15000000596046448
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/crate_long_C",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "crate_long_C.glb",
+    "metrics": {
+      "glbBytes": 11704,
+      "byteLength": 27487,
+      "triangles": 266,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.4000000059604645,
+        "d": 0.20000000298023224
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0,
+      "maxY": 0.1985453963279724
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/crate_long_empty",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "crate_long_empty.glb",
+    "metrics": {
+      "glbBytes": 4024,
+      "byteLength": 19807,
+      "triangles": 42,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.4000000059604645,
+        "d": 0.20000000298023224
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0,
+      "maxY": 0.15000000596046448
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/crate_open",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "crate_open.glb",
+    "metrics": {
+      "glbBytes": 13416,
+      "byteLength": 29199,
+      "triangles": 260,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.3315679654479027,
+        "d": 0.20000001788139343
+      },
+      "center": {
+        "x": 0.06578398123383522,
+        "z": 0
+      },
+      "minY": -0.005638472735881805,
+      "maxY": 0.20000101625919342
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/fence_stone_straight_gate",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "fence_stone_straight_gate.glb",
+    "metrics": {
+      "glbBytes": 18404,
+      "byteLength": 34187,
+      "triangles": 296,
+      "primitives": 2,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.2000003457069397,
+        "d": 1.154699981212616
+      },
+      "center": {
+        "x": -0.9999999701976776,
+        "z": -3.8743019104003906e-7
+      },
+      "minY": -0.04999999329447746,
+      "maxY": 0.24627195298671722
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/fence_stone_straight",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "fence_stone_straight.glb",
+    "metrics": {
+      "glbBytes": 15172,
+      "byteLength": 30955,
+      "triangles": 284,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.2000003457069397,
+        "d": 1.154699981212616
+      },
+      "center": {
+        "x": -0.9999999701976776,
+        "z": -3.8743019104003906e-7
+      },
+      "minY": -0.04999999329447746,
+      "maxY": 0.21899424493312836
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/fence_wood_straight_gate",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "fence_wood_straight_gate.glb",
+    "metrics": {
+      "glbBytes": 21672,
+      "byteLength": 37455,
+      "triangles": 308,
+      "primitives": 2,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.1400001049041748,
+        "d": 1.1547009944915771
+      },
+      "center": {
+        "x": -0.9999995231628418,
+        "z": -5.960464477539063e-8
+      },
+      "minY": -0.049999915063381195,
+      "maxY": 0.5999999642372131
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/fence_wood_straight",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "fence_wood_straight.glb",
+    "metrics": {
+      "glbBytes": 16388,
+      "byteLength": 32171,
+      "triangles": 212,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.10000002384185791,
+        "d": 1.1547009944915771
+      },
+      "center": {
+        "x": -0.9999995827674866,
+        "z": -5.960464477539063e-8
+      },
+      "minY": -0.05001270771026611,
+      "maxY": 0.5
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/flag_blue",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "flag_blue.glb",
+    "metrics": {
+      "glbBytes": 3792,
+      "byteLength": 19575,
+      "triangles": 48,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.0550091452896595,
+        "d": 0.26397787034511566
+      },
+      "center": {
+        "x": 0.0003710892051458359,
+        "z": -0.11007881909608841
+      },
+      "minY": 0,
+      "maxY": 0.27747058868408203
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/flag_green",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "flag_green.glb",
+    "metrics": {
+      "glbBytes": 3796,
+      "byteLength": 19579,
+      "triangles": 48,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.0550091452896595,
+        "d": 0.26397787034511566
+      },
+      "center": {
+        "x": 0.0003710892051458359,
+        "z": -0.11007881909608841
+      },
+      "minY": 0,
+      "maxY": 0.27747058868408203
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/flag_red",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "flag_red.glb",
+    "metrics": {
+      "glbBytes": 3792,
+      "byteLength": 19575,
+      "triangles": 48,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.0550091452896595,
+        "d": 0.26397787034511566
+      },
+      "center": {
+        "x": 0.0003710892051458359,
+        "z": -0.11007881909608841
+      },
+      "minY": 0,
+      "maxY": 0.27747058868408203
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/flag_yellow",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "flag_yellow.glb",
+    "metrics": {
+      "glbBytes": 3796,
+      "byteLength": 19579,
+      "triangles": 48,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.0550091452896595,
+        "d": 0.26397787034511566
+      },
+      "center": {
+        "x": 0.0003710892051458359,
+        "z": -0.11007881909608841
+      },
+      "minY": 0,
+      "maxY": 0.27747058868408203
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hex_coast_A_waterless",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hex_coast_A_waterless.glb",
+    "metrics": {
+      "glbBytes": 6780,
+      "byteLength": 22563,
+      "triangles": 102,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.999999463558197,
+        "d": 2.3094009160995483
+      },
+      "center": {
+        "x": -2.9802322387695312e-8,
+        "z": 5.960464477539063e-8
+      },
+      "minY": -1,
+      "maxY": 0
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hex_coast_A",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hex_coast_A.glb",
+    "metrics": {
+      "glbBytes": 7036,
+      "byteLength": 22819,
+      "triangles": 100,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.999999463558197,
+        "d": 2.3094009160995483
+      },
+      "center": {
+        "x": -2.9802322387695312e-8,
+        "z": 5.960464477539063e-8
+      },
+      "minY": -1,
+      "maxY": 0
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hex_coast_B_waterless",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hex_coast_B_waterless.glb",
+    "metrics": {
+      "glbBytes": 6856,
+      "byteLength": 22639,
+      "triangles": 104,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 1.7320499420166016
+      },
+      "center": {
+        "x": 0,
+        "z": -0.28867506980895996
+      },
+      "minY": -1,
+      "maxY": 0
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hex_coast_B",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hex_coast_B.glb",
+    "metrics": {
+      "glbBytes": 6704,
+      "byteLength": 22487,
+      "triangles": 98,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.3094000816345215
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -1,
+      "maxY": 0
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hex_coast_C_waterless",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hex_coast_C_waterless.glb",
+    "metrics": {
+      "glbBytes": 6664,
+      "byteLength": 22447,
+      "triangles": 104,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.9999977946281433,
+        "d": 1.7320502996444702
+      },
+      "center": {
+        "x": -8.642673492431641e-7,
+        "z": -0.28867512941360474
+      },
+      "minY": -1,
+      "maxY": 0
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hex_coast_C",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hex_coast_C.glb",
+    "metrics": {
+      "glbBytes": 6816,
+      "byteLength": 22599,
+      "triangles": 106,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.9999996423721313,
+        "d": 2.3094006776809692
+      },
+      "center": {
+        "x": 5.960464477539063e-8,
+        "z": 5.960464477539063e-8
+      },
+      "minY": -1,
+      "maxY": 0
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hex_coast_D_waterless",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hex_coast_D_waterless.glb",
+    "metrics": {
+      "glbBytes": 5904,
+      "byteLength": 21687,
+      "triangles": 78,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.0000001788139343,
+        "d": 1.7320489287376404
+      },
+      "center": {
+        "x": -0.49999967217445374,
+        "z": -0.2886742651462555
+      },
+      "minY": -1,
+      "maxY": 0
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hex_coast_D",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hex_coast_D.glb",
+    "metrics": {
+      "glbBytes": 6116,
+      "byteLength": 21899,
+      "triangles": 80,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.9999997019767761,
+        "d": 2.309400796890259
+      },
+      "center": {
+        "x": 8.940696716308594e-8,
+        "z": -1.1920928955078125e-7
+      },
+      "minY": -1,
+      "maxY": 0
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hex_coast_E_waterless",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hex_coast_E_waterless.glb",
+    "metrics": {
+      "glbBytes": 5604,
+      "byteLength": 21387,
+      "triangles": 72,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.000000476837158,
+        "d": 2.3094000816345215
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -1,
+      "maxY": 0
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hex_coast_E",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hex_coast_E.glb",
+    "metrics": {
+      "glbBytes": 5584,
+      "byteLength": 21367,
+      "triangles": 72,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.000000476837158,
+        "d": 2.3094000816345215
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -1,
+      "maxY": 0
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hex_grass_bottom",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hex_grass_bottom.glb",
+    "metrics": {
+      "glbBytes": 2576,
+      "byteLength": 18359,
+      "triangles": 20,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.3094000816345215
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -1,
+      "maxY": 3.725290298461914e-9
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hex_grass_sloped_high",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hex_grass_sloped_high.glb",
+    "metrics": {
+      "glbBytes": 3388,
+      "byteLength": 19171,
+      "triangles": 34,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.3094000816345215
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -1,
+      "maxY": 1
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hex_grass_sloped_low",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hex_grass_sloped_low.glb",
+    "metrics": {
+      "glbBytes": 3324,
+      "byteLength": 19107,
+      "triangles": 34,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.3094000816345215
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -1,
+      "maxY": 0.5
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hex_grass",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hex_grass.glb",
+    "metrics": {
+      "glbBytes": 3728,
+      "byteLength": 19511,
+      "triangles": 36,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.3094000816345215
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -1,
+      "maxY": 0
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hex_river_A_curvy_waterless",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hex_river_A_curvy_waterless.glb",
+    "metrics": {
+      "glbBytes": 8496,
+      "byteLength": 24279,
+      "triangles": 148,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.3094000816345215
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -1,
+      "maxY": 1.4901161193847656e-8
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hex_river_A_curvy",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hex_river_A_curvy.glb",
+    "metrics": {
+      "glbBytes": 10416,
+      "byteLength": 26199,
+      "triangles": 210,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.3094000816345215
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -1,
+      "maxY": 1.4901161193847656e-8
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hex_river_A_waterless",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hex_river_A_waterless.glb",
+    "metrics": {
+      "glbBytes": 4832,
+      "byteLength": 20615,
+      "triangles": 52,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.3094000816345215
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -1,
+      "maxY": 7.450580596923828e-9
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hex_river_A",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hex_river_A.glb",
+    "metrics": {
+      "glbBytes": 6048,
+      "byteLength": 21831,
+      "triangles": 82,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.3094000816345215
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -1,
+      "maxY": 7.450580596923828e-9
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hex_river_B_waterless",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hex_river_B_waterless.glb",
+    "metrics": {
+      "glbBytes": 8092,
+      "byteLength": 23875,
+      "triangles": 136,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.9999996423721313,
+        "d": 2.309400796890259
+      },
+      "center": {
+        "x": -5.960464477539063e-8,
+        "z": 0
+      },
+      "minY": -1,
+      "maxY": 2.9802322387695312e-8
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hex_river_B",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hex_river_B.glb",
+    "metrics": {
+      "glbBytes": 9780,
+      "byteLength": 25563,
+      "triangles": 186,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.9999996423721313,
+        "d": 2.309400796890259
+      },
+      "center": {
+        "x": -5.960464477539063e-8,
+        "z": 0
+      },
+      "minY": -1,
+      "maxY": 2.9802322387695312e-8
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hex_river_C_waterless",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hex_river_C_waterless.glb",
+    "metrics": {
+      "glbBytes": 7772,
+      "byteLength": 23555,
+      "triangles": 126,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.3094000816345215
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -1,
+      "maxY": 2.980232238769531e-7
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hex_river_C",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hex_river_C.glb",
+    "metrics": {
+      "glbBytes": 9784,
+      "byteLength": 25567,
+      "triangles": 192,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.3094000816345215
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -1,
+      "maxY": 2.980232238769531e-7
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hex_river_crossing_A_waterless",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hex_river_crossing_A_waterless.glb",
+    "metrics": {
+      "glbBytes": 7988,
+      "byteLength": 23771,
+      "triangles": 100,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.000000238418579,
+        "d": 2.3094000816345215
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -1,
+      "maxY": 7.450580596923828e-9
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hex_river_crossing_A",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hex_river_crossing_A.glb",
+    "metrics": {
+      "glbBytes": 9356,
+      "byteLength": 25139,
+      "triangles": 134,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.000000238418579,
+        "d": 2.3094000816345215
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -1,
+      "maxY": 7.450580596923828e-9
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hex_river_crossing_B_waterless",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hex_river_crossing_B_waterless.glb",
+    "metrics": {
+      "glbBytes": 7988,
+      "byteLength": 23771,
+      "triangles": 100,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.000000238418579,
+        "d": 2.3094000816345215
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -1,
+      "maxY": 7.450580596923828e-9
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hex_river_crossing_B",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hex_river_crossing_B.glb",
+    "metrics": {
+      "glbBytes": 9356,
+      "byteLength": 25139,
+      "triangles": 134,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.000000238418579,
+        "d": 2.3094000816345215
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -1,
+      "maxY": 7.450580596923828e-9
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hex_river_D_waterless",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hex_river_D_waterless.glb",
+    "metrics": {
+      "glbBytes": 8940,
+      "byteLength": 24723,
+      "triangles": 150,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.3094000816345215
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -1,
+      "maxY": 7.450580596923828e-9
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hex_river_D",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hex_river_D.glb",
+    "metrics": {
+      "glbBytes": 11428,
+      "byteLength": 27211,
+      "triangles": 226,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.3094000816345215
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -1,
+      "maxY": 7.450580596923828e-9
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hex_river_E_waterless",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hex_river_E_waterless.glb",
+    "metrics": {
+      "glbBytes": 7552,
+      "byteLength": 23335,
+      "triangles": 110,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.3094000816345215
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -1,
+      "maxY": 1.4901161193847656e-8
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hex_river_E",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hex_river_E.glb",
+    "metrics": {
+      "glbBytes": 10176,
+      "byteLength": 25959,
+      "triangles": 188,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.3094000816345215
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -1,
+      "maxY": 1.4901161193847656e-8
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hex_river_F_waterless",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hex_river_F_waterless.glb",
+    "metrics": {
+      "glbBytes": 7552,
+      "byteLength": 23335,
+      "triangles": 110,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.3094000816345215
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -1,
+      "maxY": 1.4901161193847656e-8
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hex_river_F",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hex_river_F.glb",
+    "metrics": {
+      "glbBytes": 10176,
+      "byteLength": 25959,
+      "triangles": 188,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.3094000816345215
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -1,
+      "maxY": 1.4901161193847656e-8
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hex_river_G_waterless",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hex_river_G_waterless.glb",
+    "metrics": {
+      "glbBytes": 9380,
+      "byteLength": 25163,
+      "triangles": 154,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.3094000816345215
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -1,
+      "maxY": 7.450580596923828e-9
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hex_river_G",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hex_river_G.glb",
+    "metrics": {
+      "glbBytes": 12132,
+      "byteLength": 27915,
+      "triangles": 242,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.3094000816345215
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -1,
+      "maxY": 7.450580596923828e-9
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hex_river_H_waterless",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hex_river_H_waterless.glb",
+    "metrics": {
+      "glbBytes": 10268,
+      "byteLength": 26051,
+      "triangles": 168,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.3094000816345215
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -1,
+      "maxY": 1.4901161193847656e-8
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hex_river_H",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hex_river_H.glb",
+    "metrics": {
+      "glbBytes": 13668,
+      "byteLength": 29451,
+      "triangles": 274,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.3094000816345215
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -1,
+      "maxY": 1.4901161193847656e-8
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hex_river_I_waterless",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hex_river_I_waterless.glb",
+    "metrics": {
+      "glbBytes": 10300,
+      "byteLength": 26083,
+      "triangles": 168,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.9999997019767761,
+        "d": 2.309400796890259
+      },
+      "center": {
+        "x": -2.9802322387695312e-8,
+        "z": 0
+      },
+      "minY": -1,
+      "maxY": 7.450580596923828e-9
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hex_river_I",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hex_river_I.glb",
+    "metrics": {
+      "glbBytes": 13704,
+      "byteLength": 29487,
+      "triangles": 274,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.9999997019767761,
+        "d": 2.309400796890259
+      },
+      "center": {
+        "x": -2.9802322387695312e-8,
+        "z": 0
+      },
+      "minY": -1,
+      "maxY": 7.450580596923828e-9
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hex_river_J_waterless",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hex_river_J_waterless.glb",
+    "metrics": {
+      "glbBytes": 8872,
+      "byteLength": 24655,
+      "triangles": 128,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.3094000816345215
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -1,
+      "maxY": 7.450580596923828e-9
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hex_river_J",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hex_river_J.glb",
+    "metrics": {
+      "glbBytes": 12372,
+      "byteLength": 28155,
+      "triangles": 234,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.3094000816345215
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -1,
+      "maxY": 7.450580596923828e-9
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hex_river_K_waterless",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hex_river_K_waterless.glb",
+    "metrics": {
+      "glbBytes": 11592,
+      "byteLength": 27375,
+      "triangles": 186,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.3094000816345215
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -1,
+      "maxY": 7.450580596923828e-9
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hex_river_K",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hex_river_K.glb",
+    "metrics": {
+      "glbBytes": 15908,
+      "byteLength": 31691,
+      "triangles": 322,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.3094000816345215
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -1,
+      "maxY": 7.450580596923828e-9
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hex_river_L_waterless",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hex_river_L_waterless.glb",
+    "metrics": {
+      "glbBytes": 12916,
+      "byteLength": 28699,
+      "triangles": 204,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.3094000816345215
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -1,
+      "maxY": 7.450580596923828e-9
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hex_river_L",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hex_river_L.glb",
+    "metrics": {
+      "glbBytes": 18456,
+      "byteLength": 34239,
+      "triangles": 384,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.3094000816345215
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -1,
+      "maxY": 7.450580596923828e-9
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hex_road_A_sloped_high",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hex_road_A_sloped_high.glb",
+    "metrics": {
+      "glbBytes": 6852,
+      "byteLength": 22635,
+      "triangles": 98,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.3094000816345215
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -1,
+      "maxY": 1
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hex_road_A_sloped_low",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hex_road_A_sloped_low.glb",
+    "metrics": {
+      "glbBytes": 6956,
+      "byteLength": 22739,
+      "triangles": 102,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.3094000816345215
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.9999999403953552,
+      "maxY": 0.5
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hex_road_A",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hex_road_A.glb",
+    "metrics": {
+      "glbBytes": 5008,
+      "byteLength": 20791,
+      "triangles": 58,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.3094000816345215
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -1,
+      "maxY": 7.450580596923828e-9
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hex_road_B",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hex_road_B.glb",
+    "metrics": {
+      "glbBytes": 7608,
+      "byteLength": 23391,
+      "triangles": 118,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.3094000816345215
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -1,
+      "maxY": 2.9802322387695312e-8
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hex_road_C",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hex_road_C.glb",
+    "metrics": {
+      "glbBytes": 7900,
+      "byteLength": 23683,
+      "triangles": 124,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.3094000816345215
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -1,
+      "maxY": 2.9802322387695312e-8
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hex_road_D",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hex_road_D.glb",
+    "metrics": {
+      "glbBytes": 9524,
+      "byteLength": 25307,
+      "triangles": 160,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.3094000816345215
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -1,
+      "maxY": 1.4901161193847656e-8
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hex_road_E",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hex_road_E.glb",
+    "metrics": {
+      "glbBytes": 8612,
+      "byteLength": 24395,
+      "triangles": 136,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.3094000816345215
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -1,
+      "maxY": 9.089717423194088e-9
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hex_road_F",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hex_road_F.glb",
+    "metrics": {
+      "glbBytes": 8612,
+      "byteLength": 24395,
+      "triangles": 136,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.3094000816345215
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -1,
+      "maxY": 9.089717423194088e-9
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hex_road_G",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hex_road_G.glb",
+    "metrics": {
+      "glbBytes": 9196,
+      "byteLength": 24979,
+      "triangles": 148,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.3094000816345215
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -1,
+      "maxY": 2.2351741790771484e-8
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hex_road_H",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hex_road_H.glb",
+    "metrics": {
+      "glbBytes": 11340,
+      "byteLength": 27123,
+      "triangles": 190,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.3094000816345215
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -1,
+      "maxY": 2.2351741790771484e-8
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hex_road_I",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hex_road_I.glb",
+    "metrics": {
+      "glbBytes": 11240,
+      "byteLength": 27023,
+      "triangles": 190,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.3094000816345215
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -1,
+      "maxY": 5.3551048040390015e-9
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hex_road_J",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hex_road_J.glb",
+    "metrics": {
+      "glbBytes": 10040,
+      "byteLength": 25823,
+      "triangles": 166,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.3094000816345215
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -1,
+      "maxY": 1.4901161193847656e-8
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hex_road_K",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hex_road_K.glb",
+    "metrics": {
+      "glbBytes": 12704,
+      "byteLength": 28487,
+      "triangles": 220,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.3094000816345215
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -1,
+      "maxY": 1.4901161193847656e-8
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hex_road_L",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hex_road_L.glb",
+    "metrics": {
+      "glbBytes": 14792,
+      "byteLength": 30575,
+      "triangles": 264,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.3094000816345215
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -1,
+      "maxY": 8.426241038250737e-9
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hex_road_M",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hex_road_M.glb",
+    "metrics": {
+      "glbBytes": 6088,
+      "byteLength": 21871,
+      "triangles": 94,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.3094000816345215
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -1,
+      "maxY": 8.265487849712372e-9
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hex_water",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hex_water.glb",
+    "metrics": {
+      "glbBytes": 2776,
+      "byteLength": 18559,
+      "triangles": 24,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.3094000816345215
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -1,
+      "maxY": -0.19999998807907104
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hill_single_A",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hill_single_A.glb",
+    "metrics": {
+      "glbBytes": 4540,
+      "byteLength": 20323,
+      "triangles": 60,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.1099080443382263,
+        "d": 0.8093148171901703
+      },
+      "center": {
+        "x": 0.036170631647109985,
+        "z": 0.002960994839668274
+      },
+      "minY": 0,
+      "maxY": 0.3072676658630371
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hill_single_B",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hill_single_B.glb",
+    "metrics": {
+      "glbBytes": 4604,
+      "byteLength": 20387,
+      "triangles": 60,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.9949991703033447,
+        "d": 1.360460340976715
+      },
+      "center": {
+        "x": -0.03956127166748047,
+        "z": -0.08645448088645935
+      },
+      "minY": 0,
+      "maxY": 0.41870954632759094
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hill_single_C",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hill_single_C.glb",
+    "metrics": {
+      "glbBytes": 4636,
+      "byteLength": 20419,
+      "triangles": 60,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.0243813395500183,
+        "d": 1.3249084949493408
+      },
+      "center": {
+        "x": 0.001036912202835083,
+        "z": -0.04339241981506348
+      },
+      "minY": 0,
+      "maxY": 0.5885831117630005
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hills_A_trees",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hills_A_trees.glb",
+    "metrics": {
+      "glbBytes": 32388,
+      "byteLength": 48171,
+      "triangles": 518,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.7553440928459167,
+        "d": 1.737221360206604
+      },
+      "center": {
+        "x": 0.056405872106552124,
+        "z": 0.03517395257949829
+      },
+      "minY": 0,
+      "maxY": 1.3321304321289062
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hills_A",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hills_A.glb",
+    "metrics": {
+      "glbBytes": 23404,
+      "byteLength": 39187,
+      "triangles": 383,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.7553440928459167,
+        "d": 1.737221360206604
+      },
+      "center": {
+        "x": 0.056405872106552124,
+        "z": 0.03517395257949829
+      },
+      "minY": 0,
+      "maxY": 0.7941571474075317
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hills_B_trees",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hills_B_trees.glb",
+    "metrics": {
+      "glbBytes": 26580,
+      "byteLength": 42363,
+      "triangles": 406,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.4735127687454224,
+        "d": 1.6236045360565186
+      },
+      "center": {
+        "x": -0.033693671226501465,
+        "z": -0.0734909176826477
+      },
+      "minY": -0.0000938796074478887,
+      "maxY": 1.369074821472168
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hills_B",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hills_B.glb",
+    "metrics": {
+      "glbBytes": 14608,
+      "byteLength": 30391,
+      "triangles": 226,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.4735127687454224,
+        "d": 1.6236045360565186
+      },
+      "center": {
+        "x": -0.033693671226501465,
+        "z": -0.0734909176826477
+      },
+      "minY": -0.0000938796074478887,
+      "maxY": 0.3659045100212097
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hills_C_trees",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hills_C_trees.glb",
+    "metrics": {
+      "glbBytes": 40744,
+      "byteLength": 56527,
+      "triangles": 616,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.6964905858039856,
+        "d": 1.8992114663124084
+      },
+      "center": {
+        "x": 0.0016787350177764893,
+        "z": -0.02816489338874817
+      },
+      "minY": -0.020484119653701782,
+      "maxY": 1.2748571634292603
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/hills_C",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "hills_C.glb",
+    "metrics": {
+      "glbBytes": 15736,
+      "byteLength": 31519,
+      "triangles": 238,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.5273288488388062,
+        "d": 1.4736002087593079
+      },
+      "center": {
+        "x": 0.08625960350036621,
+        "z": 0.18464073538780212
+      },
+      "minY": -0.00011646860366454348,
+      "maxY": 0.5545855760574341
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/ladder",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "ladder.glb",
+    "metrics": {
+      "glbBytes": 7228,
+      "byteLength": 23011,
+      "triangles": 84,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.2532198131084442,
+        "d": 0.0507472213357687
+      },
+      "center": {
+        "x": -3.129243850708008e-7,
+        "z": 0.007874132134020329
+      },
+      "minY": -2.2737367544323206e-13,
+      "maxY": 0.7699999213218689
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/mountain_A_grass_trees",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "mountain_A_grass_trees.glb",
+    "metrics": {
+      "glbBytes": 28696,
+      "byteLength": 44479,
+      "triangles": 468,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.8553760051727295,
+        "d": 1.8761708736419678
+      },
+      "center": {
+        "x": 0.034006476402282715,
+        "z": 0.0010093450546264648
+      },
+      "minY": 1.043081283569336e-7,
+      "maxY": 2.176356315612793
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/mountain_A_grass",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "mountain_A_grass.glb",
+    "metrics": {
+      "glbBytes": 16724,
+      "byteLength": 32507,
+      "triangles": 288,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.8010180592536926,
+        "d": 1.8761708736419678
+      },
+      "center": {
+        "x": 0.006827503442764282,
+        "z": 0.0010093450546264648
+      },
+      "minY": 1.043081283569336e-7,
+      "maxY": 1.5009690523147583
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/mountain_A",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "mountain_A.glb",
+    "metrics": {
+      "glbBytes": 8980,
+      "byteLength": 24763,
+      "triangles": 120,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.8010180592536926,
+        "d": 1.8761708736419678
+      },
+      "center": {
+        "x": 0.006827503442764282,
+        "z": 0.0010093450546264648
+      },
+      "minY": 1.043081283569336e-7,
+      "maxY": 1.4253854751586914
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/mountain_B_grass_trees",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "mountain_B_grass_trees.glb",
+    "metrics": {
+      "glbBytes": 34552,
+      "byteLength": 50335,
+      "triangles": 558,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.8010181188583374,
+        "d": 1.8761708736419678
+      },
+      "center": {
+        "x": 0.012696444988250732,
+        "z": 0.004029750823974609
+      },
+      "minY": -5.960464477539063e-8,
+      "maxY": 2.504627227783203
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/mountain_B_grass",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "mountain_B_grass.glb",
+    "metrics": {
+      "glbBytes": 16596,
+      "byteLength": 32379,
+      "triangles": 288,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.8010181188583374,
+        "d": 1.8761708736419678
+      },
+      "center": {
+        "x": 0.012696444988250732,
+        "z": 0.004029750823974609
+      },
+      "minY": -5.960464477539063e-8,
+      "maxY": 1.836353063583374
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/mountain_B",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "mountain_B.glb",
+    "metrics": {
+      "glbBytes": 8980,
+      "byteLength": 24763,
+      "triangles": 120,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.8010181188583374,
+        "d": 1.8761708736419678
+      },
+      "center": {
+        "x": 0.012696444988250732,
+        "z": 0.004029750823974609
+      },
+      "minY": -5.960464477539063e-8,
+      "maxY": 1.7695502042770386
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/mountain_C_grass_trees",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "mountain_C_grass_trees.glb",
+    "metrics": {
+      "glbBytes": 44732,
+      "byteLength": 60515,
+      "triangles": 750,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.7586182951927185,
+        "d": 2.0229865312576294
+      },
+      "center": {
+        "x": 0.028027385473251343,
+        "z": -0.006313741207122803
+      },
+      "minY": 1.341104507446289e-7,
+      "maxY": 2.112415075302124
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/mountain_C_grass",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "mountain_C_grass.glb",
+    "metrics": {
+      "glbBytes": 26772,
+      "byteLength": 42555,
+      "triangles": 480,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.7586182951927185,
+        "d": 2.0229865312576294
+      },
+      "center": {
+        "x": 0.028027385473251343,
+        "z": -0.006313741207122803
+      },
+      "minY": 1.341104507446289e-7,
+      "maxY": 1.5541561841964722
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/mountain_C",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "mountain_C.glb",
+    "metrics": {
+      "glbBytes": 14068,
+      "byteLength": 29851,
+      "triangles": 200,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.7586182951927185,
+        "d": 2.0229865312576294
+      },
+      "center": {
+        "x": 0.028027385473251343,
+        "z": -0.006313741207122803
+      },
+      "minY": 1.341104507446289e-7,
+      "maxY": 1.50800359249115
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/pallet",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "pallet.glb",
+    "metrics": {
+      "glbBytes": 6368,
+      "byteLength": 22151,
+      "triangles": 72,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.30000001192092896,
+        "d": 0.30000001192092896
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0,
+      "maxY": 0.08000000566244125
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/projectile_catapult",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "projectile_catapult.glb",
+    "metrics": {
+      "glbBytes": 13640,
+      "byteLength": 29423,
+      "triangles": 140,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.2404514104127884,
+        "d": 0.2528277188539505
+      },
+      "center": {
+        "x": -7.450580596923828e-9,
+        "z": -6.183981895446777e-7
+      },
+      "minY": -0.14133572578430176,
+      "maxY": 0.14133551716804504
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/resource_lumber",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "resource_lumber.glb",
+    "metrics": {
+      "glbBytes": 13240,
+      "byteLength": 29023,
+      "triangles": 220,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.6859425902366638,
+        "d": 0.3304957151412964
+      },
+      "center": {
+        "x": -0.001559525728225708,
+        "z": 0.0016142874956130981
+      },
+      "minY": -0.0000014901161193847656,
+      "maxY": 0.20999956130981445
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/resource_stone",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "resource_stone.glb",
+    "metrics": {
+      "glbBytes": 12920,
+      "byteLength": 28703,
+      "triangles": 220,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.42109353840351105,
+        "d": 0.35785047709941864
+      },
+      "center": {
+        "x": -0.000005073845386505127,
+        "z": 0.001863427460193634
+      },
+      "minY": -4.172325134277344e-7,
+      "maxY": 0.27999743819236755
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/rock_single_A",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "rock_single_A.glb",
+    "metrics": {
+      "glbBytes": 2560,
+      "byteLength": 18343,
+      "triangles": 18,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.2982180267572403,
+        "d": 0.28362220525741577
+      },
+      "center": {
+        "x": 7.450580596923828e-9,
+        "z": -0.01497139036655426
+      },
+      "minY": 0,
+      "maxY": 0.06930101662874222
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/rock_single_B",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "rock_single_B.glb",
+    "metrics": {
+      "glbBytes": 2980,
+      "byteLength": 18763,
+      "triangles": 26,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.2866158038377762,
+        "d": 0.24974951893091202
+      },
+      "center": {
+        "x": 0.0013307854533195496,
+        "z": -0.0031281225383281708
+      },
+      "minY": -9.681238033465434e-10,
+      "maxY": 0.13458546996116638
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/rock_single_C",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "rock_single_C.glb",
+    "metrics": {
+      "glbBytes": 3548,
+      "byteLength": 19331,
+      "triangles": 40,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.34390369057655334,
+        "d": 0.3442043215036392
+      },
+      "center": {
+        "x": -0.013315394520759583,
+        "z": -0.009912736713886261
+      },
+      "minY": -0.0000938796074478887,
+      "maxY": 0.19468727707862854
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/rock_single_D",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "rock_single_D.glb",
+    "metrics": {
+      "glbBytes": 2700,
+      "byteLength": 18483,
+      "triangles": 22,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.2866158038377762,
+        "d": 0.24974951148033142
+      },
+      "center": {
+        "x": 0.0013307854533195496,
+        "z": -0.004825815558433533
+      },
+      "minY": -9.681238033465434e-10,
+      "maxY": 0.16293124854564667
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/rock_single_E",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "rock_single_E.glb",
+    "metrics": {
+      "glbBytes": 5660,
+      "byteLength": 21443,
+      "triangles": 71,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.48814132809638977,
+        "d": 0.3475190997123718
+      },
+      "center": {
+        "x": -0.0112810879945755,
+        "z": -0.01104782521724701
+      },
+      "minY": -0.0000938796074478887,
+      "maxY": 0.19468727707862854
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/sack",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "sack.glb",
+    "metrics": {
+      "glbBytes": 4580,
+      "byteLength": 20363,
+      "triangles": 92,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.10652428865432739,
+        "d": 0.15954799950122833
+      },
+      "center": {
+        "x": 0.000008940696716308594,
+        "z": -0.0059017613530159
+      },
+      "minY": -0.0024502743035554886,
+      "maxY": 0.06223053112626076
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/target",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "target.glb",
+    "metrics": {
+      "glbBytes": 8436,
+      "byteLength": 24219,
+      "triangles": 156,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.2392999604344368,
+        "d": 0.1421177238225937
+      },
+      "center": {
+        "x": 3.725290298461914e-9,
+        "z": -0.028941147029399872
+      },
+      "minY": 0,
+      "maxY": 0.3018001317977905
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/tent",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "tent.glb",
+    "metrics": {
+      "glbBytes": 7468,
+      "byteLength": 23251,
+      "triangles": 86,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.5160000324249268,
+        "d": 0.5160000324249268
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0,
+      "maxY": 0.5160000324249268
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/tree_single_A_cut",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "tree_single_A_cut.glb",
+    "metrics": {
+      "glbBytes": 2412,
+      "byteLength": 18195,
+      "triangles": 16,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.1696762889623642,
+        "d": 0.16170502454042435
+      },
+      "center": {
+        "x": -0.000052735209465026855,
+        "z": -0.008245352655649185
+      },
+      "minY": -0.10260728746652603,
+      "maxY": 0.22763319313526154
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/tree_single_A",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "tree_single_A.glb",
+    "metrics": {
+      "glbBytes": 4696,
+      "byteLength": 20479,
+      "triangles": 50,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.5739741325378418,
+        "d": 0.5470093190670013
+      },
+      "center": {
+        "x": -0.0005467534065246582,
+        "z": -0.02821160852909088
+      },
+      "minY": -0.10260728746652603,
+      "maxY": 1.0938414335250854
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/tree_single_B_cut",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "tree_single_B_cut.glb",
+    "metrics": {
+      "glbBytes": 3156,
+      "byteLength": 18939,
+      "triangles": 38,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.1807403415441513,
+        "d": 0.190041646361351
+      },
+      "center": {
+        "x": -4.3213367462158203e-7,
+        "z": -4.470348358154297e-8
+      },
+      "minY": -0.09999983757734299,
+      "maxY": 0.13664501905441284
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/tree_single_B",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "tree_single_B.glb",
+    "metrics": {
+      "glbBytes": 8724,
+      "byteLength": 24507,
+      "triangles": 220,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.6848819851875305,
+        "d": 0.7201276123523712
+      },
+      "center": {
+        "x": 9.5367431640625e-7,
+        "z": -4.470348358154297e-8
+      },
+      "minY": -0.09999983757734299,
+      "maxY": 1.1126774549484253
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/trees_A_cut",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "trees_A_cut.glb",
+    "metrics": {
+      "glbBytes": 20364,
+      "byteLength": 36147,
+      "triangles": 288,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.6637871265411377,
+        "d": 1.6847074627876282
+      },
+      "center": {
+        "x": -0.011083602905273438,
+        "z": -0.009954601526260376
+      },
+      "minY": -0.013254642486572266,
+      "maxY": 0.19642479717731476
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/trees_A_large",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "trees_A_large.glb",
+    "metrics": {
+      "glbBytes": 58392,
+      "byteLength": 74175,
+      "triangles": 864,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.9451598525047302,
+        "d": 1.9666298627853394
+      },
+      "center": {
+        "x": 0.004168421030044556,
+        "z": -0.00814908742904663
+      },
+      "minY": -0.013254642486572266,
+      "maxY": 0.9131718277931213
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/trees_A_medium",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "trees_A_medium.glb",
+    "metrics": {
+      "glbBytes": 33048,
+      "byteLength": 48831,
+      "triangles": 480,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.751423716545105,
+        "d": 1.814279019832611
+      },
+      "center": {
+        "x": 0.014254450798034668,
+        "z": 0.03396788239479065
+      },
+      "minY": -0.020493030548095703,
+      "maxY": 1.2748571634292603
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/trees_A_small",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "trees_A_small.glb",
+    "metrics": {
+      "glbBytes": 29872,
+      "byteLength": 45655,
+      "triangles": 432,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.426328182220459,
+        "d": 1.4350239038467407
+      },
+      "center": {
+        "x": -0.047329723834991455,
+        "z": -0.013037323951721191
+      },
+      "minY": -0.020493030548095703,
+      "maxY": 1.0884511470794678
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/trees_B_cut",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "trees_B_cut.glb",
+    "metrics": {
+      "glbBytes": 14088,
+      "byteLength": 29871,
+      "triangles": 266,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.4020954966545105,
+        "d": 1.4606299996376038
+      },
+      "center": {
+        "x": 0.03571733832359314,
+        "z": -0.009463518857955933
+      },
+      "minY": -0.022003119811415672,
+      "maxY": 0.15118496119976044
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/trees_B_large",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "trees_B_large.glb",
+    "metrics": {
+      "glbBytes": 53328,
+      "byteLength": 69111,
+      "triangles": 1540,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.8492642641067505,
+        "d": 1.9324821829795837
+      },
+      "center": {
+        "x": 0.017641723155975342,
+        "z": -0.019483298063278198
+      },
+      "minY": -0.022003119811415672,
+      "maxY": 1.1525464057922363
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/trees_B_medium",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "trees_B_medium.glb",
+    "metrics": {
+      "glbBytes": 38464,
+      "byteLength": 54247,
+      "triangles": 1100,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.8638317584991455,
+        "d": 1.8331762552261353
+      },
+      "center": {
+        "x": 0.040341973304748535,
+        "z": -0.05692422389984131
+      },
+      "minY": -0.021492868661880493,
+      "maxY": 1.1525464057922363
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/trees_B_small",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "trees_B_small.glb",
+    "metrics": {
+      "glbBytes": 23528,
+      "byteLength": 39311,
+      "triangles": 660,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.3283746242523193,
+        "d": 1.1384326815605164
+      },
+      "center": {
+        "x": -0.028611302375793457,
+        "z": 0.06613495945930481
+      },
+      "minY": -0.006497662980109453,
+      "maxY": 0.9153724908828735
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/wall_corner_A_gate",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "wall_corner_A_gate.glb",
+    "metrics": {
+      "glbBytes": 48892,
+      "byteLength": 64675,
+      "triangles": 796,
+      "primitives": 3,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.759798526763916,
+        "d": 1.532520592212677
+      },
+      "center": {
+        "x": -0.12010180950164795,
+        "z": -0.2997651994228363
+      },
+      "minY": -0.049999967217445374,
+      "maxY": 1.3651083707809448
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/wall_corner_A_inside",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "wall_corner_A_inside.glb",
+    "metrics": {
+      "glbBytes": 22708,
+      "byteLength": 38491,
+      "triangles": 364,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.8464218378067017,
+        "d": 1.4160204827785492
+      },
+      "center": {
+        "x": -0.07679861783981323,
+        "z": -0.30801649391651154
+      },
+      "minY": 0,
+      "maxY": 1.0999999046325684
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/wall_corner_A_outside",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "wall_corner_A_outside.glb",
+    "metrics": {
+      "glbBytes": 26144,
+      "byteLength": 41927,
+      "triangles": 414,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.7598071694374084,
+        "d": 1.4317445755004883
+      },
+      "center": {
+        "x": -0.12010595202445984,
+        "z": -0.35015320777893066
+      },
+      "minY": 0,
+      "maxY": 1.0999999046325684
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/wall_corner_B_inside",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "wall_corner_B_inside.glb",
+    "metrics": {
+      "glbBytes": 18028,
+      "byteLength": 33811,
+      "triangles": 304,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.9624996483325958,
+        "d": 1.4660178422927856
+      },
+      "center": {
+        "x": -0.5187558978796005,
+        "z": -0.3330182433128357
+      },
+      "minY": 0,
+      "maxY": 1.0999999046325684
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/wall_corner_B_outside",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "wall_corner_B_outside.glb",
+    "metrics": {
+      "glbBytes": 24112,
+      "byteLength": 39895,
+      "triangles": 384,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.9640260338783264,
+        "d": 1.3497164249420166
+      },
+      "center": {
+        "x": -0.5179894864559174,
+        "z": -0.3411654233932495
+      },
+      "minY": 0,
+      "maxY": 1.0999999046325684
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/wall_straight_gate",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "wall_straight_gate.glb",
+    "metrics": {
+      "glbBytes": 50372,
+      "byteLength": 66155,
+      "triangles": 820,
+      "primitives": 3,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 0.8956240117549896
+      },
+      "center": {
+        "x": 0,
+        "z": 0.047811999917030334
+      },
+      "minY": -0.049999967217445374,
+      "maxY": 1.3640289306640625
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/wall_straight",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "wall_straight.glb",
+    "metrics": {
+      "glbBytes": 32400,
+      "byteLength": 48183,
+      "triangles": 504,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 0.800000011920929
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0,
+      "maxY": 1.0999999046325684
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/waterlily_A",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "waterlily_A.glb",
+    "metrics": {
+      "glbBytes": 3948,
+      "byteLength": 19731,
+      "triangles": 68,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.14514446258544922,
+        "d": 0.14462722092866898
+      },
+      "center": {
+        "x": 0,
+        "z": -0.0002586357295513153
+      },
+      "minY": 0,
+      "maxY": 0.017148621380329132
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/waterlily_B",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "waterlily_B.glb",
+    "metrics": {
+      "glbBytes": 4172,
+      "byteLength": 19955,
+      "triangles": 68,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.21145272254943848,
+        "d": 0.21069519221782684
+      },
+      "center": {
+        "x": -5.960464477539063e-8,
+        "z": -0.00037879496812820435
+      },
+      "minY": 0,
+      "maxY": 0.017148621380329132
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/waterplant_A",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "waterplant_A.glb",
+    "metrics": {
+      "glbBytes": 4340,
+      "byteLength": 20123,
+      "triangles": 66,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.198271244764328,
+        "d": 0.21569272875785828
+      },
+      "center": {
+        "x": -0.02290859818458557,
+        "z": -0.015108779072761536
+      },
+      "minY": -0.019585534930229187,
+      "maxY": 0.11272629350423813
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/waterplant_B",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "waterplant_B.glb",
+    "metrics": {
+      "glbBytes": 7164,
+      "byteLength": 22947,
+      "triangles": 162,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.15795393288135529,
+        "d": 0.10306742787361145
+      },
+      "center": {
+        "x": -0.005601249635219574,
+        "z": -0.012628600001335144
+      },
+      "minY": -0.01904015988111496,
+      "maxY": 0.23518936336040497
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/waterplant_C",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "waterplant_C.glb",
+    "metrics": {
+      "glbBytes": 13212,
+      "byteLength": 28995,
+      "triangles": 338,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.198271244764328,
+        "d": 0.21569272875785828
+      },
+      "center": {
+        "x": -0.02290859818458557,
+        "z": -0.015108779072761536
+      },
+      "minY": -0.019585534930229187,
+      "maxY": 0.2275698482990265
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/weaponrack",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "weaponrack.glb",
+    "metrics": {
+      "glbBytes": 4272,
+      "byteLength": 20055,
+      "triangles": 42,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.20000186562538147,
+        "d": 0.13000023365020752
+      },
+      "center": {
+        "x": 9.387731552124023e-7,
+        "z": -0.005000069737434387
+      },
+      "minY": 0,
+      "maxY": 0.23999996483325958
+    }
+  },
+  {
+    "id": "kaykit-medieval-hexagon/wheelbarrow",
+    "source": "kaykit-medieval-hexagon",
+    "categories": [
+      "hexagon",
+      "medieval",
+      "environment",
+      "building"
+    ],
+    "file": "wheelbarrow.glb",
+    "metrics": {
+      "glbBytes": 20376,
+      "byteLength": 36159,
+      "triangles": 396,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 15783
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.23800000548362732,
+        "d": 0.505679652094841
+      },
+      "center": {
+        "x": 3.203749656677246e-7,
+        "z": 0.04003927856683731
+      },
+      "minY": -2.9802322387695312e-8,
+      "maxY": 0.18841521441936493
+    }
+  }
+]
