@@ -1,4 +1,4 @@
-import type { BuildingPaletteOverrides, BuildingStyle } from "./buildings";
+import type { BuildingPaletteOverrides, BuildingProbabilities, BuildingStyle } from "./buildings";
 import type { BuildingKit } from "./buildingKit";
 import type { AvoidZone } from "./geometry";
 import type { TerrainPathProfile } from "./pathTerrain";
@@ -406,6 +406,8 @@ export interface BuildingEnvironmentConfig {
   style?: BuildingStyle;
   /** Explicit per-part-kind hex colors; any part left unset falls back to the resolved `style` palette. */
   palette?: BuildingPaletteOverrides;
+  /** Facade part probabilities (windows, shopfronts, awnings, …); unset parts follow the `style`. */
+  probabilities?: Partial<BuildingProbabilities>;
   seed?: string;
   /**
    * Street-aware placement: derive lots along the given roads' frontage (facing each street, set
@@ -475,7 +477,7 @@ export type OceanEnvironmentDescriptor = { kind: "ocean" } & Required<
 export type BuildingEnvironmentDescriptor = { kind: "building" } & Required<
   Pick<BuildingEnvironmentConfig, "count" | "footprint" | "stories" | "storyHeight" | "spacing" | "style">
 > &
-  Pick<BuildingEnvironmentConfig, "seed" | "position" | "palette" | "along" | "kit" | "solid">;
+  Pick<BuildingEnvironmentConfig, "seed" | "position" | "palette" | "probabilities" | "along" | "kit" | "solid">;
 
 export type PadEnvironmentDescriptor = { kind: "pad" } & Required<
   Pick<PadEnvironmentConfig, "center" | "size" | "height" | "color">
@@ -922,6 +924,7 @@ export function building(config: BuildingEnvironmentConfig = {}): BuildingEnviro
       ...(config.seed === undefined ? {} : { seed: config.seed }),
       ...(config.position === undefined ? {} : { position: config.position }),
       ...(config.palette === undefined ? {} : { palette: config.palette }),
+      ...(config.probabilities === undefined ? {} : { probabilities: config.probabilities }),
       ...(config.along === undefined ? {} : { along: config.along }),
       ...(config.kit === undefined ? {} : { kit: config.kit }),
       ...(config.solid === undefined ? {} : { solid: config.solid }),
