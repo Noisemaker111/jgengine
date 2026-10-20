@@ -1,5 +1,8 @@
+/** Why a command refused: `reason` is a stable machine code; `message`, when set, is shown to the player. */
 export interface CommandRejection {
   reason: string;
+  /** Player-facing text ("Needs 40 more gold"). The shell shows it in the notice feed with the deny cue. */
+  message?: string;
 }
 
 export type CommandDecodeResult<TInput> =
@@ -18,7 +21,7 @@ export interface CommandDefinition<TState, TInput> {
 
 export type CommandResult<TState> =
   | { status: "applied"; state: TState }
-  | { status: "rejected"; reason: string }
+  | { status: "rejected"; reason: string; message?: string }
   | { status: "unknown-command" };
 
 export interface CommandRegistry<TState> {
@@ -56,7 +59,11 @@ export function createCommandRegistry<TState>(): CommandRegistry<TState> {
       }
 
       const rejection = definition.validate?.(state, decoded) ?? null;
-      if (rejection) return { status: "rejected", reason: rejection.reason };
+      if (rejection) {
+        return rejection.message === undefined
+          ? { status: "rejected", reason: rejection.reason }
+          : { status: "rejected", reason: rejection.reason, message: rejection.message };
+      }
 
       const next = definition.apply(state, decoded);
       return { status: "applied", state: next === undefined ? state : next };

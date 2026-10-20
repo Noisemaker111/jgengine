@@ -88,6 +88,7 @@ import type { AuthoritativeFrameHandler } from "./worldSync";
 import { TouchControlsDock, TouchPlaySurface, touchDockClearance, type TouchCodeSink } from "./touch/TouchControlsOverlay";
 import { SettingsRuntime } from "./settings/SettingsRuntime";
 import { SettingsChrome } from "./settings/SettingsChrome";
+import { resolvePlayableAudio } from "./audio/playableAudio";
 import { AudioSettingsBridge, type AppliedGraphicsSettings } from "./settings/appliedSettings";
 import { TextureFiltering } from "./render/TextureFiltering";
 import { FrameRateLimiter } from "./drivers/FrameRateLimiter";
@@ -496,13 +497,13 @@ export function Shell3dPresentation({
   return (
     <SettingsProvider store={settingsStore}>
       <PlayerFovProvider config={playable.camera} orthographic={orthographic}>
-        <AudioSettingsBridge store={settingsStore} engine={audioEngine} buses={playable.audio?.buses} />
+        <AudioSettingsBridge store={settingsStore} engine={audioEngine} buses={resolvePlayableAudio(playable).buses} />
         <SettingsRuntime
           variant={settingsVariant}
           surface={settingsSurface}
           actions={settingsActions}
           input={playable.game.input ?? {}}
-          buses={playable.audio?.buses}
+          buses={resolvePlayableAudio(playable).buses}
           extra={settingsConfig.extra ?? []}
           categories={settingsConfig.categories ?? []}
           hide={hideCategories}

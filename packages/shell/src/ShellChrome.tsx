@@ -12,6 +12,7 @@ import {
 } from "./diagnostics/RuntimeDiagnostics";
 import { DevtoolsRuntime } from "./devtools/DevtoolsRuntime";
 import { GamePhaseStamp } from "./GamePhaseStamp";
+import { ShellNotices, ShellUiCues } from "./ShellNotices";
 import { SettingsPlayControlGate } from "./settings/SettingsRuntime";
 import type { ShellMultiplayer } from "./multiplayer";
 import type { PlayableGame } from "./registry";
@@ -47,11 +48,14 @@ export function ShellGameUiChrome({
           userScale={uiScale}
         >
           {orientationGate ? null : (
-            <HudThemeRoot theme={playable.hudTheme}>
-              <GameUI />
-            </HudThemeRoot>
+            <ShellUiCues ctx={ctx} enabled={playable.notices !== false && playable.notices?.cues !== false}>
+              <HudThemeRoot theme={playable.hudTheme}>
+                <GameUI />
+              </HudThemeRoot>
+            </ShellUiCues>
           )}
         </HudViewportProvider>
+        {orientationGate ? null : <ShellNotices ctx={ctx} config={playable.notices} scale={uiScale} />}
       </GameProvider>
     </GameUiErrorBoundary>
   );

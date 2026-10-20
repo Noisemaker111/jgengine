@@ -1600,6 +1600,14 @@
 - `PauseMenuProps` (interface): interface PauseMenuProps — Props for {@link PauseMenu}.
 - `useModalStack` (function): function useModalStack(stack: ModalStack): ModalStackView — Subscribe to a modal stack and re-render on every change, returning the active modal and depth.
 
+## @jgengine/react/notices
+
+- `Notice` (interface): interface Notice — A live notice as the HUD renders it.
+- `NoticePlacement` (type): type NoticePlacement = "top" | "center" | "bottom" — Where {@link NoticeStack} sits: below top-edge HUD bars, over the play area, or above bottom action bars.
+- `NoticeStack` (function): function NoticeStack({ feed, placement = "top", scale = 1, renderNotice, }: { /** Defaults to the surrounding game's `ctx.game.notices`. */ feed?: NoticeFeed; placement?: NoticePlacement; /** Multiplies text and spacing (the shell passes the player's UI scale). */ scale?: number; renderNotice?: (not… — Animated, toned notice stack for a {@link NoticeFeed} — the default renderer the shell mounts for `ctx.game.notices`. Uses `--jg-*` theme vars with fallbacks, 14px text, and never takes pointer input.
+- `NoticeTone` (type): type NoticeTone = "info" | "success" | "warn" | "deny" — How a notice reads: neutral info, a win, a caution, or a refused action.
+- `useNoticeList` (function): function useNoticeList(feed: NoticeFeed | null): readonly Notice[] — Live notices of `feed`, re-rendering on change and pruning each one when it expires.
+
 ## @jgengine/react/notifications
 
 - `NotificationBell` (function): function NotificationBell({ store, onClick, icon = "🔔", className, style }: NotificationBellProps): ReactNode — Notification bell — an icon button with an unread-count badge, bound to a notification store. Toggle a {@link NotificationCenter} panel from its click.
@@ -1827,6 +1835,13 @@
 - `easeOutCubic` (function): function easeOutCubic(t: number): number — Ease-out cubic, the default counter curve.
 - `tweenAt` (function): function tweenAt(from: number, to: number, t: number, ease: (t: number) => number = easeOutCubic): number — Value at progress `t` (0–1) between `from` and `to` under `ease`.
 - `useTweenedValue` (function): function useTweenedValue(target: number, options: TweenOptions = {}): number — Animates toward `target` whenever it changes, starting from the currently displayed value, so a counter rolls instead of jumping. Snaps immediately under reduced motion or a non-finite target.
+
+## @jgengine/react/uiCues
+
+- `UiCue` (type): type UiCue = "click" | "hover" | "open" | "close" | "confirm" | "deny" | "notify" — Interface sound cues every game gets: press, hover, panel open/close, confirm, refusal, notification.
+- `playUiCue` (function): function playUiCue(ctx: Pick<GameContext, "game"> | null, cue: UiCue): void — Play UI cue `cue` through the game's audio seam (`ui.<cue>` in the shell catalog). No-op outside a game.
+- `uiCueForInteraction` (function): function uiCueForInteraction(event: HudInteractEvent): UiCue | null — The UI cue an engine HUD primitive interaction plays, or `null` for none: activating plays the primitive's `cue` when it names a {@link UiCue} (e.g. `cue="confirm"`), else `click`; hovering a button or action slot plays `hover`; panels and windows play `open`/`close`. Press and focus are silent.
+- `useUiCue` (function): function useUiCue(): (cue: UiCue) => void — Returns a stable `cue(name)` that plays a UI sound: click, hover, open, close, confirm, deny, notify. The shell ships soft procedural defaults on the "ui" bus (volume in Settings, muted with master); a game replaces one by declaring `audio.sounds["ui.click"]` or `audio.uiCues`. Safe outside a GameProvider.
 
 ## @jgengine/react/useDebouncedCommit
 
