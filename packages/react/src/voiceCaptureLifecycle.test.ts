@@ -1,9 +1,9 @@
 import { afterAll, beforeAll, expect, test } from "bun:test";
-import { execFileSync } from "node:child_process";
 import { mkdir, rm, symlink } from "node:fs/promises";
 import { resolve } from "node:path";
 import { chromium, type Browser, type Page } from "playwright-core";
 import { buildBrowserFixture, findChromeExecutable } from "../../../scripts/browser-lib";
+import { gotoFixture, installPublicPackages } from "../../../scripts/browser-test-fixture";
 
 const root = resolve(import.meta.dir, "../../..");
 const scratch = `${root}/.scratch/voice-capture-lifecycle-test`;
@@ -15,13 +15,7 @@ beforeAll(async () => {
   for (const peer of ["react", "react-dom"]) {
     await symlink(`${root}/packages/react/node_modules/${peer}`, `${scratch}/node_modules/${peer}`, "dir");
   }
-  for (const pkg of ["core", "react"]) {
-    const pack = JSON.parse(execFileSync("npm", ["pack", "--ignore-scripts", "--json", "--pack-destination", scratch], {
-      cwd: `${root}/packages/${pkg}`, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"],
-    }))[0];
-    await mkdir(`${scratch}/node_modules/@jgengine/${pkg}`, { recursive: true });
-    execFileSync("tar", ["-xzf", pack.filename, "-C", `node_modules/@jgengine/${pkg}`, "--strip-components=1"], { cwd: scratch });
-  }
+  await installPublicPackages(scratch, ["core", "react"]);
   await Bun.write(`${scratch}/fixture.tsx`, `
     import React,{StrictMode,useEffect,useLayoutEffect,useState} from 'react';
     import {createRoot} from 'react-dom/client';import {flushSync} from 'react-dom';
@@ -98,8 +92,7 @@ afterAll(async () => {
 });
 
 async function open(query = "") {
-  await page.goto(`http://127.0.0.1:${server.port}/${query}`);
-  await page.getByText("No microphone", { exact: true }).waitFor({ timeout: 2000 });
+  await gotoFixture(page, `http://127.0.0.1:${server.port}/${query}`, () => page.getByText("No microphone", { exact: true }).waitFor());
   await page.waitForFunction((strict) => (window as any).fixture.snapshot().joins.length >= (strict ? 2 : 1), query.includes("strict"));
 }
 async function action(method: string, index?: number | string) {
@@ -107,13 +100,13 @@ async function action(method: string, index?: number | string) {
 }
 async function snapshot() { return page.evaluate(() => (window as any).fixture.snapshot()); }
 async function settled(index: number) {
-  await page.waitForFunction((index) => (window as any).fixture.snapshot().results[index] !== null, index, { timeout: 1000 });
+  await page.waitForFunction((index) => (window as any).fixture.snapshot().results[index] !== null, index);
   return snapshot();
 }
 async function granted(index: number, resultIndex = index) {
   await action("grant", index);
   const state = await settled(resultIndex);
-  await page.waitForFunction((id) => (window as any).fixture.snapshot().micId === id, state.requests[index].id, { timeout: 1000 });
+  await page.waitForFunction((id) => (window as any).fixture.snapshot().micId === id, state.requests[index].id);
   return snapshot();
 }
 function ended(request: any) { expect(request.tracks).toEqual([{ state: "ended", enabled: true, stops: 1 }, { state: "ended", enabled: true, stops: 1 }]); }
@@ -271,7 +264,7 @@ async function captured(index: number) {
   await page.waitForFunction((index) => {
     const state = (window as any).fixture.snapshot();
     return state.micId === state.requests[index].id;
-  }, index, { timeout: 1000 });
+  }, index);
 }
 async function noUnhandled() {
   // Native unhandledrejection is dispatched after the promise microtask checkpoint.

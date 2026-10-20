@@ -1,9 +1,9 @@
 import { afterAll, beforeAll, expect, test } from "bun:test";
-import { execFileSync } from "node:child_process";
 import { mkdir, rm, symlink } from "node:fs/promises";
 import { resolve } from "node:path";
 import { chromium, type Browser, type Page } from "playwright-core";
 import { buildBrowserFixture, findChromeExecutable } from "../../../scripts/browser-lib";
+import { installPublicPackages } from "../../../scripts/browser-test-fixture";
 
 const scratch = resolve(import.meta.dir, "../../../.scratch/shell-lifecycle-test");
 let browser: Browser, page: Page, server: ReturnType<typeof Bun.serve>;
@@ -15,11 +15,7 @@ beforeAll(async () => {
   for (const peer of ["react", "react-dom"]) await symlink(resolve(import.meta.dir, "../../react/node_modules", peer), `${scratch}/node_modules/${peer}`, "dir");
   await mkdir(`${scratch}/node_modules/@react-three`, { recursive: true });
   for (const peer of ["@react-three/fiber", "@react-three/drei", "three", "three-stdlib"]) await symlink(resolve(import.meta.dir, "../node_modules", peer), `${scratch}/node_modules/${peer}`, "dir");
-  for (const pkg of ["core", "react", "shell"]) {
-    const pack = JSON.parse(execFileSync("npm", ["pack", "--ignore-scripts", "--json", "--pack-destination", scratch], { cwd: resolve(import.meta.dir, "../../", pkg), encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }))[0];
-    await mkdir(`${scratch}/node_modules/@jgengine/${pkg}`, { recursive: true });
-    execFileSync("tar", ["-xzf", pack.filename, "-C", `node_modules/@jgengine/${pkg}`, "--strip-components=1"], { cwd: scratch });
-  }
+  await installPublicPackages(scratch, ["core", "react", "shell"]);
   await Bun.write(`${scratch}/fixture.tsx`, `
     import React,{useState} from 'react';import {createRoot} from 'react-dom/client';
     import {GamePlayerShell} from '@jgengine/shell/GamePlayerShell';import {defineGame} from '@jgengine/shell/defineGame';

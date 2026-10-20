@@ -1,11 +1,11 @@
 import { afterAll, afterEach, beforeAll, beforeEach, expect, test } from "bun:test";
-import { execFileSync } from "node:child_process";
 import { mkdir, mkdtemp, rm, symlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { chromium, type Browser, type BrowserContext, type Page } from "playwright-core";
 import { buildBrowserFixture, findChromeExecutable } from "../../../scripts/browser-lib";
 import { cleanupBrowserFixture } from "../../../scripts/browser-fixture-cleanup";
+import { gotoFixture, installPublicPackages } from "../../../scripts/browser-test-fixture";
 
 let scratch: string | undefined;
 let browser: Browser | undefined, context: BrowserContext | undefined, page: Page;
@@ -41,18 +41,7 @@ beforeAll(async () => {
         ...["@react-three/fiber", "@react-three/drei", "three", "three-stdlib"].map(peer => symlink(resolve(import.meta.dir, "../node_modules", peer), `${directory}/node_modules/${peer}`, "dir")),
       ]);
     });
-    const packages = ["core", "react", "shell"];
-    const packs = await setupStep("pack public core/react/shell", () => JSON.parse(execFileSync("npm", ["pack", ...packages.map(pkg => `--workspace=packages/${pkg}`), "--ignore-scripts", "--json", "--pack-destination", directory], {
-      cwd: resolve(import.meta.dir, "../../.."), encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], maxBuffer: 16 * 1024 * 1024, timeout: 25_000,
-    })) as { name: string; filename: string }[]);
-    await setupStep("extract public packages", async () => {
-      for (const pkg of packages) {
-        const pack = packs.find(candidate => candidate.name === `@jgengine/${pkg}`);
-        if (pack === undefined) throw new Error(`Missing packed @jgengine/${pkg}`);
-        await mkdir(`${directory}/node_modules/@jgengine/${pkg}`, { recursive: true });
-        execFileSync("tar", ["-xzf", pack.filename, "-C", `node_modules/@jgengine/${pkg}`, "--strip-components=1"], { cwd: directory });
-      }
-    });
+    await setupStep("install public core/react/shell", () => installPublicPackages(directory, ["core", "react", "shell"]));
     await Bun.write(`${directory}/fixture.tsx`, `
       import React,{useState} from 'react';import {createRoot} from 'react-dom/client';
       import {InventoryGrid} from '@jgengine/react/inventoryGrid';import {GameProvider} from '@jgengine/react/provider';
@@ -89,9 +78,7 @@ beforeEach(async () => {
   page = await context.newPage();
   const errors: string[] = [];
   page.on("pageerror", error => errors.push(error.message));
-  await page.goto(`http://127.0.0.1:${server!.port}`);
-  try { await page.locator('[data-slot="0"]').waitFor({ timeout: 2000 }); }
-  catch (error) { throw new Error(errors.join("\n") || String(error)); }
+  await gotoFixture(page, `http://127.0.0.1:${server!.port}`, () => page.locator('[data-slot="0"]').waitFor());
   expect(errors).toEqual([]);
 });
 afterEach(async () => { try { await context?.close(); } finally { context = undefined; } });
