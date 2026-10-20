@@ -1,5 +1,6 @@
 import { createAuthoredSimulation, type AuthoredSimulationSnapshot } from "../world/authoredSimulation";
-import { createCommandRegistry } from "../commands/commandRegistry";
+import { createCommandRegistry, type CommandResult } from "../commands/commandRegistry";
+import { createNoticeFeed } from "../game/notices";
 import { type Cosmetics } from "../game/cosmetics";
 import type { GameDefinition, GameFeatures, PersistConfig } from "../game/defineGame";
 import { groundFieldFor } from "../world/terrain";
@@ -185,6 +186,13 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   };
 
   const commandRegistry = createCommandRegistry<GameContext>();
+  const announceRefusal = (command: string, result: CommandResult<GameContext>, actor: string | null): void => {
+    if (result.status !== "rejected") return;
+    events.emit("command.refused", result.message === undefined
+      ? { command, reason: result.reason, actor }
+      : { command, reason: result.reason, message: result.message, actor });
+  };
+  const notices = createNoticeFeed({ now });
   if (definition.lifecycle !== undefined) {
     const lifecycle = definition.lifecycle;
     commandRegistry.define(lifecycle.commands?.start ?? "start", {
@@ -585,6 +593,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
         run(name, input) {
           const result = commandRegistry.run(ctx, name, input);
           signal.notify();
+          announceRefusal(name, result, null);
           return result;
         },
         runAs(actorUserId, name, input) {
@@ -593,6 +602,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
           try {
             const result = commandRegistry.run(ctx, name, input);
             signal.notify();
+            announceRefusal(name, result, actorUserId);
             return result;
           } finally {
             actingUserId = previous;
@@ -601,6 +611,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
         actor: () => actingUserId,
       },
       events,
+      notices,
       playEntityAnimation: (instanceId, event) => events.emit("entity.animation", { instanceId, event }),
       audio: {
         play: (sound, at) => events.emit("audio.play", at === undefined ? { sound } : { sound, at }),

@@ -23,10 +23,16 @@ export function localCommandSink(ctx: GameContext): CommandSink {
 export function remoteCommandSink(
   backend: Pick<LiveGameBackend, "transport">,
   serverId: string,
+  events?: Pick<GameContext["game"]["events"], "emit">,
 ): CommandSink {
   return {
     run(name, input) {
-      void backend.transport.runCommand({ serverId, command: name, input }).catch(() => undefined);
+      void backend.transport.runCommand({ serverId, command: name, input }).then((result) => {
+        // Host refusals reach the local notice feed the same way local ones do.
+        if (!result.ok && result.message !== undefined) {
+          events?.emit("command.refused", { command: name, reason: result.reason, message: result.message, actor: null });
+        }
+      }).catch(() => undefined);
     },
   };
 }
@@ -45,7 +51,7 @@ export function resolveCommandSink(
   },
 ): CommandSink {
   if (opts.serverAuthoritative && opts.backend !== null && opts.serverId !== null) {
-    return remoteCommandSink(opts.backend, opts.serverId);
+    return remoteCommandSink(opts.backend, opts.serverId, ctx.game.events);
   }
   if (opts.serverAuthoritative) return { run() {} };
   return localCommandSink(ctx);

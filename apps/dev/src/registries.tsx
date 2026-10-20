@@ -198,6 +198,7 @@ export const gameRegistry: GameRegistry = {
   "extraction-map": () => import("./demo/mapDemo").then((module) => module.mapDemoGame),
   "codex": () => import("./demo/codexDemo").then((module) => module.codexDemoGame),
   "notification-center": () => import("./demo/notificationDemo").then((module) => module.notificationDemoGame),
+  "ui-feedback": () => import("./demo/uiFeedbackDemo").then((module) => module.uiFeedbackDemoGame),
   "floating-text": () => import("./demo/floatingTextDemo").then((module) => module.floatingTextDemoGame),
   "coach-marks": () => import("./demo/coachMarksDemo").then((module) => module.coachMarksDemoGame),
   "objective-banner": () => import("./demo/objectiveBannerDemo").then((module) => module.objectiveBannerDemoGame),

@@ -6,6 +6,7 @@ import { iconForItemId } from "./gameIcons";
 import { hudFrameStyle } from "./hudFrame";
 import { IconTreatment, schoolForItem } from "./iconTreatment";
 import { useCurrency, useEntityStat, useGameClock, useGameStore, useInventory, localPlayerEntity } from "./hooks";
+import { hudType } from "./hudTokens";
 
 /**
  * Optional HUD building blocks bound to live game state — not a finished game face. Every game
@@ -78,7 +79,7 @@ export function StatBar({
   return (
     <div className={className} style={{ ...PANEL, padding: "6px 8px", width, ...style }} data-stat={statId}>
       {(label !== undefined || icon !== undefined || showValue) && (
-        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4, fontSize: 11, fontWeight: 600, letterSpacing: 0.3 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4, fontSize: hudType("xs"), fontWeight: 600, letterSpacing: 0.3 }}>
           {icon}
           <span style={{ textTransform: "uppercase", opacity: 0.75 }}>{label ?? statId}</span>
           {showValue ? (
@@ -162,7 +163,7 @@ export function Hotbar({
                   borderColor: active ? "rgba(56,189,248,0.9)" : "rgba(255,255,255,0.10)",
                 }}
               >
-                <span style={{ position: "absolute", top: 2, left: 4, fontSize: 9, fontWeight: 700, opacity: 0.55 }}>{keycap}</span>
+                <span style={{ position: "absolute", top: 2, left: 4, fontSize: hudType("xs"), fontWeight: 700, opacity: 0.55 }}>{keycap}</span>
               </div>
             )}
           </div>
@@ -218,7 +219,7 @@ export function Speedometer({
         <path d={arc(0, fraction)} fill="none" stroke={fraction > 0.85 ? "#f87171" : "#38bdf8"} strokeWidth={7} strokeLinecap="round" />
       </svg>
       <div style={{ marginTop: -8, fontVariantNumeric: "tabular-nums", fontWeight: 700, fontSize: 18, lineHeight: 1 }}>{Math.round(speed)}</div>
-      <div style={{ fontSize: 9, opacity: 0.6, letterSpacing: 0.4, textTransform: "uppercase" }}>{unit}</div>
+      <div style={{ fontSize: hudType("xs"), opacity: 0.6, letterSpacing: 0.4, textTransform: "uppercase" }}>{unit}</div>
     </div>
   );
 }
@@ -255,7 +256,7 @@ export function Clock({
   }, [hour, minute, format]);
   return (
     <div className={className} style={{ ...PANEL, padding: "5px 10px", display: "inline-flex", alignItems: "center", gap: 8, fontVariantNumeric: "tabular-nums", ...style }}>
-      {showDay ? <span style={{ fontSize: 11, opacity: 0.6 }}>Day {day + 1}</span> : null}
+      {showDay ? <span style={{ fontSize: hudType("xs"), opacity: 0.6 }}>Day {day + 1}</span> : null}
       <span style={{ fontWeight: 700, fontSize: 14 }}>{label}</span>
       {controls ? (
         <span style={{ display: "inline-flex", gap: 3, marginLeft: 4 }}>
@@ -277,7 +278,7 @@ function ClockPill({ label, active, onClick }: { label: string; active: boolean;
       style={{
         pointerEvents: "auto",
         cursor: "pointer",
-        fontSize: 10,
+        fontSize: hudType("xs"),
         fontWeight: 600,
         padding: "1px 6px",
         borderRadius: 6,
@@ -310,9 +311,9 @@ export function WaveBanner({
 }) {
   return (
     <div className={className} style={{ ...PANEL, padding: "6px 16px", textAlign: "center", display: "inline-block", ...style }}>
-      <div style={{ fontSize: 10, letterSpacing: 2, textTransform: "uppercase", opacity: 0.65 }}>{label}</div>
+      <div style={{ fontSize: hudType("xs"), letterSpacing: 2, textTransform: "uppercase", opacity: 0.65 }}>{label}</div>
       <div style={{ fontSize: 24, fontWeight: 800, lineHeight: 1.1 }}>{wave}</div>
-      {subtitle !== undefined ? <div style={{ fontSize: 11, opacity: 0.7, marginTop: 2 }}>{subtitle}</div> : null}
+      {subtitle !== undefined ? <div style={{ fontSize: hudType("xs"), opacity: 0.7, marginTop: 2 }}>{subtitle}</div> : null}
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useState, type ComponentType } from "react";
 
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { HudThemeRoot } from "@jgengine/react/hudThemeRoot";
 import { HudViewportProvider } from "@jgengine/react/hudViewport";
 import { GameProvider } from "@jgengine/react/provider";
 
@@ -11,6 +12,7 @@ import {
 } from "./diagnostics/RuntimeDiagnostics";
 import { DevtoolsRuntime } from "./devtools/DevtoolsRuntime";
 import { GamePhaseStamp } from "./GamePhaseStamp";
+import { ShellNotices, ShellUiCues } from "./ShellNotices";
 import { SettingsPlayControlGate } from "./settings/SettingsRuntime";
 import type { ShellMultiplayer } from "./multiplayer";
 import type { PlayableGame } from "./registry";
@@ -19,7 +21,7 @@ const DevtoolsOverlay = lazy(() =>
   import("./devtools/DevtoolsOverlay").then((module) => ({ default: module.DevtoolsOverlay })),
 );
 
-/** Shared GameUI mount: error boundary → GameProvider → phase stamp → HudViewport. @internal */
+/** Shared GameUI mount: error boundary → GameProvider → phase stamp → HudViewport → HUD theme root. @internal */
 export function ShellGameUiChrome({
   ctx,
   playable,
@@ -45,8 +47,15 @@ export function ShellGameUiChrome({
           config={playable.hudFit}
           userScale={uiScale}
         >
-          {orientationGate ? null : <GameUI />}
+          {orientationGate ? null : (
+            <ShellUiCues ctx={ctx} enabled={playable.notices !== false && playable.notices?.cues !== false}>
+              <HudThemeRoot theme={playable.hudTheme}>
+                <GameUI />
+              </HudThemeRoot>
+            </ShellUiCues>
+          )}
         </HudViewportProvider>
+        {orientationGate ? null : <ShellNotices ctx={ctx} config={playable.notices} scale={uiScale} />}
       </GameProvider>
     </GameUiErrorBoundary>
   );

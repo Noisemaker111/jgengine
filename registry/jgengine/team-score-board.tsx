@@ -29,7 +29,7 @@ export function TeamScoreBoard({
           </span>
           {left.name !== undefined && (
             <span
-              className="text-[9px] font-bold uppercase tracking-[0.24em]"
+              className="text-[length:var(--jg-type-xs,12px)] font-bold uppercase tracking-[0.24em]"
               style={{ color: "var(--jg-text-dim)", textShadow: HUD_TEXT_SHADOW }}
             >
               {left.name}
@@ -50,7 +50,7 @@ export function TeamScoreBoard({
           </span>
           {right.name !== undefined && (
             <span
-              className="text-[9px] font-bold uppercase tracking-[0.24em]"
+              className="text-[length:var(--jg-type-xs,12px)] font-bold uppercase tracking-[0.24em]"
               style={{ color: "var(--jg-text-dim)", textShadow: HUD_TEXT_SHADOW }}
             >
               {right.name}
@@ -60,7 +60,7 @@ export function TeamScoreBoard({
       </div>
       {roundLabel !== undefined && (
         <span
-          className="text-[10px] font-bold uppercase tracking-[0.24em]"
+          className="text-[length:var(--jg-type-xs,12px)] font-bold uppercase tracking-[0.24em]"
           style={{ color: "var(--jg-text-dim)", textShadow: HUD_TEXT_SHADOW }}
         >
           {roundLabel}

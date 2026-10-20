@@ -1,28 +1,12 @@
 {
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "target": "ES2022",
     "lib": ["ES2022", "DOM"],
     "types": ["node"],
-    "module": "ESNext",
-    "moduleResolution": "bundler",
     "jsx": "react-jsx",
-    "strict": true,
-    "noEmit": true,
-    "skipLibCheck": true,
-    "isolatedModules": true,
-    "verbatimModuleSyntax": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
-    "paths": {
-      "@jgengine/core/*": ["../core/src/*"],
-      "@jgengine/navbake/*": ["../navbake/src/*"],
-      "@jgengine/navbake": ["../navbake/src/index.ts"],
-      "@jgengine/react": ["../react/src/index.ts"],
-      "@jgengine/react/*": ["../react/src/*"],
-      "@jgengine/shell/*": ["../shell/src/*"],
-      "@jgengine/ws/*": ["../ws/src/*"]
-    }
+    "noFallthroughCasesInSwitch": true
   },
   "include": ["src"],
   "exclude": [

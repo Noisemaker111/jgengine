@@ -61,7 +61,7 @@ export function HotbarSelector({
               />
             )}
             <span
-              className="absolute left-[3px] top-0.5 font-mono text-[8px]"
+              className="absolute left-[3px] top-0.5 font-mono text-[length:var(--jg-type-xs,12px)]"
               style={{ color: "var(--jg-text-dim)" }}
             >
               {index + 1}
@@ -69,7 +69,7 @@ export function HotbarSelector({
             <span className="absolute inset-0 flex items-center justify-center">{slot.icon}</span>
             {slot.count !== undefined && (
               <span
-                className="absolute bottom-0.5 right-[3px] font-mono text-[10px] font-bold"
+                className="absolute bottom-0.5 right-[3px] font-mono text-[length:var(--jg-type-xs,12px)] font-bold"
                 style={{ color: "var(--jg-text)", textShadow: HUD_TEXT_SHADOW }}
               >
                 {slot.count}

@@ -94,12 +94,14 @@ The probe games that live in [`Noisemaker111/JGengine-games`](https://github.com
 
 ```sh
 bun install
-bun run build        # tsgo + import-extension rewrite, per package
-bun run check-types
+bun run check-types  # @jgengine/* resolves to package source; no build needed
 bun run test
+bun run build        # tsgo + import-extension rewrite, per package; only for pack/publish and the Node CLI
 bun run gen           # regenerate every committed derived artifact, in dependency order
 bun run games:clone  # once: clone Noisemaker111/JGengine-games into ephemeral ./Games at the pinned commit
 bun run games:update # move an existing clone to the pin; games:bump pins the games repo's latest stable
+bun run games:check  # type-check + test every game in ./Games against THIS checkout's sources (no build, no copying dist)
+                     # games:check <id> for one game; --published re-runs against the games' installed @jgengine/*
 bun dev              # jgengine.com locally, games playable at /games/<id> when Games/ is present
 # a cloned game standalone:
 bun --cwd=Games/harbor-heat run dev
@@ -109,7 +111,7 @@ Windows: if `bun` is not recognized after installing, its install directory is m
 
 `bun run host:fixture` builds and serves the anonymous Relay Courtyard authority fixture from a clean owned checkout: compiled frontend on `4624`, realm on `4625`. Its UI uses normal shell commands and keyboard input. Build artifacts, logs and throwaway saves live under the repository home's `.scratch/authority-fixture/`; `--allow-dirty` labels development builds explicitly. Each `/__version` reports the revision embedded in its compiled artifact. `services.json` registers both components for `fresh-services.mjs`; reload executes the landed launcher and requires the recorded source checkout at that exact revision. Prepare that checkout before reload. This fixture does not publish packages or serve game accounts.
 
-**Public export surface.** Every `@jgengine/*` package ships a broad `"./*"` wildcard export, so every built `dist` file is an importable subpath. `scripts/export-manifest.json` is the reviewed record of that surface — the exact set of subpaths a consumer can `import`, generated with `bun run gen` (which regenerates every derived artifact — barrels, capability index, skill API and this manifest — in dependency order; rerun and commit after adding/removing/renaming public source). `scripts/exportManifest.test.ts` fails when the real subpaths drift from the manifest, so an accidental new public path (or a test fixture leaking out) is caught in review. `scripts/tarballInstall.test.ts` packs each package (`npm pack`) and imports it from a clean consumer dir with no workspace aliases — proving the published tarball resolves and that build-excluded internals (`testFixtures`, `*.test`, `testkit`) are never importable. Both tests require `bun run build` first (they read `dist`).
+**Public export surface.** Every `@jgengine/*` package ships a broad `"./*"` wildcard export, so every built `dist` file is an importable subpath. `scripts/export-manifest.json` is the reviewed record of that surface — the exact set of subpaths a consumer can `import`, computed from the source files each package's `tsconfig.build.json` emits and generated with `bun run gen` (which regenerates every derived artifact — barrels, capability index, skill API and this manifest — in dependency order; rerun and commit after adding/removing/renaming public source). `scripts/exportManifest.test.ts` fails when the real subpaths drift from the manifest, so an accidental new public path (or a test fixture leaking out) is caught in review; `bun run ship:preflight` fails with the fix when it or any other generated artifact is stale. `scripts/tarballInstall.test.ts` packs each package (`npm pack`) and imports it from a clean consumer dir with no workspace aliases — proving the published tarball resolves and that build-excluded internals (`testFixtures`, `*.test`, `testkit`) are never importable; it requires `bun run build` first (it reads `dist`).
 
 ## Credits
 

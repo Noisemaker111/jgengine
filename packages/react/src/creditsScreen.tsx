@@ -1,6 +1,7 @@
 import { type CSSProperties, type ReactNode } from "react";
 
 import type { CreditsDocument, CreditsEntry } from "@jgengine/core/game/credits";
+import { hudType } from "./hudTokens";
 
 /**
  * Renders a {@link CreditsDocument} as headed sections of credited lines. Skinned entirely through
@@ -50,7 +51,7 @@ export function CreditsScreen({
             style={{
               margin: 0,
               fontFamily: "var(--jg-font-display, inherit)",
-              fontSize: 11,
+              fontSize: hudType("xs"),
               fontWeight: 700,
               letterSpacing: "0.24em",
               textTransform: "uppercase",

@@ -65,7 +65,7 @@
 - `recentChatMessages` (function): function recentChatMessages(ctx: { db: Pick<JGQueryCtx["db"], "query"> }, args: { serverId: string; channelId?: string; limit?: number }): Promise<{ _id: Id<"jgChatMessages">; _creationTime: number; authorName?: string | undefined; serverId: string; userId: string; channelId: string; body: string; a… — Bounded recent chat for a resolved server; authorization belongs to the calling query.
 - `resolveConvexMultiplayer` (function): function resolveConvexMultiplayer(args: { game: GameDefinition; gameId: string; url?: string; client?: ConvexReactClient; api?: ConvexGameApi; userId?: string; force?: boolean; feedActions?: string[]; poseTuning?: PoseSyncTuning; }): MultiplayerSession | null — ⚠ undocumented
 - `sendChatMessage` (function): function sendChatMessage(ctx: JGMutationCtx, args: { serverId: string; userId: string; body: string; channelId?: string; authorName?: string; maxBodyLength?: number; minIntervalMs?: number }): Promise<ChatSendOutcome> — Write validated chat in a host transaction after the caller resolves its actor and world.
-- `validateSlotsPerServer` (function): function validateSlotsPerServer(slotsPerServer: number, topology?: "rooms" | "shared"): { ok: true; } | { ok: false; reason: string; } — Whether a `slotsPerServer` value is a capacity a single hosted server row can actually hold.
+- `validateSlotsPerServer` (function): function validateSlotsPerServer(slotsPerServer: number, topology: "rooms" | "shared" = "rooms"): { ok: true } | { ok: false; reason: string } — Whether a `slotsPerServer` value is a capacity a single hosted server row can actually hold.
 - `watchConvexQuery` (function): function watchConvexQuery<TArgs extends DefaultFunctionArgs, TResult, TView>(client: ConvexGameClient, query: FunctionReference<"query", "public", TArgs, TResult>, args: TArgs, toView: (result: TResult) => TView, onChange: (view: TView) => void): () => void — ⚠ undocumented
 
 ## @jgengine/convex/convexChatTransport
@@ -156,7 +156,7 @@
 - `rateLimit` (function): function rateLimit(ctx: JGMutationCtx, args: { key: string; windowMs: number; max: number; nowMs?: number }): Promise<{ ok: boolean; retryAfterMs: number }> — Consume one request in a fixed rate window; concurrent callers serialize on the indexed key.
 - `recentChatMessages` (function): function recentChatMessages(ctx: { db: Pick<JGQueryCtx["db"], "query"> }, args: { serverId: string; channelId?: string; limit?: number }): Promise<{ _id: Id<"jgChatMessages">; _creationTime: number; authorName?: string | undefined; serverId: string; userId: string; channelId: string; body: string; a… — Bounded recent chat for a resolved server; authorization belongs to the calling query.
 - `sendChatMessage` (function): function sendChatMessage(ctx: JGMutationCtx, args: { serverId: string; userId: string; body: string; channelId?: string; authorName?: string; maxBodyLength?: number; minIntervalMs?: number }): Promise<ChatSendOutcome> — Write validated chat in a host transaction after the caller resolves its actor and world.
-- `validateSlotsPerServer` (function): function validateSlotsPerServer(slotsPerServer: number, topology?: "rooms" | "shared"): { ok: true; } | { ok: false; reason: string; } — Whether a `slotsPerServer` value is a capacity a single hosted server row can actually hold.
+- `validateSlotsPerServer` (function): function validateSlotsPerServer(slotsPerServer: number, topology: "rooms" | "shared" = "rooms"): { ok: true } | { ok: false; reason: string } — Whether a `slotsPerServer` value is a capacity a single hosted server row can actually hold.
 
 ## @jgengine/convex/territory
 
@@ -334,7 +334,7 @@
 - `GameSocketIoServerOptions` (type): type GameSocketIoServerOptions = HostRouterOptions & { io: SocketIoLikeServer } — ⚠ undocumented
 - `GameWsServer` (type): type GameWsServer = { wss: WebSocketServer; port: () => number; rewind: (args: { serverId: string; atMs: number }) => RewoundPosition[]; /** Fence new messages, drain accepted router work, and close sockets. Repeated calls share completion; host persistence remains caller-owned. */ close: () => Prom… — ⚠ undocumented
 - `GameWsServerOptions` (type): type GameWsServerOptions = HostRouterOptions & { server?: HttpServer; port?: number; path?: string; /** Per-message payload cap in bytes. Defaults to {@link DEFAULT_MAX_PAYLOAD_BYTES}. */ maxPayloadBytes?: number; /** Max concurrent sockets accepted; connections beyond this are closed immediately. D… — ⚠ undocumented
-- `HostChangeEvent` (type): type HostChangeEvent = { type: "server"; serverId: string; } | { type: "player"; serverId: string; userId: string; } | { type: "feed"; serverId: string; action: string; } — A change notification emitted by a `GameHost` for a server, player, or feed mutation.
+- `HostChangeEvent` (type): type HostChangeEvent = | { type: "server"; serverId: string } | { type: "player"; serverId: string; userId: string } | { type: "feed"; serverId: string; action: string } — A change notification emitted by a `GameHost` for a server, player, or feed mutation.
 - `HostedGameDefinition` (interface): interface HostedGameDefinition — A game the world server can host — its authoritative {@link GameDefinition} and the content lookup a `GameContext` reads.
 - `InstallShutdownHookOptions` (interface): interface InstallShutdownHookOptions — Config for {@link installShutdownHook}.
 - `NodeHandler` (type): type NodeHandler = (req: IncomingMessage, res: ServerResponse) => void — ⚠ undocumented
@@ -355,7 +355,7 @@
 - `filePersistence` (function): function filePersistence(dir: string, now: () => number = Date.now): HostPersistence — ⚠ undocumented
 - `fileWorldStore` (function): function fileWorldStore(path: string): HostedWorldStore — JSON-file implementation of the asynchronous hosted-world persistence seam.
 - `installShutdownHook` (function): function installShutdownHook(shutdown: () => Promise<void> | void, options: InstallShutdownHookOptions = {}): ShutdownHook — Wires `SIGINT`/`SIGTERM` (or a custom signal list) to a clean-shutdown callback — e.g. `() => worldServer.close()` or `() => Promise.all([wsServer.close(), host.stop()])`. Bounded by `timeoutMs` so a stuck flush can't hang the process forever; idempotent — a second signal delivered mid-shutdown reuses the same in-flight run instead of flushing twice. Returns a {@link ShutdownHook} whose `remove()` uninstalls the listeners, for tests and embedders that want their own handling.
-- `memoryPersistence` (function): function memoryPersistence(now?: () => number): HostPersistence — Creates an in-memory `HostPersistence` implementation, useful for tests and ephemeral hosts.
+- `memoryPersistence` (function): function memoryPersistence(now: () => number = Date.now): HostPersistence — Creates an in-memory `HostPersistence` implementation, useful for tests and ephemeral hosts.
 - `memoryWorldPersistence` (function): function memoryWorldPersistence(): WorldPersistence — Default {@link WorldPersistence}: an isolated in-memory {@link HostedWorldStore} per `gameId`/`serverId`, lost on process exit.
 - `toNodeHandler` (function): function toNodeHandler(handler: WebHandler): NodeHandler — ⚠ undocumented
 - `toWebRequest` (function): function toWebRequest(req: IncomingMessage): Promise<Request> — ⚠ undocumented
@@ -386,9 +386,9 @@
 
 - `GameHost` (type): type GameHost = { joinServer: (args: { userId: string; gameId: string; serverId?: string; attributes?: SessionAttributes; code?: string; role?: SnapshotViewer["role"]; }) => Promise<JoinServerResult>; browseServers: (args: { gameId: string; filter?: MatchFilter; limit?: number; }) => Promise<Session… — A transport-agnostic authoritative game server host that manages sessions, ticking, and persistence.
 - `GameHostOptions` (type): type GameHostOptions = { runtimes?: GameRuntime[]; persistence: HostPersistence; tickMs?: number; slotsPerServer?: number; now?: () => number; createServerId?: () => string; allowedFeedActions?: readonly string[]; } — Configuration for {@link createGameHost}, including persistence, tick rate, and game runtimes.
-- `HostChangeEvent` (type): type HostChangeEvent = { type: "server"; serverId: string; } | { type: "player"; serverId: string; userId: string; } | { type: "feed"; serverId: string; action: string; } — A change notification emitted by a `GameHost` for a server, player, or feed mutation.
+- `HostChangeEvent` (type): type HostChangeEvent = | { type: "server"; serverId: string } | { type: "player"; serverId: string; userId: string } | { type: "feed"; serverId: string; action: string } — A change notification emitted by a `GameHost` for a server, player, or feed mutation.
 - `createGameHost` (function): function createGameHost(options: GameHostOptions): GameHost — Creates a `GameHost` that runs game servers over the given persistence and runtimes.
-- `memoryPersistence` (function): function memoryPersistence(now?: () => number): HostPersistence — Creates an in-memory `HostPersistence` implementation, useful for tests and ephemeral hosts.
+- `memoryPersistence` (function): function memoryPersistence(now: () => number = Date.now): HostPersistence — Creates an in-memory `HostPersistence` implementation, useful for tests and ephemeral hosts.
 
 ## @jgengine/node/persistence
 
@@ -396,7 +396,7 @@
 - `WorldPersistenceKey` (interface): interface WorldPersistenceKey — Per-world key a {@link WorldPersistence} resolves a {@link HostedWorldStore} for.
 - `clearFilePersistence` (function): function clearFilePersistence(dir: string): Promise<void> — ⚠ undocumented
 - `filePersistence` (function): function filePersistence(dir: string, now: () => number = Date.now): HostPersistence — ⚠ undocumented
-- `memoryPersistence` (function): function memoryPersistence(now?: () => number): HostPersistence — Creates an in-memory `HostPersistence` implementation, useful for tests and ephemeral hosts.
+- `memoryPersistence` (function): function memoryPersistence(now: () => number = Date.now): HostPersistence — Creates an in-memory `HostPersistence` implementation, useful for tests and ephemeral hosts.
 - `memoryWorldPersistence` (function): function memoryWorldPersistence(): WorldPersistence — Default {@link WorldPersistence}: an isolated in-memory {@link HostedWorldStore} per `gameId`/`serverId`, lost on process exit.
 
 ## @jgengine/node/shutdown

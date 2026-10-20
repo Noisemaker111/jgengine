@@ -29,7 +29,7 @@ export function ChatBubble({
     >
       {fromLabel !== undefined && (
         <span
-          className="mb-0.5 block text-[9px] font-bold uppercase tracking-[0.18em]"
+          className="mb-0.5 block text-[length:var(--jg-type-xs,12px)] font-bold uppercase tracking-[0.18em]"
           style={{ color: "var(--jg-text-dim)" }}
         >
           {fromLabel}

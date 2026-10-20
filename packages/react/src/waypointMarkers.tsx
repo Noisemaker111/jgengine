@@ -9,6 +9,7 @@ import {
 import { formatDistance, type DistanceFormat } from "@jgengine/core/format/distance";
 
 import type { ProjectEntity } from "./entityFrames";
+import { hudType } from "./hudTokens";
 
 /**
  * Subscribe to a {@link WaypointTracker} and re-render on every change, returning
@@ -179,7 +180,7 @@ function chipStyle(theme: Required<WaypointMarkerTheme>, color: string): CSSProp
     border: `1px solid ${color}`,
     color: theme.text,
     fontFamily: theme.fontFamily,
-    fontSize: 11,
+    fontSize: hudType("xs"),
     fontWeight: 700,
     whiteSpace: "nowrap",
     textShadow: "0 1px 2px rgba(0,0,0,0.9)",

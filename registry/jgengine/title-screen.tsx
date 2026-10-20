@@ -67,7 +67,7 @@ export function TitleScreen({
         </div>
         {version !== undefined && (
           <span
-            className="absolute bottom-4 right-5 font-mono text-[10px]"
+            className="absolute bottom-4 right-5 font-mono text-[length:var(--jg-type-xs,12px)]"
             style={{ color: "var(--jg-text-dim)" }}
           >
             {version}

@@ -1,5 +1,6 @@
 import { IconTreatment, type IconSchool } from "./iconTreatment";
 import type { GameIconName } from "./gameIcons";
+import { hudType } from "./hudTokens";
 
 /**
  * A deterministic showcase of the painted {@link IconTreatment} (#1035): a school row (one gradient
@@ -36,7 +37,7 @@ export function IconsPreview({ className }: { className?: string }) {
       style={{ display: "flex", flexDirection: "column", gap: 22, padding: 26, background: "#0e1216", fontFamily: "system-ui, sans-serif", color: "#e8edf2" }}
     >
       <div>
-        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.6, textTransform: "uppercase", opacity: 0.6, marginBottom: 8 }}>
+        <div style={{ fontSize: hudType("xs"), fontWeight: 700, letterSpacing: 0.6, textTransform: "uppercase", opacity: 0.6, marginBottom: 8 }}>
           school gradients
         </div>
         <div style={{ display: "flex", gap: 10 }}>
@@ -46,7 +47,7 @@ export function IconsPreview({ className }: { className?: string }) {
         </div>
       </div>
       <div>
-        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.6, textTransform: "uppercase", opacity: 0.6, marginBottom: 8 }}>
+        <div style={{ fontSize: hudType("xs"), fontWeight: 700, letterSpacing: 0.6, textTransform: "uppercase", opacity: 0.6, marginBottom: 8 }}>
           hotbar — treated icons + count badges (slot 1 active)
         </div>
         <div style={{ display: "flex", gap: 6 }}>

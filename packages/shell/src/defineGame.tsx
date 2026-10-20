@@ -172,11 +172,13 @@ export function defineGame<TAssetRef extends ModelAssetRef = ModelAssetRef>(
     graphics,
     presentation,
     settings,
+    notices,
     objectStyles,
     devtools,
     capture,
     platforms,
     hudFit,
+    hudTheme,
     ...engineFields
   } = config;
 
@@ -268,10 +270,12 @@ export function defineGame<TAssetRef extends ModelAssetRef = ModelAssetRef>(
     graphics,
     presentation,
     settings,
+    notices,
     objectStyles,
     devtools,
     capture,
     platforms,
     hudFit,
+    hudTheme,
   };
 }

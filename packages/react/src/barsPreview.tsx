@@ -13,6 +13,7 @@ import {
   type BarTokens,
 } from "./bars";
 import { hudTheme, hudThemeVars } from "./hudTheme";
+import { hudType } from "./hudTokens";
 
 /**
  * A deterministic preview of every atomic vitals bar plus a composed example — the fixture behind
@@ -49,7 +50,7 @@ function Portrait({ color }: { color: string }) {
 function AtomicMatrix({ label, tokens }: { label: string; tokens?: BarTokens }) {
   return (
     <div style={{ ...PANEL, ...(tokens === undefined ? {} : barTokens(tokens)) }}>
-      <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.6, textTransform: "uppercase", color: "rgba(255,255,255,0.6)" }}>
+      <span style={{ fontSize: hudType("xs"), fontWeight: 700, letterSpacing: 0.6, textTransform: "uppercase", color: "rgba(255,255,255,0.6)" }}>
         {label}
       </span>
       <HealthBar value={82} max={100} label="HP" />

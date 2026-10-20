@@ -21,9 +21,15 @@ export function dispatchCommand(ctx: GameContext, name: string, input: unknown):
   const serverId = route.serverId();
   if (serverId === null) return { status: "rejected", reason: "not-joined" };
   return route.transport.runCommand({ serverId, command: name, input }).then(
-    (result): CommandResult<GameContext> => result.ok
-      ? { status: "applied", state: ctx }
-      : { status: "rejected", reason: result.reason },
+    (result): CommandResult<GameContext> => {
+      if (result.ok) return { status: "applied", state: ctx };
+      ctx.game.events.emit("command.refused", result.message === undefined
+        ? { command: name, reason: result.reason, actor: null }
+        : { command: name, reason: result.reason, message: result.message, actor: null });
+      return result.message === undefined
+        ? { status: "rejected", reason: result.reason }
+        : { status: "rejected", reason: result.reason, message: result.message };
+    },
     (error: unknown): CommandResult<GameContext> => ({ status: "rejected", reason: error instanceof Error ? error.message : "Command transport failed" }),
   );
 }

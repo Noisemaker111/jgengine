@@ -1,6 +1,7 @@
 import { useMemo, useState, type CSSProperties, type ReactNode } from "react";
 
 import type { CodexEntryView } from "@jgengine/core/game/codex";
+import { hudType } from "./hudTokens";
 
 /** Props for {@link Codex}. */
 export interface CodexProps {
@@ -54,7 +55,7 @@ export function Codex({
     background: active ? "rgba(56,189,248,0.2)" : "transparent",
     color: active ? "#bae6fd" : "rgba(226,232,240,0.75)",
     padding: "3px 9px",
-    fontSize: 11,
+    fontSize: hudType("xs"),
     fontWeight: 600,
     cursor: "pointer",
   });
@@ -76,7 +77,7 @@ export function Codex({
     >
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 10 }}>
         <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: 1.4, textTransform: "uppercase" }}>{title}</span>
-        <span style={{ fontSize: 11, color: "rgba(203,213,225,0.75)", fontVariantNumeric: "tabular-nums" }}>
+        <span style={{ fontSize: hudType("xs"), color: "rgba(203,213,225,0.75)", fontVariantNumeric: "tabular-nums" }}>
           {discovered}/{entries.length} discovered
         </span>
       </div>
@@ -121,9 +122,9 @@ export function Codex({
                   }}
                 >
                   <span style={{ fontSize: 24, filter: entry.discovered ? "none" : "grayscale(1) brightness(0.7)" }}>{icon}</span>
-                  <span style={{ fontSize: 11, fontWeight: entry.discovered ? 700 : 500, textAlign: "center" }}>{name}</span>
+                  <span style={{ fontSize: hudType("xs"), fontWeight: entry.discovered ? 700 : 500, textAlign: "center" }}>{name}</span>
                   {entry.discovered && entry.description !== undefined ? (
-                    <span style={{ fontSize: 10, color: "rgba(203,213,225,0.7)", textAlign: "center" }}>{entry.description}</span>
+                    <span style={{ fontSize: hudType("xs"), color: "rgba(203,213,225,0.7)", textAlign: "center" }}>{entry.description}</span>
                   ) : null}
                 </button>
               </li>

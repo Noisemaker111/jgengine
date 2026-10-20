@@ -17,6 +17,8 @@ const NON_THEME = [
   // component-scoped opt-in tokens; each read carries a theme-token fallback
   "--jg-card-",
   "--jg-font-card",
+  // reduced-motion multiplier the engine stylesheet owns (0 under reduced motion)
+  "--jg-motion-scale",
 ];
 
 const ROOTS = ["packages/react/src", "registry/jgengine"];
