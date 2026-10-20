@@ -1,7 +1,7 @@
 import { dispatchClickAt, parseClickAt } from "../clickInput";
 import { escapeHtml } from "../escapeHtml";
 import { driveInputPointExpr, parseDriveFill } from "./driveInput";
-import { focusGameSurface, holdComplete } from "./gameSurfaceFocus";
+import { focusGameSurface, gameSurfaceCenter, holdComplete, mouseButtonForCode } from "./gameSurfaceFocus";
 import type { EditorSceneDoc, TemplateVariant } from "./types";
 
 const indexHtml = (name: string) => `<!doctype html>
@@ -855,6 +855,7 @@ const driveMjs = `#!/usr/bin/env node
  *
  *   node scripts/drive.mjs --click "START" --shot menu-cleared
  *   node scripts/drive.mjs --key KeyW:2500 --shot walked
+ *   node scripts/drive.mjs --key mouse0:1200 --shot fired   (hold a mouse button over the canvas)
  *   node scripts/drive.mjs --rpc '{"method":"agent_status"}'
  *   node scripts/drive.mjs --rpc '{"method":"debug_snapshot"}'
  *   node scripts/drive.mjs --playtest --key KeyW:4000 --strict
@@ -1004,6 +1005,8 @@ async function fill(session, label, value) {
 
 const focusGameSurface = ${focusGameSurface.toString()};
 const holdComplete = ${holdComplete.toString()};
+const mouseButtonForCode = ${mouseButtonForCode.toString()};
+const gameSurfaceCenter = ${gameSurfaceCenter.toString()};
 
 async function holdKey(session, code, holdMs) {
   await session.send("Page.bringToFront");
@@ -1011,15 +1014,27 @@ async function holdKey(session, code, holdMs) {
   await session.evaluate("(() => { if (globalThis.__jgFrames !== undefined) return; globalThis.__jgFrames = 0; const tick = () => { globalThis.__jgFrames++; requestAnimationFrame(tick); }; requestAnimationFrame(tick); })()");
   const startFrames = await session.evaluate("globalThis.__jgFrames ?? 0");
   const deadlineMs = Date.now() + holdMs;
-  const key = code.startsWith("Key") ? code.slice(3).toLowerCase() : code;
-  await session.send("Input.dispatchKeyEvent", { type: "keyDown", code, key });
-  try {
+  const waitHold = async () => {
     for (;;) {
       await sleep(100);
       const framesElapsed = (await session.evaluate("globalThis.__jgFrames ?? 0")) - startFrames;
       if (holdComplete({ nowMs: Date.now(), deadlineMs, hardCapMs: deadlineMs + 20000, framesElapsed })) break;
     }
-  } finally {
+  };
+  const mouse = mouseButtonForCode(code);
+  if (mouse !== null) {
+    const point = JSON.parse(await session.evaluate("JSON.stringify((" + gameSurfaceCenter.toString() + ")(document))"));
+    if (point === null) throw new Error("--key " + code + " needs a play canvas to hold the button over");
+    await session.send("Input.dispatchMouseEvent", { type: "mouseMoved", x: point.x, y: point.y, button: "none", buttons: 0 });
+    await session.send("Input.dispatchMouseEvent", { type: "mousePressed", x: point.x, y: point.y, button: mouse.button, buttons: mouse.buttons, clickCount: 1 });
+    try { await waitHold(); } finally {
+      await session.send("Input.dispatchMouseEvent", { type: "mouseReleased", x: point.x, y: point.y, button: mouse.button, buttons: 0, clickCount: 1 });
+    }
+    return;
+  }
+  const key = code.startsWith("Key") ? code.slice(3).toLowerCase() : code;
+  await session.send("Input.dispatchKeyEvent", { type: "keyDown", code, key });
+  try { await waitHold(); } finally {
     await session.send("Input.dispatchKeyEvent", { type: "keyUp", code, key });
   }
 }
@@ -1703,7 +1718,7 @@ Title it \`[BUG] …\` for wrong behavior or \`[FEATURE] …\` for a missing cap
 - Visual claims are screenshot-judged, by you, harshly — flat untextured ground and an empty horizon fail. Prove content with \`bun test\`, prove looks with your eyes (\`jgengine-verify\` skill).
 - Models live in \`public/models\`, pulled — not shipped inside the package. \`jgengine create\` pulls them for you; if that was skipped (offline, \`--no-assets\`, \`--no-install\`) run \`npx assets pull starter\` in this folder, or every \`asset:\` id falls back to an untextured placeholder primitive and fails the bar above.
 - Screenshots: \`bun run shoot\` (or \`node scripts/shoot.mjs\`) captures the running game to \`shots/shot.png\` — it starts the dev server if needed, forces a real viewport so the WebGL canvas is not stuck at 300x150, waits for an honest frame, and works headless. Add \`--device mobile\`, \`--out shots/hud.png\`, \`--settle <ms>\`, or \`--url <page>\`; \`--help\` for all flags. Do **not** rely on a browser tool's "screenshot" button for the 3D canvas — it captures before the GPU draws.
-- Play & test from the CLI: \`bun run drive\` (or \`node scripts/drive.mjs\`) drives the running game headlessly — ordered \`--click "TEXT"\`, \`--click-at 240,180\` (CSS viewport pixels), \`--double-click "TEXT"\`, \`--fill "Label=value"\`, \`--key KeyW:2500\`, \`--wait <ms>\`, \`--shot <name>\`, and \`--rpc '{"method":"agent_status"}'\` steps, plus \`--playtest --strict\` for a progress/softlock verdict off the game's \`capture.probe\`; \`--help\` for all flags. **Never hand-roll a Playwright/Puppeteer/CDP script to play or test this game** — if drive cannot express what you need, that is an engine gap: file it upstream (see below).
+- Play & test from the CLI: \`bun run drive\` (or \`node scripts/drive.mjs\`) drives the running game headlessly — ordered \`--click "TEXT"\`, \`--click-at 240,180\` (CSS viewport pixels), \`--double-click "TEXT"\`, \`--fill "Label=value"\`, \`--key KeyW:2500\` (or \`mouse0:1200\` to hold a mouse button over the play canvas), \`--wait <ms>\`, \`--shot <name>\`, and \`--rpc '{"method":"agent_status"}'\` steps, plus \`--playtest --strict\` for a progress/softlock verdict off the game's \`capture.probe\`; \`--help\` for all flags. **Never hand-roll a Playwright/Puppeteer/CDP script to play or test this game** — if drive cannot express what you need, that is an engine gap: file it upstream (see below).
 `;
 
 const artDirectionMd = `# Art direction
