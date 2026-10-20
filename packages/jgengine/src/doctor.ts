@@ -246,6 +246,11 @@ export function diagnose(dir: string): Finding[] {
     if (existsSync(modelsPath)) related.push(readFileSync(modelsPath, "utf8"));
     const assetsPath = join(dir, "src", "game", "assets.ts");
     if (existsSync(assetsPath)) related.push(readFileSync(assetsPath, "utf8"));
+    findings.push({
+      ok: /\baudio\s*:/.test(configText) || srcContains(join(dir, "src"), /\baudio\.(play|loop)\(/),
+      label: "game has sound (declares audio cues)",
+      fix: 'a silent game reads unfinished — declare cues as procedural SoundDef synth patches (no asset files needed) in defineGame({ audio: { sounds } }) and call ctx.game.audio.play(id) on accepted actions: build, hit, purchase, objective, win/lose',
+    });
     const prototype = assessPrototypeLook(related);
     findings.push({
       ok: !prototype.isPrototype,
@@ -273,4 +278,14 @@ export function runDoctor(argv: string[]): number {
   const failed = findings.filter((finding) => !finding.ok).length;
   console.log(failed === 0 ? "\ndoctor: all clear" : `\ndoctor: ${failed} problem(s) found`);
   return failed === 0 ? 0 : 1;
+}
+
+/** True when any script under `folder` matches `pattern`. */
+function srcContains(folder: string, pattern: RegExp): boolean {
+  if (!existsSync(folder)) return false;
+  for (const entry of readdirSync(folder, { withFileTypes: true })) {
+    const path = join(folder, entry.name);
+    if (entry.isDirectory() ? srcContains(path, pattern) : /\.(tsx?|jsx?)$/.test(entry.name) && pattern.test(readFileSync(path, "utf8"))) return true;
+  }
+  return false;
 }

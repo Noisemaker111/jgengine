@@ -85,6 +85,13 @@ describe("diagnose", () => {
     expect(failingLabels(dir)).toContain("Tailwind @source covers @jgengine/react and @jgengine/shell");
   });
 
+  test("flags a silent game until it declares or plays audio cues", () => {
+    const dir = scaffold();
+    expect(failingLabels(dir)).toContain("game has sound (declares audio cues)");
+    writeFileSync(join(dir, "src", "game", "sfx.ts"), 'export const cue = (ctx: { game: { audio: { play(id: string): void } } }) => ctx.game.audio.play("build");\n');
+    expect(failingLabels(dir)).not.toContain("game has sound (declares audio cues)");
+  });
+
   test("flags missing editor @source when the F2+E summon is wired (the all-white editor)", () => {
     const dir = scaffold();
     const cssPath = join(dir, "src", "index.css");
