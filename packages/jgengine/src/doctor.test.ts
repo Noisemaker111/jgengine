@@ -85,6 +85,19 @@ describe("diagnose", () => {
     expect(failingLabels(dir)).toContain("Tailwind @source covers @jgengine/react and @jgengine/shell");
   });
 
+  test("flags an aliased component folder that index.css never scans", () => {
+    const dir = scaffold();
+    const tsconfigPath = join(dir, "tsconfig.json");
+    const tsconfig = JSON.parse(readFileSync(tsconfigPath, "utf8")) as { compilerOptions: Record<string, unknown> };
+    tsconfig.compilerOptions.paths = { "@/components/ui/*": ["../registry/ui/*"] };
+    writeFileSync(tsconfigPath, JSON.stringify(tsconfig));
+    writeFileSync(join(dir, "src", "game", "Hud.tsx"), 'import { WaveIndicator } from "@/components/ui/wave-indicator";\nexport const Hud = WaveIndicator;\n');
+    expect(failingLabels(dir)).toContain("Tailwind @source covers aliased component folders");
+    const cssPath = join(dir, "src", "index.css");
+    writeFileSync(cssPath, `${readFileSync(cssPath, "utf8")}@source "../../registry/ui";\n`);
+    expect(failingLabels(dir)).not.toContain("Tailwind @source covers aliased component folders");
+  });
+
   test("flags missing editor @source when the F2+E summon is wired (the all-white editor)", () => {
     const dir = scaffold();
     const cssPath = join(dir, "src", "index.css");
