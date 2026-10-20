@@ -5,6 +5,9 @@ import { CSM } from "three/examples/jsm/csm/CSM.js";
 
 import type { DirectionalLightingConfig } from "@jgengine/core/game/playableGame";
 
+/** @internal Default PCF penumbra in shadow-map texels for configured directional lights. */
+export const DEFAULT_SHADOW_RADIUS = 1.25;
+
 function isStandardMaterial(mat: THREE.Material): mat is THREE.MeshStandardMaterial | THREE.MeshPhysicalMaterial {
   return mat instanceof THREE.MeshStandardMaterial || mat instanceof THREE.MeshPhysicalMaterial;
 }
@@ -50,6 +53,7 @@ export function CascadedShadows({ entry }: { entry: DirectionalLightingConfig })
     for (const light of csm.lights) {
       light.color = new THREE.Color(entry.color ?? "#ffffff");
       light.castShadow = true;
+      light.shadow.radius = entry.shadowRadius ?? DEFAULT_SHADOW_RADIUS;
     }
     const unbind = bindCsmMaterials(scene, csm);
     csmRef.current = csm;
@@ -71,6 +75,7 @@ export function CascadedShadows({ entry }: { entry: DirectionalLightingConfig })
     entry.shadowCameraSize,
     entry.shadowMapSize,
     entry.shadowMaxFar,
+    entry.shadowRadius,
   ]);
 
   useFrame(() => {

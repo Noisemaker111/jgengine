@@ -7,7 +7,7 @@ import { GTAOPass } from "three/examples/jsm/postprocessing/GTAOPass.js";
 import { BokehPass } from "three/examples/jsm/postprocessing/BokehPass.js";
 import { SMAAPass } from "three/examples/jsm/postprocessing/SMAAPass.js";
 
-import type { PostProcessingConfig, ToneMappingMode } from "@jgengine/core/render/postProcessing";
+import { DEFAULT_AO, type AoConfig, type PostProcessingConfig, type ToneMappingMode } from "@jgengine/core/render/postProcessing";
 import type { GraphicsQuality } from "@jgengine/core/settings/settingsModel";
 
 import { createGradePass } from "./gradeShader";
@@ -78,6 +78,12 @@ export function syncSize(built: BuiltGraph, width: number, height: number, pixel
   built.composer.setSize(width, height);
 }
 
+/** AO the chain runs: authored config, {@link DEFAULT_AO} when unset, null when off or the tier skips it. @internal */
+export function resolveAoStage(ao: PostProcessingConfig["ao"], tierAllowsAo: boolean): AoConfig | null {
+  if (!tierAllowsAo || ao === false) return null;
+  return ao ?? DEFAULT_AO;
+}
+
 /**
  * Mounts an `EffectComposer` inside the shell Canvas and takes over rendering
  * (priority-1 `useFrame`, which disables R3F auto-render) to run the configured
@@ -109,15 +115,16 @@ export function PostProcessing({ config, quality = "high", stages }: { config: P
     composer.addPass(new RenderPass(scene, camera));
 
     const resolvedStages = stages ?? { ao: quality === "high", bloom: true, dof: quality === "high", smaa: true };
-    if (resolvedStages.ao && config.ao !== undefined && config.ao !== false) {
+    const aoStage = resolveAoStage(config.ao, resolvedStages.ao);
+    if (aoStage !== null) {
       const ao = new OverlayAwareGTAOPass(scene, camera, width, height);
-      ao.blendIntensity = config.ao.blend ?? 1;
+      ao.blendIntensity = aoStage.blend ?? 1;
       ao.updateGtaoMaterial({
-        radius: config.ao.radius ?? 1.8,
+        radius: aoStage.radius ?? 1.8,
         distanceExponent: 1,
-        thickness: config.ao.distanceFalloff ?? 3.6,
-        scale: config.ao.intensity ?? 2.4,
-        samples: quality === "high" ? 16 : 8,
+        thickness: aoStage.distanceFalloff ?? 3.6,
+        scale: aoStage.intensity ?? 2.4,
+        samples: quality === "ultra" ? 16 : quality === "high" ? 12 : 8,
       });
       composer.addPass(ao);
     }

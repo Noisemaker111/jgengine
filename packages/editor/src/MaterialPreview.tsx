@@ -49,7 +49,7 @@ export function MaterialPreview({ asset, mode, environment, model, onSlots, onEr
       <label>{model ? "Model yaw" : "Surface orientation"}<input aria-label="Preview orientation" style={{ width: 100 }} type="range" min={0} max={360} value={orientation} onChange={(event) => setOrientation(Number(event.target.value))} /></label>
     </div>
     <div style={{ height: 210 }} data-jg-material-preview="">
-      <Canvas key={`${view}:${asset?.id ?? model?.url ?? "empty"}`} dpr={1} camera={{ position: [0, 0.35, 3.6], fov: 38 }} shadows gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1, outputColorSpace: THREE.SRGBColorSpace }}>
+      <Canvas key={`${view}:${asset?.id ?? model?.url ?? "empty"}`} dpr={1} camera={{ position: [0, 0.35, 3.6], fov: 38 }} shadows="percentage" gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1, outputColorSpace: THREE.SRGBColorSpace }}>
         <color attach="background" args={["#24272c"]} />
         <ambientLight intensity={game ? environment?.ambientIntensity ?? 0.2 : 0.12} />
         <directionalLight position={light} intensity={game ? environment?.sunIntensity ?? 3 : 3} castShadow shadow-bias={-0.0004} shadow-normalBias={0.02} />

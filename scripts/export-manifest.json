@@ -336,6 +336,7 @@
     "./relation/thresholds",
     "./render/color",
     "./render/environment",
+    "./render/lightingBalance",
     "./render/lookPreset",
     "./render/postProcessing",
     "./render/sprite2d",

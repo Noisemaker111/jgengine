@@ -46,11 +46,10 @@ export const CINEMATIC_POST_PROCESSING: PostProcessingConfig = {
   grade: {},
 };
 
-/** Unstyled baseline: a stable linear presentation with no genre-specific grading. */
+/** Unstyled baseline: no bloom or grade; contact AO stays at the graphics-tier default. */
 export const NEUTRAL_POST_PROCESSING: PostProcessingConfig = {
   toneMapping: "agx",
   bloom: false,
-  ao: false,
   grade: false,
 };
 
@@ -99,11 +98,36 @@ const PRESET_POST: Record<Exclude<LookPreset, "neutral" | "flat">, PostProcessin
   cinematic: CINEMATIC_POST_PROCESSING,
 };
 
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function mergeStage(preset: unknown, authored: unknown): unknown {
+  if (authored === undefined) return preset;
+  if (!isPlainObject(authored) || !isPlainObject(preset)) return authored;
+  const merged: Record<string, unknown> = { ...preset };
+  for (const [key, value] of Object.entries(authored)) merged[key] = mergeStage(preset[key], value);
+  return merged;
+}
+
+/**
+ * Deep-merge a game's partial post chain over a preset's. Every field the game set wins, including
+ * `false` to drop a stage; fields it left unset come from the preset, and stage objects merge field by
+ * field (tuples such as `grade.lift` replace whole).
+ * @capability merge-post-processing layer a partial post chain over a look preset without losing its stages
+ */
+export function mergePostProcessing(preset: PostProcessingConfig, authored: PostProcessingConfig | undefined): PostProcessingConfig {
+  if (authored === undefined) return preset;
+  return mergeStage(preset, authored) as PostProcessingConfig;
+}
+
 /**
  * Expand a game's `look` into concrete lighting/backdrop/post. The default is `"neutral"`;
  * `"flat"` passes the explicit knobs through untouched.
  * Anything the game authored wins — the preset only fills unset knobs, and it never adds a sky when
  * the world already owns one (so the sky's tuned sun/hemisphere serve as the lighting rig).
+ * A styled preset's post stages are deep-merged under a partial game `postProcessing`
+ * ({@link mergePostProcessing}); under `"neutral"` a game's own chain is used as authored.
  * @capability resolve-game-look expand a look preset into concrete lighting/backdrop/post knobs
  */
 export function resolveGameLook(input: GameLookInput): ResolvedGameLook {
@@ -120,6 +144,6 @@ export function resolveGameLook(input: GameLookInput): ResolvedGameLook {
   return {
     lighting: input.lighting,
     backdrop,
-    postProcessing: input.postProcessing ?? PRESET_POST[look],
+    postProcessing: mergePostProcessing(PRESET_POST[look], input.postProcessing),
   };
 }
