@@ -16,6 +16,10 @@ export interface PrototypeLookSignals {
   hasAuthoredScene: boolean;
   /** Explicit lighting or postProcessing config present. */
   hasAuthoredGraphics: boolean;
+  /** No `look` preset named; the engine then renders the unstyled "neutral" look. */
+  lookUnset: boolean;
+  /** Explicit `postProcessing` config present. */
+  hasPostProcessing: boolean;
 }
 
 export interface PrototypeLookVerdict {
@@ -40,6 +44,8 @@ export function assessPrototypeLook(sources: readonly string[]): PrototypeLookVe
   const text = stripComments(sources.join("\n"));
 
   const flatLook = /\blook\s*:\s*["']flat["']/.test(text);
+  const lookUnset = !/\blook\s*:\s*["'](?:neutral|photoreal|toon|comic|retro|cinematic|flat)["']/.test(text);
+  const hasPostProcessing = /\bpostProcessing\s*:/.test(text);
   const hasModelSeams =
     /\bentityModels\b/.test(text) ||
     /\bobjectModels\b/.test(text) ||
@@ -65,6 +71,8 @@ export function assessPrototypeLook(sources: readonly string[]): PrototypeLookVe
     hudOnly,
     hasAuthoredGraphics,
     hasAuthoredScene,
+    lookUnset,
+    hasPostProcessing,
   };
 
   if (hudOnly) {
@@ -73,7 +81,8 @@ export function assessPrototypeLook(sources: readonly string[]): PrototypeLookVe
 
   const flagFlat = flatLook && !hasAuthoredGraphics;
   const flagBoxes = !hasModelSeams && !hasCustomRender && !hasAuthoredScene;
-  const isPrototype = flagFlat || flagBoxes;
+  const flagUnstyled = lookUnset && !hasPostProcessing;
+  const isPrototype = flagFlat || flagBoxes || flagUnstyled;
 
   const reasons: string[] = [];
   if (flagFlat) {
@@ -85,12 +94,18 @@ export function assessPrototypeLook(sources: readonly string[]): PrototypeLookVe
     );
   }
 
+  if (flagUnstyled) {
+    reasons.push(
+      'no look preset or postProcessing — the scene renders with the unstyled "neutral" look (no tone-map grade, AO or bloom)',
+    );
+  }
+
   return {
     isPrototype,
     signals,
     reasons,
     fix: isPrototype
-      ? 'wire entityModels/objectModels (e.g. entityModels: { player: "asset:person_casual" }) and leave look unset (cinematic default). Opt out only for deliberate HUD/procedural games.'
+      ? 'wire entityModels/objectModels (e.g. entityModels: { player: "asset:person_casual" }) and choose a look for the art direction (look: "cinematic" | "photoreal" | "toon" | ..., or an explicit postProcessing stack). Write look: "neutral" only when unstyled output is deliberate.'
       : undefined,
   };
 }

@@ -34,6 +34,7 @@ describe("assessPrototypeLook", () => {
       `import { createStarterCatalog } from "@jgengine/assets";
       export const game = defineGame({
         name: "Shipped",
+        look: "cinematic",
         assets: createStarterCatalog(),
         world,
         entityModels: { player: "asset:person_casual" },
@@ -49,6 +50,7 @@ describe("assessPrototypeLook", () => {
     const verdict = assessPrototypeLook([
       `export const game = defineGame({
         name: "Duet",
+        look: "toon",
         world,
         renderEntity: renderHero,
         renderObject: renderDuetObject,
@@ -62,6 +64,7 @@ describe("assessPrototypeLook", () => {
     const verdict = assessPrototypeLook([
       `export const game = defineGame({
         name: "Thin",
+        look: "photoreal",
         systems,
         loop: { onNewPlayer },
         GameUI,
@@ -91,6 +94,27 @@ describe("assessPrototypeLook", () => {
         WorldOverlay: StudioShowcaseOverlay,
         postProcessing: STUDIO_STAGE_POST,
       });`,
+    ]);
+    expect(verdict.isPrototype).toBe(false);
+  });
+
+  test("flags a 3D game that never chooses a look or post stack", () => {
+    const verdict = assessPrototypeLook([
+      `export const game = defineGame({
+        name: "Unstyled",
+        world,
+        entityModels: { player: "asset:person_casual" },
+        camera: { perspective: "third", look: "@marker:player_spawn" },
+      });`,
+    ]);
+    expect(verdict.isPrototype).toBe(true);
+    expect(verdict.signals.lookUnset).toBe(true);
+    expect(verdict.reasons.some((r) => r.includes("neutral"))).toBe(true);
+  });
+
+  test("passes a deliberate neutral look", () => {
+    const verdict = assessPrototypeLook([
+      `export const game = defineGame({ name: "Plain", look: "neutral", world, entityModels });`,
     ]);
     expect(verdict.isPrototype).toBe(false);
   });
