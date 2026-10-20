@@ -44,6 +44,7 @@ import { readUrlFlag, subscribeUrlChange, writeUrlParam } from "@jgengine/core/d
 
 import { createAudioEngine } from "./audio/audioEngine";
 import { attachAudioEventWire } from "./audio/audioWire";
+import { resolvePlayableAudio } from "./audio/playableAudio";
 import { installAgentBridge } from "./devtools/agentBridge";
 import { attachPlaytestProbe } from "./devtools/playtestProbe";
 import { withDevtoolsLatency } from "./devtools/latencyInstrumentation";
@@ -281,10 +282,10 @@ export function GamePlayerShell({
   const audioEngine = useMemo(
     () =>
       createAudioEngine({
-        sounds: playable.audio?.sounds,
+        sounds: resolvePlayableAudio(playable).sounds,
         maxVoices: playable.audio?.maxVoices,
         voiceOverflow: playable.audio?.voiceOverflow,
-        buses: playable.audio?.buses,
+        buses: resolvePlayableAudio(playable).buses,
         music: playable.audio?.music,
         musicBus: playable.audio?.musicBus,
       }),

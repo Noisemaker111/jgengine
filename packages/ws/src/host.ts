@@ -489,7 +489,9 @@ export function createGameHost(options: GameHostOptions): GameHost {
         const result = runtime.runCommand(entry.snapshot, args.userId, args.command, commandInput, now());
         const outcome: TransportRunCommandResult = result.ok
           ? { ok: true }
-          : { ok: false, reason: result.reason };
+          : result.message === undefined
+            ? { ok: false, reason: result.reason }
+            : { ok: false, reason: result.reason, message: result.message };
 
         if (result.ok) {
           entry.snapshot = result.snapshot;

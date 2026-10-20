@@ -881,6 +881,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `setTouchControlsMode` (function) · `import { setTouchControlsMode } from "@jgengine/core/input/touchControlsMode"`
 - `touchButtonShape` (function) · `import { touchButtonShape } from "@jgengine/core/input/touchScheme"`
 
+## ui-sound-cues — default procedural click/hover/open/close/confirm/deny/notify cues on a "ui" bus, overridable per game
+
+- `withUiCueSounds` (function) · `import { withUiCueSounds } from "@jgengine/core/audio/uiCues"`
+
 ## uphill-grade-step — constrain sampled heightfield ascent with axis sliding and a configurable terrain-policy sampler
 
 - `resolveTerrainGradeStep` (function) · `import { resolveTerrainGradeStep } from "@jgengine/core/movement/terrainGrade"`

@@ -118,7 +118,7 @@ export function useSettingsCategories(config: SettingsControllerInput): Settings
       const id = busVolumeSettingId(bus.id);
       return {
         id,
-        label: `${bus.id.charAt(0).toUpperCase()}${bus.id.slice(1)} volume`,
+        label: bus.id === "ui" ? "UI volume" : `${bus.id.charAt(0).toUpperCase()}${bus.id.slice(1)} volume`,
         kind: "slider",
         value: store.get(id, bus.gain ?? 1),
         min: 0,

@@ -1,4 +1,5 @@
-export type CommandValidationError = { reason: string };
+/** `reason` is a stable machine code; `message`, when set, is player-facing text the client shows on refusal. */
+export type CommandValidationError = { reason: string; message?: string };
 
 /**
  * Which slice of a server has to be hydrated before some work runs against it. Both fields default to
@@ -122,7 +123,7 @@ export function commandScopeEscape(
 
 export type RunCommandResult =
   | { ok: true; snapshot: import("./snapshot").GameRuntimeSnapshot }
-  | { ok: false; reason: string };
+  | { ok: false; reason: string; message?: string };
 
 /** @internal */
 export function runCommand<TInput>(
@@ -147,7 +148,9 @@ export function runCommand<TInput>(
 
   const validationError = command.validate(snapshot, parsed, actorUserId, nowMs);
   if (validationError) {
-    return { ok: false, reason: validationError.reason };
+    return validationError.message === undefined
+      ? { ok: false, reason: validationError.reason }
+      : { ok: false, reason: validationError.reason, message: validationError.message };
   }
 
   const next = command.apply(snapshot, parsed, actorUserId, nowMs);
