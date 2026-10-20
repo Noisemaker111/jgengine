@@ -15,6 +15,7 @@ import type { ShellMultiplayer } from "../multiplayer";
 
 import { EMPTY_RESERVED, NO_ACTIONS } from "../shellConstants";
 import type { PlayableGame } from "../registry";
+import { registerSimStepper } from "../devtools/simStepper";
 
 export function HudOnlyDriver({
   ctx,
@@ -49,6 +50,13 @@ export function HudOnlyDriver({
       const last = lastFrameRef.current;
       lastFrameRef.current = now;
       if (last === null) return;
+      const rawDt = (now - last) / 1000;
+      const simStart = performance.now();
+      if (!simulate(rawDt)) return;
+      devtools.frame.record({ frameMs: rawDt * 1000, simMs: performance.now() - simStart });
+    };
+    /** One frame of simulation; false when play is gated and nothing advanced. Shared with `sim_advance`. */
+    const simulate = (rawDt: number): boolean => {
       const sendInput = () => {
         if (!serverAuthoritative || serverIdRef.current === null) return;
         const frame: InputFrame = { held: ctx.input.held(), pointer: ctx.input.pointer(), analog: ctx.input.analog() };
@@ -60,10 +68,8 @@ export function HudOnlyDriver({
         ctx.input.publish(heldActionsFor(tracker, NO_ACTIONS), { reset: true });
         ctx.input.publishAnalog(null);
         sendInput();
-        return;
+        return false;
       }
-      const rawDt = (now - last) / 1000;
-      const simStart = performance.now();
       try {
         let endPhase = devtools.profile.begin("time+input");
         const dt = Math.min(rawDt, 0.05);
@@ -97,10 +103,14 @@ export function HudOnlyDriver({
           onRuntimeError(error, "tick");
         }
       }
-      devtools.frame.record({ frameMs: rawDt * 1000, simMs: performance.now() - simStart });
+      return true;
     };
     frameId = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(frameId);
+    const unregister = registerSimStepper((rawDt) => { simulate(rawDt); });
+    return () => {
+      cancelAnimationFrame(frameId);
+      unregister();
+    };
   }, [ctx, playable, tracker, pointerAxisRef, gateRef, onRuntimeError, inputActions, multiplayer, serverIdRef, serverAuthoritative]);
 
   return null;

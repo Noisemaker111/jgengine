@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
-import { playerPoseReport, waitForEditorHost } from "./agentBridge";
+import { applyTimeScale, playerPoseReport, waitForEditorHost } from "./agentBridge";
 
 describe("waitForEditorHost", () => {
   test("resolves true as soon as the host goes live", async () => {
@@ -37,5 +37,24 @@ describe("playerPoseReport", () => {
   test("is null before the context or the player entity exists", () => {
     expect(playerPoseReport(null)).toBeNull();
     expect(playerPoseReport(ctxWith(null))).toBeNull();
+  });
+});
+
+describe("applyTimeScale", () => {
+  const clock = () => {
+    let scale = 1;
+    return { time: { setTimescale: (value: number) => { scale = value; }, timescale: () => scale, now: () => 12.34567 } } as unknown as Pick<GameContext, "time">;
+  };
+
+  test("sets and reports the timescale with the current game time", () => {
+    const ctx = clock();
+    expect(applyTimeScale(ctx, 20)).toEqual({ ok: true, timescale: 20, now: 12.346 });
+    expect(applyTimeScale(ctx, undefined)).toEqual({ ok: true, timescale: 20, now: 12.346 });
+  });
+
+  test("rejects non-numeric, negative or extreme scales without touching the clock", () => {
+    const ctx = clock();
+    for (const bad of ["2", -1, Number.NaN, 500]) expect(applyTimeScale(ctx, bad).ok).toBe(false);
+    expect(ctx.time.timescale()).toBe(1);
   });
 });
