@@ -175,7 +175,7 @@ test("the built Node CLI drains a workspace JSON report larger than a pipe buffe
     for (let index = 0; index < 120; index++) manifest(join(root, "games", `game-${index}`), {
       name: `game-${index}`, dependencies: { "@jgengine/core": "0.19.0" },
     });
-    const result = spawnSync("node", [join(import.meta.dir, "..", "dist", "cli", "index.js"), "doctor", "--workspace", root, "--json"], { encoding: "utf8" });
+    const result = spawnSync("node", [join(import.meta.dir, "..", "dist", "cli", "index.js"), "doctor", "--workspace", root, "--json"], { encoding: "utf8", timeout: 60_000 });
     expect(result.error).toBeUndefined();expect(result.status).toBe(0);expect(result.stderr).toBe("");
     expect(Buffer.byteLength(result.stdout)).toBeGreaterThan(65_536);
     const report = JSON.parse(result.stdout);

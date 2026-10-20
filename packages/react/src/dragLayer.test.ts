@@ -1,9 +1,9 @@
 import { afterAll, afterEach, beforeAll, beforeEach, expect, test } from "bun:test";
-import { execFileSync } from "node:child_process";
 import { mkdir, rm, symlink } from "node:fs/promises";
 import { resolve } from "node:path";
 import { chromium, type Browser, type CDPSession, type Page } from "playwright-core";
 import { buildBrowserFixture, findChromeExecutable } from "../../../scripts/browser-lib";
+import { gotoFixture, installPublicPackages } from "../../../scripts/browser-test-fixture";
 
 const scratch = resolve(import.meta.dir, "../../../.scratch/drag-layer-test");
 let browser: Browser, page: Page, server: ReturnType<typeof Bun.serve>;
@@ -15,14 +15,7 @@ beforeAll(async () => {
   for (const peer of ["react", "react-dom"]) {
     await symlink(resolve(import.meta.dir, "../node_modules", peer), `${scratch}/node_modules/${peer}`, "dir");
   }
-  for (const pkg of ["core", "react"]) {
-    const result = JSON.parse(execFileSync("npm", ["pack", "--ignore-scripts", "--json", "--pack-destination", scratch], {
-      cwd: resolve(import.meta.dir, "../../", pkg), encoding: "utf8", stdio: ["ignore", "pipe", "ignore"],
-    }))[0];
-    const destination = `${scratch}/node_modules/@jgengine/${pkg}`;
-    await mkdir(destination, { recursive: true });
-    execFileSync("tar", ["-xzf", result.filename, "-C", `node_modules/@jgengine/${pkg}`, "--strip-components=1"], { cwd: scratch });
-  }
+  await installPublicPackages(scratch, ["core", "react"]);
   const entry = `${scratch}/fixture.tsx`;
   await Bun.write(entry, `
     import React, {useState} from 'react'; import {createRoot} from 'react-dom/client'; import {flushSync} from 'react-dom';
@@ -69,9 +62,7 @@ beforeEach(async () => {
   input = await page.context().newCDPSession(page);
   const errors: string[] = [];
   page.on("pageerror", error => errors.push(error.message));
-  await page.goto(`http://127.0.0.1:${server.port}`);
-  try { await page.locator('[data-card="ace"]').waitFor({ timeout: 2000 }); }
-  catch (error) { throw new Error(errors.join("\n") || String(error)); }
+  await gotoFixture(page, `http://127.0.0.1:${server.port}`, () => page.locator('[data-card="ace"]').waitFor());
   expect(errors).toEqual([]);
   await page.locator("#outside").click();
   baselineListeners = await page.evaluate(() => Object.entries((window as any).fixture.listeners()).filter(([, count]) => count !== 0));
@@ -91,7 +82,7 @@ async function touch(type: "touchStart" | "touchMove" | "touchEnd" | "touchCance
 async function drops() { return JSON.parse(await page.locator("#drops").textContent() ?? "[]"); }
 async function slots() { return page.evaluate(() => (window as any).fixture.slots()); }
 async function idle() {
-  await page.waitForFunction(() => document.querySelector('[data-drag-ghost]') === null, undefined, { timeout: 1000 });
+  await page.waitForFunction(() => document.querySelector('[data-drag-ghost]') === null);
   expect(await page.evaluate(() => Object.entries((window as any).fixture.listeners()).filter(([, count]) => count !== 0))).toEqual(baselineListeners);
 }
 async function mouseDrag(from: string, to: string) {
@@ -154,12 +145,12 @@ test("Escape and lost capture cancel the drag without consuming the card", async
   await page.mouse.down();
   // Capture becomes active when the browser processes another pointer event.
   await page.mouse.move(start.x + 1, start.y + 1);
-  await page.waitForFunction(() => (window as any).capture.got?.pointerId === (window as any).capture.owner, undefined, { timeout: 1000 });
+  await page.waitForFunction(() => (window as any).capture.got?.pointerId === (window as any).capture.owner);
   const captured = await page.evaluate(() => (window as any).capture);
   expect(captured.got).toEqual({ pointerId: captured.owner, trusted: true, onCard: true });
   await page.locator('[data-card="ace"]').evaluate(element => element.releasePointerCapture((window as any).capture.owner));
   await page.mouse.move(650, 400);
-  await page.waitForFunction(() => (window as any).capture.lost?.pointerId === (window as any).capture.owner, undefined, { timeout: 1000 });
+  await page.waitForFunction(() => (window as any).capture.lost?.pointerId === (window as any).capture.owner);
   const released = await page.evaluate(() => (window as any).capture);
   expect(released.lost).toEqual({ pointerId: released.owner, trusted: true, onCard: true });
   await idle(); await page.mouse.up();

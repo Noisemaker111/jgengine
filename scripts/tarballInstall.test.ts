@@ -46,6 +46,7 @@ function packOnce(pkg: (typeof publishedPackages)[number]): PackedArtifact {
     cwd: packageDir(pkg),
     encoding: "utf8",
     stdio: ["ignore", "pipe", "ignore"],
+    timeout: 120_000,
   });
   const entry = (JSON.parse(out) as Array<{ filename: string; files: PackEntry[] }>)[0];
   const artifact: PackedArtifact = {
@@ -111,7 +112,7 @@ function installTarballs(packages: readonly (typeof publishedPackages)[number][]
     // as a remote host ("Cannot connect to C: resolve failed") on Windows; a
     // bare basename plus a relative `-C` dir extracts identically on GNU tar,
     // bsdtar, and Linux.
-    execFileSync("tar", ["-xzf", basename(tgz), "-C", extractName], { cwd: packCacheDir });
+    execFileSync("tar", ["-xzf", basename(tgz), "-C", extractName], { cwd: packCacheDir, timeout: 60_000 });
     renameSync(join(extractDir, "package"), join(scope, pkg));
   }
   return { consumer: join(work, "consumer"), scope };
@@ -186,6 +187,7 @@ describe.if(built)("clean-consumer resolution of the real tarball (zero-dep pack
       const out = execFileSync("node", ["--input-type=module", "-e", script], {
         cwd: consumer,
         encoding: "utf8",
+        timeout: 60_000,
       });
       expect(out.trim()).toBe("ok");
     } finally {
@@ -206,6 +208,7 @@ describe.if(built)("clean-consumer resolution of the real tarball (zero-dep pack
       const out = execFileSync("node", ["--input-type=module", "-e", script], {
         cwd: consumer,
         encoding: "utf8",
+        timeout: 60_000,
       });
       expect(out.trim()).toBe("ok");
     } finally {
@@ -227,6 +230,7 @@ describe.if(built)("clean-consumer resolution of the real tarball (zero-dep pack
       const out = execFileSync("node", ["--input-type=module", "-e", script], {
         cwd: consumer,
         encoding: "utf8",
+        timeout: 60_000,
       });
       expect(out.trim()).toBe("ok");
     } finally {
@@ -250,6 +254,7 @@ describe.if(built)("clean-consumer resolution of the real tarball (zero-dep pack
       const out = execFileSync("node", ["--input-type=module", "-e", script], {
         cwd: consumer,
         encoding: "utf8",
+        timeout: 60_000,
       });
       expect(out.trim()).toBe("ok");
     } finally {
@@ -302,7 +307,7 @@ describe.if(built)("clean-consumer resolution of the real tarball (zero-dep pack
         "disposeModelScene(instance); skin.dispose(); cloth.dispose(); mesh.geometry.dispose();",
         "console.log('ok');",
       ].join("\n");
-      const out = execFileSync("node", ["--input-type=module", "-e", script], { cwd: consumer, encoding: "utf8" });
+      const out = execFileSync("node", ["--input-type=module", "-e", script], { cwd: consumer, encoding: "utf8", timeout: 60_000 });
       expect(out.trim()).toBe("ok");
     } finally {
       rmSync(join(consumer, ".."), { recursive: true, force: true });

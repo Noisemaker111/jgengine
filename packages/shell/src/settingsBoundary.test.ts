@@ -1,23 +1,21 @@
 import { afterAll, afterEach, beforeAll, beforeEach, expect, test } from "bun:test";
-import { execFileSync } from "node:child_process";
-import { mkdir, rm, symlink } from "node:fs/promises";
-import { resolve } from "node:path";
+import { mkdir, mkdtemp, rm, symlink } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
 import { chromium, type Browser, type Page } from "playwright-core";
 import { buildBrowserFixture, findChromeExecutable } from "../../../scripts/browser-lib";
+import { gotoFixture, installPublicPackages } from "../../../scripts/browser-test-fixture";
 
-const scratch = resolve(import.meta.dir, "../../../.scratch/settings-boundary-test");
+let scratch: string | undefined;
 let browser: Browser, page: Page, server: ReturnType<typeof Bun.serve>;
 beforeAll(async () => {
-  await mkdir(`${scratch}/node_modules/@jgengine`, { recursive: true });
-  for (const peer of ["react", "react-dom"]) await symlink(resolve(import.meta.dir, "../../react/node_modules", peer), `${scratch}/node_modules/${peer}`, "dir");
-  await mkdir(`${scratch}/node_modules/@react-three`, { recursive: true });
-  for (const peer of ["@react-three/fiber", "@react-three/drei", "three", "three-stdlib"]) await symlink(resolve(import.meta.dir, "../node_modules", peer), `${scratch}/node_modules/${peer}`, "dir");
-  for (const pkg of ["core", "react", "shell", "ws"]) {
-    const pack = JSON.parse(execFileSync("npm", ["pack", "--ignore-scripts", "--json", "--pack-destination", scratch], { cwd: resolve(import.meta.dir, "../../", pkg), encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }))[0];
-    await mkdir(`${scratch}/node_modules/@jgengine/${pkg}`, { recursive: true });
-    execFileSync("tar", ["-xzf", pack.filename, "-C", `node_modules/@jgengine/${pkg}`, "--strip-components=1"], { cwd: scratch });
-  }
-  await Bun.write(`${scratch}/fixture.tsx`, `
+  const dir = scratch = await mkdtemp(join(tmpdir(), "jgengine-settings-boundary-"));
+  await mkdir(`${dir}/node_modules/@jgengine`, { recursive: true });
+  for (const peer of ["react", "react-dom"]) await symlink(resolve(import.meta.dir, "../../react/node_modules", peer), `${dir}/node_modules/${peer}`, "dir");
+  await mkdir(`${dir}/node_modules/@react-three`, { recursive: true });
+  for (const peer of ["@react-three/fiber", "@react-three/drei", "three", "three-stdlib"]) await symlink(resolve(import.meta.dir, "../node_modules", peer), `${dir}/node_modules/${peer}`, "dir");
+  await installPublicPackages(dir, ["core", "react", "shell", "ws"]);
+  await Bun.write(`${dir}/fixture.tsx`, `
     import React from 'react';import {createRoot} from 'react-dom/client';
     import {defineGame} from '@jgengine/shell/gameKit';import {ShellHudPresentation} from '@jgengine/shell/ShellHudPresentation';
     import {SettingsTrigger,useSettings} from '@jgengine/react/settings';
@@ -44,18 +42,17 @@ beforeAll(async () => {
       trackPointerAxis={()=>{}} deactivatePointerAxis={()=>{}} onPointerResumeAudio={()=>{}} settingsStore={store}
       bindingOverrides={{}} rebindAction={()=>{}} resetActionBinding={()=>{}} audioEngine={audio} poster={false}/>);
   `);
-  const script = buildBrowserFixture(`${scratch}/fixture.tsx`);
+  const script = buildBrowserFixture(`${dir}/fixture.tsx`);
   server = Bun.serve({ hostname: "127.0.0.1", port: 0, fetch: request => new URL(request.url).pathname === "/fixture.js" ? new Response(script, { headers: { "Content-Type": "text/javascript" } }) : new Response('<div id="root"></div><script type="module" src="/fixture.js"></script>', { headers: { "Content-Type": "text/html" } }) });
   Bun.gc(true);
   browser = await chromium.launch({ executablePath: findChromeExecutable(), headless: true, args: ["--no-sandbox"] });
 }, 30000);
 beforeEach(async () => { page = await browser.newPage(); });
 afterEach(async () => { await page?.close(); });
-afterAll(async () => { await browser?.close(); server?.stop(true); await rm(scratch, { recursive: true, force: true }); Bun.gc(true); });
+afterAll(async () => { await browser?.close(); server?.stop(true); if (scratch !== undefined) await rm(scratch, { recursive: true, force: true }); Bun.gc(true); });
 async function open(mode: string) {
   const errors: string[] = []; page.on("pageerror", error => errors.push(error.message));
-  await page.goto(`http://127.0.0.1:${server.port}/?mode=${mode}`);
-  try { await page.locator("#ready").waitFor({ timeout: 2000 }); } catch (error) { throw new Error(errors.join("\n") || String(error)); }
+  await gotoFixture(page, `http://127.0.0.1:${server.port}/?mode=${mode}`, () => page.locator("#ready").waitFor());
   expect(errors).toEqual([]); expect(await page.evaluate(() => (window as any).fixture.errors())).toEqual([]);
 }
 test("configured action-only HUD trigger opens the authored sheet and runs against its real context", async () => {
@@ -96,7 +93,7 @@ test("saved player values override configured defaults and survive a mounted she
   await hints.click(); expect(await hints.getAttribute("aria-checked")).toBe("false");
   expect(await page.evaluate(() => (window as any).fixture.saved())).toBe(false);
   await page.evaluate(() => (window as any).fixture.unmount());
-  await page.reload(); await page.locator("#ready").waitFor({timeout:2000});
+  await page.reload(); await page.locator("#ready").waitFor();
   expect(await page.evaluate(() => (window as any).fixture.saved())).toBe(false);
   expect(await page.evaluate(() => (window as any).fixture.configDefault())).toBe(true);
 });

@@ -1,10 +1,10 @@
 import { afterAll, beforeAll, expect, test } from "bun:test";
-import { execFileSync } from "node:child_process";
 import { mkdir, readdir, rm, symlink } from "node:fs/promises";
 import { resolve } from "node:path";
 import { chromium, type Browser, type Page } from "playwright-core";
 import { buildBrowserFixture, chromeGraphicsArgs, findChromeExecutable, killPid } from "../../../scripts/browser-lib";
 import { cleanupBrowserFixture, ownBrowserProcess, type OwnedBrowserProcess } from "../../../scripts/browser-fixture-cleanup";
+import { installPublicPackages } from "../../../scripts/browser-test-fixture";
 import { decodePng } from "../../../scripts/png-reader";
 import { computeShotMetrics } from "../../../scripts/shot-metrics";
 
@@ -16,6 +16,8 @@ let server: ReturnType<typeof Bun.serve>;
 const errors: string[] = [];
 let holdNextSave = false;
 let releaseFailedSave: (() => void) | null = null;
+let heldSaveArrived: Promise<void> = Promise.resolve();
+let markHeldSaveArrived = () => {};
 
 beforeAll(async () => {
   await rm(scratch, { recursive: true, force: true });
@@ -28,11 +30,7 @@ beforeAll(async () => {
   await symlink(resolve(import.meta.dir, "../../navbake/node_modules/recast-navigation"), `${scratch}/node_modules/recast-navigation`, "dir");
   await mkdir(`${scratch}/node_modules/@react-three`, { recursive: true });
   for (const peer of ["@react-three/fiber", "@react-three/drei"]) await symlink(resolve(import.meta.dir, "../node_modules", peer), `${scratch}/node_modules/${peer}`, "dir");
-  for (const pkg of ["core", "react", "ws", "shell", "navbake", "editor"]) {
-    const pack = JSON.parse(execFileSync("npm", ["pack", "--ignore-scripts", "--json", "--pack-destination", scratch], { cwd: resolve(import.meta.dir, "../../", pkg), encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }))[0];
-    await mkdir(`${scratch}/node_modules/@jgengine/${pkg}`, { recursive: true });
-    execFileSync("tar", ["-xzf", pack.filename, "-C", `node_modules/@jgengine/${pkg}`, "--strip-components=1"], { cwd: scratch });
-  }
+  await installPublicPackages(scratch, ["core", "react", "ws", "shell", "navbake", "editor"]);
   await Bun.write(`${scratch}/fixture.tsx`, `
     import React,{useState,useEffect} from 'react';import {createRoot} from 'react-dom/client';
     import {useGameContext} from '@jgengine/react/provider';
@@ -42,7 +40,7 @@ beforeAll(async () => {
     import {environment,terrain} from '@jgengine/core/world/features';
     const policy={maxDocuments:2,maxBytes:12000,maxObjects:4,maxPathPoints:16,maxGridCells:0,maxTerrainVertices:0,allowedKinds:['player_spawn','prop'],allowedAssets:[]};
     const initialDocument=()=>normalizeEditorLayers({markers:[{id:'spawn',kind:'player_spawn',label:'Start marker',position:{x:0,y:0,z:0}}]});
-    function ClockHud(){const ctx=useGameContext();const[time,setTime]=useState(ctx.time.now());useEffect(()=>{const timer=setInterval(()=>setTime(ctx.time.now()),50);return()=>clearInterval(timer)},[ctx]);return <output aria-label="Simulation seconds" style={{position:'absolute',top:60,left:8,color:'white'}}>{time.toFixed(6)}</output>}
+    function ClockHud(){const ctx=useGameContext();window.simClock=ctx.time;const[time,setTime]=useState(ctx.time.now());useEffect(()=>{const timer=setInterval(()=>setTime(ctx.time.now()),50);return()=>clearInterval(timer)},[ctx]);return <output aria-label="Simulation seconds" style={{position:'absolute',top:60,left:8,color:'white'}}>{time.toFixed(6)}</output>}
     const createPlayable=document=>defineGame({name:'Creator fixture',assets:createAssetCatalog(),editorLayers:document,world:environment({terrain:terrain({bounds:{w:24,d:24},height:0,material:'grass'})}),GameUI:ClockHud,postProcessing:{enabled:false},shadows:false,graphics:{low:{renderScale:0.5},medium:{renderScale:0.5},high:{renderScale:0.5}},server:{mode:'single'},save:'none'});
     const durable=createCreatorDocumentStorage({storage:localStorage,key:'creator-fixture:v1',policy});
     const config={policy,initialDocument,createPlayable,storage:{...durable,save:async(...args)=>{const check=await(await fetch('/save-check')).json();if(!check.ok)throw new Error(check.error);return durable.save(...args)}}};
@@ -59,13 +57,18 @@ beforeAll(async () => {
   const css = compiled.build(new Scanner({ sources: compiled.sources }).scan());
   server = Bun.serve({ hostname: "127.0.0.1", port: 0, fetch: (request, server) => {
     const path = new URL(request.url).pathname;
-    if (path === "/hold-next-save") { holdNextSave = true; return Response.json({ ok: true }); }
+    if (path === "/hold-next-save") {
+      holdNextSave = true;
+      heldSaveArrived = new Promise((arrived) => { markHeldSaveArrived = arrived; });
+      return Response.json({ ok: true });
+    }
     if (path === "/release-failed-save") { releaseFailedSave?.(); releaseFailedSave = null; return Response.json({ ok: true }); }
     if (path === "/save-check") {
       if (!holdNextSave) return Response.json({ ok: true });
       holdNextSave = false;
       // The test releases this save explicitly; fixture cleanup also drains it.
       server.timeout(request, 0);
+      markHeldSaveArrived();
       return new Promise<Response>((done) => { releaseFailedSave = () => done(Response.json({ ok: false, error: "Durable quota rejected" })); });
     }
     if (path === "/fixture.js") return new Response(script, { headers: { "content-type": "text/javascript" } });
@@ -161,24 +164,37 @@ test("native export round-trips through validated import and rejects an over-bud
   expect(errors).toEqual([]);
 }, 60000);
 
+/** Simulation seconds read from the game clock itself, not the HUD's polled copy. */
+function simSeconds(): Promise<number> {
+  return page.evaluate(() => (window as any).simClock.now());
+}
+
+/** Let `count` rendered frames pass, so a frozen clock is checked against real frames instead of wall time. */
+function renderFrames(count: number): Promise<void> {
+  return page.evaluate((frames) => new Promise<void>((done) => {
+    let left = frames;
+    const tick = () => { left -= 1; if (left <= 0) done(); else requestAnimationFrame(tick); };
+    requestAnimationFrame(tick);
+  }), count);
+}
+
 test("unsaved and pending failed saves survive native play, pause, resume and return", async () => {
   await page.getByRole("treeitem").filter({ hasText: "Saved start 1" }).last().getByRole("button").first().click();
   await page.getByRole("textbox", { name: "Object name" }).fill("Unsaved pending");
   await page.getByText("Unsaved changes", { exact: true }).waitFor();
   await page.getByRole("button", { name: "Play", exact: true }).click();
   await page.getByRole("button", { name: "Pause simulation", exact: true }).click();
-  await page.waitForTimeout(200);
-  const paused = Number(await page.getByLabel("Simulation seconds", { exact: true }).textContent());
-  await page.waitForTimeout(200);
-  expect(Number(await page.getByLabel("Simulation seconds", { exact: true }).textContent())).toBe(paused);
+  await page.waitForFunction(() => (window as any).simClock.isPaused());
+  const paused = await simSeconds();
+  await renderFrames(10);
+  expect(await simSeconds()).toBe(paused);
   await page.getByRole("button", { name: "Step one frame (pause required)", exact: true }).click();
-  await page.waitForFunction((previous) => Number(document.querySelector('[aria-label="Simulation seconds"]')?.textContent) > previous, paused);
-  await page.waitForTimeout(200);
-  const stepped = Number(await page.getByLabel("Simulation seconds", { exact: true }).textContent());
-  await page.waitForTimeout(200);
-  expect(Number(await page.getByLabel("Simulation seconds", { exact: true }).textContent())).toBe(stepped);
+  await page.waitForFunction((previous) => (window as any).simClock.now() > previous && (window as any).simClock.isPaused(), paused);
+  const stepped = await simSeconds();
+  await renderFrames(10);
+  expect(await simSeconds()).toBe(stepped);
   await page.getByRole("button", { name: "Resume simulation", exact: true }).click();
-  await page.waitForFunction((previous) => Number(document.querySelector('[aria-label="Simulation seconds"]')?.textContent) > previous, stepped);
+  await page.waitForFunction((previous) => (window as any).simClock.now() > previous, stepped);
   await page.keyboard.press("Escape");
   await page.getByRole("button", { name: "Return to editor", exact: true }).click();
   await page.getByText("Unsaved changes", { exact: true }).waitFor();
@@ -189,6 +205,8 @@ test("unsaved and pending failed saves survive native play, pause, resume and re
   await page.keyboard.press("Escape");
   await page.getByRole("button", { name: "Return to editor", exact: true }).click();
   await page.getByRole("button", { name: "Saving…", exact: true }).waitFor();
+  // "Saving…" renders before the save's request reaches the server; releasing earlier would be a no-op.
+  await heldSaveArrived;
   await page.request.post(`http://127.0.0.1:${server.port}/release-failed-save`);
   await page.getByRole("button", { name: "Retry save", exact: true }).waitFor();
   expect(await page.getByRole("button", { name: "Retry save", exact: true }).getAttribute("title")).toBe("Durable quota rejected");
