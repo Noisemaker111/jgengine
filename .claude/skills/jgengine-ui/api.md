@@ -3147,7 +3147,7 @@
 - `NameplateSample` (interface): interface NameplateSample — Projected nameplate with optional health and distance from the render camera.
 - `ProjectileTracers` (function): function ProjectileTracers({ lifeMs = 130 }: { lifeMs?: number }): React.JSX.Element — ⚠ undocumented
 - `Reticle` (function): function Reticle({ className }: { className?: string }): React.JSX.Element — ⚠ undocumented
-- `WorldBarSample` (interface): interface WorldBarSample { entityId?: string; x: number; y: number; percent: number } — ⚠ undocumented
+- `WorldBarSample` (interface): interface WorldBarSample { entityId?: string; x: number; y: number; percent: number; pxPerMeter?: number } — ⚠ undocumented
 - `WorldEntityBars` (function): function WorldEntityBars({ statId, height = 2.2, roles, resolveRole, maxDistance = 60, occlude = true, tickMs = 80, maxSamples = 64, }: { statId: string; height?: number; roles?: readonly CatalogEntityRole[]; resolveRole?: (entity: SceneEntity) => CatalogEntityRole | undefined; /** Hide bars beyond … — ⚠ undocumented
 - `WorldFloatText` (function): function WorldFloatText({ height = 1.9, lifeMs = 950 }: { height?: number; lifeMs?: number }): React.JSX.Element — ⚠ undocumented
 - `WorldNameplates` (function): function WorldNameplates({ statId = "health", height = 2.3, roles, resolveRole, maxDistance = 40, occlude = true, tickMs = 120, maxSamples = 64, resolveName, showHealth = true, className, nameplateClassName, nameClassName, barClassName, fillClassName, renderNameplate, }: WorldNameplatesProps): React… — Billboarded name + 78×6px HP bar over every nearby non-local entity that passes `roles`/`maxDistance` — headless (className/data-* slots on every part, `renderNameplate` for a full swap), turned on declaratively via `defineGame({ nameplates })` rather than mounted by hand.
@@ -3199,7 +3199,7 @@
 
 - `NameplateSample` (interface): interface NameplateSample — Projected nameplate with optional health and distance from the render camera.
 - `Projectable` (interface): interface Projectable { set(x: number, y: number, z: number): this; project(camera: {matrixWorldInverse: unknown; projectionMatrix: unknown}): this; x: number; y: number; z: number } — ⚠ undocumented
-- `WorldBarSample` (interface): interface WorldBarSample { entityId?: string; x: number; y: number; percent: number } — ⚠ undocumented
+- `WorldBarSample` (interface): interface WorldBarSample { entityId?: string; x: number; y: number; percent: number; pxPerMeter?: number } — ⚠ undocumented
 - `WorldOverlayCamera` (interface): interface WorldOverlayCamera — Render camera matrices; world translation supplies the overlay's viewpoint.
 - `WorldOverlaySampleOptions` (interface): interface WorldOverlaySampleOptions — Sampling policy shared by health bars and nameplates.
 

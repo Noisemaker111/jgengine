@@ -7,7 +7,7 @@ import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { createPossession } from "@jgengine/core/scene/possession";
 import { building, environment } from "@jgengine/core/world/features";
-import { collectNameplateSamples, collectWorldBarSamples, worldBarOccluded, refreshWorldBarSamples, type NameplateSample, type WorldBarSample, type WorldOverlaySampleOptions } from "./worldBarSamples";
+import { collectNameplateSamples, collectWorldBarSamples, worldBarOccluded, worldBarSize, refreshWorldBarSamples, type NameplateSample, type WorldBarSample, type WorldOverlaySampleOptions } from "./worldBarSamples";
 
 function setup(deps: SceneRaycastDeps = {}) {
   const store = createEntityStore();
@@ -110,7 +110,7 @@ describe("world overlay visibility", () => {
     const { ctx, spawn, rays } = setup();
     spawn("enemy", [0, 0, 0], "Wolf");
     spawn("npc", [1, 0, 0], "Innkeeper", null);
-    expect(bars(ctx)).toEqual([{ entityId: "enemy", x: 400, y: 300, percent: 0.5 }]);
+    expect(bars(ctx)).toEqual([{ entityId: "enemy", x: 400, y: 300, percent: 0.5, pxPerMeter: expect.any(Number) }]);
     expect(plates(ctx).map((p) => [p.name, p.percent])).toEqual([["Wolf", 0.5], ["Innkeeper", null]]);
     expect(rays.every((r) => r.filter?.entities === false)).toBe(true);
   });
@@ -216,5 +216,27 @@ describe("world overlay visibility", () => {
     expect(queries()).toBe(2);
     expect(bars(ctx, cameraAt(), false, { maxSamples: 12 })).toHaveLength(12);
     expect(rays).toHaveLength(76);
+  });
+});
+
+describe("world bar size", () => {
+  test("a far or zoomed-out actor gets a smaller bar than a near one", () => {
+    const { ctx, spawn } = setup();
+    spawn("enemy", [0, 0, 0], "Wolf");
+    const near = bars(ctx, cameraAt([0, 2, 6]))[0]!.pxPerMeter!;
+    const far = bars(ctx, cameraAt([0, 2, 40]))[0]!.pxPerMeter!;
+    expect(near).toBeGreaterThan(far * 4);
+    expect(worldBarSize(near).width).toBeGreaterThan(worldBarSize(far).width);
+  });
+
+  test("spans about 1.4 m on screen, clamped between a readable minimum and the maximum", () => {
+    expect(worldBarSize(40)).toEqual({ width: 56, height: 5 });
+    expect(worldBarSize(2)).toEqual({ width: 28, height: 4 });
+    expect(worldBarSize(500)).toEqual({ width: 112, height: 10 });
+  });
+
+  test("caller-painted samples without a scale keep the configured size", () => {
+    expect(worldBarSize(undefined)).toEqual({ width: 112, height: 10 });
+    expect(worldBarSize(undefined, 80, 8)).toEqual({ width: 80, height: 8 });
   });
 });

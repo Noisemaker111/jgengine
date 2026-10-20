@@ -8,6 +8,8 @@ export interface WorldBarSample {
   x: number;
   y: number;
   percent: number;
+  /** Screen pixels per world metre at the anchor, so painted bars shrink with distance and zoom. */
+  pxPerMeter?: number;
 }
 
 export interface Projectable {
@@ -71,6 +73,19 @@ function projectAnchor(entity: SceneEntity, height: number, camera: WorldOverlay
   return anchor;
 }
 
+/**
+ * Screen pixels per world metre at `anchor`: project a point one metre along the camera's right
+ * axis and measure the gap. Call after reading the anchor's own projection — `project` is reused.
+ */
+function pixelsPerMeter(anchor: EntityPosition, camera: WorldOverlayCamera, project: Projectable, viewport: { width: number; height: number }, x: number, y: number): number {
+  const m = camera.matrixWorld.elements;
+  project.set(anchor[0] + m[0]!, anchor[1] + m[1]!, anchor[2] + m[2]!).project(camera);
+  const px = (project.x * 0.5 + 0.5) * viewport.width;
+  const py = (-project.y * 0.5 + 0.5) * viewport.height;
+  const scale = Math.hypot(px - x, py - y);
+  return Number.isFinite(scale) ? scale : 0;
+}
+
 function healthFraction(stat: { min: number; max: number; current: number }): number {
   const range = stat.max - stat.min;
   return range <= 0 ? 0 : Math.max(0, Math.min(1, (stat.current - stat.min) / range));
@@ -118,11 +133,14 @@ export function collectWorldBarSamples(
     if (anchor === null) continue;
     if (checked++ >= limit) break;
     if (occlude && worldBarOccluded(ctx, origin, anchor)) continue;
+    const x = (project.x * 0.5 + 0.5) * viewport.width;
+    const y = (-project.y * 0.5 + 0.5) * viewport.height;
     into.push({
       entityId: id,
-      x: (project.x * 0.5 + 0.5) * viewport.width,
-      y: (-project.y * 0.5 + 0.5) * viewport.height,
+      x,
+      y,
       percent: healthFraction(stat),
+      pxPerMeter: pixelsPerMeter(anchor, camera, project, viewport, x, y),
     });
   }
   return into.length;
@@ -145,9 +163,11 @@ export function refreshWorldBarSamples(
     if (sample.entityId === undefined) continue;
     const entity = eligibleEntity(ctx, sample.entityId, options);
     if (entity === null || Math.hypot(entity.position[0] - origin[0], entity.position[1] - origin[1], entity.position[2] - origin[2]) > maxDistance) continue;
-    if (projectAnchor(entity, height, camera, project) === null) continue;
+    const anchor = projectAnchor(entity, height, camera, project);
+    if (anchor === null) continue;
     sample.x = (project.x * 0.5 + 0.5) * viewport.width;
     sample.y = (-project.y * 0.5 + 0.5) * viewport.height;
+    sample.pxPerMeter = pixelsPerMeter(anchor, camera, project, viewport, sample.x, sample.y);
     samples[kept++] = sample;
   }
   samples.length = kept;
@@ -212,24 +232,40 @@ export function collectNameplateSamples(
   return into.length;
 }
 
+/** World width a health bar spans over its entity, in metres. */
+const WORLD_BAR_METERS = 1.4;
+const MIN_BAR_WIDTH_PX = 28;
+
+/**
+ * Painted bar size for a sample: about {@link WORLD_BAR_METERS} wide at the anchor's on-screen
+ * scale, clamped between a still-readable minimum and the configured maximum, with height in
+ * proportion. Samples without a scale (caller-painted screen samples) keep the maximum.
+ * @internal
+ */
+export function worldBarSize(pxPerMeter: number | undefined, maxWidthPx = 112, maxHeightPx = 10): { width: number; height: number } {
+  if (pxPerMeter === undefined || !(pxPerMeter > 0)) return { width: maxWidthPx, height: maxHeightPx };
+  const width = Math.max(Math.min(MIN_BAR_WIDTH_PX, maxWidthPx), Math.min(maxWidthPx, pxPerMeter * WORLD_BAR_METERS));
+  const height = Math.max(4, Math.min(maxHeightPx, Math.round(width / 11)));
+  return { width: Math.round(width), height };
+}
+
 /** @internal */
 export function paintWorldBarSamples(
   canvas: { width: number; height: number; getContext(kind: "2d"): CanvasRenderingContext2D | null },
   samples: readonly WorldBarSample[],
   dpr: number,
-  barWidthPx = 112,
-  barHeightPx = 10,
+  maxBarWidthPx = 112,
+  maxBarHeightPx = 10,
 ): void {
   const g = canvas.getContext("2d");
   if (g === null) return;
   g.setTransform(1, 0, 0, 1, 0, 0);
   g.clearRect(0, 0, canvas.width, canvas.height);
   g.setTransform(dpr, 0, 0, dpr, 0, 0);
-  const halfW = barWidthPx / 2;
-  const halfH = barHeightPx / 2;
   for (const sample of samples) {
-    const left = sample.x - halfW;
-    const top = sample.y - halfH;
+    const { width: barWidthPx, height: barHeightPx } = worldBarSize(sample.pxPerMeter, maxBarWidthPx, maxBarHeightPx);
+    const left = sample.x - barWidthPx / 2;
+    const top = sample.y - barHeightPx / 2;
     g.fillStyle = "rgba(0,0,0,0.7)";
     g.strokeStyle = "rgba(0,0,0,0.7)";
     g.lineWidth = 1;
