@@ -85,6 +85,13 @@ describe("diagnose", () => {
     expect(failingLabels(dir)).toContain("Tailwind @source covers @jgengine/react and @jgengine/shell");
   });
 
+  test("flags a silent game until it declares or plays audio cues", () => {
+    const dir = scaffold();
+    expect(failingLabels(dir)).toContain("game has sound (declares audio cues)");
+    writeFileSync(join(dir, "src", "game", "sfx.ts"), 'export const cue = (ctx: { game: { audio: { play(id: string): void } } }) => ctx.game.audio.play("build");\n');
+    expect(failingLabels(dir)).not.toContain("game has sound (declares audio cues)");
+  });
+
   test("flags an aliased component folder that index.css never scans", () => {
     const dir = scaffold();
     const tsconfigPath = join(dir, "tsconfig.json");
