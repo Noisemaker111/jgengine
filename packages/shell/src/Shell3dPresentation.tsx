@@ -104,6 +104,7 @@ import type { RuntimeDiagnostic } from "./diagnostics/RuntimeDiagnostics";
 import { createShellKeyHandlers, ShellDebugOverlays, ShellGameUiChrome } from "./ShellChrome";
 import { CombatPresentation } from "./CombatPresentation";
 import { WorldParticles } from "./world/WorldParticles";
+import { TerrainQualityContext } from "./terrain/terrainQuality";
 import { detectKtx2Support } from "./render/modelLoad";
 import {
   resolvePresentationEffects,
@@ -619,6 +620,7 @@ export function Shell3dPresentation({
                 ) : null}
                 <BackdropFog fog={backdrop?.fog} />
                 <GameProvider context={ctx}>
+                  <TerrainQualityContext.Provider value={graphics.quality}>
                   <BuildingRenderBudget drawDistance={graphics.profile.drawDistance} visibility={playable.visibility} cullingDisabled={splitScreen}>
                   <CullingProvider config={playable.visibility} drawDistance={graphics.profile.drawDistance}>
                     <WorldView
@@ -688,6 +690,7 @@ export function Shell3dPresentation({
                   />
                   <PointerProbe service={pointerService} />
                   </BuildingRenderBudget>
+                  </TerrainQualityContext.Provider>
                 </GameProvider>
                 <RemotePlayers rows={remotePlayers} />
                 <FrameDriver
