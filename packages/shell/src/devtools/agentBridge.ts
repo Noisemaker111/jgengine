@@ -212,10 +212,11 @@ export function installAgentBridge(options: {
         if (typeof seconds !== "number" || !Number.isFinite(seconds) || seconds <= 0 || seconds > 120) {
           return { ok: false, error: "sim_advance needs { seconds } in (0, 120]" };
         }
-        const frames = advanceSimulation(seconds);
-        if (frames === null) return { ok: false, error: "no sim driver mounted" };
-        const ctx = getContext();
-        return { ok: true, frames, now: ctx === null ? null : Math.round(ctx.time.now() * 1000) / 1000 };
+        return advanceSimulation(seconds).then((frames): AgentBridgeResponse => {
+          if (frames === null) return { ok: false, error: "no sim driver mounted" };
+          const ctx = getContext();
+          return { ok: true, frames, now: ctx === null ? null : Math.round(ctx.time.now() * 1000) / 1000 };
+        });
       }
       case "debug_report":
         return { ok: true, report: buildFullReport(playable) };
