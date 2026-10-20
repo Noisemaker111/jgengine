@@ -668,3 +668,12 @@ describe("raycastHeightField", () => {
     expect(hit!.y).toBeCloseTo(rolling(3, -4), 3);
   });
 });
+
+test("resolveTerrainDetail fills surfaceStrength and resolves an implicit default without snow", () => {
+  expect(resolveTerrainDetail({}).surfaceStrength).toBe(1);
+  expect(resolveTerrainDetail({ surfaceStrength: 2 }).surfaceStrength).toBe(1);
+  const implicit = resolveTerrainDetail(undefined, 3);
+  expect(implicit.waterLevel).toBe(3);
+  expect(implicit.snowHeight).toBeGreaterThan(1000);
+  expect(implicit.strength).toBeLessThan(1);
+});

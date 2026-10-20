@@ -69,6 +69,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `useAutoScroll` (function) · `import { useAutoScroll } from "@jgengine/react"`
 
+## balance-ibl-lighting — trim flat ambient under IBL and add a key light to directionless lighting
+
+- `balanceLightingForIbl` (function) · `import { balanceLightingForIbl } from "@jgengine/core/render/lightingBalance"`
+
 ## bounded-spatial-audio — play positional or flat cues with listener orientation, voice budgets, and per-source cleanup
 
 - `createAudioEngine` (function) · `import { createAudioEngine } from "@jgengine/shell/audio/audioEngine"`
@@ -434,6 +438,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `menuStackReducer` (function) · `import { menuStackReducer } from "@jgengine/react/menuRouter"`
 
+## merge-post-processing — layer a partial post chain over a look preset without losing its stages
+
+- `mergePostProcessing` (function) · `import { mergePostProcessing } from "@jgengine/core/render/lookPreset"`
+
 ## minimap — framed circular minimap with terrain bake, fog, markers, and facing arrow
 
 - `Minimap` (function) · `import { Minimap } from "@jgengine/react"`
@@ -475,6 +483,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## model-load-idle — how long the shared GLB loader has been idle, for capture settle waits
 
 - `modelLoadIdleMs` (function) · `import { modelLoadIdleMs } from "@jgengine/shell/render/modelLoad"`
+
+## model-load-starts — count of model streaming bursts, for capture quiescence checks
+
+- `modelLoadStarts` (function) · `import { modelLoadStarts } from "@jgengine/shell/render/modelLoad"`
 
 ## multiplayer-p2p — bootstrap a playable authoritative world for browser peer co-op
 

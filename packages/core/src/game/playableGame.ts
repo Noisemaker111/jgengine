@@ -275,6 +275,8 @@ export interface ModelConfig {
   collisionMesh?: CollisionMeshData;
   /** Per-entity PBR tint/finish override (#151.3); cloned onto each `MeshStandardMaterial` in the model so shared GLTF caches stay untouched. */
   material?: ModelMaterialOverride;
+  /** `false` keeps this model's exported material params and skips the engine's default painted surface detail. Default true. */
+  surfaceDetail?: boolean;
   /** Reusable authored surfaces available to this model's named slot assignments. */
   materialAssets?: readonly MaterialAsset[];
   /** Sparse per-slot assignments; unselected imported materials keep their original appearance. */
@@ -354,6 +356,8 @@ export interface DirectionalLightingConfig {
   shadowBias?: number;
   /** Shadow normal bias to fight peter-panning. Default 0.02. */
   shadowNormalBias?: number;
+  /** PCF penumbra width in shadow-map texels; 0 is a hard edge. Default 1.25. */
+  shadowRadius?: number;
 }
 
 export interface HemisphereLightingConfig {
@@ -387,6 +391,16 @@ export interface LightingConfig {
   /** Maximum dynamic point + spot lights mounted by the shell. Default 8. */
   maxDynamicLights?: number;
   hemisphere?: HemisphereLightingConfig;
+  /**
+   * Multiplier on `ambient` intensity while image-based light is on (every look but `"flat"`), so the
+   * shaped sky light carries the fill instead of a flat wash. Default 0.5; 1 keeps the authored value.
+   */
+  iblAmbientScale?: number;
+  /**
+   * With no `directional` entry, the shell adds a soft shadowless key light so forms still get a lit
+   * and a shaded side. Default true; `false` keeps the scene lit by ambient/hemisphere/IBL alone.
+   */
+  fallbackKey?: boolean;
 }
 
 export interface BackdropFogConfig {
@@ -664,6 +678,8 @@ export interface PlayableGame<
   shadows?: boolean;
   /** Per-quality renderer budgets; omitted tiers use {@link DEFAULT_GRAPHICS_PROFILES}. */
   graphics?: Partial<Record<"low" | "medium" | "high", Partial<GraphicsProfile>>>;
+  /** Default painted finish on loaded models (normalized glTF params plus procedural mottling, wear and micro-normal, scaled by the graphics tier's `surfaceDetail`). Default true; `false` renders every model with its exported material. */
+  surfaceDetail?: boolean;
   /** Pointer-driven input: click-to-move, box-select, right-click verbs, cursor aim (#22/#30/#31). */
   pointer?: PointerConfig;
   /** Touch controls on coarse-pointer devices. Unset derives a scheme from `input` (virtual joystick for movement actions, on-screen buttons for the rest); a config refines it with gestures and curated buttons; `false` opts out. */

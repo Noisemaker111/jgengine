@@ -29,14 +29,18 @@ export const overworld = world({
 ## Legacy world features
 
 Authored terrain paint carried by `environmentContentFromDocument(document).sculpt` renders on
-the normal environment ground. Single surface IDs use `TERRAIN_MATERIAL_COLORS` from
-`@jgengine/core/editor/terrainMaterials`; a layer's `tint` replaces that default color. Layer
-weights are multiplied by `opacity`, normalized, and blended in linear color space, matching
-the editor. Unpainted cells retain the descriptor palette. Grass roots and soil patch borders
-sample the same authored colors. Paint changes color, never ground height or collision.
-Descriptor-wide terrain detail still overlays the painted ground. Per-layer `roughness`,
-`tiling` and `triplanar` remain serialized authoring metadata; they do not select or configure
-separate runtime materials.
+the normal environment ground through the terrain surface material, in play and in the editor
+viewport alike. Each layer keeps its hue (`tint`, else `TERRAIN_MATERIAL_COLORS`) and draws its
+`surface` type's procedural ground: grass, dirt, gravel, rock, sand, mud, snow and road each get
+their own albedo variation, roughness and micro-normal (`terrainSurfaceClass` maps ids such as
+`path` → dirt or `stone` → rock; unknown ids get generic ground). Layer weights × `opacity` meet
+along noise-warped, height-aware edges, so the 1–2 m paint grid never shows. Steep slopes turn to
+rock, and macro sweeps break up large single-hue fields. Layer `roughness` sets the base roughness
+and `tiling` scales the pattern; `triplanar` is not needed (rock is sampled in 3D). Unpainted cells
+keep the descriptor palette with procedural detail. Paint changes color, never ground height or
+collision. A terrain without `detail` still renders this way; `detail.surfaceStrength: 0` keeps
+flat painted colour, and `detail: false` opts out to the old flat vertex-colour ground. The
+`low` graphics tier draws one cheap mottle per surface and skips micro-normals.
 
 Custom ground consumers can use `createTerrainPaintColorSampler` from `@jgengine/shell/terrain`
 with a `TerrainPaintSource` (an editable terrain's layer/surface/weight channels). The returned
@@ -436,6 +440,8 @@ Cancelled or stolen pending cues never create a late source. Natural sample/synt
 Custom authored primitive renderers use `StaticShapeInstances` (`@jgengine/shell/render/staticShapeInstances`) with document-derived box/cylinder transforms and caller-owned `AuthoredSurfaceConfig`. Boxes span one unit; cylinders use unit radius/height. Grouping includes maps, sampler settings, PBR/rim values, tessellation and shadow policy. Updates upload matrices and recompute conservative bounds; positive finite scale is required. Bounds include an affine-parent safety factor, so culling may retain extra geometry. Generator markers (including Field Station's authored bookcase) consume this seam automatically without changing generator data or material defaults.
 
 `ModelMaterialMaps` derives its URL fields from `MaterialTextureRole`; ordinary models and authored surfaces accept all 20 supported roles, including alpha, sheen, anisotropy, clearcoat, specular, transmission, thickness and iridescence maps. `modelAssetRequests` discovers supplied maps through inline parts and attachments; unknown roles remain outside its request list. Legacy color/normal/roughness/ao/metalness/emissive/height order stays stable, followed by the remaining authority-defined roles. Authored surfaces keep their owned resources for equivalent config/map ordering and reload when a supported URL changes. Omitted model roles retain imported maps; games choose URLs and physical response parameters. This is the simple all-slot override seam; per-slot `MaterialAsset` assignments retain their own selectors and metadata.
+
+Every model the shared loader resolves gets a default painted finish at load: eligible materials (opaque standard/physical, no normal map, no alpha cutout — flat colour, vertex colour or a KayKit-style palette atlas) have exported roughness remapped into 0.6–0.95, exporter-default metal (metallic 1 / roughness 1, no map) dropped to 0.1 and `envMapIntensity` capped at 0.8, plus one shared object-space detail shader (mottling, paler wear, roughness break-up, micro-normal, down-facing cavity). `GraphicsProfile.surfaceDetail` picks the level per tier (`"lite"` on low drops the micro-normal; `"off"` compiles plain); programs are shared per level. `ModelConfig.material` overrides still win. Opt out per model with `surfaceDetail: false` on the `ModelConfig`, or per game with `defineGame({ surfaceDetail: false })`.
 
 `AuthoredSurfaceMaterial` / `useAuthoredSurfaceMaterial` (`@jgengine/shell/render/authoredSurfaceMaterial`) share model-material map roles and material application. They own material/texture clones; cached loader textures remain shared and untouched. Colour, emissive, sheen-colour and specular-colour maps are sRGB; normal and numeric roles are linear, following `MATERIAL_TEXTURE_SEMANTICS` from `@jgengine/core/material/materialAsset`. `wrapping` selects repeat (default), clamp or mirror; `anisotropy` defaults to 1. `normalScale` is explicit, `repeatMetres` optionally tiles unit shapes in physical metres including instance/parent scale (cylinder sides approximate an elliptical circumference). Omitting it retains authored UVs. Height maps must be normalized to [0,1]; `displacementScale`/`displacementBias` use local shape units and expand batch bounds. Compose local palette, asset URLs, opacity/depthWrite and emission in the game. No scene coordinates or surface families belong in these primitives; editor placement stays authoritative. Deepward's prefab-authoring fallback is tracked by #1937 and should be removed when editor composition can express it.
 

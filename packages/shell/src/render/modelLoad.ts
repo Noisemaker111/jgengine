@@ -12,6 +12,7 @@ import {
 import { reportTextureLoadError } from "@jgengine/core/devtools/textureErrors";
 
 import { resolveAssetBaseUrl } from "./assetBase";
+import { applyModelSurface } from "./modelSurface";
 
 /** Model containers already covered by the whole-model fallback probe; not "texture" errors. @internal */
 const MODEL_URL_RE = /\.(glb|gltf)(\?|#|$)/i;
@@ -259,6 +260,7 @@ export class DiagnosticGLTFLoader extends GLTFLoader {
       url,
       (gltf: GLTF) => {
         recordModelTriangles(url, countSceneTriangles(gltf.scene));
+        applyModelSurface(gltf.scene);
         onLoad(gltf);
       },
       onProgress,
@@ -320,9 +322,11 @@ export function materialKtx2Loader(): KTX2Loader {
 // a drain timestamp is the whole state.
 let modelQueueBusy = false;
 let modelQueueDrainedAt = 0;
+let modelQueueStarts = 0;
 const now = (): number => (typeof performance === "undefined" ? Date.now() : performance.now());
 modelLoadingManager.onStart = () => {
   modelQueueBusy = true;
+  modelQueueStarts += 1;
 };
 modelLoadingManager.onLoad = () => {
   modelQueueBusy = false;
@@ -340,6 +344,16 @@ export function modelLoadIdleMs(): number {
   if (modelQueueBusy) return 0;
   if (modelQueueDrainedAt === 0) return Number.POSITIVE_INFINITY;
   return now() - modelQueueDrainedAt;
+}
+
+/**
+ * How many times the shared GLB loader has gone from idle to busy since boot. A capture host
+ * compares two readings around a rendered frame to tell whether that frame started new model
+ * streaming, which an idle reading alone cannot show.
+ * @capability model-load-starts count of model streaming bursts, for capture quiescence checks
+ */
+export function modelLoadStarts(): number {
+  return modelQueueStarts;
 }
 
 /** Shared GLTF loader used by shell entity/object model mounts. @internal */

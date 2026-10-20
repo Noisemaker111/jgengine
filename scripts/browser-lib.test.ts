@@ -14,6 +14,8 @@ import {
   captureViewportPng,
   checkoutIdentity,
   chromeGraphicsArgs,
+  chromeRenderArgs,
+  softwareGlBackend,
   closePageTarget,
   navigateCapturePage,
   normalizeLoopbackUrl,
@@ -512,5 +514,21 @@ describe("capture quality", () => {
     expect(applyCaptureQuality(new URL("http://x/?game=g"), "full").toString()).toBe("http://x/?game=g");
     expect(qualitySuffix("full")).toBe("");
     expect(() => parseQualityArg("low")).toThrow("--quality must be draft or full");
+  });
+});
+
+describe("software GL backend", () => {
+  test("prefers llvmpipe on Linux when Xvfb exists, SwiftShader otherwise", () => {
+    expect(softwareGlBackend({}, "linux", true)).toBe("llvmpipe");
+    expect(softwareGlBackend({}, "linux", false)).toBe("swiftshader");
+    expect(softwareGlBackend({ JG_CAPTURE_GL: "swiftshader" }, "linux", true)).toBe("swiftshader");
+    expect(softwareGlBackend({}, "win32", true)).toBeNull();
+  });
+
+  test("llvmpipe runs headful on ANGLE GL; the others stay headless", () => {
+    expect(chromeRenderArgs("llvmpipe")).toContain("--use-angle=gl");
+    expect(chromeRenderArgs("llvmpipe")).not.toContain("--headless=new");
+    expect(chromeRenderArgs("swiftshader")).toEqual(expect.arrayContaining(["--headless=new", "--use-angle=swiftshader"]));
+    expect(chromeRenderArgs(null)).toEqual(["--headless=new", "--ignore-gpu-blocklist"]);
   });
 });

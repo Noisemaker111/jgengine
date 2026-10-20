@@ -19,9 +19,9 @@ import { existsSync, mkdirSync, statSync } from "node:fs";
 import { isAbsolute, join, resolve } from "node:path";
 import {
   CdpSession,
-  DEVICES,
   applyCaptureQuality,
   applyDevice,
+  captureProfile,
   captureViewportPng,
   ensureDevServer,
   ensureWebServer,
@@ -32,9 +32,8 @@ import {
   parseQualityArg,
   parseSizeArg,
   qualitySuffix,
-  sizeForQuality,
   readCapturePageState,
-  scaleProfile,
+  sizeForQuality,
   screencastCapturesFully,
   sizeSuffix,
   withBrowserSession,
@@ -42,11 +41,16 @@ import {
   type CaptureQuality,
   type SizeMode,
   type Device,
+  type ViewportOverride,
 } from "./browser-lib";
 import { attachDaemon, ensureDaemonTarget } from "./shoot-daemon";
 import { lookSearchParams, parseLookAim } from "./lookArg";
 import { driveTargetUrl, externalCaptureUrl, parseCaptureDevice, requireReusableCaptureStorage } from "./captureTarget";
-import { driveInputPointExpr, parseDriveFill } from "../packages/jgengine/src/templates/driveInput";
+import { driveInputPointExpr } from "../packages/jgengine/src/templates/driveInput";
+import { CAPTURE_FLAGS, captureFlagHelp, parseCaptureArgs, type CaptureStep } from "../packages/jgengine/src/templates/captureArgs";
+import { awaitGameView, holdDriveInput, type DriveInputDeps, type DriveSession } from "../packages/jgengine/src/templates/driveSteps";
+import { gameSurfaceCenter, mouseButtonForCode } from "../packages/jgengine/src/templates/gameSurfaceFocus";
+import { dispatchClickAt, parseClickAt } from "../packages/jgengine/src/clickInput";
 import { decodePng } from "./png-reader";
 import { shotSignature } from "./shot-metrics";
 import { buildShotRecord, clearShotTarget, describeReplacement, writeShotRecord, type PreviousShot } from "./shotProvenance";
@@ -56,22 +60,10 @@ import { framesFromTimeline, thinFrames, type TimedPng } from "./apng";
 import { assembleGif } from "./gif";
 import { assembleMp4 } from "./video";
 
-type Step =
-  | { kind: "click" | "double-click"; text: string }
-  | { kind: "fill"; label: string; value: string }
-  | { kind: "key"; code: string; holdMs: number }
-  | { kind: "wait"; ms: number }
-  | { kind: "reload" }
-  | { kind: "shot"; name: string; out?: string }
-  | { kind: "rpc"; json: string }
-  | { kind: "probe"; name: string };
+type Step = CaptureStep;
 
 /** A lockstep step that commits no new frame falls back to a forced capture after this. */
 const LOCKSTEP_FRAME_TIMEOUT_MS = 20_000;
-
-/** Extra wall-clock a frame-starved page gets to render one frame under a held
- * key before {@link holdKey} gives up (see {@link holdComplete}). */
-const FRAME_STARVE_GRACE_MS = 20_000;
 
 /** Below this effective render cadence (frames actually drawn per second over the
  * playtest window) a held key advances the sim too little to distinguish real
@@ -85,7 +77,6 @@ type Args = {
   modeExplicit: boolean;
   device: Device;
   size: SizeMode;
-  sizeExplicit?: SizeMode;
   quality: CaptureQuality;
   connect?: number;
   keep: boolean;
@@ -112,6 +103,12 @@ type Args = {
   recordFps: number;
   recordRealtime: boolean;
   reuseStorage: boolean;
+  port?: number;
+  width?: number;
+  height?: number;
+  settle?: number;
+  run?: string;
+  style?: string;
 };
 
 /** GitHub's camo image proxy stops serving around 5 MB — stay safely under it
@@ -120,219 +117,70 @@ const RECORD_BUDGET_BYTES = 4_500_000;
 
 const HELP = `bun run drive <gameId> [options] --click "TEXT" --shot name ...
 
-  --mode <ui|play>    capture mode (default play)
-  --device <desktop|mobile|mobile-landscape>
-                      shared shoot viewport/touch/UA profile (default desktop)
-  --size <full|half>  half halves both dimensions (~1/4 the pixels) for cheap
-                      mid-loop judge shots — use full (default) for final/PR shots
-  --quality <draft|full>  draft = iteration run: half size (unless --size) and the
-                      low graphics tier (?quality=low), several times faster on
-                      software GL; shots get a -draft suffix. full (default) is
-                      the honest path — use it for PR evidence
-  --click "<text>"    click the first visible element containing this text (or, for
-                      icon-only buttons, this aria-label — e.g. "Settings")
-  --double-click "<text>"  double-click an actionable text target
-  --fill "<label>=<value>" replace a text field by its accessible label
-  --wait <ms>         pause before the next step
-  --reload            reload this page and await readiness, keeping this run's storage
-                      (not available with lockstep recording or --playtest)
-  --key <CODE:ms>     hold a key (e.g. KeyW:2500) for the given milliseconds; join codes with
-                      + to hold a chord (KeyW+KeyD:2000 = throttle and steer together)
-  --shot <name|path>  screenshot to shots/<game>-<name>.png for a bare name, or to
-                      an absolute path written verbatim (like shoot --out; no size
-                      suffix). Relative paths are rejected — they ENOENT.
-  --param <key=value> add a query parameter to the game URL (repeatable), e.g.
-                      --param gamepad=2 injects two synthetic pads for local seats
-  --spawn <x,y,z>     override the authored player spawn for this run only (adds a
-                      ?spawn= overlay like ?cam=); never mutates editor.scene.json.
-                       Accepts x,y,z or x,y,z,yaw (yaw radians)
-  --look <x,z | x,y,z | @marker:<id> | @entity:<id>>
-                      pin a detached camera on a world point for this capture:
-                      the vantage the shot actually wants, independent of the
-                      player spawn, this run's look yaw, and where the AI
-                      wandered. x,z samples the ground height; @marker:<id>
-                      aims at an authored marker and @entity:<id> tracks a live
-                      entity. A point outside the world, an unknown id, or a
-                      camera the terrain would bury fails the run instead of
-                      returning an empty frame.
-  --look-from <dist[,height[,angle]]>
-                      vantage for --look (default 12,5,0; angle in radians)
-  --view <name>       replay a framing the game declares in capture.views (see
-                      shoot --list-views). Distinct from --shot, which names the
-                      output file: --view keep-enemy --shot before
-  --state <name>      boot into a capture.states entry (same as shoot --state), then
-                      run the steps — pair with --rpc debug_snapshot to measure a
-                      staged scene instead of clicking it together by hand
-  --site <path>       drive a route from the managed apps/web server instead of a game
-  --url <url>         drive an existing native game server without booting a runner;
-                      uses the same readiness, recording, RPC, and storage rules
-  --rpc <json>        call the page's agent/editor bridge with this JSON payload.
-                      Compose an editor aerial in one call, e.g.
-                      --rpc '{"method":"camera_frame","pitch":60}' (auto-fits the
-                      region) or '{"method":"camera_goto","x":40,"z":-20,"distance":80,"pitch":55}'
-  --record <name>     record the drive to shots/<game>-<name>.mp4. Records in
-                      LOCKSTEP: the page's rAF/clocks are taken over and game time
-                      advances one fixed tick per captured frame, so the clip plays
-                      smoothly at --record-fps no matter how slowly headless GL
-                      renders — but every output frame costs ~1s of real render, so
-                      choreograph drives short (8-15s of game time), not minutes.
-                      Share via pr-shots / the /pr-video comment
-  --record-fps <n>    lockstep output frame rate (default 24; lower it to fit a
-                      longer drive in the same wall-clock budget)
-  --record-realtime   old behavior: capture only the frames the page really renders
-                      (CDP screencast, wall-clock timing — expect ~1fps on software
-                      GL; useful for honest performance evidence)
-  --record-width <px> screencast max width in realtime mode (default 640); lockstep
-                      captures at the page viewport size — use --size half
-  --probe [name]      print the game's live capture.probe metrics (e.g. player
-                      position) as JSON — pair one before and one after a --key
-                      hold to prove a non-zero movement delta via RPC, which is
-                      the honest movement check on a low-fps headless GL page
-                      where held-key motion is too small to read off screenshots
-  --reuse-storage     keep the warm profile's existing localStorage/origin storage
-                      for the target instead of clearing it before the drive;
-                      requires a live daemon or explicit --connect <port>. By
-                      default a drive clears the target origin's storage so the game
-                      boots clean and capture.probe reflects THIS run — a game that
-                      auto-restores a save would otherwise resume the prior run's
-                      session on a warm/persistent Chrome and corrupt the evidence.
-  --connect <port>    attach to an already-running Chrome (skips launch/kill)
-  --keep              leave the dev server + Chrome (per-worktree warm debug port)
-                      running after this drive — pair with --connect <port>
-                      on every following drive in the loop (warm-loop pattern)
-  --timeout <s>       page-ready timeout (default 60; --site: 10 local, 30 Linux/CI);
-                      ordinary sessions also stop after this + 120s (default 180s).
-                      Use --timeout 300 for a 420s long-play budget. Lockstep
-                      recordings additionally budget 3s per projected frame.
-  --playtest          bot-playtest rung: drive input, sample the game's
-                      capture.probe over time, print a progress/softlock verdict
-                      as JSON (needs a --key hold to drive; game must expose
-                      capture.probe). No screenshot unless one is asked for.
-  --strict            with --playtest, exit nonzero on a softlock or missing probe
-  --seed <n>          playtest seed, forwarded as ?seed=n and echoed (default 1)
-  --sample <ms>       playtest probe sampling interval (default 250; lower over-samples
-                      and can starve a heavy scene's render thread into a false softlock)
-  --softlock <ms>     flat-progress span under input that counts as a softlock (default 2000)
-  --epsilon <n>       smallest metric change that counts as progress (default 0.001)
-  --help              show this text
+${captureFlagHelp("drive", "engine", CAPTURE_FLAGS)}
+
+Notes:
+  --probe before and after a --key hold proves movement by RPC on a low-fps headless page.
+  --record runs LOCKSTEP: game time advances one tick per captured frame, so choreograph
+  8-15s of game time. --reuse-storage needs a live daemon or --connect.
+  --port starts (or reuses) the dev runner on that port instead of the per-checkout default.
 
 Warm loop:
   bun run shoot daemon start
-  bun run drive --site '/playground' --wait 1000 --shot website
-  bun run drive <game> --click START --shot before --keep                       # first: cold boot, stays warm
-  bun run drive <game> --click START --shot after --connect <port> --size half  # <10s, cheap judge PNG
-  bun run drive <game> --click START --shot final --connect <port>              # final full-res shot for the PR
-  # port is printed after --keep; each worktree gets its own default so parallel ships don't collide
+  bun run drive <game> --click START --shot before --keep
+  bun run drive <game> --click START --shot after --connect <port> --size half
 `;
 
+/** Map the shared capture command line (packages/jgengine/src/templates/captureArgs.ts) onto drive's options. */
 function parseArgs(argv: string[]): Args {
+  const parsed = parseCaptureArgs("drive", argv, CAPTURE_FLAGS);
+  const o = parsed.options;
+  const str = (name: string): string | undefined => (typeof o[name] === "string" ? (o[name] as string) : undefined);
+  const num = (name: string): number | undefined => (str(name) === undefined ? undefined : Number(str(name)));
+  if (parsed.positionals.length > 1) throw new Error(`drive: one game id, got ${parsed.positionals.join(" ")}`);
   const args: Args = {
-    game: "",
-    mode: "play",
-    modeExplicit: false,
-    device: "desktop",
-    size: "full",
-    quality: "full",
-    connect: undefined,
-    keep: false,
-    help: false,
-    timeoutMs: 60_000,
-    timeoutExplicit: false,
-    steps: [],
-    params: [],
-    playtest: false,
-    strict: false,
-    seed: 1,
-    sampleMs: 250,
-    softlockMs: 2000,
-    epsilon: 1e-3,
-    recordWidth: 640,
-    recordFps: 24,
-    recordRealtime: false,
-    reuseStorage: false,
+    game: str("game") ?? parsed.positionals[0] ?? "",
+    mode: str("mode") ?? "play",
+    modeExplicit: str("mode") !== undefined,
+    device: parseCaptureDevice(str("device") ?? "desktop"),
+    quality: parseQualityArg(str("quality") ?? "full"),
+    size: sizeForQuality(parseQualityArg(str("quality") ?? "full"), str("size") === undefined ? undefined : parseSizeArg(str("size"))),
+    connect: num("connect"),
+    keep: o.keep === true,
+    help: parsed.help,
+    timeoutMs: (num("timeout") ?? 60) * 1000,
+    timeoutExplicit: str("timeout") !== undefined,
+    steps: parsed.steps,
+    params: ((o.param as string[] | undefined) ?? []).map((pair) => [pair.slice(0, pair.indexOf("=")), pair.slice(pair.indexOf("=") + 1)] as [string, string]),
+    playtest: o.playtest === true,
+    strict: o.strict === true,
+    seed: num("seed") ?? 1,
+    sampleMs: num("sample") ?? 250,
+    softlockMs: num("softlock") ?? 2000,
+    epsilon: num("epsilon") ?? 1e-3,
+    spawn: str("spawn"),
+    look: str("look"),
+    lookFrom: str("look-from"),
+    view: str("view") === "" ? undefined : str("view"),
+    state: str("state"),
+    site: str("site"),
+    url: str("url") === undefined ? undefined : externalCaptureUrl(str("url")),
+    record: str("record"),
+    recordWidth: num("record-width") ?? 640,
+    recordFps: num("record-fps") ?? 24,
+    recordRealtime: o["record-realtime"] === true,
+    reuseStorage: o["reuse-storage"] === true,
+    port: num("port"),
+    width: num("width"),
+    height: num("height"),
+    settle: num("settle"),
+    run: str("run"),
+    style: str("style"),
   };
-  for (let index = 0; index < argv.length; index += 1) {
-    const value = argv[index];
-    if (value === "--mode") {
-      args.mode = argv[++index] ?? args.mode;
-      args.modeExplicit = true;
-    }
-    else if (value === "--state") args.state = argv[++index];
-    else if (value === "--device") args.device = parseCaptureDevice(argv[++index]);
-    else if (value === "--size") {
-      args.sizeExplicit = parseSizeArg(argv[++index]);
-    } else if (value === "--quality") {
-      args.quality = parseQualityArg(argv[++index]);
-    } else if (value === "--timeout") {
-      args.timeoutMs = Number(argv[++index]) * 1000;
-      args.timeoutExplicit = true;
-    }
-    else if (value === "--click" || value === "--double-click") {
-      const text = argv[++index];
-      if (!text || text.startsWith("--")) throw new Error(`${value} requires target text`);
-      args.steps.push({ kind: value === "--click" ? "click" : "double-click", text });
-    }
-    else if (value === "--fill") args.steps.push({ kind: "fill", ...parseDriveFill(argv[++index]) });
-    else if (value === "--reload") args.steps.push({ kind: "reload" });
-    else if (value === "--wait") args.steps.push({ kind: "wait", ms: Number(argv[++index] ?? 500) });
-    else if (value === "--key") {
-      const spec = argv[++index] ?? "KeyW:1000";
-      const colon = spec.lastIndexOf(":");
-      const code = colon > 0 ? spec.slice(0, colon) : spec;
-      const holdMs = colon > 0 ? Number(spec.slice(colon + 1)) : 1000;
-      args.steps.push({ kind: "key", code, holdMs });
-    } else if (value === "--shot") {
-      const name = argv[++index] ?? "drive";
-      if (isAbsolute(name)) {
-        args.steps.push({ kind: "shot", name, out: resolve(name) });
-      } else if (name.includes("/") || name.includes("\\")) {
-        throw new Error(
-          `drive: --shot takes a bare name or an absolute path, not a relative path (got "${name}") — a bare name lands in shots/<game>-<name>.png`,
-        );
-      } else {
-        args.steps.push({ kind: "shot", name });
-      }
-    } else if (value === "--rpc") args.steps.push({ kind: "rpc", json: argv[++index] ?? "{}" });
-    else if (value === "--probe") {
-      const next = argv[index + 1];
-      const name = next !== undefined && !next.startsWith("--") ? argv[++index]! : "probe";
-      args.steps.push({ kind: "probe", name });
-    } else if (value === "--connect") args.connect = Number(argv[++index]);
-    else if (value === "--keep") args.keep = true;
-    else if (value === "--playtest") args.playtest = true;
-    else if (value === "--strict") args.strict = true;
-    else if (value === "--seed") args.seed = Number(argv[++index] ?? args.seed);
-    else if (value === "--sample") args.sampleMs = Number(argv[++index] ?? args.sampleMs);
-    else if (value === "--softlock") args.softlockMs = Number(argv[++index] ?? args.softlockMs);
-    else if (value === "--epsilon") args.epsilon = Number(argv[++index] ?? args.epsilon);
-    else if (value === "--spawn") args.spawn = argv[++index];
-    else if (value === "--param") {
-      const pair = argv[++index] ?? "";
-      const split = pair.indexOf("=");
-      if (split <= 0) throw new Error(`--param expects key=value, got "${pair}"`);
-      args.params.push([pair.slice(0, split), pair.slice(split + 1)]);
-    }
-    else if (value === "--look") args.look = argv[++index];
-    else if (value === "--look-from") args.lookFrom = argv[++index];
-    else if (value === "--view") args.view = argv[++index];
-    else if (value === "--site") args.site = argv[++index];
-    else if (value === "--url") args.url = externalCaptureUrl(argv[++index]);
-    else if (value === "--record") {
-      const name = argv[++index] ?? "clip";
-      if (name.includes("/") || name.includes("\\")) {
-        throw new Error(`drive: --record takes a bare name, not a path (got "${name}") — output always lands in shots/<game>-<name>.gif`);
-      }
-      args.record = name;
-    } else if (value === "--record-width") args.recordWidth = Number(argv[++index] ?? args.recordWidth);
-    else if (value === "--record-fps") args.recordFps = Number(argv[++index] ?? args.recordFps);
-    else if (value === "--record-realtime") args.recordRealtime = true;
-    else if (value === "--reuse-storage") args.reuseStorage = true;
-    else if (value === "--help" || value === "-h") args.help = true;
-    else if (value !== undefined && !value.startsWith("--")) args.game = value;
-    else throw new Error(`drive: unknown option ${value}; see --help`);
-  }
   if (args.help) return args;
-  args.size = sizeForQuality(args.quality, args.sizeExplicit);
+  if (args.record !== undefined && (args.record.includes("/") || args.record.includes("\\"))) {
+    throw new Error(`drive: --record takes a bare name, not a path (got "${args.record}")`);
+  }
   if (args.url !== undefined && (args.site !== undefined || args.game !== "")) {
     throw new Error("drive: --url selects an external target; omit the game id and --site");
   }
@@ -439,13 +287,6 @@ async function readFrames(session: CdpSession): Promise<number> {
   return (await session.evaluate<number>(`globalThis.__jgFrames ?? 0`)) ?? 0;
 }
 
-/**
- * Hold a key so it moves the player. Focuses the surface first (keys are dead
- * without it), then keeps the key down for the wall-clock budget and, on a
- * frame-starved headless GL page, a bounded moment longer until at least one
- * frame has rendered under it — otherwise the sim never steps and the player
- * sits exactly at spawn (see {@link holdComplete}).
- */
 async function sendKeys(session: CdpSession, chord: string, type: "keyDown" | "keyUp"): Promise<void> {
   for (const code of chord.split("+")) {
     const key = code.startsWith("Key") ? code.slice(3).toLowerCase() : code;
@@ -453,19 +294,15 @@ async function sendKeys(session: CdpSession, chord: string, type: "keyDown" | "k
   }
 }
 
-async function holdKey(session: CdpSession, chord: string, holdMs: number): Promise<void> {
-  await focusSurface(session);
-  const startFrames = await readFrames(session);
-  const start = Date.now();
-  const deadlineMs = start + holdMs;
-  const hardCapMs = deadlineMs + FRAME_STARVE_GRACE_MS;
-  await sendKeys(session, chord, "keyDown");
-  for (;;) {
-    await new Promise((r) => setTimeout(r, 100));
-    const framesElapsed = (await readFrames(session)) - startFrames;
-    if (holdComplete({ nowMs: Date.now(), deadlineMs, hardCapMs, framesElapsed })) break;
-  }
-  await sendKeys(session, chord, "keyUp");
+const driveDeps = {
+  focusGameSurface, holdComplete, mouseButtonForCode, gameSurfaceCenter,
+  sleep: (ms: number) => new Promise<void>((r) => setTimeout(r, ms)),
+  now: () => Date.now(),
+} as unknown as DriveInputDeps;
+
+/** Shared with the portable drive.mjs: key, chord or mouse hold that waits for a rendered frame. */
+function holdKey(session: CdpSession, chord: string, holdMs: number): Promise<void> {
+  return holdDriveInput(session as unknown as DriveSession, chord, holdMs, driveDeps);
 }
 
 async function rpc(session: CdpSession, json: string): Promise<void> {
@@ -665,8 +502,10 @@ async function screenshot(
   device: Device,
   screencast: boolean,
   previous: PreviousShot | undefined,
+  viewport: ViewportOverride,
 ): Promise<void> {
-  const profile = scaleProfile(DEVICES[device], size);
+  await awaitGameView(session as unknown as DriveSession, 60_000, driveDeps);
+  const profile = captureProfile(device, size, viewport);
   const { region } = await readCapturePageState(session);
   const editor = await session.evaluate<boolean>(`document.documentElement.dataset.jgEditor === "1"`);
   const { bytes, via } = await captureViewportPng(session, {
@@ -710,7 +549,16 @@ for (const step of args.steps) {
   if (!preparedShots.has(path)) preparedShots.set(path, clearShotTarget(path));
 }
 
-const daemon = args.connect === undefined ? await attachDaemon() : null;
+const viewport: ViewportOverride = { width: args.width, height: args.height };
+const clickPoints = new Map<CaptureStep, { x: number; y: number }>();
+{
+  const profile = captureProfile(args.device, args.size, viewport);
+  for (const step of args.steps) {
+    if (step.kind === "click-at") clickPoints.set(step, parseClickAt(step.spec, profile.width, profile.height));
+  }
+}
+if (args.port !== undefined) process.env.JG_DEV_PORT = String(args.port);
+const daemon = args.connect === undefined && args.port === undefined ? await attachDaemon() : null;
 requireReusableCaptureStorage(args.reuseStorage, args.connect !== undefined, daemon !== null);
 if (args.url !== undefined && !(await isUp(args.url))) {
   throw new Error(`drive: nothing is listening at ${args.url} — start that external server first`);
@@ -749,13 +597,16 @@ const exitCode = await withBrowserSession(
     try {
       await session.send("Page.enable");
       await session.send("Runtime.enable");
-      await applyDevice(session, args.device, args.size);
+      await applyDevice(session, args.device, args.size, viewport);
       const url = applyCaptureQuality(driveTargetUrl(args, dev.base), args.quality);
       url.searchParams.set("capture", "1");
       if (args.spawn !== undefined && args.spawn.length > 0) url.searchParams.set("spawn", args.spawn);
       for (const [key, value] of args.params) url.searchParams.set(key, value);
       if (args.view !== undefined) url.searchParams.set("view", args.view);
       if (args.state !== undefined) url.searchParams.set("state", args.state);
+      if (args.run !== undefined) url.searchParams.set("run", args.run);
+      if (args.style !== undefined) url.searchParams.set("style", args.style);
+      if (args.settle !== undefined) url.searchParams.set("settle", String(args.settle));
       const aim = parseLookAim(args.look, args.lookFrom, { withNamedView: args.view !== undefined });
       if (aim !== undefined) {
         for (const [key, value] of Object.entries(lookSearchParams(aim))) url.searchParams.set(key, value);
@@ -856,7 +707,14 @@ const exitCode = await withBrowserSession(
         } else if (step.kind === "reload") {
           await navigateCapturePageWithRetry(session, url.toString(), dev.base, args.timeoutMs, 2, { legacyCanvas: args.url !== undefined });
           await installFrameCounter(session);
-        } else if (step.kind === "rpc") await rpc(session, step.json);
+        } else if (step.kind === "click-at") {
+          await session.send("Page.bringToFront");
+          await dispatchClickAt(session, clickPoints.get(step)!, step.button);
+          if (recorder !== null) await recorder.advance(300);
+        } else if (step.kind === "rpc") {
+          await rpc(session, step.json);
+          if (step.summarized) console.error(`drive: debug_snapshot printed its summary; pass {"method":"debug_snapshot","detail":"full"} for everything`);
+        }
         else if (step.kind === "probe") {
           const metrics = await readProbe(session);
           console.log(JSON.stringify({ probe: step.name, metrics }));
@@ -872,6 +730,7 @@ const exitCode = await withBrowserSession(
             args.device,
             args.record === undefined,
             previous,
+            viewport,
           );
         }
       }

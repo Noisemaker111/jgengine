@@ -6,6 +6,7 @@ import type { ModelConfig } from "@jgengine/core/game/playableGame";
 
 import { measureLocalBounds, type MeasuredLocalBounds } from "./measureBounds";
 import { copyModelBindPose } from "./modelBindPose";
+import { optOutModelSurface } from "./modelSurface";
 
 export const PAINT_TEXTURE_SIZE = 512;
 
@@ -49,7 +50,7 @@ export function modelPlacementTransform(root: THREE.Object3D, model: ModelConfig
  */
 export function cloneModelScene(
   source: THREE.Object3D,
-  options?: { cloneMaterials?: boolean; shadows?: ModelShadowMode },
+  options?: { cloneMaterials?: boolean; shadows?: ModelShadowMode; surfaceDetail?: boolean },
 ): THREE.Object3D {
   const clone = cloneSkinned(source) as THREE.Object3D;
   copyModelBindPose(source, clone);
@@ -68,6 +69,7 @@ export function cloneModelScene(
       material = source.clone();
       material.onBeforeCompile = source.onBeforeCompile;
       material.customProgramCacheKey = source.customProgramCacheKey;
+      if (options?.surfaceDetail === false) optOutModelSurface(material);
       materials.set(source, material);
     }
     return material;

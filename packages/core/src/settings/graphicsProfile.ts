@@ -1,5 +1,11 @@
 import type { GraphicsQuality } from "./settingsModel";
 
+/**
+ * Procedural surface detail on loaded models: `"full"` adds mottling, wear, roughness break-up, a
+ * micro-normal and cavity shading; `"lite"` drops the micro-normal; `"off"` compiles the plain material.
+ */
+export type SurfaceDetailLevel = "off" | "lite" | "full";
+
 /** Serializable renderer budget selected by the player's graphics tier. */
 export interface GraphicsProfile {
   renderScale: number;
@@ -10,6 +16,8 @@ export interface GraphicsProfile {
   /** Anisotropic texture filtering samples; clamped to the GPU maximum. 1 is plain trilinear. */
   anisotropy: 1 | 2 | 4 | 8 | 16;
   postStages: { ao: boolean; bloom: boolean; dof: boolean; smaa: boolean };
+  /** Default painted-surface shader on loaded models. */
+  surfaceDetail: SurfaceDetailLevel;
 }
 
 /** Conservative defaults that preserve the existing high-quality shell behavior. */
@@ -22,6 +30,7 @@ export const DEFAULT_GRAPHICS_PROFILES: Record<GraphicsQuality, GraphicsProfile>
     particleCap: 128,
     anisotropy: 2,
     postStages: { ao: false, bloom: true, dof: false, smaa: true },
+    surfaceDetail: "lite",
   },
   medium: {
     renderScale: 1.5,
@@ -31,6 +40,7 @@ export const DEFAULT_GRAPHICS_PROFILES: Record<GraphicsQuality, GraphicsProfile>
     particleCap: 256,
     anisotropy: 4,
     postStages: { ao: true, bloom: true, dof: true, smaa: true },
+    surfaceDetail: "full",
   },
   high: {
     renderScale: 2,
@@ -40,6 +50,7 @@ export const DEFAULT_GRAPHICS_PROFILES: Record<GraphicsQuality, GraphicsProfile>
     particleCap: 512,
     anisotropy: 8,
     postStages: { ao: true, bloom: true, dof: true, smaa: true },
+    surfaceDetail: "full",
   },
   ultra: {
     renderScale: 2,
@@ -49,6 +60,7 @@ export const DEFAULT_GRAPHICS_PROFILES: Record<GraphicsQuality, GraphicsProfile>
     particleCap: 1024,
     anisotropy: 16,
     postStages: { ao: true, bloom: true, dof: true, smaa: true },
+    surfaceDetail: "full",
   },
 };
 

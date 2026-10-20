@@ -138,7 +138,8 @@ function applyRimLight(target: THREE.MeshStandardMaterial, rim: ModelRimLight): 
   const power = rim.power ?? 2.5;
   if (strength <= 0) return;
   const previousCompile = target.onBeforeCompile;
-  const previousKey = target.customProgramCacheKey();
+  const previousKey = target.customProgramCacheKey;
+  previousKey.call(target);
   target.onBeforeCompile = (shader, renderer) => {
     previousCompile.call(target, shader, renderer);
     shader.uniforms.uJgRimColor = { value: color };
@@ -160,6 +161,7 @@ outgoingLight += uJgRimColor * jgRim * uJgRimStrength;
       );
   };
   // Two materials differing only in rim tuning must not share a compiled program.
-  target.customProgramCacheKey = () => `${previousKey}|jgengine-rim-${rim.color ?? "#ffffff"}-${strength}-${power}`;
+  // Read the chained key lazily: the default surface's key follows the live graphics tier.
+  target.customProgramCacheKey = () => `${previousKey.call(target)}|jgengine-rim-${rim.color ?? "#ffffff"}-${strength}-${power}`;
   target.needsUpdate = true;
 }

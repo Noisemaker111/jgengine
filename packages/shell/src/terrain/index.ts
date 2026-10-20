@@ -60,3 +60,21 @@ export {
 } from "@jgengine/core/world/terrain";
 
 export { createTerrainPaintColorSampler, type TerrainPaintColorSampler, type TerrainPaintSource } from "./terrainPaintColor";
+export {
+  ALL_TERRAIN_SURFACE_CLASSES,
+  createTerrainDetailMaterial,
+  type TerrainDetailMaterialHandle,
+  type TerrainDetailMaterialOptions,
+  type TerrainDetailMaterialTextures,
+} from "./terrainDetailMaterial";
+export {
+  createTerrainPaintTextures,
+  MAX_TERRAIN_PAINT_LAYERS,
+  packTerrainPaintWeights,
+  terrainSurfaceClass,
+  type TerrainPaintSlot,
+  type TerrainPaintTextures,
+  type TerrainPaintWeights,
+  type TerrainSurfaceClass,
+} from "./terrainSurfaces";
+export { TerrainQualityContext, useTerrainQuality } from "./terrainQuality";
