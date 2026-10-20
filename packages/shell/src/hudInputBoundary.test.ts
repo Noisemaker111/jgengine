@@ -1,5 +1,4 @@
 import { afterAll, afterEach, beforeAll, beforeEach, expect, test } from "bun:test";
-import { execFileSync } from "node:child_process";
 import { mkdir, mkdtemp, rm, symlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -35,24 +34,14 @@ beforeAll(async () => {
   try {
     const directory = scratch = await mkdtemp(join(tmpdir(), "jgengine-hud-input-"));
     await setupStep("link browser peers", async () => {
-      await Promise.all([mkdir(`${directory}/node_modules/@jgengine`, { recursive: true }), mkdir(`${directory}/node_modules/@react-three`, { recursive: true })]);
+      await mkdir(`${directory}/node_modules/@react-three`, { recursive: true });
       await Promise.all([
         ...["react", "react-dom"].map(peer => symlink(resolve(import.meta.dir, "../../react/node_modules", peer), `${directory}/node_modules/${peer}`, "dir")),
         ...["@react-three/fiber", "@react-three/drei", "three", "three-stdlib"].map(peer => symlink(resolve(import.meta.dir, "../node_modules", peer), `${directory}/node_modules/${peer}`, "dir")),
       ]);
     });
-    const packages = ["core", "react", "shell"];
-    const packs = await setupStep("pack public core/react/shell", () => JSON.parse(execFileSync("npm", ["pack", ...packages.map(pkg => `--workspace=packages/${pkg}`), "--ignore-scripts", "--json", "--pack-destination", directory], {
-      cwd: resolve(import.meta.dir, "../../.."), encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], maxBuffer: 16 * 1024 * 1024, timeout: 25_000,
-    })) as { name: string; filename: string }[]);
-    await setupStep("extract public packages", async () => {
-      for (const pkg of packages) {
-        const pack = packs.find(candidate => candidate.name === `@jgengine/${pkg}`);
-        if (pack === undefined) throw new Error(`Missing packed @jgengine/${pkg}`);
-        await mkdir(`${directory}/node_modules/@jgengine/${pkg}`, { recursive: true });
-        execFileSync("tar", ["-xzf", pack.filename, "-C", `node_modules/@jgengine/${pkg}`, "--strip-components=1"], { cwd: directory });
-      }
-    });
+    // Public subpaths resolve to package source through the repo's tsconfig paths: no build or pack.
+    await Bun.write(`${directory}/tsconfig.json`, JSON.stringify({ extends: resolve(import.meta.dir, "../../../tsconfig.base.json") }));
     await Bun.write(`${directory}/fixture.tsx`, `
       import React,{useState} from 'react';import {createRoot} from 'react-dom/client';
       import {InventoryGrid} from '@jgengine/react/inventoryGrid';import {GameProvider} from '@jgengine/react/provider';

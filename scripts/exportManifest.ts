@@ -1,4 +1,4 @@
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -43,36 +43,6 @@ export function readPackageJson(pkg: PublishedPackage): PackageJson {
   return JSON.parse(readFileSync(join(packageDir(pkg), "package.json"), "utf8")) as PackageJson;
 }
 
-// A dist/*.js file is a real public subpath only when a source file still
-// produces it. Builds compile in place without pruning dist, so a deleted or
-// renamed source leaves an orphaned dist/*.js behind. Reading dist as the sole
-// source of truth would then report that orphan as a live public subpath,
-// masking the removal. Cross-checking each dist entry against src keeps the
-// manifest deterministic and free of these phantoms without an rm -rf rebuild.
-const sourceExtensions = [".ts", ".tsx"] as const;
-
-function hasSourceCounterpart(srcDir: string, relWithoutExtension: string): boolean {
-  return sourceExtensions.some((extension) => existsSync(join(srcDir, `${relWithoutExtension}${extension}`)));
-}
-
-function distFilesWithoutExtension(pkgDir: string, distDir: string, srcDir: string): string[] {
-  const out: string[] = [];
-  const walk = (dir: string): void => {
-    for (const entry of readdirSync(dir, { withFileTypes: true })) {
-      const full = join(dir, entry.name);
-      if (entry.isDirectory()) {
-        walk(full);
-      } else if (entry.name.endsWith(".js")) {
-        const relToDist = relative(distDir, full).slice(0, -".js".length).replaceAll("\\", "/");
-        if (!hasSourceCounterpart(srcDir, relToDist)) continue;
-        out.push(relative(pkgDir, full).slice(0, -".js".length).replaceAll("\\", "/"));
-      }
-    }
-  };
-  walk(distDir);
-  return out;
-}
-
 function targetString(value: unknown): string | undefined {
   if (typeof value === "string") return value;
   if (value && typeof value === "object") {
@@ -83,21 +53,14 @@ function targetString(value: unknown): string | undefined {
   return undefined;
 }
 
-export function distExists(pkg: PublishedPackage): boolean {
-  try {
-    return statSync(join(packageDir(pkg), "dist")).isDirectory();
-  } catch {
-    return false;
-  }
-}
-
-// Directory-based core so the src/dist cross-check is testable against a
-// temp fixture without depending on a real package's mutable dist output.
+// Subpaths come from the files the build WILL emit (src filtered by each package's
+// tsconfig.build.json), never from dist on disk: dist can be absent, partial or
+// hold orphans from deleted sources, and any of those made the manifest drift.
 export function exposedSubpathsForPackageDir(
   pkgDir: string,
   exportsMap: Record<string, unknown>,
 ): string[] {
-  const distFiles = distFilesWithoutExtension(pkgDir, join(pkgDir, "dist"), join(pkgDir, "src"));
+  const emitted = emittedFilesForPackageDir(pkgDir);
   const subpaths = new Set<string>();
   for (const [key, value] of Object.entries(exportsMap)) {
     if (key.includes("*")) {
@@ -105,7 +68,7 @@ export function exposedSubpathsForPackageDir(
       if (!target) continue;
       const bare = target.replace(/^\.\//, "").replace(/\.d\.ts$|\.js$/, "");
       const [prefix, suffix = ""] = bare.split("*");
-      for (const file of distFiles) {
+      for (const file of emitted) {
         if (file.startsWith(prefix) && file.endsWith(suffix)) {
           const captured = file.slice(prefix.length, file.length - suffix.length);
           subpaths.add(key.replace("*", captured));
@@ -118,24 +81,20 @@ export function exposedSubpathsForPackageDir(
   return [...subpaths].sort();
 }
 
-export function computeExposedSubpaths(pkg: PublishedPackage): string[] {
-  if (!distExists(pkg)) {
-    throw new Error(`dist missing for @jgengine/${pkg} — run \`bun run build\` before generating the export manifest`);
+/** Whether a package has been built; only tarball/pack checks need dist. */
+export function distExists(pkg: PublishedPackage): boolean {
+  try {
+    return statSync(join(packageDir(pkg), "dist")).isDirectory();
+  } catch {
+    return false;
   }
+}
+
+export function computeExposedSubpaths(pkg: PublishedPackage): string[] {
   return exposedSubpathsForPackageDir(packageDir(pkg), readPackageJson(pkg).exports ?? {});
 }
 
-// --- Stale/partial dist detection (advisory only) -------------------------
-//
-// The manifest reads `dist/*.js` as the source of truth, so generating before a
-// full package build silently omits new subpaths: a fresh `src/foo.ts` with no
-// `dist/foo.js` yet just does not appear, and the drift only surfaces later on a
-// fully-built (often unrelated) branch. A naive src->dist inverse check
-// false-positives on sources the build deliberately does not emit 1:1 (e.g.
-// `editor` `src/mcp/*` and `jgengine` `src/recipes/snippets/*`). We therefore
-// mirror exactly what the build emits by consulting each package's
-// `tsconfig.build.json` `include`/`exclude`/`rootDir`, so a fully-built tree
-// produces zero false positives while a partial dist is named loudly.
+// The build's emit set, mirrored from tsconfig.build.json include/exclude/rootDir.
 
 interface BuildTsconfig {
   include: string[];
@@ -235,61 +194,17 @@ function emittableSrcRelPaths(pkgDir: string, cfg: BuildTsconfig): string[] {
   return out;
 }
 
-// Directory-based core so the staleness signal is testable against a temp
-// fixture without depending on a real package's mutable dist output.
-export function missingDistFilesForPackageDir(pkgDir: string, cfg: BuildTsconfig): string[] {
+const defaultBuildTsconfig: BuildTsconfig = { include: ["src"], exclude: [], rootDir: "src" };
+
+/** Package-relative `dist/<path>` (no extension) for every module the build emits. */
+export function emittedFilesForPackageDir(pkgDir: string, cfg = readBuildTsconfig(pkgDir) ?? defaultBuildTsconfig): string[] {
   const rootDir = cfg.rootDir.replace(/^\.\//, "").replace(/\/+$/, "");
-  const missing: string[] = [];
-  for (const srcRel of emittableSrcRelPaths(pkgDir, cfg)) {
-    const withoutRoot = srcRel.startsWith(`${rootDir}/`) ? srcRel.slice(rootDir.length + 1) : srcRel;
-    const distRel = `${withoutRoot.replace(emittableExtensions, "")}.js`;
-    if (!existsSync(join(pkgDir, "dist", distRel))) missing.push(distRel);
-  }
-  return missing.sort();
-}
-
-export interface StalePackage {
-  package: string;
-  missing: string[];
-}
-
-// Packages whose dist is present but missing built output the build config says
-// it should emit. Fully-missing dist is deliberately skipped here — that case is
-// already loud via `computeExposedSubpaths` throwing.
-export function stalePackages(): StalePackage[] {
-  const stale: StalePackage[] = [];
-  for (const pkg of publishedPackages) {
-    if (!distExists(pkg)) continue;
-    const cfg = readBuildTsconfig(packageDir(pkg));
-    if (!cfg) continue;
-    const missing = missingDistFilesForPackageDir(packageDir(pkg), cfg);
-    if (missing.length > 0) stale.push({ package: readPackageJson(pkg).name, missing });
-  }
-  return stale;
-}
-
-const MAX_LISTED_MISSING = 5;
-
-export function formatStaleWarning(stale: StalePackage[]): string {
-  const lines = [
-    "WARNING: export manifest generated against a stale/partial dist.",
-    "These packages have source files with no built output yet — their new subpaths will be silently omitted until you rebuild:",
-  ];
-  for (const { package: name, missing } of stale) {
-    const shown = missing.slice(0, MAX_LISTED_MISSING).join(", ");
-    const more = missing.length > MAX_LISTED_MISSING ? ` (+${missing.length - MAX_LISTED_MISSING} more)` : "";
-    lines.push(`  - ${name}: ${shown}${more}`);
-  }
-  lines.push("Run `bun run build` (or `bun run agent:bootstrap`) before generating the manifest.");
-  return lines.join("\n");
-}
-
-// Advisory only: prints a loud warning to stderr and never throws or exits.
-export function warnIfStaleDist(logger: (message: string) => void = console.error): boolean {
-  const stale = stalePackages();
-  if (stale.length === 0) return false;
-  logger(formatStaleWarning(stale));
-  return true;
+  return emittableSrcRelPaths(pkgDir, cfg)
+    .map((srcRel) => {
+      const withoutRoot = srcRel.startsWith(`${rootDir}/`) ? srcRel.slice(rootDir.length + 1) : srcRel;
+      return `dist/${withoutRoot.replace(emittableExtensions, "")}`;
+    })
+    .sort();
 }
 
 export function computeManifest(): Record<string, string[]> {

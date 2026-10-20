@@ -1,4 +1,4 @@
-import { existsSync, readdirSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -15,6 +15,22 @@ const game = (name: string) => fileURLToPath(new URL(`../../Games/${name}/src`, 
 const gamesDir = fileURLToPath(new URL("../../Games", import.meta.url));
 const studios = fileURLToPath(new URL("../../examples/studios/src", import.meta.url));
 const registryUi = fileURLToPath(new URL("../../registry/jgengine", import.meta.url));
+
+// Every workspace package resolves to its source, so the runner never needs a build.
+const packagesDir = fileURLToPath(new URL("../../packages", import.meta.url));
+const packageAliases = readdirSync(packagesDir, { withFileTypes: true })
+  .filter((entry) => {
+    const manifest = join(packagesDir, entry.name, "package.json");
+    return existsSync(manifest) && JSON.parse(readFileSync(manifest, "utf8")).name === `@jgengine/${entry.name}`;
+  })
+  .flatMap((entry) => {
+    const name = entry.name;
+    const index = join(src(name), "index.ts");
+    return [
+      ...(existsSync(index) ? [{ find: new RegExp(`^@jgengine/${name}$`), replacement: index }] : []),
+      { find: new RegExp(`^@jgengine/${name}/(.*)$`), replacement: `${src(name)}/$1` },
+    ];
+  });
 
 const gameAliases = existsSync(gamesDir)
   ? readdirSync(gamesDir, { withFileTypes: true })
@@ -55,21 +71,7 @@ export default defineConfig({
     extensions: [".ts", ".tsx", ".mjs", ".js", ".jsx", ".json"],
     alias: [
       { find: /^@\/components\/ui\/(.*)$/, replacement: `${registryUi}/$1` },
-      { find: /^@jgengine\/core$/, replacement: `${src("core")}/index.ts` },
-      { find: /^@jgengine\/core\/(.*)$/, replacement: `${src("core")}/$1` },
-      { find: /^@jgengine\/react$/, replacement: `${src("react")}/index.ts` },
-      { find: /^@jgengine\/react\/(.*)$/, replacement: `${src("react")}/$1` },
-      { find: /^@jgengine\/ws$/, replacement: `${src("ws")}/index.ts` },
-      { find: /^@jgengine\/ws\/(.*)$/, replacement: `${src("ws")}/$1` },
-      { find: /^@jgengine\/convex$/, replacement: `${src("convex")}/index.ts` },
-      { find: /^@jgengine\/convex\/(.*)$/, replacement: `${src("convex")}/$1` },
-      { find: /^@jgengine\/shell\/(.*)$/, replacement: `${src("shell")}/$1` },
-      { find: /^@jgengine\/github$/, replacement: `${src("github")}/index.ts` },
-      { find: /^@jgengine\/github\/(.*)$/, replacement: `${src("github")}/$1` },
-      { find: /^@jgengine\/assets$/, replacement: `${src("assets")}/index.ts` },
-      { find: /^@jgengine\/assets\/(.*)$/, replacement: `${src("assets")}/$1` },
-      { find: /^@jgengine\/editor$/, replacement: `${src("editor")}/index.ts` },
-      { find: /^@jgengine\/editor\/(.*)$/, replacement: `${src("editor")}/$1` },
+      ...packageAliases,
       { find: /^@jgengine-examples\/studios$/, replacement: `${studios}/index.ts` },
       { find: /^@jgengine-examples\/studios\/(.*)$/, replacement: `${studios}/$1` },
       ...gameAliases,
