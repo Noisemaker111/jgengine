@@ -3,6 +3,7 @@ import { type CSSProperties } from "react";
 import { AmmoCounter, ExperienceBar, HealthBar, ManaBar, ShieldBar } from "./bars";
 import { HudFrame } from "./hudFrame";
 import { HUD_THEME_PRESETS, defaultHudTheme, hudThemeVars, type HudTheme } from "./hudTheme";
+import { hudType } from "./hudTokens";
 
 /**
  * A deterministic preset matrix for {@link HudTheme} (#1034): every genre preset × (bars + a themed
@@ -23,7 +24,7 @@ function Slot({ index }: { index: number }) {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        fontSize: 10,
+        fontSize: hudType("xs"),
         color: "var(--jg-bar-text, #f4f6fb)",
         opacity: index === 0 ? 1 : 0.6,
       }}

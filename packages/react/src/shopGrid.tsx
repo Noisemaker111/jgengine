@@ -5,6 +5,7 @@ import type { ShopPrice, ShopStock, ShopStockEntry } from "@jgengine/core/econom
 
 import { GameIcon, iconForItemId, type GameIconName } from "./gameIcons";
 import { HudFrame } from "./hudFrame";
+import { hudType } from "./hudTokens";
 
 /**
  * Subscribe to a shop's stock and re-render whenever it changes (buy, sell, restock, price, add,
@@ -242,7 +243,7 @@ export function ShopGrid({
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6 }}>
                 <PriceTag price={entry.price} icon={currencyIcon(entry.price.currency, currencyIcons)} accent={t.accent} muted={t.text} />
                 {entry.sellPrice !== undefined ? (
-                  <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 11, color: t.muted }}>
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: hudType("xs"), color: t.muted }}>
                     sell
                     <PriceTag price={entry.sellPrice} icon={currencyIcon(entry.sellPrice.currency, currencyIcons)} accent={t.muted} muted={t.muted} />
                   </span>

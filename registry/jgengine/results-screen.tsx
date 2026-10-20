@@ -74,7 +74,7 @@ export function ResultsScreen({
               return (
                 <Fragment key={`${line.label}-${index}`}>
                   <span
-                    className="text-[10px] font-bold uppercase tracking-[0.24em]"
+                    className="text-[length:var(--jg-type-xs,12px)] font-bold uppercase tracking-[0.24em]"
                     style={{
                       fontFamily: "var(--jg-font-display)",
                       color: "var(--jg-text-dim)",

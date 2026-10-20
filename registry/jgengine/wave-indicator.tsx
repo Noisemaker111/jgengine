@@ -30,7 +30,7 @@ export function WaveIndicator({
   return (
     <div className={`flex flex-col items-center gap-1 ${className ?? ""}`} data-jg="wave-indicator">
       <span
-        className="text-[10px] font-bold uppercase tracking-[0.24em]"
+        className="text-[length:var(--jg-type-xs,12px)] font-bold uppercase tracking-[0.24em]"
         style={{ color: "var(--jg-text-dim)", textShadow: HUD_TEXT_SHADOW }}
       >
         Wave
@@ -57,7 +57,7 @@ export function WaveIndicator({
             {remaining}
           </span>
           <span
-            className="text-[10px] font-bold uppercase tracking-[0.2em]"
+            className="text-[length:var(--jg-type-xs,12px)] font-bold uppercase tracking-[0.2em]"
             style={{ fontFamily: "var(--jg-font-display)", color: "var(--jg-text-dim)" }}
           >
             {remainingLabel}

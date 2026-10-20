@@ -125,7 +125,7 @@ export function CraftingPanel({
                         />
                       )}
                       <span
-                        className="flex items-center gap-[3px] font-mono text-[10px]"
+                        className="flex items-center gap-[3px] font-mono text-[length:var(--jg-type-xs,12px)]"
                         style={{ color: input.have >= input.need ? "var(--jg-success)" : "var(--jg-danger)" }}
                       >
                         {input.icon}

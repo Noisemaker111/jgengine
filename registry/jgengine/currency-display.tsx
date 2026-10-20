@@ -53,7 +53,7 @@ export function CurrencyDisplay({
       </span>
       {name !== undefined && (
         <span
-          className="text-[10px] font-bold uppercase tracking-[0.2em]"
+          className="text-[length:var(--jg-type-xs,12px)] font-bold uppercase tracking-[0.2em]"
           style={{ fontFamily: "var(--jg-font-display)", color: "var(--jg-text-dim)" }}
         >
           {name}

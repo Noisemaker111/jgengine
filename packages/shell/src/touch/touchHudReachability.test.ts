@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, expect, test } from "bun:test";
-import { cp, mkdir, rm, symlink } from "node:fs/promises";
+import { mkdir, rm, symlink } from "node:fs/promises";
 import { resolve } from "node:path";
 import { chromium, type Browser } from "playwright-core";
 import { buildBrowserFixture, findChromeExecutable } from "../../../../scripts/browser-lib";
@@ -7,15 +7,8 @@ import { buildBrowserFixture, findChromeExecutable } from "../../../../scripts/b
 const scratch=resolve(import.meta.dir,'../../../../.scratch/touch-hud-test');
 let browser:Browser, server:ReturnType<typeof Bun.serve>;
 beforeAll(async()=>{
-  await mkdir(scratch,{recursive:true});
-  await mkdir(`${scratch}/node_modules/@jgengine`, {recursive:true});
+  await mkdir(`${scratch}/node_modules`,{recursive:true});
   for (const pkg of ['react','react-dom']) await symlink(resolve(import.meta.dir,'../../../../packages/react/node_modules',pkg),`${scratch}/node_modules/${pkg}`,'dir');
-  for (const pkg of ['react','shell','core']) {
-    const destination = `${scratch}/node_modules/@jgengine/${pkg}`;
-    await mkdir(destination, {recursive:true});
-    await cp(resolve(import.meta.dir,'../../../../packages',pkg,'package.json'),`${destination}/package.json`);
-    await cp(resolve(import.meta.dir,'../../../../packages',pkg,'dist'),`${destination}/dist`,{recursive:true});
-  }
   await Bun.write(`${scratch}/fixture.tsx`, `
     import React, {useState} from 'react'; import {createRoot} from 'react-dom/client';
     import {TouchControlsDock} from '@jgengine/shell/touch/TouchControlsOverlay';

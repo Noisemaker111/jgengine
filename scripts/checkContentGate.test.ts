@@ -43,7 +43,7 @@ function writeGame(root: string, id: string, files: Record<string, string>): voi
 const AUTHORED_SCENE = JSON.stringify({ markers: [{ id: "m1" }] });
 
 function runGate(root: string): { code: number; err: string } {
-  const proc = Bun.spawnSync(["bun", SCRIPT], { cwd: root });
+  const proc = Bun.spawnSync(["bun", SCRIPT], { cwd: root, timeout: 60_000 });
   return { code: proc.exitCode, err: proc.stderr.toString() + proc.stdout.toString() };
 }
 

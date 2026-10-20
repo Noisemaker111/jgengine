@@ -68,14 +68,14 @@ export function VitalBar({
           style={{ paddingLeft: lean }}
         >
           <span
-            className="text-[10px] font-bold uppercase tracking-[0.2em]"
+            className="text-[length:var(--jg-type-xs,12px)] font-bold uppercase tracking-[0.2em]"
             style={{ color: "var(--jg-text-dim)", textShadow: HUD_TEXT_SHADOW }}
           >
             {label ?? ""}
           </span>
           {showNumbers && (
             <span
-              className="font-mono text-[11px] font-bold"
+              className="font-mono text-[length:var(--jg-type-xs,12px)] font-bold"
               style={{ color: "var(--jg-text)", textShadow: HUD_TEXT_SHADOW }}
             >
               {Math.ceil(value.current)}

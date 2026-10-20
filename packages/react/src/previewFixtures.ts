@@ -1,5 +1,6 @@
 import type { GamePreviewComponent } from "./preview";
 import { BarsPreview } from "./barsPreview";
+import { HudChromePreview } from "./hudChromePreview";
 import { HudThemePreview } from "./hudThemePreview";
 import { IconsPreview } from "./iconsPreview";
 import { StreetGeometryPreview } from "./streetGeometryPreview";
@@ -35,6 +36,11 @@ export interface PreviewFixture {
  */
 export const PREVIEW_FIXTURES: Record<string, PreviewFixture> = {
   ScrollRailPreview: { name: "ScrollRailPreview", description: "Reachable caller-owned settings categories in shared scrolling chrome.", component: ScrollRailPreview },
+  HudChromePreview: {
+    name: "HudChromePreview",
+    description: "Shared HUD chrome under the default root theme: frame, vitals, action bar, window, dialogs, buttons.",
+    component: HudChromePreview,
+  },
   HudThemePreview: {
     name: "HudThemePreview",
     description: "Every HudTheme genre preset × atomic bars + a themed frame + a slot row.",

@@ -52,7 +52,7 @@ export function CastBar({
       </div>
       {label !== undefined && (
         <div
-          className="mt-[3px] text-center text-[11px] font-semibold tracking-[0.06em]"
+          className="mt-[3px] text-center text-[length:var(--jg-type-xs,12px)] font-semibold tracking-[0.06em]"
           style={{
             color: interrupted ? "var(--jg-danger)" : "var(--jg-text)",
             textShadow: HUD_TEXT_SHADOW,

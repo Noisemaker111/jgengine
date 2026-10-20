@@ -39,7 +39,7 @@ export function ComboCounter({
       <span
         style={{
           fontFamily: "var(--jg-font-display)",
-          fontSize: 10,
+          fontSize: "var(--jg-type-xs, 12px)",
           fontWeight: 700,
           letterSpacing: "0.24em",
           textTransform: "uppercase",

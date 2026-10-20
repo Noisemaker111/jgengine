@@ -16,8 +16,8 @@ export function KeybindBadge({
   if (coarsePointer) return null;
   const dims =
     size === "sm"
-      ? "min-w-[15px] h-[15px] px-[3px] text-[9px]"
-      : "min-w-[20px] h-5 px-[5px] text-[11px]";
+      ? "min-w-[15px] h-[15px] px-[3px] text-[length:var(--jg-type-xs,12px)]"
+      : "min-w-[20px] h-5 px-[5px] text-[length:var(--jg-type-xs,12px)]";
   return (
     <kbd
       data-jg="keybind-badge"

@@ -49,7 +49,7 @@ test("no fragments leaves the document untouched; a headingless fragment throws"
 function checkerFixture(fragment: string | null, change: "docs" | "skip" | "source" = "docs", markdown = MARKDOWN) {
   const root = mkdtempSync(join(tmpdir(), "jg-changelog-gate-"));
   const git = (...args: string[]) => {
-    const result = spawnSync("git", args, { cwd: root, encoding: "utf8" });
+    const result = spawnSync("git", args, { cwd: root, encoding: "utf8", timeout: 30_000 });
     if (result.status !== 0) throw new Error(result.stderr);
     return result.stdout.trim();
   };

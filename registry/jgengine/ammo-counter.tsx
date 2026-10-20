@@ -22,7 +22,7 @@ export function AmmoCounter({
     <div className={`flex flex-col items-end gap-0.5 ${className ?? ""}`} data-jg="ammo-counter">
       {reloading && (
         <span
-          className="text-[10px] font-bold uppercase tracking-[0.24em]"
+          className="text-[length:var(--jg-type-xs,12px)] font-bold uppercase tracking-[0.24em]"
           style={{
             fontFamily: "var(--jg-font-display)",
             color: "var(--jg-warning)",

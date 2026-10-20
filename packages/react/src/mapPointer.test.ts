@@ -1,9 +1,9 @@
 import { afterAll, afterEach, beforeAll, beforeEach, expect, test } from "bun:test";
-import { execFileSync } from "node:child_process";
 import { mkdir, rm, symlink } from "node:fs/promises";
 import { resolve } from "node:path";
 import { chromium, type Browser, type CDPSession, type Page } from "playwright-core";
 import { buildBrowserFixture, findChromeExecutable } from "../../../scripts/browser-lib";
+import { gotoFixture, installPublicPackages } from "../../../scripts/browser-test-fixture";
 const root = resolve(import.meta.dir, "../../..");
 const scratch = `${root}/.scratch/fullscreen-map-pointer-test`;
 let browser: Browser, page: Page, input: CDPSession, server: ReturnType<typeof Bun.serve>;
@@ -11,11 +11,7 @@ beforeAll(async () => {
   await rm(scratch, { recursive: true, force: true });
   await mkdir(`${scratch}/node_modules/@jgengine`, { recursive: true });
   for (const peer of ["react", "react-dom"]) await symlink(`${root}/packages/react/node_modules/${peer}`, `${scratch}/node_modules/${peer}`, "dir");
-  for (const pkg of ["core", "react"]) {
-    const pack = JSON.parse(execFileSync("npm", ["pack", "--ignore-scripts", "--json", "--pack-destination", scratch], { cwd: `${root}/packages/${pkg}`, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }))[0];
-    await mkdir(`${scratch}/node_modules/@jgengine/${pkg}`, { recursive: true });
-    execFileSync("tar", ["-xzf", pack.filename, "-C", `node_modules/@jgengine/${pkg}`, "--strip-components=1"], { cwd: scratch });
-  }
+  await installPublicPackages(scratch, ["core", "react"]);
   await Bun.write(`${scratch}/fixture.tsx`, `
     import React,{useState} from 'react';import {createRoot} from 'react-dom/client';import {flushSync} from 'react-dom';
     import {FullscreenMap,MapLegend} from '@jgengine/react/map';import {createAnnotationLayer} from '@jgengine/core/world/mapAnnotations';
@@ -43,9 +39,7 @@ afterEach(async () => { await input?.detach(); });
 afterAll(async () => { await browser?.close(); server?.stop(true); await rm(scratch, { recursive: true, force: true }); });
 async function open(mode = "pan") {
   const errors: string[] = []; page.on("pageerror", error => errors.push(error.message));
-  await page.goto(`http://127.0.0.1:${server.port}/?mode=${mode}`);
-  try { await page.locator("[data-fullscreen-map-viewport]").waitFor({ timeout: 2000 }); }
-  catch (error) { throw new Error(errors.join("\n") || String(error)); }
+  await gotoFixture(page, `http://127.0.0.1:${server.port}/?mode=${mode}`, () => page.locator("[data-fullscreen-map-viewport]").waitFor());
   expect(errors).toEqual([]);
 }
 async function at(x = 0.25, y = 0.3, id = 1) {
@@ -122,10 +116,10 @@ test("native touch capture loss retires a map pan before later movement", async 
     source.addEventListener("lostpointercapture", event => { capture.lost = event.pointerId === capture.owner && event.isTrusted; }, { once: true });
   });
   await touch("touchStart",[first]); await touch("touchMove",[end]);
-  await page.waitForFunction(() => (window as any).capture.got, undefined, { timeout: 1000 }); const before = await transform();
+  await page.waitForFunction(() => (window as any).capture.got); const before = await transform();
   await viewport.evaluate(element => element.releasePointerCapture((window as any).capture.owner));
   await touch("touchMove",[{...end,x:end.x+40,y:end.y+30}]);
-  await page.waitForFunction(() => (window as any).capture.lost, undefined, { timeout: 1000 });
+  await page.waitForFunction(() => (window as any).capture.lost);
   expect(await transform()).toBe(before); await touch("touchEnd",[]);
 });
 test("mouse button chords keep the primary pan active until its release", async () => {

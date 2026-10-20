@@ -21,7 +21,7 @@ export function XpBar({
     <div className={`flex items-center gap-2 ${className ?? ""}`} data-jg="xp-bar" style={{ width }}>
       {level !== undefined && (
         <span
-          className="flex-shrink-0 font-mono text-[11px] font-bold"
+          className="flex-shrink-0 font-mono text-[length:var(--jg-type-xs,12px)] font-bold"
           style={{ color: "var(--jg-xp)", textShadow: HUD_TEXT_SHADOW }}
         >
           Lv {level}

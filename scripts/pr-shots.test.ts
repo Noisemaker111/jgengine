@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 function git(args: string[]): string {
-  return execFileSync("git", args, { encoding: "utf8" }).trim();
+  return execFileSync("git", args, { encoding: "utf8", timeout: 30_000 }).trim();
 }
 
 describe("pr-shots", () => {
@@ -27,6 +27,7 @@ describe("pr-shots", () => {
     execFileSync("bun", ["run", join(import.meta.dir, "pr-shots.ts"), "--dry", "--branch", "pr-shots-test", png], {
       encoding: "utf8",
       cwd: join(import.meta.dir, ".."),
+      timeout: 60_000,
     });
 
     const afterSym = (() => {

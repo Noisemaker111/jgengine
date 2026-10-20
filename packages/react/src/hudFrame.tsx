@@ -1,5 +1,7 @@
 import type { CSSProperties, ReactNode } from "react";
 
+import { hudElevation, hudFont, hudType } from "./hudTokens";
+
 /** Frame skin — `glass` (the shared dark-glass panel), `plate` (a heavier opaque plate), `retro` (a hard black-outlined frame), or `themed` (driven by the `--jg-frame-*` `HudTheme` tokens). */
 export type HudFrameVariation = "glass" | "plate" | "retro" | "themed";
 
@@ -29,7 +31,7 @@ export function hudFrameStyle(
           borderImage: "var(--jg-frame-image, none) var(--jg-frame-slice, 0) / var(--jg-frame-scale, 1) var(--jg-frame-fill, stretch)",
           cursor: "var(--jg-skin-cursor, auto)",
           color: "var(--jg-bar-text, #f4f6fb)",
-          fontFamily: "ui-sans-serif, system-ui, -apple-system, sans-serif",
+          fontFamily: hudFont.body,
         }
       : variation === "retro"
       ? {
@@ -44,18 +46,19 @@ export function hudFrameStyle(
             border: "1px solid rgba(255,255,255,0.10)",
             borderRadius: 10,
             color: "#f4f6fb",
-            fontFamily: "ui-sans-serif, system-ui, -apple-system, sans-serif",
-            boxShadow: "0 6px 20px rgba(0,0,0,0.45)",
+            fontFamily: hudFont.body,
+            boxShadow: hudElevation("raised"),
           }
         : {
             background: "rgba(10,12,16,0.62)",
-            backdropFilter: "blur(6px)",
-            WebkitBackdropFilter: "blur(6px)",
-            border: "1px solid rgba(255,255,255,0.10)",
+            backgroundImage: "linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0) 45%)",
+            backdropFilter: "blur(8px) saturate(1.2)",
+            WebkitBackdropFilter: "blur(8px) saturate(1.2)",
+            border: "1px solid rgba(255,255,255,0.12)",
             borderRadius: 10,
             color: "#f4f6fb",
-            fontFamily: "ui-sans-serif, system-ui, -apple-system, sans-serif",
-            boxShadow: "0 4px 16px rgba(0,0,0,0.35)",
+            fontFamily: hudFont.body,
+            boxShadow: hudElevation("raised"),
           };
   if (shape === "circle") return { ...base, borderRadius: 9999 };
   if (shape === "square") return { ...base, borderRadius: 0 };
@@ -128,10 +131,12 @@ export function HudFrame({
             alignItems: "center",
             gap: 8,
             marginBottom: 6,
-            fontSize: 10,
-            letterSpacing: 1.4,
+            fontSize: hudType("xs"),
+            fontWeight: 650,
+            letterSpacing: "var(--jg-tracking-label, 0.08em)",
+            lineHeight: 1.2,
             textTransform: "uppercase",
-            opacity: 0.75,
+            opacity: 0.82,
           }}
         >
           <span>{title}</span>

@@ -62,7 +62,7 @@ export function ItemGrid({
             <span className="absolute inset-0 flex items-center justify-center">{slot.icon}</span>
             {occupied && slot.count !== undefined && slot.count > 1 && (
               <span
-                className="absolute bottom-0.5 right-[3px] font-mono text-[10px] font-bold"
+                className="absolute bottom-0.5 right-[3px] font-mono text-[length:var(--jg-type-xs,12px)] font-bold"
                 style={{ color: "var(--jg-text)", textShadow: HUD_TEXT_SHADOW }}
               >
                 {slot.count}
