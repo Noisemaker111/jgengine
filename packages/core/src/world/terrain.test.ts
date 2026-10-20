@@ -542,6 +542,12 @@ describe("terrain field", () => {
     expect(ground.sampleHeight(20, 0)).toBeCloseTo(0.16, 6);
   });
 
+  test("resolveTerrainDetail paints no sand band on a terrain without water", () => {
+    expect(resolveTerrainDetail({}).waterLevel).toBeLessThan(-1000);
+    expect(resolveTerrainDetail({}, 2).waterLevel).toBe(2);
+    expect(resolveTerrainDetail({ waterLevel: -3 }, 2).waterLevel).toBe(-3);
+  });
+
   test("resolveTerrainDetail leaves material undefined when no texture is configured", () => {
     const detail = resolveTerrainDetail({});
     expect(detail.material).toBeUndefined();
