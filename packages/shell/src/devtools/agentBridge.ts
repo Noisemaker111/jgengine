@@ -218,6 +218,31 @@ export function installAgentBridge(options: {
           return { ok: true, frames, now: ctx === null ? null : Math.round(ctx.time.now() * 1000) / 1000 };
         });
       }
+      case "notice_push": {
+        const ctx = getContext();
+        if (ctx === null) return { ok: false, error: "no game context yet" };
+        const tone = request.tone;
+        if (typeof request.text !== "string" || (tone !== undefined && tone !== "info" && tone !== "success" && tone !== "warn" && tone !== "deny")) {
+          return { ok: false, error: "notice_push needs { text, tone?: info|success|warn|deny, ttlMs? }" };
+        }
+        const ttlMs = typeof request.ttlMs === "number" && request.ttlMs > 0 ? request.ttlMs : undefined;
+        const notice = ctx.game.notices.push({ text: request.text, ...(tone === undefined ? {} : { tone }), ...(ttlMs === undefined ? {} : { ttlMs }) });
+        return { ok: true, id: notice.id, count: notice.count };
+      }
+      case "notice_list": {
+        const ctx = getContext();
+        if (ctx === null) return { ok: false, error: "no game context yet" };
+        return { ok: true, notices: ctx.game.notices.list(), rendered: document.querySelectorAll("[data-jg-notice]").length, now: Date.now() };
+      }
+      case "run_command": {
+        const ctx = getContext();
+        if (ctx === null) return { ok: false, error: "no game context yet" };
+        if (typeof request.name !== "string") return { ok: false, error: "run_command needs { name, input? }" };
+        const result = ctx.game.commands.run(request.name, request.input ?? {});
+        return result.status === "rejected"
+          ? { ok: true, status: result.status, reason: result.reason, ...(result.message === undefined ? {} : { message: result.message }) }
+          : { ok: true, status: result.status };
+      }
       case "debug_report":
         return { ok: true, report: buildFullReport(playable) };
       case "debug_perf_reset":

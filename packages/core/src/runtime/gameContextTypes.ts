@@ -1,5 +1,6 @@
 import type { AuthoredSimulationRuntime } from "../world/authoredSimulation";
 import type { Territory } from "../world/territory";
+import type { NoticeFeed } from "../game/notices";
 import type { CurrencyDefinition } from "../economy/currency";
 import type { CardPile, CardPileConfig } from "../cards/cardPile";
 import type {
@@ -533,6 +534,11 @@ export interface GameContext {
     territory?: Territory;
     commands: GameContextCommands;
     events: GameEvents;
+    /**
+     * Player-facing notice feed (info/success/warn/deny) with stacking dedupe and TTL. The shell renders it
+     * and plays a UI cue per push; refused commands that return `{ reason, message }` land here automatically.
+     */
+    notices: NoticeFeed;
     audio: GameAudio;
     /** Play a model's one-shot animation clip bound to `event` in its `animation.oneShots` (e.g. an attack swing) — emits `entity.animation` for the shell to pick up. */
     playEntityAnimation(instanceId: string, event: string): void;

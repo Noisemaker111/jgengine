@@ -43,6 +43,8 @@ Existing React games keep their entity store and use the focused
 
 ## Shared-world interaction rules
 
+- **Refusals and notices are engine feedback, not per-game toasts.** Return `{ reason: "insufficient-gold", message: "Needs 40 more gold" }` from a command's `validate`: the shell shows `message` in the shared notice feed with the deny cue and stacks repeats. Push other player messages with `ctx.game.notices.push({ text, tone })` (info/success/warn/deny) from game logic instead of a hand-built toast list. Tune or hide the stock feed with `notices: { placement, hidden }` (`hidden` keeps cues and lets the game render `useNoticeList(ctx.game.notices)` itself).
+- **UI sounds come from `useUiCue()`.** Call `cue("click" | "hover" | "open" | "close" | "confirm" | "deny" | "notify")` from buttons and panels; replace a default by declaring `audio.sounds["ui.click"]`, or silence with `audio.uiCues: { hover: false }` / `false`.
 - Every rejected verb displays its reason on the triggering surface. Use `useServerSession(transport, gameId)` for join lifecycle. Join failure blocks play with `JoinGate` and retry; returning `{ ok: false }` without feedback is incomplete.
 - Placement previews display claim cost and affordability inline with `TerritoryOverlay`.
 - `ChatPanel` owns collapsed/expanded state, own-message styling, Enter focus and Escape blur; standalone hosts pass `messages`, `userId`, and `onSend` (typed `{ ok, reason }`), while context-backed games use channel props. Use native inputs so shell typing-target suspension applies.

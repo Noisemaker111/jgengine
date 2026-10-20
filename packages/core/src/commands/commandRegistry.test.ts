@@ -187,3 +187,13 @@ describe("command registry", () => {
     });
   });
 });
+
+describe("command registry refusal messages", () => {
+  test("passes a player-facing message through and omits it when absent", () => {
+    const registry = createCommandRegistry<CounterState>();
+    registry.define("buy", { validate: () => ({ reason: "insufficient-gold", message: "Needs 40 more gold" }), apply: () => undefined });
+    registry.define("sell", { validate: () => ({ reason: "empty" }), apply: () => undefined });
+    expect(registry.run({ count: 0 }, "buy", {})).toEqual({ status: "rejected", reason: "insufficient-gold", message: "Needs 40 more gold" });
+    expect(registry.run({ count: 0 }, "sell", {})).toStrictEqual({ status: "rejected", reason: "empty" });
+  });
+});

@@ -303,11 +303,11 @@
 
 ## @jgengine/core/audio/audioFalloff
 
-- `AudioBusDef` (interface): interface AudioBusDef { id: AudioBusId; gain?: number } — ⚠ undocumented
+- `AudioBusDef` (interface): interface AudioBusDef { id: AudioBusId; gain?: number } — ⚠ undocumented · used by `withUiCueSounds` (@jgengine/core/audio/uiCues): Merge the default UI cue patches into a game's sound catalog.
 - `AudioBusId` (type): type AudioBusId = string — ⚠ undocumented
 - `AudioFalloffConfig` (interface): interface AudioFalloffConfig { minDistance?: number; maxDistance?: number; curve?: FalloffCurve } — ⚠ undocumented
 - `FalloffCurve` (type): type FalloffCurve = "linear" | "inverse" | "none" — ⚠ undocumented
-- `SoundDef` (interface): interface SoundDef { id: string; url?: string; synth?: SynthPatch; bus: AudioBusId; gain?: number; loop?: boolean; maxVoices?: number; priority?: number; positional?: boolean; falloff?: AudioFalloffConfig; doppler?: number; spatial?: {panning: "hrtf" | "equal… — ⚠ undocumented
+- `SoundDef` (interface): interface SoundDef { id: string; url?: string; synth?: SynthPatch; bus: AudioBusId; gain?: number; loop?: boolean; maxVoices?: number; priority?: number; positional?: boolean; falloff?: AudioFalloffConfig; doppler?: number; spatial?: {panning: "hrtf" | "equal… — ⚠ undocumented · used by `DEFAULT_UI_CUE_SOUNDS` (@jgengine/core/audio/uiCues): Short, soft procedural patches: no samples to load, quiet enough to sit under game audio.
 - `computeFalloffGain` (function): function computeFalloffGain(distance: number, config: AudioFalloffConfig = {}): number — ⚠ undocumented
 - `distance3` (function): function distance3(a: { x: number; y: number; z: number }, b: { x: number; y: number; z: number }): number — ⚠ undocumented
 - `resolveEmitterGain` (function): function resolveEmitterGain(distance: number, sound: Pick<SoundDef, "gain" | "positional" | "falloff">, busGain: number): number — ⚠ undocumented
@@ -367,6 +367,17 @@
 - `SynthWave` (type): type SynthWave = "sine" | "square" | "sawtooth" | "triangle" — Oscillator waveform available to a pitched synth voice.
 - `ToneVoice` (interface): interface ToneVoice — A pitched oscillator voice: a 12ms linear attack to `gain`, then an exponential decay to silence across `duration`, with an optional exponential pitch slide from `freq` to `slideTo`.
 - `patchDuration` (function): function patchDuration(patch: SynthPatch): number — Total wall-clock length of a patch in seconds — the latest voice end across all voices.
+
+## @jgengine/core/audio/uiCues
+
+- `DEFAULT_UI_CUE_SOUNDS` (const): const DEFAULT_UI_CUE_SOUNDS: Readonly<Record<UiCue, SoundDef>> — Short, soft procedural patches: no samples to load, quiet enough to sit under game audio.
+- `NOTICE_TONE_CUES` (const): const NOTICE_TONE_CUES: Readonly<Record<NoticeTone, UiCue>> — The cue a notice of each tone plays when it appears.
+- `UI_CUES` (const): const UI_CUES: readonly UiCue[] — Every {@link UiCue}, in a stable order.
+- `UI_CUE_BUS` (const): const UI_CUE_BUS: "ui" — Bus the default UI cues mix through; the settings menu shows its volume.
+- `UiCue` (type): type UiCue = "click" | "hover" | "open" | "close" | "confirm" | "deny" | "notify" — Interface sound cues every game gets: press, hover, panel open/close, confirm, refusal, notification.
+- `UiCueOverrides` (type): type UiCueOverrides = false | Partial<Record<UiCue, SoundDef | false>> — Per-cue override: a replacement sound, or `false` to silence that cue. `false` for the whole map silences all.
+- `uiCueSoundId` (function): function uiCueSoundId(cue: UiCue): string — Catalog id a cue plays under: `ui.click`, `ui.deny`, ... A game sound with that id replaces the default.
+- `withUiCueSounds` (function): function withUiCueSounds(sounds: Readonly<Record<string, SoundDef>> | undefined, buses: Readonly<Record<string, AudioBusDef>> | undefined, overrides?: UiCueOverrides): { sounds: Record<string, SoundDef>; buses: Record<string, AudioBusDef> | undefined } — Merge the default UI cue patches into a game's sound catalog. A game sound already named `ui.<cue>` wins, then `overrides`, then the default. Adds the `ui` bus (gain 0.8) when the game did not declare one.
 
 ## @jgengine/core/audio/voiceAllocator
 
@@ -2092,7 +2103,7 @@
 - `AssetSpace` (interface): interface AssetSpace — Catalog-level asset-space metadata: how a model is authored relative to the engine, owned by the catalog entry rather than re-derived per game. Every field is optional so an unmeasured asset stays valid; {@link resolveFacingRotationY}/{@link assetUnitScale}/{@link resolveAnchorOffset} supply the documented defaults.
 - `AssetSpaceIssue` (interface): interface AssetSpaceIssue — One problem found by {@link validateAssetSpace}: which metadata field and why it is invalid.
 - `AttackMoveOrderPayload` (interface): interface AttackMoveOrderPayload — Payload for an attack-move: advance toward `point`, engaging hostiles encountered en route.
-- `AudioBusDef` (interface): interface AudioBusDef { id: AudioBusId; gain?: number } — ⚠ undocumented
+- `AudioBusDef` (interface): interface AudioBusDef { id: AudioBusId; gain?: number } — ⚠ undocumented · used by `withUiCueSounds` (@jgengine/core/audio/uiCues): Merge the default UI cue patches into a game's sound catalog.
 - `AudioFalloffConfig` (interface): interface AudioFalloffConfig { minDistance?: number; maxDistance?: number; curve?: FalloffCurve } — ⚠ undocumented
 - `AuthoredTrigger` (interface): interface AuthoredTrigger — One resolved trigger binding from a document object.
 - `AuthoredTriggerRuntime` (interface): interface AuthoredTriggerRuntime — Runtime handle that watches authored triggers against moving actors each tick.
@@ -2517,7 +2528,7 @@
 - `SnapMode` (type): type SnapMode = "grid" | "free" | "surface" — ⚠ undocumented
 - `SnowEnvironmentDescriptor` (type): type SnowEnvironmentDescriptor = { kind: "snow" } & Required< Pick<SnowEnvironmentConfig, "area" | "density" | "speed" | "flakeSize" | "drift" | "wind" | "color" | "opacity"> > — ⚠ undocumented · used by `snow`: Declares a snowfall weather effect for `environment()` — area, density, drift, wind, and flake opacity.
 - `SoilRules` (interface): interface SoilRules — Fully-defaulted soil params parsed from a volume's `meta`.
-- `SoundDef` (interface): interface SoundDef { id: string; url?: string; synth?: SynthPatch; bus: AudioBusId; gain?: number; loop?: boolean; maxVoices?: number; priority?: number; positional?: boolean; falloff?: AudioFalloffConfig; doppler?: number; spatial?: {panning: "hrtf" | "equal… — ⚠ undocumented
+- `SoundDef` (interface): interface SoundDef { id: string; url?: string; synth?: SynthPatch; bus: AudioBusId; gain?: number; loop?: boolean; maxVoices?: number; priority?: number; positional?: boolean; falloff?: AudioFalloffConfig; doppler?: number; spatial?: {panning: "hrtf" | "equal… — ⚠ undocumented · used by `DEFAULT_UI_CUE_SOUNDS` (@jgengine/core/audio/uiCues): Short, soft procedural patches: no samples to load, quiet enough to sit under game audio.
 - `SpatialGrid` (class): class SpatialGrid — A uniform-grid broad-phase over the x/z plane, separate from the rigid-body sim, for cheap same-tick proximity across hundreds–thousands of simple movers (swarm enemies). Rebuild each tick from the caller's own position arrays, then `queryCircle` (enemies hitting the player / an AoE) or `forEachPair` (mutual separation). Both are precise: no false negatives, no false positives beyond the exact distance test.
 - `SpawnDirectorConfig` (interface): interface SpawnDirectorConfig { waves: readonly WaveManifest[]; maxAlive?: number; escalationPerSecond?: number; alertBudgetPerSecond?: number; alertDecayPerSecond?: number; playerBudgetPerSecond?: number; maxSpawnsPerTick?: number; loop?: boolean; seed?: number; spawnP… — ⚠ undocumented
 - `SpawnDirectorState` (interface): interface SpawnDirectorState { wave: number; elapsed: number; waveElapsed: number; budget: number; alert: number; spawnedThisWave: number; spawnedTotal: number; rng: RandomSeed; done: boolean } — ⚠ undocumented

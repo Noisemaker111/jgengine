@@ -65,8 +65,8 @@
 - `CommandDecoder` (type): type CommandDecoder<TInput> = (input: unknown) => CommandDecodeResult<TInput> — Parses raw `unknown` transport input into `TInput`, rejecting anything that doesn't match the command's declared shape. Runs before `validate`/`apply`, so a malformed payload never reaches game logic.
 - `CommandDefinition` (interface): interface CommandDefinition<TState, TInput> { decode?: CommandDecoder<TInput>; validate?(state: TState, input: TInput): CommandRejection | null; apply(state: TState, input: TInput): TState | void } — ⚠ undocumented
 - `CommandRegistry` (interface): interface CommandRegistry<TState> { define<TInput>(name: string, definition: CommandDefinition<TState, TInput>): void; has(name: string): boolean; names(): string[]; run(state: TState, name: string, input: unknown): CommandResult<TState> } — ⚠ undocumented
-- `CommandRejection` (interface): interface CommandRejection { reason: string } — ⚠ undocumented · used by `validateCommandInput` (@jgengine/ws): Validates a `runCommand` input against a declared catalog.
-- `CommandResult` (type): type CommandResult<TState> = | { status: "applied"; state: TState } | { status: "rejected"; reason: string } | { status: "unknown-command" } — ⚠ undocumented
+- `CommandRejection` (interface): interface CommandRejection — Why a command refused: `reason` is a stable machine code; `message`, when set, is shown to the player.
+- `CommandResult` (type): type CommandResult<TState> = | { status: "applied"; state: TState } | { status: "rejected"; reason: string; message?: string } | { status: "unknown-command" } — ⚠ undocumented
 - `createCommandRegistry` (function): function createCommandRegistry<TState>(): CommandRegistry<TState> — ⚠ undocumented
 
 ## @jgengine/core/devtools/controls
@@ -292,9 +292,9 @@
 - `CommandDef` (type): type CommandDef<TInput = unknown> = { /** * `"server"` when `input` carries facts only the host may decide (unlock state, prices, multipliers): * public transports then refuse it and only trusted host calls such as `helpers.runCommand` run it. * Defaults to `"client"`, so every field of `input` must… — ⚠ undocumented · used by `defineCommand`: Declare a command with a typed input: `parse` narrows the wire value once, and `scope`, `validate` and `apply` receive the parsed type.
 - `CommandScope` (type): type CommandScope = { /** Member ids to hydrate; omit for the whole roster. */ players?: readonly string[]; /** Chunk keys to hydrate; omit for every chunk of the server, `[]` for none. */ chunkKeys?: readonly string[]; } — Which slice of a server has to be hydrated before some work runs against it. Both fields default to "everything", which costs a read per member plus one per chunk — the cost that makes a large shared world unaffordable per mutation. Narrow them when the caller knows what it will touch.
 - `CommandScopeDefinition` (type): type CommandScopeDefinition = Omit<CommandScope, "players"> & { players?: readonly string[] | "actor" } — Declarative read scope; actor is resolved before host hydration.
-- `CommandValidationError` (type): type CommandValidationError = { reason: string } — ⚠ undocumented
+- `CommandValidationError` (type): type CommandValidationError = { reason: string; message?: string } — `reason` is a stable machine code; `message`, when set, is player-facing text the client shows on refusal.
 - `MALFORMED_COMMAND_INPUT_REASON` (const): const MALFORMED_COMMAND_INPUT_REASON: "Malformed command input" — Reason every host returns when a command's `parse` rejects its input.
-- `RunCommandResult` (type): type RunCommandResult = | { ok: true; snapshot: GameRuntimeSnapshot } | { ok: false; reason: string } — ⚠ undocumented
+- `RunCommandResult` (type): type RunCommandResult = | { ok: true; snapshot: GameRuntimeSnapshot } | { ok: false; reason: string; message?: string } — ⚠ undocumented
 - `SERVER_ONLY_COMMAND_REASON` (const): const SERVER_ONLY_COMMAND_REASON: "Command is server-only" — Reason a public transport returns for a {@link CommandDef} marked `access: "server"`.
 - `defineCommand` (function): function defineCommand<TInput>(definition: CommandDef<TInput> & { parse: (input: unknown) => TInput | null }): CommandDef — Declare a command with a typed input: `parse` narrows the wire value once, and `scope`, `validate` and `apply` receive the parsed type. Returns the untyped {@link CommandDef} a runtime's command table holds.
 
@@ -593,7 +593,7 @@
 - `PresenceSync` (type): type PresenceSync = { subscribe: (serverId: string, onChange: (rows: PresencePoseRow[]) => void) => FeedUnsubscribe; syncPose: (serverId: string, pose: PlayerPose) => void; } — ⚠ undocumented
 - `ResumeTicket` (type): type ResumeTicket = { userId: string; serverId: string; token: string; } — A short-lived credential allowing a disconnected client to reclaim one server membership.
 - `RunCommandArgs` (type): type RunCommandArgs = { serverId: string; command: string; input: unknown; } — ⚠ undocumented
-- `TransportRunCommandResult` (type): type TransportRunCommandResult = | { ok: true } | { ok: false; reason: string } — ⚠ undocumented
+- `TransportRunCommandResult` (type): type TransportRunCommandResult = | { ok: true } /** `message` is the command's player-facing refusal text, when its `validate` gave one. */ | { ok: false; reason: string; message?: string } — ⚠ undocumented
 - `WorldSyncFrame` (type): type WorldSyncFrame = | { kind: "baseline"; revision: number; snapshot: WorldSnapshot } | { kind: "diff"; revision: number; diff: WorldDiff } — A revision-stamped world baseline or compact diff sent to a server-authoritative client.
 - `createTransportSessionId` (function): function createTransportSessionId(): string — Fresh id for one client session's join/leave pair (see {@link GameRuntimeTransport.joinServer}).
 

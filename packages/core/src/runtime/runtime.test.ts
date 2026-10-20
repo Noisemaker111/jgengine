@@ -330,3 +330,13 @@ test("a host that passes no clock gets the wall clock rather than zero", () => {
   );
   expect(ticked).toBeGreaterThanOrEqual(before);
 });
+
+test("runCommand carries a player-facing refusal message beside the machine reason", () => {
+  const snapshot = createRuntimeSnapshot({ gameId: "demo", serverId: "srv_1" });
+  const commands = {
+    "shop.buy": { validate: () => ({ reason: "insufficient-gold", message: "Needs 40 more gold" }), apply: (state: typeof snapshot) => state },
+    "shop.sell": { validate: () => ({ reason: "empty" }), apply: (state: typeof snapshot) => state },
+  };
+  expect(runCommand(snapshot, commands, "shop.buy", {}, "user_a")).toEqual({ ok: false, reason: "insufficient-gold", message: "Needs 40 more gold" });
+  expect(runCommand(snapshot, commands, "shop.sell", {}, "user_a")).toStrictEqual({ ok: false, reason: "empty" });
+});
