@@ -3,15 +3,18 @@ import { useEffect, useRef } from "react";
 import { Quaternion, Vector3 } from "three";
 import { useGameContext } from "@jgengine/react/provider";
 import type { AudioEmitterHandle, AudioEngine } from "./audioEngine";
+import { groundFocusListener, type ListenerAnchor } from "./listenerAnchor";
 import { createListenerVelocityTrack, stepListenerVelocity, type ListenerVelocityTrack } from "./loopParams";
 
-export function AudioListener({ engine }: { engine: AudioEngine }) {
+export function AudioListener({ engine, anchor = "camera" }: { engine: AudioEngine; anchor?: ListenerAnchor }) {
   const camera = useThree((state) => state.camera);
+  const ctx = useGameContext();
   const trackRef = useRef<ListenerVelocityTrack>(createListenerVelocityTrack());
   useFrame((_, dt) => {
     const direction = camera.getWorldDirection(new Vector3());
     const up = camera.up.clone().applyQuaternion(camera.getWorldQuaternion(new Quaternion()));
-    const position = { x: camera.position.x, y: camera.position.y, z: camera.position.z };
+    const eye = { x: camera.position.x, y: camera.position.y, z: camera.position.z };
+    const position = anchor === "ground" ? groundFocusListener(eye, direction, ctx.world.groundHeightAt(eye.x, eye.z)) : eye;
     engine.setListenerPose({
       position,
       forward: { x: direction.x, y: direction.y, z: direction.z },

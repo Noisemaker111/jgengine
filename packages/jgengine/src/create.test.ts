@@ -56,7 +56,8 @@ describe("writeGame", () => {
     }
 
     const failures = diagnose(dir).filter(
-      (finding) => !finding.ok && !finding.label.includes("art-direction") && !finding.label.includes("skeleton"),
+      (finding) =>
+        !finding.ok && !finding.label.includes("art-direction") && !finding.label.includes("skeleton") && !finding.label.includes("has sound"),
     );
     expect(failures).toEqual([]);
   });

@@ -254,6 +254,11 @@ export function diagnose(dir: string): Finding[] {
     if (existsSync(modelsPath)) related.push(readFileSync(modelsPath, "utf8"));
     const assetsPath = join(dir, "src", "game", "assets.ts");
     if (existsSync(assetsPath)) related.push(readFileSync(assetsPath, "utf8"));
+    findings.push({
+      ok: /\baudio\s*:/.test(configText) || /\baudio\.(play|loop)\(/.test(readSourceText(join(dir, "src"))),
+      label: "game has sound (declares audio cues)",
+      fix: 'a silent game reads unfinished — declare cues as procedural SoundDef synth patches (no asset files needed) in defineGame({ audio: { sounds } }) and call ctx.game.audio.play(id) on accepted actions: build, hit, purchase, objective, win/lose',
+    });
     const prototype = assessPrototypeLook(related);
     findings.push({
       ok: !prototype.isPrototype,

@@ -1812,7 +1812,7 @@
 
 ## @jgengine/shell/audio/AudioComponents
 
-- `AudioListener` (function): function AudioListener({ engine }: { engine: AudioEngine }): null — ⚠ undocumented
+- `AudioListener` (function): function AudioListener({ engine, anchor = "camera" }: { engine: AudioEngine; anchor?: ListenerAnchor }): null — ⚠ undocumented
 - `EntityAudioEmitters` (function): function EntityAudioEmitters({ engine, entitySounds, }: { engine: AudioEngine; entitySounds: Record<string, string> | undefined; }): null — ⚠ undocumented
 - `ObjectAudioEmitters` (function): function ObjectAudioEmitters({ engine, objectSounds, }: { engine: AudioEngine; objectSounds: Record<string, string> | undefined; }): null — ⚠ undocumented
 

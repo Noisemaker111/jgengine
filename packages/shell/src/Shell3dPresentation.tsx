@@ -667,7 +667,7 @@ export function Shell3dPresentation({
                   <WorldParticles quality={graphics.quality} particleCap={graphics.profile.particleCap} diagnostics={devtoolsEnabled} />
                   <CombatPresentation effects={effects} />
                   {devtoolsEnabled ? <CollisionDebugWorld /> : null}
-                  <AudioListener engine={audioEngine} />
+                  <AudioListener engine={audioEngine} anchor={playable.camera?.rig === "rts" || playable.camera?.rig === "topDown" ? "ground" : "camera"} />
                   <EntityAudioEmitters engine={audioEngine} entitySounds={playable.entitySounds} />
                   <ObjectAudioEmitters engine={audioEngine} objectSounds={playable.objectSounds} />
                   <GameCameraRig
