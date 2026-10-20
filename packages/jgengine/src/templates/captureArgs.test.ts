@@ -76,10 +76,10 @@ describe("portable harness parity", () => {
       const dir = materializeHarness(tool);
       try {
         for (const entry of CAPTURE_FLAGS.filter((flag) => flag.tools.includes(tool))) {
-          const run = spawnSync(process.execPath, [join(dir, `${tool}.mjs`), ...sampleArgv(entry), "--help"], { encoding: "utf8" });
+          const run = spawnSync(process.execPath, [join(dir, `${tool}.mjs`), ...sampleArgv(entry), "--help"], { encoding: "utf8", timeout: 30_000 });
           expect({ flag: entry.flag, status: run.status }).toEqual({ flag: entry.flag, status: 0 });
           if (entry.engineOnly === undefined) continue;
-          const refused = spawnSync(process.execPath, [join(dir, `${tool}.mjs`), ...sampleArgv(entry)], { encoding: "utf8" });
+          const refused = spawnSync(process.execPath, [join(dir, `${tool}.mjs`), ...sampleArgv(entry)], { encoding: "utf8", timeout: 30_000 });
           expect(refused.status).toBe(1);
           expect(refused.stderr).toContain(`${entry.flag} ${entry.engineOnly}`);
         }
