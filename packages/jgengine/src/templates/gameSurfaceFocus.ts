@@ -48,3 +48,28 @@ export function holdComplete(input: {
   if (input.nowMs >= input.hardCapMs) return true;
   return input.nowMs >= input.deadlineMs && input.framesElapsed >= 1;
 }
+
+/**
+ * Maps a binding code (`mouse0`/`mouse1`/`mouse2`, as the shell's action tracker names pointer
+ * buttons) to the CDP mouse button and its `buttons` mask, or `null` for a keyboard code — so
+ * `--key mouse0:1200` holds the primary button over the play surface (hold-to-fire weapons).
+ * Self-contained for browser serialization.
+ */
+export function mouseButtonForCode(code: string): { button: "left" | "middle" | "right"; buttons: number } | null {
+  if (code === "mouse0") return { button: "left", buttons: 1 };
+  if (code === "mouse1") return { button: "middle", buttons: 4 };
+  if (code === "mouse2") return { button: "right", buttons: 2 };
+  return null;
+}
+
+/**
+ * Centre of the play canvas in CSS viewport pixels, or `null` without one: where a held mouse
+ * button lands. Self-contained for browser serialization.
+ */
+export function gameSurfaceCenter(doc: { querySelector(selector: string): { getBoundingClientRect(): { left: number; top: number; width: number; height: number } } | null }): { x: number; y: number } | null {
+  const canvas = doc.querySelector("canvas");
+  if (canvas === null) return null;
+  const rect = canvas.getBoundingClientRect();
+  if (rect.width <= 0 || rect.height <= 0) return null;
+  return { x: Math.round(rect.left + rect.width / 2), y: Math.round(rect.top + rect.height / 2) };
+}
