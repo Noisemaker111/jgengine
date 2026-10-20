@@ -1,6 +1,8 @@
 import { dispatchClickAt, parseClickAt } from "../clickInput";
 import { escapeHtml } from "../escapeHtml";
-import { driveInputPointExpr, parseDriveFill } from "./driveInput";
+import { CAPTURE_FLAGS, captureFlagHelp, parseCaptureArgs, rejectEngineOnlyFlags } from "./captureArgs";
+import { awaitGameView, holdDriveInput } from "./driveSteps";
+import { driveInputPointExpr } from "./driveInput";
 import { focusGameSurface, gameSurfaceCenter, holdComplete, mouseButtonForCode } from "./gameSurfaceFocus";
 import type { EditorSceneDoc, TemplateVariant } from "./types";
 
@@ -263,6 +265,36 @@ import { inflateSync } from "node:zlib";
 export ${parseClickAt.toString()}
 
 export ${dispatchClickAt.toString()}
+
+// Shared with the engine's bun run shoot/drive (packages/jgengine/src/templates/captureArgs.ts).
+export const CAPTURE_FLAGS = ${JSON.stringify(CAPTURE_FLAGS)};
+
+export ${parseCaptureArgs.toString()}
+
+export ${rejectEngineOnlyFlags.toString()}
+
+export ${captureFlagHelp.toString()}
+
+export ${holdDriveInput.toString()}
+
+export ${awaitGameView.toString()}
+
+/** Parse argv for a portable harness: the shared flag table, minus what only the engine runner honors. */
+export function parsePortableArgs(tool, argv) {
+  const parsed = parseCaptureArgs(tool, argv, CAPTURE_FLAGS);
+  if (!parsed.help) rejectEngineOnlyFlags(parsed, CAPTURE_FLAGS);
+  return parsed;
+}
+
+/** Viewport for a portable run: device defaults, --width/--height overrides, then --size half. */
+export function portableViewport(options) {
+  const profile = DEVICES[options.device ?? "desktop"];
+  if (profile === undefined) throw new Error("--device both is engine-only here; pass desktop, mobile, or mobile-landscape");
+  const scale = options.size === "half" ? 0.5 : 1;
+  const width = Math.round((options.width !== undefined ? Number(options.width) : profile.width) * scale);
+  const height = Math.round((options.height !== undefined ? Number(options.height) : profile.height) * scale);
+  return { profile, width, height };
+}
 
 export const DEVICES = {
   desktop: { width: 1600, height: 900, dsf: 1, mobile: false },
@@ -579,7 +611,8 @@ export async function openPage(debugPort) {
 export const HONESTY_EXPR =
   "(function(){var r=document.documentElement;var c=document.querySelector('canvas');" +
   "return {cap:r.dataset.jgCapture||null,err:r.dataset.jgCaptureError||null," +
-  "hasCanvas:!!c,cw:c?c.clientWidth:0,ch:c?c.clientHeight:0,bw:c?c.width:0,bh:c?c.height:0};})()";
+  "hasCanvas:!!c,cw:c?c.clientWidth:0,ch:c?c.clientHeight:0,bw:c?c.width:0,bh:c?c.height:0," +
+  "loading:!!document.querySelector('[data-shell-code-loading]')};})()";
 export const RAF_EXPR =
   "new Promise(function(res){requestAnimationFrame(function(){requestAnimationFrame(function(){res(1);});});})";
 
@@ -601,7 +634,8 @@ export async function waitForHonestFrame(session, url, timeoutMs) {
     if (s && s.cap !== null && s.cap !== undefined) handshakeSeen = true;
     if (s && s.cap === "error") throw new Error("page reported a capture error: " + (s.err || "unknown"));
     if (s && s.cap === "ready") return s;
-    if (!handshakeSeen && s && s.hasCanvas && s.cw > 10 && s.ch > 10 && s.bw > 10 && s.bh > 10) return s;
+    // The shell's "Loading game view…" fallback can sit beside an already-sized canvas; never call that ready.
+    if (!handshakeSeen && s && !s.loading && s.hasCanvas && s.cw > 10 && s.ch > 10 && s.bw > 10 && s.bh > 10) return s;
     await sleep(100);
   }
   throw new Error(
@@ -762,91 +796,57 @@ const shootMjs = `#!/usr/bin/env node
  */
 import { join, resolve } from "node:path";
 import {
-  DEVICES,
+  awaitGameView,
+  captureFlagHelp,
+  CAPTURE_FLAGS,
   emulateDevice,
   ensureDevServer,
   launchChrome,
   openPage,
+  parsePortableArgs,
+  portableViewport,
   RAF_EXPR,
   screenshotTo,
   shutdown,
-  shutdownOnSignal,
   sleep,
-  waitForDebuggerPort,
+  waitForDebugger,
   waitForHonestFrame,
 } from "./browser.mjs";
 
 const HELP = [
   "shoot.mjs — screenshot this JGengine game (WebGL-safe, dependency-free)",
   "",
-  "  --url <url>       page to capture (default http://127.0.0.1:<port>)",
-  "  --port <n>        dev-server port to use/start (default 5173)",
-  "  --device <name>   desktop | mobile | mobile-landscape (default desktop)",
-  "  --width <n>       viewport width override",
-  "  --height <n>      viewport height override",
-  "  --out <path>      output PNG (default shots/shot.png)",
-  "  --settle <ms>     extra wait after first honest frame (default 2000)",
-  "  --timeout <s>     readiness/capture timeout in seconds (default 60)",
-  "  --help            show this text",
+  captureFlagHelp("shoot", "bundled", CAPTURE_FLAGS),
   "",
   "Needs Chrome/Chromium (set CHROME_PATH if not auto-detected).",
   "To play/test the game from the CLI, see scripts/drive.mjs (bun run drive).",
 ].join("\\n");
 
-function parseArgs(argv) {
-  const args = {
-    url: undefined,
-    port: 5173,
-    device: "desktop",
-    width: undefined,
-    height: undefined,
-    out: undefined,
-    settle: 2000,
-    timeoutMs: 60_000,
-    help: false,
-  };
-  for (let i = 0; i < argv.length; i += 1) {
-    const v = argv[i];
-    if (v === "--url") args.url = argv[++i];
-    else if (v === "--port") args.port = Number(argv[++i]);
-    else if (v === "--device") args.device = argv[++i];
-    else if (v === "--width") args.width = Number(argv[++i]);
-    else if (v === "--height") args.height = Number(argv[++i]);
-    else if (v === "--out") args.out = argv[++i];
-    else if (v === "--settle") args.settle = Number(argv[++i]);
-    else if (v === "--timeout") args.timeoutMs = Number(argv[++i]) * 1000;
-    else if (v === "--help" || v === "-h") args.help = true;
-    else throw new Error("unknown argument: " + v);
-  }
-  if (!DEVICES[args.device]) {
-    throw new Error("--device must be desktop, mobile, or mobile-landscape (got " + args.device + ")");
-  }
-  return args;
-}
-
 async function main() {
-  const args = parseArgs(process.argv.slice(2));
-  if (args.help) {
+  const parsed = parsePortableArgs("shoot", process.argv.slice(2));
+  if (parsed.help) {
     console.log(HELP);
     return 0;
   }
-
-  const profile = DEVICES[args.device];
-  const width = Number.isFinite(args.width) ? args.width : profile.width;
-  const height = Number.isFinite(args.height) ? args.height : profile.height;
-  const base = "http://127.0.0.1:" + args.port;
-  const target = new URL(args.url ?? base);
+  const o = parsed.options;
+  const { profile, width, height } = portableViewport(o);
+  const port = o.port !== undefined ? Number(o.port) : 5173;
+  const settle = o.settle !== undefined ? Number(o.settle) : 2000;
+  const timeoutMs = (o.timeout !== undefined ? Number(o.timeout) : 60) * 1000;
+  const base = "http://127.0.0.1:" + port;
+  const target = new URL(o.url ?? base);
   target.searchParams.set("capture", "1"); // honored by hosts that set data-jg-capture; ignored otherwise
+  for (const pair of o.param ?? []) target.searchParams.set(pair.slice(0, pair.indexOf("=")), pair.slice(pair.indexOf("=") + 1));
   const url = target.toString();
-  const outPath = resolve(args.out ?? join("shots", "shot.png"));
+  const outPath = resolve(o.out ?? join("shots", "shot.png"));
 
-  const server = await ensureDevServer(args.url ?? base, args.port);
-  const chrome = launchChrome(0, "jg-shoot-");
-  shutdownOnSignal(chrome, server);
+  const server = await ensureDevServer(o.url ?? base, port);
+  const debugPort = 9200 + Math.floor(Date.now() % 700);
+  const chrome = launchChrome(debugPort, "jg-shoot-");
 
   let exitCode = 0;
   try {
-    const debugPort = await waitForDebuggerPort(chrome, 30_000);
+    await waitForDebugger(debugPort, 30_000);
     const session = await openPage(debugPort);
     try {
       await session.send("Page.enable");
@@ -854,7 +854,7 @@ async function main() {
       // The fix for R3F's 300x150 default: give the page a real viewport BEFORE it lays out.
       await emulateDevice(session, profile, width, height);
       await session.send("Page.navigate", { url });
-      const frame = await waitForHonestFrame(session, url, args.timeoutMs);
+      const frame = await waitForHonestFrame(session, url, timeoutMs);
       if (frame && frame.bw === 300 && frame.bh === 150) {
         console.error(
           "shoot: warning — canvas backing store is 300x150 (React-Three-Fiber's unsized default). " +
@@ -863,15 +863,16 @@ async function main() {
       }
       // Let the scene paint a couple of frames, then settle for late assets.
       await session.evaluate(RAF_EXPR, { awaitPromise: true });
-      await sleep(Number.isFinite(args.settle) ? args.settle : 2000);
-      await screenshotTo(session, outPath, 10_000, args.timeoutMs);
-      console.log(outPath + " (" + width + "x" + height + " " + args.device + ")");
+      await sleep(settle);
+      await awaitGameView(session, timeoutMs, { sleep, now: () => Date.now() });
+      await screenshotTo(session, outPath, 10_000, timeoutMs);
+      console.log(outPath + " (" + width + "x" + height + " " + (o.device ?? "desktop") + ")");
     } finally {
       session.close();
     }
   } catch (error) {
     exitCode = 1;
-    console.error("shoot: " + (error instanceof Error ? error.message : String(error)));
+    console.error("shoot: " + (error instanceof Error ? error.message : String(error)).replace(/^(drive|shoot): /, ""));
   } finally {
     shutdown(chrome, server);
   }
@@ -881,7 +882,7 @@ async function main() {
 try {
   process.exit(await main());
 } catch (error) {
-  console.error("shoot: " + (error instanceof Error ? error.message : String(error)));
+  console.error("shoot: " + (error instanceof Error ? error.message : String(error)).replace(/^(drive|shoot): /, ""));
   process.exit(1);
 }
 `;
@@ -907,116 +908,63 @@ const driveMjs = `#!/usr/bin/env node
  * running page. --playtest samples the game's capture.probe metrics while your
  * --key/--click-at steps drive input and prints a JSON progress/softlock verdict.
  */
-import { join, resolve } from "node:path";
+import { isAbsolute, join, resolve } from "node:path";
 import {
-  DEVICES,
+  awaitGameView,
+  captureFlagHelp,
+  CAPTURE_FLAGS,
   dispatchClickAt,
   parseClickAt,
   findClickPoint,
   driveInputPointExpr,
   emulateDevice,
   ensureDevServer,
+  holdDriveInput,
   launchChrome,
   openPage,
+  parsePortableArgs,
+  portableViewport,
   RAF_EXPR,
   screenshotTo,
   shutdown,
-  shutdownOnSignal,
   sleep,
-  waitForDebuggerPort,
+  waitForDebugger,
   waitForHonestFrame,
 } from "./browser.mjs";
 
 const HELP = [
   "drive.mjs — play/test this JGengine game from the CLI (WebGL-safe, dependency-free)",
   "",
-  "Steps run in the order given:",
-  '  --click "<text>"    scroll to and click actionable text (case-insensitive)',
-  "  --click-at <x,y>    native left click in CSS viewport pixels (within width/height)",
-  "  --right-click-at <x,y>  native right click there (RTS move/attack/gather orders, context menus)",
-  '  --double-click "<text>"  double-click actionable text',
-  '  --fill "<label>=<value>" replace a text field by its accessible label',
-  "  --key <CODE:ms>     hold a key (e.g. KeyW:2500) for the given milliseconds",
-  "  --wait <ms>         pause before the next step",
-  "  --shot <name>       screenshot to shots/<name>.png (default step if none given)",
-  "  --rpc <json>        call the page's agent/editor bridge with this JSON payload",
-  "",
-  "Session:",
-  "  --url <url>         page to drive (default http://127.0.0.1:<port>)",
-  "  --port <n>          dev-server port to use/start (default 5173)",
-  "  --device <name>     desktop | mobile | mobile-landscape (default desktop)",
-  "  --width/--height    viewport overrides",
-  "  --timeout <s>       readiness/capture timeout in seconds (default 60)",
-  "",
-  "Playtest (softlock/progress rung — game must expose capture.probe):",
-  "  --playtest          sample probe metrics while steps run; print JSON verdict",
-  "  --strict            exit nonzero on a softlock or missing probe",
-  "  --seed <n>          forwarded as ?seed=n and echoed (default 1)",
-  "  --sample <ms>       probe sampling interval (default 250)",
-  "  --softlock <ms>     flat-progress span under input that counts as a softlock (default 2000)",
-  "  --epsilon <n>       smallest metric change that counts as progress (default 0.001)",
-  "  --help              show this text",
+  captureFlagHelp("drive", "bundled", CAPTURE_FLAGS),
   "",
   "Needs Chrome/Chromium (set CHROME_PATH if not auto-detected).",
 ].join("\\n");
 
-const parseDriveFill = ${parseDriveFill.toString()};
-
 function parseArgs(argv) {
+  const parsed = parsePortableArgs("drive", argv);
+  const o = parsed.options;
   const args = {
-    url: undefined,
-    port: 5173,
-    device: "desktop",
-    width: undefined,
-    height: undefined,
-    timeoutMs: 60_000,
-    steps: [],
-    playtest: false,
-    strict: false,
-    seed: 1,
-    sampleMs: 250,
-    softlockMs: 2000,
-    epsilon: 1e-3,
-    help: false,
+    help: parsed.help,
+    url: o.url,
+    port: o.port !== undefined ? Number(o.port) : 5173,
+    device: o.device ?? "desktop",
+    viewport: portableViewport(o),
+    settle: o.settle !== undefined ? Number(o.settle) : 0,
+    params: o.param ?? [],
+    timeoutMs: (o.timeout !== undefined ? Number(o.timeout) : 60) * 1000,
+    steps: parsed.steps,
+    playtest: o.playtest === true,
+    strict: o.strict === true,
+    seed: o.seed !== undefined ? Number(o.seed) : 1,
+    sampleMs: o.sample !== undefined ? Number(o.sample) : 250,
+    softlockMs: o.softlock !== undefined ? Number(o.softlock) : 2000,
+    epsilon: o.epsilon !== undefined ? Number(o.epsilon) : 1e-3,
   };
-  for (let i = 0; i < argv.length; i += 1) {
-    const v = argv[i];
-    if (v === "--url") args.url = argv[++i];
-    else if (v === "--port") args.port = Number(argv[++i]);
-    else if (v === "--device") args.device = argv[++i];
-    else if (v === "--width") args.width = Number(argv[++i]);
-    else if (v === "--height") args.height = Number(argv[++i]);
-    else if (v === "--timeout") args.timeoutMs = Number(argv[++i]) * 1000;
-    else if (v === "--click" || v === "--double-click") {
-      const text = argv[++i];
-      if (!text || text.startsWith("--")) throw new Error(v + " requires target text");
-      args.steps.push({ kind: v === "--click" ? "click" : "double-click", text });
-    }
-    else if (v === "--fill") args.steps.push({ kind: "fill", ...parseDriveFill(argv[++i]) });
-    else if (v === "--click-at" || v === "--right-click-at") args.steps.push({ kind: "clickAt", spec: argv[++i] ?? "", button: v === "--right-click-at" ? "right" : "left" });
-    else if (v === "--wait") args.steps.push({ kind: "wait", ms: Number(argv[++i] ?? 500) });
-    else if (v === "--key") {
-      const spec = argv[++i] ?? "KeyW:1000";
-      const colon = spec.lastIndexOf(":");
-      const code = colon > 0 ? spec.slice(0, colon) : spec;
-      const holdMs = colon > 0 ? Number(spec.slice(colon + 1)) : 1000;
-      args.steps.push({ kind: "key", code, holdMs });
-    } else if (v === "--shot") args.steps.push({ kind: "shot", name: argv[++i] ?? "drive" });
-    else if (v === "--rpc") args.steps.push({ kind: "rpc", json: argv[++i] ?? "{}" });
-    else if (v === "--playtest") args.playtest = true;
-    else if (v === "--strict") args.strict = true;
-    else if (v === "--seed") args.seed = Number(argv[++i] ?? args.seed);
-    else if (v === "--sample") args.sampleMs = Number(argv[++i] ?? args.sampleMs);
-    else if (v === "--softlock") args.softlockMs = Number(argv[++i] ?? args.softlockMs);
-    else if (v === "--epsilon") args.epsilon = Number(argv[++i] ?? args.epsilon);
-    else if (v === "--help" || v === "-h") args.help = true;
-    else throw new Error("unknown argument: " + v);
-  }
-  if (!DEVICES[args.device]) {
-    throw new Error("--device must be desktop, mobile, or mobile-landscape (got " + args.device + ")");
-  }
-  if (!args.help && !args.playtest && !args.steps.some((s) => s.kind === "shot" || s.kind === "rpc")) {
+  if (!args.help && !args.playtest && !args.steps.some((s) => s.kind === "shot" || s.kind === "rpc" || s.kind === "probe")) {
     args.steps.push({ kind: "shot", name: "drive" });
+  }
+  if (args.steps.some((s) => s.kind === "reload") && args.playtest) {
+    throw new Error("--reload cannot reset the clock during --playtest; use a separate recovery drive");
   }
   return args;
 }
@@ -1053,38 +1001,10 @@ const mouseButtonForCode = ${mouseButtonForCode.toString()};
 const gameSurfaceCenter = ${gameSurfaceCenter.toString()};
 
 async function holdKey(session, code, holdMs) {
-  await session.send("Page.bringToFront");
-  await session.evaluate("(" + focusGameSurface.toString() + ")(document)");
-  await session.evaluate("(() => { if (globalThis.__jgFrames !== undefined) return; globalThis.__jgFrames = 0; const tick = () => { globalThis.__jgFrames++; requestAnimationFrame(tick); }; requestAnimationFrame(tick); })()");
-  const startFrames = await session.evaluate("globalThis.__jgFrames ?? 0");
-  const deadlineMs = Date.now() + holdMs;
-  const waitHold = async () => {
-    for (;;) {
-      await sleep(100);
-      const framesElapsed = (await session.evaluate("globalThis.__jgFrames ?? 0")) - startFrames;
-      if (holdComplete({ nowMs: Date.now(), deadlineMs, hardCapMs: deadlineMs + 20000, framesElapsed })) break;
-    }
-  };
-  const mouse = mouseButtonForCode(code);
-  if (mouse !== null) {
-    const point = JSON.parse(await session.evaluate("JSON.stringify((" + gameSurfaceCenter.toString() + ")(document))"));
-    if (point === null) throw new Error("--key " + code + " needs a play canvas to hold the button over");
-    await session.send("Input.dispatchMouseEvent", { type: "mouseMoved", x: point.x, y: point.y, button: "none", buttons: 0 });
-    await session.send("Input.dispatchMouseEvent", { type: "mousePressed", x: point.x, y: point.y, button: mouse.button, buttons: mouse.buttons, clickCount: 1 });
-    try { await waitHold(); } finally {
-      await session.send("Input.dispatchMouseEvent", { type: "mouseReleased", x: point.x, y: point.y, button: mouse.button, buttons: 0, clickCount: 1 });
-    }
-    return;
-  }
-  const key = code.startsWith("Key") ? code.slice(3).toLowerCase() : code;
-  await session.send("Input.dispatchKeyEvent", { type: "keyDown", code, key });
-  try { await waitHold(); } finally {
-    await session.send("Input.dispatchKeyEvent", { type: "keyUp", code, key });
-  }
+  await holdDriveInput(session, code, holdMs, { focusGameSurface, holdComplete, mouseButtonForCode, gameSurfaceCenter, sleep, now: () => Date.now() });
 }
 
 async function rpc(session, json) {
-  JSON.parse(json); // fail fast on malformed payloads, before touching the page
   const value = await session.evaluate(
     "(async function(){var host=globalThis.__jgengineAgent||globalThis.__jgengineEditorHost;" +
       "if(host===undefined)return JSON.stringify({ok:false,error:'no agent bridge or editor host on this page'});" +
@@ -1185,6 +1105,13 @@ function summarizePlaytest(samples, options) {
   };
 }
 
+async function navigate(session, url, timeoutMs, settle) {
+  await session.send("Page.navigate", { url });
+  await waitForHonestFrame(session, url, timeoutMs);
+  await session.evaluate(RAF_EXPR, { awaitPromise: true });
+  await sleep(500 + settle);
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   if (args.help) {
@@ -1192,34 +1119,30 @@ async function main() {
     return 0;
   }
 
-  const profile = DEVICES[args.device];
-  const width = Number.isFinite(args.width) ? args.width : profile.width;
-  const height = Number.isFinite(args.height) ? args.height : profile.height;
+  const { profile, width, height } = args.viewport;
   for (const step of args.steps) {
-    if (step.kind === "clickAt") step.point = parseClickAt(step.spec, width, height);
+    if (step.kind === "click-at") step.point = parseClickAt(step.spec, width, height);
   }
   const base = "http://127.0.0.1:" + args.port;
   const target = new URL(args.url ?? base);
   target.searchParams.set("capture", "1");
+  for (const pair of args.params) target.searchParams.set(pair.slice(0, pair.indexOf("=")), pair.slice(pair.indexOf("=") + 1));
   if (args.playtest) target.searchParams.set("seed", String(args.seed));
   const url = target.toString();
 
   const server = await ensureDevServer(args.url ?? base, args.port);
-  const chrome = launchChrome(0, "jg-drive-");
-  shutdownOnSignal(chrome, server);
+  const debugPort = 9200 + Math.floor(Date.now() % 700);
+  const chrome = launchChrome(debugPort, "jg-drive-");
 
   let exitCode = 0;
   try {
-    const debugPort = await waitForDebuggerPort(chrome, 30_000);
+    await waitForDebugger(debugPort, 30_000);
     const session = await openPage(debugPort);
     try {
       await session.send("Page.enable");
       await session.send("Runtime.enable");
       await emulateDevice(session, profile, width, height);
-      await session.send("Page.navigate", { url });
-      await waitForHonestFrame(session, url, args.timeoutMs);
-      await session.evaluate(RAF_EXPR, { awaitPromise: true });
-      await sleep(500);
+      await navigate(session, url, args.timeoutMs, args.settle);
 
       const samples = [];
       let sampling = args.playtest;
@@ -1237,12 +1160,17 @@ async function main() {
       for (const step of args.steps) {
         if (step.kind === "click" || step.kind === "double-click") await click(session, step.text, step.kind === "double-click" ? 2 : 1);
         else if (step.kind === "fill") await fill(session, step.label, step.value);
-        else if (step.kind === "clickAt") await dispatchClickAt(session, step.point, step.button);
+        else if (step.kind === "click-at") await dispatchClickAt(session, step.point, step.button);
         else if (step.kind === "key") await holdKey(session, step.code, step.holdMs);
         else if (step.kind === "wait") await sleep(step.ms);
-        else if (step.kind === "rpc") await rpc(session, step.json);
+        else if (step.kind === "reload") await navigate(session, url, args.timeoutMs, args.settle);
+        else if (step.kind === "rpc") {
+          await rpc(session, step.json);
+          if (step.summarized) console.error('drive: debug_snapshot printed its summary; pass {"method":"debug_snapshot","detail":"full"} for everything');
+        } else if (step.kind === "probe") console.log(JSON.stringify({ probe: step.name, metrics: await readProbe(session) }));
         else {
-          const outPath = resolve(join("shots", step.name + ".png"));
+          const outPath = step.out !== undefined && isAbsolute(step.out) ? step.out : resolve(join("shots", step.name + ".png"));
+          await awaitGameView(session, args.timeoutMs, { sleep, now: () => Date.now() });
           await screenshotTo(session, outPath, 10_000, args.timeoutMs);
           console.log(outPath);
         }
@@ -1269,7 +1197,7 @@ async function main() {
               "(threshold " + args.softlockMs + "ms, seed " + args.seed + "). The loop did not advance.",
           );
           if (args.strict) exitCode = 1;
-        } else if (args.steps.every((step) => step.kind !== "key" && step.kind !== "clickAt")) {
+        } else if (args.steps.every((step) => step.kind !== "key" && step.kind !== "click-at")) {
           console.error("drive: --playtest ran with no --key or --click-at step — gameplay input is unproven.");
         }
       }
@@ -1278,7 +1206,7 @@ async function main() {
     }
   } catch (error) {
     exitCode = 1;
-    console.error("drive: " + (error instanceof Error ? error.message : String(error)));
+    console.error("drive: " + (error instanceof Error ? error.message : String(error)).replace(/^(drive|shoot): /, ""));
   } finally {
     shutdown(chrome, server);
   }
@@ -1288,7 +1216,7 @@ async function main() {
 try {
   process.exit(await main());
 } catch (error) {
-  console.error("drive: " + (error instanceof Error ? error.message : String(error)));
+  console.error("drive: " + (error instanceof Error ? error.message : String(error)).replace(/^(drive|shoot): /, ""));
   process.exit(1);
 }
 `;

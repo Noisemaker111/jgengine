@@ -13,12 +13,15 @@ describe("shared drive device profiles", () => {
     for (const invalid of [undefined, "phone", "both", "toString", "__proto__"]) {
       expect(() => parseCaptureDevice(invalid)).toThrow("--device must be");
     }
-    for (const flags of [["--device"], ["--device", "phone"]]) {
+    for (const [flags, message] of [
+      [["--device"], "--device requires a value <desktop|mobile|mobile-landscape>"],
+      [["--device", "phone"], "--device must be"],
+    ] as const) {
       const result = spawnSync(process.execPath, ["scripts/drive-dev.ts", ...flags, "--help"], {
         cwd: import.meta.dir + "/..", encoding: "utf8", timeout: 5_000,
       });
       expect(result.status).toBe(1);
-      expect(result.stderr).toContain("--device must be");
+      expect(result.stderr).toContain(message);
     }
   });
 

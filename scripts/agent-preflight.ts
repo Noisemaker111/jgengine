@@ -152,11 +152,12 @@ const GENERATED_CHECKS: readonly { name: string; args: readonly string[] }[] = [
   { name: "check-source-paths", args: ["scripts/sourcePaths.ts", "--check"] },
 ];
 
-/** The rest of CI's `quick` job: cheap source checks, so preflight fails where `quick` would. */
+/** Cheap source checks CI runs (`quick` job and check-types), so preflight fails where CI would. */
 const QUICK_CHECKS: readonly { name: string; args: readonly string[] }[] = [
   { name: "check-stage-skills", args: ["scripts/stage-skills.ts", "--check"] },
   { name: "check-skills", args: ["scripts/check-skill-sync.ts"] },
   { name: "check-changelog", args: ["scripts/check-changelog.ts"] },
+  { name: "check-test-spawn-timeouts", args: ["scripts/check-test-spawn-timeouts.ts"] },
 ];
 
 function runCheck(args: readonly string[]): Promise<{ ok: boolean; output: string }> {

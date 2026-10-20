@@ -20,7 +20,7 @@ describe("drive form arguments", () => {
         for (const args of [["--fill"], ["--fill", "Scene name"], ["--fill", "=Course"], ["--fill", " =Course"], ["--fill", "--click=Course"], ["--double-click"], ["--double-click", "--wait"]]) {
           const result = spawnSync(process.execPath, [script, ...args, "--help"], { encoding: "utf8", timeout: 5_000 });
           expect(result.status).toBe(1);
-          expect(result.stderr).toMatch(/--fill expects|requires target text/);
+          expect(result.stderr).toMatch(/--fill expects|requires a value/);
           expect(result.stderr).not.toContain("starting");
         }
         const help = spawnSync(process.execPath, [script, "--fill", "Scene name=Course=dusk", "--double-click", "Rock", "--help"], { encoding: "utf8", timeout: 5_000 });

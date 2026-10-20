@@ -13,6 +13,7 @@ import { runDoctor } from "../doctor";
 import { runHarness } from "../harness";
 import { cliVersion, findUp, pickPackageManager, readPackageJson, sdkVersion } from "../pkg";
 import { runSkills } from "../skills";
+import { runningCli, staleCliWarnings } from "../staleCli";
 import { runUpgrade } from "../upgrade";
 import { editorScaffold } from "../templates";
 
@@ -184,6 +185,10 @@ function runEditorMcp(argv: string[]): number {
 }
 
 const [command, ...rest] = process.argv.slice(2);
+if (command !== undefined && !["help", "--help", "-h", "--version", "-v"].includes(command)) {
+  const running = runningCli(dirname(fileURLToPath(import.meta.url)), cliVersion(), sdkVersion());
+  for (const warning of staleCliWarnings(process.cwd(), running)) console.error(`jgengine: warning — ${warning}`);
+}
 
 switch (command) {
   case "create":

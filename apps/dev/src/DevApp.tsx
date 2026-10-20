@@ -63,7 +63,17 @@ export function DevApp({ gameId }: { gameId: string }) {
       setCaptureStatus("preparing");
       return;
     }
-    return armCaptureReady(MODE, resolvedSettleMs() ?? playable?.capture?.settleMs);
+    const start = playable === null ? null : resolveCaptureRun({
+      capture: playable.capture,
+      stateParam: resolvedState(),
+      run: resolvedRun(),
+      mode: MODE,
+      gameId,
+    });
+    return armCaptureReady(MODE, resolvedSettleMs() ?? playable?.capture?.settleMs, {
+      expectRun: MODE === "play" && start !== null && start.error === null && start.captureRun.length > 0,
+      explicitStart: start !== null && start.source !== null && start.captureRun.length > 0,
+    });
   }, [playable]);
   useEffect(() => {
     if (!captureArmed()) return;
@@ -166,7 +176,7 @@ export function DevApp({ gameId }: { gameId: string }) {
   if (scenarioPending) return <LoadingPanel label="Staging scenario…" />;
   const stageScenario =
     STAGE && scenario !== undefined ? (ctx: GameContext) => scenario(ctx, playable) : undefined;
-  const { captureRun, error: captureRunError } = resolveCaptureRun({
+  const { captureRun, error: captureRunError, source: captureRunSource } = resolveCaptureRun({
     capture: playable.capture,
     stateParam: resolvedState(),
     run: resolvedRun(),
@@ -178,6 +188,7 @@ export function DevApp({ gameId }: { gameId: string }) {
     captureRun,
     stageScenario,
     gameId,
+    strict: captureRunSource === "state" || captureRunSource === "run",
   });
   return <GamePlayerShell playable={playable} multiplayer={multiplayer} onContextReady={onContextReady} />;
 }

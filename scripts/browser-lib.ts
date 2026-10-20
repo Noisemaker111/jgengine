@@ -60,8 +60,20 @@ export function scaleProfile(profile: DeviceProfile, size: SizeMode): DeviceProf
   };
 }
 
-export async function applyDevice(session: CdpSession, device: Device, size: SizeMode = "full"): Promise<void> {
-  const profile = scaleProfile(DEVICES[device], size);
+/** Viewport overrides (`--width`/`--height`) in CSS pixels, applied before `--size half` halves them. */
+export interface ViewportOverride {
+  width?: number;
+  height?: number;
+}
+
+/** The device profile a capture actually uses: device defaults, explicit overrides, then size. */
+export function captureProfile(device: Device, size: SizeMode = "full", override: ViewportOverride = {}): DeviceProfile {
+  const base = DEVICES[device];
+  return scaleProfile({ ...base, width: override.width ?? base.width, height: override.height ?? base.height }, size);
+}
+
+export async function applyDevice(session: CdpSession, device: Device, size: SizeMode = "full", override: ViewportOverride = {}): Promise<void> {
+  const profile = captureProfile(device, size, override);
   await session.send("Emulation.setDeviceMetricsOverride", {
     width: profile.width,
     height: profile.height,
@@ -1147,7 +1159,8 @@ const CAPTURE_READINESS_EXPR = `(() => {
   return {
     status: document.documentElement.dataset.jgCapture ?? null,
     error: document.documentElement.dataset.jgCaptureError ?? null,
-    sizedCanvas: canvas !== null && canvas.clientWidth > 10 && canvas.clientHeight > 10 && canvas.width > 10 && canvas.height > 10
+    sizedCanvas: canvas !== null && canvas.clientWidth > 10 && canvas.clientHeight > 10 && canvas.width > 10 && canvas.height > 10 &&
+      document.querySelector("[data-shell-code-loading]") === null
   };
 })()`;
 
@@ -1266,6 +1279,8 @@ export async function navigateCapturePageWithRetry(
   for (let attempt = 1; ; attempt += 1) {
     try {
       await navigateCapturePage(session, url, timeoutMs, options);
+      const note = await session.evaluate<string | null>(`document.documentElement.dataset.jgCaptureNote ?? null`);
+      if (typeof note === "string" && note.length > 0) console.error(`capture: ${note}`);
       return;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
