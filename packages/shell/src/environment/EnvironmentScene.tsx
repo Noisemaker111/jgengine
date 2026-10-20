@@ -396,7 +396,12 @@ export function EnvironmentScene({ feature }: EnvironmentSceneProps) {
       {roads.map((entry, index) => (
         <RoadRibbons key={`road-${index}`} road={entry} field={field} paths={roadNetwork.roadPaths[index] ?? []} />
       ))}
-      <RoadJunctions surfaces={roadNetwork.junctionSurfaces} junctions={junctions} field={field} />
+      <RoadJunctions
+        surfaces={roadNetwork.junctionSurfaces}
+        junctions={junctions}
+        field={field}
+        surfaceDetail={roads.some((road) => road.surface !== false)}
+      />
       {structures.map((entry, index) => (
         <Structures key={`structures-${index}`} structures={entry} field={field} />
       ))}

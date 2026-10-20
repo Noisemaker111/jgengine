@@ -515,6 +515,11 @@ export interface RoadEnvironmentConfig {
   elevation?: number;
   /** Sidewalk bands on both edges; `false` for none. Default `{ width: 2.6, color: "#a7adb8" }`. */
   sidewalk?: { width?: number; color?: string } | false;
+  /**
+   * Procedural surface the carriageway shades with, named like terrain paint (`"asphalt"`,
+   * `"gravel"`, `"dirt"`). `false` keeps flat colour. Default `"road"` (asphalt grain and tyre wear).
+   */
+  surface?: string | false;
 }
 
 /** Resolved road descriptor produced by {@link road} and rendered by the shell environment scene. */
@@ -523,6 +528,8 @@ export type RoadEnvironmentDescriptor = { kind: "road" } & Required<
 > & {
   /** Resolved sidewalk band, or `false` when the road has none. */
   sidewalk: { width: number; color: string } | false;
+  /** Procedural carriageway surface; absent means `"road"`, `false` flat colour. */
+  surface?: string | false;
 };
 
 export type WeatherEnvironmentDescriptor = RainEnvironmentDescriptor | SnowEnvironmentDescriptor;
@@ -907,6 +914,7 @@ export function road(config: RoadEnvironmentConfig): RoadEnvironmentDescriptor {
       config.sidewalk === false
         ? false
         : { width: config.sidewalk?.width ?? 2.6, color: config.sidewalk?.color ?? "#a7adb8" },
+    ...(config.surface === undefined ? {} : { surface: config.surface }),
   };
 }
 

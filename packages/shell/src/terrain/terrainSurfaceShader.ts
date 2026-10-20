@@ -1,3 +1,32 @@
+/** Integer-hash value noise (`jgHashUint`, `jgVNoise`, `jgFbm`) every surface chunk builds on. */
+export const NOISE_GLSL = /* glsl */ `
+uint jgHashUint(uvec2 v){
+  uint x = v.x * 1664525u + v.y * 1013904223u;
+  x = (x ^ (x >> 16u)) * 2246822519u;
+  x = (x ^ (x >> 13u)) * 3266489917u;
+  x = x ^ (x >> 16u);
+  return x;
+}
+float jgHash(vec2 p){
+  ivec2 i = ivec2(floor(p));
+  return float(jgHashUint(uvec2(i))) * (1.0 / 4294967296.0);
+}
+float jgVNoise(vec2 p){
+  vec2 i = floor(p); vec2 f = fract(p);
+  vec2 u = f * f * (3.0 - 2.0 * f);
+  float a = jgHash(i);
+  float b = jgHash(i + vec2(1.0, 0.0));
+  float c = jgHash(i + vec2(0.0, 1.0));
+  float d = jgHash(i + vec2(1.0, 1.0));
+  return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
+}
+float jgFbm(vec2 p){
+  float v = 0.0; float amp = 0.5;
+  for (int i = 0; i < 4; i++){ v += amp * jgVNoise(p); p *= 2.0; amp *= 0.5; }
+  return v;
+}
+`;
+
 /**
  * GLSL for the terrain surface pass: per-surface procedural ground (grass, dirt, gravel, rock, sand,
  * mud, snow, road) and the height-aware blend between painted layers. Needs `NOISE_GLSL` first.
@@ -216,4 +245,25 @@ vec2 jgPaintUv(vec2 wp){
   f = f * f * (3.0 - 2.0 * f);
   return (i + f + 0.5) / uPaintGrid;
 }
+`;
+
+/**
+ * Micro-normal from a surface height `jgBumpH` (metres) via screen-space derivatives; goes after
+ * `normal_fragment_maps`. Skipped on the low tier.
+ */
+export const SURFACE_BUMP_NORMAL_GLSL = /* glsl */ `
+#ifndef JG_SURFACE_LOW
+{
+  // Bump from the blended surface height (metres) via screen-space derivatives, unnormalised so the
+  // tilt is the true world slope of that height field at any distance.
+  vec3 jgSigX = dFdx(-vViewPosition);
+  vec3 jgSigY = dFdy(-vViewPosition);
+  vec2 jgDh = vec2(dFdx(jgBumpH), dFdy(jgBumpH));
+  vec3 jgR1 = cross(jgSigY, normal);
+  vec3 jgR2 = cross(normal, jgSigX);
+  float jgDet = dot(jgSigX, jgR1) * faceDirection;
+  vec3 jgGrad = sign(jgDet) * (jgDh.x * jgR1 + jgDh.y * jgR2);
+  normal = normalize(abs(jgDet) * normal - jgGrad);
+}
+#endif
 `;

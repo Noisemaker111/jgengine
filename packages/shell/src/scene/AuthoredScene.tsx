@@ -25,6 +25,16 @@ import type { TerrainField } from "@jgengine/core/world/terrain";
 import { getAssetGenerator } from "@jgengine/core/scene/assetGenerator";
 import { useGameContext } from "@jgengine/react/provider";
 
+import {
+  resolvePathSurface,
+  RIBBON_FRAME_ATTRIBUTE,
+  ribbonEdgeMargin,
+  ribbonSurfaceFrame,
+  useSurfaceRibbonMaterial,
+  type RibbonSurfaceStyle,
+} from "../terrain/surfaceRibbonMaterial";
+import { useTerrainQuality } from "../terrain/terrainQuality";
+
 import { createModelMapResolver } from "../render/resolveModel";
 import { InstancedScatter } from "../scatter/InstancedScatter";
 import { GeneratedAssetInstance } from "./GeneratedAssetRenderer";
@@ -138,32 +148,41 @@ function DrapedPath({
   width,
   color,
   field,
+  surface,
 }: {
   points: readonly (readonly [number, number])[];
   width: number;
   color: string;
   field: TerrainField;
+  surface: RibbonSurfaceStyle | null;
 }) {
+  const quality = useTerrainQuality();
+  const margin = surface === null ? 0 : ribbonEdgeMargin(surface);
   const geometry = useMemo(() => {
     // Fillet sharp turns first so bends read as smooth arcs, not overlapping rectangles.
     const rounded = roundPathCorners(points, Math.max(1.5, width * 0.9), 6);
-    const ribbon = buildRoadRibbon(rounded, width, (x, z) => field.sampleHeight(x, z), {
+    // A soft edge needs the ribbon wider than authored so the fade straddles the authored edge.
+    const ribbon = buildRoadRibbon(rounded, width + margin, (x, z) => field.sampleHeight(x, z), {
       // Generic authored paths (dirt roads, routes, corridors) drape on the shared road decal layer.
       elevation: GROUND_DECAL_LAYERS.road,
       maxSegmentLength: 1,
     });
     const geo = new THREE.BufferGeometry();
     geo.setAttribute("position", new THREE.BufferAttribute(ribbon.positions, 3));
+    geo.setAttribute(RIBBON_FRAME_ATTRIBUTE, new THREE.BufferAttribute(ribbonSurfaceFrame([ribbon.positions]), 3));
     geo.setIndex(new THREE.BufferAttribute(ribbon.indices, 1));
     geo.computeVertexNormals();
     return geo;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [points, width, field]);
+  }, [points, width, margin, field]);
   useEffect(() => () => geometry.dispose(), [geometry]);
+  const material = useSurfaceRibbonMaterial(
+    surface === null ? null : { ...surface, color, halfWidth: width / 2, quality },
+  );
   if (points.length < 2) return null;
   return (
-    <mesh geometry={geometry} receiveShadow>
-      <meshStandardMaterial color={color} roughness={1} metalness={0} side={THREE.DoubleSide} />
+    <mesh geometry={geometry} receiveShadow {...(material === null ? {} : { material })}>
+      {material === null ? <meshStandardMaterial color={color} roughness={1} metalness={0} side={THREE.DoubleSide} /> : null}
     </mesh>
   );
 }
@@ -179,14 +198,20 @@ export interface AuthoredPathsProps {
   field: TerrainField;
   /** Only render these path kinds; default renders every non-scatter path. */
   kinds?: readonly string[];
+  /**
+   * Shade paths with the terrain's procedural surfaces (dirt, gravel, paving), wear and soft edges.
+   * Default true; false keeps flat-colour ribbons. One path opts out with `meta.surfaceDetail: false`.
+   */
+  surfaceDetail?: boolean;
 }
 
 /**
  * Renders a document's non-scatter paths (roads, routes, corridors) as ground-draped ribbons — the
  * editor authors the polyline, the engine drapes it over the live terrain at runtime. Width comes
- * from `path.width`, color from `path.meta.color`/`path.color`. A game never hand-rolls path meshes.
+ * from `path.width`, color from `path.meta.color`/`path.color`, and the procedural surface from
+ * `path.meta.surface` or the kind (see `resolvePathSurface`). A game never hand-rolls path meshes.
  */
-export function AuthoredPaths({ document, field, kinds }: AuthoredPathsProps) {
+export function AuthoredPaths({ document, field, kinds, surfaceDetail = true }: AuthoredPathsProps) {
   const paths = document.paths.filter(
     (path) => !isScatterPath(path) && getSceneKindRenderer(path.kind) === undefined && (kinds === undefined || kinds.includes(path.kind)),
   );
@@ -199,6 +224,7 @@ export function AuthoredPaths({ document, field, kinds }: AuthoredPathsProps) {
           width={path.width ?? 4}
           color={pathColor(path.meta, path.color)}
           field={field}
+          surface={surfaceDetail ? resolvePathSurface(path.kind, path.width ?? 4, path.meta) : null}
         />
       ))}
     </>
@@ -287,6 +313,8 @@ export interface AuthoredSceneProps {
   field: TerrainField;
   /** Restrict rendered path kinds; default renders every non-scatter path. */
   pathKinds?: readonly string[];
+  /** Procedural surface, wear and soft edges on paths (default true); see {@link AuthoredPathsProps.surfaceDetail}. */
+  pathSurfaceDetail?: boolean;
   /**
    * Scatter palette item id → model asset id or `ModelConfig`; a mapped item GPU-instances the real
    * catalog GLB instead of the stylized proxy. Keyed by scatter `item` (not entity name — pass a
@@ -329,6 +357,7 @@ export function AuthoredScene({
   diagnostics = false,
   field,
   pathKinds,
+  pathSurfaceDetail = true,
   scatterModels,
   flockModels,
   assets,
@@ -352,7 +381,12 @@ export function AuthoredScene({
     <>
       <AuthoredWeatherLayer document={liveDocument} heightAt={field.sampleHeight} diagnostics={diagnostics} />
       {flockModels === undefined ? null : <AuthoredFlocks models={flockModels} assets={assets} />}
-      <AuthoredPaths document={liveDocument} field={field} {...(pathKinds === undefined ? {} : { kinds: pathKinds })} />
+      <AuthoredPaths
+        document={liveDocument}
+        field={field}
+        surfaceDetail={pathSurfaceDetail}
+        {...(pathKinds === undefined ? {} : { kinds: pathKinds })}
+      />
       <InstancedScatter instances={instances} {...(resolveItem === undefined ? {} : { resolveItem })} />
       <AuthoredStudios
         document={liveDocument}

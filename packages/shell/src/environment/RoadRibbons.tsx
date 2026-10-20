@@ -15,6 +15,14 @@ import {
 import { offsetPath, sidewalkWidthOf, type RoadJunction } from "@jgengine/core/world/streets";
 import type { TerrainField } from "@jgengine/core/world/terrain";
 
+import {
+  resolvePathSurface,
+  RIBBON_FRAME_ATTRIBUTE,
+  ribbonSurfaceFrame,
+  useSurfaceRibbonMaterial,
+} from "../terrain/surfaceRibbonMaterial";
+import { useTerrainQuality } from "../terrain/terrainQuality";
+
 /**
  * Decal sub-layers as small lifts above each road's authored base `elevation`, spaced by the
  * single-owner {@link GROUND_DECAL_LAYERS} table so the edge strip and lane paint never z-fight the
@@ -59,7 +67,9 @@ function mergeRibbons(ribbons: readonly RoadRibbon[]): BufferGeometry | null {
     vertexOffset += ribbon.positions.length;
     indexOffset += ribbon.indices.length;
   }
-  return toGeometry(positions, indices);
+  const geometry = toGeometry(positions, indices);
+  geometry?.setAttribute(RIBBON_FRAME_ATTRIBUTE, new BufferAttribute(ribbonSurfaceFrame(ribbons.map((r) => r.positions)), 3));
+  return geometry;
 }
 
 /** Convert a detected {@link RoadJunction} into the structural {@link RoadJunctionInput} the trimmer wants. @internal */
@@ -190,7 +200,9 @@ export function buildAuthoredRoadNetwork(
  * by {@link buildAuthoredRoadNetwork}): an asphalt ribbon, a curb/edge strip along each border, an
  * optional dashed centerline, and optional sidewalks. Because the sub-paths already stop at the
  * junction boundary, every layer naturally ends there — no ribbon ploughs through the crossing and
- * the dashed line no longer needs exclusion circles to skip intersections.
+ * the dashed line no longer needs exclusion circles to skip intersections. The carriageway, curbs and
+ * sidewalks shade with the terrain's procedural surfaces (`road.surface`, default asphalt with tyre
+ * wear); `surface: false` keeps them flat.
  */
 export function RoadRibbons({
   road,
@@ -245,15 +257,29 @@ export function RoadRibbons({
     return mergeRibbons(ribbons);
   }, [paths, road, field]);
 
+  const quality = useTerrainQuality();
+  const detailed = road.surface !== false;
+  const style = detailed ? resolvePathSurface("road", road.width, { surface: road.surface ?? "road" }) : null;
+  const asphaltMaterial = useSurfaceRibbonMaterial(
+    style === null ? null : { surface: style.surface, wear: style.wear, color: road.color, halfWidth: road.width / 2, quality },
+  );
+  const curbMaterial = useSurfaceRibbonMaterial(
+    detailed ? { surface: "concrete", color: curbColor, halfWidth: road.width / 2, roughness: 0.9, quality } : null,
+  );
+  const sidewalkColor = road.sidewalk === false ? "#a7adb8" : road.sidewalk.color;
+  const sidewalkMaterial = useSurfaceRibbonMaterial(
+    detailed && sidewalks !== null ? { surface: "pavement", color: sidewalkColor, halfWidth: road.width / 2, roughness: 0.9, scale: 1.6, quality } : null,
+  );
+
   if (asphalt === null) return null;
   return (
     <group>
-      <mesh geometry={asphalt} receiveShadow>
-        <meshStandardMaterial color={road.color} roughness={0.95} metalness={0} side={DoubleSide} />
+      <mesh geometry={asphalt} receiveShadow {...(asphaltMaterial === null ? {} : { material: asphaltMaterial })}>
+        {asphaltMaterial === null ? <meshStandardMaterial color={road.color} roughness={0.95} metalness={0} side={DoubleSide} /> : null}
       </mesh>
       {curbs !== null ? (
-        <mesh geometry={curbs} receiveShadow>
-          <meshStandardMaterial color={curbColor} roughness={0.9} metalness={0} side={DoubleSide} />
+        <mesh geometry={curbs} receiveShadow {...(curbMaterial === null ? {} : { material: curbMaterial })}>
+          {curbMaterial === null ? <meshStandardMaterial color={curbColor} roughness={0.9} metalness={0} side={DoubleSide} /> : null}
         </mesh>
       ) : null}
       {dashes !== null ? (
@@ -270,13 +296,8 @@ export function RoadRibbons({
         </mesh>
       ) : null}
       {sidewalks !== null ? (
-        <mesh geometry={sidewalks} receiveShadow>
-          <meshStandardMaterial
-            color={road.sidewalk === false ? "#a7adb8" : road.sidewalk.color}
-            roughness={0.9}
-            metalness={0}
-            side={DoubleSide}
-          />
+        <mesh geometry={sidewalks} receiveShadow {...(sidewalkMaterial === null ? {} : { material: sidewalkMaterial })}>
+          {sidewalkMaterial === null ? <meshStandardMaterial color={sidewalkColor} roughness={0.9} metalness={0} side={DoubleSide} /> : null}
         </mesh>
       ) : null}
     </group>

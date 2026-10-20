@@ -3,7 +3,19 @@ import { BufferAttribute, BufferGeometry, DoubleSide } from "three";
 import { buildRoadRibbon, GROUND_DECAL_LAYERS, type RoadPoint } from "@jgengine/core/world/roads";
 import { junctionMarkings, type RoadJunction } from "@jgengine/core/world/streets";
 import type { TerrainField } from "@jgengine/core/world/terrain";
+import { useSurfaceRibbonMaterial } from "../terrain/surfaceRibbonMaterial";
+import { useTerrainQuality } from "../terrain/terrainQuality";
 import type { JunctionSurface } from "./RoadRibbons";
+
+function JunctionPatch({ geometry, color, surfaceDetail }: { geometry: BufferGeometry; color: string; surfaceDetail: boolean }) {
+  const quality = useTerrainQuality();
+  const material = useSurfaceRibbonMaterial(surfaceDetail ? { surface: "road", color, halfWidth: 1, quality } : null);
+  return (
+    <mesh geometry={geometry} receiveShadow {...(material === null ? {} : { material })}>
+      {material === null ? <meshStandardMaterial color={color} roughness={0.95} metalness={0} side={DoubleSide} /> : null}
+    </mesh>
+  );
+}
 
 /** Lane paint sits the table's road→marking gap above the welded junction surface (also polygonOffset). */
 const MARKING_LIFT = GROUND_DECAL_LAYERS.marking - GROUND_DECAL_LAYERS.road;
@@ -56,10 +68,13 @@ export function RoadJunctions({
   surfaces,
   junctions,
   field,
+  surfaceDetail = true,
 }: {
   surfaces: readonly JunctionSurface[];
   junctions: readonly RoadJunction[];
   field: TerrainField;
+  /** Shade the welded surfaces with the asphalt procedural surface, matching the ribbons. Default true. */
+  surfaceDetail?: boolean;
 }) {
   const patches = useMemo(
     () =>
@@ -89,9 +104,7 @@ export function RoadJunctions({
   return (
     <group>
       {patches.map((patch, index) => (
-        <mesh key={`junction-${index}`} geometry={patch.geometry} receiveShadow>
-          <meshStandardMaterial color={patch.color} roughness={0.95} metalness={0} side={DoubleSide} />
-        </mesh>
+        <JunctionPatch key={`junction-${index}`} geometry={patch.geometry} color={patch.color} surfaceDetail={surfaceDetail} />
       ))}
       {markings.stops !== null ? (
         <mesh geometry={markings.stops} renderOrder={1}>

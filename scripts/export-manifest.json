@@ -983,6 +983,7 @@
     "./terrain/index",
     "./terrain/random",
     "./terrain/soilPatchMaterial",
+    "./terrain/surfaceRibbonMaterial",
     "./terrain/terrainDetailMaterial",
     "./terrain/terrainMath",
     "./terrain/terrainPaintColor",
