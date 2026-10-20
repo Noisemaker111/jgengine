@@ -34,7 +34,7 @@ A change to published-SDK source (`packages/<pkg>/src`) adds `changes/<branch-na
 
 ## Verify
 
-Run the focused tests and typecheck for the packages you touched while iterating (`bun --cwd=packages/<pkg> run test` and `bun --cwd=packages/<pkg> run check-types`; root `bun run check-types` when types cross packages). After committing, run `bun run ship:preflight`. PR CI runs the full gate (types, all tests, Games checks and smoke against the pin in `scripts/games-ref.txt`), so skip local `bun run gate` unless you changed the gate or are reproducing a CI failure. Move the Games pin with `bun run games:bump` in a PR of its own. Use `jgengine-verify` for scene, UI, or gameplay evidence.
+Run the focused tests and typecheck for the packages you touched while iterating (`bun --cwd=packages/<pkg> run test` and `bun --cwd=packages/<pkg> run check-types`; root `bun run check-types` when types cross packages). After committing, run `bun run ship:preflight`. PR CI runs the full gate (types, all tests, Games checks and smoke against the pin in `scripts/games-ref.txt`), so skip local `bun run gate` unless you changed the gate or are reproducing a CI failure. When a change can affect games, `bun run games:check [<id>]` type-checks and tests the games in `./Games` against this checkout's sources (no build or dist copying; `--published` compares with their installed SDK). Move the Games pin with `bun run games:bump` in a PR of its own. Use `jgengine-verify` for scene, UI, or gameplay evidence.
 
 Inspect `git status`, the full diff, and acceptance criteria before staging. Stage only the intended files and commit once the cohesive change is complete.
 

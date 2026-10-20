@@ -77,7 +77,7 @@ export function ProgressStrip({
       {title !== undefined ? (
         <div
           style={{
-            fontSize: 10,
+            fontSize: "var(--jg-type-xs, 12px)",
             letterSpacing: 1.4,
             textTransform: "uppercase",
             marginBottom: 4,

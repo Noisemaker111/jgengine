@@ -2,6 +2,8 @@ import { readFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import { Node, Project, ts, type JSDocableNode, type SourceFile } from "ts-morph";
 
+import { repoRoot, sourcePathEntries } from "./sourcePaths";
+
 export interface ApiCapability {
   slug: string;
   intent: string;
@@ -171,6 +173,9 @@ export function extractPackageSurface(packageDir: string): ApiPackage {
       jsx: ts.JsxEmit.ReactJSX,
       strict: true,
       skipLibCheck: true,
+      // Sibling packages resolve to source, so extraction never depends on a build.
+      baseUrl: repoRoot,
+      paths: sourcePathEntries(repoRoot),
     },
   });
   project.addSourceFilesAtPaths([

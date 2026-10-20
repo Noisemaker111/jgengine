@@ -43,6 +43,7 @@ import { useGameLayoutMode, useRegisterLayoutRegion } from "./gameViewport";
 import { useOptionalGamePhase } from "./hooks";
 import { useHudLayoutPersist } from "./hudLayoutPersist";
 import { useHudViewport } from "./hudViewport";
+import { hudFont, hudType } from "./hudTokens";
 
 /** Whether a HUD element opted into `showDuring` is visible in the current phase; `undefined` = always visible (default). */
 export function hudVisibleInPhase(showDuring: readonly GamePhase[] | undefined, phase: GamePhase): boolean {
@@ -649,7 +650,7 @@ export function HudCanvas({
                     borderRadius: 4,
                     background: "rgba(180, 20, 20, 0.95)",
                     color: "#fff",
-                    font: "600 10px/1.4 system-ui, sans-serif",
+                    font: `600 ${hudType("xs")}/1.4 ${hudFont.body}`,
                     whiteSpace: "nowrap",
                   }}
                 >
@@ -725,7 +726,7 @@ function HudChip({
           background: "rgba(10, 10, 14, 0.72)",
           border: "1px solid rgba(255, 255, 255, 0.22)",
           color: "rgba(255, 255, 255, 0.92)",
-          font: "600 11px/1.2 system-ui, sans-serif",
+          font: `600 ${hudType("xs")}/1.2 ${hudFont.body}`,
           letterSpacing: "0.04em",
           textTransform: "uppercase",
           cursor: "pointer",
@@ -983,7 +984,7 @@ export function HudPanel({
           borderRadius: 4,
           background: "rgba(10, 10, 14, 0.85)",
           color: "rgba(255, 255, 255, 0.9)",
-          font: "10px/1.5 system-ui, sans-serif",
+          font: `${hudType("xs")}/1.5 ${hudFont.body}`,
           whiteSpace: "nowrap",
         }}
       >

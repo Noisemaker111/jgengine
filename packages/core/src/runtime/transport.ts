@@ -38,7 +38,8 @@ export type RunCommandArgs = {
 
 export type TransportRunCommandResult =
   | { ok: true }
-  | { ok: false; reason: string };
+  /** `message` is the command's player-facing refusal text, when its `validate` gave one. */
+  | { ok: false; reason: string; message?: string };
 
 export type GameRuntimeServerView = {
   serverId: string;

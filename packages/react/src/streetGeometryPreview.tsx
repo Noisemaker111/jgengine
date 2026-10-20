@@ -5,6 +5,7 @@ import {
   type RoadJunctionInput,
   type RoadRibbon,
 } from "@jgengine/core/world/roads";
+import { hudType } from "./hudTokens";
 
 interface PreviewCase {
   name: string;
@@ -135,7 +136,7 @@ export function StreetGeometryPreview({ className }: { className?: string }) {
               <section key={entry.name} style={{ background: "#10263a", border: "1px solid #285174", borderRadius: 10, overflow: "hidden" }}>
                 <div style={{ padding: "8px 12px 3px", display: "flex", justifyContent: "space-between", gap: 8 }}>
                   <strong style={{ fontSize: 14 }}>{entry.name}</strong>
-                  <span style={{ color: "#67e8f9", fontSize: 11 }}>extent {extent.toFixed(1)}</span>
+                  <span style={{ color: "#67e8f9", fontSize: hudType("xs") }}>extent {extent.toFixed(1)}</span>
                 </div>
                 <svg viewBox="0 0 280 205" role="img" aria-label={`${entry.name} road mesh`} style={{ display: "block", width: "100%", height: "auto" }}>
                   <defs>
@@ -176,7 +177,7 @@ export function StreetGeometryPreview({ className }: { className?: string }) {
               ["#4ade80", "Terrain drape", "Every vertex sampled"],
               ["#fbbf24", "Offset continuity", "Positive and negative"],
             ].map(([color, label, detail]) => (
-              <div key={label} style={{ display: "grid", gridTemplateColumns: "12px 1fr auto", alignItems: "center", gap: 9, marginTop: 9, fontSize: 11 }}>
+              <div key={label} style={{ display: "grid", gridTemplateColumns: "12px 1fr auto", alignItems: "center", gap: 9, marginTop: 9, fontSize: hudType("xs") }}>
                 <span style={{ width: 10, height: 10, borderRadius: 2, background: color, boxShadow: `0 0 8px ${color}` }} />
                 <span style={{ color: "#e2edf5" }}>{label}</span>
                 <span style={{ color: "#82a9c2" }}>{detail}</span>

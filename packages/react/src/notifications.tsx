@@ -1,6 +1,7 @@
 import { useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
 
 import type { NotificationEntry, NotificationStore } from "@jgengine/core/game/notifications";
+import { hudType } from "./hudTokens";
 
 /** Subscribe to a notification store's live list. */
 export function useNotifications<TMeta = unknown>(store: NotificationStore<TMeta>): readonly NotificationEntry<TMeta>[] {
@@ -79,7 +80,7 @@ export function NotificationBell({ store, onClick, icon = "🔔", className, sty
             borderRadius: 9999,
             background: "#ef4444",
             color: "#fff",
-            fontSize: 11,
+            fontSize: hudType("xs"),
             fontWeight: 700,
             display: "flex",
             alignItems: "center",
@@ -132,7 +133,7 @@ export function NotificationCenter({
     borderRadius: 6,
     background: "transparent",
     color: "rgba(226,232,240,0.85)",
-    fontSize: 11,
+    fontSize: hudType("xs"),
     padding: "3px 8px",
     cursor: "pointer",
   };
@@ -195,10 +196,10 @@ export function NotificationCenter({
                 <span style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0, flex: 1 }}>
                   <span style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
                     <span style={{ fontSize: 13, fontWeight: entry.read ? 500 : 700 }}>{entry.title}</span>
-                    <span style={{ fontSize: 10, color: "rgba(148,163,184,0.7)", whiteSpace: "nowrap" }}>{time(entry.at)}</span>
+                    <span style={{ fontSize: hudType("xs"), color: "rgba(148,163,184,0.7)", whiteSpace: "nowrap" }}>{time(entry.at)}</span>
                   </span>
                   {entry.body !== undefined ? (
-                    <span style={{ fontSize: 11, color: "rgba(203,213,225,0.75)" }}>{entry.body}</span>
+                    <span style={{ fontSize: hudType("xs"), color: "rgba(203,213,225,0.75)" }}>{entry.body}</span>
                   ) : null}
                 </span>
               </button>

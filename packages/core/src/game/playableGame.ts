@@ -1,6 +1,9 @@
 import type { AnimGraph } from "../anim/animGraph";
 import type { AudioBusDef, SoundDef } from "../audio/audioFalloff";
 import type { MusicTheme } from "../audio/music";
+import type { UiCueOverrides } from "../audio/uiCues";
+import type { NoticeFeedConfig } from "./notices";
+
 import type { MaterialAsset, MaterialAssignment, MaterialSurfaceParameters, MaterialTextureRole } from "../material/materialAsset";
 import type { EditorCatalogDefinition, EditorDocument } from "../editor/types";
 import type { PostProcessingConfig } from "../render/postProcessing";
@@ -29,6 +32,18 @@ import type { GameCameraConfig } from "./cameraConfig";
 import type { ViewportsConfig } from "./viewports";
 import type { LootFilterRule } from "./lootFilter";
 import type { RarityStyle } from "./worldItem";
+
+/** How the shell presents `ctx.game.notices`; every field is optional. */
+export interface NoticePresentationConfig extends NoticeFeedConfig {
+  /** Screen band for the feed. "top" sits below top-edge HUD bars, "center" over the play area, "bottom" above action bars. Default "top". */
+  placement?: "top" | "center" | "bottom";
+  /** Keep the feed and cues but render nothing (the game draws `ctx.game.notices` itself). Default false. */
+  hidden?: boolean;
+  /** Show refused commands' `message` as deny notices. Default true. */
+  refusals?: boolean;
+  /** Play a UI cue per new notice (deny → deny, success → confirm, else notify). Default true. */
+  cues?: boolean;
+}
 
 
 export type {
@@ -726,6 +741,8 @@ export interface PlayableGame<
     buses?: Record<string, AudioBusDef>;
     music?: Record<string, MusicTheme>;
     musicBus?: string;
+    /** Default UI cues (`ui.click`, `ui.deny`, ...) on a "ui" bus. A sound named `ui.<cue>` in `sounds` replaces one; a map entry replaces or (`false`) silences one; `false` silences all. */
+    uiCues?: UiCueOverrides;
   };
   /** Continuous positional emitter keyed by entity kind name: while a matching entity exists, the shell plays and repositions the mapped `audio.sounds` id (looping engine hum, campfire crackle, footstep loop) with listener-distance falloff. */
   entitySounds?: Record<string, string>;
@@ -749,6 +766,12 @@ export interface PlayableGame<
   postProcessing?: PostProcessingConfig;
   /** F2+D debug overlay (frame/sim timing, logs, backend latency, keybinds, live tunables). On for every game by default; `false` disables the toggle. */
   devtools?: boolean;
+  /**
+   * Shell-mounted notice feed for `ctx.game.notices`: toned, stacked, self-expiring messages with a UI cue
+   * per push, plus automatic deny notices for refused commands that return a `message`. On by default;
+   * `false` removes the renderer, the cues and the refusal hookup (the feed itself stays on ctx).
+   */
+  notices?: NoticePresentationConfig | false;
   /** Player settings menu. Auto-mounted for every game (Sound / Graphics / Gameplay / Controls); unset uses the defaults, `false` opts out. Add game-specific rows via `extra`, switch overlay/full-page via `mode`, or swap the gear for compact on-screen buttons via `surface: "quick"`. */
   settings?: GameSettingsConfig | false;
   /** Automatic camera frustum + distance culling and asset streaming. On by default with conservative margins; unset uses engine defaults, `{ enabled: false }` opts out. Override bounds/distance/pins per entity kind or object catalog id. */

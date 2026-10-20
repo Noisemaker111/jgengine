@@ -1,6 +1,7 @@
 import { type CSSProperties, type ReactNode } from "react";
 
 import { useEntityStat, useGameStore, localPlayerEntity } from "./hooks";
+import { hudType } from "./hudTokens";
 
 /**
  * Atomic, purpose-named vitals — one component per readout (`HealthBar`, `ShieldBar`, …), never a
@@ -254,7 +255,7 @@ function BarView({
           alignItems: "center",
           justifyContent: label === undefined ? "center" : "space-between",
           padding: "0 6px",
-          fontSize: 11,
+          fontSize: hudType("xs"),
           fontWeight: 700,
           letterSpacing: 0.3,
           color: cssVar("text"),

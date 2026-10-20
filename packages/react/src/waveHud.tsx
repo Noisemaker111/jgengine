@@ -4,6 +4,7 @@ import type { WaveRunner, WaveView } from "@jgengine/core/ai/waveRunner";
 
 import { ExperienceBar } from "./bars";
 import { HudFrame, type HudFrameVariation } from "./hudFrame";
+import { hudType } from "./hudTokens";
 
 /**
  * Subscribe to a {@link WaveRunner} and re-render whenever it notifies (wave,
@@ -59,7 +60,7 @@ export interface WaveHudProps {
 function Stat({ caption, value, muted }: { caption: string; value: string; muted: string }): ReactNode {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
-      <span style={{ fontSize: 9, letterSpacing: 1, textTransform: "uppercase", color: muted }}>{caption}</span>
+      <span style={{ fontSize: hudType("xs"), letterSpacing: 1, textTransform: "uppercase", color: muted }}>{caption}</span>
       <span style={{ fontSize: 15, fontWeight: 800, fontVariantNumeric: "tabular-nums" }}>{value}</span>
     </div>
   );

@@ -448,11 +448,18 @@ export function ToastStack({
 }) {
   const entries = useFeed({ action, limit });
   if (entries.length === 0) return null;
-  const newestFirst = [...entries].reverse();
+  // Keys stay stable as newer entries arrive so a toast's entrance animation plays once.
+  const seen = new Map<number, number>();
+  const keyed = entries.map((entry) => {
+    const n = seen.get(entry.at) ?? 0;
+    seen.set(entry.at, n + 1);
+    return { entry, key: `${entry.at}-${n}` };
+  });
+  const newestFirst = keyed.reverse();
   return (
     <div className={className} data-toast-stack={action}>
-      {newestFirst.map((entry, index) => (
-        <div key={`${entry.at}-${index}`} data-toast>
+      {newestFirst.map(({ entry, key }, index) => (
+        <div key={key} data-toast>
           {renderToast !== undefined ? renderToast(entry, index) : defaultToast(entry)}
         </div>
       ))}

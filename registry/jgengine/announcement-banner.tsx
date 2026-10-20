@@ -89,7 +89,7 @@ export function AnnouncementBanner({
           <span
             style={{
               fontFamily: "var(--jg-font-body)",
-              fontSize: 11,
+              fontSize: "var(--jg-type-xs, 12px)",
               color: "var(--jg-text-dim)",
               textShadow: HUD_TEXT_SHADOW,
             }}
@@ -100,7 +100,7 @@ export function AnnouncementBanner({
           <span
             style={{
               fontFamily: "var(--jg-font-body)",
-              fontSize: 11,
+              fontSize: "var(--jg-type-xs, 12px)",
               color: "var(--jg-text-dim)",
               textShadow: HUD_TEXT_SHADOW,
             }}

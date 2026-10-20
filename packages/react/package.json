@@ -4,7 +4,9 @@
   "description": "React UI layer for JGengine: GameProvider, hooks, and headless primitives over @jgengine/core.",
   "license": "Apache-2.0",
   "type": "module",
-  "sideEffects": false,
+  "sideEffects": [
+    "*.css"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Noisemaker111/jgengine.git",
@@ -20,15 +22,17 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./styles.css": "./dist/styles.css",
     "./*": {
       "types": "./dist/*.d.ts",
       "default": "./dist/*.js"
     }
   },
   "scripts": {
-    "build": "tsgo -p tsconfig.build.json && bun ../../scripts/fix-extensions.ts dist",
-    "check-types": "bun ../../scripts/check-types-preflight.ts && tsgo --noEmit -p tsconfig.json",
-    "test": "bun test src"
+    "build": "tsgo -p tsconfig.build.json && bun ../../scripts/fix-extensions.ts dist && bun scripts/styles.ts",
+    "check-types": "tsgo --noEmit -p tsconfig.json",
+    "test": "bun test src",
+    "styles": "bun scripts/styles.ts"
   },
   "dependencies": {
     "@jgengine/core": "^0.22.0"

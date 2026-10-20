@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, beforeEach, expect, test } from "bun:test";
-import { cp, mkdir, rm, symlink } from "node:fs/promises";
+import { mkdir, rm, symlink } from "node:fs/promises";
 import { resolve } from "node:path";
 import { chromium, type Browser, type Page } from "playwright-core";
 import { buildBrowserFixture, findChromeExecutable } from "../../../scripts/browser-lib";
@@ -8,14 +8,8 @@ const scratch = resolve(import.meta.dir, "../../../.scratch/scroll-rail-test");
 let browser: Browser, page: Page, server: ReturnType<typeof Bun.serve>;
 beforeAll(async () => {
   await mkdir(scratch, { recursive: true });
-  await mkdir(`${scratch}/node_modules/@jgengine`, {recursive:true});
+  await mkdir(`${scratch}/node_modules`, {recursive:true});
   for (const pkg of ['react','react-dom']) await symlink(resolve(import.meta.dir,'../../../packages/react/node_modules',pkg),`${scratch}/node_modules/${pkg}`,'dir');
-  for (const pkg of ['react','shell','core']) {
-    const destination = `${scratch}/node_modules/@jgengine/${pkg}`;
-    await mkdir(destination, {recursive:true});
-    await cp(resolve(import.meta.dir,'../../../packages',pkg,'package.json'),`${destination}/package.json`);
-    await cp(resolve(import.meta.dir,'../../../packages',pkg,'dist'),`${destination}/dist`,{recursive:true});
-  }
   const entry = `${scratch}/fixture.tsx`;
   await Bun.write(entry, `
     import React, {useState} from 'react';

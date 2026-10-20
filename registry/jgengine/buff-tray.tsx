@@ -57,7 +57,7 @@ export function BuffTray({
             )}
             {buff.stacks !== undefined && buff.stacks > 1 && (
               <span
-                className="absolute bottom-0.5 right-0.5 font-mono text-[9px] font-bold"
+                className="absolute bottom-0.5 right-0.5 font-mono text-[length:var(--jg-type-xs,12px)] font-bold"
                 style={{ color: "var(--jg-text)", textShadow: HUD_TEXT_SHADOW }}
               >
                 {buff.stacks}

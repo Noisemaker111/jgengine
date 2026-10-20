@@ -1,11 +1,12 @@
 /**
  * Cold-tree on-ramp for coding agents (Claude / Codex / Grok).
  *
- * Fresh worktrees and clean checkouts lack node_modules and package dist.
- * Package typechecks resolve @jgengine/* through built dist, so install alone
- * is not enough. Run this before focused checks or gate.
+ * Fresh checkouts lack node_modules. Tests, type-checks and generators resolve
+ * @jgengine/* to package source (scripts/sourcePaths.ts), so install is all a
+ * tree needs; dist matters only for packing, publishing and the Node-run CLI.
  *
  *   bun run agent:bootstrap
+ *   bun run agent:bootstrap --build   # also build every package's dist
  *   bun run agent:bootstrap --check   # report only; exit 1 if not ready
  */
 import { existsSync, readdirSync, readFileSync, rmSync, statSync, unlinkSync, writeFileSync } from "node:fs";
@@ -13,6 +14,7 @@ import { join } from "node:path";
 
 const root = process.cwd();
 const checkOnly = process.argv.includes("--check");
+const withBuild = process.argv.includes("--build");
 const lockPath = join(root, ".agent-bootstrap.lock");
 const logPath = join(root, ".agent-bootstrap.log");
 // Present while `bun install` runs; still present on the next run = the install
@@ -109,7 +111,7 @@ function joinOrAcquireLock(): void {
   while (lockAlive()) {
     console.log("agent-bootstrap: another bootstrap is running — waiting for it (do NOT kill it)");
     Bun.sleepSync(5_000);
-    if (!lockAlive() && hasTsgo() && coreDistComplete()) {
+    if (!lockAlive() && hasTsgo() && (!withBuild || coreDistComplete())) {
       console.log("agent-bootstrap: the other bootstrap finished — tree is ready");
       process.exit(0);
     }
@@ -136,8 +138,8 @@ Avoid:
   bun run --cwd packages/<pkg> <script>   # can resolve the wrong root script
 
 Parallel work:
-  bun run agent:worktree -- <name>  →  .claude/worktrees/<name>/ (bootstraps itself)
-  Shared-filesystem agents use separate worktrees; independent cloud sessions branch directly.
+  bun run agent:worktree -- <name>  →  .claude/worktrees/<name>/ (deps, Games and assets linked; no build)
+  Agents sharing one filesystem (local or cloud) use separate worktrees; a lone cloud session branches directly.
 
 Game changes:
   Follow AGENTS.md#game-changes-improve-the-framework.
@@ -145,7 +147,7 @@ Game changes:
   Keep unique game rules, content and presentation in the game.
 
 Verify:
-  focused package tests and types; bun run gen when required
+  focused package tests and types (from source; no build needed); bun run gen when required
   bun run ship:preflight after commit; CI runs the full gate
   visual: bun run shoot daemon + shoot <game> only for pixel claims
   arbitrary --url pages declare readiness after an honest frame, never by forcing a ready flag
@@ -158,11 +160,10 @@ if (import.meta.main) {
     process.exit(1);
   }
 
-  const missingEntry = firstMissingCoreDistEntry(coreSrc, coreDist);
-  const ready = hasTsgo() && missingEntry === null;
+  const ready = hasTsgo() && !existsSync(installingPath);
   if (checkOnly) {
     if (ready) {
-      console.log("agent-bootstrap: check ok (deps + core dist complete)");
+      console.log("agent-bootstrap: check ok (deps installed; @jgengine/* resolves to source)");
       process.exit(0);
     }
     if (lockAlive()) {
@@ -179,17 +180,7 @@ if (import.meta.main) {
       );
       process.exit(1);
     }
-    // A present-but-incomplete dist is the sneaky case: it looks built but is
-    // missing entries, so name it explicitly instead of a generic "not ready".
-    if (hasTsgo() && coreDistPresent() && missingEntry) {
-      console.error(
-        `agent-bootstrap: not ready — incomplete core dist (missing dist/${missingEntry} from a partial prior build); run \`bun run agent:bootstrap\` to rebuild`,
-      );
-    } else {
-      console.error(
-        "agent-bootstrap: not ready — run `bun run agent:bootstrap` (missing node_modules and/or packages/core/dist)",
-      );
-    }
+    console.error("agent-bootstrap: not ready — run `bun run agent:bootstrap` (node_modules missing or incomplete)");
     process.exit(1);
   }
 
@@ -209,6 +200,11 @@ if (import.meta.main) {
     rmSync(installingPath, { force: true });
   } else {
     console.log("agent-bootstrap: node_modules present (tsgo found)");
+  }
+
+  if (!withBuild) {
+    printContract();
+    process.exit(0);
   }
 
   // A present-but-incomplete core dist (a build killed mid-emit) can otherwise
