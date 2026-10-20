@@ -150,3 +150,28 @@ describe("the chrome presets keep their pre-unification values (#1573)", () => {
     }
   });
 });
+
+describe("scale, motion, elevation, and state tokens", () => {
+  test("every theme emits them, falling back to the defaults when a theme omits the groups", () => {
+    const { type, space, motion, elevation, state, ...legacy } = defaultHudTheme;
+    const vars = hudThemeVars(legacy) as Record<string, string>;
+    for (const token of ["--jg-type-xs", "--jg-type-display", "--jg-space-md", "--jg-motion-base", "--jg-ease-out", "--jg-elevation-modal", "--jg-highlight", "--jg-hover-overlay", "--jg-press-scale", "--jg-focus-ring", "--jg-disabled-opacity"]) {
+      expect(vars[token], token).toBeString();
+    }
+    expect(vars["--jg-motion-base"]).toBe(motion?.base ?? "");
+    expect(type?.min).toBe("12px");
+    expect(space && elevation && state).toBeTruthy();
+  });
+
+  test("type steps never fall below the floor", () => {
+    const vars = hudThemeVars(hudTheme({ type: { xs: "9px" } })) as Record<string, string>;
+    expect(vars["--jg-type-xs"]).toBe("max(12px, 9px)");
+  });
+
+  test("the focus ring derives from the accent unless set", () => {
+    const derived = hudThemeVars(hudTheme({ palette: { accent: "#ff00aa" } })) as Record<string, string>;
+    expect(derived["--jg-focus-ring"]).toContain("#ff00aa");
+    const pinned = hudThemeVars(hudTheme({ state: { focusRing: "0 0 0 3px red" } })) as Record<string, string>;
+    expect(pinned["--jg-focus-ring"]).toBe("0 0 0 3px red");
+  });
+});

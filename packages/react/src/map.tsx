@@ -30,6 +30,7 @@ import {
   type MapZone,
 } from "@jgengine/core/world/mapLayers";
 import { createFogDataUrl } from "./fogOverlay";
+import { hudType } from "./hudTokens";
 
 type ProjectFn = (x: number, z: number) => { x: number; y: number };
 
@@ -323,7 +324,7 @@ export function Minimap({
           justifyContent: "space-between",
           alignItems: "center",
           marginBottom: 6,
-          fontSize: 10,
+          fontSize: hudType("xs"),
           letterSpacing: 1.4,
           textTransform: "uppercase",
           color: "rgba(203,213,225,0.75)",
@@ -652,7 +653,7 @@ export function Compass({
                   left: x,
                   bottom: 2,
                   transform: "translateX(-50%)",
-                  fontSize: 11,
+                  fontSize: hudType("xs"),
                   color: style.color,
                   fontWeight: 700,
                 }}
@@ -730,7 +731,7 @@ export function MinimapPanel({
             <span
               className={clockClassName}
               data-minimap-chrome-clock
-              style={{ fontSize: 11, color: "rgba(226,232,240,0.75)" }}
+              style={{ fontSize: hudType("xs"), color: "rgba(226,232,240,0.75)" }}
             >
               {clock}
             </span>
@@ -1142,7 +1143,7 @@ export function WorldMap({
               borderRadius: 6,
               background: "transparent",
               color: "rgba(226,232,240,0.85)",
-              fontSize: 11,
+              fontSize: hudType("xs"),
               padding: "3px 9px",
               cursor: "pointer",
             }}
@@ -1381,11 +1382,11 @@ export function FullscreenMap({
           <button type="button" aria-label="Zoom in" style={controlButton} onClick={() => zoomBy(1.2, contentWidth / 2, contentHeight / 2)}>
             +
           </button>
-          <button type="button" aria-label="Reset view" style={{ ...controlButton, width: "auto", padding: "0 10px", fontSize: 11 }} onClick={() => setViewport(IDENTITY_VIEWPORT)}>
+          <button type="button" aria-label="Reset view" style={{ ...controlButton, width: "auto", padding: "0 10px", fontSize: hudType("xs") }} onClick={() => setViewport(IDENTITY_VIEWPORT)}>
             Reset
           </button>
           {onClose !== undefined ? (
-            <button type="button" aria-label="Close map" style={{ ...controlButton, width: "auto", padding: "0 12px", fontSize: 11 }} onClick={onClose}>
+            <button type="button" aria-label="Close map" style={{ ...controlButton, width: "auto", padding: "0 12px", fontSize: hudType("xs") }} onClick={onClose}>
               Close
             </button>
           ) : null}
@@ -1501,12 +1502,12 @@ export function MapLegend({
         border: "1px solid rgba(148,163,184,0.28)",
         color: "#e2e8f0",
         fontFamily: "ui-sans-serif, system-ui, sans-serif",
-        fontSize: 11,
+        fontSize: hudType("xs"),
         ...style,
       }}
     >
       {title !== "" ? (
-        <div style={{ fontSize: 9, letterSpacing: 1.4, textTransform: "uppercase", color: "rgba(203,213,225,0.7)", marginBottom: 5 }}>
+        <div style={{ fontSize: hudType("xs"), letterSpacing: 1.4, textTransform: "uppercase", color: "rgba(203,213,225,0.7)", marginBottom: 5 }}>
           {title}
         </div>
       ) : null}
@@ -1580,10 +1581,10 @@ export function WaypointArrow({
         </g>
       </svg>
       {label !== undefined ? (
-        <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.6, textTransform: "uppercase" }}>{label}</span>
+        <span style={{ fontSize: hudType("xs"), fontWeight: 700, letterSpacing: 0.6, textTransform: "uppercase" }}>{label}</span>
       ) : null}
       {distance !== undefined ? (
-        <span style={{ fontSize: 11, fontVariantNumeric: "tabular-nums", color: "rgba(226,232,240,0.9)" }}>
+        <span style={{ fontSize: hudType("xs"), fontVariantNumeric: "tabular-nums", color: "rgba(226,232,240,0.9)" }}>
           {formatDistance(distance)}
         </span>
       ) : null}

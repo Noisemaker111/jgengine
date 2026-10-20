@@ -4,6 +4,7 @@ import { statusEffectRemainingFraction, type StatusEffectView } from "@jgengine/
 
 import { iconForItemId, isGameIconName, type GameIconName } from "./gameIcons";
 import { IconTreatment, schoolForItem, type IconSchool } from "./iconTreatment";
+import { hudType } from "./hudTokens";
 
 /**
  * `StatusEffectBar` (#status-effect-hud): a drop-in timeline HUD row that renders active
@@ -143,7 +144,7 @@ function StatusEffectIcon({
         <span
           data-status-timer=""
           style={{
-            fontSize: 10,
+            fontSize: hudType("xs"),
             fontWeight: 700,
             fontVariantNumeric: "tabular-nums",
             color: "var(--jg-bar-text, #f5f7fa)",

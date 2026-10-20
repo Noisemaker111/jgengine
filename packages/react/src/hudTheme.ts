@@ -106,6 +106,78 @@ export interface HudThemeSlot {
   radius: string;
 }
 
+/**
+ * Type scale (any CSS length). `min` is the readability floor every engine block clamps to;
+ * `xs` is the smallest step a block uses, so it never drops below `min`.
+ */
+export interface HudThemeType {
+  min: string;
+  xs: string;
+  sm: string;
+  md: string;
+  lg: string;
+  xl: string;
+  xxl: string;
+  display: string;
+  /** Body line height (unitless). */
+  leading: string;
+  /** Letter spacing for uppercase labels and headers. */
+  tracking: string;
+}
+
+/** Spacing steps (any CSS length). */
+export interface HudThemeSpace {
+  xs: string;
+  sm: string;
+  md: string;
+  lg: string;
+  xl: string;
+}
+
+/**
+ * Motion durations and easings. Blocks multiply durations by `--jg-motion-scale`, which the engine
+ * stylesheet sets to 0 under `prefers-reduced-motion` or `[data-reduced-motion="true"]`.
+ */
+export interface HudThemeMotion {
+  fast: string;
+  base: string;
+  slow: string;
+  /** Standard ease for state changes. */
+  ease: string;
+  /** Decelerating ease for entrances. */
+  easeOut: string;
+  /** Slight overshoot for pops and presses releasing. */
+  spring: string;
+}
+
+/** Layered `box-shadow` stacks by height, plus the inner top highlight a lit panel edge gets. */
+export interface HudThemeElevation {
+  /** Resting panels and buttons. */
+  raised: string;
+  /** Hovered buttons, popovers, tooltips. */
+  overlay: string;
+  /** Windows and modal dialogs. */
+  modal: string;
+  /** Inset top-edge highlight, layered into the stacks above by blocks that want a lit rim. */
+  highlight: string;
+}
+
+/** Interactive-state tokens shared by every engine button, slot, and window. */
+export interface HudThemeState {
+  /** Overlay color washed over a hovered control. */
+  hover: string;
+  /** Hover lift as a `translate` Y length (e.g. `"-1px"`). */
+  hoverLift: string;
+  /** Overlay color washed over a pressed control. */
+  press: string;
+  /** Pressed `scale` factor (e.g. `"0.97"`). */
+  pressScale: string;
+  /** Focus ring as a `box-shadow` value. Unset derives a two-tone ring from the accent. */
+  focusRing?: string;
+  /** Opacity of a disabled control. */
+  disabledOpacity: string;
+}
+
 /** A full HUD theme. Author one with {@link hudTheme} or {@link deriveHudTheme}. */
 export interface HudTheme {
   palette: HudThemePalette;
@@ -119,6 +191,59 @@ export interface HudTheme {
   /** Minimap chrome ring color. */
   ring: string;
   skin?: HudSkin;
+  /** Type scale; unset uses {@link defaultHudTheme}'s. */
+  type?: HudThemeType;
+  /** Spacing steps; unset uses {@link defaultHudTheme}'s. */
+  space?: HudThemeSpace;
+  /** Durations and easings; unset uses {@link defaultHudTheme}'s. */
+  motion?: HudThemeMotion;
+  /** Shadow stacks; unset uses {@link defaultHudTheme}'s. */
+  elevation?: HudThemeElevation;
+  /** Hover, press, focus, and disabled tokens; unset uses {@link defaultHudTheme}'s. */
+  state?: HudThemeState;
+}
+
+const DEFAULT_TYPE: HudThemeType = {
+  min: "12px",
+  xs: "12px",
+  sm: "13px",
+  md: "14px",
+  lg: "16px",
+  xl: "20px",
+  xxl: "26px",
+  display: "34px",
+  leading: "1.4",
+  tracking: "0.08em",
+};
+
+const DEFAULT_SPACE: HudThemeSpace = { xs: "4px", sm: "8px", md: "12px", lg: "16px", xl: "24px" };
+
+const DEFAULT_MOTION: HudThemeMotion = {
+  fast: "120ms",
+  base: "180ms",
+  slow: "320ms",
+  ease: "cubic-bezier(0.2, 0, 0, 1)",
+  easeOut: "cubic-bezier(0.16, 1, 0.3, 1)",
+  spring: "cubic-bezier(0.34, 1.56, 0.64, 1)",
+};
+
+const DEFAULT_ELEVATION: HudThemeElevation = {
+  raised: "0 1px 2px rgba(0,0,0,0.45), 0 4px 12px -2px rgba(0,0,0,0.4)",
+  overlay: "0 2px 4px rgba(0,0,0,0.4), 0 10px 24px -4px rgba(0,0,0,0.5)",
+  modal: "0 4px 8px rgba(0,0,0,0.35), 0 24px 56px -12px rgba(0,0,0,0.7)",
+  highlight: "inset 0 1px 0 rgba(255,255,255,0.08)",
+};
+
+const DEFAULT_STATE: HudThemeState = {
+  hover: "rgba(255,255,255,0.07)",
+  hoverLift: "-1px",
+  press: "rgba(0,0,0,0.14)",
+  pressScale: "0.97",
+  disabledOpacity: "0.45",
+};
+
+function focusRing(theme: HudTheme): string {
+  return theme.state?.focusRing ?? `0 0 0 2px ${theme.surface.surfaceDeep}, 0 0 0 4px ${theme.palette.accent}`;
 }
 
 /** Emits theme CSS properties, resetting inherited bar fills when absent. Spread onto a HUD ancestor. */
@@ -192,10 +317,82 @@ export function hudThemeVars(theme: HudTheme): CSSProperties {
     "--jg-slot-border": slot.border,
     "--jg-slot-radius": slot.radius,
     "--jg-ring": theme.ring,
+    ...typeVars(theme.type ?? DEFAULT_TYPE),
+    ...spaceVars(theme.space ?? DEFAULT_SPACE),
+    ...motionVars(theme.motion ?? DEFAULT_MOTION),
+    ...elevationVars(theme.elevation ?? DEFAULT_ELEVATION),
+    ...stateVars(theme.state ?? DEFAULT_STATE),
+    "--jg-focus-ring": focusRing(theme),
   } as CSSProperties;
 }
 
-/** Default theme tokens for previews/scaffold — not a finished game look; author a custom theme. */
+function typeVars(type: HudThemeType): Record<string, string> {
+  const floor = (size: string) => `max(${type.min}, ${size})`;
+  return {
+    "--jg-type-min": type.min,
+    "--jg-type-xs": floor(type.xs),
+    "--jg-type-sm": floor(type.sm),
+    "--jg-type-md": floor(type.md),
+    "--jg-type-lg": floor(type.lg),
+    "--jg-type-xl": floor(type.xl),
+    "--jg-type-xxl": floor(type.xxl),
+    "--jg-type-display": floor(type.display),
+    "--jg-leading": type.leading,
+    "--jg-tracking-label": type.tracking,
+  };
+}
+
+function spaceVars(space: HudThemeSpace): Record<string, string> {
+  return {
+    "--jg-space-xs": space.xs,
+    "--jg-space-sm": space.sm,
+    "--jg-space-md": space.md,
+    "--jg-space-lg": space.lg,
+    "--jg-space-xl": space.xl,
+  };
+}
+
+function motionVars(motion: HudThemeMotion): Record<string, string> {
+  return {
+    "--jg-motion-fast": motion.fast,
+    "--jg-motion-base": motion.base,
+    "--jg-motion-slow": motion.slow,
+    "--jg-ease": motion.ease,
+    "--jg-ease-out": motion.easeOut,
+    "--jg-ease-spring": motion.spring,
+  };
+}
+
+function elevationVars(elevation: HudThemeElevation): Record<string, string> {
+  return {
+    "--jg-elevation-raised": elevation.raised,
+    "--jg-elevation-overlay": elevation.overlay,
+    "--jg-elevation-modal": elevation.modal,
+    "--jg-highlight": elevation.highlight,
+  };
+}
+
+function stateVars(state: HudThemeState): Record<string, string> {
+  return {
+    "--jg-hover-overlay": state.hover,
+    "--jg-hover-lift": state.hoverLift,
+    "--jg-press-overlay": state.press,
+    "--jg-press-scale": state.pressScale,
+    "--jg-disabled-opacity": state.disabledOpacity,
+  };
+}
+
+const UI_FONT =
+  '"Inter Variable", Inter, "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI Variable Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+const DISPLAY_FONT =
+  '"Inter Display", "Inter Variable", Inter, "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+
+/**
+ * The engine's default HUD look, applied by the shell at the HUD root of every game that does not
+ * opt out: a strong system UI font stack, layered translucent panels with a lit top rim and crisp
+ * hairline borders, a 12px type floor, and motion that honours reduced-motion. Games override any
+ * part with their own theme on a HUD ancestor.
+ */
 export const defaultHudTheme: HudTheme = {
   palette: {
     health: "#e5484d",
@@ -235,9 +432,9 @@ export const defaultHudTheme: HudTheme = {
     neutral: "#c9b458",
   },
   font: {
-    display: '"Segoe UI", system-ui, sans-serif',
-    numeric: 'Consolas, "Cascadia Mono", "SF Mono", "Roboto Mono", monospace',
-    body: '"Segoe UI", system-ui, sans-serif',
+    display: DISPLAY_FONT,
+    numeric: UI_FONT,
+    body: UI_FONT,
   },
   rarity: {
     common: "#b4b2a8",
@@ -247,10 +444,10 @@ export const defaultHudTheme: HudTheme = {
     legendary: "#e0862e",
   },
   frame: {
-    bg: "linear-gradient(180deg, rgba(20,24,32,0.86), rgba(10,12,16,0.9))",
-    border: "1px solid rgba(255,255,255,0.12)",
+    bg: "linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0) 42%), linear-gradient(180deg, rgba(22,27,36,0.9), rgba(10,13,18,0.94))",
+    border: "1px solid rgba(255,255,255,0.13)",
     radius: "10px",
-    glow: "0 6px 20px rgba(0,0,0,0.45)",
+    glow: `${DEFAULT_ELEVATION.highlight}, ${DEFAULT_ELEVATION.raised}`,
   },
   bar: {
     track: "rgba(0,0,0,0.55)",
@@ -260,8 +457,17 @@ export const defaultHudTheme: HudTheme = {
     bevel: "inset 0 2px 4px rgba(0,0,0,0.55), inset 0 -1px 2px rgba(255,255,255,0.08)",
     text: "#f5f7fa",
   },
-  slot: { bg: "rgba(12,14,20,0.7)", border: "1px solid rgba(255,255,255,0.12)", radius: "8px" },
+  slot: {
+    bg: "linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0) 50%), rgba(12,15,21,0.78)",
+    border: "1px solid rgba(255,255,255,0.13)",
+    radius: "8px",
+  },
   ring: "rgba(140,170,200,0.35)",
+  type: DEFAULT_TYPE,
+  space: DEFAULT_SPACE,
+  motion: DEFAULT_MOTION,
+  elevation: DEFAULT_ELEVATION,
+  state: DEFAULT_STATE,
 };
 
 /** Per-group partial overrides accepted by {@link hudTheme}. */
@@ -276,6 +482,11 @@ export interface HudThemeOverrides {
   slot?: Partial<HudThemeSlot>;
   ring?: string;
   skin?: HudSkin;
+  type?: Partial<HudThemeType>;
+  space?: Partial<HudThemeSpace>;
+  motion?: Partial<HudThemeMotion>;
+  elevation?: Partial<HudThemeElevation>;
+  state?: Partial<HudThemeState>;
 }
 
 /**
@@ -297,6 +508,11 @@ export function hudTheme(overrides: HudThemeOverrides): HudTheme {
     slot: { ...defaultHudTheme.slot, ...overrides.slot },
     ring: overrides.ring ?? defaultHudTheme.ring,
     skin: overrides.skin,
+    type: { ...DEFAULT_TYPE, ...overrides.type },
+    space: { ...DEFAULT_SPACE, ...overrides.space },
+    motion: { ...DEFAULT_MOTION, ...overrides.motion },
+    elevation: { ...DEFAULT_ELEVATION, ...overrides.elevation },
+    state: { ...DEFAULT_STATE, ...overrides.state },
   };
 }
 

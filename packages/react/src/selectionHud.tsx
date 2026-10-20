@@ -17,6 +17,7 @@ import {
   type SelectionView,
   type SelectionWindow,
 } from "@jgengine/core/ui/selectionModel";
+import { hudType } from "./hudTokens";
 
 /**
  * Composable React renderers over the headless selection view model
@@ -143,7 +144,7 @@ export function VitalBar({
   return (
     <div className={className} data-vital={vital.id} style={{ width, ...style }}>
       {showLabel ? (
-        <div style={{ display: "flex", fontSize: 10, opacity: 0.75, marginBottom: 2 }}>
+        <div style={{ display: "flex", fontSize: hudType("xs"), opacity: 0.75, marginBottom: 2 }}>
           <span>{vital.label ?? vital.id}</span>
           <span style={{ marginLeft: "auto", fontVariantNumeric: "tabular-nums" }}>
             {Math.round(vital.current)}/{Math.round(vital.max)}
@@ -266,13 +267,13 @@ export function EntitySummary({
       <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
         <strong style={{ fontSize: 14 }}>{entity.name ?? entity.id}</strong>
         {entity.kind !== undefined ? (
-          <span style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 0.4, opacity: 0.6 }}>{entity.kind}</span>
+          <span style={{ fontSize: hudType("xs"), textTransform: "uppercase", letterSpacing: 0.4, opacity: 0.6 }}>{entity.kind}</span>
         ) : null}
       </div>
       {entity.tags !== undefined && entity.tags.length > 0 ? (
         <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
           {entity.tags.map((tag) => (
-            <span key={tag} style={{ fontSize: 9, padding: "1px 5px", borderRadius: 999, background: "rgba(255,255,255,0.1)" }}>{tag}</span>
+            <span key={tag} style={{ fontSize: hudType("xs"), padding: "1px 5px", borderRadius: 999, background: "rgba(255,255,255,0.1)" }}>{tag}</span>
           ))}
         </div>
       ) : null}
@@ -313,7 +314,7 @@ export function SelectionGroupChip({
       style={{ ...PORTRAIT_BASE, width: 44, height: 44, ...style }}
     >
       <span aria-hidden style={{ fontSize: 16 }}>{renderIcon ? renderIcon(group) : (group.icon ?? group.label.slice(0, 2))}</span>
-      <span style={{ position: "absolute", right: 2, bottom: 1, fontSize: 10, fontWeight: 700 }}>{group.count}</span>
+      <span style={{ position: "absolute", right: 2, bottom: 1, fontSize: hudType("xs"), fontWeight: 700 }}>{group.count}</span>
     </button>
   );
 }

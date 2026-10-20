@@ -124,7 +124,7 @@ export function LoopDial({
       {label !== undefined ? (
         <div
           style={{
-            fontSize: 10,
+            fontSize: "var(--jg-type-xs, 12px)",
             letterSpacing: 1.4,
             textTransform: "uppercase",
             marginTop: 2,

@@ -1,6 +1,7 @@
 import type { CSSProperties, ReactNode } from "react";
 
 import type { TrackedQuestView } from "@jgengine/core/game/quest";
+import { hudType } from "./hudTokens";
 
 /** Props for {@link QuestTracker}. */
 export interface QuestTrackerProps {
@@ -80,7 +81,7 @@ export function QuestTracker({
       }}
     >
       {title !== "" ? (
-        <div style={{ fontSize: 10, letterSpacing: 1.4, textTransform: "uppercase", color: "rgba(203,213,225,0.7)", marginBottom: 8 }}>
+        <div style={{ fontSize: hudType("xs"), letterSpacing: 1.4, textTransform: "uppercase", color: "rgba(203,213,225,0.7)", marginBottom: 8 }}>
           {title}
         </div>
       ) : null}
@@ -96,7 +97,7 @@ export function QuestTracker({
               <li key={quest.id} data-quest={quest.id} data-status={quest.status} style={{ listStyle: "none" }}>
                 <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 4 }}>
                   <span style={{ fontWeight: 700, color: done ? accent : "#f8fafc" }}>{quest.title}</span>
-                  {done ? <span style={{ fontSize: 10, color: accent }}>DONE</span> : null}
+                  {done ? <span style={{ fontSize: hudType("xs"), color: accent }}>DONE</span> : null}
                 </div>
                 <ul style={{ margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 5 }}>
                   {shown.map((objective) => (
@@ -111,7 +112,7 @@ export function QuestTracker({
                   ))}
                 </ul>
                 {hidden > 0 ? (
-                  <div style={{ marginTop: 4, fontSize: 11, color: "rgba(148,163,184,0.75)" }}>+{hidden} more</div>
+                  <div style={{ marginTop: 4, fontSize: hudType("xs"), color: "rgba(148,163,184,0.75)" }}>+{hidden} more</div>
                 ) : null}
               </li>
             );

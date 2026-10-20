@@ -65,7 +65,7 @@ export function LootCard({
             {name}
           </span>
           {typeLine !== undefined && (
-            <span className="text-[10px]" style={{ color: "var(--jg-text-dim)" }}>
+            <span className="text-[length:var(--jg-type-xs,12px)]" style={{ color: "var(--jg-text-dim)" }}>
               {typeLine}
             </span>
           )}
@@ -78,7 +78,7 @@ export function LootCard({
       {stats !== undefined && stats.length > 0 && (
         <div className="flex flex-col gap-px">
           {stats.map((line, index) => (
-            <span key={index} className="text-[11px]" style={{ color: "var(--jg-text)" }}>
+            <span key={index} className="text-[length:var(--jg-type-xs,12px)]" style={{ color: "var(--jg-text)" }}>
               {line}
             </span>
           ))}
@@ -87,14 +87,14 @@ export function LootCard({
       {affixes !== undefined && affixes.length > 0 && (
         <div className="flex flex-col gap-px">
           {affixes.map((line, index) => (
-            <span key={index} className="text-[11px] italic" style={{ color }}>
+            <span key={index} className="text-[length:var(--jg-type-xs,12px)] italic" style={{ color }}>
               {line}
             </span>
           ))}
         </div>
       )}
       {flavor !== undefined && (
-        <span className="text-[10px] italic" style={{ color: "var(--jg-text-dim)" }}>
+        <span className="text-[length:var(--jg-type-xs,12px)] italic" style={{ color: "var(--jg-text-dim)" }}>
           {flavor}
         </span>
       )}

@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useReducer, useState, type CSSProperties, type ReactNode } from "react";
 
 import type { CoachMarkPlacement, CoachMarkSequence, CoachMarkView } from "@jgengine/core/ui/coachMarks";
+import { hudType } from "./hudTokens";
 
 /**
  * Subscribe to a coach-mark sequence and re-render on every change, returning the
@@ -118,7 +119,7 @@ export function CoachMark({
     >
       <div
         data-coach-mark-counter
-        style={{ fontSize: 10, letterSpacing: 1.4, textTransform: "uppercase", fontWeight: 700, color: t.accent }}
+        style={{ fontSize: hudType("xs"), letterSpacing: 1.4, textTransform: "uppercase", fontWeight: 700, color: t.accent }}
       >
         {view.index + 1} of {view.total}
       </div>
@@ -137,7 +138,7 @@ export function CoachMark({
             border: "none",
             background: "transparent",
             color: "rgba(148,163,184,0.85)",
-            fontSize: 11.5,
+            fontSize: hudType("xs"),
             cursor: "pointer",
             padding: 0,
             textDecoration: "underline",
