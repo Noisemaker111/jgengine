@@ -19,8 +19,8 @@ describe("advanceSimulation", () => {
   test("yields to the host between batches so the UI can commit mid-advance", async () => {
     const unregister = registerSimStepper(() => {});
     let yields = 0;
-    expect(await advanceSimulation(3, 0.05, async () => { yields += 1; })).toBe(60);
-    expect(yields).toBe(60 / FRAMES_PER_YIELD - 1);
+    expect(await advanceSimulation(30, 0.05, async () => { yields += 1; })).toBe(600);
+    expect(yields).toBe(600 / FRAMES_PER_YIELD - 1);
     unregister();
   });
 

@@ -37,8 +37,8 @@ export async function advanceSimulation(seconds: number, step = 0.05, yieldToHos
   return frames;
 }
 
-/** Simulated frames between yields to the host (one game second at 0.05 s frames). @internal */
-export const FRAMES_PER_YIELD = 20;
+/** Simulated frames between yields to the host (ten game seconds at 0.05 s frames): each yield can cost a full render frame, which headless software rendering spends seconds on. @internal */
+export const FRAMES_PER_YIELD = 200;
 
 function defaultYield(): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, 0));
