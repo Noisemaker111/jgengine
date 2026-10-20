@@ -890,6 +890,7 @@ const HELP = [
   "Steps run in the order given:",
   '  --click "<text>"    scroll to and click actionable text (case-insensitive)',
   "  --click-at <x,y>    native left click in CSS viewport pixels (within width/height)",
+  "  --right-click-at <x,y>  native right click there (RTS move/attack/gather orders, context menus)",
   '  --double-click "<text>"  double-click actionable text',
   '  --fill "<label>=<value>" replace a text field by its accessible label',
   "  --key <CODE:ms>     hold a key (e.g. KeyW:2500) for the given milliseconds",
@@ -949,7 +950,7 @@ function parseArgs(argv) {
       args.steps.push({ kind: v === "--click" ? "click" : "double-click", text });
     }
     else if (v === "--fill") args.steps.push({ kind: "fill", ...parseDriveFill(argv[++i]) });
-    else if (v === "--click-at") args.steps.push({ kind: "clickAt", spec: argv[++i] ?? "" });
+    else if (v === "--click-at" || v === "--right-click-at") args.steps.push({ kind: "clickAt", spec: argv[++i] ?? "", button: v === "--right-click-at" ? "right" : "left" });
     else if (v === "--wait") args.steps.push({ kind: "wait", ms: Number(argv[++i] ?? 500) });
     else if (v === "--key") {
       const spec = argv[++i] ?? "KeyW:1000";
@@ -1193,7 +1194,7 @@ async function main() {
       for (const step of args.steps) {
         if (step.kind === "click" || step.kind === "double-click") await click(session, step.text, step.kind === "double-click" ? 2 : 1);
         else if (step.kind === "fill") await fill(session, step.label, step.value);
-        else if (step.kind === "clickAt") await dispatchClickAt(session, step.point);
+        else if (step.kind === "clickAt") await dispatchClickAt(session, step.point, step.button);
         else if (step.kind === "key") await holdKey(session, step.code, step.holdMs);
         else if (step.kind === "wait") await sleep(step.ms);
         else if (step.kind === "rpc") await rpc(session, step.json);
@@ -1718,7 +1719,7 @@ Title it \`[BUG] …\` for wrong behavior or \`[FEATURE] …\` for a missing cap
 - Visual claims are screenshot-judged, by you, harshly — flat untextured ground and an empty horizon fail. Prove content with \`bun test\`, prove looks with your eyes (\`jgengine-verify\` skill).
 - Models live in \`public/models\`, pulled — not shipped inside the package. \`jgengine create\` pulls them for you; if that was skipped (offline, \`--no-assets\`, \`--no-install\`) run \`npx assets pull starter\` in this folder, or every \`asset:\` id falls back to an untextured placeholder primitive and fails the bar above.
 - Screenshots: \`bun run shoot\` (or \`node scripts/shoot.mjs\`) captures the running game to \`shots/shot.png\` — it starts the dev server if needed, forces a real viewport so the WebGL canvas is not stuck at 300x150, waits for an honest frame, and works headless. Add \`--device mobile\`, \`--out shots/hud.png\`, \`--settle <ms>\`, or \`--url <page>\`; \`--help\` for all flags. Do **not** rely on a browser tool's "screenshot" button for the 3D canvas — it captures before the GPU draws.
-- Play & test from the CLI: \`bun run drive\` (or \`node scripts/drive.mjs\`) drives the running game headlessly — ordered \`--click "TEXT"\`, \`--click-at 240,180\` (CSS viewport pixels), \`--double-click "TEXT"\`, \`--fill "Label=value"\`, \`--key KeyW:2500\` (or \`mouse0:1200\` to hold a mouse button over the play canvas), \`--wait <ms>\`, \`--shot <name>\`, and \`--rpc '{"method":"agent_status"}'\` steps, plus \`--playtest --strict\` for a progress/softlock verdict off the game's \`capture.probe\`; \`--help\` for all flags. **Never hand-roll a Playwright/Puppeteer/CDP script to play or test this game** — if drive cannot express what you need, that is an engine gap: file it upstream (see below).
+- Play & test from the CLI: \`bun run drive\` (or \`node scripts/drive.mjs\`) drives the running game headlessly — ordered \`--click "TEXT"\`, \`--click-at 240,180\` (CSS viewport pixels; \`--right-click-at\` for right-click orders), \`--double-click "TEXT"\`, \`--fill "Label=value"\`, \`--key KeyW:2500\` (or \`mouse0:1200\` to hold a mouse button over the play canvas), \`--wait <ms>\`, \`--shot <name>\`, and \`--rpc '{"method":"agent_status"}'\` steps, plus \`--playtest --strict\` for a progress/softlock verdict off the game's \`capture.probe\`; \`--help\` for all flags. **Never hand-roll a Playwright/Puppeteer/CDP script to play or test this game** — if drive cannot express what you need, that is an engine gap: file it upstream (see below).
 `;
 
 const artDirectionMd = `# Art direction
