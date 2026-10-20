@@ -777,6 +777,7 @@
     "./audio/AudioComponents",
     "./audio/audioEngine",
     "./audio/audioWire",
+    "./audio/listenerAnchor",
     "./audio/loopParams",
     "./audio/musicDirector",
     "./audio/musicVoices",
