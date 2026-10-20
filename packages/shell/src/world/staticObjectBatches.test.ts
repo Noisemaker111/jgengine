@@ -9,7 +9,7 @@ import { createPointerService, POINTER_OBJECT_INSTANCES_KEY } from "../pointer/p
 import { measureLocalBounds } from "../render/measureBounds";
 import { measureLocalCollisionTriangles } from "../render/measureCollisionMesh";
 import { resolveObjectModel, type ObjectModelCacheEntry } from "../render/resolveModel";
-import { canBatchStaticObject, canInstanceStaticScene, groupStaticObjects, incompatibleStaticObjectIds, syncStaticObjectSource, type StaticObjectCandidate } from "./staticObjectBatches";
+import { canBatchStaticObject, canInstanceStaticScene, groupStaticObjects, STATIC_BATCH_CHUNK, STATIC_BATCH_MIN, incompatibleStaticObjectIds, syncStaticObjectSource, type StaticObjectCandidate } from "./staticObjectBatches";
 
 function candidate(index: number, patch: Partial<StaticObjectCandidate> = {}): StaticObjectCandidate {
   return {
@@ -37,16 +37,16 @@ function modelScene() {
 }
 
 describe("static authored object batching", () => {
-  test("requires more than eight compatible placements in a cell and preserves model choices", () => {
-    const eight = Array.from({ length: 8 }, (_, i) => candidate(i));
-    expect(groupStaticObjects(eight).batches).toHaveLength(0);
-    const objects = [...eight, candidate(8), ...Array.from({ length: 9 }, (_, i) => candidate(i + 9, { model: { url: "model-a.glb", material: { color: "red" } } }))];
+  test("requires STATIC_BATCH_MIN compatible placements in a cell and preserves model choices", () => {
+    const below = Array.from({ length: STATIC_BATCH_MIN - 1 }, (_, i) => candidate(i));
+    expect(groupStaticObjects(below).batches).toHaveLength(0);
+    const objects = [...below, candidate(STATIC_BATCH_MIN - 1), ...Array.from({ length: STATIC_BATCH_MIN }, (_, i) => candidate(i + 20, { model: { url: "model-a.glb", material: { color: "red" } } }))];
     const grouped = groupStaticObjects(objects);
     expect(grouped.batches).toHaveLength(2);
-    expect(grouped.batches.map((batch) => batch.objects.length)).toEqual([9, 9]);
+    expect(grouped.batches.map((batch) => batch.objects.length)).toEqual([STATIC_BATCH_MIN, STATIC_BATCH_MIN]);
     expect(grouped.batches[1]!.model.material?.color).toBe("red");
-    const outside = candidate(30); outside.object.position = [24, 1, 2];
-    expect(groupStaticObjects([...eight, outside]).batches).toHaveLength(0);
+    const outside = candidate(30); outside.object.position = [STATIC_BATCH_CHUNK, 1, 2];
+    expect(groupStaticObjects([...below, outside]).batches).toHaveLength(0);
   });
 
   test("keeps custom, runtime, interactive, animated, textured, composed and mirrored placements independent", () => {
@@ -64,6 +64,11 @@ describe("static authored object batching", () => {
       { object: { ...candidate(0).object, visual: { color: "blue", opacity: 0.7 } } },
     ];
     for (const patch of excluded) expect(groupStaticObjects(Array.from({ length: 10 }, (_, i) => candidate(i, patch))).batches).toHaveLength(0);
+  });
+
+  test("batches runtime placements whose catalog declares them scenery", () => {
+    expect(groupStaticObjects(Array.from({ length: 10 }, (_, i) => candidate(i, { authored: false, catalog: { scenery: true } }))).batches).toHaveLength(1);
+    expect(groupStaticObjects(Array.from({ length: 10 }, (_, i) => candidate(i, { authored: false, catalog: { scenery: true, verbs: [{} as never] } }))).batches).toHaveLength(0);
   });
 
   test("reuses unchanged batch/model identities and falls back when live compatibility changes", () => {
@@ -224,7 +229,7 @@ describe("static authored object batching", () => {
     const document = createEmptyEditorDocument();
     const configs = new Map(Array.from({ length: 24 }, (_, i) => [`asset-${i}`, { url: `authored-${i}.glb`, material: { color: `#${(0x334455 + i * 900).toString(16)}` } }] as const));
     for (const [catalogId] of configs) for (let cell = 0; cell < 2; cell++) for (let i = 0; i < 64; i++) {
-      document.markers.push({ id: `${catalogId}:${cell}:${i}`, kind: "prop", catalogId, position: { x: cell * 24 + i % 8, y: 0, z: Math.floor(i / 8) }, rotationY: i / 10 });
+      document.markers.push({ id: `${catalogId}:${cell}:${i}`, kind: "prop", catalogId, position: { x: cell * STATIC_BATCH_CHUNK + i % 8, y: 0, z: Math.floor(i / 8) }, rotationY: i / 10 });
     }
     const saved = JSON.stringify(document);
     const store = createObjectStore(); placeAuthoredObjects(store, resolveAuthoredObjects(document), (x, z) => x / 10 + z / 20);

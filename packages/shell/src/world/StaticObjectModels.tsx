@@ -68,7 +68,7 @@ function LoadedStaticObjects({ batch, single }: { batch: StaticObjectBatch; sing
   </>;
 }
 
-/** Render compatible authored props as shared model draws, preserving unsupported models. @internal */
+/** Render compatible authored or `scenery` props as shared model draws, preserving unsupported models. @internal */
 export function StaticObjectModels({ batch, single }: { batch: StaticObjectBatch; single: (object: SceneObject) => ReactNode }) {
   return <IsolatedModelPart model={batch.model} seam="object"><LoadedStaticObjects batch={batch} single={single} /></IsolatedModelPart>;
 }

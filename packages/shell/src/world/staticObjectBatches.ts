@@ -25,7 +25,7 @@ export interface StaticObjectBatch {
 /** The same compatibility gate is used when live placements change after grouping. @internal */
 export function canBatchStaticObject(candidate: StaticObjectCandidate): boolean {
   const { object, model, catalog } = candidate;
-  return candidate.authored && !candidate.custom && candidate.style === undefined &&
+  return (candidate.authored || catalog?.scenery === true) && !candidate.custom && candidate.style === undefined &&
     isCompatibleStaticObject(object, model, catalog);
 }
 
@@ -76,8 +76,13 @@ export function incompatibleStaticObjectIds(
   });
 }
 
-/** Groups compatible authored props above eight placements per spatial cell. @internal */
-export function groupStaticObjects(candidates: readonly StaticObjectCandidate[], chunkSize = 24, previous?: ReadonlyMap<string, StaticObjectBatch>): {
+/** Batch cell edge in metres: one instanced draw per model per cell, culled as a unit. @internal */
+export const STATIC_BATCH_CHUNK = 64;
+/** Smallest same-model group worth an instanced draw; below this each prop draws on its own. @internal */
+export const STATIC_BATCH_MIN = 3;
+
+/** Groups compatible authored or `scenery` props, at least {@link STATIC_BATCH_MIN} per spatial cell. @internal */
+export function groupStaticObjects(candidates: readonly StaticObjectCandidate[], chunkSize = STATIC_BATCH_CHUNK, previous?: ReadonlyMap<string, StaticObjectBatch>): {
   batches: StaticObjectBatch[];
   singles: StaticObjectCandidate[];
 } {
@@ -100,7 +105,7 @@ export function groupStaticObjects(candidates: readonly StaticObjectCandidate[],
   }
   const batches: StaticObjectBatch[] = [];
   for (const { batch, candidates: members } of groups.values()) {
-    if (batch.objects.length > 8) {
+    if (batch.objects.length >= STATIC_BATCH_MIN) {
       const cached = previous?.get(batch.key);
       batches.push(cached !== undefined && cached.objects.length === batch.objects.length &&
         cached.objects.every((object, index) => object.instanceId === batch.objects[index]!.instanceId) ? cached : batch);
