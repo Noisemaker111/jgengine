@@ -333,4 +333,15 @@ describe("portable coordinate input", () => {
       expect(calls.every(call => call.params.x === 12.5 && call.params.y === 34)).toBe(true);
     } finally { rmSync(dir, { recursive: true, force: true }); }
   });
+
+  test("the emitted dispatcher right-clicks with the secondary button for --right-click-at", async () => {
+    const dir = materializeHarness("drive");
+    try {
+      const lib = await import(join(dir, "browser.mjs"));
+      const calls: { method: string; params: Record<string, unknown> }[] = [];
+      await lib.dispatchClickAt({ async send(method: string, params: Record<string, unknown>) { calls.push({ method, params }); } }, { x: 300, y: 200 }, "right");
+      expect(calls.map(call => call.params.button)).toEqual(["none", "right", "right"]);
+      expect(calls.map(call => call.params.buttons)).toEqual([0, 2, 0]);
+    } finally { rmSync(dir, { recursive: true, force: true }); }
+  });
 });
