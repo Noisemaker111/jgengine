@@ -14,6 +14,7 @@ import {
   type EditorUiPanelLayout,
 } from "@jgengine/core/ui/hudDocument";
 import { buildFullReport, buildLeanReport } from "./devtoolsReports";
+import { advanceSimulation } from "./simStepper";
 
 /** One RPC call into the agent bridge: a verb name plus its verb-specific fields. */
 export type AgentBridgeRequest = { method: string } & Record<string, unknown>;
@@ -36,6 +37,22 @@ export function playerPoseReport(ctx: GameContext | null): { userId: string; pos
   const [x, y, z] = entity.position;
   const round = (value: number) => Math.round(value * 1000) / 1000;
   return { userId: ctx.player.userId, position: [round(x), round(y), round(z)], rotationY: round(entity.rotationY ?? 0) };
+}
+
+/**
+ * @internal
+ * `time_scale` verb: sets the game clock's global timescale (`ctx.time.setTimescale`) so a headless
+ * drive can fast-forward timers, economies and day cycles that never finish at capture frame rates.
+ * Large scales take large steps — use it for clocks, not to judge movement. Omit `scale` to read.
+ */
+export function applyTimeScale(ctx: Pick<GameContext, "time">, scale: unknown): AgentBridgeResponse {
+  if (scale !== undefined) {
+    if (typeof scale !== "number" || !Number.isFinite(scale) || scale < 0 || scale > 120) {
+      return { ok: false, error: "time_scale needs { scale } between 0 and 120 (1 = normal)" };
+    }
+    ctx.time.setTimescale(scale);
+  }
+  return { ok: true, timescale: ctx.time.timescale(), now: Math.round(ctx.time.now() * 1000) / 1000 };
 }
 
 type EditorHost = { gameId: string; handle(request: AgentBridgeRequest): unknown };
@@ -184,6 +201,21 @@ export function installAgentBridge(options: {
       case "player_pose": {
         const pose = playerPoseReport(getContext());
         return pose === null ? { ok: false, error: "no local player entity yet" } : { ok: true, ...pose };
+      }
+      case "time_scale": {
+        const ctx = getContext();
+        if (ctx === null) return { ok: false, error: "no game context yet" };
+        return applyTimeScale(ctx, request.scale);
+      }
+      case "sim_advance": {
+        const seconds = request.seconds;
+        if (typeof seconds !== "number" || !Number.isFinite(seconds) || seconds <= 0 || seconds > 120) {
+          return { ok: false, error: "sim_advance needs { seconds } in (0, 120]" };
+        }
+        const frames = advanceSimulation(seconds);
+        if (frames === null) return { ok: false, error: "no sim driver mounted" };
+        const ctx = getContext();
+        return { ok: true, frames, now: ctx === null ? null : Math.round(ctx.time.now() * 1000) / 1000 };
       }
       case "debug_report":
         return { ok: true, report: buildFullReport(playable) };

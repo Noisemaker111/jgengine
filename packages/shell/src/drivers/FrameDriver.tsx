@@ -1,5 +1,5 @@
 import { useFrame } from "@react-three/fiber";
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 
 import { RESERVED_INPUT_ACTIONS, dispatchBoundAction, heldActionsFor, shouldFireBoundAction } from "../boundActionDispatch";
 import { executeHotbarSlot, findHotbarSlotActions, hotbarIdFor } from "../hotbarActions";
@@ -24,6 +24,7 @@ import { devtools } from "@jgengine/core/devtools/devtools";
 import type { ActionStateTracker } from "@jgengine/core/input/actionBindings";
 
 import { collisionDebug } from "../devtools/collisionDebug";
+import { registerSimStepper } from "../devtools/simStepper";
 import { GAME_SIM_FRAME_PRIORITY } from "../camera";
 import { NO_ACTIONS } from "../shellConstants";
 import type { PointerService } from "../pointer/pointerService";
@@ -144,16 +145,10 @@ export function FrameDriver({
   }, [ctx]);
   authoritativeFrameRef.current = serverAuthoritative ? predictionHandler : null;
 
-  useFrame((_state, rawDt) => {
-    if (poster) {
-      if (posterDoneRef.current) return;
-      posterElapsedRef.current += Math.min(rawDt, 0.05);
-      if (posterElapsedRef.current >= POSTER_SETTLE_SECONDS) {
-        posterDoneRef.current = true;
-        onPosterSettled();
-        return;
-      }
-    }
+  // One frame of simulation — input, movement, onTick, behaviors, bound actions — shared by the
+  // render loop and the agent bridge's render-free `sim_advance`.
+  /** Returns false when play is gated (menu, pause) and nothing advanced. */
+  const simulate = (rawDt: number): boolean => {
     const sendInput = () => {
       if (!serverAuthoritative) return;
       const frame: InputFrame = {
@@ -171,9 +166,8 @@ export function FrameDriver({
       ctx.input.publish(heldActionsFor(tracker, NO_ACTIONS), { reset: true });
       ctx.input.publishAnalog(null);
       sendInput();
-      return;
+      return false;
     }
-    const simStart = performance.now();
     try {
     let endPhase = devtools.profile.begin("time+input");
     const dt = Math.min(rawDt, 0.05);
@@ -350,6 +344,24 @@ export function FrameDriver({
         onRuntimeError(error, "tick");
       }
     }
+    return true;
+  };
+  const simulateRef = useRef(simulate);
+  simulateRef.current = simulate;
+  useEffect(() => (poster ? undefined : registerSimStepper((rawDt) => simulateRef.current(rawDt))), [poster]);
+
+  useFrame((_state, rawDt) => {
+    if (poster) {
+      if (posterDoneRef.current) return;
+      posterElapsedRef.current += Math.min(rawDt, 0.05);
+      if (posterElapsedRef.current >= POSTER_SETTLE_SECONDS) {
+        posterDoneRef.current = true;
+        onPosterSettled();
+        return;
+      }
+    }
+    const simStart = performance.now();
+    if (!simulate(rawDt)) return;
     devtools.frame.record({ frameMs: rawDt * 1000, simMs: performance.now() - simStart });
   }, GAME_SIM_FRAME_PRIORITY);
   return null;
