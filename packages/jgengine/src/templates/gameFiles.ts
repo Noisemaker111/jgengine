@@ -1423,6 +1423,8 @@ const gameConfigTs = (name: string, options: GameConfigOptions) => {
   const fields = [
     `  name: ${JSON.stringify(name)},`,
     "  simulation: { hz: 60 },",
+    "  // Pick the look for this game's art direction: cinematic | photoreal | toon | comic | retro, or an explicit postProcessing stack.",
+    '  look: "cinematic",',
     // The world carries its own physics (laws of the place) — no separate physics field to wire.
     ...(options.world ? ["  assets,", "  world,"] : []),
     "  // Binding any movement action makes the shell drive the walk controller — a fresh game walks.",
