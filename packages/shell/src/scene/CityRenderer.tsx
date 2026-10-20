@@ -86,8 +86,8 @@ const CROP_COLORS = ["#5d7a35", "#7a6b41", "#6f7f3a"] as const;
  *  only a low-density (large-block) district lets the edge band go back to lawn. */
 const BLOCK_SURFACE_COLORS: Record<CityZoneBand, string> = { core: "#5b5850", mid: "#6c6456", edge: "#78765c" };
 const BLOCK_EDGE_GREEN = "#6a7f4a";
-/** The developed ground fades into this at its outer reach so the fabric has no stamped rim. */
-const FRINGE_COLOR = "#5f7444";
+/** Width (m) over which the developed ground fades out at its outer reach, so it has no stamped rim. */
+const FABRIC_FADE = 9;
 /** Non-buildable block land takes its open-space colour so a park block never shows raw terrain. */
 const BLOCK_OPEN_COLORS = { park: PARK_COLORS.green, plaza: PARK_COLORS.plaza, field: PARK_COLORS.field, buffer: PARK_COLORS.buffer } as const;
 
@@ -178,15 +178,6 @@ class MeshAccumulator {
     for (let i = 0; i < ribbon.positions.length; i += 1) this.positions.push(ribbon.positions[i]!);
     for (let i = 0; i < ribbon.indices.length; i += 1) this.indices.push(ribbon.indices[i]! + offset);
     this.pushColor(ribbon.positions.length / 3, color);
-  }
-
-  /** Append absolute positions with per-vertex colours (a colored accumulator only). */
-  addColoredMesh(positions: readonly number[], indices: readonly number[], colors: readonly number[]): void {
-    if (positions.length === 0) return;
-    const offset = this.positions.length / 3;
-    for (let i = 0; i < positions.length; i += 1) this.positions.push(positions[i]!);
-    for (let i = 0; i < indices.length; i += 1) this.indices.push(indices[i]! + offset);
-    if (this.colors !== null) for (let i = 0; i < colors.length; i += 1) this.colors.push(colors[i]!);
   }
 
   /** A ground-draped rotated rectangle, grid-subdivided so large patches follow the relief. */
@@ -687,7 +678,7 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
     const asphalt = new MeshAccumulator(true);
     const gravel = new MeshAccumulator();
     const sidewalks = new MeshAccumulator();
-    const urban = new MeshAccumulator(true);
+    let urban: THREE.BufferGeometry | null = null;
     const land = new MeshAccumulator(true);
     const patches = new MeshAccumulator(true);
     const markings = new MeshAccumulator(true);
@@ -965,7 +956,6 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
         }
         // One shared-vertex sheet coloured per vertex from smooth noise: a per-cell roll flipped
         // neighbouring cells between zone bands and drew a hard checkerboard over the district.
-        const fringe = new THREE.Color(FRINGE_COLOR);
         const fabricColor = new THREE.Color();
         const seed = hashString(`fabric:${resolved.center[0]}:${resolved.center[2]}`);
         const vertexIndex = new Int32Array(nx * nz).fill(-1);
@@ -987,10 +977,12 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
             fabricColor.multiplyScalar(0.8 + (valueNoise(x / 22, z / 22, seed + 1) * 0.5 + 0.5) * 0.42);
           }
           fabricColor.multiplyScalar(0.95 + tone * 0.1);
-          if (d > reach - 7) fabricColor.lerp(fringe, Math.min(1, (d - (reach - 7)) / 7));
+          // Fade to transparent over the outer reach so the sheet melts into whatever terrain lies
+          // beyond it, instead of a hard stair-stepped rim in a fixed fringe colour.
+          const t = Math.max(0, Math.min(1, (reach - d) / FABRIC_FADE));
           const next = fabric.positions.length / 3;
           fabric.positions.push(x, sample(x, z) + URBAN_LAYER, z);
-          fabric.colors.push(fabricColor.r, fabricColor.g, fabricColor.b);
+          fabric.colors.push(fabricColor.r, fabricColor.g, fabricColor.b, t * t * (3 - 2 * t));
           vertexIndex[idx] = next;
           return next;
         };
@@ -1005,7 +997,13 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
             fabric.indices.push(a, c, b, b, c, e);
           }
         }
-        urban.addColoredMesh(fabric.positions, fabric.indices, fabric.colors);
+        if (fabric.indices.length > 0) {
+          urban = new THREE.BufferGeometry();
+          urban.setAttribute("position", new THREE.BufferAttribute(new Float32Array(fabric.positions), 3));
+          urban.setAttribute("color", new THREE.BufferAttribute(new Float32Array(fabric.colors), 4));
+          urban.setIndex(fabric.indices);
+          urban.computeVertexNormals();
+        }
       }
     }
     // The land ring behind the sidewalk is the block INTERIOR — fill it with a surface read from
@@ -1074,7 +1072,7 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
       asphalt: asphalt.build(),
       gravel: gravel.build(),
       sidewalks: sidewalks.build(),
-      urban: urban.build(),
+      urban,
       land: land.build(),
       patches: patches.build(),
       markings: markings.build(),
@@ -1683,7 +1681,7 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
     <group>
       {ground?.urban != null ? (
         <mesh geometry={ground.urban} receiveShadow>
-          <meshStandardMaterial vertexColors roughness={1} metalness={0} side={THREE.DoubleSide} />
+          <meshStandardMaterial vertexColors transparent depthWrite={false} roughness={1} metalness={0} side={THREE.DoubleSide} />
         </mesh>
       ) : null}
       {ground?.land != null ? (
