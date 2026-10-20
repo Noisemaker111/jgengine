@@ -13,7 +13,7 @@ import { applyModelNodeVisibility, modelHiddenNodesKey } from "./modelNodeVisibi
 
 /** Model loading, placement, shadows and animation for a custom renderer. */
 export type ModelInstanceConfig = Pick<ModelConfig,
-  "url" | "scale" | "targetHeight" | "y" | "anchor" | "dims" | "shadows" | "animation" | "hiddenNodes"
+  "url" | "scale" | "targetHeight" | "y" | "anchor" | "dims" | "shadows" | "animation" | "hiddenNodes" | "surfaceDetail"
 >;
 
 /** Caller-owned styling runs on the isolated clone, never the loader cache. */
@@ -46,7 +46,7 @@ export function useModelInstance(model: ModelInstanceConfig, options: ModelInsta
   const { configure, instanceId } = options;
   const hiddenNodesKey = modelHiddenNodesKey(hiddenNodes);
   const { content, scene, bindBounds } = useMemo(() => {
-    const content = cloneModelScene(gltf.scene, { shadows: model.shadows });
+    const content = cloneModelScene(gltf.scene, { shadows: model.shadows, surfaceDetail: model.surfaceDetail });
     try {
       configure?.(content);
       for (const diagnostic of applyModelNodeVisibility(content, hiddenNodes)) console.warn(`Model ${model.url} hiddenNodes: ${diagnostic.message}`);
@@ -56,7 +56,7 @@ export function useModelInstance(model: ModelInstanceConfig, options: ModelInsta
       disposeModelScene(content);
       throw error;
     }
-  }, [gltf.scene, model.shadows, configure, hiddenNodesKey]);
+  }, [gltf.scene, model.shadows, model.surfaceDetail, configure, hiddenNodesKey]);
   const placement = useMemo(() => modelPlacementTransform(scene, model, bindBounds),
     [scene, bindBounds, model.scale, model.targetHeight, model.y, model.anchor, model.dims]);
   useEffect(() => () => disposeModelScene(content), [content]);

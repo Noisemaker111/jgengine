@@ -5,6 +5,7 @@ import { parseModelHiddenNodes } from "@jgengine/core/editor/modelNodeVisibility
 
 import { applyMaterialOverride } from "../materialOverride";
 import { cloneModelScene, disposeModelScene, ownModelMaterial } from "../render/modelRender";
+import { applyModelSurface } from "../render/modelSurface";
 
 /** One instanceable draw source harvested from a resolved GLB — geometry stays shared with the loader cache, `localMatrix` bakes the model's own transform (from its scene root) plus scale/anchor normalization. */
 export interface ScatterModelSource {
@@ -57,7 +58,8 @@ export function buildScatterModelSources(
   if (parseModelHiddenNodes(model.hiddenNodes)?.length) throw new Error("Instanced model node visibility requires the individual model renderer; use EntityModel for hidden nodes");
   if (model.materialAssignments?.length) throw new Error("Instanced model material assignments require the individual model renderer; use EntityModel for authored slots");
   if (model.material?.maps !== undefined) throw new Error("Instanced model override maps require an owned texture loader; use EntityModel for authored maps");
-  const root = cloneModelScene(gltfScene, { shadows: model.shadows });
+  applyModelSurface(gltfScene);
+  const root = cloneModelScene(gltfScene, { shadows: model.shadows, surfaceDetail: model.surfaceDetail });
   if (model.material !== undefined) applyMaterialOverride(root, model.material, { clone: false, ownMaterial: material => ownModelMaterial(root, material) });
   root.updateMatrixWorld(true);
   const base = scatterModelBaseTransform(root, model);
