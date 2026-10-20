@@ -125,12 +125,15 @@ export function GamePlayerShell({
         devtoolsEnabled,
         isDevtoolsOpen: () => devtoolsOpenRef.current,
         setDevtoolsOpen,
+        getContext: () => ctxRef.current,
       }),
     [playable, devtoolsEnabled],
   );
   const [posterFrozen, setPosterFrozen] = useState(false);
   const posterSettledRef = useRef(false);
   const [ctx, setCtx] = useState<GameContext | null>(null);
+  const ctxRef = useRef<GameContext | null>(null);
+  ctxRef.current = ctx;
   const [diagnostics, setDiagnostics] = useState<RuntimeDiagnostic[]>([]);
   const diagnosticSequence = useRef(0);
   const presentationDiagnostics = useRef(createPresentationDiagnosticOwnership());

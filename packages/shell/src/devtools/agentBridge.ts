@@ -1,5 +1,6 @@
 import { devtools } from "@jgengine/core/devtools/devtools";
 import { getSaveEndpoint } from "@jgengine/core/devtools/saveEndpoint";
+import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { PlayableGame } from "../registry";
 import {
   isHudAnchor,
@@ -21,6 +22,21 @@ export type AgentBridgeRequest = { method: string } & Record<string, unknown>;
 export type AgentBridgeResponse =
   | { ok: true; [key: string]: unknown }
   | { ok: false; error: string };
+
+/**
+ * @internal
+ * The local player's live pose for `player_pose` / `debug_snapshot`, so a drive can measure movement
+ * (position deltas between two RPCs) instead of judging it from screenshots. `null` before the game
+ * context exists or before the player entity spawns.
+ */
+export function playerPoseReport(ctx: GameContext | null): { userId: string; position: readonly [number, number, number]; rotationY: number } | null {
+  if (ctx === null) return null;
+  const entity = ctx.scene.entity.get(ctx.player.userId);
+  if (entity === null || entity === undefined) return null;
+  const [x, y, z] = entity.position;
+  const round = (value: number) => Math.round(value * 1000) / 1000;
+  return { userId: ctx.player.userId, position: [round(x), round(y), round(z)], rotationY: round(entity.rotationY ?? 0) };
+}
 
 type EditorHost = { gameId: string; handle(request: AgentBridgeRequest): unknown };
 
@@ -134,8 +150,11 @@ export function installAgentBridge(options: {
   devtoolsEnabled: boolean;
   isDevtoolsOpen: () => boolean;
   setDevtoolsOpen: (open: boolean) => void;
+  /** Live game context, once mounted; feeds `player_pose`. */
+  getContext?: () => GameContext | null;
 }): () => void {
   const { playable, devtoolsEnabled, isDevtoolsOpen, setDevtoolsOpen } = options;
+  const getContext = options.getContext ?? (() => null);
 
   const handle = (request: AgentBridgeRequest): AgentBridgeResponse | Promise<AgentBridgeResponse> => {
     const method = typeof request?.method === "string" ? request.method : "";
@@ -161,7 +180,11 @@ export function installAgentBridge(options: {
         return { ok: true, open };
       }
       case "debug_snapshot":
-        return { ok: true, snapshot: buildLeanReport(playable) };
+        return { ok: true, snapshot: { ...buildLeanReport(playable), player: playerPoseReport(getContext()) } };
+      case "player_pose": {
+        const pose = playerPoseReport(getContext());
+        return pose === null ? { ok: false, error: "no local player entity yet" } : { ok: true, ...pose };
+      }
       case "debug_report":
         return { ok: true, report: buildFullReport(playable) };
       case "debug_perf_reset":
