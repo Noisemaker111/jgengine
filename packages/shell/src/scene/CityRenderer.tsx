@@ -56,6 +56,7 @@ import { InstancedBuildings, type InstancedBuildingPlacement } from "../structur
 import { getBuildingKit } from "../structures/buildingKitRegistry";
 import { createCityWindowMaterial } from "./cityWindowMaterial";
 import { registerSceneKindRenderer, type SceneKindRenderContext } from "./sceneKindRenderers";
+import { junctionSurface } from "./cityJunctionSurface";
 
 const ASPHALT_COLOR = "#3a3b3d";
 const GRAVEL_COLOR = "#93815f";
@@ -825,7 +826,9 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
       const crossIndex = trimmed.junctionIndices[j]!;
       const scuff = (hashString(`cross:${crossIndex}`) % 512) / 512;
       wearColor.setRGB(0.76 + scuff * 0.18, 0.77 + scuff * 0.17, 0.8 + scuff * 0.16);
-      patches.addMesh(trimmed.junctions[j]!, wearColor);
+      const cross = resolved.intersections[crossIndex];
+      if (cross !== undefined && junctionSurface(cross, resolved.streets) === "gravel") gravel.addMesh(trimmed.junctions[j]!);
+      else patches.addMesh(trimmed.junctions[j]!, wearColor);
     }
     for (const paint of buildIntersectionMarkings(trimmed, deckSampler, {
       mouthClearance: 1.25,
