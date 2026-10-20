@@ -39,6 +39,11 @@ describe("atomic bars render from an explicit value with no provider", () => {
     }
   });
 
+  test("caps the frame at a quarter of the bar height so thin bars keep a visible fill", () => {
+    const html = renderToStaticMarkup(createElement(HealthBar, { value: 50, max: 100 }));
+    expect(html).toContain("border:min(var(--jg-bar-frame-width, 2px), calc(var(--jg-bar-height, 18px) / 4)) solid");
+  });
+
   test("fill fraction clamps to 0..1 from value/min/max", () => {
     expect(renderToStaticMarkup(createElement(HealthBar, { value: 30, max: 120 }))).toContain('data-fill-fraction="0.2500"');
     expect(renderToStaticMarkup(createElement(HealthBar, { value: 999, max: 100 }))).toContain('data-fill-fraction="1.0000"');
