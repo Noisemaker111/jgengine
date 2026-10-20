@@ -99,7 +99,7 @@ export function assetLinks(mainRoot: string, ignored: string[]): string[] {
   const links = existsSync(join(mainRoot, "Games")) ? ["Games"] : [];
   for (const line of ignored) {
     const rel = line.replace(/\/$/, "");
-    if (/^apps\/[^/]+\/public\/.+/.test(rel)) links.push(rel);
+    if (/^apps\/dev\/public\/.+/.test(rel)) links.push(rel);
   }
   return links;
 }
@@ -149,7 +149,7 @@ if (import.meta.main) {
   } else {
     const branchExists =
       Bun.spawnSync(["git", "rev-parse", "--verify", "--quiet", `refs/heads/${branch}`], { cwd: mainRoot }).exitCode === 0;
-    console.log(`agent-worktree: adding ${target} on ${branch} from origin/beta (${base.slice(0, 8)})`);
+    console.log(`agent-worktree: adding ${target} on ${branch}${branchExists ? "" : ` from origin/beta (${base.slice(0, 8)})`}`);
     git(mainRoot, branchExists ? ["worktree", "add", target, branch] : ["worktree", "add", "-b", branch, target, "origin/beta"], 180_000);
   }
 
@@ -186,7 +186,6 @@ if (import.meta.main) {
 agent-worktree: ready
   path:   ${target}
   branch: ${branch}
-  base:   origin/beta
 
 Tests and type-checks run from source with no build. Work with cwd = that path;
 do not create another worktree from inside it.

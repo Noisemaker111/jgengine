@@ -63,7 +63,7 @@ describe("linking a worktree to the main checkout", () => {
   test("links Games and ignored dev-runner assets, never tracked or non-public paths", () => {
     mkdirSync(join(main, "Games", "beacon"), { recursive: true });
     mkdirSync(join(main, "apps", "dev", "public", "models", "pack"), { recursive: true });
-    const links = assetLinks(main, ["apps/dev/public/models/pack/", "apps/dev/node_modules/", "apps/dev/.cache/"]);
+    const links = assetLinks(main, ["apps/dev/public/models/pack/", "apps/dev/node_modules/", "apps/web/public/r/"]);
     expect(links).toEqual(["Games", "apps/dev/public/models/pack"]);
     expect(linkAssets(main, target, links)).toEqual(links);
     expect(lstatSync(join(target, "Games")).isSymbolicLink()).toBe(true);
