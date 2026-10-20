@@ -5,7 +5,7 @@ import { join, resolve } from "node:path";
 import { chromium, type Browser, type BrowserContext, type Page } from "playwright-core";
 import { buildBrowserFixture, findChromeExecutable } from "../../../scripts/browser-lib";
 import { cleanupBrowserFixture } from "../../../scripts/browser-fixture-cleanup";
-import { gotoFixture, installPublicPackages } from "../../../scripts/browser-test-fixture";
+import { gotoFixture } from "../../../scripts/browser-test-fixture";
 
 let scratch: string | undefined;
 let browser: Browser | undefined, context: BrowserContext | undefined, page: Page;
@@ -35,13 +35,14 @@ beforeAll(async () => {
   try {
     const directory = scratch = await mkdtemp(join(tmpdir(), "jgengine-hud-input-"));
     await setupStep("link browser peers", async () => {
-      await Promise.all([mkdir(`${directory}/node_modules/@jgengine`, { recursive: true }), mkdir(`${directory}/node_modules/@react-three`, { recursive: true })]);
+      await mkdir(`${directory}/node_modules/@react-three`, { recursive: true });
       await Promise.all([
         ...["react", "react-dom"].map(peer => symlink(resolve(import.meta.dir, "../../react/node_modules", peer), `${directory}/node_modules/${peer}`, "dir")),
         ...["@react-three/fiber", "@react-three/drei", "three", "three-stdlib"].map(peer => symlink(resolve(import.meta.dir, "../node_modules", peer), `${directory}/node_modules/${peer}`, "dir")),
       ]);
     });
-    await setupStep("install public core/react/shell", () => installPublicPackages(directory, ["core", "react", "shell"]));
+    // Public subpaths resolve to package source through the repo's tsconfig paths: no build or pack.
+    await Bun.write(`${directory}/tsconfig.json`, JSON.stringify({ extends: resolve(import.meta.dir, "../../../tsconfig.base.json") }));
     await Bun.write(`${directory}/fixture.tsx`, `
       import React,{useState} from 'react';import {createRoot} from 'react-dom/client';
       import {InventoryGrid} from '@jgengine/react/inventoryGrid';import {GameProvider} from '@jgengine/react/provider';

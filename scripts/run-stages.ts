@@ -41,7 +41,7 @@ const bun = (...args: string[]): { command: string; args: string[] } => ({ comma
  * Checks whose failure means "a committed artifact drifted from its generator", not "your code is
  * wrong". These are the ones that cost repeated round trips when the message only says what failed.
  */
-const GENERATED_ARTIFACT_CHECKS = new Set(["check-skill-api", "check-capabilities", "check-artifacts"]);
+const GENERATED_ARTIFACT_CHECKS = new Set(["check-skill-api", "check-capabilities", "check-artifacts", "check-source-paths"]);
 
 /**
  * `check-types` fans out over independent validators. None of them consumes
@@ -49,7 +49,7 @@ const GENERATED_ARTIFACT_CHECKS = new Set(["check-skill-api", "check-capabilitie
  * hang off `ensure-ready` alone.
  */
 const CHECK_TYPES_STAGES: readonly Stage[] = [
-  { name: "ensure-ready", ...bun("scripts/ensure-ready.ts"), rerun: "bun scripts/ensure-ready.ts" },
+  { name: "ensure-ready", ...bun("scripts/ensure-ready.ts", "--install-only"), rerun: "bun scripts/ensure-ready.ts --install-only" },
   ...[
     "check-artifacts",
     "check-release-set",
@@ -71,6 +71,7 @@ const CHECK_TYPES_STAGES: readonly Stage[] = [
     "check-doc-symbols",
     "check-hud-tokens",
     "check-street-rule-parity",
+    "check-source-paths",
     "check-test-spawn-timeouts",
   ].map((name): Stage => ({
     name,
@@ -116,12 +117,13 @@ const GATE_STAGES: readonly Stage[] = [
 
 /**
  * Every committed derived artifact, regenerated in dependency order by one command. These were four
- * separate scripts that had to be run in the right sequence — and often after a build — with nothing
- * naming the sequence, so a core API change cost several round trips through a failing gate.
- * `ensure-ready` rebuilds stale package dist first, which `gen:export-manifest` reads.
+ * separate scripts that had to be run in the right sequence with nothing naming the sequence, so a
+ * core API change cost several round trips through a failing gate. Every generator reads package
+ * source, so no build runs first.
  */
 const GEN_STAGES: readonly Stage[] = [
-  { name: "ensure-ready", ...bun("scripts/ensure-ready.ts"), rerun: "bun scripts/ensure-ready.ts" },
+  { name: "ensure-ready", ...bun("scripts/ensure-ready.ts", "--install-only"), rerun: "bun scripts/ensure-ready.ts --install-only" },
+  { name: "gen:source-paths", ...bun("run", "gen:source-paths"), needs: ["ensure-ready"] },
   // Barrels first: the export surface every later generator reads is derived from them.
   { name: "gen:barrels", ...bun("run", "gen:barrels"), needs: ["ensure-ready"] },
   ...["gen:capabilities", "gen:skill-api", "gen:export-manifest"].map(

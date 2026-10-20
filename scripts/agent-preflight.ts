@@ -1,7 +1,7 @@
 import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
@@ -139,6 +139,40 @@ if (ship) {
     failures.push(
       "branch has no net diff from origin/beta — commit your work to this branch first (ship:preflight reads committed history, not the working tree), or drop the no-op PR",
     );
+}
+
+/**
+ * Committed generated artifacts CI compares against their generators. All of them read package
+ * source, so they run on an unbuilt tree and never compare against a stale dist.
+ */
+const GENERATED_CHECKS: readonly { name: string; args: readonly string[] }[] = [
+  { name: "check-export-manifest", args: ["scripts/gen-export-manifest.ts", "--check"] },
+  { name: "check-capabilities", args: ["scripts/gen-capability-index.ts", "--check"] },
+  { name: "check-skill-api", args: ["scripts/gen-skill-api.ts", "--check"] },
+  { name: "check-source-paths", args: ["scripts/sourcePaths.ts", "--check"] },
+];
+
+function runCheck(args: readonly string[]): Promise<{ ok: boolean; output: string }> {
+  return new Promise((done) => {
+    const child = spawn("bun", [...args], { cwd: root, stdio: ["ignore", "pipe", "pipe"] });
+    let output = "";
+    child.stdout.on("data", (chunk) => (output += chunk));
+    child.stderr.on("data", (chunk) => (output += chunk));
+    child.on("close", (code) => done({ ok: code === 0, output: output.trim() }));
+    child.on("error", (error) => done({ ok: false, output: String(error) }));
+  });
+}
+
+if (ship) {
+  const results = await Promise.all(GENERATED_CHECKS.map(async (check) => ({ check, ...(await runCheck(check.args)) })));
+  const stale = results.filter((result) => !result.ok);
+  if (stale.length > 0) {
+    failures.push(
+      `generated files are stale (${stale.map((result) => result.check.name).join(", ")}) — CI will fail. ` +
+        "Run `bun run gen`, commit the result, then re-run ship:preflight.\n" +
+        stale.map((result) => `    ${result.check.name}: ${result.output.split("\n").slice(0, 6).join("\n      ")}`).join("\n"),
+    );
+  }
 }
 
 if (failures.length > 0) {

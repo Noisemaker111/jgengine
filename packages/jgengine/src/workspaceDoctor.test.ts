@@ -1,5 +1,5 @@
 import { expect, test, spyOn } from "bun:test";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
@@ -167,7 +167,9 @@ test("an installed SDK graph budget prevents a complete workspace verdict", asyn
   });
 });
 
-test("the built Node CLI drains a workspace JSON report larger than a pipe buffer", () => {
+// Needs `bun run build` (CI builds first); source-only checkouts skip it.
+const builtCli = join(import.meta.dir, "..", "dist", "cli", "index.js");
+test.if(existsSync(builtCli))("the built Node CLI drains a workspace JSON report larger than a pipe buffer", () => {
   const root = mkdtempSync(join(tmpdir(), "jgengine-workspace-stdout-"));
   try {
     manifest(root, { workspaces: ["games/*"] });
@@ -175,7 +177,7 @@ test("the built Node CLI drains a workspace JSON report larger than a pipe buffe
     for (let index = 0; index < 120; index++) manifest(join(root, "games", `game-${index}`), {
       name: `game-${index}`, dependencies: { "@jgengine/core": "0.19.0" },
     });
-    const result = spawnSync("node", [join(import.meta.dir, "..", "dist", "cli", "index.js"), "doctor", "--workspace", root, "--json"], { encoding: "utf8", timeout: 60_000 });
+    const result = spawnSync("node", [builtCli, "doctor", "--workspace", root, "--json"], { encoding: "utf8", timeout: 60_000 });
     expect(result.error).toBeUndefined();expect(result.status).toBe(0);expect(result.stderr).toBe("");
     expect(Buffer.byteLength(result.stdout)).toBeGreaterThan(65_536);
     const report = JSON.parse(result.stdout);
