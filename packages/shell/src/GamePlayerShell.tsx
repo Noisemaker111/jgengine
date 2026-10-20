@@ -67,6 +67,7 @@ import { observableShellTracker, attachShellInputPublication } from "./shellInpu
 import { attachShellControlSuspension } from "./shellControlSuspension";
 import { LazyShell3dPresentation } from "./lazyShell3dPresentation";
 import { createPresentationDiagnosticOwnership, createPlaySurfaceFocusOwnership, PresentationRecovery, type PresentationRecoveryEvent } from "./presentationRecovery";
+import { installPlayFocusReclaim } from "./playSurfaceFocus";
 
 const DEV_USER_ID = "dev-player";
 
@@ -138,6 +139,8 @@ export function GamePlayerShell({
   const presentationDiagnostics = useRef(createPresentationDiagnosticOwnership());
   const [remotePlayers, setRemotePlayers] = useState<PresencePoseRow[]>([]);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
+  // A start/menu button that unmounts on click drops focus to <body>, where gameplay keys never arrive.
+  useEffect(() => (poster ? undefined : installPlayFocusReclaim(document, () => wrapperRef.current)), [poster]);
   const recoveredFocus = useRef(createPlaySurfaceFocusOwnership<GameContext>());
   const yawRef = useRef(0);
   const pitchRef = useRef(0);

@@ -862,6 +862,7 @@
     "./map/terrainMap",
     "./materialOverride",
     "./multiplayer",
+    "./playSurfaceFocus",
     "./pointer/PointerOverlays",
     "./pointer/PointerProbe",
     "./pointer/pointerService",
