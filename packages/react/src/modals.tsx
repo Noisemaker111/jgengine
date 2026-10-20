@@ -278,6 +278,7 @@ const PAUSE_TITLE: CSSProperties = {
 };
 
 const PAUSE_ITEM: CSSProperties = { marginTop: 8 };
+const PAUSE_DANGER_ITEM: CSSProperties = { ...PAUSE_ITEM, color: "var(--jg-danger, #e5484d)", borderColor: "rgba(229,72,77,0.45)" };
 
 /**
  * A reskinnable pause-menu building block: a primary Resume button plus a game-filled list of slot
@@ -308,12 +309,11 @@ export function PauseMenu({
           key={item.id}
           data-pause-item={item.id}
           cue={`pause:${item.id}`}
-          variant={item.danger ? "danger" : "secondary"}
           size="lg"
           block
           onClick={item.onSelect}
           disabled={item.disabled}
-          style={PAUSE_ITEM}
+          style={item.danger ? PAUSE_DANGER_ITEM : PAUSE_ITEM}
         >
           {item.label}
         </HudButton>

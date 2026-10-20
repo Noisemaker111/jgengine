@@ -61,7 +61,7 @@ export const ENGINE_STYLESHEET = `/* @jgengine/react engine stylesheet */
 }
 :where([data-jg-hud]) :where(button, [role="button"]):where(${ENABLED}):active { scale: var(--jg-press-scale, 0.97); }
 
-[data-jg-button] { appearance: none; box-sizing: border-box; position: relative; isolation: isolate; display: inline-flex; align-items: center; justify-content: center; gap: var(--jg-space-sm, 8px); min-height: 36px; padding: 0 var(--jg-space-lg, 16px); margin: 0; font-family: var(--jg-font-body, ${HUD_FONT_STACK}); font-size: var(--jg-type-sm, 13px); font-weight: 600; line-height: 1; letter-spacing: 0.01em; white-space: nowrap; color: var(--jg-text, #f5f7fa); background: var(--jg-slot-bg, rgba(12,15,21,0.78)); border: var(--jg-slot-border, 1px solid rgba(255,255,255,0.13)); border-radius: var(--jg-slot-radius, 8px); box-shadow: ${HIGHLIGHT}, ${RAISED}; cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent; transition: translate ${FAST} ${EASE}, scale ${FAST} ${SPRING}, box-shadow ${FAST} ${EASE}, border-color ${FAST} ${EASE}, background-color ${FAST} ${EASE}; }
+[data-jg-button] { appearance: none; box-sizing: border-box; position: relative; isolation: isolate; display: inline-flex; align-items: center; justify-content: center; gap: var(--jg-space-sm, 8px); min-height: 36px; padding: 0 var(--jg-space-lg, 16px); margin: 0; font-family: var(--jg-font-body, ${HUD_FONT_STACK}); font-size: var(--jg-type-md, 14px); font-weight: 600; line-height: 1; letter-spacing: 0.01em; white-space: nowrap; color: var(--jg-text, #f5f7fa); background: linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.03)), var(--jg-slot-bg, rgba(12,15,21,0.78)); border: var(--jg-slot-border, 1px solid rgba(255,255,255,0.13)); border-radius: var(--jg-slot-radius, 8px); box-shadow: ${HIGHLIGHT}, ${RAISED}; cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent; transition: translate ${FAST} ${EASE}, scale ${FAST} ${SPRING}, box-shadow ${FAST} ${EASE}, border-color ${FAST} ${EASE}, background-color ${FAST} ${EASE}; }
 [data-jg-button]::after { content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; background: var(--jg-hover-overlay, rgba(255,255,255,0.07)); opacity: 0; pointer-events: none; transition: opacity ${FAST} ${EASE}; }
 @media (hover: hover) {
   [data-jg-button]${ENABLED}:hover { translate: 0 var(--jg-hover-lift, -1px); box-shadow: ${HIGHLIGHT}, ${OVERLAY}; }
@@ -75,8 +75,8 @@ export const ENGINE_STYLESHEET = `/* @jgengine/react engine stylesheet */
 [data-jg-button][data-variant="danger"] { color: #fff; background: linear-gradient(180deg, rgba(255,255,255,0.16), rgba(255,255,255,0) 60%), var(--jg-danger, #e5484d); border: 1px solid rgba(255,255,255,0.22); }
 [data-jg-button][data-variant="ghost"] { background: transparent; border-color: transparent; box-shadow: none; }
 [data-jg-button][data-variant="ghost"]${ENABLED}:hover { box-shadow: none; }
-[data-jg-button][data-size="sm"] { min-height: 28px; padding: 0 var(--jg-space-md, 12px); font-size: var(--jg-type-xs, 12px); }
-[data-jg-button][data-size="lg"] { min-height: 44px; padding: 0 var(--jg-space-xl, 24px); font-size: var(--jg-type-md, 14px); }
+[data-jg-button][data-size="sm"] { min-height: 28px; padding: 0 var(--jg-space-md, 12px); font-size: var(--jg-type-sm, 13px); }
+[data-jg-button][data-size="lg"] { min-height: 44px; padding: 0 var(--jg-space-xl, 24px); font-size: var(--jg-type-lg, 16px); }
 [data-jg-button][data-size="icon"] { min-height: 0; width: 28px; height: 28px; padding: 0; font-size: var(--jg-type-sm, 13px); }
 [data-jg-button][data-block] { display: flex; width: 100%; }
 

@@ -1360,6 +1360,10 @@
 - `HudButtonSize` (type): type HudButtonSize = "sm" | "md" | "lg" | "icon" — Size of a {@link HudButton}; `icon` is a 28px square.
 - `HudButtonVariant` (type): type HudButtonVariant = "secondary" | "primary" | "danger" | "ghost" — Visual weight of a {@link HudButton}.
 
+## @jgengine/react/hudChromePreview
+
+- `HudChromePreview` (function): function HudChromePreview({ className }: { className?: string }): React.JSX.Element — The shared HUD chrome under the shell's default root theme, from static values: a glass frame with vitals and a counter, an action bar, a window, a confirm dialog, a pause menu, and the button variants. Screenshots identically; the before/after evidence for theme and primitive changes.
+
 ## @jgengine/react/hudFrame
 
 - `HudFrame` (function): function HudFrame({ variation = "glass", shape = "rounded", title, aside, padding, width, interactive, className, style, children, }: HudFrameProps): ReactNode — Optional framed panel primitive — a single `<div data-hud-frame>` with a `glass`, `plate`, `retro`, or `themed` skin, optional `title`/`aside` header, and caller `style` merged last. Shared building block for demos and token-themed widgets; games own product chrome and art direction (see AGENTS.md).

@@ -673,6 +673,7 @@
     "./hooks",
     "./hud",
     "./hudButton",
+    "./hudChromePreview",
     "./hudFrame",
     "./hudInteract",
     "./hudLayout",
