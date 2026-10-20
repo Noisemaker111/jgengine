@@ -201,7 +201,9 @@ function BarView({
         flex: endCap === undefined ? undefined : "1 1 auto",
         width: endCap === undefined ? "100%" : undefined,
         height: cssVar("height"),
-        border: `${cssVar("frameWidth")} solid ${cssVar("frame")}`,
+        // The frame never takes more than a quarter of the height, so thin bars (4px roster/overhead
+        // bars) keep a visible fill instead of collapsing to two frame lines.
+        border: `min(${cssVar("frameWidth")}, calc(${cssVar("height")} / 4)) solid ${cssVar("frame")}`,
         background: cssVar("track"),
         backgroundImage: "var(--jg-bar-skin-track, none)",
         boxShadow: cssVar("bevel"),
