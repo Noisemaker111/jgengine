@@ -128,4 +128,16 @@ describe("environmentSummary", () => {
     const [west, east] = summary.structures;
     expect(west.bounds.maxX).toBeLessThan(east.bounds.minX);
   });
+  test("building style shapes the facade, not just its colours", () => {
+    const count = (style: "generic" | "industrial", kind: string) =>
+      resolveStructureBuildings(building({ count: 16, stories: [3, 3], style, seed: "facade" }))
+        .flatMap((entry) => entry.parts)
+        .filter((part) => part.kind === kind).length;
+    expect(count("industrial", "window")).toBeLessThan(count("generic", "window") * 0.6);
+    expect(count("industrial", "clothesline")).toBe(0);
+    const overridden = resolveStructureBuildings(
+      building({ count: 4, stories: [3, 3], style: "industrial", probabilities: { window: 1 }, seed: "facade" }),
+    ).flatMap((entry) => entry.parts).filter((part) => part.kind === "window").length;
+    expect(overridden).toBeGreaterThan(0);
+  });
 });

@@ -372,6 +372,32 @@ export const BUILDING_STYLE_PALETTES: Record<BuildingStyle, Record<BuildingPartK
  * neighbours differ in hue and value while the block stays one palette. Index 0 is the palette's
  * own `wall`; the rest fan warmer/cooler and lighter/darker around it.
  */
+/**
+ * Facade grammar per style: which parts a style tends to show. A style used to change colour only,
+ * so an industrial yard, a ruined block and a coastal strip all read as the same windowed apartment.
+ * Unset parts keep the generic probabilities.
+ */
+export const BUILDING_STYLE_PROBABILITIES: Record<BuildingStyle, Partial<BuildingProbabilities>> = {
+  generic: {},
+  capital: { window: 0.95, awning: 0.3, clothesline: 0.02, storeSign: 0.5 },
+  village: { window: 0.7, openStore: 0.25, awning: 0.3, airConditioner: 0.04, clothesline: 0.4, storeSign: 0.18, roofProp: 0.12 },
+  desert: { window: 0.45, awning: 0.55, airConditioner: 0.2, clothesline: 0.18, storeSign: 0.35, roofProp: 0.4 },
+  industrial: { window: 0.3, openStore: 0.12, awning: 0, airConditioner: 0.55, clothesline: 0, storeSign: 0.08, roofProp: 0.8 },
+  coastal: { window: 0.85, awning: 0.62, clothesline: 0.32, storeSign: 0.55 },
+  neon: { window: 0.9, awning: 0.2, clothesline: 0.05, storeSign: 0.95, roofProp: 0.5 },
+  ruin: { window: 0.5, openStore: 0.2, awning: 0.04, airConditioner: 0.04, clothesline: 0.03, storeSign: 0.04, roofProp: 0.12 },
+  frontier: { window: 0.5, openStore: 0.45, awning: 0.58, airConditioner: 0, clothesline: 0.12, storeSign: 0.45, roofProp: 0.1 },
+  aerial: { window: 0.95, awning: 0, airConditioner: 0.3, clothesline: 0, storeSign: 0.2, roofProp: 0.6 },
+};
+
+/** Style facade probabilities with explicit overrides applied on top. */
+export function resolveBuildingProbabilities(
+  style: BuildingStyle = DEFAULT_BUILDING_STYLE,
+  overrides?: Partial<BuildingProbabilities>,
+): Partial<BuildingProbabilities> {
+  return { ...BUILDING_STYLE_PROBABILITIES[style], ...overrides };
+}
+
 export const BUILDING_STYLE_WALL_TONES: Record<BuildingStyle, readonly string[]> = {
   generic: ["#9c8f80", "#736a60", "#b7a894", "#8b8a80", "#c3ac90", "#635c54", "#a1978c"],
   capital: ["#cfc5ad", "#ac9878", "#e6e0cf", "#a8a698", "#c8b48d", "#847b68", "#ded2b3"],
