@@ -157,7 +157,7 @@ describe("SDK validation ownership", () => {
     expect(sdk.map((stage) => stage.name)).toEqual([
       "ensure-ready", "check-artifacts", "check-release-set", "check-skills", "check-skill-api", "check-orphan-ratchet",
       "check-stateful-ratchet", "check-capabilities", "check-pack-texture-layout", "check-recipes",
-      "check-doc-symbols", "check-hud-tokens", "check-street-rule-parity", "check-types-all",
+      "check-doc-symbols", "check-hud-tokens", "check-street-rule-parity", "check-test-spawn-timeouts", "check-types-all",
     ]);
   });
 
