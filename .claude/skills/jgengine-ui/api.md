@@ -1840,6 +1840,7 @@
 
 - `UiCue` (type): type UiCue = "click" | "hover" | "open" | "close" | "confirm" | "deny" | "notify" — Interface sound cues every game gets: press, hover, panel open/close, confirm, refusal, notification.
 - `playUiCue` (function): function playUiCue(ctx: Pick<GameContext, "game"> | null, cue: UiCue): void — Play UI cue `cue` through the game's audio seam (`ui.<cue>` in the shell catalog). No-op outside a game.
+- `uiCueForInteraction` (function): function uiCueForInteraction(event: HudInteractEvent): UiCue | null — The UI cue an engine HUD primitive interaction plays, or `null` for none: activating plays the primitive's `cue` when it names a {@link UiCue} (e.g. `cue="confirm"`), else `click`; hovering a button or action slot plays `hover`; panels and windows play `open`/`close`. Press and focus are silent.
 - `useUiCue` (function): function useUiCue(): (cue: UiCue) => void — Returns a stable `cue(name)` that plays a UI sound: click, hover, open, close, confirm, deny, notify. The shell ships soft procedural defaults on the "ui" bus (volume in Settings, muted with master); a game replaces one by declaring `audio.sounds["ui.click"]` or `audio.uiCues`. Safe outside a GameProvider.
 
 ## @jgengine/react/useDebouncedCommit
