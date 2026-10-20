@@ -76,12 +76,12 @@ export function incompatibleStaticObjectIds(
   });
 }
 
-/** Groups compatible authored props above eight placements per spatial cell. @internal */
 /** Batch cell edge in metres: one instanced draw per model per cell, culled as a unit. @internal */
 export const STATIC_BATCH_CHUNK = 64;
 /** Smallest same-model group worth an instanced draw; below this each prop draws on its own. @internal */
 export const STATIC_BATCH_MIN = 3;
 
+/** Groups compatible authored or `scenery` props, at least {@link STATIC_BATCH_MIN} per spatial cell. @internal */
 export function groupStaticObjects(candidates: readonly StaticObjectCandidate[], chunkSize = STATIC_BATCH_CHUNK, previous?: ReadonlyMap<string, StaticObjectBatch>): {
   batches: StaticObjectBatch[];
   singles: StaticObjectCandidate[];
