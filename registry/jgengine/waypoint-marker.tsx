@@ -78,14 +78,14 @@ export function WaypointMarker({
       )}
       {label !== undefined && (
         <span
-          className="text-[9px] font-bold uppercase tracking-[0.18em]"
+          className="text-[length:var(--jg-type-xs,12px)] font-bold uppercase tracking-[0.18em]"
           style={{ fontFamily: "var(--jg-font-display)", color, textShadow: HUD_TEXT_SHADOW }}
         >
           {label}
         </span>
       )}
       {distance !== undefined && (
-        <span className="font-mono text-[9px]" style={{ color: "var(--jg-text-dim)" }}>
+        <span className="font-mono text-[length:var(--jg-type-xs,12px)]" style={{ color: "var(--jg-text-dim)" }}>
           {distance}
         </span>
       )}

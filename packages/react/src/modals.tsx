@@ -2,6 +2,7 @@ import {
   useCallback,
   useEffect,
   useReducer,
+  useRef,
   type CSSProperties,
   type ReactNode,
 } from "react";
@@ -13,8 +14,14 @@ import {
   type ModalStack,
 } from "@jgengine/core/ui/modalStack";
 
-import { HudFrame } from "./hudFrame";
+import { useReducedMotion } from "./accessibility";
 import { useDialogBehavior } from "./dialogBehavior";
+import { useEngineStyles } from "./engineStyles";
+import { HudButton } from "./hudButton";
+import { useHudInteract, type HudInteractListener } from "./hudInteract";
+import { HudPanel } from "./hudPanel";
+import { hudType } from "./hudTokens";
+import { usePresence } from "./presence";
 
 /**
  * React chrome over the headless modal stack (`@jgengine/core/ui/modalStack`) — the blocking-overlay
@@ -66,9 +73,13 @@ export interface ModalHostProps {
   closeOnEsc?: boolean;
   /** z-index of the host's stacking context — sits above the HUD/windows. Default 80. */
   zIndexBase?: number;
+  /** Called with `open` / `close` as modals show and the stack empties (`cue` is the modal kind) — the UI sound seam. */
+  onInteract?: HudInteractListener;
   className?: string;
   style?: CSSProperties;
 }
+
+const MODAL_EXIT_MS = 140;
 
 /** Stack-bound controls handed to a {@link ModalHost} render callback. */
 export interface ModalControls {
@@ -97,10 +108,26 @@ export function ModalHost({
   closeOnBackdrop = true,
   closeOnEsc = true,
   zIndexBase = 80,
+  onInteract,
   className,
   style,
 }: ModalHostProps): ReactNode {
-  const { top } = useModalStack(stack);
+  useEngineStyles();
+  const { top: live } = useModalStack(stack);
+  const last = useRef<ModalRecord | null>(live);
+  if (live !== null) last.current = live;
+  const presence = usePresence(live !== null, useReducedMotion() ? 0 : MODAL_EXIT_MS);
+  const top = live ?? (presence === "closed" ? last.current : null);
+  const report = useHudInteract("modal", top?.kind, onInteract);
+  const reportedId = useRef<string | null>(null);
+  useEffect(() => {
+    const id = live?.id ?? null;
+    if (id === reportedId.current) return;
+    const wasOpen = reportedId.current !== null;
+    reportedId.current = id;
+    if (id !== null) report("open");
+    else if (wasOpen) report("close");
+  }, [live, report]);
 
   const controls: ModalControls = {
     resolve: useCallback((result: string, payload?: unknown) => stack.resolve(result, payload !== undefined ? { payload } : undefined), [stack]) as ModalControls["resolve"],
@@ -120,6 +147,7 @@ export function ModalHost({
   return (
     <div
       data-modal-host=""
+      data-state={live === null ? "closed" : "open"}
       className={className}
       style={{
         position: "fixed",
@@ -136,7 +164,7 @@ export function ModalHost({
         <div
           data-modal-backdrop=""
           onClick={closeOnBackdrop ? () => controls.cancel() : undefined}
-          style={{ position: "fixed", inset: 0, background: dim }}
+          style={{ position: "fixed", inset: 0, background: dim, pointerEvents: live === null ? "none" : undefined }}
         />
       ) : null}
       <div
@@ -147,7 +175,7 @@ export function ModalHost({
         data-modal={top.kind}
         data-modal-id={top.id}
         tabIndex={-1}
-        style={{ position: "relative", pointerEvents: "auto", outline: "none", maxWidth: "calc(100vw - 32px)", maxHeight: "calc(100vh - 32px)" }}
+        style={{ position: "relative", pointerEvents: live === null ? "none" : "auto", outline: "none", maxWidth: "calc(100vw - 32px)", maxHeight: "calc(100vh - 32px)" }}
       >
         {children(top, controls)}
       </div>
@@ -155,35 +183,9 @@ export function ModalHost({
   );
 }
 
-const DIALOG_TITLE: CSSProperties = { margin: 0, fontSize: 17, fontWeight: 700, letterSpacing: 0.2 };
-const DIALOG_BODY: CSSProperties = { margin: "10px 0 0", fontSize: 13.5, lineHeight: 1.55, color: "rgba(226,232,240,0.82)" };
+const DIALOG_TITLE: CSSProperties = { margin: 0, fontFamily: "var(--jg-font-display, inherit)", fontSize: hudType("lg"), fontWeight: 700, letterSpacing: 0.1, lineHeight: 1.3 };
+const DIALOG_BODY: CSSProperties = { margin: "10px 0 0", fontSize: hudType("md"), lineHeight: 1.55, color: "var(--jg-text-dim, rgba(226,232,240,0.82))" };
 const BUTTON_ROW: CSSProperties = { display: "flex", gap: 10, marginTop: 20, justifyContent: "flex-end" };
-
-const BUTTON_BASE: CSSProperties = {
-  appearance: "none",
-  borderRadius: "var(--jg-slot-radius, 8px)",
-  border: "1px solid transparent",
-  fontSize: 13,
-  fontWeight: 600,
-  padding: "8px 16px",
-  cursor: "pointer",
-  font: "inherit",
-};
-
-function primaryButtonStyle(danger: boolean): CSSProperties {
-  return {
-    ...BUTTON_BASE,
-    background: danger ? "#e5484d" : "var(--jg-accent, #38bdf8)",
-    color: danger ? "#fff" : "#06121b",
-  };
-}
-
-const GHOST_BUTTON: CSSProperties = {
-  ...BUTTON_BASE,
-  background: "var(--jg-slot-bg, rgba(148,163,184,0.12))",
-  color: "var(--jg-bar-text, #e2e8f0)",
-  border: "var(--jg-slot-border, 1px solid rgba(148,163,184,0.28))",
-};
 
 /** Props for {@link ConfirmDialog}. */
 export interface ConfirmDialogProps {
@@ -206,7 +208,7 @@ export interface ConfirmDialogProps {
 
 /**
  * A generic two-button confirmation dialog — title, optional body, and Cancel / Confirm buttons over
- * a `HudTheme`-token-driven {@link HudFrame}. Presentation-only: wire `onConfirm`/`onCancel` to a
+ * a `HudTheme`-token-driven {@link HudPanel}. Presentation-only: wire `onConfirm`/`onCancel` to a
  * modal stack's `resolve` (typically inside a {@link ModalHost} render callback) and reskin via
  * `HudTheme` tokens or `danger` for a destructive action. It interprets nothing — the game supplies
  * the copy.
@@ -226,14 +228,14 @@ export function ConfirmDialog({
   style,
 }: ConfirmDialogProps): ReactNode {
   return (
-    <HudFrame variation="themed" width={width} padding={20} interactive className={className} style={style}>
+    <HudPanel elevation="modal" width={width} padding={20} className={className} style={style}>
       <h2 data-confirm-title="" style={DIALOG_TITLE}>{title}</h2>
       {body !== undefined ? <p data-confirm-body="" style={DIALOG_BODY}>{body}</p> : null}
       <div style={BUTTON_ROW}>
-        <button type="button" data-confirm-cancel="" onClick={onCancel} style={GHOST_BUTTON}>{cancelLabel}</button>
-        <button type="button" data-confirm-accept="" onClick={onConfirm} style={primaryButtonStyle(danger)}>{confirmLabel}</button>
+        <HudButton data-confirm-cancel="" cue="cancel" onClick={onCancel}>{cancelLabel}</HudButton>
+        <HudButton data-confirm-accept="" cue="confirm" variant={danger ? "danger" : "primary"} onClick={onConfirm}>{confirmLabel}</HudButton>
       </div>
-    </HudFrame>
+    </HudPanel>
   );
 }
 
@@ -267,26 +269,19 @@ export interface PauseMenuProps {
 
 const PAUSE_TITLE: CSSProperties = {
   margin: "0 0 14px",
-  fontSize: 12,
+  fontSize: hudType("xs"),
   fontWeight: 700,
-  letterSpacing: 2,
+  letterSpacing: "0.18em",
   textTransform: "uppercase",
   textAlign: "center",
   color: "var(--jg-accent, #38bdf8)",
 };
 
-const PAUSE_ITEM_BASE: CSSProperties = {
-  ...BUTTON_BASE,
-  display: "block",
-  width: "100%",
-  textAlign: "center",
-  padding: "10px 16px",
-  marginTop: 8,
-};
+const PAUSE_ITEM: CSSProperties = { marginTop: 8 };
 
 /**
  * A reskinnable pause-menu building block: a primary Resume button plus a game-filled list of slot
- * items (Settings, Save, Quit, …), stacked in a `HudTheme`-token-driven {@link HudFrame}. It ships
+ * items (Settings, Save, Quit, …), stacked in a `HudTheme`-token-driven {@link HudPanel}. It ships
  * the common shape every game's pause screen needs and nothing genre-specific — the game supplies the
  * title, item labels/order, and destructive styling, and reskins with `HudTheme` tokens. Drop it into
  * a {@link ModalHost} keyed on a `"pause"` modal, or render it standalone.
@@ -303,35 +298,26 @@ export function PauseMenu({
   style,
 }: PauseMenuProps): ReactNode {
   return (
-    <HudFrame variation="themed" width={width} padding={20} interactive className={className} style={style}>
+    <HudPanel elevation="modal" width={width} padding={20} className={className} style={style}>
       <div data-pause-title="" style={PAUSE_TITLE}>{title}</div>
-      <button
-        type="button"
-        data-pause-resume=""
-        onClick={onResume}
-        style={{ ...PAUSE_ITEM_BASE, ...primaryButtonStyle(false), marginTop: 0 }}
-      >
+      <HudButton data-pause-resume="" cue="resume" variant="primary" size="lg" block onClick={onResume}>
         {resumeLabel}
-      </button>
+      </HudButton>
       {items.map((item) => (
-        <button
+        <HudButton
           key={item.id}
-          type="button"
           data-pause-item={item.id}
+          cue={`pause:${item.id}`}
+          variant={item.danger ? "danger" : "secondary"}
+          size="lg"
+          block
           onClick={item.onSelect}
           disabled={item.disabled}
-          style={{
-            ...PAUSE_ITEM_BASE,
-            ...(item.danger
-              ? { background: "transparent", color: "#f0787c", border: "1px solid rgba(229,72,77,0.5)" }
-              : GHOST_BUTTON),
-            opacity: item.disabled === true ? 0.5 : 1,
-            cursor: item.disabled === true ? "not-allowed" : "pointer",
-          }}
+          style={PAUSE_ITEM}
         >
           {item.label}
-        </button>
+        </HudButton>
       ))}
-    </HudFrame>
+    </HudPanel>
   );
 }

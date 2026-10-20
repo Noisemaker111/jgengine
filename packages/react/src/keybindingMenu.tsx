@@ -3,6 +3,7 @@ import { useEffect, useReducer, type CSSProperties, type ReactNode } from "react
 import type { RebindRow, RebindSession } from "@jgengine/core/input/rebindSession";
 
 import { Keycap } from "./keyHint";
+import { hudType } from "./hudTokens";
 
 /**
  * Subscribe to a rebind session and re-render on every change (capture, reset,
@@ -217,7 +218,7 @@ function KeybindingRow({
               marginLeft: 8,
               padding: "1px 7px",
               borderRadius: 999,
-              fontSize: 10,
+              fontSize: hudType("xs"),
               fontWeight: 800,
               letterSpacing: "0.06em",
               textTransform: "uppercase",
@@ -277,7 +278,7 @@ function KeybindingRow({
           opacity: row.isDefault ? 0.35 : 1,
           cursor: row.isDefault ? "default" : "pointer",
           padding: "4px 8px",
-          fontSize: 11,
+          fontSize: hudType("xs"),
         }}
       >
         Reset

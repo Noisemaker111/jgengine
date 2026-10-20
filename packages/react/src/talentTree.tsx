@@ -10,6 +10,7 @@ import {
 
 import { GameIcon, iconForAction, iconForItemId, isGameIconName, type GameIconName } from "./gameIcons";
 import { HudFrame, type HudFrameVariation } from "./hudFrame";
+import { hudType } from "./hudTokens";
 
 /** How a node id resolves to display art: a built-in {@link GameIconName}, any node, or `null` for the default. */
 export type TalentIcon = GameIconName | ReactNode | null;
@@ -240,7 +241,7 @@ function TalentNode({
             background: node.state === "maxed" ? "var(--jg-accent, #38bdf8)" : "rgba(6,10,16,0.92)",
             color: node.state === "maxed" ? "#06121b" : "var(--jg-bar-text, #f4f6fb)",
             border: "1px solid var(--jg-accent, #38bdf8)",
-            fontSize: 10.5,
+            fontSize: hudType("xs"),
             fontWeight: 800,
             fontVariantNumeric: "tabular-nums",
             display: "flex",
@@ -329,7 +330,7 @@ export function TalentTree<TStat extends string = string>({
               left: header.cx,
               top: header.top,
               transform: "translateX(-50%)",
-              fontSize: 10,
+              fontSize: hudType("xs"),
               fontWeight: 700,
               letterSpacing: 1.4,
               textTransform: "uppercase",

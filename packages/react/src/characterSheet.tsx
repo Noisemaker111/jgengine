@@ -2,6 +2,7 @@ import { type CSSProperties, type ReactNode } from "react";
 
 import { EquipmentSlots, type SlotItem } from "./slots";
 import { HudFrame, type HudFrameVariation } from "./hudFrame";
+import { hudType } from "./hudTokens";
 
 /**
  * Character-sheet / paperdoll composition (#1033 follow-up): a drop-in `<CharacterSheet>` that
@@ -88,7 +89,7 @@ function SlotLabel({ children }: { children: ReactNode }) {
   return (
     <span
       style={{
-        fontSize: 9,
+        fontSize: hudType("xs"),
         letterSpacing: 0.6,
         fontVariant: "small-caps",
         textTransform: "lowercase",
@@ -241,7 +242,7 @@ function StatListRow({ row }: { row: StatRow }) {
       data-stat-row={row.id}
       style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, padding: "2px 0" }}
     >
-      <span style={{ fontSize: 11, fontVariant: "small-caps", letterSpacing: 0.5, color: "var(--jg-bar-text, #f4f6fb)", opacity: 0.72 }}>
+      <span style={{ fontSize: hudType("xs"), fontVariant: "small-caps", letterSpacing: 0.5, color: "var(--jg-bar-text, #f4f6fb)", opacity: 0.72 }}>
         {row.label}
       </span>
       <span style={{ fontSize: 12, fontWeight: 700, fontVariantNumeric: "tabular-nums", color: "var(--jg-accent, #38bdf8)" }}>
@@ -276,7 +277,7 @@ export function StatList({ stats, className, style }: StatListProps): ReactNode 
           {group.name !== undefined ? (
             <div
               style={{
-                fontSize: 9,
+                fontSize: hudType("xs"),
                 letterSpacing: 1.4,
                 textTransform: "uppercase",
                 opacity: 0.55,
@@ -361,7 +362,7 @@ export function CharacterSheet({
               <>
                 {name !== undefined ? <div style={{ fontSize: 16, fontWeight: 800, letterSpacing: 0.2 }}>{name}</div> : null}
                 {subtitle !== undefined ? (
-                  <div style={{ fontSize: 11, opacity: 0.65, fontVariant: "small-caps", letterSpacing: 0.4 }}>{subtitle}</div>
+                  <div style={{ fontSize: hudType("xs"), opacity: 0.65, fontVariant: "small-caps", letterSpacing: 0.4 }}>{subtitle}</div>
                 ) : null}
               </>
             )}

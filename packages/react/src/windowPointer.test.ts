@@ -44,6 +44,8 @@ beforeEach(async () => {
   try { await page.getByRole("dialog", { name: "Inspector" }).waitFor({ timeout: 2000 }); }
   catch (error) { throw new Error(errors.join("\n") || String(error)); }
   expect(errors).toEqual([]);
+  // Windows enter with a short transform transition; measure them at rest.
+  await page.evaluate(() => Promise.all(document.getAnimations().map((animation) => animation.finished)));
 });
 afterEach(async () => { await input?.detach(); await page?.close(); });
 afterAll(async () => { await browser?.close(); server?.stop(true); await rm(scratch, { recursive: true, force: true }); });

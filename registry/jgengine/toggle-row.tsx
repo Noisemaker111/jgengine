@@ -8,7 +8,7 @@ const slantBar = (lean: number) =>
 function HudLabel({ children }: { children: ReactNode }) {
   return (
     <span
-      className="text-[10px] font-bold uppercase tracking-[0.24em]"
+      className="text-[length:var(--jg-type-xs,12px)] font-bold uppercase tracking-[0.24em]"
       style={{ fontFamily: "var(--jg-font-display)", color: "var(--jg-text-dim)", textShadow: HUD_TEXT_SHADOW }}
     >
       {children}
@@ -50,10 +50,10 @@ export function ToggleRow({
         onClick={() => onChange?.(!value)}
         className="flex cursor-pointer gap-0.5 border-none bg-transparent p-0"
       >
-        <span className="px-3.5 py-1 text-[9px] font-bold uppercase tracking-[0.12em]" style={segmentStyle(!value)}>
+        <span className="px-3.5 py-1 text-[length:var(--jg-type-xs,12px)] font-bold uppercase tracking-[0.12em]" style={segmentStyle(!value)}>
           {offLabel}
         </span>
-        <span className="px-3.5 py-1 text-[9px] font-bold uppercase tracking-[0.12em]" style={segmentStyle(value)}>
+        <span className="px-3.5 py-1 text-[length:var(--jg-type-xs,12px)] font-bold uppercase tracking-[0.12em]" style={segmentStyle(value)}>
           {onLabel}
         </span>
       </button>

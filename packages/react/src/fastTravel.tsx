@@ -2,6 +2,7 @@ import { useEffect, useReducer, type CSSProperties, type ReactNode } from "react
 
 import type { FastTravelNetwork, TravelPointView } from "@jgengine/core/world/fastTravel";
 import type { WorldXZ } from "@jgengine/core/world/minimap";
+import { hudType } from "./hudTokens";
 
 /**
  * Subscribe a component to a fast-travel network's discovery changes. Returns the
@@ -125,7 +126,7 @@ export function FastTravelMenu<TMeta = unknown>({
               borderRadius: 6,
               background: "transparent",
               color: "rgba(226,232,240,0.85)",
-              fontSize: 11,
+              fontSize: hudType("xs"),
               padding: "3px 8px",
               cursor: "pointer",
             }}
@@ -143,7 +144,7 @@ export function FastTravelMenu<TMeta = unknown>({
               {group.region !== null ? (
                 <div
                   style={{
-                    fontSize: 10,
+                    fontSize: hudType("xs"),
                     fontWeight: 700,
                     letterSpacing: 1,
                     textTransform: "uppercase",
@@ -186,11 +187,11 @@ export function FastTravelMenu<TMeta = unknown>({
                         <span style={{ display: "flex", flexDirection: "column", minWidth: 0, flex: 1 }}>
                           <span style={{ fontSize: 13, fontWeight: 600 }}>{point.name}</span>
                           {isCurrent ? (
-                            <span style={{ fontSize: 10, color: "rgba(56,189,248,0.85)" }}>You are here</span>
+                            <span style={{ fontSize: hudType("xs"), color: "rgba(56,189,248,0.85)" }}>You are here</span>
                           ) : null}
                         </span>
                         {distance !== null && !isCurrent ? (
-                          <span style={{ fontSize: 11, color: "rgba(148,163,184,0.75)", whiteSpace: "nowrap" }}>
+                          <span style={{ fontSize: hudType("xs"), color: "rgba(148,163,184,0.75)", whiteSpace: "nowrap" }}>
                             {distance}
                           </span>
                         ) : null}

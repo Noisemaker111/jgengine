@@ -32,7 +32,7 @@ export function MatchTimer({
     <div className={`flex flex-col items-center gap-0.5 ${className ?? ""}`} data-jg="match-timer">
       {label !== undefined && (
         <span
-          className="text-[10px] font-bold uppercase tracking-[0.24em]"
+          className="text-[length:var(--jg-type-xs,12px)] font-bold uppercase tracking-[0.24em]"
           style={{ color: "var(--jg-text-dim)", textShadow: HUD_TEXT_SHADOW }}
         >
           {label}

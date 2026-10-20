@@ -4,6 +4,7 @@ import type { SaveSlotMeta, SaveSlots } from "@jgengine/core/game/saveSlots";
 
 import { GameIcon, type GameIconName } from "./gameIcons";
 import { HudFrame } from "./hudFrame";
+import { hudType } from "./hudTokens";
 
 /**
  * Subscribe to a {@link SaveSlots} index and re-render on any change (write,
@@ -145,13 +146,13 @@ function MetaChips({
               color: t.muted,
               borderRadius: 999,
               padding: "3px 9px",
-              fontSize: 11,
+              fontSize: hudType("xs"),
               fontWeight: 600,
               lineHeight: 1.3,
             }}
           >
             {icon !== undefined ? <GameIcon name={icon} size={12} color={t.accent} /> : null}
-            <span style={{ opacity: 0.7, textTransform: "uppercase", letterSpacing: 0.6, fontSize: 9 }}>{key}</span>
+            <span style={{ opacity: 0.7, textTransform: "uppercase", letterSpacing: 0.6, fontSize: hudType("xs") }}>{key}</span>
             <span style={{ color: t.text }}>{String(value)}</span>
           </span>
         );
@@ -268,7 +269,7 @@ export function SaveSlotMenu({
                 </span>
                 <span>
                   <span style={{ display: "block", fontSize: 15, fontWeight: 700, color: t.text }}>New Game</span>
-                  <span style={{ fontSize: 11 }}>Empty slot · {slot.id}</span>
+                  <span style={{ fontSize: hudType("xs") }}>Empty slot · {slot.id}</span>
                 </span>
               </button>
             ) : (
@@ -278,7 +279,7 @@ export function SaveSlotMenu({
                     {slot.name ?? slot.id}
                   </span>
                   {slot.savedAt !== undefined ? (
-                    <span style={{ fontSize: 11, fontWeight: 600, color: t.accent, whiteSpace: "nowrap" }}>
+                    <span style={{ fontSize: hudType("xs"), fontWeight: 600, color: t.accent, whiteSpace: "nowrap" }}>
                       {relativeSavedAt(slot.savedAt, nowMs)}
                     </span>
                   ) : null}

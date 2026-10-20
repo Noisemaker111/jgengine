@@ -3,6 +3,7 @@ import { useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import type { RadialArc } from "@jgengine/core/ui/radialMenu";
 
 import { RadialMenu, type RadialMenuOption } from "./radialMenu";
+import { hudType } from "./hudTokens";
 
 /** An entry on a {@link QuickMenu}: a leaf action, or (with `children`) a submenu. */
 export interface QuickMenuItem extends RadialMenuOption {
@@ -56,13 +57,13 @@ function Badges({ item, accent }: { item: QuickMenuItem; accent: string }): Reac
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
       {item.cooldown !== undefined && item.cooldown > 0 ? (
-        <span style={{ fontSize: 10, color: "rgba(148,163,184,0.85)" }}>{Math.ceil(item.cooldown * 100)}%</span>
+        <span style={{ fontSize: hudType("xs"), color: "rgba(148,163,184,0.85)" }}>{Math.ceil(item.cooldown * 100)}%</span>
       ) : null}
       {item.badge !== undefined ? (
-        <span style={{ fontSize: 11, fontWeight: 700, color: accent, fontVariantNumeric: "tabular-nums" }}>{item.badge}</span>
+        <span style={{ fontSize: hudType("xs"), fontWeight: 700, color: accent, fontVariantNumeric: "tabular-nums" }}>{item.badge}</span>
       ) : null}
       {item.hotkey !== undefined ? (
-        <kbd style={{ fontSize: 10, padding: "1px 5px", borderRadius: 4, border: "1px solid rgba(148,163,184,0.4)", color: "rgba(226,232,240,0.85)" }}>
+        <kbd style={{ fontSize: hudType("xs"), padding: "1px 5px", borderRadius: 4, border: "1px solid rgba(148,163,184,0.4)", color: "rgba(226,232,240,0.85)" }}>
           {item.hotkey}
         </kbd>
       ) : null}
@@ -116,12 +117,12 @@ export function QuickMenu({
       <div data-quick-header style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
         {path.length > 0 ? (
           <button type="button" data-quick-back onClick={back}
-            style={{ border: "1px solid rgba(148,163,184,0.4)", borderRadius: 6, background: "transparent", color: "#e2e8f0", fontSize: 11, padding: "2px 8px", cursor: "pointer" }}>
+            style={{ border: "1px solid rgba(148,163,184,0.4)", borderRadius: 6, background: "transparent", color: "#e2e8f0", fontSize: hudType("xs"), padding: "2px 8px", cursor: "pointer" }}>
             ‹ Back
           </button>
         ) : null}
         {title !== undefined ? (
-          <span style={{ fontSize: 11, letterSpacing: 1.2, textTransform: "uppercase", color: "rgba(203,213,225,0.75)" }}>{title}</span>
+          <span style={{ fontSize: hudType("xs"), letterSpacing: 1.2, textTransform: "uppercase", color: "rgba(203,213,225,0.75)" }}>{title}</span>
         ) : null}
       </div>
     ) : null;
@@ -155,7 +156,7 @@ export function QuickMenu({
         {groups.map((group, gi) => (
           <div key={group.section ?? gi} data-section={group.section}>
             {group.section !== undefined ? (
-              <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.2, color: "rgba(148,163,184,0.75)", margin: "6px 0 4px" }}>{group.section}</div>
+              <div style={{ fontSize: hudType("xs"), textTransform: "uppercase", letterSpacing: 1.2, color: "rgba(148,163,184,0.75)", margin: "6px 0 4px" }}>{group.section}</div>
             ) : null}
             <div style={{ display: "grid", gridTemplateColumns: `repeat(${columns}, 1fr)`, gap: 6 }}>
               {group.items.map((item) => (
@@ -167,11 +168,11 @@ export function QuickMenu({
                     cursor: item.disabled === true ? "default" : "pointer", opacity: item.disabled === true ? 0.4 : 1,
                   }}>
                   <span style={{ fontSize: 22 }}>{item.icon}</span>
-                  {item.label !== undefined ? <span style={{ fontSize: 10 }}>{item.label}</span> : null}
+                  {item.label !== undefined ? <span style={{ fontSize: hudType("xs") }}>{item.label}</span> : null}
                   {item.badge !== undefined ? (
-                    <span style={{ position: "absolute", top: 3, right: 5, fontSize: 10, fontWeight: 700, color: accent }}>{item.badge}</span>
+                    <span style={{ position: "absolute", top: 3, right: 5, fontSize: hudType("xs"), fontWeight: 700, color: accent }}>{item.badge}</span>
                   ) : null}
-                  {item.children !== undefined ? <span style={{ position: "absolute", bottom: 3, right: 5, fontSize: 10 }}>▸</span> : null}
+                  {item.children !== undefined ? <span style={{ position: "absolute", bottom: 3, right: 5, fontSize: hudType("xs") }}>▸</span> : null}
                 </button>
               ))}
             </div>
@@ -188,7 +189,7 @@ export function QuickMenu({
       {groups.map((group, gi) => (
         <div key={group.section ?? gi} data-section={group.section}>
           {group.section !== undefined ? (
-            <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.2, color: "rgba(148,163,184,0.75)", margin: "6px 0 4px" }}>{group.section}</div>
+            <div style={{ fontSize: hudType("xs"), textTransform: "uppercase", letterSpacing: 1.2, color: "rgba(148,163,184,0.75)", margin: "6px 0 4px" }}>{group.section}</div>
           ) : null}
           <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 2 }}>
             {group.items.map((item) => (

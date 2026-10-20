@@ -21,6 +21,9 @@ import {
 } from "@jgengine/core/ui/actionModel";
 import { actionTooltip, placePopover, type PopoverSide, type TooltipContent } from "@jgengine/core/ui/tooltipModel";
 
+import { useEngineStyles } from "./engineStyles";
+import { useHudInteract, type HudInteractListener } from "./hudInteract";
+import { HUD_FOCUS_RING, hudElevation, hudFont, hudType } from "./hudTokens";
 import { Keycap } from "./keyHint";
 
 /**
@@ -188,8 +191,11 @@ const ITEM_BASE: CSSProperties = {
   border: "var(--jg-slot-border, 1px solid rgba(255,255,255,0.14))",
   borderRadius: "var(--jg-slot-radius, 8px)",
   background: "var(--jg-slot-bg, rgba(14,17,22,0.72))",
-  color: "#eef2f8",
-  font: "600 12px/1.1 ui-sans-serif, system-ui, sans-serif",
+  color: "var(--jg-text, #eef2f8)",
+  fontFamily: hudFont.body,
+  fontSize: hudType("xs"),
+  fontWeight: 600,
+  lineHeight: 1.1,
   cursor: "pointer",
   userSelect: "none",
   overflow: "hidden",
@@ -223,10 +229,16 @@ export function ActionButton({
   onFocus,
   onHover,
   renderIcon,
+  cue,
+  onInteract,
   className,
   style,
 }: {
   action: ResolvedAction;
+  /** Feedback cue name (default the action id), rendered as `data-jg-cue`. */
+  cue?: string;
+  /** Called on hover, press, and activate — the seam a UI sound system hooks. */
+  onInteract?: HudInteractListener;
   focused?: boolean;
   hovered?: boolean;
   size?: number;
@@ -244,6 +256,8 @@ export function ActionButton({
   const title = [tip.title, ...(tip.notes ?? [])].join("\n");
   const cooldown = action.cooldown;
   const wipeDeg = cooldown !== null && !cooldown.ready ? Math.round(cooldown.fraction * 360) : 0;
+  useEngineStyles();
+  const report = useHudInteract("action", cue ?? action.id, onInteract);
   return (
     <button
       type="button"
@@ -253,48 +267,57 @@ export function ActionButton({
       data-active={action.active ? "" : undefined}
       data-enabled={action.enabled ? "" : undefined}
       data-focused={focused ? "" : undefined}
+      data-jg-cue={cue ?? action.id}
       aria-disabled={!action.enabled}
       aria-pressed={action.active}
       aria-keyshortcuts={action.hotkey}
       aria-label={action.label}
       title={title}
       tabIndex={tabIndex}
-      onClick={() => onActivate?.(action.id)}
+      onClick={() => {
+        report("activate");
+        onActivate?.(action.id);
+      }}
       onFocus={() => onFocus?.(action.id)}
-      onPointerEnter={() => onHover?.(action.id)}
+      onPointerDown={() => {
+        if (action.enabled) report("press");
+      }}
+      onPointerEnter={() => {
+        if (action.enabled) report("hover");
+        onHover?.(action.id);
+      }}
       onPointerLeave={() => onHover?.(null)}
       style={{
         ...ITEM_BASE,
         width: size,
         height: size,
-        opacity: action.enabled ? 1 : 0.5,
+        opacity: action.enabled ? 1 : "var(--jg-disabled-opacity, 0.45)",
         borderColor: action.active
-          ? "rgba(56,189,248,0.95)"
+          ? "var(--jg-accent, #38bdf8)"
           : focused
-            ? "rgba(148,197,255,0.9)"
+            ? "var(--jg-edge-bright, rgba(148,197,255,0.9))"
             : hovered
               ? "rgba(255,255,255,0.3)"
-              : "rgba(255,255,255,0.14)",
+              : undefined,
         boxShadow: focused
-          ? "0 0 0 2px rgba(96,165,250,0.7)"
+          ? HUD_FOCUS_RING
           : action.active
-            ? "0 0 0 1px rgba(56,189,248,0.6)"
-            : "none",
-        transform: hovered && action.enabled ? "translateY(-1px)" : "none",
-        transition: "transform 120ms ease, border-color 120ms ease, box-shadow 120ms ease",
+            ? "0 0 0 1px var(--jg-accent, #38bdf8), 0 0 14px var(--jg-accent-glow, rgba(56,189,248,0.5))"
+            : hudElevation("raised"),
+        translate: hovered && action.enabled ? "0 var(--jg-hover-lift, -1px)" : undefined,
         ...style,
       }}
     >
       {showHotkey && action.hotkey !== undefined ? (
         <span style={{ position: "absolute", top: 2, left: 3 }} aria-hidden>
-          <Keycap style={{ fontSize: 9, padding: "0 3px", opacity: 0.85 }}>{action.hotkey}</Keycap>
+          <Keycap style={{ fontSize: hudType("xs"), padding: "0 3px", opacity: 0.85 }}>{action.hotkey}</Keycap>
         </span>
       ) : null}
       <span style={{ fontSize: renderIcon ? undefined : 18, lineHeight: 1 }} data-action-icon aria-hidden>
         {renderIcon ? renderIcon(action) : (action.icon ?? action.label.slice(0, 2))}
       </span>
       {action.costs.length > 0 ? (
-        <span data-action-costs style={{ display: "flex", gap: 4, fontSize: 9 }}>
+        <span data-action-costs style={{ display: "flex", gap: 4, fontSize: hudType("xs") }}>
           {action.costs.map((cost) => (
             <span key={cost.resourceId} style={{ color: cost.met ? "rgba(147,197,253,0.9)" : "#f87171" }}>
               {cost.amount}
@@ -564,23 +587,26 @@ export function ActionTooltip({
         background: "rgba(8,10,14,0.95)",
         border: "1px solid rgba(255,255,255,0.14)",
         color: "#eef2f8",
-        font: "500 12px/1.35 ui-sans-serif, system-ui, sans-serif",
-        boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
+        fontFamily: hudFont.body,
+        fontSize: hudType("xs"),
+        fontWeight: 500,
+        lineHeight: 1.35,
+        boxShadow: hudElevation("overlay"),
         ...style,
       }}
     >
       <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-        <strong style={{ fontSize: 13 }}>{content.title}</strong>
+        <strong style={{ fontSize: hudType("sm") }}>{content.title}</strong>
         {content.hotkey !== undefined ? (
-          <Keycap style={{ marginLeft: "auto", fontSize: 10 }}>{content.hotkey}</Keycap>
+          <Keycap style={{ marginLeft: "auto", fontSize: hudType("xs") }}>{content.hotkey}</Keycap>
         ) : null}
       </div>
       {content.subtitle !== undefined ? (
-        <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 0.4, opacity: 0.6 }}>{content.subtitle}</div>
+        <div style={{ fontSize: hudType("xs"), textTransform: "uppercase", letterSpacing: "var(--jg-tracking-label, 0.08em)", opacity: 0.65 }}>{content.subtitle}</div>
       ) : null}
       {content.body !== undefined ? <div style={{ marginTop: 4, opacity: 0.9 }}>{content.body}</div> : null}
       {content.costs !== undefined && content.costs.length > 0 ? (
-        <div style={{ marginTop: 4, display: "flex", gap: 8, fontSize: 11 }}>
+        <div style={{ marginTop: 4, display: "flex", gap: 8, fontSize: hudType("xs") }}>
           {content.costs.map((cost) => (
             <span key={cost.resourceId} style={{ color: cost.met ? "rgba(147,197,253,0.95)" : "#f87171" }}>
               {cost.amount} {cost.resourceId}
@@ -589,12 +615,12 @@ export function ActionTooltip({
         </div>
       ) : null}
       {content.cooldown != null ? (
-        <div style={{ marginTop: 4, fontSize: 11, opacity: 0.8 }}>
+        <div style={{ marginTop: 4, fontSize: hudType("xs"), opacity: 0.8 }}>
           {(content.cooldown.remainingMs / 1000).toFixed(1)}s cooldown
         </div>
       ) : null}
       {content.notes !== undefined && content.notes.length > 0 ? (
-        <div style={{ marginTop: 6, paddingTop: 4, borderTop: "1px solid rgba(255,255,255,0.1)", fontSize: 11, color: "#fca5a5" }}>
+        <div style={{ marginTop: 6, paddingTop: 4, borderTop: "1px solid rgba(255,255,255,0.1)", fontSize: hudType("xs"), color: "#fca5a5" }}>
           {content.notes.map((note) => (
             <div key={note}>{note}</div>
           ))}

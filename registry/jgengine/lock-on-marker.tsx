@@ -77,7 +77,7 @@ export function LockOnMarker({
       </span>
       {label !== undefined && (
         <span
-          className="font-mono text-[9px] font-bold uppercase tracking-[0.2em]"
+          className="font-mono text-[length:var(--jg-type-xs,12px)] font-bold uppercase tracking-[0.2em]"
           style={{ color: markColor, textShadow: HUD_TEXT_SHADOW }}
         >
           {label}

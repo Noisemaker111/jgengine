@@ -10,7 +10,7 @@ const clampFraction = (value: number) => (Number.isNaN(value) ? 0 : Math.min(1, 
 function HudLabel({ children }: { children: ReactNode }) {
   return (
     <span
-      className="text-[10px] font-bold uppercase tracking-[0.24em]"
+      className="text-[length:var(--jg-type-xs,12px)] font-bold uppercase tracking-[0.24em]"
       style={{ fontFamily: "var(--jg-font-display)", color: "var(--jg-text-dim)", textShadow: HUD_TEXT_SHADOW }}
     >
       {children}
@@ -69,7 +69,7 @@ export function SliderRow({
     <div className={`flex flex-col gap-1.5 ${className ?? ""}`} data-jg="slider-row" style={{ width }}>
       <div className="flex items-baseline justify-between">
         <HudLabel>{label}</HudLabel>
-        <span className="font-mono text-[11px] font-bold" style={{ color: "var(--jg-text)" }}>
+        <span className="font-mono text-[length:var(--jg-type-xs,12px)] font-bold" style={{ color: "var(--jg-text)" }}>
           {format(value)}
         </span>
       </div>

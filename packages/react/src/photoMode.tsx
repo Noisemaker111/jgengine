@@ -1,6 +1,7 @@
 import { useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
 
 import type { PhotoModeState, PhotoModeStore } from "@jgengine/core/ui/photoMode";
+import { hudType } from "./hudTokens";
 
 /** Subscribe to a photo-mode store's live state. */
 export function usePhotoMode(store: PhotoModeStore): PhotoModeState {
@@ -54,7 +55,7 @@ export function PhotoModeControls({ store, onCapture, className, style }: PhotoM
         ...style,
       }}
     >
-      <span style={{ fontSize: 11, letterSpacing: 1.4, textTransform: "uppercase", color: "rgba(203,213,225,0.75)", padding: "0 4px" }}>
+      <span style={{ fontSize: hudType("xs"), letterSpacing: 1.4, textTransform: "uppercase", color: "rgba(203,213,225,0.75)", padding: "0 4px" }}>
         📷 Photo
       </span>
       <button

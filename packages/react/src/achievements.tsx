@@ -1,6 +1,7 @@
 import { useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
 
 import type { AchievementTracker, AchievementView } from "@jgengine/core/game/achievements";
+import { hudType } from "./hudTokens";
 
 /**
  * Subscribe a component to an achievement tracker's live view list. The list
@@ -77,14 +78,14 @@ export function AchievementToast({
         {icon ?? "🏆"}
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 1, minWidth: 0 }}>
-        <span style={{ fontSize: 9, letterSpacing: 1.6, textTransform: "uppercase", color: "rgba(245,158,11,0.85)" }}>
+        <span style={{ fontSize: hudType("xs"), letterSpacing: 1.6, textTransform: "uppercase", color: "rgba(245,158,11,0.85)" }}>
           {heading}
         </span>
         <span style={{ fontSize: 14, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
           {name}
         </span>
         {description !== undefined ? (
-          <span style={{ fontSize: 11, color: "rgba(226,232,240,0.7)" }}>{description}</span>
+          <span style={{ fontSize: hudType("xs"), color: "rgba(226,232,240,0.7)" }}>{description}</span>
         ) : null}
       </div>
       {points !== undefined ? (
@@ -150,7 +151,7 @@ export function AchievementGallery({
     >
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 10 }}>
         <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: 1.4, textTransform: "uppercase" }}>{title}</span>
-        <span style={{ fontSize: 11, color: "rgba(203,213,225,0.75)", fontVariantNumeric: "tabular-nums" }}>
+        <span style={{ fontSize: hudType("xs"), color: "rgba(203,213,225,0.75)", fontVariantNumeric: "tabular-nums" }}>
           {unlockedCount}/{achievements.length}
           {hasPoints ? ` · ${score} pts` : ""}
         </span>
@@ -194,13 +195,13 @@ export function AchievementGallery({
                   <span style={{ fontSize: 13, fontWeight: 700, color: achievement.unlocked ? "#f8fafc" : "rgba(226,232,240,0.85)" }}>
                     {name}
                     {achievement.points !== undefined && !masked ? (
-                      <span style={{ marginLeft: 6, fontSize: 10, color: "rgba(245,158,11,0.85)", fontWeight: 600 }}>
+                      <span style={{ marginLeft: 6, fontSize: hudType("xs"), color: "rgba(245,158,11,0.85)", fontWeight: 600 }}>
                         {achievement.points}
                       </span>
                     ) : null}
                   </span>
                   {description !== undefined ? (
-                    <span style={{ fontSize: 11, color: "rgba(203,213,225,0.7)" }}>{description}</span>
+                    <span style={{ fontSize: hudType("xs"), color: "rgba(203,213,225,0.7)" }}>{description}</span>
                   ) : null}
                   {showProgress ? (
                     <div data-achievement-progress style={{ marginTop: 3, height: 5, borderRadius: 9999, background: "rgba(148,163,184,0.2)", overflow: "hidden" }}>
