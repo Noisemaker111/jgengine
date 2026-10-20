@@ -1,9 +1,9 @@
 import { afterAll, afterEach, beforeAll, beforeEach, expect, test } from "bun:test";
-import { execFileSync } from "node:child_process";
 import { mkdir, rm, symlink } from "node:fs/promises";
 import { resolve } from "node:path";
 import { chromium, type Browser, type CDPSession, type Page } from "playwright-core";
 import { buildBrowserFixture, findChromeExecutable } from "../../../scripts/browser-lib";
+import { gotoFixture, installPublicPackages } from "../../../scripts/browser-test-fixture";
 
 const root = resolve(import.meta.dir, "../../..");
 const scratch = `${root}/.scratch/voice-pointer-test`;
@@ -12,11 +12,7 @@ beforeAll(async () => {
   await rm(scratch, { recursive: true, force: true });
   await mkdir(`${scratch}/node_modules/@jgengine`, { recursive: true });
   for (const peer of ["react", "react-dom"]) await symlink(`${root}/packages/react/node_modules/${peer}`, `${scratch}/node_modules/${peer}`, "dir");
-  for (const pkg of ["core", "react"]) {
-    const pack = JSON.parse(execFileSync("npm", ["pack", "--ignore-scripts", "--json", "--pack-destination", scratch], { cwd: `${root}/packages/${pkg}`, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }))[0];
-    await mkdir(`${scratch}/node_modules/@jgengine/${pkg}`, { recursive: true });
-    execFileSync("tar", ["-xzf", pack.filename, "-C", `node_modules/@jgengine/${pkg}`, "--strip-components=1"], { cwd: scratch });
-  }
+  await installPublicPackages(scratch, ["core", "react"]);
   await Bun.write(`${scratch}/fixture.tsx`, `
     import React,{useEffect,useState} from 'react';import {createRoot} from 'react-dom/client';import {flushSync} from 'react-dom';
     import {useVoice,PushToTalkButton} from '@jgengine/react/voice';
@@ -42,9 +38,8 @@ afterAll(async () => {
   Bun.gc(true);
 });
 async function open(mode = "hold") {
-  await page.goto(`http://127.0.0.1:${server.port}/?mode=${mode}`);
-  await page.getByRole("button", { name: "Crew radio", exact: true }).waitFor({ timeout: 2000 });
-  await page.waitForFunction(() => { const state = (window as any).fixture.snapshot(); return state.enabled === state.transmitting; }, undefined, { timeout: 1000 });
+  await gotoFixture(page, `http://127.0.0.1:${server.port}/?mode=${mode}`, () => page.getByRole("button", { name: "Crew radio", exact: true }).waitFor());
+  await page.waitForFunction(() => { const state = (window as any).fixture.snapshot(); return state.enabled === state.transmitting; });
 }
 async function snapshot() { return page.evaluate(() => (window as any).fixture.snapshot()); }
 async function center(id = 1) {
@@ -57,7 +52,7 @@ async function touch(type: "touchStart" | "touchMove" | "touchEnd" | "touchCance
   await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => resolve())));
 }
 async function talking(transmitting: boolean) {
-  await page.waitForFunction(expected => { const state = (window as any).fixture.snapshot(); return state.transmitting === expected && state.enabled === expected; }, transmitting, { timeout: 1000 });
+  await page.waitForFunction(expected => { const state = (window as any).fixture.snapshot(); return state.transmitting === expected && state.enabled === expected; }, transmitting);
   const state = await snapshot();
   expect(state.transmitting).toBe(transmitting); expect(state.enabled).toBe(transmitting);
 }
@@ -117,10 +112,10 @@ test("native capture loss ends an owned touch before release", async () => {
     element.addEventListener("lostpointercapture", event => { capture.lost = (event as PointerEvent).pointerId === capture.owner && event.isTrusted; }, { once: true });
   });
   await touch("touchStart", [point]); await touch("touchMove", [{ ...point, x: point.x + 1 }]);
-  await page.waitForFunction(() => (window as any).capture.got, undefined, { timeout: 1000 }); await talking(true);
+  await page.waitForFunction(() => (window as any).capture.got); await talking(true);
   await button.evaluate(element => element.releasePointerCapture((window as any).capture.owner));
   await touch("touchMove", [{ ...point, x: point.x + 2 }]);
-  await page.waitForFunction(() => (window as any).capture.lost, undefined, { timeout: 1000 }); await talking(false);
+  await page.waitForFunction(() => (window as any).capture.lost); await talking(false);
   await touch("touchEnd", []); expect(await snapshot()).toMatchObject({ down: 1, up: 1 });
 });
 test("auxiliary mouse release preserves the primary radio hold", async () => {

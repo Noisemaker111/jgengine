@@ -254,7 +254,7 @@ const browserLibMjs = `/**
  * Not a CLI; run shoot.mjs or drive.mjs instead.
  */
 import { spawn } from "node:child_process";
-import { existsSync, mkdirSync, readdirSync, renameSync, statSync, unlinkSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, renameSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { inflateSync } from "node:zlib";
@@ -354,9 +354,15 @@ export function findChrome() {
   throw new Error("No Chrome/Chromium found. Install Chrome or set CHROME_PATH.");
 }
 
+/**
+ * Launch headless Chrome. Port 0 lets Chrome bind a free debug port, read back with
+ * waitForDebuggerPort; a guessed port can land on another Chrome and drive the wrong browser.
+ */
 export function launchChrome(port, prefix) {
   const chrome = findChrome();
-  const userDataDir = join(tmpdir(), (prefix ?? "jg-shoot-") + process.pid + "-" + port);
+  const userDataDir = port === 0
+    ? mkdtempSync(join(tmpdir(), prefix ?? "jg-shoot-"))
+    : join(tmpdir(), (prefix ?? "jg-shoot-") + process.pid + "-" + port);
   const child = spawn(
     chrome,
     [
@@ -380,6 +386,7 @@ export function launchChrome(port, prefix) {
     ],
     { stdio: "ignore" },
   );
+  child.userDataDir = userDataDir;
   return child;
 }
 
@@ -404,6 +411,39 @@ export async function waitForDebugger(port, timeoutMs) {
     await sleep(150);
   }
   throw new Error("Chrome debugger never came up on port " + port);
+}
+
+/** Wait for a Chrome launched with port 0 to publish its DevTools port, then return that port. */
+export async function waitForDebuggerPort(chrome, timeoutMs) {
+  const deadline = Date.now() + timeoutMs;
+  const portFile = join(chrome.userDataDir, "DevToolsActivePort");
+  while (Date.now() < deadline) {
+    if (chrome.exitCode !== null || chrome.signalCode !== null) {
+      throw new Error("Chrome exited before its debugger came up (" + (chrome.signalCode ?? "code " + chrome.exitCode) + ")");
+    }
+    let port = 0;
+    try {
+      port = parseInt(readFileSync(portFile, "utf8"), 10) || 0;
+    } catch {
+      /* not written yet */
+    }
+    if (port > 0) {
+      await waitForDebugger(port, Math.max(1, deadline - Date.now()));
+      return port;
+    }
+    await sleep(100);
+  }
+  throw new Error("Chrome debugger never published its port in " + chrome.userDataDir);
+}
+
+/** Kill the launched Chrome and server when this process is interrupted, so no browser outlives it. */
+export function shutdownOnSignal(chrome, server) {
+  for (const [signal, code] of [["SIGINT", 130], ["SIGTERM", 143]]) {
+    process.once(signal, () => {
+      shutdown(chrome, server);
+      process.exit(code);
+    });
+  }
 }
 
 /** Start the game's Vite dev server if nothing is already serving base. */
@@ -729,8 +769,9 @@ import {
   RAF_EXPR,
   screenshotTo,
   shutdown,
+  shutdownOnSignal,
   sleep,
-  waitForDebugger,
+  waitForDebuggerPort,
   waitForHonestFrame,
 } from "./browser.mjs";
 
@@ -799,12 +840,12 @@ async function main() {
   const outPath = resolve(args.out ?? join("shots", "shot.png"));
 
   const server = await ensureDevServer(args.url ?? base, args.port);
-  const debugPort = 9200 + Math.floor(Date.now() % 700);
-  const chrome = launchChrome(debugPort, "jg-shoot-");
+  const chrome = launchChrome(0, "jg-shoot-");
+  shutdownOnSignal(chrome, server);
 
   let exitCode = 0;
   try {
-    await waitForDebugger(debugPort, 30_000);
+    const debugPort = await waitForDebuggerPort(chrome, 30_000);
     const session = await openPage(debugPort);
     try {
       await session.send("Page.enable");
@@ -879,8 +920,9 @@ import {
   RAF_EXPR,
   screenshotTo,
   shutdown,
+  shutdownOnSignal,
   sleep,
-  waitForDebugger,
+  waitForDebuggerPort,
   waitForHonestFrame,
 } from "./browser.mjs";
 
@@ -1162,12 +1204,12 @@ async function main() {
   const url = target.toString();
 
   const server = await ensureDevServer(args.url ?? base, args.port);
-  const debugPort = 9200 + Math.floor(Date.now() % 700);
-  const chrome = launchChrome(debugPort, "jg-drive-");
+  const chrome = launchChrome(0, "jg-drive-");
+  shutdownOnSignal(chrome, server);
 
   let exitCode = 0;
   try {
-    await waitForDebugger(debugPort, 30_000);
+    const debugPort = await waitForDebuggerPort(chrome, 30_000);
     const session = await openPage(debugPort);
     try {
       await session.send("Page.enable");

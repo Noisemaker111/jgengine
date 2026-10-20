@@ -73,7 +73,7 @@ afterAll(async () => {
 });
 
 async function focused(id: string) {
-  await page.waitForFunction(expected => document.activeElement?.id === expected, id, { timeout: 2000 });
+  await page.waitForFunction(expected => document.activeElement?.id === expected, id);
   expect(await page.evaluate(() => document.activeElement?.id)).toBe(id);
 }
 

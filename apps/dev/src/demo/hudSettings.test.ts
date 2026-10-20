@@ -2,16 +2,16 @@ import { describe, expect, test } from "bun:test";
 
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { createActionStateTracker, toActionStateBindingMap } from "../../../../packages/core/dist/input/actionBindings.js";
-import { defineGameDefinition } from "../../../../packages/core/dist/game/defineGame.js";
-import { createAssetCatalog } from "../../../../packages/core/dist/scene/assetCatalog.js";
-import { createGameContext } from "../../../../packages/core/dist/runtime/gameContext.js";
-import { createSettingsStore, type GameSettingsConfig } from "../../../../packages/core/dist/settings/settingsModel.js";
-import { SettingsTrigger, useSettings, useSettingsStore, type SettingsController } from "../../../../packages/react/dist/settings.js";
-import { createAudioEngine } from "../../../../packages/shell/dist/audio/audioEngine.js";
-import type { PlayableGame } from "../../../../packages/shell/dist/registry.js";
+import { createActionStateTracker, toActionStateBindingMap } from "@jgengine/core/input/actionBindings";
+import { defineGameDefinition } from "@jgengine/core/game/defineGame";
+import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
+import { createGameContext } from "@jgengine/core/runtime/gameContext";
+import { createSettingsStore, type GameSettingsConfig } from "@jgengine/core/settings/settingsModel";
+import { SettingsTrigger, useSettings, useSettingsStore, type SettingsController } from "@jgengine/react/settings";
+import { createAudioEngine } from "@jgengine/shell/audio/audioEngine";
+import type { PlayableGame } from "@jgengine/shell/registry";
 
-import { ShellHudPresentation } from "../../../../packages/shell/dist/ShellHudPresentation.js";
+import { ShellHudPresentation } from "@jgengine/shell/ShellHudPresentation";
 
 function renderHud(settings: GameSettingsConfig | false | undefined) {
   const store = createSettingsStore(null);
