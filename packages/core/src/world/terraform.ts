@@ -139,6 +139,8 @@ export interface EditableTerrain extends TerrainField {
   readonly cols: number;
   readonly rows: number;
   readonly cellSize: number;
+  /** World-space extent of the cell grid; cell `(gx, gz)` spans `cols`/`rows` equal slices of it. */
+  readonly gridBounds: Aabb;
   apply(edit: TerraformEdit): number;
   /** Apply an edit while reporting every touched vertex to `record` — the seam strokes record deltas through. */
   applyRecording(edit: TerraformEdit, record: TerraformDeltaRecorder): number;
@@ -596,6 +598,7 @@ export function createEditableTerrain(config: EditableTerrainConfig): EditableTe
     cols,
     rows,
     cellSize,
+    gridBounds: { minX: bounds.minX, minZ: bounds.minZ, maxX: bounds.minX + spanX, maxZ: bounds.minZ + spanZ },
     sampleHeight,
     sampleNormal,
     ...(base.bounds === undefined ? {} : { bounds: base.bounds }),

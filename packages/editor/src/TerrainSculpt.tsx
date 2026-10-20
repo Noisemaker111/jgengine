@@ -133,15 +133,15 @@ function toneAt(
   heightRange: readonly [number, number],
   paintColorAt: TerrainPaintColorSampler,
 ): void {
-  if (paintColorAt(x, z, out)) return;
   if (paletteAt !== null) {
     const palette = paletteAt(x, z);
     const blend = normalizeHeightBlend(height, heightRange[0], heightRange[1]);
     out.copy(BLEND_A.set(palette.low).lerp(BLEND_B.set(palette.high), blend));
-    return;
+  } else {
+    const t = Math.max(0, Math.min(1, (height + COLOR_SPAN * 0.25) / COLOR_SPAN));
+    out.copy(BLEND_A.copy(LOW).lerp(HIGH, t));
   }
-  const t = Math.max(0, Math.min(1, (height + COLOR_SPAN * 0.25) / COLOR_SPAN));
-  out.copy(BLEND_A.copy(LOW).lerp(HIGH, t));
+  paintColorAt(x, z, out);
 }
 
 /**

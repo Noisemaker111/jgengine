@@ -26,10 +26,11 @@ export function terrainGroundColorSampler(
   const swing = (terrain?.height ?? 0) * 1.2;
   const scratch = new THREE.Color();
   return (x: number, z: number) => {
-    if (paintColorAt?.(x, z, scratch)) return `#${scratch.getHexString()}`;
     const regional = paletteAt?.(x, z);
     if (regional !== undefined) { low.set(regional.low); high.set(regional.high); }
     const t = swing <= 0 ? 0.5 : THREE.MathUtils.clamp((field.sampleHeight(x, z) - (base - swing)) / (swing * 2), 0, 1);
-    return `#${scratch.copy(low).lerp(high, t).getHexString()}`;
+    scratch.copy(low).lerp(high, t);
+    paintColorAt?.(x, z, scratch);
+    return `#${scratch.getHexString()}`;
   };
 }
