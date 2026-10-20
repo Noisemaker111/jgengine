@@ -828,6 +828,7 @@
     "./devtools/panelAtoms",
     "./devtools/perfDiagnose",
     "./devtools/playtestProbe",
+    "./devtools/simStepper",
     "./diagnostics/FpsCounter",
     "./diagnostics/RuntimeDiagnostics",
     "./drivers/FrameDriver",
