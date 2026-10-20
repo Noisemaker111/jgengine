@@ -81,7 +81,10 @@ const NORMAL_MAIN = /* glsl */ `
   vec3 jgR2 = cross(normal, jgDpdx);
   float jgDet = dot(jgDpdx, jgR1) * faceDirection;
   vec3 jgGrad = sign(jgDet) * (dFdx(jgHeight) * jgR1 + dFdy(jgHeight) * jgR2);
-  normal = normalize(abs(jgDet) * normal - jgGrad);
+  vec3 jgBumped = abs(jgDet) * normal - jgGrad;
+  float jgLength2 = dot(jgBumped, jgBumped);
+  // A degenerate pixel frame (det 0, edge-on or helper lanes) would normalize zero into NaN, which bloom spreads across the frame.
+  if (jgLength2 > 1e-30 && jgLength2 < 1e30) normal = jgBumped * inversesqrt(jgLength2);
 }`;
 
 // Cheap cavity: down-facing and mottled-dark spots receive less sky, which grounds a form without an AO pass.

@@ -83,6 +83,7 @@
 
 - `DEFAULT_GRAPHICS_PROFILES` (const): const DEFAULT_GRAPHICS_PROFILES: Record<GraphicsQuality, GraphicsProfile> — Conservative defaults that preserve the existing high-quality shell behavior.
 - `GraphicsProfile` (interface): interface GraphicsProfile — Serializable renderer budget selected by the player's graphics tier.
+- `SurfaceDetailLevel` (type): type SurfaceDetailLevel = "off" | "lite" | "full" — Procedural surface detail on loaded models: `"full"` adds mottling, wear, roughness break-up, a micro-normal and cavity shading; `"lite"` drops the micro-normal; `"off"` compiles the plain material.
 - `resolveGraphicsProfile` (function): function resolveGraphicsProfile(quality: GraphicsQuality, overrides?: Partial<GraphicsProfile>): GraphicsProfile — Resolve one tier and apply game-authored field and post-stage overrides.
 
 ## @jgengine/core/settings/graphicsSettings
@@ -2545,7 +2546,7 @@
 - `ModelShadowMode` (type): type ModelShadowMode = "cast" | "receive" | "both" | "none" — Shadow participation applied to every mesh of a cloned model; mirrors `ModelConfig.shadows`.
 - `PAINT_TEXTURE_SIZE` (const): const PAINT_TEXTURE_SIZE: 512 — ⚠ undocumented
 - `PaintCanvas` (interface): interface PaintCanvas { canvas: HTMLCanvasElement; context: CanvasRenderingContext2D; texture: THREE.CanvasTexture } — ⚠ undocumented
-- `cloneModelScene` (function): function cloneModelScene(source: THREE.Object3D, options?: { cloneMaterials?: boolean; shadows?: ModelShadowMode }): THREE.Object3D — Clone a model with independent pose and materials, retaining shared geometry and textures.
+- `cloneModelScene` (function): function cloneModelScene(source: THREE.Object3D, options?: { cloneMaterials?: boolean; shadows?: ModelShadowMode; surfaceDetail?: boolean }): THREE.Object3D — Clone a model with independent pose and materials, retaining shared geometry and textures.
 - `disposeModelScene` (function): function disposeModelScene(root: THREE.Object3D): void — Release materials and bone textures owned by `cloneModelScene`; shared assets and attached models remain owned by their callers.
 
 ## @jgengine/shell/render/projectedOverdraw
@@ -2612,7 +2613,7 @@
 ## @jgengine/shell/render/useModelInstance
 
 - `ModelInstance` (interface): interface ModelInstance — Render `scene` with `position` and uniform `scale`; animate or deform `content` inside that placement frame.
-- `ModelInstanceConfig` (type): type ModelInstanceConfig = Pick<ModelConfig, "url" | "scale" | "targetHeight" | "y" | "anchor" | "dims" | "shadows" | "animation" | "hiddenNodes" > — Model loading, placement, shadows and animation for a custom renderer.
+- `ModelInstanceConfig` (type): type ModelInstanceConfig = Pick<ModelConfig, "url" | "scale" | "targetHeight" | "y" | "anchor" | "dims" | "shadows" | "animation" | "hiddenNodes" | "surfaceDetail" > — Model loading, placement, shadows and animation for a custom renderer.
 - `ModelInstanceOptions` (interface): interface ModelInstanceOptions — Caller-owned styling runs on the isolated clone, never the loader cache.
 - `useModelInstance` (function): function useModelInstance(model: ModelInstanceConfig, options: ModelInstanceOptions = {}): ModelInstance — Load and own an isolated model instance, preserving imported transforms and measuring placement at bind pose. Apply hiddenNodes to the configured clone before measurement; equivalent name lists retain the instance. Mount `scene` with the returned position/scale. Custom materials, deformation and surrounding geometry stay caller-owned. Must run inside an R3F canvas and Suspense boundary; a game provider is optional.
 
