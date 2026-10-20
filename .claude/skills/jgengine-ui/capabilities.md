@@ -476,6 +476,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `modelLoadIdleMs` (function) · `import { modelLoadIdleMs } from "@jgengine/shell/render/modelLoad"`
 
+## model-load-starts — count of model streaming bursts, for capture quiescence checks
+
+- `modelLoadStarts` (function) · `import { modelLoadStarts } from "@jgengine/shell/render/modelLoad"`
+
 ## multiplayer-p2p — bootstrap a playable authoritative world for browser peer co-op
 
 - `resolvePeerShellMultiplayer` (function) · `import { resolvePeerShellMultiplayer } from "@jgengine/shell/multiplayer"`

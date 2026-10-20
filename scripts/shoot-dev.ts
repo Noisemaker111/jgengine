@@ -21,7 +21,7 @@ import {
   ensureWebServer,
   forwardPageConsole,
   readCapturePageState,
-  scaleProfile,
+  captureProfile,
   screencastCapturesFully,
   isUp,
   navigateCapturePageWithRetry,
@@ -35,6 +35,7 @@ import {
 } from "./browser-lib";
 import { decodePng } from "./png-reader";
 import { externalCaptureUrl } from "./captureTarget";
+import { CAPTURE_FLAGS, captureFlagHelp, parseCaptureArgs } from "../packages/jgengine/src/templates/captureArgs";
 import { lookSearchParams, parseLookAim } from "./lookArg";
 import {
   MIN_SAMPLED_SHARE,
@@ -102,64 +103,15 @@ type Args = {
   help: boolean;
   timeoutMs: number;
   timeoutExplicit: boolean;
+  port?: number;
+  width?: number;
+  height?: number;
+  params: [string, string][];
 };
 
 const HELP = `bun run shoot [game] [options]
 
-  --game <id>         game id (default world-of-warcraft; positional arg also works)
-  --mode <ui|play|poster|preview>   capture mode (default ui)
-  --device <desktop|mobile|mobile-landscape|both>   viewport (default desktop)
-  --size <full|half>  half halves both dimensions (~1/4 the pixels) for cheap
-                      mid-loop judge shots — use full (default) for final/PR shots
-  --state <name>      capture.states entry instead of live play
-  --preview [key]     preview.tsx state instead of the full shell
-  --fixture [name]    capture an exported engine preview fixture (real @jgengine/react
-                      component) by name — no game boot, no hand-rolled --url page.
-                      With no name (or --list), prints the registered fixtures and exits
-  --list              list the registered engine preview fixtures and exit
-  --run <cmd[,cmd]>   script past a start screen before capture
-  --settle <ms>       wait past an intro before capture
-  --spawn <x,y,z>     override the authored player spawn for this shot only (adds a
-                      ?spawn= overlay like --cam/?cam=); never mutates editor.scene.json.
-                      Accepts x,y,z or x,y,z,yaw (yaw radians)
-  --style <look>      render this shot with a different look preset (?style=): neutral,
-                      photoreal, cinematic, toon, comic, retro or flat. Replaces the
-                      game's own post chain so art styles compare on the same scene.
-  --look <x,z | x,y,z | @marker:<id> | @entity:<id>>
-                      pin a detached camera on a world point for this capture:
-                      the vantage the shot actually wants, independent of the
-                      player spawn, this run's look yaw, and where the AI
-                      wandered. x,z samples the ground height; @marker:<id>
-                      aims at an authored marker and @entity:<id> tracks a live
-                      entity. Aims at a subject, so it never misses the way
-                      --spawn does.
-                      A point outside the world, or a camera the terrain would
-                      bury, fails the shot instead of returning an empty frame.
-  --look-from <dist[,height[,angle]]>
-                      vantage for --look (default 12,5,0; angle in radians)
-  --view <name>       replay a framing the game declares in capture.views — the
-                      same camera, staging, and settle every run, so a
-                      before/after pair is the same view by construction rather
-                      than two hand-typed flag sets that drifted. Any explicit
-                      flag still wins over the view's value. With no name (or
-                      --list-views), prints the game's declared views and exits
-  --list-views        list the game's declared capture.views and exit
-  --out <path>        explicit output path
-  --url <url>         capture an arbitrary URL instead of the dev runner
-                      (page MUST set document.documentElement.dataset.jgCapture
-                      = "ready" when the frame is honest; otherwise shoot times out)
-  --site <path>       capture a route from the managed apps/web server, e.g.
-                      --site '/playground?inspect=1&junction=5'
-  --connect <port>    attach to an already-running Chrome (skips launch/kill)
-  --keep              leave the dev server + Chrome (per-worktree warm debug port)
-                      running after this shot — pair with --connect <port>
-                      on every following shot in the loop (warm-loop pattern)
-  --serve             keep Chrome warm; start the requested Vite lazily
-  --inspect           run the pixel-metrics pass on the PNG we already have
-                      in memory (no second browser launch) and write
-                      shots/<name>.metrics.json beside it
-  --timeout <s>       per-shot timeout (default 60; --site: 10 local, 30 Linux/CI)
-  --help              show this text
+${captureFlagHelp("shoot", "engine", CAPTURE_FLAGS)}
 
   JG_CAPTURE_SCREENCAST=0 forces Page.captureScreenshot instead of the screencast
   frame pump (same pixels, several times slower on software GL).
@@ -168,99 +120,55 @@ Persistent daemon (preferred for multi-shot loops):
   bun run shoot --serve                      # keep Chrome warm; Vite starts on demand
   bun run shoot daemon start|status|stop     # managed background service
   bun run shoot <game> --mode play           # auto-attaches when daemon is live (<5s)
-  bun run shoot --site '/playground'         # use the managed apps/web target
 
-Manual warm loop (still supported):
-  bun run shoot <game> --mode play --keep                       # first shot: cold boot, stays warm
-  bun run shoot <game> --mode play --connect <port> --size half # re-shots: <10s, cheap judge PNG
-  bun run shoot <game> --mode play --connect <port>             # final full-res shot for the PR
-  # port is printed after --keep; each worktree gets its own default
+Manual warm loop:
+  bun run shoot <game> --mode play --keep                       # cold boot, stays warm
+  bun run shoot <game> --mode play --connect <port> --size half # cheap judge PNG
 `;
 
+/** Map the shared capture command line (packages/jgengine/src/templates/captureArgs.ts) onto shoot's options. */
 function parseArgs(argv: string[]): Args {
+  const parsed = parseCaptureArgs("shoot", argv, CAPTURE_FLAGS);
+  const o = parsed.options;
+  const str = (name: string): string | undefined => (typeof o[name] === "string" ? (o[name] as string) : undefined);
+  const num = (name: string): number | undefined => (str(name) === undefined ? undefined : Number(str(name)));
+  if (parsed.positionals.length > 1) throw new Error(`shoot: one game id, got ${parsed.positionals.join(" ")}`);
+  const mode = str("mode") ?? "ui";
+  if (!["ui", "play", "poster", "preview"].includes(mode)) throw new Error(`--mode must be ui, play, poster, or preview (got ${mode})`);
+  const run = str("run")?.split(",").map((name) => name.trim()).filter((name) => name.length > 0);
+  const view = str("view");
   const args: Args = {
-    game: "world-of-warcraft",
-    mode: "ui",
-    device: "desktop",
-    size: "full",
-    connect: undefined,
-    keep: false,
-    inspect: false,
-    help: false,
-    listFixtures: false,
-    listViews: false,
-    timeoutMs: 60_000,
-    timeoutExplicit: false,
+    game: str("game") ?? parsed.positionals[0] ?? "world-of-warcraft",
+    mode: mode as Mode,
+    device: (str("device") ?? "desktop") as DeviceArg,
+    size: parseSizeArg(str("size") ?? "full"),
+    stage: o.stage === true ? true : undefined,
+    state: str("state"),
+    preview: str("preview") ?? (mode === "preview" ? "" : undefined),
+    fixture: str("fixture"),
+    listFixtures: o.list === true,
+    run: run !== undefined && run.length > 0 ? run : undefined,
+    settle: num("settle"),
+    spawn: str("spawn"),
+    style: str("style"),
+    look: str("look"),
+    lookFrom: str("look-from"),
+    view: view === "" ? undefined : view,
+    listViews: o["list-views"] === true || view === "",
+    out: str("out"),
+    url: str("url") === undefined ? undefined : externalCaptureUrl(str("url")),
+    site: str("site"),
+    connect: num("connect"),
+    keep: o.keep === true,
+    inspect: o.inspect === true,
+    help: parsed.help,
+    timeoutMs: (num("timeout") ?? 60) * 1000,
+    timeoutExplicit: str("timeout") !== undefined,
+    port: num("port"),
+    width: num("width"),
+    height: num("height"),
+    params: ((o.param as string[] | undefined) ?? []).map((pair) => [pair.slice(0, pair.indexOf("=")), pair.slice(pair.indexOf("=") + 1)] as [string, string]),
   };
-  for (let index = 0; index < argv.length; index += 1) {
-    const value = argv[index];
-    if (value === "--game") args.game = argv[++index] ?? args.game;
-    else if (value === "--mode") args.mode = (argv[++index] as Mode) ?? args.mode;
-    else if (value === "--device") {
-      const device = argv[++index] as DeviceArg | undefined;
-      if (device !== "desktop" && device !== "mobile" && device !== "mobile-landscape" && device !== "both") {
-        throw new Error(`--device must be desktop, mobile, mobile-landscape, or both (got ${device ?? "nothing"})`);
-      }
-      args.device = device;
-    } else if (value === "--size") {
-      args.size = parseSizeArg(argv[++index]);
-    } else if (value === "--stage") args.stage = true;
-    else if (value === "--state") args.state = argv[++index];
-    else if (value === "--preview") {
-      const next = argv[index + 1];
-      if (next !== undefined && !next.startsWith("--")) {
-        args.preview = next;
-        index += 1;
-      } else {
-        args.preview = "";
-      }
-    } else if (value === "--fixture") {
-      const next = argv[index + 1];
-      if (next !== undefined && !next.startsWith("--")) {
-        args.fixture = next;
-        index += 1;
-      } else {
-        args.fixture = "";
-      }
-    } else if (value === "--list" || value === "--list-fixtures") {
-      args.listFixtures = true;
-    } else if (value === "--run") {
-      const list = (argv[++index] ?? "")
-        .split(",")
-        .map((name) => name.trim())
-        .filter((name) => name.length > 0);
-      args.run = list.length > 0 ? list : args.run;
-    } else if (value === "--settle") args.settle = Number(argv[++index]);
-    else if (value === "--spawn") args.spawn = argv[++index];
-    else if (value === "--style") args.style = argv[++index];
-    else if (value === "--look") args.look = argv[++index];
-    else if (value === "--look-from") args.lookFrom = argv[++index];
-    else if (value === "--view") {
-      const next = argv[index + 1];
-      if (next !== undefined && !next.startsWith("--")) {
-        args.view = next;
-        index += 1;
-      } else {
-        args.listViews = true;
-      }
-    } else if (value === "--list-views") args.listViews = true;
-    else if (value === "--out") args.out = argv[++index];
-    else if (value === "--url") {
-      const raw = argv[++index];
-      args.url = externalCaptureUrl(raw);
-    }
-    else if (value === "--site") args.site = argv[++index];
-    else if (value === "--connect") args.connect = Number(argv[++index]);
-    else if (value === "--keep") args.keep = true;
-    else if (value === "--inspect") args.inspect = true;
-    else if (value === "--help" || value === "-h") args.help = true;
-    else if (value === "--timeout") {
-      args.timeoutMs = Number(argv[++index]) * 1000;
-      args.timeoutExplicit = true;
-    }
-    else if (!value.startsWith("--")) args.game = value;
-  }
-  if (args.mode === "preview" && args.preview === undefined) args.preview = "";
   if (args.site !== undefined && !args.timeoutExplicit) {
     args.timeoutMs = process.platform === "linux" || process.env.CI !== undefined ? 30_000 : 10_000;
   }
@@ -424,15 +332,18 @@ async function shootOne(
     await session.send("Runtime.enable");
     stopConsoleForward = forwardPageConsole(session, "shoot:");
     mark("enable");
-    await applyDevice(session, device, args.size);
+    const viewportSize = { width: args.width, height: args.height };
+    await applyDevice(session, device, args.size, viewportSize);
     mark("device");
-    const url = targetUrl(args, device, devBase);
+    const target = new URL(targetUrl(args, device, devBase));
+    for (const [key, value] of args.params) target.searchParams.set(key, value);
+    const url = target.toString();
     await navigateCapturePageWithRetry(session, url, devBase, args.timeoutMs, CAPTURE_MAX_ATTEMPTS, { legacyCanvas: args.url !== undefined });
     mark("ready");
     await reportAppliedAim(session, args);
     await new Promise((r) => setTimeout(r, 600));
     mark("settle");
-    const expected = scaleProfile(DEVICES[device], args.size);
+    const expected = captureProfile(device, args.size, viewportSize);
     // Read before capturing, not alongside it: the region is what lets the fast path reject a
     // frame whose 3D viewport the canvas never committed into, and a shot that is a black hole
     // where the world should be is worth more than the frame time the overlap saved.
@@ -554,8 +465,9 @@ if (!args.listViews) {
   }
 }
 
+if (args.port !== undefined) process.env.JG_DEV_PORT = String(args.port);
 const daemon: ShootDaemonState | null =
-  args.connect === undefined ? await attachDaemon() : null;
+  args.connect === undefined && args.port === undefined ? await attachDaemon() : null;
 
 let server: ChildProcess | null = null;
 let serverPid: number | undefined;
