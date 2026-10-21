@@ -1,7 +1,9 @@
-import { useEffect, useState, useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
 
 import type { Notice, NoticeFeed, NoticeTone } from "@jgengine/core/game/notices";
+import type { LayoutRect, LayoutRegion } from "@jgengine/core/ui/gameLayout";
 
+import { useGameViewportLayout } from "./gameViewport";
 import { useOptionalGameContext } from "./provider";
 
 export type { Notice, NoticeTone } from "@jgengine/core/game/notices";
@@ -22,11 +24,50 @@ const TONE_COLOR: Record<NoticeTone, string> = {
 
 const TONE_LABEL: Record<NoticeTone, string> = { info: "Info", success: "Done", warn: "Warning", deny: "Can't do that" };
 
-const PLACEMENT_STYLE: Record<NoticePlacement, CSSProperties> = {
-  top: { top: "clamp(64px, 14%, 150px)" },
-  center: { top: "34%" },
-  bottom: { bottom: "clamp(120px, 22%, 230px)", flexDirection: "column-reverse" },
+const DEFAULT_OFFSET: Record<NoticePlacement, string> = {
+  top: "clamp(64px, 14%, 150px)",
+  center: "34%",
+  bottom: "clamp(120px, 22%, 230px)",
 };
+
+const AVOID_GAP = 8;
+
+function placementStyle(placement: NoticePlacement, offset: number | string | undefined): CSSProperties {
+  const edge = offset === undefined ? DEFAULT_OFFSET[placement] : typeof offset === "number" ? `${offset}px` : offset;
+  if (placement === "bottom") return { bottom: `calc(var(--jg-safe-bottom, 0px) + ${edge})`, flexDirection: "column-reverse" };
+  if (placement === "center") return { top: edge };
+  return { top: `calc(var(--jg-safe-top, 0px) + ${edge})` };
+}
+
+/**
+ * How far a top or bottom notice stack must move toward the screen middle to clear the registered
+ * layout regions in its column. `stack` is its current rect, already moved by `shift`; regions
+ * reaching past the container's middle (full-height sidebars, screens) are ignored. @internal
+ */
+export function noticeAvoidShift(
+  placement: NoticePlacement,
+  stack: LayoutRect,
+  shift: number,
+  container: LayoutRect,
+  regions: readonly Pick<LayoutRegion, "kind" | "rect">[],
+  gap = AVOID_GAP,
+): number {
+  if (placement === "center") return 0;
+  const middle = (container.top + container.bottom) / 2;
+  let need = 0;
+  for (const { kind, rect } of regions) {
+    if (kind === "screen" || rect.right <= rect.left || rect.bottom <= rect.top) continue;
+    if (rect.right <= stack.left || rect.left >= stack.right) continue;
+    if (placement === "top") {
+      if (rect.bottom > middle) continue;
+      need = Math.max(need, rect.bottom + gap - (stack.top - shift));
+    } else {
+      if (rect.top < middle) continue;
+      need = Math.max(need, stack.bottom + shift - (rect.top - gap));
+    }
+  }
+  return Math.max(0, Math.round(need));
+}
 
 const KEYFRAMES = `
 @keyframes jg-notice-in { from { opacity: 0; transform: translateY(-8px) scale(0.97); } to { opacity: 1; transform: none; } }
@@ -106,19 +147,30 @@ export function useNoticeList(feed: NoticeFeed | null): readonly Notice[] {
 
 /**
  * Animated, toned notice stack for a {@link NoticeFeed} — the default renderer the shell mounts for
- * `ctx.game.notices`. Uses `--jg-*` theme vars with fallbacks, 14px text, and never takes pointer input.
+ * `ctx.game.notices` inside the HUD theme root. Uses `--jg-*` theme vars with fallbacks, 14px text, and
+ * never takes pointer input. A top or bottom stack keeps clear of HUD panels registered in its column
+ * and sits above modal overlays.
  *
- * @capability notice-feed render ctx.game.notices as an animated toned stack (enter/exit motion, ×N stacking)
+ * @capability notice-feed render ctx.game.notices as an animated toned stack (enter/exit motion, ×N stacking, HUD avoidance)
  */
 export function NoticeStack({
   feed,
   placement = "top",
+  offset,
+  avoidHud = true,
+  zIndex = 85,
   scale = 1,
   renderNotice,
 }: {
   /** Defaults to the surrounding game's `ctx.game.notices`. */
   feed?: NoticeFeed;
   placement?: NoticePlacement;
+  /** Distance from the band's screen edge (px or CSS length), added to the safe-area inset. */
+  offset?: number | string;
+  /** Move a top/bottom stack clear of registered HUD panels and touch controls in its column. Default true. */
+  avoidHud?: boolean;
+  /** Default 85: above `ModalHost` (80) and `PanelHost` (40). */
+  zIndex?: number;
   /** Multiplies text and spacing (the shell passes the player's UI scale). */
   scale?: number;
   renderNotice?: (notice: Notice) => ReactNode;
@@ -132,6 +184,18 @@ export function NoticeStack({
     setSeenLive(live);
     setShown(reconcileShown(shown, live));
   }
+  const { regions } = useGameViewportLayout();
+  const stackRef = useRef<HTMLDivElement | null>(null);
+  const [shift, setShift] = useState(0);
+  const visible = shown.length > 0;
+  useLayoutEffect(() => {
+    const element = stackRef.current;
+    const container = element?.offsetParent;
+    const next = element == null || container == null || !avoidHud
+      ? 0
+      : noticeAvoidShift(placement, element.getBoundingClientRect(), shift, container.getBoundingClientRect(), regions);
+    if (next !== shift) setShift(next);
+  }, [regions, visible, placement, avoidHud, shift]);
   const anyLeaving = shown.some((entry) => entry.leaving);
   useEffect(() => {
     if (!anyLeaving) return;
@@ -142,6 +206,7 @@ export function NoticeStack({
   if (shown.length === 0) return null;
   return (
     <div
+      ref={stackRef}
       data-jg-notices={placement}
       role="status"
       aria-live="polite"
@@ -149,14 +214,15 @@ export function NoticeStack({
         position: "absolute",
         left: "50%",
         transform: "translateX(-50%)",
-        zIndex: 45,
+        zIndex,
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
         gap: 6 * scale,
         width: "min(460px, calc(100% - 32px))",
         pointerEvents: "none",
-        ...PLACEMENT_STYLE[placement],
+        ...placementStyle(placement, offset),
+        ...(shift === 0 ? {} : placement === "bottom" ? { marginBottom: shift } : { marginTop: shift }),
       }}
     >
       <style>{KEYFRAMES}</style>

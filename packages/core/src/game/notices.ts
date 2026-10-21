@@ -12,6 +12,8 @@ export interface NoticeInput {
   key?: string;
   /** Lifetime in ms. Defaults to the feed's `ttlMs`, or `denyTtlMs` for deny. */
   ttlMs?: number;
+  /** Skip this push's sound cue (the notice still shows). Default false. */
+  silent?: boolean;
 }
 
 /** A live notice as the HUD renders it. */
@@ -25,6 +27,8 @@ export interface Notice {
   /** Clock time (ms) of the latest push. */
   at: number;
   expiresAt: number;
+  /** Set when the latest push asked for no sound cue. */
+  silent?: true;
 }
 
 /** Plain JSON state of a {@link NoticeFeed}. */
@@ -100,17 +104,18 @@ export function createNoticeFeed(config: NoticeFeedConfig & { now?: () => number
       const key = input.key ?? `${tone}:${input.text}`;
       const time = now();
       const life = input.ttlMs ?? (tone === "deny" ? denyTtlMs : ttlMs);
+      const quiet = input.silent === true ? { silent: true as const } : {};
       const live = prunedAt(time);
       const index = live.findIndex((notice) => notice.key === key);
       let notice: Notice;
       if (index >= 0) {
-        const previous = live[index]!;
-        notice = { ...previous, text: input.text, tone, count: previous.count + 1, at: time, expiresAt: time + life };
+        const { silent: _previousSilent, ...previous } = live[index]!;
+        notice = { ...previous, text: input.text, tone, count: previous.count + 1, at: time, expiresAt: time + life, ...quiet };
         const next = [...live];
         next[index] = notice;
         set(next);
       } else {
-        notice = { id: `notice-${counter}`, text: input.text, tone, key, count: 1, at: time, expiresAt: time + life };
+        notice = { id: `notice-${counter}`, text: input.text, tone, key, count: 1, at: time, expiresAt: time + life, ...quiet };
         counter += 1;
         const next = [...live, notice];
         set(cap > 0 && next.length > cap ? next.slice(next.length - cap) : next);

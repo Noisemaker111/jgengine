@@ -858,7 +858,9 @@ export function HudPanel({
     }),
     [id, mobileBehavior, priority, allowOverlapWith, collisionGroup],
   );
-  useRegisterLayoutRegion(regionSpec, rootRef, region && !regionHidden);
+  // A flowing panel portals into its anchor region, which HudCanvas only provides after its first commit.
+  const awaitingRegion = panel !== undefined && (compact || !panel.moved) && regions[compact ? anchor : panel.placement.anchor] === undefined;
+  useRegisterLayoutRegion(regionSpec, rootRef, region && !regionHidden && !awaitingRegion);
 
   const onPointerDown = (event: ReactPointerEvent) => {
     if (!draggable || event.button !== 0) return;

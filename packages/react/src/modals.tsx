@@ -19,7 +19,7 @@ import { useDialogBehavior } from "./dialogBehavior";
 import { useEngineStyles } from "./engineStyles";
 import { HudButton } from "./hudButton";
 import { useHudInteract, type HudInteractListener } from "./hudInteract";
-import { HudPanel } from "./hudPanel";
+import { HudSurface } from "./hudSurface";
 import { hudType } from "./hudTokens";
 import { usePresence } from "./presence";
 
@@ -208,7 +208,7 @@ export interface ConfirmDialogProps {
 
 /**
  * A generic two-button confirmation dialog — title, optional body, and Cancel / Confirm buttons over
- * a `HudTheme`-token-driven {@link HudPanel}. Presentation-only: wire `onConfirm`/`onCancel` to a
+ * a `HudTheme`-token-driven {@link HudSurface}. Presentation-only: wire `onConfirm`/`onCancel` to a
  * modal stack's `resolve` (typically inside a {@link ModalHost} render callback) and reskin via
  * `HudTheme` tokens or `danger` for a destructive action. It interprets nothing — the game supplies
  * the copy.
@@ -228,14 +228,14 @@ export function ConfirmDialog({
   style,
 }: ConfirmDialogProps): ReactNode {
   return (
-    <HudPanel elevation="modal" width={width} padding={20} className={className} style={style}>
+    <HudSurface elevation="modal" width={width} padding={20} className={className} style={style}>
       <h2 data-confirm-title="" style={DIALOG_TITLE}>{title}</h2>
       {body !== undefined ? <p data-confirm-body="" style={DIALOG_BODY}>{body}</p> : null}
       <div style={BUTTON_ROW}>
         <HudButton data-confirm-cancel="" cue="cancel" onClick={onCancel}>{cancelLabel}</HudButton>
         <HudButton data-confirm-accept="" cue="confirm" variant={danger ? "danger" : "primary"} onClick={onConfirm}>{confirmLabel}</HudButton>
       </div>
-    </HudPanel>
+    </HudSurface>
   );
 }
 
@@ -282,7 +282,7 @@ const PAUSE_DANGER_ITEM: CSSProperties = { ...PAUSE_ITEM, color: "var(--jg-dange
 
 /**
  * A reskinnable pause-menu building block: a primary Resume button plus a game-filled list of slot
- * items (Settings, Save, Quit, …), stacked in a `HudTheme`-token-driven {@link HudPanel}. It ships
+ * items (Settings, Save, Quit, …), stacked in a `HudTheme`-token-driven {@link HudSurface}. It ships
  * the common shape every game's pause screen needs and nothing genre-specific — the game supplies the
  * title, item labels/order, and destructive styling, and reskins with `HudTheme` tokens. Drop it into
  * a {@link ModalHost} keyed on a `"pause"` modal, or render it standalone.
@@ -299,7 +299,7 @@ export function PauseMenu({
   style,
 }: PauseMenuProps): ReactNode {
   return (
-    <HudPanel elevation="modal" width={width} padding={20} className={className} style={style}>
+    <HudSurface elevation="modal" width={width} padding={20} className={className} style={style}>
       <div data-pause-title="" style={PAUSE_TITLE}>{title}</div>
       <HudButton data-pause-resume="" cue="resume" variant="primary" size="lg" block onClick={onResume}>
         {resumeLabel}
@@ -318,6 +318,6 @@ export function PauseMenu({
           {item.label}
         </HudButton>
       ))}
-    </HudPanel>
+    </HudSurface>
   );
 }

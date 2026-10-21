@@ -37,11 +37,17 @@ import type { RarityStyle } from "./worldItem";
 export interface NoticePresentationConfig extends NoticeFeedConfig {
   /** Screen band for the feed. "top" sits below top-edge HUD bars, "center" over the play area, "bottom" above action bars. Default "top". */
   placement?: "top" | "center" | "bottom";
+  /** Distance from the band's screen edge (px or a CSS length), added to the device safe-area inset. Default `clamp(64px, 14%, 150px)` for top, `clamp(120px, 22%, 230px)` for bottom, 34% for center. */
+  offset?: number | string;
+  /** Move the top/bottom stack clear of HUD panels and touch controls registered in its column. Default true. */
+  avoidHud?: boolean;
+  /** Stacking order. Default 85, above `ModalHost` (80) and `PanelHost` (40), so notices stay readable over pause screens. */
+  zIndex?: number;
   /** Keep the feed and cues but render nothing (the game draws `ctx.game.notices` itself). Default false. */
   hidden?: boolean;
   /** Show refused commands' `message` as deny notices. Default true. */
   refusals?: boolean;
-  /** Play a UI cue per new notice (deny → deny, success → confirm, else notify). Default true. */
+  /** Play a UI cue per new notice (deny → deny, success → confirm, else notify); a push with `silent: true` skips its own. Independent of the HUD control sounds (`audio.hudCues`). Default true. */
   cues?: boolean;
 }
 
@@ -753,6 +759,8 @@ export interface PlayableGame<
     buses?: Record<string, AudioBusDef>;
     music?: Record<string, MusicTheme>;
     musicBus?: string;
+    /** Play UI cues for engine HUD controls (`HudButton` click/hover, `HudSurface` and window open/close, action slots). Independent of notice sounds (`notices.cues`). Default true. */
+    hudCues?: boolean;
     /** Default UI cues (`ui.click`, `ui.deny`, ...) on a "ui" bus. A sound named `ui.<cue>` in `sounds` replaces one; a map entry replaces or (`false`) silences one; `false` silences all. */
     uiCues?: UiCueOverrides;
   };

@@ -336,6 +336,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `StatBar` (function) · `import { StatBar } from "@jgengine/react"`
 
+## hud-surface — themed panel frame with elevation, header slots, landmark element, and open/close transitions
+
+- `HudSurface` (const) · `import { HudSurface } from "@jgengine/react/hudSurface"`
+
 ## hud-theme — game-authored token object covering bars, frames, slots, chrome, text, status colors, fonts, and rarity
 
 - `HudThemePalette` (interface) · `import { HudThemePalette } from "@jgengine/react"`
@@ -502,7 +506,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `WorldNameplates` (function) · `import { WorldNameplates } from "@jgengine/shell/world/WorldHud"`
 
-## notice-feed — render ctx.game.notices as an animated toned stack (enter/exit motion, ×N stacking)
+## notice-feed — render ctx.game.notices as an animated toned stack (enter/exit motion, ×N stacking, HUD avoidance)
 
 - `NoticeStack` (function) · `import { NoticeStack } from "@jgengine/react/notices"`
 
