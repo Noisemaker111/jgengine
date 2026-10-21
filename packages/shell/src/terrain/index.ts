@@ -92,8 +92,9 @@ export {
 } from "./surfaceRibbonMaterial";
 export {
   applyGroundEdgeFade,
+  buildGroundCoverageMask,
   createGroundEdgeFade,
-  groundEdgeFadeWidth,
+  type GroundCoverageMask,
+  type GroundCoverageOptions,
   type GroundEdgeFade,
-  type GroundEdgeFadeRect,
 } from "./groundEdgeFade";

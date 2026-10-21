@@ -979,6 +979,7 @@
     "./terrain/grassBudget",
     "./terrain/grassGeometry",
     "./terrain/grassMaterial",
+    "./terrain/groundEdgeFade",
     "./terrain/heightfieldGeometry",
     "./terrain/index",
     "./terrain/random",

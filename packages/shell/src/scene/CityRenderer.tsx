@@ -56,7 +56,7 @@ import { InstancedBuildings, type InstancedBuildingPlacement } from "../structur
 import { getBuildingKit } from "../structures/buildingKitRegistry";
 import { createCityWindowMaterial } from "./cityWindowMaterial";
 import { createSurfaceRibbonMaterial } from "../terrain/surfaceRibbonMaterial";
-import { applyGroundEdgeFade, createGroundEdgeFade, groundEdgeFadeWidth, type GroundEdgeFadeRect } from "../terrain/groundEdgeFade";
+import { applyGroundEdgeFade, buildGroundCoverageMask, createGroundEdgeFade } from "../terrain/groundEdgeFade";
 import { useTerrainQuality } from "../terrain/terrainQuality";
 import { registerSceneKindRenderer, type SceneKindRenderContext } from "./sceneKindRenderers";
 import { junctionSurface } from "./cityJunctionSurface";
@@ -1702,26 +1702,21 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
 
   const quality = useTerrainQuality();
   const surfaceDetail = object.meta?.["surfaceDetail"] !== false;
-  // The block graph closes outer blocks on the district rectangle, so that rectangle is the town's
-  // outer boundary: every opaque ground layer fades out toward it, while seams between layers
-  // inside it stay crisp. The urban sheet already fades over its own street-distance reach.
+  // Every opaque ground layer fades out where the district's merged ground footprint meets bare
+  // terrain; seams between layers inside it stay crisp. The urban sheet is left out of the
+  // footprint because it already fades over its own street-distance reach.
   const edgeFadeOn = object.meta?.["edgeFade"] !== false;
-  const rimRect = useMemo<GroundEdgeFadeRect | null>(() => {
-    if (resolved === null) return null;
-    const halfX = resolved.size[0] / 2;
-    const halfZ = resolved.size[1] / 2;
-    return { centerX: resolved.center[0], centerZ: resolved.center[2], halfX, halfZ, rotationY: resolved.rotationY, width: groundEdgeFadeWidth(halfX, halfZ) };
-  }, [resolved]);
-  const hasRim = rimRect !== null;
-  const edgeFade = useMemo(
-    () => (edgeFadeOn && rimRect !== null ? createGroundEdgeFade(rimRect) : null),
-    // Uniforms are retargeted below; only turning the fade on or off rebuilds the materials.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [edgeFadeOn, hasRim],
-  );
+  const edgeFade = useMemo(() => (edgeFadeOn ? createGroundEdgeFade() : null), [edgeFadeOn]);
+  useEffect(() => () => edgeFade?.dispose(), [edgeFade]);
+  const fadeWidth = Math.min(4, Math.max(1.5, (resolved?.rules.streetWidth ?? 3) * 0.6));
+  const footprint = useMemo(() => {
+    if (edgeFade === null || ground === null) return null;
+    const layers = GROUND_LAYERS.filter((layer) => layer !== "urban" && layer !== "curbs" && layer !== "markings").map((layer) => ground[layer]);
+    return buildGroundCoverageMask(layers, { width: fadeWidth });
+  }, [edgeFade, ground, fadeWidth]);
   useLayoutEffect(() => {
-    if (edgeFade !== null && rimRect !== null) edgeFade.set(rimRect);
-  }, [edgeFade, rimRect]);
+    edgeFade?.setMask(footprint, fadeWidth);
+  }, [edgeFade, footprint, fadeWidth]);
   const groundMaterials = useMemo(() => {
     const make = (surface: string, color: string, vertexColors: boolean, roughness: number, scale = 1): THREE.MeshStandardMaterial =>
       surfaceDetail

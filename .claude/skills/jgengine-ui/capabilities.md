@@ -266,6 +266,12 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `GameContextBridge` (function) · `import { GameContextBridge } from "@jgengine/react"`
 
+## ground-edge-fade — fade merged ground layers into the terrain at their outer edge, keeping inner seams crisp
+
+- `applyGroundEdgeFade` (function) · `import { applyGroundEdgeFade } from "@jgengine/shell/terrain"`
+- `buildGroundCoverageMask` (function) · `import { buildGroundCoverageMask } from "@jgengine/shell/terrain"`
+- `createGroundEdgeFade` (function) · `import { createGroundEdgeFade } from "@jgengine/shell/terrain"`
+
 ## heavy-models — models over the per-model triangle budget, for perf probes and smoke assertions
 
 - `heavyModels` (function) · `import { heavyModels } from "@jgengine/shell/render/modelLoad"`
