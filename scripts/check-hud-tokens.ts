@@ -14,9 +14,11 @@ const NON_THEME = [
   "--jg-hud-pad-",
   "--jg-hud-dock-clearance",
   "--jg-visual-viewport-",
+  "--jg-safe-",
   // component-scoped opt-in tokens; each read carries a theme-token fallback
   "--jg-card-",
   "--jg-font-card",
+  "--jg-panel-padding",
   // reduced-motion multiplier the engine stylesheet owns (0 under reduced motion)
   "--jg-motion-scale",
 ];
