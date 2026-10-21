@@ -567,6 +567,7 @@ const exitCode = await withBrowserSession(
         identity: checkoutIdentity(),
         chromePort: debugPort,
         chromePid: chrome?.pid,
+        userDataDir: chrome?.userDataDir,
         startedAt: new Date().toISOString(),
       };
       const target = { port: Number(new URL(devBase).port), base: devBase, pid: serverPid ?? server?.pid };

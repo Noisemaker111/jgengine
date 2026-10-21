@@ -1,5 +1,5 @@
 import { describe, expect, mock, test } from "bun:test";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, rmSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createServer } from "node:http";
@@ -29,6 +29,8 @@ import {
   parseQualityArg,
   qualitySuffix,
   sizeForQuality,
+  PROFILE_OWNER_FILE,
+  sweepStaleProfiles,
 } from "./browser-lib";
 
 test("browser fixture bundling reads real modules despite runner mocks", async () => {
@@ -530,5 +532,33 @@ describe("software GL backend", () => {
     expect(chromeRenderArgs("llvmpipe")).not.toContain("--headless=new");
     expect(chromeRenderArgs("swiftshader")).toEqual(expect.arrayContaining(["--headless=new", "--use-angle=swiftshader"]));
     expect(chromeRenderArgs(null)).toEqual(["--headless=new", "--ignore-gpu-blocklist"]);
+  });
+});
+
+describe("capture profile sweep", () => {
+  test("removes only stale jg dirs whose browser is gone", () => {
+    const root = mkdtempSync(join(tmpdir(), "jg-sweep-test-"));
+    try {
+      const leaked = mkdtempSync(join(root, "jg-drive-"));
+      const liveOwned = mkdtempSync(join(root, "jg-shoot-daemon-"));
+      writeFileSync(join(liveOwned, PROFILE_OWNER_FILE), String(process.pid));
+      const recent = mkdtempSync(join(root, "jg-shoot-"));
+      const foreign = mkdtempSync(join(root, "other-"));
+      const file = join(root, "jg-notes.txt");
+      writeFileSync(file, "not a profile");
+      const dayAgo = new Date(Date.now() - 25 * 60 * 60 * 1000);
+      for (const dir of [leaked, liveOwned, foreign]) utimesSync(dir, dayAgo, dayAgo);
+      utimesSync(file, dayAgo, dayAgo);
+
+      sweepStaleProfiles(root);
+
+      expect(existsSync(leaked)).toBe(false);
+      expect(existsSync(liveOwned)).toBe(true);
+      expect(existsSync(recent)).toBe(true);
+      expect(existsSync(foreign)).toBe(true);
+      expect(existsSync(file)).toBe(true);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
   });
 });
