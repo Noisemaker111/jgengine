@@ -506,10 +506,16 @@
   font: 9px/1.5 var(--font-mono);
   letter-spacing: 0.05em;
 }
+.showcase-item {
+  display: flex;
+  flex-direction: column;
+}
 .showcase-label > span:last-child {
   font-size: 17px;
 }
 .showcase-item .card {
+  flex: 1;
+  height: auto;
   border-radius: 0;
   box-shadow: none;
   background: transparent;
