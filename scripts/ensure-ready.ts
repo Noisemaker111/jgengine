@@ -19,7 +19,8 @@ function run(label: string, cmd: string[], timeoutMs: number): void {
   }
 }
 
-if (!existsSync(join(process.cwd(), "node_modules", ".bin", "tsgo"))) {
+const tsgo = join(process.cwd(), "node_modules", ".bin", process.platform === "win32" ? "tsgo.exe" : "tsgo");
+if (!existsSync(tsgo)) {
   run("node_modules incomplete (tsgo missing) — running bun install", ["bun", "install"], 300_000);
 }
 
