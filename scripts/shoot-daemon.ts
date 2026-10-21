@@ -31,9 +31,13 @@ import {
   killPid,
   killProcessTree,
   launchPersistentChrome,
+  pidAlive,
+  removeProfileDir,
   resolveDevPort,
   resolveWarmChromePort,
   waitForDebugger,
+  waitForPidExit,
+  type ChromeProcess,
   type EnsureDevServerResult,
 } from "./browser-lib";
 
@@ -43,6 +47,8 @@ export interface ShootDaemonState {
   devPort?: number;
   devBase?: string;
   chromePid?: number;
+  /** Chrome profile, removed when the daemon stops. */
+  userDataDir?: string;
   devPid?: number;
   webPort?: number;
   webBase?: string;
@@ -127,16 +133,6 @@ async function withDaemonFileLock<T>(lockPath: string, fn: () => T | Promise<T>,
   }
 }
 
-function pidAlive(pid: number | undefined): boolean {
-  if (pid === undefined || !Number.isFinite(pid) || pid <= 0) return false;
-  try {
-    process.kill(pid, 0);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 /** True when the recorded daemon's persistent Chrome is reachable. Vite starts lazily per target. */
 export async function isDaemonLive(cwd = process.cwd()): Promise<boolean> {
   const state = readDaemonState(cwd);
@@ -208,6 +204,10 @@ export async function reapStaleDaemonState(cwd = process.cwd()): Promise<boolean
   if (pidAlive(state.chromePid)) killPid(state.chromePid, true);
   if (pidAlive(state.devPid)) killPid(state.devPid, true);
   if (pidAlive(state.webPid)) killPid(state.webPid, true);
+  if (state.userDataDir !== undefined) {
+    await waitForPidExit(state.chromePid);
+    removeProfileDir(state.userDataDir);
+  }
   clearDaemonState(cwd);
   console.error("shoot daemon: reaped stale Chrome/Vite state before restart");
   return true;
@@ -262,19 +262,23 @@ export async function startDaemon(options: {
       throw new Error(`shoot daemon: Chrome debug port ${chromePort} is already reachable without a live record for this checkout. Use a unique JG_CHROME_PORT to start a separate daemon, or explicitly --connect ${chromePort} to use the existing browser; its ownership and storage were not changed.`);
     }
     await reapStaleDaemonState(cwd);
-    let chrome: ChildProcess | null = null;
+    let chrome: ChromeProcess | null = null;
     let chromePid: number | undefined;
+    let userDataDir: string | undefined;
     try {
       const launched = launchPersistentChrome(chromePort, "jg-shoot-daemon-");
       chrome = launched.child;
       chromePid = launched.pid;
+      userDataDir = launched.userDataDir;
       await waitForDebugger(chromePort, 30_000);
     } catch (error) {
       if (chrome !== null) killProcessTree(chrome);
       else killPid(chromePid, true);
+      await waitForPidExit(chromePid);
+      if (userDataDir !== undefined) removeProfileDir(userDataDir);
       throw error;
     }
-    const started: ShootDaemonState = { identity, chromePort, chromePid, startedAt: new Date().toISOString() };
+    const started: ShootDaemonState = { identity, chromePort, chromePid, userDataDir, startedAt: new Date().toISOString() };
     writeDaemonState(started, cwd);
     return { state: started, chrome, started: true };
   }, 35_000);
@@ -290,8 +294,8 @@ export async function startDaemon(options: {
 
   if (options.foreground) {
     const stop = () => {
-      void (chrome === null ? stopDaemon({ cwd }) : stopDaemon({ cwd, chrome }));
-      process.exit(0);
+      const stopping = chrome === null ? stopDaemon({ cwd }) : stopDaemon({ cwd, chrome });
+      void stopping.finally(() => process.exit(0));
     };
     process.on("SIGINT", stop);
     process.on("SIGTERM", stop);
@@ -313,7 +317,7 @@ export async function startDaemon(options: {
 
 export async function stopDaemon(options: {
   cwd?: string;
-  chrome?: ChildProcess | null;
+  chrome?: ChromeProcess | null;
   server?: ChildProcess | null;
   webServer?: ChildProcess | null;
 } = {}): Promise<boolean> {
@@ -327,6 +331,7 @@ export async function stopDaemon(options: {
     return current;
   });
   let stopped = false;
+  const profileDir = options.chrome?.userDataDir ?? state?.userDataDir;
 
   if (options.chrome !== undefined) {
     killProcessTree(options.chrome);
@@ -350,6 +355,11 @@ export async function stopDaemon(options: {
   } else if (state?.webPid !== undefined && pidAlive(state.webPid)) {
     killPid(state.webPid, true);
     stopped = true;
+  }
+
+  if (profileDir !== undefined) {
+    await waitForPidExit(options.chrome?.pid ?? state?.chromePid);
+    removeProfileDir(profileDir);
   }
 
   if (stopped || state !== null) {

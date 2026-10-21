@@ -6,6 +6,7 @@ import {
   readFileSync,
   readdirSync,
   renameSync,
+  rmSync,
   statSync,
   unlinkSync,
   writeFileSync,
@@ -715,17 +716,96 @@ export async function openPageSession(debugPort: number): Promise<CdpSession> {
   );
 }
 
+/** Every capture profile dir is `jg-*` under the temp dir. */
+const PROFILE_PREFIX = "jg-";
+const STALE_PROFILE_MS = 24 * 60 * 60 * 1000;
+/** Holds the browser pid, so a sweep never deletes the profile of a live browser. */
+export const PROFILE_OWNER_FILE = "jg-owner-pid";
+
+export type ChromeProcess = ChildProcess & { userDataDir: string };
+
+export function pidAlive(pid: number | undefined): boolean {
+  if (pid === undefined || !Number.isFinite(pid) || pid <= 0) return false;
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    return (error as NodeJS.ErrnoException).code === "EPERM";
+  }
+}
+
+/** Bounded wait for a browser to exit; Chrome keeps writing its profile until it does. */
+export async function waitForPidExit(pid: number | undefined, timeoutMs = 5_000): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+  while (pidAlive(pid) && Date.now() < deadline) {
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+}
+
+/**
+ * Chrome's renderers and crash handler release profile files a moment after the browser pid
+ * exits (EBUSY on Windows), so retry for a few seconds. A profile still locked after that is
+ * left for the stale sweep.
+ */
+export function removeProfileDir(userDataDir: string): void {
+  const deadline = Date.now() + 10_000;
+  const pause = new Int32Array(new SharedArrayBuffer(4));
+  for (;;) {
+    try {
+      rmSync(userDataDir, { recursive: true, force: true });
+      return;
+    } catch (error) {
+      if (Date.now() >= deadline) {
+        console.error(
+          `browser: could not remove profile ${userDataDir} (${error instanceof Error ? error.message : String(error)}); the stale sweep removes it after a day`,
+        );
+        return;
+      }
+      Atomics.wait(pause, 0, 0, 200);
+    }
+  }
+}
+
+function readOwnerPid(dir: string): number | undefined {
+  try {
+    return Number(readFileSync(join(dir, PROFILE_OWNER_FILE), "utf8"));
+  } catch {
+    return undefined;
+  }
+}
+
+/** Removes profile dirs that killed runs leaked: older than a day, and no live browser owns them. */
+export function sweepStaleProfiles(root = tmpdir(), now = Date.now()): void {
+  for (const name of readdirSync(root)) {
+    if (!name.startsWith(PROFILE_PREFIX)) continue;
+    const dir = join(root, name);
+    try {
+      const info = statSync(dir);
+      if (!info.isDirectory() || now - info.mtimeMs < STALE_PROFILE_MS) continue;
+      if (pidAlive(readOwnerPid(dir))) continue;
+      rmSync(dir, { recursive: true, force: true });
+    } catch {
+      /* still locked or already gone; the next launch's sweep retries it */
+    }
+  }
+}
+
+function createProfileDir(prefix: string): string {
+  sweepStaleProfiles();
+  return mkdtempSync(join(tmpdir(), prefix));
+}
+
 export function launchChrome(
   debugPort: number,
   prefix = "jg-drive-",
   options: { persistent?: boolean } = {},
-): ChildProcess {
+): ChromeProcess {
   const chrome = findChromeExecutable();
-  const userDataDir = mkdtempSync(join(tmpdir(), prefix));
+  const userDataDir = createProfileDir(prefix);
   let backend = softwareGlBackend();
   const display = backend === "llvmpipe" ? ensureXvfbDisplay() : null;
   if (backend === "llvmpipe" && display === null) backend = "swiftshader";
-  return spawn(
+  const child = spawn(
     chrome,
     [
       `--remote-debugging-port=${debugPort}`,
@@ -759,6 +839,8 @@ export function launchChrome(
       detached: options.persistent === true || process.platform !== "win32",
     },
   );
+  if (child.pid !== undefined) writeFileSync(join(userDataDir, PROFILE_OWNER_FILE), String(child.pid));
+  return Object.assign(child, { userDataDir });
 }
 
 function powershellQuote(value: string): string {
@@ -785,16 +867,16 @@ export function windowsPersistentChromeCommand(chrome: string, args: readonly st
 export function launchPersistentChrome(
   debugPort: number,
   prefix = "jg-shoot-daemon-",
-): { pid: number; child: ChildProcess | null } {
+): { pid: number; child: ChromeProcess | null; userDataDir: string } {
   if (process.platform !== "win32") {
     const child = launchChrome(debugPort, prefix, { persistent: true });
     child.unref();
     if (child.pid === undefined) throw new Error("Persistent Chrome launcher returned no pid");
-    return { pid: child.pid, child };
+    return { pid: child.pid, child, userDataDir: child.userDataDir };
   }
 
   const chrome = findChromeExecutable();
-  const userDataDir = mkdtempSync(join(tmpdir(), prefix));
+  const userDataDir = createProfileDir(prefix);
   const args = [
     `--remote-debugging-port=${debugPort}`,
     `--user-data-dir=${userDataDir}`,
@@ -824,9 +906,11 @@ export function launchPersistentChrome(
   );
   const pid = Number(launched.stdout.trim());
   if (launched.status !== 0 || !Number.isFinite(pid) || pid <= 0) {
+    removeProfileDir(userDataDir);
     throw new Error(`Persistent Chrome launch failed: ${launched.stderr.trim() || `exit ${launched.status}`}`);
   }
-  return { pid, child: null };
+  writeFileSync(join(userDataDir, PROFILE_OWNER_FILE), String(pid));
+  return { pid, child: null, userDataDir };
 }
 
 export type CaptureVia = "screencast" | "screenshot";
@@ -1416,7 +1500,7 @@ export interface BrowserSession {
   /** CDP debug port the page target lives on. */
   debugPort: number;
   /** The Chrome we launched, or null when attached to an existing/daemon one. */
-  chrome: ChildProcess | null;
+  chrome: ChromeProcess | null;
 }
 
 export interface WithBrowserSessionOptions {
@@ -1461,7 +1545,7 @@ export async function withBrowserSession(
   const leaveWarm = options.leaveWarm ?? options.keep;
   const hardDeadlineMs = options.hardDeadlineMs ?? options.timeoutMs + 120_000;
 
-  let chrome: ChildProcess | null = null;
+  let chrome: ChromeProcess | null = null;
   let exitCode = 0;
 
   const watchdog = setTimeout(() => {
@@ -1473,6 +1557,7 @@ export async function withBrowserSession(
     killProcessTree(chrome);
     killProcessTree(options.server ?? null);
     killPid(options.serverPid, true);
+    if (chrome !== null) removeProfileDir(chrome.userDataDir);
     process.exit(124);
   }, hardDeadlineMs);
   watchdog.unref();
@@ -1495,6 +1580,10 @@ export async function withBrowserSession(
       killProcessTree(chrome);
       killProcessTree(options.server ?? null);
       killPid(options.serverPid, true);
+      if (chrome !== null) {
+        await waitForPidExit(chrome.pid);
+        removeProfileDir(chrome.userDataDir);
+      }
     }
   }
   return exitCode;
