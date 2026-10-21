@@ -48,8 +48,12 @@ noise-warped edge that fades into the terrain around the authored width; pavemen
 edge with tyre lanes and cracks. Tune with `meta.edgeSoftness` (0 = hard) and `meta.wear` (0..1);
 `meta.surfaceDetail: false` or `<AuthoredScene pathSurfaceDetail={false}>` keeps flat ribbons.
 `road({ surface })` picks the carriageway surface (default `"road"`, `false` for flat colour), and
-city studio ground takes `meta.surfaceDetail: false` on its volume. Custom ribbons use
-`createSurfaceRibbonMaterial` with `ribbonSurfaceFrame` from `@jgengine/shell/terrain`.
+city studio ground takes `meta.surfaceDetail: false` on its volume. City ground layers fade out
+where the district's merged footprint meets bare terrain, keeping seams between layers crisp;
+`meta.edgeFade: false` on the volume keeps hard outer edges. Custom ribbons use
+`createSurfaceRibbonMaterial` with `ribbonSurfaceFrame` from `@jgengine/shell/terrain`; custom
+ground meshes get the same outer-edge fade from `buildGroundCoverageMask`, `createGroundEdgeFade`
+and `applyGroundEdgeFade`.
 
 Custom ground consumers can use `createTerrainPaintColorSampler` from `@jgengine/shell/terrain`
 with a `TerrainPaintSource` (an editable terrain's layer/surface/weight channels). The returned

@@ -13,7 +13,7 @@
  * All geometry derives from the document volume, so editor sliders re-render the district live and
  * games consume the same authored volume unchanged.
  */
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 
@@ -56,6 +56,7 @@ import { InstancedBuildings, type InstancedBuildingPlacement } from "../structur
 import { getBuildingKit } from "../structures/buildingKitRegistry";
 import { createCityWindowMaterial } from "./cityWindowMaterial";
 import { createSurfaceRibbonMaterial } from "../terrain/surfaceRibbonMaterial";
+import { applyGroundEdgeFade, buildGroundCoverageMask, createGroundEdgeFade } from "../terrain/groundEdgeFade";
 import { useTerrainQuality } from "../terrain/terrainQuality";
 import { registerSceneKindRenderer, type SceneKindRenderContext } from "./sceneKindRenderers";
 import { junctionSurface } from "./cityJunctionSurface";
@@ -119,6 +120,24 @@ const CROP_LAYER = 0.42;
 const RACE_SURFACE_LAYER = 0.28;
 const RACE_PAINT_LAYER = 0.3;
 const BRIDGE_DECK_LIFT = 0.12;
+
+/** Ground meshes bottom layer first; the index is each mesh's `renderOrder`, so blended layers draw under the ones above. */
+const GROUND_LAYERS = [
+  "urban",
+  "asphalt",
+  "gravel",
+  "patches",
+  "curbs",
+  "markings",
+  "land",
+  "medians",
+  "sidewalks",
+  "parks",
+  "pavementDrives",
+  "gravelDrives",
+  "crops",
+] as const;
+type GroundLayer = (typeof GROUND_LAYERS)[number];
 
 /** Compact carriageway-union — same seam as StreetGeometryPreview and playground `cityScene`. */
 const JUNCTION_OPTS = { curbReturnRadius: 2, apronMargin: 0.25, filletSegments: 6, elevation: ROAD_LAYER, maxSegmentLength: 2 };
@@ -1683,30 +1702,61 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
 
   const quality = useTerrainQuality();
   const surfaceDetail = object.meta?.["surfaceDetail"] !== false;
+  // Every opaque ground layer fades out where the district's merged ground footprint meets bare
+  // terrain; seams between layers inside it stay crisp. The urban sheet is left out of the
+  // footprint because it already fades over its own street-distance reach.
+  const edgeFadeOn = object.meta?.["edgeFade"] !== false;
+  const edgeFade = useMemo(() => (edgeFadeOn ? createGroundEdgeFade() : null), [edgeFadeOn]);
+  useEffect(() => () => edgeFade?.dispose(), [edgeFade]);
+  const fadeWidth = Math.min(4, Math.max(1.5, (resolved?.rules.streetWidth ?? 3) * 0.6));
+  const footprint = useMemo(() => {
+    if (edgeFade === null || ground === null) return null;
+    const layers = GROUND_LAYERS.filter((layer) => layer !== "urban" && layer !== "curbs" && layer !== "markings").map((layer) => ground[layer]);
+    return buildGroundCoverageMask(layers, { width: fadeWidth });
+  }, [edgeFade, ground, fadeWidth]);
+  useLayoutEffect(() => {
+    edgeFade?.setMask(footprint, fadeWidth);
+  }, [edgeFade, footprint, fadeWidth]);
   const groundMaterials = useMemo(() => {
-    if (!surfaceDetail) return null;
-    const make = (surface: string, color: string, vertexColors: boolean, roughness: number, scale = 1) =>
-      createSurfaceRibbonMaterial({ surface, color, vertexColors, roughness, scale, halfWidth: 1, quality });
+    const make = (surface: string, color: string, vertexColors: boolean, roughness: number, scale = 1): THREE.MeshStandardMaterial =>
+      surfaceDetail
+        ? createSurfaceRibbonMaterial({ surface, color, vertexColors, roughness, scale, halfWidth: 1, quality })
+        : new THREE.MeshStandardMaterial({ color, vertexColors, roughness, metalness: 0, side: THREE.DoubleSide });
     const urban = make("dirt", "#ffffff", true, 1);
     urban.transparent = true;
     urban.depthWrite = false;
-    return {
+    const materials: Record<GroundLayer, THREE.MeshStandardMaterial> = {
       urban,
-      land: make("dirt", "#ffffff", true, 1),
       asphalt: make("road", ASPHALT_COLOR, true, 0.96),
       gravel: make("gravel", GRAVEL_COLOR, false, 1),
-      sidewalks: make("pavement", SIDEWALK_COLOR, false, 1, 1.6),
       patches: make("road", ASPHALT_COLOR, true, 0.96),
+      curbs: new THREE.MeshStandardMaterial({ color: CURB_COLOR, roughness: 0.9, metalness: 0, side: THREE.DoubleSide }),
+      markings: new THREE.MeshStandardMaterial({
+        color: MARKING_COLOR,
+        vertexColors: true,
+        roughness: 0.8,
+        metalness: 0,
+        side: THREE.DoubleSide,
+        polygonOffset: true,
+        polygonOffsetFactor: -1,
+        polygonOffsetUnits: -1,
+      }),
+      land: make("dirt", "#ffffff", true, 1),
       medians: make("grass", MEDIAN_COLOR, false, 1),
+      sidewalks: make("pavement", SIDEWALK_COLOR, false, 1, 1.6),
+      parks: make("ground", "#ffffff", true, 1),
       pavementDrives: make("concrete", PAVEMENT_COLOR, false, 1, 1.6),
       gravelDrives: make("gravel", GRAVEL_COLOR, false, 1),
-      parks: make("ground", "#ffffff", true, 1),
       crops: make("dirt", "#ffffff", true, 1),
     };
-  }, [surfaceDetail, quality]);
+    if (edgeFade !== null) {
+      for (const layer of GROUND_LAYERS) if (layer !== "urban") applyGroundEdgeFade(materials[layer], edgeFade);
+    }
+    return materials;
+  }, [surfaceDetail, quality, edgeFade]);
   useEffect(
     () => () => {
-      for (const material of Object.values(groundMaterials ?? {})) material.dispose();
+      for (const material of Object.values(groundMaterials)) material.dispose();
     },
     [groundMaterials],
   );
@@ -1714,82 +1764,20 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
   if (resolved === null) return null;
   return (
     <group>
-      {ground?.urban != null ? (
-        <mesh geometry={ground.urban} receiveShadow {...(groundMaterials === null ? {} : { material: groundMaterials.urban })}>
-          {groundMaterials === null ? (
-            <meshStandardMaterial vertexColors transparent depthWrite={false} roughness={1} metalness={0} side={THREE.DoubleSide} />
-          ) : null}
-        </mesh>
-      ) : null}
-      {ground?.land != null ? (
-        <mesh geometry={ground.land} receiveShadow {...(groundMaterials === null ? {} : { material: groundMaterials.land })}>
-          {groundMaterials === null ? <meshStandardMaterial vertexColors roughness={1} metalness={0} side={THREE.DoubleSide} /> : null}
-        </mesh>
-      ) : null}
-      {ground?.asphalt != null ? (
-        <mesh geometry={ground.asphalt} receiveShadow {...(groundMaterials === null ? {} : { material: groundMaterials.asphalt })}>
-          {groundMaterials === null ? <meshStandardMaterial color={ASPHALT_COLOR} vertexColors roughness={0.96} metalness={0} side={THREE.DoubleSide} /> : null}
-        </mesh>
-      ) : null}
-      {ground?.gravel != null ? (
-        <mesh geometry={ground.gravel} receiveShadow {...(groundMaterials === null ? {} : { material: groundMaterials.gravel })}>
-          {groundMaterials === null ? <meshStandardMaterial color={GRAVEL_COLOR} roughness={1} metalness={0} side={THREE.DoubleSide} /> : null}
-        </mesh>
-      ) : null}
-      {ground?.sidewalks != null ? (
-        <mesh geometry={ground.sidewalks} receiveShadow {...(groundMaterials === null ? {} : { material: groundMaterials.sidewalks })}>
-          {groundMaterials === null ? <meshStandardMaterial color={SIDEWALK_COLOR} roughness={1} metalness={0} side={THREE.DoubleSide} /> : null}
-        </mesh>
-      ) : null}
-      {ground?.patches != null ? (
-        <mesh geometry={ground.patches} receiveShadow {...(groundMaterials === null ? {} : { material: groundMaterials.patches })}>
-          {groundMaterials === null ? <meshStandardMaterial color={ASPHALT_COLOR} vertexColors roughness={0.96} metalness={0} side={THREE.DoubleSide} /> : null}
-        </mesh>
-      ) : null}
-      {ground?.curbs != null ? (
-        <mesh geometry={ground.curbs} receiveShadow castShadow>
-          <meshStandardMaterial color={CURB_COLOR} roughness={0.9} metalness={0} side={THREE.DoubleSide} />
-        </mesh>
-      ) : null}
-      {ground?.markings != null ? (
-        <mesh geometry={ground.markings} renderOrder={1}>
-          <meshStandardMaterial
-            color={MARKING_COLOR}
-            vertexColors
-            roughness={0.8}
-            metalness={0}
-            side={THREE.DoubleSide}
-            polygonOffset
-            polygonOffsetFactor={-1}
-            polygonOffsetUnits={-1}
+      {GROUND_LAYERS.map((layer, order) => {
+        const geometry = ground?.[layer];
+        if (geometry == null) return null;
+        return (
+          <mesh
+            key={layer}
+            geometry={geometry}
+            material={groundMaterials[layer]}
+            renderOrder={order}
+            receiveShadow={layer !== "markings"}
+            castShadow={layer === "curbs"}
           />
-        </mesh>
-      ) : null}
-      {ground?.medians != null ? (
-        <mesh geometry={ground.medians} receiveShadow {...(groundMaterials === null ? {} : { material: groundMaterials.medians })}>
-          {groundMaterials === null ? <meshStandardMaterial color={MEDIAN_COLOR} roughness={1} metalness={0} side={THREE.DoubleSide} /> : null}
-        </mesh>
-      ) : null}
-      {ground?.pavementDrives != null ? (
-        <mesh geometry={ground.pavementDrives} receiveShadow {...(groundMaterials === null ? {} : { material: groundMaterials.pavementDrives })}>
-          {groundMaterials === null ? <meshStandardMaterial color={PAVEMENT_COLOR} roughness={1} metalness={0} side={THREE.DoubleSide} /> : null}
-        </mesh>
-      ) : null}
-      {ground?.gravelDrives != null ? (
-        <mesh geometry={ground.gravelDrives} receiveShadow {...(groundMaterials === null ? {} : { material: groundMaterials.gravelDrives })}>
-          {groundMaterials === null ? <meshStandardMaterial color={GRAVEL_COLOR} roughness={1} metalness={0} side={THREE.DoubleSide} /> : null}
-        </mesh>
-      ) : null}
-      {ground?.parks != null ? (
-        <mesh geometry={ground.parks} receiveShadow {...(groundMaterials === null ? {} : { material: groundMaterials.parks })}>
-          {groundMaterials === null ? <meshStandardMaterial vertexColors roughness={1} metalness={0} side={THREE.DoubleSide} /> : null}
-        </mesh>
-      ) : null}
-      {ground?.crops != null ? (
-        <mesh geometry={ground.crops} receiveShadow {...(groundMaterials === null ? {} : { material: groundMaterials.crops })}>
-          {groundMaterials === null ? <meshStandardMaterial vertexColors roughness={1} metalness={0} side={THREE.DoubleSide} /> : null}
-        </mesh>
-      ) : null}
+        );
+      })}
       {bridges?.deck != null ? (
         <mesh geometry={bridges.deck} castShadow receiveShadow>
           <meshStandardMaterial color={CONCRETE_COLOR} roughness={0.85} metalness={0.05} side={THREE.DoubleSide} />

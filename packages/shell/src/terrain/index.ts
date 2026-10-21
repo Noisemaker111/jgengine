@@ -90,3 +90,11 @@ export {
   type RibbonSurfaceStyle,
   type SurfaceRibbonMaterialOptions,
 } from "./surfaceRibbonMaterial";
+export {
+  applyGroundEdgeFade,
+  buildGroundCoverageMask,
+  createGroundEdgeFade,
+  type GroundCoverageMask,
+  type GroundCoverageOptions,
+  type GroundEdgeFade,
+} from "./groundEdgeFade";
