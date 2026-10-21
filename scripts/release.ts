@@ -189,6 +189,9 @@ function main(): void {
   if (!dryRun) {
     const bump = spawnSync("bun", ["scripts/set-version.ts", "--release", ...(patchRelease ? ["--patch"] : [])], { cwd: root, stdio: "inherit" });
     if (bump.status !== 0) process.exit(bump.status ?? 1);
+    // Workspace versions live in bun.lock too; without this the lockfile keeps the old release.
+    const lock = spawnSync("bun", ["install"], { cwd: root, stdio: "inherit" });
+    if (lock.status !== 0) process.exit(lock.status ?? 1);
   }
 
   const sdk = dryRun ? nextReleaseVersion(version("core"), patchRelease) : version("core");
