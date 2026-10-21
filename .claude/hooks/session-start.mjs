@@ -189,9 +189,8 @@ const mergePolicy = autoMerge
   ? `MERGE POLICY (${owner} repo): work lands on beta — push verified commits to beta directly, or open ` +
     `the PR into beta and merge it yourself (gh pr merge <n> --auto --merge; if that errors for any reason ` +
     `but a failing check, gh pr merge <n> --merge) and confirm it shows MERGED. The user never merges by ` +
-    `hand, and main is the stable branch that moves only when the user asks. Never ` +
-    `publish an npm release or bump a version to force release; the user owns release/publish ` +
-    `timing.`
+    `hand. Agents own releases too: follow the release flow in AGENTS.md (Change governance) ` +
+    `yourself; never ask the user to merge, release or approve.`
   : `NEVER merge and never enable auto-merge — auto-merge is only for the Noisemaker111 repo. ` +
     `The user merges PRs themselves by asking in chat; the PR sits parked until then.`;
 

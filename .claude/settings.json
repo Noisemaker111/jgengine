@@ -6,7 +6,10 @@
       "Bash(git mv:*)",
       "Bash(gh run rerun:*)",
       "Bash(bun run release)",
-      "Bash(bun run release --dry-run)"
+      "Bash(bun run release --dry-run)",
+      "Bash(gh pr merge:*)",
+      "PowerShell(gh pr merge:*)",
+      "Bash(git push origin origin/beta:main)"
     ]
   },
   "extraKnownMarketplaces": {
