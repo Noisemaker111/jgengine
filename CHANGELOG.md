@@ -26,6 +26,20 @@ At publish, rename this heading to the new version and mirror the entries into
 `packages/core/src/meta/changelog.ts` (the typed `CHANGELOG` export).
 -->
 
+## 0.24.0
+
+### Migrate
+
+- **Bump lockstep SDK packages to `^0.24.0`:** `@jgengine/{core,rapier,react,ws,node,sql,convex,shell,editor,assets,navbake}`. CLI `jgengine` is `0.21.0`; `@jgengine/github` is `0.11.0`.
+
+### Added
+
+- `buildGroundCoverageMask`, `createGroundEdgeFade` and `applyGroundEdgeFade` (`@jgengine/shell/terrain`) fade any ground material out at the outer edge of a merged mesh footprint, leaving seams between layers inside it crisp.
+
+### Changed
+
+- City studio ground (roads, junctions, block land, sidewalks, medians, drives, parks, crops, curbs, markings) now fades into the terrain where the town's ground ends instead of stopping at a hard edge. `meta.edgeFade: false` on the city volume keeps the old hard edge.
+
 ## 0.23.0
 
 ### Migrate

@@ -1,5 +1,5 @@
 /** Installed `@jgengine/core` semver — compare against {@link CHANGELOG} keys when migrating. */
-export const VERSION = "0.23.0";
+export const VERSION = "0.24.0";
 
 /** One release's migrate steps plus added/changed/removed notes (typed mirror of CHANGELOG.md). */
 export interface ChangelogEntry {
@@ -11,6 +11,18 @@ export interface ChangelogEntry {
 
 /** Per-version engine changelog keyed by semver string (e.g. `"0.10.0"`). */
 export const CHANGELOG: Record<string, ChangelogEntry> = {
+  "0.24.0": {
+    migrate: [
+      "Bump lockstep SDK packages to `^0.24.0`: `@jgengine/{core,rapier,react,ws,node,sql,convex,shell,editor,assets,navbake}`. CLI `jgengine` is `0.21.0`; `@jgengine/github` is `0.11.0`.",
+    ],
+    added: [
+      "`buildGroundCoverageMask`, `createGroundEdgeFade` and `applyGroundEdgeFade` (`@jgengine/shell/terrain`) fade any ground material out at the outer edge of a merged mesh footprint, leaving seams between layers inside it crisp.",
+    ],
+    changed: [
+      "City studio ground (roads, junctions, block land, sidewalks, medians, drives, parks, crops, curbs, markings) now fades into the terrain where the town's ground ends instead of stopping at a hard edge. `meta.edgeFade: false` on the city volume keeps the old hard edge.",
+    ],
+    removed: [],
+  },
   "0.23.0": {
     migrate: [
       "Bump lockstep SDK packages to `^0.23.0`: `@jgengine/{core,rapier,react,ws,node,sql,convex,shell,editor,assets,navbake}`. CLI `jgengine` is `0.20.0`; `@jgengine/github` is `0.10.0`.",
