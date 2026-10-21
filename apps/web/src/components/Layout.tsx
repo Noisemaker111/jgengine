@@ -28,7 +28,7 @@ function Wordmark() {
   return (
     <span className="flex items-center gap-2.5">
       <LogoMark />
-      <span className="font-display text-[1.15rem] font-bold tracking-tight text-fg">jgengine</span>
+      <span className="font-display text-[1.3rem] font-extrabold tracking-[-0.06em] text-fg">jgengine<span className="text-accent-text">.</span></span>
     </span>
   );
 }
@@ -108,8 +108,7 @@ const NAV_LINKS = [
   { to: "/capabilities", label: "Capabilities" },
   { to: "/why", label: "Why" },
   { to: "/editor", label: "Editor" },
-  { to: "/playground", label: "Playground" },
-  { to: "/adopt", label: "Adopt" },
+  { to: "/adopt", label: "Build" },
 ] as const;
 
 export function Header({ sticky = true }: { sticky?: boolean }) {
@@ -127,7 +126,7 @@ export function Header({ sticky = true }: { sticky?: boolean }) {
 
   return (
     <header
-      className={`${sticky ? "sticky top-0" : "relative"} z-30 border-b border-line bg-bg/80 backdrop-blur-xl backdrop-saturate-150`}
+      className={`site-header ${sticky ? "sticky top-0" : "relative"} z-30 border-b border-line bg-bg/90 backdrop-blur-xl`}
     >
       <a
         href="#main"
@@ -135,7 +134,7 @@ export function Header({ sticky = true }: { sticky?: boolean }) {
       >
         Skip to content
       </a>
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
+      <div className="site-header-inner mx-auto flex h-20 items-center justify-between gap-4 px-5 sm:px-8">
         <Link to="/" onClick={closeMenu} className="shrink-0 rounded-md" aria-label="jgengine home">
           <Wordmark />
         </Link>
@@ -159,7 +158,7 @@ export function Header({ sticky = true }: { sticky?: boolean }) {
             className="hidden h-9 items-center gap-2 rounded-lg border border-line px-3 text-sm text-muted transition-colors hover:border-line-strong hover:text-fg sm:flex"
           >
             <GitHubIcon />
-            <span className="hidden lg:inline">GitHub</span>
+            <span className="hidden lg:inline">Source</span>
           </a>
           <button
             type="button"
@@ -263,13 +262,13 @@ export function Footer() {
           <div className="max-w-sm">
             <Wordmark />
             <p className="mt-4 text-sm leading-relaxed text-muted">
-              A pure-TypeScript game SDK. Coding agents build whole games on it from one sentence.
+              A TypeScript game framework for coding agents. Your ideas, built on shared foundations.
             </p>
             <p className="mt-5 inline-flex max-w-full items-center gap-2 rounded-lg border border-line bg-raised px-3 py-2 font-mono text-xs text-muted">
               <span className="text-accent-text" aria-hidden>
                 ›
               </span>
-              <span className="truncate">{ENTRY_PROMPT}</span>
+              <span className="break-words">{ENTRY_PROMPT}</span>
             </p>
           </div>
           <div className="grid grid-cols-2 gap-8 text-sm sm:grid-cols-3">

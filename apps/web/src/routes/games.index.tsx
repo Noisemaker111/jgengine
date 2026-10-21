@@ -1,55 +1,98 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
 
 import { GameCard } from "../components/GameCard";
-import { Page, PageHero } from "../components/Layout";
-import { GAME_IDS } from "../lib/games";
+import { Page } from "../components/Layout";
+import { GAME_IDS, gameBlurb, gameTitle } from "../lib/games";
 import { seo } from "../lib/seo";
 
 export const Route = createFileRoute("/games/")({
   head: () =>
     seo({
-      title: "Games — play what agents built with jgengine",
+      title: "Games — made with JGengine",
       description:
-        "Probe games built by coding agents on the published jgengine packages, playable in your browser with no install.",
+        "Explore playable reference games made with JGengine. Different worlds and rules, built on one open-source TypeScript framework.",
       path: "/games",
     }),
   component: Games,
 });
 
 function Games() {
+  const [query, setQuery] = useState("");
+  const games = GAME_IDS.filter((id) =>
+    `${gameTitle(id)} ${gameBlurb(id) ?? ""}`
+      .toLowerCase()
+      .includes(query.trim().toLowerCase()),
+  );
   return (
     <Page>
-      <PageHero
-        eyebrow="Games · playable in your browser"
-        title={
-          <>
-            Play what the <span className="text-accent">agents built.</span>
-          </>
-        }
-        blurb="Every probe game runs right here with no install. Coding agents built them on the same npm packages you get, to find the engine's gaps. Some are homages to games you know."
-      />
-
-      <section className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-20">
-        {GAME_IDS.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-line-strong p-8 text-center text-muted">
-            No games in this build. Run <code className="font-mono text-fg">bun run games:clone</code> to fetch them.
+      <section
+        className="home-section games-library"
+        aria-labelledby="games-title"
+      >
+        <div className="section-index">
+          <span>THE PLAYABLE COLLECTION</span>
+          <span>{GAME_IDS.length} REFERENCE GAMES</span>
+        </div>
+        <div className="editorial-heading">
+          <h1 id="games-title">
+            Pick a world.
+            <br />
+            <span>Press play.</span>
+          </h1>
+          <p>
+            These are the games we build to test the framework. Explore their
+            worlds, try their systems, and see what the same engine can do in
+            different hands.
           </p>
-        ) : (
-          <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {GAME_IDS.map((id, i) => (
-              <li key={id}>
-                <GameCard id={id} eager={i < 3} />
+        </div>
+        <div className="library-tools">
+          <label htmlFor="game-search">Find your next world</label>
+          <input
+            id="game-search"
+            type="search"
+            placeholder="Search games…"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+          />
+          <span aria-live="polite">
+            {games.length} {games.length === 1 ? "game" : "games"}
+          </span>
+        </div>
+        {games.length > 0 ? (
+          <ul className="showcase-grid">
+            {games.map((id, index) => (
+              <li key={id} className="showcase-item">
+                <div className="showcase-label">
+                  <span>0{index + 1} / BUILT WITH JGENGINE</span>
+                  <span aria-hidden>↗</span>
+                </div>
+                <GameCard id={id} size="lg" eager={index < 2} />
               </li>
             ))}
           </ul>
+        ) : (
+          <div className="library-empty">
+            <h2>
+              {GAME_IDS.length
+                ? "No matching worlds."
+                : "The game library is unavailable in this build."}
+            </h2>
+            {query && (
+              <button
+                type="button"
+                onClick={() => setQuery("")}
+                className="btn btn-secondary"
+              >
+                Clear search
+              </button>
+            )}
+          </div>
         )}
-        <p className="mt-10 max-w-2xl text-sm leading-relaxed text-faint">
-          These live in{" "}
-          <a href="https://github.com/Noisemaker111/JGengine-games" className="link">
-            Noisemaker111/JGengine-games
-          </a>
-          . They are probes, not templates: their content is not licensed for reuse. To start your own game, tell your
-          agent the sentence; it runs <code className="font-mono text-muted">npx jgengine create</code>.
+        <p className="showcase-note">
+          Reference projects, not templates. Game content has its own credits
+          and is not licensed for reuse. Start your own project with JGengine’s
+          CLI and published packages.
         </p>
       </section>
     </Page>

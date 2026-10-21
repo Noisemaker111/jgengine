@@ -1,234 +1,336 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 
 import { Blueprints } from "../components/Blueprints";
-import { CommandBlock } from "../components/Copy";
 import { GameCard } from "../components/GameCard";
-import { HeroTerminal } from "../components/HeroTerminal";
-import { HeroWorld } from "../components/HeroWorld";
-import { GitHubIcon, Page, SectionHeading } from "../components/Layout";
+import { HeroShowcase } from "../components/HeroShowcase";
+import { GitHubIcon, Page } from "../components/Layout";
+import { PromptStudio } from "../components/PromptStudio";
 import { CAPABILITIES, SKILL_DOMAINS } from "../lib/capabilities";
 import { GAME_IDS } from "../lib/games";
 import { seo } from "../lib/seo";
-import { ENTRY_PROMPT, PACKAGE_LAYERS, REPO_URL, SITE_DESCRIPTION, SITE_TITLE } from "../lib/site";
+import { REPO_URL, SITE_DESCRIPTION, SITE_TITLE } from "../lib/site";
 
 export const Route = createFileRoute("/")({
-  head: () => seo({ title: SITE_TITLE, description: SITE_DESCRIPTION, path: "/" }),
+  head: () =>
+    seo({ title: SITE_TITLE, description: SITE_DESCRIPTION, path: "/" }),
   component: Home,
 });
 
-const FEATURED = ["harbor-heat", "scrap-signal", "brightway-park"];
-
-const STEPS = [
+const SYSTEMS = [
   {
-    title: "Say the sentence",
-    body: "In any coding agent: Make a game that … with jgengine. Nothing to install first; the agent runs the CLI.",
+    number: "01",
+    name: "Worlds you can play.",
+    type: "WORLD + PHYSICS",
+    body: "Move through authored scenes, drive vehicles, and build characters that navigate and react. Terrain, weather, and physics share the same foundation.",
+    tags: ["Character & vehicle controls", "Rapier physics", "AI & navigation"],
+    to: "/games",
+    action: "See the playable worlds",
+    symbol: "world",
   },
   {
-    title: "The agent reads the skills",
-    body: "An intake skill turns your pitch into a plan and loads only the domains the game needs: world, combat, UI, multiplayer.",
-  },
-  {
-    title: "It builds from blocks",
-    body: "Each system comes from a narrow, tested primitive. The game's own code is its content, rules and feel.",
-  },
-  {
-    title: "It proves the game runs",
-    body: "Type checks, gameplay tests, and screenshots of the running game before the agent calls it done.",
-  },
-];
-
-const LIVE_LINKS = [
-  {
-    to: "/playground",
-    label: "Playground",
-    title: "Grow a city from sliders",
-    body: "The generator behind the hero, with every dial exposed.",
-  },
-  {
+    number: "02",
+    name: "The depth behind play.",
+    type: "COMBAT + GAMEPLAY",
+    body: "Weapons, abilities, loot, quests, crafting, and progression. Compose the systems your game needs and make the rules your own.",
+    tags: [
+      "Combat & abilities",
+      "Inventory & crafting",
+      "Quests & progression",
+    ],
     to: "/capabilities",
-    label: "Capabilities",
-    title: "Wind, cables, terrain",
-    body: "Core functions running in canvases next to their code.",
+    action: "Explore the systems",
+    symbol: "combat",
   },
   {
+    number: "03",
+    name: "Room for everyone.",
+    type: "MULTIPLAYER + STATE",
+    body: "Authoritative hosts, player sessions, and persistent worlds. The same game state can run locally or connect through a network adapter.",
+    tags: ["WebSocket & WebRTC", "Server authority", "Save & restore"],
+    to: "/why",
+    action: "See how it fits together",
+    symbol: "network",
+  },
+  {
+    number: "04",
+    name: "A world you can edit.",
+    type: "EDITOR + INTERFACE",
+    body: "Place scenes, terrain, foliage, and assets in the editor. Build your interface from reskinnable HUD parts, then inspect the game as it runs.",
+    tags: ["Visual scene editor", "Agent authoring", "Composable HUD"],
     to: "/editor",
-    label: "Editor",
-    title: "Author the world",
-    body: "Scenes, terrain and foliage live in one document the game reads.",
+    action: "Explore the editor",
+    symbol: "editor",
   },
 ] as const;
 
-function Home() {
-  const featured = FEATURED.filter((id) => GAME_IDS.includes(id));
-  const rest = GAME_IDS.filter((id) => !featured.includes(id));
+function SystemDrawing({ kind }: { kind: string }) {
+  return (
+    <div className={`system-drawing system-drawing-${kind}`} aria-hidden>
+      <svg
+        viewBox="0 0 240 150"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1"
+      >
+        {kind === "world" ? (
+          <>
+            <path d="m20 100 100 40 100-40-100-40zM20 80l100 40 100-40-100-40zM20 60l100 40 100-40-100-40z" />
+            <path
+              d="M120 20v120M20 60v40m200-40v40m-150-60v80m100-80v80"
+              strokeDasharray="3 5"
+            />
+            <path d="m20 60 100 40 100-40-100-40z" className="drawing-fill" />
+          </>
+        ) : kind === "combat" ? (
+          <>
+            <circle cx="120" cy="75" r="50" />
+            <circle cx="120" cy="75" r="32" strokeDasharray="4 6" />
+            <path d="M120 12v35m0 56v35M57 75h35m56 0h35m-75-12 24 24m0-24-24 24" />
+            <path d="m120 23 52 52-52 52-52-52z" className="drawing-fill" />
+          </>
+        ) : kind === "network" ? (
+          <>
+            <path d="m120 75-75-40m75 40 75-40m-75 40-75 40m75-40 75 40m-75-40V12m0 63v63" />
+            <circle cx="120" cy="75" r="22" className="drawing-fill" />
+            <circle cx="45" cy="35" r="12" />
+            <circle cx="195" cy="35" r="12" />
+            <circle cx="45" cy="115" r="12" />
+            <circle cx="195" cy="115" r="12" />
+            <circle cx="120" cy="12" r="5" />
+            <circle cx="120" cy="138" r="5" />
+          </>
+        ) : (
+          <>
+            <rect x="25" y="20" width="190" height="110" rx="2" />
+            <path d="M25 40h190M65 40v90m-30-80h20m-20 12h20m-20 12h12" />
+            <path
+              d="m100 85 37 20 38-20-38-20zM100 85v20l37 20 38-20V85m-38 20v20"
+              className="drawing-fill"
+            />
+            <path d="m178 100 16 9-9 3-4 10z" />
+          </>
+        )}
+      </svg>
+    </div>
+  );
+}
 
+function Home() {
+  const featured = [
+    "harbor-heat",
+    "scrap-signal",
+    "ember-command",
+    "drift-foundry",
+  ].filter((id) => GAME_IDS.includes(id));
   return (
     <Page>
-      <HeroWorld />
+      <div className="engine-home">
+        <HeroShowcase />
 
-      <section aria-labelledby="games-heading" className="relative border-t border-line">
-        <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
-          <div className="flex flex-wrap items-end justify-between gap-6">
-            <SectionHeading
-              eyebrow="Built with jgengine"
-              title={<span id="games-heading">Real games. Playable in this tab.</span>}
-              blurb="Coding agents built these probe games on the published packages. Some are homages to games you know. All of them run here with no install."
-            />
-            <Link to="/games" className="btn btn-secondary">
-              All {GAME_IDS.length > 0 ? GAME_IDS.length : ""} games <span className="arrow" aria-hidden>→</span>
-            </Link>
+        <div className="engine-strip" aria-label="Framework at a glance">
+          <span>
+            <strong>{CAPABILITIES.length}</strong> capabilities
+          </span>
+          <span>
+            <strong>{SKILL_DOMAINS.length}</strong> focused skill domains
+          </span>
+          <span>
+            <strong>0</strong> core dependencies
+          </span>
+          <span>
+            <strong>100%</strong> TypeScript
+          </span>
+          <span className="strip-open">
+            OPEN SOURCE <span aria-hidden>↗</span>
+          </span>
+        </div>
+
+        <section
+          id="engine"
+          className="home-section"
+          aria-labelledby="engine-heading"
+        >
+          <div className="section-index">
+            <span>01 / UNDER THE HOOD</span>
+            <span aria-hidden>+</span>
           </div>
-          {featured.length > 0 && (
-            <div className="mt-12 grid gap-5 md:grid-cols-3">
-              {featured.map((id, i) => (
-                <div key={id} className="reveal" style={{ animationDelay: `${i * 60}ms` }}>
-                  <GameCard id={id} size="lg" />
+          <div className="editorial-heading">
+            <h2 id="engine-heading">
+              A game takes
+              <br />
+              <span>more than graphics.</span>
+            </h2>
+            <p>
+              JGengine gives your agent the systems behind the screen. Small,
+              composable building blocks. A different game every time.
+            </p>
+          </div>
+          <div className="systems-grid">
+            {SYSTEMS.map((system) => (
+              <Link key={system.number} to={system.to} className="system-card">
+                <div className="system-card-top">
+                  <span>{system.type}</span>
+                  <span>{system.number}</span>
                 </div>
-              ))}
-            </div>
-          )}
-          {rest.length > 0 && (
-            <ul className="mt-3 grid grid-cols-2 gap-3 sm:mt-5 sm:gap-5 lg:grid-cols-4">
-              {rest.map((id) => (
-                <li key={id} className="reveal">
-                  <GameCard id={id} size="sm" />
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      </section>
-
-      <section aria-labelledby="blocks-heading" className="relative overflow-hidden border-t border-line bg-raised">
-        <div className="bg-dots pointer-events-none absolute inset-0 opacity-60" aria-hidden />
-        <div className="relative mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
-          <SectionHeading
-            eyebrow="No genre kits"
-            title={<span id="blocks-heading">Big games, made of small blocks.</span>}
-            blurb={
-              <>
-                There is no MMO template or shooter preset. The agent composes each game from narrow primitives. These
-                are real rows from the skills' capability indexes: {CAPABILITIES.length} intents across{" "}
-                {SKILL_DOMAINS.length} skills.
-              </>
-            }
-          />
-          <div className="mt-12">
-            <Blueprints />
-          </div>
-        </div>
-      </section>
-
-      <section aria-labelledby="how-heading" className="border-t border-line">
-        <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
-          <SectionHeading
-            eyebrow="How it works"
-            title={<span id="how-heading">One sentence in. A tested game out.</span>}
-          />
-          <div className="mt-12 grid items-start gap-10 lg:grid-cols-[1fr_1.05fr] lg:gap-14">
-            <ol className="grid gap-px overflow-hidden rounded-2xl border border-line bg-line">
-              {STEPS.map((step, i) => (
-                <li key={step.title} className="reveal flex gap-4 bg-bg p-5 sm:p-6">
-                  <span className="font-display grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-accent text-sm font-bold text-on-accent">
-                    {i + 1}
-                  </span>
-                  <div>
-                    <h3 className="font-display text-lg font-semibold tracking-tight text-fg">{step.title}</h3>
-                    <p className="mt-1 text-sm leading-relaxed text-muted">{step.body}</p>
-                  </div>
-                </li>
-              ))}
-            </ol>
-            <div className="lg:sticky lg:top-24">
-              <HeroTerminal />
-              <p className="mt-3 px-1 text-xs text-faint">
-                An illustrative session. The commands are the real CLI and project scripts.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section aria-labelledby="live-heading" className="border-t border-line">
-        <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-24">
-          <SectionHeading
-            eyebrow="Try the engine"
-            title={<span id="live-heading">Everything that moves on this site is the engine.</span>}
-            blurb="The same zero-dependency core a shipped game runs, feeding three.js in your browser."
-          />
-          <div className="mt-10 grid gap-5 md:grid-cols-3">
-            {LIVE_LINKS.map((item) => (
-              <Link key={item.to} to={item.to} className="card card-link reveal flex flex-col p-6">
-                <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-accent-text">{item.label}</span>
-                <span className="font-display mt-3 text-xl font-semibold tracking-tight text-fg">{item.title}</span>
-                <span className="mt-2 text-sm leading-relaxed text-muted">{item.body}</span>
-                <span className="mt-6 text-sm font-semibold text-fg">
-                  Open <span aria-hidden>→</span>
+                <SystemDrawing kind={system.symbol} />
+                <h3>{system.name}</h3>
+                <p>{system.body}</p>
+                <ul>
+                  {system.tags.map((tag) => (
+                    <li key={tag}>{tag}</li>
+                  ))}
+                </ul>
+                <span className="system-action">
+                  {system.action}
+                  <span aria-hidden>↗</span>
                 </span>
               </Link>
             ))}
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section aria-labelledby="sdk-heading" className="border-t border-line">
-        <div className="mx-auto grid max-w-6xl gap-10 px-4 py-20 sm:px-6 sm:py-24 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16">
-          <SectionHeading
-            eyebrow="The SDK"
-            title={<span id="sdk-heading">Layers that only point down.</span>}
-            blurb="@jgengine/core imports nothing: no React, no renderer, no backend. That is why the same generator runs in this page, in the editor and on a game server. Each layer above it adds one kind of dependency."
-          />
-          <ol className="reveal grid gap-2">
-            {PACKAGE_LAYERS.map((layer) => (
-              <li
-                key={layer.label}
-                className="grid gap-2 rounded-xl border border-line bg-raised p-4 sm:grid-cols-[10rem_1fr] sm:items-center sm:gap-4"
-              >
-                <div>
-                  <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-faint">{layer.label}</p>
-                  <p className="mt-0.5 text-xs text-muted">{layer.note}</p>
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {layer.packages.map((name) => (
-                    <a
-                      key={name}
-                      href={`https://www.npmjs.com/package/${name}`}
-                      className={`rounded-md border px-2 py-1 font-mono text-xs transition-colors ${
-                        name === "@jgengine/core"
-                          ? "border-accent/50 bg-accent/10 text-accent-text hover:border-accent"
-                          : "border-line text-fg hover:border-line-strong"
-                      }`}
-                    >
-                      {name}
-                    </a>
-                  ))}
-                </div>
-              </li>
-            ))}
-          </ol>
-        </div>
-      </section>
-
-      <section aria-labelledby="cta-heading" className="relative overflow-hidden border-t border-line">
-        <div className="bg-dots bg-dots-fade pointer-events-none absolute inset-0" aria-hidden />
-        <div className="relative mx-auto max-w-3xl px-4 py-24 text-center sm:px-6 sm:py-32">
-          <h2
-            id="cta-heading"
-            className="font-display text-balance text-4xl font-bold leading-[1] tracking-[-0.03em] text-fg sm:text-6xl"
-          >
-            What will you <span className="text-accent">make</span>?
-          </h2>
-          <p className="mx-auto mt-5 max-w-lg text-pretty text-muted sm:text-lg">
-            Paste this into your coding agent and finish the sentence.
-          </p>
-          <div className="mx-auto mt-9 max-w-xl">
-            <CommandBlock command={ENTRY_PROMPT} kind="prompt" />
+        <section
+          className="games-showcase home-section"
+          aria-labelledby="games-heading"
+        >
+          <div className="section-index">
+            <span>02 / BUILT WITH JGENGINE</span>
+            <span>REAL GAME CAPTURES</span>
           </div>
-          <a href={REPO_URL} className="btn btn-secondary mt-6">
-            <GitHubIcon /> Star on GitHub
-          </a>
-        </div>
-      </section>
+          <div className="editorial-heading">
+            <h2 id="games-heading">
+              Less imagining.
+              <br />
+              <span>More playing.</span>
+            </h2>
+            <div>
+              <p>
+                Different worlds. Different rules. The same framework
+                underneath. Play the reference games we use to push the engine
+                forward.
+              </p>
+              <Link to="/games" className="text-action">
+                Explore all {GAME_IDS.length || ""} games{" "}
+                <span aria-hidden>↗</span>
+              </Link>
+            </div>
+          </div>
+          <div className="showcase-grid">
+            {featured.map((id, index) => (
+              <div className="showcase-item" key={id}>
+                <div className="showcase-label">
+                  <span>0{index + 1} / ENGINE IN ACTION</span>
+                  <span aria-hidden>↗</span>
+                </div>
+                <GameCard id={id} size="lg" />
+              </div>
+            ))}
+          </div>
+          <p className="showcase-note">
+            Playable reference projects, not templates. Each game has its own
+            art, rules, and credits.
+          </p>
+        </section>
+
+        <section
+          className="build-section home-section"
+          id="start-building"
+          aria-labelledby="build-heading"
+        >
+          <div className="section-index">
+            <span>03 / FROM IDEA TO PLAY</span>
+            <span aria-hidden>+</span>
+          </div>
+          <div className="build-composition">
+            <div className="build-copy">
+              <p className="eyebrow">You bring the idea</p>
+              <h2 id="build-heading">
+                Start with
+                <br />
+                <span>a sentence.</span>
+              </h2>
+              <p>
+                Tell Claude Code, Codex, Cursor, or your coding agent what you
+                want to make. JGengine ships the skills and APIs it needs to get
+                building.
+              </p>
+              <ol className="build-steps">
+                <li>
+                  <span>01</span>
+                  <div>
+                    <h3>Describe your game</h3>
+                    <p>The world, the rules, the thing that makes it yours.</p>
+                  </div>
+                </li>
+                <li>
+                  <span>02</span>
+                  <div>
+                    <h3>Your agent uses the engine</h3>
+                    <p>
+                      Focused skills guide design, implementation, and testing.
+                    </p>
+                  </div>
+                </li>
+                <li>
+                  <span>03</span>
+                  <div>
+                    <h3>Play. Change. Repeat.</h3>
+                    <p>
+                      Your own project, real TypeScript, and room to keep
+                      building.
+                    </p>
+                  </div>
+                </li>
+              </ol>
+            </div>
+            <PromptStudio />
+          </div>
+        </section>
+
+        <section
+          className="blueprint-section home-section"
+          aria-labelledby="blueprint-heading"
+        >
+          <div className="section-index">
+            <span>04 / LOOK INSIDE</span>
+            <span>REAL SDK IMPORTS</span>
+          </div>
+          <div className="editorial-heading">
+            <h2 id="blueprint-heading">
+              Your game.
+              <br />
+              <span>Not a genre kit.</span>
+            </h2>
+            <p>
+              See how an agent combines existing capabilities for different
+              ideas. Every block below comes from the engine’s skill indexes.
+            </p>
+          </div>
+          <Blueprints />
+        </section>
+
+        <section className="open-source-section" aria-labelledby="open-heading">
+          <div>
+            <span className="micro-label">NO ROYALTIES. NO BLACK BOX.</span>
+            <h2 id="open-heading">
+              Make it yours.
+              <br />
+              Keep it yours.
+            </h2>
+            <p>
+              Apache-2.0. Commercial and closed-source games welcome.
+              <br />
+              Keep the license and attribution notices. Ship your idea.
+            </p>
+            <a href={REPO_URL} className="btn">
+              <GitHubIcon /> Explore the source <span aria-hidden>↗</span>
+            </a>
+          </div>
+          <span className="source-asterisk" aria-hidden>
+            ✳
+          </span>
+        </section>
+      </div>
     </Page>
   );
 }

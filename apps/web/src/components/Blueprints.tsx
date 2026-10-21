@@ -53,8 +53,7 @@ export function Blueprints() {
               i === active ? "bg-fg text-bg" : "text-muted hover:text-fg"
             }`}
           >
-            {item.scale.replace(/-scale$/, "")}
-            <span className="hidden sm:inline">-scale</span>
+            {item.scale}
           </button>
         ))}
       </div>
@@ -76,12 +75,12 @@ export function Blueprints() {
             {rows.map((row) => (
               <li key={`${row.skill}/${row.key}`} className="rounded-xl border border-line bg-bg p-3.5">
                 <p className="flex items-center justify-between gap-2">
-                  <span className="truncate font-mono text-[12px] font-semibold text-fg">{row.key}</span>
+                  <span className="break-words font-mono text-[12px] font-semibold text-fg">{row.key}</span>
                   <span className="shrink-0 font-mono text-[10px] uppercase tracking-[0.1em] text-faint">
                     {domainLabel(row.skill)}
                   </span>
                 </p>
-                <p className="mt-1 line-clamp-2 text-[13px] leading-snug text-muted">
+                <p className="mt-1 text-[13px] leading-snug text-muted">
                   <InlineCode text={row.summary} />
                 </p>
               </li>

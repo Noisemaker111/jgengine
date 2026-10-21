@@ -102,7 +102,7 @@ function Capabilities() {
             {CAPABILITIES.length} building blocks. <span className="text-accent">Search them.</span>
           </>
         }
-        blurb="Every row below comes from the capability indexes the skills ship with: the thing a game needs, and the primitive that already does it. Agents read the same files. Above them, three core functions running live."
+        blurb="Worlds, combat, inventory, quests, multiplayer, and interface systems. Search the capabilities your agent can use, with real imports drawn from the engine’s own skill indexes."
       >
         <div className="flex flex-wrap gap-3">
           <a href="#index" className="btn btn-primary">
@@ -114,11 +114,15 @@ function Capabilities() {
         </div>
       </PageHero>
 
+      <section id="index" aria-label="Search engine capabilities" className="mx-auto max-w-6xl scroll-mt-24 px-4 pb-20 sm:px-6">
+        <CapabilityBrowser />
+      </section>
+
       <section aria-labelledby="live-heading" className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-24">
         <SectionHeading
-          eyebrow="Live specimens"
-          title={<span id="live-heading">Running in this tab, not recorded.</span>}
-          blurb="Each canvas is a zero-dependency @jgengine/core function feeding three.js, the same way @jgengine/shell uses core in a game. The code beside it is what the canvas runs. Drag the dials."
+          eyebrow="Technical examples"
+          title={<span id="live-heading">Three functions, isolated.</span>}
+          blurb="Small interactive examples for understanding wind, cable curves, and terrain noise. These illustrate individual functions; the games show how systems work together."
         />
         <div className="mt-12 space-y-20">
           {LIVE_SPECIMENS.map((spec, i) => (
@@ -149,24 +153,6 @@ function Capabilities() {
         </div>
       </section>
 
-      <section id="index" aria-labelledby="index-heading" className="scroll-mt-20 border-t border-line bg-bg">
-        <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-24">
-          <SectionHeading
-            eyebrow="The index"
-            title={<span id="index-heading">Reach for these before hand-rolling.</span>}
-            blurb={
-              <>
-                Generated from source by <code className="font-mono text-[0.9em] text-fg">bun run gen:capabilities</code>{" "}
-                and shipped inside every package as <code className="font-mono text-[0.9em] text-fg">skills/*/capabilities.md</code>.
-                Opt-in: a game only imports what it uses.
-              </>
-            }
-          />
-          <div className="mt-10">
-            <CapabilityBrowser />
-          </div>
-        </div>
-      </section>
     </Page>
   );
 }

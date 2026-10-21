@@ -46,8 +46,8 @@ export const Route = createRootRoute({
       { name: "twitter:title", content: TITLE },
       { name: "twitter:description", content: DESCRIPTION },
       { name: "twitter:image", content: OG_IMAGE },
-      { name: "theme-color", content: "#0d0c0b", media: "(prefers-color-scheme: dark)" },
-      { name: "theme-color", content: "#f5f1e8", media: "(prefers-color-scheme: light)" },
+      { name: "theme-color", content: "#111310", media: "(prefers-color-scheme: dark)" },
+      { name: "theme-color", content: "#f1f2e9", media: "(prefers-color-scheme: light)" },
     ],
     links: [
       { rel: "preload", href: displayWoff2, as: "font", type: "font/woff2", crossOrigin: "anonymous" },
