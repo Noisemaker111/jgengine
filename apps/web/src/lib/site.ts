@@ -1,9 +1,9 @@
 export const SITE_URL = "https://jgengine.com";
 export const REPO_URL = "https://github.com/Noisemaker111/jgengine";
 
-export const SITE_TITLE = "jgengine — pure-TypeScript game engine SDK";
+export const SITE_TITLE = "JGengine — Make your world";
 export const SITE_DESCRIPTION =
-  "jgengine is a pure-TypeScript game engine SDK on npm (@jgengine/core, jgengine CLI). Not automotive. Tell your agent: Make a game that … with jgengine. Site: jgengine.com · GitHub: Noisemaker111/jgengine.";
+  "An open-source TypeScript game framework for coding agents. Build your own worlds, combat, multiplayer, and gameplay. Explore real games, then start with an idea.";
 
 /** The only human interface outside this monorepo: say this to any coding agent. */
 export const ENTRY_PROMPT = "Make a game that ... with jgengine";

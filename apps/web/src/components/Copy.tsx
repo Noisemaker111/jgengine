@@ -37,23 +37,28 @@ export function CopyButton({
   className?: string;
 }) {
   const [copied, setCopied] = useState(false);
+  const [failed, setFailed] = useState(false);
   return (
     <button
       type="button"
       aria-label={ariaLabel}
       onClick={() => {
+        setFailed(false);
         void navigator.clipboard
           .writeText(value)
           .then(() => {
             setCopied(true);
             setTimeout(() => setCopied(false), 1400);
           })
-          .catch(() => setCopied(false));
+          .catch(() => {
+            setCopied(false);
+            setFailed(true);
+          });
       }}
       className={`flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors ${VARIANTS[variant]} ${className}`}
     >
       {copied ? <CheckIcon /> : <CopyIcon />}
-      {(label !== "" || copied) && <span aria-live="polite">{copied ? "Copied" : label}</span>}
+      {(label !== "" || copied || failed) && <span aria-live="polite">{failed ? "Copy blocked — select the text instead" : copied ? "Copied" : label}</span>}
     </button>
   );
 }

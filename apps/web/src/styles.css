@@ -2,6 +2,7 @@
 @import "@fontsource-variable/inter";
 @import "@fontsource-variable/jetbrains-mono";
 @import "@fontsource-variable/bricolage-grotesque";
+@import "./home.css";
 
 @source "../../../registry/jgengine";
 
@@ -53,40 +54,40 @@
 :root,
 [data-theme="dark"] {
   color-scheme: dark;
-  --jg-bg: #0d0c0b;
-  --jg-raised: #161513;
-  --jg-sunken: #090807;
+  --jg-bg: #111310;
+  --jg-raised: #1b1e18;
+  --jg-sunken: #0a0c09;
   --jg-line: rgb(245 240 230 / 0.1);
   --jg-line-strong: rgb(245 240 230 / 0.2);
-  --jg-fg: #f4f0e8;
-  --jg-muted: #bdb6aa;
-  --jg-faint: #8d867b;
-  --jg-accent: #ff6a2b;
-  --jg-on-accent: #170800;
-  --jg-accent-text: #ff8d5c;
-  --jg-live: #b9f23f;
+  --jg-fg: #f2f3e9;
+  --jg-muted: #b6bbae;
+  --jg-faint: #939a89;
+  --jg-accent: #d2f34b;
+  --jg-on-accent: #162005;
+  --jg-accent-text: #d2f34b;
+  --jg-live: #d2f34b;
   --jg-code-fg: #e8e2d6;
   --jg-code-string: #b9f23f;
   --jg-code-keyword: #ff9a6b;
   --jg-code-comment: #857e72;
   --jg-dot: rgb(245 240 230 / 0.075);
   --jg-shadow: 0 1px 0 rgb(255 255 255 / 0.04) inset, 0 24px 48px -28px rgb(0 0 0 / 0.9);
-  --jg-accent-glow: rgb(255 106 43 / 0.45);
+  --jg-accent-glow: rgb(210 243 75 / 0.25);
 }
 
 [data-theme="light"] {
   color-scheme: light;
-  --jg-bg: #f5f1e8;
-  --jg-raised: #fffdf8;
-  --jg-sunken: #ebe5d8;
+  --jg-bg: #f1f2e9;
+  --jg-raised: #fafbf4;
+  --jg-sunken: #e5e8dc;
   --jg-line: rgb(22 20 15 / 0.12);
   --jg-line-strong: rgb(22 20 15 / 0.24);
   --jg-fg: #16140f;
   --jg-muted: #4b463d;
   --jg-faint: #6a6459;
-  --jg-accent: #f0602a;
-  --jg-on-accent: #170800;
-  --jg-accent-text: #b23c0c;
+  --jg-accent: #d2f34b;
+  --jg-on-accent: #162005;
+  --jg-accent-text: #456200;
   --jg-live: #3d7400;
   --jg-code-fg: #2a2620;
   --jg-code-string: #3d7400;
@@ -94,7 +95,7 @@
   --jg-code-comment: #7b7466;
   --jg-dot: rgb(22 20 15 / 0.09);
   --jg-shadow: 0 1px 0 rgb(255 255 255 / 0.6) inset, 0 24px 48px -30px rgb(60 40 10 / 0.35);
-  --jg-accent-glow: rgb(240 96 42 / 0.35);
+  --jg-accent-glow: rgb(100 130 0 / 0.2);
 }
 
 @theme inline {
@@ -201,7 +202,7 @@ body {
   position: relative;
   border: 1px solid var(--jg-line);
   background: var(--jg-raised);
-  border-radius: 1rem;
+  border-radius: 0.35rem;
   box-shadow: var(--jg-shadow);
 }
 .card-link {
@@ -229,7 +230,7 @@ body {
   gap: 0.5rem;
   min-height: 2.75rem;
   padding: 0.65rem 1.15rem;
-  border-radius: 0.75rem;
+  border-radius: 0.25rem;
   font-size: 0.9rem;
   font-weight: 600;
   letter-spacing: -0.005em;
