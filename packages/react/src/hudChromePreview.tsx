@@ -4,7 +4,7 @@ import { ActionButton } from "./actionHud";
 import { HealthBar, ManaBar } from "./bars";
 import { HudButton } from "./hudButton";
 import { HudFrame } from "./hudFrame";
-import { HudPanel } from "./hudPanel";
+import { HudSurface } from "./hudSurface";
 import { HudThemeRoot } from "./hudThemeRoot";
 import { ConfirmDialog, PauseMenu } from "./modals";
 import { Window } from "./panels";
@@ -58,7 +58,7 @@ export function HudChromePreview({ className }: { className?: string }) {
           <PauseMenu onResume={noop} items={[{ id: "settings", label: "Settings", onSelect: noop }, { id: "quit", label: "Quit to title", onSelect: noop, danger: true }]} />
         </div>
         <div style={{ position: "absolute", left: 340, top: 300 }}>
-          <HudPanel title="Buttons" padding={14}>
+          <HudSurface title="Buttons" padding={14}>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", width: 420 }}>
               <HudButton variant="primary">Deploy</HudButton>
               <HudButton>Inspect</HudButton>
@@ -67,7 +67,7 @@ export function HudChromePreview({ className }: { className?: string }) {
               <HudButton disabled>Locked</HudButton>
               <HudButton size="sm">Small</HudButton>
             </div>
-          </HudPanel>
+          </HudSurface>
         </div>
       </HudThemeRoot>
     </div>

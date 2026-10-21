@@ -21,13 +21,18 @@ const KILL_MOTION =
 
 /**
  * The engine stylesheet: every `jg-*` keyframe the shared blocks and registry components animate
- * with, the `[data-jg-*]` interaction-state rules behind {@link HudButton} / {@link HudPanel}, the
+ * with, the `[data-jg-*]` interaction-state rules behind {@link HudButton} / {@link HudSurface}, the
  * quiet hover/press/focus defaults for plain buttons inside the HUD root, and reduced-motion
  * handling (`prefers-reduced-motion` or `[data-reduced-motion="true"]` zero `--jg-motion-scale`).
- * Generic HUD rules sit in `:where()` so any game selector wins. The shell injects it; games that
- * mount outside the shell import `@jgengine/react/styles.css`, which holds the same text.
+ * Every rule sits in the `components.jgengine` cascade layer, so unlayered game CSS, a game's own
+ * `components` rules and Tailwind utilities win without `!important`. It first declares
+ * `theme, base, components, utilities` so Tailwind v4's preflight stays below engine controls even
+ * when the engine sheet loads first. The shell injects it; games that mount outside the shell import
+ * `@jgengine/react/styles.css`, which holds the same text.
  */
 export const ENGINE_STYLESHEET = `/* @jgengine/react engine stylesheet */
+@layer theme, base, components, utilities;
+@layer components.jgengine {
 :root { --jg-motion-scale: 1; }
 @media (prefers-reduced-motion: reduce) { :root { --jg-motion-scale: 0; } }
 [data-reduced-motion="true"] { --jg-motion-scale: 0; }
@@ -61,7 +66,7 @@ export const ENGINE_STYLESHEET = `/* @jgengine/react engine stylesheet */
 }
 :where([data-jg-hud]) :where(button, [role="button"]):where(${ENABLED}):active { scale: var(--jg-press-scale, 0.97); }
 
-[data-jg-button] { appearance: none; box-sizing: border-box; position: relative; isolation: isolate; display: inline-flex; align-items: center; justify-content: center; gap: var(--jg-space-sm, 8px); min-height: 36px; padding: 0 var(--jg-space-lg, 16px); margin: 0; font-family: var(--jg-font-body, ${HUD_FONT_STACK}); font-size: var(--jg-type-md, 14px); font-weight: 600; line-height: 1; letter-spacing: 0.01em; white-space: nowrap; color: var(--jg-text, #f5f7fa); background: linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.03)), var(--jg-slot-bg, rgba(12,15,21,0.78)); border: var(--jg-slot-border, 1px solid rgba(255,255,255,0.13)); border-radius: var(--jg-slot-radius, 8px); box-shadow: ${HIGHLIGHT}, ${RAISED}; cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent; transition: translate ${FAST} ${EASE}, scale ${FAST} ${SPRING}, box-shadow ${FAST} ${EASE}, border-color ${FAST} ${EASE}, background-color ${FAST} ${EASE}; }
+[data-jg-button] { appearance: none; box-sizing: border-box; position: relative; isolation: isolate; display: inline-flex; align-items: center; justify-content: center; gap: var(--jg-space-sm, 8px); min-height: 36px; padding: var(--jg-space-xs, 4px) var(--jg-space-lg, 16px); margin: 0; font-family: var(--jg-font-body, ${HUD_FONT_STACK}); font-size: var(--jg-type-md, 14px); font-weight: 600; line-height: 1.2; letter-spacing: 0.01em; text-align: center; white-space: normal; color: var(--jg-text, #f5f7fa); background: linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.03)), var(--jg-slot-bg, rgba(12,15,21,0.78)); border: var(--jg-slot-border, 1px solid rgba(255,255,255,0.13)); border-radius: var(--jg-slot-radius, 8px); box-shadow: ${HIGHLIGHT}, ${RAISED}; cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent; transition: translate ${FAST} ${EASE}, scale ${FAST} ${SPRING}, box-shadow ${FAST} ${EASE}, border-color ${FAST} ${EASE}, background-color ${FAST} ${EASE}; }
 [data-jg-button]::after { content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; background: var(--jg-hover-overlay, rgba(255,255,255,0.07)); opacity: 0; pointer-events: none; transition: opacity ${FAST} ${EASE}; }
 @media (hover: hover) {
   [data-jg-button]${ENABLED}:hover { translate: 0 var(--jg-hover-lift, -1px); box-shadow: ${HIGHLIGHT}, ${OVERLAY}; }
@@ -75,12 +80,12 @@ export const ENGINE_STYLESHEET = `/* @jgengine/react engine stylesheet */
 [data-jg-button][data-variant="danger"] { color: #fff; background: linear-gradient(180deg, rgba(255,255,255,0.16), rgba(255,255,255,0) 60%), var(--jg-danger, #e5484d); border: 1px solid rgba(255,255,255,0.22); }
 [data-jg-button][data-variant="ghost"] { background: transparent; border-color: transparent; box-shadow: none; }
 [data-jg-button][data-variant="ghost"]${ENABLED}:hover { box-shadow: none; }
-[data-jg-button][data-size="sm"] { min-height: 28px; padding: 0 var(--jg-space-md, 12px); font-size: var(--jg-type-sm, 13px); }
-[data-jg-button][data-size="lg"] { min-height: 44px; padding: 0 var(--jg-space-xl, 24px); font-size: var(--jg-type-lg, 16px); }
+[data-jg-button][data-size="sm"] { min-height: 28px; padding-inline: var(--jg-space-md, 12px); font-size: var(--jg-type-sm, 13px); }
+[data-jg-button][data-size="lg"] { min-height: 44px; padding-inline: var(--jg-space-xl, 24px); font-size: var(--jg-type-lg, 16px); }
 [data-jg-button][data-size="icon"] { min-height: 0; width: 28px; height: 28px; padding: 0; font-size: var(--jg-type-sm, 13px); }
 [data-jg-button][data-block] { display: flex; width: 100%; }
 
-[data-jg-panel] { box-sizing: border-box; color: var(--jg-text, #f5f7fa); font-family: var(--jg-font-body, ${HUD_FONT_STACK}); background: var(--jg-frame-bg, rgba(12,15,21,0.9)); border: var(--jg-frame-border, 1px solid rgba(255,255,255,0.13)); border-radius: var(--jg-frame-radius, 10px); box-shadow: var(--jg-frame-glow, ${HIGHLIGHT}, ${RAISED}); }
+[data-jg-panel] { box-sizing: border-box; padding: var(--jg-panel-padding, 12px); color: var(--jg-text, #f5f7fa); font-family: var(--jg-font-body, ${HUD_FONT_STACK}); background: var(--jg-frame-bg, rgba(12,15,21,0.9)); border: var(--jg-frame-border, 1px solid rgba(255,255,255,0.13)); border-radius: var(--jg-frame-radius, 10px); box-shadow: var(--jg-frame-glow, ${HIGHLIGHT}, ${RAISED}); }
 [data-jg-panel][data-elevation="overlay"] { box-shadow: var(--jg-frame-glow, ${HIGHLIGHT}), ${OVERLAY}; }
 [data-jg-panel][data-elevation="modal"] { box-shadow: var(--jg-frame-glow, ${HIGHLIGHT}), ${MODAL}; }
 [data-jg-panel][data-state="open"] { animation: jg-panel-in ${BASE} ${EASE_OUT} both; }
@@ -99,6 +104,7 @@ export const ENGINE_STYLESHEET = `/* @jgengine/react engine stylesheet */
 @media (hover: hover) { [data-action-id][data-enabled]:hover { translate: 0 var(--jg-hover-lift, -1px); } }
 [data-action-id][data-enabled]:active { translate: 0 0; scale: var(--jg-press-scale, 0.97); }
 [data-action-id]:focus-visible { outline: none; box-shadow: ${FOCUS}; }
+}
 `;
 
 const STYLE_ID = "jg-engine-styles";

@@ -100,6 +100,17 @@ describe("attachRefusalNotices", () => {
   });
 });
 
+describe("silent notices", () => {
+  test("a silent push is marked, and a later audible push onto the same notice clears it", () => {
+    const feed = createNoticeFeed({ now: () => 0 });
+    expect(feed.push({ text: "Autosaved", silent: true }).silent).toBe(true);
+    const stacked = feed.push("Autosaved");
+    expect(stacked.count).toBe(2);
+    expect("silent" in stacked).toBe(false);
+    expect("silent" in feed.push("Plain")).toBe(false);
+  });
+});
+
 describe("ctx.game.notices", () => {
   test("refused commands announce their reason and message", () => {
     const ctx = createGameContext({

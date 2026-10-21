@@ -48,14 +48,14 @@ export function ShellGameUiChrome({
           userScale={uiScale}
         >
           {orientationGate ? null : (
-            <ShellUiCues ctx={ctx} enabled={playable.notices !== false && playable.notices?.cues !== false}>
+            <ShellUiCues ctx={ctx} enabled={playable.audio?.hudCues !== false}>
               <HudThemeRoot theme={playable.hudTheme}>
                 <GameUI />
+                <ShellNotices ctx={ctx} config={playable.notices} scale={uiScale} />
               </HudThemeRoot>
             </ShellUiCues>
           )}
         </HudViewportProvider>
-        {orientationGate ? null : <ShellNotices ctx={ctx} config={playable.notices} scale={uiScale} />}
       </GameProvider>
     </GameUiErrorBoundary>
   );

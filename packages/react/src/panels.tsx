@@ -27,7 +27,7 @@ import { useReducedMotion } from "./accessibility";
 import { HudButton } from "./hudButton";
 import { HudFrame, type HudFrameShape, type HudFrameVariation } from "./hudFrame";
 import { useHudInteract, type HudInteractListener } from "./hudInteract";
-import { HudPanel } from "./hudPanel";
+import { HudSurface } from "./hudSurface";
 import { hudType } from "./hudTokens";
 import { observeBrowserSuspension } from "./browserLifecycle";
 import { usePresence } from "./presence";
@@ -361,9 +361,9 @@ function WindowView({
       style={{ position: "absolute", left: pos.x, top: pos.y, zIndex: z, pointerEvents: "auto", ...style }}
     >
       {variation === undefined ? (
-        <HudPanel elevation="modal" padding={0} width={width} style={shape === "square" ? { borderRadius: 0 } : undefined}>
+        <HudSurface elevation="modal" padding={0} width={width} style={shape === "square" ? { borderRadius: 0 } : undefined}>
           {frameBody}
-        </HudPanel>
+        </HudSurface>
       ) : (
         <HudFrame variation={variation} shape={shape} width={width} padding={0} interactive>
           {frameBody}

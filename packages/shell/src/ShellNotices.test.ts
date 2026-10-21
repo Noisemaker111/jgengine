@@ -41,6 +41,14 @@ describe("attachShellNotices", () => {
     expect(played).toHaveLength(3);
   });
 
+  test("a silent notice skips its cue", () => {
+    const { ctx, played } = gameCtx();
+    attachShellNotices(ctx);
+    ctx.game.notices.push({ text: "Autosaved", silent: true });
+    ctx.game.notices.push({ text: "Wave cleared", tone: "success" });
+    expect(played).toEqual(["ui.confirm"]);
+  });
+
   test("refusals and cues opt out separately", () => {
     const { ctx, played } = gameCtx();
     attachShellNotices(ctx, { refusals: false, cues: false });

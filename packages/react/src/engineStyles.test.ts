@@ -7,6 +7,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { ENGINE_STYLESHEET } from "./engineStyles";
 import { HudButton } from "./hudButton";
 import { HudPanel } from "./hudPanel";
+import { HudSurface } from "./hudSurface";
 import { HudThemeRoot } from "./hudThemeRoot";
 import { defaultHudTheme, hudTheme } from "./hudTheme";
 
@@ -41,6 +42,26 @@ describe("engine stylesheet", () => {
   test("reduced motion zeroes the motion scale for the OS preference and the accessibility setting", () => {
     expect(ENGINE_STYLESHEET).toContain("@media (prefers-reduced-motion: reduce) { :root { --jg-motion-scale: 0; } }");
     expect(ENGINE_STYLESHEET).toContain('[data-reduced-motion="true"] { --jg-motion-scale: 0; }');
+  });
+
+  test("every rule sits in the components.jgengine layer, after Tailwind's layer order", () => {
+    expect(ENGINE_STYLESHEET).toContain("@layer theme, base, components, utilities;\n@layer components.jgengine {\n");
+    expect(ENGINE_STYLESHEET.trimEnd().endsWith("}")).toBe(true);
+    const body = ENGINE_STYLESHEET.slice(ENGINE_STYLESHEET.indexOf("@layer components.jgengine {"));
+    let depth = 0;
+    let closedAt = -1;
+    for (let index = 0; index < body.length; index += 1) {
+      if (body[index] === "{") depth += 1;
+      else if (body[index] === "}" && --depth === 0) { closedAt = index; break; }
+    }
+    expect(body.slice(closedAt + 1).trim()).toBe("");
+  });
+
+  test("buttons wrap and panels take padding from a variable", () => {
+    const button = ENGINE_STYLESHEET.split("\n").find((line) => line.startsWith("[data-jg-button] {"))!;
+    expect(button).toContain("white-space: normal;");
+    expect(button).not.toContain("line-height: 1;");
+    expect(ENGINE_STYLESHEET).toContain("[data-jg-panel] { box-sizing: border-box; padding: var(--jg-panel-padding, 12px);");
   });
 
   test("generic HUD control defaults have zero specificity so game selectors win", () => {
@@ -80,16 +101,29 @@ describe("HudButton", () => {
   });
 });
 
-describe("HudPanel", () => {
+describe("HudSurface", () => {
+  test("the deprecated HudPanel name is the same component", () => {
+    expect(HudPanel).toBe(HudSurface);
+  });
+
+  test("renders as a landmark element and leaves padding to CSS unless asked", () => {
+    const plain = renderToStaticMarkup(createElement(HudSurface, { as: "aside", "aria-label": "Crew" }, "x"));
+    expect(plain.startsWith("<aside")).toBe(true);
+    expect(plain).not.toContain("padding");
+    const padded = renderToStaticMarkup(createElement(HudSurface, { padding: 20 }, "x"));
+    expect(padded).toContain("--jg-panel-padding:20px");
+    expect(padded).not.toMatch(/[";]padding:/);
+  });
+
   test("a static panel has no transition state; a controlled one starts open", () => {
-    expect(renderToStaticMarkup(createElement(HudPanel, null, "x"))).not.toContain("data-state");
-    const open = renderToStaticMarkup(createElement(HudPanel, { open: true, title: "Bag", elevation: "modal" }, "x"));
+    expect(renderToStaticMarkup(createElement(HudSurface, null, "x"))).not.toContain("data-state");
+    const open = renderToStaticMarkup(createElement(HudSurface, { open: true, title: "Bag", elevation: "modal" }, "x"));
     expect(open).toContain('data-state="open"');
     expect(open).toContain('data-elevation="modal"');
     expect(open).toContain("Bag");
   });
 
   test("a panel that starts closed renders nothing", () => {
-    expect(renderToStaticMarkup(createElement(HudPanel, { open: false }, "x"))).toBe("");
+    expect(renderToStaticMarkup(createElement(HudSurface, { open: false }, "x"))).toBe("");
   });
 });
