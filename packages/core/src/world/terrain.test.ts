@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
+import { gateTimingMs } from "../../../../scripts/timing-budget";
 import type { TerrainMaterialMaps } from "./features";
 import { environment, island, road, terrain } from "./features";
 import { buildRoadRibbon } from "./roads";
@@ -648,7 +649,8 @@ describe("raycastHeightField", () => {
     const started = performance.now();
     const hit = raycastHeightField(() => 0, [0, 5, 0], [0, 1, 0], { bounds, step: 0.5 });
     expect(hit).toBeNull();
-    expect(performance.now() - started).toBeLessThan(250);
+    // A hang bound, not a regression budget: this miss measures 0.3 ms idle.
+    gateTimingMs("terrain raycast, upward miss", [performance.now() - started], 250);
   });
 
   test("a near-vertical miss is bounded by maxSteps instead of the enormous slab crossing", () => {
@@ -656,7 +658,8 @@ describe("raycastHeightField", () => {
     const started = performance.now();
     const hit = raycastHeightField(() => -1000, [0, 5, 0], [1e-11, 1, 0], { bounds, step: 0.5 });
     expect(hit).toBeNull();
-    expect(performance.now() - started).toBeLessThan(250);
+    // A hang bound, not a regression budget: this miss measures 0.35 ms idle.
+    gateTimingMs("terrain raycast, near-vertical miss", [performance.now() - started], 250);
   });
 
   test("a vertical ray straight down hits the field under it", () => {

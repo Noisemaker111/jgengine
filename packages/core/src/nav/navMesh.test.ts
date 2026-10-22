@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { buildNavAdjacency, closestPoint, createNavMeshQuery, findPath, raycastNav, type NavMeshData } from "@jgengine/core/nav/navMesh";
+import { gateTimingMs } from "../../../../scripts/timing-budget";
 
 const lMesh: NavMeshData = {
   verts: [0, 0, 0, 2, 0, 0, 2, 0, 1, 1, 0, 1, 1, 0, 3, 0, 0, 3],
@@ -119,6 +120,7 @@ describe("navMesh", () => {
       expect(path.points.at(-1)).toEqual(to);
       expect(path.points.length).toBeLessThanOrEqual(3);
     }
-    expect(performance.now() - started).toBeLessThan(3000);
+    // A hang bound, not a regression budget: these 20 paths measure 76 ms idle.
+    gateTimingMs("nav mesh, 20 long paths across a 200x200 grid", [performance.now() - started], 3000);
   });
 });

@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import type { CameraVisibilityContext } from "@jgengine/core/visibility/camera";
 import type { Renderable } from "@jgengine/core/visibility/visibilitySystem";
 import { createVisibilitySystem } from "@jgengine/core/visibility/visibilitySystem";
+import { gateTimingMs } from "../../../../scripts/timing-budget";
 
 /**
  * Representative benchmark: a large scene where most objects sit far outside the camera view.
@@ -29,11 +30,15 @@ describe("visibility benchmark", () => {
     };
     const sys = createVisibilitySystem({ renderables: () => objects, cameras: () => [camera] });
 
-    // Warm the index, then measure a steady-state frame.
+    // Warm the index, then measure steady-state frames.
     sys.update();
-    const t0 = performance.now();
-    const result = sys.update();
-    const ms = performance.now() - t0;
+    const frames: number[] = [];
+    let result = sys.update();
+    for (let frame = 0; frame < 5; frame += 1) {
+      const started = performance.now();
+      result = sys.update();
+      frames.push(performance.now() - started);
+    }
 
     const stats = result.stats;
     expect(stats.totalObjects).toBe(10_000);
@@ -42,8 +47,8 @@ describe("visibility benchmark", () => {
     expect(stats.drawCallsAvoided).toBeGreaterThan(9_000);
     // The spatial index means we never even consider the whole scene.
     expect(stats.consideredForRender).toBeLessThan(stats.totalObjects);
-    // Whole-frame culling stays cheap on a large scene (generous bound for CI variance).
-    expect(ms).toBeLessThan(80);
+    // Fastest frame 2.2 ms idle (this machine, 2026-10-22).
+    gateTimingMs("visibility cull frame, 10k objects", frames, 4.5);
   });
 
   test("an object dead-ahead is never culled (correctness under load)", () => {
