@@ -4,6 +4,7 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";
 import { ANIM_PARAMS_KEY, createAnimGraphRuntime, type AnimGraph, type AnimParamValue } from "@jgengine/core/anim/animGraph";
+import { LOCOMOTION_DIRECTION_PARAM, LOCOMOTION_FACING_PARAM, LOCOMOTION_TURN_RATE_PARAM } from "@jgengine/core/anim/locomotionGraph";
 import { createGameContext } from "@jgengine/core/runtime/gameContext";
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
@@ -86,8 +87,59 @@ describe("physical movement animation parameters", () => {
     expect(params.aiming).toBeUndefined();
   });
 
-  test("a policy-blocked jump retains custom parameters instead of overriding them with rejected motion", () => {
+  test("motion derives the directional parameters from the character's own facing", () => {
     const ctx = context();
+    const params: Record<string, AnimParamValue> = {};
+    const step = (dx: number, dz: number, dyaw = 0, seconds = 0.5) => readModelAnimationParams(ctx, "knight", 1.5, params, { dx, dz, dyaw, seconds });
+    const near = (facing: number, direction: number, turnRate = 0) => {
+      expect(params[LOCOMOTION_FACING_PARAM]).toBeCloseTo(facing, 9);
+      expect(params[LOCOMOTION_DIRECTION_PARAM]).toBeCloseTo(direction, 9);
+      expect(params[LOCOMOTION_TURN_RATE_PARAM]).toBeCloseTo(turnRate, 9);
+    };
+    // Facing +Z (yaw 0): forward is +Z, the character's right is +X.
+    step(0, 1);
+    near(1, 0);
+    step(1, 0);
+    near(0, 1);
+    step(0, -1);
+    near(-1, 0);
+    // Facing +X (yaw pi/2): forward is +X, the character's right is -Z.
+    ctx.scene.entity.spawn("hero", { id: "turned", position: [0, 0, 0], rotationY: Math.PI / 2 });
+    const turned: Record<string, AnimParamValue> = {};
+    readModelAnimationParams(ctx, "turned", 1.5, turned, { dx: 1, dz: 0, dyaw: 0, seconds: 0.5 });
+    expect(turned[LOCOMOTION_FACING_PARAM]).toBeCloseTo(1, 9);
+    expect(turned[LOCOMOTION_DIRECTION_PARAM]).toBeCloseTo(0, 9);
+    readModelAnimationParams(ctx, "turned", 1.5, turned, { dx: 0, dz: 1, dyaw: 0, seconds: 0.5 });
+    expect(turned[LOCOMOTION_FACING_PARAM]).toBeCloseTo(0, 9);
+    expect(turned[LOCOMOTION_DIRECTION_PARAM]).toBeCloseTo(-1, 9);
+    // A diagonal step splits between the axes.
+    step(Math.SQRT1_2, Math.SQRT1_2);
+    near(Math.SQRT1_2, Math.SQRT1_2);
+    // Yaw change becomes a rate, and a step with no travel reports no direction.
+    step(0, 0, Math.PI);
+    near(0, 0, Math.PI / 0.5);
+    step(0, 0, -Math.PI / 2, 0.25);
+    near(0, 0, -2 * Math.PI);
+  });
+
+  test("derived direction and facing override conflicting authored extras", () => {
+    const ctx = context();
+    ctx.scene.entity.blackboard.set("knight", ANIM_PARAMS_KEY, { direction: 99, facing: 99, aiming: true });
+    const params: Record<string, AnimParamValue> = {};
+    readModelAnimationParams(ctx, "knight", 1.5, params, { dx: 1, dz: 0, dyaw: 0, seconds: 0.5 });
+    expect(params).toMatchObject({ direction: 1, facing: 0, aiming: true, speed: 1.5 });
+  });
+
+  test("omitting the step leaves the directional parameters to the authored extras", () => {
+    const ctx = context();
+    const params: Record<string, AnimParamValue> = {};
+    readModelAnimationParams(ctx, "knight", 1.5, params);
+    expect(params).toEqual({ speed: 1.5 });
+    expect("direction" in params).toBe(false);
+    expect("turnRate" in params).toBe(false);
+  });
+
+  test("a policy-blocked jump retains custom parameters instead of overriding them with rejected motion", () => {    const ctx = context();
     const extras = { grounded: true, verticalSpeed: 0, crouched: false };
     ctx.scene.entity.blackboard.set("knight", ANIM_PARAMS_KEY, extras);
     const tuning = resolvePlayerMovementTuning({ movement: { beforeCommit: () => [0, 0, 0] } });

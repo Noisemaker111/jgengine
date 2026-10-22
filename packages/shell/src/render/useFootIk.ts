@@ -5,7 +5,7 @@ import * as THREE from "three";
 import { inferLegChains, placeFeet, type FootGroundSample, type FootPlacement } from "@jgengine/core/anim/footPlacement";
 import { lookAt, solveTwoBone, type MutableVec3 } from "@jgengine/core/anim/ikSolver";
 import type { GameContext } from "@jgengine/core/runtime/gameContextTypes";
-import type { ModelConfig, ModelIkConfig } from "@jgengine/core/game/playableGame";
+import type { ModelConfig, ModelIkConfig, ModelLookAtConfig } from "@jgengine/core/game/playableGame";
 import type { SceneRaycastHit, SceneRaycastInput } from "@jgengine/core/scene/sceneRaycast";
 import { resolveRigNode } from "./rigNode";
 
@@ -31,6 +31,10 @@ export interface FootIkRig {
   legs: IkLeg[];
   pelvis: THREE.Object3D | null;
   head: THREE.Object3D | null;
+  /** Yaw and pitch limits of the look-at solve, in radians; absent means unconstrained. */
+  lookAtLimits: { maxYaw?: number; maxPitch?: number };
+  /** How much of the solved look-at turn reaches the bone, `0..1`. */
+  lookAtWeight: number;
   maxAdjust: number;
   alignToGround: number;
   /** Pose before and after last frame's correction, so a bone no clip animates never accumulates it. */
@@ -158,6 +162,8 @@ export function resolveFootIkRig(scene: THREE.Object3D, config: FootIkConfig): F
     legs,
     pelvis,
     head,
+    lookAtLimits: { ...(options.lookAt?.maxYaw === undefined ? {} : { maxYaw: options.lookAt.maxYaw }), ...(options.lookAt?.maxPitch === undefined ? {} : { maxPitch: options.lookAt.maxPitch }) },
+    lookAtWeight: Math.max(0, Math.min(1, options.lookAt?.weight ?? 1)),
     maxAdjust: options.maxAdjust ?? DEFAULT_MAX_ADJUST,
     alignToGround: Math.max(0, Math.min(1, options.alignToGround ?? 1)),
     poses: [...bones].map((bone) => ({
@@ -199,8 +205,9 @@ function restoreFootIkPose(rig: FootIkRig): void {
 /**
  * Applies one frame of foot IK after the animation mixer: probes the ground under each foot,
  * resolves targets with `placeFeet`, lowers the pelvis, solves each leg with `solveTwoBone` bending
- * toward the animated knee, and tilts planted feet to the ground. Returns whether the feet are
- * grounded; `state` carries the faded weight between frames. Exported for tests and custom hosts.
+ * toward the animated knee, and tilts planted feet to the ground. Turns the look-at bone toward
+ * `lookAtTarget` when the rig has one. Returns whether the feet are grounded; `state` carries the
+ * faded weight between frames. Exported for tests and custom hosts.
  */
 export function applyFootIk(
   rig: FootIkRig,
@@ -208,7 +215,7 @@ export function applyFootIk(
   probe: GroundProbe,
   state: FootIkState,
   delta: number,
-  cameraTarget?: readonly [number, number, number],
+  lookAtTarget?: readonly [number, number, number],
 ): boolean {
   restoreFootIkPose(rig);
   for (const record of rig.poses) {
@@ -269,11 +276,12 @@ export function applyFootIk(
     }
   }
 
-  if (rig.head !== null && cameraTarget !== undefined) {
+  if (rig.head !== null && lookAtTarget !== undefined) {
     const from = rig.head.getWorldPosition(scratch.a);
-    const q = lookAt({ from: [from.x, from.y, from.z], target: cameraTarget, up: [0, 1, 0] });
+    const q = lookAt({ from: [from.x, from.y, from.z], target: lookAtTarget, up: [0, 1, 0], ...rig.lookAtLimits });
     const current = rig.head.getWorldQuaternion(scratch.q2);
-    writeWorldQuaternion(rig.head, current.slerp(scratch.q.set(q[0], q[1], q[2], q[3]), Math.max(weight, rig.legs.length === 0 ? 1 : 0)));
+    const reach = Math.max(weight, rig.legs.length === 0 ? 1 : 0) * rig.lookAtWeight;
+    writeWorldQuaternion(rig.head, current.slerp(scratch.q.set(q[0], q[1], q[2], q[3]), reach));
   }
   for (const record of rig.poses) {
     record.written.q.copy(record.bone.quaternion);
@@ -297,8 +305,11 @@ export function useFootIk(
   const camera = useThree((three) => three.camera);
   const rig = useMemo(() => (config === undefined ? null : resolveFootIkRig(scene, config)), [scene, config]);
   const state = useRef<FootIkState>({ weight: 0, pelvis: 0 });
+  const lookAtConfig = config === undefined || config === "auto" ? undefined : config.lookAt;
+  const target = useRef<THREE.Vector3 | null>(null);
   useLayoutEffect(() => {
     state.current = { weight: 0, pelvis: 0 };
+    target.current = null;
     return () => {
       if (rig !== null) {
         restoreFootIkPose(rig);
@@ -311,6 +322,8 @@ export function useFootIk(
     const parent = scene.parent;
     const originY = parent === null ? scene.position.y : parent.localToWorld(scratch.a.set(0, groundOffset, 0)).y;
     const exclude = [instanceId];
+    const aim = resolveLookAtTarget(lookAtConfig?.target, ctx, target.current, lookAtConfig?.entityEyeHeight ?? DEFAULT_EYE_HEIGHT);
+    target.current = aim;
     applyFootIk(
       rig,
       originY,
@@ -323,7 +336,31 @@ export function useFootIk(
         }),
       state.current,
       delta,
-      rig.head === null ? undefined : camera.getWorldPosition(scratch.b).toArray(),
+      aim === null ? camera.getWorldPosition(scratch.b).toArray() : [aim.x, aim.y, aim.z],
     );
   });
+}
+
+const DEFAULT_EYE_HEIGHT = 1.5;
+
+/**
+ * Where a look-at bone should aim this frame, or `null` when it aims at the camera. An entity
+ * target that is not spawned yet reuses `previous` rather than snapping back to the camera.
+ */
+function resolveLookAtTarget(
+  spec: ModelLookAtConfig["target"],
+  ctx: GameContext,
+  previous: THREE.Vector3 | null,
+  eyeHeight: number,
+): THREE.Vector3 | null {
+  if (spec === undefined || spec === "camera") return null;
+  if ("point" in spec) {
+    previous?.set(spec.point[0], spec.point[1], spec.point[2]);
+    return previous ?? new THREE.Vector3(spec.point[0], spec.point[1], spec.point[2]);
+  }
+  const entity = ctx.scene.entity.get(spec.entity);
+  if (entity === null || entity === undefined) return previous;
+  const position = entity.position;
+  previous?.set(position[0], position[1] + eyeHeight, position[2]);
+  return previous ?? new THREE.Vector3(position[0], position[1] + eyeHeight, position[2]);
 }
