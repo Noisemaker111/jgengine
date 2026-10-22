@@ -197,6 +197,24 @@
 - `ThreatTableState` (interface): interface ThreatTableState — Plain JSON state of a {@link ThreatTable}; `entries` keeps insertion order, which breaks ties in `highest`.
 - `createThreatTable` (function): function createThreatTable(config: ThreatTableConfig = {}): ThreatTable — ⚠ undocumented
 
+## @jgengine/core/ai/utilityBrain
+
+- `ResponseCurve` (type): type ResponseCurve = | { readonly kind: "linear"; readonly from: number; readonly to: number } /** Same shape as `linear`, raised to `exponent` (default `2`), so appeal stays flat until it matters. */ | { readonly kind: "quadratic"; readonly from: number; readonly to: number; readonly exponent?: num… — How one need's satisfaction maps to an option's appeal: `1` at `from`, `0` at `to`, clamped outside. Read satisfaction `1` as a full meter; pair with {@link UtilityTerm.invert} when a full meter is what makes the option attractive.
+- `UtilityBrain` (interface): interface UtilityBrain — Utility-scored action selection over decaying needs: score every option's appeal through response curves, pick the best reachable candidate minus its cost, and hold that pick until a rival clears the hysteresis margin — unless a declared interrupt fires.
+- `UtilityBrainConfig` (interface): interface UtilityBrainConfig extends UtilityTunables — Everything a utility brain needs: the shared need set, its scored options, and selection policy.
+- `UtilityBrainSnapshot` (interface): interface UtilityBrainSnapshot — Serializable brain state: the held pick plus any in-play retuning. Needs save separately.
+- `UtilityCandidate` (interface): interface UtilityCandidate — One reachable instance of an option this tick; `cost` is the caller's own effort number.
+- `UtilityDebugSnapshot` (interface): interface UtilityDebugSnapshot — JSON-safe view of a brain for the devtools overlay and bug reports.
+- `UtilityDecision` (interface): interface UtilityDecision — The outcome of one {@link UtilityBrain.decide}. Valid until the next `decide` call.
+- `UtilityInterrupt` (interface): interface UtilityInterrupt — A need level that overrides the sticky pick the moment it is crossed.
+- `UtilityOption` (interface): interface UtilityOption — A thing an agent can decide to do, scored against its needs.
+- `UtilityScore` (interface): interface UtilityScore — One option's need-driven score, ignoring candidate cost.
+- `UtilitySwitchReason` (type): type UtilitySwitchReason = "initial" | "score" | "interrupt" | "unavailable" — Why the brain's pick changed on the tick it changed.
+- `UtilityTerm` (interface): interface UtilityTerm — One need's contribution to an option's appeal.
+- `UtilityTunables` (interface): interface UtilityTunables — In-play dials that stay reachable through {@link UtilityBrain.retune}.
+- `createUtilityBrain` (function): function createUtilityBrain(config: UtilityBrainConfig): UtilityBrain — Create a utility brain over an existing {@link NeedSet}. The need set is injected, not owned, so the game shows the same hunger the brain scores and persists one copy.
+- `sampleResponseCurve` (function): function sampleResponseCurve(curve: ResponseCurve, satisfaction: number): number — Sample a response curve at a `0..1` satisfaction. Deterministic, allocation-free.
+
 ## @jgengine/core/ai/waveRunner
 
 - `WaveRunner` (interface): interface WaveRunner — A live, observable, serializable wave/spawn runner over a seeded spawn director.
@@ -2460,6 +2478,7 @@
 - `ResolvedPoleLine` (interface): interface ResolvedPoleLine — The renderable payload the resolver returns and the shell renderer consumes.
 - `ResolvedTerrainDetail` (type): type ResolvedTerrainDetail = Required<Omit<TerrainDetailConfig, "waterLevel" | "material" | "sweeps">> & { waterLevel: number; material?: ResolvedTerrainDetailMaterial; sweeps: { dry: readonly [number, number, number]; wet: readonly [number, number, number] }; } — A {@link TerrainDetailConfig} with every field resolved to a concrete value — the shape the shell's detail material consumes.
 - `ResolvedWeather` (interface): interface ResolvedWeather { grip: number; visibility: number; structureDamage: number; chill: number; ignition: number; spread: number } — ⚠ undocumented
+- `ResponseCurve` (type): type ResponseCurve = | { readonly kind: "linear"; readonly from: number; readonly to: number } /** Same shape as `linear`, raised to `exponent` (default `2`), so appeal stays flat until it matters. */ | { readonly kind: "quadratic"; readonly from: number; readonly to: number; readonly exponent?: num… — How one need's satisfaction maps to an option's appeal: `1` at `from`, `0` at `to`, clamped outside. Read satisfaction `1` as a full meter; pair with {@link UtilityTerm.invert} when a full meter is what makes the option attractive.
 - `RevealHit` (interface): interface RevealHit { instanceId: string; distance: number; tags: readonly string[] } — ⚠ undocumented · used by `useRevealHits` (@jgengine/shell/vision/RevealVision): Occlusion-ignoring tagged-entity radius query (#115), bound to the live scene.
 - `RevealQuery` (interface): interface RevealQuery { inRadius(center: EntityPosition | string, radius: number, tags: readonly string[]): RevealHit[] } — ⚠ undocumented
 - `RoadCut` (interface): interface RoadCut — One trim of a ribbon end back to a junction boundary — the seam the welded surface attaches to.
@@ -2591,6 +2610,18 @@
 - `TriggerSourceKind` (type): type TriggerSourceKind = "marker" | "volume" — Document collection a trigger source lives on.
 - `TrimmedIntersections` (interface): interface TrimmedIntersections — Renderer-ready output of {@link buildTrimmedIntersections}: trimmed ribbons + welded junction surfaces.
 - `TrimmedRoad` (interface): interface TrimmedRoad — A street sub-path after trimming, plus the cuts (0–2) that shortened it. Feed `path` to {@link buildRoadRibbon}.
+- `UtilityBrain` (interface): interface UtilityBrain — Utility-scored action selection over decaying needs: score every option's appeal through response curves, pick the best reachable candidate minus its cost, and hold that pick until a rival clears the hysteresis margin — unless a declared interrupt fires.
+- `UtilityBrainConfig` (interface): interface UtilityBrainConfig extends UtilityTunables — Everything a utility brain needs: the shared need set, its scored options, and selection policy.
+- `UtilityBrainSnapshot` (interface): interface UtilityBrainSnapshot — Serializable brain state: the held pick plus any in-play retuning. Needs save separately.
+- `UtilityCandidate` (interface): interface UtilityCandidate — One reachable instance of an option this tick; `cost` is the caller's own effort number.
+- `UtilityDebugSnapshot` (interface): interface UtilityDebugSnapshot — JSON-safe view of a brain for the devtools overlay and bug reports.
+- `UtilityDecision` (interface): interface UtilityDecision — The outcome of one {@link UtilityBrain.decide}. Valid until the next `decide` call.
+- `UtilityInterrupt` (interface): interface UtilityInterrupt — A need level that overrides the sticky pick the moment it is crossed.
+- `UtilityOption` (interface): interface UtilityOption — A thing an agent can decide to do, scored against its needs.
+- `UtilityScore` (interface): interface UtilityScore — One option's need-driven score, ignoring candidate cost.
+- `UtilitySwitchReason` (type): type UtilitySwitchReason = "initial" | "score" | "interrupt" | "unavailable" — Why the brain's pick changed on the tick it changed.
+- `UtilityTerm` (interface): interface UtilityTerm — One need's contribution to an option's appeal.
+- `UtilityTunables` (interface): interface UtilityTunables — In-play dials that stay reachable through {@link UtilityBrain.retune}.
 - `VEGETATION_VOLUME_KIND` (const): const VEGETATION_VOLUME_KIND: "vegetation" — The editor volume kind that marks an area as vegetation fill.
 - `VISIBILITY_HIDDEN` (const): const VISIBILITY_HIDDEN: 0 — Numeric code for a cell no group member has seen, or has fully forgotten.
 - `VISIBILITY_OBSERVED` (const): const VISIBILITY_OBSERVED: 2 — Numeric code for a cell a group currently observes.
@@ -2753,6 +2784,7 @@
 - `createTerrainSnapshot` (function): function createTerrainSnapshot(config: EditableTerrainConfig): TerraformSnapshot — A fresh, unedited terrain snapshot sized to `bounds`/`cellSize` — the seed for a new sculpt document.
 - `createThreatTable` (function): function createThreatTable(config: ThreatTableConfig = {}): ThreatTable — ⚠ undocumented
 - `createTimerSet` (function): function createTimerSet(options: TimerSetOptions = {}): TimerSet — Create a serializable set of named countdown / countup timers on an injected clock — one primitive for round timers, respawn clocks, and ability cooldown/charge. Start/pause/resume/stop/reset timers by free-string id, read `{ remainingMs, elapsedMs, durationMs, progress01, running, expired }` for a mm:ss readout or a radial/bar fill, and `poll` for expiry edges. Ids and labels carry no genre meaning; `snapshot`/`restore` round-trip through a save.
+- `createUtilityBrain` (function): function createUtilityBrain(config: UtilityBrainConfig): UtilityBrain — Create a utility brain over an existing {@link NeedSet}. The need set is injected, not owned, so the game shows the same hunger the brain scores and persists one copy.
 - `createVehicleBody` (function): function createVehicleBody(world: PhysicsWorld, config: VehicleBodyConfig): VehicleBody — ⚠ undocumented
 - `createVehicleObstacleClamp` (function): function createVehicleObstacleClamp(options: { /** Solids near the car this tick (already filtered to the relevant, solid set). */ obstacles: () => readonly CollisionObstacle[]; /** Vehicle body radius (units). Default {@link DEFAULT_VEHICLE_RADIUS}. */ radius?: number; /** Current tick dt (seconds)… — Build a slide-along move clamp for a kinematic car (#1051). `obstacles` is sampled fresh each tick — the caller hands back the already-filtered set of solids near the car — and `dt` supplies the current tick length so a blocked move's lost displacement converts to a closing speed. `radius` inflates each obstacle footprint by the car's body radius (default {@link DEFAULT_VEHICLE_RADIUS}).
 - `createVehicleSeats` (function): function createVehicleSeats(controller?: MountController): VehicleSeats — Builds a {@link VehicleSeats}, optionally over an existing `MountController` to share its occupancy.
@@ -2909,6 +2941,7 @@
 - `sampleElevation` (function): function sampleElevation(sampleHeight: HeightSampler, x: number, z: number, reference = 0): ElevationReadout — Reads the ground elevation under a world point and its signed delta from a reference plane — the measurable cursor/hover feedback ("+3.4 above the pad") an author needs to judge sculpted height.
 - `sampleGripCurve` (function): function sampleGripCurve(curve: GripCurve, slip: number): number — Piecewise-linear tire-grip curve: normalized lateral slip → available grip (0..1). Grip peaks near the breakaway slip then falls off as the tire slides — the shape that separates a planted corner from a drift. Points are read in ascending slip order; ends clamp.
 - `samplePoint` (function): function samplePoint<P extends SamplePoint>(options: SamplePointOptions<P>): SampleResult<P> — Draw one point from `region` that clears every constraint, retrying up to `maxAttempts` times with the injected `rng`, then apply the `fallback` policy. Returns a structured {@link SampleResult} — a clean hit is `ok: true`; exhaustion or a degenerate region is reported with the attempt count and an explicit fallback flag, never a silently-accepted bad point.
+- `sampleResponseCurve` (function): function sampleResponseCurve(curve: ResponseCurve, satisfaction: number): number — Sample a response curve at a `0..1` satisfaction. Deterministic, allocation-free.
 - `sampleStratified` (function): function sampleStratified(options: StratifiedOptions): Vec2[] — Stratified 2D sampling: one jittered point per grid cell over `area`, in deterministic row-major order. Unlike pure rejection sampling this guarantees even coverage (no clumps, no gaps) — the distinct "stratified" distribution policy, kept separate from area-uniform draws.
 - `sanitizeGameTimeScale` (function): function sanitizeGameTimeScale(timeScale?: number | null): number — ⚠ undocumented
 - `scatter` (function): function scatter(config: ScatterConfig): ScatterPoint[] — ⚠ undocumented

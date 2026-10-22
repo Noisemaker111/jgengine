@@ -329,6 +329,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `freezeNarrativeCanon` (function) · `import { freezeNarrativeCanon } from "@jgengine/core/game/narrativeAuthoring"`
 
+## needs — decaying needs an agent reads by index to decide what it wants next
+
+- `createNeedSet` (function) · `import { createNeedSet } from "@jgengine/core/gameplay"`
+
 ## notice-feed — serializable tone-tagged notice/event feed bounded by count and age (toasts, life events, killfeed)
 
 - `appendFeed` (function) · `import { appendFeed } from "@jgengine/core/gameplay"`

@@ -37,6 +37,23 @@ export {
 } from "./ai/targetAcquisition";
 export { createThreatTable, type ThreatTable } from "./ai/threat";
 export {
+  createUtilityBrain,
+  sampleResponseCurve,
+  type ResponseCurve,
+  type UtilityBrain,
+  type UtilityBrainConfig,
+  type UtilityBrainSnapshot,
+  type UtilityCandidate,
+  type UtilityDebugSnapshot,
+  type UtilityDecision,
+  type UtilityInterrupt,
+  type UtilityOption,
+  type UtilityScore,
+  type UtilitySwitchReason,
+  type UtilityTerm,
+  type UtilityTunables,
+} from "./ai/utilityBrain";
+export {
   createWaveRunner,
   type WaveRunner,
   type WaveRunnerConfig,

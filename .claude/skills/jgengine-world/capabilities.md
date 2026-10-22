@@ -889,6 +889,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `resolveTerrainGradeStep` (function) · `import { resolveTerrainGradeStep } from "@jgengine/core/movement/terrainGrade"`
 
+## utility-brain — pick actions by decaying-need appeal with response curves, hysteresis and interrupts
+
+- `createUtilityBrain` (function) · `import { createUtilityBrain } from "@jgengine/core/world"`
+
 ## vehicle-backend-link — collide a vehicle sim with a physics backend — shove props, stop at walls, slide along them
 
 - `createVehicleBackendLink` (function) · `import { createVehicleBackendLink } from "@jgengine/core/physics/vehicleBackendLink"`

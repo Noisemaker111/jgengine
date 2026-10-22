@@ -49,6 +49,7 @@ export const CORE_DOMAIN_SKILLS: Record<string, string> = {
   sensor: "jgengine-world",
   session: "jgengine-gameplay",
   settings: "jgengine-ui",
+  sim: "jgengine-gameplay",
   stats: "jgengine-combat",
   store: "jgengine-gameplay",
   survival: "jgengine-gameplay",
