@@ -39,8 +39,12 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `actionLayer` (function) · `import { actionLayer } from "@jgengine/core/anim/actionLayer"`
 - `inferLegChains` (function) · `import { inferLegChains } from "@jgengine/core/anim/footPlacement"`
 - `lookAt` (function) · `import { lookAt } from "@jgengine/core/anim/ikSolver"`
+- `multiplyQuaternions` (function) · `import { multiplyQuaternions } from "@jgengine/core/anim/ikSolver"`
 - `placeFeet` (function) · `import { placeFeet } from "@jgengine/core/anim/footPlacement"`
 - `planBoneTexture` (function) · `import { planBoneTexture } from "@jgengine/core/anim/boneTexture"`
+- `quaternionFromUnitVectors` (function) · `import { quaternionFromUnitVectors } from "@jgengine/core/anim/ikSolver"`
+- `ragdollBoneOrientations` (function) · `import { ragdollBoneOrientations } from "@jgengine/core/anim/ragdollRig"`
+- `ragdollConfigFromPoses` (function) · `import { ragdollConfigFromPoses } from "@jgengine/core/anim/ragdollRig"`
 - `sampleBoneTexture` (function) · `import { sampleBoneTexture } from "@jgengine/core/anim/boneTexture"`
 - `solveFabrik` (function) · `import { solveFabrik } from "@jgengine/core/anim/ikSolver"`
 - `solveTwoBone` (function) · `import { solveTwoBone } from "@jgengine/core/anim/ikSolver"`

@@ -322,6 +322,8 @@
 - `TwoBoneOutput` (interface): interface TwoBoneOutput — Reused output buffers filled by {@link solveTwoBone}.
 - `Vec3` (type): type Vec3 = readonly [number, number, number] — A three-dimensional point or direction represented without a renderer dependency.
 - `lookAt` (function): function lookAt(input: LookAtInput): Quat — Returns a quaternion that points a +Z bone from `from` toward `target`, with optional yaw and pitch limits.
+- `multiplyQuaternions` (function): function multiplyQuaternions(a: Quat, b: Quat): Quat — The product of two quaternions (`a` applied after `b`), both as `[x, y, z, w]`.
+- `quaternionFromUnitVectors` (function): function quaternionFromUnitVectors(from: Vec3, to: Vec3): Quat — The shortest rotation taking one unit direction to another, as a quaternion. Parallel directions give the identity; opposite directions give a half turn about a perpendicular axis. Returns the identity for a zero-length input.
 - `solveFabrik` (function): function solveFabrik(chain: readonly Vec3[], target: Vec3, options: FabrikOptions = {}): MutableVec3[] — Solves a chain with the FABRIK forward-and-backward reaching algorithm. Returned tuples are new values; the input chain is not modified.
 - `solveTwoBone` (function): function solveTwoBone(input: TwoBoneInput, out: TwoBoneOutput): TwoBoneOutput — Solves a two-segment chain analytically, placing the middle and tip joints toward `target` and `pole`. The root remains fixed, and unreachable targets are clamped to the chain's maximum reach.
 
@@ -342,6 +344,15 @@
 - `LocomotionGraphInput` (interface): interface LocomotionGraphInput — Inputs for {@link locomotionGraph}: the locomotion clip names and the one-shot table a rig config already carries.
 - `animGraphFromConfig` (function): function animGraphFromConfig(config: ModelAnimationConfig): AnimGraph | undefined — The graph a model animation config plays: its `graph`, or the {@link locomotionGraph} its `states` and `oneShots` describe, retaining every one-shot variant. `undefined` for a single-clip config or incomplete locomotion roles. Idle must name a clip; an absent or blank walk role holds that idle clip at walking speeds until configured. The shell plays this and the editor inspects it, so both see the same graph.
 - `locomotionGraph` (function): function locomotionGraph(input: LocomotionGraphInput): AnimGraph — The engine's default locomotion as an authored graph: a speed-driven blend between idle, walk and run, plus a state per one-shot that plays once and returns (or clamps for `death`). What `useModelAnimation` used to hardcode.
+
+## @jgengine/core/anim/ragdollRig
+
+- `HUMANOID_RAGDOLL_BODIES` (const): const HUMANOID_RAGDOLL_BODIES: Readonly<Partial<Record<SkeletonSlot, RagdollBodyShape>>> — Humanoid body shapes for the standard slots, sized for a roughly 1.8 m character standing on the ground. A rig of another scale multiplies them (see {@link RagdollRigOptions.scale}).
+- `RagdollBodyShape` (interface): interface RagdollBodyShape — Half-extents and mass of one standard slot's physics body, in the rig's own world units.
+- `RagdollPose` (interface): interface RagdollPose — One standard slot's world pose, sampled at the moment a character is killed. The orientation is the reference the ragdoll's aim rotates from, so every bone keeps the roll it died with.
+- `RagdollRigOptions` (interface): interface RagdollRigOptions — Tuning for {@link ragdollConfigFromPoses}.
+- `ragdollBoneOrientations` (function): function ragdollBoneOrientations(rest: readonly RagdollPose[], positions: Readonly<Partial<Record<SkeletonSlot, readonly [number, number, number]>>>): Partial<Record<SkeletonSlot, [number, number, number, number]>> — World orientations for a ragdoll's bones from its bodies' current positions: each bone rotates from its rest direction-to-child onto the current one, so the aim follows the joints while every bone keeps the roll it had in the death pose. A bone with no posed child keeps its rest orientation. The physics bodies carry translation only, so this is what gives the ragdoll a skeleton instead of a pile of boxes.
+- `ragdollConfigFromPoses` (function): function ragdollConfigFromPoses(map: SkeletonMap, poses: readonly RagdollPose[], options: RagdollRigOptions = {}): RagdollConfig — A jointed ragdoll for a mapped rig from its bones' world poses at the moment of death: one box body per standard slot that has a shape, sized to the character, and one distance link per slot that has its parent present, holding the bones' own separation. The bodies start where the character actually was, so the collapse continues the death pose instead of snapping to a preset.
 
 ## @jgengine/core/anim/skeletonStandard
 
@@ -1385,7 +1396,7 @@
 - `Ragdoll` (class): class Ragdoll — A jointed multi-body character — floppy by default, or active-ragdoll when a balance motor is configured. Bones are `PhysicsWorld` bodies; links are joints on the joint API. `balance(dt, mx, mz)` drives the root toward its target height (staying upright) and pushes it by the move vector.
 - `RagdollBalanceConfig` (interface): interface RagdollBalanceConfig { root: string; targetHeight: number; strength?: number; moveForce?: number } — ⚠ undocumented
 - `RagdollBoneSpec` (interface): interface RagdollBoneSpec { name: string; position: readonly [number, number, number]; halfExtents: readonly [number, number, number]; mass?: number } — ⚠ undocumented
-- `RagdollConfig` (interface): interface RagdollConfig { bones: RagdollBoneSpec[]; links: RagdollLinkSpec[]; balance?: RagdollBalanceConfig } — ⚠ undocumented
+- `RagdollConfig` (interface): interface RagdollConfig { bones: RagdollBoneSpec[]; links: RagdollLinkSpec[]; balance?: RagdollBalanceConfig } — ⚠ undocumented · used by `ragdollConfigFromPoses` (@jgengine/core/anim/ragdollRig): A jointed ragdoll for a mapped rig from its bones' world poses at the moment of death: one box body per standard slot that has a shape, size…
 - `RagdollLinkSpec` (interface): interface RagdollLinkSpec { a: string; b: string; kind?: "hinge" | "distance"; anchor?: readonly [number, number, number] } — ⚠ undocumented
 - `createRagdoll` (function): function createRagdoll(world: PhysicsWorld, config: RagdollConfig): Ragdoll — ⚠ undocumented
 
