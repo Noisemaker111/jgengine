@@ -1,0 +1,7 @@
+### Changed
+
+- Shadow casters under a 0.5 m world radius clear `castShadow` as they stream in (`cullSmallShadowCasters`, `@jgengine/shell/render/shadowCasters`). A prop that small is a couple of shadow-map texels wide, so the depth pass spent a draw on a smudge; the authored flag comes back when the mesh leaves the scene. Only clears, so a mesh the game keeps out of the pass stays out. The `render/shadows` devtools system probe reports casters and how many were skipped.
+- Cascaded shadow maps refresh the far cascades on a cadence instead of every frame (`scheduleCascadeRefresh`): with three cascades the nearest redraws every frame, the middle every 2nd and the far every 4th; with four, the two nearest every frame and the rest every 2nd/4th. A skipped cascade keeps the matrix and map from its last refresh, so the pair stays consistent and the shadows do not slide.
+- Cascaded shadow reach now comes from the graphics tier when a game does not author `shadowMaxFar`: the tier's shadow-map resolution sets the reach (512 → 100 m, 1024 → 150 m, 2048/4096 → 200 m), clamped by that tier's draw distance. An authored `shadowMaxFar` still wins, so existing games keep the distance they chose.
+
+Harbor Heat's shadow pass self time at `--quality full`: 2.88 → 1.37 ms per frame, `WebGLShadowMap.render` 11.0% → 5.3% of the sampled window; the material patch hook every draw pays dropped out of the top self-time entries (0.83 ms → under 0.3 ms per frame). Frame time is unchanged within the capture noise floor at that view, where the post-processing chain dominates.

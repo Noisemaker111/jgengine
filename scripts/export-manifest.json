@@ -996,6 +996,7 @@
     "./render/rigNode",
     "./render/sceneCapture",
     "./render/shaderWarmup",
+    "./render/shadowCasters",
     "./render/spriteRender",
     "./render/stableTextureSet",
     "./render/staticShapeInstances",

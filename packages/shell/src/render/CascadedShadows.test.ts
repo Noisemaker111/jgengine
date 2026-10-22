@@ -2,7 +2,8 @@ import { describe, expect, test } from "bun:test";
 import * as THREE from "three";
 import { CSM } from "three/examples/jsm/csm/CSM.js";
 
-import { bindCsmMaterials, patchSceneMaterials, releaseCascadedShadows, type CsmMaterialSetup } from "./CascadedShadows";
+import { bindCsmMaterials, cascadeShadowCadence, patchSceneMaterials, releaseCascadedShadows, resolveShadowDistance, scheduleCascadeRefresh, type CsmMaterialSetup } from "./CascadedShadows";
+import { resolveGraphicsProfile } from "@jgengine/core/settings/graphicsProfile";
 
 function fakeCsm(calls: THREE.Material[]): CsmMaterialSetup {
   return {
@@ -54,6 +55,40 @@ describe("patchSceneMaterials", () => {
     const renderer = {} as Parameters<THREE.Material["onBeforeCompile"]>[1];
     material.onBeforeCompile(shader, renderer);
     expect(order).toEqual(["own", "csm"]);
+  });
+});
+
+describe("cascade cadence and shadow reach", () => {
+  test("nearest cascades refresh every frame, far ones every 2nd or 4th", () => {
+    expect([0, 1, 2].map((i) => cascadeShadowCadence(i, 3))).toEqual([1, 2, 4]);
+    expect([0, 1, 2, 3].map((i) => cascadeShadowCadence(i, 4))).toEqual([1, 1, 2, 4]);
+    expect([0, 1].map((i) => cascadeShadowCadence(i, 2))).toEqual([1, 2]);
+    expect(cascadeShadowCadence(0, 1)).toBe(1);
+  });
+
+  test("shadow reach follows the tier and never exceeds the authored value", () => {
+    expect(resolveShadowDistance(resolveGraphicsProfile("high"))).toBe(200);
+    expect(resolveShadowDistance(resolveGraphicsProfile("medium"))).toBe(150);
+    expect(resolveShadowDistance(resolveGraphicsProfile("medium", { drawDistance: 90 }))).toBe(90);
+    expect(resolveShadowDistance(resolveGraphicsProfile("ultra"))).toBe(200);
+    expect(resolveShadowDistance(resolveGraphicsProfile("medium"), 220)).toBe(220);
+    expect(resolveShadowDistance(undefined)).toBe(200);
+  });
+
+  test("three renders each cascade exactly as many times as its cadence allows", () => {
+    const lights = Array.from({ length: 3 }, () => new THREE.DirectionalLight());
+    const refreshes = [0, 0, 0];
+    for (let frame = 0; frame < 8; frame++) {
+      scheduleCascadeRefresh(lights, frame);
+      lights.forEach((light, index) => {
+        const renders = light.shadow.autoUpdate || light.shadow.needsUpdate;
+        if (renders) {
+          refreshes[index]! += 1;
+          light.shadow.needsUpdate = false;
+        }
+      });
+    }
+    expect(refreshes).toEqual([8, 4, 2]);
   });
 });
 
