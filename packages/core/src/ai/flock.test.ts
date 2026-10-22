@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
+import { gateTimingMs } from "../../../../scripts/timing-budget";
 import {
   flockSteer,
   stepFlock,
@@ -204,13 +205,22 @@ describe("stepFlock", () => {
       }
     }
     expect(agents.length).toBe(side * side);
-    const t0 = performance.now();
-    for (let step = 0; step < 8; step += 1) {
-      stepFlock(agents, config, 1 / 60);
+    const pristine = structuredClone(agents);
+    const samples: number[] = [];
+    let stepped = agents;
+    // Repeated passes keep a window to read when the process is throttled.
+    for (let pass = 0; pass < 5; pass += 1) {
+      stepped = structuredClone(pristine);
+      const t0 = performance.now();
+      for (let step = 0; step < 8; step += 1) {
+        stepFlock(stepped, config, 1 / 60);
+      }
+      samples.push(performance.now() - t0);
     }
-    const elapsed = performance.now() - t0;
-    expect(elapsed).toBeLessThan(750);
-    expect(Number.isFinite(agents[0]!.position[0])).toBe(true);
+    // Fastest pass 7.8 ms idle (this machine, 2026-10-22); the budget is a
+    // sub-quadratic guard, not a frame budget.
+    gateTimingMs("flock step, 2025 agents", samples, 16);
+    expect(Number.isFinite(stepped[0]!.position[0])).toBe(true);
   });
 });
 

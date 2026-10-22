@@ -4,6 +4,7 @@ import { resolveBounds } from "@jgengine/core/visibility/bounds";
 import type { CameraView } from "@jgengine/core/visibility/frustum";
 import { createFrustum, updateFrustum } from "@jgengine/core/visibility/frustum";
 import { createSpatialIndex } from "@jgengine/core/visibility/spatialIndex";
+import { gateTimingMs } from "../../../../scripts/timing-budget";
 
 function boxAt(cx: number, cy: number, cz: number, half = 1): RenderBounds {
   return resolveBounds({ kind: "aabb", half: [half, half, half] }, [cx, cy, cz]);
@@ -130,7 +131,8 @@ describe("spatialIndex", () => {
     idx.queryBox(-1e6, -1e6, -1e6, 1e6, 1e6, 1e6, out);
     const elapsed = performance.now() - start;
     expect(out.length).toBe(200);
-    expect(elapsed).toBeLessThan(250);
+    // A hang bound, not a regression budget: this query measures 0.04 ms idle.
+    gateTimingMs("spatial index query over a far-larger range, 200 objects", [elapsed], 250);
   });
 
   test("giant-far-plane frustum query returns the same set as a matching box query", () => {

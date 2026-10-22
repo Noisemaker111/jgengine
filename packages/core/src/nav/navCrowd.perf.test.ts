@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { createNavCrowd, createNavRuntime, type NavMeshData } from "@jgengine/core/world";
+import { gateTimingMs } from "../../../../scripts/timing-budget";
 import { seededRng } from "../random/rng";
 
 function gridMesh(cols: number, rows: number, size = 1): NavMeshData {
@@ -29,13 +30,8 @@ function crowdOf500(): { nav: ReturnType<typeof createNavRuntime>; crowd: Return
   return { nav, crowd };
 }
 
-function median(samples: readonly number[]): number {
-  const sorted = [...samples].sort((a, b) => a - b);
-  return sorted[Math.floor(sorted.length / 2)]!;
-}
-
 describe("nav crowd budget", () => {
-  test("500 agents route, avoid and move in under 2 ms per tick", () => {
+  test("500 agents route, avoid and move in about a millisecond per tick", () => {
     const { nav, crowd } = crowdOf500();
     expect(crowd.count()).toBe(AGENTS);
     for (let t = 0; t < 120; t += 1) crowd.tick(1 / 30);
@@ -45,13 +41,15 @@ describe("nav crowd budget", () => {
       crowd.tick(1 / 30);
       samples.push(performance.now() - started);
     }
-    const p50 = median(samples);
     const p90 = [...samples].sort((a, b) => a - b)[Math.floor(samples.length * 0.9)]!;
-    console.log(
-      `500 agents, 1 tick: p50 ${p50.toFixed(3)} ms, p90 ${p90.toFixed(3)} ms, max ${Math.max(...samples).toFixed(3)} ms, ` +
-        `first 5 ${samples.slice(0, 5).map((value) => value.toFixed(3)).join(" ")} ms`,
+    // Fastest tick 0.55 ms idle (this machine, 2026-10-22): the budget is about
+    // 2x that, so a doubling fails and a throttled runner is scaled up instead.
+    gateTimingMs(
+      "nav crowd tick, 500 agents on 1600 polygons",
+      samples,
+      1.2,
+      `p90 ${p90.toFixed(3)} ms, first 5 ${samples.slice(0, 5).map((value) => value.toFixed(3)).join(" ")} ms`,
     );
-    expect(p50).toBeLessThan(2);
     expect(crowd.stats().unroutable).toBe(0);
     crowd.dispose();
     nav.dispose();

@@ -54,6 +54,8 @@ In the engine monorepo, `bun run perf <game> [--quality draft|full] [--seconds n
 
 CI's `perf` job runs `bun run perf:gate`: every reference game plays under software GL, then draws, triangles and scene nodes are compared with that game's entry in `scripts/perf-budget.json` (a game's own `Games/<id>/perf-budget.json` wins) and any `linkProgram`/`createFramebuffer` after the 5 s warmup fails. Raise a budget only from a measured `bun run perf` baseline, and put the measurement in the entry's `baseline` string; frame times are never gated because CI runners are shared.
 
+CPU timings are measured in `bun test` and gated by `bun run bench:cpu`, which the same job runs with `JG_TIMING_GATE=1`. A test prints its timing every run and asserts a ceiling only under that flag, so a loaded runner never fails the unit suite. The gate reads the fastest sampled window and scales the budget by a machine-speed reference, so a busy or slower runner passes and only the code's own regression fails (`scripts/timing-budget.ts` documents the rule; each call site names its budget and baseline).
+
 Use these budgets when reviewing frame metrics:
 
 | Profile | Frame budget | Draw-call budget | Triangle budget |

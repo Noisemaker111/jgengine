@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { createNavRuntime, type NavMeshData } from "@jgengine/core/world";
+import { gateTimingMs, gateTimingRatio } from "../../../../scripts/timing-budget";
 import type { NeedDefinition } from "./needs";
 import { createNearAgents } from "./nearAgents";
 import { createOffScreenWorld } from "./offScreen";
@@ -49,11 +50,6 @@ function dayFor(i: number) {
 function median(samples: readonly number[]): number {
   const sorted = [...samples].sort((a, b) => a - b);
   return sorted[Math.floor(sorted.length / 2)]!;
-}
-
-function percentile(samples: readonly number[], fraction: number): number {
-  const sorted = [...samples].sort((a, b) => a - b);
-  return sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * fraction))]!;
 }
 
 function scene(count: number, viewer: readonly [number, number, number]) {
@@ -113,19 +109,24 @@ describe("off-screen world cost", () => {
     const nearP50 = median(nearSamples);
     const farStats = far.world.stats();
     const nearStats = near.world.stats();
-    console.log(
-      `1000 far: p50 ${farP50.toFixed(4)} ms, p90 ${percentile(farSamples, 0.9).toFixed(4)} ms, ` +
-        `${farStats.farRefreshes} cheap refreshes, ${farStats.decisions} decisions; ` +
-        `200 near: p50 ${nearP50.toFixed(4)} ms, p90 ${percentile(nearSamples, 0.9).toFixed(4)} ms, ` +
-        `${nearStats.decisions} decisions, ${nearStats.near} near`,
+    // Fastest windows 0.015 ms far / 0.11 ms near idle (this machine, 2026-10-22).
+    gateTimingMs(
+      "off-screen far world tick, 1000 agents",
+      farSamples,
+      0.04,
+      `${farStats.farRefreshes} cheap refreshes, ${farStats.decisions} decisions`,
+    );
+    gateTimingMs(
+      "near world tick, 200 agents",
+      nearSamples,
+      0.3,
+      `${nearStats.decisions} decisions, ${nearStats.near} near`,
     );
 
     expect(farStats.decisions).toBe(0);
     expect(farStats.near).toBe(0);
+    gateTimingRatio("off-screen far tick against the near tick", farP50, nearP50);
     expect(far.crowd.crowd().stats().plans).toBe(0);
-    expect(farP50).toBeLessThan(0.2);
-    expect(nearP50).toBeLessThan(2.5);
-    expect(farP50).toBeLessThan(nearP50);
 
     far.world.dispose();
     far.nav.dispose();
