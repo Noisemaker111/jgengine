@@ -65,17 +65,11 @@ jobs:
           GAMES_CLONE_TOKEN: ${{ secrets.GAMES_CLONE_TOKEN }}
       - run: bun run check-types
 
-  # One bun process over every test file took 5m37s of test time on a runner. The same
-  # files are split by path into four jobs of about 90 s; scripts/test-shard.ts owns the
-  # split and fails if a test file falls outside every shard, so nothing is dropped.
-  # `ci` needs `test`, which aggregates all four shards - a red shard fails `ci`.
+  # Scratch: the pre-A1.12 single test job, kept only to prove the shard split runs the
+  # same number of tests at the same commit. Not for merge.
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    strategy:
-      fail-fast: false
-      matrix:
-        shard: [core, ui, sdk, scripts]
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
@@ -92,7 +86,7 @@ jobs:
       - run: bun run games:clone
         env:
           GAMES_CLONE_TOKEN: ${{ secrets.GAMES_CLONE_TOKEN }}
-      - run: bun scripts/test-shard.ts ${{ matrix.shard }}
+      - run: bun test --timeout 20000 packages apps/dev scripts
 
   web-build:
     runs-on: ubuntu-latest
