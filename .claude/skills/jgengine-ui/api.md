@@ -2758,6 +2758,14 @@
 - `captureCanvas` (function): function captureCanvas(gl: CaptureRenderer): string | null — Read the current frame to a PNG data URL. Requires the R3F `<Canvas>` to have been created with `gl={{ preserveDrawingBuffer: true }}` (the shell's game canvas already is); returns null if the backing canvas can't be read.
 - `downloadImage` (function): function downloadImage(dataUrl: string, filename = "screenshot.png"): void — Trigger a browser download of an image data URL (the photo-mode "save" action).
 
+## @jgengine/shell/render/shaderWarmup
+
+- `SHADER_WARMUP_DEFAULTS` (const): const SHADER_WARMUP_DEFAULTS: { readonly quietMs: 400; readonly budgetMs: 5000; readonly roundFloorMs: 1500; readonly streamWaitMs: 2000; } — Defaults sized to cover an initial burst of streamed models without holding the screen.
+- `ShaderWarmup` (interface): interface ShaderWarmup — A warmup in flight: its promise, its latest state, and a way to stop it.
+- `ShaderWarmupOptions` (interface): interface ShaderWarmupOptions — Options for {@link createShaderWarmup}; the clock, sleep and loader signal are injectable for tests.
+- `ShaderWarmupRenderer` (interface): interface ShaderWarmupRenderer — The renderer surface the warmup needs; a real `WebGLRenderer` satisfies it.
+- `ShaderWarmupState` (interface): interface ShaderWarmupState — Where the load-time shader warmup is: waiting for the scene to stop growing, compiling a round, finished, or skipped because the renderer refused. The loading screen renders it.
+
 ## @jgengine/shell/render/staticShapeInstances
 
 - `StaticShapeInstance` (interface): interface StaticShapeInstance — One editor-derived static primitive. A box spans one unit; a cylinder has unit radius and height before scale.

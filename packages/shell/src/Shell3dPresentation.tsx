@@ -111,6 +111,7 @@ import { CombatPresentation } from "./CombatPresentation";
 import { WorldParticles } from "./world/WorldParticles";
 import { TerrainQualityContext } from "./terrain/terrainQuality";
 import { detectKtx2Support } from "./render/modelLoad";
+import { SCENE_WARMUP_PENDING, SceneWarmupCover, SceneWarmupGate } from "./render/SceneWarmupGate";
 import {
   resolvePresentationEffects,
   resolveWorldOverlayBars,
@@ -225,6 +226,7 @@ export function Shell3dPresentation({
 }) {
   const GameUI = playable.GameUI;
   const ktx2SupportDetected = useRef(false);
+  const [warmup, setWarmup] = useState(SCENE_WARMUP_PENDING);
   const frameTally = useRef<FrameTally>({ frames: 0 }).current;
   const WorldOverlay = playable.WorldOverlay;
   const pointerService = useMemo(() => createPointerService(), []);
@@ -778,7 +780,9 @@ export function Shell3dPresentation({
                 {!splitScreen && resolvedLook.postProcessing !== undefined && resolvedLook.postProcessing.enabled !== false ? (
                   <PostProcessing config={resolvedLook.postProcessing} quality={graphics.quality} stages={graphics.profile.postStages} />
                 ) : null}
+                {poster ? null : <SceneWarmupGate onState={setWarmup} />}
               </Canvas>
+              <SceneWarmupCover state={warmup} />
               {graphics.showFps && !poster ? <FpsCounter tally={frameTally} /> : null}
               {!poster &&
               !orientationGate &&
