@@ -23,7 +23,9 @@ import {
  *   bun run perf <game> [--quality draft|full] [--profile] [--seconds n]
  *
  * The JSON goes to stdout alone so it can be piped and diffed; notes and the
- * `--profile` inclusive table go to stderr.
+ * `--profile` inclusive table go to stderr. `measureGame` is the same sequence
+ * without the boot, so the CI budget gate (`scripts/perf-gate.ts`) reuses one
+ * dev server and one browser across every game.
  */
 
 const repoRoot = fileURLToPath(new URL("..", import.meta.url));
@@ -321,6 +323,64 @@ async function countInstances(
   return { nodes: value?.nodes ?? 0, scenes: value?.scenes ?? 0 };
 }
 
+/** Everything one measured window says about a game, as printed by `bun run perf`. */
+export interface PerfRecord {
+  game: string;
+  gpu: string;
+  quality: CaptureQuality;
+  viewport: string;
+  seconds: number;
+  frame: FrameWindow;
+  render: {
+    draws: number | null;
+    triangles: number | null;
+    geometries: number | null;
+    textures: number | null;
+    nodes: number | null;
+    nodesSource: SceneNodeCount["source"];
+    scenes: number;
+  };
+  gl: {
+    programsLinked: number;
+    framebuffers: number;
+    buffers: number;
+    textures: number;
+    vertexArrays: number;
+    allocations: number;
+    residentPrograms: number | null;
+    total: Record<string, number>;
+  };
+  sim: { avgMs: number; outsideMs: number } | null;
+  profile: { samplingUs: number; seconds: number; top: ProfileEntry[] } | null;
+}
+
+interface RawProfile {
+  nodes: ProfileNode[];
+  samples: number[];
+  timeDeltas: number[];
+}
+
+export interface MeasureOptions {
+  /** Page target to measure; the caller owns opening and closing it. */
+  session: CdpSession;
+  /** Dev-server base URL, e.g. `http://127.0.0.1:4601`. */
+  base: string;
+  game: string;
+  quality?: CaptureQuality;
+  seconds?: number;
+  warmupMs?: number;
+  /** Run the CPU profiler pass afterwards; the budget gate does not need it. */
+  profile?: boolean;
+}
+
+export interface PerfMeasure {
+  record: PerfRecord;
+  /** Raw profile for the inclusive table (`--profile`); null when profiling was skipped. */
+  profile: RawProfile | null;
+  /** Wall-clock length of the profile window in ms, for percentages. */
+  profileMs: number;
+}
+
 function readGpu(session: CdpSession): Promise<string | undefined> {
   return session.evaluate<string>(`(() => {
     const gl = document.createElement("canvas").getContext("webgl2");
@@ -337,6 +397,116 @@ function printInclusive(entries: readonly ProfileEntry[]): void {
   for (const entry of entries) {
     console.error(`${entry.selfMs.toFixed(1).padStart(8)} ms  ${entry.selfPct.toFixed(1).padStart(5)}%  ${entry.fn}  ${entry.at}`);
   }
+}
+
+/**
+ * Play one game and measure it: warm up, sample frame deltas, snapshot renderer
+ * and scene counts, and read the GL objects created after warmup.
+ */
+export async function measureGame(options: MeasureOptions): Promise<PerfMeasure> {
+  const { session, base, game, quality = "full", seconds = DEFAULT_SECONDS, warmupMs = WARMUP_MS } = options;
+  const profileRun = options.profile ?? true;
+
+  await session.send("Page.enable");
+  await session.send("Page.addScriptToEvaluateOnNewDocument", { source: GL_COUNTERS_SCRIPT });
+  await applyDevice(session, "desktop", quality === "draft" ? "half" : "full");
+  const url = new URL(base);
+  url.searchParams.set("game", game);
+  url.searchParams.set("mode", "play");
+  url.searchParams.set("device", "desktop");
+  url.searchParams.set("capture", "1");
+  applyCaptureQuality(url, quality);
+  await session.send("Page.navigate", { url: url.toString() });
+  await waitCaptureReady(session, 90_000);
+  await session.evaluate(`window.__jgengineAgent?.handle?.({ method: "debug_perf_reset" })`);
+
+  const gpu = (await readGpu(session)) ?? "unknown";
+  if (/swiftshader|llvmpipe|software/i.test(gpu)) {
+    console.error(`perf: software rasterizer (${gpu}) — frame times are not a GPU measurement`);
+  }
+
+  await session.evaluate(`new Promise((r) => setTimeout(r, ${warmupMs}))`, { awaitPromise: true });
+  await session.evaluate(`window.__jgPerfGl?.reset?.()`);
+  await session.evaluate(`window.__jgengineAgent?.handle?.({ method: "debug_perf_reset" })`);
+
+  // Frame timings are sampled without the profiler running, so the fps and
+  // percentiles are the loop the player gets; the profile window is separate.
+  const startedAt = Date.now();
+  const deltas = (await session.evaluate<number[]>(SAMPLE_FRAMES_SCRIPT(seconds * 1000), { awaitPromise: true })) ?? [];
+  const windowMs = Date.now() - startedAt;
+
+  const snapshot = await session.evaluate<{
+    frame: { avgSimMs?: number; avgOutsideMs?: number; phases?: unknown[] } | null;
+    render: { drawCalls: number; triangles: number; geometries: number; textures: number } | null;
+    probes?: Record<string, unknown>;
+    longFrames?: unknown[];
+  }>(`window.__jgengineAgent?.handle?.({ method: "debug_snapshot" })?.snapshot ?? null`);
+  const gl = (await session.evaluate<GlCounts | null>(`globalThis.__jgPerfGl ?? null`)) ?? { counts: {}, since: {} };
+  const sceneNodes = await measureSceneNodes(session);
+  const size = await session.evaluate<{ w: number; h: number }>(`({ w: innerWidth, h: innerHeight })`);
+
+  const frame = summarizeFrameDeltas(deltas);
+  const since = gl.since;
+  const allocations =
+    (since.buffers ?? 0) +
+    (since.textures ?? 0) +
+    (since.vertexArrays ?? 0) +
+    (since.programsLinked ?? 0) +
+    (since.framebuffers ?? 0);
+  const residentPrograms = snapshot?.probes?.shaderPrograms;
+
+  let raw: RawProfile | null = null;
+  let profiledMs = 0;
+  if (profileRun) {
+    await session.send("Profiler.enable");
+    await session.send("Profiler.setSamplingInterval", { interval: PROFILE_SAMPLING_US });
+    await session.send("Profiler.start");
+    const profiledAt = Date.now();
+    await session.evaluate(`new Promise((r) => setTimeout(r, ${seconds * 1000}))`, { awaitPromise: true });
+    profiledMs = Date.now() - profiledAt;
+    const stopped = await session.send("Profiler.stop");
+    raw = (stopped.profile ?? { nodes: [], samples: [], timeDeltas: [] }) as RawProfile;
+  }
+
+  const top = raw === null ? [] : aggregateSelfTime(raw, profiledMs);
+
+  const record: PerfRecord = {
+    game,
+    gpu,
+    quality,
+    viewport: `${size?.w ?? 0}x${size?.h ?? 0}`,
+    seconds: Math.round((windowMs / 1000) * 10) / 10,
+    frame,
+    render: {
+      draws: snapshot?.render?.drawCalls ?? null,
+      triangles: snapshot?.render?.triangles ?? null,
+      geometries: snapshot?.render?.geometries ?? null,
+      textures: snapshot?.render?.textures ?? null,
+      nodes: sceneNodes.nodes,
+      nodesSource: sceneNodes.source,
+      scenes: sceneNodes.scenes,
+    },
+    gl: {
+      programsLinked: since.programsLinked ?? 0,
+      framebuffers: since.framebuffers ?? 0,
+      buffers: since.buffers ?? 0,
+      textures: since.textures ?? 0,
+      vertexArrays: since.vertexArrays ?? 0,
+      allocations,
+      residentPrograms: typeof residentPrograms === "number" ? residentPrograms : null,
+      total: gl.counts,
+    },
+    sim:
+      snapshot?.frame === null || snapshot?.frame === undefined
+        ? null
+        : {
+            avgMs: Math.round((snapshot.frame.avgSimMs ?? 0) * 100) / 100,
+            outsideMs: Math.round((snapshot.frame.avgOutsideMs ?? 0) * 100) / 100,
+          },
+    profile: raw === null ? null : { samplingUs: PROFILE_SAMPLING_US, seconds: Math.round((profiledMs / 1000) * 10) / 10, top },
+  };
+
+  return { record, profile: raw, profileMs: profiledMs };
 }
 
 async function main(): Promise<void> {
@@ -357,112 +527,17 @@ async function main(): Promise<void> {
     async ({ debugPort }) => {
       const session = await openPageSession(debugPort);
       try {
-        await session.send("Page.enable");
-        await session.send("Page.addScriptToEvaluateOnNewDocument", { source: GL_COUNTERS_SCRIPT });
-        await applyDevice(session, "desktop", quality === "draft" ? "half" : "full");
-        const url = new URL(server.base);
-        url.searchParams.set("game", game);
-        url.searchParams.set("mode", "play");
-        url.searchParams.set("device", "desktop");
-        url.searchParams.set("capture", "1");
-        applyCaptureQuality(url, quality);
-        await session.send("Page.navigate", { url: url.toString() });
-        await waitCaptureReady(session, 90_000);
-        await session.evaluate(`window.__jgengineAgent?.handle?.({ method: "debug_perf_reset" })`);
-
-        const gpu = (await readGpu(session)) ?? "unknown";
-        if (/swiftshader|llvmpipe|software/i.test(gpu)) {
-          console.error(`perf: software rasterizer (${gpu}) — frame times are not a GPU measurement`);
+        const measured = await measureGame({ session, base: server.base, game, quality, seconds });
+        console.log(JSON.stringify(measured.record, null, 2));
+        if (profile && measured.profile !== null) {
+          printInclusive(aggregateInclusiveTime(measured.profile, measured.profileMs));
         }
-
-        await session.evaluate(`new Promise((r) => setTimeout(r, ${WARMUP_MS}))`, { awaitPromise: true });
-        await session.evaluate(`window.__jgPerfGl?.reset?.()`);
-        await session.evaluate(`window.__jgengineAgent?.handle?.({ method: "debug_perf_reset" })`);
-
-        // Frame timings are sampled without the profiler running, so the fps and
-        // percentiles are the loop the player gets; the profile window is separate.
-        const startedAt = Date.now();
-        const deltas = (await session.evaluate<number[]>(SAMPLE_FRAMES_SCRIPT(seconds * 1000), { awaitPromise: true })) ?? [];
-        const windowMs = Date.now() - startedAt;
-
-        const snapshot = await session.evaluate<{
-          frame: { avgSimMs?: number; avgOutsideMs?: number; phases?: unknown[] } | null;
-          render: { drawCalls: number; triangles: number; geometries: number; textures: number } | null;
-          probes?: Record<string, unknown>;
-          longFrames?: unknown[];
-        }>(`window.__jgengineAgent?.handle?.({ method: "debug_snapshot" })?.snapshot ?? null`);
-        const gl = (await session.evaluate<GlCounts | null>(`globalThis.__jgPerfGl ?? null`)) ?? { counts: {}, since: {} };
-        const sceneNodes = await measureSceneNodes(session);
-        const size = await session.evaluate<{ w: number; h: number }>(`({ w: innerWidth, h: innerHeight })`);
-
-        const frame = summarizeFrameDeltas(deltas);
-        const since = gl.since;
-        const allocations =
-          (since.buffers ?? 0) +
-          (since.textures ?? 0) +
-          (since.vertexArrays ?? 0) +
-          (since.programsLinked ?? 0) +
-          (since.framebuffers ?? 0);
-        const residentPrograms = snapshot?.probes?.shaderPrograms;
-
-        await session.send("Profiler.enable");
-        await session.send("Profiler.setSamplingInterval", { interval: PROFILE_SAMPLING_US });
-        await session.send("Profiler.start");
-        const profiledAt = Date.now();
-        await session.evaluate(`new Promise((r) => setTimeout(r, ${seconds * 1000}))`, { awaitPromise: true });
-        const profiledMs = Date.now() - profiledAt;
-        const stopped = await session.send("Profiler.stop");
-        const profile = (stopped.profile ?? {}) as {
-          nodes: ProfileNode[];
-          samples: number[];
-          timeDeltas: number[];
-        };
-
-        const top = aggregateSelfTime(profile, profiledMs);
-
-        const record = {
-          game,
-          gpu,
-          quality,
-          viewport: `${size?.w ?? 0}x${size?.h ?? 0}`,
-          seconds: Math.round((windowMs / 1000) * 10) / 10,
-          frame,
-          render: {
-            draws: snapshot?.render?.drawCalls ?? null,
-            triangles: snapshot?.render?.triangles ?? null,
-            geometries: snapshot?.render?.geometries ?? null,
-            textures: snapshot?.render?.textures ?? null,
-            nodes: sceneNodes.nodes,
-            nodesSource: sceneNodes.source,
-            scenes: sceneNodes.scenes,
-          },
-          gl: {
-            programsLinked: since.programsLinked ?? 0,
-            framebuffers: since.framebuffers ?? 0,
-            buffers: since.buffers ?? 0,
-            textures: since.textures ?? 0,
-            vertexArrays: since.vertexArrays ?? 0,
-            allocations,
-            residentPrograms: typeof residentPrograms === "number" ? residentPrograms : null,
-            total: gl.counts,
-          },
-          sim:
-            snapshot?.frame === null || snapshot?.frame === undefined
-              ? null
-              : {
-                  avgMs: Math.round((snapshot.frame.avgSimMs ?? 0) * 100) / 100,
-                  outsideMs: Math.round((snapshot.frame.avgOutsideMs ?? 0) * 100) / 100,
-                },
-          profile: { samplingUs: PROFILE_SAMPLING_US, seconds: Math.round((profiledMs / 1000) * 10) / 10, top },
-        };
-
-        console.log(JSON.stringify(record, null, 2));
-        if (profile) printInclusive(aggregateInclusiveTime(profile, profiledMs));
-        if (top.length === 0) console.error("perf: the CPU profile produced no samples");
-        if ((gl.counts.buffers ?? 0) + (gl.counts.textures ?? 0) === 0) {
+        if (measured.record.profile?.top.length === 0) console.error("perf: the CPU profile produced no samples");
+        const totals = measured.record.gl.total;
+        if ((totals.buffers ?? 0) + (totals.textures ?? 0) === 0) {
           console.error("perf: GL allocation counters saw no activity — the WebGL hooks did not attach");
         }
-        if (sceneNodes.nodes === null) console.error("perf: could not count scene nodes on this page");
+        if (measured.record.render.nodes === null) console.error("perf: could not count scene nodes on this page");
       } finally {
         await session.close();
       }

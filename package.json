@@ -81,6 +81,7 @@
     "shoot": "bun scripts/guard.ts 420 'bun scripts/shoot-dev.ts'",
     "drive": "bun scripts/guard.ts 900 'bun scripts/drive-dev.ts'",
     "perf": "bun scripts/guard.ts 420 'bun scripts/perf-play.ts'",
+    "perf:gate": "bun scripts/guard.ts 1500 'bun scripts/perf-gate.ts'",
     "probe": "bun scripts/guard.ts 1200 'bun scripts/probe-commit.ts'",
     "new:game": "bun packages/jgengine/src/cli/index.ts create",
     "pr-shots": "bun scripts/pr-shots.ts",

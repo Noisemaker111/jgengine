@@ -104,6 +104,7 @@ bun run games:check  # type-check + test every game in ./Games against THIS chec
                      # games:check <id> for one game; --published re-runs against the games' installed @jgengine/*
 bun dev              # jgengine.com locally, games playable at /games/<id> when Games/ is present
 bun run perf <game>  # frame times, draws, triangles, node/GL counts and top self-time functions as JSON (--help)
+bun run perf:gate    # CI gate: plays all 8 reference games and fails on draws/triangles/nodes over scripts/perf-budget.json or any program/framebuffer created after warmup (--help)
 # a cloned game standalone:
 bun --cwd=Games/harbor-heat run dev
 ```
