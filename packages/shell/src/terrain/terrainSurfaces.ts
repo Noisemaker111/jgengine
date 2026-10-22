@@ -65,8 +65,8 @@ export interface TerrainPaintSlot {
   scale: number;
   /** World metres per texture repeat for this layer's scanned color map; 0 when the layer has no map. */
   tileMetres: number;
-  /** Material library name the slot's map comes from, if any. */
-  material?: string;
+  /** Resolved color-map URL the slot's scanned texture comes from, if any. */
+  materialUrl?: string;
 }
 
 /** Per-cell paint coverage packed for the shader: two RGBA8 planes holding up to eight layer weights. */
@@ -88,8 +88,8 @@ function slotFor(surface: string, layer: TerrainMaterialLayer | undefined): Terr
     classIndex: CLASS_INDEX[surfaceClass],
     roughness: layer?.roughness ?? CLASS_ROUGHNESS[surfaceClass],
     scale: tiling === undefined || tiling <= 0 ? 1 : Math.min(2, Math.max(0.5, CLASS_TILING[surfaceClass] / tiling)),
-    tileMetres: layer?.material === undefined ? 0 : tiling !== undefined && tiling > 0 ? tiling : 6,
-    ...(layer?.material === undefined ? {} : { material: layer.material }),
+    tileMetres: layer?.materialUrl === undefined ? 0 : tiling !== undefined && tiling > 0 ? tiling : 6,
+    ...(layer?.materialUrl === undefined ? {} : { materialUrl: layer.materialUrl }),
   };
 }
 

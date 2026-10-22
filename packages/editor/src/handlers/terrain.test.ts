@@ -46,8 +46,25 @@ describe("terrain RPC authoring recovery", () => {
     dispose();
   });
 
-  test("adding and reordering materials keeps existing authored blends", () => {
+  test("a layer material name resolves to its scanned color map and an unknown name is refused", () => {
     const { api, dispose } = host();
+    const session = api.getSession();
+    const resolved = api.handle({ method: "set_terrain_layers", layers: [{ id: "turf", surface: "grass", tiling: 6, material: "foliage/grass" }] });
+    expect(resolved.ok).toBe(true);
+    const layer = session.getState().document.terrain!.layers![0]!;
+    expect(layer.material).toBe("foliage/grass");
+    expect(layer.materialUrl).toContain("/materials/ambientcg-grass001/");
+    const refused = api.handle({ method: "set_terrain_layers", layers: [{ id: "turf", surface: "grass", material: "not/a-material" }] });
+    expect(refused.ok).toBe(false);
+    expect(refused.error).toContain("not/a-material");
+    expect(session.getState().document.terrain!.layers![0]!.material).toBe("foliage/grass");
+    const cleared = api.handle({ method: "set_terrain_layers", layers: [{ id: "turf", surface: "grass" }] });
+    expect(cleared.ok).toBe(true);
+    expect(session.getState().document.terrain!.layers![0]!.materialUrl).toBeUndefined();
+    dispose();
+  });
+
+  test("adding and reordering materials keeps existing authored blends", () => {    const { api, dispose } = host();
     api.handle({ method: "blend_terrain", x: 0, z: 0, surface: "dirt", strength: 0.5 });
     const session = api.getSession();
     const terrain = session.getState().document.terrain!;

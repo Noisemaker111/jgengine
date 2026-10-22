@@ -16,6 +16,7 @@ import {
 } from "@jgengine/core/world/scatterRegion";
 
 import { TERRAIN_MATERIALS } from "../uiStore";
+import { libraryMaterialAsset } from "@jgengine/assets/catalogs/materialLibrary";
 import type { HandlerTable } from "./context";
 
 function brushError(request: { x: number; z: number; radius?: number; strength?: number }): string | null {
@@ -167,7 +168,22 @@ export const terrainHandlers: Pick<
     if (new Set(request.layers.map((layer) => layer.id)).size !== request.layers.length || request.layers.some((layer) => layer.id.length === 0 || layer.surface.length === 0)) {
       return { ok: false, error: "terrain layers require unique nonempty ids and nonempty surfaces" };
     }
-    ctx.session.dispatch({ type: "setTerrainLayers", layers: request.layers });
+    const layers: TerrainMaterialLayer[] = [];
+    for (const layer of request.layers) {
+      if (layer.material === undefined || layer.material.length === 0) {
+        layers.push({ ...layer, materialUrl: undefined });
+        continue;
+      }
+      let url: string | undefined;
+      try {
+        url = libraryMaterialAsset(layer.material).textures?.color?.url;
+      } catch {
+        return { ok: false, error: `unknown material library name "${layer.material}"` };
+      }
+      if (url === undefined) return { ok: false, error: `material "${layer.material}" has no color map` };
+      layers.push({ ...layer, materialUrl: url });
+    }
+    ctx.session.dispatch({ type: "setTerrainLayers", layers });
     return { ok: true, result: { layers: ctx.session.getState().document.terrain?.layers ?? [] } };
   },
   blend_terrain: (ctx, request) => {

@@ -50,7 +50,7 @@ export function useModelInstance(model: ModelInstanceConfig, options: ModelInsta
     const content = cloneModelScene(gltf.scene, { shadows: model.shadows, surfaceDetail: model.surfaceDetail });
     try {
       configure?.(content);
-      applyModelWindToScene(content, model.wind, model.wind?.height ?? 4);
+      applyModelWindToScene(content, model.wind, model.wind === false || model.wind === undefined ? 4 : model.wind.height ?? 4);
       for (const diagnostic of applyModelNodeVisibility(content, hiddenNodes)) console.warn(`Model ${model.url} hiddenNodes: ${diagnostic.message}`);
       const scene = new Group().add(content);
       return { content, scene, bindBounds: measureLocalBounds(scene) };

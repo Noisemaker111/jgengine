@@ -3,6 +3,7 @@ import { environment, terrain } from "@jgengine/core/world/features";
 import type { TerrainMaterialLayer } from "@jgengine/core/world/terraform";
 import type { PlayableGame } from "@jgengine/shell/registry";
 import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
+import { libraryMaterialAsset } from "@jgengine/assets/catalogs/materialLibrary";
 
 import { demoGame } from "./demoGame";
 
@@ -10,9 +11,15 @@ const params = new URLSearchParams(typeof window === "undefined" ? "" : window.l
 /** `?procedural=1` drops the layer maps: the mask blend is still there, one procedural surface per layer. */
 const procedural = params.get("procedural") === "1";
 
+/** What `set_terrain_layers` writes: the authored library name plus the URL the editor resolved it to. */
+function layerMap(name: string): { material?: string; materialUrl?: string } {
+  if (procedural) return {};
+  return { material: name, materialUrl: libraryMaterialAsset(name).textures?.color?.url };
+}
+
 const LAYERS: readonly TerrainMaterialLayer[] = [
-  { id: "turf", surface: "grass", tiling: 6, roughness: 0.95, material: procedural ? undefined : "foliage/grass" },
-  { id: "rock", surface: "rock", tiling: 5, roughness: 0.82, material: procedural ? undefined : "ground/rock" },
+  { id: "turf", surface: "grass", tiling: 6, roughness: 0.95, ...layerMap("foliage/grass") },
+  { id: "rock", surface: "rock", tiling: 5, roughness: 0.82, ...layerMap("ground/rock") },
 ];
 
 const sculpt = (() => {

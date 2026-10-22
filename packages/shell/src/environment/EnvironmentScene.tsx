@@ -28,7 +28,6 @@ import {
 } from "@jgengine/core/world/terrain";
 
 import { useDisposable } from "../render/useDisposable";
-import { libraryMaterialAsset } from "@jgengine/assets/catalogs/materialLibrary";
 import { editableTerrainFromSnapshot, type TerraformSnapshot } from "@jgengine/core/world/terraform";
 import { createTerrainPaintColorSampler } from "../terrain/terrainPaintColor";
 import { GroundPad } from "./GroundPad";
@@ -114,25 +113,18 @@ const NO_LAYER_MAP = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYA
 
 /**
  * Scanned color maps for up to {@link MAX_TERRAIN_LAYER_MAPS} painted terrain layers, loaded through
- * the shared recoverable texture path and tiled at each layer's own authored metres.
+ * the shared recoverable texture path and tiled at each layer's own authored metres. The URL is
+ * authored data (`TerrainMaterialLayer.materialUrl`), resolved by the editor from a library name, so
+ * the renderer never reaches into the asset pipeline.
  */
 function useTerrainLayerMaps(paint: TerrainPaintTextures | undefined): readonly (TerrainLayerMap | undefined)[] | undefined {
-  const materials = useMemo(
-    () => (paint?.slots ?? []).slice(1, 1 + MAX_TERRAIN_LAYER_MAPS).map((slot) => slot.material ?? ""),
-    [paint],
-  );
   const urls = useMemo(
     () =>
       Array.from({ length: MAX_TERRAIN_LAYER_MAPS }, (_, index) => {
-        const name = materials[index];
-        if (name === undefined || name.length === 0) return NO_LAYER_MAP;
-        try {
-          return libraryMaterialAsset(name).textures?.color?.url ?? NO_LAYER_MAP;
-        } catch {
-          return NO_LAYER_MAP;
-        }
+        const url = paint?.slots[index + 1]?.materialUrl;
+        return url === undefined || url.length === 0 ? NO_LAYER_MAP : url;
       }),
-    [materials],
+    [paint],
   );
   const textures = useRecoverableTexture({ layer1: urls[0]!, layer2: urls[1]!, layer3: urls[2]!, layer4: urls[3]! });
   useEffect(() => {
@@ -148,7 +140,7 @@ function useTerrainLayerMaps(paint: TerrainPaintTextures | undefined): readonly 
     if (slots === undefined) return undefined;
     return Array.from({ length: MAX_TERRAIN_LAYER_MAPS }, (_, index) => {
       const slot = slots[index + 1];
-      if (slot?.material === undefined) return undefined;
+      if (slot?.materialUrl === undefined) return undefined;
       const texture = textures[`layer${index + 1}` as keyof typeof textures];
       return texture === undefined ? undefined : { color: texture, tileMetres: slot.tileMetres };
     });
