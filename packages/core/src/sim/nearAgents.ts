@@ -1,6 +1,6 @@
 import { devtools } from "../devtools/devtools";
 import type { Vec3 } from "../world/geometry";
-import { createNavCrowd, type NavCrowd, type NavCrowdOptions } from "../nav/navCrowd";
+import { createNavCrowd, type NavCrowd, type NavCrowdOptions, type NavCrowdSnapshot } from "../nav/navCrowd";
 import type { NavRuntime } from "../nav/navRuntime";
 import {
   createUtilityBrain,
@@ -63,8 +63,13 @@ export interface NearCrowdAgents extends NearAgents {
   decisions(): number;
   view(id: string): NearAgentView | null;
   crowd(): NavCrowd;
-  snapshot(): { agents: NearAgentSnapshot[] };
-  restore(next: { agents: readonly NearAgentSnapshot[] }): void;
+  /**
+   * Serializable state: each agent's needs and held pick, plus the crowd's own routes. The crowd is
+   * part of the snapshot because a restored agent must resume the route it was walking, not re-plan a
+   * fresh one from wherever it stood.
+   */
+  snapshot(): { agents: NearAgentSnapshot[]; crowd: NavCrowdSnapshot };
+  restore(next: { agents: readonly NearAgentSnapshot[]; crowd: NavCrowdSnapshot }): void;
 }
 
 interface Agent {
@@ -114,15 +119,19 @@ export function createNearAgents(options: NearAgentsOptions): NearCrowdAgents {
     };
   }
 
+  function makeBrain(forNeeds: ReturnType<typeof createNeedSet>): UtilityBrain {
+    return createUtilityBrain({
+      needs: forNeeds,
+      options: options.options ?? [],
+      ...(options.interrupts === undefined ? {} : { interrupts: options.interrupts }),
+    });
+  }
+
   function mount(next: NearSpawn, saved?: NearAgentSnapshot): void {
     if (agents.has(next.id)) return;
     const needs = createNeedSet(defs);
     needs.restore(saved === undefined ? { values: { ...next.needs }, rates: {}, modifiers: {} } : saved.needs);
-    const brain = createUtilityBrain({
-      needs,
-      options: options.options ?? [],
-      ...(options.interrupts === undefined ? {} : { interrupts: options.interrupts }),
-    });
+    const brain = makeBrain(needs);
     if (saved !== undefined) brain.restore(saved.brain);
     const goal = saved?.goal ?? next.goal;
     const agent: Agent = {
@@ -198,17 +207,28 @@ export function createNearAgents(options: NearAgentsOptions): NearCrowdAgents {
           brain: agent.brain.snapshot(),
         });
       }
-      return { agents: out };
+      return { agents: out, crowd: crowd.snapshot() };
     },
     restore(next) {
-      for (const id of [...agents.keys()]) {
-        crowd.remove(id);
-        agents.get(id)?.brain.dispose();
-        agents.delete(id);
-      }
+      for (const agent of agents.values()) agent.brain.dispose();
+      agents.clear();
+      // The crowd's own snapshot carries each agent's route, so a restored agent walks the corridor it
+      // was on rather than a fresh plan from its current spot.
+      crowd.restore(next.crowd);
       for (const saved of next.agents) {
-        mount(
-          {
+        const needs = createNeedSet(defs);
+        needs.restore(saved.needs);
+        const brain = makeBrain(needs);
+        brain.restore(saved.brain);
+        agents.set(saved.id, {
+          id: saved.id,
+          needs,
+          brain,
+          goal: saved.goal,
+          place: saved.place,
+          activity: saved.activity,
+          travelling: saved.travelling,
+          spawned: {
             id: saved.id,
             position: saved.position,
             place: saved.place,
@@ -218,8 +238,7 @@ export function createNearAgents(options: NearAgentsOptions): NearCrowdAgents {
             stop: 0,
             travelling: saved.travelling,
           },
-          saved,
-        );
+        });
       }
     },
     dispose() {

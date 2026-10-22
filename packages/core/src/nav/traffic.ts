@@ -154,7 +154,6 @@ export interface TrafficSnapshot {
     ticks: number;
     maxStillSeconds: number;
     maxDeadlockSeconds: number;
-    slowestTickMs: number;
   };
 }
 
@@ -1069,7 +1068,6 @@ export function createTraffic(options: TrafficOptions): Traffic {
           ticks,
           maxStillSeconds,
           maxDeadlockSeconds,
-          slowestTickMs,
         },
       };
     },
@@ -1090,7 +1088,7 @@ export function createTraffic(options: TrafficOptions): Traffic {
       ticks = next.counters.ticks;
       maxStillSeconds = next.counters.maxStillSeconds;
       maxDeadlockSeconds = next.counters.maxDeadlockSeconds;
-      slowestTickMs = next.counters.slowestTickMs;
+      slowestTickMs = 0;
       for (const saved of next.cars) {
         const car: Car = {
           ...saved,

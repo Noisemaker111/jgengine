@@ -187,6 +187,16 @@ entries, and arrears that count once per advance until the loan defaults at
 `maxMissed`. `repay` pays principal early; a save stores terms and progress and
 the schedule is rebuilt on restore.
 
+One document saves the whole world. `createGameSave` (`game/gameSave`) holds one versioned
+`GameSaveDocument` with a section per registered system, named slots, caller-policy autosave and a
+`migrate` path, over the same injected `SaveBackend` `createSaveStore` uses. Register each stateful
+system once by `name` with its `snapshot()`/`restore()`; `capture()` builds the document,
+`save()`/`touch()` persist it, `load()`/`switchSlot()` restore every section, and
+`digest()`/`digests()` hash the state for a save/reload determinism test. Pass `rng: { seed, stream }`
+so the world's shared seed and cursor survive the save. A snapshot field that means "never" must
+serialize as `null` and be mapped back on restore - `Infinity` becomes `null` through JSON, which
+silently changes a restored run.
+
 For timed away missions, compose the pure transitions in `work/expedition` with
 your existing `defineStore` and clock. The [expedition recipe](recipes/expeditions.md)
 keeps bounded offline catch-up, finite supplies, return/death, capacity and RNG

@@ -185,6 +185,7 @@
     "./game/events",
     "./game/feed",
     "./game/gamePhase",
+    "./game/gameSave",
     "./game/keyValueStore",
     "./game/leaderboard",
     "./game/leaderboardRank",

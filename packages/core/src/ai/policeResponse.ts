@@ -227,7 +227,6 @@ export interface PoliceResponseState {
     sightings: number;
     escapes: number;
     roadblockTicks: number;
-    slowestTickMs: number;
   };
 }
 
@@ -512,7 +511,14 @@ export function createPoliceResponse(config: PoliceResponseConfig): PoliceRespon
         outOfSightSeconds,
         lastSighting: lastSighting === null ? null : { ...lastSighting, position: [...lastSighting.position] as HeatPoint },
         pending: pending.slice(),
-        counters: { ...counters },
+        counters: {
+          ticks: counters.ticks,
+          crimes: counters.crimes,
+          witnessed: counters.witnessed,
+          sightings: counters.sightings,
+          escapes: counters.escapes,
+          roadblockTicks: counters.roadblockTicks,
+        },
       };
     },
     restore(next) {
@@ -525,7 +531,7 @@ export function createPoliceResponse(config: PoliceResponseConfig): PoliceRespon
           : { ...next.lastSighting, position: [...next.lastSighting.position] as HeatPoint };
       pending.length = 0;
       for (const amount of next.pending) pending.push(amount);
-      counters = { ...next.counters };
+      counters = { ...next.counters, slowestTickMs: 0 };
       escaped = outOfSightSeconds >= tuning.escapeSeconds;
       lastTier = tierFor(tuning.tiers, heatState.heat);
       lastArea = null;
