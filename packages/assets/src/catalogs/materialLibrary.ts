@@ -7,6 +7,8 @@ import {
   type MaterialTextureMetadata,
   type MaterialTextureRole,
 } from "@jgengine/core/material/materialAsset";
+import type { BuildingSurfaceMaps, BuildingSurfaceMaterial } from "@jgengine/core/world/buildings";
+import type { TerrainDetailMaterialConfig, TerrainMaterialMaps } from "@jgengine/core/world/features";
 
 import { MATERIAL_MAP_FILES } from "../materialMapFiles";
 import { sourceById } from "../sources";
@@ -48,6 +50,20 @@ export interface LibraryMaterial {
   tileMetres: number;
   /** Sparse physical response merged over the imported or authored slot. */
   response: MaterialSurfaceParameters;
+  /**
+   * How this scan blends onto terrain when the defaults are wrong for its scale. A macro ground
+   * scan tiles over tens of metres, so its own albedo is a broad wash rather than the authored
+   * ground colour; it wants to arrive as grain (`tint` low) instead of replacing the biome tint.
+   */
+  terrain?: LibraryTerrainDetail;
+}
+
+/** Blend policy for putting a library scan on terrain; only entries whose scale needs it declare one. */
+export interface LibraryTerrainDetail {
+  /** Blend strength over the procedural/vertex-colour ground, 0..1. Default 1. */
+  strength?: number;
+  /** How much of the scan's own colour replaces the authored ground colour, 0..1. Default 1. */
+  tint?: number;
 }
 
 const MATTE = { metalness: 0, roughness: 0.85 } as const;
@@ -108,12 +124,14 @@ export const MATERIAL_LIBRARY: readonly LibraryMaterial[] = [
   { name: "foliage/leaf", title: "Leaf card", group: "foliage", source: "ambientcg-leaf001", surface: "foliage", tileMetres: 0.8, response: { metalness: 0, roughness: 0.55, alphaMode: "mask", alphaCutoff: 0.45, doubleSided: true, sheen: 0.6, sheenColor: "#c8d18a", sheenRoughness: 0.7 } },
   { name: "foliage/leaf-dense", title: "Dense leaf card", group: "foliage", source: "ambientcg-leaf003", surface: "foliage", tileMetres: 1, response: { metalness: 0, roughness: 0.6, alphaMode: "mask", alphaCutoff: 0.45, doubleSided: true, sheen: 0.55, sheenColor: "#b9cc7d", sheenRoughness: 0.75 } },
   { name: "foliage/grass", title: "Grass ground", group: "foliage", source: "ambientcg-grass001", surface: "opaque", tileMetres: 2, response: { metalness: 0, roughness: 0.9 } },
+  { name: "foliage/grass-macro", title: "Grass ground (macro)", group: "foliage", source: "ambientcg-grass001", surface: "opaque", tileMetres: 24, response: { metalness: 0, roughness: 0.9 }, terrain: { strength: 0.6, tint: 0.3 } },
   { name: "foliage/grass-dry", title: "Dry grass", group: "foliage", source: "ambientcg-grass004", surface: "opaque", tileMetres: 2, response: { metalness: 0, roughness: 0.92 } },
   { name: "foliage/moss", title: "Moss", group: "foliage", source: "ambientcg-moss001", surface: "opaque", tileMetres: 1.2, response: { metalness: 0, roughness: 0.95 } },
   { name: "foliage/leaf-litter", title: "Leaf litter", group: "foliage", source: "ambientcg-scatteredleaves008", surface: "opaque", tileMetres: 2.4, response: { metalness: 0, roughness: 0.88 } },
 
   // Ground and nature.
   { name: "ground/dirt", title: "Forest floor", group: "ground", source: "ambientcg-ground037", surface: "opaque", tileMetres: 2.4, response: { metalness: 0, roughness: 0.9 } },
+  { name: "ground/dirt-macro", title: "Forest floor (macro)", group: "ground", source: "ambientcg-ground037", surface: "opaque", tileMetres: 20, response: { metalness: 0, roughness: 0.9 }, terrain: { strength: 0.6, tint: 0.3 } },
   { name: "ground/sand", title: "Beach sand", group: "ground", source: "ambientcg-ground055s", surface: "opaque", tileMetres: 2, response: { metalness: 0, roughness: 0.88 } },
   { name: "ground/sand-dark", title: "Dark sand", group: "ground", source: "ambientcg-ground080", surface: "opaque", tileMetres: 2, response: { metalness: 0, roughness: 0.86 } },
   { name: "ground/mud", title: "Wet mud", group: "ground", source: "ambientcg-ground095b", surface: "opaque", tileMetres: 2, response: { metalness: 0, roughness: 0.52 } },
@@ -143,11 +161,16 @@ export const MATERIAL_LIBRARY: readonly LibraryMaterial[] = [
 
 const byName = new Map(MATERIAL_LIBRARY.map((entry) => [entry.name, entry]));
 
-/** Map roles a library scan can carry: the PBR set plus cut-out coverage. */
-export type LibraryMapRole = "color" | "normal" | "roughness" | "ao" | "opacity";
+/** Map roles a library scan can carry: the PBR set plus cut-out coverage and a height map. */
+export type LibraryMapRole = "color" | "normal" | "roughness" | "ao" | "opacity" | "displacement";
 
 /** Every readable map role a library material can carry, in load order. */
-const LIBRARY_ROLES: readonly LibraryMapRole[] = ["color", "normal", "roughness", "ao", "opacity"];
+const LIBRARY_ROLES: readonly LibraryMapRole[] = ["color", "normal", "roughness", "ao", "opacity", "displacement"];
+
+/** Authoring role a library map feeds: `opacity` is an alpha map, `displacement` is a height map. */
+function textureRoleFor(role: LibraryMapRole): MaterialTextureRole {
+  return role === "opacity" ? "alpha" : role === "displacement" ? "height" : role;
+}
 
 /** Resolve a library name; unknown names return `null` so a caller can report them by name. */
 export function findLibraryMaterial(name: string): LibraryMaterial | null {
@@ -178,13 +201,17 @@ export interface LibraryMaterialOptions {
 /**
  * Serialized runtime map URLs for a library material, matching what `assets pull <source>` writes
  * into `<basePath>/<source-id>/`. Roles the archive does not ship are omitted, never invented.
+ * `displacement` is not loaded here: no standard-path renderer samples a height map, and a decoded
+ * 1K map per material would cost real GPU memory. Terrain callers get the URL through
+ * {@link libraryTerrainMaterial} instead.
  */
 export function libraryMaterialMaps(entry: LibraryMaterial, options: LibraryMaterialOptions = {}): Partial<Record<MaterialTextureRole, MaterialTextureMetadata>> {
   const base = `${(options.basePath ?? "/materials").replace(/\/+$/, "")}/${entry.source ?? ""}`;
   const source = entry.source === undefined ? undefined : sourceById.get(entry.source);
   const textures: Partial<Record<MaterialTextureRole, MaterialTextureMetadata>> = {};
   for (const role of libraryMaterialRoles(entry)) {
-    const target: MaterialTextureRole = role === "opacity" ? "alpha" : role;
+    if (role === "displacement") continue;
+    const target = textureRoleFor(role);
     textures[target] = {
       url: `${base}/${MATERIAL_MAP_FILES[role]}`,
       colorSpace: MATERIAL_TEXTURE_SEMANTICS[target].colorSpace,
@@ -243,4 +270,118 @@ export function filterLibraryMaterials(query: string, group?: LibraryGroup): rea
     if (needle.length === 0) return true;
     return `${entry.name} ${entry.title} ${entry.group} ${entry.source ?? ""}`.toLowerCase().includes(needle);
   });
+}
+
+function requireLibraryMaterial(name: string): LibraryMaterial {
+  const entry = findLibraryMaterial(name);
+  if (entry === null) throw new TypeError(`Unknown library material "${name}"`);
+  return entry;
+}
+
+/** Pulled URL for one map role, or `undefined` when this entry's archive never ships it. */
+function mapUrl(entry: LibraryMaterial, role: LibraryMapRole, basePath: string): string | undefined {
+  if (entry.source === undefined || !libraryMaterialRoles(entry).includes(role)) return undefined;
+  return `${basePath.replace(/\/+$/, "")}/${entry.source}/${MATERIAL_MAP_FILES[role]}`;
+}
+
+/** Options for {@link libraryTerrainMaterial}. */
+export interface LibraryTerrainOptions {
+  /** URL prefix `assets pull` writes under; defaults to `/materials`. */
+  basePath?: string;
+  /** World units per texture tile; defaults to the entry's authored `tileMetres`. */
+  repeat?: number;
+  /** Blend strength over the procedural ground, 0..1; the entry's terrain policy, else 1. */
+  strength?: number;
+  /** How much of the map's own colour replaces the authored ground colour, 0..1; the entry's terrain policy, else 1. */
+  tint?: number;
+}
+
+/**
+ * A library name as terrain detail material config: `terrain({ detail: { material: libraryTerrainMaterial("foliage/grass-macro") } })`.
+ * Tiling comes from the entry's authored metres and blend from its terrain policy, so a game selects
+ * a ground by name instead of assembling map URLs. A map the archive does not ship is omitted, so
+ * `displacement` is never a URL the caller had to invent.
+ * @capability library-terrain-material put a named library material on terrain without faking optional maps
+ */
+export function libraryTerrainMaterial(name: string, options: LibraryTerrainOptions = {}): TerrainDetailMaterialConfig {
+  const entry = requireLibraryMaterial(name);
+  const basePath = options.basePath ?? "/materials";
+  const color = mapUrl(entry, "color", basePath);
+  const normal = mapUrl(entry, "normal", basePath);
+  if (color === undefined || normal === undefined) {
+    throw new TypeError(`Library material "${name}" carries no pulled color/normal maps; terrain needs a scanned surface.`);
+  }
+  const roughness = mapUrl(entry, "roughness", basePath);
+  const ao = mapUrl(entry, "ao", basePath);
+  const displacement = mapUrl(entry, "displacement", basePath);
+  const maps: TerrainMaterialMaps = {
+    color,
+    normal,
+    ...(roughness === undefined ? {} : { roughness }),
+    ...(ao === undefined ? {} : { ao }),
+    ...(displacement === undefined ? {} : { displacement }),
+  };
+  return {
+    maps,
+    repeat: options.repeat ?? entry.tileMetres,
+    strength: options.strength ?? entry.terrain?.strength ?? 1,
+    tint: options.tint ?? entry.terrain?.tint ?? 1,
+  };
+}
+
+/** Options for {@link libraryBuildingSurface}. */
+export interface LibraryBuildingSurfaceOptions {
+  /** URL prefix `assets pull` writes under; defaults to `/materials`. */
+  basePath?: string;
+  /** Metres one building part slot covers, `[width, height]`; tiles per slot follow from the entry's `tileMetres`. */
+  slotMetres?: readonly [number, number];
+  /** Tiles per slot, along [x, y]; wins over `slotMetres`. */
+  repeat?: number | readonly [number, number];
+  /** Albedo multiplier over the map; defaults to the entry's authored response colour. */
+  color?: string;
+}
+
+/**
+ * A library name as a building surface: `building({ palette: { wall: libraryBuildingSurface("brick/red", { slotMetres: [12, 3] }) } })`.
+ * The maps tile at the entry's authored metres, and the response's colour/roughness/metalness come
+ * with them, so a facade picks a material by name instead of hand-wiring a surface per part kind.
+ * @capability library-building-surface paint a building part from a named library material
+ */
+export function libraryBuildingSurface(name: string, options: LibraryBuildingSurfaceOptions = {}): BuildingSurfaceMaterial {
+  const entry = requireLibraryMaterial(name);
+  const basePath = options.basePath ?? "/materials";
+  const color = mapUrl(entry, "color", basePath);
+  const normal = mapUrl(entry, "normal", basePath);
+  if (color === undefined || normal === undefined) {
+    throw new TypeError(`Library material "${name}" carries no pulled color/normal maps; a shader surface has nothing to tile onto a building.`);
+  }
+  const roughness = mapUrl(entry, "roughness", basePath);
+  const ao = mapUrl(entry, "ao", basePath);
+  const maps: BuildingSurfaceMaps = {
+    color,
+    normal,
+    ...(roughness === undefined ? {} : { roughness }),
+    ...(ao === undefined ? {} : { ao }),
+  };
+  const repeat = options.repeat
+    ?? (options.slotMetres === undefined
+      ? undefined
+      : [options.slotMetres[0] / entry.tileMetres, options.slotMetres[1] / entry.tileMetres] as const);
+  const surfaceColor = options.color ?? entry.response.color;
+  return {
+    maps,
+    ...(surfaceColor === undefined ? {} : { color: surfaceColor }),
+    ...(repeat === undefined ? {} : { repeat }),
+    ...(entry.response.roughness === undefined ? {} : { roughness: entry.response.roughness }),
+    ...(entry.response.metalness === undefined ? {} : { metalness: entry.response.metalness }),
+  };
+}
+
+/**
+ * A library name as the sparse surface parameters a `MaterialAsset` or a render-time override takes,
+ * so a material picked by name keeps its authored roughness, metalness and cut-out policy.
+ * @capability library-surface-parameters carry a named library material's response into authored overrides
+ */
+export function librarySurfaceParameters(name: string): MaterialSurfaceParameters {
+  return { ...requireLibraryMaterial(name).response };
 }
