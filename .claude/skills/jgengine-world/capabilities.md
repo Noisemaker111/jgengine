@@ -224,6 +224,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createCameraShake` (function) · `import { createCameraShake } from "@jgengine/core/world"`
 
+## capture — force a framed capture camera over a game that owns its camera
+
+- `installCaptureCamera` (function) · `import { installCaptureCamera } from "@jgengine/core/world/captureCamera"`
+
 ## character-controller — capsule walk over the physics backend — slide, step-up, slopes, crouch, platforms
 
 - `createCharacterController` (function) · `import { createCharacterController } from "@jgengine/core/movement/characterController"`

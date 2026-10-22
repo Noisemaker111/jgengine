@@ -50,6 +50,7 @@ import {
   computeShotMetrics,
   deadViewport,
   evaluateThresholds,
+  metricsPathFor,
   shotSignature,
 } from "./shot-metrics";
 import {
@@ -413,7 +414,7 @@ async function shootOne(
       }
     }
     if (args.inspect) {
-      const metricsPath = outPath.replace(/\.png$/, ".metrics.json");
+      const metricsPath = metricsPathFor(outPath);
       writeFileSync(metricsPath, JSON.stringify({ frame, viewport }, null, 2));
       console.log(metricsPath);
     }

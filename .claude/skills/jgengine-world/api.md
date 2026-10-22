@@ -3478,6 +3478,13 @@
 - `resolveBuildingProbabilities` (function): function resolveBuildingProbabilities(style: BuildingStyle = DEFAULT_BUILDING_STYLE, overrides?: Partial<BuildingProbabilities>): Partial<BuildingProbabilities> — Style facade probabilities with explicit overrides applied on top.
 - `resolveBuildingSurface` (function): function resolveBuildingSurface(surface: BuildingSurface): BuildingSurfaceMaterial — Normalises a surface to its material form so a renderer reads one shape.
 
+## @jgengine/core/world/captureCamera
+
+- `CaptureCameraOverride` (interface): interface CaptureCameraOverride — Per-session capture-camera override — the harness counterpart of `?cam=`/`?look=`, and the same install-style seam as `world/spawnOverride`: the runner installs one, the shell reads it, nothing changes until one is installed.
+- `clearCaptureCamera` (function): function clearCaptureCamera(): void — Clear any installed capture camera.
+- `installCaptureCamera` (function): function installCaptureCamera(override: CaptureCameraOverride | null): void — Install (or, with `null`, clear) the capture camera. Idempotent; last write wins. It outranks the game's static camera config and any runtime `ctx.camera` rig selection, and it is never saved — it is a property of this capture session, not of the game.
+- `readCaptureCamera` (function): function readCaptureCamera(): CaptureCameraOverride | null — The installed capture camera, or `null` when the game's own camera should render.
+
 ## @jgengine/core/world/carve
 
 - `CarvableField` (class): class CarvableField implements TerrainField — A `TerrainField` you can write craters and mounds into at runtime — the height-field side of destructible terrain (Helldivers 2 explosion craters, engineer-deposited berms). Wraps a base field and layers smooth radial deformations on top, so `sampleHeight` (and therefore ground-snap, collision, and the shell's terrain mesh) all read the deformed surface. `carve` digs a bowl, `deposit` raises a mound.
