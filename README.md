@@ -105,7 +105,7 @@ bun run games:check  # type-check + test every game in ./Games against THIS chec
 bun dev              # jgengine.com locally, games playable at /games/<id> when Games/ is present
 bun run perf <game>  # frame times, draws, triangles, node/GL counts and top self-time functions as JSON (--help)
 bun run debug <game> # the same JSON for a game already open in a browser, ~0.3 s, fails on a budget breach
-bun run perf:gate    # CI gate: plays all 8 reference games and fails on draws/triangles/nodes over scripts/perf-budget.json or any program/framebuffer created after warmup (--help)
+bun run perf:gate    # CI gate: plays all 8 reference games and fails on draws/triangles/nodes over each game's Games/<id>/perf-budget.json (engine scripts/perf-budget.json when a game has none), or any program/framebuffer created after warmup; prints which file each game used (--help)
 bun run bench:cpu    # the CPU timing gate: re-runs the benchmarks that carry wall-clock budgets (nav crowd, perception, utility, visibility, off-screen, flock, paths) and fails when one exceeds its budget
 # a cloned game standalone:
 bun --cwd=Games/harbor-heat run dev

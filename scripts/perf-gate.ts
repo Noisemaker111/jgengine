@@ -11,7 +11,7 @@ import {
   type CaptureQuality,
 } from "./browser-lib";
 import { measureGame } from "./perf-play";
-import { checkBudget, loadBudget, summarizeRecord, type PerfBudget } from "./perf-budget";
+import { checkBudget, loadBudget, summarizeRecord, type LoadedBudget } from "./perf-budget";
 
 /**
  * Frame-budget gate: plays every reference game under the checkout's software
@@ -31,7 +31,7 @@ const repoRoot = fileURLToPath(new URL("..", import.meta.url));
 const DEFAULT_SECONDS = 6;
 const WARMUP_MS = 5_000;
 
-export { checkBudget, loadBudget, type BudgetViolation, type PerfBudget } from "./perf-budget";
+export { checkBudget, loadBudget, type BudgetViolation, type LoadedBudget, type PerfBudget } from "./perf-budget";
 
 /** The reference games the epic's budget passes cover. */
 export const PERF_GATE_GAMES = [
@@ -129,7 +129,7 @@ async function main(): Promise<void> {
 
   // Budgets are read before any browser starts: a missing file must fail fast,
   // not after ten minutes of software-GL rendering.
-  const budgets = new Map<string, PerfBudget>();
+  const budgets = new Map<string, LoadedBudget>();
   for (const game of games) budgets.set(game, loadBudget(game));
 
   const missing = games.filter((game) => !existsSync(join(repoRoot, "Games", game, "src", "index.tsx")));
@@ -149,6 +149,8 @@ async function main(): Promise<void> {
     { keep: false, timeoutMs: 180_000, server: server.child, serverPid: server.pid, hardDeadlineMs: 1_500_000 },
     async ({ debugPort }) => {
       for (const game of games) {
+        const loaded = budgets.get(game)!;
+        console.log(`perf gate: ${game} budget ${loaded.source}`);
         const session = await openPageSession(debugPort);
         try {
           const measured = await measureGame({
@@ -160,7 +162,7 @@ async function main(): Promise<void> {
             warmupMs: WARMUP_MS,
             profile: false,
           });
-          const budget = budgets.get(game)!;
+          const budget = loaded.budget;
           if (!rasterizerPrinted) {
             rasterizerPrinted = true;
             console.log(`perf gate: rasterizer ${measured.record.gpu}`);
@@ -171,7 +173,7 @@ async function main(): Promise<void> {
             console.log(`perf gate: ${summarizeRecord(measured.record, budget)}`);
           } else {
             failures.push(...violations.map((entry) => entry.message));
-            console.error(`perf gate: ${game} FAILED (${measured.record.gpu})`);
+            console.error(`perf gate: ${game} FAILED against ${loaded.source} (${measured.record.gpu})`);
             for (const entry of violations) console.error(`  ${entry.message}`);
             console.error(JSON.stringify(measured.record, null, 2));
           }
@@ -194,7 +196,9 @@ async function main(): Promise<void> {
   if (failures.length > 0) {
     console.error(`\nperf gate FAILED — ${failures.length} problem(s) across ${games.length} games`);
     for (const failure of failures) console.error(`  ${failure}`);
-    console.error("budgets live in scripts/perf-budget.json; raise one only with a measured baseline.");
+    console.error(
+      "budgets live beside each game (Games/<id>/perf-budget.json), else scripts/perf-budget.json; raise one only with a measured baseline.",
+    );
     process.exit(1);
   }
 

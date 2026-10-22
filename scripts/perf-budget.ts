@@ -1,11 +1,11 @@
 import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { join } from "node:path";
+import { join, relative } from "node:path";
 
 import type { PerfReport } from "../packages/core/src/devtools/report";
 
 /**
- * The budget file and the verdict logic, shared by the CI gate (`bun run perf:gate`)
+ * The budget files and the verdict logic, shared by the CI gate (`bun run perf:gate`)
  * and the in-page report reader (`bun run debug <game>`), so one command cannot pass
  * where the other fails. Frame times are deliberately not gated: CI runners are slow
  * and shared, so only counts a build controls decide pass or fail.
@@ -14,7 +14,7 @@ import type { PerfReport } from "../packages/core/src/devtools/report";
 const repoRoot = fileURLToPath(new URL("..", import.meta.url));
 const BASELINE_RELATIVE = join("scripts", "perf-budget.json");
 
-/** Counts one game may not exceed, from `scripts/perf-budget.json`. */
+/** Counts one game may not exceed, from its `perf-budget.json`. */
 export interface PerfBudget {
   draws: number;
   triangles: number;
@@ -28,6 +28,13 @@ export interface PerfBudget {
   programsLinked?: number;
   /** How the numbers above were produced (date, command, GPU). */
   baseline?: string;
+}
+
+/** One game's budget and the file it came from, so a run can name what it compared against. */
+export interface LoadedBudget {
+  budget: PerfBudget;
+  /** Repo-relative path of the file the numbers came from, with forward slashes. */
+  source: string;
 }
 
 export interface BudgetViolation {
@@ -67,11 +74,12 @@ function parseBudgetEntry(raw: unknown, game: string, source: string): PerfBudge
 
 /**
  * The budget for one game. A game's own `perf-budget.json` in its `Games/<id>/`
- * directory wins, so the games repo can own its numbers; the engine copy is the
- * baseline this gate and its CI job land with. No file anywhere is a failure,
- * never a skip.
+ * directory wins, so the games repo can own its numbers and a content PR carries
+ * its budget; the engine copy is the fallback this gate and its CI job land with.
+ * No file anywhere is a failure, never a skip. The returned `source` names the
+ * file that was used, because a verdict means nothing without it.
  */
-export function loadBudget(game: string, root = repoRoot): PerfBudget {
+export function loadBudget(game: string, root = repoRoot): LoadedBudget {
   const gameFile = join(root, "Games", game, "perf-budget.json");
   if (existsSync(gameFile)) {
     let parsed: unknown;
@@ -80,7 +88,7 @@ export function loadBudget(game: string, root = repoRoot): PerfBudget {
     } catch (error) {
       throw new Error(`perf gate: ${gameFile} is not valid JSON (${(error as Error).message})`);
     }
-    return parseBudgetEntry(parsed, game, gameFile);
+    return { budget: parseBudgetEntry(parsed, game, gameFile), source: relative(root, gameFile).replaceAll("\\", "/") };
   }
 
   const engineFile = join(root, BASELINE_RELATIVE);
@@ -99,7 +107,7 @@ export function loadBudget(game: string, root = repoRoot): PerfBudget {
   if (budgets === null || typeof budgets !== "object" || !(game in budgets)) {
     throw new Error(`perf gate: no budget for "${game}" in ${BASELINE_RELATIVE} — add a measured entry before gating it`);
   }
-  return parseBudgetEntry(budgets[game], game, BASELINE_RELATIVE);
+  return { budget: parseBudgetEntry(budgets[game], game, BASELINE_RELATIVE), source: BASELINE_RELATIVE.replaceAll("\\", "/") };
 }
 
 function violation(game: string, metric: string, measured: number, budget: number): BudgetViolation {

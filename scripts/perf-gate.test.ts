@@ -128,17 +128,33 @@ describe("loadBudget", () => {
     writeFileSync(join(dir, "perf-budget.json"), JSON.stringify(budget));
   }
 
-  test("reads the engine baseline for the named game", () => {
+  test("reads the engine baseline for the named game and names that file", () => {
     const root = tempRoot();
     writeEngineBudgets(root, { "harbor-heat": { draws: 7600, triangles: 3850000, nodes: 11900 } });
-    expect(loadBudget("harbor-heat", root)).toEqual({ draws: 7600, triangles: 3850000, nodes: 11900 });
+    expect(loadBudget("harbor-heat", root)).toEqual({
+      budget: { draws: 7600, triangles: 3850000, nodes: 11900 },
+      source: "scripts/perf-budget.json",
+    });
   });
 
-  test("a game's own perf-budget.json wins over the engine copy", () => {
+  test("a game's own perf-budget.json wins over the engine copy, and the gate reports that path", () => {
     const root = tempRoot();
     writeEngineBudgets(root, { "harbor-heat": { draws: 7600, triangles: 3850000, nodes: 11900 } });
     writeGameBudget(root, "harbor-heat", { draws: 5000, triangles: 2_000_000, nodes: 9000 });
-    expect(loadBudget("harbor-heat", root).draws).toBe(5000);
+    const loaded = loadBudget("harbor-heat", root);
+    expect(loaded.budget.draws).toBe(5000);
+    expect(loaded.source).toBe("Games/harbor-heat/perf-budget.json");
+  });
+
+  test("the standalone game copy is the whole entry, not a table keyed by game id", () => {
+    const root = tempRoot();
+    writeGameBudget(root, "deepward", { draws: 90, triangles: 56100, nodes: 170, baseline: "2026-10-22 bun run perf:gate" });
+    expect(loadBudget("deepward", root).budget).toEqual({
+      draws: 90,
+      triangles: 56100,
+      nodes: 170,
+      baseline: "2026-10-22 bun run perf:gate",
+    });
   });
 
   test("a missing budget fails loudly and names both places it looked", () => {
@@ -160,7 +176,7 @@ describe("loadBudget", () => {
 
   test("the engine baseline itself parses for every gated game", () => {
     for (const game of PERF_GATE_GAMES) {
-      const budget = loadBudget(game);
+      const { budget } = loadBudget(game);
       expect(budget.draws).toBeGreaterThan(0);
       expect(budget.triangles).toBeGreaterThan(0);
       expect(budget.nodes).toBeGreaterThan(0);
