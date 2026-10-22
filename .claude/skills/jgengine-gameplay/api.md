@@ -1175,6 +1175,11 @@
 - `DEFAULT_FRAME_STAGES` (const): const DEFAULT_FRAME_STAGES: readonly ["input", "movement", "combat", "ai", "activities", "cleanup", "animation", "camera", "effects"] — Default frame stage order. Gameplay stages mirror the fixed table so once-per-frame systems (`type: "frame"`) can pick `combat`/`ai`/… without falling into the unknown-stage bucket; presentation stages follow.
 - `DEFAULT_PICKUP_RADIUS` (const): const DEFAULT_PICKUP_RADIUS: 2 — ⚠ undocumented
 - `DEFAULT_PING_CATEGORIES` (const): const DEFAULT_PING_CATEGORIES: Record<PingCategory, PingCategoryDef> — Content-agnostic default ping wheel: enemy / loot / location / danger.
+- `DEFAULT_QUEUE_SEED_SERVICE_SECONDS` (const): const DEFAULT_QUEUE_SEED_SERVICE_SECONDS: 8 — Seconds one guest occupies the head of the line before any boarding interval has been measured. A bootstrap only: the estimate switches to the queue's own measured throughput as soon as two boardings have been observed.
+- `DEFAULT_QUEUE_WINDOW` (const): const DEFAULT_QUEUE_WINDOW: 8 — Boarding events the throughput window keeps.
+- `DEFAULT_RIDE_BREAKDOWN` (const): const DEFAULT_RIDE_BREAKDOWN: RideBreakdown — A ride's breakdown curve a park starts from when it has none and retunes only part of one.
+- `DEFAULT_RIDE_FUN_CURVE` (const): const DEFAULT_RIDE_FUN_CURVE: ResponseCurve — How empty a bored guest's fun need has to be before a ride starts to pull, by default.
+- `DEFAULT_RIDE_RATING_RANGE` (const): const DEFAULT_RIDE_RATING_RANGE: RideRatingRange — A 0–10 rating scale, the usual shape of a ride catalog. Override it when a park rates differently.
 - `DEFAULT_TOUCH_STYLE` (const): const DEFAULT_TOUCH_STYLE: TouchStyle — Skin used when neither the game nor the player picks one.
 - `DecayMeterSet` (interface): interface DecayMeterSet — Set of named survival meters (hunger/thirst/…) that drain and refill over game time.
 - `DecayMeterValues` (type): type DecayMeterValues = Record<string, number> — Plain-data meter values: `meter id → current value`. This is the whole serialized form — it drops straight into a `defineGame` state record and round-trips through save/load and multiplayer sync with no closure to rebuild.
@@ -1381,6 +1386,8 @@
 - `QuestDef` (interface): interface QuestDef { id: string; title: string; description?: string; giver?: string; turnIn?: string; requires?: string[]; objectives: QuestObjective[]; rewards?: QuestRewards } — ⚠ undocumented · used by `describeTrackedQuest`: Join a quest's static {@link QuestDef} with a player's live {@link QuestInstance} into a flat, renderer-free view a HUD tracker draws (title…
 - `QuestInstance` (interface): interface QuestInstance { questId: string; status: QuestStatus; objectives: QuestObjectiveProgress[] } — ⚠ undocumented · used by `describeTrackedQuest`: Join a quest's static {@link QuestDef} with a player's live {@link QuestInstance} into a flat, renderer-free view a HUD tracker draws (title…
 - `QuestRewards` (interface): interface QuestRewards { xp?: {amount: number}; economy?: Record<string, number>; items?: {item: string; count: number; inventory: string}[]; unlocks?: string[]; quests?: string[] } — ⚠ undocumented · used by `applyQuestRewards` (@jgengine/core/game/quest): Apply items before XP, currency, and unlocks.
+- `QueueEntry` (interface): interface QueueEntry — One guest waiting their turn, and when they joined the line.
+- `QueueWait` (interface): interface QueueWait — A wait estimate read off the queue's own measured throughput.
 - `RaceState` (class): class RaceState — Race state machine (issue #87). Drive it each tick with `update(now, positions)` — `now` is game time (`ctx.time`), `positions` maps each racer to a world point tested against the ordered checkpoint volumes. It emits `checkpoint.hit` / `lap.completed` / `position.changed` / `race.finished`, keeps cumulative split times for PB deltas, resolves a pluggable win condition (first-past-post, round-cut, derby last-standing), and `resetToCheckpoint` hands back a respawn pose at the racer's last checkpoint. `removeRacer` drops a racer mid-race and `reset` returns the whole instance to its pre-race state for reuse.
 - `RankLeaderboardOptions` (interface): interface RankLeaderboardOptions — Options for {@link rankLeaderboard}. All optional.
 - `RankableRow` (interface): interface RankableRow — A single input score to rank. Accepts the raw shape produced by {@link LeaderboardRow} (a `LeaderboardRow` is assignable to this) as well as a minimal `{ userId, value }` pair with an optional display `label` the game owns.
@@ -1403,6 +1410,26 @@
 - `ResourcePolicy` (type): type ResourcePolicy = ( txn: ResourceTransaction, ctx: PolicyContext, ) => readonly ResourceTransaction[] — A composable transform over one transaction. Return the transactions to keep: `[]` rejects it, `[txn]` passes/transforms it, and multiple entries split it.
 - `ResourceTransaction` (interface): interface ResourceTransaction — One resource movement produced by a due cycle, before it is applied to balances.
 - `RetainedVfxKind` (type): type RetainedVfxKind = string — The archetype of a retained (long-lived, updatable) VFX effect — an open string, not a closed union, so a renderer registers new kinds (beam, tether, zone, target line, looping emitter) without a central branch. `"beam"` is the first shipped retained renderer.
+- `RideBreakdown` (interface): interface RideBreakdown — Breakdown curve and money for one ride. All data, so a park tunes its own economy.
+- `RideChoicePolicy` (interface): interface RideChoicePolicy — Policy a park might vary when it turns taste and ride data into utility options.
+- `RideChooser` (interface): interface RideChooser — One guest's ride choice over one park: taste becomes utility options, each ride is costed by its own line's wait, and the pick comes from the shared utility brain — so the same brain that picks food picks rides, and a guest's queue tolerance is a weight rather than a rule.
+- `RideChooserConfig` (interface): interface RideChooserConfig — Everything a ride chooser needs: the park, the guest's taste, and the guest's needs.
+- `RideChooserSnapshot` (interface): interface RideChooserSnapshot — Serializable chooser state: the guest's taste and the brain's held pick.
+- `RideDefinition` (interface): interface RideDefinition — Everything a ride is: its ratings, its cycle and its wear. Content, not code.
+- `RidePhase` (type): type RidePhase = "idle" | "loading" | "riding" | "unloading" | "broken" — Where a ride is in its cycle.
+- `RideQueueView` (interface): interface RideQueueView — A ride's line as a game or the devtools overlay reads it.
+- `RideRatingRange` (interface): interface RideRatingRange — The rating scale a park's taste curves are normalized against.
+- `RideRatings` (interface): interface RideRatings — What a ride is worth to a guest. All three come from the ride's own data.
+- `RideRetune` (interface): interface RideRetune — In-play dials a ride accepts from {@link RideSystem.retune}.
+- `RideServiceResult` (interface): interface RideServiceResult — What a service cost the caller.
+- `RideStats` (interface): interface RideStats — Counters a devtools probe or test reads.
+- `RideSystem` (interface): interface RideSystem — The park's rides: each runs its own load → ride → unload cycle at its own capacity, takes guests off its own line, wears out against its own breakdown curve, and reports its own repairs and services. The clock is internal and only `tick` moves it, so a replay, a save and a test read the same cycle.
+- `RideSystemConfig` (interface): interface RideSystemConfig — Everything a ride system needs.
+- `RideSystemSnapshot` (interface): interface RideSystemSnapshot — Serializable park state: the clock, each ride's cycle position, wear and line.
+- `RideTaste` (interface): interface RideTaste — What one guest wants from a ride: the intensity and nausea they are comfortable with, and how long they will stand in line. All three are the guest's own data.
+- `RideTickSink` (interface): interface RideTickSink — Where a ride's boardings, alightings and breakdowns are announced. Every hook is optional.
+- `RideView` (interface): interface RideView — One ride's live state.
+- `RideWaitSource` (interface): interface RideWaitSource — The live queue a ride-choice candidate is costed against. {@link RideSystem} satisfies this.
 - `Ring` (interface): interface Ring — ⚠ undocumented
 - `RingConfig` (interface): interface RingConfig { center: RingPoint; phases: readonly RingPhase[] } — ⚠ undocumented
 - `RingPhase` (interface): interface RingPhase { startTime: number; shrinkDuration: number; fromRadius: number; toRadius: number; damagePerSecond: number; center?: RingPoint } — ⚠ undocumented
@@ -1543,6 +1570,9 @@
 - `VfxKind` (type): type VfxKind = "projectile" | "beam" | "nova" | "glow" | "spark" — The visual archetype of a spell/ability effect burst: a traveling bolt, a connecting beam, an expanding ground nova, a soft aura glow, or a scattering impact spark.
 - `VfxRef` (type): type VfxRef = string | readonly [number, number, number] — An endpoint of a retained VFX instance: either an entity instance id (a renderer resolves and follows its live pose each frame) or a fixed `[x, y, z]` world point. Kept serializable so the effect replicates as plain data.
 - `WORLD_ITEM_ENTITY_NAME` (const): const WORLD_ITEM_ENTITY_NAME: "world_item" — Scene-entity catalog name every dropped-item instance spawns under (see the three buckets: worldItem is an entity, never an inventory item or object).
+- `WaitQueue` (interface): interface WaitQueue — A real line: guests join the back, leave the head, and the wait a new arrival faces comes from how fast this queue has actually been boarding — not from a configured constant. A broken ride stops boarding, the line grows, and the estimate grows with it.
+- `WaitQueueOptions` (interface): interface WaitQueueOptions — Tunables for {@link createWaitQueue}, every one retunable through a restore.
+- `WaitQueueSnapshot` (interface): interface WaitQueueSnapshot — Serializable line state: who is waiting, and the boardings the estimate is measured from.
 - `WorkQueueConfig` (interface): interface WorkQueueConfig<TSpec, TReserve = undefined, TOutput = undefined> — Injected policy for a queue. Never serialized — pass the same config to every {@link enqueue}/{@link tick}/{@link cancelJob} call for a given queue.
 - `WorkQueueEvent` (type): type WorkQueueEvent<TSpec, TReserve = undefined, TOutput = undefined> = | { readonly type: "started"; readonly job: Job<TSpec, TReserve> } | { readonly type: "completed"; readonly job: Job<TSpec, TReserve>; readonly output: TOutput } — Typed lifecycle event emitted from {@link tick}.
 - `WorkQueueState` (interface): interface WorkQueueState<TSpec, TReserve = undefined> — Serializable queue state. Holds only non-terminal jobs, so it stays bounded.
@@ -1645,6 +1675,8 @@
 - `createRecipeGraph` (function): function createRecipeGraph(defs: readonly RecipeDef[] = []): RecipeGraph — ⚠ undocumented
 - `createRecordBook` (function): function createRecordBook<K extends string>(config: RecordBookConfig<K>): RecordBook<K> — A personal-best record book: named numeric fields each racing toward "lower" (times) or "higher" (scores, streaks), persisted through a structural key-value storage (pass `localStorage` in a browser, a stub in tests, or `null` for in-memory only). Corrupt or unavailable storage degrades to an empty book — a record write never throws into a game tick.
 - `createResourceLedger` (function): function createResourceLedger(init?: Partial<ResourceLedger>): ResourceLedger — Create an empty scheduled-transaction ledger, or hydrate one from a saved snapshot. State is plain data: production, depletion, tax, and upkeep are all expressed as {@link ScheduledRule}s settled deterministically by {@link advanceLedger}.
+- `createRideChooser` (function): function createRideChooser(config: RideChooserConfig): RideChooser — Create one guest's ride choice over a park. Options are rebuilt when the park is retuned, so a coaster whose track changes its ratings is re-scored without rebuilding the guest.
+- `createRideSystem` (function): function createRideSystem(config: RideSystemConfig): RideSystem — Create the rides a park runs. Each ride cycles on its own data, boards from its own line up to its own capacity, wears against its own breakdown curve and reports its repairs through the sink, so the caller keeps the wallet, the bodies and the visuals.
 - `createRing` (function): function createRing(config: RingConfig): Ring — ⚠ undocumented
 - `createRuleRegistry` (function): function createRuleRegistry<TPayload = unknown>(initial?: readonly RuleDef<TPayload>[]): RuleRegistry<TPayload> — Create a {@link RuleRegistry}. Rules install through `register` (duplicate ids throw); selection and `layersFor` are data-driven, so the core never branches on which mutators exist.
 - `createRunDraft` (function): function createRunDraft<TStat extends string = string, TData = unknown>(config: RunDraftConfig<TStat, TData>): RunDraft<TStat, TData> — A roguelike run built from stacking drafted modifier picks that reshape the run.
@@ -1664,6 +1696,7 @@
 - `createUnlocks` (function): function createUnlocks(defs: UnlockDef[] = []): Unlocks — ⚠ undocumented
 - `createUseBehaviorRegistry` (function): function createUseBehaviorRegistry<TWorld>(): UseBehaviorRegistry<TWorld> — Create an empty use-behavior registry. Games register their behaviors, then compose each item's stored refs into a dispatcher whose serializable state lives with the item.
 - `createVfxInstanceStore` (function): function createVfxInstanceStore(options: VfxInstanceStoreOptions = {}): VfxInstanceStore — Build a headless retained-VFX registry. The store is the serializable source of truth for long-lived effects (beams, tethers, zones, target lines, looping emitters) that must move and mutate without one-shot re-emit flicker: `upsert` creates or replaces by stable id, `update` nudges dynamic params, `stop` disposes with an optional fade, and `tick` enforces TTL heartbeats. It stays independent of renderer availability, so simulation and tests run without a shell; a wired `onOp` sink turns each op into a `combat.vfxInstance` event the shell binds to render resources.
+- `createWaitQueue` (function): function createWaitQueue(options: WaitQueueOptions = {}): WaitQueue — Create a line whose wait estimate is derived from its own throughput. The queue owns the order and the measurement; the ride owns how fast guests are taken off the head, so a slower cycle raises the estimate without the queue being told a cycle time.
 - `createWeaponStats` (function): function createWeaponStats(resolveEntry: (itemId: string) => WeaponEntry | null | undefined): WeaponStats — Resolve per-weapon stat values — damage, fire rate, spread — for combat math.
 - `createWorkQueue` (function): function createWorkQueue<TSpec, TReserve = undefined>(): WorkQueueState<TSpec, TReserve> — Create an empty timed work queue.
 - `crossThresholds` (function): function crossThresholds<Id>(boundaries: readonly ThresholdBoundary<Id>[], before: number, after: number, options: CrossThresholdsOptions = {}): ThresholdCrossing<Id>[] — Report every boundary crossed moving from `before` to `after`.
@@ -1769,6 +1802,10 @@
 - `resumeJob` (function): function resumeJob<TSpec, TReserve>(state: WorkQueueState<TSpec, TReserve>, id: JobId): WorkQueueState<TSpec, TReserve> — Resume a paused job; it re-enters the queue and competes for a slot by ordering.
 - `resumeRule` (function): function resumeRule(ledger: ResourceLedger, ruleId: string): ResourceLedger — Resume a paused rule. Its `nextDueSeconds` is unchanged, so the paused span counts as missed cycles that the rule's {@link CatchUpPolicy} decides how to settle on the next advance.
 - `returnExpeditionNow` (function): function returnExpeditionNow<TCtx>(config: ExpeditionConfig<TCtx>, state: ExpeditionState, nowMs: number): ExpeditionState — Settle first, then complete a live return instantly. Caller owns payment/authorization; pending ticks remain unsettled when the budget is exhausted, and dead/home state is never changed.
+- `rideAppeal` (function): function rideAppeal(ratings: RideRatings, taste: RideTaste, range: RideRatingRange = DEFAULT_RIDE_RATING_RANGE): number — One ride's standing appeal to one guest, before queue cost. Excitement draws, force and nausea push back — what a guest's own card or thought bubble can show.
+- `rideChoiceCandidates` (function): function rideChoiceCandidates(source: RideWaitSource, out: UtilityCandidate[] = []): UtilityCandidate[] — Cost each ride by the wait its own line reports, so a guest weighs a ride by seconds in line rather than by a fixed order. `out` is reused for the array; the candidate records are not.
+- `rideChoiceOptions` (function): function rideChoiceOptions(rides: readonly RideDefinition[], taste: RideTaste, policy: RideChoicePolicy = {}): UtilityOption[] — Compile a guest's taste and the park's ride data into utility options, so the guest's pick comes from `createUtilityBrain` like every other decision it makes. Ride choice is one more set of options a guest can score, not a separate scoring function.
+- `rideQueueCostWeight` (function): function rideQueueCostWeight(taste: RideTaste): number — Score points per second of queue wait: a guest's own tolerance is the denominator. A guest who merges rides into a brain that also scores food and exits uses this as its `costWeight`.
 - `ringSampleAt` (function): function ringSampleAt(config: RingConfig, time: number): RingSample — ⚠ undocumented
 - `rollLoot` (function): function rollLoot(catalog: LootCatalog, rng: () => number, options: LootRollOptions = {}): LootItem — Roll one item from a catalog: a base and maker, a weighted rarity, one part per slot, rarity-count affixes, level-scaled stats and a name composed from maker, rarity, part, affix words and base. Deterministic for a given `rng`; every field it reads is caller data. Validate a catalog built outside {@link createLootRoller} once with {@link assertLootCatalog} before rolling from it.
 - `runPipeline` (function): function runPipeline<V>(base: V, modifiers: readonly Modifier<V>[], equals: (a: V, b: V) => boolean = Object.is): PipelineResult<V> — ⚠ undocumented
@@ -2327,6 +2364,49 @@
 - `OffScreenStats` (interface): interface OffScreenStats — Counters a devtools probe or a test reads to prove far agents cost nothing.
 - `OffScreenWorld` (interface): interface OffScreenWorld — The off-screen world: every resident exists, but only the ones within the policy radius are simulated. The rest are a position, a routine phase and a needs record that only move when the clock crosses a routine boundary — no navigation, no utility scoring, no per-frame need decay.
 - `createOffScreenWorld` (function): function createOffScreenWorld(options: OffScreenOptions): OffScreenWorld — Create the world that decides which agents deserve a simulation. Residents are cheap state until they come near, and cheap again when they leave; the cheap state is the schedule, the needs and the last place, so a returning resident never pops in at the origin.
+
+## @jgengine/core/sim/queue
+
+- `DEFAULT_QUEUE_SEED_SERVICE_SECONDS` (const): const DEFAULT_QUEUE_SEED_SERVICE_SECONDS: 8 — Seconds one guest occupies the head of the line before any boarding interval has been measured. A bootstrap only: the estimate switches to the queue's own measured throughput as soon as two boardings have been observed.
+- `DEFAULT_QUEUE_WINDOW` (const): const DEFAULT_QUEUE_WINDOW: 8 — Boarding events the throughput window keeps.
+- `QueueEntry` (interface): interface QueueEntry — One guest waiting their turn, and when they joined the line.
+- `QueueWait` (interface): interface QueueWait — A wait estimate read off the queue's own measured throughput.
+- `WaitQueue` (interface): interface WaitQueue — A real line: guests join the back, leave the head, and the wait a new arrival faces comes from how fast this queue has actually been boarding — not from a configured constant. A broken ride stops boarding, the line grows, and the estimate grows with it.
+- `WaitQueueOptions` (interface): interface WaitQueueOptions — Tunables for {@link createWaitQueue}, every one retunable through a restore.
+- `WaitQueueSnapshot` (interface): interface WaitQueueSnapshot — Serializable line state: who is waiting, and the boardings the estimate is measured from.
+- `createWaitQueue` (function): function createWaitQueue(options: WaitQueueOptions = {}): WaitQueue — Create a line whose wait estimate is derived from its own throughput. The queue owns the order and the measurement; the ride owns how fast guests are taken off the head, so a slower cycle raises the estimate without the queue being told a cycle time.
+
+## @jgengine/core/sim/rides
+
+- `DEFAULT_RIDE_BREAKDOWN` (const): const DEFAULT_RIDE_BREAKDOWN: RideBreakdown — A ride's breakdown curve a park starts from when it has none and retunes only part of one.
+- `DEFAULT_RIDE_FUN_CURVE` (const): const DEFAULT_RIDE_FUN_CURVE: ResponseCurve — How empty a bored guest's fun need has to be before a ride starts to pull, by default.
+- `DEFAULT_RIDE_RATING_RANGE` (const): const DEFAULT_RIDE_RATING_RANGE: RideRatingRange — A 0–10 rating scale, the usual shape of a ride catalog. Override it when a park rates differently.
+- `RideBreakdown` (interface): interface RideBreakdown — Breakdown curve and money for one ride. All data, so a park tunes its own economy.
+- `RideChoicePolicy` (interface): interface RideChoicePolicy — Policy a park might vary when it turns taste and ride data into utility options.
+- `RideChooser` (interface): interface RideChooser — One guest's ride choice over one park: taste becomes utility options, each ride is costed by its own line's wait, and the pick comes from the shared utility brain — so the same brain that picks food picks rides, and a guest's queue tolerance is a weight rather than a rule.
+- `RideChooserConfig` (interface): interface RideChooserConfig — Everything a ride chooser needs: the park, the guest's taste, and the guest's needs.
+- `RideChooserSnapshot` (interface): interface RideChooserSnapshot — Serializable chooser state: the guest's taste and the brain's held pick.
+- `RideDefinition` (interface): interface RideDefinition — Everything a ride is: its ratings, its cycle and its wear. Content, not code.
+- `RidePhase` (type): type RidePhase = "idle" | "loading" | "riding" | "unloading" | "broken" — Where a ride is in its cycle.
+- `RideQueueView` (interface): interface RideQueueView — A ride's line as a game or the devtools overlay reads it.
+- `RideRatingRange` (interface): interface RideRatingRange — The rating scale a park's taste curves are normalized against.
+- `RideRatings` (interface): interface RideRatings — What a ride is worth to a guest. All three come from the ride's own data.
+- `RideRetune` (interface): interface RideRetune — In-play dials a ride accepts from {@link RideSystem.retune}.
+- `RideServiceResult` (interface): interface RideServiceResult — What a service cost the caller.
+- `RideStats` (interface): interface RideStats — Counters a devtools probe or test reads.
+- `RideSystem` (interface): interface RideSystem — The park's rides: each runs its own load → ride → unload cycle at its own capacity, takes guests off its own line, wears out against its own breakdown curve, and reports its own repairs and services. The clock is internal and only `tick` moves it, so a replay, a save and a test read the same cycle.
+- `RideSystemConfig` (interface): interface RideSystemConfig — Everything a ride system needs.
+- `RideSystemSnapshot` (interface): interface RideSystemSnapshot — Serializable park state: the clock, each ride's cycle position, wear and line.
+- `RideTaste` (interface): interface RideTaste — What one guest wants from a ride: the intensity and nausea they are comfortable with, and how long they will stand in line. All three are the guest's own data.
+- `RideTickSink` (interface): interface RideTickSink — Where a ride's boardings, alightings and breakdowns are announced. Every hook is optional.
+- `RideView` (interface): interface RideView — One ride's live state.
+- `RideWaitSource` (interface): interface RideWaitSource — The live queue a ride-choice candidate is costed against. {@link RideSystem} satisfies this.
+- `createRideChooser` (function): function createRideChooser(config: RideChooserConfig): RideChooser — Create one guest's ride choice over a park. Options are rebuilt when the park is retuned, so a coaster whose track changes its ratings is re-scored without rebuilding the guest.
+- `createRideSystem` (function): function createRideSystem(config: RideSystemConfig): RideSystem — Create the rides a park runs. Each ride cycles on its own data, boards from its own line up to its own capacity, wears against its own breakdown curve and reports its repairs through the sink, so the caller keeps the wallet, the bodies and the visuals.
+- `rideAppeal` (function): function rideAppeal(ratings: RideRatings, taste: RideTaste, range: RideRatingRange = DEFAULT_RIDE_RATING_RANGE): number — One ride's standing appeal to one guest, before queue cost. Excitement draws, force and nausea push back — what a guest's own card or thought bubble can show.
+- `rideChoiceCandidates` (function): function rideChoiceCandidates(source: RideWaitSource, out: UtilityCandidate[] = []): UtilityCandidate[] — Cost each ride by the wait its own line reports, so a guest weighs a ride by seconds in line rather than by a fixed order. `out` is reused for the array; the candidate records are not.
+- `rideChoiceOptions` (function): function rideChoiceOptions(rides: readonly RideDefinition[], taste: RideTaste, policy: RideChoicePolicy = {}): UtilityOption[] — Compile a guest's taste and the park's ride data into utility options, so the guest's pick comes from `createUtilityBrain` like every other decision it makes. Ride choice is one more set of options a guest can score, not a separate scoring function.
+- `rideQueueCostWeight` (function): function rideQueueCostWeight(taste: RideTaste): number — Score points per second of queue wait: a guest's own tolerance is the denominator. A guest who merges rides into a brain that also scores food and exits uses this as its `costWeight`.
 
 ## @jgengine/core/sim/routine
 
