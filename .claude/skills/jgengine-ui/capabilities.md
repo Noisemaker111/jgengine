@@ -177,6 +177,8 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## day-night-sky — drop-in R3F presenter that drives the engine's existing sky dome and lights from a serializable day-night cycle for a moving, color-graded day-night look
 
 - `DayNightSky` (function) · `import { DayNightSky } from "@jgengine/shell/environment"`
+- `skyNoonKeyframes` (function) · `import { skyNoonKeyframes } from "@jgengine/core/render/skyOwnedLighting"`
+- `splitSkyOwnedLighting` (function) · `import { splitSkyOwnedLighting } from "@jgengine/core/render/skyOwnedLighting"`
 
 ## debounced-commit — bind a slider/number/color control to an expensive commit path (scene-document patch, settings persist) — instant local mirror, one trailing commit per pause, flush on release/blur/unmount; no raw onChange→patch wiring
 

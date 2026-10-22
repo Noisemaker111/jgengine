@@ -59,6 +59,16 @@
 - `mergePostProcessing` (function): function mergePostProcessing(preset: PostProcessingConfig, authored: PostProcessingConfig | undefined): PostProcessingConfig — Deep-merge a game's partial post chain over a preset's. Every field the game set wins, including `false` to drop a stage; fields it left unset come from the preset, and stage objects merge field by field (tuples such as `grade.lift` replace whole).
 - `resolveGameLook` (function): function resolveGameLook(input: GameLookInput): ResolvedGameLook — Expand a game's `look` into concrete lighting/backdrop/post. The default is `"neutral"`; `"flat"` passes the explicit knobs through untouched. Anything the game authored wins — the preset only fills unset knobs, and it never adds a sky when the world already owns one (so the sky's tuned sun/hemisphere serve as the lighting rig). A styled preset's post stages are deep-merged under a partial game `postProcessing` ({@link mergePostProcessing}); under `"neutral"` a game's own chain is used as authored.
 
+## @jgengine/core/render/physicalSky
+
+- `MOONLIGHT_COLOR` (const): const MOONLIGHT_COLOR: "#a9c3e8" — Moonlight's colour: scattered sunlight, blue-shifted because the eye's scotopic response peaks there.
+- `MOONLIGHT_PEAK` (const): const MOONLIGHT_PEAK: 0.12 — Peak moonlight as a fraction of the authored sunlight, at the moon's highest point. Real moonlight is ~2.5e-6 of daylight; every game exaggerates it to stay readable, and this is the exaggeration, not a measurement. Games override it through `SkyEnvironmentConfig.moon`.
+- `NIGHT_FOG_COLOR` (const): const NIGHT_FOG_COLOR: "#0a0e16" — Fog color once the sun is gone: the night sky's own haze, lifted enough to keep silhouettes readable.
+- `elevationOf` (function): function elevationOf(direction: readonly [number, number, number]): number — Elevation of a world-space direction in degrees; a zero vector reads as overhead.
+- `moonIllumination` (function): function moonIllumination(moonElevationDeg: number, peak: number = MOONLIGHT_PEAK): number — Moonlight at `sunElevationDeg`'s opposite point: full at the top of the moon's arc, zero while the moon is below the horizon, scaled by `peak` (a fraction of the authored sun intensity).
+- `starOpacity` (function): function starOpacity(sunElevationDeg: number): number — How visible the stars are: none in daylight, half at the first hint of a set sun, full once it is 6° under.
+- `sunlightColor` (function): function sunlightColor(elevationDeg: number): string — The sun's colour at `elevationDeg`, normalised so its brightest channel is full: white overhead, orange at the horizon, moon-blue once it has set. Intensity stays the authored cycle's job.
+
 ## @jgengine/core/render/postProcessing
 
 - `AoConfig` (interface): interface AoConfig — Ground-truth ambient occlusion stage — darkens contact creases and cavities for depth.
@@ -72,6 +82,12 @@
 - `STUDIO_STAGE_POST` (const): const STUDIO_STAGE_POST: PostProcessingConfig — A cinematic "product shot" post preset — the full chain on (contact-AO, soft bloom, a warm film grade with vignette + a touch of grain + chromatic aberration). Meant for a `StudioStage` where a single parametric asset is framed on a backdrop, so every studio reads shipped, not intern-tier. DoF is left off by default (it needs a per-scene focus distance); set `dof` to enable it.
 - `StylizeConfig` (interface): interface StylizeConfig — Art-style stage that turns the same models and lighting into a different look without touching materials: ink outlines (comic / Borderlands), cel bands (cartoon), pixelation (retro). Runs after tone mapping, before the grade.
 - `ToneMappingMode` (type): type ToneMappingMode = "aces" | "agx" | "reinhard" | "cineon" | "linear" | "none" — Renderer tone-mapping curve applied by the post chain's output stage.
+
+## @jgengine/core/render/skyOwnedLighting
+
+- `SkyOwnedLighting` (interface): interface SkyOwnedLighting — Which half of a game's authored `lighting` a time-of-day sky takes over.
+- `skyNoonKeyframes` (function): function skyNoonKeyframes<T extends SkyEnvironmentConfig>(sky: T, lighting: LightingConfig | undefined, fogColor?: string): T — The authored `lighting` as the day cycle's **noon keyframes**, filling only the sky fields the game left unset. A game's midday sun, fill and fog therefore become the peak the cycle scales and cross-fades from, so an authored world gets a sunset and a night without re-authoring the same numbers in the sky. Authored sky fields always win over the lighting config.
+- `splitSkyOwnedLighting` (function): function splitSkyOwnedLighting(lighting: LightingConfig | undefined): SkyOwnedLighting — Splits authored lighting into the sun/ambient terms a time-of-day sky drives and the rest. Returns an empty `sky` when the game authored no lighting, so callers can keep engine defaults.
 
 ## @jgengine/core/render/sprite2d
 
@@ -2244,33 +2260,37 @@
 
 - `DayNightSky` (function): function DayNightSky({ cycle, radius, hazeStrength, sunGlowStrength, lights = true, keyLightIntensity = 1.1, ambientIntensity = 0.6, }: DayNightSkyProps): React.JSX.Element — Binds a {@link DayNightCycle} to the engine's existing `SkyDome` shader and a pair of lights: each frame it reads `cycle.sample()` and writes the blended tint into the dome's top/horizon/sun uniforms while the sun's arc comes from the shared `daylightStateAt` geometry. This is the turnkey presentation seam — a game mounts this one component in its scene and gets a moving, color-graded day-night sky from the serializable model, with no hand-rolled per-frame lerp and no new renderer. The cycle's `phase`/color values are free-form and never interpreted here.
 - `DayNightSkyProps` (interface): interface DayNightSkyProps — Props for {@link DayNightSky}: the cycle to bind plus optional dome shape and light-strength knobs.
-- `DaylightCycleConfig` (interface): interface DaylightCycleConfig { horizonColor?: string; zenithColor?: string; sunIntensity?: number; ambientIntensity?: number; sun?: SkySunConfig } — ⚠ undocumented
-- `DaylightProps` (interface): interface DaylightProps { sky?: SkyDomeProps | false; fog?: {color?: string; near?: number; far?: number} | false; sun?: {position?: readonly [number, number, number]; intensity?: number; color?: string}; ambient?: {skyColor?: string; groundColor?: string; intensi… — ⚠ undocumented
-- `DaylightState` (interface): interface DaylightState { sunPosition: [number, number, number]; sunIntensity: number; ambientIntensity: number; skyTop: string; skyBottom: string; background: string } — ⚠ undocumented
+- `DaylightCycleConfig` (interface): interface DaylightCycleConfig { horizonColor?: string; zenithColor?: string; sunIntensity?: number; ambientIntensity?: number; sun?: SkySunConfig; sunColor?: string; fogColor?: string; moonIntensity?: number; moonColor?: string } — ⚠ undocumented
+- `DaylightProps` (interface): interface DaylightProps { sky?: SkyDomeProps | false; fog?: {color?: string; near?: number; far?: number} | false; sun?: {position?: readonly [number, number, number]; intensity?: number; color?: string}; moon?: {position?: readonly [number, number, number]; inten… — ⚠ undocumented
+- `DaylightState` (interface): interface DaylightState { sunPosition: [number, number, number]; sunIntensity: number; sunColor: string; ambientIntensity: number; skyTop: string; skyBottom: string; background: string; fogColor: string; moonPosition: [number, number, number]; moonIntensity: numbe… — ⚠ undocumented
 - `EnvironmentScene` (function): function EnvironmentScene({ feature }: EnvironmentSceneProps): React.JSX.Element — ⚠ undocumented
 - `EnvironmentSceneProps` (interface): interface EnvironmentSceneProps { feature: EnvironmentWorldFeature } — ⚠ undocumented
 - `SKY_PRESET_DAY_FRACTION` (const): const SKY_PRESET_DAY_FRACTION: Record<"day" | "dusk" | "night", number> — ⚠ undocumented
-- `SkyDaylightProps` (interface): interface SkyDaylightProps { sky: SkyEnvironmentDescriptor; lights?: boolean; bands?: readonly BiomeBand[] } — ⚠ undocumented
-- `SkyDomeProps` (interface): interface SkyDomeProps { topColor?: string; horizonColor?: string; radius?: number; offset?: number; exponent?: number; sunDirection?: readonly [number, number, number]; sunColor?: string; sunIntensity?: number; hazeStrength?: number; cloudiness?: number; sunGlow… — ⚠ undocumented
+- `SkyDaylightProps` (interface): interface SkyDaylightProps { sky: SkyEnvironmentDescriptor; lights?: boolean; bands?: readonly BiomeBand[]; fogRange?: {near?: number; far?: number} } — ⚠ undocumented
+- `SkyDomeProps` (interface): interface SkyDomeProps { topColor?: string; horizonColor?: string; radius?: number; offset?: number; exponent?: number; sunDirection?: readonly [number, number, number]; sunColor?: string; sunIntensity?: number; moonDirection?: readonly [number, number, number]; … — ⚠ undocumented
 - `SkyLightOwnership` (type): type SkyLightOwnership = "authored" | "sky-default" — Policy for composing sky backdrops with `PlayableGame.lighting`: - authored lighting present → sky renders dome + fog only; lights stay game-owned - no authored lighting → sky may emit its default sun/hemisphere with the dome Time-of-day never rewrites configured lights; it only drives sky colors/fog (and sky-owned lights when the game did not author lighting).
-- `TimeOfDayDaylightProps` (interface): interface TimeOfDayDaylightProps { sky: SkyEnvironmentDescriptor; clock?: {calendar(): {dayFraction: number}}; lights?: boolean; bands?: readonly BiomeBand[] } — ⚠ undocumented
+- `TimeOfDayDaylightProps` (interface): interface TimeOfDayDaylightProps { sky: SkyEnvironmentDescriptor; clock?: {calendar(): {dayFraction: number}}; lights?: boolean; bands?: readonly BiomeBand[]; fogRange?: {near?: number; far?: number} } — ⚠ undocumented
 - `VolumetricCloudsProps` (interface): interface VolumetricCloudsProps — Props for {@link VolumetricClouds} — fully-resolved cloud rules plus the shared sun direction.
 
 ## @jgengine/shell/environment
 
 - `DayNightSky` (function): function DayNightSky({ cycle, radius, hazeStrength, sunGlowStrength, lights = true, keyLightIntensity = 1.1, ambientIntensity = 0.6, }: DayNightSkyProps): React.JSX.Element — Binds a {@link DayNightCycle} to the engine's existing `SkyDome` shader and a pair of lights: each frame it reads `cycle.sample()` and writes the blended tint into the dome's top/horizon/sun uniforms while the sun's arc comes from the shared `daylightStateAt` geometry. This is the turnkey presentation seam — a game mounts this one component in its scene and gets a moving, color-graded day-night sky from the serializable model, with no hand-rolled per-frame lerp and no new renderer. The cycle's `phase`/color values are free-form and never interpreted here.
 - `DayNightSkyProps` (interface): interface DayNightSkyProps — Props for {@link DayNightSky}: the cycle to bind plus optional dome shape and light-strength knobs.
-- `DaylightCycleConfig` (interface): interface DaylightCycleConfig { horizonColor?: string; zenithColor?: string; sunIntensity?: number; ambientIntensity?: number; sun?: SkySunConfig } — ⚠ undocumented
-- `DaylightProps` (interface): interface DaylightProps { sky?: SkyDomeProps | false; fog?: {color?: string; near?: number; far?: number} | false; sun?: {position?: readonly [number, number, number]; intensity?: number; color?: string}; ambient?: {skyColor?: string; groundColor?: string; intensi… — ⚠ undocumented
-- `DaylightState` (interface): interface DaylightState { sunPosition: [number, number, number]; sunIntensity: number; ambientIntensity: number; skyTop: string; skyBottom: string; background: string } — ⚠ undocumented
+- `DaylightCycleConfig` (interface): interface DaylightCycleConfig { horizonColor?: string; zenithColor?: string; sunIntensity?: number; ambientIntensity?: number; sun?: SkySunConfig; sunColor?: string; fogColor?: string; moonIntensity?: number; moonColor?: string } — ⚠ undocumented
+- `DaylightProps` (interface): interface DaylightProps { sky?: SkyDomeProps | false; fog?: {color?: string; near?: number; far?: number} | false; sun?: {position?: readonly [number, number, number]; intensity?: number; color?: string}; moon?: {position?: readonly [number, number, number]; inten… — ⚠ undocumented
+- `DaylightState` (interface): interface DaylightState { sunPosition: [number, number, number]; sunIntensity: number; sunColor: string; ambientIntensity: number; skyTop: string; skyBottom: string; background: string; fogColor: string; moonPosition: [number, number, number]; moonIntensity: numbe… — ⚠ undocumented
 - `EnvironmentScene` (function): function EnvironmentScene({ feature }: EnvironmentSceneProps): React.JSX.Element — ⚠ undocumented
 - `EnvironmentSceneProps` (interface): interface EnvironmentSceneProps { feature: EnvironmentWorldFeature } — ⚠ undocumented
 - `SKY_PRESET_DAY_FRACTION` (const): const SKY_PRESET_DAY_FRACTION: Record<"day" | "dusk" | "night", number> — ⚠ undocumented
-- `SkyDaylightProps` (interface): interface SkyDaylightProps { sky: SkyEnvironmentDescriptor; lights?: boolean; bands?: readonly BiomeBand[] } — ⚠ undocumented
-- `SkyDomeProps` (interface): interface SkyDomeProps { topColor?: string; horizonColor?: string; radius?: number; offset?: number; exponent?: number; sunDirection?: readonly [number, number, number]; sunColor?: string; sunIntensity?: number; hazeStrength?: number; cloudiness?: number; sunGlow… — ⚠ undocumented
+- `SkyDaylightProps` (interface): interface SkyDaylightProps { sky: SkyEnvironmentDescriptor; lights?: boolean; bands?: readonly BiomeBand[]; fogRange?: {near?: number; far?: number} } — ⚠ undocumented
+- `SkyDomeProps` (interface): interface SkyDomeProps { topColor?: string; horizonColor?: string; radius?: number; offset?: number; exponent?: number; sunDirection?: readonly [number, number, number]; sunColor?: string; sunIntensity?: number; moonDirection?: readonly [number, number, number]; … — ⚠ undocumented
 - `SkyLightOwnership` (type): type SkyLightOwnership = "authored" | "sky-default" — Policy for composing sky backdrops with `PlayableGame.lighting`: - authored lighting present → sky renders dome + fog only; lights stay game-owned - no authored lighting → sky may emit its default sun/hemisphere with the dome Time-of-day never rewrites configured lights; it only drives sky colors/fog (and sky-owned lights when the game did not author lighting).
-- `TimeOfDayDaylightProps` (interface): interface TimeOfDayDaylightProps { sky: SkyEnvironmentDescriptor; clock?: {calendar(): {dayFraction: number}}; lights?: boolean; bands?: readonly BiomeBand[] } — ⚠ undocumented
+- `TimeOfDayDaylightProps` (interface): interface TimeOfDayDaylightProps { sky: SkyEnvironmentDescriptor; clock?: {calendar(): {dayFraction: number}}; lights?: boolean; bands?: readonly BiomeBand[]; fogRange?: {near?: number; far?: number} } — ⚠ undocumented
 - `VolumetricCloudsProps` (interface): interface VolumetricCloudsProps — Props for {@link VolumetricClouds} — fully-resolved cloud rules plus the shared sun direction.
+
+## @jgengine/shell/environment/AuthoredDaylight
+
+- `AuthoredDaylightProps` (interface): interface AuthoredDaylightProps — Props for {@link AuthoredDaylight}: the authored sky whose values are the noon keyframe, the world clock, and the holder configured lights read.
 
 ## @jgengine/shell/environment/DayNightSky
 
@@ -2279,10 +2299,10 @@
 
 ## @jgengine/shell/environment/Daylight
 
-- `DaylightProps` (interface): interface DaylightProps { sky?: SkyDomeProps | false; fog?: {color?: string; near?: number; far?: number} | false; sun?: {position?: readonly [number, number, number]; intensity?: number; color?: string}; ambient?: {skyColor?: string; groundColor?: string; intensi… — ⚠ undocumented
-- `SkyDaylightProps` (interface): interface SkyDaylightProps { sky: SkyEnvironmentDescriptor; lights?: boolean; bands?: readonly BiomeBand[] } — ⚠ undocumented
-- `SkyDomeProps` (interface): interface SkyDomeProps { topColor?: string; horizonColor?: string; radius?: number; offset?: number; exponent?: number; sunDirection?: readonly [number, number, number]; sunColor?: string; sunIntensity?: number; hazeStrength?: number; cloudiness?: number; sunGlow… — ⚠ undocumented
-- `TimeOfDayDaylightProps` (interface): interface TimeOfDayDaylightProps { sky: SkyEnvironmentDescriptor; clock?: {calendar(): {dayFraction: number}}; lights?: boolean; bands?: readonly BiomeBand[] } — ⚠ undocumented
+- `DaylightProps` (interface): interface DaylightProps { sky?: SkyDomeProps | false; fog?: {color?: string; near?: number; far?: number} | false; sun?: {position?: readonly [number, number, number]; intensity?: number; color?: string}; moon?: {position?: readonly [number, number, number]; inten… — ⚠ undocumented
+- `SkyDaylightProps` (interface): interface SkyDaylightProps { sky: SkyEnvironmentDescriptor; lights?: boolean; bands?: readonly BiomeBand[]; fogRange?: {near?: number; far?: number} } — ⚠ undocumented
+- `SkyDomeProps` (interface): interface SkyDomeProps { topColor?: string; horizonColor?: string; radius?: number; offset?: number; exponent?: number; sunDirection?: readonly [number, number, number]; sunColor?: string; sunIntensity?: number; moonDirection?: readonly [number, number, number]; … — ⚠ undocumented
+- `TimeOfDayDaylightProps` (interface): interface TimeOfDayDaylightProps { sky: SkyEnvironmentDescriptor; clock?: {calendar(): {dayFraction: number}}; lights?: boolean; bands?: readonly BiomeBand[]; fogRange?: {near?: number; far?: number} } — ⚠ undocumented
 
 ## @jgengine/shell/environment/EnvironmentScene
 
@@ -2310,9 +2330,10 @@
 - `DEFAULT_DAY_SKY_BOTTOM` (const): const DEFAULT_DAY_SKY_BOTTOM: "#e3f4ff" — ⚠ undocumented
 - `DEFAULT_DAY_SKY_TOP` (const): const DEFAULT_DAY_SKY_TOP: "#3fa4f2" — ⚠ undocumented
 - `DEFAULT_DAY_SUN_INTENSITY` (const): const DEFAULT_DAY_SUN_INTENSITY: 1 — ⚠ undocumented
+- `DEFAULT_SUN_COLOR` (const): const DEFAULT_SUN_COLOR: "#fff1c9" — Warm-white noon sun used when the game authored no sun tint (the shell's `SUN_COLOR`).
 - `DEFAULT_SUN_ELEVATION_DEG` (const): const DEFAULT_SUN_ELEVATION_DEG: number — The engine arc's noon height: `atan(1 / SUN_DEPTH_RATIO)`, ~68 degrees.
-- `DaylightCycleConfig` (interface): interface DaylightCycleConfig { horizonColor?: string; zenithColor?: string; sunIntensity?: number; ambientIntensity?: number; sun?: SkySunConfig } — ⚠ undocumented
-- `DaylightState` (interface): interface DaylightState { sunPosition: [number, number, number]; sunIntensity: number; ambientIntensity: number; skyTop: string; skyBottom: string; background: string } — ⚠ undocumented
+- `DaylightCycleConfig` (interface): interface DaylightCycleConfig { horizonColor?: string; zenithColor?: string; sunIntensity?: number; ambientIntensity?: number; sun?: SkySunConfig; sunColor?: string; fogColor?: string; moonIntensity?: number; moonColor?: string } — ⚠ undocumented
+- `DaylightState` (interface): interface DaylightState { sunPosition: [number, number, number]; sunIntensity: number; sunColor: string; ambientIntensity: number; skyTop: string; skyBottom: string; background: string; fogColor: string; moonPosition: [number, number, number]; moonIntensity: numbe… — ⚠ undocumented
 - `SKY_PRESET_DAY_FRACTION` (const): const SKY_PRESET_DAY_FRACTION: Record<"day" | "dusk" | "night", number> — ⚠ undocumented
 
 ## @jgengine/shell/environment/groundPadMath
@@ -2476,7 +2497,7 @@
 ## @jgengine/shell/render/SceneLighting
 
 - `BackdropFog` (function): function BackdropFog({ fog }: { fog: BackdropConfig["fog"] }): React.JSX.Element | null — ⚠ undocumented
-- `ConfiguredLighting` (function): function ConfiguredLighting({ lighting, profile }: { lighting: LightingConfig; profile?: GraphicsProfile }): React.JSX.Element — ⚠ undocumented
+- `ConfiguredLighting` (function): function ConfiguredLighting({ lighting, profile, modulation, }: { lighting: LightingConfig; profile?: GraphicsProfile; /** Day-cycle scaling for the first directional (the sun) and the ambient fill. */ modulation?: DaylightModulation; }): React.JSX.Element — ⚠ undocumented
 - `POINT_LIGHT_BUDGET` (const): const POINT_LIGHT_BUDGET: 8 — Default cap for combined dynamic point and spot lights.
 - `syncShadowProjection` (function): function syncShadowProjection(light: DirectionalLight): void — Refresh a directional light's shadow projection after its frustum bounds change. R3F pierced `shadow-camera-*` props write the bounds but never call `updateProjectionMatrix()`, so depth renders with the stale default ~10×10 box and `shadowCameraSize` is silently inert.
 

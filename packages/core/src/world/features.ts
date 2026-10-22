@@ -352,6 +352,14 @@ export interface SkyEnvironmentConfig {
   zenithColor?: string;
   sunIntensity?: number;
   ambientIntensity?: number;
+  /** Authored noon sun colour; the atmosphere reddens it toward the horizon. Default warm white. */
+  sunColor?: string;
+  /** Authored noon fog colour. Dawn, dusk and night cross-fade to their own haze so fog matches the sky. */
+  fogColor?: string;
+  /** Peak moonlight as a fraction of `sunIntensity`. Default the engine's readable night value. */
+  moonIntensity?: number;
+  /** Moonlight colour. Default cool moonlight blue. */
+  moonColor?: string;
   /**
    * Sun placement for the dome glow and the sky-owned sun light. With a fixed `preset` this is the
    * sun's exact direction; under `timeOfDay` it is where the sun stands at noon and the day arc

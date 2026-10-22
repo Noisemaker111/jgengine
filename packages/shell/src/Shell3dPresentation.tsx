@@ -46,6 +46,7 @@ import { playControlsActive } from "@jgengine/core/game/controlGate";
 import { sky as resolveSkyDescriptor } from "@jgengine/core/world/features";
 import { resolveGameLook } from "@jgengine/core/render/lookPreset";
 import { balanceLightingForIbl } from "@jgengine/core/render/lightingBalance";
+import { skyNoonKeyframes } from "@jgengine/core/render/skyOwnedLighting";
 import type { PresencePoseRow } from "@jgengine/core/runtime/transport";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { GameViewportProvider } from "@jgengine/react/gameViewport";
@@ -73,7 +74,9 @@ import {
 import { CullingProvider } from "./visibility/CullingProvider";
 import { BuildingRenderBudget } from "./structures/BuildingRenderBudget";
 import { SkyDaylight, TimeOfDayDaylight } from "./environment";
+import { AuthoredDaylight } from "./environment/AuthoredDaylight";
 import { bearingFromDirection } from "./environment/daylightCycle";
+import type { DaylightModulation } from "./render/SceneLighting";
 import { resolveSkyLightOwnership, skyEmitsLights } from "./environment/skyLightingPolicy";
 import { EnvironmentScene } from "./environment/EnvironmentScene";
 import { PointerProbe } from "./pointer/PointerProbe";
@@ -277,12 +280,22 @@ export function Shell3dPresentation({
   const lighting = resolvedLook.lighting;
   const sunFromLighting = lighting?.directional?.[0]?.position;
   const sceneLighting = useMemo(() => (cinematicLook ? balanceLightingForIbl(lighting) : lighting), [cinematicLook, lighting]);
-  const effectiveSky = useMemo(
-    () =>
-      authoredSky === undefined || authoredSky.sun !== undefined || authoredSky.timeOfDay || sunFromLighting === undefined
-        ? authoredSky
-        : { ...authoredSky, sun: bearingFromDirection(sunFromLighting) },
-    [authoredSky, sunFromLighting],
+  const effectiveSky = useMemo(() => {
+    if (authoredSky === undefined) return undefined;
+    const bearing =
+      authoredSky.sun ??
+      (!authoredSky.timeOfDay && sunFromLighting !== undefined ? bearingFromDirection(sunFromLighting) : undefined);
+    const sky = bearing === undefined ? authoredSky : { ...authoredSky, sun: bearing };
+    return authoredSky.timeOfDay ? skyNoonKeyframes(sky, sceneLighting, backdrop?.fog?.color) : sky;
+  }, [authoredSky, sunFromLighting, sceneLighting, backdrop?.fog?.color]);
+  /**
+   * Under a day cycle the sky scales the game's authored sun and ambient fill; without this a
+   * time-of-day sky only repaints the dome and the world stays lit like noon after dark.
+   */
+  const authoredDaylight = effectiveSky?.timeOfDay === true && sceneLighting?.directional !== undefined;
+  const daylightModulation = useMemo<DaylightModulation>(
+    () => ({ sunFactor: 1, sunColor: effectiveSky?.sunColor ?? "#fff1c9", ambientFactor: 1 }),
+    [effectiveSky?.sunColor],
   );
   const backgroundColor = backdrop?.background ?? (effectiveSky === undefined ? DEFAULT_BACKGROUND_COLOR : undefined);
   const orthographic = playable.camera?.projection === "orthographic";
@@ -598,15 +611,23 @@ export function Shell3dPresentation({
                     horizonTint={sceneLighting?.ambient?.color}
                     sunDirection={sceneLighting?.directional?.[0]?.position}
                     sunColor={sceneLighting?.directional?.[0]?.color ?? "#fff2d6"}
+                    {...(authoredDaylight ? { daylight: daylightModulation } : {})}
                   />
                 ) : null}
                 {sceneLighting !== undefined ? (
-                  <ConfiguredLighting lighting={sceneLighting} profile={graphics.profile} />
+                  <ConfiguredLighting
+                    lighting={sceneLighting}
+                    profile={graphics.profile}
+                    {...(authoredDaylight ? { modulation: daylightModulation } : {})}
+                  />
                 ) : effectiveSky === undefined ? (
                   <>
                     <ambientLight intensity={cinematicLook ? 0.3 : 0.55} />
                     <directionalLight position={[10, 16, 6]} intensity={1.3} />
                   </>
+                ) : null}
+                {authoredDaylight && effectiveSky !== undefined ? (
+                  <AuthoredDaylight sky={effectiveSky} clock={ctx.time} modulation={daylightModulation} />
                 ) : null}
                 {effectiveSky !== undefined ? (
                   effectiveSky.timeOfDay ? (
@@ -615,16 +636,19 @@ export function Shell3dPresentation({
                       clock={ctx.time}
                       bands={effectiveSky === worldSky ? biomeBands : undefined}
                       lights={skyEmitsLights(resolveSkyLightOwnership(lighting !== undefined))}
+                      fogRange={backdrop?.fog}
                     />
                   ) : (
                     <SkyDaylight
                       sky={effectiveSky}
                       bands={effectiveSky === worldSky ? biomeBands : undefined}
                       lights={skyEmitsLights(resolveSkyLightOwnership(lighting !== undefined))}
+                      fogRange={backdrop?.fog}
                     />
                   )
                 ) : null}
-                <BackdropFog fog={backdrop?.fog} />
+                {/* One fog owner: a mounted sky always drives scene fog, so a second `<fog>` here would only shadow it. */}
+                {effectiveSky === undefined ? <BackdropFog fog={backdrop?.fog} /> : null}
                 <GameProvider context={ctx}>
                   <TerrainQualityContext.Provider value={graphics.quality}>
                   <BuildingRenderBudget drawDistance={graphics.profile.drawDistance} visibility={playable.visibility} cullingDisabled={splitScreen}>

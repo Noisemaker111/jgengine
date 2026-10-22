@@ -4,6 +4,7 @@ import * as THREE from "three";
 import { CSM } from "three/examples/jsm/csm/CSM.js";
 
 import type { DirectionalLightingConfig } from "@jgengine/core/game/playableGame";
+import type { DaylightModulation } from "./SceneLighting";
 
 /** @internal Default PCF penumbra in shadow-map texels for configured directional lights. */
 export const DEFAULT_SHADOW_RADIUS = 1.25;
@@ -21,10 +22,11 @@ function isStandardMaterial(mat: THREE.Material): mat is THREE.MeshStandardMater
  *
  * @internal shell SceneLighting helper — games set `cascades` on directional lighting config.
  */
-export function CascadedShadows({ entry }: { entry: DirectionalLightingConfig }): null {
+export function CascadedShadows({ entry, modulation }: { entry: DirectionalLightingConfig; modulation?: DaylightModulation }): null {
   const camera = useThree((s) => s.camera);
   const scene = useThree((s) => s.scene);
   const csmRef = useRef<CSM | null>(null);
+  const baseIntensity = entry.intensity ?? 1.3;
 
   useEffect(() => {
     const cascades = Math.max(2, Math.min(4, Math.floor(entry.cascades ?? 3)));
@@ -81,6 +83,13 @@ export function CascadedShadows({ entry }: { entry: DirectionalLightingConfig })
   useFrame(() => {
     const csm = csmRef.current;
     if (csm === null) return;
+    if (modulation !== undefined) {
+      // Mutated in place: changing `entry.intensity` would rebuild every cascade's shadow map.
+      for (const light of csm.lights) {
+        light.intensity = baseIntensity * modulation.sunFactor;
+        light.color.set(modulation.sunColor);
+      }
+    }
     csm.camera = camera;
     csm.update();
   });
