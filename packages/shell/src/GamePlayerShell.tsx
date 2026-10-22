@@ -80,6 +80,25 @@ const DEBUG_PARAM = "debug";
 const NO_SUBSCRIBE = () => () => undefined;
 const ZERO_VERSION = () => 0;
 
+function shellRootSnapshot(ctx: GameContext, userId: string): string {
+  return `${ctx.player.possession.active(userId)}|${activeTouchControlsMode(ctx) ?? ""}`;
+}
+
+/**
+ * Re-render the shell root only for the ctx slices it reads: the entity the local player possesses,
+ * and the active touch-control mode. Subscribing to the raw ctx version instead reconciled the
+ * canvas, the whole actor tree and the HUD on every per-frame pose and store write — the churn
+ * `subscribeMembership` and imperative `useFrame` pose reads exist to keep out of React (#625).
+ * @internal
+ */
+export function useShellRootResubscribe(ctx: GameContext | null, userId: string): void {
+  useSyncExternalStore(
+    ctx?.subscribe ?? NO_SUBSCRIBE,
+    () => (ctx === null ? "" : shellRootSnapshot(ctx, userId)),
+    () => "",
+  );
+}
+
 export { applyMotionImpulses } from "@jgengine/core/runtime/motionIntents";
 export { nearbyObstacles } from "@jgengine/core/movement/movementModel";
 export { resolvePhysicsTuning } from "@jgengine/core/movement/playerMovement";
@@ -411,11 +430,8 @@ export function GamePlayerShell({
     wrapperRef.current?.focus();
   }, [ctx]);
 
-  useSyncExternalStore(
-    ctx?.subscribe ?? (() => () => undefined),
-    ctx?.version ?? (() => 0),
-    ctx?.version ?? (() => 0),
-  );
+  // The shell root re-renders only for the ctx slices it reads — see {@link useShellRootResubscribe}.
+  useShellRootResubscribe(ctx, userId);
 
   if (ctx === null) return <div className="h-full w-full bg-neutral-950" />;
   if (join.status !== "joined") return <JoinGate {...join} />;
