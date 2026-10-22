@@ -36,7 +36,7 @@ test("the real table covers every test file once and each shard gets work", () =
   const covered = [...assigned.values()].flat();
   expect(covered.length).toBe(files.length);
   expect(new Set(covered).size).toBe(files.length);
-  expect(files.length).toBeGreaterThan(1000);
+  expect(files.length).toBeGreaterThan(99999);
   for (const shard of SHARDS) expect(assigned.get(shard.name)!.length).toBeGreaterThan(0);
 });
 
