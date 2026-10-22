@@ -18,6 +18,7 @@ import type {
   EditorCatalogDefinition,
   EditorCatalogEntry,
   EditorCollection,
+  EditorColorGrading,
   EditorDirective,
   EditorDirectiveArea,
   EditorDocument,
@@ -76,7 +77,15 @@ function cloneEnvironment(environment: EditorEnvironment): EditorEnvironment {
     ...(environment.sunAzimuth === undefined ? {} : { sunAzimuth: environment.sunAzimuth }),
     ...(environment.sunElevation === undefined ? {} : { sunElevation: environment.sunElevation }),
     ...(environment.fog === undefined ? {} : { fog: { ...environment.fog } }),
+    ...(environment.grading === undefined ? {} : { grading: cloneGrading(environment.grading) }),
     ...(environment.probes === undefined ? {} : { probes: cloneLightProbes(environment.probes) }),
+  };
+}
+
+function cloneGrading(grading: EditorColorGrading): EditorColorGrading {
+  return {
+    ...grading,
+    ...(grading.autoExposure === undefined ? {} : { autoExposure: { ...grading.autoExposure } }),
   };
 }
 
@@ -1263,8 +1272,76 @@ function decodeEnvironment(
       if (Object.keys(fog).length > 0) env.fog = fog;
     }
   }
+  if (value.grading !== undefined) {
+    const grading = decodeGrading(value.grading, `${path}.grading`, errors);
+    if (grading === undefined) failed = true;
+    else env.grading = grading;
+  }
   if (failed) return undefined;
   return env;
+}
+
+/**
+ * Validates an authored colour grade. Swatches must be hex colours and every number finite, because
+ * the runtime bakes the LUT straight from these values; unknown junk is rejected with its path rather
+ * than silently grading to something the author did not pick.
+ */
+function decodeGrading(value: unknown, path: string, errors: EditorDocumentDiagnostic[]): EditorColorGrading | undefined {
+  if (!isPlainObject(value)) {
+    errors.push({ path, message: "expected an object" });
+    return undefined;
+  }
+  let failed = false;
+  const grading: EditorColorGrading = {};
+  const swatch = (key: "shadows" | "midtones" | "highlights") => {
+    const entry = value[key];
+    if (entry === undefined) return;
+    if (typeof entry === "string" && /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.test(entry)) {
+      grading[key] = entry.startsWith("#") ? entry : `#${entry}`;
+    } else {
+      errors.push({ path: `${path}.${key}`, message: "expected a hex colour such as #2a3a52" });
+      failed = true;
+    }
+  };
+  swatch("shadows");
+  swatch("midtones");
+  swatch("highlights");
+  if (value.size !== undefined) {
+    if (typeof value.size === "number" && Number.isInteger(value.size) && value.size >= 2 && value.size <= 16) grading.size = value.size;
+    else {
+      errors.push({ path: `${path}.size`, message: "expected an integer cube size from 2 to 16" });
+      failed = true;
+    }
+  }
+  for (const key of ["tint", "saturation", "contrast"] as const) {
+    const entry = value[key];
+    if (entry === undefined) continue;
+    if (typeof entry === "number" && Number.isFinite(entry)) grading[key] = entry;
+    else {
+      errors.push({ path: `${path}.${key}`, message: "expected a finite number" });
+      failed = true;
+    }
+  }
+  if (value.autoExposure !== undefined) {
+    if (!isPlainObject(value.autoExposure)) {
+      errors.push({ path: `${path}.autoExposure`, message: "expected an object" });
+      failed = true;
+    } else {
+      const exposure: NonNullable<EditorColorGrading["autoExposure"]> = {};
+      for (const key of ["min", "max"] as const) {
+        const entry = value.autoExposure[key];
+        if (entry === undefined) continue;
+        if (typeof entry === "number" && Number.isFinite(entry) && entry > 0) exposure[key] = entry;
+        else {
+          errors.push({ path: `${path}.autoExposure.${key}`, message: "expected a positive finite exposure multiplier" });
+          failed = true;
+        }
+      }
+      if (Object.keys(exposure).length > 0) grading.autoExposure = exposure;
+    }
+  }
+  if (failed) return undefined;
+  return Object.keys(grading).length === 0 ? undefined : grading;
 }
 
 /**

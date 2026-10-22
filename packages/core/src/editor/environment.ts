@@ -3,8 +3,9 @@ import type { AvoidZone } from "../world/geometry";
 import { clearanceZonesFrom, DEFAULT_CLEARANCE_KINDS, type ClearanceOptions } from "../world/scatterRegion";
 import type { TerraformSnapshot } from "../world/terraform";
 import { editorDocumentBounds } from "./document";
-import type { EditorDocument, EditorEnvironment, EditorLightProbe } from "./types";
+import type { EditorAutoExposure, EditorColorGrading, EditorDocument, EditorEnvironment, EditorLightProbe } from "./types";
 import { bakeIrradianceVolume, type IrradianceBakeSettings, type IrradianceVolume } from "../render/lightProbes";
+import type { LutCube } from "../render/postProcessing";
 import type { LightingConfig, PointLightingConfig, SpotLightingConfig } from "../game/playableGame";
 
 /**
@@ -85,7 +86,120 @@ export function lightProbesFromDocument(doc: EditorDocument): readonly Irradianc
   return doc.environment?.probes ?? [];
 }
 
-/** The lamps a bake should include: authored light markers plus the environment's point lights.
+const GRADING_LUMA: readonly [number, number, number] = [0.2126, 0.7152, 0.0722];
+/** Cube sizes outside this bake either alias (2) or stop being a small authored file (16+). */
+const MIN_LUT_SIZE = 2;
+const MAX_LUT_SIZE = 16;
+const DEFAULT_LUT_SIZE = 8;
+
+function clamp01(value: number): number {
+  return value < 0 ? 0 : value > 1 ? 1 : value;
+}
+
+/** Parses `#rgb`/`#rrggbb` into 0..1 display RGB; `undefined` when the swatch is not a colour. */
+function displayRgb(hex: string): [number, number, number] | undefined {
+  const body = hex.startsWith("#") ? hex.slice(1) : hex;
+  const expanded = body.length === 3 ? body.split("").map((digit) => digit + digit).join("") : body;
+  if (expanded.length !== 6 || !/^[0-9a-f]{6}$/i.test(expanded)) return undefined;
+  const value = Number.parseInt(expanded, 16);
+  return [((value >> 16) & 0xff) / 255, ((value >> 8) & 0xff) / 255, (value & 0xff) / 255];
+}
+
+function luma(rgb: readonly [number, number, number]): number {
+  return rgb[0] * GRADING_LUMA[0] + rgb[1] * GRADING_LUMA[1] + rgb[2] * GRADING_LUMA[2];
+}
+
+function smoothstep(edge0: number, edge1: number, x: number): number {
+  const t = clamp01((x - edge0) / (edge1 - edge0));
+  return t * t * (3 - 2 * t);
+}
+
+/** True when the authored grade would leave every colour unchanged, so no LUT is worth baking. */
+function gradingIsIdentity(grading: EditorColorGrading): boolean {
+  const saturation = grading.saturation ?? 1;
+  const contrast = grading.contrast ?? 1;
+  const tint = grading.tint ?? 0.45;
+  const bands = grading.shadows !== undefined || grading.midtones !== undefined || grading.highlights !== undefined;
+  return saturation === 1 && contrast === 1 && (!bands || tint <= 0);
+}
+
+/**
+ * Bakes an authored grade into a display-space LUT cube. Contrast and saturation work around
+ * luma, then each band pulls its share of the frame toward the authored swatch, scaled to the
+ * pixel's own brightness so a swatch tints a band instead of painting over it. Pure and
+ * deterministic, so the editor's preview and the runtime produce the same bytes.
+ * @capability color-grading bake an authored grade into a display-space LUT cube
+ */
+export function lutCubeFromGrading(grading: EditorColorGrading): LutCube {
+  const size = Math.round(Math.min(MAX_LUT_SIZE, Math.max(MIN_LUT_SIZE, grading.size ?? DEFAULT_LUT_SIZE)));
+  const saturation = grading.saturation ?? 1;
+  const contrast = grading.contrast ?? 1;
+  const tint = clamp01(grading.tint ?? 0.45);
+  const bands = [
+    { color: grading.shadows === undefined ? undefined : displayRgb(grading.shadows), weight: (l: number) => 1 - smoothstep(0, 0.5, l) },
+    // Band weights partition the frame: shadows fade out by mid-grey, highlights fade in from it, and
+    // midtones are whatever is left (`s1 - s2`, which the naive `1 - wS - wH` double-counts).
+    { color: grading.midtones === undefined ? undefined : displayRgb(grading.midtones), weight: (l: number) => smoothstep(0, 0.5, l) - smoothstep(0.5, 1, l) },
+    { color: grading.highlights === undefined ? undefined : displayRgb(grading.highlights), weight: (l: number) => smoothstep(0.5, 1, l) },
+  ].filter((band): band is { color: [number, number, number]; weight: (l: number) => number } => band.color !== undefined);
+  const data = new Uint8Array(size * size * size * 3);
+  const levels = size - 1;
+  for (let blue = 0; blue < size; blue += 1) {
+    for (let green = 0; green < size; green += 1) {
+      for (let red = 0; red < size; red += 1) {
+        const input: [number, number, number] = [red / levels, green / levels, blue / levels];
+        const bandLuma = luma(input);
+        const curved = input.map((channel) => clamp01((channel - 0.5) * contrast + 0.5)) as [number, number, number];
+        const curvedLuma = luma(curved);
+        let color = curved.map((channel) => curvedLuma + (channel - curvedLuma) * saturation) as [number, number, number];
+        for (const band of bands) {
+          const weight = clamp01(band.weight(bandLuma));
+          if (weight <= 0) continue;
+          // The swatch at the pixel's brightness: a #2a3a52 shadow tint darkens and cools, it does
+          // not raise every shadow to mid-blue.
+          const swatchLuma = Math.max(luma(band.color), 1e-3);
+          const target = band.color.map((channel) => clamp01((channel * bandLuma) / swatchLuma));
+          const amount = tint * weight;
+          color = color.map((channel, index) => channel + (target[index]! - channel) * amount) as [number, number, number];
+        }
+        const offset = (blue * size * size + green * size + red) * 3;
+        data[offset] = Math.round(clamp01(color[0]) * 255);
+        data[offset + 1] = Math.round(clamp01(color[1]) * 255);
+        data[offset + 2] = Math.round(clamp01(color[2]) * 255);
+      }
+    }
+  }
+  return { size, data };
+}
+
+/** The renderer-facing result of a document's authored grade. */
+export interface DocumentColorGrade {
+  /** Display-space LUT baked from the authored bands, saturation and contrast. */
+  lut?: LutCube;
+  /** Authored clamped auto-exposure range, when the document set one. */
+  autoExposure?: EditorAutoExposure;
+}
+
+/**
+ * The colour grade a scene document authored, baked for the renderer. `undefined` when the document
+ * authored no grade at all, so an ungraded game keeps its own post chain untouched. The shell folds
+ * this into the post config the same way {@link lightProbesFromDocument} feeds the irradiance
+ * volumes, so a game's grade is authored data rather than a pass wired in its config.
+ * @capability color-grading read the scene document's authored grade at runtime
+ */
+export function colorGradeFromDocument(doc: EditorDocument): DocumentColorGrade | undefined {
+  const grading = doc.environment?.grading;
+  if (grading === undefined) return undefined;
+  const lut = gradingIsIdentity(grading) ? undefined : lutCubeFromGrading(grading);
+  if (lut === undefined && grading.autoExposure === undefined) return undefined;
+  return {
+    ...(lut === undefined ? {} : { lut }),
+    ...(grading.autoExposure === undefined ? {} : { autoExposure: grading.autoExposure }),
+  };
+}
+
+/**
+ * The lamps a bake should include: authored light markers plus the environment's point lights.
  * @capability light-probes fold the document's authored lamps into a probe bake
  */
 export function authoredLightsFromDocument(doc: EditorDocument): readonly { position: readonly [number, number, number]; color?: string; intensity?: number; distance?: number }[] {

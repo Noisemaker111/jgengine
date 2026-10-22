@@ -33,6 +33,17 @@
 - `createI18n` (function): function createI18n(options: I18nOptions): I18n — Create a translator over a message catalog: active-locale lookup with a fallback-locale chain, `{param}` interpolation, and `Intl.PluralRules`-based pluralization. Observable (`subscribe`) so React re-renders on `setLocale`; the catalog is caller-owned static data, the locale is the only state.
 - `interpolate` (function): function interpolate(template: string, params?: TParams): string — Replace `{name}` placeholders in `template` with `params[name]`. Unknown placeholders are left intact. Pure and locale-independent.
 
+## @jgengine/core/render/colorPipeline
+
+- `AutoExposureConfig` (interface): interface AutoExposureConfig — Bounds and adaptation policy for clamped auto-exposure.
+- `DEFAULT_AUTO_EXPOSURE` (const): const DEFAULT_AUTO_EXPOSURE: Readonly<Required<AutoExposureConfig>> — Default clamped auto-exposure. The range is deliberately asymmetric: a bright street is already readable after AgX's shoulder, while a lamp-lit interior is the case that crushes, so the meter may lift 1.3 stops but only darken 0.7 — an artist's exposure survives.
+- `METERING_HIGHLIGHT_CEILING` (const): const METERING_HIGHLIGHT_CEILING: number — Pixels count toward metering up to this multiple of {@link WHITE_POINT}. A window or a sun disc sits far above it and would otherwise pull the whole frame down to a silhouette.
+- `MID_GREY` (const): const MID_GREY: 0.18 — Linear scene luminance of an 18% grey card — the auto-exposure metering target.
+- `WHITE_POINT` (const): const WHITE_POINT: 1 — Calibration of the output pipeline, in linear scene luminance (1.0 = a white-looking surface at exposure 1).
+- `adaptExposure` (function): function adaptExposure(current: number, target: number, deltaSeconds: number, adaptationSeconds = DEFAULT_AUTO_EXPOSURE.adaptationSeconds): number — Frame-rate independent blend of `current` toward `target`, exponential in time so a hitch does not overshoot and a steady view settles. `deltaSeconds` may be 0..∞; a zero-length step keeps `current`.
+- `exposureForKey` (function): function exposureForKey(keyLuminance: number, config: AutoExposureConfig = {}): number — Exposure that places a frame whose key luminance is `keyLuminance` on {@link MID_GREY}, bounded by the authored range. A dark interior asks for more than `max` and gets `max`; a blown-out exterior asks for less than `min` and gets `min`, so the frame never runs away at either end.
+- `keyLuminanceFromSamples` (function): function keyLuminanceFromSamples(samples: ArrayLike<number>): number — Key luminance of a metered frame: the median of its samples, each clamped to {@link METERING_HIGHLIGHT_CEILING}. A median rather than a mean because a bright sky, a window or a lamp is a large minority of the frame: averaging those in drags an interior down to a silhouette, where the median still reports the room.
+
 ## @jgengine/core/render/environment
 
 - `EnvironmentSource` (type): type EnvironmentSource = | { kind: "gradient"; sky: string; ground: string; sun?: string; intensity?: number } /** Equirectangular HDR or EXR environment map loaded from `url`. */ | { kind: "hdri"; url: string; rotation?: number; intensity?: number } /** Six faces of a cube environment map, in three… — A declarative source for image-based scene lighting.
@@ -85,12 +96,14 @@
 - `DEFAULT_AO` (const): const DEFAULT_AO: Readonly<AoConfig> — Contact shading used when a post chain leaves `ao` unset: soft creases, no dark halos.
 - `DofConfig` (interface): interface DofConfig — Depth-of-field (bokeh) stage — throws the fore/background out of focus around a focus distance.
 - `GradeConfig` (interface): interface GradeConfig — Final colour-grade stage: lift/gain/gamma, saturation, vignette, film grain — applied in display space after tone mapping.
+- `GradeLut` (type): type GradeLut = { url: string; size?: number } | { cube: LutCube } — A grade's LUT: a strip PNG (one `size`-wide tile per blue slice) or a baked cube.
+- `LutCube` (interface): interface LutCube — A baked display-space LUT cube: `size³` RGB entries with red varying fastest, three bytes per entry in 0..255. Kept as plain data so a scene document can author one and a test can assert on it.
 - `OutlineConfig` (interface): interface OutlineConfig — Ink outlines traced from depth and surface-normal edges — silhouettes plus interior creases.
 - `PostAaMode` (type): type PostAaMode = "smaa" | "msaa" | false — Edge antialiasing for the post chain. SMAA runs in linear-sRGB before the output tone-map and cleans alpha-tested foliage/particles that MSAA samples alone leave crawling. `"msaa"` keeps only the render-target multisample resolve; `false` disables AA stages.
 - `PostProcessingConfig` (interface): interface PostProcessingConfig — Declarative post-processing chain (RenderPass → AO → Bloom → SMAA → tone-map output → Grade). Present on a game means the shell mounts an `EffectComposer` and owns the render; absent means the renderer draws directly (unchanged). Each stage is a config object, `false` to skip, or omitted for its default. Pure data — no three.js types leak into core.
 - `STUDIO_STAGE_POST` (const): const STUDIO_STAGE_POST: PostProcessingConfig — A cinematic "product shot" post preset — the full chain on (contact-AO, soft bloom, a warm film grade with vignette + a touch of grain + chromatic aberration). Meant for a `StudioStage` where a single parametric asset is framed on a backdrop, so every studio reads shipped, not intern-tier. DoF is left off by default (it needs a per-scene focus distance); set `dof` to enable it.
 - `StylizeConfig` (interface): interface StylizeConfig — Art-style stage that turns the same models and lighting into a different look without touching materials: ink outlines (comic / Borderlands), cel bands (cartoon), pixelation (retro). Runs after tone mapping, before the grade.
-- `ToneMappingMode` (type): type ToneMappingMode = "aces" | "agx" | "reinhard" | "cineon" | "linear" | "none" — Renderer tone-mapping curve applied by the post chain's output stage.
+- `ToneMappingMode` (type): type ToneMappingMode = "aces" | "agx" | "reinhard" | "cineon" | "linear" | "none" — Renderer tone-mapping curve applied by the post chain's output stage. `"agx"` is the pipeline default: it keeps hue in saturated highlights and rolls a sun-lit surface off gradually, where `"aces"` skews bright colours toward white.
 
 ## @jgengine/core/render/skyOwnedLighting
 
@@ -281,7 +294,7 @@
 - `TEXT_SCALE_MAX` (const): const TEXT_SCALE_MAX: 2 — Maximum UI text scale.
 - `TEXT_SCALE_MIN` (const): const TEXT_SCALE_MIN: 0.75 — Minimum UI text scale.
 - `TParams` (type): type TParams = Readonly<Record<string, string | number>> — Interpolation values for a message template.
-- `ToneMappingMode` (type): type ToneMappingMode = "aces" | "agx" | "reinhard" | "cineon" | "linear" | "none" — Renderer tone-mapping curve applied by the post chain's output stage.
+- `ToneMappingMode` (type): type ToneMappingMode = "aces" | "agx" | "reinhard" | "cineon" | "linear" | "none" — Renderer tone-mapping curve applied by the post chain's output stage. `"agx"` is the pipeline default: it keeps hue in saturated highlights and rolls a sun-lit surface off gradually, where `"aces"` skews bright colours toward white.
 - `TooltipContent` (interface): interface TooltipContent — Structured tooltip content — a renderer lays these fields out; the model owns what is shown.
 - `UI_SCALE_MAX` (const): const UI_SCALE_MAX: 1.5 — ⚠ undocumented
 - `UI_SCALE_MIN` (const): const UI_SCALE_MIN: 0.5 — ⚠ undocumented
@@ -2465,7 +2478,7 @@
 
 ## @jgengine/shell/postfx/PostProcessing
 
-- `PostProcessing` (function): function PostProcessing({ config, quality = "high", stages }: { config: PostProcessingConfig; quality?: GraphicsQuality; stages?: { ao: boolean; bloom: boolean; dof: boolean; smaa: boolean } }): null — Mounts an `EffectComposer` inside the shell Canvas and takes over rendering (priority-1 `useFrame`, which disables R3F auto-render) to run the configured post chain: RenderPass → GTAO → UnrealBloom → SMAA → OutputPass → Stylize → Grade. Rendered only when `PlayableGame.postProcessing` is set, so games without it draw unchanged.
+- `PostProcessing` (function): function PostProcessing({ config, quality = "high", stages }: { config: PostProcessingConfig; quality?: GraphicsQuality; stages?: { ao: boolean; bloom: boolean; dof: boolean; smaa: boolean } }): null — Mounts an `EffectComposer` inside the shell Canvas and takes over rendering (priority-1 `useFrame`, which disables R3F auto-render) to run the configured post chain: RenderPass → GTAO → UnrealBloom → SMAA → exposure meter → OutputPass → Stylize → Grade. Rendered only when `PlayableGame.postProcessing` is set, so games without it draw unchanged.
 
 ## @jgengine/shell/postfx/ScreenEffectsOverlay
 

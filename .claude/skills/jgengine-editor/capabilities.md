@@ -8,6 +8,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `authoredMaterialAssignments` (function) · `import { authoredMaterialAssignments } from "@jgengine/core/editor/materialAuthoring"`
 
+## color-grading — read the scene document's authored grade at runtime
+
+- `colorGradeFromDocument` (function) · `import { colorGradeFromDocument } from "@jgengine/core/editor"`
+- `lutCubeFromGrading` (function) · `import { lutCubeFromGrading } from "@jgengine/core/editor"`
+
 ## creator-export — export validated player scenes with approved catalogs and finite budgets
 
 - `exportCreatorDocument` (function) · `import { exportCreatorDocument } from "@jgengine/core/editor/creatorStorage"`

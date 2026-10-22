@@ -40,7 +40,7 @@ export const CINEMATIC_SKY: SkyEnvironmentConfig = { preset: "day" };
 
 /** Tuned tone-map + bloom + gentle SSAO + vignette/grade stack — the shipped-game post look. */
 export const CINEMATIC_POST_PROCESSING: PostProcessingConfig = {
-  toneMapping: "aces",
+  toneMapping: "agx",
   bloom: {},
   ao: { intensity: 1.4 },
   grade: {},
@@ -55,7 +55,7 @@ export const NEUTRAL_POST_PROCESSING: PostProcessingConfig = {
 
 /** High-contrast physically based presentation for authored HDR environments. */
 export const PHOTOREAL_POST_PROCESSING: PostProcessingConfig = {
-  toneMapping: "aces",
+  toneMapping: "agx",
   bloom: { strength: 0.28, radius: 0.58, threshold: 0.9 },
   ao: { intensity: 1.25, radius: 1.6 },
   grade: { saturation: 1.04, vignette: 0.08, grain: 0.004 },
@@ -71,7 +71,7 @@ export const TOON_POST_PROCESSING: PostProcessingConfig = {
 
 /** Ink outlines, four cel bands and a punchy grade — a hand-inked comic look on any model. */
 export const COMIC_POST_PROCESSING: PostProcessingConfig = {
-  toneMapping: "aces",
+  toneMapping: "agx",
   exposure: 1.05,
   aa: "msaa",
   bloom: { strength: 0.12, radius: 0.4, threshold: 1 },
@@ -82,7 +82,7 @@ export const COMIC_POST_PROCESSING: PostProcessingConfig = {
 
 /** Chunky pixels and posterized colour with no smoothing — a low-resolution retro look. */
 export const RETRO_POST_PROCESSING: PostProcessingConfig = {
-  toneMapping: "aces",
+  toneMapping: "agx",
   aa: false,
   bloom: false,
   ao: false,

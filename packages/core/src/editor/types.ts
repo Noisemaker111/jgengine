@@ -237,6 +237,42 @@ export interface EditorFogConfig {
 }
 
 /**
+ * Authored colour grading for the scene document's final image. The editor bakes a small
+ * display-space LUT from these controls and the shell applies it after tone mapping, so a game's
+ * grade is authored data like its sky, not a hardcoded pass in the game's config.
+ *
+ * The three band colours are display swatches (`#rrggbb`) that the pixels of that band are pulled
+ * toward, by `tint`. `saturation` and `contrast` are applied before the bands. Baking at a small cube
+ * size keeps the whole grade — including the LUT — a few hundred bytes of JSON.
+ */
+export interface EditorColorGrading {
+  /** Cube edge length the runtime bakes, 2..16. Default 8 — small enough to read, smooth enough for a grade. */
+  size?: number;
+  /** Swatch shadows are tinted toward, e.g. `#2a3a52` for a cool night. Absent leaves shadows alone. */
+  shadows?: string;
+  /** Swatch midtones are tinted toward. Absent leaves midtones alone. */
+  midtones?: string;
+  /** Swatch highlights are tinted toward, e.g. `#ffe9c4` for a warm sun. Absent leaves highlights alone. */
+  highlights?: string;
+  /** How far each band is pulled toward its swatch, 0..1. Default 0.45. */
+  tint?: number;
+  /** Display saturation around luma. Default 1. */
+  saturation?: number;
+  /** Display contrast around mid-grey. Default 1. */
+  contrast?: number;
+  /** Clamped auto-exposure authored with the grade; absent uses the pipeline's default range. */
+  autoExposure?: EditorAutoExposure;
+}
+
+/** Authored clamped auto-exposure range: how far the meter may pull a dark room or a bright street. */
+export interface EditorAutoExposure {
+  /** Lowest exposure multiplier the meter may reach. Default 0.5. */
+  min?: number;
+  /** Highest exposure multiplier the meter may reach. Default 2.5. */
+  max?: number;
+}
+
+/**
  * Scene-document environment/lighting authoring (#1110): sky preset, optional time-of-day drive,
  * horizon/zenith tints, sun/ambient intensity, and fog. Serializable and genre-agnostic — games
  * feed it into `environment({ sky: sky(skyFromDocument(doc)) })` (or leave world.ts sky as a
@@ -247,6 +283,8 @@ export interface EditorFogConfig {
 export interface EditorEnvironment {
   /** Optional runtime environment map source; absent keeps the procedural gradient. */
   source?: EnvironmentSource;
+  /** Authored clamped auto-exposure and colour grade; the shell applies it to the post chain. */
+  grading?: EditorColorGrading;
   /** Authored local point lights; the runtime clamps these to its bounded light budget. */
   pointLights?: readonly PointLightingConfig[];
   /**
