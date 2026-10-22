@@ -152,7 +152,9 @@ export function checkBudget(record: PerfReport, budget: PerfBudget): BudgetViola
   // Zero linkProgram/createFramebuffer is only evidence if the counters attached.
   if (record.gl.attached !== true) {
     found.push(unavailable(game, "GL allocations", "the WebGL counters never attached, so a zero allocation count proves nothing"));
-  } else {
+  } else if (record.telemetry === null || record.telemetry.warmedUp) {
+    // These two count from the sampler's post-warmup baseline; before it exists the
+    // numbers are load-time allocations, and the record says so in `telemetry`.
     const linkBudget = budget.programsLinked ?? 0;
     if (record.gl.programsLinked > linkBudget) found.push(violation(game, "linkProgram", record.gl.programsLinked, linkBudget));
     if (record.gl.framebuffers > 0) found.push(violation(game, "createFramebuffer", record.gl.framebuffers, 0));

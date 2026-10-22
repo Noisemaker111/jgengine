@@ -384,7 +384,7 @@ export async function ensureDevServer(cwd = process.cwd()): Promise<EnsureDevSer
       });
   const pid = child?.pid ?? launchPersistentCommand(process.execPath, args, cwd, { JG_DEV_PORT: String(port) });
   child?.unref();
-  writeMarker(port, identity, pid, headRevision(cwd));
+  writeMarker({ identity, port, pid, head: headRevision(cwd), kind: "runner" });
 
   const finalBase = `http://127.0.0.1:${port}`;
   for (let attempt = 0; attempt < 60; attempt += 1) {
@@ -441,7 +441,7 @@ export async function ensureWebServer(cwd = process.cwd()): Promise<EnsureDevSer
     JG_CAPTURE_SITE: "1",
   });
   child?.unref();
-  writeMarker(port, identity, pid, headRevision(cwd));
+  writeMarker({ identity, port, pid, head: headRevision(cwd), kind: "website" });
 
   const finalBase = `http://127.0.0.1:${port}`;
   for (let attempt = 0; attempt < 120; attempt += 1) {
