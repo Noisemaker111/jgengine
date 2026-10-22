@@ -770,6 +770,18 @@ export {
   type OffScreenWorld,
 } from "./sim/offScreen";
 export {
+  createVisitorPopulation,
+  type Visitor,
+  type VisitorFlow,
+  type VisitorPolicy,
+  type VisitorPolicyPatch,
+  type VisitorPopulation,
+  type VisitorPopulationOptions,
+  type VisitorPopulationSnapshot,
+  type VisitorPopulationStats,
+  type VisitorWorld,
+} from "./sim/population";
+export {
   DEFAULT_QUEUE_SEED_SERVICE_SECONDS,
   DEFAULT_QUEUE_WINDOW,
   createWaitQueue,

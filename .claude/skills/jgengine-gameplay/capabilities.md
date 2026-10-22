@@ -720,6 +720,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createUnlockCatalog` (function) · `import { createUnlockCatalog } from "@jgengine/core/gameplay"`
 
+## visitor-population — a crowd whose on-site and daily counts are the bodies the game made
+
+- `createVisitorPopulation` (function) · `import { createVisitorPopulation } from "@jgengine/core/gameplay"`
+
 ## wait-queue — a real line whose wait estimate comes from its own measured throughput
 
 - `createWaitQueue` (function) · `import { createWaitQueue } from "@jgengine/core/gameplay"`

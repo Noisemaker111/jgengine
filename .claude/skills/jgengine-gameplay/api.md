@@ -1703,6 +1703,15 @@
 - `VfxInstanceStoreOptions` (interface): interface VfxInstanceStoreOptions — Options for {@link createVfxInstanceStore}.
 - `VfxKind` (type): type VfxKind = "projectile" | "beam" | "nova" | "glow" | "spark" — The visual archetype of a spell/ability effect burst: a traveling bolt, a connecting beam, an expanding ground nova, a soft aura glow, or a scattering impact spark.
 - `VfxRef` (type): type VfxRef = string | readonly [number, number, number] — An endpoint of a retained VFX instance: either an entity instance id (a renderer resolves and follows its live pose each frame) or a fixed `[x, y, z]` world point. Kept serializable so the effect replicates as plain data.
+- `Visitor` (interface): interface Visitor — One visitor on site: the id its body, its needs and its money are keyed by.
+- `VisitorFlow` (interface): interface VisitorFlow — What a flow policy reads to decide how many arrive and when one has had enough.
+- `VisitorPolicy` (interface): interface VisitorPolicy — The game's flow policy: what draws visitors in, how many fit, and when one has had enough.
+- `VisitorPolicyPatch` (interface): interface VisitorPolicyPatch — Flow policy fields a scenario can change in play.
+- `VisitorPopulation` (interface): interface VisitorPopulation — The crowd a scene reports. Every visitor is a member with a body the game's world made, so the on-site figure is the member count and the daily figure is the sum of admissions the world accepted — there is no second tally to drift from what is on the ground. Arrivals, capacity and leaving are the game's policy; ids, day rollover and counting are this seam's.
+- `VisitorPopulationOptions` (interface): interface VisitorPopulationOptions — Options for {@link createVisitorPopulation}.
+- `VisitorPopulationSnapshot` (interface): interface VisitorPopulationSnapshot — Serializable state. No on-site count is stored: it is the restored visitor list.
+- `VisitorPopulationStats` (interface): interface VisitorPopulationStats — Counters a HUD, a probe or a test reads. The on-site figure is the visitor list's length.
+- `VisitorWorld` (interface): interface VisitorWorld — The game's world behind every counted visitor: it creates and removes the body.
 - `WORLD_ITEM_ENTITY_NAME` (const): const WORLD_ITEM_ENTITY_NAME: "world_item" — Scene-entity catalog name every dropped-item instance spawns under (see the three buckets: worldItem is an entity, never an inventory item or object).
 - `WaitQueue` (interface): interface WaitQueue — A real line: guests join the back, leave the head, and the wait a new arrival faces comes from how fast this queue has actually been boarding — not from a configured constant. A broken ride stops boarding, the line grows, and the estimate grows with it.
 - `WaitQueueOptions` (interface): interface WaitQueueOptions — Tunables for {@link createWaitQueue}, every one retunable through a restore.
@@ -1839,6 +1848,7 @@
 - `createUnlocks` (function): function createUnlocks(defs: UnlockDef[] = []): Unlocks — ⚠ undocumented
 - `createUseBehaviorRegistry` (function): function createUseBehaviorRegistry<TWorld>(): UseBehaviorRegistry<TWorld> — Create an empty use-behavior registry. Games register their behaviors, then compose each item's stored refs into a dispatcher whose serializable state lives with the item.
 - `createVfxInstanceStore` (function): function createVfxInstanceStore(options: VfxInstanceStoreOptions = {}): VfxInstanceStore — Build a headless retained-VFX registry. The store is the serializable source of truth for long-lived effects (beams, tethers, zones, target lines, looping emitters) that must move and mutate without one-shot re-emit flicker: `upsert` creates or replaces by stable id, `update` nudges dynamic params, `stop` disposes with an optional fade, and `tick` enforces TTL heartbeats. It stays independent of renderer availability, so simulation and tests run without a shell; a wired `onOp` sink turns each op into a `combat.vfxInstance` event the shell binds to render resources.
+- `createVisitorPopulation` (function): function createVisitorPopulation(options: VisitorPopulationOptions): VisitorPopulation — Create the population a scene reports, with the game owning arrival and leaving policy. A visitor only exists once the world has made its body, so the HUD's count and the bodies on screen are the same list: `admit` returning `null` is a refused arrival, not a number.
 - `createWaitQueue` (function): function createWaitQueue(options: WaitQueueOptions = {}): WaitQueue — Create a line whose wait estimate is derived from its own throughput. The queue owns the order and the measurement; the ride owns how fast guests are taken off the head, so a slower cycle raises the estimate without the queue being told a cycle time.
 - `createWeaponStats` (function): function createWeaponStats(resolveEntry: (itemId: string) => WeaponEntry | null | undefined): WeaponStats — Resolve per-weapon stat values — damage, fire rate, spread — for combat math.
 - `createWorkQueue` (function): function createWorkQueue<TSpec, TReserve = undefined>(): WorkQueueState<TSpec, TReserve> — Create an empty timed work queue.
@@ -2564,6 +2574,20 @@
 - `OffScreenStats` (interface): interface OffScreenStats — Counters a devtools probe or a test reads to prove far agents cost nothing.
 - `OffScreenWorld` (interface): interface OffScreenWorld — The off-screen world: every resident exists, but only the ones within the policy radius are simulated. The rest are a position, a routine phase and a needs record that only move when the clock crosses a routine boundary — no navigation, no utility scoring, no per-frame need decay.
 - `createOffScreenWorld` (function): function createOffScreenWorld(options: OffScreenOptions): OffScreenWorld — Create the world that decides which agents deserve a simulation. Residents are cheap state until they come near, and cheap again when they leave; the cheap state is the schedule, the needs and the last place, so a returning resident never pops in at the origin.
+
+## @jgengine/core/sim/population
+
+- `Visitor` (interface): interface Visitor — One visitor on site: the id its body, its needs and its money are keyed by.
+- `VisitorAdoption` (interface): interface VisitorAdoption — How a body the game made itself joins the population.
+- `VisitorFlow` (interface): interface VisitorFlow — What a flow policy reads to decide how many arrive and when one has had enough.
+- `VisitorPolicy` (interface): interface VisitorPolicy — The game's flow policy: what draws visitors in, how many fit, and when one has had enough.
+- `VisitorPolicyPatch` (interface): interface VisitorPolicyPatch — Flow policy fields a scenario can change in play.
+- `VisitorPopulation` (interface): interface VisitorPopulation — The crowd a scene reports. Every visitor is a member with a body the game's world made, so the on-site figure is the member count and the daily figure is the sum of admissions the world accepted — there is no second tally to drift from what is on the ground. Arrivals, capacity and leaving are the game's policy; ids, day rollover and counting are this seam's.
+- `VisitorPopulationOptions` (interface): interface VisitorPopulationOptions — Options for {@link createVisitorPopulation}.
+- `VisitorPopulationSnapshot` (interface): interface VisitorPopulationSnapshot — Serializable state. No on-site count is stored: it is the restored visitor list.
+- `VisitorPopulationStats` (interface): interface VisitorPopulationStats — Counters a HUD, a probe or a test reads. The on-site figure is the visitor list's length.
+- `VisitorWorld` (interface): interface VisitorWorld — The game's world behind every counted visitor: it creates and removes the body.
+- `createVisitorPopulation` (function): function createVisitorPopulation(options: VisitorPopulationOptions): VisitorPopulation — Create the population a scene reports, with the game owning arrival and leaving policy. A visitor only exists once the world has made its body, so the HUD's count and the bodies on screen are the same list: `admit` returning `null` is a refused arrival, not a number.
 
 ## @jgengine/core/sim/queue
 
