@@ -65,9 +65,17 @@ jobs:
           GAMES_CLONE_TOKEN: ${{ secrets.GAMES_CLONE_TOKEN }}
       - run: bun run check-types
 
+  # One bun process over every test file took 5m37s of test time on a runner. The same
+  # files are split by path into four jobs of about 90 s; scripts/test-shard.ts owns the
+  # split and fails if a test file falls outside every shard, so nothing is dropped.
+  # `ci` needs `test`, which aggregates all four shards - a red shard fails `ci`.
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [core, ui, sdk, scripts]
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
@@ -84,9 +92,7 @@ jobs:
       - run: bun run games:clone
         env:
           GAMES_CLONE_TOKEN: ${{ secrets.GAMES_CLONE_TOKEN }}
-      # Browser and physics suites cold-start Chromium/WASM; on a loaded runner the first test in a
-      # file can pass Bun's 5 s default and cascade through the file. Tests with their own timeout keep it.
-      - run: bun test --timeout 20000 packages apps/dev scripts
+      - run: bun scripts/test-shard.ts ${{ matrix.shard }}
 
   web-build:
     runs-on: ubuntu-latest
