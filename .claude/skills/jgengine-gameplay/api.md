@@ -194,6 +194,37 @@
 - `PostListingResult` (type): type PostListingResult = | { status: "ok"; listing: Listing } | { status: "rejected"; reason: PostListingReason } — Result of {@link ListingBook.post}.
 - `createListingBook` (function): function createListingBook(config: ListingBookConfig): ListingBook — A player-driven listing marketplace: post/cancel/buy against a shared book with a house cut on every sale, an expiry sweep that pulls unsold goods out of circulation, and a per-seller collection box holding sale proceeds and returned items until claimed. Buyer/seller wallet and inventory movement is the caller's job (mirrors `game/trade`'s split) — this primitive owns only the listing lifecycle and the escrowed collection-box bookkeeping behind it.
 
+## @jgengine/core/economy/loanBook
+
+- `LoanAdvanceResult` (interface): interface LoanAdvanceResult — What one {@link LoanBook.advance} settled, and what it could not.
+- `LoanBook` (interface): interface LoanBook — The loans a business owes: schedules, interest, arrears and default, posted to a ledger.
+- `LoanBookOptions` (interface): interface LoanBookOptions — Options for {@link createLoanBook}.
+- `LoanBookState` (interface): interface LoanBookState — Serializable loan-book state.
+- `LoanBookStats` (interface): interface LoanBookStats — Counters of a loan book, for a probe or a summary line.
+- `LoanPayment` (interface): interface LoanPayment — One scheduled repayment, in integer minor units.
+- `LoanRecord` (interface): interface LoanRecord — One live loan: its plan plus how far it has been paid.
+- `LoanRepayment` (interface): interface LoanRepayment — Outcome of an early repayment.
+- `LoanSchedule` (interface): interface LoanSchedule — A full repayment plan: every payment, its interest/principal split and the running balance.
+- `LoanState` (interface): interface LoanState — Saved progress of one loan; the schedule is rebuilt from its terms on restore.
+- `LoanTerms` (interface): interface LoanTerms — Money in this module is an integer count of **minor units** — cents when the currency has two decimals, whole coins when it has none. Principal, interest, payments and balances are safe integers, so a schedule adds up exactly.
+- `buildLoanSchedule` (function): function buildLoanSchedule(terms: LoanTerms): LoanSchedule — Build a loan's repayment schedule: one entry per period with its due time, interest/principal split and the balance left, in integer minor units. An amortized loan levels the payment over the outstanding balance (`P·i / (1 − (1+i)^−n)`); a flat loan charges interest on the original principal. Either way the final payment absorbs the rounding, so the principal parts sum to the principal exactly and the balance ends at zero. Deterministic and pure.
+- `createLoanBook` (function): function createLoanBook(options: LoanBookOptions): LoanBook — The loans a business owes, over a {@link TransactionLedger}: each draw posts the principal to the borrower's account, each settled payment posts its interest (`"loan-interest"`) and principal (`"loan-principal"`) as separate reason-tagged entries, and an early repayment posts `"loan-repayment"`. A payment that comes due with no funds is left in arrears and counted once per advance; after `maxMissed` the loan is defaulted and stops being advanced. State is plain data — `snapshot()` stores terms and progress, and the schedule is rebuilt from the terms.
+
+## @jgengine/core/economy/market
+
+- `Market` (interface): interface Market — A live market: prices from supply and demand over finite stock, with serializable state.
+- `MarketConfig` (interface): interface MarketConfig — Options for {@link createMarket}: the goods and the price/demand policy they share.
+- `MarketGoodDef` (interface): interface MarketGoodDef — Money in this module is an integer count of **minor units** — cents when the currency has two decimals, whole coins when it has none. Every price, cost and total is a safe integer, so a simulation never accumulates float drift; the caller converts at the display boundary.
+- `MarketGoodState` (interface): interface MarketGoodState — The mutable half of a good: what a save stores, with the definition kept as authored data.
+- `MarketPriceInput` (interface): interface MarketPriceInput — Everything a price curve reads: the good's resolved policy plus its live stock and demand.
+- `MarketQuote` (interface): interface MarketQuote — A non-mutating read of what a sale would cost and how it would move the price.
+- `MarketSale` (interface): interface MarketSale — A served sale: what the buyer paid per unit and in total, in minor units.
+- `MarketSaleRejection` (interface): interface MarketSaleRejection — Why a sale could not be served.
+- `MarketSaleResult` (type): type MarketSaleResult = MarketSale | MarketSaleRejection — A sale outcome: the price the buyers paid, or why it could not be served.
+- `MarketSnapshot` (interface): interface MarketSnapshot — Serializable market state: the mutable half of every good plus the running counters.
+- `MarketStats` (interface): interface MarketStats — Counters and stocks of a market, for a probe or a summary line.
+- `createMarket` (function): function createMarket(config: MarketConfig = {}): Market — A market whose price comes from supply and demand over finite stock, as plain serializable state.
+
 ## @jgengine/core/economy/priceHistory
 
 - `PriceHistory` (interface): interface PriceHistory — A bounded rolling record of completed sales per item. See {@link createPriceHistory}.
@@ -260,6 +291,22 @@
 - `TechRejection` (type): type TechRejection = | { reason: "unknown-node" } | { reason: "already-unlocked" } | { reason: "missing-prerequisites"; missing: readonly string[] } — ⚠ undocumented
 - `TechState` (type): type TechState = UnlockState — ⚠ undocumented
 - `TechTree` (interface): interface TechTree { has(userId: string, id: string): boolean; canUnlock(userId: string, id: string): TechCheck; unlock(userId: string, id: string): TechCheck; available(userId: string): TechNodeDef[]; recipes(userId: string): string[]; list(userId: string): … — ⚠ undocumented
+
+## @jgengine/core/economy/transactionLedger
+
+- `ChargeCursor` (interface): interface ChargeCursor — Mutable per-charge progress, kept apart from the {@link RecurringCharge} definition.
+- `LedgerAdvanceResult` (interface): interface LedgerAdvanceResult — What one {@link TransactionLedger.chargeDue} settled, and what it could not.
+- `LedgerEntry` (interface): interface LedgerEntry — Money in this module is an integer count of **minor units** — cents when the currency has two decimals, whole coins when it has none. Every posted amount and every balance is a safe integer, so a long simulation never accumulates float drift. `currency` is a free string the game owns.
+- `LedgerEntryFilter` (interface): interface LedgerEntryFilter — A filter over the journal.
+- `LedgerPostInput` (interface): interface LedgerPostInput — A post to attempt.
+- `LedgerPostResult` (type): type LedgerPostResult = | { ok: true; entry: LedgerEntry } | { ok: false; reason: "unknown-account" | "invalid-amount" | "invalid-reason" | "insufficient-funds" } — Outcome of {@link TransactionLedger.post}. A rejection leaves every balance untouched.
+- `LedgerState` (interface): interface LedgerState — Fully serializable ledger state: clock, balances, journal, totals, charges and cursors.
+- `LedgerStats` (interface): interface LedgerStats — Counters of a ledger, for a probe or a summary line.
+- `LedgerTotals` (interface): interface LedgerTotals — What one reason code did to the books, kept across entry trimming.
+- `RecurringCharge` (interface): interface RecurringCharge — A recurring charge — upkeep, rent, a subscription — settled by {@link TransactionLedger.chargeDue}.
+- `TransactionLedger` (interface): interface TransactionLedger — The books: balances with a reason-tagged journal, and recurring charges on a cadence.
+- `TransactionLedgerOptions` (interface): interface TransactionLedgerOptions — Options for {@link createTransactionLedger}.
+- `createTransactionLedger` (function): function createTransactionLedger(options: TransactionLedgerOptions = {}): TransactionLedger — The books a business keeps: per-account, per-currency balances in integer minor units with a journal that records every movement, the balance it produced and the reason it happened. {@link TransactionLedger.post} is the one money path — sales, purchases, upkeep and loan payments all go through it, so nothing moves without a reason on the record. {@link TransactionLedger.chargeDue} settles recurring charges (upkeep, rent) on their own cadence, bounded per advance; a cycle with no funds is counted as missed instead of overdrawing. Journal memory is bounded by `maxEntries`, with `totals()` keeping the per-reason summary beyond it.
 
 ## @jgengine/core/economy/unlockPoints
 
@@ -1143,6 +1190,7 @@
 - `CatchUpPolicy` (type): type CatchUpPolicy = "each" | "sum" | "skip" — How cycles that came due between two {@link advanceLedger} calls are settled: - `"each"` — replay every missed cycle as its own transaction (bounded by the limits below); - `"sum"` — collapse the missed cycles into one transaction of the combined amount; - `"skip"` — apply only the most recent cycle and discard the rest (idle income that does not bank).
 - `Cell` (type): type Cell = readonly [number, number] — ⚠ undocumented · used by `canPlace` (@jgengine/core/inventory/shapedGrid): Check bounds and overlap for a discrete footprint, optionally ignoring the item being moved.
 - `CellGrid` (interface): interface CellGrid<T> — A fixed-size 2D board of cells, row-major from the top-left; `null` is an empty cell. Plain data, so it serializes and restores as-is.
+- `ChargeCursor` (interface): interface ChargeCursor — Mutable per-charge progress, kept apart from the {@link RecurringCharge} definition.
 - `ChargeOptions` (interface): interface ChargeOptions — Options for {@link charge}/{@link chargeAll}: opt one call into overdraft debt via `overdraft`.
 - `ChargeResult` (type): type ChargeResult = { status: "ok"; state: WalletState } | { status: "rejected"; reason: "insufficient-funds" } — Outcome of a {@link charge}/{@link chargeAll} attempt: `status: "ok"` carries the debited {@link WalletState}, while `status: "rejected"` leaves the wallet untouched and reports why (currently only `"insufficient-funds"`). Discriminate on `status` before reading `state`.
 - `ChaseCameraConfig` (interface): interface ChaseCameraConfig — Speed-reactive vehicle chase rig (#27) — speed→FOV, spring arm, procedural shake, interior views.
@@ -1279,8 +1327,16 @@
 - `LayerSelection` (type): type LayerSelection = readonly string[] — A serializable, ordered reference to layers by stable id — what a save file or session setup stores.
 - `LeaderboardRow` (interface): interface LeaderboardRow { stat: string; scope: LeaderboardScope; serverId?: string; userId: string; value: number } — ⚠ undocumented · used by `createLeaderboard`: Ranked score tracking across global, server, and per-profile scopes, with top-N queries and per-profile lookups.
 - `LeaderboardScope` (type): type LeaderboardScope = "global" | "server" | "profile" — ⚠ undocumented
+- `LedgerAdvanceResult` (interface): interface LedgerAdvanceResult — What one {@link TransactionLedger.chargeDue} settled, and what it could not.
+- `LedgerEntry` (interface): interface LedgerEntry — Money in this module is an integer count of **minor units** — cents when the currency has two decimals, whole coins when it has none. Every posted amount and every balance is a safe integer, so a long simulation never accumulates float drift. `currency` is a free string the game owns.
+- `LedgerEntryFilter` (interface): interface LedgerEntryFilter — A filter over the journal.
 - `LedgerEvent` (interface): interface LedgerEvent — Lifecycle signal emitted by {@link advanceLedger}.
 - `LedgerEventKind` (type): type LedgerEventKind = "started" | "fired" | "skipped" | "depleted" | "ended" — The kinds of lifecycle signal {@link advanceLedger} can emit for a rule.
+- `LedgerPostInput` (interface): interface LedgerPostInput — A post to attempt.
+- `LedgerPostResult` (type): type LedgerPostResult = | { ok: true; entry: LedgerEntry } | { ok: false; reason: "unknown-account" | "invalid-amount" | "invalid-reason" | "insufficient-funds" } — Outcome of {@link TransactionLedger.post}. A rejection leaves every balance untouched.
+- `LedgerState` (interface): interface LedgerState — Fully serializable ledger state: clock, balances, journal, totals, charges and cursors.
+- `LedgerStats` (interface): interface LedgerStats — Counters of a ledger, for a probe or a summary line.
+- `LedgerTotals` (interface): interface LedgerTotals — What one reason code did to the books, kept across entry trimming.
 - `LevelProgress` (interface): interface LevelProgress — Result of resolving a level+xp pair: the settled `level`, leftover `xp` into the current level, the `xpMax` threshold for the next level, and how many `levelsGained` this resolution produced.
 - `LevelSequence` (interface): interface LevelSequence<TLevelConfig> { current(): CurrentLevel<TLevelConfig> | null; status(): LevelSequenceStatus; start(): void; clear(stars?: LevelStars): void; fail(): "retry" | "failed"; retry(): boolean; advance(): boolean; select(level: string): boolean; isUnlocked(leve… — ⚠ undocumented · used by `createLevelSequence`: A pure, deterministic level campaign: an ordered list of levels, each with its own opaque config, played through a `start` → (`clear` → `adv…
 - `LevelingConfig` (interface): interface LevelingConfig — Configuration for a {@link leveling} track: the `xpForLevel` {@link Curve}, the `maxLevel` cap, and optional `startLevel`, stat ids (`xpStat`/`levelStat`, default `"xp"`/`"level"`), and `thresholdMode` — `"perLevel"` (each level costs its own curve value) or `"cumulative"` (curve gives the total xp to reach a level).
@@ -1289,6 +1345,17 @@
 - `LightingConfig` (interface): interface LightingConfig — Declarative lighting replacing the shell's hardcoded ambient/directional default (#207.5); mounts regardless of world kind, only when supplied.
 - `Listing` (interface): interface Listing — One active post in a {@link ListingBook}: an item stack a seller offered at a fixed price until it expires.
 - `LoadoutDef` (interface): interface LoadoutDef { inventories?: Record<string, LoadoutItemEntry[]>; stats?: Record<string, {current: number; max?: number; min?: number}>; economy?: Record<string, number>; unlocks?: string[] } — ⚠ undocumented
+- `LoanAdvanceResult` (interface): interface LoanAdvanceResult — What one {@link LoanBook.advance} settled, and what it could not.
+- `LoanBook` (interface): interface LoanBook — The loans a business owes: schedules, interest, arrears and default, posted to a ledger.
+- `LoanBookOptions` (interface): interface LoanBookOptions — Options for {@link createLoanBook}.
+- `LoanBookState` (interface): interface LoanBookState — Serializable loan-book state.
+- `LoanBookStats` (interface): interface LoanBookStats — Counters of a loan book, for a probe or a summary line.
+- `LoanPayment` (interface): interface LoanPayment — One scheduled repayment, in integer minor units.
+- `LoanRecord` (interface): interface LoanRecord — One live loan: its plan plus how far it has been paid.
+- `LoanRepayment` (interface): interface LoanRepayment — Outcome of an early repayment.
+- `LoanSchedule` (interface): interface LoanSchedule — A full repayment plan: every payment, its interest/principal split and the running balance.
+- `LoanState` (interface): interface LoanState — Saved progress of one loan; the schedule is rebuilt from its terms on restore.
+- `LoanTerms` (interface): interface LoanTerms — Money in this module is an integer count of **minor units** — cents when the currency has two decimals, whole coins when it has none. Principal, interest, payments and balances are safe integers, so a schedule adds up exactly.
 - `LockOnCameraConfig` (interface): interface LockOnCameraConfig — Lock-on / strafe rig (#26) — yaw bound to player→target, move axis becomes strafe.
 - `LootBaseDef` (interface): interface LootBaseDef extends ItemBaseDef — A base family (frame, housing, chassis — caller nouns) with its slots, stats and affix pools.
 - `LootCatalog` (interface): interface LootCatalog — Everything a roll reads: bases, parts, affixes, rarity odds, makers and the level curve.
@@ -1325,6 +1392,17 @@
 - `MAX_LOOT_AFFIXES` (const): const MAX_LOOT_AFFIXES: 8 — Cap on affixes one item may roll, so a bad catalog cannot make a drop cost unbounded work.
 - `MISSION_COUNTER_KINDS` (const): const MISSION_COUNTER_KINDS: readonly MissionObjectiveKind[] — Objective kinds that are satisfied only by a counter — a mission made of these alone is a lint error.
 - `MISSION_TRIGGER_ACTIONS` (const): const MISSION_TRIGGER_ACTIONS: readonly TriggerActionDefinition[] — The mission actions a game registers so the editor inspector can assign them to a marker or volume. Params land flat on the object's `meta` beside `on`/`action`, like any authored trigger.
+- `Market` (interface): interface Market — A live market: prices from supply and demand over finite stock, with serializable state.
+- `MarketConfig` (interface): interface MarketConfig — Options for {@link createMarket}: the goods and the price/demand policy they share.
+- `MarketGoodDef` (interface): interface MarketGoodDef — Money in this module is an integer count of **minor units** — cents when the currency has two decimals, whole coins when it has none. Every price, cost and total is a safe integer, so a simulation never accumulates float drift; the caller converts at the display boundary.
+- `MarketGoodState` (interface): interface MarketGoodState — The mutable half of a good: what a save stores, with the definition kept as authored data.
+- `MarketPriceInput` (interface): interface MarketPriceInput — Everything a price curve reads: the good's resolved policy plus its live stock and demand.
+- `MarketQuote` (interface): interface MarketQuote — A non-mutating read of what a sale would cost and how it would move the price.
+- `MarketSale` (interface): interface MarketSale — A served sale: what the buyer paid per unit and in total, in minor units.
+- `MarketSaleRejection` (interface): interface MarketSaleRejection — Why a sale could not be served.
+- `MarketSaleResult` (type): type MarketSaleResult = MarketSale | MarketSaleRejection — A sale outcome: the price the buyers paid, or why it could not be served.
+- `MarketSnapshot` (interface): interface MarketSnapshot — Serializable market state: the mutable half of every good plus the running counters.
+- `MarketStats` (interface): interface MarketStats — Counters and stocks of a market, for a probe or a summary line.
 - `MissionActorFact` (interface): interface MissionActorFact — A live actor the machine tracks: whether it is alive and, when needed, where it is.
 - `MissionBranch` (interface): interface MissionBranch — One outgoing edge of an objective: the first branch whose `when` matches wins over `next`.
 - `MissionDef` (interface): interface MissionDef — A whole mission: the objective graph plus its fail states and rewards.
@@ -1435,6 +1513,7 @@
 - `RebindSessionSnapshot` (interface): interface RebindSessionSnapshot — Serializable session state for save/restore.
 - `RecipeDef` (interface): interface RecipeDef { id: string; inputs: readonly RecipeItem[]; outputs: readonly RecipeItem[]; seconds?: number; station?: string; stationRange?: number; requires?: readonly string[]; category?: string } — ⚠ undocumented · used by `validateRecipeCatalog` (@jgengine/core/crafting/recipeCatalog): Validate native recipes before registration: ids, counts, timing and caller-catalog references.
 - `RecipeItem` (interface): interface RecipeItem { itemId: string; count: number } — ⚠ undocumented
+- `RecurringCharge` (interface): interface RecurringCharge — A recurring charge — upkeep, rent, a subscription — settled by {@link TransactionLedger.chargeDue}.
 - `RequireRule` (interface): interface RequireRule — A rule that requires a second condition to hold whenever the first matches — e.g. "a scoped rifle requires a stock". Checked at completeness time, not during incremental placement, because the `then` side may be satisfied by a part chosen later in a generation pass.
 - `ResourceCost` (type): type ResourceCost = Readonly<Record<string, number>> — Resource costs keyed by currency/resource id.
 - `ResourceLedger` (interface): interface ResourceLedger — Fully serializable scheduled-transaction state: clock, balances, rule definitions, and cursors.
@@ -1576,6 +1655,8 @@
 - `TrackedObjectiveView` (interface): interface TrackedObjectiveView — One objective as a tracker/HUD reads it — label + progress toward its count.
 - `TrackedQuestView` (interface): interface TrackedQuestView — A quest as a tracker/HUD reads it — title, status, and per-objective progress.
 - `TrainableUnitDef` (interface): interface TrainableUnitDef — A unit the producer can train.
+- `TransactionLedger` (interface): interface TransactionLedger — The books: balances with a reason-tagged journal, and recurring charges on a cadence.
+- `TransactionLedgerOptions` (interface): interface TransactionLedgerOptions — Options for {@link createTransactionLedger}.
 - `TransformApi` (interface): interface TransformApi — Mutation surface a {@link GenTransform} uses to derive numeric fields after choices resolve. Every `set`/`add`/`mul` is captured as a {@link GenFieldRecord}, and `rng` is the same injected stream the choices drew from, so rolled derivations stay deterministic and explainable.
 - `TriggeredRule` (interface): interface TriggeredRule — A declarative subscription from an event to an effect. Everything here is serializable content — the runtime reads it, it never embeds behavior. `effect` names an effect the game resolves; core only routes and gates.
 - `TriggeredRuleEngine` (interface): interface TriggeredRuleEngine — A running set of triggered rules with gating, timed lifetimes, stacking, cleanup, and save/load.
@@ -1636,6 +1717,7 @@
 - `assertXpCurve` (function): function assertXpCurve(def: XpCurveDef): void — Check curve data before use; throws `RangeError` naming the offending field.
 - `balance` (function): function balance(state: WalletState, currency: string | CurrencyDefinition): number — ⚠ undocumented
 - `balanceOf` (function): function balanceOf(ledger: ResourceLedger, account: string, currency: string): number — Read a single balance; unknown account/currency pairs read as `0`.
+- `buildLoanSchedule` (function): function buildLoanSchedule(terms: LoanTerms): LoanSchedule — Build a loan's repayment schedule: one entry per period with its due time, interest/principal split and the balance left, in integer minor units. An amortized loan levels the payment over the outstanding balance (`P·i / (1 − (1+i)^−n)`); a flat loan charges interest on the original principal. Either way the final payment absorbs the rounding, so the principal parts sum to the principal exactly and the balance ends at zero. Deterministic and pure.
 - `canAfford` (function): function canAfford(state: WalletState, costs: Readonly<Record<string, number>>): boolean — True when every currency in `costs` has at least that much balance (a pure, non-mutating check).
 - `canCraft` (function): function canCraft(state: InventoryState, layout: InventoryLayout, traits: ItemTraits, recipe: RecipeDef, context: CraftContext = {}): CraftCheck — ⚠ undocumented
 - `cancelJob` (function): function cancelJob<TSpec, TReserve, TOutput>(state: WorkQueueState<TSpec, TReserve>, config: WorkQueueConfig<TSpec, TReserve, TOutput>, id: JobId): CancelResult<TSpec, TReserve> — Cancel a job and compute its refund. Removes the job from the queue and returns a refund payload (full reservation by default, or `config.refund` applied to the job's progress for partial/no refund). Applying the refund is the caller's job.
@@ -1687,9 +1769,11 @@
 - `createLevelSequence` (function): function createLevelSequence<TLevelConfig>(config: LevelSequenceConfig<TLevelConfig>): LevelSequence<TLevelConfig> — A pure, deterministic level campaign: an ordered list of levels, each with its own opaque config, played through a `start` → (`clear` → `advance`)* → `complete` happy path, with `fail`/`retry` handling per-level attempts. Mirrors the reducer style of `game/race.ts` and `ai/spawnDirector.ts` — no I/O, no timers, just state transitions driven by the caller.
 - `createListingBook` (function): function createListingBook(config: ListingBookConfig): ListingBook — A player-driven listing marketplace: post/cancel/buy against a shared book with a house cut on every sale, an expiry sweep that pulls unsold goods out of circulation, and a per-seller collection box holding sale proceeds and returned items until claimed. Buyer/seller wallet and inventory movement is the caller's job (mirrors `game/trade`'s split) — this primitive owns only the listing lifecycle and the escrowed collection-box bookkeeping behind it.
 - `createLoadouts` (function): function createLoadouts(deps: LoadoutDeps): Loadouts — Save, name, and swap equipment loadouts.
+- `createLoanBook` (function): function createLoanBook(options: LoanBookOptions): LoanBook — The loans a business owes, over a {@link TransactionLedger}: each draw posts the principal to the borrower's account, each settled payment posts its interest (`"loan-interest"`) and principal (`"loan-principal"`) as separate reason-tagged entries, and an early repayment posts `"loan-repayment"`. A payment that comes due with no funds is left in arrears and counted once per advance; after `maxMissed` the loan is defaulted and stops being advanced. State is plain data — `snapshot()` stores terms and progress, and the schedule is rebuilt from the terms.
 - `createLootPipeline` (function): function createLootPipeline<TCtx = unknown>(def: LootPipelineDef<TCtx>, deps: LootPipelineDeps = {}): LootPipeline<TCtx> — Build a composable loot-resolution pipeline: ordered source pools, context gates, fallbacks when a pool yields nothing, roll modifiers (luck, quantity, difficulty) applied as registered policies, and full provenance for every drop (stage, table, entry, original vs effective weights, modifier ids, seed). Rolling consumes the injected RNG in the same order as the base loot table, so a seeded resolution is deterministic and server-authoritatively replayable. Genre concepts (world, dedicated, boss, luck, rarity, pity) stay out of core and ship as stage/modifier compositions.
 - `createLootRegistry` (function): function createLootRegistry(options: LootRegistryOptions = {}): LootRegistry — Register named loot tables and roll weighted randomized drops from them.
 - `createLootRoller` (function): function createLootRoller(catalog: LootCatalog, options: LootRollerOptions = {}): LootRoller — Wrap a catalog in a roll counter: same results as {@link rollLoot}, plus counts by rarity for a debug overlay, snapshot/restore of those counts, and an optional devtools probe.
+- `createMarket` (function): function createMarket(config: MarketConfig = {}): Market — A market whose price comes from supply and demand over finite stock, as plain serializable state.
 - `createMissionRuntime` (function): function createMissionRuntime(config: MissionRuntimeConfig): MissionRuntime — Run missions as a state machine. One mission is active at a time; `tick` advances it against the world the caller supplies, moving through objectives on completion, branching on facts, and landing in a named fail state on a fail condition, an expiry or a `minSurvivors` breach. Completion pays rewards through {@link applyMissionRewards} appliers the caller wires, and a mission's `next` chains the follow-up. Escort, chase and defend are compositions of the same objective kinds (`compositions.ts`), never three bespoke systems.
 - `createMissionTriggerBridge` (function): function createMissionTriggerBridge(options: { runtime: MissionRuntime; document: SceneDocumentLike; triggers?: readonly AuthoredTrigger[]; }): MissionTriggerBridge — Wire authored markers to a {@link MissionRuntime}: an actor entering a `mission_start` marker starts the named mission, `mission_objective` completes the named objective, and `mission_fail` lands the named fail state. Pure membership math over the document, exactly like any other authored trigger.
 - `createModularItem` (function): function createModularItem(def: ModularItemDef, initial: readonly InstalledPart[] = []): ModularItem — ⚠ undocumented
@@ -1725,6 +1809,7 @@
 - `createTalentTree` (function): function createTalentTree<TStat extends string = string>(config: TalentTreeConfig<TStat>): TalentTree<TStat> — ⚠ undocumented
 - `createToastQueue` (function): function createToastQueue<T = string>(options: ToastQueueOptions = {}): ToastQueue<T> — A capped, self-expiring toast queue — the append-with-limit plus TTL-prune list every HUD hand-rolled on top of a plain array. Feed it game time: `push` raises a message, `prune(now)` drops expired ones, `list()` is what the HUD renders. Unlike the append-only event feed, toasts evict themselves.
 - `createTouchGestureTracker` (function): function createTouchGestureTracker(tuning: TouchGestureTuning): TouchGestureTracker — ⚠ undocumented
+- `createTransactionLedger` (function): function createTransactionLedger(options: TransactionLedgerOptions = {}): TransactionLedger — The books a business keeps: per-account, per-currency balances in integer minor units with a journal that records every movement, the balance it produced and the reason it happened. {@link TransactionLedger.post} is the one money path — sales, purchases, upkeep and loan payments all go through it, so nothing moves without a reason on the record. {@link TransactionLedger.chargeDue} settles recurring charges (upkeep, rent) on their own cadence, bounded per advance; a cycle with no funds is counted as missed instead of overdrawing. Journal memory is bounded by `maxEntries`, with `totals()` keeping the per-reason summary beyond it.
 - `createTriggeredRuleEngine` (function): function createTriggeredRuleEngine(rules: readonly TriggeredRule[] = []): TriggeredRuleEngine — Create an empty triggered-rule engine. Rules are added as data; dispatching an event returns the firings the caller applies to its own effect system. Time is caller-supplied (`now` in ms), so the engine is deterministic and drives equally from a fixed-step loop or a save-restored timeline.
 - `createTurnLoop` (function): function createTurnLoop<TAction = unknown>(config: TurnLoopConfig): TurnLoop<TAction> — ⚠ undocumented
 - `createUnlockCatalog` (function): function createUnlockCatalog(defs: readonly UnlockDef[] = []): UnlockCatalog — A catalog of unlockable content gated behind conditions the player earns, tracking what is unlocked.

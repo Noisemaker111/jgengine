@@ -165,6 +165,28 @@ A character kit-bashed from primitives/`ModelPart`s (no skeleton, no clips) anim
 - `ctx.game.chat.send(userId, text)` targets global chat; `recent({ limit })` returns at most 100 messages. The default is 240 characters and one message per author per channel every two seconds. Rejected messages need visible UI feedback.
 - Hosts reuse `validateChatMessage` and `decideRateWindow`, storing the rate window transactionally with each accepted operation. Preserve chat rate windows when saving/restoring chat state.
 
+Price goods with `createMarket` (`economy/market`): `price = clamp(basePrice × (coverPeriods × demand / max(stock, 1))^elasticity)`
+between `basePrice × minFactor` and `basePrice × maxFactor`, over finite integer
+stock. `sell` refuses a sale it cannot cover and names the shortfall, `restock`
+lowers the price, `recordDemand(unitsSold, unitsUnmet)` moves demand from what
+buyers actually took, and `priceCurve`/`retune` change the policy. Amounts are
+integer minor units, so a long simulation never drifts.
+
+Keep the books with `createTransactionLedger` (`economy/transactionLedger`):
+per-account balances in integer minor units plus a journal recording every
+movement, the balance it produced and a caller-owned `reason`. `post` is the one
+money path, and `totals()` keeps a per-reason count and net past the `maxEntries`
+journal cap. Register upkeep, rent or a subscription with `addCharge` and settle
+it on its cadence with `chargeDue` — bounded per charge and per advance, and a
+cycle with no funds is counted as missed rather than overdrawing.
+
+Lend and borrow with `buildLoanSchedule` / `createLoanBook` (`economy/loanBook`):
+a schedule in integer minor units (`"amortized"` or `"flat"`), the principal
+posted on the draw, interest and principal posted as separate reason-tagged
+entries, and arrears that count once per advance until the loan defaults at
+`maxMissed`. `repay` pays principal early; a save stores terms and progress and
+the schedule is rebuilt on restore.
+
 For timed away missions, compose the pure transitions in `work/expedition` with
 your existing `defineStore` and clock. The [expedition recipe](recipes/expeditions.md)
 keeps bounded offline catch-up, finite supplies, return/death, capacity and RNG

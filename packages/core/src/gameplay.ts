@@ -33,6 +33,35 @@ export {
 } from "./crafting/recipe";
 export { createAuctionBook, type Auction, type AuctionSettlement } from "./economy/auctionBook";
 export { createListingBook, type Listing } from "./economy/listingBook";
+export {
+  buildLoanSchedule,
+  createLoanBook,
+  type LoanAdvanceResult,
+  type LoanBook,
+  type LoanBookOptions,
+  type LoanBookState,
+  type LoanBookStats,
+  type LoanPayment,
+  type LoanRecord,
+  type LoanRepayment,
+  type LoanSchedule,
+  type LoanState,
+  type LoanTerms,
+} from "./economy/loanBook";
+export {
+  createMarket,
+  type Market,
+  type MarketConfig,
+  type MarketGoodDef,
+  type MarketGoodState,
+  type MarketPriceInput,
+  type MarketQuote,
+  type MarketSale,
+  type MarketSaleRejection,
+  type MarketSaleResult,
+  type MarketSnapshot,
+  type MarketStats,
+} from "./economy/market";
 export { createPriceHistory, type PriceStats, type SaleRecord } from "./economy/priceHistory";
 export {
   addScheduledRule,
@@ -78,6 +107,21 @@ export {
   type ShopStockSnapshot,
 } from "./economy/shopStock";
 export { type TechNodeDef } from "./economy/techTree";
+export {
+  createTransactionLedger,
+  type ChargeCursor,
+  type LedgerAdvanceResult,
+  type LedgerEntry,
+  type LedgerEntryFilter,
+  type LedgerPostInput,
+  type LedgerPostResult,
+  type LedgerState,
+  type LedgerStats,
+  type LedgerTotals,
+  type RecurringCharge,
+  type TransactionLedger,
+  type TransactionLedgerOptions,
+} from "./economy/transactionLedger";
 export {
   balance,
   canAfford,
