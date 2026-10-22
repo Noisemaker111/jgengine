@@ -549,13 +549,25 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `sweepMovingSphere` (function) · `import { sweepMovingSphere } from "@jgengine/core/physics/ballisticSweep"`
 
+## nav-crowd — move many agents across an editor-baked nav mesh with avoidance
+
+- `createNavCrowd` (function) · `import { createNavCrowd } from "@jgengine/core/world"`
+
 ## nav-from-solids — block world solids on a nav grid
 
 - `populateNavGridFromSolids` (function) · `import { populateNavGridFromSolids } from "@jgengine/core/nav/navFromEnvironment"`
 
+## nav-runtime — route agents on an editor-baked nav mesh with authored links and re-bakes that keep polygon identity
+
+- `createNavRuntime` (function) · `import { createNavRuntime } from "@jgengine/core/world"`
+
 ## navmesh-bake — voxelize scene triangles into an agent-sized polygon nav mesh
 
 - `bakeNavMesh` (function) · `import { bakeNavMesh } from "@jgengine/navbake"`
+
+## navmesh-from-scene — read the editor's baked nav mesh off a scene document
+
+- `navMeshFromBake` (function) · `import { navMeshFromBake } from "@jgengine/core/world"`
 
 ## navmesh-query — route, snap, and raycast on a polygon navmesh with retunable area costs and a bounded search
 
@@ -706,6 +718,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `controlGroupKey` (function) · `import { controlGroupKey } from "@jgengine/core/world"`
 - `resolveControlGroupIntent` (function) · `import { resolveControlGroupIntent } from "@jgengine/core/world"`
+
+## rvo-avoidance — reciprocal collision avoidance between many steering agents
+
+- `createRvoCrowd` (function) · `import { createRvoCrowd } from "@jgengine/core/world"`
 
 ## scatter-coverage — shared density/budget semantics for scatterable kinds
 
