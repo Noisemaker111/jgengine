@@ -216,6 +216,17 @@ export {
   type TimedFeedEntry,
 } from "./game/feed";
 export { gamePhase, setGamePhase, type GamePhase } from "./game/gamePhase";
+export {
+  GAME_SAVE_VERSION,
+  createGameSave,
+  gameSaveDigest,
+  type GameSave,
+  type GameSaveConfig,
+  type GameSaveDocument,
+  type GameSaveRng,
+  type GameSaveRngState,
+  type GameSaveSystem,
+} from "./game/gameSave";
 export { createKeyValueStore, type KeyValueStorage } from "./game/keyValueStore";
 export { createLeaderboard, type LeaderboardRow, type LeaderboardScope } from "./game/leaderboard";
 export {
@@ -372,9 +383,11 @@ export {
   localSaveBackend,
   memorySaveBackend,
   remoteSaveBackend,
+  type SaveAutoConfig,
   type SaveBackend,
   type SaveStatus,
   type SaveStore,
+  type SaveTimers,
 } from "./game/saveStore";
 export {
   createSocial,

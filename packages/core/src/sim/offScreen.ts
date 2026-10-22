@@ -130,7 +130,8 @@ export interface OffScreenSnapshot {
     travelling: boolean;
     pinned: boolean;
     updatedAt: number;
-    staleAt: number;
+    /** Next cheap-state refresh; `null` for a resident that never goes stale (no routine). */
+    staleAt: number | null;
     needs: Record<string, number>;
   }[];
 }
@@ -566,7 +567,7 @@ export function createOffScreenWorld(options: OffScreenOptions): OffScreenWorld 
           travelling: resident.travelling,
           pinned: resident.pinned,
           updatedAt: resident.updatedAt,
-          staleAt: resident.staleAt,
+          staleAt: Number.isFinite(resident.staleAt) ? resident.staleAt : null,
           needs: { ...(live ?? resident.needs) },
         };
       });
@@ -602,7 +603,7 @@ export function createOffScreenWorld(options: OffScreenOptions): OffScreenWorld 
           travelling: saved.travelling,
           pinned: saved.pinned,
           updatedAt: saved.updatedAt,
-          staleAt: saved.staleAt,
+          staleAt: saved.staleAt === null ? Infinity : saved.staleAt,
           needs: { ...saved.needs },
           distance: Infinity,
         };
