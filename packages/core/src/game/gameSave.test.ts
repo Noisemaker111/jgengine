@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
+import { devtools } from "../devtools/devtools";
 import { seededRng } from "../random/rng";
 import { createGameSave, GAME_SAVE_VERSION, type GameSaveDocument, type GameSaveSystem } from "./gameSave";
 import { memorySaveBackend, type SaveBackend, type SaveTimers } from "./saveStore";
@@ -103,6 +104,22 @@ describe("createGameSave — document and metadata", () => {
     expect(() =>
       createGameSave({ backend: memorySaveBackend(), game: "demo", systems: [first.system, second.system] }),
     ).toThrow(/already registered/);
+  });
+
+  test("a devtools probe reports the slot, status and system count, and dispose drops it", () => {
+    const counter = counterSystem("score");
+    const save = createGameSave({
+      backend: memorySaveBackend(),
+      game: "demo",
+      systems: [counter.system],
+      devtoolsName: "game-save-test",
+    });
+    const line = String(devtools.snapshot().probes["game-save-test"]);
+    expect(line).toContain("default");
+    expect(line).toContain("idle");
+    expect(line).toContain("1 systems");
+    save.dispose();
+    expect(devtools.snapshot().probes["game-save-test"]).toBeUndefined();
   });
 });
 
