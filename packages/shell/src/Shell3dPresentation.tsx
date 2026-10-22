@@ -52,7 +52,7 @@ import { GameProvider } from "@jgengine/react/provider";
 import { SettingsProvider, type SettingsActionView } from "@jgengine/react/settings";
 
 import { resolveWorldSky } from "./worldSky";
-import { resolveRuntimeCameraConfig } from "./camera/rigResolve";
+import { resolveCaptureCameraConfig } from "./camera/rigResolve";
 import { pointerAimFor, pointerContextMenu } from "./shellPointer";
 import { shellPointerInput } from "./shellPointerInput";
 import { AudioListener, EntityAudioEmitters, ObjectAudioEmitters } from "./audio/AudioComponents";
@@ -236,7 +236,7 @@ export function Shell3dPresentation({
     playable.camera?.followEntityId !== undefined
       ? playable.camera
       : { ...playable.camera, followEntityId: controlledEntityId };
-  const cameraConfig = resolveRuntimeCameraConfig(configuredCamera, cameraOverride);
+  const cameraConfig = resolveCaptureCameraConfig(configuredCamera, cameraOverride);
   const rigKind = resolveRigKind(cameraConfig);
   const firstPerson = rigKind === "first";
   const showReticle =

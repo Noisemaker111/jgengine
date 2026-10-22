@@ -1,7 +1,8 @@
-import { describe, expect, test } from "bun:test";
+import { afterEach, describe, expect, test } from "bun:test";
 
-import { resolveRigKind, resolveRuntimeCameraConfig, turntableAsObserver } from "./rigResolve";
+import { resolveCaptureCameraConfig, resolveRigKind, resolveRuntimeCameraConfig, turntableAsObserver } from "./rigResolve";
 import { createCameraDirector } from "@jgengine/core/runtime/cameraDirector";
+import { installCaptureCamera } from "@jgengine/core/world/captureCamera";
 import type { GameCameraConfig } from "@jgengine/core/game/cameraConfig";
 
 describe("resolveRigKind", () => {
@@ -52,4 +53,40 @@ test("runtime rig resolution preserves authored camera data/callbacks and null r
     director.setRig(null); expect(resolveRuntimeCameraConfig(configured, director.rig())).toBe(configured);
     expect(resolveRigKind(configured)).toBe(base.rig); expect(configured.chase).toEqual({ height: 3, springDamping: 8 });
   }
+});
+
+describe("resolveCaptureCameraConfig", () => {
+  afterEach(() => installCaptureCamera(null));
+
+  const framed = { kind: "observer" as const, config: { perspective: "third" as const, observer: { bind: { kind: "point" as const, position: { x: 1, y: 2, z: 3 } }, distance: 30, height: 20, orbitSpeed: 0 } } };
+  const chasing: GameCameraConfig = { rig: "chase", chase: { distance: 7.5, height: 3 } };
+
+  test("nothing installed leaves the game's own rig resolution exactly as it was", () => {
+    const director = createCameraDirector();
+    director.setRig("chase", { chase: { distance: 9 } });
+    expect(resolveCaptureCameraConfig(chasing, director.rig())).toEqual(resolveRuntimeCameraConfig(chasing, director.rig()));
+    expect(resolveRigKind(resolveCaptureCameraConfig(chasing, null))).toBe("chase");
+  });
+
+  test("an installed capture camera outranks the game's static config and its runtime rig", () => {
+    installCaptureCamera(framed);
+    const director = createCameraDirector();
+    director.setRig("chase", { chase: { distance: 9 } });
+    const resolved = resolveCaptureCameraConfig(chasing, director.rig());
+    expect(resolveRigKind(resolved)).toBe("observer");
+    expect(resolved?.observer?.distance).toBe(30);
+    expect(resolved?.observer?.bind).toEqual({ kind: "point", position: { x: 1, y: 2, z: 3 } });
+    // A later game-side rig selection still loses: the capture is read after it every frame.
+    director.setRig("orbit", { initialDistance: 5 });
+    expect(resolveRigKind(resolveCaptureCameraConfig(chasing, director.rig()))).toBe("observer");
+  });
+
+  test("clearing the capture camera hands the frame straight back to the game", () => {
+    installCaptureCamera(framed);
+    const director = createCameraDirector();
+    director.setRig("chase", { chase: { distance: 9 } });
+    expect(resolveRigKind(resolveCaptureCameraConfig(chasing, director.rig()))).toBe("observer");
+    installCaptureCamera(null);
+    expect(resolveRigKind(resolveCaptureCameraConfig(chasing, director.rig()))).toBe("chase");
+  });
 });

@@ -585,6 +585,7 @@
     "./world/buildingKit",
     "./world/buildingLots",
     "./world/buildings",
+    "./world/captureCamera",
     "./world/carve",
     "./world/catenary",
     "./world/cellStates",

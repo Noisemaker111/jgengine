@@ -17,7 +17,7 @@ import { GameFirstPersonCamera, type ViewmodelProps } from "./GameFirstPersonCam
 import { GameInspectionCamera } from "./GameInspectionCamera";
 import { GameOrbitCamera } from "./GameOrbitCamera";
 import { resolveDirectedCamera } from "./rigMath";
-import { resolveRigKind, resolveRuntimeCameraConfig, turntableAsObserver } from "./rigResolve";
+import { resolveCaptureCameraConfig, resolveRigKind, turntableAsObserver } from "./rigResolve";
 import { CameraShakeContext, createCameraShakeChannel } from "./shakeChannel";
 
 export { resolveRigKind } from "./rigResolve";
@@ -46,7 +46,7 @@ export function GameCameraRig({
   director,
   viewmodel,
 }: GameCameraRigProps) {
-  config = resolveRuntimeCameraConfig(config, director?.rig());
+  config = resolveCaptureCameraConfig(config, director?.rig());
   const channel = useMemo(
     () => createCameraShakeChannel(config?.shake?.decayPerSecond),
     [config?.shake?.decayPerSecond],

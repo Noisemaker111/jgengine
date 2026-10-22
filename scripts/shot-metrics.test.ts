@@ -8,6 +8,7 @@ import {
   computeShotMetrics,
   deadViewport,
   evaluateThresholds,
+  metricsPathFor,
 } from "./shot-metrics";
 
 const WIDTH = 320;
@@ -162,5 +163,19 @@ describe("viewport scoping", () => {
     const metrics = computeShotMetrics(WIDTH, HEIGHT, noisyBuffer(5), { masks: [HUD] });
     expect(metrics.sampledShare).toBeGreaterThan(0.6);
     expect(metrics.sampledShare).toBeLessThan(0.75);
+  });
+});
+
+describe("metricsPathFor", () => {
+  test("never collides with the shot path, with or without an image extension", () => {
+    expect(metricsPathFor("/shots/hero.png")).toBe("/shots/hero.metrics.json");
+    expect(metricsPathFor("/shots/hero")).toBe("/shots/hero.metrics.json");
+    expect(metricsPathFor("C:\\shots\\hero.PNG")).toBe("C:\\shots\\hero.metrics.json");
+    expect(metricsPathFor("/shots/hero.webp")).toBe("/shots/hero.metrics.json");
+    expect(metricsPathFor("/shots/hero.metrics.json")).toBe("/shots/hero.metrics.json.metrics.json");
+  });
+
+  test("a shot written without an extension keeps its own file", () => {
+    expect(metricsPathFor("aerial-test")).not.toBe("aerial-test");
   });
 });

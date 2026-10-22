@@ -8,6 +8,7 @@ import type { ComponentType } from "react";
 
 import { devtools } from "@jgengine/core/devtools/devtools";
 import { resolveTerrainField } from "@jgengine/core/world/terrain";
+import type { CameraRigConfig } from "@jgengine/core/runtime/cameraDirector";
 import type { GameCameraConfig } from "@jgengine/core/game/playableGame";
 import { applyStoredDevtoolsOverrides } from "@jgengine/shell/devtools/DevtoolsOverlay";
 import type { UiPreviewScenario } from "@jgengine/shell/GameUiPreview";
@@ -16,7 +17,7 @@ import type { GameRegistry, PlayableGame } from "@jgengine/shell/registry";
 import { CAM, resolvedLook, resolvedLookFrom } from "./appEnv";
 import { setCaptureStatus } from "./captureReady";
 import { formatAppliedAim, resolveLookCamera, type LookMarkers } from "./lookCamera";
-
+import { installCaptureCamera } from "@jgengine/core/world/captureCamera";
 const CAMERA_PRESETS: Record<string, GameCameraConfig> = {
   orbit: { rig: "orbit" },
   first: { rig: "first" },
@@ -80,11 +81,26 @@ export async function loadLookMarkers(gameId: string): Promise<LookMarkers | und
 
 export function withCameraPreset(game: PlayableGame, markers?: LookMarkers): PlayableGame {
   const look = lookCamera(game, markers);
-  if (look !== undefined) return { ...game, camera: { ...game.camera, ...look } };
-  if (CAM === null) return game;
-  const preset = CAMERA_PRESETS[CAM];
-  if (preset === undefined) return game;
+  if (look !== undefined) {
+    // The game may still select its own rig at runtime (ctx.camera.setRig, a persisted settings
+    // camera, a director cinematic), which would photograph its camera instead of this framing.
+    // The installed capture camera is read above all of those by the shell.
+    installCaptureCamera({ kind: look.rig ?? "observer", config: rigConfigOf(look) });
+    return { ...game, camera: { ...game.camera, ...look } };
+  }
+  const preset = CAM === null ? undefined : CAMERA_PRESETS[CAM];
+  if (preset === undefined) {
+    installCaptureCamera(null);
+    return game;
+  }
+  installCaptureCamera({ kind: preset.rig ?? "observer", config: rigConfigOf(preset) });
   return { ...game, camera: { ...game.camera, ...preset } };
+}
+
+/** The data half of a camera config, which is what an installed capture camera carries. */
+function rigConfigOf(config: GameCameraConfig): CameraRigConfig {
+  const { rig: _rig, projection: _projection, pixelPerfect: _pixelPerfect, frustum: _frustum, playerFov: _playerFov, weapon: _weapon, onCameraFollow: _onCameraFollow, ...rest } = config;
+  return rest;
 }
 
 const gameModules = import.meta.glob<{

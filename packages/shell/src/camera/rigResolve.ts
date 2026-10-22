@@ -4,6 +4,7 @@ import type {
   ObserverCameraConfig,
 } from "@jgengine/core/game/playableGame";
 import type { CameraRigOverride } from "@jgengine/core/runtime/cameraDirector";
+import { readCaptureCamera } from "@jgengine/core/world/captureCamera";
 
 /** @internal */
 export function resolveRuntimeCameraConfig(config: GameCameraConfig | undefined, override: CameraRigOverride | null | undefined): GameCameraConfig | undefined {
@@ -13,6 +14,22 @@ export function resolveRuntimeCameraConfig(config: GameCameraConfig | undefined,
     if (override.config[key] !== undefined) Object.assign(merged, { [key]: { ...config?.[key], ...override.config[key] } });
   }
   return merged;
+}
+
+/**
+ * The camera config that renders this frame, with the capture camera winning over everything.
+ *
+ * A game owns its camera three ways: the static `camera` block, a runtime `ctx.camera.setRig`
+ * selection, and a director cinematic. A capture harness can rewrite the first, but the other two
+ * run afterwards and quietly photograph the game's own camera. `installCaptureCamera` is read here,
+ * above all three, so `?look=`/`--look` frames what it was asked for; with nothing installed this is
+ * exactly `resolveRuntimeCameraConfig` and every game behaves as before.
+ *
+ * @capability capture render a framed capture camera over a game that owns its camera
+ * @internal
+ */
+export function resolveCaptureCameraConfig(config: GameCameraConfig | undefined, override: CameraRigOverride | null | undefined): GameCameraConfig | undefined {
+  return resolveRuntimeCameraConfig(config, readCaptureCamera() ?? override);
 }
 
 /**

@@ -262,3 +262,13 @@ export function evaluateThresholds(metrics: ShotMetrics): ThresholdWarning[] {
   }
   return warnings;
 }
+
+/**
+ * Where `--inspect` writes its metrics for a shot. `--out` may or may not carry an image extension,
+ * and swapping the extension only when it was present used to write the metrics JSON straight over
+ * the screenshot when it was not - a shot that silently became a 600-byte text file next to no PNG.
+ * Strip a known image extension, then append, so the metrics path is never the shot path.
+ */
+export function metricsPathFor(outPath: string): string {
+  return `${outPath.replace(/\.(png|jpe?g|webp)$/i, "")}.metrics.json`;
+}
