@@ -4,11 +4,17 @@
 //   bun run land --verify "bun run ship:preflight"
 //   bun run land --title "Menus" --body-file .scratch/body.md
 //
-// It refuses on `main` or a dirty tree, pushes, reuses an open PR or opens one
-// (body: the newest changes/ fragment, else --body-file, else a one-line
-// summary), runs --verify, watches checks for up to 25 minutes, merges and
-// waits for MERGED. Exit codes: 0 landed, 1 verify failed, 2 checks failed,
-// 3 could not merge (including a refused branch or dirty tree).
+// It refuses on `main` or a dirty tree, pushes, rebases onto the base, reuses
+// an open PR or opens one (body: the newest changes/ fragment, else
+// --body-file, else a one-line summary), runs --verify, watches checks for up
+// to 25 minutes, merges and waits for MERGED. Exit codes: 0 landed, 1 verify
+// failed, 2 checks failed, 3 could not merge (including a refused branch or
+// dirty tree).
+//
+// The branch land pushed is land's to rewrite: its own rebase would otherwise
+// leave the next push non-fast-forward and send the worker to a hand-typed
+// force (#2120). Land force-pushes with a lease on that branch, and only after
+// its own push in this run succeeded — a branch it did not push is refused.
 import { spawnSync } from "node:child_process";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { basename, join } from "node:path";
@@ -155,15 +161,19 @@ function sleep(ms: number): void {
   Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
 }
 
-interface Run {
+export interface Run {
   status: number;
   stdout: string;
   stderr: string;
 }
 
 function run(command: string, args: string[], timeout?: number): Run {
+  return runAt(root, command, args, timeout);
+}
+
+export function runAt(cwd: string, command: string, args: string[], timeout?: number): Run {
   const result = spawnSync(command, args, {
-    cwd: root,
+    cwd,
     encoding: "utf8",
     stdio: ["ignore", "pipe", "pipe"],
     ...(timeout === undefined ? {} : { timeout }),
@@ -175,8 +185,69 @@ function gh(args: string[]): Run {
   return run("gh", args);
 }
 
-function git(args: string[]): Run {
-  return run("git", args);
+function git(args: string[], timeout?: number): Run {
+  return runAt(root, "git", args, timeout);
+}
+
+/** Any git command in one checkout; the land test binds this to a throwaway remote. */
+export type Git = (args: string[]) => Run;
+
+/**
+ * The only force land is allowed: after its own push and rebase, with a lease on the branch it
+ * pushed. The lease makes the push fail if anyone else moved that branch in between.
+ */
+export function forcePushArgs(branch: string): string[] {
+  return ["push", `--force-with-lease=${branch}`, "origin", `HEAD:${branch}`];
+}
+
+export interface SyncResult {
+  rebased: boolean;
+  /** Why the branch cannot be pushed and rewritten, or null. */
+  refusal: string | null;
+}
+
+/**
+ * Push the branch, rebase it onto `origin/<base>`, and push it again when the rebase moved it.
+ * Land owns a branch only once its own push succeeds; a branch that already exists on the remote
+ * with commits this checkout lacks is refused rather than overwritten.
+ */
+export function syncOntoBase(options: { branch: string; base: string; git: Git }): SyncResult {
+  const { branch, base, git: runGit } = options;
+
+  const pushed = runGit(["push", "-u", "origin", "HEAD"]);
+  if (pushed.status !== 0) {
+    return {
+      rebased: false,
+      refusal:
+        `push failed, and land refuses to force-push a branch it did not push: ${details(pushed)}\n` +
+        `   Push it once yourself (git push -u origin ${branch}), or start the branch from origin/${base}.`,
+    };
+  }
+
+  const fetched = runGit(["fetch", "--no-tags", "origin", base]);
+  if (fetched.status !== 0) return { rebased: false, refusal: `fetch origin ${base} failed: ${details(fetched)}` };
+
+  const behind = runGit(["rev-list", "--count", `HEAD..origin/${base}`]);
+  const count = Number(behind.stdout.trim());
+  if (behind.status !== 0 || !Number.isFinite(count)) {
+    return { rebased: false, refusal: `could not count commits behind origin/${base}: ${details(behind)}` };
+  }
+  if (count === 0) return { rebased: false, refusal: null };
+
+  const rebased = runGit(["rebase", `origin/${base}`]);
+  if (rebased.status !== 0) {
+    runGit(["rebase", "--abort"]);
+    return {
+      rebased: false,
+      refusal: `rebase onto origin/${base} hit a conflict: ${details(rebased)}\n   Resolve it, push, and run land again.`,
+    };
+  }
+
+  const forced = runGit(forcePushArgs(branch));
+  if (forced.status !== 0) {
+    return { rebased: true, refusal: `push after the rebase failed: ${details(forced)}` };
+  }
+  return { rebased: true, refusal: null };
 }
 
 function details(result: Run): string {
@@ -340,12 +411,12 @@ function main(): void {
     process.exit(EXIT_COULD_NOT_MERGE);
   }
 
-  const pushed = run("git", ["push", "-u", "origin", "HEAD"], 120_000);
-  if (pushed.status !== 0) {
-    console.error(`land: push failed: ${details(pushed)}`);
+  const sync = syncOntoBase({ branch, base: args.base, git: (gitArgs) => git(gitArgs, 120_000) });
+  if (sync.refusal !== null) {
+    console.error(`land: ${sync.refusal}`);
     process.exit(EXIT_COULD_NOT_MERGE);
   }
-  console.log(`land: pushed ${branch}`);
+  console.log(`land: pushed ${branch}${sync.rebased ? ` and rebased it onto origin/${args.base}` : ""}`);
 
   const summary = git(["log", "-1", "--format=%s"]).stdout.trim() || branch;
   const pr = openOrReusePr(args, branch, summary);
