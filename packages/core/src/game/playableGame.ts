@@ -63,6 +63,7 @@ export type {
   ChaseView,
   CinematicCameraConfig,
   FirstPersonCameraConfig,
+  FirstPersonCollisionConfig,
   GameCameraConfig,
   InspectionCameraConfig,
   InspectionZoomAnchor,
