@@ -8,6 +8,7 @@ import { MATERIAL_TEXTURE_SEMANTICS, validateMaterialAsset, validateMaterialAssi
 import { applyMaterialOverrideToMaterial, MATERIAL_TEXTURE_PROPERTIES, requiresPhysicalMaterial, type MaterialOverrideTextures } from "../materialOverride";
 import { configureAuthoredSurface, type SurfaceShape } from "./authoredSurfaceMaterial";
 import { ownModelMaterial } from "./modelRender";
+import { meshMatchesName } from "./modelMeshMerge";
 import { useDisposable } from "./useDisposable";
 import { detectKtx2Support, materialKtx2Loader } from "./modelLoad";
 import { resolveAssetBaseUrl } from "./assetBase";
@@ -194,7 +195,7 @@ function materialAssignmentTargets(root: THREE.Object3D, assets: readonly Materi
     const selected: { mesh: THREE.Mesh; index: number }[] = [];
     root.traverse(node => {
       const mesh = node as THREE.Mesh;
-      if (!mesh.isMesh || (assignment.selector.mesh !== undefined && mesh.name !== assignment.selector.mesh)) return;
+      if (!mesh.isMesh || (assignment.selector.mesh !== undefined && !meshMatchesName(mesh, assignment.selector.mesh))) return;
       const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
       materials.forEach((material, index) => {
         if (assignment.selector.slot !== undefined && material.name !== assignment.selector.slot) return;

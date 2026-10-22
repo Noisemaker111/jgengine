@@ -967,6 +967,7 @@
     "./render/modelAssets",
     "./render/modelBindPose",
     "./render/modelLoad",
+    "./render/modelMeshMerge",
     "./render/modelNodeVisibility",
     "./render/modelRender",
     "./render/modelSurface",
