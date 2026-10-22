@@ -11,6 +11,7 @@ import { StaticObjectModels, useStaticObjectBatchProbe } from "./StaticObjectMod
 import { groupStaticObjects, type StaticObjectBatch } from "./staticObjectBatches";
 import type { AssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
+import { groundSpeed } from "@jgengine/core/scene/entityStore";
 import { objectVisualScale, type SceneObject } from "@jgengine/core/scene/objectStore";
 import { WORLD_ITEM_ENTITY_NAME } from "@jgengine/core/game/worldItem";
 import type { EntitySpriteConfig, ModelConfig, ObjectStyle } from "@jgengine/core/game/playableGame";
@@ -29,6 +30,19 @@ import { useDisposable } from "../render/useDisposable";
 import { WindClock } from "../render/modelWind";
 import { MeasuredBoundsGroup } from "../render/measureBounds";
 import { EntitySprite, IsolatedEntityModel } from "../render/SceneModels";
+import { CharacterCrowd } from "../render/CharacterCrowd";
+import {
+  CharacterCrowdRegistry,
+  crowdEligible,
+  crowdKindOf,
+  crowdKindReady,
+} from "../render/crowdRegistry";
+import {
+  characterLodTier,
+  clearCharacterLodTier,
+  setCharacterLodTier,
+  type CharacterLodTier,
+} from "../render/characterLod";
 import { resolveEntityModel, resolveObjectModel, type ObjectModelCacheEntry } from "../render/resolveModel";
 import { useRenderVisibility } from "../visibility/CullingProvider";
 import { writePoseIfChanged, writeRenderPoseIfChanged, emptyPoseMemo, type PoseMemo } from "./entityPose";
@@ -48,6 +62,7 @@ function EntityMarker({
   isLocal,
   targeted,
   selected,
+  crowd,
   onSelect,
 }: {
   entity: SceneEntity;
@@ -57,6 +72,7 @@ function EntityMarker({
   isLocal: boolean;
   targeted: boolean;
   selected: boolean;
+  crowd: CharacterCrowdRegistry | undefined;
   onSelect: (entity: SceneEntity) => void;
 }) {
   const groupRef = useRef<THREE.Group>(null);
@@ -66,17 +82,43 @@ function EntityMarker({
   const role = entity.role;
   const name = entity.name;
   const color = isLocal ? "#4ade80" : role === "npc" ? colorFromId(name) : "#9ca3af";
+  const tierRef = useRef<CharacterLodTier | undefined>(undefined);
+  const crowdModel = custom === undefined && !isLocal && crowdEligible(model) && crowd !== undefined ? model : undefined;
+  const crowdKind = crowdModel === undefined ? undefined : crowdKindOf(crowdModel);
 
   const scratchRef = useRef<RenderPose>([0, 0, 0, 0]);
   const memoRef = useRef<PoseMemo>(emptyPoseMemo());
-  useFrame(() => {
+  useFrame((state) => {
     const group = groupRef.current;
     if (group === null) return;
     const live = ctx.scene.entity.get(entityId);
     if (live === null) return;
     writeRenderPoseIfChanged(group, ctx, entityId, live, scratchRef.current, memoRef.current);
-    group.visible = live.hidden !== true && visibleRef.current(entityId);
+    let tier: CharacterLodTier | undefined;
+    if (crowdModel !== undefined && crowd !== undefined && crowdKind !== undefined && crowdKindReady(crowdKind)) {
+      const [x, y, z] = live.position;
+      const distance = Math.sqrt(
+        (state.camera.position.x - x) ** 2 + (state.camera.position.y - y) ** 2 + (state.camera.position.z - z) ** 2,
+      );
+      tier = characterLodTier(distance, crowdModel.lod === false ? undefined : crowdModel.lod, tierRef.current);
+      setCharacterLodTier(entityId, tier);
+      if (tier === "crowd") {
+        crowd.set(entityId, crowdKind, { x, y, z, rotationY: live.rotationY ?? 0, speed: groundSpeed(live) });
+      } else {
+        crowd.delete(entityId);
+      }
+    }
+    tierRef.current = tier;
+    group.visible = live.hidden !== true && visibleRef.current(entityId) && tier !== "crowd";
   });
+
+  useEffect(
+    () => () => {
+      crowd?.delete(entityId);
+      clearCharacterLodTier(entityId);
+    },
+    [crowd, entityId],
+  );
 
   return (
     <group
@@ -311,6 +353,7 @@ function WorldActors({
   const player = usePlayer();
   const targetId = useTarget(player.userId);
   const controlledId = useGameStore((c) => c.player.possession.active(player.userId));
+  const crowdRegistry = useMemo(() => new CharacterCrowdRegistry(), []);
   const handleSelect = (entity: SceneEntity) => {
     const relation = ctx.scene.entity.canReceive(entity.id, "damage") === null ? "hostile" : "friendly";
     ctx.scene.entity.setTarget(controlledId, relation === "hostile" || entity.role === "npc" ? entity.id : null);
@@ -343,6 +386,7 @@ function WorldActors({
     singles: grouped.singles.length,
   });
   const candidatesById = new Map(candidates.map((candidate) => [candidate.object.instanceId, candidate]));
+  const crowdModels = new Map<string, ModelConfig>();
   const renderSingle = (object: SceneObject) => {
     object = ctx.scene.object.get(object.instanceId) ?? object;
     const candidate = candidatesById.get(object.instanceId)!;
@@ -363,6 +407,7 @@ function WorldActors({
         if ((custom === undefined || custom === null) && model === undefined && sprite === undefined) {
           reportFallbackSeam("entity", "omittedMapping");
         }
+        if (crowdEligible(model)) crowdModels.set(crowdKindOf(model), model);
         return (
           <EntityMarker
             key={entityId}
@@ -373,10 +418,12 @@ function WorldActors({
             isLocal={entityId === controlledId}
             targeted={entityId === targetId}
             selected={selectedIds.has(entityId)}
+            crowd={crowdRegistry}
             onSelect={handleSelect}
           />
         );
       })}
+      {crowdModels.size > 0 ? <CharacterCrowd models={[...crowdModels.values()]} registry={crowdRegistry} /> : null}
       {grouped.singles.map((candidate) => renderSingle(candidate.object))}
       {grouped.batches.map((batch) => <StaticObjectModels key={batch.key} batch={batch} single={renderSingle} />)}
     </>
@@ -428,8 +475,7 @@ export function WorldView({
   );
 }
 
-export function RemotePlayers({ rows, presenceInterpolationMs = 100 }: { rows: PresencePoseRow[]; presenceInterpolationMs?: number }) {
-  const groups = useRef(new Map<string, THREE.Group>());
+export function RemotePlayers({ rows, presenceInterpolationMs = 100 }: { rows: PresencePoseRow[]; presenceInterpolationMs?: number }) {  const groups = useRef(new Map<string, THREE.Group>());
   const buffers = useRef(new Map<string, SnapshotBuffer<PresencePoseRow>>());
   const rowsRef = useRef(rows);
   rowsRef.current = rows;
@@ -488,3 +534,4 @@ export function RemotePlayers({ rows, presenceInterpolationMs = 100 }: { rows: P
     </>
   );
 }
+

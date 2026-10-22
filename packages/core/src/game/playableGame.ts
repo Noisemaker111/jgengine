@@ -329,6 +329,28 @@ export interface ModelConfig {  url: string;
   parts?: readonly ModelPart[];
   /** Tuning for the procedural part-motion driver when any part carries a `role`; omit for defaults. */
   partMotion?: PartMotionParams;
+  /**
+   * Distance tiers for a rigged character: how far away it still poses its skeleton every frame, and
+   * from where a far one renders through the GPU crowd path instead. `false` keeps this model at full
+   * rate everywhere, which is what a player avatar or a character in a cutscene wants. Omit for no
+   * distance tiers (full rate) — see {@link ModelLodConfig}.
+   */
+  lod?: ModelLodConfig | false;
+}
+
+/**
+ * Distance tiers for one character model. Distances are metres from the camera; every field is data
+ * so a game can set its own thresholds per model and retune them without touching the engine.
+ */
+export interface ModelLodConfig {
+  /** Within this distance the rig poses every frame. Default 15. */
+  fullRateDistance?: number;
+  /** Within this distance the rig poses every other frame, carrying the accumulated time. Default 40. */
+  halfRateDistance?: number;
+  /** Beyond this distance a crowd-eligible rig renders through the GPU crowd path and updates no bones. Default 25. */
+  crowdDistance?: number;
+  /** Metres a character must come back inside `crowdDistance` before it returns to its own rig, so the swap cannot flicker at the boundary. Default 2. */
+  crowdHysteresis?: number;
 }
 
 /** Wind sway for a foliage model; see {@link ModelConfig.wind}. */

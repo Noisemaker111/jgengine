@@ -2513,6 +2513,11 @@
 - `CsmMaterialSetup` (interface): interface CsmMaterialSetup — Structural slice of CSM so the patcher is testable without a renderer.
 - `patchSceneMaterials` (function): function patchSceneMaterials(scene: THREE.Scene, csm: CsmMaterialSetup, patched: WeakSet<THREE.Material>): void — Run CSM's `setupMaterial` over every unpatched standard material in the scene, chaining rather than clobbering a material's own `onBeforeCompile`.
 
+## @jgengine/shell/render/CharacterCrowd
+
+- `CharacterCrowd` (function): function CharacterCrowd({ models, registry, fps = 24 }: CharacterCrowdProps): React.JSX.Element — Draws far characters through the GPU crowd path: one baked rig per character kind, one instanced draw per material, every member's clip, time offset and speed sampled in the vertex shader. The entity markers decide who is far enough (their `lod` tiers) and write poses into `registry`; this layer owns the bakes, the materials and the instance buffers. Mount it in the same canvas as the entity markers; unmount it to fall back to per-entity rigs.
+- `CharacterCrowdProps` (interface): interface CharacterCrowdProps — Props for {@link CharacterCrowd}.
+
 ## @jgengine/shell/render/EntityPreview
 
 - `EntityPreview` (function): function EntityPreview({ children, model, instanceId, mood = "studio", backdrop, turntable = 0, faceCamera = false, forward, environment = true, cameraPosition = [0, 1, 3], fov = 35, dpr = [1, 2], className, style, }: EntityPreviewProps): React.JSX.Element — Drop-in live 3D preview of a single entity — the character-screen portrait, unit inspector, or loadout viewer. It owns all the plumbing a game would otherwise re-derive by hand: a nested `<Canvas>`, the {@link GameContextBridge} that carries the running `GameContext` across the R3F reconciler boundary (so the subject's `useEntityRenderCues` / `useGameContext` hooks resolve and it mirrors the live game), a {@link StudioStage} 3-point lighting rig with optional turntable / face-camera, and a capture-friendly GL surface. The game keeps ownership of its `renderEntity`: pass it as `children`, or hand a native `model` (+ `instanceId`) for an engine-composed body. Bound to a live `instanceId`, the portrait walks, flinches, and topples in lockstep with the world instead of a canned spin.
@@ -2564,6 +2569,23 @@
 - `AuthoredSurfaceMaterial` (function): function AuthoredSurfaceMaterial({ surface, shape = "box" }: { surface: AuthoredSurfaceConfig; shape?: SurfaceShape }): React.JSX.Element — Mount an owned PBR surface material on a mesh.
 - `SurfaceShape` (type): type SurfaceShape = "box" | "cylinder" — Primitive UV layout whose physical dimensions drive `repeatMetres`.
 - `useAuthoredSurfaceMaterial` (function): function useAuthoredSurfaceMaterial(config: AuthoredSurfaceConfig, shape: SurfaceShape = "box"): THREE.MeshStandardMaterial — Load declared surface-map roles and own the material/map clones (cached textures remain untouched). Colour, emissive, sheen-colour and specular-colour maps are sRGB; numeric maps are linear. Cylinder side metres use the RMS ellipse circumference approximation. Static batches and custom meshes share this lifecycle.
+
+## @jgengine/shell/render/characterLod
+
+- `CharacterLodPolicy` (interface): interface CharacterLodPolicy — Distance policy a character model's {@link ModelLodConfig} resolves to; every distance is metres.
+- `CharacterLodTier` (type): type CharacterLodTier = "full" | "half" | "quarter" | "crowd" — What a character's distance from the camera costs it this frame.
+- `DEFAULT_CHARACTER_LOD` (const): const DEFAULT_CHARACTER_LOD: CharacterLodPolicy — The engine's default character tiers: full under 15 m, half under 40 m, GPU crowd beyond 25 m.
+- `characterLodInterval` (function): function characterLodInterval(tier: CharacterLodTier): number — Frames between pose updates for a tier: 1, 2, 4, and `0` meaning "never" for the crowd tier.
+- `characterLodRate` (function): function characterLodRate(tier: CharacterLodTier): number — Share of frames a tier poses the rig: 1, 0.5, 0.25, and 0 once the GPU crowd draws it.
+- `characterLodTier` (function): function characterLodTier(distance: number, config: ModelLodConfig | undefined, previous?: CharacterLodTier): CharacterLodTier — The tier a character at `distance` falls in. Passing the tier it held last frame applies the crowd hysteresis, so a character walking along the crowd boundary does not swap representation every frame.
+
+## @jgengine/shell/render/crowdRegistry
+
+- `CharacterCrowdRegistry` (class): class CharacterCrowdRegistry — The characters the crowd layer is currently drawing, written by their entity markers each frame. It holds poses rather than React state: 71 pedestrians writing matrices must not re-render the world, and the crowd batch reads the same entries back to fill its instance buffers.
+- `crowdClipForSpeed` (function): function crowdClipForSpeed(clips: readonly string[], speed: number): string | undefined — The baked clip a crowd member at `speed` plays; clips are `[idle, walk, run]` as {@link crowdClipsOf} orders them.
+- `crowdClipsOf` (function): function crowdClipsOf(model: ModelConfig, clipNames: readonly string[]): string[] — The clips a crowd batch bakes for a model: its resolved idle, walk and run, in that order. Empty when the rig's clip names do not resolve to locomotion roles, which leaves the character on its own rig instead of drawing a frozen crowd copy.
+- `crowdEligible` (function): function crowdEligible(model: ModelConfig | undefined): model is ModelConfig — Whether a model can leave its own rig for the GPU crowd path: a rigged, clip-played, plain model.
+- `crowdKindOf` (function): function crowdKindOf(model: ModelConfig): string — The identity a character model shares with every other model the GPU crowd can draw: rig url, height normalization and material tint. Two entity kinds with the same key can share one instanced draw; a different tint or height needs its own.
 
 ## @jgengine/shell/render/decalGeometry
 
@@ -2718,7 +2740,7 @@
 ## @jgengine/shell/render/useModelInstance
 
 - `ModelInstance` (interface): interface ModelInstance — Render `scene` with `position` and uniform `scale`; animate or deform `content` inside that placement frame.
-- `ModelInstanceConfig` (type): type ModelInstanceConfig = Pick<ModelConfig, "url" | "scale" | "targetHeight" | "y" | "anchor" | "dims" | "shadows" | "animation" | "hiddenNodes" | "surfaceDetail" | "wind" > — Model loading, placement, shadows and animation for a custom renderer.
+- `ModelInstanceConfig` (type): type ModelInstanceConfig = Pick<ModelConfig, "url" | "scale" | "targetHeight" | "y" | "anchor" | "dims" | "shadows" | "animation" | "hiddenNodes" | "surfaceDetail" | "wind" | "lod" > — Model loading, placement, shadows and animation for a custom renderer.
 - `ModelInstanceOptions` (interface): interface ModelInstanceOptions — Caller-owned styling runs on the isolated clone, never the loader cache.
 - `useModelInstance` (function): function useModelInstance(model: ModelInstanceConfig, options: ModelInstanceOptions = {}): ModelInstance — Load and own an isolated model instance, preserving imported transforms and measuring placement at bind pose. Apply hiddenNodes to the configured clone before measurement; equivalent name lists retain the instance. Mount `scene` with the returned position/scale. Custom materials, deformation and surrounding geometry stay caller-owned. Must run inside an R3F canvas and Suspense boundary; a game provider is optional.
 

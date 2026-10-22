@@ -1,10 +1,11 @@
 import { useLoader, useThree } from "@react-three/fiber";
 import { useEffect, useMemo } from "react";
-import { Group, type Object3D } from "three";
+import { Group, type Object3D, type SkinnedMesh } from "three";
 
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import { parseModelHiddenNodes } from "@jgengine/core/editor/modelNodeVisibility";
 
+import { registerCharacterRig, unregisterCharacterRig } from "./characterLod";
 import { measureLocalBounds } from "./measureBounds";
 import { detectKtx2Support, sharedGltfLoader } from "./modelLoad";
 import { cloneModelScene, disposeModelScene, modelPlacementTransform } from "./modelRender";
@@ -14,7 +15,7 @@ import { applyModelNodeVisibility, modelHiddenNodesKey } from "./modelNodeVisibi
 
 /** Model loading, placement, shadows and animation for a custom renderer. */
 export type ModelInstanceConfig = Pick<ModelConfig,
-  "url" | "scale" | "targetHeight" | "y" | "anchor" | "dims" | "shadows" | "animation" | "hiddenNodes" | "surfaceDetail" | "wind"
+  "url" | "scale" | "targetHeight" | "y" | "anchor" | "dims" | "shadows" | "animation" | "hiddenNodes" | "surfaceDetail" | "wind" | "lod"
 >;
 
 /** Caller-owned styling runs on the isolated clone, never the loader cache. */
@@ -62,6 +63,27 @@ export function useModelInstance(model: ModelInstanceConfig, options: ModelInsta
   const placement = useMemo(() => modelPlacementTransform(scene, model, bindBounds),
     [scene, bindBounds, model.scale, model.targetHeight, model.y, model.anchor, model.dims]);
   useEffect(() => () => disposeModelScene(content), [content]);
+  const lodKey = JSON.stringify(model.lod);
+  useEffect(() => {
+    if (instanceId === undefined) return;
+    const [parts, bones] = countRig(content);
+    if (parts === 0) return;
+    registerCharacterRig(instanceId, parts, bones);
+    return () => unregisterCharacterRig(instanceId);
+  }, [content, instanceId, lodKey]);
   useModelAnimation(content, gltf.animations, model.animation, instanceId);
   return { content, scene, ...placement };
+}
+
+/** Skinned parts and bones a mounted character renders, for the character-LOD probe. */
+function countRig(root: Object3D): [parts: number, bones: number] {
+  let parts = 0;
+  let bones = 0;
+  root.traverse((node) => {
+    if ((node as SkinnedMesh).isSkinnedMesh === true) {
+      parts += 1;
+      bones = Math.max(bones, (node as SkinnedMesh).skeleton.bones.length);
+    }
+  });
+  return [parts, bones];
 }

@@ -101,6 +101,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `captureCanvas` (function) · `import { captureCanvas } from "@jgengine/shell/render/sceneCapture"`
 
+## character-crowd — draw distant animated characters on the GPU instead of posing their skeletons
+
+- `CharacterCrowd` (function) · `import { CharacterCrowd } from "@jgengine/shell/render/CharacterCrowd"`
+
 ## character-paperdoll — equip-slot paperdoll — flanking columns around a portrait, activatable slots
 
 - `Paperdoll` (function) · `import { Paperdoll } from "@jgengine/react"`

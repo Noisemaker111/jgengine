@@ -1,0 +1,93 @@
+import { afterEach, describe, expect, test } from "bun:test";
+
+import {
+  characterLodInterval,
+  characterLodPolicy,
+  characterLodProbe,
+  characterLodRate,
+  characterLodTier,
+  characterLodTierOf,
+  DEFAULT_CHARACTER_LOD,
+  noteAnimationPhase,
+  noteCharacterFrame,
+  noteCharacterPose,
+  registerCharacterRig,
+  resetCharacterLodStats,
+  setCharacterLodTier,
+  unregisterCharacterRig,
+} from "./characterLod";
+
+afterEach(() => resetCharacterLodStats());
+
+describe("characterLodTier", () => {
+  test("splits distances at the engine defaults", () => {
+    expect(characterLodTier(0, undefined)).toBe("full");
+    expect(characterLodTier(14.9, undefined)).toBe("full");
+    expect(characterLodTier(15, undefined)).toBe("half");
+    expect(characterLodTier(24.9, undefined)).toBe("half");
+    expect(characterLodTier(25, undefined)).toBe("crowd");
+    expect(characterLodTier(39.9, { crowdDistance: 100 })).toBe("half");
+    expect(characterLodTier(40, { crowdDistance: 100 })).toBe("quarter");
+  });
+
+  test("thresholds come from the model's own data", () => {
+    const policy = { fullRateDistance: 4, halfRateDistance: 8, crowdDistance: 20 };
+    expect(characterLodTier(3, policy)).toBe("full");
+    expect(characterLodTier(4, policy)).toBe("half");
+    expect(characterLodTier(20, policy)).toBe("crowd");
+  });
+
+  test("a crowd character holds its representation until it is inside the hysteresis band", () => {
+    expect(characterLodTier(24, { crowdDistance: 25, crowdHysteresis: 2 }, "crowd")).toBe("crowd");
+    expect(characterLodTier(23.1, { crowdDistance: 25, crowdHysteresis: 2 }, "crowd")).toBe("crowd");
+    expect(characterLodTier(22.9, { crowdDistance: 25, crowdHysteresis: 2 }, "crowd")).toBe("half");
+    expect(characterLodTier(24, { crowdDistance: 25, crowdHysteresis: 2 }, "half")).toBe("half");
+  });
+
+  test("bad authoring falls back to the defaults instead of a tier that never matches", () => {
+    const policy = characterLodPolicy({ fullRateDistance: Number.NaN, halfRateDistance: -2, crowdDistance: Infinity });
+    expect(policy).toEqual({
+      fullRateDistance: DEFAULT_CHARACTER_LOD.fullRateDistance,
+      halfRateDistance: DEFAULT_CHARACTER_LOD.halfRateDistance,
+      crowdDistance: DEFAULT_CHARACTER_LOD.crowdDistance,
+      crowdHysteresis: DEFAULT_CHARACTER_LOD.crowdHysteresis,
+    });
+    expect(characterLodPolicy({ fullRateDistance: 30, halfRateDistance: 10 }).halfRateDistance).toBe(30);
+  });
+});
+
+describe("characterLodRate", () => {
+  test("each tier poses the rig on its own share of frames", () => {
+    expect(characterLodRate("full")).toBe(1);
+    expect(characterLodRate("half")).toBe(0.5);
+    expect(characterLodRate("quarter")).toBe(0.25);
+    expect(characterLodRate("crowd")).toBe(0);
+    expect([characterLodInterval("full"), characterLodInterval("half"), characterLodInterval("quarter")]).toEqual([1, 2, 4]);
+    expect(characterLodInterval("crowd")).toBe(0);
+  });
+});
+
+describe("characterLodProbe", () => {
+  test("counts rigs, skinned parts and the pose writes per frame the tiers leave", () => {
+    registerCharacterRig("a", 1, 41);
+    registerCharacterRig("b", 1, 41);
+    setCharacterLodTier("a", "full");
+    setCharacterLodTier("b", "crowd");
+    noteCharacterFrame();
+    noteCharacterPose("a");
+    expect(characterLodTierOf("a")).toBe("full");
+    expect(characterLodTierOf("b")).toBe("crowd");
+    expect(characterLodTierOf(undefined)).toBe("full");
+    const counters = characterLodProbe().counters!();
+    expect(counters).toMatchObject({ rigs: 2, skinnedParts: 2, bones: 82, boneWritesPerFrame: 41, fullRate: 1, crowdRate: 1 });
+    expect(characterLodProbe().state!()).toContain("2 rigs");
+  });
+
+  test("publishes the pose a rig is holding so the crowd can continue it", () => {
+    registerCharacterRig("a", 1, 4);
+    noteAnimationPhase("a", "Walk", 0.75);
+    expect(characterLodTierOf("a")).toBe("full");
+    unregisterCharacterRig("a");
+    expect(characterLodProbe().counters!()).toMatchObject({ rigs: 0 });
+  });
+});

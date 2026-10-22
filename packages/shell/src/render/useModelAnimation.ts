@@ -27,6 +27,8 @@ import { seededRng } from "@jgengine/core/random/rng";
 import type { GameContext } from "@jgengine/core/runtime/gameContextTypes";
 import { useOptionalGameContext } from "@jgengine/react/provider";
 
+import { characterLodInterval, characterLodTierOf, noteAnimationPhase, noteCharacterPose } from "./characterLod";
+
 /** Wraps a yaw change into `(-pi, pi]`, so a turn across the wrap boundary is not a full spin. */
 function shortestAngle(radians: number): number {
   const turn = radians % (Math.PI * 2);
@@ -235,6 +237,15 @@ function applyGraphClips(actions: ReadonlyMap<string, THREE.AnimationAction>, cl
   }
 }
 
+/** The clip with the largest weight in one graph output: the pose the rig is mostly showing. */
+function dominantPhase(clips: readonly AnimClipOutput[]): { clip: string; time: number } | undefined {
+  let best: AnimClipOutput | undefined;
+  for (const entry of clips) {
+    if (entry.weight > 0 && (best === undefined || entry.weight > best.weight)) best = entry;
+  }
+  return best === undefined ? undefined : { clip: best.clip, time: best.time };
+}
+
 /** A mixer set up to show {@link AnimGraph} output on a rig; see {@link createGraphPose}. */
 export interface GraphPose {
   /** Clip durations read from the rig, the `clips` argument `runtime.advance` expects. */
@@ -376,6 +387,8 @@ export function useModelAnimation(
   const animationPausedRef = useRef(false);
   const graphRef = useRef<GraphPlayback | null>(null);
   const advancedSecondsRef = useRef<number | undefined>(undefined);
+  const pendingRef = useRef(0);
+  const frameRef = useRef(0);
   const states = animation?.states;
   const oneShots = animation?.oneShots;
   const authoredGraph = animation?.graph;
@@ -487,6 +500,15 @@ export function useModelAnimation(
       if (advancedSeconds === undefined || previousSeconds === undefined || advancedSeconds <= previousSeconds) return;
       playbackDelta = advancedSeconds - previousSeconds;
     }
+    // Distance tiers pose a far rig on fewer frames; the accumulated time keeps the clip at real
+    // speed, so a half-rate character walks the same distance, it just reaches its poses less often.
+    const interval = characterLodInterval(characterLodTierOf(instanceId));
+    if (interval === 0) return;
+    pendingRef.current += playbackDelta;
+    frameRef.current += 1;
+    if (interval > 1 && frameRef.current % interval !== 0) return;
+    playbackDelta = pendingRef.current;
+    pendingRef.current = 0;
     const playback = graphRef.current;
     if (playback !== null && mixerRef.current !== null) {
       const params = playback.params;
@@ -522,6 +544,11 @@ export function useModelAnimation(
       const out = playback.runtime.advance(playbackDelta * (animation?.timeScale ?? 1), params, playback.durations);
       applyGraphClips(playback.actions, out.clips);
       mixerRef.current.update(0);
+      if (instanceId !== undefined) {
+        noteCharacterPose(instanceId);
+        const phase = dominantPhase(out.clips);
+        if (phase !== undefined) noteAnimationPhase(instanceId, phase.clip, phase.time);
+      }
       if (out.rootMotion === true && playback.rootBone !== null && playback.rootBindPosition !== null) {
         playback.rootBone.position.x = playback.rootBindPosition.x;
         playback.rootBone.position.z = playback.rootBindPosition.z;
@@ -533,6 +560,10 @@ export function useModelAnimation(
     }
     if (mixerRef.current !== null && actionRef.current?.isRunning()) {
       mixerRef.current.update(playbackDelta);
+      if (instanceId !== undefined) {
+        noteCharacterPose(instanceId);
+        noteAnimationPhase(instanceId, actionRef.current.getClip().name, actionRef.current.time);
+      }
     }
   });
 }
