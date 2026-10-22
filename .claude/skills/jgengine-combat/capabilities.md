@@ -40,6 +40,26 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createComboPoints` (function) · `import { createComboPoints } from "@jgengine/core/combat"`
 
+## cover-field — authored-geometry cover with a bounded nearest query and rebuild on edit
+
+- `createCoverField` (function) · `import { createCoverField } from "@jgengine/core/combat"`
+
+## cover-points-from-solids — derive stand-able cover positions from authored solid boxes
+
+- `coverPointsFromSolids` (function) · `import { coverPointsFromSolids } from "@jgengine/core/combat"`
+
+## cover-points-near — bounded nearest-cover query
+
+- `coverPointsNear` (function) · `import { coverPointsNear } from "@jgengine/core/combat"`
+
+## cover-score — threat-driven cover point scoring
+
+- `scoreCoverPoint` (function) · `import { scoreCoverPoint } from "@jgengine/core/combat"`
+
+## cover-select — select cover by threat, role range and flank angle
+
+- `selectCover` (function) · `import { selectCover } from "@jgengine/core/combat"`
+
 ## damage-clamp — cap incoming damage per hit at a configured maximum
 
 - `createDamageClamp` (function) · `import { createDamageClamp } from "@jgengine/core/combat"`
@@ -199,6 +219,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `resolveSpawnStats` (function) · `import { resolveSpawnStats } from "@jgengine/core/stats/spawnLevelStats"`
 
+## squad-combat — threat-driven cover, flanking, suppression, retreat and role-driven fire discipline
+
+- `createSquadCombat` (function) · `import { createSquadCombat } from "@jgengine/core/combat"`
+
+## squad-roles — deterministic role assignment over a caller-authored composition
+
+- `assignSquadRoles` (function) · `import { assignSquadRoles } from "@jgengine/core/combat"`
+
 ## stagger-meter — accumulate an ailment buildup (bleed, freeze) until it procs
 
 - `createBuildupMeter` (function) · `import { createBuildupMeter } from "@jgengine/core/combat"`
@@ -235,6 +263,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## status-effects — commit direct or area effects through caller-owned stat pools with ordered spillover and lethal results
 
 - `createEffectSystem` (function) · `import { createEffectSystem } from "@jgengine/core/combat"`
+
+## threats-from-memory — turn perception memory into a bounded, ranked threat list
+
+- `threatsFromMemory` (function) · `import { threatsFromMemory } from "@jgengine/core/combat"`
 
 ## threshold-crossings — emit ordered crossing events as a numeric source passes named thresholds with hysteresis and once/repeat policy
 

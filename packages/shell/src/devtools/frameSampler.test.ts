@@ -186,6 +186,9 @@ describe("report route probe", () => {
 describe("devtools lean report", () => {
   test("carries systems and the log summary so the CDP harness and the page print one shape", async () => {
     const { buildLeanReport } = await import("./devtoolsReports");
+    // Other files' console warns land in the same global log buffer; this test is about the shape
+    // of the summary, not about who else wrote a line.
+    devtools.logs.clear();
     devtools.probes.registerSystem("report/test", { counters: () => ({ a: 1 }), state: () => "one" });
     devtools.logs.write("warn", "needs", "no bed nearby");
     const playable = { game: { name: "Report Probe" } } as unknown as Parameters<typeof buildLeanReport>[0];
