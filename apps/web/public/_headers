@@ -1,0 +1,11 @@
+# Hashed build output never changes under the same name, so the browser may keep
+# it forever. Cloudflare sends `Cache-Control: public, max-age=0, must-revalidate`
+# for static assets by default, which makes every visit revalidate every bundle
+# file; these rules replace that for the content-hashed directories only.
+# Unhashed files (models/, art/, game-assets/) keep the default revalidation.
+
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/play/assets/*
+  Cache-Control: public, max-age=31536000, immutable
