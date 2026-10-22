@@ -63,6 +63,14 @@ bounded batches, repair located issues and require explicit semantic approval.
 
 Prefer `defineSystem` and `defineGame({ systems })` for scheduled capabilities. Keep boot/join in the game loop only when it is truly lifecycle glue. System ordering, frequency, and serialization are explicit; avoid a giant per-frame callback.
 
+## Days and off-screen agents
+
+`resolveRoutine` (`sim/routine`) resolves an authored day (home, work, meal) against the world clock: injected travel time makes each stop depart early enough to arrive on time, and an arrival that runs late slips instead of teleporting. The timeline is pure, so a save, a forecast and a live agent read the same day.
+
+`createOffScreenWorld` (`sim/offScreen`) keeps every resident either near or cheap. Near residents spawn into your own simulation through `NearAgents`; far ones are a position, a routine phase and a needs record that only move when the clock crosses a routine boundary — no navigation, no needs tick, no utility decision. The distance radius, optional cost model and per-tick switch budget are game config. Crossing back in spawns the resident where the cheap state says it is, with its schedule progress and needs intact, so it cannot pop in at the origin.
+
+`createNearAgents` (`sim/nearAgents`) is the default near half: a nav crowd with a need set and a utility brain per agent, counting its decisions for tests and probes. Give it the same need definitions the off-screen world decays, or the two halves disagree at the boundary.
+
 For staffed production, use `stationOutputRate` (`work/staffedStation`) to resolve
 caller-owned worker stats and efficiency, then feed the rate to `tickProduction`.
 Keep staffing and production progress in the same serializable store; the
