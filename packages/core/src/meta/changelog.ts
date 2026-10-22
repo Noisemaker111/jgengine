@@ -1,5 +1,5 @@
 /** Installed `@jgengine/core` semver — compare against {@link CHANGELOG} keys when migrating. */
-export const VERSION = "0.28.0";
+export const VERSION = "0.29.0";
 
 /** One release's migrate steps plus added/changed/removed notes (typed mirror of CHANGELOG.md). */
 export interface ChangelogEntry {
@@ -11,6 +11,16 @@ export interface ChangelogEntry {
 
 /** Per-version engine changelog keyed by semver string (e.g. `"0.10.0"`). */
 export const CHANGELOG: Record<string, ChangelogEntry> = {
+  "0.29.0": {
+    migrate: [
+      "Bump lockstep SDK packages to `^0.29.0`: `@jgengine/{core,rapier,react,ws,node,sql,convex,shell,editor,assets,navbake}`. CLI `jgengine` is `0.26.0`; `@jgengine/github` is `0.16.0`.",
+    ],
+    added: [],
+    changed: [
+      "`MissionView.remaining` (`@jgengine/core/gameplay`) now counts down from a `survive` objective's own `duration`, not only from a `timeout`. A defend or hold objective reports the seconds it still has to run, which is the one number its HUD needs; a completed run still reports null.",
+    ],
+    removed: [],
+  },
   "0.28.0": {
     migrate: [
       "Bump lockstep SDK packages to `^0.28.0`: `@jgengine/{core,rapier,react,ws,node,sql,convex,shell,editor,assets,navbake}`. CLI `jgengine` is `0.25.0`; `@jgengine/github` is `0.15.0`.",
