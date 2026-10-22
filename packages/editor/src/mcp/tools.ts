@@ -73,7 +73,7 @@ const TOOL_DESCRIPTIONS: { name: EditorBridgeRequest["method"]; description: str
   { name: "fill_terrain", description: "Fill the whole terrain with one material, or null to clear all painted surfaces." },
   { name: "auto_paint", description: "Paint a material into every cell matching a slope/height rule (e.g. rock on steep, snow up high)." },
   { name: "terrain_materials", description: "List the terrain paint palette (material id, label, color)." },
-  { name: "terrain_layers", description: "List the terrain material layer stack (id, surface, roughness/tiling/triplanar/tint/opacity)." },
+  { name: "terrain_layers", description: "List the terrain material layer stack (id, surface, roughness/tiling/triplanar/tint/opacity/material — a material library name paints the layer with its scanned map)." },
   { name: "set_terrain_layers", description: "Replace the reorderable terrain material layer stack; a params-only edit keeps painted blends." },
   { name: "blend_terrain", description: "Blend-paint a material layer's weight at x/z (weighted multi-layer blend); auto-adds the layer." },
   { name: "convert_scatter", description: "Detach a foliage/scatter region into individually-editable placed prop markers, removing the region." },

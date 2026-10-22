@@ -508,6 +508,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `modelLoadStarts` (function) · `import { modelLoadStarts } from "@jgengine/shell/render/modelLoad"`
 
+## model-wind — sway a foliage model in the shared gust field
+
+- `applyModelWind` (function) · `import { applyModelWind } from "@jgengine/shell/render/modelWind"`
+
 ## multiplayer-p2p — bootstrap a playable authoritative world for browser peer co-op
 
 - `resolvePeerShellMultiplayer` (function) · `import { resolvePeerShellMultiplayer } from "@jgengine/shell/multiplayer"`

@@ -63,6 +63,10 @@ export interface TerrainPaintSlot {
   roughness: number;
   /** Pattern frequency multiplier from the layer's authored `tiling`. */
   scale: number;
+  /** World metres per texture repeat for this layer's scanned color map; 0 when the layer has no map. */
+  tileMetres: number;
+  /** Resolved color-map URL the slot's scanned texture comes from, if any. */
+  materialUrl?: string;
 }
 
 /** Per-cell paint coverage packed for the shader: two RGBA8 planes holding up to eight layer weights. */
@@ -84,6 +88,8 @@ function slotFor(surface: string, layer: TerrainMaterialLayer | undefined): Terr
     classIndex: CLASS_INDEX[surfaceClass],
     roughness: layer?.roughness ?? CLASS_ROUGHNESS[surfaceClass],
     scale: tiling === undefined || tiling <= 0 ? 1 : Math.min(2, Math.max(0.5, CLASS_TILING[surfaceClass] / tiling)),
+    tileMetres: layer?.materialUrl === undefined ? 0 : tiling !== undefined && tiling > 0 ? tiling : 6,
+    ...(layer?.materialUrl === undefined ? {} : { materialUrl: layer.materialUrl }),
   };
 }
 
@@ -160,6 +166,8 @@ export interface TerrainPaintTextures {
   readonly classMask: number;
   /** Re-upload coverage and layer slots; reallocates only when the cell grid size changes. */
   update(weights: TerrainPaintWeights): void;
+  /** The slot table the current coverage was packed from (layer materials, tile metres, classes). */
+  readonly slots: readonly TerrainPaintSlot[];
   dispose(): void;
 }
 
@@ -186,6 +194,7 @@ export function createTerrainPaintTextures(weights: TerrainPaintWeights): Terrai
   const classes = new Float32Array(MAX_TERRAIN_PAINT_LAYERS);
   const roughness = new Float32Array(MAX_TERRAIN_PAINT_LAYERS);
   const scales = new Float32Array(MAX_TERRAIN_PAINT_LAYERS);
+  const tiles = new Float32Array(MAX_TERRAIN_PAINT_LAYERS);
   const uniforms = {
     uPaintA: { value: coverageTexture(weights.planes[0], weights.cols, weights.rows) },
     uPaintB: { value: coverageTexture(weights.planes[1], weights.cols, weights.rows) },
@@ -197,9 +206,12 @@ export function createTerrainPaintTextures(weights: TerrainPaintWeights): Terrai
     uLayerClass: { value: classes },
     uLayerRough: { value: roughness },
     uLayerScale: { value: scales },
+    uLayerTile: { value: tiles },
   };
   let classMask = 0;
+  let slots: readonly TerrainPaintSlot[] = weights.slots;
   const update = (next: TerrainPaintWeights): void => {
+    slots = next.slots;
     classMask = next.slots.reduce((mask, slot) => mask | (1 << slot.classIndex), 0);
     for (const [key, plane] of [["uPaintA", next.planes[0]], ["uPaintB", next.planes[1]]] as const) {
       const current = uniforms[key].value;
@@ -221,6 +233,7 @@ export function createTerrainPaintTextures(weights: TerrainPaintWeights): Terrai
       classes[i] = slot?.classIndex ?? 0;
       roughness[i] = slot?.roughness ?? 0.9;
       scales[i] = slot?.scale ?? 1;
+      tiles[i] = slot?.tileMetres ?? 0;
     }
   };
   update(weights);
@@ -228,6 +241,9 @@ export function createTerrainPaintTextures(weights: TerrainPaintWeights): Terrai
     uniforms,
     get classMask() {
       return classMask;
+    },
+    get slots() {
+      return slots;
     },
     update,
     dispose: () => {

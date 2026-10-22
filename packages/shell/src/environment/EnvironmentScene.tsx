@@ -1,5 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
-import { useFrame } from "@react-three/fiber";
+import { useCallback, useEffect, useMemo, useRef } from "react";import { useFrame } from "@react-three/fiber";
 import { PresentationAssetBoundary } from "../presentationRecovery";
 import { PresentationRecoveredDraw, useRecoverableTexture } from "../presentationRecovery3d";
 import * as THREE from "three";
@@ -37,8 +36,10 @@ import { buildAuthoredRoadNetwork, RoadRibbons } from "./RoadRibbons";
 import { terrainGroundColorSampler } from "./terrainGroundColor";
 import { InstancedBuildings, type InstancedBuildingPlacement } from "../structures/GeneratedBuilding";
 import { GrassField } from "../terrain/GrassField";
+import { GrassCover } from "../terrain/GrassCover";
 import { CarvedTerrain, type CarvedTerrainProps } from "../terrain/CarvedTerrain";
 import { createTerrainDetailMaterial } from "../terrain/terrainDetailMaterial";
+import { MAX_TERRAIN_LAYER_MAPS, type TerrainLayerMap } from "../terrain/terrainDetailMaterial";
 import { useTerrainQuality } from "../terrain/terrainQuality";
 import { createTerrainPaintTextures, packTerrainPaintWeights, type TerrainPaintTextures } from "../terrain/terrainSurfaces";
 import { Ocean } from "../water/Ocean";
@@ -63,9 +64,11 @@ interface TerrainGroundLayout {
 function TexturedTerrainGround({
   detail,
   layout,
+  layerMaps,
 }: {
   detail: ResolvedTerrainDetail;
   layout: TerrainGroundLayout;
+  layerMaps?: readonly (TerrainLayerMap | undefined)[];
 }) {
   const maps = detail.material!.maps;
   const textures = useRecoverableTexture({
@@ -84,8 +87,8 @@ function TexturedTerrainGround({
   }, [textures]);
   const quality = useTerrainQuality();
   const material = useDisposable(
-    () => createTerrainDetailMaterial(detail, textures, { paint: layout.paint, quality }).material,
-    [detail, textures, layout.paint, quality],
+    () => createTerrainDetailMaterial(detail, textures, { paint: layout.paint, quality, ...(layerMaps === undefined ? {} : { layerMaps }) }).material,
+    [detail, textures, layout.paint, quality, layerMaps],
   );
   return (
     <>
@@ -103,6 +106,45 @@ function TexturedTerrainGround({
     />
     </>
   );
+}
+
+/** 1×1 white PNG: binds a valid sampler for a painted layer that has no scanned map. */
+const NO_LAYER_MAP = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
+
+/**
+ * Scanned color maps for up to {@link MAX_TERRAIN_LAYER_MAPS} painted terrain layers, loaded through
+ * the shared recoverable texture path and tiled at each layer's own authored metres. The URL is
+ * authored data (`TerrainMaterialLayer.materialUrl`), resolved by the editor from a library name, so
+ * the renderer never reaches into the asset pipeline.
+ */
+function useTerrainLayerMaps(paint: TerrainPaintTextures | undefined): readonly (TerrainLayerMap | undefined)[] | undefined {
+  const urls = useMemo(
+    () =>
+      Array.from({ length: MAX_TERRAIN_LAYER_MAPS }, (_, index) => {
+        const url = paint?.slots[index + 1]?.materialUrl;
+        return url === undefined || url.length === 0 ? NO_LAYER_MAP : url;
+      }),
+    [paint],
+  );
+  const textures = useRecoverableTexture({ layer1: urls[0]!, layer2: urls[1]!, layer3: urls[2]!, layer4: urls[3]! });
+  useEffect(() => {
+    for (const texture of Object.values(textures)) {
+      texture.colorSpace = THREE.SRGBColorSpace;
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+      texture.needsUpdate = true;
+    }
+  }, [textures]);
+  const slots = paint?.slots;
+  return useMemo(() => {
+    if (slots === undefined) return undefined;
+    return Array.from({ length: MAX_TERRAIN_LAYER_MAPS }, (_, index) => {
+      const slot = slots[index + 1];
+      if (slot?.materialUrl === undefined) return undefined;
+      const texture = textures[`layer${index + 1}` as keyof typeof textures];
+      return texture === undefined ? undefined : { color: texture, tileMetres: slot.tileMetres };
+    });
+  }, [slots, textures]);
 }
 
 function TerrainGround({
@@ -155,12 +197,13 @@ function TerrainGround({
     [terrain.detail, terrain.waterLevel],
   );
   const quality = useTerrainQuality();
+  const layerMaps = useTerrainLayerMaps(paint);
   const proceduralMaterial = useMemo(
     () =>
       resolvedDetail === undefined || resolvedDetail.material !== undefined
         ? undefined
-        : createTerrainDetailMaterial(resolvedDetail, undefined, { paint, quality }).material,
-    [resolvedDetail, paint, quality],
+        : createTerrainDetailMaterial(resolvedDetail, undefined, { paint, quality, ...(layerMaps === undefined ? {} : { layerMaps }) }).material,
+    [resolvedDetail, paint, quality, layerMaps],
   );
   useEffect(() => () => proceduralMaterial?.dispose(), [proceduralMaterial]);
 
@@ -170,6 +213,7 @@ function TerrainGround({
         <TexturedTerrainGround
           detail={resolvedDetail}
           layout={{ field, size, segments: terrain.segments, colors, heightRange, paletteAt, paint, center }}
+          {...(layerMaps === undefined ? {} : { layerMaps })}
         />
       </PresentationAssetBoundary>
     );
@@ -218,6 +262,16 @@ function Vegetation({
   const colorTip = grass.colors[grass.colors.length - 1];
   return (
     <group position={[cx, 0, cz]}>
+      <GrassCover
+        area={area}
+        seed={typeof grass.seed === "number" ? grass.seed : 1}
+        colorBase={colorBase ?? "#3f7d2d"}
+        colorTip={colorTip ?? "#66a83f"}
+        strength={grass.groundCover ?? 0.9}
+        edgeFeather={Math.min(8, Math.max(1.5, Math.min(grass.area.w, grass.area.d) * 0.12))}
+        heightAt={heightAt}
+        coverageAt={() => 1}
+      />
       <GrassField
         area={area}
         count={Math.max(1500, Math.min(250000, Math.ceil(grass.density * grass.area.w * grass.area.d)))}
@@ -328,23 +382,34 @@ function DynamicWater({ ocean }: { ocean: OceanEnvironmentDescriptor & { levelAt
   const groupRef = useRef<Group>(null);
   const [x, z] = ocean.position ?? [0, 0];
   const config = useOceanConfig(ocean);
+  const depthAt = useCallback(
+    (lx: number, lz: number) => ocean.levelAt!(ctx.time.now()) - ctx.world.ground.sampleHeight(x + lx, z + lz),
+    [ctx.time.now, ctx.world.ground, ocean.levelAt, x, z],
+  );
   useFrame(() => {
     if (groupRef.current !== null) groupRef.current.position.y = ocean.levelAt(ctx.time.now());
   });
   return (
     <group ref={groupRef} position={[0, ocean.level, 0]}>
-      <Ocean position={[x, 0, z]} config={config} />
+      <Ocean position={[x, 0, z]} config={config} depthAt={depthAt} />
     </group>
   );
 }
 
 function Water({ ocean }: { ocean: OceanEnvironmentDescriptor }) {
+  const ctx = useGameContext();
   const [x, z] = ocean.position ?? [0, 0];
   const config = useOceanConfig(ocean);
+  // The ocean descriptor has no depth field: sample the live ground so the sheet shades
+  // shallow→deep and the shoreline foam band lands where the bed meets the surface.
+  const depthAt = useCallback(
+    (lx: number, lz: number) => ocean.level - ctx.world.ground.sampleHeight(x + lx, z + lz),
+    [ctx.world.ground, ocean.level, x, z],
+  );
   if (ocean.levelAt !== undefined) {
     return <DynamicWater ocean={ocean as OceanEnvironmentDescriptor & { levelAt: (time: number) => number }} />;
   }
-  return <Ocean position={[x, ocean.level, z]} config={config} />;
+  return <Ocean position={[x, ocean.level, z]} config={config} depthAt={depthAt} />;
 }
 
 function Structures({ structures, field }: { structures: BuildingEnvironmentDescriptor; field: TerrainField }) {

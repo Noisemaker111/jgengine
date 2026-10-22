@@ -38,15 +38,56 @@ export interface TerrainDetailMaterialOptions {
   classMask?: number;
   /** Initial editor relief-contour strength. Default 0. */
   contour?: number;
+  /**
+   * Per-painted-slot scanned color maps (slot 1 first), each with its own world tile metres. Layers
+   * without a map (or beyond {@link MAX_TERRAIN_LAYER_MAPS}) keep the procedural surface response.
+   */
+  layerMaps?: readonly (TerrainLayerMap | undefined)[];
 }
 
+
+let placeholder: THREE.DataTexture | undefined;
+
+function placeholderTexture(): THREE.Texture {
+  if (placeholder !== undefined) return placeholder;
+  placeholder = new THREE.DataTexture(new Uint8Array([255, 255, 255, 255]), 1, 1, THREE.RGBAFormat);
+  placeholder.needsUpdate = true;
+  return placeholder;
+}
 
 const ROCK_CLASS_BIT = 1 << 4;
 /** Compile every surface response, for an editor viewport whose paint can change to any surface. */
 export const ALL_TERRAIN_SURFACE_CLASSES = 0x1ff;
 
+/** One painted layer's scanned color map plus the world metres one tile covers. */
+export interface TerrainLayerMap {
+  color: THREE.Texture;
+  tileMetres: number;
+}
+
+/** At most this many painted layers sample their own scanned map; extra layers keep procedural shading. */
+export const MAX_TERRAIN_LAYER_MAPS = 4;
+
 // Slot 0 is the unpainted base, 1–8 the paint layers, 9 slope rock.
 const SLOT_GLSL = /* glsl */ `
+#ifdef JG_TERRAIN_LAYER_MAPS
+uniform sampler2D uLayerMap1;
+uniform sampler2D uLayerMap2;
+uniform sampler2D uLayerMap3;
+uniform sampler2D uLayerMap4;
+uniform float uLayerTile1;
+uniform float uLayerTile2;
+uniform float uLayerTile3;
+uniform float uLayerTile4;
+vec3 jgLayerMap(int slot, vec3 wp, out bool has) {
+  has = false;
+  if (slot == 1) { if (uLayerTile1 > 0.0) { has = true; return texture2D(uLayerMap1, wp.xz / uLayerTile1).rgb; } }
+  else if (slot == 2) { if (uLayerTile2 > 0.0) { has = true; return texture2D(uLayerMap2, wp.xz / uLayerTile2).rgb; } }
+  else if (slot == 3) { if (uLayerTile3 > 0.0) { has = true; return texture2D(uLayerMap3, wp.xz / uLayerTile3).rgb; } }
+  else if (slot == 4) { if (uLayerTile4 > 0.0) { has = true; return texture2D(uLayerMap4, wp.xz / uLayerTile4).rgb; } }
+  return vec3(0.0);
+}
+#endif
 JgSurf jgSlot(int slot, vec3 baseTone, vec3 wp){
   vec3 jgFlatC = baseTone;
   JgSurf s;
@@ -64,6 +105,15 @@ JgSurf jgSlot(int slot, vec3 baseTone, vec3 wp){
   else {
     s = jgSurface(0, baseTone, roughness, 1.0, wp);
   }
+#ifdef JG_TERRAIN_LAYER_MAPS
+  if (slot > 0 && slot <= 4) {
+    bool jgHasMap;
+    vec3 jgMapped = jgLayerMap(slot, wp, jgHasMap);
+    // The layer owns its own scan: grain, colour and all, tiled at its authored metres, and the
+    // mask weights decide how much of it shows against the neighbour layer.
+    if (jgHasMap) s.albedo = mix(s.albedo, jgMapped, 0.92);
+  }
+#endif
   s.albedo = mix(jgFlatC, s.albedo, uSurface);
   s.height *= uSurface;
   s.bump *= uSurface;
@@ -95,6 +145,20 @@ export function createTerrainDetailMaterial(
   const strength = detail.material?.strength ?? 1;
   const tint = detail.material?.tint ?? 1;
   const paint = options.paint;
+  const layerMaps = (options.layerMaps ?? []).slice(0, MAX_TERRAIN_LAYER_MAPS);
+  const hasLayerMaps = layerMaps.some((entry) => entry !== undefined);
+  const layerMapUniforms = hasLayerMaps
+    ? {
+        uLayerMap1: { value: layerMaps[0]?.color ?? placeholderTexture() },
+        uLayerMap2: { value: layerMaps[1]?.color ?? placeholderTexture() },
+        uLayerMap3: { value: layerMaps[2]?.color ?? placeholderTexture() },
+        uLayerMap4: { value: layerMaps[3]?.color ?? placeholderTexture() },
+        uLayerTile1: { value: layerMaps[0]?.tileMetres ?? 0 },
+        uLayerTile2: { value: layerMaps[1]?.tileMetres ?? 0 },
+        uLayerTile3: { value: layerMaps[2]?.tileMetres ?? 0 },
+        uLayerTile4: { value: layerMaps[3]?.tileMetres ?? 0 },
+      }
+    : {};
   const low = options.quality === "low";
   const contour = { value: options.contour ?? 0 };
   // Rock is always compiled for slope rock; each extra class costs shader time even where unused on
@@ -116,6 +180,7 @@ export function createTerrainDetailMaterial(
     uSurface: { value: detail.surfaceStrength },
     uContour: contour,
     ...(paint === undefined ? {} : paint.uniforms),
+    ...layerMapUniforms,
     ...(hasTexture
       ? {
           uMatColor: { value: textures.color },
@@ -137,6 +202,7 @@ export function createTerrainDetailMaterial(
   });
   material.defines = {
     ...(paint === undefined ? {} : { JG_TERRAIN_PAINT: "" }),
+    ...(hasLayerMaps ? { JG_TERRAIN_LAYER_MAPS: "" } : {}),
     ...(low ? { JG_SURFACE_LOW: "" } : {}),
     JG_SURFACE_CLASSES: String(classMask),
   };
@@ -346,6 +412,6 @@ ${materialAoGlsl}`,
   };
 
   material.customProgramCacheKey = () =>
-    `jgengine-terrain-detail-${hasTexture ? "tex" : "flat"}-${hasTexture && textures.roughness !== undefined ? "rough" : "scalar"}-${hasTexture && textures.ao !== undefined ? "ao" : "unoccluded"}-${paint === undefined ? "bare" : "paint"}-${low ? "low" : "full"}-${classMask}`;
+    `jgengine-terrain-detail-${hasTexture ? "tex" : "flat"}-${hasTexture && textures.roughness !== undefined ? "rough" : "scalar"}-${hasTexture && textures.ao !== undefined ? "ao" : "unoccluded"}-${paint === undefined ? "bare" : "paint"}-${hasLayerMaps ? "layers" : "procedural"}-${low ? "low" : "full"}-${classMask}`;
   return { material, contour };
 }

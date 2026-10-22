@@ -267,8 +267,7 @@ export interface ModelPart {
   role?: PartRole;
 }
 
-export interface ModelConfig {
-  url: string;
+export interface ModelConfig {  url: string;
   scale?: number;
   /** Normalize the rendered model to this world-unit height: the shell measures the loaded scene's bounding box, scales it so its height matches, and grounds its lowest point at the placement Y. Composes with `scale` as a multiplier. */
   targetHeight?: number;
@@ -283,9 +282,15 @@ export interface ModelConfig {
   material?: ModelMaterialOverride;
   /** `false` keeps this model's exported material params and skips the engine's default painted surface detail. Default true. */
   surfaceDetail?: boolean;
+  /**
+   * Per-model wind sway for foliage: trunk and standing geometry stay planted while the upper
+   * canopy drifts in the shared gust field. `strength` is metres of tip travel, `speed` the gust
+   * rate, `height` the world height over which sway ramps in (defaults to the model's own height).
+   * `false` or omitted keeps the model rigid. Compiles into each cloned material.
+   */
+  wind?: ModelWindConfig | false;
   /** Reusable authored surfaces available to this model's named slot assignments. */
-  materialAssets?: readonly MaterialAsset[];
-  /** Sparse per-slot assignments; unselected imported materials keep their original appearance. */
+  materialAssets?: readonly MaterialAsset[];  /** Sparse per-slot assignments; unselected imported materials keep their original appearance. */
   materialAssignments?: readonly MaterialAssignment[];
   /** Hide named visual subtrees on this instance before placement measurement. Exact runtime names or unique original imported names resolve without removing bones or changing the cached model; missing or ambiguous names warn and leave existing visibility unchanged. Malformed lists reject before model or texture allocation. Omit or pass [] to retain imported visibility. */
   hiddenNodes?: readonly string[];
@@ -314,6 +319,18 @@ export interface ModelConfig {
   parts?: readonly ModelPart[];
   /** Tuning for the procedural part-motion driver when any part carries a `role`; omit for defaults. */
   partMotion?: PartMotionParams;
+}
+
+/** Wind sway for a foliage model; see {@link ModelConfig.wind}. */
+export interface ModelWindConfig {
+  /** Tip travel in metres. Default 0.35. */
+  strength?: number;
+  /** Gust rate multiplier. Default 1. */
+  speed?: number;
+  /** World height over which sway ramps from the base to full tip travel, in metres. Defaults to the model's measured height. */
+  height?: number;
+  /** Wind heading as a two-axis direction; defaults to the engine's shared gust direction. */
+  direction?: readonly [number, number];
 }
 
 /** Bone names and limits for {@link ModelConfig.ik}. */

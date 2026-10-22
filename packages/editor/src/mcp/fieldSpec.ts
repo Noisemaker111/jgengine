@@ -91,7 +91,7 @@ export const RPC_FIELD_SCHEMAS: Record<EditorBridgeRequest["method"], readonly R
   auto_paint: [req(s("surface")), n("minSlope"), n("maxSlope"), n("minHeight"), n("maxHeight")],
   terrain_materials: [],
   terrain_layers: [],
-  set_terrain_layers: [req(oa("layers", [req(s("id")), req(s("surface")), n("roughness"), n("tiling"), b("triplanar"), s("tint"), n("opacity")]))],
+  set_terrain_layers: [req(oa("layers", [req(s("id")), req(s("surface")), n("roughness"), n("tiling"), b("triplanar"), s("tint"), n("opacity"), s("material")]))],
   blend_terrain: [req(s("surface")), req(n("x")), req(n("z")), n("radius"), n("strength"), s("shape", SHAPE)],
   convert_scatter: [req(s("pathId"))],
   generate_streets: [s("volumeId"), v3("center"), n("halfX"), n("halfZ"), s("seed"), s("mode", ["net", "circuit"]), s("kind"), o("params")],

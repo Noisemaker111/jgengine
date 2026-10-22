@@ -42,8 +42,7 @@ function LoadedStaticObjects({ batch, single }: { batch: StaticObjectBatch; sing
   const objects = useMemo(() => batch.objects.filter((object) => !excluded.includes(object.instanceId)), [batch, excluded]);
   const gltf = useLoader(sharedGltfLoader, batch.model.url);
   const supported = useMemo(() => canInstanceStaticScene(gltf.scene, gltf.animations), [gltf]);
-  const harvested = useMemo(() => supported ? buildScatterModelSources(gltf.scene, batch.model) : null, [supported, gltf, batch.model]);
-  useEffect(() => () => { if (harvested !== null) disposeScatterModelSources(harvested.root); }, [harvested]);
+  const harvested = useMemo(() => supported ? buildScatterModelSources(gltf.scene, batch.model) : null, [supported, gltf, batch.model]);  useEffect(() => () => { if (harvested !== null) disposeScatterModelSources(harvested.root); }, [harvested]);
   useEffect(() => {
     if (harvested === null) return;
     const root = new THREE.Group();

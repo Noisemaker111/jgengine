@@ -13,6 +13,7 @@ import { registerWaterKind } from "../world/waterKind";
 import { registerGrassKind } from "../world/grassKind";
 import { registerSoilKind } from "../world/soilKind";
 import { registerPoleLineKind } from "../world/poleLineKind";
+import { registerDecalKind } from "../world/decalKind";
 import { registerBuildingGenerator } from "../world/buildingGenerator";
 import { registerCityKind } from "../world/cityKind";
 import { describeScatterCoverage, densityCoverage } from "../world/scatterCoverage";
@@ -84,5 +85,6 @@ export function registerBuiltinSceneKinds(): void {
   registerSoilKind();
   registerCityKind();
   registerPoleLineKind();
+  registerDecalKind();
   registerBuildingGenerator();
 }
