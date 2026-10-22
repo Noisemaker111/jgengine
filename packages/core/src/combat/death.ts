@@ -105,6 +105,8 @@ export function createDeathSystem(deps: DeathSystemDeps): DeathSystem {
       };
       if (identity.userId !== undefined) event.userId = identity.userId;
       if (identity.displayName !== undefined) event.displayName = identity.displayName;
+      const source = reason.kind === "environment" ? reason.attacker ?? reason.source : reason.source;
+      event.source = source;
       deps.events.emit("entity.died", event);
       const onDeath = normalizeOnDeath(deps.resolveOnDeath(instanceId, reason));
       const drops: Drop[] = [];
@@ -139,8 +141,10 @@ export function deathReasonFromEffect(ctx: EffectDeathContext): DeathReason {
   const killerUserId = ctx.userIdOf?.(ctx.from);
   if (killerUserId !== undefined) {
     return ctx.via?.item !== undefined
-      ? { kind: "player_kill", killerUserId, via: { item: ctx.via.item } }
-      : { kind: "player_kill", killerUserId };
+      ? { kind: "player_kill", killerUserId, source: ctx.from, via: { item: ctx.via.item } }
+      : { kind: "player_kill", killerUserId, source: ctx.from };
   }
-  return { kind: "environment", source: ctx.via?.item ?? "effect" };
+  return ctx.via?.item !== undefined
+    ? { kind: "environment", source: ctx.via.item, attacker: ctx.from }
+    : { kind: "environment", source: "effect", attacker: ctx.from };
 }

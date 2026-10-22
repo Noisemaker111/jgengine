@@ -129,15 +129,31 @@ describe("death system", () => {
         via: { item: "pistol" },
         userIdOf: (instanceId) => (instanceId === "player1" ? "u1" : undefined),
       }),
-    ).toEqual({ kind: "player_kill", killerUserId: "u1", via: { item: "pistol" } });
+    ).toEqual({ kind: "player_kill", killerUserId: "u1", source: "player1", via: { item: "pistol" } });
     expect(deathReasonFromEffect({ from: "env:spike_trap", via: { item: "spike" } })).toEqual({
       kind: "environment",
       source: "spike",
+      attacker: "env:spike_trap",
     });
     expect(deathReasonFromEffect({ from: "env:void", via: { amount: 999 } })).toEqual({
       kind: "environment",
       source: "effect",
+      attacker: "env:void",
     });
+  });
+
+  test("entity.died names the cause and the attacker for a non-player kill", () => {
+    const { system, died } = createGraveyard(REASON_AWARE);
+    const reason = deathReasonFromEffect({ from: "raider:3", via: { amount: 120 } });
+    system.resolveDeath("mob1", reason);
+    expect(reason).toEqual({ kind: "environment", source: "effect", attacker: "raider:3" });
+    expect(died[0]).toMatchObject({ instanceId: "mob1", reason, source: "raider:3" });
+  });
+
+  test("entity.died names the killer entity as the source of a player kill", () => {
+    const { system, died } = createGraveyard(REASON_AWARE);
+    system.resolveDeath("mob1", { kind: "player_kill", killerUserId: "u1", source: "player1" });
+    expect(died[0]).toMatchObject({ reason: { kind: "player_kill", killerUserId: "u1" }, source: "player1" });
   });
 });
 

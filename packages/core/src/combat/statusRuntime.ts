@@ -51,6 +51,8 @@ export interface StatusDamageTick {
   amount: number;
   /** What the caller's pipeline reported as dealt; equals `amount` when no pipeline was supplied. */
   dealt: number;
+  /** Who applied the status that is ticking, when known — a burn names its arsonist. */
+  source?: string;
 }
 
 /** A stat tick: a per-stack delta the caller reads while the status lives. */
@@ -224,6 +226,7 @@ export function createStatusRuntime(options: StatusRuntimeOptions): StatusRuntim
       channel: effect.channel,
       amount,
       dealt: amount,
+      ...(instance.source !== undefined ? { source: instance.source } : {}),
     };
     if (options.applyDamage !== undefined) tick.dealt = options.applyDamage(tick);
     return [tick];

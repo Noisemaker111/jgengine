@@ -470,7 +470,7 @@ describe("createGameContext", () => {
     ctx.scene.entity.spawn("hero", { id: "user_a", position: [0, 0, 0] });
     const slime = ctx.scene.entity.spawn("slime", { position: [1, 0, 0] });
     ctx.scene.entity.effect({ from: "user_a", to: slime, effect: "damage", via: { amount: 999 } });
-    expect(reasons).toEqual([{ kind: "player_kill", killerUserId: "user_a" }]);
+    expect(reasons).toEqual([{ kind: "player_kill", killerUserId: "user_a", source: "user_a" }]);
   });
 
   test("onDeath drops from a player kill fill the killer inventory and emit loot.granted", () => {

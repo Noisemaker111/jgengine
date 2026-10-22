@@ -11,9 +11,36 @@ export interface EntityDiedEvent {
   catalogId: string;
   userId?: string;
   displayName?: string;
+  /** The cause (`reason.kind`) and, through `source`, what dealt it. */
   reason: DeathReason;
+  /** Instance id of the killer, hazard or effect that caused it, when the caller knew one. */
+  source?: string;
   position: [number, number, number];
   serverId?: string;
+}
+
+/**
+ * One application of damage to one target: what hit it, for how much, and where its health stands.
+ * `target` is always the thing that took the blow, so a hero and a keep hit in the same frame raise
+ * two separate events and a HUD reads only the one whose `target` it owns.
+ */
+export interface DamageAppliedEvent {
+  /** The registered target that took the damage. */
+  target: string;
+  /** Who or what dealt it: an attacker instance id, a hazard, or the status that ticked. */
+  source?: string;
+  /** Damage type resolved through the target's table (`"kinetic"`, `"fire"`). */
+  type: string;
+  /** Damage dealt after the zone, type and armor steps. */
+  amount: number;
+  /** How much of the zone-adjusted incoming amount resistance and armor stopped. */
+  absorbed: number;
+  /** Health left after this application, or `null` when the runtime was given no health reader. */
+  remaining: number | null;
+  /** True only when a health reader reported the pool reaching zero or below. */
+  lethal: boolean;
+  /** The status that ticked, when the damage came from a carried status rather than a direct hit. */
+  status?: string;
 }
 
 /** Request that an entity's rig play a one-shot animation clip bound to `event` in its `animation.oneShots` (e.g. an "attack" swing); the shell resolves the clip and plays it once over the locomotion state. With an `animation.graph`, `event` arms the trigger of that name. */
@@ -317,6 +344,7 @@ export interface AudioLoopStopEvent {
 
 export interface GameEventMap {
   "entity.died": EntityDiedEvent;
+  "combat.damage": DamageAppliedEvent;
   "entity.floatText": EntityFloatTextEvent;
   "combat.telegraph": CombatTelegraphEvent;
   "combat.vfx": CombatVfxEvent;
