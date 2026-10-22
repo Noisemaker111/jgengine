@@ -361,6 +361,7 @@ export {
   type KinematicVehicle,
   type KinematicVehicleStep,
   type KinematicVehicleTuning,
+  type KinematicWeightTransferTuning,
 } from "./physics/kinematicVehicle";
 export {
   PhysicsWorld,
@@ -376,10 +377,34 @@ export { StructureGraph, type CollapseEvent, type StructureMaterial } from "./ph
 export { Glide, Grapple } from "./physics/traversal";
 export { DEFAULT_GRIP_CURVE, createVehicleBody, sampleGripCurve, type GripCurve } from "./physics/vehicleBody";
 export {
+  createVehicleDamage,
+  damagedAxis,
+  damagedTuning,
+  type VehicleDamage,
+  type VehicleDamageConfig,
+  type VehicleDamageEffect,
+  type VehicleDamageEffectResolved,
+  type VehicleDamageState,
+  type VehicleDamageTransition,
+  type VehicleDamageZone,
+  type VehicleDamageZoneState,
+  type VehicleDeformation,
+} from "./physics/vehicleDamage";
+export {
   createVehicleObstacleClamp,
   type VehicleImpact,
   type VehicleObstacleClamp,
 } from "./physics/vehicleObstacles";
+export {
+  applyVehicleParts,
+  feelOf,
+  withPart,
+  type VehicleFeel,
+  type VehiclePart,
+  type VehiclePartEffect,
+  type VehicleSetup,
+  type VehicleStat,
+} from "./physics/vehicleParts";
 export {
   type ObjectSlotRejection,
   type ObjectSlotResult,
