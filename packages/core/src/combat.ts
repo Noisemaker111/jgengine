@@ -19,6 +19,24 @@ export {
 export { createComboPoints } from "./combat/comboPoints";
 export { advanceCombo, createComboRunner, type ComboStep } from "./combat/comboString";
 export {
+  coverPointsFromSolids,
+  coverPointsNear,
+  createCoverField,
+  scoreCoverPoint,
+  selectCover,
+  type CoverChoice,
+  type CoverField,
+  type CoverFieldOptions,
+  type CoverFieldSnapshot,
+  type CoverPoint,
+  type CoverPointOptions,
+  type CoverQuery,
+  type CoverSolid,
+  type CoverSource,
+  type CoverThreat,
+  type CoverWeights,
+} from "./combat/cover";
+export {
   MAX_INTERCEPT_STEPS,
   createAntiOneShotPolicy,
   createDamageClamp,
@@ -140,6 +158,26 @@ export {
   type ResolvedShot,
   type ShotOriginPolicy,
 } from "./combat/shotOrigin";
+export {
+  createSquadCombat,
+  type SquadCombat,
+  type SquadCombatOptions,
+  type SquadCombatSnapshot,
+  type SquadCombatStats,
+  type SquadCombatTunables,
+  type SquadMemberSpec,
+  type SquadMemberView,
+  type SquadMode,
+} from "./combat/squadCombat";
+export {
+  assignSquadRoles,
+  threatsFromMemory,
+  type FireDiscipline,
+  type SquadComposition,
+  type SquadRole,
+  type ThreatReadOptions,
+  type ThreatReading,
+} from "./combat/squadTactics";
 export {
   resolveStatusApplication,
   type StatusApplicationOutcome,

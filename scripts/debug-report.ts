@@ -1,6 +1,6 @@
 import { fileURLToPath } from "node:url";
 
-import { findRunningDevServer } from "./devServerMarker";
+import { listRunningDevServers } from "./devServerMarker";
 import { checkBudget, loadBudget, summarizeRecord } from "./perf-budget";
 import { REPORT_ENDPOINT_PATH, type ReportRouteError } from "../packages/core/src/devtools/reportEndpoint";
 import type { PerfReport } from "../packages/core/src/devtools/report";
@@ -76,6 +76,36 @@ export async function fetchReport(base: string, game: string, waitMs: number): P
   return body as PerfReport;
 }
 
+/** The URL a person opens to play `game` on a given dev server. */
+export function gameUrl(server: { base: string; kind: "website" | "runner" }, game: string): string {
+  return server.kind === "website" ? `${server.base}/games/${game}` : `${server.base}/?game=${game}`;
+}
+
+/**
+ * Pick the server holding a report: the website dev server first, then the runner.
+ * A wait only ever applies to one server, so a missing report fails in about the time
+ * one `--wait` costs rather than doubling it per server.
+ */
+export async function findReport(
+  servers: readonly { base: string; kind: "website" | "runner" }[],
+  game: string,
+  waitMs: number,
+): Promise<{ server: (typeof servers)[number]; report: PerfReport } | { error: string }> {
+  let lastError = `no report for "${game}" yet`;
+  for (const server of servers) {
+    const report = await fetchReport(server.base, game, 0);
+    if (!("error" in report)) return { server, report };
+    lastError = report.error;
+  }
+  const first = servers[0];
+  if (first !== undefined && waitMs > 0) {
+    const report = await fetchReport(first.base, game, waitMs);
+    if (!("error" in report)) return { server: first, report };
+    lastError = report.error;
+  }
+  return { error: lastError };
+}
+
 async function main(): Promise<void> {
   const parsed = parseDebugArgs(process.argv.slice(2));
   if (parsed === "help") {
@@ -84,21 +114,24 @@ async function main(): Promise<void> {
   }
   const { game, waitMs, budget } = parsed;
 
-  const server = await findRunningDevServer(repoRoot);
-  if (server === null) {
+  const servers = await listRunningDevServers(repoRoot);
+  if (servers.length === 0) {
     console.error(
-      `debug: no dev server is running for this checkout — run \`bun dev\`, open ${game} at /games/${game}, then retry`,
+      `debug: no dev server is running for this checkout — run \`bun dev\`, open http://localhost:3000/games/${game}, then retry`,
     );
     process.exit(1);
   }
 
   const startedAt = Date.now();
-  const report = await fetchReport(server.base, game, waitMs);
+  const found = await findReport(servers, game, waitMs);
   const fetchMs = Date.now() - startedAt;
-  if ("error" in report) {
-    console.error(`debug: ${report.error}`);
+  if ("error" in found) {
+    const open = servers.map((server) => gameUrl(server, game)).join(" or ");
+    console.error(`debug: ${found.error}`);
+    console.error(`debug: open ${open}, play for a second, then retry`);
     process.exit(1);
   }
+  const { server, report } = found;
 
   console.log(JSON.stringify(report, null, 2));
   const ageMs = Date.now() - report.at;

@@ -6,6 +6,8 @@ export type { EditorTerrain } from "./types";
 export type { EditorMinimapBake } from "./types";
 /** Scene-document sky/fog/lighting bag edited by the lighting workspace. */
 export type { EditorEnvironment, EditorFogConfig, EditorLightProbe, EditorSkyPreset, PointLightingConfig } from "./types";
+/** Authored per-game colour grade: band tints, saturation/contrast and the clamped exposure range. */
+export type { EditorAutoExposure, EditorColorGrading } from "./types";
 /** Declarative HDRI, cube, or gradient environment source used by the shell. */
 export type { EnvironmentSource } from "../render/environment";
 /** Per-kind show/hide flags for the editor's layer panel. */
@@ -129,15 +131,19 @@ export type { DecodeEditorDocumentResult } from "./document";
 export {
   authoredLightsFromDocument,
   bakeLightProbe,
+  colorGradeFromDocument,
   environmentContentFromDocument,
   lightProbesFromDocument,
   lightingFromDocument,
+  lutCubeFromGrading,
   skyConfigFromEnvironment,
   skyFromDocument,
   terrainBoundsFromDocument,
 } from "./environment";
 /** Coordinate/placement content of an `environment()` world derived from the scene document. */
 export type { EnvironmentContent, EnvironmentContentOptions } from "./environment";
+/** A scene document's authored grade, baked for the renderer. */
+export type { DocumentColorGrade } from "./environment";
 export { bakeMinimapFromDocument, documentBakeZones } from "./minimap";
 /** Editor-side minimap bake from the scene document (footprint + biome-tint zones). */
 export type { DocumentBakeOptions } from "./minimap";

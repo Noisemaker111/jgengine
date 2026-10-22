@@ -3,7 +3,7 @@ import { describe, expect, test } from "bun:test";
 import { devtools } from "@jgengine/core/devtools/devtools";
 import { createLogBus } from "@jgengine/core/devtools/logBus";
 import { toReportLogs } from "@jgengine/core/devtools/report";
-import { buildFrameReport, countSceneNodes, attachGlCounters, reportGameId } from "./frameSampler";
+import { buildFrameReport, countSceneNodes, attachGlCounters, probeReportRoute, reportGameId } from "./frameSampler";
 
 /**
  * The in-page report is the same record `bun run perf` prints, so these assert the
@@ -166,9 +166,29 @@ describe("report game id", () => {
   });
 });
 
+describe("report route probe", () => {
+  test("installs only where a dev report route answers JSON", async () => {
+    const json = (body: unknown, status = 200) =>
+      Promise.resolve(new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } }));
+    expect(await probeReportRoute("/__jgengine/report", "deepward", (() => json({ error: "no report yet" }, 404)) as typeof fetch)).toBe(true);
+    expect(await probeReportRoute("/__jgengine/report", "deepward", (() => json({ game: "deepward", frame: {} })) as typeof fetch)).toBe(true);
+  });
+
+  test("stays off on a production host, which answers HTML or nothing", async () => {
+    const html = () => Promise.resolve(new Response("<!doctype html><title>404</title>", { headers: { "content-type": "text/html" } }));
+    expect(await probeReportRoute("/__jgengine/report", "deepward", html as unknown as typeof fetch)).toBe(false);
+    const offline = () => Promise.reject(new Error("ECONNREFUSED"));
+    expect(await probeReportRoute("/__jgengine/report", "deepward", offline as unknown as typeof fetch)).toBe(false);
+    expect(await probeReportRoute("/__jgengine/report", "deepward", null)).toBe(false);
+  });
+});
+
 describe("devtools lean report", () => {
   test("carries systems and the log summary so the CDP harness and the page print one shape", async () => {
     const { buildLeanReport } = await import("./devtoolsReports");
+    // Other files' console warns land in the same global log buffer; this test is about the shape
+    // of the summary, not about who else wrote a line.
+    devtools.logs.clear();
     devtools.probes.registerSystem("report/test", { counters: () => ({ a: 1 }), state: () => "one" });
     devtools.logs.write("warn", "needs", "no bed nearby");
     const playable = { game: { name: "Report Probe" } } as unknown as Parameters<typeof buildLeanReport>[0];

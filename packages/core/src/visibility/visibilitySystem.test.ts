@@ -108,7 +108,7 @@ describe("visibilitySystem", () => {
     const reading = devtools.probes.systems()["render/culling"]!;
     expect(reading.counters).toMatchObject({ totalObjects: 2, visible: 1, culled: 1 });
     expect(reading.timers.cullingMs).toBeGreaterThanOrEqual(0);
-    expect(reading.state).toBe("1/2 visible · 1 culled · 0ms");
+    expect(reading.state).toBe("1/2 visible · 1 culled · " + reading.timers.cullingMs + "ms");
     sys.clear();
     expect(devtools.probes.systems()["render/culling"]).toBeUndefined();
   });

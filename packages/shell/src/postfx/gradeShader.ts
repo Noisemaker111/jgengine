@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { ShaderPass } from "three-stdlib";
 
-import type { GradeConfig } from "@jgengine/core/render/postProcessing";
+import type { GradeConfig, LutCube } from "@jgengine/core/render/postProcessing";
 
 const DEFAULT_LIFT: readonly [number, number, number] = [0.012, 0.01, 0.018];
 const DEFAULT_GAIN: readonly [number, number, number] = [1.05, 1.02, 0.98];
@@ -31,10 +31,15 @@ const fragmentShader = /* glsl */ `
 
   vec3 sampleLut(vec3 color) {
     float size = max(uLutSize, 2.0);
-    vec3 c = clamp(color, 0.0, 1.0) * (size - 1.0);
-    float blue = floor(c.b);
-    vec2 uv = vec2((blue * size + c.r + 0.5) / (size * size), (c.g + 0.5) / size);
-    return texture2D(uLut, uv).rgb;
+    float levels = size - 1.0;
+    vec3 c = clamp(color, 0.0, 1.0) * levels;
+    // One tile per blue slice, sampled at texel centres so linear filtering never reads across
+    // into the neighbouring slice, and the two nearest slices blend the blue axis by hand.
+    float slice = floor(c.b);
+    float next = min(slice + 1.0, levels);
+    vec2 uvA = vec2((slice * size + 0.5 + c.r) / (size * size), (0.5 + c.g) / size);
+    vec2 uvB = vec2((next * size + 0.5 + c.r) / (size * size), (0.5 + c.g) / size);
+    return mix(texture2D(uLut, uvA).rgb, texture2D(uLut, uvB).rgb, c.b - slice);
   }
 
   void main() {
@@ -66,6 +71,35 @@ const vertexShader = /* glsl */ `
     gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
   }
 `;
+
+/** Packs a baked cube into the strip layout the sampler expects: `size` tiles side by side per blue slice. */
+function lutStripTexture(cube: LutCube): THREE.DataTexture {
+  const size = cube.size;
+  const data = new Uint8Array(size * size * size * 4);
+  for (let slice = 0; slice < size; slice += 1) {
+    for (let green = 0; green < size; green += 1) {
+      for (let red = 0; red < size; red += 1) {
+        const from = (slice * size * size + green * size + red) * 3;
+        const to = (green * size * size + slice * size + red) * 4;
+        data[to] = cube.data[from] ?? 0;
+        data[to + 1] = cube.data[from + 1] ?? 0;
+        data[to + 2] = cube.data[from + 2] ?? 0;
+        data[to + 3] = 255;
+      }
+    }
+  }
+  const texture = new THREE.DataTexture(data, size * size, size, THREE.RGBAFormat, THREE.UnsignedByteType);
+  // Display-space values sampled raw in the shader, so no colour-space decode on the way in.
+  texture.colorSpace = THREE.NoColorSpace;
+  texture.minFilter = THREE.LinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+  texture.wrapS = THREE.ClampToEdgeWrapping;
+  texture.wrapT = THREE.ClampToEdgeWrapping;
+  texture.generateMipmaps = false;
+  texture.flipY = false;
+  texture.needsUpdate = true;
+  return texture;
+}
 
 /** Build the display-space colour-grade pass and load its optional LUT. Dispose the pass to release its LUT; advance `uniforms.uTime.value` each frame to animate grain. */
 export function createGradePass(config: GradeConfig = {}): ShaderPass {
@@ -100,6 +134,12 @@ export function createGradePass(config: GradeConfig = {}): ShaderPass {
   };
   if (config.lut !== undefined) {
     const lut = config.lut;
+    if ("cube" in lut) {
+      lutTexture = lutStripTexture(lut.cube);
+      pass.uniforms.uLut.value = lutTexture;
+      pass.uniforms.uLutSize.value = lut.cube.size;
+      return pass;
+    }
     void new THREE.TextureLoader().loadAsync(lut.url).then((texture) => {
       if (disposed) {
         texture.dispose();

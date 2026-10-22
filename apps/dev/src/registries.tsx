@@ -219,6 +219,7 @@ export const gameRegistry: GameRegistry = {
   "dialogue": () => import("./demo/dialogueDemo").then((module) => module.dialogueDemoGame),
   "damage-direction": () => import("./demo/damageDirectionDemo").then((module) => module.damageDirectionDemoGame),
   "day-night": () => import("./demo/dayNightDemo").then((module) => module.dayNightDemoGame),
+  "color-pipeline": () => import("./demo/colorPipelineDemo").then((module) => module.colorPipelineDemoGame),
   "status-effects": () => import("./demo/statusEffectDemo").then((module) => module.statusEffectDemoGame),
   "cutscene": () => import("./demo/cutsceneDemo").then((module) => module.cutsceneDemoGame),
   "pause-menu": () => import("./demo/pauseMenuDemo").then((module) => module.pauseMenuDemoGame),

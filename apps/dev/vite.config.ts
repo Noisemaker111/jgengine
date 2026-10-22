@@ -8,6 +8,7 @@ import { defineConfig, searchForWorkspaceRoot, type ProxyOptions } from "vite";
 
 import { parseDevProxyTable } from "../../packages/core/src/data/devProxy";
 import { tunableDiscoveryPlugin } from "../../packages/core/src/devtools/transformTunables";
+import { devServerMarkerPlugin } from "../../scripts/devServerMarker";
 import { devSavePlugin } from "./devSavePlugin";
 import { devReportPlugin } from "./devReportPlugin";
 
@@ -55,7 +56,7 @@ const devProxy: Record<string, string | ProxyOptions> = Object.fromEntries(
 );
 
 export default defineConfig({
-  plugins: [tunableDiscoveryPlugin(), devSavePlugin(gamesDir), devReportPlugin(), react(), tailwindcss()],
+  plugins: [devServerMarkerPlugin({ kind: "runner" }), tunableDiscoveryPlugin(), devSavePlugin(gamesDir), devReportPlugin(), react(), tailwindcss()],
   clearScreen: false,
   build: {
     target: "es2022",

@@ -14,6 +14,23 @@ Scene and catalog modules are optional. A present module with a broken dependenc
 
 `dispatch` with `setEnvironment` validates only the candidate environment before changing the session, undo history, or live document revision. Supported presets are `day`, `dusk`, and `night`; custom palette, sun, intensity, and fog fields remain explicit authored values. Invalid inputs report `$.environment` paths. Validated nested fields are copied, so mutating the command afterward cannot change the document. Passing `environment: undefined` removes the bag and remains undoable. Repair unsupported authored values through an explicit editor command; preserve the author's palette and fog rather than substituting a default.
 
+`environment.grading` is the colour pipeline's authored face, edited in the Lighting workspace's Colour grade section:
+
+```json
+"grading": {
+  "size": 8,
+  "shadows": "#25304a",
+  "midtones": "#e6dcc8",
+  "highlights": "#fff0d2",
+  "tint": 0.42,
+  "saturation": 1.12,
+  "contrast": 1.08,
+  "autoExposure": { "min": 0.5, "max": 2.6 }
+}
+```
+
+Each band swatch is a display colour the pixels of that band are pulled toward by `tint` (absent band = untouched); saturation and contrast work around luma first. The runtime bakes the block into one `size³` cube LUT (`lutCubeFromGrading`, `@jgengine/core/editor/environment`, size 2..16, default 8 — a few hundred bytes of JSON, no texture asset to ship) and applies it after tone mapping; `autoExposure` is the clamped range the meter may use. The shell reads it from `editorLayers` with `colorGradeFromDocument`, so a game carries its own grade by authoring this block — never by hardcoding a LUT URL or grade in its config. Swatches must be hex colours and cube sizes outside 2..16 are rejected with their `$.environment.grading` path.
+
 ## Atomic authoring batches
 
 Use `document_revision` to inspect the current revision, then send one `push_document_patch` for a complete placement operation. Commands use the `EditorCommand` shapes from `@jgengine/core/editor/commands`, rather than RPC verb shapes. Earlier commands' ids are available to later commands in the same batch:

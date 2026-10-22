@@ -235,6 +235,15 @@ const SAMPLE_FRAMES_SCRIPT = (windowMs: number): string => `new Promise((resolve
   requestAnimationFrame(tick);
 })`;
 
+/**
+ * Resource timing keeps 250 entries by default: a heavy game evicts the three.js module
+ * from the list before the node counter looks for it, which read as "nodes unavailable"
+ * on a scene that plainly rendered. Raise it before any page script runs.
+ */
+const RESOURCE_BUFFER_SCRIPT = `(() => {
+  try { performance.setResourceTimingBufferSize(4000); } catch {}
+})();`;
+
 interface GlCounts {
   counts: Record<string, number>;
   since: Record<string, number>;
@@ -251,11 +260,25 @@ function remoteObjectId(result: Record<string, unknown>): string | undefined {
 }
 
 /**
- * Count live three.js scene-graph nodes. The dev runner's three module is
- * already loaded, so importing its served URL yields the same constructor the
- * game uses; queryObjects then hands back every live instance.
+ * Count live three.js scene-graph nodes. The page's own sampler counts them from the
+ * live scene (`window.__JG.report().render`), which is the same number and does not
+ * depend on resource-timing entries surviving; when the sampler is off (an A/B run),
+ * fall back to the dev runner's three module, imported by its served URL so
+ * `queryObjects` hands back every live instance.
  */
-async function measureSceneNodes(session: CdpSession): Promise<SceneNodeCount> {
+export async function measureSceneNodes(session: CdpSession): Promise<SceneNodeCount> {
+  try {
+    const fromPage = await session.evaluate<{ nodes: number | null; scenes: number; source: SceneNodeSource }>(`(() => {
+      const render = window.__JG?.report?.()?.render;
+      if (render === undefined || typeof render.nodes !== "number") return null;
+      return { nodes: render.nodes, scenes: render.scenes ?? 1, source: render.nodesSource ?? "scene-graph" };
+    })()`);
+    if (fromPage !== null && fromPage !== undefined && typeof fromPage.nodes === "number") {
+      return { nodes: fromPage.nodes, source: fromPage.source, scenes: fromPage.scenes };
+    }
+  } catch {
+    /* fall through to the CDP walk */
+  }
   try {
     await session.send("Runtime.enable");
     const namespace = await session.send("Runtime.evaluate", {
@@ -377,6 +400,7 @@ export async function measureGame(options: MeasureOptions): Promise<PerfMeasure>
   const profileRun = options.profile ?? true;
 
   await session.send("Page.enable");
+  await session.send("Page.addScriptToEvaluateOnNewDocument", { source: RESOURCE_BUFFER_SCRIPT });
   await session.send("Page.addScriptToEvaluateOnNewDocument", { source: GL_COUNTERS_SCRIPT });
   await applyDevice(session, "desktop", quality === "draft" ? "half" : "full");
   const url = new URL(base);
