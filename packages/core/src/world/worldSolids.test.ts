@@ -290,10 +290,10 @@ describe("environment structures are solid to every system that reads ctx.world.
 
     for (const ctx of [generated, placed]) {
       const senses = createPerception({ sightRange: 30, sightConeDeg: 360, hearingRange: 0, memorySeconds: 1,
-        occluded: (from, to) => ctx.scene.raycast({ ...ray, origin: from,
+        isSegmentClear: (from, to) => ctx.scene.raycast({ ...ray, origin: from,
           direction: [to[0] - from[0], to[1] - from[1], to[2] - from[2]], maxDistance: Math.hypot(...to.map((v, i) => v - from[i]!)),
           accept: (hit) => hit.blocks,
-        }) !== null,
+        }) === null,
       });
       const observer = { id: "observer", position: ray.origin, yaw: 0 };
       const targets = [{ id: "target", position: [0, 1, 20] as const }];

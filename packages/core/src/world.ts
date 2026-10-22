@@ -495,6 +495,19 @@ export {
   type FrustumTarget,
 } from "./sensor/frustumSensor";
 export { type HiddenStateSource, type SensorProbeOptions, type SensorReading } from "./sensor/hiddenStateProbe";
+export {
+  createPerception,
+  type PerceptionCandidate,
+  type PerceptionConfig,
+  type PerceptionMemory,
+  type PerceptionObserver,
+  type PerceptionPosition,
+  type PerceptionService,
+  type PerceptionSnapshot,
+  type PerceptionStats,
+  type PerceptionStimulus,
+  type PerceptionStimulusKind,
+} from "./sensor/perception";
 export { type RecordingBuffer, type RecordingBufferOptions } from "./sensor/recordingBuffer";
 export { type RevealHit, type RevealQuery } from "./sensor/revealQuery";
 export {

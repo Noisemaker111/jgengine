@@ -151,7 +151,7 @@ export interface GuardSenses {
 }
 
 export function createGuardSenses(): GuardSenses {
-  const perception = createPerception({ ...GUARD_SENSES, occluded: wallBlocks });
+  const perception = createPerception({ ...GUARD_SENSES, isSegmentClear: (from, to) => !wallBlocks(from, to) });
   let now = 0;
   let lastSample = 0;
   let lastPlayer: readonly [number, number, number] | null = null;
