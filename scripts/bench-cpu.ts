@@ -8,7 +8,7 @@ import { TIMING_GATE_ENV } from "./timing-budget";
 /**
  * The wall-clock gate: runs every test file that carries a timing budget with
  * `JG_TIMING_GATE=1`, so the ceilings assert here and stay measured-and-printed
- * in `bun test`. CI runs this in the `perf` job, never in `test`, because a
+ * in `bun test`. CI runs this in the `perf-cpu` job, never in `test`, because a
  * shared runner throttles and a busy neighbour must not fail a merge.
  *
  *   bun run bench:cpu
