@@ -1,6 +1,6 @@
 {
   "name": "@jgengine/editor",
-  "version": "0.25.0",
+  "version": "0.26.0",
   "description": "Scene/world/asset editor for JGengine — loaded lazily by the runner; never import from game entrypoints.",
   "license": "Apache-2.0",
   "type": "module",
@@ -31,11 +31,11 @@
     "test": "bun test src"
   },
   "dependencies": {
-    "@jgengine/assets": "^0.25.0",
-    "@jgengine/core": "^0.25.0",
-    "@jgengine/navbake": "^0.25.0",
-    "@jgengine/react": "^0.25.0",
-    "@jgengine/shell": "^0.25.0"
+    "@jgengine/assets": "^0.26.0",
+    "@jgengine/core": "^0.26.0",
+    "@jgengine/navbake": "^0.26.0",
+    "@jgengine/react": "^0.26.0",
+    "@jgengine/shell": "^0.26.0"
   },
   "peerDependencies": {
     "@react-three/drei": "^10.0.0",

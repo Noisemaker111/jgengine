@@ -1,5 +1,0 @@
-### Added
-
-- `createNavRuntime` (`@jgengine/core/world`) consumes an editor-baked nav mesh: reads the `nav` bake off a scene document (`navMeshFromBake`), routes with the mesh query, resolves authored doors, ladders and jumps (`AuthoredNavLink`, priced by kind) onto the current surface, and swaps in a new bake after an edit while matching polygon identity by geometry — `applyMesh` returns a `remap` so only routes over changed polygons need re-planning.
-- `createNavCrowd` (`@jgengine/core/world`) moves many agents across that mesh: plans a corridor, follows the funnel-smoothed waypoints, keeps agents apart with reciprocal velocity obstacle avoidance, bounds path searches per tick by count and milliseconds, fans converging agents out with `spread`, and round-trips through `snapshot`/`restore`.
-- `createRvoCrowd` (`@jgengine/core/world`) is the avoidance solver on its own: RVO/ORCA half-plane solve over a uniform-grid neighbour search capped at `maxNeighbors`, deterministic tie-breaking, overlap relief, retunable `timeHorizon`/`neighborDist`/`maxNeighbors`/`sideBias`/`overlapRelief`, and `snapshot`/`restore` for saves and replays.
