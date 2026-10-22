@@ -19,6 +19,13 @@ a parallel entity store. To bolt firing onto an existing game, compose
 `resolveDamageHit`) per the
 [portable weapon-plumbing recipe](recipes/portable-weapon-plumbing.md); never add
 a default gun or FPS kit.
+For a weapon that is plain data — fire mode, rate, delivery, magazine, recoil and
+spread, damage — hand the definition to `createWeaponSystem`
+(`combat/weaponSystem`): it runs single/auto/burst, hitscan or ballistic
+projectiles, interrupted reloads and a readable ammo economy, and resolves both
+deliveries through `createDamageRuntime`. Generated guns (rolled parts) are the
+same `WeaponDefinition`; see
+[reference.md](reference.md#weapons-as-data).
 For scene-backed `createProjectileSystem`, inject authoritative `rng`; spread
 samples independent pellet rays and prediction stays on the center ray. The
 weapon-plumbing recipe covers the bounded cone and cover contracts.
@@ -38,6 +45,9 @@ snapshots/restores as plain data; see
 
 Closure-backed magazines expose snapshot/restore and `retune` for capacity/reload
 changes without reconstructing ammo state; capacity overflow is explicit.
+`pauseReload`/`resumeReload` suspend a reload and keep its progress, so a
+sprint or a weapon swap can interrupt one and continue it; a paused reload is
+not `isReloading()` and does not advance in `tick`.
 Stat modifiers expose snapshot/restore; ability
 kits, shields, and meters expose state/restore for caller-owned saves,
 rollback, replay, and workers. Follow the

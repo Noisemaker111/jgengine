@@ -348,6 +348,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `vfxPresets` (const) · `import { vfxPresets } from "@jgengine/core/combat"`
 
+## weapon-cadence — convert a rounds-per-minute weapon rate into the interval a fire gate takes
+
+- `weaponIntervalMs` (function) · `import { weaponIntervalMs } from "@jgengine/core/combat"`
+
+## weapon-definition-validate — reject a malformed weapon definition at construction with the field named
+
+- `assertWeaponDefinition` (function) · `import { assertWeaponDefinition } from "@jgengine/core/combat"`
+
 ## weapon-feedback — turn weapon shots, recoil kick and impacts into per-tick feedback-mixer signals for camera shake, audio and rumble
 
 - `createWeaponFeedbackSignals` (function) · `import { createWeaponFeedbackSignals } from "@jgengine/core/combat/weaponFeedback"`
@@ -367,3 +375,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## weapon-runtime — compose cadence, magazine, a caller-owned raycast, and portable damage resolution into a fire controller
 
 - `createWeaponRuntime` (function) · `import { createWeaponRuntime } from "@jgengine/core/combat"`
+
+## weapon-system — run a data-defined weapon: fire modes, recoil and bloom, hitscan or ballistic projectiles, interrupted reloads and readable ammo, all resolving through the damage runtime
+
+- `createWeaponSystem` (function) · `import { createWeaponSystem } from "@jgengine/core/combat"`

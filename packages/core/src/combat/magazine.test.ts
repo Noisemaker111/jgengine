@@ -73,8 +73,7 @@ describe("createMagazine", () => {
     expect(mag.loaded()).toBe(0);
   });
 
-  test("omitted reserve is infinite — always reloadable, addReserve is a no-op", () => {
-    const mag = createMagazine({ capacity: 5, reloadMs: 200 });
+  test("omitted reserve is infinite - always reloadable, addReserve is a no-op", () => {    const mag = createMagazine({ capacity: 5, reloadMs: 200 });
     expect(mag.reserve()).toBeNull();
     mag.fire(5);
     mag.addReserve(999);
@@ -263,5 +262,73 @@ describe("magazine live tuning", () => {
       expect(mag.capacity()).toBe(6);
       expect(mag.loaded()).toBe(6);
     }
+  });
+});
+
+describe("interrupted reloads", () => {
+  test("pause keeps the progress and resume continues from it", () => {
+    const mag = createMagazine({ capacity: 6, reloadMs: 1000, reserve: 20 });
+    mag.fire(4);
+    expect(mag.startReload()).toBe(true);
+    mag.tick(0.4);
+    expect(mag.pauseReload()).toBe(true);
+    expect(mag.isPaused()).toBe(true);
+    expect(mag.isReloading()).toBe(false);
+    expect(mag.reloadFraction()).toBeCloseTo(0.4);
+
+    mag.tick(5);
+    expect(mag.loaded()).toBe(2);
+    expect(mag.reloadFraction()).toBeCloseTo(0.4);
+    expect(mag.pauseReload()).toBe(false);
+    expect(mag.startReload()).toBe(false);
+    expect(mag.canReload()).toBe(false);
+
+    expect(mag.resumeReload()).toBe(true);
+    expect(mag.isReloading()).toBe(true);
+    mag.tick(0.59);
+    expect(mag.loaded()).toBe(2);
+    mag.tick(0.01);
+    expect(mag.loaded()).toBe(6);
+    expect(mag.reserve()).toBe(16);
+    expect(mag.isPaused()).toBe(false);
+  });
+
+  test("cancel still drops the progress a pause kept", () => {
+    const mag = createMagazine({ capacity: 6, reloadMs: 1000, reserve: 20 });
+    mag.fire(4);
+    mag.startReload();
+    mag.tick(0.5);
+    mag.pauseReload();
+    mag.cancelReload();
+    expect(mag.isPaused()).toBe(false);
+    expect(mag.isReloading()).toBe(false);
+    expect(mag.reloadFraction()).toBe(0);
+    expect(mag.canReload()).toBe(true);
+  });
+
+  test("a paused reload round-trips through JSON", () => {
+    const mag = createMagazine({ capacity: 6, reloadMs: 1000, reserve: 20 });
+    mag.fire(4);
+    mag.startReload();
+    mag.tick(0.4);
+    mag.pauseReload();
+    const saved = JSON.parse(JSON.stringify(mag.snapshot()));
+    expect(saved.paused).toBe(true);
+
+    const restored = createMagazine({ capacity: 6, reloadMs: 1000, reserve: 0, loaded: 0 });
+    expect(restored.restore(saved)).toBe(true);
+    expect(restored.isPaused()).toBe(true);
+    expect(restored.reloadFraction()).toBeCloseTo(0.4);
+    restored.resumeReload();
+    restored.tick(0.6);
+    expect(restored.loaded()).toBe(6);
+    mag.resumeReload();
+    mag.tick(0.6);
+    expect(restored.snapshot()).toEqual(mag.snapshot());
+  });
+
+  test("an idle snapshot keeps its old shape", () => {
+    const mag = createMagazine({ capacity: 4, reloadMs: 500, reserve: 8 });
+    expect("paused" in mag.snapshot()).toBe(false);
   });
 });

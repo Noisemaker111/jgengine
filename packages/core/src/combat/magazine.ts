@@ -32,6 +32,8 @@ export interface MagazineSnapshot {
   loaded: number;
   reloadElapsedMs: number | null;
   reserve: number | null;
+  /** Present and `true` only while a reload is suspended, so idle snapshots keep their shape. */
+  paused?: boolean;
 }
 
 /**
@@ -58,6 +60,12 @@ export interface Magazine {
   canReload(): boolean;
   /** Begin the reload timer if `canReload()`; returns whether it started. */
   startReload(): boolean;
+  /** Suspend an in-progress reload, keeping its elapsed progress, so it can be resumed later. */
+  pauseReload(): boolean;
+  /** Continue a paused reload from the progress it kept. */
+  resumeReload(): boolean;
+  /** True while a reload is suspended by `pauseReload()`. */
+  isPaused(): boolean;
   /** Abort an in-progress reload; loaded/reserve are unchanged (only completion moves ammo). */
   cancelReload(): void;
   /** Add `amount` to a self-contained numeric reserve (a pickup); a no-op against an infinite or externally-owned reserve without a `gain`. */
@@ -115,6 +123,7 @@ export function createMagazine(config: MagazineConfig): Magazine {
 
   let loaded = clampLoaded(config.loaded ?? capacity);
   let reloadElapsedMs: number | null = null;
+  let paused = false;
 
   return {
     loaded: () => loaded,
@@ -139,7 +148,7 @@ export function createMagazine(config: MagazineConfig): Magazine {
       return true;
     },
     reserve: () => (isInfiniteReserve ? null : reserve.current()),
-    isReloading: () => reloadElapsedMs !== null,
+    isReloading: () => reloadElapsedMs !== null && !paused,
     reloadFraction: () => (reloadElapsedMs === null || reloadMs <= 0 ? 0 : Math.min(1, reloadElapsedMs / reloadMs)),
     isEmpty: () => loaded <= 0,
     isFull: () => loaded >= capacity,
@@ -160,16 +169,29 @@ export function createMagazine(config: MagazineConfig): Magazine {
     startReload() {
       if (!this.canReload()) return false;
       reloadElapsedMs = 0;
+      paused = false;
       return true;
     },
+    pauseReload() {
+      if (reloadElapsedMs === null || paused) return false;
+      paused = true;
+      return true;
+    },
+    resumeReload() {
+      if (!paused) return false;
+      paused = false;
+      return true;
+    },
+    isPaused: () => paused,
     cancelReload() {
       reloadElapsedMs = null;
+      paused = false;
     },
     addReserve(amount) {
       if (amount > 0) reserve.gain?.(amount);
     },
     tick(dtSeconds) {
-      if (dtSeconds <= 0 || reloadElapsedMs === null) return;
+      if (dtSeconds <= 0 || reloadElapsedMs === null || paused) return;
       reloadElapsedMs += dtSeconds * 1000;
       if (reloadElapsedMs < reloadMs) return;
       const need = capacity - loaded;
@@ -184,6 +206,7 @@ export function createMagazine(config: MagazineConfig): Magazine {
         loaded,
         reloadElapsedMs,
         reserve: isInfiniteReserve ? null : reserve.current(),
+        ...(paused ? { paused: true } : {}),
       };
     },
     restore(snapshot) {
@@ -200,6 +223,7 @@ export function createMagazine(config: MagazineConfig): Magazine {
         snapshot.reloadElapsedMs === null
           ? null
           : Math.max(0, Math.min(reloadMs, snapshot.reloadElapsedMs));
+      paused = reloadElapsedMs !== null && snapshot.paused === true;
       return true;
     },
   };
