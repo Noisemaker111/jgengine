@@ -48,6 +48,8 @@ Classify each acceptance claim before scheduling proof. A plan that uses screens
 
 When a game is reported slow, play it and pull the debug menu's perf data instead of guessing. In the engine monorepo, `bun run perf <game> [--quality draft|full] [--seconds n]` does the whole sequence below on a real GPU and prints one JSON record (frame stats, draws, triangles, scene nodes, GL allocations after warmup, top self-time functions) to diff before and after; use it first and drop to the manual steps when you need a phase breakdown.
 
+CI's `perf` job runs `bun run perf:gate`: every reference game plays under software GL, then draws, triangles and scene nodes are compared with that game's entry in `scripts/perf-budget.json` (a game's own `Games/<id>/perf-budget.json` wins) and any `linkProgram`/`createFramebuffer` after the 5 s warmup fails. Raise a budget only from a measured `bun run perf` baseline, and put the measurement in the entry's `baseline` string; frame times are never gated because CI runners are shared.
+
 Use these budgets when reviewing frame metrics:
 
 | Profile | Frame budget | Draw-call budget | Triangle budget |

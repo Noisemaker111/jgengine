@@ -1,0 +1,51 @@
+{
+  "harbor-heat": {
+    "draws": 7950,
+    "triangles": 4025000,
+    "nodes": 12500,
+    "baseline": "2026-10-21 bun run perf:gate, GeForce RTX 3070 D3D11, 1600x900 full: 7,232 draws / 3,658,612 triangles / 11,365 nodes"
+  },
+  "scrap-signal": {
+    "draws": 685,
+    "triangles": 1848000,
+    "nodes": 7650,
+    "programsLinked": 3,
+    "baseline": "2026-10-21 bun run perf:gate, GeForce RTX 3070 D3D11, 1600x900 full: 619 draws / 1,679,654 triangles / 6,951 nodes; links 1-3 programs after warmup as late materials appear, so 3 is the measured ceiling (A3.2 drives it to 0)"
+  },
+  "brightway-park": {
+    "draws": 2570,
+    "triangles": 113600,
+    "nodes": 1385,
+    "baseline": "2026-10-21 bun run perf:gate, GeForce RTX 3070 D3D11, 1600x900 full: 2,334 draws / 103,276 triangles / 1,258 nodes"
+  },
+  "ember-command": {
+    "draws": 1810,
+    "triangles": 432700,
+    "nodes": 775,
+    "baseline": "2026-10-21 bun run perf:gate, GeForce RTX 3070 D3D11, 1600x900 full: 1,642 draws / 393,326 triangles / 703 nodes"
+  },
+  "beacon-bastion": {
+    "draws": 453,
+    "triangles": 1415500,
+    "nodes": 175,
+    "baseline": "2026-10-21 bun run perf:gate, GeForce RTX 3070 D3D11, 1600x900 full: 411 draws / 1,286,777 triangles / 159 nodes"
+  },
+  "drift-foundry": {
+    "draws": 4125,
+    "triangles": 1642000,
+    "nodes": 3760,
+    "baseline": "2026-10-21 bun run perf:gate, GeForce RTX 3070 D3D11, 1600x900 full: 3,750 draws / 1,493,021 triangles / 3,415 nodes"
+  },
+  "odd-orbit": {
+    "draws": 570,
+    "triangles": 536200,
+    "nodes": 320,
+    "baseline": "2026-10-21 bun run perf:gate, GeForce RTX 3070 D3D11, 1600x900 full: 518 draws / 487,470 triangles / 291 nodes"
+  },
+  "deepward": {
+    "draws": 82,
+    "triangles": 55800,
+    "nodes": 157,
+    "baseline": "2026-10-21 bun run perf:gate, GeForce RTX 3070 D3D11, 1600x900 full: 74 draws / 50,748 triangles / 142 nodes"
+  }
+}
