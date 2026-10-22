@@ -30,6 +30,8 @@ export interface SaveSlotWrite {
   name?: string;
   /** Replacement free-string display fields. Omit to keep the existing `meta`. */
   meta?: Record<string, string | number>;
+  /** The save's own write time (ms) when the payload knows it; omit to use the index's clock. */
+  savedAt?: number;
 }
 
 /** How a {@link createSaveSlots} index is wired. */
@@ -170,7 +172,7 @@ export function createSaveSlots(config: SaveSlotsConfig = {}): SaveSlots {
       }
       const slot = slots[i]!;
       slot.empty = false;
-      slot.savedAt = now();
+      slot.savedAt = write?.savedAt ?? now();
       if (write?.name !== undefined) slot.name = write.name;
       if (write?.meta !== undefined) slot.meta = { ...write.meta };
       notify();

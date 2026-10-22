@@ -175,6 +175,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `ControlsList` (function) · `import { ControlsList } from "@jgengine/react"`
 
+## credits-panel — scrollable, navigable credits screen with a back affordance
+
+- `CreditsPanel` (function) · `import { CreditsPanel } from "@jgengine/react"`
+
 ## credits-screen — drop-in credits view over a CreditsDocument — headed sections, optional links, HudTheme-skinned
 
 - `CreditsScreen` (function) · `import { CreditsScreen } from "@jgengine/react/creditsScreen"`
@@ -435,6 +439,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## live-markers — a self-ticking MarkerSet kept in sync from the live scene each HUD tick — pass a rebuild(markers, ctx) that clears+repopulates, no hand-rolled setInterval
 
 - `useLiveMarkers` (function) · `import { useLiveMarkers } from "@jgengine/react"`
+
+## loading-screen — loading block with progress, rotating tips, a ready gate, and a scene backdrop
+
+- `LoadingScreen` (function) · `import { LoadingScreen } from "@jgengine/react"`
+
+## loading-tips — deterministic loading-screen tip rotation with a seeded shuffle and snapshot/restore
+
+- `createTipRotation` (function) · `import { createTipRotation } from "@jgengine/core/ui/loadingTips"`
 
 ## map-legend — marker-kind key (glyph + color + label per kind) sharing the map's kindStyles
 
@@ -744,19 +756,19 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## settings-keybind-row — one rebindable controls row — key glyph, armed state and reset
 
-- `SettingsKeybindControl` (function) · `import { SettingsKeybindControl } from "@jgengine/react"`
+- `SettingsKeybindControl` (function) · `import { SettingsKeybindControl } from "@jgengine/react/settingsBlocks"`
 
 ## settings-section — settings category block — rows plus click-to-capture keybind rows, HudTheme-styled, store-backed
 
-- `SettingsSection` (function) · `import { SettingsSection } from "@jgengine/react"`
+- `SettingsSection` (function) · `import { SettingsSection } from "@jgengine/react/settingsBlocks"`
 
 ## settings-slider — a settings slider row that mirrors locally and persists on release
 
-- `SettingsSlider` (function) · `import { SettingsSlider } from "@jgengine/react"`
+- `SettingsSlider` (function) · `import { SettingsSlider } from "@jgengine/react/settingsBlocks"`
 
 ## settings-tabs — scrollable settings category tabs with pressed state
 
-- `SettingsTabs` (function) · `import { SettingsTabs } from "@jgengine/react"`
+- `SettingsTabs` (function) · `import { SettingsTabs } from "@jgengine/react/settingsBlocks"`
 
 ## shop-grid-host — drop-in vendor/shop grid over a caller-owned wallet — item cards with icon/price/stock, afford-aware Buy, optional Sell, and a balance readout, token-themed
 
@@ -850,11 +862,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## use-accessibility-rows — accessibility setting rows for a game-owned settings layout
 
-- `useAccessibilityRows` (function) · `import { useAccessibilityRows } from "@jgengine/react"`
+- `useAccessibilityRows` (function) · `import { useAccessibilityRows } from "@jgengine/react/accessibilitySettings"`
 
 ## use-accessibility-settings — live accessibility preferences from the shared settings store
 
-- `useAccessibilitySettings` (function) · `import { useAccessibilitySettings } from "@jgengine/react"`
+- `useAccessibilitySettings` (function) · `import { useAccessibilitySettings } from "@jgengine/react/accessibilitySettings"`
 
 ## use-camera-shake — React hook binding a camera-shake controller — subscribes for live trauma/kind and can self-drive its decay on a frame loop
 
@@ -886,7 +898,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## use-hold-vs-toggle — live hold-or-toggle preference from the shared settings store
 
-- `useHoldVsToggle` (function) · `import { useHoldVsToggle } from "@jgengine/react"`
+- `useHoldVsToggle` (function) · `import { useHoldVsToggle } from "@jgengine/react/accessibilitySettings"`
 
 ## use-interaction-prompt — React hook binding a prompt registry to a moving player — resolves the nearest interactable prompt and returns the active one
 

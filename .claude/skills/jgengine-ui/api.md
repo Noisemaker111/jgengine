@@ -502,6 +502,13 @@
 - `rectOverflow` (function): function rectOverflow(rect: HudRect, viewport: HudSize, tolerance = 1.5): Omit<HudOverflow, "id"> | null — Non-null when any edge of `rect` falls outside `viewport` by more than `tolerance` px; each field is the overflow distance past that edge (0 when inside).
 - `resolveHudFit` (function): function resolveHudFit(config: HudViewportConfig | undefined, mobile: boolean): Required<HudFitConfig> — ⚠ undocumented
 
+## @jgengine/core/ui/loadingTips
+
+- `TipRotation` (interface): interface TipRotation — A deterministic, cycle-through tip list.
+- `TipRotationConfig` (interface): interface TipRotationConfig — The tip rotation behind a loading screen: a deterministic shuffle of the game's tips, shown one at a time, cycling without repeating until the list is exhausted. Deterministic for a given seed, so a capture or a test sees the same first tip every run. Presentation-free — the loading block owns the look and the timer.
+- `TipRotationSnapshot` (interface): interface TipRotationSnapshot — Serializable rotation state.
+- `createTipRotation` (function): function createTipRotation(config: TipRotationConfig): TipRotation — Create a {@link TipRotation} over the game's tips. Order is a seeded shuffle; `next()` walks it and wraps, so every tip is seen once per cycle instead of a random repeat.
+
 ## @jgengine/core/ui/menuNav
 
 - `MENU_KEY_INTENTS` (const): const MENU_KEY_INTENTS: Readonly<Record<string, MenuIntent>> — Keyboard codes that drive a menu, by `KeyboardEvent.code`. Tab is deliberately absent: it stays native.
@@ -706,6 +713,8 @@
 - `ConfirmDialogProps` (interface): interface ConfirmDialogProps — Props for {@link ConfirmDialog}.
 - `ControlHint` (interface): interface ControlHint — One row of a control legend. Name the game action(s) whose bound key(s) to show (`action`) so the glyphs come straight from the keybind map — never re-typed — or give literal `keys` for controls that live outside the map (`"Mouse"`, `"LMB"`). `label` says what the control does.
 - `ControlsList` (function): function ControlsList({ bindings, controls, hideOnCoarsePointer = true, separator = " / ", className, rowClassName, keysClassName, keyClassName, separatorClassName, labelClassName, renderKey, renderRow, }: { bindings?: ActionCodesMap; controls: readonly ControlHint[]; hideOnCoarsePointer?: boolean; … — Renders a controls legend whose key glyphs come from the game's keybind map, so bindings live in one place and never drift from a hand-typed table. Hides itself on coarse-pointer devices (a touchscreen has no keyboard) via the same `data-jg-kbd-hint` marker as `KeyHint`. Headless: every part carries a `className` slot and `data-*` hook; pass `renderKey`/`renderRow` to fully own the markup.
+- `CreditsPanel` (function): function CreditsPanel({ document, onBack, title = "Credits", backLabel = "Back", open = true, backdrop, className, style, contentClassName, contentStyle, }: CreditsPanelProps): ReactNode — A reachable credits screen: the generated or hand-authored {@link CreditsDocument} in a scrollable panel over the scene, with one back affordance that keyboard and gamepad both reach. The game owns the backdrop and the wording; the block keeps the lines HudTheme-skinned and the exit working.
+- `CreditsPanelProps` (interface): interface CreditsPanelProps — Props for {@link CreditsPanel}.
 - `Crosshair` (function): function Crosshair({ size = 18, gap = 5, thickness = 2, color = "rgba(255,255,255,0.85)", style, className, }: { size?: number; gap?: number; thickness?: number; color?: string; style?: CSSProperties; className?: string; }): React.JSX.Element — A minimal center crosshair reticle — four ticks around a gap. Purely presentational.
 - `CurrencyPill` (function): function CurrencyPill({ currencyId, className }: { currencyId: string; className?: string }): React.JSX.Element — ⚠ undocumented
 - `CutsceneLetterbox` (function): function CutsceneLetterbox({ active, caption, onSkip, skipLabel = "Skip", progress, theme, className, style, }: CutsceneLetterboxProps): ReactNode — A drop-in cinematic letterbox overlay: black bars slide in top and bottom while a cutscene is `active`, an optional caption/dialogue line sits above the lower bar with an optional progress line, and a Skip button rides the top bar. Presentation only — it never touches the director; wire `active`/`caption`/`progress`/`onSkip` from {@link useSequenceDirector} and your `onCue` handler. Reskin via {@link CutsceneLetterboxTheme}.
@@ -835,6 +844,8 @@
 - `LayoutRegionSpec` (type): type LayoutRegionSpec = Omit<LayoutRegion, "rect"> — A region descriptor without its measured rectangle — the caller supplies geometry through `useRegisterLayoutRegion`.
 - `LeavePartyButton` (function): function LeavePartyButton({ className, children, }: { className?: string; children?: ReactNode; }): React.JSX.Element | null — ⚠ undocumented
 - `LevelUpFlash` (function): function LevelUpFlash({ stat, durationMs = 1600, className, children, renderFlash, }: { stat?: string; durationMs?: number; className?: string; children?: ReactNode; renderFlash?: (event: StatLevelUpEvent) => ReactNode; }): React.JSX.Element | null — ⚠ undocumented
+- `LoadingScreen` (function): function LoadingScreen({ progress, title = "Loading", tips, tipIntervalMs = 6000, ready = false, onReady, onSkip, backdrop, scrim = "blur", children, open = true, reducedMotion, onClosed, className, style, contentClassName, contentStyle, }: LoadingScreenProps): ReactNode — A loading screen with a progress bar and a rotating tip. Progress is a real 0–1 value from the game's loader (or indeterminate), tips come from the game and cycle deterministically, and a `ready` screen accepts any key, a gamepad A/Cross or a click. It reads HudTheme tokens and keeps a live scene visible behind a blur, so loading a level looks like the game rather than a blank page.
+- `LoadingScreenProps` (interface): interface LoadingScreenProps — Props for {@link LoadingScreen}.
 - `ManaBar` (const): const ManaBar: (props: AtomicBarProps) => React.JSX.Element — Spell/energy resource pool.
 - `MapBounds` (interface): interface MapBounds { minX: number; minZ: number; maxX: number; maxZ: number } — ⚠ undocumented
 - `MapLegend` (function): function MapLegend({ kinds, labels, kindStyles = DEFAULT_MARKER_KINDS, title = "Legend", className, style, }: MapLegendProps): ReactNode — Marker-kind key for a map/minimap — glyph + color swatch per kind, labelled. Reads the same `kindStyles` the map renders with, so the legend can never drift from the pins.
@@ -933,19 +944,9 @@
 - `SettingsCategoryView` (interface): interface SettingsCategoryView — A settings menu category with its rows and keybinds, ready to render.
 - `SettingsController` (interface): interface SettingsController — The live settings controller — every category/row/keybind/action plus open-state. Render it any way you like or drive the engine menu.
 - `SettingsControllerProvider` (function): function SettingsControllerProvider({ controller, children, }: { controller: SettingsController; children: ReactNode; }): React.JSX.Element — ⚠ undocumented
-- `SettingsKeybindControl` (function): function SettingsKeybindControl({ row, armed = false, onArm, buttonProps }: SettingsKeybindControlProps): ReactNode — A controls row for one action: its label, the bound key (click to rebind), a conflict/armed state and reset. The caller owns capture; this is the row's presentation.
-- `SettingsKeybindControlProps` (interface): interface SettingsKeybindControlProps — One rebindable action row: current key glyph, armed-capture state and a reset button.
 - `SettingsKeybindRow` (interface): interface SettingsKeybindRow — One rebindable action row rendered in the controls settings category.
 - `SettingsProvider` (function): function SettingsProvider({ store, children }: { store: SettingsStore; children: ReactNode }): React.JSX.Element — ⚠ undocumented
 - `SettingsRow` (interface): interface SettingsRow — One editable setting rendered in a settings menu category.
-- `SettingsRowControl` (function): function SettingsRowControl({ row }: { row: SettingsRow }): ReactNode — Render the control a {@link SettingsRow} kind asks for.
-- `SettingsSection` (function): function SettingsSection({ category, heading = true, capture = true, className, style, onCaptureChange, }: SettingsSectionProps): ReactNode — One settings category as a block: its rows, then its rebindable actions with click-to-capture. The game picks where it sits and how wide it is; the block reads HudTheme tokens and the live rows the settings controller hands it, and writes every change straight back to that controller's store.
-- `SettingsSectionProps` (interface): interface SettingsSectionProps — How a {@link SettingsSection} handles a rebind capture.
-- `SettingsSelect` (function): function SettingsSelect({ row }: { row: SettingsRow }): ReactNode — One choice row from a {@link SettingsRow}, rendered as a pressed-state option group.
-- `SettingsSlider` (function): function SettingsSlider({ row }: { row: SettingsRow }): ReactNode — One slider row from a {@link SettingsRow}: mirrors the thumb locally and commits on release, so a drag never storms the settings store or the graphics rebuild it drives.
-- `SettingsTabs` (function): function SettingsTabs({ categories, activeId, onSelect, leading, tabProps, className, style }: SettingsTabsProps): ReactNode — The category tab rail for a settings screen: a scrollable row of buttons with pressed state. The game owns the surrounding layout; this block keeps every category reachable on narrow screens.
-- `SettingsTabsProps` (interface): interface SettingsTabsProps — The live category tabs for a settings screen: a scrollable rail with pressed state.
-- `SettingsToggle` (function): function SettingsToggle({ row }: { row: SettingsRow }): ReactNode — One on/off row from a {@link SettingsRow}.
 - `SettingsTrigger` (function): function SettingsTrigger({ className = SETTINGS_TRIGGER_CLASSNAME, children, label = "Settings", }: { className?: string; children?: ReactNode; label?: string; }): React.JSX.Element | null — Inline settings entry — drop it anywhere in your game's menu or HUD; it opens the themed settings menu. Headless: pass `className` only when overriding the default HudTheme skin; pass `children` to replace the gear glyph. Renders nothing when the game has no settings to show, so it never leaves a dead button behind.
 - `ShieldBar` (const): const ShieldBar: (props: AtomicBarProps) => React.JSX.Element — Absorb/armor shield overlay.
 - `ShopGrid` (function): function ShopGrid({ shop, wallet, onWalletChange, theme, currencyIcons, iconFor, showSell = false, walletCurrencies, title = "Shop", labelFor, minCardWidth = "140px", className, style, }: ShopGridProps): ReactNode — A drop-in vendor/shop grid: item cards (icon, name, price with a currency glyph, stock count or "∞") over a caller-owned wallet, plus a wallet balance readout. Each card's Buy button disables when the wallet cannot afford it (`shop.canAfford`) or the item is sold out; an optional Sell button appears for entries with a `sellPrice`. Buying/selling routes through the core shop model and hands the debited/credited wallet back via `onWalletChange` — the component never owns the wallet. Purely token-driven presentation (shared `--jg-*` HudTheme tokens, reskinnable via {@link ShopGridTheme}); `kind` and `currency` are free strings the game styles, never interpreted.
@@ -1055,8 +1056,6 @@
 - `useAbilitySlot` (function): function useAbilitySlot(kit: AbilityKit, slotId: string, resourceAvailable?: number, options?: AbilitySlotBindingOptions): AbilitySlotSnapshot | null — ⚠ undocumented
 - `useAbilitySlots` (function): function useAbilitySlots(kit: AbilityKit, resourceAvailable?: number, options?: AbilitySlotBindingOptions): AbilitySlotSnapshot[] — ⚠ undocumented
 - `useAccessibility` (function): function useAccessibility(): AccessibilityContextValue — Read the live accessibility state + its store; throws without an {@link AccessibilityProvider} above.
-- `useAccessibilityRows` (function): function useAccessibilityRows(): AccessibilitySettingRow[] — The accessibility rows backed by the shared settings store, for a settings screen the game lays out itself: map them through `SettingsRowControl` (`@jgengine/react/settingsBlocks`). The shell's stock settings menu shows the same rows as its `accessibility` category.
-- `useAccessibilitySettings` (function): function useAccessibilitySettings(): AccessibilityState — The live accessibility preferences (reduced motion, high contrast, text scale, colorblind mode, captions) from the shared settings store. Re-renders whenever any setting changes, so a root that spreads them onto the HUD updates the moment the player picks a value.
 - `useAchievements` (function): function useAchievements(tracker: AchievementTracker): readonly AchievementView[] — Subscribe a component to an achievement tracker's live view list. The list keeps a stable identity between changes, so this re-renders only on unlock or progress — not every frame.
 - `useActionBar` (function): function useActionBar(defs: readonly ActionDef[], options?: UseActionBarOptions): ActionBarModel — The DATA/HOOK layer: resolve `defs` into a live view model with focus, hover, keyboard grid navigation, and hotkey activation. Rendering-agnostic — feed the returned model to {@link ActionBarChrome}, or read it directly to lay out a radial or a bespoke card.
 - `useActivePrompt` (function): function useActivePrompt<T extends PositionedPrompt>(prompts?: readonly T[]): T | null — ⚠ undocumented
@@ -1096,7 +1095,6 @@
 - `useGameViewportLayout` (function): function useGameViewportLayout(): GameViewportLayout — The live shared viewport layout. Returns a neutral default outside a `GameViewportProvider` so it never throws in previews.
 - `useHasSettings` (function): function useHasSettings(): boolean — True when the game has any setting or game-action to show — gate your own settings entry on it.
 - `useHeldKeys` (function): function useHeldKeys(): (code: string) => boolean — Held-key predicate backed by window keydown/keyup/blur listeners (blur clears held state so a released-off-window key doesn't stick). SSR-safe: listeners attach in an effect, never at module scope. The returned predicate is stable across renders.
-- `useHoldVsToggle` (function): function useHoldVsToggle(): HoldVsToggle — The live hold-versus-toggle preference for actions that support both (aim, sprint, crouch). Pair it with `holdToggleActive` (`@jgengine/core/settings/accessibilitySettings`) per frame.
 - `useHudFont` (function): function useHudFont(skin?: HudSkin): boolean — Loads a skin font in browsers and reports when it is available.
 - `useHudLayout` (function): function useHudLayout(options?: { storageKey?: string; snap?: number; locked?: boolean; /** * Scene-document `ui` section — source of truth for panel placement/size. * When provided, hydrates the layout store (and wins over legacy localStorage). */ documentUi?: EditorUiDocument; /** * When true (def… — Layout state for `HudCanvas` — panel placements, edit-mode drag/resize, and per-game persistence.
 - `useHudLayoutPersist` (function): function useHudLayoutPersist(): HudLayoutPersist | null — Injected panel-commit port, or `null` when no host has provided one.
@@ -1320,6 +1318,11 @@
 - `resolveDialogueInvoke` (function): function resolveDialogueInvoke(choice: DialogueChoice, result: CheckResult | null): { command: string; args?: unknown } | null — ⚠ undocumented
 - `runDialogueChoice` (function): function runDialogueChoice(commands: { run(name: string, input?: unknown): unknown }, choice: DialogueChoice, result: CheckResult | null): void — Route a {@link DialogueBox} choice through the `features.dialogue` bridge: resolve the choice's invoke (honoring a skill-check `result`), run that command, and otherwise close the dialogue — the write side that replaces a per-game `onChoice` that hand-rolls `resolveDialogueInvoke` + `dialogue.close`.
 - `useOpenDialogueId` (function): function useOpenDialogueId(): string | null — The id of the dialogue `ctx.game.dialogue` (or a `talkable(id)` prompt) currently has open, or `null`. The read side of the `features.dialogue` bridge — a panel looks the id up in its own dialogue catalog and renders {@link DialogueBox}, with no per-game open/close store.
+
+## @jgengine/react/creditsPanel
+
+- `CreditsPanel` (function): function CreditsPanel({ document, onBack, title = "Credits", backLabel = "Back", open = true, backdrop, className, style, contentClassName, contentStyle, }: CreditsPanelProps): ReactNode — A reachable credits screen: the generated or hand-authored {@link CreditsDocument} in a scrollable panel over the scene, with one back affordance that keyboard and gamepad both reach. The game owns the backdrop and the wording; the block keeps the lines HudTheme-skinned and the exit working.
+- `CreditsPanelProps` (interface): interface CreditsPanelProps — Props for {@link CreditsPanel}.
 
 ## @jgengine/react/creditsScreen
 
@@ -1700,6 +1703,11 @@
 - `frameBindSubscriberCount` (function): function frameBindSubscriberCount(): number — ⚠ undocumented
 - `subscribeFrameBind` (function): function subscribeFrameBind(subscriber: FrameSubscriber): () => void — ⚠ undocumented
 - `useFrameBind` (function): function useFrameBind<T, E extends Element = Element>(ref: { current: E | null }, get: () => T, apply: (value: T, element: E) => void): void — ⚠ undocumented
+
+## @jgengine/react/loadingScreen
+
+- `LoadingScreen` (function): function LoadingScreen({ progress, title = "Loading", tips, tipIntervalMs = 6000, ready = false, onReady, onSkip, backdrop, scrim = "blur", children, open = true, reducedMotion, onClosed, className, style, contentClassName, contentStyle, }: LoadingScreenProps): ReactNode — A loading screen with a progress bar and a rotating tip. Progress is a real 0–1 value from the game's loader (or indeterminate), tips come from the game and cycle deterministically, and a `ready` screen accepts any key, a gamepad A/Cross or a click. It reads HudTheme tokens and keeps a live scene visible behind a blur, so loading a level looks like the game rather than a blank page.
+- `LoadingScreenProps` (interface): interface LoadingScreenProps — Props for {@link LoadingScreen}.
 
 ## @jgengine/react/map
 

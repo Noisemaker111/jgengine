@@ -119,6 +119,11 @@ export interface GameSave {
   load(): Promise<GameSaveDocument>;
   /** Flush the current slot, switch, and load the next one. */
   switchSlot(slot: string): Promise<GameSaveDocument>;
+  /**
+   * Read a slot's document without applying it to the live systems — the save-select menu's data
+   * source. Returns `null` for an empty slot.
+   */
+  peek(slot: string): Promise<GameSaveDocument | null>;
   /** Slots this save has written. */
   slots(): Promise<string[]>;
   slot(): string;
@@ -280,6 +285,11 @@ export function createGameSave(config: GameSaveConfig): GameSave {
       const document = await store.switchSlot(slot);
       apply(document);
       return document;
+    },
+    async peek(slot) {
+      const stored = await store.peek(slot);
+      if (stored === null) return null;
+      return stored.value;
     },
     slots: () => store.slots(),
     slot: () => store.slot(),
