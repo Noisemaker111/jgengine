@@ -198,6 +198,7 @@ export function SettingsKeybindControl({ row, armed = false, onArm, buttonProps 
           data-settings-reset=""
           onClick={() => row.reset()}
           aria-label={`Reset ${row.label}`}
+          tabIndex={row.isDefault ? -1 : 0}
           style={{
             width: 30,
             height: 30,
@@ -205,8 +206,7 @@ export function SettingsKeybindControl({ row, armed = false, onArm, buttonProps 
             border: "none",
             background: "transparent",
             color: "var(--jg-text-dim, #94a3a0)",
-            opacity: row.isDefault ? 0 : 1,
-            pointerEvents: row.isDefault ? "none" : "auto",
+            visibility: row.isDefault ? "hidden" : "visible",
             cursor: "pointer",
           }}
         >

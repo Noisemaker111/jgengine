@@ -170,7 +170,7 @@
 ## @jgengine/core/settings/settingsModel
 
 - `BUILT_IN_SETTING_CATEGORIES` (const): const BUILT_IN_SETTING_CATEGORIES: readonly BuiltInSettingCategory[] — ⚠ undocumented
-- `BuiltInSettingCategory` (type): type BuiltInSettingCategory = "sound" | "graphics" | "gameplay" | "controls" — ⚠ undocumented
+- `BuiltInSettingCategory` (type): type BuiltInSettingCategory = "sound" | "graphics" | "gameplay" | "controls" | "accessibility" — ⚠ undocumented
 - `DEFAULT_GRAPHICS_QUALITY` (const): const DEFAULT_GRAPHICS_QUALITY: GraphicsQuality — ⚠ undocumented
 - `DEFAULT_GRAPHICS_SHADOWS` (const): const DEFAULT_GRAPHICS_SHADOWS: true — ⚠ undocumented
 - `DEFAULT_MASTER_VOLUME` (const): const DEFAULT_MASTER_VOLUME: 1 — ⚠ undocumented
