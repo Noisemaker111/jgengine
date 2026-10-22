@@ -110,9 +110,17 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun --cwd=apps/web run build
 
-  smoke:
+  # Four headless boots of the shared shell path, one per runner: the single job's
+  # 4m30s was almost all `bun run smoke` (setup is 16 s), so the split is what makes
+  # it stop being the critical path. `scripts/smoke-games.test.ts` fails when this
+  # matrix and SMOKE_GAMES disagree.
+  smoke-game:
     runs-on: ubuntu-latest
     timeout-minutes: 12
+    strategy:
+      fail-fast: false
+      matrix:
+        game: [harbor-heat, scrap-signal, drift-foundry, deepward]
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
@@ -127,9 +135,19 @@ jobs:
       - run: bun run games:clone
         env:
           GAMES_CLONE_TOKEN: ${{ secrets.GAMES_CLONE_TOKEN }}
-      - run: bun run smoke
+      - run: bun run smoke --games ${{ matrix.game }}
         env:
           CHROME_PATH: /usr/bin/google-chrome
+
+  # Green only when every smoke game booted clean, so one unplayable game still
+  # blocks the merge through the same `smoke` check as before.
+  smoke:
+    needs: [smoke-game]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - run: test "${{ needs.smoke-game.result }}" = "success"
 
   # Frame-budget gate: every reference game plays under software GL (CI forces
   # ANGLE/SwiftShader or Mesa llvmpipe), then draws/triangles/nodes are compared
