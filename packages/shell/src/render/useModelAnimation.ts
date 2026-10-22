@@ -12,11 +12,28 @@ import {
   type AnimGraphRuntime,
   type AnimParamValue,
 } from "@jgengine/core/anim/animGraph";
-import { animGraphFromConfig, LOCOMOTION_CROUCHED_PARAM, LOCOMOTION_GROUNDED_PARAM, LOCOMOTION_SPEED_PARAM, LOCOMOTION_VERTICAL_SPEED_PARAM } from "@jgengine/core/anim/locomotionGraph";
+import {
+  animGraphFromConfig,
+  LOCOMOTION_CROUCHED_PARAM,
+  LOCOMOTION_DIRECTION_PARAM,
+  LOCOMOTION_FACING_PARAM,
+  LOCOMOTION_GROUNDED_PARAM,
+  LOCOMOTION_SPEED_PARAM,
+  LOCOMOTION_TURN_RATE_PARAM,
+  LOCOMOTION_VERTICAL_SPEED_PARAM,
+} from "@jgengine/core/anim/locomotionGraph";
 import { playerMovementTelemetry } from "@jgengine/core/movement/playerMovement";
 import { seededRng } from "@jgengine/core/random/rng";
 import type { GameContext } from "@jgengine/core/runtime/gameContextTypes";
 import { useOptionalGameContext } from "@jgengine/react/provider";
+
+/** Wraps a yaw change into `(-pi, pi]`, so a turn across the wrap boundary is not a full spin. */
+function shortestAngle(radians: number): number {
+  const turn = radians % (Math.PI * 2);
+  if (turn > Math.PI) return turn - Math.PI * 2;
+  if (turn < -Math.PI) return turn + Math.PI * 2;
+  return turn;
+}
 
 function graphClipNames(graph: AnimGraph): Set<string> {
   const names = new Set<string>();
@@ -116,14 +133,30 @@ interface GraphPlayback {
   rootBone: THREE.Bone | null;
   rootBindPosition: THREE.Vector3 | null;
   lastPos: [number, number, number] | null;
+  lastYaw: number | null;
   smoothedSpeed: number;
   params: Record<string, AnimParamValue>;
 }
 
 /**
+ * One visual sample's measured motion, used to derive the directional locomotion parameters.
+ * `dx`/`dz` are world horizontal displacement since the previous sample, `dyaw` the yaw change in
+ * radians and `seconds` the time the sample covers.
+ */
+export interface ModelMotionStep {
+  dx: number;
+  dz: number;
+  dyaw: number;
+  seconds: number;
+}
+
+/**
  * Refreshes a caller-owned graph parameter dictionary from authored extras and known physical movement.
  * Grounded, verticalSpeed and crouched use the shared motor's resolved state when available; custom movers
- * retain their authored values. Speed always uses the supplied measured ground speed. Does not write game state.
+ * retain their authored values. Speed always uses the supplied measured ground speed. Passing `step`
+ * derives the directional parameters from the character's own motion: `direction` is the motion's share
+ * along the character's right axis, `facing` its share along the facing axis, and `turnRate` its yaw
+ * change per second. Derived values override conflicting authored extras. Does not write game state.
  *
  * @capability animation-motion-params read resolved player movement into reusable animation graph parameters
  */
@@ -132,6 +165,7 @@ export function readModelAnimationParams(
   instanceId: string,
   speed: number,
   out: Record<string, AnimParamValue>,
+  step?: ModelMotionStep,
 ): Record<string, AnimParamValue> {
   const extra = ctx.scene.entity.blackboard.get<Record<string, AnimParamValue>>(instanceId, ANIM_PARAMS_KEY);
   const motion = playerMovementTelemetry(ctx, instanceId);
@@ -144,6 +178,21 @@ export function readModelAnimationParams(
     out[LOCOMOTION_CROUCHED_PARAM] = motion.crouching;
   }
   out[LOCOMOTION_SPEED_PARAM] = speed;
+  if (step !== undefined) {
+    const yaw = ctx.scene.entity.get(instanceId)?.rotationY ?? 0;
+    const planar = Math.hypot(step.dx, step.dz);
+    if (planar > 1e-4) {
+      const mx = step.dx / planar;
+      const mz = step.dz / planar;
+      // The rig faces its own +Z turned by `rotationY`, so its right axis is +X turned the same way.
+      out[LOCOMOTION_FACING_PARAM] = mx * Math.sin(yaw) + mz * Math.cos(yaw);
+      out[LOCOMOTION_DIRECTION_PARAM] = mx * Math.cos(yaw) - mz * Math.sin(yaw);
+    } else {
+      out[LOCOMOTION_FACING_PARAM] = 0;
+      out[LOCOMOTION_DIRECTION_PARAM] = 0;
+    }
+    out[LOCOMOTION_TURN_RATE_PARAM] = step.seconds > 0 ? step.dyaw / step.seconds : 0;
+  }
   return out;
 }
 
@@ -278,6 +327,7 @@ function buildGraphPlayback(scene: THREE.Object3D, mixer: THREE.AnimationMixer, 
     rootBone,
     rootBindPosition: rootBone?.position.clone() ?? null,
     lastPos: null,
+    lastYaw: null,
     smoothedSpeed: 0,
     params: {},
   };
@@ -444,6 +494,8 @@ export function useModelAnimation(
         const entity = ctx.scene.entity.get(instanceId);
         if (entity !== null && playbackDelta > 0) {
           const [x, , z] = entity.position;
+          const yaw = entity.rotationY ?? 0;
+          let step: ModelMotionStep | undefined;
           if (playback.lastPos !== null) {
             const dx = x - playback.lastPos[0];
             const dy = entity.position[1] - playback.lastPos[1];
@@ -454,11 +506,15 @@ export function useModelAnimation(
             } else {
               const instantSpeed = Math.hypot(dx, dz) / playbackDelta;
               playback.smoothedSpeed += (instantSpeed - playback.smoothedSpeed) * Math.min(1, playbackDelta * 12);
+              step = { dx, dz, dyaw: playback.lastYaw === null ? 0 : shortestAngle(yaw - playback.lastYaw), seconds: playbackDelta };
             }
           }
           playback.lastPos = [x, entity.position[1], z];
+          playback.lastYaw = yaw;
+          readModelAnimationParams(ctx, instanceId, playback.smoothedSpeed, params, step);
+        } else {
+          readModelAnimationParams(ctx, instanceId, playback.smoothedSpeed, params);
         }
-        readModelAnimationParams(ctx, instanceId, playback.smoothedSpeed, params);
       } else {
         for (const key in params) if (Object.hasOwn(params, key)) delete params[key];
         params[LOCOMOTION_SPEED_PARAM] = playback.smoothedSpeed;

@@ -24,6 +24,7 @@
     "./ai/threat",
     "./ai/utilityBrain",
     "./ai/waveRunner",
+    "./anim/actionLayer",
     "./anim/animGraph",
     "./anim/boneTexture",
     "./anim/easing",
