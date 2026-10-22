@@ -30,6 +30,11 @@ Damage commitment accepts the same structural pool adapter while the matchup,
 receiver, interceptor, and status stages remain pure. Follow the
 [portable damage/effects recipe](recipes/portable-damage-effects.md) to compose
 them over an existing store, clock, RNG, spatial index, and death flow.
+Damage types × resistance, the armor curve, hit-zone crits and carried statuses
+compose through `createDamageRuntime` (`combat/damageRuntime`): a readable table,
+time-to-kill quotes, and status ticks that follow the declared stack rule. It
+snapshots/restores as plain data; see
+[reference.md](reference.md#damage-runtime-armor-crits-and-statuses).
 
 Closure-backed magazines expose snapshot/restore and `retune` for capacity/reload
 changes without reconstructing ammo state; capacity overflow is explicit.
