@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from "react";
 
-import type { EditorDocument, EditorEnvironment, EditorLightProbe, EditorSession, EditorSkyPreset, EnvironmentSource } from "@jgengine/core/editor/index";
+import type { EditorColorGrading, EditorDocument, EditorEnvironment, EditorLightProbe, EditorSession, EditorSkyPreset, EnvironmentSource } from "@jgengine/core/editor/index";
 import { bakeLightProbe } from "@jgengine/core/editor/environment";
 import { editorDocumentBounds } from "@jgengine/core/editor/document";
 
@@ -78,6 +78,23 @@ export function LightingPanel({ session }: { session: EditorSession }) {
   const source = env?.source;
   const pointLights = env?.pointLights ?? [];
   const probes = env?.probes ?? [];
+  const grading = env?.grading;
+  const exposure = grading?.autoExposure;
+
+  const setGrading = (next: EditorColorGrading | undefined) => {
+    const base: EditorEnvironment = { ...(env ?? {}) };
+    if (next === undefined || Object.keys(next).length === 0) delete base.grading;
+    else base.grading = next;
+    commit(Object.keys(base).length === 0 ? undefined : base, "env:grading");
+  };
+
+  const patchGrading = (partial: EditorColorGrading) => {
+    const next: EditorColorGrading = { ...(grading ?? {}), ...partial };
+    for (const key of Object.keys(next) as (keyof EditorColorGrading)[]) {
+      if (next[key] === undefined) delete next[key];
+    }
+    setGrading(next);
+  };
 
   const commit = (next: EditorEnvironment | undefined, coalesce?: string) => {
     session.dispatch({ type: "setEnvironment", environment: next }, coalesce === undefined ? undefined : { coalesce });
@@ -349,6 +366,98 @@ export function LightingPanel({ session }: { session: EditorSession }) {
             }}
           />
         </label>
+      </section>
+
+      <section className="space-y-1.5 border-t border-white/[0.05] pt-2">
+        <div className="flex items-center justify-between">
+          <span className={MICRO_LABEL}>Colour grade</span>
+          {grading === undefined ? null : (
+            <button
+              type="button"
+              className={`${CONTROL} px-2 py-1 text-[10px]`}
+              title="Remove the authored grade; the game's own post chain applies unchanged"
+              onClick={() => setGrading(undefined)}
+            >
+              Clear
+            </button>
+          )}
+        </div>
+        <div className="text-[10px] text-neutral-500">
+          Baked into a small LUT applied after tone mapping. Swatches tint their band; white leaves it alone.
+        </div>
+        <div className="grid grid-cols-3 gap-1">
+          {([["shadows", "shadows", "#2a3a52"], ["midtones", "mid", "#e8e2d6"], ["highlights", "high", "#ffe9c4"]] as const).map(([key, label, placeholder]) => (
+            <label key={key} className="flex flex-col gap-1 rounded border border-white/[0.06] p-1">
+              <span className="text-[9px] uppercase tracking-wider text-neutral-500">{label}</span>
+              <div className="flex items-center gap-1">
+                <input
+                  type="color"
+                  aria-label={`Grade ${label} tint`}
+                  value={grading?.[key] ?? placeholder}
+                  onChange={(event) => patchGrading({ [key]: event.target.value })}
+                />
+                {grading?.[key] === undefined ? null : (
+                  <button
+                    type="button"
+                    aria-label={`Clear ${label} tint`}
+                    className={`${CONTROL} px-1 py-0.5 text-[9px]`}
+                    onClick={() => patchGrading({ [key]: undefined })}
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+            </label>
+          ))}
+        </div>
+        <SliderRow
+          label="tint"
+          value={grading?.tint ?? 0.45}
+          min={0}
+          max={1}
+          step={0.01}
+          onChange={(value) => patchGrading({ tint: value })}
+          format={(v) => v.toFixed(2)}
+        />
+        <SliderRow
+          label="saturation"
+          value={grading?.saturation ?? 1}
+          min={0}
+          max={2}
+          step={0.01}
+          onChange={(value) => patchGrading({ saturation: value })}
+          format={(v) => v.toFixed(2)}
+        />
+        <SliderRow
+          label="contrast"
+          value={grading?.contrast ?? 1}
+          min={0.5}
+          max={1.6}
+          step={0.01}
+          onChange={(value) => patchGrading({ contrast: value })}
+          format={(v) => v.toFixed(2)}
+        />
+        <SliderRow
+          label="min exposure"
+          value={exposure?.min ?? 0.5}
+          min={0.1}
+          max={1}
+          step={0.05}
+          onChange={(value) => patchGrading({ autoExposure: { ...(exposure ?? {}), min: value } })}
+          format={(v) => `${v.toFixed(2)}×`}
+        />
+        <SliderRow
+          label="max exposure"
+          value={exposure?.max ?? 2.5}
+          min={1}
+          max={6}
+          step={0.05}
+          onChange={(value) => patchGrading({ autoExposure: { ...(exposure ?? {}), max: value } })}
+          format={(v) => `${v.toFixed(2)}×`}
+        />
+        <div className="text-[10px] text-neutral-500">
+          Auto-exposure meters the frame toward 18% grey and stays inside this range, so a dark room lifts instead of crushing.
+        </div>
       </section>
 
       <section className="space-y-1.5 border-t border-white/[0.05] pt-2">

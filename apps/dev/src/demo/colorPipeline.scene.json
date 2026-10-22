@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "markers": [
+    { "id": "player_spawn", "kind": "player_spawn", "position": { "x": 0, "y": 0, "z": 0 } },
+    { "id": "sun_key", "kind": "light", "position": { "x": 6, "y": 4, "z": -24 }, "meta": { "type": "point", "color": "#ffd2a0", "intensity": 1.1, "range": 9 } }
+  ],
+  "volumes": [],
+  "paths": [],
+  "annotations": [],
+  "prefabs": [],
+  "collections": [],
+  "catalogs": [],
+  "environment": {
+    "preset": "day",
+    "sunIntensity": 1.15,
+    "ambientIntensity": 0.5,
+    "sunElevation": 52,
+    "sunAzimuth": 128,
+    "grading": {
+      "size": 8,
+      "shadows": "#16233d",
+      "midtones": "#e8dcc0",
+      "highlights": "#ffe2b0",
+      "tint": 0.6,
+      "saturation": 1.18,
+      "contrast": 1.1,
+      "autoExposure": { "min": 0.5, "max": 2.6 }
+    }
+  }
+}

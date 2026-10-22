@@ -78,7 +78,7 @@ import { SkyDaylight, TimeOfDayDaylight } from "./environment";
 import { AuthoredDaylight } from "./environment/AuthoredDaylight";
 import { bearingFromDirection } from "./environment/daylightCycle";
 import type { DaylightModulation } from "./render/SceneLighting";
-import { lightProbesFromDocument } from "@jgengine/core/editor/environment";
+import { colorGradeFromDocument, lightProbesFromDocument } from "@jgengine/core/editor/environment";
 import { resolveSkyLightOwnership, skyEmitsLights } from "./environment/skyLightingPolicy";
 import { EnvironmentScene } from "./environment/EnvironmentScene";
 import { PointerProbe } from "./pointer/PointerProbe";
@@ -101,6 +101,7 @@ import { FrameRateLimiter } from "./drivers/FrameRateLimiter";
 import { FpsCounter, FpsProbe, type FrameTally } from "./diagnostics/FpsCounter";
 import { ConfiguredLighting, BackdropFog } from "./render/SceneLighting";
 import { IrradianceVolumeLighting } from "./render/IrradianceVolumeLighting";
+import { withAuthoredGrade } from "./render/authoredGrade";
 import { WorldView, RemotePlayers } from "./world/WorldScene";
 import { FrameDriver } from "./drivers/FrameDriver";
 import { GamepadSource } from "./input/gamepadSource";
@@ -265,16 +266,23 @@ export function Shell3dPresentation({
           : undefined);
   // The post chain and sky rebuild on identity change; a fresh look object per render recompiled every pass each frame.
   const hasWorldSky = worldSky !== undefined;
+  const authoredGrade = useMemo(
+    () => (playable.editorLayers === undefined ? undefined : colorGradeFromDocument(playable.editorLayers)),
+    [playable.editorLayers],
+  );
   const resolvedLook = useMemo(
     () =>
-      resolveGameLook({
-        look: playable.look,
-        lighting: playable.lighting,
-        backdrop: playable.backdrop,
-        postProcessing: playable.postProcessing,
-        hasWorldSky,
-      }),
-    [playable.look, playable.lighting, playable.backdrop, playable.postProcessing, hasWorldSky],
+      withAuthoredGrade(
+        resolveGameLook({
+          look: playable.look,
+          lighting: playable.lighting,
+          backdrop: playable.backdrop,
+          postProcessing: playable.postProcessing,
+          hasWorldSky,
+        }),
+        authoredGrade,
+      ),
+    [playable.look, playable.lighting, playable.backdrop, playable.postProcessing, hasWorldSky, authoredGrade],
   );
   const cinematicLook = (playable.look ?? "cinematic") !== "flat";
   const backdrop = resolvedLook.backdrop;

@@ -1,5 +1,25 @@
-/** Renderer tone-mapping curve applied by the post chain's output stage. */
+import type { AutoExposureConfig } from "./colorPipeline";
+
+/**
+ * Renderer tone-mapping curve applied by the post chain's output stage. `"agx"` is the pipeline
+ * default: it keeps hue in saturated highlights and rolls a sun-lit surface off gradually, where
+ * `"aces"` skews bright colours toward white.
+ */
 export type ToneMappingMode = "aces" | "agx" | "reinhard" | "cineon" | "linear" | "none";
+
+/**
+ * A baked display-space LUT cube: `size³` RGB entries with red varying fastest, three bytes per entry
+ * in 0..255. Kept as plain data so a scene document can author one and a test can assert on it.
+ */
+export interface LutCube {
+  /** Edge length of the cube, 2..16. */
+  size: number;
+  /** `size³ × 3` bytes, red fastest, then green, then blue. */
+  data: Uint8Array;
+}
+
+/** A grade's LUT: a strip PNG (one `size`-wide tile per blue slice) or a baked cube. */
+export type GradeLut = { url: string; size?: number } | { cube: LutCube };
 
 /** UnrealBloom stage — soft HDR glow around bright pixels (sun, glints, emissive). */
 export interface BloomConfig {
@@ -29,8 +49,12 @@ export interface AoConfig {
 
 /** Final colour-grade stage: lift/gain/gamma, saturation, vignette, film grain — applied in display space after tone mapping. */
 export interface GradeConfig {
-  /** Optional 2D strip LUT URL. The strip contains size square tiles, one tile per blue slice. */
-  lut?: { url: string; size?: number };
+  /**
+   * Colour LUT applied after the numeric grade, in display space. Either a strip PNG (one
+   * `size`-wide tile per blue slice, trilinearly sampled) or a baked {@link LutCube} such as the one
+   * a scene document's authored grading produces.
+   */
+  lut?: GradeLut;
   /** Additive shadow tint (RGB, ~0..0.1). Default cool [0.012, 0.010, 0.018]. */
   lift?: readonly [number, number, number];
   /** Multiplicative highlight tint (RGB, ~1). Default warm [1.05, 1.02, 0.98]. */
@@ -104,10 +128,19 @@ export type PostAaMode = "smaa" | "msaa" | false;
 export interface PostProcessingConfig {
   /** Master switch; a config object with `enabled: false` mounts nothing. Default true. */
   enabled?: boolean;
-  /** Tone-mapping curve the output stage applies. Default "aces". */
+  /** Tone-mapping curve the output stage applies. Default "agx". */
   toneMapping?: ToneMappingMode;
-  /** Exposure multiplier applied before tone mapping. Default 1. */
+  /**
+   * Exposure multiplier applied before tone mapping. Default 1. With `autoExposure` on this is the
+   * baseline the meter corrects around, not a fixed value.
+   */
   exposure?: number;
+  /**
+   * Clamped auto-exposure: meters the rendered frame and adapts exposure toward
+   * {@link import("./colorPipeline").MID_GREY}, bounded by `min`/`max`. Omitted uses
+   * {@link import("./colorPipeline").DEFAULT_AUTO_EXPOSURE} on every tier; `false` pins `exposure`.
+   */
+  autoExposure?: AutoExposureConfig | false;
   /**
    * Antialiasing. Default `"smaa"` (plus a light MSAA resolve on the beauty target).
    * Set `"msaa"` to skip the SMAA pass, or `false` for neither.
@@ -136,7 +169,7 @@ export const DEFAULT_AO: Readonly<AoConfig> = { radius: 1.3, intensity: 1.3, dis
  * is left off by default (it needs a per-scene focus distance); set `dof` to enable it.
  */
 export const STUDIO_STAGE_POST: PostProcessingConfig = {
-  toneMapping: "aces",
+  toneMapping: "agx",
   exposure: 1.05,
   bloom: { strength: 0.28, radius: 0.6, threshold: 0.8 },
   ao: { radius: 1.1, intensity: 1.5, distanceFalloff: 3, blend: 1 },

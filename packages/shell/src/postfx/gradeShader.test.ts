@@ -64,6 +64,42 @@ test("a disposed old graph cannot bind a late LUT into its replacement", async (
   expect(newTexture.disposals()).toBe(1);
 });
 
+test("a baked cube LUT packs into one linear-filtered strip and is released with the pass", () => {
+  const size = 4;
+  const data = new Uint8Array(size * size * size * 3);
+  for (let index = 0; index < size * size * size; index += 1) {
+    data[index * 3] = index % 256;
+    data[index * 3 + 1] = 255 - (index % 256);
+    data[index * 3 + 2] = index % 256;
+  }
+  const pass = createGradePass({ lut: { cube: { size, data } } });
+  const texture = pass.uniforms.uLut.value as THREE.DataTexture;
+  expect(texture).toBeInstanceOf(THREE.DataTexture);
+  expect(texture.image.width).toBe(size * size);
+  expect(texture.image.height).toBe(size);
+  expect(texture.minFilter).toBe(THREE.LinearFilter);
+  expect(texture.magFilter).toBe(THREE.LinearFilter);
+  // Display values are sampled raw, so the hardware must not decode them as sRGB.
+  expect(texture.colorSpace).toBe(THREE.NoColorSpace);
+  expect(pass.uniforms.uLutSize.value).toBe(size);
+  // Blue slice 1, green 2, red 3 -> row 2, tile 1, column 3 of the strip.
+  const from = (1 * size * size + 2 * size + 3) * 3;
+  const to = (2 * size * size + 1 * size + 3) * 4;
+  expect(texture.image.data[to]).toBe(data[from]);
+  expect(texture.image.data[to + 1]).toBe(data[from + 1]);
+  expect(texture.image.data[to + 2]).toBe(data[from + 2]);
+  expect(texture.image.data[to + 3]).toBe(255);
+  let disposals = 0;
+  texture.addEventListener("dispose", () => { disposals++; });
+  pass.dispose();
+  expect(disposals).toBe(1);
+});
+
+test("a baked cube LUT does not touch the texture loader", () => {
+  createGradePass({ lut: { cube: { size: 2, data: new Uint8Array(24).fill(128) } } });
+  expect(loads).not.toHaveBeenCalled();
+});
+
 test("a failed LUT keeps the normal grade pass usable without an unhandled rejection", async () => {
   loads.mockRejectedValueOnce(new Error("LUT unavailable"));
   const pass = createGradePass({ lut: { url: "/missing.png" } });

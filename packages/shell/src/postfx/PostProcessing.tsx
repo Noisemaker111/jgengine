@@ -8,8 +8,10 @@ import { BokehPass } from "three/examples/jsm/postprocessing/BokehPass.js";
 import { SMAAPass } from "three/examples/jsm/postprocessing/SMAAPass.js";
 
 import { DEFAULT_AO, type AoConfig, type PostProcessingConfig, type ToneMappingMode } from "@jgengine/core/render/postProcessing";
+import { adaptExposure, DEFAULT_AUTO_EXPOSURE, exposureForKey, keyLuminanceFromSamples } from "@jgengine/core/render/colorPipeline";
 import type { GraphicsQuality } from "@jgengine/core/settings/settingsModel";
 
+import { ExposureMeterPass } from "./autoExposure";
 import { createGradePass } from "./gradeShader";
 import { StylizePass } from "./stylizePass";
 import { renderShadowlessPrepass } from "./shadowPrepass";
@@ -66,6 +68,15 @@ interface BuiltGraph {
   grade: ShaderPass | null;
 }
 
+/**
+ * Rounds an adapted exposure to 1/32 of a stop. Without it the sky's display-colour cache (which keys
+ * off the renderer's exposure) re-solves its swatches every frame the meter nudges.
+ * @internal
+ */
+export function quantizeExposure(value: number): number {
+  return Math.round(value * 32) / 32;
+}
+
 /** Release each pass and the composer's owned targets. @internal */
 export function disposeGraph(built: BuiltGraph): void {
   for (const pass of built.composer.passes) pass.dispose();
@@ -87,7 +98,7 @@ export function resolveAoStage(ao: PostProcessingConfig["ao"], tierAllowsAo: boo
 /**
  * Mounts an `EffectComposer` inside the shell Canvas and takes over rendering
  * (priority-1 `useFrame`, which disables R3F auto-render) to run the configured
- * post chain: RenderPass → GTAO → UnrealBloom → SMAA → OutputPass → Stylize → Grade. Rendered only
+ * post chain: RenderPass → GTAO → UnrealBloom → SMAA → exposure meter → OutputPass → Stylize → Grade. Rendered only
  * when `PlayableGame.postProcessing` is set, so games without it draw unchanged.
  *
  * `stages` (resolved from the player's graphics profile) controls expensive passes
@@ -156,6 +167,25 @@ export function PostProcessing({ config, quality = "high", stages }: { config: P
       composer.addPass(new SMAAPass());
     }
 
+    // Clamped auto-exposure meters the pre-tone-map buffer, so the meter sits before OutputPass and
+    // hands the adaptation to the renderer's exposure — the one value the sky swatches also read.
+    const autoExposure = config.autoExposure === false ? null : { ...DEFAULT_AUTO_EXPOSURE, ...(config.autoExposure ?? {}) };
+    const authoredExposure = config.exposure ?? 1;
+    if (autoExposure !== null) {
+      let current = authoredExposure;
+      let sampled = false;
+      composer.addPass(
+        new ExposureMeterPass((samples, seconds) => {
+          const target = authoredExposure * exposureForKey(keyLuminanceFromSamples(samples), autoExposure);
+          // The first sample lands on its own target; fading in from the authored exposure would
+          // open every load on a visible exposure slideshow.
+          current = sampled ? adaptExposure(current, target, seconds, autoExposure.adaptationSeconds) : target;
+          sampled = true;
+          gl.toneMappingExposure = quantizeExposure(current);
+        }),
+      );
+    }
+
     composer.addPass(new OutputPass());
 
     if (config.stylize !== undefined && config.stylize !== false) {
@@ -180,7 +210,7 @@ export function PostProcessing({ config, quality = "high", stages }: { config: P
   useEffect(() => {
     const prevTone = gl.toneMapping;
     const prevExposure = gl.toneMappingExposure;
-    gl.toneMapping = TONE_MAPPING[config.toneMapping ?? "aces"];
+    gl.toneMapping = TONE_MAPPING[config.toneMapping ?? "agx"];
     gl.toneMappingExposure = config.exposure ?? 1;
     return () => {
       gl.toneMapping = prevTone;
