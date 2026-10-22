@@ -20,6 +20,8 @@ const KAYKIT_SKELETON = [
   "Interact",
   "Jump_Full_Long",
   "Running_A",
+  "Running_Strafe_Left",
+  "Running_Strafe_Right",
   "Spawn_Ground",
   "Throw",
   "Walking_A",
@@ -41,6 +43,14 @@ describe("classifyClip", () => {
     expect(classifyClip("Spawn_Ground")).toBe("spawn");
     expect(classifyClip("Interact")).toBe("interact");
     expect(classifyClip("Cheer")).toBe("cheer");
+  });
+
+  test("directional clips classify by their own vocabulary", () => {
+    expect(classifyClip("Running_Strafe_Left")).toBe("strafe");
+    expect(classifyClip("Running_Strafe_Right")).toBe("strafe");
+    expect(classifyClip("Walking_Backwards")).toBe("backward");
+    expect(classifyClip("Walking_A")).toBe("walk");
+    expect(classifyClip("Running_A")).toBe("run");
   });
 
   test("Quaternius / Blender-export vocabulary strips rig prefixes", () => {
@@ -93,7 +103,14 @@ describe("rolesFromClips", () => {
 describe("defaultAnimationForClips", () => {
   test("KayKit skeleton gets full states plus one-shots", () => {
     const config = defaultAnimationForClips(KAYKIT_SKELETON);
-    expect(config?.states).toEqual({ idle: "Idle", walk: "Walking_A", run: "Running_A" });
+    expect(config?.states).toEqual({
+      idle: "Idle",
+      walk: "Walking_A",
+      run: "Running_A",
+      strafeLeft: "Running_Strafe_Left",
+      strafeRight: "Running_Strafe_Right",
+      backward: "Walking_Backwards",
+    });
     expect(config?.oneShots?.hit).toEqual(["Hit_A", "Hit_B"]);
     expect(config?.oneShots?.death).toBe("Death_A");
     expect(config?.oneShots?.attack).toEqual(["Throw", "1H_Melee_Attack_Chop"]);

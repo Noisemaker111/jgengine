@@ -159,6 +159,14 @@ export interface ModelAnimationStates {
   walk: string;
   /** Clip name above `runSpeed`; omit to keep `walk` at any speed. */
   run?: string;
+  /** Clip while moving to the character's left; with `strafeRight` adds the lateral strafe blend, driven by the `direction` parameter. */
+  strafeLeft?: string;
+  /** Clip while moving to the character's right; with `strafeLeft` adds the lateral strafe blend. */
+  strafeRight?: string;
+  /** Clip while moving backwards; adds the backward blend, driven by the `facing` parameter. */
+  backward?: string;
+  /** Clip while turning on the spot; omit to pivot on `walk`, driven by the `turnRate` parameter. */
+  turn?: string;
   /** Speed (world units/sec) above which the entity counts as moving. Default 0.5. */
   walkSpeed?: number;
   /** Speed above which `run` plays when provided. Default 6. */

@@ -1,6 +1,14 @@
 import { describe, expect, test } from "bun:test";
 import { createAnimGraphRuntime } from "./animGraph";
-import { animGraphFromConfig, locomotionGraph } from "./locomotionGraph";
+import {
+  LOCOMOTION_BACKWARD_STATE,
+  LOCOMOTION_SPEED_PARAM,
+  LOCOMOTION_STATE,
+  LOCOMOTION_STRAFE_STATE,
+  LOCOMOTION_TURN_STATE,
+  animGraphFromConfig,
+  locomotionGraph,
+} from "./locomotionGraph";
 import { parseAnimGraph } from "./animGraph";
 import type { ModelAnimationConfig } from "../game/playableGame";
 
@@ -94,5 +102,155 @@ describe("locomotion one-shot lifecycle", () => {
     runtime.trigger("death");
     runtime.advance(0, {}, clips);
     expect(runtime.stateOf("base")).toBe("death");
+  });
+});
+
+/** Total weight the graph put on each clip in one advance. */
+function weightsOf(output: { clips: readonly { clip: string; weight: number }[] }): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const entry of output.clips) out[entry.clip] = (out[entry.clip] ?? 0) + entry.weight;
+  return out;
+}
+
+/** Ramps one parameter from `from` to `to` in 1/60 s steps, returning each step's weights. */
+function ramp(
+  graph: Parameters<typeof createAnimGraphRuntime>[0],
+  param: string,
+  from: number,
+  to: number,
+  steps: number,
+  fixed: Record<string, number> = {},
+) {
+  const runtime = createAnimGraphRuntime(graph);
+  const samples: Record<string, number>[] = [];
+  for (let i = 0; i <= steps; i += 1) {
+    const value = from + ((to - from) * i) / steps;
+    samples.push(weightsOf(runtime.advance(1 / 60, { ...fixed, [param]: value }, clips)));
+  }
+  return { runtime, samples };
+}
+
+describe("locomotion blend tree", () => {
+  const DIRECTIONAL = {
+    idle: "idle",
+    walk: "walk",
+    run: "run",
+    strafeLeft: "strafeL",
+    strafeRight: "strafeR",
+    backward: "back",
+    turn: "turn",
+  };
+  const CLIPS = { ...clips, run: 0.8, strafeL: 1, strafeR: 1, back: 1, turn: 1.4 };
+
+  test("the plain idle/walk/run graph keeps its entry and only adds the inert turn blend", () => {
+    const graph = locomotionGraph({ idle: "idle", walk: "walk", run: "run" });
+    const layer = graph.layers[0]!;
+    expect(layer.entry).toBe(LOCOMOTION_STATE);
+    expect(Object.keys(layer.states)).toEqual([LOCOMOTION_STATE, LOCOMOTION_TURN_STATE]);
+  });
+
+  test("a speed ramp blends idle to walk to run with no step bigger than one crossfade frame", () => {
+    const graph = locomotionGraph(DIRECTIONAL);
+    const { samples } = ramp(graph, LOCOMOTION_SPEED_PARAM, 0, 8, 800);
+    let worstStep = 0;
+    for (let i = 1; i < samples.length; i += 1) {
+      const total = Object.values(samples[i]!).reduce((a, b) => a + b, 0);
+      expect(total).toBeCloseTo(1, 6);
+      for (const clip of ["idle", "walk", "run"]) {
+        worstStep = Math.max(worstStep, Math.abs((samples[i]![clip] ?? 0) - (samples[i - 1]![clip] ?? 0)));
+      }
+    }
+    expect(samples[0]!.idle).toBeCloseTo(1, 6);
+    expect(samples[samples.length - 1]!.run).toBeCloseTo(1, 6);
+    expect(samples[50]!.walk ?? 0).toBeGreaterThan(0.99);
+    // The ramp advances 0.01 speed units per frame; a hard switch would step the weight by 1.
+    expect(worstStep).toBeLessThan(0.05);
+    const report = [0, 1, 2, 4, 6, 8]
+      .map((speed) => {
+        const s = samples[speed * 100]!;
+        return `${speed} m/s idle=${(s.idle ?? 0).toFixed(3)} walk=${(s.walk ?? 0).toFixed(3)} run=${(s.run ?? 0).toFixed(3)}`;
+      })
+      .join(" | ");
+    console.log(`speed ramp blend weights: ${report}`);
+  });
+
+  test("a direction ramp hands off to the strafe blend and back without popping", () => {
+    const graph = locomotionGraph(DIRECTIONAL);
+    const { runtime, samples } = ramp(graph, "direction", 0, 1, 120, { speed: 1.2 });
+    let worstStep = 0;
+    for (let i = 1; i < samples.length; i += 1) {
+      const total = Object.values(samples[i]!).reduce((a, b) => a + b, 0);
+      expect(total).toBeCloseTo(1, 6);
+      for (const clip of ["walk", "strafeL", "strafeR"]) {
+        worstStep = Math.max(worstStep, Math.abs((samples[i]![clip] ?? 0) - (samples[i - 1]![clip] ?? 0)));
+      }
+    }
+    expect(runtime.stateOf("base")).toBe(LOCOMOTION_STRAFE_STATE);
+    expect(samples[samples.length - 1]!.strafeR).toBeCloseTo(1, 2);
+    expect(worstStep).toBeLessThan(0.15);
+  });
+
+  test("the strafe blend still resolves both sides across the full lateral range", () => {
+    const graph = locomotionGraph(DIRECTIONAL);
+    const runtime = createAnimGraphRuntime(graph);
+    for (let i = 0; i < 40; i += 1) runtime.advance(1 / 60, { speed: 1.2, direction: -1 }, CLIPS);
+    expect(runtime.stateOf("base")).toBe(LOCOMOTION_STRAFE_STATE);
+    expect(weightsOf(runtime.advance(1 / 60, { speed: 1.2, direction: -1 }, CLIPS)).strafeL).toBeCloseTo(1, 2);
+    for (let i = 0; i < 40; i += 1) runtime.advance(1 / 60, { speed: 1.2, direction: 1 }, CLIPS);
+    expect(weightsOf(runtime.advance(1 / 60, { speed: 1.2, direction: 1 }, CLIPS)).strafeR).toBeCloseTo(1, 2);
+  });
+
+  test("walking backwards enters the backward blend and returns when facing forward", () => {
+    const graph = locomotionGraph(DIRECTIONAL);
+    const runtime = createAnimGraphRuntime(graph);
+    for (let i = 0; i < 30; i += 1) runtime.advance(1 / 60, { speed: 1.5, facing: -1, direction: 0 }, CLIPS);
+    expect(runtime.stateOf("base")).toBe(LOCOMOTION_BACKWARD_STATE);
+    expect(weightsOf(runtime.advance(1 / 60, { speed: 1.5, facing: -1, direction: 0 }, CLIPS)).back).toBeCloseTo(1, 2);
+    for (let i = 0; i < 30; i += 1) runtime.advance(1 / 60, { speed: 1.5, facing: 1, direction: 0 }, CLIPS);
+    expect(runtime.stateOf("base")).toBe(LOCOMOTION_STATE);
+  });
+
+  test("turning on the spot blends idle into the pivot clip and releases at rest", () => {
+    const graph = locomotionGraph(DIRECTIONAL);
+    const runtime = createAnimGraphRuntime(graph);
+    for (let i = 0; i < 30; i += 1) runtime.advance(1 / 60, { speed: 0, turnRate: 3 }, CLIPS);
+    expect(runtime.stateOf("base")).toBe(LOCOMOTION_TURN_STATE);
+    const turning = weightsOf(runtime.advance(1 / 60, { speed: 0, turnRate: 3 }, CLIPS));
+    expect(turning.turn ?? 0).toBeGreaterThan(0.5);
+    expect((turning.idle ?? 0) + (turning.turn ?? 0)).toBeCloseTo(1, 6);
+    for (let i = 0; i < 30; i += 1) runtime.advance(1 / 60, { speed: 0, turnRate: 0 }, CLIPS);
+    expect(runtime.stateOf("base")).toBe(LOCOMOTION_STATE);
+  });
+
+  test("a rig with no turn clip pivots on its walk clip instead of holding the bind pose", () => {
+    const graph = locomotionGraph({ idle: "idle", walk: "walk" });
+    const runtime = createAnimGraphRuntime(graph);
+    for (let i = 0; i < 40; i += 1) runtime.advance(1 / 60, { speed: 0, turnRate: 4 }, CLIPS);
+    expect(runtime.stateOf("base")).toBe(LOCOMOTION_TURN_STATE);
+    expect(weightsOf(runtime.advance(1 / 60, { speed: 0, turnRate: 4 }, CLIPS)).walk).toBeCloseTo(1, 2);
+  });
+
+  test("an armed hit still wins over the direction transitions", () => {
+    const graph = locomotionGraph({ ...DIRECTIONAL, oneShots: { hit: "hit" } });
+    const runtime = createAnimGraphRuntime(graph);
+    for (let i = 0; i < 30; i += 1) runtime.advance(1 / 60, { speed: 1.2, direction: 0.9 }, CLIPS);
+    expect(runtime.stateOf("base")).toBe(LOCOMOTION_STRAFE_STATE);
+    runtime.trigger("hit");
+    runtime.advance(1 / 60, { speed: 1.2, direction: 0.9 }, CLIPS);
+    expect(runtime.stateOf("base")).toBe("hit");
+  });
+
+  test("directional roles survive a config round trip through saved JSON", () => {
+    const config: ModelAnimationConfig = {
+      states: { idle: "idle", walk: "walk", run: "run", strafeLeft: "strafeL", strafeRight: "strafeR", backward: "back", turn: "turn" },
+    };
+    const graph = animGraphFromConfig(config)!;
+    expect(parseAnimGraph(JSON.parse(JSON.stringify(graph)))).toEqual(graph);
+    expect(Object.keys(graph.layers[0]!.states)).toEqual([
+      LOCOMOTION_STATE,
+      LOCOMOTION_STRAFE_STATE,
+      LOCOMOTION_BACKWARD_STATE,
+      LOCOMOTION_TURN_STATE,
+    ]);
   });
 });

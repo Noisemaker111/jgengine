@@ -321,7 +321,7 @@ describe("animation graph authoring", () => {
     expect(effectiveAnimGraph("none", clips)).toBeNull();
     const custom = effectiveAnimGraph({ states: { idle: "Idle", walk: "Walking_A" }, oneShots: { cheer: "Cheer" } }, clips);
     expect(custom?.source).toBe("locomotion");
-    expect(Object.keys(custom!.graph.layers[0]!.states)).toEqual(["locomotion", "cheer"]);
+    expect(Object.keys(custom!.graph.layers[0]!.states)).toEqual(["locomotion", "turn", "cheer"]);
     expect(effectiveAnimGraph({ clip: "Idle" }, clips)).toBeNull();
   });
 

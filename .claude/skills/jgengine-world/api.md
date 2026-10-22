@@ -320,14 +320,40 @@
 
 ## @jgengine/core/anim/locomotionGraph
 
+- `LOCOMOTION_BACKWARD_STATE` (const): const LOCOMOTION_BACKWARD_STATE: "backward" — State id of the backwards blend.
 - `LOCOMOTION_CROUCHED_PARAM` (const): const LOCOMOTION_CROUCHED_PARAM: "crouched" — Physically resolved crouch stance from the shared player motor.
+- `LOCOMOTION_DIRECTION_PARAM` (const): const LOCOMOTION_DIRECTION_PARAM: "direction" — Signed lateral share of the character's motion: `-1` fully to its left, `+1` fully to its right, `0` straight ahead or straight back. A custom mover feeds it under `ANIM_PARAMS_KEY`.
+- `LOCOMOTION_FACING_PARAM` (const): const LOCOMOTION_FACING_PARAM: "facing" — Dot of the character's facing with its motion direction: `1` running forward, `-1` running backwards. A custom mover feeds it under `ANIM_PARAMS_KEY`.
 - `LOCOMOTION_GROUNDED_PARAM` (const): const LOCOMOTION_GROUNDED_PARAM: "grounded" — Ground contact reported by the shared player motor; absent for custom movers without authored parameters.
 - `LOCOMOTION_LAYER` (const): const LOCOMOTION_LAYER: "base" — Layer id the locomotion graph uses; query `runtime.stateOf(LOCOMOTION_LAYER)`.
 - `LOCOMOTION_SPEED_PARAM` (const): const LOCOMOTION_SPEED_PARAM: "speed" — The parameter name the shell feeds with the entity's smoothed ground speed.
+- `LOCOMOTION_STATE` (const): const LOCOMOTION_STATE: "locomotion" — State id of the forward idle/walk/run blend.
+- `LOCOMOTION_STRAFE_STATE` (const): const LOCOMOTION_STRAFE_STATE: "strafe" — State id of the lateral strafe blend.
+- `LOCOMOTION_TURN_RATE_PARAM` (const): const LOCOMOTION_TURN_RATE_PARAM: "turnRate" — Signed yaw rate in radians/sec; a custom mover feeds it under `ANIM_PARAMS_KEY`.
+- `LOCOMOTION_TURN_STATE` (const): const LOCOMOTION_TURN_STATE: "turn" — State id of the on-the-spot turn blend.
 - `LOCOMOTION_VERTICAL_SPEED_PARAM` (const): const LOCOMOTION_VERTICAL_SPEED_PARAM: "verticalSpeed" — Resolved vertical velocity from the shared player motor, in world units/sec.
-- `LocomotionGraphInput` (interface): interface LocomotionGraphInput — Inputs for {@link locomotionGraph}: the idle/walk/run clip names and the one-shot table a rig config already carries.
+- `LocomotionGraphInput` (interface): interface LocomotionGraphInput — Inputs for {@link locomotionGraph}: the locomotion clip names and the one-shot table a rig config already carries.
 - `animGraphFromConfig` (function): function animGraphFromConfig(config: ModelAnimationConfig): AnimGraph | undefined — The graph a model animation config plays: its `graph`, or the {@link locomotionGraph} its `states` and `oneShots` describe, retaining every one-shot variant. `undefined` for a single-clip config or incomplete locomotion roles. Idle must name a clip; an absent or blank walk role holds that idle clip at walking speeds until configured. The shell plays this and the editor inspects it, so both see the same graph.
-- `locomotionGraph` (function): function locomotionGraph(input: LocomotionGraphInput): AnimGraph — The engine's default locomotion as an authored graph: a speed-driven blend between idle, walk, and run, plus a state per one-shot that plays once and returns (or clamps for `death`). What `useModelAnimation` used to hardcode.
+- `locomotionGraph` (function): function locomotionGraph(input: LocomotionGraphInput): AnimGraph — The engine's default locomotion as an authored graph: a speed-driven blend between idle, walk and run, plus a state per one-shot that plays once and returns (or clamps for `death`). What `useModelAnimation` used to hardcode.
+
+## @jgengine/core/anim/skeletonStandard
+
+- `KAYKIT_SCHEME` (const): const KAYKIT_SCHEME: RigScheme — The standard itself, as a scheme: a KayKit rig already is the standard, so its own names are the candidates. Both authored (`upperleg.l`) and runtime (`upperlegl`) spellings are accepted.
+- `MIXAMO_SCHEME` (const): const MIXAMO_SCHEME: RigScheme — Mixamo exports (`mixamorig*` names, or the same names without the prefix). Mixamo has a neck and a shoulder per side, which the standard folds into `chest` and `upperArm`; its toe is `ToeBase`, which is the standard's `toes`. Mixamo's topmost bone is `Hips`, so `root` and `hips` both resolve to it — a rig on this scheme has no bone above the pelvis.
+- `QUATERNIUS_ALIEN_SCHEME` (const): const QUATERNIUS_ALIEN_SCHEME: RigScheme — Quaternius sci-fi aliens: a `Root` plus a `Spine_1..Spine_6` chain, a `Neck` and a `Head`. The pack ships no arms and no legs, so those slots stay empty and the alien can only be driven on its spine and head. That is the honest mapping: the pack's own clip set is `Alien_Idle` alone.
+- `RIG_SCHEMES` (const): const RIG_SCHEMES: Readonly<Record<string, RigScheme>> — Every scheme the engine ships a mapping for, keyed by {@link RigScheme.id}.
+- `RigScheme` (interface): interface RigScheme — A source naming scheme and the bone names on it that fill each standard slot. A slot lists every accepted spelling; matching is case- and punctuation-insensitive, so `mixamorigLeftUpLeg` and `LeftUpLeg` are the same candidate.
+- `SKELETON_PARENT` (const): const SKELETON_PARENT: Readonly<Partial<Record<SkeletonSlot, SkeletonSlot>>> — The parent slot of each slot that has one; `root` has none.
+- `SKELETON_SLOTS` (const): const SKELETON_SLOTS: readonly SkeletonSlot[] — Every standard slot, in parent-before-child order.
+- `SKELETON_STANDARD` (const): const SKELETON_STANDARD: SkeletonStandard — The one humanoid skeleton standard. Bone names are the authored KayKit names; the loaded hierarchy spells them without `.` and `resolveRigNode` accepts either.
+- `SkeletonMap` (interface): interface SkeletonMap — The result of mapping a rig's bones onto {@link SKELETON_STANDARD}.
+- `SkeletonSlot` (type): type SkeletonSlot = | "root" | "hips" | "spine" | "chest" | "head" | "upperArm.l" | "upperArm.r" | "lowerArm.l" | "lowerArm.r" | "hand.l" | "hand.r" | "handSlot.l" | "handSlot.r" | "upperLeg.l" | "upperLeg.r" | "lowerLeg.l" | "lowerLeg.r" | "foot.l" | "foot.r" | "toes.l" | "toes.r" — The engine's one humanoid skeleton standard, and the path any other CC0 rig takes onto it.
+- `SkeletonStandard` (interface): interface SkeletonStandard — A named skeleton standard: its id and the authored bone name for each slot it defines.
+- `SlotLength` (interface): interface SlotLength — A standard slot and the rest-pose length of the bone chain that reaches it.
+- `mapRigToStandard` (function): function mapRigToStandard(bones: readonly string[], scheme: RigScheme | string = KAYKIT_SCHEME): SkeletonMap — Maps a rig's bone names onto {@link SKELETON_STANDARD} through one {@link RigScheme}. Each slot takes the first candidate that resolves; a candidate list is tried in order, so a scheme can name a preferred bone and fall back. Bones that fill no slot come back in `unmapped`, and slots the rig cannot fill in `missing` — the caller decides whether a partial map is usable.
+- `retargetBoneScales` (function): function retargetBoneScales(source: readonly SlotLength[], target: readonly SlotLength[]): Partial<Record<SkeletonSlot, number>> — Per-slot length ratios that stretch a source rig's bone chain onto the standard's proportions, so a retargeted clip moves both rigs the same distance rather than the same angle. Slots with no counterpart on either side are omitted; a source length of zero is skipped instead of dividing.
+- `retargetTracks` (function): function retargetTracks(tracks: readonly string[], map: SkeletonMap): (string | null)[] — Renames a clip's tracks from a rig's own bone names onto the standard's, so one authored clip plays on a mapped rig. The emitted node is the **runtime** bone name (see {@link runtimeBoneName}), which is what both the loaded scene graph and the loaded clips spell. A track whose node fills no slot is dropped (`null` in the result) rather than left pointing at a bone the rig does not have; a track whose property is not one of the four three writes is dropped too, since renaming it would not make it resolvable.
+- `runtimeBoneName` (function): function runtimeBoneName(authored: string): string — The runtime name GLTFLoader gives an authored bone name: three's `PropertyBinding.sanitizeNodeName` strips `[ ] . : /`, so the authored `upperleg.l` loads as `upperlegl`.
 
 ## @jgengine/core/area/areaEffectField
 

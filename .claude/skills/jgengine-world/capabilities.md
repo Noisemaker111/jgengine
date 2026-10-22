@@ -775,6 +775,15 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createSharedAnnotations` (function) · `import { createSharedAnnotations } from "@jgengine/core/world"`
 
+## skeleton-standard — map a rig on the standard scheme onto the standard's slots
+
+- `KAYKIT_SCHEME` (const) · `import { KAYKIT_SCHEME } from "@jgengine/core/anim/skeletonStandard"`
+- `SKELETON_STANDARD` (const) · `import { SKELETON_STANDARD } from "@jgengine/core/anim/skeletonStandard"`
+- `mapRigToStandard` (function) · `import { mapRigToStandard } from "@jgengine/core/anim/skeletonStandard"`
+- `retargetBoneScales` (function) · `import { retargetBoneScales } from "@jgengine/core/anim/skeletonStandard"`
+- `retargetTracks` (function) · `import { retargetTracks } from "@jgengine/core/anim/skeletonStandard"`
+- `runtimeBoneName` (function) · `import { runtimeBoneName } from "@jgengine/core/anim/skeletonStandard"`
+
 ## skill-check — a timing-bar skill check where you release inside a zone
 
 - `skillCheckZoneAt` (function) · `import { skillCheckZoneAt } from "@jgengine/core/world"`
