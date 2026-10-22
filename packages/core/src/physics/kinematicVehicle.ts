@@ -47,6 +47,13 @@ export interface KinematicVehicleTuning {
   /** Optional aerodynamic drag/downforce and electronic driver assists. */
   dynamics?: KinematicDynamicsTuning;
   /**
+   * Optional load-transfer handling: the tires' combined grip falls as weight moves off a corner, so a
+   * car on the brakes into a corner holds less slide than the same car coasting, and a hard corner
+   * itself costs grip. Bounded by the geometry (never diverges) and reported per tick as
+   * {@link KinematicVehicleStep.weightTransfer}. Omit to keep the flat-grip model.
+   */
+  weightTransfer?: KinematicWeightTransferTuning;
+  /**
    * Optional mass-and-force chassis layer (#1051). When present it supersedes `engineAccel`/`brakeAccel`
    * with force/mass dynamics — a tire friction budget, lateral weight transfer, and engine braking — so
    * vehicles of different mass, drive/brake force, and center-of-gravity drive measurably differently.
@@ -127,6 +134,24 @@ export interface KinematicDynamicsTuning {
   attitudeResponse?: number;
 }
 
+/**
+ * Load-transfer handling for the arcade model. Weight moves under braking, traction and cornering; the
+ * tire that goes light loses more grip than the loaded one gains (load sensitivity), so the axle's
+ * combined grip falls. Every term is bounded by the geometry, and `sensitivity` caps the loss, so the
+ * transfer can never drive grip negative or diverge. For per-axle balance from tire forces, use
+ * `createVehicleDynamics` (`physics/vehicleDynamics`) instead.
+ */
+export interface KinematicWeightTransferTuning {
+  /** Centre-of-mass height, m. */
+  comHeight: number;
+  /** Wheelbase, m; sets longitudinal transfer under braking and traction. */
+  wheelbase: number;
+  /** Track width, m; sets lateral transfer under cornering. */
+  trackWidth: number;
+  /** Grip lost per unit of total load transfer (default `0.35`); the tire load sensitivity. */
+  sensitivity?: number;
+}
+
 export interface KinematicVehicleOptions {
   position?: readonly [number, number, number];
   heading?: number;
@@ -166,6 +191,11 @@ export interface KinematicVehicleModifiers {
    * Separate from `accelScale` because stronger drive and stronger brakes are not the same upgrade.
    */
   brakeScale?: number;
+  /**
+   * Scale the tire grip curve this tick (damage, a low-grip zone, a temporary debuff). Mirrors the
+   * `gripScale` on `VehicleDynamicsModifiers`, so a damage layer's per-tick output drives either sim.
+   */
+  gripScale?: number;
 }
 
 export interface KinematicVehicleStep {
@@ -178,6 +208,13 @@ export interface KinematicVehicleStep {
   slip: number;
   /** The `surfaceFriction` sample used this tick (`< 1` = off the ideal surface). */
   surface: number;
+  /**
+   * Total load transfer this tick, `0..1`: longitudinal (braking/traction) plus lateral (cornering)
+   * weight movement as a fraction of the vehicle's weight. Always `0` without a `weightTransfer` block.
+   */
+  weightTransfer: number;
+  /** The grip multiplier the load transfer applied this tick (`1` = no loss); always `1` without the block. */
+  loadGrip: number;
   /** One-based forward gear, or `0` while reversing/neutral. */
   gear: number;
   rpm: number;
@@ -456,7 +493,20 @@ export function createKinematicVehicle(
       const slip = Math.abs(lateralSpeed) / (Math.abs(forwardSpeed) + 1);
       const handbrakeFactor = 1 - axis.handbrake * (1 - tuning.handbrakeGrip);
       const downforce = 1 + (tuning.dynamics?.downforce ?? 0) * Math.min(1, Math.abs(forwardSpeed) / Math.max(1, topSpeed));
-      const gripValue = sampleGripCurve(grip, slip) * surface * handbrakeFactor * downforce;
+      // Load transfer: longitudinal from the commanded accel, lateral from the cornering demand. Both are
+      // fractions of weight, so the same car on the brakes into a corner and coasting through it differ
+      // by this term alone. `loadGrip` is floored so the loss stays a feel change, never a black hole.
+      const transfer = tuning.weightTransfer;
+      let weightTransfer = 0;
+      let loadGrip = 1;
+      if (transfer !== undefined) {
+        const longitudinal = (Math.abs(accel) * transfer.comHeight) / (Math.max(0.1, transfer.wheelbase) * GRAVITY);
+        const lateral = (Math.abs(yawRate * forwardSpeed) * transfer.comHeight) / (Math.max(0.1, transfer.trackWidth) * GRAVITY);
+        weightTransfer = Math.min(1, longitudinal + lateral);
+        loadGrip = Math.max(0.3, 1 - (transfer.sensitivity ?? 0.35) * weightTransfer);
+      }
+      const gripValue =
+        sampleGripCurve(grip, slip) * surface * handbrakeFactor * downforce * loadGrip * (modifiers?.gripScale ?? 1);
       const keep = Math.max(0, 1 - gripValue * tuning.gripStrength * dt);
       // ESC fights intentional slides — ease it off while the handbrake is held so drift stays steerable.
       const stability = (tuning.dynamics?.stabilityControl ?? 0) * (1 - 0.85 * axis.handbrake);
@@ -566,6 +616,8 @@ export function createKinematicVehicle(
         lateralSpeed: -vx * fz + vz * fx,
         slip,
         surface,
+        weightTransfer,
+        loadGrip,
         gear: speed < -0.2 ? 0 : gearIndex + 1,
         rpm,
         steerAngle,
