@@ -73,6 +73,18 @@ Validate generated quest catalogs with `validateQuestCatalog` (`game/questCatalo
 Follow the [quest authoring recipe](recipes/quest-authoring.md) for bounded batches,
 canonical facts, external unlock declarations, and precise repair diagnostics.
 
+Run a mission with `createMissionRuntime` (`mission/mission`): a mission is data — a graph of
+objectives the machine walks, with named fail states, per-objective timers, conditional branches and
+rewards. `escortMission`, `chaseMission` and `defendMission` (`mission/compositions`) are compositions
+of the same `reach`/`interact`/`survive`/`pursue`/`kill`/`collect` kinds, not archetypes: an escort is
+a `reach` with an `actor-died` guard, a defend is a `survive` with a survivor floor, a chase is a
+`pursue` with an escape guard. Start, advance and fail missions from authored scene markers with
+`registerMissionTriggerActions` and `createMissionTriggerBridge` (`mission/triggers`); positional
+objectives read `missionMarkers(document)`. Rewards route through the quest appliers and the loot
+registry (`applyMissionRewards`). `validateMissionCatalog` is the content gate and it fails a mission
+whose success path is counters alone — `createMissionRuntime` runs it at construction, so a
+counter-only mission throws instead of shipping.
+
 For cross-catalog sources and skill gates, compose `validateContentReferences` and
 `validateContentProgression` (`game/contentValidation`) with `validateRecipeCatalog`
 (`crafting/recipeCatalog`). Follow [content validation](reference-content-validation.md).

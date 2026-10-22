@@ -345,6 +345,32 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `mergeCredits` (function) · `import { mergeCredits } from "@jgengine/core/game/credits"`
 
+## mission-compositions — build escort, chase and defend missions from the shared objective kinds
+
+- `chaseMission` (function) · `import { chaseMission } from "@jgengine/core/gameplay"`
+- `defendMission` (function) · `import { defendMission } from "@jgengine/core/gameplay"`
+- `escortMission` (function) · `import { escortMission } from "@jgengine/core/gameplay"`
+
+## mission-rewards — pay mission rewards through the quest appliers and the loot registry
+
+- `applyMissionRewards` (function) · `import { applyMissionRewards } from "@jgengine/core/gameplay"`
+
+## mission-runtime — missions as a data-driven objective state machine with fail states, timers, branches and rewards
+
+- `createMissionRuntime` (function) · `import { createMissionRuntime } from "@jgengine/core/gameplay"`
+
+## mission-triggers — start, advance and fail a mission from authored scene markers
+
+- `MISSION_TRIGGER_ACTIONS` (const) · `import { MISSION_TRIGGER_ACTIONS } from "@jgengine/core/gameplay"`
+- `createMissionTriggerBridge` (function) · `import { createMissionTriggerBridge } from "@jgengine/core/gameplay"`
+- `missionMarkers` (function) · `import { missionMarkers } from "@jgengine/core/gameplay"`
+- `registerMissionTriggerActions` (function) · `import { registerMissionTriggerActions } from "@jgengine/core/gameplay"`
+
+## mission-validation — tell whether an objective kind completes from a counter alone
+
+- `isCounterObjective` (function) · `import { isCounterObjective } from "@jgengine/core/gameplay"`
+- `validateMissionCatalog` (function) · `import { validateMissionCatalog } from "@jgengine/core/gameplay"`
+
 ## modular-item — attach parts into item mount slots to compute combined stats
 
 - `slotAccepts` (function) · `import { slotAccepts } from "@jgengine/core/gameplay"`

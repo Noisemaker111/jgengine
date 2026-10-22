@@ -546,6 +546,53 @@ export {
 } from "./loot/lootGen";
 export { lootWeaponDefinition, type LootWeaponProjection, type LootWeaponStatMap } from "./loot/lootWeapon";
 export {
+  chaseMission,
+  defendMission,
+  escortMission,
+  type ChaseMissionOptions,
+  type ComposedMissionOptions,
+  type DefendMissionOptions,
+  type EscortMissionOptions,
+} from "./mission/compositions";
+export {
+  DEFAULT_ESCAPE_MULTIPLE,
+  DEFAULT_PURSUE_DISTANCE,
+  DEFAULT_REACH_RADIUS,
+  MISSION_COUNTER_KINDS,
+  applyMissionRewards,
+  createMissionRuntime,
+  isCounterObjective,
+  validateMissionCatalog,
+  type MissionActorFact,
+  type MissionBranch,
+  type MissionDef,
+  type MissionEvent,
+  type MissionFactCondition,
+  type MissionFailCondition,
+  type MissionFailDef,
+  type MissionIssue,
+  type MissionObjectiveDef,
+  type MissionObjectiveKind,
+  type MissionRewardAppliers,
+  type MissionRewards,
+  type MissionRuntime,
+  type MissionRuntimeConfig,
+  type MissionRuntimeSnapshot,
+  type MissionState,
+  type MissionStats,
+  type MissionStatus,
+  type MissionTickInput,
+  type MissionValidationOptions,
+  type MissionView,
+} from "./mission/mission";
+export {
+  MISSION_TRIGGER_ACTIONS,
+  createMissionTriggerBridge,
+  missionMarkers,
+  registerMissionTriggerActions,
+  type MissionTriggerBridge,
+} from "./mission/triggers";
+export {
   compareGearSets,
   gearScore,
   type GearScore,
