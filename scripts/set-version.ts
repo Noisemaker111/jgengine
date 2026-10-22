@@ -9,7 +9,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
-const PACKAGES = ["core", "rapier", "ws", "sql", "navbake", "react", "convex", "node", "shell", "editor", "assets", "github", "jgengine"];
+const PACKAGES = ["core", "rapier", "ws", "sql", "navbake", "react", "convex", "node", "shell", "assets", "editor", "github", "jgengine"];
 const root = fileURLToPath(new URL("..", import.meta.url));
 const args = process.argv.slice(2);
 const check = args.includes("--check");
