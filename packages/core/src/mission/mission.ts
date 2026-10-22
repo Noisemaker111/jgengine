@@ -272,7 +272,7 @@ export interface MissionView {
   objectiveId: string | null;
   label: string;
   objectiveElapsed: number;
-  /** Seconds left on the current objective's timer, or null when it has none. */
+  /** Seconds left on the current objective's timer (a `timeout` or a `survive` duration), or null when it has none. */
   remaining: number | null;
   /** Counter fraction 0..1 for the current objective, or 0 when it is not a counter. */
   progress: number;
@@ -899,7 +899,10 @@ export function createMissionRuntime(config: MissionRuntimeConfig): MissionRunti
       readout.objectiveId = state.objective;
       readout.label = objective === null ? "" : objectiveLabel(objective);
       readout.objectiveElapsed = state.objectiveElapsed;
-      readout.remaining = objective?.timeout === undefined ? null : Math.max(0, objective.timeout - state.objectiveElapsed);
+      const timer = objective === null
+        ? undefined
+        : objective.timeout ?? (objective.kind === "survive" ? objective.duration : undefined);
+      readout.remaining = timer === undefined ? null : Math.max(0, timer - state.objectiveElapsed);
       const counted = objective === null || !isCounterObjective(objective.kind)
         ? 0
         : (state.progress[counterKey(objective)] ?? 0);
