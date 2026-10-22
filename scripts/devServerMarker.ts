@@ -1,12 +1,19 @@
-import { readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { readdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+
+import { headRevision } from "./captureRevision";
 
 /**
  * The marker every checkout's dev server writes, so a command can find a server
  * that is already running instead of launching one. `bun run debug` depends on it:
  * reading a live game's report must never start a process of its own.
+ *
+ * Three writers publish it: `scripts/browser-lib.ts` when it launches a server for a
+ * capture, and the `bun dev` Vite configs of `apps/web` and `apps/dev` through
+ * {@link devServerMarkerPlugin}. Running `bun dev` and opening the game is the
+ * workflow this exists for.
  */
 
 export interface DevServerMarker {
@@ -15,33 +22,52 @@ export interface DevServerMarker {
   pid?: number;
   /** Commit this server booted from; absent for markers written before revision keying. */
   head?: string;
+  /** Which config published it; absent on older markers, resolved by probing `/games`. */
+  kind?: "website" | "runner";
+  /** Host that answers: Vite's default `localhost` can be IPv6-only, where `127.0.0.1` hangs. */
+  host?: string;
 }
 
 const MARKER_PREFIX = "jgengine-dev-";
 
-export function markerPath(port: number): string {
-  return join(tmpdir(), `${MARKER_PREFIX}${port}.json`);
+export function markerPath(port: number, dir = tmpdir()): string {
+  return join(dir, `${MARKER_PREFIX}${port}.json`);
 }
 
-export function readMarker(port: number): DevServerMarker | null {
+export function readMarker(port: number, dir = tmpdir()): DevServerMarker | null {
   try {
-    return JSON.parse(readFileSync(markerPath(port), "utf8")) as DevServerMarker;
+    return JSON.parse(readFileSync(markerPath(port, dir), "utf8")) as DevServerMarker;
   } catch {
     return null;
   }
 }
 
-export function writeMarker(port: number, identity: string, pid?: number, head?: string): void {
-  const body: DevServerMarker = { identity, port, pid, head };
-  writeFileSync(markerPath(port), `${JSON.stringify(body)}\n`);
+export function writeMarker(marker: DevServerMarker, dir = tmpdir()): void {
+  writeFileSync(markerPath(marker.port, dir), `${JSON.stringify(marker)}\n`);
 }
 
-/** Every marker on this machine, newest file first is irrelevant — callers filter by identity. */
-export function listMarkers(): DevServerMarker[] {
+/**
+ * Remove one marker, but only when it belongs to `identity` — a checkout must never
+ * delete a marker another checkout published on the same port.
+ */
+export function removeMarker(port: number, identity?: string, dir = tmpdir()): boolean {
+  const marker = readMarker(port, dir);
+  if (marker === null) return false;
+  if (identity !== undefined && marker.identity !== identity) return false;
+  try {
+    unlinkSync(markerPath(port, dir));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Every marker on this machine — callers filter by identity. */
+export function listMarkers(dir = tmpdir()): DevServerMarker[] {
   const out: DevServerMarker[] = [];
   let names: string[];
   try {
-    names = readdirSync(tmpdir());
+    names = readdirSync(dir);
   } catch {
     return out;
   }
@@ -49,7 +75,7 @@ export function listMarkers(): DevServerMarker[] {
     if (!name.startsWith(MARKER_PREFIX) || !name.endsWith(".json")) continue;
     const port = Number(name.slice(MARKER_PREFIX.length, -".json".length));
     if (!Number.isFinite(port)) continue;
-    const marker = readMarker(port);
+    const marker = readMarker(port, dir);
     if (marker !== null) out.push(marker);
   }
   return out;
@@ -65,6 +91,33 @@ export async function isUp(url: string): Promise<boolean> {
   }
 }
 
+/**
+ * The base URL a server on `port` actually answers on. Vite's default host is
+ * `localhost`, which on Windows can bind IPv6 only, so a `127.0.0.1` probe alone can
+ * hang until it times out. The marker's recorded host is tried first; the report route
+ * is probed before `/` because it answers in milliseconds while an SSR page compiles.
+ */
+export async function reachableBase(port: number, preferredHost?: string): Promise<string | null> {
+  const hosts = [...(preferredHost === undefined ? [] : [preferredHost]), "127.0.0.1", "localhost"];
+  for (const host of new Set(hosts)) {
+    const base = `http://${host}:${port}`;
+    if (await answers(base)) return base;
+  }
+  return null;
+}
+
+async function answers(base: string, timeoutMs = 3_000): Promise<boolean> {
+  for (const path of ["/__jgengine/report?game=probe", "/"]) {
+    try {
+      await fetch(`${base}${path}`, { signal: AbortSignal.timeout(timeoutMs) });
+      return true;
+    } catch {
+      continue;
+    }
+  }
+  return false;
+}
+
 /** Stable identity for this checkout (worktree path or monorepo root). */
 export function checkoutIdentity(cwd = process.cwd()): string {
   try {
@@ -76,18 +129,110 @@ export function checkoutIdentity(cwd = process.cwd()): string {
   return resolve(cwd);
 }
 
+export interface RunningDevServer {
+  port: number;
+  base: string;
+  /** Which config published it: the website (`bun dev`) or the game runner (`dev:runner`, captures). */
+  kind: "website" | "runner";
+  head?: string;
+}
+
 /**
- * The dev server already serving this checkout, or null. Never starts one: a
- * `bun run debug` that launched its own server would have no game to read.
+ * Every dev server already serving this checkout, website first. A marker whose server
+ * does not answer is skipped, never deleted: a live server can look dead during a slow
+ * boot, and a deleted marker would hide it from every later read. Never starts a
+ * server — a `bun run debug` that launched its own would have no game to read.
  */
-export async function findRunningDevServer(cwd = process.cwd()): Promise<{ port: number; base: string } | null> {
+export async function listRunningDevServers(cwd = process.cwd(), dir = tmpdir()): Promise<RunningDevServer[]> {
   const identity = checkoutIdentity(cwd);
-  const candidates = listMarkers()
+  const preferredPort = Number(process.env.JG_DEV_PORT);
+  const candidates = listMarkers(dir)
     .filter((marker) => marker.identity === identity)
-    .sort((a, b) => (b.port === Number(process.env.JG_DEV_PORT) ? 1 : 0) - (a.port === Number(process.env.JG_DEV_PORT) ? 1 : 0));
+    .sort((a, b) => (b.port === preferredPort ? 1 : 0) - (a.port === preferredPort ? 1 : 0));
+  const running: RunningDevServer[] = [];
   for (const marker of candidates) {
-    const base = `http://127.0.0.1:${marker.port}`;
-    if (await isUp(base)) return { port: marker.port, base };
+    const base = await reachableBase(marker.port, marker.host);
+    if (base === null) continue;
+    // The website dev server serves games at /games/<id>; the runner serves them at /?game=<id>.
+    const kind = marker.kind ?? ((await servesWebsite(base)) ? "website" : "runner");
+    running.push({ port: marker.port, base, kind, ...(marker.head === undefined ? {} : { head: marker.head }) });
   }
-  return null;
+  return running.sort((a, b) => (a.kind === b.kind ? a.port - b.port : a.kind === "website" ? -1 : 1));
+}
+
+async function servesWebsite(base: string): Promise<boolean> {
+  try {
+    const response = await fetch(`${base}/games`, { signal: AbortSignal.timeout(1_000) });
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * The dev server already serving this checkout, or null — website dev first, then the
+ * runner. Kept for callers that only need one.
+ */
+export async function findRunningDevServer(cwd = process.cwd(), dir = tmpdir()): Promise<RunningDevServer | null> {
+  const servers = await listRunningDevServers(cwd, dir);
+  return servers[0] ?? null;
+}
+
+type ViteServerLike = {
+  config: { root: string };
+  httpServer?: { listening: boolean; address(): { port: number } | string | null; once(event: string, listener: () => void): void } | null;
+  middlewares?: unknown;
+};
+
+/**
+ * Dev-only Vite plugin: publish this server's marker once it is listening and remove
+ * it on shutdown. `apply: "serve"` keeps it out of every production build, so a
+ * deployed site never advertises a debug port.
+ */
+export function devServerMarkerPlugin(options: { kind: RunningDevServer["kind"]; dir?: string }): {
+  name: string;
+  apply: "serve";
+  configureServer(server: ViteServerLike): void;
+} {
+  const dir = options.dir;
+  let published: { port: number; identity: string } | null = null;
+  const cleanup = (): void => {
+    if (published === null) return;
+    const { port, identity } = published;
+    published = null;
+    removeMarker(port, identity, dir);
+  };
+  return {
+    name: "jgengine-dev-server-marker",
+    apply: "serve",
+    configureServer(server) {
+      const httpServer = server.httpServer;
+      if (httpServer === null || httpServer === undefined) return;
+      const publish = (): void => {
+        const address = httpServer.address();
+        if (address === null || typeof address === "string") return;
+        const identity = checkoutIdentity(server.config.root);
+        // Record the host that actually answers: `localhost` may be IPv6-only, where a
+        // 127.0.0.1 read hangs until it times out.
+        const host = "family" in address && address.family === "IPv6" ? "localhost" : "127.0.0.1";
+        published = { port: address.port, identity };
+        writeMarker(
+          {
+            identity,
+            port: address.port,
+            pid: process.pid,
+            head: headRevision(server.config.root),
+            kind: options.kind,
+            host,
+          },
+          dir,
+        );
+      };
+      if (httpServer.listening) publish();
+      else httpServer.once("listening", publish);
+      httpServer.once("close", cleanup);
+      for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"] as const) process.once(signal, cleanup);
+      process.once("exit", cleanup);
+    },
+  };
 }

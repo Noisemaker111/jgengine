@@ -94,6 +94,17 @@ describe("checkBudget", () => {
     expect(violations[0]?.message).toContain("never reached play");
   });
 
+  test("a report still inside its warmup cannot be judged on post-warmup GL counts", () => {
+    const warming = record({
+      telemetry: { source: "in-page", warmedUp: false, ageMs: 1_900, buildMs: 0.7, heapBytes: null },
+    }, {}, { programsLinked: 3, framebuffers: 1, allocations: 4 });
+    expect(checkBudget(warming, BUDGET)).toEqual([]);
+    const warmed = record({
+      telemetry: { source: "in-page", warmedUp: true, ageMs: 9_000, buildMs: 0.7, heapBytes: null },
+    }, {}, { programsLinked: 3, framebuffers: 1, allocations: 4 });
+    expect(checkBudget(warmed, BUDGET).map((entry) => entry.metric)).toEqual(["linkProgram", "createFramebuffer"]);
+  });
+
   test("fails when the GL counters never attached, since 0 allocations would be meaningless", () => {
     const [violation] = checkBudget(record({}, {}, { attached: false, total: { buffers: 0, textures: 0 } }), BUDGET);
     expect(violation?.message).toContain("GL allocations unavailable");

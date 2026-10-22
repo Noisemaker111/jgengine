@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 
-import { aggregateInclusiveTime, aggregateSelfTime, parsePerfArgs, summarizeFrameDeltas } from "./perf-play";
+import { aggregateInclusiveTime, aggregateSelfTime, measureSceneNodes, parsePerfArgs, summarizeFrameDeltas } from "./perf-play";
 
 test("parsePerfArgs reads one game with its flags", () => {
   expect(parsePerfArgs(["harbor-heat"])).toEqual({
@@ -52,4 +52,48 @@ test("aggregateSelfTime ranks functions and keeps readable source locations", ()
   const inclusive = aggregateInclusiveTime(profile, 7);
   expect(inclusive[0]?.fn).toBe("(root)");
   expect(inclusive.find((entry) => entry.fn === "updateWorld")?.selfMs).toBe(6);
+});
+
+/**
+ * Node counting runs on CI's llvmpipe runners where a frame can take seconds. It reads
+ * the page sampler first, and only walks the heap when the sampler is off, because the
+ * heap walk depends on three's URL still being in the resource-timing buffer.
+ */
+test("scene nodes come from the page sampler before any heap walk", async () => {
+  const calls: string[] = [];
+  const session = {
+    evaluate: async () => ({ nodes: 11_365, scenes: 1, source: "scene-graph" }),
+    send: async (method: string) => {
+      calls.push(method);
+      throw new Error("heap walk should not run");
+    },
+  };
+  expect(await measureSceneNodes(session as never)).toEqual({ nodes: 11_365, source: "scene-graph", scenes: 1 });
+  expect(calls).toEqual([]);
+});
+
+test("scene nodes fall back to the CDP heap walk when the sampler is off", async () => {
+  const session = {
+    evaluate: async () => null,
+    send: async (method: string, params?: { objectId?: string; functionDeclaration?: string }) => {
+      if (method === "Runtime.enable") return {};
+      if (method === "Runtime.evaluate") return { result: { objectId: "namespace" } };
+      if (method === "Runtime.callFunctionOn" && params?.objectId === "namespace") return { result: { objectId: "prototype" } };
+      if (method === "Runtime.queryObjects") return { objects: { objectId: "instances" } };
+      return { result: { value: { scenes: 1, nodes: 142 } } };
+    },
+  };
+  expect(await measureSceneNodes(session as never)).toEqual({ nodes: 142, source: "scene-graph", scenes: 1 });
+});
+
+test("an unreadable scene is reported as unavailable, never as zero", async () => {
+  const session = {
+    evaluate: async () => {
+      throw new Error("no page");
+    },
+    send: async () => {
+      throw new Error("no page");
+    },
+  };
+  expect(await measureSceneNodes(session as never)).toEqual({ nodes: null, source: "unavailable", scenes: 0 });
 });

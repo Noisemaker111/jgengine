@@ -10,6 +10,8 @@ import viteReact from "@vitejs/plugin-react";
 import { defineConfig, type Connect, type Plugin } from "vite";
 
 import { restoreFromCache, saveToCache } from "../../scripts/games-player-cache";
+import { devServerMarkerPlugin } from "../../scripts/devServerMarker";
+import { devReportPlugin } from "../dev/devReportPlugin";
 import { parseGameReadme } from "./src/lib/gameReadme";
 import { shouldRouteMdRequestToSsr } from "./src/lib/mdSsrRoute";
 
@@ -290,6 +292,10 @@ export default defineConfig({
   plugins: [
     cloudflare({ viteEnvironment: { name: "ssr" } }),
     tailwindcss(),
+    // Dev only: publish this server (so `bun run debug <game>` finds it) and accept the
+    // in-page perf report a game pushes from the /play runner it serves.
+    devServerMarkerPlugin({ kind: "website" }),
+    devReportPlugin(),
     tanstackStart({
       prerender: {
         enabled: true,

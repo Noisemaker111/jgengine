@@ -1,7 +1,6 @@
 import { devtools } from "@jgengine/core/devtools/devtools";
 import { roundReport, toReportLogs, type GlReport, type PerfQuality, type PerfReport, type ReportLogs } from "@jgengine/core/devtools/report";
 import type { FrameStats, RenderSample, SystemProbeReading } from "@jgengine/core/devtools/types";
-import { isProductionEnvironment } from "@jgengine/core/devtools/saveEndpoint";
 import { REPORT_ENDPOINT_PATH } from "@jgengine/core/devtools/reportEndpoint";
 import { readUrlParam } from "@jgengine/core/devtools/urlFlags";
 
@@ -203,15 +202,44 @@ function browserNow(): number {
 }
 
 /**
- * The id a report is keyed by: the dev runner's `?game=` when present, else the game's
- * display name slugged (`Harbor Heat` → `harbor-heat`), which is the same id
- * `bun run perf` prints and the budget file is keyed by.
+ * `Harbor Heat` -> `harbor-heat`, unless the dev runner's `?game=` says otherwise. The
+ * report is keyed by this, so it matches `bun run perf` and the budget file.
  * @internal
  */
 export function reportGameId(displayName: string): string {
   const fromRunner = readUrlParam("game");
   if (fromRunner !== null && fromRunner.length > 0) return fromRunner;
   return displayName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+}
+
+/**
+ * Ask the dev server whether its report route exists. This is the sampler's only
+ * production guard and it is behaviour, not a build flag: the route is mounted by the
+ * dev Vite configs only, so a shipped game answers this one request and installs
+ * nothing — no timers, no GL wrapping, no `window.__JG`. The website dev server serves
+ * the /play runner as a production build, which is why a build-time `PROD` check would
+ * wrongly disable the report there.
+ * @internal
+ */
+export async function probeReportRoute(
+  endpoint = REPORT_ENDPOINT_PATH,
+  game = "",
+  fetchImpl: typeof fetch | null = typeof fetch === "function" ? fetch : null,
+  timeoutMs = 1_500,
+): Promise<boolean> {
+  if (fetchImpl === null) return false;
+  try {
+    const response = await fetchImpl(`${endpoint}?game=${encodeURIComponent(game)}`, {
+      signal: AbortSignal.timeout(timeoutMs),
+      cache: "no-store",
+    });
+    const type = response.headers.get("content-type") ?? "";
+    if (!type.includes("application/json")) return false;
+    const body = (await response.json()) as { error?: unknown; frame?: unknown };
+    return typeof body?.error === "string" || body?.frame !== undefined;
+  } catch {
+    return false;
+  }
 }
 
 function heapUsedBytes(): number | null {
@@ -239,12 +267,12 @@ export function resetFrameTelemetry(): void {
 
 /**
  * Install the sampler for the page: publishes `window.__JG.report()` and pushes the
- * same record to the dev server's report route every second. Returns `null` in a
- * production build, or when `?telemetry=off` asks for the comparison run.
+ * same record to the dev server's report route every second. Returns `null` when
+ * `?telemetry=off` asks for the comparison run; callers gate installation on
+ * {@link probeReportRoute}, so a shipped game never starts the sampler.
  * @internal
  */
 export function installFrameTelemetry(sources: FrameTelemetrySources): FrameTelemetry | null {
-  if (isProductionEnvironment()) return null;
   if ((readUrlParam(TELEMETRY_FLAG) ?? "").toLowerCase() === "off") return null;
   if (typeof window === "undefined") return null;
 
