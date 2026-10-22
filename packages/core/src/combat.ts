@@ -267,6 +267,25 @@ export {
   type VfxPresetName,
 } from "./combat/vfxPresets";
 export {
+  DEFAULT_WEAPON_PELLETS_IN_FLIGHT,
+  MAX_WEAPON_BURST_COUNT,
+  MAX_WEAPON_PELLETS_IN_FLIGHT,
+  MAX_WEAPON_PELLETS_PER_SHOT,
+  assertWeaponDefinition,
+  weaponDamageAt,
+  weaponIntervalMs,
+  weaponMaxInFlight,
+  type WeaponBurstDef,
+  type WeaponDamageDef,
+  type WeaponDefinition,
+  type WeaponFalloffDef,
+  type WeaponFireMode,
+  type WeaponHitscanDef,
+  type WeaponMagazineDef,
+  type WeaponProjectileDef,
+  type WeaponVec3,
+} from "./combat/weaponDefinition";
+export {
   createFireCadence,
   createWeaponRuntime,
   type FireCadence,
@@ -276,6 +295,22 @@ export {
   type WeaponRuntime,
   type WeaponRuntimeConfig,
 } from "./combat/weaponFire";
+export {
+  createWeaponSystem,
+  type WeaponAim,
+  type WeaponAmmo,
+  type WeaponContact,
+  type WeaponImpact,
+  type WeaponImpactContext,
+  type WeaponProjectileView,
+  type WeaponReloadState,
+  type WeaponShotRecord,
+  type WeaponStats,
+  type WeaponSystem,
+  type WeaponSystemDeps,
+  type WeaponSystemState,
+  type WeaponTickResult,
+} from "./combat/weaponSystem";
 export { createAccumulatorMeter, tierAt, type MeterAddResult } from "./stats/accumulatorMeter";
 export { createEventMeter, type EventMeter, type EventMeterFeedResult } from "./stats/eventMeter";
 export { rollCheck, type CheckAdvantage, type CheckResult } from "./stats/rollCheck";

@@ -49,6 +49,7 @@
 - `DEFAULT_MAX_MITIGATION` (const): const DEFAULT_MAX_MITIGATION: 0.9 — Default ceiling on armor mitigation, so armor never fully negates a hit.
 - `DEFAULT_RENDER_CUES` (const): const DEFAULT_RENDER_CUES: Readonly<EntityRenderCues> — Neutral starting cue set: idle, unarmed, undamaged.
 - `DEFAULT_VFX_PRESET` (const): const DEFAULT_VFX_PRESET: VfxPresetName — The fallback flavor used when a `vfx()` call names an unknown preset — so a typo still shows a spark instead of nothing.
+- `DEFAULT_WEAPON_PELLETS_IN_FLIGHT` (const): const DEFAULT_WEAPON_PELLETS_IN_FLIGHT: 32 — Default live-pellet cap for a weapon that does not name one.
 - `DamageChannelId` (type): type DamageChannelId = string — Caller-owned id for a damage channel — `"fire"`, `"ballistic"`, `"physical"`, `"corrosive"`. The engine never branches on the value; a channel is whatever a game's data declares.
 - `DamageClampConfig` (interface): interface DamageClampConfig — Caller data for a flat per-hit damage cap.
 - `DamageContext` (interface): interface DamageContext — The facts a received-damage modifier predicates over: the incoming `channel`, who dealt it, the statuses the target currently carries, and any caller tags. All caller-owned strings; the engine never assigns meaning to a channel, source, status, or tag.
@@ -95,6 +96,9 @@
 - `InterceptDecision` (type): type InterceptDecision = | { kind: "pass" } | { kind: "transform"; amount: number; note?: string } | { kind: "clamp"; max: number; note?: string } | { kind: "redirect"; target: string; note?: string } | { kind: "split"; parts: readonly PendingDamage[]; note?: string } | { kind: "defer"; note?: strin… — What an interceptor decides to do with the pending application it was handed. `split` parts continue at the NEXT interceptor (never re-entering the splitter), which is what keeps the pipeline bounded and recursion-free.
 - `InterceptRecord` (interface): interface InterceptRecord — One row of provenance: which interceptor acted, what it decided, and the amount before/after it acted.
 - `MAX_INTERCEPT_STEPS` (const): const MAX_INTERCEPT_STEPS: 256 — Upper bound on interceptor evaluations for a single resolution; guards against runaway `split`/`redirect` loops.
+- `MAX_WEAPON_BURST_COUNT` (const): const MAX_WEAPON_BURST_COUNT: 64 — Cap on `WeaponBurstDef.count`.
+- `MAX_WEAPON_PELLETS_IN_FLIGHT` (const): const MAX_WEAPON_PELLETS_IN_FLIGHT: 256 — Cap on `WeaponDefinition.maxInFlight`; bounds per-tick projectile work.
+- `MAX_WEAPON_PELLETS_PER_SHOT` (const): const MAX_WEAPON_PELLETS_PER_SHOT: 64 — Cap on `WeaponDefinition.pellets`; bounds rays and damage resolutions per shot.
 - `Magazine` (interface): interface Magazine — A per-weapon magazine: discrete loaded rounds, a timed reload that refills from a reserve pool, and the reserve-pool interaction itself — the primitive that replaces hand-rolling mag size, reload delay, and reserve bookkeeping per game (#536.2).
 - `MagazineConfig` (interface): interface MagazineConfig — Tuning for `createMagazine`: mag capacity, reload delay, and where reserve ammo is drawn from.
 - `MagazineReserve` (interface): interface MagazineReserve — Draws ammo for a `Magazine`'s reload from wherever the reserve pool actually lives.
@@ -183,10 +187,32 @@
 - `UnknownTargetProfileError` (class): class UnknownTargetProfileError extends Error — Raised when a hit names a target that was never registered — a wiring error, not a 0-damage hit.
 - `VfxPreset` (interface): interface VfxPreset — A named visual flavor for a one-shot `combat.vfx` burst: the archetype (`kind`), a `0xRRGGBB` tint, and optional default `durationMs`/`radius`. Purely presentation — a preset never touches damage, range, or any authoritative value; it just answers "what does this attack look like" so a game does not hand-roll colors and archetypes.
 - `VfxPresetName` (type): type VfxPresetName = keyof typeof vfxPresets — A named key into {@link vfxPresets} (`"arrow" | "fireball" | "lightning" | "web" | "slash" | "shield" | "heal" | ...`).
+- `WeaponAim` (interface): interface WeaponAim — Current aim with recoil applied.
+- `WeaponAmmo` (interface): interface WeaponAmmo — Ammo and cadence as a HUD or a test reads them.
+- `WeaponBurstDef` (interface): interface WeaponBurstDef — Shots one trigger pull commits to. A burst finishes even if the trigger is released.
+- `WeaponContact` (interface): interface WeaponContact — Where one pellet met the caller's world.
+- `WeaponDamageDef` (interface): interface WeaponDamageDef — What one pellet does when it reaches a registered damage target.
+- `WeaponDefinition` (interface): interface WeaponDefinition — One weapon as plain data: cadence, fire mode, delivery, magazine, feel and damage. Nothing here is a function, so a generator can roll it, a save can store it, and two weapons differ by their fields.
+- `WeaponFalloffDef` (interface): interface WeaponFalloffDef — Linear damage falloff between two distances.
+- `WeaponFireMode` (type): type WeaponFireMode = "single" | "auto" | "burst" — How a held or tapped trigger turns into shots.
 - `WeaponFireResult` (interface): interface WeaponFireResult<THit> — The result of a {@link WeaponRuntime.fire} attempt. On `"fired"`, `hits` is whatever the caller's raycast returned and `resolutions` holds the portable damage provenance for each hit that produced a {@link DamageHitInput}; on any blocked status both are empty and no round was spent.
 - `WeaponFireStatus` (type): type WeaponFireStatus = "fired" | "cooling" | "empty" | "reloading" — Why a {@link WeaponRuntime.fire} attempt resolved the way it did.
+- `WeaponHitscanDef` (interface): interface WeaponHitscanDef — A ray resolved in the caller's world on the same tick it is fired.
+- `WeaponImpact` (interface): interface WeaponImpact — One resolved hit, with the damage runtime's full provenance.
+- `WeaponImpactContext` (interface): interface WeaponImpactContext — Read-only facts about the hit handed to `damageFor`.
+- `WeaponMagazineDef` (interface): interface WeaponMagazineDef — Loaded rounds, reload time, and where reloads draw from.
+- `WeaponProjectileDef` (interface): interface WeaponProjectileDef — A travelling pellet simulated by the runtime, resolved when it meets the caller's world.
+- `WeaponProjectileView` (interface): interface WeaponProjectileView — A pellet alive in flight, for presentation or prediction.
+- `WeaponReloadState` (type): type WeaponReloadState = "idle" | "reloading" | "interrupted" — `idle`, `reloading`, or `interrupted` after `interruptReload()` kept the progress.
 - `WeaponRuntime` (interface): interface WeaponRuntime<TAim, THit> — A composed weapon fire controller: a {@link FireCadence} gate, an optional {@link Magazine}, the caller's raycast, and portable {@link resolveDamageHit} damage resolution wired together. The caller retains ownership of models, animations, muzzle flash, audio, input, camera, aiming, and the raycaster itself.
 - `WeaponRuntimeConfig` (interface): interface WeaponRuntimeConfig<TAim, THit> — Configuration for {@link createWeaponRuntime}. Everything time/ammo-related is plain data; the two callbacks are where the caller keeps ownership of aiming, its own raycaster/projectile query, and how a hit maps to damage. There is deliberately no default weapon, projectile, or damage table here — those are game content.
+- `WeaponShotRecord` (interface): interface WeaponShotRecord — One fired shot: the cone it fired into, the kick it took, and where each pellet went.
+- `WeaponStats` (interface): interface WeaponStats — Lifetime ammo economy and resolution counters.
+- `WeaponSystem` (interface): interface WeaponSystem — A weapon as the game drives it: base aim in, shots and resolved impacts out. Fire mode, cadence, handling, delivery, magazine and damage all come from one {@link WeaponDefinition}; the game owns input, the muzzle, and the world query.
+- `WeaponSystemDeps` (interface): interface WeaponSystemDeps — Everything the runtime is allowed to reach: RNG, the damage model, the muzzle, and the world query.
+- `WeaponSystemState` (interface): interface WeaponSystemState — Serializable runtime state: aim, handling, ammo, trigger, pellets and counters.
+- `WeaponTickResult` (interface): interface WeaponTickResult — What one {@link WeaponSystem.tick} produced. Empty arrays on a quiet tick.
+- `WeaponVec3` (type): type WeaponVec3 = readonly [number, number, number] — A world-space point or direction in metres.
 - `activePhaseId` (function): function activePhaseId<TData>(state: EncounterState<TData>): string | null — The deepest active phase id — the completion cursor a HUD reads to label the current wave/phase — or null before start and once done.
 - `advanceCombo` (function): function advanceCombo(input: AdvanceComboInput): AdvanceComboResult — ⚠ undocumented
 - `advanceMotionCues` (function): function advanceMotionCues(cues: EntityRenderCues, speed: number, dt: number, tuning?: RenderCueTuning): EntityRenderCues — Advances `bobPhase` and decays `recoil` from a live `speed` sample (e.g. `groundSpeed(entity)`); leaves event-driven fields untouched.
@@ -198,6 +224,7 @@
 - `armorMitigation` (function): function armorMitigation(armor: number, config?: ArmorConfig): number — Fraction of a hit that armor removes at `armor` points; `0` at zero armor, capped by config.
 - `assertDamageTable` (function): function assertDamageTable(table: DamageTableDef): void — Validate a table once at construction: duplicate ids and non-finite multipliers fail loudly.
 - `assertHitZoneTable` (function): function assertHitZoneTable(table: HitZoneTable): void — Validate a zone table once at construction: duplicate ids and a missing default fail loudly.
+- `assertWeaponDefinition` (function): function assertWeaponDefinition(definition: WeaponDefinition): void — Check a definition before it reaches the runtime, so a rolled weapon fails loudly at construction instead of firing nothing. Throws `RangeError` naming the field.
 - `assignSquadRoles` (function): function assignSquadRoles(members: readonly string[], composition: SquadComposition): Map<string, SquadRole> — Deterministic role per member: declared order, `count` copies of each role, and the list repeats when the squad is larger than the composition. Same members and composition give the same answer on every host and after a reload.
 - `attackMeta` (function): function attackMeta(tags: readonly AttackTag[], extra?: Omit<AttackMeta, "tags">): AttackMeta — ⚠ undocumented
 - `changeStatPool` (function): function changeStatPool(pool: StatPool, amount: number): StatPoolChange — Pure bounded delta transition with the exact applied amount and boundary flags.
@@ -237,6 +264,7 @@
 - `createStatusRuntime` (function): function createStatusRuntime(options: StatusRuntimeOptions): StatusRuntime — Build a status runtime over serializable definitions. Applications reuse {@link resolveStatusApplication} for chance and stacking, so a refresh/stack-to-N/ignore rule has exactly one implementation; `tick` then applies each status's declared effect per stack.
 - `createThresholdTracker` (function): function createThresholdTracker(config: ThresholdCrossingConfig): ThresholdTracker — Track a numeric source against named thresholds and emit ordered crossing events with direction, hysteresis, once/repeat policy, and skipped-threshold handling. Deterministic and serializable; drives phase transitions, armor breaks, resource warnings, and any other threshold consumer.
 - `createWeaponRuntime` (function): function createWeaponRuntime<TAim, THit>(config: WeaponRuntimeConfig<TAim, THit>): WeaponRuntime<TAim, THit> — Compose a portable weapon fire controller from the existing generic primitives — a {@link FireCadence} gate, an optional {@link Magazine}, a caller-provided raycast, and portable {@link resolveDamageHit} damage resolution. No `GameContext`, entity store, renderer, or default weapon is involved; the caller owns aiming, its raycaster, and all presentation, and the result carries full damage provenance for authority to apply and replicate.
+- `createWeaponSystem` (function): function createWeaponSystem(initial: WeaponDefinition, deps: WeaponSystemDeps): WeaponSystem — Build a weapon from one {@link WeaponDefinition}. The game supplies aim, a muzzle, one world query, the damage model and an RNG; the runtime owns fire modes, cadence, recoil, bloom, reload states, ammo accounting, projectile ballistics and the damage call. State snapshots as plain data.
 - `encounterProgress` (function): function encounterProgress<TData>(state: EncounterState<TData>): { completed: number; total: number; done: boolean; } — Progress across the whole tree: how many phases have completed out of the total node count, plus whether the encounter has finished. Counts injected phases.
 - `eyeHeightFromColliders` (function): function eyeHeightFromColliders(set: EntityColliderSet | null | undefined): number — Eye height derived from a collider set: 90% of the tallest hitbox top, or the humanoid default when unknown.
 - `filterOutcomeFor` (function): function filterOutcomeFor(outcome: AllocationOutcome, viewerId: string): AllocationOutcome — Project an allocation outcome for one viewer, enforcing replication authoritatively: private grants belonging to other recipients are dropped, and pools the viewer cannot claim (not eligible, or reserved for someone else) are hidden — so private rewards never leak across the wire while provenance on the viewer's own grants is preserved.
@@ -278,6 +306,9 @@
 - `typeMultiplier` (function): function typeMultiplier(table: DamageTableDef, type: string, resistance: string): number — The type × resistance multiplier for one class, before armor. An unknown type throws; an unknown resistance class uses the table's `defaultMultiplier`, since target classes may be narrower than the table's coverage.
 - `updateEncounter` (function): function updateEncounter<TData>(config: EncounterConfig<TData>, state: EncounterState<TData>, dt: number, ctx: EncounterContext = {}): EncounterStep<TData> — Advance an encounter by `dt` seconds against the caller `ctx`. Accumulates time, then repeatedly: evaluates the cursor node's completion predicate; on completion, either re-runs its subtree (`repeat`) or marks it complete and advances to the next sibling — bubbling up to parent groups whose children are exhausted — entering the next chain and emitting enter/spawn/complete events. Emits a final `done` event when the last phase completes. Bounded per call by node count; mutates and returns `state`.
 - `vfxPresets` (const): const vfxPresets: { readonly arrow: { readonly kind: "projectile"; readonly color: 14207392; }; readonly bolt: { readonly kind: "projectile"; readonly color: 16777215; }; readonly fireball: { readonly kind: "projectile"; readonly color: 16738842; readonly durationMs: 460; }; readonly firebolt: { rea… — Ready-made visual flavors for the things players actually shoot, swing, and cast — so `ctx.scene.entity.vfx({ preset: "arrow", from, to })` renders a visible bolt with zero tuning, and `"lightning"`, `"web"`, `"slash"`, `"shield"`, `"heal"`, `"explosion"` likewise just work. Each entry only picks a `kind` (`projectile | beam | nova | glow | spark`), a color, and a lifetime; it is visual vocabulary (like named CSS colors), not a gameplay archetype — combat numbers stay in the caller's own effect/ability data. Any field passed to `vfx()` overrides the preset, and unknown names fall back to `spark` so a flavor typo still shows *something* rather than nothing.
+- `weaponDamageAt` (function): function weaponDamageAt(definition: WeaponDefinition, distance: number): number — Damage multiplier at a distance: `1` before `falloff.start`, linearly down to `endScale` at `end`.
+- `weaponIntervalMs` (function): function weaponIntervalMs(definition: WeaponDefinition): number — Milliseconds between shots at full cadence: `60_000 / roundsPerMinute`.
+- `weaponMaxInFlight` (function): function weaponMaxInFlight(definition: WeaponDefinition): number — Live pellets one definition may keep, clamped to a bounded range.
 
 ## @jgengine/core/combat/abilityKit
 
@@ -775,6 +806,26 @@
 - `resolveVfxPreset` (function): function resolveVfxPreset(name: string | undefined, overrides?: Partial<VfxPreset>): VfxPreset — Resolve a named visual flavor into a concrete `{ kind, color, durationMs?, radius? }`, with any provided `overrides` winning field by field. An unknown name resolves to {@link DEFAULT_VFX_PRESET} rather than throwing, so a flavor typo degrades to a visible spark. Used by `ctx.scene.entity.vfx({ preset })`; call it directly when you need the raw numbers (e.g. to seed a retained `vfxInstance` from the same vocabulary).
 - `vfxPresets` (const): const vfxPresets: { readonly arrow: { readonly kind: "projectile"; readonly color: 14207392; }; readonly bolt: { readonly kind: "projectile"; readonly color: 16777215; }; readonly fireball: { readonly kind: "projectile"; readonly color: 16738842; readonly durationMs: 460; }; readonly firebolt: { rea… — Ready-made visual flavors for the things players actually shoot, swing, and cast — so `ctx.scene.entity.vfx({ preset: "arrow", from, to })` renders a visible bolt with zero tuning, and `"lightning"`, `"web"`, `"slash"`, `"shield"`, `"heal"`, `"explosion"` likewise just work. Each entry only picks a `kind` (`projectile | beam | nova | glow | spark`), a color, and a lifetime; it is visual vocabulary (like named CSS colors), not a gameplay archetype — combat numbers stay in the caller's own effect/ability data. Any field passed to `vfx()` overrides the preset, and unknown names fall back to `spark` so a flavor typo still shows *something* rather than nothing.
 
+## @jgengine/core/combat/weaponDefinition
+
+- `DEFAULT_WEAPON_PELLETS_IN_FLIGHT` (const): const DEFAULT_WEAPON_PELLETS_IN_FLIGHT: 32 — Default live-pellet cap for a weapon that does not name one.
+- `MAX_WEAPON_BURST_COUNT` (const): const MAX_WEAPON_BURST_COUNT: 64 — Cap on `WeaponBurstDef.count`.
+- `MAX_WEAPON_PELLETS_IN_FLIGHT` (const): const MAX_WEAPON_PELLETS_IN_FLIGHT: 256 — Cap on `WeaponDefinition.maxInFlight`; bounds per-tick projectile work.
+- `MAX_WEAPON_PELLETS_PER_SHOT` (const): const MAX_WEAPON_PELLETS_PER_SHOT: 64 — Cap on `WeaponDefinition.pellets`; bounds rays and damage resolutions per shot.
+- `WeaponBurstDef` (interface): interface WeaponBurstDef — Shots one trigger pull commits to. A burst finishes even if the trigger is released.
+- `WeaponDamageDef` (interface): interface WeaponDamageDef — What one pellet does when it reaches a registered damage target.
+- `WeaponDefinition` (interface): interface WeaponDefinition — One weapon as plain data: cadence, fire mode, delivery, magazine, feel and damage. Nothing here is a function, so a generator can roll it, a save can store it, and two weapons differ by their fields.
+- `WeaponFalloffDef` (interface): interface WeaponFalloffDef — Linear damage falloff between two distances.
+- `WeaponFireMode` (type): type WeaponFireMode = "single" | "auto" | "burst" — How a held or tapped trigger turns into shots.
+- `WeaponHitscanDef` (interface): interface WeaponHitscanDef — A ray resolved in the caller's world on the same tick it is fired.
+- `WeaponMagazineDef` (interface): interface WeaponMagazineDef — Loaded rounds, reload time, and where reloads draw from.
+- `WeaponProjectileDef` (interface): interface WeaponProjectileDef — A travelling pellet simulated by the runtime, resolved when it meets the caller's world.
+- `WeaponVec3` (type): type WeaponVec3 = readonly [number, number, number] — A world-space point or direction in metres.
+- `assertWeaponDefinition` (function): function assertWeaponDefinition(definition: WeaponDefinition): void — Check a definition before it reaches the runtime, so a rolled weapon fails loudly at construction instead of firing nothing. Throws `RangeError` naming the field.
+- `weaponDamageAt` (function): function weaponDamageAt(definition: WeaponDefinition, distance: number): number — Damage multiplier at a distance: `1` before `falloff.start`, linearly down to `endScale` at `end`.
+- `weaponIntervalMs` (function): function weaponIntervalMs(definition: WeaponDefinition): number — Milliseconds between shots at full cadence: `60_000 / roundsPerMinute`.
+- `weaponMaxInFlight` (function): function weaponMaxInFlight(definition: WeaponDefinition): number — Live pellets one definition may keep, clamped to a bounded range.
+
 ## @jgengine/core/combat/weaponFeedback
 
 - `WeaponFeedbackSignal` (type): type WeaponFeedbackSignal = "shot" | "kick" | "impact" | "recoil" | "cameraKick" | "spread" | "ads" — Signals {@link createWeaponFeedbackSignals} reports each tick, named for `createFeedbackMixer` routes. `shot`, `kick` and `impact` are pulses that read non-zero only on the tick they happened; the rest follow the handling frame.
@@ -820,6 +871,23 @@
 - `WeaponPresentationTuning` (interface): interface WeaponPresentationTuning — How one weapon sits in first person. Offsets are camera-space metres, angles are radians, FOVs are degrees. Every field is optional; two weapons differ by the ones they set.
 - `createWeaponPresentation` (function): function createWeaponPresentation(initial: WeaponPresentationTuning = {}): WeaponPresentation — Creates a {@link WeaponPresentation}: per-weapon viewmodel offset, ADS pose and viewmodel FOV, sway and inertia from look speed, bob from the movement probe, and a recoil kick, all driven by the same handling frame third-person and over-the-shoulder rigs read. Deterministic and allocation-free per update.
 - `viewmodelFovScale` (function): function viewmodelFovScale(worldFov: number, viewmodelFov: number): number — Scale for a viewmodel drawn at `viewmodelFov` through a camera at `worldFov` (both degrees): multiply the viewmodel's camera-space x and y by this and it projects as if rendered with its own FOV, without a second camera or render pass.
+
+## @jgengine/core/combat/weaponSystem
+
+- `WeaponAim` (interface): interface WeaponAim — Current aim with recoil applied.
+- `WeaponAmmo` (interface): interface WeaponAmmo — Ammo and cadence as a HUD or a test reads them.
+- `WeaponContact` (interface): interface WeaponContact — Where one pellet met the caller's world.
+- `WeaponImpact` (interface): interface WeaponImpact — One resolved hit, with the damage runtime's full provenance.
+- `WeaponImpactContext` (interface): interface WeaponImpactContext — Read-only facts about the hit handed to `damageFor`.
+- `WeaponProjectileView` (interface): interface WeaponProjectileView — A pellet alive in flight, for presentation or prediction.
+- `WeaponReloadState` (type): type WeaponReloadState = "idle" | "reloading" | "interrupted" — `idle`, `reloading`, or `interrupted` after `interruptReload()` kept the progress.
+- `WeaponShotRecord` (interface): interface WeaponShotRecord — One fired shot: the cone it fired into, the kick it took, and where each pellet went.
+- `WeaponStats` (interface): interface WeaponStats — Lifetime ammo economy and resolution counters.
+- `WeaponSystem` (interface): interface WeaponSystem — A weapon as the game drives it: base aim in, shots and resolved impacts out. Fire mode, cadence, handling, delivery, magazine and damage all come from one {@link WeaponDefinition}; the game owns input, the muzzle, and the world query.
+- `WeaponSystemDeps` (interface): interface WeaponSystemDeps — Everything the runtime is allowed to reach: RNG, the damage model, the muzzle, and the world query.
+- `WeaponSystemState` (interface): interface WeaponSystemState — Serializable runtime state: aim, handling, ammo, trigger, pellets and counters.
+- `WeaponTickResult` (interface): interface WeaponTickResult — What one {@link WeaponSystem.tick} produced. Empty arrays on a quiet tick.
+- `createWeaponSystem` (function): function createWeaponSystem(initial: WeaponDefinition, deps: WeaponSystemDeps): WeaponSystem — Build a weapon from one {@link WeaponDefinition}. The game supplies aim, a muzzle, one world query, the damage model and an RNG; the runtime owns fire modes, cadence, recoil, bloom, reload states, ammo accounting, projectile ballistics and the damage call. State snapshots as plain data.
 
 ## @jgengine/core/stats/accumulatorMeter
 
