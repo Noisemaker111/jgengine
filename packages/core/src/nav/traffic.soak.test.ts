@@ -112,11 +112,14 @@ describe("traffic soak", () => {
         if (tick % 30 === 0) tightest = Math.min(tightest, tightestGap(traffic));
         if (tick % 300 === 0) {
           const exits = traffic.stats().exited;
-          if (exits === previousExits) windowsWithoutExit += 1;
-          else windowsWithoutExit = 0;
+          if (exits === previousExits) {
+            windowsWithoutExit += 1;
+            expect(windowsWithoutExit).toBeLessThan(10);
+          } else {
+            windowsWithoutExit = 0;
+          }
           previousExits = exits;
         }
-        expect(windowsWithoutExit).toBeLessThan(10);
       }
       const stats = traffic.stats();
       expect(stats.ticks).toBe(ticks);
