@@ -925,9 +925,17 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createVehicleBackendLink` (function) · `import { createVehicleBackendLink } from "@jgengine/core/physics/vehicleBackendLink"`
 
+## vehicle-damage — fixed-zone crash damage that changes handling and shows a bounded dent, serializable
+
+- `createVehicleDamage` (function) · `import { createVehicleDamage } from "@jgengine/core/world"`
+
 ## vehicle-dynamics — force-based car handling — tires, load transfer, drivetrain, assists — tuned with physical numbers
 
 - `createVehicleDynamics` (function) · `import { createVehicleDynamics } from "@jgengine/core/physics/vehicleDynamics"`
+
+## vehicle-parts — compose data-driven tuning parts (tires, engine, brakes) onto a vehicle tuning and read the resulting feel
+
+- `applyVehicleParts` (function) · `import { applyVehicleParts } from "@jgengine/core/world"`
 
 ## vehicle-seats — enter, exit and swap seats in a car or mount (GTA-style boarding) with driver and passenger slots
 
