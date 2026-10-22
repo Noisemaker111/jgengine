@@ -1,11 +1,12 @@
 import { useFrame, useLoader } from "@react-three/fiber";
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback, type ReactNode } from "react";
 import * as THREE from "three";
 import type { SceneObject } from "@jgengine/core/scene/objectStore";
 import { devtools } from "@jgengine/core/devtools/devtools";
 import { useGameContext } from "@jgengine/react/provider";
 import { sharedGltfLoader } from "../render/modelLoad";
 import { IsolatedModelPart } from "../render/SceneModels";
+import { freezeStaticTransforms } from "../render/staticTransforms";
 import { measureLocalBounds, reportMeasuredBounds } from "../render/measureBounds";
 import { measureLocalCollisionTriangles, reportMeasuredCollisionMesh } from "../render/measureCollisionMesh";
 import { buildScatterModelSources, disposeScatterModelSources, type ScatterModelSource } from "../scatter/scatterModels";
@@ -44,6 +45,10 @@ function ObjectSource({ source, objects, batch }: { source: ScatterModelSource; 
   const visibility = useRenderVisibility();
   const ref = useRef<THREE.InstancedMesh>(null);
   const scratch = useMemo(() => new THREE.Object3D(), []);
+  const attach = useCallback((mesh: THREE.InstancedMesh | null) => {
+    ref.current = mesh;
+    if (mesh !== null) freezeStaticTransforms(mesh);
+  }, []);
   useEffect(() => {
     const mesh = ref.current;
     return () => { mesh?.dispose(); };
@@ -55,7 +60,7 @@ function ObjectSource({ source, objects, batch }: { source: ScatterModelSource; 
         isCompatibleStaticObject(object, batch.model, ctx.scene.object.catalog(id)) ? object : null;
     }, visibility.current, scratch);
   }, CAMERA_POST_FRAME_PRIORITY + 0.1);
-  return <instancedMesh ref={ref} args={[source.geometry, source.material, objects.length]} userData={{ [STATIC_BATCH_MESH_KEY]: true }} castShadow={source.castShadow} receiveShadow={source.receiveShadow} dispose={null} />;
+  return <instancedMesh ref={attach} args={[source.geometry, source.material, objects.length]} userData={{ [STATIC_BATCH_MESH_KEY]: true }} castShadow={source.castShadow} receiveShadow={source.receiveShadow} dispose={null} />;
 }
 
 function LoadedStaticObjects({ batch, single }: { batch: StaticObjectBatch; single: (object: SceneObject) => ReactNode }) {

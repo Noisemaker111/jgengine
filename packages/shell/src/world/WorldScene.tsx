@@ -31,7 +31,7 @@ import { MeasuredBoundsGroup } from "../render/measureBounds";
 import { EntitySprite, IsolatedEntityModel } from "../render/SceneModels";
 import { resolveEntityModel, resolveObjectModel, type ObjectModelCacheEntry } from "../render/resolveModel";
 import { useRenderVisibility } from "../visibility/CullingProvider";
-import { writeEntityPose, writeRenderPose } from "./entityPose";
+import { writePoseIfChanged, writeRenderPoseIfChanged, emptyPoseMemo, type PoseMemo } from "./entityPose";
 import type { RenderPose } from "@jgengine/core/runtime/poseInterpolation";
 import { createSnapshotBuffer, type SnapshotBuffer } from "@jgengine/core/runtime/snapshotBuffer";
 import { POINTER_ENTITY_KEY, POINTER_OBJECT_KEY } from "../pointer/pointerService";
@@ -68,18 +68,20 @@ function EntityMarker({
   const color = isLocal ? "#4ade80" : role === "npc" ? colorFromId(name) : "#9ca3af";
 
   const scratchRef = useRef<RenderPose>([0, 0, 0, 0]);
+  const memoRef = useRef<PoseMemo>(emptyPoseMemo());
   useFrame(() => {
     const group = groupRef.current;
     if (group === null) return;
     const live = ctx.scene.entity.get(entityId);
     if (live === null) return;
-    writeRenderPose(group, ctx, entityId, live, scratchRef.current);
+    writeRenderPoseIfChanged(group, ctx, entityId, live, scratchRef.current, memoRef.current);
     group.visible = live.hidden !== true && visibleRef.current(entityId);
   });
 
   return (
     <group
       ref={groupRef}
+      matrixAutoUpdate={false}
       userData={{ [POINTER_ENTITY_KEY]: entityId }}
       onPointerDown={(event) => {
         event.stopPropagation();
@@ -149,6 +151,7 @@ function ObjectMarker({
   const ctx = useGameContext();
   const visibleRef = useRenderVisibility();
   const instanceId = object.instanceId;
+  const memoRef = useRef<PoseMemo>(emptyPoseMemo());
   const [scaleX, scaleY, scaleZ] = objectVisualScale(object.visual);
   const color = object.visual?.color ?? style?.color ?? colorFromId(object.catalogId);
   const opacity = object.visual?.opacity ?? style?.opacity ?? 1;
@@ -158,12 +161,12 @@ function ObjectMarker({
     if (group === null) return;
     const live = ctx.scene.object.get(instanceId);
     if (live === null) return;
-    writeEntityPose(group, live);
+    writePoseIfChanged(group, live, memoRef.current);
     group.visible = visibleRef.current(instanceId);
   });
 
   return (
-    <group ref={groupRef} userData={{ [POINTER_OBJECT_KEY]: instanceId }}>
+    <group ref={groupRef} matrixAutoUpdate={false} userData={{ [POINTER_OBJECT_KEY]: instanceId }}>
       {custom !== undefined && custom !== null ? (
         <MeasuredBoundsGroup target="object" measureKey={object.catalogId}>
           {custom}

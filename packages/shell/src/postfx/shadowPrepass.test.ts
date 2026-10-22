@@ -10,7 +10,7 @@ function renderer(autoUpdate = true, needsUpdate = false): Pick<THREE.WebGLRende
 }
 
 describe("postfx shadow prepasses", () => {
-  test("actual GTAO and DOF scene prepasses reuse beauty shadows", () => {
+  test("actual GTAO and DOF scene prepasses reuse beauty shadows and beauty matrices", () => {
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera();
     const writeBuffer = new THREE.WebGLRenderTarget(8, 8);
@@ -18,6 +18,7 @@ describe("postfx shadow prepasses", () => {
     const passes = [new GTAOPass(scene, camera, 8, 8), new BokehPass(scene, camera, {})];
     let shadowUpdates = 0;
     let sceneDraws = 0;
+    const matrixWalkStates: boolean[] = [];
     const clearColor = new THREE.Color();
     const gl = {
       ...renderer(),
@@ -31,6 +32,7 @@ describe("postfx shadow prepasses", () => {
       render: (object: THREE.Object3D) => {
         if (object !== scene) return;
         sceneDraws++;
+        matrixWalkStates.push(scene.matrixWorldAutoUpdate);
         if (gl.shadowMap.autoUpdate || gl.shadowMap.needsUpdate) shadowUpdates++;
       },
     };
@@ -40,6 +42,8 @@ describe("postfx shadow prepasses", () => {
     }
     expect(sceneDraws).toBe(3);
     expect(shadowUpdates).toBe(1);
+    expect(matrixWalkStates).toEqual([true, false, false]);
+    expect(scene.matrixWorldAutoUpdate).toBe(true);
     gl.render(scene);
     expect(shadowUpdates).toBe(2);
     for (const pass of passes) pass.dispose();
@@ -94,6 +98,7 @@ describe("postfx shadow prepasses", () => {
       renderShadowlessPrepass(gl, scene, innerHidden, () => {
         expect(gl.shadowMap.autoUpdate).toBe(false);
         expect(gl.shadowMap.needsUpdate).toBe(false);
+        expect(scene.matrixWorldAutoUpdate).toBe(false);
         expect(overlay.visible).toBe(false);
       });
       expect(gl.shadowMap.autoUpdate).toBe(false);
@@ -102,8 +107,19 @@ describe("postfx shadow prepasses", () => {
     });
     expect(gl.shadowMap.autoUpdate).toBe(true);
     expect(gl.shadowMap.needsUpdate).toBe(true);
+    expect(scene.matrixWorldAutoUpdate).toBe(true);
     expect(overlay.visible).toBe(true);
     expect(outerHidden).toHaveLength(0);
     expect(innerHidden).toHaveLength(0);
+  });
+
+  test("a throwing prepass restores the scene's matrix pass", () => {
+    const scene = new THREE.Scene();
+    const error = new Error("prepass failed");
+    expect(() => renderShadowlessPrepass(renderer(), scene, [], () => {
+      expect(scene.matrixWorldAutoUpdate).toBe(false);
+      throw error;
+    })).toThrow(error);
+    expect(scene.matrixWorldAutoUpdate).toBe(true);
   });
 });
