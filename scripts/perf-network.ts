@@ -328,10 +328,25 @@ async function waitForQuiet(recorder: NetworkRecorder, phase: Phase, quietMs = 2
   }
 }
 
+/**
+ * A game that reloads itself (save migration, error-boundary retry) detaches the
+ * page's execution context, and CDP answers "Inspected target navigated or
+ * closed" for a read in flight. That is a navigation, not a measurement failure:
+ * the recorder keeps counting across it, so reads stay best-effort.
+ */
+async function tryEvaluate<T>(session: CdpSession, expression: string): Promise<T | undefined> {
+  try {
+    return await session.evaluate<T>(expression);
+  } catch {
+    return undefined;
+  }
+}
+
 async function waitForReady(session: CdpSession, timeoutMs: number): Promise<"ready" | "error" | "timeout"> {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
-    const state = await session.evaluate<{ status: string | null; error: string | null }>(
+    const state = await tryEvaluate<{ status: string | null; error: string | null }>(
+      session,
       `({
         status: document.documentElement.dataset.jgCapture ?? null,
         error: document.documentElement.dataset.jgCaptureError ?? null
@@ -345,12 +360,13 @@ async function waitForReady(session: CdpSession, timeoutMs: number): Promise<"re
 }
 
 async function shellValue(session: CdpSession, expression: string): Promise<unknown> {
-  return session.evaluate<unknown>(expression);
+  return tryEvaluate<unknown>(session, expression);
 }
 
 /** Resource Timing totals for the current document — a cross-check on the CDP byte counters. */
 async function resourceTiming(session: CdpSession): Promise<{ count: number; transferBytes: number; bodyBytes: number; fromCache: number } | null> {
-  return (await session.evaluate<{ count: number; transferBytes: number; bodyBytes: number; fromCache: number }>(
+  return (await tryEvaluate<{ count: number; transferBytes: number; bodyBytes: number; fromCache: number }>(
+    session,
     `(() => {
       const entries = performance.getEntriesByType("resource");
       let transferBytes = 0;
