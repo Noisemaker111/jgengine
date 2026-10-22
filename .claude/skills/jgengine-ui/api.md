@@ -2657,6 +2657,13 @@
 
 - `drawProceduralTileLayer` (function): function drawProceduralTileLayer(canvas: CanvasFixture): TilemapWorldConfig — Draw the deterministic tile atlas used by textured tile-layer captures and tests.
 
+## @jgengine/shell/render/triplanarMaterial
+
+- `TriplanarAssetMaterial` (function): function TriplanarAssetMaterial({ asset, ...options }: { asset: MaterialAsset } & { tileMetres?: number; sharpness?: number; normalScale?: number }): React.JSX.Element — Mounts {@link useTriplanarAssetMaterial} on a mesh; the R3F renderer owns disposal.
+- `TriplanarProjectionOptions` (interface): interface TriplanarProjectionOptions — Inputs for {@link applyTriplanarProjection}.
+- `applyTriplanarProjection` (function): function applyTriplanarProjection(material: THREE.MeshStandardMaterial, options: TriplanarProjectionOptions): THREE.MeshStandardMaterial — Projects a standard material's maps from world position instead of mesh UVs, so world geometry without a `uv` attribute still renders a textured PBR surface. Instanced meshes project in their instanced world space. Skinned meshes keep the bind-pose normal for the blend weights, which is close enough for the static world surfaces this path exists for.
+- `useTriplanarAssetMaterial` (function): function useTriplanarAssetMaterial(asset: MaterialAsset, options: { tileMetres?: number; sharpness?: number; normalScale?: number } = {}): THREE.MeshStandardMaterial — Render a serializable material asset — one built by `libraryMaterialAsset`, or authored in the editor — with world-space triplanar projection, so world geometry needs no UVs. Tile size defaults to the asset's own `physicalSize`, which the shared library sets per surface.
+
 ## @jgengine/shell/render/useDisposable
 
 - `Disposable` (interface): interface Disposable — Anything exposing dispose() — three.js geometries, materials, textures, render targets.

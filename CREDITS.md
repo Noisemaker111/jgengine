@@ -1,5 +1,15 @@
 # Credits
 
+## ambientCG
+
+The shared material library ([`packages/assets/src/catalogs/materialLibrary.ts`](packages/assets/src/catalogs/materialLibrary.ts))
+names 56 PBR surfaces whose maps come from **[ambientCG](https://ambientcg.com)** — one CC0
+scan per name, pulled with `assets pull library` rather than committed. Credits are recorded
+per entry: `MaterialAsset.provenance` and every texture's `provenance` carry `ambientCG` and
+`CC0-1.0` plus the scan's own page. The four shader-only entries (clear glass, frosted glass,
+ocean and puddle) publish no ambientCG scan; they are response parameters, and the smudged
+glass entry adds ambientCG's `Fingerprints001` normal so glass is not mathematically clean.
+
 ## Poly Haven
 
 Environment-map capture examples use free CC0 HDRIs from [Poly Haven](https://polyhaven.com/hdris).

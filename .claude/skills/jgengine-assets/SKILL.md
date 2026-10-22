@@ -54,7 +54,16 @@ After package publication and the shared consumer upgrade, delete the equivalent
 
 A model resolved from a catalog string id is stamped `animation: "auto"`: the shell derives speed-driven `idle`/`walk`/`run` states plus `hit`/`death`/`attack` one-shots from the loaded GLB's own clip names via semantic clip roles (`@jgengine/core/game/clipRoles` — `classifyClip`, `defaultAnimationForClips`, exported `DEFAULT_CLIP_ROLE_TABLE` covering KayKit/Quaternius/Mixamo naming). No game-side clip strings needed; a clipless model is unaffected. An explicit `ModelConfig.animation`/`style.animation` always wins, and `animation: "none"` opts a placement back to the bind pose. Games rendering cloned scenes themselves get the same driver from `@jgengine/shell/render/useModelAnimation` instead of hand-rolling an `AnimationMixer`.
 
-Material sources declare the map roles in their pinned archive through `AssetSource.materialMaps`; `pull` checks those declarations before writing. `buildMaterialCatalog` omits absent `ao`, `roughness`, and `ktx2` URLs. Pass the returned maps directly to model, building, or terrain seams, or explicitly supply a game-owned map. Do not construct optional map filenames or fill every material with synthetic AO. Check the actual archive when changing availability; ambientCG API map metadata covers the catalog, while byte verification covers the downloaded variants.
+Material sources declare the map roles in their pinned archive through `AssetSource.materialMaps`; `pull` checks those declarations before writing. `buildMaterialCatalog` omits absent `ao`, `roughness`, `opacity`, and `ktx2` URLs. Pass the returned maps directly to model, building, or terrain seams, or explicitly supply a game-owned map. Do not construct optional map filenames or fill every material with synthetic AO. Check the actual archive when changing availability; ambientCG API map metadata covers the catalog, while byte verification covers the downloaded variants.
+
+## Material library
+
+`@jgengine/assets/catalogs/materialLibrary` is the shared palette: `MATERIAL_LIBRARY` names 56 surfaces (`asphalt/wet`, `metal/painted`, `stucco/painted`, `brick/red`, `wood/oak`, `foliage/leaf`, `glass/clear`, `water/ocean`, `ground/sand`, `concrete/smooth`, …), each with its ambientCG source, world tile size in metres and physical response. Select by name — never by source id or filename.
+
+- `assets pull library --dir <public>` pulls every pinned map set (about 360 MB of 1K-JPG archives; each pulled material is then 5–7 MB beside its name). Pull into a game's `public/materials` and build assets with `libraryMaterialAsset(name)`; the returned `MaterialAsset` is the same editable value the editor writes into `editor.scene.json`.
+- Clear and frosted glass, ocean and puddle carry no scan: ambientCG publishes no glass or water material, so those four are response parameters. `glass/smudged` adds ambientCG's fingerprint normal.
+- Geometry without a `uv` attribute renders through `@jgengine/shell/render/triplanarMaterial` (`TriplanarAssetMaterial`, `useTriplanarAssetMaterial`, or `applyTriplanarProjection` on an owned material). It projects colour, normal, roughness and AO from world position at the asset's tile size, and instanced meshes project in instanced space. Use it for generated or imported world geometry; keep UV-mapped models on the ordinary path.
+- Metals need an environment to reflect. A metal entry under a bare clear colour reads as coloured chrome — pair `metal/*` with `EnvironmentLighting` or an authored sky.
 
 ## Source rules
 

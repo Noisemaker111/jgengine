@@ -446,6 +446,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `configureMaterialTexture` (function) · `import { configureMaterialTexture } from "@jgengine/shell/render/materialAsset"`
 
+## material-triplanar — render a material asset on world geometry without UVs
+
+- `useTriplanarAssetMaterial` (function) · `import { useTriplanarAssetMaterial } from "@jgengine/shell/render/triplanarMaterial"`
+
 ## menu-router — screen stack for a game front-end — push/back/replace/reset with optional Escape-to-back
 
 - `useMenuRouter` (function) · `import { useMenuRouter } from "@jgengine/react/menuRouter"`
