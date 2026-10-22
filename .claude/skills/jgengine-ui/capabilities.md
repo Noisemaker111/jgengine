@@ -459,13 +459,37 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `useTriplanarAssetMaterial` (function) · `import { useTriplanarAssetMaterial } from "@jgengine/shell/render/triplanarMaterial"`
 
+## menu-key-intent — resolve a keyboard code to a menu intent (move / confirm / back)
+
+- `menuIntentForKey` (function) · `import { menuIntentForKey } from "@jgengine/core/ui"`
+
+## menu-nav-move — move menu focus by direction over a list or grid, skipping disabled items
+
+- `menuNavMove` (function) · `import { menuNavMove } from "@jgengine/core/ui"`
+
+## menu-nav-repeat — gate held menu navigation into an initial press plus repeats
+
+- `shouldRepeatMenuNav` (function) · `import { shouldRepeatMenuNav } from "@jgengine/core/ui"`
+
+## menu-pad-intent — resolve a standard gamepad button to a menu intent
+
+- `menuIntentForPadButton` (function) · `import { menuIntentForPadButton } from "@jgengine/core/ui"`
+
 ## menu-router — screen stack for a game front-end — push/back/replace/reset with optional Escape-to-back
 
 - `useMenuRouter` (function) · `import { useMenuRouter } from "@jgengine/react/menuRouter"`
 
+## menu-screen — animated enter/exit menu screen over a live scene, with translucent scrim, backdrop slot, reduced-motion support and exit unmount
+
+- `MenuScreen` (function) · `import { MenuScreen } from "@jgengine/react"`
+
 ## menu-stack-reducer — pure push/back/replace/reset transitions for a menu screen stack
 
 - `menuStackReducer` (function) · `import { menuStackReducer } from "@jgengine/react/menuRouter"`
+
+## menu-transition — enter/exit phase timing for an animated menu screen, with reduced-motion collapse and snapshot/restore
+
+- `createMenuTransition` (function) · `import { createMenuTransition } from "@jgengine/core/ui"`
 
 ## merge-post-processing — layer a partial post chain over a look preset without losing its stages
 
@@ -768,6 +792,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `TimerRing` (function) · `import { TimerRing } from "@jgengine/react"`
 
+## title-menu — title-screen block — wordmark, tagline, navigable verb list, footer, backdrop slot, animated over a live scene
+
+- `TitleMenu` (function) · `import { TitleMenu } from "@jgengine/react"`
+
 ## trans — inline translated-message component bound to the active locale
 
 - `Trans` (function) · `import { Trans } from "@jgengine/react"`
@@ -819,6 +847,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## use-interaction-prompt — React hook binding a prompt registry to a moving player — resolves the nearest interactable prompt and returns the active one
 
 - `useInteractionPrompt` (function) · `import { useInteractionPrompt } from "@jgengine/react"`
+
+## use-menu-nav — keyboard and gamepad focus navigation for a menu — roving focus order, confirm/back, disabled-item skipping, no focus trap
+
+- `useMenuNav` (function) · `import { useMenuNav } from "@jgengine/react"`
 
 ## use-modal-stack — React hook binding a modal stack to a component — re-renders on push/pop/resolve
 
