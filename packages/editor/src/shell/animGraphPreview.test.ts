@@ -76,6 +76,7 @@ describe("graph controls", () => {
     const controls = graphParamControls(withAim);
     expect(controls.map((control) => [control.name, control.kind])).toEqual([
       ["speed", "number"],
+      ["turnRate", "number"],
       ["aiming", "boolean"],
     ]);
     expect(controls[0]!.max).toBeGreaterThanOrEqual(7.5);
