@@ -346,6 +346,12 @@ function runSoak(seed = 2038): {
   const pick = (ids: readonly string[]): Map<string, Sampled> =>
     new Map(ids.map((id) => [id, samples.get(id)!]));
 
+  combat.dispose();
+  raiderCrowd.dispose();
+  nav.dispose();
+  cover.dispose();
+  perception.dispose();
+
   return {
     defenders: pick(defenders.map((entry) => entry.id)),
     raiders: pick(raiders.map((entry) => entry.id)),
