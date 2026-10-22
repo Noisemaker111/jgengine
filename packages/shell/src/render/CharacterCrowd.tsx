@@ -3,6 +3,7 @@ import { Suspense, useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 
 import { devtools } from "@jgengine/core/devtools/devtools";
+import { warnOnce } from "@jgengine/core/devtools/warnOnce";
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
 
 import {
@@ -65,10 +66,17 @@ function CrowdBatch({
   const gltf = useLoader(sharedGltfLoader, model.url);
   const clipNames = useMemo(() => gltf.animations.map((clip) => clip.name), [gltf]);
   const clips = useMemo(() => crowdClipsOf(model, clipNames), [model, clipNames]);
-  const baked = useMemo(
-    () => (clips.length === 0 ? null : bakeSkinnedCrowd({ scene: gltf.scene, animations: gltf.animations }, { clips, fps })),
-    [gltf, clips, fps],
-  );
+  const baked = useMemo(() => {
+    if (clips.length === 0) return null;
+    try {
+      return bakeSkinnedCrowd({ scene: gltf.scene, animations: gltf.animations }, { clips, fps });
+    } catch (error) {
+      // A model can carry clips without a skin (a node-transform prop animation). It keeps its own
+      // rig rather than entering the crowd path, which is what the readiness flag then reports.
+      warnOnce(`character-crowd:${model.url}`, `[jgengine] character crowd: "${model.url}" cannot be baked (no skinned mesh) and stays on its own rig`);
+      return null;
+    }
+  }, [gltf, clips, fps, model.url]);
   useEffect(() => () => baked?.dispose(), [baked]);
 
   const uniforms = useMemo(() => (baked === null ? null : createCrowdUniforms(baked)), [baked]);
