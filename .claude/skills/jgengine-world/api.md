@@ -908,6 +908,23 @@
 - `CorridorSample` (interface): interface CorridorSample { distance: number; closest: CorridorPoint; edgeIndex: number } — ⚠ undocumented
 - `createCorridorField` (function): function createCorridorField(edges: readonly CorridorEdge[]): CorridorField — ⚠ undocumented
 
+## @jgengine/core/nav/laneGraph
+
+- `LaneEdgeConfig` (interface): interface LaneEdgeConfig — One directed lane span to resolve into the graph.
+- `LaneGraph` (interface): interface LaneGraph — Authored lane topology: junctions, directed spans with speed limits and arc lengths, crossings with their right-of-way, and parking spots. Positions come from the spans themselves, so a traffic runtime never re-derives geometry or runs a path search per vehicle.
+- `LaneGraphConfig` (interface): interface LaneGraphConfig — The authored lane graph: junctions, directed spans, crossings and parking spots.
+- `LaneGraphDocumentOptions` (interface): interface LaneGraphDocumentOptions — How the document reader recognizes authored lane content.
+- `LaneIntersection` (interface): interface LaneIntersection — A resolved crossing: the lanes that feed it, the lanes that leave it, and its right-of-way.
+- `LaneIntersectionConfig` (interface): interface LaneIntersectionConfig — Right-of-way and signal timing for one authored crossing.
+- `LaneNode` (interface): interface LaneNode — A junction where lane spans meet.
+- `LanePose` (interface): interface LanePose — World pose of a lane at an arc position.
+- `LaneRightOfWay` (type): type LaneRightOfWay = "signal" | "priority" — How an intersection resolves which approach may enter next.
+- `LaneSignalProgram` (interface): interface LaneSignalProgram — Signal timing for one intersection; phases list the in-lanes each green window serves.
+- `LaneSpan` (interface): interface LaneSpan — A resolved lane span: centerline, arc lengths, limit and adjacency.
+- `LaneSpot` (interface): interface LaneSpot — A parking spot projected onto one lane at an arc position.
+- `createLaneGraph` (function): function createLaneGraph(config: LaneGraphConfig): LaneGraph — Read handle over the graph resolved once at construction. The build mutates its working set; this object never changes, so a save system rebuilds it from the scene document instead of serializing it.
+- `laneGraphFromDocument` (function): function laneGraphFromDocument(doc: Pick<EditorDocument, "paths" | "markers">, options: LaneGraphDocumentOptions = {}): LaneGraph — Read a lane graph out of an authored scene document. `traffic_lane` paths are one directed lane each; `road` paths (the editor's street bake) become a lane per direction, offset onto their own side of the road; `traffic_intersection` markers carry a signal program and right-of-way in `meta`; `traffic_parking` markers place parking spots. Runtime positions come from the paths, so editing a road moves its traffic instead of leaving a duplicate lane behind.
+
 ## @jgengine/core/nav/navConstrain
 
 - `NavConstrainEntity` (interface): interface NavConstrainEntity { position: EntityPosition } — ⚠ undocumented
@@ -1016,6 +1033,18 @@
 - `TimetablePose` (interface): interface TimetablePose { position: Waypoint; heading: number; segment: number; dwelling: boolean } — ⚠ undocumented
 - `TimetableStop` (interface): interface TimetableStop { at: Waypoint; dwellSeconds?: number } — ⚠ undocumented
 - `createRouteTimetable` (function): function createRouteTimetable(config: RouteTimetableConfig): RouteTimetable — ⚠ undocumented
+
+## @jgengine/core/nav/traffic
+
+- `Traffic` (interface): interface Traffic — Traffic on an authored lane graph: cars follow lane spans with IDM car-following, hold at stop lines, cross intersections under a signal phase or first-come right-of-way, change lanes, park in authored spots, and grow or shrink with the caller's `demand`. Deterministic — cars advance in insertion order, ties break on id, and the injected generator is the only source of variety. Bounded per tick: one pass over the cars, one sorted pass per occupied lane, no path search.
+- `TrafficCarView` (interface): interface TrafficCarView — One car's live state, as a renderer, a game or the devtools overlay reads it.
+- `TrafficOptions` (interface): interface TrafficOptions — Everything {@link createTraffic} needs: the graph, the injected generator and the caller's policies.
+- `TrafficRoutePolicy` (type): type TrafficRoutePolicy = (context: { carId: string; laneId: string; nodeId: string; /** Outbound lanes that are not the lane the car arrived on, sorted by id. */ options: readonly string[]; }) => string | null — Caller-supplied exit choice at a junction: return one of `options`, or `null` to leave the graph.
+- `TrafficSignalState` (interface): interface TrafficSignalState — An intersection's signal right now: which phase is green and for how long.
+- `TrafficSnapshot` (interface): interface TrafficSnapshot — Serializable traffic state: the fleet, the parking occupancy, the signal clocks and the demand.
+- `TrafficStats` (interface): interface TrafficStats — Counters a devtools probe, a HUD or a test reads.
+- `TrafficTuning` (interface): interface TrafficTuning — Every per-car behaviour number, retunable in play.
+- `createTraffic` (function): function createTraffic(options: TrafficOptions): Traffic — Traffic for an authored lane graph (see {@link createLaneGraph}).
 
 ## @jgengine/core/orders/orderKinds
 
@@ -2373,6 +2402,18 @@
 - `KinematicVehicleTuning` (interface): interface KinematicVehicleTuning { engineAccel: number; brakeAccel: number; topSpeed: number; reverseSpeed: number; turnRate: number; turnSpeedRef: number; grip?: GripCurve; gripStrength: number; handbrakeGrip: number; rollingResistance?: number; coastDeceleration?: number… — ⚠ undocumented · used by `createKinematicVehicle`: Arcade ground-vehicle sim (car, kart, bike) with throttle, brake, steer, drift and retunable handling.
 - `LANDMARK_HARD_CAP` (const): const LANDMARK_HARD_CAP: 12 — Hard cap on grand plots emitted regardless of dial/city size.
 - `LOCK_ACTIONS` (const): const LOCK_ACTIONS: readonly LockAction[] — The five pick actions, in display order (shallow → deep).
+- `LaneEdgeConfig` (interface): interface LaneEdgeConfig — One directed lane span to resolve into the graph.
+- `LaneGraph` (interface): interface LaneGraph — Authored lane topology: junctions, directed spans with speed limits and arc lengths, crossings with their right-of-way, and parking spots. Positions come from the spans themselves, so a traffic runtime never re-derives geometry or runs a path search per vehicle.
+- `LaneGraphConfig` (interface): interface LaneGraphConfig — The authored lane graph: junctions, directed spans, crossings and parking spots.
+- `LaneGraphDocumentOptions` (interface): interface LaneGraphDocumentOptions — How the document reader recognizes authored lane content.
+- `LaneIntersection` (interface): interface LaneIntersection — A resolved crossing: the lanes that feed it, the lanes that leave it, and its right-of-way.
+- `LaneIntersectionConfig` (interface): interface LaneIntersectionConfig — Right-of-way and signal timing for one authored crossing.
+- `LaneNode` (interface): interface LaneNode — A junction where lane spans meet.
+- `LanePose` (interface): interface LanePose — World pose of a lane at an arc position.
+- `LaneRightOfWay` (type): type LaneRightOfWay = "signal" | "priority" — How an intersection resolves which approach may enter next.
+- `LaneSignalProgram` (interface): interface LaneSignalProgram — Signal timing for one intersection; phases list the in-lanes each green window serves.
+- `LaneSpan` (interface): interface LaneSpan — A resolved lane span: centerline, arc lengths, limit and adjacency.
+- `LaneSpot` (interface): interface LaneSpot — A parking spot projected onto one lane at an arc position.
 - `LeaveVehicleOptions` (interface): interface LeaveVehicleOptions extends DismountOffset — Exit placement and optional local camera restoration for an explicit rider.
 - `LineFormationOptions` (interface): interface LineFormationOptions — Options for {@link lineFormation}.
 - `LocalAvoidanceOptions` (interface): interface LocalAvoidanceOptions — Tuning for {@link resolveLocalAvoidance}.
@@ -2667,6 +2708,14 @@
 - `TimerSnapshot` (interface): interface TimerSnapshot — One timer's serializable state — elapsed resolved at snapshot time, ready to re-anchor on restore.
 - `TimerStartOptions` (interface): interface TimerStartOptions — Options for {@link TimerSet.start}.
 - `ToneVoice` (interface): interface ToneVoice — A pitched oscillator voice: a 12ms linear attack to `gain`, then an exponential decay to silence across `duration`, with an optional exponential pitch slide from `freq` to `slideTo`.
+- `Traffic` (interface): interface Traffic — Traffic on an authored lane graph: cars follow lane spans with IDM car-following, hold at stop lines, cross intersections under a signal phase or first-come right-of-way, change lanes, park in authored spots, and grow or shrink with the caller's `demand`. Deterministic — cars advance in insertion order, ties break on id, and the injected generator is the only source of variety. Bounded per tick: one pass over the cars, one sorted pass per occupied lane, no path search.
+- `TrafficCarView` (interface): interface TrafficCarView — One car's live state, as a renderer, a game or the devtools overlay reads it.
+- `TrafficOptions` (interface): interface TrafficOptions — Everything {@link createTraffic} needs: the graph, the injected generator and the caller's policies.
+- `TrafficRoutePolicy` (type): type TrafficRoutePolicy = (context: { carId: string; laneId: string; nodeId: string; /** Outbound lanes that are not the lane the car arrived on, sorted by id. */ options: readonly string[]; }) => string | null — Caller-supplied exit choice at a junction: return one of `options`, or `null` to leave the graph.
+- `TrafficSignalState` (interface): interface TrafficSignalState — An intersection's signal right now: which phase is green and for how long.
+- `TrafficSnapshot` (interface): interface TrafficSnapshot — Serializable traffic state: the fleet, the parking occupancy, the signal clocks and the demand.
+- `TrafficStats` (interface): interface TrafficStats — Counters a devtools probe, a HUD or a test reads.
+- `TrafficTuning` (interface): interface TrafficTuning — Every per-car behaviour number, retunable in play.
 - `TravelPointDef` (interface): interface TravelPointDef<TMeta = unknown> — A fast-travel destination the game defines. Discovery is tracked separately.
 - `TravelPointView` (interface): interface TravelPointView<TMeta = unknown> extends TravelPointDef<TMeta> — A destination plus its discovery state (and distance from a query origin, when given).
 - `TriggerActionDefinition` (interface): interface TriggerActionDefinition — A game-declared action the editor can assign to a volume/marker trigger. Schema drives the inspector params; `targets`/`events` optionally narrow where it appears.
@@ -2819,6 +2868,7 @@
 - `createInterestCensus` (function): function createInterestCensus(): InterestCensusAccumulator — Create a census accumulator so the caller can tally active/dormant gates during the loop it already runs, avoiding any separate full-world scan just to report scheduler metrics.
 - `createInterestGateState` (function): function createInterestGateState(config: InterestSchedulerConfig, phase = 0): InterestGateState — Create a dormant gate state, staggered by `phase` (`[0,1)`, typically {@link interestPhase} of the agent id) so siblings created together do not all fire their first active tick on the same frame.
 - `createKinematicVehicle` (function): function createKinematicVehicle(initialTuning: KinematicVehicleTuning, options: KinematicVehicleOptions = {}): KinematicVehicle — Arcade ground-vehicle sim (car, kart, bike) with throttle, brake, steer, drift and retunable handling.
+- `createLaneGraph` (function): function createLaneGraph(config: LaneGraphConfig): LaneGraph — Read handle over the graph resolved once at construction. The build mutates its working set; this object never changes, so a save system rebuilds it from the scene document instead of serializing it.
 - `createLeaderTrail` (function): function createLeaderTrail(config: LeaderTrailConfig): LeaderTrail — A trailing follower formation that chases a leader along its past path — snake/convoy trails.
 - `createLodScheduler` (function): function createLodScheduler(config: LodSchedulerConfig): LodScheduler — ⚠ undocumented
 - `createMarkerSet` (function): function createMarkerSet<TMeta = unknown>(now: () => number = Date.now): MarkerSet<TMeta> — ⚠ undocumented
@@ -2854,6 +2904,7 @@
 - `createTerrainSnapshot` (function): function createTerrainSnapshot(config: EditableTerrainConfig): TerraformSnapshot — A fresh, unedited terrain snapshot sized to `bounds`/`cellSize` — the seed for a new sculpt document.
 - `createThreatTable` (function): function createThreatTable(config: ThreatTableConfig = {}): ThreatTable — ⚠ undocumented
 - `createTimerSet` (function): function createTimerSet(options: TimerSetOptions = {}): TimerSet — Create a serializable set of named countdown / countup timers on an injected clock — one primitive for round timers, respawn clocks, and ability cooldown/charge. Start/pause/resume/stop/reset timers by free-string id, read `{ remainingMs, elapsedMs, durationMs, progress01, running, expired }` for a mm:ss readout or a radial/bar fill, and `poll` for expiry edges. Ids and labels carry no genre meaning; `snapshot`/`restore` round-trip through a save.
+- `createTraffic` (function): function createTraffic(options: TrafficOptions): Traffic — Traffic for an authored lane graph (see {@link createLaneGraph}).
 - `createUtilityBrain` (function): function createUtilityBrain(config: UtilityBrainConfig): UtilityBrain — Create a utility brain over an existing {@link NeedSet}. The need set is injected, not owned, so the game shows the same hunger the brain scores and persists one copy.
 - `createVehicleBody` (function): function createVehicleBody(world: PhysicsWorld, config: VehicleBodyConfig): VehicleBody — ⚠ undocumented
 - `createVehicleObstacleClamp` (function): function createVehicleObstacleClamp(options: { /** Solids near the car this tick (already filtered to the relevant, solid set). */ obstacles: () => readonly CollisionObstacle[]; /** Vehicle body radius (units). Default {@link DEFAULT_VEHICLE_RADIUS}. */ radius?: number; /** Current tick dt (seconds)… — Build a slide-along move clamp for a kinematic car (#1051). `obstacles` is sampled fresh each tick — the caller hands back the already-filtered set of solids near the car — and `dt` supplies the current tick length so a blocked move's lost displacement converts to a closing speed. `radius` inflates each obstacle footprint by the car's body radius (default {@link DEFAULT_VEHICLE_RADIUS}).
@@ -2917,6 +2968,7 @@
 - `keybind` (function): function keybind(actionId: string, label?: string): KeybindPromptDisplay — ⚠ undocumented
 - `label` (function): function label(text: string): LabelPromptDisplay — ⚠ undocumented
 - `laneCenters` (function): function laneCenters(road: RoadEnvironmentDescriptor): readonly [StreetLane, StreetLane] — Two right-hand-traffic lane centerlines for a road — each offset a quarter of the drivable width from the center and ordered in its direction of travel. Feed a lane's `path` straight into `nav/pathFollow` for traffic AI, or use its endpoints as directed car spawn points.
+- `laneGraphFromDocument` (function): function laneGraphFromDocument(doc: Pick<EditorDocument, "paths" | "markers">, options: LaneGraphDocumentOptions = {}): LaneGraph — Read a lane graph out of an authored scene document. `traffic_lane` paths are one directed lane each; `road` paths (the editor's street bake) become a lane per direction, offset onto their own side of the road; `traffic_intersection` markers carry a signal program and right-of-way in `meta`; `traffic_parking` markers place parking spots. Runtime positions come from the paths, so editing a road moves its traffic instead of leaving a duplicate lane behind.
 - `leaveVehicle` (function): function leaveVehicle(ctx: GameContext, seats: VehicleSeats, riderId: string, options: LeaveVehicleOptions = {}): ExitVehicleResult | { ok: false; reason: "unknown_rider" | "unknown_vehicle" } — Apply dismount placement, restore rider movement/visibility and the configured camera rig.
 - `lineFormation` (function): function lineFormation(options: LineFormationOptions): FormationSlotGenerator — A single rank abreast, centered on the destination and facing forward — a skirmish line or a chorus row. Slots run left→right along the group's right axis.
 - `listTriggerActions` (function): function listTriggerActions(target?: TriggerSourceKind): TriggerActionDefinition[] — Every registered action, optionally filtered by target collection.

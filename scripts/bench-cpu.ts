@@ -19,6 +19,7 @@ export const BENCH_FILES = [
   "packages/core/src/ai/utilityBrain.test.ts",
   "packages/core/src/nav/navCrowd.perf.test.ts",
   "packages/core/src/nav/navMesh.test.ts",
+  "packages/core/src/nav/traffic.soak.test.ts",
   "packages/core/src/scene/spatial.test.ts",
   "packages/core/src/sensor/perception.perf.test.ts",
   "packages/core/src/sim/offScreen.perf.test.ts",
