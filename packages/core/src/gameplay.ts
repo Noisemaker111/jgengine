@@ -586,6 +586,7 @@ export {
 export { createRing, ringSampleAt, type Ring, type RingConfig, type RingPhase } from "./session/ring";
 export { type RoleSpec } from "./session/roles";
 export { type RoundConfig, type RoundSnapshot } from "./session/roundState";
+export { createNeedSet, type NeedDefinition, type NeedReading, type NeedSet, type NeedSnapshot } from "./sim/needs";
 export {
   createDecayMeterSet,
   decayMeterMoodles,

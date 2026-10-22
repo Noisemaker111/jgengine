@@ -1298,6 +1298,10 @@
 - `MountSlotDef` (interface): interface MountSlotDef { id: string; accepts: string | readonly string[]; required?: boolean } — ⚠ undocumented · used by `slotAccepts`: Attach parts into an item's mount slots and resolve the combined stats.
 - `MultiRegionHealth` (interface): interface MultiRegionHealth — Per-limb / per-region health track with treat/damage/heal APIs.
 - `NEUTRAL_AXIS` (const): const NEUTRAL_AXIS: AxisInput — ⚠ undocumented
+- `NeedDefinition` (type): type NeedDefinition = DecayMeterConfig — A decaying need is a survival decay meter (`max`/`min`/`start`/`rate`, optional moodle thresholds) whose satisfaction an agent brain reads to score actions. The meter owns the numbers; per-need appeal lives in the game's utility options.
+- `NeedReading` (interface): interface NeedReading — One need's current satisfaction, worst-first ready: `fraction` is 0 (empty) … 1 (full).
+- `NeedSet` (interface): interface NeedSet — Named needs that drain or recover on game time — hunger, energy, hygiene, bladder, fun. Reads are index-addressed (`indexOf` once, `fractionAt` per tick) so a thousand-agent loop never re-resolves ids; the whole set round-trips through {@link NeedSnapshot}.
+- `NeedSnapshot` (interface): interface NeedSnapshot — Serializable need state: values plus any in-play retuning, so a save keeps the dials.
 - `NotificationCenterOptions` (interface): interface NotificationCenterOptions — Options for {@link createNotificationCenter}.
 - `NotificationEntry` (interface): interface NotificationEntry<TMeta = unknown> — One persistent notification — unlike a transient toast, it stays in the log until dismissed.
 - `NotificationFilter` (interface): interface NotificationFilter — Filter for {@link NotificationStore.list}.
@@ -1564,6 +1568,7 @@
 - `createMoodleStack` (function): function createMoodleStack(): MoodleStack — A stateful holder for timed status moodles (food buffs, temporary shelter, warmth). Meters and multi-region health derive their own moodles on read; combine all three through `stackMoodles(stack.list(), meterMoodles, ailmentMoodles)` for one display.
 - `createMultiRegionHealth` (function): function createMultiRegionHealth(config: MultiRegionHealthConfig): MultiRegionHealth — Per-region/limb health tracked separately, so each body part takes and heals damage on its own.
 - `createNameGenerator` (function): function createNameGenerator(options: NameGeneratorOptions): NameGenerator — Generate procedural names from templates and word banks with an injected random source.
+- `createNeedSet` (function): function createNeedSet(definitions: readonly NeedDefinition[]): NeedSet — Create the needs an agent or a park guest carries. Decay reuses the survival meter formulas (`survival/decayMeter`), so moodle thresholds, clamping and rate modifiers behave exactly like every other meter; this set adds index-addressed reads and single-need retuning for hot AI loops. Score these needs into an action with `createUtilityBrain` (`@jgengine/core/world`).
 - `createNotificationCenter` (function): function createNotificationCenter<TMeta = unknown>(options: NotificationCenterOptions = {}): NotificationStore<TMeta> — A persistent notification log with read/unread tracking — the "notification center" surface toasts don't cover. Newest-first, capped, serializable, and observable; a game pushes durable events (quest updates, trades, party news) here and a HUD renders the list + an unread badge. `snapshot`/`restore` round-trip through a save.
 - `createPairKeyCodec` (function): function createPairKeyCodec(options: PairKeyOptions = {}): PairKeyCodec — Build a pair-key codec for keyed relation values. Ids are escaped before joining, so any id (including ones containing the separator or a backslash) round-trips through {@link PairKeyCodec.key} → {@link PairKeyCodec.parse} without collision. Undirected codecs (the default) canonicalize so `key(a, b) === key(b, a)`.
 - `createPingSystem` (function): function createPingSystem(deps: PingSystemDeps): PingSystem — Contextual ping/marker communication between teammates, classified by what was pinged.
@@ -2122,6 +2127,14 @@
 - `RoundSnapshot` (interface): interface RoundSnapshot<TPhase extends string = RoundPhase> { round: number; phase: TPhase; timeLeft: number; scores: Record<string, number>; lossStreaks: Record<string, number>; roles: Record<string, string | undefined>; matchOver: boolean; pendingWinner: string | null } — ⚠ undocumented
 - `RoundState` (interface): interface RoundState<TPhase extends string = RoundPhase> { tick(dt: number): RoundEvent<TPhase>[]; concludeRound(winner: string): RoundEvent<TPhase>[]; evaluate(): RoundEvent<TPhase>[]; onPhaseEnd(hook: PhaseEndHook<TPhase>): () => void; phase(): TPhase; round(): number; timeLeft(): number; score… — ⚠ undocumented
 - `RoundTeam` (interface): interface RoundTeam — A team entry with an optional role tag (e.g. "attacker", "defender") retrievable via `RoundState.roleOf`.
+
+## @jgengine/core/sim/needs
+
+- `NeedDefinition` (type): type NeedDefinition = DecayMeterConfig — A decaying need is a survival decay meter (`max`/`min`/`start`/`rate`, optional moodle thresholds) whose satisfaction an agent brain reads to score actions. The meter owns the numbers; per-need appeal lives in the game's utility options.
+- `NeedReading` (interface): interface NeedReading — One need's current satisfaction, worst-first ready: `fraction` is 0 (empty) … 1 (full).
+- `NeedSet` (interface): interface NeedSet — Named needs that drain or recover on game time — hunger, energy, hygiene, bladder, fun. Reads are index-addressed (`indexOf` once, `fractionAt` per tick) so a thousand-agent loop never re-resolves ids; the whole set round-trips through {@link NeedSnapshot}.
+- `NeedSnapshot` (interface): interface NeedSnapshot — Serializable need state: values plus any in-play retuning, so a save keeps the dials.
+- `createNeedSet` (function): function createNeedSet(definitions: readonly NeedDefinition[]): NeedSet — Create the needs an agent or a park guest carries. Decay reuses the survival meter formulas (`survival/decayMeter`), so moodle thresholds, clamping and rate modifiers behave exactly like every other meter; this set adds index-addressed reads and single-need retuning for hot AI loops. Score these needs into an action with `createUtilityBrain` (`@jgengine/core/world`).
 
 ## @jgengine/core/store/defineKeyedStore
 
