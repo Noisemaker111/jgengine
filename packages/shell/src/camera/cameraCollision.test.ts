@@ -147,6 +147,18 @@ describe("camera clearance", () => {
     expect(cleared.position).toEqual(desired);
   });
 
+  test("a boom origin inside the trunk leaves the eye where it is instead of teleporting", () => {
+    const { query } = trunkWorld();
+    const cleared = clearCameraBoom({
+      pivot: { x: 0, y: 1.5, z: 0 },
+      desired: { x: 0, y: 1.5, z: 3 },
+      query,
+      clearance: CLEARANCE,
+    });
+    expect(cleared.pulled).toBe(false);
+    expect(cleared.position).toEqual({ x: 0, y: 1.5, z: 3 });
+  });
+
   test("a third-person boom through the trunk pulls in the same way", () => {
     const { query } = trunkWorld();
     const cleared = clearCameraBoom({

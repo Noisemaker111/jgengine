@@ -111,6 +111,11 @@ export function clearCameraBoom(input: CameraClearanceInput): CameraClearanceRes
   const clearance = Math.max(0, input.clearance ?? 0.3);
   const direction = { x: dx / length, y: dy / length, z: dz / length };
   const hit = query.firstHit(pivot, direction, length + clearance);
+  // A zero hit means the boom origin is itself inside collision, so the ray says nothing
+  // about the eye; moving to it would teleport the camera into whatever holds the origin.
+  if (hit !== null && hit <= 0) {
+    return { position: { ...desired }, arm: length, pulled: false };
+  }
   const allowed = hit === null ? length : clampNumber(hit - clearance, 0, length);
 
   let arm = allowed;
