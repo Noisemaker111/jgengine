@@ -12,6 +12,7 @@ import {
 import { reportTextureLoadError } from "@jgengine/core/devtools/textureErrors";
 
 import { resolveAssetBaseUrl } from "./assetBase";
+import { mergeModelSubMeshes } from "./modelMeshMerge";
 import { applyModelSurface } from "./modelSurface";
 
 /** Model containers already covered by the whole-model fallback probe; not "texture" errors. @internal */
@@ -261,6 +262,7 @@ export class DiagnosticGLTFLoader extends GLTFLoader {
       (gltf: GLTF) => {
         recordModelTriangles(url, countSceneTriangles(gltf.scene));
         applyModelSurface(gltf.scene);
+        mergeModelSubMeshes(gltf.scene, gltf.animations);
         onLoad(gltf);
       },
       onProgress,

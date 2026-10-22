@@ -3,6 +3,7 @@ import * as THREE from "three";
 import { type MaterialAsset } from "@jgengine/core/material/materialAsset";
 import { applyMaterialAsset, applyMaterialAssignments, configureMaterialTexture, inspectModelMaterialSlots, materialResourceMetrics, setHairCardLightExposure, validateMaterialAssignmentTargets } from "./materialAsset";
 import { cloneModelScene, disposeModelScene } from "./modelRender";
+import { mergeModelSubMeshes } from "./modelMeshMerge";
 import { applyMaterialOverride } from "../materialOverride";
 
 function asset(id = "test-metal"): MaterialAsset {
@@ -258,6 +259,23 @@ describe("material assets render fidelity", () => {
     expect(() => validateMaterialAssignmentTargets(root, assets, [{ materialId: "plain", selector: { slot: "facade" } }])).toThrow("requires mesh UVs");
   });
 
+
+  test("a selector naming a sub-mesh a load-time merge absorbed still resolves", () => {
+    const root = new THREE.Group();
+    const shared = new THREE.MeshStandardMaterial();
+    shared.name = "trim";
+    const a = new THREE.Mesh(new THREE.BoxGeometry(), shared);
+    a.name = "hull";
+    const b = new THREE.Mesh(new THREE.BoxGeometry(), shared);
+    b.name = "hull_trim";
+    root.add(a, b);
+    expect(mergeModelSubMeshes(root).merged).toBe(1);
+
+    const plain: MaterialAsset = { ...asset("plain"), capabilities: ["pbr"], surface: { color: "#112233" } };
+    expect(() => validateMaterialAssignmentTargets(root, [plain], [{ materialId: "plain", selector: { mesh: "hull_trim" } }])).not.toThrow();
+    expect(applyMaterialAssignments(root, [plain], [{ materialId: "plain", selector: { mesh: "hull_trim" } }]).length).toBe(1);
+    expect((root.children[0] as THREE.Mesh).material).toBeDefined();
+  });
 
   test("last overlapping assignment wins without stacking procedural shader hooks", () => {
     const mesh = new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshStandardMaterial()); mesh.name = "cloth";
