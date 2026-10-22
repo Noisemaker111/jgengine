@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import type { PerfRecord } from "./perf-play";
 import { PERF_GATE_GAMES, checkBudget, describeGamesCheckout, describeGamesLine, loadBudget, parseGateArgs, type PerfBudget } from "./perf-gate";
@@ -212,6 +213,20 @@ describe("describeGamesLine", () => {
 
   test("still measures when Games/ is not a git checkout", () => {
     expect(describeGamesLine({ pin, head: null })).toContain("games checkout unavailable");
+  });
+});
+
+describe("ci matrix", () => {
+  const workflow = readFileSync(fileURLToPath(new URL("../.github/workflows/ci.yml", import.meta.url)), "utf8");
+
+  function matrixGames(): string[] {
+    const job = /^ {2}perf-game:\n([\s\S]*?)(?=^ {2}\S)/m.exec(workflow)?.[1] ?? "";
+    const list = /^ {8}game: \[(.+)\]$/m.exec(job)?.[1] ?? "";
+    return list.split(",").map((id) => id.trim()).filter((id) => id.length > 0);
+  }
+
+  test("gives every reference game its own job, so none is measured twice or dropped", () => {
+    expect(matrixGames()).toEqual([...PERF_GATE_GAMES]);
   });
 });
 
