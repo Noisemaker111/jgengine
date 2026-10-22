@@ -54,8 +54,25 @@ function runtime(missions: readonly MissionDef[]): MissionRuntime {
 
 const playerAt = (point: { x: number; y: number; z: number }) => ({ player: { position: point } });
 
-describe("a failed mission keeps its remaining and can be retried", () => {
-  test("the timer expiring fails the run, and the failure is readable", () => {
+describe("a held objective shows its own countdown", () => {
+  test("a survive objective's remaining runs down from its duration", () => {
+    const run = runtime([{
+      id: "hold",
+      title: "Hold",
+      objectives: [{ id: "hold", kind: "survive", duration: 60, next: "done" }],
+    }]);
+    run.start("hold");
+    run.tick(10, { survivors: 1 });
+    expect(run.view()!.remaining).toBeCloseTo(50, 5);
+    run.tick(20, { survivors: 1 });
+    expect(run.view()!.remaining).toBeCloseTo(30, 5);
+    run.tick(30, { survivors: 1 });
+    expect(run.state()!.status).toBe("completed");
+    expect(run.view()!.remaining).toBeNull();
+  });
+});
+
+describe("a failed mission keeps its remaining and can be retried", () => {  test("the timer expiring fails the run, and the failure is readable", () => {
     const run = runtime([COURIER]);
     run.start("courier");
     run.tick(59, { actors: playerAt({ x: 200, y: 0, z: 0 }) });
