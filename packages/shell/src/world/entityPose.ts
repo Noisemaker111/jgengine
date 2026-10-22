@@ -17,6 +17,64 @@ export function writeEntityPose(target: PoseWritable, source: PoseSource): void 
   target.rotation.y = source.rotationY;
 }
 
+/** The pose last written to one marker group, reused across frames. @internal */
+export type PoseMemo = [number, number, number, number];
+
+/** A marker group that owns its own matrix instead of three recomposing it every frame. @internal */
+export interface MatrixPoseTarget extends PoseWritable {
+  updateMatrix(): void;
+}
+
+/** A memo that never matches, so the first write to a marker group always lands. @internal */
+export function emptyPoseMemo(): PoseMemo {
+  return [Number.NaN, Number.NaN, Number.NaN, Number.NaN];
+}
+
+/**
+ * Write a marker pose and recompose only when it changed. The marker group runs with
+ * `matrixAutoUpdate=false`, so an idle actor or a parked prop leaves its whole subtree out of the
+ * per-frame world-matrix pass instead of forcing every child to recompose (#2038).
+ * @internal
+ */
+export function writePoseIfChanged(target: MatrixPoseTarget, source: PoseSource, memo: PoseMemo): boolean {
+  const [x, y, z] = source.position;
+  if (memo[0] === x && memo[1] === y && memo[2] === z && memo[3] === source.rotationY) return false;
+  memo[0] = x;
+  memo[1] = y;
+  memo[2] = z;
+  memo[3] = source.rotationY;
+  target.position.set(x, y, z);
+  target.rotation.y = source.rotationY;
+  target.updateMatrix();
+  return true;
+}
+
+/** {@link writePoseIfChanged} for the interpolated pose in `ctx.sim`, falling back to `live`. @internal */
+export function writeRenderPoseIfChanged(
+  target: MatrixPoseTarget,
+  ctx: Pick<GameContext, "sim">,
+  entityId: string,
+  live: PoseSource,
+  scratch: RenderPose,
+  memo: PoseMemo,
+): boolean {
+  if (!ctx.sim.renderPose(entityId, scratch)) {
+    scratch[0] = live.position[0];
+    scratch[1] = live.position[1];
+    scratch[2] = live.position[2];
+    scratch[3] = live.rotationY;
+  }
+  if (memo[0] === scratch[0] && memo[1] === scratch[1] && memo[2] === scratch[2] && memo[3] === scratch[3]) return false;
+  memo[0] = scratch[0];
+  memo[1] = scratch[1];
+  memo[2] = scratch[2];
+  memo[3] = scratch[3];
+  target.position.set(scratch[0], scratch[1], scratch[2]);
+  target.rotation.y = scratch[3];
+  target.updateMatrix();
+  return true;
+}
+
 /** Write the interpolated render pose from `ctx.sim` (falls back to `live` when no history exists). @internal */
 export function writeRenderPose(
   target: PoseWritable,

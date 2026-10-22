@@ -4,6 +4,7 @@ import { FullScreenQuad, Pass } from "three-stdlib";
 import type { StylizeConfig } from "@jgengine/core/render/postProcessing";
 
 import { isPostfxOverlay } from "./postfxOverlay";
+import { renderWithCurrentMatrices } from "./shadowPrepass";
 
 const DEFAULT_OUTLINE_COLOR = "#101014";
 const DEFAULT_DEPTH_THRESHOLD = 0.08;
@@ -214,7 +215,7 @@ export class StylizePass extends Pass {
     renderer.setRenderTarget(target);
     renderer.setClearColor(0x8080ff, 1);
     renderer.clear();
-    renderer.render(scene, this.camera);
+    renderWithCurrentMatrices(scene, () => renderer.render(scene, this.camera));
     renderer.setClearColor(this.clearColor, previousClearAlpha);
     renderer.shadowMap.autoUpdate = previousShadowUpdate;
     scene.background = previousBackground;

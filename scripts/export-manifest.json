@@ -988,6 +988,7 @@
     "./render/spriteRender",
     "./render/stableTextureSet",
     "./render/staticShapeInstances",
+    "./render/staticTransforms",
     "./render/triplanarMaterial",
     "./render/useDisposable",
     "./render/useEntityRenderCues",

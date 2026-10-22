@@ -726,6 +726,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `StaticShapeInstances` (function) · `import { StaticShapeInstances } from "@jgengine/shell/render/staticShapeInstances"`
 
+## static-transforms — static-transforms
+
+- `freezeStaticTransforms` (function) · `import { freezeStaticTransforms } from "@jgengine/shell/render/staticTransforms"`
+- `thawStaticTransforms` (function) · `import { thawStaticTransforms } from "@jgengine/shell/render/staticTransforms"`
+
 ## status-effect-bar — timeline HUD row of active statuses — icon + radial countdown ring + stack badge, driven off the status model, HudTheme-skinned
 
 - `StatusEffectBar` (function) · `import { StatusEffectBar } from "@jgengine/react"`
