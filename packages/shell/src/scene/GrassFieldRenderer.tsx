@@ -7,6 +7,7 @@ import { clearanceMasksFrom, DEFAULT_CLEARANCE_KINDS } from "@jgengine/core/worl
 import { masksInfluence } from "@jgengine/core/world/geometry";
 
 import { GrassField } from "../terrain/GrassField";
+import { GrassCover } from "../terrain/GrassCover";
 import type { GrassExclusion } from "../terrain/grassGeometry";
 import { registerSceneKindRenderer, type SceneKindRenderContext } from "./sceneKindRenderers";
 
@@ -108,28 +109,41 @@ function OneGrass({ object, context }: { object: SceneKindObject; context: Scene
   // meadow reads expansive without raising the instance ceiling.
   const instanceCount = Math.max(1500, Math.min(250000, Math.ceil(rules.density * area[0] * area[1])));
   return (
-    <GrassField
-      position={[center[0], center[1], center[2]]}
-      area={area}
-      count={instanceCount}
-      density={rules.density}
-      bladeHeight={bladeHeight}
-      bladeWidth={bladeWidth}
-      bladeBend={bladeBend}
-      tuftRadius={rules.tuftRadius}
-      normalLift={rules.normalLift}
-      colorBase={rules.colorBase}
-      colorTip={rules.colorTip}
-      colorGround={context.groundColorAt?.(center[0], center[2])}
-      colorVariation={rules.colorVariation}
-      roughness={rules.roughness}
-      seed={hashSeed(rules.seed.length > 0 ? rules.seed : object.id)}
-      heightAt={heightAt}
-      coverageAt={coverageAt}
-      wind={wind}
-      edgeFeather={2.2}
-      exclude={exclude}
-    />
+    <>
+      <GrassCover
+        position={[center[0], center[1], center[2]]}
+        area={area}
+        seed={hashSeed(rules.seed.length > 0 ? rules.seed : object.id)}
+        colorBase={rules.colorBase}
+        colorTip={rules.colorTip}
+        strength={rules.groundCover}
+        edgeFeather={2.2}
+        heightAt={heightAt}
+        coverageAt={coverageAt}
+      />
+      <GrassField
+        position={[center[0], center[1], center[2]]}
+        area={area}
+        count={instanceCount}
+        density={rules.density}
+        bladeHeight={bladeHeight}
+        bladeWidth={bladeWidth}
+        bladeBend={bladeBend}
+        tuftRadius={rules.tuftRadius}
+        normalLift={rules.normalLift}
+        colorBase={rules.colorBase}
+        colorTip={rules.colorTip}
+        colorGround={context.groundColorAt?.(center[0], center[2])}
+        colorVariation={rules.colorVariation}
+        roughness={rules.roughness}
+        seed={hashSeed(rules.seed.length > 0 ? rules.seed : object.id)}
+        heightAt={heightAt}
+        coverageAt={coverageAt}
+        wind={wind}
+        edgeFeather={2.2}
+        exclude={exclude}
+      />
+    </>
   );
 }
 

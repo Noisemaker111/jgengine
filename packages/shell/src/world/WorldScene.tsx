@@ -26,6 +26,7 @@ import { useSceneEntityIds, useSceneObjectIds, useGameStore, usePlayer, useTarge
 import { colorFromId } from "../worldSky";
 import { DefaultSurface, detailMaps } from "../render/defaultSurface";
 import { useDisposable } from "../render/useDisposable";
+import { WindClock } from "../render/modelWind";
 import { MeasuredBoundsGroup } from "../render/measureBounds";
 import { EntitySprite, IsolatedEntityModel } from "../render/SceneModels";
 import { resolveEntityModel, resolveObjectModel, type ObjectModelCacheEntry } from "../render/resolveModel";
@@ -400,6 +401,7 @@ export function WorldView({
 }) {
   return (
     <>
+      <WindClock />
       <WorldEnvironment environment={environment} />
       <WorldActors
         entitySprites={entitySprites}

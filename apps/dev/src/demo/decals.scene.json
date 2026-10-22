@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "markers": [
+    {
+      "id": "bay-dirt",
+      "kind": "decal",
+      "position": { "x": -2.4, "y": 0, "z": 1.6 },
+      "rotationY": 0.4,
+      "meta": { "style": "dirt", "size": 3.2, "tilt": 0, "opacity": 0.85, "seed": "bay-dirt" }
+    },
+    {
+      "id": "bay-cracks",
+      "kind": "decal",
+      "position": { "x": 2.6, "y": 0, "z": 1.2 },
+      "rotationY": 1.1,
+      "meta": { "style": "cracks", "size": 3.6, "tilt": 0, "opacity": 0.8, "seed": "bay-cracks" }
+    },
+    {
+      "id": "bay-blood",
+      "kind": "decal",
+      "position": { "x": -5.2, "y": 0, "z": 3.4 },
+      "rotationY": 2.2,
+      "meta": { "style": "blood", "size": 2.2, "tilt": 0, "opacity": 0.9, "seed": "bay-blood" }
+    },
+    {
+      "id": "wall-paint",
+      "kind": "decal",
+      "position": { "x": 1.4, "y": 0, "z": -3.94 },
+      "rotationY": 0,
+      "meta": { "style": "paint", "size": 2.8, "tilt": 90, "lift": 2.2, "offset": 0.06, "opacity": 0.9, "seed": "wall-paint" }
+    },
+    {
+      "id": "wall-blood",
+      "kind": "decal",
+      "position": { "x": -1.8, "y": 0, "z": -3.94 },
+      "rotationY": 0,
+      "meta": { "style": "blood", "size": 2.1, "tilt": 90, "lift": 1.5, "offset": 0.06, "opacity": 0.85, "seed": "wall-blood" }
+    }
+  ],
+  "volumes": [],
+  "paths": [],
+  "annotations": [],
+  "prefabs": [],
+  "collections": [],
+  "catalogs": []
+}

@@ -8,6 +8,14 @@ describe("readGrassRules", () => {
     expect(rules.windStrength).toBe(0.5);
     expect(rules.colorTip).toBe("#fff");
     expect(rules.density).toBe(GRASS_DEFAULTS.density);
+    expect(rules.groundCover).toBe(GRASS_DEFAULTS.groundCover);
+  });
+
+  test("clamps the authored ground-cover strength and defaults it on for authored volumes", () => {
+    expect(readGrassRules({ groundCover: 0.4 }).groundCover).toBe(0.4);
+    expect(readGrassRules({ groundCover: 4 }).groundCover).toBe(1);
+    expect(readGrassRules({ groundCover: -1 }).groundCover).toBe(0);
+    expect(GRASS_DEFAULTS.groundCover).toBeGreaterThan(0.5);
   });
 });
 

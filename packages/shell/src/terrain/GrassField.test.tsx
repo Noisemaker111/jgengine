@@ -56,7 +56,12 @@ function cameraAt(x = 0, y = 2, z = 500) {
 }
 function meshes(scene: THREE.Scene): THREE.Mesh<THREE.InstancedBufferGeometry, THREE.MeshStandardMaterial>[] {
   const result: THREE.Mesh<THREE.InstancedBufferGeometry, THREE.MeshStandardMaterial>[] = [];
-  scene.traverse((object) => { if ((object as THREE.Mesh).isMesh) result.push(object as typeof result[number]); });
+  // Grass tuft meshes only: a `grass_field` now also mounts its ground-cover mat, which is a plain
+  // indexed mesh with no per-tuft instance attributes.
+  scene.traverse((object) => {
+    const mesh = object as THREE.Mesh<THREE.InstancedBufferGeometry, THREE.MeshStandardMaterial>;
+    if (mesh.isMesh && mesh.geometry.getAttribute("instanceOffset") !== undefined) result.push(mesh);
+  });
   return result;
 }
 function submission(scene: THREE.Scene, camera: THREE.Camera, shadow = false) {

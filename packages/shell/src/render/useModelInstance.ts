@@ -8,12 +8,13 @@ import { parseModelHiddenNodes } from "@jgengine/core/editor/modelNodeVisibility
 import { measureLocalBounds } from "./measureBounds";
 import { detectKtx2Support, sharedGltfLoader } from "./modelLoad";
 import { cloneModelScene, disposeModelScene, modelPlacementTransform } from "./modelRender";
+import { applyModelWindToScene } from "./modelWind";
 import { useModelAnimation } from "./useModelAnimation";
 import { applyModelNodeVisibility, modelHiddenNodesKey } from "./modelNodeVisibility";
 
 /** Model loading, placement, shadows and animation for a custom renderer. */
 export type ModelInstanceConfig = Pick<ModelConfig,
-  "url" | "scale" | "targetHeight" | "y" | "anchor" | "dims" | "shadows" | "animation" | "hiddenNodes" | "surfaceDetail"
+  "url" | "scale" | "targetHeight" | "y" | "anchor" | "dims" | "shadows" | "animation" | "hiddenNodes" | "surfaceDetail" | "wind"
 >;
 
 /** Caller-owned styling runs on the isolated clone, never the loader cache. */
@@ -49,6 +50,7 @@ export function useModelInstance(model: ModelInstanceConfig, options: ModelInsta
     const content = cloneModelScene(gltf.scene, { shadows: model.shadows, surfaceDetail: model.surfaceDetail });
     try {
       configure?.(content);
+      applyModelWindToScene(content, model.wind, model.wind?.height ?? 4);
       for (const diagnostic of applyModelNodeVisibility(content, hiddenNodes)) console.warn(`Model ${model.url} hiddenNodes: ${diagnostic.message}`);
       const scene = new Group().add(content);
       return { content, scene, bindBounds: measureLocalBounds(scene) };
@@ -56,7 +58,7 @@ export function useModelInstance(model: ModelInstanceConfig, options: ModelInsta
       disposeModelScene(content);
       throw error;
     }
-  }, [gltf.scene, model.shadows, model.surfaceDetail, configure, hiddenNodesKey]);
+  }, [gltf.scene, model.shadows, model.surfaceDetail, model.wind, configure, hiddenNodesKey]);
   const placement = useMemo(() => modelPlacementTransform(scene, model, bindBounds),
     [scene, bindBounds, model.scale, model.targetHeight, model.y, model.anchor, model.dims]);
   useEffect(() => () => disposeModelScene(content), [content]);

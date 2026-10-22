@@ -2565,6 +2565,15 @@
 - `SurfaceShape` (type): type SurfaceShape = "box" | "cylinder" — Primitive UV layout whose physical dimensions drive `repeatMetres`.
 - `useAuthoredSurfaceMaterial` (function): function useAuthoredSurfaceMaterial(config: AuthoredSurfaceConfig, shape: SurfaceShape = "box"): THREE.MeshStandardMaterial — Load declared surface-map roles and own the material/map clones (cached textures remain untouched). Colour, emissive, sheen-colour and specular-colour maps are sRGB; numeric maps are linear. Cylinder side metres use the RMS ellipse circumference approximation. Static batches and custom meshes share this lifecycle.
 
+## @jgengine/shell/render/decalGeometry
+
+- `DecalDrapeGeometry` (interface): interface DecalDrapeGeometry — Baked vertex/index buffers for one draped ground decal.
+- `DecalDrapeOptions` (interface): interface DecalDrapeOptions — Inputs for {@link createDecalDrapeGeometry}.
+
+## @jgengine/shell/render/decalTexture
+
+- `DecalTextureData` (interface): interface DecalTextureData — Row-major RGBA bytes plus their edge length, ready for a `THREE.DataTexture`.
+
 ## @jgengine/shell/render/materialAppearanceSignals
 
 - `RenderMaterialAppearanceBaseline` (interface): interface RenderMaterialAppearanceBaseline extends MaterialAppearanceBaseline — Immutable resolved baseline for one caller-owned assigned material, including its original card exposure.
@@ -2623,6 +2632,14 @@
 - `PaintCanvas` (interface): interface PaintCanvas { canvas: HTMLCanvasElement; context: CanvasRenderingContext2D; texture: THREE.CanvasTexture } — ⚠ undocumented
 - `cloneModelScene` (function): function cloneModelScene(source: THREE.Object3D, options?: { cloneMaterials?: boolean; shadows?: ModelShadowMode; surfaceDetail?: boolean }): THREE.Object3D — Clone a model with independent pose and materials, retaining shared geometry and textures.
 - `disposeModelScene` (function): function disposeModelScene(root: THREE.Object3D): void — Release materials and bone textures owned by `cloneModelScene`; shared assets and attached models remain owned by their callers.
+
+## @jgengine/shell/render/modelWind
+
+- `ResolvedModelWind` (interface): interface ResolvedModelWind — Resolved sway settings baked into one material.
+- `WindClock` (function): function WindClock(): null — Advances the shared gust clock once per frame; mount one per 3D world.
+- `applyModelWind` (function): function applyModelWind(material: THREE.MeshStandardMaterial, wind: ResolvedModelWind): THREE.MeshStandardMaterial — Compiles height-ramped wind sway into a standard material's vertex shader. Idempotent per material; the clock and direction are shared module uniforms, so the whole scene advances with one write per frame and no per-material bookkeeping.
+- `windClock` (const): const windClock: { value: number; } — Shared gust clock every foliage material reads; advanced once per frame by `WindClock`.
+- `windDirection` (const): const windDirection: Vector2 — Shared gust direction (XZ); a model may override it with its own authored direction.
 
 ## @jgengine/shell/render/projectedOverdraw
 
@@ -2695,7 +2712,7 @@
 ## @jgengine/shell/render/useModelInstance
 
 - `ModelInstance` (interface): interface ModelInstance — Render `scene` with `position` and uniform `scale`; animate or deform `content` inside that placement frame.
-- `ModelInstanceConfig` (type): type ModelInstanceConfig = Pick<ModelConfig, "url" | "scale" | "targetHeight" | "y" | "anchor" | "dims" | "shadows" | "animation" | "hiddenNodes" | "surfaceDetail" > — Model loading, placement, shadows and animation for a custom renderer.
+- `ModelInstanceConfig` (type): type ModelInstanceConfig = Pick<ModelConfig, "url" | "scale" | "targetHeight" | "y" | "anchor" | "dims" | "shadows" | "animation" | "hiddenNodes" | "surfaceDetail" | "wind" > — Model loading, placement, shadows and animation for a custom renderer.
 - `ModelInstanceOptions` (interface): interface ModelInstanceOptions — Caller-owned styling runs on the isolated clone, never the loader cache.
 - `useModelInstance` (function): function useModelInstance(model: ModelInstanceConfig, options: ModelInstanceOptions = {}): ModelInstance — Load and own an isolated model instance, preserving imported transforms and measuring placement at bind pose. Apply hiddenNodes to the configured clone before measurement; equivalent name lists retain the instance. Mount `scene` with the returned position/scale. Custom materials, deformation and surrounding geometry stay caller-owned. Must run inside an R3F canvas and Suspense boundary; a game provider is optional.
 
@@ -3029,6 +3046,11 @@
 - `EditableGround` (function): function EditableGround({ terrain, bounds, segments = 96, version = 0, baseColor = "#3f6b3a", surfaceColors = DEFAULT_SURFACE_COLORS, }: EditableGroundProps): React.JSX.Element — ⚠ undocumented
 - `EditableGroundProps` (interface): interface EditableGroundProps { terrain: Pick<EditableTerrain, "sampleHeight" | "surfaceAt">; bounds: Aabb; segments?: number; version?: number; baseColor?: string; surfaceColors?: Record<string, string> } — ⚠ undocumented
 
+## @jgengine/shell/terrain/GrassCover
+
+- `GrassCover` (function): function GrassCover({ area, seed, colorBase, colorTip, strength, edgeFeather, heightAt, coverageAt, segments, position, }: GrassCoverProps): React.JSX.Element | null — The turf surface under one authored `grass_field` patch: a ground-draped, edge-feathered mat that turns a bare pavement footprint into grass the blade field stands in. Bounded to one draw and a {@link GRASS_COVER_MAX_SEGMENTS}² grid, so a large park still costs a single mesh.
+- `GrassCoverProps` (interface): interface GrassCoverProps — Props for {@link GrassCover}: one authored patch's footprint, colours and drape samplers.
+
 ## @jgengine/shell/terrain/GrassField
 
 - `DEFAULT_GRASS_COUNT` (const): const DEFAULT_GRASS_COUNT: 1500 — ⚠ undocumented
@@ -3051,6 +3073,13 @@
 
 - `DEFAULT_GRASS_COUNT` (const): const DEFAULT_GRASS_COUNT: 1500 — ⚠ undocumented
 - `DEFAULT_GRASS_DENSITY` (const): const DEFAULT_GRASS_DENSITY: 4 — Blades per square meter — matches `@jgengine/core/world/vegetation`'s `VEGETATION_DEFAULTS.density`, so an editor-placed grass volume and a bare `<GrassField>` agree on what "4" means.
+
+## @jgengine/shell/terrain/grassCoverGeometry
+
+- `GRASS_COVER_MAX_SEGMENTS` (const): const GRASS_COVER_MAX_SEGMENTS: 96 — Largest grid a cover mat bakes to, per axis — a 66 m park stays one draw at ~1 m cells.
+- `GRASS_COVER_TILE_METRES` (const): const GRASS_COVER_TILE_METRES: 3 — World metres one cover-texture tile spans; the mat's own grain is sampled in world space.
+- `GrassCoverGeometry` (interface): interface GrassCoverGeometry — Bake result for {@link createGrassCoverGeometry}; empty arrays when the mat is switched off.
+- `GrassCoverGeometryOptions` (interface): interface GrassCoverGeometryOptions — Inputs for {@link createGrassCoverGeometry}.
 
 ## @jgengine/shell/terrain/grassGeometry
 
@@ -3108,9 +3137,11 @@
 ## @jgengine/shell/terrain/terrainDetailMaterial
 
 - `ALL_TERRAIN_SURFACE_CLASSES` (const): const ALL_TERRAIN_SURFACE_CLASSES: 511 — Compile every surface response, for an editor viewport whose paint can change to any surface.
+- `MAX_TERRAIN_LAYER_MAPS` (const): const MAX_TERRAIN_LAYER_MAPS: 4 — At most this many painted layers sample their own scanned map; extra layers keep procedural shading.
 - `TerrainDetailMaterialHandle` (interface): interface TerrainDetailMaterialHandle — The built procedural detail terrain material, ready to mount on the ground mesh.
 - `TerrainDetailMaterialOptions` (interface): interface TerrainDetailMaterialOptions — Surface-pass inputs beyond the resolved detail config.
 - `TerrainDetailMaterialTextures` (interface): interface TerrainDetailMaterialTextures — Loaded PBR textures matching a resolved `ResolvedTerrainDetailMaterial.maps`' roles. The caller (a React component, via `useTexture`/`useLoader`) owns loading and disposal; `core` never touches `THREE.Texture` and this shell function never fetches a URL itself. Omitted AO/roughness skip sampling.
+- `TerrainLayerMap` (interface): interface TerrainLayerMap — One painted layer's scanned color map plus the world metres one tile covers.
 
 ## @jgengine/shell/terrain/terrainMath
 

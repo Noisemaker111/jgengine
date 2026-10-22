@@ -12,6 +12,7 @@ import { registerWaterRenderer } from "./WaterRenderer";
 import { registerSoilPatchRenderer } from "./SoilPatchRenderer";
 import { registerCityRenderer } from "./CityRenderer";
 import { registerPoleLineRenderer } from "./PoleLineRenderer";
+import { registerDecalRenderer } from "./DecalRenderer";
 
 let registered = false;
 
@@ -25,4 +26,5 @@ export function registerBuiltinSceneKindRenderers(): void {
   registerSoilPatchRenderer();
   registerCityRenderer();
   registerPoleLineRenderer();
+  registerDecalRenderer();
 }

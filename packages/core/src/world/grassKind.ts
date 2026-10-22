@@ -43,6 +43,11 @@ export interface GrassRules {
   windGust: number;
   /** Blade material roughness, 0..1. */
   roughness: number;
+  /**
+   * Ground-cover mat strength, 0..1: the patch paints a turf surface over its footprint instead of
+   * leaving the ground beneath the blades bare. 0 keeps blades only.
+   */
+  groundCover: number;
   /** Seed string; same seed reproduces the same blade layout. */
   seed: string;
 }
@@ -64,6 +69,7 @@ export const GRASS_DEFAULTS: GrassRules = {
   windSpeed: 1.6,
   windGust: 0.16,
   roughness: 0.85,
+  groundCover: 0.9,
   seed: "",
 };
 
@@ -85,6 +91,7 @@ export const GRASS_SCHEMA: ParamSchema = {
     { type: "range", key: "windSpeed", label: "wind speed", min: 0, max: 4, step: 0.05, default: GRASS_DEFAULTS.windSpeed },
     { type: "range", key: "windGust", label: "gust scale", min: 0, max: 1, step: 0.02, default: GRASS_DEFAULTS.windGust },
     { type: "range", key: "roughness", label: "roughness", min: 0, max: 1, step: 0.02, default: GRASS_DEFAULTS.roughness },
+    { type: "range", key: "groundCover", label: "ground cover", min: 0, max: 1, step: 0.02, default: GRASS_DEFAULTS.groundCover },
     { type: "seed", key: "seed", label: "seed", default: "" },
   ],
 };
@@ -121,6 +128,7 @@ export function readGrassRules(meta: Record<string, unknown> | undefined): Grass
     windSpeed: metaNumber(meta, "windSpeed", GRASS_DEFAULTS.windSpeed),
     windGust: metaNumber(meta, "windGust", GRASS_DEFAULTS.windGust),
     roughness: metaNumber(meta, "roughness", GRASS_DEFAULTS.roughness),
+    groundCover: Math.max(0, Math.min(1, metaNumber(meta, "groundCover", GRASS_DEFAULTS.groundCover))),
     seed: metaString(meta, "seed", GRASS_DEFAULTS.seed),
   };
 }

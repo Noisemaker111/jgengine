@@ -307,6 +307,8 @@ export interface GrassEnvironmentConfig {
   colorVariation?: number;
   /** 0..1 blend of blade normals toward straight-up (shell default 0.6). Low values light each blade plane individually and go dark when side-lit; high values light the field like a soft carpet. */
   normalLift?: number;
+  /** 0..1 strength of the turf ground-cover mat painted under the blades (shell default 0.9); 0 leaves the ground bare. */
+  groundCover?: number;
 }
 
 export interface OceanEnvironmentConfig {
@@ -485,7 +487,7 @@ export type SnowEnvironmentDescriptor = { kind: "snow" } & Required<
 export type GrassEnvironmentDescriptor = { kind: "grass" } & Required<
   Pick<GrassEnvironmentConfig, "area" | "density" | "bladeHeight" | "bladeWidth" | "windStrength" | "colors">
 > &
-  Pick<GrassEnvironmentConfig, "seed" | "bladeBend" | "tuftRadius" | "colorVariation" | "normalLift">;
+  Pick<GrassEnvironmentConfig, "seed" | "bladeBend" | "tuftRadius" | "colorVariation" | "normalLift" | "groundCover">;
 
 export type OceanEnvironmentDescriptor = { kind: "ocean" } & Required<
   Pick<OceanEnvironmentConfig, "bounds" | "level" | "waveHeight" | "waveScale" | "waveSpeed" | "color">
@@ -887,6 +889,7 @@ export function grass(config: GrassEnvironmentConfig = {}): GrassEnvironmentDesc
     ...(config.tuftRadius === undefined ? {} : { tuftRadius: config.tuftRadius }),
     ...(config.colorVariation === undefined ? {} : { colorVariation: config.colorVariation }),
     ...(config.normalLift === undefined ? {} : { normalLift: config.normalLift }),
+    ...(config.groundCover === undefined ? {} : { groundCover: config.groundCover }),
   };
 }
 

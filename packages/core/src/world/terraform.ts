@@ -62,6 +62,12 @@ export interface TerrainMaterialLayer {
   tint?: string;
   /** Layer master opacity 0..1 — scales this layer's blend weight everywhere. */
   opacity?: number;
+  /**
+   * Material library name (e.g. `"foliage/grass"`) whose scanned PBR color map paints this layer.
+   * Omitted layers keep the procedural surface response. The runtime samples the map at this layer's
+   * `tiling` and blends it with sibling layers through the authored mask weights.
+   */
+  material?: string;
 }
 
 export interface TerraformSnapshot {
