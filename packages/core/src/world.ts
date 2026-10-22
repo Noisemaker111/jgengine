@@ -15,6 +15,15 @@ export {
 } from "./ai/interestScheduler";
 export { type Job, type JobDef, type JobReport } from "./ai/jobBoard";
 export {
+  createRvoCrowd,
+  type RvoAgentSpec,
+  type RvoAgentView,
+  type RvoCrowd,
+  type RvoCrowdOptions,
+  type RvoSnapshot,
+  type RvoTunables,
+} from "./ai/rvo";
+export {
   advanceSpawnDirector,
   advanceWave,
   createSpawnDirectorState,
@@ -198,6 +207,16 @@ export { resolvePlayerMovementTuning, stepPlayerMovement } from "./movement/play
 export { POSE_HITBOX, createPoseState, type MovementPose } from "./movement/poseState";
 export { steerYaw } from "./movement/steering";
 export { constrainToNavGrid } from "./nav/navConstrain";
+export {
+  createNavCrowd,
+  type NavCrowd,
+  type NavCrowdAgentSpec,
+  type NavCrowdAgentView,
+  type NavCrowdOptions,
+  type NavCrowdRevalidate,
+  type NavCrowdSnapshot,
+  type NavCrowdStats,
+} from "./nav/navCrowd";
 export { populateNavGridFromEnvironment } from "./nav/navFromEnvironment";
 export { createNavGrid, findPath, slopeStepCost, type NavGrid, type NavPoint } from "./nav/navGrid";
 export {
@@ -213,6 +232,18 @@ export {
   type NavMeshQueryOptions,
   type NavMeshQuerySnapshot,
 } from "./nav/navMesh";
+export {
+  createNavRuntime,
+  navMeshFromBake,
+  type AuthoredNavLink,
+  type NavLinkKind,
+  type NavRebuildStats,
+  type NavRegion,
+  type NavRuntime,
+  type NavRuntimeOptions,
+  type NavRuntimeSnapshot,
+  type SceneBake,
+} from "./nav/navRuntime";
 export {
   advancePathFollow,
   createPathFollow,

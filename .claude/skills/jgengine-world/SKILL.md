@@ -59,7 +59,9 @@ NPC decisions are a `decisionGraph` behavior: the graph and its blackboard are d
 
 For a bounded local detour over movement collision geometry, use `planSolidRoute` (`nav/solidRoute`) with an indexed `solidObstaclesNear` or `sourceObstaclesNear` query. Handle `no-path` and `budget` separately; retain caller movement, goals, terrain and retry policy. See [reference.md](reference.md#local-collision-routes) for limits.
 
-Route on a polygon nav mesh through one `createNavMeshQuery(mesh)` per mesh; price terrain and gate doors with `areaCosts` via `retune`, and keep `maxNodes` bounded so a long request returns a `partial` route instead of stalling a frame.
+Route on an editor-baked polygon nav mesh through `createNavRuntime` (`nav/navRuntime`): read the bake off the scene document with `navMeshFromBake(document.bakes)`, price terrain and gate doors with `areaCosts`, author doors, ladders and jumps as `AuthoredNavLink` world points, and call `applyMesh(nextBake)` after an edit — polygons that survive keep their identity through the returned `remap`, so only routes crossing changed polygons need re-planning (`createNavCrowd`'s `revalidate`). A bare `createNavMeshQuery` per mesh is still the lower-level seam; keep `maxNodes` bounded so a long request returns a `partial` route instead of stalling a frame.
+
+Move many agents across that mesh with `createNavCrowd` (`nav/navCrowd`): it plans corridors, follows the funnel-smoothed waypoints, keeps them apart with `createRvoCrowd` (`ai/rvo`) reciprocal velocity obstacles, bounds path searches to a per-tick time and count budget, and serializes through `snapshot`/`restore`. Give a crowd converging on one spot a `spread` radius so agents fan out (`ai/crowd`'s stable per-id offset) instead of stacking. Avoidance keeps agents inside the mesh's outer bounds; interior walls remain the game's collision layer.
 
 ### Fallback-seam diagnostics
 

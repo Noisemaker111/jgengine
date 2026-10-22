@@ -147,6 +147,16 @@
 - `armPursuit` (function): function armPursuit(state: PursuitState, intervalSeconds: number): void — Set the cooldown after an attack fires (clamped at `0`). Call on the step that returned `"attack"`.
 - `createPursuitState` (function): function createPursuitState(attackCooldown = 0): PursuitState — A fresh pursuit state, ready to attack immediately (`attackCooldown` at `0`).
 
+## @jgengine/core/ai/rvo
+
+- `RvoAgentSpec` (interface): interface RvoAgentSpec — One agent's circular footprint and top speed; positions and velocities live in the crowd.
+- `RvoAgentView` (interface): interface RvoAgentView — One agent's live kinematics, as the crowd exposes them.
+- `RvoCrowd` (interface): interface RvoCrowd — Many circular agents steering around each other. `setPreferredVelocity` states where each agent wants to go; `step` turns that into reciprocal collision-free velocities and integrates them. Deterministic: agents are visited in slot order, neighbours in grid and slot order, and head-on ties break on slot index rather than chance.
+- `RvoCrowdOptions` (interface): interface RvoCrowdOptions extends Partial<RvoTunables> — Options for {@link createRvoCrowd}.
+- `RvoSnapshot` (interface): interface RvoSnapshot — Serializable crowd state: tuning plus every agent's position, velocity and footprint.
+- `RvoTunables` (interface): interface RvoTunables — Serializable avoidance tuning, retunable in play through {@link RvoCrowd.retune}.
+- `createRvoCrowd` (function): function createRvoCrowd(options: RvoCrowdOptions = {}): RvoCrowd — Reciprocal velocity obstacle avoidance over circular agents. Each nearby pair contributes one or two half-plane constraints on the agent's velocity, and a small linear program picks the velocity closest to the preferred one that satisfies them all. The neighbour search is a uniform grid capped at `maxNeighbors`, so a tick costs the same for 50 agents and 5,000.
+
 ## @jgengine/core/ai/spawnDirector
 
 - `DirectorContext` (interface): interface DirectorContext { alive: number; players?: number; playerPositions?: readonly NavPoint[] } — ⚠ undocumented
@@ -905,6 +915,17 @@
 - `NavConstrainProposed` (interface): interface NavConstrainProposed { position: EntityPosition; rotationY: number; grounded: boolean } — ⚠ undocumented
 - `constrainToNavGrid` (function): function constrainToNavGrid(grid: NavGrid, options?: NavConstrainOptions): (proposed: NavConstrainProposed, entity: NavConstrainEntity) => NavConstrainProposed | null — ⚠ undocumented
 
+## @jgengine/core/nav/navCrowd
+
+- `NavCrowd` (interface): interface NavCrowd — Agents that cross an editor-baked nav mesh: each one plans a corridor with {@link NavRuntime}, walks the funnel-smoothed waypoints, and keeps its distance through reciprocal velocity obstacle avoidance. Goals, arrivals and replans are serializable; a mesh edit only re-plans the agents whose remaining route actually crossed the rebuilt region.
+- `NavCrowdAgentSpec` (interface): interface NavCrowdAgentSpec — How one crowd agent was configured when it joined.
+- `NavCrowdAgentView` (interface): interface NavCrowdAgentView — One crowd agent's live state, as a game or the devtools overlay reads it.
+- `NavCrowdOptions` (interface): interface NavCrowdOptions — Tunables for {@link createNavCrowd}, every one retunable in play.
+- `NavCrowdRevalidate` (interface): interface NavCrowdRevalidate — Result of telling the crowd the nav mesh changed.
+- `NavCrowdSnapshot` (interface): interface NavCrowdSnapshot — Serializable crowd state: agents, their routes, and the avoidance tuning they run under.
+- `NavCrowdStats` (interface): interface NavCrowdStats — Counters a devtools probe or test reads.
+- `createNavCrowd` (function): function createNavCrowd(options: NavCrowdOptions & { nav: NavRuntime }): NavCrowd — Compose {@link createNavRuntime} and {@link createRvoCrowd} into a moving crowd: plan on the mesh, follow the smoothed corridor, avoid each other. Deterministic — agents advance in insertion order and the avoidance solve breaks ties by slot, not chance.
+
 ## @jgengine/core/nav/navFromEnvironment
 
 - `NavObstacleGrid` (interface): interface NavObstacleGrid { blockAabb(aabb: Aabb): void } — ⚠ undocumented · used by `populateNavGridFromEnvironment`: Blocks the footprint of every solid building an environment feature's `structures` generate — the same set `ctx.world.solids` holds for it.
@@ -939,6 +960,19 @@
 - `createNavMeshQuery` (function): function createNavMeshQuery(mesh: NavMeshData, options: NavMeshQueryOptions = {}): NavMeshQuery — Create a cached query over a nav mesh: height-aware polygon lookup through a uniform grid, binary-heap A* priced by area costs and bounded by `maxNodes`, portal-funnel path straightening, and edge-walking raycasts.
 - `findPath` (function): function findPath(mesh: NavMeshData, from: Vec3, to: Vec3): NavMeshPath | null — A* over polygon portals with default area costs, straightened by a portal funnel. Use {@link createNavMeshQuery} to price areas.
 - `raycastNav` (function): function raycastNav(mesh: NavMeshData, from: Vec3, to: Vec3): boolean — True when the segment remains over walkable polygons.
+
+## @jgengine/core/nav/navRuntime
+
+- `AuthoredNavLink` (interface): interface AuthoredNavLink — A connection the scene author places between two spots — a door through a wall, a ladder to a deck, a jump across a gap. Authored as world points, not polygon ids, so it survives a re-bake: {@link NavRuntime.applyMesh} resolves each end onto the nearest walkable polygon.
+- `NavLinkKind` (type): type NavLinkKind = "door" | "ladder" | "jump" | "link" — What an authored off-mesh connection crosses; the runtime prices it by kind unless the author sets a cost.
+- `NavRebuildStats` (interface): interface NavRebuildStats — How one {@link NavRuntime.applyMesh} exchange changed the mesh.
+- `NavRegion` (interface): interface NavRegion — An XZ box naming the authored area a scene edit touched, so routing state elsewhere is left alone.
+- `NavRuntime` (interface): interface NavRuntime — Runtime seam over a baked {@link NavMeshData}: route, price areas, resolve authored links, rebuild in place.
+- `NavRuntimeOptions` (interface): interface NavRuntimeOptions extends NavMeshQueryOptions — Options for {@link createNavRuntime}.
+- `NavRuntimeSnapshot` (interface): interface NavRuntimeSnapshot — Serializable tuning and authored links of a {@link NavRuntime}; the baked geometry is replaced by `applyMesh`.
+- `SceneBake` (interface): interface SceneBake — A bake stored on an editor scene document, structurally compatible with `EditorBake`.
+- `createNavRuntime` (function): function createNavRuntime(options: NavRuntimeOptions & { mesh: NavMeshData }): NavRuntime — Route agents over the nav mesh an editor baked. Wraps {@link createNavMeshQuery}, resolves authored off-mesh links (doors, ladders, jumps) onto the current surface, and exchanges the mesh one scene region at a time so untouched polygons keep their ids and the agents routing over them keep their paths.
+- `navMeshFromBake` (function): function navMeshFromBake(bakes: readonly SceneBake[] | undefined, id = "main"): NavMeshData | null — Read the named navigation bake an editor wrote onto a scene document. Returns `null` when the document holds no such bake yet, and throws when the stored bake is not a valid nav mesh — a corrupt bake should fail at load, not as agents walking through walls.
 
 ## @jgengine/core/nav/pathFollow
 
@@ -2123,6 +2157,7 @@
 - `AttackMoveOrderPayload` (interface): interface AttackMoveOrderPayload — Payload for an attack-move: advance toward `point`, engaging hostiles encountered en route.
 - `AudioBusDef` (interface): interface AudioBusDef { id: AudioBusId; gain?: number } — ⚠ undocumented · used by `withUiCueSounds` (@jgengine/core/audio/uiCues): Merge the default UI cue patches into a game's sound catalog.
 - `AudioFalloffConfig` (interface): interface AudioFalloffConfig { minDistance?: number; maxDistance?: number; curve?: FalloffCurve } — ⚠ undocumented
+- `AuthoredNavLink` (interface): interface AuthoredNavLink — A connection the scene author places between two spots — a door through a wall, a ladder to a deck, a jump across a gap. Authored as world points, not polygon ids, so it survives a re-bake: {@link NavRuntime.applyMesh} resolves each end onto the nearest walkable polygon.
 - `AuthoredTrigger` (interface): interface AuthoredTrigger — One resolved trigger binding from a document object.
 - `AuthoredTriggerRuntime` (interface): interface AuthoredTriggerRuntime — Runtime handle that watches authored triggers against moving actors each tick.
 - `AutoTargetPolicy` (type): type AutoTargetPolicy = | "nearest" | "farthest" | "random" | "strongest" | "weakest" | "first" | "last" — ⚠ undocumented
@@ -2378,7 +2413,15 @@
 - `MusicInstrument` (type): type MusicInstrument = | "strings" | "flute" | "harp" | "horn" | "choir" | "bell" | "timpani" | "bass" | "stacc" | "pad" | "lute" | "dulcimer" | "frameDrum" | "warDrum" | "reed" | "pipe" | "squareLead" | "woodBlock" | "tinyBell" | "piano" | "shaker" | "brassStab" | "cymSwell" | "oboe" — Named synthesised instrument. Each maps to a voice in the shell's instrument library (`@jgengine/shell/audio/musicVoices`); an unknown name falls back to a plain sine voice so a theme is never silent.
 - `MusicTheme` (interface): interface MusicTheme — A through-composed, looping music track. `events` need not be sorted; the director schedules them ahead against a fixed anchor so loops are seamless.
 - `NOCLIP_FLIGHT_TUNING` (const): const NOCLIP_FLIGHT_TUNING: FreeFlightTuning — Preset for noclip — weightless, noclips, yaw-relative with independent vertical.
+- `NavCrowd` (interface): interface NavCrowd — Agents that cross an editor-baked nav mesh: each one plans a corridor with {@link NavRuntime}, walks the funnel-smoothed waypoints, and keeps its distance through reciprocal velocity obstacle avoidance. Goals, arrivals and replans are serializable; a mesh edit only re-plans the agents whose remaining route actually crossed the rebuilt region.
+- `NavCrowdAgentSpec` (interface): interface NavCrowdAgentSpec — How one crowd agent was configured when it joined.
+- `NavCrowdAgentView` (interface): interface NavCrowdAgentView — One crowd agent's live state, as a game or the devtools overlay reads it.
+- `NavCrowdOptions` (interface): interface NavCrowdOptions — Tunables for {@link createNavCrowd}, every one retunable in play.
+- `NavCrowdRevalidate` (interface): interface NavCrowdRevalidate — Result of telling the crowd the nav mesh changed.
+- `NavCrowdSnapshot` (interface): interface NavCrowdSnapshot — Serializable crowd state: agents, their routes, and the avoidance tuning they run under.
+- `NavCrowdStats` (interface): interface NavCrowdStats — Counters a devtools probe or test reads.
 - `NavGrid` (interface): interface NavGrid { readonly cols: number; readonly rows: number; readonly cellSize: number; readonly bounds: Aabb; readonly diagonal: boolean; isWalkable(col: number, row: number): boolean; setWalkable(col: number, row: number, walkable: boolean): void; blo… — ⚠ undocumented · used by `findPath`: A* over the walkable grid.
+- `NavLinkKind` (type): type NavLinkKind = "door" | "ladder" | "jump" | "link" — What an authored off-mesh connection crosses; the runtime prices it by kind unless the author sets a cost.
 - `NavMeshAdjacency` (interface): interface NavMeshAdjacency — Neighbor relationship for one navigation polygon.
 - `NavMeshData` (interface): interface NavMeshData — Serializable polygon navigation mesh data. Treat it as immutable once queried; queries cache derived geometry per object.
 - `NavMeshLink` (interface): interface NavMeshLink — Explicit traversable connection between two navigation polygons.
@@ -2387,6 +2430,11 @@
 - `NavMeshQueryOptions` (interface): interface NavMeshQueryOptions — Tunable pricing and bounds for a {@link NavMeshQuery}.
 - `NavMeshQuerySnapshot` (interface): interface NavMeshQuerySnapshot — Serializable tuning of a {@link NavMeshQuery}.
 - `NavPoint` (type): type NavPoint = readonly [number, number] — ⚠ undocumented · used by `findPath`: A* over the walkable grid.
+- `NavRebuildStats` (interface): interface NavRebuildStats — How one {@link NavRuntime.applyMesh} exchange changed the mesh.
+- `NavRegion` (interface): interface NavRegion — An XZ box naming the authored area a scene edit touched, so routing state elsewhere is left alone.
+- `NavRuntime` (interface): interface NavRuntime — Runtime seam over a baked {@link NavMeshData}: route, price areas, resolve authored links, rebuild in place.
+- `NavRuntimeOptions` (interface): interface NavRuntimeOptions extends NavMeshQueryOptions — Options for {@link createNavRuntime}.
+- `NavRuntimeSnapshot` (interface): interface NavRuntimeSnapshot — Serializable tuning and authored links of a {@link NavRuntime}; the baked geometry is replaced by `applyMesh`.
 - `NoiseFieldConfig` (interface): interface NoiseFieldConfig — Configuration for {@link noiseField}: seed, amplitude, and fractal noise shaping.
 - `NoiseVoice` (interface): interface NoiseVoice — A filtered white-noise burst — impacts, whooshes, breath, crackle. Realised from a shared 1s noise buffer at a randomised playback rate and start offset, decaying exponentially to silence at `duration * decay`.
 - `NoteEvent` (interface): interface NoteEvent — One scheduled note in a theme, positioned on the loop's quarter-note grid.
@@ -2489,6 +2537,12 @@
 - `RosterEntry` (interface): interface RosterEntry { id: string; catalogId: string; capturedAt: number; equipped: boolean } — ⚠ undocumented
 - `RoundGround` (interface): interface RoundGround — A planet/sphere you play on the outside of. Sized by `radius` only.
 - `RoundGroundSize` (interface): interface RoundGroundSize — Size of a `round` ground: the planet/sphere radius in world units. Nothing else.
+- `RvoAgentSpec` (interface): interface RvoAgentSpec — One agent's circular footprint and top speed; positions and velocities live in the crowd.
+- `RvoAgentView` (interface): interface RvoAgentView — One agent's live kinematics, as the crowd exposes them.
+- `RvoCrowd` (interface): interface RvoCrowd — Many circular agents steering around each other. `setPreferredVelocity` states where each agent wants to go; `step` turns that into reciprocal collision-free velocities and integrates them. Deterministic: agents are visited in slot order, neighbours in grid and slot order, and head-on ties break on slot index rather than chance.
+- `RvoCrowdOptions` (interface): interface RvoCrowdOptions extends Partial<RvoTunables> — Options for {@link createRvoCrowd}.
+- `RvoSnapshot` (interface): interface RvoSnapshot — Serializable crowd state: tuning plus every agent's position, velocity and footprint.
+- `RvoTunables` (interface): interface RvoTunables — Serializable avoidance tuning, retunable in play through {@link RvoCrowd.retune}.
 - `SCATTER_COVERAGE_SPECS` (const): const SCATTER_COVERAGE_SPECS: Record<ScatterCoverageKind, ScatterCoverageSpec> — The coverage spec per scatterable kind — the single source for its unit + budget.
 - `SCATTER_INSTANCE_BUDGET` (const): const SCATTER_INSTANCE_BUDGET: 250000 — Max blade/placement instances a single `grass_field` or `scatter` patch places. Mirrors the grass renderer's instance-buffer ceiling; the scatter resolver truncates to it too, so a patch never renders more than this many placements regardless of density × area.
 - `SCATTER_PATH_KIND` (const): const SCATTER_PATH_KIND: "scatter" — The editor path kind that marks a closed polyline as a foliage/scatter region.
@@ -2511,6 +2565,7 @@
 - `ScatterInstance` (interface): interface ScatterInstance — ⚠ undocumented · used by `resolveScatter`: Every scatter region's placements across a document, grounded on `terrain` when provided.
 - `ScatterPoint` (interface): interface ScatterPoint { x: number; z: number; index: number } — ⚠ undocumented
 - `ScatterTerrain` (interface): interface ScatterTerrain — Ground sampler a scatter resolve reads height/normal from (the sculpt terrain or the game's ground).
+- `SceneBake` (interface): interface SceneBake — A bake stored on an editor scene document, structurally compatible with `EditorBake`.
 - `SceneEntity` (interface): interface SceneEntity<TMeta = unknown> { id: string; name: string; position: EntityPosition; rotationY: number; rotationX: number; rotationZ: number; velocity: EntityPosition; role: EntityRole; movement: EntityMovement; behaviors: readonly BehaviorDescriptor[]; hidden?: boolean;… — ⚠ undocumented · used by `entityMetaOf`: Narrow `entity.meta` with a type guard — prefer this over `entity.meta as T` so failed shapes return `null` instead of lying to the type che…
 - `SceneKindObject` (interface): interface SceneKindObject — The raw document object a resolver receives — shape shared by markers, volumes, and paths.
 - `SceneKindResolveContext` (interface): interface SceneKindResolveContext — Ground sampler + options a resolver may read (terrain height/normal snap).
@@ -2758,8 +2813,10 @@
 - `createMarkerSet` (function): function createMarkerSet<TMeta = unknown>(now: () => number = Date.now): MarkerSet<TMeta> — ⚠ undocumented
 - `createMarkerSource` (function): function createMarkerSource<TEntity, TMarker extends MarkerView = MarkerView>(options: MarkerSourceOptions<TEntity, TMarker>): MarkerSource<TMarker> — Adapt a caller-owned array/store to an observable marker source. Projection is cached between source changes, so React reads do not copy the collection per frame. The caller retains ownership of entities, updates, persistence, and subscription scheduling.
 - `createMountController` (function): function createMountController(): MountController — ⚠ undocumented
+- `createNavCrowd` (function): function createNavCrowd(options: NavCrowdOptions & { nav: NavRuntime }): NavCrowd — Compose {@link createNavRuntime} and {@link createRvoCrowd} into a moving crowd: plan on the mesh, follow the smoothed corridor, avoid each other. Deterministic — agents advance in insertion order and the avoidance solve breaks ties by slot, not chance.
 - `createNavGrid` (function): function createNavGrid(config: NavGridConfig): NavGrid — ⚠ undocumented
 - `createNavMeshQuery` (function): function createNavMeshQuery(mesh: NavMeshData, options: NavMeshQueryOptions = {}): NavMeshQuery — Create a cached query over a nav mesh: height-aware polygon lookup through a uniform grid, binary-heap A* priced by area costs and bounded by `maxNodes`, portal-funnel path straightening, and edge-walking raycasts.
+- `createNavRuntime` (function): function createNavRuntime(options: NavRuntimeOptions & { mesh: NavMeshData }): NavRuntime — Route agents over the nav mesh an editor baked. Wraps {@link createNavMeshQuery}, resolves authored off-mesh links (doors, ladders, jumps) onto the current surface, and exchanges the mesh one scene region at a time so untouched polygons keep their ids and the agents routing over them keep their paths.
 - `createOrderQueue` (function): function createOrderQueue<TCtx, TPayload = unknown>(registry: OrderRegistry<TCtx>, options: OrderQueueOptions<TPayload> = {}): OrderQueue<TCtx, TPayload> — Create a per-entity order queue over a shared kind registry. The queue owns the deterministic lifecycle and preemption policy; the kinds own behavior. Nothing here is random or unbounded: id generation is injected, activation is bounded by the pending count, and a single `tick` advances at most the active order plus one activation.
 - `createOrderRegistry` (function): function createOrderRegistry<TCtx>(): OrderRegistry<TCtx> — Build an empty order-kind registry. Register the built-in compositions from `orders/orderKinds` or your own verbs, then hand it to `createOrderQueue`. One registry is shared by many per-entity queues.
 - `createParticleSystem` (function): function createParticleSystem(config: EmitterConfig = {}, options: ParticleSystemOptions = {}): ParticleSystem — A generic, allocation-aware particle system: one emitter, a fixed pool, and Structure-of-Arrays buffers a renderer uploads straight to the GPU. It is dt-driven (call `update(dt)` each frame) and deterministic — all randomness flows from an injected `seed`, so the same seed and dt sequence reproduce the same frames, and `snapshot`/`restore` round-trips the live pool. Nothing here is combat- or genre-specific: configure it for smoke, sparks, rain, dust, embers, magic, or confetti. Travel/gameplay stays elsewhere; this owns only the spawn-integrate-fade lifecycle.
@@ -2772,6 +2829,7 @@
 - `createRagdoll` (function): function createRagdoll(world: PhysicsWorld, config: RagdollConfig): Ragdoll — ⚠ undocumented
 - `createRegionField` (function): function createRegionField<T = unknown>(config: RegionFieldConfig<T>): RegionField<T> — ⚠ undocumented
 - `createReputationLedger` (function): function createReputationLedger(config: ReputationLedgerConfig = {}): ReputationLedger — ⚠ undocumented
+- `createRvoCrowd` (function): function createRvoCrowd(options: RvoCrowdOptions = {}): RvoCrowd — Reciprocal velocity obstacle avoidance over circular agents. Each nearby pair contributes one or two half-plane constraints on the agent's velocity, and a small linear program picks the velocity closest to the preferred one that satisfies them all. The neighbour search is a uniform grid capped at `maxNeighbors`, so a tick costs the same for 50 agents and 5,000.
 - `createScreenEffects` (function): function createScreenEffects(options: ScreenEffectsOptions = {}): ScreenEffectsController — A serializable screen-feedback controller: a game triggers transient flashes and edge vignettes (a red damage hit, a green heal flash) or sustained, optionally oscillating tints (a low-health pulse), and reads back a composite of the effects to draw right now with their eased opacities. It is clock-driven — call `advance()` each frame against an injected `now` — and allocation-aware: the composite array and its entries are pooled and reused, so steady-state ticking never allocates. Nothing here is genre-specific: `kind` is a free label the game owns and styles, and vignette / flash / pulse are just parameterizations of the same data (region shape, decay easing, sustained oscillation). A shell overlay subscribes and renders; `snapshot`/`restore` round-trips through a save.
 - `createSelectionBookmarks` (function): function createSelectionBookmarks(snapshot?: SelectionBookmarkSnapshot): SelectionBookmarks — Create a keyed bookmark store, optionally restored from a {@link serialize} snapshot. Restoration re-dedupes and drops empty sets, so a hand-authored or migrated snapshot always normalizes to the same invariants a live store holds.
 - `createSelectionSet` (function): function createSelectionSet(initial?: Iterable<string>): SelectionSet — An ordered, deduplicated set of selected instance ids for RTS unit-command routing.
@@ -2857,6 +2915,7 @@
 - `migrateTerrainSnapshot` (function): function migrateTerrainSnapshot(snapshot: TerraformSnapshot): TerraformSnapshot — Upgrades a pre-2.0 snapshot in place-safe (copy-on-write) form: derives a {@link TerrainMaterialLayer} stack from the distinct painted surfaces (first-seen order, default params) when none exists. Leaves the lazy `weights` buffer absent — a single-layer terrain stays compact until blended. Idempotent: a snapshot that already carries `layers` is returned unchanged.
 - `minimapBakeToPngDataUri` (function): function minimapBakeToPngDataUri(bake: MinimapBake): string — Encodes a bake as a `data:image/png;base64,...` URI — the exact string the `Minimap` / `WorldMap` `background` prop takes. Deterministic for a fixed bake.
 - `mtof` (function): function mtof(midi: number): number — Standard equal-temperament MIDI-to-frequency (A4 = 440 Hz at MIDI 69).
+- `navMeshFromBake` (function): function navMeshFromBake(bakes: readonly SceneBake[] | undefined, id = "main"): NavMeshData | null — Read the named navigation bake an editor wrote onto a scene document. Returns `null` when the document holds no such bake yet, and throws when the stored bake is not a valid nav mesh — a corrupt bake should fail at load, not as agents walking through walls.
 - `normalizeDegrees` (function): function normalizeDegrees(degrees: number): number — Wrap `degrees` into `[0, 360)` — the canonical heading range every policy and conversion here works in. Non-finite input collapses to `0` so bad metadata never leaks a `NaN` heading downstream.
 - `notesInWindow` (function): function notesInWindow(theme: MusicTheme, anchorSec: number, fromSec: number, toSec: number): ScheduledNote[] — Pure lookahead scheduler: every note occurrence of `theme` whose onset falls in the half-open window `(fromSec, toSec]`, given the theme's loop-zero at `anchorSec`. Handles any number of loop wraps, so a director calls it once per tick with a non-overlapping window and never double-schedules a note.
 - `objectVisualScale` (function): function objectVisualScale(visual: ObjectVisual | undefined): readonly [number, number, number] — ⚠ undocumented
