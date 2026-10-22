@@ -37,6 +37,15 @@
 
 - `EnvironmentSource` (type): type EnvironmentSource = | { kind: "gradient"; sky: string; ground: string; sun?: string; intensity?: number } /** Equirectangular HDR or EXR environment map loaded from `url`. */ | { kind: "hdri"; url: string; rotation?: number; intensity?: number } /** Six faces of a cube environment map, in three… — A declarative source for image-based scene lighting.
 
+## @jgengine/core/render/lightProbes
+
+- `IrradianceBakeInput` (interface): interface IrradianceBakeInput — Everything a bake needs for one volume: where the grid sits, how much sky reaches it, and what fills the dark.
+- `IrradianceBakeSettings` (interface): interface IrradianceBakeSettings — Authored bake inputs stored beside the samples so a volume can be re-baked without the editor.
+- `IrradianceVolume` (interface): interface IrradianceVolume — One irradiance volume authored on a scene document.
+- `PROBE_STRIDE` (const): const PROBE_STRIDE: number — Floats stored per probe: {@link SH_COEFFICIENTS} × RGB.
+- `SH_COEFFICIENTS` (const): const SH_COEFFICIENTS: 9 — Baked irradiance volume: a grid of second-order (9-coefficient, RGB) spherical-harmonic probes over a box region, sampled at runtime for ambient lighting. It is the datum an interior has that a hemisphere light cannot: a room's fill is its own, not the sky's, and it varies across the space.
+- `bakeIrradianceVolume` (function): function bakeIrradianceVolume(input: IrradianceBakeInput): IrradianceVolume — Bakes an irradiance volume from authored inputs: sky radiance where the region is open, an authored ceiling/floor fill where it is enclosed, plus inverse-square lamp radiance. Each probe projects its directional radiance into L2 SH, so ambient varies across the grid and keeps a lit side instead of flattening to one number.
+
 ## @jgengine/core/render/lightingBalance
 
 - `DEFAULT_IBL_AMBIENT_SCALE` (const): const DEFAULT_IBL_AMBIENT_SCALE: 0.5 — Ambient multiplier applied under image-based light when `iblAmbientScale` is unset.

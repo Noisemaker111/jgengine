@@ -5,7 +5,7 @@ export type { EditorTerrain } from "./types";
 /** A baked top-down minimap (PNG data URI + world bounds) persisted on the scene document. */
 export type { EditorMinimapBake } from "./types";
 /** Scene-document sky/fog/lighting bag edited by the lighting workspace. */
-export type { EditorEnvironment, EditorFogConfig, EditorSkyPreset, PointLightingConfig } from "./types";
+export type { EditorEnvironment, EditorFogConfig, EditorLightProbe, EditorSkyPreset, PointLightingConfig } from "./types";
 /** Declarative HDRI, cube, or gradient environment source used by the shell. */
 export type { EnvironmentSource } from "../render/environment";
 /** Per-kind show/hide flags for the editor's layer panel. */
@@ -127,7 +127,10 @@ export type {
 /** Result of {@link decodeEditorDocument}: a typed document, or every diagnostic collected while decoding it. */
 export type { DecodeEditorDocumentResult } from "./document";
 export {
+  authoredLightsFromDocument,
+  bakeLightProbe,
   environmentContentFromDocument,
+  lightProbesFromDocument,
   lightingFromDocument,
   skyConfigFromEnvironment,
   skyFromDocument,

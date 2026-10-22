@@ -77,6 +77,7 @@ import { SkyDaylight, TimeOfDayDaylight } from "./environment";
 import { AuthoredDaylight } from "./environment/AuthoredDaylight";
 import { bearingFromDirection } from "./environment/daylightCycle";
 import type { DaylightModulation } from "./render/SceneLighting";
+import { lightProbesFromDocument } from "@jgengine/core/editor/environment";
 import { resolveSkyLightOwnership, skyEmitsLights } from "./environment/skyLightingPolicy";
 import { EnvironmentScene } from "./environment/EnvironmentScene";
 import { PointerProbe } from "./pointer/PointerProbe";
@@ -98,6 +99,7 @@ import { TextureFiltering } from "./render/TextureFiltering";
 import { FrameRateLimiter } from "./drivers/FrameRateLimiter";
 import { FpsCounter, FpsProbe, type FrameTally } from "./diagnostics/FpsCounter";
 import { ConfiguredLighting, BackdropFog } from "./render/SceneLighting";
+import { IrradianceVolumeLighting } from "./render/IrradianceVolumeLighting";
 import { WorldView, RemotePlayers } from "./world/WorldScene";
 import { FrameDriver } from "./drivers/FrameDriver";
 import { GamepadSource } from "./input/gamepadSource";
@@ -298,6 +300,10 @@ export function Shell3dPresentation({
     [effectiveSky?.sunColor],
   );
   const backgroundColor = backdrop?.background ?? (effectiveSky === undefined ? DEFAULT_BACKGROUND_COLOR : undefined);
+  const irradianceVolumes = useMemo(
+    () => (playable.editorLayers === undefined ? [] : lightProbesFromDocument(playable.editorLayers)),
+    [playable.editorLayers],
+  );
   const orthographic = playable.camera?.projection === "orthographic";
 
   const pointerDownRef = useRef<{ x: number; y: number } | null>(null);
@@ -647,6 +653,7 @@ export function Shell3dPresentation({
                     />
                   )
                 ) : null}
+{irradianceVolumes.length > 0 ? <IrradianceVolumeLighting volumes={irradianceVolumes} /> : null}
                 {/* One fog owner: a mounted sky always drives scene fog, so a second `<fog>` here would only shadow it. */}
                 {effectiveSky === undefined ? <BackdropFog fog={backdrop?.fog} /> : null}
                 <GameProvider context={ctx}>

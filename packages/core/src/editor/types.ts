@@ -7,6 +7,7 @@ import type { MinimapBakeBounds } from "../world/minimapBake";
 import type { TerraformSnapshot } from "../world/terraform";
 import type { EditorGridLayer } from "./grid";
 import type { EnvironmentSource } from "../render/environment";
+import type { IrradianceBakeSettings, IrradianceVolume } from "../render/lightProbes";
 import type { PointLightingConfig } from "../game/playableGame";
 /** Runtime point-light shape reused by authored editor light markers. */
 export type { PointLightingConfig } from "../game/playableGame";
@@ -214,6 +215,18 @@ export interface EditorBake {
 export type EditorSkyPreset = "day" | "dusk" | "night";
 
 /**
+ * An irradiance volume authored on the scene document: a grid of baked SH probes over a box, plus
+ * the bake settings that produced them so a scene can re-bake without the editor session.
+ * @capability light-probes author a baked irradiance volume on the scene document
+ */
+export interface EditorLightProbe extends IrradianceVolume {
+  /** Label shown in the lighting workspace. */
+  label?: string;
+  /** The authored bake inputs; absent means the volume was authored elsewhere and only the probe data matters. */
+  bake?: IrradianceBakeSettings;
+}
+
+/**
  * Linear distance fog authored on the scene document — serializable subset of sky/backdrop fog.
  * Absent fields keep engine defaults when the document is applied at runtime.
  */
@@ -236,6 +249,12 @@ export interface EditorEnvironment {
   source?: EnvironmentSource;
   /** Authored local point lights; the runtime clamps these to its bounded light budget. */
   pointLights?: readonly PointLightingConfig[];
+  /**
+   * Authored irradiance volumes: baked light probes for interiors and shaded streets. The runtime
+   * samples them at the camera and feeds three.js's scene light probe, so a room's ambient comes
+   * from its own lights instead of the sky.
+   */
+  probes?: readonly EditorLightProbe[];
   /** Fixed sky look when `timeOfDay` is off (or no clock is available). */
   preset?: EditorSkyPreset;
   /** Drive sun/sky from the world clock's day fraction instead of the fixed `preset`. */

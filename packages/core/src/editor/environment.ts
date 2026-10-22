@@ -3,7 +3,8 @@ import type { AvoidZone } from "../world/geometry";
 import { clearanceZonesFrom, DEFAULT_CLEARANCE_KINDS, type ClearanceOptions } from "../world/scatterRegion";
 import type { TerraformSnapshot } from "../world/terraform";
 import { editorDocumentBounds } from "./document";
-import type { EditorDocument, EditorEnvironment } from "./types";
+import type { EditorDocument, EditorEnvironment, EditorLightProbe } from "./types";
+import { bakeIrradianceVolume, type IrradianceBakeSettings, type IrradianceVolume } from "../render/lightProbes";
 import type { LightingConfig, PointLightingConfig, SpotLightingConfig } from "../game/playableGame";
 
 /**
@@ -74,6 +75,67 @@ export function skyConfigFromEnvironment(env: EditorEnvironment): SkyEnvironment
         }),
     ...(env.fog === undefined ? {} : { fog: { ...env.fog } }),
   };
+}
+
+/**
+ * The baked irradiance volumes a scene document authored, flattened for the renderer.
+ * @capability light-probes read the scene document's baked irradiance volumes at runtime
+ */
+export function lightProbesFromDocument(doc: EditorDocument): readonly IrradianceVolume[] {
+  return doc.environment?.probes ?? [];
+}
+
+/** The lamps a bake should include: authored light markers plus the environment's point lights.
+ * @capability light-probes fold the document's authored lamps into a probe bake
+ */
+export function authoredLightsFromDocument(doc: EditorDocument): readonly { position: readonly [number, number, number]; color?: string; intensity?: number; distance?: number }[] {
+  const lamps: { position: readonly [number, number, number]; color?: string; intensity?: number; distance?: number }[] = [];
+  for (const marker of doc.markers) {
+    if (marker.kind !== "light" || marker.position === undefined) continue;
+    const meta = marker.meta ?? {};
+    lamps.push({
+      position: [marker.position.x, marker.position.y, marker.position.z],
+      ...(typeof meta.color === "string" ? { color: meta.color } : {}),
+      ...(typeof meta.intensity === "number" ? { intensity: meta.intensity } : {}),
+      ...(typeof meta.range === "number" ? { distance: meta.range } : {}),
+    });
+  }
+  for (const light of doc.environment?.pointLights ?? []) {
+    lamps.push({
+      position: light.position,
+      ...(light.color === undefined ? {} : { color: light.color }),
+      ...(light.intensity === undefined ? {} : { intensity: light.intensity }),
+      ...(light.distance === undefined ? {} : { distance: light.distance }),
+    });
+  }
+  return lamps;
+}
+
+/**
+ * Bakes one authored irradiance volume from its own settings and the document's lamps: sky where
+ * the region is open, an authored ceiling/floor fill where it is enclosed, and the authored lamps
+ * on top. Pure and deterministic, so the editor's Bake button and a script produce the same samples.
+ * @capability light-probes bake a scene document's irradiance volume from its authored lamps
+ */
+export function bakeLightProbe(probe: EditorLightProbe, doc: EditorDocument): EditorLightProbe {
+  const bake = probe.bake ?? { skyVisibility: 0 };
+  const lamps = bakedLampsFor(probe, doc);
+  return {
+    ...probe,
+    samples: bakeIrradianceVolume({
+      id: probe.id,
+      center: probe.center,
+      size: probe.size,
+      resolution: probe.resolution,
+      settings: { ...bake, lights: lamps },
+    }).samples,
+  };
+}
+
+/** Lamps folded into a probe: its own bake lights when authored, else the document's lamps. */
+function bakedLampsFor(probe: EditorLightProbe, doc: EditorDocument): NonNullable<IrradianceBakeSettings["lights"]> {
+  if (probe.bake?.lights !== undefined && probe.bake.lights.length > 0) return probe.bake.lights;
+  return authoredLightsFromDocument(doc);
 }
 
 /** Converts authored `light` markers into the runtime lighting contract. */
