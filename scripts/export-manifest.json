@@ -262,6 +262,8 @@
     "./item/use",
     "./item/useBehavior",
     "./item/weapon",
+    "./loot/lootGen",
+    "./loot/lootWeapon",
     "./material/appearanceSignals",
     "./material/hairCards",
     "./material/materialAsset",

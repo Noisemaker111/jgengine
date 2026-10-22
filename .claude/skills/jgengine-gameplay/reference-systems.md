@@ -28,6 +28,37 @@ and level state, then emits every reached level in ascending order. State stays
 in the caller's save format and round-trips as ordinary JSON. See the
 [portable XP/leveling recipe](recipes/portable-xp-leveling.md).
 
+## Procedural gear
+
+`loot/lootGen` rolls a whole named item from a caller-authored `LootCatalog`:
+bases (`baseStats`, affix `pools`, mount `slots`), parts, affix pools, weighted
+`RarityTier`s, `LootManufacturerDef`s (name, flat `bias`, per-stat `scale`,
+favored pools) and a `levelScale` curve of `[level, multiplier]` points. A roll
+picks maker, base, rarity, one part per slot and `affixCount` affixes; stats are
+`base × rarity.statScale × levelScale`, plus part stats/multipliers, maker
+personality, then additive affixes and multiplicative ones. Additive affix
+rolls scale with level; multiplicative ones do not. Names follow one rule:
+maker, rarity word, first part word, first prefix affix, base name, first suffix
+affix. Every random draw uses the injected `rng`, so a seed reproduces the item.
+
+```ts
+import { compareLootItems, createLootRoller, lootWeaponDefinition, seededRng } from "@jgengine/core/gameplay";
+
+const roller = createLootRoller(catalog, { devtoolsName: "loot" });
+const item = roller.roll(seededRng(dropSeed), { level: 30 });
+const delta = compareLootItems(item, equipped, { lowerIsBetter: ["reload"] });
+const weapon = lootWeaponDefinition(item, { template, stats: { damage: "power", roundsPerMinute: "cadence" } });
+```
+
+`validateLootItem` returns coded issues (`unknown-base`, `part-category`,
+`missing-slot-part`, `unknown-affix`, `empty-name`…) and the roller's counters
+snapshot/restore as plain data. Register a roll through
+`proceduralLootEntry` into `item/itemInstanceRegistry` and hand its runtime id
+to `game/lootTable`; the weapon projection only maps stats it is told to, so a
+catalog without weapon stats stays usable for non-weapon gear. Check a
+distribution with a fixed seed over 10,000 drops against each tier's 4σ
+binomial bound rather than eyeballing shares.
+
 ## Coherent authored content
 
 Keep stable ids and canonical facts for characters, factions, places, and world rules in the game's authored data. Record each chapter's prerequisites, consequences, and which facts it may introduce or change. The game's creative pillars, story voice, content palette, and desired player experience come from its author; generated prose, items, art, and assets must serve those constraints. Reuse constrained generation and validation code across games while each game owns its content and visual identity; do not fill catalogs from default genre kits or mass generic content.
