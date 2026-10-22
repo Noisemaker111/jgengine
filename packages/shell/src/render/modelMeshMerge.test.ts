@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import * as THREE from "three";
 
-import { mergedMeshNames, mergeModelSubMeshes, meshMatchesName, setModelSubMeshMerge } from "./modelMeshMerge";
+import { mergedMeshNames, mergeModelSubMeshes, mergeSkinnedModelParts, meshMatchesName, setModelSubMeshMerge } from "./modelMeshMerge";
 
 afterEach(() => setModelSubMeshMerge(true));
 
@@ -191,3 +191,103 @@ describe("mergeModelSubMeshes", () => {
     expect(meshes(root)).toHaveLength(2);
   });
 });
+
+/** A two-bone rig whose parts each ride one bone, the shape a character export arrives in. */
+function skinnedRig(partCount = 2): { root: THREE.Group; parts: THREE.SkinnedMesh[]; bones: THREE.Bone[] } {
+  const root = new THREE.Group();
+  const bones = [new THREE.Bone(), new THREE.Bone()];
+  bones[0]!.name = "hips";
+  bones[1]!.name = "head";
+  bones[1]!.position.set(0, 1, 0);
+  bones[0]!.add(bones[1]!);
+  root.add(bones[0]!);
+  const material = new THREE.MeshStandardMaterial();
+  const parts: THREE.SkinnedMesh[] = [];
+  for (let index = 0; index < partCount; index += 1) {
+    const geometry = new THREE.BoxGeometry(0.4, 0.4, 0.4);
+    geometry.translate(0, index * 0.5, 0);
+    const bone = index === 0 ? 0 : 1;
+    const indices = new Float32Array(geometry.attributes.position.count * 4);
+    const weights = new Float32Array(geometry.attributes.position.count * 4);
+    for (let vertex = 0; vertex < geometry.attributes.position.count; vertex += 1) {
+      indices[vertex * 4] = bone;
+      weights[vertex * 4] = 1;
+    }
+    geometry.setAttribute("skinIndex", new THREE.Float32BufferAttribute(indices, 4));
+    geometry.setAttribute("skinWeight", new THREE.Float32BufferAttribute(weights, 4));
+    const skeleton = new THREE.Skeleton(bones, bones.map(() => new THREE.Matrix4()));
+    const mesh = new THREE.SkinnedMesh(geometry, material);
+    mesh.name = index === 0 ? "Body" : "Head";
+    root.add(mesh);
+    mesh.bind(skeleton);
+    parts.push(mesh);
+  }
+  root.updateMatrixWorld(true);
+  return { root, parts, bones };
+}
+
+function posedPositions(mesh: THREE.SkinnedMesh): Float32Array {
+  mesh.updateMatrixWorld(true);
+  mesh.skeleton.update();
+  const vertex = new THREE.Vector3();
+  const out = new Float32Array(mesh.geometry.attributes.position.count * 3);
+  for (let index = 0; index < mesh.geometry.attributes.position.count; index += 1) {
+    mesh.getVertexPosition(index, vertex);
+    vertex.toArray(out, index * 3);
+  }
+  return out;
+}
+
+describe("mergeSkinnedModelParts", () => {
+  test("collapses a rig's skinned parts into one mesh and keeps the posed vertices", () => {
+    const { root, parts, bones } = skinnedRig();
+    bones[1]!.rotation.z = 0.6;
+    root.updateMatrixWorld(true);
+    const before = parts.flatMap((part) => [...posedPositions(part)]);
+
+    const report = mergeSkinnedModelParts(root);
+
+    expect(report).toEqual({ merged: 1, kept: 1 });
+    const meshes = skinnedMeshes(root);
+    expect(meshes).toHaveLength(1);
+    const merged = meshes[0]!;
+    expect(merged.skeleton.bones).toHaveLength(2);
+    expect(merged.material).toBe(parts[0]!.material);
+    const after = [...posedPositions(merged)];
+    expect(after).toHaveLength(before.length);
+    for (let index = 0; index < before.length; index += 1) expect(after[index]).toBeCloseTo(before[index]!, 5);
+    expect(mergedMeshNames(merged)).toEqual(["Body", "Head"]);
+  });
+
+  test("merges parts that carry their own skeleton over the same bones", () => {
+    const { root } = skinnedRig(3);
+
+    expect(mergeSkinnedModelParts(root)).toEqual({ merged: 2, kept: 1 });
+    expect(skinnedMeshes(root)).toHaveLength(1);
+  });
+
+  test("keeps parts apart when their materials differ, and keeps a single part", () => {
+    const { root, parts } = skinnedRig();
+    parts[1]!.material = new THREE.MeshStandardMaterial();
+    expect(mergeSkinnedModelParts(root)).toEqual({ merged: 0, kept: 2 });
+    expect(skinnedMeshes(root)).toHaveLength(2);
+  });
+
+  test("merging can be switched off", () => {
+    const { root } = skinnedRig();
+    setModelSubMeshMerge(false);
+    expect(mergeSkinnedModelParts(root)).toEqual({ merged: 0, kept: 2 });
+    expect(skinnedMeshes(root)).toHaveLength(2);
+  });
+});
+
+function skinnedMeshes(root: THREE.Object3D): THREE.SkinnedMesh[] {
+  const found: THREE.SkinnedMesh[] = [];
+  root.traverse((node) => {
+    if ((node as THREE.SkinnedMesh).isSkinnedMesh === true) found.push(node as THREE.SkinnedMesh);
+  });
+  return found;
+}
+
+
+

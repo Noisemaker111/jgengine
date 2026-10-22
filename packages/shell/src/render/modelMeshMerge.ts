@@ -158,3 +158,121 @@ export function mergeModelSubMeshes(
 
   return { merged, kept };
 }
+
+interface BoneSlot {
+  bone: THREE.Bone;
+  inverse: THREE.Matrix4;
+}
+
+function boneSlot(slots: BoneSlot[], bone: THREE.Bone, inverse: THREE.Matrix4): number {
+  const found = slots.findIndex((slot) => slot.bone === bone && slot.inverse.equals(inverse));
+  if (found >= 0) return found;
+  slots.push({ bone, inverse: inverse.clone() });
+  return slots.length - 1;
+}
+
+function isMergeableSkinnedPart(mesh: THREE.Mesh): boolean {
+  if ((mesh as THREE.SkinnedMesh).isSkinnedMesh !== true) return false;
+  if (mesh.children.length > 0 || mesh.visible !== true) return false;
+  if (Array.isArray(mesh.material) || mesh.material === undefined || mesh.material === null) return false;
+  const geometry = mesh.geometry;
+  if (geometry.attributes.position === undefined) return false;
+  if (Object.keys(geometry.morphAttributes).length > 0) return false;
+  return geometry.getAttribute("skinIndex") !== undefined && geometry.getAttribute("skinWeight") !== undefined;
+}
+
+/**
+ * Collapse a rigged model's skinned parts that share a skeleton and a material into one skinned mesh,
+ * so one character is one draw and one bone matrix upload instead of one per body part. Vertices move
+ * into bind space (each part's own `bindMatrix` baked in) and skin indices are remapped onto the
+ * union of the parts' bones, which leaves the posed result unchanged. Runs once per load, before any
+ * clone, so every instance inherits the lower part count.
+ *
+ * Parts with a different material, a different attribute layout, morph targets, several materials or
+ * children stay as they are. A model that only has one part is untouched.
+ * @internal
+ */
+export function mergeSkinnedModelParts(root: THREE.Object3D): ModelMeshMergeReport {
+  if (!mergeEnabled) return { merged: 0, kept: countMeshes(root) };
+
+  root.updateMatrixWorld(true);
+  const groups = new Map<string, { material: THREE.Material; meshes: THREE.SkinnedMesh[] }>();
+  let kept = 0;
+  root.traverse((node) => {
+    const mesh = node as THREE.Mesh;
+    if (mesh.isMesh !== true) return;
+    if (!isMergeableSkinnedPart(mesh)) {
+      if ((mesh as THREE.SkinnedMesh).isSkinnedMesh === true) kept += 1;
+      return;
+    }
+    const skinned = mesh as THREE.SkinnedMesh;
+    const bones = skinned.skeleton.bones.map((bone) => bone.uuid).join(",");
+    const material = skinned.material as THREE.Material;
+    const key = `${material.uuid}|${attributeKey(skinned.geometry)}|${bones}`;
+    const group = groups.get(key);
+    if (group === undefined) groups.set(key, { material, meshes: [skinned] });
+    else group.meshes.push(skinned);
+  });
+
+  let merged = 0;
+  for (const group of groups.values()) {
+    if (group.meshes.length < 2) {
+      kept += group.meshes.length;
+      continue;
+    }
+    const slots: BoneSlot[] = [];
+    const parts: THREE.BufferGeometry[] = [];
+    for (const mesh of group.meshes) {
+      const source = mesh.geometry;
+      const part = new THREE.BufferGeometry();
+      for (const [name, attribute] of Object.entries(source.attributes)) part.setAttribute(name, attribute.clone());
+      if (source.index !== null) part.setIndex(source.index.clone());
+      part.applyMatrix4(mesh.bindMatrix);
+
+      const skinIndex = source.getAttribute("skinIndex");
+      const skinWeight = source.getAttribute("skinWeight");
+      const bySkeletonIndex = mesh.skeleton.bones.map((bone, index) => boneSlot(slots, bone, mesh.skeleton.boneInverses[index]!));
+      const indices = new Float32Array(skinIndex.count * 4);
+      const weights = new Float32Array(skinWeight.count * 4);
+      for (let vertex = 0; vertex < skinIndex.count; vertex += 1) {
+        for (let channel = 0; channel < 4; channel += 1) {
+          indices[vertex * 4 + channel] = bySkeletonIndex[skinIndex.getComponent(vertex, channel)] ?? 0;
+          weights[vertex * 4 + channel] = skinWeight.getComponent(vertex, channel);
+        }
+      }
+      part.setAttribute("skinIndex", new THREE.Float32BufferAttribute(indices, 4));
+      part.setAttribute("skinWeight", new THREE.Float32BufferAttribute(weights, 4));
+      parts.push(part);
+    }
+    const geometry = mergeGeometries(parts, false);
+    for (const part of parts) part.dispose();
+    if (geometry === null) {
+      kept += group.meshes.length;
+      continue;
+    }
+    geometry.computeBoundingBox();
+    geometry.computeBoundingSphere();
+
+    const first = group.meshes[0]!;
+    const mesh = new THREE.SkinnedMesh(geometry, group.material);
+    // Bind mode "attached" keeps bindMatrixInverse equal to the mesh's own world matrix, which is what
+    // makes vertices baked out of bind space pose the same wherever the merged node hangs. An explicit
+    // identity bind matrix is required: bind() would otherwise recalculate rest inverses from the
+    // current pose and skin every part against the wrong rest.
+    mesh.bind(new THREE.Skeleton(slots.map((slot) => slot.bone), slots.map((slot) => slot.inverse)), new THREE.Matrix4());
+    mesh.name = first.name;
+    mesh.renderOrder = first.renderOrder;
+    mesh.frustumCulled = first.frustumCulled;
+    mesh.castShadow = first.castShadow;
+    mesh.receiveShadow = first.receiveShadow;
+    const names = [...new Set(group.meshes.map((part) => part.name).filter((name) => name.length > 0))];
+    if (names.length > 0) mesh.userData[MERGED_NAMES_KEY] = names;
+
+    for (const source of group.meshes) source.removeFromParent();
+    root.add(mesh);
+    merged += group.meshes.length - 1;
+    kept += 1;
+  }
+
+  return { merged, kept };
+}
