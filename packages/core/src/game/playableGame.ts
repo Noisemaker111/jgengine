@@ -167,6 +167,8 @@ export interface ModelAnimationStates {
   backward?: string;
   /** Clip while turning on the spot; omit to pivot on `walk`, driven by the `turnRate` parameter. */
   turn?: string;
+  /** Play every locomotion state as root motion: the rig holds in place and the blended travel comes out as `rootDelta` for the movement owner to consume. */
+  rootMotion?: boolean;
   /** Speed (world units/sec) above which the entity counts as moving. Default 0.5. */
   walkSpeed?: number;
   /** Speed above which `run` plays when provided. Default 6. */

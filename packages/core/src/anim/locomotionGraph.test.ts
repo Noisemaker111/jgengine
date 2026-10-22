@@ -240,6 +240,28 @@ describe("locomotion blend tree", () => {
     expect(runtime.stateOf("base")).toBe("hit");
   });
 
+  test("a root-motion locomotion set reports blended root travel", () => {
+    const graph = locomotionGraph({ idle: "Idle", walk: "Walk", run: "Run", walkSpeed: 0.5, runSpeed: 6, rootMotion: true });
+    const track = (travel: number) => ({ times: new Float32Array([0, 1]), values: new Float32Array([0, 0, 0, 0, 0, travel]) });
+    const durations = {
+      Idle: { duration: 1, rootTrack: track(0) },
+      Walk: { duration: 1, rootTrack: track(0.5) },
+      Run: { duration: 1, rootTrack: track(2) },
+    };
+    // Speed 3.25 puts half the weight on walk and half on run.
+    const runtime = createAnimGraphRuntime(graph);
+    const first = runtime.advance(0, { speed: 3.25 }, durations);
+    expect(first.rootMotion).toBe(true);
+    const blended = runtime.advance(1, { speed: 3.25 }, durations);
+    expect(blended.rootMotion).toBe(true);
+    // Half of walk's 0.5 m cycle plus half of run's 2 m cycle.
+    expect(blended.rootDelta![2]).toBeCloseTo(1.25, 6);
+    // A rig whose clips are authored in place reports no travel at all.
+    const still = createAnimGraphRuntime(locomotionGraph({ idle: "Idle", walk: "Walk" }));
+    expect(still.advance(1, { speed: 3 }, { Idle: 1, Walk: 1 }).rootMotion).toBeUndefined();
+    expect(still.advance(1, { speed: 3 }, { Idle: 1, Walk: 1 }).rootDelta).toBeUndefined();
+  });
+
   test("directional roles survive a config round trip through saved JSON", () => {
     const config: ModelAnimationConfig = {
       states: { idle: "idle", walk: "walk", run: "run", strafeLeft: "strafeL", strafeRight: "strafeR", backward: "back", turn: "turn" },

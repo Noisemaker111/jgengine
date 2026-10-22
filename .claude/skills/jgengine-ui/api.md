@@ -2717,6 +2717,11 @@
 - `ModelInstanceOptions` (interface): interface ModelInstanceOptions — Caller-owned styling runs on the isolated clone, never the loader cache.
 - `useModelInstance` (function): function useModelInstance(model: ModelInstanceConfig, options: ModelInstanceOptions = {}): ModelInstance — Load and own an isolated model instance, preserving imported transforms and measuring placement at bind pose. Apply hiddenNodes to the configured clone before measurement; equivalent name lists retain the instance. Mount `scene` with the returned position/scale. Custom materials, deformation and surrounding geometry stay caller-owned. Must run inside an R3F canvas and Suspense boundary; a game provider is optional.
 
+## @jgengine/shell/render/useRagdoll
+
+- `RagdollOptions` (interface): interface RagdollOptions — What {@link useRagdoll} needs: the rig's bone names, the physics world and what arms it.
+- `useRagdoll` (function): function useRagdoll(scene: THREE.Object3D, options: RagdollOptions): void — Turns a rigged character into a physics ragdoll when `active` goes true: the bones' world poses at that moment become box bodies joined by distance links in `world`, and every frame after, each bone's world position and aim come from its body. The physics bodies carry translation only, so each bone is oriented by rotating its death-pose direction-to-child onto the current one, which is what gives the body a skeleton instead of a pile of boxes.
+
 ## @jgengine/shell/replay/useSessionRecorder
 
 - `RecordedPose` (interface): interface RecordedPose { position: EntityPosition; rotationY: number } — ⚠ undocumented · used by `useSessionRecorder`: Session-recording buffer (#120) for replay / photo mode / kill-cam: records an entity's pose on game-time every frame into a `RecordingBuffe…
