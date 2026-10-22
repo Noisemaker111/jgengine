@@ -625,6 +625,7 @@ export {
   type MissionBranch,
   type MissionDef,
   type MissionEvent,
+  type MissionEventFilter,
   type MissionFactCondition,
   type MissionFailCondition,
   type MissionFailDef,
@@ -642,6 +643,8 @@ export {
   type MissionTickInput,
   type MissionValidationOptions,
   type MissionView,
+  type MissionWorldEvent,
+  type MissionWorldEventKind,
 } from "./mission/mission";
 export {
   MISSION_TRIGGER_ACTIONS,

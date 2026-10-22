@@ -364,6 +364,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `defendMission` (function) · `import { defendMission } from "@jgengine/core/gameplay"`
 - `escortMission` (function) · `import { escortMission } from "@jgengine/core/gameplay"`
 
+## mission-events — count constrained kills and fail a mission on a matching world event
+
+- `MissionWorldEvent` (interface) · `import { MissionWorldEvent } from "@jgengine/core/gameplay"`
+
 ## mission-rewards — pay mission rewards through the quest appliers and the loot registry
 
 - `applyMissionRewards` (function) · `import { applyMissionRewards } from "@jgengine/core/gameplay"`

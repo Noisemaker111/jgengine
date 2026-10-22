@@ -35,6 +35,42 @@ export function isCounterObjective(kind: MissionObjectiveKind): boolean {
   return kind === "kill" || kind === "collect";
 }
 
+/** What a reported world event is. */
+export type MissionWorldEventKind = "kill" | "collect" | "deliver";
+
+/**
+ * One thing that happened in the world this tick, reported by the game. A constrained objective counts
+ * matching events and an `event` fail condition reacts to them, so the machine judges the world instead
+ * of the game polling its own counters.
+ *
+ * @capability mission-events count constrained kills and fail a mission on a matching world event
+ */
+export interface MissionWorldEvent {
+  kind: MissionWorldEventKind;
+  /** Target catalog id, item id or route id the event concerns. */
+  target: string;
+  /** Actor that caused it. */
+  by?: string;
+  /** Free-form tags the game attaches — weapon, element, route, `decoy`. */
+  tags?: readonly string[];
+  /** How many the event is worth. Default 1. */
+  count?: number;
+}
+
+/** Which world events an objective counts or a fail condition reacts to. Absent fields do not filter. */
+export interface MissionEventFilter {
+  /** Event kind; a `kill`/`collect` objective defaults to its own kind. */
+  kind?: MissionWorldEventKind;
+  /** Exact target id. */
+  target?: string;
+  /** Exact actor that caused it. */
+  by?: string;
+  /** Every one of these tags must be present. */
+  tags?: readonly string[];
+  /** None of these may be present — how a decoy or a wrong-weapon kill is excluded. */
+  withoutTags?: readonly string[];
+}
+
 /** A readable fact test a branch or a `fact` fail condition reads. All comparators are optional. */
 export interface MissionFactCondition {
   /** Fact name, or `"score"` for the mission's running survival score. */
@@ -52,10 +88,13 @@ export interface MissionFactCondition {
 /**
  * A condition that fails the mission while the objective is active. `to` names a {@link MissionFailDef};
  * with no `to` the mission fails with the generic `"failed"` state.
+ *
+ * `actor-died`, `timer`, `fact` and `left-area` read world state every tick; `event` reacts to a world
+ * event the game reported this tick.
  */
 export interface MissionFailCondition {
-  kind: "actor-died" | "timer" | "fact";
-  /** `actor-died`: the tracked actor whose death fails the mission. */
+  kind: "actor-died" | "timer" | "fact" | "event" | "left-area";
+  /** `actor-died`: the tracked actor whose death fails the mission. `left-area`: the actor watched. */
   actor?: string;
   /** `timer`: seconds in the current objective before the mission fails. */
   seconds?: number;
@@ -64,6 +103,12 @@ export interface MissionFailCondition {
   is?: string | number | boolean;
   atLeast?: number;
   atMost?: number;
+  /** `event`: which events fail the mission. Omitted matches any event. */
+  match?: MissionEventFilter;
+  /** `left-area`: authored marker the watched actor must stay near. */
+  marker?: string;
+  /** `left-area`: distance (m) past which the actor has left. Default {@link DEFAULT_REACH_RADIUS}. */
+  radius?: number;
   /** Named fail state id. */
   to?: string;
   /** Human reason carried on the `failed` event. */
@@ -107,6 +152,11 @@ export interface MissionObjectiveDef {
   counter?: string;
   /** Counter target for `kill` / `collect`. */
   count?: number;
+  /**
+   * Count `kill` / `collect` objectives from reported world events instead of a bare counter, so only a
+   * matching event credits progress (`tags`, `withoutTags`, `target`). Omitted keeps the counter path.
+   */
+  match?: MissionEventFilter;
   /** Survivors that must remain for `survive`; dropping below fails the mission. */
   minSurvivors?: number;
   /** Fail state a `minSurvivors` breach lands in. Default `"failed"`. */
@@ -167,6 +217,8 @@ export interface MissionTickInput {
   actors?: Readonly<Record<string, MissionActorFact>>;
   /** Cumulative counters for `kill` / `collect` objectives, by counter key. */
   counters?: Readonly<Record<string, number>>;
+  /** World events that happened this tick — what a `match` objective counts and an `event` fail reacts to. */
+  events?: readonly MissionWorldEvent[];
   /** Transient facts for branch and `fact` fail conditions. */
   facts?: Readonly<Record<string, string | number | boolean>>;
   /** Actor ids that interacted this frame, for `interact` objectives. */
@@ -224,7 +276,19 @@ export interface MissionView {
   remaining: number | null;
   /** Counter fraction 0..1 for the current objective, or 0 when it is not a counter. */
   progress: number;
+  /** Counter value the current objective has reached. */
+  counted: number;
+  /** Counter value the current objective needs, or 0 when it is not a counter. */
+  count: number;
+  /** How many objectives the run has entered — a HUD shows this as "step N". */
+  step: number;
+  /** Objectives the mission declares; a chain shows "of M". */
+  steps: number;
   score: number;
+  /** Fail state id once the run failed, else null. */
+  outcome: string | null;
+  /** Human failure reason, else null. */
+  reason: string | null;
   path: readonly string[];
 }
 
@@ -332,6 +396,16 @@ function counterKey(objective: MissionObjectiveDef): string {
   return objective.counter ?? objective.id;
 }
 
+function eventMatches(filter: MissionEventFilter, event: MissionWorldEvent): boolean {
+  if (filter.kind !== undefined && filter.kind !== event.kind) return false;
+  if (filter.target !== undefined && filter.target !== event.target) return false;
+  if (filter.by !== undefined && filter.by !== event.by) return false;
+  const tags = event.tags ?? [];
+  for (const required of filter.tags ?? []) if (!tags.includes(required)) return false;
+  for (const banned of filter.withoutTags ?? []) if (tags.includes(banned)) return false;
+  return true;
+}
+
 function hasFailState(def: MissionDef, id: string): boolean {
   return def.fail?.some((entry) => entry.id === id) ?? false;
 }
@@ -412,7 +486,13 @@ export function createMissionRuntime(config: MissionRuntimeConfig): MissionRunti
     objectiveElapsed: 0,
     remaining: null,
     progress: 0,
+    counted: 0,
+    count: 0,
+    step: 0,
+    steps: 0,
     score: 0,
+    outcome: null,
+    reason: null,
     path: [],
   };
 
@@ -506,9 +586,43 @@ export function createMissionRuntime(config: MissionRuntimeConfig): MissionRunti
         return d !== undefined && d <= (objective.distance ?? DEFAULT_PURSUE_DISTANCE);
       }
       case "kill":
-      case "collect":
-        return (input.counters?.[counterKey(objective)] ?? 0) >= (objective.count ?? 1);
+      case "collect": {
+        const key = counterKey(objective);
+        const counted = objective.match === undefined
+          ? (input.counters?.[key] ?? 0)
+          : (state!.progress[key] ?? 0);
+        return counted >= (objective.count ?? 1);
+      }
     }
+  }
+
+  /**
+   * Record this tick's progress for a counter objective: matching world events for a `match` objective,
+   * or the game's cumulative counter otherwise. Mirrored into `state.progress` so `view()` and a save
+   * both see it.
+   */
+  function accumulateEvents(objective: MissionObjectiveDef, input: MissionTickInput): void {
+    if (!isCounterObjective(objective.kind)) return;
+    const key = counterKey(objective);
+    const filter = objective.match;
+    if (filter === undefined) {
+      const external = input.counters?.[key];
+      if (external !== undefined) state!.progress[key] = external;
+      return;
+    }
+    if (input.events === undefined) return;
+    const kind = filter.kind ?? objective.kind;
+    for (const event of input.events) {
+      if (event.kind !== kind || !eventMatches(filter, event)) continue;
+      state!.progress[key] = (state!.progress[key] ?? 0) + (event.count ?? 1);
+    }
+  }
+
+  function eventFails(match: MissionEventFilter | undefined, input: MissionTickInput): boolean {
+    for (const event of input.events ?? []) {
+      if (match === undefined || eventMatches(match, event)) return true;
+    }
+    return false;
   }
 
   function failOf(
@@ -527,6 +641,21 @@ export function createMissionRuntime(config: MissionRuntimeConfig): MissionRunti
       if (condition.kind === "timer") {
         if (current.objectiveElapsed >= (condition.seconds ?? 0)) {
           return { state: condition.to ?? "failed", reason: condition.message ?? "timer expired" };
+        }
+        continue;
+      }
+      if (condition.kind === "event") {
+        if (eventFails(condition.match, input)) {
+          return { state: condition.to ?? "failed", reason: condition.message ?? "wrong event" };
+        }
+        continue;
+      }
+      if (condition.kind === "left-area") {
+        const actor = condition.actor ?? objective.actor;
+        const from = positionOf(actor, input);
+        const to = condition.marker === undefined ? undefined : markers[condition.marker];
+        if (from !== undefined && to !== undefined && distance(from, to) > (condition.radius ?? DEFAULT_REACH_RADIUS)) {
+          return { state: condition.to ?? "failed", reason: condition.message ?? `${actor ?? "actor"} left the area` };
         }
         continue;
       }
@@ -679,6 +808,7 @@ export function createMissionRuntime(config: MissionRuntimeConfig): MissionRunti
     state.objectiveElapsed += dt;
     const objective = objectiveOf(def, state.objective);
     if (objective === null) return [];
+    accumulateEvents(objective, input);
     const fail = failOf(objective, input, dt);
     if (fail !== null) return failMission(def, fail.state, fail.reason);
     if (objective.timeout !== undefined && state.objectiveElapsed >= objective.timeout) {
@@ -770,10 +900,18 @@ export function createMissionRuntime(config: MissionRuntimeConfig): MissionRunti
       readout.label = objective === null ? "" : objectiveLabel(objective);
       readout.objectiveElapsed = state.objectiveElapsed;
       readout.remaining = objective?.timeout === undefined ? null : Math.max(0, objective.timeout - state.objectiveElapsed);
-      readout.progress = objective === null || !isCounterObjective(objective.kind)
+      const counted = objective === null || !isCounterObjective(objective.kind)
         ? 0
-        : clamp((state.progress[counterKey(objective)] ?? 0) / (objective.count ?? 1), 0, 1);
+        : (state.progress[counterKey(objective)] ?? 0);
+      const count = objective !== null && isCounterObjective(objective.kind) ? (objective.count ?? 1) : 0;
+      readout.counted = counted;
+      readout.count = count;
+      readout.progress = count === 0 ? 0 : clamp(counted / count, 0, 1);
+      readout.step = state.path.length;
+      readout.steps = def.objectives.length;
       readout.score = state.score;
+      readout.outcome = state.outcome;
+      readout.reason = state.reason;
       readout.path = state.path;
       return readout;
     },
@@ -816,6 +954,7 @@ export interface MissionIssue {
     | "missing-duration"
     | "missing-target"
     | "invalid-number"
+    | "invalid-match"
     | "unreachable-objective"
     | "counter-only";
   severity: "error" | "warning";
@@ -950,6 +1089,23 @@ export function validateMissionCatalog(
           issues.push({ code: "unknown-fail-state", severity: "error", missionId: def.id, objectiveId: objective.id,
             path: `${field}/failOn/${failIndex}/to`, message: `Fail condition targets unknown fail state "${condition.to}".` });
         }
+        if (condition.kind === "left-area") {
+          if (condition.actor === undefined && objective.actor === undefined) {
+            issues.push({ code: "missing-actor", severity: "error", missionId: def.id, objectiveId: objective.id,
+              path: `${field}/failOn/${failIndex}/actor`, message: `Left-area fail condition on "${objective.id}" watches no actor.` });
+          }
+          if (condition.marker === undefined) {
+            issues.push({ code: "missing-marker", severity: "error", missionId: def.id, objectiveId: objective.id,
+              path: `${field}/failOn/${failIndex}/marker`, message: `Left-area fail condition on "${objective.id}" has no marker.` });
+          } else if (markerIds !== null && !markerIds.has(condition.marker)) {
+            issues.push({ code: "unknown-marker", severity: "error", missionId: def.id, objectiveId: objective.id,
+              path: `${field}/failOn/${failIndex}/marker`, message: `Left-area fail condition references unknown marker "${condition.marker}".` });
+          }
+        }
+      }
+      if (objective.match !== undefined && !isCounterObjective(objective.kind)) {
+        issues.push({ code: "invalid-match", severity: "error", missionId: def.id, objectiveId: objective.id,
+          path: `${field}/match`, message: `Objective "${objective.id}" is a ${objective.kind} goal; only kill and collect objectives read world events.` });
       }
     }
     const reachable = new Set<string>();
