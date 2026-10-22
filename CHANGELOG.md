@@ -26,6 +26,16 @@ At publish, rename this heading to the new version and mirror the entries into
 `packages/core/src/meta/changelog.ts` (the typed `CHANGELOG` export).
 -->
 
+## 0.29.0
+
+### Migrate
+
+- **Bump lockstep SDK packages to `^0.29.0`:** `@jgengine/{core,rapier,react,ws,node,sql,convex,shell,editor,assets,navbake}`. CLI `jgengine` is `0.26.0`; `@jgengine/github` is `0.16.0`.
+
+### Fixed
+
+- `MissionView.remaining` (`@jgengine/core/gameplay`) now counts down from a `survive` objective's own `duration`, not only from a `timeout`. A defend or hold objective reports the seconds it still has to run, which is the one number its HUD needs; a completed run still reports null.
+
 ## 0.28.0
 
 ### Migrate
