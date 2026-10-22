@@ -163,6 +163,51 @@ test("main and shadow hooks keep caller callbacks and conservative sampled/wind 
   });
 });
 
+test("an authored grass_field volume mounts the ground-cover mat under its blades", async () => {
+  registerGrassFieldRenderer();
+  const Renderer = getSceneKindRenderer("grass_field")!;
+  const object = { id: "park", kind: "grass_field", center: { x: 0, y: 0, z: 0 }, halfExtents: { x: 8, y: 0, z: 6 },
+    meta: { density: 24, colorBase: "#53734a", colorTip: "#819064", seed: "park" } };
+  const context = { document: { markers: [], paths: [], volumes: [object] }, field: { sampleHeight: () => 1.2 } } as unknown as SceneKindRenderContext;
+  await mounted(cameraAt(0, 6, 12), createElement(Renderer, { objects: [object], context }), async (scene) => {
+    const covers: THREE.Mesh[] = [];
+    scene.traverse((node) => {
+      const mesh = node as THREE.Mesh;
+      if (mesh.isMesh && mesh.geometry.getAttribute("instanceOffset") === undefined) covers.push(mesh);
+    });
+    expect(covers).toHaveLength(1);
+    const cover = covers[0]!;
+    const color = cover.geometry.getAttribute("color");
+    expect(color.itemSize).toBe(4);
+    expect(cover.geometry.index!.count).toBeGreaterThan(0);
+    // Every vertex rides the runtime ground, and the authored alpha reaches full cover in the middle.
+    for (let i = 0; i < color.count; i++) {
+      expect(cover.geometry.getAttribute("position").getY(i)).toBeCloseTo(1.2 + 0.035, 4);
+    }
+    let maxAlpha = 0;
+    for (let i = 0; i < color.count; i++) maxAlpha = Math.max(maxAlpha, color.getW(i));
+    expect(maxAlpha).toBeGreaterThan(0.7);
+    expect((cover.material as THREE.MeshStandardMaterial).transparent).toBe(true);
+    expect((cover.material as THREE.MeshStandardMaterial).depthWrite).toBe(false);
+  });
+});
+
+test("a grass_field volume authored with groundCover 0 keeps bare ground", async () => {
+  registerGrassFieldRenderer();
+  const Renderer = getSceneKindRenderer("grass_field")!;
+  const object = { id: "blades-only", kind: "grass_field", center: { x: 0, y: 0, z: 0 }, halfExtents: { x: 6, y: 0, z: 6 },
+    meta: { density: 8, groundCover: 0 } };
+  const context = { document: { markers: [], paths: [], volumes: [object] }, field: { sampleHeight: () => 0 } } as unknown as SceneKindRenderContext;
+  await mounted(cameraAt(0, 4, 8), createElement(Renderer, { objects: [object], context }), async (scene) => {
+    let covers = 0;
+    scene.traverse((node) => {
+      const mesh = node as THREE.Mesh;
+      if (mesh.isMesh && mesh.geometry.getAttribute("instanceOffset") === undefined) covers += 1;
+    });
+    expect(covers).toBe(0);
+  });
+});
+
 test("authored grass renderer uses the same bounded submission while preserving its material", async () => {
   registerGrassFieldRenderer();
   const Renderer = getSceneKindRenderer("grass_field")!;
