@@ -4,10 +4,65 @@ import * as THREE from "three";
 import { CSM } from "three/examples/jsm/csm/CSM.js";
 
 import type { DirectionalLightingConfig } from "@jgengine/core/game/playableGame";
+import type { GraphicsProfile } from "@jgengine/core/settings/graphicsProfile";
 import type { DaylightModulation } from "./SceneLighting";
 
 /** @internal Default PCF penumbra in shadow-map texels for configured directional lights. */
 export const DEFAULT_SHADOW_RADIUS = 1.25;
+
+/** @internal Reach in metres used when neither the game nor a graphics profile sets one. */
+export const DEFAULT_SHADOW_DISTANCE = 200;
+
+/**
+ * Shadow reach each tier's map resolution pays for. A cascade's texels stop describing a
+ * silhouette past roughly a tenth of a metre, so a smaller map covers less ground instead
+ * of covering the same ground coarsely.
+ * @internal
+ */
+export const SHADOW_DISTANCE_BY_MAP_SIZE: Readonly<Record<number, number>> = {
+  512: 100,
+  1024: 150,
+  2048: 200,
+  4096: 200,
+};
+
+/**
+ * Cascaded-shadow reach from the graphics tier, clamped by that tier's draw distance.
+ * A game's own `shadowMaxFar` still wins.
+ * @internal
+ */
+export function resolveShadowDistance(profile?: GraphicsProfile, authored?: number): number {
+  if (authored !== undefined) return authored;
+  if (profile === undefined) return DEFAULT_SHADOW_DISTANCE;
+  const reach = SHADOW_DISTANCE_BY_MAP_SIZE[profile.shadowMapSize] ?? DEFAULT_SHADOW_DISTANCE;
+  return Math.min(profile.drawDistance, reach);
+}
+
+/**
+ * Frames between shadow-map refreshes for the cascade at `index`, nearest first. The nearest
+ * cascades move several texels per frame and refresh every frame; the far ones cover ground a
+ * slow camera barely crosses, so they pay the depth pass a half or a quarter as often.
+ * @internal
+ */
+export function cascadeShadowCadence(index: number, cascades: number): number {
+  if (index < cascades - 2) return 1;
+  if (cascades <= 2) return index === 0 ? 1 : 2;
+  return 2 ** (index - (cascades - 3));
+}
+
+/**
+ * Set each cascade's shadow refresh policy for `frame`. A cascade that is not due keeps both
+ * its matrix and its map from the last refresh, so the pair stays consistent with itself.
+ * @internal
+ */
+export function scheduleCascadeRefresh(lights: readonly THREE.DirectionalLight[], frame: number): void {
+  for (let index = 0; index < lights.length; index += 1) {
+    const shadow = lights[index]!.shadow;
+    const cadence = cascadeShadowCadence(index, lights.length);
+    shadow.autoUpdate = cadence === 1;
+    if (cadence > 1) shadow.needsUpdate = frame % cadence === 0;
+  }
+}
 
 function isStandardMaterial(mat: THREE.Material): mat is THREE.MeshStandardMaterial | THREE.MeshPhysicalMaterial {
   return mat instanceof THREE.MeshStandardMaterial || mat instanceof THREE.MeshPhysicalMaterial;
@@ -22,11 +77,21 @@ function isStandardMaterial(mat: THREE.Material): mat is THREE.MeshStandardMater
  *
  * @internal shell SceneLighting helper — games set `cascades` on directional lighting config.
  */
-export function CascadedShadows({ entry, modulation }: { entry: DirectionalLightingConfig; modulation?: DaylightModulation }): null {
+export function CascadedShadows({
+  entry,
+  profile,
+  modulation,
+}: {
+  entry: DirectionalLightingConfig;
+  profile?: GraphicsProfile;
+  modulation?: DaylightModulation;
+}): null {
   const camera = useThree((s) => s.camera);
   const scene = useThree((s) => s.scene);
   const csmRef = useRef<CSM | null>(null);
+  const frameRef = useRef(0);
   const baseIntensity = entry.intensity ?? 1.3;
+  const maxFar = resolveShadowDistance(profile, entry.shadowMaxFar);
 
   useEffect(() => {
     const cascades = Math.max(2, Math.min(4, Math.floor(entry.cascades ?? 3)));
@@ -42,7 +107,7 @@ export function CascadedShadows({ entry, modulation }: { entry: DirectionalLight
       camera,
       parent: scene,
       cascades,
-      maxFar: entry.shadowMaxFar ?? 200,
+      maxFar,
       mode: "practical",
       shadowMapSize: entry.shadowMapSize ?? 1024,
       shadowBias: entry.shadowBias ?? -0.0004,
@@ -76,7 +141,7 @@ export function CascadedShadows({ entry, modulation }: { entry: DirectionalLight
     entry.shadowBias,
     entry.shadowCameraSize,
     entry.shadowMapSize,
-    entry.shadowMaxFar,
+    maxFar,
     entry.shadowRadius,
   ]);
 
@@ -92,6 +157,7 @@ export function CascadedShadows({ entry, modulation }: { entry: DirectionalLight
     }
     csm.camera = camera;
     csm.update();
+    scheduleCascadeRefresh(csm.lights, frameRef.current++);
   });
 
   return null;
@@ -164,13 +230,22 @@ export function bindCsmMaterials(scene: THREE.Scene, csm: CsmMaterialSetup): () 
     const added = ({ child }: THREE.Object3DEventMap["childadded"]) => attach(child);
     const removed = ({ child }: THREE.Object3DEventMap["childremoved"]) => detach(child);
     const prior = node.onBeforeRender;
+    // One reference compare per draw: a mesh whose material has not been swapped costs nothing
+    // more than the authored hook. Re-patching only on a change keeps the swap detection.
+    let lastMaterial: THREE.Material | THREE.Material[] | undefined;
+    const mesh = node as THREE.Mesh;
     const before: typeof prior = function (this: THREE.Object3D, ...args) {
       prior.apply(this, args);
-      patchMesh(this);
+      if (mesh.material === lastMaterial) return;
+      lastMaterial = mesh.material;
+      patchMesh(mesh);
     };
     node.addEventListener("childadded", added);
     node.addEventListener("childremoved", removed);
-    if ((node as THREE.Mesh).isMesh) node.onBeforeRender = before;
+    if (mesh.isMesh) {
+      lastMaterial = mesh.material;
+      node.onBeforeRender = before;
+    }
     nodes.set(node, () => {
       node.removeEventListener("childadded", added);
       node.removeEventListener("childremoved", removed);

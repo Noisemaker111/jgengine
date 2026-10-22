@@ -60,11 +60,12 @@ describe("diagnose", () => {
   test("compares the running CLI's SDK target with installed SDK versions, independently of declared ranges", () => {
     const dir = scaffold();
     const installed = join(dir, "node_modules", "@jgengine", "core", "package.json");
-    writeFileSync(installed, '{"version":"99.0.0"}');
+    const [major, minor] = sdkVersion().split(".");
+    const newer = `${major}.${Number(minor) + 1}.0`;
+    writeFileSync(installed, JSON.stringify({ version: newer }));
     const finding = diagnose(dir).find(entry => entry.label === "running CLI supports installed SDK minor");
     expect(finding?.ok).toBe(false);
-    expect(finding?.fix).toContain("@jgengine/core@99.0.0");
-    const [major, minor] = sdkVersion().split(".");
+    expect(finding?.fix).toContain(`@jgengine/core@${newer}`);
     writeFileSync(installed, JSON.stringify({ version: `${major}.${minor}.99` }));
     expect(failingLabels(dir)).not.toContain("running CLI supports installed SDK minor");
   });
