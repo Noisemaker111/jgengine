@@ -1,0 +1,158 @@
+import { afterEach, describe, expect, test } from "bun:test";
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+
+import { assess, exemptionReason, isRuntimePath, isTestPath, parseNameStatus } from "./check-fix-has-test";
+
+const SCRIPT = join(import.meta.dir, "check-fix-has-test.ts");
+const SCRATCH = join(import.meta.dir, "..", ".scratch");
+
+const made: string[] = [];
+afterEach(() => {
+  for (const dir of made.splice(0)) rmSync(dir, { recursive: true, force: true });
+});
+
+function workspace(name: string): string {
+  const dir = join(SCRATCH, `fix-has-test-${name}-${crypto.randomUUID()}`);
+  mkdirSync(dir, { recursive: true });
+  made.push(dir);
+  return dir;
+}
+
+function gitIn(cwd: string, args: string[]): string {
+  const result = Bun.spawnSync({
+    cmd: ["git", "-c", "user.email=gate@example.test", "-c", "user.name=Gate", ...args],
+    cwd,
+    timeout: 60_000,
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  if (result.exitCode !== 0) throw new Error(`git ${args.join(" ")}: ${result.stderr.toString()}`);
+  return result.stdout.toString().trim();
+}
+
+function commit(cwd: string, message: string): string {
+  gitIn(cwd, ["add", "-A"]);
+  gitIn(cwd, ["commit", "-q", "-m", message]);
+  return gitIn(cwd, ["rev-parse", "HEAD"]);
+}
+
+function runCheck(args: string[], cwd: string): { code: number | null; stdout: string; stderr: string } {
+  const result = Bun.spawnSync({
+    cmd: [process.execPath, SCRIPT, ...args],
+    cwd,
+    timeout: 60_000,
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  return { code: result.exitCode, stdout: result.stdout.toString(), stderr: result.stderr.toString() };
+}
+
+describe("which paths count", () => {
+  test("runtime paths are source under a package, scripts and apps", () => {
+    expect(isRuntimePath("packages/core/src/a.ts")).toBe(true);
+    expect(isRuntimePath("packages/jgengine/src/cli/index.ts")).toBe(true);
+    expect(isRuntimePath("scripts/land.ts")).toBe(true);
+    expect(isRuntimePath("apps/web/src/app.tsx")).toBe(true);
+  });
+
+  test("tests, docs, json and snapshots never count as runtime", () => {
+    expect(isRuntimePath("packages/core/src/a.test.ts")).toBe(false);
+    expect(isRuntimePath("packages/core/src/a.test.tsx")).toBe(false);
+    expect(isRuntimePath("packages/core/src/README.md")).toBe(false);
+    expect(isRuntimePath("scripts/perf-budget.json")).toBe(false);
+    expect(isRuntimePath("packages/core/src/__snapshots__/a.snap")).toBe(false);
+    expect(isRuntimePath("packages/core/package.json")).toBe(false);
+    expect(isRuntimePath("changes/note.md")).toBe(false);
+    expect(isTestPath("scripts/land.test.ts")).toBe(true);
+    expect(isTestPath("scripts/land.ts")).toBe(false);
+  });
+
+  test("reads paths out of name-status output, including a rename's destination", () => {
+    expect(parseNameStatus("M\tscripts/a.ts\nA\tscripts/b.test.ts\nR100\told.ts\tnew.ts\n")).toEqual([
+      "scripts/a.ts",
+      "scripts/b.test.ts",
+      "new.ts",
+    ]);
+  });
+});
+
+describe("the fix-without-test rule", () => {
+  test("a source-only change fails", () => {
+    const verdict = assess(["packages/core/src/spawn.ts"], "");
+    expect(verdict.ok).toBe(false);
+    expect(verdict.problems[0]).toContain("no test file changed");
+  });
+
+  test("a source change plus a changed test passes", () => {
+    expect(assess(["packages/core/src/spawn.ts", "packages/core/src/spawn.test.ts"], "").ok).toBe(true);
+  });
+
+  test("a docs, json or skill change passes without a test", () => {
+    expect(assess(["README.md", "changes/note.md", "scripts/perf-budget.json"], "").ok).toBe(true);
+    expect(assess([], "").ok).toBe(true);
+  });
+
+  test("the exact exemption line passes", () => {
+    const body = "### Fixed\n\n- Root cause.\n\nPrevention: none - the failure needs a live GPU on the runner\n";
+    const verdict = assess(["scripts/perf-gate.ts"], body);
+    expect(verdict.ok).toBe(true);
+    expect(verdict.exempt).toBe("the failure needs a live GPU on the runner");
+  });
+
+  test("a too-short reason is rejected and named in the failure", () => {
+    const verdict = assess(["scripts/perf-gate.ts"], "Prevention: none - flaky");
+    expect(verdict.ok).toBe(false);
+    expect(verdict.problems[0]).toContain("under 10");
+  });
+
+  test("the prefix is case-sensitive and must be its own line", () => {
+    expect(exemptionReason("prevention: none - the failure needs a live GPU")).toBeNull();
+    expect(exemptionReason("see Prevention: none - the failure needs a live GPU")).toBeNull();
+    expect(exemptionReason("Prevention: none -  the failure needs a live GPU")).toBe("the failure needs a live GPU");
+  });
+});
+
+describe("reading a real diff", () => {
+  test("source alone exits 1, then a test next to it exits 0, and a body-file exemption also exits 0", () => {
+    const repo = workspace("repo");
+    mkdirSync(join(repo, "packages/core/src"), { recursive: true });
+    gitIn(repo, ["init", "-q", "-b", "main"]);
+    writeFileSync(join(repo, "packages/core/src/spawn.ts"), "export const a = 1;\n");
+    const base = commit(repo, "base");
+
+    writeFileSync(join(repo, "packages/core/src/spawn.ts"), "export const a = 2;\n");
+    commit(repo, "change without a test");
+    const failing = runCheck(["--root", repo, "--base", base], repo);
+    expect(failing.code).toBe(1);
+    expect(failing.stderr).toContain("packages/core/src/spawn.ts");
+    expect(failing.stderr).toContain("Prevention: none - ");
+
+    writeFileSync(join(repo, "packages/core/src/spawn.test.ts"), "import { expect, test } from 'bun:test';\n");
+    commit(repo, "add the test");
+    expect(runCheck(["--root", repo, "--base", base], repo).code).toBe(0);
+
+    const bodyFile = join(repo, "body.md");
+    writeFileSync(bodyFile, "Prevention: none - the path needs a signed Windows driver\n");
+    rmSync(join(repo, "packages/core/src/spawn.test.ts"));
+    commit(repo, "drop the test, exempt instead");
+    const exempt = runCheck(["--root", repo, "--base", base, "--body-file", bodyFile], repo);
+    expect(exempt.code).toBe(0);
+    expect(exempt.stdout).toContain("exempt: the path needs a signed Windows driver");
+  });
+
+  test("a missing base or an unreadable body file fails loudly instead of passing", () => {
+    const repo = workspace("empty");
+    gitIn(repo, ["init", "-q", "-b", "main"]);
+    writeFileSync(join(repo, "a.txt"), "x\n");
+    commit(repo, "one");
+
+    const noBase = runCheck(["--root", repo, "--base", "origin/nope"], repo);
+    expect(noBase.code).toBe(2);
+    expect(noBase.stderr).toContain("git diff origin/nope...HEAD failed");
+
+    const noBody = runCheck(["--root", repo, "--base", "HEAD", "--body-file", join(repo, "absent.md")], repo);
+    expect(noBody.code).toBe(2);
+    expect(noBody.stderr).toContain("could not read");
+  });
+});

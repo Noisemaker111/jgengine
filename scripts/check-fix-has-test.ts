@@ -1,0 +1,182 @@
+/**
+ * A fix with no test leaves nothing behind that fails when the bug comes back, so the next session
+ * learns the same lesson again. This gate reads what a branch changed: any runtime path needs a
+ * changed test, unless the PR body says why that is impossible.
+ *
+ *   bun run check:fix-has-test --base origin/beta --body-file .scratch/pr-body.md
+ *
+ * Exit 0 pass, 1 runtime paths without a test, 2 the check could not read git or the body file.
+ */
+import { spawnSync } from "node:child_process";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+
+export const DEFAULT_BASE = "origin/beta";
+export const EXEMPTION_PREFIX = "Prevention: none - ";
+const MIN_REASON = 10;
+const RUNTIME_ROOTS = [/^packages\/[^/]+\/src\//, /^apps\//, /^scripts\//];
+const NOT_RUNTIME = /\.(test|spec)\.tsx?$|\.(md|json|snap)$/i;
+const TEST_FILE = /\.test\.tsx?$/;
+
+/** `--base`, `--body-file` and `--root` (a checkout other than this one, for the test). */
+export interface FixArgs {
+  base: string;
+  bodyFile?: string;
+  root?: string;
+}
+
+export function parseArgs(argv: readonly string[]): FixArgs {
+  const args: FixArgs = { base: DEFAULT_BASE };
+  for (let i = 0; i < argv.length; i += 1) {
+    const arg = argv[i];
+    if (arg === "--base") args.base = value(argv, (i += 1), arg);
+    else if (arg === "--body-file") args.bodyFile = value(argv, (i += 1), arg);
+    else if (arg === "--root") args.root = value(argv, (i += 1), arg);
+    else throw new Error(`unknown argument ${arg}`);
+  }
+  return args;
+}
+
+function value(argv: readonly string[], at: number, flag: string): string {
+  const found = argv[at];
+  if (found === undefined || found.startsWith("--")) throw new Error(`${flag} needs a value`);
+  return found;
+}
+
+/** Paths from `git diff --name-status` output, one per line, however the rename columns look. */
+export function parseNameStatus(text: string): string[] {
+  const paths: string[] = [];
+  for (const line of text.split("\n")) {
+    const fields = line.trim().split("\t");
+    if (fields.length < 2) continue;
+    paths.push(fields[fields.length - 1]!);
+  }
+  return paths;
+}
+
+export function isRuntimePath(path: string): boolean {
+  return RUNTIME_ROOTS.some((root) => root.test(path)) && !NOT_RUNTIME.test(path);
+}
+
+export function isTestPath(path: string): boolean {
+  return TEST_FILE.test(path);
+}
+
+/**
+ * The reason from a `Prevention: none - <reason>` line, or null. The prefix is exact and
+ * case-sensitive: an exemption that is almost right is not an exemption.
+ */
+export function exemptionReason(body: string): string | null {
+  for (const line of body.split("\n").map((entry) => entry.trimEnd())) {
+    if (!line.startsWith(EXEMPTION_PREFIX)) continue;
+    const reason = line.slice(EXEMPTION_PREFIX.length).trim();
+    if (reason.length >= MIN_REASON) return reason;
+  }
+  return null;
+}
+
+/** A `Prevention: none -` line that is there but carries too short a reason. */
+export function shortExemption(body: string): string | null {
+  for (const line of body.split("\n").map((entry) => entry.trimEnd())) {
+    if (!line.startsWith(EXEMPTION_PREFIX)) continue;
+    const reason = line.slice(EXEMPTION_PREFIX.length).trim();
+    if (reason.length < MIN_REASON) return reason;
+  }
+  return null;
+}
+
+export interface Assessment {
+  runtime: string[];
+  tests: string[];
+  /** The accepted exemption reason, when the body carries one. */
+  exempt: string | null;
+  ok: boolean;
+  problems: string[];
+}
+
+export function assess(changed: readonly string[], body: string): Assessment {
+  const paths = [...new Set(changed)].sort();
+  const runtime = paths.filter(isRuntimePath);
+  const tests = paths.filter(isTestPath);
+  const exempt = runtime.length === 0 || tests.length > 0 ? null : exemptionReason(body);
+  const problems: string[] = [];
+  if (runtime.length > 0 && tests.length === 0 && exempt === null) {
+    const short = shortExemption(body);
+    problems.push(
+      short === null
+        ? `${runtime.length} runtime path(s) changed and no test file changed`
+        : `the body's "Prevention: none -" reason is ${short.length} character(s), under ${MIN_REASON}: "${short}"`,
+    );
+  }
+  return { runtime, tests, exempt, ok: problems.length === 0, problems };
+}
+
+export function report(assessment: Assessment): string {
+  const lines: string[] = [];
+  if (assessment.runtime.length > 0) {
+    lines.push("Runtime paths this branch changed:", ...assessment.runtime.map((path) => `  ${path}`), "");
+  }
+  lines.push(
+    "A change to behavior needs a regression test that fails before it and passes after it.",
+    "Add or extend a *.test.ts / *.test.tsx next to the code. If no test can reach the bug, say why",
+    "on its own line of the PR body, spelled exactly:",
+    `  ${EXEMPTION_PREFIX}<why, ${MIN_REASON}+ characters>`,
+  );
+  return lines.join("\n");
+}
+
+function git(root: string, args: string[]): { status: number; stdout: string; stderr: string } {
+  const result = spawnSync("git", args, { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+  return { status: result.status ?? 1, stdout: result.stdout ?? "", stderr: result.stderr ?? "" };
+}
+
+/** Committed-against-base paths plus whatever is staged, so a run before committing still sees the diff. */
+export function changedPaths(root: string, base: string): { paths: string[]; error?: string } {
+  const committed = git(root, ["diff", "--name-status", `${base}...HEAD`]);
+  if (committed.status !== 0) return { paths: [], error: `git diff ${base}...HEAD failed: ${committed.stderr.trim()}` };
+  const staged = git(root, ["diff", "--name-status", "--cached"]);
+  if (staged.status !== 0) return { paths: [], error: `git diff --cached failed: ${staged.stderr.trim()}` };
+  return { paths: [...parseNameStatus(committed.stdout), ...parseNameStatus(staged.stdout)] };
+}
+
+function main(): number {
+  let args: FixArgs;
+  try {
+    args = parseArgs(process.argv.slice(2));
+  } catch (error) {
+    console.error(`check-fix-has-test: ${(error as Error).message}`);
+    return 2;
+  }
+  const root = args.root ?? fileURLToPath(new URL("..", import.meta.url));
+
+  let body = "";
+  if (args.bodyFile !== undefined) {
+    try {
+      body = readFileSync(args.bodyFile, "utf8");
+    } catch (error) {
+      console.error(`check-fix-has-test: could not read ${args.bodyFile}: ${(error as Error).message}`);
+      return 2;
+    }
+  }
+
+  const changed = changedPaths(root, args.base);
+  if (changed.error !== undefined) {
+    console.error(`check-fix-has-test: ${changed.error}`);
+    return 2;
+  }
+
+  const assessment = assess(changed.paths, body);
+  if (!assessment.ok) {
+    console.error(`\ncheck-fix-has-test failed: ${assessment.problems.join("; ")}\n`);
+    console.error(report(assessment));
+    console.error("");
+    return 1;
+  }
+  const why = assessment.exempt === null ? "" : ` (exempt: ${assessment.exempt})`;
+  console.log(
+    `check-fix-has-test ok: ${assessment.runtime.length} runtime path(s), ${assessment.tests.length} test file(s)${why}`,
+  );
+  return 0;
+}
+
+if (import.meta.main) process.exit(main());

@@ -73,6 +73,7 @@ const CHECK_TYPES_STAGES: readonly Stage[] = [
     "check-street-rule-parity",
     "check-source-paths",
     "check-test-spawn-timeouts",
+    "check:fixture-location",
   ].map((name): Stage => ({
     name,
     ...bun("run", name),

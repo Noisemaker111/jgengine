@@ -74,6 +74,21 @@ jobs:
       - run: bun run build
       - run: bun run check-skill-api
       - run: bun run check-orphan-ratchet
+      - run: bun run check:fixture-location
+      # A runtime change with no changed test needs a `Prevention: none - <reason>` line in the
+      # PR body (#2109's sibling lesson: a fix that leaves no failing test teaches nobody).
+      - name: every changed runtime path carries a regression test
+        env:
+          EVENT: ${{ github.event_name }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if [ "$EVENT" != "pull_request" ]; then
+            echo "check:fix-has-test skipped: a push has no PR body; the rule reads the body of a pull request"
+            exit 0
+          fi
+          printf '%s' "$PR_BODY" > "$RUNNER_TEMP/pr-body.txt"
+          bun run check:fix-has-test --base "$BASE_SHA" --body-file "$RUNNER_TEMP/pr-body.txt"
       # Needs the `bun run build` above.
       - run: bun run check-export-manifest
 
@@ -273,8 +288,52 @@ jobs:
             esac
           fi
 
+  # Three package tests fail on Windows only (#2119: workspaceDoctor's wildcard and dangling
+  # symlink cases, and `Bun.build` returning `EINVAL: failed to open root directory: /C:/...` in
+  # narrativeAuthoring.test.ts). The Ubuntu jobs cannot see them, so beta learned about them from
+  # whoever ran the suite on a PC. This job runs that suite on windows-latest for a push to beta
+  # and for workflow_dispatch; a pull request skips it in seconds through `windows`, and no
+  # `continue-on-error` or allow-list hides a failure - red here is the point until #2119 closes.
+  windows-tests:
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/beta')
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.2
+      - uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: bun-${{ runner.os }}-
+      - run: bun install --frozen-lockfile
+      - run: bun --cwd=packages/jgengine run test
+
+  # The `windows` check branch protection reads: green in seconds on a pull request and on a main
+  # push, and green on a beta push or manual run only when the Windows suite passed.
+  windows:
+    needs: [windows-tests]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: windows verdict
+        env:
+          EVENT: ${{ github.event_name }}
+          REF: ${{ github.ref }}
+          TESTS: ${{ needs.windows-tests.result }}
+        run: |
+          if [ "$EVENT" = "workflow_dispatch" ] || { [ "$EVENT" = "push" ] && [ "$REF" = "refs/heads/beta" ]; }; then
+            test "$TESTS" = "success"
+            exit 0
+          fi
+          test "$TESTS" = "skipped"
+          echo "windows suite skipped: pull requests and main pushes run the Ubuntu suite; a push to beta or a manual run covers Windows"
+
   ci:
-    needs: [changes, quick, types, test, web-build, smoke, perf]
+    needs: [changes, quick, types, test, web-build, smoke, perf, windows]
     # A superseded run is cancelled, not failed; reporting it as a failure only pages the PR's owner.
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
@@ -290,7 +349,7 @@ jobs:
         run: |
           # A scope job that failed took the gated jobs down with it; never let that read as a pass.
           test "$SCOPE" = "success"
-          for result in "${{ needs.quick.result }}" "${{ needs.types.result }}" "${{ needs.test.result }}" "${{ needs.web-build.result }}" "${{ needs.perf.result }}"; do
+          for result in "${{ needs.quick.result }}" "${{ needs.types.result }}" "${{ needs.test.result }}" "${{ needs.web-build.result }}" "${{ needs.perf.result }}" "${{ needs.windows.result }}"; do
             test "$result" = "success"
           done
           # Smoke boots every game, so a skip is only acceptable when no changed path can affect it.
