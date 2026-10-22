@@ -979,6 +979,16 @@
 - `createRunDraft` (function): function createRunDraft<TStat extends string = string, TData = unknown>(config: RunDraftConfig<TStat, TData>): RunDraft<TStat, TData> — A roguelike run built from stacking drafted modifier picks that reshape the run.
 - `createRunModifierStack` (function): function createRunModifierStack<TStat extends string = string, TData = unknown>(offers: readonly RunModifierOffer<TStat, TData>[]): RunModifierStack<TStat, TData> — ⚠ undocumented
 
+## @jgengine/core/game/saveSlotIndex
+
+- `SaveSlotMetaOptions` (interface): interface SaveSlotMetaOptions — Bridging the versioned save document (`createGameSave`) to the save-select index (`createSaveSlots`): the document already carries `savedAt`, `time` and `playtime`, so a menu built on the index can show real saves instead of hand-maintained metadata.
+- `SaveSlotSource` (interface): interface SaveSlotSource — The source a slot list is refreshed from — a `GameSave`, or a narrower reader.
+- `SaveSlotsRefresh` (interface): interface SaveSlotsRefresh — The result of a refresh: what the menu should show now.
+- `formatSavePlaytime` (function): function formatSavePlaytime(seconds: number): string — "4h 12m" / "12m" / "< 1m" — the playtime chip every save menu wants.
+- `gameSaveSlotSource` (function): function gameSaveSlotSource(save: GameSave): SaveSlotSource — Adapt a {@link GameSave} as a {@link SaveSlotSource}. Kept separate so a host can supply its own reader (a cloud endpoint listing saves) with the same shape.
+- `refreshSaveSlots` (function): function refreshSaveSlots(source: SaveSlotSource, model: SaveSlots, options: SaveSlotMetaOptions = {}): Promise<SaveSlotsRefresh> — Read every written slot's document and write the display metadata into a `SaveSlots` index — the glue between B5.3's save document and a save-select menu. Slots the index already knows that have no document are cleared, so a deleted save stops showing a stale Continue.
+- `saveSlotMeta` (function): function saveSlotMeta(slot: string, document: GameSaveDocument, options: SaveSlotMetaOptions = {}): SaveSlotMeta — Project one save document onto the index's display metadata: name, last-saved time and a playtime chip (plus any caller `metaOf` fields). Pure, so a menu can build its list from documents a host fetched for it.
+
 ## @jgengine/core/game/saveSlots
 
 - `SaveSlotMeta` (interface): interface SaveSlotMeta — One entry in a {@link SaveSlots} index: a save/profile slot's *display* metadata, not its payload. The real save data lives in a `createSaveStore` slot; this record is only what a save-select menu renders — an id, an optional player-facing `name`, whether the slot is `empty`, when it was last written (`savedAt`), and a free-string `meta` bag the game fills with whatever the menu should show (level, playtime, location, chapter, a thumbnail ref, …). `meta` keys are opaque to this model — it never reads or branches on them.

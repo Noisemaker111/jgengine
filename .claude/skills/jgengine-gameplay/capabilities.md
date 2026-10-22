@@ -586,6 +586,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createRunDraft` (function) · `import { createRunDraft } from "@jgengine/core/gameplay"`
 
+## save-slot-index — refresh a save-select index from the game's save documents
+
+- `refreshSaveSlots` (function) · `import { refreshSaveSlots } from "@jgengine/core/game/saveSlotIndex"`
+
+## save-slot-meta — project a save document onto save-select display metadata
+
+- `saveSlotMeta` (function) · `import { saveSlotMeta } from "@jgengine/core/game/saveSlotIndex"`
+
 ## save-slots — serializable save-slot / profile metadata index — write/clear/rename/mostRecent over free-string per-slot meta, powering New/Continue/Load/Delete menus, with snapshot/restore
 
 - `createSaveSlots` (function) · `import { createSaveSlots } from "@jgengine/core/gameplay"`

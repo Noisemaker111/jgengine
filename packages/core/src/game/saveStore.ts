@@ -147,6 +147,11 @@ export interface SaveStore<T> {
   save(): Promise<void>;
   /** Delete the active slot and reset `value()` to `initial`. */
   clear(): Promise<void>;
+  /**
+   * Read a stored slot without touching the live value, active slot or status — what a save-select
+   * menu shows. Returns `null` when the slot holds nothing.
+   */
+  peek(slot?: string): Promise<{ value: T; savedAt: number } | null>;
   /** Flush any dirty state, switch to `slot`, and load it. */
   switchSlot(slot: string): Promise<T>;
   /** The slots this store has written (for a load/save menu). */
@@ -381,6 +386,20 @@ export function createSaveStore<T>(config: SaveStoreConfig<T>): SaveStore<T> {
       dirty = false;
       firstDirtyAt = null;
       return load();
+    },
+    async peek(slot = currentSlot) {
+      try {
+        const raw = await backend.read(dataKey(slot));
+        if (raw === null) return null;
+        const parsed = deserialize(raw);
+        if (isEnvelope(parsed)) {
+          return { value: decode(raw), savedAt: typeof parsed.savedAt === "number" ? parsed.savedAt : 0 };
+        }
+        return { value: decode(raw), savedAt: 0 };
+      } catch (error) {
+        reportError(error);
+        return null;
+      }
     },
     async slots() {
       try {
