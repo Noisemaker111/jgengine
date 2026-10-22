@@ -462,6 +462,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createKinematicVehicle` (function) · `import { createKinematicVehicle } from "@jgengine/core/world"`
 
+## lane-graph — directed lane topology with junctions, signals and parking for vehicle traffic
+
+- `createLaneGraph` (function) · `import { createLaneGraph } from "@jgengine/core/world"`
+
+## lane-graph-from-scene — read an authored lane graph, signals and parking out of the scene document
+
+- `laneGraphFromDocument` (function) · `import { laneGraphFromDocument } from "@jgengine/core/world"`
+
 ## lean-metrics — measure a motorcycle's lean — steady lean, time to lean, countersteer tip-in
 
 - `measureLean` (function) · `import { measureLean } from "@jgengine/core/physics/handlingProbe"`
@@ -896,6 +904,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `setTouchControlsMode` (function) · `import { setTouchControlsMode } from "@jgengine/core/input/touchControlsMode"`
 - `touchButtonShape` (function) · `import { touchButtonShape } from "@jgengine/core/input/touchScheme"`
+
+## traffic — lane-graph traffic with car following, signals, right-of-way, lane changes and parking
+
+- `createTraffic` (function) · `import { createTraffic } from "@jgengine/core/world"`
 
 ## ui-sound-cues — default procedural click/hover/open/close/confirm/deny/notify cues on a "ui" bus, overridable per game
 
