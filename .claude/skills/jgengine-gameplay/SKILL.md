@@ -38,6 +38,16 @@ Pins consume no choice RNG and must satisfy the same pool and constraints;
 incompatible pins backtrack earlier unpinned choices or return `unsatisfiable`
 within the configured attempt and pick budgets.
 
+Roll whole named gear from an authored catalog with `rollLoot`
+(`loot/lootGen`): bases with mount slots, parts, affix pools, weighted rarity
+tiers, manufacturer stat personalities and a level curve, all caller data.
+`validateLootItem` names each defect, `compareLootItems` returns per-stat deltas
+and a weighted score, and `lootWeaponDefinition` (`loot/lootWeapon`) projects a
+rolled item onto a `WeaponDefinition` for `createWeaponSystem`. `createLootRoller`
+counts drops per rarity for a debug probe and snapshots its counters. Sample
+catalog, distribution check and generated-weapon proof are in
+[reference-systems.md](reference-systems.md#procedural-gear).
+
 Validate generated quest catalogs with `validateQuestCatalog` (`game/questCatalog`).
 Follow the [quest authoring recipe](recipes/quest-authoring.md) for bounded batches,
 canonical facts, external unlock declarations, and precise repair diagnostics.

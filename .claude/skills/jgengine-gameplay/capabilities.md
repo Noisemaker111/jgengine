@@ -287,19 +287,39 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `RarityStyle` (interface) · `import { RarityStyle } from "@jgengine/core/gameplay"`
 
+## loot-comparison — compare two rolled items with per-stat deltas and a weighted score
+
+- `compareLootItems` (function) · `import { compareLootItems } from "@jgengine/core/gameplay"`
+
 ## loot-filter — filter and highlight drops by rarity/name rules
 
 - `evaluateLootFilter` (function) · `import { evaluateLootFilter } from "@jgengine/core/gameplay"`
+
+## loot-generation — roll a named item from bases, parts, affixes, rarity weights, manufacturer personalities and level scaling
+
+- `rollLoot` (function) · `import { rollLoot } from "@jgengine/core/gameplay"`
 
 ## loot-pipeline — compose ordered loot pools with fallbacks, roll modifiers, and provenance
 
 - `createLootPipeline` (function) · `import { createLootPipeline } from "@jgengine/core/gameplay"`
 - `defineLootPipeline` (function) · `import { defineLootPipeline } from "@jgengine/core/gameplay"`
 
+## loot-roller — roll items from one validated catalog while counting drops per rarity for a debug probe
+
+- `createLootRoller` (function) · `import { createLootRoller } from "@jgengine/core/gameplay"`
+
 ## loot-table — register loot tables and roll weighted randomized drops
 
 - `createLootRegistry` (function) · `import { createLootRegistry } from "@jgengine/core/gameplay"`
 - `lootTable` (function) · `import { lootTable } from "@jgengine/core/gameplay"`
+
+## loot-validation — check a rolled item against its catalog and report each defect with its code
+
+- `validateLootItem` (function) · `import { validateLootItem } from "@jgengine/core/gameplay"`
+
+## loot-weapon — feed a rolled item into a weapon definition so generated gear fires through the weapon system
+
+- `lootWeaponDefinition` (function) · `import { lootWeaponDefinition } from "@jgengine/core/gameplay"`
 
 ## maturation-stage — resolve the baby/juvenile/adolescent/adult stage from elapsed maturation
 

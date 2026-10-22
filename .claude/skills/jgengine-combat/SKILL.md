@@ -24,7 +24,9 @@ spread, damage — hand the definition to `createWeaponSystem`
 (`combat/weaponSystem`): it runs single/auto/burst, hitscan or ballistic
 projectiles, interrupted reloads and a readable ammo economy, and resolves both
 deliveries through `createDamageRuntime`. Generated guns (rolled parts) are the
-same `WeaponDefinition`; see
+same `WeaponDefinition`: `loot/lootGen` rolls the item and `loot/lootWeapon`'s
+`lootWeaponDefinition` maps its stats onto one, so no second weapon type exists;
+see
 [reference.md](reference.md#weapons-as-data).
 For scene-backed `createProjectileSystem`, inject authoritative `rng`; spread
 samples independent pellet rays and prediction stays on the center ray. The

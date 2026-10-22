@@ -519,6 +519,31 @@ export {
 } from "./item/useBehavior";
 export { createWeaponStats } from "./item/weapon";
 export {
+  MAX_LOOT_AFFIXES,
+  assertLootCatalog,
+  compareLootItems,
+  createLootRoller,
+  lootLevelScale,
+  rollLoot,
+  validateLootItem,
+  type LootBaseDef,
+  type LootCatalog,
+  type LootComparison,
+  type LootComparisonOptions,
+  type LootInstalledPart,
+  type LootIssueCode,
+  type LootItem,
+  type LootManufacturerDef,
+  type LootPartDef,
+  type LootRollOptions,
+  type LootRoller,
+  type LootRollerOptions,
+  type LootRollerState,
+  type LootStatDelta,
+  type LootValidationIssue,
+} from "./loot/lootGen";
+export { lootWeaponDefinition, type LootWeaponProjection, type LootWeaponStatMap } from "./loot/lootWeapon";
+export {
   createStatGraph,
   statModifierContributions,
   type StatContribution,
