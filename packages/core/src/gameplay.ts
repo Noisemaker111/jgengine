@@ -304,6 +304,7 @@ export {
   type DirectionalLightingConfig,
   type EntitySpriteConfig,
   type FirstPersonCameraConfig,
+  type FirstPersonCollisionConfig,
   type GameCameraConfig,
   type InspectionCameraConfig,
   type InspectionZoomAnchor,

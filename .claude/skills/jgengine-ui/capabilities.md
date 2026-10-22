@@ -89,6 +89,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `observeBrowserSuspension` (function) · `import { observeBrowserSuspension } from "@jgengine/react"`
 
+## camera-clearance — keep any camera out of world collision with a spring-arm pull-in
+
+- `clearCameraBoom` (function) · `import { clearCameraBoom } from "@jgengine/shell/camera"`
+- `sceneCameraQuery` (function) · `import { sceneCameraQuery } from "@jgengine/shell/camera"`
+
 ## camera-shake-meter — HUD readout for a core camera-shake controller — a trauma meter plus current impact-kind label, reskinnable and kind-labelled
 
 - `CameraShakeMeter` (function) · `import { CameraShakeMeter } from "@jgengine/react"`

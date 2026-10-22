@@ -13,6 +13,7 @@ import {
 import { useGameContext } from "@jgengine/react/provider";
 import { usePlayer } from "@jgengine/react/hooks";
 import { useEntityRenderCues } from "../render/useEntityRenderCues";
+import { clearCameraBoom, sceneCameraQuery } from "./cameraCollision";
 import { usePlayerFov } from "./PlayerFov";
 import { GAME_SIM_FRAME_PRIORITY, ORBIT_CAMERA_FRAME_PRIORITY } from "./orbitCameraMath";
 import { requestRawPointerLock } from "../input/pointerLock";
@@ -68,6 +69,9 @@ export function GameFirstPersonCamera({
   const tuningRef = useRef<WeaponPresentationTuning | undefined>(undefined);
   const lastLookRef = useRef<{ yaw: number; pitch: number } | null>(null);
   const poseRef = useRef<WeaponPose | null>(null);
+  const armRef = useRef<number | null>(null);
+  const collision = config?.collision;
+  const query = useMemo(() => sceneCameraQuery(ctx.scene.raycast), [ctx.scene]);
 
   useEffect(() => {
     const requestLock = () => {
@@ -120,12 +124,40 @@ export function GameFirstPersonCamera({
     const yaw = yawRef.current - (pose?.lookYaw ?? 0);
     const pitch = Math.max(-maxPitch, Math.min(maxPitch, pitchRef.current + (pose?.lookPitch ?? 0)));
     const cosPitch = Math.cos(pitch);
-    camera.position.set(entity.position[0], entity.position[1] + eyeHeight, entity.position[2]);
-    camera.lookAt(
-      camera.position.x + Math.sin(yaw) * cosPitch,
-      camera.position.y + Math.sin(pitch),
-      camera.position.z + Math.cos(yaw) * cosPitch,
-    );
+    const eye = {
+      x: entity.position[0],
+      y: entity.position[1] + eyeHeight,
+      z: entity.position[2],
+    };
+    const look = {
+      x: eye.x + Math.sin(yaw) * cosPitch,
+      y: eye.y + Math.sin(pitch),
+      z: eye.z + Math.cos(yaw) * cosPitch,
+    };
+    if (collision !== false) {
+      const options = collision ?? {};
+      const armBack = options.armBack ?? 1.5;
+      // The boom anchors behind the eye along the look ray, so a trunk the body reached
+      // pulls the camera back toward it instead of leaving the view inside the bark.
+      const forward = { x: Math.sin(yaw) * cosPitch, y: Math.sin(pitch), z: Math.cos(yaw) * cosPitch };
+      const cleared = clearCameraBoom({
+        pivot: { x: eye.x - forward.x * armBack, y: eye.y - forward.y * armBack, z: eye.z - forward.z * armBack },
+        desired: eye,
+        query,
+        clearance: options.clearance ?? ((camera as THREE.PerspectiveCamera).near || 0.1) + 0.15,
+        previousArm: armRef.current,
+        deltaSeconds: dt,
+      });
+      armRef.current = cleared.arm;
+      camera.position.set(cleared.position.x, cleared.position.y, cleared.position.z);
+      look.x += cleared.position.x - eye.x;
+      look.y += cleared.position.y - eye.y;
+      look.z += cleared.position.z - eye.z;
+    } else {
+      armRef.current = null;
+      camera.position.set(eye.x, eye.y, eye.z);
+    }
+    camera.lookAt(look.x, look.y, look.z);
     if ((camera as THREE.PerspectiveCamera).isPerspectiveCamera === true) {
       const perspective = camera as THREE.PerspectiveCamera;
       const fov = playerFov.fov * (pose?.fovScale ?? 1);

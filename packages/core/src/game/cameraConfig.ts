@@ -25,6 +25,21 @@ export interface FirstPersonCameraConfig {
   reticle?: boolean;
   /** Render a viewmodel in view: the built-in three-mesh gun, or `PlayableGame.viewmodel` when set (#542). `false` renders no viewmodel regardless of `PlayableGame.viewmodel`. Default true. */
   viewmodel?: boolean;
+  /**
+   * Keep the eye out of world collision. The boom anchors `armBack` behind the eye and
+   * pulls the camera toward it so the near plane stays clear of a trunk or wall the body
+   * can reach; pulling in is immediate, easing back out is not. `false` restores the
+   * unchecked camera. Default on, with `clearance` = near plane + 0.15.
+   */
+  collision?: false | FirstPersonCollisionConfig;
+}
+
+/** Clearance tuning for the first-person camera's collision pull-in. */
+export interface FirstPersonCollisionConfig {
+  /** Gap kept between the camera and the surface it would enter, world units. Defaults to the near plane plus 0.15. */
+  clearance?: number;
+  /** How far behind the eye the boom anchors, giving the pull somewhere to travel. Default 1.5. */
+  armBack?: number;
 }
 
 /**

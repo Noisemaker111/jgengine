@@ -27,7 +27,13 @@ export { rtsPanKeysConflict } from "./rigMath";
 export { GAME_SIM_FRAME_PRIORITY } from "./orbitCameraMath";
 export {
   CAMERA_TRANSPARENT_USERDATA,
+  clearCameraBoom,
   isCameraOccluderTransparent,
+  sceneCameraQuery,
+  type CameraClearanceInput,
+  type CameraClearanceResult,
+  type CameraCollisionQuery,
   type CameraOccluder,
+  type CameraPoint,
 } from "./cameraCollision";
 export { registerFirstPersonMuzzle, type FirstPersonMuzzleReader } from "./customMuzzle";
