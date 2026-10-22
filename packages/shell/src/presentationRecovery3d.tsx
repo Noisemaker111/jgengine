@@ -1,8 +1,9 @@
 import { addAfterEffect, useThree } from "@react-three/fiber";
 import { useTexture } from "@react-three/drei";
-import { useLayoutEffect, useRef } from "react";
+import { useLayoutEffect } from "react";
 
 import { usePresentationRetryScope } from "./presentationRecovery";
+import { useStableTextureSet } from "./render/stableTextureSet";
 
 /** Registers exact loader inputs and their cache clear before a load can suspend. @internal */
 export function useRecoverableTexture<T extends string[] | string | Record<string, string>>(input: T) {
@@ -11,17 +12,7 @@ export function useRecoverableTexture<T extends string[] | string | Record<strin
   const loaded = scope?.registry.register(inputs, useTexture.clear);
   const textures = useTexture(input);
   loaded?.();
-  // drei returns a fresh keyed object each render; materials built from it rebuilt and recompiled every frame.
-  const stable = useRef(textures);
-  if (!sameTextures(stable.current, textures)) stable.current = textures;
-  return stable.current;
-}
-
-function sameTextures(a: unknown, b: unknown): boolean {
-  if (a === b) return true;
-  if (typeof a !== "object" || typeof b !== "object" || a === null || b === null) return false;
-  const ka = Object.keys(a), kb = Object.keys(b);
-  return ka.length === kb.length && ka.every((k) => (a as Record<string, unknown>)[k] === (b as Record<string, unknown>)[k]);
+  return useStableTextureSet(textures as object) as typeof textures;
 }
 
 /** Observes the owning renderer after the restored material subtree commits and draws. @internal */

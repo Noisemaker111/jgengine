@@ -43,8 +43,6 @@ import {
   type SettingsStore,
 } from "@jgengine/core/settings/settingsModel";
 import { playControlsActive } from "@jgengine/core/game/controlGate";
-import { sky as resolveSkyDescriptor } from "@jgengine/core/world/features";
-import { resolveGameLook } from "@jgengine/core/render/lookPreset";
 import { balanceLightingForIbl } from "@jgengine/core/render/lightingBalance";
 import { skyNoonKeyframes } from "@jgengine/core/render/skyOwnedLighting";
 import type { PresencePoseRow } from "@jgengine/core/runtime/transport";
@@ -101,7 +99,7 @@ import { FrameRateLimiter } from "./drivers/FrameRateLimiter";
 import { FpsCounter, FpsProbe, type FrameTally } from "./diagnostics/FpsCounter";
 import { ConfiguredLighting, BackdropFog } from "./render/SceneLighting";
 import { IrradianceVolumeLighting } from "./render/IrradianceVolumeLighting";
-import { withAuthoredGrade } from "./render/authoredGrade";
+import { usePresentationLook } from "./render/presentationLook";
 import { WorldView, RemotePlayers } from "./world/WorldScene";
 import { FrameDriver } from "./drivers/FrameDriver";
 import { GamepadSource } from "./input/gamepadSource";
@@ -270,23 +268,18 @@ export function Shell3dPresentation({
     () => (playable.editorLayers === undefined ? undefined : colorGradeFromDocument(playable.editorLayers)),
     [playable.editorLayers],
   );
-  const resolvedLook = useMemo(
-    () =>
-      withAuthoredGrade(
-        resolveGameLook({
-          look: playable.look,
-          lighting: playable.lighting,
-          backdrop: playable.backdrop,
-          postProcessing: playable.postProcessing,
-          hasWorldSky,
-        }),
-        authoredGrade,
-      ),
-    [playable.look, playable.lighting, playable.backdrop, playable.postProcessing, hasWorldSky, authoredGrade],
+  const { look: resolvedLook, backdropSky } = usePresentationLook(
+    {
+      look: playable.look,
+      lighting: playable.lighting,
+      backdrop: playable.backdrop,
+      postProcessing: playable.postProcessing,
+      hasWorldSky,
+    },
+    authoredGrade,
   );
   const cinematicLook = (playable.look ?? "cinematic") !== "flat";
   const backdrop = resolvedLook.backdrop;
-  const backdropSky = useMemo(() => (backdrop?.sky !== undefined ? resolveSkyDescriptor(backdrop.sky) : undefined), [backdrop?.sky]);
   const authoredSky = backdropSky ?? worldSky;
   const lighting = resolvedLook.lighting;
   const sunFromLighting = lighting?.directional?.[0]?.position;
