@@ -128,7 +128,10 @@ jobs:
   # Frame-budget gate: every reference game plays under software GL (CI forces
   # ANGLE/SwiftShader or Mesa llvmpipe), then draws/triangles/nodes are compared
   # against scripts/perf-budget.json and any linkProgram/createFramebuffer after
-  # the 5 s warmup fails. Frame times are never gated — CI runners are shared.
+  # the 5 s warmup fails. Frame times are never gated - CI runners are shared.
+  # The CPU timing budgets (nav crowd, perception, utility, visibility, off-screen,
+  # flock, paths) assert here too, via `bench:cpu` with JG_TIMING_GATE=1; the unit
+  # suite keeps measuring and printing them without a pass/fail ceiling.
   perf:
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -149,6 +152,7 @@ jobs:
       - run: bun run perf:gate
         env:
           CHROME_PATH: /usr/bin/google-chrome
+      - run: bun run bench:cpu
 
   ci:
     needs: [quick, types, test, web-build, smoke, perf]

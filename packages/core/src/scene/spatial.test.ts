@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import type { EntityPosition } from "@jgengine/core/scene/entityStore";
 import { createSpatialApi, distanceBetween } from "@jgengine/core/scene/spatial";
+import { gateTimingRatio } from "../../../../scripts/timing-budget";
 
 function apiFrom(positions: Record<string, EntityPosition>, occluder?: (from: EntityPosition, to: EntityPosition) => boolean) {
   return createSpatialApi({
@@ -194,13 +195,16 @@ describe("spatial", () => {
       const center: EntityPosition = [0, 0, 0];
       const radius = 12;
       gridded.inRadius(center, radius);
-      const t0 = performance.now();
-      for (let i = 0; i < 40; i += 1) linear.inRadius(center, radius);
-      const linearMs = performance.now() - t0;
-      const t1 = performance.now();
-      for (let i = 0; i < 40; i += 1) gridded.inRadius(center, radius);
-      const gridMs = performance.now() - t1;
-      expect(gridMs).toBeLessThan(linearMs);
+      const time = (api: { inRadius: (at: EntityPosition, within: number) => unknown }): number => {
+        let best = Infinity;
+        for (let pass = 0; pass < 5; pass += 1) {
+          const started = performance.now();
+          for (let i = 0; i < 40; i += 1) api.inRadius(center, radius);
+          best = Math.min(best, performance.now() - started);
+        }
+        return best;
+      };
+      gateTimingRatio("grid-backed inRadius against a full linear scan, 4000 entities", time(gridded), time(linear));
       expect(gridded.inRadius(center, radius).sort()).toEqual(linear.inRadius(center, radius).sort());
     });
   });

@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
+import { gateTimingMs } from "../../../../scripts/timing-budget";
 import { devtools } from "../devtools/devtools";
 import { seededRng } from "../random/rng";
 import { createNeedSet, type NeedSet } from "../sim/needs";
@@ -253,9 +254,7 @@ describe("1,000-agent utility tick budget", () => {
       for (let run = 0; run < TICKS; run += 1) tick();
       samples.push((performance.now() - start) / TICKS);
     }
-    samples.sort((a, b) => a - b);
-    const median = samples[2]!;
-    console.log(`utility tick for ${AGENTS} agents: ${median.toFixed(4)} ms median (samples ${samples.map((s) => s.toFixed(4)).join(", ")})`);
-    expect(median).toBeLessThan(1);
+    // Fastest tick 0.33 ms idle (this machine, 2026-10-22).
+    gateTimingMs(`utility tick for ${AGENTS} agents`, samples, 0.7);
   });
 });

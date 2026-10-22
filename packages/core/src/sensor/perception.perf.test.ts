@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { createPerception, type PerceptionPosition } from "@jgengine/core/world";
+import { gateTimingMs } from "../../../../scripts/timing-budget";
 
 const OBSERVERS = 200;
 const TARGETS = 200;
@@ -38,11 +39,6 @@ function field(): { observers: { id: string; position: PerceptionPosition; yaw: 
   return { observers, targets };
 }
 
-function median(samples: readonly number[]): number {
-  const sorted = [...samples].sort((a, b) => a - b);
-  return sorted[Math.floor(sorted.length / 2)]!;
-}
-
 describe("perception budget", () => {
   test("200 observers against 200 targets stays under a millisecond per pass", () => {
     const { observers, targets } = field();
@@ -70,14 +66,14 @@ describe("perception budget", () => {
     expect(stats.occlusionChecks).toBeGreaterThan(0);
     expect(stats.occlusionChecks).toBeLessThan(stats.coneTests);
 
-    const p50 = median(samples);
-    const p90 = [...samples].sort((a, b) => a - b)[Math.floor(samples.length * 0.9)]!;
-    console.log(
-      `200 observers × 200 targets: ${stats.pairChecks / 40} pairs a pass, ` +
-        `${stats.rangeCulled / 40} range-culled, ${stats.coneTests / 40} cone tests, ${stats.occlusionChecks / 40} line checks; ` +
-        `p50 ${p50.toFixed(3)} ms, p90 ${p90.toFixed(3)} ms per pass`,
+    // Fastest pass 0.71 ms idle (this machine, 2026-10-22).
+    gateTimingMs(
+      "perception pass, 200 observers x 200 targets",
+      samples,
+      1.5,
+      `${stats.pairChecks / 40} pairs a pass, ${stats.rangeCulled / 40} range-culled, ` +
+        `${stats.coneTests / 40} cone tests, ${stats.occlusionChecks / 40} line checks`,
     );
-    expect(p50).toBeLessThan(2);
   }, 120_000);
 
   test("a squad roster is bounded by the per-pass share cap", () => {
