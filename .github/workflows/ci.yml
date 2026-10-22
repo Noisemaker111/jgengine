@@ -86,7 +86,12 @@ jobs:
       - run: bun run games:clone
         env:
           GAMES_CLONE_TOKEN: ${{ secrets.GAMES_CLONE_TOKEN }}
-      - run: bun test --timeout 20000 packages apps/dev scripts
+      - run: bun test --timeout 20000 --reporter=junit --reporter-outfile=ci-single.xml packages apps/dev scripts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ci-single
+          path: ci-single.xml
 
   web-build:
     runs-on: ubuntu-latest
