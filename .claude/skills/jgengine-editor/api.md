@@ -582,6 +582,10 @@
 
 - `MaterialAssetEditorProps` (interface): interface MaterialAssetEditorProps — A callback-driven physical material editor; the host owns persistence, undo and preview rendering.
 
+## @jgengine/editor/MaterialLibraryBrowser
+
+- `MaterialLibraryBrowserProps` (interface): interface MaterialLibraryBrowserProps — Adopting a library name writes a real, editable material asset into the scene document.
+
 ## @jgengine/editor/PerfProbe
 
 - `PerfProbe` (const): const PerfProbe: React.MemoExoticComponent<({ api }: { api: EditorHostApi; }) => null> — In-canvas frame counter: publishes fps/draw-call samples to the editor host every 500ms.

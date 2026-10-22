@@ -5,6 +5,7 @@ import { createMaterialTemplate, parseMaterialAssignments, type MaterialAsset, t
 
 import { clearMaterialAssignmentPatch } from "./authoredComponentMeta";
 import { MaterialAssetEditor } from "./MaterialAssetEditor";
+import { MaterialLibraryBrowser } from "./MaterialLibraryBrowser";
 import {
   filterMaterialAssignments,
   listMaterialAssignments,
@@ -148,6 +149,10 @@ export function MaterialsWorkspacePanel({
       <div className="space-y-2 border-b border-white/[0.06] p-2">
         <label className="block space-y-1"><span className={MICRO_LABEL}>Reusable material asset</span><select aria-label="Choose material asset" value={activeAsset?.id ?? ""} className={`w-full px-2 py-1 ${INPUT_CLS}`} onChange={(event) => setActiveAssetId(event.target.value)}>{assets.length ? assets.map((asset) => <option key={asset.id} value={asset.id}>{asset.name}</option>) : <option value="">No authored materials</option>}</select></label>
         {activeAsset ? <button type="button" className={`${CHIP} border-rose-400/25 text-rose-200`} onClick={() => { const result = api.handle({ method: "remove_material_asset", id: activeAsset.id }); setError(result.ok ? null : result.error ?? "Material operation failed."); }}>Remove unused asset</button> : null}
+        <MaterialLibraryBrowser
+          onAdopt={(asset) => { const result = api.handle({ method: "upsert_material_asset", asset }); if (result.ok) { setActiveAssetId(asset.id); setError(null); } else setError(result.error ?? "Material operation failed."); }}
+          onError={setError}
+        />
         <details><summary className={`cursor-pointer text-[11px] text-neutral-400 ${FOCUS_RING}`}>Create from an editable starting point</summary><div className="mt-2 space-y-2">
           <select aria-label="Material starting point" className={`w-full px-2 py-1 ${INPUT_CLS}`} value={template} onChange={(event) => setTemplate(event.target.value as MaterialTemplate)}>{["wool", "cotton", "silk", "brushed-metal", "glass", "coated-plastic", "stone", "hair-cards"].map((entry) => <option key={entry} value={entry}>{entry}</option>)}</select>
           <input aria-label="New material stable ID" value={newId} onChange={(event) => setNewId(event.target.value)} placeholder="game/my-original-surface" className={`w-full px-2 py-1 ${INPUT_CLS}`} />

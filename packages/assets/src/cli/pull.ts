@@ -5,6 +5,7 @@ import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { createAssetBudgetReport, type AssetBudget } from "../assetBudget";
+import { MATERIAL_LIBRARY } from "../catalogs/materialLibrary";
 import { downloadPackArchive, extractGlbs, extractSpriteFiles } from "../download";
 import { type AssetKind, type AssetMatch, rankAssets } from "../find";
 import { generatedIndex } from "../generated";
@@ -174,6 +175,18 @@ export async function cmdPull(argv: string[]): Promise<void> {
   if (sourceId === "starter") {
     for (const id of STARTER_SOURCE_PACKS) await cmdPull([id, ...argv.slice(1)]);
     console.log(`starter: ${STARTER_SOURCE_PACKS.length} pack(s) ready`);
+    return;
+  }
+  // `library` pulls every map the shared material library pins, so one command gives a game the
+  // surfaces its names resolve to (roughly 360 MB of 1K-JPG archives for the whole set).
+  if (sourceId === "library") {
+    const pulled = new Set<string>();
+    for (const entry of MATERIAL_LIBRARY) {
+      if (entry.source === undefined || pulled.has(entry.source)) continue;
+      pulled.add(entry.source);
+      await cmdPull([entry.source, ...argv.slice(1)]);
+    }
+    console.log(`library: ${pulled.size} material(s) ready`);
     return;
   }
   const source = sourceById.get(sourceId);

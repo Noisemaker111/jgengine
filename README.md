@@ -27,7 +27,7 @@ adoption rules live in [AGENTS.md](AGENTS.md#game-changes-improve-the-framework)
 
 ## Packages
 
-**Versions:** the lockstep game SDK set is `@jgengine/{core,rapier,react,ws,node,sql,convex,shell,editor,assets,navbake}` — bump together. Package manifests own the current versions. Separate cadences: CLI package `jgengine` and `@jgengine/github` (may lag; not part of that lockstep set).
+**Versions:** the lockstep game SDK set is `@jgengine/{core,rapier,react,ws,node,sql,convex,shell,assets,editor,navbake}` - bump together. Package manifests own the current versions. Separate cadences: CLI package `jgengine` and `@jgengine/github` (may lag; not part of that lockstep set).
 
 | Package | What it is |
 | --- | --- |

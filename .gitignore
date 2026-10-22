@@ -41,8 +41,11 @@ packages/*/src/**/*.d.ts.map
 packages/*/skills/
 
 # Ephemeral git worktrees created by parallel shipping subagents
-# (Agent({ isolation: "worktree" })) — transient, never committed.
+# (Agent({ isolation: "worktree" })) - transient, never committed.
 .claude/worktrees/
+
+# Painted material maps a demo pulls with `assets pull library` (~360 MB for the whole library).
+apps/dev/public/library-materials/
 
 # Games are now in the separate Noisemaker111/JGengine-games repo.
 # The website clones them at build time into ephemeral ./Games (see scripts/ensure-games.ts).

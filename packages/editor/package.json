@@ -31,6 +31,7 @@
     "test": "bun test src"
   },
   "dependencies": {
+    "@jgengine/assets": "^0.25.0",
     "@jgengine/core": "^0.25.0",
     "@jgengine/navbake": "^0.25.0",
     "@jgengine/react": "^0.25.0",

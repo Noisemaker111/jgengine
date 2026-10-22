@@ -14,7 +14,7 @@
 - `AssetProvenanceKind` (type): type AssetProvenanceKind = "committed" | "provisioned" | "dangling" — How an asset id's bytes reach a clean checkout: - `committed` — resolves to a self-hosted / remote URL carried in the shipped index (a {@link SingleAsset}); no pull step, available immediately. - `provisioned` — a pack {@link IndexEntry}; the id is declared but its GLB is fetched on demand by `assets pull <source>` into the consumer's served dir. - `dangling` — nothing in the index, singles, or aliases owns the id, so no provisioning step exists and it can never resolve on a clean clone.
 - `AssetProvider` (type): type AssetProvider = | "quaternius" | "kaykit" | "polypizza" | "itch" | "ambientcg" | "gameicons" | "custom" — ⚠ undocumented
 - `AssetReference` (interface): interface AssetReference — A logical asset id referenced by some consumer (a game, scene, or config), for validation.
-- `AssetSource` (interface): interface AssetSource { id: string; kind?: AssetSourceKind; provider: AssetProvider; title: string; license: string; author: string; categories: readonly string[]; download: AssetDownload; homepage?: string; materialMaps?: readonly MaterialMapRole[]; mirror?: st… — ⚠ undocumented · used by `ambientcgSources`: Every ambientCG material source, generated per family (`ambientcg-grass001` … ).
+- `AssetSource` (interface): interface AssetSource { id: string; kind?: AssetSourceKind; provider: AssetProvider; title: string; license: string; author: string; categories: readonly string[]; download: AssetDownload; homepage?: string; materialMaps?: readonly MaterialMapRole[]; mirror?: st… — ⚠ undocumented · used by `ambientcgSources`: Every ambientCG material source: the generated family sweep plus the pinned variants the shared library needs.
 - `AssetSourceKind` (type): type AssetSourceKind = "model" | "material" | "sprite" — What a source's archive contains: GLB models (default), one PBR material's texture maps, or a pack of individual 2D sprite/icon files (SVG/PNG).
 - `AssetSpace` (interface): interface AssetSpace — Catalog-level asset-space metadata: how a model is authored relative to the engine, owned by the catalog entry rather than re-derived per game. Every field is optional so an unmeasured asset stays valid; {@link resolveFacingRotationY}/{@link assetUnitScale}/{@link resolveAnchorOffset} supply the documented defaults.
 - `BuildCatalogOptions` (interface): interface BuildCatalogOptions { basePath?: string; sources?: readonly string[]; includeAliases?: boolean; includeSingles?: boolean; extras?: readonly CatalogExtra[] } — ⚠ undocumented · used by `buildCatalog`: Builds a game's asset catalog from the generated CC0 pack index plus singles, extras, and aliases.
@@ -28,10 +28,15 @@
 - `GlbTextureMetrics` (interface): interface GlbTextureMetrics — Dimensions and encoded bytes for one glTF image, including images referenced by texture extensions.
 - `ImportSpecValidation` (type): type ImportSpecValidation = { ok: true; entry: AssetImportSpec } | { ok: false; reason: string } — Result of validating an import description; a successful entry is an independent JSON snapshot.
 - `IndexEntry` (interface): interface IndexEntry — A source-owned model or sprite id, with optional offline model measurements.
-- `MATERIAL_MAP_FILES` (const): const MATERIAL_MAP_FILES: { readonly color: "color.jpg"; readonly normal: "normal.jpg"; readonly roughness: "roughness.jpg"; readonly ao: "ao.jpg"; readonly displacement: "displacement.jpg"; readonly ktx2: "material.ktx2"; } — Normalized filenames a pulled material directory contains, keyed by map role.
+- `LibraryGroup` (type): type LibraryGroup = | "asphalt" | "concrete" | "stucco" | "brick" | "tile" | "metal" | "wood" | "foliage" | "ground" | "fabric" | "stone" | "glass" | "water" — Browse groups the library browser and `assets list` share.
+- `LibraryMaterial` (interface): interface LibraryMaterial — One named material a game or the editor selects by name. `source` names the ambientCG catalog entry whose pulled maps it uses; glass and water carry response parameters only, because ambientCG publishes no scanned glass or water material and both are shader surfaces.
+- `LibraryMaterialOptions` (interface): interface LibraryMaterialOptions — Options for {@link libraryMaterialMaps} and {@link libraryMaterialAsset}.
+- `LibrarySurface` (type): type LibrarySurface = "opaque" | "foliage" | "glass" | "water" — How a library surface renders: an ordinary PBR surface, cut-out foliage, glass or water.
+- `MATERIAL_LIBRARY` (const): const MATERIAL_LIBRARY: readonly LibraryMaterial[] — The shared library: 40+ ambientCG PBR materials plus the glass and water surfaces that need a shader rather than a scan. `satisfies` keeps every entry complete, so a missing tile size or response is a type error instead of a silently grey surface.
+- `MATERIAL_MAP_FILES` (const): const MATERIAL_MAP_FILES: { readonly color: "color.jpg"; readonly normal: "normal.jpg"; readonly roughness: "roughness.jpg"; readonly ao: "ao.jpg"; readonly opacity: "opacity.jpg"; readonly displacement: "displacement.jpg"; readonly ktx2: "material.ktx2"; } — Normalized filenames a pulled material directory contains, keyed by map role. Kept in its own module so catalogs and editors can name a pulled file without loading the archive reader.
 - `MaterialCatalog` (interface): interface MaterialCatalog — Resolves material ids and `material/…` aliases to `MaterialRef`s.
 - `MaterialMapRole` (type): type MaterialMapRole = keyof typeof MATERIAL_MAP_FILES — One PBR map's role within a material, including an optional compressed KTX2 asset.
-- `MaterialMaps` (interface): interface MaterialMaps — URLs of one material's PBR maps; `ao`/`roughness`/`ktx2` appear only when declared by its source.
+- `MaterialMaps` (interface): interface MaterialMaps — URLs of one material's PBR maps; `ao`/`roughness`/`opacity`/`ktx2` appear only when declared by its source.
 - `MaterialRef` (interface): interface MaterialRef — A resolved material: identity, attribution, and its normalized map URLs.
 - `ModelDims` (interface): interface ModelDims — Measured horizontal footprint, footprint center, and lowest Y of a model in model space.
 - `ModelSnippetOptions` (interface): interface ModelSnippetOptions { basePath?: string; seam?: "objectModels" | "entityModels" } — ⚠ undocumented · used by `modelWiringSnippet`: Copy-paste wiring for a pulled GLB id: resolve through the catalog, drop into a model seam.
@@ -54,7 +59,7 @@
 - `ValidateAssetReferencesResult` (interface): interface ValidateAssetReferencesResult — The aggregate result of validating a set of references against the provisioning contract.
 - `VerifyResult` (interface): interface VerifyResult { ok: boolean; errors: string[] } — ⚠ undocumented
 - `aliases` (const): const aliases: readonly AssetAlias[] — Semantic keys → live catalog ids. Prefer these in games so re-homes only touch this table. Never point at kenney-*. Curated starter theme ids (`asset:person_casual`, `nature_tree`, …) come from {@link starterAliases}.
-- `ambientcgSources` (const): const ambientcgSources: readonly AssetSource[] — Every ambientCG material source, generated per family (`ambientcg-grass001` … ).
+- `ambientcgSources` (const): const ambientcgSources: readonly AssetSource[] — Every ambientCG material source: the generated family sweep plus the pinned variants the shared library needs. A pinned id the family sweep already covers stays with the sweep, so catalog ids never appear twice.
 - `buildCatalog` (function): function buildCatalog(options: BuildCatalogOptions = {}): AssetCatalog — Builds a game's asset catalog from the generated CC0 pack index plus singles, extras, and aliases. Registration order is packs → singles → {@link BuildCatalogOptions.extras | extras} → aliases: packs and singles come first, extras override them last-writer-wins, and aliases resolve last so they can target an extra. See {@link BuildCatalogOptions} for filtering and opt-outs.
 - `buildMaterialCatalog` (function): function buildMaterialCatalog(options: BuildMaterialCatalogOptions = {}): MaterialCatalog — A resolvable catalog over every `kind: "material"` source. Ids are source ids (`ambientcg-grass001`) plus the `material/…` aliases; every resolve returns the normalized map URLs under `basePath`, matching what `assets pull` writes into `<dir>/materials/<id>/`.
 - `buildSpriteCatalog` (function): function buildSpriteCatalog(options: BuildSpriteCatalogOptions = {}): AssetCatalog — Resolves individual pulled sprite/icon ids (e.g. `gameicons-icons/sword`) to `{ url }`.
@@ -65,7 +70,9 @@
 - `entryForSpriteFile` (function): function entryForSpriteFile(source: AssetSource, file: string): IndexEntry — Builds one sprite/icon `IndexEntry` — same shape as a model entry, minus `dims`.
 - `entryUrl` (function): function entryUrl(basePath: string, entry: IndexEntry): string — ⚠ undocumented
 - `extractMaterialMaps` (function): function extractMaterialMaps(archive: Uint8Array): ExtractedMaterialMap[] — Pulls the recognized PBR maps out of a material archive (ambientCG's flat `<Asset>_<Res>_<Map>.jpg` layout) and normalizes their names so resolved URLs never depend on the provider's naming or the pulled resolution.
+- `filterLibraryMaterials` (function): function filterLibraryMaterials(query: string, group?: LibraryGroup): readonly LibraryMaterial[] — Filter the library for a picker: case-insensitive match on name, title, group or source. Empty query returns everything, so a browser can render the full library first.
 - `findAssets` (function): function findAssets(query: string, options: FindOptions = {}): AssetMatch[] — The ranked matches for a query — models, packs, HUD components, and icons in one list.
+- `findLibraryMaterial` (function): function findLibraryMaterial(name: string): LibraryMaterial | null — Resolve a library name; unknown names return `null` so a caller can report them by name.
 - `gameiconsSources` (const): const gameiconsSources: readonly AssetSource[] — game-icons.net (https://game-icons.net) — ~4,000 CC BY 3.0 SVG item/ability icons from 40+ contributing artists, mirrored as one GitHub repo (github.com/game-icons/icons). `HEAD` resolves the default branch without pinning a name or commit, so this always mirrors the current set; the per-artist `license.txt` files inside the repo carry the individual credits behind this pack's single collective `author` field.
 - `generatedBySource` (const): const generatedBySource: Record<string, IndexEntry[]> — ⚠ undocumented
 - `generatedIndex` (const): const generatedIndex: IndexEntry[] — ⚠ undocumented
@@ -76,6 +83,10 @@
 - `isScrapeDownload` (function): function isScrapeDownload(download: AssetDownload): download is ScrapeDownload — ⚠ undocumented
 - `kaykitSources` (const): const kaykitSources: readonly AssetSource[] — ⚠ undocumented
 - `keyFromSpriteFile` (function): function keyFromSpriteFile(file: string): string — Strips the `.svg`/`.png` extension off a pulled sprite/icon filename to get its id suffix.
+- `libraryMaterialAsset` (function): function libraryMaterialAsset(name: string, options: LibraryMaterialOptions = {}): MaterialAsset — Build the editable, serializable material asset for a library name: maps, response and CC0 attribution in one value the editor can save into `editor.scene.json` and the shell renders. `projection` records whether those maps should sample authored UVs or world-space triplanar.
+- `libraryMaterialMaps` (function): function libraryMaterialMaps(entry: LibraryMaterial, options: LibraryMaterialOptions = {}): Partial<Record<MaterialTextureRole, MaterialTextureMetadata>> — Serialized runtime map URLs for a library material, matching what `assets pull <source>` writes into `<basePath>/<source-id>/`. Roles the archive does not ship are omitted, never invented.
+- `libraryMaterialNames` (function): function libraryMaterialNames(): readonly string[] — Every library name, in authored order.
+- `libraryMaterialRoles` (function): function libraryMaterialRoles(entry: LibraryMaterial): readonly LibraryMapRole[] — Map roles the pinned archive of `entry` actually ships, from its catalog source declaration.
 - `materialAliases` (const): const materialAliases: readonly AssetAlias[] — Semantic keys onto the ambientCG catalog, mirroring the model alias layer.
 - `materialSources` (const): const materialSources: readonly AssetSource[] — Every `kind: "material"` source — one CC0 PBR material each, resolvable via `buildMaterialCatalog`.
 - `materialWiringSnippet` (function): function materialWiringSnippet(id: string, basePath = "/materials"): string — Copy-paste wiring for a pulled PBR material: resolve the map URLs through the material catalog, then apply them onto terrain or a model.
@@ -121,6 +132,21 @@
 
 - `BuildSpriteCatalogOptions` (interface): interface BuildSpriteCatalogOptions — Options for `buildSpriteCatalog`.
 - `buildSpriteCatalog` (function): function buildSpriteCatalog(options: BuildSpriteCatalogOptions = {}): AssetCatalog — Resolves individual pulled sprite/icon ids (e.g. `gameicons-icons/sword`) to `{ url }`.
+
+## @jgengine/assets/catalogs/materialLibrary
+
+- `LibraryGroup` (type): type LibraryGroup = | "asphalt" | "concrete" | "stucco" | "brick" | "tile" | "metal" | "wood" | "foliage" | "ground" | "fabric" | "stone" | "glass" | "water" — Browse groups the library browser and `assets list` share.
+- `LibraryMapRole` (type): type LibraryMapRole = "color" | "normal" | "roughness" | "ao" | "opacity" — Map roles a library scan can carry: the PBR set plus cut-out coverage.
+- `LibraryMaterial` (interface): interface LibraryMaterial — One named material a game or the editor selects by name. `source` names the ambientCG catalog entry whose pulled maps it uses; glass and water carry response parameters only, because ambientCG publishes no scanned glass or water material and both are shader surfaces.
+- `LibraryMaterialOptions` (interface): interface LibraryMaterialOptions — Options for {@link libraryMaterialMaps} and {@link libraryMaterialAsset}.
+- `LibrarySurface` (type): type LibrarySurface = "opaque" | "foliage" | "glass" | "water" — How a library surface renders: an ordinary PBR surface, cut-out foliage, glass or water.
+- `MATERIAL_LIBRARY` (const): const MATERIAL_LIBRARY: readonly LibraryMaterial[] — The shared library: 40+ ambientCG PBR materials plus the glass and water surfaces that need a shader rather than a scan. `satisfies` keeps every entry complete, so a missing tile size or response is a type error instead of a silently grey surface.
+- `filterLibraryMaterials` (function): function filterLibraryMaterials(query: string, group?: LibraryGroup): readonly LibraryMaterial[] — Filter the library for a picker: case-insensitive match on name, title, group or source. Empty query returns everything, so a browser can render the full library first.
+- `findLibraryMaterial` (function): function findLibraryMaterial(name: string): LibraryMaterial | null — Resolve a library name; unknown names return `null` so a caller can report them by name.
+- `libraryMaterialAsset` (function): function libraryMaterialAsset(name: string, options: LibraryMaterialOptions = {}): MaterialAsset — Build the editable, serializable material asset for a library name: maps, response and CC0 attribution in one value the editor can save into `editor.scene.json` and the shell renders. `projection` records whether those maps should sample authored UVs or world-space triplanar.
+- `libraryMaterialMaps` (function): function libraryMaterialMaps(entry: LibraryMaterial, options: LibraryMaterialOptions = {}): Partial<Record<MaterialTextureRole, MaterialTextureMetadata>> — Serialized runtime map URLs for a library material, matching what `assets pull <source>` writes into `<basePath>/<source-id>/`. Roles the archive does not ship are omitted, never invented.
+- `libraryMaterialNames` (function): function libraryMaterialNames(): readonly string[] — Every library name, in authored order.
+- `libraryMaterialRoles` (function): function libraryMaterialRoles(entry: LibraryMaterial): readonly LibraryMapRole[] — Map roles the pinned archive of `entry` actually ships, from its catalog source declaration.
 
 ## @jgengine/assets/catalogs/starter
 
@@ -225,7 +251,7 @@
 - `AssetAlias` (interface): interface AssetAlias { key: string; target: string } — ⚠ undocumented · used by `aliases` (@jgengine/assets): Semantic keys → live catalog ids.
 - `AssetDownload` (type): type AssetDownload = PinnedDownload | ScrapeDownload — ⚠ undocumented
 - `AssetProvider` (type): type AssetProvider = | "quaternius" | "kaykit" | "polypizza" | "itch" | "ambientcg" | "gameicons" | "custom" — ⚠ undocumented
-- `AssetSource` (interface): interface AssetSource { id: string; kind?: AssetSourceKind; provider: AssetProvider; title: string; license: string; author: string; categories: readonly string[]; download: AssetDownload; homepage?: string; materialMaps?: readonly MaterialMapRole[]; mirror?: st… — ⚠ undocumented · used by `ambientcgSources` (@jgengine/assets): Every ambientCG material source, generated per family (`ambientcg-grass001` … ).
+- `AssetSource` (interface): interface AssetSource { id: string; kind?: AssetSourceKind; provider: AssetProvider; title: string; license: string; author: string; categories: readonly string[]; download: AssetDownload; homepage?: string; materialMaps?: readonly MaterialMapRole[]; mirror?: st… — ⚠ undocumented · used by `ambientcgSources` (@jgengine/assets): Every ambientCG material source: the generated family sweep plus the pinned variants the shared library needs.
 - `AssetSourceKind` (type): type AssetSourceKind = "model" | "material" | "sprite" — What a source's archive contains: GLB models (default), one PBR material's texture maps, or a pack of individual 2D sprite/icon files (SVG/PNG).
 - `AssetSpace` (interface): interface AssetSpace — Catalog-level asset-space metadata: how a model is authored relative to the engine, owned by the catalog entry rather than re-derived per game. Every field is optional so an unmeasured asset stays valid; {@link resolveFacingRotationY}/{@link assetUnitScale}/{@link resolveAnchorOffset} supply the documented defaults.
 - `CollisionMeshData` (interface): interface CollisionMeshData — Compact, serializable triangle collision mesh measured at asset reindex — the renderer-free source of mesh-accurate hitboxes. Positions are welded onto a 16-bit grid spanning `min`..`max` (model space) and stored base64-encoded, so an opted-in catalog asset ships its collision triangles inside the generated index without the runtime ever touching the rendered scene graph.
@@ -236,14 +262,19 @@
 - `SingleAsset` (interface): interface SingleAsset { id: string; url: string; license: string; author: string; categories: readonly string[] } — ⚠ undocumented
 - `isScrapeDownload` (function): function isScrapeDownload(download: AssetDownload): download is ScrapeDownload — ⚠ undocumented
 
+## @jgengine/assets/materialMapFiles
+
+- `MATERIAL_MAP_FILES` (const): const MATERIAL_MAP_FILES: { readonly color: "color.jpg"; readonly normal: "normal.jpg"; readonly roughness: "roughness.jpg"; readonly ao: "ao.jpg"; readonly opacity: "opacity.jpg"; readonly displacement: "displacement.jpg"; readonly ktx2: "material.ktx2"; } — Normalized filenames a pulled material directory contains, keyed by map role. Kept in its own module so catalogs and editors can name a pulled file without loading the archive reader.
+- `MaterialMapRole` (type): type MaterialMapRole = keyof typeof MATERIAL_MAP_FILES — One PBR map's role within a material, including an optional compressed KTX2 asset.
+
 ## @jgengine/assets/materials
 
 - `BuildMaterialCatalogOptions` (interface): interface BuildMaterialCatalogOptions — Options for `buildMaterialCatalog`.
 - `ExtractedMaterialMap` (interface): interface ExtractedMaterialMap — One normalized map pulled out of a material archive by `extractMaterialMaps`.
-- `MATERIAL_MAP_FILES` (const): const MATERIAL_MAP_FILES: { readonly color: "color.jpg"; readonly normal: "normal.jpg"; readonly roughness: "roughness.jpg"; readonly ao: "ao.jpg"; readonly displacement: "displacement.jpg"; readonly ktx2: "material.ktx2"; } — Normalized filenames a pulled material directory contains, keyed by map role.
+- `MATERIAL_MAP_FILES` (const): const MATERIAL_MAP_FILES: { readonly color: "color.jpg"; readonly normal: "normal.jpg"; readonly roughness: "roughness.jpg"; readonly ao: "ao.jpg"; readonly opacity: "opacity.jpg"; readonly displacement: "displacement.jpg"; readonly ktx2: "material.ktx2"; } — Normalized filenames a pulled material directory contains, keyed by map role. Kept in its own module so catalogs and editors can name a pulled file without loading the archive reader.
 - `MaterialCatalog` (interface): interface MaterialCatalog — Resolves material ids and `material/…` aliases to `MaterialRef`s.
 - `MaterialMapRole` (type): type MaterialMapRole = keyof typeof MATERIAL_MAP_FILES — One PBR map's role within a material, including an optional compressed KTX2 asset.
-- `MaterialMaps` (interface): interface MaterialMaps — URLs of one material's PBR maps; `ao`/`roughness`/`ktx2` appear only when declared by its source.
+- `MaterialMaps` (interface): interface MaterialMaps — URLs of one material's PBR maps; `ao`/`roughness`/`opacity`/`ktx2` appear only when declared by its source.
 - `MaterialRef` (interface): interface MaterialRef — A resolved material: identity, attribution, and its normalized map URLs.
 - `buildMaterialCatalog` (function): function buildMaterialCatalog(options: BuildMaterialCatalogOptions = {}): MaterialCatalog — A resolvable catalog over every `kind: "material"` source. Ids are source ids (`ambientcg-grass001`) plus the `material/…` aliases; every resolve returns the normalized map URLs under `basePath`, matching what `assets pull` writes into `<dir>/materials/<id>/`.
 - `extractMaterialMaps` (function): function extractMaterialMaps(archive: Uint8Array): ExtractedMaterialMap[] — Pulls the recognized PBR maps out of a material archive (ambientCG's flat `<Asset>_<Res>_<Map>.jpg` layout) and normalizes their names so resolved URLs never depend on the provider's naming or the pulled resolution.
@@ -292,7 +323,7 @@
 
 ## @jgengine/assets/sources
 
-- `ambientcgSources` (const): const ambientcgSources: readonly AssetSource[] — Every ambientCG material source, generated per family (`ambientcg-grass001` … ).
+- `ambientcgSources` (const): const ambientcgSources: readonly AssetSource[] — Every ambientCG material source: the generated family sweep plus the pinned variants the shared library needs. A pinned id the family sweep already covers stays with the sweep, so catalog ids never appear twice.
 - `gameiconsSources` (const): const gameiconsSources: readonly AssetSource[] — game-icons.net (https://game-icons.net) — ~4,000 CC BY 3.0 SVG item/ability icons from 40+ contributing artists, mirrored as one GitHub repo (github.com/game-icons/icons). `HEAD` resolves the default branch without pinning a name or commit, so this always mirrors the current set; the per-artist `license.txt` files inside the repo carry the individual credits behind this pack's single collective `author` field.
 - `kaykitSources` (const): const kaykitSources: readonly AssetSource[] — ⚠ undocumented
 - `materialSources` (const): const materialSources: readonly AssetSource[] — Every `kind: "material"` source — one CC0 PBR material each, resolvable via `buildMaterialCatalog`.
@@ -304,8 +335,9 @@
 
 ## @jgengine/assets/sources/ambientcg
 
+- `AMBIENTCG_PINNED_ASSET_IDS` (const): const AMBIENTCG_PINNED_ASSET_IDS: ReadonlyMap<string, string> — Upstream asset id pinned to a material source id, so the reverse lookup never guesses a variant.
 - `ambientcgAssetId` (function): function ambientcgAssetId(source: AssetSource): string — Upstream asset id (`Grass001`) for a material source id (`ambientcg-grass001`).
-- `ambientcgSources` (const): const ambientcgSources: readonly AssetSource[] — Every ambientCG material source, generated per family (`ambientcg-grass001` … ).
+- `ambientcgSources` (const): const ambientcgSources: readonly AssetSource[] — Every ambientCG material source: the generated family sweep plus the pinned variants the shared library needs. A pinned id the family sweep already covers stays with the sweep, so catalog ids never appear twice.
 
 ## @jgengine/assets/sources/gameicons
 

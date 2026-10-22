@@ -1,26 +1,17 @@
 import { unzipSync } from "fflate";
 
 import type { AssetAlias, AssetSource } from "./manifest";
+import { MATERIAL_MAP_FILES, type MaterialMapRole } from "./materialMapFiles";
 import { materialSources, sourceById } from "./sources";
 
-/** Normalized filenames a pulled material directory contains, keyed by map role. */
-export const MATERIAL_MAP_FILES = {
-  color: "color.jpg",
-  normal: "normal.jpg",
-  roughness: "roughness.jpg",
-  ao: "ao.jpg",
-  displacement: "displacement.jpg",
-  ktx2: "material.ktx2",
-} as const;
-
-/** One PBR map's role within a material, including an optional compressed KTX2 asset. */
-export type MaterialMapRole = keyof typeof MATERIAL_MAP_FILES;
+export { MATERIAL_MAP_FILES, type MaterialMapRole } from "./materialMapFiles";
 
 const MAP_SUFFIXES: readonly { role: MaterialMapRole; pattern: RegExp }[] = [
   { role: "color", pattern: /_Color\.(jpe?g|png)$/i },
   { role: "normal", pattern: /_NormalGL\.(jpe?g|png)$/i },
   { role: "roughness", pattern: /_Roughness\.(jpe?g|png)$/i },
   { role: "ao", pattern: /_AmbientOcclusion\.(jpe?g|png)$/i },
+  { role: "opacity", pattern: /_Opacity\.(jpe?g|png)$/i },
   { role: "displacement", pattern: /_Displacement\.(jpe?g|png)$/i },
 ];
 
@@ -50,12 +41,14 @@ export function extractMaterialMaps(archive: Uint8Array): ExtractedMaterialMap[]
   return Array.from(byRole.values()).sort((a, b) => a.file.localeCompare(b.file));
 }
 
-/** URLs of one material's PBR maps; `ao`/`roughness`/`ktx2` appear only when declared by its source. */
+/** URLs of one material's PBR maps; `ao`/`roughness`/`opacity`/`ktx2` appear only when declared by its source. */
 export interface MaterialMaps {
   color: string;
   normal: string;
   roughness?: string;
   ao?: string;
+  /** Cut-out coverage map, present on foliage and decal-style scans. */
+  opacity?: string;
   displacement: string;
   ktx2?: string;
 }
@@ -118,6 +111,7 @@ function refFor(source: AssetSource, basePath: string): MaterialRef {
       normal: `${base}/${MATERIAL_MAP_FILES.normal}`,
       ...(source.materialMaps?.includes("roughness") ? { roughness: `${base}/${MATERIAL_MAP_FILES.roughness}` } : {}),
       ...(source.materialMaps?.includes("ao") ? { ao: `${base}/${MATERIAL_MAP_FILES.ao}` } : {}),
+      ...(source.materialMaps?.includes("opacity") ? { opacity: `${base}/${MATERIAL_MAP_FILES.opacity}` } : {}),
       displacement: `${base}/${MATERIAL_MAP_FILES.displacement}`,
       ...(source.materialMaps?.includes("ktx2") ? { ktx2: `${base}/${MATERIAL_MAP_FILES.ktx2}` } : {}),
     },
