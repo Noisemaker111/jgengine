@@ -2233,6 +2233,16 @@
 
 - `DebugSummary` (interface): interface DebugSummary — Compact `debug_summary` payload: the numbers an agent needs to judge a run, about 1 KB.
 
+## @jgengine/shell/devtools/frameSampler
+
+- `FrameReportInputs` (interface): interface FrameReportInputs — Everything the report needs, gathered by whichever producer is asking.
+- `FrameTelemetry` (interface): interface FrameTelemetry — The installed sampler: ask it for a report, reset its window, or tear it down.
+- `FrameTelemetrySources` (interface): interface FrameTelemetrySources — What the shell hands the sampler: live getters, called only when a report is built.
+- `GlCounterTotals` (interface): interface GlCounterTotals — GPU-object creation counts, the fields the budget gate compares.
+- `REPORT_PUSH_MS` (const): const REPORT_PUSH_MS: 1000 — Cadence of the push to the dev server, in milliseconds.
+- `TELEMETRY_FLAG` (const): const TELEMETRY_FLAG: "telemetry" — In-page frame telemetry: the game reports on itself instead of needing a second process to attach a profiler. Frame timings come from the devtools frame ring, renderer counts from the live renderer, GPU-object creation from wrapped GL calls, and per-system numbers from `devtools.probes` — all read on demand, so nothing here runs on the hot path.
+- `TELEMETRY_WARMUP_MS` (const): const TELEMETRY_WARMUP_MS: 5000 — How long after the sampler starts the GL counters get their post-warmup baseline.
+
 ## @jgengine/shell/devtools/panelAtoms
 
 - `SectionLabel` (function): function SectionLabel({ children }: { children: string }): React.JSX.Element — ⚠ undocumented

@@ -12,12 +12,15 @@ import {
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { join } from "node:path";
 
 import { retrySettleMs, shouldRetryCapture } from "./capture-retry";
 import { clearViteCaches, headRevision, revisionDrifted, shortRevision } from "./captureRevision";
+import { checkoutIdentity, isUp, markerPath, readMarker, writeMarker } from "./devServerMarker";
 import { computeShotMetrics, deadViewport } from "./shot-metrics";
 import { decodePng } from "./png-reader";
+
+export { checkoutIdentity, isUp };
 
 /**
  * Default port when no worktree key is needed — kept for docs/bench that still
@@ -226,30 +229,6 @@ export function normalizeLoopbackUrl(raw: string): string {
   return raw;
 }
 
-export async function isUp(url: string): Promise<boolean> {
-  try {
-    const response = await fetch(url, { signal: AbortSignal.timeout(1_000) });
-    return response.ok;
-  } catch {
-    return false;
-  }
-}
-
-/** Stable identity for this checkout (worktree path or monorepo root). */
-export function checkoutIdentity(cwd = process.cwd()): string {
-  try {
-    const top = spawnSync("git", ["rev-parse", "--show-toplevel"], {
-      cwd,
-      encoding: "utf8",
-      windowsHide: true,
-    });
-    if (top.status === 0 && top.stdout.trim().length > 0) return top.stdout.trim();
-  } catch {
-    /* fall through */
-  }
-  return resolve(cwd);
-}
-
 function hashPortOffset(identity: string, span: number): number {
   const digest = createHash("sha256").update(identity).digest();
   return digest.readUInt32BE(0) % span;
@@ -298,32 +277,6 @@ export function resolveWarmChromePort(cwd = process.cwd()): number {
     if (Number.isFinite(n) && n > 0) return Math.floor(n);
   }
   return 9223 + hashPortOffset(checkoutIdentity(cwd), 100);
-}
-
-interface DevServerMarker {
-  identity: string;
-  port: number;
-  pid?: number;
-  /** Commit this server booted from; absent for markers written before revision keying. */
-  head?: string;
-}
-
-function markerPath(port: number): string {
-  return join(tmpdir(), `jgengine-dev-${port}.json`);
-}
-
-function readMarker(port: number): DevServerMarker | null {
-  try {
-    const raw = readFileSync(markerPath(port), "utf8");
-    return JSON.parse(raw) as DevServerMarker;
-  } catch {
-    return null;
-  }
-}
-
-function writeMarker(port: number, identity: string, pid?: number, head?: string): void {
-  const body: DevServerMarker = { identity, port, pid, head };
-  writeFileSync(markerPath(port), `${JSON.stringify(body)}\n`);
 }
 
 /** True when something is listening *and* its marker matches this checkout. */

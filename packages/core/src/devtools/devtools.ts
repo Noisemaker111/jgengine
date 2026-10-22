@@ -45,6 +45,7 @@ export type {
   DevtoolsControl,
   DevtoolsLogEntry,
   DevtoolsLogLevel,
+  DevtoolsLogs,
   DevtoolsSnapshot,
   DiscoveredEntry,
   FrameRecordSample,
@@ -54,12 +55,28 @@ export type {
   OverrideApplyResult,
   PhaseStats,
   RenderSample,
+  SystemProbe,
+  SystemProbeReading,
   Tunable,
   TunableAccessor,
 } from "./types";
 
-export { LONG_FRAME_MS } from "./frame";
+export { LONG_FRAME_MS } from "./report";
 export { formatLogMessage } from "./logs";
+export type {
+  FrameWindow,
+  GlReport,
+  PerfQuality,
+  PerfReport,
+  ProfileEntry,
+  ProfileReport,
+  RenderReport,
+  ReportLogLine,
+  ReportLogs,
+  ReportTelemetry,
+  SceneNodeSource,
+} from "./report";
+export type { LogBusCounts, LogBusEntry, LogBusSnapshot } from "./logBus";
 
 export function createDevtools(): Devtools {
   const signal = createChangeSignal();
@@ -100,6 +117,7 @@ export function createDevtools(): Devtools {
         longFrames: [...frame.frame.longFrames()],
         logs: [...logs.logs.list()],
         probes: discover.readProbes(),
+        systems: discover.readSystems(),
         controls: [...controls.controlRecords.values()].map((record) => ({
           name: record.name,
           kind: record.kind,

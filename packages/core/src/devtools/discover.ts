@@ -15,7 +15,7 @@ import {
 } from "./tunableSchema";
 import { formatLogArg } from "./logs";
 import type { ControlRecord } from "./controls";
-import type { Devtools, DiscoveredEntry, Tunable, TunableAccessor } from "./types";
+import type { Devtools, DiscoveredEntry, SystemProbe, SystemProbeReading, Tunable, TunableAccessor } from "./types";
 
 /** Internal record for an auto-discovered field: identity, kind, initial value, source object, and get/set accessors. */
 export interface DiscoveredRecord {
@@ -116,6 +116,7 @@ export interface DiscoverModule {
   discover: Devtools["discover"];
   probes: Devtools["probes"];
   readProbes: () => Record<string, unknown>;
+  readSystems: () => Record<string, SystemProbeReading>;
   enableDiscovered: (id: string) => void;
   discoveredRecords: Map<string, DiscoveredRecord>;
   getDiscoverySkips: () => readonly DiscoverySkip[];
@@ -131,6 +132,7 @@ export const createDiscoverModule = (deps: {
 
   const discoveredRecords = new Map<string, DiscoveredRecord>();
   const probeReaders = new Map<string, () => unknown>();
+  const systemProbes = new Map<string, SystemProbe>();
   let boundProps = new WeakMap<object, Set<string>>();
   let discoverySkips: DiscoverySkip[] = [];
 
@@ -144,6 +146,30 @@ export const createDiscoverModule = (deps: {
       }
     }
     return values;
+  };
+
+  const finiteOnly = (values: Record<string, number> | undefined): Record<string, number> => {
+    const out: Record<string, number> = {};
+    for (const [key, value] of Object.entries(values ?? {})) {
+      if (typeof value === "number" && Number.isFinite(value)) out[key] = value;
+    }
+    return out;
+  };
+
+  const readSystems = (): Record<string, SystemProbeReading> => {
+    const out: Record<string, SystemProbeReading> = {};
+    for (const [id, probe] of systemProbes) {
+      try {
+        out[id] = {
+          counters: finiteOnly(probe.counters?.()),
+          timers: finiteOnly(probe.timers?.()),
+          state: probe.state?.() ?? "",
+        };
+      } catch (error) {
+        out[id] = { counters: {}, timers: {}, state: `probe failed: ${formatLogArg(error)}` };
+      }
+    }
+    return out;
   };
 
   const bindDiscovered = (
@@ -273,6 +299,7 @@ export const createDiscoverModule = (deps: {
             controlRecords.delete(record.id);
           }
         }
+        // A clear drops discovered bindings; system probes belong to their systems, not to discovery.
         discoveredRecords.clear();
         discoverySkips = [];
         boundProps = new WeakMap();
@@ -289,8 +316,19 @@ export const createDiscoverModule = (deps: {
         };
       },
       read: readProbes,
+      registerSystem(id, probe) {
+        systemProbes.set(id, probe);
+        signal.notify();
+        return () => {
+          if (systemProbes.get(id) !== probe) return;
+          systemProbes.delete(id);
+          signal.notify();
+        };
+      },
+      systems: readSystems,
     },
     readProbes,
+    readSystems,
     enableDiscovered,
     discoveredRecords,
     getDiscoverySkips: () => discoverySkips,

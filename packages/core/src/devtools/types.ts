@@ -115,11 +115,51 @@ export interface LatencyStats {
 /** Severity level for a captured devtools log entry. */
 export type DevtoolsLogLevel = "log" | "info" | "warn" | "error";
 
-/** A single captured log line with timestamp, level, and formatted message. */
+/** A single captured log line with timestamp, level, owning system tag, and formatted message. */
 export interface DevtoolsLogEntry {
   at: number;
   level: DevtoolsLogLevel;
+  /** System that wrote the line, e.g. `needs`, `nav`, `render/culling`, `console`, `runtime`. */
+  system: string;
   message: string;
+}
+
+/** What one system reports about itself: totals it keeps anyway, named timings, and one state line. */
+export interface SystemProbe {
+  /** Monotonic or gauge numbers a system already tracks (counts, queue depths, cache hits). */
+  counters?(): Record<string, number>;
+  /** Named timings in milliseconds the system accumulated (spatial query, path solve, tick). */
+  timers?(): Record<string, number>;
+  /** One short line a human reads in the report, e.g. `visible 120/800 · culled 680`. */
+  state?(): string;
+}
+
+/** One system's probe read out on demand; missing sections stay empty rather than absent. */
+export interface SystemProbeReading {
+  counters: Record<string, number>;
+  timers: Record<string, number>;
+  state: string;
+}
+
+/** Bounded log ring with per-system tags, a warning/error ring, and lifetime counts. */
+export interface DevtoolsLogs {
+  /** Tagged write for a system's own lines; allocation-free apart from the message itself. */
+  write(level: DevtoolsLogLevel, system: string, message: string): void;
+  /** Untagged convenience write; `system` defaults to `console`. */
+  push(level: DevtoolsLogLevel, message: string, system?: string): void;
+  captureConsole(): void;
+  list(): readonly DevtoolsLogEntry[];
+  severe(): readonly DevtoolsLogEntry[];
+  counts(): import("./logBus").LogBusCounts;
+  dropped(): number;
+  snapshot(): import("./logBus").LogBusSnapshot;
+  clear(): void;
+}
+
+/** Latency samples recorded by instrumented transport methods. */
+export interface DevtoolsLatency {
+  record(ms: number): void;
+  stats(): LatencyStats | null;
 }
 
 /** A control auto-discovered by scanning an object/table, with its binding metadata and current reader. */
@@ -149,6 +189,8 @@ export interface DevtoolsSnapshot {
   longFrames: readonly LongFrameEvent[];
   logs: readonly DevtoolsLogEntry[];
   probes: Record<string, unknown>;
+  /** Per-system probe readings (`counters`/`timers`/`state`), keyed by system id. */
+  systems: Record<string, SystemProbeReading>;
   controls: readonly { name: string; kind: DevtoolsControlKind; value: unknown; initial: unknown }[];
   discovered: readonly { id: string; kind: DevtoolsControlKind; value: unknown; enabled: boolean }[];
   skipped: readonly DiscoverySkip[];
@@ -182,16 +224,8 @@ export interface Devtools {
     record(sample: RenderSample): void;
     latest(): RenderSample | null;
   };
-  logs: {
-    push(level: DevtoolsLogLevel, message: string): void;
-    captureConsole(): void;
-    list(): readonly DevtoolsLogEntry[];
-    clear(): void;
-  };
-  latency: {
-    record(ms: number): void;
-    stats(): LatencyStats | null;
-  };
+  logs: DevtoolsLogs;
+  latency: DevtoolsLatency;
   controls: {
     register<T>(name: string, initial: T, options?: TunableOptions<T>): Tunable<T>;
     list(): readonly DevtoolsControl[];
@@ -216,6 +250,13 @@ export interface Devtools {
   probes: {
     register(name: string, read: () => unknown): () => void;
     read(): Record<string, unknown>;
+    /**
+     * Register a system's own counters, timers and state line. Returns its dispose; registering the
+     * same id again replaces the earlier one (the last live instance wins).
+     */
+    registerSystem(id: string, probe: SystemProbe): () => void;
+    /** Read every registered system probe. Allocates; call on demand, never per frame. */
+    systems(): Record<string, SystemProbeReading>;
   };
   signal: ChangeSignal;
   snapshot(): DevtoolsSnapshot;

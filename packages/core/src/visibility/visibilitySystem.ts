@@ -13,6 +13,7 @@ import type { OcclusionTester } from "./occlusion";
 import { noOcclusion } from "./occlusion";
 import type { VisibilityStats } from "./diagnostics";
 import { createVisibilityStats, resetCullingStats, nowMs } from "./diagnostics";
+import { devtools } from "../devtools/devtools";
 
 /**
  * A scene object the visibility system considers. A normal game object already carries a
@@ -87,6 +88,10 @@ interface ObjRecord {
   lastSeen: number;
 }
 
+function round2(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
 export function createVisibilitySystem(options: VisibilitySystemOptions): VisibilitySystem {
   let settings = mergeCullingSettings(DEFAULT_CULLING_SETTINGS, options.settings ?? {});
   const occlusion = options.occlusion ?? noOcclusion;
@@ -111,6 +116,24 @@ export function createVisibilitySystem(options: VisibilitySystemOptions): Visibi
   const hysteresisFrustum = createFrustum();
 
   let updateCounter = 0;
+
+  const disposeProbe = devtools.probes.registerSystem("render/culling", {
+    counters: () => ({
+      totalObjects: stats.totalObjects,
+      visible: stats.visible,
+      preloaded: stats.preloaded,
+      culled: stats.drawCallsAvoided,
+      rejectedByFrustum: stats.rejectedByFrustum,
+      rejectedByDistance: stats.rejectedByDistance,
+      rejectedByOcclusion: stats.rejectedByOcclusion,
+    }),
+    timers: () => ({
+      spatialQueryMs: round2(stats.spatialQueryMs),
+      cullingMs: round2(stats.cullingMs),
+    }),
+    state: () =>
+      `${stats.visible}/${stats.totalObjects} visible · ${stats.drawCallsAvoided} culled · ${round2(stats.cullingMs)}ms`,
+  });
 
   function specOf(r: Renderable, resolved: ResolvedOverrides): BoundsSpec {
     return resolved.bounds ?? r.bounds ?? DEFAULT_BOUNDS;
@@ -332,6 +355,7 @@ export function createVisibilitySystem(options: VisibilitySystemOptions): Visibi
       return { cameras, bounds: boundsOut, partitions: index.cells(), culled, stats };
     },
     clear() {
+      disposeProbe();
       index.clear();
       bounds.clear();
       records.clear();

@@ -82,25 +82,42 @@
 - `Devtools` (interface): interface Devtools — Top-level devtools facade aggregating frame, profile, render, logs, latency, controls, discover, overrides, and probes.
 - `DevtoolsControl` (interface): interface DevtoolsControl — Registered tunable control with its resolved schema metadata and read/write/reset accessors.
 - `DevtoolsControlKind` (type): type DevtoolsControlKind = | "slider" | "toggle" | "color" | "select" | "text" | "vec2" | "vec3" | "vec4" | "interval" | "angle" | "enum" — ⚠ undocumented
-- `DevtoolsLogEntry` (interface): interface DevtoolsLogEntry — A single captured log line with timestamp, level, and formatted message.
+- `DevtoolsLogEntry` (interface): interface DevtoolsLogEntry — A single captured log line with timestamp, level, owning system tag, and formatted message.
 - `DevtoolsLogLevel` (type): type DevtoolsLogLevel = "log" | "info" | "warn" | "error" — Severity level for a captured devtools log entry.
+- `DevtoolsLogs` (interface): interface DevtoolsLogs — Bounded log ring with per-system tags, a warning/error ring, and lifetime counts.
 - `DevtoolsOverrides` (interface): interface DevtoolsOverrides { version: number; enabled: string[]; values: Record<string, unknown>; schemas?: Record<string, {kind: DevtoolsControlKind; schemaVersion?: number}> } — ⚠ undocumented
 - `DevtoolsSnapshot` (interface): interface DevtoolsSnapshot — Serializable point-in-time snapshot of devtools state: frame, render, latency, logs, controls, and discovered fields.
 - `DiscoveredEntry` (interface): interface DiscoveredEntry — A control auto-discovered by scanning an object/table, with its binding metadata and current reader.
 - `DiscoverySkip` (interface): interface DiscoverySkip { readonly path: string; readonly reason: string } — ⚠ undocumented
 - `FrameRecordSample` (interface): interface FrameRecordSample — Per-frame timing input recorded by callers: total frame time, sim time, and optional named phase durations.
 - `FrameStats` (interface): interface FrameStats — Aggregated frame-timing statistics over the recent sampling window, including per-phase breakdown.
-- `LONG_FRAME_MS` (const): const LONG_FRAME_MS: 33.4 — Frame duration in milliseconds above which a frame is recorded as a long-frame spike (~30fps budget).
+- `FrameWindow` (interface): interface FrameWindow — Frame timings over the measured window, as the player sees them.
+- `GlReport` (interface): interface GlReport — GPU-object creation counts. `total` is since the page loaded, the named fields since warmup.
+- `LONG_FRAME_MS` (const): const LONG_FRAME_MS: 33.4 — The one perf record shape. `bun run perf` (CDP, out of process) and the in-page telemetry report (`window.__JG.report()`, the dev-server route, `bun run debug`) both produce exactly this object, so a budget check and a diff read either one.
 - `LatencyStats` (interface): interface LatencyStats — Aggregated latency statistics (last/avg/min/max) over recorded latency samples.
+- `LogBusCounts` (interface): interface LogBusCounts — Lifetime totals per level, plus how many lines the ring dropped.
+- `LogBusEntry` (interface): interface LogBusEntry — One captured line: when, how bad, which system said it, and what it said.
+- `LogBusSnapshot` (interface): interface LogBusSnapshot — Read-out of the log bus: newest-window entries, the warning/error ring, totals, and evictions.
 - `LongFrameEvent` (interface): interface LongFrameEvent — Recorded spike event for a frame that exceeded the long-frame threshold, with culprit attribution.
 - `NormalizedColor` (interface): interface NormalizedColor { readonly hex: string; readonly rgb: string; readonly alpha: number; readonly hasAlpha: boolean } — ⚠ undocumented
 - `OVERRIDES_FORMAT_VERSION` (const): const OVERRIDES_FORMAT_VERSION: 1 — ⚠ undocumented
 - `OverrideApplyDiagnostic` (interface): interface OverrideApplyDiagnostic { readonly id: string; readonly reason: string } — ⚠ undocumented
 - `OverrideApplyResult` (interface): interface OverrideApplyResult — Outcome of applying a devtools overrides payload: counts of applied and skipped entries plus diagnostics.
+- `PerfQuality` (type): type PerfQuality = "full" | "draft" — Graphics tier the record was measured at.
+- `PerfReport` (interface): interface PerfReport — One measured window of one game: the record `bun run perf`, `window.__JG.report()` and `bun run debug` print.
 - `PhaseStats` (interface): interface PhaseStats — Timing summary for a single named profiling phase across the sampling window.
+- `ProfileEntry` (interface): interface ProfileEntry — One sampled stack frame reduced to a readable key and its self time.
+- `ProfileReport` (interface): interface ProfileReport — CPU profile summary; only the CDP harness can produce one.
+- `RenderReport` (interface): interface RenderReport — Renderer-side counts for the measured window; `null` where the source could not read them.
 - `RenderSample` (interface): interface RenderSample — Snapshot of renderer resource counts (draw calls, triangles, geometries, textures) for a frame.
+- `ReportLogLine` (interface): interface ReportLogLine — One log line as it appears in the report.
+- `ReportLogs` (interface): interface ReportLogs — Bounded log read-out carried by the report: warn/error lines survive even a flood of info logs.
+- `ReportTelemetry` (interface): interface ReportTelemetry — Who produced the report, and how much producing it cost.
 - `ScanFieldMeta` (interface): interface ScanFieldMeta extends TunableOptions { kind?: DevtoolsControlKind } — ⚠ undocumented
 - `ScanMeta` (type): type ScanMeta = Readonly<Record<string, ScanFieldMeta>> — ⚠ undocumented
+- `SceneNodeSource` (type): type SceneNodeSource = "scene-graph" | "heap-object3d" | "unavailable" — Where the scene-node count came from: the live scene graph, a heap walk, or nowhere.
+- `SystemProbe` (interface): interface SystemProbe — What one system reports about itself: totals it keeps anyway, named timings, and one state line.
+- `SystemProbeReading` (interface): interface SystemProbeReading — One system's probe read out on demand; missing sections stay empty rather than absent.
 - `Tunable` (interface): interface Tunable<T> — Typed handle to a registered control, exposing its live value and subscribe/set/reset operations.
 - `TunableAccessor` (interface): interface TunableAccessor — Get/set accessor pair plus initial value used to bind a discovered field to a control.
 - `TunableChoice` (interface): interface TunableChoice<T = unknown> { readonly value: T; readonly label?: string } — ⚠ undocumented
@@ -139,8 +156,19 @@
 ## @jgengine/core/devtools/frame
 
 - `FrameModule` (interface): interface FrameModule — Frame subsystem exposing the frame-timing, profiling, and render-sample facades.
-- `LONG_FRAME_MS` (const): const LONG_FRAME_MS: 33.4 — Frame duration in milliseconds above which a frame is recorded as a long-frame spike (~30fps budget).
 - `createFrameModule` (const): const createFrameModule: (deps: { readProbes: () => Record<string, unknown>; }) => FrameModule — Create the frame subsystem that records frame/sim/phase timings, computes stats, and captures long-frame events.
+
+## @jgengine/core/devtools/logBus
+
+- `LOG_BUS_CAPACITY` (const): const LOG_BUS_CAPACITY: 200 — Default measured window for the log ring; older lines are evicted, never grown.
+- `LOG_BUS_MESSAGE_MAX` (const): const LOG_BUS_MESSAGE_MAX: 400 — Longest kept message; a longer one is cut once, at write time.
+- `LOG_BUS_SEVERE_CAPACITY` (const): const LOG_BUS_SEVERE_CAPACITY: 64 — Warnings and errors also land in their own ring, so an error is never pushed out by info traffic.
+- `LogBus` (interface): interface LogBus — A fixed-capacity ring of log lines tagged by owning system. `write` reuses a preallocated slot — no array growth, no splice, no per-write object — so a hot path can call it and only the message string (already built by the caller) costs an allocation.
+- `LogBusCounts` (interface): interface LogBusCounts — Lifetime totals per level, plus how many lines the ring dropped.
+- `LogBusEntry` (interface): interface LogBusEntry — One captured line: when, how bad, which system said it, and what it said.
+- `LogBusOptions` (interface): interface LogBusOptions — Tunables for the log ring: capacity, the severity ring's capacity, and the clock.
+- `LogBusSnapshot` (interface): interface LogBusSnapshot — Read-out of the log bus: newest-window entries, the warning/error ring, totals, and evictions.
+- `createLogBus` (function): function createLogBus(options: LogBusOptions = {}): LogBus — Create the bounded log bus the devtools log facade writes through.
 
 ## @jgengine/core/devtools/logs
 
@@ -152,6 +180,27 @@
 
 - `OverridesModule` (interface): interface OverridesModule — Overrides subsystem exposing the export/apply facade for persisting and restoring control values.
 - `createOverridesModule` (const): const createOverridesModule: (deps: { signal: ChangeSignal; controlRecords: Map<string, ControlRecord>; writeControl: (record: ControlRecord, raw: unknown) => boolean; discoveredRecords: Map<string, DiscoveredRecord>; enableDiscovered: (id: string) => void; }) => OverridesModule — Create the overrides subsystem that serializes changed control values and re-applies a saved overrides payload.
+
+## @jgengine/core/devtools/report
+
+- `FrameWindow` (interface): interface FrameWindow — Frame timings over the measured window, as the player sees them.
+- `GlReport` (interface): interface GlReport — GPU-object creation counts. `total` is since the page loaded, the named fields since warmup.
+- `LONG_FRAME_MS` (const): const LONG_FRAME_MS: 33.4 — The one perf record shape. `bun run perf` (CDP, out of process) and the in-page telemetry report (`window.__JG.report()`, the dev-server route, `bun run debug`) both produce exactly this object, so a budget check and a diff read either one.
+- `PerfQuality` (type): type PerfQuality = "full" | "draft" — Graphics tier the record was measured at.
+- `PerfReport` (interface): interface PerfReport — One measured window of one game: the record `bun run perf`, `window.__JG.report()` and `bun run debug` print.
+- `ProfileEntry` (interface): interface ProfileEntry — One sampled stack frame reduced to a readable key and its self time.
+- `ProfileReport` (interface): interface ProfileReport — CPU profile summary; only the CDP harness can produce one.
+- `RenderReport` (interface): interface RenderReport — Renderer-side counts for the measured window; `null` where the source could not read them.
+- `ReportLogLine` (interface): interface ReportLogLine — One log line as it appears in the report.
+- `ReportLogs` (interface): interface ReportLogs — Bounded log read-out carried by the report: warn/error lines survive even a flood of info logs.
+- `ReportTelemetry` (interface): interface ReportTelemetry — Who produced the report, and how much producing it cost.
+- `SceneNodeSource` (type): type SceneNodeSource = "scene-graph" | "heap-object3d" | "unavailable" — Where the scene-node count came from: the live scene graph, a heap walk, or nowhere.
+
+## @jgengine/core/devtools/reportEndpoint
+
+- `REPORT_ENDPOINT_PATH` (const): const REPORT_ENDPOINT_PATH: "/__jgengine/report" — The dev-only route a running game pushes its in-page report to, and that `bun run debug <game>` reads back. One process: the page gathers, the dev server holds the newest record per game, the CLI fetches it. Nothing here ships in a production build — the Vite plugin mounts it under `apply: "serve"`.
+- `ReportPushBody` (interface): interface ReportPushBody — Body the page POSTs: the game it measured and the record itself.
+- `ReportRouteError` (interface): interface ReportRouteError — Body sent when there is nothing to return yet.
 
 ## @jgengine/core/devtools/rewriteTunables
 
@@ -203,8 +252,10 @@
 
 - `Devtools` (interface): interface Devtools — Top-level devtools facade aggregating frame, profile, render, logs, latency, controls, discover, overrides, and probes.
 - `DevtoolsControl` (interface): interface DevtoolsControl — Registered tunable control with its resolved schema metadata and read/write/reset accessors.
-- `DevtoolsLogEntry` (interface): interface DevtoolsLogEntry — A single captured log line with timestamp, level, and formatted message.
+- `DevtoolsLatency` (interface): interface DevtoolsLatency — Latency samples recorded by instrumented transport methods.
+- `DevtoolsLogEntry` (interface): interface DevtoolsLogEntry — A single captured log line with timestamp, level, owning system tag, and formatted message.
 - `DevtoolsLogLevel` (type): type DevtoolsLogLevel = "log" | "info" | "warn" | "error" — Severity level for a captured devtools log entry.
+- `DevtoolsLogs` (interface): interface DevtoolsLogs — Bounded log ring with per-system tags, a warning/error ring, and lifetime counts.
 - `DevtoolsSnapshot` (interface): interface DevtoolsSnapshot — Serializable point-in-time snapshot of devtools state: frame, render, latency, logs, controls, and discovered fields.
 - `DiscoveredEntry` (interface): interface DiscoveredEntry — A control auto-discovered by scanning an object/table, with its binding metadata and current reader.
 - `FrameRecordSample` (interface): interface FrameRecordSample — Per-frame timing input recorded by callers: total frame time, sim time, and optional named phase durations.
@@ -214,6 +265,8 @@
 - `OverrideApplyResult` (interface): interface OverrideApplyResult — Outcome of applying a devtools overrides payload: counts of applied and skipped entries plus diagnostics.
 - `PhaseStats` (interface): interface PhaseStats — Timing summary for a single named profiling phase across the sampling window.
 - `RenderSample` (interface): interface RenderSample — Snapshot of renderer resource counts (draw calls, triangles, geometries, textures) for a frame.
+- `SystemProbe` (interface): interface SystemProbe — What one system reports about itself: totals it keeps anyway, named timings, and one state line.
+- `SystemProbeReading` (interface): interface SystemProbeReading — One system's probe read out on demand; missing sections stay empty rather than absent.
 - `Tunable` (interface): interface Tunable<T> — Typed handle to a registered control, exposing its live value and subscribe/set/reset operations.
 - `TunableAccessor` (interface): interface TunableAccessor — Get/set accessor pair plus initial value used to bind a discovered field to a control.
 

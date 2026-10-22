@@ -1,4 +1,5 @@
 import { devtools, type DevtoolsSnapshot, type LongFrameEvent } from "@jgengine/core/devtools/devtools";
+import { toReportLogs } from "@jgengine/core/devtools/report";
 import type { PlayableGame } from "../registry";
 import { diagnose } from "./perfDiagnose";
 
@@ -94,6 +95,8 @@ export function buildLeanReport(playable: PlayableGame) {
     longFrameSummary: summarizeLongFrames(longs),
     longFrames: longs.slice(-6).map(compactLongFrame),
     probes: snap.probes,
+    systems: snap.systems,
+    logSummary: toReportLogs(devtools.logs.snapshot()),
     logs: hotLogs.length > 0 ? hotLogs : undefined,
     controls: changedControls.length > 0 ? changedControls : undefined,
     discovered: enabledDiscovered.length > 0 ? enabledDiscovered : undefined,

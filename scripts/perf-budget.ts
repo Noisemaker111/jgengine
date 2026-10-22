@@ -1,0 +1,175 @@
+import { existsSync, readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { join } from "node:path";
+
+import type { PerfReport } from "../packages/core/src/devtools/report";
+
+/**
+ * The budget file and the verdict logic, shared by the CI gate (`bun run perf:gate`)
+ * and the in-page report reader (`bun run debug <game>`), so one command cannot pass
+ * where the other fails. Frame times are deliberately not gated: CI runners are slow
+ * and shared, so only counts a build controls decide pass or fail.
+ */
+
+const repoRoot = fileURLToPath(new URL("..", import.meta.url));
+const BASELINE_RELATIVE = join("scripts", "perf-budget.json");
+
+/** Counts one game may not exceed, from `scripts/perf-budget.json`. */
+export interface PerfBudget {
+  draws: number;
+  triangles: number;
+  nodes: number;
+  /**
+   * Programs a game may still link after warmup. Zero unless a measured
+   * baseline shows materials that genuinely first appear during play; the entry
+   * then records that number so the gate catches growth, and tightening it back
+   * to 0 is the fix.
+   */
+  programsLinked?: number;
+  /** How the numbers above were produced (date, command, GPU). */
+  baseline?: string;
+}
+
+export interface BudgetViolation {
+  game: string;
+  /** Metric name as it appears in the message: draws, triangles, nodes, linkProgram, createFramebuffer. */
+  metric: string;
+  budget: number;
+  measured: number;
+  /** Readable one-liner naming the game, metric, measured value and budget. */
+  message: string;
+}
+
+export const fmtCount = (value: number): string => value.toLocaleString("en-US");
+
+function budgetNumber(raw: unknown, game: string, field: string, source: string): number {
+  if (typeof raw !== "number" || !Number.isFinite(raw) || raw <= 0) {
+    throw new Error(`perf gate: ${source} needs a positive number for "${game}.${field}" (got ${JSON.stringify(raw)})`);
+  }
+  return raw;
+}
+
+function parseBudgetEntry(raw: unknown, game: string, source: string): PerfBudget {
+  if (raw === null || typeof raw !== "object") {
+    throw new Error(`perf gate: ${source} has no budget object for "${game}"`);
+  }
+  const entry = raw as Record<string, unknown>;
+  return {
+    draws: budgetNumber(entry.draws, game, "draws", source),
+    triangles: budgetNumber(entry.triangles, game, "triangles", source),
+    nodes: budgetNumber(entry.nodes, game, "nodes", source),
+    ...(entry.programsLinked === undefined
+      ? {}
+      : { programsLinked: budgetNumber(entry.programsLinked, game, "programsLinked", source) }),
+    ...(typeof entry.baseline === "string" ? { baseline: entry.baseline } : {}),
+  };
+}
+
+/**
+ * The budget for one game. A game's own `perf-budget.json` in its `Games/<id>/`
+ * directory wins, so the games repo can own its numbers; the engine copy is the
+ * baseline this gate and its CI job land with. No file anywhere is a failure,
+ * never a skip.
+ */
+export function loadBudget(game: string, root = repoRoot): PerfBudget {
+  const gameFile = join(root, "Games", game, "perf-budget.json");
+  if (existsSync(gameFile)) {
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(readFileSync(gameFile, "utf8"));
+    } catch (error) {
+      throw new Error(`perf gate: ${gameFile} is not valid JSON (${(error as Error).message})`);
+    }
+    return parseBudgetEntry(parsed, game, gameFile);
+  }
+
+  const engineFile = join(root, BASELINE_RELATIVE);
+  if (!existsSync(engineFile)) {
+    throw new Error(
+      `perf gate: no budget for "${game}" — ${BASELINE_RELATIVE} is missing and Games/${game}/perf-budget.json does not exist`,
+    );
+  }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(readFileSync(engineFile, "utf8"));
+  } catch (error) {
+    throw new Error(`perf gate: ${engineFile} is not valid JSON (${(error as Error).message})`);
+  }
+  const budgets = parsed as Record<string, unknown>;
+  if (budgets === null || typeof budgets !== "object" || !(game in budgets)) {
+    throw new Error(`perf gate: no budget for "${game}" in ${BASELINE_RELATIVE} — add a measured entry before gating it`);
+  }
+  return parseBudgetEntry(budgets[game], game, BASELINE_RELATIVE);
+}
+
+function violation(game: string, metric: string, measured: number, budget: number): BudgetViolation {
+  const over = measured > budget ? ` over by ${fmtCount(measured - budget)}` : "";
+  return {
+    game,
+    metric,
+    budget,
+    measured,
+    message: `perf gate: ${game} ${metric} ${fmtCount(measured)} (budget ${fmtCount(budget)})${over}`,
+  };
+}
+
+function unavailable(game: string, metric: string, reason: string): BudgetViolation {
+  return {
+    game,
+    metric,
+    budget: 0,
+    measured: 0,
+    message: `perf gate: ${game} ${metric} unavailable — ${reason}`,
+  };
+}
+
+/**
+ * Compare one measured record against its budget. Every returned violation is
+ * one line a human reads in the CI log, and the list is empty only when the
+ * game actually played and stayed inside its counts.
+ */
+export function checkBudget(record: PerfReport, budget: PerfBudget): BudgetViolation[] {
+  const game = record.game;
+  const found: BudgetViolation[] = [];
+
+  // A capture that never rendered would otherwise read as a perfect 0 draws.
+  if (record.render.draws === null || record.render.draws === 0) {
+    found.push(unavailable(game, "draws", "0 draw calls means the game never reached play"));
+    return found;
+  }
+  if (record.render.triangles === null) {
+    found.push(unavailable(game, "triangles", "the debug snapshot reported no triangle count"));
+  } else if (record.render.triangles > budget.triangles) {
+    found.push(violation(game, "triangles", record.render.triangles, budget.triangles));
+  }
+  if (record.render.nodes === null) {
+    found.push(unavailable(game, "nodes", `the harness could not read three.js scene nodes (${record.render.nodesSource})`));
+  } else if (record.render.nodes > budget.nodes) {
+    found.push(violation(game, "nodes", record.render.nodes, budget.nodes));
+  }
+  if (record.render.draws > budget.draws) found.push(violation(game, "draws", record.render.draws, budget.draws));
+
+  // Zero linkProgram/createFramebuffer is only evidence if the counters attached.
+  if (record.gl.attached !== true) {
+    found.push(unavailable(game, "GL allocations", "the WebGL counters never attached, so a zero allocation count proves nothing"));
+  } else {
+    const linkBudget = budget.programsLinked ?? 0;
+    if (record.gl.programsLinked > linkBudget) found.push(violation(game, "linkProgram", record.gl.programsLinked, linkBudget));
+    if (record.gl.framebuffers > 0) found.push(violation(game, "createFramebuffer", record.gl.framebuffers, 0));
+  }
+  return found;
+}
+
+/** One line naming every measured count against its budget, for a passing run. */
+export function summarizeRecord(record: PerfReport, budget: PerfBudget): string {
+  return [
+    `${record.game} ok`,
+    `draws ${fmtCount(record.render.draws ?? 0)}/${fmtCount(budget.draws)}`,
+    `triangles ${fmtCount(record.render.triangles ?? 0)}/${fmtCount(budget.triangles)}`,
+    `nodes ${fmtCount(record.render.nodes ?? 0)}/${fmtCount(budget.nodes)}`,
+    `links ${fmtCount(record.gl.programsLinked)}/${fmtCount(budget.programsLinked ?? 0)}`,
+    `framebuffers ${fmtCount(record.gl.framebuffers)}/0`,
+    `allocations ${fmtCount(record.gl.allocations)}`,
+    `${record.viewport} ${record.quality}`,
+  ].join("  ");
+}

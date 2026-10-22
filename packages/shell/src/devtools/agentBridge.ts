@@ -14,6 +14,7 @@ import {
   type EditorUiPanelLayout,
 } from "@jgengine/core/ui/hudDocument";
 import { buildFullReport, buildLeanReport, summarizeLeanReport } from "./devtoolsReports";
+import { resetFrameTelemetry } from "./frameSampler";
 import { advanceSimulation } from "./simStepper";
 
 /** One RPC call into the agent bridge: a verb name plus its verb-specific fields. */
@@ -255,6 +256,7 @@ export function installAgentBridge(options: {
         return { ok: true, report: buildFullReport(playable) };
       case "debug_perf_reset":
         devtools.frame.reset();
+        resetFrameTelemetry();
         return { ok: true };
       case "canvas_state":
         return { ok: true, layouts: canvasPanels() };

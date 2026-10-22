@@ -46,7 +46,11 @@ Classify each acceptance claim before scheduling proof. A plan that uses screens
 
 ## Performance proof
 
-When a game is reported slow, play it and pull the debug menu's perf data instead of guessing. In the engine monorepo, `bun run perf <game> [--quality draft|full] [--seconds n]` does the whole sequence below on a real GPU and prints one JSON record (frame stats, draws, triangles, scene nodes, GL allocations after warmup, top self-time functions) to diff before and after; use it first and drop to the manual steps when you need a phase breakdown.
+When a game is reported slow, play it and pull the debug menu's perf data instead of guessing.
+
+**A game already open reports on itself.** In a dev build the shell samples frame telemetry in-page — no second process, no CDP: `bun run debug <game>` prints the newest record for a game open in a browser (about 0.3 s, it only fetches `/__jgengine/report` from the dev server), `window.__JG.report()` returns the same object from the console, and either fails a budget breach with the same verdicts as CI. It carries `systems` (each core system's own counters, timers and state line via `devtools.probes.registerSystem`) and `logs` (the warning/error ring, kept across a crash or reload by the dev server). The sampler is off in production builds and off under `?telemetry=off` for an A/B run.
+
+In the engine monorepo, `bun run perf <game> [--quality draft|full] [--seconds n] [--telemetry on|off]` does the whole sequence below on a real GPU and prints the same record plus a CPU profile — the one to use when you need a profile, a cold launch, or a repeatable GPU measurement rather than the page you are already watching.
 
 CI's `perf` job runs `bun run perf:gate`: every reference game plays under software GL, then draws, triangles and scene nodes are compared with that game's entry in `scripts/perf-budget.json` (a game's own `Games/<id>/perf-budget.json` wins) and any `linkProgram`/`createFramebuffer` after the 5 s warmup fails. Raise a budget only from a measured `bun run perf` baseline, and put the measurement in the entry's `baseline` string; frame times are never gated because CI runners are shared.
 

@@ -48,6 +48,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `defineSystem` (function) · `import { defineSystem } from "@jgengine/shell/gameKit"`
 
+## devtools-log-bus — a bounded, per-system-tagged log ring a system writes to and a report reads
+
+- `LogBus` (interface) · `import { LogBus } from "@jgengine/core/devtools/logBus"`
+
 ## editor-catalogs — Export typed gameplay catalogs for in-editor tuning.
 
 - `EditorCatalogDefinition` (interface) · `import { EditorCatalogDefinition } from "@jgengine/shell/gameKit"`

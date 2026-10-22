@@ -34,6 +34,7 @@ function record(overrides: Partial<PerfRecord> = {}, render: Partial<PerfRecord[
     quality: "full",
     viewport: "1600x900",
     seconds: 6,
+    at: 1,
     frame: { fps: 60, avgMs: 16.6, p95Ms: 18, maxMs: 24, samples: 360, longFrames: 0 },
     render: { draws: 7_000, triangles: 3_600_000, geometries: 300, textures: 90, nodes: 11_000, nodesSource: "scene-graph", scenes: 1, ...render },
     gl: {
@@ -45,10 +46,14 @@ function record(overrides: Partial<PerfRecord> = {}, render: Partial<PerfRecord[
       allocations: 0,
       residentPrograms: 56,
       total: { buffers: 1790, textures: 101, programsLinked: 57 },
+      attached: true,
       ...gl,
     },
     sim: { avgMs: 2.6, outsideMs: 13 },
     profile: null,
+    systems: {},
+    logs: null,
+    telemetry: null,
     ...overrides,
   };
 }
@@ -90,9 +95,9 @@ describe("checkBudget", () => {
   });
 
   test("fails when the GL counters never attached, since 0 allocations would be meaningless", () => {
-    const [violation] = checkBudget(record({}, {}, { total: { buffers: 0, textures: 0 } }), BUDGET);
+    const [violation] = checkBudget(record({}, {}, { attached: false, total: { buffers: 0, textures: 0 } }), BUDGET);
     expect(violation?.message).toContain("GL allocations unavailable");
-    expect(violation?.message).toContain("did not attach");
+    expect(violation?.message).toContain("never attached");
   });
 
   test("fails when the harness cannot count scene nodes", () => {

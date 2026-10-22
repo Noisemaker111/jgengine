@@ -1381,7 +1381,7 @@
 - `ResourcePolicy` (type): type ResourcePolicy = ( txn: ResourceTransaction, ctx: PolicyContext, ) => readonly ResourceTransaction[] — A composable transform over one transaction. Return the transactions to keep: `[]` rejects it, `[txn]` passes/transforms it, and multiple entries split it.
 - `ResourceTransaction` (interface): interface ResourceTransaction — One resource movement produced by a due cycle, before it is applied to balances.
 - `RetainedVfxKind` (type): type RetainedVfxKind = string — The archetype of a retained (long-lived, updatable) VFX effect — an open string, not a closed union, so a renderer registers new kinds (beam, tether, zone, target line, looping emitter) without a central branch. `"beam"` is the first shipped retained renderer.
-- `Ring` (interface): interface Ring { at(time: number): RingSample; isOutside(time: number, position: RingPoint): boolean; distanceOutside(time: number, position: RingPoint): number; damageOutside(time: number, dt: number, positions: Iterable<{id: string; position: RingPoint}… — ⚠ undocumented
+- `Ring` (interface): interface Ring — ⚠ undocumented
 - `RingConfig` (interface): interface RingConfig { center: RingPoint; phases: readonly RingPhase[] } — ⚠ undocumented
 - `RingPhase` (interface): interface RingPhase { startTime: number; shrinkDuration: number; fromRadius: number; toRadius: number; damagePerSecond: number; center?: RingPoint } — ⚠ undocumented
 - `RoleSpec` (interface): interface RoleSpec { id: string; count?: number; ratio?: number } — ⚠ undocumented

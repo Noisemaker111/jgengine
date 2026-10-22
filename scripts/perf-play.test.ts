@@ -5,11 +5,11 @@ import { aggregateInclusiveTime, aggregateSelfTime, parsePerfArgs, summarizeFram
 test("parsePerfArgs reads one game with its flags", () => {
   expect(parsePerfArgs(["harbor-heat"])).toEqual({
     kind: "run",
-    args: { game: "harbor-heat", quality: "full", profile: false, seconds: 6 },
+    args: { game: "harbor-heat", quality: "full", profile: false, seconds: 6, telemetry: "on" },
   });
   expect(parsePerfArgs(["deepward", "--quality", "draft", "--profile", "--seconds", "3"])).toEqual({
     kind: "run",
-    args: { game: "deepward", quality: "draft", profile: true, seconds: 3 },
+    args: { game: "deepward", quality: "draft", profile: true, seconds: 3, telemetry: "on" },
   });
   expect(parsePerfArgs(["--help"]).kind).toBe("help");
 });
