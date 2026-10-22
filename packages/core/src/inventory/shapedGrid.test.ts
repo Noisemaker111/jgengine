@@ -6,6 +6,7 @@ import {
   cellOccupant,
   createShapedGrid,
   findShapedPlacement,
+  fitShapedItem,
   gridAdjacencyQuery,
   moveShaped,
   normalizeFootprint,
@@ -223,5 +224,54 @@ describe("ordered bounded placement search", () => {
     expect(() => findShapedPlacement(grid, [], {})).toThrow();
     expect(() => findShapedPlacement(grid, rifle, { rotations: [0.5 as 0] })).toThrow();
     expect(findShapedPlacement(grid, rifle, { rotations: [] })).toEqual({ status: "no-space", checks: 0 });
+  });
+});
+
+describe("first-fit placement that names why an item does not fit", () => {
+  const rifle: Footprint = [[0, 0], [1, 0], [2, 0]];
+
+  test("places a fitting item and reports the origin, rotation and work spent", () => {
+    const result = fitShapedItem(createShapedGrid(4, 2), { id: "rifle", value: "rifle", footprint: rifle });
+    expect(result.status).toBe("ok");
+    if (result.status !== "ok") return;
+    expect(result.origin).toEqual([0, 0]);
+    expect(result.rotation).toBe(0);
+    expect(result.checks).toBe(1);
+    expect(result.grid.placements).toHaveLength(1);
+  });
+
+  test("a 3×1 item that fits turned reports the rotation it used", () => {
+    const result = fitShapedItem(createShapedGrid(2, 3), { id: "rifle", value: "rifle", footprint: rifle });
+    expect(result.status).toBe("ok");
+    if (result.status !== "ok") return;
+    expect(result.rotation).toBe(1);
+  });
+
+  test("an item too big for the board in any rotation is rejected as too-large, with both sizes", () => {
+    const result = fitShapedItem(createShapedGrid(2, 2), { id: "rifle", value: "rifle", footprint: rifle });
+    expect(result.status).toBe("rejected");
+    if (result.status !== "rejected") return;
+    expect(result.reason).toBe("too-large");
+    expect(result.detail).toContain("3×1");
+    expect(result.detail).toContain("2×2");
+  });
+
+  test("a full board is no-space, never too-large", () => {
+    const sized = fitShapedItem(createShapedGrid(2, 2), { id: "big", value: "big", footprint: [[0, 0], [1, 0], [0, 1], [1, 1]] });
+    if (sized.status !== "ok") throw new Error("setup");
+    const blocked = fitShapedItem(sized.grid, { id: "single", value: "single", footprint: [[0, 0]] });
+    expect(blocked).toMatchObject({ status: "rejected", reason: "no-space" });
+  });
+
+  test("an exhausted search says budget-exceeded, not no-space", () => {
+    const result = fitShapedItem(createShapedGrid(3, 3), { id: "rifle", value: "rifle", footprint: rifle }, { maxChecks: 0 });
+    expect(result).toMatchObject({ status: "rejected", reason: "budget-exceeded", checks: 0 });
+  });
+
+  test("duplicate ids and empty footprints are refused by name", () => {
+    const placed = fitShapedItem(createShapedGrid(2, 2), { id: "peg", value: 1, footprint: [[0, 0]] });
+    if (placed.status !== "ok") throw new Error("setup");
+    expect(fitShapedItem(placed.grid, { id: "peg", value: 1, footprint: [[0, 0]] })).toMatchObject({ status: "rejected", reason: "duplicate-id" });
+    expect(fitShapedItem(createShapedGrid(2, 2), { id: "ghost", value: 1, footprint: [] })).toMatchObject({ status: "rejected", reason: "invalid-footprint" });
   });
 });

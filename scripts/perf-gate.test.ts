@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import type { PerfRecord } from "./perf-play";
-import { PERF_GATE_GAMES, checkBudget, loadBudget, parseGateArgs, type PerfBudget } from "./perf-gate";
+import { PERF_GATE_GAMES, checkBudget, describeGamesCheckout, describeGamesLine, loadBudget, parseGateArgs, type PerfBudget } from "./perf-gate";
 
 /**
  * The gate's verdict logic runs here without a browser: every case is a record
@@ -128,17 +128,33 @@ describe("loadBudget", () => {
     writeFileSync(join(dir, "perf-budget.json"), JSON.stringify(budget));
   }
 
-  test("reads the engine baseline for the named game", () => {
+  test("reads the engine baseline for the named game and names that file", () => {
     const root = tempRoot();
     writeEngineBudgets(root, { "harbor-heat": { draws: 7600, triangles: 3850000, nodes: 11900 } });
-    expect(loadBudget("harbor-heat", root)).toEqual({ draws: 7600, triangles: 3850000, nodes: 11900 });
+    expect(loadBudget("harbor-heat", root)).toEqual({
+      budget: { draws: 7600, triangles: 3850000, nodes: 11900 },
+      source: "scripts/perf-budget.json",
+    });
   });
 
-  test("a game's own perf-budget.json wins over the engine copy", () => {
+  test("a game's own perf-budget.json wins over the engine copy, and the gate reports that path", () => {
     const root = tempRoot();
     writeEngineBudgets(root, { "harbor-heat": { draws: 7600, triangles: 3850000, nodes: 11900 } });
     writeGameBudget(root, "harbor-heat", { draws: 5000, triangles: 2_000_000, nodes: 9000 });
-    expect(loadBudget("harbor-heat", root).draws).toBe(5000);
+    const loaded = loadBudget("harbor-heat", root);
+    expect(loaded.budget.draws).toBe(5000);
+    expect(loaded.source).toBe("Games/harbor-heat/perf-budget.json");
+  });
+
+  test("the standalone game copy is the whole entry, not a table keyed by game id", () => {
+    const root = tempRoot();
+    writeGameBudget(root, "deepward", { draws: 90, triangles: 56100, nodes: 170, baseline: "2026-10-22 bun run perf:gate" });
+    expect(loadBudget("deepward", root).budget).toEqual({
+      draws: 90,
+      triangles: 56100,
+      nodes: 170,
+      baseline: "2026-10-22 bun run perf:gate",
+    });
   });
 
   test("a missing budget fails loudly and names both places it looked", () => {
@@ -160,7 +176,7 @@ describe("loadBudget", () => {
 
   test("the engine baseline itself parses for every gated game", () => {
     for (const game of PERF_GATE_GAMES) {
-      const budget = loadBudget(game);
+      const { budget } = loadBudget(game);
       expect(budget.draws).toBeGreaterThan(0);
       expect(budget.triangles).toBeGreaterThan(0);
       expect(budget.nodes).toBeGreaterThan(0);
@@ -179,5 +195,42 @@ describe("parseGateArgs", () => {
 
   test("rejects an unknown flag rather than measuring everything", () => {
     expect(() => parseGateArgs(["--games-from"])).toThrow(/unknown argument/);
+  });
+});
+
+describe("describeGamesLine", () => {
+  const pin = "c81aabc494295170c53c4b7a0763573162590a7f";
+  const other = "3385ce43256f4f88495ffd7fb2f6e4839a32f23e";
+
+  test("names the measured checkout and the pin when they agree", () => {
+    expect(describeGamesLine({ pin, head: pin })).toBe("perf gate: games c81aabc, pinned c81aabc");
+  });
+
+  test("says so when the clone is off the pin, since the budgets describe the pin", () => {
+    expect(describeGamesLine({ pin, head: other })).toBe("perf gate: games 3385ce4, pinned c81aabc (measuring unpinned content)");
+  });
+
+  test("still measures when Games/ is not a git checkout", () => {
+    expect(describeGamesLine({ pin, head: null })).toContain("games checkout unavailable");
+  });
+});
+
+describe("describeGamesCheckout", () => {
+  test("reads the pin and reports the head the caller found", () => {
+    const root = tempRoot();
+    const pin = "c81aabc494295170c53c4b7a0763573162590a7f";
+    writeFileSync(join(root, "scripts", "games-ref.txt"), `${pin}\n`);
+    let asked = "";
+    const found = describeGamesCheckout(root, (directory) => {
+      asked = directory;
+      return pin;
+    });
+    expect(found).toEqual({ pin, head: pin });
+    expect(asked.endsWith("Games")).toBe(true);
+  });
+
+  test("reports no pin when the file is missing instead of failing the run", () => {
+    const root = tempRoot();
+    expect(describeGamesCheckout(root, () => null)).toEqual({ pin: null, head: null });
   });
 });

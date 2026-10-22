@@ -1,4 +1,5 @@
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
 
@@ -10,7 +11,7 @@ import {
   type CaptureQuality,
 } from "./browser-lib";
 import { measureGame } from "./perf-play";
-import { checkBudget, loadBudget, summarizeRecord, type PerfBudget } from "./perf-budget";
+import { checkBudget, loadBudget, summarizeRecord, type LoadedBudget } from "./perf-budget";
 
 /**
  * Frame-budget gate: plays every reference game under the checkout's software
@@ -30,7 +31,7 @@ const repoRoot = fileURLToPath(new URL("..", import.meta.url));
 const DEFAULT_SECONDS = 6;
 const WARMUP_MS = 5_000;
 
-export { checkBudget, loadBudget, type BudgetViolation, type PerfBudget } from "./perf-budget";
+export { checkBudget, loadBudget, type BudgetViolation, type LoadedBudget, type PerfBudget } from "./perf-budget";
 
 /** The reference games the epic's budget passes cover. */
 export const PERF_GATE_GAMES = [
@@ -84,6 +85,40 @@ const USAGE = `usage: bun run perf:gate [--games a,b] [--seconds n] [--quality d
   --seconds         measured window per game (default ${DEFAULT_SECONDS})
   --quality         graphics tier: full (default) or draft`;
 
+/**
+ * The games checkout the gate is about to measure, as the pin in
+ * `scripts/games-ref.txt` and the clone's actual HEAD. Budgets describe a content
+ * snapshot, so a run that does not say which snapshot it measured cannot be read
+ * as an engine regression — the log names it instead.
+ */
+export function describeGamesCheckout(root: string, head: () => string | null = gamesHead): { pin: string | null; head: string | null } {
+  let pin: string | null = null;
+  try {
+    const raw = readFileSync(join(root, "scripts", "games-ref.txt"), "utf8").trim();
+    if (/^[0-9a-f]{40}$/.test(raw)) pin = raw;
+  } catch {
+    /* no pin file: the run still measures, it just cannot name the pinned content */
+  }
+  return { pin, head: head(join(root, "Games")) };
+}
+
+function gamesHead(directory: string): string | null {
+  try {
+    return execFileSync("git", ["-C", directory, "rev-parse", "HEAD"], { encoding: "utf8" }).trim() || null;
+  } catch {
+    return null;
+  }
+}
+
+/** One line naming the games content behind the numbers, flagging a clone that is not at the pin. */
+export function describeGamesLine(checkout: { pin: string | null; head: string | null }): string {
+  const short = (sha: string | null): string => (sha === null ? "unknown" : sha.slice(0, 7));
+  if (checkout.head === null) return "perf gate: games checkout unavailable — the numbers describe whatever Games/ holds";
+  const pinned = checkout.pin === null ? "no pin" : `pinned ${short(checkout.pin)}`;
+  const drift = checkout.pin !== null && checkout.pin !== checkout.head ? " (measuring unpinned content)" : "";
+  return `perf gate: games ${short(checkout.head)}, ${pinned}${drift}`;
+}
+
 async function main(): Promise<void> {
   const parsed = process.argv.slice(2);
   if (parsed.includes("--help") || parsed.includes("-h")) {
@@ -94,7 +129,7 @@ async function main(): Promise<void> {
 
   // Budgets are read before any browser starts: a missing file must fail fast,
   // not after ten minutes of software-GL rendering.
-  const budgets = new Map<string, PerfBudget>();
+  const budgets = new Map<string, LoadedBudget>();
   for (const game of games) budgets.set(game, loadBudget(game));
 
   const missing = games.filter((game) => !existsSync(join(repoRoot, "Games", game, "src", "index.tsx")));
@@ -108,11 +143,14 @@ async function main(): Promise<void> {
   const failures: string[] = [];
   const lines: string[] = [];
   let rasterizerPrinted = false;
+  console.log(describeGamesLine(describeGamesCheckout(repoRoot)));
 
   const exitCode = await withBrowserSession(
     { keep: false, timeoutMs: 180_000, server: server.child, serverPid: server.pid, hardDeadlineMs: 1_500_000 },
     async ({ debugPort }) => {
       for (const game of games) {
+        const loaded = budgets.get(game)!;
+        console.log(`perf gate: ${game} budget ${loaded.source}`);
         const session = await openPageSession(debugPort);
         try {
           const measured = await measureGame({
@@ -124,7 +162,7 @@ async function main(): Promise<void> {
             warmupMs: WARMUP_MS,
             profile: false,
           });
-          const budget = budgets.get(game)!;
+          const budget = loaded.budget;
           if (!rasterizerPrinted) {
             rasterizerPrinted = true;
             console.log(`perf gate: rasterizer ${measured.record.gpu}`);
@@ -135,7 +173,7 @@ async function main(): Promise<void> {
             console.log(`perf gate: ${summarizeRecord(measured.record, budget)}`);
           } else {
             failures.push(...violations.map((entry) => entry.message));
-            console.error(`perf gate: ${game} FAILED (${measured.record.gpu})`);
+            console.error(`perf gate: ${game} FAILED against ${loaded.source} (${measured.record.gpu})`);
             for (const entry of violations) console.error(`  ${entry.message}`);
             console.error(JSON.stringify(measured.record, null, 2));
           }
@@ -158,7 +196,9 @@ async function main(): Promise<void> {
   if (failures.length > 0) {
     console.error(`\nperf gate FAILED — ${failures.length} problem(s) across ${games.length} games`);
     for (const failure of failures) console.error(`  ${failure}`);
-    console.error("budgets live in scripts/perf-budget.json; raise one only with a measured baseline.");
+    console.error(
+      "budgets live beside each game (Games/<id>/perf-budget.json), else scripts/perf-budget.json; raise one only with a measured baseline.",
+    );
     process.exit(1);
   }
 

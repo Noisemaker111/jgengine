@@ -12,6 +12,7 @@ import {
   type InventoryState,
   type ItemTraits,
 } from "@jgengine/core/inventory/inventoryModel";
+import { partitionOnDeath } from "@jgengine/core/inventory/storageTier";
 
 const traits: ItemTraits = {
   stackLimit(itemId) {
@@ -222,6 +223,13 @@ describe("splitStack", () => {
     expect(splitStack(full, 0, 2, 1)).toEqual({ status: "rejected", reason: "slot-occupied" });
     expect(splitStack(full, 0, 2, 0)).toEqual({ status: "rejected", reason: "slot-occupied" });
   });
+
+  test("a stack limit keeps a split merge inside the max stack", () => {
+    const near: InventoryState = { slots: [{ itemId: "stone", count: 10 }, { itemId: "stone", count: 6 }, null] };
+    expect(splitStack(near, 0, 6, 1, 10)).toEqual({ status: "rejected", reason: "over-stack" });
+    expect(splitStack(near, 0, 4, 1, 10).status).toBe("ok");
+    expect(splitStack(near, 0, 6, 2, 10).status).toBe("ok");
+  });
 });
 
 describe("createInventorySet", () => {
@@ -322,5 +330,105 @@ describe("invalid inventory inputs", () => {
     expect(moved.to.slots).toEqual([null, { itemId: "stone", count: 15.5 }, null]);
     expect(countItem(moved.to, "stone")).toBe(15.5);
     expect(state.slots[0]).toEqual({ itemId: "stone", count: 10.5 });
+  });
+});
+
+describe("stash beside a carried inventory", () => {
+  const stashLayout: InventoryLayout = { slots: 4 };
+
+  test("a stash holds its own slots: filling one never changes the other", () => {
+    const set = createInventorySet({ bag: backpackLayout, stash: stashLayout }, traits);
+    set.put("bag", "stone", 5);
+    set.put("stash", "stone", 64);
+
+    expect(set.state("bag").slots).toEqual([{ itemId: "stone", count: 5 }, null, null]);
+    expect(set.count("bag", "stone")).toBe(5);
+    expect(set.count("stash", "stone")).toBe(64);
+    expect(set.state("bag").slots).not.toBe(set.state("stash").slots);
+  });
+
+  test("moving into the stash drains the bag and leaves no shared stack", () => {
+    const set = createInventorySet({ bag: backpackLayout, stash: stashLayout }, traits);
+    set.put("bag", "stone", 40);
+
+    expect(set.move("bag", 0, "stash", 0).status).toBe("ok");
+    expect(set.state("bag").slots[0]).toBeNull();
+    expect(set.state("stash").slots[0]).toEqual({ itemId: "stone", count: 40 });
+
+    const stashSlot = set.state("stash").slots[0]!;
+    (stashSlot as { count: number }).count = 1;
+    expect(set.state("bag").slots[0]).toBeNull();
+  });
+
+  test("a snapshot is detached: editing it changes nothing live", () => {
+    const set = createInventorySet({ bag: backpackLayout, stash: stashLayout }, traits);
+    set.put("bag", "stone", 3);
+    set.put("stash", "sword", 1);
+
+    const saved = set.snapshot();
+    expect(saved.bag.slots[0]).toEqual({ itemId: "stone", count: 3 });
+
+    saved.bag.slots[0] = { itemId: "stone", count: 99 };
+    saved.stash.slots[0] = null;
+    expect(set.count("bag", "stone")).toBe(3);
+    expect(set.count("stash", "sword")).toBe(1);
+  });
+
+  test("restore round-trips a save into a fresh set and detaches it", () => {
+    const source = createInventorySet({ bag: backpackLayout, stash: stashLayout }, traits);
+    source.put("bag", "stone", 7);
+    source.put("stash", "shield", 1);
+    const saved = JSON.parse(JSON.stringify(source.snapshot()));
+
+    const target = createInventorySet({ bag: backpackLayout, stash: stashLayout }, traits);
+    expect(target.restore(saved)).toBe(true);
+    expect(target.count("bag", "stone")).toBe(7);
+    expect(target.count("stash", "shield")).toBe(1);
+
+    saved.bag.slots[1] = { itemId: "stone", count: 50 };
+    expect(target.state("bag").slots[1]).toBeNull();
+  });
+
+  test("restore refuses an incomplete or malformed save without touching live items", () => {
+    const set = createInventorySet({ bag: backpackLayout, stash: stashLayout }, traits);
+    set.put("bag", "stone", 2);
+
+    expect(set.restore({ bag: createEmptyInventory(backpackLayout) } as never)).toBe(false);
+    expect(set.restore({ bag: createEmptyInventory(backpackLayout), stash: { slots: [null] } })).toBe(false);
+    expect(set.restore({
+      bag: { slots: [{ itemId: "stone", count: 0 }, null, null] },
+      stash: createEmptyInventory(stashLayout),
+    })).toBe(false);
+    expect(set.restore({
+      bag: { slots: [{ itemId: "stone", count: 1 }, null, null] },
+      stash: { slots: [null, null, null, { itemId: "shield", count: Number.NaN }] },
+    })).toBe(false);
+    expect(set.count("bag", "stone")).toBe(2);
+    expect(set.count("stash", "shield")).toBe(0);
+  });
+
+  test("reset empties every inventory without leaving stale arrays behind", () => {
+    const set = createInventorySet({ bag: backpackLayout, stash: stashLayout }, traits);
+    set.put("bag", "stone", 2);
+    set.put("stash", "shield", 1);
+    set.reset();
+    expect(set.count("bag", "stone")).toBe(0);
+    expect(set.count("stash", "shield")).toBe(0);
+    set.put("stash", "stone", 1);
+    expect(set.count("bag", "stone")).toBe(0);
+  });
+
+  test("a banked stash survives the death partition while the carried bag is lost", () => {
+    const set = createInventorySet({ bag: backpackLayout, stash: stashLayout }, traits);
+    set.put("bag", "stone", 4);
+    set.put("stash", "sword", 1);
+
+    const partition = partitionOnDeath([
+      { inventoryId: "bag", tier: "carried", items: [{ itemId: "stone", count: 4 }] },
+      { inventoryId: "stash", tier: "banked", items: [{ itemId: "sword", count: 1 }] },
+    ]);
+    expect(partition.kept).toEqual([{ itemId: "sword", count: 1 }]);
+    expect(partition.lost).toEqual([{ itemId: "stone", count: 4 }]);
+    expect(set.count("stash", "sword")).toBe(1);
   });
 });

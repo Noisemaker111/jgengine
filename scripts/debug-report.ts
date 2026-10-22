@@ -7,7 +7,7 @@ import type { PerfReport } from "../packages/core/src/devtools/report";
 
 /**
  * Read the report a game already open in a browser is producing, and gate it against
- * `scripts/perf-budget.json`. No browser launch, no CDP, no second process: the page
+ * that game's budget. No browser launch, no CDP, no second process: the page
  * pushes to the dev server's route about once a second, and this fetches the newest.
  *
  *   bun run debug <game> [--wait ms] [--no-budget]
@@ -29,7 +29,7 @@ const USAGE = `usage: bun run debug <game> [--wait ms] [--no-budget]
 
   <game>            game id already open in a browser (for example harbor-heat)
   --wait            how long to wait for a report when none has arrived (default ${DEFAULT_WAIT_MS} ms)
-  --no-budget       print the report without checking scripts/perf-budget.json`;
+  --no-budget       print the report without checking the game's budget`;
 
 export function parseDebugArgs(argv: readonly string[]): DebugArgs | "help" {
   if (argv.includes("--help") || argv.includes("-h")) return "help";
@@ -149,12 +149,12 @@ async function main(): Promise<void> {
   if (!budget) return;
 
   const limit = loadBudget(game, repoRoot);
-  const violations = checkBudget(report, limit);
+  const violations = checkBudget(report, limit.budget);
   if (violations.length === 0) {
-    console.error(`debug: ${summarizeRecord(report, limit)}`);
+    console.error(`debug: ${summarizeRecord(report, limit.budget)}  (budget ${limit.source})`);
     return;
   }
-  console.error(`debug: ${game} is over budget`);
+  console.error(`debug: ${game} is over budget ${limit.source}`);
   for (const violation of violations) console.error(`  ${violation.message}`);
   process.exit(1);
 }

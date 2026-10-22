@@ -206,6 +206,22 @@ export { MOVEMENT_TUNING, type CollisionObstacle } from "./movement/movementMode
 export { resolvePlayerMovementTuning, stepPlayerMovement } from "./movement/playerMovement";
 export { POSE_HITBOX, createPoseState, type MovementPose } from "./movement/poseState";
 export { steerYaw } from "./movement/steering";
+export {
+  createLaneGraph,
+  laneGraphFromDocument,
+  type LaneEdgeConfig,
+  type LaneGraph,
+  type LaneGraphConfig,
+  type LaneGraphDocumentOptions,
+  type LaneIntersection,
+  type LaneIntersectionConfig,
+  type LaneNode,
+  type LanePose,
+  type LaneRightOfWay,
+  type LaneSignalProgram,
+  type LaneSpan,
+  type LaneSpot,
+} from "./nav/laneGraph";
 export { constrainToNavGrid } from "./nav/navConstrain";
 export {
   createNavCrowd,
@@ -257,6 +273,17 @@ export {
   type PathProgress,
   type Waypoint,
 } from "./nav/pathFollow";
+export {
+  createTraffic,
+  type Traffic,
+  type TrafficCarView,
+  type TrafficOptions,
+  type TrafficRoutePolicy,
+  type TrafficSignalState,
+  type TrafficSnapshot,
+  type TrafficStats,
+  type TrafficTuning,
+} from "./nav/traffic";
 export {
   defineAttackMoveOrder,
   defineHoldOrder,

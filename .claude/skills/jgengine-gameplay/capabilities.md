@@ -36,12 +36,15 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `cancelJob` (function) · `import { cancelJob } from "@jgengine/core/gameplay"`
 
-## carry-encumbrance — carried mass vs capacity into movement penalty tiers and a speed multiplier
+## carry-encumbrance — gate a pickup against the carrier's remaining capacity
 
+- `canCarry` (function) · `import { canCarry } from "@jgengine/core/inventory/carryLoad"`
+- `characterLoad` (function) · `import { characterLoad } from "@jgengine/core/inventory/carryLoad"`
 - `resolveEncumbrance` (function) · `import { resolveEncumbrance } from "@jgengine/core/inventory/encumbrance"`
 
-## carry-load — sum carried mass from item stacks via an injected mass resolver
+## carry-load — read carried stacks out of one or more inventories for a weight query
 
+- `carriedEntries` (function) · `import { carriedEntries } from "@jgengine/core/inventory/carryLoad"`
 - `totalLoad` (function) · `import { totalLoad } from "@jgengine/core/inventory/encumbrance"`
 
 ## cell-grid — immutable 2D board of cells with row clears, gravity collapse, and match runs
@@ -148,6 +151,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `enqueue` (function) · `import { enqueue } from "@jgengine/core/gameplay"`
 
+## equipment-slot-inventory — wear gear by slot with item-kind rules, two-handed blocking and replace-on-equip
+
+- `createEquipment` (function) · `import { createEquipment } from "@jgengine/core/inventory/equipment"`
+
 ## event-bus — typed publish/subscribe bus for gameplay events
 
 - `createGameEvents` (function) · `import { createGameEvents } from "@jgengine/core/gameplay"`
@@ -188,6 +195,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `SystemDefinition` (interface) · `import { SystemDefinition } from "@jgengine/core/gameplay"`
 
+## gear-score — score a loadout from stat weights, level, rarity and slot coverage
+
+- `gearScore` (function) · `import { gearScore } from "@jgengine/core/gameplay"`
+
 ## group-credits — turn a flat list of credited things into ordered credit sections
 
 - `groupCredits` (function) · `import { groupCredits } from "@jgengine/core/game/credits"`
@@ -212,7 +223,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createEmptyInventory` (function) · `import { createEmptyInventory } from "@jgengine/core/inventory/inventoryModel"`
 
-## inventory-split — split a stack into a target or first-empty slot
+## inventory-split — split a stack into a target or first-empty slot, honoring a stack limit
 
 - `splitStack` (function) · `import { splitStack } from "@jgengine/core/inventory/inventoryModel"`
 
@@ -287,19 +298,44 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `RarityStyle` (interface) · `import { RarityStyle } from "@jgengine/core/gameplay"`
 
+## loot-comparison — compare two rolled items with per-stat deltas and a weighted score
+
+- `compareLootItems` (function) · `import { compareLootItems } from "@jgengine/core/gameplay"`
+
 ## loot-filter — filter and highlight drops by rarity/name rules
 
 - `evaluateLootFilter` (function) · `import { evaluateLootFilter } from "@jgengine/core/gameplay"`
+
+## loot-generation — roll a named item from bases, parts, affixes, rarity weights, manufacturer personalities and level scaling
+
+- `rollLoot` (function) · `import { rollLoot } from "@jgengine/core/gameplay"`
 
 ## loot-pipeline — compose ordered loot pools with fallbacks, roll modifiers, and provenance
 
 - `createLootPipeline` (function) · `import { createLootPipeline } from "@jgengine/core/gameplay"`
 - `defineLootPipeline` (function) · `import { defineLootPipeline } from "@jgengine/core/gameplay"`
 
+## loot-roller — roll items from one validated catalog while counting drops per rarity for a debug probe
+
+- `createLootRoller` (function) · `import { createLootRoller } from "@jgengine/core/gameplay"`
+
+## loot-score — split one stat block into per-stat weighted contributions
+
+- `lootStatContributions` (function) · `import { lootStatContributions } from "@jgengine/core/gameplay"`
+- `scoreLootStats` (function) · `import { scoreLootStats } from "@jgengine/core/gameplay"`
+
 ## loot-table — register loot tables and roll weighted randomized drops
 
 - `createLootRegistry` (function) · `import { createLootRegistry } from "@jgengine/core/gameplay"`
 - `lootTable` (function) · `import { lootTable } from "@jgengine/core/gameplay"`
+
+## loot-validation — check a rolled item against its catalog and report each defect with its code
+
+- `validateLootItem` (function) · `import { validateLootItem } from "@jgengine/core/gameplay"`
+
+## loot-weapon — feed a rolled item into a weapon definition so generated gear fires through the weapon system
+
+- `lootWeaponDefinition` (function) · `import { lootWeaponDefinition } from "@jgengine/core/gameplay"`
 
 ## maturation-stage — resolve the baby/juvenile/adolescent/adult stage from elapsed maturation
 
@@ -523,10 +559,15 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## shaped-placement — find a shaped inventory item's first fit with ordered rotations, row-major placement, and an explicit search budget
 
 - `findShapedPlacement` (function) · `import { findShapedPlacement } from "@jgengine/core/inventory/shapedGrid"`
+- `fitShapedItem` (function) · `import { fitShapedItem } from "@jgengine/core/inventory/shapedGrid"`
 
 ## shop-grid — serializable vendor/shop stock with buy/sell over a caller-owned wallet — finite/unlimited qty, sell-back, restock/setPrice, snapshot/restore
 
 - `createShopStock` (function) · `import { createShopStock } from "@jgengine/core/gameplay"`
+
+## skill-tree — spend, refuse and refund points over an authored tree with passives, actives and synergies
+
+- `createSkillTree` (function) · `import { createSkillTree } from "@jgengine/core/gameplay"`
 
 ## social-emotes — emotes and social interactions between nearby players
 
@@ -660,3 +701,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## work-queued-jobs — list jobs waiting for a slot, in selection order
 
 - `queuedJobs` (function) · `import { queuedJobs } from "@jgengine/core/gameplay"`
+
+## xp-curve — resolve an authored xp growth rule into per-level thresholds, totals and a level cap
+
+- `defineXpCurve` (function) · `import { defineXpCurve } from "@jgengine/core/gameplay"`
