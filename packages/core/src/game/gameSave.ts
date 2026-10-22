@@ -1,3 +1,4 @@
+import { devtools } from "../devtools/devtools";
 import { hashString, restoreRng, rngStateOf } from "../random/rng";
 import {
   createSaveStore,
@@ -96,6 +97,8 @@ export interface GameSaveConfig {
   readonly migrate?: (document: unknown, fromVersion: number) => GameSaveDocument;
   /** Notified on any backend read/write failure or a restored document written by another world. */
   readonly onError?: (error: unknown) => void;
+  /** Register a devtools probe under this name so the overlay shows the slot, status and system count. */
+  readonly devtoolsName?: string;
 }
 
 /**
@@ -249,6 +252,14 @@ export function createGameSave(config: GameSaveConfig): GameSave {
     },
   });
 
+  const unregister =
+    config.devtoolsName === undefined
+      ? null
+      : devtools.probes.register(
+          config.devtoolsName,
+          () => `${store.slot()} ${store.status()} rev ${store.revision()} ${systems.size} systems`,
+        );
+
   return {
     register(system) {
       add(system);
@@ -286,6 +297,9 @@ export function createGameSave(config: GameSaveConfig): GameSave {
       return out;
     },
     subscribe: (listener) => store.subscribe(listener),
-    dispose: () => store.dispose(),
+    dispose: () => {
+      unregister?.();
+      store.dispose();
+    },
   };
 }
