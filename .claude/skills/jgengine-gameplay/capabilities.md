@@ -290,6 +290,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createLoadouts` (function) · `import { createLoadouts } from "@jgengine/core/gameplay"`
 
+## loan-schedule — build a loan's interest and principal repayment schedule in integer minor units
+
+- `buildLoanSchedule` (function) · `import { buildLoanSchedule } from "@jgengine/core/gameplay"`
+
+## loans — draw, schedule, service and default a loan with interest, posted to a ledger
+
+- `createLoanBook` (function) · `import { createLoanBook } from "@jgengine/core/gameplay"`
+
 ## local-save — persist a game to on-device localStorage (offline)
 
 - `localSaveBackend` (function) · `import { localSaveBackend } from "@jgengine/core/gameplay"`
@@ -634,6 +642,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `statModifierContributions` (function) · `import { statModifierContributions } from "@jgengine/core/gameplay"`
 
+## supply-demand-pricing — price goods from finite stock and live demand on a stated curve
+
+- `createMarket` (function) · `import { createMarket } from "@jgengine/core/gameplay"`
+
 ## system-schedule — compile fixed/frame/interval system ticks into deterministic ordered stages
 
 - `compileSystemSchedule` (function) · `import { compileSystemSchedule } from "@jgengine/core/gameplay"`
@@ -663,6 +675,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `setTouchControlsMode` (function) · `import { setTouchControlsMode } from "@jgengine/core/gameplay"`
 - `touchButtonShape` (function) · `import { touchButtonShape } from "@jgengine/core/gameplay"`
+
+## transaction-ledger — record every money movement with its reason over per-account integer minor-unit balances
+
+- `createTransactionLedger` (function) · `import { createTransactionLedger } from "@jgengine/core/gameplay"`
 
 ## tribe-group — shared-ownership group (tribe/guild/clan) with ranked permissions, group vs personal assets, alliances, and a bounded event log
 
