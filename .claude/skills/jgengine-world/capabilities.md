@@ -34,15 +34,21 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `parseAnimGraph` (function) · `import { parseAnimGraph } from "@jgengine/core/anim/animGraph"`
 - `validateAnimGraph` (function) · `import { validateAnimGraph } from "@jgengine/core/anim/animGraph"`
 
-## animation — find thigh, shin and foot bones on a humanoid rig for foot IK
+## animation — build a masked one-shot overlay layer for upper-body actions and hit reactions
 
+- `actionLayer` (function) · `import { actionLayer } from "@jgengine/core/anim/actionLayer"`
 - `inferLegChains` (function) · `import { inferLegChains } from "@jgengine/core/anim/footPlacement"`
 - `lookAt` (function) · `import { lookAt } from "@jgengine/core/anim/ikSolver"`
+- `multiplyQuaternions` (function) · `import { multiplyQuaternions } from "@jgengine/core/anim/ikSolver"`
 - `placeFeet` (function) · `import { placeFeet } from "@jgengine/core/anim/footPlacement"`
 - `planBoneTexture` (function) · `import { planBoneTexture } from "@jgengine/core/anim/boneTexture"`
+- `quaternionFromUnitVectors` (function) · `import { quaternionFromUnitVectors } from "@jgengine/core/anim/ikSolver"`
+- `ragdollBoneOrientations` (function) · `import { ragdollBoneOrientations } from "@jgengine/core/anim/ragdollRig"`
+- `ragdollConfigFromPoses` (function) · `import { ragdollConfigFromPoses } from "@jgengine/core/anim/ragdollRig"`
 - `sampleBoneTexture` (function) · `import { sampleBoneTexture } from "@jgengine/core/anim/boneTexture"`
 - `solveFabrik` (function) · `import { solveFabrik } from "@jgengine/core/anim/ikSolver"`
 - `solveTwoBone` (function) · `import { solveTwoBone } from "@jgengine/core/anim/ikSolver"`
+- `withActionLayers` (function) · `import { withActionLayers } from "@jgengine/core/anim/actionLayer"`
 
 ## area-effect-field — source-following area membership with enter/refresh/leave edges, stacking, and cleanup
 
@@ -783,6 +789,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `retargetBoneScales` (function) · `import { retargetBoneScales } from "@jgengine/core/anim/skeletonStandard"`
 - `retargetTracks` (function) · `import { retargetTracks } from "@jgengine/core/anim/skeletonStandard"`
 - `runtimeBoneName` (function) · `import { runtimeBoneName } from "@jgengine/core/anim/skeletonStandard"`
+- `standardBoneMask` (function) · `import { standardBoneMask } from "@jgengine/core/anim/skeletonStandard"`
 
 ## skill-check — a timing-bar skill check where you release inside a zone
 

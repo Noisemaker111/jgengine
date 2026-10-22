@@ -328,6 +328,59 @@ export function retargetBoneScales(
 const TRACK_PROPERTIES = ["quaternion", "position", "scale", "morphTargetInfluences"] as const;
 
 /**
+ * Bone-name prefixes for a set of standard slots, for an {@link AnimLayer.mask}. A slot on one side
+ * contributes its side-less prefix (`upperLeg.l` → `upperleg`), which matches both sides' tracks; an
+ * unsided slot contributes its own runtime name. Masking by slot means a rig mapped onto the
+ * standard is masked without hand-typing its bone names.
+ *
+ * @capability skeleton-standard build a layer mask from the standard's own slots
+ */
+export function standardBoneMask(slots: readonly SkeletonSlot[]): string[] {
+  const out = new Set<string>();
+  for (const slot of slots) {
+    const bone = SKELETON_STANDARD.slots[slot];
+    if (bone === undefined) continue;
+    const sided = slot.endsWith(".l") || slot.endsWith(".r");
+    out.add(sided ? slot.slice(0, -2).toLowerCase() : runtimeBoneName(bone));
+  }
+  return [...out];
+}
+
+/** Standard slots an upper-body action layer drives: spine, chest, head and both arms. */
+export const UPPER_BODY_SLOTS: readonly SkeletonSlot[] = [
+  "spine",
+  "chest",
+  "head",
+  "upperArm.l",
+  "upperArm.r",
+  "lowerArm.l",
+  "lowerArm.r",
+  "hand.l",
+  "hand.r",
+  "handSlot.l",
+  "handSlot.r",
+];
+
+/** Standard slots a lower-body layer drives: hips, both legs and both feet. */
+export const LOWER_BODY_SLOTS: readonly SkeletonSlot[] = [
+  "hips",
+  "upperLeg.l",
+  "upperLeg.r",
+  "lowerLeg.l",
+  "lowerLeg.r",
+  "foot.l",
+  "foot.r",
+  "toes.l",
+  "toes.r",
+];
+
+/** Layer mask for an upper-body action layer (aim, reload, hit reaction) on a standard rig. */
+export const UPPER_BODY_MASK: readonly string[] = standardBoneMask(UPPER_BODY_SLOTS);
+
+/** Layer mask for a lower-body layer on a standard rig. */
+export const LOWER_BODY_MASK: readonly string[] = standardBoneMask(LOWER_BODY_SLOTS);
+
+/**
  * Renames a clip's tracks from a rig's own bone names onto the standard's, so one authored clip
  * plays on a mapped rig. The emitted node is the **runtime** bone name (see {@link runtimeBoneName}),
  * which is what both the loaded scene graph and the loaded clips spell. A track whose node fills no

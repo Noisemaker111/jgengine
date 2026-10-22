@@ -167,6 +167,8 @@ export interface ModelAnimationStates {
   backward?: string;
   /** Clip while turning on the spot; omit to pivot on `walk`, driven by the `turnRate` parameter. */
   turn?: string;
+  /** Play every locomotion state as root motion: the rig holds in place and the blended travel comes out as `rootDelta` for the movement owner to consume. */
+  rootMotion?: boolean;
   /** Speed (world units/sec) above which the entity counts as moving. Default 0.5. */
   walkSpeed?: number;
   /** Speed above which `run` plays when provided. Default 6. */
@@ -351,8 +353,27 @@ export interface ModelIkConfig {
   maxAdjust?: number;
   /** Tilt planted feet to the ground normal, `0..1`. Default `1`. */
   alignToGround?: number;
-  /** Turns this bone toward the camera. */
-  lookAt?: { bone: string };
+  /** Turns this bone toward a target. */
+  lookAt?: ModelLookAtConfig;
+}
+
+/** {@link ModelIkConfig.lookAt}: the bone that turns, and what it turns toward. */
+export interface ModelLookAtConfig {
+  /** Bone turned toward the target; the head on a humanoid rig. */
+  bone: string;
+  /**
+   * What the bone turns toward: the camera (default), another entity's position, or a fixed world
+   * point. An entity target that is not spawned this frame keeps the last known direction.
+   */
+  target?: "camera" | { entity: string } | { point: readonly [number, number, number] };
+  /** Height above an entity target's origin to aim at; the entity's eye level. Default 1.5. */
+  entityEyeHeight?: number;
+  /** Yaw limit in radians; the head stops turning past it. Omitted means unconstrained. */
+  maxYaw?: number;
+  /** Pitch limit in radians. Omitted means unconstrained. */
+  maxPitch?: number;
+  /** How much of the solved turn reaches the bone, `0..1`. Default `1`. */
+  weight?: number;
 }
 
 export interface ObjectStyle {

@@ -34,6 +34,13 @@ export interface LocomotionGraphInput {
   turnFull?: number;
   /** Speed below which a turn counts as turning on the spot. Default 0.5. */
   turnSpeed?: number;
+  /**
+   * Mark every locomotion state as a root-motion state, so the rig plays in place and the blended
+   * root travel comes out as `AnimGraphOutput.rootDelta`. The movement owner consumes it with
+   * `takeRootMotion` and resolves it through its controller. Off by default, for rigs whose clips
+   * are authored in place.
+   */
+  rootMotion?: boolean;
   /** One-shot clips keyed by trigger name; `death` holds its last frame instead of returning. */
   oneShots?: Readonly<Record<string, string | readonly string[]>>;
 }
@@ -93,6 +100,7 @@ export function locomotionGraph(input: LocomotionGraphInput): AnimGraph {
   const walkSpeed = input.walkSpeed ?? 0.5;
   const runSpeed = input.runSpeed ?? 6;
   const fade = input.fadeSec ?? 0.2;
+  const rootMotion = input.rootMotion === true ? { rootMotion: true as const } : {};
   const states: Record<string, AnimState> = {
     [LOCOMOTION_STATE]: {
       kind: "blend1D",
@@ -102,6 +110,7 @@ export function locomotionGraph(input: LocomotionGraphInput): AnimGraph {
         { at: walkSpeed, clip: input.walk },
         ...(input.run === undefined ? [] : [{ at: runSpeed, clip: input.run }]),
       ],
+      ...rootMotion,
     },
   };
   const directional: AnimTransition[] = [];
@@ -114,7 +123,7 @@ export function locomotionGraph(input: LocomotionGraphInput): AnimGraph {
       ...(input.strafeLeft === undefined ? [] : [{ at: -1, clip: input.strafeLeft }]),
       ...(input.strafeRight === undefined ? [] : [{ at: 1, clip: input.strafeRight }]),
     ];
-    states[LOCOMOTION_STRAFE_STATE] = { kind: "blend1D", param: LOCOMOTION_DIRECTION_PARAM, points };
+    states[LOCOMOTION_STRAFE_STATE] = { kind: "blend1D", param: LOCOMOTION_DIRECTION_PARAM, points, ...rootMotion };
     for (const side of [-1, 1] as const) {
       directional.push({
         from: LOCOMOTION_STATE,
@@ -137,7 +146,7 @@ export function locomotionGraph(input: LocomotionGraphInput): AnimGraph {
   if (input.backward !== undefined) {
     const gate = input.backwardGate ?? DEFAULT_BACKWARD_GATE;
     const release = input.backwardRelease ?? DEFAULT_BACKWARD_RELEASE;
-    states[LOCOMOTION_BACKWARD_STATE] = { kind: "blend1D", param: LOCOMOTION_SPEED_PARAM, points: [{ at: walkSpeed, clip: input.backward }] };
+    states[LOCOMOTION_BACKWARD_STATE] = { kind: "blend1D", param: LOCOMOTION_SPEED_PARAM, points: [{ at: walkSpeed, clip: input.backward }], ...rootMotion };
     for (const from of [LOCOMOTION_STATE, LOCOMOTION_STRAFE_STATE]) {
       if (states[from] === undefined) continue;
       directional.push({
@@ -168,6 +177,7 @@ export function locomotionGraph(input: LocomotionGraphInput): AnimGraph {
       { at: turnGate, clip: input.idle },
       { at: turnFull, clip: input.turn ?? input.walk },
     ],
+    ...rootMotion,
   };
   for (const from of [LOCOMOTION_STATE, LOCOMOTION_STRAFE_STATE, LOCOMOTION_BACKWARD_STATE]) {
     if (states[from] === undefined) continue;
@@ -229,6 +239,7 @@ export function animGraphFromConfig(config: ModelAnimationConfig): AnimGraph | u
     ...(clip(states.strafeRight) === undefined ? {} : { strafeRight: clip(states.strafeRight)! }),
     ...(clip(states.backward) === undefined ? {} : { backward: clip(states.backward)! }),
     ...(clip(states.turn) === undefined ? {} : { turn: clip(states.turn)! }),
+    ...(states.rootMotion === true ? { rootMotion: true } : {}),
     walkSpeed: states.walkSpeed,
     runSpeed: states.runSpeed,
     fadeSec: states.fadeSec,

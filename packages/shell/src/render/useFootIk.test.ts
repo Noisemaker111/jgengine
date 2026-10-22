@@ -254,6 +254,125 @@ describe("applyFootIk", () => {
   });
 });
 
+/** Forward axis of a bone in world space; `lookAt` points a +Z bone at its target. */
+const forward = (object: THREE.Object3D) => new THREE.Vector3(0, 0, 1).applyQuaternion(object.getWorldQuaternion(new THREE.Quaternion()));
+
+/** The synthetic rig plus a head bone on the hips, for look-at. */
+function rigWithHead() {
+  const { scene, rig } = syntheticRig();
+  const head = new THREE.Object3D();
+  head.name = "Head";
+  head.position.set(0, 0.7, 0);
+  scene.getObjectByName("hips")!.add(head);
+  scene.updateMatrixWorld(true);
+  const config = {
+    feet: [
+      { root: "Thigh_L", mid: "Shin_L", tip: "Foot_L" },
+      { root: "Thigh_R", mid: "Shin_R", tip: "Foot_R" },
+    ],
+    lookAt: { bone: "Head" },
+  };
+  const withHead = resolveFootIkRig(scene, config)!;
+  for (const leg of withHead.legs) leg.ankleRatio = 0.05 / LEG;
+  expect(withHead.head).toBe(head);
+  expect(rig.legs).toHaveLength(2);
+  return { scene, rig: withHead, head };
+}
+
+describe("applyFootIk look-at", () => {
+  test("a target turns the head bone onto it and leaves the rest of the rig alone", () => {
+    const { scene, rig, head } = rigWithHead();
+    const target = [3, 1.7, 0] as const;
+    const { probe } = ground(() => 0);
+    const state = settle((s) => applyFootIk(rig, 0, probe, s, 1 / 60, target));
+    expect(state.weight).toBeGreaterThan(0.99);
+    const from = head.getWorldPosition(new THREE.Vector3());
+    const to = new THREE.Vector3(...target).sub(from).normalize();
+    expect(forward(head).dot(to)).toBeCloseTo(1, 4);
+  });
+
+  test("a yaw limit stops the head short of a target behind it", () => {
+    const { rig, head } = rigWithHead();
+    const limited = resolveFootIkRig(head.parent!.parent!, { feet: [{ root: "Thigh_L", mid: "Shin_L", tip: "Foot_L" }], lookAt: { bone: "Head", maxYaw: 0.2 } })!;
+    for (const leg of limited.legs) leg.ankleRatio = 0.05 / LEG;
+    const { probe } = ground(() => 0);
+    settle((s) => applyFootIk(limited, 0, probe, s, 1 / 60, [0, 1.7, -4]));
+    const facing = forward(head);
+    expect(Math.atan2(facing.x, facing.z)).toBeCloseTo(0.2, 3);
+    expect(rig.head).toBe(head);
+  });
+
+  test("a weight below one turns the head part of the way", () => {
+    const { head } = rigWithHead();
+    const scene = head.parent!.parent!;
+    const half = resolveFootIkRig(scene, { feet: [], lookAt: { bone: "Head", weight: 0.5 } })!;
+    expect(half.lookAtWeight).toBe(0.5);
+    const { probe } = ground(() => 0);
+    const state: FootIkState = { weight: 0, pelvis: 0 };
+    applyFootIk(half, 0, probe, state, 1 / 60, [4, 1.7, 0]);
+    const yaw = Math.atan2(forward(head).x, forward(head).z);
+    expect(yaw).toBeGreaterThan(0.2);
+    expect(yaw).toBeLessThan(Math.PI / 2 - 0.2);
+  });
+});
+
+/** Ground of a 25% slope through the origin; the synthetic rig's feet are 0.3 apart on it. */
+const slope = (x: number) => x * 0.25;
+
+describe("applyFootIk on a slope", () => {
+  test("a slope inside maxAdjust puts each sole exactly on its own ground", () => {
+    const { scene, rig } = syntheticRig();
+    const { probe } = ground(slope);
+    settle((state) => applyFootIk(rig, 0, probe, state, 1 / 60));
+    for (const side of ["L", "R"]) {
+      const foot = world(scene, `Foot_${side}`);
+      expect(foot.y - slope(foot.x)).toBeCloseTo(0.05, 4);
+    }
+    expect(world(scene, "hips").y).toBeCloseTo(1 - 0.0375, 3);
+  });
+
+  test("walking up a slope keeps every sole on the ground at every frame", () => {
+    const { scene, rig } = syntheticRig();
+    const { probe } = ground(slope);
+    const state: FootIkState = { weight: 0, pelvis: 0 };
+    // Settle the correction in before measuring; the ramp-in is not a placement failure.
+    for (let i = 0; i < 90; i += 1) applyFootIk(rig, 0, probe, state, 1 / 60);
+    let worstSink = 0;
+    let worstFloat = 0;
+    for (let frame = 0; frame < 240; frame += 1) {
+      scene.position.x = frame * 0.01;
+      scene.position.y = slope(scene.position.x);
+      scene.updateMatrixWorld(true);
+      applyFootIk(rig, slope(scene.position.x), probe, state, 1 / 60);
+      expect(state.weight).toBeGreaterThan(0.99);
+      for (const side of ["L", "R"]) {
+        const foot = world(scene, `Foot_${side}`);
+        const gap = foot.y - slope(foot.x) - 0.05;
+        worstSink = Math.min(worstSink, gap);
+        worstFloat = Math.max(worstFloat, gap);
+      }
+    }
+    // The sole never goes under its ground, and never floats above it by more than the smoothing lag.
+    expect(worstSink).toBeGreaterThan(-0.001);
+    expect(worstFloat).toBeLessThan(0.004);
+    console.log(`slope walk: worst sink ${worstSink.toFixed(5)} m, worst float ${worstFloat.toFixed(5)} m`);
+  });
+
+  test("a slope steeper than maxAdjust clamps the correction to the leg budget", () => {
+    const { scene, rig } = syntheticRig();
+    const steep = (x: number) => x * 3;
+    const { probe } = ground(steep);
+    const state = settle((s) => applyFootIk(rig, 0, probe, s, 1 / 60));
+    const limit = rig.maxAdjust * LEG;
+    // Past the clamp the sole cannot reach its ground: uphill penetrates, downhill floats.
+    // The correction itself stays inside the leg budget either way.
+    expect(world(scene, "Foot_L").y - 0.05).toBeCloseTo(limit, 3);
+    expect(world(scene, "Foot_R").y - 0.05).toBeCloseTo(-limit, 3);
+    expect(world(scene, "hips").y).toBeCloseTo(1 - limit, 3);
+    expect(state.weight).toBeGreaterThan(0.99);
+  });
+});
+
 async function loadKnight(name = "Knight"): Promise<GLTF> {
   const file = fileURLToPath(new URL(`../../../../apps/dev/public/models/kaykit-adventurers/${name}.glb`, import.meta.url));
   const bytes = readFileSync(file);
@@ -269,7 +388,7 @@ async function loadKnight(name = "Knight"): Promise<GLTF> {
   }
 }
 
-async function footIkHarness(scene: THREE.Object3D) {
+async function footIkHarness(scene: THREE.Object3D, entities?: Record<string, [number, number, number]>) {
   const actEnvironment = globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean };
   const previous = actEnvironment.IS_REACT_ACT_ENVIRONMENT;
   actEnvironment.IS_REACT_ACT_ENVIRONMENT = true;
@@ -278,7 +397,12 @@ async function footIkHarness(scene: THREE.Object3D) {
     frameloop: "never", size: { width: 100, height: 100, top: 0, left: 0 }, dpr: 1,
     gl: () => ({ render() {}, setSize() {}, setPixelRatio() {} }) as unknown as THREE.WebGLRenderer,
   });
-  const ctx = { scene: { raycast: ground((x) => x > 0 ? 0.12 : -0.1).probe } } as unknown as import("@jgengine/core/runtime/gameContextTypes").GameContext;
+  const ctx = {
+    scene: {
+      raycast: ground((x) => x > 0 ? 0.12 : -0.1).probe,
+      entity: { get: (id: string) => (entities?.[id] === undefined ? null : { id, position: entities[id] }) },
+    },
+  } as unknown as import("@jgengine/core/runtime/gameContextTypes").GameContext;
   let store: RootStore;
   function Model({ config }: { config: import("@jgengine/core/game/playableGame").ModelConfig["ik"] }) {
     useFootIk(scene, config, ctx, "hero");
@@ -354,6 +478,40 @@ describe("useFootIk lifecycle", () => {
     await h.unmount();
     expect(leftThigh.quaternion.angleTo(originalRotation)).toBeLessThan(1e-6);
     expect(hips.position.toArray()).toEqual([0.1, 1.3, -0.2]);
+  });
+
+  test("a look-at entity target turns the head toward it, not the camera", async () => {
+    const { scene } = await loadKnight();
+    const head = scene.getObjectByName("head")!;
+    const h = await footIkHarness(scene, { mark: [6, 0, 0] });
+    try {
+      await h.render({ feet: [], lookAt: { bone: "head", target: { entity: "mark" }, entityEyeHeight: 1.5 } });
+      h.frames(60);
+      const from = head.getWorldPosition(new THREE.Vector3());
+      const wanted = new THREE.Vector3(6, 1.5, 0).sub(from).normalize();
+      const facing = new THREE.Vector3(0, 0, 1).applyQuaternion(head.getWorldQuaternion(new THREE.Quaternion()));
+      expect(facing.dot(wanted)).toBeGreaterThan(0.999);
+    } finally {
+      await h.unmount();
+    }
+  });
+
+  test("an unspawned look-at entity falls back to the camera rather than keeping a stale aim", async () => {
+    const oriented = async (target: "camera" | { entity: string }): Promise<THREE.Quaternion> => {
+      const { scene } = await loadKnight();
+      const head = scene.getObjectByName("head")!;
+      const h = await footIkHarness(scene);
+      try {
+        await h.render({ feet: [], lookAt: { bone: "head", target } });
+        h.frames(60);
+        return head.getWorldQuaternion(new THREE.Quaternion());
+      } finally {
+        await h.unmount();
+      }
+    };
+    const camera = await oriented("camera");
+    const missing = await oriented({ entity: "missing" });
+    expect(camera.angleTo(missing)).toBeLessThan(1e-3);
   });
 });
 

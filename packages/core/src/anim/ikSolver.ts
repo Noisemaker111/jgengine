@@ -89,6 +89,43 @@ export function solveTwoBone(input: TwoBoneInput, out: TwoBoneOutput): TwoBoneOu
 }
 
 /**
+ * The product of two quaternions (`a` applied after `b`), both as `[x, y, z, w]`.
+ *
+ * @capability animation inverse kinematics compose two rotations
+ */
+export function multiplyQuaternions(a: Quat, b: Quat): Quat {
+  return [
+    a[3] * b[0] + a[0] * b[3] + a[1] * b[2] - a[2] * b[1],
+    a[3] * b[1] - a[0] * b[2] + a[1] * b[3] + a[2] * b[0],
+    a[3] * b[2] + a[0] * b[1] - a[1] * b[0] + a[2] * b[3],
+    a[3] * b[3] - a[0] * b[0] - a[1] * b[1] - a[2] * b[2],
+  ];
+}
+
+/**
+ * The shortest rotation taking one unit direction to another, as a quaternion. Parallel directions
+ * give the identity; opposite directions give a half turn about a perpendicular axis. Returns the
+ * identity for a zero-length input.
+ *
+ * @capability animation inverse kinematics the shortest rotation between two directions
+ */
+export function quaternionFromUnitVectors(from: Vec3, to: Vec3): Quat {
+  const a = normalize(from[0], from[1], from[2]);
+  const b = normalize(to[0], to[1], to[2]);
+  if (Math.hypot(...a) <= EPSILON || Math.hypot(...b) <= EPSILON) return [0, 0, 0, 1];
+  const dot = a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+  if (dot >= 1 - EPSILON) return [0, 0, 0, 1];
+  if (dot <= -1 + EPSILON) {
+    const axis = Math.abs(a[0]) < 0.9 ? normalize(...cross(a, [1, 0, 0])) : normalize(...cross(a, [0, 1, 0]));
+    return [axis[0], axis[1], axis[2], 0];
+  }
+  const c = cross(a, b);
+  const q: Quat = [c[0], c[1], c[2], 1 + dot];
+  const length = Math.hypot(...q);
+  return [q[0] / length, q[1] / length, q[2] / length, q[3] / length];
+}
+
+/**
  * Solves a chain with the FABRIK forward-and-backward reaching algorithm.
  * Returned tuples are new values; the input chain is not modified.
  *

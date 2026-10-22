@@ -44,6 +44,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `ActionTooltip` (function) · `import { ActionTooltip } from "@jgengine/react"`
 
+## animation — turn a killed rigged character into a physics ragdoll on death
+
+- `useRagdoll` (function) · `import { useRagdoll } from "@jgengine/shell/render/useRagdoll"`
+
 ## animation-motion-params — read resolved player movement into reusable animation graph parameters
 
 - `readModelAnimationParams` (function) · `import { readModelAnimationParams } from "@jgengine/shell/render/useModelAnimation"`

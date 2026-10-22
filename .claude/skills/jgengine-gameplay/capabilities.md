@@ -187,9 +187,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `ActionCodesMap` (type) · `import { ActionCodesMap } from "@jgengine/core/gameplay"`
 
-## game-save — save/load game state with a pluggable backend, autosave, slots, and migration
+## game-save — one versioned save document with per-system sections, named slots, caller-policy autosave, migration and a state digest
 
+- `createGameSave` (function) · `import { createGameSave } from "@jgengine/core/gameplay"`
 - `createSaveStore` (function) · `import { createSaveStore } from "@jgengine/core/gameplay"`
+
+## game-save-digest — hash a save document's state for a determinism test or a diff
+
+- `gameSaveDigest` (function) · `import { gameSaveDigest } from "@jgengine/core/gameplay"`
 
 ## game-system — declare a composable capability with its own schedule and lifecycle
 
