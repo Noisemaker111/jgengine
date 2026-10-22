@@ -492,6 +492,7 @@
     "./sim/nearAgents",
     "./sim/needs",
     "./sim/offScreen",
+    "./sim/population",
     "./sim/queue",
     "./sim/rides",
     "./sim/routine",
