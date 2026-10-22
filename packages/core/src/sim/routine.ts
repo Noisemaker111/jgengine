@@ -74,8 +74,16 @@ export interface RoutineTimeline {
   nextChangeAfter(time: number): number;
 }
 
-function wrap(value: number, cycle: number): number {
-  return ((value % cycle) + cycle) % cycle;
+/**
+ * Seconds into the cycle, plus how far float rounding can have moved them.
+ *
+ * `time` is a sum of whole cycles and a stop time, so it arrives with the low bits of the stop time
+ * already rounded away; comparing a boundary against it needs a tolerance or a boundary that *is*
+ * now reads as a change still to come, which would repeat forever.
+ */
+function localAt(time: number, cycleSeconds: number): { cycle: number; local: number; tolerance: number } {
+  const cycle = Math.floor(time / cycleSeconds) * cycleSeconds;
+  return { cycle, local: time - cycle, tolerance: Math.max(1e-9, Math.abs(time) * Number.EPSILON * 8) };
 }
 
 /**
@@ -145,8 +153,7 @@ export function resolveRoutine(config: RoutineConfig): RoutineTimeline {
   }));
 
   function phaseAt(time: number): RoutinePhase {
-    const cycle = Math.floor(time / cycleSeconds) * cycleSeconds;
-    const local = wrap(time, cycleSeconds);
+    const { cycle, local, tolerance } = localAt(time, cycleSeconds);
     if (stops.length === 1) {
       const only = stops[0]!;
       return {
@@ -161,7 +168,7 @@ export function resolveRoutine(config: RoutineConfig): RoutineTimeline {
       };
     }
     for (const stop of stops) {
-      if (local >= stop.arriveAt && local < stop.departAt) {
+      if (local >= stop.arriveAt - tolerance && local < stop.departAt - tolerance) {
         return {
           stop: stop.index,
           place: stop.place,
@@ -176,7 +183,7 @@ export function resolveRoutine(config: RoutineConfig): RoutineTimeline {
     }
     let from = stops.length - 1;
     for (let i = 0; i < stops.length; i += 1) {
-      if (stops[i]!.departAt <= local) from = i;
+      if (stops[i]!.departAt <= local + tolerance) from = i;
     }
     const next = (from + 1) % stops.length;
     const departLocal = stops[from]!.departAt;
@@ -202,17 +209,18 @@ export function resolveRoutine(config: RoutineConfig): RoutineTimeline {
     stops,
     phaseAt,
     nextChangeAfter(time) {
-      const cycle = Math.floor(time / cycleSeconds) * cycleSeconds;
-      const local = wrap(time, cycleSeconds);
+      const { cycle, tolerance } = localAt(time, cycleSeconds);
       let best = Infinity;
       for (const stop of stops) {
         for (const boundary of [stop.arriveAt, stop.departAt]) {
-          let candidate = boundary;
-          if (candidate <= local) candidate += cycleSeconds;
+          // Absolute time, so a boundary that rounding has put a hair behind `time` cannot answer
+          // with `time` itself and stall every caller that steps by the answer.
+          let candidate = cycle + boundary;
+          if (candidate <= time + tolerance) candidate += cycleSeconds;
           if (candidate < best) best = candidate;
         }
       }
-      return cycle + best;
+      return best;
     },
   };
 }

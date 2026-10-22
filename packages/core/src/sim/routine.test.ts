@@ -62,6 +62,30 @@ describe("resolveRoutine", () => {
     expect(routine.phaseAt(at(8, 30))).toMatchObject({ stop: 1, place: "work", travelling: false });
   });
 
+  test("fractional stop times always answer with a strictly later change", () => {
+    const routine = resolveRoutine({
+      cycleSeconds: 600,
+      stops: [
+        { place: "home", arriveAt: 0, travelSeconds: 0 },
+        { place: "work", arriveAt: 3.3, activity: "work", travelSeconds: 0 },
+        { place: "diner", arriveAt: 120.1, activity: "meal", travelSeconds: 0 },
+        { place: "home", arriveAt: 400.7, activity: "home", travelSeconds: 0 },
+      ],
+    });
+
+    const expected = [3.3, 120.1, 400.7, 600, 603.3, 720.1, 1000.7, 1200, 1203.3, 1320.1, 1600.7, 1800];
+    let time = 0;
+    for (const want of expected) {
+      const next = routine.nextChangeAfter(time);
+      expect(next).toBeGreaterThan(time);
+      expect(next).toBeCloseTo(want, 6);
+      time = next;
+    }
+
+    expect(routine.phaseAt(603.3)).toMatchObject({ place: "work", activity: "work", travelling: false });
+    expect(routine.phaseAt(600 * 4 + 120.1)).toMatchObject({ place: "diner", activity: "meal", travelling: false });
+  });
+
   test("wraps every cycle and keeps a one-stop day at home", () => {
     const routine = dayOf();
     expect(routine.phaseAt(0).stop).toBe(0);

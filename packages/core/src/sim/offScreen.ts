@@ -296,7 +296,17 @@ export function createOffScreenWorld(options: OffScreenOptions): OffScreenWorld 
           }
         }
       }
-      resident.staleAt = resident.routine.nextChangeAfter(resident.updatedAt);
+      const next = resident.routine.nextChangeAfter(resident.updatedAt);
+      if (next > resident.updatedAt) {
+        resident.staleAt = next;
+      } else {
+        // A schedule that cannot name a later change must not spin this catch-up loop; hold the
+        // phase, decay to `now` and try once more a cycle later.
+        resident.needs = decayMeters(resident.needs, defs, now - resident.updatedAt);
+        resident.updatedAt = now;
+        resident.staleAt = now + resident.routine.cycleSeconds;
+        break;
+      }
     }
   }
 
