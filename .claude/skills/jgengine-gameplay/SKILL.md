@@ -85,6 +85,13 @@ registry (`applyMissionRewards`). `validateMissionCatalog` is the content gate a
 whose success path is counters alone — `createMissionRuntime` runs it at construction, so a
 counter-only mission throws instead of shipping.
 
+Report what happened instead of polling your own counters: `tick(dt, { events })` takes
+`MissionWorldEvent`s (`kill`/`collect`/`deliver` with a target, actor and tags), an objective's `match`
+filter credits only matching ones - a decoy, a wrong weapon or a rival's kill does not advance it - and
+a `failOn` of kind `event` or `left-area` ends the run on a matching event or on an actor leaving an
+authored marker. `view()` is everything a HUD needs: label, `remaining`, `counted`/`count`,
+`step`/`steps`, `outcome` and `reason`.
+
 For cross-catalog sources and skill gates, compose `validateContentReferences` and
 `validateContentProgression` (`game/contentValidation`) with `validateRecipeCatalog`
 (`crafting/recipeCatalog`). Follow [content validation](reference-content-validation.md).
