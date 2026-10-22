@@ -145,6 +145,17 @@ export function createCombatSubsystem(d: CombatSubsystemDeps): CombatSubsystem {
         const userId = userIdOf(instanceId);
         return { catalogId: entity.name, name: entity.name, ...(userId === undefined ? {} : { userId }) };
       },
+      onDamage(application) {
+        events.emit("combat.damage", {
+          target: application.target,
+          source: application.source,
+          type: application.effect,
+          amount: application.dealt,
+          absorbed: Math.max(0, application.incoming - application.dealt),
+          remaining: application.remaining,
+          lethal: application.lethal,
+        });
+      },
       onLethal(instanceId, lethalCtx) {
         // Capture identity + onDeath *before* resolveDeath despawns the entity.
         const dyingEntity = entities.get(instanceId);

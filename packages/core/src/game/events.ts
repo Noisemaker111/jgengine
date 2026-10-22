@@ -29,7 +29,7 @@ export interface DamageAppliedEvent {
   target: string;
   /** Who or what dealt it: an attacker instance id, a hazard, or the status that ticked. */
   source?: string;
-  /** Damage type resolved through the target's table (`"kinetic"`, `"fire"`). */
+  /** Damage type resolved through the target's table (`"kinetic"`, `"fire"`). On the effect path (`ctx.scene.entity.effect`) there is no table, so it is the effect id that landed. */
   type: string;
   /** Damage dealt after the zone, type and armor steps. */
   amount: number;

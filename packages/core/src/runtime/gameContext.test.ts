@@ -1,13 +1,14 @@
 import { describe, expect, test } from "bun:test";
 
 import { defineGameDefinition } from "../game/defineGame";
-import type { CombatVfxEvent, EntityFloatTextEvent, ProjectileSettledEvent } from "../game/events";
+import type { CombatVfxEvent, DamageAppliedEvent, EntityFloatTextEvent, ProjectileSettledEvent } from "../game/events";
 import { gamePhase } from "../game/gamePhase";
 import { raceTrack, type Checkpoint } from "@jgengine/core/game/race";
 import { createAssetCatalog } from "../scene/assetCatalog";
 import { encodeCollisionMesh, type CollisionMeshData, type CollisionMeshSource } from "../scene/collisionMesh";
 import { defineStore } from "../store/defineStore";
 import { resetRngFallbackWarnings } from "../random/resolveRng";
+import { createDamageRuntime } from "../combat/damageRuntime";
 import { environment, terrain } from "../world/features";
 import { resolveTerrainField } from "../world/terrain";
 import { createGameContext, type GameContextContent } from "./gameContext";
@@ -1675,4 +1676,100 @@ test("context economy uses a currency definition consistently across grant, bala
   expect(ctx.game.economy.charge("user_a", cash, 0.002)).toEqual({ reason: "insufficient-funds" });
   expect(ctx.game.economy.charge("user_a", cash, 0.002, { overdraft: true })).toBeNull();
   expect(ctx.game.economy.balance("user_a", cash)).toBe(-0.001);
+});
+
+describe("damage events", () => {
+  test("a damaging effect raises one combat.damage with source and remaining", () => {
+    const ctx = makeContext();
+    const seen: DamageAppliedEvent[] = [];
+    ctx.game.events.on("combat.damage", (event) => seen.push(event));
+    const attacker = ctx.scene.entity.spawn("attacker", { position: [0, 0, 0] });
+    const dummy = ctx.scene.entity.spawn("dummy", { position: [1, 0, 0] });
+
+    ctx.scene.entity.effect({ from: attacker, to: dummy, effect: "damage", via: { amount: 12 } });
+
+    expect(seen).toEqual([{
+      target: dummy,
+      source: attacker,
+      type: "damage",
+      amount: 12,
+      absorbed: 0,
+      remaining: 18,
+      lethal: false,
+    }]);
+  });
+
+  test("a lethal effect announces once and a restorative one stays silent", () => {
+    const ctx = makeContext();
+    const seen: DamageAppliedEvent[] = [];
+    ctx.game.events.on("combat.damage", (event) => seen.push(event));
+    const attacker = ctx.scene.entity.spawn("attacker", { position: [0, 0, 0] });
+    const slime = ctx.scene.entity.spawn("slime", { position: [1, 0, 0] });
+
+    ctx.scene.entity.effect({ from: attacker, to: slime, effect: "damage", via: { amount: 999 } });
+    expect(seen).toEqual([{
+      target: slime,
+      source: attacker,
+      type: "damage",
+      amount: 10,
+      absorbed: 989,
+      remaining: 0,
+      lethal: true,
+    }]);
+
+    const dummy = ctx.scene.entity.spawn("dummy", { position: [4, 0, 0] });
+    ctx.scene.entity.effect({ from: attacker, to: dummy, effect: "damage", via: { amount: -5 } });
+    expect(seen).toHaveLength(1);
+  });
+
+  test("an area effect announces one event per target it lands on", () => {
+    const ctx = makeContext();
+    const seen: DamageAppliedEvent[] = [];
+    ctx.game.events.on("combat.damage", (event) => seen.push(event));
+    const attacker = ctx.scene.entity.spawn("attacker", { position: [0, 0, 0] });
+    const near = ctx.scene.entity.spawn("dummy", { position: [1, 0, 0] });
+    const far = ctx.scene.entity.spawn("dummy", { position: [9, 0, 0] });
+
+    ctx.scene.entity.effect({ from: attacker, effect: "damage", via: { amount: 6 }, at: [0, 0, 0], radius: 4 });
+
+    expect(seen.map((event) => event.target)).toEqual([near]);
+    expect(seen[0]).toMatchObject({ source: attacker, amount: 6, remaining: 24 });
+    expect(seen.some((event) => event.target === far)).toBe(false);
+  });
+
+  test("the runtime and the effect path each raise their own event, never two for one hit", () => {
+    const ctx = makeContext();
+    const seen: DamageAppliedEvent[] = [];
+    ctx.game.events.on("combat.damage", (event) => seen.push(event));
+    const attacker = ctx.scene.entity.spawn("attacker", { position: [0, 0, 0] });
+    const dummy = ctx.scene.entity.spawn("dummy", { position: [1, 0, 0] });
+    const damage = createDamageRuntime({
+      table: {
+        types: [{ id: "kinetic", vs: { flesh: 1 } }],
+        armor: { halfValue: 100, maxMitigation: 0.9 },
+      },
+      zones: { zones: [{ id: "body", multiplier: 1 }], defaultZone: "body", critChance: 0, critMultiplier: 1 },
+      rng: () => 0.5,
+      events: ctx.game.events,
+      healthOf: (id) => ctx.scene.entity.stats.get(id, "health")?.current ?? null,
+    });
+    damage.registerTarget(dummy, { resistance: "flesh", armor: 0 });
+
+    damage.hit({ target: dummy, type: "kinetic", base: 5, source: attacker });
+    expect(seen).toHaveLength(1);
+    expect(seen[0]).toEqual({
+      target: dummy,
+      source: attacker,
+      type: "kinetic",
+      amount: 5,
+      absorbed: 0,
+      remaining: 25,
+      lethal: false,
+    });
+
+    ctx.scene.entity.effect({ from: attacker, to: dummy, effect: "damage", via: { amount: 7 } });
+    expect(seen).toHaveLength(2);
+    // The runtime only reads health; the caller applies the number it resolved. The effect path writes its own.
+    expect(seen[1]).toMatchObject({ target: dummy, source: attacker, amount: 7, remaining: 23 });
+  });
 });

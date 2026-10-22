@@ -2008,8 +2008,12 @@
 ## @jgengine/shell/camera
 
 - `CAMERA_TRANSPARENT_USERDATA` (const): const CAMERA_TRANSPARENT_USERDATA: { readonly jgCameraTransparent: true } — userData applied to the group wrapping author `WorldOverlay` decor so the spring-arm ignores it by default.
+- `CameraClearanceInput` (interface): interface CameraClearanceInput — What a camera asks `clearCameraBoom` each frame: the boom it wants and the surfaces that may stop it.
+- `CameraClearanceResult` (interface): interface CameraClearanceResult — Clear camera position and the boom length to hand back next frame.
+- `CameraCollisionQuery` (interface): interface CameraCollisionQuery — One collision question the camera asks: distance along a ray to the nearest surface that should stop it.
 - `CameraFollowListener` (type): type CameraFollowListener = (state: CameraFollowState) => void — ⚠ undocumented
-- `CameraOccluder` (interface): interface CameraOccluder — Camera spring-arm occlusion filtering.
+- `CameraOccluder` (interface): interface CameraOccluder — Minimal structural view of a raycast hit object: its own tags plus a parent link to walk. Keeps this filter free of a three.js import so it stays unit-testable.
+- `CameraPoint` (interface): interface CameraPoint — World-space point for camera boom math, matching the rigs' `Vec3`.
 - `CameraShakeChannel` (interface): interface CameraShakeChannel { shake(amplitude: number, decayPerSecond?: number): void; step(dt: number): void; sample(config?: Parameters<typeof shakeOffset>[1]): ShakeOffset; trauma(): number } — ⚠ undocumented · used by `defaultCameraShakeChannel`: Process-wide default channel.
 - `CameraShakeContext` (const): const CameraShakeContext: React.Context<CameraShakeChannel> — ⚠ undocumented
 - `ControllerCameraShake` (function): function ControllerCameraShake({ controller, priority = GAME_SIM_FRAME_PRIORITY, }: ControllerCameraShakeProps): ReactNode — The shell-side consumer of a core {@link CameraShakeController}: each frame it calls `controller.update(delta)` to bleed trauma, reads the pooled `controller.offset()`, and applies it additively to the active camera — a positional kick plus a pitch/yaw/roll rotation — so the view VISIBLY shakes on impacts. It runs after the camera rig (which re-poses the camera to its base every frame), so the shake composes with any rig without a manual save/restore and without fighting the built-in `shakeChannel`. Renders nothing.
@@ -2028,10 +2032,12 @@
 - `PlayerFovSlider` (function): function PlayerFovSlider(): React.JSX.Element | null — ⚠ undocumented
 - `PlayerFovState` (interface): interface PlayerFovState { fov: number; bounds: PlayerFovBounds; enabled: boolean; persist: boolean; setFov: (value: number) => void; compose: (poseFov: number, mode?: "relative" | "absolute") => number } — ⚠ undocumented
 - `ViewmodelProps` (interface): interface ViewmodelProps — Props handed to a custom viewmodel component (#542): a live cue ref (velocity/bob/firing/reloading/recoil/hit) for the followed entity, driven from your own `useFrame` — read `cuesRef.current` there rather than storing it as render state.
+- `clearCameraBoom` (function): function clearCameraBoom(input: CameraClearanceInput): CameraClearanceResult — Pull a camera in along its boom so it never sits inside world collision. A blocking surface rejects the desired position: the camera moves to `clearance` before it, and onto the pivot when the surface is closer than that (the pivot is inside, so no camera position is clear). Pulling in is immediate — a camera must not spend a frame inside a trunk — while releasing eases back at `releaseRate`, which is what makes the boom read as a spring arm instead of a hard stop.
 - `defaultCameraShakeChannel` (const): const defaultCameraShakeChannel: CameraShakeChannel — Process-wide default channel. A shell mounts its own channel via `CameraShakeContext`, but game systems that have no React context (e.g. a `loop.onTick` reacting to `entity.died`) can import `cameraShake` and feed the default channel directly.
 - `isCameraOccluderTransparent` (function): function isCameraOccluderTransparent(object: CameraOccluder | null | undefined): boolean — Should the camera spring-arm ignore this raycast hit? Walks the object up its `.parent` chain and honors the nearest camera tag: `jgCameraCollide === true` blocks (opt back in), `jgCameraTransparent === true` passes through. Untagged geometry blocks as before, so engine-owned ground/entities are unaffected.
 - `readFirstPersonMuzzle` (function): function readFirstPersonMuzzle(target: THREE.Vector3, camera?: THREE.Camera): boolean — Presentation muzzle in world space; camera-scoped when supplied, false leaves target unchanged.
 - `registerFirstPersonMuzzle` (function): function registerFirstPersonMuzzle(camera: Camera, reader: FirstPersonMuzzleReader): () => void — Register a custom rig's presentation muzzle for its Three.js camera. Newest available custom reader wins over that camera's stock muzzle; call the returned cleanup on unmount.
+- `sceneCameraQuery` (function): function sceneCameraQuery(raycast: SceneRaycastApi["raycast"], options: { entities?: boolean; terrain?: boolean } = {}): CameraCollisionQuery — `CameraCollisionQuery` over the scene's existing collision query (`ctx.scene.raycast`), which already reads world solids, scene-object colliders and walls. Entities and terrain stay out by default: the followed body must not push its own camera, and looking down at the ground must not pull the boom.
 - `usePlayerFov` (function): function usePlayerFov(): PlayerFovState — ⚠ undocumented
 
 ## @jgengine/shell/camera/ControllerCameraShake
@@ -2081,8 +2087,14 @@
 ## @jgengine/shell/camera/cameraCollision
 
 - `CAMERA_TRANSPARENT_USERDATA` (const): const CAMERA_TRANSPARENT_USERDATA: { readonly jgCameraTransparent: true } — userData applied to the group wrapping author `WorldOverlay` decor so the spring-arm ignores it by default.
-- `CameraOccluder` (interface): interface CameraOccluder — Camera spring-arm occlusion filtering.
+- `CameraClearanceInput` (interface): interface CameraClearanceInput — What a camera asks `clearCameraBoom` each frame: the boom it wants and the surfaces that may stop it.
+- `CameraClearanceResult` (interface): interface CameraClearanceResult — Clear camera position and the boom length to hand back next frame.
+- `CameraCollisionQuery` (interface): interface CameraCollisionQuery — One collision question the camera asks: distance along a ray to the nearest surface that should stop it.
+- `CameraOccluder` (interface): interface CameraOccluder — Minimal structural view of a raycast hit object: its own tags plus a parent link to walk. Keeps this filter free of a three.js import so it stays unit-testable.
+- `CameraPoint` (interface): interface CameraPoint — World-space point for camera boom math, matching the rigs' `Vec3`.
+- `clearCameraBoom` (function): function clearCameraBoom(input: CameraClearanceInput): CameraClearanceResult — Pull a camera in along its boom so it never sits inside world collision. A blocking surface rejects the desired position: the camera moves to `clearance` before it, and onto the pivot when the surface is closer than that (the pivot is inside, so no camera position is clear). Pulling in is immediate — a camera must not spend a frame inside a trunk — while releasing eases back at `releaseRate`, which is what makes the boom read as a spring arm instead of a hard stop.
 - `isCameraOccluderTransparent` (function): function isCameraOccluderTransparent(object: CameraOccluder | null | undefined): boolean — Should the camera spring-arm ignore this raycast hit? Walks the object up its `.parent` chain and honors the nearest camera tag: `jgCameraCollide === true` blocks (opt back in), `jgCameraTransparent === true` passes through. Untagged geometry blocks as before, so engine-owned ground/entities are unaffected.
+- `sceneCameraQuery` (function): function sceneCameraQuery(raycast: SceneRaycastApi["raycast"], options: { entities?: boolean; terrain?: boolean } = {}): CameraCollisionQuery — `CameraCollisionQuery` over the scene's existing collision query (`ctx.scene.raycast`), which already reads world solids, scene-object colliders and walls. Entities and terrain stay out by default: the followed body must not push its own camera, and looking down at the ground must not pull the boom.
 
 ## @jgengine/shell/camera/cameraRigs
 
