@@ -1,5 +1,5 @@
 import { useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useLayoutEffect, useMemo, useRef, type MutableRefObject, type RefObject } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type MutableRefObject, type RefObject } from "react";
 import * as THREE from "three";
 
 import type { BiomeBand, SkyEnvironmentDescriptor } from "@jgengine/core/world/features";
@@ -262,13 +262,13 @@ export function SkyDome({
         float sFbm(vec2 p){ float v = 0.0; float a = 0.5; for (int i = 0; i < 5; i++){ v += a * sNoise(p); p *= 2.0; a *= 0.5; } return v; }
         float h3(vec3 p){ return fract(sin(dot(p, vec3(12.9898, 78.233, 37.719))) * 43758.5453); }
         float starField(vec3 dir){
-          vec3 q = dir * 190.0;
+          vec3 q = dir * 170.0;
           vec3 cell = floor(q);
           float seed = h3(cell);
-          if (seed < 0.982) return 0.0;
-          vec3 jitter = vec3(h3(cell + vec3(1.0, 0.0, 0.0)), h3(cell + vec3(0.0, 1.0, 0.0)), h3(cell + vec3(0.0, 0.0, 1.0))) - 0.5;
+          if (seed < 0.984) return 0.0;
+          vec3 jitter = fract(vec3(seed * 137.0, seed * 311.0, seed * 531.0)) - 0.5;
           float d = length(fract(q) - 0.5 - jitter * 0.7);
-          return smoothstep(0.16, 0.0, d) * smoothstep(0.982, 0.998, seed);
+          return smoothstep(0.18, 0.0, d) * smoothstep(0.984, 0.999, seed);
         }
         void main() {
           vec3 dir = normalize(vWorldPosition + vec3(0.0, offset, 0.0));
@@ -408,6 +408,26 @@ function bandsDriveSkyOrFog(bands: readonly BiomeBand[] | undefined): bands is r
   return bands !== undefined && bands.some((band) => band.fog !== undefined || band.sky !== undefined);
 }
 
+/**
+ * Mount state for the moon: it re-renders only when the moon crosses the horizon. A zero-intensity
+ * directional light still costs a per-fragment loop in every lit material, so a day sky must not
+ * carry it.
+ * @internal
+ */
+export function useMoonAboveHorizon(initialUp: boolean): [boolean, (intensity: number) => void] {
+  const [up, setUp] = useState(initialUp);
+  const upRef = useRef(up);
+  return [
+    up,
+    (intensity: number) => {
+      const next = intensity > 0;
+      if (next === upRef.current) return;
+      upRef.current = next;
+      setUp(next);
+    },
+  ];
+}
+
 /** Fog range: the sky's own fields win, then the authored backdrop, then the caller's default. */
 function skyFogRange(sky: SkyEnvironmentDescriptor, fogRange: SkyDaylightProps["fogRange"], fallback: { near: number; far: number }) {
   return { near: sky.fog?.near ?? fogRange?.near ?? fallback.near, far: sky.fog?.far ?? fogRange?.far ?? fallback.far };
@@ -532,9 +552,11 @@ function BiomeDaylight({
   );
   const fogSampler = useMemo(() => createBiomeFogSampler(bands, fogFallback), [bands, fogFallback]);
   const skySampler = useMemo(() => createBiomeSkySampler(bands, skyFallback), [bands, skyFallback]);
+  const [moonUp, syncMoon] = useMoonAboveHorizon(initial.moonIntensity > 0);
 
   useFrame((state) => {
     const base = timeOfDay ? daylightStateAt(clock!.calendar().dayFraction, sky) : initial;
+    syncMoon(base.moonIntensity);
     const z = state.camera.position.z;
     const fog = fogSampler(z);
     const skyValue = skySampler(z);
@@ -593,6 +615,7 @@ function BiomeDaylight({
             intensity={initial.sunIntensity}
             color={initial.sunColor}
           />
+          {moonUp ? (
           <MoonLight
             direction={initial.moonPosition}
             directionRef={moonDirectionRef}
@@ -600,6 +623,7 @@ function BiomeDaylight({
             intensity={initial.moonIntensity}
             color={initial.moonColor}
           />
+          ) : null}
         </>
       ) : null}
     </>
@@ -626,11 +650,13 @@ function DrivenDaylight({
   const fogRef = useRef<THREE.Fog>(null);
   const skyMaterialRef = useRef<THREE.ShaderMaterial | null>(null);
   const range = skyFogRange(sky, fogRange, { near: 70, far: 260 });
+  const [moonUp, syncMoon] = useMoonAboveHorizon(initial.moonIntensity > 0);
 
   useFrame(() => {
     const state = daylightStateAt(clock.calendar().dayFraction, sky);
     sunDirectionRef.current = state.sunPosition;
     moonDirectionRef.current = state.moonPosition;
+    syncMoon(state.moonIntensity);
     const sun = sunRef.current;
     if (sun !== null) {
       sun.intensity = state.sunIntensity;
@@ -672,7 +698,9 @@ function DrivenDaylight({
         <>
           <hemisphereLight ref={hemiRef} args={[HEMI_SKY, HEMI_GROUND, initial.ambientIntensity]} />
           <SunLight direction={initial.sunPosition} directionRef={sunDirectionRef} lightRef={sunRef} intensity={initial.sunIntensity} color={initial.sunColor} />
-          <MoonLight direction={initial.moonPosition} directionRef={moonDirectionRef} lightRef={moonRef} intensity={initial.moonIntensity} color={initial.moonColor} />
+          {moonUp ? (
+            <MoonLight direction={initial.moonPosition} directionRef={moonDirectionRef} lightRef={moonRef} intensity={initial.moonIntensity} color={initial.moonColor} />
+          ) : null}
         </>
       ) : null}
     </>

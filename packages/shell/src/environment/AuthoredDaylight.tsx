@@ -5,7 +5,7 @@ import * as THREE from "three";
 import type { SkyEnvironmentDescriptor } from "@jgengine/core/world/features";
 
 import type { DaylightModulation } from "../render/SceneLighting";
-import { MoonLight } from "./Daylight";
+import { MoonLight, useMoonAboveHorizon } from "./Daylight";
 import { daylightStateAt, DEFAULT_DAY_AMBIENT_INTENSITY, DEFAULT_DAY_SUN_INTENSITY } from "./daylightCycle";
 
 /** Props for {@link AuthoredDaylight}: the authored sky whose values are the noon keyframe, the world clock, and the holder configured lights read. */
@@ -36,6 +36,7 @@ export function AuthoredDaylight({ sky, clock, modulation }: AuthoredDaylightPro
   const noonAmbient = sky.ambientIntensity ?? DEFAULT_DAY_AMBIENT_INTENSITY;
   const moonRef = useRef<THREE.DirectionalLight>(null);
   const moonDirectionRef = useRef<readonly [number, number, number]>(initial.moonPosition);
+  const [moonUp, syncMoon] = useMoonAboveHorizon(initial.moonIntensity > 0);
 
   useFrame(() => {
     const state = daylightStateAt(clock.calendar().dayFraction, sky);
@@ -48,8 +49,10 @@ export function AuthoredDaylight({ sky, clock, modulation }: AuthoredDaylightPro
       moon.intensity = state.moonIntensity;
       moon.color.set(state.moonColor);
     }
+    syncMoon(state.moonIntensity);
   });
 
+  if (!moonUp) return null;
   return (
     <MoonLight
       direction={initial.moonPosition}
@@ -60,3 +63,4 @@ export function AuthoredDaylight({ sky, clock, modulation }: AuthoredDaylightPro
     />
   );
 }
+
