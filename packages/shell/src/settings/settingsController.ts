@@ -31,6 +31,7 @@ import {
   type GraphicsProfileOverrides,
 } from "@jgengine/core/settings/graphicsSettings";
 import { FRAME_RATE_LIMIT_DISPLAY, FRAME_RATE_LIMIT_OPTIONS } from "@jgengine/core/settings/frameRateLimit";
+import { accessibilitySettingRows } from "@jgengine/core/settings/accessibilitySettings";
 import {
   DEFAULT_TOUCH_JOYSTICK_VARIANT,
   TOUCH_JOYSTICK_VARIANT_OPTIONS,
@@ -55,6 +56,7 @@ const DEFAULT_CATEGORY_LABELS: Record<string, string> = {
   graphics: "Graphics",
   gameplay: "Gameplay",
   controls: "Controls",
+  accessibility: "Accessibility",
 };
 
 const percent = (value: number): string => `${Math.round(value * 100)}%`;
@@ -269,6 +271,7 @@ export function useSettingsCategories(config: SettingsControllerInput): Settings
     graphics: graphicsRows,
     gameplay: gameplayRows,
     controls: controlsRows,
+    accessibility: accessibilitySettingRows(store) as SettingsRow[],
   };
   const builtInKeybinds: Record<string, SettingsKeybindRow[]> = { controls: keybinds };
 
@@ -279,6 +282,7 @@ export function useSettingsCategories(config: SettingsControllerInput): Settings
     if (!order.includes(id)) order.push(id);
   };
   for (const id of BUILT_IN_SETTING_CATEGORIES) push(id);
+  push("accessibility");
   for (const c of config.categories) push(c.id);
   for (const def of config.extra) push(def.category);
 

@@ -1,17 +1,10 @@
-import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
+import { useState, type CSSProperties, type ReactNode } from "react";
 
-import { ScrollRail } from "@jgengine/react/scrollRail";
 import { useDialogBehavior } from "@jgengine/react/dialogBehavior";
+import { ScrollRail } from "@jgengine/react/scrollRail";
+import { SettingsSection } from "@jgengine/react/settingsBlocks";
 
-import { useDebouncedCommit } from "@jgengine/react/useDebouncedCommit";
-
-import {
-  type SettingsActionView,
-  type SettingsCategoryView,
-  type SettingsController,
-  type SettingsKeybindRow,
-  type SettingsRow,
-} from "./settingsController";
+import type { SettingsActionView, SettingsCategoryView, SettingsController } from "./settingsController";
 
 const surface = "var(--jg-surface, #16161d)";
 const surfaceDeep = "var(--jg-surface-deep, #0b0b11)";
@@ -19,13 +12,9 @@ const edge = "var(--jg-edge, #2b2b35)";
 const text = "var(--jg-text, #ececef)";
 const textDim = "var(--jg-text-dim, #9494a0)";
 const accent = "var(--jg-accent, #6ee7a8)";
-const accentGlow = "var(--jg-accent-glow, rgba(110,231,168,0.35))";
 const onAccent = "var(--jg-surface-deep, #0b0b0f)";
 const danger = "var(--jg-danger, #e0574e)";
 const fontDisplay = "var(--jg-font-display, inherit)";
-
-const rowStyle: CSSProperties = { background: "rgba(255,255,255,0.045)", border: "1px solid rgba(255,255,255,0.08)" };
-const badgeStyle: CSSProperties = { background: surfaceDeep, border: "1px solid rgba(255,255,255,0.12)", color: text };
 
 interface Tab {
   id: string;
@@ -41,15 +30,6 @@ function GlyphClose() {
   );
 }
 
-function GlyphReset() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5" aria-hidden>
-      <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
-      <path d="M3 3v5h5" />
-    </svg>
-  );
-}
-
 function CloseButton({ onClose }: { onClose: () => void }) {
   return (
     <button
@@ -61,151 +41,6 @@ function CloseButton({ onClose }: { onClose: () => void }) {
     >
       <GlyphClose />
     </button>
-  );
-}
-
-function RowShell({ label, control }: { label: string; control: ReactNode }) {
-  return (
-    <div className="flex items-center justify-between gap-4 rounded-xl px-3.5 py-3" style={rowStyle}>
-      <span className="text-sm" style={{ color: text }}>
-        {label}
-      </span>
-      {control}
-    </div>
-  );
-}
-
-function SliderRow({ row }: { row: SettingsRow }) {
-  // Mirror the thumb + readout locally; debounce the persisting `set` so a drag doesn't storm the
-  // settings store (and any graphics rebuild it drives), flushing on release/blur (#1372).
-  const { value: local, onInput, flush } = useDebouncedCommit(Number(row.value), (next) => row.set(next));
-  const readout = row.format?.(local) ?? String(local);
-  return (
-    <RowShell
-      label={row.label}
-      control={
-        <div className="flex flex-1 items-center gap-3 pl-4">
-          <input
-            type="range"
-            min={row.min}
-            max={row.max}
-            step={row.step}
-            value={local}
-            aria-label={row.label}
-            className="h-1.5 flex-1 cursor-pointer"
-            style={{ accentColor: accent }}
-            onChange={(event) => onInput(Number(event.target.value))}
-            onPointerUp={flush}
-            onKeyUp={flush}
-            onBlur={flush}
-          />
-          <span className="w-12 shrink-0 text-right text-sm tabular-nums" style={{ color: text }}>
-            {readout}
-          </span>
-        </div>
-      }
-    />
-  );
-}
-
-function ToggleRow({ row }: { row: SettingsRow }) {
-  const on = Boolean(row.value);
-  return (
-    <RowShell
-      label={row.label}
-      control={
-        <button
-          type="button"
-          role="switch"
-          aria-checked={on}
-          aria-label={row.label}
-          onClick={() => row.set(!on)}
-          className="relative h-7 w-12 shrink-0 rounded-full transition"
-          style={{ background: on ? accent : "rgba(255,255,255,0.16)", boxShadow: on ? `0 0 12px ${accentGlow}` : "none" }}
-        >
-          <span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-all ${on ? "left-6" : "left-1"}`} />
-        </button>
-      }
-    />
-  );
-}
-
-function SelectRow({ row }: { row: SettingsRow }) {
-  const options = row.options ?? [];
-  const current = String(row.value);
-  return (
-    <RowShell
-      label={row.label}
-      control={
-        <div role="group" aria-label={row.label} className="flex flex-wrap justify-end gap-1 rounded-lg p-1" style={{ background: surfaceDeep }}>
-          {options.map((option) => {
-            const selected = option.value === current;
-            return (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => row.set(option.value)}
-                aria-pressed={selected}
-                className="min-h-[34px] rounded-md px-3 text-sm font-medium transition"
-                style={selected ? { background: accent, color: onAccent } : { color: textDim }}
-              >
-                {option.label}
-              </button>
-            );
-          })}
-        </div>
-      }
-    />
-  );
-}
-
-function RowControl({ row }: { row: SettingsRow }) {
-  if (row.kind === "slider") return <SliderRow row={row} />;
-  if (row.kind === "toggle") return <ToggleRow row={row} />;
-  return <SelectRow row={row} />;
-}
-
-function KeybindRowView({
-  row,
-  capturing,
-  onCapture,
-}: {
-  row: SettingsKeybindRow;
-  capturing: boolean;
-  onCapture: () => void;
-}) {
-  return (
-    <div className="flex items-center justify-between gap-3 rounded-xl px-3.5 py-3" style={rowStyle}>
-      <span className="text-sm" style={{ color: text }}>
-        {row.label}
-      </span>
-      <div className="flex shrink-0 items-center gap-2">
-        <button
-          type="button"
-          onClick={onCapture}
-          disabled={capturing}
-          title="Click to rebind — Esc to cancel"
-          className="inline-flex min-h-[34px] min-w-[3.75rem] items-center justify-center rounded-lg px-3 font-mono text-sm transition hover:brightness-125"
-          style={
-            capturing
-              ? { background: accentGlow, color: accent, border: `1px solid ${accent}` }
-              : badgeStyle
-          }
-        >
-          {capturing ? "Press…" : row.bindingLabel}
-        </button>
-        <button
-          type="button"
-          onClick={() => row.reset()}
-          aria-label={`Reset ${row.label}`}
-          title="Reset to default"
-          className={`flex h-8 w-8 items-center justify-center rounded-lg transition hover:bg-white/10 ${row.isDefault ? "invisible" : ""}`}
-          style={{ color: textDim }}
-        >
-          <GlyphReset />
-        </button>
-      </div>
-    </div>
   );
 }
 
@@ -254,36 +89,21 @@ function TabButton({ tab, selected, orientation, onSelect }: { tab: Tab; selecte
   );
 }
 
-function Body({ tab, actions, capturing, setCapturing, onClose }: BodyProps) {
+interface BodyProps {
+  tab: Tab;
+  actions: SettingsActionView[];
+  onCaptureChange: (action: string | null) => void;
+  onClose: () => void;
+}
+
+function Body({ tab, actions, onCaptureChange, onClose }: BodyProps) {
   return (
     <div className="jg-settings-scroll min-h-0 flex-1 space-y-2 overflow-y-auto p-4">
       {tab.category === null
         ? actions.map((action) => <ActionRow key={action.id} action={action} onClose={onClose} />)
-        : (
-          <>
-            {tab.category.rows.map((row) => (
-              <RowControl key={row.id} row={row} />
-            ))}
-            {tab.category.keybinds.map((row) => (
-              <KeybindRowView
-                key={row.action}
-                row={row}
-                capturing={capturing?.action === row.action}
-                onCapture={() => setCapturing(row)}
-              />
-            ))}
-          </>
-        )}
+        : <SettingsSection category={tab.category} heading={false} onCaptureChange={onCaptureChange} />}
     </div>
   );
-}
-
-interface BodyProps {
-  tab: Tab;
-  actions: SettingsActionView[];
-  capturing: SettingsKeybindRow | null;
-  setCapturing: (row: SettingsKeybindRow) => void;
-  onClose: () => void;
 }
 
 const panelStyle: CSSProperties = {
@@ -324,42 +144,13 @@ export function SettingsMenu({
   const [activeId, setActiveId] = useState<string>(
     initialTab !== undefined && tabs.some((tab) => tab.id === initialTab) ? initialTab : (tabs[0]?.id ?? ""),
   );
-  const [capturing, setCapturing] = useState<SettingsKeybindRow | null>(null);
+  const [capturing, setCapturing] = useState<string | null>(null);
   const active = tabs.find((tab) => tab.id === activeId) ?? tabs[0] ?? null;
   const dialogRef = useDialogBehavior({ open: active !== null, onClose: capturing === null ? onClose : undefined });
 
-  useEffect(() => {
-    if (capturing === null) return;
-    const onKey = (event: KeyboardEvent) => {
-      event.preventDefault();
-      event.stopPropagation();
-      if (event.code === "Escape") {
-        setCapturing(null);
-        return;
-      }
-      capturing.rebind(event.code);
-      setCapturing(null);
-    };
-    const onPointer = (event: PointerEvent) => {
-      event.preventDefault();
-      event.stopPropagation();
-      capturing.rebind(`mouse${event.button}`);
-      setCapturing(null);
-    };
-    const onContext = (event: Event) => event.preventDefault();
-    window.addEventListener("keydown", onKey, true);
-    window.addEventListener("pointerdown", onPointer, true);
-    window.addEventListener("contextmenu", onContext, true);
-    return () => {
-      window.removeEventListener("keydown", onKey, true);
-      window.removeEventListener("pointerdown", onPointer, true);
-      window.removeEventListener("contextmenu", onContext, true);
-    };
-  }, [capturing]);
-
   if (active === null) return null;
 
-  const bodyProps: BodyProps = { tab: active, actions: controller.actions, capturing, setCapturing, onClose };
+  const bodyProps: BodyProps = { tab: active, actions: controller.actions, onCaptureChange: setCapturing, onClose };
   const title = (
     <h2 className="text-base font-semibold tracking-wide" style={{ color: text }}>
       Settings

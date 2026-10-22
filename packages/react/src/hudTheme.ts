@@ -327,7 +327,7 @@ export function hudThemeVars(theme: HudTheme): CSSProperties {
 }
 
 function typeVars(type: HudThemeType): Record<string, string> {
-  const floor = (size: string) => `max(${type.min}, ${size})`;
+  const floor = (size: string) => `calc(max(${type.min}, ${size}) * var(--jg-text-scale, 1))`;
   return {
     "--jg-type-min": type.min,
     "--jg-type-xs": floor(type.xs),

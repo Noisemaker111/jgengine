@@ -77,7 +77,7 @@ describe("HudThemeRoot", () => {
     expect(html).toContain('data-jg-hud=""');
     expect(html).toContain("display:contents");
     expect(html).toContain(`--jg-accent:${defaultHudTheme.palette.accent}`);
-    expect(html).toContain("--jg-type-xs:max(12px, 12px)");
+    expect(html).toContain("--jg-type-xs:calc(max(12px, 12px) * var(--jg-text-scale, 1))");
   });
 
   test("uses the game's theme when given", () => {

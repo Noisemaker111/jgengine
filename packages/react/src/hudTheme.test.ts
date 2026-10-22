@@ -165,7 +165,7 @@ describe("scale, motion, elevation, and state tokens", () => {
 
   test("type steps never fall below the floor", () => {
     const vars = hudThemeVars(hudTheme({ type: { xs: "9px" } })) as Record<string, string>;
-    expect(vars["--jg-type-xs"]).toBe("max(12px, 9px)");
+    expect(vars["--jg-type-xs"]).toBe("calc(max(12px, 9px) * var(--jg-text-scale, 1))");
   });
 
   test("the focus ring derives from the accent unless set", () => {
