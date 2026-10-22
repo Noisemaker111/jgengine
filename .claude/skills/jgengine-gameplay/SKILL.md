@@ -102,6 +102,8 @@ Prefer `defineSystem` and `defineGame({ systems })` for scheduled capabilities. 
 
 `createNearAgents` (`sim/nearAgents`) is the default near half: a nav crowd with a need set and a utility brain per agent, counting its decisions for tests and probes. Give it the same need definitions the off-screen world decays, or the two halves disagree at the boundary.
 
+Rides and their lines are `createRideSystem` and `createWaitQueue` (`sim/rides`, `sim/queue`): a ride cycles load → ride → unload at its own capacity, wears against its own breakdown curve, and reports boards, alights, breakdowns and repair costs through a sink; the wait a guest faces comes from the queue's own measured boarding throughput, not a configured constant. Guest choice stays on the utility brain — `rideChoiceOptions` compiles a guest's `RideTaste` (intensity comfort, nausea comfort, queue tolerance) and the park's ratings into options, `rideChoiceCandidates` costs each one by its own line's wait, and `createRideChooser` wires both to one guest. Ratings, cycle times, breakdown curves and costs are caller data, and `retune` changes them in play.
+
 For staffed production, use `stationOutputRate` (`work/staffedStation`) to resolve
 caller-owned worker stats and efficiency, then feed the rate to `tickProduction`.
 Keep staffing and production progress in the same serializable store; the

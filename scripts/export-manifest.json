@@ -482,6 +482,8 @@
     "./sim/nearAgents",
     "./sim/needs",
     "./sim/offScreen",
+    "./sim/queue",
+    "./sim/rides",
     "./sim/routine",
     "./stats/accumulatorMeter",
     "./stats/eventMeter",

@@ -518,6 +518,21 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createVfxInstanceStore` (function) · `import { createVfxInstanceStore } from "@jgengine/core/gameplay"`
 
+## ride-appeal — how much one guest likes one ride, from its ratings and their taste
+
+- `rideAppeal` (function) · `import { rideAppeal } from "@jgengine/core/gameplay"`
+
+## ride-choice — guests pick rides by taste and queue tolerance through the utility brain
+
+- `createRideChooser` (function) · `import { createRideChooser } from "@jgengine/core/gameplay"`
+- `rideChoiceCandidates` (function) · `import { rideChoiceCandidates } from "@jgengine/core/gameplay"`
+- `rideChoiceOptions` (function) · `import { rideChoiceOptions } from "@jgengine/core/gameplay"`
+- `rideQueueCostWeight` (function) · `import { rideQueueCostWeight } from "@jgengine/core/gameplay"`
+
+## ride-sim — rides with capacity, cycles, queues, ratings, breakdowns and maintenance
+
+- `createRideSystem` (function) · `import { createRideSystem } from "@jgengine/core/gameplay"`
+
 ## routine-timeline — authored daily routines (home, work, meal) resolved against the world clock
 
 - `resolveRoutine` (function) · `import { resolveRoutine } from "@jgengine/core/gameplay"`
@@ -657,6 +672,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## unlockables — gate content behind unlock conditions the player earns
 
 - `createUnlockCatalog` (function) · `import { createUnlockCatalog } from "@jgengine/core/gameplay"`
+
+## wait-queue — a real line whose wait estimate comes from its own measured throughput
+
+- `createWaitQueue` (function) · `import { createWaitQueue } from "@jgengine/core/gameplay"`
 
 ## wallet — hold currency balances with charge and affordability checks
 
