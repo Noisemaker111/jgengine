@@ -2,6 +2,7 @@ import { useFrame, useLoader } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import * as THREE from "three";
 import type { SceneObject } from "@jgengine/core/scene/objectStore";
+import { devtools } from "@jgengine/core/devtools/devtools";
 import { useGameContext } from "@jgengine/react/provider";
 import { sharedGltfLoader } from "../render/modelLoad";
 import { IsolatedModelPart } from "../render/SceneModels";
@@ -10,7 +11,33 @@ import { measureLocalCollisionTriangles, reportMeasuredCollisionMesh } from "../
 import { buildScatterModelSources, disposeScatterModelSources, type ScatterModelSource } from "../scatter/scatterModels";
 import { useRenderVisibility } from "../visibility/CullingProvider";
 import { CAMERA_POST_FRAME_PRIORITY } from "../camera/cameraRigs";
-import { canInstanceStaticScene, incompatibleStaticObjectIds, isCompatibleStaticObject, syncStaticObjectSource, type StaticObjectBatch } from "./staticObjectBatches";
+import { canInstanceStaticScene, countStaticBatchDraws, incompatibleStaticObjectIds, isCompatibleStaticObject, STATIC_BATCH_MESH_KEY, syncStaticObjectSource, type StaticObjectBatch } from "./staticObjectBatches";
+
+/**
+ * Report what static object batching is doing to `debug_snapshot().systems`: the grouped batches, the
+ * total instances behind them, and how many instances survived per-instance culling this frame. A
+ * batch whose instances are all outside the view contributes a draw of zero, so `drawn` is the culling
+ * evidence, not a claim.
+ * @internal
+ */
+export function useStaticObjectBatchProbe(
+  scene: THREE.Object3D,
+  stats: { batches: number; instances: number; singles: number },
+): void {
+  const ref = useRef(stats);
+  ref.current = stats;
+  useEffect(
+    () =>
+      devtools.probes.registerSystem("render/staticBatches", {
+        counters: () => ({ ...ref.current, ...countStaticBatchDraws(scene) }),
+        state: () => {
+          const { draws, drawn } = countStaticBatchDraws(scene);
+          return `${ref.current.batches} batches · ${draws} draws · ${drawn}/${ref.current.instances} instances drawn`;
+        },
+      }),
+    [scene],
+  );
+}
 
 function ObjectSource({ source, objects, batch }: { source: ScatterModelSource; objects: readonly SceneObject[]; batch: StaticObjectBatch }) {
   const ctx = useGameContext();
@@ -28,7 +55,7 @@ function ObjectSource({ source, objects, batch }: { source: ScatterModelSource; 
         isCompatibleStaticObject(object, batch.model, ctx.scene.object.catalog(id)) ? object : null;
     }, visibility.current, scratch);
   }, CAMERA_POST_FRAME_PRIORITY + 0.1);
-  return <instancedMesh ref={ref} args={[source.geometry, source.material, objects.length]} castShadow={source.castShadow} receiveShadow={source.receiveShadow} dispose={null} />;
+  return <instancedMesh ref={ref} args={[source.geometry, source.material, objects.length]} userData={{ [STATIC_BATCH_MESH_KEY]: true }} castShadow={source.castShadow} receiveShadow={source.receiveShadow} dispose={null} />;
 }
 
 function LoadedStaticObjects({ batch, single }: { batch: StaticObjectBatch; single: (object: SceneObject) => ReactNode }) {
@@ -71,3 +98,5 @@ function LoadedStaticObjects({ batch, single }: { batch: StaticObjectBatch; sing
 export function StaticObjectModels({ batch, single }: { batch: StaticObjectBatch; single: (object: SceneObject) => ReactNode }) {
   return <IsolatedModelPart model={batch.model} seam="object"><LoadedStaticObjects batch={batch} single={single} /></IsolatedModelPart>;
 }
+
+

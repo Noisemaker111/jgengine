@@ -1,13 +1,13 @@
 import { modelWithAuthoredMaterials } from "@jgengine/core/editor/materialAuthoring";
 import { modelWithAuthoredNodeVisibility } from "@jgengine/core/editor/modelNodeVisibility";
-import { useFrame } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, type ComponentType, type ReactNode } from "react";
 import * as THREE from "three";
 
 import { createEmptyEditorDocument, type EditorDocument } from "@jgengine/core/editor/index";
 import { resolveAuthoredObjects } from "@jgengine/core/world/authoredObjects";
 import { useLiveEditorDocument } from "../scene/AuthoredScene";
-import { StaticObjectModels } from "./StaticObjectModels";
+import { StaticObjectModels, useStaticObjectBatchProbe } from "./StaticObjectModels";
 import { groupStaticObjects, type StaticObjectBatch } from "./staticObjectBatches";
 import type { AssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
@@ -297,6 +297,7 @@ function WorldActors({
   editorLayers?: EditorDocument | undefined;
 }) {
   const ctx = useGameContext();
+  const scene = useThree((state) => state.scene);
   const entityIds = useSceneEntityIds();
   const objectIds = useSceneObjectIds();
   const document = useLiveEditorDocument(editorLayers ?? EMPTY_DOCUMENT, editorLayers !== undefined);
@@ -331,8 +332,13 @@ function WorldActors({
     }
     return [{ object, model, custom, style, authored: authoredIds.has(instanceId), catalog: ctx.scene.object.catalog(instanceId) }];
   });
-  const grouped = groupStaticObjects(candidates.map((candidate) => ({ ...candidate, custom: candidate.custom !== undefined && candidate.custom !== null })), undefined, batchCache.current);
+  const grouped = groupStaticObjects(candidates.map((candidate) => ({ ...candidate, custom: candidate.custom !== undefined && candidate.custom !== null })), batchCache.current);
   batchCache.current = new Map(grouped.batches.map((batch) => [batch.key, batch]));
+  useStaticObjectBatchProbe(scene, {
+    batches: grouped.batches.length,
+    instances: grouped.batches.reduce((total, batch) => total + batch.objects.length, 0),
+    singles: grouped.singles.length,
+  });
   const candidatesById = new Map(candidates.map((candidate) => [candidate.object.instanceId, candidate]));
   const renderSingle = (object: SceneObject) => {
     object = ctx.scene.object.get(object.instanceId) ?? object;
