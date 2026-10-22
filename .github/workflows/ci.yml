@@ -135,12 +135,16 @@ jobs:
   # ANGLE/SwiftShader or Mesa llvmpipe), then draws/triangles/nodes are compared
   # against scripts/perf-budget.json and any linkProgram/createFramebuffer after
   # the 5 s warmup fails. Frame times are never gated - CI runners are shared.
-  # The CPU timing budgets (nav crowd, perception, utility, visibility, off-screen,
-  # flock, paths) assert here too, via `bench:cpu` with JG_TIMING_GATE=1; the unit
-  # suite keeps measuring and printing them without a pass/fail ceiling.
-  perf:
+  # Eight games in one job took ~5m20s of rendering; one game per runner leaves the
+  # wall clock at one game plus setup. `scripts/perf-gate.test.ts` fails when this
+  # matrix and PERF_GATE_GAMES disagree, so a ninth game cannot drop out of the gate.
+  perf-game:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        game: [harbor-heat, scrap-signal, brightway-park, ember-command, beacon-bastion, drift-foundry, odd-orbit, deepward]
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
@@ -155,10 +159,42 @@ jobs:
       - run: bun run games:clone
         env:
           GAMES_CLONE_TOKEN: ${{ secrets.GAMES_CLONE_TOKEN }}
-      - run: bun run perf:gate
+      - run: bun run perf:gate --games ${{ matrix.game }}
         env:
           CHROME_PATH: /usr/bin/google-chrome
+
+  # The CPU timing budgets (nav crowd, perception, utility, visibility, off-screen,
+  # flock, paths) assert via `bench:cpu` with JG_TIMING_GATE=1; the unit suite keeps
+  # measuring and printing them without a pass/fail ceiling. It needs no browser, so
+  # it runs beside the frame gate instead of adding ~30 s to the aggregate below.
+  perf-cpu:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.2
+      - uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: bun-${{ runner.os }}-
+      - run: bun install --frozen-lockfile
       - run: bun run bench:cpu
+
+  # The `perf` check branch protection reads: green only when all eight frame-budget
+  # games and the CPU budgets passed. A red matrix leg shows as a failed job and fails
+  # the check here, so a single over-budget game still blocks the merge.
+  perf:
+    needs: [perf-game, perf-cpu]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - run: |
+          test "${{ needs.perf-game.result }}" = "success"
+          test "${{ needs.perf-cpu.result }}" = "success"
 
   ci:
     needs: [quick, types, test, web-build, smoke, perf]
