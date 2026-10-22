@@ -66,6 +66,29 @@ export function parseSkillsArgs(argv: string[]): { scope: SkillsScope; set: Skil
 
 const VERSION_METADATA = ".jgengine-version.json";
 
+const SEMVER = /^\d+\.\d+\.\d+(?:-[\w.-]+)?(?:\+[\w.-]+)?$/;
+
+/** Installed skill metadata, or null when it is absent or unusable; an unusable file is reported once and treated as missing so it can be rewritten. */
+function readVersionMetadata(path: string): { cliVersion: string; sdkVersion: string } | null {
+  if (!existsSync(path)) return null;
+  const unusable = (reason: string): null => {
+    console.warn(`warning: ${path} is unusable (${reason}); treating ${basename(dirname(path))} as unversioned`);
+    return null;
+  };
+  let data: unknown;
+  try {
+    data = JSON.parse(readFileSync(path, "utf8"));
+  } catch (error) {
+    return unusable(error instanceof Error ? error.message : String(error));
+  }
+  if (data === null || typeof data !== "object") return unusable("not a JSON object");
+  const { version, cliVersion, sdkVersion } = data as Record<string, unknown>;
+  if (version !== 1) return unusable(`unsupported version ${String(version)}`);
+  if (typeof cliVersion !== "string" || typeof sdkVersion !== "string") return unusable("missing cliVersion or sdkVersion");
+  if (!SEMVER.test(cliVersion) || !SEMVER.test(sdkVersion)) return unusable(`invalid cliVersion ${cliVersion} or sdkVersion ${sdkVersion}`);
+  return { cliVersion, sdkVersion };
+}
+
 function identicalSource(source: string, target: string): boolean {
   return readdirSync(source, { withFileTypes: true }).every(entry => {
     if (entry.name === "api.md" || entry.name === VERSION_METADATA) return true;
@@ -87,14 +110,13 @@ function preflightSkills(target: string, base: string, scope: SkillsScope, skill
       const installed = join(target, skill);
       if (!existsSync(installed)) continue;
       const metadata = join(installed, VERSION_METADATA);
-      if (!existsSync(metadata)) {
+      const version = readVersionMetadata(metadata);
+      if (version === null) {
         if (packaged !== undefined && identicalSource(join(packaged, skill), installed)) continue;
-        throw new Error(`${skill} has no version metadata; preserving its existing files`);
+        throw new Error(`${skill} has no usable version metadata at ${metadata}; preserving its existing files`);
       }
-      const version = JSON.parse(readFileSync(metadata, "utf8")) as { version?: number; cliVersion?: string; sdkVersion?: string };
-      if (version.version !== 1 || typeof version.cliVersion !== "string" || typeof version.sdkVersion !== "string") throw new Error(`${skill} has invalid version metadata`);
       if (versionNewer(version.cliVersion, cliVersion()) || versionNewer(version.sdkVersion, sdkVersion())) {
-        throw new Error(`${skill} was installed by CLI ${version.cliVersion} for SDK ${version.sdkVersion}; running CLI ${cliVersion()} targets SDK ${sdkVersion()}`);
+        throw new Error(`${skill} was installed by CLI ${version.cliVersion} for SDK ${version.sdkVersion} (${metadata}); running CLI ${cliVersion()} targets SDK ${sdkVersion()}`);
       }
     }
     return true;
