@@ -103,6 +103,7 @@ bun run games:update # move an existing clone to the pin; games:bump pins the ga
 bun run games:check  # type-check + test every game in ./Games against THIS checkout's sources (no build, no copying dist)
                      # games:check <id> for one game; --published re-runs against the games' installed @jgengine/*
 bun dev              # jgengine.com locally, games playable at /games/<id> when Games/ is present
+bun run perf <game>  # frame times, draws, triangles, node/GL counts and top self-time functions as JSON (--help)
 # a cloned game standalone:
 bun --cwd=Games/harbor-heat run dev
 ```
