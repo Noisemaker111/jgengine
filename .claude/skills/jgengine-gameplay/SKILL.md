@@ -59,6 +59,16 @@ Score a whole loadout with `gearScore` (`progression/gearScore`) on the same wei
 `compareLootItems`. [reference-systems.md](reference-systems.md#progression-and-gear-score) shows
 the data shapes and a two-build comparison.
 
+Wear gear with `createEquipment` (`inventory/equipment`): slot defs own accepted kinds and the slots
+they block, item defs own the slots an item may occupy, a filled slot swaps and hands back the
+replaced item, and `state()` / `restore()` round-trip the worn set. Weigh a character with
+`characterLoad` (`inventory/carryLoad`), which turns carried inventories plus worn gear into the
+shared encumbrance bands (`moveMultiplier`, sprint/jump gates, `remaining`), so `canCarry` gates a
+pickup. Declare a stash as its own inventory (`tier: "banked"`) and move items with
+`InventorySet.move`; `snapshot()` / `restore()` save both as detached data. The bag and stash render
+through `<InventoryGrid>` with `<EquipmentSlots>` above it. See
+[inventory, equipment and weight](reference-systems.md#inventory-equipment-and-weight).
+
 Validate generated quest catalogs with `validateQuestCatalog` (`game/questCatalog`).
 Follow the [quest authoring recipe](recipes/quest-authoring.md) for bounded batches,
 canonical facts, external unlock declarations, and precise repair diagnostics.
