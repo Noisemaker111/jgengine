@@ -1,4 +1,5 @@
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
 
@@ -84,6 +85,40 @@ const USAGE = `usage: bun run perf:gate [--games a,b] [--seconds n] [--quality d
   --seconds         measured window per game (default ${DEFAULT_SECONDS})
   --quality         graphics tier: full (default) or draft`;
 
+/**
+ * The games checkout the gate is about to measure, as the pin in
+ * `scripts/games-ref.txt` and the clone's actual HEAD. Budgets describe a content
+ * snapshot, so a run that does not say which snapshot it measured cannot be read
+ * as an engine regression — the log names it instead.
+ */
+export function describeGamesCheckout(root: string, head: () => string | null = gamesHead): { pin: string | null; head: string | null } {
+  let pin: string | null = null;
+  try {
+    const raw = readFileSync(join(root, "scripts", "games-ref.txt"), "utf8").trim();
+    if (/^[0-9a-f]{40}$/.test(raw)) pin = raw;
+  } catch {
+    /* no pin file: the run still measures, it just cannot name the pinned content */
+  }
+  return { pin, head: head(join(root, "Games")) };
+}
+
+function gamesHead(directory: string): string | null {
+  try {
+    return execFileSync("git", ["-C", directory, "rev-parse", "HEAD"], { encoding: "utf8" }).trim() || null;
+  } catch {
+    return null;
+  }
+}
+
+/** One line naming the games content behind the numbers, flagging a clone that is not at the pin. */
+export function describeGamesLine(checkout: { pin: string | null; head: string | null }): string {
+  const short = (sha: string | null): string => (sha === null ? "unknown" : sha.slice(0, 7));
+  if (checkout.head === null) return "perf gate: games checkout unavailable — the numbers describe whatever Games/ holds";
+  const pinned = checkout.pin === null ? "no pin" : `pinned ${short(checkout.pin)}`;
+  const drift = checkout.pin !== null && checkout.pin !== checkout.head ? " (measuring unpinned content)" : "";
+  return `perf gate: games ${short(checkout.head)}, ${pinned}${drift}`;
+}
+
 async function main(): Promise<void> {
   const parsed = process.argv.slice(2);
   if (parsed.includes("--help") || parsed.includes("-h")) {
@@ -108,6 +143,7 @@ async function main(): Promise<void> {
   const failures: string[] = [];
   const lines: string[] = [];
   let rasterizerPrinted = false;
+  console.log(describeGamesLine(describeGamesCheckout(repoRoot)));
 
   const exitCode = await withBrowserSession(
     { keep: false, timeoutMs: 180_000, server: server.child, serverPid: server.pid, hardDeadlineMs: 1_500_000 },
