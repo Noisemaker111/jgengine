@@ -586,7 +586,37 @@ export {
 export { createRing, ringSampleAt, type Ring, type RingConfig, type RingPhase } from "./session/ring";
 export { type RoleSpec } from "./session/roles";
 export { type RoundConfig, type RoundSnapshot } from "./session/roundState";
+export {
+  createNearAgents,
+  type NearAgentSnapshot,
+  type NearAgentView,
+  type NearAgentsOptions,
+  type NearCrowdAgents,
+} from "./sim/nearAgents";
 export { createNeedSet, type NeedDefinition, type NeedReading, type NeedSet, type NeedSnapshot } from "./sim/needs";
+export {
+  createOffScreenWorld,
+  type NearAgents,
+  type NearHandoff,
+  type NearSpawn,
+  type OffScreenAgentView,
+  type OffScreenMode,
+  type OffScreenOptions,
+  type OffScreenPolicy,
+  type OffScreenPolicyPatch,
+  type OffScreenResidentSpec,
+  type OffScreenSnapshot,
+  type OffScreenStats,
+  type OffScreenWorld,
+} from "./sim/offScreen";
+export {
+  resolveRoutine,
+  type RoutineConfig,
+  type RoutinePhase,
+  type RoutineStop,
+  type RoutineStopSpec,
+  type RoutineTimeline,
+} from "./sim/routine";
 export {
   createDecayMeterSet,
   decayMeterMoodles,

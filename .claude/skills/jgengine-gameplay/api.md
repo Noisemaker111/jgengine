@@ -1298,6 +1298,13 @@
 - `MountSlotDef` (interface): interface MountSlotDef { id: string; accepts: string | readonly string[]; required?: boolean } — ⚠ undocumented · used by `slotAccepts`: Attach parts into an item's mount slots and resolve the combined stats.
 - `MultiRegionHealth` (interface): interface MultiRegionHealth — Per-limb / per-region health track with treat/damage/heal APIs.
 - `NEUTRAL_AXIS` (const): const NEUTRAL_AXIS: AxisInput — ⚠ undocumented
+- `NearAgentSnapshot` (interface): interface NearAgentSnapshot — Serializable state of one near agent: where it walks, what it needs, what it last chose.
+- `NearAgentView` (interface): interface NearAgentView — Everything a near agent is doing, for a HUD, a probe or a test. Allocates.
+- `NearAgents` (interface): interface NearAgents — The near half of the world: the game's real simulation. Only residents inside the radius are ever spawned here, which is what keeps far agents free of navigation and utility scoring.
+- `NearAgentsOptions` (interface): interface NearAgentsOptions — What the near side needs from the game: a nav mesh, the shared need definitions, and what agents can do.
+- `NearCrowdAgents` (interface): interface NearCrowdAgents extends NearAgents — The near half of the off-screen world: one nav crowd for movement, one need set and utility brain per agent for what it wants. Resident identity survives the handoff because the off-screen world spawns and despawns through this seam and keeps the saved state.
+- `NearHandoff` (interface): interface NearHandoff — What a near-side simulator hands back when a resident leaves range.
+- `NearSpawn` (interface): interface NearSpawn — Everything a near-side simulator is told when a resident crosses into range.
 - `NeedDefinition` (type): type NeedDefinition = DecayMeterConfig — A decaying need is a survival decay meter (`max`/`min`/`start`/`rate`, optional moodle thresholds) whose satisfaction an agent brain reads to score actions. The meter owns the numbers; per-need appeal lives in the game's utility options.
 - `NeedReading` (interface): interface NeedReading — One need's current satisfaction, worst-first ready: `fraction` is 0 (empty) … 1 (full).
 - `NeedSet` (interface): interface NeedSet — Named needs that drain or recover on game time — hunger, energy, hygiene, bladder, fun. Reads are index-addressed (`indexOf` once, `fractionAt` per tick) so a thousand-agent loop never re-resolves ids; the whole set round-trips through {@link NeedSnapshot}.
@@ -1310,6 +1317,15 @@
 - `NumericBounds` (interface): interface NumericBounds — Optional inclusive `[min, max]` clamp applied after a write. Omit an edge for unbounded.
 - `ObjectStyle` (interface): interface ObjectStyle { color?: string; opacity?: number; hidden?: boolean } — ⚠ undocumented
 - `ObserverCameraConfig` (interface): interface ObserverCameraConfig — Detached spectator/photo cam (#120) — binds to any entity or fixed point, never reads player input.
+- `OffScreenAgentView` (interface): interface OffScreenAgentView — A resident as a game or the devtools overlay reads it. Allocates a need copy — debug and tests.
+- `OffScreenMode` (type): type OffScreenMode = "near" | "far" — Which side of the distance policy a resident is on: simulated near the viewer, or cheap state.
+- `OffScreenOptions` (interface): interface OffScreenOptions — Options for {@link createOffScreenWorld}.
+- `OffScreenPolicy` (interface): interface OffScreenPolicy — Where the near/far boundary is and what it costs. The radius, the cost model and the budget are the game's call — a city block and a haunted-house hallway do not share a number.
+- `OffScreenPolicyPatch` (interface): interface OffScreenPolicyPatch — A policy change that stays reachable in play.
+- `OffScreenResidentSpec` (interface): interface OffScreenResidentSpec — One resident of the world: an identity, where it belongs, and the day it follows.
+- `OffScreenSnapshot` (interface): interface OffScreenSnapshot — Serializable world state: the policy and every resident, near ones included.
+- `OffScreenStats` (interface): interface OffScreenStats — Counters a devtools probe or a test reads to prove far agents cost nothing.
+- `OffScreenWorld` (interface): interface OffScreenWorld — The off-screen world: every resident exists, but only the ones within the policy radius are simulated. The rest are a position, a routine phase and a needs record that only move when the clock crosses a routine boundary — no navigation, no utility scoring, no per-frame need decay.
 - `Overdraft` (type): type Overdraft = boolean | { max: number } — Opt-in debt affordance for {@link charge}/{@link chargeAll}: `true` allows the balance to go arbitrarily negative, a number caps how far into the red it may go (the charge is rejected once `balance - amount` would fall below `-max`). Omitted (the default) keeps the strict no-debt rule.
 - `PING_FEED_ACTION` (const): const PING_FEED_ACTION: "party.ping" — ⚠ undocumented
 - `PairKeyCodec` (interface): interface PairKeyCodec — Canonicalizes a two-part relation identity into a single delimiter-safe record key.
@@ -1372,6 +1388,11 @@
 - `Rotation` (type): type Rotation = 0 | 1 | 2 | 3 — ⚠ undocumented · used by `canPlace` (@jgengine/core/inventory/shapedGrid): Check bounds and overlap for a discrete footprint, optionally ignoring the item being moved.
 - `RoundConfig` (interface): interface RoundConfig<TPhase extends string = RoundPhase> { phases: Record<TPhase, number>; teams: readonly string[] | readonly RoundTeam[]; phaseOrder?: readonly TPhase[]; winCondition?: (state: RoundSnapshot<TPhase>) => string | null; maxRounds?: number; winReward?: number; lossBonus?: LossBonus… — ⚠ undocumented
 - `RoundSnapshot` (interface): interface RoundSnapshot<TPhase extends string = RoundPhase> { round: number; phase: TPhase; timeLeft: number; scores: Record<string, number>; lossStreaks: Record<string, number>; roles: Record<string, string | undefined>; matchOver: boolean; pendingWinner: string | null } — ⚠ undocumented
+- `RoutineConfig` (interface): interface RoutineConfig — Everything needed to resolve a routine: its authored stops, its cycle, and how far apart places are.
+- `RoutinePhase` (interface): interface RoutinePhase — Where a routine puts its agent at one instant.
+- `RoutineStop` (interface): interface RoutineStop — One stop after travel is accounted for: the authored time and the time the agent really gets there.
+- `RoutineStopSpec` (interface): interface RoutineStopSpec — One authored stop in a day: where the agent belongs, and when it wants to get there.
+- `RoutineTimeline` (interface): interface RoutineTimeline — An authored day resolved against time: arrival times after walking, departures early enough to make the next stop, and a phase for any instant. Pure — there is no state to tick, so a far agent and a loaded save read the same day from the same clock.
 - `RtsCameraConfig` (interface): interface RtsCameraConfig extends TopDownCameraConfig — Free-pan / edge-scroll RTS rig (#24) — pan/rotate/zoom independent of any avatar.
 - `RuleCursor` (interface): interface RuleCursor — Mutable per-rule progress, kept separate from the immutable {@link ScheduledRule} definition.
 - `RuleDef` (interface): interface RuleDef<TPayload = unknown> — A selectable rule over a tagged pool. `tags` classify it for include/exclude filtering and for `requires`/`conflicts` matching (which match either another rule's id or one of its tags). `layers` are the parameter layers this rule contributes when active; `payload` is opaque caller data.
@@ -1568,8 +1589,10 @@
 - `createMoodleStack` (function): function createMoodleStack(): MoodleStack — A stateful holder for timed status moodles (food buffs, temporary shelter, warmth). Meters and multi-region health derive their own moodles on read; combine all three through `stackMoodles(stack.list(), meterMoodles, ailmentMoodles)` for one display.
 - `createMultiRegionHealth` (function): function createMultiRegionHealth(config: MultiRegionHealthConfig): MultiRegionHealth — Per-region/limb health tracked separately, so each body part takes and heals damage on its own.
 - `createNameGenerator` (function): function createNameGenerator(options: NameGeneratorOptions): NameGenerator — Generate procedural names from templates and word banks with an injected random source.
+- `createNearAgents` (function): function createNearAgents(options: NearAgentsOptions): NearCrowdAgents — Create the near-side simulation: agents on a nav mesh with decaying needs and a utility brain each. The off-screen world decides which agents exist here, so a resident beyond its radius costs this seam nothing at all — no path, no need tick, no decision.
 - `createNeedSet` (function): function createNeedSet(definitions: readonly NeedDefinition[]): NeedSet — Create the needs an agent or a park guest carries. Decay reuses the survival meter formulas (`survival/decayMeter`), so moodle thresholds, clamping and rate modifiers behave exactly like every other meter; this set adds index-addressed reads and single-need retuning for hot AI loops. Score these needs into an action with `createUtilityBrain` (`@jgengine/core/world`).
 - `createNotificationCenter` (function): function createNotificationCenter<TMeta = unknown>(options: NotificationCenterOptions = {}): NotificationStore<TMeta> — A persistent notification log with read/unread tracking — the "notification center" surface toasts don't cover. Newest-first, capped, serializable, and observable; a game pushes durable events (quest updates, trades, party news) here and a HUD renders the list + an unread badge. `snapshot`/`restore` round-trip through a save.
+- `createOffScreenWorld` (function): function createOffScreenWorld(options: OffScreenOptions): OffScreenWorld — Create the world that decides which agents deserve a simulation. Residents are cheap state until they come near, and cheap again when they leave; the cheap state is the schedule, the needs and the last place, so a returning resident never pops in at the origin.
 - `createPairKeyCodec` (function): function createPairKeyCodec(options: PairKeyOptions = {}): PairKeyCodec — Build a pair-key codec for keyed relation values. Ids are escaped before joining, so any id (including ones containing the separator or a backslash) round-trips through {@link PairKeyCodec.key} → {@link PairKeyCodec.parse} without collision. Undirected codecs (the default) canonicalize so `key(a, b) === key(b, a)`.
 - `createPingSystem` (function): function createPingSystem(deps: PingSystemDeps): PingSystem — Contextual ping/marker communication between teammates, classified by what was pinged.
 - `createPriceHistory` (function): function createPriceHistory(config: PriceHistoryConfig): PriceHistory — The "market price" readout behind every auction house: a bounded rolling record of completed sales per item, aggregated into min/max/volume-weighted-average/latest unit-price stats so games can show current value and recent trends. Memory is bounded by `maxSamplesPerItem` (oldest samples drop first) and optionally by a sliding time window; timestamps are injected by the caller so the history stays deterministic.
@@ -1693,6 +1716,7 @@
 - `resolveOneShotClip` (function): function resolveOneShotClip(oneShots: Record<string, string | readonly string[]> | undefined, event: string, roll: number): string | null — Resolves the clip name a one-shot `event` should play from a model's `animation.oneShots` map, or `null` if the event isn't bound. A `string[]` binding picks a variant by `roll` (a value in `[0, 1)`), so combat can vary attack swings. Pure and deterministic given `roll` — the shell supplies the randomness.
 - `resolveParams` (function): function resolveParams(base: Readonly<Record<string, number>>, layers: readonly ParamLayer[]): ParamSnapshot — Fold an ordered stack of layers over `base` and return the effective {@link ParamSnapshot}. Layers apply in {@link orderLayers} sequence; within a layer each parameter's ops fold left-to-right. Every op is recorded in `contributions` for provenance/preview. Parameters a layer introduces but `base` omits start from `0`. Pure and deterministic — no ambient randomness or time.
 - `resolvePowerGrid` (function): function resolvePowerGrid(supply: number, consumers: readonly PowerConsumer[]): PowerGridResult — ⚠ undocumented
+- `resolveRoutine` (function): function resolveRoutine(config: RoutineConfig): RoutineTimeline — Resolve an authored routine into a timeline driven by the world clock.
 - `resolveSelection` (function): function resolveSelection(base: Readonly<Record<string, number>>, registry: LayerRegistry, ids: LayerSelection): { readonly snapshot: ParamSnapshot; readonly unknown: readonly string[] } — Reproducible session setup in one call: resolve a saved {@link LayerSelection} through a registry, fold the found layers over `base`, and return the snapshot alongside any unknown ids. The same base + registry + selection always yields the same snapshot.
 - `resumeJob` (function): function resumeJob<TSpec, TReserve>(state: WorkQueueState<TSpec, TReserve>, id: JobId): WorkQueueState<TSpec, TReserve> — Resume a paused job; it re-enters the queue and competes for a slot by ordering.
 - `resumeRule` (function): function resumeRule(ledger: ResourceLedger, ruleId: string): ResourceLedger — Resume a paused rule. Its `nextDueSeconds` is unchanged, so the paused span counts as missed cycles that the rule's {@link CatchUpPolicy} decides how to settle on the next advance.
@@ -2128,6 +2152,14 @@
 - `RoundState` (interface): interface RoundState<TPhase extends string = RoundPhase> { tick(dt: number): RoundEvent<TPhase>[]; concludeRound(winner: string): RoundEvent<TPhase>[]; evaluate(): RoundEvent<TPhase>[]; onPhaseEnd(hook: PhaseEndHook<TPhase>): () => void; phase(): TPhase; round(): number; timeLeft(): number; score… — ⚠ undocumented
 - `RoundTeam` (interface): interface RoundTeam — A team entry with an optional role tag (e.g. "attacker", "defender") retrievable via `RoundState.roleOf`.
 
+## @jgengine/core/sim/nearAgents
+
+- `NearAgentSnapshot` (interface): interface NearAgentSnapshot — Serializable state of one near agent: where it walks, what it needs, what it last chose.
+- `NearAgentView` (interface): interface NearAgentView — Everything a near agent is doing, for a HUD, a probe or a test. Allocates.
+- `NearAgentsOptions` (interface): interface NearAgentsOptions — What the near side needs from the game: a nav mesh, the shared need definitions, and what agents can do.
+- `NearCrowdAgents` (interface): interface NearCrowdAgents extends NearAgents — The near half of the off-screen world: one nav crowd for movement, one need set and utility brain per agent for what it wants. Resident identity survives the handoff because the off-screen world spawns and despawns through this seam and keeps the saved state.
+- `createNearAgents` (function): function createNearAgents(options: NearAgentsOptions): NearCrowdAgents — Create the near-side simulation: agents on a nav mesh with decaying needs and a utility brain each. The off-screen world decides which agents exist here, so a resident beyond its radius costs this seam nothing at all — no path, no need tick, no decision.
+
 ## @jgengine/core/sim/needs
 
 - `NeedDefinition` (type): type NeedDefinition = DecayMeterConfig — A decaying need is a survival decay meter (`max`/`min`/`start`/`rate`, optional moodle thresholds) whose satisfaction an agent brain reads to score actions. The meter owns the numbers; per-need appeal lives in the game's utility options.
@@ -2135,6 +2167,31 @@
 - `NeedSet` (interface): interface NeedSet — Named needs that drain or recover on game time — hunger, energy, hygiene, bladder, fun. Reads are index-addressed (`indexOf` once, `fractionAt` per tick) so a thousand-agent loop never re-resolves ids; the whole set round-trips through {@link NeedSnapshot}.
 - `NeedSnapshot` (interface): interface NeedSnapshot — Serializable need state: values plus any in-play retuning, so a save keeps the dials.
 - `createNeedSet` (function): function createNeedSet(definitions: readonly NeedDefinition[]): NeedSet — Create the needs an agent or a park guest carries. Decay reuses the survival meter formulas (`survival/decayMeter`), so moodle thresholds, clamping and rate modifiers behave exactly like every other meter; this set adds index-addressed reads and single-need retuning for hot AI loops. Score these needs into an action with `createUtilityBrain` (`@jgengine/core/world`).
+
+## @jgengine/core/sim/offScreen
+
+- `NearAgents` (interface): interface NearAgents — The near half of the world: the game's real simulation. Only residents inside the radius are ever spawned here, which is what keeps far agents free of navigation and utility scoring.
+- `NearHandoff` (interface): interface NearHandoff — What a near-side simulator hands back when a resident leaves range.
+- `NearSpawn` (interface): interface NearSpawn — Everything a near-side simulator is told when a resident crosses into range.
+- `OffScreenAgentView` (interface): interface OffScreenAgentView — A resident as a game or the devtools overlay reads it. Allocates a need copy — debug and tests.
+- `OffScreenMode` (type): type OffScreenMode = "near" | "far" — Which side of the distance policy a resident is on: simulated near the viewer, or cheap state.
+- `OffScreenOptions` (interface): interface OffScreenOptions — Options for {@link createOffScreenWorld}.
+- `OffScreenPolicy` (interface): interface OffScreenPolicy — Where the near/far boundary is and what it costs. The radius, the cost model and the budget are the game's call — a city block and a haunted-house hallway do not share a number.
+- `OffScreenPolicyPatch` (interface): interface OffScreenPolicyPatch — A policy change that stays reachable in play.
+- `OffScreenResidentSpec` (interface): interface OffScreenResidentSpec — One resident of the world: an identity, where it belongs, and the day it follows.
+- `OffScreenSnapshot` (interface): interface OffScreenSnapshot — Serializable world state: the policy and every resident, near ones included.
+- `OffScreenStats` (interface): interface OffScreenStats — Counters a devtools probe or a test reads to prove far agents cost nothing.
+- `OffScreenWorld` (interface): interface OffScreenWorld — The off-screen world: every resident exists, but only the ones within the policy radius are simulated. The rest are a position, a routine phase and a needs record that only move when the clock crosses a routine boundary — no navigation, no utility scoring, no per-frame need decay.
+- `createOffScreenWorld` (function): function createOffScreenWorld(options: OffScreenOptions): OffScreenWorld — Create the world that decides which agents deserve a simulation. Residents are cheap state until they come near, and cheap again when they leave; the cheap state is the schedule, the needs and the last place, so a returning resident never pops in at the origin.
+
+## @jgengine/core/sim/routine
+
+- `RoutineConfig` (interface): interface RoutineConfig — Everything needed to resolve a routine: its authored stops, its cycle, and how far apart places are.
+- `RoutinePhase` (interface): interface RoutinePhase — Where a routine puts its agent at one instant.
+- `RoutineStop` (interface): interface RoutineStop — One stop after travel is accounted for: the authored time and the time the agent really gets there.
+- `RoutineStopSpec` (interface): interface RoutineStopSpec — One authored stop in a day: where the agent belongs, and when it wants to get there.
+- `RoutineTimeline` (interface): interface RoutineTimeline — An authored day resolved against time: arrival times after walking, departures early enough to make the next stop, and a phase for any instant. Pure — there is no state to tick, so a far agent and a loaded save read the same day from the same clock.
+- `resolveRoutine` (function): function resolveRoutine(config: RoutineConfig): RoutineTimeline — Resolve an authored routine into a timeline driven by the world clock.
 
 ## @jgengine/core/store/defineKeyedStore
 

@@ -329,6 +329,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `freezeNarrativeCanon` (function) · `import { freezeNarrativeCanon } from "@jgengine/core/game/narrativeAuthoring"`
 
+## near-agents — nav crowd plus per-agent needs and utility brains for on-screen residents
+
+- `createNearAgents` (function) · `import { createNearAgents } from "@jgengine/core/gameplay"`
+
 ## needs — decaying needs an agent reads by index to decide what it wants next
 
 - `createNeedSet` (function) · `import { createNeedSet } from "@jgengine/core/gameplay"`
@@ -346,6 +350,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## objectives — check progress of a threshold objective against a live metric
 
 - `evaluateObjective` (function) · `import { evaluateObjective } from "@jgengine/core/gameplay"`
+
+## offscreen-world — schedules agents near the player as real state and far ones as cheap state
+
+- `createOffScreenWorld` (function) · `import { createOffScreenWorld } from "@jgengine/core/gameplay"`
 
 ## param-layers — register parameter layers by stable id and resolve serialized selections
 
@@ -473,6 +481,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## retained-vfx — create/update/stop long-lived dynamic visual effects (beam, tether, zone, target line) by stable id
 
 - `createVfxInstanceStore` (function) · `import { createVfxInstanceStore } from "@jgengine/core/gameplay"`
+
+## routine-timeline — authored daily routines (home, work, meal) resolved against the world clock
+
+- `resolveRoutine` (function) · `import { resolveRoutine } from "@jgengine/core/gameplay"`
 
 ## rule-selection — register rules and bridge a selection to its contributed parameter layers
 
