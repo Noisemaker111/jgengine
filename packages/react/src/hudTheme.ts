@@ -261,6 +261,7 @@ export function hudThemeVars(theme: HudTheme): CSSProperties {
     // `initial` clears inherited skins and lets var() fall back to the bar's palette color.
     "--jg-bar-skin-fill": "initial",
     "--jg-skin-cursor": "auto",
+    "--jg-text-scale": "1",
     ...hudSkinVars(theme.skin),
     // atomic-bar tokens (same names the bars read — #1033)
     "--jg-health": palette.health,
