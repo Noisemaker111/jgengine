@@ -53,7 +53,7 @@ function RecoveryEnvironment() {
     preview.rendered = rendered;
     return () => { if (preview.rendered === rendered) delete preview.rendered; };
   }, [ctx, camera]);
-  const feature = environment({ sculpt: authoredTerrain, terrain: terrain({ bounds: { w: previewWidth, d: previewDepth }, height: 0, frequency: 0.035, seed: "relay-recovery", ...(textured ? { detail: { material: { maps, repeat: previewWidth / 9 } } } : {}) }) });
+  const feature = environment({ sculpt: authoredTerrain, terrain: terrain({ bounds: { w: previewWidth, d: previewDepth }, height: 0, frequency: 0.035, seed: "relay-recovery", ...(textured ? { detail: { material: { maps, repeat: previewWidth / 9, missing: "fail" } } } : {}) }) });
   return <group ref={ground} name="recovery-authored-terrain"><EnvironmentScene feature={feature} /></group>;
 }
 function RecoveryUI() {

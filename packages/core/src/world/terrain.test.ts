@@ -563,7 +563,13 @@ describe("terrain field", () => {
       displacement: "/materials/grass/displacement.jpg",
     };
     const detail = resolveTerrainDetail({ material: { maps } });
-    expect(detail.material).toEqual({ maps, repeat: 4, strength: 1, tint: 1 });
+    expect(detail.material).toEqual({ maps, repeat: 4, strength: 1, tint: 1, missing: "procedural" });
+  });
+
+  test("a detail material keeps the procedural ground when its pulled maps are absent, unless it asks to fail", () => {
+    const maps: TerrainMaterialMaps = { color: "c", normal: "n" };
+    expect(resolveTerrainDetail({ material: { maps } }).material?.missing).toBe("procedural");
+    expect(resolveTerrainDetail({ material: { maps, missing: "fail" } }).material?.missing).toBe("fail");
   });
 
   test("resolveTerrainDetail honors explicit material repeat/strength overrides", () => {
@@ -575,7 +581,7 @@ describe("terrain field", () => {
       displacement: "d",
     };
     const detail = resolveTerrainDetail({ material: { maps, repeat: 12, strength: 0.4 } });
-    expect(detail.material).toEqual({ maps, repeat: 12, strength: 0.4, tint: 1 });
+    expect(detail.material).toEqual({ maps, repeat: 12, strength: 0.4, tint: 1, missing: "procedural" });
   });
 });
 

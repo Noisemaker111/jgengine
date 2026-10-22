@@ -112,6 +112,13 @@ export interface TerrainDetailMaterialConfig {
    * hand-tinted world wants from a stock PBR set.
    */
   tint?: number;
+  /**
+   * What a failed map load does. Scanned maps are pulled by a game's asset step, not committed, so a
+   * checkout without them looks exactly like a broken one. `"procedural"` (default) keeps the
+   * authored procedural ground and logs one warning naming the map; `"fail"` hands the error to the
+   * presentation retry screen, which is what a view that cannot render without the scan asks for.
+   */
+  missing?: "procedural" | "fail";
 }
 
 export interface TerrainFlattenMask {

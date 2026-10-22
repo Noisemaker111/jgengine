@@ -626,6 +626,7 @@ export interface ResolvedTerrainDetailMaterial {
   repeat: number;
   strength: number;
   tint: number;
+  missing: "procedural" | "fail";
 }
 
 /** A {@link TerrainDetailConfig} with every field resolved to a concrete value — the shape the shell's detail material consumes. */
@@ -659,6 +660,7 @@ const IMPLICIT_TERRAIN_DETAIL: TerrainDetailConfig = {
 const DEFAULT_TERRAIN_MATERIAL_REPEAT = 4;
 const DEFAULT_TERRAIN_MATERIAL_STRENGTH = 1;
 const DEFAULT_TERRAIN_MATERIAL_TINT = 1;
+const DEFAULT_TERRAIN_MATERIAL_MISSING = "procedural" as const;
 
 /** Sand-band level for a terrain with no water: far below any ground, so no beach is painted. */
 const NO_WATER_SAND_LEVEL = -1e6;
@@ -693,6 +695,7 @@ export function resolveTerrainDetail(config: TerrainDetailConfig | undefined, te
             repeat: config.material.repeat ?? DEFAULT_TERRAIN_MATERIAL_REPEAT,
             tint: clamp01(config.material.tint ?? DEFAULT_TERRAIN_MATERIAL_TINT),
             strength: clamp01(config.material.strength ?? DEFAULT_TERRAIN_MATERIAL_STRENGTH),
+            missing: config.material.missing ?? DEFAULT_TERRAIN_MATERIAL_MISSING,
           },
         }),
   };
