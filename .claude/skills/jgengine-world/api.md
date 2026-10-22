@@ -1820,15 +1820,16 @@
 ## @jgengine/core/sensor/perception
 
 - `PerceptionCandidate` (interface): interface PerceptionCandidate — A candidate target considered by a sight check.
-- `PerceptionConfig` (interface): interface PerceptionConfig — Configuration for sight, hearing, memory decay, and optional occlusion.
+- `PerceptionConfig` (interface): interface PerceptionConfig — Configuration for sight, hearing, memory decay, squad sharing and optional occlusion.
 - `PerceptionMemory` (interface): interface PerceptionMemory — A remembered target and its linearly decaying confidence.
 - `PerceptionObserver` (interface): interface PerceptionObserver — The observer pose used for a sight check.
 - `PerceptionPosition` (type): type PerceptionPosition = readonly [number, number, number] — A world position used by perception, in `[x, y, z]` order.
 - `PerceptionService` (interface): interface PerceptionService — Stateful perception API with retuning and save/restore support.
 - `PerceptionSnapshot` (interface): interface PerceptionSnapshot — Serializable state for a perception service.
+- `PerceptionStats` (interface): interface PerceptionStats — Counters a perf test or a devtools probe reads. Reset with {@link PerceptionService.resetStats}.
 - `PerceptionStimulus` (interface): interface PerceptionStimulus — An event that can seed an observer's memory.
 - `PerceptionStimulusKind` (type): type PerceptionStimulusKind = "sight" | "sound" | "damage" — The kinds of stimulus the perception service can retain.
-- `createPerception` (function): function createPerception(initial: PerceptionConfig): PerceptionService — Creates a deterministic sight, sound, and damage perception service with expiring target memory.
+- `createPerception` (function): function createPerception(initial: PerceptionConfig): PerceptionService — Creates a deterministic sight, sound, and damage perception service with expiring target memory. Signals are judged in the order the caller supplies them, never from the wall clock.
 
 ## @jgengine/core/sensor/recordingBuffer
 
@@ -2485,6 +2486,16 @@
 - `PathRetaining` (interface): interface PathRetaining — Retaining behavior for a path corridor's shoulders. A wall rises only where the corridor already cuts or fills into the surrounding ground by at least `threshold` — gentle stretches stay open — so a road through a canyon gets held banks while the same profile on flat ground does not. The wall fades in smoothly across `taper` above the threshold so it never steps on or off between adjacent samples.
 - `PatrolOrderPayload` (interface): interface PatrolOrderPayload — Payload for a patrol: walk a waypoint route, optionally looping forever.
 - `PatrolOrderState` (interface): interface PatrolOrderState — Serializable patrol progress.
+- `PerceptionCandidate` (interface): interface PerceptionCandidate — A candidate target considered by a sight check.
+- `PerceptionConfig` (interface): interface PerceptionConfig — Configuration for sight, hearing, memory decay, squad sharing and optional occlusion.
+- `PerceptionMemory` (interface): interface PerceptionMemory — A remembered target and its linearly decaying confidence.
+- `PerceptionObserver` (interface): interface PerceptionObserver — The observer pose used for a sight check.
+- `PerceptionPosition` (type): type PerceptionPosition = readonly [number, number, number] — A world position used by perception, in `[x, y, z]` order.
+- `PerceptionService` (interface): interface PerceptionService — Stateful perception API with retuning and save/restore support.
+- `PerceptionSnapshot` (interface): interface PerceptionSnapshot — Serializable state for a perception service.
+- `PerceptionStats` (interface): interface PerceptionStats — Counters a perf test or a devtools probe reads. Reset with {@link PerceptionService.resetStats}.
+- `PerceptionStimulus` (interface): interface PerceptionStimulus — An event that can seed an observer's memory.
+- `PerceptionStimulusKind` (type): type PerceptionStimulusKind = "sight" | "sound" | "damage" — The kinds of stimulus the perception service can retain.
 - `PhysicsStats` (interface): interface PhysicsStats { count: number; awake: number; sleeping: number; contacts: number; pairs: number; substeps: number; stepMs: number } — ⚠ undocumented
 - `PhysicsWorld` (class): class PhysicsWorld — ⚠ undocumented
 - `PlaceAssetResult` (interface): interface PlaceAssetResult — Shared place-asset verb: one resolved payload for editor `place_asset` and in-game build-mode commits. Convert with {@link toStructureInput} / {@link toEditorMarker}.
@@ -2821,6 +2832,7 @@
 - `createOrderRegistry` (function): function createOrderRegistry<TCtx>(): OrderRegistry<TCtx> — Build an empty order-kind registry. Register the built-in compositions from `orders/orderKinds` or your own verbs, then hand it to `createOrderQueue`. One registry is shared by many per-entity queues.
 - `createParticleSystem` (function): function createParticleSystem(config: EmitterConfig = {}, options: ParticleSystemOptions = {}): ParticleSystem — A generic, allocation-aware particle system: one emitter, a fixed pool, and Structure-of-Arrays buffers a renderer uploads straight to the GPU. It is dt-driven (call `update(dt)` each frame) and deterministic — all randomness flows from an injected `seed`, so the same seed and dt sequence reproduce the same frames, and `snapshot`/`restore` round-trips the live pool. Nothing here is combat- or genre-specific: configure it for smoke, sparks, rain, dust, embers, magic, or confetti. Travel/gameplay stays elsewhere; this owns only the spawn-integrate-fade lifecycle.
 - `createPathFollow` (function): function createPathFollow(config: PathFollowConfig): PathFollowState — ⚠ undocumented
+- `createPerception` (function): function createPerception(initial: PerceptionConfig): PerceptionService — Creates a deterministic sight, sound, and damage perception service with expiring target memory. Signals are judged in the order the caller supplies them, never from the wall clock.
 - `createPlacedStructureStore` (function): function createPlacedStructureStore(): PlacedStructureStore — ⚠ undocumented
 - `createPlacementController` (function): function createPlacementController(config: PlacementControllerConfig): PlacementController — Headless placement ghost: hover → valid/invalid preview, rotate, grid/free/surface snap, commit. Pair with `@jgengine/shell/structures` `PlacementGhost` and {@link placeAssetFromCommit}.
 - `createPlotPermissions` (function): function createPlotPermissions(config: PlotPermissionConfig): PlotPermissions — ⚠ undocumented

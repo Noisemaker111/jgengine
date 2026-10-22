@@ -15,8 +15,14 @@ Working example: the `guard-probe` dev demo (`apps/dev/src/demo/guardProbe.ts`),
   senses. Each tick, push the stimuli your game produces (`sound` with a
   `loudness` that scales range, `damage`) and call `observe(npc, candidates, nowMs)`
   with a *bounded* candidate list from a spatial query, never every entity. Pass
-  `occluded` for walls. Memory decays linearly over `memorySeconds`; each observer
-  judges a stimulus once.
+  `isSegmentClear` for walls — a caller function over your collision layer that
+  returns true when nothing blocks the line; it is only called for pairs already
+  inside range and cone, so keep that cheap. Memory decays linearly over
+  `memorySeconds`; each observer judges a stimulus once. Pass `squadMates` so one
+  member's sighting lands in every mate's memory stamped with `sourceId` and
+  `sourceTick`; `maxSharesPerTick` caps the broadcast. `memoryOf(id, target)` is
+  the one question "is this still known, and how sure", and `stats()` says what
+  the pass cost (pairs, range prunes, line checks, shares).
 - **Memory → blackboard.** A small system copies the facts the graph needs into
   the NPC's persistent blackboard: `behaviorControl(ctx).blackboard(id)`. Write
   plain scalars (`alerted`, `lastKnownX`, `lastKnownZ`, `confidence`). Actions
