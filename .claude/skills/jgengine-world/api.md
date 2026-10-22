@@ -126,6 +126,29 @@
 
 - `mobBrainGraph` (const): const mobBrainGraph: DecisionGraph — Graph-shaped description of the mob brain's idle, wander, chase, engage, and evade decisions.
 
+## @jgengine/core/ai/policeResponse
+
+- `DEFAULT_POLICE_TIERS` (const): const DEFAULT_POLICE_TIERS: readonly PoliceTier[] — The starting tier table: patrol until heat arrives, then investigate, pursue and finally cordon.
+- `DEFAULT_POLICE_TUNING` (const): const DEFAULT_POLICE_TUNING: PoliceTuning — The starting policy: linear decay, a six-second escape and a search area that grows at 2 m/s.
+- `PoliceLaneHit` (interface): interface PoliceLaneHit — A lane near a world point: its id, the arc of the nearest point on it, and how far away that is.
+- `PoliceResponse` (interface): interface PoliceResponse — Stateful wanted/pursuit API with retuning and save/restore support.
+- `PoliceResponseConfig` (interface): interface PoliceResponseConfig extends Partial<PoliceTuning> — Everything {@link createPoliceResponse} needs: the witness seam, the roster and the caller's policy.
+- `PoliceResponseKind` (type): type PoliceResponseKind = "patrol" | "investigate" | "pursue" | "roadblock" — How police answer the current heat tier — watching the streets up to cordoning them.
+- `PoliceResponseState` (interface): interface PoliceResponseState — Serializable response state — the heat curve, the sight timer, the anchor and the counters.
+- `PoliceRoadblockSite` (interface): interface PoliceRoadblockSite — A roadblock site on a lane, resolved from authored road data.
+- `PoliceRoads` (interface): interface PoliceRoads — Road data the response reads: nearby lanes for the search area, authored sites for roadblocks.
+- `PoliceRoadsOptions` (interface): interface PoliceRoadsOptions — How the document reader recognizes authored road content.
+- `PoliceSearchArea` (interface): interface PoliceSearchArea — Where the search is, as the last sighting places it.
+- `PoliceSighting` (interface): interface PoliceSighting — One remembered sighting of the suspect, as the perception service reports it — `PerceptionMemory` from `sensor/perception` satisfies this shape.
+- `PoliceStats` (interface): interface PoliceStats — Counters a devtools probe, a HUD or a test reads.
+- `PoliceStep` (interface): interface PoliceStep — One tick's answer: the heat, the tier, the search area, the cordon and the escape.
+- `PoliceTickContext` (interface): interface PoliceTickContext — Per-tick world facts {@link PoliceResponse.tick} needs but cannot derive itself.
+- `PoliceTier` (interface): interface PoliceTier — One response tier: the heat it begins at, what it puts on the street, and how wide it searches.
+- `PoliceTuning` (interface): interface PoliceTuning — The serializable policy of a response: the tier table, the heat curve and the search shape.
+- `PoliceWitness` (interface): interface PoliceWitness — The witness seam: perception memory, queried by observer id. Pass `createPerception` (`sensor/perception`) straight in — a crime is witnessed when an observer still holds the suspect in view, so there is no second sight path to keep in step.
+- `createPoliceResponse` (function): function createPoliceResponse(config: PoliceResponseConfig): PoliceResponse — The wanted level a crime sandbox needs, over the shared heat curve: a crime raises heat only while a witness holds the suspect in view, the heat bleeds on a stated linear curve once the suspect has been out of every witness's sight for `escapeSeconds`, the tier table decides what police do (patrol → investigate → pursue → roadblock), the search area sits where the suspect was last seen and grows while the trail is cold, and a roadblock tier cordons it with authored sites off the lane graph. Heat, tiers and curves are caller policy; witness facts come from `sensor/perception` memory (`sourceId`/`sourceTick` kept), so there is no second sight path.
+- `policeRoadsFromLaneGraph` (function): function policeRoadsFromLaneGraph(graph: LaneGraph, markers: readonly EditorMarker[] = [], options: PoliceRoadsOptions = {}): PoliceRoads — Read the police road data out of an authored lane graph: `traffic_roadblock` markers become cordon sites projected onto the lane they block, and lanes are indexed so `lanesNear` answers from the local cells rather than a scan of every lane. With no roadblock markers authored, the graph's intersections are the sites, so a cordon still sits where streets meet. Built once; the index is rebuildable from the document, so it is never serialized.
+
 ## @jgengine/core/ai/populationDirector
 
 - `PopulationCensus` (type): type PopulationCensus = Record<string, Record<string, number>> — Live census of alive counts keyed `region -> species -> count`, used to reconcile the director to reality.
@@ -2324,6 +2347,8 @@
 - `DEFAULT_LANDMARK_SHARE` (const): const DEFAULT_LANDMARK_SHARE: 0.04 — Default grand-plot share dial — a handful of block-scale parcels per default city.
 - `DEFAULT_MARKER_KINDS` (const): const DEFAULT_MARKER_KINDS: Record<string, MarkerKindStyle> — ⚠ undocumented
 - `DEFAULT_MINIMAP_PALETTE` (const): const DEFAULT_MINIMAP_PALETTE: MinimapBakePalette — The built-in height→color ramp and water color a bake uses when no palette override is given.
+- `DEFAULT_POLICE_TIERS` (const): const DEFAULT_POLICE_TIERS: readonly PoliceTier[] — The starting tier table: patrol until heat arrives, then investigate, pursue and finally cordon.
+- `DEFAULT_POLICE_TUNING` (const): const DEFAULT_POLICE_TUNING: PoliceTuning — The starting policy: linear decay, a six-second escape and a search area that grows at 2 m/s.
 - `DEFAULT_REPUTATION_TIERS` (const): const DEFAULT_REPUTATION_TIERS: readonly ReputationTier[] — ⚠ undocumented
 - `DamageDirectionOptions` (interface): interface DamageDirectionOptions — Options for {@link createDamageDirectionTracker}.
 - `DamageDirectionSnapshot` (interface): interface DamageDirectionSnapshot — Serializable state for save/restore — the clock reading plus every live indicator.
@@ -2401,6 +2426,7 @@
 - `HeatConfig` (interface): interface HeatConfig — Tuning for {@link createHeatState}/{@link advanceHeat} — levels, decay, and pursuit-spawn ring.
 - `HeatGain` (interface): interface HeatGain — One crime tick's contribution — only `witnessed` gains raise heat (unseen crimes are free, GTA-style).
 - `HeatLevelDef` (interface): interface HeatLevelDef — One escalation tier — the heat threshold it begins at and the pursuer count it wants active.
+- `HeatPoint` (type): type HeatPoint = readonly [number, number] — A world-space `[x, z]` used for the heat system's spawn ring and witness proximity checks.
 - `HeatSource` (interface): interface HeatSource — A localized warmth source — campfire, forge, geothermal vent.
 - `HeatState` (interface): interface HeatState — Serializable heat-system state — round-trips through `createHeatState`/`advanceHeat` each tick.
 - `HeightSampler` (type): type HeightSampler = (x: number, z: number) => number — A height sampler over the ground: world elevation at any `x`/`z`.
@@ -2579,6 +2605,22 @@
 - `PlatformCarry` (class): class PlatformCarry — Carries bodies standing on a moving platform by composing their transform with the platform's per-`step` delta — moving/rotating lifts and conveyor floors (Fall Guys, Gang Beasts). The platform is a body the game repositions each frame; riders are detected by overlap on its top face.
 - `Point3` (type): type Point3 = readonly [number, number, number] — Deterministic spatial sampling — draw one or many positions from a geometric region under explicit constraints, with an injected RNG, bounded attempts, and a structured pass/fail result.
 - `PointGravityOptions` (interface): interface PointGravityOptions — Center, strength, and falloff for radial gravity.
+- `PoliceLaneHit` (interface): interface PoliceLaneHit — A lane near a world point: its id, the arc of the nearest point on it, and how far away that is.
+- `PoliceResponse` (interface): interface PoliceResponse — Stateful wanted/pursuit API with retuning and save/restore support.
+- `PoliceResponseConfig` (interface): interface PoliceResponseConfig extends Partial<PoliceTuning> — Everything {@link createPoliceResponse} needs: the witness seam, the roster and the caller's policy.
+- `PoliceResponseKind` (type): type PoliceResponseKind = "patrol" | "investigate" | "pursue" | "roadblock" — How police answer the current heat tier — watching the streets up to cordoning them.
+- `PoliceResponseState` (interface): interface PoliceResponseState — Serializable response state — the heat curve, the sight timer, the anchor and the counters.
+- `PoliceRoadblockSite` (interface): interface PoliceRoadblockSite — A roadblock site on a lane, resolved from authored road data.
+- `PoliceRoads` (interface): interface PoliceRoads — Road data the response reads: nearby lanes for the search area, authored sites for roadblocks.
+- `PoliceRoadsOptions` (interface): interface PoliceRoadsOptions — How the document reader recognizes authored road content.
+- `PoliceSearchArea` (interface): interface PoliceSearchArea — Where the search is, as the last sighting places it.
+- `PoliceSighting` (interface): interface PoliceSighting — One remembered sighting of the suspect, as the perception service reports it — `PerceptionMemory` from `sensor/perception` satisfies this shape.
+- `PoliceStats` (interface): interface PoliceStats — Counters a devtools probe, a HUD or a test reads.
+- `PoliceStep` (interface): interface PoliceStep — One tick's answer: the heat, the tier, the search area, the cordon and the escape.
+- `PoliceTickContext` (interface): interface PoliceTickContext — Per-tick world facts {@link PoliceResponse.tick} needs but cannot derive itself.
+- `PoliceTier` (interface): interface PoliceTier — One response tier: the heat it begins at, what it puts on the street, and how wide it searches.
+- `PoliceTuning` (interface): interface PoliceTuning — The serializable policy of a response: the tier table, the heat curve and the search shape.
+- `PoliceWitness` (interface): interface PoliceWitness — The witness seam: perception memory, queried by observer id. Pass `createPerception` (`sensor/perception`) straight in — a crime is witnessed when an observer still holds the suspect in view, so there is no second sight path to keep in step.
 - `PositionedPrompt` (interface): interface PositionedPrompt { id: string; position: PromptPoint; priority?: number; prompt: ProximityPrompt } — ⚠ undocumented · used by `resolveActivePrompt`: Nearest prompt strictly within its radius wins; a higher-priority prompt in range beats any lower-priority one regardless of distance; equal…
 - `PositionedPromptPatch` (type): type PositionedPromptPatch = Partial<Omit<PositionedPrompt, "id">> — A partial edit applied to an already-registered {@link PositionedPrompt} by {@link PromptRegistry.update}. Any subset of the mutable fields — everything but the stable `id` — may be supplied; omitted fields keep their prior value.
 - `PromptRegistry` (interface): interface PromptRegistry — A live, observable set of interaction prompts that OWNS the registered {@link PositionedPrompt}s and tracks which one is active for a player. It is a thin stateful layer over {@link resolveActivePrompt}: registration/order lives here, the nearest-within-radius / higher-priority selection stays in the pure resolver. {@link resolve} is the per-frame hot path — call it as the player moves; subscribers fire only when the active prompt actually CHANGES.
@@ -2929,6 +2971,7 @@
 - `createPlacedStructureStore` (function): function createPlacedStructureStore(): PlacedStructureStore — ⚠ undocumented
 - `createPlacementController` (function): function createPlacementController(config: PlacementControllerConfig): PlacementController — Headless placement ghost: hover → valid/invalid preview, rotate, grid/free/surface snap, commit. Pair with `@jgengine/shell/structures` `PlacementGhost` and {@link placeAssetFromCommit}.
 - `createPlotPermissions` (function): function createPlotPermissions(config: PlotPermissionConfig): PlotPermissions — ⚠ undocumented
+- `createPoliceResponse` (function): function createPoliceResponse(config: PoliceResponseConfig): PoliceResponse — The wanted level a crime sandbox needs, over the shared heat curve: a crime raises heat only while a witness holds the suspect in view, the heat bleeds on a stated linear curve once the suspect has been out of every witness's sight for `escapeSeconds`, the tier table decides what police do (patrol → investigate → pursue → roadblock), the search area sits where the suspect was last seen and grows while the trail is cold, and a roadblock tier cordons it with authored sites off the lane graph. Heat, tiers and curves are caller policy; witness facts come from `sensor/perception` memory (`sourceId`/`sourceTick` kept), so there is no second sight path.
 - `createPoseState` (function): function createPoseState(resolveAllowed: (instanceId: string) => PoseAllowedStates | null | undefined): PoseState — Stance/pose transitions — stand, crouch, prone — that change the hitbox and movement.
 - `createPromptRegistry` (function): function createPromptRegistry(): PromptRegistry — Create a live, observable interaction-prompt registry over the pure {@link resolveActivePrompt} resolver. Register positioned "press E" prompts, `resolve(playerPosition)` each frame as the hero moves, and read `active()` — the nearest strictly-in-range prompt (higher `priority` beats closer). The set is owned here (register/update/unregister/clear/all); selection stays pure. Subscribers are notified only when the active prompt *changes*, so a HUD does not thrash per frame, and `snapshot`/`restore` round-trip the prompts plus the active id through a save (display payloads are free strings/ids the game owns — the registry never branches on their meaning). Allocation-aware: `all()` and `resolve()` reuse a cached array instead of rebuilding per call.
 - `createRagdoll` (function): function createRagdoll(world: PhysicsWorld, config: RagdollConfig): Ragdoll — ⚠ undocumented
@@ -3058,6 +3101,7 @@
 - `pointInPolygon` (function): function pointInPolygon(point: Vec2, polygon: readonly Vec2[]): boolean — Ray-casting point-in-polygon test on the XZ plane.
 - `pointInVolume` (function): function pointInVolume(volume: SceneVolumeLike, point: { x: number; y: number; z: number }): boolean — True when `point` is inside an editor volume (sphere / cylinder / box). Cylinder height defaults to diameter when omitted; sphere ignores y for the common ground-plane case only when the volume radius covers the full vertical span — here y is tested for sphere and box too.
 - `pointSetRegion` (function): function pointSetRegion(points: readonly Vec2[], options: { weights?: readonly number[] } = {}): SampleRegion<Vec2> — A fixed set of candidate points sampled by (optionally weighted) selection — the "spawn point table" region. `contains` is exact membership. Empty when the set is empty.
+- `policeRoadsFromLaneGraph` (function): function policeRoadsFromLaneGraph(graph: LaneGraph, markers: readonly EditorMarker[] = [], options: PoliceRoadsOptions = {}): PoliceRoads — Read the police road data out of an authored lane graph: `traffic_roadblock` markers become cordon sites projected onto the lane they block, and lanes are indexed so `lanesNear` answers from the local cells rather than a scan of every lane. With no roadblock markers authored, the graph's intersections are the sites, so a cordon still sits where streets meet. Built once; the index is rebuildable from the document, so it is never serialized.
 - `polygonArea` (function): function polygonArea(polygon: readonly Vec2[]): number — Shoelace area of a polygon (always non-negative), in square meters.
 - `polygonBounds` (function): function polygonBounds(polygon: readonly Vec2[]): Aabb | null — Axis-aligned bounds of a polygon, or null if it has no points.
 - `polygonRegion` (function): function polygonRegion(polygon: readonly Vec2[]): SampleRegion<Vec2> — An arbitrary closed polygon on the XZ plane. Candidates are drawn uniformly from the polygon's bounding box and gated by point-in-polygon `contains`, so a run's draw count stays fixed (the sampler's attempt budget bounds the rejection, not a hidden inner loop).
