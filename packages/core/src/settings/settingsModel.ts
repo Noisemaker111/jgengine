@@ -4,7 +4,7 @@ import { createObservableKeyedStore } from "../store/observableKeyedStore";
 export type SettingValue = number | boolean | string;
 export type SettingKind = "slider" | "toggle" | "select";
 
-export type BuiltInSettingCategory = "sound" | "graphics" | "gameplay" | "controls";
+export type BuiltInSettingCategory = "sound" | "graphics" | "gameplay" | "controls" | "accessibility";
 /** Built-in category ids keep autocomplete; any other string makes a fresh category. */
 export type SettingCategory = BuiltInSettingCategory | (string & {});
 
@@ -12,6 +12,7 @@ export const BUILT_IN_SETTING_CATEGORIES: readonly BuiltInSettingCategory[] = [
   "sound",
   "graphics",
   "gameplay",
+  "accessibility",
   "controls",
 ];
 

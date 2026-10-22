@@ -282,7 +282,6 @@ export function useSettingsCategories(config: SettingsControllerInput): Settings
     if (!order.includes(id)) order.push(id);
   };
   for (const id of BUILT_IN_SETTING_CATEGORIES) push(id);
-  push("accessibility");
   for (const c of config.categories) push(c.id);
   for (const def of config.extra) push(def.category);
 
