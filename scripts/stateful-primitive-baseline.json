@@ -43,7 +43,6 @@
   "packages/core/src/input/actionBindings.ts#createActionStateTracker",
   "packages/core/src/input/gestureSurface.ts#createGestureSurfaceTracker",
   "packages/core/src/input/touchGestures.ts#createTouchGestureTracker",
-  "packages/core/src/inventory/inventoryModel.ts#createInventorySet",
   "packages/core/src/inventory/storageTier.ts#createDeliveryQueue",
   "packages/core/src/item/affix.ts#createAffixRoller",
   "packages/core/src/item/durability.ts#createDurabilityTracker",

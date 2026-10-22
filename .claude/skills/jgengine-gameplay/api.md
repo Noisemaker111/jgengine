@@ -1248,7 +1248,7 @@
 - `InstalledPart` (interface): interface InstalledPart { slotId: string; part: PartDef } — ⚠ undocumented · used by `identityOf`: Assemble an {@link ItemIdentity} from a family, tags, and installed parts.
 - `InventoryDeclaration` (interface): interface InventoryDeclaration — Shape of one named inventory a game declares — slot count, accepted item types, HUD binding.
 - `InventorySlot` (type): type InventorySlot = { itemId: string; count: number } | null — ⚠ undocumented
-- `InventoryState` (interface): interface InventoryState { slots: InventorySlot[] } — ⚠ undocumented · used by `countItem` (@jgengine/core/inventory/inventoryModel): Total quantity of `itemId` summed across every stack in the inventory.
+- `InventoryState` (interface): interface InventoryState { slots: InventorySlot[] } — ⚠ undocumented · used by `carriedEntries` (@jgengine/core/inventory/carryLoad): Every filled stack in the given inventories as load entries, in slot order.
 - `ItemIdentity` (interface): interface ItemIdentity — The declarative identity of a built modular item: a caller-named family, its provenance tags, and the parts occupying its slots. This is the "what an item is" layer above the raw stat rollup in ./modularItem — a plain, serializable value with no game noun baked in ("gun", "manufacturer", "potion" are all caller data in `family`/`tags`).
 - `ItemProvenance` (interface): interface ItemProvenance — The serializable record of how an item was generated: its family, tags, per-slot part selection, applied set-bonus ids, and the deterministic seed. Enough for UI provenance display and byte-exact regeneration.
 - `ItemUseHandler` (interface): interface ItemUseHandler<TState> { can?(state: TState, input: ItemUseInput): ItemUseRejection | null; apply(state: TState, input: ItemUseInput): ItemUseResult<TState> } — ⚠ undocumented
@@ -1810,6 +1810,15 @@
 - `withTouchCodes` (function): function withTouchCodes(map: ActionCodesMap | undefined): ActionCodesMap — Every action gains a synthetic touch code alongside its physical codes.
 - `worldHealthBarAllowsRole` (function): function worldHealthBarAllowsRole(roles: readonly CatalogEntityRole[] | undefined, role: CatalogEntityRole | undefined): boolean — ⚠ undocumented
 
+## @jgengine/core/inventory/carryLoad
+
+- `CharacterLoad` (interface): interface CharacterLoad extends EncumbranceState — A carrier's load: the encumbrance state, how it splits into carried and worn, and capacity left.
+- `CharacterLoadInput` (interface): interface CharacterLoadInput — Everything a {@link characterLoad} reading takes: carried inventories, worn gear and the capacity they are measured against.
+- `WeightLookup` (type): type WeightLookup = (itemId: string) => number — Per-item mass in the caller's weight unit; an unknown item weighs 0.
+- `canCarry` (function): function canCarry(load: Pick<CharacterLoad, "mass" | "capacity">, addedMass: number): boolean — Whether `addedMass` more weight still fits under `capacity`. Pure: the caller decides what to do with a refusal, so an overload policy stays with the game.
+- `carriedEntries` (function): function carriedEntries(states: readonly InventoryState[]): LoadEntry[] — Every filled stack in the given inventories as load entries, in slot order. Only the inventories the caller passes count, so a stash left out of the list adds no weight.
+- `characterLoad` (function): function characterLoad(input: CharacterLoadInput): CharacterLoad — Weigh a character: carried stacks plus worn gear against a capacity, resolved into the shared encumbrance bands. Movement reads `moveMultiplier`, `canSprint`, `canJump` and `immobile`; pickup gates read `remaining` or {@link canCarry}. The stash is not part of `carried`, so it adds nothing.
+
 ## @jgengine/core/inventory/encumbrance
 
 - `EncumbranceConfig` (interface): interface EncumbranceConfig — Tuning for where the encumbrance bands sit and how hard the carrier is slowed. Both fields are load *fractions* / multipliers in `0..1`, never absolute mass.
@@ -1821,16 +1830,32 @@
 - `resolveEncumbrance` (function): function resolveEncumbrance(mass: number, capacity: number, config?: EncumbranceConfig): EncumbranceState — Resolve carried mass against carrying capacity into a serializable encumbrance state: load fraction, tier, and the movement consequences (`canSprint`/`canJump`/`immobile` gates plus a progressive `moveMultiplier`). Below `soft` the carrier is unencumbered and unhindered; from `soft` up to capacity it is encumbered — no sprint or jump, and speed decays from 1 toward `floor`; at or above capacity it is immobile (multiplier 0). Deterministic and allocation-light; pair with {@link totalLoad} to derive `mass` from an inventory and a mass table. A capacity of 0 or less pins any positive load as immobile (`fraction` 1) so the state stays finite/serializable.
 - `totalLoad` (function): function totalLoad(entries: readonly LoadEntry[], massOf: MassResolver): number — Sum the mass of every carried stack using an injected per-unit mass resolver. Bounded by the number of entries; allocates nothing. Missing or negative unit masses are treated as 0.
 
+## @jgengine/core/inventory/equipment
+
+- `EquipItemDef` (interface): interface EquipItemDef — The gear facts the equip rules read from an item. A rolled item resolves its runtime id through the instance registry to its base and answers from that base's data — this is not a second item type.
+- `EquipItemLookup` (type): type EquipItemLookup = (itemId: string) => EquipItemDef | null | undefined — Item lookup the rules read; returns nothing for an unknown id.
+- `EquipRejection` (type): type EquipRejection = "unknown-slot" | "not-equippable" | "wrong-slot" | "already-equipped" | "blocked" — Why an equip attempt was refused; `detail` names the item and slots involved.
+- `EquipResult` (type): type EquipResult = | { status: "ok"; state: EquipmentState; slotId: string; replaced: string | null } | { status: "rejected"; reason: EquipRejection; detail: string } — An equip attempt: the new worn set plus the replaced item, or the refusal with its reason and detail.
+- `EquipSlotDef` (interface): interface EquipSlotDef — One body slot: the item kinds it accepts and the slots it occupies while filled.
+- `Equipment` (interface): interface Equipment — A worn-gear set: one item per slot, rules from slot and item data, state out and back in.
+- `EquipmentOptions` (interface): interface EquipmentOptions — Options for {@link createEquipment}.
+- `EquipmentProbeReading` (interface): interface EquipmentProbeReading — What the debug overlay reads about a worn set.
+- `EquipmentState` (interface): interface EquipmentState — Serializable equip state: the filled slots as `[slotId, itemId]` pairs.
+- `UnequipResult` (type): type UnequipResult = | { status: "ok"; state: EquipmentState; itemId: string } | { status: "rejected"; reason: "unknown-slot" | "empty-slot"; detail: string } — An unequip attempt: the new worn set plus the item taken off, or the refusal with its detail.
+- `WornEntry` (interface): interface WornEntry — One worn item and the slot holding it.
+- `createEquipment` (function): function createEquipment(slotDefs: readonly EquipSlotDef[], lookup: EquipItemLookup, options: EquipmentOptions = {}): Equipment — A worn-gear set over caller slot and item data.
+
 ## @jgengine/core/inventory/inventoryModel
 
 - `InventoryLayout` (interface): interface InventoryLayout { slots: number; accepts?: string | readonly string[] } — ⚠ undocumented · used by `createEmptyInventory`: A bag of stackable items supporting add, remove, count, and move — the base inventory model.
 - `InventorySet` (interface): interface InventorySet<TId extends string> { put(id: TId, itemId: string, count: number, options?: {slot?: number}): PutResult; take(id: TId, itemId: string, count: number): TakeResult; move(fromId: TId, fromSlot: number, toId: TId, toSlot?: number): MoveResult; count(id: TId, itemI… — ⚠ undocumented · used by `createInventorySet`: Build a keyed set of named inventories from their `layouts`, sharing one `traits` table — the stateful façade over put/take/move/count.
+- `InventorySetState` (type): type InventorySetState<TId extends string> = Record<TId, InventoryState> — Every inventory in a set, keyed by id, as plain slot data.
 - `InventorySlot` (type): type InventorySlot = { itemId: string; count: number } | null — ⚠ undocumented
 - `InventoryState` (interface): interface InventoryState { slots: InventorySlot[] } — ⚠ undocumented · used by `countItem`: Total quantity of `itemId` summed across every stack in the inventory.
 - `ItemTraits` (interface): interface ItemTraits { stackLimit(itemId: string): number; kind?(itemId: string): string | null } — ⚠ undocumented · used by `createInventorySet`: Build a keyed set of named inventories from their `layouts`, sharing one `traits` table — the stateful façade over put/take/move/count.
 - `MoveResult` (type): type MoveResult = | { status: "ok"; from: InventoryState; to: InventoryState } | { status: "rejected"; reason: "invalid-slot" | "empty-slot" | "wrong-kind" | "no-space" } — ⚠ undocumented · used by `moveItem`: Move the stack at `fromSlot` to `toSlot` (or auto-stack when omitted) — swapping, merging with remainder, or relocating across two inventori…
 - `PutResult` (type): type PutResult = | { status: "ok"; state: InventoryState } | { status: "rejected"; reason: "no-space" | "wrong-kind" | "slot-occupied" | "invalid-slot" } — ⚠ undocumented · used by `putItem`: Add `count` of `itemId` — into a specific `options.slot`, or auto-stacked across free/partial slots.
-- `SplitResult` (type): type SplitResult = | { status: "ok"; state: InventoryState } | { status: "rejected"; reason: "invalid-slot" | "empty-slot" | "invalid-amount" | "no-space" | "slot-occupied" } — Outcome of {@link splitStack}: the new state, or a rejection reason.
+- `SplitResult` (type): type SplitResult = | { status: "ok"; state: InventoryState } | { status: "rejected"; reason: "invalid-slot" | "empty-slot" | "invalid-amount" | "no-space" | "slot-occupied" | "over-stack" } — Outcome of {@link splitStack}: the new state, or a rejection reason.
 - `TakeResult` (type): type TakeResult = { status: "ok"; state: InventoryState } | { status: "rejected"; reason: "insufficient" } — ⚠ undocumented · used by `takeItem`: Remove `count` of `itemId`, draining from the last matching stacks first.
 - `countItem` (function): function countItem(state: InventoryState, itemId: string): number — Total quantity of `itemId` summed across every stack in the inventory.
 - `createEmptyInventory` (function): function createEmptyInventory(layout: InventoryLayout): InventoryState — A bag of stackable items supporting add, remove, count, and move — the base inventory model.
@@ -1838,7 +1863,7 @@
 - `hasItem` (function): function hasItem(state: InventoryState, itemId: string, count: number): boolean — True when the inventory holds at least `count` of `itemId`.
 - `moveItem` (function): function moveItem(from: InventoryState, fromSlot: number, to: InventoryState, toLayout: InventoryLayout, traits: ItemTraits, toSlot?: number): MoveResult — Move the stack at `fromSlot` to `toSlot` (or auto-stack when omitted) — swapping, merging with remainder, or relocating across two inventories. Rejects on empty source, wrong kind, or no space.
 - `putItem` (function): function putItem(state: InventoryState, layout: InventoryLayout, traits: ItemTraits, itemId: string, count: number, options?: { slot?: number }): PutResult — Add `count` of `itemId` — into a specific `options.slot`, or auto-stacked across free/partial slots. Rejects on no space or wrong kind.
-- `splitStack` (function): function splitStack(state: InventoryState, slot: number, amount: number, toSlot?: number): SplitResult — Splits `amount` off the stack in `slot` into `toSlot` (or the first empty slot when `toSlot` is omitted). Limit-agnostic: it does not consult {@link ItemTraits}, so a same-item target merges by simple addition. Rejects an empty source, `amount <= 0`, `amount >= stack count` (a split must leave both sides non-empty), no free slot, or a target holding a different item.
+- `splitStack` (function): function splitStack(state: InventoryState, slot: number, amount: number, toSlot?: number, limit?: number): SplitResult — Splits `amount` off the stack in `slot` into `toSlot` (or the first empty slot when `toSlot` is omitted). Without `limit` it is limit-agnostic: a same-item target merges by simple addition. Pass the item's stack limit to keep the merge legal, which rejects `over-stack`. Rejects an empty source, `amount <= 0`, `amount >= stack count` (a split must leave both sides non-empty), no free slot, or a target holding a different item.
 - `takeItem` (function): function takeItem(state: InventoryState, itemId: string, count: number): TakeResult — Remove `count` of `itemId`, draining from the last matching stacks first. Rejects if fewer than `count` are held.
 
 ## @jgengine/core/inventory/shapedGrid
@@ -1848,8 +1873,10 @@
 - `GridAdjacencyQuery` (interface): interface GridAdjacencyQuery { cellsOf(id: string): readonly Cell[]; neighborsOf(id: string): readonly string[]; touching(idA: string, idB: string): boolean; adjacentCells(cells: readonly Cell[]): readonly Cell[] } — ⚠ undocumented
 - `Placement` (interface): interface Placement<T> { id: string; value: T; footprint: Footprint; origin: Cell; rotation: Rotation } — ⚠ undocumented
 - `Rotation` (type): type Rotation = 0 | 1 | 2 | 3 — ⚠ undocumented · used by `canPlace`: Check bounds and overlap for a discrete footprint, optionally ignoring the item being moved.
+- `ShapedFitRejection` (type): type ShapedFitRejection = "duplicate-id" | "invalid-footprint" | "too-large" | "no-space" | "budget-exceeded" — Why a first-fit placement failed: the footprint cannot fit an empty board at any offered rotation (`too-large`), the board is genuinely full (`no-space`), or the search hit its budget.
+- `ShapedFitResult` (type): type ShapedFitResult<T> = | { status: "ok"; grid: ShapedGrid<T>; origin: Cell; rotation: Rotation; checks: number } | { status: "rejected"; reason: ShapedFitRejection; detail: string; checks: number } — A placed board, or a refusal that names why the item does not fit.
 - `ShapedGrid` (interface): interface ShapedGrid<T> { readonly width: number; readonly height: number; readonly placements: readonly Placement<T>[] } — ⚠ undocumented · used by `canPlace`: Check bounds and overlap for a discrete footprint, optionally ignoring the item being moved.
-- `ShapedItem` (interface): interface ShapedItem<T> { id: string; value: T; footprint: Footprint } — ⚠ undocumented · used by `placeShaped`: Place a caller-defined item without mutating the source board; duplicate ids reject.
+- `ShapedItem` (interface): interface ShapedItem<T> { id: string; value: T; footprint: Footprint } — ⚠ undocumented · used by `fitShapedItem`: Place a shaped item at the first legal spot, or say why it does not fit.
 - `ShapedPlaceResult` (interface): interface ShapedPlaceResult<T> { status: "ok"; grid: ShapedGrid<T> } — ⚠ undocumented
 - `ShapedPlacementSearchOptions` (interface): interface ShapedPlacementSearchOptions — Search policy: rotation order first, then rows and columns; the work budget counts candidate origins.
 - `ShapedPlacementSearchResult` (type): type ShapedPlacementSearchResult = | { status: "found"; origin: Cell; rotation: Rotation; checks: number } | { status: "no-space"; checks: number } | { status: "budget-exceeded"; checks: number } — A detached placement, a completed no-fit search, or an incomplete search that reached its budget.
@@ -1859,6 +1886,7 @@
 - `canPlace` (function): function canPlace<T>(grid: ShapedGrid<T>, footprint: Footprint, origin: Cell, rotation: Rotation, ignoreId?: string): ShapedRejection | null — Check bounds and overlap for a discrete footprint, optionally ignoring the item being moved.
 - `createShapedGrid` (function): function createShapedGrid<T>(width: number, height: number): ShapedGrid<T> — An immutable spatial inventory board holding caller-defined multi-cell items.
 - `findShapedPlacement` (function): function findShapedPlacement<T>(grid: ShapedGrid<T>, footprint: Footprint, options: ShapedPlacementSearchOptions = {}): ShapedPlacementSearchResult — Find the first legal placement without mutating the board; occupancy is indexed once per search.
+- `fitShapedItem` (function): function fitShapedItem<T>(grid: ShapedGrid<T>, item: ShapedItem<T>, options: ShapedPlacementSearchOptions = {}): ShapedFitResult<T> — Place a shaped item at the first legal spot, or say why it does not fit. Distinguishes an item that can never fit the board (`too-large`, with its footprint and the board size in `detail`) from a full board (`no-space`) and an exhausted search (`budget-exceeded`, not a full bag).
 - `moveShaped` (function): function moveShaped<T>(grid: ShapedGrid<T>, id: string, origin: Cell, rotation?: Rotation): ShapedResult<T> — Move or rotate one placement, ignoring its current cells during overlap checks.
 - `placeShaped` (function): function placeShaped<T>(grid: ShapedGrid<T>, item: ShapedItem<T>, origin: Cell, rotation: Rotation = 0): ShapedResult<T> — Place a caller-defined item without mutating the source board; duplicate ids reject.
 - `removeShaped` (function): function removeShaped<T>(grid: ShapedGrid<T>, id: string): ShapedResult<T> — Remove one placement without mutating the source board.

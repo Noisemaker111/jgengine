@@ -222,6 +222,71 @@ export function placeShaped<T>(
 }
 
 /**
+ * Why a first-fit placement failed: the footprint cannot fit an empty board at any offered rotation
+ * (`too-large`), the board is genuinely full (`no-space`), or the search hit its budget.
+ */
+export type ShapedFitRejection = "duplicate-id" | "invalid-footprint" | "too-large" | "no-space" | "budget-exceeded";
+
+/** A placed board, or a refusal that names why the item does not fit. */
+export type ShapedFitResult<T> =
+  | { status: "ok"; grid: ShapedGrid<T>; origin: Cell; rotation: Rotation; checks: number }
+  | { status: "rejected"; reason: ShapedFitRejection; detail: string; checks: number };
+
+function footprintBounds(footprint: Footprint): { width: number; height: number } {
+  let width = 0;
+  let height = 0;
+  for (const [c, r] of footprint) {
+    width = Math.max(width, c + 1);
+    height = Math.max(height, r + 1);
+  }
+  return { width, height };
+}
+
+/**
+ * Place a shaped item at the first legal spot, or say why it does not fit. Distinguishes an item that
+ * can never fit the board (`too-large`, with its footprint and the board size in `detail`) from a full
+ * board (`no-space`) and an exhausted search (`budget-exceeded`, not a full bag).
+ *
+ * @capability shaped-placement place a shaped item at its first fit and name why it does not fit
+ */
+export function fitShapedItem<T>(
+  grid: ShapedGrid<T>,
+  item: ShapedItem<T>,
+  options: ShapedPlacementSearchOptions = {},
+): ShapedFitResult<T> {
+  if (grid.placements.some((placement) => placement.id === item.id)) {
+    return { status: "rejected", reason: "duplicate-id", detail: `"${item.id}" is already placed`, checks: 0 };
+  }
+  if (!validFootprint(item.footprint)) {
+    return { status: "rejected", reason: "invalid-footprint", detail: `footprint has ${item.footprint.length} cell(s)`, checks: 0 };
+  }
+  const rotations = options.rotations ?? [0, 1, 2, 3];
+  const candidates = rotations.map((rotation) => ({ rotation, bounds: footprintBounds(rotateFootprint(item.footprint, rotation)) }));
+  const fitsEmptyBoard = candidates.filter(({ bounds }) => bounds.width <= grid.width && bounds.height <= grid.height);
+  if (fitsEmptyBoard.length === 0) {
+    const bounds = footprintBounds(normalizeFootprint(item.footprint));
+    return {
+      status: "rejected",
+      reason: "too-large",
+      detail: `a ${bounds.width}×${bounds.height} item does not fit a ${grid.width}×${grid.height} board`,
+      checks: 0,
+    };
+  }
+
+  const fit = findShapedPlacement(grid, item.footprint, { ...options, rotations: fitsEmptyBoard.map((entry) => entry.rotation) });
+  if (fit.status !== "found") {
+    return fit.status === "budget-exceeded"
+      ? { status: "rejected", reason: "budget-exceeded", detail: `search stopped after ${fit.checks} placements`, checks: fit.checks }
+      : { status: "rejected", reason: "no-space", detail: `every position is covered after ${fit.checks} placements`, checks: fit.checks };
+  }
+  const placed = placeShaped(grid, item, fit.origin, fit.rotation);
+  if (placed.status === "rejected") {
+    return { status: "rejected", reason: "no-space", detail: placed.reason, checks: fit.checks };
+  }
+  return { status: "ok", grid: placed.grid, origin: fit.origin, rotation: fit.rotation, checks: fit.checks };
+}
+
+/**
  * Remove one placement without mutating the source board.
  * @capability shaped-grid a serializable inventory board with arbitrary cell footprints, rotation, overlap checks, and immutable placement
  */

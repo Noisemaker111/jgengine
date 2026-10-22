@@ -36,12 +36,15 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `cancelJob` (function) · `import { cancelJob } from "@jgengine/core/gameplay"`
 
-## carry-encumbrance — carried mass vs capacity into movement penalty tiers and a speed multiplier
+## carry-encumbrance — gate a pickup against the carrier's remaining capacity
 
+- `canCarry` (function) · `import { canCarry } from "@jgengine/core/inventory/carryLoad"`
+- `characterLoad` (function) · `import { characterLoad } from "@jgengine/core/inventory/carryLoad"`
 - `resolveEncumbrance` (function) · `import { resolveEncumbrance } from "@jgengine/core/inventory/encumbrance"`
 
-## carry-load — sum carried mass from item stacks via an injected mass resolver
+## carry-load — read carried stacks out of one or more inventories for a weight query
 
+- `carriedEntries` (function) · `import { carriedEntries } from "@jgengine/core/inventory/carryLoad"`
 - `totalLoad` (function) · `import { totalLoad } from "@jgengine/core/inventory/encumbrance"`
 
 ## cell-grid — immutable 2D board of cells with row clears, gravity collapse, and match runs
@@ -148,6 +151,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `enqueue` (function) · `import { enqueue } from "@jgengine/core/gameplay"`
 
+## equipment-slot-inventory — wear gear by slot with item-kind rules, two-handed blocking and replace-on-equip
+
+- `createEquipment` (function) · `import { createEquipment } from "@jgengine/core/inventory/equipment"`
+
 ## event-bus — typed publish/subscribe bus for gameplay events
 
 - `createGameEvents` (function) · `import { createGameEvents } from "@jgengine/core/gameplay"`
@@ -216,7 +223,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createEmptyInventory` (function) · `import { createEmptyInventory } from "@jgengine/core/inventory/inventoryModel"`
 
-## inventory-split — split a stack into a target or first-empty slot
+## inventory-split — split a stack into a target or first-empty slot, honoring a stack limit
 
 - `splitStack` (function) · `import { splitStack } from "@jgengine/core/inventory/inventoryModel"`
 
@@ -552,6 +559,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## shaped-placement — find a shaped inventory item's first fit with ordered rotations, row-major placement, and an explicit search budget
 
 - `findShapedPlacement` (function) · `import { findShapedPlacement } from "@jgengine/core/inventory/shapedGrid"`
+- `fitShapedItem` (function) · `import { fitShapedItem } from "@jgengine/core/inventory/shapedGrid"`
 
 ## shop-grid — serializable vendor/shop stock with buy/sell over a caller-owned wallet — finite/unlimited qty, sell-back, restock/setPrice, snapshot/restore
 

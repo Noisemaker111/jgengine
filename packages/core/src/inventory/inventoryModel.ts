@@ -27,7 +27,7 @@ export type MoveResult =
 /** Outcome of {@link splitStack}: the new state, or a rejection reason. */
 export type SplitResult =
   | { status: "ok"; state: InventoryState }
-  | { status: "rejected"; reason: "invalid-slot" | "empty-slot" | "invalid-amount" | "no-space" | "slot-occupied" };
+  | { status: "rejected"; reason: "invalid-slot" | "empty-slot" | "invalid-amount" | "no-space" | "slot-occupied" | "over-stack" };
 
 /**
  * A bag of stackable items supporting add, remove, count, and move — the base inventory model.
@@ -227,17 +227,19 @@ export function moveItem(
 
 /**
  * Splits `amount` off the stack in `slot` into `toSlot` (or the first empty slot when `toSlot` is
- * omitted). Limit-agnostic: it does not consult {@link ItemTraits}, so a same-item target merges by
- * simple addition. Rejects an empty source, `amount <= 0`, `amount >= stack count` (a split must
- * leave both sides non-empty), no free slot, or a target holding a different item.
+ * omitted). Without `limit` it is limit-agnostic: a same-item target merges by simple addition.
+ * Pass the item's stack limit to keep the merge legal, which rejects `over-stack`. Rejects an empty
+ * source, `amount <= 0`, `amount >= stack count` (a split must leave both sides non-empty), no free
+ * slot, or a target holding a different item.
  *
- * @capability inventory-split split a stack into a target or first-empty slot
+ * @capability inventory-split split a stack into a target or first-empty slot, honoring a stack limit
  */
 export function splitStack(
   state: InventoryState,
   slot: number,
   amount: number,
   toSlot?: number,
+  limit?: number,
 ): SplitResult {
   if (!validSlot(state, slot)) return { status: "rejected", reason: "invalid-slot" };
   const source = state.slots[slot];
@@ -257,6 +259,9 @@ export function splitStack(
 
   const slots = state.slots.slice();
   const dest = slots[target];
+  if (limit !== undefined && dest !== null && dest !== undefined && dest.count + amount > limit) {
+    return { status: "rejected", reason: "over-stack" };
+  }
   slots[slot] = { itemId: source.itemId, count: source.count - amount };
   slots[target] =
     dest === null || dest === undefined
@@ -273,6 +278,31 @@ export interface InventorySet<TId extends string> {
   has(id: TId, itemId: string, count: number): boolean;
   state(id: TId): InventoryState;
   replaceState(id: TId, state: InventoryState): void;
+  /** Detached copy of every declared inventory — a save, never a live alias. */
+  snapshot(): InventorySetState<TId>;
+  /** Replace every declared inventory from a snapshot; returns false without mutation when an entry is malformed or incomplete. */
+  restore(next: InventorySetState<TId>): boolean;
+  /** Empty every declared inventory. */
+  reset(): void;
+}
+
+/** Every inventory in a set, keyed by id, as plain slot data. */
+export type InventorySetState<TId extends string> = Record<TId, InventoryState>;
+
+function cloneSlots(slots: readonly InventorySlot[]): InventorySlot[] {
+  return slots.map((slot) => (slot === null ? null : { itemId: slot.itemId, count: slot.count }));
+}
+
+function validInventoryState(state: InventoryState, slots: number): boolean {
+  if (state === null || typeof state !== "object" || !Array.isArray(state.slots)) return false;
+  if (state.slots.length !== slots) return false;
+  for (const slot of state.slots) {
+    if (slot === null) continue;
+    if (typeof slot !== "object") return false;
+    if (typeof slot.itemId !== "string") return false;
+    if (!Number.isFinite(slot.count) || slot.count <= 0) return false;
+  }
+  return true;
 }
 
 /** Build a keyed set of named inventories from their `layouts`, sharing one `traits` table — the stateful façade over put/take/move/count. */
@@ -321,6 +351,27 @@ export function createInventorySet<TId extends string>(
     },
     replaceState(id, state) {
       states.set(id, state);
+    },
+    snapshot() {
+      const out = {} as InventorySetState<TId>;
+      for (const id of Object.keys(layouts) as TId[]) {
+        out[id] = { slots: cloneSlots(requireState(id).slots) };
+      }
+      return out;
+    },
+    restore(next) {
+      if (next === null || typeof next !== "object") return false;
+      const staged = new Map<TId, InventoryState>();
+      for (const id of Object.keys(layouts) as TId[]) {
+        const state = (next as Partial<InventorySetState<TId>>)[id];
+        if (state === undefined || !validInventoryState(state, layouts[id].slots)) return false;
+        staged.set(id, { slots: cloneSlots(state.slots) });
+      }
+      for (const [id, state] of staged) states.set(id, state);
+      return true;
+    },
+    reset() {
+      for (const id of Object.keys(layouts) as TId[]) states.set(id, createEmptyInventory(layouts[id]));
     },
   };
 }
