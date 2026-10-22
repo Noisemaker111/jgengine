@@ -257,16 +257,22 @@ export function Shell3dPresentation({
         : world?.kind === "biomes" || world?.kind === "voxel" || world?.kind === "plots" || world?.kind === "tilemap"
           ? () => <GridWorldScene feature={world} />
           : undefined);
-  const resolvedLook = resolveGameLook({
-    look: playable.look,
-    lighting: playable.lighting,
-    backdrop: playable.backdrop,
-    postProcessing: playable.postProcessing,
-    hasWorldSky: worldSky !== undefined,
-  });
+  // The post chain and sky rebuild on identity change; a fresh look object per render recompiled every pass each frame.
+  const hasWorldSky = worldSky !== undefined;
+  const resolvedLook = useMemo(
+    () =>
+      resolveGameLook({
+        look: playable.look,
+        lighting: playable.lighting,
+        backdrop: playable.backdrop,
+        postProcessing: playable.postProcessing,
+        hasWorldSky,
+      }),
+    [playable.look, playable.lighting, playable.backdrop, playable.postProcessing, hasWorldSky],
+  );
   const cinematicLook = (playable.look ?? "cinematic") !== "flat";
   const backdrop = resolvedLook.backdrop;
-  const backdropSky = backdrop?.sky !== undefined ? resolveSkyDescriptor(backdrop.sky) : undefined;
+  const backdropSky = useMemo(() => (backdrop?.sky !== undefined ? resolveSkyDescriptor(backdrop.sky) : undefined), [backdrop?.sky]);
   const authoredSky = backdropSky ?? worldSky;
   const lighting = resolvedLook.lighting;
   const sunFromLighting = lighting?.directional?.[0]?.position;

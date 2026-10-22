@@ -1,6 +1,6 @@
 import { addAfterEffect, useThree } from "@react-three/fiber";
 import { useTexture } from "@react-three/drei";
-import { useLayoutEffect } from "react";
+import { useLayoutEffect, useRef } from "react";
 
 import { usePresentationRetryScope } from "./presentationRecovery";
 
@@ -11,7 +11,17 @@ export function useRecoverableTexture<T extends string[] | string | Record<strin
   const loaded = scope?.registry.register(inputs, useTexture.clear);
   const textures = useTexture(input);
   loaded?.();
-  return textures;
+  // drei returns a fresh keyed object each render; materials built from it rebuilt and recompiled every frame.
+  const stable = useRef(textures);
+  if (!sameTextures(stable.current, textures)) stable.current = textures;
+  return stable.current;
+}
+
+function sameTextures(a: unknown, b: unknown): boolean {
+  if (a === b) return true;
+  if (typeof a !== "object" || typeof b !== "object" || a === null || b === null) return false;
+  const ka = Object.keys(a), kb = Object.keys(b);
+  return ka.length === kb.length && ka.every((k) => (a as Record<string, unknown>)[k] === (b as Record<string, unknown>)[k]);
 }
 
 /** Observes the owning renderer after the restored material subtree commits and draws. @internal */

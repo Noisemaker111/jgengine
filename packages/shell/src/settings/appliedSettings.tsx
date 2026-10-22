@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from "react";
 
 import type { AudioBusDef } from "@jgengine/core/audio/audioFalloff";
 import {
@@ -75,18 +75,21 @@ export function useGraphicsSettings(
   shadowsDefault: boolean,
   overrides?: GraphicsProfileOverrides,
 ): AppliedGraphicsSettings {
-  useSettingsRevision(store);
-  const { quality, profile } = readGraphicsSettings(store, overrides);
-  const rawUiScale = store.get(SETTING_IDS.graphicsUiScale, DEFAULT_UI_SCALE);
-  return {
-    shadows: store.get(SETTING_IDS.graphicsShadows, shadowsDefault),
-    dpr: profile.renderScale,
-    uiScale: Math.min(UI_SCALE_MAX, Math.max(UI_SCALE_MIN, rawUiScale)),
-    quality,
-    profile,
-    frameRateLimit: readFrameRateLimit(store),
-    showFps: store.get(SETTING_IDS.graphicsShowFps, false),
-  };
+  const rev = useSettingsRevision(store);
+  // Effects rebuild on identity change; a fresh object each render recompiled the post chain every frame.
+  return useMemo(() => {
+    const { quality, profile } = readGraphicsSettings(store, overrides);
+    const rawUiScale = store.get(SETTING_IDS.graphicsUiScale, DEFAULT_UI_SCALE);
+    return {
+      shadows: store.get(SETTING_IDS.graphicsShadows, shadowsDefault),
+      dpr: profile.renderScale,
+      uiScale: Math.min(UI_SCALE_MAX, Math.max(UI_SCALE_MIN, rawUiScale)),
+      quality,
+      profile,
+      frameRateLimit: readFrameRateLimit(store),
+      showFps: store.get(SETTING_IDS.graphicsShowFps, false),
+    };
+  }, [store, rev, shadowsDefault, overrides]);
 }
 
 export function AudioSettingsBridge({
