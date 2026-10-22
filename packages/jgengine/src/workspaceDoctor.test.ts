@@ -61,6 +61,7 @@ test("literal missing and malformed manifests and unmatched wildcards report inc
     const report = inspectWorkspaceSdkInstall(root);expect(report.status).toBe("incomplete");
     expect(report.coverage.errors.some(error => error.includes("absent"))).toBe(true);
     expect(report.coverage.errors.some(error => error.includes("field/package.json"))).toBe(true);
+    expect(report.coverage.errors.every(error => !error.includes("\\"))).toBe(true);
     expect(report.coverage.errors.some(error => error.includes("matched no readable"))).toBe(true);
   });
 });
