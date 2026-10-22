@@ -75,7 +75,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [hot-core, core-rest, ui, rest]
+        shard: [core, ui, sdk, scripts]
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
