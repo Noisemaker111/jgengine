@@ -2,18 +2,22 @@ import { validateForceField, type ForceFieldConfig } from "../physics/forceVolum
 import type { AuthoredWeatherConfig } from "../world/authoredWeather";
 import { validateAuthoredWeather } from "../world/authoredWeather";
 import { validateEmitterConfig, type EmitterConfig } from "../vfx/particles";
+import { effectNames } from "../vfx/effectLibrary";
 import { validateParticleAttachOptions, type ParticleAttachOptions } from "../vfx/particleDirector";
 import type { FireGridConfig } from "../world/weather";
 import type { FlockConfig } from "../ai/flock";
 import type { EditorDocument, EditorVec3 } from "./types";
 
-/** A named emitter authored in metres, with game-owned appearance and attachment ids. */
+/** A named emitter authored in metres: either a library effect name or a full config. */
 export interface AuthoredEmitter {
   id: string;
   /** Spawn only while this authored fire area burns; live particles finish their lifetime. */
   fireAreaId?: string;
   position: EditorVec3;
-  config: EmitterConfig;
+  /** Named effect from the shared library (`fire/flame`, `explosion/core`, …). */
+  effect?: string;
+  /** Full emitter config; used when `effect` is absent. */
+  config?: EmitterConfig;
   options?: ParticleAttachOptions;
 }
 
@@ -128,23 +132,29 @@ export function decodeEditorSimulation(value: unknown, document?: Pick<EditorDoc
     });
   }
   rows(source.emitters, "$.simulation.emitters", 128, (row, path) => {
-    known(row, ["id", "position", "config", "options", "fireAreaId"], path);
+    known(row, ["id", "position", "effect", "config", "options", "fireAreaId"], path);
     if (row.fireAreaId !== undefined) {
       text(row.fireAreaId, `${path}.fireAreaId`);
       if (!Array.isArray(source.fires) || !source.fires.some((area) => area !== null && typeof area === "object" && (area as Record<string, unknown>).id === row.fireAreaId)) throw new Error(`${path}.fireAreaId: missing fire area ${row.fireAreaId}`);
     }
-    const diagnostics = validateEmitterConfig(row.config);
-    if (diagnostics.length) throw new Error(`${path}.config: ${diagnostics.join("; ")}`);
-    if (row.options !== undefined) { const errors = validateParticleAttachOptions(row.options); if (errors.length) throw new Error(`${path}.options: ${errors.join("; ")}`); }
-    const config = object(row.config, `${path}.config`);
-    for (const key of ["max", "rate", "spread", "drag"]) if (config[key] !== undefined) finite(config[key], `${path}.config.${key}`, 0, key === "max" ? 100_000 : key === "drag" ? 1 : Infinity);
-    if (config.max !== undefined && !Number.isInteger(config.max)) throw new Error(`${path}.config.max: expected an integer`);
-    for (const key of ["position", "spawnJitter", "direction", "gravity"]) if (config[key] !== undefined) tuple(config[key], `${path}.config.${key}`);
-    for (const key of ["lifetime", "speed"]) if (config[key] !== undefined) {
-      const range = object(config[key], `${path}.config.${key}`);
-      finite(range.min, `${path}.config.${key}.min`, 0);
-      finite(range.max, `${path}.config.${key}.max`, range.min as number);
+    if ((row.effect === undefined) === (row.config === undefined)) throw new Error(`${path}: expected exactly one of effect or config`);
+    if (row.effect !== undefined) {
+      text(row.effect, `${path}.effect`);
+      if (!effectNames().includes(row.effect as string)) throw new Error(`${path}.effect: unknown effect ${row.effect}`);
+    } else {
+      const diagnostics = validateEmitterConfig(row.config);
+      if (diagnostics.length) throw new Error(`${path}.config: ${diagnostics.join("; ")}`);
+      const config = object(row.config, `${path}.config`);
+      for (const key of ["max", "rate", "spread", "drag"]) if (config[key] !== undefined) finite(config[key], `${path}.config.${key}`, 0, key === "max" ? 100_000 : key === "drag" ? 1 : Infinity);
+      if (config.max !== undefined && !Number.isInteger(config.max)) throw new Error(`${path}.config.max: expected an integer`);
+      for (const key of ["position", "spawnJitter", "direction", "gravity"]) if (config[key] !== undefined) tuple(config[key], `${path}.config.${key}`);
+      for (const key of ["lifetime", "speed"]) if (config[key] !== undefined) {
+        const range = object(config[key], `${path}.config.${key}`);
+        finite(range.min, `${path}.config.${key}.min`, 0);
+        finite(range.max, `${path}.config.${key}.max`, range.min as number);
+      }
     }
+    if (row.options !== undefined) { const errors = validateParticleAttachOptions(row.options); if (errors.length) throw new Error(`${path}.options: ${errors.join("; ")}`); }
     if (row.options !== undefined) {
       const options = object(row.options, `${path}.options`);
       if (options.space !== undefined && options.space !== "local" && options.space !== "world") throw new Error(`${path}.options.space: expected local or world`);

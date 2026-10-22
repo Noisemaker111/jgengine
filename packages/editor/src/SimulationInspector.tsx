@@ -2,6 +2,7 @@ import type { CreatorPolicy } from "@jgengine/core/editor/creatorStorage";
 import { useState } from "react";
 import type { EditorSession } from "@jgengine/core/editor/commands";
 import type { EditorSimulation } from "@jgengine/core/editor/simulation";
+import { effectNames } from "@jgengine/core/vfx/effectLibrary";
 import type { AuthoredWeatherConfig, AuthoredWeatherMode } from "@jgengine/core/world/authoredWeather";
 import { useStoreSelector } from "./useStoreSelector";
 
@@ -95,15 +96,18 @@ export function SimulationInspector({ session, creatorPolicy }: { session: Edito
     </fieldset>
     <fieldset hidden={!allowEmitters} className="space-y-2"><legend>Named effects</legend>
       {(simulation?.emitters ?? []).map((emitter, index) => <div key={emitter.id} className="space-y-1 border-l border-neutral-700 pl-2"><span>{emitter.id}</span>
-        <select aria-label={`${emitter.id} appearance`} value={emitter.options?.render?.shape ?? "point"} onChange={(event) => update({ ...simulation, emitters: simulation!.emitters!.map((row, i) => i === index ? { ...row, options: { ...row.options, render: { shape: event.target.value as "point" | "streak" | "flake" | "flame" | "smoke" | "ribbon" | "ripple" } } } : row) })}>{["point", "streak", "flake", "flame", "smoke", "ribbon", "ripple"].map((shape) => <option key={shape}>{shape}</option>)}</select>
-        <NumberInput label={`${emitter.id} particles/second`} value={emitter.config.rate ?? 0} onChange={(rate) => update({ ...simulation, emitters: simulation!.emitters!.map((row, i) => i === index ? { ...row, config: { ...row.config, rate } } : row) })} />
-        <NumberInput label={`${emitter.id} particle capacity`} step={1} value={emitter.config.max ?? 512} onChange={(max) => update({ ...simulation, emitters: simulation!.emitters!.map((row, i) => i === index ? { ...row, config: { ...row.config, max } } : row) })} />
+        <label>Effect<select aria-label={`${emitter.id} effect`} value={emitter.effect ?? ""} onChange={(event) => update({ ...simulation, emitters: simulation!.emitters!.map((row, i) => i === index ? (event.target.value === "" ? { ...row, effect: undefined, config: row.config ?? { rate: 8, max: 64, lifetime: { min: 1, max: 2 }, seed: row.id } } : { ...row, effect: event.target.value, config: undefined }) : row) })}><option value="">Custom config</option>{effectNames().map((name) => <option key={name}>{name}</option>)}</select></label>
+        {emitter.effect === undefined ? <>
+          <select aria-label={`${emitter.id} appearance`} value={emitter.options?.render?.shape ?? "point"} onChange={(event) => update({ ...simulation, emitters: simulation!.emitters!.map((row, i) => i === index ? { ...row, options: { ...row.options, render: { shape: event.target.value as "point" | "streak" | "flake" | "flame" | "smoke" | "ribbon" | "ripple" } } } : row) })}>{["point", "streak", "flake", "flame", "smoke", "ribbon", "ripple"].map((shape) => <option key={shape}>{shape}</option>)}</select>
+          <NumberInput label={`${emitter.id} particles/second`} value={emitter.config?.rate ?? 0} onChange={(rate) => update({ ...simulation, emitters: simulation!.emitters!.map((row, i) => i === index ? { ...row, config: { ...row.config, rate } } : row) })} />
+          <NumberInput label={`${emitter.id} particle capacity`} step={1} value={emitter.config?.max ?? 512} onChange={(max) => update({ ...simulation, emitters: simulation!.emitters!.map((row, i) => i === index ? { ...row, config: { ...row.config, max } } : row) })} />
+        </> : <span>{emitter.effect}</span>}
         {(["x", "y", "z"] as const).map((axis) => <NumberInput key={axis} label={`${emitter.id} ${axis.toUpperCase()} metres`} min={-1e6} value={emitter.position[axis]} onChange={(value) => update({ ...simulation, emitters: simulation!.emitters!.map((row, i) => i === index ? { ...row, position: { ...row.position, [axis]: value } } : row) })} />)}
         <label><input type="checkbox" checked={emitter.options?.active !== false} onChange={(event) => update({ ...simulation, emitters: simulation!.emitters!.map((row, i) => i === index ? { ...row, options: { ...row.options, active: event.target.checked } } : row) })} /> Spawning</label>
         <label>Fire binding<select aria-label={`${emitter.id} fire area`} value={emitter.fireAreaId ?? ""} onChange={(event) => update({ ...simulation, emitters: simulation!.emitters!.map((row, i) => i === index ? { ...row, fireAreaId: event.target.value || undefined } : row) })}><option value="">Independent</option>{simulation?.fires?.map((area) => <option key={area.id}>{area.id}</option>)}</select></label>
         <button type="button" onClick={() => update({ ...simulation, emitters: simulation!.emitters!.filter((_, i) => i !== index) })}>Remove emitter</button>
       </div>)}
-      <button type="button" onClick={() => update({ ...simulation, emitters: [...(simulation?.emitters ?? []), { id: id("emitter", simulation?.emitters ?? []), position: { x: 0, y: 1, z: 0 }, config: { rate: 8, max: 64, lifetime: { min: 1, max: 2 }, seed: "authored" }, options: { render: { shape: "smoke" } } }] })}>Add named emitter</button>
+      <button type="button" onClick={() => update({ ...simulation, emitters: [...(simulation?.emitters ?? []), { id: id("emitter", simulation?.emitters ?? []), position: { x: 0, y: 1, z: 0 }, effect: effectNames()[0]! }] })}>Add named emitter</button>
     </fieldset>
     <fieldset hidden={!allowFire} className="space-y-2"><legend>Fire areas</legend>
       {(simulation?.fires ?? []).map((area, index) => <div key={area.id} className="space-y-1 border-l border-neutral-700 pl-2"><span>{area.id}</span>

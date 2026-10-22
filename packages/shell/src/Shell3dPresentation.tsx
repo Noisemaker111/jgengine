@@ -709,7 +709,7 @@ export function Shell3dPresentation({
                   ) : null}
                   </CullingProvider>
                   <WorldItems config={playable.worldItem} />
-                  <WorldParticles quality={graphics.quality} particleCap={graphics.profile.particleCap} diagnostics={devtoolsEnabled} />
+                  <WorldParticles quality={graphics.quality} particleCap={graphics.profile.particleCap} particleBudget={graphics.profile.particleBudget} diagnostics={devtoolsEnabled} />
                   <CombatPresentation effects={effects} />
                   {devtoolsEnabled ? <CollisionDebugWorld /> : null}
                   <AudioListener engine={audioEngine} anchor={playable.camera?.rig === "rts" || playable.camera?.rig === "topDown" ? "ground" : "camera"} />

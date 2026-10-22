@@ -2049,6 +2049,20 @@
 - `HitInput` (interface): interface HitInput — A single incoming hit to register on a {@link DamageDirectionTracker}. The angle is relative to the player's facing (renderer-agnostic): `0` points at the front/top of the reticle and increases clockwise, so a game passes the bearing from the player toward the attacker without knowing anything about the screen.
 - `createDamageDirectionTracker` (function): function createDamageDirectionTracker(options: DamageDirectionOptions = {}): DamageDirectionTracker — Create a damage-direction tracker: the classic "hit-from" feedback brain. A game calls `registerHit({ angle, intensity, kind })` with the bearing from the player toward the attacker (radians, `0` = front) and the tracker owns the fade timers and eased strength so the renderer just draws an arc per `active()` entry. It is renderer-free and genre-agnostic (the `kind` tag is never interpreted here), allocation-aware (a fixed pool, no per-frame garbage), and fully serializable via `snapshot`/`restore`. Optional angle merging collapses a burst from one direction into a single strong arc.
 
+## @jgengine/core/vfx/effectLibrary
+
+- `DEFAULT_EFFECT` (const): const DEFAULT_EFFECT: "sparks/weld" — The fallback effect used when a play call names an unknown effect — a typo still shows a spark.
+- `EFFECT_LIBRARY` (const): const EFFECT_LIBRARY: readonly ParticleEffect[] — The shared library of named particle effects: fire, smoke, sparks, dust, splashes, muzzle flash, explosions, magic and weather. Each entry is authored parameters only — rate, lifetime, size, colour and the sprite texture — so a game calls `ctx.particles.play("explosion/core", at)` and the editor authors the same name instead of hand-tuning an `EmitterConfig`. Names are the contract; a config retune here changes every consumer deliberately.
+- `EFFECT_PRIORITY` (const): const EFFECT_PRIORITY: { readonly weather: 20; readonly dust: 40; readonly smoke: 60; readonly magic: 70; readonly sparks: 70; readonly fire: 80; readonly splash: 80; readonly muzzle: 90; readonly explosion: 90; } — Ambient dressing drops first, then gameplay-loud effects last.
+- `EffectGroup` (type): type EffectGroup = | "fire" | "smoke" | "sparks" | "dust" | "splash" | "muzzle" | "explosion" | "magic" | "weather" — The family an effect belongs to; groups the library browser and the contact sheet.
+- `EffectOverride` (interface): interface EffectOverride — Per-call overrides merged over a library effect; each field wins over the authored default.
+- `EffectTexture` (type): type EffectTexture = "soft" | "spark" | "flake" | "flame" | "smoke" | "ribbon" | "ring" — The procedural sprite family a particle draws with on the GPU path. Each family maps to a {@link ParticleRenderHint} shape: `soft` puffs, velocity-stretched `spark` streaks, `flake` crystals, `flame` tongues, `smoke` puffs, connected `ribbon` trails and flat `ring` ripples. There is no image file to load or credit — the field is the authored name for the sprite.
+- `ParticleEffect` (interface): interface ParticleEffect — One named effect a game or the editor plays by name. Every field is data: the `config` is the same `EmitterConfig` a hand-authored emitter uses, so a library effect serializes, retunes and renders on the existing pooled GPU path without a second implementation.
+- `ResolvedEffect` (interface): interface ResolvedEffect — A library effect resolved into the exact data the director and renderer consume.
+- `effectNames` (function): function effectNames(): readonly string[] — Every library effect name, for editor pickers and runtime discovery.
+- `findEffect` (function): function findEffect(name: string): ParticleEffect | undefined — The named effect, or `undefined` when the name is not in the library.
+- `resolveEffect` (function): function resolveEffect(name: string, override?: EffectOverride): ResolvedEffect — Resolve a named effect into concrete emitter data, with any `override` winning field by field. An unknown name resolves to {@link DEFAULT_EFFECT} rather than throwing, so a typo shows *something*; call {@link findEffect} when the caller must reject an unknown name.
+
 ## @jgengine/core/vfx/feedbackMixer
 
 - `FeedbackCurve` (type): type FeedbackCurve = readonly (readonly [number, number])[] — Piecewise-linear map from a signal value to an output value; points in ascending input order, ends clamp.
@@ -2060,8 +2074,16 @@
 - `createFeedbackMixer` (function): function createFeedbackMixer<TSignal extends string, TTarget extends string>(initial: FeedbackMixerConfig<TSignal, TTarget>): FeedbackMixer<TSignal, TTarget> — Creates a {@link FeedbackMixer}: the one place a game declares how sim telemetry drives presentation — rpm to engine pitch, tire saturation to squeal and rumble, speed to FOV, landing speed to a thud — instead of hand-writing that glue per vehicle, aircraft or weapon. Deterministic, allocation-free per update.
 - `sampleFeedbackCurve` (function): function sampleFeedbackCurve(curve: FeedbackCurve | undefined, x: number): number — Sample a {@link FeedbackCurve}; an empty curve is the identity.
 
+## @jgengine/core/vfx/particleBudget
+
+- `ParticleBudgetEntry` (interface): interface ParticleBudgetEntry — The graphics-tier particle budget. A tier caps the live particle count across every effect on screen; when the requested effects do not fit, whole effects are dropped in a defined order (lowest {@link ParticleBudgetEntry.priority} first) rather than every effect thinning out.
+- `ParticleBudgetGrant` (interface): interface ParticleBudgetGrant — An admitted effect and the particles it may hold.
+- `ParticleBudgetPlan` (interface): interface ParticleBudgetPlan — What the tier cap admits, and what it drops.
+- `planParticleBudget` (function): function planParticleBudget(entries: readonly ParticleBudgetEntry[], cap: number): ParticleBudgetPlan — Allocate a tier's particle cap across the effects that want it.
+
 ## @jgengine/core/vfx/particleDirector
 
+- `EffectRequest` (interface): interface EffectRequest extends EffectOverride — A library effect played by name: where it plays, plus per-call overrides.
 - `ParticleAttachOptions` (interface): interface ParticleAttachOptions — Options for {@link ParticleDirector.attach}.
 - `ParticleBlendHint` (type): type ParticleBlendHint = "additive" | "normal" — How a particle effect composites on screen: `additive` for sparks/fire/glow, `normal` for smoke/dust.
 - `ParticleBurst` (interface): interface ParticleBurst — A one-shot burst request — consumed once by the renderer, never serialized.

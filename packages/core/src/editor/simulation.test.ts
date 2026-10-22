@@ -103,3 +103,17 @@ test("emitter fire bindings require a defined authored area", () => {
   document.simulation.emitters![0]!.fireAreaId = "camp";
   expect(decodeEditorDocument(document).ok).toBe(true);
 });
+
+test("an emitter authors either a library effect name or a full config, never both", () => {
+  const named = { ...createEmptyEditorDocument(), simulation: { emitters: [{ id: "torch", position: { x: 0, y: 1, z: 0 }, effect: "fire/torch" }] } };
+  const decoded = decodeEditorDocument(named);
+  expect(decoded.ok).toBe(true);
+  if (decoded.ok) expect(decoded.document.simulation!.emitters![0]!.effect).toBe("fire/torch");
+
+  const both = { ...createEmptyEditorDocument(), simulation: { emitters: [{ id: "torch", position: { x: 0, y: 1, z: 0 }, effect: "fire/torch", config: { rate: 4 } }] } };
+  const neither = { ...createEmptyEditorDocument(), simulation: { emitters: [{ id: "torch", position: { x: 0, y: 1, z: 0 } }] } };
+  const unknown = { ...createEmptyEditorDocument(), simulation: { emitters: [{ id: "torch", position: { x: 0, y: 1, z: 0 }, effect: "fire/nope" }] } };
+  expect(decodeEditorDocument(both).ok).toBe(false);
+  expect(decodeEditorDocument(neither).ok).toBe(false);
+  expect(decodeEditorDocument(unknown).ok).toBe(false);
+});

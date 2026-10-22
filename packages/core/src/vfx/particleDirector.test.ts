@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { createParticleDirector, validateParticleAttachOptions } from "./particleDirector";
+import { findEffect } from "./effectLibrary";
 
 describe("particleDirector", () => {
   test("bursts queue with monotonic seq and drain exactly once", () => {
@@ -19,6 +20,27 @@ describe("particleDirector", () => {
     director.burst({}, 0);
     director.burst({}, -3);
     expect(director.drainBursts()).toEqual([]);
+  });
+
+  test("play and attachEffect resolve a named library effect with its config, texture and priority", () => {
+    const director = createParticleDirector();
+    director.play("explosion/core", { position: [1, 2, 3] });
+    const burst = director.drainBursts()[0]!;
+    expect(burst.count).toBe(findEffect("explosion/core")!.burst);
+    expect(burst.priority).toBe(findEffect("explosion/core")!.priority);
+    expect(burst.blending).toBe("additive");
+    expect(burst.config.position).toEqual([1, 2, 3]);
+    expect(burst.config.max).toBe(findEffect("explosion/core")!.config.max);
+    expect(burst.options?.render?.shape).toBe("flame");
+
+    director.attachEffect("torch", "fire/torch", { position: [0, 1, 0], follow: "hero" });
+    const spec = director.emitters()[0]!;
+    expect(spec.id).toBe("torch");
+    expect(spec.follow).toBe("hero");
+    expect(spec.priority).toBe(findEffect("fire/torch")!.priority);
+    expect(spec.render?.shape).toBe("flame");
+    expect(spec.config.position).toEqual([0, 1, 0]);
+    expect(director.effectNames()).toContain("fire/torch");
   });
 
   test("attach upserts, retune patches config, detach removes", () => {
