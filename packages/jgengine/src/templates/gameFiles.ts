@@ -257,7 +257,7 @@ const browserLibMjs = `/**
  * Not a CLI; run shoot.mjs or drive.mjs instead.
  */
 import { spawn } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, renameSync, statSync, unlinkSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, renameSync, rmSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { inflateSync } from "node:zlib";
@@ -754,7 +754,21 @@ export async function screenshotTo(session, outPath, blankWaitMs = 10_000, timeo
   }
 }
 
-/** Kill the launched Chrome and (when we started it) the dev server tree. */
+/** Delete a capture's temp Chrome profile; Chrome releases its files a moment after it exits. */
+export function removeProfileDir(userDataDir) {
+  if (!userDataDir) return;
+  const pause = new Int32Array(new SharedArrayBuffer(4));
+  for (let attempt = 0; attempt < 50; attempt += 1) {
+    try {
+      rmSync(userDataDir, { recursive: true, force: true });
+      return;
+    } catch {
+      Atomics.wait(pause, 0, 0, 200);
+    }
+  }
+}
+
+/** Kill the launched Chrome and (when we started it) the dev server tree, then drop the profile. */
 export function shutdown(chrome, server) {
   try {
     chrome.kill();
@@ -769,6 +783,7 @@ export function shutdown(chrome, server) {
       /* ignore */
     }
   }
+  removeProfileDir(chrome.userDataDir);
 }
 `;
 
@@ -808,6 +823,7 @@ import {
   RAF_EXPR,
   screenshotTo,
   shutdown,
+  shutdownOnSignal,
   sleep,
   waitForDebugger,
   waitForHonestFrame,
@@ -843,6 +859,7 @@ async function main() {
   const server = await ensureDevServer(o.url ?? base, port);
   const debugPort = 9200 + Math.floor(Date.now() % 700);
   const chrome = launchChrome(debugPort, "jg-shoot-");
+  shutdownOnSignal(chrome, server);
 
   let exitCode = 0;
   try {
@@ -927,6 +944,7 @@ import {
   RAF_EXPR,
   screenshotTo,
   shutdown,
+  shutdownOnSignal,
   sleep,
   waitForDebugger,
   waitForHonestFrame,
@@ -1133,6 +1151,7 @@ async function main() {
   const server = await ensureDevServer(args.url ?? base, args.port);
   const debugPort = 9200 + Math.floor(Date.now() % 700);
   const chrome = launchChrome(debugPort, "jg-drive-");
+  shutdownOnSignal(chrome, server);
 
   let exitCode = 0;
   try {

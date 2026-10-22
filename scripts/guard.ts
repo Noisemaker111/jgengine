@@ -1,4 +1,6 @@
-import { spawn, type ChildProcess, type SpawnOptions } from "node:child_process";
+import { spawn, spawnSync, type ChildProcess, type SpawnOptions } from "node:child_process";
+
+import { sweepOrphanProfiles } from "./browser-lib";
 
 /**
  * Split a shell-free command string into an argv array on whitespace. Used only
@@ -66,32 +68,31 @@ if (import.meta.main) {
   const plan = buildSpawn(process.platform, command, extra);
   const child: ChildProcess = spawn(plan.file, plan.args, plan.options);
 
+  /**
+   * A capture killed here cannot release its own Chrome profile, and on Windows a forced kill
+   * runs no cleanup at all — so the guard, which is what force-kills, sweeps the orphan it left.
+   */
   const killTree = (signal: NodeJS.Signals): void => {
-    if (child.pid === undefined) return;
-    if (isWin) {
-      try {
-        spawn("taskkill", ["/pid", String(child.pid), "/t", "/f"], {
+    if (child.pid !== undefined) {
+      if (isWin) {
+        spawnSync("taskkill", ["/pid", String(child.pid), "/t", "/f"], {
           stdio: "ignore",
           windowsHide: true,
         });
-      } catch {
+      } else {
         try {
-          child.kill();
+          process.kill(-child.pid, signal);
         } catch {
-          /* already gone */
+          try {
+            child.kill(signal);
+          } catch {
+            /* already gone */
+          }
         }
       }
-      return;
     }
-    try {
-      process.kill(-child.pid, signal);
-    } catch {
-      try {
-        child.kill(signal);
-      } catch {
-        /* already gone */
-      }
-    }
+    const reclaimed = sweepOrphanProfiles();
+    if (reclaimed > 0) console.error(`guard: removed ${reclaimed} leaked Chrome profile(s)`);
   };
 
   for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"] as const) {

@@ -10,6 +10,7 @@
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import type { ChildProcess } from "node:child_process";
+import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import {
   type CdpSession,
@@ -23,6 +24,7 @@ import {
   forwardPageConsole,
   readCapturePageState,
   captureProfile,
+  ensureCaptureFreeSpace,
   screencastCapturesFully,
   isUp,
   navigateCapturePageWithRetry,
@@ -32,6 +34,7 @@ import {
   qualitySuffix,
   sizeForQuality,
   sizeSuffix,
+  sweepStaleProfiles,
   withBrowserSession,
   writePngAtomic,
   type CaptureQuality,
@@ -473,6 +476,11 @@ if (!args.listViews) {
 }
 
 if (args.port !== undefined) process.env.JG_DEV_PORT = String(args.port);
+// Reclaim profiles that killed runs left behind before this one can add to them, and refuse to
+// start on a drive that cannot hold this capture.
+const reclaimed = sweepStaleProfiles();
+if (reclaimed > 0) console.error(`shoot: removed ${reclaimed} leaked Chrome profile(s) from ${tmpdir()}`);
+ensureCaptureFreeSpace();
 const daemon: ShootDaemonState | null =
   args.connect === undefined && args.port === undefined ? await attachDaemon() : null;
 

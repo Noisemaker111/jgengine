@@ -30,7 +30,10 @@ import {
   qualitySuffix,
   sizeForQuality,
   PROFILE_OWNER_FILE,
+  ensureCaptureFreeSpace,
   sweepStaleProfiles,
+  withBrowserSession,
+  type ChromeProcess,
 } from "./browser-lib";
 
 test("browser fixture bundling reads real modules despite runner mocks", async () => {
@@ -546,17 +549,59 @@ describe("capture profile sweep", () => {
       const foreign = mkdtempSync(join(root, "other-"));
       const file = join(root, "jg-notes.txt");
       writeFileSync(file, "not a profile");
-      const dayAgo = new Date(Date.now() - 25 * 60 * 60 * 1000);
-      for (const dir of [leaked, liveOwned, foreign]) utimesSync(dir, dayAgo, dayAgo);
-      utimesSync(file, dayAgo, dayAgo);
+      const stale = new Date(Date.now() - 4 * 60 * 60 * 1000);
+      const fresh = new Date(Date.now() - 60 * 60 * 1000);
+      for (const dir of [leaked, liveOwned, foreign]) utimesSync(dir, stale, stale);
+      utimesSync(recent, fresh, fresh);
+      utimesSync(file, stale, stale);
 
-      sweepStaleProfiles(root);
+      expect(sweepStaleProfiles(root)).toBe(1);
 
       expect(existsSync(leaked)).toBe(false);
       expect(existsSync(liveOwned)).toBe(true);
       expect(existsSync(recent)).toBe(true);
       expect(existsSync(foreign)).toBe(true);
       expect(existsSync(file)).toBe(true);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("a thrown capture removes the profile its browser created", async () => {
+    const server = Bun.serve({ port: 0, hostname: "127.0.0.1", fetch: () => Response.json({ Browser: "test" }) });
+    const profiles: string[] = [];
+    try {
+      const exit = await withBrowserSession(
+        {
+          keep: false,
+          timeoutMs: 1_000,
+          debugPort: server.port,
+          launch: () => {
+            const dir = mkdtempSync(join(tmpdir(), "jg-test-shot-"));
+            writeFileSync(join(dir, "Preferences"), "{}");
+            profiles.push(dir);
+            return { pid: undefined, userDataDir: dir, kill() {} } as unknown as ChromeProcess;
+          },
+        },
+        async () => {
+          throw new Error("bad game id");
+        },
+      );
+      expect(exit).toBe(1);
+    } finally {
+      server.stop(true);
+    }
+    expect(profiles).toHaveLength(1);
+    expect(existsSync(profiles[0] as string)).toBe(false);
+  });
+
+  test("a drive below the free-space floor fails loudly before capturing", () => {
+    const root = mkdtempSync(join(tmpdir(), "jg-space-"));
+    try {
+      expect(() => ensureCaptureFreeSpace(root, { JG_CAPTURE_MIN_FREE_MB: String(1024 * 1024) })).toThrow(
+        /has [\d.]+ (GB|MB) free, less than the 1024\.0 GB a capture needs/,
+      );
+      expect(() => ensureCaptureFreeSpace(root, { JG_CAPTURE_MIN_FREE_MB: "1" })).not.toThrow();
     } finally {
       rmSync(root, { recursive: true, force: true });
     }

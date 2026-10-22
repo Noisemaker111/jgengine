@@ -7,12 +7,13 @@ import {
   readdirSync,
   renameSync,
   rmSync,
+  statfsSync,
   statSync,
   unlinkSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, parse } from "node:path";
 
 import { retrySettleMs, shouldRetryCapture } from "./capture-retry";
 import { clearViteCaches, headRevision, revisionDrifted, shortRevision } from "./captureRevision";
@@ -671,9 +672,16 @@ export async function openPageSession(debugPort: number): Promise<CdpSession> {
 
 /** Every capture profile dir is `jg-*` under the temp dir. */
 const PROFILE_PREFIX = "jg-";
-const STALE_PROFILE_MS = 24 * 60 * 60 * 1000;
+/**
+ * A profile is swept once its directory has gone untouched this long. A live browser writes its
+ * profile continuously, so an untouched directory that old belongs to a run that died; the old
+ * 24-hour floor let a day of killed captures pile up 1.6 GB.
+ */
+const STALE_PROFILE_MS = 3 * 60 * 60 * 1000;
 /** Holds the browser pid, so a sweep never deletes the profile of a live browser. */
 export const PROFILE_OWNER_FILE = "jg-owner-pid";
+/** Free space a capture needs on the temp drive before it starts; one Chrome profile is ~150 MB. */
+export const MIN_CAPTURE_FREE_BYTES = 2 * 1024 * 1024 * 1024;
 
 export type ChromeProcess = ChildProcess & { userDataDir: string };
 
@@ -685,6 +693,55 @@ export function pidAlive(pid: number | undefined): boolean {
   } catch (error) {
     return (error as NodeJS.ErrnoException).code === "EPERM";
   }
+}
+
+type OwnedProfile = { dir: string; pid?: number };
+/** Profiles this process created and still owes cleanup for. */
+const ownedProfiles = new Map<string, OwnedProfile>();
+let profileCleanupHooks = false;
+
+/**
+ * Kill the browsers this process still owns, then delete their profiles. Every exit path that
+ * cannot return normally — a throw, a watchdog, SIGINT — ends here.
+ */
+function releaseOwnedProfiles(): void {
+  for (const profile of ownedProfiles.values()) killPid(profile.pid, true);
+  for (const dir of [...ownedProfiles.keys()]) {
+    ownedProfiles.delete(dir);
+    try {
+      rmSync(dir, { recursive: true, force: true });
+    } catch {
+      /* a browser still holding a file; the stale sweep reaches it */
+    }
+  }
+}
+
+function ownProfileDir(dir: string): string {
+  if (!profileCleanupHooks) {
+    profileCleanupHooks = true;
+    process.on("exit", releaseOwnedProfiles);
+    for (const [signal, code] of [["SIGINT", 130], ["SIGTERM", 143], ["SIGHUP", 129]] as const) {
+      process.on(signal, () => {
+        const count = ownedProfiles.size;
+        if (count > 0) console.error(`browser: ${signal} — closing Chrome and removing ${count} capture profile(s)`);
+        releaseOwnedProfiles();
+        process.exit(code);
+      });
+    }
+  }
+  ownedProfiles.set(dir, { dir });
+  return dir;
+}
+
+/** Record the browser that owns a profile, so an exit kills it before deleting its files. */
+export function trackProfileBrowser(dir: string, pid: number | undefined): void {
+  const owned = ownedProfiles.get(dir);
+  if (owned !== undefined) owned.pid = pid;
+}
+
+/** Hand a profile to a longer-lived owner (a warm daemon): this process must not delete it. */
+export function detachProfileDir(dir: string): void {
+  ownedProfiles.delete(dir);
 }
 
 /** Bounded wait for a browser to exit; Chrome keeps writing its profile until it does. */
@@ -701,6 +758,7 @@ export async function waitForPidExit(pid: number | undefined, timeoutMs = 5_000)
  * left for the stale sweep.
  */
 export function removeProfileDir(userDataDir: string): void {
+  ownedProfiles.delete(userDataDir);
   const deadline = Date.now() + 10_000;
   const pause = new Int32Array(new SharedArrayBuffer(4));
   for (;;) {
@@ -710,7 +768,7 @@ export function removeProfileDir(userDataDir: string): void {
     } catch (error) {
       if (Date.now() >= deadline) {
         console.error(
-          `browser: could not remove profile ${userDataDir} (${error instanceof Error ? error.message : String(error)}); the stale sweep removes it after a day`,
+          `browser: could not remove profile ${userDataDir} (${error instanceof Error ? error.message : String(error)}); the stale sweep removes it after a few hours`,
         );
         return;
       }
@@ -727,25 +785,91 @@ function readOwnerPid(dir: string): number | undefined {
   }
 }
 
-/** Removes profile dirs that killed runs leaked: older than a day, and no live browser owns them. */
-export function sweepStaleProfiles(root = tmpdir(), now = Date.now()): void {
+/**
+ * Removes profile dirs that killed runs leaked: untouched for `minAgeMs`, and no live browser owns
+ * them. Dirs this process is still using are never touched, whatever their age.
+ * Returns how many it removed.
+ */
+export function sweepStaleProfiles(
+  root = tmpdir(),
+  now = Date.now(),
+  minAgeMs = STALE_PROFILE_MS,
+): number {
+  let removed = 0;
   for (const name of readdirSync(root)) {
     if (!name.startsWith(PROFILE_PREFIX)) continue;
     const dir = join(root, name);
+    if (ownedProfiles.has(dir)) continue;
     try {
       const info = statSync(dir);
-      if (!info.isDirectory() || now - info.mtimeMs < STALE_PROFILE_MS) continue;
+      if (!info.isDirectory() || now - info.mtimeMs < minAgeMs) continue;
       if (pidAlive(readOwnerPid(dir))) continue;
       rmSync(dir, { recursive: true, force: true });
+      removed += 1;
     } catch {
       /* still locked or already gone; the next launch's sweep retries it */
     }
   }
+  return removed;
+}
+
+/**
+ * Remove `jg-*` profiles whose recorded browser is already dead, whatever their age, plus the
+ * ordinary stale ones. Used by the capture guard right after it force-kills a run: the killed
+ * browser cannot release its own profile, and no cleanup code in it ever runs.
+ */
+export function sweepOrphanProfiles(root = tmpdir(), now = Date.now()): number {
+  let removed = 0;
+  for (const name of readdirSync(root)) {
+    if (!name.startsWith(PROFILE_PREFIX)) continue;
+    const dir = join(root, name);
+    if (ownedProfiles.has(dir)) continue;
+    try {
+      const info = statSync(dir);
+      if (!info.isDirectory()) continue;
+      const owner = readOwnerPid(dir);
+      if (owner === undefined ? now - info.mtimeMs < STALE_PROFILE_MS : pidAlive(owner)) continue;
+      rmSync(dir, { recursive: true, force: true });
+      removed += 1;
+    } catch {
+      /* still locked or already gone */
+    }
+  }
+  return removed;
+}
+
+function formatBytes(bytes: number): string {
+  return bytes >= 1024 ** 3 ? `${(bytes / 1024 ** 3).toFixed(1)} GB` : `${Math.round(bytes / 1024 ** 2)} MB`;
+}
+
+/** Free bytes on the drive holding `root`, or null where the platform cannot report it. */
+export function freeBytesAt(root: string = tmpdir()): number | null {
+  try {
+    const stats = statfsSync(root);
+    return stats.bsize * stats.bavail;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Fail before a capture instead of filling the disk. A full drive takes the whole machine with
+ * it, and one leaked profile is ~150 MB; `JG_CAPTURE_MIN_FREE_MB` moves the floor.
+ */
+export function ensureCaptureFreeSpace(root: string = tmpdir(), env: NodeJS.ProcessEnv = process.env): void {
+  const configured = Number(env.JG_CAPTURE_MIN_FREE_MB);
+  const minimum = Number.isFinite(configured) && configured > 0 ? configured * 1024 * 1024 : MIN_CAPTURE_FREE_BYTES;
+  const free = freeBytesAt(root);
+  if (free === null || free >= minimum) return;
+  throw new Error(
+    `capture: ${parse(root).root} has ${formatBytes(free)} free, less than the ${formatBytes(minimum)} a capture needs — free space, or point TEMP at another drive (JG_CAPTURE_MIN_FREE_MB changes the floor)`,
+  );
 }
 
 function createProfileDir(prefix: string): string {
+  ensureCaptureFreeSpace();
   sweepStaleProfiles();
-  return mkdtempSync(join(tmpdir(), prefix));
+  return ownProfileDir(mkdtempSync(join(tmpdir(), prefix)));
 }
 
 export function launchChrome(
@@ -793,6 +917,7 @@ export function launchChrome(
     },
   );
   if (child.pid !== undefined) writeFileSync(join(userDataDir, PROFILE_OWNER_FILE), String(child.pid));
+  trackProfileBrowser(userDataDir, child.pid);
   return Object.assign(child, { userDataDir });
 }
 
@@ -825,6 +950,8 @@ export function launchPersistentChrome(
     const child = launchChrome(debugPort, prefix, { persistent: true });
     child.unref();
     if (child.pid === undefined) throw new Error("Persistent Chrome launcher returned no pid");
+    // The daemon state file owns this profile from here; this process exiting must not delete it.
+    detachProfileDir(child.userDataDir);
     return { pid: child.pid, child, userDataDir: child.userDataDir };
   }
 
@@ -863,6 +990,7 @@ export function launchPersistentChrome(
     throw new Error(`Persistent Chrome launch failed: ${launched.stderr.trim() || `exit ${launched.status}`}`);
   }
   writeFileSync(join(userDataDir, PROFILE_OWNER_FILE), String(pid));
+  detachProfileDir(userDataDir);
   return { pid, child: null, userDataDir };
 }
 
@@ -1479,6 +1607,8 @@ export interface WithBrowserSessionOptions {
   hardDeadlineMs?: number;
   /** Override the derived warm debug port. */
   warmPort?: number;
+  /** Replace the real Chrome launch (tests own the profile dir they hand back). */
+  launch?: (debugPort: number, prefix?: string) => ChromeProcess;
 }
 
 /**
@@ -1519,7 +1649,7 @@ export async function withBrowserSession(
     if (options.connect !== undefined || attach) {
       await waitForDebugger(debugPort, 5_000);
     } else {
-      chrome = launchChrome(debugPort, options.chromePrefix);
+      chrome = (options.launch ?? launchChrome)(debugPort, options.chromePrefix);
       await waitForDebugger(debugPort, 30_000);
     }
     const result = await fn({ debugPort, chrome });
@@ -1537,6 +1667,9 @@ export async function withBrowserSession(
         await waitForPidExit(chrome.pid);
         removeProfileDir(chrome.userDataDir);
       }
+    } else if (chrome !== null) {
+      // A warm browser and the daemon state file own this profile now, not this process.
+      detachProfileDir(chrome.userDataDir);
     }
   }
   return exitCode;
