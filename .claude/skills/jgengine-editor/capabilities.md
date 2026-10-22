@@ -100,6 +100,13 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `runtimeEntityMetaWriteBackCommand` (function) · `import { runtimeEntityMetaWriteBackCommand } from "@jgengine/core/editor"`
 - `summarizeRuntimeInspector` (function) · `import { summarizeRuntimeInspector } from "@jgengine/core/editor"`
 
+## light-probes — author a baked irradiance volume on the scene document
+
+- `EditorLightProbe` (interface) · `import { EditorLightProbe } from "@jgengine/core/editor"`
+- `authoredLightsFromDocument` (function) · `import { authoredLightsFromDocument } from "@jgengine/core/editor"`
+- `bakeLightProbe` (function) · `import { bakeLightProbe } from "@jgengine/core/editor"`
+- `lightProbesFromDocument` (function) · `import { lightProbesFromDocument } from "@jgengine/core/editor"`
+
 ## minimap-bake — persist a baked minimap PNG + bounds on the scene document
 
 - `EditorMinimapBake` (interface) · `import { EditorMinimapBake } from "@jgengine/core/editor"`

@@ -1,6 +1,8 @@
 import { useSyncExternalStore } from "react";
 
-import type { EditorEnvironment, EditorSession, EditorSkyPreset, EnvironmentSource } from "@jgengine/core/editor/index";
+import type { EditorDocument, EditorEnvironment, EditorLightProbe, EditorSession, EditorSkyPreset, EnvironmentSource } from "@jgengine/core/editor/index";
+import { bakeLightProbe } from "@jgengine/core/editor/environment";
+import { editorDocumentBounds } from "@jgengine/core/editor/document";
 
 import { SliderRow } from "./chromeFields";
 import { BORDER, CONTROL, CONTROL_ACTIVE, FOCUS_RING, INPUT_CLS, MICRO_LABEL, PANEL_BG } from "./shell/theme";
@@ -43,9 +45,28 @@ function readDisplay(env: EditorEnvironment | undefined) {
 }
 
 /**
+ * A new irradiance volume sized to the scene's authored extent: one grid over the whole play space,
+ * so the first bake already covers it. The author shrinks it to a room when it should be enclosed.
+ */
+function newProbe(doc: EditorDocument, index: number): EditorLightProbe {
+  const bounds = editorDocumentBounds(doc);
+  const halfX = bounds === null ? 30 : Math.max(30, (bounds.max.x - bounds.min.x) / 2 + 12);
+  const halfZ = bounds === null ? 30 : Math.max(30, (bounds.max.z - bounds.min.z) / 2 + 12);
+  return {
+    id: `probes-${index + 1}`,
+    label: `Volume ${index + 1}`,
+    center: [0, 4, 0],
+    size: [Math.round(halfX * 2), 12, Math.round(halfZ * 2)],
+    resolution: [4, 2, 4],
+    bake: { skyVisibility: 0.4, ceilingColor: "#b8b2a4", floorColor: "#494339", fillIntensity: 0.6 },
+  };
+}
+
+/**
  * Lighting workspace panel — edits `document.environment` (sky preset, time-of-day, intensities,
- * fog, optional horizon/zenith colors) through the session undo stack. No fabricated runtime data:
- * empty document shows defaults as display placeholders; the first edit writes a real bag.
+ * fog, optional horizon/zenith colors, local lights and baked light-probe volumes) through the
+ * session undo stack. No fabricated runtime data: empty document shows defaults as display
+ * placeholders; the first edit writes a real bag.
  *
  * @internal
  */
@@ -56,6 +77,7 @@ export function LightingPanel({ session }: { session: EditorSession }) {
   const authored = env !== undefined;
   const source = env?.source;
   const pointLights = env?.pointLights ?? [];
+  const probes = env?.probes ?? [];
 
   const commit = (next: EditorEnvironment | undefined, coalesce?: string) => {
     session.dispatch({ type: "setEnvironment", environment: next }, coalesce === undefined ? undefined : { coalesce });
@@ -174,6 +196,78 @@ export function LightingPanel({ session }: { session: EditorSession }) {
         {source?.kind === "cube" ? (
           <input className={`w-full px-2 py-1 ${INPUT_CLS}`} placeholder=" six face URLs, comma-separated" value={source.urls.join(",")} onChange={(event) => patch({ source: { ...source, urls: event.target.value.split(",").slice(0, 6) as [string, string, string, string, string, string] } }, "env:sourceCube")} />
         ) : null}
+      </section>
+
+      <section className="space-y-1.5 border-t border-white/[0.05] pt-2">
+        <div className="flex items-center justify-between">
+          <span className={MICRO_LABEL}>Light probes</span>
+          <div className="flex gap-1">
+            <button
+              type="button"
+              className={`${CONTROL} px-2 py-1 text-[10px]`}
+              title="Add an irradiance volume around the scene centre, then bake it"
+              onClick={() => patch({ probes: [...probes, newProbe(state.document, probes.length)] }, "env:probes")}
+            >
+              Add
+            </button>
+            <button
+              type="button"
+              className={`${CONTROL} px-2 py-1 text-[10px]`}
+              disabled={probes.length === 0}
+              title="Re-bake every volume from the document's lamps and its authored fill"
+              onClick={() => commit({ ...(env ?? {}), probes: probes.map((probe) => bakeLightProbe(probe, state.document)) }, "env:probes")}
+            >
+              Bake
+            </button>
+          </div>
+        </div>
+        <div className="text-[10px] text-neutral-500">
+          Ambient baked per volume: interiors take their own fill instead of the sky's.
+        </div>
+        {probes.map((probe, index) => (
+          <div key={probe.id} className="rounded border border-white/[0.06] p-1.5">
+            <div className="mb-1 flex items-center justify-between text-[10px] text-neutral-400">
+              <span>{probe.label ?? probe.id}</span>
+              <div className="flex gap-1">
+                <button
+                  type="button"
+                  className={`${CONTROL} px-1.5 py-0.5 text-[9px]`}
+                  title="Bake this volume from the document's lamps"
+                  onClick={() => {
+                    const next = [...probes];
+                    next[index] = bakeLightProbe(probe, state.document);
+                    patch({ probes: next }, "env:probes");
+                  }}
+                >
+                  Bake
+                </button>
+                <button
+                  type="button"
+                  className={`${CONTROL} px-1.5 py-0.5 text-[9px]`}
+                  onClick={() => patch({ probes: probes.filter((_, i) => i !== index) }, "env:probes")}
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+            <SliderRow
+              label="sky reach"
+              value={probe.bake?.skyVisibility ?? 0.4}
+              min={0}
+              max={1}
+              step={0.05}
+              format={(v) => (v <= 0.001 ? "enclosed" : v.toFixed(2))}
+              onChange={(value) => {
+                const next = [...probes];
+                next[index] = { ...probe, bake: { ...(probe.bake ?? {}), skyVisibility: value } };
+                patch({ probes: next }, "env:probes");
+              }}
+            />
+            <div className="text-[9px] text-neutral-500">
+              {probe.samples === undefined ? "not baked" : `${probe.resolution.join("×")} probes baked`} · {probe.size.map((extent) => Math.round(extent)).join("×")} m
+            </div>
+          </div>
+        ))}
       </section>
 
       <section className="space-y-1.5 border-t border-white/[0.05] pt-2">

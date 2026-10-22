@@ -403,6 +403,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `KillFeed` (function) · `import { KillFeed } from "@jgengine/react"`
 
+## light-probes — bake an irradiance volume from authored sky, fill and lamp inputs
+
+- `bakeIrradianceVolume` (function) · `import { bakeIrradianceVolume } from "@jgengine/core/render/lightProbes"`
+
 ## live-markers — a self-ticking MarkerSet kept in sync from the live scene each HUD tick — pass a rebuild(markers, ctx) that clears+repopulates, no hand-rolled setInterval
 
 - `useLiveMarkers` (function) · `import { useLiveMarkers } from "@jgengine/react"`

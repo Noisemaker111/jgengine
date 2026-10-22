@@ -38,6 +38,20 @@ import type {
   EditorVolumeShape,
 } from "./types";
 import type { EnvironmentSource } from "../render/environment";
+import type { EditorLightProbe } from "./types";
+import { PROBE_STRIDE, type IrradianceBakeSettings } from "../render/lightProbes";
+
+function cloneLightProbes(probes: readonly EditorLightProbe[]): EditorLightProbe[] {
+  return probes.map((probe) => ({
+    ...probe,
+    center: [...probe.center] as [number, number, number],
+    size: [...probe.size] as [number, number, number],
+    resolution: [...probe.resolution] as [number, number, number],
+    ...(probe.samples === undefined ? {} : { samples: [...probe.samples] }),
+    ...(probe.bake === undefined ? {} : { bake: { ...probe.bake, ...(probe.bake.lights === undefined ? {} : { lights: probe.bake.lights.map((light) => ({ ...light, position: [...light.position] as [number, number, number] })) }) } }),
+  }));
+}
+
 
 /** Copies a baked minimap so a document's PNG + bounds are never shared by reference across rebuilds. */
 function cloneMinimapBake(minimap: EditorMinimapBake): EditorMinimapBake {
@@ -62,6 +76,7 @@ function cloneEnvironment(environment: EditorEnvironment): EditorEnvironment {
     ...(environment.sunAzimuth === undefined ? {} : { sunAzimuth: environment.sunAzimuth }),
     ...(environment.sunElevation === undefined ? {} : { sunElevation: environment.sunElevation }),
     ...(environment.fog === undefined ? {} : { fog: { ...environment.fog } }),
+    ...(environment.probes === undefined ? {} : { probes: cloneLightProbes(environment.probes) }),
   };
 }
 
@@ -1170,6 +1185,23 @@ function decodeEnvironment(
       }));
     }
   }
+  if (value.probes !== undefined) {
+    if (!Array.isArray(value.probes)) {
+      errors.push({ path: `${path}.probes`, message: "expected an array" });
+      failed = true;
+    } else if (value.probes.length > 16) {
+      errors.push({ path: `${path}.probes`, message: "at most 16 irradiance volumes" });
+      failed = true;
+    } else {
+      const probes: EditorLightProbe[] = [];
+      for (const [index, entry] of value.probes.entries()) {
+        const probe = decodeLightProbe(entry, `${path}.probes[${index}]`, errors);
+        if (probe === undefined) failed = true;
+        else probes.push(probe);
+      }
+      if (probes.length > 0) env.probes = probes;
+    }
+  }
   if (value.preset !== undefined) {
     if (typeof value.preset === "string" && SKY_PRESETS.has(value.preset)) {
       env.preset = value.preset as EditorSkyPreset;
@@ -1233,6 +1265,85 @@ function decodeEnvironment(
   }
   if (failed) return undefined;
   return env;
+}
+
+/**
+ * Validates one authored irradiance volume. Probes are bounded (16 volumes, 16³ probes each) so a
+ * scene document cannot turn into an accidental multi-megabyte bake, and every sample must be a
+ * finite number because the renderer writes them straight into SH uniforms.
+ */
+function decodeLightProbe(value: unknown, path: string, errors: EditorDocumentDiagnostic[]): EditorLightProbe | undefined {
+  if (!isPlainObject(value)) {
+    errors.push({ path, message: "expected an object" });
+    return undefined;
+  }
+  const vec3 = (entry: unknown): [number, number, number] | null => {
+    if (!Array.isArray(entry) || entry.length !== 3) return null;
+    if (entry.some((component: unknown) => typeof component !== "number" || !Number.isFinite(component))) return null;
+    return [...(entry as number[])] as [number, number, number];
+  };
+  let failed = false;
+  const id = value.id;
+  if (typeof id !== "string" || id.length === 0) {
+    errors.push({ path: `${path}.id`, message: "expected a non-empty string" });
+    failed = true;
+  }
+  const center = vec3(value.center);
+  const size = vec3(value.size);
+  const resolution = vec3(value.resolution);
+  if (center === null) { errors.push({ path: `${path}.center`, message: "expected three finite numbers" }); failed = true; }
+  if (size === null || (size !== null && size.some((extent) => extent <= 0))) { errors.push({ path: `${path}.size`, message: "expected three positive extents" }); failed = true; }
+  if (resolution === null || (resolution !== null && resolution.some((count) => count < 1 || count > 16 || !Number.isInteger(count)))) {
+    errors.push({ path: `${path}.resolution`, message: "expected 1-16 whole probes per axis" });
+    failed = true;
+  }
+  let samples: number[] | undefined;
+  if (value.samples !== undefined) {
+    const expected = resolution === null ? 0 : PROBE_STRIDE * resolution[0] * resolution[1] * resolution[2];
+    if (!Array.isArray(value.samples) || value.samples.length !== expected || value.samples.some((sample: unknown) => typeof sample !== "number" || !Number.isFinite(sample))) {
+      errors.push({ path: `${path}.samples`, message: `expected ${expected} finite numbers for this resolution` });
+      failed = true;
+    } else {
+      samples = [...(value.samples as number[])];
+    }
+  }
+  if (failed || center === null || size === null || resolution === null || typeof id !== "string") return undefined;
+  const bake = isPlainObject(value.bake) ? decodeLightProbeBake(value.bake) : undefined;
+  return {
+    id,
+    center,
+    size,
+    resolution,
+    ...(samples === undefined ? {} : { samples }),
+    ...(typeof value.label === "string" ? { label: value.label } : {}),
+    ...(bake === undefined ? {} : { bake }),
+  };
+}
+
+function decodeLightProbeBake(value: Record<string, unknown>): IrradianceBakeSettings | undefined {
+  if (typeof value.skyVisibility !== "number" || !Number.isFinite(value.skyVisibility)) return undefined;
+  const color = (entry: unknown) => (typeof entry === "string" ? entry : undefined);
+  const lights = Array.isArray(value.lights)
+    ? value.lights.flatMap((light: unknown) => {
+        if (!isPlainObject(light) || !Array.isArray(light.position) || light.position.length !== 3) return [];
+        if (light.position.some((n: unknown) => typeof n !== "number" || !Number.isFinite(n))) return [];
+        return [{
+          position: [...(light.position as number[])] as [number, number, number],
+          ...(color(light.color) === undefined ? {} : { color: color(light.color)! }),
+          ...(typeof light.intensity === "number" && Number.isFinite(light.intensity) ? { intensity: light.intensity } : {}),
+          ...(typeof light.distance === "number" && Number.isFinite(light.distance) ? { distance: light.distance } : {}),
+        }];
+      })
+    : undefined;
+  return {
+    skyVisibility: Math.max(0, Math.min(1, value.skyVisibility)),
+    ...(color(value.skyColor) === undefined ? {} : { skyColor: color(value.skyColor)! }),
+    ...(color(value.groundColor) === undefined ? {} : { groundColor: color(value.groundColor)! }),
+    ...(color(value.ceilingColor) === undefined ? {} : { ceilingColor: color(value.ceilingColor)! }),
+    ...(color(value.floorColor) === undefined ? {} : { floorColor: color(value.floorColor)! }),
+    ...(typeof value.fillIntensity === "number" && Number.isFinite(value.fillIntensity) ? { fillIntensity: value.fillIntensity } : {}),
+    ...(lights === undefined || lights.length === 0 ? {} : { lights }),
+  };
 }
 
 const GRID_AXES: ReadonlySet<string> = new Set(["xz", "xy"]);
