@@ -523,26 +523,56 @@ export function validateLootItem(item: LootItem, catalog: LootCatalog): LootVali
 }
 
 /**
+ * Per-stat weighted contribution: `value × weight`, negated for stats listed in `lowerIsBetter`.
+ * This is the single weight policy behind {@link scoreLootStats}, {@link compareLootItems} and a
+ * gear score, so an item and a whole loadout are never ranked by different arithmetic.
+ *
+ * @capability loot-score split one stat block into per-stat weighted contributions
+ */
+export function lootStatContributions(
+  stats: Readonly<Record<string, number>>,
+  options: Pick<LootComparisonOptions, "weights" | "lowerIsBetter"> = {},
+): Record<string, number> {
+  const weights = options.weights ?? {};
+  const lower = new Set(options.lowerIsBetter ?? []);
+  const out: Record<string, number> = {};
+  for (const stat of Object.keys(stats)) {
+    out[stat] = (stats[stat] ?? 0) * (weights[stat] ?? 1) * (lower.has(stat) ? -1 : 1);
+  }
+  return out;
+}
+
+/**
+ * One stat block's weighted score: the sum of `value × weight`, negated for stats listed in
+ * `lowerIsBetter`. Pair it with {@link lootStatContributions} when a caller also needs the split.
+ *
+ * @capability loot-score score one stat block with caller weights and lower-is-better stats
+ */
+export function scoreLootStats(
+  stats: Readonly<Record<string, number>>,
+  options: Pick<LootComparisonOptions, "weights" | "lowerIsBetter"> = {},
+): number {
+  let score = 0;
+  for (const value of Object.values(lootStatContributions(stats, options))) score += value;
+  return score;
+}
+
+/**
  * Compare two rolled items: every stat delta plus one weighted score for each, with caller-named
  * weights and which stats read better when small.
  *
  * @capability loot-comparison compare two rolled items with per-stat deltas and a weighted score
  */
 export function compareLootItems(a: LootItem, b: LootItem, options: LootComparisonOptions = {}): LootComparison {
-  const weights = options.weights ?? {};
-  const lower = new Set(options.lowerIsBetter ?? []);
   const stats = [...new Set([...Object.keys(a.stats), ...Object.keys(b.stats)])].sort();
   const deltas: LootStatDelta[] = [];
-  let scoreA = 0;
-  let scoreB = 0;
   for (const stat of stats) {
     const valueA = a.stats[stat] ?? 0;
     const valueB = b.stats[stat] ?? 0;
     deltas.push({ stat, a: valueA, b: valueB, delta: valueB - valueA });
-    const weight = (weights[stat] ?? 1) * (lower.has(stat) ? -1 : 1);
-    scoreA += valueA * weight;
-    scoreB += valueB * weight;
   }
+  const scoreA = scoreLootStats(a.stats, options);
+  const scoreB = scoreLootStats(b.stats, options);
   const scoreDelta = scoreB - scoreA;
   const tolerance = options.tolerance ?? 1e-9;
   const better = Math.abs(scoreDelta) <= tolerance ? "equal" : scoreDelta > 0 ? "b" : "a";

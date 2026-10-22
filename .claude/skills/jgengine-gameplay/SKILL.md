@@ -48,6 +48,17 @@ counts drops per rarity for a debug probe and snapshots its counters. Sample
 catalog, distribution check and generated-weapon proof are in
 [reference-systems.md](reference-systems.md#procedural-gear).
 
+Resolve an authored XP curve with `defineXpCurve` (`progression/xpCurve`): one growth rule
+(`flat`, `linear`, `power`, `geometric`, `table`), a `maxLevel` cap and a stated `rule` string;
+`table()` and `totalXpFor()` read the same data, and `track()` hands those thresholds to
+`leveling`. Spend a character's points in `createSkillTree` (`progression/skillTree`): nodes carry
+a point `cost`, `requires`, `excludes`, `passives` and `actives`, `synergies` pay off two or more
+ranked nodes together, `respec()` refunds exactly the points spent, and `resolved()` returns the
+`StatModifierSet` plus ability-slot-shaped actives to feed `createStats` / `createAbilityKit`.
+Score a whole loadout with `gearScore` (`progression/gearScore`) on the same weight policy as
+`compareLootItems`. [reference-systems.md](reference-systems.md#progression-and-gear-score) shows
+the data shapes and a two-build comparison.
+
 Validate generated quest catalogs with `validateQuestCatalog` (`game/questCatalog`).
 Follow the [quest authoring recipe](recipes/quest-authoring.md) for bounded batches,
 canonical facts, external unlock declarations, and precise repair diagnostics.
