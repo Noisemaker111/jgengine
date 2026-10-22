@@ -12,6 +12,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createAntiOneShotPolicy` (function) · `import { createAntiOneShotPolicy } from "@jgengine/core/combat"`
 
+## armor-bypass — ask whether a damage type ignores armor points
+
+- `typeBypassesArmor` (function) · `import { typeBypassesArmor } from "@jgengine/core/combat"`
+
+## armor-mitigation — read the fraction of a hit armor removes at a given armor value
+
+- `armorMitigation` (function) · `import { armorMitigation } from "@jgengine/core/combat"`
+
 ## capture-bonus-levels — convert wild level and capture effectiveness into bonus levels
 
 - `captureBonusLevels` (function) · `import { captureBonusLevels } from "@jgengine/core/stats/spawnLevelStats"`
@@ -79,6 +87,42 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## damage-pipeline — install and remove ordered damage interceptors that transitions toggle at runtime
 
 - `createDamagePipeline` (function) · `import { createDamagePipeline } from "@jgengine/core/combat"`
+
+## damage-runtime — resolve hits through a damage table, hit zones, and armor, and tick data-defined statuses with declared stacking
+
+- `createDamageRuntime` (function) · `import { createDamageRuntime } from "@jgengine/core/combat"`
+
+## damage-table — score a data-defined damage type against a resistance class, with the outcome readable as a table
+
+- `typeMultiplier` (function) · `import { typeMultiplier } from "@jgengine/core/combat"`
+
+## damage-table-format — render damage-table rows as fixed-width lines for a probe, a CLI dump, or a test
+
+- `formatDamageTable` (function) · `import { formatDamageTable } from "@jgengine/core/combat"`
+
+## damage-table-read — read a damage table as rows of type × resistance × armor mitigation, with final damage per base
+
+- `readDamageTable` (function) · `import { readDamageTable } from "@jgengine/core/combat"`
+
+## damage-table-resolve — resolve a damage type against a resistance class and armor into a multiplier, mitigation, and final damage
+
+- `resolveTableDamage` (function) · `import { resolveTableDamage } from "@jgengine/core/combat"`
+
+## damage-table-validate — reject a damage table with duplicate types or non-finite multipliers before combat runs
+
+- `assertDamageTable` (function) · `import { assertDamageTable } from "@jgengine/core/combat"`
+
+## damage-target-unknown — reject a hit on a target with no registered resistance or armor profile
+
+- `UnknownTargetProfileError` (class) · `import { UnknownTargetProfileError } from "@jgengine/core/combat"`
+
+## damage-type-duplicate — reject a damage table that defines one type twice
+
+- `DuplicateDamageTypeError` (class) · `import { DuplicateDamageTypeError } from "@jgengine/core/combat"`
+
+## damage-type-unknown — reject a hit whose damage type the table does not define instead of dealing 1×
+
+- `UnknownDamageTypeError` (class) · `import { UnknownDamageTypeError } from "@jgengine/core/combat"`
 
 ## death-system — resolve entity death and its on-death consequences
 
@@ -151,6 +195,22 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## global-cooldown — share one cooldown across every ability slot (MMO global cooldown) with a cooldown group
 
 - `createAbilityKit` (function) · `import { createAbilityKit } from "@jgengine/core/combat"`
+
+## hit-zone — resolve a hit zone into one damage multiplier, crit by zone with an injected RNG
+
+- `resolveHitZone` (function) · `import { resolveHitZone } from "@jgengine/core/combat"`
+
+## hit-zone-multiplier — quote a zone's multiplier for a known crit outcome without rolling
+
+- `hitZoneMultiplier` (function) · `import { hitZoneMultiplier } from "@jgengine/core/combat"`
+
+## hit-zone-unknown — reject a hit zone table whose named default does not exist
+
+- `UnknownHitZoneError` (class) · `import { UnknownHitZoneError } from "@jgengine/core/combat"`
+
+## hit-zone-validate — reject a hit-zone table with duplicate zones or a missing default
+
+- `assertHitZoneTable` (function) · `import { assertHitZoneTable } from "@jgengine/core/combat"`
 
 ## hitscan-shot — aim a hitscan shot (shoot a gun): resolve origin and direction from the eye or muzzle for a raycast
 
@@ -263,6 +323,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## status-effects — commit direct or area effects through caller-owned stat pools with ordered spillover and lethal results
 
 - `createEffectSystem` (function) · `import { createEffectSystem } from "@jgengine/core/combat"`
+
+## status-runtime — tick data-defined statuses (burn, shock, slow, corrode) with declared stacking rules and per-tick effects
+
+- `createStatusRuntime` (function) · `import { createStatusRuntime } from "@jgengine/core/combat"`
+
+## status-unknown — reject a status id the runtime has no definition for
+
+- `UnknownStatusError` (class) · `import { UnknownStatusError } from "@jgengine/core/combat"`
 
 ## threats-from-memory — turn perception memory into a bounded, ranked threat list
 

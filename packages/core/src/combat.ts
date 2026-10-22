@@ -64,6 +64,35 @@ export {
   type TargetTraitId,
 } from "./combat/damageMatchup";
 export { resolveDamageHit, type DamageHitInput, type DamageHitResolution } from "./combat/damageResolution";
+export {
+  UnknownTargetProfileError,
+  createDamageRuntime,
+  type DamageRuntimeConfig,
+  type DamageRuntimeHitInput,
+  type DamageRuntimeResolution,
+  type DamageRuntimeRetune,
+  type DamageRuntimeState,
+  type DamageStatusRequest,
+  type TargetProfile,
+  type TimeToKill,
+} from "./combat/damageRuntime";
+export {
+  DEFAULT_ARMOR_HALF_VALUE,
+  DEFAULT_MAX_MITIGATION,
+  DuplicateDamageTypeError,
+  UnknownDamageTypeError,
+  armorMitigation,
+  assertDamageTable,
+  formatDamageTable,
+  readDamageTable,
+  resolveTableDamage,
+  typeBypassesArmor,
+  typeMultiplier,
+  type ArmorConfig,
+  type DamageTableDef,
+  type DamageTableRow,
+  type DamageTypeDef,
+} from "./combat/damageTable";
 export { createDeathSystem, type OnDeathSpec } from "./combat/death";
 export { type DeathReason } from "./combat/deathReason";
 export { createDefensiveWindow, resolveDefense, type DefenseResolution } from "./combat/defensiveWindow";
@@ -100,6 +129,16 @@ export {
   type SpawnProviderContext,
 } from "./combat/encounterSequence";
 export { impactPresets, resolveHitReaction, type HitReactionConfig } from "./combat/hitReaction";
+export {
+  DEFAULT_CRIT_MULTIPLIER,
+  UnknownHitZoneError,
+  assertHitZoneTable,
+  hitZoneMultiplier,
+  resolveHitZone,
+  type HitZoneDef,
+  type HitZoneResolution,
+  type HitZoneTable,
+} from "./combat/hitZones";
 export {
   createMagazine,
   type Magazine,
@@ -193,6 +232,21 @@ export {
   type StatusEffectView,
   type StatusEffectViewOptions,
 } from "./combat/statusEffectView";
+export {
+  UnknownStatusError,
+  createStatusRuntime,
+  type StatusApplyOptions,
+  type StatusDamageTick,
+  type StatusDef,
+  type StatusEffect,
+  type StatusExpiredTick,
+  type StatusRuntime,
+  type StatusRuntimeEntry,
+  type StatusRuntimeOptions,
+  type StatusRuntimeState,
+  type StatusStatTick,
+  type StatusTickEvent,
+} from "./combat/statusRuntime";
 export { type TelegraphConfig, type TelegraphShape } from "./combat/telegraph";
 export {
   createThresholdTracker,
