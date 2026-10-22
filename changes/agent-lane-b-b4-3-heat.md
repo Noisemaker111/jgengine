@@ -1,5 +1,0 @@
-### Added
-
-- `createPoliceResponse` (`@jgengine/core/world`) is the wanted level over the shared `ai/heatSystem` curve: a crime raises heat only while `sensor/perception` memory holds the suspect in view (the sighting's own `sourceId`/`sourceTick` kept as its owner), decay starts once every witness has been out of sight for `escapeSeconds`, and a caller-supplied tier table decides what police do — patrol, investigate, pursue, roadblock — with pursuer budgets, a last-sighting search area that grows while the trail is cold, and roadblock sites off the authored road data. `state()`/`restore()` round-trip mid-chase and the injected generator is the only source of variety.
-- `policeRoadsFromLaneGraph` (`@jgengine/core/world`) reads cordon sites and an indexed nearby-lane query out of an authored lane graph: `traffic_roadblock` markers projected onto the lane they block, or the graph's intersections when none are authored.
-- `DEFAULT_POLICE_TIERS` and `DEFAULT_POLICE_TUNING` are the starting tier table and curve a game overrides.

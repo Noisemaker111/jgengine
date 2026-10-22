@@ -1,5 +1,0 @@
-### Added
-
-- `MissionTickInput.events` (`@jgengine/core/gameplay`) carries the world events that happened this tick - `kill`, `collect`, `deliver` with a target, the actor, free-form `tags` and a count. An objective's `match` filter (`target`, `by`, `tags`, `withoutTags`) credits a constrained counter only from matching events, so a decoy, a wrong weapon or another killer's kill does not advance it.
-- `failOn` accepts `event` (a matching reported event ends the run) and `left-area` (the watched actor is farther than `radius` from an authored marker), completing the reachable fail states: cargo lost, time out, escort died, left the area. `validateMissionCatalog` rejects a `left-area` fail with no actor or unknown marker and a `match` on a non-counter objective instead of ignoring it.
-- `MissionView` now carries `counted`, `count`, `step`, `steps`, `outcome` and `reason`, so a HUD renders "step 2 of 3", a timer and the fail state from `view()` alone. A counter objective's progress mirrors the caller's counters into `state.progress`, so `view()` and a save both see it.
