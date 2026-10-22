@@ -247,6 +247,7 @@ export function SettingsSection({
   onCaptureChange,
 }: SettingsSectionProps): ReactNode {
   const [armed, setArmed] = useState<string | null>(null);
+  const armedRef = useRef<string | null>(null);
   const callbacks = useRef({ onCaptureChange });
   callbacks.current = { onCaptureChange };
 
@@ -258,10 +259,15 @@ export function SettingsSection({
     if (armed === null) return;
     const row = category.keybinds.find((candidate) => candidate.action === armed);
     if (row === undefined) {
+      armedRef.current = null;
       setArmed(null);
       return;
     }
     const onKey = (event: KeyboardEvent): void => {
+      // The listener outlives the render that disarms it, so a second key must pass
+      // through to the dialog instead of being swallowed by this stale capture.
+      if (armedRef.current === null) return;
+      armedRef.current = null;
       event.preventDefault();
       event.stopPropagation();
       if (event.code === "Escape") {
@@ -272,6 +278,8 @@ export function SettingsSection({
       setArmed(null);
     };
     const onPointer = (event: PointerEvent): void => {
+      if (armedRef.current === null) return;
+      armedRef.current = null;
       event.preventDefault();
       event.stopPropagation();
       row.rebind(`mouse${event.button}`);
@@ -314,7 +322,7 @@ export function SettingsSection({
           key={row.action}
           row={row}
           armed={armed === row.action}
-          onArm={capture ? () => setArmed(row.action) : undefined}
+          onArm={capture ? () => { armedRef.current = row.action; setArmed(row.action); } : undefined}
         />
       ))}
     </section>

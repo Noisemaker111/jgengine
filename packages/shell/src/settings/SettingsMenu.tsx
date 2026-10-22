@@ -92,16 +92,15 @@ function TabButton({ tab, selected, orientation, onSelect }: { tab: Tab; selecte
 interface BodyProps {
   tab: Tab;
   actions: SettingsActionView[];
-  onCaptureChange: (action: string | null) => void;
   onClose: () => void;
 }
 
-function Body({ tab, actions, onCaptureChange, onClose }: BodyProps) {
+function Body({ tab, actions, onClose }: BodyProps) {
   return (
     <div className="jg-settings-scroll min-h-0 flex-1 space-y-2 overflow-y-auto p-4">
       {tab.category === null
         ? actions.map((action) => <ActionRow key={action.id} action={action} onClose={onClose} />)
-        : <SettingsSection category={tab.category} heading={false} onCaptureChange={onCaptureChange} />}
+        : <SettingsSection category={tab.category} heading={false} />}
     </div>
   );
 }
@@ -144,13 +143,12 @@ export function SettingsMenu({
   const [activeId, setActiveId] = useState<string>(
     initialTab !== undefined && tabs.some((tab) => tab.id === initialTab) ? initialTab : (tabs[0]?.id ?? ""),
   );
-  const [capturing, setCapturing] = useState<string | null>(null);
   const active = tabs.find((tab) => tab.id === activeId) ?? tabs[0] ?? null;
-  const dialogRef = useDialogBehavior({ open: active !== null, onClose: capturing === null ? onClose : undefined });
+  const dialogRef = useDialogBehavior({ open: active !== null, onClose });
 
   if (active === null) return null;
 
-  const bodyProps: BodyProps = { tab: active, actions: controller.actions, onCaptureChange: setCapturing, onClose };
+  const bodyProps: BodyProps = { tab: active, actions: controller.actions, onClose };
   const title = (
     <h2 className="text-base font-semibold tracking-wide" style={{ color: text }}>
       Settings
