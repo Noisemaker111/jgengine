@@ -116,6 +116,30 @@ export {
   type HudViewportConfig,
 } from "./ui/hudScale";
 export {
+  MENU_KEY_INTENTS,
+  menuIntentForKey,
+  menuIntentForPadAxis,
+  menuIntentForPadButton,
+  menuNavIdAt,
+  menuNavIndex,
+  menuNavMove,
+  shouldRepeatMenuNav,
+  type MenuIntent,
+  type MenuNavDirection,
+  type MenuNavHold,
+  type MenuNavLayout,
+  type MenuNavRepeat,
+} from "./ui/menuNav";
+export {
+  createMenuTransition,
+  menuTransitionDurations,
+  menuTransitionPhaseMs,
+  type MenuTransition,
+  type MenuTransitionConfig,
+  type MenuTransitionPhase,
+  type MenuTransitionSnapshot,
+} from "./ui/menuTransition";
+export {
   MODAL_CANCEL,
   MODAL_CONFIRM,
   createModalStack,

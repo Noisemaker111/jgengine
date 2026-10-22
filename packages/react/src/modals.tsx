@@ -21,6 +21,7 @@ import { HudButton } from "./hudButton";
 import { useHudInteract, type HudInteractListener } from "./hudInteract";
 import { HudSurface } from "./hudSurface";
 import { hudType } from "./hudTokens";
+import { useMenuNav } from "./menuNav";
 import { usePresence } from "./presence";
 
 /**
@@ -298,15 +299,33 @@ export function PauseMenu({
   className,
   style,
 }: PauseMenuProps): ReactNode {
+  const nav = useMenuNav({
+    ids: ["resume", ...items.map((item) => item.id)],
+    disabled: items.filter((item) => item.disabled === true).map((item) => item.id),
+    onBack: onResume,
+    onConfirm: (id) => {
+      if (id === "resume") onResume();
+      else items.find((item) => item.id === id)?.onSelect();
+    },
+  });
   return (
-    <HudSurface elevation="modal" width={width} padding={20} className={className} style={style}>
+    <HudSurface elevation="modal" width={width} padding={20} className={className} style={style} {...nav.containerProps}>
       <div data-pause-title="" style={PAUSE_TITLE}>{title}</div>
-      <HudButton data-pause-resume="" cue="resume" variant="primary" size="lg" block onClick={onResume}>
+      <HudButton
+        {...nav.itemProps("resume")}
+        data-pause-resume=""
+        cue="resume"
+        variant="primary"
+        size="lg"
+        block
+        onClick={onResume}
+      >
         {resumeLabel}
       </HudButton>
       {items.map((item) => (
         <HudButton
           key={item.id}
+          {...nav.itemProps(item.id)}
           data-pause-item={item.id}
           cue={`pause:${item.id}`}
           size="lg"
