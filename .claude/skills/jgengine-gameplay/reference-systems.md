@@ -28,6 +28,124 @@ and level state, then emits every reached level in ascending order. State stays
 in the caller's save format and round-trips as ordinary JSON. See the
 [portable XP/leveling recipe](recipes/portable-xp-leveling.md).
 
+## Procedural gear
+
+`loot/lootGen` rolls a whole named item from a caller-authored `LootCatalog`:
+bases (`baseStats`, affix `pools`, mount `slots`), parts, affix pools, weighted
+`RarityTier`s, `LootManufacturerDef`s (name, flat `bias`, per-stat `scale`,
+favored pools) and a `levelScale` curve of `[level, multiplier]` points. A roll
+picks maker, base, rarity, one part per slot and `affixCount` affixes; stats are
+`base × rarity.statScale × levelScale`, plus part stats/multipliers, maker
+personality, then additive affixes and multiplicative ones. Additive affix
+rolls scale with level; multiplicative ones do not. Names follow one rule:
+maker, rarity word, first part word, first prefix affix, base name, first suffix
+affix. Every random draw uses the injected `rng`, so a seed reproduces the item.
+
+```ts
+import { compareLootItems, createLootRoller, lootWeaponDefinition, seededRng } from "@jgengine/core/gameplay";
+
+const roller = createLootRoller(catalog, { devtoolsName: "loot" });
+const item = roller.roll(seededRng(dropSeed), { level: 30 });
+const delta = compareLootItems(item, equipped, { lowerIsBetter: ["reload"] });
+const weapon = lootWeaponDefinition(item, { template, stats: { damage: "power", roundsPerMinute: "cadence" } });
+```
+
+`validateLootItem` returns coded issues (`unknown-base`, `part-category`,
+`missing-slot-part`, `unknown-affix`, `empty-name`…) and the roller's counters
+snapshot/restore as plain data. Register a roll through
+`proceduralLootEntry` into `item/itemInstanceRegistry` and hand its runtime id
+to `game/lootTable`; the weapon projection only maps stats it is told to, so a
+catalog without weapon stats stays usable for non-weapon gear. Check a
+distribution with a fixed seed over 10,000 drops against each tier's 4σ
+binomial bound rather than eyeballing shares.
+
+## Progression and gear score
+
+`progression/xpCurve` turns one authored growth rule into the level table, the cap and a
+plain-words rule line, so the balance lives in save-visible data:
+
+```ts
+import { createSkillTree, defineXpCurve, gearScore } from "@jgengine/core/gameplay";
+
+const xp = defineXpCurve({ growth: "power", step: 100, growthRate: 1.5, maxLevel: 40, round: "floor" });
+// rule: "power: 100 x level^1.5, floor (levels 1-40)"; xpForLevel(2) is 282, xpForLevel(40) is 0
+xp.levelForXp(xp.totalXpFor(7)).level; // 7
+xp.track(); // the same thresholds as a `leveling` track for a stat adapter
+
+const tree = createSkillTree({ nodes, synergies, points: 6 }, { devtoolsName: "skills" });
+tree.spend("strike"); // { ok: true, spent: 1, pointsAvailable: 5 }
+tree.canSpend("sight"); // { ok: false, reason: "requires", detail: '...needs rank 1 of "focus"' }
+const { stats, actives, synergies: live } = tree.resolved();
+tree.respec(); // { refunded: 6, pointsAvailable: 6 }
+```
+
+A `SkillNodeDef` is `{ id, branch?, cost?, maxRank?, requires?, requiresPointsInBranch?,
+excludes?, passives?, actives?, tags? }`; a `SkillSynergyDef` lists at least two `requires` and
+adds passives/actives only while they all hold. `excludes` is symmetric, so two nodes named as
+alternatives block each other in both directions. Actives are `{ id, cooldownMs?, resourceCost?,
+castType?, groups? }`, shaped to bind into `createAbilityKit` slots. Snapshot/restore carries
+`{ points, ranks }`; restore refuses unknown nodes, over-ranked nodes and negative points without
+mutating. A tree where breadth beats depth is the point: in the test fixture, four points down
+`strike` give `damage +3`, while the same four points in `strike x2`, `focus`, `sight` give
+`damage +4` plus the `overload` synergy and its action.
+
+`gearScore(set, options)` scores `slot -> { stats, level?, rarity? }` as
+`Σ_stat value × weight × (lowerIsBetter ? -1 : 1) + levelWeight × level + rarityScore[rarity]`,
+summed over filled slots, minus `emptySlotPenalty` per expected-but-empty slot; it also returns
+`bySlot`, `byStat`, `average`, `coverage` and `emptySlots`. `compareGearSets` ranks two loadouts.
+The stat term comes from `lootStatContributions`, the same function behind `scoreLootStats` and
+`compareLootItems`, so per-item and whole-loadout scores cannot drift apart.
+
+## Inventory, equipment and weight
+
+A carried bag and a stash are two declared inventories, so they hold separate plain state from the
+first frame and persist as `InventorySet.snapshot()`:
+
+```ts
+import { createInventorySet } from "@jgengine/core/inventory/inventoryModel";
+import { canCarry, characterLoad } from "@jgengine/core/inventory/carryLoad";
+import { createEquipment } from "@jgengine/core/inventory/equipment";
+
+const items = createInventorySet({ bag: { slots: 24 }, stash: { slots: 60 } }, traits);
+items.move("bag", 3, "stash", 0); // across inventories; a rejected move leaves both untouched
+const saved = items.snapshot(); // detached; JSON-safe; restore() refuses a bad save without mutating
+
+const gear = createEquipment(
+  [{ id: "weapon", blocks: ["offhand"] }, { id: "offhand" }, { id: "chest", accepts: ["armor"] }],
+  (itemId) => baseDefs[registry.get(itemId)?.baseId ?? itemId]?.gear, // rolled item -> its base's gear facts
+  { devtoolsName: "gear" },
+);
+gear.equip("chest", "plate"); // { status: "ok", replaced: null, ... }
+gear.equipBest("greatsword"); // first free preferred slot, else the first one it may replace
+
+const load = characterLoad({
+  carried: [items.state("bag")],
+  worn: gear.worn().map((entry) => entry.itemId),
+  weightOf: (itemId) => baseDefs[itemId]?.weight ?? 0,
+  capacity: 60 + stats.value("carryCapacity"),
+});
+load.moveMultiplier; // 1 unencumbered, decays across the soft band, 0 at capacity
+canCarry(load, 12); // gate a pickup; the overload policy stays the game's
+```
+
+`EquipSlotDef` owns `accepts` (item kinds) and `blocks` (slots it occupies while filled), and
+`EquipItemDef` owns the `slots` an item may occupy plus its `kind`; a filled slot swaps and returns
+the replaced item, so nothing is silently destroyed, and `state()` / `restore()` carry
+`{ slots: [[slotId, itemId]] }`. The stash is simply left out of `carried`, so its contents add no
+weight, and declaring it `tier: "banked"` keeps it out of `partitionOnDeath`'s lost half.
+
+For a footprint bag, `fitShapedItem` (`inventory/shapedGrid`) places the first legal spot or names
+why it does not fit — `too-large` with both sizes, `no-space` for a full board, `budget-exceeded` for
+an exhausted search. Stack rules stay in `ItemTraits`: `putItem` fills partial stacks then opens new
+ones up to the max stack, `moveItem` merges with a remainder, and `splitStack(..., limit)` refuses an
+`over-stack` merge instead of breaking the cap.
+
+The rendered side is the engine's: `<InventoryGrid inventoryId="bag" />` (`packages/react`) binds a
+live declared inventory with drag, swap, merge and split through the `inventory.move` /
+`inventory.split` commands, and `<EquipmentSlots items={...} />` paints the worn slots from
+`gear.worn()`. What the grid cannot yet do is drag from one inventory to another (bag to stash), so a
+stash transfer goes through `InventorySet.move` behind a button or command.
+
 ## Coherent authored content
 
 Keep stable ids and canonical facts for characters, factions, places, and world rules in the game's authored data. Record each chapter's prerequisites, consequences, and which facts it may introduce or change. The game's creative pillars, story voice, content palette, and desired player experience come from its author; generated prose, items, art, and assets must serve those constraints. Reuse constrained generation and validation code across games while each game owns its content and visual identity; do not fill catalogs from default genre kits or mass generic content.

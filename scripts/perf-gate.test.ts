@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import type { PerfRecord } from "./perf-play";
-import { PERF_GATE_GAMES, checkBudget, loadBudget, parseGateArgs, type PerfBudget } from "./perf-gate";
+import { PERF_GATE_GAMES, checkBudget, describeGamesCheckout, describeGamesLine, loadBudget, parseGateArgs, type PerfBudget } from "./perf-gate";
 
 /**
  * The gate's verdict logic runs here without a browser: every case is a record
@@ -179,5 +179,42 @@ describe("parseGateArgs", () => {
 
   test("rejects an unknown flag rather than measuring everything", () => {
     expect(() => parseGateArgs(["--games-from"])).toThrow(/unknown argument/);
+  });
+});
+
+describe("describeGamesLine", () => {
+  const pin = "c81aabc494295170c53c4b7a0763573162590a7f";
+  const other = "3385ce43256f4f88495ffd7fb2f6e4839a32f23e";
+
+  test("names the measured checkout and the pin when they agree", () => {
+    expect(describeGamesLine({ pin, head: pin })).toBe("perf gate: games c81aabc, pinned c81aabc");
+  });
+
+  test("says so when the clone is off the pin, since the budgets describe the pin", () => {
+    expect(describeGamesLine({ pin, head: other })).toBe("perf gate: games 3385ce4, pinned c81aabc (measuring unpinned content)");
+  });
+
+  test("still measures when Games/ is not a git checkout", () => {
+    expect(describeGamesLine({ pin, head: null })).toContain("games checkout unavailable");
+  });
+});
+
+describe("describeGamesCheckout", () => {
+  test("reads the pin and reports the head the caller found", () => {
+    const root = tempRoot();
+    const pin = "c81aabc494295170c53c4b7a0763573162590a7f";
+    writeFileSync(join(root, "scripts", "games-ref.txt"), `${pin}\n`);
+    let asked = "";
+    const found = describeGamesCheckout(root, (directory) => {
+      asked = directory;
+      return pin;
+    });
+    expect(found).toEqual({ pin, head: pin });
+    expect(asked.endsWith("Games")).toBe(true);
+  });
+
+  test("reports no pin when the file is missing instead of failing the run", () => {
+    const root = tempRoot();
+    expect(describeGamesCheckout(root, () => null)).toEqual({ pin: null, head: null });
   });
 });

@@ -38,6 +38,37 @@ Pins consume no choice RNG and must satisfy the same pool and constraints;
 incompatible pins backtrack earlier unpinned choices or return `unsatisfiable`
 within the configured attempt and pick budgets.
 
+Roll whole named gear from an authored catalog with `rollLoot`
+(`loot/lootGen`): bases with mount slots, parts, affix pools, weighted rarity
+tiers, manufacturer stat personalities and a level curve, all caller data.
+`validateLootItem` names each defect, `compareLootItems` returns per-stat deltas
+and a weighted score, and `lootWeaponDefinition` (`loot/lootWeapon`) projects a
+rolled item onto a `WeaponDefinition` for `createWeaponSystem`. `createLootRoller`
+counts drops per rarity for a debug probe and snapshots its counters. Sample
+catalog, distribution check and generated-weapon proof are in
+[reference-systems.md](reference-systems.md#procedural-gear).
+
+Resolve an authored XP curve with `defineXpCurve` (`progression/xpCurve`): one growth rule
+(`flat`, `linear`, `power`, `geometric`, `table`), a `maxLevel` cap and a stated `rule` string;
+`table()` and `totalXpFor()` read the same data, and `track()` hands those thresholds to
+`leveling`. Spend a character's points in `createSkillTree` (`progression/skillTree`): nodes carry
+a point `cost`, `requires`, `excludes`, `passives` and `actives`, `synergies` pay off two or more
+ranked nodes together, `respec()` refunds exactly the points spent, and `resolved()` returns the
+`StatModifierSet` plus ability-slot-shaped actives to feed `createStats` / `createAbilityKit`.
+Score a whole loadout with `gearScore` (`progression/gearScore`) on the same weight policy as
+`compareLootItems`. [reference-systems.md](reference-systems.md#progression-and-gear-score) shows
+the data shapes and a two-build comparison.
+
+Wear gear with `createEquipment` (`inventory/equipment`): slot defs own accepted kinds and the slots
+they block, item defs own the slots an item may occupy, a filled slot swaps and hands back the
+replaced item, and `state()` / `restore()` round-trip the worn set. Weigh a character with
+`characterLoad` (`inventory/carryLoad`), which turns carried inventories plus worn gear into the
+shared encumbrance bands (`moveMultiplier`, sprint/jump gates, `remaining`), so `canCarry` gates a
+pickup. Declare a stash as its own inventory (`tier: "banked"`) and move items with
+`InventorySet.move`; `snapshot()` / `restore()` save both as detached data. The bag and stash render
+through `<InventoryGrid>` with `<EquipmentSlots>` above it. See
+[inventory, equipment and weight](reference-systems.md#inventory-equipment-and-weight).
+
 Validate generated quest catalogs with `validateQuestCatalog` (`game/questCatalog`).
 Follow the [quest authoring recipe](recipes/quest-authoring.md) for bounded batches,
 canonical facts, external unlock declarations, and precise repair diagnostics.

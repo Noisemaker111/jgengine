@@ -56,6 +56,33 @@ describe("InventoryGrid render", () => {
   });
 });
 
+describe("a stash beside the bag renders from the same model", () => {
+  test("the stash grid shows the banked stack while the bag grid stays empty", () => {
+    const ctx = createGameContext({
+      definition: defineGameDefinition({
+        name: "StashGridTest",
+        assets: createAssetCatalog(),
+        multiplayer: "off",
+        inventories: { bag: { slots: 4 }, stash: { slots: 4, tier: "banked" } },
+      }),
+      content: {},
+      player: { userId: "user_a", isNew: true },
+    });
+    ctx.player.inventory.put("stash", "rifle", 1, { slot: 1 });
+
+    const html = renderToStaticMarkup(
+      createElement(
+        GameProvider,
+        { context: ctx },
+        createElement(InventoryGrid, { inventoryId: "stash", columns: 2 }),
+      ),
+    );
+    expect(html).toContain('data-inventory-grid="stash"');
+    expect(html).toContain("data-icon-treatment");
+    expect(ctx.player.inventory.state("bag").slots.every((slot) => slot === null)).toBe(true);
+  });
+});
+
 describe("inventory.move / inventory.split commands (the grid's write path)", () => {
   test("moving onto an empty slot relocates the stack", () => {
     const ctx = makeContext();
