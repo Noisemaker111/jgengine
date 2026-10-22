@@ -1,5 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import { devtools } from "../devtools/devtools";
+import { createGameEvents, type DamageAppliedEvent } from "../game/events";
 import { createDamageRuntime, UnknownTargetProfileError, type DamageRuntimeConfig } from "./damageRuntime";
 import type { StatusDef } from "./statusRuntime";
 
@@ -178,6 +179,96 @@ describe("state out and back", () => {
     expect(line).toContain("3 targets");
     expect(line).toContain("1 hits");
     expect(line).toContain("last fire 25.0");
+    damage.dispose();
+  });
+});
+
+describe("damage events", () => {
+  function commanded(devtoolsName?: string) {
+    const events = createGameEvents();
+    const seen: DamageAppliedEvent[] = [];
+    events.on("combat.damage", (event) => seen.push(event));
+    const pools = new Map<string, number>([["hero", 380], ["keep", 1_600]]);
+    const damage = createDamageRuntime({
+      ...config,
+      events,
+      healthOf: (id) => pools.get(id) ?? null,
+      ...(devtoolsName === undefined ? {} : { devtoolsName }),
+    });
+    damage.registerTarget("hero", { resistance: "flesh", armor: 0 });
+    damage.registerTarget("keep", { resistance: "armor", armor: 200 });
+    return { damage, seen, pools };
+  }
+
+  it("announces one event per application with target, source, amount and remaining", () => {
+    const { damage, seen } = commanded();
+    const resolution = damage.hit({ target: "hero", type: "kinetic", base: 40, source: "raider:1" });
+    expect(seen).toHaveLength(1);
+    expect(seen[0]).toEqual({
+      target: "hero",
+      source: "raider:1",
+      type: "kinetic",
+      amount: resolution.damage,
+      absorbed: 40 - resolution.damage,
+      remaining: 380 - resolution.damage,
+      lethal: false,
+    });
+  });
+
+  it("keeps a hero and a keep on their own events, health and death", () => {
+    const { damage, seen, pools } = commanded();
+    const keepHit = damage.hit({ target: "keep", type: "kinetic", base: 100, source: "raider:1" });
+    const heroHit = damage.hit({ target: "hero", type: "kinetic", base: 40, source: "raider:1" });
+
+    expect(seen.map((event) => event.target)).toEqual(["keep", "hero"]);
+    const [keep, hero] = seen;
+    expect(keep?.remaining).toBe(1_600 - keepHit.damage);
+    expect(hero?.remaining).toBe(380 - heroHit.damage);
+    expect(keep?.absorbed).toBeGreaterThan(hero?.absorbed ?? Number.POSITIVE_INFINITY);
+    expect(keep?.lethal).toBe(false);
+    expect(hero?.lethal).toBe(false);
+    // The runtime reads a pool; it never writes one target's damage into another's.
+    expect(pools.get("keep")).toBe(1_600);
+    expect(pools.get("hero")).toBe(380);
+
+    pools.set("hero", 20);
+    damage.hit({ target: "hero", type: "kinetic", base: 40, source: "raider:2" });
+    damage.hit({ target: "keep", type: "kinetic", base: 100, source: "raider:2" });
+    const [heroDeath, keepAfter] = seen.slice(-2);
+    expect(heroDeath).toMatchObject({ target: "hero", source: "raider:2", remaining: 0, lethal: true });
+    expect(keepAfter).toMatchObject({ target: "keep", lethal: false });
+    expect(keepAfter?.remaining).toBeGreaterThan(1_000);
+  });
+
+  it("names the status and who lit it when a carried status ticks", () => {
+    const { damage, seen } = commanded();
+    damage.applyStatus("hero", "burn", { source: "raider:3" });
+    damage.tick(0.5);
+    const tick = seen.find((event) => event.status === "burn");
+    expect(tick).toMatchObject({ target: "hero", source: "raider:3", type: "fire", status: "burn" });
+    expect(tick?.amount).toBeGreaterThan(0);
+    expect(tick?.remaining).toBe(380 - (tick?.amount ?? 0));
+  });
+
+  it("reports no remaining health when the caller supplied no health reader", () => {
+    const damage = model();
+    damage.hit({ target: "raider", type: "kinetic", base: 10 });
+    expect(damage.recentDamage()).toEqual([
+      { target: "raider", type: "kinetic", amount: 7.5, absorbed: 2.5, remaining: null, lethal: false },
+    ]);
+  });
+
+  it("makes the event stream readable from the devtools probe", () => {
+    const { damage } = commanded("combat/damage-events-test");
+    damage.hit({ target: "keep", type: "kinetic", base: 100, source: "raider:1" });
+    damage.hit({ target: "hero", type: "kinetic", base: 40, source: "raider:1" });
+    const line = String(devtools.snapshot().probes["combat/damage-events-test"]);
+    expect(line).toContain("events");
+    expect(line).toContain("keep -");
+    expect(line).toContain("from raider:1");
+    expect(line).toContain("hero -");
+    expect(damage.recentDamage(1)).toHaveLength(1);
+    expect(damage.recentDamage(1)[0]?.target).toBe("hero");
     damage.dispose();
   });
 });

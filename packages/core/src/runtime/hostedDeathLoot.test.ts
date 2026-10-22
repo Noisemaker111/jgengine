@@ -73,7 +73,8 @@ for (const [name, input] of [
       expect(ctx.scene.entity.get("victim")).not.toBeNull();
       session.tick(0.2);
     }
-    expect(reasons).toEqual([{ kind: "player_kill", killerUserId: "bob" }]);
+    expect(reasons).toHaveLength(1);
+    expect(reasons[0]).toMatchObject({ kind: "player_kill", killerUserId: "bob" });
     expect(bag("bob")).toBe(2);
     expect(bag("alice")).toBe(0);
     expect(ctx.player.inventory.count("backpack", "goo")).toBe(0);
@@ -85,7 +86,8 @@ for (const [name, input] of [
 test("remote-player world loot scatters exactly once and never enters host bag", () => {
   const { session, ctx, reasons, bag } = fixture({ drops: "goo", dropMode: "world" });
   expect(session.command("bob", "strike", {}).status).toBe("applied");
-  expect(reasons).toEqual([{ kind: "player_kill", killerUserId: "bob" }]);
+  expect(reasons).toHaveLength(1);
+  expect(reasons[0]).toMatchObject({ kind: "player_kill", killerUserId: "bob" });
   expect(ctx.scene.worldItem.list().map((item) => [item.itemId, item.count])).toEqual([["goo", 2]]);
   expect(bag("bob")).toBe(0);
   expect(ctx.player.inventory.count("backpack", "goo")).toBe(0);
@@ -108,7 +110,8 @@ test("explicit any-death world rule drops environmental loot without enabling un
     drops: [{ table: "goo", when: { reason: "any" } }, { table: "unfiltered" }],
   });
   expect(session.command("bob", "strike", { from: "environment:trap" }).status).toBe("applied");
-  expect(reasons).toEqual([{ kind: "environment", source: "effect" }]);
+  expect(reasons).toHaveLength(1);
+  expect(reasons[0]).toMatchObject({ kind: "environment", source: "effect" });
   expect(ctx.scene.worldItem.list().map((item) => [item.itemId, item.count])).toEqual([["goo", 2]]);
   expect(bag("bob")).toBe(0);
   expect(bag("alice")).toBe(0);

@@ -69,7 +69,7 @@
 - `DamageTableDef` (interface): interface DamageTableDef — A serializable damage table: damage types scored against resistance classes, plus the armor curve those rows are read with. It is data a generated gun (B3.1) and a weapon runtime (B2.3) pass in; the engine holds no built-in elemental chart.
 - `DamageTableRow` (interface): interface DamageTableRow — One readable row: a type against a resistance class at a given armor value.
 - `DamageTypeDef` (interface): interface DamageTypeDef — One damage type's row in a damage table: a caller-owned id (`"kinetic"`, `"fire"`) and how it fares against each resistance class a target can present (`"flesh"`, `"shield"`, `"armor"`). Values below `1` are resisted, `1` is neutral, above `1` is a weakness, and `0` is immune.
-- `DeathReason` (type): type DeathReason = | { kind: "player_kill"; killerUserId: string; via?: { item?: string } } | { kind: "environment"; source: string } | { kind: "self"; source: string } — Why an entity died — who or what gets credit, for drop/command rules and the `entity.died` event.
+- `DeathReason` (type): type DeathReason = | { kind: "player_kill"; killerUserId: string; source?: string; via?: { item?: string } } | { kind: "environment"; source: string; attacker?: string } | { kind: "self"; source: string } — Why an entity died — who or what gets credit, for drop/command rules and the `entity.died` event. `source` names what dealt it: a player kill's killer instance id, or the hazard/item of an environment death; `attacker` carries the non-player entity's instance id when one dealt it.
 - `DefenseResolution` (interface): interface DefenseResolution — Result of resolving an incoming hit against a defensive window: `outcome` is the graded defense (`"parry"`/`"block"`/`"iframe"`/`"hit"`) and `perfect` is true when the input landed inside the tight just-frame at the window's start rather than its wider active span.
 - `DuplicateDamageTypeError` (class): class DuplicateDamageTypeError extends Error — Raised when a table lists the same damage type twice, which would make the winner depend on order.
 - `EncounterConfig` (interface): interface EncounterConfig<TData = unknown> — Non-serializable configuration for an encounter: the authored phase tree plus predicate and spawn-provider registries. Re-supplied alongside a loaded {@link EncounterState}, the way `advanceSpawnDirector` pairs config with state, so the state itself stays pure data.
@@ -243,7 +243,7 @@
 - `createCoverField` (function): function createCoverField(options: CoverFieldOptions): CoverField — Cover over authored boxes: derive the stand points once, re-derive them after an edit, and answer bounded nearest-cover queries. `walkable` is injected, so the seam checks the game's own ground test (`nav.findPolygon(point) !== null`) instead of assuming a flat floor.
 - `createDamageClamp` (function): function createDamageClamp(config: DamageClampConfig): DamageInterceptor — A stateless interceptor that caps any single application at `maxPerHit`.
 - `createDamagePipeline` (function): function createDamagePipeline(initial?: readonly DamageInterceptor[]): DamagePipeline — Create a mutable damage interception chain that state transitions install into and remove from — e.g. add an invulnerability interceptor on phase enter and drop it on phase exit. Evaluation order is install order.
-- `createDamageRuntime` (function): function createDamageRuntime(config: DamageRuntimeConfig): DamageRuntime — Build a damage model from data. The number a hit lands is `base × zone multiplier × type multiplier × (1 − armor mitigation)`; statuses tick through the same table and armor, so a burn on an armored target is mitigated like a bullet.
+- `createDamageRuntime` (function): function createDamageRuntime(config: DamageRuntimeConfig): DamageRuntime — Build a damage model from data. The number a hit lands is `base × zone multiplier × type multiplier × (1 − armor mitigation)`; statuses tick through the same table and armor, so a burn on an armored target is mitigated like a bullet. Every application — a hit or a status tick — is announced as `combat.damage` carrying the target, source, type, amount, absorbed, remaining health and a lethal flag, so a HUD names the blow instead of guessing.
 - `createDeathSystem` (function): function createDeathSystem(deps: DeathSystemDeps): DeathSystem — Resolve entity death and the on-death consequences — drops, respawn eligibility, kill credit.
 - `createDefensiveWindow` (function): function createDefensiveWindow(config: DefensiveWindowConfig): DefensiveWindow — Open a timed defensive window — block, parry, or i-frames — and test incoming hits against it.
 - `createDotField` (function): function createDotField(): DotField — Builds an empty {@link DotField}; `apply` DoTs onto it and drain damage each frame with `tick`.
@@ -462,7 +462,7 @@
 - `TargetProfile` (interface): interface TargetProfile — What a target presents to the table: one resistance class and its armor points.
 - `TimeToKill` (interface): interface TimeToKill — A quoted time to kill for one fixed hit against one health pool.
 - `UnknownTargetProfileError` (class): class UnknownTargetProfileError extends Error — Raised when a hit names a target that was never registered — a wiring error, not a 0-damage hit.
-- `createDamageRuntime` (function): function createDamageRuntime(config: DamageRuntimeConfig): DamageRuntime — Build a damage model from data. The number a hit lands is `base × zone multiplier × type multiplier × (1 − armor mitigation)`; statuses tick through the same table and armor, so a burn on an armored target is mitigated like a bullet.
+- `createDamageRuntime` (function): function createDamageRuntime(config: DamageRuntimeConfig): DamageRuntime — Build a damage model from data. The number a hit lands is `base × zone multiplier × type multiplier × (1 − armor mitigation)`; statuses tick through the same table and armor, so a burn on an armored target is mitigated like a bullet. Every application — a hit or a status tick — is announced as `combat.damage` carrying the target, source, type, amount, absorbed, remaining health and a lethal flag, so a HUD names the blow instead of guessing.
 
 ## @jgengine/core/combat/damageTable
 
@@ -501,7 +501,7 @@
 
 ## @jgengine/core/combat/deathReason
 
-- `DeathReason` (type): type DeathReason = | { kind: "player_kill"; killerUserId: string; via?: { item?: string } } | { kind: "environment"; source: string } | { kind: "self"; source: string } — Why an entity died — who or what gets credit, for drop/command rules and the `entity.died` event.
+- `DeathReason` (type): type DeathReason = | { kind: "player_kill"; killerUserId: string; source?: string; via?: { item?: string } } | { kind: "environment"; source: string; attacker?: string } | { kind: "self"; source: string } — Why an entity died — who or what gets credit, for drop/command rules and the `entity.died` event. `source` names what dealt it: a player kill's killer instance id, or the hazard/item of an environment death; `attacker` carries the non-player entity's instance id when one dealt it.
 
 ## @jgengine/core/combat/defensiveWindow
 

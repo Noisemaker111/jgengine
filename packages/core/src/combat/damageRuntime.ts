@@ -1,4 +1,5 @@
 import { devtools } from "../devtools/devtools";
+import type { DamageAppliedEvent, GameEvents } from "../game/events";
 import { resolveRng } from "../random/resolveRng";
 import type { StatusApplicationOutcome, StatusInstance } from "./statusApplication";
 import {
@@ -23,6 +24,11 @@ import {
   type StatusRuntimeState,
   type StatusTickEvent,
 } from "./statusRuntime";
+
+/** How many recent damage applications the runtime keeps for `recentDamage` and its probe line. */
+const RECENT_DAMAGE_LIMIT = 8;
+/** Most applications the probe line spells out; the ring keeps more than it prints. */
+const RECENT_DAMAGE_PROBE_LINES = 3;
 
 /** What a target presents to the table: one resistance class and its armor points. */
 export interface TargetProfile {
@@ -98,6 +104,14 @@ export interface DamageRuntimeConfig {
   armorStat?: string;
   /** Injected `[0,1)` stream for crit rolls. Omitting it warns once and is not replayable. */
   rng?: () => number;
+  /** Bus every applied damage is announced on as `combat.damage`. Omitted, events reach only the probe. */
+  events?: GameEvents;
+  /**
+   * A target's live health, read once per application before the caller applies it. The event's
+   * `remaining` is that value minus the damage dealt, and `lethal` is `remaining <= 0`; omit the
+   * reader and every event reports `remaining: null` and `lethal: false`.
+   */
+  healthOf?: (targetId: string) => number | null;
   /** Register a one-line devtools probe under this name. */
   devtoolsName?: string;
 }
@@ -135,6 +149,8 @@ export interface DamageRuntime {
   restore(next: DamageRuntimeState): void;
   /** Carried statuses, for a HUD or a test. */
   statusesOf(targetId: string): readonly StatusInstance[];
+  /** The last `limit` damage applications this model announced, oldest first. Default all it keeps. */
+  recentDamage(limit?: number): readonly DamageAppliedEvent[];
   stats(): { targets: number; hits: number; crits: number; statusTicks: number; dealt: number };
   /** Drop the devtools probe registered by `devtoolsName`. Safe to call twice. */
   dispose(): void;
@@ -156,7 +172,9 @@ export class UnknownTargetProfileError extends Error {
 /**
  * Build a damage model from data. The number a hit lands is
  * `base × zone multiplier × type multiplier × (1 − armor mitigation)`; statuses tick through the
- * same table and armor, so a burn on an armored target is mitigated like a bullet.
+ * same table and armor, so a burn on an armored target is mitigated like a bullet. Every application
+ * — a hit or a status tick — is announced as `combat.damage` carrying the target, source, type,
+ * amount, absorbed, remaining health and a lethal flag, so a HUD names the blow instead of guessing.
  *
  * @capability damage-runtime resolve hits through a damage table, hit zones, and armor, and tick data-defined statuses with declared stacking
  */
@@ -164,6 +182,8 @@ export function createDamageRuntime(config: DamageRuntimeConfig): DamageRuntime 
   assertDamageTable(config.table);
   assertHitZoneTable(config.zones);
   const rng = resolveRng(config.rng, "createDamageRuntime");
+  const bus = config.events;
+  const healthOf = config.healthOf;
 
   let table = config.table;
   let zones = config.zones;
@@ -174,6 +194,7 @@ export function createDamageRuntime(config: DamageRuntimeConfig): DamageRuntime 
   let dealt = 0;
   let statusTicks = 0;
   let last: DamageRuntimeState["last"] = null;
+  const recent: DamageAppliedEvent[] = [];
 
   let statusRuntime: StatusRuntime;
   statusRuntime = createStatusRuntime({
@@ -203,7 +224,48 @@ export function createDamageRuntime(config: DamageRuntimeConfig): DamageRuntime 
 
   function resolveStatusDamage(tick: StatusDamageTick): number {
     if (!targets.has(tick.target)) return tick.amount;
-    return scaleAt(tick.target, tick.channel, tick.amount).damage ?? 0;
+    const dealt = scaleAt(tick.target, tick.channel, tick.amount).damage ?? 0;
+    announce({
+      target: tick.target,
+      type: tick.channel,
+      incoming: tick.amount,
+      dealt,
+      ...(tick.source !== undefined ? { source: tick.source } : {}),
+      status: tick.status,
+    });
+    return dealt;
+  }
+
+  function announce(input: {
+    target: string;
+    type: string;
+    incoming: number;
+    dealt: number;
+    source?: string;
+    status?: string;
+  }): void {
+    const health = healthOf?.(input.target) ?? null;
+    const remaining = health === null ? null : Math.max(0, health - input.dealt);
+    const event: DamageAppliedEvent = {
+      target: input.target,
+      ...(input.source !== undefined ? { source: input.source } : {}),
+      type: input.type,
+      amount: input.dealt,
+      absorbed: Math.max(0, input.incoming - input.dealt),
+      remaining,
+      lethal: remaining !== null && remaining <= 0,
+      ...(input.status !== undefined ? { status: input.status } : {}),
+    };
+    recent.push(event);
+    if (recent.length > RECENT_DAMAGE_LIMIT) recent.shift();
+    bus?.emit("combat.damage", event);
+  }
+
+  function describe(event: DamageAppliedEvent): string {
+    const source = event.source === undefined ? "" : ` from ${event.source}`;
+    const status = event.status === undefined ? "" : ` ${event.status}`;
+    const left = event.remaining === null ? "" : ` → ${event.remaining.toFixed(0)}`;
+    return `${event.target} -${event.amount.toFixed(0)}${source}${status}${left}${event.lethal ? " LETHAL" : ""}`;
   }
 
   function probeLine(): string {
@@ -211,7 +273,10 @@ export function createDamageRuntime(config: DamageRuntimeConfig): DamageRuntime 
     const tail = l === null
       ? "no hits"
       : `last ${l.type} ${l.base.toFixed(1)}→${l.damage.toFixed(1)} ${l.zone}${l.crit ? " crit" : ""}`;
-    return `${targets.size} targets · ${hits} hits ${crits} crits · ${statusTicks} status ticks · ${dealt.toFixed(0)} dealt · ${tail}`;
+    const events = recent.length === 0
+      ? ""
+      : ` · events ${recent.slice(-RECENT_DAMAGE_PROBE_LINES).map(describe).join(" | ")}`;
+    return `${targets.size} targets · ${hits} hits ${crits} crits · ${statusTicks} status ticks · ${dealt.toFixed(0)} dealt · ${tail}${events}`;
   }
 
   const unregister = config.devtoolsName === undefined
@@ -232,7 +297,8 @@ export function createDamageRuntime(config: DamageRuntimeConfig): DamageRuntime 
     },
     hit(input) {
       const zone = resolveHitZone(zones, input.zone, rng);
-      const row = scaleAt(input.target, input.type, input.base * zone.multiplier);
+      const incoming = input.base * zone.multiplier;
+      const row = scaleAt(input.target, input.type, incoming);
       const applied: StatusApplicationOutcome[] = [];
       for (const request of input.statuses ?? []) {
         const statusId = typeof request === "string" ? request : request.id;
@@ -253,6 +319,13 @@ export function createDamageRuntime(config: DamageRuntimeConfig): DamageRuntime 
       if (zone.crit) crits += 1;
       dealt += damage;
       last = { type: input.type, base: input.base, damage, zone: zone.zone, crit: zone.crit };
+      announce({
+        target: input.target,
+        type: input.type,
+        incoming,
+        dealt: damage,
+        ...(input.source !== undefined ? { source: input.source } : {}),
+      });
       return {
         target: input.target,
         type: input.type,
@@ -340,8 +413,13 @@ export function createDamageRuntime(config: DamageRuntimeConfig): DamageRuntime 
       crits = next.crits;
       dealt = next.dealt;
       last = next.last === null ? null : { ...next.last };
+      recent.length = 0;
     },
     statusesOf: (targetId) => statusRuntime.statusesOf(targetId),
+    recentDamage(limit) {
+      const count = limit === undefined ? recent.length : Math.max(0, Math.min(recent.length, Math.floor(limit)));
+      return recent.slice(recent.length - count);
+    },
     stats: () => ({ targets: targets.size, hits, crits, statusTicks, dealt }),
     dispose() {
       statusRuntime.dispose();
