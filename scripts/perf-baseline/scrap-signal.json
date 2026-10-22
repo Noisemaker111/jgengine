@@ -1,0 +1,178 @@
+{
+  "game": "scrap-signal",
+  "gpu": "Google Inc. (NVIDIA) ANGLE (NVIDIA, NVIDIA GeForce RTX 3070 (0x00002484) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+  "quality": "full",
+  "viewport": "1600x900",
+  "seconds": 6,
+  "at": 1792672367929,
+  "frame": {
+    "fps": 60.1,
+    "avgMs": 16.65,
+    "p95Ms": 16.8,
+    "maxMs": 17.1,
+    "samples": 361,
+    "longFrames": 0
+  },
+  "render": {
+    "draws": 264,
+    "triangles": 667626,
+    "geometries": 182,
+    "textures": 42,
+    "nodes": 961,
+    "nodesSource": "scene-graph",
+    "scenes": 1
+  },
+  "gl": {
+    "programsLinked": 2,
+    "framebuffers": 0,
+    "buffers": 0,
+    "textures": 0,
+    "vertexArrays": 2,
+    "allocations": 4,
+    "residentPrograms": 35,
+    "total": {
+      "programsLinked": 43,
+      "framebuffers": 29,
+      "buffers": 1366,
+      "textures": 50,
+      "vertexArrays": 445
+    },
+    "attached": true
+  },
+  "sim": {
+    "avgMs": 1.3,
+    "outsideMs": 14.1
+  },
+  "profile": {
+    "samplingUs": 200,
+    "seconds": 6,
+    "top": [
+      {
+        "fn": "(program)",
+        "at": "",
+        "selfMs": 565.8,
+        "selfPct": 9.4
+      },
+      {
+        "fn": "exports.jsxDEV",
+        "at": ".vite/deps/react_jsx-dev-runtime.js:239:32",
+        "selfMs": 453,
+        "selfPct": 7.5
+      },
+      {
+        "fn": "projectObject",
+        "at": ".vite/deps/chunk-W2JRLIAH.js:42136:27",
+        "selfMs": 415.4,
+        "selfPct": 6.9
+      },
+      {
+        "fn": "updateFalloff",
+        "at": "src/audio/audioEngine.ts:227:27",
+        "selfMs": 239.4,
+        "selfPct": 4
+      },
+      {
+        "fn": "ReactElement",
+        "at": ".vite/deps/react_jsx-dev-runtime.js:127:28",
+        "selfMs": 225.8,
+        "selfPct": 3.8
+      },
+      {
+        "fn": "(garbage collector)",
+        "at": "",
+        "selfMs": 213.6,
+        "selfPct": 3.5
+      },
+      {
+        "fn": "WebGLRenderer.renderBufferDirect",
+        "at": ".vite/deps/chunk-W2JRLIAH.js:41849:39",
+        "selfMs": 199.2,
+        "selfPct": 3.3
+      },
+      {
+        "fn": "inBox",
+        "at": "src/scene/objectStore.ts:163:10",
+        "selfMs": 198.8,
+        "selfPct": 3.3
+      },
+      {
+        "fn": "updateMatrixWorld",
+        "at": ".vite/deps/chunk-W2JRLIAH.js:8834:20",
+        "selfMs": 138.5,
+        "selfPct": 2.3
+      },
+      {
+        "fn": "_Object3D",
+        "at": ".vite/deps/chunk-W2JRLIAH.js:8199:14",
+        "selfMs": 135.6,
+        "selfPct": 2.3
+      },
+      {
+        "fn": "composeBuildingKitMatrix",
+        "at": "src/structures/buildingKitFit.ts:115:41",
+        "selfMs": 123.5,
+        "selfPct": 2.1
+      },
+      {
+        "fn": "renderObject",
+        "at": ".vite/deps/chunk-W2JRLIAH.js:42285:26",
+        "selfMs": 119.1,
+        "selfPct": 2
+      },
+      {
+        "fn": "partitionBuildingMatrices",
+        "at": "src/structures/buildingSpatialBatch.ts:2:42",
+        "selfMs": 114,
+        "selfPct": 1.9
+      },
+      {
+        "fn": "now",
+        "at": "",
+        "selfMs": 89.6,
+        "selfPct": 1.5
+      },
+      {
+        "fn": "Material",
+        "at": ".vite/deps/chunk-W2JRLIAH.js:10234:14",
+        "selfMs": 83.4,
+        "selfPct": 1.4
+      }
+    ]
+  },
+  "systems": {
+    "render/culling": {
+      "counters": {
+        "totalObjects": 691,
+        "visible": 66,
+        "preloaded": 122,
+        "culled": 625,
+        "rejectedByFrustum": 78,
+        "rejectedByDistance": 412,
+        "rejectedByOcclusion": 0
+      },
+      "timers": {
+        "spatialQueryMs": 0,
+        "cullingMs": 0.1
+      },
+      "state": "66/691 visible · 625 culled · 0.1ms"
+    }
+  },
+  "logs": {
+    "counts": {
+      "log": 0,
+      "info": 0,
+      "warn": 1,
+      "error": 0
+    },
+    "dropped": 0,
+    "severe": [
+      {
+        "at": 1792672340195,
+        "level": "warn",
+        "system": "console",
+        "message": "THREE.WebGLProgram: Program Info Log: (221,81-129): warning X4122: sum of 0.996094 and -2.98545e-017 cannot be represented accurately in double precision\n(220,37-61): warning X4122: sum of 1 and -1.49272e-017 cannot be represented accurately in double precision\n(221,82-106): warning X4122: sum of 1 and -1.49272e-017 cannot be represented accurately in double precision\n(220,37-61): warning X4122: s…"
+      }
+    ]
+  },
+  "telemetry": null
+}
