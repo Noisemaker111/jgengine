@@ -1,20 +1,19 @@
 import { afterAll, afterEach, beforeAll, beforeEach, expect, test } from "bun:test";
-import { mkdir, mkdtemp, rm, symlink } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { mkdir, rm, symlink } from "node:fs/promises";
+import { resolve } from "node:path";
 import { chromium, type Browser, type Page } from "playwright-core";
 import { buildBrowserFixture, findChromeExecutable } from "../../../scripts/browser-lib";
-import { gotoFixture, installPublicPackages } from "../../../scripts/browser-test-fixture";
+import { gotoFixture } from "../../../scripts/browser-test-fixture";
 
-let scratch: string | undefined;
+const root = resolve(import.meta.dir, "../../..");
+const scratch = `${root}/.scratch/settings-boundary-test`;
 let browser: Browser, page: Page, server: ReturnType<typeof Bun.serve>;
 beforeAll(async () => {
-  const dir = scratch = await mkdtemp(join(tmpdir(), "jgengine-settings-boundary-"));
-  await mkdir(`${dir}/node_modules/@jgengine`, { recursive: true });
-  for (const peer of ["react", "react-dom"]) await symlink(resolve(import.meta.dir, "../../react/node_modules", peer), `${dir}/node_modules/${peer}`, "dir");
+  const dir = scratch;
+  await rm(dir, { recursive: true, force: true });
   await mkdir(`${dir}/node_modules/@react-three`, { recursive: true });
+  for (const peer of ["react", "react-dom"]) await symlink(resolve(import.meta.dir, "../../react/node_modules", peer), `${dir}/node_modules/${peer}`, "dir");
   for (const peer of ["@react-three/fiber", "@react-three/drei", "three", "three-stdlib"]) await symlink(resolve(import.meta.dir, "../node_modules", peer), `${dir}/node_modules/${peer}`, "dir");
-  await installPublicPackages(dir, ["core", "react", "shell", "ws"]);
   await Bun.write(`${dir}/fixture.tsx`, `
     import React from 'react';import {createRoot} from 'react-dom/client';
     import {defineGame} from '@jgengine/shell/gameKit';import {ShellHudPresentation} from '@jgengine/shell/ShellHudPresentation';
@@ -49,7 +48,7 @@ beforeAll(async () => {
 }, 30000);
 beforeEach(async () => { page = await browser.newPage(); });
 afterEach(async () => { await page?.close(); });
-afterAll(async () => { await browser?.close(); server?.stop(true); if (scratch !== undefined) await rm(scratch, { recursive: true, force: true }); Bun.gc(true); });
+afterAll(async () => { await browser?.close(); server?.stop(true); await rm(scratch, { recursive: true, force: true }); Bun.gc(true); });
 async function open(mode: string) {
   const errors: string[] = []; page.on("pageerror", error => errors.push(error.message));
   await gotoFixture(page, `http://127.0.0.1:${server.port}/?mode=${mode}`, () => page.locator("#ready").waitFor());
