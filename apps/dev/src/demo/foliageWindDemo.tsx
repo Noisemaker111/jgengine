@@ -79,7 +79,7 @@ export const foliageWindGame: PlayableGame = {
   ),
   capture: {
     views: {
-      state: { look: "0,2.6,0", lookFrom: "10,3.2,0.15" },
+      state: { look: "0,3.1,0", lookFrom: "5.5,2.9,0.12" },
     },
   },
 };
