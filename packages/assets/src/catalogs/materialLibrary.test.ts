@@ -6,9 +6,12 @@ import {
   MATERIAL_LIBRARY,
   filterLibraryMaterials,
   findLibraryMaterial,
+  libraryBuildingSurface,
   libraryMaterialAsset,
   libraryMaterialMaps,
   libraryMaterialRoles,
+  librarySurfaceParameters,
+  libraryTerrainMaterial,
 } from "./materialLibrary";
 import { sourceById } from "../sources";
 
@@ -87,5 +90,69 @@ describe("shared material library", () => {
   test("never references Kenney", () => {
     const text = JSON.stringify(MATERIAL_LIBRARY).toLowerCase();
     expect(text.includes("kenney")).toBe(false);
+  });
+
+  test("a macro ground variant tiles over tens of metres and arrives as grain, not as colour", () => {
+    const fine = findLibraryMaterial("foliage/grass")!;
+    const macro = findLibraryMaterial("foliage/grass-macro")!;
+    expect(macro.source).toBe(fine.source);
+    expect(macro.tileMetres).toBeGreaterThanOrEqual(20);
+    expect(macro.tileMetres).toBeGreaterThan(fine.tileMetres * 5);
+    expect(macro.terrain?.tint).toBeLessThan(1);
+    expect(findLibraryMaterial("ground/dirt-macro")!.tileMetres).toBeGreaterThanOrEqual(20);
+  });
+
+  test("displacement is a published library role that terrain takes and the authored asset does not load", () => {
+    const macro = findLibraryMaterial("foliage/grass-macro")!;
+    expect(libraryMaterialRoles(macro)).toContain("displacement");
+    expect(libraryMaterialMaps(macro).height).toBeUndefined();
+    expect(libraryMaterialAsset("foliage/grass-macro").textures?.height).toBeUndefined();
+    expect(libraryTerrainMaterial("foliage/grass-macro").maps.displacement).toBe("/materials/ambientcg-grass001/displacement.jpg");
+    expect(libraryMaterialRoles(findLibraryMaterial("glass/smudged")!)).not.toContain("displacement");
+  });
+
+  test("libraryTerrainMaterial carries the entry's tiling, terrain policy and only the maps the archive ships", () => {
+    const macro = libraryTerrainMaterial("foliage/grass-macro");
+    expect(macro.repeat).toBe(24);
+    expect(macro.tint).toBeLessThan(1);
+    expect(macro.strength).toBeLessThan(1);
+    expect(macro.maps.color).toBe("/materials/ambientcg-grass001/color.jpg");
+    expect(macro.maps.displacement).toBe("/materials/ambientcg-grass001/displacement.jpg");
+
+    const fingerprint = libraryTerrainMaterial("glass/smudged");
+    expect(fingerprint.maps.displacement).toBeUndefined();
+    expect(fingerprint.maps.roughness).toBe("/materials/ambientcg-fingerprints001/roughness.jpg");
+
+    expect(libraryTerrainMaterial("foliage/grass", { repeat: 8, tint: 1 }).repeat).toBe(8);
+    expect(libraryTerrainMaterial("foliage/grass", { tint: 1 }).tint).toBe(1);
+    expect(() => libraryTerrainMaterial("glass/clear")).toThrow(/no pulled color\/normal maps/);
+    expect(() => libraryTerrainMaterial("asphalt/nope")).toThrow(/Unknown library material/);
+  });
+
+  test("libraryBuildingSurface paints a part from a name at the entry's authored metres", () => {
+    const surface = libraryBuildingSurface("brick/red", { slotMetres: [12, 3] });
+    expect(surface.maps?.color).toBe("/materials/ambientcg-bricks004/color.jpg");
+    expect(surface.maps?.normal).toBe("/materials/ambientcg-bricks004/normal.jpg");
+    expect(surface.maps?.roughness).toBe("/materials/ambientcg-bricks004/roughness.jpg");
+    expect(surface.maps?.ao).toBe("/materials/ambientcg-bricks004/ao.jpg");
+    expect(surface.repeat).toEqual([12 / 1.6, 3 / 1.6]);
+    expect(surface.roughness).toBe(0.86);
+    expect(surface.metalness).toBe(0);
+
+    expect(libraryBuildingSurface("brick/red").repeat).toBeUndefined();
+    expect(libraryBuildingSurface("brick/red", { repeat: 3 }).repeat).toBe(3);
+    expect(libraryBuildingSurface("asphalt/wet").color).toBe("#8f9498");
+    expect(libraryBuildingSurface("asphalt/wet", { color: "#ffffff" }).color).toBe("#ffffff");
+    expect(() => libraryBuildingSurface("water/ocean")).toThrow(/nothing to tile onto a building/);
+    expect(() => libraryBuildingSurface("brick/nope")).toThrow(/Unknown library material/);
+  });
+
+  test("librarySurfaceParameters returns the entry's response without leaking the library's copy", () => {
+    const parameters = librarySurfaceParameters("foliage/leaf");
+    expect(parameters.alphaMode).toBe("mask");
+    expect(parameters.sheenColor).toBe("#c8d18a");
+    parameters.roughness = 0.1;
+    expect(librarySurfaceParameters("foliage/leaf").roughness).toBe(0.55);
+    expect(() => librarySurfaceParameters("nope/nope")).toThrow(/Unknown library material/);
   });
 });
