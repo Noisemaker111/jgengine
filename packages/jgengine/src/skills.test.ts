@@ -76,6 +76,11 @@ describe("skillsInstallArgs", () => {
 });
 
 describe("installPackagedSkills", () => {
+  // A newer release of the same two packages, so the guard is tested with versions a real install writes.
+  function nextMinor(version: string): string {
+    const [major, minor] = version.split(".");
+    return `${major}.${Number(minor) + 1}.0`;
+  }
   function bytes(dir: string): Record<string, string> {
     return Object.fromEntries(readdirSync(dir, { recursive: true, withFileTypes: true })
       .filter(entry => entry.isFile())
@@ -132,7 +137,7 @@ describe("installPackagedSkills", () => {
         expect(installPackagedSkills(packaged, "project", project, "all")).toBe(0);
         const lastSkill = GAME_SKILLS[GAME_SKILLS.length - 1]!;
         const marker = join(project, ".claude", "skills", lastSkill, ".jgengine-version.json");
-        writeFileSync(marker, JSON.stringify({ version: 1, cliVersion: cliVersion(), sdkVersion: sdkVersion(), [field]: "99.0.0" }));
+        writeFileSync(marker, JSON.stringify({ version: 1, cliVersion: cliVersion(), sdkVersion: sdkVersion(), [field]: nextMinor(field === "cliVersion" ? cliVersion() : sdkVersion()) }));
         writeFileSync(join(packaged, GAME_SKILLS[0], "SKILL.md"), "incoming changed skill\n");
         const before = bytes(project);
         expect(installPackagedSkills(packaged, "project", project, "all")).toBe(1);
@@ -147,7 +152,7 @@ describe("installPackagedSkills", () => {
     });
   }
 
-  test("preserves differing legacy skills, adopts identical ones, and refuses corrupt metadata", () => {
+  test("preserves differing legacy skills and adopts identical ones", () => {
     const project = mkdtempSync(join(tmpdir(), "jgengine-skills-legacy-"));
     const packaged = packagedFixture();
     try {
@@ -158,14 +163,48 @@ describe("installPackagedSkills", () => {
       expect(installPackagedSkills(packaged, "project", project)).toBe(1);
       expect(bytes(project)).toEqual(before);
       expect(installPackagedSkills(packaged, "project", project, "minimal", true)).toBe(0);
-      const marker = join(skill, ".jgengine-version.json");
-      rmSync(marker);
+      rmSync(join(skill, ".jgengine-version.json"));
       expect(installPackagedSkills(packaged, "project", project)).toBe(0);
-      writeFileSync(marker, "{broken");
-      const corruptBefore = bytes(project);
-      expect(installPackagedSkills(packaged, "project", project)).toBe(1);
-      expect(bytes(project)).toEqual(corruptBefore);
     } finally {
+      rmSync(project, { recursive: true, force: true });
+      rmSync(packaged, { recursive: true, force: true });
+    }
+  });
+
+  test("repairs unreadable version metadata instead of blocking on it", () => {
+    const project = mkdtempSync(join(tmpdir(), "jgengine-skills-corrupt-"));
+    const packaged = packagedFixture();
+    try {
+      expect(installPackagedSkills(packaged, "project", project)).toBe(0);
+      const marker = join(project, ".claude", "skills", MINIMAL_GAME_SKILLS[0]!, ".jgengine-version.json");
+      for (const corrupt of ['{broken', '{"version":1,"cliVersion":"next"}', '{"version":1,"cliVersion":"0.1.0"}']) {
+        writeFileSync(marker, corrupt);
+        expect(installPackagedSkills(packaged, "project", project)).toBe(0);
+        expect(JSON.parse(readFileSync(marker, "utf8"))).toEqual({ version: 1, cliVersion: cliVersion(), sdkVersion: sdkVersion() });
+      }
+    } finally {
+      rmSync(project, { recursive: true, force: true });
+      rmSync(packaged, { recursive: true, force: true });
+    }
+  });
+
+  test("unreadable metadata on a differing skill refuses and names the file", () => {
+    const project = mkdtempSync(join(tmpdir(), "jgengine-skills-corrupt-diff-"));
+    const packaged = packagedFixture();
+    const errors: string[] = [];
+    const original = console.error;
+    console.error = (message: string) => { errors.push(String(message)); };
+    try {
+      expect(installPackagedSkills(packaged, "project", project)).toBe(0);
+      const skill = MINIMAL_GAME_SKILLS[0]!;
+      const marker = join(project, ".claude", "skills", skill, ".jgengine-version.json");
+      writeFileSync(marker, "{broken");
+      writeFileSync(join(packaged, skill, "SKILL.md"), "incoming changed skill\n");
+      expect(installPackagedSkills(packaged, "project", project)).toBe(1);
+      expect(errors.join("\n")).toContain(marker);
+      expect(readFileSync(join(project, ".claude", "skills", skill, "SKILL.md"), "utf8")).not.toBe("incoming changed skill\n");
+    } finally {
+      console.error = original;
       rmSync(project, { recursive: true, force: true });
       rmSync(packaged, { recursive: true, force: true });
     }
@@ -177,7 +216,7 @@ describe("installPackagedSkills", () => {
     try {
       writeFileSync(join(project, "package.json"), JSON.stringify({ dependencies: { "@jgengine/core": "^0.1.0" } }));
       mkdirSync(join(project, "node_modules", "@jgengine", "core"), { recursive: true });
-      writeFileSync(join(project, "node_modules", "@jgengine", "core", "package.json"), '{"version":"99.0.0"}');
+      writeFileSync(join(project, "node_modules", "@jgengine", "core", "package.json"), JSON.stringify({ version: nextMinor(sdkVersion()) }));
       const before = bytes(project);
       expect(installPackagedSkills(packaged, "project", project)).toBe(1);
       expect(bytes(project)).toEqual(before);
