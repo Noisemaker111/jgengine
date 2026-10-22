@@ -1,5 +1,5 @@
-import { useLayoutEffect, useRef } from "react";
-import { useFrame } from "@react-three/fiber";
+import { useEffect, useLayoutEffect, useRef } from "react";
+import { useFrame, useThree } from "@react-three/fiber";
 import type * as THREE from "three";
 import type { DirectionalLight } from "three";
 
@@ -11,8 +11,10 @@ import type {
   SpotLightingConfig,
 } from "@jgengine/core/game/playableGame";
 import type { GraphicsProfile } from "@jgengine/core/settings/graphicsProfile";
+import { devtools } from "@jgengine/core/devtools/devtools";
 
 import { CascadedShadows, DEFAULT_SHADOW_RADIUS } from "./CascadedShadows";
+import { cullSmallShadowCasters, MIN_SHADOW_CASTER_RADIUS, type ShadowCasterCull } from "./shadowCasters";
 
 const DEFAULT_BACKDROP_FOG_COLOR = "#1a1c22";
 /** Default cap for combined dynamic point and spot lights. */
@@ -55,7 +57,7 @@ function usesCascades(entry: DirectionalLightingConfig): boolean {
 function DirectionalShadowLight({ entry, profile, modulation }: { entry: DirectionalLightingConfig; profile?: GraphicsProfile; modulation?: DaylightModulation }) {
   const resolved = profile === undefined ? entry : { ...entry, shadowMapSize: entry.shadowMapSize ?? profile.shadowMapSize, cascades: entry.cascades ?? profile.cascades };
   if (usesCascades(resolved)) {
-    return <CascadedShadows entry={resolved} modulation={modulation} />;
+    return <CascadedShadows entry={resolved} profile={profile} modulation={modulation} />;
   }
   return <SingleShadowLight entry={resolved} modulation={modulation} />;
 }
@@ -124,6 +126,31 @@ export function ConfiguredLighting({
   modulation?: DaylightModulation;
 }) {
   const dynamic = resolveDynamicLights(lighting);
+  const scene = useThree((s) => s.scene);
+  const shadowsCast = (lighting.directional ?? []).some((entry) => entry.castShadow === true);
+  const cullRef = useRef<ShadowCasterCull | null>(null);
+  useEffect(() => {
+    if (!shadowsCast) return;
+    const cull = cullSmallShadowCasters(scene);
+    cullRef.current = cull;
+    return () => {
+      cull.restore();
+      cullRef.current = null;
+    };
+  }, [scene, shadowsCast]);
+  useEffect(
+    () =>
+      devtools.probes.registerSystem("render/shadows", {
+        counters: () => cullRef.current?.stats() ?? { casters: 0, skipped: 0 },
+        state: () => {
+          const stats = cullRef.current?.stats();
+          return stats === undefined
+            ? "no shadow-casting directional light"
+            : `${stats.casters} casters · ${stats.skipped} under ${MIN_SHADOW_CASTER_RADIUS} m skipped`;
+        },
+      }),
+    [],
+  );
   const ambientRef = useRef<THREE.AmbientLight>(null);
   const hemisphereRef = useRef<THREE.HemisphereLight>(null);
   const baseAmbient = lighting.ambient?.intensity ?? 0.55;
