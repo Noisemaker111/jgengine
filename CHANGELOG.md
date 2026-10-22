@@ -26,6 +26,50 @@ At publish, rename this heading to the new version and mirror the entries into
 `packages/core/src/meta/changelog.ts` (the typed `CHANGELOG` export).
 -->
 
+## 0.27.0
+
+### Migrate
+
+- **Bump lockstep SDK packages to `^0.27.0`:** `@jgengine/{core,rapier,react,ws,node,sql,convex,shell,editor,assets,navbake}`. CLI `jgengine` is `0.24.0`; `@jgengine/github` is `0.14.0`.
+
+### Added
+
+- `rollLoot` (`@jgengine/core/loot/lootGen`) rolls a named item from a caller `LootCatalog`: bases with mount slots, parts, affix pools, weighted rarity tiers, manufacturer personalities and a `levelScale` curve. Stats are `base × rarity.statScale × levelScale`, then part stats/multipliers, maker `bias`/`scale`, then additive and multiplicative affixes; additive affix rolls scale with level, multiplicative ones do not.
+- `createLootRoller` wraps a validated catalog with roll counts per rarity, `snapshot()`/`restore()`/`reset()` and an optional devtools probe; `assertLootCatalog` rejects duplicate ids, unresolvable pools, empty item slots and a non-ascending level curve at construction.
+- `validateLootItem` returns coded issues (`unknown-base`, `manufacturer-base`, `missing-slot-part`, `part-category`, `unknown-affix`, `empty-name`, …) and `compareLootItems` returns sorted per-stat deltas plus a weighted score with caller-named `lowerIsBetter` stats.
+- `lootWeaponDefinition` (`@jgengine/core/loot/lootWeapon`) projects a rolled item onto a `WeaponDefinition` through a caller stat map, so a generated gun runs in `createWeaponSystem` after `assertWeaponDefinition`.
+- `defineXpCurve` (`@jgengine/core/gameplay`) resolves one authored growth rule (`flat`, `linear`, `power`, `geometric`, `table`) plus a `maxLevel` cap into per-level thresholds, lifetime totals, a plain-words rule string and a `leveling` track.
+- `createSkillTree` spends and refunds points over authored nodes with `cost`, `requires`, `excludes`, passives, actives and multi-node `synergies`; `resolved()` returns the stat modifiers and actions, and state snapshots/restores as `{ points, ranks }`.
+- `gearScore` / `compareGearSets` score a whole loadout from stat weights, level, rarity and slot coverage.
+- `lootStatContributions` and `scoreLootStats` expose the weight policy `compareLootItems` already used.
+- `createEquipment` (`@jgengine/core/inventory/equipment`) wears gear by slot: slot defs declare accepted kinds and the slots they block, item defs declare the slots an item may occupy, a filled slot swaps and hands back the replaced item, and a two-handed item and the slot it blocks cannot both be filled. `state()` / `restore()` round-trip the worn set; a devtools probe reports filled slots.
+- `characterLoad` and `canCarry` (`@jgengine/core/inventory/carryLoad`) weigh carried inventories plus worn gear against a capacity and hand back the shared encumbrance bands (tier, `moveMultiplier`, sprint/jump gates, `remaining`), so a stash left out of `carried` adds no weight.
+- `fitShapedItem` (`@jgengine/core/inventory/shapedGrid`) places a shaped item at its first fit or names why not: `too-large` (with both sizes), `no-space`, `budget-exceeded`.
+- `InventorySet.snapshot()` / `restore()` / `reset()` (`@jgengine/core/inventory/inventoryModel`) save and reload every declared inventory as detached plain data, so a bag and a stash never share live slots.
+- `splitStack` takes an optional stack `limit`, rejecting `over-stack` instead of merging past the max stack.
+- `createLaneGraph` and `laneGraphFromDocument` (`@jgengine/core/world`) read an authored lane graph out of the scene document: `traffic_lane` paths are one directed span each, `road` paths (the street bake) become a lane per direction split where streets cross, `traffic_intersection` markers carry signal phases and right-of-way in `meta`, and `traffic_parking` markers place kerbside spots.
+- `createTraffic` (`@jgengine/core/world`) runs cars on that graph: IDM car following and braking, one car at a time through each intersection box behind a signal phase or first-come right-of-way, lane changes across authored neighbours, parking that reserves a spot, deterministic injected variety, `snapshot`/`restore`, and a devtools probe.
+- `Traffic.setDemand(count)` is the fleet target; the time-of-day curve stays the caller's policy.
+- `applyVehicleParts` (`@jgengine/core/world`) composes data-driven tuning parts onto a `KinematicVehicleTuning` — stat multipliers/addends applied in install order plus an optional tire grip curve — and returns the composed tuning, the installed ids, and a `VehicleFeel` (top speed, drive, brakes, turn rate, handbrake grip, and the grip curve's peak/slide). `withPart` swaps a part within its slot and `feelOf` reads the numbers out of any tuning.
+- `createVehicleDamage` (`@jgengine/core/world`) is fixed-zone crash damage wired to handling and visuals: impacts accumulate into discrete stages, each stage costs grip/drive/brakes/top speed/drag and pulls the steering (`effect`), and each zone shows one bounded dent (`deformation`) that never exceeds its authored `deform`. Parts can detach at a set stage, a total impulse can disable the vehicle, and `snapshot`/`restore` resume mid-crash. `damagedTuning` and `damagedAxis` fold the effect into a tuning or an input, and `modifiers()` carries it as per-tick overrides.
+- `KinematicVehicleTuning.weightTransfer` (`@jgengine/core/world`) adds load-transfer grip: longitudinal transfer under braking/traction and lateral transfer under cornering cut the tire grip curve (tire load sensitivity), so braking into a corner holds less slide than coasting through it. Each tick reports `weightTransfer` and `loadGrip`; omitting the block keeps the previous flat-grip model exactly.
+- `KinematicVehicleModifiers.gripScale` scales the grip curve for one tick, mirroring `VehicleDynamicsModifiers.gripScale` so a damage layer drives either sim.
+- `decal` scene kind (`@jgengine/core/world/decalKind`) and its renderer (`@jgengine/shell/scene/DecalRenderer`): dirt, cracks, paint and blood decals authored as placed markers, draped on the live terrain or standing on an authored tilt, with a deterministic procedural texture per style+seed.
+- `TerrainMaterialLayer.material` (`@jgengine/core/world/terraform`): a material library name whose scanned color map paints that terrain layer. The runtime samples up to four layer maps at each layer's `tiling` and blends them through the authored mask weights (`createTerrainDetailMaterial`'s `layerMaps`), so painted terrain blends between authored layers instead of tiling one flat map.
+- `grass_field` volumes now paint a ground-cover mat under their blades (`groundCover` rule, `@jgengine/shell/terrain/GrassCover`), so an authored patch reads as turf rather than bare ground with stubble. `GrassEnvironmentConfig.groundCover` does the same for `grass()` patches.
+- `ModelConfig.wind` (`@jgengine/core/game/playableGame`) and `applyModelWind` (`@jgengine/shell/render/modelWind`): per-model foliage sway with height-ramped travel, shared gust clock and per-model strength/speed/direction.
+
+### Fixed
+
+- The player shell re-renders only for the ctx slices it reads — the possessed entity and the touch control mode — instead of on every `ctx` write. Subscribing the shell root to the raw ctx version reconciled the canvas, the whole actor tree and the HUD on each per-frame entity pose write, which is what `subscribeMembership` and the markers' imperative `useFrame` pose reads exist to avoid (#625). Scrap Signal: 86.6 ms → 16.7 ms per frame at the same 621 draws; Harbor Heat: 102.8 ms → 46.2 ms at the same ~7.2k draws.
+- The `ocean()` environment feature passes the live ground to its shader, so the sea shades shallow→deep and its shoreline foam band lands where the bed meets the surface.
+
+### Numbers
+
+- Test catalog (60/25/10/4/1 rarity weights) over 10,000 drops at level 20, fixed seed: common 59.41% (target 60%), uncommon 25.66% (25%), rare 9.58% (10%), epic 4.20% (4%), legendary 1.15% (1%); every tier inside its 4σ binomial bound. All 10,000 items validated with zero issues and composed names (e.g. `Voss Rare Long Keen Lightframe of Reach`, `Tallow Long Lightframe`, `Voss Snub Lightframe of Steadying`).
+- Level curve `[[1,1],[15,1.6],[30,2.4],[60,4]]`: a level-60 roll's base and additive affix values are 4× the same seed at level 1; maker personalities move the same roll (`Voss` +power/−cadence, `Tallow` the reverse).
+- A rolled epic projects to a hitscan `WeaponDefinition` (rate, damage, integer magazine capacity, spread, range), passes `assertWeaponDefinition`, and its first `tick` fires one shot and one impact through `createDamageRuntime` with the rolled capacity spent.
+
 ## 0.26.0
 
 ### Migrate
