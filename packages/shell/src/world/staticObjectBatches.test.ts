@@ -3,13 +3,15 @@ import * as THREE from "three";
 import { createEmptyEditorDocument } from "@jgengine/core/editor/index";
 import { createObjectStore, type SceneObject } from "@jgengine/core/scene/objectStore";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
+import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { placeAuthoredObjects, resolveAuthoredObjects } from "@jgengine/core/world/authoredObjects";
 import { buildScatterModelSources, disposeScatterModelSources } from "../scatter/scatterModels";
 import { createPointerService, POINTER_OBJECT_INSTANCES_KEY } from "../pointer/pointerService";
 import { measureLocalBounds } from "../render/measureBounds";
 import { measureLocalCollisionTriangles } from "../render/measureCollisionMesh";
 import { resolveObjectModel, type ObjectModelCacheEntry } from "../render/resolveModel";
-import { canBatchStaticObject, canInstanceStaticScene, groupStaticObjects, STATIC_BATCH_CHUNK, STATIC_BATCH_MIN, incompatibleStaticObjectIds, syncStaticObjectSource, type StaticObjectCandidate } from "./staticObjectBatches";
+import { buildCullingDriver } from "../visibility/cullingDriver";
+import { canBatchStaticObject, canInstanceStaticScene, countStaticBatchDraws, groupStaticObjects, STATIC_BATCH_CELL, STATIC_BATCH_MESH_KEY, STATIC_BATCH_MIN, incompatibleStaticObjectIds, syncStaticObjectSource, type StaticObjectCandidate } from "./staticObjectBatches";
 
 function candidate(index: number, patch: Partial<StaticObjectCandidate> = {}): StaticObjectCandidate {
   return {
@@ -37,7 +39,7 @@ function modelScene() {
 }
 
 describe("static authored object batching", () => {
-  test("requires STATIC_BATCH_MIN compatible placements in a cell and preserves model choices", () => {
+  test("requires STATIC_BATCH_MIN compatible placements and preserves model choices", () => {
     const below = Array.from({ length: STATIC_BATCH_MIN - 1 }, (_, i) => candidate(i));
     expect(groupStaticObjects(below).batches).toHaveLength(0);
     const objects = [...below, candidate(STATIC_BATCH_MIN - 1), ...Array.from({ length: STATIC_BATCH_MIN }, (_, i) => candidate(i + 20, { model: { url: "model-a.glb", material: { color: "red" } } }))];
@@ -45,8 +47,70 @@ describe("static authored object batching", () => {
     expect(grouped.batches).toHaveLength(2);
     expect(grouped.batches.map((batch) => batch.objects.length)).toEqual([STATIC_BATCH_MIN, STATIC_BATCH_MIN]);
     expect(grouped.batches[1]!.model.material?.color).toBe("red");
-    const outside = candidate(30); outside.object.position = [STATIC_BATCH_CHUNK, 1, 2];
-    expect(groupStaticObjects([...below, outside]).batches).toHaveLength(0);
+  });
+
+  test("one model batches inside a cell and a lone placement in another cell stays single", () => {
+    const inside = Array.from({ length: 2 }, (_, i) => {
+      const entry = candidate(i);
+      entry.object.position = [i * 100, 1, 0];
+      return entry;
+    });
+    expect(groupStaticObjects(inside).batches).toHaveLength(1);
+    const elsewhere = candidate(2);
+    elsewhere.object.position = [STATIC_BATCH_CELL + 22, 1, 0];
+    const split = groupStaticObjects([...inside, elsewhere]);
+    expect(split.batches).toHaveLength(1);
+    expect(split.batches[0]!.objects).toHaveLength(2);
+    expect(split.singles).toHaveLength(1);
+  });
+
+  test("a world-wide batch draws only what the frustum keeps and its bounds cover only those", () => {
+    const store = createObjectStore();
+    store.place("a", 0, 0, 0, { instanceId: "near" });
+    store.place("a", 110, 0, 110, { instanceId: "far" });
+    const objects = store.list();
+    const batch = groupStaticObjects(objects.map((object) => candidate(0, { object, model: { url: "a.glb" } }))).batches[0]!;
+    expect(batch.objects).toHaveLength(2);
+
+    const driver = buildCullingDriver(
+      { scene: { entity: { list: () => [] }, object: store } } as unknown as GameContext,
+      undefined,
+    );
+    driver.setView({ kind: "perspective", position: [0, 0, 20], target: [0, 0, 0], up: [0, 1, 0], fovDeg: 50, aspect: 1, near: 0.1, far: 60 });
+    const visible = driver.system.update().visible;
+    expect(visible.has("near")).toBe(true);
+    expect(visible.has("far")).toBe(false);
+
+    const geometry = new THREE.BoxGeometry();
+    const source = { geometry, material: new THREE.MeshStandardMaterial(), localMatrix: new THREE.Matrix4() };
+    const mesh = new THREE.InstancedMesh(geometry, source.material, 2);
+    syncStaticObjectSource(mesh, source, batch.objects, store.get, (id) => visible.has(id), new THREE.Object3D());
+    expect(mesh.count).toBe(1);
+    expect(mesh.userData[POINTER_OBJECT_INSTANCES_KEY]).toEqual(["near"]);
+    // One sphere per batch is only dangerous when it spans the culled instances too; this one is
+    // rebuilt from the drawn range, so the renderer's own frustum test still rejects a view of "far".
+    expect(mesh.boundingSphere!.containsPoint(new THREE.Vector3(0, 0, 0))).toBe(true);
+    expect(mesh.boundingSphere!.containsPoint(new THREE.Vector3(110, 0, 110))).toBe(false);
+
+    mesh.dispose(); geometry.dispose(); (mesh.material as THREE.Material).dispose();
+  });
+
+  test("the batching probe counts distinct instances across a model's material draws", () => {
+    const store = createObjectStore();
+    store.place("a", 0, 0, 0, { instanceId: "near" });
+    store.place("a", 110, 0, 110, { instanceId: "far" });
+    const objects = store.list();
+    const scene = new THREE.Scene();
+    const geometry = new THREE.BoxGeometry();
+    const material = new THREE.MeshStandardMaterial();
+    // Two material sources of one batch: each draws the same compacted instance list.
+    for (const localMatrix of [new THREE.Matrix4(), new THREE.Matrix4().makeScale(2, 2, 2)]) {
+      const mesh = new THREE.InstancedMesh(geometry, material, 2);
+      mesh.userData[STATIC_BATCH_MESH_KEY] = true;
+      scene.add(mesh);
+      syncStaticObjectSource(mesh, { geometry, material, localMatrix }, objects, store.get, (id) => id === "near", new THREE.Object3D());
+    }
+    expect(countStaticBatchDraws(scene)).toEqual({ draws: 2, drawn: 1 });
   });
 
   test("keeps custom, runtime, interactive, animated, textured, composed and mirrored placements independent", () => {
@@ -77,7 +141,7 @@ describe("static authored object batching", () => {
     const candidates = () => store.list().map((object) => candidate(0, { object, model: { url: "a.glb" } }));
     const first = groupStaticObjects(candidates()).batches[0]!;
     const cache = new Map([[first.key, first]]);
-    const rerender = groupStaticObjects(candidates(), 24, cache).batches[0]!;
+    const rerender = groupStaticObjects(candidates(), cache).batches[0]!;
     expect(rerender).toBe(first); expect(rerender.model).toBe(first.model);
     let excluded: readonly string[] = [];
     expect(incompatibleStaticObjectIds(first, store.get, () => null, excluded)).toBe(excluded);
@@ -94,7 +158,7 @@ describe("static authored object batching", () => {
     store.setState("a-1", undefined);
     expect(incompatibleStaticObjectIds(first, store.get, () => ({ verbs: [{} as never] }), excluded)).toHaveLength(10);
     expect(incompatibleStaticObjectIds(first, store.get, () => null, excluded)).toEqual([]);
-    expect(groupStaticObjects(candidates().map((entry) => ({ ...entry, style: { hidden: true } })), 24, cache).batches).toHaveLength(0);
+    expect(groupStaticObjects(candidates().map((entry) => ({ ...entry, style: { hidden: true } })), cache).batches).toHaveLength(0);
   });
 
   test("node selections keep authored placements independent while empty selections retain batching", () => {
@@ -225,16 +289,17 @@ describe("static authored object batching", () => {
     expect(disposed).toBe(3); expect(cacheDisposed).toBe(0);
   });
 
-  test("exact authored fixture: 24 distinct models, 3072 placements, 9216 independent submissions become 144", () => {
+  test("exact authored fixture: 24 distinct models, 3072 placements, 9216 independent submissions become 72", () => {
     const document = createEmptyEditorDocument();
     const configs = new Map(Array.from({ length: 24 }, (_, i) => [`asset-${i}`, { url: `authored-${i}.glb`, material: { color: `#${(0x334455 + i * 900).toString(16)}` } }] as const));
     for (const [catalogId] of configs) for (let cell = 0; cell < 2; cell++) for (let i = 0; i < 64; i++) {
-      document.markers.push({ id: `${catalogId}:${cell}:${i}`, kind: "prop", catalogId, position: { x: cell * STATIC_BATCH_CHUNK + i % 8, y: 0, z: Math.floor(i / 8) }, rotationY: i / 10 });
+      document.markers.push({ id: `${catalogId}:${cell}:${i}`, kind: "prop", catalogId, position: { x: cell * 64 + i % 8, y: 0, z: Math.floor(i / 8) }, rotationY: i / 10 });
     }
     const saved = JSON.stringify(document);
     const store = createObjectStore(); placeAuthoredObjects(store, resolveAuthoredObjects(document), (x, z) => x / 10 + z / 20);
     const grouped = groupStaticObjects(store.list().map((object) => ({ object, model: configs.get(object.catalogId)!, authored: true, custom: false, catalog: null })));
-    expect(grouped.singles).toHaveLength(0); expect(grouped.batches).toHaveLength(48);
+    expect(grouped.singles).toHaveLength(0); expect(grouped.batches).toHaveLength(24);
+    expect(grouped.batches.every((batch) => batch.objects.length === 128)).toBe(true);
     expect(new Set(grouped.batches.map((batch) => batch.model.url)).size).toBe(24);
     let submissions = 0;
     for (const batch of grouped.batches) {
@@ -243,16 +308,16 @@ describe("static authored object batching", () => {
         submissions += Array.isArray(source.material) ? source.geometry.groups.filter((group) => source.material instanceof Array && source.material[group.materialIndex ?? 0]?.visible).length : 1;
         const mesh = new THREE.InstancedMesh(source.geometry, source.material, batch.objects.length);
         syncStaticObjectSource(mesh, source, batch.objects, store.get, () => true, new THREE.Object3D());
-        expect(mesh.count).toBe(64);
-        const matrix = new THREE.Matrix4(); mesh.getMatrixAt(63, matrix);
-        const placed = batch.objects[63]!;
+        expect(mesh.count).toBe(128);
+        const matrix = new THREE.Matrix4(); mesh.getMatrixAt(127, matrix);
+        const placed = batch.objects[127]!;
         const expected = new THREE.Matrix4().makeRotationY(placed.rotationY).setPosition(...placed.position).multiply(source.localMatrix);
         matrix.elements.forEach((value, index) => expect(value).toBeCloseTo(expected.elements[index]!, 4));
         mesh.dispose();
       }
       disposeScatterModelSources(harvested.root);
     }
-    expect(store.list().length * 3).toBe(9216); expect(submissions).toBe(144);
+    expect(store.list().length * 3).toBe(9216); expect(submissions).toBe(72);
     expect(JSON.stringify(document)).toBe(saved);
   });
 });

@@ -76,13 +76,26 @@ export function incompatibleStaticObjectIds(
   });
 }
 
-/** Batch cell edge in metres: one instanced draw per model per cell, culled as a unit. @internal */
-export const STATIC_BATCH_CHUNK = 64;
 /** Smallest same-model group worth an instanced draw; below this each prop draws on its own. @internal */
-export const STATIC_BATCH_MIN = 3;
+export const STATIC_BATCH_MIN = 2;
 
-/** Groups compatible authored or `scenery` props, at least {@link STATIC_BATCH_MIN} per spatial cell. @internal */
-export function groupStaticObjects(candidates: readonly StaticObjectCandidate[], chunkSize = STATIC_BATCH_CHUNK, previous?: ReadonlyMap<string, StaticObjectBatch>): {
+/**
+ * Batch cell edge in metres. One InstancedMesh has one bounding sphere, and three frustum-tests it in
+ * the shadow pass too, so a batch that spans the whole city submits every camera-visible instance to
+ * every shadow cascade. A cell keeps that test useful without fragmenting one model per prop.
+ * @internal
+ */
+export const STATIC_BATCH_CELL = 128;
+
+/**
+ * Groups compatible authored or `scenery` props by model inside {@link STATIC_BATCH_CELL} metres, at
+ * least {@link STATIC_BATCH_MIN} of a model. Culling stays per instance: `syncStaticObjectSource`
+ * compacts each batch's drawn range against the visibility predicate every frame, and the cell keeps
+ * the batch's one bounding sphere small enough that three's own frustum test still rejects it in the
+ * shadow pass. Props spread thinner than the minimum in a cell fall back to individual draws.
+ * @internal
+ */
+export function groupStaticObjects(candidates: readonly StaticObjectCandidate[], previous?: ReadonlyMap<string, StaticObjectBatch>, cell = STATIC_BATCH_CELL): {
   batches: StaticObjectBatch[];
   singles: StaticObjectCandidate[];
 } {
@@ -94,7 +107,7 @@ export function groupStaticObjects(candidates: readonly StaticObjectCandidate[],
       singles.push(candidate);
       continue;
     }
-    const key = JSON.stringify([object.catalogId, Math.floor(object.position[0] / chunkSize), Math.floor(object.position[2] / chunkSize), model]);
+    const key = JSON.stringify([object.catalogId, Math.floor(object.position[0] / cell), Math.floor(object.position[2] / cell), model]);
     let group = groups.get(key);
     if (group === undefined) {
       group = { batch: { key, model, objects: [] }, candidates: [] };
@@ -113,6 +126,35 @@ export function groupStaticObjects(candidates: readonly StaticObjectCandidate[],
     else singles.push(...members);
   }
   return { batches, singles };
+}
+
+/** Marks the instanced draws a static object batch owns so the batching probe can count them. @internal */
+export const STATIC_BATCH_MESH_KEY = "jgStaticObjectBatch";
+
+/** What one frame's static object batching produced. @internal */
+export interface StaticBatchCounts {
+  /** Instanced draws the loaded models actually submitted. */
+  draws: number;
+  /** Distinct instances inside those draws after the visibility predicate compacted them. */
+  drawn: number;
+}
+
+/**
+ * Sum the tagged draws in the live scene. `drawn` counts each instance once even though one instance
+ * appears in every material source's draw, so it is the number of instances the renderer was asked to
+ * draw this frame — a world-wide batch whose instances leave the view drops it without unmounting.
+ * @internal
+ */
+export function countStaticBatchDraws(scene: THREE.Object3D): StaticBatchCounts {
+  let draws = 0;
+  const drawn = new Set<string>();
+  scene.traverse((node) => {
+    if (node.userData[STATIC_BATCH_MESH_KEY] !== true) return;
+    draws += 1;
+    const ids = node.userData[POINTER_OBJECT_INSTANCES_KEY];
+    if (Array.isArray(ids)) for (const id of ids as string[]) drawn.add(id);
+  });
+  return { draws, drawn: drawn.size };
 }
 
 /** Rejects loaded scenes whose behavior cannot be represented by static instanced draws. @internal */
