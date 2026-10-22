@@ -41,7 +41,7 @@ export function extractMaterialMaps(archive: Uint8Array): ExtractedMaterialMap[]
   return Array.from(byRole.values()).sort((a, b) => a.file.localeCompare(b.file));
 }
 
-/** URLs of one material's PBR maps; `ao`/`roughness`/`opacity`/`ktx2` appear only when declared by its source. */
+/** URLs of one material's PBR maps; `ao`/`roughness`/`opacity`/`ktx2`/`displacement` appear only when declared by its source. */
 export interface MaterialMaps {
   color: string;
   normal: string;
@@ -49,7 +49,8 @@ export interface MaterialMaps {
   ao?: string;
   /** Cut-out coverage map, present on foliage and decal-style scans. */
   opacity?: string;
-  displacement: string;
+  /** Height map for callers that displace geometry; absent on archives published without one. */
+  displacement?: string;
   ktx2?: string;
 }
 
@@ -112,7 +113,7 @@ function refFor(source: AssetSource, basePath: string): MaterialRef {
       ...(source.materialMaps?.includes("roughness") ? { roughness: `${base}/${MATERIAL_MAP_FILES.roughness}` } : {}),
       ...(source.materialMaps?.includes("ao") ? { ao: `${base}/${MATERIAL_MAP_FILES.ao}` } : {}),
       ...(source.materialMaps?.includes("opacity") ? { opacity: `${base}/${MATERIAL_MAP_FILES.opacity}` } : {}),
-      displacement: `${base}/${MATERIAL_MAP_FILES.displacement}`,
+      ...(source.materialMaps?.includes("displacement") ? { displacement: `${base}/${MATERIAL_MAP_FILES.displacement}` } : {}),
       ...(source.materialMaps?.includes("ktx2") ? { ktx2: `${base}/${MATERIAL_MAP_FILES.ktx2}` } : {}),
     },
   };

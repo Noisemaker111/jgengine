@@ -75,16 +75,20 @@ export interface TerrainDetailConfig {
 
 /**
  * PBR map URLs for a real ground texture — the same shape
- * `buildMaterialCatalog({ basePath }).resolve(id)!.maps` from `@jgengine/assets` returns. Kept
- * dependency-free here so `core` never imports the assets package; any URLs (pulled maps, a CDN, a
- * data URI) satisfy it. Omitted roughness keeps the terrain scalar; omitted AO skips occlusion sampling.
+ * `libraryTerrainMaterial(name).maps` from `@jgengine/assets` returns. Kept dependency-free here so
+ * `core` never imports the assets package; any URLs (pulled maps, a CDN, a data URI) satisfy it.
+ * Omitted roughness keeps the terrain scalar; omitted AO skips occlusion sampling.
  */
 export interface TerrainMaterialMaps {
   color: string;
   normal: string;
   roughness?: string;
   ao?: string;
-  displacement: string;
+  /**
+   * Height map for callers that displace geometry themselves. The terrain detail shader never
+   * samples it, so pass the URL only when the pulled set actually ships one — never invent it.
+   */
+  displacement?: string;
 }
 
 /**

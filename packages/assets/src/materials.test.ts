@@ -51,6 +51,7 @@ describe("buildMaterialCatalog", () => {
       expect(catalog.resolve(id)?.maps.ao).toBeUndefined();
     }
     for (const id of catalog.ids()) expect(catalog.resolve(id)?.maps.ktx2).toBeUndefined();
+    expect(catalog.resolve("ambientcg-fingerprints001")?.maps.displacement).toBeUndefined();
   });
 
   test("resolves aliases to their target material", () => {

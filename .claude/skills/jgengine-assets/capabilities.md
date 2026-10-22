@@ -48,6 +48,18 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `validateHairCardAuthoring` (function) · `import { validateHairCardAuthoring } from "@jgengine/core/material/hairCards"`
 
+## library-building-surface — paint a building part from a named library material
+
+- `libraryBuildingSurface` (function) · `import { libraryBuildingSurface } from "@jgengine/assets/catalogs/materialLibrary"`
+
+## library-surface-parameters — carry a named library material's response into authored overrides
+
+- `librarySurfaceParameters` (function) · `import { librarySurfaceParameters } from "@jgengine/assets/catalogs/materialLibrary"`
+
+## library-terrain-material — put a named library material on terrain without faking optional maps
+
+- `libraryTerrainMaterial` (function) · `import { libraryTerrainMaterial } from "@jgengine/assets/catalogs/materialLibrary"`
+
 ## material-feature-requirements — Declare material shader requirements when authors add maps or appearance adapters.
 
 - `materialCapabilitiesForAsset` (function) · `import { materialCapabilitiesForAsset } from "@jgengine/core/material/materialAsset"`
