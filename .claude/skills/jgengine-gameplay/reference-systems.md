@@ -59,6 +59,43 @@ catalog without weapon stats stays usable for non-weapon gear. Check a
 distribution with a fixed seed over 10,000 drops against each tier's 4σ
 binomial bound rather than eyeballing shares.
 
+## Progression and gear score
+
+`progression/xpCurve` turns one authored growth rule into the level table, the cap and a
+plain-words rule line, so the balance lives in save-visible data:
+
+```ts
+import { createSkillTree, defineXpCurve, gearScore } from "@jgengine/core/gameplay";
+
+const xp = defineXpCurve({ growth: "power", step: 100, growthRate: 1.5, maxLevel: 40, round: "floor" });
+// rule: "power: 100 x level^1.5, floor (levels 1-40)"; xpForLevel(2) is 282, xpForLevel(40) is 0
+xp.levelForXp(xp.totalXpFor(7)).level; // 7
+xp.track(); // the same thresholds as a `leveling` track for a stat adapter
+
+const tree = createSkillTree({ nodes, synergies, points: 6 }, { devtoolsName: "skills" });
+tree.spend("strike"); // { ok: true, spent: 1, pointsAvailable: 5 }
+tree.canSpend("sight"); // { ok: false, reason: "requires", detail: '...needs rank 1 of "focus"' }
+const { stats, actives, synergies: live } = tree.resolved();
+tree.respec(); // { refunded: 6, pointsAvailable: 6 }
+```
+
+A `SkillNodeDef` is `{ id, branch?, cost?, maxRank?, requires?, requiresPointsInBranch?,
+excludes?, passives?, actives?, tags? }`; a `SkillSynergyDef` lists at least two `requires` and
+adds passives/actives only while they all hold. `excludes` is symmetric, so two nodes named as
+alternatives block each other in both directions. Actives are `{ id, cooldownMs?, resourceCost?,
+castType?, groups? }`, shaped to bind into `createAbilityKit` slots. Snapshot/restore carries
+`{ points, ranks }`; restore refuses unknown nodes, over-ranked nodes and negative points without
+mutating. A tree where breadth beats depth is the point: in the test fixture, four points down
+`strike` give `damage +3`, while the same four points in `strike x2`, `focus`, `sight` give
+`damage +4` plus the `overload` synergy and its action.
+
+`gearScore(set, options)` scores `slot -> { stats, level?, rarity? }` as
+`Σ_stat value × weight × (lowerIsBetter ? -1 : 1) + levelWeight × level + rarityScore[rarity]`,
+summed over filled slots, minus `emptySlotPenalty` per expected-but-empty slot; it also returns
+`bySlot`, `byStat`, `average`, `coverage` and `emptySlots`. `compareGearSets` ranks two loadouts.
+The stat term comes from `lootStatContributions`, the same function behind `scoreLootStats` and
+`compareLootItems`, so per-item and whole-loadout scores cannot drift apart.
+
 ## Coherent authored content
 
 Keep stable ids and canonical facts for characters, factions, places, and world rules in the game's authored data. Record each chapter's prerequisites, consequences, and which facts it may introduce or change. The game's creative pillars, story voice, content palette, and desired player experience come from its author; generated prose, items, art, and assets must serve those constraints. Reuse constrained generation and validation code across games while each game owns its content and visual identity; do not fill catalogs from default genre kits or mass generic content.

@@ -524,7 +524,9 @@ export {
   compareLootItems,
   createLootRoller,
   lootLevelScale,
+  lootStatContributions,
   rollLoot,
+  scoreLootStats,
   validateLootItem,
   type LootBaseDef,
   type LootCatalog,
@@ -544,6 +546,27 @@ export {
 } from "./loot/lootGen";
 export { lootWeaponDefinition, type LootWeaponProjection, type LootWeaponStatMap } from "./loot/lootWeapon";
 export {
+  compareGearSets,
+  gearScore,
+  type GearScore,
+  type GearScoreOptions,
+  type GearSlotItem,
+} from "./progression/gearScore";
+export {
+  assertSkillTreeConfig,
+  createSkillTree,
+  type SkillActiveDef,
+  type SkillNodeDef,
+  type SkillRequirement,
+  type SkillResolution,
+  type SkillSpendReason,
+  type SkillSpendResult,
+  type SkillSynergyDef,
+  type SkillTree,
+  type SkillTreeConfig,
+  type SkillTreeState,
+} from "./progression/skillTree";
+export {
   createStatGraph,
   statModifierContributions,
   type StatContribution,
@@ -559,6 +582,14 @@ export {
   type StatSheet,
   type StatSheetState,
 } from "./progression/statGraph";
+export {
+  assertXpCurve,
+  defineXpCurve,
+  type XpCurve,
+  type XpCurveDef,
+  type XpGrowthRule,
+  type XpLevelStep,
+} from "./progression/xpCurve";
 export { type CellGrid } from "./puzzle/cellGrid";
 export { type ShapeTable } from "./puzzle/fallingPiece";
 export { createNameGenerator } from "./random/nameGen";

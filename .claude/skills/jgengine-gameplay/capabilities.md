@@ -188,6 +188,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `SystemDefinition` (interface) · `import { SystemDefinition } from "@jgengine/core/gameplay"`
 
+## gear-score — score a loadout from stat weights, level, rarity and slot coverage
+
+- `gearScore` (function) · `import { gearScore } from "@jgengine/core/gameplay"`
+
 ## group-credits — turn a flat list of credited things into ordered credit sections
 
 - `groupCredits` (function) · `import { groupCredits } from "@jgengine/core/game/credits"`
@@ -307,6 +311,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## loot-roller — roll items from one validated catalog while counting drops per rarity for a debug probe
 
 - `createLootRoller` (function) · `import { createLootRoller } from "@jgengine/core/gameplay"`
+
+## loot-score — split one stat block into per-stat weighted contributions
+
+- `lootStatContributions` (function) · `import { lootStatContributions } from "@jgengine/core/gameplay"`
+- `scoreLootStats` (function) · `import { scoreLootStats } from "@jgengine/core/gameplay"`
 
 ## loot-table — register loot tables and roll weighted randomized drops
 
@@ -548,6 +557,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createShopStock` (function) · `import { createShopStock } from "@jgengine/core/gameplay"`
 
+## skill-tree — spend, refuse and refund points over an authored tree with passives, actives and synergies
+
+- `createSkillTree` (function) · `import { createSkillTree } from "@jgengine/core/gameplay"`
+
 ## social-emotes — emotes and social interactions between nearby players
 
 - `createSocial` (function) · `import { createSocial } from "@jgengine/core/gameplay"`
@@ -680,3 +693,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## work-queued-jobs — list jobs waiting for a slot, in selection order
 
 - `queuedJobs` (function) · `import { queuedJobs } from "@jgengine/core/gameplay"`
+
+## xp-curve — resolve an authored xp growth rule into per-level thresholds, totals and a level cap
+
+- `defineXpCurve` (function) · `import { defineXpCurve } from "@jgengine/core/gameplay"`
