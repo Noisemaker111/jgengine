@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from "react";import { useFrame } from "@react-three/fiber";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";import { useFrame } from "@react-three/fiber";
 import { PresentationAssetBoundary } from "../presentationRecovery";
 import { PresentationRecoveredDraw, useRecoverableTexture } from "../presentationRecovery3d";
 import * as THREE from "three";
@@ -16,6 +16,7 @@ import type {
   RainEnvironmentDescriptor,
   SnowEnvironmentDescriptor,
   TerrainEnvironmentDescriptor,
+  TerrainMaterialMaps,
   WeatherEnvironmentDescriptor,
 } from "@jgengine/core/world/features";
 import {
@@ -39,7 +40,7 @@ import { GrassField } from "../terrain/GrassField";
 import { GrassCover } from "../terrain/GrassCover";
 import { CarvedTerrain, type CarvedTerrainProps } from "../terrain/CarvedTerrain";
 import { createTerrainDetailMaterial } from "../terrain/terrainDetailMaterial";
-import { MAX_TERRAIN_LAYER_MAPS, type TerrainLayerMap } from "../terrain/terrainDetailMaterial";
+import { MAX_TERRAIN_LAYER_MAPS, type TerrainDetailMaterialTextures, type TerrainLayerMap } from "../terrain/terrainDetailMaterial";
 import { useTerrainQuality } from "../terrain/terrainQuality";
 import { createTerrainPaintTextures, packTerrainPaintWeights, type TerrainPaintTextures } from "../terrain/terrainSurfaces";
 import { Ocean } from "../water/Ocean";
@@ -110,6 +111,89 @@ function TexturedTerrainGround({
 
 /** 1×1 white PNG: binds a valid sampler for a painted layer that has no scanned map. */
 const NO_LAYER_MAP = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
+
+/** The map roles a detail material samples, in the order the loader starts them. */
+function scanRoles(maps: TerrainMaterialMaps): readonly (readonly [keyof TerrainDetailMaterialTextures, string])[] {
+  return [
+    ["color", maps.color],
+    ["normal", maps.normal],
+    ...(maps.roughness === undefined ? [] : ([["roughness", maps.roughness]] as const)),
+    ...(maps.ao === undefined ? [] : ([["ao", maps.ao]] as const)),
+  ];
+}
+
+/**
+ * The same ground as {@link TexturedTerrainGround} for a scan the game pulled rather than shipped:
+ * the maps load straight through `THREE.TextureLoader`, so a missing one stays a warning instead of
+ * a suspense rejection that would take the view down, and the authored procedural ground renders
+ * until they answer.
+ */
+function TolerantTerrainGround({
+  detail,
+  layout,
+  layerMaps,
+  fallback,
+}: {
+  detail: ResolvedTerrainDetail;
+  layout: TerrainGroundLayout;
+  layerMaps?: readonly (TerrainLayerMap | undefined)[];
+  fallback: ReactNode;
+}) {
+  const maps = detail.material!.maps;
+  const roles = scanRoles(maps);
+  const key = roles.map(([role, url]) => `${role}:${url}`).join("|");
+  const [loaded, setLoaded] = useState<{ key: string; textures?: TerrainDetailMaterialTextures }>({ key });
+  useEffect(() => {
+    let active = true;
+    const textures: Partial<Record<keyof TerrainDetailMaterialTextures, THREE.Texture>> = {};
+    let pending = roles.length;
+    const loader = new THREE.TextureLoader();
+    for (const [role, url] of roles) {
+      loader.load(url, (texture) => {
+        if (!active) { texture.dispose(); return; }
+        texture.colorSpace = role === "color" ? THREE.SRGBColorSpace : THREE.NoColorSpace;
+        texture.wrapS = THREE.RepeatWrapping;
+        texture.wrapT = THREE.RepeatWrapping;
+        textures[role] = texture;
+        pending -= 1;
+        if (pending === 0) setLoaded({ key, textures: textures as TerrainDetailMaterialTextures });
+      }, undefined, () => {
+        if (!active) return;
+        active = false;
+        console.warn(`[jgengine] terrain detail maps did not load (${url}) — keeping the procedural ground. Pull the game's asset packs (\`bun run provision\`) to restore them.`);
+        setLoaded({ key });
+      });
+    }
+    return () => {
+      active = false;
+      for (const texture of Object.values(textures)) texture?.dispose();
+    };
+  }, [key]);
+  const quality = useTerrainQuality();
+  const material = useMemo(
+    () =>
+      loaded.key !== key || loaded.textures === undefined
+        ? undefined
+        : createTerrainDetailMaterial(detail, loaded.textures, { paint: layout.paint, quality, ...(layerMaps === undefined ? {} : { layerMaps }) }).material,
+    [detail, loaded, key, layout.paint, quality, layerMaps],
+  );
+  useEffect(() => () => material?.dispose(), [material]);
+  if (material === undefined) return <>{fallback}</>;
+  return (
+    <CarvedTerrain
+      field={layout.field}
+      size={layout.size}
+      segments={layout.segments}
+      colors={layout.colors}
+      heightRange={layout.heightRange}
+      paletteAt={layout.paletteAt}
+      center={layout.center}
+      roughness={0.94}
+      surfaceMaterial={material}
+    />
+  );
+}
+
 
 /**
  * Scanned color maps for up to {@link MAX_TERRAIN_LAYER_MAPS} painted terrain layers, loaded through
@@ -200,26 +284,14 @@ function TerrainGround({
   const layerMaps = useTerrainLayerMaps(paint);
   const proceduralMaterial = useMemo(
     () =>
-      resolvedDetail === undefined || resolvedDetail.material !== undefined
+      resolvedDetail === undefined || (resolvedDetail.material !== undefined && resolvedDetail.material.missing === "fail")
         ? undefined
         : createTerrainDetailMaterial(resolvedDetail, undefined, { paint, quality, ...(layerMaps === undefined ? {} : { layerMaps }) }).material,
     [resolvedDetail, paint, quality, layerMaps],
   );
   useEffect(() => () => proceduralMaterial?.dispose(), [proceduralMaterial]);
 
-  if (resolvedDetail?.material !== undefined) {
-    return (
-      <PresentationAssetBoundary>
-        <TexturedTerrainGround
-          detail={resolvedDetail}
-          layout={{ field, size, segments: terrain.segments, colors, heightRange, paletteAt, paint, center }}
-          {...(layerMaps === undefined ? {} : { layerMaps })}
-        />
-      </PresentationAssetBoundary>
-    );
-  }
-
-  return (
+  const proceduralGround = (
     <CarvedTerrain
       field={field}
       size={size}
@@ -233,6 +305,27 @@ function TerrainGround({
       surfaceMaterial={proceduralMaterial}
     />
   );
+
+  if (resolvedDetail?.material !== undefined) {
+    const textured = (
+      <TexturedTerrainGround
+        detail={resolvedDetail}
+        layout={{ field, size, segments: terrain.segments, colors, heightRange, paletteAt, paint, center }}
+        {...(layerMaps === undefined ? {} : { layerMaps })}
+      />
+    );
+    if (resolvedDetail.material.missing === "fail") return <PresentationAssetBoundary>{textured}</PresentationAssetBoundary>;
+    return (
+      <TolerantTerrainGround
+        detail={resolvedDetail}
+        layout={{ field, size, segments: terrain.segments, colors, heightRange, paletteAt, paint, center }}
+        {...(layerMaps === undefined ? {} : { layerMaps })}
+        fallback={proceduralGround}
+      />
+    );
+  }
+
+  return proceduralGround;
 }
 
 function areaCenter(area: { position?: readonly [number, number] }): readonly [number, number] {
