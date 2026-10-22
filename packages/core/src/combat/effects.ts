@@ -110,6 +110,27 @@ export function resolveAreaTargets(
   return targets;
 }
 
+/**
+ * One effect application that drained a target's pools, as an announcer needs it. The effect path
+ * has no damage table, so the caller names the channel (`effect`) and reads health its own way.
+ */
+export interface EffectDamageApplication {
+  /** The entity that took the drain. */
+  target: string;
+  /** Who dealt it: the effect's `from` instance id (attacker, hazard, projectile owner). */
+  source: string;
+  /** The effect id that landed (`"damage"`, `"bullet"`, `"fire"`). */
+  effect: string;
+  /** Magnitude before receive modifiers and area falloff. */
+  incoming: number;
+  /** Magnitude drained after modifiers, falloff and available pool headroom. */
+  dealt: number;
+  /** The last pool's current after the drain — the pool whose exhaustion is `lethal`. */
+  remaining: number | null;
+  /** True when the last pool reached its minimum. */
+  lethal: boolean;
+}
+
 export interface EffectSystemDeps {
   resolveReceive(instanceId: string): ReceiveMap | null | undefined;
   /** Preferred portable bridge to caller-owned resource state. */
@@ -129,6 +150,11 @@ export interface EffectSystemDeps {
    */
   resolveSlainIdentity?(instanceId: string): SlainIdentity | null | undefined;
   onLethal?(instanceId: string, ctx: LethalContext): void;
+  /**
+   * Called once per target a draining effect lands on, after its pools changed and before
+   * {@link onLethal} despawns it. Restorative applications (`via.amount` below zero) stay silent.
+   */
+  onDamage?(application: EffectDamageApplication): void;
 }
 
 export interface EffectSystem {
@@ -225,6 +251,20 @@ export function createEffectSystem(deps: EffectSystemDeps): EffectSystem {
     const drainMagnitude = modifiedDrainMagnitude(baseDrainMagnitude(effect, via) * scale, rule);
     if (canReceive(instanceId, effect, drainMagnitude) !== null) return null;
     const result = drainPools(instanceId, effect, rule, drainMagnitude);
+    if (drainMagnitude > 0 && deps.onDamage !== undefined) {
+      let dealt = 0;
+      for (const delta of result.applied) if (delta.delta < 0) dealt -= delta.delta;
+      const lastStatId = rule.order[rule.order.length - 1];
+      deps.onDamage({
+        target: instanceId,
+        source: from,
+        effect,
+        incoming: drainMagnitude,
+        dealt,
+        remaining: statPools.get(instanceId, lastStatId)?.current ?? null,
+        lethal: result.lethal,
+      });
+    }
     if (result.lethal) {
       // Capture identity before onLethal, which runs the death system and despawns the target.
       const slain = deps.resolveSlainIdentity?.(instanceId);

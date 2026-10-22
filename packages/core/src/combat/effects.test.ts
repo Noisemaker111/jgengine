@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import {
   createEffectSystem,
+  type EffectDamageApplication,
   type EffectSystemDeps,
   type LethalContext,
   type ReceiveMap,
@@ -24,6 +25,7 @@ function createWorld(
     stats[instanceId] = seedStatValues(entity.stats);
   }
   const lethalCalls: { instanceId: string; ctx: LethalContext }[] = [];
+  const damageCalls: EffectDamageApplication[] = [];
   const deps: EffectSystemDeps = {
     resolveReceive: (instanceId) => entities[instanceId]?.receive,
     resolveStats: (instanceId) => stats[instanceId],
@@ -38,9 +40,10 @@ function createWorld(
       positionOf: (instanceId) => entities[instanceId]?.position,
     },
     onLethal: (instanceId, ctx) => lethalCalls.push({ instanceId, ctx }),
+    onDamage: (application) => damageCalls.push(application),
     ...(overrides?.drainStatByEffect ? { drainStatByEffect: overrides.drainStatByEffect } : {}),
   };
-  return { system: createEffectSystem(deps), stats, lethalCalls };
+  return { system: createEffectSystem(deps), stats, lethalCalls, damageCalls };
 }
 
 describe("effect system", () => {
@@ -364,5 +367,52 @@ describe("effect system", () => {
     );
     system.applyEffect({ from: "p", effect: "damage", via: { amount: 10 }, at: [0, 0, 0], radius: 5, los: false });
     expect(stats["hidden"]!["health"]!.current).toBe(90);
+  });
+});
+
+describe("damage announcements", () => {
+  test("announces one drained application with source, dealt and remaining", () => {
+    const { system, damageCalls, stats } = createWorld({
+      enemy: {
+        stats: { shield: { max: 15 }, health: { max: 80 } },
+        receive: { bullet: { order: ["shield", "health"] } },
+      },
+    });
+    system.applyEffect({ from: "raider:1", to: "enemy", effect: "bullet", via: { amount: 25 } });
+
+    expect(damageCalls).toEqual([{
+      target: "enemy",
+      source: "raider:1",
+      effect: "bullet",
+      incoming: 25,
+      dealt: 25,
+      remaining: 70,
+      lethal: false,
+    }]);
+    expect(stats["enemy"]!["health"]!.current).toBe(70);
+  });
+
+  test("counts receive modifiers as absorbed and a clamped hit as one lethal application", () => {
+    const { system, damageCalls } = createWorld({
+      enemy: {
+        stats: { health: { max: 10 } },
+        receive: { damage: { order: ["health"], modifiers: { armor: 0.25 } } },
+      },
+    });
+    system.applyEffect({ from: "hazard", to: "enemy", effect: "damage", via: { amount: 100 } });
+
+    expect(damageCalls).toHaveLength(1);
+    expect(damageCalls[0]).toMatchObject({ incoming: 75, dealt: 10, remaining: 0, lethal: true });
+  });
+
+  test("stays silent for a restorative application", () => {
+    const { system, damageCalls, stats } = createWorld({
+      ally: { stats: { health: { max: 30 } }, receive: { heal: { order: ["health"] } } },
+    });
+    stats["ally"]!["health"] = { current: 10, max: 30, min: 0 };
+    system.applyEffect({ from: "medic", to: "ally", effect: "heal", via: { amount: -5 } });
+
+    expect(stats["ally"]!["health"]!.current).toBe(15);
+    expect(damageCalls).toEqual([]);
   });
 });
