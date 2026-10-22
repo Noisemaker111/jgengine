@@ -9,6 +9,8 @@ export type ClipRole =
   | "idle"
   | "walk"
   | "run"
+  | "strafe"
+  | "backward"
   | "attack"
   | "hit"
   | "death"
@@ -37,6 +39,8 @@ const ROLE_PRIORITY: readonly ClipRole[] = [
   "spawn",
   "interact",
   "cheer",
+  "strafe",
+  "backward",
   "run",
   "walk",
   "idle",
@@ -48,6 +52,8 @@ export const DEFAULT_CLIP_ROLE_TABLE: ClipRoleTable = {
     idle: ["idle"],
     walk: ["walk"],
     run: ["run", "sprint", "jog"],
+    strafe: ["strafe"],
+    backward: ["backward", "backpedal"],
     attack: ["attack", "punch", "slash", "shoot", "chop", "stab", "cast", "swing", "strike", "kick", "throw"],
     hit: ["hit", "receive", "impact", "hurt", "damage"],
     death: ["death", "die", "dead", "dying"],
@@ -126,11 +132,20 @@ function oneShotSpec(variants: string[] | undefined): string | string[] | undefi
   return variants.length === 1 ? variants[0] : variants;
 }
 
+/** Which side a strafe clip covers, read from its own name; `undefined` when the name names no side. */
+function strafeSide(name: string): "left" | "right" | undefined {
+  const lower = name.toLowerCase();
+  if (lower.includes("left")) return "left";
+  if (lower.includes("right")) return "right";
+  return undefined;
+}
+
 /**
  * Build the default `ModelConfig.animation` for a rigged asset from its catalog clip names:
- * speed-driven idle/walk/run states plus hit/death/attack one-shots where identifiable. Returns
- * `undefined` when no idle clip is identifiable — an ambiguous rig renders its bind pose rather
- * than guessing. Walk falls back to idle when the pack has no walk clip.
+ * speed-driven idle/walk/run states plus hit/death/attack one-shots where identifiable, and the
+ * lateral/backward states when the pack names them (KayKit's `Running_Strafe_Left`,
+ * `Walking_Backwards`). Returns `undefined` when no idle clip is identifiable - an ambiguous rig
+ * renders its bind pose rather than guessing. Walk falls back to idle when the pack has no walk clip.
  *
  * @capability clip-roles derive a complete default animation config from a rigged asset's clip names
  */
@@ -150,8 +165,22 @@ export function defaultAnimationForClips(
   if (hit !== undefined) oneShots.hit = hit;
   if (death !== undefined) oneShots.death = death;
   if (attack !== undefined) oneShots.attack = attack;
+  let strafeLeft: string | undefined;
+  let strafeRight: string | undefined;
+  for (const clip of roles.strafe ?? []) {
+    const side = strafeSide(clip);
+    if (side === "left") strafeLeft ??= clip;
+    else if (side === "right") strafeRight ??= clip;
+  }
   return {
-    states: { idle, walk, ...(run === undefined ? {} : { run }) },
+    states: {
+      idle,
+      walk,
+      ...(run === undefined ? {} : { run }),
+      ...(strafeLeft === undefined ? {} : { strafeLeft }),
+      ...(strafeRight === undefined ? {} : { strafeRight }),
+      ...(roles.backward?.[0] === undefined ? {} : { backward: roles.backward[0] }),
+    },
     ...(Object.keys(oneShots).length === 0 ? {} : { oneShots }),
   };
 }
