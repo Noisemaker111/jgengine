@@ -4,14 +4,15 @@ import type { NarrativeBatch, NarrativeCanon } from "../../../core/src/game/narr
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import type * as Snippet from "./snippets/narrative-authoring";
 
 const compiled = await Bun.build({
-  entrypoints: [new URL("./snippets/narrative-authoring.ts", import.meta.url).pathname],
+  entrypoints: [fileURLToPath(new URL("./snippets/narrative-authoring.ts", import.meta.url))],
   target: "bun",
   plugins: [{ name: "recipe-sdk", setup(build) {
     build.onResolve({ filter: /^@jgengine\/core\/game\/narrativeAuthoring$/ }, () => ({
-      path: new URL("../../../core/src/game/narrativeAuthoring.ts", import.meta.url).pathname,
+      path: fileURLToPath(new URL("../../../core/src/game/narrativeAuthoring.ts", import.meta.url)),
     }));
   } }],
 });

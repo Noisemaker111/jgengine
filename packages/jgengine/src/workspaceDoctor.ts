@@ -37,7 +37,10 @@ export function inspectWorkspaceSdkInstall(directory: string, options: Partial<W
     coverage: { complete: false, patternsAttempted: 0, directoryEntriesExamined: 0, manifestReadAttempts: 0, limits, patterns: [], errors: [], exclusions: [] },
   };
   const coverage = report.coverage;
-  const fail = (message: string) => { if (!coverage.errors.includes(message)) coverage.errors.push(message); };
+  const fail = (message: string) => {
+    const text = sep === "/" ? message : message.split(sep).join("/");
+    if (!coverage.errors.includes(text)) coverage.errors.push(text);
+  };
   try { report.root = realpathSync(report.root); }
   catch { fail(`workspace root does not exist: ${report.root}`); return report; }
   const seen = new Set<string>();
