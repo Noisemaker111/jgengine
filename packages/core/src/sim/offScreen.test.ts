@@ -4,7 +4,7 @@ import { createNavRuntime, type NavMeshData } from "@jgengine/core/world";
 import type { NeedDefinition } from "./needs";
 import { createNearAgents } from "./nearAgents";
 import { createOffScreenWorld, type OffScreenPolicy } from "./offScreen";
-import { resolveRoutine } from "./routine";
+import { resolveRoutine, type RoutineTimeline } from "./routine";
 
 const NEEDS: readonly NeedDefinition[] = [{ id: "hunger", max: 100, rate: 0.02 }];
 
@@ -119,6 +119,82 @@ describe("createOffScreenWorld", () => {
     now = advance(scene, now, now + 1, viewer);
     const returned = scene.crowd.view(id)!;
     expect(Math.hypot(returned.position[0] - cheapHeld[0], returned.position[2] - cheapHeld[2])).toBeLessThan(0.05);
+
+    scene.world.dispose();
+    scene.nav.dispose();
+  });
+
+  test("fractional stop times never stall a far resident: ten minutes of its day completes", () => {
+    const routine = resolveRoutine({
+      cycleSeconds: 600,
+      stops: [
+        { place: "home", arriveAt: 0, activity: "sleep", travelSeconds: 0 },
+        { place: "work", arriveAt: 3.3, activity: "work", travelSeconds: 1.7 },
+        { place: "diner", arriveAt: 120.1, activity: "meal", travelSeconds: 2.9 },
+        { place: "home", arriveAt: 400.7, activity: "home", travelSeconds: 0.3 },
+      ],
+    });
+
+    // Fail on the precision bug here, before a tick can spin inside refreshCheap.
+    let probe = 0;
+    for (let step = 0; step < 8; step += 1) {
+      const next = routine.nextChangeAfter(probe);
+      expect(next).toBeGreaterThan(probe);
+      probe = next;
+    }
+
+    const scene = build({ residents: [{ id: "dial", home: [6, 0, 6], routine, needs: { hunger: 80 } }] });
+    const far = [5000, 0, 0] as const;
+    const dt = 1 / 30;
+    let now = 0;
+    let ticks = 0;
+    const drive = (to: number): void => {
+      while (now < to && ticks < 20_000) {
+        now = Math.min(to, now + dt);
+        ticks += 1;
+        scene.world.tick(dt, now, far);
+      }
+      expect(now).toBe(to);
+    };
+
+    drive(60);
+    expect(scene.world.agent("dial")!.mode).toBe("far");
+    expect(scene.world.agent("dial")!.place).toBe("work");
+    expect(scene.world.agent("dial")!.activity).toBe("work");
+
+    drive(150);
+    expect(scene.world.agent("dial")!.place).toBe("diner");
+    expect(scene.world.agent("dial")!.activity).toBe("meal");
+
+    drive(600);
+    expect(ticks).toBeLessThan(20_000);
+    expect(scene.world.stats().farRefreshes).toBeGreaterThan(0);
+    expect(scene.world.needsAt("dial", 600)!["hunger"]).toBeCloseTo(80 - 0.02 * 600, 2);
+
+    scene.world.dispose();
+    scene.nav.dispose();
+  });
+
+  test("a routine that cannot name a later change stops the far catch-up instead of spinning", () => {
+    const real = resolveRoutine({
+      cycleSeconds: 600,
+      stops: [
+        { place: "home", arriveAt: 0, travelSeconds: 0 },
+        { place: "work", arriveAt: 300, travelSeconds: 0 },
+      ],
+    });
+    const frozen: RoutineTimeline = { ...real, nextChangeAfter: (time) => time };
+    const scene = build({ residents: [{ id: "stuck", home: [6, 0, 6], routine: frozen, needs: { hunger: 80 } }] });
+    const far = [5000, 0, 0] as const;
+
+    let now = 0;
+    for (let i = 0; i < 60; i += 1) {
+      now += 1 / 30;
+      scene.world.tick(1 / 30, now, far);
+    }
+
+    expect(scene.world.agent("stuck")!.mode).toBe("far");
+    expect(scene.world.needsAt("stuck", now)!["hunger"]).toBeCloseTo(80 - 0.02 * now, 2);
 
     scene.world.dispose();
     scene.nav.dispose();

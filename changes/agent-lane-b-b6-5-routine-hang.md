@@ -1,0 +1,4 @@
+### Fixed
+
+- `RoutineTimeline.nextChangeAfter` (`@jgengine/core/sim/routine`) no longer answers with the time it was given when a stop time is fractional. `time` arrives as a whole number of cycles plus a stop time, so its low bits are already rounded; a boundary that rounding put a hair behind `time` read as a change still to come, and the answer repeated, so anything that stepped by it looped forever. Boundaries are compared in absolute time within a few ulps of `time`, so every answer is strictly later. `phaseAt` uses the same tolerance, so a phase that starts exactly on a rounded boundary reports the new phase instead of the walk that led to it.
+- `createOffScreenWorld.refreshCheap` stops catching up instead of spinning if a schedule ever again fails to name a later change: it decays needs to `now`, holds the phase and retries one cycle later.
