@@ -1,4 +1,5 @@
 import type { KeyValueStorage } from "../game/keyValueStore";
+import { findEffect } from "../vfx/effectLibrary";
 import { cloneEditorDocument, decodeEditorDocument, editorDocumentSize } from "./document";
 import type { EditorDocument } from "./types";
 import { isScatterPath } from "../world/scatterRegion";
@@ -92,7 +93,8 @@ export function validateCreatorDocument(value: unknown, policy: CreatorPolicy): 
     const emitterParticles = (simulation.emitters ?? []).reduce((total, emitter) => {
       const child = emitter.options?.collisionEffect;
       if (child !== undefined) maxChildParticles = Math.max(maxChildParticles, Math.min(child.count, child.config.max ?? child.count));
-      return total + (emitter.config.max ?? 512);
+      const authored = emitter.config ?? (emitter.effect === undefined ? undefined : findEffect(emitter.effect)?.config);
+      return total + (authored?.max ?? 512);
     }, 0);
     // The renderer retains up to 32 concurrent child bursts, shared by all standing emitters.
     if (weatherParticles + emitterParticles + 32 * maxChildParticles > (policy.maxSimulationParticles ?? 0)) throw new Error("Scene exceeds particle budget");

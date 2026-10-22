@@ -343,7 +343,7 @@
 
 ## @jgengine/core/editor/simulation
 
-- `AuthoredEmitter` (interface): interface AuthoredEmitter — A named emitter authored in metres, with game-owned appearance and attachment ids.
+- `AuthoredEmitter` (interface): interface AuthoredEmitter — A named emitter authored in metres: either a library effect name or a full config.
 - `AuthoredFireArea` (interface): interface AuthoredFireArea — A bounded fire grid; fuel and damage policy remain game content.
 - `AuthoredFlockHabitat` (interface): interface AuthoredFlockHabitat — An authored habitat selects a game species and optionally follows a document path.
 - `EditorSimulation` (interface): interface EditorSimulation — Authored simulation inputs. Runtime particles, heat, accumulation and actors save separately.

@@ -312,6 +312,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `tickDrivableVehicle` (function) · `import { tickDrivableVehicle } from "@jgengine/core/world"`
 
+## effect-resolve — turn a named library effect into emitter config, GPU sprite texture, blending and budget priority with per-call overrides
+
+- `resolveEffect` (function) · `import { resolveEffect } from "@jgengine/core/vfx/effectLibrary"`
+
 ## elevation-readout — cursor height and delta-from-reference feedback
 
 - `sampleElevation` (function) · `import { sampleElevation } from "@jgengine/core/world"`
@@ -339,6 +343,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## feedback-mixer — map sim telemetry to camera, audio and haptic parameters through curves, smoothing and threshold events
 
 - `createFeedbackMixer` (function) · `import { createFeedbackMixer } from "@jgengine/core/vfx/feedbackMixer"`
+
+## find-effect — look up one named particle effect in the shared library, or undefined when unknown
+
+- `findEffect` (function) · `import { findEffect } from "@jgengine/core/vfx/effectLibrary"`
 
 ## fire-input — bind a key or mouse button to a named action that runs the same-named command with the aim; repeatMs auto-fires while held
 
@@ -669,6 +677,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `applyRotationPolicy` (function) · `import { applyRotationPolicy } from "@jgengine/core/world"`
 - `parseRotationPolicy` (function) · `import { parseRotationPolicy } from "@jgengine/core/world"`
 - `snapHeading` (function) · `import { snapHeading } from "@jgengine/core/world"`
+
+## plan-particle-budget — cap live particles to a graphics tier and drop whole effects lowest-priority-first when over budget
+
+- `planParticleBudget` (function) · `import { planParticleBudget } from "@jgengine/core/vfx/particleBudget"`
 
 ## pole-line — editor-authorable poles + sagging cables along a path
 

@@ -3,19 +3,20 @@ import { useEffect, useRef, useState, type ReactElement } from "react";
 import type { Group } from "three";
 
 import { devtools } from "@jgengine/core/devtools/devtools";
+import { DEFAULT_GRAPHICS_PROFILES } from "@jgengine/core/settings/graphicsProfile";
 import type { GraphicsQuality } from "@jgengine/core/settings/settingsModel";
 import { createParticleSystem, type ParticleEvent, type ParticleSystem, type Vec3 } from "@jgengine/core/vfx/particles";
+import { planParticleBudget } from "@jgengine/core/vfx/particleBudget";
 import type { ParticleCollisionEffect, ParticleEmitterSpec, ParticleRenderHint } from "@jgengine/core/vfx/particleDirector";
 import { useGameContext } from "@jgengine/react/provider";
 
 import { ParticleField, type ParticleFieldMetrics } from "../vfx/ParticleField";
 
-const QUALITY_POOL_CAP: Record<GraphicsQuality, number> = { low: 128, medium: 256, high: 512, ultra: 1024 };
-
 /** The requested visual pool clamped to the graphics tier. */
 export function resolveParticleBudget(quality: GraphicsQuality, requested: number | undefined, particleCap?: number): number {
-  const rawCap = particleCap ?? QUALITY_POOL_CAP[quality];
-  const cap = Number.isFinite(rawCap) ? Math.max(1, Math.floor(rawCap)) : QUALITY_POOL_CAP[quality];
+  const tier = DEFAULT_GRAPHICS_PROFILES[quality].particleCap;
+  const rawCap = particleCap ?? tier;
+  const cap = Number.isFinite(rawCap) ? Math.max(1, Math.floor(rawCap)) : tier;
   return Number.isFinite(requested) ? Math.max(1, Math.floor(Math.min(requested!, cap))) : cap;
 }
 
@@ -70,11 +71,12 @@ export function resolveParticleDelta(previousTime: number, gameTime: number): nu
 }
 
 /** Renders the existing director and pooled simulator; named bursts reuse the standing pool. @internal */
-export function WorldParticles({ quality, particleCap, diagnostics = false }: { quality: GraphicsQuality; particleCap?: number; diagnostics?: boolean }): ReactElement {
+export function WorldParticles({ quality, particleCap, particleBudget, diagnostics = false }: { quality: GraphicsQuality; particleCap?: number; particleBudget?: number; diagnostics?: boolean }): ReactElement {
   const ctx = useGameContext();
   const emittersRef = useRef(new Map<string, EmitterInstance>());
   const burstsRef = useRef<BurstInstance[]>([]);
   const previousTime = useRef(ctx.time.now());
+  const budget = useRef<{ cap: number; particles: number; dropped: string[] }>({ cap: 0, particles: 0, dropped: [] });
   const timing = useRef({ poolsCreated: 0, poolsRetired: 0, updateSamples: 0, lastUpdateMs: 0, totalUpdateMs: 0, maxUpdateMs: 0, droppedCatchupSeconds: 0 });
   const resources = useRef<ParticleFieldMetrics>({ fieldsMounted: 0, fieldsUnmounted: 0, liveFields: 0, attributeBytes: 0, totalUploadMs: 0, maxUploadMs: 0, uploadSamples: 0 });
   const [, setGeneration] = useState(0);
@@ -140,10 +142,20 @@ export function WorldParticles({ quality, particleCap, diagnostics = false }: { 
     const emitters = emittersRef.current;
     function sync(): void {
       let changed = false;
+      const cap = resolveParticleBudget(quality, undefined, particleBudget ?? DEFAULT_GRAPHICS_PROFILES[quality].particleBudget);
+      const specs = ctx.particles.emitters();
+      const queued = ctx.particles.drainBursts();
+      const plan = planParticleBudget([
+        ...specs.map((spec) => ({ id: spec.id, priority: spec.priority ?? 0, requested: resolveParticleBudget(quality, spec.config.max, particleCap) })),
+        ...queued.map((burst) => ({ id: `burst:${burst.seq}`, priority: burst.priority ?? 0, requested: resolveParticleBudget(quality, Math.min(burst.count, burst.config.max ?? burst.count), particleCap) })),
+      ], cap);
+      const granted = new Map(plan.grants.map((grant) => [grant.id, grant.particles]));
+      budget.current = { cap, particles: plan.particles, dropped: plan.dropped };
       const liveIds = new Set<string>();
-      for (const spec of ctx.particles.emitters()) {
+      for (const spec of specs) {
+        const poolMax = granted.get(spec.id) ?? 0;
+        if (poolMax <= 0) { emitters.delete(spec.id); continue; }
         liveIds.add(spec.id);
-        const poolMax = resolveParticleBudget(quality, spec.config.max, particleCap);
         const current = emitters.get(spec.id);
         if (current === undefined || current.poolMax !== poolMax) {
           const next: EmitterInstance = { spec, poolMax, group: current?.group ?? null, pose: pose(spec),
@@ -170,14 +182,15 @@ export function WorldParticles({ quality, particleCap, diagnostics = false }: { 
         timing.current.poolsRetired++;
         changed = true;
       }
-      for (const burst of ctx.particles.drainBursts()) {
+      for (const burst of queued) {
         const named = burst.emitterId === undefined ? undefined : emitters.get(burst.emitterId);
         if (named !== undefined) {
           syncPose(named);
           named.system.emit(burst.count);
           continue;
         }
-        const poolMax = resolveParticleBudget(quality, Math.min(burst.count, burst.config.max ?? burst.count), particleCap);
+        const poolMax = granted.get(`burst:${burst.seq}`) ?? 0;
+        if (poolMax <= 0) continue;
         const spec: ParticleEmitterSpec = { id: `burst:${burst.seq}`, config: burst.config, ...burst.options };
         const resolved = pose(spec);
         const system = createParticleSystem({ ...burst.config, rate: 0, max: poolMax, seed: burst.config.seed ?? burst.seq }, { collision: collisionFor(() => spec, resolved), acceleration: accelerationFor(() => spec, resolved) });
@@ -185,7 +198,7 @@ export function WorldParticles({ quality, particleCap, diagnostics = false }: { 
           const base = spec.follow === undefined ? burst.config.position ?? [0, 0, 0] : [0, 0, 0];
           system.configure({ position: [resolved.position[0] + base[0], resolved.position[1] + base[1], resolved.position[2] + base[2]] });
         }
-        system.emit(burst.count);
+        system.emit(Math.min(burst.count, poolMax));
         timing.current.poolsCreated++;
         burstsRef.current.push({ seq: burst.seq, system, blending: burst.blending ?? "additive", render: spec.render, collisionEffect: spec.collisionEffect,
           position: spec.space === "local" ? resolved.position : [0, 0, 0], rotationY: spec.space === "local" ? resolved.yaw : 0 });
@@ -197,7 +210,7 @@ export function WorldParticles({ quality, particleCap, diagnostics = false }: { 
     sync();
     const off = ctx.particles.subscribe(sync);
     return off;
-  }, [ctx, quality, particleCap]);
+  }, [ctx, quality, particleCap, particleBudget]);
 
   useEffect(() => {
     if (!diagnostics) return;
@@ -213,6 +226,7 @@ export function WorldParticles({ quality, particleCap, diagnostics = false }: { 
       for (const burst of burstsRef.current) read(burst.system);
       const sample = timing.current, fields = resources.current;
       return { scope: "WorldParticles", emitters: emittersRef.current.size, bursts: burstsRef.current.length, count, capacity, renderBufferBytes,
+        cap: budget.current.cap, budgetParticles: budget.current.particles, dropped: budget.current.dropped.length, droppedIds: budget.current.dropped,
         poolsCreated: sample.poolsCreated, poolsRetired: sample.poolsRetired,
         updateSamples: sample.updateSamples, lastUpdateMs: sample.lastUpdateMs, maxUpdateMs: sample.maxUpdateMs,
         avgUpdateMs: sample.updateSamples === 0 ? 0 : sample.totalUpdateMs / sample.updateSamples,

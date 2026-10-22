@@ -171,6 +171,7 @@ export const gameRegistry: GameRegistry = {
     : import("./demo/hostedAuthorityDemo").then((module) => module.hostedAuthorityDemoGame),
   "material-showcase": () => import("./demo/materialShowcase").then((module) => module.materialShowcaseGame),
   "material-library": () => import("./demo/materialLibrary").then((module) => module.materialLibraryGame),
+  "vfx-library": () => import("./demo/vfxLibrary").then((module) => module.vfxLibraryGame),
   "foliage-wind": () => import("./demo/foliageWindDemo").then((module) => module.foliageWindGame),
   decals: () => import("./demo/decalShowcase").then((module) => module.decalShowcaseGame),
   "terrain-layers": () => import("./demo/terrainLayersDemo").then((module) => module.terrainLayersGame),  demo: () => import("./demo/demoGame").then((module) => module.demoGame),

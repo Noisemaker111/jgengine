@@ -6,7 +6,7 @@ import type { EditorDocument, EditorVolume } from "../editor/types";
 import { createEmptyEditorDocument } from "../editor/document";
 import { createAuthoredWeather, createWeatherExposure, type AuthoredWeatherSample, type WeatherExposure, type WeatherExposureSnapshot, type WeatherExposureSurface } from "./authoredWeather";
 import { createFireGrid, type FireCell, type FireGrid } from "./weather";
-import type { ParticleDirector } from "../vfx/particleDirector";
+import type { EffectRequest, ParticleDirector } from "../vfx/particleDirector";
 import type { Vec3 } from "../vfx/particles";
 
 /** A watched surface is sampled in metres. Its accumulation survives runtime save/restore. */
@@ -145,7 +145,11 @@ export function createAuthoredSimulation(options: { document?: EditorDocument; t
       const id = `authored:${emitter.id}`;
       const previous = config.emitters?.find((entry) => entry.id === emitter.id);
       if (emitterIds.includes(id) && JSON.stringify(previous) === JSON.stringify(emitter)) continue;
-      options.particles?.attach(id, { ...emitter.config, position: [emitter.position.x, emitter.position.y, emitter.position.z] }, { ...emitter.options, ...(emitter.fireAreaId === undefined ? {} : { active: emitter.options?.active !== false && nextFires.get(emitter.fireAreaId)!.burning > 0 }) });
+      const position: Vec3 = [emitter.position.x, emitter.position.y, emitter.position.z];
+      const fire = emitter.fireAreaId === undefined ? undefined : { active: emitter.options?.active !== false && nextFires.get(emitter.fireAreaId)!.burning > 0 };
+      const request: EffectRequest = { position, options: { ...emitter.options, ...(fire ?? {}) } };
+      if (emitter.effect !== undefined) options.particles?.attachEffect(id, emitter.effect, request);
+      else options.particles?.attach(id, { ...emitter.config, position }, request.options);
     }
     emitterIds = nextEmitterIds;
     document = nextDocument;

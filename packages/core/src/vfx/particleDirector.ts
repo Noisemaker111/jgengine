@@ -1,3 +1,4 @@
+import { effectNames, resolveEffect, type EffectOverride } from "./effectLibrary";
 import { validateEmitterConfig, type EmitterConfig, type ParticleEvent, type Vec3 } from "./particles";
 
 /** How a particle effect composites on screen: `additive` for sparks/fire/glow, `normal` for smoke/dust. */
@@ -20,6 +21,8 @@ export interface ParticleBurst {
   blending?: ParticleBlendHint;
   emitterId?: string;
   options?: ParticleAttachOptions;
+  /** Graphics-tier drop order; higher survives. Default 0. */
+  priority?: number;
 }
 
 /** A bounded collision child effect; children cannot spawn further collision children. */
@@ -44,6 +47,8 @@ export interface ParticleAttachOptions {
   collisionEffect?: ParticleCollisionEffect;
   /** Explicit environment influence: windResponse in 1/second, maxAcceleration in metres/second², both 0..1e12. */
   environment?: { windResponse?: number; maxAcceleration?: number; mask?: number };
+  /** Graphics-tier drop order: higher survives, lower is dropped first. Default 0. */
+  priority?: number;
 }
 
 /** A keyed continuous emitter owned by the director until detached. */
@@ -53,6 +58,12 @@ export interface ParticleEmitterSpec extends ParticleAttachOptions {
   follow?: string;
   offset?: Vec3;
   blending?: ParticleBlendHint;
+}
+
+/** A library effect played by name: where it plays, plus per-call overrides. */
+export interface EffectRequest extends EffectOverride {
+  /** Entity id a standing emitter tracks each frame (plus `offset`). */
+  follow?: string;
 }
 
 /** A cosmetic simulation event, labelled with its emitting effect. */
@@ -93,6 +104,12 @@ export interface ParticleDirector {
   stop(id: string): void;
   /** Emit once through a named emitter's existing pool, including when stopped. */
   burstNamed(id: string, count: number): void;
+  /** Play a library effect by name once, as a one-shot burst at the request's position. */
+  play(name: string, request?: EffectRequest): void;
+  /** Create or replace a standing emitter from a library effect name under `id`. */
+  attachEffect(id: string, name: string, request?: EffectRequest): void;
+  /** The named effects a caller can play, from the shared library. */
+  effectNames(): readonly string[];
   /** Renderer-to-game cosmetic event exchange, bounded by the director's event limit. */
   reportEvents(id: string, events: readonly ParticleEvent[]): void;
   drainEvents(): ParticleDirectorEvent[];
@@ -136,6 +153,7 @@ export function createParticleDirector(options: ParticleDirectorOptions = {}): P
     bursts.push({ seq: nextSeq++, config: structuredClone(config), count: wanted,
       ...(blending === undefined ? {} : { blending }),
       ...(emitterId === undefined ? {} : { emitterId }),
+      priority: Number.isFinite(attachOptions?.priority) ? attachOptions!.priority! : 0,
       ...(attachOptions === undefined ? {} : { options: structuredClone(attachOptions) }) });
     notify();
   }
@@ -174,6 +192,19 @@ export function createParticleDirector(options: ParticleDirectorOptions = {}): P
       const { id: _, config, ...options } = spec;
       queue(config, count, spec.blending, id, options);
     },
+    play(name, request) {
+      const effect = resolveEffect(name, request);
+      const follow = request?.follow ?? effect.options.follow;
+      queue(effect.config, effect.burst, effect.blending, undefined, { ...effect.options, ...(follow === undefined ? {} : { follow }) });
+    },
+    attachEffect(id, name, request) {
+      const effect = resolveEffect(name, request);
+      if (!emitters.has(id) && emitters.size >= maxEmitters) throw new RangeError(`Particle emitter capacity ${maxEmitters} exceeded by ${id}`);
+      const follow = request?.follow ?? effect.options.follow;
+      emitters.set(id, { id, config: effect.config, ...effect.options, ...(follow === undefined ? {} : { follow }) });
+      notify();
+    },
+    effectNames,
     reportEvents(id, next) {
       for (let i = 0, n = Math.min(next.length, maxEvents - events.length); i < n; i++) {
         events.push({ ...structuredClone(next[i]!), emitterId: id });
@@ -231,6 +262,7 @@ export function validateParticleAttachOptions(value: unknown): string[] {
   if (options.offset !== undefined && (!Array.isArray(options.offset) || options.offset.length !== 3 || options.offset.some((v) => typeof v !== "number" || !Number.isFinite(v)))) errors.push("offset must contain three finite numbers");
   if (options.space !== undefined && options.space !== "world" && options.space !== "local") errors.push("space must be world or local");
   if (options.active !== undefined && typeof options.active !== "boolean") errors.push("active must be boolean");
+  if (options.priority !== undefined && (typeof options.priority !== "number" || !Number.isFinite(options.priority))) errors.push("priority must be a finite number");
   const output = (render: unknown, blending: unknown, prefix: string) => {
     if (blending !== undefined && blending !== "normal" && blending !== "additive") errors.push(`${prefix}blending must be normal or additive`);
     if (render === undefined) return;

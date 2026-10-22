@@ -67,6 +67,23 @@ test("weather retuning preserves progressed fire and teardown releases authored 
   expect(ctx.particles.emitters()).toHaveLength(0);
 });
 
+test("an authored emitter names a library effect and inherits its config and budget priority", async () => {
+  const { createAuthoredSimulation } = await import("./authoredSimulation");
+  const { createParticleDirector } = await import("../vfx/particleDirector");
+  const { findEffect } = await import("../vfx/effectLibrary");
+  const director = createParticleDirector();
+  const named = { ...createEmptyEditorDocument(), simulation: { emitters: [{ id: "torch", position: { x: 2, y: 3, z: 4 }, effect: "fire/torch" }] } };
+  const runtime = createAuthoredSimulation({ document: named, timeSeconds: () => 0, particles: director });
+  const effect = findEffect("fire/torch")!;
+  const spec = director.emitters().find((entry) => entry.id === "authored:torch")!;
+  expect(spec.config.position).toEqual([2, 3, 4]);
+  expect(spec.config.max).toBe(effect.config.max);
+  expect(spec.priority).toBe(effect.priority);
+  expect(spec.render?.shape).toBe("flame");
+  runtime.dispose();
+  expect(director.emitters()).toHaveLength(0);
+});
+
 test("unrelated retunes preserve emitter identity and rejected capacity edits remain atomic", async () => {
   const { createAuthoredSimulation } = await import("./authoredSimulation");
   const { createParticleDirector } = await import("../vfx/particleDirector");
