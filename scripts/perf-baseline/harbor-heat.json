@@ -1,0 +1,178 @@
+{
+  "game": "harbor-heat",
+  "gpu": "Google Inc. (NVIDIA) ANGLE (NVIDIA, NVIDIA GeForce RTX 3070 (0x00002484) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+  "quality": "full",
+  "viewport": "1600x900",
+  "seconds": 6.2,
+  "at": 1792672324026,
+  "frame": {
+    "fps": 15.1,
+    "avgMs": 66.3,
+    "p95Ms": 83.3,
+    "maxMs": 83.4,
+    "samples": 91,
+    "longFrames": 91
+  },
+  "render": {
+    "draws": 9463,
+    "triangles": 4040796,
+    "geometries": 320,
+    "textures": 99,
+    "nodes": 13828,
+    "nodesSource": "scene-graph",
+    "scenes": 1
+  },
+  "gl": {
+    "programsLinked": 0,
+    "framebuffers": 0,
+    "buffers": 0,
+    "textures": 0,
+    "vertexArrays": 0,
+    "allocations": 0,
+    "residentPrograms": 60,
+    "total": {
+      "programsLinked": 61,
+      "framebuffers": 29,
+      "buffers": 2151,
+      "textures": 107,
+      "vertexArrays": 1068
+    },
+    "attached": true
+  },
+  "sim": {
+    "avgMs": 2.6,
+    "outsideMs": 61.7
+  },
+  "profile": {
+    "samplingUs": 200,
+    "seconds": 6.2,
+    "top": [
+      {
+        "fn": "(program)",
+        "at": "",
+        "selfMs": 708.1,
+        "selfPct": 11.4
+      },
+      {
+        "fn": "projectObject",
+        "at": ".vite/deps/chunk-W2JRLIAH.js:42136:27",
+        "selfMs": 532.7,
+        "selfPct": 8.6
+      },
+      {
+        "fn": "updateMatrixWorld",
+        "at": ".vite/deps/chunk-W2JRLIAH.js:8834:20",
+        "selfMs": 514,
+        "selfPct": 8.3
+      },
+      {
+        "fn": "before",
+        "at": "src/render/CascadedShadows.tsx:160:28",
+        "selfMs": 306.9,
+        "selfPct": 5
+      },
+      {
+        "fn": "renderObject",
+        "at": ".vite/deps/chunk-W2JRLIAH.js:37638:24",
+        "selfMs": 285.3,
+        "selfPct": 4.6
+      },
+      {
+        "fn": "update",
+        "at": ".vite/deps/chunk-W2JRLIAH.js:34736:18",
+        "selfMs": 283.4,
+        "selfPct": 4.6
+      },
+      {
+        "fn": "needsUpdate",
+        "at": ".vite/deps/chunk-W2JRLIAH.js:32992:23",
+        "selfMs": 277.9,
+        "selfPct": 4.5
+      },
+      {
+        "fn": "setProgram",
+        "at": ".vite/deps/chunk-W2JRLIAH.js:42392:24",
+        "selfMs": 220.5,
+        "selfPct": 3.6
+      },
+      {
+        "fn": "WebGLRenderer.renderBufferDirect",
+        "at": ".vite/deps/chunk-W2JRLIAH.js:41849:39",
+        "selfMs": 216.8,
+        "selfPct": 3.5
+      },
+      {
+        "fn": "multiplyMatrices",
+        "at": ".vite/deps/chunk-W2JRLIAH.js:7150:19",
+        "selfMs": 209.9,
+        "selfPct": 3.4
+      },
+      {
+        "fn": "traverse",
+        "at": ".vite/deps/chunk-W2JRLIAH.js:8778:11",
+        "selfMs": 208,
+        "selfPct": 3.4
+      },
+      {
+        "fn": "copyArray",
+        "at": ".vite/deps/chunk-W2JRLIAH.js:34986:19",
+        "selfMs": 138.9,
+        "selfPct": 2.2
+      },
+      {
+        "fn": "renderObject",
+        "at": ".vite/deps/chunk-W2JRLIAH.js:42285:26",
+        "selfMs": 138.3,
+        "selfPct": 2.2
+      },
+      {
+        "fn": "exports.jsxDEV",
+        "at": ".vite/deps/react_jsx-dev-runtime.js:239:32",
+        "selfMs": 126.8,
+        "selfPct": 2
+      },
+      {
+        "fn": "renderObjects",
+        "at": ".vite/deps/chunk-W2JRLIAH.js:42271:27",
+        "selfMs": 121.4,
+        "selfPct": 2
+      }
+    ]
+  },
+  "systems": {
+    "render/culling": {
+      "counters": {
+        "totalObjects": 862,
+        "visible": 354,
+        "preloaded": 440,
+        "culled": 508,
+        "rejectedByFrustum": 62,
+        "rejectedByDistance": 44,
+        "rejectedByOcclusion": 0
+      },
+      "timers": {
+        "spatialQueryMs": 0,
+        "cullingMs": 0.1
+      },
+      "state": "354/862 visible · 508 culled · 0.1ms"
+    }
+  },
+  "logs": {
+    "counts": {
+      "log": 0,
+      "info": 0,
+      "warn": 1,
+      "error": 0
+    },
+    "dropped": 0,
+    "severe": [
+      {
+        "at": 1792672289984,
+        "level": "warn",
+        "system": "console",
+        "message": "THREE.WebGLProgram: Program Info Log: (221,81-129): warning X4122: sum of 0.996094 and -2.98545e-017 cannot be represented accurately in double precision\n(220,37-61): warning X4122: sum of 1 and -1.49272e-017 cannot be represented accurately in double precision\n(221,82-106): warning X4122: sum of 1 and -1.49272e-017 cannot be represented accurately in double precision\n(220,37-61): warning X4122: s…"
+      }
+    ]
+  },
+  "telemetry": null
+}
