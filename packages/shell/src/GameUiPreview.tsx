@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
+import { useAccessibilitySettings } from "@jgengine/react/accessibilitySettings";
 import { GameProvider } from "@jgengine/react/provider";
 import { HudThemeRoot } from "@jgengine/react/hudThemeRoot";
 import { HudViewportProvider } from "@jgengine/react/hudViewport";
@@ -53,6 +54,7 @@ export function GameUiPreview({
   scenario?: UiPreviewScenario;
 }) {
   const [ctx, setCtx] = useState<GameContext | null>(null);
+  const accessibility = useAccessibilitySettings();
 
   useEffect(() => {
     const models = contextModels(playable);
@@ -86,7 +88,7 @@ export function GameUiPreview({
     >
       <GameProvider context={ctx}>
         <HudViewportProvider platforms={playable.platforms} config={playable.hudFit}>
-          <HudThemeRoot theme={playable.hudTheme}>
+          <HudThemeRoot theme={playable.hudTheme} accessibility={accessibility}>
             <GameUI />
           </HudThemeRoot>
         </HudViewportProvider>

@@ -8,6 +8,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `AccessibilityProvider` (function) · `import { AccessibilityProvider } from "@jgengine/react"`
 
+## accessibility-settings — read accessibility preferences and the hold-vs-toggle choice from the shared settings store
+
+- `readAccessibilitySettings` (function) · `import { readAccessibilitySettings } from "@jgengine/core/settings/accessibilitySettings"`
+
+## accessibility-settings-rows — accessibility setting rows (text scale, colorblind, reduced motion, high contrast, captions, hold-vs-toggle) backed by the shared settings store
+
+- `accessibilitySettingRows` (function) · `import { accessibilitySettingRows } from "@jgengine/core/settings/accessibilitySettings"`
+
 ## accessibility-store — serializable, observable accessibility preferences (reduced motion, high contrast, text scale, colorblind mode, captions) a game binds to its settings and presentation
 
 - `createAccessibilityStore` (function) · `import { createAccessibilityStore } from "@jgengine/core/ui"`
@@ -295,6 +303,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `displaceHeightfieldGeometry` (function) · `import { displaceHeightfieldGeometry } from "@jgengine/shell/terrain"`
 
+## hold-vs-toggle — resolve one action frame under a hold-or-toggle preference
+
+- `holdToggleActive` (function) · `import { holdToggleActive } from "@jgengine/core/settings/accessibilitySettings"`
+
 ## hud-button — themed button with hover lift, press scale, focus ring, disabled state, and an interaction cue seam
 
 - `HudButton` (const) · `import { HudButton } from "@jgengine/react/hudButton"`
@@ -367,7 +379,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `deriveHudTheme` (function) · `import { deriveHudTheme } from "@jgengine/react"`
 
-## hud-theme-root — apply the default (or a game) HudTheme and the engine stylesheet at the HUD root
+## hud-theme-root — apply the default (or a game) HudTheme, the player's accessibility preferences and the engine stylesheet at the HUD root
 
 - `HudThemeRoot` (function) · `import { HudThemeRoot } from "@jgengine/react/hudThemeRoot"`
 
@@ -730,6 +742,22 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `useServerSession` (function) · `import { useServerSession } from "@jgengine/react/useServerSession"`
 
+## settings-keybind-row — one rebindable controls row — key glyph, armed state and reset
+
+- `SettingsKeybindControl` (function) · `import { SettingsKeybindControl } from "@jgengine/react"`
+
+## settings-section — settings category block — rows plus click-to-capture keybind rows, HudTheme-styled, store-backed
+
+- `SettingsSection` (function) · `import { SettingsSection } from "@jgengine/react"`
+
+## settings-slider — a settings slider row that mirrors locally and persists on release
+
+- `SettingsSlider` (function) · `import { SettingsSlider } from "@jgengine/react"`
+
+## settings-tabs — scrollable settings category tabs with pressed state
+
+- `SettingsTabs` (function) · `import { SettingsTabs } from "@jgengine/react"`
+
 ## shop-grid-host — drop-in vendor/shop grid over a caller-owned wallet — item cards with icon/price/stock, afford-aware Buy, optional Sell, and a balance readout, token-themed
 
 - `ShopGrid` (function) · `import { ShopGrid } from "@jgengine/react"`
@@ -820,6 +848,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `useUiCue` (function) · `import { useUiCue } from "@jgengine/react/uiCues"`
 
+## use-accessibility-rows — accessibility setting rows for a game-owned settings layout
+
+- `useAccessibilityRows` (function) · `import { useAccessibilityRows } from "@jgengine/react"`
+
+## use-accessibility-settings — live accessibility preferences from the shared settings store
+
+- `useAccessibilitySettings` (function) · `import { useAccessibilitySettings } from "@jgengine/react"`
+
 ## use-camera-shake — React hook binding a camera-shake controller — subscribes for live trauma/kind and can self-drive its decay on a frame loop
 
 - `useCameraShake` (function) · `import { useCameraShake } from "@jgengine/react"`
@@ -847,6 +883,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## use-fast-travel — re-render a component when a fast-travel network's discovery state changes
 
 - `useFastTravel` (function) · `import { useFastTravel } from "@jgengine/react"`
+
+## use-hold-vs-toggle — live hold-or-toggle preference from the shared settings store
+
+- `useHoldVsToggle` (function) · `import { useHoldVsToggle } from "@jgengine/react"`
 
 ## use-interaction-prompt — React hook binding a prompt registry to a moving player — resolves the nearest interactable prompt and returns the active one
 

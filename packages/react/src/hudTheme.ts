@@ -261,6 +261,7 @@ export function hudThemeVars(theme: HudTheme): CSSProperties {
     // `initial` clears inherited skins and lets var() fall back to the bar's palette color.
     "--jg-bar-skin-fill": "initial",
     "--jg-skin-cursor": "auto",
+    "--jg-text-scale": "1",
     ...hudSkinVars(theme.skin),
     // atomic-bar tokens (same names the bars read — #1033)
     "--jg-health": palette.health,
@@ -327,7 +328,7 @@ export function hudThemeVars(theme: HudTheme): CSSProperties {
 }
 
 function typeVars(type: HudThemeType): Record<string, string> {
-  const floor = (size: string) => `max(${type.min}, ${size})`;
+  const floor = (size: string) => `calc(max(${type.min}, ${size}) * var(--jg-text-scale, 1))`;
   return {
     "--jg-type-min": type.min,
     "--jg-type-xs": floor(type.xs),

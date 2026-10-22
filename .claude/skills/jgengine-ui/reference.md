@@ -277,6 +277,10 @@ HUD-only games (`presentation: "hud"` or a camera with rig `"none"`) use the sam
 
 **Present it any way you want.** `useSettings()` (`@jgengine/react`) returns the live controller — `{ categories, actions, variant, surface, isOpen, open, close, setOpen }` — so a game can drive its own pause-menu button, or render `categories`/`actions` (rows carry `value`/`set`/bounds, keybinds carry `rebind`/`reset`) entirely inside its own HUD. `useHasSettings()` gates a custom entry; `useSetting(id, fallback)` reads/writes one value. Set a slider's `min`/`max` explicitly — an omitted range collapses the thumb to 0/1.
 
+**Composing your own settings layout.** `SettingsSection` (`@jgengine/react/settingsBlocks`) renders one controller category — its rows, then its click-to-capture keybind rows — and `SettingsTabs` renders the category rail (pass `tabProps` from `useMenuNav` so a gamepad can switch categories). `SettingsRowControl`, `SettingsSlider`, `SettingsToggle`, `SettingsSelect` and `SettingsKeybindControl` are the individual rows if the layout is not a list. All of them read `--jg-*` tokens and write through the controller, so the game's rebinds land in the same keybinding store as the stock menu. The stock menu uses these same blocks, so a game-composed screen and the engine dialog cannot drift.
+
+**Accessibility is a shipped category.** The settings menu includes `accessibility` — text size, colourblind palette, reduce motion, high contrast, captions and hold-or-toggle — unless the game hides it. Text size multiplies every `--jg-type-*` token through `--jg-text-scale`, reduce motion zeroes `--jg-motion-scale`, and high contrast/colourblind/captions set `data-*` hooks on the HUD root; read them with `useAccessibilitySettings()` and `useHoldVsToggle()` for a custom layout. Apply the colourblind matrix (`ColorblindFilters`, `@jgengine/react/accessibility`) around the surface that should be daltonized — the shell sets the hook but does not wrap the 3D canvas.
+
 ## 8. Motion and game feel
 
 Add purposeful motion for:

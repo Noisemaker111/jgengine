@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useState, type ComponentType } from "react";
 
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { useAccessibilitySettings } from "@jgengine/react/accessibilitySettings";
 import { HudThemeRoot } from "@jgengine/react/hudThemeRoot";
 import { HudViewportProvider } from "@jgengine/react/hudViewport";
 import { GameProvider } from "@jgengine/react/provider";
@@ -37,6 +38,7 @@ export function ShellGameUiChrome({
   orientationGate: boolean;
   onRuntimeError: (error: unknown, phase: string, componentStack?: string) => void;
 }) {
+  const accessibility = useAccessibilitySettings();
   return (
     <GameUiErrorBoundary onRuntimeError={onRuntimeError}>
       <GameProvider context={ctx}>
@@ -49,7 +51,7 @@ export function ShellGameUiChrome({
         >
           {orientationGate ? null : (
             <ShellUiCues ctx={ctx} enabled={playable.audio?.hudCues !== false}>
-              <HudThemeRoot theme={playable.hudTheme}>
+              <HudThemeRoot theme={playable.hudTheme} accessibility={accessibility}>
                 <GameUI />
                 <ShellNotices ctx={ctx} config={playable.notices} scale={uiScale} />
               </HudThemeRoot>

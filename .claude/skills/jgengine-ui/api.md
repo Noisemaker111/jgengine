@@ -118,6 +118,23 @@
 - `createSpriteClipPlayer` (function): function createSpriteClipPlayer(atlas: SpriteAtlas): { play(name: string): void; advance(dt: number): void; frame: () => { x: number; y: number; w: number; h: number; pivot?: [number, number] | undefined; } | undefined; snapshot: () => { animation: string; frameIndex: number; elapsed: number; done: … — Create a renderer-independent sprite animation player.
 - `sortingOrder` (function): function sortingOrder(layers: readonly string[], layer: string, offset = 0): number — Resolve a layer name and local offset into a stable render order.
 
+## @jgengine/core/settings/accessibilitySettings
+
+- `ACCESSIBILITY_SETTING_IDS` (const): const ACCESSIBILITY_SETTING_IDS: { readonly textScale: "accessibility.textScale"; readonly colorblind: "accessibility.colorblind"; readonly reducedMotion: "accessibility.reducedMotion"; readonly highContrast: "accessibility.highContrast"; readonly captions: "accessibility.captions"; readonly holdVsT… — The persisted settings ids behind the accessibility section.
+- `AccessibilitySettingRow` (interface): interface AccessibilitySettingRow — One accessibility setting as the shared settings menu renders it.
+- `COLORBLIND_OPTIONS` (const): const COLORBLIND_OPTIONS: readonly SettingOption[] — Colorblind palette choices. `none` keeps the game's own colours.
+- `HOLD_VS_TOGGLE_OPTIONS` (const): const HOLD_VS_TOGGLE_OPTIONS: readonly SettingOption[] — Hold-versus-toggle choices for actions that support both.
+- `HoldToggleInput` (interface): interface HoldToggleInput — One frame of an action's raw input.
+- `HoldVsToggle` (type): type HoldVsToggle = "hold" | "toggle" — A "hold or toggle" preference for actions that can be either (aim, sprint, crouch, block). Shared because players expect one setting to cover them all, rather than each game inventing a flag.
+- `TEXT_SCALE_OPTIONS` (const): const TEXT_SCALE_OPTIONS: readonly SettingOption[] — Text-scale choices, as numeric strings the settings store persists.
+- `accessibilitySettingDefs` (function): function accessibilitySettingDefs(category = "accessibility"): GameSettingDef[] — Declarative form of the accessibility rows for `defineGame({ settings })`, for a game that wants them inside its own setting categories rather than the built-in `accessibility` one.
+- `accessibilitySettingRows` (function): function accessibilitySettingRows(store: SettingsStore): AccessibilitySettingRow[] — The accessibility rows, wired to the settings store: text scale, colorblind palette, reduced motion, high contrast, captions and hold-vs-toggle. The shell adds them as its `accessibility` category and any game can render them inside its own settings layout.
+- `holdToggleActive` (function): function holdToggleActive(previous: boolean, input: HoldToggleInput, mode: HoldVsToggle): boolean — The action's active state for one frame under a {@link HoldVsToggle} preference: `hold` follows the button, `toggle` latches on each press edge. Call with the previous result so toggle mode can flip without the caller keeping a second flag.
+- `readAccessibilitySettings` (function): function readAccessibilitySettings(store: SettingsStore): { state: AccessibilityState; holdVsToggle: HoldVsToggle; } — Read the whole accessibility state the presentation needs (reduced motion, high contrast, text scale, colorblind mode, captions) plus the hold/toggle preference, from the shared settings store.
+- `readColorblind` (function): function readColorblind(store: SettingsStore): ColorblindMode — Read a stored colorblind mode, falling back to `none` for an unknown value.
+- `readHoldVsToggle` (function): function readHoldVsToggle(store: SettingsStore): HoldVsToggle — Read the hold-or-toggle preference, falling back to `hold`.
+- `readTextScale` (function): function readTextScale(store: SettingsStore): number — Read a stored text scale, clamped to the supported range.
+
 ## @jgengine/core/settings/frameRateLimit
 
 - `FRAME_RATE_LIMIT_DISPLAY` (const): const FRAME_RATE_LIMIT_DISPLAY: "display" — Stored value for "render every display refresh" — the browser's vsync-locked rate.
@@ -153,7 +170,7 @@
 ## @jgengine/core/settings/settingsModel
 
 - `BUILT_IN_SETTING_CATEGORIES` (const): const BUILT_IN_SETTING_CATEGORIES: readonly BuiltInSettingCategory[] — ⚠ undocumented
-- `BuiltInSettingCategory` (type): type BuiltInSettingCategory = "sound" | "graphics" | "gameplay" | "controls" — ⚠ undocumented
+- `BuiltInSettingCategory` (type): type BuiltInSettingCategory = "sound" | "graphics" | "gameplay" | "controls" | "accessibility" — ⚠ undocumented
 - `DEFAULT_GRAPHICS_QUALITY` (const): const DEFAULT_GRAPHICS_QUALITY: GraphicsQuality — ⚠ undocumented
 - `DEFAULT_GRAPHICS_SHADOWS` (const): const DEFAULT_GRAPHICS_SHADOWS: true — ⚠ undocumented
 - `DEFAULT_MASTER_VOLUME` (const): const DEFAULT_MASTER_VOLUME: 1 — ⚠ undocumented
@@ -168,7 +185,7 @@
 - `SettingCategory` (type): type SettingCategory = BuiltInSettingCategory | (string & {}) — Built-in category ids keep autocomplete; any other string makes a fresh category.
 - `SettingCategoryDef` (interface): interface SettingCategoryDef — Declares or relabels/reorders a category tab; use it for a custom category or to reshape the built-ins.
 - `SettingKind` (type): type SettingKind = "slider" | "toggle" | "select" — ⚠ undocumented
-- `SettingOption` (interface): interface SettingOption { value: string; label: string } — ⚠ undocumented · used by `FRAME_RATE_LIMIT_OPTIONS` (@jgengine/core/settings/frameRateLimit): Frame-rate limit choices.
+- `SettingOption` (interface): interface SettingOption { value: string; label: string } — ⚠ undocumented · used by `COLORBLIND_OPTIONS` (@jgengine/core/settings/accessibilitySettings): Colorblind palette choices.
 - `SettingValue` (type): type SettingValue = number | boolean | string — ⚠ undocumented · used by `useSetting` (@jgengine/react): Read + write one persisted setting; re-renders when the value changes anywhere.
 - `SettingsActionDef` (interface): interface SettingsActionDef — A game-state action (Restart, Quit to menu, …) shown as rows in the first "Game" settings tab — never a floating button or a rebindable key.
 - `SettingsStore` (interface): interface SettingsStore { get<T extends SettingValue>(id: string, fallback: T): T; set(id: string, value: SettingValue): void; subscribe(listener: () => void): () => void } — ⚠ undocumented · used by `createSettingsStore`: Reactive, localStorage-backed settings store shared by the shell wiring and React hooks.
@@ -292,7 +309,7 @@
 - `SettingCategory` (type): type SettingCategory = BuiltInSettingCategory | (string & {}) — Built-in category ids keep autocomplete; any other string makes a fresh category.
 - `SettingCategoryDef` (interface): interface SettingCategoryDef — Declares or relabels/reorders a category tab; use it for a custom category or to reshape the built-ins.
 - `SettingKind` (type): type SettingKind = "slider" | "toggle" | "select" — ⚠ undocumented
-- `SettingOption` (interface): interface SettingOption { value: string; label: string } — ⚠ undocumented · used by `FRAME_RATE_LIMIT_OPTIONS` (@jgengine/core/settings/frameRateLimit): Frame-rate limit choices.
+- `SettingOption` (interface): interface SettingOption { value: string; label: string } — ⚠ undocumented · used by `COLORBLIND_OPTIONS` (@jgengine/core/settings/accessibilitySettings): Colorblind palette choices.
 - `SettingValue` (type): type SettingValue = number | boolean | string — ⚠ undocumented · used by `useSetting` (@jgengine/react): Read + write one persisted setting; re-renders when the value changes anywhere.
 - `SettingsActionDef` (interface): interface SettingsActionDef — A game-state action (Restart, Quit to menu, …) shown as rows in the first "Game" settings tab — never a floating button or a rebindable key.
 - `SettingsStore` (interface): interface SettingsStore { get<T extends SettingValue>(id: string, fallback: T): T; set(id: string, value: SettingValue): void; subscribe(listener: () => void): () => void } — ⚠ undocumented · used by `createSettingsStore`: Reactive, localStorage-backed settings store shared by the shell wiring and React hooks.
@@ -916,9 +933,19 @@
 - `SettingsCategoryView` (interface): interface SettingsCategoryView — A settings menu category with its rows and keybinds, ready to render.
 - `SettingsController` (interface): interface SettingsController — The live settings controller — every category/row/keybind/action plus open-state. Render it any way you like or drive the engine menu.
 - `SettingsControllerProvider` (function): function SettingsControllerProvider({ controller, children, }: { controller: SettingsController; children: ReactNode; }): React.JSX.Element — ⚠ undocumented
+- `SettingsKeybindControl` (function): function SettingsKeybindControl({ row, armed = false, onArm, buttonProps }: SettingsKeybindControlProps): ReactNode — A controls row for one action: its label, the bound key (click to rebind), a conflict/armed state and reset. The caller owns capture; this is the row's presentation.
+- `SettingsKeybindControlProps` (interface): interface SettingsKeybindControlProps — One rebindable action row: current key glyph, armed-capture state and a reset button.
 - `SettingsKeybindRow` (interface): interface SettingsKeybindRow — One rebindable action row rendered in the controls settings category.
 - `SettingsProvider` (function): function SettingsProvider({ store, children }: { store: SettingsStore; children: ReactNode }): React.JSX.Element — ⚠ undocumented
 - `SettingsRow` (interface): interface SettingsRow — One editable setting rendered in a settings menu category.
+- `SettingsRowControl` (function): function SettingsRowControl({ row }: { row: SettingsRow }): ReactNode — Render the control a {@link SettingsRow} kind asks for.
+- `SettingsSection` (function): function SettingsSection({ category, heading = true, capture = true, className, style, onCaptureChange, }: SettingsSectionProps): ReactNode — One settings category as a block: its rows, then its rebindable actions with click-to-capture. The game picks where it sits and how wide it is; the block reads HudTheme tokens and the live rows the settings controller hands it, and writes every change straight back to that controller's store.
+- `SettingsSectionProps` (interface): interface SettingsSectionProps — How a {@link SettingsSection} handles a rebind capture.
+- `SettingsSelect` (function): function SettingsSelect({ row }: { row: SettingsRow }): ReactNode — One choice row from a {@link SettingsRow}, rendered as a pressed-state option group.
+- `SettingsSlider` (function): function SettingsSlider({ row }: { row: SettingsRow }): ReactNode — One slider row from a {@link SettingsRow}: mirrors the thumb locally and commits on release, so a drag never storms the settings store or the graphics rebuild it drives.
+- `SettingsTabs` (function): function SettingsTabs({ categories, activeId, onSelect, leading, tabProps, className, style }: SettingsTabsProps): ReactNode — The category tab rail for a settings screen: a scrollable row of buttons with pressed state. The game owns the surrounding layout; this block keeps every category reachable on narrow screens.
+- `SettingsTabsProps` (interface): interface SettingsTabsProps — The live category tabs for a settings screen: a scrollable rail with pressed state.
+- `SettingsToggle` (function): function SettingsToggle({ row }: { row: SettingsRow }): ReactNode — One on/off row from a {@link SettingsRow}.
 - `SettingsTrigger` (function): function SettingsTrigger({ className = SETTINGS_TRIGGER_CLASSNAME, children, label = "Settings", }: { className?: string; children?: ReactNode; label?: string; }): React.JSX.Element | null — Inline settings entry — drop it anywhere in your game's menu or HUD; it opens the themed settings menu. Headless: pass `className` only when overriding the default HudTheme skin; pass `children` to replace the gear glyph. Renders nothing when the game has no settings to show, so it never leaves a dead button behind.
 - `ShieldBar` (const): const ShieldBar: (props: AtomicBarProps) => React.JSX.Element — Absorb/armor shield overlay.
 - `ShopGrid` (function): function ShopGrid({ shop, wallet, onWalletChange, theme, currencyIcons, iconFor, showSell = false, walletCurrencies, title = "Shop", labelFor, minCardWidth = "140px", className, style, }: ShopGridProps): ReactNode — A drop-in vendor/shop grid: item cards (icon, name, price with a currency glyph, stock count or "∞") over a caller-owned wallet, plus a wallet balance readout. Each card's Buy button disables when the wallet cannot afford it (`shop.canAfford`) or the item is sold out; an optional Sell button appears for entries with a `sellPrice`. Buying/selling routes through the core shop model and hands the debited/credited wallet back via `onWalletChange` — the component never owns the wallet. Purely token-driven presentation (shared `--jg-*` HudTheme tokens, reskinnable via {@link ShopGridTheme}); `kind` and `currency` are free strings the game styles, never interpreted.
@@ -1028,6 +1055,8 @@
 - `useAbilitySlot` (function): function useAbilitySlot(kit: AbilityKit, slotId: string, resourceAvailable?: number, options?: AbilitySlotBindingOptions): AbilitySlotSnapshot | null — ⚠ undocumented
 - `useAbilitySlots` (function): function useAbilitySlots(kit: AbilityKit, resourceAvailable?: number, options?: AbilitySlotBindingOptions): AbilitySlotSnapshot[] — ⚠ undocumented
 - `useAccessibility` (function): function useAccessibility(): AccessibilityContextValue — Read the live accessibility state + its store; throws without an {@link AccessibilityProvider} above.
+- `useAccessibilityRows` (function): function useAccessibilityRows(): AccessibilitySettingRow[] — The accessibility rows backed by the shared settings store, for a settings screen the game lays out itself: map them through `SettingsRowControl` (`@jgengine/react/settingsBlocks`). The shell's stock settings menu shows the same rows as its `accessibility` category.
+- `useAccessibilitySettings` (function): function useAccessibilitySettings(): AccessibilityState — The live accessibility preferences (reduced motion, high contrast, text scale, colorblind mode, captions) from the shared settings store. Re-renders whenever any setting changes, so a root that spreads them onto the HUD updates the moment the player picks a value.
 - `useAchievements` (function): function useAchievements(tracker: AchievementTracker): readonly AchievementView[] — Subscribe a component to an achievement tracker's live view list. The list keeps a stable identity between changes, so this re-renders only on unlock or progress — not every frame.
 - `useActionBar` (function): function useActionBar(defs: readonly ActionDef[], options?: UseActionBarOptions): ActionBarModel — The DATA/HOOK layer: resolve `defs` into a live view model with focus, hover, keyboard grid navigation, and hotkey activation. Rendering-agnostic — feed the returned model to {@link ActionBarChrome}, or read it directly to lay out a radial or a bespoke card.
 - `useActivePrompt` (function): function useActivePrompt<T extends PositionedPrompt>(prompts?: readonly T[]): T | null — ⚠ undocumented
@@ -1067,6 +1096,7 @@
 - `useGameViewportLayout` (function): function useGameViewportLayout(): GameViewportLayout — The live shared viewport layout. Returns a neutral default outside a `GameViewportProvider` so it never throws in previews.
 - `useHasSettings` (function): function useHasSettings(): boolean — True when the game has any setting or game-action to show — gate your own settings entry on it.
 - `useHeldKeys` (function): function useHeldKeys(): (code: string) => boolean — Held-key predicate backed by window keydown/keyup/blur listeners (blur clears held state so a released-off-window key doesn't stick). SSR-safe: listeners attach in an effect, never at module scope. The returned predicate is stable across renders.
+- `useHoldVsToggle` (function): function useHoldVsToggle(): HoldVsToggle — The live hold-versus-toggle preference for actions that support both (aim, sprint, crouch). Pair it with `holdToggleActive` (`@jgengine/core/settings/accessibilitySettings`) per frame.
 - `useHudFont` (function): function useHudFont(skin?: HudSkin): boolean — Loads a skin font in browsers and reports when it is available.
 - `useHudLayout` (function): function useHudLayout(options?: { storageKey?: string; snap?: number; locked?: boolean; /** * Scene-document `ui` section — source of truth for panel placement/size. * When provided, hydrates the layout store (and wins over legacy localStorage). */ documentUi?: EditorUiDocument; /** * When true (def… — Layout state for `HudCanvas` — panel placements, edit-mode drag/resize, and per-game persistence.
 - `useHudLayoutPersist` (function): function useHudLayoutPersist(): HudLayoutPersist | null — Injected panel-commit port, or `null` when no host has provided one.
@@ -1138,6 +1168,12 @@
 - `useAccessibility` (function): function useAccessibility(): AccessibilityContextValue — Read the live accessibility state + its store; throws without an {@link AccessibilityProvider} above.
 - `usePrefersReducedMotion` (function): function usePrefersReducedMotion(): boolean — OS "reduce motion" preference (`prefers-reduced-motion: reduce`) as a live boolean — SSR-safe (defaults false). Use it to seed an accessibility store's `reducedMotion` default.
 - `useReducedMotion` (function): function useReducedMotion(): boolean — True when motion should be skipped: the OS `prefers-reduced-motion` preference, or the nearest {@link AccessibilityProvider}'s `reducedMotion` setting. Works without a provider.
+
+## @jgengine/react/accessibilitySettings
+
+- `useAccessibilityRows` (function): function useAccessibilityRows(): AccessibilitySettingRow[] — The accessibility rows backed by the shared settings store, for a settings screen the game lays out itself: map them through `SettingsRowControl` (`@jgengine/react/settingsBlocks`). The shell's stock settings menu shows the same rows as its `accessibility` category.
+- `useAccessibilitySettings` (function): function useAccessibilitySettings(): AccessibilityState — The live accessibility preferences (reduced motion, high contrast, text scale, colorblind mode, captions) from the shared settings store. Re-renders whenever any setting changes, so a root that spreads them onto the HUD updates the moment the player picks a value.
+- `useHoldVsToggle` (function): function useHoldVsToggle(): HoldVsToggle — The live hold-versus-toggle preference for actions that support both (aim, sprint, crouch). Pair it with `holdToggleActive` (`@jgengine/core/settings/accessibilitySettings`) per frame.
 
 ## @jgengine/react/achievements
 
@@ -1560,7 +1596,7 @@
 
 ## @jgengine/react/hudThemeRoot
 
-- `HudThemeRoot` (function): function HudThemeRoot({ theme, children }: { theme?: HudTheme | false; children?: ReactNode }): ReactNode — The HUD root the shell mounts around every `GameUI`: a layout-free (`display: contents`) `[data-jg-hud]` element carrying the theme's `--jg-*` variables, plus the engine stylesheet. Unset `theme` applies {@link defaultHudTheme}; a game's own theme on any descendant still wins by inheritance. `false` opts out of the default theme and the generic HUD control defaults; the keyframes stay so engine blocks still animate.
+- `HudThemeRoot` (function): function HudThemeRoot({ theme, accessibility, children, }: { theme?: HudTheme | false; accessibility?: Partial<AccessibilityState>; children?: ReactNode; }): ReactNode — The HUD root the shell mounts around every `GameUI`: a layout-free (`display: contents`) `[data-jg-hud]` element carrying the theme's `--jg-*` variables, plus the engine stylesheet. Unset `theme` applies {@link defaultHudTheme}; a game's own theme on any descendant still wins by inheritance. `false` opts out of the default theme and the generic HUD control defaults; the keyframes stay so engine blocks still animate.
 
 ## @jgengine/react/hudTokens
 
@@ -1874,6 +1910,19 @@
 - `useSetting` (function): function useSetting<T extends SettingValue>(id: string, fallback: T): readonly [T, (value: SettingValue) => void] — Read + write one persisted setting; re-renders when the value changes anywhere.
 - `useSettings` (function): function useSettings(): SettingsController — The engine settings controller for the current game — render your own settings UI from `categories`, or open the built-in menu with `open()`. Null-safe stub when mounted outside the shell.
 - `useSettingsStore` (function): function useSettingsStore(): SettingsStore — The shared settings store, or a standalone one when no provider is mounted (game code read outside the shell).
+
+## @jgengine/react/settingsBlocks
+
+- `SettingsKeybindControl` (function): function SettingsKeybindControl({ row, armed = false, onArm, buttonProps }: SettingsKeybindControlProps): ReactNode — A controls row for one action: its label, the bound key (click to rebind), a conflict/armed state and reset. The caller owns capture; this is the row's presentation.
+- `SettingsKeybindControlProps` (interface): interface SettingsKeybindControlProps — One rebindable action row: current key glyph, armed-capture state and a reset button.
+- `SettingsRowControl` (function): function SettingsRowControl({ row }: { row: SettingsRow }): ReactNode — Render the control a {@link SettingsRow} kind asks for.
+- `SettingsSection` (function): function SettingsSection({ category, heading = true, capture = true, className, style, onCaptureChange, }: SettingsSectionProps): ReactNode — One settings category as a block: its rows, then its rebindable actions with click-to-capture. The game picks where it sits and how wide it is; the block reads HudTheme tokens and the live rows the settings controller hands it, and writes every change straight back to that controller's store.
+- `SettingsSectionProps` (interface): interface SettingsSectionProps — How a {@link SettingsSection} handles a rebind capture.
+- `SettingsSelect` (function): function SettingsSelect({ row }: { row: SettingsRow }): ReactNode — One choice row from a {@link SettingsRow}, rendered as a pressed-state option group.
+- `SettingsSlider` (function): function SettingsSlider({ row }: { row: SettingsRow }): ReactNode — One slider row from a {@link SettingsRow}: mirrors the thumb locally and commits on release, so a drag never storms the settings store or the graphics rebuild it drives.
+- `SettingsTabs` (function): function SettingsTabs({ categories, activeId, onSelect, leading, tabProps, className, style }: SettingsTabsProps): ReactNode — The category tab rail for a settings screen: a scrollable row of buttons with pressed state. The game owns the surrounding layout; this block keeps every category reachable on narrow screens.
+- `SettingsTabsProps` (interface): interface SettingsTabsProps — The live category tabs for a settings screen: a scrollable rail with pressed state.
+- `SettingsToggle` (function): function SettingsToggle({ row }: { row: SettingsRow }): ReactNode — One on/off row from a {@link SettingsRow}.
 
 ## @jgengine/react/shopGrid
 
