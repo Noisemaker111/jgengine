@@ -1,5 +1,5 @@
 import { reportTextureLoadError } from "@jgengine/core/devtools/textureErrors";
-import { useThree } from "@react-three/fiber";
+import { useThree, useFrame } from "@react-three/fiber";
 import { useEffect } from "react";
 import * as THREE from "three";
 import { EXRLoader } from "three/examples/jsm/loaders/EXRLoader.js";
@@ -25,6 +25,12 @@ export interface EnvironmentLightingProps {
   sunDirection?: readonly [number, number, number];
   /** Sun disc tint. Default warm white. */
   sunColor?: string;
+  /**
+   * Day-cycle scaling for the probe's brightness. Rebuilding a PMREM every frame is not free, so a
+   * cycle dims the applied environment instead of re-baking it; without this the sky turns black at
+   * night while the IBL keeps lighting the world like noon.
+   */
+  daylight?: { sunFactor: number; ambientFactor: number };
 }
 
 /**
@@ -44,6 +50,7 @@ export function EnvironmentLighting({
   horizonTint = "#ffffff",
   sunDirection,
   sunColor = "#fff2d6",
+  daylight,
 }: EnvironmentLightingProps): null {
   const gl = useThree((state) => state.gl);
   const scene = useThree((state) => state.scene);
@@ -63,7 +70,10 @@ export function EnvironmentLighting({
     const release = () => {
       if (cancelled) return;
       cancelled = true;
-      if (target !== undefined && scene.environment === target.texture) scene.environment = previous;
+      if (target !== undefined && scene.environment === target.texture) {
+        scene.environment = previous;
+        scene.environmentIntensity = previousIntensity;
+      }
       if (appliedRotation !== undefined && scene.environmentRotation === appliedRotation && appliedRotation.equals(appliedRotationValue!)) scene.environmentRotation = previousRotation;
       if (scene.environmentIntensity === appliedIntensity) scene.environmentIntensity = previousIntensity;
       pmrem.dispose();
@@ -118,6 +128,12 @@ export function EnvironmentLighting({
     }
     return release;
   }, [gl, scene, source, intensity, skyColor, groundColor, horizonTint, sunColor, sunDirection?.[0], sunDirection?.[1], sunDirection?.[2]]);
+
+  useFrame(() => {
+    if (daylight === undefined || scene.environment === null) return;
+    // Ambient fill and the probe's sun lobe fade together; the probe's colours stay authored.
+    scene.environmentIntensity = (source?.intensity ?? intensity) * (daylight.ambientFactor * 0.6 + daylight.sunFactor * 0.4);
+  });
 
   return null;
 }

@@ -1,4 +1,6 @@
 import { useLayoutEffect, useRef } from "react";
+import { useFrame } from "@react-three/fiber";
+import type * as THREE from "three";
 import type { DirectionalLight } from "three";
 
 import type {
@@ -15,6 +17,18 @@ import { CascadedShadows, DEFAULT_SHADOW_RADIUS } from "./CascadedShadows";
 const DEFAULT_BACKDROP_FOG_COLOR = "#1a1c22";
 /** Default cap for combined dynamic point and spot lights. */
 export const POINT_LIGHT_BUDGET = 8;
+
+/**
+ * Per-frame scaling a day cycle applies to a game's authored sun and ambient fill, so an authored
+ * sun sets and a moon rises instead of the world staying lit like noon after dark. `sunFactor` and
+ * `ambientFactor` are 1 at the authored noon peak; colors come from the atmosphere.
+ * @internal
+ */
+export interface DaylightModulation {
+  sunFactor: number;
+  sunColor: string;
+  ambientFactor: number;
+}
 
 /** @internal Clamp point lights for the runtime budget. */
 export function resolvePointLightBudget(entries: readonly PointLightingConfig[] | undefined): readonly PointLightingConfig[] {
@@ -38,12 +52,12 @@ function usesCascades(entry: DirectionalLightingConfig): boolean {
   return (entry.castShadow ?? false) && (entry.cascades ?? 1) > 1;
 }
 
-function DirectionalShadowLight({ entry, profile }: { entry: DirectionalLightingConfig; profile?: GraphicsProfile }) {
+function DirectionalShadowLight({ entry, profile, modulation }: { entry: DirectionalLightingConfig; profile?: GraphicsProfile; modulation?: DaylightModulation }) {
   const resolved = profile === undefined ? entry : { ...entry, shadowMapSize: entry.shadowMapSize ?? profile.shadowMapSize, cascades: entry.cascades ?? profile.cascades };
   if (usesCascades(resolved)) {
-    return <CascadedShadows entry={resolved} />;
+    return <CascadedShadows entry={resolved} modulation={modulation} />;
   }
-  return <SingleShadowLight entry={resolved} />;
+  return <SingleShadowLight entry={resolved} modulation={modulation} />;
 }
 
 /**
@@ -56,11 +70,18 @@ export function syncShadowProjection(light: DirectionalLight): void {
   light.shadow.camera.updateProjectionMatrix();
 }
 
-function SingleShadowLight({ entry }: { entry: DirectionalLightingConfig }) {
+function SingleShadowLight({ entry, modulation }: { entry: DirectionalLightingConfig; modulation?: DaylightModulation }) {
   const lightRef = useRef<DirectionalLight>(null);
   const size = entry.shadowCameraSize ?? 40;
   const far = Math.max(200, size * 6);
   const mapSize = entry.shadowMapSize ?? 1024;
+  const baseIntensity = entry.intensity ?? 1.3;
+  useFrame(() => {
+    const light = lightRef.current;
+    if (light === null || modulation === undefined) return;
+    light.intensity = baseIntensity * modulation.sunFactor;
+    light.color.set(modulation.sunColor);
+  });
   useLayoutEffect(() => {
     if (lightRef.current !== null) syncShadowProjection(lightRef.current);
   }, [size, far]);
@@ -92,24 +113,43 @@ function SingleShadowLight({ entry }: { entry: DirectionalLightingConfig }) {
   );
 }
 
-export function ConfiguredLighting({ lighting, profile }: { lighting: LightingConfig; profile?: GraphicsProfile }) {
+export function ConfiguredLighting({
+  lighting,
+  profile,
+  modulation,
+}: {
+  lighting: LightingConfig;
+  profile?: GraphicsProfile;
+  /** Day-cycle scaling for the first directional (the sun) and the ambient fill. */
+  modulation?: DaylightModulation;
+}) {
   const dynamic = resolveDynamicLights(lighting);
+  const ambientRef = useRef<THREE.AmbientLight>(null);
+  const hemisphereRef = useRef<THREE.HemisphereLight>(null);
+  const baseAmbient = lighting.ambient?.intensity ?? 0.55;
+  const baseHemisphere = lighting.hemisphere?.intensity ?? 0.55;
+  useFrame(() => {
+    if (modulation === undefined) return;
+    if (ambientRef.current !== null) ambientRef.current.intensity = baseAmbient * modulation.ambientFactor;
+    if (hemisphereRef.current !== null) hemisphereRef.current.intensity = baseHemisphere * modulation.ambientFactor;
+  });
   return (
     <>
       {lighting.ambient !== undefined ? (
-        <ambientLight color={lighting.ambient.color} intensity={lighting.ambient.intensity ?? 0.55} />
+        <ambientLight ref={ambientRef} color={lighting.ambient.color} intensity={baseAmbient} />
       ) : null}
       {lighting.hemisphere !== undefined ? (
         <hemisphereLight
+          ref={hemisphereRef}
           args={[
             lighting.hemisphere.skyColor ?? "#bfe3ff",
             lighting.hemisphere.groundColor ?? "#4c6b34",
-            lighting.hemisphere.intensity ?? 0.55,
+            baseHemisphere,
           ]}
         />
       ) : null}
       {(lighting.directional ?? []).map((entry, index) => (
-        <DirectionalShadowLight key={index} entry={entry} profile={profile} />
+        <DirectionalShadowLight key={index} entry={entry} profile={profile} {...(index === 0 && modulation !== undefined ? { modulation } : {})} />
       ))}
       {dynamic.point.map((entry, index) => (
         <pointLight

@@ -1,4 +1,12 @@
 import type { SkySunConfig } from "@jgengine/core/world/features";
+import {
+  elevationOf,
+  MOONLIGHT_COLOR,
+  moonIllumination,
+  NIGHT_FOG_COLOR,
+  starOpacity,
+  sunlightColor,
+} from "@jgengine/core/render/physicalSky";
 
 export interface DaylightCycleConfig {
   horizonColor?: string;
@@ -7,15 +15,34 @@ export interface DaylightCycleConfig {
   ambientIntensity?: number;
   /** Fixed sun placement, or the noon placement the day arc swings around. Unset keeps the engine arc. */
   sun?: SkySunConfig;
+  /** Authored noon sun colour, reddened toward the horizon by the atmosphere. Default warm white. */
+  sunColor?: string;
+  /** Authored noon fog colour; dawn, dusk and night cross-fade to their own haze. Default the noon horizon. */
+  fogColor?: string;
+  /** Peak moonlight as a fraction of `sunIntensity`. Default `MOONLIGHT_PEAK`. */
+  moonIntensity?: number;
+  /** Moonlight colour. Default `MOONLIGHT_COLOR`. */
+  moonColor?: string;
 }
 
 export interface DaylightState {
   sunPosition: [number, number, number];
   sunIntensity: number;
+  /** The sun's colour at this hour: authored tint high up, atmosphere-reddened near the horizon. */
+  sunColor: string;
   ambientIntensity: number;
   skyTop: string;
   skyBottom: string;
   background: string;
+  /** Scene fog colour matched to the sky at this hour, so fogged ground meets the horizon. */
+  fogColor: string;
+  /** The moon's direction — the sun's arc half a day away, so it is up whenever the sun is down. */
+  moonPosition: [number, number, number];
+  /** Moonlight intensity, already scaled by the authored noon sun intensity. */
+  moonIntensity: number;
+  moonColor: string;
+  /** Star visibility, 0 in daylight and 1 with the sun well under the horizon. */
+  starOpacity: number;
 }
 
 interface DaylightKeyframe {
@@ -24,6 +51,7 @@ interface DaylightKeyframe {
   ambientIntensity: number;
   skyTop: string;
   skyBottom: string;
+  fog: string;
 }
 
 const NIGHT_SUN_INTENSITY = 0.02;
@@ -45,6 +73,8 @@ export const DEFAULT_DAY_SUN_INTENSITY = 1;
 export const DEFAULT_DAY_AMBIENT_INTENSITY = 0.6;
 export const DEFAULT_DAY_SKY_TOP = "#3fa4f2";
 export const DEFAULT_DAY_SKY_BOTTOM = "#e3f4ff";
+/** Warm-white noon sun used when the game authored no sun tint (the shell's `SUN_COLOR`). */
+export const DEFAULT_SUN_COLOR = "#fff1c9";
 
 const SUN_DISTANCE = 200;
 const SUN_DEPTH_RATIO = 0.4;
@@ -120,6 +150,7 @@ function buildKeyframes(config: DaylightCycleConfig): readonly DaylightKeyframe[
     ambientIntensity: NIGHT_AMBIENT_INTENSITY,
     skyTop: NIGHT_SKY_TOP,
     skyBottom: NIGHT_SKY_BOTTOM,
+    fog: NIGHT_FOG_COLOR,
   };
   const dawn: DaylightKeyframe = {
     t: 0.25,
@@ -127,6 +158,7 @@ function buildKeyframes(config: DaylightCycleConfig): readonly DaylightKeyframe[
     ambientIntensity: DAWN_AMBIENT_INTENSITY,
     skyTop: DAWN_SKY_TOP,
     skyBottom: DAWN_SKY_BOTTOM,
+    fog: DAWN_SKY_BOTTOM,
   };
   const day: DaylightKeyframe = {
     t: 0.5,
@@ -134,6 +166,7 @@ function buildKeyframes(config: DaylightCycleConfig): readonly DaylightKeyframe[
     ambientIntensity: config.ambientIntensity ?? DEFAULT_DAY_AMBIENT_INTENSITY,
     skyTop: config.zenithColor ?? DEFAULT_DAY_SKY_TOP,
     skyBottom: config.horizonColor ?? DEFAULT_DAY_SKY_BOTTOM,
+    fog: config.fogColor ?? config.horizonColor ?? DEFAULT_DAY_SKY_BOTTOM,
   };
   const dusk: DaylightKeyframe = {
     t: 0.75,
@@ -141,6 +174,7 @@ function buildKeyframes(config: DaylightCycleConfig): readonly DaylightKeyframe[
     ambientIntensity: DUSK_AMBIENT_INTENSITY,
     skyTop: DUSK_SKY_TOP,
     skyBottom: DUSK_SKY_BOTTOM,
+    fog: DUSK_SKY_BOTTOM,
   };
   const midnight: DaylightKeyframe = { ...night, t: 1 };
   return [night, dawn, day, dusk, midnight];
@@ -169,10 +203,11 @@ function segmentAt(
 
 /**
  * Samples the daylight cycle at a point in the day (0 = midnight, 0.25 = dawn, 0.5 = noon, 0.75 = dusk),
- * lerping sun position/intensity, ambient intensity, and sky colors through a dawn/day/dusk/night
- * keyframe table. `config` overrides the noon (peak-day) colors and intensities only.
-  * @internal
-  */
+ * lerping sun position/intensity, ambient intensity, sky and fog colors through a dawn/day/dusk/night
+ * keyframe table, and deriving sun tint, moonlight and star visibility from the sun's elevation.
+ * `config` overrides the noon (peak-day) colors and intensities only.
+ * @internal
+ */
 export function daylightStateAt(dayFraction: number, config: DaylightCycleConfig = {}): DaylightState {
   const wrapped = wrapFraction(dayFraction);
   const keyframes = buildKeyframes(config);
@@ -182,11 +217,41 @@ export function daylightStateAt(dayFraction: number, config: DaylightCycleConfig
   const ambientIntensity = lerp(from.ambientIntensity, to.ambientIntensity, localT);
   const skyTop = lerpHexColor(from.skyTop, to.skyTop, localT);
   const skyBottom = lerpHexColor(from.skyBottom, to.skyBottom, localT);
+  const fogColor = lerpHexColor(from.fog, to.fog, localT);
 
   const sunPosition = sunPositionAt(wrapped, config.sun);
+  const moonPosition = sunPositionAt(wrapped + 0.5, config.sun);
+  const sunColor = mixHex(
+    config.sunColor ?? DEFAULT_SUN_COLOR,
+    sunlightColor(elevationOf(sunPosition)),
+    lowSunWeight(wrapped),
+  );
 
-  return { sunPosition, sunIntensity, ambientIntensity, skyTop, skyBottom, background: skyBottom };
+  return {
+    sunPosition,
+    sunIntensity,
+    sunColor,
+    ambientIntensity,
+    skyTop,
+    skyBottom,
+    background: skyBottom,
+    fogColor,
+    moonPosition,
+    moonIntensity: moonIllumination(elevationOf(moonPosition), config.moonIntensity) * (config.sunIntensity ?? DEFAULT_DAY_SUN_INTENSITY),
+    moonColor: config.moonColor ?? MOONLIGHT_COLOR,
+    starOpacity: starOpacity(elevationOf(sunPosition)),
+  };
 }
+
+function mixHex(from: string, to: string, t: number): string {
+  return t <= 0 ? from : t >= 1 ? to : lerpHexColor(from, to, t);
+}
+
+/** How much of the sun's colour comes from the atmosphere rather than the authored tint: 0 with the sun high, 1 once it is on the horizon. */
+function lowSunWeight(wrapped: number): number {
+  return Math.min(1, Math.abs(wrapped - 0.5) / 0.25);
+}
+
 
 /**
  * Sun position for a wrapped day fraction. Without `sun`, the legacy arc: east at dawn, ~68 degrees

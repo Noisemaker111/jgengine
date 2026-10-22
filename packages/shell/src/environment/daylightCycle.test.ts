@@ -85,8 +85,63 @@ describe("daylightStateAt", () => {
   });
 });
 
-describe("lerpHexColor", () => {
-  test("interpolates channel-by-channel", () => {
+describe("sun, moon and fog through the day", () => {
+  const channels = (hex: string) => [0, 2, 4].map((offset) => Number.parseInt(hex.slice(1 + offset, 3 + offset), 16));
+  const luma = (hex: string) => {
+    const [r, g, b] = channels(hex);
+    return (0.2126 * r! + 0.7152 * g! + 0.0722 * b!) / 255;
+  };
+
+  test("the moon is up whenever the sun is down and vice versa", () => {
+    for (const fraction of [0, 0.1, 0.9, 0.5, 0.25, 0.75]) {
+      const state = daylightStateAt(fraction);
+      expect(state.moonPosition[1] * state.sunPosition[1]).toBeLessThanOrEqual(0);
+    }
+    expect(daylightStateAt(0).moonPosition[1]).toBeGreaterThan(150);
+    expect(daylightStateAt(0.5).moonPosition[1]).toBeLessThan(0);
+  });
+
+  test("midnight is moonlit, starry and fogged dark", () => {
+    const midnight = daylightStateAt(0);
+    expect(midnight.moonIntensity).toBeGreaterThan(0.05);
+    expect(midnight.moonIntensity).toBeLessThan(0.4);
+    expect(midnight.starOpacity).toBe(1);
+    expect(luma(midnight.fogColor)).toBeLessThan(0.12);
+    expect(channels(midnight.moonColor)[2]!).toBeGreaterThan(channels(midnight.moonColor)[0]!);
+  });
+
+  test("noon has no moon, no stars and the authored fog color", () => {
+    const noon = daylightStateAt(0.5, { fogColor: "#b9cfd8", sunColor: "#fff0cf" });
+    expect(noon.moonIntensity).toBe(0);
+    expect(noon.starOpacity).toBe(0);
+    expect(noon.fogColor).toBe("#b9cfd8");
+    expect(noon.sunColor).toBe("#fff0cf");
+  });
+
+  test("the sun reddens toward the horizon while keeping its intensity", () => {
+    const noon = daylightStateAt(0.5);
+    const dusk = daylightStateAt(0.75);
+    expect(channels(noon.sunColor)[2]!).toBeGreaterThan(channels(dusk.sunColor)[2]!);
+    expect(channels(dusk.sunColor)[0]!).toBeGreaterThan(channels(dusk.sunColor)[2]!);
+    expect(dusk.fogColor).toBe(dusk.skyBottom);
+  });
+
+  test("fog follows the sky at every hour instead of staying at its noon value", () => {
+    const authored = { fogColor: "#b9cfd8" };
+    const values = [0, 0.25, 0.5, 0.75].map((fraction) => daylightStateAt(fraction, authored).fogColor);
+    expect(luma(values[0]!)).toBeLessThan(luma(values[2]!) / 3);
+    expect(values[1]).not.toBe(values[2]);
+    expect(luma(values[2]!)).toBeGreaterThan(luma(values[3]!));
+  });
+
+  test("config scales the moonlight with the authored sun", () => {
+    const dim = daylightStateAt(0, { sunIntensity: 1 });
+    const bright = daylightStateAt(0, { sunIntensity: 2 });
+    expect(bright.moonIntensity).toBeCloseTo(dim.moonIntensity * 2, 6);
+  });
+});
+
+describe("lerpHexColor", () => {  test("interpolates channel-by-channel", () => {
     expect(lerpHexColor("#000000", "#ffffff", 0)).toBe("#000000");
     expect(lerpHexColor("#000000", "#ffffff", 1)).toBe("#ffffff");
     expect(lerpHexColor("#000000", "#ffffff", 0.5)).toBe("#808080");
