@@ -15,6 +15,41 @@ concurrency:
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
+  # Decides whether this run measures frame budgets and boots every game. Those two
+  # cost a runner and ~180 s per game, and a docs, skill or unrelated-package change
+  # cannot move either, so on a PR they run only when a changed path can reach them.
+  # A push (beta, or main through the release flow) and a release PR always run them.
+  # `ci` fails when `heavy` was true and a gated job did not pass, so a skip can never
+  # stand in for a pass.
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      heavy: ${{ steps.scope.outputs.heavy }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: scope
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE: ${{ github.base_ref }}
+        run: |
+          if [ "$EVENT" != "pull_request" ]; then
+            echo "push to ${{ github.ref }} runs the full gate"
+            echo "heavy=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git fetch --no-tags origin "$BASE"
+          files=$(git diff --name-only "origin/$BASE...HEAD")
+          echo "$files"
+          # CHANGELOG.md is what `bun run release` rewrites, so its presence marks the release PR.
+          if echo "$files" | grep -Eq '^(packages/shell/|packages/core/src/render/|Games/|scripts/(perf-|smoke|ensure-games|games-ref|shoot)|scripts/.*capture|\.github/workflows/|CHANGELOG\.md)'; then
+            echo "heavy=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "heavy=false" >> "$GITHUB_OUTPUT"
+          fi
+
   quick:
     runs-on: ubuntu-latest
     timeout-minutes: 8
@@ -115,6 +150,8 @@ jobs:
   # it stop being the critical path. `scripts/smoke-games.test.ts` fails when this
   # matrix and SMOKE_GAMES disagree.
   smoke-game:
+    needs: [changes]
+    if: needs.changes.outputs.heavy == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 12
     strategy:
@@ -142,8 +179,8 @@ jobs:
   # Green only when every smoke game booted clean, so one unplayable game still
   # blocks the merge through the same `smoke` check as before.
   smoke:
-    needs: [smoke-game]
-    if: ${{ !cancelled() }}
+    needs: [changes, smoke-game]
+    if: ${{ !cancelled() && needs.changes.outputs.heavy == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -157,6 +194,8 @@ jobs:
   # wall clock at one game plus setup. `scripts/perf-gate.test.ts` fails when this
   # matrix and PERF_GATE_GAMES disagree, so a ninth game cannot drop out of the gate.
   perf-game:
+    needs: [changes]
+    if: needs.changes.outputs.heavy == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     strategy:
@@ -193,8 +232,9 @@ jobs:
 
   # The CPU timing budgets (nav crowd, perception, utility, visibility, off-screen,
   # flock, paths) assert via `bench:cpu` with JG_TIMING_GATE=1; the unit suite keeps
-  # measuring and printing them without a pass/fail ceiling. It needs no browser, so
-  # it runs beside the frame gate instead of adding ~30 s to the aggregate below.
+  # measuring and printing them without a pass/fail ceiling. It needs no browser and
+  # takes ~40 s, and core logic in any package can move a budget, so it runs on every
+  # PR rather than joining the change-scoped set above.
   perf-cpu:
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -211,21 +251,34 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run bench:cpu
 
-  # The `perf` check branch protection reads: green only when all eight frame-budget
-  # games and the CPU budgets passed. A red matrix leg shows as a failed job and fails
-  # the check here, so a single over-budget game still blocks the merge.
+  # The `perf` check branch protection reads: green only when the CPU budgets passed
+  # and, when the change can reach rendering, all eight frame-budget games passed too.
+  # A red matrix leg shows as a failed job and fails the check here, so a single
+  # over-budget game still blocks the merge.
   perf:
-    needs: [perf-game, perf-cpu]
+    needs: [changes, perf-game, perf-cpu]
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - run: |
-          test "${{ needs.perf-game.result }}" = "success"
-          test "${{ needs.perf-cpu.result }}" = "success"
+      - name: perf verdict
+        env:
+          HEAVY: ${{ needs.changes.outputs.heavy }}
+          FRAME: ${{ needs.perf-game.result }}
+          CPU: ${{ needs.perf-cpu.result }}
+        run: |
+          test "$CPU" = "success"
+          if [ "$HEAVY" = "true" ]; then
+            test "$FRAME" = "success"
+          else
+            case "$FRAME" in
+              success | skipped) ;;
+              *) echo "frame gate had to run and did not: $FRAME"; exit 1 ;;
+            esac
+          fi
 
   ci:
-    needs: [quick, types, test, web-build, smoke, perf]
+    needs: [changes, quick, types, test, web-build, smoke, perf]
     # A superseded run is cancelled, not failed; reporting it as a failure only pages the PR's owner.
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
@@ -233,10 +286,20 @@ jobs:
     permissions:
       issues: write
     steps:
-      - run: |
-          for result in "${{ needs.quick.result }}" "${{ needs.types.result }}" "${{ needs.test.result }}" "${{ needs.web-build.result }}" "${{ needs.smoke.result }}" "${{ needs.perf.result }}"; do
+      - name: every required job passed
+        env:
+          SCOPE: ${{ needs.changes.result }}
+          HEAVY: ${{ needs.changes.outputs.heavy }}
+          SMOKE: ${{ needs.smoke.result }}
+        run: |
+          # A scope job that failed took the gated jobs down with it; never let that read as a pass.
+          test "$SCOPE" = "success"
+          for result in "${{ needs.quick.result }}" "${{ needs.types.result }}" "${{ needs.test.result }}" "${{ needs.web-build.result }}" "${{ needs.perf.result }}"; do
             test "$result" = "success"
           done
+          # Smoke boots every game, so a skip is only acceptable when no changed path can affect it.
+          test "$SMOKE" = "success" && exit 0
+          test "$SMOKE" = "skipped" && test "$HEAVY" = "false"
       - name: Track red main in one issue
         if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
