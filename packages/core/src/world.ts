@@ -1,4 +1,4 @@
-export { type HeatConfig, type HeatGain, type HeatLevelDef, type HeatState } from "./ai/heatSystem";
+export { type HeatConfig, type HeatGain, type HeatLevelDef, type HeatPoint, type HeatState } from "./ai/heatSystem";
 export {
   advanceInterestGate,
   createInterestCensus,
@@ -14,6 +14,28 @@ export {
   type InterestTier,
 } from "./ai/interestScheduler";
 export { type Job, type JobDef, type JobReport } from "./ai/jobBoard";
+export {
+  DEFAULT_POLICE_TIERS,
+  DEFAULT_POLICE_TUNING,
+  createPoliceResponse,
+  policeRoadsFromLaneGraph,
+  type PoliceLaneHit,
+  type PoliceResponse,
+  type PoliceResponseConfig,
+  type PoliceResponseKind,
+  type PoliceResponseState,
+  type PoliceRoadblockSite,
+  type PoliceRoads,
+  type PoliceRoadsOptions,
+  type PoliceSearchArea,
+  type PoliceSighting,
+  type PoliceStats,
+  type PoliceStep,
+  type PoliceTickContext,
+  type PoliceTier,
+  type PoliceTuning,
+  type PoliceWitness,
+} from "./ai/policeResponse";
 export {
   createRvoCrowd,
   type RvoAgentSpec,

@@ -674,6 +674,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `POLE_LINE_KIND` (const) · `import { POLE_LINE_KIND } from "@jgengine/core/world/poleLineKind"`
 
+## police-response — witness-gated heat, tiered police response, last-sighting search areas and lane-graph roadblocks
+
+- `createPoliceResponse` (function) · `import { createPoliceResponse } from "@jgengine/core/world"`
+
+## police-roads — lane-graph roadblock sites and an indexed nearby-lane query for search areas
+
+- `policeRoadsFromLaneGraph` (function) · `import { policeRoadsFromLaneGraph } from "@jgengine/core/world"`
+
 ## population-director — ambient per-region creature population manager with timed weighted respawns and caps
 
 - `createPopulationDirector` (function) · `import { createPopulationDirector } from "@jgengine/core/ai/populationDirector"`

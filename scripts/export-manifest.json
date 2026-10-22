@@ -13,6 +13,7 @@
     "./ai/laneSelect",
     "./ai/mobBrain",
     "./ai/mobBrainGraph",
+    "./ai/policeResponse",
     "./ai/populationDirector",
     "./ai/pursuit",
     "./ai/rvo",
