@@ -13,6 +13,15 @@ import {
   withBrowserSession,
   type CaptureQuality,
 } from "./browser-lib";
+import {
+  summarizeFrameWindow,
+  type FrameWindow,
+  type PerfReport,
+  type ProfileEntry as ReportedProfileEntry,
+  type ReportLogs,
+  type SceneNodeSource,
+  type SystemProbeReading,
+} from "../packages/core/src/devtools/report";
 
 /**
  * Frame-time harness for one game: boots the checkout's dev runner, plays the
@@ -40,16 +49,19 @@ export interface PerfArgs {
   quality: CaptureQuality;
   profile: boolean;
   seconds: number;
+  /** In-page sampler on/off for the A/B frame-time overhead comparison. */
+  telemetry: "on" | "off";
 }
 
 export type ArgResult = { kind: "run"; args: PerfArgs } | { kind: "help" };
 
-const USAGE = `usage: bun run perf <game> [--quality draft|full] [--profile] [--seconds n]
+const USAGE = `usage: bun run perf <game> [--quality draft|full] [--profile] [--seconds n] [--telemetry on|off]
 
   <game>            game id under Games/ (for example harbor-heat)
   --quality         graphics tier: full (default) or draft (?quality=low, half viewport)
   --profile         also print the inclusive-time table to stderr
-  --seconds         measured window in seconds (default ${DEFAULT_SECONDS})`;
+  --seconds         measured window in seconds (default ${DEFAULT_SECONDS})
+  --telemetry       in-page report sampler: on (default) or off (?telemetry=off) for an A/B run`;
 
 export function parsePerfArgs(argv: readonly string[]): ArgResult {
   if (argv.includes("--help") || argv.includes("-h")) return { kind: "help" };
@@ -57,6 +69,7 @@ export function parsePerfArgs(argv: readonly string[]): ArgResult {
   let quality: CaptureQuality = "full";
   let profile = false;
   let seconds = DEFAULT_SECONDS;
+  let telemetry: "on" | "off" = "on";
 
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index]!;
@@ -64,12 +77,15 @@ export function parsePerfArgs(argv: readonly string[]): ArgResult {
       profile = true;
       continue;
     }
-    if (arg === "--quality" || arg === "--seconds") {
+    if (arg === "--quality" || arg === "--seconds" || arg === "--telemetry") {
       const value = argv[index + 1];
       if (value === undefined) throw new Error(`${arg} needs a value`);
       index += 1;
       if (arg === "--quality") quality = parseQualityArg(value);
-      else {
+      else if (arg === "--telemetry") {
+        if (value !== "on" && value !== "off") throw new Error(`--telemetry must be on or off (got ${value})`);
+        telemetry = value;
+      } else {
         const parsed = Number(value);
         if (!Number.isFinite(parsed) || parsed <= 0) throw new Error(`--seconds must be a positive number (got ${value})`);
         seconds = parsed;
@@ -81,16 +97,12 @@ export function parsePerfArgs(argv: readonly string[]): ArgResult {
     game = arg;
   }
   if (game === undefined) throw new Error("a game id is required");
-  return { kind: "run", args: { game, quality, profile, seconds } };
+  return { kind: "run", args: { game, quality, profile, seconds, telemetry } };
 }
 
 /** One sampled stack frame reduced to a readable key and its self time. */
-export interface ProfileEntry {
-  fn: string;
-  at: string;
-  selfMs: number;
-  selfPct: number;
-}
+export type ProfileEntry = ReportedProfileEntry;
+
 
 interface ProfileNode {
   id: number;
@@ -168,29 +180,11 @@ function rank(totals: ReadonlyMap<string, number>, windowMs: number, top: number
     });
 }
 
-export interface FrameWindow {
-  fps: number;
-  avgMs: number;
-  p95Ms: number;
-  maxMs: number;
-  samples: number;
-  longFrames: number;
-}
+export type { FrameWindow } from "../packages/core/src/devtools/report";
 
 /** Frame timings from requestAnimationFrame deltas, the interval a player sees. */
 export function summarizeFrameDeltas(deltas: readonly number[]): FrameWindow {
-  const kept = deltas.filter((ms) => Number.isFinite(ms) && ms > 0);
-  if (kept.length === 0) return { fps: 0, avgMs: 0, p95Ms: 0, maxMs: 0, samples: 0, longFrames: 0 };
-  const sorted = [...kept].sort((a, b) => a - b);
-  const avgMs = kept.reduce((sum, ms) => sum + ms, 0) / kept.length;
-  return {
-    fps: Math.round((1000 / avgMs) * 10) / 10,
-    avgMs: Math.round(avgMs * 100) / 100,
-    p95Ms: Math.round(sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * 0.95))]! * 100) / 100,
-    maxMs: Math.round(sorted[sorted.length - 1]! * 100) / 100,
-    samples: kept.length,
-    longFrames: kept.filter((ms) => ms > 33.4).length,
-  };
+  return summarizeFrameWindow(deltas);
 }
 
 /**
@@ -248,7 +242,7 @@ interface GlCounts {
 
 interface SceneNodeCount {
   nodes: number | null;
-  source: "scene-graph" | "heap-object3d" | "unavailable";
+  source: SceneNodeSource;
   scenes: number;
 }
 
@@ -324,35 +318,8 @@ async function countInstances(
 }
 
 /** Everything one measured window says about a game, as printed by `bun run perf`. */
-export interface PerfRecord {
-  game: string;
-  gpu: string;
-  quality: CaptureQuality;
-  viewport: string;
-  seconds: number;
-  frame: FrameWindow;
-  render: {
-    draws: number | null;
-    triangles: number | null;
-    geometries: number | null;
-    textures: number | null;
-    nodes: number | null;
-    nodesSource: SceneNodeCount["source"];
-    scenes: number;
-  };
-  gl: {
-    programsLinked: number;
-    framebuffers: number;
-    buffers: number;
-    textures: number;
-    vertexArrays: number;
-    allocations: number;
-    residentPrograms: number | null;
-    total: Record<string, number>;
-  };
-  sim: { avgMs: number; outsideMs: number } | null;
-  profile: { samplingUs: number; seconds: number; top: ProfileEntry[] } | null;
-}
+export type PerfRecord = PerfReport;
+export type { PerfReport };
 
 interface RawProfile {
   nodes: ProfileNode[];
@@ -371,6 +338,8 @@ export interface MeasureOptions {
   warmupMs?: number;
   /** Run the CPU profiler pass afterwards; the budget gate does not need it. */
   profile?: boolean;
+  /** In-page report sampler: `off` loads the same build with `?telemetry=off` for an A/B run. */
+  telemetry?: "on" | "off";
 }
 
 export interface PerfMeasure {
@@ -415,6 +384,7 @@ export async function measureGame(options: MeasureOptions): Promise<PerfMeasure>
   url.searchParams.set("mode", "play");
   url.searchParams.set("device", "desktop");
   url.searchParams.set("capture", "1");
+  if (options.telemetry === "off") url.searchParams.set("telemetry", "off");
   applyCaptureQuality(url, quality);
   await session.send("Page.navigate", { url: url.toString() });
   await waitCaptureReady(session, 90_000);
@@ -439,6 +409,8 @@ export async function measureGame(options: MeasureOptions): Promise<PerfMeasure>
     frame: { avgSimMs?: number; avgOutsideMs?: number; phases?: unknown[] } | null;
     render: { drawCalls: number; triangles: number; geometries: number; textures: number } | null;
     probes?: Record<string, unknown>;
+    systems?: Record<string, SystemProbeReading>;
+    logSummary?: ReportLogs;
     longFrames?: unknown[];
   }>(`window.__jgengineAgent?.handle?.({ method: "debug_snapshot" })?.snapshot ?? null`);
   const gl = (await session.evaluate<GlCounts | null>(`globalThis.__jgPerfGl ?? null`)) ?? { counts: {}, since: {} };
@@ -476,6 +448,7 @@ export async function measureGame(options: MeasureOptions): Promise<PerfMeasure>
     quality,
     viewport: `${size?.w ?? 0}x${size?.h ?? 0}`,
     seconds: Math.round((windowMs / 1000) * 10) / 10,
+    at: Date.now(),
     frame,
     render: {
       draws: snapshot?.render?.drawCalls ?? null,
@@ -495,6 +468,7 @@ export async function measureGame(options: MeasureOptions): Promise<PerfMeasure>
       allocations,
       residentPrograms: typeof residentPrograms === "number" ? residentPrograms : null,
       total: gl.counts,
+      attached: (gl.counts.buffers ?? 0) + (gl.counts.textures ?? 0) > 0,
     },
     sim:
       snapshot?.frame === null || snapshot?.frame === undefined
@@ -504,6 +478,9 @@ export async function measureGame(options: MeasureOptions): Promise<PerfMeasure>
             outsideMs: Math.round((snapshot.frame.avgOutsideMs ?? 0) * 100) / 100,
           },
     profile: raw === null ? null : { samplingUs: PROFILE_SAMPLING_US, seconds: Math.round((profiledMs / 1000) * 10) / 10, top },
+    systems: snapshot?.systems ?? {},
+    logs: snapshot?.logSummary ?? null,
+    telemetry: null,
   };
 
   return { record, profile: raw, profileMs: profiledMs };
@@ -515,7 +492,7 @@ async function main(): Promise<void> {
     console.log(USAGE);
     return;
   }
-  const { game, quality, profile, seconds } = parsed.args;
+  const { game, quality, profile, seconds, telemetry } = parsed.args;
 
   if (!existsSync(join(repoRoot, "Games", game, "src", "index.tsx"))) {
     throw new Error(`no game "${game}" in Games/ — run \`bun run games:clone\` first, then retry`);
@@ -527,14 +504,13 @@ async function main(): Promise<void> {
     async ({ debugPort }) => {
       const session = await openPageSession(debugPort);
       try {
-        const measured = await measureGame({ session, base: server.base, game, quality, seconds });
+        const measured = await measureGame({ session, base: server.base, game, quality, seconds, telemetry });
         console.log(JSON.stringify(measured.record, null, 2));
         if (profile && measured.profile !== null) {
           printInclusive(aggregateInclusiveTime(measured.profile, measured.profileMs));
         }
         if (measured.record.profile?.top.length === 0) console.error("perf: the CPU profile produced no samples");
-        const totals = measured.record.gl.total;
-        if ((totals.buffers ?? 0) + (totals.textures ?? 0) === 0) {
+        if (measured.record.gl.attached !== true) {
           console.error("perf: GL allocation counters saw no activity — the WebGL hooks did not attach");
         }
         if (measured.record.render.nodes === null) console.error("perf: could not count scene nodes on this page");

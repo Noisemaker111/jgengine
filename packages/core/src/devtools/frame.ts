@@ -6,11 +6,10 @@ import type {
   PhaseStats,
   RenderSample,
 } from "./types";
+import { LONG_FRAME_MS } from "./report";
 
 const FRAME_CAPACITY = 240;
 const RECENT_FRAMES = 60;
-/** Frame duration in milliseconds above which a frame is recorded as a long-frame spike (~30fps budget). */
-export const LONG_FRAME_MS = 33.4;
 const LONG_FRAME_CAPACITY = 40;
 const MAX_PHASES_PER_FRAME = 24;
 const MAX_LONG_FRAME_PHASES = 8;

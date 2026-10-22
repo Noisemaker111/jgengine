@@ -1,9 +1,8 @@
 import type { ChangeSignal } from "../store/changeSignal";
-import type { Devtools, DevtoolsLogEntry, DevtoolsLogLevel, LatencyStats } from "./types";
+import type { DevtoolsLogLevel, DevtoolsLogs, DevtoolsLatency, LatencyStats } from "./types";
+import { createLogBus, LOG_BUS_MESSAGE_MAX, type LogBus } from "./logBus";
 
 const LATENCY_CAPACITY = 120;
-const LOG_CAPACITY = 200;
-const LOG_MESSAGE_MAX = 400;
 
 /** @internal */
 export function formatLogArg(arg: unknown): string {
@@ -19,28 +18,25 @@ export function formatLogArg(arg: unknown): string {
 /** Format an array of console arguments into a single truncated log message string. */
 export function formatLogMessage(args: readonly unknown[]): string {
   const message = args.map(formatLogArg).join(" ");
-  return message.length > LOG_MESSAGE_MAX ? `${message.slice(0, LOG_MESSAGE_MAX)}…` : message;
+  return message.length > LOG_BUS_MESSAGE_MAX ? `${message.slice(0, LOG_BUS_MESSAGE_MAX)}…` : message;
 }
 
 /** Logs subsystem exposing the log-capture and latency-tracking facades. */
 export interface LogsModule {
-  logs: Devtools["logs"];
-  latency: Devtools["latency"];
+  logs: DevtoolsLogs;
+  latency: DevtoolsLatency;
+  /** The ring the facade writes through, for a reporter that needs the whole window at once. */
+  bus: LogBus;
 }
 
 /** Create the logs subsystem that buffers captured console output and records latency samples. */
 export const createLogsModule = (deps: { signal: ChangeSignal }): LogsModule => {
   const { signal } = deps;
 
-  const logEntries: DevtoolsLogEntry[] = [];
+  const bus = createLogBus();
   let consoleCaptured = false;
 
   const latencySamples: number[] = [];
-
-  const pushLog = (level: DevtoolsLogLevel, message: string): void => {
-    logEntries.push({ at: Date.now(), level, message });
-    if (logEntries.length > LOG_CAPACITY) logEntries.splice(0, logEntries.length - LOG_CAPACITY);
-  };
 
   const latencyStats = (): LatencyStats | null => {
     if (latencySamples.length === 0) return null;
@@ -63,7 +59,12 @@ export const createLogsModule = (deps: { signal: ChangeSignal }): LogsModule => 
 
   return {
     logs: {
-      push: pushLog,
+      write(level: DevtoolsLogLevel, system: string, message: string) {
+        bus.write(level, system, message);
+      },
+      push(level: DevtoolsLogLevel, message: string, system = "console") {
+        bus.write(level, system, message);
+      },
       captureConsole() {
         if (consoleCaptured) return;
         const globalConsole = (globalThis as { console?: Console }).console;
@@ -73,14 +74,18 @@ export const createLogsModule = (deps: { signal: ChangeSignal }): LogsModule => 
         for (const level of levels) {
           const original = globalConsole[level].bind(globalConsole);
           globalConsole[level] = (...args: unknown[]) => {
-            pushLog(level, formatLogMessage(args));
+            bus.write(level, "console", formatLogMessage(args));
             original(...args);
           };
         }
       },
-      list: () => logEntries,
+      list: () => bus.list(),
+      severe: () => bus.severe(),
+      counts: () => bus.counts(),
+      dropped: () => bus.dropped(),
+      snapshot: () => bus.snapshot(),
       clear() {
-        logEntries.length = 0;
+        bus.reset();
         signal.notify();
       },
     },
@@ -91,5 +96,6 @@ export const createLogsModule = (deps: { signal: ChangeSignal }): LogsModule => 
       },
       stats: latencyStats,
     },
+    bus,
   };
 };

@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import type { CameraVisibilityContext } from "@jgengine/core/visibility/camera";
 import type { Renderable } from "@jgengine/core/visibility/visibilitySystem";
+import { devtools } from "@jgengine/core/devtools/devtools";
 import { createVisibilitySystem } from "./visibilitySystem";
 
 function mainCamera(): CameraVisibilityContext {
@@ -98,6 +99,18 @@ describe("visibilitySystem", () => {
     const sys = createVisibilitySystem({ renderables: () => objects, cameras: () => [mainCamera()] });
     sys.update();
     expect(sys.requiredAssets().has("tree.glb")).toBe(true);
+  });
+
+  test("the culling system reports its own probe without any shell wiring", () => {
+    const objects: Renderable[] = [ahead("front", 20), ahead("behind", -20)];
+    const sys = createVisibilitySystem({ renderables: () => objects, cameras: () => [mainCamera()] });
+    sys.update();
+    const reading = devtools.probes.systems()["render/culling"]!;
+    expect(reading.counters).toMatchObject({ totalObjects: 2, visible: 1, culled: 1 });
+    expect(reading.timers.cullingMs).toBeGreaterThanOrEqual(0);
+    expect(reading.state).toBe("1/2 visible · 1 culled · 0ms");
+    sys.clear();
+    expect(devtools.probes.systems()["render/culling"]).toBeUndefined();
   });
 
   test("removed objects drop out of the index and bounds", () => {

@@ -63,6 +63,7 @@ import { PostProcessing } from "./postfx/PostProcessing";
 import { EnvironmentLighting } from "./render/EnvironmentLighting";
 import { CollisionDebugWorld } from "./devtools/CollisionDebugWorld";
 import { DevtoolsRendererProbe } from "./devtools/DevtoolsOverlay";
+import { FrameTelemetry } from "./devtools/FrameTelemetry";
 import {
   CAMERA_TRANSPARENT_USERDATA,
   GameCameraRig,
@@ -767,6 +768,9 @@ export function Shell3dPresentation({
                   seatsActive={() => !gateRef.current && playControlsActive(ctx)}
                 />
                 <DevtoolsRendererProbe />
+                {devtoolsEnabled ? (
+                  <FrameTelemetry game={playable.game.name} quality={graphics.quality === "low" ? "draft" : "full"} />
+                ) : null}
                 {splitScreen ? (
                   <SplitScreenRenderer ctx={ctx} viewports={seatViewports} config={playable.viewports} mainCamera={playable.camera} />
                 ) : null}

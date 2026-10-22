@@ -150,8 +150,19 @@ describe("devtools logs and latency", () => {
     expect(formatLogMessage(["spawned", { id: 4 }])).toBe('spawned {"id":4}');
   });
 
-  test("latency stats aggregate samples", () => {
+  test("a tagged write names the owning system and keeps errors through a flood", () => {
     const dev = createDevtools();
+    dev.logs.write("error", "runtime", "uncaught: cannot read properties of undefined");
+    for (let i = 0; i < 240; i += 1) dev.logs.push("log", `noise ${i}`);
+    expect(dev.logs.list()).toHaveLength(200);
+    expect(dev.logs.severe()).toEqual([
+      expect.objectContaining({ level: "error", system: "runtime", message: "uncaught: cannot read properties of undefined" }),
+    ]);
+    expect(dev.logs.counts()).toMatchObject({ error: 1, log: 240 });
+    expect(dev.logs.dropped()).toBe(41);
+  });
+
+  test("latency stats aggregate samples", () => {    const dev = createDevtools();
     dev.latency.record(20);
     dev.latency.record(40);
     const stats = dev.latency.stats();
@@ -197,6 +208,52 @@ describe("devtools snapshot", () => {
       throw new Error("nope");
     });
     expect(dev.snapshot().probes["boom"]).toBe("probe failed: Error: nope");
+  });
+});
+
+describe("system probes", () => {
+  test("a system registers counters, timers and one state line through the probes seam", () => {
+    const dev = createDevtools();
+    dev.probes.registerSystem("needs", {
+      counters: () => ({ hungry: 3 }),
+      timers: () => ({ tickMs: 0.42 }),
+      state: () => "3 of 12 hungry",
+    });
+    expect(dev.probes.systems()["needs"]).toEqual({
+      counters: { hungry: 3 },
+      timers: { tickMs: 0.42 },
+      state: "3 of 12 hungry",
+    });
+    expect(dev.snapshot().systems["needs"]!.state).toBe("3 of 12 hungry");
+  });
+
+  test("a probe may report only what it has, and non-finite numbers are dropped", () => {
+    const dev = createDevtools();
+    dev.probes.registerSystem("nav", { counters: () => ({ agents: 2, ratio: Number.NaN }) });
+    expect(dev.probes.systems()["nav"]).toEqual({ counters: { agents: 2 }, timers: {}, state: "" });
+  });
+
+  test("dispose removes the probe, and a replaced probe's dispose leaves the newer one", () => {
+    const dev = createDevtools();
+    const first = dev.probes.registerSystem("render/culling", { state: () => "first" });
+    const second = dev.probes.registerSystem("render/culling", { state: () => "second" });
+    first();
+    expect(dev.probes.systems()["render/culling"]!.state).toBe("second");
+    second();
+    expect(dev.probes.systems()["render/culling"]).toBeUndefined();
+  });
+
+  test("a throwing system probe reports inline instead of breaking the whole read", () => {
+    const dev = createDevtools();
+    dev.probes.registerSystem("bad", {
+      counters: () => {
+        throw new Error("counter exploded");
+      },
+    });
+    dev.probes.registerSystem("good", { state: () => "fine" });
+    const systems = dev.probes.systems();
+    expect(systems["bad"]!.state).toContain("counter exploded");
+    expect(systems["good"]!.state).toBe("fine");
   });
 });
 
