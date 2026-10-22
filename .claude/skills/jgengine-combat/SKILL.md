@@ -44,6 +44,12 @@ compose through `createDamageRuntime` (`combat/damageRuntime`): a readable table
 time-to-kill quotes, and status ticks that follow the declared stack rule. It
 snapshots/restores as plain data; see
 [reference.md](reference.md#damage-runtime-armor-crits-and-statuses).
+Both damage paths raise `combat.damage` on `ctx.game.events`, one event per target
+application: the runtime with the table `type`, and `ctx.scene.entity.effect` with
+the effect id as `type` and `remaining` read from the last pool in the receive
+order. Use the runtime for new damage that needs types, zones or armor; keep the
+effect path for games that already drain `receive` pools. Neither delegates to
+the other, so a hit never raises the event twice.
 
 Closure-backed magazines expose snapshot/restore and `retune` for capacity/reload
 changes without reconstructing ammo state; capacity overflow is explicit.

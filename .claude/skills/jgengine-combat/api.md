@@ -541,6 +541,7 @@
 - `AreaTarget` (interface): interface AreaTarget { instanceId: string; scale: number } — ⚠ undocumented
 - `AreaTargetInput` (interface): interface AreaTargetInput { at: EntityPosition; radius: number; falloff?: "linear" | "none"; los?: boolean } — ⚠ undocumented
 - `CombatSpatialDeps` (interface): interface CombatSpatialDeps { inRadius(center: EntityPosition, radius: number): string[]; hasLineOfSight(from: EntityPosition | string, to: string): boolean; positionOf(instanceId: string): EntityPosition | undefined } — ⚠ undocumented
+- `EffectDamageApplication` (interface): interface EffectDamageApplication — One effect application that drained a target's pools, as an announcer needs it. The effect path has no damage table, so the caller names the channel (`effect`) and reads health its own way.
 - `EffectInput` (type): type EffectInput = SingleTargetEffectInput | AreaEffectInput — ⚠ undocumented
 - `EffectResult` (interface): interface EffectResult { instanceId: string; effect: string; applied: AppliedPoolDelta[]; lethal: boolean; slain?: SlainIdentity } — ⚠ undocumented
 - `EffectSystem` (interface): interface EffectSystem { canReceive(instanceId: string, effect: string, magnitude?: number): string | null; preview(input: SingleTargetEffectInput): number; applyEffect(input: EffectInput): EffectResult[] } — ⚠ undocumented · used by `createEffectSystem`: Resolve direct or area resource effects through caller-owned stat pools, including ordered absorption, restoration, modifiers, and lethal co…
