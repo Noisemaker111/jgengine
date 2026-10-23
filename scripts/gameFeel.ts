@@ -28,12 +28,22 @@ function sources(root: string): { rel: string; source: string }[] {
   return result;
 }
 
+/** A game owns `src/`; the games repo also keeps tooling folders (`scripts/`, `.github/`) beside its games. */
+function isGameDir(root: string, dir: string): boolean {
+  return existsSync(join(root, dir, "src"));
+}
+
 export function findGameFeelGaps(root: string): RatchetFinding[] {
   const files = sources(root);
   const byGame = new Map<string, string>();
+  const gameDirs = new Map<string, boolean>();
   for (const { rel, source } of files) {
     const parts = rel.split("/");
     const game = parts[0] === "Games" ? parts[1]! : "created-game";
+    const dir = parts[0] === "Games" ? join("Games", game) : "created-game";
+    const known = gameDirs.get(dir) ?? isGameDir(root, dir);
+    gameDirs.set(dir, known);
+    if (!known) continue;
     byGame.set(game, `${byGame.get(game) ?? ""}\n${source}`);
   }
   const gaps: RatchetFinding[] = [];
