@@ -25,6 +25,31 @@ export interface RunOffer<T> {
   change: T | null;
 }
 
+/** One change a run could open with, in the shape a choice screen shows: the id and its payload. */
+export interface RunChoice<T> {
+  id: string;
+  change: T;
+}
+
+/** What the loop reports about the run it is playing, for a capture or devtools read. */
+export interface RunReadout {
+  /** The run in progress, or the last settled run when none is open. */
+  run: number;
+  /** What the run in progress carries and can still lose. */
+  carried: number;
+  banked: number;
+  lost: number;
+  /** The best single bank across the career. */
+  best: number;
+  /** The change the run in progress opened with, or the one the next run is offered. */
+  offered: string | null;
+}
+
+/** Read-only handle a capture or devtools uses to prove a run loop is live, not merely imported. */
+export interface RunProbe {
+  read(): RunReadout;
+}
+
 /** Everything a run loop stores as plain JSON: the run in progress plus lifetime totals. */
 export interface RunLoopState {
   /** The run in progress, or `0` before the first `start`. */
@@ -76,6 +101,17 @@ export interface RunLoop<T> {
   /** The run in progress's offer, or the offer the next `start` would open. */
   offer(): RunOffer<T>;
   /**
+   * Up to `count` distinct changes the next run could open with, drawn weighted and in draw order,
+   * so a game can offer a choice instead of the single change {@link RunOffer} names. `choose` takes one.
+   */
+  present(count: number): RunChoice<T>[];
+  /**
+   * Open the next run around `changeId` (or around no change for `null`), which is how a presented
+   * choice becomes the change the run carries. Returns false for an id this loop's table does not
+   * carry, leaving the offer untouched.
+   */
+  choose(changeId: string | null): boolean;
+  /**
    * Close the run in progress: bank the haul scaled by `multiplier`, or lose it. Throws when no run
    * is open, so a double settle cannot bank the same haul twice.
    */
@@ -95,7 +131,9 @@ function positive(value: unknown): number {
  * with the game (pair it with `progression/careerBank`). After each settled run the loop draws the next
  * run's change from `changes`: eligible when `after <= completed`, never the change just played unless
  * it is the only one eligible, weighted by `weight`. The draw is `seededRng(seed:run:N)`, so the same
- * seed and the same run history give the same sequence, before or after a save/load.
+ * seed and the same run history give the same sequence, before or after a save/load. `present(count)`
+ * draws several of those changes for a choice screen and `choose(id)` adopts the pick as the next run's
+ * change.
  *
  * @capability run-loop bank or lose what a run carries, with one deterministic change per run
  */
@@ -116,13 +154,18 @@ export function createRunLoop<T>(config: RunLoopConfig<T>): RunLoop<T> {
   let bestHaul = 0;
 
   function drawFor(index: number, previous: string | null): RunOffer<T> {
-    const eligible = table.filter((change) => (change.after ?? 0) <= index - 1);
-    const fresh = eligible.filter((change) => change.id !== previous);
-    // A one-entry table still offers its change rather than nothing.
-    const pool = fresh.length > 0 ? fresh : eligible;
+    const pool = poolFor(index, previous);
     const rng = seededRng(`${config.seed}:run:${index}`);
     const drawn = pickWeighted(rng, pool, (change) => change.weight ?? 1) ?? null;
     return { run: index, changeId: drawn?.id ?? null, change: drawn?.value ?? null };
+  }
+
+  /** The changes run `index` may open with: `after`-eligible, and never the one just played while others remain. */
+  function poolFor(index: number, previous: string | null): RunChange<T>[] {
+    const eligible = table.filter((change) => (change.after ?? 0) <= index - 1);
+    const fresh = eligible.filter((change) => change.id !== previous);
+    // A one-entry table still offers its change rather than nothing.
+    return fresh.length > 0 ? fresh : eligible;
   }
 
   function offer(): RunOffer<T> {
@@ -149,6 +192,30 @@ export function createRunLoop<T>(config: RunLoopConfig<T>): RunLoop<T> {
     },
     haul: () => haul,
     offer,
+    present(count) {
+      const index = run > completed ? run : completed + 1;
+      const remaining = poolFor(index, changeId);
+      const drawn: RunChoice<T>[] = [];
+      const wanted = Number.isFinite(count) ? Math.max(0, Math.floor(count)) : 0;
+      const rng = seededRng(`${config.seed}:present:${index}`);
+      while (drawn.length < wanted && remaining.length > 0) {
+        const picked = pickWeighted(rng, remaining, (change) => change.weight ?? 1);
+        if (picked === undefined) break;
+        drawn.push({ id: picked.id, change: picked.value });
+        remaining.splice(remaining.indexOf(picked), 1);
+      }
+      return drawn;
+    },
+    choose(nextChangeId) {
+      if (nextChangeId !== null && !known.has(nextChangeId)) return false;
+      // A settled loop has no run to adopt the pick, so the pick opens the next one.
+      if (run <= completed) {
+        run = completed + 1;
+        haul = 0;
+      }
+      changeId = nextChangeId;
+      return true;
+    },
     settle(outcome, multiplier) {
       if (run <= completed) throw new Error("run loop: no run is open to settle");
       const settledHaul = haul;
@@ -173,5 +240,37 @@ export function createRunLoop<T>(config: RunLoopConfig<T>): RunLoop<T> {
       lostTotal = positive(next.lostTotal);
       bestHaul = positive(next.bestHaul);
     },
+  };
+}
+
+const RUN_PROBE_KEY = "__jgengineRun";
+
+type RunProbeGlobal = typeof globalThis & { [RUN_PROBE_KEY]?: RunProbe };
+
+/**
+ * Publish the loop's own readout on `window.__jgengineRun`, so a capture or devtools probe can state
+ * the live run, what it carries, what it banked or lost and the change it offers. Reads only; it never
+ * starts, settles or changes a run. Returns the uninstaller.
+ *
+ * @capability run-loop bank or lose what a run carries, with one deterministic change per run
+ */
+export function installRunProbe<T>(loop: RunLoop<T>): () => void {
+  const scope = globalThis as RunProbeGlobal;
+  const probe: RunProbe = {
+    read() {
+      const state = loop.snapshot();
+      return {
+        run: state.run,
+        carried: state.haul,
+        banked: state.bankedTotal,
+        lost: state.lostTotal,
+        best: state.bestHaul,
+        offered: loop.offer().changeId,
+      };
+    },
+  };
+  scope[RUN_PROBE_KEY] = probe;
+  return () => {
+    if (scope[RUN_PROBE_KEY] === probe) delete scope[RUN_PROBE_KEY];
   };
 }

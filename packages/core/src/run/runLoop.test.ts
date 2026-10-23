@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { createRunLoop, type RunLoop, type RunLoopState } from "./runLoop";
+import { createRunLoop, installRunProbe, type RunLoop, type RunLoopState } from "./runLoop";
 
 interface Change {
   label: string;
@@ -196,5 +196,126 @@ describe("run loop", () => {
     resumed.restore({ ...state, changeId: "retired-change" });
     expect(resumed.snapshot().changeId).toBeNull();
     expect(resumed.start().run).toBe(1);
+  });
+});
+
+describe("run choices", () => {
+  test("present offers distinct changes and the same three on a replay", () => {
+    const offered = loop().present(3);
+    expect(offered).toHaveLength(3);
+    expect(new Set(offered.map((choice) => choice.id)).size).toBe(3);
+    expect(offered.map((choice) => choice.id)).toEqual(loop().present(3).map((choice) => choice.id));
+  });
+
+  test("present carries each change's payload, not just its id", () => {
+    for (const choice of loop().present(3)) {
+      expect(choice.change.label.length).toBeGreaterThan(0);
+    }
+  });
+
+  test("present leaves out a change its `after` gate has not opened yet", () => {
+    const run = loop();
+    expect(run.present(4).map((choice) => choice.id)).not.toContain("night-shift");
+    run.start();
+    run.settle("banked");
+    run.start();
+    run.settle("banked");
+    // `after: 2` opens on run 3, once two runs have settled.
+    expect(run.present(4).map((choice) => choice.id)).toContain("night-shift");
+  });
+
+  test("present never offers the change the last run played", () => {
+    const run = loop();
+    const played = run.start().changeId;
+    run.carry(10);
+    run.settle("banked");
+    expect(run.present(3).map((choice) => choice.id)).not.toContain(played);
+  });
+
+  test("present never asks for more changes than the table has", () => {
+    expect(loop().present(50)).toHaveLength(3);
+    expect(loop().present(0)).toEqual([]);
+    expect(loop().present(Number.NaN)).toEqual([]);
+    expect(createRunLoop<Change>({ seed: "bare" }).present(3)).toEqual([]);
+  });
+
+  test("choosing a presented change opens the next run with it", () => {
+    const run = loop();
+    run.start();
+    run.carry(100);
+    run.settle("banked", 1);
+    const pick = run.present(3)[1];
+    expect(pick).toBeDefined();
+    if (pick === undefined) return;
+    expect(run.choose(pick.id)).toBe(true);
+    expect(run.snapshot()).toMatchObject({ run: 2, completed: 1, changeId: pick.id, haul: 0 });
+    expect(run.start()).toEqual({ run: 2, changeId: pick.id, change: pick.change });
+  });
+
+  test("a pick this loop's table does not carry is refused without changing the offer", () => {
+    const run = loop();
+    run.start();
+    run.settle("banked");
+    const before = run.offer();
+    expect(run.choose("no-such-relic")).toBe(false);
+    expect(run.offer()).toEqual(before);
+    expect(run.snapshot().run).toBe(1);
+  });
+
+  test("choosing nothing opens the next run plain", () => {
+    const run = loop();
+    run.start();
+    run.carry(40);
+    run.settle("lost");
+    expect(run.choose(null)).toBe(true);
+    expect(run.start()).toEqual({ run: 2, changeId: null, change: null });
+  });
+
+  test("a chosen change survives a save and opens the run it was picked for", () => {
+    const run = loop();
+    run.start();
+    run.carry(80);
+    run.settle("banked");
+    run.choose("short-yard");
+    const resumed = loop();
+    resumed.restore(JSON.parse(JSON.stringify(run.snapshot())));
+    expect(resumed.offer().changeId).toBe("short-yard");
+    expect(resumed.start().changeId).toBe("short-yard");
+  });
+});
+
+describe("run probe", () => {
+  const scope = globalThis as typeof globalThis & { __jgengineRun?: { read(): unknown } };
+
+  test("the probe reports the live run, its totals and the change offered", () => {
+    const run = loop();
+    run.start();
+    run.carry(240);
+    const stop = installRunProbe(run);
+    try {
+      expect(scope.__jgengineRun?.read()).toMatchObject({ run: 1, carried: 240, banked: 0, lost: 0, best: 0 });
+      expect(scope.__jgengineRun?.read().offered).toBe(run.offer().changeId);
+      run.settle("banked", 1.25);
+      expect(scope.__jgengineRun?.read()).toMatchObject({ carried: 0, banked: 300, lost: 0, best: 300 });
+      expect(scope.__jgengineRun?.read().offered).toBe(run.offer().changeId);
+    } finally {
+      stop();
+    }
+    expect(scope.__jgengineRun).toBeUndefined();
+  });
+
+  test("a wrecked run reports what it lost, and a replaced probe is not removed by the old uninstaller", () => {
+    const first = loop();
+    const second = loop("row-six");
+    const stopFirst = installRunProbe(first);
+    const stopSecond = installRunProbe(second);
+    second.start();
+    second.carry(120);
+    second.settle("lost");
+    expect(scope.__jgengineRun?.read()).toMatchObject({ run: 1, carried: 0, banked: 0, lost: 120, best: 0 });
+    stopFirst();
+    expect(scope.__jgengineRun).toBeDefined();
+    stopSecond();
+    expect(scope.__jgengineRun).toBeUndefined();
   });
 });
