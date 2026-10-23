@@ -26,6 +26,16 @@ At publish, rename this heading to the new version and mirror the entries into
 `packages/core/src/meta/changelog.ts` (the typed `CHANGELOG` export).
 -->
 
+## 0.34.0
+
+### Migrate
+
+- **Bump lockstep SDK packages to `^0.34.0`:** `@jgengine/{core,rapier,react,ws,node,sql,convex,shell,editor,assets,navbake}`. CLI `jgengine` is `0.31.0`; `@jgengine/github` is `0.21.0`.
+
+### Added
+
+- `createRunLoop` (`@jgengine/core/run/runLoop`) holds a run's at-risk haul, banks it scaled by the line or loses it on a failure, and draws one authored change for each next run from a seeded table, so the same seed and run history replay the same sequence. State round-trips through `snapshot`/`restore`; the money stays in `progression/careerBank`.
+
 ## 0.33.0
 
 ### Migrate

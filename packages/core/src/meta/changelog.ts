@@ -1,5 +1,5 @@
 /** Installed `@jgengine/core` semver — compare against {@link CHANGELOG} keys when migrating. */
-export const VERSION = "0.33.0";
+export const VERSION = "0.34.0";
 
 /** One release's migrate steps plus added/changed/removed notes (typed mirror of CHANGELOG.md). */
 export interface ChangelogEntry {
@@ -11,6 +11,16 @@ export interface ChangelogEntry {
 
 /** Per-version engine changelog keyed by semver string (e.g. `"0.10.0"`). */
 export const CHANGELOG: Record<string, ChangelogEntry> = {
+  "0.34.0": {
+    migrate: [
+      "Bump lockstep SDK packages to `^0.34.0`: `@jgengine/{core,rapier,react,ws,node,sql,convex,shell,editor,assets,navbake}`. CLI `jgengine` is `0.31.0`; `@jgengine/github` is `0.21.0`.",
+    ],
+    added: [
+      "`createRunLoop` (`@jgengine/core/run/runLoop`) holds a run's at-risk haul, banks it scaled by the line or loses it on a failure, and draws one authored change for each next run from a seeded table, so the same seed and run history replay the same sequence. State round-trips through `snapshot`/`restore`; the money stays in `progression/careerBank`.",
+    ],
+    changed: [],
+    removed: [],
+  },
   "0.33.0": {
     migrate: [
       "Bump lockstep SDK packages to `^0.33.0`: `@jgengine/{core,rapier,react,ws,node,sql,convex,shell,editor,assets,navbake}`. CLI `jgengine` is `0.30.0`; `@jgengine/github` is `0.20.0`.",
