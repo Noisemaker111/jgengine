@@ -1,5 +1,5 @@
 /** Installed `@jgengine/core` semver — compare against {@link CHANGELOG} keys when migrating. */
-export const VERSION = "0.34.0";
+export const VERSION = "0.35.0";
 
 /** One release's migrate steps plus added/changed/removed notes (typed mirror of CHANGELOG.md). */
 export interface ChangelogEntry {
@@ -11,6 +11,28 @@ export interface ChangelogEntry {
 
 /** Per-version engine changelog keyed by semver string (e.g. `"0.10.0"`). */
 export const CHANGELOG: Record<string, ChangelogEntry> = {
+  "0.35.0": {
+    migrate: [
+      "Bump lockstep SDK packages to `^0.35.0`: `@jgengine/{core,rapier,react,ws,node,sql,convex,shell,editor,assets,navbake}`. CLI `jgengine` is `0.32.0`; `@jgengine/github` is `0.22.0`.",
+    ],
+    added: [
+      "`ModelLodConfig.crowdCapacity` declares how many characters of one model a batch draws (default 128). A character past the cap keeps its own rig at its distance tier instead of disappearing.",
+      "`ModelLodConfig.crowdDistance` accepts `0`, which batches a character at every distance instead of only past 25 m. A game with a near crowd or a close-quarters army sets it to batch members in front of the camera too.",
+      "`characterRigTier` (`@jgengine/shell/render/characterLod`) resolves the distance tier a character poses its own rig on, which is the fallback for an over-cap crowd.",
+      "`audio.zones` (`@jgengine/core/game/playableGame`): a scene declares world-space ambience zones, one looping bed per zone. The shell crossfades bed levels from the listener position on each sound's own bus, so entering, leaving and walking between zones hand over instead of cutting.",
+      "`audio.occlusion` (`@jgengine/core/audio/occlusion`): budgeted geometry occlusion for retained positional loops. A blocked line attenuates the loop and darkens it through a low-pass; the per-tick test budget and interval bound the cost, and a loop that cannot be tested stays on distance-only.",
+      "`SoundDef.duck`: a cue can lower named buses for its own duration. `AudioEngine.duck` returns a release, and the player's own gain is restored exactly even when they move the slider mid-duck.",
+      "`AudioEngine.ambience()`, `AudioEngine.occlusionStats()` and `window.__jgengineAudio` report the zone mix, the newest occlusion test and the measured per-test cost for capture and diagnostics.",
+    ],
+    changed: [
+      "The character batch path now covers every drawable character model, not only skinned locomotion rigs: a node-transform character (rotating limbs, no skin) rides the node a clip moves, and a model with no clips at all batches as a static geometry. Both still bake to one geometry per material, so a crowd draws once per model and material.",
+      "Batched characters are pickable: the batch carries the entity ids of the instances it drew, so `worldHit().entity` and a click on a batched character resolve to the character instead of falling through to the ground.",
+      "Load-time shader warmup compiles what the first frame can reach, reveals as soon as those programs are linked, and finishes the rest in background rounds, so a scene no longer holds the loading cover for its whole model stream and no longer drops a compile onto a frame that is already showing. The loading cover names the shader count, the seconds waited and the work left for the background.",
+      "A crowd batch silently dropped members past its fixed 128 instances while their markers still hid them, so a full scene lost characters. Members past the declared capacity now keep their own rigs.",
+      "A crowd batch's clock now follows the game clock when one is bound, so a paused game no longer keeps its crowd walking.",
+    ],
+    removed: [],
+  },
   "0.34.0": {
     migrate: [
       "Bump lockstep SDK packages to `^0.34.0`: `@jgengine/{core,rapier,react,ws,node,sql,convex,shell,editor,assets,navbake}`. CLI `jgengine` is `0.31.0`; `@jgengine/github` is `0.21.0`.",
