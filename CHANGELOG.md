@@ -26,6 +26,25 @@ At publish, rename this heading to the new version and mirror the entries into
 `packages/core/src/meta/changelog.ts` (the typed `CHANGELOG` export).
 -->
 
+## 0.32.0
+
+### Migrate
+
+- **Bump lockstep SDK packages to `^0.32.0`:** `@jgengine/{core,rapier,react,ws,node,sql,convex,shell,editor,assets,navbake}`. CLI `jgengine` is `0.29.0`; `@jgengine/github` is `0.19.0`.
+
+### Added
+
+- Audio mixing grew a mute that composes with gain: `AudioEngine.setBusMute` / `setMasterMute` keep the player's volume while silencing a bus, `masterLevel()` / `busLevel()` report the composed value, and Settings carries a mute row per bus plus "Mute all" (`sound.muted`, `sound.bus.<id>.muted`). `AudioEngine.play` and `playOneShot` hold cues in a bounded 16-slot queue while the browser keeps the context suspended and play them on the first gesture instead of dropping them; `installGestureResume` wires that gesture for both presentation paths.
+- `AudioEngine.measure()` reads master RMS and peak from a lazily built analyser, and `installAudioProbe` publishes `window.__jgengineAudio` so a headless capture can prove sound with a measured level rather than a screenshot.
+- `@jgengine/core/audio/feedbackCues` ships seven procedural reactions - `hit`, `hurt`, `kill`, `pickup`, `objective`, `wave`, `deny` - on an `sfx` bus, merged into every game's catalog as `feel.<cue>`. A game sound with that id replaces one; `audio.feedbackCues` replaces or silences them.
+- `@jgengine/shell/audio/eventFeedback` maps the events the engine already announces to those reactions: `combat.damage` (local player reads as hurt, anything else as a hit), `entity.died`, `worldItem.picked_up`, `quest.completed`, `stat.levelUp` and `command.refused`. Each row carries a sound, a gamepad pulse, camera trauma and a caption; the mapping and reactions are data (`DEFAULT_FEEDBACK_BINDINGS`, `DEFAULT_FEEDBACK_REACTIONS`) a game can replace, cooldowns fold a burst into one impact, reduced motion keeps sound and rumble but drops the camera kick, and the resolved reaction is pooled so handling an event allocates nothing per frame. `attachWaveFeedback(runner, ctx.game.feedback)` announces each new wave.
+- `ctx.game.feedback.cue(cue, caption?)` announces a moment no engine event covers and emits `feedback.cue`.
+- `@jgengine/shell/audio/captions` and `CaptionOverlay` render a bounded, deduping, self-expiring caption line under the accessibility captions setting; `FeedbackHost` mounts the whole layer - feedback mapping, gesture resume, audio probe and captions - for both the 3D and HUD presentation paths.
+
+### Changed
+
+- The CI gate runs nine test shards instead of ten, and a `types` job whose stages overlap, so a docs-only pull request fits the account's 20-job runner cap with room for another run beside it. `scripts/test-shard.ts` owns which files each shard runs and what it prepares first; `bun scripts/type-shard.ts` runs the `check-types` plan two stages at a time and then the tsc fan-out alone.
+
 ## 0.31.0
 
 ### Migrate
