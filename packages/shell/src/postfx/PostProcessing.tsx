@@ -205,6 +205,25 @@ export function planPostStages(
   };
 }
 
+/** The stage toggles a settings surface may offer; each is a pass a chain can either build or skip. @internal */
+export type PostfxToggleStage = "ao" | "bloom" | "dof" | "smaa";
+
+/**
+ * The toggle stages a chain built from `config` can contain on its most permissive tier, with the
+ * player's own toggles ignored. A row for any other stage switches a pass the chain never builds, so
+ * nothing the player picks reaches the screen.
+ * @internal
+ */
+export function availablePostfxStages(config: PostProcessingConfig): readonly PostfxToggleStage[] {
+  const plan = planPostStages(config, "high", { ao: true, bloom: true, dof: true, smaa: true });
+  const stages: PostfxToggleStage[] = [];
+  if (plan.ao !== null) stages.push("ao");
+  if (plan.bloom !== null) stages.push("bloom");
+  if (plan.dof !== null) stages.push("dof");
+  if (plan.smaa) stages.push("smaa");
+  return stages;
+}
+
 /**
  * Build the composer for a plan. A stage the plan left out adds no pass, so it draws nothing and
  * allocates no render target.
