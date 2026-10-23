@@ -6,9 +6,9 @@
 
 /** What the director reads about the player before it chooses a tier. */
 export interface PressureReading {
-  /** Player health fraction `0..1`. Lower leans harder. */
+  /** Player health fraction `0..1`. A healthier player is leaned on harder. */
   health: number;
-  /** Encounter progress `0..1` — waves cleared over waves authored. Lower leans harder. */
+  /** Encounter progress `0..1` — waves cleared over waves authored. Further in leans harder. */
   progress: number;
   /** Seconds the encounter has run. Longer leans harder, up to the window. */
   elapsed: number;
@@ -16,9 +16,9 @@ export interface PressureReading {
 
 /** The weights and window that turn a reading into an index, plus the hard cap. */
 export interface PressureRule {
-  /** Weight of low player health. Default `1`. */
+  /** Weight of the player staying in control (health). Default `0.5`. */
   healthWeight?: number;
-  /** Weight of the encounter not being finished. Default `1`. */
+  /** Weight of how far through the encounter the player is. Default `1`. */
   progressWeight?: number;
   /** Weight of time spent past `timeFloorSeconds`. Default `0.5`. */
   timeWeight?: number;
@@ -58,7 +58,7 @@ interface ResolvedRule {
 }
 
 const RULE_DEFAULTS: ResolvedRule = {
-  healthWeight: 1,
+  healthWeight: 0.5,
   progressWeight: 1,
   timeWeight: 0.5,
   timeFloorSeconds: 90,
@@ -92,11 +92,12 @@ function timeTerm(elapsed: number, rule: ResolvedRule): number {
 /**
  * Turn one reading into a bounded pressure plan.
  *
- * The index is the weighted mean of three terms — how hurt the player is (`1 - health`), how far
- * from finished the encounter is (`1 - progress`), and how long it has run — each clamped to
- * `0..1`, then split into `maxTier + 1` bands. Because every term and every derived effect is a
- * clamp of an authored cap, the rule cannot climb: a dead player on a stalled timer for an hour
- * lands on `tier === maxTier` with `countBonus === maxTier`, never above it.
+ * The index is the weighted mean of three terms — the player's health (staying in control), how far
+ * through the encounter they are, and how long it has run — each clamped to `0..1`, then split into
+ * `maxTier + 1` bands. A hurt player is leaned on *less*, so a director that reads this plan never
+ * piles on someone already losing. Because every term and every derived effect is a clamp of an
+ * authored cap, the rule cannot climb: a full-health player on a long run lands on
+ * `tier === maxTier` with `countBonus === maxTier`, never above it.
  *
  * @capability encounter-pressure bounded difficulty tier read from player health, encounter progress and time
  */
@@ -112,8 +113,8 @@ export function evaluatePressure(reading: PressureReading, rule: PressureRule = 
     totalWeight <= 0
       ? 0
       : clamp01(
-          (resolved.healthWeight * (1 - health) +
-            resolved.progressWeight * (1 - progress) +
+          (resolved.healthWeight * health +
+            resolved.progressWeight * progress +
             resolved.timeWeight * time) /
             totalWeight,
         );

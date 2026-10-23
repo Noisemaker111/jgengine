@@ -2,12 +2,13 @@ import { describe, expect, test } from "bun:test";
 
 import { evaluatePressure, type PressureReading, type PressureRule } from "@jgengine/core/ai/director/pressure";
 
-const calm: PressureReading = { health: 1, progress: 0.8, elapsed: 10 };
-const struggling: PressureReading = { health: 0.15, progress: 0.2, elapsed: 200 };
+const opening: PressureReading = { health: 1, progress: 0, elapsed: 0 };
+const deep: PressureReading = { health: 1, progress: 0.85, elapsed: 260 };
+const hurting: PressureReading = { health: 0.1, progress: 0.85, elapsed: 260 };
 
 describe("encounter pressure", () => {
-  test("a healthy player near the end of the encounter gets the authored composition", () => {
-    const plan = evaluatePressure(calm);
+  test("a healthy player at the opening gets the authored composition", () => {
+    const plan = evaluatePressure(opening);
     expect(plan.tier).toBe(0);
     expect(plan.countBonus).toBe(0);
     expect(plan.eliteSlots).toBe(0);
@@ -15,14 +16,22 @@ describe("encounter pressure", () => {
     expect(plan.atCap).toBe(false);
   });
 
-  test("a hurt player early in a long fight reaches the top tier", () => {
-    const plan = evaluatePressure(struggling, { timeFloorSeconds: 60, timeWindowSeconds: 240 });
+  test("a healthy player deep into a long run reaches the top tier", () => {
+    const plan = evaluatePressure(deep, { timeFloorSeconds: 60, timeWindowSeconds: 300 });
     expect(plan.tier).toBe(2);
     expect(plan.countBonus).toBe(2);
     expect(plan.eliteSlots).toBe(1);
     expect(plan.cadenceScale).toBeLessThan(1);
     expect(plan.atCap).toBe(true);
-    expect(plan.reason).toContain("health 0.15");
+    expect(plan.reason).toContain("health 1.00");
+  });
+
+  test("a hurt player is leaned on less than a healthy one at the same point", () => {
+    const rule: PressureRule = { timeFloorSeconds: 60, timeWindowSeconds: 300 };
+    expect(evaluatePressure(hurting, rule).tier).toBeLessThan(evaluatePressure(deep, rule).tier);
+    expect(evaluatePressure({ ...deep, health: 0 }, rule).tier).toBeLessThanOrEqual(
+      evaluatePressure(deep, rule).tier,
+    );
   });
 
   test("the plan never exceeds the rule's documented bound", () => {
@@ -46,11 +55,11 @@ describe("encounter pressure", () => {
     }
   });
 
-  test("a dead player on a stalled clock for an hour sits exactly on the cap", () => {
-    const first = evaluatePressure({ health: 0, progress: 0, elapsed: 60 }, { maxTier: 2 });
-    const hourLater = evaluatePressure({ health: 0, progress: 0, elapsed: 3600 }, { maxTier: 2 });
+  test("a full-health player on a very long run sits exactly on the cap", () => {
+    const early = evaluatePressure({ health: 1, progress: 1, elapsed: 200 }, { maxTier: 2 });
+    const hourLater = evaluatePressure({ health: 1, progress: 1, elapsed: 3600 }, { maxTier: 2 });
     expect(hourLater.tier).toBe(2);
-    expect(hourLater.tier).toBe(first.tier);
+    expect(hourLater.tier).toBe(early.tier);
     expect(hourLater.countBonus).toBe(2);
     expect(hourLater.eliteSlots).toBe(1);
     expect(hourLater.atCap).toBe(true);
@@ -58,7 +67,7 @@ describe("encounter pressure", () => {
 
   test("a rule with maxTier 0 never escalates", () => {
     for (const health of [0, 0.5, 1]) {
-      const plan = evaluatePressure({ health, progress: 0, elapsed: 1e6 }, { maxTier: 0 });
+      const plan = evaluatePressure({ health, progress: 1, elapsed: 1e6 }, { maxTier: 0 });
       expect(plan.tier).toBe(0);
       expect(plan.countBonus).toBe(0);
       expect(plan.cadenceScale).toBe(1);
@@ -66,7 +75,7 @@ describe("encounter pressure", () => {
     }
   });
 
-  test("worse readings never lower the tier, and the call is pure", () => {
+  test("better play never lowers the tier, and the call is pure", () => {
     const rule: PressureRule = {};
     const reading = { health: 0.6, progress: 0.5, elapsed: 120 };
     const before = JSON.stringify(reading);
@@ -74,8 +83,7 @@ describe("encounter pressure", () => {
     const b = evaluatePressure(reading, rule);
     expect(a).toEqual(b);
     expect(JSON.stringify(reading)).toBe(before);
-    const worse = evaluatePressure({ ...reading, health: 0.2 }, rule);
-    expect(worse.tier).toBeGreaterThanOrEqual(a.tier);
-    expect(evaluatePressure({ ...reading, progress: 0.9 }, rule).tier).toBeLessThanOrEqual(a.tier);
+    expect(evaluatePressure({ ...reading, health: 0.9 }, rule).tier).toBeGreaterThanOrEqual(a.tier);
+    expect(evaluatePressure({ ...reading, progress: 0.2 }, rule).tier).toBeLessThanOrEqual(a.tier);
   });
 });

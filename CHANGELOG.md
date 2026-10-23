@@ -26,6 +26,10 @@ At publish, rename this heading to the new version and mirror the entries into
 `packages/core/src/meta/changelog.ts` (the typed `CHANGELOG` export).
 -->
 
+### Changed
+
+- `evaluatePressure` (`@jgengine/core/ai/director/pressure`) reads pressure as player control: a healthy player further into a run is leaned on harder, a hurt player is eased off, and every effect stays inside the rule's `maxTier`.
+
 ## 0.30.0
 
 ### Migrate
