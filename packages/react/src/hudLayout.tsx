@@ -80,9 +80,12 @@ const WINDOW_ATTR = "data-hud-window";
  */
 function isDevBuild(): boolean {
   try {
-    // @ts-expect-error -- `vite/client` types are not part of this package's tsconfig
+    // Literal members on purpose: Vite replaces exactly `import.meta.env.DEV`.
+    // Inlined as plain `@ts-ignore` because a workspace-wide type program that
+    // includes `vite/client` would otherwise fail an unused-directive check.
+    // @ts-ignore -- `vite/client` types are not part of this package's own tsconfig
     if (import.meta.env.DEV === true) return true;
-    // @ts-expect-error -- `vite/client` types are not part of this package's tsconfig
+    // @ts-ignore -- `vite/client` types are not part of this package's own tsconfig
     if (import.meta.env.PROD === true) return false;
   } catch {
     /* import.meta.env unavailable under this bundler */
