@@ -15,3 +15,5 @@ One file per PR means parallel PRs never conflict on `CHANGELOG.md`. Use the Kee
 ```
 
 Pure refactors, tests and internal-only changes skip it with `[skip changelog]` in a commit message.
+
+`bun run land` sends the newest fragment as the PR body only when it is given no `--body-file`; an explicit body wins.
