@@ -1,16 +1,25 @@
 // The CI `test` job runs this once per shard. One bun process over `packages
 // apps/dev scripts` took 5m37s of test time on a runner, so the same files are
-// split by path into four jobs. Every test file under those roots lands in
+// split by measured cost into four jobs. Every test file under those roots lands in
 // exactly one shard - the last entry covers the rest - and `--check` fails if
 // the split ever stops covering everything, so a new directory cannot drop its
 // tests silently.
 //
-//   bun scripts/test-shard.ts hot-core
+//   bun scripts/test-shard.ts a
 //   bun scripts/test-shard.ts --check     # file counts per shard, no tests run
 //
-// Balance is measured, not guessed: the seconds after each entry are that
-// shard's `bun test` step from a CI run, and shards are rebalanced by moving
-// whole directories when one runs long.
+// The names are the four letters in the ci.yml matrix, and the matrix is the only
+// shard fact that file holds: which files each letter runs lives here, so
+// rebalancing never edits the workflow. `scripts/test-shard.test.ts` fails when
+// the two lists disagree.
+//
+// Balance is measured, not guessed: each number below is that shard's `bun test`
+// step on a runner, timed per file with `--reporter=junit` (2026-10-23):
+// a 86 s, b 99 s, c 86 s, d 77 s, out of 352 s of test time for one job. b holds a
+// single file because `packages/editor/src/CreatorApp.test.ts` is 99 s on its own -
+// it boots Chrome and drives real frames through a save/play/return round - so it
+// sets the floor no matter where it goes; the other three carry the rest. Moving a
+// directory means re-timing the shard and updating these numbers in the same commit.
 import { readdirSync } from "node:fs";
 import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -25,20 +34,33 @@ const SKIP_DIRS = new Set(["node_modules", "dist", ".git", ".claude", "coverage"
 
 export interface Shard {
   name: string;
+  /** What the shard runs, printed with its file count so a red `test (a)` says what broke. */
+  label: string;
   include: string[];
 }
 
-/**
- * Order matters: the first entry whose include matches a file owns it, and the
- * trailing root prefixes on the last shard catch a new package instead of
- * dropping its tests. Measured `bun test` wall clock on the recording machine:
- * core 63 s, ui 66 s, sdk 94 s, scripts 74 s, out of 286 s for one job.
- */
+/** Four shards by measured cost; the CI matrix runs one job per entry, in this order. */
 export const SHARDS: readonly Shard[] = [
-  { name: "core", include: ["packages/core"] },
-  { name: "ui", include: ["packages/react", "packages/editor", "packages/assets", "packages/sql", "packages/navbake"] },
-  { name: "sdk", include: ["packages/jgengine", "packages/rapier", "packages/convex", "packages/github"] },
-  { name: "scripts", include: ["scripts", "apps/dev", "packages/shell", "packages/ws", "packages/node", ...TEST_ROOTS] },
+  { name: "a", label: "core + react", include: ["packages/core", "packages/react"] },
+  { name: "b", label: "editor browser", include: ["packages/editor/src/CreatorApp.test.ts"] },
+  {
+    name: "c",
+    label: "sdk",
+    include: [
+      "packages/jgengine",
+      "packages/rapier",
+      "packages/convex",
+      "packages/github",
+      "packages/assets",
+      "packages/sql",
+      "packages/navbake",
+    ],
+  },
+  {
+    name: "d",
+    label: "scripts + shell",
+    include: ["scripts", "apps/dev", "packages/shell", "packages/ws", "packages/node", "packages/editor", ...TEST_ROOTS],
+  },
 ];
 
 /** Every test file under the roots, as repo-relative forward-slash paths. */
@@ -81,7 +103,7 @@ export function assignShards(files: readonly string[], shards: readonly Shard[] 
 
 function counts(files: readonly string[], shards: readonly Shard[]): string[] {
   const assigned = assignShards(files, shards);
-  return shards.map((shard) => `${shard.name}: ${assigned.get(shard.name)!.length} file(s)`);
+  return shards.map((shard) => `${shard.name} (${shard.label}): ${assigned.get(shard.name)!.length} file(s)`);
 }
 
 function main(): void {
@@ -99,17 +121,18 @@ function main(): void {
     console.error(`test-shard: pass a shard name (${SHARDS.map((s) => s.name).join(", ")}) or --check`);
     process.exit(1);
   }
-  const assigned = assignShards(files, SHARDS).get(name);
-  if (assigned === undefined) {
+  const shard = SHARDS.find((entry) => entry.name === name);
+  if (shard === undefined) {
     console.error(`test-shard: unknown shard ${name}`);
     process.exit(1);
   }
+  const assigned = assignShards(files, SHARDS).get(name)!;
   if (assigned.length === 0) {
     console.error(`test-shard: shard ${name} has no test files`);
     process.exit(1);
   }
 
-  console.log(`test-shard ${name}: ${assigned.length} of ${files.length} test file(s)`);
+  console.log(`test-shard ${name} (${shard.label}): ${assigned.length} of ${files.length} test file(s)`);
   const run = spawnSync("bun", ["test", "--timeout", "20000", ...assigned], {
     cwd: root,
     stdio: "inherit",

@@ -116,16 +116,18 @@ jobs:
       - run: bun run check-types
 
   # One bun process over every test file took 5m37s of test time on a runner. The same
-  # files are split by path into four jobs of about 90 s; scripts/test-shard.ts owns the
-  # split and fails if a test file falls outside every shard, so nothing is dropped.
-  # `ci` needs `test`, which aggregates all four shards - a red shard fails `ci`.
+  # files are split by cost into four jobs of about 90 s. scripts/test-shard.ts owns which
+  # files each letter runs, so rebalancing never touches this file; it fails if a test file
+  # falls outside every shard, and scripts/test-shard.test.ts fails if this matrix and the
+  # script's shard names drift apart. `ci` needs `test`, which aggregates all four shards -
+  # a red shard fails `ci`.
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
-        shard: [core, ui, sdk, scripts]
+        shard: [a, b, c, d]
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
