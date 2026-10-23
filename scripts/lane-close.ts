@@ -129,7 +129,12 @@ export function waitingGate(session: AuditSession): Waiting & { blocked: boolean
   return { sleepMs, ciWatchMs, calls: named, blocked: sleepMs > 0 || ciWatchMs > 0 };
 }
 
-/** The session this lane is: named, else the only one in this directory, else the longest. */
+/**
+ * The session this lane is: the one the harness names, else the only one in this
+ * directory, else the one with the most waiting. A directory can hold more than one
+ * session, and the gate judges the numbers the report prints, so an unnamed
+ * ambiguous read takes the worst session rather than a hopeful one.
+ */
 export function pickSession(
   sessions: readonly AuditSession[],
   options: { session?: string; env?: Record<string, string | undefined> } = {},
@@ -147,11 +152,15 @@ export function pickSession(
   }
   if (sessions.length === 0) return { session: null, note: "no session in this directory in the last 6 hours" };
   if (sessions.length === 1) return { session: sessions[0]!, note: `session ${sessions[0]!.id}` };
-  const longest = sessions.reduce((best, session) => (session.spanMs > best.spanMs ? session : best), sessions[0]!);
+  const worst = sessions.reduce((best, session) => (waited(session) > waited(best) || (waited(session) === waited(best) && session.spanMs > best.spanMs) ? session : best), sessions[0]!);
   return {
-    session: longest,
-    note: `session ${longest.id} (the longest of ${sessions.length} in this directory; pass --session <id> to name another)`,
+    session: worst,
+    note: `session ${worst.id} (the one with the most waiting of ${sessions.length} in this directory; pass --session <id> to name another)`,
   };
+}
+
+function waited(session: AuditSession): number {
+  return (session.sleepMs ?? 0) + (session.ciWatchMs ?? 0);
 }
 
 export function population(report: AuditReport): number {
@@ -344,7 +353,7 @@ export function closeLane(args: LaneCloseArgs, io: LaneIo): number {
   if (gate !== null && gate.blocked) {
     io.out(`lane:close: waiting waived (${args.waive}): sleep ${minutes(gate.sleepMs)}, CI watch ${minutes(gate.ciWatchMs)}`);
   }
-  if (picked.session !== null) io.out(`lane:close: read session "${picked.session.title}" (${picked.session.id})`);
+  if (picked.session !== null) io.out(`lane:close: read session "${picked.session.title}" — ${picked.note}`);
 
   io.out("");
   io.out(

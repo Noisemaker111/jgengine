@@ -148,6 +148,15 @@ describe("which session is this lane", () => {
     expect(pickSession([session({ id: "a" }), session({ id: "b" })], { session: "b" }).session?.id).toBe("b");
   });
 
+  test("an unnamed ambiguous directory is read as its worst session, never the hopeful one", () => {
+    const picked = pickSession(
+      [session({ id: "a", title: "clean" }), session({ id: "b", title: "slept", sleepMs: 60_000 })],
+      { env: {} },
+    );
+    expect(picked.session?.id).toBe("b");
+    expect(picked.note).toContain("most waiting of 2");
+  });
+
   test("the harness session id is used when the audit knows it", () => {
     const picked = pickSession([session({ id: "a" }), session({ id: "b" })], { env: { CLAUDE_SESSION_ID: "b" } });
     expect(picked.session?.id).toBe("b");
