@@ -1,6 +1,6 @@
 // The CI `test` job runs this once per shard. One bun process over `packages
 // apps/dev scripts` took 5m37s of test time on a runner, so the same files are
-// split by measured cost into eight jobs. Every test file under those roots lands in
+// split by measured cost into nine jobs. Every test file under those roots lands in
 // exactly one shard - the last entry covers the rest - and `--check` fails if
 // the split ever stops covering everything, so a new directory cannot drop its
 // tests silently.
@@ -9,25 +9,27 @@
 //   bun scripts/test-shard.ts --check     # file counts per shard, no tests run
 //   bun scripts/test-shard.ts --print a   # this shard's file paths, one per line
 //
-// The names are the eight letters in the ci.yml matrix, and the matrix is the only
+// The names are the nine letters in the ci.yml matrix, and the matrix is the only
 // shard fact that file holds: which files each letter runs and what it prepares first
 // lives here, so rebalancing never edits the workflow. `scripts/test-shard.test.ts`
 // fails when the two lists disagree.
 //
 // Balance is measured, not guessed: the numbers below are what each shard's tests took on a
-// runner (2026-10-23: runs 39892384209, 39900500138 and 39899930095 - a docs-only PR each, the
-// last two with a full gate running beside them; a single browser scenario moves 10-18 s
-// between them, and that is the variance to plan against). Ten jobs cost ten runners of fixed
-// setup against the account's 20-job cap, so a PR racing another run queued its shards in two
-// waves; eight is the fewest that keeps every shard at the slowest single file.
+// runner (2026-10-23, runs 39892384209, 39900500138, 39901449536 and 39901783484 - docs-only
+// pull requests, some with a full gate running beside them; one browser scenario moves 31-75 s
+// between them, and that spread is the variance to plan against). Ten jobs against the
+// account's 20-job cap queued a PR's shards into a second wave whenever another run was in
+// flight. Eight fits the cap but measured +15-24 s on the deepest job, because merging core
+// (6246 tests) with scripts put 6976 tests in one job whose own time swung 48-79 s across four
+// runs. Nine keeps those two apart and still runs three jobs fewer than ten did.
 //
 // The floor is one file per shard: the editor round trip (a) and the editor scene io run (f)
 // are single browser scenarios, and the harness pair (b, c) each waits out the harness's own
 // 10 s give-up. Merging two shards adds their times, so a merged shard only goes where the job
-// is already waiting on Chrome: the small packages and apps/dev fill a and e, the editor's unit
-// tests fill b, and shell rides behind c's browser file. React (41 s) cannot fold into anything
-// without clearing 60 s, so it is the one shard that is a single package. Moving a directory
-// means re-timing the shard and updating these numbers in the same commit.
+// is already waiting on Chrome: the small packages fill a, shell rides behind c's browser file,
+// and apps/dev joins e. React (41 s) cannot fold into anything without clearing 60 s, so it
+// carries the editor's unit tests and nothing else. Moving a directory means re-timing the
+// shard and updating these numbers in the same commit.
 import { readdirSync } from "node:fs";
 import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -123,11 +125,20 @@ export const SHARDS: readonly Shard[] = [
   },
   {
     name: "h",
-    label: "core, scripts and the built gate",
-    // 15 s of core outside world plus 35 s of scripts; anything a new root adds lands here too.
-    // It is the only shard that reads a built dist and the only one that reads `./Games`, so it
-    // is the only job that pays for either: about 7 s on this step, and zero on the other seven.
-    include: ["packages/core", ...TEST_ROOTS],
+    label: "core",
+    // 15-26 s: the 6246 core tests outside world. It is not merged with scripts any more: the
+    // same content in one job measured 48, 57 and 79 s of test time across four runs, and the
+    // deepest job has to stay under a minute for the gate to have any headroom.
+    include: ["packages/core"],
+    needs: [],
+  },
+  {
+    name: "i",
+    label: "scripts and the built gate",
+    // 35 s of repo gates and CLI tests; anything a new root adds lands here too. It is the only
+    // shard that reads a built dist and the only one that reads `./Games`, so it is the only job
+    // that pays for either: about 7 s on this step, and zero on the other eight.
+    include: ["scripts", ...TEST_ROOTS],
     needs: ["build", "games"],
   },
 ];
