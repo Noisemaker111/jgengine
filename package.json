@@ -26,6 +26,7 @@
     "agent:bootstrap": "bun scripts/agent-bootstrap.ts",
     "agent:worktree": "bun scripts/agent-worktree.ts",
     "agent:preflight": "bun scripts/agent-preflight.ts",
+    "worktree:doctor": "bun scripts/worktree-doctor.ts",
     "ship:preflight": "bun scripts/agent-preflight.ts --ship",
     "land": "bun scripts/land.ts",
     "gate": "bun scripts/guard.ts 1800 'bun scripts/run-stages.ts gate'",

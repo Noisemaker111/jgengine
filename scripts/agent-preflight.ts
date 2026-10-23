@@ -33,8 +33,19 @@ try {
 
 requirePath("bun.lock", "run bun install and commit the lockfile (or `bun run agent:bootstrap`)");
 requirePath("node_modules", "run `bun run agent:bootstrap` (or bun install) before generators or gates");
-requirePath("node_modules/ts-morph", "dependencies incomplete — run `bun run agent:bootstrap`");
-requirePath("node_modules/@typescript/native-preview", "dependencies incomplete — run `bun run agent:bootstrap`");
+requirePath("node_modules/ts-morph", "dependencies incomplete - run `bun run agent:bootstrap`");
+requirePath("node_modules/@typescript/native-preview", "dependencies incomplete - run `bun run agent:bootstrap`");
+
+// A half-linked install resolves nothing yet still passes a bare node_modules check,
+// so let the worktree doctor answer for this tree only (about 0.2s, no full scan).
+const doctor = spawnSync("bun", ["scripts/worktree-doctor.ts", "--self"], {
+  cwd: root,
+  encoding: "utf8",
+  stdio: ["ignore", "pipe", "pipe"],
+});
+if (doctor.status !== 0) {
+  failures.push((doctor.stderr || doctor.stdout || "worktree install is broken").trim().split("\n").join(" "));
+}
 
 function workspacePatterns(): string[] {
   const workspaces = JSON.parse(readFileSync(join(root, "package.json"), "utf8")).workspaces as
