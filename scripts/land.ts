@@ -5,11 +5,15 @@
 //   bun run land --title "Menus" --body-file .scratch/body.md
 //
 // It refuses on `main` or a dirty tree, pushes, rebases onto the base, reuses
-// an open PR or opens one (body: the newest changes/ fragment, else
-// --body-file, else a one-line summary), runs --verify, watches checks for up
-// to 25 minutes, merges and waits for MERGED. Exit codes: 0 landed, 1 verify
-// failed, 2 checks failed, 3 could not merge (including a refused branch or
-// dirty tree).
+// an open PR or opens one (body: --body-file when given, else the newest
+// changes/ fragment, else a one-line summary), runs --verify, watches checks
+// for up to 25 minutes, merges and waits for MERGED. Exit codes: 0 landed, 1
+// verify failed, 2 checks failed, 3 could not merge (including a refused
+// branch or dirty tree).
+//
+// A body given on the command line is the author's, so it wins over the
+// fragment and is written over a reused PR's old body: a stale body keeps
+// check:fix-has-test red through no fault of the branch (#2200).
 //
 // The branch land pushed is land's to rewrite: its own rebase would otherwise
 // leave the next push non-fast-forward and send the worker to a hand-typed
@@ -23,7 +27,7 @@
 // shares it (so lanes queue with each other, not just with themselves), and it
 // cannot show up in `git status` to trip land's own dirty-tree check.
 import { spawnSync } from "node:child_process";
-import { readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { basename, isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { FRAGMENT_PATTERN } from "./changelog-fragments";
@@ -100,17 +104,43 @@ export function readNewestFragment(branch: string, dir = join(root, "changes")):
   return pickFragment(files, branch);
 }
 
-/** Fragment first, then an explicit body file, then a one-line summary. */
+/** An explicit body file wins; the fragment fills in only when land was given no body. */
 export function chooseBody(sources: {
   fragment?: string | null;
   bodyFile?: string | null;
   summary: string;
 }): string {
-  const fragment = sources.fragment?.trim() ?? "";
-  if (fragment.length > 0) return fragment;
   const bodyFile = sources.bodyFile?.trim() ?? "";
   if (bodyFile.length > 0) return bodyFile;
+  const fragment = sources.fragment?.trim() ?? "";
+  if (fragment.length > 0) return fragment;
   return sources.summary.trim();
+}
+
+export interface PrBody {
+  text: string;
+  /** True when the text came from `--body-file`, so land may write it over an open PR's body. */
+  explicit: boolean;
+}
+
+/**
+ * The body for this PR: `--body-file` if land was given one, else the newest changes/ fragment,
+ * else a one-line summary. The fragment is not even read once a non-blank body file is supplied.
+ */
+export function landBody(options: {
+  args: LandArgs;
+  branch: string;
+  summary: string;
+  read?: (path: string) => string;
+  fragment?: (branch: string) => { text: string } | null;
+}): PrBody {
+  const { args, branch, summary } = options;
+  const read = options.read ?? ((path: string) => readFileSync(path, "utf8"));
+  const readFragment = options.fragment ?? readNewestFragment;
+  const bodyFile = args.bodyFile === undefined ? null : read(args.bodyFile);
+  const explicit = (bodyFile?.trim() ?? "").length > 0;
+  const fragment = explicit ? null : (readFragment(branch)?.text ?? null);
+  return { text: chooseBody({ bodyFile, fragment, summary }), explicit };
 }
 
 export interface GhCheck {
@@ -464,23 +494,70 @@ function verify(command: string): boolean {
   return (result.status ?? 1) === 0;
 }
 
-function openOrReusePr(args: LandArgs, branch: string, summary: string): { number: number; url: string } | null {
-  const listed = gh(["pr", "list", "--head", branch, "--base", args.base, "--state", "open", "--json", "number,url"]);
+/** Any gh invocation in one run; the land test binds this to a scripted PR list. */
+export type Gh = (args: string[]) => Run;
+
+export interface PrRef {
+  number: number;
+  url: string;
+}
+
+/** Replace a PR's body, leaving it alone when it already reads the same. */
+export function updatePrBody(number: number, text: string, gh: Gh, log = (line: string) => console.log(`land: ${line}`)): boolean {
+  const view = gh(["pr", "view", String(number), "--json", "body"]);
+  if (view.status !== 0) {
+    console.error(`land: gh pr view #${number} failed: ${details(view)}`);
+    return false;
+  }
+  let current = "";
+  try {
+    current = (JSON.parse(view.stdout) as { body?: string }).body ?? "";
+  } catch (error) {
+    console.error(`land: unreadable gh pr view output for #${number}: ${String(error)}`);
+    return false;
+  }
+  if (current.trim() === text.trim()) {
+    log(`PR #${number} body is already the one given`);
+    return true;
+  }
+  const edited = gh(["pr", "edit", String(number), "--body", text]);
+  if (edited.status !== 0) {
+    console.error(`land: could not update PR #${number} body: ${details(edited)}`);
+    return false;
+  }
+  log(`updated PR #${number} body`);
+  return true;
+}
+
+/**
+ * Reuse the open PR for `branch`, or open one. A reused PR gets the body land was given written over
+ * its old one, so a body left from an earlier run cannot keep a check that reads it red.
+ */
+export function ensurePr(options: {
+  args: LandArgs;
+  branch: string;
+  summary: string;
+  body: PrBody;
+  gh: Gh;
+  log?: (line: string) => void;
+}): PrRef | null {
+  const { args, branch, summary, body, gh: runGh } = options;
+  const log = options.log ?? ((line: string) => console.log(`land: ${line}`));
+
+  const listed = runGh(["pr", "list", "--head", branch, "--base", args.base, "--state", "open", "--json", "number,url"]);
   if (listed.status !== 0) {
     console.error(`land: gh pr list failed: ${details(listed)}`);
     return null;
   }
-  const open = JSON.parse(listed.stdout || "[]") as { number: number; url: string }[];
+  const open = JSON.parse(listed.stdout || "[]") as PrRef[];
   const existing = open[0];
   if (existing !== undefined) {
-    console.log(`land: reusing PR #${existing.number} ${existing.url}`);
+    log(`reusing PR #${existing.number} ${existing.url}`);
+    if (body.explicit && !updatePrBody(existing.number, body.text, runGh, log)) return null;
     return existing;
   }
 
-  const fragment = readNewestFragment(branch);
-  const bodyFile = args.bodyFile === undefined ? null : readFileSync(args.bodyFile, "utf8");
-  const body = chooseBody({ fragment: fragment?.text, bodyFile, summary });
-  const created = gh([
+  const created = runGh([
     "pr",
     "create",
     "--base",
@@ -490,7 +567,7 @@ function openOrReusePr(args: LandArgs, branch: string, summary: string): { numbe
     "--title",
     args.title ?? summary,
     "--body",
-    body,
+    body.text,
   ]);
   if (created.status !== 0) {
     console.error(`land: gh pr create failed: ${details(created)}`);
@@ -502,7 +579,7 @@ function openOrReusePr(args: LandArgs, branch: string, summary: string): { numbe
     console.error(`land: could not read a PR number from ${url}`);
     return null;
   }
-  console.log(`land: opened PR #${number} ${url}`);
+  log(`opened PR #${number} ${url}`);
   return { number, url };
 }
 
@@ -577,6 +654,11 @@ function waitForMerged(number: number): number {
 function main(): void {
   const args = parseArgs(process.argv.slice(2));
 
+  if (args.bodyFile !== undefined && !existsSync(args.bodyFile)) {
+    console.error(`land: --body-file ${args.bodyFile} does not exist`);
+    process.exit(EXIT_COULD_NOT_MERGE);
+  }
+
   const branch = git(["rev-parse", "--abbrev-ref", "HEAD"]).stdout.trim();
   const refusal = landRefusal(branch, git(["status", "--porcelain"]).stdout, args.base);
   if (refusal !== null) {
@@ -598,7 +680,7 @@ function land(args: LandArgs, branch: string): number {
   console.log(`land: pushed ${branch}${sync.rebased ? ` and rebased it onto origin/${args.base}` : ""}`);
 
   const summary = git(["log", "-1", "--format=%s"]).stdout.trim() || branch;
-  const pr = openOrReusePr(args, branch, summary);
+  const pr = ensurePr({ args, branch, summary, body: landBody({ args, branch, summary }), gh });
   if (pr === null) return EXIT_COULD_NOT_MERGE;
 
   if (args.verify !== undefined && !verify(args.verify)) {
