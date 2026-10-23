@@ -5,21 +5,24 @@ import {
   aggregateSelfTime,
   droppedOverrides,
   measureSceneNodes,
+  parseDeclaredSettings,
   parsePerfArgs,
   parseSettingSpec,
   perfPageUrl,
   perfSettingsScript,
+  perfStateLine,
   summarizeFrameDeltas,
+  undeclaredSettingErrors,
 } from "./perf-play";
 
 test("parsePerfArgs reads one game with its flags", () => {
   expect(parsePerfArgs(["harbor-heat"])).toEqual({
     kind: "run",
-    args: { game: "harbor-heat", quality: "full", profile: false, seconds: 6, telemetry: "on", settings: [] },
+    args: { game: "harbor-heat", quality: "full", profile: false, seconds: 6, telemetry: "on", settings: [], params: [] },
   });
   expect(parsePerfArgs(["deepward", "--quality", "draft", "--profile", "--seconds", "3"])).toEqual({
     kind: "run",
-    args: { game: "deepward", quality: "draft", profile: true, seconds: 3, telemetry: "on", settings: [] },
+    args: { game: "deepward", quality: "draft", profile: true, seconds: 3, telemetry: "on", settings: [], params: [] },
   });
   expect(parsePerfArgs(["--help"]).kind).toBe("help");
 });
@@ -32,19 +35,107 @@ test("parsePerfArgs rejects unusable input", () => {
   expect(() => parsePerfArgs(["a", "--bogus"])).toThrow("unknown flag --bogus");
 });
 
+test("--state pins the scene two runs share, and the pin is echoed with the numbers", () => {
+  const parsed = parsePerfArgs(["beacon-bastion", "--state", "two-towers"]);
+  expect(parsed.kind === "run" && parsed.args.state).toBe("two-towers");
+  expect(perfStateLine("two-towers")).toBe("perf: state two-towers");
+  expect(perfStateLine(undefined, [["spawn", "1,2,3"]])).toBe("perf: params spawn=1,2,3");
+  expect(perfStateLine("two-towers", [["seed", "7"]])).toBe("perf: state two-towers · params seed=7");
+  expect(perfStateLine(undefined)).toBeNull();
+
+  expect(() => parsePerfArgs(["a", "--state"])).toThrow("--state needs a capture.states name");
+  expect(() => parsePerfArgs(["a", "--state", "one", "--state", "two"])).toThrow("--state given twice");
+});
+
+test("--param reaches the page as a query param, and cannot take a param the harness owns", () => {
+  const parsed = parsePerfArgs(["deepward", "--param", "spawn=4,0,-9", "--param", "seed=7"]);
+  expect(parsed.kind === "run" && parsed.args.params).toEqual([
+    ["spawn", "4,0,-9"],
+    ["seed", "7"],
+  ]);
+  const url = perfPageUrl({
+    base: "http://127.0.0.1:4601",
+    game: "deepward",
+    quality: "full",
+    state: "paused",
+    params: parsed.kind === "run" ? parsed.args.params : [],
+  });
+  expect(url.searchParams.get("state")).toBe("paused");
+  expect(url.searchParams.get("spawn")).toBe("4,0,-9");
+  expect(url.searchParams.get("seed")).toBe("7");
+
+  expect(() => parsePerfArgs(["a", "--param", "spawn"])).toThrow("--param needs key=value");
+  expect(() => parsePerfArgs(["a", "--param", "=1"])).toThrow("--param needs key=value");
+  expect(() => parsePerfArgs(["a", "--param", "device=mobile"])).toThrow("--param device is the harness's own");
+  expect(() => parsePerfArgs(["a", "--param", "state=paused"])).toThrow("use --state <name>");
+  expect(() => parsePerfArgs(["a", "--param", "seed=1", "--param", "seed=2"])).toThrow("--param seed given twice");
+});
+
 test("--set names an engine setting and reports it with the run", () => {
   const parsed = parsePerfArgs(["harbor-heat", "--set", "colorblind=grayscale"]);
   expect(parsed.kind === "run" && parsed.args.settings).toEqual([
-    { id: "accessibility.colorblind", key: "colorblind", value: "grayscale" },
+    { id: "accessibility.colorblind", key: "colorblind", value: "grayscale", scope: "engine" },
   ]);
   expect(parsePerfArgs(["harbor-heat", "--set", "accessibility.colorblind=grayscale", "--set", "shadows=false"])).toMatchObject({
     args: {
       settings: [
-        { id: "accessibility.colorblind", key: "accessibility.colorblind", value: "grayscale" },
-        { id: "graphics.shadows", key: "shadows", value: "false" },
+        { id: "accessibility.colorblind", key: "accessibility.colorblind", value: "grayscale", scope: "engine" },
+        { id: "graphics.shadows", key: "shadows", value: "false", scope: "engine" },
       ],
     },
   });
+});
+
+test("a setting the game declares resolves through the game's own table", () => {
+  const setting = parseSettingSpec("survey.hints=false");
+  expect(setting).toEqual({ id: "survey.hints", key: "survey.hints", value: "false", scope: "game" });
+
+  const declared = parseDeclaredSettings(
+    JSON.stringify([
+      { id: "survey.hints", kind: "toggle", default: true },
+      { id: "survey.pace", kind: "select", options: ["slow", "fast"], default: "slow" },
+      { id: "survey.fov", kind: "slider", min: 50, max: 100, default: 70 },
+    ]),
+  );
+  expect(declared.map((entry) => entry.id)).toEqual(["survey.hints", "survey.pace", "survey.fov"]);
+  expect(undeclaredSettingErrors([setting], declared)).toEqual([]);
+  expect(undeclaredSettingErrors([parseSettingSpec("survey.pace=fast")], declared)).toEqual([]);
+  expect(undeclaredSettingErrors([parseSettingSpec("survey.fov=68")], declared)).toEqual([]);
+});
+
+test("a game setting the game does not declare fails, naming the key and what it does declare", () => {
+  const declared = parseDeclaredSettings(JSON.stringify([{ id: "survey.hints", kind: "toggle" }]));
+  expect(undeclaredSettingErrors([parseSettingSpec("survey.hintz=false")], declared)).toEqual([
+    'unknown setting "survey.hintz" — the game declares: survey.hints',
+  ]);
+  expect(undeclaredSettingErrors([parseSettingSpec("survey.hints=false")], [])).toEqual([
+    'unknown setting "survey.hints" — the game declares no settings of its own',
+  ]);
+  expect(undeclaredSettingErrors([parseSettingSpec("survey.hints=yes")], declared)).toEqual([
+    "--set survey.hints=yes must be true or false (the game declares survey.hints a toggle)",
+  ]);
+  expect(
+    undeclaredSettingErrors(
+      [parseSettingSpec("survey.pace=slow")],
+      parseDeclaredSettings(JSON.stringify([{ id: "survey.pace", kind: "select", options: ["slow", "fast"] }])),
+    ),
+  ).toEqual([]);
+  expect(
+    undeclaredSettingErrors(
+      [parseSettingSpec("survey.pace=glacial")],
+      parseDeclaredSettings(JSON.stringify([{ id: "survey.pace", kind: "select", options: ["slow", "fast"] }])),
+    ),
+  ).toEqual(["--set survey.pace=glacial must be one of slow, fast (the game declares survey.pace a select)"]);
+});
+
+test("a declaration the dev runner did not publish reads as none, never as a guess", () => {
+  expect(parseDeclaredSettings(null)).toEqual([]);
+  expect(parseDeclaredSettings("")).toEqual([]);
+  expect(parseDeclaredSettings("not json")).toEqual([]);
+  expect(parseDeclaredSettings('{"id":"survey.hints"}')).toEqual([]);
+  expect(
+    parseDeclaredSettings(JSON.stringify([{ kind: "toggle" }, { id: "survey.hints", kind: "toggle" }, null, 3])),
+  ).toEqual([{ id: "survey.hints", kind: "toggle" }]);
 });
 
 test("a typo in the setting key fails instead of measuring the default", () => {

@@ -39,7 +39,7 @@ import {
  * counts, GL allocations made after warmup, and the hottest self-time
  * functions.
  *
- *   bun run perf <game> [--quality draft|full] [--profile] [--seconds n] [--set key=value ...]
+ *   bun run perf <game> [--quality draft|full] [--profile] [--seconds n] [--state name] [--param k=v ...] [--set key=value ...]
  *
  * The JSON goes to stdout alone so it can be piped and diffed; notes and the
  * `--profile` inclusive table go to stderr. `measureGame` is the same sequence
@@ -56,11 +56,26 @@ const TOP_INCLUSIVE = 25;
 
 /** One setting a run turns on before the game boots, echoed beside the numbers it produced. */
 export interface PerfSettingOverride {
-  /** Canonical engine settings id, e.g. `accessibility.colorblind`. */
+  /** The id written to settings storage: an engine setting, or the id the game declares. */
   id: string;
   /** What `--set` named: the id or its last segment. */
   key: string;
   value: string;
+  /**
+   * Where the id is checked. `engine` ids are checked against the engine's table at parse time; `game`
+   * ids are checked against the game's own declaration once the dev runner has published it, because
+   * only the game knows which ids it reads.
+   */
+  scope: "engine" | "game";
+}
+
+/** One setting a game declares beyond the engine's own, as the dev runner publishes it for the harness. */
+export interface DeclaredSetting {
+  id: string;
+  kind: "slider" | "toggle" | "select" | string;
+  options?: string[];
+  min?: number;
+  max?: number;
 }
 
 /** Every persisted setting id the engine publishes, by the id and by its last segment. */
@@ -83,6 +98,12 @@ const SETTING_VALUES: ReadonlyMap<string, readonly string[]> = new Map([
 
 const KNOWN_SETTING_KEYS = [...SETTING_IDS_BY_KEY.keys()].filter((key) => !key.includes(".")).sort();
 
+/**
+ * Page params the harness owns. A `--param` that named one would silently change what the
+ * run measures (a different game, viewport or tier), so it is refused instead.
+ */
+const HARNESS_PARAMS: ReadonlySet<string> = new Set(["game", "capture", "device", "telemetry", "quality", "state"]);
+
 export interface PerfArgs {
   game: string;
   quality: CaptureQuality;
@@ -92,23 +113,37 @@ export interface PerfArgs {
   telemetry: "on" | "off";
   /** Settings enabled before boot, so a measured cost names the setting that caused it. */
   settings: PerfSettingOverride[];
+  /** The game's `capture.states` entry the run boots into, so two runs are the same scene. */
+  state?: string;
+  /** Extra page params in the order given (`spawn=…`, `seed=…`), for a scene no state names. */
+  params: [string, string][];
 }
 
 export type ArgResult = { kind: "run"; args: PerfArgs } | { kind: "help" };
 
-const USAGE = `usage: bun run perf <game> [--quality draft|full] [--profile] [--seconds n] [--telemetry on|off] [--set key=value ...]
+const USAGE = `usage: bun run perf <game> [--quality draft|full] [--profile] [--seconds n] [--telemetry on|off]
+                    [--state name] [--param k=v ...] [--set key=value ...]
 
   <game>            game id under Games/ (for example harbor-heat)
   --quality         graphics tier: full (default) or draft (?quality=low, half viewport)
   --profile         also print the inclusive-time table to stderr
   --seconds         measured window in seconds (default ${DEFAULT_SECONDS})
   --telemetry       in-page report sampler: on (default) or off (?telemetry=off) for an A/B run
+  --state           boot into the game's capture.states entry of this name (?state=name), so two runs
+                    are the same scene. An unknown name fails with the states the game declares.
+  --param           add a page query parameter; repeatable (?spawn=1,2,3, ?seed=7). The harness's own
+                    params (game, capture, device, telemetry, quality, state) are refused.
   --set             enable a setting before boot; repeatable (--set colorblind=grayscale).
-                    Key is an engine setting id (accessibility.colorblind) or its last segment;
-                    an unknown key or value fails the run instead of measuring the default.
-                    Common keys: ${KNOWN_SETTING_KEYS.join(", ")}`;
+                    Key is an engine setting id (accessibility.colorblind) or its last segment, or the
+                    exact id the game declares (survey.hints). An unknown key or an unaccepted value
+                    fails the run instead of measuring the default.
+                    Common engine keys: ${KNOWN_SETTING_KEYS.join(", ")}`;
 
-/** Resolve one `--set key=value` spec against the engine's settings ids. */
+/**
+ * Resolve one `--set key=value` spec. An engine key is checked here; a key that names no engine
+ * setting but is pointed (`survey.hints`) is left to the game's own declared table, which only the
+ * page can report — so the failure arrives before the measured window, not at parse time.
+ */
 export function parseSettingSpec(spec: string): PerfSettingOverride {
   const at = spec.indexOf("=");
   if (at <= 0 || at === spec.length - 1) throw new Error(`--set needs key=value (got ${spec})`);
@@ -116,24 +151,104 @@ export function parseSettingSpec(spec: string): PerfSettingOverride {
   const value = spec.slice(at + 1).trim();
   const id = SETTING_IDS_BY_KEY.get(key);
   if (id === undefined) {
-    throw new Error(`unknown setting "${key}" — known keys: ${KNOWN_SETTING_KEYS.join(", ")}`);
+    // A game's own settings are namespaced `<category>.<name>`; a dotless key is a mistyped engine key.
+    if (key.includes(".")) return { id: key, key, value, scope: "game" };
+    throw new Error(`unknown setting "${key}" — known engine keys: ${KNOWN_SETTING_KEYS.join(", ")}`);
   }
   const allowed = SETTING_VALUES.get(id);
   if (allowed !== undefined && !allowed.includes(value)) {
     throw new Error(`--set ${key}=${value} must be one of ${allowed.join(", ")}`);
   }
-  return { id, key, value };
+  return { id, key, value, scope: "engine" };
+}
+
+/** The game's declared settings the dev runner published, or none when it published nothing usable. */
+export function parseDeclaredSettings(raw: string | null | undefined): DeclaredSetting[] {
+  if (raw === null || raw === undefined || raw.trim().length === 0) return [];
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return [];
+  }
+  if (!Array.isArray(parsed)) return [];
+  return parsed.flatMap((entry): DeclaredSetting[] => {
+    if (entry === null || typeof entry !== "object") return [];
+    const row = entry as { id?: unknown; kind?: unknown; options?: unknown; min?: unknown; max?: unknown };
+    if (typeof row.id !== "string" || row.id.length === 0) return [];
+    return [
+      {
+        id: row.id,
+        kind: typeof row.kind === "string" ? row.kind : "toggle",
+        ...(Array.isArray(row.options) ? { options: row.options.filter((option): option is string => typeof option === "string") } : {}),
+        ...(typeof row.min === "number" ? { min: row.min } : {}),
+        ...(typeof row.max === "number" ? { max: row.max } : {}),
+      },
+    ];
+  });
+}
+
+/** The value problem one declared setting has, or null when the value is the kind the game declared. */
+function declaredValueProblem(entry: DeclaredSetting, value: string): string | null {
+  if (entry.kind === "toggle") return value === "true" || value === "false" ? null : `must be true or false`;
+  if (entry.kind === "slider") {
+    const number = Number(value);
+    if (value.trim().length === 0 || !Number.isFinite(number)) return "must be a number";
+    if (entry.min !== undefined && number < entry.min) return `must be at least ${entry.min}`;
+    if (entry.max !== undefined && number > entry.max) return `must be at most ${entry.max}`;
+    return null;
+  }
+  if (entry.kind === "select" && entry.options !== undefined && entry.options.length > 0 && !entry.options.includes(value)) {
+    return `must be one of ${entry.options.join(", ")}`;
+  }
+  return null;
+}
+
+/**
+ * Check the overrides that named a game setting against what the game declares. A row the game never
+ * declared would sit unused in storage and read as free, which is the failure this flag removes.
+ */
+export function undeclaredSettingErrors(
+  settings: readonly PerfSettingOverride[],
+  declared: readonly DeclaredSetting[],
+): string[] {
+  const byKey = new Map<string, DeclaredSetting>();
+  for (const entry of declared) {
+    byKey.set(entry.id, entry);
+    const segment = entry.id.slice(entry.id.lastIndexOf(".") + 1);
+    if (!byKey.has(segment)) byKey.set(segment, entry);
+  }
+  const errors: string[] = [];
+  for (const setting of settings) {
+    if (setting.scope !== "game") continue;
+    const entry = byKey.get(setting.key);
+    if (entry === undefined) {
+      errors.push(
+        declared.length === 0
+          ? `unknown setting "${setting.key}" — the game declares no settings of its own`
+          : `unknown setting "${setting.key}" — the game declares: ${declared.map((row) => row.id).sort().join(", ")}`,
+      );
+      continue;
+    }
+    const problem = declaredValueProblem(entry, setting.value);
+    if (problem !== null) errors.push(`--set ${setting.key}=${setting.value} ${problem} (the game declares ${entry.id} a ${entry.kind})`);
+  }
+  return errors;
 }
 
 /**
  * The URL one measured run opens. Overrides are not query params: they are seeded into the page's
  * settings storage, which is where the game reads them, so the printed query stays the harness's.
+ * `state` and `params` are the scene pin, and they are query params because that is how the dev
+ * runner and the capture CLIs already take a scene.
  */
 export function perfPageUrl(options: {
   base: string;
   game: string;
   quality: CaptureQuality;
   telemetry?: "on" | "off";
+  state?: string;
+  params?: readonly (readonly [string, string])[];
 }): URL {
   const url = new URL(options.base);
   url.searchParams.set("game", options.game);
@@ -141,8 +256,18 @@ export function perfPageUrl(options: {
   url.searchParams.set("device", "desktop");
   url.searchParams.set("capture", "1");
   if (options.telemetry === "off") url.searchParams.set("telemetry", "off");
+  if (options.state !== undefined) url.searchParams.set("state", options.state);
+  for (const [key, value] of options.params ?? []) url.searchParams.set(key, value);
   applyCaptureQuality(url, options.quality);
   return url;
+}
+
+/** The stderr line naming the pinned scene, so a printed record says what it was the same as. */
+export function perfStateLine(state: string | undefined, params: readonly (readonly [string, string])[] = []): string | null {
+  const parts: string[] = [];
+  if (state !== undefined) parts.push(`state ${state}`);
+  if (params.length > 0) parts.push(`params ${params.map(([key, value]) => `${key}=${value}`).join(" ")}`);
+  return parts.length === 0 ? null : `perf: ${parts.join(" · ")}`;
 }
 
 /** Runs before the page's own scripts, so the settings store reads the override at mount. */
@@ -170,12 +295,37 @@ export function parsePerfArgs(argv: readonly string[]): ArgResult {
   let profile = false;
   let seconds = DEFAULT_SECONDS;
   let telemetry: "on" | "off" = "on";
+  let state: string | undefined;
+  const params: [string, string][] = [];
   const settings: PerfSettingOverride[] = [];
 
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index]!;
     if (arg === "--profile") {
       profile = true;
+      continue;
+    }
+    if (arg === "--state") {
+      const value = argv[index + 1];
+      if (value === undefined || value.startsWith("--")) throw new Error("--state needs a capture.states name");
+      index += 1;
+      if (state !== undefined) throw new Error(`--state given twice (${state}, ${value}) — one scene per run`);
+      state = value.trim();
+      if (state.length === 0) throw new Error("--state needs a capture.states name");
+      continue;
+    }
+    if (arg === "--param") {
+      const spec = argv[index + 1];
+      if (spec === undefined || spec.startsWith("--")) throw new Error("--param needs key=value");
+      index += 1;
+      const at = spec.indexOf("=");
+      const key = at <= 0 ? "" : spec.slice(0, at).trim();
+      if (key.length === 0) throw new Error(`--param needs key=value (got ${spec})`);
+      if (HARNESS_PARAMS.has(key)) {
+        throw new Error(`--param ${key} is the harness's own — ${key === "state" ? "use --state <name>" : "it would change what the run measures"}`);
+      }
+      if (params.some(([existing]) => existing === key)) throw new Error(`--param ${key} given twice — one value per param`);
+      params.push([key, spec.slice(at + 1).trim()]);
       continue;
     }
     if (arg === "--set") {
@@ -209,7 +359,7 @@ export function parsePerfArgs(argv: readonly string[]): ArgResult {
     game = arg;
   }
   if (game === undefined) throw new Error("a game id is required");
-  return { kind: "run", args: { game, quality, profile, seconds, telemetry, settings } };
+  return { kind: "run", args: { game, quality, profile, seconds, telemetry, settings, ...(state === undefined ? {} : { state }), params } };
 }
 
 /** One sampled stack frame reduced to a readable key and its self time. */
@@ -456,6 +606,10 @@ async function countInstances(
 export interface PerfRecord extends PerfReport {
   /** The settings this run enabled, `id=value` each, so its numbers carry their cause. */
   overrides: string[];
+  /** The `capture.states` entry the run booted into, or null when it played the plain start. */
+  state: string | null;
+  /** Extra page params the run pinned beside the state, `k=v` each. */
+  params: string[];
 }
 export type { PerfReport };
 
@@ -480,6 +634,10 @@ export interface MeasureOptions {
   telemetry?: "on" | "off";
   /** Settings seeded into the page's settings storage before it boots. */
   settings?: readonly PerfSettingOverride[];
+  /** The game's `capture.states` entry to boot into, so two runs are the same scene. */
+  state?: string;
+  /** Extra page params pinned beside the state (`spawn=…`, `seed=…`). */
+  params?: readonly (readonly [string, string])[];
 }
 
 export interface PerfMeasure {
@@ -511,9 +669,17 @@ function printInclusive(entries: readonly ProfileEntry[]): void {
 /**
  * Read the seeded values back after boot. A page that drops them (a game resetting storage, a
  * mount that rewrites a default) would otherwise print a number described by a setting it never
- * had, which is the whole failure this flag exists to remove.
+ * had, which is the whole failure this flag exists to remove. A game-scoped id is also checked
+ * against the settings the game declares, read from the dev runner's published table.
  */
 async function confirmSettings(session: CdpSession, settings: readonly PerfSettingOverride[]): Promise<void> {
+  if (settings.some((setting) => setting.scope === "game")) {
+    const declared = parseDeclaredSettings(
+      await session.evaluate<string | null>(`document.documentElement.dataset.jgSettings ?? null`),
+    );
+    const errors = undeclaredSettingErrors(settings, declared);
+    if (errors.length > 0) throw new Error(`perf: ${errors.join("; ")}`);
+  }
   const keys = settings.map((setting) => settingStorageKey(setting.id));
   const stored = await session.evaluate<Record<string, string | null>>(`(() => {
     const out = {};
@@ -540,6 +706,7 @@ export async function measureGame(options: MeasureOptions): Promise<PerfMeasure>
   const { session, base, game, quality = "full", seconds = DEFAULT_SECONDS, warmupMs = WARMUP_MS } = options;
   const profileRun = options.profile ?? true;
   const settings = options.settings ?? [];
+  const params = options.params ?? [];
 
   await session.send("Page.enable");
   await session.send("Page.addScriptToEvaluateOnNewDocument", { source: RESOURCE_BUFFER_SCRIPT });
@@ -548,7 +715,7 @@ export async function measureGame(options: MeasureOptions): Promise<PerfMeasure>
     await session.send("Page.addScriptToEvaluateOnNewDocument", { source: perfSettingsScript(settings) });
   }
   await applyDevice(session, "desktop", quality === "draft" ? "half" : "full");
-  const url = perfPageUrl({ base, game, quality, telemetry: options.telemetry });
+  const url = perfPageUrl({ base, game, quality, telemetry: options.telemetry, state: options.state, params });
   await session.send("Page.navigate", { url: url.toString() });
   await waitCaptureReady(session, 90_000);
   if (settings.length > 0) await confirmSettings(session, settings);
@@ -646,6 +813,8 @@ export async function measureGame(options: MeasureOptions): Promise<PerfMeasure>
     logs: snapshot?.logSummary ?? null,
     telemetry: null,
     overrides: settings.map((setting) => `${setting.id}=${setting.value}`),
+    state: options.state ?? null,
+    params: params.map(([key, value]) => `${key}=${value}`),
   };
 
   return { record, profile: raw, profileMs: profiledMs };
@@ -657,7 +826,7 @@ async function main(): Promise<void> {
     console.log(USAGE);
     return;
   }
-  const { game, quality, profile, seconds, telemetry, settings } = parsed.args;
+  const { game, quality, profile, seconds, telemetry, settings, state, params } = parsed.args;
 
   if (!existsSync(join(repoRoot, "Games", game, "src", "index.tsx"))) {
     throw new Error(`no game "${game}" in Games/ — run \`bun run games:clone\` first, then retry`);
@@ -669,7 +838,9 @@ async function main(): Promise<void> {
     async ({ debugPort }) => {
       const session = await openPageSession(debugPort);
       try {
-        const measured = await measureGame({ session, base: server.base, game, quality, seconds, telemetry, settings });
+        const measured = await measureGame({ session, base: server.base, game, quality, seconds, telemetry, settings, state, params });
+        const pin = perfStateLine(state, params);
+        if (pin !== null) console.error(pin);
         if (measured.record.overrides.length > 0) {
           console.error(`perf: overrides ${measured.record.overrides.join(" ")}`);
         }

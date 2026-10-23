@@ -57,6 +57,8 @@ function record(overrides: Partial<PerfRecord> = {}, render: Partial<PerfRecord[
     logs: null,
     telemetry: null,
     overrides: [],
+    state: null,
+    params: [],
     ...overrides,
   };
 }
