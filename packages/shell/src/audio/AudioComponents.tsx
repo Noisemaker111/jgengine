@@ -2,7 +2,8 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
 import { Quaternion, Vector3 } from "three";
 import { useGameContext } from "@jgengine/react/provider";
-import type { AudioEmitterHandle, AudioEngine } from "./audioEngine";
+import type { AudioEngine } from "./audioEngine";
+import { createEmitterTracker, type EmitterPose, type EmitterSources, type EmitterTracker } from "./emitterTracking";
 import { groundFocusListener, type ListenerAnchor } from "./listenerAnchor";
 import { createListenerVelocityTrack, stepListenerVelocity, type ListenerVelocityTrack } from "./loopParams";
 
@@ -27,61 +28,67 @@ export function AudioListener({ engine, anchor = "camera" }: { engine: AudioEngi
   return null;
 }
 
-type EmitterEntry = { id: string; key: string; position: readonly [number, number, number] };
-
+/**
+ * Keep one loop per sounding entity/object. The tracker retains the loops and only reads the
+ * emitters it already plays, so a still world stops paying a per-frame rebuild (#2209).
+ */
 function useTrackedEmitters(
   engine: AudioEngine,
   soundByKey: Record<string, string> | undefined,
-  readEntries: () => readonly EmitterEntry[],
+  sources: EmitterSources,
 ) {
-  const handles = useRef(new Map<string, AudioEmitterHandle>());
-  const lastPose = useRef(new Map<string, readonly [number, number, number]>());
+  const soundsRef = useRef(soundByKey);
+  soundsRef.current = soundByKey;
+  const stateRef = useRef<{ engine: AudioEngine; tracker: EmitterTracker } | null>(null);
+  const current = stateRef.current;
+  if (current === null || current.engine !== engine) {
+    // `sources` closes over the session's game context, which outlives the engine it was built with.
+    current?.tracker.dispose();
+    stateRef.current = {
+      engine,
+      tracker: createEmitterTracker({
+        sources,
+        sounds: () => soundsRef.current,
+        play: (soundId, position) => engine.playLoop(soundId, position),
+      }),
+    };
+  }
 
   useEffect(
     () => () => {
-      for (const handle of handles.current.values()) handle.stop();
-      handles.current.clear();
-      lastPose.current.clear();
+      stateRef.current?.tracker.dispose();
+      stateRef.current = null;
     },
     [engine],
   );
 
-  useFrame(() => {
-    if (soundByKey === undefined) return;
-    const live = new Set<string>();
-    for (const entry of readEntries()) {
-      const soundId = soundByKey[entry.key];
-      if (soundId === undefined) continue;
-      live.add(entry.id);
-      let handle = handles.current.get(entry.id);
-      if (handle === undefined) {
-        handle = engine.playLoop(soundId, { x: entry.position[0], y: entry.position[1], z: entry.position[2] }) ?? undefined;
-        if (handle !== undefined) {
-          handles.current.set(entry.id, handle);
-          lastPose.current.set(entry.id, entry.position);
-        }
-        continue;
-      }
-      const prev = lastPose.current.get(entry.id);
-      if (
-        prev !== undefined &&
-        prev[0] === entry.position[0] &&
-        prev[1] === entry.position[1] &&
-        prev[2] === entry.position[2]
-      ) {
-        continue;
-      }
-      handle.setPosition({ x: entry.position[0], y: entry.position[1], z: entry.position[2] });
-      lastPose.current.set(entry.id, entry.position);
-    }
-    for (const [id, handle] of handles.current) {
-      if (!live.has(id)) {
-        handle.stop();
-        handles.current.delete(id);
-        lastPose.current.delete(id);
-      }
-    }
-  });
+  useFrame(() => stateRef.current?.tracker.step());
+}
+
+function entitySources(ctx: ReturnType<typeof useGameContext>): EmitterSources {
+  return {
+    ids: () => ctx.scene.entity.ids(),
+    read(id: string, pose: EmitterPose) {
+      const entity = ctx.scene.entity.get(id);
+      if (entity === null) return false;
+      pose.key = entity.name;
+      pose.position = entity.position;
+      return true;
+    },
+  };
+}
+
+function objectSources(ctx: ReturnType<typeof useGameContext>): EmitterSources {
+  return {
+    ids: () => ctx.scene.object.ids(),
+    read(id: string, pose: EmitterPose) {
+      const object = ctx.scene.object.get(id);
+      if (object === null) return false;
+      pose.key = object.catalogId;
+      pose.position = object.position;
+      return true;
+    },
+  };
 }
 
 export function EntityAudioEmitters({
@@ -92,9 +99,9 @@ export function EntityAudioEmitters({
   entitySounds: Record<string, string> | undefined;
 }) {
   const ctx = useGameContext();
-  useTrackedEmitters(engine, entitySounds, () =>
-    ctx.scene.entity.list().map((entity) => ({ id: entity.id, key: entity.name, position: entity.position })),
-  );
+  const sourcesRef = useRef<EmitterSources | null>(null);
+  sourcesRef.current ??= entitySources(ctx);
+  useTrackedEmitters(engine, entitySounds, sourcesRef.current);
   return null;
 }
 
@@ -106,12 +113,8 @@ export function ObjectAudioEmitters({
   objectSounds: Record<string, string> | undefined;
 }) {
   const ctx = useGameContext();
-  useTrackedEmitters(engine, objectSounds, () =>
-    ctx.scene.object.list().map((object) => ({
-      id: object.instanceId,
-      key: object.catalogId,
-      position: object.position,
-    })),
-  );
+  const sourcesRef = useRef<EmitterSources | null>(null);
+  sourcesRef.current ??= objectSources(ctx);
+  useTrackedEmitters(engine, objectSounds, sourcesRef.current);
   return null;
 }
