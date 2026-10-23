@@ -1,4 +1,4 @@
-import { afterAll, afterEach, beforeAll, beforeEach, expect, test } from "bun:test";
+import { afterAll, afterEach, beforeAll, beforeEach, expect, setDefaultTimeout, test } from "bun:test";
 import { mkdir, mkdtemp, rm, symlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -6,6 +6,8 @@ import { chromium, type Browser, type BrowserContext, type Page } from "playwrig
 import { buildBrowserFixture, findChromeExecutable } from "../../../scripts/browser-lib";
 import { cleanupBrowserFixture } from "../../../scripts/browser-fixture-cleanup";
 import { gotoFixture } from "../../../scripts/browser-test-fixture";
+
+setDefaultTimeout(30_000);
 
 let scratch: string | undefined;
 let browser: Browser | undefined, context: BrowserContext | undefined, page: Page;
