@@ -77,6 +77,8 @@
     "check-stage-skills": "bun scripts/stage-skills.ts --check",
     "test": "bun scripts/guard.ts 300 'bun scripts/ensure-ready.ts --install-only && bun test packages apps/dev apps/web apps/desktop scripts'",
     "test:all": "bun scripts/guard.ts 900 'bun scripts/ensure-ready.ts --install-only && bun test packages apps/dev apps/web apps/desktop scripts'",
+    "verify:fast": "bun scripts/verify-fast.ts",
+    "verify:full": "bun scripts/verify-fast.ts --full",
     "games:clone": "bun scripts/ensure-games.ts",
     "games:update": "bun scripts/ensure-games.ts --update",
     "games:bump": "bun scripts/ensure-games.ts --bump",
