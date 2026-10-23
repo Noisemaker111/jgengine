@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { createServer, type Server } from "node:http";
 
 import { BROWSER_LAUNCH_BLOCK, LAUNCH_BLOCK_END, LAUNCH_BLOCK_START } from "./browserLaunch";
 import { browserLibMjs, driveMjs, shootMjs } from "./gameFiles";
@@ -7,6 +8,26 @@ import { browserLibMjs, driveMjs, shootMjs } from "./gameFiles";
 async function scaffoldBrowser(): Promise<Record<string, any>> {
   const encoded = Buffer.from(browserLibMjs, "utf8").toString("base64");
   return (await import(`data:text/javascript;base64,${encoded}`)) as Record<string, any>;
+}
+
+/** A debugger endpoint that answers `/json/version` at once, like a warm Chrome. */
+async function liveDebugger(): Promise<{ port: number; stop: () => Promise<void> }> {
+  const server: Server = createServer((request, response) => {
+    if (request.url !== "/json/version") {
+      response.writeHead(503);
+      response.end();
+      return;
+    }
+    response.writeHead(200, { "content-type": "application/json" });
+    response.end(JSON.stringify({ webSocketDebuggerUrl: "ws://127.0.0.1:1/devtools/browser/jg-proxy" }));
+  });
+  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const address = server.address();
+  if (address === null || typeof address === "string") throw new Error("no debugger port");
+  return {
+    port: address.port,
+    stop: () => new Promise<void>((resolve) => server.close(() => resolve())),
+  };
 }
 
 /** A launched Chrome stand-in. No real directory: the block only ever tries to delete the profile. */
@@ -120,7 +141,7 @@ describe("scaffold launch block", () => {
 
   test("the debugger handshake ignores HTTP_PROXY", async () => {
     const { startBrowser } = await scaffoldBrowser();
-    const debuggerEndpoint = await slowDebugger(0);
+    const debuggerEndpoint = await liveDebugger();
     const saved = new Map<string, string | undefined>();
     const proxy = {
       HTTP_PROXY: "http://127.0.0.1:9",
