@@ -50,6 +50,8 @@ test("server records round-trip and list by game", async () => {
 });
 
 
+test("deliberate red shard probe", () => { expect(1).toBe(2); });
+
 test("profiles and chunks round-trip", async () => {
   const persistence = await makePersistence();
   expect(await persistence.loadProfile({ userId: "alice", gameId: "demo" })).toBeNull();
