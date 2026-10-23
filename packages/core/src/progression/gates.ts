@@ -47,6 +47,7 @@ export interface GateSet {
   claim(facts: GateFacts, granted: readonly string[]): readonly GateDef[];
 }
 
+/** Content and the resolvers a {@link GateSet} is built from. */
 export interface GateSetConfig {
   gates: readonly GateDef[];
   /** The ids an unlock may resolve to; normally the game's content catalog. */

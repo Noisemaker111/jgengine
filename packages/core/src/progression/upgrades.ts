@@ -47,6 +47,7 @@ export interface UpgradeTree {
   restore(next: UpgradeState): void;
 }
 
+/** Authored nodes plus the standing a node's requirement reads. */
 export interface UpgradeTreeConfig {
   nodes: readonly UpgradeNodeDef[];
   /** The standing a node's requirement reads, for both validation and purchase. */

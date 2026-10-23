@@ -36,6 +36,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `cancelJob` (function) · `import { cancelJob } from "@jgengine/core/gameplay"`
 
+## career-bank — persistent career money with a run haul that can be banked or lost
+
+- `createCareerBank` (function) · `import { createCareerBank } from "@jgengine/core/progression/careerBank"`
+
 ## carry-encumbrance — gate a pickup against the carrier's remaining capacity
 
 - `canCarry` (function) · `import { canCarry } from "@jgengine/core/inventory/carryLoad"`
@@ -651,6 +655,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `stationOutputRate` (function) · `import { stationOutputRate } from "@jgengine/core/gameplay"`
 
+## standing — per-track standing moved by authored outcomes, with tiers and one snapshot
+
+- `createStanding` (function) · `import { createStanding } from "@jgengine/core/progression/standing"`
+
 ## stat-graph — derive game-defined stats from named inputs with provenance and preview
 
 - `createStatGraph` (function) · `import { createStatGraph } from "@jgengine/core/gameplay"`
@@ -724,6 +732,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `unitTrainingConfig` (function) · `import { unitTrainingConfig } from "@jgengine/core/gameplay"`
 
+## unlock-gates — milestones gated by standing or money, validated against the content they grant
+
+- `createGateSet` (function) · `import { createGateSet } from "@jgengine/core/progression/gates"`
+
 ## unlock-points — spendable point pool earned per level and spent to unlock nodes, with refund and respec
 
 - `createUnlockPoints` (function) · `import { createUnlockPoints } from "@jgengine/core/economy/unlockPoints"`
@@ -731,6 +743,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## unlockables — gate content behind unlock conditions the player earns
 
 - `createUnlockCatalog` (function) · `import { createUnlockCatalog } from "@jgengine/core/gameplay"`
+
+## upgrade-tree — ranked upgrades priced by a cost curve, gated by prerequisites and standing
+
+- `createUpgradeTree` (function) · `import { createUpgradeTree } from "@jgengine/core/progression/upgrades"`
 
 ## visitor-population — a crowd whose on-site and daily counts are the bodies the game made
 
