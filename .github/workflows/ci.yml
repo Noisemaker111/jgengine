@@ -75,6 +75,8 @@ jobs:
       - run: bun run check-skill-api
       - run: bun run check-orphan-ratchet
       - run: bun run check:fixture-location
+      # One launch/retry block for the engine and for the scaffold every `jgengine create` ships.
+      - run: bun run check:scaffold-launch
       # A runtime change with no changed test needs a `Prevention: none - <reason>` line in the
       # PR body (#2109's sibling lesson: a fix that leaves no failing test teaches nobody).
       - name: every changed runtime path carries a regression test
