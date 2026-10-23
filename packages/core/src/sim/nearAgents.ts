@@ -249,3 +249,5 @@ export function createNearAgents(options: NearAgentsOptions): NearCrowdAgents {
     },
   };
 }
+
+// proof run for #2219: this line only exists to show a sim change reaches the frame gate
