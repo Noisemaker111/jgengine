@@ -45,6 +45,8 @@ export interface TitleMenuProps {
   transition?: MenuScreenTransition;
   /** Dim/blur treatment over the scene behind. Default `"dim"`. */
   scrim?: MenuScreenScrim;
+  /** The title paints over the whole canvas, so the engine may stop drawing the world behind it. Default false. */
+  coversCanvas?: boolean;
   enterMs?: number;
   exitMs?: number;
   reducedMotion?: boolean;
@@ -93,6 +95,7 @@ export function TitleMenu({
   open = true,
   transition = "slide",
   scrim = "dim",
+  coversCanvas,
   enterMs,
   exitMs,
   reducedMotion,
@@ -116,6 +119,7 @@ export function TitleMenu({
       open={open}
       transition={transition}
       scrim={scrim}
+      {...(coversCanvas === undefined ? {} : { coversCanvas })}
       {...(enterMs === undefined ? {} : { enterMs })}
       {...(exitMs === undefined ? {} : { exitMs })}
       {...(reducedMotion === undefined ? {} : { reducedMotion })}

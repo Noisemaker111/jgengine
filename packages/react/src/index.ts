@@ -58,6 +58,7 @@ export * from "./interactionPrompt";
 export * from "./startScreen";
 export * from "./menuNav";
 export * from "./menuScreen";
+export * from "./canvasCover";
 export * from "./titleMenu";
 export * from "./loadingScreen";
 export * from "./creditsPanel";

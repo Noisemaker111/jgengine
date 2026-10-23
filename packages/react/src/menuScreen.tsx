@@ -3,6 +3,7 @@ import { useEffect, useMemo, useSyncExternalStore, type CSSProperties, type Reac
 import { createMenuTransition, menuTransitionDurations } from "@jgengine/core/ui/menuTransition";
 
 import { useReducedMotion } from "./accessibility";
+import { useCanvasCover } from "./canvasCover";
 
 /** Which motion a {@link MenuScreen} uses when it enters and leaves. */
 export type MenuScreenTransition = "fade" | "slide" | "scale" | "none";
@@ -18,6 +19,12 @@ export interface MenuScreenProps {
   transition?: MenuScreenTransition;
   /** Dim/blur treatment over the scene behind. Default `"dim"`. */
   scrim?: MenuScreenScrim;
+  /**
+   * The screen paints over the whole canvas, so the engine can stop drawing the world behind it.
+   * Leave false for a scrim over a live scene or a side panel: anything the scene shows through
+   * must keep drawing. Default false.
+   */
+  coversCanvas?: boolean;
   /** Enter duration in ms. Default 220. */
   enterMs?: number;
   /** Exit duration in ms. Default 160. */
@@ -72,6 +79,7 @@ export function MenuScreen({
   open = true,
   transition = "fade",
   scrim = "dim",
+  coversCanvas = false,
   enterMs = 220,
   exitMs = 160,
   reducedMotion,
@@ -87,6 +95,7 @@ export function MenuScreen({
 }: MenuScreenProps): ReactNode {
   const prefersReduced = useReducedMotion();
   const motion = reducedMotion === undefined ? prefersReduced : reducedMotion || prefersReduced;
+  useCanvasCover(open && coversCanvas);
   const machine = useMemo(() => {
     const config = { enterMs, exitMs, reducedMotion: motion };
     const initial = open
