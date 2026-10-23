@@ -7,6 +7,7 @@
 //   bun run verify:fast              # the loop while iterating: seconds
 //   bun run verify:fast --full       # everything CI runs; minutes, before landing
 //   bun run verify:fast --plan       # the steps and their commands, nothing run
+//   bun run verify:fast --json       # one JSON document on stdout: { ok, ms, checks }
 //
 // Exit: 0 verified, 1 a step failed, 2 a changed runtime file reached no test (a
 // change this cannot attribute is never a silent pass).
@@ -36,6 +37,18 @@ export interface Step {
 export interface Workspace {
   dir: string;
   checkTypes: boolean;
+}
+
+export interface CheckResult {
+  name: string;
+  ok: boolean;
+  ms: number;
+}
+
+export interface VerifyReport {
+  ok: boolean;
+  ms: number;
+  checks: CheckResult[];
 }
 
 export interface Plan {
@@ -346,6 +359,11 @@ async function run(step: Step, root: string): Promise<{ ok: boolean; seconds: nu
   return { ok: code === 0, seconds: (Date.now() - started) / 1000, output: `${stdout}${stderr}`.trim() };
 }
 
+/** The single document `--json` prints: `ok` only when every check passed. */
+export function summarize(checks: readonly CheckResult[], ms: number): VerifyReport {
+  return { ok: checks.every((check) => check.ok), ms: Math.round(ms), checks: checks.map((check) => ({ ...check })) };
+}
+
 function printPlan(plan: Plan, steps: readonly Step[]): void {
   for (const path of plan.changed) console.log(`  changed  ${path}`);
   for (const step of steps) console.log(`  step     ${step.name}  (${step.command.join(" ")})`);
@@ -372,6 +390,10 @@ async function main(argv: readonly string[]): Promise<number> {
   const base = baseIndex >= 0 ? (argv[baseIndex + 1] ?? BASE) : BASE;
   const full = argv.includes("--full");
   const planOnly = argv.includes("--plan");
+  const json = argv.includes("--json");
+  const emit = (report: VerifyReport): void => {
+    process.stdout.write(`${JSON.stringify(report)}\n`);
+  };
 
   let changed: string[];
   try {
@@ -382,32 +404,38 @@ async function main(argv: readonly string[]): Promise<number> {
   }
 
   if (changed.length === 0) {
-    console.log(`verify:fast: nothing changed against ${base}; nothing to verify.`);
+    if (json) emit(summarize([], 0));
+    else console.log(`verify:fast: nothing changed against ${base}; nothing to verify.`);
     return EXIT_VERIFIED;
   }
 
   const started = Date.now();
   if (full) {
     const steps = await fullSteps(root, changed);
-    console.log(`verify:fast --full: ${steps.length} step(s), what CI runs for ${changed.length} changed file(s)`);
-    console.log("  slower than verify:fast because CI runs these as parallel jobs on fresh runners; this runs them in order here.");
+    if (!json) {
+      console.log(`verify:fast --full: ${steps.length} step(s), what CI runs for ${changed.length} changed file(s)`);
+      console.log("  slower than verify:fast because CI runs these as parallel jobs on fresh runners; this runs them in order here.");
+    }
     if (planOnly) {
       for (const step of steps) console.log(`  step  ${step.name}  (${step.command.join(" ")})`);
       return EXIT_VERIFIED;
     }
-    const failures: string[] = [];
+    const checks: CheckResult[] = [];
     for (const step of steps) {
       const result = await run(step, root);
-      console.log(`${result.ok ? "PASS" : "FAIL"}  ${step.name}  ${result.seconds.toFixed(1)}s`);
-      if (!result.ok) {
-        failures.push(step.name);
-        console.log(result.output);
-      }
+      checks.push({ name: step.name, ok: result.ok, ms: Math.round(result.seconds * 1000) });
+      if (!json) console.log(`${result.ok ? "PASS" : "FAIL"}  ${step.name}  ${result.seconds.toFixed(1)}s`);
+      if (!result.ok) (json ? console.error : console.log)(result.output);
     }
-    const seconds = (Date.now() - started) / 1000;
-    console.log(`\ntotal ${seconds.toFixed(1)}s — ${steps.length - failures.length} passed, ${failures.length} failed`);
-    if (failures.length > 0) console.log(`failed: ${failures.join(", ")}`);
-    return failures.length === 0 ? EXIT_VERIFIED : EXIT_FAILED;
+    const report = summarize(checks, Date.now() - started);
+    if (json) {
+      emit(report);
+    } else {
+      const failures = checks.filter((check) => !check.ok).map((check) => check.name);
+      console.log(`\ntotal ${(report.ms / 1000).toFixed(1)}s — ${checks.length - failures.length} passed, ${failures.length} failed`);
+      if (failures.length > 0) console.log(`failed: ${failures.join(", ")}`);
+    }
+    return report.ok ? EXIT_VERIFIED : EXIT_FAILED;
   }
 
   const resolveSpecifier = makeResolver(root);
@@ -420,27 +448,33 @@ async function main(argv: readonly string[]): Promise<number> {
   });
   const steps = fastSteps(plan);
 
-  console.log(`verify:fast against ${base}: ${plan.changed.length} changed file(s), ${plan.tests.length} test file(s), ${plan.gates.length} gate(s)`);
+  if (!json && !planOnly) {
+    console.log(`verify:fast against ${base}: ${plan.changed.length} changed file(s), ${plan.tests.length} test file(s), ${plan.gates.length} gate(s)`);
+  }
   if (planOnly) {
     printPlan(plan, steps);
     return plan.unattributed.length === 0 ? EXIT_VERIFIED : EXIT_UNATTRIBUTED;
   }
   if (plan.unattributed.length > 0) {
+    if (json) emit({ ok: false, ms: Math.round(Date.now() - started), checks: [] });
     reportUnattributed(plan);
     return EXIT_UNATTRIBUTED;
   }
 
-  const failures: string[] = [];
+  const checks: CheckResult[] = [];
   for (const step of steps) {
     const result = await run(step, root);
-    console.log(`${result.ok ? "PASS" : "FAIL"}  ${step.name}  ${result.seconds.toFixed(1)}s`);
-    if (!result.ok) {
-      failures.push(step.name);
-      console.log(result.output);
-    }
+    checks.push({ name: step.name, ok: result.ok, ms: Math.round(result.seconds * 1000) });
+    if (!json) console.log(`${result.ok ? "PASS" : "FAIL"}  ${step.name}  ${result.seconds.toFixed(1)}s`);
+    if (!result.ok) (json ? console.error : console.log)(result.output);
   }
-  const seconds = (Date.now() - started) / 1000;
-  console.log(`\ntotal ${seconds.toFixed(1)}s — ${steps.length - failures.length} passed, ${failures.length} failed`);
+  const report = summarize(checks, Date.now() - started);
+  if (json) {
+    emit(report);
+    return report.ok ? EXIT_VERIFIED : EXIT_FAILED;
+  }
+  const failures = checks.filter((check) => !check.ok).map((check) => check.name);
+  console.log(`\ntotal ${(report.ms / 1000).toFixed(1)}s — ${checks.length - failures.length} passed, ${failures.length} failed`);
   if (failures.length > 0) {
     console.log(`failed: ${failures.join(", ")}`);
     console.log("verify:fast ran only what this change reaches. `bun run verify:fast --full` runs what CI runs.");

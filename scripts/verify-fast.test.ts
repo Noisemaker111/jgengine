@@ -17,6 +17,7 @@ import {
   makeResolver,
   ownTests,
   specifiers,
+  summarize,
   workspaceOf,
   workspaces,
   type Workspace,
@@ -214,6 +215,56 @@ describe("static gates", () => {
 
   test("a scripts change pays the capture hygiene gate", () => {
     expect(gatesFor(["scripts/lookArg.ts"])).toContain("check:capture-hygiene");
+  });
+});
+
+describe("--json", () => {
+  const shape = (value: unknown): void => {
+    expect(typeof value).toBe("object");
+    const report = value as { ok: unknown; ms: unknown; checks: unknown };
+    expect(Object.keys(report).sort()).toEqual(["checks", "ms", "ok"]);
+    expect(typeof report.ok).toBe("boolean");
+    expect(typeof report.ms).toBe("number");
+    expect(Array.isArray(report.checks)).toBe(true);
+    for (const check of report.checks as Array<Record<string, unknown>>) {
+      expect(Object.keys(check).sort()).toEqual(["ms", "name", "ok"]);
+      expect(typeof check.name).toBe("string");
+      expect(typeof check.ok).toBe("boolean");
+      expect(typeof check.ms).toBe("number");
+    }
+  };
+
+  test("a passing run prints one document with ok true and a check per step", () => {
+    const report = summarize(
+      [
+        { name: "typecheck packages/core", ok: true, ms: 1200 },
+        { name: "test 2 file(s)", ok: true, ms: 3400 },
+        { name: "check-artifacts", ok: true, ms: 90 },
+      ],
+      4690,
+    );
+    shape(JSON.parse(JSON.stringify(report)));
+    expect(report.ok).toBe(true);
+    expect(report.checks.map((check) => check.name)).toEqual(["typecheck packages/core", "test 2 file(s)", "check-artifacts"]);
+  });
+
+  test("a failing run leaves ok false and keeps the failing check's name", () => {
+    const report = summarize(
+      [
+        { name: "typecheck packages/core", ok: true, ms: 1200 },
+        { name: "test 2 file(s)", ok: false, ms: 3400 },
+      ],
+      4600,
+    );
+    shape(JSON.parse(JSON.stringify(report)));
+    expect(report.ok).toBe(false);
+    expect(report.checks.filter((check) => !check.ok).map((check) => check.name)).toEqual(["test 2 file(s)"]);
+  });
+
+  test("an empty run is one document, not a bare line of prose", () => {
+    const text = JSON.stringify(summarize([], 0));
+    expect(text).toBe('{"ok":true,"ms":0,"checks":[]}');
+    shape(JSON.parse(text));
   });
 });
 
