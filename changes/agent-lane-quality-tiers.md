@@ -1,4 +1,0 @@
-### Changed
-
-- The graphics quality tier now costs what it claims on the render path. A tier's post chain renders at its own resolution scale (`low` 0.7, `medium` 0.85, `high`/`ultra` native) instead of always at the canvas size, and a game's authored `shadowMapSize` and `cascades` are a ceiling the tier caps rather than a value it ignored — every reference game authored 3 cascades and 1024/2048, so no tier changed a shadow before this. `low` and `medium` also stretch the far cascades' refresh interval, and the smallest caster worth a depth draw grows as the map shrinks. `high` and `ultra` keep native resolution, the authored shadow sizes and the measured cadence, so their frames are unchanged.
-- Measured uncapped at 1600x900: whole-frame draws at `low` fell 53% in harbor-heat (515 → 242) and 63% in drift-foundry (1,098 → 408), with the shadow pass there down from 911 ms to 344 ms over a 6 s window; `high` and `ultra` held their draw counts.
