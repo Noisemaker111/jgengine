@@ -1,16 +1,23 @@
+import { join } from "node:path";
+
 import { expect, test } from "bun:test";
 
+import { chromeFrameClockArgs, startBrowser, type ChromeLaunchOptions } from "./browser-lib";
 import {
   aggregateInclusiveTime,
   aggregateSelfTime,
+  cappedClockProblem,
   droppedOverrides,
+  measureGame,
   measureSceneNodes,
   parseDeclaredSettings,
   parsePerfArgs,
   parseSettingSpec,
+  perfFrameClockLine,
   perfPageUrl,
   perfSettingsScript,
   perfStateLine,
+  probeFrameClockMs,
   summarizeFrameDeltas,
   undeclaredSettingErrors,
 } from "./perf-play";
@@ -18,11 +25,11 @@ import {
 test("parsePerfArgs reads one game with its flags", () => {
   expect(parsePerfArgs(["harbor-heat"])).toEqual({
     kind: "run",
-    args: { game: "harbor-heat", quality: "full", profile: false, seconds: 6, telemetry: "on", settings: [], params: [] },
+    args: { game: "harbor-heat", quality: "full", profile: false, seconds: 6, telemetry: "on", settings: [], frameClock: "capped", params: [] },
   });
   expect(parsePerfArgs(["deepward", "--quality", "draft", "--profile", "--seconds", "3"])).toEqual({
     kind: "run",
-    args: { game: "deepward", quality: "draft", profile: true, seconds: 3, telemetry: "on", settings: [], params: [] },
+    args: { game: "deepward", quality: "draft", profile: true, seconds: 3, telemetry: "on", settings: [], frameClock: "capped", params: [] },
   });
   expect(parsePerfArgs(["--help"]).kind).toBe("help");
 });
@@ -251,4 +258,115 @@ test("an unreadable scene is reported as unavailable, never as zero", async () =
     },
   };
   expect(await measureSceneNodes(session as never)).toEqual({ nodes: null, source: "unavailable", scenes: 0 });
+});
+
+/**
+ * The launch flags and the record marker: `--uncapped` has to reach Chrome, and a record has to say
+ * which clock produced its ms, because a vsync-multiple and a real frame cost never compare.
+ */
+test("--uncapped asks Chrome for an unthrottled rAF clock; the default asks for nothing", () => {
+  expect(parsePerfArgs(["harbor-heat", "--uncapped"])).toMatchObject({ args: { frameClock: "uncapped" } });
+  expect(parsePerfArgs(["harbor-heat"]).kind === "run" && parsePerfArgs(["harbor-heat"]).args.frameClock).toBe("capped");
+
+  expect(chromeFrameClockArgs("capped")).toEqual([]);
+  expect(chromeFrameClockArgs()).toEqual([]);
+  expect(chromeFrameClockArgs("uncapped")).toEqual([
+    "--disable-frame-rate-limit",
+    "--disable-gpu-vsync",
+    "--run-all-compositor-stages-before-draw",
+  ]);
+
+  expect(perfFrameClockLine("capped")).toBeNull();
+  expect(perfFrameClockLine("uncapped")).toContain("not comparable with a capped record");
+});
+
+test("the frame clock the run asked for is what the browser launch receives", async () => {
+  const seen: (ChromeLaunchOptions | undefined)[] = [];
+  const original = globalThis.fetch;
+  globalThis.fetch = (async () =>
+    new Response(JSON.stringify({ webSocketDebuggerUrl: "ws://127.0.0.1:1/devtools" }), { status: 200 })) as typeof fetch;
+  try {
+    for (const frameClock of ["uncapped", undefined] as const) {
+      await startBrowser({
+        debugPort: 1,
+        readyMs: 500,
+        log: () => {},
+        ...(frameClock === undefined ? {} : { frameClock }),
+        launch: (_port, _prefix, options) => {
+          seen.push(options);
+          // A path only: the fake launch owns no browser, so nothing is created or cleaned up.
+          return { pid: undefined, userDataDir: join(".scratch", "jg-clock-fake") };
+        },
+        pageProbe: async () => {},
+      });
+    }
+  } finally {
+    globalThis.fetch = original;
+  }
+  expect(seen).toEqual([{ frameClock: "uncapped" }, undefined]);
+});
+
+test("a blank page that still ticks at vsync is a failed uncapped run, not a measurement", () => {
+  expect(cappedClockProblem(0.7)).toBeNull();
+  expect(cappedClockProblem(4.2)).toBeNull();
+  expect(cappedClockProblem(16.7)).toContain("still ticked at 16.7 ms");
+  expect(cappedClockProblem(16.7)).toContain("16.7 ms multiples");
+  expect(cappedClockProblem(0)).toContain("saw no animation frames");
+});
+
+test("a probe that catches the compositor still starting retries instead of failing the run", async () => {
+  const samples = [[16.7, 16.7, 16.8], [0.2, 0.3, 0.1]];
+  let reads = 0;
+  const session = { evaluate: async () => samples[Math.min(reads++, samples.length - 1)] };
+  expect(await probeFrameClockMs(session as never, 300, 3)).toBe(0.2);
+  expect(reads).toBe(2);
+
+  const capped = { evaluate: async () => [16.7, 16.7, 16.8] };
+  expect(await probeFrameClockMs(capped as never, 300, 3)).toBe(16.7);
+});
+
+function fakePerfSession(options: { clock?: number[]; frames?: number[]; gpu?: string } = {}) {
+  const session = {
+    send: async () => ({}),
+    evaluate: async (expression: string) => {
+      if (expression.includes("jgCapture")) return { status: "ready", error: null };
+      if (expression.includes(">= 300")) return options.clock ?? [2, 2, 3];
+      if (expression.includes("deltas.push")) return options.frames ?? [5, 6, 7, 6];
+      if (expression.includes("innerWidth")) return { w: 1600, h: 900 };
+      if (expression.includes("webgl2")) return options.gpu ?? "Test GPU";
+      if (expression.includes("__jgPerfGl")) return { counts: {}, since: {} };
+      return null;
+    },
+  };
+  return session as never;
+}
+
+test("a record says which clock produced its frame times, so the two never get compared", async () => {
+  const base = "http://127.0.0.1:4601";
+  const capped = await measureGame({ session: fakePerfSession(), base, game: "beacon-bastion", warmupMs: 0, seconds: 0.001, profile: false });
+  expect(capped.record.frameClock).toBe("capped");
+  expect(capped.record.frame.avgMs).toBe(6);
+
+  const uncapped = await measureGame({
+    session: fakePerfSession({ clock: [0.8, 0.9, 0.7] }),
+    base,
+    game: "beacon-bastion",
+    warmupMs: 0,
+    seconds: 0.001,
+    profile: false,
+    frameClock: "uncapped",
+  });
+  expect(uncapped.record.frameClock).toBe("uncapped");
+
+  await expect(
+    measureGame({
+      session: fakePerfSession({ clock: [16.7, 16.7, 16.8] }),
+      base,
+      game: "beacon-bastion",
+      warmupMs: 0,
+      seconds: 0.001,
+      profile: false,
+      frameClock: "uncapped",
+    }),
+  ).rejects.toThrow("--uncapped did not take");
 });

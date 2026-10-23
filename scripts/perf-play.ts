@@ -12,6 +12,7 @@ import {
   waitCaptureReady,
   withBrowserSession,
   type CaptureQuality,
+  type FrameClock,
 } from "./browser-lib";
 import {
   summarizeFrameWindow,
@@ -117,18 +118,25 @@ export interface PerfArgs {
   state?: string;
   /** Extra page params in the order given (`spawn=…`, `seed=…`), for a scene no state names. */
   params: [string, string][];
+  /** rAF clock the browser is launched on; `uncapped` is opt-in and marks the record. */
+  frameClock: FrameClock;
 }
 
 export type ArgResult = { kind: "run"; args: PerfArgs } | { kind: "help" };
 
 const USAGE = `usage: bun run perf <game> [--quality draft|full] [--profile] [--seconds n] [--telemetry on|off]
-                    [--state name] [--param k=v ...] [--set key=value ...]
+                    [--state name] [--param k=v ...] [--set key=value ...] [--uncapped]
 
   <game>            game id under Games/ (for example harbor-heat)
   --quality         graphics tier: full (default) or draft (?quality=low, half viewport)
   --profile         also print the inclusive-time table to stderr
   --seconds         measured window in seconds (default ${DEFAULT_SECONDS})
   --telemetry       in-page report sampler: on (default) or off (?telemetry=off) for an A/B run
+  --uncapped        launch the browser with an unthrottled rAF clock (--disable-frame-rate-limit,
+                    --disable-gpu-vsync), so frame times are what a frame costs instead of a 16.7 ms
+                    vsync multiple. Opt-in: the record then says frameClock uncapped and its ms do not
+                    compare with a capped record. Verify the clock took by omission — a browser that
+                    stays vsynced fails the run.
   --state           boot into the game's capture.states entry of this name (?state=name), so two runs
                     are the same scene. An unknown name fails with the states the game declares.
   --param           add a page query parameter; repeatable (?spawn=1,2,3, ?seed=7). The harness's own
@@ -295,6 +303,7 @@ export function parsePerfArgs(argv: readonly string[]): ArgResult {
   let profile = false;
   let seconds = DEFAULT_SECONDS;
   let telemetry: "on" | "off" = "on";
+  let frameClock: FrameClock = "capped";
   let state: string | undefined;
   const params: [string, string][] = [];
   const settings: PerfSettingOverride[] = [];
@@ -303,6 +312,10 @@ export function parsePerfArgs(argv: readonly string[]): ArgResult {
     const arg = argv[index]!;
     if (arg === "--profile") {
       profile = true;
+      continue;
+    }
+    if (arg === "--uncapped") {
+      frameClock = "uncapped";
       continue;
     }
     if (arg === "--state") {
@@ -359,7 +372,7 @@ export function parsePerfArgs(argv: readonly string[]): ArgResult {
     game = arg;
   }
   if (game === undefined) throw new Error("a game id is required");
-  return { kind: "run", args: { game, quality, profile, seconds, telemetry, settings, ...(state === undefined ? {} : { state }), params } };
+  return { kind: "run", args: { game, quality, profile, seconds, telemetry, settings, frameClock, ...(state === undefined ? {} : { state }), params } };
 }
 
 /** One sampled stack frame reduced to a readable key and its self time. */
@@ -506,6 +519,51 @@ const RESOURCE_BUFFER_SCRIPT = `(() => {
   try { performance.setResourceTimingBufferSize(4000); } catch {}
 })();`;
 
+/** Window the blank-page probe samples: long enough for a few hundred uncapped ticks. */
+const CLOCK_PROBE_MS = 300;
+/** Probe samples one uncapped run may take before its clock reads as frozen. */
+const CLOCK_PROBE_ATTEMPTS = 3;
+/** The slowest median blank-page rAF delta still read as an uncapped clock, in ms. */
+const UNCAPPED_CLOCK_MAX_MS = 8;
+
+/** Why a run that asked for the uncapped clock is still vsynced, or null when the probe agrees. */
+export function cappedClockProblem(medianMs: number): string | null {
+  if (!Number.isFinite(medianMs) || medianMs <= 0) return "the clock probe saw no animation frames at all";
+  if (medianMs <= UNCAPPED_CLOCK_MAX_MS) return null;
+  return `a blank page still ticked at ${Math.round(medianMs * 10) / 10} ms, so rAF is on the display's commit clock and these frame times are 16.7 ms multiples`;
+}
+
+/**
+ * Median rAF delta on the blank page the session opens with, before the game loads.
+ * An uncapped browser ticks well under the 16.7 ms commit interval; a capped one ticks at it.
+ * Sampling the clock on its own keeps "the game costs 16.7 ms" from reading the same as
+ * "the launch flags never took". A browser still starting its compositor can serve the first
+ * sample off the display clock, so a reading that fails is retried: a capped browser fails
+ * every attempt, while a startup race passes the next one.
+ */
+export async function probeFrameClockMs(
+  session: CdpSession,
+  windowMs = CLOCK_PROBE_MS,
+  attempts = CLOCK_PROBE_ATTEMPTS,
+): Promise<number> {
+  let slowest = 0;
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    const deltas = (await session.evaluate<number[]>(SAMPLE_FRAMES_SCRIPT(windowMs), { awaitPromise: true })) ?? [];
+    const kept = deltas.filter((ms) => Number.isFinite(ms) && ms > 0).sort((a, b) => a - b);
+    const median = kept.length === 0 ? 0 : kept[Math.floor(kept.length / 2)]!;
+    if (median > 0 && median <= UNCAPPED_CLOCK_MAX_MS) return median;
+    slowest = Math.max(slowest, median);
+  }
+  return slowest;
+}
+
+/** The stderr line that keeps an uncapped record from being read as a capped one, or null when capped. */
+export function perfFrameClockLine(clock: FrameClock): string | null {
+  return clock === "uncapped"
+    ? "perf: frame clock uncapped (rAF off the vsync clock) — these ms are not comparable with a capped record"
+    : null;
+}
+
 interface GlCounts {
   counts: Record<string, number>;
   since: Record<string, number>;
@@ -610,6 +668,11 @@ export interface PerfRecord extends PerfReport {
   state: string | null;
   /** Extra page params the run pinned beside the state, `k=v` each. */
   params: string[];
+  /**
+   * The rAF clock the browser ran on. `capped` frame times are vsync multiples (16.7 ms steps) and
+   * `uncapped` ones are what a frame costs, so the two never compare to each other.
+   */
+  frameClock: FrameClock;
 }
 export type { PerfReport };
 
@@ -638,6 +701,8 @@ export interface MeasureOptions {
   state?: string;
   /** Extra page params pinned beside the state (`spawn=…`, `seed=…`). */
   params?: readonly (readonly [string, string])[];
+  /** The rAF clock the caller launched the browser on, echoed into the record. */
+  frameClock?: FrameClock;
 }
 
 export interface PerfMeasure {
@@ -646,6 +711,8 @@ export interface PerfMeasure {
   profile: RawProfile | null;
   /** Wall-clock length of the profile window in ms, for percentages. */
   profileMs: number;
+  /** Blank-page rAF median the uncapped run proved its clock with, or null on the capped path. */
+  clockProbeMs: number | null;
 }
 
 function readGpu(session: CdpSession): Promise<string | undefined> {
@@ -707,6 +774,15 @@ export async function measureGame(options: MeasureOptions): Promise<PerfMeasure>
   const profileRun = options.profile ?? true;
   const settings = options.settings ?? [];
   const params = options.params ?? [];
+  const frameClock = options.frameClock ?? "capped";
+
+  let clockProbeMs: number | null = null;
+  if (frameClock === "uncapped") {
+    const clockMs = await probeFrameClockMs(session);
+    const problem = cappedClockProblem(clockMs);
+    if (problem !== null) throw new Error(`perf: --uncapped did not take — ${problem}`);
+    clockProbeMs = Math.round(clockMs * 100) / 100;
+  }
 
   await session.send("Page.enable");
   await session.send("Page.addScriptToEvaluateOnNewDocument", { source: RESOURCE_BUFFER_SCRIPT });
@@ -815,9 +891,10 @@ export async function measureGame(options: MeasureOptions): Promise<PerfMeasure>
     overrides: settings.map((setting) => `${setting.id}=${setting.value}`),
     state: options.state ?? null,
     params: params.map(([key, value]) => `${key}=${value}`),
+    frameClock,
   };
 
-  return { record, profile: raw, profileMs: profiledMs };
+  return { record, profile: raw, profileMs: profiledMs, clockProbeMs };
 }
 
 async function main(): Promise<void> {
@@ -826,7 +903,7 @@ async function main(): Promise<void> {
     console.log(USAGE);
     return;
   }
-  const { game, quality, profile, seconds, telemetry, settings, state, params } = parsed.args;
+  const { game, quality, profile, seconds, telemetry, settings, state, params, frameClock } = parsed.args;
 
   if (!existsSync(join(repoRoot, "Games", game, "src", "index.tsx"))) {
     throw new Error(`no game "${game}" in Games/ — run \`bun run games:clone\` first, then retry`);
@@ -834,13 +911,18 @@ async function main(): Promise<void> {
 
   const server = await ensureDevServer(repoRoot);
   const exitCode = await withBrowserSession(
-    { keep: false, timeoutMs: 120_000, server: server.child, serverPid: server.pid },
+    { keep: false, timeoutMs: 120_000, frameClock, server: server.child, serverPid: server.pid },
     async ({ debugPort }) => {
       const session = await openPageSession(debugPort);
       try {
-        const measured = await measureGame({ session, base: server.base, game, quality, seconds, telemetry, settings, state, params });
+        const measured = await measureGame({ session, base: server.base, game, quality, seconds, telemetry, settings, state, params, frameClock });
         const pin = perfStateLine(state, params);
         if (pin !== null) console.error(pin);
+        const clock = perfFrameClockLine(frameClock);
+        if (clock !== null) console.error(clock);
+        if (measured.clockProbeMs !== null) {
+          console.error(`perf: blank page ticked at ${measured.clockProbeMs} ms on the uncapped clock`);
+        }
         if (measured.record.overrides.length > 0) {
           console.error(`perf: overrides ${measured.record.overrides.join(" ")}`);
         }
