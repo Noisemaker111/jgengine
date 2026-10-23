@@ -6,7 +6,7 @@ import { devtools } from "@jgengine/core/devtools/devtools";
 import { createShaderWarmup, type ShaderWarmupState } from "./shaderWarmup";
 
 /** Warmup state before the gate has run, so the loading screen covers the very first frame. @internal */
-export const SCENE_WARMUP_PENDING: ShaderWarmupState = { phase: "waiting", rounds: 0, programs: 0, elapsedMs: 0 };
+export const SCENE_WARMUP_PENDING: ShaderWarmupState = { phase: "waiting", rounds: 0, programs: 0, planned: 0, deferred: 0, elapsedMs: 0 };
 
 /**
  * Compiles the mounted scene's shaders behind the loading screen and reports progress to it.
@@ -21,7 +21,7 @@ export function SceneWarmupGate({ onState }: { onState: (state: ShaderWarmupStat
     const warmup = createShaderWarmup({ renderer: gl, scene, camera, onState });
     const unregister = devtools.probes.register("sceneWarmup", () => {
       const state = warmup.state();
-      return `${state.phase}, ${state.rounds} rounds, ${state.programs} programs, ${state.elapsedMs}ms`;
+      return `${state.phase}, ${state.rounds} rounds, ${state.programs} programs, ${state.planned} planned, ${state.deferred} deferred, ${state.elapsedMs}ms`;
     });
     return () => {
       warmup.cancel();
@@ -31,6 +31,19 @@ export function SceneWarmupGate({ onState }: { onState: (state: ShaderWarmupStat
   return null;
 }
 
+/** What the loading cover says, so a wait that takes seconds reads as progress instead of a blank. @internal */
+export function warmupLabel(state: ShaderWarmupState): string {
+  if (state.phase === "compiling") {
+    return state.programs === 0 ? "Preparing scene." : `Preparing scene (${state.programs} shaders)`;
+  }
+  return "Preparing scene.";
+}
+
+/** Whether the cover is still up: a failed compile releases the frame rather than hiding a broken scene. @internal */
+export function warmupCovering(state: ShaderWarmupState): boolean {
+  return state.phase !== "ready" && state.phase !== "failed";
+}
+
 /**
  * Opaque cover over the canvas while the scene warms: the first frames of a scene compile its
  * materials, and a player should not see those frames. Game UI and menus mount after this and
@@ -38,7 +51,7 @@ export function SceneWarmupGate({ onState }: { onState: (state: ShaderWarmupStat
  * @internal
  */
 export function SceneWarmupCover({ state }: { state: ShaderWarmupState }) {
-  if (state.phase === "ready" || state.phase === "failed") return null;
+  if (!warmupCovering(state)) return null;
   return (
     <div
       data-shell-code-loading
@@ -55,7 +68,25 @@ export function SceneWarmupCover({ state }: { state: ShaderWarmupState }) {
         fontFamily: "ui-sans-serif, system-ui, sans-serif",
       }}
     >
-      {state.phase === "compiling" && state.programs > 0 ? `Preparing scene (${state.programs} shaders)` : "Preparing scene."}
+      <div style={{ display: "grid", gap: 10, justifyItems: "center", fontSize: 14 }}>
+        <span>{warmupLabel(state)}</span>
+        <div data-shell-warmup-bar aria-hidden="true" style={{ width: 160, height: 3, borderRadius: 2, background: "#1e293b", overflow: "hidden" }}>
+          <div
+            style={{
+              width: state.phase === "compiling" ? "100%" : "20%",
+              height: "100%",
+              background: "#38bdf8",
+              opacity: state.phase === "compiling" ? 1 : 0.4,
+            }}
+          />
+        </div>
+        {state.deferred > 0 ? (
+          <span style={{ fontSize: 11, color: "#94a3b8" }}>{`${state.deferred} more prepare after this`}</span>
+        ) : null}
+        {state.phase === "compiling" && state.elapsedMs >= 1_000 ? (
+          <span style={{ fontSize: 11, color: "#64748b" }}>{`${(state.elapsedMs / 1000).toFixed(1)}s`}</span>
+        ) : null}
+      </div>
     </div>
   );
 }
