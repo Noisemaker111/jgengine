@@ -97,7 +97,7 @@ import { resolvePlayableAudio } from "./audio/playableAudio";
 import { AudioSettingsBridge, type AppliedGraphicsSettings } from "./settings/appliedSettings";
 import { TextureFiltering } from "./render/TextureFiltering";
 import { FrameRateLimiter } from "./drivers/FrameRateLimiter";
-import { CanvasCoverFrameloop, type CanvasFrameloop } from "./drivers/CanvasCoverFrameloop";
+import { CanvasCoverFrameloop } from "./drivers/CanvasCoverFrameloop";
 import { FpsCounter, FpsProbe, type FrameTally } from "./diagnostics/FpsCounter";
 import { ConfiguredLighting, BackdropFog } from "./render/SceneLighting";
 import { IrradianceVolumeLighting } from "./render/IrradianceVolumeLighting";
@@ -510,7 +510,7 @@ export function Shell3dPresentation({
         run: () => action.run(ctx),
       }));
   const touchScale = compact ? 0.88 : 1;
-  const canvasFrameloop: CanvasFrameloop =
+  const canvasFrameloop: "always" | "demand" | "never" =
     poster && posterFrozen ? "demand" : graphics.frameRateLimit > 0 && !poster ? "never" : "always";
   // The frame carries the player's colour-vision mode; the HUD and menu text above it stay unfiltered.
   const colorblind = useColorblindMode(settingsStore);

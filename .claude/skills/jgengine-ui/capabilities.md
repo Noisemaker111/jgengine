@@ -126,6 +126,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `isCameraOccluderTransparent` (function) · `import { isCameraOccluderTransparent } from "@jgengine/shell/camera"`
 
+## canvas-cover — stop world rendering behind a full-screen surface while input, audio, the HUD and the menu keep running
+
+- `canvasCover` (const) · `import { canvasCover } from "@jgengine/react"`
+
 ## caption-feed — bounded, self-expiring, deduped caption lines for the accessibility captions overlay
 
 - `createCaptionFeed` (function) · `import { createCaptionFeed } from "@jgengine/shell/audio/captions"`

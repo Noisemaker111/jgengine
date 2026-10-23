@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useCanvasCovered } from "@jgengine/react/canvasCover";
 
 /** The frameloop the shell asked for; the cover only ever overrides it with `"never"`. */
-export type CanvasFrameloop = "always" | "demand" | "never";
+type CanvasFrameloop = "always" | "demand" | "never";
 
 /**
  * Stops R3F's loop while a surface covers the canvas: the world, its shadow passes and postfx
