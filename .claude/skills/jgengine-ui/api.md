@@ -1173,7 +1173,7 @@
 - `useWaypoints` (function): function useWaypoints(source: WaypointTracker | readonly Waypoint[]): readonly Waypoint[] — Subscribe to a {@link WaypointTracker} and re-render on every change, returning its current waypoints. Pass a plain array instead and it is returned as-is (no subscription), so a game can drive the host from a tracker or from its own derived state.
 - `useWorldBrowser` (function): function useWorldBrowser(options: { fetchSessions: () => Promise<readonly SessionListing[]>; filter?: MatchFilter; limit?: number; refreshMs?: number; }): WorldBrowserState — Polls a host-supplied session fetcher (e.g. createWsBackend().browse) and filters through matchmaking's browseSessions. fetchSessions must be identity-stable (wrap in useCallback at the call site) or every render refetches.
 - `useWorldInvites` (function): function useWorldInvites(): WorldInvite[] — ⚠ undocumented
-- `useWorldItems` (function): function useWorldItems(): readonly WorldItemRecord[] — ⚠ undocumented
+- `useWorldItems` (function): function useWorldItems(): readonly WorldItemRecord[] — Live dropped-item records: the returned list keeps one identity until an item spawns, is picked up or is removed. `worldItem.list()` allocates a new array per call and the shared store signal fires on every pose write, so a raw read re-rendered every marker each frame (#2175). A marker reads its own live pose imperatively (useFrame).
 
 ## @jgengine/react/accessibility
 
@@ -1506,7 +1506,7 @@
 - `useTicker` (function): function useTicker(hz = 10): number — Re-render at a steady rate. Returns a monotonically increasing tick count driven by a setInterval, for HUD elements that display wall-clock-derived values (cooldowns, cast bars, swing timers) without an engine subscription to hang off. `hz <= 0` disables the ticker.
 - `useWorldBrowser` (function): function useWorldBrowser(options: { fetchSessions: () => Promise<readonly SessionListing[]>; filter?: MatchFilter; limit?: number; refreshMs?: number; }): WorldBrowserState — Polls a host-supplied session fetcher (e.g. createWsBackend().browse) and filters through matchmaking's browseSessions. fetchSessions must be identity-stable (wrap in useCallback at the call site) or every render refetches.
 - `useWorldInvites` (function): function useWorldInvites(): WorldInvite[] — ⚠ undocumented
-- `useWorldItems` (function): function useWorldItems(): readonly WorldItemRecord[] — ⚠ undocumented
+- `useWorldItems` (function): function useWorldItems(): readonly WorldItemRecord[] — Live dropped-item records: the returned list keeps one identity until an item spawns, is picked up or is removed. `worldItem.list()` allocates a new array per call and the shared store signal fires on every pose write, so a raw read re-rendered every marker each frame (#2175). A marker reads its own live pose imperatively (useFrame).
 
 ## @jgengine/react/hud
 
