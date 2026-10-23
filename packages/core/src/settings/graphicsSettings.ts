@@ -1,5 +1,6 @@
 import { resolveGraphicsProfile, type GraphicsProfile } from "./graphicsProfile";
 import {
+  asSettingType,
   DEFAULT_GRAPHICS_QUALITY,
   GRAPHICS_QUALITY_OPTIONS,
   SETTING_IDS,
@@ -7,7 +8,6 @@ import {
   type SettingValue,
   type SettingsStore,
 } from "./settingsModel";
-
 /** The post-processing stages a player can toggle individually on top of the quality tier. */
 export type GraphicsPostStage = keyof GraphicsProfile["postStages"];
 
@@ -139,7 +139,8 @@ export function withGraphicsQualityOverride(
   ]);
   return {
     get(id, fallback) {
-      return pinned.has(id) ? (pinned.get(id) as typeof fallback) : store.get(id, fallback);
+      const pinnedValue = pinned.get(id);
+      return pinnedValue === undefined ? store.get(id, fallback) : asSettingType(id, pinnedValue, fallback);
     },
     set(id, value) {
       pinned.delete(id);

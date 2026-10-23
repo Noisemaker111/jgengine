@@ -148,31 +148,79 @@ function defaultStorage(): Pick<WebStorageLike, "getItem" | "setItem"> | null {
   return null;
 }
 
-function coerce<T extends SettingValue>(raw: unknown, fallback: T): T {
-  if (typeof fallback === "number") {
-    const n = typeof raw === "number" ? raw : Number(raw);
-    return (Number.isFinite(n) ? n : fallback) as T;
+/** A stored setting holds a value the read asked for as another type, so no honest value exists. */
+export class SettingsTypeError extends Error {
+  readonly settingId: string;
+  readonly storedType: string;
+  readonly fallbackType: string;
+
+  constructor(settingId: string, storedType: string, fallbackType: string) {
+    super(`Setting "${settingId}" stores ${storedType} but was read as ${fallbackType}.`);
+    this.name = "SettingsTypeError";
+    this.settingId = settingId;
+    this.storedType = storedType;
+    this.fallbackType = fallbackType;
   }
-  if (typeof fallback === "boolean") {
-    if (typeof raw === "boolean") return raw as T;
-    return (raw === "true" ? true : raw === "false" ? false : fallback) as T;
-  }
-  return (typeof raw === "string" ? raw : fallback) as T;
 }
 
+function storedTypeName(raw: unknown): string {
+  if (raw === null) return "null";
+  if (Array.isArray(raw)) return "array";
+  return typeof raw;
+}
+
+/**
+ * Read a stored value as the type the caller asked for. A value of another primitive type converts
+ * when the result is the same value in the asked-for type (a number as its digits, a boolean as
+ * `"true"`/`"false"`); otherwise it throws {@link SettingsTypeError}, naming the key and both types,
+ * instead of handing back the fallback as if nothing were stored.
+ */
+export function asSettingType<T extends SettingValue>(id: string, stored: unknown, fallback: T): T {
+  const wanted = typeof fallback as "number" | "string" | "boolean";
+  const storedType = storedTypeName(stored);
+  if (storedType === wanted) {
+    if (wanted === "number" && !Number.isFinite(stored)) {
+      throw new SettingsTypeError(id, storedType, wanted);
+    }
+    return stored as T;
+  }
+  if (wanted === "number" && storedType === "string") {
+    const text = (stored as string).trim();
+    const parsed = text === "" ? Number.NaN : Number(text);
+    if (Number.isFinite(parsed)) return parsed as T;
+  } else if (wanted === "string" && (storedType === "number" || storedType === "boolean")) {
+    return String(stored) as T;
+  } else if (wanted === "boolean" && storedType === "string" && (stored === "true" || stored === "false")) {
+    return (stored === "true") as T;
+  }
+  throw new SettingsTypeError(id, storedType, wanted);
+}
+
+/**
+ * Read one persisted setting as `fallback`'s type. An absent or unreadable cell yields the
+ * fallback; a stored value of an incompatible type throws {@link SettingsTypeError}.
+ */
 export function loadSettingValue<T extends SettingValue>(
   id: string,
   fallback: T,
   storage: Pick<WebStorageLike, "getItem"> | null | undefined = defaultStorage(),
 ): T {
   if (storage == null) return fallback;
+  let raw: string | null;
   try {
-    const raw = storage.getItem(settingStorageKey(id));
-    if (raw === null) return fallback;
-    return coerce(JSON.parse(raw), fallback);
+    raw = storage.getItem(settingStorageKey(id));
   } catch {
     return fallback;
   }
+  if (raw === null) return fallback;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return fallback;
+  }
+  if (parsed === null) return fallback;
+  return asSettingType(id, parsed, fallback);
 }
 
 export function saveSettingValue(
@@ -201,7 +249,8 @@ export function createSettingsStore(
   const mem = createObservableKeyedStore<SettingValue>();
   return {
     get(id, fallback) {
-      if (mem.has(id)) return coerce(mem.get(id), fallback);
+      const stored = mem.get(id);
+      if (stored !== undefined) return asSettingType(id, stored, fallback);
       return loadSettingValue(id, fallback, storage ?? undefined);
     },
     set(id, value) {

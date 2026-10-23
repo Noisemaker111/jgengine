@@ -186,16 +186,18 @@
 - `SettingCategoryDef` (interface): interface SettingCategoryDef — Declares or relabels/reorders a category tab; use it for a custom category or to reshape the built-ins.
 - `SettingKind` (type): type SettingKind = "slider" | "toggle" | "select" — ⚠ undocumented
 - `SettingOption` (interface): interface SettingOption { value: string; label: string } — ⚠ undocumented · used by `COLORBLIND_OPTIONS` (@jgengine/core/settings/accessibilitySettings): Colorblind palette choices.
-- `SettingValue` (type): type SettingValue = number | boolean | string — ⚠ undocumented · used by `useSetting` (@jgengine/react): Read + write one persisted setting; re-renders when the value changes anywhere.
+- `SettingValue` (type): type SettingValue = number | boolean | string — ⚠ undocumented · used by `asSettingType`: Read a stored value as the type the caller asked for.
 - `SettingsActionDef` (interface): interface SettingsActionDef — A game-state action (Restart, Quit to menu, …) shown as rows in the first "Game" settings tab — never a floating button or a rebindable key.
 - `SettingsStore` (interface): interface SettingsStore { get<T extends SettingValue>(id: string, fallback: T): T; set(id: string, value: SettingValue): void; subscribe(listener: () => void): () => void } — ⚠ undocumented · used by `createSettingsStore`: Reactive, localStorage-backed settings store shared by the shell wiring and React hooks.
 - `SettingsSurface` (type): type SettingsSurface = "quick" — `quick` shows compact on-screen volume/graphics buttons; `false` (default) mounts no engine trigger — open the menu from your own UI with `<SettingsTrigger>` or `useSettings().open()`.
+- `SettingsTypeError` (class): class SettingsTypeError extends Error — A stored setting holds a value the read asked for as another type, so no honest value exists.
 - `SettingsVariant` (type): type SettingsVariant = "panel" | "sheet" | "sidebar" | "fullscreen" — The four themed settings layouts, chosen with `defineGame({ settings: { variant } })`. All read the game's `--jg-*` theme tokens.
 - `UI_SCALE_MAX` (const): const UI_SCALE_MAX: 1.5 — ⚠ undocumented
 - `UI_SCALE_MIN` (const): const UI_SCALE_MIN: 0.5 — ⚠ undocumented
+- `asSettingType` (function): function asSettingType<T extends SettingValue>(id: string, stored: unknown, fallback: T): T — Read a stored value as the type the caller asked for. A value of another primitive type converts when the result is the same value in the asked-for type (a number as its digits, a boolean as `"true"`/`"false"`); otherwise it throws {@link SettingsTypeError}, naming the key and both types, instead of handing back the fallback as if nothing were stored.
 - `busVolumeSettingId` (function): function busVolumeSettingId(busId: string): string — ⚠ undocumented
 - `createSettingsStore` (function): function createSettingsStore(storage: Pick<WebStorageLike, "getItem" | "setItem"> | null | undefined = defaultStorage()): SettingsStore — Reactive, localStorage-backed settings store shared by the shell wiring and React hooks.
-- `loadSettingValue` (function): function loadSettingValue<T extends SettingValue>(id: string, fallback: T, storage: Pick<WebStorageLike, "getItem"> | null | undefined = defaultStorage()): T — ⚠ undocumented
+- `loadSettingValue` (function): function loadSettingValue<T extends SettingValue>(id: string, fallback: T, storage: Pick<WebStorageLike, "getItem"> | null | undefined = defaultStorage()): T — Read one persisted setting as `fallback`'s type. An absent or unreadable cell yields the fallback; a stored value of an incompatible type throws {@link SettingsTypeError}.
 - `saveSettingValue` (function): function saveSettingValue(id: string, value: SettingValue, storage: Pick<WebStorageLike, "setItem"> | null | undefined = defaultStorage()): void — ⚠ undocumented
 - `settingStorageKey` (function): function settingStorageKey(id: string): string — ⚠ undocumented
 
@@ -310,7 +312,7 @@
 - `SettingCategoryDef` (interface): interface SettingCategoryDef — Declares or relabels/reorders a category tab; use it for a custom category or to reshape the built-ins.
 - `SettingKind` (type): type SettingKind = "slider" | "toggle" | "select" — ⚠ undocumented
 - `SettingOption` (interface): interface SettingOption { value: string; label: string } — ⚠ undocumented · used by `COLORBLIND_OPTIONS` (@jgengine/core/settings/accessibilitySettings): Colorblind palette choices.
-- `SettingValue` (type): type SettingValue = number | boolean | string — ⚠ undocumented · used by `useSetting` (@jgengine/react): Read + write one persisted setting; re-renders when the value changes anywhere.
+- `SettingValue` (type): type SettingValue = number | boolean | string — ⚠ undocumented · used by `asSettingType` (@jgengine/core/settings/settingsModel): Read a stored value as the type the caller asked for.
 - `SettingsActionDef` (interface): interface SettingsActionDef — A game-state action (Restart, Quit to menu, …) shown as rows in the first "Game" settings tab — never a floating button or a rebindable key.
 - `SettingsStore` (interface): interface SettingsStore { get<T extends SettingValue>(id: string, fallback: T): T; set(id: string, value: SettingValue): void; subscribe(listener: () => void): () => void } — ⚠ undocumented · used by `createSettingsStore`: Reactive, localStorage-backed settings store shared by the shell wiring and React hooks.
 - `SettingsSurface` (type): type SettingsSurface = "quick" — `quick` shows compact on-screen volume/graphics buttons; `false` (default) mounts no engine trigger — open the menu from your own UI with `<SettingsTrigger>` or `useSettings().open()`.

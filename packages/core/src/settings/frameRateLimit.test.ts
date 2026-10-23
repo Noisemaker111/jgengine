@@ -1,6 +1,7 @@
 import { describe, expect, it } from "bun:test";
 
 import { paceFrame, readFrameRateLimit } from "./frameRateLimit";
+import { createSettingsStore, SETTING_IDS } from "./settingsModel";
 
 function run(displayHz: number, fps: number, seconds: number): number {
   let anchor = 0;
@@ -41,5 +42,11 @@ describe("readFrameRateLimit", () => {
     expect(readFrameRateLimit(store("display"))).toBe(0);
     expect(readFrameRateLimit(store("nope"))).toBe(0);
     expect(readFrameRateLimit(store("120"))).toBe(120);
+  });
+
+  it("applies a stored numeric cap read through the display fallback", () => {
+    const store = createSettingsStore(null);
+    store.set(SETTING_IDS.graphicsFrameRateLimit, 60);
+    expect(readFrameRateLimit(store)).toBe(60);
   });
 });
