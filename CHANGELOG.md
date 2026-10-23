@@ -26,6 +26,38 @@ At publish, rename this heading to the new version and mirror the entries into
 `packages/core/src/meta/changelog.ts` (the typed `CHANGELOG` export).
 -->
 
+## 0.36.0
+
+### Migrate
+
+- **Bump lockstep SDK packages to `^0.36.0`:** `@jgengine/{core,rapier,react,ws,node,sql,convex,shell,editor,assets,navbake}`. CLI `jgengine` is `0.33.0`; `@jgengine/github` is `0.23.0`.
+
+### Added
+
+- `createAgentSystem` (`@jgengine/core/agents/system`) takes a game's needs, options, mood weights, members and
+  schedules once and returns a running cast: one `tick(dt)` for everyone, one target selector for the whole system,
+  a fallback declared once, and a plain-JSON `save()`/`load()` that rides the game's own save.
+- `--quick` on `bun run shoot` and `bun run drive` is the 960x540 iteration preset: one settled frame (a 2s settle window in drive), no video, no perf pass, written as `<name>-quick.png` and timed on its own line. It refuses a 1600x900 pixel claim, a frame-time claim, a non-desktop device and a recording flag by name instead of producing weaker evidence; full stays the default for PR shots. On a warm daemon a two-shot `drive` of ember-command went 9.3s to 8.2s and 4316KB to 1383KB of PNG.
+- `createPlayScript` / `runPlayScript` (`@jgengine/shell/play`) play a real `PlayableGame` headlessly from a tick-based script: `move`, `aim`, `fire`, `use`, `wait` and `command` steps plus `setup`/`onTick` hooks, `expect` assertions read after setup and on their own tick, a tick timeline, and an FNV digest for replay comparison. It replays the shell's own frame pipeline — held movement through the walk controller, a bound action resolving to its command on press and repeat, interact prompts, hotbar — so a script proves the same code path a player's hands do. No browser, no wall clock, fixed `dt`.
+- `bun run simulate <game> <script>` runs a committed `<game>/scripts/*.play.ts` against a game under `./Games`, prints the timeline, names a failed assertion and exits 1. It merges the game's own tsconfig `paths` with this checkout's source packages, so the game imports and the engine under test are one module graph.
+- `HeadlessRunner.aim()` steers the walk controller mid-run; `HeadlessRunnerOptions` gains `seed` (deterministic `ctx.rng`) and `collision` (the shell's voxel config, previously dropped on the headless path).
+
+Play scripts prove play in seconds instead of minutes of browser play, and the three proofs land beside their games: Scrap Signal (an enemy takes damage and closes in), Beacon Bastion (a composed wave is reached, its bounty scales, a boss phase flips) and Harbor Heat (heat is witness-gated, the search area is set, a courier is swept).
+
+### Changed
+
+- The graphics quality tier now costs what it claims on the render path. A tier's post chain renders at its own resolution scale (`low` 0.7, `medium` 0.85, `high`/`ultra` native) instead of always at the canvas size, and a game's authored `shadowMapSize` and `cascades` are a ceiling the tier caps rather than a value it ignored — every reference game authored 3 cascades and 1024/2048, so no tier changed a shadow before this. `low` and `medium` also stretch the far cascades' refresh interval, and the smallest caster worth a depth draw grows as the map shrinks. `high` and `ultra` keep native resolution, the authored shadow sizes and the measured cadence, so their frames are unchanged.
+- Measured uncapped at 1600x900: whole-frame draws at `low` fell 53% in harbor-heat (515 → 242) and 63% in drift-foundry (1,098 → 408), with the shadow pass there down from 911 ms to 344 ms over a 6 s window; `high` and `ultra` held their draw counts.
+
+### Fixed
+
+- Terrain build no longer scans every road and path segment for every vertex. A baked path corridor, a draped road and a painted polyline region each answer "how far is this point?" from a precomputed segment grid, so Scrap Signal's world build drops from 16.6 s to 0.51 s on the same machine and its longest boot stall from 11.6–18.4 s to 1.2 s. Sampled heights and palettes are bit-identical to the previous full scan, and `withPathProfiles` still composes profiles in order.
+- Load-time shader warmup compiles against the render state the first frame actually draws with. A scene whose post chain renders into its own buffer was linking two programs per material, one linear untone-mapped set the frame draws and one canvas set nothing ever drew; the cover no longer waits for the second set. Harbor Heat links 84 programs to 58 and Scrap Signal 124 to 83 before the cover lifts, with no visual change.
+
+### Performance
+
+- `createTerrainPaletteSampler` (`@jgengine/core/world/terrain`) tests only the material regions whose painted core or blend ring covers a sample, so a world with hundreds of authored regions no longer pays for all of them at every vertex.
+
 ## 0.35.0
 
 ### Migrate

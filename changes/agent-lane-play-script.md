@@ -1,7 +1,0 @@
-### Added
-
-- `createPlayScript` / `runPlayScript` (`@jgengine/shell/play`) play a real `PlayableGame` headlessly from a tick-based script: `move`, `aim`, `fire`, `use`, `wait` and `command` steps plus `setup`/`onTick` hooks, `expect` assertions read after setup and on their own tick, a tick timeline, and an FNV digest for replay comparison. It replays the shell's own frame pipeline — held movement through the walk controller, a bound action resolving to its command on press and repeat, interact prompts, hotbar — so a script proves the same code path a player's hands do. No browser, no wall clock, fixed `dt`.
-- `bun run simulate <game> <script>` runs a committed `<game>/scripts/*.play.ts` against a game under `./Games`, prints the timeline, names a failed assertion and exits 1. It merges the game's own tsconfig `paths` with this checkout's source packages, so the game imports and the engine under test are one module graph.
-- `HeadlessRunner.aim()` steers the walk controller mid-run; `HeadlessRunnerOptions` gains `seed` (deterministic `ctx.rng`) and `collision` (the shell's voxel config, previously dropped on the headless path).
-
-Play scripts prove play in seconds instead of minutes of browser play, and the three proofs land beside their games: Scrap Signal (an enemy takes damage and closes in), Beacon Bastion (a composed wave is reached, its bounty scales, a boss phase flips) and Harbor Heat (heat is witness-gated, the search area is set, a courier is swept).
