@@ -1,15 +1,25 @@
-// One command that lands a branch on beta, so landing is not a hand-assembled
-// sequence of push, open, arm and wait:
+// One command that hands a branch to the landing queue, so landing is not a
+// hand-assembled sequence of push, open and wait:
 //   bun run land
 //   bun run land --verify "bun run ship:preflight"
 //   bun run land --title "Menus" --body-file .scratch/body.md
 //
 // It refuses on `main` or a dirty tree, pushes, rebases onto the base, reuses
 // an open PR or opens one (body: --body-file when given, else the newest
-// changes/ fragment, else a one-line summary), runs --verify, watches checks
-// for up to 25 minutes, merges and waits for MERGED. Exit codes: 0 landed, 1
-// verify failed, 2 checks failed, 3 could not merge (including a refused
-// branch or dirty tree).
+// changes/ fragment, else a one-line summary), runs --verify, arms auto-merge
+// and exits in seconds: it prints the PR URL and `bun run ci:status --pr <n>`,
+// the one command that answers status later. It never polls and never sleeps.
+//
+// Waiting is `bun run land:queue`'s job, and only its: a branch hands off when
+// land arms auto-merge (or, where the repo cannot arm it, labels the PR
+// `land:queue`). The queue rebases a PR whose base moved, waits for its checks
+// once, merges it and prints one line per PR with that PR's wait time and run.
+// Exit codes: 0 handed to the queue, 1 verify failed, 2 checks already failed,
+// 3 could not hand off (including a refused branch or dirty tree).
+//
+// --watch is deprecated and kept because older lanes call it: it prints one
+// line saying the queue owns waiting now and then lands the old way (watch up
+// to 25 minutes, merge, wait for MERGED).
 //
 // A body given on the command line is the author's, so it wins over the
 // fragment and is written over a reused PR's old body: a stale body keeps
@@ -53,22 +63,28 @@ const POLL_INTERVAL_MS = 15_000;
 /** How many times one landing rebases and re-watches after the base moves under its merge. */
 export const MERGE_ATTEMPTS = 3;
 
+/** The label that marks a PR ready for the queue when the repo cannot arm auto-merge. */
+export const QUEUE_LABEL = "land:queue";
+
 export interface LandArgs {
   title?: string;
   bodyFile?: string;
   verify?: string;
   base: string;
+  /** Deprecated: wait and merge here, as land did before the queue owned waiting. */
+  watch: boolean;
 }
 
-/** `--title`, `--body-file`, `--verify` and `--base beta`; anything else is a typo. */
+/** `--title`, `--body-file`, `--verify`, `--base beta` and deprecated `--watch`; anything else is a typo. */
 export function parseArgs(argv: readonly string[]): LandArgs {
-  const args: LandArgs = { base: "beta" };
+  const args: LandArgs = { base: "beta", watch: false };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === "--title") args.title = value(argv, (i += 1), arg);
     else if (arg === "--body-file") args.bodyFile = value(argv, (i += 1), arg);
     else if (arg === "--verify") args.verify = value(argv, (i += 1), arg);
     else if (arg === "--base") args.base = value(argv, (i += 1), arg);
+    else if (arg === "--watch") args.watch = true;
     else throw new Error(`unknown argument ${arg}`);
   }
   return args;
@@ -772,6 +788,39 @@ function prepare(args: LandArgs, branch: string, io: LandIo): PrRef | number {
   return pr ?? EXIT_COULD_NOT_MERGE;
 }
 
+/** What arming means for the hand-off: the queue's readiness signal, or why there is none. */
+export type Arming =
+  | { kind: "armed" }
+  | { kind: "labelled"; why: string }
+  | { kind: "retry"; why: string }
+  | { kind: "failed"; code: number };
+
+/**
+ * Hand the PR to the queue: arm auto-merge, which is what the queue reads as ready. A repo that
+ * refuses to arm gets the `land:queue` label instead, and the queue merges that PR directly.
+ */
+function armForQueue(io: LandIo, number: number): Arming {
+  const { checks } = readChecks(io.gh, number);
+  if (checkVerdict(checks).failures.length > 0) return { kind: "failed", code: reportChecks(io, "failed", checks) };
+  const armed = io.gh(["pr", "merge", String(number), "--auto", "--merge"]);
+  if (armed.status === 0) return { kind: "armed" };
+  const why = details(armed);
+  if (baseMoved(why)) return { kind: "retry", why };
+  const labelled = io.gh(["pr", "edit", String(number), "--add-label", QUEUE_LABEL]);
+  if (labelled.status === 0) return { kind: "labelled", why: firstLine(why) };
+  io.error(`could not arm auto-merge (${firstLine(why)}) or add the ${QUEUE_LABEL} label (${details(labelled)})`);
+  return { kind: "failed", code: EXIT_COULD_NOT_MERGE };
+}
+
+/** What an author reads instead of a wait: the PR, how to ask later, and who waits now. */
+export function handOffLines(pr: PrRef): string[] {
+  return [
+    pr.url,
+    `status: bun run ci:status --pr ${pr.number}`,
+    "waiting: bun run land:queue (the queue owns the wait; this command is done)",
+  ];
+}
+
 export interface LandRun {
   args: LandArgs;
   branch: string;
@@ -783,21 +832,67 @@ export interface LandRun {
 }
 
 /**
- * Land `branch`, holding the repo's lock only around the shared moments: the push and PR, and the
- * merge. The CI watch and --verify run with the lock free, so concurrent landings overlap there.
+ * Land `branch`: hand it to the queue and return, unless `--watch` asked for the old in-process
+ * wait. The lock is held only around the shared moments: the push and PR, and the arming.
  */
 export function landBranch(run: LandRun): number {
   const waits = run.waits ?? [];
   const startedAt = Date.now();
   try {
-    return landAttempts(run, waits);
+    return run.args.watch ? watchAndMerge(run, waits) : handOff(run, waits);
   } finally {
     run.io.log(formatTiming(Date.now() - startedAt, waits));
   }
 }
 
-function landAttempts(run: LandRun, waits: LockWait[]): number {
+/** Push, open, verify, arm: everything the author owes, and none of the waiting. */
+function handOff(run: LandRun, waits: LockWait[]): number {
   const { args, branch, io } = run;
+  const prepared = landLocked({ path: run.lock, branch, log: io.log }, () => prepare(args, branch, io), waits);
+  if (typeof prepared === "number") return prepared;
+
+  if (args.verify !== undefined) {
+    io.log(`verify ${args.verify}`);
+    if (!io.verify(args.verify)) {
+      io.error(`verify failed: ${args.verify}`);
+      return EXIT_VERIFY_FAILED;
+    }
+  }
+
+  for (let attempt = 1; attempt <= MERGE_ATTEMPTS; attempt += 1) {
+    const armed = landLocked({ path: run.lock, branch, log: io.log }, () => armForQueue(io, prepared.number), waits);
+    if (armed.kind === "failed") return armed.code;
+    if (armed.kind === "retry") {
+      if (attempt === MERGE_ATTEMPTS) {
+        io.error(`could not hand #${prepared.number} over after ${MERGE_ATTEMPTS} attempts: ${firstLine(armed.why)}`);
+        return EXIT_COULD_NOT_MERGE;
+      }
+      io.log(
+        `origin/${args.base} moved before the hand-off (${firstLine(armed.why)}); ` +
+          `rebasing (attempt ${attempt + 1} of ${MERGE_ATTEMPTS})`,
+      );
+      const synced = landLocked(
+        { path: run.lock, branch, log: io.log },
+        () => syncOntoBase({ branch, base: args.base, git: io.git }),
+        waits,
+      );
+      if (synced.refusal !== null) {
+        io.error(synced.refusal);
+        return EXIT_COULD_NOT_MERGE;
+      }
+      continue;
+    }
+    if (armed.kind === "labelled") io.log(`auto-merge unavailable (${armed.why}); labelled the PR ${QUEUE_LABEL}`);
+    for (const line of handOffLines(prepared)) io.log(line);
+    return EXIT_LANDED;
+  }
+  return EXIT_COULD_NOT_MERGE;
+}
+
+/** The old behaviour, kept only for lanes that still pass `--watch`. */
+function watchAndMerge(run: LandRun, waits: LockWait[]): number {
+  const { args, branch, io } = run;
+  io.log("--watch is deprecated: bun run land:queue owns the waiting now; land hands the PR over and exits");
   for (let attempt = 1; attempt <= MERGE_ATTEMPTS; attempt += 1) {
     const prepared = landLocked({ path: run.lock, branch, log: io.log }, () => prepare(args, branch, io), waits);
     if (typeof prepared === "number") return prepared;
