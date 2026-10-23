@@ -10,6 +10,7 @@
  * @consumer packages/core/src/world/terrain.ts (resolveTerrainField), Games/scrap-signal roads
  */
 import type { Vec2 } from "./geometry";
+import { buildPolylineIndex, type PolylineIndex } from "./polylineIndex";
 
 function clamp01(value: number): number {
   return value < 0 ? 0 : value > 1 ? 1 : value;
@@ -85,6 +86,7 @@ interface Corridor {
   readonly points: readonly Vec2[];
   readonly cumulative: readonly number[];
   readonly total: number;
+  readonly index: PolylineIndex;
 }
 
 /** Nearest point on a corridor: unsigned lateral distance, arc-length position, and the projected point. */
@@ -115,35 +117,28 @@ function buildCorridor(points: readonly Vec2[]): Corridor {
     const b = points[i]!;
     cumulative.push(cumulative[i - 1]! + Math.hypot(b[0] - a[0], b[1] - a[1]));
   }
-  return { points, cumulative, total: cumulative[cumulative.length - 1] ?? 0 };
+  return { points, cumulative, total: cumulative[cumulative.length - 1] ?? 0, index: buildPolylineIndex(points) };
 }
 
 /**
- * Closest point on the corridor to `(x, z)`: unsigned lateral distance and arc-length position. Self-
- * contained (each segment projects independently and the minimum lateral wins) so a vertex always reports
- * a near-zero lateral, regardless of which side of the line the neighbours fall.
+ * Closest point on the corridor to `(x, z)` within `limit`: unsigned lateral distance and arc-length
+ * position. Self-contained (each segment projects independently and the minimum lateral wins) so a
+ * vertex always reports a near-zero lateral, regardless of which side of the line the neighbours fall.
+ * Beyond `limit` the corridor cannot change the sample, so the answer is `null`.
  */
-function nearestOnCorridor(corridor: Corridor, x: number, z: number): CorridorHit {
-  let bestLateral = Number.POSITIVE_INFINITY;
-  let bestAlong = 0;
-  let bestPoint: Vec2 = corridor.points[0] ?? [x, z];
-  for (let i = 1; i < corridor.points.length; i += 1) {
-    const a = corridor.points[i - 1]!;
-    const b = corridor.points[i]!;
-    const abx = b[0] - a[0];
-    const abz = b[1] - a[1];
-    const segLenSq = abx * abx + abz * abz;
-    const t = segLenSq <= 0 ? 0 : Math.max(0, Math.min(1, ((x - a[0]) * abx + (z - a[1]) * abz) / segLenSq));
-    const px = a[0] + abx * t;
-    const pz = a[1] + abz * t;
-    const lateral = Math.hypot(x - px, z - pz);
-    if (lateral < bestLateral) {
-      bestLateral = lateral;
-      bestAlong = corridor.cumulative[i - 1]! + t * Math.sqrt(segLenSq);
-      bestPoint = [px, pz];
-    }
-  }
-  return { lateral: bestLateral, along: bestAlong, point: bestPoint };
+function nearestOnCorridor(corridor: Corridor, x: number, z: number, limit: number): CorridorHit | null {
+  const hit = corridor.index.nearest(x, z, limit);
+  if (hit === null) return null;
+  const a = corridor.points[hit.segment]!;
+  const b = corridor.points[hit.segment + 1]!;
+  const abx = b[0] - a[0];
+  const abz = b[1] - a[1];
+  const segLenSq = abx * abx + abz * abz;
+  return {
+    lateral: hit.distance,
+    along: corridor.cumulative[hit.segment]! + hit.t * Math.sqrt(segLenSq),
+    point: hit.point,
+  };
 }
 
 function resolveProfile(profile: TerrainPathProfile): ResolvedProfile | null {
@@ -203,9 +198,9 @@ function applyProfileAt(
   surrounding: number,
   base: (x: number, z: number) => number,
 ): number {
-  const hit = nearestOnCorridor(profile.corridor, x, z);
+  const hit = nearestOnCorridor(profile.corridor, x, z, profile.reach);
+  if (hit === null) return surrounding;
   const lateral = hit.lateral;
-  if (lateral > profile.reach) return surrounding;
   const target = clampCutFill(
     centerlineTarget(profile, hit.along, hit.point, base),
     surrounding,
