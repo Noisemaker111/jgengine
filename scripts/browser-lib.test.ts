@@ -9,6 +9,7 @@ import { deflateSync } from "node:zlib";
 import {
   type CdpSession,
   DEVICES,
+  BrowserLaunchError,
   buildBrowserFixture,
   MAX_FLAT_SCREENCAST_FRAMES,
   captureViewportPng,
@@ -31,7 +32,11 @@ import {
   sizeForQuality,
   PROFILE_OWNER_FILE,
   ensureCaptureFreeSpace,
+  isRetryableLaunchFailure,
+  resolveChromeReadyMs,
+  startBrowser,
   sweepStaleProfiles,
+  waitForDebugger,
   withBrowserSession,
   type ChromeProcess,
 } from "./browser-lib";
@@ -538,8 +543,187 @@ describe("software GL backend", () => {
   });
 });
 
-describe("capture profile sweep", () => {
-  test("removes only stale jg dirs whose browser is gone", () => {
+function fakeDebuggerServer(): ReturnType<typeof Bun.serve> {
+  return Bun.serve({
+    port: 0,
+    hostname: "127.0.0.1",
+    fetch: () =>
+      Response.json({
+        Browser: "fake",
+        webSocketDebuggerUrl: "ws://127.0.0.1:1/devtools/browser/fake",
+      }),
+  });
+}
+
+function launchFailure(error: unknown): BrowserLaunchError {
+  expect(error).toBeInstanceOf(BrowserLaunchError);
+  return error as BrowserLaunchError;
+}
+
+describe("browser launch handshake", () => {
+  test("the ready wait is tunable through JG_CHROME_READY_MS", () => {
+    expect(resolveChromeReadyMs({})).toBe(30_000);
+    expect(resolveChromeReadyMs({ JG_CHROME_READY_MS: "45000" })).toBe(45_000);
+    for (const bad of ["", "0", "-5", "soon"]) {
+      expect(resolveChromeReadyMs({ JG_CHROME_READY_MS: bad })).toBe(30_000);
+    }
+  });
+
+  test("an endpoint that never answers is retried once with a doubled wait and a fresh profile", async () => {
+    const profiles: string[] = [];
+    const lines: string[] = [];
+    let error: unknown;
+    try {
+      await startBrowser({
+        debugPort: 1,
+        readyMs: 60,
+        log: (line) => lines.push(line),
+        launch: () => {
+          const dir = mkdtempSync(join(tmpdir(), "jg-hung-chrome-"));
+          profiles.push(dir);
+          return { pid: undefined, userDataDir: dir };
+        },
+        pageProbe: async () => {},
+      });
+    } catch (caught) {
+      error = caught;
+    }
+
+    const failure = launchFailure(error);
+    expect(failure.step).toBe("endpoint");
+    expect(failure.attempts).toBe(2);
+    expect(profiles).toHaveLength(2);
+    expect(new Set(profiles).size).toBe(2);
+    for (const dir of profiles) expect(existsSync(dir)).toBe(false);
+    expect(failure.message).toContain("endpoint step failed after");
+    expect(failure.message).toContain(profiles[1] as string);
+    expect(failure.message).toContain("2 attempts, last wait 120ms");
+    expect(lines).toHaveLength(1);
+    expect(lines[0]).toContain("retrying with a fresh profile and a 120ms wait");
+    expect(lines[0]).toContain(profiles[0] as string);
+  });
+
+  test("a launch that fails to spawn recovers on the second attempt", async () => {
+    const server = fakeDebuggerServer();
+    const lines: string[] = [];
+    const profiles: string[] = [];
+    let calls = 0;
+    try {
+      const started = await startBrowser({
+        debugPort: server.port,
+        readyMs: 1_000,
+        log: (line) => lines.push(line),
+        launch: () => {
+          calls += 1;
+          if (calls === 1) throw new Error("spawn chrome ENOENT");
+          const dir = mkdtempSync(join(tmpdir(), "jg-recovered-"));
+          profiles.push(dir);
+          return { pid: undefined, userDataDir: dir };
+        },
+        pageProbe: async () => {},
+      });
+      expect(started.attempts).toBe(2);
+      expect(started.profilePath).toBe(profiles[0] as string);
+    } finally {
+      server.stop(true);
+      for (const dir of profiles) rmSync(dir, { recursive: true, force: true });
+    }
+    expect(lines).toHaveLength(2);
+    expect(lines[0]).toContain("launch step failed on attempt 1");
+    expect(lines[1]).toContain("launch recovered on attempt 2");
+  });
+
+  test("a page target that closed under us gets one fresh browser", async () => {
+    const server = fakeDebuggerServer();
+    const profiles: string[] = [];
+    let probes = 0;
+    try {
+      const started = await startBrowser({
+        debugPort: server.port,
+        readyMs: 1_000,
+        log: () => {},
+        launch: () => {
+          const dir = mkdtempSync(join(tmpdir(), "jg-page-"));
+          profiles.push(dir);
+          return { pid: undefined, userDataDir: dir };
+        },
+        pageProbe: async () => {
+          probes += 1;
+          if (probes === 1) throw new Error("Target page, context or browser has been closed");
+        },
+      });
+      expect(started.attempts).toBe(2);
+      expect(probes).toBe(2);
+      expect(profiles).toHaveLength(2);
+    } finally {
+      server.stop(true);
+      for (const dir of profiles) if (existsSync(dir)) rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  test("a real page failure is reported once, never retried", async () => {
+    const server = fakeDebuggerServer();
+    const profiles: string[] = [];
+    let probes = 0;
+    try {
+      await expect(
+        startBrowser({
+          debugPort: server.port,
+          readyMs: 1_000,
+          log: () => {},
+          launch: () => {
+            const dir = mkdtempSync(join(tmpdir(), "jg-page-fail-"));
+            profiles.push(dir);
+            return { pid: undefined, userDataDir: dir };
+          },
+          pageProbe: async () => {
+            probes += 1;
+            throw new Error("capture error: unknown state");
+          },
+        }),
+      ).rejects.toThrow("page step failed");
+      expect(probes).toBe(1);
+      expect(profiles).toHaveLength(1);
+    } finally {
+      server.stop(true);
+      for (const dir of profiles) if (existsSync(dir)) rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  test("missing Chrome is a configuration error, not a flake to retry", async () => {
+    let calls = 0;
+    await expect(
+      startBrowser({
+        debugPort: 1,
+        readyMs: 60,
+        log: () => {},
+        launch: () => {
+          calls += 1;
+          throw new Error("No Chrome/Chromium found. Set CHROME_PATH or install Chrome.");
+        },
+      }),
+    ).rejects.toThrow("launch step failed");
+    expect(calls).toBe(1);
+  });
+
+  test("only the handshake retries: a budget or assertion failure never does", () => {
+    expect(isRetryableLaunchFailure("launch", "spawn chrome ENOENT")).toBe(true);
+    expect(isRetryableLaunchFailure("endpoint", "the debugger on :9222 did not answer")).toBe(true);
+    expect(isRetryableLaunchFailure("page", "Target page, context or browser has been closed")).toBe(true);
+    expect(isRetryableLaunchFailure("page", "capture error: unknown state")).toBe(false);
+    expect(isRetryableLaunchFailure("launch", "No Chrome/Chromium found. Set CHROME_PATH")).toBe(false);
+  });
+
+  test("a browser that already exited fails at once instead of burning the wait", async () => {
+    const startedAt = Date.now();
+    await expect(
+      waitForDebugger(1, 5_000, { browser: { exitCode: 1 }, profilePath: "/tmp/jg-profile" }),
+    ).rejects.toThrow("the browser process exited (code 1) before binding the debugger on :1");
+    expect(Date.now() - startedAt).toBeLessThan(1_000);
+  });
+});
+
+describe("capture profile sweep", () => {  test("removes only stale jg dirs whose browser is gone", () => {
     const root = mkdtempSync(join(tmpdir(), "jg-sweep-test-"));
     try {
       const leaked = mkdtempSync(join(root, "jg-drive-"));
@@ -568,7 +752,12 @@ describe("capture profile sweep", () => {
   });
 
   test("a thrown capture removes the profile its browser created", async () => {
-    const server = Bun.serve({ port: 0, hostname: "127.0.0.1", fetch: () => Response.json({ Browser: "test" }) });
+    const server = Bun.serve({
+      port: 0,
+      hostname: "127.0.0.1",
+      fetch: () =>
+        Response.json({ Browser: "test", webSocketDebuggerUrl: "ws://127.0.0.1:1/devtools/browser/test" }),
+    });
     const profiles: string[] = [];
     try {
       const exit = await withBrowserSession(
@@ -576,6 +765,7 @@ describe("capture profile sweep", () => {
           keep: false,
           timeoutMs: 1_000,
           debugPort: server.port,
+          pageProbe: async () => {},
           launch: () => {
             const dir = mkdtempSync(join(tmpdir(), "jg-test-shot-"));
             writeFileSync(join(dir, "Preferences"), "{}");

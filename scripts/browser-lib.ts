@@ -491,20 +491,125 @@ export function pickDebugPort(): number {
   return 9200 + Math.floor(Math.random() * 700);
 }
 
-export async function waitForDebugger(port: number, timeoutMs: number): Promise<void> {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    try {
-      const response = await fetch(`http://127.0.0.1:${port}/json/version`, {
-        signal: AbortSignal.timeout(500),
-      });
-      if (response.ok) return;
-    } catch {
-      /* retry */
-    }
-    await new Promise((r) => setTimeout(r, 150));
+/** Default wait for a launched browser to answer on its debugger endpoint. */
+export const DEFAULT_CHROME_READY_MS = 30_000;
+
+/**
+ * How long one launch attempt waits for the debugger endpoint: `JG_CHROME_READY_MS`,
+ * else 30s. A cold CI runner spends most of that on the first browser start of the
+ * day, and a busy runner overran the old hardcoded 30s (#2110).
+ */
+export function resolveChromeReadyMs(env: NodeJS.ProcessEnv = process.env): number {
+  const configured = Number(env.JG_CHROME_READY_MS);
+  return Number.isFinite(configured) && configured > 0 ? Math.floor(configured) : DEFAULT_CHROME_READY_MS;
+}
+
+/** Where a launch stopped: spawning, the debugger endpoint, or the first page target. */
+export type BrowserLaunchStep = "launch" | "endpoint" | "page";
+
+export interface BrowserLaunchFailure {
+  step: BrowserLaunchStep;
+  elapsedMs: number;
+  profilePath: string | null;
+  attempts: number;
+  /** Wait the failing attempt was given, when the step waited at all. */
+  waitedMs?: number;
+  reason: string;
+}
+
+/** A launch that failed, saying which step it reached, how long it took and which profile it was using. */
+export class BrowserLaunchError extends Error {
+  readonly step: BrowserLaunchStep;
+  readonly elapsedMs: number;
+  readonly profilePath: string | null;
+  readonly attempts: number;
+  /** The underlying failure, without this error's own step/elapsed/profile prefix. */
+  readonly reason: string;
+
+  constructor(failure: BrowserLaunchFailure) {
+    const profile = failure.profilePath === null ? "no profile" : `profile ${failure.profilePath}`;
+    const attempts = `${failure.attempts} attempt${failure.attempts === 1 ? "" : "s"}`;
+    const waited = failure.waitedMs === undefined ? "" : `, last wait ${failure.waitedMs}ms`;
+    super(`browser: the ${failure.step} step failed after ${failure.elapsedMs}ms (${profile}, ${attempts}${waited}): ${failure.reason}`);
+    this.name = "BrowserLaunchError";
+    this.step = failure.step;
+    this.elapsedMs = failure.elapsedMs;
+    this.profilePath = failure.profilePath;
+    this.attempts = failure.attempts;
+    this.reason = failure.reason;
   }
-  throw new Error(`Chrome debugger not ready on :${port} within ${timeoutMs}ms`);
+}
+
+/** Profile of the browser this process launched on each debug port, for failure messages. */
+const launchedProfiles = new Map<number, string>();
+
+/** Profile path behind a debug port this process launched, or null when attached. */
+function profileForDebugPort(debugPort: number): string | null {
+  return launchedProfiles.get(debugPort) ?? null;
+}
+
+export interface DebuggerWaitContext {
+  /** The browser just launched, so a process that already died fails now instead of at the deadline. */
+  browser?: { pid?: number; exitCode?: number | null };
+  profilePath?: string;
+}
+
+/** Chrome answers `/json/version` with a JSON body; anything slower than this is still not a debugger. */
+const DEBUGGER_PROBE_TIMEOUT_MS = 2_000;
+
+async function debuggerVersionUrl(port: number): Promise<string | null> {
+  try {
+    const response = await fetch(`http://127.0.0.1:${port}/json/version`, {
+      signal: AbortSignal.timeout(DEBUGGER_PROBE_TIMEOUT_MS),
+    });
+    if (!response.ok) return null;
+    const body = (await response.json()) as { webSocketDebuggerUrl?: unknown };
+    return typeof body.webSocketDebuggerUrl === "string" ? body.webSocketDebuggerUrl : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Wait until Chrome's debugger endpoint really answers — a listening socket that has
+ * not finished booting HTTP is not ready, so each probe asks for a parsed `/json/version`.
+ * Returns the elapsed wait. A browser that exited fails at once rather than after the
+ * full deadline.
+ */
+export async function waitForDebugger(
+  port: number,
+  timeoutMs: number,
+  context: DebuggerWaitContext = {},
+): Promise<number> {
+  const startedAt = Date.now();
+  const deadline = startedAt + timeoutMs;
+  let pause = 100;
+  while (Date.now() < deadline) {
+    const exit = context.browser?.exitCode;
+    if (typeof exit === "number") {
+      throw new BrowserLaunchError({
+        step: "endpoint",
+        elapsedMs: Date.now() - startedAt,
+        profilePath: context.profilePath ?? null,
+        attempts: 1,
+        waitedMs: timeoutMs,
+        reason: `the browser process exited (code ${exit}) before binding the debugger on :${port}`,
+      });
+    }
+    if ((await debuggerVersionUrl(port)) !== null) return Date.now() - startedAt;
+    const remaining = deadline - Date.now();
+    if (remaining <= 0) break;
+    await new Promise((resolve) => setTimeout(resolve, Math.min(pause, remaining)));
+    pause = Math.min(250, Math.round(pause * 1.5));
+  }
+  throw new BrowserLaunchError({
+    step: "endpoint",
+    elapsedMs: Date.now() - startedAt,
+    profilePath: context.profilePath ?? null,
+    attempts: 1,
+    waitedMs: timeoutMs,
+    reason: `the debugger on :${port} did not answer /json/version within ${timeoutMs}ms`,
+  });
 }
 
 type CdpMessage = {
@@ -640,7 +745,46 @@ export async function closePageTarget(debugPort: number, targetId: string): Prom
   }
 }
 
-export async function openPageSession(debugPort: number): Promise<CdpSession> {
+export async function openPageSession(
+  debugPort: number,
+  options: { profilePath?: string } = {},
+): Promise<CdpSession> {
+  const startedAt = Date.now();
+  const profilePath = options.profilePath ?? profileForDebugPort(debugPort);
+  for (let attempt = 1; ; attempt += 1) {
+    try {
+      return await connectPageTarget(debugPort);
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : String(error);
+      // A page target that closes under us is the browser restarting its own target, not a
+      // capture assertion: one fresh attempt covers "Target page, context or browser has been
+      // closed", and anything else surfaces immediately.
+      if (attempt >= 2 || !isTransientPageFailure(reason)) {
+        throw new BrowserLaunchError({
+          step: "page",
+          elapsedMs: Date.now() - startedAt,
+          profilePath,
+          attempts: attempt,
+          reason,
+        });
+      }
+      await new Promise((resolve) => setTimeout(resolve, 250));
+    }
+  }
+}
+
+function isTransientPageFailure(message: string): boolean {
+  const lower = message.toLowerCase();
+  return (
+    lower.includes("target page, context or browser has been closed") ||
+    lower.includes("browser has been closed") ||
+    lower.includes("cdp websocket error") ||
+    lower.includes("cdp websocket connect timeout") ||
+    lower.includes("no cdp page target available")
+  );
+}
+
+async function connectPageTarget(debugPort: number): Promise<CdpSession> {
   let info: { id?: string; webSocketDebuggerUrl?: string } | undefined;
   for (const method of ["PUT", "GET"] as const) {
     try {
@@ -994,8 +1138,113 @@ export function launchPersistentChrome(
   return { pid, child: null, userDataDir };
 }
 
-export type CaptureVia = "screencast" | "screenshot";
+export interface LaunchableBrowser {
+  pid?: number;
+  userDataDir: string;
+}
 
+export interface StartBrowserOptions<L extends LaunchableBrowser = ChromeProcess> {
+  debugPort: number;
+  /** user-data-dir prefix; every attempt gets a fresh profile under it. */
+  prefix?: string;
+  /** Wait per attempt; defaults to {@link resolveChromeReadyMs}. The retry doubles it. */
+  readyMs?: number;
+  env?: NodeJS.ProcessEnv;
+  /** Replace the real launch (tests and the daemon own what they hand back). */
+  launch?: (debugPort: number, prefix?: string) => L;
+  /** Prove the page layer answers; defaults to opening and closing a page target. */
+  pageProbe?: (debugPort: number, profilePath: string) => Promise<void>;
+  log?: (line: string) => void;
+}
+
+export interface StartedBrowser<L extends LaunchableBrowser = ChromeProcess> {
+  debugPort: number;
+  browser: L;
+  profilePath: string;
+  /** 1 when the first handshake worked, 2 when the retry recovered it. */
+  attempts: number;
+}
+
+async function defaultPageProbe(debugPort: number, profilePath: string): Promise<void> {
+  const session = await openPageSession(debugPort, { profilePath });
+  await session.close();
+}
+
+/**
+ * The one way a caller starts a browser: spawn it, wait for its debugger endpoint, then
+ * prove a page target answers. A transient failure before the page is live — a slow cold
+ * start, a browser that exits before binding, a target that closed under us — gets exactly
+ * one retry with a fresh profile and a doubled wait. A budget, assertion or capture failure
+ * happens after this returns and is never retried here.
+ */
+export async function startBrowser<L extends LaunchableBrowser = ChromeProcess>(
+  options: StartBrowserOptions<L>,
+): Promise<StartedBrowser<L>> {
+  const env = options.env ?? process.env;
+  let readyMs = options.readyMs ?? resolveChromeReadyMs(env);
+  const log = options.log ?? ((line: string) => console.error(line));
+  const launch = options.launch ?? ((port: number, prefix?: string) => launchChrome(port, prefix) as unknown as L);
+  const pageProbe = options.pageProbe ?? defaultPageProbe;
+  const attempts = 2;
+  let last: BrowserLaunchError | null = null;
+
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    const startedAt = Date.now();
+    let browser: L | undefined;
+    let step: BrowserLaunchStep = "launch";
+    try {
+      browser = launch(options.debugPort, options.prefix);
+      step = "endpoint";
+      await waitForDebugger(options.debugPort, readyMs, {
+        browser: browser as { pid?: number; exitCode?: number | null },
+        profilePath: browser.userDataDir,
+      });
+      step = "page";
+      await pageProbe(options.debugPort, browser.userDataDir);
+      launchedProfiles.set(options.debugPort, browser.userDataDir);
+      if (attempt > 1) {
+        log(`browser: launch recovered on attempt ${attempt} after ${Date.now() - startedAt}ms (profile ${browser.userDataDir})`);
+      }
+      return { debugPort: options.debugPort, browser, profilePath: browser.userDataDir, attempts: attempt };
+    } catch (error) {
+      const elapsedMs = Date.now() - startedAt;
+      const profilePath = browser?.userDataDir ?? null;
+      const reason = error instanceof Error ? error.message : String(error);
+      last = new BrowserLaunchError({
+        step,
+        elapsedMs,
+        profilePath,
+        attempts: attempt,
+        waitedMs: step === "launch" ? undefined : readyMs,
+        reason,
+      });
+      // Discard this attempt's browser and profile before spending another wait on a new one.
+      if (browser !== undefined) {
+        killPid(browser.pid, true);
+        await waitForPidExit(browser.pid);
+        removeProfileDir(browser.userDataDir);
+      }
+      if (attempt >= attempts || !isRetryableLaunchFailure(step, reason)) throw last;
+      const next = Math.round(readyMs * 2);
+      const short = error instanceof BrowserLaunchError ? error.reason : reason;
+      log(
+        `browser: the ${step} step failed on attempt ${attempt} after ${elapsedMs}ms` +
+          `${profilePath === null ? "" : ` (profile ${profilePath})`}: ${short} — retrying with a fresh profile and a ${next}ms wait`,
+      );
+      readyMs = next;
+    }
+  }
+  throw last ?? new Error("browser: launch failed without a reason");
+}
+
+/** Which handshake failures are worth one fresh browser, and which are real configuration errors. */
+export function isRetryableLaunchFailure(step: BrowserLaunchStep, message: string): boolean {
+  if (/no chrome\/chromium found/i.test(message)) return false;
+  if (step === "launch" || step === "endpoint") return true;
+  return isTransientPageFailure(message);
+}
+
+export type CaptureVia = "screencast" | "screenshot";
 export interface ViewportPng {
   bytes: Buffer;
   /** Which CDP path produced the pixels — recorded in the shot's timing line. */
@@ -1609,11 +1858,14 @@ export interface WithBrowserSessionOptions {
   warmPort?: number;
   /** Replace the real Chrome launch (tests own the profile dir they hand back). */
   launch?: (debugPort: number, prefix?: string) => ChromeProcess;
+  /** Replace the page-target probe {@link startBrowser} uses (tests own the fake browser). */
+  pageProbe?: (debugPort: number, profilePath: string) => Promise<void>;
 }
 
 /**
  * Own the browser-driver shell shared by shoot and drive: derive the debug
- * port, launch-or-attach Chrome, arm the hard-deadline watchdog, run `fn`,
+ * port, launch-or-attach Chrome through {@link startBrowser} (one retried
+ * handshake with a fresh profile), arm the hard-deadline watchdog, run `fn`,
  * then force-kill Chrome + dev server unless left warm. `fn` returns the
  * process exit code (defaults to 0); a throw is reported and yields 1.
  */
@@ -1649,8 +1901,13 @@ export async function withBrowserSession(
     if (options.connect !== undefined || attach) {
       await waitForDebugger(debugPort, 5_000);
     } else {
-      chrome = (options.launch ?? launchChrome)(debugPort, options.chromePrefix);
-      await waitForDebugger(debugPort, 30_000);
+      const started = await startBrowser({
+        debugPort,
+        ...(options.chromePrefix === undefined ? {} : { prefix: options.chromePrefix }),
+        ...(options.launch === undefined ? {} : { launch: options.launch }),
+        ...(options.pageProbe === undefined ? {} : { pageProbe: options.pageProbe }),
+      });
+      chrome = started.browser;
     }
     const result = await fn({ debugPort, chrome });
     if (typeof result === "number") exitCode = result;
@@ -1660,6 +1917,7 @@ export async function withBrowserSession(
   } finally {
     clearTimeout(watchdog);
     if (!leaveWarm) {
+      launchedProfiles.delete(debugPort);
       killProcessTree(chrome);
       killProcessTree(options.server ?? null);
       killPid(options.serverPid, true);
