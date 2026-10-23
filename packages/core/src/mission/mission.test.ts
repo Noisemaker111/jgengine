@@ -6,6 +6,7 @@ import {
   createMissionRuntime,
   validateMissionCatalog,
   type MissionDef,
+  type MissionMarkerProximity,
   type MissionRuntime,
 } from "./mission";
 
@@ -43,8 +44,17 @@ const TIMED: MissionDef = {
   fail: [{ id: "too_slow", message: "out of time" }],
 };
 
-function runtime(missions: readonly MissionDef[], options: { rng?: () => number } = {}): MissionRuntime {
-  return createMissionRuntime({ missions, markers: MARKERS, rng: options.rng, defaultPursuer: "player" });
+function runtime(
+  missions: readonly MissionDef[],
+  options: { rng?: () => number; proximity?: MissionMarkerProximity } = {},
+): MissionRuntime {
+  return createMissionRuntime({
+    missions,
+    markers: MARKERS,
+    rng: options.rng,
+    defaultPursuer: "player",
+    markerProximity: options.proximity,
+  });
 }
 
 const at = (point: { x: number; y: number; z: number }) => ({ player: { position: point } });
@@ -236,6 +246,67 @@ describe("mission state machine", () => {
     other.start("heist");
     other.fail("heist", "failed", "authored");
     expect(other.state()!.status).toBe("failed");
+  });
+});
+
+describe("mission marker proximity", () => {
+  const HILL: MissionDef = {
+    id: "signal",
+    title: "Signal",
+    objectives: [{ id: "tower", kind: "reach", actor: "player", marker: "gate", next: "done" }],
+  };
+
+  test("an authored y=0 marker triggers from ground 6 m above it and not from 40 m away", () => {
+    const near = runtime([HILL]);
+    near.start("signal");
+    near.tick(1 / 60, { actors: at({ x: 0, y: 6, z: 0 }) });
+    expect(near.state()!.status).toBe("completed");
+
+    const far = runtime([HILL]);
+    far.start("signal");
+    far.tick(1 / 60, { actors: at({ x: 40, y: 6, z: 0 }) });
+    expect(far.state()!.status).toBe("active");
+  });
+
+  test("spatial mode still requires vertical proximity", () => {
+    const run = runtime([HILL], { proximity: { plane: "spatial" } });
+    run.start("signal");
+    run.tick(1 / 60, { actors: at({ x: 0, y: 6, z: 0 }) });
+    expect(run.state()!.status).toBe("active");
+    run.tick(1 / 60, { actors: at({ x: 0, y: 0, z: 0 }) });
+    expect(run.state()!.status).toBe("completed");
+  });
+
+  test("the horizontal tolerance holds at its boundary", () => {
+    const inside = runtime([HILL], { proximity: { tolerance: 4 } });
+    inside.start("signal");
+    inside.tick(1 / 60, { actors: at({ x: 0, y: 3.999, z: 0 }) });
+    expect(inside.state()!.status).toBe("completed");
+
+    const outside = runtime([HILL], { proximity: { tolerance: 4 } });
+    outside.start("signal");
+    outside.tick(1 / 60, { actors: at({ x: 0, y: 4.001, z: 0 }) });
+    expect(outside.state()!.status).toBe("active");
+  });
+
+  test("left-area reads the same plane, so ground below its marker does not fail the mission", () => {
+    const mission: MissionDef = {
+      id: "watch",
+      title: "Watch",
+      objectives: [{
+        id: "hold",
+        kind: "survive",
+        actor: "player",
+        duration: 10,
+        failOn: [{ kind: "left-area", actor: "player", marker: "gate", radius: 4 }],
+      }],
+    };
+    const run = runtime([mission]);
+    run.start("watch");
+    run.tick(1 / 60, { actors: at({ x: 0, y: 6, z: 0 }) });
+    expect(run.state()!.status).toBe("active");
+    run.tick(1 / 60, { actors: at({ x: 12, y: 6, z: 0 }) });
+    expect(run.state()!.outcome).toBe("failed");
   });
 });
 

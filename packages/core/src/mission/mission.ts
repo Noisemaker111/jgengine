@@ -332,6 +332,8 @@ export interface MissionRuntimeConfig {
   readonly missions: readonly MissionDef[];
   /** Marker positions resolved from the authored scene, by marker id. See `missionMarkers`. */
   readonly markers?: Readonly<Record<string, ScenePoint3>>;
+  /** How marker proximity is measured for `reach`, `interact` and `left-area`. Default horizontal. */
+  readonly markerProximity?: MissionMarkerProximity;
   /** Actor id used for a `pursue` objective that names no `pursuer`. */
   readonly defaultPursuer?: string;
   /** `[0,1)` source for a mission's `rollout`; pass `ctx.rng`. Only read when a mission declares one. */
@@ -371,8 +373,28 @@ export interface MissionRuntime {
   dispose(): void;
 }
 
+/** Which plane a marker proximity test compares in. */
+export type MissionMarkerPlane = "horizontal" | "spatial";
+
+/**
+ * How a positional objective compares an actor to its authored marker.
+ *
+ * Authored markers sit on a flat plan (`y = 0`) while the terrain around them rises, so a straight
+ * 3D test can leave a marker unreachable from the ground below it. `"horizontal"` compares the
+ * ground distance and allows the actor up to `tolerance` metres off the marker's height;
+ * `"spatial"` is the plain 3D check, for a world whose stacked platforms must stay distinct.
+ */
+export interface MissionMarkerProximity {
+  /** `"horizontal"` (default) or `"spatial"`. */
+  plane?: MissionMarkerPlane;
+  /** Horizontal plane only: how far (m) the actor may sit above or below the marker. Default {@link DEFAULT_MARKER_TOLERANCE}. */
+  tolerance?: number;
+}
+
 /** Default proximity radius (m) for a `reach` / `interact` objective. */
 export const DEFAULT_REACH_RADIUS = 2.5;
+/** Default vertical allowance (m) for a horizontal marker proximity test. */
+export const DEFAULT_MARKER_TOLERANCE = 8;
 /** Default keep-close distance (m) for a `pursue` objective. */
 export const DEFAULT_PURSUE_DISTANCE = 3;
 /** A pursuit escapes at this multiple of its keep-close distance when none is declared. */
@@ -380,6 +402,27 @@ export const DEFAULT_ESCAPE_MULTIPLE = 3;
 
 function distance(a: ScenePoint3, b: ScenePoint3): number {
   return Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
+}
+
+/** Whether `from` is inside the marker's reach radius under the configured plane — no allocation, no sqrt. */
+function markerWithin(
+  from: ScenePoint3,
+  to: ScenePoint3,
+  radius: number,
+  plane: MissionMarkerPlane,
+  tolerance: number,
+): boolean {
+  const dy = from.y - to.y;
+  const limit = radius * radius;
+  if (plane === "spatial") {
+    const dx = from.x - to.x;
+    const dz = from.z - to.z;
+    return dx * dx + dy * dy + dz * dz <= limit;
+  }
+  if (Math.abs(dy) > tolerance) return false;
+  const dx = from.x - to.x;
+  const dz = from.z - to.z;
+  return dx * dx + dz * dz <= limit;
 }
 
 function cloneState(state: MissionState): MissionState {
@@ -461,12 +504,18 @@ export function applyMissionRewards(
  *
  * Cost per tick is bounded by the active objective's own fail list plus one goal test.
  *
+ * Marker proximity runs on the plane `markerProximity` picks: horizontal by default, so a marker
+ * authored on a flat `y = 0` plan still triggers from ground that rises under it; `spatial` for a
+ * world whose stacked platforms must stay apart.
+ *
  * @capability mission-runtime missions as a data-driven objective state machine with fail states, timers, branches and rewards
  */
 export function createMissionRuntime(config: MissionRuntimeConfig): MissionRuntime {
   const defs = new Map<string, MissionDef>();
   for (const def of config.missions) defs.set(def.id, def);
   const markers = config.markers ?? {};
+  const markerPlane: MissionMarkerPlane = config.markerProximity?.plane ?? "horizontal";
+  const markerTolerance = Math.max(0, config.markerProximity?.tolerance ?? DEFAULT_MARKER_TOLERANCE);
   let rng = config.rng;
   let state: MissionState | null = null;
   let ticks = 0;
@@ -570,14 +619,15 @@ export function createMissionRuntime(config: MissionRuntimeConfig): MissionRunti
         const from = positionOf(objective.actor, input);
         const to = objective.marker === undefined ? undefined : markers[objective.marker];
         if (from === undefined || to === undefined) return false;
-        return distance(from, to) <= (objective.radius ?? DEFAULT_REACH_RADIUS);
+        return markerWithin(from, to, objective.radius ?? DEFAULT_REACH_RADIUS, markerPlane, markerTolerance);
       }
       case "interact": {
         if (objective.actor === undefined || !(input.interact ?? []).includes(objective.actor)) return false;
         const to = objective.marker === undefined ? undefined : markers[objective.marker];
         if (to === undefined) return true;
         const from = positionOf(objective.actor, input);
-        return from !== undefined && distance(from, to) <= (objective.radius ?? DEFAULT_REACH_RADIUS);
+        return from !== undefined
+          && markerWithin(from, to, objective.radius ?? DEFAULT_REACH_RADIUS, markerPlane, markerTolerance);
       }
       case "survive":
         return state!.objectiveElapsed >= (objective.duration ?? 0);
@@ -654,7 +704,8 @@ export function createMissionRuntime(config: MissionRuntimeConfig): MissionRunti
         const actor = condition.actor ?? objective.actor;
         const from = positionOf(actor, input);
         const to = condition.marker === undefined ? undefined : markers[condition.marker];
-        if (from !== undefined && to !== undefined && distance(from, to) > (condition.radius ?? DEFAULT_REACH_RADIUS)) {
+        const radius = condition.radius ?? DEFAULT_REACH_RADIUS;
+        if (from !== undefined && to !== undefined && !markerWithin(from, to, radius, markerPlane, markerTolerance)) {
           return { state: condition.to ?? "failed", reason: condition.message ?? `${actor ?? "actor"} left the area` };
         }
         continue;

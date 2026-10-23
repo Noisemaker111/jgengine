@@ -1297,6 +1297,7 @@
 - `DEFAULT_ESCAPE_MULTIPLE` (const): const DEFAULT_ESCAPE_MULTIPLE: 3 — A pursuit escapes at this multiple of its keep-close distance when none is declared.
 - `DEFAULT_FIXED_STAGES` (const): const DEFAULT_FIXED_STAGES: readonly ["input", "movement", "combat", "ai", "activities", "cleanup"] — Default fixed-sim stage order — systems pick a stage; most need only this.
 - `DEFAULT_FRAME_STAGES` (const): const DEFAULT_FRAME_STAGES: readonly ["input", "movement", "combat", "ai", "activities", "cleanup", "animation", "camera", "effects"] — Default frame stage order. Gameplay stages mirror the fixed table so once-per-frame systems (`type: "frame"`) can pick `combat`/`ai`/… without falling into the unknown-stage bucket; presentation stages follow.
+- `DEFAULT_MARKER_TOLERANCE` (const): const DEFAULT_MARKER_TOLERANCE: 8 — Default vertical allowance (m) for a horizontal marker proximity test.
 - `DEFAULT_PICKUP_RADIUS` (const): const DEFAULT_PICKUP_RADIUS: 2 — ⚠ undocumented
 - `DEFAULT_PING_CATEGORIES` (const): const DEFAULT_PING_CATEGORIES: Record<PingCategory, PingCategoryDef> — Content-agnostic default ping wheel: enemy / loot / location / danger.
 - `DEFAULT_PURSUE_DISTANCE` (const): const DEFAULT_PURSUE_DISTANCE: 3 — Default keep-close distance (m) for a `pursue` objective.
@@ -1493,6 +1494,8 @@
 - `MissionFailCondition` (interface): interface MissionFailCondition — A condition that fails the mission while the objective is active. `to` names a {@link MissionFailDef}; with no `to` the mission fails with the generic `"failed"` state.
 - `MissionFailDef` (interface): interface MissionFailDef — A named fail state an objective, timer or branch can land in.
 - `MissionIssue` (interface): interface MissionIssue — A located mission-catalog problem; `path` is a JSON Pointer into the supplied catalog.
+- `MissionMarkerPlane` (type): type MissionMarkerPlane = "horizontal" | "spatial" — Which plane a marker proximity test compares in.
+- `MissionMarkerProximity` (interface): interface MissionMarkerProximity — How a positional objective compares an actor to its authored marker.
 - `MissionObjectiveDef` (interface): interface MissionObjectiveDef — One objective. Every field is content; the machine reads only these.
 - `MissionObjectiveKind` (type): type MissionObjectiveKind = "reach" | "interact" | "survive" | "pursue" | "kill" | "collect" — The primitive goals an objective can have. Escort, chase and defend are not kinds — they are compositions of these plus fail conditions and timers (see `compositions.ts`).
 - `MissionRewardAppliers` (interface): interface MissionRewardAppliers — Appliers a mission reward routes through — the same shape quests use, plus a loot-table hook.
@@ -2355,6 +2358,7 @@
 ## @jgengine/core/mission/mission
 
 - `DEFAULT_ESCAPE_MULTIPLE` (const): const DEFAULT_ESCAPE_MULTIPLE: 3 — A pursuit escapes at this multiple of its keep-close distance when none is declared.
+- `DEFAULT_MARKER_TOLERANCE` (const): const DEFAULT_MARKER_TOLERANCE: 8 — Default vertical allowance (m) for a horizontal marker proximity test.
 - `DEFAULT_PURSUE_DISTANCE` (const): const DEFAULT_PURSUE_DISTANCE: 3 — Default keep-close distance (m) for a `pursue` objective.
 - `DEFAULT_REACH_RADIUS` (const): const DEFAULT_REACH_RADIUS: 2.5 — Default proximity radius (m) for a `reach` / `interact` objective.
 - `MISSION_COUNTER_KINDS` (const): const MISSION_COUNTER_KINDS: readonly MissionObjectiveKind[] — Objective kinds that are satisfied only by a counter — a mission made of these alone is a lint error.
@@ -2367,6 +2371,8 @@
 - `MissionFailCondition` (interface): interface MissionFailCondition — A condition that fails the mission while the objective is active. `to` names a {@link MissionFailDef}; with no `to` the mission fails with the generic `"failed"` state.
 - `MissionFailDef` (interface): interface MissionFailDef — A named fail state an objective, timer or branch can land in.
 - `MissionIssue` (interface): interface MissionIssue — A located mission-catalog problem; `path` is a JSON Pointer into the supplied catalog.
+- `MissionMarkerPlane` (type): type MissionMarkerPlane = "horizontal" | "spatial" — Which plane a marker proximity test compares in.
+- `MissionMarkerProximity` (interface): interface MissionMarkerProximity — How a positional objective compares an actor to its authored marker.
 - `MissionObjectiveDef` (interface): interface MissionObjectiveDef — One objective. Every field is content; the machine reads only these.
 - `MissionObjectiveKind` (type): type MissionObjectiveKind = "reach" | "interact" | "survive" | "pursue" | "kill" | "collect" — The primitive goals an objective can have. Escort, chase and defend are not kinds — they are compositions of these plus fail conditions and timers (see `compositions.ts`).
 - `MissionRewardAppliers` (interface): interface MissionRewardAppliers — Appliers a mission reward routes through — the same shape quests use, plus a loot-table hook.

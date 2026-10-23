@@ -614,6 +614,7 @@ export {
 } from "./mission/compositions";
 export {
   DEFAULT_ESCAPE_MULTIPLE,
+  DEFAULT_MARKER_TOLERANCE,
   DEFAULT_PURSUE_DISTANCE,
   DEFAULT_REACH_RADIUS,
   MISSION_COUNTER_KINDS,
@@ -630,6 +631,8 @@ export {
   type MissionFailCondition,
   type MissionFailDef,
   type MissionIssue,
+  type MissionMarkerPlane,
+  type MissionMarkerProximity,
   type MissionObjectiveDef,
   type MissionObjectiveKind,
   type MissionRewardAppliers,
