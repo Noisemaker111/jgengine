@@ -96,6 +96,7 @@ export type FeedbackBinding<Name extends FeedbackEventName = FeedbackEventName> 
   detail?: (payload: GameEventMap[Name]) => string | undefined;
 };
 
+/** Any row of the event mapping, whichever event it binds. */
 export type AnyFeedbackBinding = { [Name in FeedbackEventName]: FeedbackBinding<Name> }[FeedbackEventName];
 
 /**
@@ -326,8 +327,9 @@ export function createEventFeedback(deps: FeedbackDeps, options: EventFeedbackOp
 }
 
 /**
- * Subscribe the feedback seam to a game's event bus. Returns the detach function; the mapping and
- * reactions stay override-able through the seam's `retune`.
+ * Subscribe the feedback seam to a game's event bus, including `feedback.cue` for moments the game
+ * announces itself. Returns the detach function; the mapping and reactions stay override-able
+ * through the seam's `retune`.
  *
  * @capability attach-event-feedback one call wires every announced combat/loot/objective/refusal event to its reaction
  */
@@ -346,24 +348,39 @@ export function attachEventFeedback(
       feedback.handle(name, payload as GameEventMap[typeof name]);
     }),
   );
+  offs.push(
+    events.on("feedback.cue", ({ cue, caption }) => {
+      feedback.notify(cue, caption);
+    }) as () => void,
+  );
   return () => {
     for (const off of offs) off();
   };
 }
 
+/** The slice of `ctx.game.feedback` a wave runner needs, so this runs headless in a test. */
+export interface FeedbackAnnouncer {
+  cue(cue: FeedbackCue, caption?: string): void;
+}
+
 /**
  * Announce each new wave a {@link WaveRunner} starts as the `wave` cue, once per boundary. A wave
  * has no event of its own, so this is the engine-side hookup for tower defense and wave survival
- * games; nothing is polled, the runner's own notification drives it.
+ * games: `attachWaveFeedback(runner, ctx.game.feedback)`. Nothing is polled, the runner's own
+ * notification drives it, and one `update` that crosses two waves still fires once - the cue has a
+ * cooldown and the next boundary is announced by the next crossing.
  *
  * @capability attach-wave-feedback fire the wave cue once whenever a wave runner crosses into a new wave
  */
-export function attachWaveFeedback(runner: Pick<WaveRunner, "state" | "subscribe">, feedback: EventFeedback): () => void {
+export function attachWaveFeedback(
+  runner: Pick<WaveRunner, "state" | "subscribe">,
+  announce: FeedbackAnnouncer,
+): () => void {
   let lastWave = runner.state().wave;
   return runner.subscribe(() => {
     const wave = runner.state().wave;
     if (wave === lastWave) return;
     lastWave = wave;
-    feedback.notify("wave", `Wave ${wave + 1}`);
+    announce.cue("wave", `Wave ${wave + 1}`);
   });
 }

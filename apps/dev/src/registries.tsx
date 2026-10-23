@@ -222,6 +222,7 @@ export const gameRegistry: GameRegistry = {
   "codex": () => import("./demo/codexDemo").then((module) => module.codexDemoGame),
   "notification-center": () => import("./demo/notificationDemo").then((module) => module.notificationDemoGame),
   "ui-feedback": () => import("./demo/uiFeedbackDemo").then((module) => module.uiFeedbackDemoGame),
+  "feel-audio": () => import("./demo/feelAudioDemo").then((module) => module.feelAudioDemoGame),
   "floating-text": () => import("./demo/floatingTextDemo").then((module) => module.floatingTextDemoGame),
   "coach-marks": () => import("./demo/coachMarksDemo").then((module) => module.coachMarksDemoGame),
   "objective-banner": () => import("./demo/objectiveBannerDemo").then((module) => module.objectiveBannerDemoGame),

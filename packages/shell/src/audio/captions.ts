@@ -10,6 +10,7 @@ export interface Caption {
   expiresAt: number;
 }
 
+/** Tunables for {@link createCaptionFeed}; all retunable at runtime. */
 export interface CaptionFeedConfig {
   /** Maximum live lines. Default 3. */
   cap?: number;

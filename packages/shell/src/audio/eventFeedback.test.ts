@@ -198,7 +198,7 @@ describe("attachEventFeedback and attachWaveFeedback", () => {
         return () => listeners.delete(listener);
       },
     };
-    const detach = attachWaveFeedback(runner, feedback);
+    const detach = attachWaveFeedback(runner, { cue: (cue, caption) => feedback.notify(cue, caption) });
     for (const listener of listeners) listener();
     expect(h.played).toEqual([]);
 

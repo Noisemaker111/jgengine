@@ -64,6 +64,18 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `readModelAnimationParams` (function) · `import { readModelAnimationParams } from "@jgengine/shell/render/useModelAnimation"`
 
+## attach-event-feedback — one call wires every announced combat/loot/objective/refusal event to its reaction
+
+- `attachEventFeedback` (function) · `import { attachEventFeedback } from "@jgengine/shell/audio/eventFeedback"`
+
+## attach-wave-feedback — fire the wave cue once whenever a wave runner crosses into a new wave
+
+- `attachWaveFeedback` (function) · `import { attachWaveFeedback } from "@jgengine/shell/audio/eventFeedback"`
+
+## audio-probe — read the live master RMS/peak and bus gains from a running page for capture and diagnostics
+
+- `installAudioProbe` (function) · `import { installAudioProbe } from "@jgengine/shell/audio/audioProbe"`
+
 ## authored-flocks — render authored habitat agents through caller-selected animated species models with velocity orientation and bounded model lifetime
 
 - `AuthoredFlocks` (function) · `import { AuthoredFlocks } from "@jgengine/shell/world/AuthoredFlocks"`
@@ -113,6 +125,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## camera-transparent-decor — let author decor pass through the orbit spring-arm; a child opts back in with jgCameraCollide
 
 - `isCameraOccluderTransparent` (function) · `import { isCameraOccluderTransparent } from "@jgengine/shell/camera"`
+
+## caption-feed — bounded, self-expiring, deduped caption lines for the accessibility captions overlay
+
+- `createCaptionFeed` (function) · `import { createCaptionFeed } from "@jgengine/shell/audio/captions"`
+
+## caption-overlay — render the caption feed as a themed, screen-reader-announced line stack gated by the captions accessibility setting
+
+- `CaptionOverlay` (function) · `import { CaptionOverlay } from "@jgengine/shell/audio/CaptionOverlay"`
 
 ## capture-canvas — read the live R3F frame to a PNG data URL (needs preserveDrawingBuffer)
 
@@ -285,6 +305,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `EntitySummary` (function) · `import { EntitySummary } from "@jgengine/react"`
 
+## event-feedback — map announced gameplay events (damage, kill, pickup, objective, wave, refusal) to a sound, gamepad pulse, camera shake and caption through one data mapping
+
+- `createEventFeedback` (function) · `import { createEventFeedback } from "@jgengine/shell/audio/eventFeedback"`
+
 ## event-meter-hud — render a core event/heat meter's live value, fraction, tier, and ready state in a HUD gauge
 
 - `useEventMeter` (function) · `import { useEventMeter } from "@jgengine/react"`
@@ -292,6 +316,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## fast-travel-menu — discovered-destinations picker grouped by region with distances, a discovery counter, and a travel callback
 
 - `FastTravelMenu` (function) · `import { FastTravelMenu } from "@jgengine/react"`
+
+## feedback-host — mount event feedback, gesture-gated audio and captions for a running game in one component
+
+- `FeedbackHost` (function) · `import { FeedbackHost } from "@jgengine/shell/audio/FeedbackHost"`
 
 ## floating-text — overlay that renders on-screen floating combat text with per-kind color, alpha, and pop-in scale
 
@@ -308,6 +336,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## game-context-bridge — re-provide the GameContext across a nested Canvas/reconciler boundary
 
 - `GameContextBridge` (function) · `import { GameContextBridge } from "@jgengine/react"`
+
+## gesture-resume — unlock the audio context on the first pointer/key/touch gesture, so pre-gesture cues play instead of vanishing
+
+- `installGestureResume` (function) · `import { installGestureResume } from "@jgengine/shell/audio/gestureResume"`
 
 ## ground-edge-fade — fade merged ground layers into the terrain at their outer edge, keeping inner seams crisp
 

@@ -2,6 +2,7 @@ import type { EffectResult } from "../combat/effects";
 import type { DeathReason } from "../combat/deathReason";
 import type { TelegraphShape } from "../combat/telegraph";
 import type { CameraShake } from "../combat/hitReaction";
+import type { FeedbackCue } from "../audio/feedbackCues";
 import type { CombatVfxInstanceEvent } from "./vfxInstance";
 
 export type { DeathReason };
@@ -290,6 +291,16 @@ export interface AudioPlayEvent {
 /** Request that the shell's audio engine resume its (browser-gesture-suspended) context; carries no payload. */
 export type AudioResumeEvent = Record<string, never>;
 
+/**
+ * A gameplay moment the game announces itself, for the moments no engine event covers (a wave
+ * starting, a scripted beat). The shell reacts with the cue's sound, rumble, camera kick and caption.
+ */
+export interface FeedbackCueEvent {
+  cue: FeedbackCue;
+  /** Caption text that replaces the cue's default label ("WAVE 3"). */
+  caption?: string;
+}
+
 /** Crossfade the procedural soundtrack to `theme` (null fades out), optionally transposing the incoming theme by `transpose` semitones. */
 export interface AudioMusicEvent {
   theme: string | null;
@@ -378,6 +389,7 @@ export interface GameEventMap {
   "audio.loopStop": AudioLoopStopEvent;
   "entity.animation": EntityAnimationEvent;
   "animation.event": AnimationClipEvent;
+  "feedback.cue": FeedbackCueEvent;
   "command.refused": CommandRefusedEvent;
 }
 
