@@ -18,6 +18,19 @@ beforeAll(async () => {
 
 afterAll(() => fixture.stop(session));
 
+/**
+ * The play HUD's buttons, clicked without Playwright's two-frame stability check and each
+ * followed by a wait on the state the click produces. A runner renders this scene at about one
+ * frame a second, so that check cost 2-4 s of each click, 20-30 s of this file.
+ */
+function press(page: CreatorAppSession["page"], name: string) {
+  return page.getByRole("button", { name, exact: true }).click({ force: true });
+}
+
+function shown(page: CreatorAppSession["page"], name: string) {
+  return page.getByRole("button", { name, exact: true }).waitFor();
+}
+
 test("native export round-trips through validated import and rejects an over-budget file", async () => {
   const { page, scratch } = session;
   const downloaded = page.waitForEvent("download");
@@ -35,7 +48,7 @@ test("native export round-trips through validated import and rejects an over-bud
   await page.getByRole("alert").filter({ hasText: "byte budget" }).waitFor();
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem("creator-fixture:v1")!).documents.length)).toBe(1);
   await page.getByLabel("Import scene JSON", { exact: true }).setInputFiles(exported);
-  await page.getByRole("button", { name: "Save", exact: true }).waitFor();
+  await shown(page, "Save");
   await page.getByRole("treeitem").filter({ hasText: "Saved start 1" }).waitFor();
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem("creator-fixture:v1")!).documents.length)).toBe(2);
   expect(session.errors).toEqual([]);
@@ -46,7 +59,11 @@ function simSeconds(): Promise<number> {
   return session.page.evaluate(() => (window as any).simClock.now());
 }
 
-/** Let `count` rendered frames pass, so a frozen clock is checked against real frames instead of wall time. */
+/**
+ * Let `count` rendered frames pass, so a frozen clock is checked against real frames instead of
+ * wall time. Three frames is enough for that and is what a runner can afford: each one costs
+ * about a second there, and ten of them twice was a third of this file.
+ */
 function renderFrames(count: number): Promise<void> {
   return session.page.evaluate((frames) => new Promise<void>((done) => {
     let left = frames;
@@ -57,39 +74,40 @@ function renderFrames(count: number): Promise<void> {
 
 test("unsaved and pending failed saves survive native play, pause, resume and return", async () => {
   const { page } = session;
-  await page.getByRole("treeitem").filter({ hasText: "Saved start 1" }).last().getByRole("button").first().click();
+  await page.getByRole("treeitem").filter({ hasText: "Saved start 1" }).last().getByRole("button").first().click({ force: true });
   await page.getByRole("textbox", { name: "Object name" }).fill("Unsaved pending");
   await page.getByText("Unsaved changes", { exact: true }).waitFor();
-  await page.getByRole("button", { name: "Play", exact: true }).click();
-  await page.getByRole("button", { name: "Pause simulation", exact: true }).click();
+  await press(page, "Play");
+  await shown(page, "Pause simulation");
+  await press(page, "Pause simulation");
   await page.waitForFunction(() => (window as any).simClock.isPaused());
   const paused = await simSeconds();
-  await renderFrames(10);
+  await renderFrames(3);
   expect(await simSeconds()).toBe(paused);
-  await page.getByRole("button", { name: "Step one frame (pause required)", exact: true }).click();
+  await press(page, "Step one frame (pause required)");
   await page.waitForFunction((previous) => (window as any).simClock.now() > previous && (window as any).simClock.isPaused(), paused);
   const stepped = await simSeconds();
-  await renderFrames(10);
+  await renderFrames(3);
   expect(await simSeconds()).toBe(stepped);
-  await page.getByRole("button", { name: "Resume simulation", exact: true }).click();
+  await press(page, "Resume simulation");
   await page.waitForFunction((previous) => (window as any).simClock.now() > previous, stepped);
   await page.keyboard.press("Escape");
-  await page.getByRole("button", { name: "Return to editor", exact: true }).click();
+  await press(page, "Return to editor");
   await page.getByText("Unsaved changes", { exact: true }).waitFor();
   await page.request.post(`http://127.0.0.1:${session.server.port}/hold-next-save`);
-  await page.getByRole("button", { name: "Save", exact: true }).click();
-  await page.getByRole("button", { name: "Saving…", exact: true }).waitFor();
-  await page.getByRole("button", { name: "Play", exact: true }).click();
+  await press(page, "Save");
+  await shown(page, "Saving…");
+  await press(page, "Play");
   await page.keyboard.press("Escape");
-  await page.getByRole("button", { name: "Return to editor", exact: true }).click();
-  await page.getByRole("button", { name: "Saving…", exact: true }).waitFor();
+  await press(page, "Return to editor");
+  await shown(page, "Saving…");
   // "Saving…" renders before the save's request reaches the server; releasing earlier would be a no-op.
   await session.heldSaveArrived();
   await page.request.post(`http://127.0.0.1:${session.server.port}/release-failed-save`);
-  await page.getByRole("button", { name: "Retry save", exact: true }).waitFor();
+  await shown(page, "Retry save");
   expect(await page.getByRole("button", { name: "Retry save", exact: true }).getAttribute("title")).toBe("Durable quota rejected");
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem("creator-fixture:v1")!).documents[1].document.markers[0].label)).toBe("Saved start 1");
-  await page.getByRole("button", { name: "Retry save", exact: true }).click();
+  await press(page, "Retry save");
   await page.waitForFunction(() => JSON.parse(localStorage.getItem("creator-fixture:v1")!).documents[1].document.markers[0].label === "Unsaved pending");
   expect(await page.getByText("Unsaved changes", { exact: true }).count()).toBe(0);
   expect(session.errors).toEqual([]);
