@@ -14,19 +14,19 @@
 // lives here, so rebalancing never edits the workflow. `scripts/test-shard.test.ts`
 // fails when the two lists disagree.
 //
-// Balance is measured, not guessed: the numbers below are what each shard's tests took on
-// a runner (2026-10-23, run 39892384209, a docs-only PR: 377 s of test time over ten jobs;
-// run 39893307182 pushed the same content while a full gate ran and moved every shard by
-// up to 20 s, which is the variance to expect). Ten jobs cost ten runners of fixed setup
-// against the account's 20-job cap, so a PR racing another run queued its shards in two
-// waves; eight is the fewest that keeps every shard at the slowest single file.
+// Balance is measured, not guessed: the numbers below are what each shard's tests took on a
+// runner (2026-10-23, run 39892384209, a docs-only PR: 377 s of test time over ten jobs;
+// run 39893307182 pushed the same content while a full gate ran and moved every shard by up
+// to 20 s, which is the variance to expect). Ten jobs cost ten runners of fixed setup against
+// the account's 20-job cap, so a PR racing another run queued its shards in two waves; eight
+// is the fewest that keeps every shard at the slowest single file.
 //
 // The floor is one file per shard: the editor round trip (a) and the editor scene io run
-// (f) are single browser scenarios, and the harness pair (b, c) each waits out the
-// harness's own 10 s give-up. Merging two shards adds their times, so the cheap shards
-// went where there was room rather than into each other: the four sub-40 s shards (g 26,
-// h 37, i 35, j 15) are now the tail of c (the small packages) and the last two entries.
-// Moving a directory means re-timing the shard and updating these numbers in the same commit.
+// (f) are single browser scenarios, and the harness pair (b, e) each waits out the
+// harness's own 10 s give-up. Merging two shards adds their times, so the cheap shards went
+// where there was room rather than into each other: the old g 26, h 37, i 35 and j 15 are now
+// the tail of c (the small packages and apps/dev) and the last two entries. Moving a
+// directory means re-timing the shard and updating these numbers in the same commit.
 import { readdirSync } from "node:fs";
 import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -72,11 +72,12 @@ export const SHARDS: readonly Shard[] = [
   {
     name: "c",
     label: "harness unreachable targets + the small packages",
-    // 34 s of harness scenarios plus the 8 s the small packages take together. They sit here
-    // because this job waits on Chrome rather than on a core: it is the one shard with room
-    // left, and adding them here is what keeps every other shard under the slowest single file.
+    // 34 s of harness scenarios plus the 8 s the small packages and apps/dev take together.
+    // They sit here because this job waits on Chrome rather than on a core: it is the one shard
+    // with room left, and adding them here is what keeps every other shard under 58 s.
     include: [
       "packages/jgengine/src/harness.unreachableTargets.browser.test.ts",
+      "apps/dev",
       "packages/node",
       "packages/ws",
       "packages/assets",
@@ -102,7 +103,7 @@ export const SHARDS: readonly Shard[] = [
     // 43 s of harness drive plus the other 2 s of jgengine. A browser file runs alone:
     // the editor scene io file took 34 s first in its process and 78 s after 85 others.
     include: ["packages/jgengine/src/harness.browser.test.ts", "packages/jgengine"],
-    needs: ["build"],
+    needs: [],
   },
   {
     name: "f",
@@ -113,17 +114,18 @@ export const SHARDS: readonly Shard[] = [
   },
   {
     name: "g",
-    label: "shell, editor, react and the dev app",
-    // 26 s of shell, the 3 s of editor tests that are not browser scenarios, 29 s of react and
-    // apps/dev. This is the old shell+editor shard with the old react shard folded in.
-    include: ["packages/shell", "packages/editor", "packages/react", "apps/dev"],
-    needs: ["build"],
+    label: "shell, editor and react",
+    // 26 s of shell, the 3 s of editor tests that are not browser scenarios, and 29 s of react.
+    // This is the old shell+editor shard with the old react shard folded in.
+    include: ["packages/shell", "packages/editor", "packages/react"],
+    needs: [],
   },
   {
     name: "h",
     label: "core, scripts and the built gate",
     // 15 s of core outside world plus 35 s of scripts; anything a new root adds lands here too.
-    // It is the only shard that reads a built dist and the only one that reads `./Games`.
+    // It is the only shard that reads a built dist and the only one that reads `./Games`, so it
+    // is the only job that pays for either: about 7 s on this step, and zero on the other seven.
     include: ["packages/core", ...TEST_ROOTS],
     needs: ["build", "games"],
   },
