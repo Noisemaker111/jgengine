@@ -26,6 +26,15 @@ At publish, rename this heading to the new version and mirror the entries into
 `packages/core/src/meta/changelog.ts` (the typed `CHANGELOG` export).
 -->
 
+### Added
+
+- `ColorblindFrame` (`@jgengine/react/accessibility`) wraps the 3D canvas and applies the player's colour-vision mode to that box alone, so HUD, menu and caption text keep their own contrast. `colorblindFrameFilter` (`@jgengine/core/ui/accessibility`) resolves a mode to the CSS filter, and `useColorblindMode` reads the mode from the settings store the settings rows write; the 3D shell does both for the mounted game.
+- `SettingsSection` (`@jgengine/react/settingsBlocks`) is one `useMenuNav` menu: a d-pad or left stick moves between rows and left/right steps the focused value — slider by its step, toggle flipped, select to the next option, confirm arms a keybind — through the same `onAdjust` path the arrow keys use. `onAdjust` (`@jgengine/react/menuNav`) is the option that makes left/right adjust instead of move.
+
+### Changed
+
+- `AccessibilityProvider` (`@jgengine/react/accessibility`) sets its data attributes and text-scale var without filtering its own subtree. A colour matrix over the HUD and menu root recoloured the text the rest of the UI assumes, so wrap the game canvas in `ColorblindFrame` instead; a custom root can still offset it with its own `ColorblindFilters` and `filter: url(#jg-cb-<mode>)`.
+
 ## 0.29.0
 
 ### Migrate
