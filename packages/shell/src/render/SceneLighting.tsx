@@ -15,6 +15,7 @@ import { devtools } from "@jgengine/core/devtools/devtools";
 
 import { CascadedShadows, DEFAULT_SHADOW_RADIUS } from "./CascadedShadows";
 import { cullSmallShadowCasters, MIN_SHADOW_CASTER_RADIUS, type ShadowCasterCull } from "./shadowCasters";
+import { minShadowCasterRadius, resolveCascadeCount, resolveShadowMapSize, SHADOW_CASTER_RADIUS_REFERENCE_MAP } from "./shadowTiers";
 
 const DEFAULT_BACKDROP_FOG_COLOR = "#1a1c22";
 /** Default cap for combined dynamic point and spot lights. */
@@ -55,7 +56,13 @@ function usesCascades(entry: DirectionalLightingConfig): boolean {
 }
 
 function DirectionalShadowLight({ entry, profile, modulation }: { entry: DirectionalLightingConfig; profile?: GraphicsProfile; modulation?: DaylightModulation }) {
-  const resolved = profile === undefined ? entry : { ...entry, shadowMapSize: entry.shadowMapSize ?? profile.shadowMapSize, cascades: entry.cascades ?? profile.cascades };
+  const resolved = profile === undefined
+    ? entry
+    : {
+        ...entry,
+        shadowMapSize: resolveShadowMapSize(profile, entry.shadowMapSize),
+        cascades: resolveCascadeCount(profile, entry.cascades),
+      };
   if (usesCascades(resolved)) {
     return <CascadedShadows entry={resolved} profile={profile} modulation={modulation} />;
   }
@@ -129,27 +136,31 @@ export function ConfiguredLighting({
   const scene = useThree((s) => s.scene);
   const shadowsCast = (lighting.directional ?? []).some((entry) => entry.castShadow === true);
   const cullRef = useRef<ShadowCasterCull | null>(null);
+  const casterRadius = minShadowCasterRadius(
+    profile?.shadowMapSize ?? SHADOW_CASTER_RADIUS_REFERENCE_MAP,
+    MIN_SHADOW_CASTER_RADIUS,
+  );
   useEffect(() => {
     if (!shadowsCast) return;
-    const cull = cullSmallShadowCasters(scene);
+    const cull = cullSmallShadowCasters(scene, casterRadius);
     cullRef.current = cull;
     return () => {
       cull.restore();
       cullRef.current = null;
     };
-  }, [scene, shadowsCast]);
+  }, [scene, shadowsCast, casterRadius]);
   useEffect(
     () =>
       devtools.probes.registerSystem("render/shadows", {
-        counters: () => cullRef.current?.stats() ?? { casters: 0, skipped: 0 },
+        counters: () => cullRef.current?.stats() ?? { casters: 0, skipped: 0, minRadius: casterRadius },
         state: () => {
           const stats = cullRef.current?.stats();
           return stats === undefined
             ? "no shadow-casting directional light"
-            : `${stats.casters} casters · ${stats.skipped} under ${MIN_SHADOW_CASTER_RADIUS} m skipped`;
+            : `${stats.casters} casters · ${stats.skipped} under ${stats.minRadius} m skipped`;
         },
       }),
-    [],
+    [casterRadius],
   );
   const ambientRef = useRef<THREE.AmbientLight>(null);
   const hemisphereRef = useRef<THREE.HemisphereLight>(null);

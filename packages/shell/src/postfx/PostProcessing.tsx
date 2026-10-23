@@ -28,6 +28,7 @@ import type { GraphicsQuality } from "@jgengine/core/settings/settingsModel";
 
 import { ExposureMeterPass } from "./autoExposure";
 import { createGradePass } from "./gradeShader";
+import { postfxTierPolicy } from "./postfxTierPolicy";
 import { releasePostfxOverlayTracking } from "./postfxOverlay";
 import { StylizePass } from "./stylizePass";
 import { renderShadowlessPrepass } from "./shadowPrepass";
@@ -142,6 +143,12 @@ export interface PostfxStagePlan {
   grade: GradeConfig | null;
   /** The authored exposure the meter corrects around. */
   exposure: number;
+  /**
+   * Composer backing store as a fraction of the canvas. Every stage below `1` — AO, bloom, DOF,
+   * SMAA and the beauty pass itself — renders into a smaller target, and the OutputPass stretches it
+   * back over the canvas.
+   */
+  resolutionScale: number;
 }
 
 interface BuiltGraph {
@@ -149,6 +156,8 @@ interface BuiltGraph {
   grade: ShaderPass | null;
   /** Stages this chain actually built, in pass order. A stage absent here costs no draw. */
   stages: readonly PostfxStage[];
+  /** The plan's {@link PostfxStagePlan.resolutionScale}, kept so a resize re-applies it. */
+  resolutionScale: number;
 }
 
 /**
@@ -166,10 +175,15 @@ export function disposeGraph(built: BuiltGraph): void {
   built.composer.dispose();
 }
 
-/** Resize the composer and its passes at the renderer's pixel ratio. @internal */
+/**
+ * Resize the composer and its passes to the plan's share of the renderer's backing store. The
+ * scaled size is rounded to whole pixels: a fractional target size reaches `texImage2D` as one.
+ * @internal
+ */
 export function syncSize(built: BuiltGraph, width: number, height: number, pixelRatio: number): void {
-  built.composer.setPixelRatio(pixelRatio);
-  built.composer.setSize(width, height);
+  const scale = pixelRatio * built.resolutionScale;
+  built.composer.setPixelRatio(1);
+  built.composer.setSize(Math.max(1, Math.round(width * scale)), Math.max(1, Math.round(height * scale)));
 }
 
 /** AO the chain runs: authored config, {@link DEFAULT_AO} when unset, null when off or the tier skips it. @internal */
@@ -185,7 +199,8 @@ export function planPostStages(
   stages?: { ao: boolean; bloom: boolean; dof: boolean; smaa: boolean },
 ): PostfxStagePlan {
   const aa = config.aa === undefined ? "smaa" : config.aa;
-  const tierStages = stages ?? { ao: quality === "high", bloom: true, dof: quality === "high", smaa: true };
+  const policy = postfxTierPolicy(quality);
+  const tierStages = stages ?? policy.stages;
   const ao = resolveAoStage(config.ao, tierStages.ao);
   const authoredDof = tierStages.dof && config.dof !== undefined && config.dof !== false ? config.dof : null;
   const bloom = tierStages.bloom && config.bloom !== false ? (config.bloom ?? {}) : null;
@@ -193,7 +208,7 @@ export function planPostStages(
   return {
     samples: aa === false ? 0 : 2,
     ao,
-    aoSamples: quality === "ultra" ? 16 : quality === "high" ? 12 : 8,
+    aoSamples: policy.aoSamples,
     aoGbuffer: smaa || aa === false ? "beauty" : "prepass",
     bloom,
     dof: authoredDof === null ? null : { ...authoredDof, aperture: authoredDof.aperture ?? (quality === "high" ? 0.00025 : 0.00012) },
@@ -202,6 +217,7 @@ export function planPostStages(
     stylize: config.stylize !== undefined && config.stylize !== false ? config.stylize : null,
     grade: config.grade !== false ? (config.grade ?? {}) : null,
     exposure: config.exposure ?? 1,
+    resolutionScale: policy.resolutionScale,
   };
 }
 
@@ -324,7 +340,7 @@ export function buildPostGraph(
     built.push("grade");
   }
 
-  return { composer, grade, stages: built };
+  return { composer, grade, stages: built, resolutionScale: plan.resolutionScale };
 }
 
 /**
@@ -337,6 +353,8 @@ export function buildPostGraph(
  * independently. Medium keeps AO and DOF with reduced AO sampling; low can disable
  * them while retaining cheaper bloom, SMAA, tone mapping, and grade stages. A stage
  * that is off adds no pass at all, so it costs no draw and allocates no target.
+ * The tier also sets the composer's resolution scale, so the passes a lower tier
+ * keeps still cover fewer pixels.
  */
 export function PostProcessing({ config, quality = "high", stages }: { config: PostProcessingConfig; quality?: GraphicsQuality; stages?: { ao: boolean; bloom: boolean; dof: boolean; smaa: boolean } }) {
   const gl = useThree((s) => s.gl);

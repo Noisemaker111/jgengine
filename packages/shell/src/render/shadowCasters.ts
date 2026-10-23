@@ -11,7 +11,7 @@ export const MIN_SHADOW_CASTER_RADIUS = 0.5;
 /** A live caster cull: what it is keeping, and how to put the authored flags back. @internal */
 export interface ShadowCasterCull {
   /** Meshes still casting in the tree, and how many were cleared for being under the radius. */
-  stats(): { casters: number; skipped: number };
+  stats(): { casters: number; skipped: number; minRadius: number };
   restore(): void;
 }
 
@@ -89,12 +89,12 @@ export function cullSmallShadowCasters(root: THREE.Object3D, minRadius = MIN_SHA
 
   attach(root);
   return {
-    stats(): { casters: number; skipped: number } {
+    stats(): { casters: number; skipped: number; minRadius: number } {
       let casters = 0;
       root.traverse((node) => {
         if ((node as THREE.Mesh).isMesh === true && (node as THREE.Mesh).castShadow) casters += 1;
       });
-      return { casters, skipped: cleared.size };
+      return { casters, skipped: cleared.size, minRadius };
     },
     restore(): void {
       for (const off of listeners.values()) off();
