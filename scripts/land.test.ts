@@ -7,8 +7,10 @@ import {
   acquireLock,
   checkVerdict,
   chooseBody,
+  ensurePr,
   forcePushArgs,
   formatFailures,
+  landBody,
   landLocked,
   landRefusal,
   lockPath,
@@ -18,7 +20,7 @@ import {
   staleReason,
   syncOntoBase,
 } from "./land";
-import type { Run } from "./land";
+import type { Gh, Run } from "./land";
 
 test("parses flags with values and defaults the base to beta", () => {
   expect(parseArgs([])).toEqual({ base: "beta" });
@@ -56,12 +58,165 @@ test("falls back to the newest fragment when no fragment matches the branch", ()
   expect(pickFragment([], "agent/somewhere-else")).toBeNull();
 });
 
-test("builds the PR body from fragment, then body file, then summary", () => {
-  expect(chooseBody({ fragment: "### Added\n\n- Note.\n", bodyFile: "file body", summary: "summary" })).toBe(
+test("builds the PR body from an explicit body file, then the fragment, then the summary", () => {
+  expect(chooseBody({ fragment: "### Added\n\n- Note.\n", bodyFile: "file body", summary: "summary" })).toBe("file body");
+  expect(chooseBody({ fragment: "### Added\n\n- Note.\n", bodyFile: "  \n", summary: "summary" })).toBe(
     "### Added\n\n- Note.",
   );
-  expect(chooseBody({ fragment: "  \n", bodyFile: "file body", summary: "summary" })).toBe("file body");
   expect(chooseBody({ bodyFile: null, summary: " summary " })).toBe("summary");
+});
+
+test("an explicit body file is used as written and the fragment is never read for it", () => {
+  const read: string[] = [];
+  const body = landBody({
+    args: { base: "beta", bodyFile: ".scratch/body.md" },
+    branch: "agent/lane-x",
+    summary: "the last commit",
+    read: (path) => {
+      read.push(path);
+      return "the body I wrote\n";
+    },
+    fragment: () => {
+      throw new Error("the fragment must not be read when a body file is given");
+    },
+  });
+  expect(body).toEqual({ text: "the body I wrote", explicit: true });
+  expect(read).toEqual([".scratch/body.md"]);
+});
+
+test("with no body file the branch's changes/ fragment is the body, and a summary when there is none", () => {
+  const fragment = landBody({
+    args: { base: "beta" },
+    branch: "agent/lane-x",
+    summary: "the last commit",
+    fragment: () => ({ text: "### Changed\n\n- The fragment.\n" }),
+  });
+  expect(fragment).toEqual({ text: "### Changed\n\n- The fragment.", explicit: false });
+
+  const summary = landBody({
+    args: { base: "beta" },
+    branch: "agent/lane-x",
+    summary: " the last commit ",
+    fragment: () => null,
+  });
+  expect(summary).toEqual({ text: "the last commit", explicit: false });
+});
+
+test("a blank body file falls back to the fragment and does not claim to be explicit", () => {
+  const body = landBody({
+    args: { base: "beta", bodyFile: ".scratch/empty.md" },
+    branch: "agent/lane-x",
+    summary: "the last commit",
+    read: () => "  \n",
+    fragment: () => ({ text: "### Fixed\n\n- The fragment.\n" }),
+  });
+  expect(body).toEqual({ text: "### Fixed\n\n- The fragment.", explicit: false });
+});
+
+/** A gh that answers from a script and records every call, so a landing can be replayed without GitHub. */
+function scriptedGh(answers: { open?: { number: number; url: string }[]; body?: string; fail?: string }): {
+  gh: Gh;
+  calls: string[][];
+} {
+  const calls: string[][] = [];
+  const gh: Gh = (args) => {
+    calls.push(args);
+    const joined = args.join(" ");
+    if (answers.fail !== undefined && joined.startsWith(answers.fail)) {
+      return { status: 1, stdout: "", stderr: `scripted ${answers.fail} failure` };
+    }
+    if (joined.startsWith("pr list")) {
+      return { status: 0, stdout: JSON.stringify(answers.open ?? []), stderr: "" };
+    }
+    if (joined.startsWith("pr view")) {
+      return { status: 0, stdout: JSON.stringify({ body: answers.body ?? "" }), stderr: "" };
+    }
+    if (joined.startsWith("pr create")) {
+      return { status: 0, stdout: "https://github.com/Noisemaker111/JGengine/pull/4242\n", stderr: "" };
+    }
+    return { status: 0, stdout: "", stderr: "" };
+  };
+  return { gh, calls };
+}
+
+const noLog = (): void => {};
+
+test("a reused PR has its stale body replaced with the explicit one", () => {
+  const { gh, calls } = scriptedGh({ open: [{ number: 12, url: "https://example.test/12" }], body: "a stale body" });
+  const pr = ensurePr({
+    args: { base: "beta", bodyFile: ".scratch/body.md" },
+    branch: "agent/lane-x",
+    summary: "the last commit",
+    body: { text: "the body I wrote", explicit: true },
+    gh,
+    log: noLog,
+  });
+  expect(pr).toEqual({ number: 12, url: "https://example.test/12" });
+  expect(calls).toContainEqual(["pr", "view", "12", "--json", "body"]);
+  expect(calls).toContainEqual(["pr", "edit", "12", "--body", "the body I wrote"]);
+});
+
+test("a reused PR keeps a body land was not given, and one that already matches is not rewritten", () => {
+  const kept = scriptedGh({ open: [{ number: 13, url: "https://example.test/13" }], body: "a body someone wrote" });
+  ensurePr({
+    args: { base: "beta" },
+    branch: "agent/lane-x",
+    summary: "the last commit",
+    body: { text: "### Changed\n\n- The fragment.\n", explicit: false },
+    gh: kept.gh,
+    log: noLog,
+  });
+  expect(kept.calls.some((call) => call[1] === "edit")).toBe(false);
+
+  const same = scriptedGh({ open: [{ number: 14, url: "https://example.test/14" }], body: "the body I wrote\n" });
+  ensurePr({
+    args: { base: "beta", bodyFile: ".scratch/body.md" },
+    branch: "agent/lane-x",
+    summary: "the last commit",
+    body: { text: "the body I wrote", explicit: true },
+    gh: same.gh,
+    log: noLog,
+  });
+  expect(same.calls.some((call) => call[1] === "edit")).toBe(false);
+});
+
+test("a body that cannot be written over the reused PR stops the landing", () => {
+  const { gh } = scriptedGh({ open: [{ number: 15, url: "https://example.test/15" }], body: "stale", fail: "pr edit" });
+  const pr = ensurePr({
+    args: { base: "beta", bodyFile: ".scratch/body.md" },
+    branch: "agent/lane-x",
+    summary: "the last commit",
+    body: { text: "the body I wrote", explicit: true },
+    gh,
+    log: noLog,
+  });
+  expect(pr).toBeNull();
+});
+
+test("opening a PR sends the explicit body rather than the fragment", () => {
+  const { gh, calls } = scriptedGh({ open: [] });
+  const pr = ensurePr({
+    args: { base: "beta", title: "Menus", bodyFile: ".scratch/body.md" },
+    branch: "agent/lane-x",
+    summary: "the last commit",
+    body: { text: "the body I wrote", explicit: true },
+    gh,
+    log: noLog,
+  });
+  expect(pr).toEqual({ number: 4242, url: "https://github.com/Noisemaker111/JGengine/pull/4242" });
+  const create = calls.find((call) => call[1] === "create");
+  expect(create).toEqual([
+    "pr",
+    "create",
+    "--base",
+    "beta",
+    "--head",
+    "agent/lane-x",
+    "--title",
+    "Menus",
+    "--body",
+    "the body I wrote",
+  ]);
 });
 
 test("maps a green check list to no failures", () => {
