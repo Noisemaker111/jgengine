@@ -72,7 +72,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `attachWaveFeedback` (function) · `import { attachWaveFeedback } from "@jgengine/shell/audio/eventFeedback"`
 
-## audio-probe — read the live master RMS/peak and bus gains from a running page for capture and diagnostics
+## audio-probe — read the live master RMS/peak, bus gains, ambience zone mix and occlusion cost from a running page for capture and diagnostics
 
 - `installAudioProbe` (function) · `import { installAudioProbe } from "@jgengine/shell/audio/audioProbe"`
 

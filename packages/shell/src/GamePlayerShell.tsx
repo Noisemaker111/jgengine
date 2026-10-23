@@ -316,6 +316,8 @@ export function GamePlayerShell({
         buses: resolvePlayableAudio(playable).buses,
         music: playable.audio?.music,
         musicBus: playable.audio?.musicBus,
+        zones: playable.audio?.zones,
+        occlusion: playable.audio?.occlusion,
       }),
     [playable],
   );

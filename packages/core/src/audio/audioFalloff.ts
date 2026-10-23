@@ -33,6 +33,18 @@ export interface SoundDef {
   maxVoices?: number;
   /** Playback priority; higher priorities survive voice-budget pressure. Default 0. */
   priority?: number;
+  /**
+   * Ducking policy for this cue: while it plays, the named buses drop so a hit, explosion or voice
+   * line cuts through the music and ambience, then return to exactly the player's own level.
+   */
+  duck?: {
+    /** Buses to lower. Default `["music"]`. */
+    buses?: readonly string[];
+    /** How far to lower them, 0..1 (0.6 leaves 40% of the player's level). Default 0.6. */
+    amount?: number;
+    /** Seconds to hold the duck. Default the cue's own length: synth patch duration or decoded sample length. */
+    seconds?: number;
+  };
   /** Positional emitters attenuate by distance from the listener; non-positional sounds (UI, music) play at flat gain. Default true. */
   positional?: boolean;
   falloff?: AudioFalloffConfig;
