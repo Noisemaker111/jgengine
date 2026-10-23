@@ -825,10 +825,10 @@ test("a landing that queues prints what it waited for, and its summary splits wa
   printLanding("landing behind a holder", landing);
 
   expect(landing.code).toBe(0);
-  expect(landing.logs).toContainEqual(expect.stringMatching(/^waited \d+s for the lock \(held by agent\/holder\)$/));
+  expect(landing.logs).toContainEqual(expect.stringMatching(/^waited (\d+s|<1s) for the lock \(held by agent\/holder\)$/));
   expect(landing.waits.length).toBeGreaterThan(0);
   expect(landing.waits[0]!.holder).toBe("agent/holder");
-  expect(landing.logs.at(-1)).toMatch(/^worked \d+s, waited \d+s for the lock \(held by agent\/holder\)$/);
+  expect(landing.logs.at(-1)).toMatch(/^worked (\d+s|<1s), waited (\d+s|<1s) for the lock \(held by agent\/holder\)$/);
   await holder.child.exited;
 }, 120_000);
 
