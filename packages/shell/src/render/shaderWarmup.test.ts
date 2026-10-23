@@ -19,6 +19,10 @@ interface FakeProgram {
   isReady(): boolean;
 }
 
+/** A frozen clock with a fake that never stops linking would grow forever; fail loudly instead. */
+const MAX_FIXTURE_ROUNDS = 200;
+const MAX_FIXTURE_PROGRAMS = 400;
+
 function fixture(
   overrides: Partial<ShaderWarmupOptions> & { linkPerRound?: readonly number[]; readyAfterPolls?: number } = {},
 ) {
@@ -29,6 +33,9 @@ function fixture(
   const renderer = {
     info: { programs: [] as FakeProgram[] },
     compile() {
+      if (rounds.length >= MAX_FIXTURE_ROUNDS || renderer.info.programs.length >= MAX_FIXTURE_PROGRAMS) {
+        throw new Error("warmup fixture: a frozen clock let the rounds run away");
+      }
       rounds.push(rounds.length);
       const linked = linkPerRound[rounds.length - 1] ?? 0;
       for (let i = 0; i < linked; i += 1) {
@@ -307,5 +314,110 @@ describe("createShaderWarmup", () => {
     // Background rounds queue links for late content and never extend the covered round count.
     expect(warmup.state().rounds).toBe(coveredRoundCount);
     expect(compiles.length).toBeGreaterThan(compilesAtReveal);
+  });
+});
+
+describe("createShaderWarmup frame target", () => {
+  test("compiles with the frame's render target bound, then puts the renderer back", async () => {
+    const canvas = { name: "canvas" };
+    let bound: unknown = canvas;
+    const boundDuringCompile: unknown[] = [];
+    const renderer = {
+      info: { programs: [] as FakeProgram[] },
+      getRenderTarget: () => bound,
+      setRenderTarget: (target: unknown) => {
+        bound = target;
+      },
+      compile() {
+        if (renderer.info.programs.length > 0) return;
+        boundDuringCompile.push(bound);
+        renderer.info.programs.push({ isReady: () => true });
+      },
+    };
+    const warmup = createShaderWarmup({
+      renderer,
+      scene: new Scene(),
+      camera: new PerspectiveCamera(),
+      quietMs: 0,
+      planBudgetMs: 500,
+      backgroundMs: 0,
+      now: () => 0,
+      sleep: async () => {},
+      loaderQuiet: () => true,
+      loaderStarts: () => 0,
+      sceneDrawsToTarget: () => true,
+    });
+    await warmup.done;
+
+    expect(boundDuringCompile.length).toBeGreaterThan(0);
+    // A bound target is what makes three build the linear, untone-mapped program the post chain draws.
+    for (const target of boundDuringCompile) expect(target).not.toBeNull();
+    expect(boundDuringCompile[0]).not.toBe(canvas);
+    expect(bound).toBe(canvas);
+    expect(renderer.info.programs.length).toBe(1);
+  });
+
+  test("leaves the renderer's target alone when the frame draws to the canvas", async () => {
+    let setCalls = 0;
+    const renderer = {
+      info: { programs: [] as FakeProgram[] },
+      getRenderTarget: () => null,
+      setRenderTarget: () => {
+        setCalls += 1;
+      },
+      compile() {
+        if (renderer.info.programs.length > 0) return;
+        renderer.info.programs.push({ isReady: () => true });
+      },
+    };
+    const warmup = createShaderWarmup({
+      renderer,
+      scene: new Scene(),
+      camera: new PerspectiveCamera(),
+      quietMs: 0,
+      planBudgetMs: 500,
+      backgroundMs: 0,
+      now: () => 0,
+      sleep: async () => {},
+      loaderQuiet: () => true,
+      loaderStarts: () => 0,
+      sceneDrawsToTarget: () => false,
+    });
+    await warmup.done;
+
+    expect(setCalls).toBe(0);
+    expect(renderer.info.programs.length).toBe(1);
+  });
+
+  test("restores the renderer's target when the compile throws", async () => {
+    const canvas = { name: "canvas" };
+    let bound: unknown = canvas;
+    const renderer = {
+      info: { programs: [] as FakeProgram[] },
+      getRenderTarget: () => bound,
+      setRenderTarget: (target: unknown) => {
+        bound = target;
+      },
+      compile(): void {
+        throw new Error("driver refused");
+      },
+    };
+    const warmup = createShaderWarmup({
+      renderer,
+      scene: new Scene(),
+      camera: new PerspectiveCamera(),
+      quietMs: 0,
+      planBudgetMs: 500,
+      backgroundMs: 0,
+      now: () => 0,
+      sleep: async () => {},
+      loaderQuiet: () => true,
+      loaderStarts: () => 0,
+      sceneDrawsToTarget: () => true,
+    });
+    const final = await warmup.done;
+
+    expect(final.phase).toBe("failed");
+    expect(bound).toBe(canvas);
   });
 });

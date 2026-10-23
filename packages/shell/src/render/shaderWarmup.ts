@@ -1,4 +1,4 @@
-import { Frustum, Matrix4, Sphere, Vector3, type BufferGeometry, type Camera, type Object3D } from "three";
+import { Frustum, Matrix4, Sphere, Vector3, WebGLRenderTarget, type BufferGeometry, type Camera, type Object3D } from "three";
 
 import { modelLoadIdleMs, modelLoadStarts } from "./modelLoad";
 
@@ -25,6 +25,10 @@ export interface ShaderWarmupRenderer {
   compile(scene: Object3D, camera: Camera): unknown;
   /** Renderer program list; each entry answers `isReady()` once the driver finishes its link. */
   readonly info?: { readonly programs?: readonly unknown[] | null };
+  /** The render target currently bound, if any; three builds different programs for a target. */
+  getRenderTarget?(): unknown;
+  /** Bind a render target, or `null` for the canvas. */
+  setRenderTarget?(target: unknown | null): void;
 }
 
 /** A renderer program's completion check, which three keeps off its public type. */
@@ -179,6 +183,14 @@ export interface ShaderWarmupOptions {
   loaderQuiet?: (quietMs: number) => boolean;
   /** Changes whenever the shared loader starts a new burst of model loads. */
   loaderStarts?: () => number;
+  /**
+   * Whether the frame that follows the cover draws the scene into a render target instead of the
+   * canvas, asked again on every round. three builds different programs for the two: a target
+   * renders linear with no tone map, the canvas renders in the output colour space with one. The
+   * warmup compiles against the one the frame will draw with, so it no longer links a set that
+   * nothing draws.
+   */
+  sceneDrawsToTarget?: () => boolean;
 }
 
 /** A warmup in flight: its promise, its latest state, and a way to stop it. */
@@ -220,6 +232,36 @@ export function createShaderWarmup(options: ShaderWarmupOptions): ShaderWarmup {
 
   const programs = (): number => options.renderer.info?.programs?.length ?? 0;
 
+  // Any target builds the same programs: three reads "rendering to a target" for the colour space
+  // and the tone map, not the target's size or format.
+  let scratchTarget: WebGLRenderTarget | null = null;
+  const frameTarget = (): WebGLRenderTarget | null => {
+    if (options.sceneDrawsToTarget?.() !== true) return null;
+    scratchTarget ??= new WebGLRenderTarget(1, 1);
+    return scratchTarget;
+  };
+  const releaseScratch = (): void => {
+    scratchTarget?.dispose();
+    scratchTarget = null;
+  };
+
+  /** Compile with the frame's target bound, so the links are the programs that frame draws. */
+  const withFrameTarget = (compile: () => void): void => {
+    const target = frameTarget();
+    const renderer = options.renderer;
+    if (target === null || renderer.setRenderTarget === undefined) {
+      compile();
+      return;
+    }
+    const previous = renderer.getRenderTarget?.() ?? null;
+    renderer.setRenderTarget(target);
+    try {
+      compile();
+    } finally {
+      renderer.setRenderTarget(previous);
+    }
+  };
+
   const publish = (next: Partial<ShaderWarmupState>): void => {
     state = { ...state, ...next, elapsedMs: Math.round(now() - startedAt) };
     options.onState?.(state);
@@ -244,7 +286,7 @@ export function createShaderWarmup(options: ShaderWarmupOptions): ShaderWarmup {
     publish({ planned: plan.reachable, deferred: plan.deferred, programs: programs() });
     const before = programs();
     try {
-      compileSubset(options.renderer, options.scene, options.camera, (object) => plan.objects.has(object));
+      withFrameTarget(() => compileSubset(options.renderer, options.scene, options.camera, (object) => plan.objects.has(object)));
     } catch {
       return "error";
     }
@@ -257,7 +299,7 @@ export function createShaderWarmup(options: ShaderWarmupOptions): ShaderWarmup {
   /** Queue links for content that has no program yet, without waiting on the driver. */
   const queueBackground = (): void => {
     try {
-      options.renderer.compile(options.scene, options.camera);
+      withFrameTarget(() => options.renderer.compile(options.scene, options.camera));
     } catch {
       /* a background round is an optimisation; the first frame is already showing */
     }
@@ -306,8 +348,11 @@ export function createShaderWarmup(options: ShaderWarmupOptions): ShaderWarmup {
   };
 
   const done = (async (): Promise<ShaderWarmupState> => {
-    if (!(await covered())) return state;
-    void background();
+    if (!(await covered())) {
+      releaseScratch();
+      return state;
+    }
+    void background().finally(releaseScratch);
     return state;
   })();
 
@@ -316,6 +361,7 @@ export function createShaderWarmup(options: ShaderWarmupOptions): ShaderWarmup {
     state: () => state,
     cancel: () => {
       cancelled = true;
+      releaseScratch();
     },
   };
 }

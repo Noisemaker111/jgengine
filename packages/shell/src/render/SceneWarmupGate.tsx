@@ -13,12 +13,22 @@ export const SCENE_WARMUP_PENDING: ShaderWarmupState = { phase: "waiting", round
  * Mounted inside the canvas, after the world, so the first round sees the world's materials.
  * @internal
  */
-export function SceneWarmupGate({ onState }: { onState: (state: ShaderWarmupState) => void }) {
+export function SceneWarmupGate({ onState, sceneDrawsToTarget }: { onState: (state: ShaderWarmupState) => void; sceneDrawsToTarget?: boolean }) {
   const gl = useThree((state) => state.gl);
   const scene = useThree((state) => state.scene);
   const camera = useThree((state) => state.camera);
+  // With no answer from the canvas owner, a priority frame loop is taken for the post chain, which
+  // draws the scene into its own buffer. A scissored split-screen loop also takes priority and draws
+  // the canvas, so the composition passes the answer where it knows it.
+  const internal = useThree((state) => state.internal);
   useEffect(() => {
-    const warmup = createShaderWarmup({ renderer: gl, scene, camera, onState });
+    const warmup = createShaderWarmup({
+      renderer: gl,
+      scene,
+      camera,
+      onState,
+      sceneDrawsToTarget: () => sceneDrawsToTarget ?? internal.priority > 0,
+    });
     const unregister = devtools.probes.register("sceneWarmup", () => {
       const state = warmup.state();
       return `${state.phase}, ${state.rounds} rounds, ${state.programs} programs, ${state.planned} planned, ${state.deferred} deferred, ${state.elapsedMs}ms`;

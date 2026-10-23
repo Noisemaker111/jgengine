@@ -789,7 +789,12 @@ export function Shell3dPresentation({
                   {!splitScreen && resolvedLook.postProcessing !== undefined && resolvedLook.postProcessing.enabled !== false ? (
                     <PostProcessing config={resolvedLook.postProcessing} quality={graphics.quality} stages={graphics.profile.postStages} />
                   ) : null}
-                  {poster ? null : <SceneWarmupGate onState={setWarmup} />}
+                  {poster ? null : (
+                    <SceneWarmupGate
+                      onState={setWarmup}
+                      sceneDrawsToTarget={!splitScreen && resolvedLook.postProcessing !== undefined && resolvedLook.postProcessing.enabled !== false}
+                    />
+                  )}
                 </Canvas>
               </ColorblindFrame>
               <SceneWarmupCover state={warmup} />
