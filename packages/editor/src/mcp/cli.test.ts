@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { request } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -227,15 +228,28 @@ describe("editor CLI entry", () => {
     let healthy = false;
     try {
       for (let attempt = 0; attempt < 150 && !healthy && proc.exitCode === null; attempt += 1) {
-        try {
-          const res = await fetch(`http://127.0.0.1:${port}/health`);
-          if (res.ok) {
-            const body = (await res.json()) as { ok?: boolean };
-            healthy = body.ok === true;
-          }
-        } catch {
-          // server not bound yet
-        }
+        // node:http, not fetch: a proxy in the environment sends fetch's localhost request to the
+        // proxy instead of the bridge, which is how this test failed on a runner where the other
+        // spawned CLI tests passed.
+        healthy = await new Promise<boolean>((resolve) => {
+          const probe = request({ host: "127.0.0.1", port, path: "/health", timeout: 1_000 }, (response) => {
+            let body = "";
+            response.on("data", (chunk) => (body += chunk));
+            response.on("end", () => {
+              try {
+                resolve(response.statusCode === 200 && (JSON.parse(body) as { ok?: boolean }).ok === true);
+              } catch {
+                resolve(false);
+              }
+            });
+          });
+          probe.on("error", () => resolve(false));
+          probe.on("timeout", () => {
+            probe.destroy();
+            resolve(false);
+          });
+          probe.end();
+        });
         if (!healthy) await Bun.sleep(100);
       }
       if (!healthy) {
