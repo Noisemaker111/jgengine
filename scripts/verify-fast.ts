@@ -7,9 +7,12 @@
 //   bun run verify:fast              # the loop while iterating: seconds
 //   bun run verify:fast --full       # everything CI runs; minutes, before landing
 //   bun run verify:fast --plan       # the steps and their commands, nothing run
+//   bun run verify:fast --json       # one { ok, ms, checks } document on stdout
 //
 // Exit: 0 verified, 1 a step failed, 2 a changed runtime file reached no test (a
-// change this cannot attribute is never a silent pass).
+// change this cannot attribute is never a silent pass). With `--json` the exit is
+// 0 or 1: a caller reading the document gets no meaningful 2, so an unattributed
+// change is a failed check named `attribution`.
 import { spawnSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { basename, dirname, join, relative, resolve } from "node:path";
@@ -335,7 +338,54 @@ export async function fullSteps(root: string, changed: readonly string[]): Promi
   return steps;
 }
 
-async function run(step: Step, root: string): Promise<{ ok: boolean; seconds: number; output: string }> {
+export interface Check {
+  name: string;
+  ok: boolean;
+  ms: number;
+}
+
+export interface JsonReport {
+  ok: boolean;
+  ms: number;
+  checks: Check[];
+}
+
+/** The document `--json` prints: `ok` is every check, `ms` the whole run. */
+export function jsonReport(checks: readonly Check[], ms: number): JsonReport {
+  return {
+    ok: checks.every((check) => check.ok),
+    ms,
+    checks: checks.map((check) => ({ name: check.name, ok: check.ok, ms: check.ms })),
+  };
+}
+
+/**
+ * `--json`: run the steps and print one document, nothing else on stdout. A failing
+ * step's output goes to stderr so a person can still read why. Returns the exit code.
+ */
+export async function jsonRun(
+  steps: readonly Step[],
+  options: {
+    run: (step: Step) => Promise<{ ok: boolean; ms: number; output: string }>;
+    out?: (line: string) => void;
+    err?: (line: string) => void;
+    started?: number;
+  },
+): Promise<number> {
+  const out = options.out ?? ((line: string): void => console.log(line));
+  const err = options.err ?? ((line: string): void => console.error(line));
+  const started = options.started ?? Date.now();
+  const checks: Check[] = [];
+  for (const step of steps) {
+    const result = await options.run(step);
+    checks.push({ name: step.name, ok: result.ok, ms: result.ms });
+    if (!result.ok && result.output.length > 0) err(result.output);
+  }
+  out(JSON.stringify(jsonReport(checks, Date.now() - started)));
+  return checks.every((check) => check.ok) ? EXIT_VERIFIED : EXIT_FAILED;
+}
+
+async function run(step: Step, root: string): Promise<{ ok: boolean; ms: number; output: string }> {
   const started = Date.now();
   const proc = Bun.spawn(step.command, { cwd: root, stdout: "pipe", stderr: "pipe" });
   const [stdout, stderr, code] = await Promise.all([
@@ -343,7 +393,7 @@ async function run(step: Step, root: string): Promise<{ ok: boolean; seconds: nu
     new Response(proc.stderr).text(),
     proc.exited,
   ]);
-  return { ok: code === 0, seconds: (Date.now() - started) / 1000, output: `${stdout}${stderr}`.trim() };
+  return { ok: code === 0, ms: Date.now() - started, output: `${stdout}${stderr}`.trim() };
 }
 
 function printPlan(plan: Plan, steps: readonly Step[]): void {
@@ -372,23 +422,35 @@ async function main(argv: readonly string[]): Promise<number> {
   const base = baseIndex >= 0 ? (argv[baseIndex + 1] ?? BASE) : BASE;
   const full = argv.includes("--full");
   const planOnly = argv.includes("--plan");
+  const json = argv.includes("--json");
+  const started = Date.now();
 
   let changed: string[];
   try {
     changed = changedFiles(root, base);
   } catch (error) {
-    console.error(`verify:fast: ${(error as Error).message}`);
+    const message = (error as Error).message;
+    if (json) {
+      console.log(JSON.stringify(jsonReport([{ name: "changed files", ok: false, ms: 0 }], Date.now() - started)));
+      console.error(message);
+      return EXIT_FAILED;
+    }
+    console.error(`verify:fast: ${message}`);
     return EXIT_FAILED;
   }
 
   if (changed.length === 0) {
+    if (json) {
+      console.log(JSON.stringify(jsonReport([], Date.now() - started)));
+      return EXIT_VERIFIED;
+    }
     console.log(`verify:fast: nothing changed against ${base}; nothing to verify.`);
     return EXIT_VERIFIED;
   }
 
-  const started = Date.now();
   if (full) {
     const steps = await fullSteps(root, changed);
+    if (json) return await jsonRun(steps, { run: (step) => run(step, root), started });
     console.log(`verify:fast --full: ${steps.length} step(s), what CI runs for ${changed.length} changed file(s)`);
     console.log("  slower than verify:fast because CI runs these as parallel jobs on fresh runners; this runs them in order here.");
     if (planOnly) {
@@ -398,7 +460,7 @@ async function main(argv: readonly string[]): Promise<number> {
     const failures: string[] = [];
     for (const step of steps) {
       const result = await run(step, root);
-      console.log(`${result.ok ? "PASS" : "FAIL"}  ${step.name}  ${result.seconds.toFixed(1)}s`);
+      console.log(`${result.ok ? "PASS" : "FAIL"}  ${step.name}  ${(result.ms / 1000).toFixed(1)}s`);
       if (!result.ok) {
         failures.push(step.name);
         console.log(result.output);
@@ -420,6 +482,15 @@ async function main(argv: readonly string[]): Promise<number> {
   });
   const steps = fastSteps(plan);
 
+  if (json) {
+    if (plan.unattributed.length > 0) {
+      reportUnattributed(plan);
+      console.log(JSON.stringify(jsonReport([{ name: "attribution", ok: false, ms: 0 }], Date.now() - started)));
+      return EXIT_FAILED;
+    }
+    return await jsonRun(steps, { run: (step) => run(step, root), started });
+  }
+
   console.log(`verify:fast against ${base}: ${plan.changed.length} changed file(s), ${plan.tests.length} test file(s), ${plan.gates.length} gate(s)`);
   if (planOnly) {
     printPlan(plan, steps);
@@ -433,7 +504,7 @@ async function main(argv: readonly string[]): Promise<number> {
   const failures: string[] = [];
   for (const step of steps) {
     const result = await run(step, root);
-    console.log(`${result.ok ? "PASS" : "FAIL"}  ${step.name}  ${result.seconds.toFixed(1)}s`);
+    console.log(`${result.ok ? "PASS" : "FAIL"}  ${step.name}  ${(result.ms / 1000).toFixed(1)}s`);
     if (!result.ok) {
       failures.push(step.name);
       console.log(result.output);
