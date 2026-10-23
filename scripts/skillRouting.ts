@@ -6,6 +6,7 @@ export { MINIMAL_GAME_SKILLS };
 export const MAIN = "jgengine";
 
 export const CORE_DOMAIN_SKILLS: Record<string, string> = {
+  agents: "jgengine-gameplay",
   ai: "jgengine-world",
   anim: "jgengine-world",
   area: "jgengine-world",
