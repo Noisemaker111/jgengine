@@ -27,7 +27,7 @@ test("graph resizes and disposes the current Three Bokeh through its pass lifecy
   let materialDisposals = 0;
   dof.materialBokeh.addEventListener("dispose", () => materialDisposals++);
   composer.addPass(dof);
-  const graph = { composer, grade: null };
+  const graph = { composer, grade: null, resolutionScale: 1 };
   syncSize(graph, 320, 180, 2);
   expect(sizes.at(-1)).toEqual([640, 360]);
   syncSize(graph, 180, 320, 1);
@@ -145,4 +145,43 @@ test("the AO depth source follows what the chain can sample", () => {
   expect(planPostStages({ ...bare, ao: undefined, aa: false }, "high").aoGbuffer).toBe("beauty");
   expect(planPostStages({ ...bare, ao: undefined, aa: "smaa" }, "high").aoGbuffer).toBe("beauty");
   expect(planPostStages({ ...bare, ao: undefined, aa: "msaa" }, "high").aoGbuffer).toBe("prepass");
+});
+
+test("a lower tier builds fewer passes and renders them into a smaller target", () => {
+  const originalImage = globalThis.Image;
+  globalThis.Image = class {
+    src = "";
+    width = 0;
+    height = 0;
+  } as unknown as typeof Image;
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera();
+  const authored = { toneMapping: "aces" as const, ao: undefined, bloom: {}, dof: { focus: 12 } };
+  const built = (quality: "low" | "medium" | "high" | "ultra") => {
+    const plan = planPostStages(authored, quality);
+    const graph = buildPostGraph(stubRenderer(), scene, camera, plan, 320, 180);
+    syncSize(graph, 320, 180, 1);
+    return graph;
+  };
+  const low = built("low");
+  const medium = built("medium");
+  const high = built("high");
+  const ultra = built("ultra");
+  try {
+    expect(high.stages).toEqual(["ao", "bloom", "dof", "smaa", "exposure", "grade"]);
+    expect(medium.stages).toEqual(high.stages);
+    expect(low.stages).toEqual(["bloom", "smaa", "exposure", "grade"]);
+    expect(low.composer.passes.length).toBeLessThan(high.composer.passes.length);
+    expect(high.composer.renderTarget1.width).toBe(320);
+    expect(medium.composer.renderTarget1.width).toBeLessThan(high.composer.renderTarget1.width);
+    expect(low.composer.renderTarget1.width).toBeLessThan(medium.composer.renderTarget1.width);
+    expect(low.composer.renderTarget1.height).toBe(126);
+    expect(ultra.composer.renderTarget1.width).toBe(high.composer.renderTarget1.width);
+    // A resize re-applies the tier's scale instead of snapping back to native.
+    syncSize(low, 640, 360, 1);
+    expect(low.composer.renderTarget1.width).toBe(448);
+  } finally {
+    for (const graph of [low, medium, high, ultra]) disposeGraph(graph);
+    globalThis.Image = originalImage;
+  }
 });

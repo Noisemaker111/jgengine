@@ -5,6 +5,7 @@ import { CSM } from "three/examples/jsm/csm/CSM.js";
 
 import type { DirectionalLightingConfig } from "@jgengine/core/game/playableGame";
 import type { GraphicsProfile } from "@jgengine/core/settings/graphicsProfile";
+import { resolveCascadeCount, resolveShadowMapSize, shadowRefreshScale } from "./shadowTiers";
 import type { DaylightModulation } from "./SceneLighting";
 
 /** @internal Default PCF penumbra in shadow-map texels for configured directional lights. */
@@ -53,12 +54,21 @@ export function cascadeShadowCadence(index: number, cascades: number): number {
 /**
  * Set each cascade's shadow refresh policy for `frame`. A cascade that is not due keeps both
  * its matrix and its map from the last refresh, so the pair stays consistent with itself.
+ * `refreshScale` stretches the far cascades' interval further on a tier whose maps are cheap
+ * enough to lag; `1` is the cadence the cascade rig was measured with. The nearest cascade always
+ * refreshes every frame: it is the one a moving camera crosses fastest.
  * @internal
  */
-export function scheduleCascadeRefresh(lights: readonly THREE.DirectionalLight[], frame: number): void {
+export function scheduleCascadeRefresh(
+  lights: readonly THREE.DirectionalLight[],
+  frame: number,
+  refreshScale = 1,
+): void {
+  const stretch = Math.max(1, Math.floor(refreshScale));
   for (let index = 0; index < lights.length; index += 1) {
     const shadow = lights[index]!.shadow;
-    const cadence = cascadeShadowCadence(index, lights.length);
+    const base = cascadeShadowCadence(index, lights.length);
+    const cadence = base === 1 ? 1 : base * stretch;
     shadow.autoUpdate = cadence === 1;
     if (cadence > 1) shadow.needsUpdate = frame % cadence === 0;
   }
@@ -92,9 +102,11 @@ export function CascadedShadows({
   const frameRef = useRef(0);
   const baseIntensity = entry.intensity ?? 1.3;
   const maxFar = resolveShadowDistance(profile, entry.shadowMaxFar);
+  const shadowMapSize = resolveShadowMapSize(profile, entry.shadowMapSize);
+  const cascades = Math.max(2, Math.min(4, Math.floor(resolveCascadeCount(profile, entry.cascades))));
+  const refreshScale = shadowRefreshScale(shadowMapSize);
 
   useEffect(() => {
-    const cascades = Math.max(2, Math.min(4, Math.floor(entry.cascades ?? 3)));
     const lightDirection = new THREE.Vector3(
       -entry.position[0],
       -entry.position[1],
@@ -109,7 +121,7 @@ export function CascadedShadows({
       cascades,
       maxFar,
       mode: "practical",
-      shadowMapSize: entry.shadowMapSize ?? 1024,
+      shadowMapSize,
       shadowBias: entry.shadowBias ?? -0.0004,
       lightDirection,
       lightIntensity: entry.intensity ?? 1.3,
@@ -132,7 +144,7 @@ export function CascadedShadows({
   }, [
     camera,
     scene,
-    entry.cascades,
+    cascades,
     entry.color,
     entry.intensity,
     entry.position[0],
@@ -140,7 +152,7 @@ export function CascadedShadows({
     entry.position[2],
     entry.shadowBias,
     entry.shadowCameraSize,
-    entry.shadowMapSize,
+    shadowMapSize,
     maxFar,
     entry.shadowRadius,
   ]);
@@ -157,7 +169,7 @@ export function CascadedShadows({
     }
     csm.camera = camera;
     csm.update();
-    scheduleCascadeRefresh(csm.lights, frameRef.current++);
+    scheduleCascadeRefresh(csm.lights, frameRef.current++, refreshScale);
   });
 
   return null;
