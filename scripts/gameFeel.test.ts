@@ -19,7 +19,7 @@ describe("findGameFeelGaps", () => {
     }
   });
   test("accepts conditional rendered damage feedback and muzzle flash", () => {
-    for (const feedback of [`{dive.hurt > 0 && <div className="damage" />}`, `{dive.flash > 0 ? "+" : "�"}`]) {
+    for (const feedback of [`{dive.hurt > 0 && <div className="damage" />}`, `{dive.flash > 0 ? "+" : "�"}`, `{dive !== null && dive.hurt > 0 && <div className="damage" />}`]) {
       expect(scan({ "Games/probe/src/index.tsx": `attack; audio.play(); ${feedback}` })).toEqual([]);
     }
   });
