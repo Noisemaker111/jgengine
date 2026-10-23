@@ -22,6 +22,14 @@ jobs:
   # A push (beta, or main through the release flow) and a release PR always run them.
   # `ci` fails when `heavy` was true and a gated job did not pass, so a skip can never
   # stand in for a pass.
+  #
+  # The core paths are the ones the frame's own work runs through: the systems the tick
+  # loop calls (sim, ai, nav, physics), the movement queries that read them, the object
+  # and obstacle index they scan (scene), the stepper and its clock (runtime, time), and
+  # the scheduler that decides which systems run in a frame (game/systemRuntime.ts,
+  # game/systemSchedule.ts). #2218 cut movement and step time in exactly these files and
+  # merged with both gates skipped, so a regression there has to pay for the gate.
+  # `scripts/heavy-paths.test.ts` fails if one of them drops out of the pattern.
   changes:
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -45,7 +53,7 @@ jobs:
           files=$(git diff --name-only "origin/$BASE...HEAD")
           echo "$files"
           # CHANGELOG.md is what `bun run release` rewrites, so its presence marks the release PR.
-          if echo "$files" | grep -Eq '^(packages/shell/|packages/core/src/render/|Games/|scripts/(perf-|smoke|ensure-games|games-ref|shoot)|scripts/.*capture|\.github/workflows/|CHANGELOG\.md)'; then
+          if echo "$files" | grep -Eq '^(packages/shell/|packages/core/src/(render|scene|sim|ai|nav|physics|movement|runtime|time)/|packages/core/src/game/system(Runtime|Schedule)\.ts|Games/|scripts/(perf-|smoke|ensure-games|games-ref|shoot)|scripts/.*capture|\.github/workflows/|CHANGELOG\.md)'; then
             echo "heavy=true" >> "$GITHUB_OUTPUT"
           else
             echo "heavy=false" >> "$GITHUB_OUTPUT"
