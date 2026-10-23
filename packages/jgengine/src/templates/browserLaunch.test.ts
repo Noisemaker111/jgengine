@@ -10,15 +10,13 @@ async function scaffoldBrowser(): Promise<Record<string, any>> {
   return (await import(`data:text/javascript;base64,${encoded}`)) as Record<string, any>;
 }
 
-/**
- * A debugger endpoint that keeps refusing `/json/version` until the test opens its gate, like a
- * cold Chrome that comes up on the second launch.
- */
-async function gatedDebugger(): Promise<{ port: number; open: () => void; stop: () => Promise<void> }> {
-  let open = false;
+/** A debugger endpoint that answers `/json/version` as soon as it starts, and counts the asks. */
+async function debuggerEndpoint(): Promise<{ port: number; asks: () => number; stop: () => Promise<void> }> {
+  let asks = 0;
   const server: Server = createServer((request, response) => {
-    if (request.url !== "/json/version" || !open) {
-      response.writeHead(503);
+    asks += 1;
+    if (request.url !== "/json/version") {
+      response.writeHead(404);
       response.end();
       return;
     }
@@ -30,16 +28,21 @@ async function gatedDebugger(): Promise<{ port: number; open: () => void; stop: 
   if (address === null || typeof address === "string") throw new Error("no debugger port");
   return {
     port: address.port,
-    open: () => {
-      open = true;
-    },
+    asks: () => asks,
     stop: () => new Promise<void>((resolve) => server.close(() => resolve())),
   };
 }
 
 /** A launched Chrome stand-in. No real directory: the block only ever tries to delete the profile. */
-function fakeChrome(index: number, onKill: () => void = () => {}): { kill: () => void; userDataDir: string; exitCode: null } {
-  return { kill: onKill, userDataDir: `/tmp/jg-scaffold-launch-${index}`, exitCode: null };
+function fakeChrome(
+  index: number,
+  launched: { exitCode?: number | null; onKill?: () => void } = {},
+): { kill: () => void; userDataDir: string; exitCode: number | null } {
+  return {
+    kill: launched.onKill ?? (() => {}),
+    userDataDir: `/tmp/jg-scaffold-launch-${index}`,
+    exitCode: launched.exitCode ?? null,
+  };
 }
 
 describe("scaffold launch block", () => {
@@ -70,20 +73,25 @@ describe("scaffold launch block", () => {
     }
   });
 
-  test("a hung first attempt is retried with a fresh profile and the launch recovers", async () => {
+  test("a first attempt that loses its browser is retried with a fresh profile and the launch recovers", async () => {
     const { startBrowser } = await scaffoldBrowser();
-    const debuggerEndpoint = await gatedDebugger();
+    const endpoint = await debuggerEndpoint();
     const profiles: string[] = [];
+    const killed: number[] = [];
     const lines: string[] = [];
     try {
       const started = await startBrowser({
-        debugPort: debuggerEndpoint.port,
+        debugPort: endpoint.port,
         readyMs: 100,
         log: (line: string) => lines.push(line),
+        // Attempt 1 is gone before it binds, so the endpoint answers only the retry. Nothing here
+        // waits on a clock, so a loaded runner cannot spend the retry's budget before it asks.
         launch: () => {
-          // The gate opens when attempt 1 discards its browser, so attempt 1 cannot answer on
-          // any machine speed and attempt 2 cannot race a timer for its endpoint.
-          const chrome = fakeChrome(profiles.length + 1, debuggerEndpoint.open);
+          const index = profiles.length + 1;
+          const chrome = fakeChrome(index, {
+            exitCode: index === 1 ? 1 : null,
+            onKill: () => killed.push(index),
+          });
           profiles.push(chrome.userDataDir);
           return chrome;
         },
@@ -93,14 +101,43 @@ describe("scaffold launch block", () => {
       expect(started.profilePath).toBe(profiles[1] as string);
       expect(profiles).toHaveLength(2);
       expect(new Set(profiles).size).toBe(2);
+      expect(killed).toEqual([1]);
+      expect(endpoint.asks()).toBeGreaterThan(0);
     } finally {
-      await debuggerEndpoint.stop();
+      await endpoint.stop();
     }
     expect(lines).toHaveLength(2);
     expect(lines[0]).toContain("browser: the endpoint step failed on attempt 1 after");
-    expect(lines[0]).toContain("did not answer /json/version within 100ms");
+    expect(lines[0]).toContain("the browser process exited (code 1) before binding the debugger");
     expect(lines[0]).toContain("retrying with a fresh profile and a 200ms wait");
     expect(lines[1]).toContain("browser: launch recovered on attempt 2 after");
+  });
+
+  test("a debugger that never answers is reported after the retry, naming the endpoint step", async () => {
+    const { startBrowser, BrowserLaunchError } = await scaffoldBrowser();
+    const profiles: string[] = [];
+    let failure: any;
+    try {
+      await startBrowser({
+        debugPort: 1,
+        readyMs: 60,
+        log: () => {},
+        launch: () => {
+          const chrome = fakeChrome(profiles.length + 1);
+          profiles.push(chrome.userDataDir);
+          return chrome;
+        },
+        pageProbe: async () => {},
+      });
+    } catch (error) {
+      failure = error;
+    }
+    expect(profiles).toHaveLength(2);
+    expect(failure).toBeInstanceOf(BrowserLaunchError);
+    expect(failure.step).toBe("endpoint");
+    expect(failure.attempts).toBe(2);
+    expect(failure.message).toContain("2 attempts");
+    expect(failure.message).toContain("did not answer /json/version within 120ms");
   });
 
   test("a browser that exited fails at once, naming the endpoint step", async () => {
