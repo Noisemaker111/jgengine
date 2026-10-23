@@ -1,5 +1,5 @@
 import type { ShopStock, ShopStockEntry } from "../economy/shopStock";
-import { rollLoot, type LootCatalog, type LootItem } from "../loot/lootGen";
+import { rollLoot, type LootCatalog, type LootItem } from "./lootGen";
 import type { ItemDrop } from "./drop";
 
 /** How a vendor price is derived from an item: a base, a per-level rate and a rarity multiplier. */

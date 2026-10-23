@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import type { AffixPool, RarityTier } from "../item/affix";
-import type { LootBaseDef, LootCatalog, LootManufacturerDef } from "../loot/lootGen";
+import type { LootBaseDef, LootCatalog, LootManufacturerDef } from "./lootGen";
 import { createInventorySet } from "../inventory/inventoryModel";
 import { createShopStock } from "../economy/shopStock";
 import { createEmptyWallet, balance, grant } from "../economy/wallet";

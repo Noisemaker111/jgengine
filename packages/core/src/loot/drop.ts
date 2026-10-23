@@ -6,7 +6,7 @@ import {
   type LootItem,
   type LootRollOptions,
   type LootStatDelta,
-} from "../loot/lootGen";
+} from "./lootGen";
 import { seededRng } from "../random/rng";
 
 /** A rolled item with a stable instance id, so a stash, ledger and vendor stock can name it. */
