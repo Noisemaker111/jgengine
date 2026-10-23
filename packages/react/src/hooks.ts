@@ -233,16 +233,51 @@ export function useCurrency(currencyId: string): number {
   return useGameStore((ctx) => ctx.game.economy.balance(ctx.player.userId, currencyId));
 }
 
+/** Feed entries are immutable once pushed, so a bound list is the same entries in the same order (#2216). */
+function sameFeedEntries(previous: readonly FeedEntry[], next: readonly FeedEntry[]): boolean {
+  return sameRecordList(previous, next);
+}
+
+/**
+ * Recent feed entries for `action`, newest last: the list keeps one identity until an entry is pushed,
+ * so a HUD ticker or kill feed no longer re-renders on every pose write (#2216).
+ */
 export function useFeed({ action, limit }: { action: string; limit?: number }): FeedEntry[] {
-  return useGameStore((ctx) =>
-    ctx.game.feed.recent(action, limit === undefined ? undefined : { limit }),
+  return useGameStore(
+    (ctx) => ctx.game.feed.recent(action, limit === undefined ? undefined : { limit }),
+    sameFeedEntries,
   );
 }
 
 const EMPTY_QUESTS: QuestInstance[] = [];
 
+/** `list()` builds fresh rows per call, so compare the fields it emits and leave nothing else to identity. */
+function sameQuestViews(previous: readonly QuestInstance[], next: readonly QuestInstance[]): boolean {
+  if (previous.length !== next.length) return false;
+  for (let index = 0; index < previous.length; index += 1) {
+    const before = previous[index]!;
+    const after = next[index]!;
+    if (before === after) continue;
+    if (before.questId !== after.questId || before.status !== after.status) return false;
+    if (before.objectives.length !== after.objectives.length) return false;
+    for (let row = 0; row < before.objectives.length; row += 1) {
+      const was = before.objectives[row]!;
+      const is = after.objectives[row]!;
+      if (was === is) continue;
+      if (was.id !== is.id || was.kind !== is.kind || was.count !== is.count) return false;
+      if (was.progress !== is.progress || was.complete !== is.complete) return false;
+    }
+  }
+  return true;
+}
+
+/**
+ * The local player's journal: the list keeps one identity while the accepted quests, their status and
+ * their objective progress are unchanged, so a tracker HUD no longer re-renders on every pose write
+ * (#2216). Accepting, progressing, completing or revoking a quest re-renders once.
+ */
 export function useQuestJournal(): QuestInstance[] {
-  return useGameStore((ctx) => ctx.game.quest?.list(ctx.player.userId) ?? EMPTY_QUESTS);
+  return useGameStore((ctx) => ctx.game.quest?.list(ctx.player.userId) ?? EMPTY_QUESTS, sameQuestViews);
 }
 
 const EMPTY_FRIENDS: FriendEntry[] = [];
@@ -253,8 +288,25 @@ const EMPTY_FRIEND_REQUESTS: FriendRequestEntry[] = [];
 const EMPTY_PARTY_INVITES: PartyInviteEntry[] = [];
 const OFFLINE_PRESENCE: PresenceInfo = { online: false };
 
+/** Friends rows are rebuilt per call too, so compare the friend and their presence rather than the row object. */
+function sameFriendViews(previous: readonly FriendEntry[], next: readonly FriendEntry[]): boolean {
+  if (previous.length !== next.length) return false;
+  for (let index = 0; index < previous.length; index += 1) {
+    const before = previous[index]!;
+    const after = next[index]!;
+    if (before === after) continue;
+    if (before.userId !== after.userId || before.online !== after.online) return false;
+  }
+  return true;
+}
+
+/**
+ * The local player's friends with their presence: the list keeps one identity until a request is
+ * accepted, a friend is removed or a friend's presence flips, so a friends HUD no longer re-renders on
+ * every pose write (#2216).
+ */
 export function useFriends(): FriendEntry[] {
-  return useGameStore((ctx) => ctx.game.social?.friends.list(ctx.player.userId) ?? EMPTY_FRIENDS);
+  return useGameStore((ctx) => ctx.game.social?.friends.list(ctx.player.userId) ?? EMPTY_FRIENDS, sameFriendViews);
 }
 
 export function useParty(): PartyMemberEntry[] {
