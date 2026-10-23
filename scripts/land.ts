@@ -15,9 +15,16 @@
 // leave the next push non-fast-forward and send the worker to a hand-typed
 // force (#2120). Land force-pushes with a lease on that branch, and only after
 // its own push in this run succeeded — a branch it did not push is refused.
+//
+// Landings are serialised. Every landing rebases, pushes and merges against the
+// same base, and each open PR spends sixteen of the account's twenty job slots,
+// so a second landing that starts at the same moment only makes both slower.
+// The lock is one file in the repo's git directory: every worktree of the repo
+// shares it (so lanes queue with each other, not just with themselves), and it
+// cannot show up in `git status` to trip land's own dirty-tree check.
 import { spawnSync } from "node:child_process";
-import { readdirSync, readFileSync, statSync } from "node:fs";
-import { basename, join } from "node:path";
+import { readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { basename, isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { FRAGMENT_PATTERN } from "./changelog-fragments";
 
@@ -159,6 +166,172 @@ export function landRefusal(branch: string, dirty: string, base: string): string
 
 function sleep(ms: number): void {
   Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+}
+
+export interface LandLock {
+  branch: string;
+  pid: number;
+  startedAt: number;
+}
+
+/** A lock nobody refreshed for this long is broken even if its pid still answers. */
+export const LOCK_STALE_MS = 30 * 60_000;
+/** How often a waiting landing looks again, and how long an unreadable lock is given to appear. */
+export const LOCK_POLL_MS = 500;
+const LOCK_UNREADABLE_GRACE_MS = 5_000;
+
+/** The one lock file for a repo, in its git directory so every worktree shares it. */
+export function lockPath(gitCommonDir: string): string {
+  return join(gitCommonDir, "land.lock");
+}
+
+export function parseLock(text: string): LandLock | null {
+  try {
+    const parsed = JSON.parse(text) as Partial<LandLock>;
+    const { branch, pid, startedAt } = parsed;
+    if (typeof branch !== "string" || typeof pid !== "number" || typeof startedAt !== "number") return null;
+    return { branch, pid, startedAt };
+  } catch {
+    return null;
+  }
+}
+
+export function pidIsAlive(pid: number): boolean {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    return (error as NodeJS.ErrnoException).code === "EPERM";
+  }
+}
+
+/** Why the lock at `path` can be taken anyway, or null while its holder is still landing. */
+export function staleReason(
+  lock: LandLock | null,
+  mtimeMs: number,
+  now: number,
+  alive: (pid: number) => boolean,
+): string | null {
+  if (lock === null) {
+    return now - mtimeMs >= LOCK_UNREADABLE_GRACE_MS ? "unreadable lock file" : null;
+  }
+  if (!alive(lock.pid)) return `pid ${lock.pid} is gone`;
+  if (now - lock.startedAt >= LOCK_STALE_MS) return `older than ${LOCK_STALE_MS / 60_000} minutes`;
+  return null;
+}
+
+export interface LockOptions {
+  path: string;
+  branch: string;
+  pid?: number;
+  now?: () => number;
+  alive?: (pid: number) => boolean;
+  wait?: (ms: number) => void;
+  log?: (line: string) => void;
+}
+
+/**
+ * Wait for the repo's landing lock, then hold it until the returned release runs.
+ * A holder that died, or that has held the lock past 30 minutes, is broken with a warning.
+ */
+export function acquireLock(options: LockOptions): () => void {
+  const { path, branch } = options;
+  const pid = options.pid ?? process.pid;
+  const now = options.now ?? Date.now;
+  const alive = options.alive ?? pidIsAlive;
+  const wait = options.wait ?? sleep;
+  const log = options.log ?? ((line: string) => console.log(`land: ${line}`));
+  const startedAt = now();
+  let announced: string | null = null;
+  let waitedSince: number | null = null;
+
+  const release = (): void => {
+    const held = readLockFile(path);
+    if (held !== null && held.pid !== pid) {
+      log(`lock at ${path} is held by pid ${held.pid}; leaving it alone`);
+      return;
+    }
+    rmSync(path, { force: true });
+  };
+
+  for (;;) {
+    try {
+      writeFileSync(path, `${JSON.stringify({ branch, pid, startedAt })}\n`, { flag: "wx" });
+      if (waitedSince !== null) log(`lock acquired after waiting ${Math.round((now() - waitedSince) / 1000)}s`);
+      return release;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+    }
+
+    const held = readLockFile(path);
+    const mtimeMs = modifiedAt(path, now());
+    const reason = staleReason(held, mtimeMs, now(), alive);
+    if (reason !== null) {
+      const who = held === null ? "the lock" : `${held.branch} (pid ${held.pid})`;
+      log(`breaking a stale lock from ${who}: ${reason}`);
+      breakStale(path, pid);
+      continue;
+    }
+
+    waitedSince ??= now();
+    const holder = held === null ? "an unreadable lock" : `${held.branch} (pid ${held.pid})`;
+    const key = `${held?.pid ?? "unreadable"}:${held?.branch ?? ""}`;
+    if (key !== announced) {
+      log(`waiting on ${holder} to finish landing`);
+      announced = key;
+    } else if (now() - waitedSince > LOCK_STALE_MS / 4 && now() - waitedSince < LOCK_STALE_MS / 4 + LOCK_POLL_MS) {
+      log(`still waiting on ${holder}`);
+    }
+    wait(LOCK_POLL_MS);
+  }
+}
+
+function readLockFile(path: string): LandLock | null {
+  try {
+    return parseLock(readFileSync(path, "utf8"));
+  } catch {
+    return null;
+  }
+}
+
+function modifiedAt(path: string, fallback: number): number {
+  try {
+    return statSync(path).mtimeMs;
+  } catch {
+    return fallback;
+  }
+}
+
+/** Rename before unlinking, so two waiters breaking one stale lock cannot both win. */
+function breakStale(path: string, pid: number): void {
+  const tombstone = `${path}.${pid}.stale`;
+  try {
+    renameSync(path, tombstone);
+  } catch {
+    return;
+  }
+  rmSync(tombstone, { force: true });
+}
+
+/** Run `body` holding the repo's landing lock, and release it on every path out, thrown errors included. */
+export function landLocked(options: LockOptions, body: () => number): number {
+  const release = acquireLock(options);
+  try {
+    return body();
+  } finally {
+    release();
+  }
+}
+
+/** The git directory every worktree of this repo shares, or the checkout's own when git says nothing. */
+export function gitCommonDir(git: Git): string {
+  const common = git(["rev-parse", "--path-format=absolute", "--git-common-dir"]);
+  if (common.status === 0 && common.stdout.trim().length > 0) {
+    const dir = common.stdout.trim();
+    return isAbsolute(dir) ? dir : resolve(root, dir);
+  }
+  const plain = git(["rev-parse", "--git-common-dir"]);
+  return resolve(root, plain.stdout.trim() || ".git");
 }
 
 export interface Run {
@@ -411,26 +584,32 @@ function main(): void {
     process.exit(EXIT_COULD_NOT_MERGE);
   }
 
+  const code = landLocked({ path: lockPath(gitCommonDir(git)), branch }, () => land(args, branch));
+  process.exit(code);
+}
+
+/** Everything after the lock is held: push, rebase, PR, verify, checks, merge. */
+function land(args: LandArgs, branch: string): number {
   const sync = syncOntoBase({ branch, base: args.base, git: (gitArgs) => git(gitArgs, 120_000) });
   if (sync.refusal !== null) {
     console.error(`land: ${sync.refusal}`);
-    process.exit(EXIT_COULD_NOT_MERGE);
+    return EXIT_COULD_NOT_MERGE;
   }
   console.log(`land: pushed ${branch}${sync.rebased ? ` and rebased it onto origin/${args.base}` : ""}`);
 
   const summary = git(["log", "-1", "--format=%s"]).stdout.trim() || branch;
   const pr = openOrReusePr(args, branch, summary);
-  if (pr === null) process.exit(EXIT_COULD_NOT_MERGE);
+  if (pr === null) return EXIT_COULD_NOT_MERGE;
 
   if (args.verify !== undefined && !verify(args.verify)) {
     console.error(`land: verify failed: ${args.verify}`);
-    process.exit(EXIT_VERIFY_FAILED);
+    return EXIT_VERIFY_FAILED;
   }
 
   const watched = watchChecks(pr.number);
-  if (watched !== EXIT_LANDED) process.exit(watched);
+  if (watched !== EXIT_LANDED) return watched;
 
-  process.exit(merge(pr.number));
+  return merge(pr.number);
 }
 
 if (import.meta.main) main();
