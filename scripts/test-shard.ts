@@ -1,6 +1,6 @@
 // The CI `test` job runs this once per shard. One bun process over `packages
 // apps/dev scripts` took 5m37s of test time on a runner, so the same files are
-// split by measured cost into four jobs. Every test file under those roots lands in
+// split by measured cost into six jobs. Every test file under those roots lands in
 // exactly one shard - the last entry covers the rest - and `--check` fails if
 // the split ever stops covering everything, so a new directory cannot drop its
 // tests silently.
@@ -9,18 +9,19 @@
 //   bun scripts/test-shard.ts --check     # file counts per shard, no tests run
 //   bun scripts/test-shard.ts --print a   # this shard's file paths, one per line
 //
-// The names are the four letters in the ci.yml matrix, and the matrix is the only
+// The names are the six letters in the ci.yml matrix, and the matrix is the only
 // shard fact that file holds: which files each letter runs lives here, so
 // rebalancing never edits the workflow. `scripts/test-shard.test.ts` fails when
 // the two lists disagree.
 //
-// Balance is measured, not guessed: each number below is that shard's `bun test`
-// step on a runner, timed per file with `--reporter=junit` (2026-10-23):
-// a 86 s, b 99 s, c 86 s, d 77 s, out of 352 s of test time for one job. b holds a
-// single file because `packages/editor/src/CreatorApp.test.ts` is 99 s on its own -
-// it boots Chrome and drives real frames through a save/play/return round - so it
-// sets the floor no matter where it goes; the other three carry the rest. Moving a
-// directory means re-timing the shard and updating these numbers in the same commit.
+// Balance is measured, not guessed: the numbers below are per-file runner seconds from
+// one `--reporter=junit` run (2026-10-23, run 39885331732), which sums to 408 s of test
+// time. The two browser files used to be 111 s and 91 s single files, so no split of the
+// rest could pass them; each is now two files and each shard's heaviest entry is 65 s.
+// Reporter seconds are inflated for many-small-file shards (the same files took 74 s and
+// 54 s of plain `bun test` against 111 s and 90 s of junit), so the six shards measure
+// 50-60 s of plain test time. Moving a directory means re-timing the shard and updating
+// these numbers in the same commit.
 import { readdirSync } from "node:fs";
 import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -40,27 +41,55 @@ export interface Shard {
   include: string[];
 }
 
-/** Four shards by measured cost; the CI matrix runs one job per entry, in this order. */
+/** Six shards by measured cost; the CI matrix runs one job per entry, in this order. */
 export const SHARDS: readonly Shard[] = [
-  { name: "a", label: "core + react", include: ["packages/core", "packages/react"] },
-  { name: "b", label: "editor browser", include: ["packages/editor/src/CreatorApp.test.ts"] },
+  {
+    name: "a",
+    label: "editor round trip",
+    // 65 s: the save/play/return/reopen chain, one Chrome and one save chain end to end.
+    include: ["packages/editor/src/CreatorApp.test.ts"],
+  },
+  {
+    name: "b",
+    label: "editor scene io",
+    // 65 s: export/import and the failed-save round, plus the rest of the editor (1.8 s).
+    include: ["packages/editor/src/CreatorApp.sceneIo.test.ts", "packages/editor"],
+  },
   {
     name: "c",
-    label: "sdk",
-    include: [
-      "packages/jgengine",
-      "packages/rapier",
-      "packages/convex",
-      "packages/github",
-      "packages/assets",
-      "packages/sql",
-      "packages/navbake",
-    ],
+    label: "harness blocked targets",
+    // 56 s: the five scenarios the drive harness must refuse, 11 s each, plus jgengine (3.4 s).
+    include: ["packages/jgengine/src/harness.blockedTargets.browser.test.ts", "packages/jgengine"],
   },
   {
     name: "d",
-    label: "scripts + shell",
-    include: ["scripts", "apps/dev", "packages/shell", "packages/ws", "packages/node", "packages/editor", ...TEST_ROOTS],
+    label: "harness drive + scripts",
+    // 36 s of drive harness, 25 s of scripts, and the small packages; no browser chain here.
+    include: [
+      "packages/jgengine/src/harness.browser.test.ts",
+      "scripts",
+      "apps/dev",
+      "packages/node",
+      "packages/ws",
+      "packages/assets",
+      "packages/sql",
+      "packages/rapier",
+      "packages/convex",
+      "packages/navbake",
+      "packages/github",
+    ],
+  },
+  {
+    name: "e",
+    label: "core world + react",
+    // 51 s of core world (651 core files are 77 s together) and 34 s of react.
+    include: ["packages/core/src/world", "packages/react"],
+  },
+  {
+    name: "f",
+    label: "shell + core",
+    // 58 s of shell and the remaining 25 s of core, then anything a new root adds.
+    include: ["packages/shell", "packages/core", ...TEST_ROOTS],
   },
 ];
 
