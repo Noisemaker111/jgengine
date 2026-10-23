@@ -167,6 +167,11 @@ async function main(): Promise<void> {
       for (const game of games) {
         const loaded = budgets.get(game)!;
         console.log(`perf gate: ${game} budget ${loaded.source}`);
+        if (loaded.budget.legacyDraws === true) {
+          console.log(
+            `perf gate: ${game} budget entry still says draws — it is compared whole-frame, but re-measure it as drawsFrame (bun run perf ${game}) so the number is a sampled p95, not one frame`,
+          );
+        }
         const session = await openPageSession(debugPort);
         try {
           const measured = await measureGame({
@@ -183,7 +188,7 @@ async function main(): Promise<void> {
             rasterizerPrinted = true;
             console.log(`perf gate: rasterizer ${measured.record.gpu}`);
           }
-          const violations = checkBudget(measured.record, budget);
+          const violations = checkBudget(measured.record, budget, { requireDrawsFrame: true });
           if (violations.length === 0) {
             lines.push(summarizeRecord(measured.record, budget));
             console.log(`perf gate: ${summarizeRecord(measured.record, budget)}`);

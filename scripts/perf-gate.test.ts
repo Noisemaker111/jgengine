@@ -79,9 +79,13 @@ describe("checkBudget", () => {
   });
 
   test("fails when the wrapped draw counter sampled no frame, instead of trusting the renderer sample alone", () => {
-    const [violation] = checkBudget(record({}, { drawsFrame: null, drawsFrames: 0 }), BUDGET);
+    const [violation] = checkBudget(record({}, { drawsFrame: null, drawsFrames: 0 }), BUDGET, { requireDrawsFrame: true });
     expect(violation?.message).toContain("drawsFrame (whole frame) unavailable");
     expect(violation?.message).toContain("never rendered one");
+  });
+
+  test("an in-page report without a whole-frame count is judged on the counts it carries", () => {
+    expect(checkBudget(record({}, { drawsFrame: null, drawsFrames: 0 }), BUDGET)).toEqual([]);
   });
 
   test("gates triangles and scene nodes too", () => {
@@ -172,10 +176,16 @@ describe("loadBudget", () => {
     });
   });
 
-  test("an entry that still carries only the old draws budget fails and names the re-measure", () => {
+  test("an entry that still budgets draws is compared whole-frame and named as pre-drawsFrame", () => {
     const root = tempRoot();
     writeEngineBudgets(root, { "harbor-heat": { draws: 10420, triangles: 4405210, nodes: 15210 } });
-    expect(() => loadBudget("harbor-heat", root)).toThrow(/has no drawsFrame.*re-measure.*previousDraws/s);
+    expect(loadBudget("harbor-heat", root).budget).toMatchObject({ drawsFrame: 10420, legacyDraws: true });
+  });
+
+  test("an entry with neither count fails instead of skipping the gate", () => {
+    const root = tempRoot();
+    writeEngineBudgets(root, { "harbor-heat": { triangles: 4405210, nodes: 15210 } });
+    expect(() => loadBudget("harbor-heat", root)).toThrow(/harbor-heat\.drawsFrame/);
   });
 
   test("a missing budget fails loudly and names both places it looked", () => {

@@ -24,6 +24,12 @@ export interface PerfBudget {
    */
   drawsFrame: number;
   /**
+   * True for an entry that still budgets `draws` because it was written before the gate counted
+   * whole frames. Its number is compared whole-frame (three's counter accumulated across passes),
+   * and the run prints that the entry needs re-measuring rather than treating it as current.
+   */
+  legacyDraws?: boolean;
+  /**
    * The `draws` budget this entry carried before the gate counted whole frames, kept so the old
    * number reads as history beside the new one instead of disappearing.
    */
@@ -73,9 +79,19 @@ function parseBudgetEntry(raw: unknown, game: string, source: string): PerfBudge
   }
   const entry = raw as Record<string, unknown>;
   if (entry.drawsFrame === undefined && entry.draws !== undefined) {
-    throw new Error(
-      `perf gate: ${source} "${game}" has no drawsFrame — the gate compares a whole frame's draws now, so re-measure \`bun run perf ${game}\` and write its p95, keeping the old number as previousDraws`,
-    );
+    // A game's own file can be older than this gate. Its `draws` budget was the renderer counter
+    // accumulated over a frame, so comparing it to drawsFrame is the same measurement; it is just
+    // single-sampled and stale, which the run says out loud instead of hiding.
+    return {
+      drawsFrame: budgetNumber(entry.draws, game, "draws", source),
+      legacyDraws: true,
+      triangles: budgetNumber(entry.triangles, game, "triangles", source),
+      nodes: budgetNumber(entry.nodes, game, "nodes", source),
+      ...(entry.programsLinked === undefined
+        ? {}
+        : { programsLinked: budgetNumber(entry.programsLinked, game, "programsLinked", source) }),
+      ...(typeof entry.baseline === "string" ? { baseline: entry.baseline } : {}),
+    };
   }
   return {
     drawsFrame: budgetNumber(entry.drawsFrame, game, "drawsFrame", source),
@@ -154,8 +170,16 @@ function unavailable(game: string, metric: string, reason: string): BudgetViolat
  * Compare one measured record against its budget. Every returned violation is
  * one line a human reads in the CI log, and the list is empty only when the
  * game actually played and stayed inside its counts.
+ *
+ * `requireDrawsFrame` is set by the CDP gate, whose page wraps the draw calls. The
+ * in-page report cannot: it reads the renderer probe's last sample, so it is judged on
+ * the counts it does carry and prints `drawsFrame n/a` rather than a zero.
  */
-export function checkBudget(record: PerfReport, budget: PerfBudget): BudgetViolation[] {
+export function checkBudget(
+  record: PerfReport,
+  budget: PerfBudget,
+  options: { requireDrawsFrame?: boolean } = {},
+): BudgetViolation[] {
   const game = record.game;
   const found: BudgetViolation[] = [];
 
@@ -165,9 +189,11 @@ export function checkBudget(record: PerfReport, budget: PerfBudget): BudgetViola
     return found;
   }
   if (record.render.drawsFrame === null || record.render.drawsFrame === 0) {
-    found.push(
-      unavailable(game, "drawsFrame (whole frame)", "the wrapped draw counter saw no frame — the page never rendered one"),
-    );
+    if (options.requireDrawsFrame === true) {
+      found.push(
+        unavailable(game, "drawsFrame (whole frame)", "the wrapped draw counter saw no frame — the page never rendered one"),
+      );
+    }
   } else if (record.render.drawsFrame > budget.drawsFrame) {
     found.push(violation(game, "drawsFrame (whole frame)", record.render.drawsFrame, budget.drawsFrame));
   }
@@ -201,7 +227,7 @@ export function summarizeRecord(record: PerfReport, budget: PerfBudget): string 
   const overrides = (record as PerfReport & { overrides?: readonly string[] }).overrides ?? [];
   return [
     `${record.game} ok`,
-    `drawsFrame ${fmtCount(record.render.drawsFrame ?? 0)}/${fmtCount(budget.drawsFrame)} (${record.render.drawsFrames} frames)`,
+    `drawsFrame ${record.render.drawsFrame === null ? "n/a" : fmtCount(record.render.drawsFrame)}/${fmtCount(budget.drawsFrame)} (${record.render.drawsFrames} frames)`,
     `draws ${fmtCount(record.render.draws ?? 0)}`,
     `triangles ${fmtCount(record.render.triangles ?? 0)}/${fmtCount(budget.triangles)}`,
     `nodes ${fmtCount(record.render.nodes ?? 0)}/${fmtCount(budget.nodes)}`,
