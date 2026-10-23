@@ -48,6 +48,35 @@
 - `AgentScheduleStop` (interface): interface AgentScheduleStop extends RoutineStopSpec — One authored stop in an agent's day. The shape is the routine owner's (`sim/routine`) plus a beat: the places a working stop walks in order, so a janitor on patrol is an agent with a route rather than a special case.
 - `createAgentSchedule` (function): function createAgentSchedule(config: AgentScheduleConfig): AgentSchedule — Resolve an authored day plan into a clock-driven schedule. Timing, travel and arrival slips come from `sim/routine`; this adds the work beat and the refills a stop carries, so an off-hours stop is just another authored stop and a patrol is not a second scheduler.
 
+## @jgengine/core/agents/system
+
+- `Agent` (interface): interface Agent — Needs, mood, schedule and a chosen action, in one object a game ticks.
+- `AgentAction` (interface): interface AgentAction — What the agent is doing.
+- `AgentFallback` (interface): interface AgentFallback — Where an agent goes when the thing it wanted is gone: a named option and a named place.
+- `AgentFrame` (interface): interface AgentFrame — What one update produced: the action, the feeling, and where the day plan puts the agent.
+- `AgentMemberSpec` (interface): interface AgentMemberSpec extends UtilityTunables — One member: an id, and only what differs from the system's defaults.
+- `AgentMemberState` (interface): interface AgentMemberState — One member's saved state: its agent snapshot plus the off-camera flag the snapshot does not carry.
+- `AgentMoodConfig` (interface): interface AgentMoodConfig — The mood policy a member runs on: which needs matter, and the game's own words for the bands.
+- `AgentScheduleConfig` (interface): interface AgentScheduleConfig — An agent's whole day as data: what it does, where, and when.
+- `AgentSchedulePhase` (interface): interface AgentSchedulePhase — Where a schedule puts an agent at one instant.
+- `AgentScheduleStop` (interface): interface AgentScheduleStop extends RoutineStopSpec — One authored stop in an agent's day. The shape is the routine owner's (`sim/routine`) plus a beat: the places a working stop walks in order, so a janitor on patrol is an agent with a route rather than a special case.
+- `AgentSelectView` (interface): interface AgentSelectView — What a selector is told about the member asking: who it is, its live agent, and where it stands.
+- `AgentSelector` (type): type AgentSelector = (view: AgentSelectView) => readonly AgentTarget[] — Everything the member could do right now, as the game's world offers it. Declared once per system.
+- `AgentSnapshot` (interface): interface AgentSnapshot — Serializable whole agent: needs, feeling, held action, day-plan cursor and the far flag.
+- `AgentSystem` (interface): interface AgentSystem — A whole cast of agents behind one factory and one tick.
+- `AgentSystemConfig` (interface): interface AgentSystemConfig — The game's data, in one place: what its people need, what they can do, and how they feel.
+- `AgentSystemState` (interface): interface AgentSystemState — The whole system as plain JSON - drop it in a save, read it back with {@link AgentSystem.load}.
+- `AgentSystemStorage` (interface): interface AgentSystemStorage — Where a system keeps its save data: a key-value store, a save slot, or a test's map.
+- `AgentTarget` (interface): interface AgentTarget — One reachable thing the agent could do this tick, as the game sees its own world.
+- `Mood` (interface): interface Mood — What the agent feels right now, on the caller's own tier labels.
+- `MoodTier` (interface): interface MoodTier — One labelled band of the 0-100 mood score.
+- `MoodWeight` (interface): interface MoodWeight — One need's say in the mood score; weights are relative, so they need no fixed total.
+- `NeedDefinition` (type): type NeedDefinition = DecayMeterConfig — A decaying need is a survival decay meter (`max`/`min`/`start`/`rate`, optional moodle thresholds) whose satisfaction an agent brain reads to score actions. The meter owns the numbers; per-need appeal lives in the game's utility options.
+- `UtilityInterrupt` (interface): interface UtilityInterrupt — A need level that overrides the sticky pick the moment it is crossed.
+- `UtilityOption` (interface): interface UtilityOption — A thing an agent can decide to do, scored against its needs.
+- `UtilityTunables` (interface): interface UtilityTunables — In-play dials that stay reachable through {@link UtilityBrain.retune}.
+- `createAgentSystem` (function): function createAgentSystem(config: AgentSystemConfig): AgentSystem — One call for a whole cast: a game hands over its needs, options, mood weights, schedules and one target selector, and gets back a running system with a single `tick(dt)` and a save blob that goes into the game's own save.
+
 ## @jgengine/core/behaviour/behaviour
 
 - `Behaviour` (class): class Behaviour — Subclass and override the lifecycle hooks. A behaviour only joins the per-frame update dispatch if it actually overrides `onUpdate` (prototype-identity check at each activation), so hook-only behaviours cost nothing per frame.
