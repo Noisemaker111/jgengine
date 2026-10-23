@@ -1,48 +1,23 @@
 import { afterAll, describe, expect, test } from "bun:test";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { join } from "node:path";
 
-import { materializeHarness } from "./harness";
+import {
+  cleanupHarness,
+  harnessBrowser as browser,
+  harnessCli as cli,
+  driveDevCli,
+  harnessProject,
+  hasChrome,
+  isBlocked,
+  navigate,
+  runHarnessCli,
+  TARGET_SCENARIOS,
+  targetPage,
+  type Click,
+  type Report,
+} from "../../../scripts/harness-browser-fixture";
 
-const harnessDir = materializeHarness("drive");
-const browser = await import(join(harnessDir, "browser.mjs"));
-let hasChrome = true;
-try {
-  browser.findChrome();
-} catch {
-  hasChrome = false;
-}
-afterAll(() => rmSync(harnessDir, { recursive: true, force: true }));
-
-type Report = { coarse: boolean; fine: boolean; touchPoints: number; width: number; height: number };
-type Click = { trusted: boolean; x: number; y: number; scroll: number };
-const cli = resolve(import.meta.dir, "cli/index.ts");
-
-/**
- * Run a harness CLI child. It gets its own deadline below the test's, so a stuck drive is killed
- * (SIGTERM also stops its Chrome) and fails with its stderr instead of leaking into later tests.
- */
-async function runHarnessCli(command: string[], options: { cwd: string; env?: Record<string, string | undefined>; timeoutMs?: number }) {
-  const child = Bun.spawn([process.execPath, ...command], { cwd: options.cwd, env: options.env, stdout: "pipe", stderr: "pipe", timeout: options.timeoutMs ?? 40_000, killSignal: "SIGTERM" });
-  const [exit, stdout, stderr] = await Promise.all([child.exited, new Response(child.stdout).text(), new Response(child.stderr).text()]);
-  if (child.signalCode !== null) throw new Error(`${command.slice(0, 2).join(" ")} did not exit (${child.signalCode}):\n${stderr}`);
-  return { exit, stdout, stderr };
-}
-
-/** Navigate and wait until the new document has loaded, instead of sleeping and hoping it committed. */
-async function navigate(session: { send(method: string, params?: object): Promise<unknown>; evaluate(expression: string): Promise<unknown> }, url: string) {
-  await session.send("Page.navigate", { url });
-  const loaded = `location.href === ${JSON.stringify(url)} && document.readyState === "complete"`;
-  for (;;) {
-    try {
-      if (await session.evaluate(loaded)) return;
-    } catch {
-      // The execution context is replaced while the navigation commits.
-    }
-    await Bun.sleep(20);
-  }
-}
+afterAll(cleanupHarness);
 
 describe.skipIf(!hasChrome)("portable harness in Chromium", () => {
   for (const driver of ["portable", "monorepo"] as const) {
@@ -66,11 +41,10 @@ describe.skipIf(!hasChrome)("portable harness in Chromium", () => {
           requestAnimationFrame(() => requestAnimationFrame(() => document.documentElement.dataset.jgCapture='ready'));
           </script></html>`, { headers: { "content-type": "text/html" } });
       } });
-      const project = mkdtempSync(join(tmpdir(), "jg-form-project-"));
-      writeFileSync(join(project, "package.json"), JSON.stringify({ dependencies: { "@jgengine/shell": "*" } }));
+      const project = harnessProject("jg-form-project-");
       try {
-        const command = driver === "portable" ? [cli, "drive"] : [resolve(import.meta.dir, "../../../scripts/drive-dev.ts")];
-        const { exit, stderr } = await runHarnessCli([...command, "--url", server.url.toString(), "--click", "Create", "--fill", "scene NAME=Course = dusk", "--fill", "Description=Terrain notes", "--fill", "Note=", "--double-click", "Approved rock", "--click", "Create scene", "--wait", "100", "--rpc", "{}"], { cwd: project, env: { ...process.env, JG_CHROME_PORT: "1" } });
+        const command = driver === "portable" ? [cli, "drive"] : [driveDevCli];
+        const { exit, stderr } = await runHarnessCli([...command, "--url", server.url.toString(), "--click", "Create", "--fill", "scene NAME=Course = dusk", "--fill", "Description=Terrain notes", "--fill", "Note=", "--double-click", "Approved rock", "--click", "Create scene", "--wait", "100", "--rpc", "{}"], { cwd: project.dir, env: { ...process.env, JG_CHROME_PORT: "1" } });
         expect(stderr).not.toContain("did not receive focus");
         expect(exit).toBe(0);
         expect(events.find(event => event.type === "submit")).toEqual({ type: "submit", trusted: true, name: "Course = dusk", description: "Terrain notes", note: "" });
@@ -80,7 +54,7 @@ describe.skipIf(!hasChrome)("portable harness in Chromium", () => {
         expect(events.every(event => event.trusted)).toBe(true);
       } finally {
         server.stop(true);
-        rmSync(project, { recursive: true, force: true });
+        project.dispose();
       }
     }, 45000);
   }
@@ -101,10 +75,9 @@ describe.skipIf(!hasChrome)("portable harness in Chromium", () => {
         requestAnimationFrame(() => requestAnimationFrame(() => document.documentElement.dataset.jgCapture='ready'));
         </script></html>`, { headers: { "content-type": "text/html" } });
     } });
-    const project = mkdtempSync(join(tmpdir(), "jg-delayed-controls-"));
-    writeFileSync(join(project, "package.json"), JSON.stringify({ dependencies: { "@jgengine/shell": "*" } }));
+    const project = harnessProject("jg-delayed-controls-");
     try {
-      const { exit, stderr } = await runHarnessCli([resolve(import.meta.dir, "../../../scripts/drive-dev.ts"), "--url", server.url.toString(), "--click", "Load controls", "--click", "Late save", "--wait", "100", "--rpc", "{}"], { cwd: project, env: { ...process.env, JG_CHROME_PORT: "1" }, timeoutMs: 25_000 });
+      const { exit, stderr } = await runHarnessCli([driveDevCli, "--url", server.url.toString(), "--click", "Load controls", "--click", "Late save", "--wait", "100", "--rpc", "{}"], { cwd: project.dir, env: { ...process.env, JG_CHROME_PORT: "1" }, timeoutMs: 25_000 });
       expect(stderr).not.toContain("no settled actionable element");
       expect(exit).toBe(0);
       expect(events).toHaveLength(1);
@@ -112,7 +85,7 @@ describe.skipIf(!hasChrome)("portable harness in Chromium", () => {
       expect(events[0]?.elapsed).toBeGreaterThanOrEqual(5800);
     } finally {
       server.stop(true);
-      rmSync(project, { recursive: true, force: true });
+      project.dispose();
     }
   }, 30000);
 
@@ -179,73 +152,47 @@ describe.skipIf(!hasChrome)("portable harness in Chromium", () => {
       }
       return new Response(`<!doctype html><html data-jg-capture="ready"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{background:#124;color:white}button{padding:20px}</style><button>Capture fixture</button><script>const post=(path,body)=>{const x=new XMLHttpRequest();x.open('POST',path,false);x.send(body)};post('/report',JSON.stringify({coarse:matchMedia('(pointer: coarse)').matches,fine:matchMedia('(pointer: fine)').matches,touchPoints:navigator.maxTouchPoints,width:innerWidth,height:innerHeight}))</script></html>`, { headers: { "content-type": "text/html" } });
     } });
-    const project = mkdtempSync(join(tmpdir(), "jg-shoot-project-"));
-    writeFileSync(join(project, "package.json"), JSON.stringify({ dependencies: { "@jgengine/shell": "*" } }));
+    const project = harnessProject("jg-shoot-project-");
     try {
-      const { exit, stderr } = await runHarnessCli([cli, "shoot", "--url", server.url.toString(), "--device", "mobile-landscape", "--settle", "0"], { cwd: project });
+      const { exit, stderr } = await runHarnessCli([cli, "shoot", "--url", server.url.toString(), "--device", "mobile-landscape", "--settle", "0"], { cwd: project.dir });
       expect(stderr).toContain("using the bundled shoot harness");
       expect(exit).toBe(0);
       expect(reports).toEqual([{ coarse: true, fine: false, touchPoints: 5, width: 844, height: 390 }]);
     } finally {
       server.stop(true);
-      rmSync(project, { recursive: true, force: true });
+      project.dispose();
     }
   }, 45000);
 
-  for (const scenario of ["visible", "aria-label", "scrolled", "clipped", "partial", "occluded", "disabled", "aria-disabled", "inert", "hidden"] as const) {
+  for (const scenario of TARGET_SCENARIOS.filter((name) => !isBlocked(name))) {
     test(`canonical drive ${scenario} target`, async () => {
       const clicks: Click[] = [];
       const reports: Report[] = [];
-      const styles: Record<typeof scenario, string> = {
-        visible: "",
-        "aria-label": "",
-        scrolled: ".spacer{height:1800px}",
-        clipped: ".region{height:80px;width:200px;overflow:auto}.spacer{height:1200px}",
-        partial: "button{position:fixed;left:-1200px;top:-300px;height:1000px;width:1400px}",
-        occluded: ".overlay{position:fixed;inset:0;background:#ddd;z-index:10}",
-        disabled: "",
-        "aria-disabled": "",
-        inert: "",
-        hidden: "button{visibility:hidden}",
-      };
-      const blocked = ["occluded", "disabled", "aria-disabled", "inert", "hidden"].includes(scenario);
-      const html = `<!doctype html><html data-jg-capture="ready"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:20px;background:#134;color:white}button{padding:20px;text-transform:uppercase}${styles[scenario]}</style><div class="region" ${scenario === "inert" ? "inert" : ""}><div class="spacer"></div><button ${scenario === "aria-label" ? 'aria-label="Back"' : ""} ${scenario === "disabled" ? "disabled" : ""} ${scenario === "aria-disabled" ? 'aria-disabled="true"' : ""}>${scenario === "aria-label" ? '<span aria-hidden="true">←</span>' : "<span>Back</span>"}</button></div><div class="overlay"></div><script>
-        const post = (path, body) => { const x = new XMLHttpRequest(); x.open('POST', path, false); x.send(body); };
-        post('/report',JSON.stringify({coarse:matchMedia('(pointer: coarse)').matches,fine:matchMedia('(pointer: fine)').matches,touchPoints:navigator.maxTouchPoints,width:innerWidth,height:innerHeight}));
-        document.querySelector('button').addEventListener('click',event=>post('/click',JSON.stringify({trusted:event.isTrusted,x:event.clientX,y:event.clientY,scroll:scrollY+document.querySelector('.region').scrollTop})));
-      </script></html>`;
       const server = Bun.serve({ port: 0, hostname: "127.0.0.1", async fetch(request) {
         const url = new URL(request.url);
         if (url.pathname === "/click") clicks.push(await request.json() as Click);
         else if (url.pathname === "/report") reports.push(await request.json() as Report);
-        else return new Response(html, { headers: { "content-type": "text/html" } });
+        else return new Response(targetPage(scenario), { headers: { "content-type": "text/html" } });
         return new Response("ok");
       } });
-      const project = mkdtempSync(join(tmpdir(), "jg-browser-project-"));
-      writeFileSync(join(project, "package.json"), JSON.stringify({ dependencies: { "@jgengine/shell": "*" } }));
+      const project = harnessProject("jg-browser-project-");
       try {
-        const { exit, stdout, stderr } = await runHarnessCli([cli, "drive", "--url", server.url.toString(), "--device", "mobile", "--click", "bAcK", "--wait", "100", "--shot", "result"], { cwd: project });
+        const { exit, stdout, stderr } = await runHarnessCli([cli, "drive", "--url", server.url.toString(), "--device", "mobile", "--click", "bAcK", "--wait", "100", "--shot", "result"], { cwd: project.dir });
         expect(stderr).toContain("using the bundled drive harness");
         expect(reports).toEqual([{ coarse: true, fine: false, touchPoints: 5, width: 390, height: 844 }]);
-        if (blocked) {
-          expect(exit).toBe(1);
-          expect(stderr).toContain('no actionable element matching "bAcK"');
-          expect(clicks).toEqual([]);
-        } else {
-          expect(exit).toBe(0);
-          expect(stdout).toContain(join("shots", "result.png"));
-          expect(stdout).not.toContain("SOFTLOCK");
-          expect(clicks).toHaveLength(1);
-          expect(clicks[0]!.trusted).toBe(true);
-          expect(clicks[0]!.x).toBeGreaterThan(0);
-          expect(clicks[0]!.x).toBeLessThan(390);
-          expect(clicks[0]!.y).toBeGreaterThan(0);
-          expect(clicks[0]!.y).toBeLessThan(844);
-          if (scenario === "scrolled" || scenario === "clipped") expect(clicks[0]!.scroll).toBeGreaterThan(0);
-        }
+        expect(exit).toBe(0);
+        expect(stdout).toContain(join("shots", "result.png"));
+        expect(stdout).not.toContain("SOFTLOCK");
+        expect(clicks).toHaveLength(1);
+        expect(clicks[0]!.trusted).toBe(true);
+        expect(clicks[0]!.x).toBeGreaterThan(0);
+        expect(clicks[0]!.x).toBeLessThan(390);
+        expect(clicks[0]!.y).toBeGreaterThan(0);
+        expect(clicks[0]!.y).toBeLessThan(844);
+        if (scenario === "scrolled" || scenario === "clipped") expect(clicks[0]!.scroll).toBeGreaterThan(0);
       } finally {
         server.stop(true);
-        rmSync(project, { recursive: true, force: true });
+        project.dispose();
       }
     }, 45000);
   }

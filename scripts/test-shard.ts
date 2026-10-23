@@ -1,25 +1,26 @@
 // The CI `test` job runs this once per shard. One bun process over `packages
 // apps/dev scripts` took 5m37s of test time on a runner, so the same files are
-// split by measured cost into four jobs. Every test file under those roots lands in
+// split by measured cost into six jobs. Every test file under those roots lands in
 // exactly one shard - the last entry covers the rest - and `--check` fails if
 // the split ever stops covering everything, so a new directory cannot drop its
 // tests silently.
 //
 //   bun scripts/test-shard.ts a
 //   bun scripts/test-shard.ts --check     # file counts per shard, no tests run
+//   bun scripts/test-shard.ts --print a   # this shard's file paths, one per line
 //
-// The names are the four letters in the ci.yml matrix, and the matrix is the only
+// The names are the six letters in the ci.yml matrix, and the matrix is the only
 // shard fact that file holds: which files each letter runs lives here, so
 // rebalancing never edits the workflow. `scripts/test-shard.test.ts` fails when
 // the two lists disagree.
 //
-// Balance is measured, not guessed: each number below is that shard's `bun test`
-// step on a runner, timed per file with `--reporter=junit` (2026-10-23):
-// a 86 s, b 99 s, c 86 s, d 77 s, out of 352 s of test time for one job. b holds a
-// single file because `packages/editor/src/CreatorApp.test.ts` is 99 s on its own -
-// it boots Chrome and drives real frames through a save/play/return round - so it
-// sets the floor no matter where it goes; the other three carry the rest. Moving a
-// directory means re-timing the shard and updating these numbers in the same commit.
+// Balance is measured, not guessed: the numbers below are what each shard's `bun test`
+// step took on a runner (2026-10-23, run 39888130429, 377 s of test time over six jobs).
+// Six bins left two of them at 91 s and 92 s because the four browser files and the core
+// world/react/shell blocks are each 34-55 s and only just fit one per job; eight bins put
+// every job under 56 s. The heaviest entry is still one file - the editor round trip at
+// 55 s - so this is the floor until that scenario itself gets cheaper. Moving a directory
+// means re-timing the shard and updating these numbers in the same commit.
 import { readdirSync } from "node:fs";
 import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -39,27 +40,80 @@ export interface Shard {
   include: string[];
 }
 
-/** Four shards by measured cost; the CI matrix runs one job per entry, in this order. */
+/** Nine shards by measured cost; the CI matrix runs one job per entry, in this order. */
 export const SHARDS: readonly Shard[] = [
-  { name: "a", label: "core + react", include: ["packages/core", "packages/react"] },
-  { name: "b", label: "editor browser", include: ["packages/editor/src/CreatorApp.test.ts"] },
+  {
+    name: "a",
+    label: "editor round trip",
+    // 40 s: one Chrome drives save/play/return/reopen across a reload, start to finish.
+    include: ["packages/editor/src/CreatorApp.test.ts"],
+  },
+  {
+    name: "b",
+    label: "harness pointer-blocked targets",
+    // 35 s: three scenarios the drive harness must refuse; each waits out the harness's own
+    // 10 s give-up, so this shard is the harness's fixed cost, not the runner's.
+    include: ["packages/jgengine/src/harness.blockedTargets.browser.test.ts"],
+  },
   {
     name: "c",
-    label: "sdk",
-    include: [
-      "packages/jgengine",
-      "packages/rapier",
-      "packages/convex",
-      "packages/github",
-      "packages/assets",
-      "packages/sql",
-      "packages/navbake",
-    ],
+    label: "harness unreachable targets",
+    // 22 s: the two scenarios where the page never draws the target at all.
+    include: ["packages/jgengine/src/harness.unreachableTargets.browser.test.ts"],
   },
   {
     name: "d",
-    label: "scripts + shell",
-    include: ["scripts", "apps/dev", "packages/shell", "packages/ws", "packages/node", "packages/editor", ...TEST_ROOTS],
+    label: "core world",
+    // 39 s: 87 files, the generator and city suites among them.
+    include: ["packages/core/src/world"],
+  },
+  {
+    name: "e",
+    label: "harness drive",
+    // 44 s of harness drive plus the other 2 s of jgengine. A browser file runs alone:
+    // the editor scene io file took 34 s first in its process and 78 s after 85 others.
+    include: ["packages/jgengine/src/harness.browser.test.ts", "packages/jgengine"],
+  },
+  {
+    name: "f",
+    label: "editor scene io",
+    // 34 s: export/import and the failed-save round, seeding its scene through the real UI.
+    include: ["packages/editor/src/CreatorApp.sceneIo.test.ts"],
+  },
+  {
+    name: "g",
+    label: "shell + editor",
+    // 27 s of shell and the 3 s of editor tests that are not browser scenarios.
+    include: ["packages/shell", "packages/editor"],
+  },
+  {
+    name: "h",
+    label: "react + small packages",
+    // 35 s of react plus apps/dev and the small packages (8 s together).
+    include: [
+      "packages/react",
+      "apps/dev",
+      "packages/node",
+      "packages/ws",
+      "packages/assets",
+      "packages/sql",
+      "packages/rapier",
+      "packages/convex",
+      "packages/navbake",
+      "packages/github",
+    ],
+  },
+  {
+    name: "i",
+    label: "scripts",
+    // 30 s: 65 files of repo gates and CLI tests.
+    include: ["scripts"],
+  },
+  {
+    name: "j",
+    label: "core",
+    // 30 s: the 542 core files outside world; anything a new root adds lands here too.
+    include: ["packages/core", ...TEST_ROOTS],
   },
 ];
 
@@ -113,6 +167,16 @@ function main(): void {
   if (argv.includes("--check")) {
     for (const line of counts(files, SHARDS)) console.log(line);
     console.log(`total: ${files.length} file(s)`);
+    return;
+  }
+
+  if (argv.includes("--print")) {
+    const name = argv.find((arg) => !arg.startsWith("--"));
+    if (name === undefined || !SHARDS.some((entry) => entry.name === name)) {
+      console.error(`test-shard: --print needs one of ${SHARDS.map((s) => s.name).join(", ")}`);
+      process.exit(1);
+    }
+    for (const file of assignShards(files, SHARDS).get(name)!) console.log(file);
     return;
   }
 

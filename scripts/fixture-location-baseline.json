@@ -15,7 +15,6 @@
   "packages/jgengine/src/doctor.test.ts",
   "packages/jgengine/src/driveNative.test.ts",
   "packages/jgengine/src/find.test.ts",
-  "packages/jgengine/src/harness.browser.test.ts",
   "packages/jgengine/src/harness.test.ts",
   "packages/jgengine/src/installedSdkGraph.test.ts",
   "packages/jgengine/src/pkg.test.ts",
