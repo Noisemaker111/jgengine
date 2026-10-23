@@ -1,15 +1,20 @@
 import { afterEach, expect, test } from "bun:test";
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 
 import {
+  EXIT_VERIFY_FAILED,
   LOCK_STALE_MS,
+  MERGE_ATTEMPTS,
   acquireLock,
+  baseMoved,
   checkVerdict,
   chooseBody,
+  duration,
   ensurePr,
   forcePushArgs,
   formatFailures,
+  formatTiming,
   landBody,
   landLocked,
   landRefusal,
@@ -20,7 +25,7 @@ import {
   staleReason,
   syncOntoBase,
 } from "./land";
-import type { Gh, Run } from "./land";
+import type { Gh, LockWait, Run } from "./land";
 
 test("parses flags with values and defaults the base to beta", () => {
   expect(parseArgs([])).toEqual({ base: "beta" });
@@ -374,7 +379,7 @@ import { appendFileSync } from "node:fs";
 const { acquireLock } = await import("./scripts/land.ts");
 const at = (label) => appendFileSync(${JSON.stringify(logFile)}, label + " " + Date.now() + "\\n");
 if (${options.delayMs ?? 0} > 0) await Bun.sleep(${options.delayMs ?? 0});
-const release = acquireLock({ path: ${JSON.stringify(options.lock)}, branch: ${JSON.stringify(options.branch)}, log: (line) => at("LOG " + line) });
+const release = acquireLock({ path: ${JSON.stringify(options.lock)}, branch: ${JSON.stringify(options.branch)}, log: (line) => at("LOG " + line) }).release;
 at("HELD");
 if (${options.crash === true}) process.exit(9);
 await Bun.sleep(${options.holdMs});
@@ -413,14 +418,15 @@ test("a second landing waits on the first one's branch, then takes the lock", as
 
   const logged: string[] = [];
   const startedAt = Date.now();
-  const release = acquireLock({ path: lock, branch: "agent/second", log: (line) => logged.push(line) });
+  const held = acquireLock({ path: lock, branch: "agent/second", log: (line) => logged.push(line) });
   const waited = Date.now() - startedAt;
-  release();
+  held.release();
 
   expect(logged[0]).toContain("waiting on agent/first");
   expect(logged[0]).toContain(`pid ${first.child.pid}`);
   expect(waited).toBeGreaterThan(300);
-  expect(logged.at(-1)).toContain("lock acquired after waiting");
+  expect(held.wait?.holder).toBe("agent/first");
+  expect(logged.at(-1)).toBe(`waited ${duration(held.wait?.waitedMs ?? 0)} for the lock (held by agent/first)`);
 
   await first.child.exited;
   expect(first.events()[0]).toStartWith("HELD");
@@ -441,7 +447,8 @@ test("two landings launched together hold the lock one at a time, in start order
   expect(labels(first.events())).toEqual(["HELD", "RELEASED"]);
   expect(labels(second.events())).toEqual(["LOG", "LOG", "HELD", "RELEASED"]);
   expect(second.events()[0]).toContain("waiting on agent/one");
-  expect(second.events()[1]).toContain("lock acquired after waiting");
+  expect(second.events()[1]).toContain("waited ");
+  expect(second.events()[1]).toContain("for the lock (held by agent/one)");
   expect(heldAt(second.events())).toBeGreaterThanOrEqual(releasedAt(first.events()));
 });
 
@@ -453,8 +460,7 @@ test("a landing killed while holding the lock does not wedge the next one", asyn
   expect(existsSync(lock)).toBe(true);
 
   const logged: string[] = [];
-  const release = acquireLock({ path: lock, branch: "agent/next", log: (line) => logged.push(line) });
-  release();
+  acquireLock({ path: lock, branch: "agent/next", log: (line) => logged.push(line) }).release();
 
   expect(logged[0]).toContain("breaking a stale lock from agent/crashed");
   expect(logged[0]).toContain(`pid ${crashed.child.pid} is gone`);
@@ -469,7 +475,7 @@ test("a lock older than half an hour is broken even though its process still ans
   );
 
   const logged: string[] = [];
-  acquireLock({ path: lock, branch: "agent/fresh", log: (line) => logged.push(line) })();
+  acquireLock({ path: lock, branch: "agent/fresh", log: (line) => logged.push(line) }).release();
 
   expect(logged[0]).toContain("breaking a stale lock from agent/slow");
   expect(logged[0]).toContain("older than 30 minutes");
@@ -499,10 +505,377 @@ test("the lock is released when the landing throws, and a lock land does not own
   expect(existsSync(lock)).toBe(false);
 
   const logged: string[] = [];
-  const release = acquireLock({ path: lock, branch: "agent/ours", log: (line) => logged.push(line) });
+  const held = acquireLock({ path: lock, branch: "agent/ours", log: (line) => logged.push(line) });
   writeFileSync(lock, JSON.stringify({ branch: "agent/other", pid: process.ppid, startedAt: Date.now() }));
-  release();
+  held.release();
   expect(logged.at(-1)).toContain("leaving it alone");
   expect(existsSync(lock)).toBe(true);
   expect(lockPath(join("repo", ".git"))).toBe(join("repo", ".git", "land.lock"));
 });
+
+test("the summary splits what a landing worked from what it lost queueing", () => {
+  expect(duration(0)).toBe("0s");
+  expect(duration(999)).toBe("<1s");
+  expect(duration(42_000)).toBe("42s");
+  expect(duration(150_000)).toBe("2m30s");
+  expect(duration(3_900_000)).toBe("1h05m");
+
+  expect(formatTiming(180_000, [])).toBe("worked 3m00s, waited 0s for the lock");
+  expect(formatTiming(180_000, [{ holder: "agent/x", waitedMs: 42_000 }])).toBe(
+    "worked 2m18s, waited 42s for the lock (held by agent/x)",
+  );
+  expect(
+    formatTiming(180_000, [
+      { holder: "agent/x", waitedMs: 30_000 },
+      { holder: "agent/y", waitedMs: 12_000 },
+    ]),
+  ).toBe("worked 2m18s, waited 42s for the lock (2 waits, longest 30s held by agent/x)");
+});
+
+test("only a moved base, not a failing check, sends a merge back to rebase", () => {
+  expect(baseMoved("the base branch was modified. Review and try the merge again.")).toBe(true);
+  expect(baseMoved("Pull request #12 is not mergeable: the base branch requires that the pull request is up to date")).toBe(
+    true,
+  );
+  expect(baseMoved("Pull request #12 is not mergeable: the merge commit cannot be cleanly created.")).toBe(true);
+  expect(baseMoved("GraphQL: Pull request is not mergeable (mergePullRequest)")).toBe(false);
+  expect(baseMoved("checks are still pending")).toBe(false);
+});
+
+/**
+ * A landing driven end to end by `scripts/land.ts` itself, in its own process so two of them really
+ * run at once: the fake GitHub answers PR calls, enforces "up to date" like branch protection, and
+ * performs a real merge into the throwaway remote.
+ */
+const HARNESS = `
+import { appendFileSync, writeFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+const cfg = JSON.parse(process.env.LAND_TEST_CONFIG);
+const land = await import("./scripts/land.ts");
+const at = (label) => appendFileSync(cfg.events, label + " " + Date.now() + "\\n");
+const gitAt = (cwd) => (args) => {
+  const r = spawnSync("git", ["-c", "user.email=land@example.test", "-c", "user.name=Land", ...args], { cwd, encoding: "utf8", timeout: 60_000 });
+  return { status: r.status ?? 1, stdout: r.stdout ?? "", stderr: r.stderr ?? "" };
+};
+const lane = gitAt(cfg.clone);
+const bare = gitAt(cfg.bare);
+const server = gitAt(cfg.server);
+const partner = cfg.moveBase === null ? null : gitAt(cfg.moveBase);
+const ok = { status: 0, stdout: "", stderr: "" };
+const pause = (ms) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+let created = false;
+let moved = false;
+const url = "https://example.test/" + cfg.number;
+const gh = (args) => {
+  const joined = args.join(" ");
+  if (joined.startsWith("pr list")) return { status: 0, stdout: created ? JSON.stringify([{ number: cfg.number, url }]) : "[]", stderr: "" };
+  if (joined.startsWith("pr create")) { created = true; return { status: 0, stdout: url + "\\n", stderr: "" }; }
+  if (joined.startsWith("pr view") && joined.includes("body")) return { status: 0, stdout: JSON.stringify({ body: "" }), stderr: "" };
+  if (joined.startsWith("pr view")) return { status: 0, stdout: JSON.stringify({ state: "MERGED", url }), stderr: "" };
+  if (joined.startsWith("pr edit")) return ok;
+  if (joined.startsWith("pr checks") && joined.includes("--watch")) return ok;
+  if (joined.startsWith("pr checks")) return { status: 0, stdout: JSON.stringify([{ name: "ci", state: "SUCCESS", bucket: "pass" }]), stderr: "" };
+  if (joined.startsWith("pr merge")) {
+    at("MERGE-START");
+    pause(cfg.mergeMs);
+    const tip = bare(["rev-parse", "refs/heads/" + cfg.branch]).stdout.trim();
+    const beta = bare(["rev-parse", "refs/heads/beta"]).stdout.trim();
+    const upToDate = bare(["merge-base", "--is-ancestor", beta, tip]).status === 0;
+    if (cfg.strictBase && !upToDate) {
+      at("MERGE-END");
+      return { status: 1, stdout: "", stderr: "the base branch was modified. Review and try the merge again." };
+    }
+    server(["fetch", "-q", "origin", cfg.branch, "beta"]);
+    server(["checkout", "-q", "-B", "beta", "origin/beta"]);
+    const merged = server(["merge", "-q", "--no-ff", "-m", "Merge " + cfg.branch, "origin/" + cfg.branch]);
+    const pushed = merged.status === 0 ? server(["push", "-q", "origin", "beta"]) : merged;
+    at("MERGE-END");
+    return pushed;
+  }
+  return ok;
+};
+const waits = [];
+at("SPAWNED");
+if (cfg.startAt !== null) {
+  const waitMs = cfg.startAt - Date.now();
+  if (waitMs > 0) pause(waitMs);
+}
+at("START");
+const code = land.landBranch({
+  args: { base: "beta", verify: cfg.verify },
+  branch: cfg.branch,
+  lock: cfg.lock,
+  waits,
+  io: {
+    git: lane,
+    gh,
+    verify: () => cfg.verifyOk,
+    watch: () => {
+      at("WATCH-START");
+      pause(cfg.watchMs);
+      at("WATCH-END");
+      if (partner !== null && !moved) {
+        moved = true;
+        partner(["pull", "-q", "--rebase", "origin", "beta"]);
+        writeFileSync(cfg.moveBase + "/moved.txt", "moved\\n");
+        partner(["add", "-A"]);
+        partner(["commit", "-q", "-m", "beta moves on"]);
+        partner(["push", "-q", "origin", "beta"]);
+        at("BASE-MOVED");
+      }
+    },
+    sleep: pause,
+    log: (line) => at("LOG " + line),
+    error: (line) => at("ERR " + line),
+  },
+});
+at("END");
+writeFileSync(cfg.out, JSON.stringify({ code, waits }));
+`;
+
+interface Lane {
+  clone: string;
+  branch: string;
+}
+
+interface TimelineEvent {
+  label: string;
+  at: number;
+}
+
+interface Landing {
+  code: number;
+  waits: LockWait[];
+  events: TimelineEvent[];
+  logs: string[];
+  errors: string[];
+  span: { start: number; end: number };
+}
+
+/** A bare origin, a clone that plays GitHub's merge, and one branch per lane. */
+function landingRepo(names: readonly string[]): { bare: string; server: string; lanes: Lane[]; partner: string } {
+  const { bare, work, partner } = originWithBeta();
+  const home = dirname(work);
+  const server = join(home, "server");
+  gitOk(home, ["clone", "-q", bare, server]);
+  const lanes = names.map((name) => {
+    const clone = join(home, `lane-${name}`);
+    gitOk(home, ["clone", "-q", "-b", "beta", bare, clone]);
+    const branch = `agent/${name}`;
+    gitOk(clone, ["checkout", "-q", "-b", branch]);
+    commit(clone, `${name}.txt`, `${name}\n`, `${name} work`);
+    return { clone, branch };
+  });
+  return { bare, server, lanes, partner };
+}
+
+function startLanding(options: {
+  lane: Lane;
+  bare: string;
+  server: string;
+  lock: string;
+  number: number;
+  watchMs: number;
+  mergeMs?: number;
+  strictBase?: boolean;
+  moveBase?: string;
+  verify?: string;
+  verifyOk?: boolean;
+  startAt?: number;
+}): Promise<Landing> {
+  const dir = join(SCRATCH, `run-${crypto.randomUUID()}`);
+  made.push(dir);
+  mkdirSync(dir, { recursive: true });
+  const events = join(dir, "events.log");
+  const out = join(dir, "out.json");
+  const config = {
+    clone: options.lane.clone,
+    branch: options.lane.branch,
+    bare: options.bare,
+    server: options.server,
+    lock: options.lock,
+    number: options.number,
+    watchMs: options.watchMs,
+    mergeMs: options.mergeMs ?? 150,
+    strictBase: options.strictBase ?? true,
+    moveBase: options.moveBase ?? null,
+    verify: options.verify ?? undefined,
+    verifyOk: options.verifyOk ?? true,
+    startAt: options.startAt ?? null,
+    events,
+    out,
+  };
+  const child = Bun.spawn({
+    cmd: ["bun", "-e", HARNESS],
+    cwd: join(import.meta.dir, ".."),
+    env: { ...process.env, LAND_TEST_CONFIG: JSON.stringify(config) },
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  return (async () => {
+    const status = await child.exited;
+    const stderr = await new Response(child.stderr).text();
+    const timeline = readFileSync(events, "utf8")
+      .split("\n")
+      .filter((line) => line.length > 0)
+      .map((line) => {
+        const space = line.lastIndexOf(" ");
+        return { label: line.slice(0, space), at: Number(line.slice(space + 1)) };
+      });
+    if (!existsSync(out)) throw new Error(`landing ${options.lane.branch} exited ${status} without a result: ${stderr}`);
+    const result = JSON.parse(readFileSync(out, "utf8")) as { code: number; waits: LockWait[] };
+    const start = timeline.find((event) => event.label === "START")?.at ?? 0;
+    const end = timeline.find((event) => event.label === "END")?.at ?? start;
+    return {
+      code: result.code,
+      waits: result.waits,
+      events: timeline,
+      logs: timeline.filter((event) => event.label.startsWith("LOG ")).map((event) => event.label.slice(4)),
+      errors: timeline.filter((event) => event.label.startsWith("ERR ")).map((event) => event.label.slice(4)),
+      span: { start, end },
+    };
+  })();
+}
+
+function windows(timeline: readonly TimelineEvent[], start: string, end: string): { start: number; end: number }[] {
+  const found: { start: number; end: number }[] = [];
+  let open: number | null = null;
+  for (const event of timeline) {
+    if (event.label === start) open = event.at;
+    else if (event.label === end && open !== null) {
+      found.push({ start: open, end: event.at });
+      open = null;
+    }
+  }
+  return found;
+}
+
+function overlap(a: { start: number; end: number }, b: { start: number; end: number }): number {
+  return Math.min(a.end, b.end) - Math.max(a.start, b.start);
+}
+
+function printLanding(label: string, landing: Landing): void {
+  console.log(`${label} (exit ${landing.code}, ${landing.span.end - landing.span.start}ms):`);
+  for (const line of landing.logs) console.log(`  land: ${line}`);
+}
+
+test("two landings watch their checks at once and only queue for the lock", async () => {
+  const WATCH_MS = 3000;
+
+  const soloRepo = landingRepo(["solo"]);
+  const solo = await startLanding({
+    lane: soloRepo.lanes[0]!,
+    bare: soloRepo.bare,
+    server: soloRepo.server,
+    lock: join(dirname(soloRepo.lanes[0]!.clone), "land.lock"),
+    number: 1,
+    watchMs: WATCH_MS,
+  });
+  expect(solo.code).toBe(0);
+  const soloWall = solo.span.end - solo.span.start;
+
+  const pair = landingRepo(["a", "b"]);
+  const lock = join(dirname(pair.lanes[0]!.clone), "land.lock");
+  const startAt = Date.now() + 1500;
+  const [a, b] = await Promise.all([
+    startLanding({ lane: pair.lanes[0]!, bare: pair.bare, server: pair.server, lock, number: 2, watchMs: WATCH_MS, strictBase: false, startAt }),
+    startLanding({ lane: pair.lanes[1]!, bare: pair.bare, server: pair.server, lock, number: 3, watchMs: WATCH_MS, strictBase: false, startAt }),
+  ]);
+  printLanding("landing a", a);
+  printLanding("landing b", b);
+
+  expect(a.code).toBe(0);
+  expect(b.code).toBe(0);
+
+  const [aWatch, bWatch] = [windows(a.events, "WATCH-START", "WATCH-END")[0]!, windows(b.events, "WATCH-START", "WATCH-END")[0]!];
+  expect(overlap(aWatch, bWatch)).toBeGreaterThan(WATCH_MS / 3);
+
+  const [aMerge, bMerge] = [windows(a.events, "MERGE-START", "MERGE-END")[0]!, windows(b.events, "MERGE-START", "MERGE-END")[0]!];
+  expect(overlap(aMerge, bMerge)).toBeLessThanOrEqual(0);
+
+  const [aWall, bWall] = [a.span.end - a.span.start, b.span.end - b.span.start];
+  const together = Math.max(a.span.end, b.span.end) - Math.min(a.span.start, b.span.start);
+  const serialised = aWall + bWall;
+  console.log(
+    `one landing ${soloWall}ms; landing a ${aWall}ms, landing b ${bWall}ms, together ${together}ms ` +
+      `(end to end would be ${serialised}ms); watches overlapped ${overlap(aWatch, bWatch)}ms; ` +
+      `merge windows overlapped ${overlap(aMerge, bMerge)}ms`,
+  );
+  expect(serialised - together).toBeGreaterThan(WATCH_MS / 2);
+  expect(together).toBeLessThan(serialised * 0.8);
+
+  expect(a.logs.some((line) => /^worked .+, waited .+ for the lock/.test(line))).toBe(true);
+  expect(b.logs.some((line) => /^worked .+, waited .+ for the lock/.test(line))).toBe(true);
+}, 120_000);
+
+test("a landing that queues prints what it waited for, and its summary splits waited from worked", async () => {
+  const repo = landingRepo(["queued"]);
+  const lock = join(dirname(repo.lanes[0]!.clone), "land.lock");
+  const holder = spawnHolder({ lock, branch: "agent/holder", holdMs: 1600 });
+  await holder.waitFor("HELD");
+
+  const landing = await startLanding({
+    lane: repo.lanes[0]!,
+    bare: repo.bare,
+    server: repo.server,
+    lock,
+    number: 4,
+    watchMs: 200,
+  });
+  printLanding("landing behind a holder", landing);
+
+  expect(landing.code).toBe(0);
+  expect(landing.logs).toContainEqual(expect.stringMatching(/^waited (\d+s|<1s) for the lock \(held by agent\/holder\)$/));
+  expect(landing.waits.length).toBeGreaterThan(0);
+  expect(landing.waits[0]!.holder).toBe("agent/holder");
+  expect(landing.logs.at(-1)).toMatch(/^worked (\d+s|<1s), waited (\d+s|<1s) for the lock \(held by agent\/holder\)$/);
+  await holder.child.exited;
+}, 120_000);
+
+test("a base that moves between the push and the merge is rebased, and the landing is not lost", async () => {
+  const repo = landingRepo(["mover"]);
+  const lock = join(dirname(repo.lanes[0]!.clone), "land.lock");
+  const landing = await startLanding({
+    lane: repo.lanes[0]!,
+    bare: repo.bare,
+    server: repo.server,
+    lock,
+    number: 5,
+    watchMs: 200,
+    moveBase: repo.partner,
+  });
+  printLanding("landing on a base that moved", landing);
+
+  expect(landing.code).toBe(0);
+  expect(landing.logs).toContainEqual(
+    expect.stringMatching(new RegExp(`^merge refused because origin/beta moved .*attempt 2 of ${MERGE_ATTEMPTS}\\)$`)),
+  );
+  expect(windows(landing.events, "WATCH-START", "WATCH-END").length).toBe(2);
+  expect(windows(landing.events, "MERGE-START", "MERGE-END").length).toBe(2);
+
+  const beta = gitOk(repo.bare, ["rev-parse", "refs/heads/beta"]);
+  const branchTip = gitOk(repo.bare, ["rev-parse", "refs/heads/agent/mover"]);
+  const movedCommit = gitOk(repo.partner, ["rev-parse", "HEAD"]);
+  expect(gitIn(repo.bare, ["merge-base", "--is-ancestor", branchTip, beta]).status).toBe(0);
+  expect(gitIn(repo.bare, ["merge-base", "--is-ancestor", movedCommit, beta]).status).toBe(0);
+  expect(gitOk(repo.bare, ["rev-parse", "refs/heads/agent/mover^"])).toBe(movedCommit);
+}, 120_000);
+
+test("a failed verify stops the landing before it merges", async () => {
+  const repo = landingRepo(["unverified"]);
+  const landing = await startLanding({
+    lane: repo.lanes[0]!,
+    bare: repo.bare,
+    server: repo.server,
+    lock: join(dirname(repo.lanes[0]!.clone), "land.lock"),
+    number: 6,
+    watchMs: 200,
+    verify: "the-command",
+    verifyOk: false,
+  });
+
+  expect(landing.code).toBe(EXIT_VERIFY_FAILED);
+  expect(landing.logs).toContain("verify the-command");
+  expect(landing.errors).toContain("verify failed: the-command");
+  expect(windows(landing.events, "MERGE-START", "MERGE-END").length).toBe(0);
+}, 120_000);
