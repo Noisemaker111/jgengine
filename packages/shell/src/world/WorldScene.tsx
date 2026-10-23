@@ -39,6 +39,7 @@ import {
 } from "../render/crowdRegistry";
 import {
   characterLodTier,
+  characterRigTier,
   clearCharacterLodTier,
   setCharacterLodTier,
   type CharacterLodTier,
@@ -76,6 +77,7 @@ function EntityMarker({
   onSelect: (entity: SceneEntity) => void;
 }) {
   const groupRef = useRef<THREE.Group>(null);
+  const modelRef = useRef<THREE.Group>(null);
   const ctx = useGameContext();
   const visibleRef = useRenderVisibility();
   const entityId = entity.id;
@@ -94,22 +96,32 @@ function EntityMarker({
     const live = ctx.scene.entity.get(entityId);
     if (live === null) return;
     writeRenderPoseIfChanged(group, ctx, entityId, live, scratchRef.current, memoRef.current);
+    const shown = live.hidden !== true && visibleRef.current(entityId);
     let tier: CharacterLodTier | undefined;
-    if (crowdModel !== undefined && crowd !== undefined && crowdKind !== undefined && crowdKindReady(crowdKind)) {
+    let batched = false;
+    if (crowdModel !== undefined && crowd !== undefined && crowdKind !== undefined && crowdKindReady(crowdKind) && shown) {
       const [x, y, z] = live.position;
       const distance = Math.sqrt(
         (state.camera.position.x - x) ** 2 + (state.camera.position.y - y) ** 2 + (state.camera.position.z - z) ** 2,
       );
-      tier = characterLodTier(distance, crowdModel.lod === false ? undefined : crowdModel.lod, tierRef.current);
-      setCharacterLodTier(entityId, tier);
+      const lod = crowdModel.lod === false ? undefined : crowdModel.lod;
+      tier = characterLodTier(distance, lod, tierRef.current);
       if (tier === "crowd") {
-        crowd.set(entityId, crowdKind, { x, y, z, rotationY: live.rotationY ?? 0, speed: groundSpeed(live) });
-      } else {
-        crowd.delete(entityId);
+        // A painted character keeps its own rig: its strokes live on its materials, not in the batch.
+        const painted = ctx.scene.entity.paint.version(entityId) !== 0;
+        batched = !painted && crowd.claim(entityId, crowdKind, { x, y, z, rotationY: live.rotationY ?? 0, speed: groundSpeed(live) });
+        // An over-cap batch leaves the rest of its kind on their own rigs at the tier their distance
+        // earns, so a crowded scene loses draws rather than characters.
+        if (!batched) tier = characterRigTier(distance, lod);
       }
+      setCharacterLodTier(entityId, tier);
     }
+    if (!batched) crowd?.delete(entityId);
     tierRef.current = tier;
-    group.visible = live.hidden !== true && visibleRef.current(entityId) && tier !== "crowd";
+    // The marker itself stays mounted and visible while a batch draws the character: its status
+    // rings and the hit test on its rig have to behave as they do when it draws itself.
+    if (modelRef.current !== null) modelRef.current.visible = !batched;
+    group.visible = shown;
   });
 
   useEffect(
@@ -138,36 +150,38 @@ function EntityMarker({
           <meshBasicMaterial color="#34d399" transparent opacity={0.9} />
         </mesh>
       ) : null}
-      {custom !== undefined && custom !== null ? (
-        <MeasuredBoundsGroup target="entity" measureKey={name}>
-          {custom}
-        </MeasuredBoundsGroup>
-      ) : model !== undefined ? (
-        <IsolatedEntityModel
-          model={model}
-          instanceId={entityId}
-          measure={{ target: "entity", key: name }}
-          fallback={sprite !== undefined ? <EntitySprite sprite={sprite} /> : undefined}
-        />
-      ) : sprite !== undefined ? (
-        <EntitySprite sprite={sprite} />
-      ) : role === "prop" ? (
-        <mesh position-y={0.5} castShadow receiveShadow>
-          <sphereGeometry args={[0.45, 24, 24]} />
-          <DefaultSurface color={color} />
-        </mesh>
-      ) : (
-        <group scale={ctx.scene.entity.visualScaleOf(entityId)}>
-          <mesh position-y={0.95} castShadow receiveShadow>
-            <capsuleGeometry args={[0.35, 1.1, 6, 14]} />
-            <DefaultSurface color={color} roughness={0.6} />
+      <group ref={modelRef}>
+        {custom !== undefined && custom !== null ? (
+          <MeasuredBoundsGroup target="entity" measureKey={name}>
+            {custom}
+          </MeasuredBoundsGroup>
+        ) : model !== undefined ? (
+          <IsolatedEntityModel
+            model={model}
+            instanceId={entityId}
+            measure={{ target: "entity", key: name }}
+            fallback={sprite !== undefined ? <EntitySprite sprite={sprite} /> : undefined}
+          />
+        ) : sprite !== undefined ? (
+          <EntitySprite sprite={sprite} />
+        ) : role === "prop" ? (
+          <mesh position-y={0.5} castShadow receiveShadow>
+            <sphereGeometry args={[0.45, 24, 24]} />
+            <DefaultSurface color={color} />
           </mesh>
-          <mesh position={[0, 1.35, 0.32]}>
-            <boxGeometry args={[0.16, 0.16, 0.16]} />
-            <meshStandardMaterial color="#f8fafc" />
-          </mesh>
-        </group>
-      )}
+        ) : (
+          <group scale={ctx.scene.entity.visualScaleOf(entityId)}>
+            <mesh position-y={0.95} castShadow receiveShadow>
+              <capsuleGeometry args={[0.35, 1.1, 6, 14]} />
+              <DefaultSurface color={color} roughness={0.6} />
+            </mesh>
+            <mesh position={[0, 1.35, 0.32]}>
+              <boxGeometry args={[0.16, 0.16, 0.16]} />
+              <meshStandardMaterial color="#f8fafc" />
+            </mesh>
+          </group>
+        )}
+      </group>
       {targeted ? (
         <mesh rotation-x={-Math.PI / 2} position-y={0.03}>
           <ringGeometry args={[0.6, 0.75, 28]} />
@@ -423,7 +437,16 @@ function WorldActors({
           />
         );
       })}
-      {crowdModels.size > 0 ? <CharacterCrowd models={[...crowdModels.values()]} registry={crowdRegistry} /> : null}
+      {crowdModels.size > 0 ? (
+        <CharacterCrowd
+          models={[...crowdModels.values()]}
+          registry={crowdRegistry}
+          onPick={(entityId) => {
+            const live = ctx.scene.entity.get(entityId);
+            if (live !== null) handleSelect(live);
+          }}
+        />
+      ) : null}
       {grouped.singles.map((candidate) => renderSingle(candidate.object))}
       {grouped.batches.map((batch) => <StaticObjectModels key={batch.key} batch={batch} single={renderSingle} />)}
     </>

@@ -1,4 +1,5 @@
 import { useFrame, useLoader } from "@react-three/fiber";
+import type { ThreeEvent } from "@react-three/fiber";
 import { Suspense, useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 
@@ -7,7 +8,7 @@ import { warnOnce } from "@jgengine/core/devtools/warnOnce";
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
 
 import {
-  animationPhaseOf,
+  characterLodPolicy,
   characterLodProbe,
   clearCrowdKind,
   noteCharacterFrame,
@@ -15,76 +16,65 @@ import {
 } from "./characterLod";
 import {
   CharacterCrowdRegistry,
-  crowdClipForSpeed,
   crowdClipsOf,
   crowdKindOf,
+  crowdSpeedBandsOf,
   setCrowdKindReady,
   type CrowdMember,
 } from "./crowdRegistry";
 import { applyMaterialOverrideToMaterial } from "../materialOverride";
 import { useRenderVisibility } from "../visibility/CullingProvider";
+import { useOptionalGameContext } from "@jgengine/react/provider";
+import { POINTER_ENTITY_INSTANCES_KEY } from "../pointer/pointerService";
+import { writeCrowdBatch, type CrowdPlayback } from "./crowdBatch";
 import { ModelFallbackBoundary } from "./SceneModels";
 import { sharedGltfLoader } from "./modelLoad";
+import { modelPlacementTransform } from "./modelRender";
 import {
   bakeSkinnedCrowd,
   createCrowdUniforms,
   patchCrowdMaterial,
 } from "./SkinnedInstances";
 
-/** Instances one crowd batch can draw; a batch skips past this rather than allocate mid-frame. */
-const CROWD_CAPACITY = 128;
-
-const scratchMatrix = new THREE.Matrix4();
-const scratchOffset = new THREE.Matrix4();
-const scratchQuaternion = new THREE.Quaternion();
-const scratchPosition = new THREE.Vector3();
-const scratchScale = new THREE.Vector3();
-
-interface ClipPlayback {
-  clip: number;
-  offset: number;
-}
-
-/** A stable non-zero time offset for a member with no recorded pose, so a crowd is not in lockstep. */
-function poseOffset(id: string): number {
-  let hash = 0;
-  for (let index = 0; index < id.length; index += 1) hash = (hash * 31 + id.charCodeAt(index)) | 0;
-  return (Math.abs(hash) % 1000) / 1000 + 0.05;
-}
-
 function CrowdBatch({
   kind,
   model,
   registry,
   fps,
+  onPick,
 }: {
   kind: string;
   model: ModelConfig;
   registry: CharacterCrowdRegistry;
   fps: number;
+  onPick: ((id: string) => void) | undefined;
 }) {
   const gltf = useLoader(sharedGltfLoader, model.url);
   const clipNames = useMemo(() => gltf.animations.map((clip) => clip.name), [gltf]);
   const clips = useMemo(() => crowdClipsOf(model, clipNames), [model, clipNames]);
+  const bands = useMemo(() => crowdSpeedBandsOf(model, clipNames), [model, clipNames]);
+  const capacity = useMemo(() => characterLodPolicy(model.lod === false ? undefined : model.lod).crowdCapacity, [model.lod]);
   const baked = useMemo(() => {
-    if (clips.length === 0) return null;
+    // A model that plays clips but resolves none of them to locomotion keeps its own rig: batching it
+    // would draw a frozen stance. A model with no clips at all is a static character, which batches.
+    if (clipNames.length > 0 && clips.length === 0) return null;
     try {
       return bakeSkinnedCrowd({ scene: gltf.scene, animations: gltf.animations }, { clips, fps });
     } catch (error) {
       // A model can carry clips without a skin (a node-transform prop animation). It keeps its own
       // rig rather than entering the crowd path, which is what the readiness flag then reports.
-      warnOnce(`character-crowd:${model.url}`, `[jgengine] character crowd: "${model.url}" cannot be baked (no skinned mesh) and stays on its own rig`);
+      warnOnce(`character-crowd:${model.url}`, `[jgengine] character crowd: "${model.url}" cannot be baked and stays on its own rig`);
       return null;
     }
-  }, [gltf, clips, fps, model.url]);
+  }, [gltf, clips, clipNames.length, fps, model.url]);
   useEffect(() => () => baked?.dispose(), [baked]);
 
-  const uniforms = useMemo(() => (baked === null ? null : createCrowdUniforms(baked)), [baked]);
+  const uniforms = useMemo(() => (baked === null || !baked.animated ? null : createCrowdUniforms(baked)), [baked]);
   const materials = useMemo(() => {
-    if (baked === null || uniforms === null) return [];
+    if (baked === null) return [];
     return baked.materials.map((material) => {
       const tinted = model.material === undefined ? material.clone() : applyMaterialOverrideToMaterial(material.clone(), model.material, false, undefined);
-      return patchCrowdMaterial(tinted, uniforms);
+      return uniforms === null ? tinted : patchCrowdMaterial(tinted, uniforms);
     });
   }, [baked, uniforms, model]);
   const depthMaterial = useMemo(
@@ -93,15 +83,15 @@ function CrowdBatch({
   );
 
   const mesh = useMemo(() => {
-    if (baked === null || depthMaterial === null || materials.length === 0) return null;
-    const instanced = new THREE.InstancedMesh(baked.geometry, materials, CROWD_CAPACITY);
-    instanced.customDepthMaterial = depthMaterial;
+    if (baked === null || materials.length === 0) return null;
+    const instanced = new THREE.InstancedMesh(baked.geometry, materials.length === 1 ? materials[0]! : materials, capacity);
+    if (depthMaterial !== null) instanced.customDepthMaterial = depthMaterial;
     instanced.boundingSphere = new THREE.Sphere(new THREE.Vector3(), 0);
     instanced.count = 0;
-    instanced.geometry.setAttribute("crowdPlay", new THREE.InstancedBufferAttribute(new Float32Array(CROWD_CAPACITY * 3), 3));
+    if (uniforms !== null) instanced.geometry.setAttribute("crowdPlay", new THREE.InstancedBufferAttribute(new Float32Array(capacity * 3), 3));
     instanced.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     return instanced;
-  }, [baked, materials, depthMaterial]);
+  }, [baked, materials, depthMaterial, uniforms, capacity]);
 
   useEffect(
     () => () => {
@@ -112,79 +102,107 @@ function CrowdBatch({
     [materials, depthMaterial, mesh],
   );
 
-  useEffect(() => {
-    // A kind without a bakeable locomotion clip set keeps every character on its own rig rather than
-    // making them invisible past the crowd distance.
-    setCrowdKindReady(kind, mesh !== null && clips.length > 0);
-    return () => setCrowdKindReady(kind, false);
-  }, [kind, mesh, clips]);
-
   /** The height and centering the full entity path gives this model, so a crowd copy stands in the same place. */
   const placement = useMemo(() => {
     if (baked === null) return null;
-    const box = baked.geometry.boundingBox ?? (baked.geometry.computeBoundingBox(), baked.geometry.boundingBox)!;
-    const height = box.max.y - box.min.y;
-    const scale = (model.scale ?? 1) * (model.targetHeight !== undefined && height > 0 ? model.targetHeight / height : 1);
+    const next = modelPlacementTransform(new THREE.Group(), model, {
+      min: baked.bounds.min.toArray() as [number, number, number],
+      max: baked.bounds.max.toArray() as [number, number, number],
+      meshCount: 1,
+    });
     return {
-      scale,
-      offset: new THREE.Vector3(-scale * (box.min.x + box.max.x) / 2, (model.y ?? 0) - scale * box.min.y, -scale * (box.min.z + box.max.z) / 2),
+      scale: next.scale,
+      offset: new THREE.Vector3(next.position[0], next.position[1], next.position[2]),
     };
   }, [baked, model]);
 
-  const playback = useRef(new Map<string, ClipPlayback>());
+  useEffect(() => {
+    // A kind without a bakeable set keeps every character on its own rig rather than making them
+    // invisible past the crowd distance.
+    const ready = mesh !== null && placement !== null;
+    setCrowdKindReady(kind, ready);
+    registry.setCapacity(kind, ready ? capacity : 0);
+    if (ready && baked !== null && placement !== null) {
+      registry.setGeometry(kind, { geometry: baked.geometry, position: placement.offset.toArray() as [number, number, number], scale: placement.scale });
+    }
+    return () => {
+      setCrowdKindReady(kind, false);
+      registry.setCapacity(kind, 0);
+      registry.setGeometry(kind, undefined);
+    };
+  }, [kind, mesh, placement, registry, capacity, baked]);
+
+  const playback = useRef(new Map<string, CrowdPlayback>());
   const visibleRef = useRenderVisibility();
+  const ctx = useOptionalGameContext();
+  const drawnIds = useRef<string[]>([]);
+  const drawnMembers = useRef<{ id: string; member: CrowdMember }[]>([]);
 
   useFrame((_state, delta) => {
-    if (mesh === null || baked === null || uniforms === null || placement === null) return;
-    uniforms.crowdTime.value += delta;
-    const play = mesh.geometry.getAttribute("crowdPlay") as THREE.InstancedBufferAttribute;
-    const active = playback.current;
-    let count = 0;
-    let minX = Infinity, minY = Infinity, minZ = Infinity, maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
-    registry.forEach(kind, (id, member: CrowdMember) => {
-      if (count >= CROWD_CAPACITY) return;
-      if (!visibleRef.current(id)) return;
-      const clipName = crowdClipForSpeed(clips, member.speed);
-      const clip = clipName === undefined ? 0 : baked.clipIndex.get(clipName) ?? 0;
-      let entry = active.get(id);
-      if (entry === undefined || entry.clip !== clip) {
-        // Hand the crowd the pose the rig was holding, so the swap continues the same gait instead
-        // of restarting the clip at a different phase.
-        const phase = animationPhaseOf(id);
-        entry = {
-          clip,
-          offset: phase !== undefined && phase.clip === clipName ? phase.time - uniforms.crowdTime.value : poseOffset(id),
-        };
-        active.set(id, entry);
-      }
-      scratchQuaternion.setFromAxisAngle(THREE.Object3D.DEFAULT_UP, member.rotationY);
-      scratchMatrix.compose(scratchPosition.set(member.x, member.y, member.z), scratchQuaternion, scratchScale.setScalar(placement.scale));
-      scratchMatrix.multiply(scratchOffset.makeTranslation(placement.offset.x, placement.offset.y, placement.offset.z));
-      mesh.setMatrixAt(count, scratchMatrix);
-      play.setXYZ(count, entry.clip, entry.offset, 1);
-      minX = Math.min(minX, member.x); maxX = Math.max(maxX, member.x);
-      minY = Math.min(minY, member.y); maxY = Math.max(maxY, member.y);
-      minZ = Math.min(minZ, member.z); maxZ = Math.max(maxZ, member.z);
-      count += 1;
-    });
-    mesh.count = count;
-    mesh.instanceMatrix.needsUpdate = true;
-    play.needsUpdate = true;
-    if (count > 0) {
-      // One batch spans every drawn member, so its cull sphere has to follow them; three cannot cull
-      // an InstancedMesh per instance.
-      const sphere = mesh.boundingSphere ?? (mesh.boundingSphere = new THREE.Sphere());
-      sphere.center.set((minX + maxX) / 2, (minY + maxY) / 2, (minZ + maxZ) / 2);
-      sphere.radius = Math.hypot(maxX - minX, maxY - minY, maxZ - minZ) / 2 + placement.scale * 1.2;
+    if (mesh === null || baked === null || placement === null) return;
+    // A crowd on a game clock stops when the game stops; an unbound preview advances on real time.
+    if (uniforms !== null) {
+      const advanced = ctx?.time.advancedSeconds?.();
+      uniforms.crowdTime.value = advanced !== undefined && advanced > 0 ? advanced : uniforms.crowdTime.value + delta;
     }
+    const batches = drawnMembers.current;
+    let visible = 0;
+    registry.forEach(kind, (id, member: CrowdMember) => {
+      if (!visibleRef.current(id)) return;
+      const existing = batches[visible];
+      if (existing === undefined) batches[visible] = { id, member };
+      else {
+        existing.id = id;
+        existing.member = member;
+      }
+      visible += 1;
+    });
+    batches.length = visible;
+    const count = writeCrowdBatch({
+      mesh,
+      play: uniforms === null ? null : (mesh.geometry.getAttribute("crowdPlay") as THREE.InstancedBufferAttribute),
+      members: batches,
+      placement,
+      clips,
+      bands,
+      clipIndex: baked.clipIndex,
+      time: uniforms === null ? 0 : uniforms.crowdTime.value,
+      playback: playback.current,
+      ids: drawnIds.current,
+    });
+    mesh.userData[ENTITY_INSTANCES_KEY] = drawnIds.current;
     noteCrowdInstances(kind, count);
   });
 
   useEffect(() => () => clearCrowdKind(kind), [kind]);
+  // A member removed while its matrix is still in the buffer must not linger on screen.
+  useEffect(() => () => {
+    playback.current.clear();
+  }, []);
 
   if (mesh === null) return null;
-  return <primitive object={mesh} castShadow receiveShadow />;
+  return (
+    <primitive
+      object={mesh}
+      castShadow
+      receiveShadow
+      onPointerDown={
+        onPick === undefined
+          ? undefined
+          : (event: ThreeEvent<PointerEvent>) => {
+              if (event.instanceId === undefined) return;
+              const id = drawnIds.current[event.instanceId];
+              if (id === undefined) return;
+              event.stopPropagation();
+              onPick(id);
+            }
+      }
+    />
+  );
 }
+
+/** Instance slot → entity id, so picking a batched character resolves like its own rig. @internal */
+export const ENTITY_INSTANCES_KEY = POINTER_ENTITY_INSTANCES_KEY;
 
 /** Props for {@link CharacterCrowd}. */
 export interface CharacterCrowdProps {
@@ -194,17 +212,19 @@ export interface CharacterCrowdProps {
   registry: CharacterCrowdRegistry;
   /** Baked samples per second for the crowd clips. Default 24. */
   fps?: number;
+  /** Called when a batched character is clicked, with the entity a click on its own rig would select. */
+  onPick?: (entityId: string) => void;
 }
 
 /**
- * Draws far characters through the GPU crowd path: one baked rig per character kind, one instanced
- * draw per material, every member's clip, time offset and speed sampled in the vertex shader. The
- * entity markers decide who is far enough (their `lod` tiers) and write poses into `registry`; this
- * layer owns the bakes, the materials and the instance buffers. Mount it in the same canvas as the
- * entity markers; unmount it to fall back to per-entity rigs.
- * @capability character-crowd draw distant animated characters on the GPU instead of posing their skeletons
+ * Draws characters through the GPU batch path: one baked rig per character kind, one instanced draw
+ * per material, every member's clip, time offset and speed sampled in the vertex shader. The entity
+ * markers decide who is batched (their `lod` tiers and the batch capacity) and write poses into
+ * `registry`; this layer owns the bakes, the materials and the instance buffers. Mount it in the same
+ * canvas as the entity markers; unmount it to fall back to per-entity rigs.
+ * @capability character-crowd draw animated or static characters as batched instanced draws instead of posing each skeleton
  */
-export function CharacterCrowd({ models, registry, fps = 24 }: CharacterCrowdProps) {
+export function CharacterCrowd({ models, registry, fps = 24, onPick }: CharacterCrowdProps) {
   const kinds = useMemo(() => {
     const unique = new Map<string, ModelConfig>();
     for (const model of models) {
@@ -230,11 +250,10 @@ export function CharacterCrowd({ models, registry, fps = 24 }: CharacterCrowdPro
       {kinds.map(([kind, model]) => (
         <ModelFallbackBoundary key={kind} fallback={null} url={model.url} seam="entity">
           <Suspense fallback={null}>
-            <CrowdBatch kind={kind} model={model} registry={registry} fps={fps} />
+            <CrowdBatch kind={kind} model={model} registry={registry} fps={fps} onPick={onPick} />
           </Suspense>
         </ModelFallbackBoundary>
       ))}
     </>
   );
 }
-
