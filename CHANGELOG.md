@@ -26,6 +26,37 @@ At publish, rename this heading to the new version and mirror the entries into
 `packages/core/src/meta/changelog.ts` (the typed `CHANGELOG` export).
 -->
 
+## 0.31.0
+
+### Migrate
+
+- **Bump lockstep SDK packages to `^0.31.0`:** `@jgengine/{core,rapier,react,ws,node,sql,convex,shell,editor,assets,navbake}`. CLI `jgengine` is `0.28.0`; `@jgengine/github` is `0.18.0`.
+
+### Added
+
+- `createAgent` (`@jgengine/core/agents/agent`) runs one resident's whole loop on the world clock: needs decay through `sim/needs`, a utility brain picks among the targets the game offers, an authored day plan says where the agent belongs, and the agent falls back to a declared target when its pick disappears. Mood, action and the far flag snapshot and restore with the needs.
+- `createMoodReader` / `readMood` (`@jgengine/core/agents/mood`) derive a 0-100 mood and a caller-labelled tier from weighted need satisfaction, plus named sources a queue, a litter patch or a cold snap raises and clears.
+- `createAgentSchedule` (`@jgengine/core/agents/schedule`) resolves an authored day plan through `sim/routine` and adds a work beat: a stop names the places it patrols, so a janitor is an agent with a route rather than a special case. Off-hours behaviour is a stop without a beat.
+- `createRelationshipBook` (`@jgengine/core/agents/relationships`) keeps undirected familiarity and opinion per pair. A social action moves both and reports the milestones crossed, friends prefer each other's company, and a bonded pair refuses to split. Pair keys come from `relation/keyedValues` and crossings from `relation/thresholds`.
+- `GameSave.deleteSlot(slot)` and `SaveStore.deleteSlot(slot)` remove one slot's payload and drop it from the slot index; they resolve `true` when a document was removed and `false` for an unknown slot. Deleting the active slot resets the live state to the initial document. `load()` no longer lists a slot that holds nothing, so a deleted slot cannot return.
+- `HudPanel` takes `lane` (`@jgengine/react`): blocks naming the same anchor and lane stack without overlap, lanes in one anchor sit side by side, and `resolveHudLanes` resolves the rectangles. A moved panel leaves its lane and keeps its authored placement.
+- `hudBlockOverlaps` and `formatHudOverlapReport` (`@jgengine/react`) name every pair of rendered HUD blocks whose rectangles intersect, with both ids and the viewport; `HudCanvas` warns with that report in a dev build.
+- `rollDrop` (`@jgengine/core/loot/drop`) rolls one deterministic item from a seed and `compareToEquipped` turns it into per-stat deltas against worn gear with a weighted verdict a HUD can render.
+- `createRunHaul` (`@jgengine/core/loot/haul`) gates carried loot by weight through the shared encumbrance rules, banks what the persistent stash fits, and discards the run's haul when the game calls `fail`.
+- `salvageItem` and `createItemLedger` (`@jgengine/core/loot/salvage`) break an item down for the currency its level and rarity say and claim the instance, so a salvaged item cannot be salvaged, equipped or sold again.
+- `stockVendor` and `createVendorRotation` (`@jgengine/core/loot/vendor`) fill a `ShopStock` with rolled items priced through the economy wallet, with a run-count restock rule the game authors.
+- `markerProximity` on `createMissionRuntime` picks the plane a marker proximity test compares in: `"horizontal"` (default) measures ground distance and allows the actor a `tolerance` (default 8 m) above or below the marker, `"spatial"` is the straight 3D check for worlds with stacked platforms. `MissionMarkerPlane`, `MissionMarkerProximity` and `DEFAULT_MARKER_TOLERANCE` are exported with it.
+
+### Changed
+
+- Loot bases and affixes take `minLevel`, so `rollLoot` only draws from entries at or below the item level. Loot bases take `mass`; rolled items carry it for carry checks.
+
+### Fixed
+
+- `HudCanvas` resolved its host with `canvas.parentElement`, which is `HudThemeRoot`'s `display: contents` element and measures 0x0 — the boundary overlay, the HUD-fit measurement and the new overlap report never ran under the standard HUD root. It now uses the nearest ancestor with a real box.
+- The HUD boundary check returned early whenever nothing overflowed, so a later report in the same pass could never run.
+- `reach`, `interact` and the `left-area` fail condition compared a marker in 3D, so a marker authored at `y=0` under rising ground was unreachable. They now read the same plane.
+
 ## 0.30.0
 
 ### Migrate
