@@ -96,6 +96,11 @@ jobs:
 
   # PRs run everything main runs, split into parallel jobs, so squash auto-merge cannot land a red main.
   # Games/ is cloned at the SHA in scripts/games-ref.txt; a games-repo push changes nothing here until a PR bumps it.
+  # `bun run check-types` ran its independent stages one after another: 59 s on a runner, of
+  # which the tsc fan-out was 21 s and three generators 23 s. scripts/type-shard.ts runs the
+  # same stages from the same plan with four in flight, heaviest first, and keeps this one
+  # check name. A second job would have paid 15 s of checkout, install and build before its
+  # first stage and taken a slot from the 20-job cap.
   types:
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -111,25 +116,25 @@ jobs:
           restore-keys: bun-${{ runner.os }}-
       - run: bun install --frozen-lockfile
       - run: bun run build
-      - run: bun run build:registry
       - run: bun run games:clone
         env:
           GAMES_CLONE_TOKEN: ${{ secrets.GAMES_CLONE_TOKEN }}
-      - run: bun run check-types
+      - run: bun scripts/type-shard.ts
 
   # One bun process over every test file took 5m37s of test time on a runner. The same
-  # files are split by cost into ten jobs of about 40 s. scripts/test-shard.ts owns which
-  # files each letter runs, so rebalancing never touches this file; it fails if a test file
-  # falls outside every shard, and scripts/test-shard.test.ts fails if this
-  # matrix and the script's shard names drift apart. `ci` needs `test`, which aggregates
-  # every shard - a red shard fails `ci`.
+  # files are split by cost into eight jobs of about 55 s, which is what fits the account's
+  # 20-job cap with room for one more run in flight. scripts/test-shard.ts owns which
+  # files each letter runs and what it prepares first, so rebalancing never touches this
+  # file; it fails if a test file falls outside every shard, and
+  # scripts/test-shard.test.ts fails if this matrix and the script's shard names drift
+  # apart. `ci` needs `test`, which aggregates every shard - a red shard fails `ci`.
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
-        shard: [a, b, c, d, e, f, g, h, i, j]
+        shard: [a, b, c, d, e, f, g, h]
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
@@ -141,12 +146,11 @@ jobs:
           key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
           restore-keys: bun-${{ runner.os }}-
       - run: bun install --frozen-lockfile
-      - run: bun run build
-      - run: bun run build:registry
-      - run: bun run games:clone
+      # The shard runs the build and the Games clone only when its own tests read them,
+      # which is why seven of these eight jobs no longer pay either.
+      - run: bun scripts/test-shard.ts ${{ matrix.shard }}
         env:
           GAMES_CLONE_TOKEN: ${{ secrets.GAMES_CLONE_TOKEN }}
-      - run: bun scripts/test-shard.ts ${{ matrix.shard }}
 
   web-build:
     runs-on: ubuntu-latest
