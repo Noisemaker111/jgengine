@@ -1,9 +1,9 @@
 import { Database } from "bun:sqlite";
 import { afterEach, expect, test } from "bun:test";
 import { mkdirSync, rmSync } from "node:fs";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 
-import { auditSession, classifyCommand, directoryMatches, toolCallsFromMessages } from "./lane-audit";
+import { auditSession, classifyCommand, cwdFilter, directoryMatches, toolCallsFromMessages } from "./lane-audit";
 import type { ToolCall } from "./lane-audit";
 
 const SCRIPT = join(import.meta.dir, "lane-audit.ts");
@@ -149,6 +149,9 @@ test("a cwd selects the lanes under it", () => {
   expect(directoryMatches("C:/repo/.claude/worktrees/lane-work", "C:\\repo\\.claude\\worktrees\\lane-work")).toBe(true);
   expect(directoryMatches("C:/repo/.claude/worktrees/lane-work/src", "C:/repo/.claude/worktrees/lane-work")).toBe(true);
   expect(directoryMatches("C:/repo/.claude/worktrees/lane-wait", "C:/repo/.claude/worktrees/lane-work")).toBe(false);
+  // A recorded Windows path stays whole on a POSIX runner instead of being resolved against its cwd.
+  expect(cwdFilter("C:/repo/.claude/worktrees/lane-work")).toBe("C:/repo/.claude/worktrees/lane-work");
+  expect(cwdFilter(".claude/worktrees/lane-work")).toBe(resolve(".claude/worktrees/lane-work"));
 });
 
 test("--json carries the documented shape and percentile", () => {

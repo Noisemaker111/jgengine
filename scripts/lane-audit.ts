@@ -406,6 +406,15 @@ export function describeWaits(sessions: readonly RankedAudit[]): string[] {
   return lines;
 }
 
+/**
+ * A lane passes the directory it runs in, which may be a Windows path recorded on another machine, so
+ * only a relative value is resolved against the current directory.
+ */
+export function cwdFilter(value: string): string {
+  const absolute = /^[A-Za-z]:[\\/]/.test(value) || value.startsWith("/") || value.startsWith("\\\\");
+  return absolute ? value : resolve(value);
+}
+
 interface Args {
   hours: number;
   database?: string;
@@ -477,7 +486,7 @@ function main(argv: readonly string[]): number {
     const report = auditDatabase(database, {
       hours: args.hours,
       database: resolved,
-      cwd: args.cwd === undefined ? undefined : resolve(args.cwd),
+      cwd: args.cwd === undefined ? undefined : cwdFilter(args.cwd),
       now: Date.now(),
     });
     if (report.sessions.length === 0) {
