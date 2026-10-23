@@ -53,6 +53,20 @@ export const COLORBLIND_MATRICES: Record<ColorblindMode, string | null> = {
   grayscale: "0.299 0.587 0.114 0 0  0.299 0.587 0.114 0 0  0.299 0.587 0.114 0 0  0 0 0 1 0",
 };
 
+/**
+ * The CSS filter that applies `mode` to one rendered frame — a `url(#jg-cb-<mode>)` reference to the
+ * `feColorMatrix` defs {@link COLORBLIND_MATRICES} drives. `"none"` maps to `null` (no filter), so a
+ * caller can spread it onto the canvas alone and leave HUD and menu text at its own contrast.
+ *
+ * @capability colorblind-frame-filter resolve a colorblind mode to the CSS filter for the 3D frame alone
+ */
+export function colorblindFrameFilter(mode: ColorblindMode): string | null {
+  const matrix = COLORBLIND_MATRICES[mode];
+  // An unknown id at runtime would reference a filter that does not exist, and a broken `url()` filter hides the element.
+  if (matrix === null || matrix === undefined) return null;
+  return `url(#jg-cb-${mode})`;
+}
+
 /** Observable, serializable accessibility-preferences store. */
 export interface AccessibilityStore {
   get(): AccessibilityState;

@@ -1,25 +1,23 @@
-import { type CSSProperties, type ReactNode } from "react";
+import { useEffect, type CSSProperties, type ReactNode } from "react";
 
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import type { GameContext, GameContextEntityEntry } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { environment, grass, terrain } from "@jgengine/core/world/features";
 import {
-  createAccessibilityStore,
-  TEXT_SCALE_MAX,
-  TEXT_SCALE_MIN,
-  type ColorblindMode,
-} from "@jgengine/core/ui/accessibility";
-import { AccessibilityProvider, useAccessibility } from "@jgengine/react/accessibility";
+  ACCESSIBILITY_SETTING_IDS,
+  COLORBLIND_OPTIONS,
+  HOLD_VS_TOGGLE_OPTIONS,
+  TEXT_SCALE_OPTIONS,
+} from "@jgengine/core/settings/accessibilitySettings";
+import { useAccessibilitySettings, useHoldVsToggle } from "@jgengine/react/accessibilitySettings";
+import { HudThemeRoot } from "@jgengine/react/hudThemeRoot";
+import { useSettingsStore } from "@jgengine/react/settings";
 
 import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
 import type { PlayableGame } from "@jgengine/shell/registry";
 
 const SCOUT = "scout";
-
-const store = createAccessibilityStore();
-
-const COLORBLIND_MODES: readonly ColorblindMode[] = ["none", "protanopia", "deuteranopia", "tritanopia", "grayscale"];
 
 const SWATCHES: readonly { label: string; color: string }[] = [
   { label: "Health", color: "#ef4444" },
@@ -51,7 +49,7 @@ function onNewPlayer(ctx: GameContext): void {
 }
 
 function Panel({ children }: { children: ReactNode }) {
-  const { state } = useAccessibility();
+  const state = useAccessibilitySettings();
   return (
     <div
       style={{
@@ -70,7 +68,9 @@ function Panel({ children }: { children: ReactNode }) {
 }
 
 function Controls() {
-  const { state, store: s } = useAccessibility();
+  const state = useAccessibilitySettings();
+  const hold = useHoldVsToggle();
+  const settings = useSettingsStore();
   const btn = (active: boolean): CSSProperties => ({
     borderRadius: 6,
     border: `1px solid ${active ? "rgba(56,189,248,0.6)" : "rgba(148,163,184,0.4)"}`,
@@ -81,28 +81,65 @@ function Controls() {
     fontWeight: 600,
     cursor: "pointer",
   });
+  const scaleIndex = Math.max(0, TEXT_SCALE_OPTIONS.findIndex((option) => Number(option.value) === state.textScale));
+  const stepScale = (delta: -1 | 1) => {
+    const next = TEXT_SCALE_OPTIONS[Math.min(TEXT_SCALE_OPTIONS.length - 1, Math.max(0, scaleIndex + delta))];
+    if (next !== undefined) settings.set(ACCESSIBILITY_SETTING_IDS.textScale, Number(next.value));
+  };
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 8, minWidth: 260 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
         <span style={{ width: 96 }}>Text size</span>
-        <button type="button" style={btn(false)} onClick={() => s.set({ textScale: Math.max(TEXT_SCALE_MIN, state.textScale - 0.25) })}>A−</button>
+        <button type="button" style={btn(false)} onClick={() => stepScale(-1)}>A−</button>
         <span style={{ minWidth: 40, textAlign: "center", fontVariantNumeric: "tabular-nums" }}>{state.textScale.toFixed(2)}×</span>
-        <button type="button" style={btn(false)} onClick={() => s.set({ textScale: Math.min(TEXT_SCALE_MAX, state.textScale + 0.25) })}>A+</button>
+        <button type="button" style={btn(false)} onClick={() => stepScale(1)}>A+</button>
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
         <span style={{ width: 96 }}>Colorblind</span>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-          {COLORBLIND_MODES.map((mode) => (
-            <button key={mode} type="button" style={btn(state.colorblind === mode)} onClick={() => s.set({ colorblind: mode })}>
-              {mode === "none" ? "off" : mode.slice(0, 4)}
+          {COLORBLIND_OPTIONS.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              style={btn(state.colorblind === option.value)}
+              onClick={() => settings.set(ACCESSIBILITY_SETTING_IDS.colorblind, option.value)}
+            >
+              {option.value === "none" ? "off" : option.value.slice(0, 4)}
             </button>
           ))}
         </div>
       </div>
       <div style={{ display: "flex", gap: 6 }}>
-        <button type="button" style={btn(state.reducedMotion)} onClick={() => s.set({ reducedMotion: !state.reducedMotion })}>Reduced motion</button>
-        <button type="button" style={btn(state.highContrast)} onClick={() => s.set({ highContrast: !state.highContrast })}>High contrast</button>
-        <button type="button" style={btn(state.captions)} onClick={() => s.set({ captions: !state.captions })}>Captions</button>
+        <button
+          type="button"
+          style={btn(state.reducedMotion)}
+          onClick={() => settings.set(ACCESSIBILITY_SETTING_IDS.reducedMotion, !state.reducedMotion)}
+        >
+          Reduced motion
+        </button>
+        <button
+          type="button"
+          style={btn(state.highContrast)}
+          onClick={() => settings.set(ACCESSIBILITY_SETTING_IDS.highContrast, !state.highContrast)}
+        >
+          High contrast
+        </button>
+        <button type="button" style={btn(state.captions)} onClick={() => settings.set(ACCESSIBILITY_SETTING_IDS.captions, !state.captions)}>
+          Captions
+        </button>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <span style={{ width: 96 }}>Aim</span>
+        {HOLD_VS_TOGGLE_OPTIONS.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            style={btn(hold === option.value)}
+            onClick={() => settings.set(ACCESSIBILITY_SETTING_IDS.holdVsToggle, option.value)}
+          >
+            {option.label}
+          </button>
+        ))}
       </div>
     </div>
   );
@@ -122,7 +159,7 @@ function Swatches() {
 }
 
 function Captions() {
-  const { state } = useAccessibility();
+  const state = useAccessibilitySettings();
   if (!state.captions) return null;
   return (
     <div
@@ -142,23 +179,32 @@ function Captions() {
 }
 
 function AccessibilityUI() {
+  const state = useAccessibilitySettings();
+  const settings = useSettingsStore();
+  // `?colorblind=<mode>` seeds the preference for a capture; the panel below is the real control.
+  useEffect(() => {
+    const seeded = new URLSearchParams(window.location.search).get("colorblind");
+    if (seeded !== null) settings.set(ACCESSIBILITY_SETTING_IDS.colorblind, seeded);
+  }, [settings]);
   return (
-    <AccessibilityProvider store={store} className="pointer-events-none absolute inset-0">
-      <div className="pointer-events-auto absolute left-4 top-4" style={{ maxWidth: 420 }}>
-        <Panel>
-          <h1 style={{ fontSize: "calc(1.1rem * var(--jg-text-scale, 1))", fontWeight: 700, color: "#7dd3fc", margin: 0 }}>
-            Accessibility
-          </h1>
-          <p style={{ margin: "2px 0 10px", color: "rgba(226,232,240,0.65)" }}>
-            Text scale, colorblind filters, high contrast, reduced motion &amp; captions.
-          </p>
-          <Swatches />
-          <div style={{ height: 12 }} />
-          <Controls />
-          <Captions />
-        </Panel>
+    <HudThemeRoot accessibility={state}>
+      <div className="pointer-events-none absolute inset-0">
+        <div className="pointer-events-auto absolute left-4 top-4" style={{ maxWidth: 420 }}>
+          <Panel>
+            <h1 style={{ fontSize: "calc(1.1rem * var(--jg-text-scale, 1))", fontWeight: 700, color: "#7dd3fc", margin: 0 }}>
+              Accessibility
+            </h1>
+            <p style={{ margin: "2px 0 10px", color: "rgba(226,232,240,0.65)" }}>
+              Text scale, colour-vision filter on the 3D frame, high contrast, reduced motion &amp; captions.
+            </p>
+            <Swatches />
+            <div style={{ height: 12 }} />
+            <Controls />
+            <Captions />
+          </Panel>
+        </div>
       </div>
-    </AccessibilityProvider>
+    </HudThemeRoot>
   );
 }
 

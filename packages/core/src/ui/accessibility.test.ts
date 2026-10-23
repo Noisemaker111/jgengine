@@ -3,11 +3,13 @@ import { describe, expect, test } from "bun:test";
 import {
   clampTextScale,
   COLORBLIND_MATRICES,
+  colorblindFrameFilter,
   createAccessibilityStore,
   DEFAULT_ACCESSIBILITY,
   reducedMotionDuration,
   TEXT_SCALE_MAX,
   TEXT_SCALE_MIN,
+  type ColorblindMode,
 } from "./accessibility";
 
 describe("clampTextScale", () => {
@@ -36,6 +38,19 @@ describe("COLORBLIND_MATRICES", () => {
       expect(values).not.toBeNull();
       expect(values!.trim().split(/\s+/)).toHaveLength(20);
     }
+  });
+});
+
+describe("colorblindFrameFilter", () => {
+  test("maps a mode to a filter reference and none to null", () => {
+    expect(colorblindFrameFilter("none")).toBeNull();
+    for (const mode of ["protanopia", "deuteranopia", "tritanopia", "grayscale"] as const) {
+      expect(colorblindFrameFilter(mode)).toBe(`url(#jg-cb-${mode})`);
+    }
+  });
+
+  test("returns null for a mode with no matrix instead of a filter that hides the frame", () => {
+    expect(colorblindFrameFilter("sepia" as ColorblindMode)).toBeNull();
   });
 });
 

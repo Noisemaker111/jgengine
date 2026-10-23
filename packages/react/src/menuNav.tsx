@@ -68,6 +68,12 @@ export interface UseMenuNavOptions {
   enabled?: boolean;
   /** Confirm (Enter/Space/A). Called with the focused id. */
   onConfirm?: (id: string) => void;
+  /**
+   * Left/right (arrow keys, d-pad, left stick) change the focused item's value by one step instead of
+   * moving focus. Give it to a menu whose items are settings rows; hold-to-repeat applies, so a held
+   * direction steps repeatedly. Up/down and confirm/back are unchanged.
+   */
+  onAdjust?: (id: string, delta: -1 | 1) => void;
   /** Back (Escape/Backspace/B/Start). */
   onBack?: () => void;
   /** Poll a connected gamepad for menu intents. Default true. */
@@ -99,6 +105,7 @@ export function useMenuNav({
   enabled = true,
   onConfirm,
   onBack,
+  onAdjust,
   gamepad = true,
   repeat,
 }: UseMenuNavOptions): MenuNavController {
@@ -124,8 +131,8 @@ export function useMenuNav({
   idsRef.current = ids;
   const activeIndexRef = useRef(activeIndex);
   activeIndexRef.current = activeIndex;
-  const callbacks = useRef({ onConfirm, onBack });
-  callbacks.current = { onConfirm, onBack };
+  const callbacks = useRef({ onConfirm, onBack, onAdjust });
+  callbacks.current = { onConfirm, onBack, onAdjust };
 
   const elements = useRef(new Map<string, HTMLElement>());
   const pendingFocus = useRef(true);
@@ -167,13 +174,19 @@ export function useMenuNav({
     (intent: MenuIntent) => {
       if (intent === "confirm") activate(menuNavIdAt(idsRef.current, activeIndexRef.current));
       else if (intent === "back") callbacks.current.onBack?.();
-      else move(intent);
+      else if (intent === "left" || intent === "right") {
+        const adjust = callbacks.current.onAdjust;
+        if (adjust === undefined) {
+          move(intent);
+          return;
+        }
+        const id = menuNavIdAt(idsRef.current, activeIndexRef.current);
+        if (id !== null) adjust(id, intent === "right" ? 1 : -1);
+      } else move(intent);
     },
     [activate, move],
   );
 
-  const moveRef = useRef(move);
-  moveRef.current = move;
   const runIntentRef = useRef(runIntent);
   runIntentRef.current = runIntent;
   const repeatRef = useRef(repeat);
@@ -286,12 +299,12 @@ export function useMenuNav({
         }
         if (isNew) {
           held.set(button, { pressedAt: now, lastFiredAt: now });
-          moveRef.current(intent);
+          runIntentRef.current(intent);
           continue;
         }
         if (record !== undefined && shouldRepeatMenuNav(now, record, repeatRef.current)) {
           record.lastFiredAt = now;
-          moveRef.current(intent);
+          runIntentRef.current(intent);
         }
       }
       for (const button of [...held.keys()]) if (!pressed.has(button)) held.delete(button);
@@ -306,12 +319,12 @@ export function useMenuNav({
       }
       if (stick === null || stick.intent !== axisIntent) {
         stick = { intent: axisIntent, pressedAt: now, lastFiredAt: now };
-        moveRef.current(axisIntent);
+        runIntentRef.current(axisIntent);
         return;
       }
       if (shouldRepeatMenuNav(now, stick, repeatRef.current)) {
         stick.lastFiredAt = now;
-        moveRef.current(axisIntent);
+        runIntentRef.current(axisIntent);
       }
     };
 

@@ -1,6 +1,9 @@
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+
+import type { SettingValue } from "@jgengine/core/settings/settingsModel";
 
 import { hudSpace, hudType, hudTransition } from "./hudTokens";
+import { useMenuNav, type MenuNavItemProps } from "./menuNav";
 import type { SettingsCategoryView, SettingsKeybindRow, SettingsRow } from "./settings";
 import { ScrollRail } from "./scrollRail";
 import { useDebouncedCommit } from "./useDebouncedCommit";
@@ -29,13 +32,38 @@ const valueStyle: CSSProperties = {
   textAlign: "right",
 };
 
-function RowShell({ label, children }: { label: string; children: ReactNode }): ReactNode {
+function RowShell({ label, children, itemProps }: { label: string; children: ReactNode; itemProps?: MenuNavItemProps }): ReactNode {
   return (
-    <div data-settings-row="" style={rowStyle}>
+    <div data-settings-row="" style={rowStyle} {...itemProps}>
       <span style={labelStyle}>{label}</span>
       <div style={{ display: "flex", alignItems: "center", gap: hudSpace("sm"), minWidth: 0 }}>{children}</div>
     </div>
   );
+}
+
+/**
+ * One adjustment of a settings row: a slider moves by its step inside its bounds, a toggle flips, a
+ * select moves one option (wrapping at both ends). Returns the value to write, or `undefined` when the
+ * kind has nothing to step. Shared by the keyboard and the gamepad so both change a row the same way.
+ *
+ * @capability adjust-setting-row step a settings row value once, for keyboard and gamepad alike
+ */
+export function adjustSettingRow(row: SettingsRow, delta: -1 | 1): SettingValue | undefined {
+  if (row.kind === "toggle") return !Boolean(row.value);
+  if (row.kind === "select") {
+    const options = row.options ?? [];
+    if (options.length === 0) return undefined;
+    const current = options.findIndex((option) => option.value === String(row.value));
+    const base = current < 0 ? (delta > 0 ? -1 : 0) : current;
+    return options[(base + delta + options.length) % options.length]?.value;
+  }
+  if (row.kind !== "slider") return undefined;
+  const step = row.step ?? 1;
+  const min = row.min ?? Number.NEGATIVE_INFINITY;
+  const max = row.max ?? Number.POSITIVE_INFINITY;
+  const next = Math.min(max, Math.max(min, Number(row.value) + step * delta));
+  // Settings persist as plain numbers, so keep float noise out of values like 0.30000000000000004.
+  return Math.round(next * 1e6) / 1e6;
 }
 
 /**
@@ -44,10 +72,10 @@ function RowShell({ label, children }: { label: string; children: ReactNode }): 
  *
  * @capability settings-slider a settings slider row that mirrors locally and persists on release
  */
-export function SettingsSlider({ row }: { row: SettingsRow }): ReactNode {
+export function SettingsSlider({ row, itemProps }: { row: SettingsRow; itemProps?: MenuNavItemProps }): ReactNode {
   const { value, onInput, flush } = useDebouncedCommit(Number(row.value), (next) => row.set(next));
   return (
-    <RowShell label={row.label}>
+    <RowShell label={row.label} itemProps={itemProps}>
       <input
         type="range"
         min={row.min}
@@ -67,10 +95,10 @@ export function SettingsSlider({ row }: { row: SettingsRow }): ReactNode {
 }
 
 /** One on/off row from a {@link SettingsRow}. */
-export function SettingsToggle({ row }: { row: SettingsRow }): ReactNode {
+export function SettingsToggle({ row, itemProps }: { row: SettingsRow; itemProps?: MenuNavItemProps }): ReactNode {
   const on = Boolean(row.value);
   return (
-    <RowShell label={row.label}>
+    <RowShell label={row.label} itemProps={itemProps}>
       <button
         type="button"
         role="switch"
@@ -107,10 +135,10 @@ export function SettingsToggle({ row }: { row: SettingsRow }): ReactNode {
 }
 
 /** One choice row from a {@link SettingsRow}, rendered as a pressed-state option group. */
-export function SettingsSelect({ row }: { row: SettingsRow }): ReactNode {
+export function SettingsSelect({ row, itemProps }: { row: SettingsRow; itemProps?: MenuNavItemProps }): ReactNode {
   const current = String(row.value);
   return (
-    <RowShell label={row.label}>
+    <RowShell label={row.label} itemProps={itemProps}>
       <div role="group" aria-label={row.label} style={{ display: "flex", flexWrap: "wrap", justifyContent: "flex-end", gap: 4 }}>
         {(row.options ?? []).map((option) => {
           const selected = option.value === current;
@@ -142,11 +170,11 @@ export function SettingsSelect({ row }: { row: SettingsRow }): ReactNode {
   );
 }
 
-/** Render the control a {@link SettingsRow} kind asks for. */
-export function SettingsRowControl({ row }: { row: SettingsRow }): ReactNode {
-  if (row.kind === "slider") return <SettingsSlider row={row} />;
-  if (row.kind === "toggle") return <SettingsToggle row={row} />;
-  return <SettingsSelect row={row} />;
+/** Render the control a {@link SettingsRow} kind asks for. `itemProps` carries `useMenuNav` focus tracking from {@link SettingsSection}. */
+export function SettingsRowControl({ row, itemProps }: { row: SettingsRow; itemProps?: MenuNavItemProps }): ReactNode {
+  if (row.kind === "slider") return <SettingsSlider row={row} itemProps={itemProps} />;
+  if (row.kind === "toggle") return <SettingsToggle row={row} itemProps={itemProps} />;
+  return <SettingsSelect row={row} itemProps={itemProps} />;
 }
 
 /** One rebindable action row: current key glyph, armed-capture state and a reset button. */
@@ -158,6 +186,8 @@ export interface SettingsKeybindControlProps {
   onArm?: () => void;
   /** Props the caller can spread onto the binding button for focus tracking. */
   buttonProps?: Record<string, unknown>;
+  /** Props for the row element (a `useMenuNav` item). */
+  rowProps?: MenuNavItemProps;
 }
 
 /**
@@ -166,9 +196,9 @@ export interface SettingsKeybindControlProps {
  *
  * @capability settings-keybind-row one rebindable controls row — key glyph, armed state and reset
  */
-export function SettingsKeybindControl({ row, armed = false, onArm, buttonProps }: SettingsKeybindControlProps): ReactNode {
+export function SettingsKeybindControl({ row, armed = false, onArm, buttonProps, rowProps }: SettingsKeybindControlProps): ReactNode {
   return (
-    <div data-settings-keybind={row.action} data-armed={armed ? "" : undefined} style={rowStyle}>
+    <div data-settings-keybind={row.action} data-armed={armed ? "" : undefined} style={rowStyle} {...rowProps}>
       <span style={labelStyle}>{row.label}</span>
       <div style={{ display: "flex", alignItems: "center", gap: hudSpace("xs") }}>
         <button
@@ -225,28 +255,49 @@ export interface SettingsSectionProps {
   heading?: boolean;
   /** Allow click-to-rebind on the controls rows. Default true. */
   capture?: boolean;
+  /** Take arrow keys, the d-pad and the left stick for row navigation and value edits. Default true. */
+  enabled?: boolean;
+  /** Row focused on mount. Default the first row. */
+  initialId?: string;
   className?: string;
   style?: CSSProperties;
   /** Called with the armed action id (or `null`) so a game can suspend its own keys. */
   onCaptureChange?: (action: string | null) => void;
 }
 
+const ROW_ITEM_PREFIX = "row:";
+const KEY_ITEM_PREFIX = "key:";
+
 /**
  * One settings category as a block: its rows, then its rebindable actions with click-to-capture. The
  * game picks where it sits and how wide it is; the block reads HudTheme tokens and the live rows the
  * settings controller hands it, and writes every change straight back to that controller's store.
  *
- * @capability settings-section settings category block — rows plus click-to-capture keybind rows, HudTheme-styled, store-backed
+ * The rows are one `useMenuNav` menu: up/down (or the d-pad/stick) move between them, left/right step
+ * the focused value — a slider by its step, a toggle flipped, a select to the next/previous option, a
+ * keybind armed — and Enter/Space/A confirm. Keyboard and gamepad share that one mapping, so a held
+ * direction repeats at the same rate for both, and no row carries its own key handling.
+ *
+ * @capability settings-section settings category block — rows plus click-to-capture keybind rows, HudTheme-styled, store-backed, keyboard and gamepad navigable
  */
 export function SettingsSection({
   category,
   heading = true,
   capture = true,
+  enabled = true,
+  initialId,
   className,
   style,
   onCaptureChange,
 }: SettingsSectionProps): ReactNode {
   const [armed, setArmed] = useState<string | null>(null);
+  // Mirrors `armed` synchronously. Two key events in one tick — Escape then the key after it — would both
+  // see the pre-render state without it, and the second would rebind what Escape just cancelled.
+  const armedRef = useRef<string | null>(null);
+  const arm = useCallback((action: string | null) => {
+    armedRef.current = action;
+    setArmed(action);
+  }, []);
   const callbacks = useRef({ onCaptureChange });
   callbacks.current = { onCaptureChange };
 
@@ -254,28 +305,69 @@ export function SettingsSection({
     callbacks.current.onCaptureChange?.(armed);
   }, [armed]);
 
+  const rows = category.rows;
+  const keybinds = category.keybinds;
+  const ids = useMemo(
+    () => [...rows.map((row) => `${ROW_ITEM_PREFIX}${row.id}`), ...keybinds.map((row) => `${KEY_ITEM_PREFIX}${row.action}`)],
+    [rows, keybinds],
+  );
+
+  const adjust = useCallback(
+    (id: string, delta: -1 | 1) => {
+      // A keybind row has no value to step; confirming it is what arms the capture.
+      if (id.startsWith(KEY_ITEM_PREFIX)) return;
+      const row = rows.find((candidate) => `${ROW_ITEM_PREFIX}${candidate.id}` === id);
+      if (row === undefined) return;
+      const next = adjustSettingRow(row, delta);
+      if (next !== undefined) row.set(next);
+    },
+    [rows],
+  );
+
+  const confirm = useCallback(
+    (id: string) => {
+      if (id.startsWith(ROW_ITEM_PREFIX)) {
+        const row = rows.find((candidate) => `${ROW_ITEM_PREFIX}${candidate.id}` === id);
+        // A slider's value belongs to left/right; confirming it would jump the thumb for a keyboard user.
+        if (row === undefined || row.kind === "slider") return;
+        const next = adjustSettingRow(row, 1);
+        if (next !== undefined) row.set(next);
+        return;
+      }
+      if (!capture) return;
+      arm(id.slice(KEY_ITEM_PREFIX.length));
+    },
+    [arm, capture, rows],
+  );
+
+  const nav = useMenuNav({
+    ids,
+    ...(initialId === undefined ? {} : { initialId: `${ROW_ITEM_PREFIX}${initialId}` }),
+    enabled: enabled && armed === null,
+    onAdjust: adjust,
+    onConfirm: confirm,
+  });
+
   useEffect(() => {
     if (armed === null) return;
-    const row = category.keybinds.find((candidate) => candidate.action === armed);
+    const row = keybinds.find((candidate) => candidate.action === armed);
     if (row === undefined) {
-      setArmed(null);
+      arm(null);
       return;
     }
     const onKey = (event: KeyboardEvent): void => {
       event.preventDefault();
       event.stopPropagation();
-      if (event.code === "Escape") {
-        setArmed(null);
-        return;
-      }
-      row.rebind(event.code);
-      setArmed(null);
+      if (armedRef.current !== row.action) return;
+      arm(null);
+      if (event.code !== "Escape") row.rebind(event.code);
     };
     const onPointer = (event: PointerEvent): void => {
       event.preventDefault();
       event.stopPropagation();
+      if (armedRef.current !== row.action) return;
+      arm(null);
       row.rebind(`mouse${event.button}`);
-      setArmed(null);
     };
     const onContext = (event: Event): void => event.preventDefault();
     window.addEventListener("keydown", onKey, true);
@@ -286,10 +378,10 @@ export function SettingsSection({
       window.removeEventListener("pointerdown", onPointer, true);
       window.removeEventListener("contextmenu", onContext, true);
     };
-  }, [armed, category.keybinds]);
+  }, [armed, arm, keybinds]);
 
   return (
-    <section data-settings-section={category.id} className={className} style={{ display: "flex", flexDirection: "column", gap: hudSpace("xs"), ...style }}>
+    <section {...nav.containerProps} data-settings-section={category.id} className={className} style={{ display: "flex", flexDirection: "column", gap: hudSpace("xs"), ...style }}>
       {heading ? (
         <h3
           style={{
@@ -306,15 +398,16 @@ export function SettingsSection({
           {category.label}
         </h3>
       ) : null}
-      {category.rows.map((row) => (
-        <SettingsRowControl key={row.id} row={row} />
+      {rows.map((row) => (
+        <SettingsRowControl key={row.id} row={row} itemProps={nav.itemProps(`${ROW_ITEM_PREFIX}${row.id}`)} />
       ))}
-      {category.keybinds.map((row) => (
+      {keybinds.map((row) => (
         <SettingsKeybindControl
           key={row.action}
           row={row}
           armed={armed === row.action}
-          onArm={capture ? () => setArmed(row.action) : undefined}
+          onArm={capture ? () => arm(row.action) : undefined}
+          rowProps={nav.itemProps(`${KEY_ITEM_PREFIX}${row.action}`)}
         />
       ))}
     </section>
@@ -380,3 +473,5 @@ export function SettingsTabs({ categories, activeId, onSelect, leading, tabProps
     </div>
   );
 }
+
+
