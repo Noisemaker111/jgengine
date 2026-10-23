@@ -1,5 +1,4 @@
 import { describe, expect, test } from "bun:test";
-import { createServer, type Server } from "node:http";
 
 import { BROWSER_LAUNCH_BLOCK, LAUNCH_BLOCK_END, LAUNCH_BLOCK_START } from "./browserLaunch";
 import { browserLibMjs, driveMjs, shootMjs } from "./gameFiles";
@@ -10,39 +9,9 @@ async function scaffoldBrowser(): Promise<Record<string, any>> {
   return (await import(`data:text/javascript;base64,${encoded}`)) as Record<string, any>;
 }
 
-/** A debugger endpoint that answers `/json/version` as soon as it starts, and counts the asks. */
-async function debuggerEndpoint(): Promise<{ port: number; asks: () => number; stop: () => Promise<void> }> {
-  let asks = 0;
-  const server: Server = createServer((request, response) => {
-    asks += 1;
-    if (request.url !== "/json/version") {
-      response.writeHead(404);
-      response.end();
-      return;
-    }
-    response.writeHead(200, { "content-type": "application/json" });
-    response.end(JSON.stringify({ webSocketDebuggerUrl: "ws://127.0.0.1:1/devtools/browser/jg-test" }));
-  });
-  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
-  const address = server.address();
-  if (address === null || typeof address === "string") throw new Error("no debugger port");
-  return {
-    port: address.port,
-    asks: () => asks,
-    stop: () => new Promise<void>((resolve) => server.close(() => resolve())),
-  };
-}
-
 /** A launched Chrome stand-in. No real directory: the block only ever tries to delete the profile. */
-function fakeChrome(
-  index: number,
-  launched: { exitCode?: number | null; onKill?: () => void } = {},
-): { kill: () => void; userDataDir: string; exitCode: number | null } {
-  return {
-    kill: launched.onKill ?? (() => {}),
-    userDataDir: `/tmp/jg-scaffold-launch-${index}`,
-    exitCode: launched.exitCode ?? null,
-  };
+function fakeChrome(index: number, onKill: () => void = () => {}): { kill: () => void; userDataDir: string; exitCode: null } {
+  return { kill: onKill, userDataDir: `/tmp/jg-scaffold-launch-${index}`, exitCode: null };
 }
 
 describe("scaffold launch block", () => {
@@ -73,42 +42,42 @@ describe("scaffold launch block", () => {
     }
   });
 
-  test("a first attempt that loses its browser is retried with a fresh profile and the launch recovers", async () => {
+  test("a failed first endpoint wait is retried with a fresh profile and the launch recovers", async () => {
     const { startBrowser } = await scaffoldBrowser();
-    const endpoint = await debuggerEndpoint();
     const profiles: string[] = [];
     const killed: number[] = [];
+    const waits: number[] = [];
     const lines: string[] = [];
-    try {
-      const started = await startBrowser({
-        debugPort: endpoint.port,
-        readyMs: 100,
-        log: (line: string) => lines.push(line),
-        // Attempt 1 is gone before it binds, so the endpoint answers only the retry. Nothing here
-        // waits on a clock, so a loaded runner cannot spend the retry's budget before it asks.
-        launch: () => {
-          const index = profiles.length + 1;
-          const chrome = fakeChrome(index, {
-            exitCode: index === 1 ? 1 : null,
-            onKill: () => killed.push(index),
-          });
-          profiles.push(chrome.userDataDir);
-          return chrome;
-        },
-        pageProbe: async () => {},
-      });
-      expect(started.attempts).toBe(2);
-      expect(started.profilePath).toBe(profiles[1] as string);
-      expect(profiles).toHaveLength(2);
-      expect(new Set(profiles).size).toBe(2);
-      expect(killed).toEqual([1]);
-      expect(endpoint.asks()).toBeGreaterThan(0);
-    } finally {
-      await endpoint.stop();
-    }
+    const started = await startBrowser({
+      debugPort: 4242,
+      readyMs: 100,
+      log: (line: string) => lines.push(line),
+      // Neither a socket nor a clock: attempt 1 fails the endpoint step outright, so a loaded
+      // runner cannot spend the retry's budget before the endpoint can answer.
+      waitForDebugger: async (port: number, timeoutMs: number) => {
+        waits.push(timeoutMs);
+        if (waits.length === 1) {
+          throw new Error("the debugger on :" + port + " did not answer /json/version within " + timeoutMs + "ms");
+        }
+        return 0;
+      },
+      launch: () => {
+        const index = profiles.length + 1;
+        const chrome = fakeChrome(index, () => killed.push(index));
+        profiles.push(chrome.userDataDir);
+        return chrome;
+      },
+      pageProbe: async () => {},
+    });
+    expect(waits).toEqual([100, 200]);
+    expect(started.attempts).toBe(2);
+    expect(started.profilePath).toBe(profiles[1] as string);
+    expect(profiles).toHaveLength(2);
+    expect(new Set(profiles).size).toBe(2);
+    expect(killed).toEqual([1]);
     expect(lines).toHaveLength(2);
     expect(lines[0]).toContain("browser: the endpoint step failed on attempt 1 after");
-    expect(lines[0]).toContain("the browser process exited (code 1) before binding the debugger");
+    expect(lines[0]).toContain("did not answer /json/version within 100ms");
     expect(lines[0]).toContain("retrying with a fresh profile and a 200ms wait");
     expect(lines[1]).toContain("browser: launch recovered on attempt 2 after");
   });
