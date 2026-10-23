@@ -123,8 +123,23 @@ export function useSceneObjectIds(): readonly string[] {
   return useSyncExternalStore(object.subscribeMembership, object.ids, object.ids);
 }
 
+/** Records are immutable once spawned, so an unchanged list is the same records in the same order. */
+function sameWorldItemRecords(previous: readonly WorldItemRecord[], next: readonly WorldItemRecord[]): boolean {
+  if (previous.length !== next.length) return false;
+  for (let index = 0; index < previous.length; index += 1) {
+    if (previous[index] !== next[index]) return false;
+  }
+  return true;
+}
+
+/**
+ * Live dropped-item records: the returned list keeps one identity until an item spawns, is picked up
+ * or is removed. `worldItem.list()` allocates a new array per call and the shared store signal fires
+ * on every pose write, so a raw read re-rendered every marker each frame (#2175). A marker reads its
+ * own live pose imperatively (useFrame).
+ */
 export function useWorldItems(): readonly WorldItemRecord[] {
-  return useGameStore((ctx) => ctx.scene.worldItem.list());
+  return useGameStore((ctx) => ctx.scene.worldItem.list(), sameWorldItemRecords);
 }
 
 /** Nearest ground item within `radius` of the local player — drives a pickup prompt/highlight. */

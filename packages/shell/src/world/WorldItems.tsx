@@ -6,6 +6,7 @@ import type { WorldItemRenderConfig } from "@jgengine/core/game/playableGame";
 import { resolveWorldItemPresentation } from "@jgengine/core/game/worldItem";
 import { useGameContext } from "@jgengine/react/provider";
 import { useWorldItems } from "@jgengine/react/hooks";
+import { emptyPoseMemo, writePoseIfChanged, type PoseMemo } from "./entityPose";
 import { POINTER_ENTITY_KEY } from "../pointer/pointerService";
 
 const DEFAULT_BEAM_HEIGHT = 2.5;
@@ -15,19 +16,20 @@ const SPAWN_DURATION = 0.4;
 
 function WorldItemMarker({
   instanceId,
-  position,
   color,
   beam,
   label,
   beamHeight,
 }: {
   instanceId: string;
-  position: readonly [number, number, number];
   color: string;
   beam: boolean;
   label: string | undefined;
   beamHeight: number;
 }) {
+  const ctx = useGameContext();
+  const groupRef = useRef<Group>(null);
+  const poseRef = useRef<PoseMemo>(emptyPoseMemo());
   const beamPoints = useMemo(
     () =>
       [
@@ -42,6 +44,9 @@ function WorldItemMarker({
   const gemRef = useRef<Group>(null);
   const ageRef = useRef(0);
   useFrame((_state, delta) => {
+    const group = groupRef.current;
+    const live = ctx.scene.entity.get(instanceId);
+    if (group !== null && live !== null) writePoseIfChanged(group, live, poseRef.current);
     const gem = gemRef.current;
     if (gem === null) return;
     const age = ageRef.current + delta;
@@ -52,7 +57,7 @@ function WorldItemMarker({
     gem.rotation.y = age * 1.6;
   });
   return (
-    <group position={[position[0], position[1], position[2]]} userData={{ [POINTER_ENTITY_KEY]: instanceId }}>
+    <group ref={groupRef} matrixAutoUpdate={false} userData={{ [POINTER_ENTITY_KEY]: instanceId }}>
       <mesh rotation-x={-Math.PI / 2} position-y={0.03}>
         <ringGeometry args={[0.26, 0.4, 24]} />
         <meshBasicMaterial color={color} transparent opacity={0.85} />
@@ -94,7 +99,6 @@ export function WorldItems({ config }: { config?: WorldItemRenderConfig }) {
           <WorldItemMarker
             key={item.instanceId}
             instanceId={item.instanceId}
-            position={entity.position}
             color={presentation.color ?? FALLBACK_COLOR}
             beam={presentation.beam}
             label={presentation.label}
