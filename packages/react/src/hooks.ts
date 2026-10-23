@@ -96,12 +96,52 @@ export function useOptionalGamePhase(): GamePhase {
   return useSyncExternalStore(ctx?.subscribe ?? noopSubscribe, getSnapshot, getSnapshot);
 }
 
-export function useSceneEntities(): readonly SceneEntity[] {
-  return useGameStore((ctx) => ctx.scene.entity.list());
+/** Same records in the same order: the list keeps one identity while membership holds (#2211, #2212). */
+function sameRecordList<T>(previous: readonly T[], next: readonly T[]): boolean {
+  if (previous.length !== next.length) return false;
+  for (let index = 0; index < previous.length; index += 1) {
+    if (previous[index] !== next[index]) return false;
+  }
+  return true;
 }
 
+/**
+ * Object records are replaced on every write, so compare the placement and leave pose out: a move or
+ * rotate keeps the list identity. Read a live pose with `ctx.scene.object.get(instanceId)`.
+ */
+function sameObjectPlacements(previous: readonly SceneObject[], next: readonly SceneObject[]): boolean {
+  if (previous.length !== next.length) return false;
+  for (let index = 0; index < previous.length; index += 1) {
+    const before = previous[index]!;
+    const after = next[index]!;
+    if (before === after) continue;
+    if (before.instanceId !== after.instanceId || before.catalogId !== after.catalogId) return false;
+    if (before.parentSpace !== after.parentSpace || before.animation !== after.animation) return false;
+    if (before.visual !== after.visual || before.state !== after.state || before.slots !== after.slots) return false;
+  }
+  return true;
+}
+
+/**
+ * Live entities: the returned list keeps one identity until an entity spawns, despawns, is replaced
+ * or the store is hydrated — a pose write does not re-render its readers (#2212). `entity.list()`
+ * allocates a new array per write against an `Object.is` comparison, so every pose write re-rendered
+ * every HUD reading this hook. The records themselves are mutated in place, so a reader that needs a
+ * pose right now can still take `entity.position`; render-loop work reads it in `useFrame`.
+ */
+export function useSceneEntities(): readonly SceneEntity[] {
+  return useGameStore((ctx) => ctx.scene.entity.list(), sameRecordList<SceneEntity>);
+}
+
+/**
+ * Placed objects: the returned list keeps one identity across move and rotate writes, so a HUD
+ * reading it no longer re-renders on every pose write (#2212). Place, remove and the non-pose fields
+ * (catalog id, parent space, animation, visual, state, slots) still re-render. `move`/`rotate`
+ * replace the record, so take live placement from `ctx.scene.object.get(instanceId)` rather than
+ * the record's `position`.
+ */
 export function useSceneObjects(): readonly SceneObject[] {
-  return useGameStore((ctx) => ctx.scene.object.list());
+  return useGameStore((ctx) => ctx.scene.object.list(), sameObjectPlacements);
 }
 
 /**
@@ -123,15 +163,6 @@ export function useSceneObjectIds(): readonly string[] {
   return useSyncExternalStore(object.subscribeMembership, object.ids, object.ids);
 }
 
-/** Records are immutable once spawned, so an unchanged list is the same records in the same order. */
-function sameWorldItemRecords(previous: readonly WorldItemRecord[], next: readonly WorldItemRecord[]): boolean {
-  if (previous.length !== next.length) return false;
-  for (let index = 0; index < previous.length; index += 1) {
-    if (previous[index] !== next[index]) return false;
-  }
-  return true;
-}
-
 /**
  * Live dropped-item records: the returned list keeps one identity until an item spawns, is picked up
  * or is removed. `worldItem.list()` allocates a new array per call and the shared store signal fires
@@ -139,7 +170,7 @@ function sameWorldItemRecords(previous: readonly WorldItemRecord[], next: readon
  * own live pose imperatively (useFrame).
  */
 export function useWorldItems(): readonly WorldItemRecord[] {
-  return useGameStore((ctx) => ctx.scene.worldItem.list(), sameWorldItemRecords);
+  return useGameStore((ctx) => ctx.scene.worldItem.list(), sameRecordList<WorldItemRecord>);
 }
 
 /** Nearest ground item within `radius` of the local player — drives a pickup prompt/highlight. */

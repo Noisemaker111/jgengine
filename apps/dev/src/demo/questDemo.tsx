@@ -4,7 +4,7 @@ import type { GameContext, GameContextEntityEntry } from "@jgengine/core/runtime
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { environment, grass, terrain } from "@jgengine/core/world/features";
 import { QuestTracker } from "@jgengine/react/questTracker";
-import { usePlayer, useSceneEntities } from "@jgengine/react/hooks";
+import { usePlayer, useTicker } from "@jgengine/react/hooks";
 
 import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
 import type { PlayableGame } from "@jgengine/shell/registry";
@@ -73,7 +73,7 @@ function onNewPlayer(ctx: GameContext): void {
 
 function QuestUI() {
   const player = usePlayer();
-  useSceneEntities(); // re-render as the world ticks
+  useTicker(10); // the journal is not a store the scene hooks track, so the tracker samples it on a HUD tick
   const quests = journal === null ? [] : journal.list(player.userId).map((instance) => {
     const def = instance.questId === SIDE_QUEST.id ? SIDE_QUEST : QUEST;
     return describeTrackedQuest(def, instance);

@@ -22,7 +22,7 @@ import { resolveTerrainField, type TerrainField } from "@jgengine/core/world/ter
 import { createWaypointStore, type WaypointStore } from "@jgengine/core/world/waypoints";
 import { createAnnotationLayer, type AnnotationLayer } from "@jgengine/core/world/mapAnnotations";
 import { Compass, FullscreenMap, MapLegend, Minimap, WaypointArrow } from "@jgengine/react/map";
-import { usePlayer, useSceneEntities, useFeed } from "@jgengine/react/hooks";
+import { usePlayer, useRafLoop, useSceneEntities, useFeed } from "@jgengine/react/hooks";
 
 import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
 import { bakeTerrainMap, type BakedMap } from "@jgengine/shell/map/terrainMap";
@@ -238,6 +238,9 @@ function useAnnotationRoutes() {
 function MapUI() {
   const player = usePlayer();
   const entities = useSceneEntities();
+  // The compass follows the player's live pose; the scene list only re-renders on membership.
+  const [, setFrame] = useState(0);
+  useRafLoop(() => setFrame((frame) => (frame + 1) % 1_000_000));
   const pings = useFeed({ action: PING_FEED_ACTION, limit: 3 });
   const open = useWorldMapOpen();
   const [tool, setTool] = useState<"pan" | "draw">("pan");

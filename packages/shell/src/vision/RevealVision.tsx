@@ -1,4 +1,5 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { useFrame } from "@react-three/fiber";
 import { DoubleSide } from "three";
 
 import { createRevealQuery, type RevealHit } from "@jgengine/core/sensor/revealQuery";
@@ -12,25 +13,43 @@ export interface RevealVisionOptions {
   resolveTags: (entity: SceneEntity) => readonly string[];
 }
 
-/** Occlusion-ignoring tagged-entity radius query (#115), bound to the live scene. */
+function revealHits(
+  entities: readonly SceneEntity[],
+  originId: string,
+  options: RevealVisionOptions,
+): readonly RevealHit[] {
+  const byId = new Map(entities.map((entity) => [entity.id, entity] as const));
+  const query = createRevealQuery({
+    resolvePosition: (id) => byId.get(id)?.position,
+    resolveTags: (id) => {
+      const entity = byId.get(id);
+      return entity === undefined ? [] : options.resolveTags(entity);
+    },
+    candidates: () => entities.map((entity) => entity.id),
+  });
+  return query.inRadius(originId, options.radius, options.tags);
+}
+
+/** Occlusion-ignoring tagged-entity radius query (#115), bound to the live scene and refreshed on render. */
 export function useRevealHits(options: RevealVisionOptions): readonly RevealHit[] {
   const entities = useSceneEntities();
   const player = usePlayer();
   const originId = options.originEntityId ?? player.userId;
   const tagsKey = options.tags.join("|");
 
-  return useMemo(() => {
-    const byId = new Map(entities.map((entity) => [entity.id, entity] as const));
-    const query = createRevealQuery({
-      resolvePosition: (id) => byId.get(id)?.position,
-      resolveTags: (id) => {
-        const entity = byId.get(id);
-        return entity === undefined ? [] : options.resolveTags(entity);
-      },
-      candidates: () => entities.map((entity) => entity.id),
-    });
-    return query.inRadius(originId, options.radius, options.tags);
-  }, [entities, originId, options.radius, tagsKey, options.tags, options.resolveTags]);
+  return useMemo(
+    () => revealHits(entities, originId, options),
+    [entities, originId, options.radius, tagsKey, options.tags, options.resolveTags],
+  );
+}
+
+/** Frames on a counter while `active`: the hook lists only change on membership, so a live overlay drives its own re-render. */
+function useFrameRefresh(active: boolean): number {
+  const [frame, setFrame] = useState(0);
+  useFrame(() => {
+    if (active) setFrame((value) => (value + 1) % 1_000_000);
+  });
+  return frame;
 }
 
 export interface RevealHighlightsProps extends RevealVisionOptions {
@@ -43,11 +62,21 @@ export interface RevealHighlightsProps extends RevealVisionOptions {
  * occluders (Dark Sight / detective-vision / wallhack style). Renders with
  * `depthTest: false` so the highlight draws over any wall standing between
  * the origin and the revealed entity, rather than the usual depth-sorted scene.
+ * Highlights track the origin and their targets every frame while enabled, so
+ * a disabled mode costs no renders.
  */
 export function RevealHighlights(props: RevealHighlightsProps) {
   const { enabled, color = "#7dd3fc" } = props;
-  const hits = useRevealHits(props);
+  const frame = useFrameRefresh(enabled);
   const entities = useSceneEntities();
+  const player = usePlayer();
+  const originId = props.originEntityId ?? player.userId;
+  const tagsKey = props.tags.join("|");
+  const hits = useMemo(
+    () => (enabled ? revealHits(entities, originId, props) : []),
+    // `frame` is the refresh: the list identity says nothing about where the origin or the targets moved.
+    [enabled, frame, entities, originId, props.radius, tagsKey, props.tags, props.resolveTags],
+  );
 
   if (!enabled) return null;
 
