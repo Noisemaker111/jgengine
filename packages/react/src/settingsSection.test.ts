@@ -170,13 +170,22 @@ describe("SettingsSection keyboard rows", () => {
     });
     await page.waitForFunction(() => document.activeElement?.getAttribute("data-jg-menu-item") === "row:volume");
     await page.keyboard.press("ArrowRight");
-    expect(await page.evaluate(() => document.getElementById("volume")?.textContent)).toBe("0.60");
+    await page.waitForFunction(() => document.getElementById("volume")?.textContent === "0.60", undefined, {
+      polling: 25,
+      timeout: 4000,
+    });
     await page.keyboard.press("ArrowLeft");
-    expect(await page.evaluate(() => document.getElementById("volume")?.textContent)).toBe("0.50");
+    await page.waitForFunction(() => document.getElementById("volume")?.textContent === "0.50", undefined, {
+      polling: 25,
+      timeout: 4000,
+    });
     await page.keyboard.press("ArrowDown");
-    expect(await page.evaluate(() => document.activeElement?.getAttribute("data-jg-menu-item"))).toBe("row:captions");
+    await page.waitForFunction(() => document.activeElement?.getAttribute("data-jg-menu-item") === "row:captions");
     await page.keyboard.press("Enter");
-    expect(await page.evaluate(() => document.getElementById("captions")?.textContent)).toBe("true");
+    await page.waitForFunction(() => document.getElementById("captions")?.textContent === "true", undefined, {
+      polling: 25,
+      timeout: 4000,
+    });
   }, 20_000);
 });
 
@@ -349,3 +358,6 @@ describe("accessibility text scale", () => {
     expect(after / before).toBeCloseTo(2, 1);
   });
 });
+
+
+
