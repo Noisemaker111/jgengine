@@ -1,5 +1,3 @@
-import { mkdtempSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { expect, test } from "bun:test";
@@ -284,7 +282,6 @@ test("--uncapped asks Chrome for an unthrottled rAF clock; the default asks for 
 
 test("the frame clock the run asked for is what the browser launch receives", async () => {
   const seen: (ChromeLaunchOptions | undefined)[] = [];
-  const dirs: string[] = [];
   const original = globalThis.fetch;
   globalThis.fetch = (async () =>
     new Response(JSON.stringify({ webSocketDebuggerUrl: "ws://127.0.0.1:1/devtools" }), { status: 200 })) as typeof fetch;
@@ -297,16 +294,14 @@ test("the frame clock the run asked for is what the browser launch receives", as
         ...(frameClock === undefined ? {} : { frameClock }),
         launch: (_port, _prefix, options) => {
           seen.push(options);
-          const dir = mkdtempSync(join(tmpdir(), "jg-clock-"));
-          dirs.push(dir);
-          return { pid: undefined, userDataDir: dir };
+          // A path only: the fake launch owns no browser, so nothing is created or cleaned up.
+          return { pid: undefined, userDataDir: join(".scratch", "jg-clock-fake") };
         },
         pageProbe: async () => {},
       });
     }
   } finally {
     globalThis.fetch = original;
-    for (const dir of dirs) rmSync(dir, { recursive: true, force: true });
   }
   expect(seen).toEqual([{ frameClock: "uncapped" }, undefined]);
 });
