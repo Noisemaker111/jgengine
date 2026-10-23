@@ -64,6 +64,9 @@ export function creatorAppFixture(name: string): CreatorAppFixture {
     function ClockHud(){const ctx=useGameContext();window.simClock=ctx.time;const[time,setTime]=useState(ctx.time.now());useEffect(()=>{const timer=setInterval(()=>setTime(ctx.time.now()),50);return()=>clearInterval(timer)},[ctx]);return <output aria-label="Simulation seconds" style={{position:'absolute',top:60,left:8,color:'white'}}>{time.toFixed(6)}</output>}
     const createPlayable=document=>defineGame({name:'Creator fixture',assets:createAssetCatalog(),editorLayers:document,world:environment({terrain:terrain({bounds:{w:24,d:24},height:0,material:'grass'})}),GameUI:ClockHud,postProcessing:{enabled:false},shadows:false,graphics:{low:{renderScale:0.5},medium:{renderScale:0.5},high:{renderScale:0.5}},server:{mode:'single'},save:'none'});
     const durable=createCreatorDocumentStorage({storage:localStorage,key:'creator-fixture:v1',policy});
+    // A scenario that only needs a saved scene seeds it here instead of re-driving the
+    // create/rename/save clicks, which cost 20 s of browser frames per test file.
+    window.seedCreator=(name,label)=>durable.save({version:1,id:crypto.randomUUID(),name,revision:0,document:normalizeEditorLayers({markers:[{id:'spawn',kind:'player_spawn',label,position:{x:0,y:0,z:0}}]})},null);
     const config={policy,initialDocument,createPlayable,storage:{...durable,save:async(...args)=>{const check=await(await fetch('/save-check')).json();if(!check.ok)throw new Error(check.error);return durable.save(...args)}}};
     const playable=createPlayable(initialDocument());const loader=()=>import('@jgengine/editor');
     function Fixture(){const[open,setOpen]=useState(false);return <>{!open&&<button onClick={()=>setOpen(true)}>Create or edit</button>}<GameHost playable={playable} editor={loader} creator={config} creatorOpen={open} onCreatorOpenChange={setOpen}/></>}

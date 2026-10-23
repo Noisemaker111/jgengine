@@ -7,14 +7,11 @@ let session: CreatorAppSession;
 beforeAll(async () => {
   session = await fixture.start();
   const { page } = session;
+  await page.evaluate(() => (window as unknown as { seedCreator: (name: string, label: string) => Promise<unknown> }).seedCreator("Cloud course", "Saved start 1"));
   await page.getByRole("button", { name: "Create or edit", exact: true }).click();
-  await page.getByRole("textbox", { name: "Scene name" }).fill("Cloud course");
-  await page.getByRole("button", { name: "Create scene", exact: true }).click();
+  await page.getByRole("button", { name: "Edit Cloud course", exact: true }).click();
   await page.getByRole("button", { name: "Save", exact: true }).waitFor({ timeout: 20000 });
-  await page.getByRole("treeitem").filter({ hasText: "Start marker" }).last().getByRole("button").first().click();
-  await page.getByRole("textbox", { name: "Object name" }).fill("Saved start 1");
-  await page.getByRole("button", { name: "Save", exact: true }).click();
-  await page.waitForFunction(() => JSON.parse(localStorage.getItem("creator-fixture:v1")!).documents[0].document.markers[0].label === "Saved start 1");
+  await page.getByRole("treeitem").filter({ hasText: "Saved start 1" }).waitFor();
 }, 120000);
 
 afterAll(() => fixture.stop(session));
