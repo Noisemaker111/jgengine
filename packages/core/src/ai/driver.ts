@@ -31,6 +31,61 @@ export interface DriverGoal {
   stopAtGoal?: boolean;
   /** Cap on desired speed for this goal (a speed limit, a formation speed); default unlimited. */
   speedLimit?: number;
+  /**
+   * This car's catch-up pacing band, applied to the goal's pace. The caller measures {@link paceGap}
+   * (it owns the spatial query) and tunes the band; {@link paceBandFactor} is the rule.
+   */
+  paceBand?: PaceBand;
+  /** Signed gap to the band's reference: positive when this car is ahead of it; default `0`. */
+  paceGap?: number;
+}
+
+/**
+ * Catch-up pacing for one car in a field: the gap it tries to hold to a reference car (a rival, the
+ * player, a convoy lead) and how its pace bends when it drifts off that gap. Past `margin` by
+ * `tolerance` it sheds up to `ease` of its pace; short of it by `tolerance` it gains up to `push`;
+ * inside that tolerance it leaves the car alone. The push never outdrives `DriverTuning.maxSpeed`,
+ * so a band changes how hard a car tries, never what it is built to do.
+ */
+export interface PaceBand {
+  /** Gap to the reference this car aims to hold, world units; default `0` (level with it). */
+  margin?: number;
+  /** Gap error either side of `margin` the car leaves alone; default `0`. */
+  tolerance?: number;
+  /** Gap error past `tolerance` where the ease reaches full strength; default `0` (at once). */
+  easeAt?: number;
+  /** Fraction of the goal's pace shed at full ease; default `0`. */
+  ease?: number;
+  /** Gap error past `tolerance` where the push reaches full strength; default `0` (at once). */
+  pushAt?: number;
+  /** Fraction of the goal's pace added at full push; default `0`. */
+  push?: number;
+  /** Share of the band this car accepts, `0..1`; default `1`. */
+  scale?: number;
+}
+
+/**
+ * The pace multiplier a {@link PaceBand} asks for at `gap`: `1` inside the tolerance, `1 - ease *
+ * scale` fully ahead of it, `1 + push * scale` fully behind it, ramped linearly across `easeAt` /
+ * `pushAt` in between. Pure scalar math, so a band is deterministic and costs no allocation per
+ * step; the result never goes negative.
+ */
+export function paceBandFactor(band: PaceBand, gap: number): number {
+  const scale = band.scale ?? 1;
+  if (scale <= 0) return 1;
+  const error = gap - (band.margin ?? 0);
+  const tolerance = band.tolerance ?? 0;
+  if (error > tolerance) {
+    const ease = band.ease ?? 0;
+    if (ease <= 0) return 1;
+    return Math.max(0, 1 - ease * scale * Math.min(1, (error - tolerance) / (band.easeAt ?? 0)));
+  }
+  if (error < -tolerance) {
+    const push = band.push ?? 0;
+    if (push <= 0) return 1;
+    return Math.max(0, 1 + push * scale * Math.min(1, (-error - tolerance) / (band.pushAt ?? 0)));
+  }
+  return 1;
 }
 
 /** Vehicle-feel numbers the game supplies; everything has a sensible default except `maxSpeed`. */
@@ -113,8 +168,10 @@ const clamp01 = (value: number): number => (value < 0 ? 0 : value > 1 ? 1 : valu
  * `speed * reactionSeconds`, so easy tiers brake at the last moment and expert tiers with proper
  * margin. The steering target is a delay-line over the goal — resampled every `reactionSeconds`,
  * so it trails a moving goal by up to that long, which is what makes an easy chaser visibly cut
- * toward where the target *was*. When throttle produces no motion for a tier-scaled while the
- * driver reverses out with counter-steer (brake past standstill — the shared sim's reverse).
+ * toward where the target *was*. A {@link PaceBand} on the goal eases a car ahead of its margin and
+ * pushes one behind it, bounded by the car's own top speed. When throttle produces no motion for a
+ * tier-scaled while the driver reverses out with counter-steer (brake past standstill — the shared
+ * sim's reverse).
  *
  * @capability ai-driver difficulty-aware chase/route driving step producing throttle/brake/steer for the vehicle sim
  */
@@ -172,6 +229,9 @@ export function driveStep(
   const cornerSlowdown = tuning.cornerSlowdown ?? 0.75;
   const cornerFactor = 1 - cornerSlowdown * Math.min(1, Math.abs(headingError) / (Math.PI / 2));
   let desiredSpeed = Math.min(tuning.maxSpeed, goal.speedLimit ?? Number.POSITIVE_INFINITY);
+  if (goal.paceBand !== undefined) {
+    desiredSpeed = Math.min(tuning.maxSpeed, desiredSpeed * paceBandFactor(goal.paceBand, goal.paceGap ?? 0));
+  }
   desiredSpeed *= cornerFactor;
   if (goal.stopAtGoal === true) {
     // Ease in over the last stretch so the stop lands inside the radius instead of overshooting.

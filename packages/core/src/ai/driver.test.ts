@@ -4,9 +4,11 @@ import { difficultyProfile, type DifficultyProfile } from "./difficulty";
 import {
   createDriverState,
   driveStep,
+  paceBandFactor,
   pathTargetAhead,
   type DriverPose,
   type DriverTuning,
+  type PaceBand,
 } from "./driver";
 
 const noRng = () => 0.5;
@@ -172,6 +174,93 @@ describe("stuck-reverse recovery", () => {
     step = driveStep(state, 0.5, wall, { x: 30, z: 0 }, dull, TUNING, noRng); // crosses 2.4s, arms reverse
     step = driveStep(state, 0.5, wall, { x: 30, z: 0 }, dull, TUNING, noRng);
     expect(step.brake).toBe(1);
+  });
+});
+
+describe("pace band", () => {
+  const BAND: PaceBand = { margin: 0, tolerance: 2, easeAt: 10, ease: 0.25, pushAt: 20, push: 0.5 };
+  const CRUISE: DriverTuning = { maxSpeed: 30 };
+
+  test("the tolerance is a dead zone: inside it the rule and the step change nothing", () => {
+    for (const gap of [-2, -1, 0, 1, 2]) expect(paceBandFactor(BAND, gap)).toBe(1);
+    const plain = driveStep(createDriverState(0, 100), 0.1, pose(0, 0, 0, 24), { x: 0, z: 100 }, exact(), CRUISE, noRng);
+    const banded = driveStep(
+      createDriverState(0, 100),
+      0.1,
+      pose(0, 0, 0, 24),
+      { x: 0, z: 100, paceBand: BAND, paceGap: 1.5 },
+      exact(),
+      CRUISE,
+      noRng,
+    );
+    expect(banded.throttle).toBe(plain.throttle);
+    expect(banded.brake).toBe(plain.brake);
+  });
+
+  test("the rule ramps past the tolerance, clamps at full effect, and the scale is a per-car share", () => {
+    expect(paceBandFactor(BAND, 7)).toBeCloseTo(1 - 0.25 * 0.5);
+    expect(paceBandFactor(BAND, 400)).toBeCloseTo(0.75);
+    expect(paceBandFactor(BAND, -12)).toBeCloseTo(1 + 0.5 * 0.5);
+    expect(paceBandFactor(BAND, -400)).toBeCloseTo(1.5);
+    // The expert concedes less than the rookie with the same gap; a still margin or scale is level.
+    expect(paceBandFactor({ ...BAND, scale: 0.5 }, 400)).toBeGreaterThan(paceBandFactor(BAND, 400));
+    expect(paceBandFactor({ ...BAND, scale: 0 }, 400)).toBe(1);
+    expect(paceBandFactor({ ...BAND, margin: 400 }, 400)).toBe(1);
+  });
+
+  test("a leader out past its margin eases off the throttle", () => {
+    const cruise = { x: 0, z: 100, paceBand: BAND, paceGap: 0 };
+    const level = driveStep(createDriverState(0, 100), 0.1, pose(0, 0, 0, 30), cruise, exact(), CRUISE, noRng);
+    expect(level.throttle).toBe(0);
+    expect(level.brake).toBe(0);
+    const ahead = driveStep(createDriverState(0, 100), 0.1, pose(0, 0, 0, 30), { ...cruise, paceGap: 30 }, exact(), CRUISE, noRng);
+    expect(ahead.throttle).toBe(0);
+    expect(ahead.brake).toBeGreaterThan(0);
+  });
+
+  test("a chaser behind the field pushes past its cruise pace and closes the gap", () => {
+    const state = createDriverState(0, 1);
+    const dt = 1 / 60;
+    let z = 0;
+    let speed = 0;
+    let leaderZ = 60;
+    let gap = z - leaderZ;
+    let peak = 0;
+    for (let tick = 0; tick < 60 * 20 && gap < -4; tick += 1) {
+      leaderZ += 20 * dt;
+      const step = driveStep(
+        state,
+        dt,
+        pose(0, z, 0, speed),
+        { x: 0, z: z + 50, speedLimit: 18, paceBand: BAND, paceGap: gap },
+        exact(),
+        CRUISE,
+        noRng,
+      );
+      speed = Math.max(0, speed + step.throttle * 8 * dt - step.brake * 16 * dt);
+      z += speed * dt;
+      gap = z - leaderZ;
+      peak = Math.max(peak, speed);
+    }
+    // Cruise pace is 18 and the leader runs 20, so only the push can take this car past it.
+    expect(peak).toBeGreaterThan(25);
+    expect(speed).toBeGreaterThan(18);
+    expect(gap).toBeGreaterThan(-10);
+  });
+
+  test("the push never outdrives the car's own top speed", () => {
+    const capped: DriverTuning = { maxSpeed: 18 };
+    const step = driveStep(
+      createDriverState(0, 100),
+      0.1,
+      pose(0, 0, 0, 18),
+      { x: 0, z: 100, speedLimit: 18, paceBand: BAND, paceGap: -60 },
+      exact(),
+      capped,
+      noRng,
+    );
+    expect(step.throttle).toBe(0);
+    expect(step.brake).toBe(0);
   });
 });
 
