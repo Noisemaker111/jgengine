@@ -246,6 +246,23 @@ describe("applyFootIk", () => {
     expect(calls[0]!.maxDistance).toBeCloseTo(LEG * 2, 6);
   });
 
+  test("every probe in a frame carries that leg's own origin and distance", () => {
+    const { rig } = syntheticRig();
+    const seen: { origin: readonly number[]; maxDistance: number }[] = [];
+    const probe = (input: SceneRaycastInput) => {
+      seen.push({ origin: [...input.origin], maxDistance: input.maxDistance });
+      return null;
+    };
+    applyFootIk(rig, 0, probe, { weight: 0, pelvis: 0 }, 1 / 60, [1, 1.7, 2]);
+    applyFootIk(rig, 0, probe, { weight: 0, pelvis: 0 }, 1 / 60, [1, 1.7, 2]);
+    expect(seen).toHaveLength(4);
+    expect(seen[0]!.origin[0]).not.toBeCloseTo(seen[1]!.origin[0]!, 6);
+    expect(seen[0]!.origin).not.toEqual(seen[1]!.origin);
+    // A second frame repeats the same two per-leg probes rather than keeping the last frame's.
+    expect(seen[2]).toEqual(seen[0]);
+    expect(seen[3]).toEqual(seen[1]);
+  });
+
   test("a rig without legs resolves to null", () => {
     const messages = diagnostics(() => {
       expect(resolveFootIkRig(new THREE.Group(), "auto")).toBeNull();
