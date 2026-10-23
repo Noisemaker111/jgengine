@@ -18,6 +18,10 @@ export interface LootPartDef extends PartDef {
 export interface LootBaseDef extends ItemBaseDef {
   /** Relative pick weight among bases a manufacturer can produce (default `1`). */
   weight?: number;
+  /** Lowest item level a roll may pick this base at; omitted means every level. */
+  minLevel?: number;
+  /** Mass at item level 1 in the caller's weight unit (default `1`); grows 10% per level. */
+  mass?: number;
   /** Free-form tags for caller filters and UI. */
   tags?: readonly string[];
   /** Mount slots a roll fills; every declared slot receives one part. */
@@ -78,6 +82,8 @@ export interface LootItem {
   parts: readonly LootInstalledPart[];
   affixes: readonly RolledAffix[];
   stats: Readonly<Record<string, number>>;
+  /** Carried mass from the base def at this level; absent on saves made before mass existed. */
+  mass?: number;
 }
 
 /** Pin any part of a roll; omitted fields are drawn from the catalog. */
@@ -93,6 +99,7 @@ export interface LootRollOptions {
 export type LootIssueCode =
   | "invalid-level"
   | "unknown-base"
+  | "level-gated-base"
   | "unknown-manufacturer"
   | "manufacturer-base"
   | "unknown-rarity"
@@ -105,6 +112,7 @@ export type LootIssueCode =
   | "duplicate-affix"
   | "invalid-affix"
   | "non-finite-stat"
+  | "invalid-mass"
   | "empty-name";
 
 /** One reason a rolled item is not legal against its catalog, with the offending value named. */
@@ -184,6 +192,8 @@ export function assertLootCatalog(catalog: LootCatalog): void {
     check(!baseIds.has(base.id), `Loot base "${base.id}" is declared twice`);
     baseIds.add(base.id);
     if (base.weight !== undefined) check(base.weight > 0, `Loot base "${base.id}" weight must be positive`);
+    if (base.minLevel !== undefined) check(Number.isInteger(base.minLevel) && base.minLevel >= 1, `Loot base "${base.id}" minLevel must be an integer >= 1`);
+    if (base.mass !== undefined) check(Number.isFinite(base.mass) && base.mass > 0, `Loot base "${base.id}" mass must be positive`);
   }
 
   const poolIds = new Set<string>();
@@ -196,6 +206,7 @@ export function assertLootCatalog(catalog: LootCatalog): void {
       check(!affixIds.has(affix.id), `Loot affix "${affix.id}" is declared twice`);
       affixIds.add(affix.id);
       check(affix.weight > 0, `Loot affix "${affix.id}" weight must be positive`);
+      if (affix.minLevel !== undefined) check(Number.isInteger(affix.minLevel) && affix.minLevel >= 1, `Loot affix "${affix.id}" minLevel must be an integer >= 1`);
       if (typeof affix.roll === "number") {
         check(Number.isFinite(affix.roll), `Loot affix "${affix.id}" roll must be finite`);
         if (affix.op === "mul") check(affix.roll > 0, `Loot affix "${affix.id}" multiplicative roll must be positive`);
@@ -313,13 +324,21 @@ function weighted<T>(rng: () => number, items: readonly T[], weightOf: (item: T)
   return picked;
 }
 
-function candidateAffixes(catalog: LootCatalog, base: LootBaseDef, rarity: RarityTier): { affix: AffixPool["affixes"][number]; poolId: string }[] {
+function candidateAffixes(
+  catalog: LootCatalog,
+  base: LootBaseDef,
+  rarity: RarityTier,
+  level: number,
+): { affix: AffixPool["affixes"][number]; poolId: string }[] {
   const out: { affix: AffixPool["affixes"][number]; poolId: string }[] = [];
   for (const poolId of base.pools) {
     if (rarity.pools !== undefined && !rarity.pools.includes(poolId)) continue;
     const pool = catalog.pools.find((entry) => entry.id === poolId);
     if (pool === undefined) continue;
-    for (const affix of pool.affixes) out.push({ affix, poolId });
+    for (const affix of pool.affixes) {
+      if (affix.minLevel !== undefined && affix.minLevel > level) continue;
+      out.push({ affix, poolId });
+    }
   }
   return out;
 }
@@ -368,13 +387,20 @@ export function rollLoot(catalog: LootCatalog, rng: () => number, options: LootR
     )
     : findOrThrow(catalog.manufacturers, options.manufacturer, "manufacturer");
 
-  const basePool = catalog.bases.filter((base) => manufacturer.bases === undefined || manufacturer.bases.includes(base.id));
+  const basePool = catalog.bases.filter((base) =>
+    (base.minLevel === undefined || base.minLevel <= level)
+    && (manufacturer.bases === undefined || manufacturer.bases.includes(base.id)),
+  );
   const base = options.baseId === undefined
     ? weighted(rng, basePool, (entry) => entry.weight ?? 1, "base")
     : findOrThrow(catalog.bases, options.baseId, "base");
   check(
     manufacturer.bases === undefined || manufacturer.bases.includes(base.id),
     `Loot manufacturer "${manufacturer.id}" does not produce base "${base.id}"`,
+  );
+  check(
+    base.minLevel === undefined || base.minLevel <= level,
+    `Loot base "${base.id}" needs item level ${base.minLevel}, got ${level}`,
   );
 
   const rarity = options.rarity === undefined
@@ -388,7 +414,7 @@ export function rollLoot(catalog: LootCatalog, rng: () => number, options: LootR
     parts.push({ slotId: slot.id, partId: part.id, category: part.category });
   }
 
-  const candidates = candidateAffixes(catalog, base, rarity);
+  const candidates = candidateAffixes(catalog, base, rarity, level);
   const favors = manufacturer.favoredPools ?? [];
   const favorWeight = manufacturer.favoredWeight ?? 3;
   const remaining = candidates.slice();
@@ -434,6 +460,7 @@ export function rollLoot(catalog: LootCatalog, rng: () => number, options: LootR
     else add(affix.stat, affix.value);
   }
   for (const stat of Object.keys(stats)) stats[stat] = Math.round(stats[stat]! * 1000) / 1000;
+  const mass = Math.round((base.mass ?? 1) * (1 + 0.1 * (level - 1)) * 100) / 100;
 
   return {
     baseId: base.id,
@@ -444,6 +471,7 @@ export function rollLoot(catalog: LootCatalog, rng: () => number, options: LootR
     parts,
     affixes,
     stats,
+    mass,
   };
 }
 
@@ -461,6 +489,8 @@ export function validateLootItem(item: LootItem, catalog: LootCatalog): LootVali
   const base = catalog.bases.find((entry) => entry.id === item.baseId);
   if (base === undefined) {
     issues.push({ code: "unknown-base", detail: `base "${item.baseId}" is not in the catalog` });
+  } else if (base.minLevel !== undefined && base.minLevel > item.level) {
+    issues.push({ code: "level-gated-base", detail: `base "${base.id}" needs item level ${base.minLevel}, got ${item.level}` });
   }
   const manufacturer = catalog.manufacturers.find((entry) => entry.id === item.manufacturer);
   if (manufacturer === undefined) {
@@ -498,7 +528,7 @@ export function validateLootItem(item: LootItem, catalog: LootCatalog): LootVali
     if (!seenSlots.has(slot.id)) issues.push({ code: "missing-slot-part", detail: `slot "${slot.id}" has no part` });
   }
 
-  const allowed = base === undefined || rarity === undefined ? null : candidateAffixes(catalog, base, rarity);
+  const allowed = base === undefined || rarity === undefined ? null : candidateAffixes(catalog, base, rarity, item.level);
   const seenAffixes = new Set<string>();
   for (const affix of item.affixes) {
     if (seenAffixes.has(affix.id)) {
@@ -516,6 +546,9 @@ export function validateLootItem(item: LootItem, catalog: LootCatalog): LootVali
 
   for (const [stat, value] of Object.entries(item.stats)) {
     if (!Number.isFinite(value)) issues.push({ code: "non-finite-stat", detail: `stat "${stat}" is ${String(value)}` });
+  }
+  if (item.mass !== undefined && (!Number.isFinite(item.mass) || item.mass <= 0)) {
+    issues.push({ code: "invalid-mass", detail: `mass ${String(item.mass)} is not a positive number` });
   }
   if (item.name.trim() === "") issues.push({ code: "empty-name", detail: "item has no name" });
 
