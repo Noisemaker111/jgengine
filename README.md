@@ -96,7 +96,7 @@ The probe games that live in [`Noisemaker111/JGengine-games`](https://github.com
 bun install
 bun run check-types  # @jgengine/* resolves to package source; no build needed
 bun run test
-bun scripts/test-shard.ts a  # one CI test shard locally (a-h); --check counts files, --print lists them
+bun scripts/test-shard.ts a  # one CI test shard locally (a-i); --check counts files, --print lists them
 bun run build        # tsgo + import-extension rewrite, per package; only for pack/publish and the Node CLI
 bun run gen           # regenerate every committed derived artifact, in dependency order
 bun run games:clone  # once: clone Noisemaker111/JGengine-games into ephemeral ./Games at the pinned commit

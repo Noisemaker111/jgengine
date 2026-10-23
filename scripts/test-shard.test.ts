@@ -49,6 +49,14 @@ test("the last shard covers every root, so a new one cannot fall outside the spl
   }
 });
 
+test("the core suite and the scripts suite stay out of one shard", () => {
+  // Measured: merged, that job's own test time swung 48-79 s across four runs, which is what
+  // pushed the deepest job past a minute. Merging them again needs a fresh timing, not a hunch.
+  const core = matchingShard("packages/core/src/combat/damage.test.ts")!;
+  const scripts = matchingShard("scripts/test-shard.test.ts")!;
+  expect(core.name).not.toBe(scripts.name);
+});
+
 test("the shard that reads Games is the shard that clones it, and the built gate is one shard", () => {
   for (const file of ["scripts/cutlistSurface.test.ts", "packages/editor/src/mcp/loadGameLayers.test.ts"]) {
     const shard = matchingShard(file)!;
