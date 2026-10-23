@@ -99,6 +99,8 @@ export function ColorblindFrame({ mode = "none", children, className, style }: C
  * The live colour-vision mode from a settings store — the same store the settings rows write, so the
  * frame follows the player's choice the moment they pick it. Pass the store the shell owns; read
  * `useAccessibilitySettings().colorblind` instead when a `SettingsProvider` is above the caller.
+ *
+ * @capability colorblind-frame-mode read the live colour-vision mode from the settings store that the settings rows write
  */
 export function useColorblindMode(store: SettingsStore): ColorblindMode {
   return useSyncExternalStore(

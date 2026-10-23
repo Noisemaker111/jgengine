@@ -4,7 +4,7 @@
 
 Reach for these before hand-rolling. Each row is *the thing you need* → *the primitive that already does it*.
 
-## accessibility-provider — apply accessibility preferences to a subtree — text-scale CSS var, reduced-motion/high-contrast/colorblind/captions data attrs, and the colorblind color-matrix filter
+## accessibility-provider — apply accessibility preferences to a subtree — text-scale CSS var and reduced-motion/high-contrast/colorblind/captions data attrs
 
 - `AccessibilityProvider` (function) · `import { AccessibilityProvider } from "@jgengine/react"`
 
@@ -51,6 +51,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## action-tooltip — structured action tooltip body (title, cost, cooldown, blocking notes)
 
 - `ActionTooltip` (function) · `import { ActionTooltip } from "@jgengine/react"`
+
+## adjust-setting-row — step a settings row value once, for keyboard and gamepad alike
+
+- `adjustSettingRow` (function) · `import { adjustSettingRow } from "@jgengine/react/settingsBlocks"`
 
 ## animation — turn a killed rigged character into a physics ragdoll on death
 
@@ -158,6 +162,18 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## colorblind-filters — SVG feColorMatrix defs (protanopia/deuteranopia/tritanopia/grayscale) referenced by the accessibility colorblind filter
 
 - `ColorblindFilters` (function) · `import { ColorblindFilters } from "@jgengine/react"`
+
+## colorblind-frame — apply the player's colour-vision mode to the 3D frame alone, leaving HUD and menu text unfiltered
+
+- `ColorblindFrame` (function) · `import { ColorblindFrame } from "@jgengine/react"`
+
+## colorblind-frame-filter — resolve a colorblind mode to the CSS filter for the 3D frame alone
+
+- `colorblindFrameFilter` (function) · `import { colorblindFrameFilter } from "@jgengine/core/ui/accessibility"`
+
+## colorblind-frame-mode — read the live colour-vision mode from the settings store that the settings rows write
+
+- `useColorblindMode` (function) · `import { useColorblindMode } from "@jgengine/react"`
 
 ## combo-meter-hud — drop-in HUD for a core combo meter — big live count, free-string tier label, derived multiplier, and a draining decay-window bar, per-tier colored from a caller map and HudTheme-token skinnable
 
@@ -758,7 +774,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `SettingsKeybindControl` (function) · `import { SettingsKeybindControl } from "@jgengine/react/settingsBlocks"`
 
-## settings-section — settings category block — rows plus click-to-capture keybind rows, HudTheme-styled, store-backed
+## settings-section — settings category block — rows plus click-to-capture keybind rows, HudTheme-styled, store-backed, keyboard and gamepad navigable
 
 - `SettingsSection` (function) · `import { SettingsSection } from "@jgengine/react/settingsBlocks"`
 
