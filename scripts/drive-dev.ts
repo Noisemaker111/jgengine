@@ -16,8 +16,8 @@
  * remains available. `--size half` is the cheap iteration mode; `--quick` is the
  * cheaper one (960x540, one settled frame in a 2s window, no video, no perf pass).
  */
-import { existsSync, mkdirSync, statSync } from "node:fs";
-import { isAbsolute, join, resolve } from "node:path";
+import { existsSync, mkdirSync, readFileSync, statSync } from "node:fs";
+import { dirname, isAbsolute, join, resolve } from "node:path";
 import {
   CdpSession,
   applyCaptureQuality,
@@ -57,8 +57,8 @@ import {
   splitQuickFlag,
 } from "./capture-preset";
 import { driveInputPointExpr } from "../packages/jgengine/src/templates/driveInput";
-import { CAPTURE_FLAGS, captureFlagHelp, parseCaptureArgs, type CaptureStep } from "../packages/jgengine/src/templates/captureArgs";
-import { awaitGameView, holdDriveInput, type DriveInputDeps, type DriveSession } from "../packages/jgengine/src/templates/driveSteps";
+import { CAPTURE_FLAGS, captureFlagHelp, describeStep, describeStepFile, parseCaptureArgs, parseStepFile, rejectMixedStepFlags, type CaptureStep } from "../packages/jgengine/src/templates/captureArgs";
+import { awaitDriveCondition, awaitGameView, holdDriveInput, type DriveConditionClock, type DriveInputDeps, type DriveSession } from "../packages/jgengine/src/templates/driveSteps";
 import { gameSurfaceCenter, mouseButtonForCode } from "../packages/jgengine/src/templates/gameSurfaceFocus";
 import { dispatchClickAt, parseClickAt } from "../packages/jgengine/src/clickInput";
 import { decodePng } from "./png-reader";
@@ -123,15 +123,47 @@ type Args = {
   headed: boolean;
   /** 960x540 iteration preset: one settled frame in a 2s window, no video, no perf pass. */
   quick: boolean;
+  /** Step file this run reads, when it reads one. */
+  stepsFile?: string;
+  /** Parse and print the step file, then exit without a browser. */
+  check: boolean;
 };
 
 /** GitHub's camo image proxy stops serving around 5 MB — stay safely under it
  * so a recorded clip actually animates in the PR body. */
 const RECORD_BUDGET_BYTES = 4_500_000;
 
-const HELP = `bun run drive <gameId> [options] --click "TEXT" --shot name ...
+const HELP = `bun run drive <gameId> --steps <file>   (scripted drive: checked, no flags)
+bun run drive <gameId> [options] --click "TEXT" --shot name ...   (one-off drive)
 
 ${captureFlagHelp("drive", "engine", CAPTURE_FLAGS)}
+
+Script a drive:
+  bun run drive ember-command --steps proofs/skirmish.json --check   # list the resolved steps, no browser
+  bun run drive ember-command --steps proofs/skirmish.json
+
+  { "steps": [
+    { "click": "Free skirmish",
+      "before": { "is": "menu.ready", "timeoutMs": 15000 },
+      "after":  { "is": "skirmish.started" } },
+    { "key": "KeyH", "ms": 120,
+      "before": { "is": "selection.count >= 2" },
+      "after":  { "is": "squad.formationCount >= 2" } },
+    { "shot": "formation-line",
+      "before": { "is": "squad.formation === 'line'" } }
+  ] }
+
+  A step waits for its before condition, acts, then waits for its after condition, so
+  each step starts the instant the previous one is really done. Conditions are page
+  expressions polled every 50ms (default timeout 15000ms, per-condition timeoutMs). A
+  timeout stops the run at that step and prints the index, the expression, the last
+  value and the elapsed time; nothing after it runs.
+  "shot" is a bare name: it lands in <game>/docs/<name>.png, never an absolute path,
+  and a site target lands in apps/web/docs/. Coordinates are [x, y] numbers.
+  "waitFor": "<expression>" is sugar for a step with only a before condition.
+  A fixed "wait" still parses for CI compatibility, but it is the last resort: a guessed
+  sleep either wastes the difference or races the frame. Say what must be true instead.
+  --steps cannot be mixed with step flags (--click, --key, --wait, --shot, ...).
 
 Notes:
   --probe before and after a --key hold proves movement by RPC on a low-fps headless page.
@@ -202,8 +234,11 @@ function parseArgs(argv: string[]): Args {
     style: str("style"),
     headed,
     quick: quick.quick,
+    stepsFile: str("steps"),
+    check: o.check === true,
   };
   if (args.help) return args;
+  if (args.check && args.stepsFile === undefined) throw new Error("drive: --check needs --steps <file>");
   assertQuickIsIterationOnly({
     tool: "drive",
     quick: args.quick,
@@ -240,7 +275,21 @@ function parseArgs(argv: string[]): Args {
   if (args.site !== undefined && !args.timeoutExplicit) {
     args.timeoutMs = process.platform === "linux" || process.env.CI !== undefined ? 30_000 : 10_000;
   }
+  if (args.stepsFile !== undefined) {
+    rejectMixedStepFlags("drive", quick.argv, CAPTURE_FLAGS);
+    if (!existsSync(resolve(args.stepsFile))) throw new Error("drive: no step file at " + args.stepsFile);
+    let raw: unknown;
+    try {
+      raw = JSON.parse(readFileSync(resolve(args.stepsFile), "utf8"));
+    } catch (error) {
+      throw new Error("drive: " + args.stepsFile + " is not valid JSON (" + (error instanceof Error ? error.message : String(error)) + ")");
+    }
+    const root = resolve(import.meta.dir, "..");
+    const docs = args.game === "url" ? join(process.cwd(), "docs") : join(root, args.site === undefined ? "Games" : "apps/web", args.site === undefined ? args.game : "", "docs");
+    args.steps = parseStepFile(raw, args.stepsFile).map((step) => step.kind === "shot" ? { ...step, out: join(docs, step.name + ".png") } : step);
+  }
   if (
+    args.stepsFile === undefined &&
     !args.playtest &&
     args.record === undefined &&
     !args.steps.some((step) => step.kind === "shot" || step.kind === "rpc" || step.kind === "probe")
@@ -585,12 +634,19 @@ if (args.help) {
   console.log(HELP);
   process.exit(0);
 }
+if (args.check) {
+  console.log(describeStepFile(args.steps, args.stepsFile ?? "steps"));
+  process.exit(0);
+}
 
 sweepCaptureProfiles();
 const startedAt = performance.now();
 
 const outDir = resolve(import.meta.dir, "../shots");
 if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true });
+for (const step of args.steps) {
+  if (step.kind === "shot" && step.out !== undefined) mkdirSync(dirname(step.out), { recursive: true });
+}
 const preparedShots = new Map<string, PreviousShot | undefined>();
 for (const step of args.steps) {
   if (step.kind !== "shot") continue;
@@ -732,58 +788,83 @@ const exitCode = await withBrowserSession(
           })()
         : Promise.resolve();
 
-      for (const step of args.steps) {
-        if (step.kind === "click" || step.kind === "double-click") {
-          await click(session, step.text, step.kind === "double-click" ? 2 : 1);
-          // Let the UI react on the virtual clock so the click's effect is in frame.
-          if (recorder !== null) await recorder.advance(300);
-        } else if (step.kind === "fill") {
-          await fill(session, step.label, step.value);
-          if (recorder !== null) await recorder.advance(300);
-        } else if (step.kind === "key") {
-          if (recorder !== null) {
-            // Lockstep hold: the virtual clock guarantees the sim steps under the
-            // held key, so no frame-starvation grace dance is needed.
-            await focusSurface(session);
-            await sendKeys(session, step.code, "keyDown");
-            await recorder.advance(step.holdMs);
-            await sendKeys(session, step.code, "keyUp");
-          } else {
-            await holdKey(session, step.code, step.holdMs);
+      const conditionClock = (): DriveConditionClock => recorder === null
+        ? { sleep: (ms: number) => new Promise<void>((r) => setTimeout(r, ms)), now: () => Date.now() }
+        : { sleep: (ms: number) => recorder!.advance(ms), now: () => recorder!.virtualNow };
+      const waitOn = (label: string, entry: { is: string; value?: unknown; timeoutMs?: number; note?: string }) =>
+        awaitDriveCondition(session as unknown as DriveSession, label, entry, conditionClock());
+
+      for (const [index, step] of args.steps.entries()) {
+        const stepStartedAt = performance.now();
+        const label = "steps[" + index + "]";
+        const timings: string[] = [];
+        try {
+          if (step.before !== undefined) timings.push("before " + (await waitOn(label + ".before", step.before)).elapsedMs + "ms");
+          if (step.kind === "click" || step.kind === "double-click") {
+            await click(session, step.text, step.kind === "double-click" ? 2 : 1);
+            // Let the UI react on the virtual clock so the click's effect is in frame.
+            if (recorder !== null) await recorder.advance(300);
+          } else if (step.kind === "fill") {
+            await fill(session, step.label, step.value);
+            if (recorder !== null) await recorder.advance(300);
+          } else if (step.kind === "key") {
+            if (recorder !== null) {
+              // Lockstep hold: the virtual clock guarantees the sim steps under the
+              // held key, so no frame-starvation grace dance is needed.
+              await focusSurface(session);
+              await sendKeys(session, step.code, "keyDown");
+              await recorder.advance(step.holdMs);
+              await sendKeys(session, step.code, "keyUp");
+            } else {
+              await holdKey(session, step.code, step.holdMs);
+            }
+          } else if (step.kind === "wait") {
+            if (recorder !== null) await recorder.advance(step.ms);
+            else await new Promise((r) => setTimeout(r, step.ms));
+          } else if (step.kind === "waitFor") {
+            timings.push("waitFor " + (await waitOn(label + ".waitFor", { is: step.expression, timeoutMs: step.timeoutMs })).elapsedMs + "ms");
+          } else if (step.kind === "reload") {
+            await navigateCapturePageWithRetry(session, url.toString(), dev.base, args.timeoutMs, 2, { legacyCanvas: args.url !== undefined });
+            await installFrameCounter(session);
+          } else if (step.kind === "click-at") {
+            await session.send("Page.bringToFront");
+            await dispatchClickAt(session, clickPoints.get(step)!, step.button);
+            if (recorder !== null) await recorder.advance(300);
+          } else if (step.kind === "rpc") {
+            await rpc(session, step.json);
+            if (step.summarized) console.error(`drive: debug_snapshot printed its summary; pass {"method":"debug_snapshot","detail":"full"} for everything`);
           }
-        } else if (step.kind === "wait") {
-          if (recorder !== null) await recorder.advance(step.ms);
-          else await new Promise((r) => setTimeout(r, step.ms));
-        } else if (step.kind === "reload") {
-          await navigateCapturePageWithRetry(session, url.toString(), dev.base, args.timeoutMs, 2, { legacyCanvas: args.url !== undefined });
-          await installFrameCounter(session);
-        } else if (step.kind === "click-at") {
-          await session.send("Page.bringToFront");
-          await dispatchClickAt(session, clickPoints.get(step)!, step.button);
-          if (recorder !== null) await recorder.advance(300);
-        } else if (step.kind === "rpc") {
-          await rpc(session, step.json);
-          if (step.summarized) console.error(`drive: debug_snapshot printed its summary; pass {"method":"debug_snapshot","detail":"full"} for everything`);
-        }
-        else if (step.kind === "probe") {
-          const metrics = await readProbe(session);
-          console.log(JSON.stringify({ probe: step.name, metrics }));
-        } else {
-          // A recording owns the screencast pump; a shot must not start/stop it underneath.
-          const path = step.out ?? join(outDir, `${args.game}-${step.name}${sizeSuffix(args.size)}${qualitySuffix(args.quality)}${quickSuffix(args.quick)}.png`);
-          const previous = preparedShots.has(path) ? preparedShots.get(path) : clearShotTarget(path);
-          preparedShots.delete(path);
-          await screenshot(
-            session,
-            path,
-            args.size,
-            args.device,
-            args.record === undefined,
-            previous,
-            viewport,
-            args.quick ? QUICK_DRIVE_WINDOW_MS : 60_000,
+          else if (step.kind === "probe") {
+            const metrics = await readProbe(session);
+            console.log(JSON.stringify({ probe: step.name, metrics }));
+          } else {
+            // A recording owns the screencast pump; a shot must not start/stop it underneath.
+            const path = step.out ?? join(outDir, `${args.game}-${step.name}${sizeSuffix(args.size)}${qualitySuffix(args.quality)}${quickSuffix(args.quick)}.png`);
+            const previous = preparedShots.has(path) ? preparedShots.get(path) : clearShotTarget(path);
+            preparedShots.delete(path);
+            await screenshot(
+              session,
+              path,
+              args.size,
+              args.device,
+              args.record === undefined,
+              previous,
+              viewport,
+              args.quick ? QUICK_DRIVE_WINDOW_MS : 60_000,
+            );
+          }
+          if (step.after !== undefined) timings.push("after " + (await waitOn(label + ".after", step.after)).elapsedMs + "ms");
+        } catch (error) {
+          console.error(
+            "drive: #" + (index + 1) + " " + describeStep(step) + " FAIL " + (timings.length === 0 ? "" : timings.join(" ") + " ") +
+              "total " + Math.round(performance.now() - stepStartedAt) + "ms — " + (error instanceof Error ? error.message : String(error)),
           );
+          throw error;
         }
+        console.error(
+          "drive: #" + (index + 1) + " " + describeStep(step) + " ok " + (timings.length === 0 ? "" : timings.join(" ") + " ") +
+            "total " + Math.round(performance.now() - stepStartedAt) + "ms",
+        );
       }
 
       if (recorder !== null) {
