@@ -32,9 +32,11 @@ import {
   sizeForQuality,
   PROFILE_OWNER_FILE,
   ensureCaptureFreeSpace,
+  PRESSURE_FREE_BYTES,
   isRetryableLaunchFailure,
   resolveChromeReadyMs,
   startBrowser,
+  sweepCaptureProfiles,
   sweepStaleProfiles,
   waitForDebugger,
   withBrowserSession,
@@ -734,7 +736,7 @@ describe("capture profile sweep", () => {  test("removes only stale jg dirs whos
       const file = join(root, "jg-notes.txt");
       writeFileSync(file, "not a profile");
       const stale = new Date(Date.now() - 4 * 60 * 60 * 1000);
-      const fresh = new Date(Date.now() - 60 * 60 * 1000);
+      const fresh = new Date(Date.now() - 20 * 60 * 1000);
       for (const dir of [leaked, liveOwned, foreign]) utimesSync(dir, stale, stale);
       utimesSync(recent, fresh, fresh);
       utimesSync(file, stale, stale);
@@ -792,6 +794,105 @@ describe("capture profile sweep", () => {  test("removes only stale jg dirs whos
         /has [\d.]+ (GB|MB) free, less than the 1024\.0 GB a capture needs/,
       );
       expect(() => ensureCaptureFreeSpace(root, { JG_CAPTURE_MIN_FREE_MB: "1" })).not.toThrow();
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  /** A real profile directory whose mtime is `ageMinutes` old. */
+  function agedProfile(root: string, prefix: string, ageMinutes: number): string {
+    const dir = mkdtempSync(join(root, prefix));
+    const at = new Date(Date.now() - ageMinutes * 60_000);
+    utimesSync(dir, at, at);
+    return dir;
+  }
+
+  test("with plenty of space a 20-minute profile stays and a 60-minute one goes", () => {
+    const root = mkdtempSync(join(tmpdir(), "jg-sweep-room-"));
+    try {
+      const young = agedProfile(root, "jg-young-", 20);
+      const leaked = agedProfile(root, "jg-leaked-", 60);
+      const reported: string[] = [];
+      const removed = sweepCaptureProfiles(root, {
+        freeBytes: 200 * 1024 ** 3,
+        log: (line) => {
+          reported.push(line);
+          console.error(line);
+        },
+      });
+      console.error(`proof (a): 200 GB free — removed ${removed} of 2, kept the 20-minute profile`);
+
+      expect(removed).toBe(1);
+      expect(existsSync(young)).toBe(true);
+      expect(existsSync(leaked)).toBe(false);
+      expect(reported).toHaveLength(1);
+      expect(reported[0]).toContain("older than 45 minutes");
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("under 15 GB free a 6-minute profile goes and a just-created one stays", () => {
+    const root = mkdtempSync(join(tmpdir(), "jg-sweep-tight-"));
+    try {
+      const justMade = mkdtempSync(join(root, "jg-now-"));
+      const sixMinutes = agedProfile(root, "jg-six-", 6);
+      const reported: string[] = [];
+      const removed = sweepCaptureProfiles(root, {
+        freeBytes: 8 * 1024 ** 3,
+        log: (line) => {
+          reported.push(line);
+          console.error(line);
+        },
+      });
+      console.error(`proof (b): 8 GB free — removed ${removed} of 2, kept the just-created profile`);
+
+      expect(removed).toBe(1);
+      expect(existsSync(sixMinutes)).toBe(false);
+      expect(existsSync(justMade)).toBe(true);
+      expect(reported).toHaveLength(1);
+      expect(reported[0]).toContain("older than 5 minutes");
+      expect(reported[0]).toContain(`under 15.0 GB`);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("a profile whose browser pid is alive is kept with space and under pressure", () => {
+    for (const freeBytes of [200 * 1024 ** 3, 8 * 1024 ** 3]) {
+      const root = mkdtempSync(join(tmpdir(), "jg-sweep-live-"));
+      try {
+        const liveHour = mkdtempSync(join(root, "jg-live-hour-"));
+        writeFileSync(join(liveHour, PROFILE_OWNER_FILE), String(process.pid));
+        const at = new Date(Date.now() - 60 * 60_000);
+        utimesSync(liveHour, at, at);
+        const liveSix = mkdtempSync(join(root, "jg-live-six-"));
+        writeFileSync(join(liveSix, PROFILE_OWNER_FILE), String(process.pid));
+        const recent = new Date(Date.now() - 6 * 60_000);
+        utimesSync(liveSix, recent, recent);
+
+        const removed = sweepCaptureProfiles(root, { freeBytes, log: () => {} });
+        console.error(`proof (c): ${Math.round(freeBytes / 1024 ** 3)} GB free — removed ${removed} of 2, kept both live-browser profiles`);
+
+        expect(removed).toBe(0);
+        expect(existsSync(liveHour)).toBe(true);
+        expect(existsSync(liveSix)).toBe(true);
+      } finally {
+        rmSync(root, { recursive: true, force: true });
+      }
+    }
+  });
+
+  test("unreadable free space means no pressure", () => {
+    const root = mkdtempSync(join(tmpdir(), "jg-sweep-unknown-"));
+    try {
+      const twenty = agedProfile(root, "jg-twenty-", 20);
+      const hour = agedProfile(root, "jg-hour-", 60);
+      const removed = sweepCaptureProfiles(root, { freeBytes: null, log: () => {} });
+      expect(removed).toBe(1);
+      expect(existsSync(twenty)).toBe(true);
+      expect(existsSync(hour)).toBe(false);
+      expect(PRESSURE_FREE_BYTES).toBe(15 * 1024 ** 3);
     } finally {
       rmSync(root, { recursive: true, force: true });
     }

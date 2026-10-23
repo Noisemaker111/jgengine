@@ -36,6 +36,7 @@ import {
   sizeForQuality,
   screencastCapturesFully,
   sizeSuffix,
+  sweepCaptureProfiles,
   withBrowserSession,
   writePngAtomic,
   type CaptureQuality,
@@ -539,6 +540,8 @@ if (args.help) {
   console.log(HELP);
   process.exit(0);
 }
+
+sweepCaptureProfiles();
 
 const outDir = resolve(import.meta.dir, "../shots");
 if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true });

@@ -9,6 +9,7 @@ import {
   ensureDevServer,
   openPageSession,
   parseQualityArg,
+  sweepCaptureProfiles,
   waitCaptureReady,
   withBrowserSession,
   type CaptureQuality,
@@ -997,6 +998,8 @@ async function main(): Promise<void> {
     return;
   }
   const { game, quality, profile, seconds, telemetry, settings, state, params, frameClock } = parsed.args;
+
+  sweepCaptureProfiles();
 
   if (!existsSync(join(repoRoot, "Games", game, "src", "index.tsx"))) {
     throw new Error(`no game "${game}" in Games/ — run \`bun run games:clone\` first, then retry`);
