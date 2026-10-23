@@ -42,6 +42,7 @@ import {
 } from "./browser-lib";
 import { decodePng } from "./png-reader";
 import { externalCaptureUrl } from "./captureTarget";
+import { assertQuickIsIterationOnly, quickProfile, quickSuffix, quickTimingLine, splitQuickFlag } from "./capture-preset";
 import { CAPTURE_FLAGS, captureFlagHelp, parseCaptureArgs } from "../packages/jgengine/src/templates/captureArgs";
 import { lookSearchParams, parseLookAim } from "./lookArg";
 import {
@@ -111,6 +112,8 @@ type Args = {
   inspect: boolean;
   /** Show a real window (off-screen) instead of headless Chrome. */
   headed: boolean;
+  /** 960x540 iteration preset: one settled frame, no evidence claims. */
+  quick: boolean;
   help: boolean;
   timeoutMs: number;
   timeoutExplicit: boolean;
@@ -138,14 +141,20 @@ Manual warm loop:
 
   --headed opens a real Chrome window off-screen, for debugging a capture; every
   run is headless unless you ask, and the window never lands on the desktop.
+
+  --quick is the iteration preset: 960x540, one settled frame, no video or perf
+  pass. It cannot support a 1600x900 pixel claim or a frame-time claim, so asking
+  for either alongside it fails; re-run without --quick for the shot that goes in
+  the PR.
 `;
 
 /** Map the shared capture command line (packages/jgengine/src/templates/captureArgs.ts) onto shoot's options. */
 function parseArgs(argv: string[]): Args {
   // `--headed` is parsed here, not in CAPTURE_FLAGS: the scaffold's shoot.mjs has no local window to
   // show, so the flag stays engine-only instead of parsing there and doing nothing.
-  const headed = argv.includes("--headed");
-  const parsed = parseCaptureArgs("shoot", argv.filter((arg) => arg !== "--headed"), CAPTURE_FLAGS);
+  const quick = splitQuickFlag("shoot", argv);
+  const headed = quick.argv.includes("--headed");
+  const parsed = parseCaptureArgs("shoot", quick.argv.filter((arg) => arg !== "--headed"), CAPTURE_FLAGS);
   const o = parsed.options;
   const str = (name: string): string | undefined => (typeof o[name] === "string" ? (o[name] as string) : undefined);
   const num = (name: string): number | undefined => (str(name) === undefined ? undefined : Number(str(name)));
@@ -180,6 +189,7 @@ function parseArgs(argv: string[]): Args {
     keep: o.keep === true,
     inspect: o.inspect === true,
     headed,
+    quick: quick.quick,
     help: parsed.help,
     timeoutMs: (num("timeout") ?? 60) * 1000,
     timeoutExplicit: str("timeout") !== undefined,
@@ -188,6 +198,20 @@ function parseArgs(argv: string[]): Args {
     height: num("height"),
     params: ((o.param as string[] | undefined) ?? []).map((pair) => [pair.slice(0, pair.indexOf("=")), pair.slice(pair.indexOf("=") + 1)] as [string, string]),
   };
+  assertQuickIsIterationOnly({
+    tool: "shoot",
+    quick: args.quick,
+    width: args.width,
+    height: args.height,
+    size: str("size"),
+    device: str("device"),
+  });
+  if (args.quick) {
+    const preset = quickProfile(true);
+    args.width = preset.width;
+    args.height = preset.height;
+    args.size = "full";
+  }
   if (args.site !== undefined && !args.timeoutExplicit) {
     args.timeoutMs = process.platform === "linux" || process.env.CI !== undefined ? 30_000 : 10_000;
   }
@@ -207,7 +231,7 @@ function outPathFor(args: Args, device: Device, outDir: string): string {
     if (dot <= 0) return `${resolved}-mobile`;
     return `${resolved.slice(0, dot)}-mobile${resolved.slice(dot)}`;
   }
-  const suffix = `${device === "mobile" ? "-mobile" : ""}${sizeSuffix(args.size)}${qualitySuffix(args.quality)}`;
+  const suffix = `${device === "mobile" ? "-mobile" : ""}${sizeSuffix(args.size)}${qualitySuffix(args.quality)}${quickSuffix(args.quick)}`;
   if (args.fixture !== undefined && args.fixture.length > 0) {
     const key = args.fixture.replace(/[^A-Za-z0-9._-]+/g, "_");
     return join(outDir, `fixture-${key}${suffix}.png`);
@@ -427,8 +451,17 @@ async function shootOne(
       console.log(metricsPath);
     }
     mark("inspect");
+    const total = (performance.now() - startedAt) / 1_000;
     console.error(
-      `shoot: timing ${device} ${timings.join(" ")} total=${((performance.now() - startedAt) / 1_000).toFixed(2)}s`,
+      args.quick
+        ? quickTimingLine("shoot", {
+            seconds: total,
+            width: Math.round(expected.width * expected.deviceScaleFactor),
+            height: Math.round(expected.height * expected.deviceScaleFactor),
+            device,
+            phases: timings,
+          })
+        : `shoot: timing ${device} ${timings.join(" ")} total=${total.toFixed(2)}s`,
     );
     return ok;
   } finally {

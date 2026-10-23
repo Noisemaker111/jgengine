@@ -13,7 +13,8 @@
  *
  * Managed warm loop: `shoot daemon start` keeps Chrome warm and lazily retains
  * the requested game or website Vite target. Manual `--keep`/`--connect` also
- * remains available. `--size half` is the cheap iteration mode.
+ * remains available. `--size half` is the cheap iteration mode; `--quick` is the
+ * cheaper one (960x540, one settled frame in a 2s window, no video, no perf pass).
  */
 import { existsSync, mkdirSync, statSync } from "node:fs";
 import { isAbsolute, join, resolve } from "node:path";
@@ -47,6 +48,14 @@ import {
 import { attachDaemon, ensureDaemonTarget } from "./shoot-daemon";
 import { lookSearchParams, parseLookAim } from "./lookArg";
 import { driveTargetUrl, externalCaptureUrl, parseCaptureDevice, requireReusableCaptureStorage } from "./captureTarget";
+import {
+  QUICK_DRIVE_WINDOW_MS,
+  assertQuickIsIterationOnly,
+  quickProfile,
+  quickSuffix,
+  quickTimingLine,
+  splitQuickFlag,
+} from "./capture-preset";
 import { driveInputPointExpr } from "../packages/jgengine/src/templates/driveInput";
 import { CAPTURE_FLAGS, captureFlagHelp, parseCaptureArgs, type CaptureStep } from "../packages/jgengine/src/templates/captureArgs";
 import { awaitGameView, holdDriveInput, type DriveInputDeps, type DriveSession } from "../packages/jgengine/src/templates/driveSteps";
@@ -112,6 +121,8 @@ type Args = {
   style?: string;
   /** Show a real window (off-screen) instead of headless Chrome. */
   headed: boolean;
+  /** 960x540 iteration preset: one settled frame in a 2s window, no video, no perf pass. */
+  quick: boolean;
 };
 
 /** GitHub's camo image proxy stops serving around 5 MB — stay safely under it
@@ -129,19 +140,24 @@ Notes:
   --port starts (or reuses) the dev runner on that port instead of the per-checkout default.
   --headed opens a real Chrome window off-screen, for debugging a drive; every run is
   headless unless you ask, and the window never lands on the desktop.
+  --quick is the iteration preset: 960x540, one settled frame in a 2s window, no
+  video, no perf pass. It cannot support a 1600x900 pixel claim or a frame-time
+  claim, so asking for either alongside it fails; re-run without --quick for
+  evidence.
 
 Warm loop:
   bun run shoot daemon start
   bun run drive <game> --click START --shot before --keep
-  bun run drive <game> --click START --shot after --connect <port> --size half
+  bun run drive <game> --click START --shot after --connect <port> --quick
 `;
 
 /** Map the shared capture command line (packages/jgengine/src/templates/captureArgs.ts) onto drive's options. */
 function parseArgs(argv: string[]): Args {
   // `--headed` is parsed here, not in CAPTURE_FLAGS: the scaffold's drive.mjs has no local window to
   // show, so the flag stays engine-only instead of parsing there and doing nothing.
-  const headed = argv.includes("--headed");
-  const parsed = parseCaptureArgs("drive", argv.filter((arg) => arg !== "--headed"), CAPTURE_FLAGS);
+  const quick = splitQuickFlag("drive", argv);
+  const headed = quick.argv.includes("--headed");
+  const parsed = parseCaptureArgs("drive", quick.argv.filter((arg) => arg !== "--headed"), CAPTURE_FLAGS);
   const o = parsed.options;
   const str = (name: string): string | undefined => (typeof o[name] === "string" ? (o[name] as string) : undefined);
   const num = (name: string): number | undefined => (str(name) === undefined ? undefined : Number(str(name)));
@@ -185,8 +201,28 @@ function parseArgs(argv: string[]): Args {
     run: str("run"),
     style: str("style"),
     headed,
+    quick: quick.quick,
   };
   if (args.help) return args;
+  assertQuickIsIterationOnly({
+    tool: "drive",
+    quick: args.quick,
+    width: args.width,
+    height: args.height,
+    size: str("size"),
+    device: str("device"),
+    playtest: args.playtest,
+    record: args.record,
+    recordRealtime: args.recordRealtime,
+    recordFps: str("record-fps") === undefined ? undefined : args.recordFps,
+    recordWidth: str("record-width") === undefined ? undefined : args.recordWidth,
+  });
+  if (args.quick) {
+    const preset = quickProfile(true);
+    args.width = preset.width;
+    args.height = preset.height;
+    args.size = "full";
+  }
   if (args.record !== undefined && (args.record.includes("/") || args.record.includes("\\"))) {
     throw new Error(`drive: --record takes a bare name, not a path (got "${args.record}")`);
   }
@@ -512,8 +548,9 @@ async function screenshot(
   screencast: boolean,
   previous: PreviousShot | undefined,
   viewport: ViewportOverride,
+  settleWindowMs: number,
 ): Promise<void> {
-  await awaitGameView(session as unknown as DriveSession, 60_000, driveDeps);
+  await awaitGameView(session as unknown as DriveSession, settleWindowMs, driveDeps);
   const profile = captureProfile(device, size, viewport);
   const { region } = await readCapturePageState(session);
   const editor = await session.evaluate<boolean>(`document.documentElement.dataset.jgEditor === "1"`);
@@ -550,13 +587,14 @@ if (args.help) {
 }
 
 sweepCaptureProfiles();
+const startedAt = performance.now();
 
 const outDir = resolve(import.meta.dir, "../shots");
 if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true });
 const preparedShots = new Map<string, PreviousShot | undefined>();
 for (const step of args.steps) {
   if (step.kind !== "shot") continue;
-  const path = step.out ?? join(outDir, `${args.game}-${step.name}${sizeSuffix(args.size)}${qualitySuffix(args.quality)}.png`);
+  const path = step.out ?? join(outDir, `${args.game}-${step.name}${sizeSuffix(args.size)}${qualitySuffix(args.quality)}${quickSuffix(args.quick)}.png`);
   if (!preparedShots.has(path)) preparedShots.set(path, clearShotTarget(path));
 }
 
@@ -732,7 +770,7 @@ const exitCode = await withBrowserSession(
           console.log(JSON.stringify({ probe: step.name, metrics }));
         } else {
           // A recording owns the screencast pump; a shot must not start/stop it underneath.
-          const path = step.out ?? join(outDir, `${args.game}-${step.name}${sizeSuffix(args.size)}${qualitySuffix(args.quality)}.png`);
+          const path = step.out ?? join(outDir, `${args.game}-${step.name}${sizeSuffix(args.size)}${qualitySuffix(args.quality)}${quickSuffix(args.quick)}.png`);
           const previous = preparedShots.has(path) ? preparedShots.get(path) : clearShotTarget(path);
           preparedShots.delete(path);
           await screenshot(
@@ -743,6 +781,7 @@ const exitCode = await withBrowserSession(
             args.record === undefined,
             previous,
             viewport,
+            args.quick ? QUICK_DRIVE_WINDOW_MS : 60_000,
           );
         }
       }
@@ -844,6 +883,17 @@ const exitCode = await withBrowserSession(
         } else if (args.steps.every((step) => step.kind !== "key")) {
           console.error("drive: --playtest ran with no --key hold — nothing drove input, so progress is unproven.");
         }
+      }
+      if (args.quick) {
+        const shotProfile = captureProfile(args.device, args.size, viewport);
+        console.error(
+          quickTimingLine("drive", {
+            seconds: (performance.now() - startedAt) / 1_000,
+            width: Math.round(shotProfile.width * shotProfile.deviceScaleFactor),
+            height: Math.round(shotProfile.height * shotProfile.deviceScaleFactor),
+            device: args.device,
+          }),
+        );
       }
       if (args.keep) {
         console.error(`drive: kept warm — chrome debug port ${debugPort}, dev server on ${dev.base}`);
