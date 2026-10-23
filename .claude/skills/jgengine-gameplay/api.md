@@ -2653,6 +2653,17 @@
 - `TriggeredRuleState` (interface): interface TriggeredRuleState — Serializable runtime state — everything that changes future triggers. Rules travel with it.
 - `createTriggeredRuleEngine` (function): function createTriggeredRuleEngine(rules: readonly TriggeredRule[] = []): TriggeredRuleEngine — Create an empty triggered-rule engine. Rules are added as data; dispatching an event returns the firings the caller applies to its own effect system. Time is caller-supplied (`now` in ms), so the engine is deterministic and drives equally from a fixed-step loop or a save-restored timeline.
 
+## @jgengine/core/run/runLoop
+
+- `RunChange` (interface): interface RunChange<T> — One change the next run can open with. `T` is the game's own payload (a tighter rival line, an unlocked part, a route modifier) - the loop only draws and remembers which id was drawn.
+- `RunLoop` (interface): interface RunLoop<T> — A run's lifecycle: what it carries and can lose, and the change it hands the next run.
+- `RunLoopConfig` (interface): interface RunLoopConfig<T> — Configuration for {@link createRunLoop}.
+- `RunLoopState` (interface): interface RunLoopState — Everything a run loop stores as plain JSON: the run in progress plus lifetime totals.
+- `RunOffer` (interface): interface RunOffer<T> — The change a run opens with, and which run it is.
+- `RunOutcome` (type): type RunOutcome = "banked" | "lost" — How a run ended: what it carried reached the bank, or it was lost.
+- `RunSettlement` (interface): interface RunSettlement<T> — What one closed run banked or lost, and what the next run changes.
+- `createRunLoop` (function): function createRunLoop<T>(config: RunLoopConfig<T>): RunLoop<T> — Bank-or-lose between runs, with one deterministic change per run drawn from an authored table.
+
 ## @jgengine/core/session/contestedChannel
 
 - `ContestReaction` (type): type ContestReaction = "pause" | "decay" — ⚠ undocumented

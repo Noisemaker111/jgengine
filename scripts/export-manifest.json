@@ -404,6 +404,7 @@
     "./rules/predicate",
     "./rules/ruleEffects",
     "./rules/triggeredRules",
+    "./run/runLoop",
     "./runtime/adapter",
     "./runtime/cameraDirector",
     "./runtime/commandDispatch",
