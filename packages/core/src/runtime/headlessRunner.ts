@@ -31,6 +31,8 @@ export interface HeadlessRunnerOptions<TAssetRef extends ModelAssetRef, TMultipl
   player?: { userId: string; isNew: boolean };
   /** Wall-clock source for the sim clock — inject a deterministic counter for reproducible runs. */
   now?: () => number;
+  /** Seed for `ctx.rng` — pass one so a recorded run and its replay draw the same numbers. Defaults to the definition's name. */
+  seed?: string | number;
   /** Per-step real-dt clamp in seconds, matching the shell's frame cap so one long stall can't fast-forward the sim. Default `0.05`. */
   maxStepSeconds?: number;
   /**
@@ -41,7 +43,9 @@ export interface HeadlessRunnerOptions<TAssetRef extends ModelAssetRef, TMultipl
   playerMovement?: boolean;
   /** Movement tuning — when `playerMovement` is on, the shell resolves from `definition.world`/`physics`; pass a direct config to test flight or other movement overrides headlessly. */
   movement?: import("../game/playableGame").PlayerMovementConfig;
-  /** Yaw heading (radians) fed to the movement controller when `playerMovement` is on; the shell supplies its camera yaw. */
+  /** Voxel collision config (`defineGame({ collision })`) — the shell's walk controller reads it, so a headless caller passes the same object to walk the same geometry. */
+  collision?: import("../game/playableGame").VoxelCollisionConfig;
+  /** Yaw heading (radians) fed to the movement controller when `playerMovement` is on; the shell supplies its camera yaw. Change it mid-run with {@link HeadlessRunner.aim}. */
   heading?: number;
   /** Pitch (radians) fed alongside yaw for 6DOF spectator flight when `alignWithLook` is set. */
   pitch?: number;
@@ -85,6 +89,8 @@ export interface HeadlessRunner {
   publishInput(input: HeadlessInput): void;
   /** Drive the game's own UI commands / intents headlessly — the same registry `ctx.game.commands` and the shell's command sink dispatch into. No renderer, no pointer simulation: dispatch an intent, then read reactive state off `ctx`. */
   readonly ui: HeadlessCommandInterface;
+  /** Point the movement controller at a yaw/pitch mid-run — what the shell does when the camera turns, so a scripted run can walk one way and then another. */
+  aim(look: { heading?: number; pitch?: number }): void;
   /** Capture the whole simulation (world, clock, loop, rng cursor) for {@link restore}; with a fixed `simulation.hz` and recorded input, replaying from it reproduces the run exactly. */
   snapshot(): SimSnapshot;
   restore(snapshot: SimSnapshot): void;
@@ -105,6 +111,7 @@ export function createHeadlessRunner<TAssetRef extends ModelAssetRef, TMultiplay
     content,
     player,
     ...(options.now === undefined ? {} : { now: options.now }),
+    ...(options.seed === undefined ? {} : { seed: options.seed }),
     ...(options.models === undefined ? {} : { models: options.models }),
   });
 
@@ -112,9 +119,12 @@ export function createHeadlessRunner<TAssetRef extends ModelAssetRef, TMultiplay
   loop?.onNewPlayer?.(ctx);
   const simSnapshot = createContextSimSnapshot(ctx);
 
+  const look = { heading: options.heading ?? 0, pitch: options.pitch ?? 0 };
+
   const tuning: PlayerMovementTuning | null =
     options.playerMovement === true
       ? { ...resolvePlayerMovementTuning({
+          collision: options.collision,
           physics: definition.physics,
           world: definition.world,
           movement: options.movement,
@@ -145,6 +155,10 @@ export function createHeadlessRunner<TAssetRef extends ModelAssetRef, TMultiplay
       names: () => ctx.game.commands.names(),
       has: (name) => ctx.game.commands.has(name),
     },
+    aim(next) {
+      if (next.heading !== undefined && Number.isFinite(next.heading)) look.heading = next.heading;
+      if (next.pitch !== undefined && Number.isFinite(next.pitch)) look.pitch = next.pitch;
+    },
     step(dtSeconds, input) {
       if (input !== undefined) publishInput(input);
       const dt = Math.min(dtSeconds, maxStep);
@@ -160,8 +174,8 @@ export function createHeadlessRunner<TAssetRef extends ModelAssetRef, TMultiplay
             { held: ctx.input.held(), pointer: ctx.input.pointer() },
             gameDt,
             tuning,
-            options.heading,
-            options.pitch,
+            look.heading,
+            look.pitch,
           );
         }
         ctx.sim.runStages("afterMovement", stepDt);

@@ -16,6 +16,10 @@
     "skills"
   ],
   "exports": {
+    "./play": {
+      "types": "./dist/play/index.d.ts",
+      "default": "./dist/play/index.js"
+    },
     "./weather": {
       "types": "./dist/weather/index.d.ts",
       "default": "./dist/weather/index.js"

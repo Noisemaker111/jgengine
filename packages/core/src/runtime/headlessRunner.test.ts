@@ -197,6 +197,46 @@ describe("createHeadlessRunner", () => {
     runner.step(0.05);
     expect(runner.ctx.scene.entity.get("p1")!.position[0]).toBeGreaterThan(startX);
   });
+
+  test("aim() steers the walk controller mid-run", () => {
+    const game = defineGameDefinition({ name: "Aim", world: environment({ terrain: terrain() }), physics: { gravity: 0, jumpVelocity: 0 } });
+    const runner = createHeadlessRunner({
+      definition: game,
+      content,
+      playerMovement: true,
+      loop: { onNewPlayer(ctx) { ctx.scene.entity.spawn("hero", { id: ctx.player.userId, position: [0, 0, 0] }); } },
+    });
+    for (let index = 0; index < 10; index += 1) runner.step(1 / 60, { held: ["moveForward"] });
+    const forward = runner.ctx.scene.entity.get("player")!.position;
+    expect(forward[2]).toBeGreaterThan(0.5);
+
+    runner.aim({ heading: Math.PI / 2 });
+    for (let index = 0; index < 10; index += 1) runner.step(1 / 60, { held: ["moveForward"] });
+    const turned = runner.ctx.scene.entity.get("player")!.position;
+    expect(turned[0]).toBeGreaterThan(0.5);
+  });
+
+  test("seed fixes ctx.rng so two runs of the same seed draw the same numbers", () => {
+    const game = defineGameDefinition({ name: "Seeded" });
+    const draw = (seed: string) => {
+      const runner = createHeadlessRunner({ definition: game, seed });
+      return [runner.ctx.rng(), runner.ctx.rng()];
+    };
+    expect(draw("a")).toEqual(draw("a"));
+    expect(draw("b")).not.toEqual(draw("a"));
+  });
+
+  test("collision config reaches the walk controller", () => {
+    const game = defineGameDefinition({ name: "Voxel walk", collision: { voxel: true } });
+    const runner = createHeadlessRunner({
+      definition: game,
+      collision: game.collision,
+      playerMovement: true,
+      loop: { onNewPlayer(ctx) { ctx.scene.entity.spawn("hero", { id: ctx.player.userId, position: [0, 0, 0] }); } },
+    });
+    expect(() => runner.step(1 / 60, { held: ["moveForward"] })).not.toThrow();
+    expect(runner.ctx.scene.entity.get("player")!.position[2]).toBeGreaterThan(0);
+  });
 });
 
 describe("headless ui-intent seam", () => {
