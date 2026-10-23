@@ -3,8 +3,9 @@ import { join, relative } from "node:path";
 
 /** Every non-test `.ts`/`.tsx` under each game's `src`, as repo-relative paths with their source.
  * Games now live in Noisemaker111/JGengine-games and are cloned at build time into ephemeral ./Games.
- * When the directory is absent (fresh engine checkout with no clone), return no sources rather than throwing. */
-export function eachGameSource(root: string): { rel: string; source: string }[] {
+ * When the directory is absent (fresh engine checkout with no clone), return no sources rather than throwing.
+ * Pass `games` to scan only those (the reference set); omitted scans every game folder the clone has. */
+export function eachGameSource(root: string, games?: readonly string[]): { rel: string; source: string }[] {
   const gamesDir = join(root, "Games");
   const files: { rel: string; source: string }[] = [];
 
@@ -20,13 +21,14 @@ export function eachGameSource(root: string): { rel: string; source: string }[] 
     }
   };
 
-  let games: string[];
+  let folders: string[];
   try {
-    games = readdirSync(gamesDir);
+    folders = readdirSync(gamesDir);
   } catch {
     return [];
   }
-  for (const game of games) {
+  for (const game of folders) {
+    if (games !== undefined && !games.includes(game)) continue;
     // Only real games have a src/index.tsx barrel (the dev harness entry). This excludes
     // helper packages like `studios` (src/index.ts) and design-only folders like `vaultbreak`.
     if (!existsSync(join(gamesDir, game, "src/index.tsx"))) continue;
@@ -42,9 +44,13 @@ export function eachGameSource(root: string): { rel: string; source: string }[] 
 }
 
 /** Scans every game source line by line, collecting whatever `match` returns. */
-export function scanGameLines<T>(root: string, match: (line: string, rel: string, lineNumber: number) => T | null): T[] {
+export function scanGameLines<T>(
+  root: string,
+  match: (line: string, rel: string, lineNumber: number) => T | null,
+  games?: readonly string[],
+): T[] {
   const found: T[] = [];
-  for (const { rel, source } of eachGameSource(root)) {
+  for (const { rel, source } of eachGameSource(root, games)) {
     for (const [index, line] of source.split("\n").entries()) {
       const hit = match(line, rel, index + 1);
       if (hit !== null) found.push(hit);

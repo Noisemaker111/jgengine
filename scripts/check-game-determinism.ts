@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { findRandomnessLeaks } from "./gameDeterminism";
+import { ignoredGames, referenceGames, warnIgnoredGames } from "./games-scope";
 import { runRatchet } from "./ratchet";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
@@ -11,11 +12,13 @@ if (!existsSync(join(root, "Games"))) {
   process.exit(0);
 }
 
+const games = referenceGames(root);
+warnIgnoredGames("check-game-determinism", ignoredGames(root, games));
 runRatchet(
   {
     name: "check-game-determinism",
     baselineRel: "scripts/game-determinism-baseline.json",
-    scan: findRandomnessLeaks,
+    scan: (scanRoot) => findRandomnessLeaks(scanRoot, games),
     guidance:
       "`Math.random` makes a run unreproducible — no replay, no lockstep, no rollback, and a test\n" +
       "that cannot pin the outcome. Every game context carries `ctx.rng`, the per-world seeded\n" +

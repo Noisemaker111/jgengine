@@ -11,6 +11,7 @@ function run(dir: string): { code: number; output: string } {
   const source = readFileSync(new URL("./check-art-direction.ts", import.meta.url), "utf8");
   const script = join(dir, "check.ts");
   writeFileSync(script, source);
+  copyFileSync(join(import.meta.dir, "games-scope.ts"), join(dir, "games-scope.ts"));
   const result = Bun.spawnSync([process.execPath, script], { cwd: dir, env: { ...process.env, CI: "" }, timeout: 60_000 });
   return { code: result.exitCode, output: new TextDecoder().decode(result.stdout) + new TextDecoder().decode(result.stderr) };
 }
@@ -43,6 +44,7 @@ function fixture(files: Record<string, string>) {
   try {
     mkdirSync(join(root, "scripts"));
     copyFileSync(join(import.meta.dir, "check-art-direction.ts"), join(root, "scripts/check-art-direction.ts"));
+    copyFileSync(join(import.meta.dir, "games-scope.ts"), join(root, "scripts/games-scope.ts"));
     writeFileSync(join(root, "scripts/art-direction-baseline.json"), "[]");
     for (const [file, text] of Object.entries(files)) {
       const path = join(root, file);

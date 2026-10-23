@@ -25,8 +25,8 @@ const REQUIREMENTS = [
 ] as const;
 
 /** Every game missing one of the required front-end surfaces. */
-export function findFrontEndGaps(root: string): RatchetFinding[] {
-  const sources = eachGameSource(root);
+export function findFrontEndGaps(root: string, games?: readonly string[]): RatchetFinding[] {
+  const sources = eachGameSource(root, games);
   const byGame = new Map<string, string>();
   for (const { rel, source } of sources) {
     const game = rel.split("/")[1]!;
@@ -36,13 +36,13 @@ export function findFrontEndGaps(root: string): RatchetFinding[] {
   const gamesDir = join(root, "Games");
   if (!existsSync(gamesDir)) return [];
   const gaps: RatchetFinding[] = [];
-  let games: string[];
+  let folders: string[];
   try {
-    games = readdirSync(gamesDir);
+    folders = games === undefined ? readdirSync(gamesDir) : [...games];
   } catch {
     return [];
   }
-  for (const game of games) {
+  for (const game of folders) {
     if (!existsSync(join(gamesDir, game, "src/index.tsx"))) continue;
     try {
       if (!statSync(join(gamesDir, game, "src")).isDirectory()) continue;

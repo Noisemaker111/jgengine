@@ -1,13 +1,16 @@
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { ignoredGames, referenceGames, warnIgnoredGames } from "./games-scope";
 const root = fileURLToPath(new URL("..", import.meta.url));
 const gamesRoot = join(root, "Games");
 if (!existsSync(gamesRoot) && process.env.CI === "true") {
   console.error("check-art-direction: Games/ checkout is required in CI — run bun run games:clone first");
   process.exit(1);
 }
-const games = existsSync(gamesRoot) ? readdirSync(gamesRoot, { withFileTypes: true }).filter((e) => e.isDirectory() && !e.name.startsWith(".") && (existsSync(join(gamesRoot, e.name, "src/index.tsx")) || existsSync(join(gamesRoot, e.name, "src/game.config.ts")))).map((e) => join(gamesRoot, e.name)) : [];
+if (existsSync(gamesRoot)) warnIgnoredGames("check-art-direction", ignoredGames(root, referenceGames(root)));
+const scope = referenceGames(root);
+const games = existsSync(gamesRoot) ? readdirSync(gamesRoot, { withFileTypes: true }).filter((e) => e.isDirectory() && !e.name.startsWith(".") && scope.includes(e.name) && (existsSync(join(gamesRoot, e.name, "src/index.tsx")) || existsSync(join(gamesRoot, e.name, "src/game.config.ts")))).map((e) => join(gamesRoot, e.name)) : [];
 const targets = games.length ? games : (existsSync(join(process.cwd(), "src", "game.config.ts")) ? [process.cwd()] : []);
 const gaps: string[] = [];
 for (const dir of targets) {
