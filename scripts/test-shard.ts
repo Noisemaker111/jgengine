@@ -105,9 +105,15 @@ export const SHARDS: readonly Shard[] = [
   },
   {
     name: "i",
-    label: "scripts + core",
-    // 30 s of scripts and the 20 s of core outside world; anything a new root adds lands here.
-    include: ["scripts", "packages/core", ...TEST_ROOTS],
+    label: "scripts",
+    // 30 s: 65 files of repo gates and CLI tests.
+    include: ["scripts"],
+  },
+  {
+    name: "j",
+    label: "core",
+    // 30 s: the 542 core files outside world; anything a new root adds lands here too.
+    include: ["packages/core", ...TEST_ROOTS],
   },
 ];
 
