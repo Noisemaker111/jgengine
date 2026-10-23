@@ -40,46 +40,58 @@ export interface Shard {
   include: string[];
 }
 
-/** Eight shards by measured cost; the CI matrix runs one job per entry, in this order. */
+/** Nine shards by measured cost; the CI matrix runs one job per entry, in this order. */
 export const SHARDS: readonly Shard[] = [
   {
     name: "a",
     label: "editor round trip",
-    // 55 s: one Chrome drives save/play/return/reopen across a reload, start to finish.
+    // 40 s: one Chrome drives save/play/return/reopen across a reload, start to finish.
     include: ["packages/editor/src/CreatorApp.test.ts"],
   },
   {
     name: "b",
-    label: "harness blocked targets",
-    // 53 s: the five scenarios the drive harness must refuse, ~11 s each.
+    label: "harness pointer-blocked targets",
+    // 35 s: three scenarios the drive harness must refuse; each waits out the harness's own
+    // 10 s give-up, so this shard is the harness's fixed cost, not the runner's.
     include: ["packages/jgengine/src/harness.blockedTargets.browser.test.ts"],
   },
   {
     name: "c",
-    label: "core world",
-    // 48 s: 87 files, the generator and city suites among them.
-    include: ["packages/core/src/world"],
+    label: "harness unreachable targets",
+    // 22 s: the two scenarios where the page never draws the target at all.
+    include: ["packages/jgengine/src/harness.unreachableTargets.browser.test.ts"],
   },
   {
     name: "d",
-    label: "shell",
-    // 43 s: the player shell lifecycle round plus 157 files of shell.
-    include: ["packages/shell"],
+    label: "core world",
+    // 39 s: 87 files, the generator and city suites among them.
+    include: ["packages/core/src/world"],
   },
   {
     name: "e",
     label: "harness drive",
-    // 39 s of harness drive plus the other 2 s of jgengine.
+    // 44 s of harness drive plus the other 2 s of jgengine. A browser file runs alone:
+    // the editor scene io file took 34 s first in its process and 78 s after 85 others.
     include: ["packages/jgengine/src/harness.browser.test.ts", "packages/jgengine"],
   },
   {
     name: "f",
     label: "editor scene io",
-    // 34 s: export/import and the failed-save round, plus the rest of the editor (2 s)
-    // and the small packages that ship next to it.
+    // 34 s: export/import and the failed-save round, seeding its scene through the real UI.
+    include: ["packages/editor/src/CreatorApp.sceneIo.test.ts"],
+  },
+  {
+    name: "g",
+    label: "shell + editor",
+    // 27 s of shell and the 3 s of editor tests that are not browser scenarios.
+    include: ["packages/shell", "packages/editor"],
+  },
+  {
+    name: "h",
+    label: "react + small packages",
+    // 35 s of react plus apps/dev and the small packages (8 s together).
     include: [
-      "packages/editor/src/CreatorApp.sceneIo.test.ts",
-      "packages/editor",
+      "packages/react",
       "apps/dev",
       "packages/node",
       "packages/ws",
@@ -92,15 +104,9 @@ export const SHARDS: readonly Shard[] = [
     ],
   },
   {
-    name: "g",
-    label: "react",
-    // 36 s: 66 files of hooks and input surfaces.
-    include: ["packages/react"],
-  },
-  {
-    name: "h",
+    name: "i",
     label: "scripts + core",
-    // 30 s of scripts and the 19 s of core outside world; anything a new root adds lands here.
+    // 30 s of scripts and the 20 s of core outside world; anything a new root adds lands here.
     include: ["scripts", "packages/core", ...TEST_ROOTS],
   },
 ];

@@ -80,6 +80,12 @@ const TARGET_STYLES: Record<TargetScenario, string> = {
 /** Scenarios where the harness must refuse the click; the rest must land it. */
 export const BLOCKED_SCENARIOS: readonly TargetScenario[] = ["occluded", "disabled", "aria-disabled", "inert", "hidden"];
 
+/** A target the page draws but another layer covers or disables. */
+export const POINTER_BLOCKED: readonly TargetScenario[] = ["occluded", "disabled", "aria-disabled"];
+
+/** A target the page never renders at all. */
+export const UNREACHABLE: readonly TargetScenario[] = ["inert", "hidden"];
+
 export function isBlocked(scenario: TargetScenario): boolean {
   return BLOCKED_SCENARIOS.includes(scenario);
 }

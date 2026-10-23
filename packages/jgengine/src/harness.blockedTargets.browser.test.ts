@@ -1,7 +1,7 @@
 import { afterAll, describe, expect, test } from "bun:test";
 
 import {
-  BLOCKED_SCENARIOS,
+  POINTER_BLOCKED,
   cleanupHarness,
   harnessBrowser as browser,
   harnessCli as cli,
@@ -15,8 +15,8 @@ import {
 
 afterAll(cleanupHarness);
 
-describe.skipIf(!hasChrome)("portable harness blocked targets in Chromium", () => {
-  for (const scenario of BLOCKED_SCENARIOS) {
+describe.skipIf(!hasChrome)("portable harness pointer-blocked targets in Chromium", () => {
+  for (const scenario of POINTER_BLOCKED) {
     test(`canonical drive ${scenario} target`, async () => {
       const clicks: Click[] = [];
       const reports: Report[] = [];
@@ -27,7 +27,7 @@ describe.skipIf(!hasChrome)("portable harness blocked targets in Chromium", () =
         else return new Response(targetPage(scenario), { headers: { "content-type": "text/html" } });
         return new Response("ok");
       } });
-      const project = harnessProject("jg-browser-blocked-");
+      const project = harnessProject("jg-browser-pointer-blocked-");
       try {
         const { exit, stdout, stderr } = await runHarnessCli([cli, "drive", "--url", server.url.toString(), "--device", "mobile", "--click", "bAcK", "--wait", "100", "--shot", "result"], { cwd: project.dir });
         expect(stderr).toContain("using the bundled drive harness");
