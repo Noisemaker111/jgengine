@@ -8,6 +8,7 @@ import {
   characterLodRate,
   characterLodTier,
   characterLodTierOf,
+  characterRigTier,
   DEFAULT_CHARACTER_LOD,
   noteAnimationPhase,
   noteCharacterFrame,
@@ -52,8 +53,24 @@ describe("characterLodTier", () => {
       halfRateDistance: DEFAULT_CHARACTER_LOD.halfRateDistance,
       crowdDistance: DEFAULT_CHARACTER_LOD.crowdDistance,
       crowdHysteresis: DEFAULT_CHARACTER_LOD.crowdHysteresis,
+      crowdCapacity: DEFAULT_CHARACTER_LOD.crowdCapacity,
     });
     expect(characterLodPolicy({ fullRateDistance: 30, halfRateDistance: 10 }).halfRateDistance).toBe(30);
+  });
+
+  test("a pattern that batches every distance carries its own instance cap", () => {
+    expect(characterLodPolicy({ crowdDistance: 0, crowdCapacity: 40 })).toMatchObject({ crowdDistance: 0, crowdCapacity: 40 });
+    expect(characterLodTier(0, { crowdDistance: 0 })).toBe("crowd");
+    // A negative cap is bad authoring, not "no batch": zero is how a pattern turns the batch off.
+    expect(characterLodPolicy({ crowdCapacity: -5 }).crowdCapacity).toBe(DEFAULT_CHARACTER_LOD.crowdCapacity);
+    expect(characterLodPolicy({ crowdCapacity: 0 }).crowdCapacity).toBe(0);
+  });
+
+  test("the rig tier ignores the crowd path, so an over-cap crowd falls back to posing its own rig", () => {
+    expect(characterRigTier(3, undefined)).toBe("full");
+    expect(characterRigTier(20, undefined)).toBe("half");
+    expect(characterRigTier(60, undefined)).toBe("quarter");
+    expect(characterRigTier(3, { crowdDistance: 0 })).toBe("full");
   });
 });
 

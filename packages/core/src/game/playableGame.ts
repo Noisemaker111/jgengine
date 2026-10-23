@@ -351,10 +351,19 @@ export interface ModelLodConfig {
   fullRateDistance?: number;
   /** Within this distance the rig poses every other frame, carrying the accumulated time. Default 40. */
   halfRateDistance?: number;
-  /** Beyond this distance a crowd-eligible rig renders through the GPU crowd path and updates no bones. Default 25. */
+  /**
+   * At or beyond this distance a crowd-eligible character renders through the GPU batch path and
+   * updates no bones. Default 25. `0` batches it at every distance, which is what a crowd or an army
+   * wants: near members then draw from the same instance buffer instead of one rig each.
+   */
   crowdDistance?: number;
   /** Metres a character must come back inside `crowdDistance` before it returns to its own rig, so the swap cannot flicker at the boundary. Default 2. */
   crowdHysteresis?: number;
+  /**
+   * Characters of this model one batch can draw. A character past the cap keeps its own rig, so a
+   * crowded scene loses draws rather than characters. Default 128.
+   */
+  crowdCapacity?: number;
 }
 
 /** Wind sway for a foliage model; see {@link ModelConfig.wind}. */

@@ -23,15 +23,16 @@ async function loadKnight(): Promise<GLTF> {
 }
 
 function boneMatrix(baked: BakedSkinnedCrowd, slot: number, row: number): THREE.Matrix4 {
-  const data = baked.texture.image.data as Float32Array;
-  const offset = (row * baked.layout.width + slot * 4) * 4;
+  const layout = baked.layout!;
+  const data = (baked.texture!.image.data as Float32Array);
+  const offset = (row * layout.width + slot * 4) * 4;
   return new THREE.Matrix4().fromArray(data, offset);
 }
 
-/** CPU mirror of the crowd shader: blend the baked bone matrices and skin one vertex. */
+/** CPU mirror of the crowd shader: blend the baked slot matrices and skin one vertex. */
 function skinBaked(baked: BakedSkinnedCrowd, vertex: number, clip: string, time: number): THREE.Vector3 {
   const index = baked.clipIndex.get(clip)!;
-  const sample = sampleBoneTexture(baked.layout.clips[index]!, baked.layout.fps, time, baked.loops[index]!);
+  const sample = sampleBoneTexture(baked.layout!.clips[index]!, baked.layout!.fps, time, baked.loops[index]!);
   const position = new THREE.Vector3().fromBufferAttribute(baked.geometry.getAttribute("position") as THREE.BufferAttribute, vertex);
   const skinIndex = baked.geometry.getAttribute("skinIndex");
   const skinWeight = baked.geometry.getAttribute("skinWeight");
@@ -47,7 +48,27 @@ function skinBaked(baked: BakedSkinnedCrowd, vertex: number, clip: string, time:
   return out;
 }
 
-/** three's own CPU skinning of the same vertex, posed by a mixer at `time`. */
+/** A model's meshes grouped exactly the way the bake groups them: material, then vertex layout. */
+function bakeGroups(scene: THREE.Object3D): THREE.Mesh[][] {
+  const groups = new Map<string, THREE.Mesh[]>();
+  scene.traverse((object) => {
+    const mesh = object as THREE.Mesh;
+    if (mesh.isMesh !== true || Array.isArray(mesh.material) || mesh.material === undefined) return;
+    if (mesh.geometry.getAttribute("position") === undefined) return;
+    const material = mesh.material as THREE.Material;
+    const layout = [mesh.geometry.index === null ? "plain" : "indexed", ...Object.keys(mesh.geometry.attributes).sort()].join(",");
+    const key = `${material.uuid}|${layout}`;
+    const bucket = groups.get(key);
+    if (bucket === undefined) groups.set(key, [mesh]);
+    else bucket.push(mesh);
+  });
+  return [...groups.values()];
+}
+
+/**
+ * three's own CPU skinning of the same vertices in the bake's draw order: grouped by material, meshes
+ * in traversal order, skinned vertices posed by the mixer and rigid vertices by their node.
+ */
 function skinReference(gltf: GLTF, clip: string, time: number): THREE.Vector3[] {
   const mixer = new THREE.AnimationMixer(gltf.scene);
   const action = mixer.clipAction(THREE.AnimationClip.findByName(gltf.animations, clip)!);
@@ -56,32 +77,65 @@ function skinReference(gltf: GLTF, clip: string, time: number): THREE.Vector3[] 
   mixer.update(0);
   gltf.scene.updateMatrixWorld(true);
   const positions: THREE.Vector3[] = [];
-  gltf.scene.traverse((object) => {
-    const mesh = object as THREE.SkinnedMesh;
-    if (mesh.isSkinnedMesh !== true) return;
-    mesh.skeleton.update();
-    const count = mesh.geometry.getAttribute("position").count;
-    for (let v = 0; v < count; v += 1) positions.push(mesh.getVertexPosition(v, new THREE.Vector3()).applyMatrix4(mesh.matrixWorld));
-  });
+  for (const meshes of bakeGroups(gltf.scene)) {
+    for (const mesh of meshes) {
+      const index = mesh.geometry.index;
+      const count = index === null ? mesh.geometry.getAttribute("position").count : index.count;
+      const skinned = mesh as THREE.SkinnedMesh;
+      if (skinned.isSkinnedMesh === true) {
+        skinned.skeleton.update();
+        for (let i = 0; i < count; i += 1) {
+          const v = index === null ? i : index.getX(i);
+          positions.push(skinned.getVertexPosition(v, new THREE.Vector3()).applyMatrix4(mesh.matrixWorld));
+        }
+        continue;
+      }
+      const attribute = mesh.geometry.getAttribute("position") as THREE.BufferAttribute;
+      for (let i = 0; i < count; i += 1) {
+        const v = index === null ? i : index.getX(i);
+        positions.push(new THREE.Vector3().fromBufferAttribute(attribute, v).applyMatrix4(mesh.matrixWorld));
+      }
+    }
+  }
   action.stop();
   mixer.uncacheRoot(gltf.scene);
   return positions;
 }
 
 describe("bakeSkinnedCrowd on a KayKit Knight", () => {
-  test("merges every skinned mesh and lays out the requested clips", async () => {
+  test("merges every mesh, armour parts included, and lays out the requested clips", async () => {
     const gltf = await loadKnight();
     const baked = bakeSkinnedCrowd(gltf, { clips: ["Idle", "Walking_A", "Death_A"], once: ["Death_A"], fps: 20 });
     let vertices = 0;
     gltf.scene.traverse((object) => {
-      if ((object as THREE.SkinnedMesh).isSkinnedMesh === true) vertices += (object as THREE.SkinnedMesh).geometry.getAttribute("position").count;
+      const mesh = object as THREE.Mesh;
+      if (mesh.isMesh !== true) return;
+      // The bake flattens indexed parts, so an indexed mesh contributes one vertex per index.
+      vertices += mesh.geometry.index === null ? mesh.geometry.getAttribute("position").count : mesh.geometry.index.count;
     });
     expect(baked.geometry.getAttribute("position").count).toBe(vertices);
-    expect(baked.materials).toHaveLength(baked.geometry.groups.length);
-    expect(baked.layout.clips.map((clip) => clip.name)).toEqual(["Idle", "Walking_A", "Death_A"]);
+    // One geometry group per material when several materials are merged; a single-material rig
+    // needs no groups and is still one draw.
+    expect(baked.geometry.groups.length).toBe(baked.materials.length === 1 ? 0 : baked.materials.length);
+    expect(baked.layout!.clips.map((clip) => clip.name)).toEqual(["Idle", "Walking_A", "Death_A"]);
     expect(baked.loops).toEqual([true, true, false]);
-    expect(baked.texture.image.width).toBe(baked.layout.width);
-    expect(baked.texture.image.height).toBe(baked.layout.height);
+    expect(baked.texture!.image.width).toBe(baked.layout!.width);
+    expect(baked.texture!.image.height).toBe(baked.layout!.height);
+    expect(baked.animated).toBe(true);
+  });
+
+  test("one draw per material, however many meshes that material covers", async () => {
+    const gltf = await loadKnight();
+    const materials = new Set<string>();
+    gltf.scene.traverse((object) => {
+      const mesh = object as THREE.Mesh;
+      if (mesh.isMesh !== true || Array.isArray(mesh.material)) return;
+      materials.add((mesh.material as THREE.Material).uuid);
+    });
+    const baked = bakeSkinnedCrowd(gltf, { clips: ["Idle"], fps: 10 });
+    // A material split across meshes with different vertex layouts would still need its own draw.
+    expect(baked.materials.length).toBeLessThanOrEqual(materials.size);
+    expect(baked.materials.length).toBe(1);
   });
 
   test.each([
@@ -104,14 +158,93 @@ describe("bakeSkinnedCrowd on a KayKit Knight", () => {
   });
 });
 
+/** A node-transform character: two rotating arms and a static body, like a miniature army. */
+function rigidCharacter(material: THREE.Material): { scene: THREE.Group; animations: THREE.AnimationClip[] } {
+  const scene = new THREE.Group();
+  const root = new THREE.Group();
+  root.name = "unit";
+  scene.add(root);
+  const arm = new THREE.Group();
+  arm.name = "ArmL";
+  arm.add(new THREE.Mesh(new THREE.BoxGeometry(0.2, 1, 0.2), material));
+  const body = new THREE.Mesh(new THREE.BoxGeometry(0.6, 1, 0.4), material);
+  body.position.y = 1;
+  root.add(arm, body);
+  const clip = new THREE.AnimationClip("Idle", 1, [
+    new THREE.QuaternionKeyframeTrack("ArmL.quaternion", [0, 1], [0, 0, 0, 1, 0, 0.3826834, 0, 0.9238795]),
+  ]);
+  return { scene, animations: [clip] };
+}
+
+describe("bakeSkinnedCrowd on a rig-less character", () => {
+  test("merges a node-transform character into one draw and bakes the moving node", () => {
+    const material = new THREE.MeshStandardMaterial();
+    const source = rigidCharacter(material);
+    const baked = bakeSkinnedCrowd(source, { clips: ["Idle"], fps: 10 });
+    expect(baked.animated).toBe(true);
+    expect(baked.materials).toEqual([material]);
+    expect(baked.geometry.groups.length).toBe(0);
+    expect(baked.layout!.clips[0]!.name).toBe("Idle");
+    // Both meshes ride one geometry, so a batch draws the whole character per material.
+    const meshes: THREE.Mesh[] = [];
+    source.scene.traverse((object) => {
+      if ((object as THREE.Mesh).isMesh === true) meshes.push(object as THREE.Mesh);
+    });
+    let vertices = 0;
+    for (const mesh of meshes) {
+      const geometry = mesh.geometry;
+      vertices += geometry.index === null ? geometry.getAttribute("position").count : geometry.index.count;
+    }
+    expect(baked.geometry.getAttribute("position").count).toBe(vertices);
+    // The arm rotates away from the body between the first and last baked frames.
+    const arm = new THREE.Vector3().fromBufferAttribute(baked.geometry.getAttribute("position") as THREE.BufferAttribute, 0);
+    const start = arm.clone().applyMatrix4(boneMatrix(baked, baked.geometry.getAttribute("skinIndex").getX(0), 0));
+    const end = arm.clone().applyMatrix4(boneMatrix(baked, baked.geometry.getAttribute("skinIndex").getX(0), 10));
+    expect(start.distanceTo(end)).toBeGreaterThan(0.01);
+  });
+
+  test("a character with no clips bakes to a static batch with no texture", () => {
+    const material = new THREE.MeshStandardMaterial();
+    const source = rigidCharacter(material);
+    const baked = bakeSkinnedCrowd({ scene: source.scene, animations: [] }, {});
+    expect(baked.animated).toBe(false);
+    expect(baked.texture).toBeNull();
+    expect(baked.layout).toBeNull();
+    expect(baked.materials).toEqual([material]);
+    expect(baked.geometry.groups.length).toBe(0);
+    expect(() => createCrowdUniforms(baked)).toThrow(/static/);
+  });
+
+  test("a rig with two materials is two draws for the batch", () => {
+    const scene = new THREE.Group();
+    const first = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial());
+    const second = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial());
+    second.position.x = 2;
+    scene.add(first, second);
+    const baked = bakeSkinnedCrowd({ scene, animations: [] }, {});
+    expect(baked.materials).toHaveLength(2);
+    expect(baked.geometry.groups).toHaveLength(2);
+  });
+  test("rejects a rig that animates a node with non-uniform scale", () => {
+    const scene = new THREE.Group();
+    const node = new THREE.Group();
+    node.name = "ArmL";
+    node.scale.set(1, 2, 1);
+    node.add(new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial()));
+    scene.add(node);
+    const clip = new THREE.AnimationClip("Idle", 1, [new THREE.QuaternionKeyframeTrack("ArmL.quaternion", [0, 1], [0, 0, 0, 1, 0, 0, 0, 1])]);
+    expect(() => bakeSkinnedCrowd({ scene, animations: [clip] }, { clips: ["Idle"] })).toThrow(/non-uniform scale/);
+  });
+});
+
 describe("patchCrowdMaterial", () => {
   test("injects the crowd lookup into position and normal and shares the uniforms", async () => {
     const gltf = await loadKnight();
     const baked = bakeSkinnedCrowd(gltf, { clips: ["Idle", "Walking_A"], fps: 10 });
     const uniforms = createCrowdUniforms(baked);
     expect(uniforms.crowdClips.value.map((clip) => clip.toArray())).toEqual([
-      [0, baked.layout.clips[0]!.frameCount, 10, 1],
-      [baked.layout.clips[1]!.startFrame, baked.layout.clips[1]!.frameCount, 10, 1],
+      [0, baked.layout!.clips[0]!.frameCount, 10, 1],
+      [baked.layout!.clips[1]!.startFrame, baked.layout!.clips[1]!.frameCount, 10, 1],
     ]);
     const material = patchCrowdMaterial(new THREE.MeshStandardMaterial(), uniforms);
     const shader = {

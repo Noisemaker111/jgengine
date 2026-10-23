@@ -142,7 +142,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `captureCanvas` (function) · `import { captureCanvas } from "@jgengine/shell/render/sceneCapture"`
 
-## character-crowd — draw distant animated characters on the GPU instead of posing their skeletons
+## character-crowd — draw animated or static characters as batched instanced draws instead of posing each skeleton
 
 - `CharacterCrowd` (function) · `import { CharacterCrowd } from "@jgengine/shell/render/CharacterCrowd"`
 

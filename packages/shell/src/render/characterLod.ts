@@ -7,6 +7,7 @@ export interface CharacterLodPolicy {
   halfRateDistance: number;
   crowdDistance: number;
   crowdHysteresis: number;
+  crowdCapacity: number;
 }
 
 /** The engine's default character tiers: full under 15 m, half under 40 m, GPU crowd beyond 25 m. */
@@ -15,6 +16,7 @@ export const DEFAULT_CHARACTER_LOD: CharacterLodPolicy = {
   halfRateDistance: 40,
   crowdDistance: 25,
   crowdHysteresis: 2,
+  crowdCapacity: 128,
 };
 
 /** What a character's distance from the camera costs it this frame. */
@@ -33,6 +35,7 @@ export function characterLodPolicy(config: ModelLodConfig | undefined): Characte
     halfRateDistance: finite(config?.halfRateDistance, DEFAULT_CHARACTER_LOD.halfRateDistance),
     crowdDistance: finite(config?.crowdDistance, DEFAULT_CHARACTER_LOD.crowdDistance),
     crowdHysteresis: finite(config?.crowdHysteresis, DEFAULT_CHARACTER_LOD.crowdHysteresis),
+    crowdCapacity: Math.floor(finite(config?.crowdCapacity, DEFAULT_CHARACTER_LOD.crowdCapacity)),
   };
   // Tiers read in order, so a game that sets half below full would otherwise make "full" unreachable.
   policy.halfRateDistance = Math.max(policy.halfRateDistance, policy.fullRateDistance);
@@ -51,6 +54,16 @@ export function characterLodTier(
   const policy = characterLodPolicy(config);
   const crowdBoundary = previous === "crowd" ? policy.crowdDistance - policy.crowdHysteresis : policy.crowdDistance;
   if (distance >= crowdBoundary) return "crowd";
+  return characterRigTier(distance, config);
+}
+
+/**
+ * The tier a character poses its own rig on, ignoring the crowd path. A crowd character whose batch
+ * is full falls back to this, so an over-cap crowd draws every member on its own rig instead of
+ * dropping the ones past the cap.
+ */
+export function characterRigTier(distance: number, config: ModelLodConfig | undefined): CharacterLodTier {
+  const policy = characterLodPolicy(config);
   if (distance < policy.fullRateDistance) return "full";
   if (distance < policy.halfRateDistance) return "half";
   return "quarter";

@@ -5,6 +5,8 @@ export const POINTER_ENTITY_KEY = "jgEntityId";
 export const POINTER_OBJECT_KEY = "jgObjectId";
 /** Object-store identities indexed by the current compacted GPU instance slot. @internal */
 export const POINTER_OBJECT_INSTANCES_KEY = "jgObjectInstances";
+/** Entity identities indexed by the current compacted GPU batch slot. @internal */
+export const POINTER_ENTITY_INSTANCES_KEY = "jgEntityInstances";
 
 export type PointerHitFilter = (object: THREE.Object3D) => boolean;
 
@@ -86,7 +88,8 @@ export function createPointerService(): PointerService {
       return {
         point,
         normal,
-        entity: tagOf(hit.object, POINTER_ENTITY_KEY),
+        entity: hit.instanceId === undefined ? tagOf(hit.object, POINTER_ENTITY_KEY) :
+          (hit.object.userData[POINTER_ENTITY_INSTANCES_KEY] as readonly string[] | undefined)?.[hit.instanceId] ?? tagOf(hit.object, POINTER_ENTITY_KEY),
         object: hit.instanceId === undefined ? tagOf(hit.object, POINTER_OBJECT_KEY) :
           (hit.object.userData[POINTER_OBJECT_INSTANCES_KEY] as readonly string[] | undefined)?.[hit.instanceId] ?? tagOf(hit.object, POINTER_OBJECT_KEY),
         ...(uv !== undefined ? { uv } : {}),
