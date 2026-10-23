@@ -25,6 +25,8 @@ export interface WorldOverlayCamera {
   matrixWorld: { elements: ArrayLike<number> };
   matrixWorldInverse: { elements: ArrayLike<number> };
   projectionMatrix: unknown;
+  /** Clipping distance; bounds every derived overlay range. */
+  far?: number;
 }
 
 /** Sampling policy shared by health bars and nameplates. */
@@ -60,6 +62,98 @@ export function worldBarOccluded(
 function cameraOrigin(camera: WorldOverlayCamera): EntityPosition {
   const matrix = camera.matrixWorld.elements;
   return [matrix[12]!, matrix[13]!, matrix[14]!];
+}
+
+/** Screen height at which an annotated target is still plainly visible. */
+const MIN_TARGET_PX = 18;
+/** `1 / tan(fovY / 2)` for the engine's default 55° camera, used when the projection is not perspective. */
+const FALLBACK_PROJECTION_SCALE = 1 / Math.tan((55 * Math.PI) / 360);
+
+/**
+ * Overlay range for a camera that configured none. Two measured factors replace the magic
+ * distance: the camera's own view of the ground (the frustum corner at the depth it looks down
+ * through, so an overhead camera always reaches the units below it) and the distance at which an
+ * `anchorHeight`-tall target stops covering {@link MIN_TARGET_PX} pixels. Clamped to the camera's
+ * far plane.
+ * @internal
+ */
+export function deriveWorldBarRange(
+  camera: WorldOverlayCamera,
+  viewport: { width: number; height: number },
+  anchorHeight: number,
+): number {
+  const elements = camera.matrixWorld.elements;
+  const cameraY = elements[13] ?? 0;
+  const projection = (camera.projectionMatrix as { elements?: ArrayLike<number> } | null)?.elements;
+  const perspective = projection !== undefined && projection[15] === 0 && (projection[5] ?? 0) > 0;
+  const scale = perspective ? projection![5]! : FALLBACK_PROJECTION_SCALE;
+  const tanHalf = 1 / scale;
+
+  const height = Math.max(0.1, anchorHeight);
+  const readable = viewport.height * 0.5 * scale * height / MIN_TARGET_PX;
+
+  const depth = Math.max(0, cameraY - height);
+  const aspect = viewport.width / Math.max(1, viewport.height);
+  const groundReach = depth * Math.sqrt(1 + tanHalf * tanHalf * (1 + aspect * aspect));
+
+  const reach = Math.max(readable, groundReach);
+  const far = camera.far;
+  const clamped = Number.isFinite(far) && far !== undefined && far! > 0 ? Math.min(reach, far!) : reach;
+  return Math.max(1, clamped);
+}
+
+/**
+ * Nearest on-screen target the overlay would annotate, in world units from the render camera, or
+ * `null` when nothing it covers is in view. Used to name the real distance when a configured
+ * range hides every bar. Scans one frozen list and compares squared distances — no per-target
+ * allocation — inside `searchRadius`.
+ * @internal
+ */
+export function nearestOverlayTargetDistance(
+  ctx: GameContext,
+  camera: WorldOverlayCamera,
+  anchorHeight: number,
+  searchRadius: number,
+  project: Projectable,
+  options: WorldOverlaySampleOptions,
+  accept: (entity: SceneEntity) => boolean,
+): number | null {
+  if (!Number.isFinite(searchRadius) || searchRadius <= 0) return null;
+  const origin = cameraOrigin(camera);
+  const limitSquared = searchRadius * searchRadius;
+  let nearest = Infinity;
+  for (const id of ctx.scene.entity.inRadius(origin, searchRadius)) {
+    const entity = eligibleEntity(ctx, id, options);
+    if (entity === null || !accept(entity)) continue;
+    const dx = entity.position[0] - origin[0];
+    const dy = entity.position[1] - origin[1];
+    const dz = entity.position[2] - origin[2];
+    const distanceSquared = dx * dx + dy * dy + dz * dz;
+    if (distanceSquared > limitSquared || distanceSquared >= nearest) continue;
+    if (projectAnchor(entity, anchorHeight, camera, project) === null) continue;
+    nearest = distanceSquared;
+  }
+  return Number.isFinite(nearest) ? Math.sqrt(nearest) : null;
+}
+
+/**
+ * One-shot warning text for a configured overlay range that hides everything in view, or `null`
+ * once it has reported the same block and distance.
+ * @internal
+ */
+export function createOverlayRangeWarn(): (
+  block: string,
+  configured: number,
+  nearest: number,
+) => string | null {
+  let reported = "";
+  return (block, configured, nearest) => {
+    const key = `${block}:${configured}`;
+    if (reported === key) return null;
+    reported = key;
+    const suggested = Math.ceil(nearest + 1);
+    return `[jgengine] ${block}.maxDistance ${configured} hides every overlay on screen: the nearest target is ${nearest.toFixed(1)} world units away. Raise ${block}.maxDistance to about ${suggested}, or drop it to derive the range from the camera.`;
+  };
 }
 
 function projectAnchor(entity: SceneEntity, height: number, camera: WorldOverlayCamera, project: Projectable): EntityPosition | null {
@@ -104,6 +198,28 @@ function sampleLimit(options: WorldOverlaySampleOptions): number {
   return Math.max(0, Math.min(256, Math.floor(options.maxSamples ?? 64) || 0));
 }
 
+/** Target filter mirroring the bars' own eligibility, for range diagnostics. @internal */
+export function worldBarTargetFilter(
+  ctx: GameContext,
+  statId: string,
+  roles: readonly CatalogEntityRole[] | undefined,
+  resolveRole: ((entity: SceneEntity) => CatalogEntityRole | undefined) | undefined,
+): (entity: SceneEntity) => boolean {
+  return (entity) =>
+    worldHealthBarAllowsRole(roles, resolveRole?.(entity)) && ctx.scene.entity.stats.get(entity.id, statId) !== null;
+}
+
+/** Target filter mirroring the nameplates' own eligibility, for range diagnostics. @internal */
+export function worldNameplateTargetFilter(
+  roles: readonly CatalogEntityRole[] | undefined,
+  resolveRole: ((entity: SceneEntity) => CatalogEntityRole | undefined) | undefined,
+  resolveName: ((entity: SceneEntity) => string | null) | undefined,
+): (entity: SceneEntity) => boolean {
+  return (entity) =>
+    worldHealthBarAllowsRole(roles, resolveRole?.(entity)) &&
+    Boolean((resolveName ?? defaultDisplayName)(entity)?.trim());
+}
+
 /** Project nearby live non-local entities carrying `statId`; occlusion defaults on. @internal */
 export function collectWorldBarSamples(
   ctx: GameContext,
@@ -115,16 +231,17 @@ export function collectWorldBarSamples(
   viewport: { width: number; height: number },
   into: WorldBarSample[],
   project: Projectable,
-  maxDistance = 60,
+  maxDistance?: number,
   occlude = true,
   options: WorldOverlaySampleOptions = {},
 ): number {
   into.length = 0;
   const origin = cameraOrigin(camera);
   const limit = sampleLimit(options);
-  if (limit === 0 || !Number.isFinite(maxDistance) || maxDistance <= 0) return 0;
+  const range = maxDistance ?? deriveWorldBarRange(camera, viewport, height);
+  if (limit === 0 || !Number.isFinite(range) || range <= 0) return 0;
   let checked = 0;
-  for (const id of ctx.scene.entity.inRadius(origin, maxDistance)) {
+  for (const id of ctx.scene.entity.inRadius(origin, range)) {
     const entity = eligibleEntity(ctx, id, options);
     if (entity === null || !worldHealthBarAllowsRole(roles, resolveRole?.(entity))) continue;
     const stat = ctx.scene.entity.stats.get(id, statId);
@@ -154,15 +271,21 @@ export function refreshWorldBarSamples(
   viewport: { width: number; height: number },
   samples: WorldBarSample[],
   project: Projectable,
-  maxDistance = 60,
+  maxDistance?: number,
   options: WorldOverlaySampleOptions = {},
 ): void {
   const origin = cameraOrigin(camera);
+  const range = maxDistance ?? deriveWorldBarRange(camera, viewport, height);
+  const rangeSquared = range * range;
   let kept = 0;
   for (const sample of samples) {
     if (sample.entityId === undefined) continue;
     const entity = eligibleEntity(ctx, sample.entityId, options);
-    if (entity === null || Math.hypot(entity.position[0] - origin[0], entity.position[1] - origin[1], entity.position[2] - origin[2]) > maxDistance) continue;
+    if (entity === null) continue;
+    const dx = entity.position[0] - origin[0];
+    const dy = entity.position[1] - origin[1];
+    const dz = entity.position[2] - origin[2];
+    if (dx * dx + dy * dy + dz * dz > rangeSquared) continue;
     const anchor = projectAnchor(entity, height, camera, project);
     if (anchor === null) continue;
     sample.x = (project.x * 0.5 + 0.5) * viewport.width;
@@ -201,16 +324,17 @@ export function collectNameplateSamples(
   viewport: { width: number; height: number },
   into: NameplateSample[],
   project: Projectable,
-  maxDistance = 40,
+  maxDistance?: number,
   occlude = true,
   options: WorldOverlaySampleOptions = {},
 ): number {
   into.length = 0;
   const origin = cameraOrigin(camera);
   const limit = sampleLimit(options);
-  if (limit === 0 || !Number.isFinite(maxDistance) || maxDistance <= 0) return 0;
+  const range = maxDistance ?? deriveWorldBarRange(camera, viewport, height);
+  if (limit === 0 || !Number.isFinite(range) || range <= 0) return 0;
   let checked = 0;
-  for (const id of ctx.scene.entity.inRadius(origin, maxDistance)) {
+  for (const id of ctx.scene.entity.inRadius(origin, range)) {
     const entity = eligibleEntity(ctx, id, options);
     if (entity === null || !worldHealthBarAllowsRole(roles, resolveRole?.(entity))) continue;
     const name = (options.resolveName ?? defaultDisplayName)(entity)?.trim();
