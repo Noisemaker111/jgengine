@@ -14,6 +14,7 @@ import {
   heavyPaths,
   importers,
   isRuntimeSource,
+  jsonRun,
   makeResolver,
   ownTests,
   specifiers,
@@ -249,5 +250,59 @@ describe("commands", () => {
     const names = steps.map((step) => step.name);
     expect(names.some((name) => name.startsWith("smoke "))).toBe(true);
     expect(names.some((name) => name.startsWith("perf "))).toBe(true);
+  });
+});
+
+describe("--json", () => {
+  const drive = async (
+    results: Record<string, { ok: boolean; ms: number; output?: string }>,
+  ): Promise<{ code: number; stdout: string[]; stderr: string[] }> => {
+    const steps = Object.keys(results).map((name) => ({ name, command: ["bun", "run", name] }));
+    const stdout: string[] = [];
+    const stderr: string[] = [];
+    const code = await jsonRun(steps, {
+      run: async (step) => ({
+        ok: results[step.name]!.ok,
+        ms: results[step.name]!.ms,
+        output: results[step.name]!.output ?? "",
+      }),
+      out: (line) => stdout.push(line),
+      err: (line) => stderr.push(line),
+    });
+    return { code, stdout, stderr };
+  };
+
+  test("a passing fixture prints one document and exits 0", async () => {
+    const { code, stdout } = await drive({
+      "typecheck packages/core": { ok: true, ms: 1200 },
+      "check-artifacts": { ok: true, ms: 30 },
+    });
+    expect(code).toBe(0);
+    expect(stdout).toHaveLength(1);
+    const document = JSON.parse(stdout[0]!);
+    expect(Object.keys(document).sort()).toEqual(["checks", "ms", "ok"]);
+    expect(document.ok).toBe(true);
+    expect(typeof document.ms).toBe("number");
+    expect(document.ms).toBeGreaterThanOrEqual(0);
+    expect(document.checks).toEqual([
+      { name: "typecheck packages/core", ok: true, ms: 1200 },
+      { name: "check-artifacts", ok: true, ms: 30 },
+    ]);
+  });
+
+  test("a failing fixture names the check, keeps stdout to one document and exits 1", async () => {
+    const { code, stdout, stderr } = await drive({
+      "check-artifacts": { ok: true, ms: 30 },
+      "check-changelog": { ok: false, ms: 40, output: "missing entry for packages/core" },
+    });
+    expect(code).toBe(1);
+    expect(stdout).toHaveLength(1);
+    const document = JSON.parse(stdout[0]!);
+    expect(document.ok).toBe(false);
+    expect(document.checks).toEqual([
+      { name: "check-artifacts", ok: true, ms: 30 },
+      { name: "check-changelog", ok: false, ms: 40 },
+    ]);
+    expect(stderr).toEqual(["missing entry for packages/core"]);
   });
 });
