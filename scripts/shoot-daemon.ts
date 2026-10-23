@@ -35,7 +35,7 @@ import {
   removeProfileDir,
   resolveDevPort,
   resolveWarmChromePort,
-  waitForDebugger,
+  startBrowser,
   waitForPidExit,
   type ChromeProcess,
   type EnsureDevServerResult,
@@ -262,22 +262,14 @@ export async function startDaemon(options: {
       throw new Error(`shoot daemon: Chrome debug port ${chromePort} is already reachable without a live record for this checkout. Use a unique JG_CHROME_PORT to start a separate daemon, or explicitly --connect ${chromePort} to use the existing browser; its ownership and storage were not changed.`);
     }
     await reapStaleDaemonState(cwd);
-    let chrome: ChromeProcess | null = null;
-    let chromePid: number | undefined;
-    let userDataDir: string | undefined;
-    try {
-      const launched = launchPersistentChrome(chromePort, "jg-shoot-daemon-");
-      chrome = launched.child;
-      chromePid = launched.pid;
-      userDataDir = launched.userDataDir;
-      await waitForDebugger(chromePort, 30_000);
-    } catch (error) {
-      if (chrome !== null) killProcessTree(chrome);
-      else killPid(chromePid, true);
-      await waitForPidExit(chromePid);
-      if (userDataDir !== undefined) removeProfileDir(userDataDir);
-      throw error;
-    }
+    const launched = await startBrowser<{ pid: number; child: ChromeProcess | null; userDataDir: string }>({
+      debugPort: chromePort,
+      prefix: "jg-shoot-daemon-",
+      launch: (port, prefix) => launchPersistentChrome(port, prefix ?? "jg-shoot-daemon-"),
+    });
+    const chrome = launched.browser.child;
+    const chromePid = launched.browser.pid;
+    const userDataDir = launched.browser.userDataDir;
     const started: ShootDaemonState = { identity, chromePort, chromePid, userDataDir, startedAt: new Date().toISOString() };
     writeDaemonState(started, cwd);
     return { state: started, chrome, started: true };
