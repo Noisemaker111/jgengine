@@ -1446,7 +1446,7 @@
 - `LootDropProvenance` (interface): interface LootDropProvenance — Why one drop is in the result: the stage/table/entry that produced it, its weights, and the modifiers that shaped it.
 - `LootFilterRule` (interface): interface LootFilterRule { id: string; when: LootFilterCondition; hide?: boolean; color?: string; beam?: boolean; label?: string } — ⚠ undocumented · used by `evaluateLootFilter`: First matching rule wins (PoE/Last Epoch block semantics) — later rules never override an earlier match.
 - `LootInstalledPart` (interface): interface LootInstalledPart — One part occupying one slot of a rolled item.
-- `LootIssueCode` (type): type LootIssueCode = | "invalid-level" | "unknown-base" | "unknown-manufacturer" | "manufacturer-base" | "unknown-rarity" | "duplicate-slot" | "unknown-slot" | "missing-slot-part" | "unknown-part" | "part-category" | "unknown-affix" | "duplicate-affix" | "invalid-affix" | "non-finite-stat" | "empty-… — A defect found by {@link validateLootItem}.
+- `LootIssueCode` (type): type LootIssueCode = | "invalid-level" | "unknown-base" | "level-gated-base" | "unknown-manufacturer" | "manufacturer-base" | "unknown-rarity" | "duplicate-slot" | "unknown-slot" | "missing-slot-part" | "unknown-part" | "part-category" | "unknown-affix" | "duplicate-affix" | "invalid-affix" | "non-f… — A defect found by {@link validateLootItem}.
 - `LootItem` (interface): interface LootItem — One rolled item: the base, maker, rarity, level, composed name, chosen parts, rolled affixes and resolved stats. Plain JSON, so a save stores it and the instance registry can key it.
 - `LootManufacturerDef` (interface): interface LootManufacturerDef — A maker with a stat personality: its mark goes in the name, `bias` shifts stats additively, `scale` multiplies them, and favored affix pools weigh more when this maker rolls the item.
 - `LootModifier` (interface): interface LootModifier<TCtx = unknown> — A registered, id-tagged loot policy applied to one stage. `plan` transforms eligibility, weights, and roll counts before rolling (luck, difficulty, gating); `drops` post-processes the rolled drops (quantity multipliers, dedupe, caps). Neither hook mutates table definitions, and the id is recorded in provenance so a resolved drop can be traced back to the policies that shaped it.
@@ -2181,7 +2181,7 @@
 
 ## @jgengine/core/item/affix
 
-- `AffixDef` (interface): interface AffixDef { id: string; stat: string; op?: AffixOp; roll: number | [number, number]; weight: number; namePart?: {position: "prefix" | "suffix"; text: string} } — ⚠ undocumented
+- `AffixDef` (interface): interface AffixDef { id: string; stat: string; op?: AffixOp; roll: number | [number, number]; weight: number; minLevel?: number; namePart?: {position: "prefix" | "suffix"; text: string} } — ⚠ undocumented
 - `AffixOp` (type): type AffixOp = "add" | "mul" — ⚠ undocumented
 - `AffixPool` (interface): interface AffixPool { id: string; affixes: readonly AffixDef[] } — ⚠ undocumented
 - `AffixRoller` (interface): interface AffixRoller { rollRarity(rng: () => number): RarityTier; roll(base: ItemBaseDef, rarityId: string, rng: () => number): RolledItem; rollRandom(base: ItemBaseDef, rng: () => number): RolledItem } — ⚠ undocumented · used by `createAffixRoller`: Rolls randomized gear from a base item: a weighted rarity tier scales base stats and picks prefix/suffix affixes that name and modify the it…
@@ -2312,6 +2312,25 @@
 - `createWeaponStats` (function): function createWeaponStats(resolveEntry: (itemId: string) => WeaponEntry | null | undefined): WeaponStats — Resolve per-weapon stat values — damage, fire rate, spread — for combat math.
 - `getWeaponStat` (function): function getWeaponStat(entry: WeaponEntry | null | undefined, stat: string): number | null — ⚠ undocumented
 
+## @jgengine/core/loot/drop
+
+- `EquippedComparison` (interface): interface EquippedComparison — What a HUD renders when a drop lands: per-stat deltas against the worn item and one verdict.
+- `EquippedStatDelta` (interface): interface EquippedStatDelta extends LootStatDelta — A per-stat delta from the equipped item to the candidate; positive `delta` means the candidate is larger.
+- `ItemDrop` (interface): interface ItemDrop extends LootItem — A rolled item with a stable instance id, so a stash, ledger and vendor stock can name it.
+- `RollDropOptions` (interface): interface RollDropOptions extends LootRollOptions — {@link rollDrop} options: the loot roll plus the instance id (defaults to `drop:<seed>`).
+- `compareToEquipped` (function): function compareToEquipped(candidate: ItemDrop, equipped: ItemDrop | null, options: LootComparisonOptions = {}): EquippedComparison — Compare a dropped item against what is equipped, with one delta per stat and a weighted verdict. The delta is `candidate - equipped`; `better` flips for stats the caller lists in `lowerIsBetter`, so reload time improving does not read as worse. A missing equipped item compares against zeros.
+- `itemMass` (function): function itemMass(item: Pick<LootItem, "mass">): number — Carried mass of a rolled item. Older saves may predate `mass`; those default to `1`.
+- `rollDrop` (function): function rollDrop(catalog: LootCatalog, seed: string | number, options: RollDropOptions = {}): ItemDrop — Roll one item from a seed. Same seed, catalog and options produce the same id, name, affixes, stats and mass on every run; level gates which bases and affixes are in the pool.
+
+## @jgengine/core/loot/haul
+
+- `CarryOutcome` (type): type CarryOutcome = | { ok: true; mass: number; remaining: number } | { ok: false; reason: "over-capacity" | "no-space" | "invalid-count"; mass: number; remaining: number } — What a carry attempt returns: the new load, or the rule that refused it.
+- `HaulTransfer` (interface): interface HaulTransfer — Stacks moved between a run and its stash, or lost when the run fails.
+- `RunHaul` (interface): interface RunHaul — A run's carried loot and the stash that outlives it.
+- `RunHaulConfig` (interface): interface RunHaulConfig<TId extends string> — What a run haul needs: two inventories, a weight rule and an optional save cell.
+- `RunHaulState` (interface): interface RunHaulState — Detached run and stash contents, for a save or a debug readout.
+- `createRunHaul` (function): function createRunHaul<TId extends string>(config: RunHaulConfig<TId>): RunHaul — A run's haul beside a persistent stash. Carrying is gated by the shared encumbrance rules; `bank` moves what the stash fits and saves; `fail` throws the run's haul away and leaves the stash as it was. The game decides when a run succeeds or fails and calls one of them.
+
 ## @jgengine/core/loot/lootGen
 
 - `LootBaseDef` (interface): interface LootBaseDef extends ItemBaseDef — A base family (frame, housing, chassis — caller nouns) with its slots, stats and affix pools.
@@ -2319,7 +2338,7 @@
 - `LootComparison` (interface): interface LootComparison — How two items compare: every stat delta plus one weighted score for each.
 - `LootComparisonOptions` (interface): interface LootComparisonOptions — Caller policy for the comparison score.
 - `LootInstalledPart` (interface): interface LootInstalledPart — One part occupying one slot of a rolled item.
-- `LootIssueCode` (type): type LootIssueCode = | "invalid-level" | "unknown-base" | "unknown-manufacturer" | "manufacturer-base" | "unknown-rarity" | "duplicate-slot" | "unknown-slot" | "missing-slot-part" | "unknown-part" | "part-category" | "unknown-affix" | "duplicate-affix" | "invalid-affix" | "non-finite-stat" | "empty-… — A defect found by {@link validateLootItem}.
+- `LootIssueCode` (type): type LootIssueCode = | "invalid-level" | "unknown-base" | "level-gated-base" | "unknown-manufacturer" | "manufacturer-base" | "unknown-rarity" | "duplicate-slot" | "unknown-slot" | "missing-slot-part" | "unknown-part" | "part-category" | "unknown-affix" | "duplicate-affix" | "invalid-affix" | "non-f… — A defect found by {@link validateLootItem}.
 - `LootItem` (interface): interface LootItem — One rolled item: the base, maker, rarity, level, composed name, chosen parts, rolled affixes and resolved stats. Plain JSON, so a save stores it and the instance registry can key it.
 - `LootManufacturerDef` (interface): interface LootManufacturerDef — A maker with a stat personality: its mark goes in the name, `bias` shifts stats additively, `scale` multiplies them, and favored affix pools weigh more when this maker rolls the item.
 - `LootPartDef` (interface): interface LootPartDef extends PartDef — A part a base can mount: its stats, a pick weight, and an optional word for the item name.
@@ -2344,6 +2363,30 @@
 - `LootWeaponProjection` (interface): interface LootWeaponProjection — A base weapon definition plus the stat map a rolled item overrides.
 - `LootWeaponStatMap` (interface): interface LootWeaponStatMap — Which rolled stat feeds which part of a {@link WeaponDefinition}. Every field is a stat id from the item; an omitted field keeps the template's value, so a catalog only maps what it rolls.
 - `lootWeaponDefinition` (function): function lootWeaponDefinition(item: LootItem, projection: LootWeaponProjection): WeaponDefinition — Project a rolled item onto a plain weapon definition: copy the template, then write the mapped stats into rate, damage, magazine, spread, range and projectile speed. The result is a {@link WeaponDefinition}, so `assertWeaponDefinition` and `createWeaponSystem` accept it unchanged.
+
+## @jgengine/core/loot/salvage
+
+- `ItemDropLike` (interface): interface ItemDropLike — The fields salvage reads; an `ItemDrop` from `./drop` satisfies it.
+- `ItemLedger` (interface): interface ItemLedger — One record of what happened to rolled item instances. Every path that removes an item - salvage, sale, granting a duplicate - claims it here first, so a second claim returns false and the item cannot be equipped, sold or broken down twice.
+- `ItemLedgerState` (type): type ItemLedgerState = Readonly<Record<string, Exclude<ItemLifecycle, "owned">>> — Items that have left play, keyed by instance id; anything absent is still `owned`.
+- `ItemLifecycle` (type): type ItemLifecycle = "owned" | "salvaged" | "sold" — Where an item instance stands: still usable, broken down, or sold.
+- `SalvageResult` (type): type SalvageResult = | { ok: true; id: string; yield: SalvageYield } | { ok: false; reason: "already-spent" | "invalid-item" } — Salvage outcome: the yield, or the reason the instance could not be broken down.
+- `SalvageTable` (interface): interface SalvageTable — What a broken-down item is worth: a game-authored currency, rate and per-rarity multiplier.
+- `SalvageYield` (interface): interface SalvageYield — The currency and amount one salvage yields. `currency` is the game's key, never interpreted.
+- `createItemLedger` (function): function createItemLedger(initial: ItemLedgerState = {}): ItemLedger — Build an item ledger. Ids are consumed once: the first successful {@link ItemLedger.spend} wins, every later call fails, which is what makes salvage and sale mutually exclusive.
+- `salvageItem` (function): function salvageItem(item: ItemDropLike, table: SalvageTable, ledger: ItemLedger): SalvageResult — Break one item down through its ledger. The ledger is claimed before the yield is computed, so a salvaged item cannot be salvaged, equipped or sold again; pass the game's own wallet update from `yield`.
+- `salvageValue` (function): function salvageValue(item: Pick<ItemDropLike, "level" | "rarity">, table: SalvageTable): SalvageYield — The yield an item of this level and rarity breaks down into. The formula is `round(perLevel x level x rarityMultiplier)`, floored by `minimum`, so the same item always yields the same amount and a higher level never yields less.
+
+## @jgengine/core/loot/vendor
+
+- `StockVendorOptions` (interface): interface StockVendorOptions — What stocking a vendor reads: the roll catalog, a seeded rng and the pricing policy.
+- `VendorOffer` (interface): interface VendorOffer — One stocked item and the shop entry that prices it.
+- `VendorPriceRule` (interface): interface VendorPriceRule — How a vendor price is derived from an item: a base, a per-level rate and a rarity multiplier.
+- `VendorRotation` (interface): interface VendorRotation — A run-count refresh rule; the game owns how many runs between restocks.
+- `VendorRotationState` (interface): interface VendorRotationState — Where a vendor shelf stands: the run number it was last stocked on.
+- `createVendorRotation` (function): function createVendorRotation(everyRuns: number, start = 0): VendorRotation — A restock rule the game authors as "every N runs". It only answers when a refresh is due; the game calls {@link stockVendor} and then `mark`. No timer, so a paused or reloaded save keeps the same shelf until the run count moves.
+- `itemPrice` (function): function itemPrice(item: Pick<LootItem, "level" | "rarity">, rule: VendorPriceRule): { buy: number; sell: number | null } — The price of one item under a `VendorPriceRule`: `round(base + perLevel x level)` times the rarity multiplier, never below 1. Sell-back is `floor(price x sellFactor)` when the rule sets one.
+- `stockVendor` (function): function stockVendor(shop: ShopStock, options: StockVendorOptions): VendorOffer[] — Roll a vendor's shelf and add it to an existing {@link ShopStock}. Entries added by a previous call with the same `idPrefix` are removed first, so a refresh replaces the shelf instead of throwing on duplicate ids. Buying, selling and wallet charging stay in the economy owner.
 
 ## @jgengine/core/mission/compositions
 

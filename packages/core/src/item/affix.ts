@@ -8,6 +8,8 @@ export interface AffixDef {
   op?: AffixOp;
   roll: number | [number, number];
   weight: number;
+  /** Lowest item level whose roll pool includes this affix; omitted means every level. */
+  minLevel?: number;
   namePart?: { position: "prefix" | "suffix"; text: string };
 }
 

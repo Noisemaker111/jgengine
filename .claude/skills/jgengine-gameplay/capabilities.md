@@ -244,6 +244,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `splitStack` (function) · `import { splitStack } from "@jgengine/core/inventory/inventoryModel"`
 
+## item-comparison — show per-stat deltas and a weighted verdict for a drop against equipped gear
+
+- `compareToEquipped` (function) · `import { compareToEquipped } from "@jgengine/core/loot/drop"`
+
 ## item-generation — compose constraints, weighted pools, transforms, and provenance into a deterministic generated item
 
 - `generate` (function) · `import { generate } from "@jgengine/core/gameplay"`
@@ -265,9 +269,45 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `createItemInstanceRegistry` (function) · `import { createItemInstanceRegistry } from "@jgengine/core/gameplay"`
 - `proceduralLootEntry` (function) · `import { proceduralLootEntry } from "@jgengine/core/gameplay"`
 
+## item-ledger — track which rolled item instances are still owned, salvaged or sold
+
+- `createItemLedger` (function) · `import { createItemLedger } from "@jgengine/core/loot/salvage"`
+
+## item-roll — roll one deterministic, level-gated item from a seed
+
+- `rollDrop` (function) · `import { rollDrop } from "@jgengine/core/loot/drop"`
+
+## item-run-haul — carry loot with a weight gate, bank it into a persistent stash, or lose it when the run fails
+
+- `createRunHaul` (function) · `import { createRunHaul } from "@jgengine/core/loot/haul"`
+
+## item-salvage — break an item down for the currency its level and rarity say, once
+
+- `salvageItem` (function) · `import { salvageItem } from "@jgengine/core/loot/salvage"`
+
+## item-salvage-value — compute the currency an item of a level and rarity breaks down into
+
+- `salvageValue` (function) · `import { salvageValue } from "@jgengine/core/loot/salvage"`
+
 ## item-use-composition — compose pluggable, ordered item use-behaviors from serializable references
 
 - `createUseBehaviorRegistry` (function) · `import { createUseBehaviorRegistry } from "@jgengine/core/gameplay"`
+
+## item-vendor — stock a vendor with rolled items priced through the shared economy
+
+- `stockVendor` (function) · `import { stockVendor } from "@jgengine/core/loot/vendor"`
+
+## item-vendor-price — price an item from its level and rarity through the economy's currency
+
+- `itemPrice` (function) · `import { itemPrice } from "@jgengine/core/loot/vendor"`
+
+## item-vendor-rotation — decide when a vendor's shelf is due for a restock
+
+- `createVendorRotation` (function) · `import { createVendorRotation } from "@jgengine/core/loot/vendor"`
+
+## item-weight — read a rolled item's mass for a carry check
+
+- `itemMass` (function) · `import { itemMass } from "@jgengine/core/loot/drop"`
 
 ## key-rebinding — conflict-aware key-remap session over the action-binding model — capture/reassign, conflict detection, reset-to-defaults, persist overrides, snapshot/restore
 
