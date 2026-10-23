@@ -98,6 +98,7 @@ bun run check-types  # @jgengine/* resolves to package source; no build needed
 bun run test
 bun scripts/test-shard.ts a  # one CI test shard locally (a-i); --check counts files, --print lists them
 bun scripts/type-shard.ts    # what the CI `types` job runs: the check-types stages two at a time, then the tsc fan-out alone
+bun run gate         # the whole local verdict in one run: build, then check-types and every test
 bun run build        # tsgo + import-extension rewrite, per package; only for pack/publish and the Node CLI
 bun run gen           # regenerate every committed derived artifact, in dependency order
 bun run games:clone  # once: clone Noisemaker111/JGengine-games into ephemeral ./Games at the pinned commit
