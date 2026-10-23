@@ -15,10 +15,18 @@
 // fails if this file ever runs a different set, and each failing stage is reported with the
 // same re-run hint `bun run check-types` gives.
 import { PLANS, rerunHint, fixHint, type Stage, type StageResult } from "./run-stages";
+import { fileURLToPath } from "node:url";
+
+const root = fileURLToPath(new URL("..", import.meta.url));
 
 export const PLAN = "check-types";
-export const CONCURRENCY = 4;
-
+/**
+ * Two stages at a time. Four was measured first and bought 5 s: a 4-vCPU runner starves
+ * four CPU-bound stages and the tsc fan-out's own eight children, so the whole plan took 54 s
+ * against 59 s one after another. Two lanes put the fan-out beside the two generators that
+ * matter, which are the only stages with anything to overlap.
+ */
+export const CONCURRENCY = 2;
 /**
  * Relative cost of the stages worth ordering by, from the run named above. A stale number
  * only costs overlap - the longest stage starting late - never correctness.
@@ -81,7 +89,7 @@ export async function runTypes(
 }
 
 async function spawnStage(stage: Stage): Promise<boolean> {
-  const proc = Bun.spawn([stage.command, ...stage.args], { stdout: "pipe", stderr: "pipe" });
+  const proc = Bun.spawn([stage.command, ...stage.args], { cwd: root, stdout: "pipe", stderr: "pipe" });
   const [stdout, stderr, code] = await Promise.all([
     new Response(proc.stdout).text(),
     new Response(proc.stderr).text(),

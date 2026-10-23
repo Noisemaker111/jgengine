@@ -27,11 +27,13 @@ jobs:
           GAMES_CLONE_TOKEN: ${{ secrets.GAMES_CLONE_TOKEN }}
       - name: no dist
         run: |
+          test -d packages/core/dist && echo "DIST PRESENT at start" || echo "DIST ABSENT at start"
           files=$(bun scripts/test-shard.ts --print ${{ matrix.shard }})
           s=$(date +%s%N)
           out=$(bun test --timeout 20000 $files 2>&1); c=$?
           e=$(date +%s%N)
           echo "NODIST rc=$c $(( (e-s)/1000000 ))ms :: $(echo "$out" | grep -E '^Ran [0-9]+ tests' || echo 'no summary')"
+          echo "skipped-lines: $(echo "$out" | grep -c 'skip')"
           echo "$out" | grep -E "^\(fail\)|error:" | head -20
       - name: with dist
         run: |
