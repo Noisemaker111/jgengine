@@ -40,6 +40,12 @@ describe("findFrontEndGaps", () => {
     ).toEqual(["probe#settings"]);
   });
 
+  test("the shipped credits panel clears it", () => {
+    expect(
+      scan({ "Games/probe/src/ui.tsx": 'import { CreditsPanel } from "@jgengine/react/creditsPanel";\n' }),
+    ).toEqual(["probe#settings"]);
+  });
+
   test("generated asset credits also clear it", () => {
     expect(
       scan({ "Games/probe/src/ui.tsx": 'import { creditsForSourceIds } from "@jgengine/assets/credits";\n' }),
