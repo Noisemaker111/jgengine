@@ -1073,7 +1073,7 @@
 - `EmoteSpatialLookup` (interface): interface EmoteSpatialLookup { inRadius(center: readonly [number, number, number], radius: number, filter?: (id: string) => boolean): readonly string[] } — ⚠ undocumented
 - `Emotes` (interface): interface Emotes { play(fromUserId: string, emoteId: string, radius?: number): EmoteBroadcastResult | {reason: string} } — ⚠ undocumented
 - `EmotesDeps` (interface): interface EmotesDeps { entities: EmoteEntityLookup; spatial: EmoteSpatialLookup } — ⚠ undocumented
-- `FriendEntry` (interface): interface FriendEntry { userId: string; online: boolean } — ⚠ undocumented
+- `FriendEntry` (interface): interface FriendEntry { userId: string; online: boolean } — ⚠ undocumented · used by `useFriends` (@jgengine/react): The local player's friends with their presence: the list keeps one identity until a request is accepted, a friend is removed or a friend's p…
 - `FriendRequestEntry` (interface): interface FriendRequestEntry { requestId: string; fromUserId: string } — ⚠ undocumented
 - `Friends` (interface): interface Friends { canRequest(fromUserId: string, toUserId: string): {reason: string} | null; request(fromUserId: string, toUserId: string): {requestId: string} | {reason: string}; accept(userId: string, requestId: string): {reason: string} | null; decline(… — ⚠ undocumented
 - `FriendsSnapshot` (interface): interface FriendsSnapshot { friends: string[]; blocked: string[] } — ⚠ undocumented
@@ -1351,7 +1351,7 @@
 - `FirstPersonCameraConfig` (interface): interface FirstPersonCameraConfig { eyeHeight?: number; sensitivity?: number; maxPitch?: number; reticle?: boolean; viewmodel?: boolean; collision?: false | FirstPersonCollisionConfig } — ⚠ undocumented
 - `FirstPersonCollisionConfig` (interface): interface FirstPersonCollisionConfig — Clearance tuning for the first-person camera's collision pull-in.
 - `ForbidRule` (interface): interface ForbidRule — A rule that forbids a combination — e.g. "an incendiary barrel cannot pair with a cryo core". A forbid rule can never become satisfiable by adding more parts, so it is the check a backtracking generator runs on each candidate.
-- `FriendEntry` (interface): interface FriendEntry { userId: string; online: boolean } — ⚠ undocumented
+- `FriendEntry` (interface): interface FriendEntry { userId: string; online: boolean } — ⚠ undocumented · used by `useFriends` (@jgengine/react): The local player's friends with their presence: the list keeps one identity until a request is accepted, a friend is removed or a friend's p…
 - `FriendRequestEntry` (interface): interface FriendRequestEntry { requestId: string; fromUserId: string } — ⚠ undocumented
 - `Friends` (interface): interface Friends { canRequest(fromUserId: string, toUserId: string): {reason: string} | null; request(fromUserId: string, toUserId: string): {requestId: string} | {reason: string}; accept(userId: string, requestId: string): {reason: string} | null; decline(… — ⚠ undocumented
 - `GAME_SAVE_VERSION` (const): const GAME_SAVE_VERSION: 1 — Current save-format version of {@link GameSaveDocument}. Bump it with {@link GameSaveConfig.migrate} when the shape changes.
