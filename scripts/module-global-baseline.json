@@ -5,8 +5,6 @@
   "Games/brightway-park/src/game/build/commands.ts#revision",
   "Games/ember-command/src/game/hudStore.ts#snapshot",
   "Games/ember-command/src/game/session.ts#session",
-  "Games/odd-orbit/src/game/needs/needs.ts#cachedDayLength",
-  "Games/odd-orbit/src/game/needs/needs.ts#cachedDefs",
   "Games/scrap-signal/src/game/characters.ts#activeCharacterId",
   "Games/scrap-signal/src/game/characters.ts#activeTree",
   "Games/scrap-signal/src/game/feel.ts#equippedGunId",
