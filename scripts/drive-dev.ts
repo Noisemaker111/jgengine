@@ -110,6 +110,8 @@ type Args = {
   settle?: number;
   run?: string;
   style?: string;
+  /** Show a real window (off-screen) instead of headless Chrome. */
+  headed: boolean;
 };
 
 /** GitHub's camo image proxy stops serving around 5 MB — stay safely under it
@@ -125,6 +127,8 @@ Notes:
   --record runs LOCKSTEP: game time advances one tick per captured frame, so choreograph
   8-15s of game time. --reuse-storage needs a live daemon or --connect.
   --port starts (or reuses) the dev runner on that port instead of the per-checkout default.
+  --headed opens a real Chrome window off-screen, for debugging a drive; every run is
+  headless unless you ask, and the window never lands on the desktop.
 
 Warm loop:
   bun run shoot daemon start
@@ -134,7 +138,10 @@ Warm loop:
 
 /** Map the shared capture command line (packages/jgengine/src/templates/captureArgs.ts) onto drive's options. */
 function parseArgs(argv: string[]): Args {
-  const parsed = parseCaptureArgs("drive", argv, CAPTURE_FLAGS);
+  // `--headed` is parsed here, not in CAPTURE_FLAGS: the scaffold's drive.mjs has no local window to
+  // show, so the flag stays engine-only instead of parsing there and doing nothing.
+  const headed = argv.includes("--headed");
+  const parsed = parseCaptureArgs("drive", argv.filter((arg) => arg !== "--headed"), CAPTURE_FLAGS);
   const o = parsed.options;
   const str = (name: string): string | undefined => (typeof o[name] === "string" ? (o[name] as string) : undefined);
   const num = (name: string): number | undefined => (str(name) === undefined ? undefined : Number(str(name)));
@@ -177,6 +184,7 @@ function parseArgs(argv: string[]): Args {
     settle: num("settle"),
     run: str("run"),
     style: str("style"),
+    headed,
   };
   if (args.help) return args;
   if (args.record !== undefined && (args.record.includes("/") || args.record.includes("\\"))) {
@@ -590,6 +598,7 @@ const exitCode = await withBrowserSession(
     attach: daemon !== null,
     leaveWarm: args.keep || daemon !== null,
     chromePrefix: "jg-drive-",
+    headed: args.headed,
     // One real render + capture per output frame — give the watchdog room.
     ...(lockstep ? { hardDeadlineMs: args.timeoutMs + 120_000 + lockstepProjected * 3_000 } : {}),
   },

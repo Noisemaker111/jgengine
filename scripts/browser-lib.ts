@@ -13,7 +13,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, parse } from "node:path";
+import { basename, dirname, join, parse, resolve } from "node:path";
 
 import { retrySettleMs, shouldRetryCapture } from "./capture-retry";
 import { clearViteCaches, headRevision, revisionDrifted, shortRevision } from "./captureRevision";
@@ -188,8 +188,20 @@ export function softwareGlBackend(
   return platform === "linux" && hasXvfb ? "llvmpipe" : "swiftshader";
 }
 
-/** Chrome flags for a rasterizer choice: llvmpipe runs headful on the Xvfb display, the rest headless. */
-export function chromeRenderArgs(backend: SoftwareGl | null): string[] {
+/**
+ * Where a `--headed` capture window sits: far outside every monitor, so a real window can never
+ * cover Jon's desktop. A headed run is a deliberate act for debugging, not a way to watch a shot.
+ */
+export const HEADED_WINDOW_POSITION = "-32000,-32000";
+
+/**
+ * Chrome flags for a rasterizer choice: llvmpipe runs headful on the Xvfb display, the rest headless.
+ * `headed` asks for a real window, which lands off-screen — the default for every capture is headless.
+ */
+export function chromeRenderArgs(backend: SoftwareGl | null, headed = false): string[] {
+  if (headed) {
+    return ["--window-size=1280,720", `--window-position=${HEADED_WINDOW_POSITION}`, ...chromeGraphicsArgs()];
+  }
   if (backend === "llvmpipe") {
     return ["--ozone-platform=x11", "--use-angle=gl", "--ignore-gpu-blocklist", "--window-size=2560,2560"];
   }
@@ -848,6 +860,13 @@ const PRESSURE_PROFILE_MS = 5 * 60 * 1000;
 export const PRESSURE_FREE_BYTES = 15 * 1024 * 1024 * 1024;
 /** Holds the browser pid, so a sweep never deletes the profile of a live browser. */
 export const PROFILE_OWNER_FILE = "jg-owner-pid";
+/**
+ * Holds the pid of the run that launched the browser. Unlike {@link PROFILE_OWNER_FILE} this is not
+ * the browser: a browser outliving its run is exactly the stray window the sweep reaps.
+ */
+export const PROFILE_RUN_FILE = "jg-owner-run";
+/** Age past which a visible browser with no recorded run counts as leaked. */
+export const STRAY_BROWSER_MS = 20 * 60 * 1000;
 /** Free space a capture needs on the temp drive before it starts; one Chrome profile is ~150 MB. */
 export const MIN_CAPTURE_FREE_BYTES = 2 * 1024 * 1024 * 1024;
 
@@ -953,6 +972,186 @@ function readOwnerPid(dir: string): number | undefined {
   }
 }
 
+function readRunPid(dir: string): number | undefined {
+  try {
+    const pid = Number(readFileSync(join(dir, PROFILE_RUN_FILE), "utf8"));
+    return Number.isFinite(pid) && pid > 0 ? pid : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/** One running process as the stray-browser sweep sees it. */
+export interface BrowserProcess {
+  pid: number;
+  parentPid?: number;
+  /** Epoch ms the process started, when the platform reports it. */
+  startedAt?: number;
+  commandLine: string;
+}
+
+/** The `--user-data-dir` a command line carries, as written. */
+export function profileDirFromCommandLine(commandLine: string): string | undefined {
+  const match = /--user-data-dir=(?:"([^"]+)"|(\S+))/.exec(commandLine);
+  return match?.[1] ?? match?.[2];
+}
+
+function samePath(a: string, b: string): boolean {
+  const left = resolve(a);
+  const right = resolve(b);
+  return process.platform === "win32" ? left.toLowerCase() === right.toLowerCase() : left === right;
+}
+
+/** The `jg-*` profile directory a process owns under `root`, if any. */
+export function profileDirUnderRoot(commandLine: string, root: string): string | undefined {
+  const dir = profileDirFromCommandLine(commandLine);
+  if (dir === undefined) return undefined;
+  const normalized = dir.replace(/[\\/]+$/, "");
+  if (!basename(normalized).startsWith(PROFILE_PREFIX)) return undefined;
+  return samePath(dirname(normalized), root) ? normalized : undefined;
+}
+
+const WINDOWS_PROCESS_QUERY = [
+  "$rows = @(Get-CimInstance Win32_Process -Filter \"CommandLine like '%--user-data-dir=%'\" | ForEach-Object {",
+  "  $age = -1",
+  "  if ($_.CreationDate -ne $null) { $age = [long]((Get-Date) - [datetime]$_.CreationDate).TotalMilliseconds }",
+  "  [pscustomobject]@{ pid = [int]$_.ProcessId; ppid = [int]$_.ParentProcessId; age = $age; cmd = [string]$_.CommandLine }",
+  "});",
+  "if ($rows.Count -eq 0) { '[]' } else { ConvertTo-Json -InputObject $rows -Compress -Depth 4 }",
+].join("\n");
+
+/**
+ * Every process that carries a `--user-data-dir`, which is what a browser command line does. Cheap
+ * enough (about 200 ms) to run at a capture's start, and name-agnostic so Edge and Chromium count.
+ */
+export function listBrowserProcesses(): BrowserProcess[] {
+  const parseRows = (text: string): BrowserProcess[] => {
+    const trimmed = text.trim();
+    if (trimmed.length === 0) return [];
+    let rows: unknown;
+    try {
+      rows = JSON.parse(trimmed.startsWith("[") ? trimmed : `[${trimmed}]`);
+    } catch {
+      return [];
+    }
+    if (!Array.isArray(rows)) return [];
+    return rows.flatMap((row): BrowserProcess[] => {
+      if (typeof row !== "object" || row === null) return [];
+      const record = row as { pid?: unknown; ppid?: unknown; age?: unknown; cmd?: unknown };
+      const pid = Number(record.pid);
+      if (!Number.isFinite(pid) || pid <= 0 || typeof record.cmd !== "string") return [];
+      const parentPid = Number(record.ppid);
+      const ageMs = Number(record.age);
+      return [
+        {
+          pid,
+          commandLine: record.cmd,
+          ...(Number.isFinite(parentPid) && parentPid > 0 ? { parentPid } : {}),
+          ...(Number.isFinite(ageMs) && ageMs >= 0 ? { startedAt: Date.now() - ageMs } : {}),
+        },
+      ];
+    });
+  };
+
+  if (process.platform === "win32") {
+    // Encoded, because `-Command` through argv mangles the quotes inside a WQL filter.
+    const encoded = Buffer.from(WINDOWS_PROCESS_QUERY, "utf16le").toString("base64");
+    const query = spawnSync(
+      "powershell.exe",
+      ["-NoProfile", "-NonInteractive", "-EncodedCommand", encoded],
+      { encoding: "utf8", windowsHide: true, timeout: 20_000 },
+    );
+    return query.status === 0 ? parseRows(query.stdout ?? "") : [];
+  }
+  const withElapsed = spawnSync("ps", ["-eo", "pid=,ppid=,etimes=,args="], { encoding: "utf8", timeout: 20_000 });
+  const ps = withElapsed.status === 0 ? withElapsed : spawnSync("ps", ["-axo", "pid=,ppid=,command="], { encoding: "utf8", timeout: 20_000 });
+  if (ps.status !== 0) return [];
+  const processes: BrowserProcess[] = [];
+  for (const line of (ps.stdout ?? "").split("\n")) {
+    const match = /^\s*(\d+)\s+(\d+)\s+(\d+)?\s*(.*)$/.exec(line);
+    if (match === null || !(match[4] ?? "").includes("--user-data-dir=")) continue;
+    const pid = Number(match[1]);
+    const parentPid = Number(match[2]);
+    const elapsed = Number(match[3]);
+    processes.push({
+      pid,
+      commandLine: match[4] ?? "",
+      ...(parentPid > 0 ? { parentPid } : {}),
+      ...(Number.isFinite(elapsed) && elapsed > 0 ? { startedAt: Date.now() - elapsed * 1000 } : {}),
+    });
+  }
+  return processes;
+}
+
+/** What one stray-browser sweep did. */
+export interface StrayBrowserSweepResult {
+  /** Browsers killed because the run that owned them was gone. */
+  killed: number;
+  /** Profile directories those browsers left behind and the sweep removed. */
+  profilesRemoved: number;
+}
+
+function profileMtimeMs(dir: string): number | undefined {
+  try {
+    return statSync(dir).mtimeMs;
+  } catch {
+    return undefined;
+  }
+}
+
+export interface StrayBrowserSweepOptions {
+  now?: number;
+  /** Age past which an unowned visible browser is leaked; defaults to {@link STRAY_BROWSER_MS}. */
+  maxAgeMs?: number;
+  /** Replace the live process list (tests). */
+  processes?: readonly BrowserProcess[];
+  kill?: (pid: number) => void;
+  remove?: (dir: string) => void;
+  isAlive?: (pid: number | undefined) => boolean;
+}
+
+/**
+ * Kill browsers whose run died, before a capture starts another one. A visible Chrome left on the
+ * desktop is the failure this catches: a lane's ad-hoc script launched it, the run crashed, and the
+ * window sat there for an hour holding gigabytes. A browser is reaped only when its run is gone —
+ * a recorded run pid that is dead, or (for a visible browser with no record) a dead parent and a
+ * profile older than {@link STRAY_BROWSER_MS}. Headless browsers are never reaped here: a warm
+ * daemon outlives its launcher by design, and an invisible browser is not the complaint.
+ */
+export function sweepStrayBrowsers(root = tmpdir(), options: StrayBrowserSweepOptions = {}): StrayBrowserSweepResult {
+  const now = options.now ?? Date.now();
+  const maxAgeMs = options.maxAgeMs ?? STRAY_BROWSER_MS;
+  const isAlive = options.isAlive ?? pidAlive;
+  const kill = options.kill ?? ((pid: number) => killPid(pid, true));
+  const remove = options.remove ?? removeProfileDir;
+  const processes = options.processes ?? listBrowserProcesses();
+  const seen = new Set<string>();
+  const result: StrayBrowserSweepResult = { killed: 0, profilesRemoved: 0 };
+  for (const process of processes) {
+    const dir = profileDirUnderRoot(process.commandLine, root);
+    if (dir === undefined || seen.has(dir)) continue;
+    seen.add(dir);
+    if (ownedProfiles.has(dir)) continue;
+    const headless = process.commandLine.includes("--headless");
+    const runPid = readRunPid(dir);
+    let stray: boolean;
+    if (runPid !== undefined) {
+      stray = !isAlive(runPid);
+    } else if (headless) {
+      continue;
+    } else {
+      const startedAt = process.startedAt ?? profileMtimeMs(dir);
+      stray = !isAlive(process.parentPid) && startedAt !== undefined && now - startedAt >= maxAgeMs;
+    }
+    if (!stray) continue;
+    kill(process.pid);
+    result.killed += 1;
+    remove(dir);
+    if (!existsSync(dir)) result.profilesRemoved += 1;
+  }
+  return result;
+}
+
 /**
  * Removes profile dirs that killed runs leaked: untouched for `minAgeMs`, and no live browser owns
  * them. Dirs this process is still using are never touched, whatever their age.
@@ -1046,6 +1245,8 @@ export interface SweepOptions {
   log?: (line: string) => void;
   /** Clock, for tests. */
   now?: number;
+  /** Replace the live process list the stray-browser sweep reads (tests). */
+  processes?: readonly BrowserProcess[];
 }
 
 function minutes(ms: number): string {
@@ -1062,16 +1263,21 @@ export function sweepCaptureProfiles(root = tmpdir(), options: SweepOptions = {}
   const free = options.freeBytes === undefined ? freeBytesAt(root) : options.freeBytes;
   const pressure = free !== null && free < PRESSURE_FREE_BYTES;
   const ageMs = pressure ? PRESSURE_PROFILE_MS : STALE_PROFILE_MS;
+  const strays = sweepStrayBrowsers(root, {
+    now,
+    ...(options.processes === undefined ? {} : { processes: options.processes }),
+  });
   const removed = sweepStaleProfiles(root, now, ageMs);
-  if (pressure || removed > 0) {
+  if (pressure || removed > 0 || strays.killed > 0 || strays.profilesRemoved > 0) {
     const log = options.log ?? ((line: string) => console.error(line));
+    const killed = strays.killed > 0 ? `killed ${strays.killed} stray browser(s) whose run had died, removed ${strays.profilesRemoved} profile(s); ` : "";
     log(
       pressure
-        ? `capture: ${formatBytes(free ?? 0)} free on ${parse(root).root}, under ${formatBytes(PRESSURE_FREE_BYTES)} — swept ${removed} capture profile(s) older than ${minutes(ageMs)}`
-        : `capture: swept ${removed} leaked capture profile(s) older than ${minutes(ageMs)} from ${root}`,
+        ? `capture: ${formatBytes(free ?? 0)} free on ${parse(root).root}, under ${formatBytes(PRESSURE_FREE_BYTES)} — ${killed}swept ${removed} capture profile(s) older than ${minutes(ageMs)}`
+        : `capture: ${killed}swept ${removed} leaked capture profile(s) older than ${minutes(ageMs)} from ${root}`,
     );
   }
-  return removed;
+  return removed + strays.profilesRemoved;
 }
 
 function createProfileDir(prefix: string): string {
@@ -1088,15 +1294,17 @@ export function launchChrome(
 ): ChromeProcess {
   const chrome = findChromeExecutable();
   const userDataDir = createProfileDir(prefix);
+  const headed = options.headed === true;
   let backend = softwareGlBackend();
-  const display = backend === "llvmpipe" ? ensureXvfbDisplay() : null;
+  const display = headed || backend !== "llvmpipe" ? null : ensureXvfbDisplay();
   if (backend === "llvmpipe" && display === null) backend = "swiftshader";
+  if (!options.persistent) writeFileSync(join(userDataDir, PROFILE_RUN_FILE), String(process.pid));
   const child = spawn(
     chrome,
     [
       `--remote-debugging-port=${debugPort}`,
       `--user-data-dir=${userDataDir}`,
-      ...chromeRenderArgs(backend),
+      ...chromeRenderArgs(headed ? null : backend, headed),
       ...chromeFrameClockArgs(options.frameClock),
       "--no-first-run",
       "--no-default-browser-check",
@@ -1215,6 +1423,11 @@ export interface ChromeLaunchOptions {
   persistent?: boolean;
   /** rAF clock; the display's 16.7 ms commit by default. */
   frameClock?: FrameClock;
+  /**
+   * Show a real window instead of headless Chrome. Off by default and off-screen when set, so a
+   * capture can never put a Chrome on Jon's desktop by accident; only `--headed` sets it.
+   */
+  headed?: boolean;
 }
 
 export interface StartBrowserOptions<L extends LaunchableBrowser = ChromeProcess> {
@@ -1228,6 +1441,8 @@ export interface StartBrowserOptions<L extends LaunchableBrowser = ChromeProcess
   launch?: (debugPort: number, prefix?: string, options?: ChromeLaunchOptions) => L;
   /** rAF clock the launched Chrome runs on; test launchers receive it too. */
   frameClock?: FrameClock;
+  /** Launch a real (off-screen) window instead of headless Chrome. */
+  headed?: boolean;
   /** Prove the page layer answers; defaults to opening and closing a page target. */
   pageProbe?: (debugPort: number, profilePath: string) => Promise<void>;
   log?: (line: string) => void;
@@ -1263,7 +1478,13 @@ export async function startBrowser<L extends LaunchableBrowser = ChromeProcess>(
     ((port: number, prefix?: string, launchOptions?: ChromeLaunchOptions) =>
       launchChrome(port, prefix, launchOptions ?? {}) as unknown as L);
   const pageProbe = options.pageProbe ?? defaultPageProbe;
-  const launchOptions = options.frameClock === undefined ? undefined : { frameClock: options.frameClock };
+  const launchOptions: ChromeLaunchOptions | undefined =
+    options.frameClock === undefined && options.headed !== true
+      ? undefined
+      : {
+          ...(options.frameClock === undefined ? {} : { frameClock: options.frameClock }),
+          ...(options.headed === true ? { headed: true } : {}),
+        };
   const attempts = 2;
   let last: BrowserLaunchError | null = null;
 
@@ -1941,6 +2162,8 @@ export interface WithBrowserSessionOptions {
   pageProbe?: (debugPort: number, profilePath: string) => Promise<void>;
   /** rAF clock the launched Chrome runs on. Default is the display's commit clock. */
   frameClock?: FrameClock;
+  /** Launch a real (off-screen) window instead of headless Chrome; only `--headed` sets it. */
+  headed?: boolean;
 }
 
 /**
@@ -1988,6 +2211,7 @@ export async function withBrowserSession(
         ...(options.launch === undefined ? {} : { launch: options.launch }),
         ...(options.pageProbe === undefined ? {} : { pageProbe: options.pageProbe }),
         ...(options.frameClock === undefined ? {} : { frameClock: options.frameClock }),
+        ...(options.headed === true ? { headed: true } : {}),
       });
       chrome = started.browser;
     }
@@ -2008,8 +2232,14 @@ export async function withBrowserSession(
         removeProfileDir(chrome.userDataDir);
       }
     } else if (chrome !== null) {
-      // A warm browser and the daemon state file own this profile now, not this process.
+      // A warm browser and the daemon state file own this profile now, not this process. The run
+      // record goes too: the next capture must not read this dead pid as an orphaned browser.
       detachProfileDir(chrome.userDataDir);
+      try {
+        unlinkSync(join(chrome.userDataDir, PROFILE_RUN_FILE));
+      } catch {
+        /* no record to hand over */
+      }
     }
   }
   return exitCode;

@@ -48,6 +48,7 @@
     "check:fixture-location": "bun scripts/check-fixture-location.ts",
     "check:scaffold-launch": "bun scripts/check-scaffold-launch.ts",
     "check:fix-has-test": "bun scripts/check-fix-has-test.ts",
+    "check:capture-hygiene": "bun scripts/check-capture-hygiene.ts",
     "check-module-globals": "bun scripts/check-module-globals.ts",
     "check-game-determinism": "bun scripts/check-game-determinism.ts",
     "check-game-front-end": "bun scripts/check-game-front-end.ts",

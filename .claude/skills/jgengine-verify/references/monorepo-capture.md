@@ -15,6 +15,8 @@ Do not run bare cold `shoot` or `drive` repeatedly in a multi-shot loop. For a s
 
 Every cold start — shoot, drive, perf, perf gate, smoke, daemon — goes through one handshake: launch, wait for the debugger endpoint, open a page target. Each step is named in the failure line with its elapsed time and profile path, a transient failure gets one retry with a fresh profile and a doubled wait, and the wait is `JG_CHROME_READY_MS` (30s default). A launch that recovers is not a failed run; a budget, assertion or capture failure is never retried.
 
+Every capture is headless. `--headed` (shoot, drive, perf) opens a real Chrome window at `--window-position=-32000,-32000`, so a deliberate debugging window can never land on the desktop; never report a number from a headed run. A capture start also reaps a browser whose run died: a `jg-*` profile whose recorded run pid is dead, or a visible browser with no record that is over 20 minutes old, is killed with its process tree and its profile removed, reported in one line. `bun run check:capture-hygiene` fails a script or test that launches Chrome without `headless: true` or a persistent profile outside `%TEMP%/jg-*` — write capture scripts against `scripts/browser-lib.ts` instead.
+
 A created game's own `scripts/browser.mjs` ships that same handshake: its block is generated from `packages/jgengine/src/templates/browserLaunch.ts`, and `bun run check:scaffold-launch` fails, naming both files, when the scaffold copy and `scripts/browser-lib.ts` stop agreeing.
 
 ## Native external game servers

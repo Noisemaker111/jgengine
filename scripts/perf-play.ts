@@ -121,12 +121,14 @@ export interface PerfArgs {
   params: [string, string][];
   /** rAF clock the browser is launched on; `uncapped` is opt-in and marks the record. */
   frameClock: FrameClock;
+  /** Show a real window (off-screen) instead of headless Chrome. */
+  headed?: boolean;
 }
 
 export type ArgResult = { kind: "run"; args: PerfArgs } | { kind: "help" };
 
 const USAGE = `usage: bun run perf <game> [--quality draft|full] [--profile] [--seconds n] [--telemetry on|off]
-                    [--state name] [--param k=v ...] [--set key=value ...] [--uncapped]
+                    [--state name] [--param k=v ...] [--set key=value ...] [--uncapped] [--headed]
 
   <game>            game id under Games/ (for example harbor-heat)
   --quality         graphics tier: full (default) or draft (?quality=low, half viewport)
@@ -138,6 +140,8 @@ const USAGE = `usage: bun run perf <game> [--quality draft|full] [--profile] [--
                     vsync multiple. Opt-in: the record then says frameClock uncapped and its ms do not
                     compare with a capped record. Verify the clock took by omission — a browser that
                     stays vsynced fails the run.
+  --headed          open a real Chrome window off-screen instead of headless, for debugging a run;
+                    never use it for a number you report.
   --state           boot into the game's capture.states entry of this name (?state=name), so two runs
                     are the same scene. An unknown name fails with the states the game declares.
   --param           add a page query parameter; repeatable (?spawn=1,2,3, ?seed=7). The harness's own
@@ -305,6 +309,7 @@ export function parsePerfArgs(argv: readonly string[]): ArgResult {
   let seconds = DEFAULT_SECONDS;
   let telemetry: "on" | "off" = "on";
   let frameClock: FrameClock = "capped";
+  let headed = false;
   let state: string | undefined;
   const params: [string, string][] = [];
   const settings: PerfSettingOverride[] = [];
@@ -317,6 +322,10 @@ export function parsePerfArgs(argv: readonly string[]): ArgResult {
     }
     if (arg === "--uncapped") {
       frameClock = "uncapped";
+      continue;
+    }
+    if (arg === "--headed") {
+      headed = true;
       continue;
     }
     if (arg === "--state") {
@@ -373,7 +382,7 @@ export function parsePerfArgs(argv: readonly string[]): ArgResult {
     game = arg;
   }
   if (game === undefined) throw new Error("a game id is required");
-  return { kind: "run", args: { game, quality, profile, seconds, telemetry, settings, frameClock, ...(state === undefined ? {} : { state }), params } };
+  return { kind: "run", args: { game, quality, profile, seconds, telemetry, settings, frameClock, ...(headed ? { headed: true } : {}), ...(state === undefined ? {} : { state }), params } };
 }
 
 /** One sampled stack frame reduced to a readable key and its self time. */
@@ -997,7 +1006,7 @@ async function main(): Promise<void> {
     console.log(USAGE);
     return;
   }
-  const { game, quality, profile, seconds, telemetry, settings, state, params, frameClock } = parsed.args;
+  const { game, quality, profile, seconds, telemetry, settings, state, params, frameClock, headed } = parsed.args;
 
   sweepCaptureProfiles();
 
@@ -1007,7 +1016,7 @@ async function main(): Promise<void> {
 
   const server = await ensureDevServer(repoRoot);
   const exitCode = await withBrowserSession(
-    { keep: false, timeoutMs: 120_000, frameClock, server: server.child, serverPid: server.pid },
+    { keep: false, timeoutMs: 120_000, frameClock, headed, server: server.child, serverPid: server.pid },
     async ({ debugPort }) => {
       const session = await openPageSession(debugPort);
       try {

@@ -1,5 +1,6 @@
 import { describe, expect, mock, test } from "bun:test";
-import { existsSync, mkdtempSync, rmSync, utimesSync, writeFileSync } from "node:fs";
+import { spawn } from "node:child_process";
+import { existsSync, mkdirSync, mkdtempSync, rmSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createServer } from "node:http";
@@ -31,6 +32,7 @@ import {
   qualitySuffix,
   sizeForQuality,
   PROFILE_OWNER_FILE,
+  PROFILE_RUN_FILE,
   ensureCaptureFreeSpace,
   PRESSURE_FREE_BYTES,
   isRetryableLaunchFailure,
@@ -38,6 +40,10 @@ import {
   startBrowser,
   sweepCaptureProfiles,
   sweepStaleProfiles,
+  sweepStrayBrowsers,
+  pidAlive,
+  findChromeExecutable,
+  waitForPidExit,
   waitForDebugger,
   withBrowserSession,
   type ChromeProcess,
@@ -172,6 +178,14 @@ describe("Chrome graphics profile", () => {
     expect(chromeGraphicsArgs({ CI: "true", JG_CAPTURE_SOFTWARE_GL: "0" })).not.toContain(
       "--use-angle=swiftshader",
     );
+  });
+
+  test("every default is headless, and a headed window sits off-screen", () => {
+    expect(chromeRenderArgs(null)).toContain("--headless=new");
+    expect(chromeRenderArgs("swiftshader")).toContain("--headless=new");
+    const headed = chromeRenderArgs(null, true);
+    expect(headed).not.toContain("--headless=new");
+    expect(headed).toContain("--window-position=-32000,-32000");
   });
 });
 
@@ -893,6 +907,181 @@ describe("capture profile sweep", () => {  test("removes only stale jg dirs whos
       expect(existsSync(twenty)).toBe(true);
       expect(existsSync(hour)).toBe(false);
       expect(PRESSURE_FREE_BYTES).toBe(15 * 1024 ** 3);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("headed is a deliberate act", () => {
+  test("a session hands --headed to the launch, and headless is what a run gets without it", async () => {
+    const server = Bun.serve({
+      port: 0,
+      hostname: "127.0.0.1",
+      fetch: () => Response.json({ Browser: "test", webSocketDebuggerUrl: "ws://127.0.0.1:1/devtools/browser/test" }),
+    });
+    const handed: ({ headed?: boolean } | undefined)[] = [];
+    const profiles: string[] = [];
+    const launch = (_port: number, _prefix?: string, options?: { headed?: boolean }) => {
+      handed.push(options);
+      const dir = mkdtempSync(join(tmpdir(), "jg-test-headed-"));
+      profiles.push(dir);
+      return { pid: undefined, userDataDir: dir, kill() {} } as unknown as ChromeProcess;
+    };
+    try {
+      for (const headed of [true, false]) {
+        const exit = await withBrowserSession(
+          { keep: false, timeoutMs: 1_000, debugPort: server.port, pageProbe: async () => {}, launch, ...(headed ? { headed } : {}) },
+          async () => {},
+        );
+        expect(exit).toBe(0);
+      }
+    } finally {
+      server.stop(true);
+      for (const dir of profiles) rmSync(dir, { recursive: true, force: true });
+    }
+    expect(handed[0]?.headed).toBe(true);
+    expect(handed[1]?.headed).toBeUndefined();
+  });
+});
+
+describe("stray browser sweep", () => {
+  const DEAD_PID = 999_999;
+  const chrome = ((): string | null => {
+    try {
+      return findChromeExecutable();
+    } catch {
+      return null;
+    }
+  })();
+
+  function profile(root: string, name: string, runPid: number | undefined, ownerPid?: number): string {
+    const dir = join(root, name);
+    mkdirSync(dir, { recursive: true });
+    if (runPid !== undefined) writeFileSync(join(dir, PROFILE_RUN_FILE), String(runPid));
+    writeFileSync(join(dir, PROFILE_OWNER_FILE), String(ownerPid ?? runPid ?? DEAD_PID));
+    return dir;
+  }
+
+  test.skipIf(process.platform !== "win32" || chrome === null)(
+    "a visible browser whose run died is killed and its profile removed",
+    async () => {
+      const root = mkdtempSync(join(tmpdir(), "jg-stray-proof-"));
+      const dir = profile(root, "jg-stray-proof", DEAD_PID);
+      const child = spawn(
+        chrome as string,
+        [
+          `--user-data-dir=${dir}`,
+          "--window-size=1280,720",
+          "--window-position=-32000,-32000",
+          "--no-first-run",
+          "--no-default-browser-check",
+          "--no-sandbox",
+          "about:blank",
+        ],
+        { stdio: "ignore", windowsHide: false },
+      );
+      try {
+        expect(pidAlive(child.pid)).toBe(true);
+        const result = sweepStrayBrowsers(root);
+        console.error(
+          `proof (1): planted visible Chrome pid ${child.pid} with dead run ${DEAD_PID} — killed ${result.killed}, profiles removed ${result.profilesRemoved}`,
+        );
+        expect(result).toEqual({ killed: 1, profilesRemoved: 1 });
+        expect(existsSync(dir)).toBe(false);
+        await waitForPidExit(child.pid, 10_000);
+        expect(pidAlive(child.pid)).toBe(false);
+      } finally {
+        child.kill();
+        rmSync(root, { recursive: true, force: true });
+      }
+    },
+    30_000,
+  );
+
+  test("a browser whose run is alive is never touched", () => {
+    const root = mkdtempSync(join(tmpdir(), "jg-stray-live-"));
+    try {
+      const dir = profile(root, "jg-live-run", process.pid);
+      const killed: number[] = [];
+      const result = sweepStrayBrowsers(root, {
+        processes: [
+          {
+            pid: 4242,
+            parentPid: 1,
+            startedAt: Date.now() - 3 * 60 * 60 * 1000,
+            commandLine: `chrome.exe --user-data-dir=${dir}`,
+          },
+        ],
+        kill: (pid) => killed.push(pid),
+      });
+      console.error(`proof (2): live run pid ${process.pid} — killed ${result.killed}, profile kept ${existsSync(dir)}`);
+      expect(result).toEqual({ killed: 0, profilesRemoved: 0 });
+      expect(killed).toEqual([]);
+      expect(existsSync(dir)).toBe(true);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("an ownerless visible browser goes at 20 minutes and stays at 5", () => {
+    const root = mkdtempSync(join(tmpdir(), "jg-stray-age-"));
+    try {
+      const now = Date.now();
+      const young = profile(root, "jg-young-headed", undefined);
+      const old = profile(root, "jg-old-headed", undefined);
+      const command = (dir: string) => `chrome.exe --user-data-dir=${dir}`;
+      const processes = [
+        { pid: 5001, parentPid: DEAD_PID, startedAt: now - 5 * 60 * 1000, commandLine: command(young) },
+        { pid: 5002, parentPid: DEAD_PID, startedAt: now - 21 * 60 * 1000, commandLine: command(old) },
+      ];
+      const result = sweepStrayBrowsers(root, { now, processes });
+      console.error(`proof (3): no run record — killed ${result.killed} of 2 (21-minute window gone, 5-minute kept)`);
+      expect(result.killed).toBe(1);
+      expect(result.profilesRemoved).toBe(1);
+      expect(existsSync(young)).toBe(true);
+      expect(existsSync(old)).toBe(false);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("a headless browser is left for the profile sweep, so a warm daemon survives", () => {
+    const root = mkdtempSync(join(tmpdir(), "jg-stray-headless-"));
+    try {
+      const dir = profile(root, "jg-shoot-daemon-warm", undefined);
+      const result = sweepStrayBrowsers(root, {
+        processes: [
+          {
+            pid: 6001,
+            parentPid: DEAD_PID,
+            startedAt: Date.now() - 4 * 60 * 60 * 1000,
+            commandLine: `chrome.exe --user-data-dir=${dir} --headless=new`,
+          },
+        ],
+      });
+      expect(result.killed).toBe(0);
+      expect(existsSync(dir)).toBe(true);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("a capture start reports the kills and profile removals in one line", () => {
+    const root = mkdtempSync(join(tmpdir(), "jg-stray-line-"));
+    try {
+      const dir = profile(root, "jg-drive-orphan", DEAD_PID);
+      const reported: string[] = [];
+      const removed = sweepCaptureProfiles(root, {
+        freeBytes: 200 * 1024 ** 3,
+        processes: [{ pid: 7001, parentPid: 1, startedAt: Date.now(), commandLine: `chrome.exe --user-data-dir=${dir}` }],
+        log: (line) => reported.push(line),
+      });
+      console.error(`proof (4): one line — ${reported[0]}`);
+      expect(removed).toBe(1);
+      expect(reported).toHaveLength(1);
+      expect(reported[0]).toContain("killed 1 stray browser(s) whose run had died, removed 1 profile(s)");
+      expect(existsSync(dir)).toBe(false);
     } finally {
       rmSync(root, { recursive: true, force: true });
     }

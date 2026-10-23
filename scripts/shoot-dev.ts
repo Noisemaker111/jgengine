@@ -109,6 +109,8 @@ type Args = {
   connect?: number;
   keep: boolean;
   inspect: boolean;
+  /** Show a real window (off-screen) instead of headless Chrome. */
+  headed: boolean;
   help: boolean;
   timeoutMs: number;
   timeoutExplicit: boolean;
@@ -133,11 +135,17 @@ Persistent daemon (preferred for multi-shot loops):
 Manual warm loop:
   bun run shoot <game> --mode play --keep                       # cold boot, stays warm
   bun run shoot <game> --mode play --connect <port> --size half # cheap judge PNG
+
+  --headed opens a real Chrome window off-screen, for debugging a capture; every
+  run is headless unless you ask, and the window never lands on the desktop.
 `;
 
 /** Map the shared capture command line (packages/jgengine/src/templates/captureArgs.ts) onto shoot's options. */
 function parseArgs(argv: string[]): Args {
-  const parsed = parseCaptureArgs("shoot", argv, CAPTURE_FLAGS);
+  // `--headed` is parsed here, not in CAPTURE_FLAGS: the scaffold's shoot.mjs has no local window to
+  // show, so the flag stays engine-only instead of parsing there and doing nothing.
+  const headed = argv.includes("--headed");
+  const parsed = parseCaptureArgs("shoot", argv.filter((arg) => arg !== "--headed"), CAPTURE_FLAGS);
   const o = parsed.options;
   const str = (name: string): string | undefined => (typeof o[name] === "string" ? (o[name] as string) : undefined);
   const num = (name: string): number | undefined => (str(name) === undefined ? undefined : Number(str(name)));
@@ -171,6 +179,7 @@ function parseArgs(argv: string[]): Args {
     connect: num("connect"),
     keep: o.keep === true,
     inspect: o.inspect === true,
+    headed,
     help: parsed.help,
     timeoutMs: (num("timeout") ?? 60) * 1000,
     timeoutExplicit: str("timeout") !== undefined,
@@ -555,6 +564,7 @@ const exitCode = await withBrowserSession(
     attach: attachedDaemon,
     leaveWarm: args.keep || attachedDaemon,
     chromePrefix: "jg-shoot-",
+    headed: args.headed,
     hardDeadlineMs:
       args.site === undefined
         ? args.timeoutMs * Math.max(targets.length, 1) + 120_000
