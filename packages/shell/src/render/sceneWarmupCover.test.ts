@@ -33,7 +33,7 @@ describe("SceneWarmupCover", () => {
 
   test("names the work left for the background instead of hiding it", () => {
     const { markup } = render({ phase: "compiling", rounds: 1, programs: 20, planned: 40, deferred: 60, elapsedMs: 1_400 });
-    expect(markup).toContain("60 more prepare in the background");
+    expect(markup).toContain("60 more prepare after this");
     expect(markup).toContain("1.4s");
   });
 

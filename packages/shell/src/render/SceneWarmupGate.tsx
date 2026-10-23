@@ -81,7 +81,7 @@ export function SceneWarmupCover({ state }: { state: ShaderWarmupState }) {
           />
         </div>
         {state.deferred > 0 ? (
-          <span style={{ fontSize: 11, color: "#94a3b8" }}>{`${state.deferred} more prepare in the background`}</span>
+          <span style={{ fontSize: 11, color: "#94a3b8" }}>{`${state.deferred} more prepare after this`}</span>
         ) : null}
         {state.phase === "compiling" && state.elapsedMs >= 1_000 ? (
           <span style={{ fontSize: 11, color: "#64748b" }}>{`${(state.elapsedMs / 1000).toFixed(1)}s`}</span>
