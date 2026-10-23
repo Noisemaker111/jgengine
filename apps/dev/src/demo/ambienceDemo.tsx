@@ -36,11 +36,11 @@ const hum = {
   bus: "sfx",
   loop: true,
   positional: true,
-  falloff: { minDistance: 2, maxDistance: 40, curve: "inverse" as const },
+  falloff: { minDistance: 2, maxDistance: 60, curve: "linear" as const },
   synth: {
     voices: [
-      { kind: "tone" as const, freq: 55, duration: 2, gain: 0.5, wave: "sawtooth" as const, sustain: 2, attack: 0.01 },
-      { kind: "noise" as const, duration: 2, filterFreq: 700, filterType: "bandpass" as const, gain: 0.3, sustain: 2 },
+      { kind: "tone" as const, freq: 55, duration: 2, gain: 0.9, wave: "sawtooth" as const, sustain: 2, attack: 0.01 },
+      { kind: "noise" as const, duration: 2, filterFreq: 700, filterType: "bandpass" as const, gain: 0.5, sustain: 2 },
     ],
   },
 };
