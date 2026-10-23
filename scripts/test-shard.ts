@@ -7,6 +7,7 @@
 //
 //   bun scripts/test-shard.ts a
 //   bun scripts/test-shard.ts --check     # file counts per shard, no tests run
+//   bun scripts/test-shard.ts --print a   # this shard's file paths, one per line
 //
 // The names are the four letters in the ci.yml matrix, and the matrix is the only
 // shard fact that file holds: which files each letter runs lives here, so
@@ -113,6 +114,16 @@ function main(): void {
   if (argv.includes("--check")) {
     for (const line of counts(files, SHARDS)) console.log(line);
     console.log(`total: ${files.length} file(s)`);
+    return;
+  }
+
+  if (argv.includes("--print")) {
+    const name = argv.find((arg) => !arg.startsWith("--"));
+    if (name === undefined || !SHARDS.some((entry) => entry.name === name)) {
+      console.error(`test-shard: --print needs one of ${SHARDS.map((s) => s.name).join(", ")}`);
+      process.exit(1);
+    }
+    for (const file of assignShards(files, SHARDS).get(name)!) console.log(file);
     return;
   }
 
