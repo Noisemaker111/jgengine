@@ -172,13 +172,15 @@ export function createSceneSubsystem(d: SceneSubsystemDeps): SceneSubsystem {
   }
 
   // `moveToward` reads the same blocking colliders the player resolver does, so a chaser stops at the
-  // wall that stops the player rather than lerping through it.
+  // wall that stops the player rather than lerping through it. The obstacle index behind it rebuilds
+  // only when this version moves: an object placed, moved, rotated or re-collidered.
   const walkerReach = createObstacleReachCache();
   const solidSource: SolidObstacleSource = {
     solids: d.solids,
     list: () => objects.list(),
     inBox: (min, max) => objects.inBox(min, max),
     collidersOf: (instanceId) => objectCollidersOf(instanceId),
+    version: () => objects.version(),
   };
 
   const spatial = createSpatialApi({
@@ -197,6 +199,8 @@ export function createSceneSubsystem(d: SceneSubsystemDeps): SceneSubsystem {
           position,
           Math.abs(stepX) + DEFAULT_OBSTACLE_PLAYER_RADIUS,
           Math.abs(stepZ) + DEFAULT_OBSTACLE_PLAYER_RADIUS,
+          undefined,
+          walkerReach,
         ),
       ),
     ...(occluder !== undefined ? { occluder } : {}),
@@ -259,6 +263,7 @@ export function createSceneSubsystem(d: SceneSubsystemDeps): SceneSubsystem {
   }
 
   function reportObjectCollisionMesh(catalogId: string, mesh: CollisionMeshSource | null): boolean {
+    objects.markSpatialChange();
     if (mesh === null) {
       const existed = meshObjectByCatalogId.delete(catalogId);
       if (existed) signalNotify();
@@ -273,6 +278,7 @@ export function createSceneSubsystem(d: SceneSubsystemDeps): SceneSubsystem {
   }
 
   function reportObjectBounds(catalogId: string, bounds: MeasuredBounds | null): boolean {
+    objects.markSpatialChange();
     if (bounds === null) {
       const existed = measuredObjectByCatalogId.delete(catalogId);
       if (existed) signalNotify();
@@ -483,6 +489,7 @@ export function createSceneSubsystem(d: SceneSubsystemDeps): SceneSubsystem {
     setColliders(instanceId, colliders) {
       if (colliders === null) objectColliders.delete(instanceId);
       else objectColliders.set(instanceId, colliders);
+      objects.markSpatialChange();
       signalNotify();
     },
     collidersOf: objectCollidersOf,

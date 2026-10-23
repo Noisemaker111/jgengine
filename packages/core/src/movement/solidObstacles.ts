@@ -63,12 +63,38 @@ export interface SolidObstacleSource {
     max: EntityPosition,
   ): readonly { instanceId: string; position: EntityPosition; rotationY: number }[];
   collidersOf(instanceId: string): Parameters<typeof resolveColliders>[0] | null;
+  /**
+   * Bumps whenever membership, a position, a rotation or a collider set changes. A source that reports
+   * one is indexed once per version instead of re-resolving every object on every query.
+   */
+  version?(): number;
 }
 
-/** Mutable reach cache; one per source, invalidated by object count. */
+/** A placed object's blocking geometry, resolved once per index build and shared read-only by queries. */
+interface ObstacleGroup {
+  x: number;
+  y: number;
+  z: number;
+  obstacles: CollisionObstacle[];
+}
+
+/**
+ * Version-keyed obstacle index: object centre → its prebuilt obstacles, bucketed in coarse XZ cells so
+ * a city-scale movement box walks a few populated cells rather than every object in the world.
+ */
+interface ObstacleIndex {
+  cells: Map<number, ObstacleGroup[]>;
+  groups: ObstacleGroup[];
+}
+
+/** Mutable reach cache; one per source, invalidated by object count or by the source's version. */
 export interface ObstacleReachCache {
   count: number;
   value: ObstacleReach;
+  /** Version the value and index were built from; absent for a source that reports none. */
+  version?: number | undefined;
+  /** Built index, present only for a versioned source. */
+  index?: ObstacleIndex | undefined;
 }
 
 /** A fresh {@link ObstacleReachCache} for a caller that owns its own source. */
@@ -77,6 +103,7 @@ export function createObstacleReachCache(): ObstacleReachCache {
 }
 
 const reachCache = perContext(() => createObstacleReachCache());
+
 
 /**
  * Largest blocking reach in the scene, split into horizontal vs vertical and hard-capped. Cached per
@@ -90,30 +117,91 @@ export function solidObstacleReach(ctx: GameContext): ObstacleReach {
 
 /** {@link solidObstacleReach} against a bare source and caller-owned cache. */
 export function sourceObstacleReach(source: SolidObstacleSource, cache: ObstacleReachCache): ObstacleReach {
+  ensureSourceCache(source, cache);
+  return cache.value;
+}
+
+/** Coarse XZ cell for the obstacle index: a movement box spans tens of metres, so 1 m cells would be
+ * almost all empty lookups while a handful of these cover the whole query. */
+const INDEX_CELL_SIZE = 16;
+/** Beyond this many coarse cells a query walks the whole group list instead. */
+const INDEX_CELL_VOLUME_LIMIT = 4096;
+/** Two signed axis indices packed into one small-integer key (no string allocation, no boxing). */
+const INDEX_KEY_RADIX = 32768;
+const INDEX_KEY_BIAS = 16384;
+const INDEX_KEY_LIMIT = 16384;
+
+function indexCell(value: number): number {
+  return Math.floor(value / INDEX_CELL_SIZE);
+}
+
+function indexKey(cx: number, cz: number): number {
+  return (cx + INDEX_KEY_BIAS) * INDEX_KEY_RADIX + (cz + INDEX_KEY_BIAS);
+}
+
+/**
+ * Refresh `cache` for `source`: one scan resolves the broadphase reach and, when the source reports a
+ * version, every blocking object's obstacles into a coarse XZ index. A versioned source is scanned only
+ * when that version changes, so a per-frame query costs index lookups instead of a world scan.
+ */
+function ensureSourceCache(source: SolidObstacleSource, cache: ObstacleReachCache): void {
+  const version = source.version?.();
+  if (version !== undefined) {
+    if (cache.version === version && cache.index !== undefined) return;
+    cache.version = version;
+    cache.count = -1;
+    cache.index = undefined;
+    buildSourceCache(source, cache, source.list(), true);
+    return;
+  }
   const objects = source.list();
-  if (cache.count === objects.length) return cache.value;
+  if (cache.count === objects.length) return;
+  cache.count = objects.length;
+  cache.version = undefined;
+  cache.index = undefined;
+  buildSourceCache(source, cache, objects, false);
+}
+
+function buildSourceCache(
+  source: SolidObstacleSource,
+  cache: ObstacleReachCache,
+  objects: readonly { instanceId: string; position: EntityPosition; rotationY: number }[],
+  index: boolean,
+): void {
+  const groups: ObstacleGroup[] = index ? [] : EMPTY_GROUPS;
+  const cells = index ? new Map<number, ObstacleGroup[]>() : null;
   let horizontal = OBSTACLE_MAX_HALF_EXTENT;
   let vertical = OBSTACLE_VERTICAL_FLOOR;
   for (const object of objects) {
     const set = source.collidersOf(object.instanceId);
-    if (set === null) continue;
-    for (const collider of resolveColliders(set)) {
-      if (!collider.blocks || collider.purpose !== "physical") continue;
-      const shape = collider.shape;
-      const offset = shape.offset;
-      const ox = offset !== undefined ? Math.abs(offset[0]) : 0;
-      const oy = offset !== undefined ? Math.abs(offset[1]) : 0;
-      const oz = offset !== undefined ? Math.abs(offset[2]) : 0;
-      if (shape.kind === "sphere") {
-        horizontal = Math.max(horizontal, ox + oz + shape.radius);
-        vertical = Math.max(vertical, oy + shape.radius);
-      } else {
-        // Horizontal bound sums both axes so any yaw of the box stays covered.
-        const h = shape.halfExtents;
-        horizontal = Math.max(horizontal, ox + oz + h[0] + h[2]);
-        vertical = Math.max(vertical, oy + h[1]);
+    const obstacles: CollisionObstacle[] = [];
+    if (set === null) {
+      // No resolved collider: preserve the default 1×1×1 box.
+      if (index) obstacles.push({ position: object.position });
+    } else {
+      for (const collider of resolveColliders(set)) {
+        if (!collider.blocks || collider.purpose !== "physical") continue;
+        const reach = blockingReach(collider);
+        horizontal = Math.max(horizontal, reach[0]);
+        vertical = Math.max(vertical, reach[1]);
+        if (index) obstacles.push(obstacleFromCollider(collider, object.position, object.rotationY));
       }
     }
+    if (!index || obstacles.length === 0) continue;
+    const group: ObstacleGroup = {
+      x: object.position[0],
+      y: object.position[1],
+      z: object.position[2],
+      obstacles,
+    };
+    groups.push(group);
+    const cx = indexCell(group.x);
+    const cz = indexCell(group.z);
+    if (cx <= -INDEX_KEY_LIMIT || cx >= INDEX_KEY_LIMIT || cz <= -INDEX_KEY_LIMIT || cz >= INDEX_KEY_LIMIT) continue;
+    const key = indexKey(cx, cz);
+    const bucket = cells!.get(key);
+    if (bucket === undefined) cells!.set(key, [group]);
+    else bucket.push(group);
   }
   const value: ObstacleReach = {
     horizontal: Math.min(horizontal, OBSTACLE_HORIZONTAL_CAP),
@@ -121,7 +209,62 @@ export function sourceObstacleReach(source: SolidObstacleSource, cache: Obstacle
   };
   cache.count = objects.length;
   cache.value = value;
-  return value;
+  if (index) cache.index = { cells: cells!, groups };
+}
+
+const EMPTY_GROUPS: ObstacleGroup[] = [];
+
+/** A blocking collider's center-to-face reach, split so tower height cannot inflate the XZ query. */
+function blockingReach(collider: ResolvedCollider): [number, number] {
+  const shape = collider.shape;
+  const offset = shape.offset;
+  const ox = offset !== undefined ? Math.abs(offset[0]) : 0;
+  const oy = offset !== undefined ? Math.abs(offset[1]) : 0;
+  const oz = offset !== undefined ? Math.abs(offset[2]) : 0;
+  if (shape.kind === "sphere") return [ox + oz + shape.radius, oy + shape.radius];
+  // Horizontal bound sums both axes so any yaw of the box stays covered.
+  const h = shape.halfExtents;
+  return [ox + oz + h[0] + h[2], oy + h[1]];
+}
+
+/** Every indexed obstacle whose object centre lies inside `min`..`max` — the set the broadphase promises. */
+function indexedObstaclesNear(
+  index: ObstacleIndex,
+  min: EntityPosition,
+  max: EntityPosition,
+  out: CollisionObstacle[],
+): void {
+
+  const minCx = indexCell(min[0]);
+  const maxCx = indexCell(max[0]);
+  const minCz = indexCell(min[2]);
+  const maxCz = indexCell(max[2]);
+  const volume = Math.max(0, maxCx - minCx + 1) * Math.max(0, maxCz - minCz + 1);
+
+  if (
+    volume > INDEX_CELL_VOLUME_LIMIT ||
+    minCx <= -INDEX_KEY_LIMIT || maxCx >= INDEX_KEY_LIMIT ||
+    minCz <= -INDEX_KEY_LIMIT || maxCz >= INDEX_KEY_LIMIT
+  ) {
+    for (const group of index.groups) if (groupInBox(group, min, max)) pushGroup(group, out);
+    return;
+  }
+  for (let cx = minCx; cx <= maxCx; cx += 1) {
+    const rowBase = (cx + INDEX_KEY_BIAS) * INDEX_KEY_RADIX + minCz + INDEX_KEY_BIAS;
+    for (let cz = minCz; cz <= maxCz; cz += 1) {
+      const bucket = index.cells.get(rowBase + (cz - minCz));
+      if (bucket === undefined) continue;
+      for (const group of bucket) if (groupInBox(group, min, max)) pushGroup(group, out);
+    }
+  }
+}
+
+function groupInBox(group: ObstacleGroup, min: EntityPosition, max: EntityPosition): boolean {
+  return group.x >= min[0] && group.x <= max[0] && group.y >= min[1] && group.y <= max[1] && group.z >= min[2] && group.z <= max[2];
+}
+
+function pushGroup(group: ObstacleGroup, out: CollisionObstacle[]): void {
+  for (const obstacle of group.obstacles) out.push(obstacle);
 }
 
 /** Yaw-rotate an entity-local AABB about the object origin and re-fit it to an axis-aligned box, expressed
@@ -246,7 +389,15 @@ export function solidObstaclesNear(
   reachZ: number,
   height = WALKER_HEIGHT,
 ): CollisionObstacle[] {
-  const obstacles = sourceObstaclesNear(ctx.scene.object, solidObstacleReach(ctx), position, reachX, reachZ, height);
+  const obstacles = sourceObstaclesNear(
+    ctx.scene.object,
+    solidObstacleReach(ctx),
+    position,
+    reachX,
+    reachZ,
+    height,
+    reachCache(ctx),
+  );
   appendWorldSolidObstacles(obstacles, ctx.world.solids, position, reachX, reachZ, height);
   return obstacles;
 }
@@ -268,7 +419,11 @@ function appendWorldSolidObstacles(
   }
 }
 
-/** {@link solidObstaclesNear} against a bare source and an already-resolved reach. */
+/**
+ * {@link solidObstaclesNear} against a bare source and an already-resolved reach. Pass the source's
+ * {@link ObstacleReachCache} to use the version-keyed obstacle index; a source that reports no
+ * `version()` keeps the per-query `inBox` gather.
+ */
 export function sourceObstaclesNear(
   source: SolidObstacleSource,
   reach: ObstacleReach,
@@ -276,6 +431,7 @@ export function sourceObstaclesNear(
   reachX: number,
   reachZ: number,
   height = WALKER_HEIGHT,
+  cache?: ObstacleReachCache,
 ): CollisionObstacle[] {
   const min: EntityPosition = [
     position[0] - reachX - reach.horizontal,
@@ -288,6 +444,15 @@ export function sourceObstaclesNear(
     position[2] + reachZ + reach.horizontal,
   ];
   const obstacles: CollisionObstacle[] = [];
+  if (cache !== undefined && source.version !== undefined) {
+    ensureSourceCache(source, cache);
+    const index = cache.index;
+    if (index !== undefined) {
+      indexedObstaclesNear(index, min, max, obstacles);
+      appendWorldSolidObstacles(obstacles, source.solids, position, reachX, reachZ, height);
+      return obstacles;
+    }
+  }
   for (const object of source.inBox(min, max)) {
     const set = source.collidersOf(object.instanceId);
     if (set === null) {
@@ -309,8 +474,8 @@ export function sourceObstaclesNear(
  * X/Z it may actually take this tick. A step into a wall is cut on the blocked axis and preserved on the
  * other, exactly as {@link stepPlayerMovement} resolves the player's.
  *
- * Bounded by the same broadphase as the player's gather: one `inBox` query sized to this step, never a
- * full-world scan, so it stays affordable per NPC per tick.
+ * Bounded by the same broadphase as the player's gather: one query sized to this step, answered from the
+ * source's obstacle index, never a full-world scan, so it stays affordable per NPC per tick.
  *
  * The sliding is already axis-separated: X and Z are resolved independently inside, so a caller that
  * also splits its own movement by axis must hand this exactly one axis per call (`stepZ: 0`, then
@@ -359,6 +524,8 @@ export function resolveSourceWalkerStep(
     position,
     Math.abs(stepX) + radius,
     Math.abs(stepZ) + radius,
+    WALKER_HEIGHT,
+    cache,
   );
   return slideStep(position, stepX, stepZ, obstacles, radius, options.stepUpHeight ?? 0);
 }

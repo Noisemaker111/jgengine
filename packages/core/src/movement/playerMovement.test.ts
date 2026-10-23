@@ -1598,3 +1598,54 @@ describe("stance-dependent flight preflight", () => {
     }
   });
 });
+
+describe("the obstacle index sees world changes made during play", () => {
+  test("an object placed mid-walk stops the player, and removing it frees the path", () => {
+    const ctx = collisionContext(0);
+    // Warm the index on an empty street: the walk reaches the far side.
+    driveWith(ctx, "a", ["moveForward"], 40, COLLIDE, 0);
+    expect(ctx.scene.entity.get("a")!.position[2]).toBeGreaterThan(2);
+
+    const wall = ctx.scene.object.place("wall", 0, 0, 4);
+    ctx.scene.object.setColliders(wall, {
+      body: { name: "body", purpose: "physical", shape: { kind: "aabb", halfExtents: [3, 1.5, 0.5] } },
+    });
+    driveWith(ctx, "a", ["moveForward"], 90, COLLIDE, 0);
+    const blockedAt = ctx.scene.entity.get("a")!.position[2];
+    expect(blockedAt).toBeLessThan(3.5);
+
+    ctx.scene.object.remove(wall);
+    driveWith(ctx, "a", ["moveForward"], 90, COLLIDE, 0);
+    expect(ctx.scene.entity.get("a")!.position[2]).toBeGreaterThan(blockedAt + 1);
+  });
+
+  test("moving a blocking object moves the wall the player stops at", () => {
+    const ctx = collisionContext(0);
+    const wall = ctx.scene.object.place("wall", 0, 0, 3);
+    ctx.scene.object.setColliders(wall, {
+      body: { name: "body", purpose: "physical", shape: { kind: "aabb", halfExtents: [3, 1.5, 0.5] } },
+    });
+    driveWith(ctx, "a", ["moveForward"], 90, COLLIDE, 0);
+    const firstStop = ctx.scene.entity.get("a")!.position[2];
+    expect(firstStop).toBeLessThan(2.6);
+
+    ctx.scene.object.move(wall, 0, 0, 8);
+    driveWith(ctx, "a", ["moveForward"], 120, COLLIDE, 0);
+    expect(ctx.scene.entity.get("a")!.position[2]).toBeGreaterThan(firstStop + 2);
+  });
+
+  test("the same inputs walk the same path twice", () => {
+    const run = (): number[] => {
+      const ctx = collisionContext(0);
+      placeCrate(ctx, 1.2, 2, 1.6, 1.2);
+      placeCrate(ctx, -1.5, 4, 1.6, 1.2);
+      const trail: number[] = [];
+      for (let i = 0; i < 90; i += 1) {
+        stepPlayerMovement(ctx, "a", frame(i % 20 < 14 ? ["moveForward"] : ["moveRight", "moveForward"]), 1 / 60, COLLIDE, 0);
+        trail.push(...ctx.scene.entity.get("a")!.position);
+      }
+      return trail;
+    };
+    expect(run()).toEqual(run());
+  });
+});
