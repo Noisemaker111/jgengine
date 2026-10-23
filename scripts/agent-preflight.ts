@@ -159,6 +159,7 @@ const QUICK_CHECKS: readonly { name: string; args: readonly string[] }[] = [
   { name: "check-changelog", args: ["scripts/check-changelog.ts"] },
   { name: "check-test-spawn-timeouts", args: ["scripts/check-test-spawn-timeouts.ts"] },
   { name: "browser-test-budget", args: ["scripts/browser-test-budget.ts"] },
+  { name: "check:capture-hygiene", args: ["scripts/check-capture-hygiene.ts"] },
 ];
 
 function runCheck(args: readonly string[]): Promise<{ ok: boolean; output: string }> {
