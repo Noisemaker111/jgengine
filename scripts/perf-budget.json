@@ -1,59 +1,59 @@
 {
   "harbor-heat": {
-    "drawsFrame": 1885,
-    "previousDraws": 10420,
+    "drawsFrame": 1253,
+    "previousDraws": 1885,
     "triangles": 4405210,
-    "nodes": 15210,
-    "baseline": "2026-10-23 bun run perf:gate whole-frame p95 1,714 over 358 frames, GeForce RTX 3070 D3D11, 1600x900 full, pinned Games c746e3b; three runs read 1,714 / 1,690 / 1,680 and the budget is +10% over the highest. Previous budget 10,420 draws from a 9,469 baseline measured 2026-10-22 at Games c81aabc, before the batching work landed; triangles and nodes are unchanged from that measurement"
+    "nodes": 3146,
+    "baseline": "2026-10-23 bun run perf harbor-heat --seconds 6, whole-frame p95 as the gate compares it, GeForce RTX 3070 D3D11, 1600x900 full, engine 02162d4a at pinned Games dac3865e; three runs read drawsFrame 1,140 / 1,139 / 1,138, triangles 2,122,498 / 1,660,988 / 2,122,498, nodes 2,860 / 2,860 / 2,860. The draw ceiling is +10% over the highest of the three (1,140), rounded down, so a full 10% regression lands over it. The triangle ceiling stays where it was: a triangle count is one sample at snapshot time, not a window p95, and it moved far more than 10% between runs, so it is not ratcheted here. Previous draws 1,885 (itself from 10,420)."
   },
   "scrap-signal": {
-    "drawsFrame": 797,
-    "previousDraws": 820,
+    "drawsFrame": 534,
+    "previousDraws": 797,
     "triangles": 1992600,
-    "nodes": 8400,
+    "nodes": 7917,
     "programsLinked": 3,
-    "baseline": "2026-10-23 bun run perf:gate whole-frame p95 over six runs at pinned Games c746e3b, GeForce RTX 3070 D3D11, 1600x900 full: 408, 601 and 695-725, so the budget is +10% over the heaviest (725). This game's draw count tracks how much of its sim has spawned, not just the build, which is why the lower runs are not the baseline. Previous budget 820 draws from a 745 baseline measured 2026-10-22 at Games c81aabc; triangles, nodes and the 3-program ceiling are unchanged from that measurement"
+    "baseline": "2026-10-23 bun run perf scrap-signal --seconds 6, whole-frame p95 as the gate compares it, GeForce RTX 3070 D3D11, 1600x900 full, engine 02162d4a at pinned Games dac3865e; three runs read drawsFrame 486 / 486 / 486, triangles 1,079,901 / 985,527 / 985,527, nodes 7,198 / 7,198 / 7,198. The draw ceiling is +10% over the highest of the three (486), rounded down, so a full 10% regression lands over it. The triangle ceiling stays where it was: a triangle count is one sample at snapshot time, not a window p95, and it moved far more than 10% between runs, so it is not ratcheted here. Previous draws 797 (itself from 820)."
   },
   "brightway-park": {
     "drawsFrame": 1461,
     "previousDraws": 2970,
     "triangles": 123420,
     "nodes": 1580,
-    "baseline": "2026-10-23 bun run perf:gate whole-frame p95 1,329 over 361 frames, GeForce RTX 3070 D3D11, 1600x900 full, pinned Games c746e3b; three runs read 1,329 / 1,215 / 1,205 and the budget is +10% over the highest. Previous budget 2,970 draws from a 2,697 baseline measured 2026-10-22 at Games c81aabc; triangles and nodes are unchanged from that measurement"
+    "baseline": "2026-10-23 bun run perf brightway-park --seconds 6, whole-frame p95 as the gate compares it, GeForce RTX 3070 D3D11, 1600x900 full, engine 02162d4a at pinned Games dac3865e; three runs read drawsFrame 1,326 / 1,330 / 1,375, triangles 94,418 / 94,706 / 97,170, nodes 1,440 / 1,440 / 1,440. The draw ceiling stays at 1,461 because +10% over the highest run would be 1,512, so this game has no ratchet room left; the measured headroom is now 6.3%. The triangle ceiling stays where it was: a triangle count is one sample at snapshot time, not a window p95, and it moved far more than 10% between runs, so it is not ratcheted here. Nodes stay at 1,580: +10% would be 1,584. Previous draws 2,970."
   },
   "ember-command": {
     "drawsFrame": 1416,
     "previousDraws": 2260,
     "triangles": 591760,
-    "nodes": 1080,
-    "baseline": "2026-10-23 bun run perf:gate whole-frame p95 1,288, identical over three runs and 361 frames, GeForce RTX 3070 D3D11, 1600x900 full, pinned Games c746e3b; the budget is +10%. Previous budget 2,260 draws from a 2,051 baseline measured 2026-10-22 at Games c81aabc; triangles and nodes are unchanged from that measurement"
+    "nodes": 1075,
+    "baseline": "2026-10-23 bun run perf ember-command --seconds 6, whole-frame p95 as the gate compares it, GeForce RTX 3070 D3D11, 1600x900 full, engine 02162d4a at pinned Games dac3865e; three runs read drawsFrame 1,288 / 1,288 / 1,288, triangles 368,208 / 525,046 / 368,208, nodes 978 / 975 / 978. The draw ceiling stays at 1,416 because +10% over the highest run would be 1,416, so this game has no ratchet room left; the measured headroom is now 9.9%. The triangle ceiling stays where it was: a triangle count is one sample at snapshot time, not a window p95, and it moved far more than 10% between runs, so it is not ratcheted here. Previous draws 2,260."
   },
   "beacon-bastion": {
-    "drawsFrame": 903,
-    "previousDraws": 760,
+    "drawsFrame": 658,
+    "previousDraws": 903,
     "triangles": 4878000,
-    "nodes": 330,
-    "baseline": "2026-10-23 bun run perf:gate whole-frame p95 821, identical over three runs and 361 frames, GeForce RTX 3070 D3D11, 1600x900 full, pinned Games c746e3b; the budget is +10%. Triangles come from the pinned game's own budget (4,878,000 over 4,434,242 measured after D9.2 widened the default framing), because the engine copy's 3,718,390 predated that framing and a normal run now reaches 4,427,420. Previous draws budget 760 draws from a 684 baseline measured 2026-10-22 at Games c81aabc"
+    "nodes": 328,
+    "baseline": "2026-10-23 bun run perf beacon-bastion --seconds 6, whole-frame p95 as the gate compares it, GeForce RTX 3070 D3D11, 1600x900 full, engine 02162d4a at pinned Games dac3865e; three runs read drawsFrame 599 / 599 / 599, triangles 1,460,309 / 1,460,309 / 1,460,309, nodes 299 / 299 / 299. The draw ceiling is +10% over the highest of the three (599), rounded down, so a full 10% regression lands over it. The triangle ceiling stays where it was: a triangle count is one sample at snapshot time, not a window p95, and it moved far more than 10% between runs, so it is not ratcheted here. Previous draws 903 (itself from 760)."
   },
   "drift-foundry": {
-    "drawsFrame": 3938,
-    "previousDraws": 4710,
+    "drawsFrame": 2901,
+    "previousDraws": 3938,
     "triangles": 1801580,
-    "nodes": 4420,
-    "baseline": "2026-10-23 bun run perf:gate whole-frame p95 3,580, identical over three runs, GeForce RTX 3070 D3D11, 1600x900 full, pinned Games c746e3b; the budget is +10%. Previous budget 4,710 draws from a 4,280 baseline measured 2026-10-22 at Games c81aabc; triangles and nodes are unchanged from that measurement"
+    "nodes": 4276,
+    "baseline": "2026-10-23 bun run perf drift-foundry --seconds 6, whole-frame p95 as the gate compares it, GeForce RTX 3070 D3D11, 1600x900 full, engine 02162d4a at pinned Games dac3865e; three runs read drawsFrame 2,634 / 2,638 / 2,636, triangles 590,443 / 591,757 / 591,515, nodes 3,888 / 3,888 / 3,888. The draw ceiling is +10% over the highest of the three (2,638), rounded down, so a full 10% regression lands over it. The triangle ceiling stays where it was: a triangle count is one sample at snapshot time, not a window p95, and it moved far more than 10% between runs, so it is not ratcheted here. Previous draws 3,938 (itself from 4,710)."
   },
   "odd-orbit": {
-    "drawsFrame": 486,
-    "previousDraws": 640,
+    "drawsFrame": 401,
+    "previousDraws": 486,
     "triangles": 750190,
-    "nodes": 330,
-    "baseline": "2026-10-23 bun run perf:gate whole-frame p95 442, identical over three runs and 361 frames, GeForce RTX 3070 D3D11, 1600x900 full, pinned Games c746e3b; the budget is +10%. Previous budget 640 draws from a 574 baseline measured 2026-10-22 at Games c81aabc; triangles and nodes are unchanged from that measurement"
+    "nodes": 253,
+    "baseline": "2026-10-23 bun run perf odd-orbit --seconds 6, whole-frame p95 as the gate compares it, GeForce RTX 3070 D3D11, 1600x900 full, engine 02162d4a at pinned Games dac3865e; three runs read drawsFrame 365 / 365 / 365, triangles 333,441 / 333,441 / 404,593, nodes 230 / 230 / 230. The draw ceiling is +10% over the highest of the three (365), rounded down, so a full 10% regression lands over it. The triangle ceiling stays where it was: a triangle count is one sample at snapshot time, not a window p95, and it moved far more than 10% between runs, so it is not ratcheted here. Previous draws 486 (itself from 640)."
   },
   "deepward": {
-    "drawsFrame": 85,
-    "previousDraws": 90,
+    "drawsFrame": 56,
+    "previousDraws": 85,
     "triangles": 56100,
-    "nodes": 170,
-    "baseline": "2026-10-23 bun run perf:gate whole-frame p95 78, identical over three runs and 361 frames, GeForce RTX 3070 D3D11, 1600x900 full, pinned Games c746e3b; the budget is +10%. Previous budget 90 draws from a 78 baseline measured 2026-10-22 at Games c81aabc; triangles and nodes are unchanged from that measurement"
+    "nodes": 160,
+    "baseline": "2026-10-23 bun run perf deepward --seconds 6, whole-frame p95 as the gate compares it, GeForce RTX 3070 D3D11, 1600x900 full, engine 02162d4a at pinned Games dac3865e; three runs read drawsFrame 51 / 51 / 51, triangles 25,516 / 25,516 / 25,516, nodes 146 / 146 / 146. The draw ceiling is +10% over the highest of the three (51), rounded down, so a full 10% regression lands over it. The triangle ceiling stays where it was: a triangle count is one sample at snapshot time, not a window p95, and it moved far more than 10% between runs, so it is not ratcheted here. Previous draws 85 (itself from 90)."
   }
 }
