@@ -10,6 +10,8 @@
 // asking costs a second and can be repeated whenever there is something else to
 // do in between. Nothing here polls, sleeps or waits for a run to finish.
 //
+// `lane:close` calls this once, after landing, for a lane's closing report.
+//
 // It answers or it says why it cannot: no open PR for a branch, no checks on the
 // PR yet, or gh unreadable all exit non-zero with the reason named, because an
 // empty green-looking table is the one answer that must never be printed.
