@@ -213,29 +213,39 @@ describe("SettingsSection gamepad rows", () => {
   };
   const armed = () =>
     page.evaluate(() => document.querySelector('[data-settings-keybind="jump"]')?.hasAttribute("data-armed") === true);
+  // Record every value the row shows. A 20 ms poll missed the whole 0.50 -> 0.60 step when the
+  // machine was busy, so `steps[0]` read as undefined; a mutation observer cannot miss it.
+  const sampleVolume = () =>
+    page.evaluate(() => {
+      const target = document.getElementById("volume")!;
+      const steps: string[] = [];
+      let last = target.textContent;
+      const observer = new MutationObserver(() => {
+        const now = target.textContent;
+        if (now !== last) {
+          steps.push(now);
+          last = now;
+        }
+      });
+      observer.observe(target, { childList: true, characterData: true, subtree: true });
+      (window as any).steps = steps;
+      (window as any).sampler = observer;
+    });
+  const stopSampling = () =>
+    page.evaluate(() => {
+      (window as any).sampler?.disconnect();
+      return (window as any).steps as string[];
+    });
 
   test("opens on the first row and one d-pad press steps its value by the row's step", async () => {
     await focusRow("row:volume");
-    await page.evaluate(() => {
-      (window as any).steps = [];
-      let last = document.getElementById("volume")?.textContent;
-      (window as any).sampler = setInterval(() => {
-        const now = document.getElementById("volume")?.textContent;
-        if (now !== last) {
-          (window as any).steps.push(now);
-          last = now;
-        }
-      }, 20);
-    });
+    await sampleVolume();
     await press([15]);
     await page.waitForFunction(() => Number(document.getElementById("volume")?.textContent) > 0.5, undefined, {
       polling: 25,
       timeout: 4000,
     });
-    const steps = await page.evaluate(() => {
-      clearInterval((window as any).sampler);
-      return (window as any).steps as string[];
-    });
+    const steps = await stopSampling();
     await release();
     expect(steps[0]).toBe("0.60");
   }, 20_000);
@@ -269,26 +279,13 @@ describe("SettingsSection gamepad rows", () => {
 
   test("a held d-pad direction repeats instead of stepping once", async () => {
     await focusRow("row:volume");
-    await page.evaluate(() => {
-      (window as any).steps = [];
-      let last = document.getElementById("volume")?.textContent;
-      (window as any).sampler = setInterval(() => {
-        const now = document.getElementById("volume")?.textContent;
-        if (now !== last) {
-          (window as any).steps.push(now);
-          last = now;
-        }
-      }, 20);
-    });
+    await sampleVolume();
     await press([15]);
     await page.waitForFunction(() => Number(document.getElementById("volume")?.textContent) >= 0.8, undefined, {
       polling: 50,
       timeout: 4000,
     });
-    const steps = await page.evaluate(() => {
-      clearInterval((window as any).sampler);
-      return (window as any).steps as string[];
-    });
+    const steps = await stopSampling();
     await release();
     // One press steps once; a repeat shows several values in a row while the direction stays held.
     expect(steps.length).toBeGreaterThanOrEqual(3);
