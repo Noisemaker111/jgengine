@@ -75,6 +75,10 @@ export interface ObjectStore {
   ids(): readonly string[];
   at(x: number, y: number, z: number, tolerance?: number): SceneObject[];
   inBox(min: EntityPosition, max: EntityPosition): readonly SceneObject[];
+  /** Bumps whenever membership, a position or a rotation changes — cheap cache key for consumers. */
+  version(): number;
+  /** Bump {@link version} for a change the store cannot see, such as a consumer-owned collider set. */
+  markSpatialChange(): void;
   clear(): void;
   subscribe(listener: () => void): () => void;
   /** Notified only when the object set changes (place/remove), never on move/rotate/setVisual — markers read live poses imperatively. */
@@ -87,15 +91,37 @@ export interface ObjectStore {
 const CELL_SIZE = 1;
 
 /**
- * When an `inBox` query spans more than this many 1 m cells, walk the object list instead of the
- * cell grid. Tall/wide colliders (city buildings) can inflate movement broadphase to hundreds of
- * metres on each axis — at 1 m cells that is O(10⁶) empty `Map.get`s per frame and freezes `pose`.
- * Linear scan over a few hundred objects is cheaper the moment the cell volume exceeds the scene.
+ * Queries above this many 1 m cells walk the coarse grid instead. A 1 m cell lookup hashes a fresh
+ * string while an object test is a few comparisons, so the crossover is tens of cells — not the
+ * thousands a "scan every object instead" comparison implied. A city movement box is hundreds.
  */
-const IN_BOX_CELL_VOLUME_LIMIT = 4096;
+const IN_BOX_CELL_VOLUME_LIMIT = 32;
+
+/**
+ * Second index level for those big queries: coarse XZ columns hold the same centre points as the 1 m
+ * grid, so a city-scale box walks a few populated columns instead of every object in the world.
+ * Beyond {@link COARSE_CELL_VOLUME_LIMIT} (a world-sized query) a list walk is cheaper.
+ */
+const COARSE_CELL_SIZE = 16;
+const COARSE_CELL_VOLUME_LIMIT = 4096;
+/**
+ * Two signed coarse axes packed into one small-integer key (no string allocation, no heap-number
+ * hash): ±16384 cells covers ±262 km at 16 m and the key stays inside a 32-bit SMI.
+ */
+const COARSE_KEY_RADIX = 32768;
+const COARSE_KEY_BIAS = 16384;
+const COARSE_KEY_LIMIT = 16384;
 
 function cellIndexOf(value: number): number {
   return Math.floor(value / CELL_SIZE);
+}
+
+function coarseIndexOf(value: number): number {
+  return Math.floor(value / COARSE_CELL_SIZE);
+}
+
+function coarseKey(cx: number, cz: number): number {
+  return (cx + COARSE_KEY_BIAS) * COARSE_KEY_RADIX + (cz + COARSE_KEY_BIAS);
 }
 
 function cellKey(cx: number, cy: number, cz: number): string {
@@ -106,6 +132,7 @@ function cellKeyOf(position: EntityPosition): string {
   return cellKey(cellIndexOf(position[0]), cellIndexOf(position[1]), cellIndexOf(position[2]));
 }
 
+
 function objectInAabb(object: SceneObject, min: EntityPosition, max: EntityPosition): boolean {
   const [x, y, z] = object.position;
   return x >= min[0] && x <= max[0] && y >= min[1] && y <= max[1] && z >= min[2] && z <= max[2];
@@ -114,7 +141,9 @@ function objectInAabb(object: SceneObject, min: EntityPosition, max: EntityPosit
 export function createObjectStore(): ObjectStore {
   const store = createObservableKeyedStore<SceneObject>();
   const cellIndex = new Map<string, Set<string>>();
+  const coarseIndex = new Map<number, Set<string>>();
   let nextCounter = 1;
+  let revision = 0;
 
   function generateId(): string {
     let id = `object-${nextCounter}`;
@@ -126,6 +155,30 @@ export function createObjectStore(): ObjectStore {
     return id;
   }
 
+  function coarseAdd(instanceId: string, position: EntityPosition): void {
+    const cx = coarseIndexOf(position[0]);
+    const cz = coarseIndexOf(position[2]);
+    if (cx <= -COARSE_KEY_LIMIT || cx >= COARSE_KEY_LIMIT || cz <= -COARSE_KEY_LIMIT || cz >= COARSE_KEY_LIMIT) return;
+    const key = coarseKey(cx, cz);
+    let bucket = coarseIndex.get(key);
+    if (bucket === undefined) {
+      bucket = new Set();
+      coarseIndex.set(key, bucket);
+    }
+    bucket.add(instanceId);
+  }
+
+  function coarseRemove(instanceId: string, position: EntityPosition): void {
+    const cx = coarseIndexOf(position[0]);
+    const cz = coarseIndexOf(position[2]);
+    if (cx <= -COARSE_KEY_LIMIT || cx >= COARSE_KEY_LIMIT || cz <= -COARSE_KEY_LIMIT || cz >= COARSE_KEY_LIMIT) return;
+    const key = coarseKey(cx, cz);
+    const bucket = coarseIndex.get(key);
+    if (bucket === undefined) return;
+    bucket.delete(instanceId);
+    if (bucket.size === 0) coarseIndex.delete(key);
+  }
+
   function indexAdd(instanceId: string, position: EntityPosition): void {
     const key = cellKeyOf(position);
     let bucket = cellIndex.get(key);
@@ -134,14 +187,17 @@ export function createObjectStore(): ObjectStore {
       cellIndex.set(key, bucket);
     }
     bucket.add(instanceId);
+    coarseAdd(instanceId, position);
   }
 
   function indexRemove(instanceId: string, position: EntityPosition): void {
     const key = cellKeyOf(position);
     const bucket = cellIndex.get(key);
-    if (bucket === undefined) return;
-    bucket.delete(instanceId);
-    if (bucket.size === 0) cellIndex.delete(key);
+    if (bucket !== undefined) {
+      bucket.delete(instanceId);
+      if (bucket.size === 0) cellIndex.delete(key);
+    }
+    coarseRemove(instanceId, position);
   }
 
   return {
@@ -167,6 +223,7 @@ export function createObjectStore(): ObjectStore {
         ...(options.slots !== undefined ? { slots: options.slots } : {}),
       });
       indexAdd(instanceId, position);
+      revision += 1;
       return instanceId;
     },
     remove(instanceId) {
@@ -174,6 +231,7 @@ export function createObjectStore(): ObjectStore {
       if (!current) return false;
       store.delete(instanceId);
       indexRemove(instanceId, current.position);
+      revision += 1;
       return true;
     },
     move(instanceId, x, y, z) {
@@ -183,12 +241,14 @@ export function createObjectStore(): ObjectStore {
       store.set(instanceId, { ...current, position });
       indexRemove(instanceId, current.position);
       indexAdd(instanceId, position);
+      revision += 1;
       return true;
     },
     rotate(instanceId, rotationY) {
       const current = store.get(instanceId);
       if (!current) return false;
       store.set(instanceId, { ...current, rotationY });
+      revision += 1;
       return true;
     },
     setVisual(instanceId, visual) {
@@ -272,12 +332,37 @@ export function createObjectStore(): ObjectStore {
       const cellsY = Math.max(0, maxCy - minCy + 1);
       const cellsZ = Math.max(0, maxCz - minCz + 1);
       const cellVolume = cellsX * cellsY * cellsZ;
-      // Huge queries (city-scale movement broadphase inflated by tall building colliders): scanning
-      // every empty 1 m cell is far more expensive than testing the few hundred placed objects.
+      // Huge queries (city-scale movement broadphase inflated by tall building colliders): walking
+      // every 1 m cell is all empty lookups, so walk the coarse grid instead.
       if (cellVolume > IN_BOX_CELL_VOLUME_LIMIT) {
+        const coarseMinX = coarseIndexOf(min[0]);
+        const coarseMaxX = coarseIndexOf(max[0]);
+        const coarseMinZ = coarseIndexOf(min[2]);
+        const coarseMaxZ = coarseIndexOf(max[2]);
+        const coarseVolume = Math.max(0, coarseMaxX - coarseMinX + 1) * Math.max(0, coarseMaxZ - coarseMinZ + 1);
+        if (
+          coarseVolume > COARSE_CELL_VOLUME_LIMIT ||
+          coarseMinX <= -COARSE_KEY_LIMIT || coarseMaxX >= COARSE_KEY_LIMIT ||
+          coarseMinZ <= -COARSE_KEY_LIMIT || coarseMaxZ >= COARSE_KEY_LIMIT
+        ) {
+          const hits: SceneObject[] = [];
+          for (const object of store.arraySnapshot()) {
+            if (objectInAabb(object, min, max)) hits.push(object);
+          }
+          return hits;
+        }
         const hits: SceneObject[] = [];
-        for (const object of store.arraySnapshot()) {
-          if (objectInAabb(object, min, max)) hits.push(object);
+        for (let cx = coarseMinX; cx <= coarseMaxX; cx += 1) {
+          const rowBase = (cx + COARSE_KEY_BIAS) * COARSE_KEY_RADIX + coarseMinZ + COARSE_KEY_BIAS;
+          for (let cz = coarseMinZ; cz <= coarseMaxZ; cz += 1) {
+            const bucket = coarseIndex.get(rowBase + (cz - coarseMinZ));
+            if (bucket === undefined) continue;
+            for (const instanceId of bucket) {
+              const object = store.get(instanceId);
+              if (object === undefined) continue;
+              if (objectInAabb(object, min, max)) hits.push(object);
+            }
+          }
         }
         return hits;
       }
@@ -302,6 +387,8 @@ export function createObjectStore(): ObjectStore {
         store.delete(object.instanceId);
       }
       cellIndex.clear();
+      coarseIndex.clear();
+      revision += 1;
     },
     subscribe(listener) {
       return store.subscribe(listener);
@@ -311,6 +398,12 @@ export function createObjectStore(): ObjectStore {
     },
     snapshot() {
       return store.arraySnapshot();
+    },
+    version() {
+      return revision;
+    },
+    markSpatialChange() {
+      revision += 1;
     },
     hydrate(objects) {
       const incoming = new Set(objects.map((object) => object.instanceId));
@@ -326,6 +419,7 @@ export function createObjectStore(): ObjectStore {
         store.set(object.instanceId, object);
         indexAdd(object.instanceId, object.position);
       }
+      revision += 1;
     },
   };
 }

@@ -137,6 +137,59 @@ describe("scene object store", () => {
     expect(hits).not.toContain("far");
   });
 
+  test("inBox on a coarse-grid volume returns exactly the objects a full scan finds", () => {
+    const store = createObjectStore();
+    let seed = 7;
+    const next = (): number => {
+      seed = (seed * 1103515245 + 12345) % 2147483648;
+      return seed / 2147483648;
+    };
+    const placed = Array.from({ length: 120 }, (_, index) => ({
+      id: store.place("crate", next() * 160 - 20, next() * 12 - 2, next() * 160 - 20),
+      index,
+    }));
+    // Boxes well past the 32-cell threshold, including one that spans the whole world (list fallback).
+    for (const [lo, hi] of [
+      [[0, -2, 0], [30, 10, 30]],
+      [[-20, -4, -20], [140, 12, 140]],
+      [[-1000, -1000, -1000], [1000, 1000, 1000]],
+    ] as const) {
+      const expected = store
+        .snapshot()
+        .filter((o) => o.position.every((value, axis) => value >= lo[axis]! && value <= hi[axis]!))
+        .map((o) => o.instanceId)
+        .sort();
+      expect(store.inBox([...lo], [...hi]).map((o) => o.instanceId).sort()).toEqual(expected);
+    }
+    expect(placed).toHaveLength(120);
+  });
+
+  test("version moves on every change a spatial cache depends on", () => {
+    const store = createObjectStore();
+    const start = store.version();
+    const id = store.place("crate", 0, 0, 0);
+    const afterPlace = store.version();
+    expect(afterPlace).not.toBe(start);
+    store.move(id, 4, 0, 0);
+    const afterMove = store.version();
+    expect(afterMove).not.toBe(afterPlace);
+    store.rotate(id, Math.PI / 2);
+    const afterRotate = store.version();
+    expect(afterRotate).not.toBe(afterMove);
+    // State and visuals never move collision geometry, so they leave the cache key alone.
+    store.setState(id, { open: true });
+    store.setVisual(id, { color: "#fff" });
+    expect(store.version()).toBe(afterRotate);
+    store.remove(id);
+    const afterRemove = store.version();
+    expect(afterRemove).not.toBe(afterRotate);
+    store.hydrate([{ instanceId: "kept", catalogId: "crate", position: [1, 0, 1], rotationY: 0 }]);
+    expect(store.version()).not.toBe(afterRemove);
+    const afterHydrate = store.version();
+    store.clear();
+    expect(store.version()).not.toBe(afterHydrate);
+  });
+
   test("subscribe fires once per mutation and snapshot is referentially stable", () => {
     const store = createObjectStore();
     let notified = 0;

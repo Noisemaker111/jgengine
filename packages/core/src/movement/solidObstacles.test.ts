@@ -27,6 +27,23 @@ function sourceOf(objects: readonly SourceObject[]): SolidObstacleSource {
   };
 }
 
+/**
+ * The scene's own shape: a mutable object list plus a version that moves whenever membership, a
+ * position or a rotation changes. This is what makes the obstacle index legal to reuse.
+ */
+function versionedSourceOf(objects: SourceObject[]): SolidObstacleSource & { bump: () => void } {
+  let version = 0;
+  const base = sourceOf(objects);
+  return {
+    ...base,
+    list: () => objects,
+    version: () => version,
+    bump: () => {
+      version += 1;
+    },
+  };
+}
+
 test("a step into a wall is cut on the blocked axis and preserved on the other", () => {
   const source = sourceOf([{ instanceId: "wall", position: [2, 0, 0], rotationY: 0 }]);
   const step = resolveSourceWalkerStep(
@@ -92,4 +109,85 @@ test("the reach cache is reused across steps and refreshed when the source grows
   objects.push({ instanceId: "wall_2", position: [-2, 0, 0], rotationY: 0 });
   resolveSourceWalkerStep(source, cache, [0, 0, 0], 0.1, 0);
   expect(cache.count).toBe(2);
+});
+
+test("a versioned source is indexed once and a step costs no source scan", () => {
+  const objects: SourceObject[] = [{ instanceId: "wall", position: [2, 0, 0], rotationY: 0 }];
+  let listCalls = 0;
+  const versioned = versionedSourceOf(objects);
+  const source: SolidObstacleSource = {
+    ...versioned,
+    list: () => {
+      listCalls += 1;
+      return objects;
+    },
+  };
+  const cache = createObstacleReachCache();
+  for (let step = 0; step < 25; step += 1) {
+    resolveSourceWalkerStep(source, cache, [0, 0, 0], 0.1, 0);
+  }
+  expect(listCalls).toBe(1);
+});
+
+test("an obstacle added this tick blocks the step, and one removed this tick frees it", () => {
+  const objects: SourceObject[] = [];
+  const source = versionedSourceOf(objects);
+  const cache = createObstacleReachCache();
+  // Warm the index on an empty world; the step must be free.
+  expect(resolveSourceWalkerStep(source, cache, [0, 0, 0], 2, 0)).toEqual({ stepX: 2, stepZ: 0 });
+
+  objects.push({ instanceId: "wall", position: [2, 0, 0], rotationY: 0 });
+  source.bump();
+  expect(resolveSourceWalkerStep(source, cache, [0, 0, 0], 2, 0).stepX).toBeLessThan(2);
+
+  objects.length = 0;
+  source.bump();
+  expect(resolveSourceWalkerStep(source, cache, [0, 0, 0], 2, 0)).toEqual({ stepX: 2, stepZ: 0 });
+});
+
+test("a moved or rotated obstacle is seen without rebuilding the whole reach by hand", () => {
+  const objects: SourceObject[] = [{ instanceId: "wall", position: [10, 0, 0], rotationY: 0 }];
+  const source = versionedSourceOf(objects);
+  const cache = createObstacleReachCache();
+  expect(resolveSourceWalkerStep(source, cache, [0, 0, 0], 2, 0)).toEqual({ stepX: 2, stepZ: 0 });
+
+  objects[0] = { instanceId: "wall", position: [2, 0, 0], rotationY: 0 };
+  source.bump();
+  expect(resolveSourceWalkerStep(source, cache, [0, 0, 0], 2, 0).stepX).toBeLessThan(2);
+});
+
+test("the indexed path takes the same steps as the per-query gather for the same world", () => {
+  let seed = 19;
+  const random = (): number => {
+    seed = (seed * 1103515245 + 12345) % 2147483648;
+    return seed / 2147483648;
+  };
+  const objects: SourceObject[] = Array.from({ length: 60 }, (_, index) => ({
+    instanceId: `solid-${index}`,
+    position: [random() * 40 - 20, 0, random() * 40 - 20] as EntityPosition,
+    rotationY: random() < 0.5 ? 0 : random() * Math.PI,
+  }));
+  const indexed = versionedSourceOf(objects);
+  const plain = sourceOf(objects);
+  const indexedCache = createObstacleReachCache();
+  const plainCache = createObstacleReachCache();
+
+  const path = (source: SolidObstacleSource, cache: ReturnType<typeof createObstacleReachCache>) => {
+    const trail: number[][] = [];
+    let blocked = false;
+    let position: EntityPosition = [0, 0, 0];
+    for (let frame = 0; frame < 240; frame += 1) {
+      const stepX = Math.cos(frame / 24) * 0.25;
+      const stepZ = Math.sin(frame / 24) * 0.25;
+      const step = resolveSourceWalkerStep(source, cache, position, stepX, stepZ);
+      if (step.stepX !== stepX || step.stepZ !== stepZ) blocked = true;
+      position = [position[0] + step.stepX, position[1], position[2] + step.stepZ];
+      trail.push([...position]);
+    }
+    // A trail nothing ever blocked would prove nothing about ordering inside the resolver.
+    expect(blocked).toBe(true);
+    return trail;
+  };
+
+  expect(path(indexed, indexedCache)).toEqual(path(plain, plainCache));
 });
