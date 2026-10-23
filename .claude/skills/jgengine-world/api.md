@@ -1001,7 +1001,7 @@
 ## @jgengine/core/movement/solidObstacles
 
 - `ObstacleReach` (interface): interface ObstacleReach — Largest blocking-collider extent in the scene, split so tower height cannot inflate the XZ query.
-- `ObstacleReachCache` (interface): interface ObstacleReachCache — Mutable reach cache; one per source, invalidated by object count.
+- `ObstacleReachCache` (interface): interface ObstacleReachCache — Mutable reach cache; one per source, invalidated by object count or by the source's version.
 - `SolidObstacleSource` (interface): interface SolidObstacleSource — The slice of the scene's object store this query needs. Narrow on purpose: the scene context wires its own store here while it is still being constructed, `ctx.scene.object` satisfies it as-is, and a pure rules package with no `GameContext` to import can satisfy it from its own object list.
 - `createObstacleReachCache` (function): function createObstacleReachCache(): ObstacleReachCache — A fresh {@link ObstacleReachCache} for a caller that owns its own source.
 - `obstacleFromSolid` (function): function obstacleFromSolid(solid: WorldSolid): CollisionObstacle — A {@link WorldSolid} as a {@link CollisionObstacle}. Axis-aligned solids are one box; a yawed solid is cut into strips along its long axis, each fitted with an AABB, so a turned building does not block the street beside it the way a single enclosing box would.
@@ -1010,7 +1010,7 @@
 - `slideStep` (function): function slideStep(position: EntityPosition, stepX: number, stepZ: number, obstacles: readonly CollisionObstacle[], radius = DEFAULT_OBSTACLE_PLAYER_RADIUS, stepUpHeight = 0): { stepX: number; stepZ: number } — {@link resolveWalkerStep} against an already-gathered obstacle set.
 - `solidObstaclesNear` (function): function solidObstaclesNear(ctx: GameContext, position: EntityPosition, reachX: number, reachZ: number, height = WALKER_HEIGHT): CollisionObstacle[] — Every blocking physical obstacle overlapping the box `position` ± `reachX`/`reachZ`, read from the scene's resolved colliders and `ctx.world.solids`.
 - `sourceObstacleReach` (function): function sourceObstacleReach(source: SolidObstacleSource, cache: ObstacleReachCache): ObstacleReach — {@link solidObstacleReach} against a bare source and caller-owned cache.
-- `sourceObstaclesNear` (function): function sourceObstaclesNear(source: SolidObstacleSource, reach: ObstacleReach, position: EntityPosition, reachX: number, reachZ: number, height = WALKER_HEIGHT): CollisionObstacle[] — {@link solidObstaclesNear} against a bare source and an already-resolved reach.
+- `sourceObstaclesNear` (function): function sourceObstaclesNear(source: SolidObstacleSource, reach: ObstacleReach, position: EntityPosition, reachX: number, reachZ: number, height = WALKER_HEIGHT, cache?: ObstacleReachCache): CollisionObstacle[] — {@link solidObstaclesNear} against a bare source and an already-resolved reach. Pass the source's {@link ObstacleReachCache} to use the version-keyed obstacle index; a source that reports no `version()` keeps the per-query `inBox` gather.
 
 ## @jgengine/core/movement/steering
 
