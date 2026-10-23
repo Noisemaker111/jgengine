@@ -752,6 +752,8 @@
     "./hudChromePreview",
     "./hudFrame",
     "./hudInteract",
+    "./hudLanes",
+    "./hudLanesPreview",
     "./hudLayout",
     "./hudLayoutPersist",
     "./hudPanel",

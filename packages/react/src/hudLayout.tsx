@@ -1,5 +1,6 @@
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -20,6 +21,7 @@ import {
   registerActiveHudLayout,
   type HudAnchor,
   type HudLayoutStore,
+  type HudRect,
   type HudSize,
 } from "@jgengine/core/ui/hudLayout";
 import {
@@ -41,6 +43,7 @@ import { useDisplayProfile } from "./display";
 import { useEngineState } from "./engineStore";
 import { useGameLayoutMode, useRegisterLayoutRegion } from "./gameViewport";
 import { useOptionalGamePhase } from "./hooks";
+import { formatHudOverlapReport, hudBlockOverlaps, resolveHudLanes, type HudLaneSlot } from "./hudLanes";
 import { useHudLayoutPersist } from "./hudLayoutPersist";
 import { useHudViewport } from "./hudViewport";
 import { hudFont, hudType } from "./hudTokens";
@@ -70,12 +73,17 @@ const WINDOW_ATTR = "data-hud-window";
 /**
  * Dev-only, prod-safe. The on-screen boundary overlay must never reach players,
  * so anything we cannot positively identify as a dev build resolves to `false`.
+ *
+ * `import.meta.env.DEV` is read as a literal member chain because Vite replaces
+ * exactly those words at transform time; reading `env` off a cast `import.meta`
+ * survives to the browser as `undefined` and every dev-only report stays dark.
  */
 function isDevBuild(): boolean {
   try {
-    const meta = import.meta as unknown as { env?: { DEV?: boolean; PROD?: boolean } };
-    if (meta.env?.DEV === true) return true;
-    if (meta.env?.PROD === true) return false;
+    // @ts-expect-error -- `vite/client` types are not part of this package's tsconfig
+    if (import.meta.env.DEV === true) return true;
+    // @ts-expect-error -- `vite/client` types are not part of this package's tsconfig
+    if (import.meta.env.PROD === true) return false;
   } catch {
     /* import.meta.env unavailable under this bundler */
   }
@@ -154,6 +162,21 @@ export type HudCompactMode = "keep" | "chip" | "hide";
 export interface HudEditChord {
   hold: string;
   press: string;
+}
+
+/**
+ * The nearest ancestor that actually has a box. `HudThemeRoot` is
+ * `display: contents`, so `canvas.parentElement` can be a layout-free element
+ * whose rect is 0x0 — measuring it would silently disable every check below.
+ */
+function measurableHost(canvas: HTMLElement): HTMLElement {
+  let element = canvas.parentElement;
+  while (element !== null) {
+    const rect = element.getBoundingClientRect();
+    if (rect.width > 0 && rect.height > 0) return element;
+    element = element.parentElement;
+  }
+  return canvas;
 }
 
 function sizeStyle(panel: { width?: number; height?: number } | undefined): CSSProperties {
@@ -282,7 +305,16 @@ interface HudCanvasContextValue {
   canvasRef: RefObject<HTMLDivElement | null>;
   regions: HudRegionElements;
   compact: boolean;
+  /** Element lane blocks portal into; `null` until the canvas has committed it. */
+  laneLayer: HTMLDivElement | null;
+  /** Resolved rectangle per lane block id. */
+  laneRects: Record<string, HudRect>;
+  declareLane: (slot: HudLaneSlot) => void;
+  removeLane: (id: string) => void;
+  reportLaneSize: (id: string, size: HudSize) => void;
 }
+
+const EMPTY_LANE_RECTS: Record<string, HudRect> = {};
 
 const HudCanvasContext = createContext<HudCanvasContextValue | null>(null);
 
@@ -435,9 +467,87 @@ export function HudCanvas({
     }
     return refs;
   }, []);
+  const [laneLayer, setLaneLayer] = useState<HTMLDivElement | null>(null);
+  const [laneFrame, setLaneFrame] = useState<HudSize | null>(null);
+  const [laneRevision, setLaneRevision] = useState(0);
+  const laneSlots = useRef(new Map<string, HudLaneSlot>());
+  const laneSizes = useRef(new Map<string, HudSize>());
+  const declareLane = useCallback((slot: HudLaneSlot) => {
+    const previous = laneSlots.current.get(slot.id);
+    if (
+      previous !== undefined &&
+      previous.anchor === slot.anchor &&
+      previous.lane === slot.lane &&
+      previous.order === slot.order &&
+      previous.width === slot.width &&
+      previous.height === slot.height &&
+      previous.rect === slot.rect
+    ) {
+      return;
+    }
+    laneSlots.current.set(slot.id, slot);
+    setLaneRevision((value) => value + 1);
+  }, []);
+  const removeLane = useCallback((id: string) => {
+    if (!laneSlots.current.delete(id)) return;
+    laneSizes.current.delete(id);
+    setLaneRevision((value) => value + 1);
+  }, []);
+  const reportLaneSize = useCallback((id: string, size: HudSize) => {
+    const previous = laneSizes.current.get(id);
+    if (
+      previous !== undefined &&
+      Math.abs(previous.width - size.width) < 0.5 &&
+      Math.abs(previous.height - size.height) < 0.5
+    ) {
+      return;
+    }
+    laneSizes.current.set(id, size);
+    setLaneRevision((value) => value + 1);
+  }, []);
+  const laneRects = useMemo(() => {
+    if (laneFrame === null || laneSlots.current.size === 0) return EMPTY_LANE_RECTS;
+    const slots: HudLaneSlot[] = [];
+    for (const slot of laneSlots.current.values()) {
+      const measured = laneSizes.current.get(slot.id);
+      slots.push(
+        measured === undefined
+          ? slot
+          : { ...slot, width: slot.width ?? measured.width, height: slot.height ?? measured.height },
+      );
+    }
+    return resolveHudLanes(slots, laneFrame, { gap: REGION_GAP }).rects;
+  }, [laneFrame, laneRevision]);
+  useEffect(() => {
+    if (laneLayer === null) return;
+    const measure = () => {
+      const rect = laneLayer.getBoundingClientRect();
+      if (rect.width <= 0 || rect.height <= 0) return;
+      setLaneFrame((prev) =>
+        prev !== null && Math.abs(prev.width - rect.width) < 0.5 && Math.abs(prev.height - rect.height) < 0.5
+          ? prev
+          : { width: rect.width, height: rect.height },
+      );
+    };
+    measure();
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(laneLayer);
+    return () => observer.disconnect();
+  }, [laneLayer]);
   const value = useMemo(
-    () => ({ layout, canvasRef, regions, compact }),
-    [layout, regions, compact],
+    () => ({
+      layout,
+      canvasRef,
+      regions,
+      compact,
+      laneLayer,
+      laneRects,
+      declareLane,
+      removeLane,
+      reportLaneSize,
+    }),
+    [layout, regions, compact, laneLayer, laneRects, declareLane, removeLane, reportLaneSize],
   );
   const editing = useEngineState(layout).editing;
   useEffect(() => registerActiveHudLayout(layout), [layout]);
@@ -481,7 +591,7 @@ export function HudCanvas({
 
   useEffect(() => {
     if (!fitEnabled) return;
-    const host = canvasRef.current?.parentElement;
+    const host = canvasRef.current === null ? null : measurableHost(canvasRef.current);
     if (host === undefined || host === null || typeof ResizeObserver === "undefined") return;
     const measure = () => {
       const rect = host.getBoundingClientRect();
@@ -498,11 +608,12 @@ export function HudCanvas({
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    const host = canvas?.parentElement;
-    if (canvas === null || canvas === undefined || host === undefined || host === null) return;
+    if (canvas === null) return;
+    const host = measurableHost(canvas);
     if (typeof requestAnimationFrame !== "function") return;
     let frame = 0;
     let lastReport = "";
+    let lastOverlapReport = "";
     const dev = isDevBuild();
     const check = () => {
       frame = 0;
@@ -530,23 +641,48 @@ export function HudCanvas({
       // cross an edge — a closed/parked/off-screen menu is never an offender.
       const escaped = overflowingPanels(surfaces, viewportSize);
       const report = escaped.length === 0 ? "" : JSON.stringify(escaped);
-      if (report === lastReport) return;
-      lastReport = report;
-      if (report === "") {
-        canvas.removeAttribute("data-hud-overflow");
-      } else {
-        canvas.setAttribute("data-hud-overflow", report);
-        console.warn(
-          `[jgengine] HUD UI escapes the ${Math.round(hostRect.width)}x${Math.round(hostRect.height)} viewport: ${report}`,
-        );
+      if (report !== lastReport) {
+        lastReport = report;
+        if (report === "") {
+          canvas.removeAttribute("data-hud-overflow");
+        } else {
+          canvas.setAttribute("data-hud-overflow", report);
+          console.warn(
+            `[jgengine] HUD UI escapes the ${Math.round(hostRect.width)}x${Math.round(hostRect.height)} viewport: ${report}`,
+          );
+        }
+        if (dev) {
+          setOffenders(
+            escaped.map((overflow) => {
+              const rect = surfaces.find((s) => s.id === overflow.id)?.rect;
+              return { ...overflow, x: rect?.x ?? 0, y: rect?.y ?? 0, width: rect?.width ?? 0, height: rect?.height ?? 0 };
+            }),
+          );
+        }
       }
-      if (dev) {
-        setOffenders(
-          escaped.map((overflow) => {
-            const rect = surfaces.find((s) => s.id === overflow.id)?.rect;
-            return { ...overflow, x: rect?.x ?? 0, y: rect?.y ?? 0, width: rect?.width ?? 0, height: rect?.height ?? 0 };
-          }),
-        );
+      const blocks = [...canvas.querySelectorAll("[data-hud-panel]")]
+        .filter((el) => isSurfaceShown(el))
+        .map((el) => {
+          const rect = el.getBoundingClientRect();
+          return {
+            id: surfaceId(el),
+            rect: {
+              x: rect.left - hostRect.left,
+              y: rect.top - hostRect.top,
+              width: rect.width,
+              height: rect.height,
+            },
+          };
+        });
+      const overlapReport = dev ? formatHudOverlapReport(hudBlockOverlaps(blocks), viewportSize) : "";
+      if (overlapReport !== lastOverlapReport) {
+        lastOverlapReport = overlapReport;
+        if (overlapReport === "") {
+          canvas.removeAttribute("data-hud-overlap");
+        } else {
+          canvas.setAttribute("data-hud-overlap", overlapReport);
+          console.warn(`[jgengine] ${overlapReport}`);
+        }
       }
     };
     const schedule = () => {
@@ -620,6 +756,19 @@ export function HudCanvas({
             }}
           />
         ))}
+        <div
+          data-hud-lane-layer=""
+          style={{
+            position: "absolute",
+            inset: 0,
+            padding: `${PAD_TOP} ${PAD_RIGHT} ${PAD_BOTTOM} ${PAD_LEFT}`,
+            boxSizing: "border-box",
+            pointerEvents: "none",
+            zIndex: 1,
+          }}
+        >
+          <div ref={setLaneLayer} style={{ position: "relative", width: "100%", height: "100%" }} />
+        </div>
         {children}
         {offenders.length > 0 ? (
           <div
@@ -753,6 +902,7 @@ function HudChip({
 export function HudPanel({
   id,
   anchor = "top-left",
+  lane,
   order,
   compact: compactMode = "keep",
   chip,
@@ -774,6 +924,13 @@ export function HudPanel({
 }: {
   id: string;
   anchor?: HudAnchor;
+  /**
+   * Placement lane inside the anchor. Blocks naming the same lane stack in
+   * `order` and can never overlap; lanes in one anchor sit side by side. A block
+   * that has been moved (drag/edit, or a scene-document `ui.panels` entry) leaves
+   * the lane and keeps its authored position, so a game override always wins.
+   */
+  lane?: string;
   /** Stack position within the region, ascending outward from the screen edge. Default 0. */
   order?: number;
   /** Behavior on compact displays. Default `"keep"`. */
@@ -814,7 +971,7 @@ export function HudPanel({
   const phase = useOptionalGamePhase();
   const layoutMode = useGameLayoutMode();
   if (ctx === null) throw new Error("HudPanel must be rendered inside a HudCanvas");
-  const { layout, canvasRef, regions, compact } = ctx;
+  const { layout, canvasRef, regions, compact, laneLayer, laneRects, declareLane, removeLane, reportLaneSize } = ctx;
   const onMobile = isMobileMode(layoutMode);
   const registeredOnRef = useRef<HudLayoutStore | null>(null);
   if (registeredOnRef.current !== layout) {
@@ -861,6 +1018,57 @@ export function HudPanel({
   // A flowing panel portals into its anchor region, which HudCanvas only provides after its first commit.
   const awaitingRegion = panel !== undefined && (compact || !panel.moved) && regions[compact ? anchor : panel.placement.anchor] === undefined;
   useRegisterLayoutRegion(regionSpec, rootRef, region && !regionHidden && !awaitingRegion);
+
+  const laneActive = lane !== undefined && !regionHidden && !(panel !== undefined && panel.moved);
+  const laneRect = lane === undefined ? undefined : laneRects[id];
+  const [laneSize, setLaneSize] = useState<HudSize | null>(null);
+  useEffect(() => {
+    if (!laneActive) return;
+    declareLane({
+      id,
+      anchor: panel?.placement.anchor ?? anchor,
+      lane,
+      order,
+      width: panel?.width ?? width,
+      height: panel?.height ?? height,
+    });
+    return () => removeLane(id);
+  }, [
+    laneActive,
+    declareLane,
+    removeLane,
+    id,
+    panel?.placement.anchor,
+    lane,
+    order,
+    panel?.width,
+    width,
+    panel?.height,
+    height,
+  ]);
+  const laneMounted = laneRect !== undefined;
+  useEffect(() => {
+    if (!laneActive || !laneMounted) return;
+    const element = rootRef.current;
+    if (element === null) return;
+    const measure = () => {
+      const rect = element.getBoundingClientRect();
+      if (rect.width <= 0 && rect.height <= 0) return;
+      setLaneSize((previous) =>
+        previous !== null &&
+        Math.abs(previous.width - rect.width) < 0.5 &&
+        Math.abs(previous.height - rect.height) < 0.5
+          ? previous
+          : { width: rect.width, height: rect.height },
+      );
+      reportLaneSize(id, { width: rect.width, height: rect.height });
+    };
+    measure();
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [laneActive, laneMounted, id, reportLaneSize]);
 
   const onPointerDown = (event: ReactPointerEvent) => {
     if (!draggable || event.button !== 0) return;
@@ -1003,6 +1211,54 @@ export function HudPanel({
   if (!hudVisibleInPhase(showDuring, phase)) return null;
 
   const authoredSize = sizeStyle(panel);
+  if (laneActive) {
+    if (laneRect === undefined || laneLayer === null) return null;
+    const declaredWidth = panel.width ?? width;
+    const declaredHeight = panel.height ?? height;
+    const settled = laneSize !== null || declaredWidth !== undefined || declaredHeight !== undefined;
+    const chipped = compact && compactMode === "chip";
+    const passThrough = interactive === false && !editing && !chipped;
+    return createPortal(
+      <div
+        ref={rootRef}
+        data-hud-panel={id}
+        data-hud-lane={lane}
+        data-dragging={dragging ? "" : undefined}
+        data-hud-priority={priority}
+        data-hud-mobile-behavior={mobileBehavior}
+        data-hud-type={panel.type ?? type}
+        className={className}
+        onPointerDown={onPointerDown}
+        onClickCapture={onClickCapture}
+        style={{
+          position: "absolute",
+          left: laneRect.x,
+          top: laneRect.y,
+          ...(declaredWidth === undefined ? {} : { width: declaredWidth }),
+          ...(declaredHeight === undefined ? {} : { height: declaredHeight }),
+          visibility: settled ? undefined : "hidden",
+          pointerEvents: passThrough ? "none" : "auto",
+          touchAction: draggable ? "none" : undefined,
+          userSelect: editing || dragging ? "none" : undefined,
+          cursor: dragging ? "grabbing" : editing ? "grab" : undefined,
+          outline: editing ? "1px dashed rgba(255, 255, 255, 0.6)" : undefined,
+          outlineOffset: editing ? 2 : undefined,
+          boxSizing: "border-box",
+          ...style,
+        }}
+      >
+        {chipped ? (
+          <HudChip label={chip ?? id} anchor={anchor}>
+            {children}
+          </HudChip>
+        ) : (
+          children
+        )}
+        {editingChrome}
+      </div>,
+      laneLayer,
+    );
+  }
   const flow = compact || !panel.moved;
   if (flow) {
     const regionEl = regions[compact ? anchor : panel.placement.anchor];
