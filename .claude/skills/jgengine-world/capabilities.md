@@ -192,6 +192,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createBodyBind` (function) · `import { createBodyBind } from "@jgengine/core/world"`
 
+## boss-phase-state — fresh serializable boss phase state that opens in the first phase
+
+- `createBossState` (function) · `import { createBossState } from "@jgengine/core/ai/director/boss"`
+
+## boss-phases — data-authored boss phases that change behaviour and fire a tell at health thresholds
+
+- `advanceBoss` (function) · `import { advanceBoss } from "@jgengine/core/ai/director/boss"`
+
 ## bounded-grid-route — distinguish no path from exhausted grid search work
 
 - `findPathResult` (function) · `import { findPathResult } from "@jgengine/core/nav/navGrid"`
@@ -334,6 +342,18 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `summarizeElevation` (function) · `import { summarizeElevation } from "@jgengine/core/world"`
 
+## encounter-expand — turn an authored wave into a deterministic, pressure-adjusted list of timed spawn orders
+
+- `expandWave` (function) · `import { expandWave } from "@jgengine/core/ai/director/encounter"`
+
+## encounter-pressure — bounded difficulty tier read from player health, encounter progress and time
+
+- `evaluatePressure` (function) · `import { evaluatePressure } from "@jgengine/core/ai/director/pressure"`
+
+## encounter-runner — open authored waves, emit their timed orders, and track wave progress through a save
+
+- `createEncounter` (function) · `import { createEncounter } from "@jgengine/core/ai/director/encounter"`
+
 ## engine-layers — layered engine audio: rpm-keyed samples crossfaded, with on-load and off-load sets picked by engine load
 
 - `createEngineLayers` (function) · `import { createEngineLayers } from "@jgengine/core/audio/engineLayers"`
@@ -353,6 +373,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## feedback-mixer — map sim telemetry to camera, audio and haptic parameters through curves, smoothing and threshold events
 
 - `createFeedbackMixer` (function) · `import { createFeedbackMixer } from "@jgengine/core/vfx/feedbackMixer"`
+
+## fight-intent-composition — map assigned duties onto a squad combat composition in member order
+
+- `compositionForIntents` (function) · `import { compositionForIntents } from "@jgengine/core/ai/director/roles"`
+
+## fight-intents — assign hold, flank, cover, assault and retreat duties from live squad state
+
+- `assignFightIntents` (function) · `import { assignFightIntents } from "@jgengine/core/ai/director/roles"`
 
 ## find-effect — look up one named particle effect in the shared library, or undefined when unknown
 
@@ -811,6 +839,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## solid-route — bounded local planning over indexed collision geometry
 
 - `planSolidRoute` (function) · `import { planSolidRoute } from "@jgengine/core/nav/solidRoute"`
+
+## sound-hunting — send a bounded set of nearby enemies to investigate a noise with decaying memory
+
+- `createSoundHunt` (function) · `import { createSoundHunt } from "@jgengine/core/ai/director/sound"`
 
 ## spatial-incremental — Update one entity's spatial cell after a committed write without scanning the population
 
