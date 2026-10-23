@@ -504,6 +504,10 @@ export function applyMissionRewards(
  *
  * Cost per tick is bounded by the active objective's own fail list plus one goal test.
  *
+ * Marker proximity runs on the plane `markerProximity` picks: horizontal by default, so a marker
+ * authored on a flat `y = 0` plan still triggers from ground that rises under it; `spatial` for a
+ * world whose stacked platforms must stay apart.
+ *
  * @capability mission-runtime missions as a data-driven objective state machine with fail states, timers, branches and rewards
  */
 export function createMissionRuntime(config: MissionRuntimeConfig): MissionRuntime {
