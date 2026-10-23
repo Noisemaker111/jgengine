@@ -274,9 +274,10 @@ const KEY_ITEM_PREFIX = "key:";
  * settings controller hands it, and writes every change straight back to that controller's store.
  *
  * The rows are one `useMenuNav` menu: up/down (or the d-pad/stick) move between them, left/right step
- * the focused value — a slider by its step, a toggle flipped, a select to the next/previous option, a
- * keybind armed — and Enter/Space/A confirm. Keyboard and gamepad share that one mapping, so a held
- * direction repeats at the same rate for both, and no row carries its own key handling.
+ * the focused value — a slider by its step, a toggle flipped, a select to the next/previous option —
+ * and Enter/Space/A confirms, which flips a toggle, steps a select forward or arms a keybind.
+ * Keyboard and gamepad share that one mapping, so a held direction repeats at the same rate for both,
+ * and no row carries its own key handling.
  *
  * @capability settings-section settings category block — rows plus click-to-capture keybind rows, HudTheme-styled, store-backed, keyboard and gamepad navigable
  */
