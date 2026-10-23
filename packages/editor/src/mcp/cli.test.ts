@@ -209,17 +209,24 @@ describe("editor CLI entry", () => {
   test("--serve starts the HTTP bridge and answers /health (#996)", async () => {
     // Before the fix the serve branch referenced `options.serve`/`options.port` after those values
     // were destructured into bare bindings, so `--serve` threw `options is not defined` and never
-    // bound. Spawn it for real and prove the bridge comes up.
-    const port = 17939;
+    // bound. Spawn it for real and prove the bridge comes up. The port comes from the OS because a
+    // fixed one can already be taken on a busy runner, and the child's own error is what says so.
+    const reservation = Bun.serve({ port: 0, hostname: "127.0.0.1", fetch: () => new Response("") });
+    const port = reservation.port;
+    reservation.stop(true);
     const proc = Bun.spawn(["bun", cliEntry, "--game", "__no-such-game__", "--serve", "--port", String(port)], {
       cwd: repoRoot,
       stdout: "pipe",
       stderr: "pipe",
       stdin: "ignore",
     });
+    const errors: Uint8Array[] = [];
+    const drained = (async () => {
+      for await (const chunk of proc.stderr) errors.push(chunk as Uint8Array);
+    })();
+    let healthy = false;
     try {
-      let healthy = false;
-      for (let attempt = 0; attempt < 300 && !healthy; attempt += 1) {
+      for (let attempt = 0; attempt < 150 && !healthy && proc.exitCode === null; attempt += 1) {
         try {
           const res = await fetch(`http://127.0.0.1:${port}/health`);
           if (res.ok) {
@@ -231,12 +238,22 @@ describe("editor CLI entry", () => {
         }
         if (!healthy) await Bun.sleep(100);
       }
-      expect(healthy).toBe(true);
+      if (!healthy) {
+        proc.kill();
+        await proc.exited;
+        await drained;
+        throw new Error(
+          `the bridge never answered http://127.0.0.1:${port}/health (exit ${proc.exitCode}): ` +
+            Buffer.concat(errors).toString("utf8"),
+        );
+      }
     } finally {
       proc.kill();
       await proc.exited;
+      await drained;
     }
-  }, 20000);
+    expect(healthy).toBe(true);
+  }, 60000);
 
   test("imports a large document via --rpc - (stdin)", async () => {
     const objectCount = 400;
