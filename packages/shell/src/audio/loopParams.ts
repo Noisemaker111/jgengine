@@ -69,17 +69,27 @@ export function stepListenerVelocity(
   dt: number,
 ): { x: number; y: number; z: number } {
   const last = track.last;
-  track.last = { x: position.x, y: position.y, z: position.z };
-  if (last === null || !(dt > 0)) return track.velocity;
-  const vx = (position.x - last.x) / dt;
-  const vy = (position.y - last.y) / dt;
-  const vz = (position.z - last.z) / dt;
-  if (Math.hypot(vx, vy, vz) > MAX_LISTENER_SPEED) {
-    track.velocity = { x: 0, y: 0, z: 0 };
+  if (last === null) {
+    track.last = { x: position.x, y: position.y, z: position.z };
     return track.velocity;
   }
-  const blend = 1 - Math.exp(-dt / 0.05);
+  const dx = position.x - last.x;
+  const dy = position.y - last.y;
+  const dz = position.z - last.z;
+  last.x = position.x;
+  last.y = position.y;
+  last.z = position.z;
+  if (!(dt > 0)) return track.velocity;
   const v = track.velocity;
-  track.velocity = { x: v.x + (vx - v.x) * blend, y: v.y + (vy - v.y) * blend, z: v.z + (vz - v.z) * blend };
-  return track.velocity;
+  if (Math.hypot(dx, dy, dz) / dt > MAX_LISTENER_SPEED) {
+    v.x = 0;
+    v.y = 0;
+    v.z = 0;
+    return v;
+  }
+  const blend = 1 - Math.exp(-dt / 0.05);
+  v.x += (dx / dt - v.x) * blend;
+  v.y += (dy / dt - v.y) * blend;
+  v.z += (dz / dt - v.z) * blend;
+  return v;
 }

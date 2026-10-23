@@ -300,6 +300,16 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
   let listenerVelocity: Vec3 = { x: 0, y: 0, z: 0 };
   const nyquist = context.sampleRate / 2;
   const activeSpatialUpdaters = new Set<() => void>();
+  // A Web Audio setter costs real time per call, so a listener pose that has not moved writes nothing (#2174).
+  const listenerWritten = [NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN];
+  const listenerVelocityWritten = [NaN, NaN, NaN];
+
+  function writeChanged(slot: number[], index: number, param: AudioParam | undefined, value: number): boolean {
+    if (slot[index] === value) return false;
+    slot[index] = value;
+    setAudioParam(param, value);
+    return true;
+  }
 
   // Browser autoplay: until the first user gesture the context stays suspended and a played cue
   // would vanish. Hold a bounded FIFO of ids (preallocated slots) and flush it on resume.
@@ -420,11 +430,15 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
       let panner: PannerNode | null = null;
       let playback: SynthPlayback | null = null;
       let stopped = false;
+      let writtenCueGain = NaN;
       function updateGain(): void {
         if (cueGain === null) return;
-        cueGain.gain.value = panner === null
+        const gain = panner === null
           ? resolveEmitterGain(distance3(currentPosition, listenerPosition), sound, 1)
           : sound.gain ?? 1;
+        if (gain === writtenCueGain) return;
+        writtenCueGain = gain;
+        cueGain.gain.value = gain;
       }
       function stop(): void {
         if (stopped) return;
@@ -487,6 +501,15 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
     let userGainNode: GainNode | null = null;
     let falloffGain: GainNode | null = null;
     let pannerNode: PannerNode | null = null;
+    // Last value written or scheduled per param: an unchanged emitter writes nothing (#2174).
+    let writtenFalloff = NaN;
+    let writtenPannerX = NaN;
+    let writtenPannerY = NaN;
+    let writtenPannerZ = NaN;
+    let writtenRate = NaN;
+    let writtenGain = NaN;
+    let writtenLowpass = NaN;
+    let writtenHighpass = NaN;
 
     function effectiveRate(): number {
       if (dopplerFactor === 0) return currentRate;
@@ -501,14 +524,35 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
     }
 
     function applyRate(): void {
-      if (sourceNode !== null) sourceNode.playbackRate.setTargetAtTime(effectiveRate(), context.currentTime, LOOP_PARAM_SMOOTH_TC);
+      if (sourceNode === null) return;
+      const rate = effectiveRate();
+      if (rate === writtenRate) return;
+      writtenRate = rate;
+      sourceNode.playbackRate.setTargetAtTime(rate, context.currentTime, LOOP_PARAM_SMOOTH_TC);
     }
 
     function updateFalloff(): void {
       if (falloffGain !== null && spatial === undefined) {
-        falloffGain.gain.value = resolveEmitterGain(distance3(currentPosition, listenerPosition), sound, 1);
+        const gain = resolveEmitterGain(distance3(currentPosition, listenerPosition), sound, 1);
+        if (gain !== writtenFalloff) {
+          writtenFalloff = gain;
+          falloffGain.gain.value = gain;
+        }
       }
-      if (pannerNode !== null) setPannerPosition(pannerNode, currentPosition);
+      if (pannerNode !== null) {
+        if (writtenPannerX !== currentPosition.x) {
+          writtenPannerX = currentPosition.x;
+          setAudioParam(pannerNode.positionX, currentPosition.x);
+        }
+        if (writtenPannerY !== currentPosition.y) {
+          writtenPannerY = currentPosition.y;
+          setAudioParam(pannerNode.positionY, currentPosition.y);
+        }
+        if (writtenPannerZ !== currentPosition.z) {
+          writtenPannerZ = currentPosition.z;
+          setAudioParam(pannerNode.positionZ, currentPosition.z);
+        }
+      }
       if (dopplerFactor !== 0) applyRate();
     }
 
@@ -539,23 +583,28 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
       sourceNode = src;
       src.buffer = buffer;
       src.loop = loop || (sound.loop ?? false);
-      src.playbackRate.value = effectiveRate();
+      writtenRate = effectiveRate();
+      src.playbackRate.value = writtenRate;
       // Spatial panners own distance attenuation; the scalar stage keeps only authored gain.
       const uGain = context.createGain();
       userGainNode = uGain;
-      uGain.gain.value = currentUserGain;
+      writtenGain = currentUserGain;
+      uGain.gain.value = writtenGain;
       const fGain = context.createGain();
       falloffGain = fGain;
-      fGain.gain.value = resolveEmitterGain(distance3(currentPosition, listenerPosition), sound, 1);
+      writtenFalloff = resolveEmitterGain(distance3(currentPosition, listenerPosition), sound, 1);
+      fGain.gain.value = writtenFalloff;
       if (loop) {
         const lp = context.createBiquadFilter();
         lowpassNode = lp;
         lp.type = "lowpass";
-        lp.frequency.value = clampLoopCutoff(currentLowpass, MAX_LOOP_CUTOFF, nyquist);
+        writtenLowpass = clampLoopCutoff(currentLowpass, MAX_LOOP_CUTOFF, nyquist);
+        lp.frequency.value = writtenLowpass;
         const hp = context.createBiquadFilter();
         highpassNode = hp;
         hp.type = "highpass";
-        hp.frequency.value = clampLoopCutoff(currentHighpass, MIN_LOOP_CUTOFF, nyquist);
+        writtenHighpass = clampLoopCutoff(currentHighpass, MIN_LOOP_CUTOFF, nyquist);
+        hp.frequency.value = writtenHighpass;
         src.connect(lp);
         lp.connect(hp);
         hp.connect(uGain);
@@ -566,6 +615,9 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
       if (spatial !== undefined) {
         const panner = createPanner(context, spatial, currentPosition);
         pannerNode = panner;
+        writtenPannerX = currentPosition.x;
+        writtenPannerY = currentPosition.y;
+        writtenPannerZ = currentPosition.z;
         fGain.gain.value = sound.gain ?? 1;
         fGain.connect(panner);
         panner.connect(bus);
@@ -583,7 +635,9 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
       isPlaying: () => !stopped,
       setPosition(next) {
         if (stopped) return;
-        currentPosition = { ...next };
+        currentPosition.x = next.x;
+        currentPosition.y = next.y;
+        currentPosition.z = next.z;
         updateFalloff();
       },
       setRate(rate) {
@@ -592,18 +646,26 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
       },
       setLowpass(hz) {
         currentLowpass = clampLoopCutoff(hz, MAX_LOOP_CUTOFF, nyquist);
+        if (currentLowpass === writtenLowpass) return;
+        writtenLowpass = currentLowpass;
         if (lowpassNode !== null) lowpassNode.frequency.setTargetAtTime(currentLowpass, context.currentTime, LOOP_PARAM_SMOOTH_TC);
       },
       setHighpass(hz) {
         currentHighpass = clampLoopCutoff(hz, MIN_LOOP_CUTOFF, nyquist);
+        if (currentHighpass === writtenHighpass) return;
+        writtenHighpass = currentHighpass;
         if (highpassNode !== null) highpassNode.frequency.setTargetAtTime(currentHighpass, context.currentTime, LOOP_PARAM_SMOOTH_TC);
       },
       setVelocity(velocity) {
-        currentVelocity = { ...velocity };
+        currentVelocity.x = velocity.x;
+        currentVelocity.y = velocity.y;
+        currentVelocity.z = velocity.z;
         if (dopplerFactor !== 0) applyRate();
       },
       setGain(gain) {
         currentUserGain = clampLoopGain(gain);
+        if (currentUserGain === writtenGain) return;
+        writtenGain = currentUserGain;
         if (userGainNode !== null) userGainNode.gain.setTargetAtTime(currentUserGain, context.currentTime, LOOP_PARAM_SMOOTH_TC);
       },
       stop() {
@@ -627,18 +689,28 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
     setListenerPose(position) {
       if (disposed) return;
       const pose = "position" in position ? position : { position, forward: { x: 0, y: 0, z: -1 }, up: { x: 0, y: 1, z: 0 } };
-      listenerPosition = { ...pose.position };
-      listenerVelocity = "velocity" in pose && pose.velocity !== undefined ? { ...pose.velocity } : ZERO_VELOCITY;
+      listenerPosition.x = pose.position.x;
+      listenerPosition.y = pose.position.y;
+      listenerPosition.z = pose.position.z;
+      const velocity = "velocity" in pose && pose.velocity !== undefined ? pose.velocity : ZERO_VELOCITY;
+      listenerVelocity.x = velocity.x;
+      listenerVelocity.y = velocity.y;
+      listenerVelocity.z = velocity.z;
       const listener = context.listener;
-      setAudioParam(listener.positionX, pose.position.x);
-      setAudioParam(listener.positionY, pose.position.y);
-      setAudioParam(listener.positionZ, pose.position.z);
-      setAudioParam(listener.forwardX, pose.forward.x);
-      setAudioParam(listener.forwardY, pose.forward.y);
-      setAudioParam(listener.forwardZ, pose.forward.z);
-      setAudioParam(listener.upX, pose.up.x);
-      setAudioParam(listener.upY, pose.up.y);
-      setAudioParam(listener.upZ, pose.up.z);
+      let listenerMoved = writeChanged(listenerWritten, 0, listener.positionX, pose.position.x);
+      listenerMoved = writeChanged(listenerWritten, 1, listener.positionY, pose.position.y) || listenerMoved;
+      listenerMoved = writeChanged(listenerWritten, 2, listener.positionZ, pose.position.z) || listenerMoved;
+      listenerMoved = writeChanged(listenerWritten, 3, listener.forwardX, pose.forward.x) || listenerMoved;
+      listenerMoved = writeChanged(listenerWritten, 4, listener.forwardY, pose.forward.y) || listenerMoved;
+      listenerMoved = writeChanged(listenerWritten, 5, listener.forwardZ, pose.forward.z) || listenerMoved;
+      listenerMoved = writeChanged(listenerWritten, 6, listener.upX, pose.up.x) || listenerMoved;
+      listenerMoved = writeChanged(listenerWritten, 7, listener.upY, pose.up.y) || listenerMoved;
+      listenerMoved = writeChanged(listenerWritten, 8, listener.upZ, pose.up.z) || listenerMoved;
+      // Doppler loops alone read listener velocity, so only a changed velocity needs the per-voice pass.
+      let velocityChanged = writeChanged(listenerVelocityWritten, 0, undefined, velocity.x);
+      velocityChanged = writeChanged(listenerVelocityWritten, 1, undefined, velocity.y) || velocityChanged;
+      velocityChanged = writeChanged(listenerVelocityWritten, 2, undefined, velocity.z) || velocityChanged;
+      if (!listenerMoved && !velocityChanged) return;
       for (const updateGain of activeSpatialUpdaters) updateGain();
     },
     play(soundId, position) {
