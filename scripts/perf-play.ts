@@ -22,6 +22,16 @@ import {
   type SceneNodeSource,
   type SystemProbeReading,
 } from "../packages/core/src/devtools/report";
+import {
+  ACCESSIBILITY_SETTING_IDS,
+  COLORBLIND_OPTIONS,
+  HOLD_VS_TOGGLE_OPTIONS,
+} from "../packages/core/src/settings/accessibilitySettings";
+import {
+  GRAPHICS_QUALITY_OPTIONS,
+  SETTING_IDS,
+  settingStorageKey,
+} from "../packages/core/src/settings/settingsModel";
 
 /**
  * Frame-time harness for one game: boots the checkout's dev runner, plays the
@@ -29,7 +39,7 @@ import {
  * counts, GL allocations made after warmup, and the hottest self-time
  * functions.
  *
- *   bun run perf <game> [--quality draft|full] [--profile] [--seconds n]
+ *   bun run perf <game> [--quality draft|full] [--profile] [--seconds n] [--set key=value ...]
  *
  * The JSON goes to stdout alone so it can be piped and diffed; notes and the
  * `--profile` inclusive table go to stderr. `measureGame` is the same sequence
@@ -44,6 +54,35 @@ const PROFILE_SAMPLING_US = 200;
 const TOP_SELF = 15;
 const TOP_INCLUSIVE = 25;
 
+/** One setting a run turns on before the game boots, echoed beside the numbers it produced. */
+export interface PerfSettingOverride {
+  /** Canonical engine settings id, e.g. `accessibility.colorblind`. */
+  id: string;
+  /** What `--set` named: the id or its last segment. */
+  key: string;
+  value: string;
+}
+
+/** Every persisted setting id the engine publishes, by the id and by its last segment. */
+const SETTING_IDS_BY_KEY: ReadonlyMap<string, string> = (() => {
+  const byKey = new Map<string, string>();
+  for (const id of [...Object.values(SETTING_IDS), ...Object.values(ACCESSIBILITY_SETTING_IDS)]) {
+    byKey.set(id, id);
+    const segment = id.slice(id.lastIndexOf(".") + 1);
+    if (!byKey.has(segment)) byKey.set(segment, id);
+  }
+  return byKey;
+})();
+
+/** Settings whose accepted values the engine publishes, so a typo is an error instead of a silent default. */
+const SETTING_VALUES: ReadonlyMap<string, readonly string[]> = new Map([
+  [SETTING_IDS.graphicsQuality, GRAPHICS_QUALITY_OPTIONS.map((option) => option.value)],
+  [ACCESSIBILITY_SETTING_IDS.colorblind, COLORBLIND_OPTIONS.map((option) => option.value)],
+  [ACCESSIBILITY_SETTING_IDS.holdVsToggle, HOLD_VS_TOGGLE_OPTIONS.map((option) => option.value)],
+]);
+
+const KNOWN_SETTING_KEYS = [...SETTING_IDS_BY_KEY.keys()].filter((key) => !key.includes(".")).sort();
+
 export interface PerfArgs {
   game: string;
   quality: CaptureQuality;
@@ -51,17 +90,78 @@ export interface PerfArgs {
   seconds: number;
   /** In-page sampler on/off for the A/B frame-time overhead comparison. */
   telemetry: "on" | "off";
+  /** Settings enabled before boot, so a measured cost names the setting that caused it. */
+  settings: PerfSettingOverride[];
 }
 
 export type ArgResult = { kind: "run"; args: PerfArgs } | { kind: "help" };
 
-const USAGE = `usage: bun run perf <game> [--quality draft|full] [--profile] [--seconds n] [--telemetry on|off]
+const USAGE = `usage: bun run perf <game> [--quality draft|full] [--profile] [--seconds n] [--telemetry on|off] [--set key=value ...]
 
   <game>            game id under Games/ (for example harbor-heat)
   --quality         graphics tier: full (default) or draft (?quality=low, half viewport)
   --profile         also print the inclusive-time table to stderr
   --seconds         measured window in seconds (default ${DEFAULT_SECONDS})
-  --telemetry       in-page report sampler: on (default) or off (?telemetry=off) for an A/B run`;
+  --telemetry       in-page report sampler: on (default) or off (?telemetry=off) for an A/B run
+  --set             enable a setting before boot; repeatable (--set colorblind=grayscale).
+                    Key is an engine setting id (accessibility.colorblind) or its last segment;
+                    an unknown key or value fails the run instead of measuring the default.
+                    Common keys: ${KNOWN_SETTING_KEYS.join(", ")}`;
+
+/** Resolve one `--set key=value` spec against the engine's settings ids. */
+export function parseSettingSpec(spec: string): PerfSettingOverride {
+  const at = spec.indexOf("=");
+  if (at <= 0 || at === spec.length - 1) throw new Error(`--set needs key=value (got ${spec})`);
+  const key = spec.slice(0, at).trim();
+  const value = spec.slice(at + 1).trim();
+  const id = SETTING_IDS_BY_KEY.get(key);
+  if (id === undefined) {
+    throw new Error(`unknown setting "${key}" — known keys: ${KNOWN_SETTING_KEYS.join(", ")}`);
+  }
+  const allowed = SETTING_VALUES.get(id);
+  if (allowed !== undefined && !allowed.includes(value)) {
+    throw new Error(`--set ${key}=${value} must be one of ${allowed.join(", ")}`);
+  }
+  return { id, key, value };
+}
+
+/**
+ * The URL one measured run opens. Overrides are not query params: they are seeded into the page's
+ * settings storage, which is where the game reads them, so the printed query stays the harness's.
+ */
+export function perfPageUrl(options: {
+  base: string;
+  game: string;
+  quality: CaptureQuality;
+  telemetry?: "on" | "off";
+}): URL {
+  const url = new URL(options.base);
+  url.searchParams.set("game", options.game);
+  url.searchParams.set("mode", "play");
+  url.searchParams.set("device", "desktop");
+  url.searchParams.set("capture", "1");
+  if (options.telemetry === "off") url.searchParams.set("telemetry", "off");
+  applyCaptureQuality(url, options.quality);
+  return url;
+}
+
+/** Runs before the page's own scripts, so the settings store reads the override at mount. */
+export function perfSettingsScript(settings: readonly PerfSettingOverride[]): string {
+  const entries = settings.map((setting) => [settingStorageKey(setting.id), JSON.stringify(setting.value)]);
+  return `(() => {
+  try {
+    for (const [key, value] of ${JSON.stringify(entries)}) localStorage.setItem(key, value);
+  } catch {}
+})();`;
+}
+
+/** The overrides the page did not keep, so a setting that never reached play fails instead of reading as free. */
+export function droppedOverrides(
+  settings: readonly PerfSettingOverride[],
+  stored: Readonly<Record<string, string | null>>,
+): PerfSettingOverride[] {
+  return settings.filter((setting) => stored[setting.id] !== JSON.stringify(setting.value));
+}
 
 export function parsePerfArgs(argv: readonly string[]): ArgResult {
   if (argv.includes("--help") || argv.includes("-h")) return { kind: "help" };
@@ -70,11 +170,23 @@ export function parsePerfArgs(argv: readonly string[]): ArgResult {
   let profile = false;
   let seconds = DEFAULT_SECONDS;
   let telemetry: "on" | "off" = "on";
+  const settings: PerfSettingOverride[] = [];
 
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index]!;
     if (arg === "--profile") {
       profile = true;
+      continue;
+    }
+    if (arg === "--set") {
+      const spec = argv[index + 1];
+      if (spec === undefined) throw new Error("--set needs key=value");
+      index += 1;
+      const override = parseSettingSpec(spec);
+      if (settings.some((existing) => existing.id === override.id)) {
+        throw new Error(`--set ${override.id} given twice — one value per setting`);
+      }
+      settings.push(override);
       continue;
     }
     if (arg === "--quality" || arg === "--seconds" || arg === "--telemetry") {
@@ -97,7 +209,7 @@ export function parsePerfArgs(argv: readonly string[]): ArgResult {
     game = arg;
   }
   if (game === undefined) throw new Error("a game id is required");
-  return { kind: "run", args: { game, quality, profile, seconds, telemetry } };
+  return { kind: "run", args: { game, quality, profile, seconds, telemetry, settings } };
 }
 
 /** One sampled stack frame reduced to a readable key and its self time. */
@@ -341,7 +453,10 @@ async function countInstances(
 }
 
 /** Everything one measured window says about a game, as printed by `bun run perf`. */
-export type PerfRecord = PerfReport;
+export interface PerfRecord extends PerfReport {
+  /** The settings this run enabled, `id=value` each, so its numbers carry their cause. */
+  overrides: string[];
+}
 export type { PerfReport };
 
 interface RawProfile {
@@ -363,6 +478,8 @@ export interface MeasureOptions {
   profile?: boolean;
   /** In-page report sampler: `off` loads the same build with `?telemetry=off` for an A/B run. */
   telemetry?: "on" | "off";
+  /** Settings seeded into the page's settings storage before it boots. */
+  settings?: readonly PerfSettingOverride[];
 }
 
 export interface PerfMeasure {
@@ -392,26 +509,49 @@ function printInclusive(entries: readonly ProfileEntry[]): void {
 }
 
 /**
+ * Read the seeded values back after boot. A page that drops them (a game resetting storage, a
+ * mount that rewrites a default) would otherwise print a number described by a setting it never
+ * had, which is the whole failure this flag exists to remove.
+ */
+async function confirmSettings(session: CdpSession, settings: readonly PerfSettingOverride[]): Promise<void> {
+  const keys = settings.map((setting) => settingStorageKey(setting.id));
+  const stored = await session.evaluate<Record<string, string | null>>(`(() => {
+    const out = {};
+    for (const key of ${JSON.stringify(keys)}) out[key] = localStorage.getItem(key);
+    return out;
+  })()`);
+  const byId: Record<string, string | null> = {};
+  settings.forEach((setting, index) => {
+    byId[setting.id] = stored?.[keys[index]!] ?? null;
+  });
+  const dropped = droppedOverrides(settings, byId);
+  if (dropped.length > 0) {
+    throw new Error(
+      `perf: the page did not keep ${dropped.map((setting) => `${setting.key}=${setting.value}`).join(", ")} — its numbers would not describe that setting`,
+    );
+  }
+}
+
+/**
  * Play one game and measure it: warm up, sample frame deltas, snapshot renderer
  * and scene counts, and read the GL objects created after warmup.
  */
 export async function measureGame(options: MeasureOptions): Promise<PerfMeasure> {
   const { session, base, game, quality = "full", seconds = DEFAULT_SECONDS, warmupMs = WARMUP_MS } = options;
   const profileRun = options.profile ?? true;
+  const settings = options.settings ?? [];
 
   await session.send("Page.enable");
   await session.send("Page.addScriptToEvaluateOnNewDocument", { source: RESOURCE_BUFFER_SCRIPT });
   await session.send("Page.addScriptToEvaluateOnNewDocument", { source: GL_COUNTERS_SCRIPT });
+  if (settings.length > 0) {
+    await session.send("Page.addScriptToEvaluateOnNewDocument", { source: perfSettingsScript(settings) });
+  }
   await applyDevice(session, "desktop", quality === "draft" ? "half" : "full");
-  const url = new URL(base);
-  url.searchParams.set("game", game);
-  url.searchParams.set("mode", "play");
-  url.searchParams.set("device", "desktop");
-  url.searchParams.set("capture", "1");
-  if (options.telemetry === "off") url.searchParams.set("telemetry", "off");
-  applyCaptureQuality(url, quality);
+  const url = perfPageUrl({ base, game, quality, telemetry: options.telemetry });
   await session.send("Page.navigate", { url: url.toString() });
   await waitCaptureReady(session, 90_000);
+  if (settings.length > 0) await confirmSettings(session, settings);
   await session.evaluate(`window.__jgengineAgent?.handle?.({ method: "debug_perf_reset" })`);
 
   const gpu = (await readGpu(session)) ?? "unknown";
@@ -505,6 +645,7 @@ export async function measureGame(options: MeasureOptions): Promise<PerfMeasure>
     systems: snapshot?.systems ?? {},
     logs: snapshot?.logSummary ?? null,
     telemetry: null,
+    overrides: settings.map((setting) => `${setting.id}=${setting.value}`),
   };
 
   return { record, profile: raw, profileMs: profiledMs };
@@ -516,7 +657,7 @@ async function main(): Promise<void> {
     console.log(USAGE);
     return;
   }
-  const { game, quality, profile, seconds, telemetry } = parsed.args;
+  const { game, quality, profile, seconds, telemetry, settings } = parsed.args;
 
   if (!existsSync(join(repoRoot, "Games", game, "src", "index.tsx"))) {
     throw new Error(`no game "${game}" in Games/ — run \`bun run games:clone\` first, then retry`);
@@ -528,7 +669,10 @@ async function main(): Promise<void> {
     async ({ debugPort }) => {
       const session = await openPageSession(debugPort);
       try {
-        const measured = await measureGame({ session, base: server.base, game, quality, seconds, telemetry });
+        const measured = await measureGame({ session, base: server.base, game, quality, seconds, telemetry, settings });
+        if (measured.record.overrides.length > 0) {
+          console.error(`perf: overrides ${measured.record.overrides.join(" ")}`);
+        }
         console.log(JSON.stringify(measured.record, null, 2));
         if (profile && measured.profile !== null) {
           printInclusive(aggregateInclusiveTime(measured.profile, measured.profileMs));
