@@ -2349,6 +2349,26 @@
 - `missionMarkers` (function): function missionMarkers(document: SceneDocumentLike): Record<string, ScenePoint3> — Marker positions from an authored scene, keyed by marker id — what a positional objective reads.
 - `registerMissionTriggerActions` (function): function registerMissionTriggerActions(): void — Register {@link MISSION_TRIGGER_ACTIONS} so the editor lists them. Idempotent; call at module load next to the game's catalogs.
 
+## @jgengine/core/progression/careerBank
+
+- `CareerBank` (interface): interface CareerBank — Persistent career money plus the run in progress, which a failed run loses.
+- `CareerBankConfig` (interface): interface CareerBankConfig — Configuration for {@link createCareerBank}.
+- `CareerBankState` (interface): interface CareerBankState — Everything a career bank stores, as plain JSON. `banked` is the persistent balance; `haul` is the run in progress and is the part a failed run loses. `deposited`, `lost`, `bestHaul` and `runs` are lifetime counters a results screen reads.
+- `createCareerBank` (function): function createCareerBank(config: CareerBankConfig): CareerBank — Money that means something between runs: a persistent balance plus a run's haul that is banked on a cash-out and lost on a failure. Amounts are snapped to the currency's minor units, so a save round-trip and a display never drift. Pair it with `economy/upgrades` for a career upgrade tree.
+
+## @jgengine/core/progression/gates
+
+- `GateDef` (interface): interface GateDef — A milestone: content that opens exactly when its requirements hold and names the unlock it grants. `unlock` must resolve in the catalog the set is built with, or the set refuses to load.
+- `GateFacts` (interface): interface GateFacts — What a gate is evaluated against: standing by track and money by currency.
+- `GateMiss` (type): type GateMiss = "standing" | "balance" — Which named condition a closed gate still needs.
+- `GateRequirement` (interface): interface GateRequirement — Every condition a gate can require; all named conditions must hold.
+- `GateSet` (interface): interface GateSet — Evaluated gate content: the table, its status against facts, and the grants a caller applies.
+- `GateSetConfig` (interface): interface GateSetConfig — Content and the resolvers a {@link GateSet} is built from.
+- `GateStatus` (interface): interface GateStatus — One gate against live facts.
+- `assertGates` (function): function assertGates(config: GateSetConfig): void — Check an authored gate table against the content it grants; throws `RangeError` naming the gate.
+- `createGateSet` (function): function createGateSet(config: GateSetConfig): GateSet — Authored unlock gates: each one names the unlock it grants and the standing or balance it reads. Evaluated against caller-supplied facts, so one table serves a single-player save, a server actor or a probe. Load refuses a gate whose unlock id resolves to nothing (the D3.8 class), so a dead milestone fails at startup instead of in play. A gate with no requirements is open from the start.
+- `gateFacts` (function): function gateFacts(standing: Pick<Standing, "standing">, actorId: string, balances: Readonly<Record<string, number>> = {}): GateFacts — Read a {@link Standing} and a balance record as {@link GateFacts}.
+
 ## @jgengine/core/progression/gearScore
 
 - `GearScore` (interface): interface GearScore — A scored loadout: the total, each slot's share, each stat's signed contribution, and how complete it is.
@@ -2372,6 +2392,18 @@
 - `assertSkillTreeConfig` (function): function assertSkillTreeConfig<TStat extends string>(config: SkillTreeConfig<TStat>): void — Check tree data before play; throws `RangeError` naming the offending node, requirement or synergy.
 - `createSkillTree` (function): function createSkillTree<TStat extends string = string>(config: SkillTreeConfig<TStat>, options: { devtoolsName?: string } = {}): SkillTree<TStat> — A data-authored skill tree: nodes carry a point cost, prerequisites, passives and unlocked actions, synergies pay off two or more nodes together, and `respec` refunds exactly the points spent. Spend against `canSpend` for a reason a UI can show; read `resolved()` for the stat modifiers and action list to feed `createStats` / `createAbilityKit`.
 
+## @jgengine/core/progression/standing
+
+- `Standing` (interface): interface Standing — Live standing over authored tracks, moved by named outcomes or direct adjustments, with the tier on each track and a serializable snapshot.
+- `StandingChange` (interface): interface StandingChange — One track's movement, with the tier on both sides so a caller can announce a crossing.
+- `StandingConfig` (interface): interface StandingConfig — Authored standing content: the tracks an actor stands with, and the outcomes that move them.
+- `StandingOutcomeDef` (interface): interface StandingOutcomeDef — One outcome a game can report, and the standing it moves on each track.
+- `StandingRequirement` (interface): interface StandingRequirement — A threshold on one track, as an unlock or an upgrade reads it.
+- `StandingState` (interface): interface StandingState — Plain JSON state of a {@link Standing}; tracks left at their authored `initial` are absent.
+- `StandingTrackDef` (interface): interface StandingTrackDef — One standing track: a faction, a district, a licence board — whatever an authored outcome moves.
+- `assertStandingConfig` (function): function assertStandingConfig(config: StandingConfig): void — Check authored standing content before use; throws `RangeError` naming the offending field.
+- `createStanding` (function): function createStanding(config: StandingConfig): Standing — Per-faction or per-district standing that rises and falls from named outcomes, over authored tracks. Numbers live in the shared reputation ledger (`faction/reputation`); this adds the authored outcome table, tier-per-track and the one snapshot a save stores. An outcome id or track id that resolves to nothing throws at the call, so authored content fails loudly.
+
 ## @jgengine/core/progression/statGraph
 
 - `StatContribution` (interface): interface StatContribution — One folded contribution to a value, retained so a sheet can explain "why is this value 42?" — every step carries the source that produced it.
@@ -2388,6 +2420,17 @@
 - `StatSheetState` (interface): interface StatSheetState — Plain-data, JSON-safe sheet state: input base values plus registered modifier sources.
 - `createStatGraph` (function): function createStatGraph(def: StatGraphDef): StatGraph — A data-driven stat graph: game-owned named inputs feed caller-authored derived formulas, with contribution provenance, uncommitted previews, cycle detection, and selective recomputation. Formula semantics and numeric tables stay entirely game-defined.
 - `statModifierContributions` (function): function statModifierContributions<TStat extends string>(source: string, set: StatModifierSet<TStat>): Record<string, StatContribution[]> — Bridge the shared {@link StatModifierSet} shape (add/multiply, used by talents, items, and buffs) into stat-graph contributions, so a ranked talent tree or gear roll feeds the graph as one named source instead of a parallel store.
+
+## @jgengine/core/progression/upgrades
+
+- `UpgradeBuy` (type): type UpgradeBuy = { ok: true; nodeId: string; rank: number; cost: number } | { ok: false; reason: UpgradeRejection } — Result of {@link UpgradeTree.buy}: the rank reached and what it cost, or why it was refused.
+- `UpgradeNodeDef` (interface): interface UpgradeNodeDef — One upgrade node. Its price is the shared progression {@link Curve} evaluated at the rank being bought, so a game authors one curve and every rank of every node follows it.
+- `UpgradeRejection` (type): type UpgradeRejection = "unknown-node" | "max-rank" | "missing-prerequisites" | "standing" | "insufficient-funds" — Why a purchase was refused; the tree is left untouched on any rejection.
+- `UpgradeState` (interface): interface UpgradeState — Plain JSON state: node id → ranks owned. Nodes at rank `0` are absent.
+- `UpgradeTree` (interface): interface UpgradeTree — Authored upgrade nodes with a per-node cost curve, prerequisites, a standing gate and one snapshot.
+- `UpgradeTreeConfig` (interface): interface UpgradeTreeConfig — Authored nodes plus the standing a node's requirement reads.
+- `assertUpgrades` (function): function assertUpgrades(config: UpgradeTreeConfig): void — Check authored upgrade nodes; throws `RangeError` naming the offending node or field.
+- `createUpgradeTree` (function): function createUpgradeTree(config: UpgradeTreeConfig): UpgradeTree — An upgrade tree whose prices come from the shared curve primitive: each node authors one cost curve, each rank is that curve at the rank, and a purchase passes prerequisites, a standing gate and the caller's own payment step. State is one rank map that JSON round-trips, so a career save stores what a player paid for rather than the arithmetic behind it.
 
 ## @jgengine/core/progression/xpCurve
 
