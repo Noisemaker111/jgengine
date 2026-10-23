@@ -65,6 +65,17 @@ describe("reading the rollup", () => {
     expect(normalizeCheck(ROLLUP[1]!)).toMatchObject({ name: "gate", state: "IN_PROGRESS", bucket: "pending" });
   });
 
+  test("a check gh has not finished reports its run status, not an empty state", () => {
+    const check = normalizeCheck({
+      __typename: "CheckRun",
+      name: "perf",
+      conclusion: "",
+      status: "QUEUED",
+      detailsUrl: "https://github.com/o/r/actions/runs/7/job/8",
+    });
+    expect(check).toMatchObject({ name: "perf", state: "QUEUED", bucket: "pending", runId: 7 });
+  });
+
   test("a legacy commit status reads its state, not a status", () => {
     const check = normalizeCheck({ context: "windows-tests", state: "FAILURE", targetUrl: "https://example.test/1" });
     expect(check).toMatchObject({ name: "windows-tests", state: "FAILURE", bucket: "fail" });

@@ -133,7 +133,9 @@ export function runIdFrom(url: string): number | null {
  */
 export function normalizeCheck(entry: RollupEntry): CheckStatus {
   const url = entry.detailsUrl ?? entry.targetUrl ?? "";
-  const last = entry.conclusion ?? entry.state ?? entry.status ?? "UNKNOWN";
+  // gh sends `"conclusion": ""` for a check that has not finished, and `??` would keep it.
+  const settled = entry.conclusion === "" || entry.conclusion === null ? undefined : entry.conclusion;
+  const last = settled ?? entry.state ?? entry.status ?? "UNKNOWN";
   return {
     name: entry.name ?? entry.context ?? "(unnamed check)",
     state: last,
