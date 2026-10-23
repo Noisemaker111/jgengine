@@ -46,6 +46,58 @@
 - `planLookahead` (function): function planLookahead<S, M>(root: S, domain: LookaheadDomain<S, M>, profile: DifficultyProfile, rng: () => number): M | null — Pick the agent's next move by bounded lookahead: a depth-limited negamax (or single-perspective sequence search when `adversarial: false`) over the caller's {@link LookaheadDomain}, exploring at most `profile.planWidth` moves per ply to `profile.planDepth` plies, with the final root choice run through {@link pickScored} so `decisionNoise` still injects tier-appropriate blunders. Depth `1` is greedy — an easy profile literally cannot see the fork coming; an expert profile finds multi-ply tactics. Work is bounded by `planWidth ** planDepth` domain calls; run it at decision cadence (turns, ability windows, order re-evaluation), not per frame.
 - `shouldUseAbility` (function): function shouldUseAbility(opportunity: number, profile: DifficultyProfile, rng: () => number): boolean — Should the agent spend an ability now? `opportunity` is the caller-scored quality of this moment in `0..1` (targets clumped for the AoE, player mid-animation, burn phase). The perceived opportunity is fuzzed by `decisionNoise` and compared against `abilityDiscipline`: an easy profile (low discipline, high noise) wastes cooldowns on weak moments and sometimes sits on a perfect window; an expert profile fires exactly on strong windows. One rng draw when noisy.
 
+## @jgengine/core/ai/director/boss
+
+- `BossBehaviour` (type): type BossBehaviour = Omit<SquadRole, "id" | "count"> — The role shape a boss fights with in one phase: the same dials a squad role uses.
+- `BossPhase` (interface): interface BossPhase — One authored phase: the health it starts at, how the boss fights, and its tell.
+- `BossState` (interface): interface BossState — Serializable boss state: which phase holds, how long it has held, and the tell still on screen.
+- `BossStep` (interface): interface BossStep — One step of the boss clock.
+- `BossTell` (interface): interface BossTell — The warning a boss gives while it changes phase, and how long the player has to read it.
+- `advanceBoss` (function): function advanceBoss(phases: readonly BossPhase[], state: BossState, health: number, dt: number): BossStep — Advance the boss by `dt` at a health fraction and return the phase in effect.
+- `bossPhase` (function): function bossPhase(phases: readonly BossPhase[], health: number): BossPhase — The phase a boss fights with at a health fraction. Pure read for a HUD; never mutates.
+- `createBossState` (function): function createBossState(phases: readonly BossPhase[]): BossState — Fresh boss state for a phase list, opening in phase 0 with no tell showing.
+
+## @jgengine/core/ai/director/encounter
+
+- `Encounter` (interface): interface Encounter — Live encounter: opens waves, emits timed spawn orders, and round-trips through a save.
+- `EncounterConfig` (interface): interface EncounterConfig — Construction options for {@link createEncounter}.
+- `EncounterDefinition` (interface): interface EncounterDefinition — A whole encounter, authored as data instead of spawned in game code.
+- `EncounterGroup` (interface): interface EncounterGroup — One authored group inside a wave: what arrives, how many, where from, and when. `unit` and `entry` are game-owned ids — the engine never resolves them.
+- `EncounterOrder` (interface): interface EncounterOrder — One unit the director says should enter now.
+- `EncounterPressure` (interface): interface EncounterPressure — The subset of a pressure plan the encounter layer applies.
+- `EncounterState` (interface): interface EncounterState — Serializable encounter state.
+- `EncounterView` (interface): interface EncounterView — Pooled per-frame readout of where the encounter stands.
+- `EncounterWave` (interface): interface EncounterWave — One authored wave.
+- `createEncounter` (function): function createEncounter(config: EncounterConfig): Encounter — Create a live encounter over an authored definition: open a wave, step its clock, take the orders whose time has come, and close the wave when the game says it is cleared.
+- `expandWave` (function): function expandWave(config: EncounterConfig, waveIndex: number, pressure: EncounterPressure = {}): EncounterOrder[] — Expand one authored wave into the units it sends, at the times it sends them.
+
+## @jgengine/core/ai/director/pressure
+
+- `PressurePlan` (interface): interface PressurePlan — One bounded answer to "how hard now", plus the effects the encounter layer applies.
+- `PressureReading` (interface): interface PressureReading — Encounter pressure: how hard a director leans on a player who is struggling, read from the player's own state, quantized to a tier, and bounded by the rule's cap. The plan is a value, not a callback, so a test can sweep it and a probe can print it.
+- `PressureRule` (interface): interface PressureRule — The weights and window that turn a reading into an index, plus the hard cap.
+- `evaluatePressure` (function): function evaluatePressure(reading: PressureReading, rule: PressureRule = {}): PressurePlan — Turn one reading into a bounded pressure plan.
+
+## @jgengine/core/ai/director/roles
+
+- `FightIntent` (type): type FightIntent = "retreat" | "hold" | "flank" | "cover" | "assault" — The five duties a fighter can be given in a fight. A duty is *who does what*; the squad role a game dials (range, angles, fire discipline) is *how that duty fights* and stays content.
+- `FightOrders` (interface): interface FightOrders — What the director decided, per fighter, and why.
+- `FightSituation` (interface): interface FightSituation — The squad as it stands and the enemy it is facing, or no enemy at all.
+- `FighterState` (interface): interface FighterState — One fighter the director can order, with the state the decision reads.
+- `assignFightIntents` (function): function assignFightIntents(situation: FightSituation): FightOrders — Assign each fighter a duty from the squad's own state — who is hurt, who is under fire, and who already stands on the outside of the formation — never from an authored order or a spawn index.
+- `compositionForIntents` (function): function compositionForIntents(order: readonly string[], intents: ReadonlyMap<string, FightIntent>, roleFor: (intent: FightIntent) => SquadRole): SquadComposition — Turn duties into a squad composition `createSquadCombat` accepts: one slot per fighter, in the order the game gives its members, each mapped to the role that game dials for the duty. Build it through `composition` so squad combat executes the director's assignment instead of its own static list.
+
+## @jgengine/core/ai/director/sound
+
+- `Investigation` (interface): interface Investigation — A hunter still working a noise, as the squad layer reads it this tick.
+- `NoiseEvent` (interface): interface NoiseEvent — One noise in the world, as the game produces it.
+- `SoundHunt` (interface): interface SoundHunt — Sound hunting: raise a noise, get the bounded set of enemies that go and look.
+- `SoundHuntConfig` (interface): interface SoundHuntConfig — Everything the hunt reads and its bounds.
+- `SoundHuntEntry` (interface): interface SoundHuntEntry — One noise and the hunters sent to it. Serializable, so a hunt survives a save.
+- `SoundHuntSnapshot` (interface): interface SoundHuntSnapshot — Serializable book-keeping: which noises are still being worked, and by whom.
+- `SoundHunter` (interface): interface SoundHunter — A unit that could hear a noise: its id and where it stands when the noise lands.
+- `createSoundHunt` (function): function createSoundHunt(config: SoundHuntConfig): SoundHunt — Make enemies investigate a noise, reusing the hearing owner.
+
 ## @jgengine/core/ai/driver
 
 - `DrivePathPoint` (type): type DrivePathPoint = readonly [number, number] — A 2D polyline point (`[x, z]`), structurally compatible with authored road path centerlines.
