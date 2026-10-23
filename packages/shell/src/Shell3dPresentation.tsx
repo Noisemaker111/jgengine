@@ -49,6 +49,7 @@ import type { PresencePoseRow } from "@jgengine/core/runtime/transport";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { GameViewportProvider } from "@jgengine/react/gameViewport";
 import { GameProvider } from "@jgengine/react/provider";
+import { ColorblindFrame, useColorblindMode } from "@jgengine/react/accessibility";
 import { SettingsProvider, type SettingsActionView } from "@jgengine/react/settings";
 
 import { resolveWorldSky } from "./worldSky";
@@ -508,6 +509,8 @@ export function Shell3dPresentation({
         run: () => action.run(ctx),
       }));
   const touchScale = compact ? 0.88 : 1;
+  // The frame carries the player's colour-vision mode; the HUD and menu text above it stay unfiltered.
+  const colorblind = useColorblindMode(settingsStore);
   const dockMounted =
     !poster &&
     !orientationGate &&
@@ -580,208 +583,210 @@ export function Shell3dPresentation({
             }}
           >
             <GameViewportProvider platforms={playable.platforms}>
-              <Canvas
-                onCreated={({ gl }) => {
-                  if (ktx2SupportDetected.current) return;
-                  ktx2SupportDetected.current = true;
-                  detectKtx2Support(gl);
-                }}
-                frameloop={poster && posterFrozen ? "demand" : graphics.frameRateLimit > 0 && !poster ? "never" : "always"}
-                orthographic={orthographic}
-                camera={
-                  orthographic
-                    ? {
-                        zoom: playable.camera?.frustum?.zoom ?? CAMERA_FRUSTUM_DEFAULTS.zoom,
-                        near: playable.camera?.frustum?.near ?? CAMERA_FRUSTUM_DEFAULTS.near,
-                        far: playable.camera?.frustum?.far ?? CAMERA_FRUSTUM_DEFAULTS.far,
-                      }
-                    : {
-                        fov: playable.camera?.frustum?.fov ?? CAMERA_FRUSTUM_DEFAULTS.fov,
-                        near: playable.camera?.frustum?.near ?? CAMERA_FRUSTUM_DEFAULTS.near,
-                        far: playable.camera?.frustum?.far ?? CAMERA_FRUSTUM_DEFAULTS.far,
-                      }
-                }
-                shadows={graphics.shadows ? "percentage" : false}
-                dpr={[Math.min(1, graphics.dpr), graphics.dpr]}
-                gl={{ preserveDrawingBuffer: true, powerPreference: "high-performance" }}
-                style={{ touchAction: "none" }}
-              >
-                <TextureFiltering anisotropy={graphics.profile.anisotropy} />
-                {graphics.frameRateLimit > 0 && !poster ? <FrameRateLimiter fps={graphics.frameRateLimit} /> : null}
-                {graphics.showFps ? <FpsProbe tally={frameTally} /> : null}
-                {orthographic && playable.camera?.pixelPerfect !== undefined ? (
-                  <PixelPerfectCamera {...playable.camera.pixelPerfect} />
-                ) : null}
-                {backgroundColor !== undefined ? <color attach="background" args={[backgroundColor]} /> : null}
-                {cinematicLook ? (
-                  <EnvironmentLighting
-                    source={playable.environmentSource}
-                    skyColor={sceneLighting?.hemisphere?.skyColor ?? "#87b5e0"}
-                    groundColor={sceneLighting?.hemisphere?.groundColor ?? "#3d4a38"}
-                    horizonTint={sceneLighting?.ambient?.color}
-                    sunDirection={sceneLighting?.directional?.[0]?.position}
-                    sunColor={sceneLighting?.directional?.[0]?.color ?? "#fff2d6"}
-                    {...(authoredDaylight ? { daylight: daylightModulation } : {})}
-                  />
-                ) : null}
-                {sceneLighting !== undefined ? (
-                  <ConfiguredLighting
-                    lighting={sceneLighting}
-                    profile={graphics.profile}
-                    {...(authoredDaylight ? { modulation: daylightModulation } : {})}
-                  />
-                ) : effectiveSky === undefined ? (
-                  <>
-                    <ambientLight intensity={cinematicLook ? 0.3 : 0.55} />
-                    <directionalLight position={[10, 16, 6]} intensity={1.3} />
-                  </>
-                ) : null}
-                {authoredDaylight && effectiveSky !== undefined ? (
-                  <AuthoredDaylight sky={effectiveSky} clock={ctx.time} modulation={daylightModulation} />
-                ) : null}
-                {effectiveSky !== undefined ? (
-                  effectiveSky.timeOfDay ? (
-                    <TimeOfDayDaylight
-                      sky={effectiveSky}
-                      clock={ctx.time}
-                      bands={effectiveSky === worldSky ? biomeBands : undefined}
-                      lights={skyEmitsLights(resolveSkyLightOwnership(lighting !== undefined))}
-                      fogRange={backdrop?.fog}
-                    />
-                  ) : (
-                    <SkyDaylight
-                      sky={effectiveSky}
-                      bands={effectiveSky === worldSky ? biomeBands : undefined}
-                      lights={skyEmitsLights(resolveSkyLightOwnership(lighting !== undefined))}
-                      fogRange={backdrop?.fog}
-                    />
-                  )
-                ) : null}
-{irradianceVolumes.length > 0 ? <IrradianceVolumeLighting volumes={irradianceVolumes} /> : null}
-                {/* One fog owner: a mounted sky always drives scene fog, so a second `<fog>` here would only shadow it. */}
-                {effectiveSky === undefined ? <BackdropFog fog={backdrop?.fog} /> : null}
-                <GameProvider context={ctx}>
-                  <TerrainQualityContext.Provider value={graphics.quality}>
-                  <BuildingRenderBudget drawDistance={graphics.profile.drawDistance} visibility={playable.visibility} cullingDisabled={splitScreen}>
-                  <CullingProvider config={playable.visibility} drawDistance={graphics.profile.drawDistance}>
-                    <WorldView
-                      entitySprites={playable.entitySprites}
-                      entityModels={playable.entityModels}
-                      objectModels={playable.objectModels}
-                      objectStyles={playable.objectStyles}
-                      environment={AutoEnvironment}
-                      assets={playable.game.assets}
-                      renderEntity={playable.renderEntity}
-                      renderObject={playable.renderObject}
-                      selectedIds={selectedIds}
-                      hideLocalActor={firstPerson}
-                      editorLayers={playable.editorLayers}
-                    />
-                    {bars !== null ? (
-                      <WorldEntityBars
-                        statId={bars.statId}
-                        roles={bars.roles}
-                        resolveRole={resolveEntityRole}
-                        {...(bars.maxSamples === undefined ? {} : { maxSamples: bars.maxSamples })}
-                        {...(bars.tickMs === undefined ? {} : { tickMs: bars.tickMs })}
-                        {...(bars.maxDistance === undefined ? {} : { maxDistance: bars.maxDistance })}
-                        {...(bars.occlude === undefined ? {} : { occlude: bars.occlude })}
-                      />
-                    ) : null}
-                    {nameplates !== null ? (
-                      <WorldNameplates
-                        statId={nameplates.statId}
-                        roles={nameplates.roles}
-                        resolveRole={resolveEntityRole}
-                        {...(nameplates.maxSamples === undefined ? {} : { maxSamples: nameplates.maxSamples })}
-                        {...(nameplates.tickMs === undefined ? {} : { tickMs: nameplates.tickMs })}
-                        {...(nameplates.maxDistance === undefined ? {} : { maxDistance: nameplates.maxDistance })}
-                        occlude={nameplates.occlude}
-                        {...(nameplates.resolveName === undefined ? {} : { resolveName: nameplates.resolveName })}
-                        {...(nameplates.showHealth === undefined ? {} : { showHealth: nameplates.showHealth })}
-                      />
-                    ) : null}
-                  {WorldOverlay !== undefined ? (
-                    // Author decor is presentation dressing, not collision geometry — mark it
-                    // camera-transparent so the orbit spring-arm never yanks toward it. A child
-                    // that should block the camera opts back in with userData.jgCameraCollide.
-                    <group userData={CAMERA_TRANSPARENT_USERDATA}>
-                      <WorldOverlay ctx={ctx} />
-                    </group>
+              <ColorblindFrame mode={colorblind} style={{ position: "absolute", inset: 0 }}>
+                <Canvas
+                  onCreated={({ gl }) => {
+                    if (ktx2SupportDetected.current) return;
+                    ktx2SupportDetected.current = true;
+                    detectKtx2Support(gl);
+                  }}
+                  frameloop={poster && posterFrozen ? "demand" : graphics.frameRateLimit > 0 && !poster ? "never" : "always"}
+                  orthographic={orthographic}
+                  camera={
+                    orthographic
+                      ? {
+                          zoom: playable.camera?.frustum?.zoom ?? CAMERA_FRUSTUM_DEFAULTS.zoom,
+                          near: playable.camera?.frustum?.near ?? CAMERA_FRUSTUM_DEFAULTS.near,
+                          far: playable.camera?.frustum?.far ?? CAMERA_FRUSTUM_DEFAULTS.far,
+                        }
+                      : {
+                          fov: playable.camera?.frustum?.fov ?? CAMERA_FRUSTUM_DEFAULTS.fov,
+                          near: playable.camera?.frustum?.near ?? CAMERA_FRUSTUM_DEFAULTS.near,
+                          far: playable.camera?.frustum?.far ?? CAMERA_FRUSTUM_DEFAULTS.far,
+                        }
+                  }
+                  shadows={graphics.shadows ? "percentage" : false}
+                  dpr={[Math.min(1, graphics.dpr), graphics.dpr]}
+                  gl={{ preserveDrawingBuffer: true, powerPreference: "high-performance" }}
+                  style={{ touchAction: "none" }}
+                >
+                  <TextureFiltering anisotropy={graphics.profile.anisotropy} />
+                  {graphics.frameRateLimit > 0 && !poster ? <FrameRateLimiter fps={graphics.frameRateLimit} /> : null}
+                  {graphics.showFps ? <FpsProbe tally={frameTally} /> : null}
+                  {orthographic && playable.camera?.pixelPerfect !== undefined ? (
+                    <PixelPerfectCamera {...playable.camera.pixelPerfect} />
                   ) : null}
-                  </CullingProvider>
-                  <WorldItems config={playable.worldItem} />
-                  <WorldParticles quality={graphics.quality} particleCap={graphics.profile.particleCap} particleBudget={graphics.profile.particleBudget} diagnostics={devtoolsEnabled} />
-                  <CombatPresentation effects={effects} />
-                  {devtoolsEnabled ? <CollisionDebugWorld /> : null}
-                  <AudioListener engine={audioEngine} anchor={playable.camera?.rig === "rts" || playable.camera?.rig === "topDown" ? "ground" : "camera"} />
-                  <EntityAudioEmitters engine={audioEngine} entitySounds={playable.entitySounds} />
-                  <ObjectAudioEmitters engine={audioEngine} objectSounds={playable.objectSounds} />
-                  <GameCameraRig
+                  {backgroundColor !== undefined ? <color attach="background" args={[backgroundColor]} /> : null}
+                  {cinematicLook ? (
+                    <EnvironmentLighting
+                      source={playable.environmentSource}
+                      skyColor={sceneLighting?.hemisphere?.skyColor ?? "#87b5e0"}
+                      groundColor={sceneLighting?.hemisphere?.groundColor ?? "#3d4a38"}
+                      horizonTint={sceneLighting?.ambient?.color}
+                      sunDirection={sceneLighting?.directional?.[0]?.position}
+                      sunColor={sceneLighting?.directional?.[0]?.color ?? "#fff2d6"}
+                      {...(authoredDaylight ? { daylight: daylightModulation } : {})}
+                    />
+                  ) : null}
+                  {sceneLighting !== undefined ? (
+                    <ConfiguredLighting
+                      lighting={sceneLighting}
+                      profile={graphics.profile}
+                      {...(authoredDaylight ? { modulation: daylightModulation } : {})}
+                    />
+                  ) : effectiveSky === undefined ? (
+                    <>
+                      <ambientLight intensity={cinematicLook ? 0.3 : 0.55} />
+                      <directionalLight position={[10, 16, 6]} intensity={1.3} />
+                    </>
+                  ) : null}
+                  {authoredDaylight && effectiveSky !== undefined ? (
+                    <AuthoredDaylight sky={effectiveSky} clock={ctx.time} modulation={daylightModulation} />
+                  ) : null}
+                  {effectiveSky !== undefined ? (
+                    effectiveSky.timeOfDay ? (
+                      <TimeOfDayDaylight
+                        sky={effectiveSky}
+                        clock={ctx.time}
+                        bands={effectiveSky === worldSky ? biomeBands : undefined}
+                        lights={skyEmitsLights(resolveSkyLightOwnership(lighting !== undefined))}
+                        fogRange={backdrop?.fog}
+                      />
+                    ) : (
+                      <SkyDaylight
+                        sky={effectiveSky}
+                        bands={effectiveSky === worldSky ? biomeBands : undefined}
+                        lights={skyEmitsLights(resolveSkyLightOwnership(lighting !== undefined))}
+                        fogRange={backdrop?.fog}
+                      />
+                    )
+                  ) : null}
+  {irradianceVolumes.length > 0 ? <IrradianceVolumeLighting volumes={irradianceVolumes} /> : null}
+                  {/* One fog owner: a mounted sky always drives scene fog, so a second `<fog>` here would only shadow it. */}
+                  {effectiveSky === undefined ? <BackdropFog fog={backdrop?.fog} /> : null}
+                  <GameProvider context={ctx}>
+                    <TerrainQualityContext.Provider value={graphics.quality}>
+                    <BuildingRenderBudget drawDistance={graphics.profile.drawDistance} visibility={playable.visibility} cullingDisabled={splitScreen}>
+                    <CullingProvider config={playable.visibility} drawDistance={graphics.profile.drawDistance}>
+                      <WorldView
+                        entitySprites={playable.entitySprites}
+                        entityModels={playable.entityModels}
+                        objectModels={playable.objectModels}
+                        objectStyles={playable.objectStyles}
+                        environment={AutoEnvironment}
+                        assets={playable.game.assets}
+                        renderEntity={playable.renderEntity}
+                        renderObject={playable.renderObject}
+                        selectedIds={selectedIds}
+                        hideLocalActor={firstPerson}
+                        editorLayers={playable.editorLayers}
+                      />
+                      {bars !== null ? (
+                        <WorldEntityBars
+                          statId={bars.statId}
+                          roles={bars.roles}
+                          resolveRole={resolveEntityRole}
+                          {...(bars.maxSamples === undefined ? {} : { maxSamples: bars.maxSamples })}
+                          {...(bars.tickMs === undefined ? {} : { tickMs: bars.tickMs })}
+                          {...(bars.maxDistance === undefined ? {} : { maxDistance: bars.maxDistance })}
+                          {...(bars.occlude === undefined ? {} : { occlude: bars.occlude })}
+                        />
+                      ) : null}
+                      {nameplates !== null ? (
+                        <WorldNameplates
+                          statId={nameplates.statId}
+                          roles={nameplates.roles}
+                          resolveRole={resolveEntityRole}
+                          {...(nameplates.maxSamples === undefined ? {} : { maxSamples: nameplates.maxSamples })}
+                          {...(nameplates.tickMs === undefined ? {} : { tickMs: nameplates.tickMs })}
+                          {...(nameplates.maxDistance === undefined ? {} : { maxDistance: nameplates.maxDistance })}
+                          occlude={nameplates.occlude}
+                          {...(nameplates.resolveName === undefined ? {} : { resolveName: nameplates.resolveName })}
+                          {...(nameplates.showHealth === undefined ? {} : { showHealth: nameplates.showHealth })}
+                        />
+                      ) : null}
+                    {WorldOverlay !== undefined ? (
+                      // Author decor is presentation dressing, not collision geometry — mark it
+                      // camera-transparent so the orbit spring-arm never yanks toward it. A child
+                      // that should block the camera opts back in with userData.jgCameraCollide.
+                      <group userData={CAMERA_TRANSPARENT_USERDATA}>
+                        <WorldOverlay ctx={ctx} />
+                      </group>
+                    ) : null}
+                    </CullingProvider>
+                    <WorldItems config={playable.worldItem} />
+                    <WorldParticles quality={graphics.quality} particleCap={graphics.profile.particleCap} particleBudget={graphics.profile.particleBudget} diagnostics={devtoolsEnabled} />
+                    <CombatPresentation effects={effects} />
+                    {devtoolsEnabled ? <CollisionDebugWorld /> : null}
+                    <AudioListener engine={audioEngine} anchor={playable.camera?.rig === "rts" || playable.camera?.rig === "topDown" ? "ground" : "camera"} />
+                    <EntityAudioEmitters engine={audioEngine} entitySounds={playable.entitySounds} />
+                    <ObjectAudioEmitters engine={audioEngine} objectSounds={playable.objectSounds} />
+                    <GameCameraRig
+                      yawRef={yawRef}
+                      pitchRef={pitchRef}
+                      config={cameraConfig}
+                      viewmodel={playable.viewmodel}
+                      pointerControls={pointerUsesLeft}
+                      panKeysEnabled={rtsPanKeysEnabled}
+                      director={ctx.camera}
+                      onDragChange={(dragging) => {
+                        cameraDraggingRef.current = dragging;
+                      }}
+                    />
+                    <PointerProbe service={pointerService} />
+                    </BuildingRenderBudget>
+                    </TerrainQualityContext.Provider>
+                  </GameProvider>
+                  <RemotePlayers rows={remotePlayers} />
+                  <FrameDriver
+                    ctx={ctx}
+                    playable={playable}
+                    tracker={tracker}
                     yawRef={yawRef}
                     pitchRef={pitchRef}
-                    config={cameraConfig}
-                    viewmodel={playable.viewmodel}
-                    pointerControls={pointerUsesLeft}
-                    panKeysEnabled={rtsPanKeysEnabled}
-                    director={ctx.camera}
-                    onDragChange={(dragging) => {
-                      cameraDraggingRef.current = dragging;
-                    }}
+                    primaryClickRef={primaryClickRef}
+                    pointerAxisRef={pointerAxisRef}
+                    analogRef={analogRef}
+                    gateRef={gateRef}
+                    onRuntimeError={reportRuntimeError}
+                    multiplayer={multiplayer}
+                    serverIdRef={serverIdRef}
+                    pointerService={pointerService}
+                    pointerAim={pointer?.aim === true}
+                    pingCommand={pointer?.pingCommand}
+                    poster={poster}
+                    onPosterSettled={onPosterSettled}
+                    authoritativeFrameRef={authoritativeFrameRef}
                   />
-                  <PointerProbe service={pointerService} />
-                  </BuildingRenderBudget>
-                  </TerrainQualityContext.Provider>
-                </GameProvider>
-                <RemotePlayers rows={remotePlayers} />
-                <FrameDriver
-                  ctx={ctx}
-                  playable={playable}
-                  tracker={tracker}
-                  yawRef={yawRef}
-                  pitchRef={pitchRef}
-                  primaryClickRef={primaryClickRef}
-                  pointerAxisRef={pointerAxisRef}
-                  analogRef={analogRef}
-                  gateRef={gateRef}
-                  onRuntimeError={reportRuntimeError}
-                  multiplayer={multiplayer}
-                  serverIdRef={serverIdRef}
-                  pointerService={pointerService}
-                  pointerAim={pointer?.aim === true}
-                  pingCommand={pointer?.pingCommand}
-                  poster={poster}
-                  onPosterSettled={onPosterSettled}
-                  authoritativeFrameRef={authoritativeFrameRef}
-                />
-                <GamepadSource
-                  tracker={tracker}
-                  bindings={inputBindings ?? {}}
-                  analogRef={analogRef}
-                  input={ctx.input}
-                  feel={playable.gamepad}
-                  seats={localPlayers(ctx)}
-                  onSeatJoin={(slot) => {
-                    try {
-                      playable.loop.onNewPlayer(ctx, { userId: slot.userId, isNew: true });
-                    } catch (error) {
-                      reportRuntimeError(error, "tick");
-                    }
-                  }}
-                  seatsActive={() => !gateRef.current && playControlsActive(ctx)}
-                />
-                <DevtoolsRendererProbe />
-                {devtoolsEnabled ? (
-                  <FrameTelemetry game={playable.game.name} quality={graphics.quality === "low" ? "draft" : "full"} />
-                ) : null}
-                {splitScreen ? (
-                  <SplitScreenRenderer ctx={ctx} viewports={seatViewports} config={playable.viewports} mainCamera={playable.camera} />
-                ) : null}
-                {!splitScreen && resolvedLook.postProcessing !== undefined && resolvedLook.postProcessing.enabled !== false ? (
-                  <PostProcessing config={resolvedLook.postProcessing} quality={graphics.quality} stages={graphics.profile.postStages} />
-                ) : null}
-                {poster ? null : <SceneWarmupGate onState={setWarmup} />}
-              </Canvas>
+                  <GamepadSource
+                    tracker={tracker}
+                    bindings={inputBindings ?? {}}
+                    analogRef={analogRef}
+                    input={ctx.input}
+                    feel={playable.gamepad}
+                    seats={localPlayers(ctx)}
+                    onSeatJoin={(slot) => {
+                      try {
+                        playable.loop.onNewPlayer(ctx, { userId: slot.userId, isNew: true });
+                      } catch (error) {
+                        reportRuntimeError(error, "tick");
+                      }
+                    }}
+                    seatsActive={() => !gateRef.current && playControlsActive(ctx)}
+                  />
+                  <DevtoolsRendererProbe />
+                  {devtoolsEnabled ? (
+                    <FrameTelemetry game={playable.game.name} quality={graphics.quality === "low" ? "draft" : "full"} />
+                  ) : null}
+                  {splitScreen ? (
+                    <SplitScreenRenderer ctx={ctx} viewports={seatViewports} config={playable.viewports} mainCamera={playable.camera} />
+                  ) : null}
+                  {!splitScreen && resolvedLook.postProcessing !== undefined && resolvedLook.postProcessing.enabled !== false ? (
+                    <PostProcessing config={resolvedLook.postProcessing} quality={graphics.quality} stages={graphics.profile.postStages} />
+                  ) : null}
+                  {poster ? null : <SceneWarmupGate onState={setWarmup} />}
+                </Canvas>
+              </ColorblindFrame>
               <SceneWarmupCover state={warmup} />
               {graphics.showFps && !poster ? <FpsCounter tally={frameTally} /> : null}
               {!poster &&

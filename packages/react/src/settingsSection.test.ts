@@ -24,6 +24,16 @@ beforeAll(async () => {
     import { useAccessibilitySettings } from '../../packages/react/src/accessibilitySettings';
     import { HudThemeRoot } from '../../packages/react/src/hudThemeRoot';
 
+    const pad = { buttons: new Set(), axes: [0, 0] };
+    Object.defineProperty(navigator, 'getGamepads', {
+      configurable: true,
+      value: () => [{
+        id: 'fake', index: 0, connected: true, mapping: 'standard', timestamp: 0,
+        axes: pad.axes,
+        buttons: Array.from({ length: 17 }, (_, index) => ({ pressed: pad.buttons.has(index), value: pad.buttons.has(index) ? 1 : 0, touched: pad.buttons.has(index) })),
+      }],
+    });
+
     const session = createRebindSession({
       actions: [
         { id: 'jump', label: 'Jump', defaultCodes: ['Space'] },
@@ -46,13 +56,25 @@ beforeAll(async () => {
       );
     }
 
+    const valuesRef = { current: { volume: 0.5, captions: false, quality: 'high' } };
+
     function Fixture() {
       const [, bump] = React.useReducer((value) => value + 1, 0);
+      const [values, setValues] = React.useState({ volume: 0.5, captions: false, quality: 'high' });
       React.useEffect(() => session.subscribe(bump), []);
+      valuesRef.current = values;
       const category = {
         id: 'controls',
         label: 'Controls',
-        rows: [],
+        rows: [
+          { id: 'volume', label: 'Volume', kind: 'slider', value: values.volume, min: 0, max: 1, step: 0.1,
+            set: (next) => flushSync(() => setValues((prev) => ({ ...prev, volume: Number(next) }))) },
+          { id: 'captions', label: 'Captions', kind: 'toggle', value: values.captions,
+            set: (next) => flushSync(() => setValues((prev) => ({ ...prev, captions: Boolean(next) }))) },
+          { id: 'quality', label: 'Quality', kind: 'select', value: values.quality,
+            options: [{ value: 'low', label: 'Low' }, { value: 'high', label: 'High' }, { value: 'ultra', label: 'Ultra' }],
+            set: (next) => flushSync(() => setValues((prev) => ({ ...prev, quality: String(next) }))) },
+        ],
         keybinds: session.rows().map((row) => ({
           action: row.actionId,
           label: row.label,
@@ -65,6 +87,9 @@ beforeAll(async () => {
       return (
         <SettingsProvider store={store}>
           <SettingsSection category={category} />
+          <output id="volume">{values.volume.toFixed(2)}</output>
+          <output id="captions">{String(values.captions)}</output>
+          <output id="quality">{values.quality}</output>
           <Scaled />
         </SettingsProvider>
       );
@@ -73,6 +98,9 @@ beforeAll(async () => {
     window.fixture = {
       bindings: () => Object.fromEntries(session.rows().map((row) => [row.actionId, row.bindingLabel])),
       overrides: () => session.overrides(),
+      values: () => valuesRef.current,
+      press: (buttons) => { pad.buttons = new Set(buttons); },
+      axes: (values) => { pad.axes = values; },
     };
     createRoot(document.getElementById('root')).render(<Fixture/>);
   `);
@@ -90,6 +118,9 @@ beforeAll(async () => {
 }, 30000);
 
 beforeEach(async () => {
+  // Park the pointer before loading: Playwright keeps the mouse where the last click left it, and the browser
+  // hovers whatever is under it on the new page, which legitimately makes that row the menu's active row.
+  await page.mouse.move(1260, 4);
   await page.goto(`http://127.0.0.1:${server.port}`);
   await page.waitForFunction(() => typeof (window as any).fixture !== "undefined");
 });
@@ -99,6 +130,10 @@ afterAll(async () => {
   server?.stop(true);
   await rm(scratch, { recursive: true, force: true });
 });
+
+async function focused(): Promise<string | null> {
+  return page.evaluate(() => document.activeElement?.getAttribute("data-jg-menu-item") ?? null);
+}
 
 describe("SettingsSection rebinding", () => {
   test("click-to-capture writes the pressed key into the rebind session", async () => {
@@ -128,6 +163,189 @@ describe("SettingsSection rebinding", () => {
   });
 });
 
+describe("SettingsSection keyboard rows", () => {
+  test("arrow keys edit the focused row through the same adjust path the d-pad uses", async () => {
+    await page.evaluate(() => {
+      (document.querySelector('[data-jg-menu-item="row:volume"]') as HTMLElement | null)?.focus();
+    });
+    await page.waitForFunction(() => document.activeElement?.getAttribute("data-jg-menu-item") === "row:volume");
+    await page.keyboard.press("ArrowRight");
+    await page.waitForFunction(() => document.getElementById("volume")?.textContent === "0.60", undefined, {
+      polling: 25,
+      timeout: 4000,
+    });
+    await page.keyboard.press("ArrowLeft");
+    await page.waitForFunction(() => document.getElementById("volume")?.textContent === "0.50", undefined, {
+      polling: 25,
+      timeout: 4000,
+    });
+    await page.keyboard.press("ArrowDown");
+    await page.waitForFunction(() => document.activeElement?.getAttribute("data-jg-menu-item") === "row:captions");
+    await page.keyboard.press("Enter");
+    await page.waitForFunction(() => document.getElementById("captions")?.textContent === "true", undefined, {
+      polling: 25,
+      timeout: 4000,
+    });
+  }, 20_000);
+});
+
+describe("SettingsSection gamepad rows", () => {
+  const press = (buttons: number[]) => page.evaluate((held) => (window as any).fixture.press(held), buttons);
+  const release = async () => {
+    await press([]);
+    await page.waitForTimeout(60);
+  };
+  const text = (id: string) => page.evaluate((want) => document.getElementById(want)?.textContent, id);
+  const focusedOn = (id: string, timeout = 4000) =>
+    page.waitForFunction((want) => document.activeElement?.getAttribute("data-jg-menu-item") === want, id, {
+      polling: 50,
+      timeout,
+    });
+  // Move the nav's active row on purpose: the mouse can hover another row after a reload, which is correct behaviour.
+  const focusRow = async (id: string) => {
+    await page.evaluate((want) => {
+      const element = document.querySelector(`[data-jg-menu-item="${want}"]`);
+      (element as HTMLElement | null)?.focus();
+    }, id);
+    await focusedOn(id);
+  };
+  const armed = () =>
+    page.evaluate(() => document.querySelector('[data-settings-keybind="jump"]')?.hasAttribute("data-armed") === true);
+
+  test("opens on the first row and one d-pad press steps its value by the row's step", async () => {
+    await focusRow("row:volume");
+    await page.evaluate(() => {
+      (window as any).steps = [];
+      let last = document.getElementById("volume")?.textContent;
+      (window as any).sampler = setInterval(() => {
+        const now = document.getElementById("volume")?.textContent;
+        if (now !== last) {
+          (window as any).steps.push(now);
+          last = now;
+        }
+      }, 20);
+    });
+    await press([15]);
+    await page.waitForFunction(() => Number(document.getElementById("volume")?.textContent) > 0.5, undefined, {
+      polling: 25,
+      timeout: 4000,
+    });
+    const steps = await page.evaluate(() => {
+      clearInterval((window as any).sampler);
+      return (window as any).steps as string[];
+    });
+    await release();
+    expect(steps[0]).toBe("0.60");
+  }, 20_000);
+
+  test("d-pad down moves to the next row and A flips a toggle", async () => {
+    await focusRow("row:volume");
+    await press([13]);
+    await focusedOn("row:captions");
+    await release();
+    expect(await text("captions")).toBe("false");
+    await press([0]);
+    await page.waitForFunction(() => document.getElementById("captions")?.textContent === "true", undefined, {
+      polling: 25,
+      timeout: 4000,
+    });
+    await release();
+    expect(await text("captions")).toBe("true");
+  }, 20_000);
+
+  test("d-pad left steps a select backwards", async () => {
+    await focusRow("row:quality");
+    expect(await text("quality")).toBe("high");
+    await press([14]);
+    await page.waitForFunction(() => document.getElementById("quality")?.textContent === "low", undefined, {
+      polling: 25,
+      timeout: 4000,
+    });
+    await release();
+    expect(await text("quality")).toBe("low");
+  }, 20_000);
+
+  test("a held d-pad direction repeats instead of stepping once", async () => {
+    await focusRow("row:volume");
+    await page.evaluate(() => {
+      (window as any).steps = [];
+      let last = document.getElementById("volume")?.textContent;
+      (window as any).sampler = setInterval(() => {
+        const now = document.getElementById("volume")?.textContent;
+        if (now !== last) {
+          (window as any).steps.push(now);
+          last = now;
+        }
+      }, 20);
+    });
+    await press([15]);
+    await page.waitForFunction(() => Number(document.getElementById("volume")?.textContent) >= 0.8, undefined, {
+      polling: 50,
+      timeout: 4000,
+    });
+    const steps = await page.evaluate(() => {
+      clearInterval((window as any).sampler);
+      return (window as any).steps as string[];
+    });
+    await release();
+    // One press steps once; a repeat shows several values in a row while the direction stays held.
+    expect(steps.length).toBeGreaterThanOrEqual(3);
+    expect(Number(steps[steps.length - 1])).toBeGreaterThan(0.6);
+  }, 20_000);
+
+  test("a held stick repeats on hold", async () => {
+    await focusRow("row:volume");
+    await page.evaluate(() => (window as any).fixture.axes([1, 0]));
+    await page.waitForFunction(() => Number(document.getElementById("volume")?.textContent) >= 0.8, undefined, {
+      polling: 50,
+      timeout: 4000,
+    });
+    await page.evaluate(() => (window as any).fixture.axes([0, 0]));
+    // 0.5 to 0.8 is three steps, so only hold-to-repeat can get there.
+    expect(await page.evaluate(() => (window as any).fixture.values().volume)).toBeGreaterThanOrEqual(0.8);
+  }, 20_000);
+
+  test("A arms the focused keybind row and Escape cancels without rebinding", async () => {
+    await focusRow("row:volume");
+    for (const row of ["row:captions", "row:quality", "key:jump"]) {
+      await press([13]);
+      await focusedOn(row);
+      await release();
+    }
+    await press([0]);
+    await page.waitForFunction(() => document.querySelector('[data-settings-keybind="jump"]')?.hasAttribute("data-armed") === true, undefined, {
+      polling: 25,
+      timeout: 4000,
+    });
+    await release();
+    await page.keyboard.press("Escape");
+    await page.waitForFunction(() => document.querySelector('[data-settings-keybind="jump"]')?.hasAttribute("data-armed") === false, undefined, {
+      polling: 25,
+      timeout: 4000,
+    });
+    expect(await page.evaluate(() => (window as any).fixture.bindings().jump)).toBe("Space");
+  }, 20_000);
+
+  test("Escape disarms before the next key arrives, so a key in the same tick cannot rebind", async () => {
+    await focusRow("row:volume");
+    for (const row of ["row:captions", "row:quality", "key:jump"]) {
+      await press([13]);
+      await focusedOn(row);
+      await release();
+    }
+    await press([0]);
+    await page.waitForFunction(() => document.querySelector('[data-settings-keybind="jump"]')?.hasAttribute("data-armed") === true);
+    await release();
+    await page.evaluate(() => {
+      window.dispatchEvent(new KeyboardEvent("keydown", { code: "Escape", bubbles: true }));
+      window.dispatchEvent(new KeyboardEvent("keydown", { code: "KeyQ", bubbles: true }));
+    });
+    await page.waitForTimeout(120);
+    expect(await armed()).toBe(false);
+    expect(await page.evaluate(() => (window as any).fixture.bindings().jump)).toBe("Space");
+  }, 20_000);
+});
+
 describe("accessibility text scale", () => {
   test("the HUD root's type scale follows the stored preference", async () => {
     const before = await page.evaluate(() => parseFloat(getComputedStyle(document.getElementById("scaled")!).fontSize));
@@ -140,3 +358,6 @@ describe("accessibility text scale", () => {
     expect(after / before).toBeCloseTo(2, 1);
   });
 });
+
+
+

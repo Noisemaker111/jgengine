@@ -1,11 +1,20 @@
-import { createContext, useContext, useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useSyncExternalStore,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
 
 import {
   COLORBLIND_MATRICES,
+  colorblindFrameFilter,
   type AccessibilityState,
   type AccessibilityStore,
   type ColorblindMode,
 } from "@jgengine/core/ui/accessibility";
+import { readColorblind } from "@jgengine/core/settings/accessibilitySettings";
+import type { SettingsStore } from "@jgengine/core/settings/settingsModel";
 
 interface AccessibilityContextValue {
   state: AccessibilityState;
@@ -30,8 +39,8 @@ export function useAccessibility(): AccessibilityContextValue {
 
 /**
  * Hidden SVG `<defs>` holding the `feColorMatrix` colorblind filters that
- * `AccessibilityProvider` references by `filter: url(#jg-cb-<mode>)`. Rendered
- * automatically inside the provider; export standalone for custom roots.
+ * `filter: url(#jg-cb-<mode>)` references. Mounted by {@link ColorblindFrame};
+ * export it standalone for a root that applies the filter itself.
  *
  * @capability colorblind-filters SVG feColorMatrix defs (protanopia/deuteranopia/tritanopia/grayscale) referenced by the accessibility colorblind filter
  */
@@ -49,15 +58,70 @@ export function ColorblindFilters(): ReactNode {
   );
 }
 
+/** Props for {@link ColorblindFrame}. */
+export interface ColorblindFrameProps {
+  /** The player's colour-vision mode. `none` (default) renders the frame untouched. */
+  mode?: ColorblindMode;
+  children?: ReactNode;
+  className?: string;
+  style?: CSSProperties;
+}
+
+/**
+ * Apply the player's colour-vision mode to one rendered frame: a box carrying
+ * `filter: url(#jg-cb-<mode>)` plus the filter defs it references. Put it around the canvas of a 3D
+ * game and nothing else — the filter is one compositor pass over that box's pixels, so HUD, menu and
+ * caption text outside it keep the contrast and hues the rest of the UI assumes.
+ *
+ * The filter needs no framebuffer copy and no extra WebGL draw: the browser filters the canvas layer
+ * as it composites, so switching modes costs nothing per frame beyond that pass. Gameplay stays
+ * unaffected; the cost is one full-screen colour-matrix pass while a mode other than `none` is set.
+ *
+ * @capability colorblind-frame apply the player's colour-vision mode to the 3D frame alone, leaving HUD and menu text unfiltered
+ */
+export function ColorblindFrame({ mode = "none", children, className, style }: ColorblindFrameProps): ReactNode {
+  const filter = colorblindFrameFilter(mode);
+  return (
+    <>
+      <ColorblindFilters />
+      <div
+        className={className}
+        data-colorblind-frame={mode}
+        style={filter === null ? style : { ...style, filter }}
+      >
+        {children}
+      </div>
+    </>
+  );
+}
+
+/**
+ * The live colour-vision mode from a settings store — the same store the settings rows write, so the
+ * frame follows the player's choice the moment they pick it. Pass the store the shell owns; read
+ * `useAccessibilitySettings().colorblind` instead when a `SettingsProvider` is above the caller.
+ *
+ * @capability colorblind-frame-mode read the live colour-vision mode from the settings store that the settings rows write
+ */
+export function useColorblindMode(store: SettingsStore): ColorblindMode {
+  return useSyncExternalStore(
+    store.subscribe,
+    () => readColorblind(store),
+    () => readColorblind(store),
+  );
+}
+
 /**
  * Apply accessibility preferences to a subtree: exposes `--jg-text-scale` for
- * text to scale off, sets `data-reduced-motion` / `data-high-contrast` /
- * `data-colorblind` / `data-captions` for CSS to respond to, and wraps the tree
- * in the selected colorblind `feColorMatrix` filter. Reads a
+ * text to scale off, and sets `data-reduced-motion` / `data-high-contrast` /
+ * `data-colorblind` / `data-captions` for CSS to respond to. Reads a
  * `createAccessibilityStore` and re-renders on change; provides the state to
  * `useAccessibility`.
  *
- * @capability accessibility-provider apply accessibility preferences to a subtree — text-scale CSS var, reduced-motion/high-contrast/colorblind/captions data attrs, and the colorblind color-matrix filter
+ * It deliberately does not filter its own subtree: this is the HUD and menu root, and a colour matrix
+ * over text costs the contrast the rest of the UI was designed around. Wrap the 3D canvas in
+ * {@link ColorblindFrame} instead.
+ *
+ * @capability accessibility-provider apply accessibility preferences to a subtree — text-scale CSS var and reduced-motion/high-contrast/colorblind/captions data attrs
  */
 export function AccessibilityProvider({
   store,
@@ -73,7 +137,6 @@ export function AccessibilityProvider({
   const state = useSyncExternalStore(store.subscribe, store.get, store.get);
   const rootStyle: CSSProperties = { ...style };
   (rootStyle as Record<string, string>)["--jg-text-scale"] = String(state.textScale);
-  if (state.colorblind !== "none") rootStyle.filter = `url(#jg-cb-${state.colorblind})`;
 
   return (
     <AccessibilityContext.Provider value={{ state, store }}>
@@ -86,7 +149,6 @@ export function AccessibilityProvider({
         data-captions={state.captions}
         style={rootStyle}
       >
-        <ColorblindFilters />
         {children}
       </div>
     </AccessibilityContext.Provider>
