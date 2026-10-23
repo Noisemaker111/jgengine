@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import {
   accessibilitySettingRows,
@@ -7,14 +7,40 @@ import {
   type AccessibilitySettingRow,
   type HoldVsToggle,
 } from "@jgengine/core/settings/accessibilitySettings";
+import type { SettingsStore } from "@jgengine/core/settings/settingsModel";
 import type { AccessibilityState } from "@jgengine/core/ui/accessibility";
 
 import { useSettingsStore } from "./settings";
 
-function useSettingsRevision(): number {
-  const store = useSettingsStore();
+/** Every accessibility value as one comparable string, read with the same fallbacks the hooks use. */
+function accessibilitySignature(store: SettingsStore): string {
+  const { state, holdVsToggle } = readAccessibilitySettings(store);
+  return JSON.stringify([
+    state.reducedMotion,
+    state.highContrast,
+    state.textScale,
+    state.colorblind,
+    state.captions,
+    holdVsToggle,
+  ]);
+}
+
+/**
+ * A counter that changes on every settings write, so the hooks below re-render. React runs this
+ * subscription in a passive effect, after the render that showed the old value; a write landing in
+ * that window (a saved profile or the demo path seeding settings) would otherwise stay invisible
+ * until the player changed something else. Reading the value again on subscribe closes the window.
+ */
+function useSettingsRevision(store: SettingsStore): number {
   const [revision, setRevision] = useState(0);
-  useEffect(() => store.subscribe(() => setRevision((value) => value + 1)), [store]);
+  const rendered = useRef("");
+  rendered.current = accessibilitySignature(store);
+  useEffect(() => {
+    const bump = () => setRevision((value) => value + 1);
+    const unsubscribe = store.subscribe(bump);
+    if (accessibilitySignature(store) !== rendered.current) bump();
+    return unsubscribe;
+  }, [store]);
   return revision;
 }
 
@@ -27,7 +53,7 @@ function useSettingsRevision(): number {
  */
 export function useAccessibilitySettings(): AccessibilityState {
   const store = useSettingsStore();
-  const revision = useSettingsRevision();
+  const revision = useSettingsRevision(store);
   return useMemo(() => readAccessibilitySettings(store).state, [store, revision]);
 }
 
@@ -39,7 +65,7 @@ export function useAccessibilitySettings(): AccessibilityState {
  */
 export function useHoldVsToggle(): HoldVsToggle {
   const store = useSettingsStore();
-  const revision = useSettingsRevision();
+  const revision = useSettingsRevision(store);
   return useMemo(() => readHoldVsToggle(store), [store, revision]);
 }
 
@@ -52,6 +78,6 @@ export function useHoldVsToggle(): HoldVsToggle {
  */
 export function useAccessibilityRows(): AccessibilitySettingRow[] {
   const store = useSettingsStore();
-  const revision = useSettingsRevision();
+  const revision = useSettingsRevision(store);
   return useMemo(() => accessibilitySettingRows(store), [store, revision]);
 }
