@@ -116,9 +116,10 @@ export const SHARDS: readonly Shard[] = [
     name: "g",
     label: "shell, editor and react",
     // 26 s of shell, the 3 s of editor tests that are not browser scenarios, and 29 s of react.
-    // This is the old shell+editor shard with the old react shard folded in.
+    // This is the old shell+editor shard with the old react shard folded in. It clones Games for
+    // one editor test that opens a real game scene (`packages/editor/src/mcp/loadGameLayers`).
     include: ["packages/shell", "packages/editor", "packages/react"],
-    needs: [],
+    needs: ["games"],
   },
   {
     name: "h",

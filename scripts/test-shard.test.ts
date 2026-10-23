@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { assignShards, preparation, SHARDS, TEST_ROOTS, walkTestFiles, type Shard } from "./test-shard";
+import { assignShards, matchingShard, preparation, SHARDS, TEST_ROOTS, walkTestFiles, type Shard } from "./test-shard";
 
 const TABLE: Shard[] = [
   { name: "hot", include: ["packages/core/src/combat"] },
@@ -50,10 +50,13 @@ test("the last shard covers every root, so a new one cannot fall outside the spl
 });
 
 test("the shard that reads Games is the shard that clones it, and the built gate is one shard", () => {
-  const games = SHARDS.filter((shard) => (shard.needs ?? []).includes("games"));
-  expect(games).toHaveLength(1);
-  expect(games[0]!.include).toContain("scripts");
-  expect(preparation(games[0]!)).toEqual([
+  for (const file of ["scripts/cutlistSurface.test.ts", "packages/editor/src/mcp/loadGameLayers.test.ts"]) {
+    const shard = matchingShard(file)!;
+    expect(shard.needs ?? []).toContain("games");
+  }
+  const scripts = matchingShard("scripts/cutlistSurface.test.ts")!;
+  expect(scripts.include).toContain("scripts");
+  expect(preparation(scripts)).toEqual([
     ["run", "build"],
     ["run", "games:clone"],
   ]);
