@@ -1,5 +1,7 @@
 name: timing-a118 (throwaway)
 on:
+  push:
+    branches: [agent/lane-a1-18]
   workflow_dispatch:
 jobs:
   timing:
