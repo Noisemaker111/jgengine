@@ -23,10 +23,29 @@ export const PLAN = "check-types";
 /**
  * Two stages at a time. Four was measured first and bought 5 s: a 4-vCPU runner starves
  * four CPU-bound stages and the tsc fan-out's own eight children, so the whole plan took 54 s
- * against 59 s one after another. Two lanes put the fan-out beside the two generators that
- * matter, which are the only stages with anything to overlap.
+ * against 59 s one after another. Two lanes put the fan-out beside the generators it can
+ * overlap, which is the only arrangement that gains anything.
  */
 export const CONCURRENCY = 2;
+
+/**
+ * Stages the `quick` job already proves on the same commit, so this job does not pay them a
+ * second time. Each one names the command `quick` must still run; `scripts/type-shard.test.ts`
+ * reads `.github/workflows/ci.yml` and fails if that job stops running it, so the work cannot
+ * leave the gate by being skipped here.
+ */
+export const PROVEN_IN_QUICK: Readonly<Record<string, string>> = {
+  "check-skill-api": "bun run check-skill-api",
+};
+
+/** The stages this job runs: the plan minus what `quick` already proved. */
+export function planStages(stages: readonly Stage[]): Stage[] {
+  const names = new Set(stages.map((stage) => stage.name));
+  for (const name of Object.keys(PROVEN_IN_QUICK)) {
+    if (!names.has(name)) throw new Error(`type-shard: PROVEN_IN_QUICK names ${name}, which the plan no longer has`);
+  }
+  return stages.filter((stage) => PROVEN_IN_QUICK[stage.name] === undefined);
+}
 /**
  * Relative cost of the stages worth ordering by, from the run named above. A stale number
  * only costs overlap - the longest stage starting late - never correctness.
@@ -101,7 +120,7 @@ async function spawnStage(stage: Stage): Promise<boolean> {
 }
 
 if (import.meta.main) {
-  const stages = PLANS[PLAN]!;
+  const stages = planStages(PLANS[PLAN]!);
   if (process.argv.includes("--check")) {
     const first = stages.filter((entry) => (entry.needs ?? []).length === 0);
     const rest = stages.filter((entry) => (entry.needs ?? []).length > 0);

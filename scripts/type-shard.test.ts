@@ -1,6 +1,8 @@
 import { expect, test } from "bun:test";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { PLANS, type Stage } from "./run-stages";
-import { CONCURRENCY, ordered, PLAN, runPool, runTypes, WEIGHT } from "./type-shard";
+import { CONCURRENCY, ordered, PLAN, planStages, PROVEN_IN_QUICK, runPool, runTypes, WEIGHT } from "./type-shard";
 
 const stage = (name: string, needs: readonly string[] = ["ensure-ready"]): Stage => ({
   name,
@@ -58,4 +60,26 @@ test("the plan is the check-types plan and nothing is dropped from it", () => {
   expect(stages[0]!.name).toBe("ensure-ready");
   expect(stages.at(-1)!.name).toBe("check-types-all");
   expect(CONCURRENCY).toBeGreaterThan(1);
+});
+
+/** The commands the `quick` job runs, one per line of its steps. */
+function quickJob(): string {
+  const workflow = readFileSync(fileURLToPath(new URL("../.github/workflows/ci.yml", import.meta.url)), "utf8");
+  return /^ {2}quick:\n([\s\S]*?)(?=^ {2}\S)/m.exec(workflow)?.[1] ?? "";
+}
+
+test("a stage this job skips is still run by the quick job, so it cannot leave the gate", () => {
+  const quick = quickJob();
+  expect(quick).toContain("bun run build");
+  for (const [name, command] of Object.entries(PROVEN_IN_QUICK)) {
+    expect(quick).toContain(command);
+    expect(PLANS[PLAN]!.some((stage) => stage.name === name)).toBe(true);
+  }
+});
+
+test("the stages this job runs are the plan minus what quick proved, and none of them vanish", () => {
+  const stages = planStages(PLANS[PLAN]!);
+  expect(stages.map((stage) => stage.name)).not.toContain("check-skill-api");
+  expect(stages.length).toBe(PLANS[PLAN]!.length - Object.keys(PROVEN_IN_QUICK).length);
+  expect(stages.some((stage) => stage.name === "check-types-all")).toBe(true);
 });
