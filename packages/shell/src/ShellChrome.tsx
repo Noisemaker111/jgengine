@@ -12,6 +12,8 @@ import {
   type RuntimeDiagnostic,
 } from "./diagnostics/RuntimeDiagnostics";
 import { DevtoolsRuntime } from "./devtools/DevtoolsRuntime";
+import { FeedbackHost } from "./audio/FeedbackHost";
+import type { AudioEngine } from "./audio/audioEngine";
 import { GamePhaseStamp } from "./GamePhaseStamp";
 import { ShellNotices, ShellUiCues } from "./ShellNotices";
 import { SettingsPlayControlGate } from "./settings/SettingsRuntime";
@@ -30,6 +32,7 @@ export function ShellGameUiChrome({
   uiScale,
   orientationGate,
   onRuntimeError,
+  audioEngine,
 }: {
   ctx: GameContext;
   playable: PlayableGame;
@@ -37,6 +40,7 @@ export function ShellGameUiChrome({
   uiScale: number;
   orientationGate: boolean;
   onRuntimeError: (error: unknown, phase: string, componentStack?: string) => void;
+  audioEngine: AudioEngine;
 }) {
   const accessibility = useAccessibilitySettings();
   return (
@@ -54,6 +58,7 @@ export function ShellGameUiChrome({
               <HudThemeRoot theme={playable.hudTheme} accessibility={accessibility}>
                 <GameUI />
                 <ShellNotices ctx={ctx} config={playable.notices} scale={uiScale} />
+                <FeedbackHost ctx={ctx} engine={audioEngine} />
               </HudThemeRoot>
             </ShellUiCues>
           )}

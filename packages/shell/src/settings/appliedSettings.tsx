@@ -24,6 +24,7 @@ import {
 } from "@jgengine/core/input/touchScheme";
 
 import type { AudioEngine } from "../audio/audioEngine";
+import { busMuteSettingId, MASTER_MUTE_SETTING_ID } from "../audio/busMix";
 
 /** Sentinel Controls value meaning "defer to the game's suggested touch skin". */
 export const TOUCH_STYLE_AUTO = "auto";
@@ -104,8 +105,10 @@ export function AudioSettingsBridge({
   const rev = useSettingsRevision(store);
   useEffect(() => {
     engine.setMasterGain(store.get(SETTING_IDS.masterVolume, DEFAULT_MASTER_VOLUME));
+    engine.setMasterMute(Boolean(store.get(MASTER_MUTE_SETTING_ID, false)));
     for (const bus of Object.values(buses ?? {})) {
       engine.setBusGain(bus.id, store.get(busVolumeSettingId(bus.id), bus.gain ?? 1));
+      engine.setBusMute(bus.id, Boolean(store.get(busMuteSettingId(bus.id), false)));
     }
   }, [store, engine, buses, rev]);
   return null;
