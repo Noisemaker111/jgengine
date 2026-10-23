@@ -7,6 +7,8 @@ import {
   type SceneOwnershipManifest,
 } from "../packages/core/src/scene/sceneOwnership";
 
+import { ignoredGames, referenceGames, warnIgnoredGames } from "./games-scope";
+
 const ROOT = process.cwd();
 const GAMES_DIR = join(ROOT, "Games");
 const CONTENT_BASELINE = join(ROOT, "scripts/content-gate-baseline.json");
@@ -203,8 +205,11 @@ function scanGame(id: string): GameScan | null {
 
 function scanAll(): GameScan[] {
   if (!existsSync(GAMES_DIR)) return [];
+  const games = referenceGames(ROOT);
+  warnIgnoredGames("check-content-gate", ignoredGames(ROOT, games));
   const out: GameScan[] = [];
   for (const id of readdirSync(GAMES_DIR).sort()) {
+    if (!games.includes(id)) continue;
     const dir = join(GAMES_DIR, id);
     if (!statSync(dir).isDirectory()) continue;
     if (!existsSync(join(dir, "package.json"))) continue;

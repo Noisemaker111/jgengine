@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { findFrontEndGaps } from "./gameFrontEnd";
+import { ignoredGames, referenceGames, warnIgnoredGames } from "./games-scope";
 import { runRatchet } from "./ratchet";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
@@ -15,11 +16,13 @@ if (!existsSync(join(root, "Games"))) {
   process.exit(0);
 }
 
+const games = referenceGames(root);
+warnIgnoredGames("check-game-front-end", ignoredGames(root, games));
 runRatchet(
   {
     name: "check-game-front-end",
     baselineRel: "scripts/game-front-end-baseline.json",
-    scan: findFrontEndGaps,
+    scan: (scanRoot) => findFrontEndGaps(scanRoot, games),
     guidance:
       "Every game owns a settings surface and reachable in-game credits — see AGENTS.md, and the\n" +
       "`jgengine-ui` skill for the parts. Neither is expensive: `Games/wreckway` routes both from its\n" +

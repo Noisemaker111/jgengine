@@ -12,9 +12,7 @@ const FIRST_PERSON = /\bcamera\s*:\s*\{[^}]*\bperspective\s*:\s*["']first["']/;
 const CHASE_DAMPING = /\bcamera\s*:\s*\{[^}]*\bchase\s*:\s*\{[^}]*\bspringDamping\s*:\s*(\d+(?:\.\d+)?|\.\d+)/;
 const SMOOTHING = /targetSmoothing|smoothing/;
 
-function sources(root: string): { rel: string; source: string }[] {
-  const roots = [join(root, "Games")];
-  if (existsSync(join(root, "created-game", "src"))) roots.push(join(root, "created-game"));
+function sources(root: string, games?: readonly string[]): { rel: string; source: string }[] {
   const result: { rel: string; source: string }[] = [];
   const walk = (dir: string) => {
     if (!existsSync(dir) || !statSync(dir).isDirectory()) return;
@@ -24,7 +22,10 @@ function sources(root: string): { rel: string; source: string }[] {
       else if (/\.tsx?$/.test(entry) && !/\.test\.tsx?$/.test(entry)) result.push({ rel: relative(root, path).replace(/\\/g, "/"), source: readFileSync(path, "utf8") });
     }
   };
-  for (const dir of roots) walk(dir);
+  const gamesDir = join(root, "Games");
+  if (games === undefined) walk(gamesDir);
+  else for (const game of games) walk(join(gamesDir, game));
+  if (existsSync(join(root, "created-game", "src"))) walk(join(root, "created-game"));
   return result;
 }
 
@@ -33,8 +34,8 @@ function isGameDir(root: string, dir: string): boolean {
   return existsSync(join(root, dir, "src"));
 }
 
-export function findGameFeelGaps(root: string): RatchetFinding[] {
-  const files = sources(root);
+export function findGameFeelGaps(root: string, games?: readonly string[]): RatchetFinding[] {
+  const files = sources(root, games);
   const byGame = new Map<string, string>();
   const gameDirs = new Map<string, boolean>();
   for (const { rel, source } of files) {

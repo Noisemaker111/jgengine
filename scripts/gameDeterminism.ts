@@ -8,9 +8,9 @@ import type { RatchetFinding } from "./ratchet";
  *
  * Keyed per file, not per line, so the baseline survives ordinary edits.
  */
-export function findRandomnessLeaks(root: string): RatchetFinding[] {
+export function findRandomnessLeaks(root: string, games?: readonly string[]): RatchetFinding[] {
   const found: RatchetFinding[] = [];
-  for (const { rel, source } of eachGameSource(root)) {
+  for (const { rel, source } of eachGameSource(root, games)) {
     const lines = source
       .split("\n")
       .map((line, index) => (line.includes("Math.random") ? index + 1 : 0))
