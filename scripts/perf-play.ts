@@ -497,6 +497,86 @@ const GL_COUNTERS_SCRIPT = `(() => {
   };
 })();`;
 
+/**
+ * Counts every draw call the page issues, bucketed by animation frame, so a draw budget
+ * describes a whole frame instead of one of its passes. three wraps each pass in its own
+ * `render()`, and a post chain adds a normal/depth prepass and fullscreen quads, so the
+ * renderer's counter only survives all of them while `info.autoReset` is off and one owner
+ * resets it per frame. Wrapping the draw calls needs no such cooperation: every pass and
+ * every instanced draw is one call here, which is the number the GPU is handed.
+ */
+const DRAW_FRAME_COUNTER_SCRIPT = `(() => {
+  if (globalThis.__jgPerfDraws !== undefined) return;
+  const state = { frames: [], pending: 0, counting: false };
+  const wrapped = new WeakSet();
+  const drawMethods = [
+    "drawArrays",
+    "drawElements",
+    "drawArraysInstanced",
+    "drawElementsInstanced",
+    "drawRangeElements",
+  ];
+  for (const name of ["WebGLRenderingContext", "WebGL2RenderingContext"]) {
+    const proto = globalThis[name]?.prototype;
+    if (proto === undefined) continue;
+    for (const method of drawMethods) {
+      const original = proto[method];
+      if (typeof original !== "function" || wrapped.has(original)) continue;
+      wrapped.add(original);
+      proto[method] = function (...args) {
+        if (state.counting) state.pending += 1;
+        return original.apply(this, args);
+      };
+    }
+  }
+  const tick = () => {
+    if (state.counting) state.frames.push(state.pending);
+    state.pending = 0;
+    requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+  globalThis.__jgPerfDraws = {
+    start() {
+      state.frames = [];
+      state.pending = 0;
+      state.counting = true;
+    },
+    stop() {
+      state.counting = false;
+      return state.frames.slice(0);
+    },
+  };
+})();`;
+
+/** Whole-frame draw counts for one measured window, from the per-frame samples. */
+export interface FrameDraws {
+  /** Frames the counter sampled; 0 means the page never registered a frame. */
+  frames: number;
+  min: number;
+  p50: number;
+  p95: number;
+  max: number;
+}
+
+/**
+ * Reduce per-frame draw totals to the number a budget compares. The p95 is the gate's
+ * figure: a shadow or prepass that runs on a cadence is counted, a single spike is not,
+ * and it moved by under 2% between runs of the same build where the median moved 12%.
+ */
+export function summarizeFrameDraws(frames: readonly number[]): FrameDraws {
+  const kept = frames.filter((value) => Number.isFinite(value) && value >= 0);
+  if (kept.length === 0) return { frames: 0, min: 0, p50: 0, p95: 0, max: 0 };
+  const sorted = [...kept].sort((a, b) => a - b);
+  const at = (fraction: number): number => sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * fraction))]!;
+  return {
+    frames: kept.length,
+    min: sorted[0]!,
+    p50: at(0.5),
+    p95: at(0.95),
+    max: sorted[sorted.length - 1]!,
+  };
+}
+
 const SAMPLE_FRAMES_SCRIPT = (windowMs: number): string => `new Promise((resolve) => {
   const deltas = [];
   let last = performance.now();
@@ -787,6 +867,7 @@ export async function measureGame(options: MeasureOptions): Promise<PerfMeasure>
   await session.send("Page.enable");
   await session.send("Page.addScriptToEvaluateOnNewDocument", { source: RESOURCE_BUFFER_SCRIPT });
   await session.send("Page.addScriptToEvaluateOnNewDocument", { source: GL_COUNTERS_SCRIPT });
+  await session.send("Page.addScriptToEvaluateOnNewDocument", { source: DRAW_FRAME_COUNTER_SCRIPT });
   if (settings.length > 0) {
     await session.send("Page.addScriptToEvaluateOnNewDocument", { source: perfSettingsScript(settings) });
   }
@@ -808,9 +889,12 @@ export async function measureGame(options: MeasureOptions): Promise<PerfMeasure>
 
   // Frame timings are sampled without the profiler running, so the fps and
   // percentiles are the loop the player gets; the profile window is separate.
+  await session.evaluate(`globalThis.__jgPerfDraws?.start?.()`);
   const startedAt = Date.now();
   const deltas = (await session.evaluate<number[]>(SAMPLE_FRAMES_SCRIPT(seconds * 1000), { awaitPromise: true })) ?? [];
+  const drawFrames = (await session.evaluate<number[]>(`globalThis.__jgPerfDraws?.stop?.() ?? []`)) ?? [];
   const windowMs = Date.now() - startedAt;
+  const frameDraws = summarizeFrameDraws(drawFrames);
 
   const snapshot = await session.evaluate<{
     frame: { avgSimMs?: number; avgOutsideMs?: number; phases?: unknown[] } | null;
@@ -859,6 +943,8 @@ export async function measureGame(options: MeasureOptions): Promise<PerfMeasure>
     frame,
     render: {
       draws: snapshot?.render?.drawCalls ?? null,
+      drawsFrame: frameDraws.frames === 0 ? null : frameDraws.p95,
+      drawsFrames: frameDraws.frames,
       triangles: snapshot?.render?.triangles ?? null,
       geometries: snapshot?.render?.geometries ?? null,
       textures: snapshot?.render?.textures ?? null,
@@ -893,6 +979,13 @@ export async function measureGame(options: MeasureOptions): Promise<PerfMeasure>
     params: params.map(([key, value]) => `${key}=${value}`),
     frameClock,
   };
+
+  const draws = record.render.draws;
+  if (draws !== null && draws > 0 && frameDraws.frames > 0 && (draws < frameDraws.min || draws > frameDraws.max)) {
+    console.error(
+      `perf: renderer counter read ${draws} draws, outside the whole-frame range ${frameDraws.min}-${frameDraws.max} the wrapped calls saw — one of the two is not counting a frame`,
+    );
+  }
 
   return { record, profile: raw, profileMs: profiledMs, clockProbeMs };
 }

@@ -152,6 +152,10 @@ export function buildFrameReport(inputs: FrameReportInputs): PerfReport {
     frame: scaled,
     render: {
       draws: inputs.render?.drawCalls ?? null,
+      // Only the CDP harness wraps the draw calls and samples a whole frame; this sampler reads
+      // whatever the renderer probe last recorded, so it cannot state a percentile.
+      drawsFrame: null,
+      drawsFrames: 0,
       triangles: inputs.render?.triangles ?? null,
       geometries: inputs.render?.geometries ?? null,
       textures: inputs.render?.textures ?? null,

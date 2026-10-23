@@ -1,51 +1,59 @@
 {
   "harbor-heat": {
-    "draws": 10420,
+    "drawsFrame": 1725,
+    "previousDraws": 10420,
     "triangles": 4405210,
     "nodes": 15210,
-    "baseline": "2026-10-22 bun run perf:gate, GeForce RTX 3070 D3D11, 1600x900 full, Games c81aabc: 9,469 draws / 4,004,728 triangles / 13,819 nodes"
+    "baseline": "2026-10-23 bun run perf:gate whole-frame p95 (306 frames), GeForce RTX 3070 D3D11, 1600x900 full, Games 3385ce4: 1,569 drawsFrame, budget is +10%. Before the whole-frame count this entry budgeted 10,420 draws from a 9,469 baseline measured 2026-10-22 at Games c81aabc; triangles and nodes are that older measurement and were not re-based"
   },
   "scrap-signal": {
-    "draws": 820,
+    "drawsFrame": 421,
+    "previousDraws": 820,
     "triangles": 1992600,
     "nodes": 8400,
     "programsLinked": 3,
-    "baseline": "2026-10-22 bun run perf:gate, GeForce RTX 3070 D3D11, 1600x900 full, Games c81aabc: 745 draws / 1,811,446 triangles / 7,631 nodes; links 1-3 programs after warmup as late materials appear, so 3 is the measured ceiling (A3.2 drives it to 0)"
+    "baseline": "2026-10-23 bun run perf:gate whole-frame p95 (296 frames), GeForce RTX 3070 D3D11, 1600x900 full, Games 3385ce4: 383 drawsFrame, budget is +10%. Before the whole-frame count this entry budgeted 820 draws from a 745 baseline measured 2026-10-22 at Games c81aabc; triangles, nodes and the 3-program ceiling are that older measurement and were not re-based"
   },
   "brightway-park": {
-    "draws": 2970,
+    "drawsFrame": 1333,
+    "previousDraws": 2970,
     "triangles": 123420,
     "nodes": 1580,
-    "baseline": "2026-10-22 bun run perf:gate, GeForce RTX 3070 D3D11, 1600x900 full, Games c81aabc: 2,697 draws / 112,192 triangles / 1,434 nodes"
+    "baseline": "2026-10-23 bun run perf:gate whole-frame p95 (361 frames), GeForce RTX 3070 D3D11, 1600x900 full, Games 3385ce4: 1,212 drawsFrame, budget is +10%. Before the whole-frame count this entry budgeted 2,970 draws from a 2,697 baseline measured 2026-10-22 at Games c81aabc; triangles and nodes are that older measurement and were not re-based"
   },
   "ember-command": {
-    "draws": 2260,
+    "drawsFrame": 1004,
+    "previousDraws": 2260,
     "triangles": 591760,
     "nodes": 1080,
-    "baseline": "2026-10-22 bun run perf:gate, GeForce RTX 3070 D3D11, 1600x900 full, Games c81aabc: 2,051 draws / 537,958 triangles / 974 nodes"
+    "baseline": "2026-10-23 bun run perf:gate whole-frame p95 (352 frames), GeForce RTX 3070 D3D11, 1600x900 full, Games 3385ce4: 913 drawsFrame, budget is +10%. Before the whole-frame count this entry budgeted 2,260 draws from a 2,051 baseline measured 2026-10-22 at Games c81aabc; triangles and nodes are that older measurement and were not re-based"
   },
   "beacon-bastion": {
-    "draws": 760,
+    "drawsFrame": 412,
+    "previousDraws": 760,
     "triangles": 3718390,
     "nodes": 330,
-    "baseline": "2026-10-22 bun run perf:gate, GeForce RTX 3070 D3D11, 1600x900 full, Games c81aabc: 684 draws / 3,380,350 triangles / 298 nodes"
+    "baseline": "2026-10-23 bun run perf:gate whole-frame p95 (361 frames), GeForce RTX 3070 D3D11, 1600x900 full, Games 3385ce4: 375 drawsFrame, budget is +10%. Before the whole-frame count this entry budgeted 760 draws from a 684 baseline measured 2026-10-22 at Games c81aabc; triangles and nodes are that older measurement and were not re-based"
   },
   "drift-foundry": {
-    "draws": 4710,
+    "drawsFrame": 3476,
+    "previousDraws": 4710,
     "triangles": 1801580,
     "nodes": 4420,
-    "baseline": "2026-10-22 bun run perf:gate, GeForce RTX 3070 D3D11, 1600x900 full, Games c81aabc: 4,280 draws / 1,637,791 triangles / 4,014 nodes"
+    "baseline": "2026-10-23 bun run perf:gate whole-frame p95 (277 frames), GeForce RTX 3070 D3D11, 1600x900 full, Games 3385ce4: 3,160 drawsFrame, budget is +10%. Before the whole-frame count this entry budgeted 4,710 draws from a 4,280 baseline measured 2026-10-22 at Games c81aabc; triangles and nodes are that older measurement and were not re-based"
   },
   "odd-orbit": {
-    "draws": 640,
+    "drawsFrame": 433,
+    "previousDraws": 640,
     "triangles": 750190,
     "nodes": 330,
-    "baseline": "2026-10-22 bun run perf:gate, GeForce RTX 3070 D3D11, 1600x900 full, Games c81aabc: 574 draws / 681,982 triangles / 297 nodes"
+    "baseline": "2026-10-23 bun run perf:gate whole-frame p95 (341 frames), GeForce RTX 3070 D3D11, 1600x900 full, Games 3385ce4: 394 drawsFrame, budget is +10%. Before the whole-frame count this entry budgeted 640 draws from a 574 baseline measured 2026-10-22 at Games c81aabc; triangles and nodes are that older measurement and were not re-based"
   },
   "deepward": {
-    "draws": 90,
+    "drawsFrame": 83,
+    "previousDraws": 90,
     "triangles": 56100,
     "nodes": 170,
-    "baseline": "2026-10-22 bun run perf:gate, GeForce RTX 3070 D3D11, 1600x900 full, Games c81aabc: 78 draws / 50,992 triangles / 146 nodes"
+    "baseline": "2026-10-23 bun run perf:gate whole-frame p95 (362 frames), GeForce RTX 3070 D3D11, 1600x900 full, Games 3385ce4: 76 drawsFrame, budget is +10%. Before the whole-frame count this entry budgeted 90 draws from a 78 baseline measured 2026-10-22 at Games c81aabc; triangles and nodes are that older measurement and were not re-based"
   }
 }

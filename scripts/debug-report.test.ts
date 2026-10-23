@@ -28,7 +28,7 @@ function report(game = "deepward"): PerfReport {
     seconds: 4,
     at: Date.now(),
     frame: { fps: 60, avgMs: 16.6, p95Ms: 18, maxMs: 24, samples: 240, longFrames: 0 },
-    render: { draws: 74, triangles: 50_748, geometries: 20, textures: 9, nodes: 142, nodesSource: "scene-graph", scenes: 1 },
+    render: { draws: 74, drawsFrame: null, drawsFrames: 0, triangles: 50_748, geometries: 20, textures: 9, nodes: 142, nodesSource: "scene-graph", scenes: 1 },
     gl: {
       programsLinked: 0,
       framebuffers: 0,

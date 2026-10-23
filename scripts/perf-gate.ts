@@ -25,6 +25,15 @@ import { checkBudget, loadBudget, summarizeRecord, type LoadedBudget } from "./p
  * only counts a build controls — draws, triangles, scene nodes and post-warmup
  * GL allocations — decide pass or fail. `bun run debug <game>` reads the same
  * budget through the same verdict logic, from a game already open in a browser.
+ *
+ * Two draw counts appear in the output, and they are not interchangeable:
+ *
+ * - `drawsFrame` is every draw a frame issues, all passes together — shadow,
+ *   main, postfx prepasses, AO, DOF — taken as the p95 of the measured window by
+ *   wrapping the GL draw calls. This is what the budget compares.
+ * - `draws` is the renderer's own counter as the devtools probe sampled it: one
+ *   frame, from a source that can only hold every pass while `info.autoReset` is
+ *   off. It is printed for comparison with older records, not gated.
  */
 
 const repoRoot = fileURLToPath(new URL("..", import.meta.url));
@@ -204,7 +213,7 @@ async function main(): Promise<void> {
     console.error(`\nperf gate FAILED — ${failures.length} problem(s) across ${games.length} games`);
     for (const failure of failures) console.error(`  ${failure}`);
     console.error(
-      "budgets live beside each game (Games/<id>/perf-budget.json), else scripts/perf-budget.json; raise one only with a measured baseline.",
+      "budgets live beside each game (Games/<id>/perf-budget.json), else scripts/perf-budget.json; raise drawsFrame only with a measured whole-frame baseline.",
     );
     process.exit(1);
   }

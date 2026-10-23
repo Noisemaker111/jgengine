@@ -19,6 +19,7 @@ import {
   perfStateLine,
   probeFrameClockMs,
   summarizeFrameDeltas,
+  summarizeFrameDraws,
   undeclaredSettingErrors,
 } from "./perf-play";
 
@@ -369,4 +370,14 @@ test("a record says which clock produced its frame times, so the two never get c
       frameClock: "uncapped",
     }),
   ).rejects.toThrow("--uncapped did not take");
+});
+
+test("whole-frame draws are the p95 of the sampled frames, so a cadenced pass is counted and a spike is not", () => {
+  const frames = [100, 100, 100, 100, 100, 100, 100, 100, 100, 150, 150, 400];
+  expect(summarizeFrameDraws(frames)).toEqual({ frames: 12, min: 100, p50: 100, p95: 400, max: 400 });
+  // A shadow or prepass that runs every other frame lands in the p95 rather than being missed.
+  const cadenced = Array.from({ length: 40 }, (_, index) => (index % 2 === 0 ? 500 : 900));
+  expect(summarizeFrameDraws(cadenced)).toMatchObject({ frames: 40, min: 500, p95: 900, max: 900 });
+  expect(summarizeFrameDraws([])).toEqual({ frames: 0, min: 0, p50: 0, p95: 0, max: 0 });
+  expect(summarizeFrameDraws([Number.NaN, -4, 12])).toMatchObject({ frames: 1, p95: 12 });
 });

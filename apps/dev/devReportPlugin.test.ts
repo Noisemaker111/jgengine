@@ -18,7 +18,7 @@ function report(game = "harbor-heat"): PerfReport {
     seconds: 4,
     at: 1,
     frame: { fps: 60, avgMs: 16.6, p95Ms: 18, maxMs: 24, samples: 240, longFrames: 0 },
-    render: { draws: 7_000, triangles: 3_600_000, geometries: 300, textures: 90, nodes: 11_000, nodesSource: "scene-graph", scenes: 1 },
+    render: { draws: 7_000, drawsFrame: null, drawsFrames: 0, triangles: 3_600_000, geometries: 300, textures: 90, nodes: 11_000, nodesSource: "scene-graph", scenes: 1 },
     gl: {
       programsLinked: 0,
       framebuffers: 0,

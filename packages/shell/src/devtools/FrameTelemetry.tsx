@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useThree } from "@react-three/fiber";
 
-import type { PerfQuality } from "@jgengine/core/devtools/devtools";
+import { devtools, type PerfQuality } from "@jgengine/core/devtools/devtools";
 import { readUrlParam } from "@jgengine/core/devtools/urlFlags";
 import {
   attachGlCounters,
@@ -43,12 +43,13 @@ export function FrameTelemetry({ game, quality }: { game: string; quality: PerfQ
         quality: () => quality,
         viewport: () => `${window.innerWidth}x${window.innerHeight}`,
         gpu: () => readGpuLabel(gl.getContext()),
-        render: () => ({
+        render: () => devtools.render.latest() ?? {
+          // Falling back to the live counter is a mid-frame read: it holds the passes drawn so far.
           drawCalls: gl.info.render.calls,
           triangles: gl.info.render.triangles,
           geometries: gl.info.memory.geometries,
           textures: gl.info.memory.textures,
-        }),
+        },
         scene: () => scene,
         gl: () => counters,
         residentPrograms: () => gl.info.programs?.length ?? null,
