@@ -44,7 +44,16 @@ tiers, manufacturer stat personalities and a level curve, all caller data.
 `validateLootItem` names each defect, `compareLootItems` returns per-stat deltas
 and a weighted score, and `lootWeaponDefinition` (`loot/lootWeapon`) projects a
 rolled item onto a `WeaponDefinition` for `createWeaponSystem`. `createLootRoller`
-counts drops per rarity for a debug probe and snapshots its counters. Sample
+counts drops per rarity for a debug probe and snapshots its counters.
+
+Roll a campaign drop with `rollDrop` (`loot/drop`) and show `compareToEquipped`
+against worn gear; carry and bank it with `createRunHaul` (`loot/haul`), which
+weighs the hold through the encumbrance rules and drops the hold on `fail`. Break
+an item down once with `salvageItem` and `createItemLedger` (`loot/salvage`), and
+price a vendor shelf through the wallet with `stockVendor` (`loot/vendor`).
+Bases and affixes take `minLevel`; bases take `mass`, which a roll carries forward.
+
+Sample
 catalog, distribution check and generated-weapon proof are in
 [reference-systems.md](reference-systems.md#procedural-gear).
 
