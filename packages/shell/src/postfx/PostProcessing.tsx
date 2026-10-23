@@ -13,6 +13,7 @@ import type { GraphicsQuality } from "@jgengine/core/settings/settingsModel";
 
 import { ExposureMeterPass } from "./autoExposure";
 import { createGradePass } from "./gradeShader";
+import { releasePostfxOverlayTracking } from "./postfxOverlay";
 import { StylizePass } from "./stylizePass";
 import { renderShadowlessPrepass } from "./shadowPrepass";
 
@@ -23,8 +24,38 @@ import { renderShadowlessPrepass } from "./shadowPrepass";
  * marked overlay subtrees for the whole pass: the beauty buffer it composites over was
  * already rendered with them in.
  */
+/**
+ * GTAO's own `_overrideVisibility` walks the whole scene to hide points and lines before its normal
+ * render. `renderShadowlessPrepass` already hides the same set from a cached list, so that walk is
+ * skipped here; three only fills its cache with objects it hid, so leaving it empty restores nothing.
+ * The hooks are optional: a three version without them leaves the walk in place.
+ * @internal
+ */
+export type GtaoVisibilityHooks = {
+  _overrideVisibility?: () => void;
+  _restoreVisibility?: () => void;
+};
+
+/** Point three's GTAO pass at the prepass that already hid its points and lines. @internal */
+export function skipGtaoVisibilityWalk(pass: object): boolean {
+  const hooks = pass as GtaoVisibilityHooks;
+  if (typeof hooks._overrideVisibility !== "function" || typeof hooks._restoreVisibility !== "function") return false;
+  const restore = hooks._restoreVisibility;
+  hooks._overrideVisibility = () => {};
+  hooks._restoreVisibility = () => {
+    // three's restore only touches its own cache, which stays empty while the walk is skipped.
+    restore.call(pass);
+  };
+  return true;
+}
+
 class OverlayAwareGTAOPass extends GTAOPass {
   private readonly hiddenOverlays: THREE.Object3D[] = [];
+
+  constructor(scene: THREE.Scene, camera: THREE.Camera, width?: number, height?: number) {
+    super(scene, camera, width, height);
+    skipGtaoVisibilityWalk(this);
+  }
 
   override render(
     renderer: THREE.WebGLRenderer,
@@ -34,7 +65,7 @@ class OverlayAwareGTAOPass extends GTAOPass {
     maskActive: boolean,
   ): void {
     renderShadowlessPrepass(renderer, this.scene, this.hiddenOverlays, () =>
-      super.render(renderer, writeBuffer, readBuffer, deltaTime, maskActive));
+      super.render(renderer, writeBuffer, readBuffer, deltaTime, maskActive), true);
   }
 }
 
@@ -203,6 +234,7 @@ export function PostProcessing({ config, quality = "high", stages }: { config: P
     builtRef.current = graph;
     return () => {
       disposeGraph(graph);
+      releasePostfxOverlayTracking(scene);
       builtRef.current = null;
     };
   }, [gl, scene, camera, config, quality, stages]);

@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, test } from "bun:test";
 
 import {
+  animationPhaseOf,
   characterLodInterval,
   characterLodPolicy,
   characterLodProbe,
@@ -89,5 +90,21 @@ describe("characterLodProbe", () => {
     expect(characterLodTierOf("a")).toBe("full");
     unregisterCharacterRig("a");
     expect(characterLodProbe().counters!()).toMatchObject({ rigs: 0 });
+  });
+
+  test("a rig re-publishing its pose keeps one record and the latest clip", () => {
+    registerCharacterRig("a", 1, 4);
+    noteAnimationPhase("a", "Walk", 0.25);
+    const first = animationPhaseOf("a");
+    noteAnimationPhase("a", "Run", 0.9);
+    expect(animationPhaseOf("a")).toBe(first);
+    expect(animationPhaseOf("a")).toEqual({ clip: "Run", time: 0.9 });
+  });
+
+  test("forgetting a rig forgets its published pose", () => {
+    registerCharacterRig("a", 1, 4);
+    noteAnimationPhase("a", "Walk", 0.25);
+    unregisterCharacterRig("a");
+    expect(animationPhaseOf("a")).toBeUndefined();
   });
 });

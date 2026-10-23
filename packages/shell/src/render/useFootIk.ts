@@ -203,6 +203,15 @@ function restoreFootIkPose(rig: FootIkRig): void {
 }
 
 /**
+ * Reused per frame by {@link applyFootIk}: the ground probes, their hits and the solver input are read
+ * synchronously inside one call, so a rig posing every frame allocates nothing.
+ */
+const probeInput = { origin: [0, 0, 0] as [number, number, number], direction: [0, -1, 0] as [number, number, number], maxDistance: 0 };
+const samplesScratch: FootGroundSample[] = [];
+const normalsScratch: (readonly [number, number, number] | null)[] = [];
+const samplePool: FootGroundSample[] = [];
+
+/**
  * Applies one frame of foot IK after the animation mixer: probes the ground under each foot,
  * resolves targets with `placeFeet`, lowers the pelvis, solves each leg with `solveTwoBone` bending
  * toward the animated knee, and tilts planted feet to the ground. Turns the look-at bone toward
@@ -222,8 +231,8 @@ export function applyFootIk(
     record.animated.q.copy(record.bone.quaternion);
     record.animated.p.copy(record.bone.position);
   }
-  const samples: FootGroundSample[] = [];
-  const normals: (readonly [number, number, number] | null)[] = [];
+  samplesScratch.length = 0;
+  normalsScratch.length = 0;
   let length = 0;
   let ankleHeight = 0;
   for (const leg of rig.legs) {
@@ -232,12 +241,20 @@ export function applyFootIk(
     length = Math.max(length, legSize);
     ankleHeight = Math.max(ankleHeight, leg.ankleRatio * legSize);
     const from = Math.max(scratch.tip.y, originY) + legSize * 0.5;
-    const hit = probe({ origin: [scratch.tip.x, from, scratch.tip.z], direction: [0, -1, 0], maxDistance: legSize * 2 });
-    samples.push({ ankleY: scratch.tip.y, groundY: hit === null ? null : hit.point[1] });
-    normals.push(hit === null ? null : hit.normal);
+    probeInput.origin[0] = scratch.tip.x;
+    probeInput.origin[1] = from;
+    probeInput.origin[2] = scratch.tip.z;
+    probeInput.maxDistance = legSize * 2;
+    const hit = probe(probeInput);
+    const index = samplesScratch.length;
+    const sample = samplePool[index] ?? (samplePool[index] = { ankleY: 0, groundY: null });
+    sample.ankleY = scratch.tip.y;
+    sample.groundY = hit === null ? null : hit.point[1];
+    samplesScratch.push(sample);
+    normalsScratch.push(hit === null ? null : hit.normal);
   }
 
-  const placement: FootPlacement = placeFeet({ feet: samples, originY, ankleHeight, maxAdjust: rig.maxAdjust * length, airborneGap: length * 0.3 });
+  const placement: FootPlacement = placeFeet({ feet: samplesScratch, originY, ankleHeight, maxAdjust: rig.maxAdjust * length, airborneGap: length * 0.3 });
   const blend = Math.min(1, delta * (placement.grounded ? 12 : 6));
   state.weight += ((placement.grounded ? 1 : 0) - state.weight) * blend;
   state.pelvis += (placement.pelvisOffset - state.pelvis) * Math.min(1, delta * 15);
@@ -267,9 +284,9 @@ export function applyFootIk(
     // Rotating the thigh also moved the tip; aim the shin from that updated pose.
     aimSegment(leg.mid, leg.mid.getWorldPosition(scratch.mid), leg.tip.getWorldPosition(scratch.tip), solved.tip);
 
-    const normal = normals[i];
+    const normal = normalsScratch[i];
     if (normal !== null && normal !== undefined && rig.alignToGround > 0) {
-      const planted = 1 - Math.min(1, Math.max(0, samples[i]!.ankleY - ankleHeight - samples[i]!.groundY!) / Math.max(ankleHeight, length * 0.05));
+      const planted = 1 - Math.min(1, Math.max(0, samplesScratch[i]!.ankleY - ankleHeight - samplesScratch[i]!.groundY!) / Math.max(ankleHeight, length * 0.05));
       const tilt = scratch.q.setFromUnitVectors(UP, scratch.b.set(normal[0], normal[1], normal[2]).normalize());
       const current = leg.tip.getWorldQuaternion(scratch.q2);
       writeWorldQuaternion(leg.tip, current.slerp(tilt.multiply(current), planted * weight * rig.alignToGround));
@@ -290,6 +307,9 @@ export function applyFootIk(
   return placement.grounded;
 }
 
+/** Materials a foot probe may hit: blocking physical objects and terrain, never the model's own entity. */
+const IK_FILTER = { entities: false, objects: true, walls: false, terrain: true } as const;
+
 /**
  * Runs foot IK after the model's animation mixer for `ModelConfig.ik`. Ground probes hit terrain and
  * blocking physical objects, never the model's own entity. `groundOffset` is the model-space height
@@ -307,6 +327,19 @@ export function useFootIk(
   const state = useRef<FootIkState>({ weight: 0, pelvis: 0 });
   const lookAtConfig = config === undefined || config === "auto" ? undefined : config.lookAt;
   const target = useRef<THREE.Vector3 | null>(null);
+  // One probe input and one look-at triple per mount: a rig that poses every frame allocates nothing.
+  const probe = useMemo(
+    () => ({
+      origin: [0, 0, 0] as [number, number, number],
+      direction: [0, -1, 0] as [number, number, number],
+      maxDistance: 0,
+      excludeInstanceIds: instanceId === undefined ? [] : [instanceId],
+      filter: IK_FILTER,
+      accept: (hit: { blocks: boolean; purpose: string }) => hit.blocks && hit.purpose === "physical",
+    }),
+    [instanceId],
+  );
+  const lookAtPoint = useMemo(() => [0, 0, 0] as [number, number, number], []);
   useLayoutEffect(() => {
     state.current = { weight: 0, pelvis: 0 };
     target.current = null;
@@ -321,22 +354,31 @@ export function useFootIk(
     if (rig === null || ctx === null || instanceId === undefined) return;
     const parent = scene.parent;
     const originY = parent === null ? scene.position.y : parent.localToWorld(scratch.a.set(0, groundOffset, 0)).y;
-    const exclude = [instanceId];
     const aim = resolveLookAtTarget(lookAtConfig?.target, ctx, target.current, lookAtConfig?.entityEyeHeight ?? DEFAULT_EYE_HEIGHT);
     target.current = aim;
+    if (aim === null) {
+      const world = camera.getWorldPosition(scratch.b);
+      lookAtPoint[0] = world.x;
+      lookAtPoint[1] = world.y;
+      lookAtPoint[2] = world.z;
+    } else {
+      lookAtPoint[0] = aim.x;
+      lookAtPoint[1] = aim.y;
+      lookAtPoint[2] = aim.z;
+    }
     applyFootIk(
       rig,
       originY,
-      (input) =>
-        ctx.scene.raycast({
-          ...input,
-          excludeInstanceIds: exclude,
-          filter: { entities: false, objects: true, walls: false, terrain: true },
-          accept: (hit) => hit.blocks && hit.purpose === "physical",
-        }),
+      (input) => {
+        probe.origin[0] = input.origin[0]!;
+        probe.origin[1] = input.origin[1]!;
+        probe.origin[2] = input.origin[2]!;
+        probe.maxDistance = input.maxDistance;
+        return ctx.scene.raycast(probe);
+      },
       state.current,
       delta,
-      aim === null ? camera.getWorldPosition(scratch.b).toArray() : [aim.x, aim.y, aim.z],
+      lookAtPoint,
     );
   });
 }

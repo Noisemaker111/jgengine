@@ -138,6 +138,10 @@ interface GraphPlayback {
   lastYaw: number | null;
   smoothedSpeed: number;
   params: Record<string, AnimParamValue>;
+  /** Reused per-frame sample of this rig's motion, so posing a rig allocates nothing. */
+  step: ModelMotionStep;
+  /** Reused per-frame record of the pose the rig is showing. */
+  phase: { clip: string; time: number };
 }
 
 /**
@@ -238,12 +242,15 @@ function applyGraphClips(actions: ReadonlyMap<string, THREE.AnimationAction>, cl
 }
 
 /** The clip with the largest weight in one graph output: the pose the rig is mostly showing. */
-function dominantPhase(clips: readonly AnimClipOutput[]): { clip: string; time: number } | undefined {
+function dominantPhase(clips: readonly AnimClipOutput[], out: { clip: string; time: number }): { clip: string; time: number } | undefined {
   let best: AnimClipOutput | undefined;
   for (const entry of clips) {
     if (entry.weight > 0 && (best === undefined || entry.weight > best.weight)) best = entry;
   }
-  return best === undefined ? undefined : { clip: best.clip, time: best.time };
+  if (best === undefined) return undefined;
+  out.clip = best.clip;
+  out.time = best.time;
+  return out;
 }
 
 /** A mixer set up to show {@link AnimGraph} output on a rig; see {@link createGraphPose}. */
@@ -341,6 +348,8 @@ function buildGraphPlayback(scene: THREE.Object3D, mixer: THREE.AnimationMixer, 
     lastYaw: null,
     smoothedSpeed: 0,
     params: {},
+    step: { dx: 0, dz: 0, dyaw: 0, seconds: 0 },
+    phase: { clip: "", time: 0 },
   };
 }
 
@@ -528,10 +537,20 @@ export function useModelAnimation(
             } else {
               const instantSpeed = Math.hypot(dx, dz) / playbackDelta;
               playback.smoothedSpeed += (instantSpeed - playback.smoothedSpeed) * Math.min(1, playbackDelta * 12);
-              step = { dx, dz, dyaw: playback.lastYaw === null ? 0 : shortestAngle(yaw - playback.lastYaw), seconds: playbackDelta };
+              const sample = playback.step;
+              sample.dx = dx;
+              sample.dz = dz;
+              sample.dyaw = playback.lastYaw === null ? 0 : shortestAngle(yaw - playback.lastYaw);
+              sample.seconds = playbackDelta;
+              step = sample;
             }
           }
-          playback.lastPos = [x, entity.position[1], z];
+          if (playback.lastPos === null) playback.lastPos = [x, entity.position[1], z];
+          else {
+            playback.lastPos[0] = x;
+            playback.lastPos[1] = entity.position[1];
+            playback.lastPos[2] = z;
+          }
           playback.lastYaw = yaw;
           readModelAnimationParams(ctx, instanceId, playback.smoothedSpeed, params, step);
         } else {
@@ -546,7 +565,7 @@ export function useModelAnimation(
       mixerRef.current.update(0);
       if (instanceId !== undefined) {
         noteCharacterPose(instanceId);
-        const phase = dominantPhase(out.clips);
+        const phase = dominantPhase(out.clips, playback.phase);
         if (phase !== undefined) noteAnimationPhase(instanceId, phase.clip, phase.time);
       }
       if (out.rootMotion === true && playback.rootBone !== null && playback.rootBindPosition !== null) {

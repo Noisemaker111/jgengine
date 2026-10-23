@@ -128,6 +128,12 @@ export function noteCharacterPose(instanceId: string): void {
 
 /** Publish the clip and time a rig is posing at, so the crowd can continue the same pose at the swap. @internal */
 export function noteAnimationPhase(instanceId: string, clip: string, time: number): void {
+  const published = phases.get(instanceId);
+  if (published !== undefined) {
+    published.clip = clip;
+    published.time = time;
+    return;
+  }
   phases.set(instanceId, { clip, time });
 }
 
