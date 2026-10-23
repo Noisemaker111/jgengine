@@ -521,6 +521,8 @@ const RESOURCE_BUFFER_SCRIPT = `(() => {
 
 /** Window the blank-page probe samples: long enough for a few hundred uncapped ticks. */
 const CLOCK_PROBE_MS = 300;
+/** Probe samples one uncapped run may take before its clock reads as frozen. */
+const CLOCK_PROBE_ATTEMPTS = 3;
 /** The slowest median blank-page rAF delta still read as an uncapped clock, in ms. */
 const UNCAPPED_CLOCK_MAX_MS = 8;
 
@@ -535,12 +537,24 @@ export function cappedClockProblem(medianMs: number): string | null {
  * Median rAF delta on the blank page the session opens with, before the game loads.
  * An uncapped browser ticks well under the 16.7 ms commit interval; a capped one ticks at it.
  * Sampling the clock on its own keeps "the game costs 16.7 ms" from reading the same as
- * "the launch flags never took".
+ * "the launch flags never took". A browser still starting its compositor can serve the first
+ * sample off the display clock, so a reading that fails is retried: a capped browser fails
+ * every attempt, while a startup race passes the next one.
  */
-export async function probeFrameClockMs(session: CdpSession, windowMs = CLOCK_PROBE_MS): Promise<number> {
-  const deltas = (await session.evaluate<number[]>(SAMPLE_FRAMES_SCRIPT(windowMs), { awaitPromise: true })) ?? [];
-  const kept = deltas.filter((ms) => Number.isFinite(ms) && ms > 0).sort((a, b) => a - b);
-  return kept.length === 0 ? 0 : kept[Math.floor(kept.length / 2)]!;
+export async function probeFrameClockMs(
+  session: CdpSession,
+  windowMs = CLOCK_PROBE_MS,
+  attempts = CLOCK_PROBE_ATTEMPTS,
+): Promise<number> {
+  let slowest = 0;
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    const deltas = (await session.evaluate<number[]>(SAMPLE_FRAMES_SCRIPT(windowMs), { awaitPromise: true })) ?? [];
+    const kept = deltas.filter((ms) => Number.isFinite(ms) && ms > 0).sort((a, b) => a - b);
+    const median = kept.length === 0 ? 0 : kept[Math.floor(kept.length / 2)]!;
+    if (median > 0 && median <= UNCAPPED_CLOCK_MAX_MS) return median;
+    slowest = Math.max(slowest, median);
+  }
+  return slowest;
 }
 
 /** The stderr line that keeps an uncapped record from being read as a capped one, or null when capped. */
@@ -697,6 +711,8 @@ export interface PerfMeasure {
   profile: RawProfile | null;
   /** Wall-clock length of the profile window in ms, for percentages. */
   profileMs: number;
+  /** Blank-page rAF median the uncapped run proved its clock with, or null on the capped path. */
+  clockProbeMs: number | null;
 }
 
 function readGpu(session: CdpSession): Promise<string | undefined> {
@@ -760,10 +776,12 @@ export async function measureGame(options: MeasureOptions): Promise<PerfMeasure>
   const params = options.params ?? [];
   const frameClock = options.frameClock ?? "capped";
 
+  let clockProbeMs: number | null = null;
   if (frameClock === "uncapped") {
     const clockMs = await probeFrameClockMs(session);
     const problem = cappedClockProblem(clockMs);
     if (problem !== null) throw new Error(`perf: --uncapped did not take — ${problem}`);
+    clockProbeMs = Math.round(clockMs * 100) / 100;
   }
 
   await session.send("Page.enable");
@@ -876,7 +894,7 @@ export async function measureGame(options: MeasureOptions): Promise<PerfMeasure>
     frameClock,
   };
 
-  return { record, profile: raw, profileMs: profiledMs };
+  return { record, profile: raw, profileMs: profiledMs, clockProbeMs };
 }
 
 async function main(): Promise<void> {
@@ -902,6 +920,9 @@ async function main(): Promise<void> {
         if (pin !== null) console.error(pin);
         const clock = perfFrameClockLine(frameClock);
         if (clock !== null) console.error(clock);
+        if (measured.clockProbeMs !== null) {
+          console.error(`perf: blank page ticked at ${measured.clockProbeMs} ms on the uncapped clock`);
+        }
         if (measured.record.overrides.length > 0) {
           console.error(`perf: overrides ${measured.record.overrides.join(" ")}`);
         }

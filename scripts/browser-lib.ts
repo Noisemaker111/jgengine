@@ -157,9 +157,15 @@ export type FrameClock = "capped" | "uncapped";
  * frame costs instead of the next 16.7 ms vsync tick. Empty for the default clock, which is what
  * every capture and the perf gate keep using: a player sees a vsynced frame, so only a run that
  * asks for the uncapped clock measures the headroom below it.
+ *
+ * The rate-limit and vsync flags alone leave rAF at 17.2 ms (measured on Chrome 143 here); the
+ * compositor only stops waiting for the next vsync window once it also runs its stages before
+ * drawing, which trades pipelining away for a frame delta that covers the whole frame.
  */
 export function chromeFrameClockArgs(clock: FrameClock = "capped"): string[] {
-  return clock === "uncapped" ? ["--disable-frame-rate-limit", "--disable-gpu-vsync"] : [];
+  return clock === "uncapped"
+    ? ["--disable-frame-rate-limit", "--disable-gpu-vsync", "--run-all-compositor-stages-before-draw"]
+    : [];
 }
 
 /** Software rasterizer a capture Chrome renders WebGL with when no GPU is used. */

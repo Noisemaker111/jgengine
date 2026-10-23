@@ -19,6 +19,7 @@ import {
   perfPageUrl,
   perfSettingsScript,
   perfStateLine,
+  probeFrameClockMs,
   summarizeFrameDeltas,
   undeclaredSettingErrors,
 } from "./perf-play";
@@ -271,7 +272,11 @@ test("--uncapped asks Chrome for an unthrottled rAF clock; the default asks for 
 
   expect(chromeFrameClockArgs("capped")).toEqual([]);
   expect(chromeFrameClockArgs()).toEqual([]);
-  expect(chromeFrameClockArgs("uncapped")).toEqual(["--disable-frame-rate-limit", "--disable-gpu-vsync"]);
+  expect(chromeFrameClockArgs("uncapped")).toEqual([
+    "--disable-frame-rate-limit",
+    "--disable-gpu-vsync",
+    "--run-all-compositor-stages-before-draw",
+  ]);
 
   expect(perfFrameClockLine("capped")).toBeNull();
   expect(perfFrameClockLine("uncapped")).toContain("not comparable with a capped record");
@@ -312,6 +317,17 @@ test("a blank page that still ticks at vsync is a failed uncapped run, not a mea
   expect(cappedClockProblem(16.7)).toContain("still ticked at 16.7 ms");
   expect(cappedClockProblem(16.7)).toContain("16.7 ms multiples");
   expect(cappedClockProblem(0)).toContain("saw no animation frames");
+});
+
+test("a probe that catches the compositor still starting retries instead of failing the run", async () => {
+  const samples = [[16.7, 16.7, 16.8], [0.2, 0.3, 0.1]];
+  let reads = 0;
+  const session = { evaluate: async () => samples[Math.min(reads++, samples.length - 1)] };
+  expect(await probeFrameClockMs(session as never, 300, 3)).toBe(0.2);
+  expect(reads).toBe(2);
+
+  const capped = { evaluate: async () => [16.7, 16.7, 16.8] };
+  expect(await probeFrameClockMs(capped as never, 300, 3)).toBe(16.7);
 });
 
 function fakePerfSession(options: { clock?: number[]; frames?: number[]; gpu?: string } = {}) {
