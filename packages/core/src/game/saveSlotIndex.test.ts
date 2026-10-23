@@ -86,6 +86,30 @@ describe("refreshSaveSlots", () => {
     expect(model.get("default")?.empty).toBe(true);
   });
 
+  test("refresh never re-fills a slot removed through deleteSlot", async () => {
+    let clock = 1_700_000_000_000;
+    const save = makeSave(() => clock);
+    await save.save();
+    clock += 5_000;
+    await save.switchSlot("slot-2");
+    clock += 5_000;
+    await save.save();
+
+    const model = createSaveSlots({
+      now: () => clock,
+      slots: [{ id: "default", empty: true }, { id: "slot-2", empty: true }],
+    });
+    await refreshSaveSlots(gameSaveSlotSource(save), model);
+    expect(model.get("slot-2")?.empty).toBe(false);
+
+    expect(await save.deleteSlot("slot-2")).toBe(true);
+    const after = await refreshSaveSlots(gameSaveSlotSource(save), model);
+    expect(after.saved).toEqual(["default"]);
+    expect(after.filled.map((meta) => meta.id)).toEqual(["default"]);
+    expect(model.get("slot-2")?.empty).toBe(true);
+    expect(await save.peek("slot-2")).toBeNull();
+  });
+
   test("peek reads a slot without applying it", async () => {
     const save = makeSave(() => 1_700_000_000_000);
     const restoreCalls: unknown[] = [];

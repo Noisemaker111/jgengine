@@ -341,3 +341,69 @@ describe("createSaveStore", () => {
     expect(writes.some((w) => w.includes("2"))).toBe(true);
   });
 });
+
+describe("createSaveStore — deleteSlot", () => {
+  test("deletes one of two slots, durably, and reports an unknown slot as absent", async () => {
+    const backend = memorySaveBackend();
+    const store = createSaveStore({ backend, initial: { level: 0 } });
+    store.set({ level: 1 });
+    await store.save(); // "default"
+    await store.switchSlot("keep-2");
+    store.set({ level: 2 });
+    await store.save();
+
+    expect((await store.slots()).sort()).toEqual(["default", "keep-2"]);
+
+    expect(await store.deleteSlot("default")).toBe(true);
+    expect(await store.slots()).toEqual(["keep-2"]);
+    expect(await store.peek("default")).toBeNull();
+
+    expect(await store.deleteSlot("never-written")).toBe(false);
+
+    const reopened = createSaveStore({ backend, initial: { level: 0 } });
+    expect(await reopened.slots()).toEqual(["keep-2"]);
+    expect(await reopened.peek("default")).toBeNull();
+    expect(await reopened.switchSlot("keep-2")).toEqual({ level: 2 });
+  });
+
+  test("deleting the active slot resets the live value and a later load does not resurrect the id", async () => {
+    const backend = memorySaveBackend();
+    const store = createSaveStore({ backend, initial: { level: 0 } });
+    store.set({ level: 5 });
+    await store.save();
+    await store.switchSlot("spare");
+    store.set({ level: 6 });
+    await store.save();
+    await store.switchSlot("default");
+
+    expect(await store.deleteSlot("default")).toBe(true);
+    expect(store.value()).toEqual({ level: 0 });
+    expect(await store.load()).toEqual({ level: 0 });
+    expect(await store.slots()).toEqual(["spare"]);
+    expect(await store.peek("default")).toBeNull();
+  });
+
+  test("a pending autosave cannot write a deleted active slot back", async () => {
+    const timers = manualTimers();
+    const backend = memorySaveBackend();
+    const store = createSaveStore({
+      backend,
+      initial: 0,
+      autosave: { debounceMs: 100 },
+      timers,
+    });
+    store.set(3);
+    await store.save();
+    store.set(4); // schedules a flush
+    expect(timers.pending()).toBe(1);
+
+    expect(await store.deleteSlot("default")).toBe(true);
+    timers.runAll();
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+    const reopened = createSaveStore({ backend, initial: 0 });
+    expect(await reopened.peek("default")).toBeNull();
+    expect(await reopened.slots()).toEqual([]);
+    expect(store.status()).toBe("idle");
+  });
+});
