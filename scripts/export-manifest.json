@@ -5,6 +5,7 @@
     "./agents/mood",
     "./agents/relationships",
     "./agents/schedule",
+    "./agents/system",
     "./ai/crowd",
     "./ai/decisionGraph",
     "./ai/difficulty",

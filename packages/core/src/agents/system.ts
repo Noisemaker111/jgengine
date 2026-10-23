@@ -12,6 +12,12 @@ import {
 import type { Mood, MoodTier, MoodWeight } from "./mood";
 import type { AgentScheduleConfig } from "./schedule";
 
+export type { Agent, AgentAction, AgentFallback, AgentFrame, AgentSnapshot, AgentTarget } from "./agent";
+export type { AgentScheduleConfig, AgentScheduleStop, AgentSchedulePhase } from "./schedule";
+export type { Mood, MoodTier, MoodWeight } from "./mood";
+export type { NeedDefinition } from "../sim/needs";
+export type { UtilityInterrupt, UtilityOption, UtilityTunables } from "../ai/utilityBrain";
+
 /** The mood policy a member runs on: which needs matter, and the game's own words for the bands. */
 export interface AgentMoodConfig {
   readonly weights?: readonly MoodWeight[];

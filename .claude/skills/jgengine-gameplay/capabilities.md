@@ -23,6 +23,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## agents — a needs, thought, action and mood loop an agent runs on the world clock
 
 - `createAgent` (function) · `import { createAgent } from "@jgengine/core/agents/agent"`
+- `createAgentSystem` (function) · `import { createAgentSystem } from "@jgengine/core/agents/system"`
 
 ## auction-book — timed bid auctions with escrowed bids, buyout, anti-snipe close extension, and collection-box settlement
 
