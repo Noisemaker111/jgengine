@@ -813,6 +813,7 @@ export function Shell3dPresentation({
                 uiScale={graphics.uiScale}
                 orientationGate={orientationGate}
                 onRuntimeError={reportRuntimeError}
+                audioEngine={audioEngine}
               />
               {!poster && !orientationGate && showReticle ? <Reticle /> : null}
               {dockMounted && touchScheme !== null ? (

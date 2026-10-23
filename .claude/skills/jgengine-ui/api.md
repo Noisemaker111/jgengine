@@ -2139,14 +2139,63 @@
 - `EntityAudioEmitters` (function): function EntityAudioEmitters({ engine, entitySounds, }: { engine: AudioEngine; entitySounds: Record<string, string> | undefined; }): null — ⚠ undocumented
 - `ObjectAudioEmitters` (function): function ObjectAudioEmitters({ engine, objectSounds, }: { engine: AudioEngine; objectSounds: Record<string, string> | undefined; }): null — ⚠ undocumented
 
+## @jgengine/shell/audio/CaptionOverlay
+
+- `CaptionOverlay` (function): function CaptionOverlay({ feed, max = 2, zIndex = 84, }: { feed: CaptionFeed; /** How many lines to show at once. Default 2. */ max?: number; zIndex?: number; }): ReactNode — The captions line: a bounded, bottom-centred stack that renders only while the accessibility captions setting is on. Reads HudTheme tokens, so a game's theme reskins it, and lives in the same overlay layer as the notice stack.
+
+## @jgengine/shell/audio/FeedbackHost
+
+- `FeedbackHost` (function): function FeedbackHost({ ctx, engine }: { ctx: GameContext; engine: AudioEngine }): ReactNode — Mounts the engine's feel layer for one game: announced events become a sound, a gamepad pulse, a camera kick and a caption line; the audio context unlocks on the first gesture; and the caption stack follows the accessibility setting. Games supply sounds, never the rules.
+
 ## @jgengine/shell/audio/audioEngine
 
 - `AudioEmitterHandle` (interface): interface AudioEmitterHandle { isPlaying?(): boolean; setPosition(position: Vec3): void; setRate(rate: number): void; setGain(gain: number): void; setLowpass(hz: number): void; setHighpass(hz: number): void; setVelocity(velocity: Vec3): void; stop(): void } — ⚠ undocumented
-- `AudioEngine` (interface): interface AudioEngine { setListenerPose(pose: ListenerPose | Vec3): void; setVoiceLimit(maxTotal: number, overflow?: VoiceAllocatorConfig["overflow"]): void; playOneShot(soundId: string, position?: Vec3): void; playLoop(soundId: string, position?: Vec3): AudioEm… — ⚠ undocumented · used by `createAudioEngine`: Game-owned sound catalog playback with bounded SFX reservations, spatial panning, and shared buses.
+- `AudioEngine` (interface): interface AudioEngine { setListenerPose(pose: ListenerPose | Vec3): void; setVoiceLimit(maxTotal: number, overflow?: VoiceAllocatorConfig["overflow"]): void; play(soundId: string, position?: Vec3): void; playOneShot(soundId: string, position?: Vec3): void; playL… — ⚠ undocumented · used by `createAudioEngine`: Game-owned sound catalog playback with bounded SFX reservations, spatial panning, and shared buses.
+- `AudioLevel` (interface): interface AudioLevel — Master-output level, `0..1`. Pooled by {@link AudioEngine.measure} - read it, don't retain it.
 - `AudioSceneConfig` (interface): interface AudioSceneConfig { sounds?: Record<string, SoundDef>; maxVoices?: number; voiceOverflow?: VoiceAllocatorConfig["overflow"]; voiceAllocator?: VoiceAllocator; buses?: Record<string, AudioBusDef>; music?: Record<string, MusicTheme>; musicBus?: string } — ⚠ undocumented · used by `createAudioEngine`: Game-owned sound catalog playback with bounded SFX reservations, spatial panning, and shared buses.
 - `ListenerPose` (interface): interface ListenerPose — Position and orientation for a spatial-audio listener.
+- `MAX_PENDING_CUES` (const): const MAX_PENDING_CUES: 16 — Cues held while the browser keeps the audio context suspended, before any user gesture.
 - `Vec3` (interface): interface Vec3 { x: number; y: number; z: number } — ⚠ undocumented · used by `coverPoints` (@jgengine/core/ai/tacticalQueries): Returns boundary locations that are hidden from a threat.
 - `createAudioEngine` (function): function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine — Game-owned sound catalog playback with bounded SFX reservations, spatial panning, and shared buses.
+
+## @jgengine/shell/audio/audioProbe
+
+- `AudioProbe` (interface): interface AudioProbe — The read-only handle a capture script or devtools uses to prove the mix is producing sound.
+- `installAudioProbe` (function): function installAudioProbe(engine: AudioEngine): () => void — Publish the audio engine's own level readout on `window.__jgengineAudio`, so a headless capture can state a measured RMS instead of guessing from a screenshot. Reads only; it never plays or changes a bus.
+
+## @jgengine/shell/audio/busMix
+
+- `MASTER_MUTE_SETTING_ID` (const): const MASTER_MUTE_SETTING_ID: "sound.muted" — Persisted mute for the whole mix, next to `sound.master`.
+- `busMuteSettingId` (function): function busMuteSettingId(busId: string): string — Persisted mute for one bus, next to its `busVolumeSettingId(busId)` volume.
+
+## @jgengine/shell/audio/captions
+
+- `Caption` (interface): interface Caption — One caption line as the overlay renders it.
+- `CaptionFeed` (interface): interface CaptionFeed — A capped, self-expiring list of caption lines that the accessibility captions setting turns on.
+- `CaptionFeedConfig` (interface): interface CaptionFeedConfig — Tunables for {@link createCaptionFeed}; all retunable at runtime.
+- `createCaptionFeed` (function): function createCaptionFeed(config: CaptionFeedConfig = {}): CaptionFeed — The caption list the feedback seam writes to and the HUD overlay reads: bounded, self-expiring, and deduped so three hits read as "Hit x3" rather than three copies. Pure state with an injected clock, so it runs headless.
+
+## @jgengine/shell/audio/eventFeedback
+
+- `AnyFeedbackBinding` (type): type AnyFeedbackBinding = { [Name in FeedbackEventName]: FeedbackBinding<Name> }[FeedbackEventName] — Any row of the event mapping, whichever event it binds.
+- `DEFAULT_FEEDBACK_BINDINGS` (const): const DEFAULT_FEEDBACK_BINDINGS: readonly AnyFeedbackBinding[] — The default mapping: each engine-announced gameplay event to the cue it raises. Damage to the local player reads as hurt, damage anywhere else as a hit; a wave start has no event of its own, so a game announces it through `notify("wave")` or `attachWaveFeedback`.
+- `DEFAULT_FEEDBACK_REACTIONS` (const): const DEFAULT_FEEDBACK_REACTIONS: Readonly<Record<FeedbackCue, FeedbackReaction>> — The default reactions. They are data: a game overrides one through `audio.feedbackCues` (sound) or `createEventFeedback({ reactions })` (haptics, shake, caption), and replaces the mapping through `bindings` without touching the shell.
+- `EventFeedback` (interface): interface EventFeedback — The event-to-reaction seam. One instance per running world.
+- `EventFeedbackOptions` (interface): interface EventFeedbackOptions — Options a game or host may override.
+- `FeedbackAnnouncer` (interface): interface FeedbackAnnouncer — The slice of `ctx.game.feedback` a wave runner needs, so this runs headless in a test.
+- `FeedbackBinding` (type): type FeedbackBinding<Name extends FeedbackEventName = FeedbackEventName> = { event: Name; cue: FeedbackCue; /** Default `"any"`. `"local"` only fires for the local player's own target/user/refusal. */ scope?: FeedbackScope; /** Overrides the cue's caption for this event, e.g. "You died". */ caption?… — One row of the event mapping: `event` announces, `cue` reacts.
+- `FeedbackDeps` (interface): interface FeedbackDeps — Everything the feedback seam reaches outside itself. Injected so it runs headless.
+- `FeedbackEventName` (type): type FeedbackEventName = | "combat.damage" | "entity.died" | "worldItem.picked_up" | "quest.completed" | "stat.levelUp" | "command.refused" — Event names the default mapping listens to; a game may add its own through `bindings`.
+- `FeedbackReaction` (interface): interface FeedbackReaction — One cue's reaction: what plays, what the hand feels, what the screen does, and what a caption says.
+- `FeedbackScope` (type): type FeedbackScope = "local" | "remote" | "any" — Which side of an event a binding reacts to: the local player's, someone else's, or either.
+- `ResolvedFeedback` (interface): interface ResolvedFeedback — A resolved trigger: pooled per binding, so a busy event stream allocates nothing to decide.
+- `attachEventFeedback` (function): function attachEventFeedback(events: Pick<GameEvents, "on">, feedback: EventFeedback, eventsToBind: readonly FeedbackEventName[] = Object.keys( DEFAULT_FEEDBACK_BINDINGS.reduce<Record<string, true>>((names, binding) => { names[binding.event] = true; return names; }, {}), ) as FeedbackEventName[]): (… — Subscribe the feedback seam to a game's event bus, including `feedback.cue` for moments the game announces itself. Returns the detach function; the mapping and reactions stay override-able through the seam's `retune`.
+- `attachWaveFeedback` (function): function attachWaveFeedback(runner: Pick<WaveRunner, "state" | "subscribe">, announce: FeedbackAnnouncer): () => void — Announce each new wave a {@link WaveRunner} starts as the `wave` cue, once per boundary. A wave has no event of its own, so this is the engine-side hookup for tower defense and wave survival games: `attachWaveFeedback(runner, ctx.game.feedback)`. Nothing is polled, the runner's own notification drives it, and one `update` that crosses two waves still fires once - the cue has a cooldown and the next boundary is announced by the next crossing.
+- `createEventFeedback` (function): function createEventFeedback(deps: FeedbackDeps, options: EventFeedbackOptions = {}): EventFeedback — Build the event-to-sound/haptic/shake/caption seam. The mapping is data ({@link DEFAULT_FEEDBACK_BINDINGS}), reactions are data ({@link DEFAULT_FEEDBACK_REACTIONS}), and the resolved trigger for each binding is allocated once - handling an event allocates only the caption string it actually shows, never per frame.
+
+## @jgengine/shell/audio/gestureResume
+
+- `installGestureResume` (function): function installGestureResume(engine: Pick<AudioEngine, "resume">, target: Pick<Document, "addEventListener" | "removeEventListener"> | null = typeof document === "undefined" ? null : document): () => void — Resume the audio context on the first real user gesture. Chrome keeps a freshly created `AudioContext` suspended until the page sees a trusted input, so pressing a key, tapping or clicking is the only moment sound may start; the engine then flushes any cue it held. One listener set per game, removed on unmount.
 
 ## @jgengine/shell/audio/loopParams
 

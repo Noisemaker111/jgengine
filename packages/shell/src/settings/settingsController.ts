@@ -32,6 +32,7 @@ import {
 } from "@jgengine/core/settings/graphicsSettings";
 import { FRAME_RATE_LIMIT_DISPLAY, FRAME_RATE_LIMIT_OPTIONS } from "@jgengine/core/settings/frameRateLimit";
 import { accessibilitySettingRows } from "@jgengine/core/settings/accessibilitySettings";
+import { busMuteSettingId, MASTER_MUTE_SETTING_ID } from "../audio/busMix";
 import {
   DEFAULT_TOUCH_JOYSTICK_VARIANT,
   TOUCH_JOYSTICK_VARIANT_OPTIONS,
@@ -130,6 +131,20 @@ export function useSettingsCategories(config: SettingsControllerInput): Settings
         set: (value) => store.set(id, value),
       };
     }),
+    ...Object.values(config.buses ?? {}).map((bus): SettingsRow => ({
+      id: busMuteSettingId(bus.id),
+      label: bus.id === "ui" ? "Mute UI" : `Mute ${bus.id}`,
+      kind: "toggle",
+      value: Boolean(store.get(busMuteSettingId(bus.id), false)),
+      set: (value) => store.set(busMuteSettingId(bus.id), Boolean(value)),
+    })),
+    {
+      id: MASTER_MUTE_SETTING_ID,
+      label: "Mute all",
+      kind: "toggle",
+      value: Boolean(store.get(MASTER_MUTE_SETTING_ID, false)),
+      set: (value) => store.set(MASTER_MUTE_SETTING_ID, Boolean(value)),
+    },
     ...extrasFor("sound"),
   ];
 

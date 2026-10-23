@@ -370,6 +370,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createFastTravelNetwork` (function) · `import { createFastTravelNetwork } from "@jgengine/core/world"`
 
+## feedback-cue-sounds — default procedural hit/hurt/kill/pickup/objective/wave/deny reactions on an "sfx" bus, overridable per game
+
+- `withFeedbackCueSounds` (function) · `import { withFeedbackCueSounds } from "@jgengine/core/audio/feedbackCues"`
+
 ## feedback-mixer — map sim telemetry to camera, audio and haptic parameters through curves, smoothing and threshold events
 
 - `createFeedbackMixer` (function) · `import { createFeedbackMixer } from "@jgengine/core/vfx/feedbackMixer"`

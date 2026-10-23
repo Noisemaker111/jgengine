@@ -191,6 +191,7 @@ export function ShellHudPresentation({
               uiScale={uiScale}
               orientationGate={orientationGate}
               onRuntimeError={reportRuntimeError}
+              audioEngine={audioEngine}
             />
             {orientationGateEl}
             <ShellDebugOverlays

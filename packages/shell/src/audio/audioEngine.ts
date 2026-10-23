@@ -66,25 +66,59 @@ export interface AudioEngine {
   setListenerPose(pose: ListenerPose | Vec3): void;
   /** Retune the SFX budget and optional admission policy, stopping the lowest-priority oldest voices first. */
   setVoiceLimit(maxTotal: number, overflow?: VoiceAllocatorConfig["overflow"]): void;
+  /**
+   * One-call playback. Before a user gesture the browser keeps the context suspended, so the cue is
+   * held in a small bounded queue and played when {@link resume} succeeds instead of being dropped
+   * silently. Allocation happens per played cue, never per frame.
+   */
+  play(soundId: string, position?: Vec3): void;
   playOneShot(soundId: string, position?: Vec3): void;
   playLoop(soundId: string, position?: Vec3): AudioEmitterHandle | null;
   /** Crossfade the procedural soundtrack to `themeId` (null fades out). No-op when no `music` catalog is configured. */
   playMusic(themeId: string | null, options?: CrossfadeOptions): void;
   setBusGain(busId: string, gain: number): void;
+  /** Mute one bus without losing its gain: unmuting restores exactly the volume the player set. */
+  setBusMute(busId: string, muted: boolean): void;
   setMasterGain(gain: number): void;
+  setMasterMute(muted: boolean): void;
+  /** Master gain after volume and mute compose (`gain × (muted ? 0 : 1)`). */
+  masterLevel(): number;
+  /** Effective gain of `busId` after its authored gain, the player's volume and its mute compose. */
+  busLevel(busId: string): number;
+  /**
+   * Peak and RMS of the master output sampled on the Web Audio render clock. Pools its buffers, so
+   * calling it every frame allocates nothing; a silent (or unsupported) engine reports `0`.
+   */
+  measure(): AudioLevel;
   resume(): void;
   dispose(): void;
 }
 
+/** Master-output level, `0..1`. Pooled by {@link AudioEngine.measure} - read it, don't retain it. */
+export interface AudioLevel {
+  rms: number;
+  peak: number;
+}
+
+/** Cues held while the browser keeps the audio context suspended, before any user gesture. */
+export const MAX_PENDING_CUES = 16;
+
 function createNoopEngine(): AudioEngine {
+  const level: AudioLevel = { rms: 0, peak: 0 };
   return {
     setListenerPose: () => undefined,
     setVoiceLimit: () => undefined,
+    play: () => undefined,
     playOneShot: () => undefined,
     playLoop: () => null,
     playMusic: () => undefined,
     setBusGain: () => undefined,
+    setBusMute: () => undefined,
     setMasterGain: () => undefined,
+    setMasterMute: () => undefined,
+    masterLevel: () => 0,
+    busLevel: () => 0,
+    measure: () => level,
     resume: () => undefined,
     dispose: () => undefined,
   };
@@ -160,12 +194,40 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
   }
 
   const busGains = new Map<string, GainNode>();
+  // Authored gain survives a mute, so unmuting restores the player's volume exactly.
+  const busMix = new Map<string, { gain: number; muted: boolean }>();
+  let masterVolume = 1;
+  let masterMuted = false;
+
+  function applyMaster(): void {
+    masterGain.gain.value = masterLevel();
+  }
+
+  function masterLevel(): number {
+    return masterMuted ? 0 : masterVolume;
+  }
+
+  function busMixOf(busId: string): { gain: number; muted: boolean } {
+    let mix = busMix.get(busId);
+    if (mix === undefined) {
+      mix = { gain: busDefs[busId]?.gain ?? 1, muted: false };
+      busMix.set(busId, mix);
+    }
+    return mix;
+  }
+
+  function busLevel(busId: string): number {
+    const mix = busMix.get(busId);
+    if (mix === undefined) return busDefs[busId]?.gain ?? 1;
+    return mix.muted ? 0 : mix.gain;
+  }
+
   function busGainNode(busId: string): GainNode {
     let node = busGains.get(busId);
     if (node === undefined) {
       node = context.createGain();
       try {
-        node.gain.value = busDefs[busId]?.gain ?? 1;
+        node.gain.value = busLevel(busId);
         node.connect(masterGain);
         busGains.set(busId, node);
       } catch (error) {
@@ -174,6 +236,11 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
       }
     }
     return node;
+  }
+
+  function applyBus(busId: string): void {
+    const node = busGains.get(busId);
+    if (node !== undefined) node.gain.value = busLevel(busId);
   }
 
   let noiseBuffer: AudioBuffer | null = null;
@@ -233,6 +300,108 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
   let listenerVelocity: Vec3 = { x: 0, y: 0, z: 0 };
   const nyquist = context.sampleRate / 2;
   const activeSpatialUpdaters = new Set<() => void>();
+
+  // Browser autoplay: until the first user gesture the context stays suspended and a played cue
+  // would vanish. Hold a bounded FIFO of ids (preallocated slots) and flush it on resume.
+  const pendingCues = Array.from({ length: MAX_PENDING_CUES }, () => ({
+    soundId: null as string | null,
+    hasPosition: false,
+    x: 0,
+    y: 0,
+    z: 0,
+  }));
+  let pendingHead = 0;
+  let pendingCount = 0;
+
+  function contextRunning(): boolean {
+    const state = (context as { state?: AudioContextState }).state;
+    return state === undefined || state === "running";
+  }
+
+  function queueCue(soundId: string, position: Vec3 | undefined): void {
+    let slot;
+    if (pendingCount < MAX_PENDING_CUES) {
+      slot = pendingCues[(pendingHead + pendingCount) % MAX_PENDING_CUES]!;
+      pendingCount += 1;
+    } else {
+      // Full: drop the oldest cue, which the player has already stopped hearing.
+      slot = pendingCues[pendingHead]!;
+      pendingHead = (pendingHead + 1) % MAX_PENDING_CUES;
+    }
+    slot.soundId = soundId;
+    slot.hasPosition = position !== undefined;
+    slot.x = position?.x ?? 0;
+    slot.y = position?.y ?? 0;
+    slot.z = position?.z ?? 0;
+  }
+
+  /** Play what was held pre-gesture, oldest first, once the context can actually render it. */
+  function flushPending(): void {
+    while (pendingCount > 0) {
+      const slot = pendingCues[pendingHead]!;
+      pendingHead = (pendingHead + 1) % MAX_PENDING_CUES;
+      pendingCount -= 1;
+      const soundId = slot.soundId;
+      slot.soundId = null;
+      if (soundId === null) continue;
+      playInternal(soundId, slot.hasPosition ? { x: slot.x, y: slot.y, z: slot.z } : undefined, false);
+    }
+  }
+
+  function playCue(soundId: string, position: Vec3 | undefined): void {
+    if (disposed) return;
+    if (!contextRunning()) {
+      queueCue(soundId, position);
+      void context.resume().catch(() => undefined);
+      return;
+    }
+    playInternal(soundId, position, false);
+  }
+
+  let analyser: AnalyserNode | null = null;
+  let analyserSamples: Float32Array<ArrayBuffer> | null = null;
+  const level: AudioLevel = { rms: 0, peak: 0 };
+
+  function measure(): AudioLevel {
+    if (disposed) {
+      level.rms = 0;
+      level.peak = 0;
+      return level;
+    }
+    if (analyser === null) {
+      try {
+        analyser = context.createAnalyser();
+        analyser.fftSize = 1024;
+        analyser.smoothingTimeConstant = 0;
+        masterGain.disconnect();
+        masterGain.connect(analyser);
+        analyser.connect(context.destination);
+        analyserSamples = new Float32Array(analyser.fftSize);
+      } catch {
+        analyser = null;
+        level.rms = 0;
+        level.peak = 0;
+        return level;
+      }
+    }
+    if (analyserSamples === null) {
+      level.rms = 0;
+      level.peak = 0;
+      return level;
+    }
+    analyser.getFloatTimeDomainData(analyserSamples);
+    let sum = 0;
+    let peak = 0;
+    for (let index = 0; index < analyserSamples.length; index += 1) {
+      const sample = analyserSamples[index]!;
+      sum += sample * sample;
+      const magnitude = Math.abs(sample);
+      if (magnitude > peak) peak = magnitude;
+    }
+    level.rms = Math.sqrt(sum / analyserSamples.length);
+    level.peak = Math.min(1, peak);
+    return level;
+  }
 
   function playInternal(soundId: string, position: Vec3 | undefined, loop: boolean): AudioEmitterHandle | null {
     if (disposed) return null;
@@ -472,10 +641,11 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
       setAudioParam(listener.upZ, pose.up.z);
       for (const updateGain of activeSpatialUpdaters) updateGain();
     },
+    play(soundId, position) {
+      playCue(soundId, position);
+    },
     playOneShot(soundId, position) {
-      if (disposed) return;
-      void context.resume().catch(() => undefined);
-      playInternal(soundId, position, false);
+      playCue(soundId, position);
     },
     playLoop(soundId, position) {
       return playInternal(soundId, position, true);
@@ -487,15 +657,32 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
     },
     setBusGain(busId, gain) {
       if (disposed) return;
-      busGainNode(busId).gain.value = gain;
+      busMixOf(busId).gain = gain;
+      applyBus(busId);
+    },
+    setBusMute(busId, muted) {
+      if (disposed) return;
+      busMixOf(busId).muted = muted;
+      applyBus(busId);
     },
     setMasterGain(gain) {
       if (disposed) return;
-      masterGain.gain.value = gain;
+      masterVolume = gain;
+      applyMaster();
     },
+    setMasterMute(muted) {
+      if (disposed) return;
+      masterMuted = muted;
+      applyMaster();
+    },
+    masterLevel,
+    busLevel,
+    measure,
     resume() {
       if (disposed) return;
-      void context.resume().catch(() => undefined);
+      void context.resume().then(() => {
+        if (!disposed && contextRunning()) flushPending();
+      }).catch(() => undefined);
     },
     dispose() {
       if (disposed) return;

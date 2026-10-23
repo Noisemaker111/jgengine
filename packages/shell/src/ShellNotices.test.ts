@@ -82,6 +82,25 @@ describe("resolvePlayableAudio", () => {
     expect(resolvePlayableAudio(playable)).toBe(resolvePlayableAudio(playable));
     expect(resolvePlayableAudio(playable).sounds["ui.click"]?.bus).toBe("ui");
     const silent = { audio: { sounds: {}, uiCues: false } } as unknown as PlayableGame;
-    expect(resolvePlayableAudio(silent).sounds).toEqual({});
+    expect(Object.keys(resolvePlayableAudio(silent).sounds).some((id) => id.startsWith("ui."))).toBe(false);
+  });
+
+  test("adds the default feel reactions and honours feedbackCues: false", () => {
+    const playable = { audio: { sounds: {} } } as unknown as PlayableGame;
+    const resolved = resolvePlayableAudio(playable);
+    expect(resolved.sounds["feel.hit"]?.bus).toBe("sfx");
+    expect(resolved.sounds["feel.wave"]?.bus).toBe("sfx");
+    const quiet = { audio: { sounds: {}, feedbackCues: false } } as unknown as PlayableGame;
+    expect(Object.keys(resolvePlayableAudio(quiet).sounds).some((id) => id.startsWith("feel."))).toBe(false);
+  });
+
+  test("a game sound replaces a default reaction and its bus survives both merges", () => {
+    const playable = {
+      audio: { sounds: { "feel.hit": { id: "feel.hit", bus: "sfx", url: "own-hit.ogg" } } },
+    } as unknown as PlayableGame;
+    const resolved = resolvePlayableAudio(playable);
+    expect(resolved.sounds["feel.hit"]?.url).toBe("own-hit.ogg");
+    expect(resolved.buses?.sfx).toEqual({ id: "sfx", gain: 0.9 });
+    expect(resolved.buses?.ui).toEqual({ id: "ui", gain: 0.8 });
   });
 });

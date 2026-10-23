@@ -2,6 +2,7 @@ import type { AnimGraph } from "../anim/animGraph";
 import type { AudioBusDef, SoundDef } from "../audio/audioFalloff";
 import type { MusicTheme } from "../audio/music";
 import type { UiCueOverrides } from "../audio/uiCues";
+import type { FeedbackCueOverrides } from "../audio/feedbackCues";
 import type { NoticeFeedConfig } from "./notices";
 
 import type { MaterialAsset, MaterialAssignment, MaterialSurfaceParameters, MaterialTextureRole } from "../material/materialAsset";
@@ -832,6 +833,8 @@ export interface PlayableGame<
     hudCues?: boolean;
     /** Default UI cues (`ui.click`, `ui.deny`, ...) on a "ui" bus. A sound named `ui.<cue>` in `sounds` replaces one; a map entry replaces or (`false`) silences one; `false` silences all. */
     uiCues?: UiCueOverrides;
+    /** Default gameplay reactions (`feel.hit`, `feel.kill`, `feel.pickup`, ...) on an "sfx" bus, played by the shell from the events the engine announces. A sound named `feel.<cue>` in `sounds` replaces one; a map entry replaces or (`false`) silences one; `false` silences all. */
+    feedbackCues?: FeedbackCueOverrides;
   };
   /** Continuous positional emitter keyed by entity kind name: while a matching entity exists, the shell plays and repositions the mapped `audio.sounds` id (looping engine hum, campfire crackle, footstep loop) with listener-distance falloff. */
   entitySounds?: Record<string, string>;

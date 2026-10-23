@@ -1,5 +1,6 @@
 import type { AuthoredSimulationRuntime } from "../world/authoredSimulation";
 import type { Territory } from "../world/territory";
+import type { FeedbackCue } from "../audio/feedbackCues";
 import type { NoticeFeed } from "../game/notices";
 import type { CurrencyDefinition } from "../economy/currency";
 import type { CardPile, CardPileConfig } from "../cards/cardPile";
@@ -474,9 +475,18 @@ export interface GameContextRace {
   state(id: string, config?: RaceStateConfig): RaceState;
 }
 
+/**
+ * The game-announced feel seam on `ctx.game`: name a moment the engine has no event for and the
+ * shell plays its cue's sound, rumble, camera kick and caption. The reaction table lives in the
+ * shell, so a game never encodes what a hit or a wave should sound like.
+ */
+export interface GameFeedback {
+  /** Raise `cue` (`"hit" | "hurt" | "kill" | "pickup" | "objective" | "wave" | "deny"`); `caption` replaces the cue's default caption text. Emits `feedback.cue`. */
+  cue(cue: FeedbackCue, caption?: string): void;
+}
+
 /** Reachable audio seam on `ctx.game`: `play`, `music`, and `resume` route through the `audio.play`/`audio.music`/`audio.resume` events the shell's audio engine listens on, so game code triggers sound without importing the shell. Retained `loop`/`setLoop`/`stopLoop` add id-keyed loops with live pitch/gain control over `audio.loopStart`/`audio.loopSet`/`audio.loopStop` (#1051). */
-export interface GameAudio {
-  play(sound: string, at?: readonly [number, number, number]): void;
+export interface GameAudio {  play(sound: string, at?: readonly [number, number, number]): void;
   /** Crossfade the procedural soundtrack to `theme` (null fades out); `transpose` shifts the incoming theme's key in semitones. */
   music(theme: string | null, transpose?: number): void;
   resume(): void;
@@ -540,6 +550,12 @@ export interface GameContext {
      */
     notices: NoticeFeed;
     audio: GameAudio;
+    /**
+     * Announce a gameplay moment the engine has no event for (a wave starting, a scripted beat).
+     * The shell answers with the cue's sound, gamepad pulse, camera kick and caption, so a game
+     * never encodes the reaction itself.
+     */
+    feedback: GameFeedback;
     /** Play a model's one-shot animation clip bound to `event` in its `animation.oneShots` (e.g. an attack swing) — emits `entity.animation` for the shell to pick up. */
     playEntityAnimation(instanceId: string, event: string): void;
     feed: GameContextFeed;
