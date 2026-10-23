@@ -1,4 +1,6 @@
 import { expect, test } from "bun:test";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { assignShards, SHARDS, TEST_ROOTS, walkTestFiles, type Shard } from "./test-shard";
 
 const TABLE: Shard[] = [
@@ -42,4 +44,20 @@ test("the real table covers every test file once and each shard gets work", () =
 
 test("the roots are the directories CI tests", () => {
   expect([...TEST_ROOTS]).toEqual(["packages", "apps/dev", "scripts"]);
+});
+
+/** The `shard:` list under `test:` in ci.yml, which is the only shard fact CI keeps. */
+function matrixShards(): string[] {
+  const workflow = readFileSync(fileURLToPath(new URL("../.github/workflows/ci.yml", import.meta.url)), "utf8");
+  const job = /^ {2}test:\n([\s\S]*?)(?=^ {2}\S)/m.exec(workflow)?.[1] ?? "";
+  const list = /^ {8}shard: \[(.+)\]$/m.exec(job)?.[1] ?? "";
+  return list.split(",").map((name) => name.trim()).filter((name) => name.length > 0);
+}
+
+test("ci runs one test job per shard this script defines", () => {
+  expect(matrixShards()).toEqual(SHARDS.map((shard) => shard.name));
+});
+
+test("every shard names what it runs, so a red `test (a)` is diagnosable", () => {
+  for (const shard of SHARDS) expect(shard.label.length).toBeGreaterThan(0);
 });
