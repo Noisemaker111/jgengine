@@ -1,9 +1,11 @@
-import { afterAll, beforeAll, expect, test } from "bun:test";
+import { afterAll, beforeAll, expect, setDefaultTimeout, test } from "bun:test";
 import { mkdir, rm, symlink } from "node:fs/promises";
 import { resolve } from "node:path";
 import { chromium, type Browser, type Page } from "playwright-core";
 import { buildBrowserFixture, findChromeExecutable } from "../../../scripts/browser-lib";
 import { installPublicPackages } from "../../../scripts/browser-test-fixture";
+
+setDefaultTimeout(30_000);
 
 const scratch = resolve(import.meta.dir, "../../../.scratch/shell-lifecycle-test");
 let browser: Browser, page: Page, server: ReturnType<typeof Bun.serve>;

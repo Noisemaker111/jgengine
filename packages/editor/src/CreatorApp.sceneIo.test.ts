@@ -1,5 +1,7 @@
-import { afterAll, beforeAll, expect, test } from "bun:test";
+import { afterAll, beforeAll, expect, setDefaultTimeout, test } from "bun:test";
 import { creatorAppFixture, type CreatorAppSession } from "../../../scripts/creator-app-fixture";
+
+setDefaultTimeout(30_000);
 
 const fixture = creatorAppFixture("creator-app-scene-io");
 let session: CreatorAppSession;

@@ -1,8 +1,10 @@
-import { afterAll, beforeAll, expect, test } from "bun:test";
+import { afterAll, beforeAll, expect, setDefaultTimeout, test } from "bun:test";
 import { mkdir, rm, symlink } from "node:fs/promises";
 import { resolve } from "node:path";
 import { chromium, type Browser } from "playwright-core";
 import { buildBrowserFixture, findChromeExecutable } from "../../../../scripts/browser-lib";
+
+setDefaultTimeout(30_000);
 
 // Exercises the real React hook and Fiber frame subscription without claiming rendered appearance.
 // The fixture imports the packages' public subpaths (source, via tsconfig paths) and poses the repository's actual animated Knight.

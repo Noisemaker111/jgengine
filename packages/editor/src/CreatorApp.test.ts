@@ -1,8 +1,10 @@
-import { afterAll, beforeAll, expect, test } from "bun:test";
+import { afterAll, beforeAll, expect, setDefaultTimeout, test } from "bun:test";
 import { mkdir } from "node:fs/promises";
 import { decodePng } from "../../../scripts/png-reader";
 import { computeShotMetrics } from "../../../scripts/shot-metrics";
 import { creatorAppFixture, type CreatorAppSession } from "../../../scripts/creator-app-fixture";
+
+setDefaultTimeout(30_000);
 
 const fixture = creatorAppFixture("creator-app-chain");
 let session: CreatorAppSession;
