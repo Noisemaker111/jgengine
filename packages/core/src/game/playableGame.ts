@@ -771,7 +771,7 @@ export interface PlayableGame<
   platforms?: readonly HudPlatform[];
   /** HUD design resolution + scale clamps (default 1600×900, scale 0.4–1). `mobile` overrides tune the phone fit separately — the same resolution system drives desktop UI-scale and phone shrink. */
   hudFit?: HudViewportConfig;
-  /** Opt in to world-space health bars floating over non-local entities that carry the stat. `roles` restricts bars to entities whose catalog entry declares one of the given roles; `maxDistance` hides bars beyond this many world units from the render camera (default 60). */
+  /** Opt in to world-space health bars floating over non-local entities that carry the stat. `roles` restricts bars to entities whose catalog entry declares one of the given roles; `maxDistance` hides bars beyond this many world units from the render camera, and unset derives the range from the camera and the target height (an overhead camera reaches the units it looks at). */
   worldHealthBars?:
     | boolean
     | {
@@ -789,7 +789,7 @@ export interface PlayableGame<
    * Opt in to billboarded nameplates (name + optional HP bar) floating over non-local entities — the
    * MMO "who's this and how hurt are they" readout. `roles` restricts to entities whose catalog entry
    * declares one of the given roles (default: all); `maxDistance` hides nameplates beyond this many
-   * world units from the render camera (default 40). Headless: skin every part via `className`/`data-*` hooks
+   * world units from the render camera, and unset derives the range the same way the bars do. Headless: skin every part via `className`/`data-*` hooks
    * on `WorldNameplates` (`@jgengine/shell/world/WorldHud`) — this flag only turns the readout on and
    * scopes which entities it covers. Set `showHealth: false` for a name-only plate when a game already
    * draws the HP bar itself (its own HUD, or `worldHealthBars`) — otherwise the nameplate's built-in bar

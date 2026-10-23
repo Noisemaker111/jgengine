@@ -15,8 +15,13 @@ import { resolveFloatTextStyle } from "./floatTextStyle";
 import {
   collectNameplateSamples,
   collectWorldBarSamples,
+  createOverlayRangeWarn,
+  deriveWorldBarRange,
+  nearestOverlayTargetDistance,
   paintWorldBarSamples,
   refreshWorldBarSamples,
+  worldBarTargetFilter,
+  worldNameplateTargetFilter,
   type NameplateSample,
   type WorldBarSample,
 } from "./worldBarSamples";
@@ -36,12 +41,40 @@ function pinOverlayToViewport(
   return [size.width / 2, size.height / 2];
 }
 
+interface RangeWarnState {
+  warn: ReturnType<typeof createOverlayRangeWarn>;
+  reported: boolean;
+  at: number;
+}
+
+/**
+ * A configured range that hides every overlay is a silent blank screen; measure the nearest
+ * on-screen target and name the prop to raise. Probes at most once a second and reports once.
+ */
+function reportHiddenRange(
+  ref: { current: RangeWarnState | null },
+  block: string,
+  configured: number,
+  measure: () => number | null,
+): void {
+  const state = (ref.current ??= { warn: createOverlayRangeWarn(), reported: false, at: -Infinity });
+  if (state.reported) return;
+  const now = performance.now();
+  if (now - state.at < 1000) return;
+  state.at = now;
+  const nearest = measure();
+  if (nearest === null) return;
+  state.reported = true;
+  const message = state.warn(block, configured, nearest);
+  if (message !== null) console.warn(message);
+}
+
 export function WorldEntityBars({
   statId,
   height = 2.2,
   roles,
   resolveRole,
-  maxDistance = 60,
+  maxDistance,
   occlude = true,
   tickMs = 80,
   maxSamples = 64,
@@ -50,7 +83,7 @@ export function WorldEntityBars({
   height?: number;
   roles?: readonly CatalogEntityRole[];
   resolveRole?: (entity: SceneEntity) => CatalogEntityRole | undefined;
-  /** Hide bars beyond this camera distance in world units. Default 60. */
+  /** Hide bars beyond this camera distance in world units. Unset derives the range from the camera and the target height. */
   maxDistance?: number;
   /** Hide bars behind blocking geometry from the render camera. Default true; false explicitly reveals through walls. */
   occlude?: boolean;
@@ -67,6 +100,7 @@ export function WorldEntityBars({
   const samplesRef = useRef<WorldBarSample[]>([]);
   const projectRef = useRef(new THREE.Vector3());
   const lastTickRef = useRef(-Infinity);
+  const warnRef = useRef<RangeWarnState | null>(null);
   const visibility = useRenderVisibility();
 
   useFrame((state) => {
@@ -83,6 +117,8 @@ export function WorldEntityBars({
       canvas.height = pixelH;
     }
     camera.updateMatrixWorld();
+    const viewport = { width: cssW, height: cssH };
+    const range = maxDistance ?? deriveWorldBarRange(camera, viewport, height);
     if (nowMs - lastTickRef.current >= Math.max(0, tickMs)) {
       lastTickRef.current = nowMs;
       collectWorldBarSamples(
@@ -92,15 +128,28 @@ export function WorldEntityBars({
         roles,
         resolveRole,
         camera,
-        { width: cssW, height: cssH },
+        viewport,
         samplesRef.current,
         projectRef.current,
-        maxDistance,
+        range,
         occlude,
         { maxSamples, isVisible: visibility.current },
       );
+      if (maxDistance !== undefined && samplesRef.current.length === 0) {
+        reportHiddenRange(warnRef, "worldHealthBars", maxDistance, () =>
+          nearestOverlayTargetDistance(
+            ctx,
+            camera,
+            height,
+            deriveWorldBarRange(camera, viewport, height),
+            projectRef.current,
+            { maxSamples, isVisible: visibility.current },
+            worldBarTargetFilter(ctx, statId, roles, resolveRole),
+          ),
+        );
+      }
     } else {
-      refreshWorldBarSamples(ctx, height, camera, { width: cssW, height: cssH }, samplesRef.current, projectRef.current, maxDistance, { isVisible: visibility.current });
+      refreshWorldBarSamples(ctx, height, camera, viewport, samplesRef.current, projectRef.current, range, { isVisible: visibility.current });
     }
     paintWorldBarSamples(canvas, samplesRef.current, dpr);
   }, CAMERA_POST_FRAME_PRIORITY + 0.01);
@@ -121,7 +170,7 @@ export interface WorldNameplatesProps {
   height?: number;
   roles?: readonly CatalogEntityRole[];
   resolveRole?: (entity: SceneEntity) => CatalogEntityRole | undefined;
-  /** Hide nameplates beyond this camera distance in world units. Default 40. */
+  /** Hide nameplates beyond this camera distance in world units. Unset derives the range from the camera and the plate height. */
   maxDistance?: number;
   /** Hide plates behind blocking geometry from the render camera. Default true; false explicitly reveals through walls. */
   occlude?: boolean;
@@ -155,7 +204,7 @@ export function WorldNameplates({
   height = 2.3,
   roles,
   resolveRole,
-  maxDistance = 40,
+  maxDistance,
   occlude = true,
   tickMs = 120,
   maxSamples = 64,
@@ -175,6 +224,7 @@ export function WorldNameplates({
   const samplesRef = useRef<NameplateSample[]>([]);
   const projectRef = useRef(new THREE.Vector3());
   const lastTickRef = useRef(-Infinity);
+  const warnRef = useRef<RangeWarnState | null>(null);
   const visibility = useRenderVisibility();
 
   useFrame((state) => {
@@ -182,6 +232,7 @@ export function WorldNameplates({
     if (nowMs - lastTickRef.current < Math.max(0, tickMs)) return;
     lastTickRef.current = nowMs;
     camera.updateMatrixWorld();
+    const viewport = { width: size.width, height: size.height };
     collectNameplateSamples(
       ctx,
       statId,
@@ -189,13 +240,26 @@ export function WorldNameplates({
       roles,
       resolveRole,
       camera,
-      { width: size.width, height: size.height },
+      viewport,
       samplesRef.current,
       projectRef.current,
-      maxDistance,
+      maxDistance ?? deriveWorldBarRange(camera, viewport, height),
       occlude,
       { maxSamples, isVisible: visibility.current, ...(resolveName === undefined ? {} : { resolveName }) },
     );
+    if (maxDistance !== undefined && samplesRef.current.length === 0) {
+      reportHiddenRange(warnRef, "nameplates", maxDistance, () =>
+        nearestOverlayTargetDistance(
+          ctx,
+          camera,
+          height,
+          deriveWorldBarRange(camera, viewport, height),
+          projectRef.current,
+          { maxSamples, isVisible: visibility.current, ...(resolveName === undefined ? {} : { resolveName }) },
+          worldNameplateTargetFilter(roles, resolveRole, resolveName),
+        ),
+      );
+    }
     setSamples([...samplesRef.current]);
   }, CAMERA_POST_FRAME_PRIORITY + 0.01);
 

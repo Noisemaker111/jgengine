@@ -7,7 +7,7 @@ import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { createPossession } from "@jgengine/core/scene/possession";
 import { building, environment } from "@jgengine/core/world/features";
-import { collectNameplateSamples, collectWorldBarSamples, worldBarOccluded, worldBarSize, refreshWorldBarSamples, type NameplateSample, type WorldBarSample, type WorldOverlaySampleOptions } from "./worldBarSamples";
+import { collectNameplateSamples, collectWorldBarSamples, createOverlayRangeWarn, deriveWorldBarRange, nearestOverlayTargetDistance, paintWorldBarSamples, worldBarOccluded, worldBarSize, refreshWorldBarSamples, worldBarTargetFilter, type NameplateSample, type WorldBarSample, type WorldOverlaySampleOptions } from "./worldBarSamples";
 
 function setup(deps: SceneRaycastDeps = {}) {
   const store = createEntityStore();
@@ -56,6 +56,35 @@ function plates(ctx: GameContext, camera = cameraAt(), occlude = true, options: 
   const out: NameplateSample[] = [];
   collectNameplateSamples(ctx, "health", 2, undefined, undefined, camera, viewport, out, new THREE.Vector3(), maxDistance, occlude, options);
   return out;
+}
+
+/** Collect with the engine-derived range, as a game that configures no `maxDistance` gets. */
+function derivedBars(ctx: GameContext, camera = cameraAt(), occlude = true, options: WorldOverlaySampleOptions = {}) {
+  const out: WorldBarSample[] = [];
+  collectWorldBarSamples(ctx, "health", 2, undefined, undefined, camera, viewport, out, new THREE.Vector3(), undefined, occlude, options);
+  return out;
+}
+
+/** A canvas stub that counts painted bar outlines, so a still-rendered bar is observable. */
+function paintedBars(samples: readonly WorldBarSample[], dpr = 1): { outlines: number; fills: number } {
+  const tally = { outlines: 0, fills: 0 };
+  const context = {
+    setTransform: () => {},
+    clearRect: () => {},
+    fillRect: () => { tally.fills++; },
+    strokeRect: () => { tally.outlines++; },
+    createLinearGradient: () => ({ addColorStop: () => {} }),
+    fillStyle: "",
+    strokeStyle: "",
+    lineWidth: 1,
+  };
+  paintWorldBarSamples({ width: 800 * dpr, height: 600 * dpr, getContext: () => context as unknown as CanvasRenderingContext2D }, samples, dpr);
+  return tally;
+}
+
+/** A camera and target pair 76 units apart, like Beacon Bastion's arena under its 70-unit camera. */
+function beaconCamera() {
+  return cameraAt([0, 70, 30], [0, 0, 0]);
 }
 
 const wall: SceneRaycastDeps = { walls: [{ id: "wall", a: [-3, 5], b: [3, 5], yCenter: 2, halfHeight: 3 }] };
@@ -216,6 +245,92 @@ describe("world overlay visibility", () => {
     expect(queries()).toBe(2);
     expect(bars(ctx, cameraAt(), false, { maxSamples: 12 })).toHaveLength(12);
     expect(rays).toHaveLength(76);
+  });
+});
+
+describe("derived overlay range", () => {
+  test("a 70-unit camera still reaches the raider it looks at and paints a bar (Beacon case)", () => {
+    const { ctx, spawn } = setup();
+    spawn("raider", [0, 0, 0], "Raider", 4);
+    const camera = beaconCamera();
+    expect(bars(ctx, camera, true, {}, 60)).toHaveLength(0);
+    const samples = derivedBars(ctx, camera);
+    expect(samples).toHaveLength(1);
+    expect(samples[0]?.percent).toBeCloseTo(0.4, 5);
+    expect(paintedBars(samples).outlines).toBe(1);
+  });
+
+  test("the derived range covers the ground the camera looks down through", () => {
+    const camera = beaconCamera();
+    const range = deriveWorldBarRange(camera, viewport, 2);
+    expect(range).toBeGreaterThan(Math.hypot(70, 30));
+    expect(range).toBeLessThanOrEqual(camera.far);
+    const flat = cameraAt([0, 2, 10]);
+    expect(deriveWorldBarRange(flat, viewport, 2)).toBeGreaterThan(20);
+  });
+
+  test("the derived range stays inside the camera's far plane", () => {
+    const camera = new THREE.PerspectiveCamera(55, 800 / 600, 0.1, 40);
+    camera.position.set(0, 70, 30);
+    camera.lookAt(0, 0, 0);
+    camera.updateMatrixWorld();
+    expect(deriveWorldBarRange(camera, viewport, 2)).toBeLessThanOrEqual(40);
+  });
+
+  test("an explicit range still wins over the derived one", () => {
+    const { ctx, spawn } = setup();
+    spawn("raider", [0, 0, 0], "Raider", 4);
+    const camera = beaconCamera();
+    expect(bars(ctx, camera, true, {}, 30)).toHaveLength(0);
+    expect(bars(ctx, camera, true, {}, 80)).toHaveLength(1);
+  });
+
+  test("an explicit range that excludes every on-screen target warns exactly once with the measured distance", () => {
+    const { ctx, spawn } = setup();
+    spawn("raider", [0, 0, 0], "Raider", 4);
+    const camera = beaconCamera();
+    expect(collectWorldBarSamples(ctx, "health", 2, undefined, undefined, camera, viewport, [], new THREE.Vector3(), 30)).toBe(0);
+    const nearest = nearestOverlayTargetDistance(
+      ctx,
+      camera,
+      2,
+      deriveWorldBarRange(camera, viewport, 2),
+      new THREE.Vector3(),
+      {},
+      worldBarTargetFilter(ctx, "health", undefined, undefined),
+    );
+    expect(nearest).toBeCloseTo(76.16, 1);
+    const warn = createOverlayRangeWarn();
+    const messages = [0, 1, 2].map(() => warn("worldHealthBars", 30, nearest!)).filter((message): message is string => message !== null);
+    expect(messages).toHaveLength(1);
+    expect(messages[0]).toContain("worldHealthBars.maxDistance 30");
+    expect(messages[0]).toContain("76.2");
+    expect(messages[0]).toContain("Raise worldHealthBars.maxDistance to about 78");
+  });
+
+  test("a hidden range over an empty view stays silent", () => {
+    const { ctx } = setup();
+    const nearest = nearestOverlayTargetDistance(
+      ctx,
+      beaconCamera(),
+      2,
+      deriveWorldBarRange(beaconCamera(), viewport, 2),
+      new THREE.Vector3(),
+      {},
+      worldBarTargetFilter(ctx, "health", undefined, undefined),
+    );
+    expect(nearest).toBeNull();
+  });
+
+  test("retained bars drop once the target leaves the derived range", () => {
+    const { ctx, spawn, store } = setup();
+    spawn("raider", [0, 0, 0], "Raider", 4);
+    const camera = beaconCamera();
+    const samples = derivedBars(ctx, camera);
+    expect(samples).toHaveLength(1);
+    store.setPose("raider", { position: [0, 0, -400] });
+    refreshWorldBarSamples(ctx, 2, camera, viewport, samples, new THREE.Vector3());
+    expect(samples).toHaveLength(0);
   });
 });
 
