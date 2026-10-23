@@ -199,6 +199,12 @@ describe("parseGateArgs", () => {
   test("rejects an unknown flag rather than measuring everything", () => {
     expect(() => parseGateArgs(["--games-from"])).toThrow(/unknown argument/);
   });
+
+  test("refuses a setting override by name, since a budget describes the default build", () => {
+    expect(() => parseGateArgs(["--games", "harbor-heat", "--set", "colorblind=grayscale"])).toThrow(
+      /--set measures a setting on top of the defaults; budgets describe the default build/,
+    );
+  });
 });
 
 describe("describeGamesLine", () => {

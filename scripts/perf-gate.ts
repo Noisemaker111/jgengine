@@ -58,6 +58,11 @@ export function parseGateArgs(argv: readonly string[]): GateArgs {
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index]!;
     if (arg === "--help" || arg === "-h") throw new Error("usage");
+    if (arg === "--set") {
+      throw new Error(
+        "--set measures a setting on top of the defaults; budgets describe the default build — use `bun run perf <game> --set key=value` and compare the two records",
+      );
+    }
     if (arg === "--games" || arg === "--quality" || arg === "--seconds") {
       const value = argv[index + 1];
       if (value === undefined) throw new Error(`${arg} needs a value`);
@@ -83,7 +88,9 @@ const USAGE = `usage: bun run perf:gate [--games a,b] [--seconds n] [--quality d
 
   --games           comma-separated game ids (default: the 8 reference games)
   --seconds         measured window per game (default ${DEFAULT_SECONDS})
-  --quality         graphics tier: full (default) or draft`;
+  --quality         graphics tier: full (default) or draft
+  --set             not taken here: a setting override measures a cost against the defaults,
+                    not a budget. Use \`bun run perf <game> --set key=value\` and compare records.`;
 
 /**
  * The games checkout the gate is about to measure, as the pin in

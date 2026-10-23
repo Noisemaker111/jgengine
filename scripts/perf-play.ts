@@ -39,7 +39,7 @@ import {
  * counts, GL allocations made after warmup, and the hottest self-time
  * functions.
  *
- *   bun run perf <game> [--quality draft|full] [--profile] [--seconds n]
+ *   bun run perf <game> [--quality draft|full] [--profile] [--seconds n] [--set key=value ...]
  *
  * The JSON goes to stdout alone so it can be piped and diffed; notes and the
  * `--profile` inclusive table go to stderr. `measureGame` is the same sequence
