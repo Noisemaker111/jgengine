@@ -52,13 +52,13 @@ function isDrawable(object: Object3D): object is Drawable {
   return candidate.isMesh === true || candidate.isPoints === true || candidate.isLine === true || candidate.isSprite === true;
 }
 
-/** Knobs for {@link planFirstFrame}; the defaults are what a normal load wants. */
+/** Knobs for {@link planFirstFrame}; the defaults are what a normal load wants. @internal */
 export interface FirstFramePlanOptions {
   /** Bounding-sphere growth for the view test, so a prop just offscreen stays in the plan. */
   viewMargin?: number;
 }
 
-/** Which drawables the first frame can reach, so the cover waits for those and no others. */
+/** Which drawables the first frame can reach, so the cover waits for those and no others. @internal */
 export interface FirstFramePlan {
   /** Drawables compiled before the first frame is shown. */
   objects: ReadonlySet<Object3D>;
