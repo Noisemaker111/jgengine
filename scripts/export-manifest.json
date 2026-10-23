@@ -1343,6 +1343,7 @@
     "./staleCli",
     "./templates",
     "./templates/boardFiles",
+    "./templates/browserLaunch",
     "./templates/captureArgs",
     "./templates/driveInput",
     "./templates/driveSteps",

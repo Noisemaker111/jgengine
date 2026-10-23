@@ -15,6 +15,8 @@ Do not run bare cold `shoot` or `drive` repeatedly in a multi-shot loop. For a s
 
 Every cold start — shoot, drive, perf, perf gate, smoke, daemon — goes through one handshake: launch, wait for the debugger endpoint, open a page target. Each step is named in the failure line with its elapsed time and profile path, a transient failure gets one retry with a fresh profile and a doubled wait, and the wait is `JG_CHROME_READY_MS` (30s default). A launch that recovers is not a failed run; a budget, assertion or capture failure is never retried.
 
+A created game's own `scripts/browser.mjs` ships that same handshake: its block is generated from `packages/jgengine/src/templates/browserLaunch.ts`, and `bun run check:scaffold-launch` fails, naming both files, when the scaffold copy and `scripts/browser-lib.ts` stop agreeing.
+
 ## Native external game servers
 
 Keep the game on its published packages and its own dev server. `bun run drive --url http://127.0.0.1:5518 --click "Begin expedition" --key KeyW:500 --rpc '{"method":"debug_snapshot"}' --record expedition --record-fps 2 --size half` uses the existing input focus, recording, diagnostics, and storage isolation on that page. `shoot --url` and `drive --url` reuse daemon Chrome without starting or claiming ownership of a managed game/website server; an unavailable URL fails immediately. `--url` requires HTTP(S), preserves the page's path/query, and cannot be combined with a game id or `--site` in drive. Explicit `--mode editor` also selects the native host's editor; an existing mode query is otherwise preserved.
