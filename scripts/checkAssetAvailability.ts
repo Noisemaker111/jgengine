@@ -85,6 +85,8 @@ function sourceFilesUnder(dir: string): string[] {
 // call head to the first `sources` key, and `\bsources` so `resources:` cannot match.
 const BUILD_CATALOG_SOURCES = /buildCatalog\s*\(\s*\{[\s\S]*?\bsources\s*:\s*\[([^\]]*)\]/g;
 const QUOTED = /["'\x60]([a-zA-Z0-9_-]+)["'\x60]/g;
+const SPREAD_BINDING = /\.\.\.\s*([A-Za-z_$][\w$]*)/g;
+const STRING_ARRAY_BINDING = /(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*(?::[^=]+)?=\s*\[([^\]]*)\]/g;
 const MODELS_LITERAL = /\/models\/([a-zA-Z0-9_-]+)\//g;
 
 /**
@@ -92,6 +94,10 @@ const MODELS_LITERAL = /\/models\/([a-zA-Z0-9_-]+)\//g;
  * literals of any `buildCatalog({ sources: [...] })` array, plus every
  * `/models/<pack>/` served-path literal (how packs like `claudecraft` that skip
  * `buildCatalog` still declare their folder dependency).
+ *
+ * `sources` often spreads a named const (`sources: [...ASSET_SOURCE_IDS]`), so the
+ * same-file binding's string array is followed — a game that names its pack list is
+ * still a game that depends on those packs.
  */
 export function packReferencesForGame(game: string, srcDir: string): PackReference[] {
   const refs = new Map<string, PackReference>();
@@ -100,8 +106,16 @@ export function packReferencesForGame(game: string, srcDir: string): PackReferen
   };
   for (const file of sourceFilesUnder(srcDir)) {
     const text = readFileSync(file, "utf8");
+    const bindings = new Map<string, string>();
+    for (const match of text.matchAll(STRING_ARRAY_BINDING)) bindings.set(match[1]!, match[2]!);
     for (const match of text.matchAll(BUILD_CATALOG_SOURCES)) {
-      for (const inner of match[1]!.matchAll(QUOTED)) add(inner[1]!, "buildCatalog");
+      const inner = match[1]!;
+      for (const quoted of inner.matchAll(QUOTED)) add(quoted[1]!, "buildCatalog");
+      for (const spread of inner.matchAll(SPREAD_BINDING)) {
+        const bound = bindings.get(spread[1]!);
+        if (bound === undefined) continue;
+        for (const quoted of bound.matchAll(QUOTED)) add(quoted[1]!, "buildCatalog");
+      }
     }
     for (const match of text.matchAll(MODELS_LITERAL)) add(match[1]!, "path-literal");
   }

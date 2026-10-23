@@ -101,6 +101,24 @@ describe("packReferencesForGame", () => {
     cleanup();
   });
 
+  test("follows a named pack list spread into buildCatalog sources", () => {
+    const srcDir = makeGame({
+      "game/assets.ts": [
+        "const ASSET_SOURCE_IDS = [\"kaykit-skeletons\", \"quaternius-medieval-village\"] as const;",
+        "export const assets = buildCatalog({",
+        "  basePath: \"/models\",",
+        "  sources: [...ASSET_SOURCE_IDS],",
+        "});",
+      ].join("\\n"),
+    });
+    const refs = packReferencesForGame("beacon-bastion", srcDir);
+    const packs = new Set(refs.map((ref) => ref.pack));
+    expect(packs.has("kaykit-skeletons")).toBe(true);
+    expect(packs.has("quaternius-medieval-village")).toBe(true);
+    expect(refs.every((ref) => ref.via === "buildCatalog")).toBe(true);
+    cleanup();
+  });
+
   test("extracts /models/<pack>/ path literals (the buildCatalog-free surface)", () => {
     const srcDir = makeGame({
       "game/models.ts": 'const PLAYERS = "/models/claudecraft/players";\n',
