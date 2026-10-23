@@ -14,14 +14,13 @@
 // rebalancing never edits the workflow. `scripts/test-shard.test.ts` fails when
 // the two lists disagree.
 //
-// Balance is measured, not guessed: the numbers below are per-file runner seconds from
-// one `--reporter=junit` run (2026-10-23, run 39885331732), which sums to 408 s of test
-// time. The two browser files used to be 111 s and 91 s single files, so no split of the
-// rest could pass them; each is now two files and each shard's heaviest entry is 65 s.
-// Reporter seconds are inflated for many-small-file shards (the same files took 74 s and
-// 54 s of plain `bun test` against 111 s and 90 s of junit), so the six shards measure
-// 50-60 s of plain test time. Moving a directory means re-timing the shard and updating
-// these numbers in the same commit.
+// Balance is measured, not guessed: the numbers below are what each shard's `bun test`
+// step took on a runner (2026-10-23, run 39888130429, 377 s of test time over six jobs).
+// Six bins left two of them at 91 s and 92 s because the four browser files and the core
+// world/react/shell blocks are each 34-55 s and only just fit one per job; eight bins put
+// every job under 56 s. The heaviest entry is still one file - the editor round trip at
+// 55 s - so this is the floor until that scenario itself gets cheaper. Moving a directory
+// means re-timing the shard and updating these numbers in the same commit.
 import { readdirSync } from "node:fs";
 import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -41,33 +40,46 @@ export interface Shard {
   include: string[];
 }
 
-/** Six shards by measured cost; the CI matrix runs one job per entry, in this order. */
+/** Eight shards by measured cost; the CI matrix runs one job per entry, in this order. */
 export const SHARDS: readonly Shard[] = [
   {
     name: "a",
     label: "editor round trip",
-    // 65 s: the save/play/return/reopen chain, one Chrome and one save chain end to end.
+    // 55 s: one Chrome drives save/play/return/reopen across a reload, start to finish.
     include: ["packages/editor/src/CreatorApp.test.ts"],
   },
   {
     name: "b",
-    label: "editor scene io",
-    // 65 s: export/import and the failed-save round, plus the rest of the editor (1.8 s).
-    include: ["packages/editor/src/CreatorApp.sceneIo.test.ts", "packages/editor"],
+    label: "harness blocked targets",
+    // 53 s: the five scenarios the drive harness must refuse, ~11 s each.
+    include: ["packages/jgengine/src/harness.blockedTargets.browser.test.ts"],
   },
   {
     name: "c",
-    label: "harness blocked targets",
-    // 56 s: the five scenarios the drive harness must refuse, 11 s each, plus jgengine (3.4 s).
-    include: ["packages/jgengine/src/harness.blockedTargets.browser.test.ts", "packages/jgengine"],
+    label: "core world",
+    // 48 s: 87 files, the generator and city suites among them.
+    include: ["packages/core/src/world"],
   },
   {
     name: "d",
-    label: "harness drive + scripts",
-    // 36 s of drive harness, 25 s of scripts, and the small packages; no browser chain here.
+    label: "shell",
+    // 43 s: the player shell lifecycle round plus 157 files of shell.
+    include: ["packages/shell"],
+  },
+  {
+    name: "e",
+    label: "harness drive",
+    // 39 s of harness drive plus the other 2 s of jgengine.
+    include: ["packages/jgengine/src/harness.browser.test.ts", "packages/jgengine"],
+  },
+  {
+    name: "f",
+    label: "editor scene io",
+    // 34 s: export/import and the failed-save round, plus the rest of the editor (2 s)
+    // and the small packages that ship next to it.
     include: [
-      "packages/jgengine/src/harness.browser.test.ts",
-      "scripts",
+      "packages/editor/src/CreatorApp.sceneIo.test.ts",
+      "packages/editor",
       "apps/dev",
       "packages/node",
       "packages/ws",
@@ -80,16 +92,16 @@ export const SHARDS: readonly Shard[] = [
     ],
   },
   {
-    name: "e",
-    label: "core world + react",
-    // 51 s of core world (651 core files are 77 s together) and 34 s of react.
-    include: ["packages/core/src/world", "packages/react"],
+    name: "g",
+    label: "react",
+    // 36 s: 66 files of hooks and input surfaces.
+    include: ["packages/react"],
   },
   {
-    name: "f",
-    label: "shell + core",
-    // 58 s of shell and the remaining 25 s of core, then anything a new root adds.
-    include: ["packages/shell", "packages/core", ...TEST_ROOTS],
+    name: "h",
+    label: "scripts + core",
+    // 30 s of scripts and the 19 s of core outside world; anything a new root adds lands here.
+    include: ["scripts", "packages/core", ...TEST_ROOTS],
   },
 ];
 
