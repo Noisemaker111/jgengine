@@ -79,15 +79,20 @@ function skinReference(gltf: GLTF, clip: string, time: number): THREE.Vector3[] 
   const positions: THREE.Vector3[] = [];
   for (const meshes of bakeGroups(gltf.scene)) {
     for (const mesh of meshes) {
-      const count = mesh.geometry.getAttribute("position").count;
+      const index = mesh.geometry.index;
+      const count = index === null ? mesh.geometry.getAttribute("position").count : index.count;
       const skinned = mesh as THREE.SkinnedMesh;
       if (skinned.isSkinnedMesh === true) {
         skinned.skeleton.update();
-        for (let v = 0; v < count; v += 1) positions.push(skinned.getVertexPosition(v, new THREE.Vector3()).applyMatrix4(mesh.matrixWorld));
+        for (let i = 0; i < count; i += 1) {
+          const v = index === null ? i : index.getX(i);
+          positions.push(skinned.getVertexPosition(v, new THREE.Vector3()).applyMatrix4(mesh.matrixWorld));
+        }
         continue;
       }
       const attribute = mesh.geometry.getAttribute("position") as THREE.BufferAttribute;
-      for (let v = 0; v < count; v += 1) {
+      for (let i = 0; i < count; i += 1) {
+        const v = index === null ? i : index.getX(i);
         positions.push(new THREE.Vector3().fromBufferAttribute(attribute, v).applyMatrix4(mesh.matrixWorld));
       }
     }
@@ -104,7 +109,9 @@ describe("bakeSkinnedCrowd on a KayKit Knight", () => {
     let vertices = 0;
     gltf.scene.traverse((object) => {
       const mesh = object as THREE.Mesh;
-      if (mesh.isMesh === true) vertices += mesh.geometry.getAttribute("position").count;
+      if (mesh.isMesh !== true) return;
+      // The bake flattens indexed parts, so an indexed mesh contributes one vertex per index.
+      vertices += mesh.geometry.index === null ? mesh.geometry.getAttribute("position").count : mesh.geometry.index.count;
     });
     expect(baked.geometry.getAttribute("position").count).toBe(vertices);
     // One geometry group per material when several materials are merged; a single-material rig
@@ -179,7 +186,15 @@ describe("bakeSkinnedCrowd on a rig-less character", () => {
     expect(baked.geometry.groups.length).toBe(0);
     expect(baked.layout!.clips[0]!.name).toBe("Idle");
     // Both meshes ride one geometry, so a batch draws the whole character per material.
-    const vertices = 24 + 24;
+    const meshes: THREE.Mesh[] = [];
+    source.scene.traverse((object) => {
+      if ((object as THREE.Mesh).isMesh === true) meshes.push(object as THREE.Mesh);
+    });
+    let vertices = 0;
+    for (const mesh of meshes) {
+      const geometry = mesh.geometry;
+      vertices += geometry.index === null ? geometry.getAttribute("position").count : geometry.index.count;
+    }
     expect(baked.geometry.getAttribute("position").count).toBe(vertices);
     // The arm rotates away from the body between the first and last baked frames.
     const arm = new THREE.Vector3().fromBufferAttribute(baked.geometry.getAttribute("position") as THREE.BufferAttribute, 0);

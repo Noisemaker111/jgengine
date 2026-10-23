@@ -4,6 +4,8 @@ import * as THREE from "three";
 import type { CrowdMember } from "./crowdRegistry";
 import { CharacterCrowdRegistry } from "./crowdRegistry";
 import { poseTimeOffset, writeCrowdBatch, type CrowdPlayback } from "./crowdBatch";
+import { createPointerService } from "../pointer/pointerService";
+import { POINTER_ENTITY_INSTANCES_KEY } from "../pointer/pointerService";
 
 const placement = { scale: 1, offset: new THREE.Vector3(0, 0, 0) };
 const clips = ["Idle", "Walk", "Run"];
@@ -147,5 +149,32 @@ describe("one draw per model and material", () => {
     registry.forEach("guest-a", (id) => seen.push(id));
     expect(seen).toEqual(["a", "b"]);
     expect(registry.count("guest-b")).toBe(1);
+  });
+});
+
+describe("picking a batched character", () => {
+  test("a hit on an instance resolves to the entity that slot draws", () => {
+    const scene = new THREE.Scene();
+    const geometry = new THREE.BoxGeometry(1, 1, 1);
+    const mesh = new THREE.InstancedMesh(geometry, new THREE.MeshStandardMaterial(), 2);
+    const matrix = new THREE.Matrix4();
+    mesh.setMatrixAt(0, matrix.makeTranslation(-2, 0, 0));
+    mesh.setMatrixAt(1, matrix.makeTranslation(2, 0, 0));
+    mesh.count = 2;
+    mesh.userData[POINTER_ENTITY_INSTANCES_KEY] = ["left", "right"];
+    scene.add(mesh);
+    scene.updateMatrixWorld(true);
+
+    const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 100);
+    const pointer = createPointerService();
+    pointer.bind({ scene, camera, width: 500, height: 500 });
+    for (const [x, expected] of [[-2, "left"], [2, "right"]] as const) {
+      camera.position.set(x, 0, 10);
+      camera.lookAt(x, 0, 0);
+      camera.updateMatrixWorld();
+      const hit = pointer.worldHitCenter();
+      expect(hit?.entity).toBe(expected);
+      expect(hit?.object).toBeNull();
+    }
   });
 });

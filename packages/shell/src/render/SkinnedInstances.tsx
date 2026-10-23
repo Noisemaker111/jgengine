@@ -94,6 +94,18 @@ function layoutKey(geometry: THREE.BufferGeometry): string {
   return parts.join(",");
 }
 
+/**
+ * Flattens an indexed part so every baked geometry shares one attribute set. Bakes happen once per
+ * character kind, and mixed indexed/non-indexed sources (a box plus an icosahedron) would otherwise
+ * refuse to merge into one draw.
+ */
+function flatten(geometry: THREE.BufferGeometry): THREE.BufferGeometry {
+  if (geometry.index === null) return geometry;
+  const expanded = geometry.toNonIndexed();
+  geometry.dispose();
+  return expanded;
+}
+
 /** Copies the attributes a batch can draw: the vertex, its normal and its texture coordinate. */
 function bakePart(mesh: THREE.Mesh, relative: THREE.Matrix4): { geometry: THREE.BufferGeometry; layout: string; material: THREE.Material } {
   const source = mesh.geometry;
@@ -105,8 +117,7 @@ function bakePart(mesh: THREE.Mesh, relative: THREE.Matrix4): { geometry: THREE.
   geometry.setAttribute("uv", uv !== undefined ? uv.clone() : new THREE.Float32BufferAttribute(new Float32Array(source.getAttribute("position").count * 2), 2));
   if (source.index !== null) geometry.setIndex(source.index.clone());
   geometry.applyMatrix4(relative);
-  const layout = layoutKey(geometry);
-  return { geometry, layout, material: firstMaterial(mesh.material) };
+  return { geometry: flatten(geometry), layout: "", material: firstMaterial(mesh.material) };
 }
 
 /**
@@ -176,7 +187,8 @@ export function bakeSkinnedCrowd(source: SkinnedCrowdSource, options: BakeSkinne
       }
       geometry.setAttribute("skinIndex", new THREE.Float32BufferAttribute(remapped, 4));
       geometry.setAttribute("skinWeight", new THREE.Float32BufferAttribute(weights, 4));
-      part = { geometry, layout: layoutKey(geometry), material: firstMaterial(mesh.material) };
+      const flat = flatten(geometry);
+      part = { geometry: flat, layout: layoutKey(flat), material: firstMaterial(mesh.material) };
     } else {
       const slotNode = rigidSlotNode(mesh, root, animatedNames);
       const nodeInverse = slotNode.matrixWorld.clone().invert();

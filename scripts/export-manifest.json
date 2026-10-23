@@ -1015,6 +1015,7 @@
     "./render/authoredGrade",
     "./render/authoredSurfaceMaterial",
     "./render/characterLod",
+    "./render/crowdBatch",
     "./render/crowdRegistry",
     "./render/decalGeometry",
     "./render/decalTexture",
