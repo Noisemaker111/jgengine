@@ -22,6 +22,7 @@ import { actionContextStack, activeActionCodes } from "@jgengine/core/game/contr
 import type { PresencePoseRow } from "@jgengine/core/runtime/transport";
 import { useDisplayProfile } from "@jgengine/react/display";
 import { RotateDeviceScreen } from "@jgengine/react/rotateDevice";
+import { canvasCover } from "@jgengine/react/canvasCover";
 import { createSettingsStore } from "@jgengine/core/settings/settingsModel";
 import { parseGraphicsQuality, withGraphicsQualityOverride } from "@jgengine/core/settings/graphicsSettings";
 import {
@@ -43,7 +44,6 @@ import { armTextureErrors } from "@jgengine/core/devtools/textureErrors";
 import { readUrlFlag, subscribeUrlChange, writeUrlParam } from "@jgengine/core/devtools/urlFlags";
 
 import { createAudioEngine } from "./audio/audioEngine";
-import { canvasCover } from "@jgengine/react/canvasCover";
 import { attachAudioEventWire } from "./audio/audioWire";
 import { resolvePlayableAudio } from "./audio/playableAudio";
 import { installAgentBridge } from "./devtools/agentBridge";
@@ -75,7 +75,7 @@ import { installPlayFocusReclaim } from "./playSurfaceFocus";
 
 const DEV_USER_ID = "dev-player";
 
-/** The query param that mirrors the devtools overlay into the URL - present = open. */
+/** The query param that mirrors the devtools overlay into the URL — present = open. */
 const DEBUG_PARAM = "debug";
 /** The query param that pins the canvas cover, so a perf run can measure a covered frame. */
 const COVER_PARAM = "cover";

@@ -1,5 +1,6 @@
 import { devtools } from "@jgengine/core/devtools/devtools";
 import { getSaveEndpoint } from "@jgengine/core/devtools/saveEndpoint";
+import { canvasCover } from "@jgengine/react/canvasCover";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { PlayableGame } from "../registry";
 import {
@@ -16,7 +17,6 @@ import {
 import { buildFullReport, buildLeanReport, summarizeLeanReport } from "./devtoolsReports";
 import { resetFrameTelemetry } from "./frameSampler";
 import { advanceSimulation } from "./simStepper";
-import { canvasCover } from "@jgengine/react/canvasCover";
 
 /** One RPC call into the agent bridge: a verb name plus its verb-specific fields. */
 export type AgentBridgeRequest = { method: string } & Record<string, unknown>;
