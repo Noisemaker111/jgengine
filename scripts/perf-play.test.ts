@@ -1,15 +1,25 @@
 import { expect, test } from "bun:test";
 
-import { aggregateInclusiveTime, aggregateSelfTime, measureSceneNodes, parsePerfArgs, summarizeFrameDeltas } from "./perf-play";
+import {
+  aggregateInclusiveTime,
+  aggregateSelfTime,
+  droppedOverrides,
+  measureSceneNodes,
+  parsePerfArgs,
+  parseSettingSpec,
+  perfPageUrl,
+  perfSettingsScript,
+  summarizeFrameDeltas,
+} from "./perf-play";
 
 test("parsePerfArgs reads one game with its flags", () => {
   expect(parsePerfArgs(["harbor-heat"])).toEqual({
     kind: "run",
-    args: { game: "harbor-heat", quality: "full", profile: false, seconds: 6, telemetry: "on" },
+    args: { game: "harbor-heat", quality: "full", profile: false, seconds: 6, telemetry: "on", settings: [] },
   });
   expect(parsePerfArgs(["deepward", "--quality", "draft", "--profile", "--seconds", "3"])).toEqual({
     kind: "run",
-    args: { game: "deepward", quality: "draft", profile: true, seconds: 3, telemetry: "on" },
+    args: { game: "deepward", quality: "draft", profile: true, seconds: 3, telemetry: "on", settings: [] },
   });
   expect(parsePerfArgs(["--help"]).kind).toBe("help");
 });
@@ -20,6 +30,60 @@ test("parsePerfArgs rejects unusable input", () => {
   expect(() => parsePerfArgs(["a", "--quality", "low"])).toThrow("--quality must be draft or full");
   expect(() => parsePerfArgs(["a", "--seconds", "0"])).toThrow("--seconds must be a positive number");
   expect(() => parsePerfArgs(["a", "--bogus"])).toThrow("unknown flag --bogus");
+});
+
+test("--set names an engine setting and reports it with the run", () => {
+  const parsed = parsePerfArgs(["harbor-heat", "--set", "colorblind=grayscale"]);
+  expect(parsed.kind === "run" && parsed.args.settings).toEqual([
+    { id: "accessibility.colorblind", key: "colorblind", value: "grayscale" },
+  ]);
+  expect(parsePerfArgs(["harbor-heat", "--set", "accessibility.colorblind=grayscale", "--set", "shadows=false"])).toMatchObject({
+    args: {
+      settings: [
+        { id: "accessibility.colorblind", key: "accessibility.colorblind", value: "grayscale" },
+        { id: "graphics.shadows", key: "shadows", value: "false" },
+      ],
+    },
+  });
+});
+
+test("a typo in the setting key fails instead of measuring the default", () => {
+  expect(() => parseSettingSpec("colourblind=grayscale")).toThrow(/unknown setting "colourblind"/);
+  expect(() => parsePerfArgs(["harbor-heat", "--set", "grayscale=colorblind"])).toThrow(/unknown setting "grayscale"/);
+  expect(() => parseSettingSpec("colorblind")).toThrow("--set needs key=value");
+  expect(() => parseSettingSpec("colorblind=")).toThrow("--set needs key=value");
+});
+
+test("a value the engine does not offer fails, so a fallback is never measured as the setting", () => {
+  expect(() => parseSettingSpec("colorblind=gray")).toThrow("must be one of none, protanopia, deuteranopia, tritanopia, grayscale");
+  expect(() => parseSettingSpec("quality=highish")).toThrow("--set quality=highish must be one of low, medium, high, ultra");
+  expect(() => parsePerfArgs(["harbor-heat", "--set", "colorblind=grayscale", "--set", "accessibility.colorblind=none"])).toThrow(
+    "given twice",
+  );
+});
+
+test("the URL a run opens carries the harness's own params and nothing the override invented", () => {
+  const url = perfPageUrl({ base: "http://127.0.0.1:4601", game: "harbor-heat", quality: "full" });
+  expect(url.searchParams.get("game")).toBe("harbor-heat");
+  expect(url.searchParams.get("mode")).toBe("play");
+  expect(url.searchParams.get("device")).toBe("desktop");
+  expect(url.searchParams.get("capture")).toBe("1");
+  expect(url.searchParams.get("quality")).toBeNull();
+  expect(url.searchParams.get("telemetry")).toBeNull();
+
+  const draft = perfPageUrl({ base: "http://127.0.0.1:4601", game: "deepward", quality: "draft", telemetry: "off" });
+  expect(draft.searchParams.get("quality")).toBe("low");
+  expect(draft.searchParams.get("telemetry")).toBe("off");
+});
+
+test("the override script writes the settings storage key the game reads at boot", () => {
+  const settings = parseSettingSpec("colorblind=grayscale");
+  const written: Record<string, string> = {};
+  const localStorage = { setItem: (key: string, value: string) => void (written[key] = value) };
+  new Function("localStorage", perfSettingsScript([settings]))(localStorage);
+  expect(written).toEqual({ "jgengine:setting:accessibility.colorblind": JSON.stringify("grayscale") });
+  expect(droppedOverrides([settings], { "accessibility.colorblind": JSON.stringify("grayscale") })).toEqual([]);
+  expect(droppedOverrides([settings], { "accessibility.colorblind": null })).toEqual([settings]);
 });
 
 test("summarizeFrameDeltas reports the window a player sees", () => {

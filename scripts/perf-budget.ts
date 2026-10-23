@@ -172,6 +172,8 @@ export function checkBudget(record: PerfReport, budget: PerfBudget): BudgetViola
 
 /** One line naming every measured count against its budget, for a passing run. */
 export function summarizeRecord(record: PerfReport, budget: PerfBudget): string {
+  // A number measured with a setting on names that setting, so the line is reproducible as printed.
+  const overrides = (record as PerfReport & { overrides?: readonly string[] }).overrides ?? [];
   return [
     `${record.game} ok`,
     `draws ${fmtCount(record.render.draws ?? 0)}/${fmtCount(budget.draws)}`,
@@ -181,5 +183,6 @@ export function summarizeRecord(record: PerfReport, budget: PerfBudget): string 
     `framebuffers ${fmtCount(record.gl.framebuffers)}/0`,
     `allocations ${fmtCount(record.gl.allocations)}`,
     `${record.viewport} ${record.quality}`,
+    ...(overrides.length === 0 ? [] : [`overrides ${overrides.join(" ")}`]),
   ].join("  ");
 }

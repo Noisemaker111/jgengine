@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 
 import type { PerfRecord } from "./perf-play";
 import { PERF_GATE_GAMES, checkBudget, describeGamesCheckout, describeGamesLine, loadBudget, parseGateArgs, type PerfBudget } from "./perf-gate";
+import { summarizeRecord } from "./perf-budget";
 
 /**
  * The gate's verdict logic runs here without a browser: every case is a record
@@ -55,6 +56,7 @@ function record(overrides: Partial<PerfRecord> = {}, render: Partial<PerfRecord[
     systems: {},
     logs: null,
     telemetry: null,
+    overrides: [],
     ...overrides,
   };
 }
@@ -247,5 +249,19 @@ describe("describeGamesCheckout", () => {
   test("reports no pin when the file is missing instead of failing the run", () => {
     const root = tempRoot();
     expect(describeGamesCheckout(root, () => null)).toEqual({ pin: null, head: null });
+  });
+});
+
+describe("summarizeRecord", () => {
+  test("a run without overrides prints the same line as before", () => {
+    expect(summarizeRecord(record(), BUDGET)).toBe(
+      "harbor-heat ok  draws 7,000/7,600  triangles 3,600,000/3,850,000  nodes 11,000/11,900  links 0/0  framebuffers 0/0  allocations 0  1600x900 full",
+    );
+  });
+
+  test("a run with an override names it, so the line is reproducible as printed", () => {
+    expect(summarizeRecord(record({ overrides: ["accessibility.colorblind=grayscale"] }), BUDGET)).toEndWith(
+      "overrides accessibility.colorblind=grayscale",
+    );
   });
 });
