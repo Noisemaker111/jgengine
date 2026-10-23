@@ -22,6 +22,7 @@ import { actionContextStack, activeActionCodes } from "@jgengine/core/game/contr
 import type { PresencePoseRow } from "@jgengine/core/runtime/transport";
 import { useDisplayProfile } from "@jgengine/react/display";
 import { RotateDeviceScreen } from "@jgengine/react/rotateDevice";
+import { canvasCover } from "@jgengine/react/canvasCover";
 import { createSettingsStore } from "@jgengine/core/settings/settingsModel";
 import { parseGraphicsQuality, withGraphicsQualityOverride } from "@jgengine/core/settings/graphicsSettings";
 import {
@@ -76,6 +77,8 @@ const DEV_USER_ID = "dev-player";
 
 /** The query param that mirrors the devtools overlay into the URL — present = open. */
 const DEBUG_PARAM = "debug";
+/** The query param that pins the canvas cover, so a perf run can measure a covered frame. */
+const COVER_PARAM = "cover";
 
 const NO_SUBSCRIBE = () => () => undefined;
 const ZERO_VERSION = () => 0;
@@ -140,6 +143,10 @@ export function GamePlayerShell({
     if (!devtoolsEnabled) return;
     return subscribeUrlChange(() => setDevtoolsOpen(readUrlFlag(DEBUG_PARAM)));
   }, [devtoolsEnabled]);
+  // `?cover=1` holds the canvas cover for the page, so a perf run can measure a covered frame on
+  // any game without a menu. Games declare the same hold from their own covering surface.
+  const coverPinned = readUrlFlag(COVER_PARAM);
+  useEffect(() => (coverPinned ? canvasCover.hold() : undefined), [coverPinned]);
   useEffect(
     () =>
       installAgentBridge({

@@ -1,5 +1,6 @@
 import { devtools } from "@jgengine/core/devtools/devtools";
 import { getSaveEndpoint } from "@jgengine/core/devtools/saveEndpoint";
+import { canvasCover } from "@jgengine/react/canvasCover";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { PlayableGame } from "../registry";
 import {
@@ -173,6 +174,7 @@ export function installAgentBridge(options: {
 }): () => void {
   const { playable, devtoolsEnabled, isDevtoolsOpen, setDevtoolsOpen } = options;
   const getContext = options.getContext ?? (() => null);
+  let coverRelease: (() => void) | null = null;
 
   const handle = (request: AgentBridgeRequest): AgentBridgeResponse | Promise<AgentBridgeResponse> => {
     const method = typeof request?.method === "string" ? request.method : "";
@@ -363,6 +365,15 @@ export function installAgentBridge(options: {
         }
         return { ok: false, error: `no HUD panel "${id}" — canvas_state lists ids` };
       }
+      case "canvas_cover": {
+        if (request.covered === true) {
+          coverRelease ??= canvasCover.hold();
+          return { ok: true, covered: true, holders: canvasCover.holders() };
+        }
+        coverRelease?.();
+        coverRelease = null;
+        return { ok: true, covered: canvasCover.covered(), holders: canvasCover.holders() };
+      }
       case "canvas_list_panel_types":
         return {
           ok: true,
@@ -412,6 +423,8 @@ export function installAgentBridge(options: {
 
   window.__jgengineAgent = { handle };
   return () => {
+    coverRelease?.();
+    coverRelease = null;
     if (window.__jgengineAgent?.handle === handle) delete window.__jgengineAgent;
   };
 }

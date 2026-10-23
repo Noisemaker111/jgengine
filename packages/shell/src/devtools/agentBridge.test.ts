@@ -1,8 +1,9 @@
 import { describe, expect, test } from "bun:test";
 
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { canvasCover } from "@jgengine/react/canvasCover";
 
-import { applyTimeScale, playerPoseReport, waitForEditorHost } from "./agentBridge";
+import { applyTimeScale, installAgentBridge, playerPoseReport, waitForEditorHost } from "./agentBridge";
 
 describe("waitForEditorHost", () => {
   test("resolves true as soon as the host goes live", async () => {
@@ -37,6 +38,33 @@ describe("playerPoseReport", () => {
   test("is null before the context or the player entity exists", () => {
     expect(playerPoseReport(null)).toBeNull();
     expect(playerPoseReport(ctxWith(null))).toBeNull();
+  });
+});
+
+describe("canvas_cover", () => {
+  test("holds while on and lifts on off or dispose, so a drive can measure a covered frame", () => {
+    const globals = globalThis as typeof globalThis & { window?: unknown };
+    const previousWindow = globals.window;
+    globals.window = {};
+    try {
+      const dispose = installAgentBridge({
+        playable: { game: { name: "Cover" } } as never,
+        devtoolsEnabled: true,
+        isDevtoolsOpen: () => false,
+        setDevtoolsOpen: () => {},
+      });
+      const agent = (globals.window as { __jgengineAgent: { handle(request: { method: string; covered?: boolean }): unknown } }).__jgengineAgent;
+      expect(agent.handle({ method: "canvas_cover", covered: true })).toEqual({ ok: true, covered: true, holders: 1 });
+      expect(canvasCover.covered()).toBe(true);
+      expect(agent.handle({ method: "canvas_cover", covered: true }), "a repeated on is one hold").toEqual({ ok: true, covered: true, holders: 1 });
+      expect(agent.handle({ method: "canvas_cover", covered: false })).toEqual({ ok: true, covered: false, holders: 0 });
+      expect(canvasCover.covered()).toBe(false);
+      agent.handle({ method: "canvas_cover", covered: true });
+      dispose();
+      expect(canvasCover.covered(), "disposing the shell must lift its cover").toBe(false);
+    } finally {
+      globals.window = previousWindow;
+    }
   });
 });
 

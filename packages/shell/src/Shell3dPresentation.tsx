@@ -97,6 +97,7 @@ import { resolvePlayableAudio } from "./audio/playableAudio";
 import { AudioSettingsBridge, type AppliedGraphicsSettings } from "./settings/appliedSettings";
 import { TextureFiltering } from "./render/TextureFiltering";
 import { FrameRateLimiter } from "./drivers/FrameRateLimiter";
+import { CanvasCoverFrameloop } from "./drivers/CanvasCoverFrameloop";
 import { FpsCounter, FpsProbe, type FrameTally } from "./diagnostics/FpsCounter";
 import { ConfiguredLighting, BackdropFog } from "./render/SceneLighting";
 import { IrradianceVolumeLighting } from "./render/IrradianceVolumeLighting";
@@ -509,6 +510,8 @@ export function Shell3dPresentation({
         run: () => action.run(ctx),
       }));
   const touchScale = compact ? 0.88 : 1;
+  const canvasFrameloop: "always" | "demand" | "never" =
+    poster && posterFrozen ? "demand" : graphics.frameRateLimit > 0 && !poster ? "never" : "always";
   // The frame carries the player's colour-vision mode; the HUD and menu text above it stay unfiltered.
   const colorblind = useColorblindMode(settingsStore);
   const dockMounted =
@@ -590,7 +593,7 @@ export function Shell3dPresentation({
                     ktx2SupportDetected.current = true;
                     detectKtx2Support(gl);
                   }}
-                  frameloop={poster && posterFrozen ? "demand" : graphics.frameRateLimit > 0 && !poster ? "never" : "always"}
+                  frameloop={canvasFrameloop}
                   orthographic={orthographic}
                   camera={
                     orthographic
@@ -610,6 +613,7 @@ export function Shell3dPresentation({
                   gl={{ preserveDrawingBuffer: true, powerPreference: "high-performance" }}
                   style={{ touchAction: "none" }}
                 >
+                  <CanvasCoverFrameloop authored={canvasFrameloop} />
                   <TextureFiltering anisotropy={graphics.profile.anisotropy} />
                   {graphics.frameRateLimit > 0 && !poster ? <FrameRateLimiter fps={graphics.frameRateLimit} /> : null}
                   {graphics.showFps ? <FpsProbe tally={frameTally} /> : null}

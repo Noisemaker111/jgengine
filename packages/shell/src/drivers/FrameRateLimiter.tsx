@@ -2,18 +2,21 @@ import { useThree } from "@react-three/fiber";
 import { useEffect } from "react";
 
 import { paceFrame } from "@jgengine/core/settings/frameRateLimit";
+import { useCanvasCovered } from "@jgengine/react/canvasCover";
 
 /**
  * Drives the Canvas at a capped frame rate. Mount only with `frameloop="never"`: it runs its
  * own requestAnimationFrame loop and advances R3F on the refreshes `paceFrame` admits, so
- * simulation, useFrame and rendering all run at the cap with correct deltas.
+ * simulation, useFrame and rendering all run at the cap with correct deltas. Under a canvas
+ * cover it advances nothing, so a covered canvas draws no frames even at a cap.
  * @internal shell-internal; driven by the player's frame-rate limit setting.
  */
 export function FrameRateLimiter({ fps }: { fps: number }): null {
+  const covered = useCanvasCovered();
   const advance = useThree((state) => state.advance);
   const get = useThree((state) => state.get);
   useEffect(() => {
-    if (fps <= 0) return;
+    if (fps <= 0 || covered) return;
     // R3F's "never" mode reads the timestamp as seconds on its own clock; continue that clock.
     const base = get().clock.elapsedTime;
     let start: number | null = null;
@@ -34,6 +37,6 @@ export function FrameRateLimiter({ fps }: { fps: number }): null {
       // Hand the clock back to R3F's own loop in milliseconds so its next delta is one frame.
       get().clock.oldTime = performance.now();
     };
-  }, [fps, advance, get]);
+  }, [fps, advance, get, covered]);
   return null;
 }
