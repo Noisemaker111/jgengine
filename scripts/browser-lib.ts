@@ -14,6 +14,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, dirname, join, parse, resolve } from "node:path";
+import { request as httpRequest } from "node:http";
 
 import { retrySettleMs, shouldRetryCapture } from "./capture-retry";
 import { clearViteCaches, headRevision, revisionDrifted, shortRevision } from "./captureRevision";
@@ -588,13 +589,46 @@ export interface DebuggerWaitContext {
 /** Chrome answers `/json/version` with a JSON body; anything slower than this is still not a debugger. */
 const DEBUGGER_PROBE_TIMEOUT_MS = 2_000;
 
+/**
+ * GET a localhost URL with `node:http`, never `fetch`: Bun's fetch routes 127.0.0.1 through
+ * `HTTP_PROXY`, so a machine with a corporate proxy reads a healthy browser as dead.
+ */
+async function localGet(url: string, timeoutMs: number, method = "GET"): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const target = new URL(url);
+    const request = httpRequest(
+      {
+        hostname: target.hostname,
+        port: target.port,
+        path: target.pathname + target.search,
+        method,
+        headers: { connection: "close" },
+      },
+      (response) => {
+        let body = "";
+        response.setEncoding("utf8");
+        response.on("data", (chunk: string) => {
+          if (body.length < 1_048_576) body += chunk;
+        });
+        response.on("end", () => {
+          const status = response.statusCode ?? 0;
+          if (status >= 200 && status < 300) resolve(body);
+          else reject(Object.assign(new Error(`localhost ${target.pathname} answered ${status}`), { status }));
+        });
+        response.on("error", reject);
+      },
+    );
+    request.setTimeout(timeoutMs, () => request.destroy(new Error(`localhost ${target.pathname} timed out after ${timeoutMs}ms`)));
+    request.on("error", reject);
+    request.end();
+  });
+}
+
 async function debuggerVersionUrl(port: number): Promise<string | null> {
   try {
-    const response = await fetch(`http://127.0.0.1:${port}/json/version`, {
-      signal: AbortSignal.timeout(DEBUGGER_PROBE_TIMEOUT_MS),
-    });
-    if (!response.ok) return null;
-    const body = (await response.json()) as { webSocketDebuggerUrl?: unknown };
+    const body = JSON.parse(
+      await localGet(`http://127.0.0.1:${port}/json/version`, DEBUGGER_PROBE_TIMEOUT_MS),
+    ) as { webSocketDebuggerUrl?: unknown };
     return typeof body.webSocketDebuggerUrl === "string" ? body.webSocketDebuggerUrl : null;
   } catch {
     return null;
@@ -766,11 +800,8 @@ export class CdpSession {
 /** Close one Chrome page target through the debugger HTTP endpoint. */
 export async function closePageTarget(debugPort: number, targetId: string): Promise<boolean> {
   try {
-    const response = await fetch(
-      `http://127.0.0.1:${debugPort}/json/close/${encodeURIComponent(targetId)}`,
-      { signal: AbortSignal.timeout(2_000) },
-    );
-    return response.ok;
+    await localGet(`http://127.0.0.1:${debugPort}/json/close/${encodeURIComponent(targetId)}`, 2_000);
+    return true;
   } catch {
     return false;
   }
@@ -819,21 +850,18 @@ async function connectPageTarget(debugPort: number): Promise<CdpSession> {
   let info: { id?: string; webSocketDebuggerUrl?: string } | undefined;
   for (const method of ["PUT", "GET"] as const) {
     try {
-      const created = await fetch(`http://127.0.0.1:${debugPort}/json/new?about:blank`, {
-        method,
-        signal: AbortSignal.timeout(10_000),
-      });
-      if (created.ok) {
-        info = (await created.json()) as { id?: string; webSocketDebuggerUrl?: string };
-        break;
-      }
+      info = JSON.parse(
+        await localGet(`http://127.0.0.1:${debugPort}/json/new?about:blank`, 10_000, method),
+      ) as { id?: string; webSocketDebuggerUrl?: string };
+      break;
     } catch {
       /* try next */
     }
   }
   if (info?.webSocketDebuggerUrl === undefined) {
-    const list = await fetch(`http://127.0.0.1:${debugPort}/json/list`, { signal: AbortSignal.timeout(5_000) });
-    const pages = (await list.json()) as Array<{ type: string; webSocketDebuggerUrl?: string }>;
+    const pages = JSON.parse(
+      await localGet(`http://127.0.0.1:${debugPort}/json/list`, 5_000),
+    ) as Array<{ type: string; webSocketDebuggerUrl?: string }>;
     const page = pages.find((entry) => entry.type === "page" && entry.webSocketDebuggerUrl !== undefined);
     if (page?.webSocketDebuggerUrl === undefined) throw new Error("No CDP page target available");
     return CdpSession.connect(page.webSocketDebuggerUrl, 15_000);

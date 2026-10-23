@@ -118,6 +118,46 @@ describe("scaffold launch block", () => {
     expect(Date.now() - startedAt).toBeLessThan(1_000);
   });
 
+  test("the debugger handshake ignores HTTP_PROXY", async () => {
+    const { startBrowser } = await scaffoldBrowser();
+    const debuggerEndpoint = await slowDebugger(0);
+    const saved = new Map<string, string | undefined>();
+    const proxy = {
+      HTTP_PROXY: "http://127.0.0.1:9",
+      http_proxy: "http://127.0.0.1:9",
+      HTTPS_PROXY: "http://127.0.0.1:9",
+      https_proxy: "http://127.0.0.1:9",
+      NO_PROXY: "",
+      no_proxy: "",
+    };
+    try {
+      for (const [name, value] of Object.entries(proxy)) {
+        saved.set(name, process.env[name]);
+        process.env[name] = value;
+      }
+      const started = await startBrowser({
+        debugPort: debuggerEndpoint.port,
+        readyMs: 1_000,
+        log: () => {},
+        launch: () => fakeChrome(1),
+        pageProbe: async () => {},
+      });
+      expect(started.attempts).toBe(1);
+    } finally {
+      for (const [name, value] of saved) {
+        if (value === undefined) delete process.env[name];
+        else process.env[name] = value;
+      }
+      await debuggerEndpoint.stop();
+    }
+  });
+
+  test("the shipped block probes the debugger without fetch", () => {
+    expect(BROWSER_LAUNCH_BLOCK).toContain('from "node:http"');
+    const fetchCall = BROWSER_LAUNCH_BLOCK.indexOf("fetch(");
+    expect({ fetch: fetchCall }).toEqual({ fetch: -1 });
+  });
+
   test("missing Chrome is a configuration error, not a flake to retry", async () => {
     const { startBrowser, BrowserLaunchError } = await scaffoldBrowser();
     let calls = 0;
