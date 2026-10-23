@@ -1,15 +1,21 @@
 import { afterEach, expect, test } from "bun:test";
-import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import {
+  LOCK_STALE_MS,
+  acquireLock,
   checkVerdict,
   chooseBody,
   forcePushArgs,
   formatFailures,
+  landLocked,
   landRefusal,
+  lockPath,
   parseArgs,
+  parseLock,
   pickFragment,
+  staleReason,
   syncOntoBase,
 } from "./land";
 import type { Run } from "./land";
@@ -196,4 +202,152 @@ test("a branch land did not push is refused, and the remote copy is left alone",
 
 test("the only force land uses is a lease on the branch it pushed", () => {
   expect(forcePushArgs("agent/lane-x")).toEqual(["push", "--force-with-lease=agent/lane-x", "origin", "HEAD:agent/lane-x"]);
+});
+
+function lockPathForTest(): string {
+  const dir = join(SCRATCH, `lock-${crypto.randomUUID()}`);
+  made.push(dir);
+  mkdirSync(dir, { recursive: true });
+  return join(dir, "land.lock");
+}
+
+/** A holder in its own OS process, the way a second landing is; it logs what it did to a file. */
+function spawnHolder(options: { lock: string; branch: string; holdMs: number; crash?: boolean; delayMs?: number }) {
+  const logFile = `${options.lock}.${options.branch.replace(/\W/g, "-")}.log`;
+  const script = `
+import { appendFileSync } from "node:fs";
+const { acquireLock } = await import("./scripts/land.ts");
+const at = (label) => appendFileSync(${JSON.stringify(logFile)}, label + " " + Date.now() + "\\n");
+if (${options.delayMs ?? 0} > 0) await Bun.sleep(${options.delayMs ?? 0});
+const release = acquireLock({ path: ${JSON.stringify(options.lock)}, branch: ${JSON.stringify(options.branch)}, log: (line) => at("LOG " + line) });
+at("HELD");
+if (${options.crash === true}) process.exit(9);
+await Bun.sleep(${options.holdMs});
+release();
+at("RELEASED");
+`;
+  const child = Bun.spawn({
+    cmd: ["bun", "-e", script],
+    cwd: join(import.meta.dir, ".."),
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  const events = (): string[] => {
+    try {
+      return readFileSync(logFile, "utf8").trim().split("\n").filter((line) => line.length > 0);
+    } catch {
+      return [];
+    }
+  };
+  return {
+    child,
+    events,
+    async waitFor(label: string): Promise<void> {
+      for (let tries = 0; tries < 600 && !events().some((line) => line.startsWith(label)); tries += 1) {
+        await Bun.sleep(25);
+      }
+      expect(events().some((line) => line.startsWith(label))).toBe(true);
+    },
+  };
+}
+
+test("a second landing waits on the first one's branch, then takes the lock", async () => {
+  const lock = lockPathForTest();
+  const first = spawnHolder({ lock, branch: "agent/first", holdMs: 1200 });
+  await first.waitFor("HELD");
+
+  const logged: string[] = [];
+  const startedAt = Date.now();
+  const release = acquireLock({ path: lock, branch: "agent/second", log: (line) => logged.push(line) });
+  const waited = Date.now() - startedAt;
+  release();
+
+  expect(logged[0]).toContain("waiting on agent/first");
+  expect(logged[0]).toContain(`pid ${first.child.pid}`);
+  expect(waited).toBeGreaterThan(300);
+  expect(logged.at(-1)).toContain("lock acquired after waiting");
+
+  await first.child.exited;
+  expect(first.events()[0]).toStartWith("HELD");
+  expect(first.events().at(-1)).toStartWith("RELEASED");
+});
+
+test("two landings launched together hold the lock one at a time, in start order", async () => {
+  const lock = lockPathForTest();
+  const first = spawnHolder({ lock, branch: "agent/one", holdMs: 700 });
+  const second = spawnHolder({ lock, branch: "agent/two", holdMs: 0, delayMs: 300 });
+  await first.child.exited;
+  await second.child.exited;
+
+  const labels = (events: string[]) => events.map((line) => line.split(" ")[0]);
+  const heldAt = (events: string[]) => Number(events.find((line) => line.startsWith("HELD"))!.split(" ")[1]);
+  const releasedAt = (events: string[]) => Number(events.find((line) => line.startsWith("RELEASED"))!.split(" ")[1]);
+
+  expect(labels(first.events())).toEqual(["HELD", "RELEASED"]);
+  expect(labels(second.events())).toEqual(["LOG", "LOG", "HELD", "RELEASED"]);
+  expect(second.events()[0]).toContain("waiting on agent/one");
+  expect(second.events()[1]).toContain("lock acquired after waiting");
+  expect(heldAt(second.events())).toBeGreaterThanOrEqual(releasedAt(first.events()));
+});
+
+test("a landing killed while holding the lock does not wedge the next one", async () => {
+  const lock = lockPathForTest();
+  const crashed = spawnHolder({ lock, branch: "agent/crashed", holdMs: 0, crash: true });
+  await crashed.child.exited;
+  expect(crashed.events()[0]).toStartWith("HELD");
+  expect(existsSync(lock)).toBe(true);
+
+  const logged: string[] = [];
+  const release = acquireLock({ path: lock, branch: "agent/next", log: (line) => logged.push(line) });
+  release();
+
+  expect(logged[0]).toContain("breaking a stale lock from agent/crashed");
+  expect(logged[0]).toContain(`pid ${crashed.child.pid} is gone`);
+  expect(existsSync(lock)).toBe(false);
+});
+
+test("a lock older than half an hour is broken even though its process still answers", () => {
+  const lock = lockPathForTest();
+  writeFileSync(
+    lock,
+    JSON.stringify({ branch: "agent/slow", pid: process.pid, startedAt: Date.now() - LOCK_STALE_MS - 1_000 }),
+  );
+
+  const logged: string[] = [];
+  acquireLock({ path: lock, branch: "agent/fresh", log: (line) => logged.push(line) })();
+
+  expect(logged[0]).toContain("breaking a stale lock from agent/slow");
+  expect(logged[0]).toContain("older than 30 minutes");
+  expect(existsSync(lock)).toBe(false);
+});
+
+test("a lock whose holder is alive and recent is left alone", () => {
+  const now = Date.now();
+  const held = { branch: "agent/live", pid: 42, startedAt: now - 1_000 };
+  expect(staleReason(held, now, now, () => true)).toBeNull();
+  expect(staleReason(held, now, now, () => false)).toBe("pid 42 is gone");
+  expect(staleReason({ ...held, startedAt: now - LOCK_STALE_MS }, now, now, () => true)).toContain("older than");
+  expect(staleReason(null, now - 10, now, () => true)).toBeNull();
+  expect(staleReason(null, now - 60_000, now, () => true)).toBe("unreadable lock file");
+  expect(parseLock('{"branch":"agent/x","pid":7,"startedAt":1}')).toEqual({ branch: "agent/x", pid: 7, startedAt: 1 });
+  expect(parseLock("")).toBeNull();
+  expect(parseLock('{"branch":"agent/x"}')).toBeNull();
+});
+
+test("the lock is released when the landing throws, and a lock land does not own is left alone", () => {
+  const lock = lockPathForTest();
+  expect(() =>
+    landLocked({ path: lock, branch: "agent/boom" }, () => {
+      throw new Error("landing exploded");
+    }),
+  ).toThrow("landing exploded");
+  expect(existsSync(lock)).toBe(false);
+
+  const logged: string[] = [];
+  const release = acquireLock({ path: lock, branch: "agent/ours", log: (line) => logged.push(line) });
+  writeFileSync(lock, JSON.stringify({ branch: "agent/other", pid: process.ppid, startedAt: Date.now() }));
+  release();
+  expect(logged.at(-1)).toContain("leaving it alone");
+  expect(existsSync(lock)).toBe(true);
+  expect(lockPath(join("repo", ".git"))).toBe(join("repo", ".git", "land.lock"));
 });
