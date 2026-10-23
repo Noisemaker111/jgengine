@@ -136,6 +136,83 @@ describe("withPathProfiles", () => {
     // At the crossing the second (later) profile wins the core height.
     expect(sample(0, 0)).toBeCloseTo(2, 6);
   });
+
+  test("matches a full centerline scan at every sample, including ring edges", () => {
+    const curve: readonly (readonly [number, number])[] = [
+      [-120, -80],
+      [-40, -30],
+      [10, 12],
+      [70, 6],
+      [150, -40],
+    ];
+    const profile: TerrainPathProfile = {
+      points: curve,
+      width: 18,
+      shoulder: 26,
+      depth: 2.5,
+      height: { kind: "grade", start: 4, end: -6 },
+      retaining: { wallHeight: 6, threshold: 1.5, taper: 3 },
+      maxCut: 5,
+    };
+    const base = (x: number, z: number): number => Math.sin(x * 0.05) * 3 + Math.cos(z * 0.04) * 2;
+    const sample = withPathProfiles(base, [profile]);
+    const reach = 9 + 26;
+    // Independent oracle: the same profile maths over a scan of every segment.
+    const reference = (x: number, z: number): number => {
+      let lateral = Number.POSITIVE_INFINITY;
+      let along = 0;
+      let travelled = 0;
+      let point: readonly [number, number] = curve[0]!;
+      let total = 0;
+      for (let i = 0; i < curve.length - 1; i += 1) total += Math.hypot(curve[i + 1]![0] - curve[i]![0], curve[i + 1]![1] - curve[i]![1]);
+      for (let i = 0; i < curve.length - 1; i += 1) {
+        const a = curve[i]!;
+        const b = curve[i + 1]!;
+        const abx = b[0] - a[0];
+        const abz = b[1] - a[1];
+        const lengthSq = abx * abx + abz * abz;
+        const segment = Math.sqrt(lengthSq);
+        const t = lengthSq <= 0 ? 0 : Math.max(0, Math.min(1, ((x - a[0]) * abx + (z - a[1]) * abz) / lengthSq));
+        const px = a[0] + abx * t;
+        const pz = a[1] + abz * t;
+        const distance = Math.hypot(x - px, z - pz);
+        if (distance < lateral) {
+          lateral = distance;
+          along = travelled + t * segment;
+          point = [px, pz];
+        }
+        travelled += Math.hypot(abx, abz);
+      }
+      const surrounding = base(x, z);
+      if (lateral > reach) return surrounding;
+      const clamp = (value: number): number => Math.max(surrounding - 5, value);
+      const target = clamp(4 + (-6 - 4) * (total <= 0 ? 0 : Math.min(1, Math.max(0, along / total))));
+      if (lateral <= 9) {
+        const edge = lateral / 9;
+        return clamp(target - 2.5 * (1 - edge * edge));
+      }
+      const shoulderT = Math.min(1, Math.max(0, (lateral - 9) / 26));
+      const feathered = target + (surrounding - target) * (shoulderT * shoulderT * (3 - 2 * shoulderT));
+      const cutFill = Math.abs(target - surrounding);
+      if (cutFill < 1.5) return feathered;
+      const smooth = (value: number): number => {
+        const clamped = Math.min(1, Math.max(0, value));
+        return clamped * clamped * (3 - 2 * clamped);
+      };
+      const strength = smooth((cutFill - 1.5) / 3);
+      const crest = target + 6;
+      const walled =
+        shoulderT <= 0.5
+          ? target + (crest - target) * smooth(shoulderT / 0.5)
+          : crest + (surrounding - crest) * smooth((shoulderT - 0.5) / 0.5);
+      return feathered + (walled - feathered) * strength;
+    };
+    for (let i = 0; i < 400; i += 1) {
+      const x = ((i * 149) % 400) - 200;
+      const z = ((i * 83) % 300) - 150;
+      expect(sample(x, z)).toBe(reference(x, z));
+    }
+  });
 });
 
 describe("applyPathProfiles / resolveTerrainField wiring", () => {

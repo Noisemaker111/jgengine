@@ -16,7 +16,8 @@ import type {
 } from "./features";
 import type { AvoidZone } from "./geometry";
 import { type TerrainPathProfile, withPathProfiles } from "./pathTerrain";
-import { isOnRoad, nearestOnPath } from "./roads";
+import { buildPolylineIndex } from "./polylineIndex";
+import { buildSpatialBuckets } from "./spatialBuckets";
 import type { TerraformSnapshot } from "./terraform";
 
 /** A surface normal vector at a terrain sample point. */
@@ -417,10 +418,15 @@ export function flattenFieldAround(base: TerrainField, zones: readonly AvoidZone
  */
 export function roadDrapedField(base: TerrainField, roads: readonly RoadEnvironmentDescriptor[]): TerrainField {
   if (roads.length === 0) return base;
+  const draped = roads.map((road) => ({
+    elevation: road.elevation,
+    half: road.width / 2,
+    index: buildPolylineIndex(road.path),
+  }));
   const sampleHeight = (x: number, z: number): number => {
     let lift = 0;
-    for (const road of roads) {
-      if (road.elevation > lift && isOnRoad(road.path, road.width, x, z)) lift = road.elevation;
+    for (const road of draped) {
+      if (road.elevation > lift && road.index.nearest(x, z, road.half) !== null) lift = road.elevation;
     }
     return base.sampleHeight(x, z) + lift;
   };
@@ -898,9 +904,13 @@ export function createTerrainPaletteSampler(
     palette: resolveTerrainPalette(region),
   }));
   if (regions.length === 0 && bandSampler === null) return () => base;
+  const buckets = buildSpatialBuckets(PALETTE_REGION_CELL);
+  regions.forEach((region, index) => buckets.insert(index, region.minX, region.minZ, region.maxX, region.maxZ));
+  const nearby: number[] = [];
   return (x, z) => {
     let palette = bandSampler === null ? base : bandSampler(z);
-    for (const region of regions) {
+    for (const index of buckets.query(x, z, x, z, nearby)) {
+      const region = regions[index]!;
       const distance = region.coreDistance(x, z);
       if (distance <= 0) {
         palette = region.palette;
@@ -914,22 +924,51 @@ export function createTerrainPaletteSampler(
 }
 
 /**
+ * Cell size for the palette's region index, in world units: coarse enough that inserting a small
+ * region touches one cell, fine enough that a vertex only tests the handful of regions over it.
+ */
+const PALETTE_REGION_CELL = 32;
+
+/**
  * Resolves a `TerrainMaterialRegion` of any shape to a `coreDistance(x, z)` — 0 inside the painted
- * core, growing positive outward — plus its blend-ring `falloff`, so the palette sampler blends every
- * shape through one shape-agnostic loop.
+ * core, growing positive outward — plus its blend-ring `falloff` and the box a region can paint
+ * inside (core plus blend ring), so the palette sampler blends every shape through one shape-agnostic
+ * loop that only visits regions covering the sample.
  */
 function resolveRegionShape(region: TerrainMaterialRegion): {
   coreDistance: (x: number, z: number) => number;
   falloff: number;
+  minX: number;
+  minZ: number;
+  maxX: number;
+  maxZ: number;
 } {
   if (region.shape === "polyline") {
     const half = region.width * 0.5;
+    const falloff = region.falloff ?? half;
+    const index = buildPolylineIndex(region.points);
+    const limit = half + falloff;
+    let minX = Number.POSITIVE_INFINITY;
+    let minZ = Number.POSITIVE_INFINITY;
+    let maxX = Number.NEGATIVE_INFINITY;
+    let maxZ = Number.NEGATIVE_INFINITY;
+    for (const point of region.points) {
+      minX = Math.min(minX, point[0]);
+      maxX = Math.max(maxX, point[0]);
+      minZ = Math.min(minZ, point[1]);
+      maxZ = Math.max(maxZ, point[1]);
+    }
+    const empty = region.points.length < 2;
     return {
-      falloff: region.falloff ?? half,
+      falloff,
       coreDistance: (x, z) => {
-        const sample = nearestOnPath(region.points, x, z);
-        return sample === null ? Number.POSITIVE_INFINITY : Math.max(0, sample.distance - half);
+        const hit = index.nearest(x, z, limit);
+        return hit === null ? Number.POSITIVE_INFINITY : Math.max(0, hit.distance - half);
       },
+      minX: empty ? 0 : minX - limit,
+      minZ: empty ? 0 : minZ - limit,
+      maxX: empty ? -1 : maxX + limit,
+      maxZ: empty ? -1 : maxZ + limit,
     };
   }
   if (region.shape === "rect") {
@@ -937,8 +976,11 @@ function resolveRegionShape(region: TerrainMaterialRegion): {
     const angle = region.rotationY ?? 0;
     const cos = Math.cos(angle);
     const sin = Math.sin(angle);
+    const falloff = region.falloff ?? Math.min(hx, hz) * 0.5;
+    const extentX = Math.abs(hx * cos) + Math.abs(hz * sin) + falloff;
+    const extentZ = Math.abs(hx * sin) + Math.abs(hz * cos) + falloff;
     return {
-      falloff: region.falloff ?? Math.min(hx, hz) * 0.5,
+      falloff,
       coreDistance: (x, z) => {
         const dx = x - region.center[0];
         const dz = z - region.center[1];
@@ -946,11 +988,21 @@ function resolveRegionShape(region: TerrainMaterialRegion): {
         const lz = -dx * sin + dz * cos;
         return Math.hypot(Math.max(0, Math.abs(lx) - hx), Math.max(0, Math.abs(lz) - hz));
       },
+      minX: region.center[0] - extentX,
+      minZ: region.center[1] - extentZ,
+      maxX: region.center[0] + extentX,
+      maxZ: region.center[1] + extentZ,
     };
   }
+  const falloff = region.falloff ?? region.radius * 0.5;
+  const extent = region.radius + falloff;
   return {
-    falloff: region.falloff ?? region.radius * 0.5,
+    falloff,
     coreDistance: (x, z) => Math.max(0, Math.hypot(x - region.center[0], z - region.center[1]) - region.radius),
+    minX: region.center[0] - extent,
+    minZ: region.center[1] - extent,
+    maxX: region.center[0] + extent,
+    maxZ: region.center[1] + extent,
   };
 }
 

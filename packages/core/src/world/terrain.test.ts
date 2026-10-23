@@ -3,7 +3,7 @@ import { describe, expect, test } from "bun:test";
 import { gateTimingMs } from "../../../../scripts/timing-budget";
 import type { TerrainMaterialMaps } from "./features";
 import { environment, island, road, terrain } from "./features";
-import { buildRoadRibbon } from "./roads";
+import { buildRoadRibbon, isOnRoad } from "./roads";
 import {
   arenaField,
   composeIslandFields,
@@ -685,4 +685,89 @@ test("resolveTerrainDetail fills surfaceStrength and resolves an implicit defaul
   expect(implicit.waterLevel).toBe(3);
   expect(implicit.snowHeight).toBeGreaterThan(1000);
   expect(implicit.strength).toBeLessThan(1);
+});
+
+type Region = NonNullable<Parameters<typeof createTerrainPaletteSampler>[0]["materialRegions"]>[number];
+
+/** Segment-scan distance for one region shape — the answer the indexed sampler must reproduce. */
+function bruteCoreDistance(region: Region, x: number, z: number): number {
+  if (region.shape === "polyline") {
+    let best = Number.POSITIVE_INFINITY;
+    for (let i = 0; i < region.points.length - 1; i += 1) {
+      const a = region.points[i]!;
+      const b = region.points[i + 1]!;
+      const abx = b[0] - a[0];
+      const abz = b[1] - a[1];
+      const lengthSq = abx * abx + abz * abz;
+      const t = lengthSq <= 0 ? 0 : Math.max(0, Math.min(1, ((x - a[0]) * abx + (z - a[1]) * abz) / lengthSq));
+      best = Math.min(best, Math.hypot(x - (a[0] + abx * t), z - (a[1] + abz * t)));
+    }
+    return Math.max(0, best - region.width * 0.5);
+  }
+  if (region.shape === "rect") {
+    const [hx, hz] = region.halfExtents;
+    const angle = region.rotationY ?? 0;
+    const cos = Math.cos(angle);
+    const sin = Math.sin(angle);
+    const dx = x - region.center[0];
+    const dz = z - region.center[1];
+    const lx = dx * cos + dz * sin;
+    const lz = -dx * sin + dz * cos;
+    return Math.hypot(Math.max(0, Math.abs(lx) - hx), Math.max(0, Math.abs(lz) - hz));
+  }
+  return Math.max(0, Math.hypot(x - region.center[0], z - region.center[1]) - region.radius);
+}
+
+function regionFalloff(region: Region): number {
+  if (region.falloff !== undefined) return region.falloff;
+  if (region.shape === "polyline") return region.width * 0.5;
+  if (region.shape === "rect") return Math.min(region.halfExtents[0], region.halfExtents[1]) * 0.5;
+  return region.radius * 0.5;
+}
+
+describe("indexed sampling", () => {
+  test("the palette sampler paints every region a full scan would at that point", () => {
+    const regions: readonly Region[] = [
+      { center: [0, 0], radius: 40, material: "snow", falloff: 12 },
+      { shape: "rect", center: [120, 40], halfExtents: [30, 12], rotationY: 0.6, material: "sand", falloff: 8 },
+      { shape: "polyline", points: [[-80, -60], [40, 10], [140, -20]], width: 14, material: "slate", falloff: 9 },
+      { center: [260, -90], radius: 18, material: "rock" },
+      { shape: "polyline", points: [[-200, 120], [200, 160]], width: 20, material: "highland", falloff: 6 },
+    ];
+    const sampler = createTerrainPaletteSampler({ material: "grass", materialRegions: regions });
+    for (let i = 0; i < 240; i += 1) {
+      const x = ((i * 97) % 600) - 300;
+      const z = ((i * 61) % 400) - 200;
+      // Only a region whose core or blend ring covers the point can change the palette there.
+      const canPaint = regions.filter((region) => bruteCoreDistance(region, x, z) <= regionFalloff(region));
+      const expected = createTerrainPaletteSampler({ material: "grass", materialRegions: canPaint })(x, z);
+      expect(sampler(x, z)).toEqual(expected);
+    }
+  });
+
+  test("road draping raises the ground exactly where isOnRoad says it is on the road", () => {
+    const path = [
+      [0, 0],
+      [120, 20],
+      [260, -10],
+    ] as const;
+    const field = resolveEnvironmentField(
+      environment({
+        terrain: terrain({ height: 0, bounds: { w: 400, d: 400 } }),
+        roads: [road({ path, width: 12, elevation: 0.4 })],
+      }),
+    );
+    let onRoad = 0;
+    // Walk the straight opening stretch and offset across it, so the samples straddle the width/2 edge.
+    for (let i = 0; i < 400; i += 1) {
+      const t = (i % 40) / 40;
+      const lateral = ((i * 7) % 21) - 10;
+      const x = 120 * t - lateral * 0.164;
+      const z = 20 * t + lateral * 0.986;
+      const expected = isOnRoad(path, 12, x, z) ? 0.4 : 0;
+      if (expected > 0) onRoad += 1;
+      expect(field.sampleHeight(x, z)).toBe(expected);
+    }
+    expect(onRoad).toBeGreaterThan(20);
+  });
 });
