@@ -14,15 +14,20 @@ import {
   type EventFeedback,
   type FeedbackDeps,
 } from "./eventFeedback";
+import { createHapticsRoute } from "./hapticsRoute";
 
 function harness(overrides: Partial<FeedbackDeps> = {}) {
   let t = 0;
   const played: string[] = [];
+  const positions: (readonly [number, number, number] | undefined)[] = [];
   const shakes: number[] = [];
   const pulses: { strong: number; weak: number; ms: number }[] = [];
   const captions: string[] = [];
   const deps: FeedbackDeps = {
-    play: (sound) => played.push(sound),
+    play: (sound, position) => {
+      played.push(sound);
+      positions.push(position);
+    },
     shake: (amount) => shakes.push(amount),
     haptics: (pulse) => pulses.push(pulse),
     caption: (text) => captions.push(text),
@@ -32,7 +37,7 @@ function harness(overrides: Partial<FeedbackDeps> = {}) {
     now: () => t,
     ...overrides,
   };
-  return { deps, played, shakes, pulses, captions, advance: (ms: number) => { t += ms; } };
+  return { deps, played, positions, shakes, pulses, captions, advance: (ms: number) => { t += ms; } };
 }
 
 const damage = (target: string, amount: number): GameEventMap["combat.damage"] => ({
@@ -149,8 +154,79 @@ describe("event feedback mapping", () => {
   });
 });
 
-describe("captions follow the accessibility setting", () => {
-  test("off by default, on when the setting turns on, quiet again when it turns off", () => {
+describe("spatial cues and haptics routing", () => {
+  test("a positioned damage event plays its cue at that spot; one without a position plays centred", () => {
+    const h = harness();
+    const feedback = createEventFeedback(h.deps);
+    feedback.handle("combat.damage", { ...damage("raider-1", 8), position: [7, 1, -3] });
+    h.advance(200);
+    feedback.handle("combat.damage", damage("raider-1", 8));
+    expect(h.played).toEqual([feedbackCueSoundId("hit"), feedbackCueSoundId("hit")]);
+    expect(h.positions).toEqual([[7, 1, -3], undefined]);
+  });
+
+  test("a connected gamepad takes the pulse and the phone stays quiet", () => {
+    const pads = [{ connected: true, vibrationActuator: {} }] as unknown as ArrayLike<Gamepad | null>;
+    const delivered: string[] = [];
+    const vibrations: number[] = [];
+    const route = createHapticsRoute(
+      (pulse) => delivered.push(`pad:${pulse.ms}`),
+      { gamepads: () => pads, vibrate: (ms) => vibrations.push(ms), events: null },
+    );
+    const h = harness({ haptics: (pulse) => { route.deliver(pulse); } });
+    createEventFeedback(h.deps).handle("combat.damage", damage("me", 10));
+    expect(delivered).toEqual(["pad:140"]);
+    expect(vibrations).toEqual([]);
+    expect(h.played).toEqual([feedbackCueSoundId("hurt")]);
+  });
+
+  test("a phone with no gamepad vibrates, and reduced motion drops the shake but not the sound", () => {
+    const vibrations: number[] = [];
+    const route = createHapticsRoute(
+      () => { throw new Error("no pad should take the pulse"); },
+      { gamepads: () => [], vibrate: (ms) => vibrations.push(ms), events: null },
+    );
+    const h = harness({ haptics: (pulse) => { route.deliver(pulse); }, motionScale: () => 0 });
+    expect(createEventFeedback(h.deps).handle("combat.damage", damage("me", 10))).toBe("hurt");
+    expect(vibrations).toEqual([140]);
+    expect(h.played).toEqual([feedbackCueSoundId("hurt")]);
+    expect(h.shakes).toEqual([]);
+  });
+
+  test("a pad that connects later takes the pulse from the phone", () => {
+    let pads: Gamepad[] = [];
+    const listeners = new Map<string, () => void>();
+    const events = {
+      addEventListener: (name: string, listener: () => void) => listeners.set(name, listener),
+      removeEventListener: (name: string) => listeners.delete(name),
+    };
+    const delivered: string[] = [];
+    const vibrations: number[] = [];
+    const route = createHapticsRoute(
+      (pulse) => delivered.push(`pad:${pulse.ms}`),
+      { gamepads: () => pads, vibrate: (ms) => vibrations.push(ms), events },
+    );
+    const pulse = { strong: 0.2, weak: 0.3, ms: 70 };
+    expect(route.deliver(pulse)).toBe("vibration");
+    pads = [{ connected: true, vibrationActuator: {} } as unknown as Gamepad];
+    listeners.get("gamepadconnected")?.();
+    expect(route.deliver(pulse)).toBe("gamepad");
+    expect(delivered).toEqual(["pad:70"]);
+    expect(vibrations).toEqual([70]);
+    route.dispose();
+    expect(listeners.size).toBe(0);
+  });
+
+  test("a device with neither a pad nor a vibration motor does nothing and does not throw", () => {
+    const route = createHapticsRoute(
+      () => { throw new Error("unreachable"); },
+      { gamepads: () => [], vibrate: null, events: null },
+    );
+    expect(route.deliver({ strong: 0.4, weak: 0.2, ms: 90 })).toBe("none");
+  });
+});
+
+describe("captions follow the accessibility setting", () => {  test("off by default, on when the setting turns on, quiet again when it turns off", () => {
     const store = createSettingsStore(null);
     const h = harness();
     const feedback = createEventFeedback(h.deps, { captions: readAccessibilitySettings(store).state.captions });

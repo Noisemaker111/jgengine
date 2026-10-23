@@ -154,6 +154,7 @@ export function createCombatSubsystem(d: CombatSubsystemDeps): CombatSubsystem {
           absorbed: Math.max(0, application.incoming - application.dealt),
           remaining: application.remaining,
           lethal: application.lethal,
+          ...(application.at === undefined ? {} : { position: application.at }),
         });
       },
       onLethal(instanceId, lethalCtx) {

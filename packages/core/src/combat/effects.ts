@@ -129,6 +129,8 @@ export interface EffectDamageApplication {
   remaining: number | null;
   /** True when the last pool reached its minimum. */
   lethal: boolean;
+  /** The target's position when the spatial seam knows it, for a panned cue or a decal at the hit. */
+  at?: EntityPosition;
 }
 
 export interface EffectSystemDeps {
@@ -255,6 +257,7 @@ export function createEffectSystem(deps: EffectSystemDeps): EffectSystem {
       let dealt = 0;
       for (const delta of result.applied) if (delta.delta < 0) dealt -= delta.delta;
       const lastStatId = rule.order[rule.order.length - 1];
+      const at = deps.spatial.positionOf(instanceId);
       deps.onDamage({
         target: instanceId,
         source: from,
@@ -263,6 +266,7 @@ export function createEffectSystem(deps: EffectSystemDeps): EffectSystem {
         dealt,
         remaining: statPools.get(instanceId, lastStatId)?.current ?? null,
         lethal: result.lethal,
+        ...(at === undefined ? {} : { at }),
       });
     }
     if (result.lethal) {

@@ -56,6 +56,8 @@ export interface DamageRuntimeHitInput {
   zone?: string;
   source?: string;
   statuses?: readonly (string | DamageStatusRequest)[];
+  /** Where the blow landed, when the caller knows it; overridable per hit. */
+  position?: readonly [number, number, number];
 }
 
 /** Every stage of one resolved hit, so a UI or a test can read why the final number is what it is. */
@@ -112,6 +114,12 @@ export interface DamageRuntimeConfig {
    * reader and every event reports `remaining: null` and `lethal: false`.
    */
   healthOf?: (targetId: string) => number | null;
+  /**
+   * Where a target stands, read once per application. Gives the event a `position` so a cue pans
+   * and attenuates, including status ticks and hits whose input named none; omit it and the event
+   * carries no position and feedback stays centred.
+   */
+  positionOf?: (targetId: string) => readonly [number, number, number] | null | undefined;
   /** Register a one-line devtools probe under this name. */
   devtoolsName?: string;
 }
@@ -174,7 +182,8 @@ export class UnknownTargetProfileError extends Error {
  * `base × zone multiplier × type multiplier × (1 − armor mitigation)`; statuses tick through the
  * same table and armor, so a burn on an armored target is mitigated like a bullet. Every application
  * — a hit or a status tick — is announced as `combat.damage` carrying the target, source, type,
- * amount, absorbed, remaining health and a lethal flag, so a HUD names the blow instead of guessing.
+ * amount, absorbed, remaining health, a lethal flag and, when `positionOf` or the hit names one,
+ * where the blow landed, so a HUD names the blow and a cue pans instead of guessing.
  *
  * @capability damage-runtime resolve hits through a damage table, hit zones, and armor, and tick data-defined statuses with declared stacking
  */
@@ -184,6 +193,7 @@ export function createDamageRuntime(config: DamageRuntimeConfig): DamageRuntime 
   const rng = resolveRng(config.rng, "createDamageRuntime");
   const bus = config.events;
   const healthOf = config.healthOf;
+  const positionOf = config.positionOf;
 
   let table = config.table;
   let zones = config.zones;
@@ -232,6 +242,7 @@ export function createDamageRuntime(config: DamageRuntimeConfig): DamageRuntime 
       dealt,
       ...(tick.source !== undefined ? { source: tick.source } : {}),
       status: tick.status,
+      ...(positionOf === undefined ? {} : { position: positionOf(tick.target) ?? undefined }),
     });
     return dealt;
   }
@@ -243,6 +254,7 @@ export function createDamageRuntime(config: DamageRuntimeConfig): DamageRuntime 
     dealt: number;
     source?: string;
     status?: string;
+    position?: readonly [number, number, number] | undefined;
   }): void {
     const health = healthOf?.(input.target) ?? null;
     const remaining = health === null ? null : Math.max(0, health - input.dealt);
@@ -255,6 +267,7 @@ export function createDamageRuntime(config: DamageRuntimeConfig): DamageRuntime 
       remaining,
       lethal: remaining !== null && remaining <= 0,
       ...(input.status !== undefined ? { status: input.status } : {}),
+      ...(input.position === undefined ? {} : { position: input.position }),
     };
     recent.push(event);
     if (recent.length > RECENT_DAMAGE_LIMIT) recent.shift();
@@ -325,6 +338,9 @@ export function createDamageRuntime(config: DamageRuntimeConfig): DamageRuntime 
         incoming,
         dealt: damage,
         ...(input.source !== undefined ? { source: input.source } : {}),
+        ...(input.position !== undefined
+          ? { position: input.position }
+          : positionOf === undefined ? {} : { position: positionOf(input.target) ?? undefined }),
       });
       return {
         target: input.target,

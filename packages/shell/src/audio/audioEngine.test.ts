@@ -2,9 +2,12 @@ import { afterEach, describe, expect, test } from "bun:test";
 
 import { createVoiceAllocator } from "@jgengine/core/audio/voiceAllocator";
 import type { SoundDef } from "@jgengine/core/audio/audioFalloff";
+import { feedbackCueSoundId } from "@jgengine/core/audio/feedbackCues";
+import { createGameEvents } from "@jgengine/core/game/events";
 
 import { createAudioEngine } from "./audioEngine";
 import { attachAudioEventWire, type AudioEventBus } from "./audioWire";
+import { attachEventFeedback, createEventFeedback } from "./eventFeedback";
 
 type Param = {
   value: number;
@@ -506,6 +509,67 @@ describe("bounded audio graph lifecycle", () => {
     expect(first.stopCount).toBe(2);
     expect(first.disconnectCount).toBe(1);
     expect(panner.disconnectCount).toBe(1);
+    engine.dispose();
+  });
+});
+
+describe("a damage event carries its cue to the right place", () => {
+  test("a positioned hit pans and attenuates, an unpositioned one plays centred", async () => {
+    const mock = installGraph();
+    const engine = createAudioEngine({ sounds: {
+      [feedbackCueSoundId("hit")]: sample(feedbackCueSoundId("hit"), { spatial: { panning: "equalpower" } }),
+      [feedbackCueSoundId("hurt")]: sample(feedbackCueSoundId("hurt"), { falloff: { minDistance: 0, maxDistance: 10 } }),
+    } });
+    engine.setListenerPose({ position: { x: 0, y: 0, z: 0 }, forward: { x: 0, y: 0, z: -1 }, up: { x: 0, y: 1, z: 0 } });
+    const events = createGameEvents();
+    let t = 0;
+    const feedback = createEventFeedback({
+      play: (sound, at) => events.emit("audio.play", at === undefined ? { sound } : { sound, at }),
+      localUserId: () => "me",
+      localEntityId: () => "me",
+      motionScale: () => 1,
+      now: () => t,
+    });
+    const detachFeedback = attachEventFeedback(events, feedback, ["combat.damage"]);
+    const detachWire = attachAudioEventWire(events, engine);
+    const damage = (target: string, at?: readonly [number, number, number]) => {
+      events.emit("combat.damage", {
+        target,
+        type: "kinetic",
+        amount: 5,
+        absorbed: 0,
+        remaining: 50,
+        lethal: false,
+        ...(at === undefined ? {} : { position: at }),
+      });
+    };
+
+    damage("raider-1", [6, 2, -1]);
+    await flush();
+    const panning = mock.nodes.find((node) => node.kind === "panner");
+    expect(panning.position).toEqual([6, 2, -1]);
+
+    t += 200;
+    damage("raider-2");
+    await flush();
+    const sources = mock.nodes.filter((node) => node.kind === "bufferSource");
+    expect(sources).toHaveLength(2);
+    expect(sources[1].connections[0].connections[0].connections[0].position).toEqual([0, 0, 0]);
+
+    t += 200;
+    damage("me", [5, 0, 0]);
+    await flush();
+    t += 500;
+    damage("me");
+    await flush();
+    const hurlGains = mock.nodes
+      .filter((node) => node.kind === "bufferSource")
+      .slice(2)
+      .map((source) => source.connections[0].connections[0].gain.value);
+    expect(hurlGains).toEqual([0.5, 1]);
+
+    detachFeedback();
+    detachWire();
     engine.dispose();
   });
 });

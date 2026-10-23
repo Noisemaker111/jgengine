@@ -258,6 +258,25 @@ describe("damage events", () => {
     ]);
   });
 
+  it("carries the position a hit names, or the target's from positionOf, and omits it otherwise", () => {
+    const positioned = model({ positionOf: (id) => (id === "hero" ? [4, 0, -2] : null) });
+    positioned.registerTarget("hero", { resistance: "flesh", armor: 0 });
+    const seen: DamageAppliedEvent[] = [];
+    positioned.hit({ target: "hero", type: "kinetic", base: 5, position: [1, 2, 3] });
+    positioned.hit({ target: "hero", type: "kinetic", base: 5 });
+    positioned.applyStatus("hero", "burn");
+    positioned.tick(0.5);
+    seen.push(...positioned.recentDamage(3));
+    expect(seen[0]?.position).toEqual([1, 2, 3]);
+    expect(seen[1]?.position).toEqual([4, 0, -2]);
+    expect(seen[2]?.position).toEqual([4, 0, -2]);
+    expect(seen[2]?.status).toBe("burn");
+
+    const unpositioned = model();
+    unpositioned.hit({ target: "raider", type: "kinetic", base: 5 });
+    expect("position" in (unpositioned.recentDamage(1)[0] ?? {})).toBe(false);
+  });
+
   it("makes the event stream readable from the devtools probe", () => {
     const { damage } = commanded("combat/damage-events-test");
     damage.hit({ target: "keep", type: "kinetic", base: 100, source: "raider:1" });

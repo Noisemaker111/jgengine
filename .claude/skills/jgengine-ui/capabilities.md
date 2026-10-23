@@ -351,6 +351,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `buildGroundCoverageMask` (function) · `import { buildGroundCoverageMask } from "@jgengine/shell/terrain"`
 - `createGroundEdgeFade` (function) · `import { createGroundEdgeFade } from "@jgengine/shell/terrain"`
 
+## haptics-route — send a feedback pulse to the gamepad when one is connected, else to the phone's vibration motor
+
+- `createHapticsRoute` (function) · `import { createHapticsRoute } from "@jgengine/shell/audio/hapticsRoute"`
+
 ## heavy-models — models over the per-model triangle budget, for perf probes and smoke assertions
 
 - `heavyModels` (function) · `import { heavyModels } from "@jgengine/shell/render/modelLoad"`
