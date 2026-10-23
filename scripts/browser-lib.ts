@@ -837,10 +837,15 @@ async function connectPageTarget(debugPort: number): Promise<CdpSession> {
 const PROFILE_PREFIX = "jg-";
 /**
  * A profile is swept once its directory has gone untouched this long. A live browser writes its
- * profile continuously, so an untouched directory that old belongs to a run that died; the old
- * 24-hour floor let a day of killed captures pile up 1.6 GB.
+ * profile continuously, so an untouched directory that old belongs to a run that died. Three
+ * hours was longer than a busy session: hundreds of profiles were created inside one window and
+ * filled the drive, so the ordinary floor stays under a session's length.
  */
-const STALE_PROFILE_MS = 3 * 60 * 60 * 1000;
+const STALE_PROFILE_MS = 45 * 60 * 1000;
+/** Age that counts as leaked while the temp drive is short of space. */
+const PRESSURE_PROFILE_MS = 5 * 60 * 1000;
+/** Free space on the temp drive below which every profile older than {@link PRESSURE_PROFILE_MS} goes. */
+export const PRESSURE_FREE_BYTES = 15 * 1024 * 1024 * 1024;
 /** Holds the browser pid, so a sweep never deletes the profile of a live browser. */
 export const PROFILE_OWNER_FILE = "jg-owner-pid";
 /** Free space a capture needs on the temp drive before it starts; one Chrome profile is ~150 MB. */
@@ -931,7 +936,7 @@ export function removeProfileDir(userDataDir: string): void {
     } catch (error) {
       if (Date.now() >= deadline) {
         console.error(
-          `browser: could not remove profile ${userDataDir} (${error instanceof Error ? error.message : String(error)}); the stale sweep removes it after a few hours`,
+          `browser: could not remove profile ${userDataDir} (${error instanceof Error ? error.message : String(error)}); a later sweep removes it`,
         );
         return;
       }
@@ -1029,9 +1034,50 @@ export function ensureCaptureFreeSpace(root: string = tmpdir(), env: NodeJS.Proc
   );
 }
 
+/**
+ * Sweep leaked capture profiles, tightening the age limit while the temp drive is short of space,
+ * and say in one line what it removed. Free space is read here and injectable
+ * (`freeBytes: null` means unreadable, which is treated as no pressure).
+ */
+export interface SweepOptions {
+  /** Free bytes on the temp drive; defaults to the live reading. Null when it cannot be read. */
+  freeBytes?: number | null;
+  /** Where the line goes; stderr by default. */
+  log?: (line: string) => void;
+  /** Clock, for tests. */
+  now?: number;
+}
+
+function minutes(ms: number): string {
+  return `${Math.round(ms / 60_000)} minutes`;
+}
+
+/**
+ * One sweep at a capture tool's startup: {@link STALE_PROFILE_MS} normally, and
+ * {@link PRESSURE_PROFILE_MS} under {@link PRESSURE_FREE_BYTES} of free space. Returns how many
+ * profiles it removed, and logs one line whenever it ran under pressure or removed anything.
+ */
+export function sweepCaptureProfiles(root = tmpdir(), options: SweepOptions = {}): number {
+  const now = options.now ?? Date.now();
+  const free = options.freeBytes === undefined ? freeBytesAt(root) : options.freeBytes;
+  const pressure = free !== null && free < PRESSURE_FREE_BYTES;
+  const ageMs = pressure ? PRESSURE_PROFILE_MS : STALE_PROFILE_MS;
+  const removed = sweepStaleProfiles(root, now, ageMs);
+  if (pressure || removed > 0) {
+    const log = options.log ?? ((line: string) => console.error(line));
+    log(
+      pressure
+        ? `capture: ${formatBytes(free ?? 0)} free on ${parse(root).root}, under ${formatBytes(PRESSURE_FREE_BYTES)} — swept ${removed} capture profile(s) older than ${minutes(ageMs)}`
+        : `capture: swept ${removed} leaked capture profile(s) older than ${minutes(ageMs)} from ${root}`,
+    );
+  }
+  return removed;
+}
+
 function createProfileDir(prefix: string): string {
   ensureCaptureFreeSpace();
-  sweepStaleProfiles();
+  // Silent here: a busy lane creates hundreds of these, and the entry-point sweep logs.
+  sweepCaptureProfiles(tmpdir(), { log: () => {} });
   return ownProfileDir(mkdtempSync(join(tmpdir(), prefix)));
 }
 
