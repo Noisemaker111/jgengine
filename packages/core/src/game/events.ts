@@ -42,6 +42,12 @@ export interface DamageAppliedEvent {
   lethal: boolean;
   /** The status that ticked, when the damage came from a carried status rather than a direct hit. */
   status?: string;
+  /**
+   * Where the blow landed, for spatial feedback (a panned cue, a decal, a floating number that
+   * belongs on the body rather than on screen). Omitted by an emitter that knows no position, so a
+   * listener must fall back to a centred, unattenuated reaction.
+   */
+  position?: readonly [number, number, number];
 }
 
 /** Request that an entity's rig play a one-shot animation clip bound to `event` in its `animation.oneShots` (e.g. an "attack" swing); the shell resolves the clip and plays it once over the locomotion state. With an `animation.graph`, `event` arms the trigger of that name. */

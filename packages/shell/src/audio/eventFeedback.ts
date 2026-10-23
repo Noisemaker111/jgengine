@@ -101,8 +101,9 @@ export type AnyFeedbackBinding = { [Name in FeedbackEventName]: FeedbackBinding<
 
 /**
  * The default mapping: each engine-announced gameplay event to the cue it raises. Damage to the
- * local player reads as hurt, damage anywhere else as a hit; a wave start has no event of its own,
- * so a game announces it through `notify("wave")` or `attachWaveFeedback`.
+ * local player reads as hurt, damage anywhere else as a hit; an event that carries a `position`
+ * (damage, death) pans and attenuates its cue, and one without still plays centred. A wave start has
+ * no event of its own, so a game announces it through `notify("wave")` or `attachWaveFeedback`.
  */
 export const DEFAULT_FEEDBACK_BINDINGS: readonly AnyFeedbackBinding[] = [
   { event: "combat.damage", cue: "hurt", scope: "local", detail: (event) => `${Math.round(event.amount)}` },
@@ -128,11 +129,20 @@ export interface ResolvedFeedback {
 
 /** Everything the feedback seam reaches outside itself. Injected so it runs headless. */
 export interface FeedbackDeps {
-  /** Play one catalog sound through the game's audio seam. */
-  play(sound: string): void;
+  /**
+   * Play one catalog sound through the game's audio seam. `position` is the event's own position
+   * when it carries one, so the engine pans and attenuates the cue; omit it and the cue plays
+   * centred at full gain.
+   */
+  play(sound: string, position?: readonly [number, number, number]): void;
   /** Add camera trauma `0..1`; called with `shake x motionScale`. */
   shake?(amount: number): void;
-  haptics?(pulse: HapticPulse): void;  /** Show a caption line for `cue`; only called when captions are on. */
+  /**
+   * One-shot rumble for the local player. Wire it to `createHapticsRoute` so a gamepad takes the
+   * pulse when one is connected and a phone feels it through vibration otherwise.
+   */
+  haptics?(pulse: HapticPulse): void;
+  /** Show a caption line for `cue`; only called when captions are on. */
   caption?(text: string, cue: FeedbackCue): void;
   /** The local player, for `scope: "local"`. */
   localUserId(): string | null;
@@ -245,8 +255,9 @@ export function createEventFeedback(deps: FeedbackDeps, options: EventFeedbackOp
     }
   }
 
-  function fire(trigger: ResolvedFeedback, captionText: string | undefined): void {
-    deps.play(trigger.sound);
+  function fire(trigger: ResolvedFeedback, captionText: string | undefined, position: readonly [number, number, number] | undefined): void {
+    if (position === undefined) deps.play(trigger.sound);
+    else deps.play(trigger.sound, position);
     if (trigger.haptics !== undefined) deps.haptics?.(trigger.haptics);
     if (trigger.shake > 0) {
       const scale = deps.motionScale?.() ?? 1;
@@ -255,7 +266,7 @@ export function createEventFeedback(deps: FeedbackDeps, options: EventFeedbackOp
     if (captionsOn && captionText !== undefined) deps.caption?.(captionText, trigger.cue);
   }
 
-  function react(cue: FeedbackCue, captionText: string | undefined): boolean {
+  function react(cue: FeedbackCue, captionText: string | undefined, position?: readonly [number, number, number]): boolean {
     const reaction = reactions[cue];
     const trigger = cueTriggers[cue];
     const time = now();
@@ -266,7 +277,7 @@ export function createEventFeedback(deps: FeedbackDeps, options: EventFeedbackOp
     }
     lastPlayed[cue] = time;
     const text = captionText ?? trigger.caption ?? reaction.caption;
-    fire(trigger, text);
+    fire(trigger, text, position);
     return true;
   }
 
@@ -280,7 +291,8 @@ export function createEventFeedback(deps: FeedbackDeps, options: EventFeedbackOp
         const detail = (binding.detail as ((value: GameEventMap[FeedbackEventName]) => string | undefined) | undefined)?.(payload);
         const base = binding.caption ?? reactions[binding.cue].caption;
         const captionText = base === undefined ? detail : detail === undefined ? base : `${base} ${detail}`;
-        return react(binding.cue, captionText) ? binding.cue : null;
+        const position = (payload as { position?: readonly [number, number, number] }).position;
+        return react(binding.cue, captionText, position) ? binding.cue : null;
       }
       return null;
     },

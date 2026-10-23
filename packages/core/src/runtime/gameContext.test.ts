@@ -1696,6 +1696,7 @@ describe("damage events", () => {
       absorbed: 0,
       remaining: 18,
       lethal: false,
+      position: [1, 0, 0],
     }]);
   });
 
@@ -1715,6 +1716,7 @@ describe("damage events", () => {
       absorbed: 989,
       remaining: 0,
       lethal: true,
+      position: [1, 0, 0],
     }]);
 
     const dummy = ctx.scene.entity.spawn("dummy", { position: [4, 0, 0] });
