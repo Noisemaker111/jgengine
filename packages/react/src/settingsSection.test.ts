@@ -118,10 +118,10 @@ beforeAll(async () => {
 }, 30000);
 
 beforeEach(async () => {
+  // Park the pointer before loading: Playwright keeps the mouse where the last click left it, and the browser
+  // hovers whatever is under it on the new page, which legitimately makes that row the menu's active row.
+  await page.mouse.move(1260, 4);
   await page.goto(`http://127.0.0.1:${server.port}`);
-  // Park the pointer away from the rows: Playwright keeps the mouse where the last click left it, and a
-  // hovered row legitimately becomes the menu's active row after a reload.
-  await page.mouse.move(1270, 700);
   await page.waitForFunction(() => typeof (window as any).fixture !== "undefined");
 });
 
