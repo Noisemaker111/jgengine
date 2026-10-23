@@ -44,6 +44,8 @@ export interface MoodSnapshot {
 /**
  * The band a score reads as, from tiers sorted by `at` descending. Unknown or unsorted tiers fall
  * back to the lowest declared band rather than throwing, because a HUD reads this every frame.
+ *
+ * @capability mood a mood derived from how satisfied an agent's needs are
  */
 export function moodTierOf(score: number, tiers: readonly MoodTier[] = DEFAULT_MOOD_TIERS): MoodTier {
   let best: MoodTier | null = null;

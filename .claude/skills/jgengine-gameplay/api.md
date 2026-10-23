@@ -2,6 +2,52 @@
 
 # jgengine-gameplay — exported API surface
 
+## @jgengine/core/agents/agent
+
+- `Agent` (interface): interface Agent — Needs, mood, schedule and a chosen action, in one object a game ticks.
+- `AgentAction` (interface): interface AgentAction — What the agent is doing.
+- `AgentActionReason` (type): type AgentActionReason = UtilitySwitchReason | "fallback" | "schedule" | "cleared" — Why the action last changed.
+- `AgentConfig` (interface): interface AgentConfig — Everything an agent is made of. Policy is data; nothing about a game is compiled in.
+- `AgentFallback` (interface): interface AgentFallback — Where an agent goes when the thing it wanted is gone: a named option and a named place.
+- `AgentFrame` (interface): interface AgentFrame — What one update produced: the action, the feeling, and where the day plan puts the agent.
+- `AgentSnapshot` (interface): interface AgentSnapshot — Serializable whole agent: needs, feeling, held action, day-plan cursor and the far flag.
+- `AgentTarget` (interface): interface AgentTarget — One reachable thing the agent could do this tick, as the game sees its own world.
+- `AgentUpdate` (interface): interface AgentUpdate — One call per tick: the clock, and the targets the game's world currently offers.
+- `createAgent` (function): function createAgent(config: AgentConfig): Agent — Create one agent. The same factory serves a park guest, a household being, a patrolling janitor and a soldier: `options` is what it can choose between, `schedule` is where its day puts it.
+
+## @jgengine/core/agents/mood
+
+- `DEFAULT_MOOD_TIERS` (const): const DEFAULT_MOOD_TIERS: readonly MoodTier[] — Five bands a park guest, a household being or a soldier can share. A game overrides them when its own tone needs different words; the numeric bands are what HUD counters and tests read.
+- `Mood` (interface): interface Mood — What the agent feels right now, on the caller's own tier labels.
+- `MoodReader` (interface): interface MoodReader — A mood reader that keeps the game-raised biases, so a queue or a litter patch moves mood too.
+- `MoodSnapshot` (interface): interface MoodSnapshot — Serializable mood state: the game-raised biases that sit on top of need satisfaction.
+- `MoodTier` (interface): interface MoodTier — One labelled band of the 0-100 mood score.
+- `MoodWeight` (interface): interface MoodWeight — One need's say in the mood score; weights are relative, so they need no fixed total.
+- `createMoodReader` (function): function createMoodReader(config: { readonly needs: Pick<NeedSet, "ids" | "fraction">; readonly weights?: readonly MoodWeight[]; readonly tiers?: readonly MoodTier[]; }): MoodReader — Create the mood an agent carries. Needs are the agent's own (shared with its utility brain), and every bias is named data the game can remove again - there is no decaying hidden penalty.
+- `moodTierOf` (function): function moodTierOf(score: number, tiers: readonly MoodTier[] = DEFAULT_MOOD_TIERS): MoodTier — The band a score reads as, from tiers sorted by `at` descending. Unknown or unsorted tiers fall back to the lowest declared band rather than throwing, because a HUD reads this every frame.
+- `readMood` (function): function readMood(needs: Pick<NeedSet, "ids" | "fraction">, weights: readonly MoodWeight[], tiers: readonly MoodTier[] = DEFAULT_MOOD_TIERS, sources?: Readonly<Record<string, number>>): Mood — A mood read from a need set: each declared need contributes its `0..1` satisfaction times its weight, normalized by the total weight, so an agent with four needs and one with six read on the same 0-100 scale. Pure and allocation-light - the per-frame read a HUD and a thought bubble share.
+
+## @jgengine/core/agents/relationships
+
+- `DEFAULT_RELATIONSHIP_MILESTONES` (const): const DEFAULT_RELATIONSHIP_MILESTONES: readonly RelationshipMilestone[] — The pair levels every game starts from; a game overrides the words and the cut points.
+- `DEFAULT_SOCIAL_CONTACT` (const): const DEFAULT_SOCIAL_CONTACT: Required<SocialContact> — What a plain social action adds: a shared moment nudges both dials, never maxes either.
+- `Relationship` (interface): interface Relationship — How one pair stands: how much time they have shared, and what they think of each other.
+- `RelationshipBook` (interface): interface RelationshipBook — Everyone's view of everyone else: familiarity and opinion per pair, changed by social actions, with the pair levels that make a friendship a preference and a bond a refusal to split.
+- `RelationshipBookSnapshot` (interface): interface RelationshipBookSnapshot — Serializable relationship state: every known pair plus the dials in play.
+- `RelationshipMilestone` (interface): interface RelationshipMilestone — One labelled bond level on the opinion scale.
+- `RelationshipPolicy` (interface): interface RelationshipPolicy — Tunables a game owns, every one reachable through {@link RelationshipBook.retune}.
+- `SocialContact` (interface): interface SocialContact — Opinion and familiarity one interaction adds; a game passes its own for a hug, a row or a shift.
+- `SocialOutcome` (interface): interface SocialOutcome — What one social action did to a pair.
+- `createRelationshipBook` (function): function createRelationshipBook(policy: RelationshipPolicy = {}): RelationshipBook — Create the shared book of pair state. Keys are undirected and delimiter-safe through `createPairKeyCodec`, and milestone crossings come from `crossThresholds`, so a notice feed and a journal both read the same event.
+
+## @jgengine/core/agents/schedule
+
+- `AgentSchedule` (interface): interface AgentSchedule — A day plan resolved against the world clock. No state to tick: a far agent reads the same day.
+- `AgentScheduleConfig` (interface): interface AgentScheduleConfig — An agent's whole day as data: what it does, where, and when.
+- `AgentSchedulePhase` (interface): interface AgentSchedulePhase — Where a schedule puts an agent at one instant.
+- `AgentScheduleStop` (interface): interface AgentScheduleStop extends RoutineStopSpec — One authored stop in an agent's day. The shape is the routine owner's (`sim/routine`) plus a beat: the places a working stop walks in order, so a janitor on patrol is an agent with a route rather than a special case.
+- `createAgentSchedule` (function): function createAgentSchedule(config: AgentScheduleConfig): AgentSchedule — Resolve an authored day plan into a clock-driven schedule. Timing, travel and arrival slips come from `sim/routine`; this adds the work beat and the refills a stop carries, so an off-hours stop is just another authored stop and a patrol is not a second scheduler.
+
 ## @jgengine/core/behaviour/behaviour
 
 - `Behaviour` (class): class Behaviour — Subclass and override the lifecycle hooks. A behaviour only joins the per-frame update dispatch if it actually overrides `onUpdate` (prototype-identity check at each activation), so hook-only behaviours cost nothing per frame.

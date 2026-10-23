@@ -16,6 +16,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createAffixRoller` (function) · `import { createAffixRoller } from "@jgengine/core/gameplay"`
 
+## agent-schedule — an authored per-agent day plan with a work beat and off-hours behaviour
+
+- `createAgentSchedule` (function) · `import { createAgentSchedule } from "@jgengine/core/agents/schedule"`
+
+## agents — a needs, thought, action and mood loop an agent runs on the world clock
+
+- `createAgent` (function) · `import { createAgent } from "@jgengine/core/agents/agent"`
+
 ## auction-book — timed bid auctions with escrowed bids, buyout, anti-snipe close extension, and collection-box settlement
 
 - `createAuctionBook` (function) · `import { createAuctionBook } from "@jgengine/core/gameplay"`
@@ -396,6 +404,12 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `slotAccepts` (function) · `import { slotAccepts } from "@jgengine/core/gameplay"`
 
+## mood — a mood derived from how satisfied an agent's needs are
+
+- `createMoodReader` (function) · `import { createMoodReader } from "@jgengine/core/agents/mood"`
+- `moodTierOf` (function) · `import { moodTierOf } from "@jgengine/core/agents/mood"`
+- `readMood` (function) · `import { readMood } from "@jgengine/core/agents/mood"`
+
 ## move — a keyed value toward a target by a bounded step
 
 - `towardValue` (function) · `import { towardValue } from "@jgengine/core/gameplay"`
@@ -540,6 +554,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## refusal-feedback — surface a refused command's player-facing message in the notice feed automatically
 
 - `attachRefusalNotices` (function) · `import { attachRefusalNotices } from "@jgengine/core/game/notices"`
+
+## relationships — familiarity and opinion between agents, with a bond that changes behaviour
+
+- `createRelationshipBook` (function) · `import { createRelationshipBook } from "@jgengine/core/agents/relationships"`
 
 ## resolve — the current tier/band label for a keyed or scalar value
 

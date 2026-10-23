@@ -1,6 +1,10 @@
 {
   "@jgengine/core": [
     ".",
+    "./agents/agent",
+    "./agents/mood",
+    "./agents/relationships",
+    "./agents/schedule",
     "./ai/crowd",
     "./ai/decisionGraph",
     "./ai/difficulty",
