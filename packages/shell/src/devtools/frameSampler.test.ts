@@ -56,6 +56,8 @@ describe("in-page frame report", () => {
     expect(report.seconds).toBe(4);
     expect(report.render).toEqual({
       draws: 7_000,
+      drawsFrame: null,
+      drawsFrames: 0,
       triangles: 3_600_000,
       geometries: 300,
       textures: 90,

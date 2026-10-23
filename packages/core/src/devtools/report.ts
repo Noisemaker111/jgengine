@@ -28,7 +28,20 @@ export interface FrameWindow {
 
 /** Renderer-side counts for the measured window; `null` where the source could not read them. */
 export interface RenderReport {
+  /**
+   * The renderer's own draw counter as the devtools probe samples it. three accumulates this across
+   * every pass in a frame (the probe sets `info.autoReset = false`), but one sample is one frame, so
+   * two runs of the same build can differ by a pass that runs on a cadence.
+   */
   draws: number | null;
+  /**
+   * Every draw issued in a frame, all passes (shadow, main, postfx, AO, DOF), as the 95th percentile
+   * of the measured window: the count the budget gate compares. Only the CDP harness can wrap the
+   * draw calls, so the in-page sampler reports `null` here.
+   */
+  drawsFrame: number | null;
+  /** Frames the whole-frame count was taken over; 0 where nothing measured it. */
+  drawsFrames: number;
   triangles: number | null;
   geometries: number | null;
   textures: number | null;

@@ -8,7 +8,8 @@ import type { PerfReport } from "../packages/core/src/devtools/report";
  * The budget files and the verdict logic, shared by the CI gate (`bun run perf:gate`)
  * and the in-page report reader (`bun run debug <game>`), so one command cannot pass
  * where the other fails. Frame times are deliberately not gated: CI runners are slow
- * and shared, so only counts a build controls decide pass or fail.
+ * and shared, so only counts a build controls decide pass or fail. Draws are gated
+ * whole-frame (`drawsFrame`), because a single pass is a third of the work a frame does.
  */
 
 const repoRoot = fileURLToPath(new URL("..", import.meta.url));
@@ -16,7 +17,23 @@ const BASELINE_RELATIVE = join("scripts", "perf-budget.json");
 
 /** Counts one game may not exceed, from its `perf-budget.json`. */
 export interface PerfBudget {
-  draws: number;
+  /**
+   * Draw calls in one frame with every pass together (shadow, main, postfx, AO, DOF), measured as
+   * the p95 of the window. This is the number the gate compares; a count from a single pass is
+   * roughly a third of it and is not a budget any more.
+   */
+  drawsFrame: number;
+  /**
+   * True for an entry that still budgets `draws` because it was written before the gate counted
+   * whole frames. Its number is compared whole-frame (three's counter accumulated across passes),
+   * and the run prints that the entry needs re-measuring rather than treating it as current.
+   */
+  legacyDraws?: boolean;
+  /**
+   * The `draws` budget this entry carried before the gate counted whole frames, kept so the old
+   * number reads as history beside the new one instead of disappearing.
+   */
+  previousDraws?: number;
   triangles: number;
   nodes: number;
   /**
@@ -39,7 +56,7 @@ export interface LoadedBudget {
 
 export interface BudgetViolation {
   game: string;
-  /** Metric name as it appears in the message: draws, triangles, nodes, linkProgram, createFramebuffer. */
+  /** Metric name as it appears in the message: drawsFrame, triangles, nodes, linkProgram, createFramebuffer. */
   metric: string;
   budget: number;
   measured: number;
@@ -61,10 +78,28 @@ function parseBudgetEntry(raw: unknown, game: string, source: string): PerfBudge
     throw new Error(`perf gate: ${source} has no budget object for "${game}"`);
   }
   const entry = raw as Record<string, unknown>;
+  if (entry.drawsFrame === undefined && entry.draws !== undefined) {
+    // A game's own file can be older than this gate. Its `draws` budget was the renderer counter
+    // accumulated over a frame, so comparing it to drawsFrame is the same measurement; it is just
+    // single-sampled and stale, which the run says out loud instead of hiding.
+    return {
+      drawsFrame: budgetNumber(entry.draws, game, "draws", source),
+      legacyDraws: true,
+      triangles: budgetNumber(entry.triangles, game, "triangles", source),
+      nodes: budgetNumber(entry.nodes, game, "nodes", source),
+      ...(entry.programsLinked === undefined
+        ? {}
+        : { programsLinked: budgetNumber(entry.programsLinked, game, "programsLinked", source) }),
+      ...(typeof entry.baseline === "string" ? { baseline: entry.baseline } : {}),
+    };
+  }
   return {
-    draws: budgetNumber(entry.draws, game, "draws", source),
+    drawsFrame: budgetNumber(entry.drawsFrame, game, "drawsFrame", source),
     triangles: budgetNumber(entry.triangles, game, "triangles", source),
     nodes: budgetNumber(entry.nodes, game, "nodes", source),
+    ...(entry.previousDraws === undefined
+      ? {}
+      : { previousDraws: budgetNumber(entry.previousDraws, game, "previousDraws", source) }),
     ...(entry.programsLinked === undefined
       ? {}
       : { programsLinked: budgetNumber(entry.programsLinked, game, "programsLinked", source) }),
@@ -135,8 +170,16 @@ function unavailable(game: string, metric: string, reason: string): BudgetViolat
  * Compare one measured record against its budget. Every returned violation is
  * one line a human reads in the CI log, and the list is empty only when the
  * game actually played and stayed inside its counts.
+ *
+ * `requireDrawsFrame` is set by the CDP gate, whose page wraps the draw calls. The
+ * in-page report cannot: it reads the renderer probe's last sample, so it is judged on
+ * the counts it does carry and prints `drawsFrame n/a` rather than a zero.
  */
-export function checkBudget(record: PerfReport, budget: PerfBudget): BudgetViolation[] {
+export function checkBudget(
+  record: PerfReport,
+  budget: PerfBudget,
+  options: { requireDrawsFrame?: boolean } = {},
+): BudgetViolation[] {
   const game = record.game;
   const found: BudgetViolation[] = [];
 
@@ -144,6 +187,15 @@ export function checkBudget(record: PerfReport, budget: PerfBudget): BudgetViola
   if (record.render.draws === null || record.render.draws === 0) {
     found.push(unavailable(game, "draws", "0 draw calls means the game never reached play"));
     return found;
+  }
+  if (record.render.drawsFrame === null || record.render.drawsFrame === 0) {
+    if (options.requireDrawsFrame === true) {
+      found.push(
+        unavailable(game, "drawsFrame (whole frame)", "the wrapped draw counter saw no frame — the page never rendered one"),
+      );
+    }
+  } else if (record.render.drawsFrame > budget.drawsFrame) {
+    found.push(violation(game, "drawsFrame (whole frame)", record.render.drawsFrame, budget.drawsFrame));
   }
   if (record.render.triangles === null) {
     found.push(unavailable(game, "triangles", "the debug snapshot reported no triangle count"));
@@ -155,7 +207,6 @@ export function checkBudget(record: PerfReport, budget: PerfBudget): BudgetViola
   } else if (record.render.nodes > budget.nodes) {
     found.push(violation(game, "nodes", record.render.nodes, budget.nodes));
   }
-  if (record.render.draws > budget.draws) found.push(violation(game, "draws", record.render.draws, budget.draws));
 
   // Zero linkProgram/createFramebuffer is only evidence if the counters attached.
   if (record.gl.attached !== true) {
@@ -176,7 +227,8 @@ export function summarizeRecord(record: PerfReport, budget: PerfBudget): string 
   const overrides = (record as PerfReport & { overrides?: readonly string[] }).overrides ?? [];
   return [
     `${record.game} ok`,
-    `draws ${fmtCount(record.render.draws ?? 0)}/${fmtCount(budget.draws)}`,
+    `drawsFrame ${record.render.drawsFrame === null ? "n/a" : fmtCount(record.render.drawsFrame)}/${fmtCount(budget.drawsFrame)} (${record.render.drawsFrames} frames)`,
+    `draws ${fmtCount(record.render.draws ?? 0)}`,
     `triangles ${fmtCount(record.render.triangles ?? 0)}/${fmtCount(budget.triangles)}`,
     `nodes ${fmtCount(record.render.nodes ?? 0)}/${fmtCount(budget.nodes)}`,
     `links ${fmtCount(record.gl.programsLinked)}/${fmtCount(budget.programsLinked ?? 0)}`,

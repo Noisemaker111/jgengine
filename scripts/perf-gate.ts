@@ -25,6 +25,15 @@ import { checkBudget, loadBudget, summarizeRecord, type LoadedBudget } from "./p
  * only counts a build controls — draws, triangles, scene nodes and post-warmup
  * GL allocations — decide pass or fail. `bun run debug <game>` reads the same
  * budget through the same verdict logic, from a game already open in a browser.
+ *
+ * Two draw counts appear in the output, and they are not interchangeable:
+ *
+ * - `drawsFrame` is every draw a frame issues, all passes together — shadow,
+ *   main, postfx prepasses, AO, DOF — taken as the p95 of the measured window by
+ *   wrapping the GL draw calls. This is what the budget compares.
+ * - `draws` is the renderer's own counter as the devtools probe sampled it: one
+ *   frame, from a source that can only hold every pass while `info.autoReset` is
+ *   off. It is printed for comparison with older records, not gated.
  */
 
 const repoRoot = fileURLToPath(new URL("..", import.meta.url));
@@ -158,6 +167,11 @@ async function main(): Promise<void> {
       for (const game of games) {
         const loaded = budgets.get(game)!;
         console.log(`perf gate: ${game} budget ${loaded.source}`);
+        if (loaded.budget.legacyDraws === true) {
+          console.log(
+            `perf gate: ${game} budget entry still says draws — it is compared whole-frame, but re-measure it as drawsFrame (bun run perf ${game}) so the number is a sampled p95, not one frame`,
+          );
+        }
         const session = await openPageSession(debugPort);
         try {
           const measured = await measureGame({
@@ -174,7 +188,7 @@ async function main(): Promise<void> {
             rasterizerPrinted = true;
             console.log(`perf gate: rasterizer ${measured.record.gpu}`);
           }
-          const violations = checkBudget(measured.record, budget);
+          const violations = checkBudget(measured.record, budget, { requireDrawsFrame: true });
           if (violations.length === 0) {
             lines.push(summarizeRecord(measured.record, budget));
             console.log(`perf gate: ${summarizeRecord(measured.record, budget)}`);
@@ -204,7 +218,7 @@ async function main(): Promise<void> {
     console.error(`\nperf gate FAILED — ${failures.length} problem(s) across ${games.length} games`);
     for (const failure of failures) console.error(`  ${failure}`);
     console.error(
-      "budgets live beside each game (Games/<id>/perf-budget.json), else scripts/perf-budget.json; raise one only with a measured baseline.",
+      "budgets live beside each game (Games/<id>/perf-budget.json), else scripts/perf-budget.json; raise drawsFrame only with a measured whole-frame baseline.",
     );
     process.exit(1);
   }

@@ -15,7 +15,7 @@ import { summarizeRecord } from "./perf-budget";
  * is caught by a test instead of by a review.
  */
 
-const BUDGET: PerfBudget = { draws: 7600, triangles: 3_850_000, nodes: 11_900 };
+const BUDGET: PerfBudget = { drawsFrame: 7600, triangles: 3_850_000, nodes: 11_900 };
 
 const roots: string[] = [];
 afterEach(() => {
@@ -38,7 +38,7 @@ function record(overrides: Partial<PerfRecord> = {}, render: Partial<PerfRecord[
     seconds: 6,
     at: 1,
     frame: { fps: 60, avgMs: 16.6, p95Ms: 18, maxMs: 24, samples: 360, longFrames: 0 },
-    render: { draws: 7_000, triangles: 3_600_000, geometries: 300, textures: 90, nodes: 11_000, nodesSource: "scene-graph", scenes: 1, ...render },
+    render: { draws: 7_000, drawsFrame: 7_100, drawsFrames: 340, triangles: 3_600_000, geometries: 300, textures: 90, nodes: 11_000, nodesSource: "scene-graph", scenes: 1, ...render },
     gl: {
       programsLinked: 0,
       framebuffers: 0,
@@ -68,10 +68,24 @@ describe("checkBudget", () => {
     expect(checkBudget(record(), BUDGET)).toEqual([]);
   });
 
-  test("names the game, metric, measured value and budget when draws go over", () => {
-    const [violation] = checkBudget(record({}, { draws: 9_100 }), BUDGET);
-    expect(violation?.message).toBe("perf gate: harbor-heat draws 9,100 (budget 7,600) over by 1,500");
-    expect(violation).toMatchObject({ game: "harbor-heat", metric: "draws", budget: 7600, measured: 9100 });
+  test("names the game, metric, measured value and budget when the frame's draws go over", () => {
+    const [violation] = checkBudget(record({}, { drawsFrame: 9_100 }), BUDGET);
+    expect(violation?.message).toBe("perf gate: harbor-heat drawsFrame (whole frame) 9,100 (budget 7,600) over by 1,500");
+    expect(violation).toMatchObject({ game: "harbor-heat", metric: "drawsFrame (whole frame)", budget: 7600, measured: 9100 });
+  });
+
+  test("the renderer's single-sample draws are printed, not gated", () => {
+    expect(checkBudget(record({}, { draws: 40_000 }), BUDGET)).toEqual([]);
+  });
+
+  test("fails when the wrapped draw counter sampled no frame, instead of trusting the renderer sample alone", () => {
+    const [violation] = checkBudget(record({}, { drawsFrame: null, drawsFrames: 0 }), BUDGET, { requireDrawsFrame: true });
+    expect(violation?.message).toContain("drawsFrame (whole frame) unavailable");
+    expect(violation?.message).toContain("never rendered one");
+  });
+
+  test("an in-page report without a whole-frame count is judged on the counts it carries", () => {
+    expect(checkBudget(record({}, { drawsFrame: null, drawsFrames: 0 }), BUDGET)).toEqual([]);
   });
 
   test("gates triangles and scene nodes too", () => {
@@ -135,31 +149,43 @@ describe("loadBudget", () => {
 
   test("reads the engine baseline for the named game and names that file", () => {
     const root = tempRoot();
-    writeEngineBudgets(root, { "harbor-heat": { draws: 7600, triangles: 3850000, nodes: 11900 } });
+    writeEngineBudgets(root, { "harbor-heat": { drawsFrame: 7600, triangles: 3850000, nodes: 11900 } });
     expect(loadBudget("harbor-heat", root)).toEqual({
-      budget: { draws: 7600, triangles: 3850000, nodes: 11900 },
+      budget: { drawsFrame: 7600, triangles: 3850000, nodes: 11900 },
       source: "scripts/perf-budget.json",
     });
   });
 
   test("a game's own perf-budget.json wins over the engine copy, and the gate reports that path", () => {
     const root = tempRoot();
-    writeEngineBudgets(root, { "harbor-heat": { draws: 7600, triangles: 3850000, nodes: 11900 } });
-    writeGameBudget(root, "harbor-heat", { draws: 5000, triangles: 2_000_000, nodes: 9000 });
+    writeEngineBudgets(root, { "harbor-heat": { drawsFrame: 7600, triangles: 3850000, nodes: 11900 } });
+    writeGameBudget(root, "harbor-heat", { drawsFrame: 5000, triangles: 2_000_000, nodes: 9000 });
     const loaded = loadBudget("harbor-heat", root);
-    expect(loaded.budget.draws).toBe(5000);
+    expect(loaded.budget.drawsFrame).toBe(5000);
     expect(loaded.source).toBe("Games/harbor-heat/perf-budget.json");
   });
 
   test("the standalone game copy is the whole entry, not a table keyed by game id", () => {
     const root = tempRoot();
-    writeGameBudget(root, "deepward", { draws: 90, triangles: 56100, nodes: 170, baseline: "2026-10-22 bun run perf:gate" });
+    writeGameBudget(root, "deepward", { drawsFrame: 90, triangles: 56100, nodes: 170, baseline: "2026-10-22 bun run perf:gate" });
     expect(loadBudget("deepward", root).budget).toEqual({
-      draws: 90,
+      drawsFrame: 90,
       triangles: 56100,
       nodes: 170,
       baseline: "2026-10-22 bun run perf:gate",
     });
+  });
+
+  test("an entry that still budgets draws is compared whole-frame and named as pre-drawsFrame", () => {
+    const root = tempRoot();
+    writeEngineBudgets(root, { "harbor-heat": { draws: 10420, triangles: 4405210, nodes: 15210 } });
+    expect(loadBudget("harbor-heat", root).budget).toMatchObject({ drawsFrame: 10420, legacyDraws: true });
+  });
+
+  test("an entry with neither count fails instead of skipping the gate", () => {
+    const root = tempRoot();
+    writeEngineBudgets(root, { "harbor-heat": { triangles: 4405210, nodes: 15210 } });
+    expect(() => loadBudget("harbor-heat", root)).toThrow(/harbor-heat\.drawsFrame/);
   });
 
   test("a missing budget fails loudly and names both places it looked", () => {
@@ -169,20 +195,26 @@ describe("loadBudget", () => {
 
   test("a game missing from the baseline fails instead of skipping the gate", () => {
     const root = tempRoot();
-    writeEngineBudgets(root, { "harbor-heat": { draws: 7600, triangles: 3850000, nodes: 11900 } });
+    writeEngineBudgets(root, { "harbor-heat": { drawsFrame: 7600, triangles: 3850000, nodes: 11900 } });
     expect(() => loadBudget("deepward", root)).toThrow(/no budget for "deepward"/);
   });
 
   test("a budget entry with a non-number is rejected by name", () => {
     const root = tempRoot();
-    writeEngineBudgets(root, { "harbor-heat": { draws: "lots", triangles: 3850000, nodes: 11900 } });
-    expect(() => loadBudget("harbor-heat", root)).toThrow(/harbor-heat\.draws/);
+    writeEngineBudgets(root, { "harbor-heat": { drawsFrame: "lots", triangles: 3850000, nodes: 11900 } });
+    expect(() => loadBudget("harbor-heat", root)).toThrow(/harbor-heat\.drawsFrame/);
+  });
+
+  test("keeps the previous draws budget beside the new one", () => {
+    const root = tempRoot();
+    writeEngineBudgets(root, { "harbor-heat": { drawsFrame: 1724, previousDraws: 10420, triangles: 4405210, nodes: 15210 } });
+    expect(loadBudget("harbor-heat", root).budget).toMatchObject({ drawsFrame: 1724, previousDraws: 10420 });
   });
 
   test("the engine baseline itself parses for every gated game", () => {
     for (const game of PERF_GATE_GAMES) {
       const { budget } = loadBudget(game);
-      expect(budget.draws).toBeGreaterThan(0);
+      expect(budget.drawsFrame).toBeGreaterThan(0);
       expect(budget.triangles).toBeGreaterThan(0);
       expect(budget.nodes).toBeGreaterThan(0);
     }
@@ -263,7 +295,7 @@ describe("describeGamesCheckout", () => {
 describe("summarizeRecord", () => {
   test("a run without overrides prints the same line as before", () => {
     expect(summarizeRecord(record(), BUDGET)).toBe(
-      "harbor-heat ok  draws 7,000/7,600  triangles 3,600,000/3,850,000  nodes 11,000/11,900  links 0/0  framebuffers 0/0  allocations 0  1600x900 full",
+      "harbor-heat ok  drawsFrame 7,100/7,600 (340 frames)  draws 7,000  triangles 3,600,000/3,850,000  nodes 11,000/11,900  links 0/0  framebuffers 0/0  allocations 0  1600x900 full",
     );
   });
 
