@@ -1,5 +1,5 @@
 /** Installed `@jgengine/core` semver — compare against {@link CHANGELOG} keys when migrating. */
-export const VERSION = "0.32.0";
+export const VERSION = "0.33.0";
 
 /** One release's migrate steps plus added/changed/removed notes (typed mirror of CHANGELOG.md). */
 export interface ChangelogEntry {
@@ -11,6 +11,49 @@ export interface ChangelogEntry {
 
 /** Per-version engine changelog keyed by semver string (e.g. `"0.10.0"`). */
 export const CHANGELOG: Record<string, ChangelogEntry> = {
+  "0.33.0": {
+    migrate: [
+      "Bump lockstep SDK packages to `^0.33.0`: `@jgengine/{core,rapier,react,ws,node,sql,convex,shell,editor,assets,navbake}`. CLI `jgengine` is `0.30.0`; `@jgengine/github` is `0.20.0`.",
+      "`useSceneObjects` (`@jgengine/react/hooks`) keeps one list identity across `move` and `rotate`, so a record's `position`/`rotationY` is what it was at the last render. Read the live placement with `ctx.scene.object.get(instanceId)` (a `useFrame` loop or a rAF-ticked HUD) when a mesh or readout must follow a moving object.",
+      "A read of a mismatched stored value now converts losslessly where it can (a number as its digits, a boolean as `\"true\"`/`\"false\"`, those strings back) and throws where it cannot. No in-repo caller relied on the old fallback; `useSetting` (`@jgengine/react/settings`) is the generic path that could, so a game that stored a number under a key it reads with a string fallback now gets the digits.",
+    ],
+    added: [
+      "`releasePostfxOverlayTracking(scene)` (`@jgengine/shell/postfx/postfxOverlay`) drops the cached prepass overlay set and its listeners for a scene that is being torn down.",
+      "`canvasCover` (`@jgengine/react/canvasCover`): one page-wide hold a covering surface takes, plus `useCanvasCover(declared)` for a React overlay. While it is held the shell stops drawing the world, its shadow passes and postfx; input, audio and the DOM HUD keep running, and the first frame after release draws the untouched scene. A scrim or side panel must not take it.",
+      "`MenuScreen` and `TitleMenu` take `coversCanvas` (default false) to declare that the screen paints over the whole canvas. A menu with only a translucent scrim leaves the live scene drawing.",
+      "The dev runner pins the cover with `?cover=1`, and the devtools agent bridge answers `canvas_cover`, so a perf run or `bun run drive` can measure a covered frame on any game.",
+      "`combat.damage` carries an optional `position`: the effect path fills it from the target's own spot, and `createDamageRuntime` takes one per hit (`hit({ position })`) or from a `positionOf` reader, so a status tick is placed too. A cue with a position pans and attenuates; one without stays centred.",
+      "`createHapticsRoute` (`@jgengine/shell/audio/hapticsRoute`) sends a feedback pulse to a connected gamepad, and to `navigator.vibrate` on a phone with no pad. `FeedbackHost` wires it; reduced motion still drops the camera shake only.",
+      "`PerfReport.render.drawsFrame` is every draw a frame issues — shadow, main, postfx prepasses, AO and DOF together — as the 95th percentile of the measured window, with `drawsFrames` naming how many frames it covers. `bun run perf:gate` compares it against each game's re-based `drawsFrame` budget; the renderer's own single-sample `draws` is printed beside it and is no longer gated.",
+      "`ObjectStore.version()` / `ObjectStore.markSpatialChange()` (`ctx.scene.object`) — a counter that moves whenever membership, a position, a rotation or a consumer-owned collider set changes, so derived spells spatial data can share one cache key.",
+      "`SolidObstacleSource.version?()` (`@jgengine/core/movement/solidObstacles`) — a source that reports one gets its blocking obstacles resolved once per version into a coarse XZ index; a source without it keeps the per-query `inBox` gather.",
+      "`SettingsTypeError` and `asSettingType` (`@jgengine/core/settings/settingsModel`) report and resolve a stored setting read as another type.",
+    ],
+    changed: [
+      "`bun run land` queues landings on one lock per repo instead of running them beside each other, so two lanes no longer stack two pull requests' sixteen jobs against the account's 20-job cap. A waiting landing names the branch and pid it waits on; a lock whose process died, or that is older than 30 minutes, is broken with a warning.",
+      "The scene io browser test skips Playwright's two-frame click stability check and lets three rendered frames pass instead of ten: on a runner its second test went from 53s to 11-24s and the file from 76s to 50s, of which 16-36s is the fixture's own start.",
+      "`check-game-front-end` recognizes the shipped `CreditsPanel`, so a game that renders credits through the engine's panel is no longer flagged as having no credits screen.",
+      "The shell's frame loop switches to `frameloop=\"never\"` under a cover instead of drawing a world nobody can see (measured on Brightway Park's pause menu: 1,095 whole-frame draws and 5.2 ms/frame before, 0 draws and 0.11 ms/frame covered). A frame-rate cap no longer advances a covered canvas.",
+      "`FeedbackDeps.play` takes an optional `position`, which `FeedbackHost` forwards to `ctx.game.audio.play`, so a positioned damage or death cue reaches the spatial engine.",
+      "Each game's `perf-budget.json` entry now budgets `drawsFrame` and records the budget it replaced as `previousDraws`; an entry that still carries only `draws` fails by name instead of gating a count from a different measurement.",
+      "The in-page report reads the devtools render probe's frame sample instead of the live renderer counter, so `window.__JG.report()` and the devtools panel no longer report a mid-frame partial count.",
+      "Movement gathers obstacles from that index instead of re-resolving every nearby object every frame. On Harbor Heat the query fell from 0.62-0.65 ms to 0.10 ms a frame (2.0-2.1 ms to 1.4 ms of simulation a frame).",
+      "`objectStore.inBox` walks a coarse grid for big boxes instead of scanning every placed object; a 1 m cell lookup costs a string hash, so the switch happens past 32 cells rather than 4096.",
+      "Ambient occlusion reads the beauty pass's depth buffer instead of rendering the scene a second time for its normal/depth GBuffer. That prepass cost 537 extra draws and 2.6-2.9 ms/frame in Harbor Heat and 2,105 extra draws in Drift Foundry at 1600x900; AO now draws nothing of its own. A post chain whose antialiasing is `\"smaa\"` (the default) keeps SMAA and drops the beauty target's extra MSAA resolve, because WebGL2 cannot sample a multisampled depth texture; `\"msaa\"` chains keep the old prepass. Fixed-viewpoint captures differ only on geometry edges (#2173).",
+      "Postfx prepasses no longer walk the whole scene twice a frame to hide overlays, points and lines: the set is cached per scene and rescanned when the scene graph changes. Drift Foundry 2.11 ms/frame and Harbor Heat 0.66 ms/frame of `traverse` removed.",
+      "A rig posed from an animation graph no longer allocates a motion sample, a position triple and a fresh pose record every frame, and foot IK no longer allocates a probe input, filter, closure and per-leg records every frame.",
+      "The Graphics tab lists a post-processing stage toggle only when the game's resolved chain can build that stage. Depth of field, which no reference game authors, hid behind a row that switched a pass the composer never created, so the toggle changed nothing. The rule covers every stage: a chain with `ao: false`, `bloom: false` or `aa: \"msaa\"`/`false` no longer offers those rows, and a game with no post chain gets none of them. Every other settings row is unchanged (`@jgengine/shell/settings/settingsController`, `availablePostfxStages` in `@jgengine/shell/postfx/PostProcessing`).",
+      "Positional loops declared through `entitySounds`/`objectSounds` are tracked instead of rebuilt: spawn, despawn and a moved emitter update one retained loop each, and a frame where nothing moved reads only the emitters that already sound. On scrap-signal's 560 placed props (69 sounding), the tracking path drops from 16.7 µs to 1.2 µs per frame and a steady frame allocates no Set, array or record.",
+      "`useAccessibilitySettings`, `useHoldVsToggle` and `useAccessibilityRows` show a setting written before the component subscribed — a saved profile or the demo path seeding values before first paint — instead of waiting for the player's next change (#2180).",
+      "`useFeed`, `useQuestJournal` and `useFriends` (`@jgengine/react/hooks`) keep one list identity while membership holds instead of allocating a new array on every store write and comparing it with `Object.is`, so a HUD reading them no longer re-renders on every entity pose write. A pushed feed entry, an accepted, progressed or abandoned quest, and an accepted or removed friend each re-render once. Measured on the three read sites (`ToastStack`, `FriendsList`, `JournalQuestTracker`) with 15 quests, 20 friends and 20 feed rows: 900 renders → 0 across 300 pose writes, 0.14 ms/frame → 0.04 ms/frame.",
+      "`useWorldItems` (`@jgengine/react/hooks`) keeps one list identity until an item spawns, is picked up or is removed. It read `worldItem.list()`, which allocates a new array per call, against a store signal that also fires on every entity pose write, so a HUD re-rendered every dropped-item marker each frame (0.97 ms/frame of React work in Harbor Heat).",
+      "`WorldItems` (`@jgengine/shell`) reads each marker's live pose in `useFrame` instead of taking it as a prop, so a moving item still follows without re-rendering its marker.",
+      "`useSceneEntities` and `useSceneObjects` (`@jgengine/react/hooks`) keep one list identity while membership holds, instead of allocating a new array on every store write and comparing it with `Object.is`. A pose write no longer re-renders every HUD that reads them (30-entity roster: 0.066 ms/frame → 0; the whole loop 0.24 → 0.05 ms/frame), while a spawn, despawn, replace, place or remove still re-renders. Non-pose object writes (state, visual, animation, slots, catalog id) still re-render.",
+      "`RevealHighlights` (`@jgengine/shell/vision`) drives its own per-frame refresh only while Dark Sight is enabled, so a disabled reveal overlay no longer re-renders (0.019 ms/frame → 0) and an enabled one still follows the origin and its targets.",
+      "`createSettingsStore().get` returns a stored setting of another type instead of quietly returning the fallback, so a numeric setting read with a string fallback applies instead of vanishing (#2189). Root cause: `coerce` treated the fallback's type as the stored type and replaced every other type with the fallback. A stored value that cannot be read as the asked-for type now throws `SettingsTypeError` naming the key, the stored type and the fallback type.",
+    ],
+    removed: [],
+  },
   "0.32.0": {
     migrate: [
       "Bump lockstep SDK packages to `^0.32.0`: `@jgengine/{core,rapier,react,ws,node,sql,convex,shell,editor,assets,navbake}`. CLI `jgengine` is `0.29.0`; `@jgengine/github` is `0.19.0`.",
