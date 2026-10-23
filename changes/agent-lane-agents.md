@@ -1,6 +1,0 @@
-### Added
-
-- `createAgent` (`@jgengine/core/agents/agent`) runs one resident's whole loop on the world clock: needs decay through `sim/needs`, a utility brain picks among the targets the game offers, an authored day plan says where the agent belongs, and the agent falls back to a declared target when its pick disappears. Mood, action and the far flag snapshot and restore with the needs.
-- `createMoodReader` / `readMood` (`@jgengine/core/agents/mood`) derive a 0-100 mood and a caller-labelled tier from weighted need satisfaction, plus named sources a queue, a litter patch or a cold snap raises and clears.
-- `createAgentSchedule` (`@jgengine/core/agents/schedule`) resolves an authored day plan through `sim/routine` and adds a work beat: a stop names the places it patrols, so a janitor is an agent with a route rather than a special case. Off-hours behaviour is a stop without a beat.
-- `createRelationshipBook` (`@jgengine/core/agents/relationships`) keeps undirected familiarity and opinion per pair. A social action moves both and reports the milestones crossed, friends prefer each other's company, and a bonded pair refuses to split. Pair keys come from `relation/keyedValues` and crossings from `relation/thresholds`.
