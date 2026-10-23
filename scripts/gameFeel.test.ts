@@ -19,7 +19,7 @@ describe("findGameFeelGaps", () => {
     }
   });
   test("accepts conditional rendered damage feedback and muzzle flash", () => {
-    for (const feedback of [`{dive.hurt > 0 && <div className="damage" />}`, `{dive.flash > 0 ? "+" : "·"}`]) {
+    for (const feedback of [`{dive.hurt > 0 && <div className="damage" />}`, `{dive.flash > 0 ? "+" : "ï¿½"}`]) {
       expect(scan({ "Games/probe/src/index.tsx": `attack; audio.play(); ${feedback}` })).toEqual([]);
     }
   });
@@ -29,4 +29,7 @@ describe("findGameFeelGaps", () => {
     }
   });
   test("scans created-game", () => expect(scan({ "created-game/src/index.tsx": "interact" })).toEqual(["created-game#input-audio"]));
+  test("skips the games repo's tooling folders, which are not games", () => {
+    expect(scan({ "Games/scripts/framework-check.ts": "/damage|combat/i", "Games/probe/src/index.tsx": "audio.play();" })).toEqual([]);
+  });
 });
