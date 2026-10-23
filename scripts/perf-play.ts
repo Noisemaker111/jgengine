@@ -134,8 +134,8 @@ const USAGE = `usage: bun run perf <game> [--quality draft|full] [--profile] [--
   --param           add a page query parameter; repeatable (?spawn=1,2,3, ?seed=7). The harness's own
                     params (game, capture, device, telemetry, quality, state) are refused.
   --set             enable a setting before boot; repeatable (--set colorblind=grayscale).
-                    Key is an engine setting id (accessibility.colorblind) or its last segment, or a
-                    setting the game declares (survey.hints). An unknown key or an unaccepted value
+                    Key is an engine setting id (accessibility.colorblind) or its last segment, or the
+                    exact id the game declares (survey.hints). An unknown key or an unaccepted value
                     fails the run instead of measuring the default.
                     Common engine keys: ${KNOWN_SETTING_KEYS.join(", ")}`;
 
