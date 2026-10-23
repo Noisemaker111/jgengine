@@ -152,6 +152,32 @@ describe("createGameSave — slots", () => {
     await save.switchSlot("default");
     expect(counter.read()).toBe(1);
   });
+
+  test("deleteSlot removes the document, and deleting the active slot resets every system", async () => {
+    const backend = memorySaveBackend();
+    const counter = counterSystem("score");
+    const save = createGameSave({ backend, game: "demo", systems: [counter.system] });
+    counter.bump();
+    await save.save(); // "default" holds 1
+    await save.switchSlot("keep");
+    counter.bump();
+    counter.bump();
+    await save.save(); // "keep" holds 2
+    await save.switchSlot("default");
+    expect(counter.read()).toBe(1);
+
+    expect(await save.deleteSlot("keep")).toBe(true);
+    expect(await save.slots()).toEqual(["default"]);
+    expect(await save.peek("keep")).toBeNull();
+    expect(await save.deleteSlot("keep")).toBe(false);
+
+    expect(await save.deleteSlot("default")).toBe(true);
+    expect(counter.read()).toBe(0);
+
+    const reopened = createGameSave({ backend, game: "demo", systems: [counterSystem("score").system] });
+    expect(await reopened.slots()).toEqual([]);
+    expect(await reopened.peek("default")).toBeNull();
+  });
 });
 
 describe("createGameSave — autosave is caller policy", () => {

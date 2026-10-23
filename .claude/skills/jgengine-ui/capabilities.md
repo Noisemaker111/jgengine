@@ -359,6 +359,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `HudInteractProvider` (function) · `import { HudInteractProvider } from "@jgengine/react/hudInteract"`
 
+## hud-lanes — two HUD blocks stacked in one lane, plus a second lane beside it
+
+- `HudLanesPreview` (function) · `import { HudLanesPreview } from "@jgengine/react/hudLanesPreview"`
+- `resolveHudLanes` (function) · `import { resolveHudLanes } from "@jgengine/react"`
+
 ## hud-layout — persistent, live-editable HUD panel layout state for `HudCanvas`
 
 - `useHudLayout` (function) · `import { useHudLayout } from "@jgengine/react"`
@@ -370,6 +375,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## hud-layout-persist-hook — read the host panel-commit port from a HUD layout widget
 
 - `useHudLayoutPersist` (function) · `import { useHudLayoutPersist } from "@jgengine/react"`
+
+## hud-overlap-report — format the intersecting HUD block pairs for a development console
+
+- `formatHudOverlapReport` (function) · `import { formatHudOverlapReport } from "@jgengine/react"`
+- `hudBlockOverlaps` (function) · `import { hudBlockOverlaps } from "@jgengine/react"`
 
 ## hud-panel — anchored HUD slot — drop any widget in a named, player-movable panel
 

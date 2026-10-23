@@ -1,6 +1,7 @@
 import type { GamePreviewComponent } from "./preview";
 import { BarsPreview } from "./barsPreview";
 import { HudChromePreview } from "./hudChromePreview";
+import { HudLanesPreview } from "./hudLanesPreview";
 import { HudThemePreview } from "./hudThemePreview";
 import { IconsPreview } from "./iconsPreview";
 import { StreetGeometryPreview } from "./streetGeometryPreview";
@@ -35,6 +36,11 @@ export interface PreviewFixture {
  * declares.
  */
 export const PREVIEW_FIXTURES: Record<string, PreviewFixture> = {
+  HudLanesPreview: {
+    name: "HudLanesPreview",
+    description: "Two HUD blocks stacked in one lane, a second lane beside it, and the mirrored right-hand lane.",
+    component: HudLanesPreview,
+  },
   ScrollRailPreview: { name: "ScrollRailPreview", description: "Reachable caller-owned settings categories in shared scrolling chrome.", component: ScrollRailPreview },
   HudChromePreview: {
     name: "HudChromePreview",

@@ -126,6 +126,12 @@ export interface GameSave {
   peek(slot: string): Promise<GameSaveDocument | null>;
   /** Slots this save has written. */
   slots(): Promise<string[]>;
+  /**
+   * Delete one slot's document and drop it from the slot index, so `slots()` and `peek()` stop
+   * seeing it. Resolves `true` when a document was removed and `false` when the slot held nothing.
+   * Deleting the active slot resets the registered systems to a fresh document.
+   */
+  deleteSlot(slot: string): Promise<boolean>;
   slot(): string;
   status(): SaveStatus;
   /** Monotonic change counter — bumps on any value or status change. */
@@ -292,6 +298,11 @@ export function createGameSave(config: GameSaveConfig): GameSave {
       return stored.value;
     },
     slots: () => store.slots(),
+    async deleteSlot(slot) {
+      const deleted = await store.deleteSlot(slot);
+      if (deleted && slot === store.slot()) apply(store.value());
+      return deleted;
+    },
     slot: () => store.slot(),
     status: () => store.status(),
     revision: () => store.revision(),

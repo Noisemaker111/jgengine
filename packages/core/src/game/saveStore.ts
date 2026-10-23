@@ -148,6 +148,13 @@ export interface SaveStore<T> {
   /** Delete the active slot and reset `value()` to `initial`. */
   clear(): Promise<void>;
   /**
+   * Delete any slot: remove its stored payload and drop it from the slot index, so `slots()` and
+   * `peek()` stop seeing it. Resolves `true` when a payload was removed and `false` when the slot
+   * held nothing (an unknown slot is a no-op). Deleting the active slot resets `value()` to
+   * `initial`; other slots leave the live value alone.
+   */
+  deleteSlot(slot: string): Promise<boolean>;
+  /**
    * Read a stored slot without touching the live value, active slot or status — what a save-select
    * menu shows. Returns `null` when the slot holds nothing.
    */
@@ -331,6 +338,9 @@ export function createSaveStore<T>(config: SaveStoreConfig<T>): SaveStore<T> {
       firstDirtyAt = null;
       setStatus("idle");
       emit();
+      // Only a slot that holds a payload belongs in the index — loading an empty
+      // slot must not resurrect an id a deleteSlot removed.
+      if (raw === null) return current;
       void rememberSlot(currentSlot).catch((error) => {
         setStatus("error");
         reportError(error);
@@ -377,6 +387,35 @@ export function createSaveStore<T>(config: SaveStoreConfig<T>): SaveStore<T> {
         setStatus("error");
         reportError(error);
       }
+    },
+    async deleteSlot(slot) {
+      const wasActive = slot === currentSlot;
+      if (wasActive) {
+        clearTimer();
+        dirty = false;
+        firstDirtyAt = null;
+      }
+      const run = saveChain.then(async (): Promise<boolean> => {
+        if (wasActive) setStatus("saving");
+        try {
+          const existing = await backend.read(dataKey(slot));
+          if (existing !== null) await backend.remove(dataKey(slot));
+          await forgetSlot(slot);
+          if (existing !== null && wasActive) current = initial;
+          if (wasActive) setStatus("idle");
+          emit();
+          return existing !== null;
+        } catch (error) {
+          setStatus("error");
+          reportError(error);
+          return false;
+        }
+      });
+      saveChain = run.then(
+        () => undefined,
+        () => undefined,
+      );
+      return run;
     },
     async switchSlot(slot) {
       if (dirty) await save();

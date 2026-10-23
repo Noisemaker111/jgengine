@@ -67,6 +67,7 @@ export * from "./cards";
 export * from "./actionHud";
 export * from "./selectionHud";
 export * from "./hudLayout";
+export * from "./hudLanes";
 export * from "./hudLayoutPersist";
 export * from "./hudViewport";
 export * from "./gameViewport";
