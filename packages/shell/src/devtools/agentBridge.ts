@@ -16,6 +16,7 @@ import {
 import { buildFullReport, buildLeanReport, summarizeLeanReport } from "./devtoolsReports";
 import { resetFrameTelemetry } from "./frameSampler";
 import { advanceSimulation } from "./simStepper";
+import { canvasCover } from "@jgengine/react/canvasCover";
 
 /** One RPC call into the agent bridge: a verb name plus its verb-specific fields. */
 export type AgentBridgeRequest = { method: string } & Record<string, unknown>;
@@ -173,6 +174,7 @@ export function installAgentBridge(options: {
 }): () => void {
   const { playable, devtoolsEnabled, isDevtoolsOpen, setDevtoolsOpen } = options;
   const getContext = options.getContext ?? (() => null);
+  let coverRelease: (() => void) | null = null;
 
   const handle = (request: AgentBridgeRequest): AgentBridgeResponse | Promise<AgentBridgeResponse> => {
     const method = typeof request?.method === "string" ? request.method : "";
@@ -363,6 +365,15 @@ export function installAgentBridge(options: {
         }
         return { ok: false, error: `no HUD panel "${id}" — canvas_state lists ids` };
       }
+      case "canvas_cover": {
+        if (request.covered === true) {
+          coverRelease ??= canvasCover.hold();
+          return { ok: true, covered: true, holders: canvasCover.holders() };
+        }
+        coverRelease?.();
+        coverRelease = null;
+        return { ok: true, covered: canvasCover.covered(), holders: canvasCover.holders() };
+      }
       case "canvas_list_panel_types":
         return {
           ok: true,
@@ -412,6 +423,8 @@ export function installAgentBridge(options: {
 
   window.__jgengineAgent = { handle };
   return () => {
+    coverRelease?.();
+    coverRelease = null;
     if (window.__jgengineAgent?.handle === handle) delete window.__jgengineAgent;
   };
 }
