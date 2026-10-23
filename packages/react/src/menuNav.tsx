@@ -136,12 +136,24 @@ export function useMenuNav({
 
   const elements = useRef(new Map<string, HTMLElement>());
   const pendingFocus = useRef(true);
+  // The first pass claims focus only when nothing else owns it; later moves focus the new item.
+  const claimed = useRef(false);
+  const firstEnablePass = useRef(true);
 
   const focusActive = useCallback(() => {
     const id = menuNavIdAt(idsRef.current, activeIndexRef.current);
     if (id === null) return;
     elements.current.get(id)?.focus({ preventScroll: true });
   }, []);
+
+  // A control or dialog that already owns focus keeps it; the first move brings focus into the menu. Without
+  // this a menu mounted inside a dialog takes focus from the dialog's own initial control, and the dialog's
+  // opener is never restored on close.
+  const claimFocus = useCallback(() => {
+    const active = typeof document === "undefined" ? null : document.activeElement;
+    if (active !== null && active !== document.body && active !== document.documentElement) return;
+    focusActive();
+  }, [focusActive]);
 
   const move = useCallback(
     (direction: MenuNavDirection) => {
@@ -195,14 +207,24 @@ export function useMenuNav({
   useEffect(() => {
     if (!pendingFocus.current) return;
     pendingFocus.current = false;
-    focusActive();
-  }, [activeIndex, focusActive]);
+    if (claimed.current) {
+      focusActive();
+      return;
+    }
+    claimed.current = true;
+    claimFocus();
+  }, [activeIndex, claimFocus, focusActive]);
 
   useEffect(() => {
     if (!enabled) return;
     pendingFocus.current = true;
+    if (firstEnablePass.current) {
+      firstEnablePass.current = false;
+      claimFocus();
+      return;
+    }
     focusActive();
-  }, [enabled, focusActive]);
+  }, [enabled, claimFocus, focusActive]);
 
   useEffect(() => {
     const index = ids.indexOf(activeId ?? "");
@@ -363,3 +385,4 @@ export function useMenuNav({
 
 /** Render prop for a menu whose items come from {@link useMenuNav}. */
 export type MenuNavRender = (nav: MenuNavController) => ReactNode;
+
