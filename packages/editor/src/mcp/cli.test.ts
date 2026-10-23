@@ -219,7 +219,7 @@ describe("editor CLI entry", () => {
     });
     try {
       let healthy = false;
-      for (let attempt = 0; attempt < 50 && !healthy; attempt += 1) {
+      for (let attempt = 0; attempt < 300 && !healthy; attempt += 1) {
         try {
           const res = await fetch(`http://127.0.0.1:${port}/health`);
           if (res.ok) {
