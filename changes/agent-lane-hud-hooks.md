@@ -1,3 +1,0 @@
-### Fixed
-
-- `useFeed`, `useQuestJournal` and `useFriends` (`@jgengine/react/hooks`) keep one list identity while membership holds instead of allocating a new array on every store write and comparing it with `Object.is`, so a HUD reading them no longer re-renders on every entity pose write. A pushed feed entry, an accepted, progressed or abandoned quest, and an accepted or removed friend each re-render once. Measured on the three read sites (`ToastStack`, `FriendsList`, `JournalQuestTracker`) with 15 quests, 20 friends and 20 feed rows: 900 renders → 0 across 300 pose writes, 0.14 ms/frame → 0.04 ms/frame.
