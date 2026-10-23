@@ -15,18 +15,19 @@
 // fails when the two lists disagree.
 //
 // Balance is measured, not guessed: the numbers below are what each shard's tests took on a
-// runner (2026-10-23, run 39892384209, a docs-only PR: 377 s of test time over ten jobs;
-// run 39893307182 pushed the same content while a full gate ran and moved every shard by up
-// to 20 s, which is the variance to expect). Ten jobs cost ten runners of fixed setup against
-// the account's 20-job cap, so a PR racing another run queued its shards in two waves; eight
-// is the fewest that keeps every shard at the slowest single file.
+// runner (2026-10-23: runs 39892384209, 39900500138 and 39899930095 - a docs-only PR each, the
+// last two with a full gate running beside them; a single browser scenario moves 10-18 s
+// between them, and that is the variance to plan against). Ten jobs cost ten runners of fixed
+// setup against the account's 20-job cap, so a PR racing another run queued its shards in two
+// waves; eight is the fewest that keeps every shard at the slowest single file.
 //
-// The floor is one file per shard: the editor round trip (a) and the editor scene io run
-// (f) are single browser scenarios, and the harness pair (b, e) each waits out the
-// harness's own 10 s give-up. Merging two shards adds their times, so the cheap shards went
-// where there was room rather than into each other: the old g 26, h 37, i 35 and j 15 are now
-// the tail of c (the small packages and apps/dev) and the last two entries. Moving a
-// directory means re-timing the shard and updating these numbers in the same commit.
+// The floor is one file per shard: the editor round trip (a) and the editor scene io run (f)
+// are single browser scenarios, and the harness pair (b, c) each waits out the harness's own
+// 10 s give-up. Merging two shards adds their times, so a merged shard only goes where the job
+// is already waiting on Chrome: the small packages and apps/dev fill a and e, the editor's unit
+// tests fill b, and shell rides behind c's browser file. React (41 s) cannot fold into anything
+// without clearing 60 s, so it is the one shard that is a single package. Moving a directory
+// means re-timing the shard and updating these numbers in the same commit.
 import { readdirSync } from "node:fs";
 import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -56,28 +57,10 @@ export interface Shard {
 export const SHARDS: readonly Shard[] = [
   {
     name: "a",
-    label: "editor round trip",
-    // 34 s: one Chrome drives save/play/return/reopen across a reload, start to finish.
-    include: ["packages/editor/src/CreatorApp.test.ts"],
-    needs: [],
-  },
-  {
-    name: "b",
-    label: "harness pointer-blocked targets",
-    // 42 s: three scenarios the drive harness must refuse; each waits out the harness's own
-    // 10 s give-up, so this shard is the harness's fixed cost, not the runner's.
-    include: ["packages/jgengine/src/harness.blockedTargets.browser.test.ts"],
-    needs: [],
-  },
-  {
-    name: "c",
-    label: "harness unreachable targets + the small packages",
-    // 34 s of harness scenarios plus the 8 s the small packages and apps/dev take together.
-    // They sit here because this job waits on Chrome rather than on a core: it is the one shard
-    // with room left, and adding them here is what keeps every other shard under 58 s.
+    label: "editor round trip + the small packages",
+    // 44 s: one Chrome drives save/play/return/reopen across a reload, start to finish. The
+    // small packages (8 s) fill the job that waits on it instead of standing up a ninth runner.
     include: [
-      "packages/jgengine/src/harness.unreachableTargets.browser.test.ts",
-      "apps/dev",
       "packages/node",
       "packages/ws",
       "packages/assets",
@@ -86,7 +69,25 @@ export const SHARDS: readonly Shard[] = [
       "packages/convex",
       "packages/navbake",
       "packages/github",
+      "packages/editor/src/CreatorApp.test.ts",
     ],
+    needs: [],
+  },
+  {
+    name: "b",
+    label: "harness pointer-blocked targets",
+    // 39 s: three scenarios the drive harness must refuse; each waits out the harness's own
+    // 10 s give-up, so this shard is the harness's fixed cost, not the runner's.
+    include: ["packages/jgengine/src/harness.blockedTargets.browser.test.ts"],
+    needs: [],
+  },
+  {
+    name: "c",
+    label: "harness unreachable targets + shell",
+    // 22 s of harness scenarios plus 26 s of shell. The browser file sorts first in this
+    // process, which is the order that matters: the editor scene io file took 78 s after 85
+    // files and 34 s first in its process.
+    include: ["packages/jgengine/src/harness.unreachableTargets.browser.test.ts", "packages/shell"],
     needs: [],
   },
   {
@@ -100,25 +101,24 @@ export const SHARDS: readonly Shard[] = [
   {
     name: "e",
     label: "harness drive",
-    // 43 s of harness drive plus the other 2 s of jgengine. A browser file runs alone:
-    // the editor scene io file took 34 s first in its process and 78 s after 85 others.
-    include: ["packages/jgengine/src/harness.browser.test.ts", "packages/jgengine"],
+    // 42 s of harness drive plus the other 2 s of jgengine and apps/dev.
+    include: ["packages/jgengine/src/harness.browser.test.ts", "packages/jgengine", "apps/dev"],
     needs: [],
   },
   {
     name: "f",
     label: "editor scene io",
-    // 57 s: export/import and the failed-save round, seeding its scene through the real UI.
+    // 53-59 s: export/import and the failed-save round, seeding its scene through the real UI.
     include: ["packages/editor/src/CreatorApp.sceneIo.test.ts"],
     needs: [],
   },
   {
     name: "g",
-    label: "shell, editor and react",
-    // 26 s of shell, the 3 s of editor tests that are not browser scenarios, and 29 s of react.
-    // This is the old shell+editor shard with the old react shard folded in. It clones Games for
-    // one editor test that opens a real game scene (`packages/editor/src/mcp/loadGameLayers`).
-    include: ["packages/shell", "packages/editor", "packages/react"],
+    label: "react and the editor unit tests",
+    // 41 s of react plus 3 s of editor tests that are not browser scenarios. React cannot fold
+    // into another shard here without clearing 60 s, so this is the one job that is nearly a
+    // single package. It clones Games because one editor test opens a real game scene.
+    include: ["packages/react", "packages/editor"],
     needs: ["games"],
   },
   {

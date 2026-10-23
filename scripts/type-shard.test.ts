@@ -48,6 +48,16 @@ test("the heaviest measured stages start first so they overlap the rest", () => 
   expect(names.slice(0, 4)).toEqual(["check-types-all", "check-skill-api", "check-capabilities", "check-doc-symbols"]);
 });
 
+test("a wide stage runs after the shared lanes, not beside them", async () => {
+  const stages = [stage("ensure-ready", []), stage("cheap"), stage("check-types-all")];
+  const order: string[] = [];
+  await runTypes(stages, async (entry) => {
+    order.push(entry.name);
+    return true;
+  });
+  expect(order).toEqual(["ensure-ready", "cheap", "check-types-all"]);
+});
+
 test("every weight names a stage the plan still has, so a rename cannot silently reorder nothing", () => {
   const names = new Set(PLANS["check-types"]!.map((entry) => entry.name));
   for (const name of Object.keys(WEIGHT)) expect(names.has(name)).toBe(true);

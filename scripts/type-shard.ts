@@ -29,6 +29,14 @@ export const PLAN = "check-types";
 export const CONCURRENCY = 2;
 
 /**
+ * Stages whose own command already fans out across every core. Measured: `check-types-all`
+ * runs 22 workspaces over 8 tsgo processes, and overlapping it with one generator stretched
+ * that generator from 9.7 s to 43.7 s while the fan-out went from 21 s to 31.5 s - so these
+ * run alone, after the shared lanes are done.
+ */
+export const EXCLUSIVE = new Set(["check-types-all"]);
+
+/**
  * Stages the `quick` job already proves on the same commit, so this job does not pay them a
  * second time. Each one names the command `quick` must still run; `scripts/type-shard.test.ts`
  * reads `.github/workflows/ci.yml` and fails if that job stops running it, so the work cannot
@@ -77,8 +85,9 @@ export async function runPool<T>(items: readonly T[], concurrency: number, work:
 }
 
 /**
- * Every stage's fate: the stages with no prerequisite run first and alone, then the rest run
- * `concurrency` at a time. A stage whose prerequisite failed is skipped, never reported green.
+ * Every stage's fate: the stages with no prerequisite run first and alone, then the shared
+ * lanes run `concurrency` at a time, then the wide stages run alone. A stage whose
+ * prerequisite failed is skipped, never reported green.
  */
 export async function runTypes(
   stages: readonly Stage[],
@@ -102,7 +111,10 @@ export async function runTypes(
     else results.set(stage.name, { name: stage.name, state: "skipped", blockedBy });
   }
 
-  await runPool(ready, concurrency, async (stage) => record(stage, await run(stage)));
+  const shared = ready.filter((stage) => !EXCLUSIVE.has(stage.name));
+  const wide = ready.filter((stage) => EXCLUSIVE.has(stage.name));
+  await runPool(shared, concurrency, async (stage) => record(stage, await run(stage)));
+  for (const stage of wide) record(stage, await run(stage));
 
   return stages.map((stage) => results.get(stage.name)!);
 }
@@ -123,9 +135,13 @@ if (import.meta.main) {
   const stages = planStages(PLANS[PLAN]!);
   if (process.argv.includes("--check")) {
     const first = stages.filter((entry) => (entry.needs ?? []).length === 0);
-    const rest = stages.filter((entry) => (entry.needs ?? []).length > 0);
-    console.log(`${PLAN}: ${stages.length} stage(s), ${Math.min(CONCURRENCY, rest.length)} in flight after ${first.map((entry) => entry.name).join(", ")}`);
-    for (const stage of [...first, ...ordered(rest)]) console.log(`  ${stage.name}`);
+    const rest = stages.filter((entry) => (entry.needs ?? []).length > 0 && !EXCLUSIVE.has(entry.name));
+    const wide = stages.filter((entry) => EXCLUSIVE.has(entry.name));
+    console.log(
+      `${PLAN}: ${stages.length} stage(s), ${Math.min(CONCURRENCY, rest.length)} in flight after ` +
+        `${first.map((entry) => entry.name).join(", ")}, then ${wide.map((entry) => entry.name).join(", ")} alone`,
+    );
+    for (const stage of [...first, ...ordered(rest), ...wide]) console.log(`  ${stage.name}`);
     process.exit(0);
   }
 
