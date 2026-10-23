@@ -15,13 +15,9 @@ const OBJECT_SOUNDS: Record<string, string> = {
   reactor_gate: "gate_drone",
 };
 
-/** Marker counts from `Games/scrap-signal/src/editor.scene.json`: 74 of its placed props declare a sound. */
+/** Marker counts from `Games/scrap-signal/src/editor.scene.json`: 69 of its 560 placed props declare a sound. */
 const PLACEMENTS: readonly [string, number][] = [
   ["wreck", 56],
-  ["street_lamp", 8],
-  ["bus_wreck", 6],
-  ["water_tower", 3],
-  ["reactor_gate", 1],
   ["cover_crate", 94],
   ["rock_spire", 83],
   ["barricade", 70],
@@ -33,6 +29,15 @@ const PLACEMENTS: readonly [string, number][] = [
   ["tent", 14],
   ["watchtower", 10],
   ["signpost", 10],
+  ["wind_turbine", 10],
+  ["street_lamp", 6],
+  ["bus_wreck", 4],
+  ["red_chest", 3],
+  ["water_tower", 2],
+  ["reactor_gate", 1],
+  ["captain_rusk", 1],
+  ["wreck_maw", 1],
+  ["foundry_heart", 1],
 ];
 
 type Call = { kind: "play" | "move" | "stop"; voice: number; sound: string; x: number; y: number; z: number };
@@ -72,11 +77,14 @@ function placeScrapSignalObjects() {
   return store;
 }
 
-function objectSources(store: ReturnType<typeof createObjectStore>, onRead?: () => void): EmitterSources {
+function objectSources(
+  store: ReturnType<typeof createObjectStore>,
+  onRead?: (pose: EmitterPose) => void,
+): EmitterSources {
   return {
     ids: () => store.ids(),
     read(id: string, pose: EmitterPose) {
-      onRead?.();
+      onRead?.(pose);
       const object = store.get(id);
       if (object === null) return false;
       pose.key = object.catalogId;
@@ -86,11 +94,14 @@ function objectSources(store: ReturnType<typeof createObjectStore>, onRead?: () 
   };
 }
 
-function entitySources(store: ReturnType<typeof createEntityStore>, onRead?: () => void): EmitterSources {
+function entitySources(
+  store: ReturnType<typeof createEntityStore>,
+  onRead?: (pose: EmitterPose) => void,
+): EmitterSources {
   return {
     ids: () => store.ids(),
     read(id: string, pose: EmitterPose) {
-      onRead?.();
+      onRead?.(pose);
       const entity = store.get(id);
       if (entity === null) return false;
       pose.key = entity.name;
@@ -100,9 +111,48 @@ function entitySources(store: ReturnType<typeof createEntityStore>, onRead?: () 
   };
 }
 
-function heapUsed(): number {
-  Bun.gc(true);
-  return process.memoryUsage().heapUsed;
+/** Counting stand-ins for the constructs the removed per-frame rebuild used: `new Set`, `new Map`, `Array.from` and `Array.prototype.map`. */
+function countAllocations(run: () => void): { sets: number; maps: number; froms: number; mappedArrays: number } {
+  const counts = { sets: 0, maps: 0, froms: 0, mappedArrays: 0 };
+  const RealSet = globalThis.Set;
+  const RealMap = globalThis.Map;
+  const realFrom = Array.from;
+  const realMap = Array.prototype.map;
+
+  class CountingSet<T> extends RealSet<T> {
+    constructor(entries?: readonly T[] | null) {
+      super();
+      counts.sets += 1;
+      if (entries !== undefined && entries !== null) for (const entry of entries) this.add(entry);
+    }
+  }
+  class CountingMap<K, V> extends RealMap<K, V> {
+    constructor(entries?: readonly (readonly [K, V])[] | null) {
+      super();
+      counts.maps += 1;
+      if (entries !== undefined && entries !== null) for (const [key, value] of entries) this.set(key, value);
+    }
+  }
+
+  globalThis.Set = CountingSet as unknown as SetConstructor;
+  globalThis.Map = CountingMap as unknown as MapConstructor;
+  Array.from = ((...args: Parameters<typeof realFrom>) => {
+    counts.froms += 1;
+    return realFrom(...args);
+  }) as typeof Array.from;
+  Array.prototype.map = function countedMap(this: unknown[], ...args: Parameters<typeof realMap>) {
+    counts.mappedArrays += 1;
+    return realMap.apply(this, args as never);
+  } as typeof Array.prototype.map;
+  try {
+    run();
+  } finally {
+    globalThis.Set = RealSet;
+    globalThis.Map = RealMap;
+    Array.from = realFrom;
+    Array.prototype.map = realMap;
+  }
+  return counts;
 }
 
 describe("emitter tracking", () => {
@@ -110,36 +160,41 @@ describe("emitter tracking", () => {
     const store = placeScrapSignalObjects();
     const engine = fakeEngine();
     let reads = 0;
+    let poseRef: EmitterPose | undefined;
+    let poseRebuilt = 0;
     const tracker = createEmitterTracker({
-      sources: objectSources(store, () => { reads += 1; }),
+      sources: objectSources(store, (pose) => {
+        reads += 1;
+        if (poseRef === undefined) poseRef = pose;
+        else if (pose !== poseRef) poseRebuilt += 1;
+      }),
       sounds: () => OBJECT_SOUNDS,
       play: engine.playLoop,
     });
 
     tracker.step();
-    expect(tracker.count()).toBe(56 + 8 + 6 + 3 + 1);
-    expect(reads).toBe(549 + 74);
-    expect(engine.calls.filter((call) => call.kind === "play")).toHaveLength(74);
+    expect(tracker.count()).toBe(69);
+    expect(reads).toBe(560 + 69);
+    expect(engine.calls.filter((call) => call.kind === "play")).toHaveLength(69);
 
     const ids = store.ids();
     const callsAfterWarmup = engine.calls.length;
-    const readsAfterWarmup = reads;
-    // JIT the step loop before measuring so compiled code is not counted as per-frame allocation.
+    // JIT the step loop before counting so compiled code is not mistaken for per-frame work.
     for (let frame = 0; frame < 600; frame += 1) tracker.step();
-    const readsAfterJit = reads;
-    const before = heapUsed();
+    const readsAfterWarmup = reads;
 
     const FRAMES = 600;
-    for (let frame = 0; frame < FRAMES; frame += 1) tracker.step();
+    const allocated = countAllocations(() => {
+      for (let frame = 0; frame < FRAMES; frame += 1) tracker.step();
+    });
 
-    const allocated = process.memoryUsage().heapUsed - before;
-    // The removed rebuild allocated a Set plus a mapped object per placed prop per frame (~240 KB here).
-    expect(allocated).toBeLessThan(24 * 1024);
-    expect(reads - readsAfterJit).toBe(74 * FRAMES);
-    expect(readsAfterJit - readsAfterWarmup).toBe(74 * 600);
+    // The removed rebuild built a Set plus a mapped object per placed prop every frame.
+    expect(allocated).toEqual({ sets: 0, maps: 0, froms: 0, mappedArrays: 0 });
+    expect(reads - readsAfterWarmup).toBe(69 * FRAMES);
+    expect(poseRebuilt).toBe(0);
     expect(engine.calls.length).toBe(callsAfterWarmup);
     expect(store.ids()).toBe(ids);
-    expect(tracker.count()).toBe(74);
+    expect(tracker.count()).toBe(69);
   });
 
   test("a moved emitter updates its loop position and pan without restarting the sound", () => {
@@ -158,7 +213,7 @@ describe("emitter tracking", () => {
 
     const moves = engine.calls.filter((call) => call.kind === "move");
     expect(moves).toEqual([{ kind: "move", voice: lamp.voice, sound: "lamp_buzz", x: 12, y: 4, z: -9 }]);
-    expect(engine.calls.filter((call) => call.kind === "play")).toHaveLength(74);
+    expect(engine.calls.filter((call) => call.kind === "play")).toHaveLength(69);
     expect(engine.calls.filter((call) => call.kind === "stop")).toHaveLength(0);
 
     tracker.step();
@@ -178,15 +233,13 @@ describe("emitter tracking", () => {
     store.place("street_lamp", 3, 0, 3, { instanceId: "street_lamp_new" });
     store.place("cover_crate", 4, 0, 4, { instanceId: "crate_new" });
     tracker.step();
-    expect(tracker.count()).toBe(75);
-    expect(engine.calls.filter((call) => call.kind === "play")).toHaveLength(75);
+    expect(tracker.count()).toBe(70);
+    expect(engine.calls.filter((call) => call.kind === "play")).toHaveLength(70);
 
-    const removed = engine.calls.filter((call) => call.kind === "play").length;
     store.remove("street_lamp_0");
     tracker.step();
-    expect(tracker.count()).toBe(74);
+    expect(tracker.count()).toBe(69);
     expect(engine.calls.filter((call) => call.kind === "stop")).toHaveLength(1);
-    expect(removed).toBe(75);
   });
 
   test("entity emitters follow pose writes and retune when their sounding name changes", () => {
@@ -239,14 +292,14 @@ describe("emitter tracking", () => {
       play: engine.playLoop,
     });
     tracker.step();
-    expect(tracker.count()).toBe(74);
+    expect(tracker.count()).toBe(69);
 
     sounds = undefined;
     tracker.step();
     expect(tracker.count()).toBe(0);
-    expect(engine.calls.filter((call) => call.kind === "stop")).toHaveLength(74);
+    expect(engine.calls.filter((call) => call.kind === "stop")).toHaveLength(69);
 
     tracker.step();
-    expect(engine.calls.filter((call) => call.kind === "play")).toHaveLength(74);
+    expect(engine.calls.filter((call) => call.kind === "play")).toHaveLength(69);
   });
 });

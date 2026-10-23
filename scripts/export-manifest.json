@@ -885,6 +885,7 @@
     "./audio/audioWire",
     "./audio/busMix",
     "./audio/captions",
+    "./audio/emitterTracking",
     "./audio/eventFeedback",
     "./audio/gestureResume",
     "./audio/hapticsRoute",
