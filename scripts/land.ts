@@ -20,9 +20,15 @@
 // force (#2120). Land force-pushes with a lease on that branch, and only after
 // its own push in this run succeeded — a branch it did not push is refused.
 //
-// Landings are serialised. Every landing rebases, pushes and merges against the
-// same base, and each open PR spends sixteen of the account's twenty job slots,
-// so a second landing that starts at the same moment only makes both slower.
+// The lock covers only the moments two landings touch the same thing: the push,
+// rebase and PR for a branch and a base, and the merge into that base. The CI
+// watch is most of a landing's wall time and touches nothing shared, so it runs
+// with the lock free: two landings watch their checks at the same time and
+// queue for seconds around each other's pushes and merges. When the base moved
+// between a push and its merge, land releases, rebases and watches again, at
+// most MERGE_ATTEMPTS times. Every wait, and the work either side of it, is
+// printed, so throughput is measured rather than guessed.
+//
 // The lock is one file in the repo's git directory: every worktree of the repo
 // shares it (so lanes queue with each other, not just with themselves), and it
 // cannot show up in `git status` to trip land's own dirty-tree check.
@@ -43,6 +49,9 @@ const CHECKS_APPEAR_TIMEOUT_MS = 5 * 60_000;
 const WATCH_TIMEOUT_MS = 25 * 60_000;
 const MERGED_TIMEOUT_MS = 20 * 60_000;
 const POLL_INTERVAL_MS = 15_000;
+
+/** How many times one landing rebases and re-watches after the base moves under its merge. */
+export const MERGE_ATTEMPTS = 3;
 
 export interface LandArgs {
   title?: string;
@@ -198,6 +207,49 @@ function sleep(ms: number): void {
   Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
 }
 
+/** `42s`, `2m30s`, `1h05m`: how long a landing, or a wait, took. */
+export function duration(ms: number): string {
+  if (ms <= 0) return "0s";
+  if (ms < 1000) return "<1s";
+  const total = Math.round(ms / 1000);
+  const hours = Math.floor(total / 3600);
+  const minutes = Math.floor((total % 3600) / 60);
+  const seconds = total % 60;
+  if (hours > 0) return `${hours}h${String(minutes).padStart(2, "0")}m`;
+  if (minutes > 0) return `${minutes}m${String(seconds).padStart(2, "0")}s`;
+  return `${seconds}s`;
+}
+
+/** One queue behind another landing's lock, kept so a landing can report what it actually lost. */
+export interface LockWait {
+  /** The branch of the landing this one queued behind. */
+  holder: string;
+  waitedMs: number;
+}
+
+export function totalWait(waits: readonly LockWait[]): number {
+  return waits.reduce((sum, wait) => sum + wait.waitedMs, 0);
+}
+
+/**
+ * The line that makes a landing's throughput measurable: wall time split into the work it did and
+ * the time it lost queueing, since only the second is contention rather than the branch's own cost.
+ */
+export function formatTiming(elapsedMs: number, waits: readonly LockWait[]): string {
+  const waited = totalWait(waits);
+  const worked = Math.max(0, elapsedMs - waited);
+  const longest = waits.reduce<LockWait | null>((best, wait) => (best === null || wait.waitedMs > best.waitedMs ? wait : best), null);
+  let queued = "waited 0s for the lock";
+  if (longest !== null) {
+    const who =
+      waits.length === 1
+        ? `held by ${longest.holder}`
+        : `${waits.length} waits, longest ${duration(longest.waitedMs)} held by ${longest.holder}`;
+    queued = `waited ${duration(waited)} for the lock (${who})`;
+  }
+  return `worked ${duration(worked)}, ${queued}`;
+}
+
 export interface LandLock {
   branch: string;
   pid: number;
@@ -206,8 +258,11 @@ export interface LandLock {
 
 /** A lock nobody refreshed for this long is broken even if its pid still answers. */
 export const LOCK_STALE_MS = 30 * 60_000;
-/** How often a waiting landing looks again, and how long an unreadable lock is given to appear. */
+/** How often a waiting landing looks again once it has been queueing a while. */
 export const LOCK_POLL_MS = 500;
+/** The first seconds of a wait poll this fast, so a short hold costs a short wait, not a whole poll. */
+export const LOCK_POLL_FAST_MS = 50;
+export const LOCK_FAST_WINDOW_MS = 5_000;
 const LOCK_UNREADABLE_GRACE_MS = 5_000;
 
 /** The one lock file for a repo, in its git directory so every worktree shares it. */
@@ -260,11 +315,17 @@ export interface LockOptions {
   log?: (line: string) => void;
 }
 
+export interface HeldLock {
+  release: () => void;
+  /** What this acquisition queued behind, or null when it took the lock straight away. */
+  wait: LockWait | null;
+}
+
 /**
- * Wait for the repo's landing lock, then hold it until the returned release runs.
+ * Wait for the repo's landing lock, then hold it until `release` runs.
  * A holder that died, or that has held the lock past 30 minutes, is broken with a warning.
  */
-export function acquireLock(options: LockOptions): () => void {
+export function acquireLock(options: LockOptions): HeldLock {
   const { path, branch } = options;
   const pid = options.pid ?? process.pid;
   const now = options.now ?? Date.now;
@@ -274,6 +335,7 @@ export function acquireLock(options: LockOptions): () => void {
   const startedAt = now();
   let announced: string | null = null;
   let waitedSince: number | null = null;
+  let waitedOn: string | null = null;
 
   const release = (): void => {
     const held = readLockFile(path);
@@ -287,8 +349,11 @@ export function acquireLock(options: LockOptions): () => void {
   for (;;) {
     try {
       writeFileSync(path, `${JSON.stringify({ branch, pid, startedAt })}\n`, { flag: "wx" });
-      if (waitedSince !== null) log(`lock acquired after waiting ${Math.round((now() - waitedSince) / 1000)}s`);
-      return release;
+      if (waitedSince === null) return { release, wait: null };
+      const waitedMs = now() - waitedSince;
+      const holder = waitedOn ?? "an unreadable lock";
+      log(`waited ${duration(waitedMs)} for the lock (held by ${holder})`);
+      return { release, wait: { holder, waitedMs } };
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
     }
@@ -304,6 +369,7 @@ export function acquireLock(options: LockOptions): () => void {
     }
 
     waitedSince ??= now();
+    waitedOn ??= held === null ? "an unreadable lock" : held.branch;
     const holder = held === null ? "an unreadable lock" : `${held.branch} (pid ${held.pid})`;
     const key = `${held?.pid ?? "unreadable"}:${held?.branch ?? ""}`;
     if (key !== announced) {
@@ -312,7 +378,7 @@ export function acquireLock(options: LockOptions): () => void {
     } else if (now() - waitedSince > LOCK_STALE_MS / 4 && now() - waitedSince < LOCK_STALE_MS / 4 + LOCK_POLL_MS) {
       log(`still waiting on ${holder}`);
     }
-    wait(LOCK_POLL_MS);
+    wait(now() - waitedSince < LOCK_FAST_WINDOW_MS ? LOCK_POLL_FAST_MS : LOCK_POLL_MS);
   }
 }
 
@@ -343,13 +409,17 @@ function breakStale(path: string, pid: number): void {
   rmSync(tombstone, { force: true });
 }
 
-/** Run `body` holding the repo's landing lock, and release it on every path out, thrown errors included. */
-export function landLocked(options: LockOptions, body: () => number): number {
-  const release = acquireLock(options);
+/**
+ * Run `body` holding the repo's landing lock, and release it on every path out, thrown errors
+ * included. The wait it cost is appended to `waits` so the landing can report it.
+ */
+export function landLocked<T>(options: LockOptions, body: () => T, waits?: LockWait[]): T {
+  const held = acquireLock(options);
+  if (waits !== undefined && held.wait !== null) waits.push(held.wait);
   try {
     return body();
   } finally {
-    release();
+    held.release();
   }
 }
 
@@ -457,8 +527,28 @@ function details(result: Run): string {
   return (result.stderr || result.stdout).trim();
 }
 
-function readChecks(number: number): { checks: GhCheck[]; error?: string } {
-  const result = gh(["pr", "checks", String(number), "--json", "name,state,bucket,link"]);
+function firstLine(text: string): string {
+  return text.split("\n").map((line) => line.trim()).find((line) => line.length > 0) ?? text.trim();
+}
+
+/** Any gh invocation in one run; the land test binds this to a scripted PR list. */
+export type Gh = (args: string[]) => Run;
+
+/** Everything a landing reaches outside itself, so the land test can drive the whole sequence. */
+export interface LandIo {
+  git: Git;
+  gh: Gh;
+  /** Runs `--verify`; true when the command passed. */
+  verify: (command: string) => boolean;
+  /** Blocks until the PR's checks settle. */
+  watch: (number: number) => void;
+  sleep: (ms: number) => void;
+  log: (line: string) => void;
+  error: (line: string) => void;
+}
+
+function readChecks(runGh: Gh, number: number): { checks: GhCheck[]; error?: string } {
+  const result = runGh(["pr", "checks", String(number), "--json", "name,state,bucket,link"]);
   if (result.status !== 0) {
     const text = details(result);
     if (/no checks reported/i.test(text)) return { checks: [] };
@@ -471,31 +561,27 @@ function readChecks(number: number): { checks: GhCheck[]; error?: string } {
   }
 }
 
-function waitForChecks(number: number): GhCheck[] | null {
+function waitForChecks(io: LandIo, number: number): GhCheck[] | null {
   const deadline = Date.now() + CHECKS_APPEAR_TIMEOUT_MS;
   while (Date.now() < deadline) {
-    const { checks, error } = readChecks(number);
+    const { checks, error } = readChecks(io.gh, number);
     if (error !== undefined) {
-      console.error(`land: ${error}`);
+      io.error(error);
       return null;
     }
     if (checks.length > 0) return checks;
-    sleep(POLL_INTERVAL_MS);
+    io.sleep(POLL_INTERVAL_MS);
   }
   return null;
 }
 
-function verify(command: string): boolean {
-  console.log(`land: verify ${command}`);
+function runVerify(command: string): boolean {
   const result =
     process.platform === "win32"
       ? spawnSync("cmd.exe", ["/d", "/s", "/c", command], { cwd: root, stdio: "inherit" })
       : spawnSync("bash", ["-lc", command], { cwd: root, stdio: "inherit" });
   return (result.status ?? 1) === 0;
 }
-
-/** Any gh invocation in one run; the land test binds this to a scripted PR list. */
-export type Gh = (args: string[]) => Run;
 
 export interface PrRef {
   number: number;
@@ -583,7 +669,7 @@ export function ensurePr(options: {
   return { number, url };
 }
 
-function reportChecks(result: "failed" | "timed out", checks: GhCheck[]): number {
+function reportChecks(io: LandIo, result: "failed" | "timed out", checks: GhCheck[]): number {
   const verdict = checkVerdict(checks);
   const blocking =
     verdict.failures.length > 0
@@ -591,63 +677,154 @@ function reportChecks(result: "failed" | "timed out", checks: GhCheck[]): number
       : checks
           .filter((check) => verdict.pending.includes(check.name))
           .map((check) => ({ name: check.name, url: check.link ?? "" }));
-  console.error(`land: checks ${result}`);
-  for (const line of formatFailures(blocking)) console.error(line);
+  io.error(`checks ${result}`);
+  for (const line of formatFailures(blocking)) io.error(line);
   return EXIT_CHECKS_FAILED;
 }
 
-function watchChecks(number: number): number {
-  const appeared = waitForChecks(number);
+function watchChecks(io: LandIo, number: number): number {
+  const appeared = waitForChecks(io, number);
   if (appeared === null) {
-    console.error("land: no checks appeared within 5 minutes");
+    io.error("no checks appeared within 5 minutes");
     return EXIT_CHECKS_FAILED;
   }
-  console.log(`land: watching ${appeared.length} check(s)`);
-  const watched = run("gh", ["pr", "checks", String(number), "--watch", "--interval", "20"], WATCH_TIMEOUT_MS);
-  const { checks } = readChecks(number);
+  io.log(`watching ${appeared.length} check(s)`);
+  io.watch(number);
+  const { checks } = readChecks(io.gh, number);
   const verdict = checkVerdict(checks);
-  if (verdict.failures.length > 0) return reportChecks("failed", checks);
-  if (watched.status !== 0 && verdict.pending.length > 0) return reportChecks("timed out", checks);
-  if (verdict.pending.length > 0) return reportChecks("timed out", checks);
-  console.log(`land: ${checks.length} check(s) green`);
+  if (verdict.failures.length > 0) return reportChecks(io, "failed", checks);
+  if (verdict.pending.length > 0) return reportChecks(io, "timed out", checks);
+  io.log(`${checks.length} check(s) green`);
   return EXIT_LANDED;
 }
 
-function merge(number: number): number {
-  const armed = gh(["pr", "merge", String(number), "--auto", "--merge"]);
-  if (armed.status !== 0) {
-    const { checks } = readChecks(number);
-    if (checkVerdict(checks).failures.length > 0) return reportChecks("failed", checks);
-    console.log(`land: auto-merge unavailable (${details(armed)}); merging directly`);
-    const direct = gh(["pr", "merge", String(number), "--merge"]);
-    if (direct.status !== 0) {
-      console.error(`land: could not merge: ${details(direct)}`);
-      return EXIT_COULD_NOT_MERGE;
-    }
-  }
-  return waitForMerged(number);
+/**
+ * What GitHub says when a merge is refused because the base moved under the PR, so land rebases
+ * instead of reporting a conflict the branch may not have. A real conflict also lands here: the
+ * rebase is what tells the two apart.
+ */
+const BASE_MOVED =
+  /base branch was modified|base branch requires that the pull request is up to date|not up to date|out of date|branch is behind|merge commit cannot be cleanly created/i;
+
+export function baseMoved(detail: string): boolean {
+  return BASE_MOVED.test(detail);
 }
 
-function waitForMerged(number: number): number {
+export type MergeRequest =
+  | { kind: "requested" }
+  | { kind: "retry"; why: string }
+  | { kind: "failed"; code: number };
+
+/** Ask GitHub to merge a green PR. A refusal that names a moved base is the caller's to rebase. */
+function requestMerge(io: LandIo, number: number): MergeRequest {
+  const armed = io.gh(["pr", "merge", String(number), "--auto", "--merge"]);
+  if (armed.status !== 0) {
+    const { checks } = readChecks(io.gh, number);
+    if (checkVerdict(checks).failures.length > 0) return { kind: "failed", code: reportChecks(io, "failed", checks) };
+    const armedWhy = details(armed);
+    if (baseMoved(armedWhy)) return { kind: "retry", why: armedWhy };
+    io.log(`auto-merge unavailable (${firstLine(armedWhy)}); merging directly`);
+    const direct = io.gh(["pr", "merge", String(number), "--merge"]);
+    if (direct.status !== 0) {
+      const why = details(direct);
+      if (baseMoved(why)) return { kind: "retry", why };
+      io.error(`could not merge: ${why}`);
+      return { kind: "failed", code: EXIT_COULD_NOT_MERGE };
+    }
+  }
+  return { kind: "requested" };
+}
+
+function waitForMerged(io: LandIo, number: number): number {
   const deadline = Date.now() + MERGED_TIMEOUT_MS;
   while (Date.now() < deadline) {
-    const view = gh(["pr", "view", String(number), "--json", "state,url"]);
+    const view = io.gh(["pr", "view", String(number), "--json", "state,url"]);
     if (view.status !== 0) {
-      console.error(`land: gh pr view failed: ${details(view)}`);
+      io.error(`gh pr view failed: ${details(view)}`);
       return EXIT_COULD_NOT_MERGE;
     }
     const pr = JSON.parse(view.stdout) as { state: string; url: string };
     if (pr.state === "MERGED") {
-      console.log(`landed ${pr.url}`);
+      io.log(`landed ${pr.url}`);
       return EXIT_LANDED;
     }
     if (pr.state === "CLOSED") {
-      console.error(`land: PR #${number} closed without merging`);
+      io.error(`PR #${number} closed without merging`);
       return EXIT_COULD_NOT_MERGE;
     }
-    sleep(POLL_INTERVAL_MS);
+    io.sleep(POLL_INTERVAL_MS);
   }
-  console.error(`land: PR #${number} did not reach MERGED within ${MERGED_TIMEOUT_MS / 60_000} minutes`);
+  io.error(`PR #${number} did not reach MERGED within ${MERGED_TIMEOUT_MS / 60_000} minutes`);
+  return EXIT_COULD_NOT_MERGE;
+}
+
+/** Push, rebase and open or reuse the PR: the part that needs the lock, and nothing after it. */
+function prepare(args: LandArgs, branch: string, io: LandIo): PrRef | number {
+  const sync = syncOntoBase({ branch, base: args.base, git: io.git });
+  if (sync.refusal !== null) {
+    io.error(sync.refusal);
+    return EXIT_COULD_NOT_MERGE;
+  }
+  io.log(`pushed ${branch}${sync.rebased ? ` and rebased it onto origin/${args.base}` : ""}`);
+
+  const summary = io.git(["log", "-1", "--format=%s"]).stdout.trim() || branch;
+  const pr = ensurePr({ args, branch, summary, body: landBody({ args, branch, summary }), gh: io.gh, log: io.log });
+  return pr ?? EXIT_COULD_NOT_MERGE;
+}
+
+export interface LandRun {
+  args: LandArgs;
+  branch: string;
+  /** The repo's landing lock file. */
+  lock: string;
+  io: LandIo;
+  /** Waits on the lock are appended here, so the caller can print what the landing spent queueing. */
+  waits?: LockWait[];
+}
+
+/**
+ * Land `branch`, holding the repo's lock only around the shared moments: the push and PR, and the
+ * merge. The CI watch and --verify run with the lock free, so concurrent landings overlap there.
+ */
+export function landBranch(run: LandRun): number {
+  const waits = run.waits ?? [];
+  const startedAt = Date.now();
+  try {
+    return landAttempts(run, waits);
+  } finally {
+    run.io.log(formatTiming(Date.now() - startedAt, waits));
+  }
+}
+
+function landAttempts(run: LandRun, waits: LockWait[]): number {
+  const { args, branch, io } = run;
+  for (let attempt = 1; attempt <= MERGE_ATTEMPTS; attempt += 1) {
+    const prepared = landLocked({ path: run.lock, branch, log: io.log }, () => prepare(args, branch, io), waits);
+    if (typeof prepared === "number") return prepared;
+
+    if (args.verify !== undefined) {
+      io.log(`verify ${args.verify}`);
+      if (!io.verify(args.verify)) {
+        io.error(`verify failed: ${args.verify}`);
+        return EXIT_VERIFY_FAILED;
+      }
+    }
+
+    const watched = watchChecks(io, prepared.number);
+    if (watched !== EXIT_LANDED) return watched;
+
+    const merged = landLocked({ path: run.lock, branch, log: io.log }, () => requestMerge(io, prepared.number), waits);
+    if (merged.kind === "requested") return waitForMerged(io, prepared.number);
+    if (merged.kind === "failed") return merged.code;
+    if (attempt === MERGE_ATTEMPTS) {
+      io.error(`could not merge after ${MERGE_ATTEMPTS} attempts: ${firstLine(merged.why)}`);
+      return EXIT_COULD_NOT_MERGE;
+    }
+    io.log(
+      `merge refused because origin/${args.base} moved (${firstLine(merged.why)}); ` +
+        `rebasing and watching again (attempt ${attempt + 1} of ${MERGE_ATTEMPTS})`,
+    );
+  }
   return EXIT_COULD_NOT_MERGE;
 }
 
@@ -666,32 +843,23 @@ function main(): void {
     process.exit(EXIT_COULD_NOT_MERGE);
   }
 
-  const code = landLocked({ path: lockPath(gitCommonDir(git)), branch }, () => land(args, branch));
+  const code = landBranch({
+    args,
+    branch,
+    lock: lockPath(gitCommonDir(git)),
+    io: {
+      git: (gitArgs) => git(gitArgs, 120_000),
+      gh,
+      verify: runVerify,
+      watch: (number) => {
+        run("gh", ["pr", "checks", String(number), "--watch", "--interval", "20"], WATCH_TIMEOUT_MS);
+      },
+      sleep,
+      log: (line) => console.log(`land: ${line}`),
+      error: (line) => console.error(`land: ${line}`),
+    },
+  });
   process.exit(code);
-}
-
-/** Everything after the lock is held: push, rebase, PR, verify, checks, merge. */
-function land(args: LandArgs, branch: string): number {
-  const sync = syncOntoBase({ branch, base: args.base, git: (gitArgs) => git(gitArgs, 120_000) });
-  if (sync.refusal !== null) {
-    console.error(`land: ${sync.refusal}`);
-    return EXIT_COULD_NOT_MERGE;
-  }
-  console.log(`land: pushed ${branch}${sync.rebased ? ` and rebased it onto origin/${args.base}` : ""}`);
-
-  const summary = git(["log", "-1", "--format=%s"]).stdout.trim() || branch;
-  const pr = ensurePr({ args, branch, summary, body: landBody({ args, branch, summary }), gh });
-  if (pr === null) return EXIT_COULD_NOT_MERGE;
-
-  if (args.verify !== undefined && !verify(args.verify)) {
-    console.error(`land: verify failed: ${args.verify}`);
-    return EXIT_VERIFY_FAILED;
-  }
-
-  const watched = watchChecks(pr.number);
-  if (watched !== EXIT_LANDED) return watched;
-
-  return merge(pr.number);
 }
 
 if (import.meta.main) main();
