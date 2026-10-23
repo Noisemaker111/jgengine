@@ -1,0 +1,62 @@
+name: timing-a118 (throwaway)
+on:
+  workflow_dispatch:
+jobs:
+  timing:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.2
+      - uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: bun-${{ runner.os }}-
+      - run: bun install --frozen-lockfile
+      - run: bun run build
+      - run: bun run build:registry
+      - run: bun run games:clone
+        env:
+          GAMES_CLONE_TOKEN: ${{ secrets.GAMES_CLONE_TOKEN }}
+      - name: per-stage timings
+        run: |
+          t() { s=$(date +%s%N); "$@" >/dev/null 2>&1; c=$?; e=$(date +%s%N); echo "$(( (e-s)/1000000 ))ms rc=$c  $*"; }
+          t bun run check-artifacts
+          t bun run check-release-set
+          t bun run check-skills
+          t bun run check-skill-api
+          t bun run check-orphan-ratchet
+          t bun run check-stateful-ratchet
+          t bun run check-module-globals
+          t bun run check-game-determinism
+          t bun run check-game-front-end
+          t bun run check-game-feel
+          t bun run check-art-direction
+          t bun run check-capabilities
+          t bun run check-game-shape
+          t bun run check-content-gate
+          t bun run check-asset-availability
+          t bun run check-pack-texture-layout
+          t bun run check-recipes
+          t bun run check-doc-symbols
+          t bun run check-hud-tokens
+          t bun run check-street-rule-parity
+          t bun run check-source-paths
+          t bun run check-test-spawn-timeouts
+          t bun run check:fixture-location
+          t bun scripts/check-types-all.ts
+          echo "--- nproc: $(nproc)"
+          t bun run check-skill-api
+          t bun run check-capabilities
+          t bun run check-doc-symbols
+      - name: per-package typecheck
+        run: |
+          for dir in $(node -e 'const {readdirSync,existsSync,readFileSync}=require("fs");const {join}=require("path");const out=[];for(const root of ["packages","apps","examples"]){if(!existsSync(root))continue;for(const e of readdirSync(root,{withFileTypes:true})){if(!e.isDirectory())continue;const p=join(root,e.name,"package.json");if(!existsSync(p))continue;const s=JSON.parse(readFileSync(p,"utf8")).scripts||{};if(typeof s["check-types"]==="string")out.push(join(root,e.name));}}if(existsSync("registry/package.json"))out.push("registry");console.log(out.join(" "))'); do
+            s=$(date +%s%N)
+            bun run --cwd="$dir" check-types >/dev/null 2>&1; c=$?
+            e=$(date +%s%N)
+            echo "$(( (e-s)/1000000 ))ms rc=$c $dir"
+          done
