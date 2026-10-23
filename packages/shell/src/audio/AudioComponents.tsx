@@ -10,9 +10,11 @@ export function AudioListener({ engine, anchor = "camera" }: { engine: AudioEngi
   const camera = useThree((state) => state.camera);
   const ctx = useGameContext();
   const trackRef = useRef<ListenerVelocityTrack>(createListenerVelocityTrack());
+  const scratchRef = useRef({ direction: new Vector3(), up: new Vector3(), quaternion: new Quaternion() });
   useFrame((_, dt) => {
-    const direction = camera.getWorldDirection(new Vector3());
-    const up = camera.up.clone().applyQuaternion(camera.getWorldQuaternion(new Quaternion()));
+    const { direction, up, quaternion } = scratchRef.current;
+    camera.getWorldDirection(direction);
+    up.copy(camera.up).applyQuaternion(camera.getWorldQuaternion(quaternion));
     const eye = { x: camera.position.x, y: camera.position.y, z: camera.position.z };
     const position = anchor === "ground" ? groundFocusListener(eye, direction, ctx.world.groundHeightAt(eye.x, eye.z)) : eye;
     engine.setListenerPose({

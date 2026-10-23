@@ -8,20 +8,38 @@ import { attachAudioEventWire, type AudioEventBus } from "./audioWire";
 
 type Param = {
   value: number;
+  /** How many times the `value` setter was written, so a test can prove a no-op frame writes nothing. */
+  writes: number;
   target: number | null;
+  /** How many `setTargetAtTime` calls were scheduled, so a ramp proves it was scheduled once. */
+  targetCalls: number;
+  /** Time constant of the last scheduled ramp, so a fade keeps its stated time. */
+  tc: number | null;
   setValueAtTime: () => void;
-  setTargetAtTime: (value: number) => void;
+  setTargetAtTime: (value: number, time?: number, tc?: number) => void;
   linearRampToValueAtTime: () => void;
   exponentialRampToValueAtTime: () => void;
 };
 
 function param(value = 0): Param {
+  let current = value;
   const result: Param = {
-    value,
+    get value() {
+      return current;
+    },
+    set value(next: number) {
+      result.writes += 1;
+      current = next;
+    },
+    writes: 0,
     target: null,
+    targetCalls: 0,
+    tc: null,
     setValueAtTime: () => undefined,
-    setTargetAtTime: (next) => {
+    setTargetAtTime: (next, _time, tc) => {
+      result.targetCalls += 1;
       result.target = next;
+      result.tc = tc ?? null;
     },
     linearRampToValueAtTime: () => undefined,
     exponentialRampToValueAtTime: () => undefined,
@@ -488,6 +506,102 @@ describe("bounded audio graph lifecycle", () => {
     expect(first.stopCount).toBe(2);
     expect(first.disconnectCount).toBe(1);
     expect(panner.disconnectCount).toBe(1);
+    engine.dispose();
+  });
+});
+
+const stillPose = {
+  position: { x: 2, y: 3, z: 4 },
+  forward: { x: 0, y: 0, z: -1 },
+  up: { x: 0, y: 1, z: 0 },
+  velocity: { x: 0, y: 0, z: 0 },
+};
+
+async function spatialLoopHarness(doppler?: number) {
+  const mock = installGraph();
+  const engine = createAudioEngine({ sounds: {
+    engine: sample("engine", { loop: true, spatial: { panning: "equalpower" }, ...(doppler === undefined ? {} : { doppler }) }),
+  } });
+  engine.setListenerPose(stillPose);
+  const handle = engine.playLoop("engine", { x: 0, y: 0, z: -6 })!;
+  await flush();
+  const panner = mock.nodes.find((node) => node.kind === "panner") as any;
+  const source = mock.nodes.find((node) => node.kind === "bufferSource") as any;
+  const gainNodes = mock.nodes.filter((node) => node.kind === "gain") as any[];
+  const writes = () => {
+    const listener = mock.listener;
+    const counted = [
+      listener.positionX, listener.positionY, listener.positionZ,
+      listener.forwardX, listener.forwardY, listener.forwardZ,
+      listener.upX, listener.upY, listener.upZ,
+      panner.positionX, panner.positionY, panner.positionZ,
+      ...gainNodes.map((node) => node.gain),
+    ];
+    return counted.reduce((sum, entry) => sum + entry.writes, 0);
+  };
+  return { mock, engine, handle, panner, source, writes };
+}
+
+describe("audio params are written only when they change (#2174)", () => {
+  test("a still listener and a still spatial loop write no AudioParam on the next frame", async () => {
+    const { engine, handle, writes } = await spatialLoopHarness();
+    const before = writes();
+    engine.setListenerPose(stillPose);
+    engine.setListenerPose(stillPose);
+    handle.setPosition({ x: 0, y: 0, z: -6 });
+    expect(writes()).toBe(before);
+    engine.dispose();
+  });
+
+  test("a moved listener writes only the components that moved", async () => {
+    const { mock, engine, writes } = await spatialLoopHarness();
+    const before = mock.listener.positionX.writes;
+    engine.setListenerPose({ ...stillPose, position: { x: 2, y: 3, z: 5 } });
+    expect(mock.listener.positionX.writes).toBe(before);
+    expect(mock.listener.positionZ.writes).toBeGreaterThan(0);
+    expect(writes()).toBeGreaterThan(0);
+    engine.dispose();
+  });
+
+  test("a moved emitter writes its panner once, not once per frame", async () => {
+    const { engine, handle, panner } = await spatialLoopHarness();
+    handle.setPosition({ x: 1, y: 0, z: -6 });
+    const afterMove = panner.positionX.writes;
+    handle.setPosition({ x: 1, y: 0, z: -6 });
+    engine.setListenerPose(stillPose);
+    expect(panner.positionX.writes).toBe(afterMove);
+    handle.setPosition({ x: 2, y: 0, z: -6 });
+    expect(panner.positionX.writes).toBe(afterMove + 1);
+    engine.dispose();
+  });
+});
+
+describe("audio ramps are scheduled once (#2174)", () => {
+  test("repeating a gain target does not reschedule its ramp", async () => {
+    const { mock, engine, handle } = await spatialLoopHarness();
+    handle.setGain(0.4);
+    const userGain = mock.nodes.find((node) => node.kind === "gain" && node.gain.target !== null);
+    expect(userGain).toBeDefined();
+    expect(userGain.gain.targetCalls).toBe(1);
+    expect(userGain.gain.tc).toBeCloseTo(0.02, 6);
+    handle.setGain(0.4);
+    handle.setGain(0.4);
+    expect(userGain.gain.targetCalls).toBe(1);
+    handle.setGain(0.2);
+    expect(userGain.gain.targetCalls).toBe(2);
+    expect(userGain.gain.target).toBe(0.2);
+    engine.dispose();
+  });
+
+  test("repeating a rate target does not reschedule a doppler loop's ramp", async () => {
+    const { engine, handle, source } = await spatialLoopHarness(1);
+    handle.setRate(2);
+    const scheduled = source.playbackRate.targetCalls;
+    handle.setRate(2);
+    engine.setListenerPose(stillPose);
+    expect(source.playbackRate.targetCalls).toBe(scheduled);
+    engine.setListenerPose({ ...stillPose, velocity: { x: 0, y: 0, z: 20 } });
+    expect(source.playbackRate.targetCalls).toBeGreaterThan(scheduled);
     engine.dispose();
   });
 });
