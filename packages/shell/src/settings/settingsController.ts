@@ -16,13 +16,13 @@ import {
   type SettingCategory,
   type SettingCategoryDef,
   type SettingOption,
+  type SettingsStore,
   type SettingValue,
 } from "@jgengine/core/settings/settingsModel";
 import {
   ANISOTROPY_OPTIONS,
   applyGraphicsQuality,
   GRAPHICS_POST_STAGE_LABELS,
-  GRAPHICS_POST_STAGES,
   graphicsPostStageSettingId,
   readGraphicsSettings,
   RENDER_SCALE_MAX,
@@ -32,7 +32,9 @@ import {
 } from "@jgengine/core/settings/graphicsSettings";
 import { FRAME_RATE_LIMIT_DISPLAY, FRAME_RATE_LIMIT_OPTIONS } from "@jgengine/core/settings/frameRateLimit";
 import { accessibilitySettingRows } from "@jgengine/core/settings/accessibilitySettings";
+import type { PostProcessingConfig } from "@jgengine/core/render/postProcessing";
 import { busMuteSettingId, MASTER_MUTE_SETTING_ID } from "../audio/busMix";
+import { availablePostfxStages } from "../postfx/PostProcessing";
 import {
   DEFAULT_TOUCH_JOYSTICK_VARIANT,
   TOUCH_JOYSTICK_VARIANT_OPTIONS,
@@ -71,6 +73,8 @@ export interface SettingsControllerInput {
   fovEnabled: boolean;
   /** The game's per-tier profile overrides (`defineGame({ graphics })`), so tier defaults match what renders. */
   graphics?: GraphicsProfileOverrides;
+  /** The post chain this game actually runs, so a stage row never outlives its pass. */
+  postProcessing?: PostProcessingConfig;
   hideBindings: readonly string[];
   /** Show the touch-controls skin selector in Controls (touch device with a dock). */
   touchStyle: boolean;
@@ -148,77 +152,8 @@ export function useSettingsCategories(config: SettingsControllerInput): Settings
     ...extrasFor("sound"),
   ];
 
-  const graphics = readGraphicsSettings(store, config.graphics);
   const graphicsRows: SettingsRow[] = [
-    {
-      id: SETTING_IDS.graphicsQuality,
-      label: "Quality",
-      kind: "select",
-      value: graphics.quality,
-      options: GRAPHICS_QUALITY_OPTIONS,
-      set: (value) => applyGraphicsQuality(store, String(value) as GraphicsQuality, config.graphics),
-    },
-    {
-      id: SETTING_IDS.graphicsRenderScale,
-      label: "Render scale",
-      kind: "slider",
-      value: graphics.profile.renderScale,
-      min: RENDER_SCALE_MIN,
-      max: RENDER_SCALE_MAX,
-      step: RENDER_SCALE_STEP,
-      format: percent,
-      set: (value) => store.set(SETTING_IDS.graphicsRenderScale, value),
-    },
-    {
-      id: SETTING_IDS.graphicsFrameRateLimit,
-      label: "Frame rate limit",
-      kind: "select",
-      value: store.get(SETTING_IDS.graphicsFrameRateLimit, FRAME_RATE_LIMIT_DISPLAY),
-      options: FRAME_RATE_LIMIT_OPTIONS,
-      set: (value) => store.set(SETTING_IDS.graphicsFrameRateLimit, String(value)),
-    },
-    {
-      id: SETTING_IDS.graphicsAnisotropy,
-      label: "Texture filtering",
-      kind: "select",
-      value: String(graphics.profile.anisotropy),
-      options: ANISOTROPY_OPTIONS,
-      set: (value) => store.set(SETTING_IDS.graphicsAnisotropy, String(value)),
-    },
-    {
-      id: SETTING_IDS.graphicsShadows,
-      label: "Shadows",
-      kind: "toggle",
-      value: store.get(SETTING_IDS.graphicsShadows, DEFAULT_GRAPHICS_SHADOWS),
-      set: (value) => store.set(SETTING_IDS.graphicsShadows, value),
-    },
-    ...GRAPHICS_POST_STAGES.map(
-      (stage): SettingsRow => ({
-        id: graphicsPostStageSettingId(stage),
-        label: GRAPHICS_POST_STAGE_LABELS[stage],
-        kind: "toggle",
-        value: graphics.profile.postStages[stage],
-        set: (value) => store.set(graphicsPostStageSettingId(stage), value),
-      }),
-    ),
-    {
-      id: SETTING_IDS.graphicsUiScale,
-      label: "UI scale",
-      kind: "slider",
-      value: store.get(SETTING_IDS.graphicsUiScale, DEFAULT_UI_SCALE),
-      min: UI_SCALE_MIN,
-      max: UI_SCALE_MAX,
-      step: 0.05,
-      format: percent,
-      set: (value) => store.set(SETTING_IDS.graphicsUiScale, value),
-    },
-    {
-      id: SETTING_IDS.graphicsShowFps,
-      label: "Show FPS",
-      kind: "toggle",
-      value: store.get(SETTING_IDS.graphicsShowFps, false),
-      set: (value) => store.set(SETTING_IDS.graphicsShowFps, value),
-    },
+    ...graphicsSettingRows(store, config.graphics, config.postProcessing),
     ...extrasFor("graphics"),
   ];
 
@@ -312,6 +247,91 @@ export function useSettingsCategories(config: SettingsControllerInput): Settings
 
   views.sort((a, b) => (declaredOrder.get(a.id) ?? indexOrder(order, a.id)) - (declaredOrder.get(b.id) ?? indexOrder(order, b.id)));
   return views;
+}
+
+/**
+ * The built-in Graphics rows: tier, scale, filtering, shadows, one toggle per postfx stage this
+ * game's chain can build, then UI scale and FPS.
+ * @internal
+ */
+export function graphicsSettingRows(
+  store: SettingsStore,
+  overrides: GraphicsProfileOverrides | undefined,
+  postProcessing: PostProcessingConfig | undefined,
+): SettingsRow[] {
+  const graphics = readGraphicsSettings(store, overrides);
+  const stages = postProcessing === undefined || postProcessing.enabled === false ? [] : availablePostfxStages(postProcessing);
+  return [
+    {
+      id: SETTING_IDS.graphicsQuality,
+      label: "Quality",
+      kind: "select",
+      value: graphics.quality,
+      options: GRAPHICS_QUALITY_OPTIONS,
+      set: (value) => applyGraphicsQuality(store, String(value) as GraphicsQuality, overrides),
+    },
+    {
+      id: SETTING_IDS.graphicsRenderScale,
+      label: "Render scale",
+      kind: "slider",
+      value: graphics.profile.renderScale,
+      min: RENDER_SCALE_MIN,
+      max: RENDER_SCALE_MAX,
+      step: RENDER_SCALE_STEP,
+      format: percent,
+      set: (value) => store.set(SETTING_IDS.graphicsRenderScale, value),
+    },
+    {
+      id: SETTING_IDS.graphicsFrameRateLimit,
+      label: "Frame rate limit",
+      kind: "select",
+      value: store.get(SETTING_IDS.graphicsFrameRateLimit, FRAME_RATE_LIMIT_DISPLAY),
+      options: FRAME_RATE_LIMIT_OPTIONS,
+      set: (value) => store.set(SETTING_IDS.graphicsFrameRateLimit, String(value)),
+    },
+    {
+      id: SETTING_IDS.graphicsAnisotropy,
+      label: "Texture filtering",
+      kind: "select",
+      value: String(graphics.profile.anisotropy),
+      options: ANISOTROPY_OPTIONS,
+      set: (value) => store.set(SETTING_IDS.graphicsAnisotropy, String(value)),
+    },
+    {
+      id: SETTING_IDS.graphicsShadows,
+      label: "Shadows",
+      kind: "toggle",
+      value: store.get(SETTING_IDS.graphicsShadows, DEFAULT_GRAPHICS_SHADOWS),
+      set: (value) => store.set(SETTING_IDS.graphicsShadows, value),
+    },
+    ...stages.map(
+      (stage): SettingsRow => ({
+        id: graphicsPostStageSettingId(stage),
+        label: GRAPHICS_POST_STAGE_LABELS[stage],
+        kind: "toggle",
+        value: graphics.profile.postStages[stage],
+        set: (value) => store.set(graphicsPostStageSettingId(stage), value),
+      }),
+    ),
+    {
+      id: SETTING_IDS.graphicsUiScale,
+      label: "UI scale",
+      kind: "slider",
+      value: store.get(SETTING_IDS.graphicsUiScale, DEFAULT_UI_SCALE),
+      min: UI_SCALE_MIN,
+      max: UI_SCALE_MAX,
+      step: 0.05,
+      format: percent,
+      set: (value) => store.set(SETTING_IDS.graphicsUiScale, value),
+    },
+    {
+      id: SETTING_IDS.graphicsShowFps,
+      label: "Show FPS",
+      kind: "toggle",
+      value: store.get(SETTING_IDS.graphicsShowFps, false),
+      set: (value) => store.set(SETTING_IDS.graphicsShowFps, value),
+    },
+  ];
 }
 
 function indexOrder(order: readonly SettingCategory[], id: SettingCategory): number {

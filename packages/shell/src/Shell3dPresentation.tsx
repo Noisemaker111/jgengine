@@ -546,6 +546,7 @@ export function Shell3dPresentation({
           hide={hideCategories}
           fovEnabled={fovControlEnabled}
           graphics={playable.graphics}
+          postProcessing={resolvedLook.postProcessing}
           hideBindings={settingsConfig.hideBindings ?? []}
           touchStyle={
             coarsePointer &&

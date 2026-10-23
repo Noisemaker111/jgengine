@@ -3,7 +3,7 @@ import * as THREE from "three";
 import { EffectComposer } from "three-stdlib";
 import { BokehPass } from "three/examples/jsm/postprocessing/BokehPass.js";
 import { DEFAULT_AO } from "@jgengine/core/render/postProcessing";
-import { buildPostGraph, disposeGraph, planPostStages, resolveAoStage, syncSize } from "./PostProcessing";
+import { buildPostGraph, disposeGraph, planPostStages, resolveAoStage, syncSize, availablePostfxStages } from "./PostProcessing";
 
 test("graph resizes and disposes the current Three Bokeh through its pass lifecycle", () => {
   const renderer = {
@@ -80,6 +80,14 @@ test("a stage the game never authored stays out even when the tier and the playe
   const plan = planPostStages({ ...bare, ao: undefined }, "high", { ao: true, bloom: true, dof: true, smaa: true });
   expect(plan.dof).toBeNull();
   expect(plan.ao).toBe(DEFAULT_AO);
+});
+
+test("a settings surface is offered only the stages this chain can build", () => {
+  expect(availablePostfxStages(bare)).toEqual([]);
+  expect(availablePostfxStages({ ...bare, ao: undefined })).toEqual(["ao"]);
+  expect(availablePostfxStages({ ao: {}, bloom: {}, dof: { focus: 12 } })).toEqual(["ao", "bloom", "dof", "smaa"]);
+  // The tier's own defaults never take a stage away: the player can raise quality to reach it.
+  expect(availablePostfxStages({ ao: false, bloom: false, aa: false })).toEqual([]);
 });
 
 test("AO reads the beauty pass depth instead of rendering the scene again", () => {
