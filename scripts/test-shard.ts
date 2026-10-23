@@ -1,6 +1,6 @@
 // The CI `test` job runs this once per shard. One bun process over `packages
 // apps/dev scripts` took 5m37s of test time on a runner, so the same files are
-// split by measured cost into six jobs. Every test file under those roots lands in
+// split by measured cost into eight jobs. Every test file under those roots lands in
 // exactly one shard - the last entry covers the rest - and `--check` fails if
 // the split ever stops covering everything, so a new directory cannot drop its
 // tests silently.
@@ -9,18 +9,24 @@
 //   bun scripts/test-shard.ts --check     # file counts per shard, no tests run
 //   bun scripts/test-shard.ts --print a   # this shard's file paths, one per line
 //
-// The names are the six letters in the ci.yml matrix, and the matrix is the only
-// shard fact that file holds: which files each letter runs lives here, so
-// rebalancing never edits the workflow. `scripts/test-shard.test.ts` fails when
-// the two lists disagree.
+// The names are the eight letters in the ci.yml matrix, and the matrix is the only
+// shard fact that file holds: which files each letter runs and what it prepares first
+// lives here, so rebalancing never edits the workflow. `scripts/test-shard.test.ts`
+// fails when the two lists disagree.
 //
-// Balance is measured, not guessed: the numbers below are what each shard's `bun test`
-// step took on a runner (2026-10-23, run 39888130429, 377 s of test time over six jobs).
-// Six bins left two of them at 91 s and 92 s because the four browser files and the core
-// world/react/shell blocks are each 34-55 s and only just fit one per job; eight bins put
-// every job under 56 s. The heaviest entry is still one file - the editor round trip at
-// 55 s - so this is the floor until that scenario itself gets cheaper. Moving a directory
-// means re-timing the shard and updating these numbers in the same commit.
+// Balance is measured, not guessed: the numbers below are what each shard's tests took on
+// a runner (2026-10-23, run 39892384209, a docs-only PR: 377 s of test time over ten jobs;
+// run 39893307182 pushed the same content while a full gate ran and moved every shard by
+// up to 20 s, which is the variance to expect). Ten jobs cost ten runners of fixed setup
+// against the account's 20-job cap, so a PR racing another run queued its shards in two
+// waves; eight is the fewest that keeps every shard at the slowest single file.
+//
+// The floor is one file per shard: the editor round trip (a) and the editor scene io run
+// (f) are single browser scenarios, and the harness pair (b, c) each waits out the
+// harness's own 10 s give-up. Merging two shards adds their times, so the cheap shards
+// went where there was room rather than into each other: the four sub-40 s shards (g 26,
+// h 37, i 35, j 15) are now the tail of c (the small packages) and the last two entries.
+// Moving a directory means re-timing the shard and updating these numbers in the same commit.
 import { readdirSync } from "node:fs";
 import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -38,61 +44,39 @@ export interface Shard {
   /** What the shard runs, printed with its file count so a red `test (a)` says what broke. */
   label: string;
   include: string[];
+  /**
+   * Preparation this shard's tests need before `bun test`: `build` for the tests that read
+   * published dist, `games` for the repo gates that read the `./Games` clone. Every test job
+   * used to pay both; only the shard that needs one pays it now.
+   */
+  needs?: readonly ("build" | "games")[];
 }
 
-/** Nine shards by measured cost; the CI matrix runs one job per entry, in this order. */
+/** Eight shards by measured cost; the CI matrix runs one job per entry, in this order. */
 export const SHARDS: readonly Shard[] = [
   {
     name: "a",
     label: "editor round trip",
-    // 40 s: one Chrome drives save/play/return/reopen across a reload, start to finish.
+    // 34 s: one Chrome drives save/play/return/reopen across a reload, start to finish.
     include: ["packages/editor/src/CreatorApp.test.ts"],
+    needs: [],
   },
   {
     name: "b",
     label: "harness pointer-blocked targets",
-    // 35 s: three scenarios the drive harness must refuse; each waits out the harness's own
+    // 42 s: three scenarios the drive harness must refuse; each waits out the harness's own
     // 10 s give-up, so this shard is the harness's fixed cost, not the runner's.
     include: ["packages/jgengine/src/harness.blockedTargets.browser.test.ts"],
+    needs: [],
   },
   {
     name: "c",
-    label: "harness unreachable targets",
-    // 22 s: the two scenarios where the page never draws the target at all.
-    include: ["packages/jgengine/src/harness.unreachableTargets.browser.test.ts"],
-  },
-  {
-    name: "d",
-    label: "core world",
-    // 39 s: 87 files, the generator and city suites among them.
-    include: ["packages/core/src/world"],
-  },
-  {
-    name: "e",
-    label: "harness drive",
-    // 44 s of harness drive plus the other 2 s of jgengine. A browser file runs alone:
-    // the editor scene io file took 34 s first in its process and 78 s after 85 others.
-    include: ["packages/jgengine/src/harness.browser.test.ts", "packages/jgengine"],
-  },
-  {
-    name: "f",
-    label: "editor scene io",
-    // 34 s: export/import and the failed-save round, seeding its scene through the real UI.
-    include: ["packages/editor/src/CreatorApp.sceneIo.test.ts"],
-  },
-  {
-    name: "g",
-    label: "shell + editor",
-    // 27 s of shell and the 3 s of editor tests that are not browser scenarios.
-    include: ["packages/shell", "packages/editor"],
-  },
-  {
-    name: "h",
-    label: "react + small packages",
-    // 35 s of react plus apps/dev and the small packages (8 s together).
+    label: "harness unreachable targets + the small packages",
+    // 34 s of harness scenarios plus the 8 s the small packages take together. They sit here
+    // because this job waits on Chrome rather than on a core: it is the one shard with room
+    // left, and adding them here is what keeps every other shard under the slowest single file.
     include: [
-      "packages/react",
-      "apps/dev",
+      "packages/jgengine/src/harness.unreachableTargets.browser.test.ts",
       "packages/node",
       "packages/ws",
       "packages/assets",
@@ -102,18 +86,46 @@ export const SHARDS: readonly Shard[] = [
       "packages/navbake",
       "packages/github",
     ],
+    needs: [],
   },
   {
-    name: "i",
-    label: "scripts",
-    // 30 s: 65 files of repo gates and CLI tests.
-    include: ["scripts"],
+    name: "d",
+    label: "core world",
+    // 53 s: 87 files, the generator and city suites among them; the city generator alone is
+    // 28 s of it, so this is a single file's floor plus the world suite around it.
+    include: ["packages/core/src/world"],
+    needs: [],
   },
   {
-    name: "j",
-    label: "core",
-    // 30 s: the 542 core files outside world; anything a new root adds lands here too.
+    name: "e",
+    label: "harness drive",
+    // 43 s of harness drive plus the other 2 s of jgengine. A browser file runs alone:
+    // the editor scene io file took 34 s first in its process and 78 s after 85 others.
+    include: ["packages/jgengine/src/harness.browser.test.ts", "packages/jgengine"],
+    needs: ["build"],
+  },
+  {
+    name: "f",
+    label: "editor scene io",
+    // 57 s: export/import and the failed-save round, seeding its scene through the real UI.
+    include: ["packages/editor/src/CreatorApp.sceneIo.test.ts"],
+    needs: [],
+  },
+  {
+    name: "g",
+    label: "shell, editor, react and the dev app",
+    // 26 s of shell, the 3 s of editor tests that are not browser scenarios, 29 s of react and
+    // apps/dev. This is the old shell+editor shard with the old react shard folded in.
+    include: ["packages/shell", "packages/editor", "packages/react", "apps/dev"],
+    needs: ["build"],
+  },
+  {
+    name: "h",
+    label: "core, scripts and the built gate",
+    // 15 s of core outside world plus 35 s of scripts; anything a new root adds lands here too.
+    // It is the only shard that reads a built dist and the only one that reads `./Games`.
     include: ["packages/core", ...TEST_ROOTS],
+    needs: ["build", "games"],
   },
 ];
 
@@ -153,6 +165,16 @@ export function assignShards(files: readonly string[], shards: readonly Shard[] 
     assigned.get(shard.name)!.push(file);
   }
   return assigned;
+}
+
+/** Commands that prepare a shard, in the order they must run. */
+export function preparation(shard: Shard): string[][] {
+  const commands: string[][] = [];
+  for (const need of shard.needs ?? []) {
+    if (need === "build") commands.push(["run", "build"]);
+    else commands.push(["run", "games:clone"]);
+  }
+  return commands;
 }
 
 function counts(files: readonly string[], shards: readonly Shard[]): string[] {
@@ -197,6 +219,10 @@ function main(): void {
   }
 
   console.log(`test-shard ${name} (${shard.label}): ${assigned.length} of ${files.length} test file(s)`);
+  for (const args of preparation(shard)) {
+    const prepared = spawnSync("bun", args, { cwd: root, stdio: "inherit" });
+    if (prepared.status !== 0) process.exit(prepared.status ?? 1);
+  }
   const run = spawnSync("bun", ["test", "--timeout", "20000", ...assigned], {
     cwd: root,
     stdio: "inherit",

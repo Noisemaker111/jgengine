@@ -1,0 +1,61 @@
+import { expect, test } from "bun:test";
+import { PLANS, type Stage } from "./run-stages";
+import { CONCURRENCY, ordered, PLAN, runPool, runTypes, WEIGHT } from "./type-shard";
+
+const stage = (name: string, needs: readonly string[] = ["ensure-ready"]): Stage => ({
+  name,
+  command: "true",
+  args: [],
+  needs,
+});
+
+test("the pool never runs more than the concurrency it was given", async () => {
+  let inFlight = 0;
+  let peak = 0;
+  const seen: number[] = [];
+  await runPool([1, 2, 3, 4, 5, 6, 7], 3, async (item) => {
+    inFlight += 1;
+    peak = Math.max(peak, inFlight);
+    await Bun.sleep(5);
+    seen.push(item);
+    inFlight -= 1;
+  });
+  expect(peak).toBe(3);
+  expect(seen.sort((a, b) => a - b)).toEqual([1, 2, 3, 4, 5, 6, 7]);
+});
+
+test("a failing stage does not stop the stages beside it", async () => {
+  const stages = [stage("ensure-ready", []), stage("bad"), stage("good")];
+  const ran: string[] = [];
+  const results = await runTypes(stages, async (entry) => {
+    ran.push(entry.name);
+    return entry.name !== "bad";
+  });
+  expect(ran).toEqual(["ensure-ready", "bad", "good"]);
+  expect(results.map((result) => result.state)).toEqual(["passed", "failed", "passed"]);
+});
+
+test("a stage whose prerequisite failed is skipped, never reported as passing", async () => {
+  const stages = [stage("ensure-ready", []), stage("after", ["ensure-ready"])];
+  const results = await runTypes(stages, async () => false);
+  expect(results[1]).toEqual({ name: "after", state: "skipped", blockedBy: ["ensure-ready"] });
+});
+
+test("the heaviest measured stages start first so they overlap the rest", () => {
+  const names = ordered(PLANS["check-types"]!).map((entry) => entry.name);
+  expect(names.slice(0, 4)).toEqual(["check-types-all", "check-skill-api", "check-capabilities", "check-doc-symbols"]);
+});
+
+test("every weight names a stage the plan still has, so a rename cannot silently reorder nothing", () => {
+  const names = new Set(PLANS["check-types"]!.map((entry) => entry.name));
+  for (const name of Object.keys(WEIGHT)) expect(names.has(name)).toBe(true);
+});
+
+test("the plan is the check-types plan and nothing is dropped from it", () => {
+  expect(PLAN).toBe("check-types");
+  const stages = PLANS[PLAN]!;
+  expect(stages.length).toBeGreaterThan(20);
+  expect(stages[0]!.name).toBe("ensure-ready");
+  expect(stages.at(-1)!.name).toBe("check-types-all");
+  expect(CONCURRENCY).toBeGreaterThan(1);
+});

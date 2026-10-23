@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { assignShards, SHARDS, TEST_ROOTS, walkTestFiles, type Shard } from "./test-shard";
+import { assignShards, preparation, SHARDS, TEST_ROOTS, walkTestFiles, type Shard } from "./test-shard";
 
 const TABLE: Shard[] = [
   { name: "hot", include: ["packages/core/src/combat"] },
@@ -40,6 +40,24 @@ test("the real table covers every test file once and each shard gets work", () =
   expect(new Set(covered).size).toBe(files.length);
   expect(files.length).toBeGreaterThan(1000);
   for (const shard of SHARDS) expect(assigned.get(shard.name)!.length).toBeGreaterThan(0);
+});
+
+test("the last shard covers every root, so a new one cannot fall outside the split", () => {
+  const last = SHARDS.at(-1)!;
+  for (const root of TEST_ROOTS) {
+    expect(last.include.some((prefix) => root === prefix || root.startsWith(`${prefix}/`))).toBe(true);
+  }
+});
+
+test("the shard that reads Games is the shard that clones it, and the built gate is one shard", () => {
+  const games = SHARDS.filter((shard) => (shard.needs ?? []).includes("games"));
+  expect(games).toHaveLength(1);
+  expect(games[0]!.include).toContain("scripts");
+  expect(preparation(games[0]!)).toEqual([
+    ["run", "build"],
+    ["run", "games:clone"],
+  ]);
+  expect(preparation({ name: "bare", label: "bare", include: [] })).toEqual([]);
 });
 
 test("the roots are the directories CI tests", () => {
