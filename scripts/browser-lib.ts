@@ -149,6 +149,19 @@ export function chromeGraphicsArgs(
     : ["--ignore-gpu-blocklist"];
 }
 
+/** Frame clock a capture browser runs requestAnimationFrame on. */
+export type FrameClock = "capped" | "uncapped";
+
+/**
+ * Chrome flags that take rAF off the display's commit clock, so a sampled frame delta is what the
+ * frame costs instead of the next 16.7 ms vsync tick. Empty for the default clock, which is what
+ * every capture and the perf gate keep using: a player sees a vsynced frame, so only a run that
+ * asks for the uncapped clock measures the headroom below it.
+ */
+export function chromeFrameClockArgs(clock: FrameClock = "capped"): string[] {
+  return clock === "uncapped" ? ["--disable-frame-rate-limit", "--disable-gpu-vsync"] : [];
+}
+
 /** Software rasterizer a capture Chrome renders WebGL with when no GPU is used. */
 export type SoftwareGl = "llvmpipe" | "swiftshader";
 
@@ -1019,7 +1032,7 @@ function createProfileDir(prefix: string): string {
 export function launchChrome(
   debugPort: number,
   prefix = "jg-drive-",
-  options: { persistent?: boolean } = {},
+  options: ChromeLaunchOptions = {},
 ): ChromeProcess {
   const chrome = findChromeExecutable();
   const userDataDir = createProfileDir(prefix);
@@ -1032,6 +1045,7 @@ export function launchChrome(
       `--remote-debugging-port=${debugPort}`,
       `--user-data-dir=${userDataDir}`,
       ...chromeRenderArgs(backend),
+      ...chromeFrameClockArgs(options.frameClock),
       "--no-first-run",
       "--no-default-browser-check",
       "--disable-background-networking",
@@ -1143,6 +1157,14 @@ export interface LaunchableBrowser {
   userDataDir: string;
 }
 
+/** What one launch hands Chrome beyond its port and profile: daemon lifetime, and the frame clock. */
+export interface ChromeLaunchOptions {
+  /** Leave the browser running after the process that started it exits. */
+  persistent?: boolean;
+  /** rAF clock; the display's 16.7 ms commit by default. */
+  frameClock?: FrameClock;
+}
+
 export interface StartBrowserOptions<L extends LaunchableBrowser = ChromeProcess> {
   debugPort: number;
   /** user-data-dir prefix; every attempt gets a fresh profile under it. */
@@ -1151,7 +1173,9 @@ export interface StartBrowserOptions<L extends LaunchableBrowser = ChromeProcess
   readyMs?: number;
   env?: NodeJS.ProcessEnv;
   /** Replace the real launch (tests and the daemon own what they hand back). */
-  launch?: (debugPort: number, prefix?: string) => L;
+  launch?: (debugPort: number, prefix?: string, options?: ChromeLaunchOptions) => L;
+  /** rAF clock the launched Chrome runs on; test launchers receive it too. */
+  frameClock?: FrameClock;
   /** Prove the page layer answers; defaults to opening and closing a page target. */
   pageProbe?: (debugPort: number, profilePath: string) => Promise<void>;
   log?: (line: string) => void;
@@ -1183,8 +1207,11 @@ export async function startBrowser<L extends LaunchableBrowser = ChromeProcess>(
   const env = options.env ?? process.env;
   let readyMs = options.readyMs ?? resolveChromeReadyMs(env);
   const log = options.log ?? ((line: string) => console.error(line));
-  const launch = options.launch ?? ((port: number, prefix?: string) => launchChrome(port, prefix) as unknown as L);
+  const launch = options.launch ??
+    ((port: number, prefix?: string, launchOptions?: ChromeLaunchOptions) =>
+      launchChrome(port, prefix, launchOptions ?? {}) as unknown as L);
   const pageProbe = options.pageProbe ?? defaultPageProbe;
+  const launchOptions = options.frameClock === undefined ? undefined : { frameClock: options.frameClock };
   const attempts = 2;
   let last: BrowserLaunchError | null = null;
 
@@ -1193,7 +1220,7 @@ export async function startBrowser<L extends LaunchableBrowser = ChromeProcess>(
     let browser: L | undefined;
     let step: BrowserLaunchStep = "launch";
     try {
-      browser = launch(options.debugPort, options.prefix);
+      browser = launch(options.debugPort, options.prefix, launchOptions);
       step = "endpoint";
       await waitForDebugger(options.debugPort, readyMs, {
         browser: browser as { pid?: number; exitCode?: number | null },
@@ -1857,9 +1884,11 @@ export interface WithBrowserSessionOptions {
   /** Override the derived warm debug port. */
   warmPort?: number;
   /** Replace the real Chrome launch (tests own the profile dir they hand back). */
-  launch?: (debugPort: number, prefix?: string) => ChromeProcess;
+  launch?: (debugPort: number, prefix?: string, options?: ChromeLaunchOptions) => ChromeProcess;
   /** Replace the page-target probe {@link startBrowser} uses (tests own the fake browser). */
   pageProbe?: (debugPort: number, profilePath: string) => Promise<void>;
+  /** rAF clock the launched Chrome runs on. Default is the display's commit clock. */
+  frameClock?: FrameClock;
 }
 
 /**
@@ -1906,6 +1935,7 @@ export async function withBrowserSession(
         ...(options.chromePrefix === undefined ? {} : { prefix: options.chromePrefix }),
         ...(options.launch === undefined ? {} : { launch: options.launch }),
         ...(options.pageProbe === undefined ? {} : { pageProbe: options.pageProbe }),
+        ...(options.frameClock === undefined ? {} : { frameClock: options.frameClock }),
       });
       chrome = started.browser;
     }
