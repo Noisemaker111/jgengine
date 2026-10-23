@@ -31,6 +31,7 @@ import {
   resolvedState,
 } from "./appEnv";
 import { describeViews, resolveCaptureView } from "./captureView";
+import { describeDeclaredSettings } from "./settingsDeclaration";
 import { ErrorPanel, LoadingPanel, formatLoadError } from "./appShared";
 import {
   armCaptureReady,
@@ -114,6 +115,9 @@ export function DevApp({ gameId }: { gameId: string }) {
         // Publish the declared shots before anything can fail, so `--list-views` works on a game
         // whose `?shot=` is wrong — discovery must survive the error it exists to resolve.
         document.documentElement.dataset.jgViews = JSON.stringify(describeViews(loaded.capture?.views));
+        // The game's own settings rows, so a harness can name and check an id it did not declare.
+        document.documentElement.dataset.jgSettings = JSON.stringify(describeDeclaredSettings(loaded.settings));
+
         const view = resolveCaptureView({
           views: loaded.capture?.views,
           viewName: VIEW,
