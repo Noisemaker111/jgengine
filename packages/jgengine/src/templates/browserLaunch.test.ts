@@ -10,11 +10,14 @@ async function scaffoldBrowser(): Promise<Record<string, any>> {
   return (await import(`data:text/javascript;base64,${encoded}`)) as Record<string, any>;
 }
 
-/** A debugger endpoint that refuses `/json/version` until `answerAfterMs`, like a cold Chrome. */
-async function slowDebugger(answerAfterMs: number): Promise<{ port: number; stop: () => Promise<void> }> {
-  const startedAt = Date.now();
+/**
+ * A debugger endpoint that keeps refusing `/json/version` until the test opens its gate, like a
+ * cold Chrome that comes up on the second launch.
+ */
+async function gatedDebugger(): Promise<{ port: number; open: () => void; stop: () => Promise<void> }> {
+  let open = false;
   const server: Server = createServer((request, response) => {
-    if (request.url !== "/json/version" || Date.now() - startedAt < answerAfterMs) {
+    if (request.url !== "/json/version" || !open) {
       response.writeHead(503);
       response.end();
       return;
@@ -27,13 +30,16 @@ async function slowDebugger(answerAfterMs: number): Promise<{ port: number; stop
   if (address === null || typeof address === "string") throw new Error("no debugger port");
   return {
     port: address.port,
+    open: () => {
+      open = true;
+    },
     stop: () => new Promise<void>((resolve) => server.close(() => resolve())),
   };
 }
 
 /** A launched Chrome stand-in. No real directory: the block only ever tries to delete the profile. */
-function fakeChrome(index: number): { kill: () => void; userDataDir: string; exitCode: null } {
-  return { kill: () => {}, userDataDir: `/tmp/jg-scaffold-launch-${index}`, exitCode: null };
+function fakeChrome(index: number, onKill: () => void = () => {}): { kill: () => void; userDataDir: string; exitCode: null } {
+  return { kill: onKill, userDataDir: `/tmp/jg-scaffold-launch-${index}`, exitCode: null };
 }
 
 describe("scaffold launch block", () => {
@@ -66,7 +72,7 @@ describe("scaffold launch block", () => {
 
   test("a hung first attempt is retried with a fresh profile and the launch recovers", async () => {
     const { startBrowser } = await scaffoldBrowser();
-    const debuggerEndpoint = await slowDebugger(150);
+    const debuggerEndpoint = await gatedDebugger();
     const profiles: string[] = [];
     const lines: string[] = [];
     try {
@@ -75,7 +81,9 @@ describe("scaffold launch block", () => {
         readyMs: 100,
         log: (line: string) => lines.push(line),
         launch: () => {
-          const chrome = fakeChrome(profiles.length + 1);
+          // The gate opens when attempt 1 discards its browser, so attempt 1 cannot answer on
+          // any machine speed and attempt 2 cannot race a timer for its endpoint.
+          const chrome = fakeChrome(profiles.length + 1, debuggerEndpoint.open);
           profiles.push(chrome.userDataDir);
           return chrome;
         },
