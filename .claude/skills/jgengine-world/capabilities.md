@@ -28,6 +28,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `measureAir` (function) · `import { measureAir } from "@jgengine/core/physics/handlingProbe"`
 
+## ambience-zones — a scene declares looping sound beds keyed to world volumes; walking between them crossfades bed levels on the existing buses instead of cutting.
+
+- `AmbienceZoneDef` (interface) · `import { AmbienceZoneDef } from "@jgengine/core/audio/ambience"`
+
 ## anim-graph — data-first animation state machine with blend trees, crossfades, layers, and clip events
 
 - `createAnimGraphRuntime` (function) · `import { createAnimGraphRuntime } from "@jgengine/core/anim/animGraph"`
@@ -108,6 +112,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## attack-move-order — advance-and-engage order that pursues hostiles en route and completes at its destination
 
 - `defineAttackMoveOrder` (function) · `import { defineAttackMoveOrder } from "@jgengine/core/world"`
+
+## audio-occlusion — an emitter behind blocking world geometry is attenuated and darkened by a budgeted line test, and falls back to distance-only once the tick's budget is spent.
+
+- `AudioOcclusionConfig` (interface) · `import { AudioOcclusionConfig } from "@jgengine/core/audio/occlusion"`
 
 ## audio-voice-budget — bound simultaneous sound playback with per-sound caps, priorities, and deterministic stealing
 

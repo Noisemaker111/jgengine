@@ -2162,10 +2162,13 @@
 
 ## @jgengine/shell/audio/audioEngine
 
-- `AudioEmitterHandle` (interface): interface AudioEmitterHandle { isPlaying?(): boolean; setPosition(position: Vec3): void; setRate(rate: number): void; setGain(gain: number): void; setLowpass(hz: number): void; setHighpass(hz: number): void; setVelocity(velocity: Vec3): void; stop(): void } — ⚠ undocumented
+- `AudioAmbienceState` (interface): interface AudioAmbienceState — Current ambience mix, by zone id.
+- `AudioEmitterHandle` (interface): interface AudioEmitterHandle { isPlaying?(): boolean; setPosition(position: Vec3): void; setRate(rate: number): void; setGain(gain: number): void; setLowpass(hz: number): void; setHighpass(hz: number): void; setVelocity(velocity: Vec3): void; setOcclusion(amount: numbe… — ⚠ undocumented
 - `AudioEngine` (interface): interface AudioEngine { setListenerPose(pose: ListenerPose | Vec3): void; setVoiceLimit(maxTotal: number, overflow?: VoiceAllocatorConfig["overflow"]): void; play(soundId: string, position?: Vec3): void; playOneShot(soundId: string, position?: Vec3): void; playL… — ⚠ undocumented · used by `createAudioEngine`: Game-owned sound catalog playback with bounded SFX reservations, spatial panning, and shared buses.
 - `AudioLevel` (interface): interface AudioLevel — Master-output level, `0..1`. Pooled by {@link AudioEngine.measure} - read it, don't retain it.
-- `AudioSceneConfig` (interface): interface AudioSceneConfig { sounds?: Record<string, SoundDef>; maxVoices?: number; voiceOverflow?: VoiceAllocatorConfig["overflow"]; voiceAllocator?: VoiceAllocator; buses?: Record<string, AudioBusDef>; music?: Record<string, MusicTheme>; musicBus?: string } — ⚠ undocumented · used by `createAudioEngine`: Game-owned sound catalog playback with bounded SFX reservations, spatial panning, and shared buses.
+- `AudioOcclusionStats` (interface): interface AudioOcclusionStats — Measured geometry-occlusion work, cumulative since the engine was created.
+- `AudioSceneConfig` (interface): interface AudioSceneConfig { sounds?: Record<string, SoundDef>; maxVoices?: number; voiceOverflow?: VoiceAllocatorConfig["overflow"]; voiceAllocator?: VoiceAllocator; buses?: Record<string, AudioBusDef>; music?: Record<string, MusicTheme>; musicBus?: string; zones?: … — ⚠ undocumented · used by `createAudioEngine`: Game-owned sound catalog playback with bounded SFX reservations, spatial panning, and shared buses.
+- `DuckOptions` (interface): interface DuckOptions — How long and how far to duck buses for {@link AudioEngine.duck}.
 - `ListenerPose` (interface): interface ListenerPose — Position and orientation for a spatial-audio listener.
 - `MAX_PENDING_CUES` (const): const MAX_PENDING_CUES: 16 — Cues held while the browser keeps the audio context suspended, before any user gesture.
 - `Vec3` (interface): interface Vec3 { x: number; y: number; z: number } — ⚠ undocumented · used by `coverPoints` (@jgengine/core/ai/tacticalQueries): Returns boundary locations that are hidden from a threat.
@@ -2174,7 +2177,7 @@
 ## @jgengine/shell/audio/audioProbe
 
 - `AudioProbe` (interface): interface AudioProbe — The read-only handle a capture script or devtools uses to prove the mix is producing sound.
-- `installAudioProbe` (function): function installAudioProbe(engine: AudioEngine): () => void — Publish the audio engine's own level readout on `window.__jgengineAudio`, so a headless capture can state a measured RMS instead of guessing from a screenshot. Reads only; it never plays or changes a bus.
+- `installAudioProbe` (function): function installAudioProbe(engine: AudioEngine): () => void — Publish the audio engine's own level, ambience and occlusion readouts on `window.__jgengineAudio`, so a headless capture can state measured values instead of guessing from a screenshot. Reads only; it never plays or changes a bus.
 
 ## @jgengine/shell/audio/busMix
 
@@ -2232,6 +2235,11 @@
 ## @jgengine/shell/audio/musicVoices
 
 - `playMusicNote` (function): function playMusicNote(ctx: Ctx, event: NoteEvent, when: number, spb: number, out: GainNode, transpose = 0): void — Play one theme note through its instrument voice into `out` (a per-layer gain node the director wires to master + reverb). `spb` is seconds-per-beat and `transpose` shifts the note in semitones for per-zone key changes. This is the engine's reusable instrument library; unknown instruments fall back to a sine.
+
+## @jgengine/shell/audio/occlusion
+
+- `BlockingRaycastSource` (interface): interface BlockingRaycastSource — The narrow slice of the scene a line-of-hearing test needs.
+- `sceneLineBlocked` (function): function sceneLineBlocked(source: BlockingRaycastSource, from: Vec3, to: Vec3): boolean — Whether blocking world geometry (objects and wall segments, never creatures or terrain) lies between the listener and an emitter. One scene query per call; the engine owns how often it runs.
 
 ## @jgengine/shell/audio/synthEngine
 

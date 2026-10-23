@@ -455,13 +455,22 @@
 - `sumMagnitude` (function): function sumMagnitude<P>(memberships: readonly AreaMembership<P>[], magnitudeOf: MagnitudeOf<P>): number — Sum a numeric magnitude across memberships — additive aggregation for a total field strength (total damage per tick, total slow). A terminal reducer, not a filter, so it returns the number.
 - `uniqueByStackKey` (function): function uniqueByStackKey<P>(magnitudeOf?: MagnitudeOf<P>): AreaStackPolicy<P> — Keep at most one membership per `stackKey`. With `magnitudeOf` the strongest per key wins (ties broken by `sourceId` for determinism); without it the first-seen per key wins. Use for unique-by-key buffs where reapplying the same aura should not stack.
 
+## @jgengine/core/audio/ambience
+
+- `AmbienceWeight` (interface): interface AmbienceWeight — One zone's share of the ambience mix at a listener position, 0..1.
+- `AmbienceZoneDef` (interface): interface AmbienceZoneDef — One ambience zone: a sound bed keyed to a volume of the scene.
+- `AmbienceZoneShape` (type): type AmbienceZoneShape = | { kind: "sphere"; center: readonly [number, number, number]; radius: number } | { kind: "box"; min: readonly [number, number, number]; max: readonly [number, number, number] } — A world-space volume whose sound bed plays while the listener is inside it.
+- `activeAmbienceZone` (function): function activeAmbienceZone(weights: readonly AmbienceWeight[]): string | null — The loudest zone in a weight list, or null when every zone is silent.
+- `ambienceWeights` (function): function ambienceWeights(zones: readonly AmbienceZoneDef[], x: number, y: number, z: number, out: AmbienceWeight[] = []): AmbienceWeight[] — Every zone's mix weight at a listener position. A zone is at full level `crossfade` units inside its boundary, at half level on the boundary and silent `crossfade` units outside, so a listener walking between two zones that share a boundary hears a constant-sum handover. Weights that would sum above 1 (overlapping zones) are normalized so total bed level never exceeds unity. Writes into `out` when given, so a per-frame caller allocates nothing.
+- `zoneSignedDistance` (function): function zoneSignedDistance(shape: AmbienceZoneShape, x: number, y: number, z: number): number — Distance from a point to a zone boundary, positive inside and negative outside. Spheres measure from the surface; boxes use the nearest face.
+
 ## @jgengine/core/audio/audioFalloff
 
 - `AudioBusDef` (interface): interface AudioBusDef { id: AudioBusId; gain?: number } — ⚠ undocumented · used by `withFeedbackCueSounds` (@jgengine/core/audio/feedbackCues): Merge the default feedback reactions into a game's sound catalog.
 - `AudioBusId` (type): type AudioBusId = string — ⚠ undocumented
 - `AudioFalloffConfig` (interface): interface AudioFalloffConfig { minDistance?: number; maxDistance?: number; curve?: FalloffCurve } — ⚠ undocumented
 - `FalloffCurve` (type): type FalloffCurve = "linear" | "inverse" | "none" — ⚠ undocumented
-- `SoundDef` (interface): interface SoundDef { id: string; url?: string; synth?: SynthPatch; bus: AudioBusId; gain?: number; loop?: boolean; maxVoices?: number; priority?: number; positional?: boolean; falloff?: AudioFalloffConfig; doppler?: number; spatial?: {panning: "hrtf" | "equal… — ⚠ undocumented · used by `DEFAULT_FEEDBACK_CUE_SOUNDS` (@jgengine/core/audio/feedbackCues): Short procedural reactions - no samples to load, so every game has impact feedback without authoring audio.
+- `SoundDef` (interface): interface SoundDef { id: string; url?: string; synth?: SynthPatch; bus: AudioBusId; gain?: number; loop?: boolean; maxVoices?: number; priority?: number; duck?: {buses?: readonly string[]; amount?: number; seconds?: number;}; positional?: boolean; falloff?: A… — ⚠ undocumented · used by `DEFAULT_FEEDBACK_CUE_SOUNDS` (@jgengine/core/audio/feedbackCues): Short procedural reactions - no samples to load, so every game has impact feedback without authoring audio.
 - `computeFalloffGain` (function): function computeFalloffGain(distance: number, config: AudioFalloffConfig = {}): number — ⚠ undocumented
 - `distance3` (function): function distance3(a: { x: number; y: number; z: number }, b: { x: number; y: number; z: number }): number — ⚠ undocumented
 - `resolveEmitterGain` (function): function resolveEmitterGain(distance: number, sound: Pick<SoundDef, "gain" | "positional" | "falloff">, busGain: number): number — ⚠ undocumented
@@ -512,6 +521,13 @@
 - `MusicTier` (interface): interface MusicTier — Hysteretic music-state selector: turns a continuous intensity signal (nearby threat, alert count, chase proximity) into a stable theme id. The engine can already crossfade a soundtrack; this decides *when*, without the flapping a bare threshold produces when one enemy walks in and out of range.
 - `createMusicState` (function): function createMusicState(): MusicStateSnapshot — Fresh state with no tier entered, so the first resolve always settles and reports `changed`.
 - `resolveMusicState` (function): function resolveMusicState(state: MusicStateSnapshot, input: MusicStateInput, config: MusicStateConfig): MusicStateResult — Pick the theme for the current intensity. Escalation is immediate; de-escalation waits for the tier's `holdMs` and needs the intensity to fall a `release` margin below the tier it is leaving.
+
+## @jgengine/core/audio/occlusion
+
+- `AUDIO_OCCLUSION_DEFAULTS` (const): const AUDIO_OCCLUSION_DEFAULTS: { readonly maxTestsPerTick: 8; readonly intervalMs: 150; readonly attenuation: 0.55; readonly lowpassHz: 1200; readonly maxDistance: 60; } — Defaults for {@link AudioOcclusionConfig}.
+- `AudioOcclusionConfig` (interface): interface AudioOcclusionConfig — Geometry occlusion for retained positional loops: a cheap line test between the listener and an emitter behind blocking geometry, bounded so a busy scene can never turn audio into a raycast pass. The shell runs the test against the scene's blockable colliders; the engine applies the resulting attenuation and low-pass to the loop it already owns.
+- `ResolvedAudioOcclusionConfig` (interface): interface ResolvedAudioOcclusionConfig — A fully specified occlusion policy, with every unset field replaced by its default.
+- `resolveOcclusionConfig` (function): function resolveOcclusionConfig(config: AudioOcclusionConfig | false = {}): ResolvedAudioOcclusionConfig — Fill in the occlusion defaults and clamp each field to a workable range: a finite test budget, a non-negative retest interval and distance cap, and an attenuation in `0..1`.
 
 ## @jgengine/core/audio/stepCadence
 
@@ -2859,7 +2875,7 @@
 - `SnapMode` (type): type SnapMode = "grid" | "free" | "surface" — ⚠ undocumented
 - `SnowEnvironmentDescriptor` (type): type SnowEnvironmentDescriptor = { kind: "snow" } & Required< Pick<SnowEnvironmentConfig, "area" | "density" | "speed" | "flakeSize" | "drift" | "wind" | "color" | "opacity"> > — ⚠ undocumented · used by `snow`: Declares a snowfall weather effect for `environment()` — area, density, drift, wind, and flake opacity.
 - `SoilRules` (interface): interface SoilRules — Fully-defaulted soil params parsed from a volume's `meta`.
-- `SoundDef` (interface): interface SoundDef { id: string; url?: string; synth?: SynthPatch; bus: AudioBusId; gain?: number; loop?: boolean; maxVoices?: number; priority?: number; positional?: boolean; falloff?: AudioFalloffConfig; doppler?: number; spatial?: {panning: "hrtf" | "equal… — ⚠ undocumented · used by `DEFAULT_FEEDBACK_CUE_SOUNDS` (@jgengine/core/audio/feedbackCues): Short procedural reactions - no samples to load, so every game has impact feedback without authoring audio.
+- `SoundDef` (interface): interface SoundDef { id: string; url?: string; synth?: SynthPatch; bus: AudioBusId; gain?: number; loop?: boolean; maxVoices?: number; priority?: number; duck?: {buses?: readonly string[]; amount?: number; seconds?: number;}; positional?: boolean; falloff?: A… — ⚠ undocumented · used by `DEFAULT_FEEDBACK_CUE_SOUNDS` (@jgengine/core/audio/feedbackCues): Short procedural reactions - no samples to load, so every game has impact feedback without authoring audio.
 - `SpatialGrid` (class): class SpatialGrid — A uniform-grid broad-phase over the x/z plane, separate from the rigid-body sim, for cheap same-tick proximity across hundreds–thousands of simple movers (swarm enemies). Rebuild each tick from the caller's own position arrays, then `queryCircle` (enemies hitting the player / an AoE) or `forEachPair` (mutual separation). Both are precise: no false negatives, no false positives beyond the exact distance test.
 - `SpawnDirectorConfig` (interface): interface SpawnDirectorConfig { waves: readonly WaveManifest[]; maxAlive?: number; escalationPerSecond?: number; alertBudgetPerSecond?: number; alertDecayPerSecond?: number; playerBudgetPerSecond?: number; maxSpawnsPerTick?: number; loop?: boolean; seed?: number; spawnP… — ⚠ undocumented
 - `SpawnDirectorState` (interface): interface SpawnDirectorState { wave: number; elapsed: number; waveElapsed: number; budget: number; alert: number; spawnedThisWave: number; spawnedTotal: number; rng: RandomSeed; done: boolean } — ⚠ undocumented

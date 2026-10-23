@@ -1,5 +1,7 @@
 import type { AnimGraph } from "../anim/animGraph";
+import type { AmbienceZoneDef } from "../audio/ambience";
 import type { AudioBusDef, SoundDef } from "../audio/audioFalloff";
+import type { AudioOcclusionConfig } from "../audio/occlusion";
 import type { MusicTheme } from "../audio/music";
 import type { UiCueOverrides } from "../audio/uiCues";
 import type { FeedbackCueOverrides } from "../audio/feedbackCues";
@@ -835,6 +837,15 @@ export interface PlayableGame<
     uiCues?: UiCueOverrides;
     /** Default gameplay reactions (`feel.hit`, `feel.kill`, `feel.pickup`, ...) on an "sfx" bus, played by the shell from the events the engine announces. A sound named `feel.<cue>` in `sounds` replaces one; a map entry replaces or (`false`) silences one; `false` silences all. */
     feedbackCues?: FeedbackCueOverrides;
+    /**
+     * World-space ambience zones. While the listener is inside a zone the shell loops its bed on
+     * the sound's own bus; walking between zones hands over across each floor's `crossfade`
+     * distance, and leaving every zone fades to silence. Beds are retained, so a zone you return to
+     * resumes without a seam.
+     */
+    zones?: readonly AmbienceZoneDef[];
+    /** Geometry occlusion for retained positional loops. Unset uses the engine defaults; `false` keeps distance-only attenuation everywhere. */
+    occlusion?: AudioOcclusionConfig | false;
   };
   /** Continuous positional emitter keyed by entity kind name: while a matching entity exists, the shell plays and repositions the mapped `audio.sounds` id (looping engine hum, campfire crackle, footstep loop) with listener-distance falloff. */
   entitySounds?: Record<string, string>;

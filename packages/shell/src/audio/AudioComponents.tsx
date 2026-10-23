@@ -3,15 +3,22 @@ import { useEffect, useRef } from "react";
 import { Quaternion, Vector3 } from "three";
 import { useGameContext } from "@jgengine/react/provider";
 import type { AudioEngine } from "./audioEngine";
+import { installAudioProbe } from "./audioProbe";
 import { createEmitterTracker, type EmitterPose, type EmitterSources, type EmitterTracker } from "./emitterTracking";
 import { groundFocusListener, type ListenerAnchor } from "./listenerAnchor";
 import { createListenerVelocityTrack, stepListenerVelocity, type ListenerVelocityTrack } from "./loopParams";
+import { sceneLineBlocked } from "./occlusion";
 
 export function AudioListener({ engine, anchor = "camera" }: { engine: AudioEngine; anchor?: ListenerAnchor }) {
   const camera = useThree((state) => state.camera);
   const ctx = useGameContext();
   const trackRef = useRef<ListenerVelocityTrack>(createListenerVelocityTrack());
   const scratchRef = useRef({ direction: new Vector3(), up: new Vector3(), quaternion: new Quaternion() });
+  useEffect(() => {
+    engine.setOcclusionSource((from, to) => sceneLineBlocked(ctx.scene, from, to));
+    return () => engine.setOcclusionSource(null);
+  }, [engine, ctx]);
+  useEffect(() => installAudioProbe(engine), [engine]);
   useFrame((_, dt) => {
     const { direction, up, quaternion } = scratchRef.current;
     camera.getWorldDirection(direction);

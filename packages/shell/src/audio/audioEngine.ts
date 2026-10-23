@@ -1,5 +1,7 @@
+import { activeAmbienceZone, ambienceWeights, type AmbienceWeight, type AmbienceZoneDef } from "@jgengine/core/audio/ambience";
 import { distance3, resolveEmitterGain, type AudioBusDef, type SoundDef } from "@jgengine/core/audio/audioFalloff";
 import { dopplerRate } from "@jgengine/core/audio/doppler";
+import { resolveOcclusionConfig, type AudioOcclusionConfig, type ResolvedAudioOcclusionConfig } from "@jgengine/core/audio/occlusion";
 import type { MusicTheme } from "@jgengine/core/audio/music";
 import { patchDuration, type SynthPatch } from "@jgengine/core/audio/synth";
 import { createVoiceAllocator, type VoiceAllocator, type VoiceAllocatorConfig } from "@jgengine/core/audio/voiceAllocator";
@@ -11,6 +13,12 @@ import { createNoiseBuffer, realizeSynthPatch, type SynthPlayback } from "./synt
 
 /** setTargetAtTime time constant (~20 ms) for zipper-free live rate/gain ramps on retained loops (#1051). */
 const LOOP_PARAM_SMOOTH_TC = 0.02;
+
+/** Ambient beds ramp over ~80 ms so crossing a zone boundary never steps a gain. */
+const BED_SMOOTH_TC = 0.08;
+
+/** Ducking ramps over ~30 ms: fast enough to feel like a cut, slow enough not to click. */
+const DUCK_SMOOTH_TC = 0.03;
 
 const ZERO_VELOCITY: Vec3 = { x: 0, y: 0, z: 0 };
 
@@ -42,6 +50,10 @@ export interface AudioSceneConfig {
   music?: Record<string, MusicTheme>;
   /** Bus id the procedural music director mixes through. Default "music". */
   musicBus?: string;
+  /** World-space ambience zones; each becomes one retained looping bed driven by the listener position. */
+  zones?: readonly AmbienceZoneDef[];
+  /** Geometry occlusion budget/policy for retained positional loops. Unset keeps the defaults; `false` keeps distance-only. */
+  occlusion?: AudioOcclusionConfig | false;
 }
 
 export interface AudioEmitterHandle {
@@ -58,7 +70,41 @@ export interface AudioEmitterHandle {
   setHighpass(hz: number): void;
   /** Emitter world velocity for doppler; ignored unless the sound declares `doppler`. */
   setVelocity(velocity: Vec3): void;
+  /** Geometry occlusion, 0 (clear line) to 1 (fully blocked): scales the loop's gain and darkens it, composed with the game's own gain and filter. */
+  setOcclusion(amount: number): void;
   stop(): void;
+}
+
+/** How long and how far to duck buses for {@link AudioEngine.duck}. */
+export interface DuckOptions {
+  /** How far to lower the buses, 0..1. Default 0.6. */
+  amount?: number;
+  /** Seconds to hold the duck; omit to hold until the returned release runs. */
+  seconds?: number;
+  /** Fade time constant in seconds. Default 0.03. */
+  fadeSeconds?: number;
+}
+
+/** Measured geometry-occlusion work, cumulative since the engine was created. */
+export interface AudioOcclusionStats {
+  /** Geometry tests run. */
+  tests: number;
+  /** Tests that found blocking geometry. */
+  blocked: number;
+  /** Total time spent inside the injected geometry test, milliseconds. */
+  testMs: number;
+  /** Mean milliseconds per test, or 0 before the first test. */
+  perTestMs: number;
+  /** Endpoints and result of the newest test, for a probe explaining what the engine actually asked. */
+  lastTest: { from: Vec3; to: Vec3; blocked: boolean } | null;
+}
+
+/** Current ambience mix, by zone id. */
+export interface AudioAmbienceState {
+  /** Loudest zone, or null when the listener is outside every zone. */
+  zone: string | null;
+  /** Non-silent zone beds with their smoothed target level (`0..1`). */
+  levels: readonly { id: string; level: number }[];
 }
 
 export interface AudioEngine {
@@ -76,6 +122,21 @@ export interface AudioEngine {
   playLoop(soundId: string, position?: Vec3): AudioEmitterHandle | null;
   /** Crossfade the procedural soundtrack to `themeId` (null fades out). No-op when no `music` catalog is configured. */
   playMusic(themeId: string | null, options?: CrossfadeOptions): void;
+  /**
+   * Install the scene's blocking-geometry test (`from` listener, `to` emitter), or null to stop
+   * testing. The engine owns the per-tick budget; tests never run outside it.
+   */
+  setOcclusionSource(blocked: ((from: Vec3, to: Vec3) => boolean) | null): void;
+  /** Cumulative occlusion cost, for a capture probe or a perf readout. */
+  occlusionStats(): AudioOcclusionStats;
+  /** Current zone mix, for a capture probe or a HUD readout. */
+  ambience(): AudioAmbienceState;
+  /**
+   * Lower one bus for its duration and restore exactly the player's own level, even if they move
+   * the slider while it is ducked. Returns an idempotent release.
+   * @capability audio-ducking a cue with a `duck` policy lowers the music or ambience bus for its duration and restores the player's own gain exactly, even when the slider moves mid-duck.
+   */
+  duck(busId: string, options?: DuckOptions): () => void;
   setBusGain(busId: string, gain: number): void;
   /** Mute one bus without losing its gain: unmuting restores exactly the volume the player set. */
   setBusMute(busId: string, muted: boolean): void;
@@ -105,6 +166,7 @@ export const MAX_PENDING_CUES = 16;
 
 function createNoopEngine(): AudioEngine {
   const level: AudioLevel = { rms: 0, peak: 0 };
+  const stats: AudioOcclusionStats = { tests: 0, blocked: 0, testMs: 0, perTestMs: 0, lastTest: null };
   return {
     setListenerPose: () => undefined,
     setVoiceLimit: () => undefined,
@@ -112,6 +174,10 @@ function createNoopEngine(): AudioEngine {
     playOneShot: () => undefined,
     playLoop: () => null,
     playMusic: () => undefined,
+    setOcclusionSource: () => undefined,
+    occlusionStats: () => stats,
+    ambience: () => ({ zone: null, levels: [] }),
+    duck: () => () => undefined,
     setBusGain: () => undefined,
     setBusMute: () => undefined,
     setMasterGain: () => undefined,
@@ -194,8 +260,9 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
   }
 
   const busGains = new Map<string, GainNode>();
-  // Authored gain survives a mute, so unmuting restores the player's volume exactly.
-  const busMix = new Map<string, { gain: number; muted: boolean }>();
+  // Authored gain survives a mute, so unmuting restores the player's volume exactly. `duck` is a
+  // separate multiplier a cue applies for its own duration, so it never overwrites that volume.
+  const busMix = new Map<string, { gain: number; muted: boolean; duck: number }>();
   let masterVolume = 1;
   let masterMuted = false;
 
@@ -207,10 +274,10 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
     return masterMuted ? 0 : masterVolume;
   }
 
-  function busMixOf(busId: string): { gain: number; muted: boolean } {
+  function busMixOf(busId: string): { gain: number; muted: boolean; duck: number } {
     let mix = busMix.get(busId);
     if (mix === undefined) {
-      mix = { gain: busDefs[busId]?.gain ?? 1, muted: false };
+      mix = { gain: busDefs[busId]?.gain ?? 1, muted: false, duck: 0 };
       busMix.set(busId, mix);
     }
     return mix;
@@ -219,7 +286,8 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
   function busLevel(busId: string): number {
     const mix = busMix.get(busId);
     if (mix === undefined) return busDefs[busId]?.gain ?? 1;
-    return mix.muted ? 0 : mix.gain;
+    if (mix.muted) return 0;
+    return mix.gain * (1 - mix.duck);
   }
 
   function busGainNode(busId: string): GainNode {
@@ -241,6 +309,72 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
   function applyBus(busId: string): void {
     const node = busGains.get(busId);
     if (node !== undefined) node.gain.value = busLevel(busId);
+  }
+
+  interface DuckHold {
+    amount: number;
+    timer: ReturnType<typeof setTimeout> | undefined;
+  }
+  const duckHolds = new Map<string, Set<DuckHold>>();
+
+  /** Recompute the strongest hold on one bus; release restores the player's gain by construction. */
+  function applyDuck(busId: string): void {
+    const holds = duckHolds.get(busId);
+    let amount = 0;
+    if (holds !== undefined) {
+      for (const hold of holds) amount = Math.max(amount, hold.amount);
+    }
+    const mix = busMixOf(busId);
+    mix.duck = Math.min(1, Math.max(0, amount));
+    const node = busGains.get(busId);
+    if (node === undefined) return;
+    const level = busLevel(busId);
+    if (typeof node.gain.setTargetAtTime === "function") {
+      node.gain.setTargetAtTime(level, context.currentTime, DUCK_SMOOTH_TC);
+    } else {
+      node.gain.value = level;
+    }
+  }
+
+  function duckBus(busId: string, options: DuckOptions = {}): () => void {
+    if (disposed) return () => undefined;
+    const amount = Math.min(1, Math.max(0, options.amount ?? 0.6));
+    if (amount <= 0) return () => undefined;
+    const hold: DuckHold = { amount, timer: undefined };
+    let holds = duckHolds.get(busId);
+    if (holds === undefined) {
+      holds = new Set();
+      duckHolds.set(busId, holds);
+    }
+    holds.add(hold);
+    applyDuck(busId);
+    let released = false;
+    const release = (): void => {
+      if (released) return;
+      released = true;
+      if (hold.timer !== undefined) clearTimeout(hold.timer);
+      const current = duckHolds.get(busId);
+      current?.delete(hold);
+      if (current !== undefined && current.size === 0) duckHolds.delete(busId);
+      applyDuck(busId);
+    };
+    const seconds = options.seconds;
+    if (seconds !== undefined && Number.isFinite(seconds) && seconds > 0 && typeof setTimeout === "function") {
+      hold.timer = setTimeout(release, seconds * 1000);
+      (hold.timer as unknown as { unref?: () => void }).unref?.();
+    }
+    return release;
+  }
+
+  /** A cue's own `duck` policy: hold the named buses for its duration, then release. */
+  function applyCueDuck(sound: SoundDef, durationSeconds: number): void {
+    const policy = sound.duck;
+    if (policy === undefined) return;
+    const seconds = policy.seconds !== undefined && Number.isFinite(policy.seconds) ? policy.seconds : durationSeconds;
+    const buses = policy.buses ?? ["music"];
+    for (const busId of buses) {
+      duckBus(busId, seconds > 0 ? { amount: policy.amount, seconds } : { amount: policy.amount });
+    }
   }
 
   let noiseBuffer: AudioBuffer | null = null;
@@ -309,6 +443,152 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
     slot[index] = value;
     setAudioParam(param, value);
     return true;
+  }
+
+  const occlusionConfig: ResolvedAudioOcclusionConfig = resolveOcclusionConfig(config.occlusion);
+  let occlusionBlocked: ((from: Vec3, to: Vec3) => boolean) | null = null;
+  let occlusionTestsLeft = occlusionConfig.maxTestsPerTick;
+  const occlusionStatsState: {
+    tests: number;
+    blocked: number;
+    testMs: number;
+    lastTest: { from: Vec3; to: Vec3; blocked: boolean } | null;
+  } = { tests: 0, blocked: 0, testMs: 0, lastTest: null };
+
+  interface OcclusionTarget {
+    x: number;
+    y: number;
+    z: number;
+    lastTest: number;
+    tested: boolean;
+    set(amount: number): void;
+  }
+  const occlusionTargets = new Set<OcclusionTarget>();
+
+  function clockMs(): number {
+    return typeof performance !== "undefined" && typeof performance.now === "function" ? performance.now() : Date.now();
+  }
+
+  /**
+   * One budgeted test for one retained loop. Skipped while the loop is too close (the listener is
+   * inside its own engine hum), too far, or re-tested inside the interval; once the tick's budget
+   * is spent every other loop simply stays on distance-only attenuation.
+   */
+  function requestOcclusionTest(target: OcclusionTarget): void {
+    if (occlusionBlocked === null || occlusionConfig.maxTestsPerTick <= 0) {
+      target.set(0);
+      return;
+    }
+    const distance = distance3(target, listenerPosition);
+    if (distance < 1 || distance > occlusionConfig.maxDistance) {
+      target.set(0);
+      return;
+    }
+    const now = context.currentTime;
+    if (now - target.lastTest < occlusionConfig.intervalMs / 1000) return;
+    if (occlusionTestsLeft <= 0) {
+      if (!target.tested) target.set(0);
+      return;
+    }
+    occlusionTestsLeft -= 1;
+    target.lastTest = now;
+    target.tested = true;
+    const started = clockMs();
+    let blocked = false;
+    const from = { x: listenerPosition.x, y: listenerPosition.y, z: listenerPosition.z };
+    const to = { x: target.x, y: target.y, z: target.z };
+    try {
+      blocked = occlusionBlocked(from, to);
+    } catch {
+      blocked = false;
+    }
+    occlusionStatsState.testMs += clockMs() - started;
+    occlusionStatsState.tests += 1;
+    occlusionStatsState.lastTest = { from, to, blocked };
+    if (blocked) occlusionStatsState.blocked += 1;
+    target.set(blocked ? 1 : 0);
+  }
+
+  function stepOcclusion(): void {
+    occlusionTestsLeft = occlusionConfig.maxTestsPerTick;
+    for (const target of occlusionTargets) requestOcclusionTest(target);
+  }
+
+  const zones = config.zones ?? [];
+  interface ZoneBed {
+    gain: GainNode;
+    source: AudioBufferSourceNode | null;
+    level: number;
+  }
+  const zoneBeds = new Map<string, ZoneBed>();
+  const ambienceScratch: AmbienceWeight[] = [];
+  let ambienceActive: string | null = null;
+  let ambienceInitialized = false;
+
+  function zoneWeight(id: string): number {
+    for (const entry of ambienceScratch) {
+      if (entry.id === id) return entry.weight;
+    }
+    return 0;
+  }
+
+  function ensureBed(zone: AmbienceZoneDef, sound: SoundDef): ZoneBed | null {
+    const existing = zoneBeds.get(zone.id);
+    if (existing !== undefined) return existing;
+    let bus: GainNode;
+    try {
+      bus = busGainNode(sound.bus);
+    } catch {
+      return null;
+    }
+    const gain = context.createGain();
+    gain.gain.value = 0;
+    gain.connect(bus);
+    const bed: ZoneBed = { gain, source: null, level: -1 };
+    zoneBeds.set(zone.id, bed);
+    const pending = sound.synth !== undefined
+      ? renderSynthBuffer(zone.sound, sound.synth)
+      : sound.url !== undefined
+        ? loadBuffer(sound.url)
+        : Promise.resolve(null);
+    void pending.then((buffer) => {
+      if (disposed || buffer === null || zoneBeds.get(zone.id) !== bed) {
+        gain.disconnect();
+        return;
+      }
+      try {
+        // A looping AudioBufferSourceNode repeats sample-accurately, so the bed has no gap at the seam.
+        const source = context.createBufferSource();
+        source.buffer = buffer;
+        source.loop = true;
+        source.connect(gain);
+        source.start();
+        bed.source = source;
+        applyAmbience();
+      } catch {
+        gain.disconnect();
+      }
+    }).catch(() => undefined);
+    return bed;
+  }
+
+  function applyAmbience(): void {
+    if (zones.length === 0) return;
+    ambienceWeights(zones, listenerPosition.x, listenerPosition.y, listenerPosition.z, ambienceScratch);
+    ambienceActive = activeAmbienceZone(ambienceScratch);
+    for (const zone of zones) {
+      const weight = zoneWeight(zone.id);
+      const existing = zoneBeds.get(zone.id);
+      if (weight <= 0 && existing === undefined) continue;
+      const sound = sounds[zone.sound];
+      if (sound === undefined) continue;
+      const bed = existing ?? ensureBed(zone, sound);
+      if (bed === null) continue;
+      const level = weight * (zone.gain ?? 1) * (sound.gain ?? 1);
+      if (level === bed.level) continue;
+      bed.level = level;
+      bed.gain.gain.setTargetAtTime(level, context.currentTime, BED_SMOOTH_TC);
+    }
   }
 
   // Browser autoplay: until the first user gesture the context stays suspended and a played cue
@@ -426,6 +706,7 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
     const currentPosition = { ...(position ?? listenerPosition) };
 
     if (sound.synth !== undefined && !loop) {
+      applyCueDuck(sound, patchDuration(sound.synth));
       let cueGain: GainNode | null = null;
       let panner: PannerNode | null = null;
       let playback: SynthPlayback | null = null;
@@ -493,6 +774,7 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
     let currentUserGain = 1;
     let currentLowpass = MAX_LOOP_CUTOFF;
     let currentHighpass = MIN_LOOP_CUTOFF;
+    let currentOcclusion = 0;
     let currentVelocity: Vec3 = { x: 0, y: 0, z: 0 };
     const dopplerFactor = loop ? sound.doppler ?? 0 : 0;
     let sourceNode: AudioBufferSourceNode | null = null;
@@ -510,6 +792,24 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
     let writtenGain = NaN;
     let writtenLowpass = NaN;
     let writtenHighpass = NaN;
+
+    function applyOcclusionAmount(amount: number): void {
+      const next = Math.min(1, Math.max(0, Number.isFinite(amount) ? amount : 0));
+      if (next === currentOcclusion) return;
+      currentOcclusion = next;
+      applyUserGain();
+      applyLowpass();
+    }
+
+    const occlusionTarget: OcclusionTarget = {
+      x: initialPosition.x,
+      y: initialPosition.y,
+      z: initialPosition.z,
+      lastTest: -Infinity,
+      tested: false,
+      set: applyOcclusionAmount,
+    };
+    if (loop) occlusionTargets.add(occlusionTarget);
 
     function effectiveRate(): number {
       if (dopplerFactor === 0) return currentRate;
@@ -529,6 +829,33 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
       if (rate === writtenRate) return;
       writtenRate = rate;
       sourceNode.playbackRate.setTargetAtTime(rate, context.currentTime, LOOP_PARAM_SMOOTH_TC);
+    }
+
+    /** Player/loop gain composed with occlusion; the game's own gain is never overwritten by it. */
+    function effectiveUserGain(): number {
+      const blocked = occlusionConfig.attenuation + (1 - occlusionConfig.attenuation) * (1 - currentOcclusion);
+      return clampLoopGain(currentUserGain) * blocked;
+    }
+
+    function applyUserGain(): void {
+      const gain = effectiveUserGain();
+      if (gain === writtenGain) return;
+      writtenGain = gain;
+      if (userGainNode !== null) userGainNode.gain.setTargetAtTime(gain, context.currentTime, LOOP_PARAM_SMOOTH_TC);
+    }
+
+    /** Darkest of the game's own cutoff and the occlusion floor, blended by the blocked amount. */
+    function effectiveLowpass(): number {
+      if (currentOcclusion <= 0) return currentLowpass;
+      const floor = Math.min(currentLowpass, occlusionConfig.lowpassHz);
+      return currentLowpass - (currentLowpass - floor) * currentOcclusion;
+    }
+
+    function applyLowpass(): void {
+      const cutoff = clampLoopCutoff(effectiveLowpass(), MAX_LOOP_CUTOFF, nyquist);
+      if (cutoff === writtenLowpass) return;
+      writtenLowpass = cutoff;
+      if (lowpassNode !== null) lowpassNode.frequency.setTargetAtTime(cutoff, context.currentTime, LOOP_PARAM_SMOOTH_TC);
     }
 
     function updateFalloff(): void {
@@ -557,6 +884,7 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
     }
 
     disposer.onDispose(() => {
+      occlusionTargets.delete(occlusionTarget);
       if (sourceNode !== null) sourceNode.onended = null;
       try {
         sourceNode?.stop();
@@ -579,6 +907,7 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
     void bufferPromise.then((buffer) => {
       if (stopped || disposed) return;
       if (buffer === null) { handle.stop(); return; }
+      if (!loop) applyCueDuck(sound, buffer.duration);
       const src = context.createBufferSource();
       sourceNode = src;
       src.buffer = buffer;
@@ -588,7 +917,7 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
       // Spatial panners own distance attenuation; the scalar stage keeps only authored gain.
       const uGain = context.createGain();
       userGainNode = uGain;
-      writtenGain = currentUserGain;
+      writtenGain = effectiveUserGain();
       uGain.gain.value = writtenGain;
       const fGain = context.createGain();
       falloffGain = fGain;
@@ -598,7 +927,7 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
         const lp = context.createBiquadFilter();
         lowpassNode = lp;
         lp.type = "lowpass";
-        writtenLowpass = clampLoopCutoff(currentLowpass, MAX_LOOP_CUTOFF, nyquist);
+        writtenLowpass = clampLoopCutoff(effectiveLowpass(), MAX_LOOP_CUTOFF, nyquist);
         lp.frequency.value = writtenLowpass;
         const hp = context.createBiquadFilter();
         highpassNode = hp;
@@ -630,6 +959,7 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
     }).catch(() => handle.stop());
 
     activeSpatialUpdaters.add(updateFalloff);
+    if (loop) requestOcclusionTest(occlusionTarget);
 
     const handle: AudioEmitterHandle = {
       isPlaying: () => !stopped,
@@ -638,7 +968,11 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
         currentPosition.x = next.x;
         currentPosition.y = next.y;
         currentPosition.z = next.z;
+        occlusionTarget.x = next.x;
+        occlusionTarget.y = next.y;
+        occlusionTarget.z = next.z;
         updateFalloff();
+        if (loop) requestOcclusionTest(occlusionTarget);
       },
       setRate(rate) {
         currentRate = clampLoopRate(rate);
@@ -646,9 +980,7 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
       },
       setLowpass(hz) {
         currentLowpass = clampLoopCutoff(hz, MAX_LOOP_CUTOFF, nyquist);
-        if (currentLowpass === writtenLowpass) return;
-        writtenLowpass = currentLowpass;
-        if (lowpassNode !== null) lowpassNode.frequency.setTargetAtTime(currentLowpass, context.currentTime, LOOP_PARAM_SMOOTH_TC);
+        applyLowpass();
       },
       setHighpass(hz) {
         currentHighpass = clampLoopCutoff(hz, MIN_LOOP_CUTOFF, nyquist);
@@ -664,9 +996,10 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
       },
       setGain(gain) {
         currentUserGain = clampLoopGain(gain);
-        if (currentUserGain === writtenGain) return;
-        writtenGain = currentUserGain;
-        if (userGainNode !== null) userGainNode.gain.setTargetAtTime(currentUserGain, context.currentTime, LOOP_PARAM_SMOOTH_TC);
+        applyUserGain();
+      },
+      setOcclusion(amount) {
+        applyOcclusionAmount(amount);
       },
       stop() {
         if (stopped) return;
@@ -689,6 +1022,10 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
     setListenerPose(position) {
       if (disposed) return;
       const pose = "position" in position ? position : { position, forward: { x: 0, y: 0, z: -1 }, up: { x: 0, y: 1, z: 0 } };
+      const positionChanged =
+        listenerPosition.x !== pose.position.x ||
+        listenerPosition.y !== pose.position.y ||
+        listenerPosition.z !== pose.position.z;
       listenerPosition.x = pose.position.x;
       listenerPosition.y = pose.position.y;
       listenerPosition.z = pose.position.z;
@@ -697,6 +1034,10 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
       listenerVelocity.y = velocity.y;
       listenerVelocity.z = velocity.z;
       const listener = context.listener;
+      if (positionChanged || !ambienceInitialized) {
+        ambienceInitialized = true;
+        applyAmbience();
+      }
       let listenerMoved = writeChanged(listenerWritten, 0, listener.positionX, pose.position.x);
       listenerMoved = writeChanged(listenerWritten, 1, listener.positionY, pose.position.y) || listenerMoved;
       listenerMoved = writeChanged(listenerWritten, 2, listener.positionZ, pose.position.z) || listenerMoved;
@@ -710,6 +1051,7 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
       let velocityChanged = writeChanged(listenerVelocityWritten, 0, undefined, velocity.x);
       velocityChanged = writeChanged(listenerVelocityWritten, 1, undefined, velocity.y) || velocityChanged;
       velocityChanged = writeChanged(listenerVelocityWritten, 2, undefined, velocity.z) || velocityChanged;
+      if (positionChanged) stepOcclusion();
       if (!listenerMoved && !velocityChanged) return;
       for (const updateGain of activeSpatialUpdaters) updateGain();
     },
@@ -727,6 +1069,28 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
       void context.resume().catch(() => undefined);
       musicDirector()?.crossfadeTo(themeId, options);
     },
+    setOcclusionSource(blocked) {
+      if (disposed) return;
+      occlusionBlocked = blocked;
+      if (blocked === null) {
+        for (const target of occlusionTargets) target.set(0);
+        return;
+      }
+      stepOcclusion();
+    },
+    occlusionStats() {
+      const { tests, blocked, testMs, lastTest } = occlusionStatsState;
+      return { tests, blocked, testMs, perTestMs: tests > 0 ? testMs / tests : 0, lastTest };
+    },
+    ambience() {
+      const levels: { id: string; level: number }[] = [];
+      for (const zone of zones) {
+        const weight = zoneWeight(zone.id);
+        if (weight > 0) levels.push({ id: zone.id, level: weight * (zone.gain ?? 1) });
+      }
+      return { zone: ambienceActive, levels };
+    },
+    duck: duckBus,
     setBusGain(busId, gain) {
       if (disposed) return;
       busMixOf(busId).gain = gain;
@@ -761,6 +1125,22 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
       disposed = true;
       for (const stop of [...activeVoices.values()]) stop();
       activeSpatialUpdaters.clear();
+      occlusionTargets.clear();
+      for (const bed of zoneBeds.values()) {
+        try {
+          bed.source?.stop();
+        } catch {
+        }
+        bed.source?.disconnect();
+        bed.gain.disconnect();
+      }
+      zoneBeds.clear();
+      for (const holds of duckHolds.values()) {
+        for (const hold of holds) {
+          if (hold.timer !== undefined) clearTimeout(hold.timer);
+        }
+      }
+      duckHolds.clear();
       director?.dispose();
       for (const node of busGains.values()) node.disconnect();
       busGains.clear();
