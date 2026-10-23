@@ -31,6 +31,8 @@ const RUNNER = "needs the engine dev runner";
 
 /** The single source of truth for shoot/drive flags, help text and host support. */
 export const CAPTURE_FLAGS: readonly CaptureFlag[] = [
+  { flag: "--steps", tools: ["drive"], value: "required", arg: "<file>", engineOnly: "needs the engine dev runner to land shots in the game's docs/ folder", help: "run a JSON step file; cannot be mixed with step flags (see \"Script a drive\")" },
+  { flag: "--check", tools: ["drive"], value: "none", engineOnly: "needs the engine dev runner to resolve the step file", help: "with --steps: parse, print the resolved steps with their durations, exit without a browser" },
   { flag: "--click", tools: ["drive"], value: "required", step: true, arg: "<text>", help: "click the first settled, enabled element containing this text (or aria-label)" },
   { flag: "--double-click", tools: ["drive"], value: "required", step: true, arg: "<text>", help: "double-click an actionable text target" },
   { flag: "--click-at", tools: ["drive"], value: "required", step: true, arg: "<x,y>", help: "native left click at CSS viewport pixels (canvas targets, map orders)" },
@@ -86,18 +88,48 @@ export const CAPTURE_FLAGS: readonly CaptureFlag[] = [
   { flag: "--record-width", tools: ["drive"], value: "required", arg: "<px>", engineOnly: "needs the engine's video encoder", help: "screencast max width in realtime mode (default 640)" },
 ];
 
+/** What a step must observe before it runs and after it ran; both are polled page expressions. */
+export interface CaptureCondition {
+  /** Page expression, evaluated as an async function so a bridge call can answer it. */
+  is: string;
+  /** Deep-equal value that counts as a match; omitted means any truthy result matches. */
+  value?: unknown;
+  /** Poll cap; defaults to {@link DRIVE_CONDITION_TIMEOUT_MS}. */
+  timeoutMs?: number;
+  /** Why this condition exists, echoed in the step log. */
+  note?: string;
+}
+
 /** One ordered drive interaction. */
-export type CaptureStep =
+export type CaptureStep = (
   | { kind: "click"; text: string }
   | { kind: "double-click"; text: string }
   | { kind: "click-at"; spec: string; button: "left" | "right" }
   | { kind: "fill"; label: string; value: string }
   | { kind: "key"; code: string; holdMs: number }
   | { kind: "wait"; ms: number }
+  | { kind: "waitFor"; expression: string; timeoutMs: number }
   | { kind: "reload" }
   | { kind: "shot"; name: string; out?: string }
   | { kind: "rpc"; json: string; summarized: boolean }
-  | { kind: "probe"; name: string };
+  | { kind: "probe"; name: string }
+) & {
+  /** Polled until true, then the step runs. */
+  before?: CaptureCondition;
+  /** Polled until true, then the step counts as passed. */
+  after?: CaptureCondition;
+};
+
+/** A step starts the instant its postcondition holds; no guessed sleep in between. */
+export const DRIVE_CONDITION_TIMEOUT_MS = 15_000;
+/** How often a condition is re-evaluated while it is failing. */
+export const DRIVE_CONDITION_POLL_MS = 50;
+
+/** The step kinds a JSON step file accepts, in the order the help lists them. */
+export function driveStepKinds(): string[] {
+  return ["click", "doubleClick", "clickAt", "rightClickAt", "fill", "key", "wait", "waitFor", "reload", "shot", "rpc", "probe"];
+}
+
 
 /** Parsed command line: session options keyed by flag name without dashes, ordered steps, bare positionals. */
 export interface ParsedCaptureArgs {
@@ -211,6 +243,203 @@ export function parseCaptureArgs(tool: CaptureTool, argv: readonly string[], fla
     throw new Error("--device must be desktop, mobile, mobile-landscape" + (tool === "shoot" ? ", or both" : "") + " (got " + device + ")");
   }
   return out;
+}
+
+function valueType(value: unknown): string {
+  if (value === null) return "null";
+  if (Array.isArray(value)) return "an array";
+  return "a " + typeof value;
+}
+
+function coordinatePair(path: string, value: unknown): string {
+  if (Array.isArray(value) && value.length === 2 && value.every((part) => typeof part === "number" && Number.isFinite(part))) {
+    return value[0] + "," + value[1];
+  }
+  throw new Error(path + ": expected [x, y] numbers, got " + JSON.stringify(value));
+}
+
+function conditionAt(path: string, value: unknown): CaptureCondition {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) throw new Error(path + ": expected {\"is\": \"<page expression>\", \"value\": <expected>, \"timeoutMs\": <n>, \"note\": \"<why>\"}, got " + JSON.stringify(value));
+  const raw = value as Record<string, unknown>;
+  for (const key of Object.keys(raw)) {
+    if (key !== "is" && key !== "value" && key !== "timeoutMs" && key !== "note") throw new Error(path + ": unknown condition field \"" + key + "\" (valid: is, value, timeoutMs, note)");
+  }
+  if (typeof raw.is !== "string" || raw.is.trim() === "") throw new Error(path + ": \"is\" must be the page expression to wait for");
+  if (raw.timeoutMs !== undefined && (typeof raw.timeoutMs !== "number" || !Number.isFinite(raw.timeoutMs) || raw.timeoutMs <= 0)) {
+    throw new Error(path + ": timeoutMs must be a positive number of milliseconds, got " + JSON.stringify(raw.timeoutMs));
+  }
+  if (raw.note !== undefined && typeof raw.note !== "string") throw new Error(path + ": note must be a string");
+  return {
+    is: raw.is,
+    ...(raw.value === undefined ? {} : { value: raw.value }),
+    ...(raw.timeoutMs === undefined ? {} : { timeoutMs: raw.timeoutMs }),
+    ...(raw.note === undefined ? {} : { note: raw.note }),
+  };
+}
+
+const DRIVE_KEY_CODES = [
+  ...Array.from({ length: 26 }, (_, i) => "Key" + String.fromCharCode(65 + i)),
+  ...Array.from({ length: 10 }, (_, i) => "Digit" + i),
+  ...Array.from({ length: 10 }, (_, i) => "Numpad" + i),
+  ...Array.from({ length: 12 }, (_, i) => "F" + (i + 1)),
+  "Backquote", "Minus", "Equal", "BracketLeft", "BracketRight", "Backslash", "Semicolon", "Quote", "Comma", "Period", "Slash",
+  "Space", "Enter", "Tab", "Escape", "Backspace", "Delete", "Insert", "Home", "End", "PageUp", "PageDown",
+  "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "CapsLock",
+  "ShiftLeft", "ShiftRight", "ControlLeft", "ControlRight", "AltLeft", "AltRight", "MetaLeft", "MetaRight",
+  "mouse0", "mouse1", "mouse2",
+];
+
+function keyChordAt(path: string, value: unknown): string {
+  if (typeof value !== "string" || value.trim() === "") throw new Error(path + ": expected a key code such as \"KeyH\", got " + JSON.stringify(value));
+  const unknown = value.split("+").find((code) => !DRIVE_KEY_CODES.includes(code));
+  if (unknown !== undefined) {
+    throw new Error(
+      path + ": unknown key code \"" + unknown + "\" (valid: KeyA-KeyZ, Digit0-Digit9, F1-F12, ShiftLeft, Space, Escape, mouse0-mouse2, and \"+\" chords of those)",
+    );
+  }
+  return value;
+}
+
+function nonnegativeAt(path: string, value: unknown, fallback?: number): number {
+  if (value === undefined && fallback !== undefined) return fallback;
+  if (typeof value !== "number" || !Number.isFinite(value) || value < 0) throw new Error(path + ": expected a nonnegative number of milliseconds, got " + JSON.stringify(value));
+  return value;
+}
+
+function shotNameAt(path: string, value: unknown): string {
+  if (typeof value !== "string" || value.trim() === "") throw new Error(path + ": expected a shot name such as \"formation-line\", got " + JSON.stringify(value));
+  if (value.includes("/") || value.includes("\\") || value.endsWith(".png")) {
+    throw new Error(path + ": a shot is a bare name; it lands in the game's docs/ folder (drop the folder and .png: \"" + value + "\")");
+  }
+  return value;
+}
+
+/**
+ * Parse a drive step file — `{ "steps": [ ... ] }` — into the same {@link CaptureStep} list the
+ * flags produce, so one executor runs both. Every error names `steps[i]` and the field, and the
+ * whole file parses before anything runs, so a half-read script can never drive a game.
+ *
+ * `source` names the file in errors (the path the caller read).
+ */
+export function parseStepFile(input: unknown, source: string): CaptureStep[] {
+  const kinds = driveStepKinds();
+  if (input === null || typeof input !== "object" || Array.isArray(input)) {
+    throw new Error(source + ": expected {\"steps\":[...]}, got " + valueType(input));
+  }
+  const top = input as Record<string, unknown>;
+  for (const key of Object.keys(top)) {
+    if (key !== "steps") throw new Error(source + ": unknown top-level field \"" + key + "\" (valid: steps)");
+  }
+  if (!Array.isArray(top.steps)) throw new Error(source + ": expected {\"steps\":[...]}, got " + valueType(top.steps));
+  if (top.steps.length === 0) throw new Error(source + ": the steps list is empty, so the run would prove nothing");
+  const modifiers = ["before", "after", "ms", "timeoutMs", "note"];
+  return top.steps.map((raw, index) => {
+    const at = "steps[" + index + "]";
+    if (raw === null || typeof raw !== "object" || Array.isArray(raw)) throw new Error(at + ": expected a step object, got " + valueType(raw));
+    const step = raw as Record<string, unknown>;
+    const actions = Object.keys(step).filter((key) => kinds.includes(key));
+    const unknown = Object.keys(step).find((key) => !kinds.includes(key) && !modifiers.includes(key));
+    if (unknown !== undefined) throw new Error(at + ": unknown step kind \"" + unknown + "\" (valid: " + kinds.join(", ") + ")");
+    if (actions.length === 0) throw new Error(at + ": one step kind is required (valid: " + kinds.join(", ") + ")");
+    if (actions.length > 1) throw new Error(at + ": one step kind per object, got " + actions.join(" and "));
+    const kind = actions[0]!;
+    const value = step[kind];
+    const before = step.before === undefined ? undefined : conditionAt(at + ".before", step.before);
+    const after = step.after === undefined ? undefined : conditionAt(at + ".after", step.after);
+    const conditions = { ...(before === undefined ? {} : { before }), ...(after === undefined ? {} : { after }) };
+    const shape = (action: CaptureStep): CaptureStep => ({ ...action, ...conditions });
+    switch (kind) {
+      case "click":
+      case "doubleClick": {
+        const text = typeof value === "string" ? value : "";
+        if (text.trim() === "") throw new Error(at + "." + kind + ": expected the text to click, got " + JSON.stringify(value));
+        return shape({ kind: kind === "click" ? "click" : "double-click", text });
+      }
+      case "clickAt":
+      case "rightClickAt":
+        return shape({ kind: "click-at", spec: coordinatePair(at + "." + kind, value), button: kind === "rightClickAt" ? "right" : "left" });
+      case "fill": {
+        if (value === null || typeof value !== "object" || Array.isArray(value)) throw new Error(at + ".fill: expected {\"label\": \"<label>\", \"value\": \"<text>\"}, got " + JSON.stringify(value));
+        const field = value as Record<string, unknown>;
+        if (typeof field.label !== "string" || field.label.trim() === "") throw new Error(at + ".fill.label: expected the field's accessible label");
+        if (typeof field.value !== "string") throw new Error(at + ".fill.value: expected the text to type");
+        return shape({ kind: "fill", label: field.label, value: field.value });
+      }
+      case "key":
+        return shape({ kind: "key", code: keyChordAt(at + ".key", value), holdMs: nonnegativeAt(at + ".ms", step.ms, 1000) });
+      case "wait":
+        return shape({ kind: "wait", ms: nonnegativeAt(at + ".wait", value) });
+      case "waitFor": {
+        if (typeof value !== "string" || value.trim() === "") throw new Error(at + ".waitFor: expected the page expression to wait for, got " + JSON.stringify(value));
+        return shape({ kind: "waitFor", expression: value, timeoutMs: nonnegativeAt(at + ".timeoutMs", step.timeoutMs, DRIVE_CONDITION_TIMEOUT_MS) });
+      }
+      case "reload":
+        if (value !== true) throw new Error(at + ".reload: expected true");
+        return shape({ kind: "reload" });
+      case "shot":
+        return shape({ kind: "shot", name: shotNameAt(at + ".shot", value) });
+      case "rpc": {
+        if (value === null || typeof value !== "object" || Array.isArray(value)) throw new Error(at + ".rpc: expected a bridge request object such as {\"method\":\"agent_status\"}, got " + JSON.stringify(value));
+        const request = value as Record<string, unknown>;
+        if (typeof request.method !== "string" || request.method === "") throw new Error(at + ".rpc: expected a request with a method");
+        const summarized = request.method === "debug_snapshot" && request.detail === undefined;
+        const body = summarized ? JSON.stringify({ ...request, detail: "summary" }) : JSON.stringify(request);
+        return shape({ kind: "rpc", json: body, summarized });
+      }
+      case "probe":
+        return shape({ kind: "probe", name: value === undefined ? "probe" : String(value) });
+      default:
+        throw new Error(at + ": unknown step kind \"" + kind + "\" (valid: " + kinds.join(", ") + ")");
+    }
+  });
+}
+
+/** How long a step can hold the run: its action plus the cap on each condition. */
+export function stepDurationMs(step: CaptureStep): number {
+  const own = step.kind === "key" ? step.holdMs : step.kind === "wait" ? step.ms : step.kind === "waitFor" ? step.timeoutMs : 0;
+  const before = step.before === undefined ? 0 : step.before.timeoutMs ?? DRIVE_CONDITION_TIMEOUT_MS;
+  const after = step.after === undefined ? 0 : step.after.timeoutMs ?? DRIVE_CONDITION_TIMEOUT_MS;
+  return own + before + after;
+}
+
+/** One line of `--check`: what the step is, what it waits for, its worst-case duration. */
+export function describeStep(step: CaptureStep): string {
+  switch (step.kind) {
+    case "click": return "click \"" + step.text + "\"";
+    case "double-click": return "doubleClick \"" + step.text + "\"";
+    case "click-at": return (step.button === "right" ? "rightClickAt " : "clickAt ") + step.spec;
+    case "fill": return "fill \"" + step.label + "\" = \"" + step.value + "\"";
+    case "key": return "key " + step.code + " " + step.holdMs + "ms";
+    case "wait": return "wait " + step.ms + "ms (last resort: a guessed sleep)";
+    case "waitFor": return "waitFor " + step.expression;
+    case "reload": return "reload";
+    case "shot": return "shot " + step.name + (step.out === undefined ? "" : " -> " + step.out);
+    case "rpc": return "rpc " + step.json;
+    case "probe": return "probe " + step.name;
+  }
+}
+
+/** The `--check` report: every resolved step, its condition caps and the total worst case. */
+export function describeStepFile(steps: readonly CaptureStep[], source: string): string {
+  const lines = steps.map((step, index) => {
+    const waits = [
+      step.before === undefined ? "" : " before<=" + (step.before.timeoutMs ?? DRIVE_CONDITION_TIMEOUT_MS) + "ms",
+      step.after === undefined ? "" : " after<=" + (step.after.timeoutMs ?? DRIVE_CONDITION_TIMEOUT_MS) + "ms",
+    ].join("");
+    return "  #" + (index + 1) + " " + describeStep(step) + waits + " (" + stepDurationMs(step) + "ms cap)";
+  });
+  const total = steps.reduce((sum, step) => sum + stepDurationMs(step), 0);
+  return [source + ": " + steps.length + " step(s), " + total + "ms worst case", ...lines].join("\n");
+}
+
+/**
+ * Throw when a step file is mixed with step flags, naming each flag: a script's order lives in the
+ * file, and a half-flag/half-file run is a silent argument to the wrong executor.
+ */
+export function rejectMixedStepFlags(tool: CaptureTool, argv: readonly string[], flags: readonly CaptureFlag[]): void {
+  const mixed = flags.filter((entry) => entry.step === true && argv.includes(entry.flag)).map((entry) => entry.flag);
+  if (mixed.length === 0) return;
+  throw new Error(tool + ": --steps runs a step file, so drop the step flags (" + mixed.join(", ") + "); the file owns the order");
 }
 
 /**

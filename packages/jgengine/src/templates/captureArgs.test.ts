@@ -5,12 +5,12 @@ import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 
 import { materializeHarness } from "../harness";
-import { CAPTURE_FLAGS, parseCaptureArgs, type CaptureFlag, type CaptureTool } from "./captureArgs";
+import { CAPTURE_FLAGS, describeStepFile, parseCaptureArgs, parseStepFile, rejectMixedStepFlags, type CaptureFlag, type CaptureTool } from "./captureArgs";
 
 /** A valid value for each flag, so every flag can be exercised by every host. */
 export function sampleArgv(entry: CaptureFlag): string[] {
   const samples: Record<string, string> = {
-    "--click": "Start", "--double-click": "Tile", "--click-at": "10,20", "--right-click-at": "30,40",
+    "--steps": "steps.json", "--click": "Start", "--double-click": "Tile", "--click-at": "10,20", "--right-click-at": "30,40",
     "--fill": "Name=Ada", "--key": "KeyW+KeyD:250", "--wait": "100", "--shot": "after",
     "--rpc": '{"method":"debug_snapshot"}', "--probe": "p0", "--url": "http://127.0.0.1:5173/", "--port": "5199",
     "--device": "mobile", "--width": "800", "--height": "600", "--size": "half", "--quality": "draft", "--settle": "500", "--timeout": "90",
@@ -51,6 +51,79 @@ describe("parseCaptureArgs", () => {
     expect(parseCaptureArgs("drive", ["--rpc", '{"method":"debug_snapshot","detail":"full"}'], CAPTURE_FLAGS).steps[0]).toMatchObject({ summarized: false });
     expect(() => parseCaptureArgs("drive", ["--shot", "shots/a.png"], CAPTURE_FLAGS)).toThrow("not a relative path");
     expect(() => parseCaptureArgs("shoot", ["--port", "--width"], CAPTURE_FLAGS)).toThrow("--port requires a value");
+  });
+});
+
+describe("parseStepFile", () => {
+  const error = (steps: unknown): string => {
+    try {
+      parseStepFile({ steps }, "proof.json");
+    } catch (caught) {
+      return caught instanceof Error ? caught.message : String(caught);
+    }
+    throw new Error("expected the step file to be rejected");
+  };
+
+  test("normalizes every kind into the flag executor's step list", () => {
+    const steps = parseStepFile({
+      steps: [
+        { click: "Free skirmish", before: { is: "menu.ready" }, after: { is: "skirmish.started", timeoutMs: 4000 } },
+        { key: "KeyH", ms: 120 },
+        { rightClickAt: [420, 220] },
+        { shot: "formation-line" },
+        { waitFor: "squad.formation === 'line'", timeoutMs: 2000 },
+        { fill: { label: "Commander", value: "Ada" } },
+        { rpc: { method: "debug_snapshot" } },
+        { reload: true },
+      ],
+    }, "proof.json");
+    expect(steps[0]).toMatchObject({ kind: "click", text: "Free skirmish", before: { is: "menu.ready" }, after: { is: "skirmish.started", timeoutMs: 4000 } });
+    expect(steps[1]).toMatchObject({ kind: "key", code: "KeyH", holdMs: 120 });
+    expect(steps[2]).toMatchObject({ kind: "click-at", spec: "420,220", button: "right" });
+    expect(steps[3]).toEqual({ kind: "shot", name: "formation-line" });
+    expect(steps[4]).toMatchObject({ kind: "waitFor", expression: "squad.formation === 'line'", timeoutMs: 2000 });
+    expect(steps[5]).toMatchObject({ kind: "fill", label: "Commander", value: "Ada" });
+    expect(steps[6]).toMatchObject({ kind: "rpc", summarized: true });
+    expect(steps[7]).toEqual({ kind: "reload" });
+    expect(describeStepFile(steps, "proof.json")).toContain("#1 click \"Free skirmish\" before<=15000ms after<=4000ms");
+  });
+
+  test("names the index and the valid kinds for an unknown step kind", () => {
+    const message = error([{ click: "Start" }, { tapp: "Free skirmish" }]);
+    expect(message).toContain("steps[1]");
+    expect(message).toContain("unknown step kind \"tapp\"");
+    expect(message).toContain("click, doubleClick, clickAt");
+  });
+
+  test("names the index for a coordinate that is a string instead of a number pair", () => {
+    expect(error([{ click: "Start" }, { key: "KeyH", ms: 10 }, { wait: 5 }, { shot: "a" }, { rightClickAt: "420,220" }]))
+      .toBe("steps[4].rightClickAt: expected [x, y] numbers, got \"420,220\"");
+  });
+
+  test("names the index for an unknown key code", () => {
+    const message = error([{ click: "Start" }, { wait: 1 }, { key: "KeyHH", ms: 120 }]);
+    expect(message).toContain("steps[2].key: unknown key code \"KeyHH\"");
+    expect(message).toContain("KeyA-KeyZ");
+  });
+
+  test("names the index for two kinds in one object and for a bad condition", () => {
+    expect(error([{ click: "Start", key: "KeyH" }])).toContain("steps[0]: one step kind per object, got click and key");
+    expect(error([{ click: "Start", before: { is: "" } }])).toContain("steps[0].before: \"is\" must be the page expression");
+    expect(error([{ shot: "docs/a" }])).toContain("steps[0].shot: a shot is a bare name");
+  });
+
+  test("rejects a file that would run nothing and rejects a half-readable shape", () => {
+    expect(error([])).toContain("steps list is empty");
+    expect(() => parseStepFile({ step: [] }, "proof.json")).toThrow("unknown top-level field \"step\"");
+    expect(() => parseStepFile({ steps: [null] }, "proof.json")).toThrow("steps[0]: expected a step object");
+  });
+
+  test("refuses mixing --steps with step flags and names the flag", () => {
+    expect(() => rejectMixedStepFlags("drive", ["demo", "--steps", "proof.json", "--click", "Start"], CAPTURE_FLAGS))
+      .toThrow("drop the step flags (--click)");
+    expect(() => rejectMixedStepFlags("drive", ["demo", "--steps", "proof.json", "--wait", "1000", "--shot", "a"], CAPTURE_FLAGS))
+      .toThrow("--wait, --shot");
+    expect(() => rejectMixedStepFlags("drive", ["demo", "--steps", "proof.json"], CAPTURE_FLAGS)).not.toThrow();
   });
 });
 

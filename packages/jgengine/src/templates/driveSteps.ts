@@ -66,6 +66,67 @@ export async function holdDriveInput(session: DriveSession, chord: string, holdM
   }
 }
 
+/** A page expression a step waits for, with the value that counts as a match. */
+export interface DriveCondition {
+  is: string;
+  value?: unknown;
+  timeoutMs?: number;
+  note?: string;
+}
+
+/** Polling clock; a lockstep recorder passes virtual time instead of wall time. */
+export interface DriveConditionClock {
+  sleep: (ms: number) => Promise<void>;
+  now: () => number;
+}
+
+/** Default poll cap for a step condition; a step overrides it per condition. */
+export const DRIVE_CONDITION_DEFAULT_MS = 15_000;
+
+/** Deep value equality for a condition's expected result (JSON-shaped values only). */
+export function conditionMatches(value: unknown, expected: unknown): boolean {
+  if (expected === undefined) return Boolean(value);
+  return JSON.stringify(value) === JSON.stringify(expected);
+}
+
+/**
+ * Poll a condition in the page and return the moment it matches — the replacement for a guessed
+ * sleep. A timeout throws with the step label, the expression, the last value and the elapsed time,
+ * so a wrong state stops the run at that step instead of after the next screenshot.
+ */
+export async function awaitDriveCondition(
+  session: DriveSession,
+  label: string,
+  condition: DriveCondition,
+  deps: DriveConditionClock,
+  pollMs = 50,
+): Promise<{ value: unknown; elapsedMs: number }> {
+  const startedAt = deps.now();
+  const timeoutMs = condition.timeoutMs ?? DRIVE_CONDITION_DEFAULT_MS;
+  const expression = "(async () => (" + condition.is + "))()";
+  let last: unknown;
+  for (;;) {
+    try {
+      last = await session.evaluate(expression, { awaitPromise: true });
+    } catch (error) {
+      throw new Error(
+        label + ": \"" + condition.is + "\" threw " + (error instanceof Error ? error.message : String(error)) +
+          " after " + Math.round(deps.now() - startedAt) + "ms",
+      );
+    }
+    const elapsedMs = Math.round(deps.now() - startedAt);
+    if (conditionMatches(last, condition.value)) return { value: last, elapsedMs };
+    if (elapsedMs >= timeoutMs) {
+      throw new Error(
+        label + ": \"" + condition.is + "\" did not become " + JSON.stringify(condition.value === undefined ? true : condition.value) +
+          " within " + timeoutMs + "ms (last value: " + JSON.stringify(last ?? null) + ", elapsed " + elapsedMs + "ms)" +
+          (condition.note === undefined ? "" : " — " + condition.note),
+      );
+    }
+    await deps.sleep(Math.min(pollMs, Math.max(1, timeoutMs - elapsedMs)));
+  }
+}
+
 /**
  * Before a screenshot, wait (bounded) for the shell's "Loading game view…" fallback to leave the
  * screen, and refuse to capture it: a frame of the loading panel is never evidence of the game.
