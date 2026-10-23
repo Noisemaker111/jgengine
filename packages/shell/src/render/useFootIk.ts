@@ -203,13 +203,6 @@ function restoreFootIkPose(rig: FootIkRig): void {
 }
 
 /**
- * Applies one frame of foot IK after the animation mixer: probes the ground under each foot,
- * resolves targets with `placeFeet`, lowers the pelvis, solves each leg with `solveTwoBone` bending
- * toward the animated knee, and tilts planted feet to the ground. Turns the look-at bone toward
- * `lookAtTarget` when the rig has one. Returns whether the feet are grounded; `state` carries the
- * faded weight between frames. Exported for tests and custom hosts.
- */
-/**
  * Reused per frame by {@link applyFootIk}: the ground probes, their hits and the solver input are read
  * synchronously inside one call, so a rig posing every frame allocates nothing.
  */
@@ -218,6 +211,13 @@ const samplesScratch: FootGroundSample[] = [];
 const normalsScratch: (readonly [number, number, number] | null)[] = [];
 const samplePool: FootGroundSample[] = [];
 
+/**
+ * Applies one frame of foot IK after the animation mixer: probes the ground under each foot,
+ * resolves targets with `placeFeet`, lowers the pelvis, solves each leg with `solveTwoBone` bending
+ * toward the animated knee, and tilts planted feet to the ground. Turns the look-at bone toward
+ * `lookAtTarget` when the rig has one. Returns whether the feet are grounded; `state` carries the
+ * faded weight between frames. Exported for tests and custom hosts.
+ */
 export function applyFootIk(
   rig: FootIkRig,
   originY: number,
@@ -307,14 +307,14 @@ export function applyFootIk(
   return placement.grounded;
 }
 
+/** Materials a foot probe may hit: blocking physical objects and terrain, never the model's own entity. */
+const IK_FILTER = { entities: false, objects: true, walls: false, terrain: true } as const;
+
 /**
  * Runs foot IK after the model's animation mixer for `ModelConfig.ik`. Ground probes hit terrain and
  * blocking physical objects, never the model's own entity. `groundOffset` is the model-space height
  * its soles rest on (`ModelConfig.y`).
  */
-/** Materials a foot probe may hit: blocking physical objects and terrain, never the model's own entity. */
-const IK_FILTER = { entities: false, objects: true, walls: false, terrain: true } as const;
-
 export function useFootIk(
   scene: THREE.Object3D,
   config: FootIkConfig | undefined,
