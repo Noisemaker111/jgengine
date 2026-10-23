@@ -2037,7 +2037,7 @@
 
 ## @jgengine/core/sensor/revealQuery
 
-- `RevealHit` (interface): interface RevealHit { instanceId: string; distance: number; tags: readonly string[] } — ⚠ undocumented · used by `useRevealHits` (@jgengine/shell/vision/RevealVision): Occlusion-ignoring tagged-entity radius query (#115), bound to the live scene.
+- `RevealHit` (interface): interface RevealHit { instanceId: string; distance: number; tags: readonly string[] } — ⚠ undocumented · used by `useRevealHits` (@jgengine/shell/vision/RevealVision): Occlusion-ignoring tagged-entity radius query (#115), bound to the live scene and refreshed on render.
 - `RevealQuery` (interface): interface RevealQuery { inRadius(center: EntityPosition | string, radius: number, tags: readonly string[]): RevealHit[] } — ⚠ undocumented
 - `RevealQueryOptions` (interface): interface RevealQueryOptions { resolvePosition: (instanceId: string) => EntityPosition | undefined; resolveTags: (instanceId: string) => readonly string[]; candidates: () => string[] } — ⚠ undocumented
 
@@ -2782,7 +2782,7 @@
 - `ResolvedTerrainDetail` (type): type ResolvedTerrainDetail = Required<Omit<TerrainDetailConfig, "waterLevel" | "material" | "sweeps">> & { waterLevel: number; material?: ResolvedTerrainDetailMaterial; sweeps: { dry: readonly [number, number, number]; wet: readonly [number, number, number] }; } — A {@link TerrainDetailConfig} with every field resolved to a concrete value — the shape the shell's detail material consumes.
 - `ResolvedWeather` (interface): interface ResolvedWeather { grip: number; visibility: number; structureDamage: number; chill: number; ignition: number; spread: number } — ⚠ undocumented
 - `ResponseCurve` (type): type ResponseCurve = | { readonly kind: "linear"; readonly from: number; readonly to: number } /** Same shape as `linear`, raised to `exponent` (default `2`), so appeal stays flat until it matters. */ | { readonly kind: "quadratic"; readonly from: number; readonly to: number; readonly exponent?: num… — How one need's satisfaction maps to an option's appeal: `1` at `from`, `0` at `to`, clamped outside. Read satisfaction `1` as a full meter; pair with {@link UtilityTerm.invert} when a full meter is what makes the option attractive.
-- `RevealHit` (interface): interface RevealHit { instanceId: string; distance: number; tags: readonly string[] } — ⚠ undocumented · used by `useRevealHits` (@jgengine/shell/vision/RevealVision): Occlusion-ignoring tagged-entity radius query (#115), bound to the live scene.
+- `RevealHit` (interface): interface RevealHit { instanceId: string; distance: number; tags: readonly string[] } — ⚠ undocumented · used by `useRevealHits` (@jgengine/shell/vision/RevealVision): Occlusion-ignoring tagged-entity radius query (#115), bound to the live scene and refreshed on render.
 - `RevealQuery` (interface): interface RevealQuery { inRadius(center: EntityPosition | string, radius: number, tags: readonly string[]): RevealHit[] } — ⚠ undocumented
 - `RoadCut` (interface): interface RoadCut — One trim of a ribbon end back to a junction boundary — the seam the welded surface attaches to.
 - `RoadEnvironmentDescriptor` (type): type RoadEnvironmentDescriptor = { kind: "road" } & Required< Pick<RoadEnvironmentConfig, "path" | "width" | "color" | "markings" | "markingColor" | "elevation"> > & { /** Resolved sidewalk band, or `false` when the road has none. */ sidewalk: { width: number; color: string } | false; /** Procedural… — Resolved road descriptor produced by {@link road} and rendered by the shell environment scene.
