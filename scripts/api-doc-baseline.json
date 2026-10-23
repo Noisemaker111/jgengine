@@ -1573,7 +1573,6 @@
   "@jgengine/core/settings/settingsModel#UI_SCALE_MAX",
   "@jgengine/core/settings/settingsModel#UI_SCALE_MIN",
   "@jgengine/core/settings/settingsModel#busVolumeSettingId",
-  "@jgengine/core/settings/settingsModel#loadSettingValue",
   "@jgengine/core/settings/settingsModel#saveSettingValue",
   "@jgengine/core/settings/settingsModel#settingStorageKey",
   "@jgengine/core/stats/accumulatorMeter#AccumulatorMeter",
