@@ -225,7 +225,7 @@ export function unresolvableDependency(text: string): string | null {
 }
 
 function declaredDependencies(manifest: UnpackedPackage["manifest"]): Set<string> {
-  const record = manifest as Record<string, unknown>;
+  const record = manifest as unknown as Record<string, unknown>;
   const names = new Set<string>();
   for (const field of ["dependencies", "peerDependencies", "optionalDependencies"]) {
     const deps = record[field];
