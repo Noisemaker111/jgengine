@@ -2721,6 +2721,62 @@
 - `resolvePeerShellMultiplayer` (function): function resolvePeerShellMultiplayer(args: ResolvePeerShellMultiplayerArgs): Promise<ShellMultiplayer & { close: () => Promise<void> }> — Opens a peer session. With `playable`, one host runs the game loop and guests mirror its shared world. Await `close()` to finish authoritative persistence. Same-origin rooms use BroadcastChannel signaling.
 - `resolveShellMultiplayer` (function): function resolveShellMultiplayer(args: ResolveShellMultiplayerArgs): ShellMultiplayer | null — ⚠ undocumented
 
+## @jgengine/shell/play
+
+- `PLAY_MOVE_ACTIONS` (const): const PLAY_MOVE_ACTIONS: Readonly<Record<PlayMove, string>> — Movement action ids a {@link PlayMove} holds, so a script walks through the same controller a player does.
+- `PlayAimStep` (interface): interface PlayAimStep extends PlayStepBase — Point the walk controller and the aim payload at a yaw/pitch, in radians.
+- `PlayCommandStep` (interface): interface PlayCommandStep extends PlayStepBase — Run a registered command directly, with whatever input it declares.
+- `PlayExpectation` (interface): interface PlayExpectation — One assertion about world state. Read happens twice — right after `setup` and on the assertion's own tick — so a script can prove change ("health dropped") as well as a level ("wave is 2").
+- `PlayExpectationResult` (interface): interface PlayExpectationResult — One assertion's verdict, with both readings so a failure says what changed and by how much.
+- `PlayFireStep` (interface): interface PlayFireStep extends PlayStepBase — Hold the `fire` action: the bound `fire` command runs on the press tick, then on its repeat cadence.
+- `PlayMove` (type): type PlayMove = "forward" | "back" | "left" | "right" — Direction a scripted step walks, using the shell's own movement actions.
+- `PlayMoveStep` (interface): interface PlayMoveStep extends PlayStepBase — Hold a movement direction for `ticks` — the shell walk controller's own held actions.
+- `PlayRunOptions` (interface): interface PlayRunOptions — Options for one scripted play run.
+- `PlayRunResult` (interface): interface PlayRunResult — Everything a scripted run produced: the timeline, the assertion verdicts, and a digest of the timeline for replay comparison.
+- `PlayScript` (interface): interface PlayScript — A script to play against a real game: what to do, on which tick, and what must be true afterwards.
+- `PlayScriptSpec` (interface): interface PlayScriptSpec — What {@link createPlayScript} accepts: the same script with the derived fields optional.
+- `PlayStep` (type): type PlayStep = PlayMoveStep | PlayAimStep | PlayFireStep | PlayUseStep | PlayWaitStep | PlayCommandStep — One tick-based action in a script.
+- `PlayTimelineEntry` (interface): interface PlayTimelineEntry — One row of what happened, on the tick it happened.
+- `PlayTimelineKind` (type): type PlayTimelineKind = "step" | "command" | "event" | "check" — What a timeline row records: a scripted action, a command result, a world event, or an assertion reading.
+- `PlayUseStep` (interface): interface PlayUseStep extends PlayStepBase — Press one bound action id once (default one tick) — `interact`, `reload`, `useAbility`, a game's own action.
+- `PlayValue` (type): type PlayValue = number | string | boolean | null — A reading an assertion compares: a stat, a distance, a count, a phase id.
+- `PlayWaitStep` (interface): interface PlayWaitStep extends PlayStepBase — Hold nothing for `ticks`, letting the world run.
+- `createPlayScript` (function): function createPlayScript(spec: PlayScriptSpec): PlayScript — Validate and normalize a script: whole-tick timings, sorted steps, a derived run length.
+- `formatPlayTimelineEntry` (function): function formatPlayTimelineEntry(entry: PlayTimelineEntry): string — One compact timeline line: `t=120 event combat.damage to=bruiser amount=12 remaining=54`.
+- `playTimelineDigest` (function): function playTimelineDigest(timeline: readonly PlayTimelineEntry[]): string — FNV-1a over the timeline's canonical JSON. Cheap, dependency-free and stable across runs and machines, which is all a replay comparison needs.
+- `runPlayScript` (function): function runPlayScript(playable: PlayableGame, spec: PlayScript | PlayScriptSpec, options: PlayRunOptions = {}): PlayRunResult — Play a real game without a browser: boot its `PlayableGame` through the headless runner, apply a tick-based {@link PlayScript}, and return what happened plus whether the script's assertions held.
+
+## @jgengine/shell/play/run
+
+- `PlayRunOptions` (interface): interface PlayRunOptions — Options for one scripted play run.
+- `runPlayScript` (function): function runPlayScript(playable: PlayableGame, spec: PlayScript | PlayScriptSpec, options: PlayRunOptions = {}): PlayRunResult — Play a real game without a browser: boot its `PlayableGame` through the headless runner, apply a tick-based {@link PlayScript}, and return what happened plus whether the script's assertions held.
+
+## @jgengine/shell/play/script
+
+- `PLAY_MOVE_ACTIONS` (const): const PLAY_MOVE_ACTIONS: Readonly<Record<PlayMove, string>> — Movement action ids a {@link PlayMove} holds, so a script walks through the same controller a player does.
+- `PlayAimStep` (interface): interface PlayAimStep extends PlayStepBase — Point the walk controller and the aim payload at a yaw/pitch, in radians.
+- `PlayCommandStep` (interface): interface PlayCommandStep extends PlayStepBase — Run a registered command directly, with whatever input it declares.
+- `PlayExpectation` (interface): interface PlayExpectation — One assertion about world state. Read happens twice — right after `setup` and on the assertion's own tick — so a script can prove change ("health dropped") as well as a level ("wave is 2").
+- `PlayFireStep` (interface): interface PlayFireStep extends PlayStepBase — Hold the `fire` action: the bound `fire` command runs on the press tick, then on its repeat cadence.
+- `PlayMove` (type): type PlayMove = "forward" | "back" | "left" | "right" — Direction a scripted step walks, using the shell's own movement actions.
+- `PlayMoveStep` (interface): interface PlayMoveStep extends PlayStepBase — Hold a movement direction for `ticks` — the shell walk controller's own held actions.
+- `PlayScript` (interface): interface PlayScript — A script to play against a real game: what to do, on which tick, and what must be true afterwards.
+- `PlayScriptSpec` (interface): interface PlayScriptSpec — What {@link createPlayScript} accepts: the same script with the derived fields optional.
+- `PlayStep` (type): type PlayStep = PlayMoveStep | PlayAimStep | PlayFireStep | PlayUseStep | PlayWaitStep | PlayCommandStep — One tick-based action in a script.
+- `PlayUseStep` (interface): interface PlayUseStep extends PlayStepBase — Press one bound action id once (default one tick) — `interact`, `reload`, `useAbility`, a game's own action.
+- `PlayValue` (type): type PlayValue = number | string | boolean | null — A reading an assertion compares: a stat, a distance, a count, a phase id.
+- `PlayWaitStep` (interface): interface PlayWaitStep extends PlayStepBase — Hold nothing for `ticks`, letting the world run.
+- `createPlayScript` (function): function createPlayScript(spec: PlayScriptSpec): PlayScript — Validate and normalize a script: whole-tick timings, sorted steps, a derived run length.
+
+## @jgengine/shell/play/timeline
+
+- `PlayExpectationResult` (interface): interface PlayExpectationResult — One assertion's verdict, with both readings so a failure says what changed and by how much.
+- `PlayRunResult` (interface): interface PlayRunResult — Everything a scripted run produced: the timeline, the assertion verdicts, and a digest of the timeline for replay comparison.
+- `PlayTimelineEntry` (interface): interface PlayTimelineEntry — One row of what happened, on the tick it happened.
+- `PlayTimelineKind` (type): type PlayTimelineKind = "step" | "command" | "event" | "check" — What a timeline row records: a scripted action, a command result, a world event, or an assertion reading.
+- `formatPlayTimelineEntry` (function): function formatPlayTimelineEntry(entry: PlayTimelineEntry): string — One compact timeline line: `t=120 event combat.damage to=bruiser amount=12 remaining=54`.
+- `playTimelineDigest` (function): function playTimelineDigest(timeline: readonly PlayTimelineEntry[]): string — FNV-1a over the timeline's canonical JSON. Cheap, dependency-free and stable across runs and machines, which is all a replay comparison needs.
+
 ## @jgengine/shell/pointer/PointerOverlays
 
 - `ContextMenuView` (function): function ContextMenuView({ menu, x, y, onPick, onClose, }: { menu: ContextMenu; x: number; y: number; onPick: (verb: ContextVerb) => void; onClose: () => void; }): React.JSX.Element — ⚠ undocumented

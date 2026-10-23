@@ -277,6 +277,7 @@ export function runPlayScript(
     clockMs = Math.round((tick + 1) * dt * 1000 * 1000) / 1000;
     runner.step(dt, { held, pointer: null });
     dispatchActions();
+    script.onTick?.(ctx, runner.tick());
     options.onTick?.(runner.tick(), ctx);
 
     const nowTick = runner.tick();

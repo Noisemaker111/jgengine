@@ -97,6 +97,8 @@ export interface PlayScript {
   totalTicks: number;
   /** Boot work that must happen before the first tick: pick a class, open a wave, spawn the actors the script is about. */
   setup?: (ctx: GameContext, runner: HeadlessRunner) => void;
+  /** Called after every tick — a game that needs a decision per tick (send a wave the moment it is ready) writes it as code instead of guessing the tick in advance. Keep it tick-based: read state, run commands, never a clock. */
+  onTick?: (ctx: GameContext, tick: number) => void;
 }
 
 /** What {@link createPlayScript} accepts: the same script with the derived fields optional. */
@@ -109,6 +111,7 @@ export interface PlayScriptSpec {
   /** Minimum run length in ticks. */
   ticks?: number;
   setup?: (ctx: GameContext, runner: HeadlessRunner) => void;
+  onTick?: (ctx: GameContext, tick: number) => void;
 }
 
 function requireTick(value: number, what: string): number {
@@ -156,5 +159,5 @@ export function createPlayScript(spec: PlayScriptSpec): PlayScript {
   const lastExpect = expect.reduce((max, entry) => Math.max(max, entry.at ?? 0), 0);
   const totalTicks = Math.max(lastStep, lastExpect, spec.ticks ?? 0, 1);
 
-  return { seed: spec.seed, dt, steps, expect, ticks: spec.ticks ?? 0, totalTicks, ...(spec.setup === undefined ? {} : { setup: spec.setup }) };
+  return { seed: spec.seed, dt, steps, expect, ticks: spec.ticks ?? 0, totalTicks, ...(spec.setup === undefined ? {} : { setup: spec.setup }), ...(spec.onTick === undefined ? {} : { onTick: spec.onTick }) };
 }

@@ -736,6 +736,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `PlacementGhost` (function) · `import { PlacementGhost } from "@jgengine/shell/structures"`
 
+## play-script — write a game's behaviour as a tick-based script with declarative assertions instead of playing it in a browser
+
+- `createPlayScript` (function) · `import { createPlayScript } from "@jgengine/shell/play"`
+- `runPlayScript` (function) · `import { runPlayScript } from "@jgengine/shell/play"`
+
 ## popover — viewport-flipping, viewport-clamped anchored popover/tooltip shell
 
 - `Popover` (function) · `import { Popover } from "@jgengine/react"`
