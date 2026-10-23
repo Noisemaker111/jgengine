@@ -26,14 +26,26 @@ At publish, rename this heading to the new version and mirror the entries into
 `packages/core/src/meta/changelog.ts` (the typed `CHANGELOG` export).
 -->
 
+## 0.30.0
+
+### Migrate
+
+- **Bump lockstep SDK packages to `^0.30.0`:** `@jgengine/{core,rapier,react,ws,node,sql,convex,shell,editor,assets,navbake}`. CLI `jgengine` is `0.27.0`; `@jgengine/github` is `0.17.0`.
+
 ### Added
 
 - `ColorblindFrame` (`@jgengine/react/accessibility`) wraps the 3D canvas and applies the player's colour-vision mode to that box alone, so HUD, menu and caption text keep their own contrast. `colorblindFrameFilter` (`@jgengine/core/ui/accessibility`) resolves a mode to the CSS filter, and `useColorblindMode` reads the mode from the settings store the settings rows write; the 3D shell does both for the mounted game.
 - `SettingsSection` (`@jgengine/react/settingsBlocks`) is one `useMenuNav` menu: a d-pad or left stick moves between rows and left/right steps the focused value — slider by its step, toggle flipped, select to the next option, confirm arms a keybind — through the same `onAdjust` path the arrow keys use. `onAdjust` (`@jgengine/react/menuNav`) is the option that makes left/right adjust instead of move.
+- `createStanding` (`@jgengine/core/progression/standing`) holds per-faction or per-district standing over authored tracks and moves it from named outcomes, so an outcome that resolves to nothing throws at the call instead of silently moving nothing.
+- `createGateSet` (`@jgengine/core/progression/gates`) evaluates authored milestones against standing and money, and refuses to load when a gate's unlock id resolves to nothing.
+- `createCareerBank` (`@jgengine/core/progression/careerBank`) keeps persistent career money apart from a run's haul, so a failed run loses the haul and keeps the bank.
+- `createUpgradeTree` (`@jgengine/core/progression/upgrades`) prices each rank from the shared curve primitive and gates purchases on prerequisites and standing.
 
 ### Changed
 
 - `AccessibilityProvider` (`@jgengine/react/accessibility`) sets its data attributes and text-scale var without filtering its own subtree. A colour matrix over the HUD and menu root recoloured the text the rest of the UI assumes, so wrap the game canvas in `ColorblindFrame` instead; a custom root can still offset it with its own `ColorblindFilters` and `filter: url(#jg-cb-<mode>)`.
+- World health bars and nameplates derive their range from the render camera and the target height when a game sets no `maxDistance`: an overhead camera reaches the units it looks down at, and a bar is kept while the target it annotates still covers 18 px, instead of hiding every target past a fixed 60 units.
+- A configured `worldHealthBars.maxDistance` or `nameplates.maxDistance` that hides every target in view now warns once with the nearest measured distance and the prop to raise, instead of rendering nothing.
 
 ## 0.29.0
 
