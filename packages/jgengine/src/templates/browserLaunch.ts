@@ -125,6 +125,7 @@ export async function startBrowser(options) {
   let readyMs = options.readyMs ?? resolveChromeReadyMs(options.env ?? process.env);
   const log = options.log ?? ((line) => console.error(line));
   const launch = options.launch ?? launchChrome;
+  const waitForEndpoint = options.waitForDebugger ?? waitForDebugger;
   const pageProbe = options.pageProbe ?? pageTargetProbe;
   let last = null;
 
@@ -135,7 +136,7 @@ export async function startBrowser(options) {
     try {
       chrome = launch(options.debugPort, options.prefix);
       step = "endpoint";
-      await waitForDebugger(options.debugPort, readyMs, { browser: chrome, profilePath: chrome.userDataDir });
+      await waitForEndpoint(options.debugPort, readyMs, { browser: chrome, profilePath: chrome.userDataDir });
       step = "page";
       await pageProbe(options.debugPort, chrome.userDataDir);
       if (attempt > 1) {
