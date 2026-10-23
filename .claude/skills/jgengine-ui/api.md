@@ -2191,7 +2191,7 @@
 ## @jgengine/shell/audio/eventFeedback
 
 - `AnyFeedbackBinding` (type): type AnyFeedbackBinding = { [Name in FeedbackEventName]: FeedbackBinding<Name> }[FeedbackEventName] — Any row of the event mapping, whichever event it binds.
-- `DEFAULT_FEEDBACK_BINDINGS` (const): const DEFAULT_FEEDBACK_BINDINGS: readonly AnyFeedbackBinding[] — The default mapping: each engine-announced gameplay event to the cue it raises. Damage to the local player reads as hurt, damage anywhere else as a hit; a wave start has no event of its own, so a game announces it through `notify("wave")` or `attachWaveFeedback`.
+- `DEFAULT_FEEDBACK_BINDINGS` (const): const DEFAULT_FEEDBACK_BINDINGS: readonly AnyFeedbackBinding[] — The default mapping: each engine-announced gameplay event to the cue it raises. Damage to the local player reads as hurt, damage anywhere else as a hit; an event that carries a `position` (damage, death) pans and attenuates its cue, and one without still plays centred. A wave start has no event of its own, so a game announces it through `notify("wave")` or `attachWaveFeedback`.
 - `DEFAULT_FEEDBACK_REACTIONS` (const): const DEFAULT_FEEDBACK_REACTIONS: Readonly<Record<FeedbackCue, FeedbackReaction>> — The default reactions. They are data: a game overrides one through `audio.feedbackCues` (sound) or `createEventFeedback({ reactions })` (haptics, shake, caption), and replaces the mapping through `bindings` without touching the shell.
 - `EventFeedback` (interface): interface EventFeedback — The event-to-reaction seam. One instance per running world.
 - `EventFeedbackOptions` (interface): interface EventFeedbackOptions — Options a game or host may override.
@@ -2209,6 +2209,13 @@
 ## @jgengine/shell/audio/gestureResume
 
 - `installGestureResume` (function): function installGestureResume(engine: Pick<AudioEngine, "resume">, target: Pick<Document, "addEventListener" | "removeEventListener"> | null = typeof document === "undefined" ? null : document): () => void — Resume the audio context on the first real user gesture. Chrome keeps a freshly created `AudioContext` suspended until the page sees a trusted input, so pressing a key, tapping or clicking is the only moment sound may start; the engine then flushes any cue it held. One listener set per game, removed on unmount.
+
+## @jgengine/shell/audio/hapticsRoute
+
+- `HapticsRoute` (interface): interface HapticsRoute — Route haptic pulses to whatever the player can feel them on.
+- `HapticsRouteOptions` (interface): interface HapticsRouteOptions — The browser reach of {@link createHapticsRoute}; injected so the route runs headless.
+- `HapticsSink` (type): type HapticsSink = "gamepad" | "vibration" | "none" — Where a pulse actually landed: a gamepad, the device's own motor, or nowhere.
+- `createHapticsRoute` (function): function createHapticsRoute(pad: (pulse: HapticPulse) => void, options: HapticsRouteOptions = {}): HapticsRoute — One pulse in, whichever motor the player has: a connected gamepad takes it through the haptic channels the gamepad loop already drives, and a phone with no pad falls back to `navigator.vibrate`. Pad presence is cached and refreshed on connection events, so a hit never asks the browser for its pad list. Reduced motion does not silence this: see `eventFeedback`.
 
 ## @jgengine/shell/audio/loopParams
 

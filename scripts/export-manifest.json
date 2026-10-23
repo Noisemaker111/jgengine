@@ -887,6 +887,7 @@
     "./audio/captions",
     "./audio/eventFeedback",
     "./audio/gestureResume",
+    "./audio/hapticsRoute",
     "./audio/listenerAnchor",
     "./audio/loopParams",
     "./audio/musicDirector",
