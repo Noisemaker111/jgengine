@@ -5,7 +5,8 @@
 //   bun run lane:close --pr 2274
 //   bun run lane:close --waive "nightly build really is 20 minutes"
 //
-// It verifies, lands, asks `ci:status` once for the truth about the checks, then
+// It verifies, lands (staging and committing the lane's work first, with its `changes/`
+// fragment as the message), asks `ci:status` once for the truth about the checks, then
 // reads this session from `lane:audit` and gates on how it spent its own time. A
 // lane that slept or watched CI is refused, because neither is needed any more:
 // `ci:status` answers in a second, and a wait on a condition is a command that
@@ -16,6 +17,10 @@
 // placed in the measured population by percentile. It exits 2 on waiting, 3 when
 // it cannot answer (no PR, no session, no audit), and prints a report skeleton a
 // lane can paste instead of writing prose.
+//
+// A PR whose checks have not registered yet is a hand-off, not a failure: the queue
+// owns the wait and `bun run ci:status --pr <n>` answers only later, so the report
+// says so and the lane still exits 0.
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
@@ -318,6 +323,7 @@ export function reportSkeleton(input: ReportInput): string {
     );
   }
   lines.push(`- files changed: ${input.filesChanged}`);
+  if (input.status === undefined) lines.push(`- ask again for the checks: bun run ci:status --pr ${input.pr}`);
   if (input.waive !== undefined) lines.push(`- waiting waived: ${input.waive}`);
   return lines.join("\n");
 }
@@ -368,14 +374,14 @@ export function closeLane(args: LaneCloseArgs, io: LaneIo): number {
     return EXIT_VERIFY_FAILED;
   }
 
-  io.out("lane:close: land");
-  const landed = io.sh(["run", "land"], true);
+  io.out("lane:close: land --commit");
+  const landed = io.sh(["run", "land", "--commit"], true);
   if (landed.status !== 0) {
     io.err(`lane:close: land exited ${landed.status}; the lane is not closed`);
     return landed.status;
   }
 
-  const pr = args.pr ?? mergedPr(branch, io);
+  const pr = args.pr ?? branchPr(branch, io);
   if (pr === null) {
     io.err(`lane:close: landed ${branch} but cannot name its PR; no checks or report to print`);
     return EXIT_CANNOT_ANSWER;
@@ -476,15 +482,22 @@ export function closeLane(args: LaneCloseArgs, io: LaneIo): number {
     io.err(`lane:close: cannot check waiting: ${picked.note}`);
     return EXIT_CANNOT_ANSWER;
   }
-  if (status === undefined) {
+  // A PR whose checks have not registered yet is handed off, not unanswered: the queue owns the
+  // wait, and `ci:status` is the one command that answers later. Only a ci:status that produced no
+  // answer at all leaves the lane unable to report.
+  if (status === undefined && answer === null) {
     io.err(`lane:close: cannot report the checks: ${checksProblem}`);
     return EXIT_CANNOT_ANSWER;
   }
   return EXIT_CLOSED;
 }
 
-function mergedPr(branch: string, io: LaneIo): number | null {
-  const listed = io.sh(["gh", "pr", "list", "--head", branch, "--state", "merged", "--limit", "1", "--json", "number"], false);
+/**
+ * The PR this branch handed over: open and armed, or already merged. `land` no longer waits, so the
+ * PR a lane just produced is usually still open when the report is printed.
+ */
+function branchPr(branch: string, io: LaneIo): number | null {
+  const listed = io.sh(["gh", "pr", "list", "--head", branch, "--state", "all", "--limit", "1", "--json", "number"], false);
   if (listed.status !== 0) return null;
   const parsed = parseJson<{ number: number }[]>(listed.stdout);
   if (!("value" in parsed)) return null;

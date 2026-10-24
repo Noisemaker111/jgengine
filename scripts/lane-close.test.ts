@@ -71,7 +71,7 @@ function io(script: Script = {}): LaneIo & { lines: { out: string[]; err: string
       const key = argv.join(" ");
       if (key === "git rev-parse --abbrev-ref HEAD") return { ...run([]), stdout: `${script.branch ?? "agent/x"}\n` };
       if (key === "run verify:fast") return { ...run([]), status: script.verify ?? 0 };
-      if (key === "run land") return { ...run([]), status: script.land ?? 0 };
+      if (key === "run land --commit") return { ...run([]), status: script.land ?? 0 };
       if (key.startsWith("run ci:status")) {
         return { ...run([]), stdout: script.ci ?? CI_OK, status: script.ciStatus ?? 0 };
       }
@@ -195,8 +195,14 @@ describe("which session is this lane", () => {
 });
 
 describe("lane:close end to end", () => {
-  test("a clean lane verifies, lands and prints the numbers", () => {
+  test("a clean lane verifies, lands with --commit and prints the numbers", () => {
+    const calls: string[] = [];
     const fake = io({ audit: audit([session()]) });
+    const sh = fake.sh;
+    fake.sh = (argv, inherit) => {
+      calls.push(argv.join(" "));
+      return sh(argv, inherit);
+    };
     expect(closeLane({}, fake)).toBe(EXIT_CLOSED);
     const printed = fake.lines.out.join("\n");
     expect(printed).toContain("Lane report");
@@ -205,6 +211,30 @@ describe("lane:close end to end", () => {
     expect(printed).toContain("- span 38 min, tool 34 min, waiting 0 min — 61st percentile of 193 recent lanes");
     expect(printed).toContain("- files changed: 3 files changed, 120 insertions(+), 4 deletions(-)");
     expect(fake.lines.err).toEqual([]);
+    expect(calls).toContain("run land --commit");
+  });
+
+  test("a PR that is still open and armed is named, not refused", () => {
+    const pending = JSON.stringify({
+      ok: true,
+      pr: 2278,
+      url: "https://github.com/o/r/pull/2278",
+      state: "OPEN",
+      verdict: "pending",
+      counts: { pass: 3, fail: 0, pending: 8 },
+      runIds: [40034099879],
+    });
+    const fake = io({ audit: audit([session()]), ci: pending });
+    expect(closeLane({}, fake)).toBe(EXIT_CLOSED);
+    const printed = fake.lines.out.join("\n");
+    expect(printed).toContain("- PR: #2278 open https://github.com/o/r/pull/2278");
+    expect(printed).toContain("- checks: 3 pass, 0 fail, 8 pending — pending");
+  });
+
+  test("a landing with no PR to name cannot answer", () => {
+    const fake = io({ pr: null, audit: audit([session()]) });
+    expect(closeLane({}, fake)).toBe(EXIT_CANNOT_ANSWER);
+    expect(fake.lines.err.join("\n")).toContain("cannot name its PR");
   });
 
   test("the lane says which session it read and why", () => {
@@ -223,7 +253,7 @@ describe("lane:close end to end", () => {
       return sh(argv, inherit);
     };
     expect(closeLane({}, fake)).toBe(EXIT_VERIFY_FAILED);
-    expect(landed).not.toContain("run land");
+    expect(landed).not.toContain("run land --commit");
   });
 
   test("a lane that slept is refused, and its calls are named", () => {
@@ -272,14 +302,23 @@ describe("lane:close end to end", () => {
     expect(fake.lines.out.join("\n")).toContain("span/time: unavailable");
   });
 
-  test("no checks answer is reported as unavailable and exits non-zero", () => {
+  test("checks that have not registered yet are a hand-off, and the lane still closes", () => {
     const fake = io({
       ci: JSON.stringify({ ok: false, reason: "no-checks", message: "PR #2278 has no checks yet" }),
       ciStatus: 3,
       audit: audit([session()]),
     });
+    expect(closeLane({}, fake)).toBe(EXIT_CLOSED);
+    const printed = fake.lines.out.join("\n");
+    expect(printed).toContain("checks: unavailable — PR #2278 has no checks yet");
+    expect(printed).toContain("ask again for the checks: bun run ci:status --pr 2278");
+    expect(fake.lines.err).toEqual([]);
+  });
+
+  test("a ci:status that answers nothing at all leaves the lane unable to report", () => {
+    const fake = io({ ci: "not json", audit: audit([session()]) });
     expect(closeLane({}, fake)).toBe(EXIT_CANNOT_ANSWER);
-    expect(fake.lines.out.join("\n")).toContain("checks: unavailable — PR #2278 has no checks yet");
+    expect(fake.lines.err.join("\n")).toContain("cannot report the checks");
   });
 
   test("the base branch is refused before anything runs", () => {
