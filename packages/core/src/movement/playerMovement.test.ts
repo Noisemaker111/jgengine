@@ -1243,7 +1243,7 @@ describe("capsule jump feel", () => {
       expect(capsuleState.motion!.clockMs).toBe(authoritativeStep ? 200 : 50);
       expect(capsuleState.motion!.clockMs).toBe(heightfieldState.motion!.clockMs);
       expect(capsuleState.motion!.verticalVelocity).toBe(heightfieldState.motion!.verticalVelocity);
-      expect(capsule.scene.entity.get("capsule")!.position[1]).toBeCloseTo(authoritativeStep ? 0.8 : 0.35, 8);
+      expect(capsule.scene.entity.get("capsule")!.position[1]).toBeCloseTo(authoritativeStep ? 1.2 : 0.375, 8);
       expect(capsule.scene.entity.get("capsule")!.position[1]).toBeCloseTo(heightfield.scene.entity.get("heightfield")!.position[1], 8);
     }
   });

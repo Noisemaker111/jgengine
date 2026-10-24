@@ -44,6 +44,11 @@ export interface CharacterMoveInput {
   crouch?: boolean;
   /** Body the controller itself is represented by, excluded from its own casts. */
   self?: BodyHandle;
+  /**
+   * Vertical displacement for this move when the caller already integrated it (a movement model that
+   * owns jump/gravity feel). Overrides the controller's own `verticalVelocity * dt` for the sweep.
+   */
+  verticalStep?: number;
 }
 
 /** What one move did. */
@@ -259,13 +264,21 @@ export function createCharacterController(initial: CharacterControllerConfig): C
         remaining = slid;
       }
 
+      const verticalBefore = state.verticalVelocity;
       if (input.gravity !== undefined) state.verticalVelocity -= input.gravity * dt;
+      let jumped = false;
       if (input.jumpVelocity !== undefined && state.grounded) {
         state.verticalVelocity = input.jumpVelocity;
         state.grounded = false;
+        jumped = true;
       }
       const wasGrounded = state.grounded;
-      let vertical = state.verticalVelocity * dt + carry[1];
+      // Trapezoidal displacement: the step moves at the average of this step's start and end vertical
+      // speed, so a jump reaches its analytic apex (v²/2g) at any frame rate. A caller that already
+      // integrated the vertical motion passes the step explicitly.
+      const verticalStep =
+        input.verticalStep ?? (jumped ? state.verticalVelocity : (verticalBefore + state.verticalVelocity) / 2) * dt;
+      let vertical = verticalStep + carry[1];
       if (wasGrounded && vertical <= 0) vertical -= cfg.snapDistance;
       const { hit: verticalHit } = sweep(backend, pos, height, [0, vertical, 0], self);
       if (verticalHit !== null && vertical > 0) {

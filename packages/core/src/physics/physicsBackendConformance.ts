@@ -59,6 +59,23 @@ export function runPhysicsBackendConformance(create: () => PhysicsBackend, harne
     expect(Math.abs(state.velocity[1])).toBeLessThan(0.5);
   });
 
+  test("the same wall-clock time simulates the same distance at 30, 60 and 144 fps", () => {
+    // A backend that honours `fixedDt` as one step per call simulates `fixedDt * fps` seconds per
+    // second of real time — half speed at 30 fps, 2.4x at 144 fps. Horizontal travel ignores the
+    // integrator, so the distance is exactly `v * realSeconds` for any backend that accumulates.
+    const backend = create();
+    const travelled: number[] = [];
+    for (const fps of [30, 60, 144]) {
+      const ball = backend.addBody({ shape: { kind: "sphere", radius: 0.2 }, position: [0, 8, 0], velocity: [10, 0, 0] });
+      for (let i = 0; i < fps; i += 1) backend.step(1 / fps);
+      travelled.push(backend.body(ball)!.position[0]);
+      backend.removeBody(ball);
+    }
+    const spread = Math.max(...travelled) - Math.min(...travelled);
+    expect(travelled[1]).toBeGreaterThan(8);
+    expect(spread).toBeLessThan(0.2);
+  });
+
   test("raycast reports the floor with an upward normal and the right distance", () => {
     const backend = create();
     const ground = floor(backend);

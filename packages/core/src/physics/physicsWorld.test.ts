@@ -558,3 +558,46 @@ describe("collision events", () => {
     expect(fired).toBe(settled);
   });
 });
+
+describe("resting bodies and floor friction", () => {
+  function floorWorld(floorIsBounds: boolean): { w: PhysicsWorld; box: number } {
+    const w = new PhysicsWorld({
+      capacity: 16,
+      bounds: { min: [-50, floorIsBounds ? 0 : -5, -50], max: [50, 50, 50] },
+      gravity: -20,
+    });
+    if (!floorIsBounds) w.addBody({ shape: "box", halfExtents: [20, 0.5, 20], position: [0, -0.5, 0], static: true });
+    return { w, box: w.addBody({ shape: "box", halfExtents: [0.5, 0.5, 0.5], position: [0, 3, 0] }) };
+  }
+
+  test("a resting body stays put: velocity 0, no drift, penetration under 12 mm", () => {
+    const { w, box } = floorWorld(false);
+    for (let i = 0; i < 120; i += 1) w.step(1 / 60);
+    const restY = w.posY[box]!;
+    const restX = w.posX[box]!;
+    const penetration = 0.5 - restY;
+    expect(w.isSleeping(box)).toBe(true);
+    expect(w.velY[box]).toBe(0);
+    expect(Math.abs(w.velX[box]!)).toBeLessThan(1e-6);
+    expect(penetration).toBeGreaterThan(-1e-6);
+    expect(penetration).toBeLessThan(0.012);
+    for (let i = 0; i < 240; i += 1) w.step(1 / 60);
+    expect(w.posY[box]).toBe(restY);
+    expect(w.posX[box]).toBe(restX);
+  });
+
+  test("a body sliding on the world floor stops as fast as on a floor collider", () => {
+    const travelled: number[] = [];
+    for (const floorIsBounds of [true, false]) {
+      const { w, box } = floorWorld(floorIsBounds);
+      // Settle first: this compares steady sliding friction, not the impact impulse's friction budget.
+      for (let i = 0; i < 120; i += 1) w.step(1 / 60);
+      w.setVelocity(box, 4, 0, 0);
+      for (let i = 0; i < 60; i += 1) w.step(1 / 60);
+      travelled.push(w.posX[box]!);
+    }
+    const [bounds, collider] = travelled as [number, number];
+    expect(collider).toBeGreaterThan(0.8);
+    expect(Math.abs(bounds - collider)).toBeLessThan(collider * 0.15);
+  });
+});

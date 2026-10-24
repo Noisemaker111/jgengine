@@ -34,6 +34,11 @@ export async function createRapierBackend(options: RapierBackendOptions = {}): P
   let hasStepped = false;
   let listener: ((event: ContactEvent) => void) | null = null;
   const forced = new Set<number>();
+  // `step(dt)` is accumulated into equal fixed slices, as the backend contract promises; the
+  // default matches PhysicsWorld so the two backends simulate the same real time per frame.
+  const fixedDt = options.fixedDt ?? 1 / 60;
+  const maxSubsteps = Math.max(1, options.maxSubsteps ?? 4);
+  let accumulator = 0;
 
   const shape = (s: BodyShape): any => {
     switch (s.kind) {
@@ -122,10 +127,21 @@ export async function createRapierBackend(options: RapierBackendOptions = {}): P
     },
     removeJoint(h) { const j = joints.get(h); if (j) { world.removeImpulseJoint(j.joint, true); joints.delete(h); } },
     step(dt) {
-      if (dt <= 0) return; world.timestep = options.fixedDt ?? dt; world.step(events); hasStepped = true;
-      // Rapier keeps added forces until reset; the backend contract is one step per applyForce call.
+      if (!(dt > 0)) return;
+      const advance = (): void => {
+        world.step(events);
+        hasStepped = true;
+        events.drainCollisionEvents((rawX: number, rawY: number, started: boolean) => { if (!listener || !started) return; const x = eventHandle(rawX), y = eventHandle(rawY), ca = world.getCollider(x), cb = world.getCollider(y), ha = find(colliders, x), hb = find(colliders, y); if (!ca || !cb || ha === undefined || hb === undefined) return; const m = world.contactPair(ca, cb)?.manifolds?.()[0], n = vec(m?.normal?.() ?? { x: 0, y: 1, z: 0 }), va = ca.parent()?.linvel?.() ?? { x: 0, y: 0, z: 0 }, vb = cb.parent()?.linvel?.() ?? { x: 0, y: 0, z: 0 }; listener({ a: ha, b: hb, normal: n, approachSpeed: Math.max(0, -((vb.x - va.x) * n[0] + (vb.y - va.y) * n[1] + (vb.z - va.z) * n[2])), impulse: Number(m?.totalImpulse?.() ?? 0) }); });
+      };
+      accumulator += dt;
+      const cap = fixedDt * maxSubsteps;
+      if (accumulator > cap) accumulator = cap;
+      world.timestep = fixedDt;
+      while (accumulator >= fixedDt) {
+        advance();
+        accumulator -= fixedDt;
+      }      // Rapier keeps added forces until reset; the backend contract is one step per applyForce call.
       for (const h of forced) { const b = bodies.get(h); if (b) { b.resetForces(false); b.resetTorques(false); } } forced.clear();
-      events.drainCollisionEvents((rawX: number, rawY: number, started: boolean) => { if (!listener || !started) return; const x = eventHandle(rawX), y = eventHandle(rawY), ca = world.getCollider(x), cb = world.getCollider(y), ha = find(colliders, x), hb = find(colliders, y); if (!ca || !cb || ha === undefined || hb === undefined) return; const m = world.contactPair(ca, cb)?.manifolds?.()[0], n = vec(m?.normal?.() ?? { x: 0, y: 1, z: 0 }), va = ca.parent()?.linvel?.() ?? { x: 0, y: 0, z: 0 }, vb = cb.parent()?.linvel?.() ?? { x: 0, y: 0, z: 0 }; listener({ a: ha, b: hb, normal: n, approachSpeed: Math.max(0, -((vb.x - va.x) * n[0] + (vb.y - va.y) * n[1] + (vb.z - va.z) * n[2])), impulse: Number(m?.totalImpulse?.() ?? 0) }); });
     },
     raycast(d: RayDesc) {
       const n = Math.hypot(...d.direction); if (!n) return null;
