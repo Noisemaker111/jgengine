@@ -1,4 +1,0 @@
-### Changed
-
-- `bun run land` hands the PR over instead of waiting for it: it pushes, opens or updates the PR, runs `--verify`, arms auto-merge and exits in seconds, printing the PR URL and `bun run ci:status --pr <n>`. A trivial change spent 5m09s inside `land`'s own poll loop, and one night's lanes spent 449 minutes watching CI. `--watch` still lands the old way and says it is deprecated.
-- `bun run land:queue` is the only process that waits for CI. It lands ready PRs into `beta` in readiness order (auto-merge armed, else the `land:queue` label), rebases a branch whose base moved in a throwaway worktree so a moved base costs one CI run instead of two, waits once per PR and prints one line per PR with its wait time and run id. A lane hands off by running `bun run land`; it never rebases, labels or waits.
