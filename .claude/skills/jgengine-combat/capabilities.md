@@ -263,6 +263,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `filterOutcomeFor` (function) · `import { filterOutcomeFor } from "@jgengine/core/combat"`
 - `resolveClaim` (function) · `import { resolveClaim } from "@jgengine/core/combat"`
 
+## shot-spec — resolve one shot description into explicit travel and contact behaviour
+
+- `resolveShotSpec` (function) · `import { resolveShotSpec } from "@jgengine/core/combat"`
+
 ## spawn-instance-restore — rehydrate a creature stat instance from decoded snapshot data
 
 - `restoreSpawnInstance` (function) · `import { restoreSpawnInstance } from "@jgengine/core/stats/spawnLevelStats"`

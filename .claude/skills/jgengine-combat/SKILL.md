@@ -31,6 +31,13 @@ see
 For scene-backed `createProjectileSystem`, inject authoritative `rng`; spread
 samples independent pellet rays and prediction stays on the center ray. The
 weapon-plumbing recipe covers the bounded cone and cover contracts.
+When a weapon is not a gun — grenade, mortar, arrow, hitscan explosive — state
+how the shot travels and what it does on contact as one `ShotSpec`
+(`combat/shotSpec`) and pass it as `ProjectileShotInput.spec`, or read
+`resolveShotSpec` yourself. Delivery is `delivery.kind` ("trace" or "body") and
+nothing else decides it; a splash, damage or falloff field never makes a shot
+travel. A new weapon is a few fields, not a code path, so never branch combat
+code on a weapon id or add a second classifier.
 Tune how a weapon feels (recoil, bloom, ADS, shake and rumble) with the
 [weapon-feel recipe](recipes/weapon-feel.md): feel target → `measureWeapon`
 numbers → handling knobs, and `createWeaponFeedbackSignals` into the feedback mixer.

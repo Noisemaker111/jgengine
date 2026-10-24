@@ -99,6 +99,7 @@
     "./combat/resourcePool",
     "./combat/rewardAllocation",
     "./combat/shotOrigin",
+    "./combat/shotSpec",
     "./combat/squadCombat",
     "./combat/squadTactics",
     "./combat/statusApplication",
