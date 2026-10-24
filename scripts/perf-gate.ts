@@ -5,6 +5,8 @@ import { join } from "node:path";
 
 import {
   ensureDevServer,
+  killPid,
+  killProcessTree,
   openPageSession,
   parseQualityArg,
   withBrowserSession,
@@ -12,6 +14,7 @@ import {
 } from "./browser-lib";
 import { measureGame } from "./perf-play";
 import { checkBudget, loadBudget, summarizeRecord, type LoadedBudget } from "./perf-budget";
+import { runPool } from "./type-shard";
 
 /**
  * Frame-budget gate: plays every reference game under the checkout's software
@@ -26,6 +29,14 @@ import { checkBudget, loadBudget, summarizeRecord, type LoadedBudget } from "./p
  * GL allocations — decide pass or fail. `bun run debug <game>` reads the same
  * budget through the same verdict logic, from a game already open in a browser.
  *
+ * Games are measured a few at a time rather than one after another: eight games
+ * in series cost ~6 minutes locally, while the same eight with four in flight
+ * cost about two waves. Each game gets its own browser and profile from the
+ * launch lib (one page target per game on a shared browser is not isolation: a
+ * crashed or throttled page would take another game's measurement with it), and
+ * each is judged against its own budget on its own record, so a game over budget
+ * still fails alone.
+ *
  * Two draw counts appear in the output, and they are not interchangeable:
  *
  * - `drawsFrame` is every draw a frame issues, all passes together — shadow,
@@ -39,6 +50,14 @@ import { checkBudget, loadBudget, summarizeRecord, type LoadedBudget } from "./p
 const repoRoot = fileURLToPath(new URL("..", import.meta.url));
 const DEFAULT_SECONDS = 6;
 const WARMUP_MS = 5_000;
+/** Games measured at once by default. Four keeps a handful of software-GL pages off each other's core. */
+export const DEFAULT_JOBS = 4;
+/**
+ * Debug ports for the games in flight, one per slot. Above the 9200-9899 band
+ * `pickDebugPort` and the warm Chrome use, so two games in one run - or a game
+ * beside a capture - can never attach to each other's browser.
+ */
+export const DEBUG_PORT_BASE = 9910;
 
 export { checkBudget, loadBudget, type BudgetViolation, type LoadedBudget, type PerfBudget } from "./perf-budget";
 
@@ -58,12 +77,19 @@ export interface GateArgs {
   games: string[];
   quality: CaptureQuality;
   seconds: number;
+  jobs: number;
+}
+
+/** The debug port game `index` of a run measures through, unique per game. */
+export function debugPortFor(index: number): number {
+  return DEBUG_PORT_BASE + index;
 }
 
 export function parseGateArgs(argv: readonly string[]): GateArgs {
   let games: string[] = [...PERF_GATE_GAMES];
   let quality: CaptureQuality = "full";
   let seconds = DEFAULT_SECONDS;
+  let jobs = DEFAULT_JOBS;
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index]!;
     if (arg === "--help" || arg === "-h") throw new Error("usage");
@@ -72,7 +98,7 @@ export function parseGateArgs(argv: readonly string[]): GateArgs {
         "--set measures a setting on top of the defaults; budgets describe the default build — use `bun run perf <game> --set key=value` and compare the two records",
       );
     }
-    if (arg === "--games" || arg === "--quality" || arg === "--seconds") {
+    if (arg === "--games" || arg === "--quality" || arg === "--seconds" || arg === "--jobs") {
       const value = argv[index + 1];
       if (value === undefined) throw new Error(`${arg} needs a value`);
       index += 1;
@@ -80,6 +106,10 @@ export function parseGateArgs(argv: readonly string[]): GateArgs {
         games = value.split(",").map((id) => id.trim()).filter((id) => id.length > 0);
       } else if (arg === "--quality") {
         quality = parseQualityArg(value);
+      } else if (arg === "--jobs") {
+        const parsed = Number(value);
+        if (!Number.isInteger(parsed) || parsed < 1) throw new Error(`--jobs must be a whole number of games at least 1 (got ${value})`);
+        jobs = parsed;
       } else {
         const parsed = Number(value);
         if (!Number.isFinite(parsed) || parsed <= 0) throw new Error(`--seconds must be a positive number (got ${value})`);
@@ -90,14 +120,15 @@ export function parseGateArgs(argv: readonly string[]): GateArgs {
     throw new Error(`unknown argument ${arg}`);
   }
   if (games.length === 0) throw new Error("--games needs at least one game id");
-  return { games, quality, seconds };
+  return { games, quality, seconds, jobs };
 }
 
-const USAGE = `usage: bun run perf:gate [--games a,b] [--seconds n] [--quality draft|full]
+const USAGE = `usage: bun run perf:gate [--games a,b] [--seconds n] [--quality draft|full] [--jobs n]
 
   --games           comma-separated game ids (default: the 8 reference games)
   --seconds         measured window per game (default ${DEFAULT_SECONDS})
   --quality         graphics tier: full (default) or draft
+  --jobs            games measured at once (default ${DEFAULT_JOBS}); each gets its own browser
   --set             not taken here: a setting override measures a cost against the defaults,
                     not a budget. Use \`bun run perf <game> --set key=value\` and compare records.`;
 
@@ -135,13 +166,34 @@ export function describeGamesLine(checkout: { pin: string | null; head: string |
   return `perf gate: games ${short(checkout.head)}, ${pinned}${drift}`;
 }
 
+interface GameOutcome {
+  game: string;
+  /** The printed ok line, or null when the game failed or was not measured. */
+  summary: string | null;
+  violations: string[];
+  /** Why the game could not be measured at all, as opposed to measured over budget. */
+  error: string | null;
+}
+
+/**
+ * What a run reports: each game's own ok line, and one failure per game over its
+ * own budget or never measured. A game that passes is never dragged down by a
+ * neighbour that did not, and a game that failed is never averaged away.
+ */
+export function gateVerdicts(outcomes: readonly GameOutcome[]): { failures: string[]; lines: string[] } {
+  return {
+    failures: outcomes.flatMap((outcome) => (outcome.error === null ? outcome.violations : [outcome.error])),
+    lines: outcomes.map((outcome) => outcome.summary).filter((line): line is string => line !== null),
+  };
+}
+
 async function main(): Promise<void> {
   const parsed = process.argv.slice(2);
   if (parsed.includes("--help") || parsed.includes("-h")) {
     console.log(USAGE);
     return;
   }
-  const { games, quality, seconds } = parseGateArgs(parsed);
+  const { games, quality, seconds, jobs } = parseGateArgs(parsed);
 
   // Budgets are read before any browser starts: a missing file must fail fast,
   // not after ten minutes of software-GL rendering.
@@ -156,22 +208,21 @@ async function main(): Promise<void> {
   }
 
   const server = await ensureDevServer(repoRoot);
-  const failures: string[] = [];
-  const lines: string[] = [];
   let rasterizerPrinted = false;
   console.log(describeGamesLine(describeGamesCheckout(repoRoot)));
 
-  const exitCode = await withBrowserSession(
-    { keep: false, timeoutMs: 180_000, server: server.child, serverPid: server.pid, hardDeadlineMs: 1_500_000 },
-    async ({ debugPort }) => {
-      for (const game of games) {
-        const loaded = budgets.get(game)!;
-        console.log(`perf gate: ${game} budget ${loaded.source}`);
-        if (loaded.budget.legacyDraws === true) {
-          console.log(
-            `perf gate: ${game} budget entry still says draws — it is compared whole-frame, but re-measure it as drawsFrame (bun run perf ${game}) so the number is a sampled p95, not one frame`,
-          );
-        }
+  const measureOne = async (game: string, index: number): Promise<GameOutcome> => {
+    const loaded = budgets.get(game)!;
+    console.log(`perf gate: ${game} budget ${loaded.source}`);
+    if (loaded.budget.legacyDraws === true) {
+      console.log(
+        `perf gate: ${game} budget entry still says draws — it is compared whole-frame, but re-measure it as drawsFrame (bun run perf ${game}) so the number is a sampled p95, not one frame`,
+      );
+    }
+    let outcome: GameOutcome = { game, summary: null, violations: [], error: null };
+    const exitCode = await withBrowserSession(
+      { keep: false, debugPort: debugPortFor(index), timeoutMs: 180_000, hardDeadlineMs: 300_000 },
+      async ({ debugPort }) => {
         const session = await openPageSession(debugPort);
         try {
           const measured = await measureGame({
@@ -190,29 +241,48 @@ async function main(): Promise<void> {
           }
           const violations = checkBudget(measured.record, budget, { requireDrawsFrame: true });
           if (violations.length === 0) {
-            lines.push(summarizeRecord(measured.record, budget));
+            outcome = { ...outcome, summary: summarizeRecord(measured.record, budget) };
             console.log(`perf gate: ${summarizeRecord(measured.record, budget)}`);
           } else {
-            failures.push(...violations.map((entry) => entry.message));
+            outcome = { ...outcome, violations: violations.map((entry) => entry.message) };
             console.error(`perf gate: ${game} FAILED against ${loaded.source} (${measured.record.gpu})`);
             for (const entry of violations) console.error(`  ${entry.message}`);
             console.error(JSON.stringify(measured.record, null, 2));
           }
-        } catch (error) {
-          const reason = error instanceof Error ? error.message : String(error);
-          failures.push(`perf gate: ${game} could not be measured — ${reason}`);
-          console.error(`perf gate: ${game} could not be measured — ${reason}`);
         } finally {
           await session.close();
         }
-      }
-    },
-  );
+      },
+    );
+    if (exitCode !== 0 && outcome.error === null && outcome.violations.length === 0) {
+      outcome = { ...outcome, error: `perf gate: ${game} could not be measured — its browser session failed (exit ${exitCode})` };
+    }
+    return outcome;
+  };
 
-  if (exitCode !== 0) {
-    console.error(`perf gate: the browser session failed (exit ${exitCode}) before every game was measured`);
-    process.exit(exitCode);
+  const outcomes: (GameOutcome | undefined)[] = new Array<GameOutcome | undefined>(games.length);
+  try {
+    await runPool(
+      games.map((game, index) => ({ game, index })),
+      jobs,
+      async ({ game, index }) => {
+        try {
+          outcomes[index] = await measureOne(game, index);
+        } catch (error) {
+          const reason = error instanceof Error ? error.message : String(error);
+          const message = `perf gate: ${game} could not be measured — ${reason}`;
+          console.error(message);
+          outcomes[index] = { game, summary: null, violations: [], error: message };
+        }
+      },
+    );
+  } finally {
+    killProcessTree(server.child ?? null);
+    killPid(server.pid, true);
   }
+
+  const measured = outcomes.filter((outcome): outcome is GameOutcome => outcome !== undefined);
+  const { failures, lines } = gateVerdicts(measured);
 
   if (failures.length > 0) {
     console.error(`\nperf gate FAILED — ${failures.length} problem(s) across ${games.length} games`);

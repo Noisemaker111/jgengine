@@ -18,7 +18,37 @@ permissions:
   id-token: write
 
 jobs:
+  # `bun test packages` in the publish job was 255 s of test time in one job, more
+  # than every step after it together, and it ran on the same runner that then had
+  # to build and publish. The files are split exactly as CI's `test` job splits
+  # them: scripts/test-shard.ts owns the split, `test-shard.test.ts` fails if this
+  # matrix and the script's shard names drift apart, and the script fails a file no
+  # shard covers. `publish` needs every shard, so a red shard still stops the
+  # release instead of publishing over it.
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [a, b, c, d, e, f, g, h, i]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.2
+      - uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: bun-${{ runner.os }}-
+      - run: bun install --frozen-lockfile
+      - run: bun scripts/test-shard.ts ${{ matrix.shard }}
+        env:
+          GAMES_CLONE_TOKEN: ${{ secrets.GAMES_CLONE_TOKEN }}
+
   publish:
+    needs: [test]
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -47,7 +77,6 @@ jobs:
       - run: bun run games:clone
         env:
           GAMES_CLONE_TOKEN: ${{ secrets.GAMES_CLONE_TOKEN }}
-      - run: bun test packages
       - name: Publish unpublished packages in dependency order
         run: |
           for p in core rapier ws sql navbake react convex node shell assets editor github jgengine; do
