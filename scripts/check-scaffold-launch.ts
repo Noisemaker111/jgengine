@@ -269,7 +269,7 @@ function runtimeSources(cwd = process.cwd()): string[] {
 }
 
 /** `file:line` for every fetch() outside the remote-only list, so the fourth copy fails CI. */
-async function scanForFetchEverywhere(cwd = process.cwd()): Promise<string[]> {
+export async function scanForFetchEverywhere(cwd = process.cwd()): Promise<string[]> {
   const offending: string[] = [];
   for (const path of runtimeSources(cwd)) {
     const relative = relativePath(cwd, path);
@@ -380,4 +380,6 @@ async function main(): Promise<void> {
   );
 }
 
-await main();
+if (import.meta.main) await main();
+
+

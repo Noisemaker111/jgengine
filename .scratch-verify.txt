@@ -1,0 +1,13 @@
+$ bun scripts/verify-fast.ts
+
+verify:fast against origin/beta: 12 changed file(s), 25 test file(s), 4 gate(s)
+verify:fast cannot attribute 4 changed file(s) to a test:
+  scripts/check-scaffold-launch.ts
+  scripts/drive-hud-lean-entry.ts
+  scripts/drive-presentation-recovery.ts
+  scripts/drive-settings.ts
+
+No test in the repository imports these and none sits beside them, so this run would prove
+nothing about them. Add a test next to the file, or run the package suite yourself:
+  bun --cwd=<package> run test
+A change with no reachable test is reported here rather than passing silently.
