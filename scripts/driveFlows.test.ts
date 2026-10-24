@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { join } from "node:path";
 
 import { driveProjectDir, flowSourceFrom, flowsDirOf, listFlowNames, missingFlowsMessage } from "./driveFlows";
 
@@ -42,7 +43,7 @@ describe("flows of a game that has none", () => {
     const dir = flowsDirOf("/wt/newgame");
     expect(listFlowNames(dir, tree.readdir)).toEqual([]);
     expect(missingFlowsMessage(dir)).toContain("no flows at");
-    expect(missingFlowsMessage(dir)).toContain("proofs\\flows");
+    expect(missingFlowsMessage(dir)).toContain(join("proofs", "flows"));
     expect(missingFlowsMessage(dir)).toContain("arrival it asserts");
   });
 
@@ -55,7 +56,7 @@ describe("flows of a game that has none", () => {
     const flow = flowSourceFrom(dir, read, () => listFlowNames(dir, tree.readdir));
     expect(() => flow("to-skirmish")).toThrow("no flow named \"to-skirmish\"");
     expect(() => flow("to-skirmish")).toThrow("no flows at");
-    expect(() => flow("to-skirmish")).toThrow("proofs\\flows");
+    expect(() => flow("to-skirmish")).toThrow(join("proofs", "flows"));
   });
 
   test("a folder with flows lists them, and a missing name names the ones that exist", () => {
