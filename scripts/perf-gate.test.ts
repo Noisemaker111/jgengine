@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import type { PerfRecord } from "./perf-play";
-import { PERF_GATE_GAMES, checkBudget, describeGamesCheckout, describeGamesLine, loadBudget, parseGateArgs, type PerfBudget } from "./perf-gate";
+import { PERF_GATE_GAMES, DEBUG_PORT_BASE, checkBudget, debugPortFor, describeGamesCheckout, describeGamesLine, gateVerdicts, loadBudget, parseGateArgs, type PerfBudget } from "./perf-gate";
 import { summarizeRecord } from "./perf-budget";
 
 /**
@@ -222,12 +222,23 @@ describe("loadBudget", () => {
 });
 
 describe("parseGateArgs", () => {
-  test("defaults to every reference game at full quality", () => {
-    expect(parseGateArgs([])).toEqual({ games: [...PERF_GATE_GAMES], quality: "full", seconds: 6 });
+  test("defaults to every reference game at full quality, four at a time", () => {
+    expect(parseGateArgs([])).toEqual({ games: [...PERF_GATE_GAMES], quality: "full", seconds: 6, jobs: 4 });
   });
 
   test("narrows to named games for a local run", () => {
     expect(parseGateArgs(["--games", "harbor-heat,deepward"]).games).toEqual(["harbor-heat", "deepward"]);
+  });
+
+  test("takes the number of games to measure at once", () => {
+    expect(parseGateArgs(["--jobs", "8"]).jobs).toBe(8);
+    expect(parseGateArgs(["--jobs", "1"]).jobs).toBe(1);
+  });
+
+  test("refuses a job count that is not a whole number of games, instead of measuring one at a time", () => {
+    for (const value of ["0", "-2", "2.5", "many"]) {
+      expect(() => parseGateArgs(["--jobs", value])).toThrow(/--jobs must be a whole number of games at least 1/);
+    }
   });
 
   test("rejects an unknown flag rather than measuring everything", () => {
@@ -238,6 +249,22 @@ describe("parseGateArgs", () => {
     expect(() => parseGateArgs(["--games", "harbor-heat", "--set", "colorblind=grayscale"])).toThrow(
       /--set measures a setting on top of the defaults; budgets describe the default build/,
     );
+  });
+});
+
+describe("debugPortFor", () => {
+  test("gives every game in a run its own browser, never one shared by two", () => {
+    const ports = PERF_GATE_GAMES.map((_game, index) => debugPortFor(index));
+    expect(new Set(ports).size).toBe(ports.length);
+    expect(ports).toEqual(PERF_GATE_GAMES.map((_game, index) => DEBUG_PORT_BASE + index));
+  });
+
+  test("stays outside the band a capture's pickDebugPort and warm Chrome use, so two runs cannot attach to each other", () => {
+    for (let index = 0; index < PERF_GATE_GAMES.length; index += 1) {
+      const port = debugPortFor(index);
+      expect(port).toBeGreaterThanOrEqual(9900);
+      expect(DEBUG_PORT_BASE).toBeGreaterThan(9899);
+    }
   });
 });
 
@@ -289,6 +316,27 @@ describe("describeGamesCheckout", () => {
   test("reports no pin when the file is missing instead of failing the run", () => {
     const root = tempRoot();
     expect(describeGamesCheckout(root, () => null)).toEqual({ pin: null, head: null });
+  });
+});
+
+describe("gateVerdicts", () => {
+  test("a game over its budget fails alone while its neighbours are still reported inside budget", () => {
+    const over = checkBudget(record({ game: "harbor-heat" }, { drawsFrame: 9_100 }), BUDGET, { requireDrawsFrame: true });
+    const inside = checkBudget(record({ game: "deepward" }), BUDGET, { requireDrawsFrame: true });
+    const { failures, lines } = gateVerdicts([
+      { game: "harbor-heat", summary: null, violations: over.map((entry) => entry.message), error: null },
+      { game: "deepward", summary: "deepward ok", violations: inside.map((entry) => entry.message), error: null },
+    ]);
+    expect(failures).toEqual(["perf gate: harbor-heat drawsFrame (whole frame) 9,100 (budget 7,600) over by 1,500"]);
+    expect(lines).toEqual(["deepward ok"]);
+  });
+
+  test("a game that could not be measured is a failure of its own, not a quiet pass", () => {
+    const { failures, lines } = gateVerdicts([
+      { game: "harbor-heat", summary: null, violations: [], error: "perf gate: harbor-heat could not be measured — boom" },
+    ]);
+    expect(failures).toEqual(["perf gate: harbor-heat could not be measured — boom"]);
+    expect(lines).toEqual([]);
   });
 });
 
