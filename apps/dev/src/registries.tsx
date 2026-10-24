@@ -193,6 +193,7 @@ export const gameRegistry: GameRegistry = {
   "terrain-layers": () => import("./demo/terrainLayersDemo").then((module) => module.terrainLayersGame),
   "terrain-macro": () => import("./demo/terrainMacroDemo").then((module) => module.terrainMacroGame),
   "menu-framework": () => import("./demo/menuFrameworkDemo").then((module) => module.menuFrameworkDemoGame),
+  "game-menu": () => import("./demo/gameMenuDemo").then((module) => module.gameMenuDemoGame),
   demo: () => import("./demo/demoGame").then((module) => module.demoGame),
   "physics-probe": () => import("./demo/physicsProbeDemo").then((module) => module.physicsProbeGame),
   "guard-probe": () => import("./demo/guardProbeDemo").then((module) => module.guardProbeGame),

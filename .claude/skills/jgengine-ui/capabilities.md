@@ -207,6 +207,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `ConfirmDialog` (function) · `import { ConfirmDialog } from "@jgengine/react"`
 
+## continue-pane — continue detail pane — the save being resumed with thumbnail, character, playtime and progress
+
+- `ContinuePane` (function) · `import { ContinuePane } from "@jgengine/react"`
+
 ## controller-camera-shake — R3F consumer that applies a core camera-shake controller's pooled per-frame offset to the active camera (translation + pitch/yaw/roll) so the view visibly shakes
 
 - `ControllerCameraShake` (function) · `import { ControllerCameraShake } from "@jgengine/shell/camera"`
@@ -214,6 +218,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## controls-list — keybind-derived control legend that hides on touch
 
 - `ControlsList` (function) · `import { ControlsList } from "@jgengine/react"`
+
+## credits-pane — credits detail pane — sections scrolled inside the pane
+
+- `CreditsPane` (function) · `import { CreditsPane } from "@jgengine/react"`
 
 ## credits-panel — scrollable, navigable credits screen with a back affordance
 
@@ -340,6 +348,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## game-context-bridge — re-provide the GameContext across a nested Canvas/reconciler boundary
 
 - `GameContextBridge` (function) · `import { GameContextBridge } from "@jgengine/react"`
+
+## game-menu — full-bleed game menu — living background, token-sized logo, animated navigable verbs, detail pane, selection sound, pause variant, no page scrollbar
+
+- `GameMenu` (function) · `import { GameMenu } from "@jgengine/react"`
+
+## game-pause-menu — pause menu from the shared game-menu system — same navigation and surface, sized down
+
+- `GamePauseMenu` (function) · `import { GamePauseMenu } from "@jgengine/react"`
 
 ## gesture-resume — unlock the audio context on the first pointer/key/touch gesture, so pre-gesture cues play instead of vanishing
 
@@ -577,6 +593,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `MenuScreen` (function) · `import { MenuScreen } from "@jgengine/react"`
 
+## menu-sound — generated click for menu move/confirm/back, no audio asset
+
+- `createGameMenuSound` (function) · `import { createGameMenuSound } from "@jgengine/react"`
+
 ## menu-stack-reducer — pure push/back/replace/reset transitions for a menu screen stack
 
 - `menuStackReducer` (function) · `import { menuStackReducer } from "@jgengine/react/menuRouter"`
@@ -646,6 +666,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## nameplates — billboarded name + HP bar over nearby entities
 
 - `WorldNameplates` (function) · `import { WorldNameplates } from "@jgengine/shell/world/WorldHud"`
+
+## new-character-pane — character creation pane — name field, palette and avatar choice, start action
+
+- `NewCharacterPane` (function) · `import { NewCharacterPane } from "@jgengine/react"`
 
 ## notice-feed — render ctx.game.notices as an animated toned stack (enter/exit motion, ×N stacking, HUD avoidance)
 
@@ -785,9 +809,17 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `resolveGameLook` (function) · `import { resolveGameLook } from "@jgengine/core/ui"`
 
+## save-slot-card — save slot as a card — thumbnail, character, playtime, progress, timestamp, confirmed delete
+
+- `SaveSlotCard` (function) · `import { SaveSlotCard } from "@jgengine/react"`
+
 ## save-slot-menu — drop-in save-select / profile menu that renders a core save-slots index as New / Continue / Load / Delete cards with free-string meta chips and relative save times, theme-skinnable
 
 - `SaveSlotMenu` (function) · `import { SaveSlotMenu } from "@jgengine/react"`
+
+## save-slots-pane — slot grid pane for the game menu — Continue newest, per-slot cards, keyboard navigation
+
+- `SaveSlotsPane` (function) · `import { SaveSlotsPane } from "@jgengine/react"`
 
 ## scene-capture-binding — expose the in-Canvas scene-capture function to outside-Canvas HUD (photo mode)
 
@@ -844,6 +876,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## shop-grid-host — drop-in vendor/shop grid over a caller-owned wallet — item cards with icon/price/stock, afford-aware Buy, optional Sell, and a balance readout, token-themed
 
 - `ShopGrid` (function) · `import { ShopGrid } from "@jgengine/react"`
+
+## shrink-capture — downscale a captured frame to a save-card thumbnail data URL
+
+- `shrinkCapture` (function) · `import { shrinkCapture } from "@jgengine/react/saveThumbnail"`
 
 ## speed-format — render a m/s speed as km/h, mph, knots, or m/s for speedometers and telemetry HUDs
 
@@ -1018,6 +1054,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## use-translate — live `t(key, params)` translator bound to the active locale, re-rendering on locale change
 
 - `useT` (function) · `import { useT } from "@jgengine/react"`
+
+## use-viewport-scroll-lock — count-aware document scroll lock for full-bleed surfaces
+
+- `useViewportScrollLock` (function) · `import { useViewportScrollLock } from "@jgengine/react"`
 
 ## use-wave-runner — React hook that subscribes to a wave runner and returns its pooled current-wave view
 
