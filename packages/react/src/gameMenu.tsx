@@ -54,6 +54,9 @@ export type GameMenuVariant = "title" | "pause";
 /**
  * Inline style for a menu surface that also accepts `--jg-*` theme tokens, so a game sets a token
  * with `{ "--jg-menu-radius": "12px" }` instead of casting the object to `CSSProperties`.
+ *
+ * `style` and `detailStyle` take `CSSProperties` too: a game that already builds a `CSSProperties`
+ * object keeps passing it, which a 0.38.2 intersection silently stopped accepting.
  */
 export type GameMenuStyle = CSSProperties & Record<`--${string}`, string | number>;
 
@@ -105,9 +108,9 @@ export interface GameMenuProps {
   /** Accessible name of the surface. Default `"Main menu"` (`"Paused"` for the pause variant). */
   label?: string;
   className?: string;
-  style?: GameMenuStyle;
+  style?: CSSProperties | GameMenuStyle;
   detailClassName?: string;
-  detailStyle?: GameMenuStyle;
+  detailStyle?: CSSProperties | GameMenuStyle;
 }
 
 let scrollLocks = 0;

@@ -58,7 +58,7 @@ export function downloadImage(dataUrl: string, filename = "screenshot.png"): voi
  *
  * @capability scene-capture-binding expose the in-Canvas scene-capture function to outside-Canvas HUD (photo mode, save thumbnails)
  */
-export function SceneCaptureBinding({ bind }: { bind?: (capture: () => string | null) => void } = {}): null {
+export function SceneCaptureBinding({ bind }: { bind?: (capture: () => string | null) => void }): null {
   const gl = useThree((state) => state.gl as unknown as THREE.WebGLRenderer & CaptureRenderer);
   useEffect(() => {
     const capture = (): string | null => captureCanvas(gl);
