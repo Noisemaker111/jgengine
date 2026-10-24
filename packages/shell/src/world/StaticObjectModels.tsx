@@ -8,6 +8,7 @@ import { devtools } from "@jgengine/core/devtools/devtools";
 import { useGameContext } from "@jgengine/react/provider";
 import { sharedGltfLoader } from "../render/modelLoad";
 import { IsolatedModelPart } from "../render/SceneModels";
+import { variantLevelModel } from "../render/singleVariantLod";
 import { freezeStaticTransforms } from "../render/staticTransforms";
 import { measureLocalBounds, reportMeasuredBounds } from "../render/measureBounds";
 import { measureLocalCollisionTriangles, reportMeasuredCollisionMesh } from "../render/measureCollisionMesh";
@@ -204,7 +205,7 @@ export function VariantStaticObjects({ batch, single }: { batch: StaticObjectBat
       <VariantLevel
         key={`${level.url}:${index}`}
         url={level.url}
-        model={{ ...batch.model, url: level.url, variants: undefined }}
+        model={variantLevelModel(batch.model, index)}
         batch={batch}
         objects={objects}
         level={index}

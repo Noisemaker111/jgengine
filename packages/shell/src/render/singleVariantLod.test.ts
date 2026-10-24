@@ -5,7 +5,7 @@ import { createObjectStore } from "@jgengine/core/scene/objectStore";
 import { createModelVariantSelector } from "@jgengine/core/world/modelLod";
 import { lodBandIndex } from "@jgengine/core/world/lod";
 import { EntityModel, IsolatedEntityModel, SingleVariantModel } from "./SceneModels";
-import { singleVariantLevel, singleVariantModel } from "./singleVariantLod";
+import { singleVariantLevel, variantLevelModel } from "./singleVariantLod";
 import { attributeTriangles } from "./triangleAttribution";
 
 const FULL_TRIANGLES = 9134;
@@ -66,7 +66,7 @@ interface Frame {
  * `EntityModel` mounts a GLB, and the triangles that mount submits.
  */
 function drawFrame(model: ModelConfig, level: number): Frame {
-  const drawn = singleVariantModel(model, level);
+  const drawn = variantLevelModel(model, level);
   const triangles = ASSETS[drawn.url]!;
   const scene = new THREE.Scene();
   scene.add(assetScene(triangles));
@@ -130,7 +130,7 @@ describe("single object variant levels", () => {
       frames.push(level);
       // The component's `useMemo` key: a level that never changes never rebuilds the model.
       let drawn = drawnByLevel.get(level);
-      if (drawn === undefined) drawnByLevel.set(level, (drawn = singleVariantModel(PALM, level)));
+      if (drawn === undefined) drawnByLevel.set(level, (drawn = variantLevelModel(PALM, level)));
       models.push(drawn);
     }
 
@@ -165,10 +165,10 @@ describe("single object variant levels", () => {
 
   test("a model without variants draws its own asset and an out-of-range level clamps", () => {
     const plain: ModelConfig = { url: "mainsail-palm.glb" };
-    expect(singleVariantModel(plain, 0)).toBe(plain);
-    expect(singleVariantModel(PALM, 5).url).toBe("mainsail-palm-lod1.glb");
-    expect(singleVariantModel(PALM, -2).url).toBe("mainsail-palm.glb");
-    expect(singleVariantModel(PALM, 1).variants).toBeUndefined();
+    expect(variantLevelModel(plain, 0)).toBe(plain);
+    expect(variantLevelModel(PALM, 5).url).toBe("mainsail-palm-lod1.glb");
+    expect(variantLevelModel(PALM, -2).url).toBe("mainsail-palm.glb");
+    expect(variantLevelModel(PALM, 1).variants).toBeUndefined();
   });
 });
 
