@@ -10,6 +10,7 @@ import {
 } from "../scene/sceneRaycast";
 import type { Aim } from "../scene/spatial";
 import type { CombatSpatialDeps, EffectResult, EffectSystem, EffectVia } from "./effects";
+import { resolveShotSpec, shotArc, shotHitOutcome, shotSpecFromStats, type ResolvedShotSpec, type ShotSpec } from "./shotSpec";
 import {
   aimDirection,
   aimSpreadDeg,
@@ -21,6 +22,8 @@ import {
 export interface ProjectileShotInput {
   from: string;
   via: EffectVia;
+  /** How this shot travels and what it does on contact. Omitted means the shot's numeric stats are adapted once. */
+  spec?: ShotSpec;
   aim: Aim;
   effect: string;
   /** Defaults to `{ kind: "converge" }` — explicit rays pass through; angular aim converges from the muzzle to the sightline. */
@@ -237,11 +240,6 @@ export interface ProjectileSystem {
   snapshot(): ProjectileSystemState;
   restore(state: ProjectileSystemState): void;
 }
-
-const DEFAULT_RANGE = 100;
-const DEFAULT_PROJECTILE_SPEED = 15;
-const GRAVITY = 9.8;
-const BASE_HIT_RADIUS = 0.5;
 
 function copyPosition(position: EntityPosition): EntityPosition {
   return [position[0], position[1], position[2]];
@@ -512,14 +510,8 @@ export function createProjectileSystem(deps: ProjectileSystemDeps): ProjectileSy
       return until.map(sceneHitToRaycast);
     });
 
-  function resolveRange(via: EffectVia): number {
-    return itemStat(via, "range") ?? DEFAULT_RANGE;
-  }
-
-  function isBallistic(via: EffectVia): boolean {
-    // A fuse makes a round lobbed: it detonates on a timer, so it settles on an arc, not the sightline.
-    // Explosion alone is splash damage, which a hitscan gun's elemental roll also carries.
-    return itemStat(via, "projectile.fuseTime") !== null;
+  function resolveShotSpecOf(input: ProjectileShotInput): ResolvedShotSpec {
+    return resolveShotSpec(input.spec ?? shotSpecFromStats((stat) => itemStat(input.via, stat)));
   }
 
   interface BallisticArc {
@@ -530,41 +522,24 @@ export function createProjectileSystem(deps: ProjectileSystemDeps): ProjectileSy
     landing: [number, number, number];
   }
 
-  function ballisticArc(input: ProjectileShotInput): BallisticArc {
-    const resolved = resolveShotFor(input.from, input.aim, input.originPolicy, resolveRange(input.via));
+  function ballisticArc(input: ProjectileShotInput, spec: ResolvedShotSpec): BallisticArc {
+    const resolved = resolveShotFor(input.from, input.aim, input.originPolicy, spec.range);
     const origin = resolved?.origin ?? [0, 0, 0];
     const direction = resolved?.direction ?? aimDirection(input.aim) ?? [0, 0, 1];
-    const speed = itemStat(input.via, "projectile.speed") ?? DEFAULT_PROJECTILE_SPEED;
-    const gravityScale = itemStat(input.via, "projectile.gravity") ?? 1;
-    const fuseTime = itemStat(input.via, "projectile.fuseTime");
-    const gravity = GRAVITY * gravityScale;
-    const verticalSpeed = direction[1] * speed;
-    const flightCap = fuseTime ?? resolveRange(input.via) / speed;
-    const impactTime =
-      gravity > 0
-        ? (verticalSpeed + Math.sqrt(verticalSpeed * verticalSpeed + 2 * gravity * Math.max(0, origin[1]))) / gravity
-        : flightCap;
-    const flightTime = Math.min(impactTime, flightCap);
-    const settledY = Math.max(0, origin[1] + verticalSpeed * flightTime - 0.5 * gravity * flightTime * flightTime);
-    return {
-      origin,
-      velocity: [direction[0] * speed, verticalSpeed, direction[2] * speed],
-      gravity,
-      flightTime,
-      landing: [
-        origin[0] + direction[0] * speed * flightTime,
-        settledY,
-        origin[2] + direction[2] * speed * flightTime,
-      ],
-    };
+    const arc = shotArc(spec, origin, direction);
+    return { origin, velocity: arc.velocity, gravity: arc.gravity, flightTime: arc.flightTime, landing: arc.landing };
   }
 
-  function ballisticSettlePoint(input: ProjectileShotInput): [number, number, number] {
-    const arc = ballisticArc(input);
+  function ballisticSettlePoint(input: ProjectileShotInput, spec: ResolvedShotSpec): [number, number, number] {
+    const arc = ballisticArc(input, spec);
     const sweep = deps.sweepBallistic;
     if (sweep !== undefined) {
       const impact = sweep(arc.origin, arc.velocity, arc.gravity, arc.flightTime);
       if (impact !== null) return impact.point;
+    }
+    if (arc.gravity === 0 && spec.body!.fuse === "impact") {
+      const contact = raycast(input.from, withWeaponSpread(input.via, input.aim), spec.range, input.originPolicy)[0];
+      if (contact !== undefined) return [contact.at[0], contact.at[1], contact.at[2]];
     }
     return arc.landing;
   }
@@ -576,8 +551,9 @@ export function createProjectileSystem(deps: ProjectileSystemDeps): ProjectileSy
     direction: EntityPosition | undefined;
   } {
     const aim = withWeaponSpread(input.via, input.aim);
-    const resolved = resolveShotFor(input.from, aim, input.originPolicy, resolveRange(input.via));
-    const rawHits = raycast(input.from, aim, resolveRange(input.via), input.originPolicy);
+    const range = resolveShotSpecOf(input).range;
+    const resolved = resolveShotFor(input.from, aim, input.originPolicy, range);
+    const rawHits = raycast(input.from, aim, range, input.originPolicy);
     const visible = rawHits.filter(
       (hit) => isObjectHit(hit) || deps.spatial.hasLineOfSight(input.from, hit.instanceId),
     );
@@ -590,7 +566,7 @@ export function createProjectileSystem(deps: ProjectileSystemDeps): ProjectileSy
   }
 
   function missPoint(input: ProjectileShotInput): [number, number, number] {
-    const range = resolveRange(input.via);
+    const range = resolveShotSpecOf(input).range;
     const resolved = resolveShotFor(input.from, input.aim, input.originPolicy, range);
     if (resolved === null) return [0, 0, 0];
     return [
@@ -629,14 +605,16 @@ export function createProjectileSystem(deps: ProjectileSystemDeps): ProjectileSy
         ...input,
         aim: copyAim(input.aim),
         via: { ...input.via },
+        ...(input.spec === undefined ? {} : { spec: structuredClone(input.spec) }),
         originPolicy: copyOriginPolicy(input.originPolicy ?? defaultPolicy),
         ...(input.travel === undefined ? {} : { travel: { ...input.travel, ...(input.travel.gravity === undefined ? {} : { gravity: copyPosition(input.travel.gravity) }) } }),
       };
       captured.aim = withWeaponSpread(captured.via, captured.aim);
+      const spec = resolveShotSpecOf(captured);
       const count = itemStat(captured.via, "pellets") ?? 1;
       const pellets = Number.isFinite(count) ? Math.max(1, Math.min(maxPellets, Math.round(count))) : 1;
       const coneSamples: [number, number][] = [];
-      if ((captured.travel !== undefined || !isBallistic(captured.via)) && aimSpreadDeg(captured.aim) > 0) {
+      if ((captured.travel !== undefined || spec.mode === "trace") && aimSpreadDeg(captured.aim) > 0) {
         for (let pellet = 0; pellet < pellets; pellet += 1) {
           coneSamples.push([rng(), rng()]);
         }
@@ -644,7 +622,7 @@ export function createProjectileSystem(deps: ProjectileSystemDeps): ProjectileSy
       const shot: ProjectileShotState = { shotId, input: captured, coneSamples, pellets, firedAt: captured.travel === undefined ? now() : deps.travel!.now(), settled: false, hits: [] };
       if (captured.travel !== undefined) {
         if (!Number.isFinite(shot.firedAt)) throw new RangeError("Projectile authority time must be finite");
-        const resolved = resolveShotFor(captured.from, captured.aim, captured.originPolicy, resolveRange(captured.via));
+        const resolved = resolveShotFor(captured.from, captured.aim, captured.originPolicy, spec.range);
         if (resolved === null) throw new Error("Live projectile requires a resolvable launch origin and direction");
         shot.origin = copyPosition(resolved.origin);
         shot.flights = [];
@@ -666,7 +644,8 @@ export function createProjectileSystem(deps: ProjectileSystemDeps): ProjectileSy
         if (shot.settled || shot.flights === undefined) continue;
         const travel = shot.input.travel!;
         const gravity = travel.gravity ?? [0, 0, 0];
-        const range = resolveRange(shot.input.via);
+        const spec = resolveShotSpecOf(shot.input);
+        const range = spec.range;
         for (const flight of shot.flights) {
           if (!flight.active) continue;
           const step = Math.min(dt, Math.max(0, time - shot.firedAt - flight.age), Math.max(0, travel.lifetime - flight.age));
@@ -702,9 +681,9 @@ export function createProjectileSystem(deps: ProjectileSystemDeps): ProjectileSy
             flight.active = false;
             shot.at ??= copyPosition(flight.position);
             const target = impact?.target;
-            const splash = itemStat(shot.input.via, "explosion.radius");
+            const splash = spec.contact.splash;
             if (impact !== null && splash !== null) {
-              shot.hits.push(...deps.effects.applyEffect({ from: shot.input.from, effect: shot.input.effect, via: shot.input.via, at: flight.position, radius: splash, falloff: "linear" }));
+              shot.hits.push(...deps.effects.applyEffect({ from: shot.input.from, effect: shot.input.effect, via: shot.input.via, at: flight.position, radius: splash.radius, falloff: splash.falloff }));
             } else if (target?.kind === "entity" && target.damageEligible !== false && deps.effects.canReceive(target.instanceId, shot.input.effect) === null) {
               shot.hits.push(...deps.effects.applyEffect({ from: shot.input.from, to: target.instanceId, effect: shot.input.effect, via: shot.input.via }));
             }
@@ -762,21 +741,21 @@ export function createProjectileSystem(deps: ProjectileSystemDeps): ProjectileSy
       shot.settled = true;
       pruneSettled();
       const { input } = shot;
-      const resolved = resolveShotFor(input.from, input.aim, input.originPolicy, resolveRange(input.via));
+      const spec = resolveShotSpecOf(input);
+      const resolved = resolveShotFor(input.from, input.aim, input.originPolicy, spec.range);
       const origin = resolved?.origin ?? [0, 0, 0];
       const originTuple: [number, number, number] = [origin[0], origin[1], origin[2]];
 
-      if (isBallistic(input.via)) {
-        const at = ballisticSettlePoint(input);
-        const splashRadius = itemStat(input.via, "explosion.radius");
-        const radius = splashRadius ?? BASE_HIT_RADIUS;
+      if (spec.mode === "body") {
+        const at = ballisticSettlePoint(input, spec);
+        const splash = spec.contact.splash;
         const hits = deps.effects.applyEffect({
           from: input.from,
           effect: input.effect,
           via: input.via,
           at,
-          radius,
-          falloff: splashRadius === null ? "none" : "linear",
+          radius: splash?.radius ?? spec.body!.radius,
+          falloff: splash?.falloff ?? "none",
         });
         deps.onSettle?.({ shotId, hits: structuredClone(hits), from: input.from, origin, at, effect: input.effect, hit: hits.length > 0, ballistic: true });
         return { status: "settled", shotId, at, hits, origin: originTuple };
@@ -802,13 +781,33 @@ export function createProjectileSystem(deps: ProjectileSystemDeps): ProjectileSy
           deps.spatial.hasLineOfSight(input.from, hit.instanceId) &&
           deps.effects.canReceive(hit.instanceId, input.effect) === null,
         );
-        if (target !== undefined) {
+        const splash = spec.contact.splash;
+        if (splash !== null) {
+          const centre = (target === undefined ? undefined : deps.spatial.positionOf(target.instanceId)) ?? impact?.point ?? target?.point ?? missPoint(pelletInput);
           hits.push(...deps.effects.applyEffect({
             from: input.from,
-            to: target.instanceId,
             effect: input.effect,
             via: input.via,
+            at: [centre[0], centre[1], centre[2]],
+            radius: splash.radius,
+            falloff: splash.falloff,
           }));
+        } else if (target !== undefined) {
+          const hitsTaken = untilBlock.filter((hit) =>
+            hit.targetKind === "entity" && hit.damageEligible &&
+            deps.spatial.hasLineOfSight(input.from, hit.instanceId) &&
+            deps.effects.canReceive(hit.instanceId, input.effect) === null,
+          ).slice(0, spec.contact.penetration.count + 1);
+          for (const [index, hit] of hitsTaken.entries()) {
+            const outcome = shotHitOutcome(spec, hit.distance, index);
+            if (!outcome.applies || outcome.scale <= 0) continue;
+            hits.push(...deps.effects.applyEffect({
+              from: input.from,
+              to: hit.instanceId,
+              effect: input.effect,
+              via: outcome.scale === 1 ? input.via : { ...input.via, amount: (spec.contact.damage?.base ?? 0) * outcome.scale },
+            }));
+          }
         }
         if (at === undefined) {
           const point = impact?.point ?? target?.point ?? missPoint(pelletInput);

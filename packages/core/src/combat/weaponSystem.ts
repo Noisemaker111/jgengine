@@ -3,7 +3,6 @@ import type { DamageRuntime, DamageRuntimeHitInput, DamageRuntimeResolution } fr
 import { createMagazine, type Magazine, type MagazineSnapshot } from "./magazine";
 import {
   assertWeaponDefinition,
-  weaponDamageAt,
   weaponIntervalMs,
   weaponMaxInFlight,
   type WeaponDefinition,
@@ -16,6 +15,7 @@ import {
   type WeaponStance,
 } from "./weaponHandling";
 import { createFireCadence, type FireCadence } from "./weaponFire";
+import { SHOT_GRAVITY, resolveShotSpec, shotFalloffAt, shotSpecFromWeapon, type ResolvedShotSpec } from "./shotSpec";
 
 /** Where one pellet met the caller's world. */
 export interface WeaponContact {
@@ -296,15 +296,16 @@ export function createWeaponSystem(initial: WeaponDefinition, deps: WeaponSystem
     Math.max(1, Math.floor(deps.maxShotsPerTick ?? DEFAULT_SHOTS_PER_TICK)),
   );
 
-  function assertWiring(definition: WeaponDefinition): void {
-    if (definition.delivery.kind === "hitscan" && deps.raycast === undefined) {
+  function assertWiring(definition: WeaponDefinition, shotSpec: ResolvedShotSpec): void {
+    if (shotSpec.mode === "trace" && deps.raycast === undefined) {
       throw new Error(`Weapon "${definition.id}" is hitscan but no raycast was provided`);
     }
-    if (definition.delivery.kind === "projectile" && deps.sweep === undefined) {
+    if (shotSpec.mode === "body" && deps.sweep === undefined) {
       throw new Error(`Weapon "${definition.id}" is projectile but no sweep was provided`);
     }
   }
-  assertWiring(initial);
+  const initialShot = resolveShotSpec(shotSpecFromWeapon(initial));
+  assertWiring(initial, initialShot);
 
   function buildMagazine(definition: WeaponDefinition): Magazine | null {
     const magazine = definition.magazine;
@@ -317,6 +318,7 @@ export function createWeaponSystem(initial: WeaponDefinition, deps: WeaponSystem
   }
 
   let definition = initial;
+  let shotSpec = initialShot;
   let intervalMs = weaponIntervalMs(initial);
   let cadence: FireCadence = createFireCadence({ intervalMs });
   let magazine = buildMagazine(definition);
@@ -365,7 +367,7 @@ export function createWeaponSystem(initial: WeaponDefinition, deps: WeaponSystem
   ): void {
     const target = contact.target;
     if (target === undefined) return;
-    const falloff = weaponDamageAt(definition, distance);
+    const falloff = shotFalloffAt(shotSpec, distance);
     const context: WeaponImpactContext = { shot, pellet, distance, falloff };
     const input = deps.damageFor === undefined
       ? defaultDamage(contact, target, falloff)
@@ -385,16 +387,16 @@ export function createWeaponSystem(initial: WeaponDefinition, deps: WeaponSystem
     });
   }
 
-  function spawnPellet(shot: number, pellet: number, origin: WeaponVec3, direction: WeaponVec3): void {
-    const delivery = definition.delivery;
-    if (delivery.kind !== "projectile") return;
+  function spawnPellet(shotIndex: number, pellet: number, origin: WeaponVec3, direction: WeaponVec3): void {
+    const body = shotSpec.body;
+    if (body === null) return;
     if (pellets.length >= weaponMaxInFlight(definition)) {
       stats.pelletsDropped += 1;
       return;
     }
-    const speed = delivery.speed;
+    const speed = body.speed;
     pellets.push({
-      shot,
+      shot: shotIndex,
       pellet,
       position: origin,
       velocity: [direction[0] * speed, direction[1] * speed, direction[2] * speed],
@@ -414,13 +416,13 @@ export function createWeaponSystem(initial: WeaponDefinition, deps: WeaponSystem
     for (let pellet = 0; pellet < perShot; pellet += 1) {
       const direction = coneDirection(aim.direction, shot.spread, rng);
       directions.push(direction);
-      if (definition.delivery.kind === "hitscan") {
+      if (shotSpec.trace !== null) {
         const raycast = deps.raycast;
         if (raycast === undefined) continue;
-        const contact = raycast(origin, direction, definition.delivery.maxRange);
+        const contact = raycast(origin, direction, shotSpec.trace.range);
         if (contact === null) continue;
         const distance = distanceBetween(origin, contact.point);
-        if (distance > definition.delivery.maxRange + 1e-6) continue;
+        if (distance > shotSpec.trace.range + 1e-6) continue;
         resolveContact(contact, distance, shotCount, pellet, out);
       } else {
         spawnPellet(shotCount, pellet, origin, direction);
@@ -444,12 +446,12 @@ export function createWeaponSystem(initial: WeaponDefinition, deps: WeaponSystem
   }
 
   function advancePellets(dt: number, out: MutableTick): void {
-    const delivery = definition.delivery;
-    if (pellets.length === 0 || delivery.kind !== "projectile") return;
+    const body = shotSpec.body;
+    if (pellets.length === 0 || body === null) return;
     const sweep = deps.sweep;
     if (sweep === undefined) return;
-    const gravity = delivery.gravity ?? 0;
-    const drag = delivery.drag ?? 0;
+    const gravity = body.gravity * SHOT_GRAVITY;
+    const drag = body.drag;
     const dragScale = Math.max(0, 1 - drag * dt);
     const next: LivePellet[] = [];
     for (const pellet of pellets) {
@@ -475,8 +477,8 @@ export function createWeaponSystem(initial: WeaponDefinition, deps: WeaponSystem
       pellet.velocity = velocity;
       pellet.age += dt;
       pellet.distance = travelled;
-      const outOfRange = delivery.maxRange !== undefined && travelled >= delivery.maxRange;
-      if (pellet.age >= delivery.lifetime || outOfRange) {
+      const outOfRange = travelled >= shotSpec.range;
+      if (pellet.age >= body.lifetime || outOfRange) {
         stats.projectilesExpired += 1;
         continue;
       }
@@ -601,10 +603,12 @@ export function createWeaponSystem(initial: WeaponDefinition, deps: WeaponSystem
     },
     retune(next) {
       assertWeaponDefinition(next);
-      assertWiring(next);
+      const nextShot = resolveShotSpec(shotSpecFromWeapon(next));
+      assertWiring(next, nextShot);
       if ((next.magazine === undefined) !== (magazine === null)) return false;
       const elapsed = cadence.elapsedMs();
       definition = next;
+      shotSpec = nextShot;
       intervalMs = weaponIntervalMs(next);
       cadence = createFireCadence({ intervalMs });
       cadence.restore(elapsed);

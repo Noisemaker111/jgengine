@@ -1,0 +1,5 @@
+### Added
+
+- `ShotSpec` and `resolveShotSpec` (`@jgengine/core/combat/shotSpec`) describe how a shot travels and what it does on contact as plain data: an instant trace or a travelling body with speed, gravity, drag, fuse, lifetime, radius and homing, plus contact damage, falloff, penetration, splash, ricochet and statuses. Every field but `delivery.kind` is optional with a documented default, so a plain gun is three lines and a grenade, mortar, arrow or hitscan explosive is the same shape with different numbers. `shotArc`, `shotFalloffAt` and `shotHitOutcome` are the one place trajectory, falloff and penetration are solved; `shotSpecFromStats` and `shotSpecFromWeapon` adapt existing item stats and weapon definitions once, and a splash radius or damage number never decides that a shot travels.
+- `ProjectileShotInput.spec` lets a caller state the spec directly; the projectile and weapon systems read the resolved spec at spawn, fuse, hitscan settle and damage application instead of classifying a shot.
+- A trace that carries splash now resolves its area damage at the contact point on the same tick, which is the #2272 hitscan-explosive configuration.
