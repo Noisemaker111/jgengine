@@ -1,13 +1,20 @@
 name: Publish
 
+# A release is a fast-forward of `main` onto a proved `beta` commit, so the suite that decides
+# whether that tree is sound has already run on the merge commit. This workflow starts when that
+# run finishes and reads its verdict, instead of running 10,574 tests again on the release commit:
+# one environment-sensitive test used to block a release that the PR had already passed (#2279).
+#
+# What a release still proves, and the PR cannot: the packages build from this exact tree
+# (`bun run build`), the published `.d.ts` surface type-checks (`check-types:sdk`), the tree
+# carries no source artifacts, the candidate packs into installable tarballs, a real adopter
+# compiles against those tarballs, and every published package installs from the registry.
 on:
   workflow_dispatch:
-  push:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
     branches: [main]
-    paths:
-      - ".github/workflows/publish.yml"
-      - "packages/*/package.json"
-      - "packages/*/src/**"
 
 concurrency:
   group: publish
@@ -18,43 +25,16 @@ permissions:
   id-token: write
 
 jobs:
-  # `bun test packages` in the publish job was 255 s of test time in one job, more
-  # than every step after it together, and it ran on the same runner that then had
-  # to build and publish. The files are split exactly as CI's `test` job splits
-  # them: scripts/test-shard.ts owns the split, `test-shard.test.ts` fails if this
-  # matrix and the script's shard names drift apart, and the script fails a file no
-  # shard covers. `publish` needs every shard, so a red shard still stops the
-  # release instead of publishing over it.
-  test:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    strategy:
-      fail-fast: false
-      matrix:
-        shard: [a, b, c, d, e, f, g, h, i]
-    steps:
-      - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.4.2
-      - uses: actions/cache@v4
-        with:
-          path: ~/.bun/install/cache
-          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
-          restore-keys: bun-${{ runner.os }}-
-      - run: bun install --frozen-lockfile
-      - run: bun scripts/test-shard.ts ${{ matrix.shard }}
-        env:
-          GAMES_CLONE_TOKEN: ${{ secrets.GAMES_CLONE_TOKEN }}
-
   publish:
-    needs: [test]
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          # A workflow_run checks out the default branch tip by default, which is not necessarily
+          # the commit whose CI just finished; publish the commit CI judged.
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.4.2
@@ -68,6 +48,14 @@ jobs:
           key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
           restore-keys: bun-${{ runner.os }}-
       - run: bun install --frozen-lockfile
+      # The whole duplicate suite that used to run here is answered by this one question: did this
+      # exact commit pass CI? A red, missing or still-running verdict stops the release.
+      - name: Refuse a commit CI has not passed
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+        run: bun scripts/check-release-ci.ts --sha "$SHA"
       - name: Refuse to publish a commit behind beta
         run: bun scripts/check-release-ancestor.ts
       - name: Stage the lockstep changelog into each package
