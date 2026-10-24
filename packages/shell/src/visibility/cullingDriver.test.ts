@@ -13,6 +13,41 @@ function fixture(config?: VisibilityConfig) {
   return { ctx, driver };
 }
 
+function wideFixture(config?: VisibilityConfig) {
+  const definition = defineGameDefinition({ name: "culling", assets: createAssetCatalog() });
+  const ctx = createGameContext({ definition, content: {}, player: { userId: "viewer", isNew: true } });
+  const driver = buildCullingDriver(ctx, config);
+  driver.setView({ kind: "orthographic", position: [0, 0, 0], target: [0, 0, -1], up: [0, 1, 0], halfWidth: 80, halfHeight: 80, near: 0.1, far: 400 });
+  return { ctx, driver };
+}
+
+describe("occluder grid in the shell culling driver", () => {
+  test("skips a placed object hidden behind a building-sized solid and keeps one beside it", () => {
+    const { ctx, driver } = wideFixture({ culling: { preloadMargin: 0 } });
+    ctx.scene.object.place("tower", 0, 0, -40, { visual: { scale: 20 } });
+    const behind = ctx.scene.object.place("box", 0, 0, -85);
+    const beside = ctx.scene.object.place("box", 68, 0, -80);
+
+    driver.system.update();
+
+    expect(driver.system.isVisible(behind)).toBe(false);
+    expect(driver.system.isVisible(beside)).toBe(true);
+    expect(driver.system.stats().rejectedByOcclusion).toBe(1);
+    expect(driver.occluderStats()?.occluders).toBe(1);
+  });
+
+  test("stays off when a game turns occlusion culling off", () => {
+    const { ctx, driver } = wideFixture({ culling: { occlusionCulling: false, preloadMargin: 0 } });
+    ctx.scene.object.place("tower", 0, 0, -40, { visual: { scale: 20 } });
+    const behind = ctx.scene.object.place("box", 0, 0, -85);
+
+    driver.system.update();
+
+    expect(driver.system.isVisible(behind)).toBe(true);
+    expect(driver.occluderStats()).toBeNull();
+  });
+});
+
 describe("shell culling driver", () => {
   test("keeps each always-visible row when a normal row is yielded last", () => {
     const { ctx, driver } = fixture({ entities: { beacon: { alwaysVisible: true } }, objects: { tower: { alwaysVisible: true } } });
@@ -90,3 +125,4 @@ describe("shell culling driver", () => {
     }
   });
 });
+

@@ -1,13 +1,16 @@
 import { Suspense, useEffect, useMemo, useRef } from "react";
-import { useLoader } from "@react-three/fiber";
+import { useFrame, useLoader } from "@react-three/fiber";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";
 
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import { chunkScatterInstances, type ScatterInstance } from "@jgengine/core/world/scatterRegion";
+import { instanceOutsideCullBand, type InstanceCullPolicy } from "@jgengine/core/render/cullPolicy";
 import { beginFallbackSeam, reportFallbackSeam } from "@jgengine/core/devtools/fallbackSeams";
 
+import { useInstanceCullPolicy } from "../visibility/CullingProvider";
+import { CAMERA_POST_FRAME_PRIORITY } from "../camera/cameraRigs";
 import { buildScatterProxy } from "./scatterProxies";
 import { buildScatterModelSources, disposeScatterModelSources, type ScatterModelSource } from "./scatterModels";
 
@@ -20,6 +23,35 @@ interface ScatterBatch {
   key: string;
   item: string;
   matrices: THREE.Matrix4[];
+}
+
+/**
+ * Indices of a batch's instances inside the tier's cull band, written into `out` in source order.
+ * Instances the batch drew last frame keep the hysteresis band, so one sitting on the boundary does
+ * not flicker on and off as the camera drifts.
+ */
+export function visibleInstanceIndices(
+  camera: { readonly x: number; readonly y: number; readonly z: number },
+  matrices: readonly THREE.Matrix4[],
+  instanceRadius: number,
+  policy: InstanceCullPolicy,
+  wasDrawn: (index: number) => boolean,
+  out: number[],
+): number {
+  let kept = 0;
+  for (let index = 0; index < matrices.length; index += 1) {
+    const elements = matrices[index]!.elements;
+    const scale = Math.hypot(elements[0]!, elements[1]!, elements[2]!);
+    const inside = !instanceOutsideCullBand(
+      camera,
+      { x: elements[12]!, y: elements[13]!, z: elements[14]!, radius: instanceRadius * scale },
+      policy,
+      wasDrawn(index),
+    );
+    if (inside) out[kept++] = index;
+  }
+  out.length = kept;
+  return kept;
 }
 
 /** Groups resolved instances by spatial chunk then species so each batch is one cullable draw. */
@@ -47,6 +79,48 @@ function batchInstances(instances: readonly ScatterInstance[], chunkSize: number
   return batches;
 }
 
+const cullCamera = new THREE.Vector3();
+
+/**
+ * Re-test one batch against the tier's cull distance each time the camera moves, writing only the
+ * surviving instances and setting `count` so the far ones cost no vertex work at all.
+ */
+function useBatchCull(
+  meshRef: { current: THREE.InstancedMesh | null },
+  base: readonly THREE.Matrix4[],
+  instanceRadius: number,
+): void {
+  const policy = useInstanceCullPolicy();
+  const drawn = useRef(new Set<number>());
+  const kept = useRef<number[]>([]);
+  const lastCamera = useRef(new THREE.Vector3(Number.POSITIVE_INFINITY, 0, 0));
+  useFrame(({ camera }) => {
+    const mesh = meshRef.current;
+    if (mesh === null) return;
+    camera.getWorldPosition(cullCamera);
+    if (cullCamera.distanceToSquared(lastCamera.current) < 0.25) return;
+    lastCamera.current.copy(cullCamera);
+    const previous = kept.current.slice();
+    const count = visibleInstanceIndices(
+      { x: cullCamera.x, y: cullCamera.y, z: cullCamera.z },
+      base,
+      instanceRadius,
+      policy,
+      (index) => drawn.current.has(index),
+      kept.current,
+    );
+    let changed = count !== previous.length;
+    for (let slot = 0; !changed && slot < count; slot += 1) changed = kept.current[slot] !== previous[slot];
+    if (!changed) return;
+    drawn.current = new Set(kept.current);
+    for (let slot = 0; slot < count; slot += 1) mesh.setMatrixAt(slot, base[kept.current[slot]!]!);
+    mesh.count = count;
+    mesh.visible = count > 0;
+    mesh.instanceMatrix.needsUpdate = true;
+    mesh.computeBoundingSphere();
+  }, CAMERA_POST_FRAME_PRIORITY);
+}
+
 /** One species-in-a-chunk InstancedMesh; frustum-culled as a unit so offscreen chunks cost nothing. */
 function ScatterBatchMesh({ batch, geometry }: { batch: ScatterBatch; geometry: THREE.BufferGeometry }) {
   const meshRef = useRef<THREE.InstancedMesh>(null);
@@ -58,6 +132,7 @@ function ScatterBatchMesh({ batch, geometry }: { batch: ScatterBatch; geometry: 
     mesh.instanceMatrix.needsUpdate = true;
     mesh.computeBoundingSphere();
   }, [batch]);
+  useBatchCull(meshRef, batch.matrices, geometry.boundingSphere?.radius ?? 1);
   return (
     <instancedMesh ref={meshRef} args={[geometry, undefined, batch.matrices.length]} castShadow receiveShadow>
       <meshStandardMaterial vertexColors roughness={0.85} metalness={0} />
@@ -68,19 +143,21 @@ function ScatterBatchMesh({ batch, geometry }: { batch: ScatterBatch; geometry: 
 /** One GLB-backed draw source instanced across every chunk of one species. */
 function ScatterModelSourceInstances({ source, matrices }: { source: ScatterModelSource; matrices: THREE.Matrix4[] }) {
   const meshRef = useRef<THREE.InstancedMesh>(null);
+  const composed = useMemo(() => {
+    const out: THREE.Matrix4[] = [];
+    for (let i = 0; i < matrices.length; i += 1) out.push(new THREE.Matrix4().multiplyMatrices(matrices[i]!, source.localMatrix));
+    return out;
+  }, [matrices, source]);
   useEffect(() => {
     const mesh = meshRef.current;
     if (mesh === null) return;
-    const composed = new THREE.Matrix4();
-    for (let i = 0; i < matrices.length; i += 1) {
-      composed.multiplyMatrices(matrices[i]!, source.localMatrix);
-      mesh.setMatrixAt(i, composed);
-    }
-    mesh.count = matrices.length;
+    for (let i = 0; i < composed.length; i += 1) mesh.setMatrixAt(i, composed[i]!);
+    mesh.count = composed.length;
     mesh.instanceMatrix.needsUpdate = true;
     mesh.computeBoundingSphere();
-  }, [matrices, source]);
-  return <instancedMesh ref={meshRef} args={[source.geometry, source.material, matrices.length]} castShadow receiveShadow />;
+  }, [composed]);
+  useBatchCull(meshRef, composed, source.geometry.boundingSphere?.radius ?? 1);
+  return <instancedMesh ref={meshRef} args={[source.geometry, source.material, composed.length]} castShadow receiveShadow />;
 }
 
 /** Loads one species' real catalog GLB once, harvests its instanceable draw sources, then GPU-instances them across every chunk that species appears in. */

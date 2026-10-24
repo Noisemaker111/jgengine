@@ -5,8 +5,11 @@ import { useGameContext } from "@jgengine/react/provider";
 import type { CameraView } from "@jgengine/core/visibility/frustum";
 import type { VisibilityConfig } from "@jgengine/core/visibility/config";
 import type { Vec3 } from "@jgengine/core/visibility/bounds";
+import type { GraphicsQuality } from "@jgengine/core/settings/settingsModel";
+import { resolveInstanceCullPolicy, type InstanceCullPolicy } from "@jgengine/core/render/cullPolicy";
 import { buildCullingDriver } from "./cullingDriver";
 import { CAMERA_POST_FRAME_PRIORITY } from "../camera/cameraRigs";
+import { useTerrainQuality } from "../terrain/terrainQuality";
 
 type VisiblePredicate = (id: string) => boolean;
 
@@ -14,6 +17,13 @@ const ALWAYS_VISIBLE: VisiblePredicate = () => true;
 const alwaysVisibleRef: MutableRefObject<VisiblePredicate> = { current: ALWAYS_VISIBLE };
 
 const CullingContext = createContext<MutableRefObject<VisiblePredicate> | null>(null);
+/** The tier's instance cull distance, for batched instanced draws that manage their own count. */
+export const CullPolicyContext = createContext<InstanceCullPolicy>({ maxDistance: Number.POSITIVE_INFINITY, minDistance: 0, hysteresis: 0 });
+
+/** Read the tier's instance cull distance. Unbounded outside a culling provider. */
+export function useInstanceCullPolicy(): InstanceCullPolicy {
+  return useContext(CullPolicyContext);
+}
 
 /**
  * Read the current render-visibility predicate. Backward compatible: with no CullingProvider
@@ -24,6 +34,19 @@ export function useRenderVisibility(): MutableRefObject<VisiblePredicate> {
   return useContext(CullingContext) ?? alwaysVisibleRef;
 }
 
+/** Resolve the tier's instance cull distance, honouring a game's scene-wide distance override. @internal */
+export function resolveProviderCullPolicy(
+  tier: GraphicsQuality,
+  drawDistance: number | undefined,
+  config: VisibilityConfig | undefined,
+): InstanceCullPolicy {
+  const override = config?.culling?.defaultMaxRenderDistance;
+  return resolveInstanceCullPolicy({
+    tier,
+    drawDistance: drawDistance ?? Number.POSITIVE_INFINITY,
+    ...(override !== undefined ? { override: { maxDistance: override } } : {}),
+  });
+}
 const tmpDir = new THREE.Vector3();
 
 function viewFromCamera(camera: THREE.Camera): CameraView | null {
@@ -65,10 +88,12 @@ export function CullingProvider({ config, drawDistance, children }: { config: Vi
   const enabled = config?.enabled !== false;
   const predicateRef = useRef<VisiblePredicate>(ALWAYS_VISIBLE);
   const camera = useThree((state) => state.camera);
+  const tier = useTerrainQuality();
   const resolvedConfig = useMemo(() => {
     if (drawDistance === undefined) return config;
     return { ...config, culling: { ...config?.culling, defaultMaxRenderDistance: config?.culling?.defaultMaxRenderDistance ?? drawDistance } };
   }, [config, drawDistance]);
+  const policy = useMemo(() => resolveProviderCullPolicy(tier, drawDistance, config), [tier, drawDistance, config]);
   const driver = useMemo(() => (enabled ? buildCullingDriver(ctx, resolvedConfig) : null), [ctx, resolvedConfig, enabled]);
 
   useFrame(() => {
@@ -86,5 +111,7 @@ export function CullingProvider({ config, drawDistance, children }: { config: Vi
     predicateRef.current = (id) => visible.has(id);
   }, CAMERA_POST_FRAME_PRIORITY);
 
-  return <CullingContext.Provider value={predicateRef}>{children}</CullingContext.Provider>;
+  return <CullPolicyContext.Provider value={policy}><CullingContext.Provider value={predicateRef}>{children}</CullingContext.Provider></CullPolicyContext.Provider>;
 }
+
+

@@ -40,10 +40,10 @@ describe("occluderGrid", () => {
     expect(afterTest.rejected).toBe(1);
   });
 
-  test("keeps a box that spans a cell edge, because it could be partly visible", () => {
+    test("keeps a box at the blocker's near edge, because it may be partly visible", () => {
     const built = grid();
-    const spanning = { minX: 191, minY: 0, minZ: 101, maxX: 209, maxY: 2, maxZ: 109 };
-    expect(built.isBoxHidden({ x: 0, y: 2, z: 105 }, spanning)).toBe(false);
+    const atEdge = { minX: 85, minY: 0, minZ: 100, maxX: 95, maxY: 2, maxZ: 106 };
+    expect(built.isBoxHidden({ x: 0, y: 2, z: 105 }, atEdge)).toBe(false);
   });
 
   test("ignores occluders shorter than the trusted height", () => {
@@ -80,4 +80,6 @@ describe("occluderGrid", () => {
     expect(tester.isOccluded({ camera, bounds: { ...beside, centerX: 195, centerY: 1, centerZ: 285, radius: 5 }, occluders: [] })).toBe(false);
   });
 });
+
+
 
