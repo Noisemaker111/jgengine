@@ -14,6 +14,7 @@
  *   bun run shoot daemon start         # start daemon (background)
  *   bun run shoot daemon status
  *   bun run shoot daemon stop
+ *   bun run shoot daemon reap         # retire warm Chrome idle past JG_SHOOT_IDLE_MINUTES
  */
 import type { ChildProcess } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -70,6 +71,8 @@ export interface ShootDaemonState {
   /** Games world the website server was booted against. */
   webWorld?: GamesWorld;
   startedAt: string;
+  /** Last capture that attached to this daemon; absent on records written before idle sweeping. */
+  lastUsedAt?: string;
 }
 
 /**
@@ -184,6 +187,7 @@ export function readDaemonState(cwd = process.cwd(), legacyPath = legacyStatePat
 }
 
 export function writeDaemonState(state: ShootDaemonState, cwd = process.cwd()): void {
+  state.lastUsedAt = new Date().toISOString();
   const path = daemonStatePath(cwd);
   const temporary = `${path}.${process.pid}.tmp`;
   writeFileSync(temporary, `${JSON.stringify(state, null, 2)}\n`);
@@ -245,7 +249,20 @@ export async function isDaemonLive(cwd = process.cwd()): Promise<boolean> {
  */
 export async function attachDaemon(cwd = process.cwd()): Promise<ShootDaemonState | null> {
   if (!(await isDaemonLive(cwd))) return null;
-  return readDaemonState(cwd);
+  const state = readDaemonState(cwd);
+  if (state !== null) await touchDaemonState(cwd);
+  return state;
+}
+
+async function touchDaemonState(cwd: string): Promise<void> {
+  try {
+    await withDaemonStateLock(cwd, () => {
+      const current = readDaemonState(cwd);
+      if (current !== null) writeDaemonState(current, cwd);
+    });
+  } catch {
+    // A contended lock costs one idle window, never a capture.
+  }
 }
 
 export type ShootDaemonTarget = "dev" | "web";
@@ -456,6 +473,88 @@ export async function reapStaleDaemonState(cwd = process.cwd()): Promise<boolean
   return true;
 }
 
+/** Idle window after which a warm daemon is retired: one hour unless `JG_SHOOT_IDLE_MINUTES` says otherwise. */
+export function idleDaemonMs(env: NodeJS.ProcessEnv = process.env): number {
+  const minutes = Number(env.JG_SHOOT_IDLE_MINUTES ?? "");
+  return (Number.isFinite(minutes) && minutes > 0 ? minutes : 60) * 60_000;
+}
+
+/** What the idle sweep retired, so a caller can print it. */
+export interface IdleDaemonReap {
+  retired: { identity: string; chromePort: number; idleMs: number }[];
+  profilesRemoved: number;
+}
+
+/** Test seams: the sweep reads and kills through these instead of the real machine. */
+export interface ReapIdleDaemonsOptions {
+  dir?: string;
+  idleMs?: number;
+  now?: number;
+  alive?: (pid: number | undefined) => boolean;
+  kill?: (pid: number) => void;
+  wait?: (pid: number | undefined) => Promise<void>;
+  remove?: (dir: string) => void;
+}
+
+/**
+ * Retire every warm Chrome on this machine that no capture has used for the idle
+ * window. Records live in the temp directory per checkout, so a lane that ends
+ * without `daemon stop` otherwise leaves its Chrome running for days.
+ */
+export async function reapIdleDaemons(options: ReapIdleDaemonsOptions = {}): Promise<IdleDaemonReap> {
+  const dir = options.dir ?? tmpdir();
+  const idleMs = options.idleMs ?? idleDaemonMs();
+  const now = options.now ?? Date.now();
+  const alive = options.alive ?? pidAlive;
+  const kill = options.kill ?? ((pid: number) => killPid(pid, true));
+  const wait = options.wait ?? waitForPidExit;
+  const remove = options.remove ?? removeProfileDir;
+  const retired: IdleDaemonReap["retired"] = [];
+  const kept = new Set<string>();
+  let profilesRemoved = 0;
+
+  for (const name of readdirSync(dir)) {
+    if (!name.startsWith("jgengine-shoot-daemon-") || !name.endsWith(".json")) continue;
+    const path = join(dir, name);
+    const state = readStatePath(path);
+    if (state === null) {
+      unlinkSync(path);
+      continue;
+    }
+    const used = Date.parse(state.lastUsedAt ?? state.startedAt);
+    const idle = Number.isFinite(used) ? now - used : idleMs;
+    if (idle < idleMs) {
+      if (state.userDataDir !== undefined) kept.add(join(dir, state.userDataDir.replace(/^.*[\\/]/, "")));
+      continue;
+    }
+    for (const pid of [state.chromePid, state.devPid, state.webPid]) {
+      if (pid !== undefined && alive(pid)) kill(pid);
+    }
+    await wait(state.chromePid);
+    if (state.userDataDir !== undefined) {
+      remove(state.userDataDir);
+      kept.add(join(dir, state.userDataDir.replace(/^.*[\\/]/, "")));
+      profilesRemoved += 1;
+    }
+    unlinkSync(path);
+    retired.push({ identity: state.identity, chromePort: state.chromePort, idleMs: idle });
+    console.error(
+      `shoot daemon: retired idle ${state.identity} (chrome :${state.chromePort}, idle ${Math.round(idle / 60_000)}m)`,
+    );
+  }
+
+  for (const name of readdirSync(dir)) {
+    if (!name.startsWith("jg-shoot-daemon-")) continue;
+    const path = join(dir, name);
+    if (!existsSync(path) || !statSync(path).isDirectory()) continue;
+    if (kept.has(path) || now - statSync(path).mtimeMs < idleMs) continue;
+    remove(path);
+    profilesRemoved += 1;
+  }
+
+  return { retired, profilesRemoved };
+}
+
 /** Wait for a background daemon to expose Chrome; Vite targets start on demand. */
 export async function waitForDaemonLive(
   cwd = process.cwd(),
@@ -479,8 +578,17 @@ export async function waitForDaemonLive(
 export async function startDaemon(options: {
   cwd?: string;
   foreground?: boolean;
+  /** Idle sweep before launch; tests turn it off. */
+  reapIdle?: boolean;
 }): Promise<ShootDaemonState> {
   const cwd = options.cwd ?? process.cwd();
+  if (options.reapIdle !== false) {
+    try {
+      await reapIdleDaemons();
+    } catch (error) {
+      console.error(`shoot daemon: idle sweep skipped (${reason(error)})`);
+    }
+  }
   if (await isDaemonLive(cwd)) {
     const existing = readDaemonState(cwd);
     if (existing !== null) {
@@ -658,11 +766,24 @@ export async function runDaemonCommand(argv: string[], cwd = process.cwd()): Pro
   if (verb === "status") {
     return statusDaemon(cwd);
   }
+  if (verb === "reap") {
+    const report = await reapIdleDaemons();
+    if (report.retired.length === 0 && report.profilesRemoved === 0) {
+      console.log("shoot daemon: nothing idle to reap");
+      return 0;
+    }
+    for (const item of report.retired) {
+      console.log(`retired ${item.identity} (chrome :${item.chromePort}, idle ${Math.round(item.idleMs / 60_000)}m)`);
+    }
+    console.log(`shoot daemon: reaped ${report.retired.length} idle daemon(s), ${report.profilesRemoved} profile(s)`);
+    return 0;
+  }
   if (verb === "help" || verb === "--help" || verb === "-h") {
     console.log(`shoot daemon commands:
   start [--foreground]   keep Chrome warm; start each Vite target lazily
   status                 print state JSON if live
   stop                   kill warm Chrome/Vite and clear state
+  reap                   retire every warm Chrome idle past JG_SHOOT_IDLE_MINUTES (60)
 
 Shorthand: bun run shoot --serve  (= daemon start --foreground)
 While running, shoot and drive attach automatically (no --connect needed).`);
