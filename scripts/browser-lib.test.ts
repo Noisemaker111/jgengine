@@ -28,9 +28,10 @@ import {
   screencastCapturesFully,
   windowsPersistentChromeCommand,
   applyCaptureQuality,
-  parseQualityArg,
+  assertQualityApplied,
+  draftSuffix,
   qualitySuffix,
-  sizeForQuality,
+  sizeForDraft,
   PROFILE_OWNER_FILE,
   PROFILE_RUN_FILE,
   ensureCaptureFreeSpace,
@@ -528,18 +529,27 @@ describe("captureViewportPng", () => {
 });
 
 describe("capture quality", () => {
-  test("draft halves the viewport unless --size is explicit and pins the low tier", () => {
-    expect(sizeForQuality("draft", undefined)).toBe("half");
-    expect(sizeForQuality("draft", "full")).toBe("full");
-    expect(sizeForQuality("full", undefined)).toBe("full");
-    expect(applyCaptureQuality(new URL("http://x/?game=g"), "draft").searchParams.get("quality")).toBe("low");
-    expect(qualitySuffix("draft")).toBe("-draft");
+  test("draft halves the viewport unless --size is explicit, and pins the low tier", () => {
+    expect(sizeForDraft(true, undefined)).toBe("half");
+    expect(sizeForDraft(true, "full")).toBe("full");
+    expect(sizeForDraft(false, undefined)).toBe("full");
+    expect(applyCaptureQuality(new URL("http://x/?game=g"), "low").searchParams.get("quality")).toBe("low");
+    expect(draftSuffix(true)).toBe("-draft");
   });
 
-  test("full leaves the URL and file name untouched", () => {
-    expect(applyCaptureQuality(new URL("http://x/?game=g"), "full").toString()).toBe("http://x/?game=g");
-    expect(qualitySuffix("full")).toBe("");
-    expect(() => parseQualityArg("low")).toThrow("--quality must be draft or full");
+  test("no tier leaves the URL and file name untouched, and a non-default tier names itself", () => {
+    expect(applyCaptureQuality(new URL("http://x/?game=g"), undefined).toString()).toBe("http://x/?game=g");
+    expect(applyCaptureQuality(new URL("http://x/?game=g"), "ultra").searchParams.get("quality")).toBe("ultra");
+    expect(qualitySuffix(undefined)).toBe("");
+    expect(qualitySuffix("high")).toBe("");
+    expect(qualitySuffix("ultra")).toBe("-ultra");
+    expect(draftSuffix(false)).toBe("");
+  });
+
+  test("the tier the page reports must be the one the flag asked for", () => {
+    expect(() => assertQualityApplied("ultra", "ultra")).not.toThrow();
+    expect(() => assertQualityApplied("ultra", "high")).toThrow("the page reports tier high");
+    expect(() => assertQualityApplied("ultra", null)).toThrow("no graphics tier was reported");
   });
 });
 

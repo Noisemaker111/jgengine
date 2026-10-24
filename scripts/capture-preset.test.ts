@@ -36,12 +36,12 @@ describe("--quick is one preset, parsed by both scripts", () => {
   });
 
   test("the printed line carries the wall time and the claims it cannot support", () => {
-    const line = quickTimingLine("shoot", { seconds: 4.321, width: 960, height: 540, phases: ["ready=1.00s", "frame(screencast)=0.20s"] });
-    expect(line).toContain("quick 960x540 ready=1.00s frame(screencast)=0.20s");
+    const line = quickTimingLine("shoot", { seconds: 4.321, width: 960, height: 540, tier: "low", phases: ["ready=1.00s", "frame(screencast)=0.20s"] });
+    expect(line).toContain("quick 960x540 tier low ready=1.00s frame(screencast)=0.20s");
     expect(line).toContain("total=4.32s");
     expect(line).toContain("no 1600x900 pixel claim");
     expect(line).toContain("no frame-time claim");
-    expect(quickTimingLine("drive", { seconds: 2, width: 960, height: 540, device: "mobile" })).toContain("quick mobile 960x540");
+    expect(quickTimingLine("drive", { seconds: 2, width: 960, height: 540, device: "mobile" })).toContain("quick mobile 960x540 tier n/a");
   });
 });
 

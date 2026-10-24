@@ -333,6 +333,14 @@ export function GamePlayerShell({
       delete document.documentElement.dataset.jgPresentation;
     };
   }, [playable]);
+  // The tier the shell actually resolved, so a capture can prove which one it measured.
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    document.documentElement.dataset.jgQuality = graphics.quality;
+    return () => {
+      delete document.documentElement.dataset.jgQuality;
+    };
+  }, [graphics.quality]);
   useEffect(() => {
     if (ctx === null || typeof document === "undefined") return;
     const hud = resolveRigKind(playable.camera) === "none" || playable.presentation === "hud";

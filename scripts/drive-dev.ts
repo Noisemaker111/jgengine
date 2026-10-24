@@ -22,25 +22,26 @@ import {
   CdpSession,
   applyCaptureQuality,
   applyDevice,
+  assertQualityApplied,
   captureProfile,
   captureViewportPng,
+  draftSuffix,
   ensureDevServer,
   ensureWebServer,
   forwardPageConsole,
   isUp,
   navigateCapturePageWithRetry,
   openPageSession,
-  parseQualityArg,
   parseSizeArg,
   qualitySuffix,
   readCapturePageState,
-  sizeForQuality,
+  readReportedQuality,
+  sizeForDraft,
   screencastCapturesFully,
   sizeSuffix,
   sweepCaptureProfiles,
   withBrowserSession,
   writePngAtomic,
-  type CaptureQuality,
   type SizeMode,
   type Device,
   type ViewportOverride,
@@ -57,7 +58,7 @@ import {
   splitQuickFlag,
 } from "./capture-preset";
 import { driveInputPointExpr } from "../packages/jgengine/src/templates/driveInput";
-import { CAPTURE_FLAGS, captureFlagHelp, describeFlow, describeStepFile, parseCaptureArgs, parseStepFile, rejectMixedStepFlags, type CaptureStep, type FlowFile, type FlowSource } from "../packages/jgengine/src/templates/captureArgs";
+import { CAPTURE_FLAGS, captureFlagHelp, describeFlow, describeStepFile, parseCaptureArgs, parseGraphicsTier, parseStepFile, rejectMixedStepFlags, type CaptureStep, type FlowFile, type FlowSource, type GraphicsTier } from "../packages/jgengine/src/templates/captureArgs";
 import { awaitDriveCondition, awaitGameView, holdDriveInput, type DriveConditionClock, type DriveInputDeps, type DriveSession } from "../packages/jgengine/src/templates/driveSteps";
 import { acquireDrivePointerLock, aimDriveAt, lookDrivePointer, moveDrivePointer, type DrivePoint } from "../packages/jgengine/src/templates/driveAim";
 import { driveProjectDir, flowSourceFrom, flowsDirOf, listFlowNames, missingFlowsMessage } from "./driveFlows";
@@ -90,7 +91,10 @@ type Args = {
   modeExplicit: boolean;
   device: Device;
   size: SizeMode;
-  quality: CaptureQuality;
+  /** The tier `--quality` pinned; undefined leaves the game's own tier, which the summary still reports. */
+  quality?: GraphicsTier;
+  /** `--draft`: the low-tier half-size iteration preset. */
+  draft: boolean;
   connect?: number;
   keep: boolean;
   help: boolean;
@@ -249,13 +253,16 @@ function parseArgs(argv: string[]): Args {  // `--headed` is parsed here, not in
   const str = (name: string): string | undefined => (typeof o[name] === "string" ? (o[name] as string) : undefined);
   const num = (name: string): number | undefined => (str(name) === undefined ? undefined : Number(str(name)));
   if (parsed.positionals.length > 1) throw new Error(`drive: one game id, got ${parsed.positionals.join(" ")}`);
+  const draft = o.draft === true;
+  const quality = draft ? "low" : str("quality") === undefined ? undefined : parseGraphicsTier(str("quality"));
   const args: Args = {
     game: str("game") ?? parsed.positionals[0] ?? "",
     mode: str("mode") ?? "play",
     modeExplicit: str("mode") !== undefined,
     device: parseCaptureDevice(str("device") ?? "desktop"),
-    quality: parseQualityArg(str("quality") ?? "full"),
-    size: sizeForQuality(parseQualityArg(str("quality") ?? "full"), str("size") === undefined ? undefined : parseSizeArg(str("size"))),
+    ...(quality === undefined ? {} : { quality }),
+    draft,
+    size: sizeForDraft(draft, str("size") === undefined ? undefined : parseSizeArg(str("size"))),
     connect: num("connect"),
     keep: o.keep === true,
     cold,
@@ -745,7 +752,7 @@ for (const step of args.steps) {
 const preparedShots = new Map<string, PreviousShot | undefined>();
 for (const step of args.steps) {
   if (step.kind !== "shot") continue;
-  const path = step.out ?? join(outDir, `${args.game}-${step.name}${sizeSuffix(args.size)}${qualitySuffix(args.quality)}${quickSuffix(args.quick)}.png`);
+  const path = step.out ?? join(outDir, `${args.game}-${step.name}${sizeSuffix(args.size)}${qualitySuffix(args.quality)}${draftSuffix(args.draft)}${quickSuffix(args.quick)}.png`);
   if (!preparedShots.has(path)) preparedShots.set(path, clearShotTarget(path));
 }
 
@@ -815,6 +822,10 @@ async function driveSession(daemon: ShootDaemonState | null): Promise<number> {
         if (args.playtest) url.searchParams.set("seed", String(args.seed));
         if (!args.reuseStorage) await clearOriginStorage(session, new URL(url.toString()).origin);
         await navigateCapturePageWithRetry(session, url.toString(), dev.base, args.timeoutMs, 2, { legacyCanvas: args.url !== undefined });
+        // The tier the game resolved, not the flag: a tier that never reached the render path is
+        // the failure this readout exists to catch, and the run summary repeats it.
+        const reportedTier = await readReportedQuality(session);
+        if (args.quality !== undefined) assertQualityApplied(args.quality, reportedTier);
         if (aim !== undefined) {
           const applied = await session.evaluate<string | null>(`document.documentElement.dataset.jgLook ?? null`);
           if (typeof applied !== "string" || applied.length === 0) {
@@ -901,6 +912,7 @@ async function driveSession(daemon: ShootDaemonState | null): Promise<number> {
         const done = await runDriveSteps(args.steps, {
           now: () => performance.now(),
           line: (text) => console.error(text),
+          tier: reportedTier,
           ...(recorder === null ? {} : { virtualNow: () => recorder!.virtualNow }),
           ...(logPath === undefined ? {} : { record: (entry: DriveStepRecord) => appendFileSync(logPath, JSON.stringify(entry) + "\n") }),
           run: async (step, index) => {
@@ -964,7 +976,7 @@ async function driveSession(daemon: ShootDaemonState | null): Promise<number> {
             } else {
               if (step.kind !== "shot") throw new Error("drive: steps[" + index + "] is a " + step.kind + " step with no executor");
               // A recording owns the screencast pump; a shot must not start/stop it underneath.
-              const path = step.out ?? join(outDir, `${args.game}-${step.name}${sizeSuffix(args.size)}${qualitySuffix(args.quality)}${quickSuffix(args.quick)}.png`);
+              const path = step.out ?? join(outDir, `${args.game}-${step.name}${sizeSuffix(args.size)}${qualitySuffix(args.quality)}${draftSuffix(args.draft)}${quickSuffix(args.quick)}.png`);
               const previous = preparedShots.has(path) ? preparedShots.get(path) : clearShotTarget(path);
               preparedShots.delete(path);
               await screenshot(
@@ -1134,3 +1146,4 @@ if (warm.daemon !== null && exitCode !== 0 && (await daemonDiedUnder(warm.daemon
   exitCode = await attempt(null);
 }
 process.exit(exitCode);
+

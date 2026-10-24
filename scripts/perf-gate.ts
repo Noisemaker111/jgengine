@@ -8,11 +8,10 @@ import {
   killPid,
   killProcessTree,
   openPageSession,
-  parseQualityArg,
   withBrowserSession,
-  type CaptureQuality,
 } from "./browser-lib";
 import { measureGame } from "./perf-play";
+import { parseGraphicsTier, type GraphicsTier } from "../packages/jgengine/src/templates/captureArgs";
 import { checkBudget, loadBudget, summarizeRecord, type LoadedBudget } from "./perf-budget";
 import { runPool } from "./type-shard";
 
@@ -75,7 +74,10 @@ export const PERF_GATE_GAMES = [
 
 export interface GateArgs {
   games: string[];
-  quality: CaptureQuality;
+  /** The tier every game is measured at; undefined measures each game's own tier. */
+  quality?: GraphicsTier;
+  /** Half viewport at the low tier, for a smoke pass over the gate itself. */
+  draft: boolean;
   seconds: number;
   jobs: number;
 }
@@ -87,12 +89,17 @@ export function debugPortFor(index: number): number {
 
 export function parseGateArgs(argv: readonly string[]): GateArgs {
   let games: string[] = [...PERF_GATE_GAMES];
-  let quality: CaptureQuality = "full";
+  let quality: GraphicsTier | undefined;
+  let draft = false;
   let seconds = DEFAULT_SECONDS;
   let jobs = DEFAULT_JOBS;
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index]!;
     if (arg === "--help" || arg === "-h") throw new Error("usage");
+    if (arg === "--draft") {
+      draft = true;
+      continue;
+    }
     if (arg === "--set") {
       throw new Error(
         "--set measures a setting on top of the defaults; budgets describe the default build — use `bun run perf <game> --set key=value` and compare the two records",
@@ -105,7 +112,7 @@ export function parseGateArgs(argv: readonly string[]): GateArgs {
       if (arg === "--games") {
         games = value.split(",").map((id) => id.trim()).filter((id) => id.length > 0);
       } else if (arg === "--quality") {
-        quality = parseQualityArg(value);
+        quality = parseGraphicsTier(value);
       } else if (arg === "--jobs") {
         const parsed = Number(value);
         if (!Number.isInteger(parsed) || parsed < 1) throw new Error(`--jobs must be a whole number of games at least 1 (got ${value})`);
@@ -120,14 +127,17 @@ export function parseGateArgs(argv: readonly string[]): GateArgs {
     throw new Error(`unknown argument ${arg}`);
   }
   if (games.length === 0) throw new Error("--games needs at least one game id");
-  return { games, quality, seconds, jobs };
+  if (draft && quality !== undefined) throw new Error(`--draft measures the low tier at half viewport, so drop it or drop --quality ${quality}`);
+  return { games, ...(quality === undefined ? {} : { quality }), draft, seconds, jobs };
 }
 
-const USAGE = `usage: bun run perf:gate [--games a,b] [--seconds n] [--quality draft|full] [--jobs n]
+const USAGE = `usage: bun run perf:gate [--games a,b] [--seconds n] [--quality low|medium|high|ultra] [--draft] [--jobs n]
 
   --games           comma-separated game ids (default: the 8 reference games)
   --seconds         measured window per game (default ${DEFAULT_SECONDS})
-  --quality         graphics tier: full (default) or draft
+  --quality         the graphics tier each game is measured at (low, medium, high, ultra). Without
+                    it each game runs its own default tier, and every record names the tier it got.
+  --draft           low tier at half viewport, for a smoke pass you will not quote
   --jobs            games measured at once (default ${DEFAULT_JOBS}); each gets its own browser
   --set             not taken here: a setting override measures a cost against the defaults,
                     not a budget. Use \`bun run perf <game> --set key=value\` and compare records.`;
@@ -193,7 +203,7 @@ async function main(): Promise<void> {
     console.log(USAGE);
     return;
   }
-  const { games, quality, seconds, jobs } = parseGateArgs(parsed);
+  const { games, quality, draft, seconds, jobs } = parseGateArgs(parsed);
 
   // Budgets are read before any browser starts: a missing file must fail fast,
   // not after ten minutes of software-GL rendering.
@@ -230,6 +240,7 @@ async function main(): Promise<void> {
             base: server.base,
             game,
             quality,
+            draft,
             seconds,
             warmupMs: WARMUP_MS,
             profile: false,

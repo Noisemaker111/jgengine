@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 
 import { materializeHarness } from "../harness";
-import { CAPTURE_FLAGS, describeFlow, describeStepFile, parseCaptureArgs, parseStepFile, rejectMixedStepFlags, type CaptureFlag, type CaptureTool } from "./captureArgs";
+import { CAPTURE_FLAGS, describeFlow, describeStepFile, parseCaptureArgs, parseGraphicsTier, parseStepFile, rejectMixedStepFlags, type CaptureFlag, type CaptureTool } from "./captureArgs";
 
 /** A valid value for each flag, so every flag can be exercised by every host. */
 export function sampleArgv(entry: CaptureFlag): string[] {
@@ -13,7 +13,7 @@ export function sampleArgv(entry: CaptureFlag): string[] {
     "--steps": "steps.json", "--flow": "to-menu", "--log": "drive.log.jsonl", "--click": "Start", "--double-click": "Tile", "--click-at": "10,20", "--right-click-at": "30,40",
     "--fill": "Name=Ada", "--key": "KeyW+KeyD:250", "--wait": "100", "--shot": "after",
     "--rpc": '{"method":"debug_snapshot"}', "--probe": "p0", "--url": "http://127.0.0.1:5173/", "--port": "5199",
-    "--device": "mobile", "--width": "800", "--height": "600", "--size": "half", "--quality": "draft", "--settle": "500", "--timeout": "90",
+    "--device": "mobile", "--width": "800", "--height": "600", "--size": "half", "--quality": "ultra", "--settle": "500", "--timeout": "90",
     "--param": "gamepad=2", "--out": "/tmp/x.png", "--seed": "3", "--sample": "200", "--softlock": "1500",
     "--epsilon": "0.01", "--game": "demo", "--mode": "play", "--state": "two-towers", "--run": "game.start",
     "--view": "hero", "--look": "1,2", "--look-from": "12,5", "--spawn": "1,0,1", "--style": "toon",
@@ -39,8 +39,25 @@ describe("parseCaptureArgs", () => {
     expect(() => parseCaptureArgs("shoot", ["--click", "Start"], CAPTURE_FLAGS)).toThrow("drive option");
   });
 
-  test("keeps steps ordered and defaults debug_snapshot to the summary", () => {
-    const parsed = parseCaptureArgs("drive", ["demo", "--click-at", "10,20", "--key", "mouse0:1200", "--rpc", '{"method":"debug_snapshot"}', "--shot", "/tmp/a.png"], CAPTURE_FLAGS);
+  test("--quality pins one of the four graphics tiers and rejects anything else by name", () => {
+    for (const tool of tools) {
+      for (const tier of ["low", "medium", "high", "ultra"]) {
+        expect(parseCaptureArgs(tool, ["--quality", tier], CAPTURE_FLAGS).options.quality).toBe(tier);
+      }
+      expect(() => parseCaptureArgs(tool, ["--quality", "draft"], CAPTURE_FLAGS)).toThrow("--quality must be one of low, medium, high, ultra (got draft)");
+      expect(() => parseCaptureArgs(tool, ["--quality", "HIGH"], CAPTURE_FLAGS)).toThrow("must be one of low, medium, high, ultra");
+    }
+    expect(parseGraphicsTier("ultra")).toBe("ultra");
+    expect(() => parseGraphicsTier(undefined)).toThrow("--quality must be one of low, medium, high, ultra (got nothing)");
+  });
+
+  test("--draft is the iteration preset, so it cannot ride with --quality", () => {
+    expect(parseCaptureArgs("shoot", ["--draft"], CAPTURE_FLAGS).options.draft).toBe(true);
+    expect(parseCaptureArgs("drive", ["--draft", "--size", "half"], CAPTURE_FLAGS).options.draft).toBe(true);
+    expect(() => parseCaptureArgs("drive", ["--draft", "--quality", "ultra"], CAPTURE_FLAGS)).toThrow("--draft is the iteration preset");
+  });
+
+  test("keeps steps ordered and defaults debug_snapshot to the summary", () => {    const parsed = parseCaptureArgs("drive", ["demo", "--click-at", "10,20", "--key", "mouse0:1200", "--rpc", '{"method":"debug_snapshot"}', "--shot", "/tmp/a.png"], CAPTURE_FLAGS);
     expect(parsed.positionals).toEqual(["demo"]);
     expect(parsed.steps).toEqual([
       { kind: "click-at", spec: "10,20", button: "left" },

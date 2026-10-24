@@ -63,13 +63,19 @@ describe("runDriveSteps", () => {
     expect(host.lines.some((line) => line.startsWith("#3 shot after FAIL") && line.includes("did not become true"))).toBe(true);
   });
 
+  test("the step summary states the graphics tier the page resolved", async () => {
+    const host = harness(async () => "");
+    await runDriveSteps(steps, { ...host.deps, tier: "ultra" });
+    expect(host.lines.at(-1)).toBe("  tier     ultra");
+  });
+
   test("one log line and one JSONL row per executed step, ending with the summary", async () => {
     const host = harness(async (step) => (step.kind === "key" ? "before 18ms after 21ms" : ""));
     const summary = await runDriveSteps(steps, host.deps);
     expect(summary).toEqual({ passed: 4, failed: 0, wallMs: expect.any(Number), virtualMs: 0 });
     expect(host.lines[0]).toBe("#1 click \"Free skirmish\" ok total 26ms");
     expect(host.lines[3]).toBe("#4 key KeyH 120ms ok before 18ms after 21ms total 26ms");
-    expect(host.lines.slice(-5)).toEqual(["drive: step summary", "  passed   4", "  failed   0", expect.stringContaining("  wall     "), "  virtual  0ms"]);
+    expect(host.lines.slice(-6)).toEqual(["drive: step summary", "  passed   4", "  failed   0", expect.stringContaining("  wall     "), "  virtual  0ms", "  tier     n/a"]);
     const parsed = host.records.map((entry) => JSON.parse(JSON.stringify(entry)) as DriveStepRecord);
     expect(parsed).toHaveLength(parsed.length);
     expect(parsed).toHaveLength(4);
