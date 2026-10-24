@@ -8,10 +8,11 @@ import {
   applyDevice,
   assertQualityApplied,
   ensureDevServer,
+  navigateCapturePage,
   openPageSession,
   readReportedQuality,
   sweepCaptureProfiles,
-  waitCaptureReady,
+  watchPageExceptions,
   withBrowserSession,
   type FrameClock,
 } from "./browser-lib";
@@ -929,10 +930,12 @@ export async function measureGame(options: MeasureOptions): Promise<PerfMeasure>
   if (settings.length > 0) {
     await session.send("Page.addScriptToEvaluateOnNewDocument", { source: perfSettingsScript(settings) });
   }
+  const throws = watchPageExceptions(session);
   await applyDevice(session, "desktop", draft ? "half" : "full");
   const url = perfPageUrl({ base, game, quality, telemetry: options.telemetry, state: options.state, params });
-  await session.send("Page.navigate", { url: url.toString() });
-  await waitCaptureReady(session, 90_000);
+  // Same navigation the capture tools use: it fails on a page exception or a failed document
+  // instead of waiting out the readiness timeout.
+  await navigateCapturePage(session, url.toString(), 90_000);
   // The tier the game resolved, not the flag: a record that names a tier it never rendered at is
   // exactly the evidence gap this flag closes.
   const reportedTier = await readReportedQuality(session);
@@ -1047,6 +1050,12 @@ export async function measureGame(options: MeasureOptions): Promise<PerfMeasure>
     console.error(
       `perf: renderer counter read ${draws} draws, outside the whole-frame range ${frameDraws.min}-${frameDraws.max} the wrapped calls saw — one of the two is not counting a frame`,
     );
+  }
+  throws.stop();
+  // A game that threw and kept rendering is not a game that works: the frame counts read like a
+  // pass, so the throw is the verdict.
+  if (throws.exceptions.length > 0) {
+    throw new Error(`${game} threw while being measured: ${throws.exceptions.join("; ")}`);
   }
 
   return { record, profile: raw, profileMs: profiledMs, clockProbeMs };

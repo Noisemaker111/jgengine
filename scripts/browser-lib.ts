@@ -1769,8 +1769,7 @@ export async function webGlRenderer(session: CdpSession): Promise<string | null>
   return typeof renderer === "string" && renderer.length > 0 ? renderer : null;
 }
 
-function exceptionMessage(params: Record<string, unknown>): string {
-  const details = params.exceptionDetails as
+function exceptionMessage(params: Record<string, unknown>): string {  const details = params.exceptionDetails as
     | { text?: unknown; exception?: { description?: unknown; value?: unknown }; url?: unknown; lineNumber?: unknown }
     | undefined;
   const description = details?.exception?.description;
@@ -1789,6 +1788,19 @@ function exceptionMessage(params: Record<string, unknown>): string {
       ? ` (${details.url}${typeof details.lineNumber === "number" ? `:${details.lineNumber + 1}` : ""})`
       : "";
   return `page exception: ${message}${location}`;
+}
+
+/**
+ * Records every uncaught page exception from now until `stop()`. A page that throws after its
+ * first frame is still broken, and a measurement of it is not evidence the game works: the
+ * frame-budget gate runs one of these over its whole window so a thrown boot fails it.
+ */
+export function watchPageExceptions(session: CdpSession): { exceptions: string[]; stop: () => void } {
+  const exceptions: string[] = [];
+  const off = session.on("Runtime.exceptionThrown", (params) => {
+    exceptions.push(exceptionMessage(params));
+  });
+  return { exceptions, stop: off };
 }
 
 export interface CaptureRegions {

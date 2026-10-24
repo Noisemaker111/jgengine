@@ -340,7 +340,14 @@ test("a probe that catches the compositor still starting retries instead of fail
 });
 
 function fakePerfSession(options: { clock?: number[]; frames?: number[]; gpu?: string } = {}) {
+  const handlers = new Map<string, (params: Record<string, unknown>) => void>();
   const session = {
+    // `measureGame` navigates through `navigateCapturePage`, which subscribes to page events, so
+    // the fake has to be a session a listener can attach to.
+    on(method: string, handler: (params: Record<string, unknown>) => void) {
+      handlers.set(method, handler);
+      return () => handlers.delete(method);
+    },
     send: async () => ({}),
     evaluate: async (expression: string) => {
       if (expression.includes("jgCapture")) return { status: "ready", error: null };
