@@ -481,7 +481,7 @@ export function GameMenu({
           paddingTop: isPause ? 0 : "clamp(8px, 2vh, 28px)",
         }}
       >
-        <nav
+                <nav
           data-jg-game-menu-items=""
           {...nav.containerProps}
           style={{ position: "relative", display: "flex", flexDirection: "column", gap: 2 }}
@@ -490,6 +490,22 @@ export function GameMenu({
             if (event.key === "ArrowDown" || event.key === "ArrowUp") event.stopPropagation();
           }}
         >
+          <div
+            data-jg-game-menu-nav-surface=""
+            aria-hidden="true"
+            style={{
+              position: "absolute",
+              inset: "-16px -22px",
+              borderRadius: "var(--jg-menu-surface-radius, 8px)",
+              background:
+                "linear-gradient(96deg, rgba(4,7,11,0.6) 0%, rgba(4,7,11,0.34) 56%, rgba(4,7,11,0) 100%)",
+              maskImage: "linear-gradient(180deg, transparent 0, #000 9%, #000 91%, transparent 100%)",
+              WebkitMaskImage: "linear-gradient(180deg, transparent 0, #000 9%, #000 91%, transparent 100%)",
+              backdropFilter: "blur(2px)",
+              WebkitBackdropFilter: "blur(2px)",
+              pointerEvents: "none",
+            }}
+          />
           <div
             data-jg-game-menu-rail=""
             aria-hidden="true"
@@ -692,6 +708,9 @@ export function GamePauseMenu(
   const { onResume, onBack, ...rest } = props;
   return <GameMenu {...rest} variant="pause" onBack={onBack ?? onResume} label={rest.label ?? "Paused"} />;
 }
+
+
+
 
 
 

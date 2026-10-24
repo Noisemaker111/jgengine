@@ -208,6 +208,52 @@ describe("GameMenu surface", () => {
     expect(card.recent).toBe("");
   });
 
+  test("every slot card is the same box, filled or empty", async () => {
+    await showSlotGrid();
+    const boxes = await page.evaluate(() => {
+      const cards = [...document.querySelectorAll<HTMLElement>("[data-save-slot-card]")];
+      return cards.map((card) => {
+        const rect = card.getBoundingClientRect();
+        return { width: Math.round(rect.width), height: Math.round(rect.height) };
+      });
+    });
+    expect(boxes.length).toBeGreaterThan(1);
+    const first = boxes[0]!;
+    for (const box of boxes) {
+      expect({ box, first }).toEqual({ box: first, first });
+    }
+    const tracks = await page.evaluate(() => {
+      const grid = document.querySelector("[data-save-slots-grid]") as HTMLElement;
+      return {
+        rows: getComputedStyle(grid).gridAutoRows,
+        columns: getComputedStyle(grid).gridTemplateColumns.split(" ").filter((entry) => entry.endsWith("px")),
+      };
+    });
+    expect(["auto", "1fr", "minmax(0px, 1fr)"]).toContain(tracks.rows);
+    expect(new Set(tracks.columns).size).toBe(1);
+  });
+
+  test("the verbs sit on their own surface, not straight on the scene", async () => {
+    const surface = await page.evaluate(() => {
+      const node = document.querySelector("[data-jg-game-menu-nav-surface]") as HTMLElement | null;
+      if (node === null) return null;
+      const style = getComputedStyle(node);
+      const items = [...document.querySelectorAll("[data-jg-game-menu-item]")].map((item) => item.getBoundingClientRect());
+      const rect = node.getBoundingClientRect();
+      return {
+        background: style.backgroundImage,
+        behindEveryItem: items.every(
+          (item) => item.top >= rect.top - 1 && item.bottom <= rect.bottom + 1 && item.left >= rect.left - 1,
+        ),
+        pointerEvents: style.pointerEvents,
+      };
+    });
+    expect(surface).not.toBeNull();
+    expect(surface!.background).toContain("gradient");
+    expect(surface!.behindEveryItem).toBe(true);
+    expect(surface!.pointerEvents).toBe("none");
+  });
+
   test("an empty slot looks like an empty slot", async () => {
     const empty = await page.evaluate(() => {
       const node = document.querySelector("[data-save-slot-id='slot-3']") as HTMLElement;
@@ -249,6 +295,8 @@ describe("GameMenu surface", () => {
     expect(chosen.at(-1)).toBe("credits");
   });
 });
+
+
 
 
 
