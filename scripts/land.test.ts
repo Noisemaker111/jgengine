@@ -35,11 +35,12 @@ import {
 import type { FragmentFile, Gh, GhCheck, LandIo, LockWait, Run } from "./land";
 
 test("parses flags with values and defaults the base to beta", () => {
-  expect(parseArgs([])).toEqual({ base: "beta", commit: false, watch: false });
+  expect(parseArgs([])).toEqual({ base: "beta", commit: false, allow: [], watch: false });
   expect(parseArgs(["--verify", "bun run ship:preflight"])).toEqual({
     base: "beta",
     verify: "bun run ship:preflight",
     commit: false,
+    allow: [],
     watch: false,
   });
   expect(parseArgs(["--title", "Menus", "--body-file", ".scratch/body.md", "--base", "beta"])).toEqual({
@@ -47,6 +48,7 @@ test("parses flags with values and defaults the base to beta", () => {
     title: "Menus",
     bodyFile: ".scratch/body.md",
     commit: false,
+    allow: [],
     watch: false,
   });
   expect(parseArgs(["--watch"]).watch).toBe(true);
@@ -664,7 +666,7 @@ if (cfg.startAt !== null) {
 }
 at("START");
 const code = land.landBranch({
-  args: { base: "beta", commit: false, verify: cfg.verify, watch: true },
+  args: { base: "beta", commit: false, allow: [], verify: cfg.verify, watch: true },
   branch: cfg.branch,
   lock: cfg.lock,
   waits,
@@ -1005,7 +1007,7 @@ test("land hands the PR over in one pass: no watch, no sleep, the URL and the st
   const { gh, calls } = handOffGh();
   const { io, logs } = handOffIo({ git, gh });
 
-  const code = landBranch({ args: { base: "beta", commit: false, watch: false }, branch: "agent/lane-x", lock: lockPathForTest(), io });
+  const code = landBranch({ args: { base: "beta", commit: false, allow: [], watch: false }, branch: "agent/lane-x", lock: lockPathForTest(), io });
 
   expect(code).toBe(EXIT_LANDED);
   expect(calls).toContainEqual(["pr", "merge", "4242", "--auto", "--merge"]);
@@ -1021,7 +1023,7 @@ test("an auto-merge the repo refuses labels the PR for the queue instead of fail
   const { gh, calls } = handOffGh({ autoMerge: { status: 1, stdout: "", stderr: "auto-merge is not allowed here" } });
   const { io, logs } = handOffIo({ git, gh });
 
-  const code = landBranch({ args: { base: "beta", commit: false, watch: false }, branch: "agent/lane-x", lock: lockPathForTest(), io });
+  const code = landBranch({ args: { base: "beta", commit: false, allow: [], watch: false }, branch: "agent/lane-x", lock: lockPathForTest(), io });
 
   expect(code).toBe(EXIT_LANDED);
   expect(calls).toContainEqual(["pr", "edit", "4242", "--add-label", QUEUE_LABEL]);
@@ -1042,7 +1044,7 @@ test("a base that moved before the hand-off is rebased and armed again, without 
   };
   const { io, logs } = handOffIo({ git, gh: arming });
 
-  const code = landBranch({ args: { base: "beta", commit: false, watch: false }, branch: "agent/lane-x", lock: lockPathForTest(), io });
+  const code = landBranch({ args: { base: "beta", commit: false, allow: [], watch: false }, branch: "agent/lane-x", lock: lockPathForTest(), io });
 
   expect(code).toBe(EXIT_LANDED);
   expect(attempts).toBe(2);
@@ -1056,7 +1058,7 @@ test("checks that already failed stop the hand-off, and a failed verify never ar
   const failedChecks = handOffGh({ checks: failing });
   const first = handOffIo({ git: scriptedGit().git, gh: failedChecks.gh });
   expect(
-    landBranch({ args: { base: "beta", commit: false, watch: false }, branch: "agent/lane-x", lock: lockPathForTest(), io: first.io }),
+    landBranch({ args: { base: "beta", commit: false, allow: [], watch: false }, branch: "agent/lane-x", lock: lockPathForTest(), io: first.io }),
   ).toBe(EXIT_CHECKS_FAILED);
   expect(failedChecks.calls.some((call) => call[1] === "merge")).toBe(false);
   expect(first.errors).toContain("  test (ui) https://example.test/job/9");
@@ -1065,7 +1067,7 @@ test("checks that already failed stop the hand-off, and a failed verify never ar
   const second = handOffIo({ git: scriptedGit().git, gh: unverified.gh, verifyOk: false });
   expect(
     landBranch({
-      args: { base: "beta", commit: false, watch: false, verify: "bun run ship:preflight" },
+      args: { base: "beta", commit: false, allow: [], watch: false, verify: "bun run ship:preflight" },
       branch: "agent/lane-x",
       lock: lockPathForTest(),
       io: second.io,

@@ -395,7 +395,8 @@ describe("the gate reads what lane:audit actually emits", () => {
 
 describe("arguments", () => {
   test("--pr, --waive and --session", () => {
-    expect(parseArgs(["--pr", "12", "--waive", "slow CI"])).toEqual({ pr: 12, waive: "slow CI" });
+    expect(parseArgs(["--pr", "12", "--waive", "slow CI"])).toEqual({ pr: 12, waive: "slow CI", allow: [] });
+    expect(parseArgs(["--allow", "bun.lock"])).toEqual({ allow: ["bun.lock"] });
     expect(() => parseArgs(["--waive", "  "])).toThrow("--waive needs a reason");
     expect(() => parseArgs(["--branch", "x"])).toThrow("unknown argument");
   });

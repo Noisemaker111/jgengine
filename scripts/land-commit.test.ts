@@ -4,6 +4,7 @@ import { join } from "node:path";
 
 import {
   EXIT_LANDED,
+  commitGuards,
   commitLane,
   fragmentBody,
   fragmentSubject,
@@ -110,7 +111,7 @@ test("stages unstaged work, commits it with the branch's own fragment, and leave
     "changes/agent-lane-x.md",
     "shared.txt",
   ]);
-  expect(log).toEqual(["staged 2 file(s): changes/agent-lane-x.md, shared.txt"]);
+  expect(log).toEqual(["committing 2 file(s):", "  commit  changes/agent-lane-x.md", "  commit  shared.txt"]);
 });
 
 test("commits work that was already staged", () => {
@@ -163,7 +164,14 @@ test("a fragment another lane left is not used; this branch writes its own from 
   expect(log).toContain("no changes/ fragment in this branch's diff; wrote agent-lane-x.md from the commit summary");
 });
 
-function scriptedGit(options: { status?: string; diff?: string; summary?: string } = {}): {
+function scriptedGit(options: {
+  status?: string;
+  diff?: string;
+  summary?: string;
+  staged?: readonly string[];
+  added?: readonly string[];
+  ignored?: readonly string[];
+} = {}): {
   git: (args: string[]) => Run;
   calls: string[][];
 } {
@@ -178,6 +186,13 @@ function scriptedGit(options: { status?: string; diff?: string; summary?: string
     }
     if (joined.startsWith("log -1")) return { status: 0, stdout: `${options.summary ?? "the summary"}\n`, stderr: "" };
     if (joined.startsWith("diff --name-only origin/beta...HEAD")) return { status: 0, stdout: options.diff ?? "", stderr: "" };
+    if (joined.startsWith("diff --name-only --cached")) {
+      return { status: 0, stdout: (options.staged ?? []).map((path) => `${path}\n`).join(""), stderr: "" };
+    }
+    if (joined.startsWith("diff --name-status --cached --diff-filter=A")) {
+      return { status: 0, stdout: (options.added ?? []).map((path) => `A\t${path}\n`).join(""), stderr: "" };
+    }
+    if (joined.startsWith("check-ignore")) return { status: 0, stdout: (options.ignored ?? []).map((path) => `${path}\n`).join(""), stderr: "" };
     if (joined.startsWith("rev-list")) return { status: 0, stdout: "0\n", stderr: "" };
     return { status: 0, stdout: "", stderr: "" };
   };
@@ -200,13 +215,15 @@ function scriptedGh(): { gh: Gh; calls: string[][] } {
   return { gh, calls };
 }
 
-function handOffIo(git: (args: string[]) => Run, gh: Gh): { io: LandIo; logs: string[] } {
+function handOffIo(git: (args: string[]) => Run, gh: Gh): { io: LandIo; logs: string[]; errors: string[] } {
   const logs: string[] = [];
+  const errors: string[] = [];
   const ignite = (what: string) => () => {
     throw new Error(`land must not ${what} before handing the PR over`);
   };
   return {
     logs,
+    errors,
     io: {
       git,
       gh,
@@ -214,7 +231,7 @@ function handOffIo(git: (args: string[]) => Run, gh: Gh): { io: LandIo; logs: st
       watch: ignite("watch checks"),
       sleep: ignite("sleep"),
       log: (line) => logs.push(line),
-      error: () => {},
+      error: (line) => errors.push(line),
     },
   };
 }
@@ -227,7 +244,7 @@ test("land --commit commits with the branch fragment, then hands the PR over in 
   const { io, logs } = handOffIo(git, gh);
 
   const code = landBranch({
-    args: { base: "beta", commit: true, watch: false },
+    args: { base: "beta", commit: true, allow: [], watch: false },
     branch: "agent/lane-x",
     lock: join(SCRATCH, `lock-${crypto.randomUUID()}.lock`),
     io,
@@ -250,7 +267,7 @@ test("land --commit with nothing to commit lands what the branch already has", (
   const { io, logs } = handOffIo(git, gh);
 
   const code = landBranch({
-    args: { base: "beta", commit: true, watch: false },
+    args: { base: "beta", commit: true, allow: [], watch: false },
     branch: "agent/lane-x",
     lock: join(SCRATCH, `lock-${crypto.randomUUID()}.lock`),
     io,
@@ -271,7 +288,7 @@ test("a failed commit stops the landing before anything is pushed", () => {
     args[0] === "commit" ? { status: 1, stdout: "", stderr: "nothing added to commit" } : git(args);
 
   const code = landBranch({
-    args: { base: "beta", commit: true, watch: false },
+    args: { base: "beta", commit: true, allow: [], watch: false },
     branch: "agent/lane-x",
     lock: join(SCRATCH, `lock-${crypto.randomUUID()}.lock`),
     io: { ...io, git: failing },
@@ -285,8 +302,103 @@ test("a failed commit stops the landing before anything is pushed", () => {
 
 test("--commit skips the dirty-tree refusal that stops a plain landing", () => {
   const dirty = " M scripts/land.ts\n";
-  expect(refusalFor({ base: "beta", commit: false, watch: false }, "agent/x", dirty)).toContain("dirty tree");
-  expect(refusalFor({ base: "beta", commit: true, watch: false }, "agent/x", dirty)).toBeNull();
-  expect(refusalFor({ base: "beta", commit: true, watch: false }, "beta", dirty)).toContain("refusing to land beta");
-  expect(parseArgs(["--commit"])).toEqual({ base: "beta", commit: true, watch: false });
+  expect(refusalFor({ base: "beta", commit: false, allow: [], watch: false }, "agent/x", dirty)).toContain("dirty tree");
+  expect(refusalFor({ base: "beta", commit: true, allow: [], watch: false }, "agent/x", dirty)).toBeNull();
+  expect(refusalFor({ base: "beta", commit: true, allow: [], watch: false }, "beta", dirty)).toContain("refusing to land beta");
+  expect(parseArgs(["--commit"])).toEqual({ base: "beta", commit: true, allow: [], watch: false });
+});
+
+test("a scratch artifact, an ignored path, a stray lockfile and a stranger's new fragment are refused", () => {
+  const refused = commitGuards({
+    staged: [".scratch-2038.txt", ".scratch/bg/x/out.log", "bun.lock", "changes/agent-lane-x.md", "scripts/land.ts"],
+    added: ["changes/agent-lane-x.md"],
+    ignored: [".scratch-2038.txt"],
+    branch: "agent/lane-one-command",
+  });
+
+  expect(refused.map((entry) => entry.path)).toEqual([
+    ".scratch-2038.txt",
+    ".scratch/bg/x/out.log",
+    "bun.lock",
+    "changes/agent-lane-x.md",
+  ]);
+  const why = (path: string) => refused.find((entry) => entry.path === path)?.why ?? "";
+  expect(why(".scratch-2038.txt")).toContain("git ignores this path");
+  expect(why(".scratch/bg/x/out.log")).toContain("a run's own artifact");
+  expect(why("bun.lock")).toContain("lockfile staged without its package.json manifest");
+  expect(why("changes/agent-lane-x.md")).toContain("not part of agent/lane-one-command");
+});
+
+test("a lockfile with its manifest, a fragment named after the branch and an allowed path all pass", () => {
+  expect(
+    commitGuards({
+      staged: ["bun.lock", "package.json", "changes/agent-lane-x.md", "scripts/land.ts"],
+      added: ["changes/agent-lane-x.md"],
+      ignored: [],
+      branch: "agent/lane-x",
+    }),
+  ).toEqual([]);
+  expect(
+    commitGuards({
+      staged: ["changes/lane-attribution.md"],
+      added: ["changes/lane-attribution.md"],
+      ignored: [],
+      branch: "agent/lane-attribution",
+    }),
+  ).toEqual([]);
+  expect(
+    commitGuards({ staged: ["bun.lock"], added: [], ignored: [], branch: "agent/x", allow: ["bun.lock"] }),
+  ).toEqual([]);
+});
+
+test("--commit prints every path it will commit, and refuses the whole set with its reasons", () => {
+  const { git, calls } = scriptedGit({
+    status: " M scripts/land.ts\n?? changes/agent-lane-x.md\n",
+    staged: ["scripts/land.ts", "changes/agent-lane-x.md"],
+    added: ["changes/agent-lane-x.md"],
+  });
+  const { gh, calls: ghCalls } = scriptedGh();
+  const { io, logs, errors } = handOffIo(git, gh);
+
+  const code = landBranch({
+    args: { base: "beta", commit: true, allow: [], watch: false },
+    branch: "agent/lane-one-command",
+    lock: join(SCRATCH, `lock-${crypto.randomUUID()}.lock`),
+    io,
+  });
+
+  expect(code).toBe(3);
+  expect(logs).toContain("committing 2 file(s):");
+  expect(logs).toContain("  commit  scripts/land.ts");
+  expect(logs).toContain("  refused changes/agent-lane-x.md");
+  expect(errors).toContain(
+    "land: refusing changes/agent-lane-x.md: a new changes/ fragment whose name is not part of agent/lane-one-command, so this lane did not write it",
+  );
+  expect(errors.join("\n")).toContain("bun run land --commit --allow <path>");
+  expect(calls.some((call) => call[0] === "commit")).toBe(false);
+  expect(calls.some((call) => call.join(" ").startsWith("push"))).toBe(false);
+  expect(ghCalls.length).toBe(0);
+});
+
+test("--allow keeps one refused file on purpose", () => {
+  const { git, calls } = scriptedGit({
+    status: " M bun.lock\n?? changes/agent-lane-x.md\n",
+    staged: ["bun.lock", "changes/agent-lane-x.md"],
+    added: ["changes/agent-lane-x.md"],
+    diff: "changes/agent-lane-x.md\n",
+  });
+  const { gh, calls: ghCalls } = scriptedGh();
+  const { io } = handOffIo(git, gh);
+
+  const code = landBranch({
+    args: { base: "beta", commit: true, allow: ["bun.lock", "changes/agent-lane-x.md"], watch: false },
+    branch: "agent/lane-one-command",
+    lock: join(SCRATCH, `lock-${crypto.randomUUID()}.lock`),
+    io,
+    commitIo: { files: () => [{ path: "changes/agent-lane-x.md", text: FRAGMENT, mtimeMs: 1 }], read: () => FRAGMENT },
+  });
+
+  expect(code).toBe(EXIT_LANDED);
+  expect(calls.some((call) => call[0] === "commit")).toBe(true);
+  expect(ghCalls).toContainEqual(["pr", "merge", "4242", "--auto", "--merge"]);
 });
