@@ -25,6 +25,7 @@
     "check-orphan-ratchet.ts",
     "check-pack-texture-layout.ts",
     "check-recipes.ts",
+    "check-release-artifacts.ts",
     "check-release-set.ts",
     "check-scaffold-launch.ts",
     "check-skill-sync.ts",
