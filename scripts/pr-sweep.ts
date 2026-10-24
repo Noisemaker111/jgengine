@@ -1,5 +1,8 @@
 import { spawnSync } from "node:child_process";
 
+import { attemptsOf, judgeChecks } from "./ci-status";
+import type { RollupEntry } from "./ci-status";
+
 /**
  * Which open PRs are armed for auto-merge but red, and on which check.
  *
@@ -11,41 +14,28 @@ import { spawnSync } from "node:child_process";
  *   bun run pr:sweep --repo Noisemaker111/jgengine
  */
 
-export interface Check {
-  __typename?: string;
-  name?: string;
-  context?: string;
-  status?: string;
-  conclusion?: string | null;
-  state?: string;
-  detailsUrl?: string;
-  targetUrl?: string;
-}
-
 export interface SweepPr {
   number: number;
   title: string;
   headRefName: string;
+  /** The commit the rollup belongs to, so an attempt on an older push is not judged here. */
+  headRefOid?: string | null;
   isDraft?: boolean;
   mergeable?: string;
   autoMergeRequest: unknown;
-  statusCheckRollup?: Check[] | null;
+  statusCheckRollup?: RollupEntry[] | null;
 }
 
 export interface ArmState {
+  /** Real blockers right now, each one named. */
   red: string[];
+  /** Not blocked, just not mergeable yet. */
   waiting: string[];
+  verdict: "red" | "wait" | "clean";
 }
 
-const FAILED = new Set(["FAILURE", "TIMED_OUT", "ACTION_REQUIRED", "STARTUP_FAILURE", "ERROR"]);
-
-function checkName(check: Check): string {
-  return check.name ?? check.context ?? "unnamed check";
-}
-
-function checkUrl(check: Check): string {
-  return check.detailsUrl ?? check.targetUrl ?? "";
-}
+/** A cancelled or stale attempt produced no result: nothing to fix, but nothing proved either. */
+const NO_RESULT_STATES = new Set(["CANCELLED", "STALE"]);
 
 /** Why an armed PR cannot merge right now: failing checks, a conflict, a draft, or CI still running. */
 export function armState(pr: SweepPr): ArmState {
@@ -53,28 +43,69 @@ export function armState(pr: SweepPr): ArmState {
   const waiting: string[] = [];
   if (pr.isDraft === true) red.push("still a draft");
   if (pr.mergeable === "CONFLICTING") red.push("merge conflict with beta");
-  let running = 0;
-  let cancelled = 0;
-  for (const check of pr.statusCheckRollup ?? []) {
-    const verdict = check.conclusion ?? check.state ?? "";
-    if (FAILED.has(verdict)) {
-      const url = checkUrl(check);
-      red.push(`${checkName(check)} ${verdict.toLowerCase()}${url === "" ? "" : ` ${url}`}`);
-    } else if (verdict === "CANCELLED") {
-      // A push to the branch cancels the run it superseded; the newer run decides, so this is not red.
-      cancelled += 1;
-    } else if (verdict === "" || verdict === "PENDING" || verdict === "IN_PROGRESS" || verdict === "QUEUED" || check.status !== undefined && check.status !== "COMPLETED") {
-      running += 1;
-    }
+  const rollup = pr.statusCheckRollup ?? [];
+  const checks = judgeChecks(attemptsOf(rollup), pr.headRefOid ?? undefined);
+  const noResult = (check: { state: string }) => NO_RESULT_STATES.has(check.state.toUpperCase());
+  for (const check of checks) {
+    if (check.bucket !== "fail" || noResult(check)) continue;
+    red.push(`${check.name} ${check.state.toLowerCase()}${check.url === "" ? "" : ` ${check.url}`}`);
   }
-  if (running > 0) waiting.push(`${running} check(s) still running`);
-  else if (cancelled > 0) waiting.push(`${cancelled} cancelled check(s) from a superseded run`);
-  else if ((pr.statusCheckRollup ?? []).length === 0) waiting.push("no checks reported yet");
-  return { red, waiting };
+  const pending = checks.filter((check) => check.bucket === "pending");
+  if (pending.length > 0) {
+    const runIds = [...new Set(pending.map((check) => check.runId).filter((id): id is number => id !== null))];
+    waiting.push(`still running: ${pending.length} of ${checks.length}${runIds.length === 0 ? "" : ` (run ${runIds.join(", ")})`}`);
+  }
+  const rerun = checks.filter((check) => check.bucket === "fail" && noResult(check));
+  if (rerun.length > 0) {
+    waiting.push(`cancelled with no result, so a re-run decides: ${rerun.length} of ${checks.length}: ${rerun.map((check) => check.name).join(", ")}`);
+  }
+  if (pending.length === 0 && rerun.length === 0 && rollup.length === 0) {
+    waiting.push("no checks reported yet");
+  }
+  const verdict = red.length > 0 ? "red" : waiting.length > 0 ? "wait" : "clean";
+  return { red, waiting, verdict };
 }
 
 export function isArmed(pr: SweepPr): boolean {
   return pr.autoMergeRequest !== null && pr.autoMergeRequest !== undefined;
+}
+
+export interface SweepRow {
+  pr: SweepPr;
+  state: ArmState;
+}
+
+export interface SweepReport {
+  open: number;
+  rows: SweepRow[];
+  /** Non-zero while any armed PR is really red, so the command gates a queue. */
+  exitCode: number;
+}
+
+export function sweep(prs: readonly SweepPr[]): SweepReport {
+  const rows = prs.filter(isArmed).map((pr) => ({ pr, state: armState(pr) }));
+  return { open: prs.length, rows, exitCode: rows.some((row) => row.state.verdict === "red") ? 1 : 0 };
+}
+
+export function label(state: ArmState): string {
+  return state.verdict === "red" ? "RED " : state.verdict === "wait" ? "wait" : "ok  ";
+}
+
+/** One line per armed PR, then the reasons that line cannot stand alone. */
+export function formatText(report: SweepReport): string[] {
+  const lines = [`pr:sweep: ${report.open} open PR(s), ${report.rows.length} armed for auto-merge`];
+  for (const { pr, state } of report.rows) {
+    lines.push(`  ${label(state)} #${pr.number} ${pr.headRefName} - ${pr.title}`);
+    for (const reason of state.red) lines.push(`         armed and red: ${reason}`);
+    for (const reason of state.waiting) lines.push(`         ${reason}`);
+  }
+  const red = report.rows.filter((row) => row.state.verdict === "red");
+  if (red.length > 0) {
+    lines.push(`pr:sweep: ${red.length} armed PR(s) will never merge until fixed: ${red.map((row) => `#${row.pr.number}`).join(", ")}`);
+  } else if (report.rows.length > 0) {
+    lines.push("pr:sweep: no armed PR is red");
+  }
+  return lines;
 }
 
 function gh(args: string[], repo: string | null): string {
@@ -99,29 +130,31 @@ if (import.meta.main) {
         "--limit",
         "100",
         "--json",
-        "number,title,headRefName,isDraft,mergeable,autoMergeRequest,statusCheckRollup",
+        "number,title,headRefName,headRefOid,isDraft,mergeable,autoMergeRequest,statusCheckRollup",
       ],
       repo,
     ),
   ) as SweepPr[];
-  const armed = prs.filter(isArmed);
-  const rows = armed.map((pr) => ({ pr, state: armState(pr) }));
+  const report = sweep(prs);
   if (argv.includes("--json")) {
-    console.log(JSON.stringify({ open: prs.length, armed: rows.map((row) => ({ number: row.pr.number, headRefName: row.pr.headRefName, ...row.state })) }, null, 2));
+    console.log(
+      JSON.stringify(
+        {
+          open: report.open,
+          armed: report.rows.map((row) => ({
+            number: row.pr.number,
+            headRefName: row.pr.headRefName,
+            verdict: row.state.verdict,
+            red: row.state.red,
+            waiting: row.state.waiting,
+          })),
+        },
+        null,
+        2,
+      ),
+    );
   } else {
-    console.log(`pr:sweep: ${prs.length} open PR(s), ${armed.length} armed for auto-merge`);
-    for (const { pr, state } of rows) {
-      const label = state.red.length > 0 ? "RED " : state.waiting.length > 0 ? "wait" : "ok  ";
-      console.log(`  ${label} #${pr.number} ${pr.headRefName} - ${pr.title}`);
-      for (const reason of state.red) console.log(`         armed and red: ${reason}`);
-      for (const reason of state.waiting) console.log(`         ${reason}`);
-    }
-    const red = rows.filter((row) => row.state.red.length > 0);
-    if (red.length > 0) {
-      console.log(`pr:sweep: ${red.length} armed PR(s) will never merge until fixed: ${red.map((row) => `#${row.pr.number}`).join(", ")}`);
-    } else if (armed.length > 0) {
-      console.log("pr:sweep: no armed PR is red");
-    }
+    for (const line of formatText(report)) console.log(line);
   }
-  process.exitCode = rows.some((row) => row.state.red.length > 0) ? 1 : 0;
+  process.exitCode = report.exitCode;
 }
