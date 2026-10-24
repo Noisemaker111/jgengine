@@ -28,7 +28,13 @@ function run(status: number, stdout = "", stderr = ""): Run {
 }
 
 function io(gh: (args: string[]) => Run, branch = "agent/example"): CiIo {
-  return { gh, git: () => run(0, `${branch}\n`) };
+  return {
+    gh,
+    git: (args) =>
+      args[0] === "remote"
+        ? run(0, "git@github.com:Noisemaker111/jgengine.git\n")
+        : run(0, `${branch}\n`),
+  };
 }
 
 const ROLLUP: RollupEntry[] = [
@@ -234,7 +240,7 @@ describe("honest refusals", () => {
   test("a branch with no open PR says so instead of printing an empty table", () => {
     const answer = ask({ branch: "agent/x", json: false }, io(() => run(0, "[]")));
     expect(answer).toMatchObject({ reason: "no-pr" });
-    expect((answer as { message: string }).message).toContain("no open PR for branch agent/x");
+    expect((answer as { message: string }).message).toContain("no open PR for agent/x on Noisemaker111/jgengine - nothing to answer");
     expect(exitCodeFor(answer)).not.toBe(EXIT_GREEN);
     expect(exitCodeFor(answer)).toBe(EXIT_CANNOT_ANSWER);
   });
@@ -268,8 +274,9 @@ describe("honest refusals", () => {
   test("the command prints the refusal and exits non-zero, json or not", () => {
     const noPr = cli(["--branch", "agent/x"], io(() => run(0, "[]")), () => 0);
     expect(noPr.code).toBe(EXIT_CANNOT_ANSWER);
-    expect(noPr.stderr.join("\n")).toContain("no open PR for branch agent/x");
-    expect(noPr.stdout).toEqual([]);
+    // A lane reads stdout: the reason is the answer, so silence here is the bug this guards.
+    expect(noPr.stdout.join("\n")).toContain("no open PR for agent/x on Noisemaker111/jgengine - nothing to answer");
+    expect(noPr.stderr).toEqual([]);
 
     const json = cli(["--branch", "agent/x", "--json"], io(() => run(0, "[]")), () => 0);
     expect(json.code).toBe(EXIT_CANNOT_ANSWER);
