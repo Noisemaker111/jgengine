@@ -53,6 +53,8 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.4.2
@@ -66,6 +68,8 @@ jobs:
           key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
           restore-keys: bun-${{ runner.os }}-
       - run: bun install --frozen-lockfile
+      - name: Refuse to publish a commit behind beta
+        run: bun scripts/check-release-ancestor.ts
       - name: Stage the lockstep changelog into each package
         run: for p in core rapier ws sql navbake react convex node shell assets editor github jgengine; do cp CHANGELOG.md "packages/$p/CHANGELOG.md"; done
       - name: Stage per-package skills
@@ -77,8 +81,10 @@ jobs:
       - run: bun run games:clone
         env:
           GAMES_CLONE_TOKEN: ${{ secrets.GAMES_CLONE_TOKEN }}
-      - name: Publish unpublished packages in dependency order
+      - name: Publish packages that are not installable from the registry
         run: |
+          # `npm view` reported success for a version whose tarball returned 404 (#2280), and a
+          # re-run then skipped the broken package forever. Metadata without a tarball is repaired.
           for p in core rapier ws sql navbake react convex node shell assets editor github jgengine; do
             name=$(node -p "require('./packages/$p/package.json').name")
             version=$(node -p "require('./packages/$p/package.json').version")
@@ -86,10 +92,15 @@ jobs:
               *-*) tag=next ;;
               *) tag=latest ;;
             esac
-            if npm view "$name@$version" version >/dev/null 2>&1; then
-              echo "skip $name@$version (already on npm)"
-            else
-              echo "publish $name@$version --tag $tag"
-              (cd "packages/$p" && npm publish --access public --tag "$tag" --loglevel verbose)
+            plan=$(bun scripts/check-release-artifacts.ts --plan "$name@$version")
+            echo "$name@$version: $plan"
+            if [ "$plan" = "skip" ]; then
+              continue
             fi
+            if [ "$plan" = "repair" ]; then
+              npm unpublish "$name@$version" --force
+            fi
+            (cd "packages/$p" && npm publish --access public --tag "$tag" --loglevel verbose)
           done
+      - name: Verify every published package installs
+        run: bun run check:release-artifacts

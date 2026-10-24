@@ -3,6 +3,9 @@
 //   bun run release --dry-run    # print the plan, write nothing
 //   bun run release --no-gen     # skip the generated-artifact refresh
 //
+// It refuses a commit that does not contain origin/beta: a release cut from a stale main published
+// `@jgengine/core@0.35.0` four merges behind beta and six game lanes could not import `agents/system`.
+//
 // It folds the per-PR notes in changes/*.md into `## [Unreleased]` and deletes them, runs
 // set-version --release, renames `## [Unreleased]` to the new version, prepends the
 // lockstep Migrate bullet, leaves a fresh empty [Unreleased], and mirrors the same notes into
@@ -165,6 +168,79 @@ export function mirrorEntry(source: string, version: string, sections: Changelog
   return `${source.slice(0, cut)}\n${entry}${source.slice(cut)}`;
 }
 
+export interface GitResult {
+  status: number;
+  stdout: string;
+  stderr: string;
+}
+
+export type GitRunner = (args: string[], cwd: string) => GitResult;
+
+export const runGit: GitRunner = (args, cwd) => {
+  const result = spawnSync("git", args, { cwd, encoding: "utf8" });
+  return { status: result.status ?? 1, stdout: result.stdout ?? "", stderr: result.stderr ?? "" };
+};
+
+export interface AncestorReport {
+  ok: boolean;
+  ref: string;
+  target: string;
+  targetSha: string | null;
+  refSha: string | null;
+  /** `<short sha> <subject>` for every commit on `ref` the target does not contain. */
+  missing: string[];
+  reason: string | null;
+}
+
+/**
+ * A release may only be cut from a commit that contains the branch everything lands on. A release
+ * cut from a stale `main` published `@jgengine/core@0.35.0` four merges behind `beta`, and six game
+ * lanes could not import the `agents/system` module that had already merged.
+ */
+export function checkReleaseAncestor(input: {
+  cwd: string;
+  ref?: string;
+  target?: string;
+  git?: GitRunner;
+}): AncestorReport {
+  const git = input.git ?? runGit;
+  const ref = input.ref ?? "origin/beta";
+  const target = input.target ?? "HEAD";
+  const resolve = (rev: string): string | null => {
+    const out = git(["rev-parse", "--verify", `${rev}^{commit}`], input.cwd);
+    return out.status === 0 ? out.stdout.trim() : null;
+  };
+  const targetSha = resolve(target);
+  const refSha = resolve(ref);
+  const base = { ref, target, targetSha, refSha };
+  if (targetSha === null) return { ...base, ok: false, missing: [], reason: `cannot resolve ${target} as a commit` };
+  if (refSha === null) {
+    return { ...base, ok: false, missing: [], reason: `cannot resolve ${ref}, so the release cannot prove it contains the branch everything lands on` };
+  }
+  if (git(["merge-base", "--is-ancestor", ref, target], input.cwd).status === 0) {
+    return { ...base, ok: true, missing: [], reason: null };
+  }
+  const log = git(["log", "--format=%h %s", `${target}..${ref}`], input.cwd);
+  const missing = log.stdout
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line !== "");
+  return { ...base, ok: false, missing, reason: `${ref} has ${missing.length} commit(s) that ${target} does not contain` };
+}
+
+/** The refusal a stale release branch prints, one line per fact. */
+export function ancestorFailureLines(report: AncestorReport): string[] {
+  const lines = [
+    `release: refusing to cut from ${report.target}: ${report.reason ?? "it does not contain the branch everything lands on"}.`,
+  ];
+  if (report.missing.length > 0) {
+    lines.push(`release: missing from ${report.target} (${report.ref} ${report.refSha?.slice(0, 8) ?? "?"}):`);
+    for (const commit of report.missing) lines.push(`  ${commit}`);
+  }
+  lines.push("release: merge origin/beta into the release branch and run again.");
+  return lines;
+}
+
 function main(): void {
   const root = fileURLToPath(new URL("..", import.meta.url));
   const args = process.argv.slice(2);
@@ -173,6 +249,14 @@ function main(): void {
   const patchRelease = args.includes("--patch");
   const read = (rel: string) => readFileSync(`${root}${rel}`, "utf8");
   const version = (pkg: string) => JSON.parse(read(`packages/${pkg}/package.json`)).version as string;
+
+  // A release cut from a stale branch is how a published version ended up missing merged work.
+  if (!args.includes("--no-fetch")) spawnSync("git", ["fetch", "--quiet", "origin", "beta"], { cwd: root, stdio: "ignore", timeout: 20_000 });
+  const ancestor = checkReleaseAncestor({ cwd: root, target: args.includes("--commit") ? args[args.indexOf("--commit") + 1] : "HEAD" });
+  if (!ancestor.ok) {
+    for (const line of ancestorFailureLines(ancestor)) console.error(line);
+    process.exit(1);
+  }
 
   const changelogPath = `${root}CHANGELOG.md`;
   const mirrorPath = `${root}packages/core/src/meta/changelog.ts`;

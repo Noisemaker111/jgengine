@@ -1,5 +1,9 @@
 import { describe, expect, test } from "bun:test";
-import { nextReleaseVersion, cutChangelog, lockstepBullet, mirrorEntry, parseSections, sectionLines, splitComment } from "./release";
+import { spawnSync } from "node:child_process";
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { checkReleaseAncestor, cutChangelog, lockstepBullet, mirrorEntry, nextReleaseVersion, parseSections, sectionLines, splitComment } from "./release";
 
 const MARKDOWN = `# Changelog
 
@@ -65,4 +69,124 @@ test("patch release preserves the minor line and finalizes prereleases", () => {
   expect(nextReleaseVersion("0.18.9", true)).toBe("0.18.10");
   expect(nextReleaseVersion("0.18.1-rc.2", true)).toBe("0.18.1");
   expect(nextReleaseVersion("0.18.0")).toBe("0.19.0");
+});
+
+const ROOT = fileURLToPath(new URL("..", import.meta.url));
+
+interface Fixture {
+  dir: string;
+  git: (...args: string[]) => string;
+  commit: (file: string, body: string, message: string) => void;
+  done: () => void;
+}
+
+const CHILD_DEADLINE_MS = 120_000;
+
+/** Sync spawn with a deadline: a child that stops answering fails the test naming it, instead of hanging CI. */
+function spawnWithin(command: string, args: string[], cwd: string, env: NodeJS.ProcessEnv = process.env) {
+  const out = spawnSync(command, args, { cwd, encoding: "utf8", env, timeout: CHILD_DEADLINE_MS });
+  if (out.error) {
+    throw new Error(`${command} ${args.join(" ")} in ${cwd} did not finish within ${CHILD_DEADLINE_MS}ms: ${out.error.message}`);
+  }
+  return out;
+}
+
+/** A throwaway repository whose `beta` branch is the branch everything lands on. */
+function makeRepo(name: string): Fixture {
+  const dir = join(ROOT, ".scratch", `release-ancestor-${name}-${process.pid}`);
+  rmSync(dir, { recursive: true, force: true });
+  mkdirSync(dir, { recursive: true });
+  const identity = {
+    ...process.env,
+    GIT_AUTHOR_NAME: "release-fixture",
+    GIT_AUTHOR_EMAIL: "fixture@example.test",
+    GIT_COMMITTER_NAME: "release-fixture",
+    GIT_COMMITTER_EMAIL: "fixture@example.test",
+  };
+  const git = (...args: string[]): string => {
+    const out = spawnWithin("git", args, dir, identity);
+    if (out.status !== 0) throw new Error(`git ${args.join(" ")} failed: ${out.stderr}`);
+    return out.stdout.trim();
+  };
+  const commit = (file: string, body: string, message: string): void => {
+    writeFileSync(join(dir, file), body);
+    git("add", ".");
+    git("commit", "-q", "-m", message);
+  };
+  git("init", "-q", "-b", "beta");
+  commit("base.txt", "base\n", "base");
+  return { dir, git, commit, done: () => rmSync(dir, { recursive: true, force: true }) };
+}
+
+describe("release ancestor guard", () => {
+  test("refuses a release commit behind beta and names the missing commit", () => {
+    const repo = makeRepo("behind");
+    try {
+      repo.git("checkout", "-q", "-b", "main");
+      repo.commit("version.txt", "0.36.0\n", "chore(release): 0.36.0");
+      repo.git("checkout", "-q", "beta");
+      repo.commit("system.txt", "export {};\n", "core: add agents/system");
+      repo.git("checkout", "-q", "main");
+
+      const report = checkReleaseAncestor({ cwd: repo.dir, ref: "beta" });
+      expect(report.ok).toBe(false);
+      expect(report.missing.join("\n")).toContain("core: add agents/system");
+      expect(report.reason).toContain("does not contain");
+    } finally {
+      repo.done();
+    }
+  });
+
+  test("passes once the release commit contains beta", () => {
+    const repo = makeRepo("contains");
+    try {
+      repo.git("checkout", "-q", "-b", "main");
+      repo.commit("version.txt", "0.36.0\n", "chore(release): 0.36.0");
+      repo.git("checkout", "-q", "beta");
+      repo.commit("system.txt", "export {};\n", "core: add agents/system");
+      repo.git("checkout", "-q", "main");
+      repo.git("merge", "-q", "--no-ff", "beta", "-m", "Merge beta");
+
+      const report = checkReleaseAncestor({ cwd: repo.dir, ref: "beta" });
+      expect(report.ok).toBe(true);
+      expect(report.missing).toEqual([]);
+      expect(report.refSha).toBe(repo.git("rev-parse", "beta"));
+    } finally {
+      repo.done();
+    }
+  });
+
+  test("fails closed when the branch everything lands on is missing", () => {
+    const repo = makeRepo("noref");
+    try {
+      const report = checkReleaseAncestor({ cwd: repo.dir, ref: "origin/beta" });
+      expect(report.ok).toBe(false);
+      expect(report.reason).toContain("cannot resolve origin/beta");
+    } finally {
+      repo.done();
+    }
+  });
+
+  test("the publish gate exits non-zero and prints the missing commit", () => {
+    const repo = makeRepo("cli");
+    try {
+      repo.git("checkout", "-q", "-b", "main");
+      repo.commit("version.txt", "0.36.0\n", "chore(release): 0.36.0");
+      repo.git("checkout", "-q", "beta");
+      repo.commit("system.txt", "export {};\n", "core: add agents/system");
+      repo.git("checkout", "-q", "main");
+
+      const script = join(ROOT, "scripts", "check-release-ancestor.ts");
+      const refused = spawnWithin("bun", [script, "--cwd", repo.dir, "--ref", "beta"], ROOT);
+      expect(refused.status).toBe(1);
+      expect(`${refused.stdout}${refused.stderr}`).toContain("core: add agents/system");
+
+      repo.git("merge", "-q", "--no-ff", "beta", "-m", "Merge beta");
+      const accepted = spawnWithin("bun", [script, "--cwd", repo.dir, "--ref", "beta"], ROOT);
+      expect(accepted.status).toBe(0);
+      expect(accepted.stdout).toContain("check-release-ancestor ok");
+    } finally {
+      repo.done();
+    }
+  });
 });

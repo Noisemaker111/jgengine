@@ -105,7 +105,8 @@
     "pr-sweep": "bun scripts/pr-sweep.ts",
     "pr-video": "bun scripts/pr-video.ts",
     "host": "bun scripts/host-game.ts",
-    "smoke": "bun scripts/guard.ts 600 'bun scripts/ensure-ready.ts && bun scripts/smoke-games.ts'"
+    "smoke": "bun scripts/guard.ts 600 'bun scripts/ensure-ready.ts && bun scripts/smoke-games.ts'",
+    "check:release-artifacts": "bun scripts/check-release-artifacts.ts"
   },
   "devDependencies": {
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
