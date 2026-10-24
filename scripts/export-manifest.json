@@ -1037,6 +1037,7 @@
     "./render/decalTexture",
     "./render/defaultSurface",
     "./render/displayColor",
+    "./render/levelPass",
     "./render/materialAppearanceSignals",
     "./render/materialAsset",
     "./render/measureBounds",

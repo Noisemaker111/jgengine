@@ -3,12 +3,13 @@ import { useEffect, useMemo, useRef, useState, useCallback, type ReactNode } fro
 import * as THREE from "three";
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import type { SceneObject } from "@jgengine/core/scene/objectStore";
-import { createModelVariantSelector, type ModelVariantSelector } from "@jgengine/core/world/modelLod";
+import { createModelVariantSelector } from "@jgengine/core/world/modelLod";
 import { devtools } from "@jgengine/core/devtools/devtools";
 import { useGameContext } from "@jgengine/react/provider";
 import { sharedGltfLoader } from "../render/modelLoad";
 import { IsolatedModelPart } from "../render/SceneModels";
 import { variantLevelModel } from "../render/singleVariantLod";
+import { assignVariantLevels, createLevelPassGate, levelPassProbe, noteLevelPass, noteLevelPassFrame, variantSwitchOf } from "../render/levelPass";
 import { freezeStaticTransforms } from "../render/staticTransforms";
 import { measureLocalBounds, reportMeasuredBounds } from "../render/measureBounds";
 import { measureLocalCollisionTriangles, reportMeasuredCollisionMesh } from "../render/measureCollisionMesh";
@@ -41,6 +42,7 @@ export function useStaticObjectBatchProbe(
       }),
     [scene],
   );
+  useEffect(() => devtools.probes.registerSystem("render/levelPass", levelPassProbe()), []);
 }
 
 /** Live members of one batch after the per-frame compatibility gate removed any that changed at runtime. */
@@ -56,19 +58,17 @@ function useBatchMembers(batch: StaticObjectBatch): { objects: readonly SceneObj
   return { objects, excluded };
 }
 
-function ObjectSource({ source, objects, batch, selector, level }: {
+function ObjectSource({ source, objects, batch, assignment, level }: {
   source: ScatterModelSource;
   objects: readonly SceneObject[];
   batch: StaticObjectBatch;
-  selector?: ModelVariantSelector | undefined;
+  assignment?: ReadonlyMap<string, number> | undefined;
   level?: number | undefined;
 }) {
   const ctx = useGameContext();
   const visibility = useRenderVisibility();
   const ref = useRef<THREE.InstancedMesh>(null);
   const scratch = useMemo(() => new THREE.Object3D(), []);
-  const cameraPosition = useRef(new THREE.Vector3());
-  const probe = useMemo(() => new THREE.Vector3(), []);
   const attach = useCallback((mesh: THREE.InstancedMesh | null) => {
     ref.current = mesh;
     if (mesh !== null) freezeStaticTransforms(mesh);
@@ -77,22 +77,17 @@ function ObjectSource({ source, objects, batch, selector, level }: {
     const mesh = ref.current;
     return () => { mesh?.dispose(); };
   }, [objects.length, source]);
-  useFrame((state) => {
+  useFrame(() => {
     if (ref.current === null) return;
-    let accept: ((live: SceneObject) => boolean) | undefined;
-    if (selector !== undefined && level !== undefined) {
-      const camera = cameraPosition.current;
-      state.camera.getWorldPosition(camera);
-      accept = (live) => selector.level(live.instanceId, camera.distanceTo(
-        probe.set(live.position[0], live.position[1], live.position[2]),
-      )) === level;
-    }
+    const accept = assignment !== undefined && level !== undefined
+      ? (live: SceneObject) => assignment.get(live.instanceId) === level
+      : undefined;
     syncStaticObjectSource(ref.current, source, objects, (id) => {
       const object = ctx.scene.object.get(id);
       return object !== null && object.catalogId === batch.objects[0]!.catalogId &&
         isCompatibleStaticObject(object, batch.model, ctx.scene.object.catalog(id)) ? object : null;
     }, visibility.current, scratch, accept);
-  }, CAMERA_POST_FRAME_PRIORITY + 0.1);
+  }, CAMERA_POST_FRAME_PRIORITY + 0.2);
   return <instancedMesh ref={attach} args={[source.geometry, source.material, objects.length]} userData={{ [STATIC_BATCH_MESH_KEY]: true }} castShadow={source.castShadow} receiveShadow={source.receiveShadow} dispose={null} />;
 }
 
@@ -128,13 +123,13 @@ function LoadedStaticObjects({ batch, single }: { batch: StaticObjectBatch; sing
 }
 
 /** One detail level's GLB, harvested into instanced draws that only claim the instances the selector put on this level. */
-function VariantLevel({ url, model, batch, objects, level, selector, measure, single }: {
+function VariantLevel({ url, model, batch, objects, level, assignment, measure, single }: {
   url: string;
   model: ModelConfig;
   batch: StaticObjectBatch;
   objects: readonly SceneObject[];
   level: number;
-  selector: ModelVariantSelector;
+  assignment: ReadonlyMap<string, number>;
   measure: boolean;
   single: (object: SceneObject) => ReactNode;
 }) {
@@ -160,32 +155,28 @@ function VariantLevel({ url, model, batch, objects, level, selector, measure, si
     const triangles = measureLocalCollisionTriangles(root);
     if (triangles !== null) reportMeasuredCollisionMesh(ctx, "object", key, triangles);
   }, [ctx, harvested, batch, measure]);
-  if (harvested === null) return <LevelSingles objects={objects} level={level} selector={selector} single={single} />;
-  return <>{harvested.sources.map((source, index) => <ObjectSource key={index} source={source} objects={objects} batch={batch} selector={selector} level={level} />)}</>;
+  if (harvested === null) return <LevelSingles objects={objects} level={level} assignment={assignment} single={single} />;
+  return <>{harvested.sources.map((source, index) => <ObjectSource key={index} source={source} objects={objects} batch={batch} assignment={assignment} level={level} />)}</>;
 }
 
 /** Members of one level drawn through the individual renderer, for a level whose asset cannot be instanced. @internal */
-export function LevelSingles({ objects, level, selector, single }: {
+export function LevelSingles({ objects, level, assignment, single }: {
   objects: readonly SceneObject[];
   level: number;
-  selector: ModelVariantSelector;
+  assignment: ReadonlyMap<string, number>;
   single: (object: SceneObject) => ReactNode;
 }) {
   const ctx = useGameContext();
   const visibility = useRenderVisibility();
-  const camera = useMemo(() => new THREE.Vector3(), []);
-  const probe = useMemo(() => new THREE.Vector3(), []);
   const [members, setMembers] = useState<readonly SceneObject[]>(objects);
-  useFrame((state) => {
-    state.camera.getWorldPosition(camera);
+  useFrame(() => {
     const next = objects.flatMap((object) => {
       const live = ctx.scene.object.get(object.instanceId);
       if (live === null || !visibility.current(live.instanceId)) return [];
-      probe.set(live.position[0]!, live.position[1]!, live.position[2]!);
-      return selector.level(live.instanceId, camera.distanceTo(probe)) === level ? [live] : [];
+      return assignment.get(live.instanceId) === level ? [live] : [];
     });
     if (next.length !== members.length || next.some((member, index) => member !== members[index])) setMembers(next);
-  });
+  }, CAMERA_POST_FRAME_PRIORITY + 0.2);
   return <>{members.map(single)}</>;
 }
 
@@ -200,6 +191,32 @@ export function VariantStaticObjects({ batch, single }: { batch: StaticObjectBat
   const { objects, excluded } = useBatchMembers(batch);
   const levels = batch.model.variants!.levels;
   const selector = useMemo(() => createModelVariantSelector(batch.model.variants!), [batch.model]);
+  const variantSwitch = useMemo(() => variantSwitchOf(batch.model.variants!), [batch.model]);
+  const gate = useMemo(() => createLevelPassGate(), []);
+  const assignment = useMemo(() => new Map<string, number>(), []);
+  const camera = useMemo(() => new THREE.Vector3(), []);
+  const probe = useMemo(() => new THREE.Vector3(), []);
+  const members = useRef<readonly SceneObject[]>(objects);
+  const revision = useRef(-1);
+  const activeSelector = useRef(selector);
+  useFrame((state) => {
+    noteLevelPassFrame();
+    state.camera.getWorldPosition(camera);
+    const membership = members.current !== objects;
+    const model = activeSelector.current !== selector;
+    const moved = revision.current !== ctx.scene.object.version();
+    if (!membership && !model && !moved && !gate.needsPass(camera)) {
+      noteLevelPass(false);
+      return;
+    }
+    if (membership || model) assignment.clear();
+    const margin = assignVariantLevels(selector, variantSwitch, objects, ctx.scene.object.get, camera, assignment, probe);
+    gate.record(camera, margin);
+    members.current = objects;
+    activeSelector.current = selector;
+    revision.current = ctx.scene.object.version();
+    noteLevelPass(true);
+  }, CAMERA_POST_FRAME_PRIORITY + 0.1);
   return <>
     {levels.map((level, index) => (
       <VariantLevel
@@ -209,7 +226,7 @@ export function VariantStaticObjects({ batch, single }: { batch: StaticObjectBat
         batch={batch}
         objects={objects}
         level={index}
-        selector={selector}
+        assignment={assignment}
         measure={index === 0}
         single={single}
       />
