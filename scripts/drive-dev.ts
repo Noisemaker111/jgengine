@@ -50,6 +50,7 @@ import { acquireWarmCapture, daemonDiedUnder, ensureDaemonTarget, withDaemonWatc
 import { lookSearchParams, parseLookAim } from "./lookArg";
 import { driveTargetUrl, externalCaptureUrl, parseCaptureDevice, requireReusableCaptureStorage } from "./captureTarget";
 import { assertOneTarget, serveGameDir, splitGameDir } from "./servedGame";
+import { ensureGameAssets } from "./worktree-ready";
 import {
   QUICK_DRIVE_WINDOW_MS,
   assertQuickIsIterationOnly,
@@ -757,6 +758,14 @@ if (args.help) {
 if (args.gameDir !== null) {
   assertOneTarget({ served: args.gameDir, ...(args.url === undefined ? {} : { url: args.url }), ...(args.site === undefined ? {} : { site: args.site }) });
   serveGameDir(args.gameDir, args.game);
+}
+// A game whose packs were never pulled renders a scene with no models, which reads
+// as a broken game; refuse in a second instead of after Chrome and Vite start.
+if (args.game !== "" && args.url === undefined && args.site === undefined) {
+  const gamesRoot = process.env["JG_GAMES_DIR"] ?? resolve(import.meta.dir, "../Games");
+  const assets = ensureGameAssets(args.game, gamesRoot, { provision: process.env["JG_PROVISION_ASSETS"] === "1" });
+  if (assets.message !== "") console.log(assets.message);
+  if (!assets.ok) process.exit(1);
 }
 if (args.check) {
   console.log(describeStepFile(args.steps, args.stepsFile ?? "steps"));

@@ -1,0 +1,5 @@
+# Every `bun test` process starts ready: a worktree made by a plain
+# `git worktree add` links its dependencies and Games first, or fails naming the
+# command that fixes it (scripts/test-ready.ts, scripts/worktree-ready.ts).
+[test]
+preload = ["./scripts/test-ready.ts"]

@@ -1,6 +1,7 @@
 import { spawn, spawnSync, type ChildProcess, type SpawnOptions } from "node:child_process";
 
 import { sweepOrphanProfiles } from "./browser-lib";
+import { ensureLaneReadyOrExit } from "./worktree-ready";
 
 /**
  * Split a shell-free command string into an argv array on whitespace. Used only
@@ -65,6 +66,9 @@ if (import.meta.main) {
   }
 
   const isWin = process.platform === "win32";
+  // Guard wraps the lane's first commands (check-types, shoot, drive, test), and a
+  // tree made by a plain `git worktree add` has no install for any of them.
+  ensureLaneReadyOrExit("guard", process.cwd(), { rerun: command });
   const plan = buildSpawn(process.platform, command, extra);
   const child: ChildProcess = spawn(plan.file, plan.args, plan.options);
 

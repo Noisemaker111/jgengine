@@ -48,6 +48,7 @@ import { headRevision } from "./captureRevision";
 import { ALLOW_MISMATCH_FLAG, engineRecord, resolveEngineIdentity, type EngineRecord } from "./engineIdentity";
 import { externalCaptureUrl } from "./captureTarget";
 import { assertOneTarget, serveGameDir, splitGameDir } from "./servedGame";
+import { ensureGameAssets } from "./worktree-ready";
 import { assertQuickIsIterationOnly, quickProfile, quickSuffix, quickTimingLine, splitQuickFlag } from "./capture-preset";
 import { CAPTURE_FLAGS, captureFlagHelp, parseCaptureArgs, parseGraphicsTier, type GraphicsTier } from "../packages/jgengine/src/templates/captureArgs";
 import { applyLookSearchParams, parseLookAim } from "./lookArg";
@@ -635,6 +636,14 @@ if (args.port !== undefined) process.env.JG_DEV_PORT = String(args.port);
 if (args.gameDir !== null) {
   assertOneTarget({ served: args.gameDir, ...(args.url === undefined ? {} : { url: args.url }), ...(args.site === undefined ? {} : { site: args.site }) });
   serveGameDir(args.gameDir, args.game);
+}
+// A game whose packs were never pulled renders a scene with no models, which reads
+// as a broken game; refuse in a second instead of after Chrome and Vite start.
+if (args.game !== undefined && args.url === undefined && args.site === undefined) {
+  const gamesRoot = process.env["JG_GAMES_DIR"] ?? resolve(import.meta.dir, "../Games");
+  const assets = ensureGameAssets(args.game, gamesRoot, { provision: process.env["JG_PROVISION_ASSETS"] === "1" });
+  if (assets.message !== "") console.log(assets.message);
+  if (!assets.ok) process.exit(1);
 }
 // Reclaim profiles that killed runs left behind before this one can add to them, and refuse to
 // start on a drive that cannot hold this capture.

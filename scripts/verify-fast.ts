@@ -20,10 +20,10 @@ import { basename, dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { effectivePaths } from "./sourcePaths";
-import { assertCheckoutReady } from "./checkout-ready";
 import { scopePattern } from "./ci-scope";
 import { printHelpIfAsked } from "./script-help";
 import { walkTestFiles } from "./test-shard";
+import { ensureLaneReadyOrExit } from "./worktree-ready";
 
 const VERIFY_FAST_USAGE = {
   summary: "run only the tests and static gates this branch's diff reaches, in seconds",
@@ -41,7 +41,7 @@ const VERIFY_FAST_USAGE = {
     "0 verified",
     "1 a step failed",
     "2 a changed runtime file reached no test",
-    "78 this checkout has no node_modules - run bun install, or bun run agent:bootstrap",
+    "78 this worktree cannot be linked or installed - the message names the exact command",
   ],
 } as const;
 
@@ -854,6 +854,6 @@ async function main(argv: readonly string[]): Promise<number> {
 if (import.meta.main) {
   const argv = process.argv.slice(2);
   if (printHelpIfAsked("verify-fast", VERIFY_FAST_USAGE, argv)) process.exit(EXIT_VERIFIED);
-  assertCheckoutReady("verify:fast");
+  ensureLaneReadyOrExit("verify:fast");
   process.exit(await main(argv));
 }

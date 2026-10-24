@@ -19,9 +19,11 @@ describe("ensure-ready in a worktree nobody linked", () => {
     try {
       for (const root of [main, worktree]) {
         write(join(root, "bun.lock"), "lock-v1");
-        write(join(root, "package.json"), JSON.stringify({ workspaces: ["packages/*"] }));
+        write(join(root, "package.json"), JSON.stringify({ workspaces: ["packages/*", "apps/*"] }));
+        write(join(root, "apps", "dev", "package.json"), JSON.stringify({ name: "@jgengine/dev" }));
       }
       write(join(main, "node_modules", ".bin", "tsgo")); write(join(main, "node_modules", ".bin", "tsgo.exe"));
+      write(join(main, "apps", "dev", "node_modules", ".bin", "vite"));
       mkdirSync(join(main, ".git", "worktrees", "wt"), { recursive: true });
       mkdirSync(join(main, "Games", "beacon", "src"), { recursive: true });
       write(join(worktree, ".git"), `gitdir: ${join(main, ".git", "worktrees", "wt")}\n`);

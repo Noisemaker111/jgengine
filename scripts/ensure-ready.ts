@@ -1,8 +1,8 @@
 import { existsSync, lstatSync, readdirSync, readFileSync, realpathSync, rmSync } from "node:fs";
 import { join } from "node:path";
-import { ensureWorktreeReady } from "./agent-worktree";
 import { scanStalePackages } from "./distStaleness";
 import { gamesCheckout, gamesCheckoutLine } from "./games-scope";
+import { ensureLaneReady, reportLaneReady } from "./worktree-ready";
 
 function run(label: string, cmd: string[], timeoutMs: number): void {
   console.log(`ensure-ready: ${label}`);
@@ -22,19 +22,12 @@ function run(label: string, cmd: string[], timeoutMs: number): void {
 }
 
 // A tree created by `claude --worktree` or a bare `git worktree add` has no
-// node_modules and no Games link; agent:worktree is the only thing that made
-// them, so every test/build/smoke run in such a tree failed on missing deps or
-// an empty game list. Link from the main checkout (instant) before installing.
-const readiness = ensureWorktreeReady(process.cwd(), {
-  install: () => run("dependencies cannot be linked (bun.lock differs from the main checkout) — running bun install", ["bun", "install"], 300_000),
-});
-if (readiness !== null && !readiness.unchanged) {
-  const did: string[] = [];
-  if (readiness.installed) did.push("installed dependencies");
-  if (readiness.deps.length > 0) did.push(`linked ${readiness.deps.length} node_modules`);
-  if (readiness.assets.length > 0) did.push(`linked ${readiness.assets.join(", ")}`);
-  console.log(`ensure-ready: ${did.join("; ")}`);
-}
+// node_modules and no Games link; the readiness rule links both from the main
+// checkout, installs when the locks differ, and prints one line saying which
+// commit it linked (scripts/worktree-ready.ts).
+const readiness = ensureLaneReady(process.cwd());
+const readyCode = reportLaneReady("ensure-ready", readiness);
+if (readyCode !== 0) process.exit(readyCode);
 
 // A tree can be settled and still measure the wrong games: the Games clone is
 // shared with the main checkout, so a stale clone is every lane's stale clone.
