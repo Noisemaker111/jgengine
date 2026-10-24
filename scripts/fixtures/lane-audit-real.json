@@ -1,0 +1,77 @@
+{
+  "sessions": [
+    {
+      "id": "ses_e94f3aeedffe2CCMsTlrzgvez5",
+      "title": "Measure and ban blind waiting",
+      "directory": "C:/Users/Jk101/Projects",
+      "spanMs": 1394270,
+      "toolMs": 466908,
+      "sleepMs": 1635,
+      "ciWatchMs": 26172,
+      "over60Ms": 0,
+      "waitingShare": 0.0199,
+      "percentile": 38,
+      "calls": 173,
+      "longest": [
+        {
+          "ms": 26973,
+          "command": ""
+        },
+        {
+          "ms": 26463,
+          "command": ""
+        },
+        {
+          "ms": 24770,
+          "command": "cd C:\\Users\\Jk101\\Projects\\jgengine\\.claude\\worktrees\\lane-wait-audit; cmd /c \"bun run ship:preflight > .scratch/preflight.out 2>&1\"; Write-Output \"exit=$LASTEXITCODE\"; Get-Content .scratch/preflight.out -Tail 15"
+        }
+      ],
+      "waits": [
+        {
+          "kind": "ci-watch",
+          "ms": 1437,
+          "command": "cd C:\\Users\\Jk101\\Projects\\jgengine\\.claude\\worktrees\\lane-wait-audit; rg -n \"Start-Sleep|gh run watch|pr checks --watch|\\bsleep \\d\" scripts packages --glob '!node_modules' -S | Select-Object -First 40"
+        },
+        {
+          "kind": "ci-watch",
+          "ms": 2027,
+          "command": "cd C:\\Users\\Jk101\\Projects\\jgengine\\.claude\\worktrees\\lane-wait-audit; rg -ni \"start-sleep|gh run watch|pr checks|setTimeout\\(.*[0-9]{5}\" scripts packages -S --glob '!node_modules' -l | Select-Object -First 20; \"--- count\"; rg -ni \"start-sleep\" scripts packages -S -c --glob '!node_modules' | Select-Object -First 20"
+        },
+        {
+          "kind": "ci-watch",
+          "ms": 1079,
+          "command": "cd C:\\Users\\Jk101\\Projects\\jgengine\\.claude\\worktrees\\lane-wait-audit; Select-String -Path scripts/authority-fixture.mjs,scripts/drive-settings.ts -Pattern \"start-sleep|gh run watch|pr checks\" | ForEach-Object { \"$($_.Filename):$($_.LineNumber): $($_.Line.Trim().Substring(0,[Math]::Min(160,$_.Line.Trim().Length)))\" }"
+        },
+        {
+          "kind": "ci-watch",
+          "ms": 2746,
+          "command": "cd C:\\Users\\Jk101\\Projects\\jgengine\\.claude\\worktrees\\lane-wait-audit; git -c core.autocrlf=false commit -q -m \"Lanes: account for waiting per session and refuse a script that waits\" -m \"child sessions now have one row each: span, tool minutes, sleep/poll, CI watch, calls over a minute and the three slowest commands, ranked by waiting minutes against the window's other lanes.\" -m \"check:no-blocking-wait fails gh run watch, gh pr checks --watch, Start-Sleep, sleep and timeout /t in scripts and packages with no duration allowance; a reason comment exempts one line.\"; git log --oneline -1"
+        },
+        {
+          "kind": "ci-watch",
+          "ms": 18883,
+          "command": "cd C:\\Users\\Jk101\\Projects\\jgengine\\.claude\\worktrees\\lane-wait-audit; cmd /c \"bun scripts/lane-audit.ts --hours 40 > .scratch/audit-raw.txt 2>&1\"; $lines = Get-Content .scratch/audit-raw.txt; $table = $lines[0..12] -join \"`n\"; $totals = ($lines | Select-String \"total span\").Line; $out = @\""
+        },
+        {
+          "kind": "sleep",
+          "ms": 1635,
+          "command": "cd C:\\Users\\Jk101\\Projects\\jgengine; Start-Sleep -Milliseconds 1; gh pr checks 2283 2>&1 | Select-Object -First 20"
+        }
+      ]
+    }
+  ],
+  "totals": {
+    "spanMs": 1394270,
+    "sleepMs": 1635,
+    "ciWatchMs": 26172
+  },
+  "population": 41,
+  "attribution": {
+    "session": "ses_e94f3aeedffe2CCMsTlrzgvez5",
+    "target": "C:\\Users\\Jk101\\Projects\\jgengine\\.claude\\worktrees\\lane-wait-audit",
+    "basis": "commands",
+    "references": 136,
+    "ambiguous": false,
+    "reason": "attributed ses_e94f3aeedffe2CCMsTlrzgvez5 (136 references to C:\\Users\\Jk101\\Projects\\jgengine\\.claude\\worktrees\\lane-wait-audit)"
+  }
+}

@@ -1,4 +1,6 @@
 import { describe, expect, test } from "bun:test";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 
 import {
   EXIT_CANNOT_ANSWER,
@@ -7,6 +9,7 @@ import {
   EXIT_WAITED,
   closeLane,
   isWaitingCall,
+  auditShapeProblem,
   ordinal,
   parseArgs,
   pickSession,
@@ -108,7 +111,7 @@ describe("the gate is the count, not a percentage", () => {
 
   test("one sleep call blocks, however short", () => {
     const gate = waitingGate(
-      session({ sleepMs: 2_000, calls: [{ command: "Start-Sleep -Seconds 2", ms: 2_000 }] }),
+      session({ sleepMs: 2_000, waits: [{ kind: "sleep", command: "Start-Sleep -Seconds 2", ms: 2_000 }] }),
     );
     expect(gate.blocked).toBe(true);
     expect(gate.calls).toEqual([{ command: "Start-Sleep -Seconds 2", ms: 2_000 }]);
@@ -229,8 +232,8 @@ describe("lane:close end to end", () => {
         session({
           sleepMs: 90_000,
           waitingShare: 4,
-          calls: [
-            { command: "Start-Sleep -Seconds 90", ms: 90_000 },
+          waits: [
+            { kind: "sleep", command: "Start-Sleep -Seconds 90", ms: 90_000 },
             { command: "bun run verify:fast", ms: 600_000 },
           ],
         }),
@@ -246,14 +249,14 @@ describe("lane:close end to end", () => {
   });
 
   test("a lane that watched CI is refused too", () => {
-    const fake = io({ audit: audit([session({ ciWatchMs: 420_000, longest: [{ command: "gh pr checks 2278 --watch", ms: 420_000 }] })]) });
+    const fake = io({ audit: audit([session({ ciWatchMs: 420_000, waits: [{ kind: "ci-watch", command: "gh pr checks 2278 --watch", ms: 420_000 }] })]) });
     expect(closeLane({}, fake)).toBe(EXIT_WAITED);
     expect(fake.lines.err.join("\n")).toContain("CI watch 7 min");
   });
 
   test("--waive passes and the reason is recorded in the report", () => {
     const fake = io({
-      audit: audit([session({ sleepMs: 60_000, calls: [{ command: "Start-Sleep -Seconds 60", ms: 60_000 }] })]),
+      audit: audit([session({ sleepMs: 60_000, waits: [{ kind: "sleep", command: "Start-Sleep -Seconds 60", ms: 60_000 }] })]),
     });
     expect(closeLane({ waive: "nightly build really is 20 minutes" }, fake)).toBe(EXIT_CLOSED);
     const printed = fake.lines.out.join("\n");
@@ -286,6 +289,71 @@ describe("lane:close end to end", () => {
   });
 });
 
+describe("the gate reads what lane:audit actually emits", () => {
+  const fixturePath = join(import.meta.dir, "fixtures", "lane-audit-real.json");
+  const captured = (): string => readFileSync(fixturePath, "utf8");
+
+  test("the captured real output parses as the shape lane:close reads", () => {
+    const document = JSON.parse(captured()) as { sessions: Record<string, unknown>[] };
+    expect(auditShapeProblem(document)).toBeNull();
+    // The field that crashed a finished lane: `calls` is a count, not the calls themselves.
+    expect(typeof document.sessions[0]!.calls).toBe("number");
+    expect(document.sessions[0]!.waits).toBeArray();
+    expect(Object.keys(document.sessions[0]!).sort()).toEqual(
+      [
+        "id",
+        "title",
+        "directory",
+        "spanMs",
+        "toolMs",
+        "sleepMs",
+        "ciWatchMs",
+        "over60Ms",
+        "waitingShare",
+        "percentile",
+        "calls",
+        "longest",
+        "waits",
+      ].sort(),
+    );
+  });
+
+  test("the real lane that slept and watched CI is refused with its waits named", () => {
+    const fake = io({ audit: captured() });
+    expect(closeLane({}, fake)).toBe(EXIT_WAITED);
+    const refused = fake.lines.err.join("\n");
+    expect(refused).toContain("this lane waited");
+    expect(refused).toContain("sleep 0 min, CI watch 0 min");
+    expect(refused).toContain("Start-Sleep -Milliseconds 1");
+    expect(refused).toContain("gh pr checks 2283");
+    expect(fake.lines.out.join("\n")).toContain("- span 23 min");
+  });
+
+  test("--waive records the reason on the same real output", () => {
+    const fake = io({ audit: captured() });
+    expect(closeLane({ waive: "the audit greps for waits, and its own greps look like waits" }, fake)).toBe(EXIT_CLOSED);
+    expect(fake.lines.out.join("\n")).toContain("- waiting waived: the audit greps for waits");
+    expect(fake.lines.err).toEqual([]);
+  });
+
+  test("a changed audit shape fails loudly with the keys it saw, never a TypeError", () => {
+    const document = JSON.parse(captured()) as { sessions: Record<string, unknown>[] };
+    document.sessions[0]!.calls = [{ command: "Start-Sleep -Seconds 9", ms: 9_000 }];
+    const fake = io({ audit: JSON.stringify(document) });
+    expect(closeLane({}, fake)).toBe(EXIT_CANNOT_ANSWER);
+    const message = fake.lines.err.join("\n");
+    expect(message).toContain("the audit output shape changed: sessions[0].calls");
+    expect(message).toContain("keys seen: ");
+    expect(message).not.toContain("TypeError");
+
+    const broken = JSON.parse(captured()) as { sessions: Record<string, unknown>[] };
+    broken.sessions[0]!.waits = { kind: "sleep" };
+    expect(auditShapeProblem(broken)).toContain("sessions[0].waits is an object, expected an array");
+    expect(auditShapeProblem({ sessions: "none" })).toContain("sessions is a string, expected an array");
+    expect(auditShapeProblem({})).toContain("sessions is undefined");
+  });
+});
+
 describe("arguments", () => {
   test("--pr, --waive and --session", () => {
     expect(parseArgs(["--pr", "12", "--waive", "slow CI"])).toEqual({ pr: 12, waive: "slow CI" });
@@ -301,3 +369,5 @@ describe("the report skeleton", () => {
     expect(text).not.toContain("waiting 0 min");
   });
 });
+
+

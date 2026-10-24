@@ -5,6 +5,7 @@ import { join, resolve } from "node:path";
 
 import { auditSession, attributeLane, classifyCommand, countReferences, cwdFilter, directoryMatches, pathForms, toolCallsFromMessages } from "./lane-audit";
 import type { ToolCall } from "./lane-audit";
+import { auditShapeProblem } from "./lane-close";
 
 const SCRIPT = join(import.meta.dir, "lane-audit.ts");
 const SCRATCH = join(import.meta.dir, "..", ".scratch");
@@ -177,6 +178,8 @@ test("--json carries the documented shape and percentile", () => {
     totals: Record<string, number>;
     population: number;
   };
+  // The consumer's checks, run against the producer's real output: the two sides cannot drift silently.
+  expect(auditShapeProblem(document)).toBeNull();
   expect(document.sessions.map((session) => session.id)).toEqual(["ses_wait", "ses_work"]);
   const [worst] = document.sessions;
   expect(Object.keys(worst!).sort()).toEqual(
@@ -193,6 +196,7 @@ test("--json carries the documented shape and percentile", () => {
       "percentile",
       "calls",
       "longest",
+      "waits",
     ].sort(),
   );
   expect(worst!.title).toBe("Lane: sleepy");
@@ -204,6 +208,9 @@ test("--json carries the documented shape and percentile", () => {
   expect(worst!.waitingShare).toBeCloseTo(0.3, 4);
   expect(worst!.percentile).toBe(100);
   expect(worst!.calls).toBe(2);
+  expect(worst!.waits).toEqual([
+    { kind: "sleep", ms: 180_000, command: "cd C:/repo/.claude/worktrees/lane-wait; Start-Sleep -Seconds 150; gh pr view 12 --json state" },
+  ]);
   expect(worst!.longest).toEqual([
     { ms: 240_000, command: "cd C:/repo/.claude/worktrees/lane-wait; bun run check-types" },
     { ms: 180_000, command: "cd C:/repo/.claude/worktrees/lane-wait; Start-Sleep -Seconds 150; gh pr view 12 --json state" },
@@ -323,3 +330,4 @@ test("a missing database names every path it tried", () => {
   expect(result.code).toBe(1);
   expect(result.stderr).toMatch(/no database at|no child sessions/);
 });
+
