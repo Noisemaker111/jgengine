@@ -2,6 +2,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 import { adoptionSmellsIn } from "./gameAdoptionSmells.ts";
+import { requireGamesAtPin } from "./games-scope";
 
 import {
   gameSkeletonRequiredSummary,
@@ -23,14 +24,7 @@ const ADOPTION_BASELINE_PATH = join(process.cwd(), "scripts/game-adoption-baseli
 
 const gamesDir = join(process.cwd(), "Games");
 
-if (!existsSync(gamesDir)) {
-  if (process.env.CI === "true") {
-    console.error("check-game-shape: Games/ checkout is required in CI — run bun run games:clone first");
-    process.exit(1);
-  }
-  console.log("check-game-shape: clean — no Games/ checkout (games live in Noisemaker111/JGengine-games, clone with bun run games:clone)");
-  process.exit(0);
-}
+requireGamesAtPin("check-game-shape", process.cwd());
 
 if (existsSync(join(gamesDir, "package.json"))) {
   console.log("check-game-shape: clean — Games/ is a clone of Noisemaker111/JGengine-games (shape validated in that repo, not this one)");

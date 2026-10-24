@@ -7,7 +7,7 @@ import {
   type SceneOwnershipManifest,
 } from "../packages/core/src/scene/sceneOwnership";
 
-import { ignoredGames, referenceGames, warnIgnoredGames } from "./games-scope";
+import { ignoredGames, referenceGames, requireGamesAtPin, warnIgnoredGames } from "./games-scope";
 
 const ROOT = process.cwd();
 const GAMES_DIR = join(ROOT, "Games");
@@ -248,12 +248,9 @@ function writeBaseline(path: string, values: string[]): void {
 }
 
 function main(argv: string[]): number {
-  if (!existsSync(GAMES_DIR)) {
-    if (process.env.CI === "true") {
-      console.error("check-content-gate: Games/ checkout is required in CI — run bun run games:clone first");
-      return 1;
-    }
-    console.log("check-content-gate: clean — no Games/ checkout (games live in Noisemaker111/JGengine-games)");
+  const checkout = requireGamesAtPin("check-content-gate", ROOT);
+  if (!checkout.present) {
+    console.log("check-content-gate: nothing scanned — Games/ is absent and GAMES_ALLOW_STALE=1 permits it");
     return 0;
   }
   const scans = scanAll();

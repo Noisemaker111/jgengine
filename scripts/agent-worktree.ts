@@ -18,6 +18,8 @@
 import { cpSync, existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, realpathSync, symlinkSync, unlinkSync } from "node:fs";
 import { dirname, join, resolve, sep } from "node:path";
 
+import { gamesCheckout, gamesCheckoutLine } from "./games-scope";
+
 export const NAME_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9._-]{0,63}$/;
 
 /** Workspace roots whose per-package node_modules hold the isolated linker's symlinks. */
@@ -97,6 +99,8 @@ export function linkDeps(mainRoot: string, target: string): string[] {
 /**
  * Gitignored content the dev runner reads from the main checkout: the cloned
  * `Games` tree and pulled-in public assets (e.g. apps/dev/public/models/<pack>).
+ * A worktree shares the main checkout's single Games clone, so its commit is
+ * reported too: every game gate reads that one tree (#2217, #2228).
  * `ignored` is `git ls-files --others --ignored --exclude-standard --directory` output.
  */
 export function assetLinks(mainRoot: string, ignored: string[]): string[] {
@@ -292,5 +296,13 @@ if (import.meta.main) {
   console.log(
     `agent-worktree: ready in ${seconds}s — ${did.length > 0 ? did.join("; ") : "already set up (deps, Games, assets present; nothing changed)"}`,
   );
+
+  const checkout = gamesCheckout(target);
+  const gamesLine = gamesCheckoutLine("agent-worktree", checkout);
+  if (checkout.state === "at-pin" || checkout.state === "override" || checkout.state === "no-pin") {
+    console.log(gamesLine);
+  } else {
+    console.warn(`${gamesLine}\nagent-worktree: the game gates fail until the main checkout is at the pin — \`bun run games:clone\` in ${mainRoot}`);
+  }
   console.log(`agent-worktree: work in ${target} on ${branch}; tests run from source, no build needed`);
 }

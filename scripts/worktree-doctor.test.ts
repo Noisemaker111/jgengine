@@ -9,6 +9,8 @@ import {
   dependencyPlan,
   filterOnly,
   formatTable,
+  gamesUnlinked,
+  installBroken,
   lockVerdict,
   missingPackages,
   parseWorktreeList,
@@ -194,6 +196,23 @@ describe("severityOf", () => {
     expect(report({ nodeModules: false, missingDeps: [] }).severity).toBe(5);
   });
 
+  test("a worktree measuring a Games/ that is not the pin is broken, not fine", () => {
+    expect(report({ games: "stale", gamesHead: "67f6ed9bc5e66aadc15ad6dee391117f3aace947" }).severity).toBe(BROKEN);
+    expect(report({ games: "absent" }).severity).toBe(BROKEN);
+    expect(report({ games: "unknown-head" }).severity).toBe(BROKEN);
+    expect(report({ games: "at-pin" }).severity).toBe(0);
+    expect(report({ games: "no-pin" }).severity).toBe(0);
+  });
+
+  test("only an install problem is repaired by reinstalling", () => {
+    const stale = report({ games: "stale" });
+    expect(installBroken(stale)).toBe(false);
+    expect(installBroken(report({ missingDeps: ["vite"] }))).toBe(true);
+    expect(gamesUnlinked(stale)).toBe(false);
+    expect(gamesUnlinked(report({ games: "absent" }))).toBe(true);
+    expect(planRepair([stale]).repair).toHaveLength(0);
+  });
+
   test("a lockfile that differs from the main checkout is reported, not warned about", () => {
     expect(report({ lock: "differs" }).severity).toBe(0);
   });
@@ -254,6 +273,7 @@ describe("formatTable", () => {
     const lines = table.split("\n");
     expect(lines[0]).toContain("WORKTREE");
     expect(lines[0]).toContain("STATUS");
+    expect(lines[0]).toContain("GAMES");
     expect(lines[1]).toContain("lane-empty");
     expect(lines[1]).toContain("NO-INSTALL");
     expect(lines[2]).toContain("lane-half");
@@ -261,6 +281,13 @@ describe("formatTable", () => {
     expect(lines[2]).toContain("dirty(4)");
     expect(lines[3]).toContain("lane-sound");
     expect(lines).toHaveLength(4);
+  });
+
+  test("names the Games commit a row measures, and calls a stale one broken", () => {
+    const stale = report({ name: "lane-stale", games: "stale", gamesHead: "67f6ed9bc5e66aadc15ad6dee391117f3aace947" });
+    const lines = formatTable([stale]).split("\n");
+    expect(lines[1]).toContain("stale 67f6ed9");
+    expect(lines[1]).toContain("BROKEN");
   });
 });
 

@@ -17,6 +17,8 @@ import { join } from "node:path";
 import { spawn } from "node:child_process";
 import { resolve } from "node:path";
 
+import { requireGamesAtPin } from "./games-scope";
+
 export const SMOKE_GAMES = ["harbor-heat", "scrap-signal", "drift-foundry", "deepward"] as const;
 
 export function parseGames(argv: readonly string[]): string[] {
@@ -56,14 +58,7 @@ function boot(game: string): Promise<number> {
 async function main(): Promise<void> {
   const games = parseGames(process.argv.slice(2));
 
-  if (!existsSync(join(root, "Games"))) {
-    if (process.env.CI) {
-      console.error("smoke: Games/ checkout is required in CI — run bun run games:clone first");
-      process.exit(1);
-    }
-    console.log("smoke: skipped — no Games/ checkout (games live in Noisemaker111/JGengine-games, run bun run games:clone for a smoke)");
-    process.exit(0);
-  }
+  requireGamesAtPin("smoke", root);
 
   const failures: string[] = [];
   for (const game of games) {
