@@ -33,6 +33,8 @@ import {
   syncOntoBase,
 } from "./land";
 import type { FragmentFile, Gh, GhCheck, LandIo, LockWait, Run } from "./land";
+import { attemptsOf, judgeChecks } from "./ci-status";
+import type { RollupEntry } from "./ci-status";
 
 test("parses flags with values and defaults the base to beta", () => {
   expect(parseArgs([])).toEqual({ base: "beta", commit: false, allow: [], watch: false });
@@ -635,6 +637,16 @@ const gh = (args) => {
   if (joined.startsWith("pr list")) return { status: 0, stdout: created ? JSON.stringify([{ number: cfg.number, url }]) : "[]", stderr: "" };
   if (joined.startsWith("pr create")) { created = true; return { status: 0, stdout: url + "\\n", stderr: "" }; }
   if (joined.startsWith("pr view") && joined.includes("body")) return { status: 0, stdout: JSON.stringify({ body: "" }), stderr: "" };
+  if (joined.startsWith("pr view") && joined.includes("statusCheckRollup")) {
+    return {
+      status: 0,
+      stdout: JSON.stringify({
+        headRefOid: "head1",
+        statusCheckRollup: [{ name: "ci", conclusion: "SUCCESS", status: "COMPLETED", detailsUrl: "https://example.test/actions/runs/1/job/2" }],
+      }),
+      stderr: "",
+    };
+  }
   if (joined.startsWith("pr view")) return { status: 0, stdout: JSON.stringify({ state: "MERGED", url }), stderr: "" };
   if (joined.startsWith("pr edit")) return ok;
   if (joined.startsWith("pr checks") && joined.includes("--watch")) return ok;
@@ -958,17 +970,32 @@ function scriptedGit(answers: { behind?: string } = {}): { git: (args: string[])
   return { git, calls };
 }
 
-const GREEN: GhCheck[] = [{ name: "ci", state: "SUCCESS", bucket: "pass" }];
+const GREEN: RollupEntry[] = [{ name: "ci", conclusion: "SUCCESS", status: "COMPLETED", detailsUrl: "https://example.test/job/1" }];
 const URL_4242 = "https://github.com/Noisemaker111/JGengine/pull/4242";
 
-function handOffGh(options: { autoMerge?: Run; label?: Run; checks?: GhCheck[] } = {}): { gh: Gh; calls: string[][] } {
+/** A rollup as GitHub sends it: one row per attempt, `startedAt` ordering the attempts. */
+function rollupOf(
+  entries: readonly { name: string; conclusion?: string; status?: string; startedAt?: string; url?: string }[],
+): RollupEntry[] {
+  return entries.map((entry) => ({
+    name: entry.name,
+    conclusion: entry.conclusion ?? null,
+    status: entry.status ?? "COMPLETED",
+    startedAt: entry.startedAt ?? null,
+    detailsUrl: entry.url ?? "",
+  }));
+}
+
+function handOffGh(options: { autoMerge?: Run; label?: Run; rollup?: RollupEntry[] } = {}): { gh: Gh; calls: string[][] } {
   const calls: string[][] = [];
   const gh: Gh = (args) => {
     calls.push(args);
     const joined = args.join(" ");
     if (joined.startsWith("pr list")) return { status: 0, stdout: "[]", stderr: "" };
     if (joined.startsWith("pr create")) return { status: 0, stdout: `${URL_4242}\n`, stderr: "" };
-    if (joined.startsWith("pr checks")) return { status: 0, stdout: JSON.stringify(options.checks ?? GREEN), stderr: "" };
+    if (joined.startsWith("pr view")) {
+      return { status: 0, stdout: JSON.stringify({ headRefOid: "head1", statusCheckRollup: options.rollup ?? GREEN }), stderr: "" };
+    }
     if (joined.startsWith("pr merge")) return options.autoMerge ?? { status: 0, stdout: "", stderr: "" };
     if (joined.startsWith("pr edit")) return options.label ?? { status: 0, stdout: "", stderr: "" };
     return { status: 0, stdout: "", stderr: "" };
@@ -1053,14 +1080,71 @@ test("a base that moved before the hand-off is rebased and armed again, without 
   expect(logs).toContain("status: bun run ci:status --pr 4242");
 });
 
+test("a cancelled attempt from a superseded run is not a failure: the pass on this commit stands", () => {
+  // Two pulls of the same branch: the first suite passed, the second was cancelled when it was
+  // superseded. Every name has a green attempt on this commit, so the PR is ready to hand over.
+  const superseded = rollupOf([
+    { name: "ci", conclusion: "SUCCESS", startedAt: "2026-10-24T04:12:44Z" },
+    { name: "ci", conclusion: "CANCELLED", startedAt: "2026-10-24T04:17:03Z" },
+    { name: "types", conclusion: "SUCCESS", startedAt: "2026-10-24T04:10:17Z" },
+    { name: "types", conclusion: "CANCELLED", startedAt: "2026-10-24T04:15:15Z" },
+  ]);
+  const { gh, calls } = handOffGh({ rollup: superseded });
+  const { io, logs, errors } = handOffIo({ git: scriptedGit().git, gh });
+
+  const code = landBranch({ args: { base: "beta", commit: false, allow: [], watch: false }, branch: "agent/lane-x", lock: lockPathForTest(), io });
+
+  expect(code).toBe(EXIT_LANDED);
+  expect(errors).toEqual([]);
+  expect(calls).toContainEqual(["pr", "merge", "4242", "--auto", "--merge"]);
+  expect(logs).toContain(URL_4242);
+});
+
+test("an attempt on an older commit contributes nothing to this commit's verdict", () => {
+  const stale = rollupOf([
+    { name: "ci", conclusion: "CANCELLED", startedAt: "2026-10-24T04:00:00Z" },
+    { name: "ci", conclusion: "SUCCESS", startedAt: "2026-10-24T04:12:44Z" },
+  ]);
+  const judged = judgeChecks(attemptsOf(stale), "head1");
+  expect(judged).toEqual([
+    { name: "ci", state: "SUCCESS", bucket: "pass", url: "", runId: null },
+  ]);
+  const older = judgeChecks(
+    attemptsOf([
+      { name: "ci", conclusion: "CANCELLED", headSha: "older1" },
+      { name: "ci", conclusion: "SUCCESS", headSha: "head1" },
+    ]),
+    "head1",
+  );
+  expect(older.map((check) => check.bucket)).toEqual(["pass"]);
+});
+
+test("checks still running are reported as running, with how many and the run, never as failed", () => {
+  const running = rollupOf([
+    { name: "ci", conclusion: "SUCCESS", url: "https://example.test/actions/runs/700/job/1" },
+    { name: "test (ui)", status: "IN_PROGRESS", url: "https://example.test/actions/runs/701/job/2" },
+    { name: "types", status: "QUEUED", url: "https://example.test/actions/runs/701/job/3" },
+  ]);
+  const { gh, calls } = handOffGh({ rollup: running });
+  const { io, logs, errors } = handOffIo({ git: scriptedGit().git, gh });
+
+  const code = landBranch({ args: { base: "beta", commit: false, allow: [], watch: false }, branch: "agent/lane-x", lock: lockPathForTest(), io });
+
+  expect(code).toBe(EXIT_LANDED);
+  expect(errors).toEqual([]);
+  expect(logs).toContain("checks still running: 2 of 3 (run 701); auto-merge waits for them");
+  expect(calls.filter((call) => call[1] === "merge")).toContainEqual(["pr", "merge", "4242", "--auto", "--merge"]);
+});
+
 test("checks that already failed stop the hand-off, and a failed verify never arms anything", () => {
-  const failing: GhCheck[] = [{ name: "test (ui)", state: "FAILURE", bucket: "fail", link: "https://example.test/job/9" }];
-  const failedChecks = handOffGh({ checks: failing });
+  const failing = rollupOf([{ name: "test (ui)", conclusion: "FAILURE", url: "https://example.test/job/9" }]);
+  const failedChecks = handOffGh({ rollup: failing });
   const first = handOffIo({ git: scriptedGit().git, gh: failedChecks.gh });
   expect(
     landBranch({ args: { base: "beta", commit: false, allow: [], watch: false }, branch: "agent/lane-x", lock: lockPathForTest(), io: first.io }),
   ).toBe(EXIT_CHECKS_FAILED);
   expect(failedChecks.calls.some((call) => call[1] === "merge")).toBe(false);
+  expect(first.errors).toContain("checks failed: test (ui)");
   expect(first.errors).toContain("  test (ui) https://example.test/job/9");
 
   const unverified = handOffGh();

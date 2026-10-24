@@ -15,6 +15,10 @@
 // It answers or it says why it cannot: no open PR for a branch, no checks on the
 // PR yet, or gh unreadable all exit non-zero with the reason named, because an
 // empty green-looking table is the one answer that must never be printed.
+//
+// One commit, one verdict: the rollup is the head commit's, and a name pushed twice
+// is judged from its attempts on that commit, so a superseded run that was cancelled
+// is not a failure and a still-running attempt is not a pass.
 import { spawnSync } from "node:child_process";
 
 import { printHelpIfAsked } from "./script-help";
@@ -66,8 +70,12 @@ export interface RollupEntry {
   status?: string;
   conclusion?: string | null;
   state?: string;
+  startedAt?: string | null;
   detailsUrl?: string;
   targetUrl?: string;
+  /** Only the check-runs API names the commit; a PR rollup is already the head commit's. */
+  headSha?: string | null;
+  head_sha?: string | null;
 }
 
 export type Bucket = "pass" | "fail" | "pending";
@@ -173,15 +181,77 @@ export function verdictOf(checks: readonly CheckStatus[]): Bucket {
   return "pass";
 }
 
+/** One attempt GitHub reported for one check name: a name appears once per workflow run. */
+export interface CheckAttempt {
+  name: string;
+  state: string;
+  startedAt?: string | null;
+  url: string;
+  /** The commit this attempt ran on, when the payload names one. */
+  headSha?: string | null;
+}
+
+/** An attempt that produced no result, so it cannot overrule an attempt that did. */
+const NO_RESULT_STATES = new Set(["CANCELLED", "STALE"]);
+
+export function attemptsOf(rollup: readonly RollupEntry[]): CheckAttempt[] {
+  return rollup.map((entry) => {
+    const settled = entry.conclusion === "" || entry.conclusion === null ? undefined : entry.conclusion;
+    return {
+      name: entry.name ?? entry.context ?? "(unnamed check)",
+      state: settled ?? entry.state ?? entry.status ?? "UNKNOWN",
+      startedAt: entry.startedAt ?? null,
+      url: entry.detailsUrl ?? entry.targetUrl ?? "",
+      headSha: entry.headSha ?? entry.head_sha ?? null,
+    };
+  });
+}
+
+function startedMs(text: string | null | undefined): number {
+  const at = text === null || text === undefined ? Number.NaN : Date.parse(text);
+  return Number.isFinite(at) ? at : 0;
+}
+
+/**
+ * One row per check name, judged on the head commit only: a pushed-over branch leaves an attempt
+ * on an older commit that says nothing about this one, and a superseded attempt on this commit is
+ * cancelled rather than failed, so it cannot overrule an attempt that ran to a result. A still
+ * running attempt outranks a passed one, so nothing reads green while it is pending; a name whose
+ * every attempt was cancelled reads cancelled.
+ */
+export function judgeChecks(attempts: readonly CheckAttempt[], headSha?: string): CheckStatus[] {
+  const grouped = new Map<string, CheckAttempt[]>();
+  for (const attempt of attempts) {
+    if (headSha !== undefined && attempt.headSha != null && attempt.headSha !== headSha) continue;
+    const group = grouped.get(attempt.name);
+    if (group === undefined) grouped.set(attempt.name, [attempt]);
+    else group.push(attempt);
+  }
+  const checks: CheckStatus[] = [];
+  for (const [name, group] of grouped) {
+    const newestFirst = [...group].sort((a, b) => startedMs(b.startedAt) - startedMs(a.startedAt));
+    const running = newestFirst.find((attempt) => bucketOf(attempt.state) === "pending");
+    const decided = newestFirst.find(
+      (attempt) => bucketOf(attempt.state) !== "pending" && !NO_RESULT_STATES.has(attempt.state.toUpperCase()),
+    );
+    const chosen = running ?? decided ?? newestFirst[0];
+    if (chosen === undefined) continue;
+    checks.push({ name, state: chosen.state, bucket: bucketOf(chosen.state), url: chosen.url, runId: runIdFrom(chosen.url) });
+  }
+  return checks;
+}
+
 export function summarize(input: {
   pr: number;
   url: string;
   branch: string;
   state: string;
+  /** The commit the rollup belongs to, when the caller read it. */
+  headSha?: string;
   rollup: readonly RollupEntry[];
   wallMs: number;
 }): CiStatus {
-  const checks = input.rollup.map(normalizeCheck);
+  const checks = judgeChecks(attemptsOf(input.rollup), input.headSha);
   const verdict = verdictOf(checks);
   const counts = { pass: 0, fail: 0, pending: 0 };
   for (const check of checks) counts[check.bucket] += 1;
@@ -205,15 +275,25 @@ export function seconds(ms: number): string {
   return `${(ms / 1000).toFixed(1)}s`;
 }
 
+/** The last line's verdict: one of pass, fail naming each failing check, or still running. */
+export function verdictLine(status: CiStatus): string {
+  const { pass, fail, pending } = status.counts;
+  const counts = `${status.checks.length} check(s): ${pass} pass, ${fail} fail, ${pending} pending`;
+  if (status.verdict === "fail") {
+    const named = status.checks.filter((check) => check.bucket === "fail").map((check) => `${check.name} (${check.state})`);
+    return `${counts} — fail: ${named.join(", ")}`;
+  }
+  if (status.verdict === "pending") return `${counts} — still running`;
+  return `${counts} — pass`;
+}
+
 export function formatText(status: CiStatus): string {
-  const word = status.verdict === "pass" ? "green" : status.verdict === "fail" ? "failing" : "pending";
   const lines = [`ci:status #${status.pr} ${status.branch} ${status.state} ${status.url}`.trimEnd()];
   for (const check of status.checks) {
     const mark = check.bucket === "pass" ? "pass" : check.bucket === "fail" ? "FAIL" : "wait";
     lines.push(`  ${mark.padEnd(4)} ${check.name}${check.bucket === "pass" ? "" : ` (${check.state})`}`);
   }
-  const { pass, fail, pending } = status.counts;
-  lines.push(`${status.checks.length} check(s): ${pass} pass, ${fail} fail, ${pending} pending — ${word}`);
+  lines.push(verdictLine(status));
   if (status.runIds.length > 0) lines.push(`run ${status.runIds.join(", ")}`);
   lines.push(`answered in ${seconds(status.wallMs)}`);
   return lines.join("\n");
@@ -224,6 +304,7 @@ interface PrView {
   url: string;
   state: string;
   headRefName: string;
+  headRefOid?: string;
   statusCheckRollup: RollupEntry[] | null;
 }
 
@@ -245,7 +326,7 @@ function describe(run: Run): string {
 export function resolvePr(args: CiStatusArgs, io: CiIo): { pr: PrView } | Refusal {
   const repo = args.repo === undefined ? [] : ["-R", args.repo];
   if (args.pr !== undefined) {
-    const view = ghRun(io, ["pr", "view", String(args.pr), "--json", "number,url,state,headRefName,statusCheckRollup", ...repo]);
+    const view = ghRun(io, ["pr", "view", String(args.pr), "--json", "number,url,state,headRefName,headRefOid,statusCheckRollup", ...repo]);
     if (view.status !== 0) return { reason: "gh-failed", message: `gh pr view #${args.pr} failed: ${describe(view)}` };
     return { pr: parsePr(view.stdout, args.pr) };
   }
@@ -262,7 +343,7 @@ export function resolvePr(args: CiStatusArgs, io: CiIo): { pr: PrView } | Refusa
     "--limit",
     "1",
     "--json",
-    "number,url,state,headRefName,statusCheckRollup",
+    "number,url,state,headRefName,headRefOid,statusCheckRollup",
     ...repo,
   ]);
   if (listed.status !== 0) return { reason: "gh-failed", message: `gh pr list failed: ${describe(listed)}` };
@@ -299,6 +380,7 @@ export function ask(args: CiStatusArgs, io: CiIo): CiStatus | Refusal {
     url: resolved.pr.url ?? "",
     branch: resolved.pr.headRefName ?? "",
     state: resolved.pr.state ?? "",
+    headSha: resolved.pr.headRefOid,
     rollup,
     wallMs: 0,
   });

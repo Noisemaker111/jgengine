@@ -33,12 +33,13 @@ function fail(stderr: string): Run {
   return { status: 1, stdout: "", stderr };
 }
 
-function rollup(entries: readonly { name: string; conclusion?: string; status?: string; url?: string }[]): string {
+function rollup(entries: readonly { name: string; conclusion?: string; status?: string; startedAt?: string; url?: string }[]): string {
   return JSON.stringify(
     entries.map((entry) => ({
       name: entry.name,
       conclusion: entry.conclusion ?? null,
       status: entry.status ?? "COMPLETED",
+      startedAt: entry.startedAt ?? null,
       detailsUrl: entry.url ?? "",
     })),
   );
@@ -155,6 +156,61 @@ test("waits once per PR, reports the run it waited on, and stops at the first gr
   expect(result.waitedMs).toBe(POLL_MS * 2);
 });
 
+test("a superseded cancelled attempt does not stop the queue, and a running check is never a pass", () => {
+  const view = (number: number, entries: Parameters<typeof rollup>[0]) => () =>
+    ok(
+      JSON.stringify({
+        number,
+        url: "u",
+        state: "OPEN",
+        headRefName: `agent/${number}`,
+        headRefOid: "head1",
+        statusCheckRollup: JSON.parse(rollup(entries)),
+      }),
+    );
+
+  // Same shape as PR #2330 on 2026-10-24: a second workflow run on the head commit was cancelled
+  // after the first passed. The old row-by-row verdict called 9 of these checks failures.
+  const superseded = view(24, [
+    { name: "ci", conclusion: "SUCCESS", startedAt: "2026-10-24T04:12:44Z", url: "https://example.test/actions/runs/601/job/1" },
+    { name: "ci", conclusion: "CANCELLED", startedAt: "2026-10-24T04:17:03Z", url: "https://example.test/actions/runs/602/job/2" },
+    { name: "types", conclusion: "SUCCESS", startedAt: "2026-10-24T04:10:17Z" },
+    { name: "types", conclusion: "CANCELLED", startedAt: "2026-10-24T04:15:15Z" },
+  ]);
+  const green = waitForGreen(24, io({ gh: superseded }));
+  expect(green.verdict).toBe("green");
+  expect(green.detail).toBe("");
+
+  const failed = waitForGreen(
+    25,
+    io({
+      gh: view(25, [
+        { name: "test (ui)", conclusion: "SUCCESS", startedAt: "2026-10-24T04:10:00Z" },
+        { name: "test (ui)", conclusion: "FAILURE", startedAt: "2026-10-24T04:20:00Z", url: "https://example.test/job/7" },
+      ]),
+    }),
+  );
+  expect(failed.verdict).toBe("failed");
+  expect(failed.detail).toContain("test (ui)");
+
+  let clock = 0;
+  const running = waitForGreen(
+    26,
+    io({
+      gh: view(26, [
+        { name: "ci", conclusion: "SUCCESS", startedAt: "2026-10-24T04:10:00Z" },
+        { name: "perf", status: "IN_PROGRESS", conclusion: "", startedAt: "2026-10-24T04:20:00Z", url: "https://example.test/actions/runs/603/job/3" },
+      ]),
+      now: () => clock,
+      pause: (ms) => {
+        clock += ms;
+      },
+    }),
+  );
+  expect(running.verdict).toBe("timedout");
+  expect(running.detail).toContain("still running after 25 minutes: 1 of 2 (run 603): perf");
+});
+
 test("a failing check ends the wait at once, and a wait that never settles gives up at the ceiling", () => {
   let paused = 0;
   const failed = waitForGreen(22, io({
@@ -184,7 +240,7 @@ test("a failing check ends the wait at once, and a wait that never settles gives
   }));
   expect(stuck.verdict).toBe("timedout");
   expect(stuck.waitedMs).toBe(WAIT_TIMEOUT_MS);
-  expect(stuck.detail).toContain("still pending after 25 minutes");
+  expect(stuck.detail).toContain("still running after 25 minutes");
 });
 
 const pr = (number: number, branch = `agent/${number}`): ReadyPr => ({

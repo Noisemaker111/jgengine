@@ -209,6 +209,9 @@ function scriptedGh(): { gh: Gh; calls: string[][] } {
     const joined = args.join(" ");
     if (joined.startsWith("pr list")) return { status: 0, stdout: "[]", stderr: "" };
     if (joined.startsWith("pr create")) return { status: 0, stdout: `${PR_URL}\n`, stderr: "" };
+    if (joined.startsWith("pr view")) {
+      return { status: 0, stdout: JSON.stringify({ headRefOid: "head1", statusCheckRollup: GREEN }), stderr: "" };
+    }
     if (joined.startsWith("pr checks")) return { status: 0, stdout: JSON.stringify(GREEN), stderr: "" };
     return { status: 0, stdout: "", stderr: "" };
   };

@@ -66,6 +66,8 @@ import { fileURLToPath } from "node:url";
 import { FRAGMENT_PATTERN } from "./changelog-fragments";
 import { assertCheckoutReady } from "./checkout-ready";
 import { printHelpIfAsked } from "./script-help";
+import { attemptsOf, judgeChecks, runIdFrom } from "./ci-status";
+import type { RollupEntry } from "./ci-status";
 
 const LAND_USAGE = {
   summary: "push this branch, open or reuse its PR, verify it and hand it to the landing queue",
@@ -872,17 +874,18 @@ export interface LandIo {
 }
 
 function readChecks(runGh: Gh, number: number): { checks: GhCheck[]; error?: string } {
-  const result = runGh(["pr", "checks", String(number), "--json", "name,state,bucket,link"]);
-  if (result.status !== 0) {
-    const text = details(result);
-    if (/no checks reported/i.test(text)) return { checks: [] };
-    return { checks: [], error: text };
-  }
+  const result = runGh(["pr", "view", String(number), "--json", "headRefOid,statusCheckRollup"]);
+  if (result.status !== 0) return { checks: [], error: details(result) };
+  let view: { headRefOid?: string; statusCheckRollup?: readonly RollupEntry[] | null };
   try {
-    return { checks: JSON.parse(result.stdout) as GhCheck[] };
+    view = JSON.parse(result.stdout) as typeof view;
   } catch (error) {
-    return { checks: [], error: `unreadable gh pr checks output: ${String(error)}` };
+    return { checks: [], error: `unreadable gh pr view output: ${String(error)}` };
   }
+  const judged = judgeChecks(attemptsOf(view.statusCheckRollup ?? []), view.headRefOid);
+  return {
+    checks: judged.map((check) => ({ name: check.name, state: check.state, bucket: check.bucket, link: check.url })),
+  };
 }
 
 function waitForChecks(io: LandIo, number: number): GhCheck[] | null {
@@ -993,17 +996,35 @@ export function ensurePr(options: {
   return { number, url };
 }
 
-function reportChecks(io: LandIo, result: "failed" | "timed out", checks: GhCheck[]): number {
+/** The failure is a result: name every check that failed and let the run of each speak for itself. */
+function reportChecks(io: LandIo, checks: readonly GhCheck[]): number {
   const verdict = checkVerdict(checks);
-  const blocking =
-    verdict.failures.length > 0
-      ? verdict.failures
-      : checks
-          .filter((check) => verdict.pending.includes(check.name))
-          .map((check) => ({ name: check.name, url: check.link ?? "" }));
-  io.error(`checks ${result}`);
-  for (const line of formatFailures(blocking)) io.error(line);
+  io.error(`checks failed: ${verdict.failures.map((failure) => failure.name).join(", ")}`);
+  for (const line of formatFailures(verdict.failures)) io.error(line);
+  if (verdict.pending.length > 0) io.log(`still running: ${verdict.pending.length} more check(s): ${verdict.pending.join(", ")}`);
   return EXIT_CHECKS_FAILED;
+}
+
+/** Nothing has failed, but the checks are not done: say how many and on which run. */
+function reportRunning(io: LandIo, checks: readonly GhCheck[]): number {
+  const pending = checkVerdict(checks).pending;
+  const on = runningRunIds(checks, pending);
+  io.error(`checks still running: ${pending.length} of ${checks.length}${on}: ${pending.join(", ")}`);
+  return EXIT_CHECKS_FAILED;
+}
+
+/** ` (run 701)`, naming the Action runs the named checks are running on. */
+function runningRunIds(checks: readonly GhCheck[], names: readonly string[]): string {
+  const wanted = new Set(names);
+  const runs = [
+    ...new Set(
+      checks
+        .filter((check) => wanted.has(check.name))
+        .map((check) => runIdFrom(check.link ?? ""))
+        .filter((id): id is number => id !== null),
+    ),
+  ];
+  return runs.length > 0 ? ` (run ${runs.join(", ")})` : "";
 }
 
 function watchChecks(io: LandIo, number: number): number {
@@ -1016,8 +1037,8 @@ function watchChecks(io: LandIo, number: number): number {
   io.watch(number);
   const { checks } = readChecks(io.gh, number);
   const verdict = checkVerdict(checks);
-  if (verdict.failures.length > 0) return reportChecks(io, "failed", checks);
-  if (verdict.pending.length > 0) return reportChecks(io, "timed out", checks);
+  if (verdict.failures.length > 0) return reportChecks(io, checks);
+  if (verdict.pending.length > 0) return reportRunning(io, checks);
   io.log(`${checks.length} check(s) green`);
   return EXIT_LANDED;
 }
@@ -1044,7 +1065,7 @@ function requestMerge(io: LandIo, number: number): MergeRequest {
   const armed = io.gh(["pr", "merge", String(number), "--auto", "--merge"]);
   if (armed.status !== 0) {
     const { checks } = readChecks(io.gh, number);
-    if (checkVerdict(checks).failures.length > 0) return { kind: "failed", code: reportChecks(io, "failed", checks) };
+    if (checkVerdict(checks).failures.length > 0) return { kind: "failed", code: reportChecks(io, checks) };
     const armedWhy = details(armed);
     if (baseMoved(armedWhy)) return { kind: "retry", why: armedWhy };
     io.log(`auto-merge unavailable (${firstLine(armedWhy)}); merging directly`);
@@ -1117,7 +1138,12 @@ export type Arming =
  */
 function armForQueue(io: LandIo, number: number): Arming {
   const { checks } = readChecks(io.gh, number);
-  if (checkVerdict(checks).failures.length > 0) return { kind: "failed", code: reportChecks(io, "failed", checks) };
+  const verdict = checkVerdict(checks);
+  if (verdict.failures.length > 0) return { kind: "failed", code: reportChecks(io, checks) };
+  if (verdict.pending.length > 0) {
+    const on = runningRunIds(checks, verdict.pending);
+    io.log(`checks still running: ${verdict.pending.length} of ${checks.length}${on}; auto-merge waits for them`);
+  }
   const armed = io.gh(["pr", "merge", String(number), "--auto", "--merge"]);
   if (armed.status === 0) return { kind: "armed" };
   const why = details(armed);

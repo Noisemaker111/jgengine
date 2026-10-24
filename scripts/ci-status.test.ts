@@ -6,11 +6,13 @@ import {
   EXIT_GREEN,
   EXIT_PENDING,
   ask,
+  attemptsOf,
   bucketOf,
   cli,
   exitCodeFor,
   formatText,
   jsonText,
+  judgeChecks,
   normalizeCheck,
   parseArgs,
   runIdFrom,
@@ -102,6 +104,71 @@ describe("reading the rollup", () => {
   });
 });
 
+describe("judging one commit's attempts", () => {
+  const attempt = (name: string, conclusion: string, startedAt: string, url = "") => ({
+    name,
+    conclusion,
+    startedAt,
+    detailsUrl: url,
+  });
+
+  test("a superseded attempt that was cancelled does not unmake the pass on the same commit", () => {
+    const checks = judgeChecks(
+      attemptsOf([
+        attempt("ci", "SUCCESS", "2026-10-24T04:12:44Z"),
+        attempt("ci", "CANCELLED", "2026-10-24T04:17:03Z"),
+        { ...attempt("types", "SUCCESS", "2026-10-24T04:10:17Z") },
+        { ...attempt("types", "CANCELLED", "2026-10-24T04:15:15Z") },
+      ]),
+    );
+    expect(checks.map((check) => [check.name, check.state, check.bucket])).toEqual([
+      ["ci", "SUCCESS", "pass"],
+      ["types", "SUCCESS", "pass"],
+    ]);
+    expect(verdictOf(checks)).toBe("pass");
+  });
+
+  test("a cancelled attempt on an older commit contributes nothing", () => {
+    const checks = judgeChecks(
+      [
+        { name: "ci", state: "CANCELLED", url: "", headSha: "old1" },
+        { name: "ci", state: "SUCCESS", url: "", headSha: "head1" },
+      ],
+      "head1",
+    );
+    expect(checks).toEqual([{ name: "ci", state: "SUCCESS", bucket: "pass", url: "", runId: null }]);
+  });
+
+  test("a real failure on this commit decides, even though an older attempt passed", () => {
+    const checks = judgeChecks(
+      attemptsOf([
+        attempt("test (ui)", "SUCCESS", "2026-10-24T04:10:00Z", "https://example.test/actions/runs/1/job/1"),
+        attempt("test (ui)", "FAILURE", "2026-10-24T04:20:00Z", "https://example.test/actions/runs/2/job/2"),
+      ]),
+    );
+    expect(checks).toEqual([
+      { name: "test (ui)", state: "FAILURE", bucket: "fail", url: "https://example.test/actions/runs/2/job/2", runId: 2 },
+    ]);
+  });
+
+  test("a running attempt outranks a passed one, so nothing reads green while it is pending", () => {
+    const checks = judgeChecks(
+      attemptsOf([
+        attempt("ci", "SUCCESS", "2026-10-24T04:10:00Z"),
+        { name: "ci", status: "IN_PROGRESS", conclusion: "", startedAt: "2026-10-24T04:20:00Z" },
+      ]),
+    );
+    expect(checks.map((check) => check.bucket)).toEqual(["pending"]);
+  });
+
+  test("a name cancelled on every attempt reads cancelled, not passed", () => {
+    const checks = judgeChecks(
+      attemptsOf([attempt("perf", "CANCELLED", "2026-10-24T04:10:00Z"), attempt("perf", "CANCELLED", "2026-10-24T04:20:00Z")]),
+    );
+    expect(checks.map((check) => [check.state, check.bucket])).toEqual([["CANCELLED", "fail"]]);
+  });
+});
+
 describe("one query, one answer", () => {
   test("--json carries the verdict, the counts, the run id and every check", () => {
     const status = summarize({
@@ -134,8 +201,22 @@ describe("one query, one answer", () => {
     );
     expect(text).toContain("pass quick");
     expect(text).toContain("wait gate (IN_PROGRESS)");
-    expect(text).toContain("1 pass, 0 fail, 1 pending — pending");
+    expect(text).toContain("1 pass, 0 fail, 1 pending — still running");
     expect(text).toContain("run 4100");
+  });
+
+  test("a failing check is named in the verdict, not left to the table", () => {
+    const text = formatText(
+      summarize({
+        pr: 1,
+        url: "",
+        branch: "agent/x",
+        state: "OPEN",
+        rollup: [{ name: "test (ui)", conclusion: "FAILURE", detailsUrl: "https://example.test/job/1" }, ROLLUP[0]!],
+        wallMs: 500,
+      }),
+    );
+    expect(text).toContain("1 pass, 1 fail, 0 pending — fail: test (ui) (FAILURE)");
   });
 
   test("a PR number costs one gh call", () => {

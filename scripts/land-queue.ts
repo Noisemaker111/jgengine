@@ -23,7 +23,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { normalizeCheck, runIdFrom } from "./ci-status";
+import { attemptsOf, judgeChecks } from "./ci-status";
 import type { RollupEntry } from "./ci-status";
 import { MERGE_ATTEMPTS, QUEUE_LABEL, baseMoved, checkVerdict, duration, formatFailures } from "./land";
 import type { GhCheck, Run } from "./land";
@@ -117,6 +117,7 @@ export interface PrView {
   url: string;
   state: string;
   headRefName: string;
+  headRefOid?: string;
   mergeStateStatus?: string;
   statusCheckRollup?: RollupEntry[] | null;
 }
@@ -142,7 +143,13 @@ function firstLine(text: string): string {
 }
 
 export function readView(gh: Gh, number: number): PrView | null {
-  const view = gh(["pr", "view", String(number), "--json", "number,url,state,headRefName,mergeStateStatus,statusCheckRollup"]);
+  const view = gh([
+    "pr",
+    "view",
+    String(number),
+    "--json",
+    "number,url,state,headRefName,headRefOid,mergeStateStatus,statusCheckRollup",
+  ]);
   if (view.status !== 0) return null;
   try {
     const parsed = JSON.parse(view.stdout) as PrView;
@@ -157,11 +164,14 @@ export interface CheckReport {
   runIds: number[];
 }
 
-/** The PR's checks as land judges them, plus the Action runs they belong to. */
+/** The PR's checks as land judges them — one per name, on this commit — plus the Action runs they belong to. */
 export function checkReport(view: PrView): CheckReport {
-  const normalized = (view.statusCheckRollup ?? []).map(normalizeCheck);
-  const runIds = [...new Set(normalized.map((check) => check.runId).filter((id): id is number => id !== null))];
-  return { checks: normalized, runIds };
+  const judged = judgeChecks(attemptsOf(view.statusCheckRollup ?? []), view.headRefOid);
+  const runIds = [...new Set(judged.map((check) => check.runId).filter((id): id is number => id !== null))];
+  return {
+    checks: judged.map((check) => ({ name: check.name, state: check.state, bucket: check.bucket, link: check.url })),
+    runIds,
+  };
 }
 
 export type WaitVerdict = "green" | "failed" | "timedout" | "unreadable";
@@ -208,13 +218,14 @@ export function waitForGreen(number: number, io: QueueIo): WaitResult {
       return { verdict: "green", checks: report.checks, runIds, waitedMs: io.now() - startedAt, detail: "" };
     }
     if (io.now() - startedAt >= WAIT_TIMEOUT_MS) {
+      const on = runIds.length > 0 ? ` (run ${runIds.join(", ")})` : "";
       const pending = verdict.pending.join(", ") || "no checks reported";
       return {
         verdict: "timedout",
         checks: report.checks,
         runIds,
         waitedMs: io.now() - startedAt,
-        detail: `still pending after ${WAIT_TIMEOUT_MS / 60_000} minutes: ${pending}`,
+        detail: `still running after ${WAIT_TIMEOUT_MS / 60_000} minutes: ${verdict.pending.length} of ${report.checks.length}${on}: ${pending}`,
       };
     }
     io.pause(POLL_MS); // wait-ok: land:queue is the one process that waits for CI; everything else asks ci:status
