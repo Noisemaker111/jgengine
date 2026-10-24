@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import type { PerfRecord } from "./perf-play";
 import { PERF_GATE_GAMES, DEBUG_PORT_BASE, checkBudget, debugPortFor, describeGamesCheckout, describeGamesLine, gateVerdicts, loadBudget, parseGateArgs, type PerfBudget } from "./perf-gate";
 import { summarizeRecord } from "./perf-budget";
+import { FRAME_GAMES } from "./ci-scope";
 
 /**
  * The gate's verdict logic runs here without a browser: every case is a record
@@ -297,14 +298,11 @@ describe("describeGamesLine", () => {
 describe("ci matrix", () => {
   const workflow = readFileSync(fileURLToPath(new URL("../.github/workflows/ci.yml", import.meta.url)), "utf8");
 
-  function matrixGames(): string[] {
+  test("the matrix is the scope's game list, so a game is measured once and a surface change still boots one", () => {
     const job = /^ {2}perf-game:\n([\s\S]*?)(?=^ {2}\S)/m.exec(workflow)?.[1] ?? "";
-    const list = /^ {8}game: \[(.+)\]$/m.exec(job)?.[1] ?? "";
-    return list.split(",").map((id) => id.trim()).filter((id) => id.length > 0);
-  }
-
-  test("gives every reference game its own job, so none is measured twice or dropped", () => {
-    expect(matrixGames()).toEqual([...PERF_GATE_GAMES]);
+    expect(job).toContain("game: ${{ fromJSON(needs.changes.outputs.gameList) }}");
+    // `scripts/ci-scope.ts` cannot import this list: the `changes` job runs it with no node_modules.
+    expect([...FRAME_GAMES]).toEqual([...PERF_GATE_GAMES]);
   });
 });
 
