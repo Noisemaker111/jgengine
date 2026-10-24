@@ -36,6 +36,7 @@ beforeAll(async () => {
     import { createSaveSlots } from '../../packages/core/src/game/saveSlots';
     import { GameMenu } from '../../packages/react/src/gameMenu';
     import { ContinuePane, SaveSlotsPane } from '../../packages/react/src/gameMenuSaves';
+    import { MENU_THEME_STYLE } from '../../packages/react/src/testFixtures';
 
     const now = 1_700_000_000_000;
     const model = createSaveSlots({
@@ -75,22 +76,25 @@ beforeAll(async () => {
         return <div data-other-pane={id} style={{ height: 2000 }}>tall pane</div>;
       };
       return (
-        <GameMenu
-          items={[
-            { id: 'continue', label: 'Continue' },
-            { id: 'new', label: 'New defense' },
-            { id: 'load', label: 'Load & save' },
-            { id: 'settings', label: 'Settings' },
-            { id: 'credits', label: 'Credits' },
-          ]}
-          logo={{ text: 'Beacon Bastion' }}
-          eyebrow="Fixture"
-          detail={detail}
-          sound={false}
-          onHighlight={(id) => { if (id !== null) setActive(id); }}
-          onSelect={(id) => record.chosen.push(id)}
-          onBack={() => record.chosen.push('back')}
-        />
+        <div data-hud-wrapper="" style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+          <GameMenu
+            items={[
+              { id: 'continue', label: 'Continue' },
+              { id: 'new', label: 'New defense' },
+              { id: 'load', label: 'Load & save' },
+              { id: 'settings', label: 'Settings' },
+              { id: 'credits', label: 'Credits' },
+            ]}
+            logo={{ text: 'Beacon Bastion' }}
+            eyebrow="Fixture"
+            style={MENU_THEME_STYLE}
+            detail={detail}
+            sound={false}
+            onHighlight={(id) => { if (id !== null) setActive(id); }}
+            onSelect={(id) => record.chosen.push(id)}
+            onBack={() => record.chosen.push('back')}
+          />
+        </div>
       );
     }
 
@@ -174,6 +178,35 @@ describe("GameMenu surface", () => {
     expect(logo.tag).not.toBe("H2");
     expect(logo.text).toContain("Beacon Bastion");
     expect(Number.parseFloat(logo.size)).toBeGreaterThan(24);
+  });
+
+  test("the menu takes pointer input inside a HUD wrapper that passes clicks through", async () => {
+    const events = await page.evaluate(() => {
+      const menu = document.querySelector("[data-jg-game-menu]") as HTMLElement;
+      const wrapper = menu.parentElement as HTMLElement;
+      const backdrop = document.querySelector("[data-jg-game-menu-backdrop]") as HTMLElement;
+      return {
+        wrapper: getComputedStyle(wrapper).pointerEvents,
+        menu: getComputedStyle(menu).pointerEvents,
+        backdrop: getComputedStyle(backdrop).pointerEvents,
+      };
+    });
+    expect(events).toEqual({ wrapper: "none", menu: "auto", backdrop: "none" });
+    await page.click("[data-jg-game-menu-item='settings']");
+    const chosen = await page.evaluate(() => (window as unknown as FixtureWindow).fixture.record.chosen);
+    expect(chosen).toContain("settings");
+  });
+
+  test("theme tokens pass through the style prop without a cast", async () => {
+    const tokens = await page.evaluate(() => {
+      const menu = document.querySelector("[data-jg-game-menu]") as HTMLElement;
+      const style = getComputedStyle(menu);
+      return {
+        radius: style.getPropertyValue("--jg-menu-surface-radius").trim(),
+        logo: style.getPropertyValue("--jg-menu-logo-size").trim(),
+      };
+    });
+    expect(tokens).toEqual({ radius: "12px", logo: "clamp(30px, 5vw, 72px)" });
   });
 
   test("the highlighted verb drives the detail pane", async () => {

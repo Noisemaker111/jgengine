@@ -1055,6 +1055,7 @@
     "./render/resolveModel",
     "./render/rigNode",
     "./render/sceneCapture",
+    "./render/sceneCaptureRequest",
     "./render/shaderWarmup",
     "./render/shadowCasters",
     "./render/shadowTiers",

@@ -805,6 +805,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `RainImpactField` (function) · `import { RainImpactField } from "@jgengine/shell/weather"`
 
+## request-scene-capture — request the live scene frame, waiting for a late binding and the first painted frame
+
+- `requestSceneCapture` (function) · `import { requestSceneCapture } from "@jgengine/shell/render/sceneCapture"`
+
+## request-scene-thumbnail — request a save-card thumbnail from the live scene, or a stated failure
+
+- `requestSceneThumbnail` (function) · `import { requestSceneThumbnail } from "@jgengine/shell/render/sceneCapture"`
+
 ## resolve-game-look — expand a look preset into concrete lighting/backdrop/post knobs
 
 - `resolveGameLook` (function) · `import { resolveGameLook } from "@jgengine/core/ui"`
@@ -821,7 +829,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `SaveSlotsPane` (function) · `import { SaveSlotsPane } from "@jgengine/react"`
 
-## scene-capture-binding — expose the in-Canvas scene-capture function to outside-Canvas HUD (photo mode)
+## scene-capture-binding — expose the in-Canvas scene-capture function to outside-Canvas HUD (photo mode, save thumbnails)
 
 - `SceneCaptureBinding` (function) · `import { SceneCaptureBinding } from "@jgengine/shell/render/sceneCapture"`
 

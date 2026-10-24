@@ -795,6 +795,7 @@
 - `GameMenuSoundConfig` (interface): interface GameMenuSoundConfig — How {@link createGameMenuSound} is tuned.
 - `GameMenuSoundKind` (type): type GameMenuSoundKind = "move" | "confirm" | "back" — The short, quiet click a menu makes when the selection moves or is confirmed. Generated with an oscillator instead of shipped as an audio file, so a game gets menu feedback without authoring a sound and the whole thing unmounts with the screen.
 - `GameMenuSoundState` (interface): interface GameMenuSoundState — The sound player's readable state: on/off, gain, and whether audio is actually running.
+- `GameMenuStyle` (type): type GameMenuStyle = CSSProperties & Record<`--${string}`, string | number> — Inline style for a menu surface that also accepts `--jg-*` theme tokens, so a game sets a token with `{ "--jg-menu-radius": "12px" }` instead of casting the object to `CSSProperties`.
 - `GameMenuVariant` (type): type GameMenuVariant = "title" | "pause" — How a {@link GameMenu} is used. `pause` is the same system at a smaller scale.
 - `GamePauseMenu` (function): function GamePauseMenu(props: Omit<GameMenuProps, "variant"> & { onResume?: () => void }): ReactNode — A pause menu built from {@link GameMenu}: the same surface and navigation at a smaller scale, so a game composes one menu system rather than a second one. Escape (or B/Start) resumes.
 - `GamePreviewComponent` (type): type GamePreviewComponent = ComponentType<GamePreviewProps> — ⚠ undocumented
@@ -1483,6 +1484,7 @@
 - `GameMenuItem` (interface): interface GameMenuItem — A game's front-end menu: a full-bleed surface over a living background, a logo, primary verbs on the left that animate as the selection moves, and a detail pane on the right that changes with the highlighted verb. It is the block a main menu, a pause menu and their sub-screens are built from, so a game composes one menu system instead of a stack of modal panels.
 - `GameMenuLogo` (interface): interface GameMenuLogo — The logo slot. Give it `image` for art, or `text` for a styled wordmark.
 - `GameMenuProps` (interface): interface GameMenuProps — Props for {@link GameMenu}.
+- `GameMenuStyle` (type): type GameMenuStyle = CSSProperties & Record<`--${string}`, string | number> — Inline style for a menu surface that also accepts `--jg-*` theme tokens, so a game sets a token with `{ "--jg-menu-radius": "12px" }` instead of casting the object to `CSSProperties`.
 - `GameMenuVariant` (type): type GameMenuVariant = "title" | "pause" — How a {@link GameMenu} is used. `pause` is the same system at a smaller scale.
 - `GamePauseMenu` (function): function GamePauseMenu(props: Omit<GameMenuProps, "variant"> & { onResume?: () => void }): ReactNode — A pause menu built from {@link GameMenu}: the same surface and navigation at a smaller scale, so a game composes one menu system rather than a second one. Escape (or B/Start) resumes.
 - `useViewportScrollLock` (function): function useViewportScrollLock(active: boolean): void — Lock the page scroll while `active`, so a fixed full-bleed surface is exactly the viewport and the document behind it never gains a scrollbar. Nested and repeated locks are counted, and the previous inline styles are restored when the last one releases.
@@ -2114,6 +2116,10 @@
 - `TalentIcon` (type): type TalentIcon = GameIconName | ReactNode | null — How a node id resolves to display art: a built-in {@link GameIconName}, any node, or `null` for the default.
 - `TalentTree` (function): function TalentTree<TStat extends string = string>({ view: viewProp, nodes, tree, onLearn, icon, label, branchLabel, title = "Talents", variation = "themed", nodeSize = 54, columnGap = 30, tierGap = 46, showPoints = true, className, style, }: TalentTreeProps<TStat>): ReactNode — Drop-in talent / skill-tree widget over the existing progression model (`@jgengine/core/game/talents` + its `talentTreeView` selector). The game passes its node definitions and a live `createTalentTree` instance; the widget lays nodes out by branch column and prerequisite-depth tier, draws SVG prerequisite edges, styles each node learned/available/locked/maxed, shows an icon + rank badge, and calls `onLearn(nodeId)` when the player clicks a node that is currently allocatable. All layout, edge-drawing, and eligibility come from the model/selector — the widget never re-derives topology. Unskinned and HudTheme-token driven; node ids/branches are opaque game data the game supplies icons and labels for.
 - `TalentTreeProps` (interface): interface TalentTreeProps<TStat extends string = string> — Props for {@link TalentTree}.
+
+## @jgengine/react/testFixtures
+
+- `MENU_THEME_STYLE` (const): const MENU_THEME_STYLE: GameMenuStyle — Menu theme tokens passed through the `style` prop with no cast. This file is type-checked and kept out of the build, so the compiler proves the prop accepts `--jg-*` custom properties on every typecheck while nothing ships from here.
 
 ## @jgengine/react/tileLayerPreview
 
@@ -3078,9 +3084,28 @@
 ## @jgengine/shell/render/sceneCapture
 
 - `CaptureRenderer` (interface): interface CaptureRenderer — The bit of a WebGL renderer scene capture needs — its backing `<canvas>`.
-- `SceneCaptureBinding` (function): function SceneCaptureBinding({ bind }: { bind: (capture: () => string | null) => void }): null — In-`<Canvas>` binder that hands the scene-capture function out to HUD code living outside the reconciler (a photo-mode Capture button). Mount it inside the game's `WorldOverlay`; call `bind` receives a `() => string | null` that grabs the current frame. Renders nothing.
+- `SceneCapture` (type): type SceneCapture = () => string | null — Reads the current scene frame as an image data URL, or null when the frame cannot be read.
+- `SceneCaptureBinding` (function): function SceneCaptureBinding({ bind }: { bind: (capture: () => string | null) => void }): null — In-`<Canvas>` binder that hands the scene-capture function out to HUD code living outside the reconciler (a photo-mode Capture button, a save slot's thumbnail). Mount it inside the game's `WorldOverlay`; `bind` receives a `() => string | null` that grabs the current frame, and the same reader is registered for `requestSceneCapture`/`requestSceneThumbnail`, which wait for this mount and the first painted frame. Renders nothing.
+- `SceneCaptureFailure` (type): type SceneCaptureFailure = "no-binding" | "no-frame" | "undecodable" — Why a capture request produced no image.
+- `SceneCaptureRequestOptions` (interface): interface SceneCaptureRequestOptions — How a capture request waits and retries.
+- `SceneCaptureResult` (type): type SceneCaptureResult = | { ok: true; capture: string } | { ok: false; reason: SceneCaptureFailure } — A captured frame, or the stated reason there is none.
+- `SceneThumbnailResult` (type): type SceneThumbnailResult = | { ok: true; thumbnail: string } | { ok: false; reason: SceneCaptureFailure } — A save-card thumbnail, or the stated reason there is none.
 - `captureCanvas` (function): function captureCanvas(gl: CaptureRenderer): string | null — Read the current frame to a PNG data URL. Requires the R3F `<Canvas>` to have been created with `gl={{ preserveDrawingBuffer: true }}` (the shell's game canvas already is); returns null if the backing canvas can't be read.
 - `downloadImage` (function): function downloadImage(dataUrl: string, filename = "screenshot.png"): void — Trigger a browser download of an image data URL (the photo-mode "save" action).
+- `registerSceneCapture` (function): function registerSceneCapture(capture: SceneCapture | null): () => void — Hand the capture path a reader for the live frame, or `null` to retire it. The returned function unbinds only that reader, so a canvas that remounts cannot be unbound by its predecessor.
+- `requestSceneCapture` (function): function requestSceneCapture(options: SceneCaptureRequestOptions = {}): Promise<SceneCaptureResult> — Request the current scene frame. Resolves once a binding exists and the canvas has painted, or with the reason no frame could be read; it never polls and never rejects.
+- `requestSceneThumbnail` (function): function requestSceneThumbnail(options: SceneCaptureRequestOptions & SaveThumbnailOptions = {}): Promise<SceneThumbnailResult> — Request a save-card thumbnail from the live scene: the shared capture request, then `shrinkCapture`. Pass what the slot card stores; omit everything for a 320x180 JPEG.
+
+## @jgengine/shell/render/sceneCaptureRequest
+
+- `SceneCapture` (type): type SceneCapture = () => string | null — Reads the current scene frame as an image data URL, or null when the frame cannot be read.
+- `SceneCaptureFailure` (type): type SceneCaptureFailure = "no-binding" | "no-frame" | "undecodable" — Why a capture request produced no image.
+- `SceneCaptureRequestOptions` (interface): interface SceneCaptureRequestOptions — How a capture request waits and retries.
+- `SceneCaptureResult` (type): type SceneCaptureResult = | { ok: true; capture: string } | { ok: false; reason: SceneCaptureFailure } — A captured frame, or the stated reason there is none.
+- `SceneThumbnailResult` (type): type SceneThumbnailResult = | { ok: true; thumbnail: string } | { ok: false; reason: SceneCaptureFailure } — A save-card thumbnail, or the stated reason there is none.
+- `registerSceneCapture` (function): function registerSceneCapture(capture: SceneCapture | null): () => void — Hand the capture path a reader for the live frame, or `null` to retire it. The returned function unbinds only that reader, so a canvas that remounts cannot be unbound by its predecessor.
+- `requestSceneCapture` (function): function requestSceneCapture(options: SceneCaptureRequestOptions = {}): Promise<SceneCaptureResult> — Request the current scene frame. Resolves once a binding exists and the canvas has painted, or with the reason no frame could be read; it never polls and never rejects.
+- `requestSceneThumbnail` (function): function requestSceneThumbnail(options: SceneCaptureRequestOptions & SaveThumbnailOptions = {}): Promise<SceneThumbnailResult> — Request a save-card thumbnail from the live scene: the shared capture request, then `shrinkCapture`. Pass what the slot card stores; omit everything for a 320x180 JPEG.
 
 ## @jgengine/shell/render/shaderWarmup
 
