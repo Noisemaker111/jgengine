@@ -825,6 +825,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createSharedAnnotations` (function) · `import { createSharedAnnotations } from "@jgengine/core/world"`
 
+## sight-line — block a sight test behind the world's own collision boxes
+
+- `sightLineBlocked` (function) · `import { sightLineBlocked } from "@jgengine/core/world"`
+
 ## skeleton-standard — map a rig on the standard scheme onto the standard's slots
 
 - `KAYKIT_SCHEME` (const) · `import { KAYKIT_SCHEME } from "@jgengine/core/anim/skeletonStandard"`

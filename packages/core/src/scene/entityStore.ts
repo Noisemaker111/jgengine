@@ -67,7 +67,11 @@ export interface SpawnOptions<TMeta = unknown> {
   behaviors?: readonly BehaviorDescriptor[];
   hidden?: boolean;
   meta?: TMeta;
-  /** When `id` is already spawned: `"throw"` (default), `"replace"` (fresh spawn over it — remount-safe world setup, #284.10), or `"keep"` (leave it untouched and return the id). */
+  /**
+   * When `id` is already spawned: `"keep"` (default — adopt the live body and return its id, so a
+   * re-stream, restore or teleport cannot make a second body for one id), `"replace"` (fresh spawn
+   * over it — remount-safe world setup, #284.10), or `"throw"` (catch a double spawn as a bug).
+   */
   onExisting?: "throw" | "replace" | "keep";
 }
 
@@ -232,7 +236,7 @@ export function createEntityStore<TMeta = unknown>(options: EntityStoreOptions =
   return {
     spawn(name, options = {}) {
       if (options.id !== undefined && store.has(options.id)) {
-        const onExisting = options.onExisting ?? "throw";
+        const onExisting = options.onExisting ?? "keep";
         if (onExisting === "keep") return options.id;
         if (onExisting === "throw") throw new Error(`Scene entity id "${options.id}" is already spawned.`);
         blackboards.delete(options.id);

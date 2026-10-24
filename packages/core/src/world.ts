@@ -584,6 +584,7 @@ export {
 } from "./sensor/perception";
 export { type RecordingBuffer, type RecordingBufferOptions } from "./sensor/recordingBuffer";
 export { type RevealHit, type RevealQuery } from "./sensor/revealQuery";
+export { sightLineBlocked, type SightPoint, type SightSolids } from "./sensor/sightLine";
 export {
   createDayNightCycle,
   type DayNightCycle,

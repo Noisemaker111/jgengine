@@ -16,10 +16,13 @@ describe("scene entity store", () => {
     expect(store.list().map((entity) => entity.id).sort()).toEqual([first, second].sort());
   });
 
-  test("spawn throws on explicit duplicate id", () => {
+  test("spawn adopts a live id instead of throwing, and throw is opt-in", () => {
     const store = createEntityStore();
     store.spawn("rack.basic", { id: "hero", position: [0, 0, 0] });
-    expect(() => store.spawn("rack.gpu", { id: "hero", position: [1, 0, 0] })).toThrow();
+    expect(store.spawn("rack.gpu", { id: "hero", position: [1, 0, 0] })).toBe("hero");
+    expect(store.ids()).toEqual(["hero"]);
+    expect(store.get("hero")?.position).toEqual([0, 0, 0]);
+    expect(() => store.spawn("rack.gpu", { id: "hero", position: [1, 0, 0], onExisting: "throw" })).toThrow();
   });
 
   test("spawn defaults rotationY 0, role prop, empty movement and behaviors, origin position", () => {
@@ -347,10 +350,13 @@ describe("scene entity store", () => {
     expect(store.spawnPoseOf("hero")).toEqual({ position: [9, 0, 9], rotationY: 2 });
   });
 
-  test("onExisting default still throws on a duplicate id", () => {
+  test("a duplicate spawn keeps one body and returns its id, and throw still names it", () => {
     const store = createEntityStore();
-    store.spawn("rack", { id: "hero" });
-    expect(() => store.spawn("rack.gpu", { id: "hero" })).toThrow();
+    store.spawn("rack", { id: "hero", position: [1, 2, 3] });
+    expect(store.spawn("rack.gpu", { id: "hero", position: [9, 9, 9] })).toBe("hero");
+    expect(store.ids()).toEqual(["hero"]);
+    expect(store.get("hero")?.position).toEqual([1, 2, 3]);
+    expect(() => store.spawn("rack.gpu", { id: "hero", onExisting: "throw" })).toThrow('"hero" is already spawned');
   });
 
   test("update with an object-form position normalizes to a tuple and does not derive velocity", () => {

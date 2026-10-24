@@ -11,7 +11,7 @@ test("entity commit IDs/membership precede unchanged subscribers on every writer
   store.spawn("probe", { id: "a", position: [0, 0, 0] });
   const ids = store.ids();
   store.spawn("probe", { id: "a", onExisting: "keep" });
-  expect(() => store.spawn("probe", { id: "a" })).toThrow();
+  expect(() => store.spawn("probe", { id: "a", onExisting: "throw" })).toThrow();
   store.spawn("replacement", { id: "a", onExisting: "replace", position: [1, 0, 0] });
   const tuple = [2, 0, 0] as const;
   store.setPose("a", { position: tuple });
