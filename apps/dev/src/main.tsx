@@ -27,3 +27,5 @@ createRoot(document.getElementById("root")!).render(
     <DevApp gameId={GAME_ID} />
   ),
 );
+// boot replay control: the dev runner boots normally on this commit
+
