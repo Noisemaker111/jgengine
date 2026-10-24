@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
 
-import { lookSearchParams, parseLookAim } from "./lookArg";
+import { applyLookSearchParams, lookSearchParams, parseLookAim } from "./lookArg";
 
 describe("parseLookAim", () => {
   it("returns undefined without --look", () => {
@@ -51,6 +51,23 @@ describe("lookSearchParams", () => {
 
   it("encodes holes so a bare height keeps its slot", () => {
     expect(lookSearchParams({ point: [1, 2], height: 9 })).toEqual({ look: "1,2", lookFrom: ",9," });
+  });
+});
+
+describe("applyLookSearchParams", () => {
+  it("writes the aim onto an external URL without disturbing its own params", () => {
+    const url = new URL("http://127.0.0.1:5174/?game=harbor-heat&mode=play");
+    applyLookSearchParams(url, parseLookAim("12,-4", "30,9"));
+    expect(url.searchParams.get("game")).toBe("harbor-heat");
+    expect(url.searchParams.get("mode")).toBe("play");
+    expect(url.searchParams.get("look")).toBe("12,-4");
+    expect(url.searchParams.get("lookFrom")).toBe("30,9,");
+  });
+
+  it("leaves the URL untouched when there is no aim", () => {
+    const url = new URL("http://127.0.0.1:5174/?game=harbor-heat");
+    applyLookSearchParams(url, undefined);
+    expect(url.toString()).toBe("http://127.0.0.1:5174/?game=harbor-heat");
   });
 });
 

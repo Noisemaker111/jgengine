@@ -108,6 +108,16 @@ function parseVantage(from: string | undefined): Omit<LookAim, "point" | "subjec
   };
 }
 
+/**
+ * Write an aim onto a capture URL. The runner reads `look`/`lookFrom` from its own query string, so
+ * the local dev runner and an external `--url` pointing at another checkout's runner take the same
+ * encoding — that is what lets a lane aim a branch it is serving itself.
+ */
+export function applyLookSearchParams(url: URL, aim: LookAim | undefined): void {
+  if (aim === undefined) return;
+  for (const [key, value] of Object.entries(lookSearchParams(aim))) url.searchParams.set(key, value);
+}
+
 /** URL params the dev runner reads for an aim — the canonical, unambiguous encoding. */
 export function lookSearchParams(aim: LookAim): Record<string, string> {
   const look = aim.subject !== undefined ? `@${aim.subject.kind}:${aim.subject.id}` : (aim.point ?? []).join(",");

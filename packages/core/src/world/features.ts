@@ -772,7 +772,7 @@ export function environment(config: EnvironmentWorldConfig = {}): EnvironmentWor
 }
 
 /**
- * Vertex ceiling for a territory grid derived from `cellSize`. A density target that reads fine
+ * Vertex ceiling for a terrain grid derived from `cellSize`. A density target that reads fine
  * ("0.4 m cells") can quietly ask for millions of vertices on a large world; past this the
  * declaration fails with its own numbers instead of booting a ground mesh nobody can afford.
  */
