@@ -1,6 +1,6 @@
 import { afterAll, describe, expect, test } from "bun:test";
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import {
@@ -33,27 +33,34 @@ function gamesManifest(catalog: Record<string, string>) {
 describe("resolveGames", () => {
   const existsEverywhere = () => true;
   const existsNowhere = () => false;
+  // Absolute on every OS: a drive-letter path was resolved relative to the runner's cwd on Linux,
+  // so these cases asserted Windows semantics and failed in CI.
+  const here = process.cwd();
+  const named = join(here, "somewhere");
+  const missing = join(here, "gone");
+  const repo = join(here, "repo-test");
 
   test("--games wins over the sibling checkout", () => {
-    const result = resolveGames({ explicit: "C:/somewhere", root: "C:/repo", pin: "abc", exists: existsEverywhere });
-    expect(result.checkout?.path.replaceAll("\\", "/")).toBe("C:/somewhere");
+    const result = resolveGames({ explicit: named, root: repo, pin: "abc", exists: existsEverywhere });
+    expect(result.checkout?.path).toBe(resolve(named));
     expect(result.checkout?.ref).toBe("abc");
   });
 
   test("a named games path that does not exist is unknown, not a fallback to another checkout", () => {
-    const result = resolveGames({ explicit: "C:/gone", root: "C:/repo", exists: existsNowhere });
+    const result = resolveGames({ explicit: missing, root: repo, exists: existsNowhere });
     expect(result.checkout).toBeNull();
-    expect(result.tried).toEqual([join("C:/gone")]);
+    expect(result.tried).toEqual([resolve(missing)]);
   });
 
   test("falls back to Games/ then the sibling checkout", () => {
+    const sibling = resolve(repo, "..", "jgengine-games");
     const seen: string[] = [];
     const exists = (path: string) => {
       seen.push(path.replaceAll("\\", "/"));
       return path.replaceAll("\\", "/").endsWith("/jgengine-games/package.json");
     };
-    const result = resolveGames({ root: "C:/repo", exists });
-    expect(result.checkout?.path.replaceAll("\\", "/")).toBe("C:/jgengine-games");
+    const result = resolveGames({ root: repo, exists });
+    expect(result.checkout?.path).toBe(sibling);
     expect(seen.some((path) => path.endsWith("/Games/package.json"))).toBe(true);
   });
 
@@ -125,6 +132,23 @@ describe("runConsumerTypes without an adopter", () => {
     expect(report.outcome).toBe("unknown");
     expect(report.reason).toContain("no JGengine-games checkout");
     expect(report.games).toBeNull();
+  });
+
+  test("an unreadable games manifest is unknown, never a pass", () => {
+    const broken = join(scratchRoot, "unreadable-games");
+    mkdirSync(broken, { recursive: true });
+    writeFileSync(join(broken, "package.json"), "{ this is not json");
+    const report = runConsumerTypes({
+      root,
+      version: "1.0.0",
+      games: broken,
+      scratchDir: join(scratchRoot, "unreadable-run"),
+      materialize: (games, dest) => cpSync(games.path, dest, { recursive: true }),
+      install: () => ({ status: 0, output: "" }),
+      typecheck: () => ({ status: 0, output: "" }),
+    });
+    expect(report.outcome).toBe("unknown");
+    expect(report.reason).toContain("unreadable package.json");
   });
 
   test("the exit codes keep a compile failure and an unproven run apart", () => {

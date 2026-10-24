@@ -361,10 +361,14 @@ export function runConsumerTypes(options: RunOptions): RunReport {
   log(`check-consumer-types: adopter ${games.checkout.path} at ${games.checkout.ref} (${games.checkout.source})`);
 
   const catalogPackages: { name: string; dir: string; version: string }[] = [];
-  for (const dir of options.packages ?? publishedPackages.map((pkg) => packageDir(pkg))) {
-    const manifest = JSON.parse(readFileSync(join(dir, "package.json"), "utf8")) as { name: string; version: string };
-    if (!exists(join(dir, "dist"))) continue;
-    catalogPackages.push({ name: manifest.name, dir, version: manifest.version });
+  try {
+    for (const dir of options.packages ?? publishedPackages.map((pkg) => packageDir(pkg))) {
+      const manifest = JSON.parse(readFileSync(join(dir, "package.json"), "utf8")) as { name: string; version: string };
+      if (!exists(join(dir, "dist"))) continue;
+      catalogPackages.push({ name: manifest.name, dir, version: manifest.version });
+    }
+  } catch (error) {
+    return unknown(`reading this checkout's package manifests failed: ${message(error)}`);
   }
   const version = report.version ?? catalogPackages.find((pkg) => pkg.name === `${SCOPE}core`)?.version ?? null;
   report.version = version;
@@ -385,7 +389,12 @@ export function runConsumerTypes(options: RunOptions): RunReport {
 
   const manifestPath = join(gamesRoot, "package.json");
   if (!exists(manifestPath)) return unknown(`${gamesRoot} has no package.json after copying the games checkout`);
-  const original = JSON.parse(readFileSync(manifestPath, "utf8")) as Record<string, unknown>;
+  let original: Record<string, unknown>;
+  try {
+    original = JSON.parse(readFileSync(manifestPath, "utf8")) as Record<string, unknown>;
+  } catch (error) {
+    return unknown(`the games checkout at ${games.checkout.path} (@ ${games.checkout.ref}) has an unreadable package.json: ${message(error)}`);
+  }
   const catalog = ((original.workspaces as any)?.catalog ?? {}) as Record<string, string>;
   const toPack = catalogPackages.filter((pkg) => Object.hasOwn(catalog, pkg.name));
   const unbuilt = Object.keys(catalog).filter((name) => name.startsWith(SCOPE) && !toPack.some((pkg) => pkg.name === name));
