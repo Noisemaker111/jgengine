@@ -919,6 +919,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `TransformGizmo` (const) · `import { TransformGizmo } from "@jgengine/shell/structures"`
 
+## triangle-attribution — per-model triangle table with instance counts, for perf probes
+
+- `attributeTriangles` (function) · `import { attributeTriangles } from "@jgengine/shell/render/triangleAttribution"`
+
 ## tween-number — rolling number readout with an up/down delta flash
 
 - `TweenNumber` (function) · `import { TweenNumber } from "@jgengine/react/tweenNumber"`

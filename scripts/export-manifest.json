@@ -1054,6 +1054,7 @@
     "./render/stableTextureSet",
     "./render/staticShapeInstances",
     "./render/staticTransforms",
+    "./render/triangleAttribution",
     "./render/triplanarMaterial",
     "./render/useDisposable",
     "./render/useEntityRenderCues",
