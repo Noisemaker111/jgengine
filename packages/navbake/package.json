@@ -1,6 +1,6 @@
 {
   "name": "@jgengine/navbake",
-  "version": "0.38.2",
+  "version": "0.38.3",
   "description": "Deterministic navigation-mesh baking for JGengine scenes.",
   "license": "Apache-2.0",
   "type": "module",
@@ -32,7 +32,7 @@
     "test": "bun test src"
   },
   "dependencies": {
-    "@jgengine/core": "^0.38.2",
+    "@jgengine/core": "^0.38.3",
     "recast-navigation": "^0.34.0"
   },
   "publishConfig": {

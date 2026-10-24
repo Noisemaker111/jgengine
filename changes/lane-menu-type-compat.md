@@ -1,4 +1,0 @@
-### Fixed
-
-- `GameMenu`'s `style` and `detailStyle` accept a plain `CSSProperties` again (`CSSProperties | GameMenuStyle`). 0.38.2 typed them as `CSSProperties & Record<`--${string}`, ...>`, which a `CSSProperties` value cannot satisfy, so Harbor Heat and Beacon Bastion stopped typechecking on a patch release while they passed the same objects to `style` before it.
-- `SceneCaptureBinding`'s props are a required object with an optional `bind` again. The 0.38.2 `{ bind } = {}` optional parameter made React's `createElement` overload infer `Attributes & undefined` for the props, so a game that builds its overlay as `createElement(SceneCaptureBinding, { bind })` failed with `'bind' does not exist in type 'Attributes'`; `<SceneCaptureBinding />` and `<SceneCaptureBinding bind={…} />` both still typecheck.
