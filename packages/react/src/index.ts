@@ -82,3 +82,6 @@ export * from "./saveSlots";
 export * from "./cameraShake";
 export * from "./dialogBehavior";
 export * from "./scrollRail";
+export * from "./gameMenu";
+export * from "./gameMenuSaves";
+export * from "./gameMenuSound";

@@ -117,8 +117,12 @@ export interface GameSave {
   save(): Promise<void>;
   /** Read the active slot and apply every section to its system. */
   load(): Promise<GameSaveDocument>;
-  /** Flush the current slot, switch, and load the next one. */
-  switchSlot(slot: string): Promise<GameSaveDocument>;
+  /**
+   * Switch the active slot and load it. By default the live state is flushed into the slot being
+   * left first; pass `{ flush: false }` when opening a save from a menu, where the live state is
+   * either empty or already the slot being opened and flushing would overwrite the save.
+   */
+  switchSlot(slot: string, options?: { flush?: boolean }): Promise<GameSaveDocument>;
   /**
    * Read a slot's document without applying it to the live systems — the save-select menu's data
    * source. Returns `null` for an empty slot.
@@ -286,8 +290,8 @@ export function createGameSave(config: GameSaveConfig): GameSave {
       apply(document);
       return document;
     },
-    async switchSlot(slot) {
-      store.set(capture());
+    async switchSlot(slot, options) {
+      if (options?.flush !== false) store.set(capture());
       const document = await store.switchSlot(slot);
       apply(document);
       return document;
@@ -324,3 +328,4 @@ export function createGameSave(config: GameSaveConfig): GameSave {
     },
   };
 }
+

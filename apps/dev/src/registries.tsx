@@ -103,20 +103,24 @@ function rigConfigOf(config: GameCameraConfig): CameraRigConfig {
   return rest;
 }
 
-const gameModules = import.meta.glob<{
+// Vite rewrites every `import.meta.glob(...)` call below into a module map. Outside a browser
+// (a test or a tool importing this registry) those calls cannot run, so the registry has no Games.
+const hasViteGlob = typeof window !== "undefined";
+
+const gameModules = (hasViteGlob ? import.meta.glob<{
   game: PlayableGame;
   uiScenario?: UiPreviewScenario;
   editorLayers?: import("@jgengine/core/editor/index").EditorLayersInput;
   editorCatalogs?: import("@jgengine/core/editor/index").EditorCatalogsInput;
-}>("../../../Games/*/src/index.tsx");
+}>("../../../Games/*/src/index.tsx") : {});
 
-const gameStyleModules = import.meta.glob<Record<string, unknown>>("../../../Games/*/src/style.css");
+const gameStyleModules = (hasViteGlob ? import.meta.glob<Record<string, unknown>>("../../../Games/*/src/style.css") : {});
 
-const gameSourceModules = import.meta.glob<Record<string, unknown>>([
+const gameSourceModules = (hasViteGlob ? import.meta.glob<Record<string, unknown>>([
   "../../../Games/*/src/**/*.{ts,tsx}",
   "!**/main.tsx",
   "!**/*.test.*",
-]);
+]) : {});
 
 export async function loadGameStyle(gameId: string): Promise<void> {
   await gameStyleModules[`../../../Games/${gameId}/src/style.css`]?.();
@@ -149,9 +153,9 @@ const gameEntries = Object.fromEntries(
   gameLoaders.map(([id, loader]) => [id, () => loader().then((module) => module.game)]),
 );
 
-const editorSceneModules = import.meta.glob<{ default: unknown }>(
+const editorSceneModules = (hasViteGlob ? import.meta.glob<{ default: unknown }>(
   "../../../Games/*/src/editor.scene.json",
-);
+) : {});
 
 const editorSceneRegistry: Partial<Record<string, () => Promise<unknown>>> = Object.fromEntries(
   Object.entries(editorSceneModules).map(([path, loader]) => [
@@ -193,6 +197,7 @@ export const gameRegistry: GameRegistry = {
   "terrain-layers": () => import("./demo/terrainLayersDemo").then((module) => module.terrainLayersGame),
   "terrain-macro": () => import("./demo/terrainMacroDemo").then((module) => module.terrainMacroGame),
   "menu-framework": () => import("./demo/menuFrameworkDemo").then((module) => module.menuFrameworkDemoGame),
+  "game-menu": () => import("./demo/gameMenuDemo").then((module) => module.gameMenuDemoGame),
   demo: () => import("./demo/demoGame").then((module) => module.demoGame),
   "physics-probe": () => import("./demo/physicsProbeDemo").then((module) => module.physicsProbeGame),
   "guard-probe": () => import("./demo/guardProbeDemo").then((module) => module.guardProbeGame),
@@ -271,11 +276,15 @@ export const uiScenarioRegistry: Partial<Record<string, () => Promise<UiPreviewS
 
 export type PreviewComponent = ComponentType<{ className?: string }>;
 
-const previewModules = import.meta.glob<{
+const previewModules = (hasViteGlob ? import.meta.glob<{
   default: PreviewComponent;
   states?: Record<string, PreviewComponent>;
-}>("../../../Games/*/src/preview.tsx");
+}>("../../../Games/*/src/preview.tsx") : {});
 
 export const previewLoaders = Object.fromEntries(
   Object.entries(previewModules).map(([path, loader]) => [path.split("/").at(-3)!, loader] as const),
 );
+
+
+
+

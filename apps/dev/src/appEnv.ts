@@ -12,9 +12,9 @@ import type { CaptureViewOverrides } from "./captureView";
 
 // The site mounts this runner under /play/ — resolve games' root-absolute
 // /models and /materials paths against wherever the app is actually served.
-installAssetBase(import.meta.env.BASE_URL);
+installAssetBase(import.meta.env?.BASE_URL ?? "/");
 
-const urlParams = new URLSearchParams(window.location.search);
+const urlParams = new URLSearchParams(typeof window === "undefined" ? "" : window.location.search);
 
 /** Explicit game only — bare `/` shows the picker so demo is never a silent surprise. */
 export const GAME_ID = urlParams.get("game") ?? (import.meta.env.VITE_GAME_ID as string | undefined) ?? null;
@@ -79,3 +79,4 @@ export const CONVEX_URL = import.meta.env.VITE_CONVEX_URL as string | undefined;
 export const P2P_ROLE = urlParams.get("p2p");
 
 if (import.meta.env.DEV && GAME_ID !== null) installSaveEndpoint("/__jgengine/save", GAME_ID);
+

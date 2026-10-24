@@ -422,3 +422,37 @@ describe("createGameSave — failures and digest", () => {
     expect(otherRng()).toBe(fresh());
   });
 });
+
+describe("opening a save from a menu", () => {
+  test("switchSlot with flush false loads the slot without overwriting it", async () => {
+    const { backend } = recordingBackend();
+    const live = { level: 3 };
+    const save = createGameSave({
+      backend,
+      game: "flush-test",
+      slot: "slot-1",
+      playtime: () => 0,
+    });
+    save.register({
+      name: "run",
+      snapshot: () => ({ level: live.level }),
+      restore: (next) => {
+        live.level = (next as { level: number }).level;
+      },
+      reset: () => {
+        live.level = 0;
+      },
+    });
+    await save.save();
+    const stored = await save.peek("slot-1");
+
+    live.level = 99;
+    await save.switchSlot("slot-1", { flush: false });
+    expect(live.level).toBe(3);
+    expect(await save.peek("slot-1")).toEqual(stored);
+
+    live.level = 42;
+    await save.switchSlot("slot-1");
+    expect((await save.peek("slot-1"))?.systems.run).toEqual({ level: 42 });
+  });
+});
