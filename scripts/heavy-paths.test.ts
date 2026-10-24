@@ -75,4 +75,10 @@ describe("game scope", () => {
     expect(jobBlock("ci")).toContain('test "$TEST" = "skipped"');
     expect(jobBlock("ci")).toContain('test "$TEST" = "success"');
   });
+
+  test("a beta push queues behind the last one instead of cancelling it", () => {
+    // Two pushes 3 minutes apart on beta left the first run cancelled, so a regression that only
+    // shows on beta could go unseen. Only a pull request's superseded run is worth cancelling.
+    expect(workflow).toContain("cancel-in-progress: ${{ github.event_name == 'pull_request' }}");
+  });
 });

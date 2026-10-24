@@ -13,7 +13,11 @@ on:
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+  # A pull request's superseded run is worth cancelling. A push to beta or main is not: the next
+  # merge would cancel the run that proves the previous one landed green, and a regression that
+  # only shows on beta would go unseen. Measured on beta: two pushes 3 minutes apart left the
+  # first run cancelled. Pushes queue behind each other instead.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   # Decides how much of the game matrix this run pays for. Booting every reference game
