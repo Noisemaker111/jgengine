@@ -60,13 +60,22 @@ beforeAll(async () => {
     : new Response('<div id="root"></div><script src="/fixture.js"></script>', { headers: { "Content-Type": "text/html" } }) });
   browser = await chromium.launch({ executablePath: findChromeExecutable(), headless: true, args: ["--no-sandbox"] });
   page = await browser.newPage();
-}, 30000);
+}, 60_000);
 
 beforeEach(async () => {
-  await page.goto(`http://127.0.0.1:${server.port}`);
+  // A navigation is machine-bound, not an assertion. It gets its own deadline under the hook budget
+  // and one fresh attempt, so a renderer that stalls once resumes instead of spending the budget.
+  for (let attempt = 1; ; attempt += 1) {
+    try {
+      await page.goto(`http://127.0.0.1:${server.port}`, { timeout: 20000 });
+      break;
+    } catch (error) {
+      if (attempt >= 2) throw error;
+    }
+  }
   await page.waitForFunction(() => typeof (window as any).fixture !== "undefined");
   await page.locator("#opener").focus();
-});
+}, 60000);
 
 afterAll(async () => {
   await browser?.close();

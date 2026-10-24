@@ -57,7 +57,7 @@ beforeAll(async () => {
     ? new Response(script, { headers: { "Content-Type": "text/javascript" } })
     : new Response('<meta name="viewport" content="width=device-width, initial-scale=1"><style>body{margin:0}</style><div id="root"></div><script type="module" src="/fixture.js"></script>', { headers: { "Content-Type": "text/html" } }) });
   browser = await chromium.launch({ executablePath: findChromeExecutable(), headless: true, args: ["--no-sandbox"] });
-}, 30000);
+}, 60_000);
 
 beforeEach(async () => {
   page = await browser.newPage({ viewport: { width: 800, height: 600 }, hasTouch: true });

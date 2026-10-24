@@ -47,7 +47,7 @@ beforeAll(async () => {
   server = Bun.serve({ hostname: "127.0.0.1", port: 0, fetch: request => new URL(request.url).pathname === "/fixture.js" ? new Response(script, { headers: { "Content-Type": "text/javascript" } }) : new Response('<div id="root"></div><script type="module" src="/fixture.js"></script>', { headers: { "Content-Type": "text/html" } }) });
   Bun.gc(true);
   browser = await chromium.launch({ executablePath: findChromeExecutable(), headless: true, args: ["--no-sandbox"] });
-}, 30000);
+}, 60_000);
 beforeEach(async () => { page = await browser.newPage(); });
 afterEach(async () => { await page?.close(); });
 afterAll(async () => { await browser?.close(); server?.stop(true); await rm(scratch, { recursive: true, force: true }); Bun.gc(true); });

@@ -30,7 +30,7 @@ beforeAll(async () => {
     : new Response('<meta name="viewport" content="width=device-width, initial-scale=1"><div id="root"></div><script src="/fixture.js"></script>',{headers:{'Content-Type':'text/html'}})});
   browser = await chromium.launch({ executablePath: findChromeExecutable(), headless:true, args:['--no-sandbox'] });
   page = await browser.newPage({viewport:{width:390,height:844},hasTouch:true,isMobile:true});
-},30000);
+}, 60_000);
 beforeEach(async()=>{await page.goto(`http://127.0.0.1:${server.port}`);await page.getByRole('button',{name:'Show later categories'}).waitFor();});
 afterAll(async()=>{await browser?.close();server?.stop(true);await rm(scratch,{recursive:true,force:true});});
 

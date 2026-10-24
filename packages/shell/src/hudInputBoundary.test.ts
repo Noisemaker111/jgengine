@@ -75,7 +75,7 @@ beforeAll(async () => {
     try { await cleanup(); } catch (cleanupError) { console.error("[HUD input setup] cleanup failed", cleanupError); }
     throw error;
   }
-}, 30000);
+}, 60_000);
 beforeEach(async () => {
   context = await browser!.newContext();
   page = await context.newPage();
