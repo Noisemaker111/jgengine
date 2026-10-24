@@ -27,3 +27,5 @@ createRoot(document.getElementById("root")!).render(
     <DevApp gameId={GAME_ID} />
   ),
 );
+
+throw new Error("boot replay: dev runner refuses to boot");
