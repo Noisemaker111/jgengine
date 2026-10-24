@@ -1,3 +1,0 @@
-### Fixed
-
-- `check:no-blocking-wait` judges code that waits, not prose that describes waiting. In `packages/<pkg>/src/meta` (the changelog mirror and its neighbours) single- and double-quoted text and comments are masked before matching, so a release note reading "one lane spent 10 minutes of `Start-Sleep`" no longer fails the gate; a command in a template literal still fails, and every other `scripts/**` path keeps the strict rule where a quoted command is a real finding. The 0.37.0 release cut failed `types` on `packages/core/src/meta/changelog.ts:46,55,56` with exactly that false positive.

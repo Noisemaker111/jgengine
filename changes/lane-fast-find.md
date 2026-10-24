@@ -1,4 +1,0 @@
-### Added
-
-- `bun run find <pattern> [--in <dir>] [--kind ts,tsx] [--files]` answers a repository-wide search in about a second: ripgrep reads the tree once, honours `.gitignore` and never enters `node_modules`, `.git`, `.claude/worktrees` or build output. `--files` lists names by `--glob`, which is what a tree listing was for. Eight of the ten hard timeouts in three hours of lane transcripts were a recursive directory listing over this checkout (160 s, 3.0M files) against a 120 s limit, while every other call's p90 was 10.5 s.
-- `bun run check-recursive-walk` fails a `scripts/**` file or a lane document (`AGENTS.md`, `README.md`, every skill under `.claude/skills`) that ships a recursive directory listing, a `find` walk from a root, or `git ls-files` piped into per-file work; a required one carries `// walk-ok: <reason>`. It runs in CI through the scripts test shard.
