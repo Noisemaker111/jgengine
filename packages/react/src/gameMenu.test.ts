@@ -287,6 +287,37 @@ describe("GameMenu surface", () => {
     expect(surface!.pointerEvents).toBe("none");
   });
 
+  test("the selected verb is a filled rail with a bar, not only a thin border", async () => {
+    const rail = await page.evaluate(() => {
+      const node = document.querySelector("[data-jg-game-menu-rail]") as HTMLElement | null;
+      if (node === null) return null;
+      const style = getComputedStyle(node);
+      return {
+        background: style.backgroundImage,
+        borderLeft: style.borderLeftWidth,
+        shadow: style.boxShadow,
+      };
+    });
+    expect(rail).not.toBeNull();
+    // A tinted fill that reads at a glance on any scene, a 3px accent bar, and a ring.
+    expect(rail!.background).toContain("gradient");
+    expect(rail!.borderLeft).toBe("3px");
+    expect(rail!.shadow).toContain("inset");
+  });
+
+  test("the detail pane carries its own surface so a bright scene cannot wash out its text", async () => {
+    const pane = await page.evaluate(() => {
+      const node = document.querySelector("[data-jg-game-menu-detail]") as HTMLElement | null;
+      if (node === null) return null;
+      const style = getComputedStyle(node);
+      return { background: style.backgroundImage, padding: style.padding, radius: style.borderRadius };
+    });
+    expect(pane).not.toBeNull();
+    expect(pane!.background).toContain("gradient");
+    expect(pane!.padding).not.toBe("0px");
+    expect(pane!.radius).not.toBe("0px");
+  });
+
   test("an empty slot looks like an empty slot", async () => {
     const empty = await page.evaluate(() => {
       const node = document.querySelector("[data-save-slot-id='slot-3']") as HTMLElement;
