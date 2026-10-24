@@ -4,33 +4,55 @@ import type { EditorDocument } from "@jgengine/core/editor/types";
 
 import { environment, sky } from "@jgengine/core/world/features";
 
-import { defineGame, withDocumentSky } from "./defineGame";
+import { defineGame } from "./defineGame";
 
 function doc(environment: EditorDocument["environment"]): EditorDocument {
   return { version: 1, markers: [], volumes: [], paths: [], annotations: [], prefabs: [], collections: [], environment } as EditorDocument;
 }
 
-describe("withDocumentSky", () => {
+describe("defineGame document sky", () => {
   test("an authored document sky fills an empty backdrop", () => {
-    const backdrop = withDocumentSky(undefined, doc({ preset: "dusk", sunAzimuth: 120, fog: { far: 90 } }));
-    expect(backdrop?.sky).toEqual({ preset: "dusk", sun: { azimuth: 120 }, fog: { far: 90 } });
-  });
-
-  test("the game's own backdrop sky wins over the document", () => {
-    const backdrop = withDocumentSky({ sky: { preset: "night" }, background: "#000" }, doc({ preset: "day" }));
-    expect(backdrop).toEqual({ sky: { preset: "night" }, background: "#000" });
+    const playable = defineGame({ name: "Doc sky", editorLayers: doc({ preset: "dusk", sunAzimuth: 120, fog: { far: 90 } }) });
+    expect(playable.backdrop?.sky).toEqual({ preset: "dusk", sun: { azimuth: 120 }, fog: { far: 90 } });
   });
 
   test("keeps other backdrop fields when adding the document sky", () => {
-    expect(withDocumentSky({ background: "#123" }, doc({ preset: "day" }))).toEqual({ background: "#123", sky: { preset: "day" } });
+    const playable = defineGame({ name: "Doc sky", backdrop: { background: "#123" }, editorLayers: doc({ preset: "day" }) });
+    expect(playable.backdrop).toEqual({ background: "#123", sky: { preset: "day" } });
   });
 
-  test("an environment with only point lights leaves the world sky alone", () => {
-    expect(withDocumentSky(undefined, doc({ pointLights: [{ position: [0, 2, 0] }] }))).toBeUndefined();
-    expect(withDocumentSky(undefined, doc(undefined))).toBeUndefined();
+  test("an environment with only point lights leaves the world sky alone and keeps its lamps", () => {
+    const lamps = defineGame({ name: "Lamps", editorLayers: doc({ pointLights: [{ position: [0, 2, 0] }] }) });
+    expect(lamps.backdrop).toBeUndefined();
+    expect(lamps.lighting?.point).toEqual([{ position: [0, 2, 0] }]);
+    expect(defineGame({ name: "Bare", editorLayers: doc(undefined) }).backdrop).toBeUndefined();
   });
 });
 
+describe("defineGame look and mood", () => {
+  test("look and mood reach the playable so the shell resolves the same look", () => {
+    const playable = defineGame({ name: "Moody", look: "cinematic", mood: "golden" });
+    expect(playable.look).toBe("cinematic");
+    expect(playable.mood).toBe("golden");
+    expect(playable.lighting?.directional?.[0]?.castShadow).toBe(true);
+    expect(playable.backdrop?.sky?.sunColor).toBeDefined();
+  });
+
+  test("a mood keeps the document's lamps and lets the document place the sun", () => {
+    const playable = defineGame({ name: "Moody lamps", look: "cinematic", mood: "dusk",
+      editorLayers: doc({ sunAzimuth: 90, sunElevation: 30, pointLights: [{ position: [1, 2, 3] }] }) });
+    expect(playable.lighting?.point).toEqual([{ position: [1, 2, 3] }]);
+    expect(playable.backdrop?.sky?.sun).toEqual({ azimuth: 90, elevation: 30 });
+    const [x, y, z] = playable.lighting!.directional![0]!.position!;
+    expect(x).toBeGreaterThan(0);
+    expect(Math.abs(z)).toBeLessThan(1e-6);
+    expect(Math.atan2(y, Math.hypot(x, z)) * 180 / Math.PI).toBeCloseTo(30, 5);
+  });
+
+  test("a flat look stays flat after defineGame", () => {
+    expect(defineGame({ name: "Flat", look: "flat" }).look).toBe("flat");
+  });
+});
 
 describe("defineGame document sky compatibility", () => {
   test("sparse document edits preserve legacy clouds and unsupported sky fields without mutation", () => {

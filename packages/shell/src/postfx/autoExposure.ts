@@ -149,8 +149,14 @@ export class ExposureMeterPass extends Pass {
       this.emit();
       return;
     }
-    this.pbo ??= gl.createBuffer();
     renderer.setRenderTarget(this.meterTarget);
+    if (this.pbo === null) {
+      // A pack buffer has no storage until `bufferData` sizes it; readPixels into an unsized buffer
+      // fails, the meter reads zeros, and exposure pins to its maximum on every frame.
+      this.pbo = gl.createBuffer();
+      gl.bindBuffer(gl.PIXEL_PACK_BUFFER, this.pbo);
+      gl.bufferData(gl.PIXEL_PACK_BUFFER, this.pixels.byteLength, gl.STREAM_READ);
+    }
     gl.bindBuffer(gl.PIXEL_PACK_BUFFER, this.pbo);
     gl.readPixels(0, 0, METER_SIZE, METER_SIZE, gl.RGBA, gl.UNSIGNED_BYTE, 0);
     gl.bindBuffer(gl.PIXEL_PACK_BUFFER, null);

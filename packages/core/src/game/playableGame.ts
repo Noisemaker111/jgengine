@@ -15,6 +15,7 @@ import type { PostProcessingConfig } from "../render/postProcessing";
 import type { EnvironmentSource } from "../render/environment";
 import type { SpriteAtlas } from "../assets/spriteAtlas";
 import type { LookPreset } from "../render/lookPreset";
+import type { Mood } from "../render/lookMood";
 import type { GamepadFeelConfig } from "../input/gamepadModel";
 import type { LocalPlayersConfig } from "../runtime/localPlayers";
 import type { TouchControlsConfig } from "../input/touchScheme";
@@ -877,6 +878,13 @@ export interface PlayableGame<
   movement?: PlayerMovementConfig;
   /** Graphics look profile (#1680). Unset/`"neutral"` keeps the output unstyled; `"photoreal"` and `"toon"` select authored presentation profiles, while `"cinematic"` and `"flat"` remain compatibility aliases. Explicit `lighting`/`backdrop`/`postProcessing` always wins. */
   look?: LookPreset;
+  /**
+   * Lighting mood: the sun, sky fill, haze and grade tint as one art-direction choice (`"day"`, `"bright"`,
+   * `"golden"`, `"dusk"`, `"overcast"`, `"night"`), or `{ preset, sun, skyColor, horizonColor, groundColor, fog,
+   * exposure, saturation, contrast, shadows }` to move a few tokens. Composes with `look`; explicit `lighting`,
+   * `backdrop` and `postProcessing` fields still win.
+   */
+  mood?: Mood;
   /** Declarative ambient/directional/hemisphere lighting (#207.5); replaces the shell's hardcoded default lights when present, regardless of world kind. */
   lighting?: LightingConfig;
   /** Image-based environment source; omit to use the procedural gradient probe. */

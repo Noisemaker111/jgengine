@@ -7,7 +7,7 @@ import {
   type GameLoop,
 } from "@jgengine/core/game/defineGame";
 import { syncLifecyclePhase } from "@jgengine/core/game/gamePhase";
-import type { BackdropConfig, WorldOverlayProps } from "@jgengine/core/game/playableGame";
+import type { LightingConfig, WorldOverlayProps } from "@jgengine/core/game/playableGame";
 import { offline } from "@jgengine/core/runtime/adapter";
 import type { GameContext, GameContextContent } from "@jgengine/core/runtime/gameContext";
 import type { AssetCatalog, ModelAssetRef } from "@jgengine/core/scene/assetCatalog";
@@ -53,25 +53,16 @@ function worldBackdrop(feature: EnvironmentWorldFeature): ComponentType {
   };
 }
 
-/**
- * The scene document's authored sky fills `backdrop.sky` when the game did not set one, so editor
- * lighting-workspace edits render in `place()` worlds too. Defined document fields overlay the
- * legacy world's sky, preserving settings the editor cannot represent. An environment carrying only
- * point lights yields no sky fields and leaves the world's sky alone.
- * @internal
- */
-export function withDocumentSky(backdrop: BackdropConfig | undefined, doc: EditorDocument | undefined, worldSky?: SkyEnvironmentConfig): BackdropConfig | undefined {
-  if (backdrop?.sky !== undefined || doc === undefined) return backdrop;
-  const sky = skyFromDocument(doc);
-  if (sky === undefined || Object.keys(sky).length === 0) return backdrop;
-  return { ...backdrop, sky: {
-    ...worldSky,
-    ...sky,
-    ...(sky.sun === undefined ? {} : { sun: { ...worldSky?.sun,
-      ...Object.fromEntries(Object.entries(sky.sun).filter(([, value]) => value !== undefined)) } }),
-    ...(sky.fog === undefined ? {} : { fog: { ...worldSky?.fog,
-      ...Object.fromEntries(Object.entries(sky.fog).filter(([, value]) => value !== undefined)) } }),
-  } };
+/** The scene document's sky fields, or undefined when its environment authors none (point lights only). */
+function documentSkyOf(doc: EditorDocument | undefined): SkyEnvironmentConfig | undefined {
+  const sky = doc === undefined ? undefined : skyFromDocument(doc);
+  return sky === undefined || Object.keys(sky).length === 0 ? undefined : sky;
+}
+
+/** The lamps a scene document places (light markers, environment point lights). */
+function documentLamps(doc: EditorDocument | undefined): LightingConfig | undefined {
+  if (doc === undefined) return undefined;
+  return lightingFromDocument(doc) ?? (doc.environment?.pointLights === undefined ? undefined : { point: doc.environment.pointLights });
 }
 
 function isEnvironmentSource(value: unknown): value is EnvironmentSource {
@@ -167,6 +158,7 @@ export function defineGame<TAssetRef extends ModelAssetRef = ModelAssetRef>(
     environmentSource,
     backdrop,
     look,
+    mood,
     postProcessing,
     shadows,
     graphics,
@@ -188,12 +180,16 @@ export function defineGame<TAssetRef extends ModelAssetRef = ModelAssetRef>(
     multiplayer: multiplayer ?? offline(),
     loop: { ...loop, onDispose(ctx) { try { loop?.onDispose?.(ctx); } finally { ctx.environment.dispose(); } } },
   });
+  // The world's sky shape and the scene document's sky fields layer under the look and mood; the
+  // document's lamps join the rig the mood lights. Explicit game fields win over all of them.
   const resolvedLook = resolveGameLook({
     look,
-    lighting: authoredLighting,
-    backdrop: withDocumentSky(backdrop, editorLayers, engineFields.world?.kind === "environment" ? engineFields.world.sky : undefined),
+    mood,
+    lighting: authoredLighting ?? documentLamps(editorLayers),
+    backdrop,
     postProcessing,
-    hasWorldSky: editorLayers?.environment?.preset !== undefined,
+    worldSky: engineFields.world?.kind === "environment" ? engineFields.world.sky : undefined,
+    documentSky: documentSkyOf(editorLayers),
   });
 
   function withPhaseSync<A extends unknown[]>(
@@ -262,8 +258,10 @@ export function defineGame<TAssetRef extends ModelAssetRef = ModelAssetRef>(
     worldItem,
     collision,
     movement,
-    lighting: resolvedLook.lighting ?? (editorLayers === undefined ? undefined : lightingFromDocument(editorLayers) ?? (editorLayers.environment?.pointLights === undefined ? undefined : { point: editorLayers.environment.pointLights })),
+    lighting: resolvedLook.lighting,
     environmentSource: environmentSource ?? (isEnvironmentSource(environment) ? environment : undefined),
+    look,
+    mood,
     backdrop: resolvedLook.backdrop,
     postProcessing: resolvedLook.postProcessing,
     shadows,
