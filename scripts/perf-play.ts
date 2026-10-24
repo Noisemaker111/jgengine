@@ -32,8 +32,8 @@ import {
   type ProfileEntry as ReportedProfileEntry,
   type ReportLogs,
   type SceneNodeSource,
-  type SystemProbeReading,
 } from "../packages/core/src/devtools/report";
+import type { SystemProbeReading } from "../packages/core/src/devtools/types";
 import {
   ACCESSIBILITY_SETTING_IDS,
   COLORBLIND_OPTIONS,
@@ -794,7 +794,12 @@ async function countInstances(
 }
 
 /** Everything one measured window says about a game, as printed by `bun run perf`. */
-export interface PerfRecord extends PerfReport {
+export interface PerfRecord extends Omit<PerfReport, "quality"> {
+  /**
+   * The graphics tier the window rendered at, as the page reported it, not `PerfReport`'s capture
+   * preset: `--draft` and `--quality low|medium|high|ultra` are different things and both print here.
+   */
+  quality: string;
   /** The settings this run enabled, `id=value` each, so its numbers carry their cause. */
   overrides: string[];
   /** The `capture.states` entry the run booted into, or null when it played the plain start. */

@@ -2,20 +2,27 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 const ROOTS = ["packages", "apps", "examples"];
+/**
+ * Dirs that are not workspaces but carry their own tsconfig and `check-types`: the repository's
+ * `scripts/` are run as often as any package and had no typecheck until they were listed here.
+ */
+const EXTRA_DIRS = ["scripts"];
 const CONCURRENCY = 8;
 
-function workspaceDirs(): string[] {
+/** Every dir this runs a `check-types` in: the workspaces plus {@link EXTRA_DIRS}. */
+export function typecheckedDirs(root: string = process.cwd()): string[] {
   const dirs: string[] = [];
-  for (const root of ROOTS) {
-    const abs = join(process.cwd(), root);
+  for (const workspaceRoot of ROOTS) {
+    const abs = join(root, workspaceRoot);
     if (!existsSync(abs)) continue;
     for (const entry of readdirSync(abs, { withFileTypes: true })) {
-      if (entry.isDirectory()) dirs.push(join(root, entry.name));
+      if (entry.isDirectory()) dirs.push(`${workspaceRoot}/${entry.name}`);
     }
   }
-  if (existsSync(join(process.cwd(), "registry", "package.json"))) dirs.push("registry");
+  dirs.push(...EXTRA_DIRS);
+  if (existsSync(join(root, "registry", "package.json"))) dirs.push("registry");
   return dirs.filter((dir) => {
-    const pkgPath = join(process.cwd(), dir, "package.json");
+    const pkgPath = join(root, dir, "package.json");
     if (!existsSync(pkgPath)) return false;
     const pkg = JSON.parse(readFileSync(pkgPath, "utf8")) as {
       scripts?: Record<string, string>;
@@ -37,23 +44,27 @@ async function checkOne(dir: string): Promise<{ dir: string; ok: boolean; output
   return { dir, ok: exitCode === 0, output: `${stdout}${stderr}`.trim() };
 }
 
-const dirs = workspaceDirs();
-const failures: { dir: string; output: string }[] = [];
-let checked = 0;
+async function main(): Promise<number> {
+  const dirs = typecheckedDirs();
+  const failures: { dir: string; output: string }[] = [];
+  let checked = 0;
 
-const queue = [...dirs];
-await Promise.all(
-  Array.from({ length: CONCURRENCY }, async () => {
-    for (let dir = queue.shift(); dir !== undefined; dir = queue.shift()) {
-      const result = await checkOne(dir);
-      checked += 1;
-      if (!result.ok) failures.push({ dir: result.dir, output: result.output });
-    }
-  }),
-);
+  const queue = [...dirs];
+  await Promise.all(
+    Array.from({ length: CONCURRENCY }, async () => {
+      for (let dir = queue.shift(); dir !== undefined; dir = queue.shift()) {
+        const result = await checkOne(dir);
+        checked += 1;
+        if (!result.ok) failures.push({ dir: result.dir, output: result.output });
+      }
+    }),
+  );
 
-console.log(`check-types-all: ${checked} workspaces checked, ${failures.length} failing`);
-for (const failure of failures) {
-  console.error(`\n--- ${failure.dir} ---\n${failure.output}`);
+  console.log(`check-types-all: ${checked} dirs checked, ${failures.length} failing`);
+  for (const failure of failures) {
+    console.error(`\n--- ${failure.dir} ---\n${failure.output}`);
+  }
+  return failures.length > 0 ? 1 : 0;
 }
-if (failures.length > 0) process.exit(1);
+
+if (import.meta.main) process.exit(await main());

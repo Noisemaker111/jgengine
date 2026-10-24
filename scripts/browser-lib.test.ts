@@ -88,11 +88,11 @@ function fakeSession(options: {
   const handlers = new Map<string, (params: Record<string, unknown>) => void>();
   const emit = (method: string, params: Record<string, unknown>) => handlers.get(method)?.(params);
   return {
-    on(method, handler) {
+    on(method: string, handler: (params: Record<string, unknown>) => void) {
       handlers.set(method, handler);
       return () => handlers.delete(method);
     },
-    async send(method) {
+    async send(method: string) {
       if (method === "Page.navigate") {
         options.onNavigate?.(emit);
         return options.navigation ?? {};
@@ -589,8 +589,8 @@ describe("software GL backend", () => {
   });
 });
 
-function fakeDebuggerServer(): ReturnType<typeof Bun.serve> {
-  return Bun.serve({
+function fakeDebuggerServer(): { port: number; stop: (force?: boolean) => void } {
+  const server = Bun.serve({
     port: 0,
     hostname: "127.0.0.1",
     fetch: () =>
@@ -599,6 +599,9 @@ function fakeDebuggerServer(): ReturnType<typeof Bun.serve> {
         webSocketDebuggerUrl: "ws://127.0.0.1:1/devtools/browser/fake",
       }),
   });
+  const port = server.port;
+  if (port === undefined) throw new Error("the fake debugger server bound no port");
+  return { port, stop: (force = false) => void server.stop(force) };
 }
 
 function launchFailure(error: unknown): BrowserLaunchError {

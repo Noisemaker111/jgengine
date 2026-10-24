@@ -14,7 +14,7 @@ function harness(behaviour: (step: CaptureStep) => Promise<string>) {
     records,
     ran,
     deps: {
-      run: async (step: CaptureStep) => {
+      run: async (step: CaptureStep, _index: number) => {
         ran.push(step);
         clock += 25;
         return behaviour(step);

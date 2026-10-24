@@ -5,11 +5,11 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { captureClickPoint, driveTargetUrl, externalCaptureUrl, parseCaptureDevice, requireReusableCaptureStorage } from "./captureTarget";
 import { shotSidecarPath } from "./shotProvenance";
-import { applyDevice, DEVICES, scaleProfile, screencastCapturesFully, type CdpSession } from "./browser-lib";
+import { applyDevice, DEVICES, scaleProfile, screencastCapturesFully, type CdpSession, type Device } from "./browser-lib";
 
 describe("shared drive device profiles", () => {
   test("validates shared device names before browser startup", () => {
-    for (const device of Object.keys(DEVICES)) expect(parseCaptureDevice(device)).toBe(device);
+    for (const device of Object.keys(DEVICES) as Device[]) expect(parseCaptureDevice(device)).toBe(device);
     for (const invalid of [undefined, "phone", "both", "toString", "__proto__"]) {
       expect(() => parseCaptureDevice(invalid)).toThrow("--device must be");
     }

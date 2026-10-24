@@ -20,7 +20,6 @@ import {
   runSteps,
   splitByCost,
   specifiers,
-  windowsTestSteps,
   workspaceOf,
   workspaces,
   type Step,
@@ -76,8 +75,16 @@ describe("workspace mapping", () => {
     expect(workspaceOf("apps/dev/src/main.ts", fakeWorkspaces)?.dir).toBe("apps/dev");
   });
 
-  test("root scripts belong to no workspace, so they get no package typecheck", () => {
+  test("root scripts belong to no workspace, so their typecheck is the repo's own scripts config", () => {
     expect(workspaceOf("scripts/verify-fast.ts", fakeWorkspaces)).toBeNull();
+    const plan = buildPlan({
+      changed: ["scripts/verify-fast.ts"],
+      testFiles: [],
+      workspaces: fakeWorkspaces,
+      readText: () => "",
+      resolveSpecifier: () => [],
+    });
+    expect(plan.typechecks).toEqual(["scripts"]);
   });
 
   test("reads the real workspace list and their check-types scripts", () => {
@@ -357,7 +364,7 @@ describe("commands", () => {
 });
 
 describe("parallel steps", () => {
-  const done = (name: string, ok = true): StepResult => ({ name, ok, seconds: 0, output: "" });
+  const done = (name: string, ok = true): StepResult => ({ name, ok, ms: 0, output: "" });
   const step = (name: string, needs?: string[]): Step => ({ name, command: ["noop"], ...(needs === undefined ? {} : { needs }) });
 
   test("never runs more than the jobs it was given, and still runs every step", async () => {
@@ -449,7 +456,7 @@ describe("parallel steps", () => {
 
   test("an exclusive step runs with nothing else in flight, and its neighbours continue after", async () => {
     let inFlight = 0;
-    let duringExclusive: number | null = null;
+    let duringExclusive = 0;
     const steps = [step("long-a"), { ...step("measured"), exclusive: true }, step("long-b")];
     await runSteps(steps, 3, async (entry) => {
       inFlight += 1;

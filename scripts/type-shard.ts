@@ -30,9 +30,9 @@ export const CONCURRENCY = 2;
 
 /**
  * Stages whose own command already fans out across every core. Measured: `check-types-all`
- * runs 22 workspaces over 8 tsgo processes, and overlapping it with one generator stretched
- * that generator from 9.7 s to 43.7 s while the fan-out went from 21 s to 31.5 s - so these
- * run alone, after the shared lanes are done.
+ * runs 23 typechecked dirs (22 workspaces plus `scripts/`) over 8 tsgo processes, and
+ * overlapping it with one generator stretched that generator from 9.7 s to 43.7 s while the
+ * fan-out went from 21 s to 31.5 s - so these run alone, after the shared lanes are done.
  */
 export const EXCLUSIVE = new Set(["check-types-all"]);
 

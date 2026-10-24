@@ -170,6 +170,15 @@ export function parseTypeFailures(output: string, workspaces: readonly string[] 
   return failures;
 }
 
+/** Every path under a built package's dist, or null when there is no dist to read. */
+function listDistEntries(dist: string): string[] | null {
+  try {
+    return readdirSync(dist, { recursive: true }).map((entry) => String(entry));
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Name the published package that declares the type an error is about, so the report says which
  * tarball narrowed it. Package names win over `react`'s own types because they are scanned first.
@@ -180,14 +189,9 @@ export function attributeOwners(failures: TypeFailure[], packages: ReadonlyMap<s
   if (wanted.size === 0) return;
   const found = new Map<string, string>();
   for (const [name, dist] of packages) {
-    let entries: ReturnType<typeof readdirSync>;
-    try {
-      entries = readdirSync(dist, { recursive: true });
-    } catch {
-      continue;
-    }
-    for (const entry of entries) {
-      const file = String(entry);
+    const entries = listDistEntries(dist);
+    if (entries === null) continue;
+    for (const file of entries) {
       if (!file.endsWith(".d.ts")) continue;
       const text = readFileSync(join(dist, file), "utf8");
       for (const identifier of wanted) {

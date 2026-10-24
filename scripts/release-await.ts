@@ -113,6 +113,18 @@ function defaultGh(args: readonly string[]): ProcResult {
   return { status: result.status ?? 1, stdout: result.stdout ?? "", stderr: result.stderr ?? "" };
 }
 
+/** `spawnSync` reports no status when the process died on a signal; that is a failure, not a pass. */
+function defaultGit(args: readonly string[]): ProcResult {
+  const result = spawnSync("git", [...args], { encoding: "utf8" });
+  return { status: result.status ?? 1, stdout: result.stdout ?? "", stderr: result.stderr ?? "" };
+}
+
+/** The published version `npm view` answers, read the same way: no status is a failure. */
+function defaultNpmView(): ProcResult {
+  const result = spawnSync("npm", ["view", "@jgengine/core", "version"], { encoding: "utf8" });
+  return { status: result.status ?? 1, stdout: result.stdout ?? "", stderr: result.stderr ?? "" };
+}
+
 function parseJson<T>(text: string): T | null {
   try {
     return JSON.parse(text) as T;
@@ -219,7 +231,7 @@ export async function awaitPublish(options: AwaitOptions): Promise<AwaitResult> 
     return { ok: false, line: failureLine(run, jobs, step), runId: run.databaseId, code: 1 };
   }
 
-  const npmView = options.npmView ?? (() => spawnSync("npm", ["view", "@jgengine/core", "version"], { encoding: "utf8" }));
+  const npmView = options.npmView ?? defaultNpmView;
   const published = registryVersion(npmView);
   if (published !== options.version) {
     return {
@@ -273,7 +285,7 @@ export function parseAwaitArgs(argv: readonly string[]): { version?: string; run
 
 /** One line out, one exit code: what a lane reads instead of polling. */
 export async function awaitCli(argv: readonly string[], io: AwaitCliIo = {}): Promise<AwaitResult> {
-  const git = io.git ?? ((args: readonly string[]) => spawnSync("git", [...args], { encoding: "utf8" }) as ProcResult);
+  const git = io.git ?? defaultGit;
   const parsed = parseAwaitArgs(argv);
   const root = fileURLToPath(new URL("..", import.meta.url));
   const version = parsed.version ?? versionFromCheckout((path) => readFileSync(`${root}${path}`, "utf8"));

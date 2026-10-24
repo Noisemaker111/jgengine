@@ -149,7 +149,7 @@ const USAGE = `usage: bun run perf:gate [--games a,b] [--seconds n] [--quality l
  * snapshot, so a run that does not say which snapshot it measured cannot be read
  * as an engine regression — the log names it instead.
  */
-export function describeGamesCheckout(root: string, head: () => string | null = gamesHead): { pin: string | null; head: string | null } {
+export function describeGamesCheckout(root: string, head: (directory: string) => string | null = gamesHead): { pin: string | null; head: string | null } {
   let pin: string | null = null;
   try {
     const raw = readFileSync(join(root, "scripts", "games-ref.txt"), "utf8").trim();

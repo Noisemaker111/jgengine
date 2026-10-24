@@ -126,7 +126,7 @@ function scannedFiles(): string[] {
   const globs = ["scripts/**/*.ts", "packages/**/*.test.ts", "apps/**/*.test.ts", "examples/**/*.test.ts"];
   const files: string[] = [];
   for (const pattern of globs) {
-    for (const file of new Bun.Glob(pattern).scanSync({ cwd: root, ignore: ["**/node_modules/**"] })) files.push(resolve(root, file));
+    for (const file of new Bun.Glob(pattern).scanSync({ cwd: root })) files.push(resolve(root, file));
   }
   return files;
 }

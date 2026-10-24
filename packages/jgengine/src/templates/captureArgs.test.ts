@@ -235,7 +235,7 @@ describe("parseStepFile flows", () => {
     expect(message).toContain("flows nest at most 4 deep");
     expect(message).toContain("deep-1 -> deep-2 -> deep-3 -> deep-4 -> deep-5");
     expect(() => parse([{ flow: "deep-1" }])).toThrow();
-    const capped = { ...flows, "deep-4": { steps: [{ assert: "true" }] } };
+    const capped: Record<string, unknown> = { ...flows, "deep-4": { steps: [{ assert: "true" }] } };
     expect(parseStepFile({ steps: [{ flow: "deep-1" }] }, "proof.json", {
       flows: (name: string) => (capped[name] === undefined ? undefined : { json: capped[name], source: "flows/" + name + ".json" }),
     }).map((step) => step.kind)).toEqual(["assert"]);

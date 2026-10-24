@@ -31,7 +31,7 @@ function tempRoot(): string {
 }
 
 function record(overrides: Partial<PerfRecord> = {}, render: Partial<PerfRecord["render"]> = {}, gl: Partial<PerfRecord["gl"]> = {}): PerfRecord {
-  return {
+  const base: PerfRecord = {
     game: "harbor-heat",
     gpu: "ANGLE (NVIDIA)",
     quality: "high",
@@ -60,8 +60,9 @@ function record(overrides: Partial<PerfRecord> = {}, render: Partial<PerfRecord[
     overrides: [],
     state: null,
     params: [],
-    ...overrides,
+    frameClock: "capped",
   };
+  return Object.assign(base, overrides);
 }
 
 describe("checkBudget", () => {

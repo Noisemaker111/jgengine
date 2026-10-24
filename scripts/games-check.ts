@@ -11,11 +11,11 @@
  * `packages/<pkg>/src`, mirroring the dev runner's aliases (apps/dev/vite.config.ts).
  */
 import { existsSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
-import { dirname, isAbsolute, join, resolve } from "node:path";
+import { join, resolve } from "node:path";
 import { spawn } from "node:child_process";
 import { availableParallelism } from "node:os";
 
-import { engineSourcePaths, mergeGamePaths } from "./games-check-paths";
+import { engineSourcePaths, gamePaths, mergeGamePaths } from "./games-check-paths";
 import { requireGamesAtPin } from "./games-scope";
 
 const repoRoot = resolve(import.meta.dir, "..");
@@ -49,30 +49,6 @@ process.on("exit", cleanup);
 process.on("SIGINT", () => process.exit(130));
 const engineMap = engineSourcePaths(join(repoRoot, "packages"));
 const failures: string[] = [];
-
-function readJson(path: string): Record<string, unknown> {
-  // tsconfig allows trailing commas and comments; the games' files are plain JSON today.
-  return JSON.parse(readFileSync(path, "utf8")) as Record<string, unknown>;
-}
-
-/** The game's own `paths`, made absolute (paths resolve against the tsconfig that declares them). */
-function gamePaths(tsconfigPath: string): Record<string, string[]> {
-  const out: Record<string, string[]> = {};
-  let path: string | undefined = tsconfigPath;
-  const chain: string[] = [];
-  while (path !== undefined && existsSync(path)) {
-    chain.unshift(path);
-    const extendsValue = readJson(path).extends;
-    path = typeof extendsValue === "string" ? resolve(dirname(path), extendsValue) : undefined;
-  }
-  for (const file of chain) {
-    const options = (readJson(file).compilerOptions ?? {}) as { paths?: Record<string, string[]> };
-    for (const [key, targets] of Object.entries(options.paths ?? {})) {
-      out[key] = targets.map((target) => (isAbsolute(target) ? target : resolve(dirname(file), target)));
-    }
-  }
-  return out;
-}
 
 type Step = { label: string; command: string; args: string[]; cwd: string };
 

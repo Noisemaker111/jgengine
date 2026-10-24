@@ -250,7 +250,7 @@ function projectDirOf(args: Args): string {
 
 /** Read a named flow; a missing name lists the ones that do exist, so the next agent picks a route instead of guessing. */
 function flowSource(dir: string): FlowSource {
-  return flowSourceFrom(dir, (path) => readFileSync(path, "utf8"), () => listFlowNames(dir));
+  return flowSourceFrom(dir, (path) => readFileSync(path, "utf8"), () => listFlowNames(dir, (path) => readdirSync(path)));
 }
 
 /** Map the shared capture command line (packages/jgengine/src/templates/captureArgs.ts) onto drive's options. */
@@ -596,7 +596,11 @@ async function detectSoftwareGl(session: CdpSession): Promise<{ renderer: string
 class LockstepRecorder {
   readonly frames: TimedPng[] = [];
   readonly frameMs: number;
-  private virtualNow = 0;
+  private virtualMs = 0;
+  /** The clock this recorder has advanced to; the run reads it as the time source under a lockstep record. */
+  get virtualNow(): number {
+    return this.virtualMs;
+  }
   private pump: ((frame: { data: string; timestamp: number }) => void) | null = null;
   private stopPump: (() => void) | null = null;
 
@@ -659,7 +663,7 @@ class LockstepRecorder {
     for (let done = 0; done < ms; done += this.frameMs) {
       const budget = Math.min(this.frameMs, ms - done);
       await this.session.evaluate(`globalThis.__jgVtStep(${budget})`);
-      this.virtualNow += budget;
+      this.virtualMs += budget;
       await this.captureFrame();
     }
   }
@@ -1000,9 +1004,10 @@ async function driveSession(daemon: ShootDaemonState | null): Promise<number> {
               const metrics = await readProbe(session);
               console.log(JSON.stringify({ probe: step.name, metrics }));
             } else {
-              if (step.kind !== "shot") throw new Error("drive: steps[" + index + "] is a " + step.kind + " step with no executor");
+              // The last kind is a shot; a new CaptureStep kind fails to compile here until it has an executor.
+              const shot: { kind: "shot"; name: string; out?: string } = step;
               // A recording owns the screencast pump; a shot must not start/stop it underneath.
-              const path = step.out ?? join(outDir, `${args.game}-${step.name}${sizeSuffix(args.size)}${qualitySuffix(args.quality)}${draftSuffix(args.draft)}${quickSuffix(args.quick)}.png`);
+              const path = shot.out ?? join(outDir, `${args.game}-${shot.name}${sizeSuffix(args.size)}${qualitySuffix(args.quality)}${draftSuffix(args.draft)}${quickSuffix(args.quick)}.png`);
               const previous = preparedShots.has(path) ? preparedShots.get(path) : clearShotTarget(path);
               preparedShots.delete(path);
               await screenshot(
