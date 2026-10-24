@@ -20,7 +20,14 @@ describe("walk feel demo characters", () => {
     expect(weighty.jumpHeight).toBeLessThan(0.6);
     expect(weighty.airTime).toBeLessThan(0.4);
     expect(weighty.airControlReach).toBeLessThan(0.5);
-    expect(weighty.airTime - weighty.apexTime).toBeLessThan(weighty.apexTime);
+    // At 60 Hz the fall and the rise land on the same tick (both 0.1833 s), so this comparison sits on
+    // its own boundary. Sample at 240 Hz, where the 1.6x fall gravity resolves to 0.1667 s fall against
+    // a 0.1875 s rise. The tolerance is one 240 Hz tick — the sampling resolution — because anything
+    // smaller fails a legitimate next-tick rounding and anything larger (1/60) would swallow the signal.
+    const fine = measureMovement(WEIGHTY_FEEL, { dt: 1 / 240 });
+    const rise = fine.apexTime;
+    const fall = fine.airTime - fine.apexTime;
+    expect(fall, `fall ${fall.toFixed(4)}s against rise ${rise.toFixed(4)}s at 240 Hz`).toBeLessThan(rise - 1 / 240);
     expect(weighty.timeToTopSpeed).toBeGreaterThan(0.2);
     expect(weighty.stopDistance).toBeGreaterThan(0.2);
   });

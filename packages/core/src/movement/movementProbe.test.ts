@@ -60,9 +60,13 @@ describe("measureMovement", () => {
     expect(floaty.tapJumpHeight).toBeLessThan(floaty.jumpHeight * 0.6);
     expect(weighty.tapJumpHeight).toBe(weighty.jumpHeight);
     expect(floaty.airTime - floaty.apexTime).toBeCloseTo(floaty.apexTime, 1);
-    // At 60 Hz tick resolution the 1.6× fall gravity is under one tick; sample finer to see it.
+    // At 60 Hz tick resolution the 1.6× fall gravity is under one tick; sample finer to see it. The
+    // tolerance is one 240 Hz tick (the sampling resolution), so a fall slower than the rise by more
+    // than a tick still fails while a next-tick rounding does not.
     const weightyFine = measureMovement(WEIGHTY_SHOOTER, { dt: 1 / 240 });
-    expect(weightyFine.airTime - weightyFine.apexTime).toBeLessThan(weightyFine.apexTime);
+    const rise = weightyFine.apexTime;
+    const fall = weightyFine.airTime - weightyFine.apexTime;
+    expect(fall, `fall ${fall.toFixed(4)}s against rise ${rise.toFixed(4)}s at 240 Hz`).toBeLessThan(rise - 1 / 240);
   });
 
   test("sprint raises top speed by the run multiplier", () => {
