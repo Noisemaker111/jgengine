@@ -419,6 +419,15 @@ export interface ExplainIo {
 }
 
 /**
+ * The verify command for one commit of a landed batch. The batch's own tip is `beta` once it
+ * landed, so a plain run sees nothing to check; `--base <the base the batch started from>` is what
+ * keeps each commit's own contribution in view. Only the repo's own verifier takes that flag.
+ */
+export function explainCommand(verify: string, baseSha: string): string {
+  return /verify[-:]fast/.test(verify) && baseSha.length > 0 ? `${verify} --base ${baseSha}` : verify;
+}
+
+/**
  * Name the likely cause of a red batch tip: walk the recorded commits in order and verify each one
  * on its own, stopping at the first that cannot pass. A batch that passes every commit locally is
  * reported as a CI-only failure rather than guessed at.
@@ -430,16 +439,17 @@ export function explainBatch(args: BatchArgs, io: ExplainIo): number {
     return EXIT_BATCH_REFUSED;
   }
   const original = io.git(["rev-parse", "--abbrev-ref", "HEAD"]).stdout.trim() || record.base;
-  io.log(`${record.entries.length} commit(s) from ${short(record.baseSha)} to ${short(record.tip)} on ${record.base}`);
+  const command = explainCommand(args.verify, record.baseSha);
+  io.log(`${record.entries.length} commit(s) from ${short(record.baseSha)} to ${short(record.tip)} on ${record.base}: ${command}`);
   try {
     for (const entry of record.entries) {
       if (io.git(["checkout", "--quiet", "--detach", entry.commit]).status !== 0) {
         io.error(`cannot check out ${short(entry.commit)} (${entry.branch}); its branch is gone`);
         continue;
       }
-      if (!io.verify(args.verify)) {
+      if (!io.verify(command)) {
         const revert = io.git(["log", "-1", "--format=%B", entry.commit]).stdout.trim();
-        io.error(`likely cause: ${entry.branch} at ${short(entry.commit)} — "${firstLine(revert)}" fails ${args.verify} on its own`);
+        io.error(`likely cause: ${entry.branch} at ${short(entry.commit)} — "${firstLine(revert)}" fails ${command} on its own`);
         io.error(`revert it with: git revert -m 1 ${entry.commit}`);
         return EXIT_BATCH_PARTIAL;
       }
@@ -448,8 +458,8 @@ export function explainBatch(args: BatchArgs, io: ExplainIo): number {
   } finally {
     io.git(["checkout", "--quiet", original]);
   }
-  io.error(`every commit in the batch passes ${args.verify} here: the red tip is a CI-only failure`);
-  io.error(`ask which check failed: bun run ci:status --branch ${record.base} (or gh run list --branch ${record.base})`);
+  io.error(`every commit in the batch passes ${command} here: the red tip is a CI-only failure`);
+  io.error(`ask which check failed: gh run list --branch ${record.base} --limit 1 --json databaseId,headSha,conclusion`);
   return EXIT_BATCH_LANDED;
 }
 

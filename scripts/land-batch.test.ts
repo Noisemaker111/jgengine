@@ -9,6 +9,7 @@ import {
   EXIT_BATCH_REFUSED,
   batchBranches,
   explainBatch,
+  explainCommand,
   landBatch,
   mergeMessage,
   parseArgs,
@@ -258,7 +259,7 @@ slow("an already-landed branch is named, not merged twice", () => {
   expect(again.skipped[0]?.why).toContain("already in beta");
 });
 
-slow("--explain names the commit that cannot verify on its own", () => {
+slow("--explain names the commit that cannot verify on its own, and checks each against the base the batch started from", () => {
   const { work } = fixtures();
   branch(work, "agent/one", "one.txt", "one\n", "one");
   branch(work, "agent/two", "two.txt", "two\n", "two");
@@ -269,10 +270,18 @@ slow("--explain names the commit that cannot verify on its own", () => {
   expect(record?.entries.map((entry) => entry.branch)).toEqual(["agent/one", "agent/two"]);
   expect(existsSync(recordPath((args) => gitIn(work, args)))).toBe(true);
 
+  const commands: string[] = [];
   const log: string[] = [];
-  const sane = explainBatch(argsFor([]), { git: (args) => gitIn(work, args), verify: () => true, log: (l) => log.push(l), error: (l) => log.push(`ERR ${l}`) });
+  const sane = explainBatch(argsFor([]), {
+    git: (args) => gitIn(work, args),
+    verify: (command) => (commands.push(command), true),
+    log: (l) => log.push(l),
+    error: (l) => log.push(`ERR ${l}`),
+  });
   expect(sane).toBe(EXIT_BATCH_LANDED);
   expect(log.some((line) => line.includes("CI-only"))).toBe(true);
+  expect(commands).toHaveLength(2);
+  expect(commands.every((command) => command === argsFor([]).verify)).toBe(true);
 
   const red: string[] = [];
   const second = record!.entries[1]!;
@@ -284,6 +293,12 @@ slow("--explain names the commit that cannot verify on its own", () => {
   });
   expect(blamed).toBe(EXIT_BATCH_PARTIAL);
   expect(red.some((line) => line.includes("likely cause: agent/two"))).toBe(true);
+});
+
+test("only the repo's own verifier takes the base flag, and only when a base is known", () => {
+  expect(explainCommand("bun run verify:fast", "abc123")).toBe("bun run verify:fast --base abc123");
+  expect(explainCommand("bun run verify:fast", "")).toBe("bun run verify:fast");
+  expect(explainCommand("bun run ship:preflight", "abc123")).toBe("bun run ship:preflight");
 });
 
 slow("--explain without a recorded batch says so instead of guessing", () => {
