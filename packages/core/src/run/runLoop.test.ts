@@ -319,3 +319,29 @@ describe("run probe", () => {
     expect(scope.__jgengineRun).toBeUndefined();
   });
 });
+
+describe("the run loop keeps a live haul through its persistence seam", () => {
+  test("a reload mid-run restores the haul, the run number and the lifetime totals", () => {
+    const disk = { state: null as RunLoopState | null };
+    const open = () =>
+      createRunLoop<Change>({
+        seed: "yard-six",
+        changes: CHANGES,
+        persist: { load: () => disk.state, save: (state) => { disk.state = JSON.parse(JSON.stringify(state)) as RunLoopState; } },
+      });
+
+    const first = open();
+    first.start();
+    first.carry(120);
+    first.settle("banked");
+    first.start();
+    first.carry(45);
+    expect(disk.state?.haul).toBe(45);
+    expect(disk.state?.bankedTotal).toBe(120);
+
+    const resumed = open();
+    expect(resumed.haul()).toBe(45);
+    expect(resumed.snapshot()).toMatchObject({ run: 2, completed: 1, haul: 45, bankedTotal: 120 });
+    expect(resumed.settle("banked").banked).toBe(45);
+  });
+});

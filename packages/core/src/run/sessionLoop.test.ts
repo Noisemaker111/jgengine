@@ -5,6 +5,7 @@ import {
   createSessionLoop,
   installSessionProbe,
   type SessionLoop,
+  type SessionLoopState,
   type SessionReadout,
 } from "./sessionLoop";
 
@@ -207,6 +208,74 @@ describe("a roguelike: carries, banks or loses, and opens with an authored offer
     expect(resumed.loop.carried()).toBe(70);
     expect(resumed.loop.offer().optionId).toBe(opened.optionId);
     expect(resumed.loop.settle("banked").result).toBe(105);
+  });
+});
+
+describe("a live session stays durable through the persistence seam", () => {
+  function durable(every?: number) {
+    const disk = { state: null as SessionLoopState | null, writes: 0 };
+    const open = () =>
+      createSessionLoop<Boon, DescentEnd, number>({
+        kind: "descent",
+        seed: "seam-9",
+        offers: BOONS,
+        persist: {
+          load: () => disk.state,
+          save: (state) => {
+            disk.state = JSON.parse(JSON.stringify(state)) as typeof disk.state;
+            disk.writes += 1;
+          },
+          ...(every === undefined ? {} : { every }),
+        },
+      });
+    return { disk, open };
+  }
+
+  test("a process killed between carries comes back carrying what it had", () => {
+    const { open, disk } = durable();
+    const first = open();
+    first.start();
+    first.carry(70);
+    first.carry(30);
+    expect(disk.writes).toBeGreaterThan(0);
+    expect(disk.state?.carried).toBe(100);
+
+    const afterCrash = open();
+    expect(afterCrash.carried()).toBe(100);
+    expect(afterCrash.snapshot()).toEqual(first.snapshot());
+    expect(afterCrash.settle("banked").carried).toBe(100);
+  });
+
+  test("every N writes the haul once per N carries, and a close writes it too", () => {
+    const { open, disk } = durable(3);
+    const loop = open();
+    loop.start();
+    const opened = disk.writes;
+    loop.carry(10);
+    loop.carry(10);
+    expect(disk.writes).toBe(opened);
+    loop.carry(10);
+    expect(disk.writes).toBe(opened + 1);
+    expect(disk.state?.carried).toBe(30);
+    loop.settle("banked");
+    expect(disk.writes).toBe(opened + 2);
+    expect(disk.state?.closed).toBe(1);
+    expect(disk.state?.carried).toBe(0);
+  });
+
+  test("a storage that throws does not end the session", () => {
+    const loop = createSessionLoop<Boon, DescentEnd, number>({
+      kind: "descent",
+      offers: BOONS,
+      persist: {
+        save: () => {
+          throw new Error("quota exceeded");
+        },
+      },
+    });
+    loop.start();
+    expect(loop.carry(40)).toBe(40);
+    expect(loop.settle("banked").result).toBeUndefined();
   });
 });
 

@@ -85,6 +85,15 @@ export interface RunLoopConfig<T> {
   seed: string | number;
   /** Authored table of next-run changes; omit a table for a loop that never varies. */
   changes?: readonly RunChange<T>[];
+  /**
+   * Keep the live run durable, so a reload mid-run restores the haul instead of losing it.
+   * The hook carries {@link RunLoopState}; it is passed through to the composed session loop.
+   */
+  persist?: {
+    load?: () => RunLoopState | null;
+    save: (state: RunLoopState) => void;
+    every?: number;
+  };
 }
 
 /**
@@ -163,6 +172,26 @@ export function createRunLoop<T>(config: RunLoopConfig<T>): RunLoop<T> {
     kind: "run",
     seed: config.seed,
     offers: config.changes,
+    ...(config.persist === undefined
+      ? {}
+      : {
+          persist: {
+            every: config.persist.every,
+            save: (state) => {
+              config.persist!.save({
+                run: state.session,
+                completed: state.closed,
+                haul: state.carried,
+                changeId: state.optionId,
+                // Lifetime totals live with the run task, not the session loop; carry the ones this
+                // closure already knows so a written state is complete for a reader on the next boot.
+                bankedTotal,
+                lostTotal,
+                bestHaul,
+              });
+            },
+          },
+        }),
     settle: ({ carried, input }) => {
       const scale = Number.isFinite(input.multiplier) ? Math.max(0, input.multiplier ?? 1) : 1;
       const banked = input.outcome === "banked" ? Math.round(carried * scale) : 0;
@@ -180,7 +209,7 @@ export function createRunLoop<T>(config: RunLoopConfig<T>): RunLoop<T> {
     change: offer.option,
   });
 
-  return {
+  const api: RunLoop<T> = {
     start: () => offerOf(loop.start()),
     carry: (amount) => loop.carry(amount),
     haul: () => loop.carried(),
@@ -219,6 +248,10 @@ export function createRunLoop<T>(config: RunLoopConfig<T>): RunLoop<T> {
       bestHaul = positive(next.bestHaul);
     },
   };
+
+  const restored = config.persist?.load?.();
+  if (restored !== null && restored !== undefined) api.restore(restored);
+  return api;
 }
 
 const RUN_PROBE_KEY = "__jgengineRun";

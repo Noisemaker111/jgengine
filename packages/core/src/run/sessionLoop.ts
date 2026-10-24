@@ -86,6 +86,20 @@ export interface SessionLoopState {
   optionId: string | null;
 }
 
+/**
+ * Where a loop keeps what a live session carries, so a reload mid-session does not silently lose it.
+ * `load` runs once when the loop is created; `save` runs on each state change that a player can see -
+ * a carried amount (`every` carries between writes, default every one) and every open, adopt or close.
+ */
+export interface SessionLoopPersistence {
+  /** The state a previous boot wrote, or `null` when this is a new career. */
+  load?: () => SessionLoopState | null;
+  /** Write the loop's own state; a throw is ignored so a full disk cannot stop play. */
+  save: (state: SessionLoopState) => void;
+  /** Carries between writes (default `1`). Pass a higher number when a session carries every tick. */
+  every?: number;
+}
+
 /** Configuration for {@link createSessionLoop}. */
 export interface SessionLoopConfig<T = never, I = void, R = void> {
   /** What a session is, for the readout: `"day"`, `"shift"`, `"wave"`. */
@@ -101,6 +115,11 @@ export interface SessionLoopConfig<T = never, I = void, R = void> {
   offers?: readonly SessionOfferOption<T>[];
   /** Seed for the option draw (default `"session"`): the same seed and history replay the same sequence. */
   seed?: string | number;
+  /**
+   * Keep the session's live state durable. Without it the loop only holds state in memory, and a
+   * reload loses what the session carried until the game writes a snapshot itself.
+   */
+  persist?: SessionLoopPersistence;
 }
 
 /**
@@ -182,6 +201,23 @@ export function createSessionLoop<T = never, I = void, R = void>(
 
   const isOpen = (): boolean => session > closed;
 
+  const every = config.persist === undefined ? 0 : Math.max(1, Math.floor(config.persist.every ?? 1));
+  let carriesSinceWrite = 0;
+
+  function stateNow(): SessionLoopState {
+    return { session, closed, carried, optionId };
+  }
+
+  function persistNow(): void {
+    if (config.persist === undefined) return;
+    carriesSinceWrite = 0;
+    try {
+      config.persist.save(stateNow());
+    } catch {
+      // A save that fails must not end the session; the next carry tries again.
+    }
+  }
+
   function poolFor(index: number, previous: string | null): SessionOfferOption<T>[] {
     const eligible = table.filter((option) => (option.after ?? 0) <= index - 1);
     const fresh = eligible.filter((option) => option.id !== previous);
@@ -204,7 +240,7 @@ export function createSessionLoop<T = never, I = void, R = void>(
     return drawFor(closed + 1, optionId);
   }
 
-  return {
+  const loop: SessionLoop<T, I, R> = {
     kind: () => config.kind ?? null,
     start() {
       if (isOpen()) return offer();
@@ -212,10 +248,15 @@ export function createSessionLoop<T = never, I = void, R = void>(
       session = next.session;
       carried = 0;
       optionId = next.optionId;
+      persistNow();
       return next;
     },
     carry(amount) {
       if (carries) carried += positive(amount);
+      if (every > 0) {
+        carriesSinceWrite += 1;
+        if (carriesSinceWrite >= every) persistNow();
+      }
       return carried;
     },
     carried: () => carried,
@@ -243,6 +284,7 @@ export function createSessionLoop<T = never, I = void, R = void>(
         carried = 0;
       }
       optionId = nextOptionId;
+      persistNow();
       return true;
     },
     settle(input) {
@@ -251,6 +293,7 @@ export function createSessionLoop<T = never, I = void, R = void>(
       const result = config.settle === undefined ? (undefined as R) : config.settle(settling);
       closed = session;
       carried = 0;
+      persistNow();
       return { session: settling.session, carried: settling.carried, closed, result, next: drawFor(closed + 1, optionId) };
     },
     snapshot: () => ({ session, closed, carried, optionId }),
@@ -262,6 +305,10 @@ export function createSessionLoop<T = never, I = void, R = void>(
       optionId = next.optionId !== null && known.has(next.optionId) ? next.optionId : null;
     },
   };
+
+  const saved = config.persist?.load?.();
+  if (saved !== null && saved !== undefined) loop.restore(saved);
+  return loop;
 }
 
 const SESSION_PROBE_KEY = "__jgengineRun";
