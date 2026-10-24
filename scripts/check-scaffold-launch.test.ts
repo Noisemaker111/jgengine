@@ -12,6 +12,7 @@ import { scanForFetchEverywhere } from "./check-scaffold-launch";
  */
 
 function tree(files: Record<string, string>): string {
+  // fixture-location: allow the scan only reads the file names and one fetch( line, so no engine import is needed
   const root = mkdtempSync(join(tmpdir(), "jg-fetch-scan-"));
   for (const [path, body] of Object.entries(files)) {
     const full = join(root, path);
