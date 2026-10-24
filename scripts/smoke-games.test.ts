@@ -30,13 +30,10 @@ describe("parseGames", () => {
 describe("ci matrix", () => {
   const workflow = readFileSync(fileURLToPath(new URL("../.github/workflows/ci.yml", import.meta.url)), "utf8");
 
-  function matrixGames(job: string): string[] {
-    const body = new RegExp(`^ {2}${job}:\\n([\\s\\S]*?)(?=^ {2}\\S)`, "m").exec(workflow)?.[1] ?? "";
-    const list = /^ {8}game: \[(.+)\]$/m.exec(body)?.[1] ?? "";
-    return list.split(",").map((id) => id.trim()).filter((id) => id.length > 0);
-  }
-
-  test("gives every smoke game its own job", () => {
-    expect(matrixGames("smoke-game")).toEqual([...SMOKE_GAMES]);
+  test("no job boots a game a second time: the frame gate's matrix carries the smoke set", () => {
+    // `bun run smoke` still exists for a local boot, but CI launches each game once, from
+    // `perf-game`, whose `measureGame` fails on the same capture handshake.
+    expect(workflow).not.toContain("smoke-game:");
+    expect(workflow).not.toContain("bun run smoke --games");
   });
 });

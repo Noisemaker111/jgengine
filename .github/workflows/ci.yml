@@ -37,6 +37,8 @@ jobs:
     timeout-minutes: 5
     outputs:
       games: ${{ steps.scope.outputs.games }}
+      gameList: ${{ steps.scope.outputs.gameList }}
+      tests: ${{ steps.scope.outputs.tests }}
       reason: ${{ steps.scope.outputs.reason }}
     steps:
       - uses: actions/checkout@v4
@@ -52,8 +54,7 @@ jobs:
         run: |
           if [ "$EVENT" != "pull_request" ]; then
             echo "push to ${{ github.ref }} runs the full gate"
-            echo "games=full" >> "$GITHUB_OUTPUT"
-            echo "reason=a push runs the full gate" >> "$GITHUB_OUTPUT"
+            bun scripts/ci-scope.ts --all --github-output
             exit 0
           fi
           git fetch --no-tags origin "$BASE"
@@ -141,8 +142,11 @@ jobs:
   # what it prepares first, so rebalancing never touches this file; it fails if a test
   # file falls outside every shard, and scripts/test-shard.test.ts fails if this matrix
   # and the script's shard names drift apart. `ci` needs `test`, which aggregates every
-  # shard - a red shard fails `ci`.
+  # shard - a red shard fails `ci`. A diff that only adds change notes runs none of them:
+  # no test reads `changes/`, and `quick`'s check-changelog still validates the note.
   test:
+    needs: [changes]
+    if: needs.changes.outputs.tests != 'none'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:
@@ -182,77 +186,21 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun --cwd=apps/web run build
 
-  # Four headless boots of the shared shell path, one per runner: the single job's
-  # 4m30s was almost all `bun run smoke` (setup is 16 s), so the split is what makes
-  # it stop being the critical path. `scripts/smoke-games.test.ts` fails when this
-  # matrix and SMOKE_GAMES disagree.
-  smoke-game:
-    needs: [changes]
-    if: needs.changes.outputs.games != 'none'
-    runs-on: ubuntu-latest
-    timeout-minutes: 12
-    strategy:
-      fail-fast: false
-      matrix:
-        game: [harbor-heat, scrap-signal, drift-foundry, deepward]
-    steps:
-      - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.4.2
-      - uses: actions/cache@v4
-        with:
-          path: ~/.bun/install/cache
-          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
-          restore-keys: bun-${{ runner.os }}-
-      - run: bun install --frozen-lockfile
-      - run: bun run games:clone
-        env:
-          GAMES_CLONE_TOKEN: ${{ secrets.GAMES_CLONE_TOKEN }}
-      - run: bun run smoke --games ${{ matrix.game }}
-        env:
-          CHROME_PATH: /usr/bin/google-chrome
-
-  # Green only when every smoke game booted clean, so one unplayable game still
-  # blocks the merge through the same `smoke` check as before. A skipped run says
-  # which paths let it skip, so a green check never hides an unrun boot.
-  smoke:
-    needs: [changes, smoke-game]
-    if: ${{ !cancelled() }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - name: smoke verdict
-        env:
-          SCOPE: ${{ needs.changes.outputs.games }}
-          REASON: ${{ needs.changes.outputs.reason }}
-          BOOTS: ${{ needs.smoke-game.result }}
-        run: |
-          echo "scope=$SCOPE ($REASON)"
-          if [ "$SCOPE" = "none" ]; then
-            test "$BOOTS" = "skipped"
-            echo "skipped: no changed path can change what a game boots ($REASON)"
-            exit 0
-          fi
-          test "$BOOTS" = "success"
-          echo "every smoke game booted clean"
-
-  # Frame-budget gate: every reference game plays under software GL (CI forces
-  # ANGLE/SwiftShader or Mesa llvmpipe), then draws/triangles/nodes are compared
-  # against scripts/perf-budget.json and any linkProgram/createFramebuffer after
-  # the 5 s warmup fails. Frame times are never gated - CI runners are shared.
-  # Eight games in one job took ~5m20s of rendering; one game per runner leaves the
-  # wall clock at one game plus setup. `scripts/perf-gate.test.ts` fails when this
-  # matrix and PERF_GATE_GAMES disagree, so a ninth game cannot drop out of the gate.
+  # Every game is launched once per PR. `perf-game` already fails when a game throws at
+  # boot: `measureGame` waits on the same `data-jg-capture` handshake `bun run smoke` does
+  # and throws on `error` or the 90 s timeout, so a separate smoke job booted the same four
+  # games a second time for the same failure. The `smoke` check below reads this job's
+  # result instead, and the matrix is the scope's game list: every game for frame work, the
+  # representative game for a shared surface.
   perf-game:
     needs: [changes]
-    if: needs.changes.outputs.games == 'full'
+    if: needs.changes.outputs.games != 'none'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
-        game: [harbor-heat, scrap-signal, brightway-park, ember-command, beacon-bastion, drift-foundry, odd-orbit, deepward]
+        game: ${{ fromJSON(needs.changes.outputs.gameList) }}
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
@@ -277,6 +225,31 @@ jobs:
         env:
           CHROME_PATH: /usr/bin/google-chrome
 
+  # The `smoke` check the merge requires, fed by the one job that boots games: a game that
+  # throws at boot fails `perf-game` (the capture handshake is the same one `bun run smoke`
+  # used), and a skip says which paths let it skip.
+  smoke:
+    needs: [changes, perf-game]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: smoke verdict
+        env:
+          SCOPE: ${{ needs.changes.outputs.games }}
+          GAMES: ${{ needs.changes.outputs.gameList }}
+          REASON: ${{ needs.changes.outputs.reason }}
+          BOOTS: ${{ needs.perf-game.result }}
+        run: |
+          echo "scope=$SCOPE $GAMES ($REASON)"
+          if [ "$SCOPE" = "none" ]; then
+            test "$BOOTS" = "skipped"
+            echo "skipped: no changed path can change what a game boots ($REASON)"
+            exit 0
+          fi
+          test "$BOOTS" = "success"
+          echo "every game in $GAMES booted clean and stayed inside its budget"
+
   # The CPU timing budgets (nav crowd, perception, utility, visibility, off-screen,
   # flock, paths) assert via `bench:cpu` with JG_TIMING_GATE=1; the unit suite keeps
   # measuring and printing them without a pass/fail ceiling. It needs no browser and
@@ -299,9 +272,9 @@ jobs:
       - run: bun run bench:cpu
 
   # The `perf` check branch protection reads: green only when the CPU budgets passed
-  # and, when the change can reach rendering, all eight frame-budget games passed too.
-  # A red matrix leg shows as a failed job and fails the check here, so a single
-  # over-budget game still blocks the merge.
+  # and, when the change can reach rendering, every game the scope named passed too.
+  # A red matrix leg shows as a failed job and fails the check here, so one over-budget
+  # game still blocks the merge.
   perf:
     needs: [changes, perf-game, perf-cpu]
     if: ${{ !cancelled() }}
@@ -311,21 +284,20 @@ jobs:
       - name: perf verdict
         env:
           SCOPE: ${{ needs.changes.outputs.games }}
+          GAMES: ${{ needs.changes.outputs.gameList }}
           REASON: ${{ needs.changes.outputs.reason }}
           FRAME: ${{ needs.perf-game.result }}
           CPU: ${{ needs.perf-cpu.result }}
         run: |
-          echo "scope=$SCOPE ($REASON)"
+          echo "scope=$SCOPE $GAMES ($REASON)"
           test "$CPU" = "success"
-          if [ "$SCOPE" = "full" ]; then
-            test "$FRAME" = "success"
-            echo "frame budgets measured on every reference game"
+          if [ "$SCOPE" = "none" ]; then
+            test "$FRAME" = "skipped"
+            echo "frame budgets skipped: $REASON"
             exit 0
           fi
-          case "$FRAME" in
-            success | skipped) echo "frame budgets skipped: $REASON" ;;
-            *) echo "frame gate had to run and did not: $FRAME"; exit 1 ;;
-          esac
+          test "$FRAME" = "success"
+          echo "frame budgets measured on $GAMES"
 
   # Three package tests fail on Windows only (#2119: workspaceDoctor's wildcard and dangling
   # symlink cases, and `Bun.build` returning `EINVAL: failed to open root directory: /C:/...` in
@@ -384,32 +356,39 @@ jobs:
         env:
           SCOPE: ${{ needs.changes.result }}
           GAMES: ${{ needs.changes.outputs.games }}
+          SHARDS: ${{ needs.changes.outputs.tests }}
           REASON: ${{ needs.changes.outputs.reason }}
           SMOKE: ${{ needs.smoke.result }}
           PERF: ${{ needs.perf.result }}
+          TEST: ${{ needs.test.result }}
         run: |
           # A scope job that failed took the gated jobs down with it; never let that read as a pass.
           test "$SCOPE" = "success"
-          for result in "${{ needs.quick.result }}" "${{ needs.types.result }}" "${{ needs.test.result }}" "${{ needs.web-build.result }}" "$PERF" "${{ needs.windows.result }}"; do
+          for result in "${{ needs.quick.result }}" "${{ needs.types.result }}" "${{ needs.web-build.result }}" "$PERF" "${{ needs.smoke.result }}" "${{ needs.windows.result }}"; do
             test "$result" = "success"
           done
           echo "game scope: $GAMES ($REASON)"
-          # Smoke boots every game, so a skip is only acceptable when no changed path can affect it.
+          if [ "$SHARDS" = "none" ]; then
+            test "$TEST" = "skipped"
+            echo "skipped: test shards, change notes only"
+          else
+            test "$TEST" = "success"
+            echo "ran: every test shard"
+          fi
           case "$GAMES" in
             none)
               test "$SMOKE" = "skipped"
               echo "skipped: smoke and frame gates ($REASON)"
               ;;
+            surface)
+              test "$SMOKE" = "success"
+              echo "ran: smoke and frame budgets on the representative game"
+              ;;
             *)
               test "$SMOKE" = "success"
-              echo "ran: smoke boots every reference game"
+              echo "ran: smoke and frame budgets on every reference game"
               ;;
           esac
-          if [ "$GAMES" = "full" ]; then
-            echo "ran: frame budgets, every reference game"
-          else
-            echo "skipped: frame budgets ($REASON)"
-          fi
       - name: Track red main in one issue
         if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
