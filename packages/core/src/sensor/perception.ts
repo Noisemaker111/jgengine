@@ -1,4 +1,5 @@
 import { devtools } from "../devtools/devtools";
+import { sightLineBlocked, type SightSolids } from "./sightLine";
 
 /** A world position used by perception, in `[x, y, z]` order. */
 export type PerceptionPosition = readonly [number, number, number];
@@ -58,6 +59,18 @@ export interface PerceptionConfig {
    */
   isSegmentClear?: (from: PerceptionPosition, to: PerceptionPosition) => boolean;
   /**
+   * World collision the sight line is tested against — pass the same set movement and bullets use
+   * (`ctx.world.solids`). When given, a sighting also needs a clear segment, so a target behind a
+   * building is not seen. Ignored when `isSegmentClear` is supplied. Omit for open ground and the
+   * cheap cone.
+   */
+  solids?: SightSolids;
+  /**
+   * Most sight lines one `observe` pass (one agent's tick) may ray against `solids`. Default 64.
+   * `0` grants no sight at all; omit `solids` instead to keep the cheap cone.
+   */
+  maxSightRaysPerPass?: number;
+  /**
    * The other members of an observer's squad, by id. A sighting one member makes is written into
    * each mate's memory with the seeing member's id and the pass it happened on. Omit for lone
    * observers. Keep the returned set small — the roster is the caller's, so the caller bounds it.
@@ -79,8 +92,10 @@ export interface PerceptionStats {
   rangeCulled: number;
   /** Pairs inside sight range, so they paid the cone test. */
   coneTests: number;
-  /** Calls into the injected `isSegmentClear`. */
+  /** Sight lines tested for occlusion: calls into `isSegmentClear`, else rays against `solids`. */
   occlusionChecks: number;
+  /** Sightings the per-pass ray budget stopped us checking; they fail closed, so no sighting was granted. */
+  occlusionDropped: number;
   /** Pairs that produced the observer's own sighting. */
   sightings: number;
   /** Sound and damage stimuli an observer resolved inside its hearing range. */
@@ -141,10 +156,14 @@ function validate(config: PerceptionConfig): void {
   if (config.maxSharesPerTick !== undefined && (!Number.isInteger(config.maxSharesPerTick) || config.maxSharesPerTick < 0)) {
     throw new Error("maxSharesPerTick must be a non-negative integer.");
   }
+  if (config.maxSightRaysPerPass !== undefined && (!Number.isInteger(config.maxSightRaysPerPass) || config.maxSightRaysPerPass < 0)) {
+    throw new Error("maxSightRaysPerPass must be a non-negative integer.");
+  }
 }
 
 const DEFAULT_MAX_STIMULI = 256;
 const DEFAULT_MAX_SHARES = 64;
+const DEFAULT_MAX_SIGHT_RAYS = 64;
 
 /**
  * Creates a deterministic sight, sound, and damage perception service with expiring target memory.
@@ -163,6 +182,7 @@ export function createPerception(initial: PerceptionConfig): PerceptionService {
   validate(initial);
   let config = { ...initial };
   let maxShares = config.maxSharesPerTick ?? DEFAULT_MAX_SHARES;
+  let maxSightRays = config.maxSightRaysPerPass ?? DEFAULT_MAX_SIGHT_RAYS;
   let nowMs = 0;
   let passes = 0;
   const stimuli: StoredStimulus[] = [];
@@ -175,6 +195,7 @@ export function createPerception(initial: PerceptionConfig): PerceptionService {
     rangeCulled: 0,
     coneTests: 0,
     occlusionChecks: 0,
+    occlusionDropped: 0,
     sightings: 0,
     heard: 0,
     shares: 0,
@@ -247,7 +268,7 @@ export function createPerception(initial: PerceptionConfig): PerceptionService {
   }
 
   function debugLine(): string {
-    const work = `${stats.pairChecks} pairs ${stats.rangeCulled} culled ${stats.occlusionChecks} los ${stats.sightings} sights ${stats.heard} heard`;
+    const work = `${stats.pairChecks} pairs ${stats.rangeCulled} culled ${stats.occlusionChecks} los ${stats.occlusionDropped > 0 ? `${stats.occlusionDropped} unchecked ` : ""}${stats.sightings} sights ${stats.heard} heard`;
     const squad = stats.shareDropped > 0 ? `${stats.shares} shared ${stats.shareDropped} dropped` : `${stats.shares} shared`;
     return `${memories.size} observers ${rememberedCount()} remembered · ${work} · ${squad}`;
   }
@@ -275,6 +296,8 @@ export function createPerception(initial: PerceptionConfig): PerceptionService {
       const tick = passes;
       const halfAngle = (config.sightConeDeg * Math.PI) / 360;
       const isClear = config.isSegmentClear;
+      const solids = isClear === undefined ? config.solids : undefined;
+      let rays = maxSightRays;
       fresh.length = 0;
 
       for (const candidate of candidates) {
@@ -296,6 +319,14 @@ export function createPerception(initial: PerceptionConfig): PerceptionService {
         if (isClear !== undefined) {
           stats.occlusionChecks += 1;
           if (!isClear(observer.position, candidate.position)) continue;
+        } else if (solids !== undefined) {
+          if (rays <= 0) {
+            stats.occlusionDropped += 1;
+            continue;
+          }
+          rays -= 1;
+          stats.occlusionChecks += 1;
+          if (sightLineBlocked(solids, observer.position, candidate.position)) continue;
         }
         stats.sightings += 1;
         remember(observer.id, candidate.id, candidate.position, nowMs, 1, observer.id, tick);
@@ -379,6 +410,7 @@ export function createPerception(initial: PerceptionConfig): PerceptionService {
       stats.rangeCulled = 0;
       stats.coneTests = 0;
       stats.occlusionChecks = 0;
+      stats.occlusionDropped = 0;
       stats.sightings = 0;
       stats.heard = 0;
       stats.shares = 0;
@@ -388,6 +420,7 @@ export function createPerception(initial: PerceptionConfig): PerceptionService {
       config = { ...config, ...patch };
       validate(config);
       maxShares = config.maxSharesPerTick ?? DEFAULT_MAX_SHARES;
+      maxSightRays = config.maxSightRaysPerPass ?? DEFAULT_MAX_SIGHT_RAYS;
       pruneAll();
     },
     snapshot() {

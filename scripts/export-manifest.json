@@ -504,6 +504,7 @@
     "./sensor/recordingBuffer",
     "./sensor/replayLoop",
     "./sensor/revealQuery",
+    "./sensor/sightLine",
     "./sensor/visionCone",
     "./session/contestedChannel",
     "./session/extraction",

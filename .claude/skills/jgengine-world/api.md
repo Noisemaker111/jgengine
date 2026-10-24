@@ -2059,6 +2059,12 @@
 - `RevealQuery` (interface): interface RevealQuery { inRadius(center: EntityPosition | string, radius: number, tags: readonly string[]): RevealHit[] } — ⚠ undocumented
 - `RevealQueryOptions` (interface): interface RevealQueryOptions { resolvePosition: (instanceId: string) => EntityPosition | undefined; resolveTags: (instanceId: string) => readonly string[]; candidates: () => string[] } — ⚠ undocumented
 
+## @jgengine/core/sensor/sightLine
+
+- `SightPoint` (type): type SightPoint = readonly [number, number, number] — One world point in `[x, y, z]` order, as a sight test takes it.
+- `SightSolids` (type): type SightSolids = Pick<WorldSolids, "inBox"> & Partial<Pick<WorldSolids, "inRay">> — The indexing floor a sight test needs from world collision: boxes, narrowed by a ray when available.
+- `sightLineBlocked` (function): function sightLineBlocked(solids: SightSolids, from: SightPoint, to: SightPoint): boolean — True when a world solid stands on the straight line from `from` to `to` — the occlusion test a sight check needs, against the same collision set movement and bullets use.
+
 ## @jgengine/core/sensor/visionCone
 
 - `VisionCone` (interface): interface VisionCone — The guard-sight primitive every stealth game hand-rolled: an angle+range cone on the XZ plane whose sight lines are blocked by 2D wall segments (`world/walls` segments fit structurally). Pure math — feed entity positions and heading each tick.
@@ -2872,6 +2878,8 @@
 - `SequenceState` (interface): interface SequenceState — A read-only view of the director's playback state, returned by {@link SequenceDirector.state}.
 - `SharedAnnotations` (interface): interface SharedAnnotations — Local annotation edits that also broadcast, plus `apply` for inbound edits. `add*`/`remove`/`clear` mirror {@link AnnotationLayer} but return globally-unique ids so two clients never collide.
 - `SharedAnnotationsDeps` (interface): interface SharedAnnotationsDeps — Construction options for {@link createSharedAnnotations}.
+- `SightPoint` (type): type SightPoint = readonly [number, number, number] — One world point in `[x, y, z]` order, as a sight test takes it.
+- `SightSolids` (type): type SightSolids = Pick<WorldSolids, "inBox"> & Partial<Pick<WorldSolids, "inRay">> — The indexing floor a sight test needs from world collision: boxes, narrowed by a ray when available.
 - `SimClock` (interface): interface SimClock { advance(realDt: number): number; now(): number; advancedSeconds?(): number; snapshot(): ClockSnapshot; hydrate(snapshot: ClockSnapshot): void; calendar(): CalendarTime; isPaused(): boolean; speed(): number; pause(): void; play(): void; to… — ⚠ undocumented · used by `createSimContext` (@jgengine/core/runtime/simContext): Build `ctx.sim` for a context; `createGameContext` calls this from `definition.simulation`.
 - `SkillCheckConfig` (interface): interface SkillCheckConfig { trackWidth: number; zone: SkillCheckZone; markerPeriod: number; window: number; zoneDriftPerSecond?: number } — ⚠ undocumented · used by `skillCheckZoneAt`: A timing-bar skill check that succeeds when the moving marker is released inside the target zone.
 - `SkillCheckResult` (interface): interface SkillCheckResult { success: boolean; timedOut: boolean; markerPosition: number; zone: SkillCheckZone } — ⚠ undocumented
@@ -3329,6 +3337,7 @@
 - `shellRegion` (function): function shellRegion(center: Point3, innerRadius: number, outerRadius: number, options: { distribution?: VolumeDistribution } = {}): SampleRegion<Point3> — A spherical shell between `innerRadius` and `outerRadius`. `"volume"` fills the shell with even density; `"radial"` spreads uniformly in radius. Direction first, then radius.
 - `sidewalkPoint` (function): function sidewalkPoint(road: RoadEnvironmentDescriptor, side: "left" | "right", fraction: number): RoadPoint | null — A deterministic point on one of a road's sidewalks at a normalized position — `side` picks the band, `fraction` (0..1) picks how far along. The canonical pedestrian spawn helper.
 - `sidewalkWidthOf` (function): function sidewalkWidthOf(road: RoadEnvironmentDescriptor): number — Resolved sidewalk band widths for a road; zero when the road declares no sidewalk.
+- `sightLineBlocked` (function): function sightLineBlocked(solids: SightSolids, from: SightPoint, to: SightPoint): boolean — True when a world solid stands on the straight line from `from` to `to` — the occlusion test a sight check needs, against the same collision set movement and bullets use.
 - `skillCheckZoneAt` (function): function skillCheckZoneAt(config: SkillCheckConfig, elapsedSeconds: number): SkillCheckZone — A timing-bar skill check that succeeds when the moving marker is released inside the target zone.
 - `sky` (function): function sky(config: SkyEnvironmentConfig = {}): SkyEnvironmentDescriptor — ⚠ undocumented
 - `slopeStepCost` (function): function slopeStepCost(field: { sampleHeight(x: number, z: number): number }, weight = DEFAULT_SLOPE_STEP_WEIGHT): (from: NavPoint, to: NavPoint) => number — `FindPathOptions.stepCost` factory that penalizes steep terrain: cost is `1 + weight * |Δheight| / horizontalDistance`, so with the default weight a 45° slope roughly doubles the step cost.

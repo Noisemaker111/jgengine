@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { createPerception, type PerceptionConfig } from "@jgengine/core/world";
+import { createWorldSolids } from "@jgengine/core/world/worldSolids";
 import { devtools } from "../devtools/devtools";
 
 const observer = { id: "guard", position: [0, 0, 0] as const, yaw: 0 };
@@ -122,6 +123,44 @@ describe("sight", () => {
     expect(calls).toBe(stats.occlusionChecks);
     expect(stats.occlusionChecks).toBeLessThan(stats.coneTests);
     expect(stats.coneTests).toBeLessThan(stats.pairChecks);
+  });
+
+  test("a solid wall between eye and target hides it, and the same distance in the open does not", () => {
+    const guard = { id: "guard", position: [0, 0, 0] as const, yaw: 0 };
+    const solids = createWorldSolids();
+    solids.set("building", [{ center: [0, 1, 4], halfExtents: [3, 1.5, 0.25] }]);
+    const perception = createPerception({ ...SENSES, sightRange: 20, sightConeDeg: 120, solids });
+    perception.observe(
+      guard,
+      [
+        { id: "behind-wall", position: [0, 0, 8] },
+        { id: "open", position: [8, 0, 8] },
+      ],
+      0,
+    );
+    expect(perception.memory("guard").map((memory) => memory.targetId)).toEqual(["open"]);
+    expect(perception.memoryOf("guard", "behind-wall")).toBeNull();
+  });
+
+  test("a sight ray budget caps the per-pass wall tests and drops what it cannot check", () => {
+    const guard = { id: "guard", position: [0, 0, 0] as const, yaw: 0 };
+    const solids = createWorldSolids();
+    solids.set("building", [{ center: [0, 1, 4], halfExtents: [3, 1.5, 0.25] }]);
+    let rays = 0;
+    const counted = {
+      inBox: (min: readonly [number, number, number], max: readonly [number, number, number]) => solids.inBox(min, max),
+      inRay: (origin: readonly [number, number, number], direction: readonly [number, number, number], maxDistance: number) => {
+        rays += 1;
+        return solids.inRay!(origin, direction, maxDistance);
+      },
+    };
+    const perception = createPerception({ ...SENSES, sightRange: 20, sightConeDeg: 360, solids: counted, maxSightRaysPerPass: 3 });
+    const candidates = Array.from({ length: 6 }, (_, i) => ({ id: `t${i}`, position: [i - 2.5, 0, 8] as const }));
+    perception.observe(guard, candidates, 0);
+    expect(rays).toBe(3);
+    expect(perception.stats().occlusionChecks).toBe(3);
+    expect(perception.stats()).toMatchObject({ occlusionDropped: 3 });
+    expect(perception.memory("guard")).toEqual([]);
   });
 
   test("counters separate range prunes from cone tests", () => {
