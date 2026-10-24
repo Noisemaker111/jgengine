@@ -3,6 +3,7 @@ import { join } from "node:path";
 
 import {
   cleanupHarness,
+  HARNESS_TEST_TIMEOUT_MS,
   harnessBrowser as browser,
   harnessCli as cli,
   driveDevCli,
@@ -56,7 +57,7 @@ describe.skipIf(!hasChrome)("portable harness in Chromium", () => {
         server.stop(true);
         project.dispose();
       }
-    }, 45000);
+    }, HARNESS_TEST_TIMEOUT_MS);
   }
 
   test("monorepo drive waits for asynchronous controls beyond five seconds", async () => {
@@ -162,7 +163,7 @@ describe.skipIf(!hasChrome)("portable harness in Chromium", () => {
       server.stop(true);
       project.dispose();
     }
-  }, 45000);
+  }, HARNESS_TEST_TIMEOUT_MS);
 
   for (const scenario of TARGET_SCENARIOS.filter((name) => !isBlocked(name))) {
     test(`canonical drive ${scenario} target`, async () => {
@@ -194,6 +195,6 @@ describe.skipIf(!hasChrome)("portable harness in Chromium", () => {
         server.stop(true);
         project.dispose();
       }
-    }, 45000);
+    }, HARNESS_TEST_TIMEOUT_MS);
   }
 });

@@ -37,13 +37,44 @@ export type Report = { coarse: boolean; fine: boolean; touchPoints: number; widt
 export type Click = { trusted: boolean; x: number; y: number; scroll: number };
 
 /**
- * Run a harness CLI child. It gets its own deadline below the test's, so a stuck drive is killed
- * (SIGTERM also stops its Chrome) and fails with its stderr instead of leaking into later tests.
+ * A drive's own worst case is its 45s settle loop on top of Chrome launch and the shot, so the
+ * child's deadline sits above that and each test's above the child's. A child killed by its
+ * deadline then fails the test with the command it ran and what it printed, instead of a bare
+ * "test timed out" that names neither.
  */
+const CLI_DEADLINE_MS = 90_000;
+const PIPE_GRACE_MS = 5_000;
+export const HARNESS_TEST_TIMEOUT_MS = CLI_DEADLINE_MS + 30_000;
+
+/**
+ * Read a pipe to its end, giving up PIPE_GRACE_MS after the child has exited. The harness script
+ * the CLI spawns, and its Chrome, inherit these pipes: killing the CLI child leaves them holding
+ * the write end, and an unbounded read then waits forever on output no one will write.
+ */
+async function drain(stream: ReadableStream<Uint8Array>): Promise<string> {
+  const reader = stream.getReader();
+  const decoder = new TextDecoder();
+  let text = "";
+  const loop = (async () => {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) return true;
+      text += decoder.decode(value, { stream: true });
+    }
+  })().catch(() => true);
+  if (!(await Promise.race([loop, Bun.sleep(PIPE_GRACE_MS).then(() => false)]))) void reader.cancel().catch(() => {});
+  return text;
+}
+
+/** Run a harness CLI child under CLI_DEADLINE_MS, failing the test with its own output if it is killed. */
 export async function runHarnessCli(command: string[], options: { cwd: string; env?: Record<string, string | undefined>; timeoutMs?: number }) {
-  const child = Bun.spawn([process.execPath, ...command], { cwd: options.cwd, env: options.env, stdout: "pipe", stderr: "pipe", timeout: options.timeoutMs ?? 40_000, killSignal: "SIGTERM" });
-  const [exit, stdout, stderr] = await Promise.all([child.exited, new Response(child.stdout).text(), new Response(child.stderr).text()]);
-  if (child.signalCode !== null) throw new Error(`${command.slice(0, 2).join(" ")} did not exit (${child.signalCode}):\n${stderr}`);
+  const timeoutMs = options.timeoutMs ?? CLI_DEADLINE_MS;
+  const child = Bun.spawn([process.execPath, ...command], { cwd: options.cwd, env: options.env, stdout: "pipe", stderr: "pipe", timeout: timeoutMs, killSignal: "SIGTERM" });
+  const exit = await child.exited;
+  const [stdout, stderr] = await Promise.all([drain(child.stdout), drain(child.stderr)]);
+  if (child.signalCode !== null) {
+    throw new Error(`${command.slice(0, 2).join(" ")} did not finish within ${timeoutMs}ms, so it was stopped with ${child.signalCode}. Its output:\n${stderr || stdout}`);
+  }
   return { exit, stdout, stderr };
 }
 
