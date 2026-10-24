@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { engineSourcePaths, mergeGamePaths } from "./games-check-paths";
+import { engineSourcePaths, gamePaths, mergeGamePaths } from "./games-check-paths";
 
 describe("games:check path mapping", () => {
   test("maps package roots and subpaths to src, like the dev runner aliases", () => {
@@ -26,5 +26,22 @@ describe("games:check path mapping", () => {
       { "@jgengine/core/*": ["/engine/core/src/*"] },
     );
     expect(merged).toEqual({ "@/components/ui/*": ["/g/registry/*"], "@jgengine/core/*": ["/engine/core/src/*"] });
+  });
+
+  test("resolves a game's paths through its extends chain, against the file that declares each", () => {
+    const root = mkdtempSync(join(tmpdir(), "gcp-chain-"));
+    writeFileSync(join(root, "base.json"), JSON.stringify({ compilerOptions: { paths: { "@shared/*": ["./shared/*"], "@fixed": ["/abs/fixed"] } } }));
+    writeFileSync(
+      join(root, "tsconfig.json"),
+      JSON.stringify({ extends: "./base.json", compilerOptions: { paths: { "@game/*": ["src/game/*"] } } }),
+    );
+    const paths = gamePaths(join(root, "tsconfig.json"));
+    expect(paths["@game/*"]).toEqual([join(root, "src/game/*")]);
+    expect(paths["@shared/*"]).toEqual([join(root, "shared/*")]);
+    expect(paths["@fixed"]).toEqual(["/abs/fixed"]);
+  });
+
+  test("names nothing for a tsconfig that is not there, instead of throwing", () => {
+    expect(gamePaths(join(tmpdir(), "gcp-does-not-exist", "tsconfig.json"))).toEqual({});
   });
 });
