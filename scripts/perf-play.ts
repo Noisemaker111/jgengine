@@ -16,6 +16,7 @@ import {
   type FrameClock,
 } from "./browser-lib";
 import { parseGraphicsTier, type GraphicsTier } from "../packages/jgengine/src/templates/captureArgs";
+import { ALLOW_MISMATCH_FLAG, engineRecord, resolveEngineIdentity, type EngineRecord } from "./engineIdentity";
 import {
   acquireWarmCapture,
   daemonDiedUnder,
@@ -136,6 +137,8 @@ export interface PerfArgs {
   headed?: boolean;
   /** `--cold`: boot Chrome and Vite directly instead of reusing the warm daemon. */
   cold?: boolean;
+  /** `--allow-engine-mismatch`: serve engine source older than the game's pin on purpose. */
+  allowEngineMismatch?: boolean;
 }
 
 export type ArgResult = { kind: "run"; args: PerfArgs } | { kind: "help" };
@@ -147,6 +150,10 @@ const USAGE = `usage: bun run perf <game> [--quality low|medium|high|ultra] [--d
   --cold            skip the warm daemon and boot Chrome + Vite directly: fresh caches, larger
                     numbers than a warm run, for an evidence run that must prove a clean start.
                     Every run prints which it got: warm: reused :9261 (0.2s) / cold: started :9261 (4.1s)
+  --allow-engine-mismatch
+                    the dev runner serves engine source from this checkout; a run stops when that
+                    source is older than the version the game's catalog pins. This flag records the
+                    deliberate exception instead. Every run prints the engine it served.
   --quality         the graphics tier the game renders at (low, medium, high, ultra), pinned on the
                     page URL. The run fails when the page reports a different tier, so a record
                     always names the tier it measured.
@@ -331,6 +338,7 @@ export function parsePerfArgs(argv: readonly string[]): ArgResult {
   let frameClock: FrameClock = "capped";
   let headed = false;
   let cold = false;
+  let allowEngineMismatch = false;
   let state: string | undefined;
   const params: [string, string][] = [];
   const settings: PerfSettingOverride[] = [];
@@ -351,6 +359,10 @@ export function parsePerfArgs(argv: readonly string[]): ArgResult {
     }
     if (arg === "--cold") {
       cold = true;
+      continue;
+    }
+    if (arg === ALLOW_MISMATCH_FLAG) {
+      allowEngineMismatch = true;
       continue;
     }
     if (arg === "--draft") {
@@ -412,7 +424,7 @@ export function parsePerfArgs(argv: readonly string[]): ArgResult {
   }
   if (game === undefined) throw new Error("a game id is required");
   if (draft && quality !== undefined) throw new Error(`--draft is the iteration preset (low tier, half viewport), so drop it or drop --quality ${quality}`);
-  return { kind: "run", args: { game, ...(quality === undefined ? {} : { quality }), draft, profile, seconds, telemetry, settings, frameClock, ...(headed ? { headed: true } : {}), ...(cold ? { cold: true } : {}), ...(state === undefined ? {} : { state }), params } };
+  return { kind: "run", args: { game, ...(quality === undefined ? {} : { quality }), draft, profile, seconds, telemetry, settings, frameClock, ...(headed ? { headed: true } : {}), ...(cold ? { cold: true } : {}), ...(allowEngineMismatch ? { allowEngineMismatch: true } : {}), ...(state === undefined ? {} : { state }), params } };
 }
 
 /** One sampled stack frame reduced to a readable key and its self time. */
@@ -793,6 +805,8 @@ export interface PerfRecord extends PerfReport {
    * `uncapped` ones are what a frame costs, so the two never compare to each other.
    */
   frameClock: FrameClock;
+  /** Which engine the measured window rendered, so a saved record can be audited later. */
+  engine?: EngineRecord;
 }
 export type { PerfReport };
 
@@ -1052,6 +1066,16 @@ async function main(): Promise<void> {
     throw new Error(`no game "${game}" in Games/ — run \`bun run games:clone\` first, then retry`);
   }
 
+  // Before any browser: a number measured on an engine older than the game's pin describes a build
+  // nobody runs. The dev runner serves this checkout's source, so name it and stop on a mismatch.
+  const identity = resolveEngineIdentity({ game, allowMismatch: parsed.args.allowEngineMismatch === true, tool: "perf" });
+  console.error(identity.line);
+  if (!identity.allowed) {
+    console.error(identity.refusal);
+    process.exit(1);
+  }
+  const measuredEngine = engineRecord(identity);
+
   // The daemon's Chrome runs the display's frame clock and no window, so a run that pins its own
   // clock or asks for a window must launch its own browser instead of borrowing the daemon's.
   const ownBrowser = frameClock === "uncapped"
@@ -1085,6 +1109,7 @@ async function main(): Promise<void> {
         const session = await openPageSession(debugPort);
         try {
           const measured = await measureGame({ session, base: server.base, game, quality, draft, seconds, telemetry, settings, state, params, frameClock });
+          if (measuredEngine !== null) measured.record.engine = measuredEngine;
           console.error(`perf: tier ${measured.record.quality}${draft ? " (draft: low tier, half viewport)" : ""}`);
           const pin = perfStateLine(state, params);
           if (pin !== null) console.error(pin);
