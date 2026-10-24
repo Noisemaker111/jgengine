@@ -26,14 +26,14 @@ import { walkTestFiles } from "./test-shard";
 
 const VERIFY_FAST_USAGE = {
   summary: "run only the tests and static gates this branch's diff reaches, in seconds",
-  usage: "bun run verify:fast [--full] [--plan] [--json] [--base <ref>] [--jobs <n>] [--skip-skill-api]",
+  usage: "bun run verify:fast [--full] [--plan] [--json] [--base <ref>] [--jobs <n>] [--skill-api]",
   flags: [
     { flag: "--full", detail: "what CI runs, not just what this change reaches; minutes, before landing" },
     { flag: "--plan", detail: "print the steps and their commands, run nothing" },
     { flag: "--json", detail: "one { ok, ms, checks } document on stdout" },
     { flag: "--base <ref>", detail: "diff against this ref (default: origin/beta)" },
     { flag: "--jobs <n>", detail: "steps to run at once (default: half the cores, at most 6)" },
-    { flag: "--skip-skill-api", detail: "leave out the 21 s check-skill-api gate; CI still runs it" },
+    { flag: "--skill-api", detail: "also run check-skill-api, the 21 s generated api.md check lane:close and ship:preflight run" },
   ],
   example: "bun run verify:fast --plan",
   exits: [
@@ -284,12 +284,11 @@ export function importers(
  *
  * Both generated-file checks belong here because they are cheap against what a missed
  * one costs: `check-export-manifest` reads package.json and the build tsconfig (0.1 s),
- * and `check-skill-api` parses every package source through ts-morph (20.8 s on this PC,
- * measured 2026-10-24, and it needs no build - it fails the same without `dist`). Neither
- * needs `dist`, so a lane adding an export hears about a stale manifest and `api.md` in
- * the same run instead of after a push and a full CI round trip. 20.8 s is too long to
- * charge every run, so `check-skill-api` runs only when a package changed and
- * `--skip-skill-api` takes it back out.
+ * and `check-skill-api` parses every package source through ts-morph (21.5 s on this PC,
+ * measured 2026-10-24, and it needs no build - it fails the same without `dist`). The
+ * manifest check runs on every package change; `api.md` drift is far more expensive to
+ * find, so it waits for `--skill-api`, which `lane:close` and `ship:preflight` pass. The
+ * inner loop stays under 5 s and a push still cannot ship a stale generated file.
  */
 export function gatesFor(changed: readonly string[]): string[] {
   const gates = new Set(["check-artifacts", "check:fixture-location", "check:path-portability", "check-orphan-ratchet"]);
@@ -361,12 +360,12 @@ const GATE_COST: Readonly<Record<string, number>> = {
   "check-skill-api": 21,
 };
 
-/** The commands `bun run verify:fast` runs for a plan. */
-export function fastSteps(plan: Plan, options: { skipSkillApi?: boolean } = {}): Step[] {
+/** The commands `bun run verify:fast` runs for a plan. `check-skill-api` waits for `--skill-api`. */
+export function fastSteps(plan: Plan, options: { skillApi?: boolean } = {}): Step[] {
   const steps: Step[] = [];
   for (const dir of plan.typechecks) steps.push({ name: `typecheck ${dir}`, command: ["bun", `--cwd=${dir}`, "run", "check-types"] });
   if (plan.tests.length > 0) steps.push({ name: `test ${plan.tests.length} file(s)`, command: ["bun", "test", "--timeout", "20000", ...plan.tests] });
-  const gates = options.skipSkillApi === true ? plan.gates.filter((gate) => gate !== "check-skill-api") : plan.gates;
+  const gates = options.skillApi === true ? plan.gates : plan.gates.filter((gate) => gate !== "check-skill-api");
   for (const gate of gates) steps.push({ name: gate, command: ["bun", "run", gate], fix: GATE_FIX[gate], cost: GATE_COST[gate] });
   return steps;
 }
@@ -724,7 +723,7 @@ async function main(argv: readonly string[]): Promise<number> {
   const full = argv.includes("--full");
   const planOnly = argv.includes("--plan");
   const json = argv.includes("--json");
-  const skipSkillApi = argv.includes("--skip-skill-api");
+  const skillApi = argv.includes("--skill-api");
   const started = Date.now();
 
   let changed: string[];
@@ -800,7 +799,7 @@ async function main(argv: readonly string[]): Promise<number> {
     readText: (path) => readFileSync(join(root, path), "utf8"),
     resolveSpecifier,
   });
-  const steps = fastSteps(plan, { skipSkillApi });
+  const steps = fastSteps(plan, { skillApi });
 
   if (json) {
     if (plan.unattributed.length > 0) {
@@ -811,9 +810,12 @@ async function main(argv: readonly string[]): Promise<number> {
     return await jsonRun(steps, { run: (step) => run(step, root), started });
   }
 
-  console.log(`verify:fast against ${base}: ${plan.changed.length} changed file(s), ${plan.tests.length} test file(s), ${plan.gates.length} gate(s)`);
-  if (skipSkillApi && plan.gates.includes("check-skill-api")) {
-    console.log("verify:fast: --skip-skill-api left out check-skill-api; CI runs it and still fails on a stale api.md.");
+  const leftOutSkillApi = !skillApi && plan.gates.includes("check-skill-api");
+  console.log(
+    `verify:fast against ${base}: ${plan.changed.length} changed file(s), ${plan.tests.length} test file(s), ${plan.gates.length - (leftOutSkillApi ? 1 : 0)} gate(s)`,
+  );
+  if (leftOutSkillApi) {
+    console.log("verify:fast: check-skill-api (21 s) is left out here; `--skill-api` runs it, and lane:close and ship:preflight already do.");
   }
   if (planOnly) {
     printPlan(plan, steps);

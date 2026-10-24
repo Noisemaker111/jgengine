@@ -243,14 +243,17 @@ describe("static gates", () => {
       unattributed: [],
     });
     const manifest = steps.find((step) => step.name === "check-export-manifest");
-    const skillApi = steps.find((step) => step.name === "check-skill-api");
+    const skillApi = fastSteps(
+      { changed: ["packages/core/src/world/terrain.ts"], typechecks: [], tests: [], gates: ["check-skill-api"], unattributed: [] },
+      { skillApi: true },
+    ).find((step) => step.name === "check-skill-api");
     expect(manifest?.fix).toContain("bun run gen");
     expect(manifest?.fix).toContain("scripts/export-manifest.json");
     expect(skillApi?.fix).toContain("bun run gen");
     expect(skillApi?.fix).toContain(".claude/skills/*/api.md");
   });
 
-  test("--skip-skill-api leaves the slow generated check out and keeps the cheap one", () => {
+  test("the inner loop leaves the 21 s generated check out unless --skill-api asks for it", () => {
     const plan = {
       changed: ["packages/core/src/world/terrain.ts"],
       typechecks: [],
@@ -258,9 +261,10 @@ describe("static gates", () => {
       gates: ["check-artifacts", "check-export-manifest", "check-skill-api"],
       unattributed: [],
     };
-    const names = fastSteps(plan, { skipSkillApi: true }).map((step) => step.name);
-    expect(names).not.toContain("check-skill-api");
-    expect(names).toContain("check-export-manifest");
+    const byDefault = fastSteps(plan).map((step) => step.name);
+    expect(byDefault).not.toContain("check-skill-api");
+    expect(byDefault).toContain("check-export-manifest");
+    expect(fastSteps(plan, { skillApi: true }).map((step) => step.name)).toContain("check-skill-api");
   });
 });
 

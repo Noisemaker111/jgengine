@@ -395,10 +395,15 @@ export function closeLane(args: LaneCloseArgs, io: LaneIo): number {
     return EXIT_CANNOT_ANSWER;
   }
 
-  io.out(`lane:close: ${branch} — verify:fast`);
-  const verified = io.sh(["run", "verify:fast"], true);
+  io.out(`lane:close: ${branch} — verify:fast --skill-api`);
+  // --skill-api is the pre-push check: the inner loop stays at 4 s, and a lane still
+  // cannot land a stale export manifest or api.md.
+  const verified = io.sh(["run", "verify:fast", "--skill-api"], true);
   if (verified.status !== 0) {
-    io.err(`lane:close: verify:fast failed (exit ${verified.status}); nothing landed`);
+    io.err(
+      `lane:close: verify:fast failed (exit ${verified.status}); nothing landed. ` +
+        "If it named a stale generated file, run `bun run gen`, commit the result and close again.",
+    );
     return EXIT_VERIFY_FAILED;
   }
 
