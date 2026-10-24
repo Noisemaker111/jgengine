@@ -32,16 +32,190 @@ const LONGEST_KEPT = 3;
 export type WaitKind = "ci-watch" | "sleep";
 
 /**
- * Three shapes that never need a human or a model to finish: the first two watch CI in the foreground,
- * the rest sleep or poll a status endpoint. `gh pr checks` without `--watch` is a single question and
- * stays ordinary work.
+ * Shapes that never need a human or a model to finish: a foreground CI watch, a sleep, or a status
+ * endpoint asked over and over. `gh pr checks` without `--watch` is a single question and stays
+ * ordinary work.
+ *
+ * Matched against what a call *runs*, never against the text of its arguments: a lane that greps for
+ * `Start-Sleep` or writes a commit message about `gh run watch` did not wait, and counting its search
+ * as 26 minutes of CI watching makes every quoted total wrong.
  */
 const CI_WATCH_COMMAND = /\bgh\s+run\s+watch\b|\bgh\s+pr\s+checks\b[^\n]*--watch\b|\bgh\s+pr\s+checks\b[^\n]*--interval\b/i;
 const LOOP = /\bwhile\s*[($:]|\bfor\s*[($]|\bfor\s+\w+\s+in\b|\bdo\s*\{|\buntil\s+/i;
+const GH_CHECKS = /\bgh\s+pr\s+checks\b/i;
 const STATUS_ENDPOINT =
   /\bgh\s+pr\s+(?:view|checks|status)\b|\bgh\s+api\b[^\n]*actions\/runs|statusCheckRollup|\bgh\s+run\s+(?:list|view)\b|artifacts\/[^\n]*\/check-runs/i;
 // wait-ok: matches command text for the audit, it never runs a wait
-const SLEEP_COMMAND = /\bStart-Sleep\b|\btimeout\s+\/t\s+\d|\bsleep\s+\d/i;
+const SLEEP_COMMAND =
+  /\bstart-sleep\b|\btimeout\s+\/t\s*\d|\bsleep\s+\d|\bthread\.sleep\b|\batomics\.wait\b|\bwait-event\b|\bbun\.sleep\b/i;
+
+/**
+ * Commands that only read, print or inspect: run one and nothing waits, whatever its arguments say.
+ * `git` is here whole because no git subcommand waits on a clock.
+ */
+const READ_ONLY = new Set([
+  "rg",
+  "grep",
+  "egrep",
+  "select-string",
+  "sls",
+  "findstr",
+  "get-content",
+  "gc",
+  "cat",
+  "type",
+  "echo",
+  "write-output",
+  "write-host",
+  "git",
+  "head",
+  "tail",
+  "less",
+  "more",
+  "ls",
+  "dir",
+  "get-childitem",
+  "where",
+  "which",
+  "out-string",
+  "format-table",
+  "select-object",
+  "sort-object",
+  "measure-object",
+  "set-content",
+  "add-content",
+  "test-path",
+]);
+
+/** A wrapper anywhere in a segment whose quoted argument is the command that actually runs. */
+const SHELL_BODY =
+  /\b(?:powershell|pwsh|cmd|bash|sh|zsh)(?:\.exe)?\s+(?:[-/]\w+\s+)*?(?:-command|-c|-lc|\/c|\/k)\s*(?:"([^"]*)"|'([^']*)')/gi;
+/** A runtime anywhere in a segment whose quoted argument after `-e` is code that runs. */
+const EVAL_BODY =
+  /\b(?:node|bun|deno|tsx)(?:\.exe)?\s+(?:[-/]\w+\s+)*?(?:-e|--eval|-p|--print)\s*(?:"([^"]*)"|'([^']*)')/gi;
+
+/** One pass over the text, so a `;` or a quote inside a string is not a separator. */
+function scan(command: string): { segments: string[]; quoteSpans: { start: number; end: number }[] } {
+  const segments: string[] = [];
+  const quoteSpans: { start: number; end: number }[] = [];
+  let current = "";
+  let quote: string | null = null;
+  let openedAt = 0;
+  let escaped = false;
+  for (let index = 0; index < command.length; index += 1) {
+    const character = command[index]!;
+    if (quote !== null) {
+      current += character;
+      if (escaped) {
+        escaped = false;
+      } else if (character === "\\" || character === "`") {
+        escaped = true;
+      } else if (character === quote) {
+        quote = null;
+        quoteSpans.push({ start: openedAt, end: index });
+      }
+      continue;
+    }
+    if (character === '"' || character === "'") {
+      quote = character;
+      openedAt = index + 1;
+      current += character;
+      continue;
+    }
+    if (character === ";") {
+      segments.push(current);
+      current = "";
+      continue;
+    }
+    if (character === "&" && command[index + 1] === "&") {
+      segments.push(current);
+      current = "";
+      index += 1;
+      continue;
+    }
+    if (character === "|") {
+      segments.push(current);
+      current = "";
+      if (command[index + 1] === "|") index += 1;
+      continue;
+    }
+    if (character === "\n") {
+      segments.push(current);
+      current = "";
+      continue;
+    }
+    current += character;
+  }
+  segments.push(current);
+  return { segments, quoteSpans };
+}
+
+/** The same text with every balanced quoted argument dropped: a pattern is not a command. */
+export function stripQuoted(command: string): string {
+  const { segments } = scan(command);
+  return segments
+    .map((segment) => {
+      let out = "";
+      let quote: string | null = null;
+      let escaped = false;
+      for (const character of segment) {
+        if (quote !== null) {
+          if (escaped) escaped = false;
+          else if (character === "\\" || character === "`") escaped = true;
+          else if (character === quote) quote = null;
+          continue;
+        }
+        if (character === '"' || character === "'") {
+          quote = character;
+          continue;
+        }
+        out += character;
+      }
+      return out;
+    })
+    .join(" ");
+}
+
+function executableOf(segment: string): string | null {
+  const tokens = segment
+    .trim()
+    .split(/\s+/)
+    .map((token) => token.replace(/^[(&${@"']+/, ""))
+    .filter((token) => token.length > 0 && !/^(?:&|\$|sudo|\d+>|\d*>&\d)$/.test(token));
+  const first = tokens[0];
+  if (first === undefined) return null;
+  return (first.split(/[\\/]/).pop() ?? first).toLowerCase().replace(/\.exe$/, "");
+}
+
+function bodiesFrom(pattern: RegExp, segment: string): string[] {
+  const bodies: string[] = [];
+  for (const match of segment.matchAll(pattern)) {
+    const body = match[1] ?? match[2];
+    if (body !== undefined && body.trim().length > 0) bodies.push(body);
+  }
+  return bodies;
+}
+
+function executedText(segment: string, depth = 0): string {
+  const name = executableOf(segment);
+  if (name === null || READ_ONLY.has(name)) return "";
+  if (depth >= 4) return stripQuoted(segment);
+  // The wrapper's own text stays too: a `while` loop sits around the wrapper, not inside it.
+  const code = bodiesFrom(EVAL_BODY, segment);
+  const nested = bodiesFrom(SHELL_BODY, segment).map((body) => executedText(body, depth + 1));
+  return [stripQuoted(segment), ...code, ...nested].join("\n");
+}
+
+/**
+ * The parts of a command that actually run: each segment whose executable is not a read-only tool,
+ * its quoted arguments removed, with a shell wrapper or an `-e` body followed into.
+ */
+export function runnableText(command: string): string {
+  return scan(command)
+    .segments.map((segment) => executedText(segment))
+    .filter((text) => text.trim().length > 0)
+    .join("\n");
+}
 
 /**
  * What a single tool call was doing: a foreground CI watch, a sleep or status poll, or ordinary work.
@@ -49,10 +223,12 @@ const SLEEP_COMMAND = /\bStart-Sleep\b|\btimeout\s+\/t\s+\d|\bsleep\s+\d/i;
  */
 export function classifyCommand(command: string): WaitKind | null {
   if (command.trim() === "") return null;
-  if (CI_WATCH_COMMAND.test(command)) return "ci-watch";
-  if (/\bgh\s+pr\s+checks\b/i.test(command) && LOOP.test(command)) return "ci-watch";
-  if (SLEEP_COMMAND.test(command)) return "sleep";
-  if (LOOP.test(command) && STATUS_ENDPOINT.test(command)) return "sleep";
+  const runnable = runnableText(command);
+  if (runnable.trim() === "") return null;
+  if (CI_WATCH_COMMAND.test(runnable)) return "ci-watch";
+  if (GH_CHECKS.test(runnable) && LOOP.test(runnable)) return "ci-watch";
+  if (SLEEP_COMMAND.test(runnable)) return "sleep";
+  if (LOOP.test(runnable) && STATUS_ENDPOINT.test(runnable)) return "sleep";
   return null;
 }
 
@@ -734,3 +910,4 @@ function main(argv: readonly string[]): number {
 }
 
 if (import.meta.main) process.exit(main(process.argv.slice(2)));
+
