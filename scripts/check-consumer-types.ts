@@ -96,12 +96,24 @@ export interface CatalogSwap {
  * compiles the exact bytes a release would publish. `tarballs` maps package name to a path that is
  * valid from the games root.
  */
+/**
+ * Point every `@jgengine/*` catalog entry at the tarball packed from this checkout, so the adopter
+ * compiles the exact bytes a release would publish. `tarballs` maps package name to a path that is
+ * expressed relative to the adopter root.
+ *
+ * The same names go into `overrides` because a packed tarball keeps its own `^<version>` dependency
+ * ranges: `@jgengine/editor` depends on `@jgengine/core@^0.38.4`, and before the release is published
+ * that range resolves against a registry that does not have it yet. Without the override the install
+ * fails with `No version matching "^0.38.4"` and the release stops, which is what happened to 0.38.4's
+ * first publish run.
+ */
 export function swapCatalog(manifest: Record<string, unknown>, tarballs: ReadonlyMap<string, string>): CatalogSwap {
   const next = structuredClone(manifest) as Record<string, any>;
   const catalog = next.workspaces?.catalog as Record<string, string> | undefined;
   const swapped: CatalogSwap["swapped"] = [];
   const kept: string[] = [];
   if (catalog === undefined) return { manifest: next, swapped, kept };
+  const overrides = { ...(next.overrides as Record<string, string> | undefined) };
   for (const [name, current] of Object.entries(catalog)) {
     const tarball = tarballs.get(name);
     if (tarball === undefined) {
@@ -111,6 +123,10 @@ export function swapCatalog(manifest: Record<string, unknown>, tarballs: Readonl
     catalog[name] = tarball;
     swapped.push({ name, from: current, to: tarball });
   }
+  // A packed package the adopter does not name directly (`@jgengine/navbake`, reached through
+  // `@jgengine/editor`) still needs its `^<version>` range answered from the tarball.
+  for (const [name, tarball] of tarballs) overrides[name] = tarball;
+  if (Object.keys(overrides).length > 0) next.overrides = overrides;
   return { manifest: next, swapped, kept };
 }
 
@@ -396,11 +412,16 @@ export function runConsumerTypes(options: RunOptions): RunReport {
     return unknown(`the games checkout at ${games.checkout.path} (@ ${games.checkout.ref}) has an unreadable package.json: ${message(error)}`);
   }
   const catalog = ((original.workspaces as any)?.catalog ?? {}) as Record<string, string>;
-  const toPack = catalogPackages.filter((pkg) => Object.hasOwn(catalog, pkg.name));
-  const unbuilt = Object.keys(catalog).filter((name) => name.startsWith(SCOPE) && !toPack.some((pkg) => pkg.name === name));
+  // Every packed package is installed, not only the ones the adopter names: a catalog package's own
+  // manifest depends on the rest of the lockstep set (`@jgengine/editor` on `navbake` and `assets`),
+  // and an unpacked one would resolve against a registry that does not have this version yet.
+  const unbuilt = Object.keys(catalog).filter(
+    (name) => name.startsWith(SCOPE) && !catalogPackages.some((pkg) => pkg.name === name),
+  );
   if (unbuilt.length > 0) {
     return unknown(`this checkout has no build for ${unbuilt.join(", ")}, which the games catalog installs; run bun run build`);
   }
+  const toPack = catalogPackages;
 
   const packed = new Map<string, string>();
   try {
