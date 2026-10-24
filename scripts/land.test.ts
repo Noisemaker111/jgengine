@@ -28,9 +28,11 @@ import {
   parseLock,
   pickFragment,
   staleReason,
+  ownFragments,
+  subjectsBody,
   syncOntoBase,
 } from "./land";
-import type { Gh, GhCheck, LandIo, LockWait, Run } from "./land";
+import type { FragmentFile, Gh, GhCheck, LandIo, LockWait, Run } from "./land";
 
 test("parses flags with values and defaults the base to beta", () => {
   expect(parseArgs([])).toEqual({ base: "beta", watch: false });
@@ -79,7 +81,7 @@ test("builds the PR body from an explicit body file, then the fragment, then the
   expect(chooseBody({ bodyFile: null, summary: " summary " })).toBe("summary");
 });
 
-test("an explicit body file is used as written and the fragment is never read for it", () => {
+test("an explicit body file is used as written and no fragment is even read for it", () => {
   const read: string[] = [];
   const body = landBody({
     args: { base: "beta", bodyFile: ".scratch/body.md" },
@@ -89,41 +91,81 @@ test("an explicit body file is used as written and the fragment is never read fo
       read.push(path);
       return "the body I wrote\n";
     },
-    fragment: () => {
-      throw new Error("the fragment must not be read when a body file is given");
+    files: () => {
+      throw new Error("no fragment must be read when a body file is given");
     },
   });
   expect(body).toEqual({ text: "the body I wrote", explicit: true });
   expect(read).toEqual([".scratch/body.md"]);
 });
 
-test("with no body file the branch's changes/ fragment is the body, and a summary when there is none", () => {
-  const fragment = landBody({
+const FOREIGN: FragmentFile = {
+  path: "/repo/changes/agent-lane-someone-else.md",
+  text: "### Added\n\n- A stranger's note.\n",
+  mtimeMs: 900,
+};
+const OWN: FragmentFile = {
+  path: "/repo/changes/agent-lane-x.md",
+  text: "### Changed\n\n- The fragment.\n",
+  mtimeMs: 100,
+};
+
+test("a fragment another lane left in changes/ never reaches this PR's body", () => {
+  const logged: string[] = [];
+  const body = landBody({
     args: { base: "beta" },
     branch: "agent/lane-x",
     summary: "the last commit",
-    fragment: () => ({ text: "### Changed\n\n- The fragment.\n" }),
+    files: () => [FOREIGN, OWN],
+    added: () => ["scripts/land.ts", "changes/agent-lane-x.md"],
+    log: (line) => logged.push(line),
   });
-  expect(fragment).toEqual({ text: "### Changed\n\n- The fragment.", explicit: false });
-
-  const summary = landBody({
-    args: { base: "beta" },
-    branch: "agent/lane-x",
-    summary: " the last commit ",
-    fragment: () => null,
-  });
-  expect(summary).toEqual({ text: "the last commit", explicit: false });
+  expect(body).toEqual({ text: "### Changed\n\n- The fragment.", explicit: false });
+  expect(body.text).not.toContain("stranger");
+  expect(logged).toEqual([
+    "ignoring changes/agent-lane-someone-else.md: this branch's diff against origin/beta does not add it",
+  ]);
 });
 
-test("a blank body file falls back to the fragment and does not claim to be explicit", () => {
+test("with no fragment of its own the body lists the branch's commit subjects, never a stranger's note", () => {
+  const logged: string[] = [];
+  const body = landBody({
+    args: { base: "beta" },
+    branch: "agent/lane-x",
+    summary: "the last commit",
+    files: () => [FOREIGN],
+    added: () => ["scripts/land.ts"],
+    subjects: () => ["Add the resolver", "Test it"],
+    log: (line) => logged.push(line),
+  });
+  expect(body.text).toBe("Changed on this branch:\n- Add the resolver\n- Test it");
+  expect(body.text).not.toContain("stranger");
+  expect(logged).toContain("ignoring changes/agent-lane-someone-else.md: this branch's diff against origin/beta does not add it");
+  expect(logged).toContain("no changes/ fragment in this branch's diff; body lists its 2 commit subject(s)");
+});
+
+test("a blank body file falls back to the branch's own fragment and does not claim to be explicit", () => {
   const body = landBody({
     args: { base: "beta", bodyFile: ".scratch/empty.md" },
     branch: "agent/lane-x",
     summary: "the last commit",
     read: () => "  \n",
-    fragment: () => ({ text: "### Fixed\n\n- The fragment.\n" }),
+    files: () => [OWN],
+    added: () => ["changes/agent-lane-x.md"],
   });
-  expect(body).toEqual({ text: "### Fixed\n\n- The fragment.", explicit: false });
+  expect(body).toEqual({ text: "### Changed\n\n- The fragment.", explicit: false });
+});
+
+test("with no fragment and no commits the one-line summary is the body", () => {
+  const body = landBody({
+    args: { base: "beta" },
+    branch: "agent/lane-x",
+    summary: " the last commit ",
+    files: () => [],
+    added: () => [],
+    subjects: () => [],
+  });
+  expect(body).toEqual({ text: "the last commit", explicit: false });
 });
 
 /** A gh that answers from a script and records every call, so a landing can be replayed without GitHub. */
@@ -167,6 +209,15 @@ test("a reused PR has its stale body replaced with the explicit one", () => {
   expect(pr).toEqual({ number: 12, url: "https://example.test/12" });
   expect(calls).toContainEqual(["pr", "view", "12", "--json", "body"]);
   expect(calls).toContainEqual(["pr", "edit", "12", "--body", "the body I wrote"]);
+});
+
+test("fragments are split by what the diff adds, not by which one is newest", () => {
+  const split = ownFragments([FOREIGN, OWN], ["changes/agent-lane-x.md", "scripts/land.ts"]);
+  expect(split.own.map((file) => file.path)).toEqual([OWN.path]);
+  expect(split.ignored.map((file) => file.path)).toEqual([FOREIGN.path]);
+  expect(ownFragments([FOREIGN], ["changes/README.md"])).toEqual({ own: [], ignored: [FOREIGN] });
+  expect(subjectsBody([" one ", "", "two"])).toBe("Changed on this branch:\n- one\n- two");
+  expect(subjectsBody([])).toBe("");
 });
 
 test("a reused PR keeps a body land was not given, and one that already matches is not rewritten", () => {

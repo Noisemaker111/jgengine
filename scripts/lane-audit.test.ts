@@ -3,7 +3,7 @@ import { afterEach, expect, test } from "bun:test";
 import { mkdirSync, rmSync } from "node:fs";
 import { join, resolve } from "node:path";
 
-import { auditSession, classifyCommand, cwdFilter, directoryMatches, toolCallsFromMessages } from "./lane-audit";
+import { auditSession, attributeLane, classifyCommand, countReferences, cwdFilter, directoryMatches, pathForms, toolCallsFromMessages } from "./lane-audit";
 import type { ToolCall } from "./lane-audit";
 
 const SCRIPT = join(import.meta.dir, "lane-audit.ts");
@@ -43,10 +43,12 @@ function fixtureDatabase(): { path: string; workDirectory: string; waitDirectory
   const parent = "ses_parent";
   const workDirectory = "C:/repo/.claude/worktrees/lane-work";
   const waitDirectory = "C:/repo/.claude/worktrees/lane-wait";
+  // Both children record the directory of the agent that spawned them, which is the real shape of a
+  // subagent session: the worktree they worked in appears only in their own commands.
   const sessions = [
     { id: parent, parent_id: null, title: "Coordinator", directory: "C:/repo", updated: T0 + 40 * MINUTE },
-    { id: "ses_work", parent_id: parent, title: "Lane: pure work", directory: workDirectory, updated: T0 + 10 * MINUTE },
-    { id: "ses_wait", parent_id: parent, title: "Lane: sleepy", directory: waitDirectory, updated: T0 + 10 * MINUTE },
+    { id: "ses_work", parent_id: parent, title: "Lane: pure work", directory: "C:/repo", updated: T0 + 10 * MINUTE },
+    { id: "ses_wait", parent_id: parent, title: "Lane: sleepy", directory: "C:/repo", updated: T0 + 10 * MINUTE },
   ];
   for (const session of sessions) {
     database.run(
@@ -55,14 +57,14 @@ function fixtureDatabase(): { path: string; workDirectory: string; waitDirectory
     );
   }
   const work = [
-    message(0, [{ command: "bun test packages/core", ms: 4 * MINUTE, startedAt: T0 + 1_000 }]),
-    message(1, [{ command: "gh run list --limit 5", ms: 2 * MINUTE, startedAt: T0 + 5 * MINUTE }]),
+    message(0, [{ command: `cd ${workDirectory} && bun test packages/core`, ms: 4 * MINUTE, startedAt: T0 + 1_000 }]),
+    message(1, [{ command: `cd ${workDirectory} && gh run list --limit 5`, ms: 2 * MINUTE, startedAt: T0 + 5 * MINUTE }]),
   ];
   // 180 s of a 600 s span is a third of the lane spent on a clock.
   const wait = [
     message(0, [
-      { command: "Start-Sleep -Seconds 150; gh pr view 12 --json state", ms: 180_000, startedAt: T0 + 1_000 },
-      { command: "bun run check-types", ms: 4 * MINUTE, startedAt: T0 + 200_000 },
+      { command: `cd ${waitDirectory}; Start-Sleep -Seconds 150; gh pr view 12 --json state`, ms: 180_000, startedAt: T0 + 1_000 },
+      { command: `cd ${waitDirectory}; bun run check-types`, ms: 4 * MINUTE, startedAt: T0 + 200_000 },
     ]),
   ];
   work.forEach((data, seq) =>
@@ -154,6 +156,18 @@ test("a cwd selects the lanes under it", () => {
   expect(cwdFilter(".claude/worktrees/lane-work")).toBe(resolve(".claude/worktrees/lane-work"));
 });
 
+test("a path is counted once per mention, in either slash form, and a sibling is not this lane", () => {
+  const target = "C:\\repo\\.claude\\worktrees\\lane-attribution";
+  expect(pathForms(target)[0]).toBe("c:/repo/.claude/worktrees/lane-attribution");
+  expect(countReferences([`cd ${target} && bun test`], target)).toBe(1);
+  expect(countReferences([`cd C:/repo/.claude/worktrees/lane-attribution/scripts; bun test`], target)).toBe(1);
+  // The whole path and two tails appear in one command and are still one mention.
+  expect(countReferences([`cd .claude/worktrees/lane-attribution && ls ${target}`], target)).toBe(2);
+  expect(countReferences([`cd .claude/worktrees/lane-attribution && bun test`], target)).toBe(1);
+  expect(countReferences([`cd .claude/worktrees/lane-attribution-2 && bun test`], target)).toBe(0);
+  expect(countReferences(["bun test packages/core"], target)).toBe(0);
+});
+
 test("--json carries the documented shape and percentile", () => {
   const fixture = fixtureDatabase();
   const result = run(["--db", fixture.path, "--hours", "40", "--json"]);
@@ -182,7 +196,8 @@ test("--json carries the documented shape and percentile", () => {
     ].sort(),
   );
   expect(worst!.title).toBe("Lane: sleepy");
-  expect(worst!.directory).toBe(fixture.waitDirectory);
+  // A child session records the directory its parent ran in, so this is the repo root, not the lane.
+  expect(worst!.directory).toBe("C:/repo");
   expect(worst!.spanMs).toBe(600_000);
   expect(worst!.sleepMs).toBe(180_000);
   expect(worst!.ciWatchMs).toBe(0);
@@ -190,21 +205,98 @@ test("--json carries the documented shape and percentile", () => {
   expect(worst!.percentile).toBe(100);
   expect(worst!.calls).toBe(2);
   expect(worst!.longest).toEqual([
-    { ms: 240_000, command: "bun run check-types" },
-    { ms: 180_000, command: "Start-Sleep -Seconds 150; gh pr view 12 --json state" },
+    { ms: 240_000, command: "cd C:/repo/.claude/worktrees/lane-wait; bun run check-types" },
+    { ms: 180_000, command: "cd C:/repo/.claude/worktrees/lane-wait; Start-Sleep -Seconds 150; gh pr view 12 --json state" },
   ]);
   expect(document.sessions[1]!.percentile).toBe(0);
   expect(document.totals).toEqual({ spanMs: 1_200_000, sleepMs: 180_000, ciWatchMs: 0 });
   expect(document.population).toBe(2);
 });
 
-test("--cwd narrows the rows but keeps the window as the population", () => {
+test("--cwd finds the lane whose own commands name the worktree, and prints why", () => {
   const fixture = fixtureDatabase();
   const result = run(["--db", fixture.path, "--hours", "40", "--cwd", fixture.workDirectory, "--json"]);
   expect(result.code).toBe(0);
-  const document = JSON.parse(result.stdout) as { sessions: { id: string; percentile: number }[] };
+  const document = JSON.parse(result.stdout) as {
+    sessions: { id: string; percentile: number }[];
+    population: number;
+    attribution: { session: string; basis: string; references: number; reason: string };
+  };
   expect(document.sessions.map((session) => session.id)).toEqual(["ses_work"]);
   expect(document.sessions[0]!.percentile).toBe(0);
+  expect(document.population).toBe(2);
+  expect(document.attribution.session).toBe("ses_work");
+  expect(document.attribution.basis).toBe("commands");
+  expect(document.attribution.references).toBe(2);
+  expect(document.attribution.reason).toContain("attributed ses_work (2 references to");
+  // The same reason is printed for a person, so a lane that reads its row also reads why it is its row.
+  expect(result.stderr).toContain(`lane:audit: attributed ses_work (2 references to ${fixture.workDirectory})`);
+});
+
+test("a worktree no session names exits non-zero naming the path it searched", () => {
+  const fixture = fixtureDatabase();
+  const absent = "C:/repo/.claude/worktrees/lane-absent";
+  const result = run(["--db", fixture.path, "--hours", "40", "--cwd", absent, "--json"]);
+  expect(result.code).toBe(1);
+  expect(result.stdout.trim()).toBe("");
+  expect(result.stderr).toContain(absent);
+  expect(result.stderr).toContain("no session in the window names");
+  expect(result.stderr).toContain("searched 2 child session(s)");
+});
+
+test("a session that only records the directory is used, and the weaker basis is said", () => {
+  const attribution = attributeLane("C:/repo/.claude/worktrees/lane-quiet", [
+    {
+      id: "ses_quiet",
+      title: "Lane: quiet",
+      directory: "C:/repo/.claude/worktrees/lane-quiet",
+      timeUpdated: T0,
+      waitingMs: 0,
+      texts: ["bun test packages/core"],
+    },
+    { id: "ses_other", title: "Lane: other", directory: "C:/repo", timeUpdated: T0, waitingMs: 0, texts: [] },
+  ]);
+  expect(attribution.session).toBe("ses_quiet");
+  expect(attribution.basis).toBe("directory");
+  expect(attribution.reason).toContain("no command names C:/repo/.claude/worktrees/lane-quiet");
+});
+
+test("an equal strongest tie picks the worst-waiting lane and prints the candidates", () => {
+  const target = "C:/repo/.claude/worktrees/lane-tie";
+  const lane = (id: string, waitingMs: number, texts: string[]) => ({
+    id,
+    title: id,
+    directory: "C:/repo",
+    timeUpdated: T0,
+    waitingMs,
+    texts,
+  });
+  const attribution = attributeLane(target, [
+    lane("ses_patient", 0, [`cd ${target} && bun test`, `cd ${target} && bun run gen`]),
+    lane("ses_slept", 420_000, [`cd ${target} && Start-Sleep -Seconds 420`, `cd ${target} && bun test`]),
+  ]);
+  expect(attribution.ambiguous).toBe(true);
+  expect(attribution.session).toBe("ses_slept");
+  expect(attribution.reason).toContain("ambiguous: 2 sessions each name C:/repo/.claude/worktrees/lane-tie 2 time(s)");
+  expect(attribution.reason).toContain("ses_slept 7.0m waiting");
+  expect(attribution.reason).toContain("picked ses_slept, the worst-waiting");
+});
+
+test("the most-referencing lane wins over a lane that mentions the path once", () => {
+  const target = "C:/repo/.claude/worktrees/lane-attribution";
+  const attribution = attributeLane(target, [
+    { id: "ses_reader", title: "read it", directory: "C:/repo", timeUpdated: T0, waitingMs: 0, texts: [`ls ${target}`] },
+    {
+      id: "ses_lane",
+      title: "ran in it",
+      directory: "C:/repo",
+      timeUpdated: T0 - MINUTE,
+      waitingMs: 0,
+      texts: [`cd ${target} && bun test`, `cd ${target} && bun run land`],
+    },
+  ]);
+  expect(attribution.session).toBe("ses_lane");
+  expect(attribution.ambiguous).toBe(false);
 });
 
 test("--fail-on-waiting exits 2 on a sleep and 0 without one", () => {

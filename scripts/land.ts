@@ -5,10 +5,16 @@
 //   bun run land --title "Menus" --body-file .scratch/body.md
 //
 // It refuses on `main` or a dirty tree, pushes, rebases onto the base, reuses
-// an open PR or opens one (body: --body-file when given, else the newest
-// changes/ fragment, else a one-line summary), runs --verify, arms auto-merge
-// and exits in seconds: it prints the PR URL and `bun run ci:status --pr <n>`,
-// the one command that answers status later. It never polls and never sleeps.
+// an open PR or opens one (body: --body-file when given, else the `changes/`
+// fragment this branch's own diff adds, else the branch's commit subjects),
+// runs --verify, arms auto-merge and exits in seconds: it prints the PR URL and
+// `bun run ci:status --pr <n>`, the one command that answers status later. It
+// never polls and never sleeps.
+//
+// `changes/` is shared by every lane on a branch's base, so a fragment there is
+// only this PR's when `git diff origin/<base>...HEAD` adds it; land names the
+// ones it skips, since a body built from a stranger's note claims work the diff
+// does not contain.
 //
 // Waiting is `bun run land:queue`'s job, and only its: a branch hands off when
 // land arms auto-merge (or, where the repo cannot arm it, labels the PR
@@ -113,20 +119,60 @@ export function pickFragment(
   return newest === undefined ? null : { path: newest.path, text: newest.text };
 }
 
-export function readNewestFragment(branch: string, dir = join(root, "changes")): { path: string; text: string } | null {
+export interface FragmentFile {
+  path: string;
+  text: string;
+  mtimeMs: number;
+}
+
+/** Every `changes/` fragment in this checkout, including other lanes' notes that share the directory. */
+export function fragmentFiles(dir = join(root, "changes")): FragmentFile[] {
   let names: string[];
   try {
     names = readdirSync(dir);
   } catch {
-    return null;
+    return [];
   }
-  const files = names
-    .filter((name) => FRAGMENT_PATTERN.test(`changes/${name}`))
-    .map((name) => {
-      const path = join(dir, name);
-      return { path, text: readFileSync(path, "utf8"), mtimeMs: statSync(path).mtimeMs };
-    });
-  return pickFragment(files, branch);
+  return names.filter((name) => FRAGMENT_PATTERN.test(`changes/${name}`)).map((name) => {
+    const path = join(dir, name);
+    return { path, text: readFileSync(path, "utf8"), mtimeMs: statSync(path).mtimeMs };
+  });
+}
+
+/**
+ * Split the fragments on disk into the ones this branch's own diff adds and the strangers'. A
+ * fragment is named after nothing and shared through `changes/`, so another lane's note sits in the
+ * same directory; the diff is the only thing that says which notes describe this PR.
+ */
+export function ownFragments(
+  files: readonly FragmentFile[],
+  added: readonly string[],
+): { own: FragmentFile[]; ignored: FragmentFile[] } {
+  const mine = new Set(
+    added.filter((path) => FRAGMENT_PATTERN.test(path.trim())).map((path) => basename(path.trim())),
+  );
+  return {
+    own: files.filter((file) => mine.has(basename(file.path))),
+    ignored: files.filter((file) => !mine.has(basename(file.path))),
+  };
+}
+
+/** The body a branch with no fragment gets: its own commit subjects, never another lane's note. */
+export function subjectsBody(subjects: readonly string[]): string {
+  const clean = subjects.map((subject) => subject.trim()).filter((subject) => subject.length > 0);
+  if (clean.length === 0) return "";
+  return ["Changed on this branch:", ...clean.map((subject) => `- ${subject}`)].join("\n");
+}
+
+/** Paths this branch adds or changes against `origin/<base>`, as git reports them. */
+export function diffPaths(base: string, git: Git = (args) => run("git", args)): string[] {
+  const result = git(["diff", "--name-only", `origin/${base}...HEAD`]);
+  return result.status === 0 ? result.stdout.split("\n").map((line) => line.trim()).filter(Boolean) : [];
+}
+
+export function branchSubjects(base: string, git: Git = (args) => run("git", args)): string[] {
+  const result = git(["log", "--format=%s", `origin/${base}..HEAD`]);
+  return result.status === 0 ? result.stdout.split("\n").map((line) => line.trim()).filter(Boolean) : [];
 }
 
 /** An explicit body file wins; the fragment fills in only when land was given no body. */
@@ -149,23 +195,43 @@ export interface PrBody {
 }
 
 /**
- * The body for this PR: `--body-file` if land was given one, else the newest changes/ fragment,
- * else a one-line summary. The fragment is not even read once a non-blank body file is supplied.
+ * The body for this PR: `--body-file` if land was given one, else the branch's own `changes/`
+ * fragment (one its diff adds), else its commit subjects, else a one-line summary. A fragment another
+ * lane left in the shared directory is named and skipped, so the body never claims work the diff lacks.
  */
 export function landBody(options: {
   args: LandArgs;
   branch: string;
   summary: string;
   read?: (path: string) => string;
-  fragment?: (branch: string) => { text: string } | null;
+  files?: () => readonly FragmentFile[];
+  /** Paths this branch's diff against origin/<base> adds; a fragment not among them is not this PR's. */
+  added?: () => readonly string[];
+  subjects?: () => readonly string[];
+  log?: (line: string) => void;
 }): PrBody {
   const { args, branch, summary } = options;
   const read = options.read ?? ((path: string) => readFileSync(path, "utf8"));
-  const readFragment = options.fragment ?? readNewestFragment;
+  const log = options.log ?? (() => {});
   const bodyFile = args.bodyFile === undefined ? null : read(args.bodyFile);
-  const explicit = (bodyFile?.trim() ?? "").length > 0;
-  const fragment = explicit ? null : (readFragment(branch)?.text ?? null);
-  return { text: chooseBody({ bodyFile, fragment, summary }), explicit };
+  if ((bodyFile?.trim() ?? "").length > 0) return { text: chooseBody({ bodyFile, summary }), explicit: true };
+
+  const files = (options.files ?? (() => fragmentFiles()))();
+  const added = (options.added ?? (() => diffPaths(args.base)))();
+  const { own, ignored } = ownFragments(files, added);
+  for (const file of ignored) {
+    log(`ignoring changes/${basename(file.path)}: this branch's diff against origin/${args.base} does not add it`);
+  }
+  const fragment = pickFragment(own, branch);
+  if (fragment !== null) return { text: fragment.text.trim(), explicit: false };
+
+  const subjects = (options.subjects ?? (() => branchSubjects(args.base)))();
+  const commits = subjectsBody(subjects);
+  if (commits.length > 0) {
+    log(`no changes/ fragment in this branch's diff; body lists its ${subjects.length} commit subject(s)`);
+    return { text: commits, explicit: false };
+  }
+  return { text: summary.trim(), explicit: false };
 }
 
 export interface GhCheck {
@@ -784,7 +850,15 @@ function prepare(args: LandArgs, branch: string, io: LandIo): PrRef | number {
   io.log(`pushed ${branch}${sync.rebased ? ` and rebased it onto origin/${args.base}` : ""}`);
 
   const summary = io.git(["log", "-1", "--format=%s"]).stdout.trim() || branch;
-  const pr = ensurePr({ args, branch, summary, body: landBody({ args, branch, summary }), gh: io.gh, log: io.log });
+  const body = landBody({
+    args,
+    branch,
+    summary,
+    added: () => diffPaths(args.base, io.git),
+    subjects: () => branchSubjects(args.base, io.git),
+    log: io.log,
+  });
+  const pr = ensurePr({ args, branch, summary, body, gh: io.gh, log: io.log });
   return pr ?? EXIT_COULD_NOT_MERGE;
 }
 
