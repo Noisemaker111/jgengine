@@ -10,6 +10,7 @@ import { beginFallbackSeam, reportFallbackSeam } from "@jgengine/core/devtools/f
 import { createModelVariantSelector, type ModelVariantSelector } from "@jgengine/core/world/modelLod";
 
 import { CAMERA_POST_FRAME_PRIORITY } from "../camera/cameraRigs";
+import { variantLevelModel } from "../render/singleVariantLod";
 import { buildScatterProxy } from "./scatterProxies";
 import { buildScatterModelSources, disposeScatterModelSources, type ScatterModelSource } from "./scatterModels";
 import { writeScatterVariantLevel } from "./scatterVariants";
@@ -161,9 +162,8 @@ function ScatterVariantLevel({ model, url, level, selector, batches }: {
     loader.setMeshoptDecoder(MeshoptDecoder);
   });
   const { sources, root } = useMemo(() => {
-    const levelModel: ModelConfig = { ...model, url, variants: undefined };
-    return buildScatterModelSources(gltf.scene, levelModel);
-  }, [gltf, model, url]);
+    return buildScatterModelSources(gltf.scene, variantLevelModel(model, level));
+  }, [gltf, model, level]);
   useEffect(() => () => disposeScatterModelSources(root), [root]);
   return (
     <>

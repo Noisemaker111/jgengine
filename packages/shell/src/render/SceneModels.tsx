@@ -19,7 +19,7 @@ import { useFootIk } from "./useFootIk";
 import { resolveRigNode } from "./rigNode";
 import { PartMotionRig } from "./PartMotion";
 import { syncSpriteFrame } from "./spriteRender";
-import { singleVariantLevel, singleVariantModel } from "./singleVariantLod";
+import { singleVariantLevel, variantLevelModel } from "./singleVariantLod";
 import { applyMaterialOverride } from "../materialOverride";
 import {
   applyPaintTextureToMaterials,
@@ -192,7 +192,7 @@ export function SingleVariantModel({
     const next = singleVariantLevel(selector, instanceId, state.camera, placement, cameraAt, probe);
     if (next !== level) setLevel(next);
   });
-  const drawn = useMemo(() => singleVariantModel(model, level), [model, level]);
+  const drawn = useMemo(() => variantLevelModel(model, level), [model, level]);
   // The near level owns the measured bounds and collision mesh, like the batched path: a decimated
   // asset must not redefine what the catalog entry collides as.
   return <EntityModel model={drawn} instanceId={instanceId} measure={level === 0 ? measure : undefined} />;
