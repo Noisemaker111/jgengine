@@ -1,3 +1,3 @@
 ### Changed
 
-- Measurement line batch4.
+- Measurement note batch4: a prose-only change, the shape every lane ships a note in.
