@@ -10,7 +10,7 @@
  * need is exempted by a line comment naming the reason: `// walk-ok: <reason>`, on the call's line
  * or the comment line directly above it.
  */
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -68,17 +68,22 @@ export function findRecursiveWalks(source: string): RecursiveWalk[] {
 }
 
 function walk(dir: string, out: string[] = []): string[] {
-  let entries: string[];
+  let entries: import("node:fs").Dirent[];
   try {
-    entries = readdirSync(dir);
+    entries = readdirSync(dir, { withFileTypes: true });
   } catch {
     return out;
   }
   for (const entry of entries) {
-    if (SKIP_DIRS.has(entry) || (entry.startsWith(".") && entry !== ".claude")) continue;
-    const path = join(dir, entry);
-    if (statSync(path).isDirectory()) walk(path, out);
-    else out.push(path);
+    if (SKIP_DIRS.has(entry.name) || (entry.name.startsWith(".") && entry.name !== ".claude")) continue;
+    const path = join(dir, entry.name);
+    // A checked-out symlink can point at a path this platform does not have.
+    try {
+      if (entry.isDirectory()) walk(path, out);
+      else if (entry.isFile()) out.push(path);
+    } catch {
+      continue;
+    }
   }
   return out;
 }

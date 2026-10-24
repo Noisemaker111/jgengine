@@ -50,6 +50,11 @@ export interface FindOptions {
   files?: boolean;
   /** Stop after this many matches. */
   limit?: number;
+  /**
+   * Read files git ignores too. A search inside `.scratch/` is under the repository's own ignore
+   * rules, which is right for a lane and wrong for a fixture; only the tests ask for this.
+   */
+  noIgnore?: boolean;
 }
 
 export interface FindResult {
@@ -72,6 +77,7 @@ export function kindGlobs(kind: readonly string[]): string[] {
 export function ripgrepArgs(options: FindOptions): string[] {
   const args = ["--no-heading", "--line-number", "--color", "never", "--no-messages"];
   if (options.files === true) args.push(options.pattern === undefined ? "--files" : "--files-with-matches");
+  if (options.noIgnore === true) args.push("--no-ignore-vcs");
   for (const glob of skipGlobs()) args.push("--glob", glob);
   for (const glob of kindGlobs(options.kind ?? [])) args.push("--glob", glob);
   for (const glob of options.glob ?? []) args.push("--glob", glob);

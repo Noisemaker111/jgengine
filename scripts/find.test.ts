@@ -62,6 +62,8 @@ test("the ripgrep command skips dependencies, history, other checkouts and build
 test("names are the only difference between a content search and a listing", () => {
   expect(ripgrepArgs({ pattern: "needle", files: true })).toContain("--files-with-matches");
   expect(ripgrepArgs({ files: true })).toContain("--files");
+  expect(ripgrepArgs({ pattern: "needle" })).not.toContain("--no-ignore-vcs");
+  expect(ripgrepArgs({ pattern: "needle", noIgnore: true })).toContain("--no-ignore-vcs");
   expect(skipGlobs(["node_modules"])).toEqual(["!**/node_modules/**"]);
   expect(kindGlobs(["ts", ".tsx"])).toEqual(["*.ts", "*.tsx"]);
 });
@@ -81,10 +83,10 @@ test("finds file:line:match, skips node_modules, and honours --kind", () => {
     "packages/core/node_modules/dep/index.js": "hubLayout;\n",
     "docs/notes.md": "no mention\n",
   });
-  expect(search({ pattern: "hubLayout", in: root }).lines.sort()).toEqual(["packages/core/a.test.ts:1:hubLayout();", "packages/core/a.ts:1:export const hubLayout = 1;", "packages/core/b.tsx:1:hubLayout;"]);
-  expect(search({ pattern: "hubLayout", in: root, kind: ["tsx"] }).lines).toEqual(["packages/core/b.tsx:1:hubLayout;"]);
-  expect(search({ pattern: "hubLayout", in: root, glob: ["*.test.ts"] }).lines).toEqual(["packages/core/a.test.ts:1:hubLayout();"]);
-  expect(search({ pattern: "hubLayout", in: root, files: true }).lines.sort()).toEqual(["packages/core/a.test.ts", "packages/core/a.ts", "packages/core/b.tsx"]);
+  expect(search({ pattern: "hubLayout", in: root, noIgnore: true }).lines.sort()).toEqual(["packages/core/a.test.ts:1:hubLayout();", "packages/core/a.ts:1:export const hubLayout = 1;", "packages/core/b.tsx:1:hubLayout;"]);
+  expect(search({ pattern: "hubLayout", in: root, noIgnore: true, kind: ["tsx"] }).lines).toEqual(["packages/core/b.tsx:1:hubLayout;"]);
+  expect(search({ pattern: "hubLayout", in: root, noIgnore: true, glob: ["*.test.ts"] }).lines).toEqual(["packages/core/a.test.ts:1:hubLayout();"]);
+  expect(search({ pattern: "hubLayout", in: root, noIgnore: true, files: true }).lines.sort()).toEqual(["packages/core/a.test.ts", "packages/core/a.ts", "packages/core/b.tsx"]);
 });
 
 test("--files with no pattern lists names by glob, which is what a tree walk was for", () => {
@@ -94,12 +96,12 @@ test("--files with no pattern lists names by glob, which is what a tree walk was
     "packages/editor/b.test.ts": "",
     "packages/core/node_modules/dep/c.test.ts": "",
   });
-  expect(search({ files: true, in: root, kind: ["ts"] }).lines.sort()).toEqual(["packages/core/a.test.ts", "packages/core/a.ts", "packages/editor/b.test.ts"]);
-  expect(search({ files: true, in: root, glob: ["*.test.ts"] }).lines.length).toBe(2);
+  expect(search({ files: true, in: root, noIgnore: true, kind: ["ts"] }).lines.sort()).toEqual(["packages/core/a.test.ts", "packages/core/a.ts", "packages/editor/b.test.ts"]);
+  expect(search({ files: true, in: root, noIgnore: true, glob: ["*.test.ts"] }).lines.length).toBe(2);
 });
 
 test("no match is an empty answer, not an error, and a bad directory says so", () => {
   const root = workspace({ "a.ts": "nothing relevant\n" });
-  expect(search({ pattern: "needle", in: root }).lines).toEqual([]);
+  expect(search({ pattern: "needle", in: root, noIgnore: true }).lines).toEqual([]);
   expect(() => search({ pattern: "needle", in: join(root, "missing") })).toThrow("--in is not a directory");
 });
