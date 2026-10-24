@@ -16,7 +16,7 @@
  * remains available. `--size half` is the cheap iteration mode; `--quick` is the
  * cheaper one (960x540, one settled frame in a 2s window, no video, no perf pass).
  */
-import { existsSync, mkdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync, appendFileSync } from "node:fs";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 import {
   CdpSession,
@@ -57,8 +57,9 @@ import {
   splitQuickFlag,
 } from "./capture-preset";
 import { driveInputPointExpr } from "../packages/jgengine/src/templates/driveInput";
-import { CAPTURE_FLAGS, captureFlagHelp, describeStep, describeStepFile, parseCaptureArgs, parseStepFile, rejectMixedStepFlags, type CaptureStep } from "../packages/jgengine/src/templates/captureArgs";
+import { CAPTURE_FLAGS, captureFlagHelp, describeFlow, describeStepFile, parseCaptureArgs, parseStepFile, rejectMixedStepFlags, type CaptureStep, type FlowFile, type FlowSource } from "../packages/jgengine/src/templates/captureArgs";
 import { awaitDriveCondition, awaitGameView, holdDriveInput, type DriveConditionClock, type DriveInputDeps, type DriveSession } from "../packages/jgengine/src/templates/driveSteps";
+import { evaluateAssertStep, runDriveSteps, type DriveStepRecord } from "./driveRun";
 import { gameSurfaceCenter, mouseButtonForCode } from "../packages/jgengine/src/templates/gameSurfaceFocus";
 import { dispatchClickAt, parseClickAt } from "../packages/jgengine/src/clickInput";
 import { decodePng } from "./png-reader";
@@ -125,8 +126,14 @@ type Args = {
   quick: boolean;
   /** Step file this run reads, when it reads one. */
   stepsFile?: string;
+  /** Named flow this run reads, when it reads one. */
+  flow?: string;
+  /** List the game's flows and exit. */
+  flows: boolean;
   /** Parse and print the step file, then exit without a browser. */
   check: boolean;
+  /** Also write one JSONL line per step here. */
+  log?: string;
 };
 
 /** GitHub's camo image proxy stops serving around 5 MB — stay safely under it
@@ -134,6 +141,7 @@ type Args = {
 const RECORD_BUDGET_BYTES = 4_500_000;
 
 const HELP = `bun run drive <gameId> --steps <file>   (scripted drive: checked, no flags)
+bun run drive <gameId> --flow <name>     (a named route from <game>/proofs/flows/)
 bun run drive <gameId> [options] --click "TEXT" --shot name ...   (one-off drive)
 
 ${captureFlagHelp("drive", "engine", CAPTURE_FLAGS)}
@@ -146,6 +154,8 @@ Script a drive:
     { "click": "Free skirmish",
       "before": { "is": "menu.ready", "timeoutMs": 15000 },
       "after":  { "is": "skirmish.started" } },
+    { "assert": "skirmish.units.length", "is": 4,
+      "note": "arrival means four units on the field, not that the click landed" },
     { "key": "KeyH", "ms": 120,
       "before": { "is": "selection.count >= 2" },
       "after":  { "is": "squad.formationCount >= 2" } },
@@ -158,12 +168,29 @@ Script a drive:
   expressions polled every 50ms (default timeout 15000ms, per-condition timeoutMs). A
   timeout stops the run at that step and prints the index, the expression, the last
   value and the elapsed time; nothing after it runs.
+  An "assert" step evaluates its expression once and compares it to "is" (default true).
+  A mismatch stops the run there — no later key, click or shot — and prints the index,
+  the expression, the expected and actual value, and the elapsed ms. Assert arrival
+  ("the skirmish started, four units present"), never that a click happened.
   "shot" is a bare name: it lands in <game>/docs/<name>.png, never an absolute path,
   and a site target lands in apps/web/docs/. Coordinates are [x, y] numbers.
   "waitFor": "<expression>" is sugar for a step with only a before condition.
   A fixed "wait" still parses for CI compatibility, but it is the last resort: a guessed
   sleep either wastes the difference or races the frame. Say what must be true instead.
   --steps cannot be mixed with step flags (--click, --key, --wait, --shot, ...).
+
+Named flows:
+  A flow is a step file at <game>/proofs/flows/<name>.json holding the route every proof
+  needs once: to-menu, to-skirmish, to-level-1. Run it whole, or include it:
+    bun run drive ember-command --flow to-skirmish
+    bun run drive ember-command --flows                       # names, step counts, asserts
+    { "flow": "to-skirmish" }                                 # inside any step file
+  A flow's asserts are its contract: the route is done when they pass, so a flow that
+  only clicks is unfinished. Includes nest up to 4 deep; a repeated name is rejected as
+  a cycle. Both errors name the flow and the chain.
+  Every run prints one line per step (#3 key KeyH 120ms ok before 18ms after 21ms total
+  810ms) and a passed/failed/wall/virtual summary; --log <path> also writes JSONL,
+  one { index, name, kind, ms, pass, detail } object per step.
 
 Notes:
   --probe before and after a --key hold proves movement by RPC on a low-fps headless page.
@@ -183,9 +210,36 @@ Warm loop:
   bun run drive <game> --click START --shot after --connect <port> --quick
 `;
 
+/** The game (or site) project a run targets: its flows, docs/ and evidence live under it. */
+function projectDirOf(args: Args): string {
+  if (args.game === "url") return process.cwd();
+  return join(resolve(import.meta.dir, ".."), args.site === undefined ? "Games" : "apps/web", args.site === undefined ? args.game : args.site);
+}
+
+/** Flow names in a game's proofs/flows folder, sorted; empty when nothing is written yet. */
+function listFlowNames(dir: string): string[] {
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir).filter((name) => name.endsWith(".json")).map((name) => name.slice(0, -".json".length)).sort();
+}
+
+/** Read a named flow; a missing name lists the ones that do exist, so the next agent picks a route instead of guessing. */
+function flowSource(dir: string): FlowSource {
+  return (name: string): FlowFile | undefined => {
+    const path = join(dir, name + ".json");
+    if (!existsSync(path)) {
+      const available = listFlowNames(dir);
+      throw new Error("no flow named \"" + name + "\" in " + dir + " (" + (available.length === 0 ? "no flows written yet" : "available: " + available.join(", ")) + ")");
+    }
+    try {
+      return { json: JSON.parse(readFileSync(path, "utf8")), source: path };
+    } catch (error) {
+      throw new Error("flow \"" + name + "\" at " + path + " is not valid JSON (" + (error instanceof Error ? error.message : String(error)) + ")");
+    }
+  };
+}
+
 /** Map the shared capture command line (packages/jgengine/src/templates/captureArgs.ts) onto drive's options. */
-function parseArgs(argv: string[]): Args {
-  // `--headed` is parsed here, not in CAPTURE_FLAGS: the scaffold's drive.mjs has no local window to
+function parseArgs(argv: string[]): Args {  // `--headed` is parsed here, not in CAPTURE_FLAGS: the scaffold's drive.mjs has no local window to
   // show, so the flag stays engine-only instead of parsing there and doing nothing.
   const quick = splitQuickFlag("drive", argv);
   const headed = quick.argv.includes("--headed");
@@ -235,10 +289,17 @@ function parseArgs(argv: string[]): Args {
     headed,
     quick: quick.quick,
     stepsFile: str("steps"),
+    flow: str("flow"),
+    flows: o.flows === true,
     check: o.check === true,
+    log: str("log"),
   };
   if (args.help) return args;
-  if (args.check && args.stepsFile === undefined) throw new Error("drive: --check needs --steps <file>");
+  if (args.check && args.stepsFile === undefined && args.flow === undefined) throw new Error("drive: --check needs --steps <file> or --flow <name>");
+  if (args.flow !== undefined && args.stepsFile !== undefined) throw new Error("drive: --flow runs a committed flow; drop --steps (or --flow and keep the file)");
+  if (args.flows && (args.flow !== undefined || args.stepsFile !== undefined || args.steps.length > 0)) {
+    throw new Error("drive: --flows only lists the game's flows; drop the other step options");
+  }
   assertQuickIsIterationOnly({
     tool: "drive",
     quick: args.quick,
@@ -275,18 +336,32 @@ function parseArgs(argv: string[]): Args {
   if (args.site !== undefined && !args.timeoutExplicit) {
     args.timeoutMs = process.platform === "linux" || process.env.CI !== undefined ? 30_000 : 10_000;
   }
-  if (args.stepsFile !== undefined) {
+  if (args.stepsFile !== undefined || args.flow !== undefined) {
     rejectMixedStepFlags("drive", quick.argv, CAPTURE_FLAGS);
-    if (!existsSync(resolve(args.stepsFile))) throw new Error("drive: no step file at " + args.stepsFile);
+    const projectDir = projectDirOf(args);
+    const docs = join(projectDir, "docs");
+    const flows = flowSource(join(projectDir, "proofs", "flows"));
     let raw: unknown;
-    try {
-      raw = JSON.parse(readFileSync(resolve(args.stepsFile), "utf8"));
-    } catch (error) {
-      throw new Error("drive: " + args.stepsFile + " is not valid JSON (" + (error instanceof Error ? error.message : String(error)) + ")");
+    let source: string;
+    if (args.flow !== undefined) {
+      if (args.flow.includes("/") || args.flow.includes("\\") || args.flow.endsWith(".json")) {
+        throw new Error(`drive: --flow takes a bare name; the file lives at ${join(projectDir, "proofs", "flows", "<name>.json")} (got "${args.flow}")`);
+      }
+      const file = flows(args.flow);
+      if (file === undefined) throw new Error("drive: no flow at " + join(projectDir, "proofs", "flows", args.flow + ".json"));
+      raw = file.json;
+      source = file.source;
+      args.stepsFile = source;
+    } else {
+      if (!existsSync(resolve(args.stepsFile!))) throw new Error("drive: no step file at " + args.stepsFile);
+      try {
+        raw = JSON.parse(readFileSync(resolve(args.stepsFile!), "utf8"));
+      } catch (error) {
+        throw new Error("drive: " + args.stepsFile + " is not valid JSON (" + (error instanceof Error ? error.message : String(error)) + ")");
+      }
+      source = resolve(args.stepsFile!);
     }
-    const root = resolve(import.meta.dir, "..");
-    const docs = args.game === "url" ? join(process.cwd(), "docs") : join(root, args.site === undefined ? "Games" : "apps/web", args.site === undefined ? args.game : "", "docs");
-    args.steps = parseStepFile(raw, args.stepsFile).map((step) => step.kind === "shot" ? { ...step, out: join(docs, step.name + ".png") } : step);
+    args.steps = parseStepFile(raw, source, { flows }).map((step) => step.kind === "shot" ? { ...step, out: join(docs, step.name + ".png") } : step);
   }
   if (
     args.stepsFile === undefined &&
@@ -638,6 +713,24 @@ if (args.check) {
   console.log(describeStepFile(args.steps, args.stepsFile ?? "steps"));
   process.exit(0);
 }
+if (args.flows) {
+  const dir = join(projectDirOf(args), "proofs", "flows");
+  const names = listFlowNames(dir);
+  if (names.length === 0) {
+    console.log("drive: no flows in " + dir + " — write <game>/proofs/flows/<name>.json with the route and the arrival it asserts");
+    process.exit(0);
+  }
+  const flows = flowSource(dir);
+  for (const name of names) {
+    try {
+      const file = flows(name)!;
+      console.log(describeFlow(name, parseStepFile(file.json, file.source, { flows })));
+    } catch (error) {
+      console.log(name + ": INVALID — " + (error instanceof Error ? error.message : String(error)));
+    }
+  }
+  process.exit(0);
+}
 
 sweepCaptureProfiles();
 const startedAt = performance.now();
@@ -794,11 +887,20 @@ const exitCode = await withBrowserSession(
       const waitOn = (label: string, entry: { is: string; value?: unknown; timeoutMs?: number; note?: string }) =>
         awaitDriveCondition(session as unknown as DriveSession, label, entry, conditionClock());
 
-      for (const [index, step] of args.steps.entries()) {
-        const stepStartedAt = performance.now();
-        const label = "steps[" + index + "]";
-        const timings: string[] = [];
-        try {
+      const logPath = args.log === undefined ? undefined : resolve(args.log);
+      if (logPath !== undefined) {
+        mkdirSync(dirname(logPath), { recursive: true });
+        writeFileSync(logPath, "");
+      }
+
+      const done = await runDriveSteps(args.steps, {
+        now: () => performance.now(),
+        line: (text) => console.error(text),
+        ...(recorder === null ? {} : { virtualNow: () => recorder!.virtualNow }),
+        ...(logPath === undefined ? {} : { record: (entry: DriveStepRecord) => appendFileSync(logPath, JSON.stringify(entry) + "\n") }),
+        run: async (step, index) => {
+          const label = "steps[" + index + "]";
+          const timings: string[] = [];
           if (step.before !== undefined) timings.push("before " + (await waitOn(label + ".before", step.before)).elapsedMs + "ms");
           if (step.kind === "click" || step.kind === "double-click") {
             await click(session, step.text, step.kind === "double-click" ? 2 : 1);
@@ -823,6 +925,8 @@ const exitCode = await withBrowserSession(
             else await new Promise((r) => setTimeout(r, step.ms));
           } else if (step.kind === "waitFor") {
             timings.push("waitFor " + (await waitOn(label + ".waitFor", { is: step.expression, timeoutMs: step.timeoutMs })).elapsedMs + "ms");
+          } else if (step.kind === "assert") {
+            timings.push("actual " + JSON.stringify((await evaluateAssertStep(session as unknown as DriveSession, step)) ?? null));
           } else if (step.kind === "reload") {
             await navigateCapturePageWithRetry(session, url.toString(), dev.base, args.timeoutMs, 2, { legacyCanvas: args.url !== undefined });
             await installFrameCounter(session);
@@ -854,18 +958,10 @@ const exitCode = await withBrowserSession(
             );
           }
           if (step.after !== undefined) timings.push("after " + (await waitOn(label + ".after", step.after)).elapsedMs + "ms");
-        } catch (error) {
-          console.error(
-            "drive: #" + (index + 1) + " " + describeStep(step) + " FAIL " + (timings.length === 0 ? "" : timings.join(" ") + " ") +
-              "total " + Math.round(performance.now() - stepStartedAt) + "ms — " + (error instanceof Error ? error.message : String(error)),
-          );
-          throw error;
-        }
-        console.error(
-          "drive: #" + (index + 1) + " " + describeStep(step) + " ok " + (timings.length === 0 ? "" : timings.join(" ") + " ") +
-            "total " + Math.round(performance.now() - stepStartedAt) + "ms",
-        );
-      }
+          return timings.join(" ");
+        },
+      });
+      if (done.failed > 0) code = 1;
 
       if (recorder !== null) {
         await recorder.stop();

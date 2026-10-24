@@ -5,12 +5,12 @@ import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 
 import { materializeHarness } from "../harness";
-import { CAPTURE_FLAGS, describeStepFile, parseCaptureArgs, parseStepFile, rejectMixedStepFlags, type CaptureFlag, type CaptureTool } from "./captureArgs";
+import { CAPTURE_FLAGS, describeFlow, describeStepFile, parseCaptureArgs, parseStepFile, rejectMixedStepFlags, type CaptureFlag, type CaptureTool } from "./captureArgs";
 
 /** A valid value for each flag, so every flag can be exercised by every host. */
 export function sampleArgv(entry: CaptureFlag): string[] {
   const samples: Record<string, string> = {
-    "--steps": "steps.json", "--click": "Start", "--double-click": "Tile", "--click-at": "10,20", "--right-click-at": "30,40",
+    "--steps": "steps.json", "--flow": "to-menu", "--log": "drive.log.jsonl", "--click": "Start", "--double-click": "Tile", "--click-at": "10,20", "--right-click-at": "30,40",
     "--fill": "Name=Ada", "--key": "KeyW+KeyD:250", "--wait": "100", "--shot": "after",
     "--rpc": '{"method":"debug_snapshot"}', "--probe": "p0", "--url": "http://127.0.0.1:5173/", "--port": "5199",
     "--device": "mobile", "--width": "800", "--height": "600", "--size": "half", "--quality": "draft", "--settle": "500", "--timeout": "90",
@@ -124,6 +124,83 @@ describe("parseStepFile", () => {
     expect(() => rejectMixedStepFlags("drive", ["demo", "--steps", "proof.json", "--wait", "1000", "--shot", "a"], CAPTURE_FLAGS))
       .toThrow("--wait, --shot");
     expect(() => rejectMixedStepFlags("drive", ["demo", "--steps", "proof.json"], CAPTURE_FLAGS)).not.toThrow();
+  });
+
+  test("parses an assert as expression, expected value and note, defaulting to true", () => {
+    const steps = parseStepFile({
+      steps: [
+        { assert: "skirmish.started" },
+        { assert: "skirmish.units.length", is: 4, note: "four units on the field" },
+        { assert: "squad.formation", is: "line" },
+      ],
+    }, "proof.json");
+    expect(steps[0]).toEqual({ kind: "assert", expression: "skirmish.started", expected: true });
+    expect(steps[1]).toEqual({ kind: "assert", expression: "skirmish.units.length", expected: 4, note: "four units on the field" });
+    expect(steps[2]).toMatchObject({ kind: "assert", expected: "line" });
+    expect(describeStepFile(steps, "proof.json")).toContain("#2 assert \"skirmish.units.length\" is 4");
+    expect(error([{ click: "Start", is: true }])).toContain("\"is\" is the assert expectation");
+    expect(error([{ assert: "" }])).toContain("steps[0].assert: expected the page expression");
+  });
+});
+
+describe("parseStepFile flows", () => {
+  const flows: Record<string, unknown> = {
+    "to-menu": { steps: [{ reload: true }, { assert: "menu.ready", note: "the field desk is up" }] },
+    "to-skirmish": { steps: [{ flow: "to-menu" }, { click: "Free skirmish" }, { assert: "skirmish.started" }] },
+    "cycle-a": { steps: [{ flow: "cycle-b" }] },
+    "cycle-b": { steps: [{ flow: "cycle-a" }] },
+    "self": { steps: [{ flow: "self" }] },
+    "deep-1": { steps: [{ flow: "deep-2" }] },
+    "deep-2": { steps: [{ flow: "deep-3" }] },
+    "deep-3": { steps: [{ flow: "deep-4" }] },
+    "deep-4": { steps: [{ flow: "deep-5" }] },
+    "deep-5": { steps: [{ assert: "true" }] },
+  };
+  const reader = (name: string) => (flows[name] === undefined ? undefined : { json: flows[name], source: "flows/" + name + ".json" });
+  const parse = (steps: unknown) => parseStepFile({ steps }, "proof.json", { flows: reader });
+  const messageOf = (steps: unknown): string => {
+    try {
+      parse(steps);
+    } catch (caught) {
+      return caught instanceof Error ? caught.message : String(caught);
+    }
+    throw new Error("expected the flow to be rejected");
+  };
+
+  test("expands an include in place, keeping the flow's own steps and asserts", () => {
+    const steps = parse([{ key: "KeyH", ms: 100 }, { flow: "to-skirmish" }]);
+    expect(steps.map((step) => step.kind)).toEqual(["key", "reload", "assert", "click", "assert"]);
+    expect(steps[3]).toMatchObject({ kind: "click", text: "Free skirmish" });
+    expect(describeFlow("to-skirmish", steps.slice(1))).toContain("4 step(s)");
+    expect(describeFlow("to-skirmish", steps.slice(1))).toContain("asserts menu.ready; skirmish.started");
+    expect(describeFlow("no-assert", [{ kind: "click", text: "Start" }])).toContain("asserts nothing");
+  });
+
+  test("rejects a cycle by name", () => {
+    expect(messageOf([{ flow: "cycle-a" }])).toContain("flow cycle by name: cycle-a -> cycle-b -> cycle-a");
+    expect(messageOf([{ flow: "self" }])).toContain("flow cycle by name: self -> self");
+  });
+
+  test("rejects an unknown flow by name", () => {
+    const message = messageOf([{ click: "Start" }, { flow: "to-base" }]);
+    expect(message).toContain("steps[1].flow");
+    expect(message).toContain("no flow named \"to-base\"");
+  });
+
+  test("rejects nesting deeper than four flows and names the chain", () => {
+    const message = messageOf([{ flow: "deep-1" }]);
+    expect(message).toContain("flows nest at most 4 deep");
+    expect(message).toContain("deep-1 -> deep-2 -> deep-3 -> deep-4 -> deep-5");
+    expect(() => parse([{ flow: "deep-1" }])).toThrow();
+    const capped = { ...flows, "deep-4": { steps: [{ assert: "true" }] } };
+    expect(parseStepFile({ steps: [{ flow: "deep-1" }] }, "proof.json", {
+      flows: (name: string) => (capped[name] === undefined ? undefined : { json: capped[name], source: "flows/" + name + ".json" }),
+    }).map((step) => step.kind)).toEqual(["assert"]);
+  });
+
+  test("refuses an include with fields of its own and a flow name that is a path", () => {
+    expect(messageOf([{ flow: "to-menu", before: { is: "menu.ready" } }])).toContain("an include carries no fields of its own");
+    expect(messageOf([{ flow: "proofs/flows/to-menu" }])).toContain("a flow is a bare name");
   });
 });
 
