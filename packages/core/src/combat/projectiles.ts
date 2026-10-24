@@ -142,8 +142,9 @@ export interface ProjectileSettleReport {
   effect: string;
   hit: boolean;
   /**
-   * True for lobbed/exploding shots (grenades, launchers, rockets) whose real path is an arc,
-   * false for direct-fire shots (bullets, bolts) that travel muzzle→impact in a straight line.
+   * True for lobbed fused rounds (grenades, launchers, rockets) whose real path is an arc,
+   * false for direct-fire shots (bullets, bolts) that travel muzzle→impact in a straight line,
+   * including direct-fire shots that carry an explosion.
    * Presentation uses it to keep straight-line tracers off arced projectiles.
    */
   ballistic: boolean;
@@ -516,7 +517,9 @@ export function createProjectileSystem(deps: ProjectileSystemDeps): ProjectileSy
   }
 
   function isBallistic(via: EffectVia): boolean {
-    return itemStat(via, "projectile.fuseTime") !== null || itemStat(via, "explosion.radius") !== null;
+    // A fuse makes a round lobbed: it detonates on a timer, so it settles on an arc, not the sightline.
+    // Explosion alone is splash damage, which a hitscan gun's elemental roll also carries.
+    return itemStat(via, "projectile.fuseTime") !== null;
   }
 
   interface BallisticArc {

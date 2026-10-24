@@ -22,6 +22,7 @@ interface RangeEntity {
 const WEAPON_STATS: Record<string, Record<string, number>> = {
   pistol: { damage: 10, range: 50 },
   shotgun: { damage: 5, range: 20, pellets: 3 },
+  "explosive-pistol": { damage: 12, range: 50, "explosion.radius": 2.2 },
   grenade: {
     damage: 30,
     "projectile.speed": 10,
@@ -577,6 +578,45 @@ describe("projectile system", () => {
     expect(settle.hits).toHaveLength(1);
     expect(settle.hits[0]!.instanceId).toBe("enemy");
     expect(stats["enemy"]!["health"]!.current).toBe(80);
+  });
+
+  test("an explosive hitscan weapon hits its target at 5 m and 25 m", () => {
+    for (const distance of [5, 25]) {
+      const { projectiles, reports, stats } = createRange({ enemy: target([0, 0.9, distance]) });
+      const settle = projectiles.settleProjectile(
+        projectiles.fireProjectile({
+          from: "shooter",
+          via: { item: "explosive-pistol" },
+          aim: { origin: [0, 0.9, 0], direction: [0, 0, 1] },
+          effect: "damage",
+        }),
+      );
+      expect(settle.status).toBe("settled");
+      if (settle.status !== "settled") return;
+      expect(settle.hits.map((hit) => hit.instanceId)).toEqual(["enemy"]);
+      expect(stats["enemy"]!["health"]!.current).toBe(88);
+      expect(settle.at[2]).toBeGreaterThan(distance - 0.6);
+      expect(settle.at[2]).toBeLessThan(distance + 0.1);
+      expect(settle.at[1]).toBeCloseTo(0.9, 1);
+      expect(reports[0]!.ballistic).toBe(false);
+    }
+  });
+
+  test("a round on a fuse still lobs and settles on its arc, not the sightline", () => {
+    const { projectiles, reports } = createRange({ enemy: target([0, 0.9, 10]) });
+    const settle = projectiles.settleProjectile(
+      projectiles.fireProjectile({
+        from: "shooter",
+        via: { item: "grenade" },
+        aim: { origin: [0, 0.9, 0], direction: [0, 0, 1] },
+        effect: "damage",
+      }),
+    );
+    expect(settle.status).toBe("settled");
+    if (settle.status !== "settled") return;
+    expect(settle.at[1]).toBeCloseTo(0, 1);
+    expect(settle.at[2]).toBeLessThan(10);
+    expect(reports[0]!.ballistic).toBe(true);
   });
 
   test("settle report marks lobbed/exploding shots ballistic and direct-fire shots not", () => {
