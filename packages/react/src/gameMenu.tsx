@@ -162,11 +162,11 @@ const TINT =
 /**
  * The detail pane's own surface. A live scene behind the menu is often brighter than the text
  * sitting on it (a sunlit wall, a bloomed ceiling light), so the pane carries a scrim by default
- * instead of leaving every game to invent one. Override `--jg-menu-pane-surface` with `none` to
- * sit the pane straight on the scene.
+ * instead of leaving every game to invent one. A game that wants the pane straight on the scene
+ * passes `detailStyle={{ background: "none" }}`.
  */
 const PANE_SURFACE =
-  "var(--jg-menu-pane-surface, linear-gradient(100deg, rgba(4,7,11,0.72) 0%, rgba(4,7,11,0.66) 72%, rgba(4,7,11,0.54) 100%))";
+  "linear-gradient(100deg, rgba(4,7,11,0.72) 0%, rgba(4,7,11,0.66) 72%, rgba(4,7,11,0.54) 100%)";
 
 function logoNode(logo: GameMenuProps["logo"], title: string | undefined, reduced: boolean): ReactNode {
   if (logo === undefined || logo === null || logo === false) return null;
@@ -676,8 +676,8 @@ export function GameMenu({
             ? "clamp(10px, 1.4vw, 18px)"
             : "clamp(6px, 1.6vh, 20px) clamp(12px, 1.4vw, 22px) clamp(12px, 1.6vh, 20px)",
           background: PANE_SURFACE,
-          borderRadius: "var(--jg-menu-pane-radius, 6px)",
-          boxShadow: "var(--jg-menu-pane-shadow, inset 0 0 0 1px rgba(255,255,255,0.06))",
+          borderRadius: "var(--jg-menu-surface-radius, 8px)",
+          boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.06)",
           ...detailStyle,
         }}
       >
