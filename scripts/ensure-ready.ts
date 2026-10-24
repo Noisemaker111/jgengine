@@ -1,5 +1,6 @@
 import { existsSync, lstatSync, readdirSync, readFileSync, realpathSync, rmSync } from "node:fs";
 import { join } from "node:path";
+import { ensureWorktreeReady } from "./agent-worktree";
 import { scanStalePackages } from "./distStaleness";
 
 function run(label: string, cmd: string[], timeoutMs: number): void {
@@ -17,6 +18,21 @@ function run(label: string, cmd: string[], timeoutMs: number): void {
     console.error(`ensure-ready: '${cmd.join(" ")}' ${reason}`);
     process.exit(result.exitCode ?? 1);
   }
+}
+
+// A tree created by `claude --worktree` or a bare `git worktree add` has no
+// node_modules and no Games link; agent:worktree is the only thing that made
+// them, so every test/build/smoke run in such a tree failed on missing deps or
+// an empty game list. Link from the main checkout (instant) before installing.
+const readiness = ensureWorktreeReady(process.cwd(), {
+  install: () => run("dependencies cannot be linked (bun.lock differs from the main checkout) — running bun install", ["bun", "install"], 300_000),
+});
+if (readiness !== null && !readiness.unchanged) {
+  const did: string[] = [];
+  if (readiness.installed) did.push("installed dependencies");
+  if (readiness.deps.length > 0) did.push(`linked ${readiness.deps.length} node_modules`);
+  if (readiness.assets.length > 0) did.push(`linked ${readiness.assets.join(", ")}`);
+  console.log(`ensure-ready: ${did.join("; ")}`);
 }
 
 const tsgo = join(process.cwd(), "node_modules", ".bin", process.platform === "win32" ? "tsgo.exe" : "tsgo");

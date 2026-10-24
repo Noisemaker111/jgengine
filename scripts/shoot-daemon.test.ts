@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { existsSync, mkdtempSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
 import { createServer } from "node:http";
 import { localOk } from "./localhostHttp";
 import type { AddressInfo } from "node:net";
@@ -12,13 +12,16 @@ import {
   daemonDiedUnder,
   daemonRevisionDrift,
   daemonStatePath,
+  describeWorldChange,
   ensureDaemonTarget,
+  gamesWorld,
   isDaemonArgv,
   readDaemonState,
   reapStaleDaemonState,
   stopDaemon,
   startDaemon,
   waitForDaemonLive,
+  worldChanged,
   writeDaemonState,
   type ShootDaemonState,
 } from "./shoot-daemon";
@@ -178,6 +181,87 @@ describe("shoot daemon state file", () => {
         devBase: "http://127.0.0.1:4517",
         webBase: "http://127.0.0.1:5712",
       });
+    } finally {
+      clearDaemonState(cwd);
+      rmSync(cwd, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("shoot daemon games world", () => {
+  const fixture = (): { cwd: string; games: (names: string[]) => void } => {
+    const cwd = mkdtempSync(join(tmpdir(), "jg-shoot-world-"));
+    const games = (names: string[]): void => {
+      for (const name of names) mkdirSync(join(cwd, "Games", name, "src"), { recursive: true });
+      for (const name of names) writeFileSync(join(cwd, "Games", name, "src", "index.tsx"), "");
+    };
+    return { cwd, games };
+  };
+
+  test("reports no world when there is no Games checkout", () => {
+    const { cwd } = fixture();
+    try {
+      expect(gamesWorld(cwd)).toEqual({ target: null, linkMtimeMs: null, head: null, games: [] });
+    } finally {
+      rmSync(cwd, { recursive: true, force: true });
+    }
+  });
+
+  test("reports a repointed link and an added game as a change", () => {
+    const first = fixture();
+    const second = fixture();
+    try {
+      first.games(["beacon"]);
+      second.games(["beacon", "harbor-heat"]);
+      const before = gamesWorld(first.cwd);
+      expect(before.games).toEqual(["beacon"]);
+      expect(worldChanged(undefined, before)).toBe(false);
+      expect(worldChanged(before, gamesWorld(first.cwd))).toBe(false);
+
+      const after = gamesWorld(second.cwd);
+      expect(worldChanged(before, after)).toBe(true);
+      expect(describeWorldChange(before, after)).toContain("+harbor-heat");
+    } finally {
+      rmSync(first.cwd, { recursive: true, force: true });
+      rmSync(second.cwd, { recursive: true, force: true });
+    }
+  });
+
+  test("retires the dev server when its game list went stale, and reuses a fresh one", async () => {
+    const { cwd, games } = fixture();
+    try {
+      games(["beacon"]);
+      writeDaemonState(
+        {
+          identity: checkoutIdentity(cwd),
+          chromePort: 9223,
+          devPort: 4517,
+          devBase: "http://127.0.0.1:4517",
+          devWorld: gamesWorld(cwd),
+          startedAt: new Date().toISOString(),
+        },
+        cwd,
+      );
+      games(["beacon", "harbor-heat"]);
+
+      let sawRetired = false;
+      await ensureDaemonTarget(readDaemonState(cwd)!, "dev", cwd, async () => {
+        // The stale server must be gone before anything boots a replacement.
+        sawRetired = readDaemonState(cwd)?.devBase === undefined;
+        return { child: null, port: 4517, base: "http://127.0.0.1:4517" };
+      });
+      expect(sawRetired).toBe(true);
+      expect(readDaemonState(cwd)?.devWorld?.games).toEqual(["beacon", "harbor-heat"]);
+
+      const recorded = readDaemonState(cwd)!;
+      const reused = await ensureDaemonTarget(recorded, "dev", cwd, async () => ({
+        child: null,
+        port: 4517,
+        base: "http://127.0.0.1:4517",
+      }));
+      expect(reused.base).toBe("http://127.0.0.1:4517");
+      expect(readDaemonState(cwd)?.devBase).toBe("http://127.0.0.1:4517");
+      expect(readDaemonState(cwd)?.devWorld).toEqual(gamesWorld(cwd));
     } finally {
       clearDaemonState(cwd);
       rmSync(cwd, { recursive: true, force: true });

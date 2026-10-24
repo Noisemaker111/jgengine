@@ -10,8 +10,12 @@
  * (otherwise `bun install --frozen-lockfile`), `Games` and the dev runner's
  * gitignored public assets linked, and a clean `git status`. No build is needed:
  * tests and type-checks resolve `@jgengine/*` to source (scripts/sourcePaths.ts).
+ *
+ * `claude --worktree` and a bare `git worktree add` skip all of that, so
+ * `ensureWorktreeReady` is the same repair path exposed to any tree through
+ * `bun run ensure-ready` (which every test/build/smoke script runs).
  */
-import { cpSync, existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, realpathSync, symlinkSync } from "node:fs";
+import { cpSync, existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, realpathSync, symlinkSync, unlinkSync } from "node:fs";
 import { dirname, join, resolve, sep } from "node:path";
 
 export const NAME_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9._-]{0,63}$/;
@@ -108,12 +112,109 @@ export function linkAssets(mainRoot: string, target: string, links: string[]): s
   const made: string[] = [];
   for (const rel of links) {
     const to = join(target, rel);
-    if (exists(to)) continue;
+    if (existsSync(to)) continue;
+    if (exists(to)) unlinkSync(to); // dangling junction from a moved main checkout
     mkdirSync(dirname(to), { recursive: true });
     symlinkSync(realpathSync(join(mainRoot, rel)), to, "junction");
     made.push(rel);
   }
   return made;
+}
+
+/**
+ * Main checkout that owns `cwd`, or null when `cwd` *is* the main checkout.
+ * A linked worktree has `.git` as a file pointing at `<main>/.git/worktrees/<name>`,
+ * so this is one read instead of a git process on every test and build.
+ */
+export function mainCheckoutRoot(cwd: string): string | null {
+  const dotGit = join(cwd, ".git");
+  let content: string;
+  try {
+    if (!lstatSync(dotGit).isFile()) return null;
+    content = readFileSync(dotGit, "utf8").trim();
+  } catch {
+    return null;
+  }
+  const match = /^gitdir:\s*(.+)$/m.exec(content);
+  if (!match) return null;
+  const gitdir = resolve(cwd, match[1]!.trim());
+  const root = dirname(dirname(dirname(gitdir)));
+  return existsSync(join(root, ".git")) ? root : null;
+}
+
+export interface WorktreeReadiness {
+  mainRoot: string;
+  /** Workspace-relative node_modules dirs linked by this call. */
+  deps: string[];
+  /** Workspace-relative asset links created by this call. */
+  assets: string[];
+  /** True when this call ran `bun install` because the locks differ. */
+  installed: boolean;
+  /** True when the tree already had everything: nothing was touched. */
+  unchanged: boolean;
+}
+
+export type WorktreeReadyOptions = {
+  /** Called when dependencies cannot be linked; must install or throw. */
+  install?: (target: string) => void;
+  /** Ignored-file listing used to find dev-runner assets. Defaults to `git ls-files`. */
+  ignored?: (mainRoot: string) => string[];
+};
+
+function gitIgnored(mainRoot: string): string[] {
+  const result = Bun.spawnSync(
+    ["git", "ls-files", "--others", "--ignored", "--exclude-standard", "--directory", "apps"],
+    { cwd: mainRoot, stdout: "pipe", stderr: "pipe", timeout: 60_000 },
+  );
+  if (result.exitCode !== 0) return [];
+  return (result.stdout?.toString() ?? "").split("\n").map((line) => line.trim()).filter(Boolean);
+}
+
+function installed(target: string): boolean {
+  return (
+    existsSync(join(target, "node_modules", ".bin", "tsgo")) ||
+    existsSync(join(target, "node_modules", ".bin", "tsgo.exe"))
+  );
+}
+
+/**
+ * Make any tree usable: dependencies (linked from the main checkout when the
+ * locks match, else installed) plus the `Games` and dev-runner asset links.
+ *
+ * Idempotent and cheap when repeated: the already-ready path costs a few
+ * `existsSync` calls and no process spawn, so `ensure-ready` can call this on
+ * every test run. Returns null when `cwd` is the main checkout itself.
+ */
+export function ensureWorktreeReady(cwd: string, options: WorktreeReadyOptions = {}): WorktreeReadiness | null {
+  const mainRoot = mainCheckoutRoot(cwd);
+  if (mainRoot === null || realpathSync(mainRoot) === realpathSync(cwd)) return null;
+
+  const needsDeps = !installed(cwd);
+  const needsGames = existsSync(join(mainRoot, "Games")) && !existsSync(join(cwd, "Games"));
+  if (!needsDeps && !needsGames) return { mainRoot, deps: [], assets: [], installed: false, unchanged: true };
+
+  const result: WorktreeReadiness = { mainRoot, deps: [], assets: [], installed: false, unchanged: false };
+  if (needsDeps) {
+    if (canLinkDeps(mainRoot, cwd)) {
+      result.deps = linkDeps(mainRoot, cwd);
+    } else {
+      (options.install ?? ((target: string) => {
+        const install = Bun.spawnSync(["bun", "install", "--frozen-lockfile"], {
+          cwd: target,
+          stdout: "inherit",
+          stderr: "inherit",
+          timeout: 600_000,
+        });
+        if (install.exitCode !== 0) {
+          throw new Error(`bun install --frozen-lockfile failed (exit ${install.exitCode ?? 1})`);
+        }
+      }))(cwd);
+      result.installed = true;
+    }
+  }
+  const ignored = (options.ignored ?? gitIgnored)(mainRoot);
+  result.assets = linkAssets(mainRoot, cwd, assetLinks(mainRoot, ignored));
+  return result;
 }
 
 function git(cwd: string, args: string[], timeoutMs = 120_000): string {
@@ -127,6 +228,7 @@ function git(cwd: string, args: string[], timeoutMs = 120_000): string {
 }
 
 if (import.meta.main) {
+  const startedAt = Date.now();
   const args = process.argv.slice(2).filter((a) => a !== "--");
   const name = args[0] ?? "";
   const branch = args[1] ?? `agent/${name}`;
@@ -145,7 +247,7 @@ if (import.meta.main) {
   mkdirSync(dirname(target), { recursive: true });
 
   if (existsSync(target)) {
-    console.log(`agent-worktree: already exists at ${target} — relinking`);
+    console.log(`agent-worktree: already exists at ${target} — verifying`);
   } else {
     const branchExists =
       Bun.spawnSync(["git", "rev-parse", "--verify", "--quiet", `refs/heads/${branch}`], { cwd: mainRoot }).exitCode === 0;
@@ -153,28 +255,11 @@ if (import.meta.main) {
     git(mainRoot, branchExists ? ["worktree", "add", target, branch] : ["worktree", "add", "-b", branch, target, "origin/beta"], 180_000);
   }
 
-  if (canLinkDeps(mainRoot, target)) {
-    const linked = linkDeps(mainRoot, target);
-    console.log(`agent-worktree: linked ${linked.length} node_modules from ${mainRoot}`);
-  } else {
-    console.log("agent-worktree: bun.lock differs from the main checkout (or it has no install) — installing");
-    const install = Bun.spawnSync(["bun", "install", "--frozen-lockfile"], {
-      cwd: target,
-      stdout: "inherit",
-      stderr: "inherit",
-      timeout: 600_000,
-    });
-    if (install.exitCode !== 0) {
-      console.error("agent-worktree: bun install failed — fix, then `cd` there and re-run bun run agent:bootstrap");
-      process.exit(install.exitCode ?? 1);
-    }
+  const readiness = ensureWorktreeReady(target);
+  if (readiness === null) {
+    console.error("agent-worktree: could not resolve the main checkout for this worktree");
+    process.exit(1);
   }
-
-  const ignored = git(mainRoot, ["ls-files", "--others", "--ignored", "--exclude-standard", "--directory", "apps"])
-    .split("\n")
-    .filter(Boolean);
-  const assets = linkAssets(mainRoot, target, assetLinks(mainRoot, ignored));
-  if (assets.length > 0) console.log(`agent-worktree: linked ${assets.join(", ")}`);
 
   const dirty = git(target, ["status", "--porcelain"]);
   if (dirty !== "") {
@@ -182,12 +267,13 @@ if (import.meta.main) {
     process.exit(1);
   }
 
-  console.log(`
-agent-worktree: ready
-  path:   ${target}
-  branch: ${branch}
-
-Tests and type-checks run from source with no build. Work with cwd = that path;
-do not create another worktree from inside it.
-`);
+  const seconds = ((Date.now() - startedAt) / 1000).toFixed(1);
+  const did: string[] = [];
+  if (readiness.installed) did.push("installed dependencies (bun install --frozen-lockfile)");
+  if (readiness.deps.length > 0) did.push(`linked ${readiness.deps.length} node_modules from the main checkout`);
+  if (readiness.assets.length > 0) did.push(`linked ${readiness.assets.join(", ")}`);
+  console.log(
+    `agent-worktree: ready in ${seconds}s — ${did.length > 0 ? did.join("; ") : "already set up (deps, Games, assets present; nothing changed)"}`,
+  );
+  console.log(`agent-worktree: work in ${target} on ${branch}; tests run from source, no build needed`);
 }
