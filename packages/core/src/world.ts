@@ -793,7 +793,7 @@ export { type Aabb, type AvoidZone } from "./world/geometry";
 export { GRASS_SCHEMA } from "./world/grassKind";
 export { resolveGridInstances } from "./world/gridInstances";
 export { grounded } from "./world/grounded";
-export { createLodScheduler } from "./world/lod";
+export { createLodScheduler, lodBandIndex } from "./world/lod";
 export {
   createAnnotationLayer,
   type AnnotationLayer,
@@ -842,6 +842,14 @@ export {
   type MinimapBakeSource,
   type MinimapBakeZone,
 } from "./world/minimapBake";
+export {
+  DEFAULT_VARIANT_HYSTERESIS,
+  createModelVariantSelector,
+  type ModelVariantConfig,
+  type ModelVariantLodConfig,
+  type ModelVariantSelector,
+  type ModelVariantSelectorState,
+} from "./world/modelLod";
 export { placeAlongPath } from "./world/pathInstances";
 export {
   withPathProfiles,

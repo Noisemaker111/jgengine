@@ -3,6 +3,8 @@ import type { AmbienceZoneDef } from "../audio/ambience";
 import type { AudioBusDef, SoundDef } from "../audio/audioFalloff";
 import type { AudioOcclusionConfig } from "../audio/occlusion";
 import type { MusicTheme } from "../audio/music";
+import type { ModelVariantLodConfig } from "../world/modelLod";
+export type { ModelVariantConfig, ModelVariantLodConfig } from "../world/modelLod";
 import type { UiCueOverrides } from "../audio/uiCues";
 import type { FeedbackCueOverrides } from "../audio/feedbackCues";
 import type { NoticeFeedConfig } from "./notices";
@@ -340,6 +342,13 @@ export interface ModelConfig {  url: string;
    * distance tiers (full rate) — see {@link ModelLodConfig}.
    */
   lod?: ModelLodConfig | false;
+  /**
+   * Ordered mesh detail levels — the full mesh plus decimated copies — switched per instance by
+   * distance to the camera, so one species can keep full geometry near and a cheaper mesh far. Only
+   * the instanced draw path swaps levels; a single-instance placement always draws `url`. See
+   * {@link ModelVariantLodConfig} and `core/world/modelLod`.
+   */
+  variants?: ModelVariantLodConfig;
 }
 
 /**

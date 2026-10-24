@@ -2501,6 +2501,7 @@
 - `DEFAULT_POLICE_TIERS` (const): const DEFAULT_POLICE_TIERS: readonly PoliceTier[] — The starting tier table: patrol until heat arrives, then investigate, pursue and finally cordon.
 - `DEFAULT_POLICE_TUNING` (const): const DEFAULT_POLICE_TUNING: PoliceTuning — The starting policy: linear decay, a six-second escape and a search area that grows at 2 m/s.
 - `DEFAULT_REPUTATION_TIERS` (const): const DEFAULT_REPUTATION_TIERS: readonly ReputationTier[] — ⚠ undocumented
+- `DEFAULT_VARIANT_HYSTERESIS` (const): const DEFAULT_VARIANT_HYSTERESIS: 6 — Metres an instance must travel past a switch boundary before it changes level unless the model declares its own.
 - `DamageDirectionOptions` (interface): interface DamageDirectionOptions — Options for {@link createDamageDirectionTracker}.
 - `DamageDirectionSnapshot` (interface): interface DamageDirectionSnapshot — Serializable state for save/restore — the clock reading plus every live indicator.
 - `DamageDirectionTracker` (interface): interface DamageDirectionTracker — A serializable, allocation-aware brain that tracks where recent damage came from. Each registered hit becomes a directional indicator that fades over a fixed duration on the injected clock; {@link DamageDirectionTracker.active} reports the live ones with their eased current strength.
@@ -2654,6 +2655,10 @@
 - `ModelAssetRef` (interface): interface ModelAssetRef { url: string; anchor?: "center" | "origin"; dims?: ModelDims; collisionMesh?: CollisionMeshData; space?: AssetSpace; clips?: readonly string[] } — ⚠ undocumented · used by `createHostedWorldSessionAsync` (@jgengine/core/runtime/hostedWorldSession): Build a hosted session from an asynchronous persistence backend.
 - `ModelDims` (interface): interface ModelDims — Measured horizontal footprint, footprint center, and lowest Y of a model in model space.
 - `ModelNode` (interface): interface ModelNode — Generic named-socket reader for loaded 3D models. Walks a node tree (any object with `.name`, `.position`, and `.children` — structurally satisfied by `THREE.Object3D`) and collects the local offsets of nodes whose name marks an attachment point. Genre-agnostic: wire anchors on a pylon, muzzle/hand mounts on a character, hardpoints on a ship, seat/decal slots on furniture — anything an artist tags with an empty in the GLB. Pure data (no three.js import), so it lives in core.
+- `ModelVariantConfig` (interface): interface ModelVariantConfig — One mesh level of a {@link ModelVariantLodConfig}: a full or decimated GLB and how far it draws.
+- `ModelVariantLodConfig` (interface): interface ModelVariantLodConfig — Ordered mesh detail levels for one model, switched per instance by camera distance. The first level is the full mesh the model's own `url` names; every later level is a cheaper asset. A tree line uses this so near trees keep their full mesh while far ones draw a decimated copy of the same species.
+- `ModelVariantSelector` (interface): interface ModelVariantSelector — Per-instance distance switch over a model's detail levels: one answer per id, held across a boundary until the instance clears it.
+- `ModelVariantSelectorState` (interface): interface ModelVariantSelectorState — Plain JSON state of a {@link ModelVariantSelector}: each id's current level index.
 - `MountController` (class): class MountController — Mount / rideable control-transfer (issue #83). Registers rideables (each with one or more seats — a control seat drives, the rest ride) and tracks who is on what. It owns no camera or physics: game code reads `cameraTarget(riderId)` to point the follow camera at the mount, and `driveTarget(riderId)` to route that rider's {@link import("../physics/vehicleBody").AxisInput}-driven input at the mount's movement kit — the same seam a horse, a truck, or a shared multi-seat ship all plug into.
 - `MoveOrderPayload` (interface): interface MoveOrderPayload — Payload for a move order: go to a point and complete on arrival.
 - `MovementPose` (type): type MovementPose = "standing" | "crouch" | "prone" | "running" — ⚠ undocumented
@@ -3109,6 +3114,7 @@
 - `createLodScheduler` (function): function createLodScheduler(config: LodSchedulerConfig): LodScheduler — ⚠ undocumented
 - `createMarkerSet` (function): function createMarkerSet<TMeta = unknown>(now: () => number = Date.now): MarkerSet<TMeta> — ⚠ undocumented
 - `createMarkerSource` (function): function createMarkerSource<TEntity, TMarker extends MarkerView = MarkerView>(options: MarkerSourceOptions<TEntity, TMarker>): MarkerSource<TMarker> — Adapt a caller-owned array/store to an observable marker source. Projection is cached between source changes, so React reads do not copy the collection per frame. The caller retains ownership of entities, updates, persistence, and subscription scheduling.
+- `createModelVariantSelector` (function): function createModelVariantSelector(config: ModelVariantLodConfig): ModelVariantSelector — Builds the per-instance distance switch for a model's variant levels.
 - `createMountController` (function): function createMountController(): MountController — ⚠ undocumented
 - `createNavCrowd` (function): function createNavCrowd(options: NavCrowdOptions & { nav: NavRuntime }): NavCrowd — Compose {@link createNavRuntime} and {@link createRvoCrowd} into a moving crowd: plan on the mesh, follow the smoothed corridor, avoid each other. Deterministic — agents advance in insertion order and the avoidance solve breaks ties by slot, not chance.
 - `createNavGrid` (function): function createNavGrid(config: NavGridConfig): NavGrid — ⚠ undocumented
@@ -3213,6 +3219,7 @@
 - `leaveVehicle` (function): function leaveVehicle(ctx: GameContext, seats: VehicleSeats, riderId: string, options: LeaveVehicleOptions = {}): ExitVehicleResult | { ok: false; reason: "unknown_rider" | "unknown_vehicle" } — Apply dismount placement, restore rider movement/visibility and the configured camera rig.
 - `lineFormation` (function): function lineFormation(options: LineFormationOptions): FormationSlotGenerator — A single rank abreast, centered on the destination and facing forward — a skirmish line or a chorus row. Slots run left→right along the group's right axis.
 - `listTriggerActions` (function): function listTriggerActions(target?: TriggerSourceKind): TriggerActionDefinition[] — Every registered action, optionally filtered by target collection.
+- `lodBandIndex` (function): function lodBandIndex(bands: readonly { maxDistance: number }[], distance: number): number — Index of the band `distance` falls in, `-1` past the last band. Bands must already be sorted near to far. The scheduler and `createModelVariantSelector` both read distances through this one function, so simulation throttling and mesh detail cannot disagree about what band an id is in.
 - `mapLayerColor` (function): function mapLayerColor(tone: MapLayerTone | undefined): string — ⚠ undocumented
 - `markerCatalogId` (function): function markerCatalogId(marker: AuthoredObjectMarkerLike): string | null — Catalog id for a marker: first-class `catalogId` field, else `meta.catalogId` migration alias. Returns null when the marker is not an authored catalog prop (spawn, mob, generator, …).
 - `markerKindStyle` (function): function markerKindStyle(kind: string | undefined, styles: Record<string, MarkerKindStyle> = DEFAULT_MARKER_KINDS): MarkerKindStyle — ⚠ undocumented
@@ -3942,6 +3949,7 @@
 - `LodSchedulerConfig` (interface): interface LodSchedulerConfig { bands: readonly LodBand[]; beyondInterval?: number | null; stagger?: boolean } — ⚠ undocumented
 - `LodSchedulerState` (interface): interface LodSchedulerState — Plain JSON state of a {@link LodScheduler}: each id's accumulated seconds.
 - `createLodScheduler` (function): function createLodScheduler(config: LodSchedulerConfig): LodScheduler — ⚠ undocumented
+- `lodBandIndex` (function): function lodBandIndex(bands: readonly { maxDistance: number }[], distance: number): number — Index of the band `distance` falls in, `-1` past the last band. Bands must already be sorted near to far. The scheduler and `createModelVariantSelector` both read distances through this one function, so simulation throttling and mesh detail cannot disagree about what band an id is in.
 
 ## @jgengine/core/world/mapAnnotations
 
@@ -4029,6 +4037,15 @@
 
 - `TrackAxis` (interface): interface TrackAxis — A world-space segment defining a linear "track" minimap — points are projected onto the `from`→`to` axis.
 - `trackFraction` (function): function trackFraction(point: WorldXZ | readonly [number, number, number], axis: TrackAxis): number — Project a world point onto the `from`→`to` segment of `axis` and return the clamped 0..1 fraction of how far along the track it lies (0 at `from`, 1 at `to`). The linear analogue of `projectToMinimap` — feeds a horizontal corridor/route progress rail. Accepts XZ (`[x, z]`) or XYZ (`[x, y, z]`) points (index 0 = x, index 2 when length 3 else index 1 = z). A zero-length axis returns 0.
+
+## @jgengine/core/world/modelLod
+
+- `DEFAULT_VARIANT_HYSTERESIS` (const): const DEFAULT_VARIANT_HYSTERESIS: 6 — Metres an instance must travel past a switch boundary before it changes level unless the model declares its own.
+- `ModelVariantConfig` (interface): interface ModelVariantConfig — One mesh level of a {@link ModelVariantLodConfig}: a full or decimated GLB and how far it draws.
+- `ModelVariantLodConfig` (interface): interface ModelVariantLodConfig — Ordered mesh detail levels for one model, switched per instance by camera distance. The first level is the full mesh the model's own `url` names; every later level is a cheaper asset. A tree line uses this so near trees keep their full mesh while far ones draw a decimated copy of the same species.
+- `ModelVariantSelector` (interface): interface ModelVariantSelector — Per-instance distance switch over a model's detail levels: one answer per id, held across a boundary until the instance clears it.
+- `ModelVariantSelectorState` (interface): interface ModelVariantSelectorState — Plain JSON state of a {@link ModelVariantSelector}: each id's current level index.
+- `createModelVariantSelector` (function): function createModelVariantSelector(config: ModelVariantLodConfig): ModelVariantSelector — Builds the per-instance distance switch for a model's variant levels.
 
 ## @jgengine/core/world/pathInstances
 
