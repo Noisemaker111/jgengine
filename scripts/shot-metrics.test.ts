@@ -9,6 +9,7 @@ import {
   computeShotMetrics,
   deadViewport,
   evaluateThresholds,
+  flatFrame,
   metricsPathFor,
 } from "./shot-metrics";
 
@@ -164,6 +165,33 @@ describe("viewport scoping", () => {
     const metrics = computeShotMetrics(WIDTH, HEIGHT, noisyBuffer(5), { masks: [HUD] });
     expect(metrics.sampledShare).toBeGreaterThan(0.6);
     expect(metrics.sampledShare).toBeLessThan(0.75);
+  });
+
+  test("a fully masked canvas still fails the whole-frame flat check", () => {
+    // A loading cover or a menu can cover the canvas completely, which withholds the viewport
+    // verdict — shoot scores the whole frame unscoped for exactly that case.
+    const covered = makeBuffer(WIDTH, HEIGHT, () => [15, 23, 42, 255]);
+    const masked = computeShotMetrics(WIDTH, HEIGHT, covered, { masks: [{ x: 0, y: 0, width: WIDTH, height: HEIGHT }] });
+    expect(deadViewport(masked)).toBeNull();
+    const frame = computeShotMetrics(WIDTH, HEIGHT, covered);
+    expect(flatFrame(frame)).toContain("whole frame is one flat color");
+  });
+});
+
+describe("flatFrame", () => {
+  test("rejects a frame in one colour, whatever it depicts", () => {
+    const cover = computeShotMetrics(WIDTH, HEIGHT, makeBuffer(WIDTH, HEIGHT, () => [15, 23, 42, 255]));
+    expect(flatFrame(cover)).toContain("no scene reached the capture");
+  });
+
+  test("rejects a loading cover that carries a progress bar", () => {
+    const cover = makeBuffer(WIDTH, HEIGHT, (x, y) =>
+      x >= 200 && x < 360 && y >= 400 && y < 403 ? [56, 189, 248, 255] : [15, 23, 42, 255]);
+    expect(flatFrame(computeShotMetrics(WIDTH, HEIGHT, cover))).toContain("no scene reached the capture");
+  });
+
+  test("passes a live scene", () => {
+    expect(flatFrame(computeShotMetrics(WIDTH, HEIGHT, noisyBuffer(13)))).toBeNull();
   });
 });
 

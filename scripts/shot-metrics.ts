@@ -40,6 +40,13 @@ export const MIN_SAMPLED_SHARE = 0.15;
 /** Above this share of one color the region is a single flat fill — a dead 3D view. */
 export const DEAD_VIEW_DOMINANT_SHARE = 0.97;
 
+/**
+ * Above this share of one color the whole frame is one flat fill. Nothing a capture is for looks
+ * like that: a loading cover, a canvas that never committed and a failed WebGL context all
+ * photograph as the same field of pixels.
+ */
+export const FLAT_FRAME_DOMINANT_SHARE = 0.97;
+
 function inside(rect: ShotRect, x: number, y: number): boolean {
   return x >= rect.x && x < rect.x + rect.width && y >= rect.y && y < rect.y + rect.height;
 }
@@ -232,6 +239,16 @@ export function deadViewport(metrics: ShotMetrics): string | null {
     return `the 3D viewport is a single flat fill (${(metrics.dominantColorShare * 100).toFixed(1)}% one color)`;
   }
   return null;
+}
+
+/**
+ * A verdict on the whole frame rather than the viewport, so it still speaks when a menu or cover
+ * masks the canvas completely — the case where `deadViewport` returns null because nothing of the
+ * viewport survives masking. A frame that is one flat colour is not evidence of anything.
+ */
+export function flatFrame(metrics: ShotMetrics): string | null {
+  if (metrics.dominantColorShare < FLAT_FRAME_DOMINANT_SHARE) return null;
+  return `the whole frame is one flat color (${(metrics.dominantColorShare * 100).toFixed(1)}%) - no scene reached the capture`;
 }
 
 export function evaluateThresholds(metrics: ShotMetrics): ThresholdWarning[] {
