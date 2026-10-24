@@ -116,6 +116,43 @@ test("separates a sleep, a poll loop and a CI watch from ordinary work", () => {
   expect(classifyCommand("bun run check-types && bun run test:all")).toBeNull();
 });
 
+test("a search or a message that mentions a wait is not a wait", () => {
+  expect(classifyCommand('rg -n "Start-Sleep|gh run watch|pr checks --watch" scripts packages')).toBeNull();
+  expect(classifyCommand("rg -ni start-sleep scripts packages -l")).toBeNull();
+  expect(classifyCommand('Select-String -Path scripts/a.ts -Pattern "start-sleep|gh run watch"')).toBeNull();
+  expect(classifyCommand('Get-Content .scratch/x.log | Select-String "gh run watch"')).toBeNull();
+  expect(classifyCommand('git log --format=%s | Select-String "Start-Sleep"')).toBeNull();
+  expect(classifyCommand('git show HEAD:scripts/x.ts --grep "sleep 5"')).toBeNull();
+  expect(classifyCommand('findstr /c:"timeout /t" scripts/*.ts')).toBeNull();
+  expect(classifyCommand('cat notes.txt | grep "gh pr checks --watch"')).toBeNull();
+  expect(classifyCommand('echo "no sleep here, no gh run watch"')).toBeNull();
+  expect(classifyCommand('Write-Output "Start-Sleep 30"')).toBeNull();
+  // A read-only segment does not hide a real wait beside it.
+  expect(classifyCommand('rg -n "Start-Sleep" scripts; Start-Sleep -Seconds 20')).toBe("sleep");
+});
+
+test("awkward quoting does not swallow a real wait", () => {
+  const edited =
+    'cd "C:\\repo\\.claude\\worktrees\\lane-d"; (Get-Content src/game/setup.ts -Raw).Replace(\'spawn("ped_city")\',\'spawn("ped_city", { id: "x" })\' + "`n" + \'  spawn("ped_docks")\') | Set-Content -NoNewline src/game/setup.ts; Start-Sleep -Seconds 3; npx jgengine drive --wait 8000';
+  expect(classifyCommand(edited)).toBe("sleep");
+  expect(classifyCommand('gh pr edit 2245 --body "Moves `scripts/games-ref.txt`, then Start-Sleep -Seconds 9"')).toBeNull();
+  expect(classifyCommand('git commit -aqm "[skip] no sleep here"; bun run test:all')).toBeNull();
+  expect(classifyCommand('$out = @"\ngh run watch 1\n"@; Start-Sleep -Seconds 2')).toBe("sleep");
+});
+
+test("the wait shapes a shell wrapper or an eval hides are still caught", () => {
+  expect(classifyCommand('powershell -Command "Start-Sleep -Seconds 30"')).toBe("sleep");
+  expect(classifyCommand("pwsh -c 'Start-Sleep -Seconds 5'")).toBe("sleep");
+  expect(classifyCommand('cmd /c "timeout /t 30"')).toBe("sleep");
+  expect(classifyCommand('bash -lc "sleep 12 && bun run gate"')).toBe("sleep");
+  expect(classifyCommand('bun -e "await Bun.sleep(5000)"')).toBe("sleep");
+  expect(classifyCommand('node -e "Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 5000)"')).toBe("sleep");
+  expect(classifyCommand('bun -e "Thread.sleep(5000)"')).toBe("sleep");
+  expect(classifyCommand('bun -e "console.log(1)"')).toBeNull();
+  expect(classifyCommand("for ($i = 0; $i -lt 20; $i++) { gh pr checks 160 }")).toBe("ci-watch");
+  expect(classifyCommand("while ($true) { gh pr view 12 --json state }")).toBe("sleep");
+});
+
 test("measures one session from its stored tool calls", () => {
   const calls: ToolCall[] = [
     { name: "shell", command: "Start-Sleep -Seconds 90; gh run list", startedAt: T0 + 1_000, endedAt: T0 + 91_000, ms: 90_000 },
