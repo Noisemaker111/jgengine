@@ -6,6 +6,7 @@
  */
 import { basename, join } from "node:path";
 import type { FlowFile, FlowSource } from "../packages/jgengine/src/templates/captureArgs";
+import { servedGameDir } from "./servedGame";
 
 /** What a run points at: a game id, a managed app route, or an external URL. */
 export interface DriveTarget {
@@ -31,6 +32,10 @@ export function driveProjectDir(
     const local = join(cwd, "apps", "web", target.site);
     return exists(local) ? local : join(engineRoot, "apps", "web", target.site);
   }
+  // A run serving the game from another checkout reads that checkout's flows and writes beside
+  // them, so the bundle and the tree it describes stay in one place.
+  const served = servedGameDir();
+  if (served !== null && basename(served) === target.game) return served;
   if (exists(join(cwd, target.game))) return join(cwd, target.game);
   // Standing inside the game project itself: its own proofs/ and docs/ are the ones to read.
   if (basename(cwd) === target.game && exists(join(cwd, "package.json"))) return cwd;

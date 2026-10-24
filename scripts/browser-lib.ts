@@ -21,6 +21,7 @@ import { checkoutIdentity, isUp, markerPath, readMarker, writeMarker } from "./d
 import { localGet } from "./localhostHttp";
 import { computeShotMetrics, deadViewport } from "./shot-metrics";
 import { decodePng } from "./png-reader";
+import { servedGameDir } from "./servedGame";
 import type { GraphicsTier } from "../packages/jgengine/src/templates/captureArgs";
 
 export { checkoutIdentity, isUp };
@@ -278,7 +279,17 @@ export function resolveDevPort(cwd = process.cwd()): number {
     const n = Number(override);
     if (Number.isFinite(n) && n > 0) return Math.floor(n);
   }
-  return 4517 + hashPortOffset(checkoutIdentity(cwd), 483);
+  return 4517 + hashPortOffset(devServerIdentity(cwd), 483);
+}
+
+/**
+ * Who a warm runner belongs to. A run that serves a game from another checkout (`--game-dir`) boots
+ * a runner that renders that directory, so it must not attach to - or share a port with - the
+ * runner that serves this checkout's `Games/`.
+ */
+export function devServerIdentity(cwd = process.cwd()): string {
+  const served = servedGameDir();
+  return served === null ? checkoutIdentity(cwd) : `${checkoutIdentity(cwd)}|game-dir:${served}`;
 }
 
 export function resolveDevBase(cwd = process.cwd()): string {
@@ -383,7 +394,7 @@ function launchPersistentCommand(
  * reused only when a marker file proves it belongs to this identity.
  */
 export async function ensureDevServer(cwd = process.cwd()): Promise<EnsureDevServerResult> {
-  const identity = checkoutIdentity(cwd);
+  const identity = devServerIdentity(cwd);
   let port = resolveDevPort(cwd);
   const base = `http://127.0.0.1:${port}`;
 
@@ -407,6 +418,7 @@ export async function ensureDevServer(cwd = process.cwd()): Promise<EnsureDevSer
   }
 
   const args = ["--cwd=apps/dev", "run", "dev", "--", "--host", "127.0.0.1", "--port", String(port), "--strictPort"];
+  // The child inherits this process, so the `--game-dir` env (`VITE_JG_GAME_DIR`) reaches Vite.
   const child = process.platform === "win32"
     ? null
     : spawn(process.execPath, args, {

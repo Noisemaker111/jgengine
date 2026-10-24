@@ -32,8 +32,7 @@ import {
   openPageSession,
   readReportedQuality,
   parseSizeArg,
-  preparingCoverLabel,
-  qualitySuffix,
+  preparingCoverLabel,  qualitySuffix,
   sizeForDraft,
   sizeSuffix,
   sweepCaptureProfiles,
@@ -48,6 +47,7 @@ import { clearOriginStorage } from "./capture-storage";
 import { headRevision } from "./captureRevision";
 import { ALLOW_MISMATCH_FLAG, engineRecord, resolveEngineIdentity, type EngineRecord } from "./engineIdentity";
 import { externalCaptureUrl } from "./captureTarget";
+import { assertOneTarget, serveGameDir, splitGameDir } from "./servedGame";
 import { assertQuickIsIterationOnly, quickProfile, quickSuffix, quickTimingLine, splitQuickFlag } from "./capture-preset";
 import { CAPTURE_FLAGS, captureFlagHelp, parseCaptureArgs, parseGraphicsTier, type GraphicsTier } from "../packages/jgengine/src/templates/captureArgs";
 import { applyLookSearchParams, parseLookAim } from "./lookArg";
@@ -132,6 +132,8 @@ type Args = {
   quick: boolean;
   /** `--allow-engine-mismatch`: serve engine source older than the game's pin on purpose. */
   allowEngineMismatch: boolean;
+  /** `--game-dir`: serve this game from another checkout instead of `Games/<game>`. */
+  gameDir: string | null;
   help: boolean;
   timeoutMs: number;
   timeoutExplicit: boolean;
@@ -153,6 +155,11 @@ Engine:
   checkout's source, so the line names its version and commit. The run stops when
   that source is older than the version the game's catalog pins.
   --allow-engine-mismatch serves older source on purpose and records that it did.
+
+  --game-dir <path> serves <game> from another checkout - a lane's worktree, not
+  this repo's Games/<game> clone - and keeps the rest of this runner: this
+  checkout's engine source, --state boot states, --view and the engine line. The
+  folder is named after the game, and its parent is read for the engine pin.
 
 Persistent daemon (started for you; no lane ever starts it by hand):
   bun run shoot <game> --mode play           # starts or reuses the daemon, then attaches
@@ -187,9 +194,11 @@ function parseArgs(argv: string[]): Args {
   // `--allow-engine-mismatch` is parsed here, not in CAPTURE_FLAGS: the portable harness renders the
   // engine it ships with, so it has no checkout version to compare against a games pin.
   const allowEngineMismatch = quick.argv.includes(ALLOW_MISMATCH_FLAG);
+  // `--game-dir` is parsed here, not in CAPTURE_FLAGS: the portable harness has no `Games/` to swap.
+  const served = splitGameDir(quick.argv);
   const parsed = parseCaptureArgs(
     "shoot",
-    quick.argv.filter((arg) => arg !== "--headed" && arg !== "--cold" && arg !== ALLOW_MISMATCH_FLAG),
+    served.argv.filter((arg) => arg !== "--headed" && arg !== "--cold" && arg !== ALLOW_MISMATCH_FLAG),
     CAPTURE_FLAGS,
   );
   const o = parsed.options;
@@ -232,6 +241,7 @@ function parseArgs(argv: string[]): Args {
     headed,
     quick: quick.quick,
     allowEngineMismatch,
+    gameDir: served.dir,
     help: parsed.help,
     timeoutMs: (num("timeout") ?? 60) * 1000,
     timeoutExplicit: str("timeout") !== undefined,
@@ -622,6 +632,10 @@ if (!args.listViews) {
 }
 
 if (args.port !== undefined) process.env.JG_DEV_PORT = String(args.port);
+if (args.gameDir !== null) {
+  assertOneTarget({ served: args.gameDir, ...(args.url === undefined ? {} : { url: args.url }), ...(args.site === undefined ? {} : { site: args.site }) });
+  serveGameDir(args.gameDir, args.game);
+}
 // Reclaim profiles that killed runs left behind before this one can add to them, and refuse to
 // start on a drive that cannot hold this capture.
 sweepCaptureProfiles();

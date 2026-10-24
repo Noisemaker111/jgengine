@@ -49,6 +49,7 @@ import {
 import { acquireWarmCapture, daemonDiedUnder, ensureDaemonTarget, withDaemonWatch, type ShootDaemonState } from "./shoot-daemon";
 import { lookSearchParams, parseLookAim } from "./lookArg";
 import { driveTargetUrl, externalCaptureUrl, parseCaptureDevice, requireReusableCaptureStorage } from "./captureTarget";
+import { assertOneTarget, serveGameDir, splitGameDir } from "./servedGame";
 import {
   QUICK_DRIVE_WINDOW_MS,
   assertQuickIsIterationOnly,
@@ -138,6 +139,8 @@ type Args = {
   quick: boolean;
   /** `--allow-engine-mismatch`: serve engine source older than the game's pin on purpose. */
   allowEngineMismatch: boolean;
+  /** `--game-dir`: serve this game from another checkout instead of `Games/<game>`. */
+  gameDir: string | null;
   /** Step file this run reads, when it reads one. */
   stepsFile?: string;
   /** Named flow this run reads, when it reads one. */
@@ -230,6 +233,11 @@ Engine:
   that source is older than the version the game's catalog pins.
   --allow-engine-mismatch serves older source on purpose and records that it did.
 
+  --game-dir <path> serves <game> from another checkout - a lane's worktree, not
+  this repo's Games/<game> clone - and reads that checkout's flows and writes its
+  shots beside them. The folder is named after the game, and its parent is read for
+  the engine pin.
+
 Warm capture (started for you; no lane starts the daemon by hand):
   bun run drive <game> --click START --shot before      # reuses or starts the daemon
   --cold skips the daemon entirely: fresh Chrome and Vite, for evidence runs that
@@ -263,9 +271,11 @@ function parseArgs(argv: string[]): Args {  // `--headed` is parsed here, not in
   // `--allow-engine-mismatch` is parsed here, not in CAPTURE_FLAGS: the portable harness renders the
   // engine it ships with, so it has no checkout version to compare against a games pin.
   const allowEngineMismatch = quick.argv.includes(ALLOW_MISMATCH_FLAG);
+  // `--game-dir` is parsed here, not in CAPTURE_FLAGS: the portable harness has no `Games/` to swap.
+  const served = splitGameDir(quick.argv);
   const parsed = parseCaptureArgs(
     "drive",
-    quick.argv.filter((arg) => arg !== "--headed" && arg !== "--cold" && arg !== ALLOW_MISMATCH_FLAG),
+    served.argv.filter((arg) => arg !== "--headed" && arg !== "--cold" && arg !== ALLOW_MISMATCH_FLAG),
     CAPTURE_FLAGS,
   );
   const o = parsed.options;
@@ -317,6 +327,7 @@ function parseArgs(argv: string[]): Args {  // `--headed` is parsed here, not in
     headed,
     quick: quick.quick,
     allowEngineMismatch,
+    gameDir: served.dir,
     stepsFile: str("steps"),
     flow: str("flow"),
     flows: o.flows === true,
@@ -742,6 +753,10 @@ const args = parseArgs(process.argv.slice(2));
 if (args.help) {
   console.log(HELP);
   process.exit(0);
+}
+if (args.gameDir !== null) {
+  assertOneTarget({ served: args.gameDir, ...(args.url === undefined ? {} : { url: args.url }), ...(args.site === undefined ? {} : { site: args.site }) });
+  serveGameDir(args.gameDir, args.game);
 }
 if (args.check) {
   console.log(describeStepFile(args.steps, args.stepsFile ?? "steps"));
