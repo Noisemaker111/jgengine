@@ -1,12 +1,12 @@
 import { describe, expect, test } from "bun:test";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { randomUUID } from "node:crypto";
 
 import { livesUnderWorktrees, reap, selectReap, summarise, type ReapCandidate } from "./worktree-reap";
 
-const MAIN = "C:\\repo";
+const MAIN = resolve("repo-root");
 const WORKTREES = join(MAIN, ".claude", "worktrees");
 
 function refs(names: string[], extra: { locked?: string[]; detached?: string[]; outside?: string[] } = {}) {
@@ -54,7 +54,7 @@ describe("a merged, clean worktree is taken; everything else stays", () => {
 
   test("a worktree outside the worktrees directory is never removed, whatever its branch says", () => {
     const plan = selectReap({
-      refs: refs([], { outside: ["C:\\somewhere\\else"] }),
+      refs: refs([], { outside: [resolve("somewhere", "else")] }),
       mainRoot: MAIN,
       skip: [],
       isMerged: () => true,
