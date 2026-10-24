@@ -1,10 +1,18 @@
 // One command that hands a branch to the landing queue, so landing is not a
 // hand-assembled sequence of push, open and wait:
 //   bun run land
+//   bun run lane:close                       # verify:fast, then the line below
+//   bun run land --commit                    # stage, commit, push, open, arm
 //   bun run land --verify "bun run ship:preflight"
 //   bun run land --title "Menus" --body-file .scratch/body.md
 //
-// It refuses on `main` or a dirty tree, pushes, rebases onto the base, reuses
+// `--commit` is what lets a lane end with one command: it stages this worktree's
+// changes (tracked and new - ignored files such as `.scratch/` stay out), takes the
+// commit message from the branch's own `changes/` fragment, and writes that fragment
+// from the commit summary when the diff has none. Nothing to commit is not an error:
+// the landing runs as it does without the flag.
+//
+// It refuses on `main` or (without `--commit`) a dirty tree, pushes, rebases onto the base, reuses
 // an open PR or opens one (body: --body-file when given, else the `changes/`
 // fragment this branch's own diff adds, else the branch's commit subjects),
 // runs --verify, arms auto-merge and exits in seconds: it prints the PR URL and
@@ -50,7 +58,7 @@
 // cannot show up in `git status` to trip land's own dirty-tree check.
 import { spawnSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
-import { basename, isAbsolute, join, resolve } from "node:path";
+import { basename, isAbsolute, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { FRAGMENT_PATTERN } from "./changelog-fragments";
 
@@ -77,19 +85,22 @@ export interface LandArgs {
   bodyFile?: string;
   verify?: string;
   base: string;
+  /** Stage and commit this worktree's changes first, so the lane needs no git command after land. */
+  commit: boolean;
   /** Deprecated: wait and merge here, as land did before the queue owned waiting. */
   watch: boolean;
 }
 
-/** `--title`, `--body-file`, `--verify`, `--base beta` and deprecated `--watch`; anything else is a typo. */
+/** `--title`, `--body-file`, `--verify`, `--base beta`, `--commit` and deprecated `--watch`; anything else is a typo. */
 export function parseArgs(argv: readonly string[]): LandArgs {
-  const args: LandArgs = { base: "beta", watch: false };
+  const args: LandArgs = { base: "beta", commit: false, watch: false };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === "--title") args.title = value(argv, (i += 1), arg);
     else if (arg === "--body-file") args.bodyFile = value(argv, (i += 1), arg);
     else if (arg === "--verify") args.verify = value(argv, (i += 1), arg);
     else if (arg === "--base") args.base = value(argv, (i += 1), arg);
+    else if (arg === "--commit") args.commit = true;
     else if (arg === "--watch") args.watch = true;
     else throw new Error(`unknown argument ${arg}`);
   }
@@ -234,6 +245,116 @@ export function landBody(options: {
   return { text: summary.trim(), explicit: false };
 }
 
+/** The commit subject a fragment gives: its first bullet, as one line. */
+export function fragmentSubject(text: string): string {
+  for (const line of text.split("\n")) {
+    const trimmed = line.trim();
+    if (trimmed.length === 0 || trimmed.startsWith("#")) continue;
+    const oneLine = trimmed.replace(/^[-*]\s+/, "").replace(/\s+/g, " ").trim();
+    if (oneLine.length === 0) continue;
+    return oneLine.length > 100 ? `${oneLine.slice(0, 97).trimEnd()}...` : oneLine;
+  }
+  return "";
+}
+
+/** The fragment's bullets without its `###` headings, as a commit body. */
+export function fragmentBody(text: string): string {
+  return text
+    .split("\n")
+    .map((line) => line.trimEnd())
+    .filter((line) => line.trim().length > 0 && !/^#{2,3}\s/.test(line.trim()))
+    .join("\n")
+    .trim();
+}
+
+/** What `--commit` did, so the landing can print it and a test can read it. */
+export interface CommitOutcome {
+  kind: "committed" | "clean" | "failed";
+  /** The fragment the message and the PR body come from. */
+  fragment?: string;
+  subject?: string;
+  /** True when this run wrote the fragment because the branch's diff had none. */
+  created?: boolean;
+  code?: number;
+  why?: string;
+}
+
+export interface CommitOptions {
+  base: string;
+  branch: string;
+  git: Git;
+  /** The checkout the git runs in; the repo root by default. */
+  checkout?: string;
+  /** Fragments in this checkout, `changes/` by default. */
+  files?: () => readonly FragmentFile[];
+  read?: (path: string) => string;
+  write?: (path: string, text: string) => void;
+  log?: (line: string) => void;
+}
+
+/**
+ * Stage this worktree, then commit it with the branch's own fragment as the message. A branch with
+ * no fragment of its own gets one written from its commit summary, so the message, the PR body and
+ * `changes/` cannot disagree. Another lane's fragment in the shared directory is never used.
+ */
+export function commitLane(options: CommitOptions): CommitOutcome {
+  const { base, branch, git: runGit } = options;
+  const checkout = options.checkout ?? root;
+  const read = options.read ?? ((path: string) => readFileSync(path, "utf8"));
+  const write = options.write ?? ((path: string, text: string) => writeFileSync(path, text));
+  const log = options.log ?? (() => {});
+
+  const dirty = runGit(["status", "--porcelain"]);
+  if (dirty.status !== 0) return { kind: "failed", code: EXIT_COULD_NOT_MERGE, why: `git status failed: ${details(dirty)}` };
+  if (dirty.stdout.trim().length === 0) return { kind: "clean" };
+
+  const staged = runGit(["add", "-A"]);
+  if (staged.status !== 0) return { kind: "failed", code: EXIT_COULD_NOT_MERGE, why: `git add failed: ${details(staged)}` };
+
+  const summary = firstLine(runGit(["log", "-1", "--format=%s"]).stdout) || branch;
+  const stagedPaths = lines(runGit(["diff", "--name-only", "--cached"]));
+  log(`staged ${stagedPaths.length} file(s): ${stagedPaths.slice(0, 8).join(", ")}${stagedPaths.length > 8 ? ", ..." : ""}`);
+  const candidates = new Set([...diffPaths(base, runGit), ...stagedPaths].map((path) => basename(path.trim())));
+  const files = options.files ?? (() => fragmentFiles());
+  const own = files().filter((file) => candidates.has(basename(file.path)));
+  let fragment = pickFragment(own, branch);
+  let created = false;
+
+  if (fragment === null) {
+    const path = join(checkout, "changes", `${branch.replace(/\//g, "-")}.md`);
+    const text = `### Changed\n\n- ${summary}\n`;
+    try {
+      write(path, text);
+    } catch (error) {
+      return { kind: "failed", code: EXIT_COULD_NOT_MERGE, why: `could not write ${path}: ${String(error)}` };
+    }
+    const added = runGit(["add", "--", relative(checkout, path).replace(/\\/g, "/")]);
+    if (added.status !== 0) {
+      return { kind: "failed", code: EXIT_COULD_NOT_MERGE, why: `git add ${path} failed: ${details(added)}` };
+    }
+    fragment = { path, text };
+    created = true;
+    log(`no changes/ fragment in this branch's diff; wrote ${basename(path)} from the commit summary`);
+  }
+
+  const subject = fragmentSubject(fragment.text) || summary;
+  const body = fragmentBody(fragment.text);
+  const committed = runGit(body.length > 0 ? ["commit", "-m", subject, "-m", body] : ["commit", "-m", subject]);
+  if (committed.status !== 0) {
+    return { kind: "failed", code: EXIT_COULD_NOT_MERGE, why: `git commit failed: ${details(committed)}` };
+  }
+  return {
+    kind: "committed",
+    fragment: relative(checkout, fragment.path).replace(/\\/g, "/"),
+    subject,
+    created,
+  };
+}
+
+function lines(result: Run): string[] {
+  return result.status === 0 ? result.stdout.split("\n").map((line) => line.trim()).filter(Boolean) : [];
+}
+
 export interface GhCheck {
   name: string;
   state: string;
@@ -281,8 +402,16 @@ export function formatFailures(failures: readonly { name: string; url: string }[
 /** A branch is landable when it is not `main` and has nothing uncommitted. */
 export function landRefusal(branch: string, dirty: string, base: string): string | null {
   if (branch === "main" || branch === base) return `refusing to land ${branch}: land a task branch into ${base}, never ${branch} itself.`;
-  if (dirty.trim().length > 0) return "refusing to land a dirty tree: commit or stash first.";
+  if (dirty.trim().length > 0) return "refusing to land a dirty tree: pass --commit, or commit or stash first.";
   return null;
+}
+
+/**
+ * A path's refusal, or null. `--commit` cleans the tree itself, so the dirty check is only for a
+ * landing that was not asked to commit.
+ */
+export function refusalFor(args: LandArgs, branch: string, status: string): string | null {
+  return landRefusal(branch, args.commit ? "" : status, args.base);
 }
 
 function sleep(ms: number): void {
@@ -901,6 +1030,8 @@ export interface LandRun {
   /** The repo's landing lock file. */
   lock: string;
   io: LandIo;
+  /** Where `--commit` reads and writes fragments; the checkout's `changes/` by default. */
+  commitIo?: Pick<CommitOptions, "files" | "read" | "write">;
   /** Waits on the lock are appended here, so the caller can print what the landing spent queueing. */
   waits?: LockWait[];
 }
@@ -913,6 +1044,24 @@ export function landBranch(run: LandRun): number {
   const waits = run.waits ?? [];
   const startedAt = Date.now();
   try {
+    if (run.args.commit) {
+      const committed = commitLane({
+        base: run.args.base,
+        branch: run.branch,
+        git: run.io.git,
+        log: run.io.log,
+        ...run.commitIo,
+      });
+      if (committed.kind === "failed") {
+        run.io.error(`land: ${committed.why}`);
+        return committed.code ?? EXIT_COULD_NOT_MERGE;
+      }
+      run.io.log(
+        committed.kind === "committed"
+          ? `committed ${committed.subject} (${committed.fragment})`
+          : "nothing to commit; landing what the branch already has",
+      );
+    }
     return run.args.watch ? watchAndMerge(run, waits) : handOff(run, waits);
   } finally {
     run.io.log(formatTiming(Date.now() - startedAt, waits));
@@ -1006,7 +1155,7 @@ function main(): void {
   }
 
   const branch = git(["rev-parse", "--abbrev-ref", "HEAD"]).stdout.trim();
-  const refusal = landRefusal(branch, git(["status", "--porcelain"]).stdout, args.base);
+  const refusal = refusalFor(args, branch, args.commit ? "" : git(["status", "--porcelain"]).stdout);
   if (refusal !== null) {
     console.error(`land: ${refusal}`);
     process.exit(EXIT_COULD_NOT_MERGE);

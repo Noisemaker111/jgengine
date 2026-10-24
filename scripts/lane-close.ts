@@ -5,7 +5,8 @@
 //   bun run lane:close --pr 2274
 //   bun run lane:close --waive "nightly build really is 20 minutes"
 //
-// It verifies, lands, asks `ci:status` once for the truth about the checks, then
+// It verifies, lands (staging and committing the lane's work first, with its `changes/`
+// fragment as the message), asks `ci:status` once for the truth about the checks, then
 // reads this session from `lane:audit` and gates on how it spent its own time. A
 // lane that slept or watched CI is refused, because neither is needed any more:
 // `ci:status` answers in a second, and a wait on a condition is a command that
@@ -368,8 +369,8 @@ export function closeLane(args: LaneCloseArgs, io: LaneIo): number {
     return EXIT_VERIFY_FAILED;
   }
 
-  io.out("lane:close: land");
-  const landed = io.sh(["run", "land"], true);
+  io.out("lane:close: land --commit");
+  const landed = io.sh(["run", "land", "--commit"], true);
   if (landed.status !== 0) {
     io.err(`lane:close: land exited ${landed.status}; the lane is not closed`);
     return landed.status;

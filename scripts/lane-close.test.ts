@@ -71,7 +71,7 @@ function io(script: Script = {}): LaneIo & { lines: { out: string[]; err: string
       const key = argv.join(" ");
       if (key === "git rev-parse --abbrev-ref HEAD") return { ...run([]), stdout: `${script.branch ?? "agent/x"}\n` };
       if (key === "run verify:fast") return { ...run([]), status: script.verify ?? 0 };
-      if (key === "run land") return { ...run([]), status: script.land ?? 0 };
+      if (key === "run land --commit") return { ...run([]), status: script.land ?? 0 };
       if (key.startsWith("run ci:status")) {
         return { ...run([]), stdout: script.ci ?? CI_OK, status: script.ciStatus ?? 0 };
       }
@@ -195,8 +195,14 @@ describe("which session is this lane", () => {
 });
 
 describe("lane:close end to end", () => {
-  test("a clean lane verifies, lands and prints the numbers", () => {
+  test("a clean lane verifies, lands with --commit and prints the numbers", () => {
+    const calls: string[] = [];
     const fake = io({ audit: audit([session()]) });
+    const sh = fake.sh;
+    fake.sh = (argv, inherit) => {
+      calls.push(argv.join(" "));
+      return sh(argv, inherit);
+    };
     expect(closeLane({}, fake)).toBe(EXIT_CLOSED);
     const printed = fake.lines.out.join("\n");
     expect(printed).toContain("Lane report");
@@ -205,6 +211,7 @@ describe("lane:close end to end", () => {
     expect(printed).toContain("- span 38 min, tool 34 min, waiting 0 min — 61st percentile of 193 recent lanes");
     expect(printed).toContain("- files changed: 3 files changed, 120 insertions(+), 4 deletions(-)");
     expect(fake.lines.err).toEqual([]);
+    expect(calls).toContain("run land --commit");
   });
 
   test("the lane says which session it read and why", () => {
@@ -223,7 +230,7 @@ describe("lane:close end to end", () => {
       return sh(argv, inherit);
     };
     expect(closeLane({}, fake)).toBe(EXIT_VERIFY_FAILED);
-    expect(landed).not.toContain("run land");
+    expect(landed).not.toContain("run land --commit");
   });
 
   test("a lane that slept is refused, and its calls are named", () => {
