@@ -11,9 +11,17 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, edited]
 
+# One run per ref at a time. A pull request cancels its own superseded run: nobody reads the
+# old one, and the newest commit is the one that matters. `main` and `beta` do not cancel,
+# because their green is a fact someone asks about: on 24 Oct 11 of 44 pushes to beta were
+# cancelled, 122 runner-minutes went on runs killed after they started (40115639711,
+# 40115766928, 40116041724, 40111249236), and "is beta green" was answered by a run that never
+# finished. GitHub still keeps only the newest pending run when a burst arrives, which costs
+# nothing; what changes is that no beta run is killed after it starts, so every verdict beta
+# reports was reached.
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/beta' }}
 
 jobs:
   # Decides how much of the game matrix this run pays for. Booting every reference game
