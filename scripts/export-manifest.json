@@ -1062,6 +1062,7 @@
     "./render/stableTextureSet",
     "./render/staticShapeInstances",
     "./render/staticTransforms",
+    "./render/submittedDraws",
     "./render/triangleAttribution",
     "./render/triplanarMaterial",
     "./render/useDisposable",

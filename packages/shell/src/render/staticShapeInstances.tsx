@@ -4,6 +4,7 @@ import * as THREE from "three";
 import type { ModelShadowMode } from "./modelRender";
 import { AuthoredSurfaceMaterial, authoredSurfaceKey, type AuthoredSurfaceConfig, type SurfaceShape } from "./authoredSurfaceMaterial";
 import { ModelFallbackBoundary } from "./SceneModels";
+import { submitInstanceCount } from "./submittedDraws";
 import { useDisposable } from "./useDisposable";
 
 /** One editor-derived static primitive. A box spans one unit; a cylinder has unit radius and height before scale. */
@@ -58,7 +59,7 @@ export function writeStaticShapeInstances(mesh: THREE.InstancedMesh, instances: 
     transform.updateMatrix();
     mesh.setMatrixAt(index, transform.matrix);
   });
-  mesh.count = instances.length;
+  submitInstanceCount(mesh, instances.length);
   if (mesh.geometry.boundingBox === null) mesh.geometry.computeBoundingBox();
   const heightSurface = instances[0]?.surface;
   const displacedBounds = mesh.geometry.boundingBox!.clone();
