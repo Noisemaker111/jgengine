@@ -1739,6 +1739,36 @@ export async function waitCaptureReady(session: CdpSession, timeoutMs: number): 
   throw new Error(`timed out waiting for data-jg-capture=ready (${timeoutMs}ms)`);
 }
 
+/**
+ * What the page still has over the canvas while a scene prepares, or null once it is gone. The dev
+ * runner declares capture readiness only after this clears, so a shot that still sees it is
+ * photographing a loading cover: the label names the work it was waiting on.
+ */
+export async function preparingCoverLabel(session: CdpSession): Promise<string | null> {
+  const label = await session.evaluate<string | null>(`(() => {
+    const cover = document.querySelector("[data-shell-warmup], [data-shell-code-loading]");
+    if (cover === null) return null;
+    return (cover.textContent || "").trim().slice(0, 80) || "loading cover";
+  })()`);
+  return typeof label === "string" && label.length > 0 ? label : null;
+}
+
+/**
+ * The WebGL2 renderer the launched browser draws with, or null when it has no WebGL2 at all. A
+ * capture browser without it photographs an empty canvas, so a shot fails on null here instead of
+ * writing a frame the scene never reached.
+ */
+export async function webGlRenderer(session: CdpSession): Promise<string | null> {
+  const renderer = await session.evaluate<string | null>(`(() => {
+    const canvas = document.createElement("canvas");
+    const gl = canvas.getContext("webgl2");
+    if (gl === null) return null;
+    const ext = gl.getExtension("WEBGL_debug_renderer_info");
+    return String(ext === null ? gl.getParameter(gl.RENDERER) : gl.getParameter(ext.UNMASKED_RENDERER_WEBGL));
+  })()`);
+  return typeof renderer === "string" && renderer.length > 0 ? renderer : null;
+}
+
 function exceptionMessage(params: Record<string, unknown>): string {
   const details = params.exceptionDetails as
     | { text?: unknown; exception?: { description?: unknown; value?: unknown }; url?: unknown; lineNumber?: unknown }

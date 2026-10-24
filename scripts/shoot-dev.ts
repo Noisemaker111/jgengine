@@ -32,10 +32,12 @@ import {
   openPageSession,
   readReportedQuality,
   parseSizeArg,
+  preparingCoverLabel,
   qualitySuffix,
   sizeForDraft,
   sizeSuffix,
   sweepCaptureProfiles,
+  webGlRenderer,
   withBrowserSession,
   writePngAtomic,
   type Device,
@@ -53,6 +55,7 @@ import {
   computeShotMetrics,
   deadViewport,
   evaluateThresholds,
+  flatFrame,
   metricsPathFor,
   shotSignature,
 } from "./shot-metrics";
@@ -424,6 +427,11 @@ async function shootOne(
     await session.send("Runtime.enable");
     stopConsoleForward = forwardPageConsole(session, "shoot:");
     mark("enable");
+    const renderer = await webGlRenderer(session);
+    if (renderer === null) {
+      throw new Error("shoot: the launched Chrome has no WebGL2 - every frame would be an empty canvas; fix the launch flags before capturing");
+    }
+    console.error(`shoot: webgl2 ${renderer}`);
     const viewportSize = { width: args.width, height: args.height };
     await applyDevice(session, device, args.size, viewportSize);
     mark("device");
@@ -442,6 +450,15 @@ async function shootOne(
     if (args.quality !== undefined) assertQualityApplied(args.quality, reportedTier);
     await new Promise((r) => setTimeout(r, 600));
     mark("settle");
+    const profile = DEVICES[device];
+    const label = `${device} ${profile.width}x${profile.height}${args.size === "half" ? " (half-res)" : ""}${args.draft ? " (draft)" : ""} tier ${reportedTier ?? "n/a"}`;
+    const preparing = await preparingCoverLabel(session);
+    if (preparing !== null) {
+      console.error(
+        `shoot [${label}]: the scene is still preparing (${preparing}) - that frame is the loading cover, not the game; nothing was written`,
+      );
+      return false;
+    }
     const expected = captureProfile(device, args.size, viewportSize);
     // Read before capturing, not alongside it: the region is what lets the fast path reject a
     // frame whose 3D viewport the canvas never committed into, and a shot that is a black hole
@@ -457,9 +474,14 @@ async function shootOne(
       ...(regions.region === undefined ? {} : { liveRegion: regions.region }),
     });
     mark(`frame(${via})`);
-    writePngAtomic(outPath, bytes);
     const decoded = decodePng(bytes);
     const frame = computeShotMetrics(decoded.width, decoded.height, decoded.data);
+    const flat = flatFrame(frame);
+    if (flat !== null && regions.region !== undefined) {
+      console.error(`shoot [${label}]: ${flat} - nothing was written`);
+      return false;
+    }
+    writePngAtomic(outPath, bytes);
     const scoped = computeShotMetrics(decoded.width, decoded.height, decoded.data, regions);
     const viewport = (scoped.sampledShare ?? 1) >= MIN_SAMPLED_SHARE ? scoped : null;
     const record = buildShotRecord({
@@ -475,8 +497,6 @@ async function shootOne(
     writeShotRecord(outPath, record);
     console.log(outPath);
     mark("score");
-    const profile = DEVICES[device];
-    const label = `${device} ${profile.width}x${profile.height}${args.size === "half" ? " (half-res)" : ""}${args.draft ? " (draft)" : ""} tier ${reportedTier ?? "n/a"}`;
     let ok = true;
     if (overflow !== null) {
       console.error(`HUD OVERFLOW [${label}]: panels escape the viewport — ${overflow}`);
