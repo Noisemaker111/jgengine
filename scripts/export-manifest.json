@@ -1383,6 +1383,7 @@
     "./templates/boardFiles",
     "./templates/browserLaunch",
     "./templates/captureArgs",
+    "./templates/driveAim",
     "./templates/driveInput",
     "./templates/driveSteps",
     "./templates/editorWorkspace",

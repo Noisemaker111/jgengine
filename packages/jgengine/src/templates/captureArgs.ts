@@ -108,6 +108,9 @@ export type CaptureStep = (
   | { kind: "click"; text: string }
   | { kind: "double-click"; text: string }
   | { kind: "click-at"; spec: string; button: "left" | "right" }
+  | { kind: "move-mouse"; x: number; y: number }
+  | { kind: "look"; dx: number; dy: number }
+  | { kind: "aim-at"; expression: string; tolerancePx: number }
   | { kind: "fill"; label: string; value: string }
   | { kind: "key"; code: string; holdMs: number }
   | { kind: "wait"; ms: number }
@@ -128,10 +131,12 @@ export type CaptureStep = (
 export const DRIVE_CONDITION_TIMEOUT_MS = 15_000;
 /** How often a condition is re-evaluated while it is failing. */
 export const DRIVE_CONDITION_POLL_MS = 50;
+/** How close `aimAt` must bring the target to the crosshair before the step counts as aimed. */
+export const AIM_TOLERANCE_PX = 6;
 
 /** The step kinds a JSON step file accepts, in the order the help lists them. */
 export function driveStepKinds(): string[] {
-  return ["click", "doubleClick", "clickAt", "rightClickAt", "fill", "key", "wait", "waitFor", "reload", "shot", "rpc", "probe", "assert", "flow"];
+  return ["click", "doubleClick", "clickAt", "rightClickAt", "moveMouse", "look", "aimAt", "fill", "key", "wait", "waitFor", "reload", "shot", "rpc", "probe", "assert", "flow"];
 }
 
 /** A named flow file's parsed JSON and the path its errors name. */
@@ -358,7 +363,7 @@ export function parseStepFile(input: unknown, source: string, options: ParseStep
   }
   if (!Array.isArray(top.steps)) throw new Error(source + ": expected {\"steps\":[...]}, got " + valueType(top.steps));
   if (top.steps.length === 0) throw new Error(source + ": the steps list is empty, so the run would prove nothing");
-  const modifiers = ["before", "after", "ms", "timeoutMs", "note", "is"];
+  const modifiers = ["before", "after", "ms", "timeoutMs", "tolerancePx", "note", "is"];
   return top.steps.flatMap((raw, index) => {
     const at = "steps[" + index + "]";
     if (raw === null || typeof raw !== "object" || Array.isArray(raw)) throw new Error(at + ": expected a step object, got " + valueType(raw));
@@ -371,6 +376,7 @@ export function parseStepFile(input: unknown, source: string, options: ParseStep
     const kind = actions[0]!;
     const value = step[kind];
     if (step.is !== undefined && kind !== "assert") throw new Error(at + ": \"is\" is the assert expectation, so it cannot sit on a " + kind + " step");
+    if (step.tolerancePx !== undefined && kind !== "aimAt") throw new Error(at + ": \"tolerancePx\" sizes an aimAt target, so it cannot sit on a " + kind + " step");
     if (kind === "flow") return expandFlow(flowNameAt(at + ".flow", value), at, source, options, step);
     const before = step.before === undefined ? undefined : conditionAt(at + ".before", step.before);
     const after = step.after === undefined ? undefined : conditionAt(at + ".after", step.after);
@@ -386,6 +392,24 @@ export function parseStepFile(input: unknown, source: string, options: ParseStep
       case "clickAt":
       case "rightClickAt":
         return [shape({ kind: "click-at", spec: coordinatePair(at + "." + kind, value), button: kind === "rightClickAt" ? "right" : "left" })];
+      case "moveMouse": {
+        const [x, y] = coordinatePair(at + ".moveMouse", value).split(",").map(Number) as [number, number];
+        return [shape({ kind: "move-mouse", x, y })];
+      }
+      case "look": {
+        const [dx, dy] = coordinatePair(at + ".look", value).split(",").map(Number) as [number, number];
+        return [shape({ kind: "look", dx, dy })];
+      }
+      case "aimAt": {
+        if (typeof value !== "string" || value.trim() === "") {
+          throw new Error(at + ".aimAt: expected the page expression that returns the target's screen point { x, y }, got " + JSON.stringify(value));
+        }
+        const tolerance = step.tolerancePx;
+        if (tolerance !== undefined && (typeof tolerance !== "number" || !Number.isFinite(tolerance) || tolerance <= 0)) {
+          throw new Error(at + ".tolerancePx: expected a positive number of CSS pixels, got " + JSON.stringify(tolerance));
+        }
+        return [shape({ kind: "aim-at", expression: value, tolerancePx: tolerance ?? AIM_TOLERANCE_PX })];
+      }
       case "fill": {
         if (value === null || typeof value !== "object" || Array.isArray(value)) throw new Error(at + ".fill: expected {\"label\": \"<label>\", \"value\": \"<text>\"}, got " + JSON.stringify(value));
         const field = value as Record<string, unknown>;
@@ -442,7 +466,7 @@ function flowNameAt(path: string, value: unknown): string {
 
 /** Resolve one `{ "flow": name }` include into its steps, refusing a cycle or a fifth level. */
 function expandFlow(name: string, at: string, includeSource: string, options: ParseStepOptions, step: Record<string, unknown>): CaptureStep[] {
-  const extra = ["before", "after", "ms", "timeoutMs", "note", "is"].filter((key) => step[key] !== undefined);
+  const extra = ["before", "after", "ms", "timeoutMs", "tolerancePx", "note", "is"].filter((key) => step[key] !== undefined);
   if (extra.length > 0) throw new Error(at + ".flow: an include carries no fields of its own (got " + extra.join(", ") + "); put them on the flow's steps");
   const stack = options.stack ?? [];
   if (stack.includes(name)) throw new Error(at + ".flow: flow cycle by name: " + [...stack, name].join(" -> "));
@@ -474,6 +498,9 @@ export function describeStep(step: CaptureStep): string {
     case "click": return "click \"" + step.text + "\"";
     case "double-click": return "doubleClick \"" + step.text + "\"";
     case "click-at": return (step.button === "right" ? "rightClickAt " : "clickAt ") + step.spec;
+    case "move-mouse": return "moveMouse " + step.x + "," + step.y;
+    case "look": return "look " + step.dx + "," + step.dy + " px";
+    case "aim-at": return "aimAt " + JSON.stringify(step.expression) + " within " + step.tolerancePx + "px";
     case "fill": return "fill \"" + step.label + "\" = \"" + step.value + "\"";
     case "key": return "key " + step.code + " " + step.holdMs + "ms";
     case "wait": return "wait " + step.ms + "ms (last resort: a guessed sleep)";

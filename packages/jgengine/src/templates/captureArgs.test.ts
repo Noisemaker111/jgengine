@@ -100,6 +100,32 @@ describe("parseStepFile", () => {
       .toBe("steps[4].rightClickAt: expected [x, y] numbers, got \"420,220\"");
   });
 
+  test("parses aim steps and lists them in --check with their conditions", () => {
+    const steps = parseStepFile({
+      steps: [
+        { moveMouse: [640, 360], before: { is: "menu.ready" } },
+        { look: [-120, 40] },
+        { aimAt: "crosshair.target()", tolerancePx: 4, after: { is: "aim.onTarget", timeoutMs: 3000 } },
+      ],
+    }, "aim.json");
+    expect(steps[0]).toMatchObject({ kind: "move-mouse", x: 640, y: 360, before: { is: "menu.ready" } });
+    expect(steps[1]).toEqual({ kind: "look", dx: -120, dy: 40 });
+    expect(steps[2]).toMatchObject({ kind: "aim-at", expression: "crosshair.target()", tolerancePx: 4, after: { is: "aim.onTarget", timeoutMs: 3000 } });
+    expect(parseStepFile({ steps: [{ aimAt: "[10, 20]" }] }, "aim.json")[0]).toMatchObject({ tolerancePx: 6 });
+    const listed = describeStepFile(steps, "aim.json");
+    expect(listed).toContain("#1 moveMouse 640,360 before<=15000ms");
+    expect(listed).toContain("#2 look -120,40 px");
+    expect(listed).toContain("#3 aimAt \"crosshair.target()\" within 4px after<=3000ms");
+  });
+
+  test("names the index and the field for a malformed aim coordinate or target", () => {
+    expect(error([{ click: "Start" }, { look: [10, "20"] }])).toBe("steps[1].look: expected [x, y] numbers, got [10,\"20\"]");
+    expect(error([{ moveMouse: [1, 2, 3] }])).toBe("steps[0].moveMouse: expected [x, y] numbers, got [1,2,3]");
+    expect(error([{ aimAt: "" }])).toContain("steps[0].aimAt: expected the page expression");
+    expect(error([{ aimAt: "target()", tolerancePx: 0 }])).toContain("steps[0].tolerancePx: expected a positive number");
+    expect(error([{ look: [1, 2], tolerancePx: 3 }])).toContain("steps[0]: \"tolerancePx\" sizes an aimAt target");
+  });
+
   test("names the index for an unknown key code", () => {
     const message = error([{ click: "Start" }, { wait: 1 }, { key: "KeyHH", ms: 120 }]);
     expect(message).toContain("steps[2].key: unknown key code \"KeyHH\"");
