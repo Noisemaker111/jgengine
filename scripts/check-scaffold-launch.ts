@@ -230,6 +230,7 @@ function proxyHijackableProbes(file: string, text: string): string[] {
  * listed in the failure output, so adding one is a visible decision, not a silent pass.
  */
 const REMOTE_FETCH: Record<string, string> = {
+  "scripts/check-release-artifacts.ts": "registry.npmjs.org metadata and tarballs",
   "scripts/creator-app-fixture.ts": "browser-side page script inside a fixture app, not a Node probe",
   "scripts/mirror-assets.ts": "api.github.com and uploads.github.com",
   "scripts/pr-video.ts": "api.github.com",
