@@ -19,10 +19,14 @@ their rules, stories, items, assets, authored worlds and presentation. The engin
 the common machinery that makes those choices work. Shared behavior must preserve
 different art directions and gameplay, not impose a common game or asset kit.
 
-A compatible framework fix should reach consumers through a package upgrade, rather
-than another implementation in every game. Breaking API changes still need explicit
-migrations. The games repository centralizes SDK versions in one root workspace
-catalog; a beta merge alone does not change installed packages. The development and
+A compatible framework fix reaches consumers as a package upgrade, not an implementation
+in every game; breaking API changes still need explicit migrations. A
+merge to `beta` alone changes nothing installed: `bun run release` cuts the changelog
+and bumps the lockstep versions, that commit fast-forwards `main`, and `publish.yml`
+publishes the versions npm does not already have — `next` for a prerelease, `latest`
+for a release — after `bun run check-release-set` proves the publish order matches the
+manifests. The games repository centralizes SDK versions in one root workspace
+catalog. The development and
 adoption rules live in [AGENTS.md](AGENTS.md#game-changes-improve-the-framework).
 
 ## Packages
@@ -84,7 +88,7 @@ The game the agent builds is **its own project in its own repo/directory**, on t
 
 It deploys to Cloudflare Workers through the official Cloudflare Vite plugin. Because the site is built from `.claude/skills/` and `packages/`, **shipping an engine or skill change redeploys the site with it** — the deploy of the engine is the deploy of the website. Setup in [`apps/web/README.md`](apps/web/README.md).
 
-The probe games that live in [`Noisemaker111/JGengine-games`](https://github.com/Noisemaker111/JGengine-games) are also playable on jgengine.com itself, at `/games/<id>` via the games page and header link — the page embeds the `apps/dev` runner, which the site bundles as a static build at build time. The website clones the games repo at build time into an ephemeral `./Games` directory at the commit pinned in `scripts/games-ref.txt` (see `scripts/ensure-games.ts` / `bun run games:clone`; `bun run games:bump` moves the pin); the clone is gitignored and never committed to this repo. Root `bun dev` runs this same website locally on one server, serving that same static runner build (content-hash cached, rebuilt in the background when game or engine sources change), so the games are playable at `/games/<id>` locally once you have a clone. To play a game standalone, run `bun run --cwd Games/<id> dev` after cloning, or use the standalone dev harness inside any external game scaffolded per `jgengine`'s dev harness.
+The probe games in [`Noisemaker111/JGengine-games`](https://github.com/Noisemaker111/JGengine-games) are also playable on jgengine.com at `/games/<id>` — the page embeds the `apps/dev` runner, which the site bundles as a static build. The website clones the games repo at build time into an ephemeral `./Games` at the commit pinned in `scripts/games-ref.txt` (see `scripts/ensure-games.ts` / `bun run games:clone`; `bun run games:bump` moves the pin); the clone is gitignored and never committed. Root `bun dev` serves that same runner build locally (content-hash cached, rebuilt when game or engine sources change), so the games are playable at `/games/<id>`. To play one standalone, run `bun run --cwd Games/<id> dev` after cloning, or the dev harness inside any external game scaffolded per `jgengine`'s dev harness.
 
 ## Layering
 
@@ -97,28 +101,30 @@ bun install
 bun run check-types  # @jgengine/* resolves to package source; no build needed
 bun run test
 bun scripts/test-shard.ts a  # one CI test shard locally (a-i); --check counts files, --print lists them
-bun scripts/type-shard.ts    # what the CI `types` job runs: the check-types stages two at a time, then the tsc fan-out alone
+bun scripts/type-shard.ts    # what the CI `types` job runs: check-types two stages at a time, then the tsc fan-out alone
 bun run gate         # the whole local verdict in one run: build, then check-types and every test
 bun run build        # tsgo + import-extension rewrite, per package; only for pack/publish and the Node CLI
 bun run gen           # regenerate every committed derived artifact, in dependency order
+bun run verify:fast   # seconds: the branch diff vs origin/beta mapped to the packages, tests and quick gates it reaches
+bun run lane:close    # verify:fast, land, one ci:status read, then refuse a lane that slept or watched
 bun run games:clone  # once: clone Noisemaker111/JGengine-games into ephemeral ./Games at the pinned commit
-bun run games:update # move an existing clone to the pin; games:bump pins the games repo's latest stable
+bun run games:update # move an existing clone to the pin; games:bump pins the latest stable
 bun run games:check  # type-check + test every game in ./Games against THIS checkout's sources (no build, no copying dist)
                      # games:check <id> for one game; --published re-runs against the games' installed @jgengine/*
 bun dev              # jgengine.com locally, games playable at /games/<id> when Games/ is present
-bun run perf <game>  # frame times, draws, triangles, node/GL counts and top self-time functions as JSON (--help; --state <name> pins the scene to a capture.states entry, --param k=v pins a spawn/seed, --set key=value measures a setting's cost)
+bun run perf <game>  # frame times, draws, triangles, node/GL counts and top self-time functions as JSON (--help; --state pins the scene, --param k=v pins a spawn/seed, --set key=value prices a setting)
 bun run debug <game> # the same JSON for a game already open in a browser, ~0.3 s, fails on a budget breach
-bun run perf:gate    # CI gate: plays all 8 reference games and fails on draws/triangles/nodes over each game's Games/<id>/perf-budget.json (engine scripts/perf-budget.json when a game has none), or any program/framebuffer created after warmup; prints which file each game used (--help)
-bun run bench:cpu    # the CPU timing gate: re-runs the benchmarks that carry wall-clock budgets (nav crowd, perception, utility, visibility, off-screen, flock, paths) and fails when one exceeds its budget
+bun run perf:gate    # CI gate: plays all 8 reference games and fails on draws/triangles/nodes over Games/<id>/perf-budget.json (scripts/perf-budget.json when a game has none), or any program/framebuffer created after warmup (--help)
+bun run bench:cpu    # the CPU timing gate: re-runs the benchmarks that carry wall-clock budgets (nav crowd, perception, utility, visibility, off-screen, flock, paths) and fails when one exceeds it
 # a cloned game standalone:
 bun --cwd=Games/harbor-heat run dev
 ```
 
 Windows: if `bun` is not recognized after installing, its install directory is missing from PATH — add `%USERPROFILE%\.bun\bin` (PowerShell: `[Environment]::SetEnvironmentVariable("Path", "$env:Path;$env:USERPROFILE\.bun\bin", "User")`) and reopen the terminal.
 
-`bun run host:fixture` builds and serves the anonymous Relay Courtyard authority fixture from a clean owned checkout: compiled frontend on `4624`, realm on `4625`. Its UI uses normal shell commands and keyboard input. Build artifacts, logs and throwaway saves live under the repository home's `.scratch/authority-fixture/`; `--allow-dirty` labels development builds explicitly. Each `/__version` reports the revision embedded in its compiled artifact. `services.json` registers both components for `fresh-services.mjs`; reload executes the landed launcher and requires the recorded source checkout at that exact revision. Prepare that checkout before reload. This fixture does not publish packages or serve game accounts.
+`bun run host:fixture` builds and serves the anonymous Relay Courtyard authority fixture from a clean owned checkout: compiled frontend on `4624`, realm on `4625`, driven by normal shell commands and keyboard input. Build artifacts, logs and saves live under the repository home's `.scratch/authority-fixture/`; `--allow-dirty` labels development builds explicitly. Each `/__version` reports the revision embedded in its compiled artifact. `services.json` registers both components for `fresh-services.mjs`; reload executes the landed launcher and requires the recorded source checkout at that exact revision. This fixture does not publish packages or serve game accounts.
 
-**Public export surface.** Every `@jgengine/*` package ships a broad `"./*"` wildcard export, so every built `dist` file is an importable subpath. `scripts/export-manifest.json` is the reviewed record of that surface — the exact set of subpaths a consumer can `import`, computed from the source files each package's `tsconfig.build.json` emits and generated with `bun run gen` (which regenerates every derived artifact — barrels, capability index, skill API and this manifest — in dependency order; rerun and commit after adding/removing/renaming public source). `scripts/exportManifest.test.ts` fails when the real subpaths drift from the manifest, so an accidental new public path (or a test fixture leaking out) is caught in review; `bun run ship:preflight` fails with the fix when it or any other generated artifact is stale. `scripts/tarballInstall.test.ts` packs each package (`npm pack`) and imports it from a clean consumer dir with no workspace aliases — proving the published tarball resolves and that build-excluded internals (`testFixtures`, `*.test`, `testkit`) are never importable; it requires `bun run build` first (it reads `dist`).
+**Public export surface.** Every `@jgengine/*` package ships a broad `"./*"` wildcard export, so every built `dist` file is an importable subpath. `scripts/export-manifest.json` is the reviewed record of that surface — the exact set of subpaths a consumer can `import`, computed from the source files each package's `tsconfig.build.json` emits and regenerated by `bun run gen`, so rerun and commit after adding, removing or renaming public source. `scripts/exportManifest.test.ts` fails when the real subpaths drift from the manifest, so an accidental new public path (or a test fixture leaking out) is caught in review; `bun run ship:preflight` fails with the fix when any generated artifact is stale. `scripts/tarballInstall.test.ts` packs each package (`npm pack`) and imports it from a clean consumer dir with no workspace aliases — proving the published tarball resolves and that build-excluded internals (`testFixtures`, `*.test`, `testkit`) are never importable; it requires `bun run build` first (it reads `dist`).
 
 ## Credits
 
