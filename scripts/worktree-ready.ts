@@ -334,13 +334,14 @@ export function ensureGameAssets(
 
   const packs = gaps.filter((gap) => gap.kind === "pack").map((gap) => gap.name);
   const art = gaps.filter((gap) => gap.kind === "art");
-  const what = [
-    packs.length > 0 ? `${packs.length} pack(s): ${packs.join(", ")}` : "",
-    art.length > 0 ? `art file(s): ${art.map((gap) => gap.name).join(", ")}` : "",
-  ]
-    .filter(Boolean)
-    .join("; ");
-  const provision = `cd ${gamesRoot} && bun run provision ${game}`;
+  const steps: string[] = [];
+  if (packs.length > 0) steps.push(`bun run provision ${game}`);
+  if (art.length > 0) steps.push(`git checkout -- ${game}/src/art`);
+  const fix = `cd ${gamesRoot} && ${steps.join(" && ")}`;
+  const detail =
+    packs.length > 0
+      ? `downloads ${packs.length} pack(s) (${packs.join(", ")}), needs the network`
+      : `the art is committed, so this restores it from git; nothing is downloaded`;
 
   if (options.provision === true && packs.length > 0) {
     const result = Bun.spawnSync(["bun", "run", "provision", game], {
@@ -359,7 +360,7 @@ export function ensureGameAssets(
       gaps: after,
       message:
         `${game}: provisioning did not finish (exit ${result.exitCode ?? 1}); still missing ` +
-        `${after.map((gap) => gap.expected).join(", ") || "nothing named"} - run \`${provision}\` and read its output`,
+        `${after.map((gap) => gap.expected).join(", ") || "nothing named"} - run \`${fix}\` and read its output`,
     };
   }
 
@@ -369,7 +370,7 @@ export function ensureGameAssets(
     gaps,
     message:
       `${game}: assets are not on disk - ${gaps.map((gap) => gap.expected).join(", ")} missing. ` +
-      `Fix: ${provision} (downloads ${what}, needs the network; ${packs.length > 0 ? "nothing is downloaded unless you run it" : "art is committed, so a git fetch may be enough"})`,
+      `Fix: ${fix} (${detail}; nothing runs until you ask)`,
   };
 }
 
