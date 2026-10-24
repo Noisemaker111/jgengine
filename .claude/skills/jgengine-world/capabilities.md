@@ -643,6 +643,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `SceneObjectSlots` (interface) · `import { SceneObjectSlots } from "@jgengine/core/world"`
 
+## occluder-grid — coarse built-once occluder field that rejects cells blocked from the camera
+
+- `createOccluderGrid` (function) · `import { createOccluderGrid } from "@jgengine/core/world"`
+
 ## order-queue — serializable per-entity command queue with lifecycle, preemption, and pluggable order kinds
 
 - `createOrderQueue` (function) · `import { createOrderQueue } from "@jgengine/core/world"`

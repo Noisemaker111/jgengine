@@ -795,6 +795,15 @@ export { resolveGridInstances } from "./world/gridInstances";
 export { grounded } from "./world/grounded";
 export { createLodScheduler } from "./world/lod";
 export {
+  createOccluderGrid,
+  type OccluderBox,
+  type OccluderGrid,
+  type OccluderGridBounds,
+  type OccluderGridConfig,
+  type OccluderGridState,
+  type OccluderGridStats,
+} from "./world/occluderGrid";
+export {
   createAnnotationLayer,
   type AnnotationLayer,
   type AnnotationLayerOptions,
