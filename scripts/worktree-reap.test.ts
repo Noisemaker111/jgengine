@@ -71,14 +71,32 @@ describe("removal asks the tree, not just the branch", () => {
   });
 
   test("an uncommitted tree keeps its worktree, because those changes exist nowhere else", () => {
-    const result = reap(plan(), { isClean: (path) => !path.endsWith("b"), remove: () => true });
+    const result = reap(plan(), { exists: () => true, isClean: (path) => !path.endsWith("b"), remove: () => true });
     expect(result.removed.map((row) => row.name)).toEqual(["a"]);
     expect(result.kept).toContainEqual({ name: "b", reason: "uncommitted changes" });
+  });
+
+  test("a tree that is already gone counts as removed instead of failing the run", () => {
+    let asked = 0;
+    const result = reap(
+      { reap: [candidate("gone")], kept: [] },
+      {
+        exists: () => false,
+        isClean: () => {
+          asked += 1;
+          return true;
+        },
+        remove: () => true,
+      },
+    );
+    expect(asked).toBe(0);
+    expect(result.removed.map((row) => row.name)).toEqual(["gone"]);
   });
 
   test("a tree that cannot be deleted is reported, not retried", () => {
     let attempts = 0;
     const result = reap(plan(), {
+      exists: () => true,
       isClean: () => true,
       remove: () => {
         attempts += 1;
@@ -130,6 +148,7 @@ describe("only the worktrees directory belongs to a reap", () => {
     const result = reap(
       { reap: [candidateAt(clean, "clean"), candidateAt(dirty, "dirty")], kept: [] },
       {
+        exists: () => true,
         isClean: (path) => path === clean,
         remove: (path) => {
           rmSync(path, { recursive: true, force: true });

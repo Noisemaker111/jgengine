@@ -78,6 +78,8 @@ function safeRealpath(path: string): string {
 }
 
 export interface ReapIo {
+  /** True when the directory is still there; a tree another run already removed is not an error. */
+  exists: (path: string) => boolean;
   /** True when the tree has no tracked changes; untracked files such as node_modules do not count. */
   isClean: (path: string) => boolean;
   remove: (path: string) => boolean;
@@ -92,6 +94,10 @@ export function reap(selection: ReapSelection, io: ReapIo): { removed: ReapCandi
   const removed: ReapCandidate[] = [];
   const kept = [...selection.kept];
   for (const candidate of selection.reap) {
+    if (!io.exists(candidate.path)) {
+      removed.push(candidate);
+      continue;
+    }
     if (!io.isClean(candidate.path)) {
       kept.push({ name: candidate.name, reason: "uncommitted changes" });
       continue;
@@ -120,8 +126,14 @@ export function summarise(result: { removed: ReapCandidate[]; kept: { name: stri
 }
 
 function git(cwd: string, args: string[]): { ok: boolean; stdout: string } {
-  const run = Bun.spawnSync(["git", ...args], { cwd, stdout: "pipe", stderr: "pipe" });
-  return { ok: run.exitCode === 0, stdout: run.stdout?.toString() ?? "" };
+  // A directory can disappear between the listing and the check; spawning there
+  // reports a missing `git` rather than a missing directory, so it is caught here.
+  try {
+    const run = Bun.spawnSync(["git", ...args], { cwd, stdout: "pipe", stderr: "pipe" });
+    return { ok: run.exitCode === 0, stdout: run.stdout?.toString() ?? "" };
+  } catch {
+    return { ok: false, stdout: "" };
+  }
 }
 
 function main(argv: readonly string[]): void {
@@ -157,6 +169,7 @@ function main(argv: readonly string[]): void {
   }
 
   const result = reap(selection, {
+    exists: (path) => existsSync(path),
     isClean: (path) => git(path, ["status", "--porcelain", "--untracked-files=no"]).stdout.trim() === "",
     remove: (path) => {
       rmSync(path, { recursive: true, force: true, maxRetries: 2 });
