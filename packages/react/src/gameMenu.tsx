@@ -545,8 +545,8 @@ export function GameMenu({
                 ? undefined
                 : `transform ${hudDuration("base")} ${hudEase("spring")}, opacity ${hudDuration("fast")} ${hudEase("easeOut")}`,
               background:
-                "linear-gradient(90deg, var(--jg-accent-glow, rgba(94,196,255,0.3)) 0%, rgba(255,255,255,0.1) 62%, rgba(255,255,255,0.02) 100%)",
-              boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.22), 0 10px 30px -14px rgba(0,0,0,0.9)",
+                "linear-gradient(90deg, var(--jg-accent-glow, rgba(94,196,255,0.3)) 0%, rgba(255,255,255,0.18) 62%, rgba(255,255,255,0.04) 100%)",
+              boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.3), 0 10px 30px -14px rgba(0,0,0,0.9)",
               borderLeft: "3px solid var(--jg-accent, #7dd3fc)",
             }}
           />
