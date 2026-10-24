@@ -59,6 +59,7 @@ import {
 import { driveInputPointExpr } from "../packages/jgengine/src/templates/driveInput";
 import { CAPTURE_FLAGS, captureFlagHelp, describeFlow, describeStepFile, parseCaptureArgs, parseStepFile, rejectMixedStepFlags, type CaptureStep, type FlowFile, type FlowSource } from "../packages/jgengine/src/templates/captureArgs";
 import { awaitDriveCondition, awaitGameView, holdDriveInput, type DriveConditionClock, type DriveInputDeps, type DriveSession } from "../packages/jgengine/src/templates/driveSteps";
+import { driveProjectDir, flowSourceFrom, flowsDirOf, listFlowNames, missingFlowsMessage } from "./driveFlows";
 import { evaluateAssertStep, runDriveSteps, type DriveStepRecord } from "./driveRun";
 import { gameSurfaceCenter, mouseButtonForCode } from "../packages/jgengine/src/templates/gameSurfaceFocus";
 import { dispatchClickAt, parseClickAt } from "../packages/jgengine/src/clickInput";
@@ -212,30 +213,17 @@ Warm loop:
 
 /** The game (or site) project a run targets: its flows, docs/ and evidence live under it. */
 function projectDirOf(args: Args): string {
-  if (args.game === "url") return process.cwd();
-  return join(resolve(import.meta.dir, ".."), args.site === undefined ? "Games" : "apps/web", args.site === undefined ? args.game : args.site);
-}
-
-/** Flow names in a game's proofs/flows folder, sorted; empty when nothing is written yet. */
-function listFlowNames(dir: string): string[] {
-  if (!existsSync(dir)) return [];
-  return readdirSync(dir).filter((name) => name.endsWith(".json")).map((name) => name.slice(0, -".json".length)).sort();
+  return driveProjectDir(
+    { game: args.game, ...(args.site === undefined ? {} : { site: args.site }), external: args.game === "url" },
+    process.cwd(),
+    resolve(import.meta.dir, ".."),
+    existsSync,
+  );
 }
 
 /** Read a named flow; a missing name lists the ones that do exist, so the next agent picks a route instead of guessing. */
 function flowSource(dir: string): FlowSource {
-  return (name: string): FlowFile | undefined => {
-    const path = join(dir, name + ".json");
-    if (!existsSync(path)) {
-      const available = listFlowNames(dir);
-      throw new Error("no flow named \"" + name + "\" in " + dir + " (" + (available.length === 0 ? "no flows written yet" : "available: " + available.join(", ")) + ")");
-    }
-    try {
-      return { json: JSON.parse(readFileSync(path, "utf8")), source: path };
-    } catch (error) {
-      throw new Error("flow \"" + name + "\" at " + path + " is not valid JSON (" + (error instanceof Error ? error.message : String(error)) + ")");
-    }
-  };
+  return flowSourceFrom(dir, (path) => readFileSync(path, "utf8"), () => listFlowNames(dir));
 }
 
 /** Map the shared capture command line (packages/jgengine/src/templates/captureArgs.ts) onto drive's options. */
@@ -714,11 +702,11 @@ if (args.check) {
   process.exit(0);
 }
 if (args.flows) {
-  const dir = join(projectDirOf(args), "proofs", "flows");
-  const names = listFlowNames(dir);
+  const dir = flowsDirOf(projectDirOf(args));
+  const names = listFlowNames(dir, (path) => readdirSync(path));
   if (names.length === 0) {
-    console.log("drive: no flows in " + dir + " — write <game>/proofs/flows/<name>.json with the route and the arrival it asserts");
-    process.exit(0);
+    console.error("drive: " + missingFlowsMessage(dir));
+    process.exit(1);
   }
   const flows = flowSource(dir);
   for (const name of names) {
