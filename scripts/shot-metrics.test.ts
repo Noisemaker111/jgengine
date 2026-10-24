@@ -2,15 +2,18 @@ import { describe, expect, test } from "bun:test";
 import { join, resolve } from "node:path";
 import {
   CONTRAST_MURK_THRESHOLD,
+  DEAD_VIEW_DOMINANT_SHARE,
   DOMINANT_SHARE_SPARSE_THRESHOLD,
   EDGE_DENSITY_PRIMITIVE_THRESHOLD,
   ENTROPY_SPARSE_THRESHOLD,
   MIN_SAMPLED_SHARE,
+  MIN_STRUCTURE_SHARE,
   computeShotMetrics,
   deadViewport,
   evaluateThresholds,
   flatFrame,
   metricsPathFor,
+  sceneFrameProblem,
 } from "./shot-metrics";
 
 const WIDTH = 320;
@@ -192,6 +195,77 @@ describe("flatFrame", () => {
 
   test("passes a live scene", () => {
     expect(flatFrame(computeShotMetrics(WIDTH, HEIGHT, noisyBuffer(13)))).toBeNull();
+  });
+});
+
+/**
+ * The colours `--mode ui` paints: the game's HUD preview over a CSS backdrop gradient rather than a
+ * 3D canvas. Every distribution test passes on it — entropy, colour variety, contrast — while
+ * nothing was rendered, which is how a HUD-only frame was written as a scene shot.
+ */
+function hudPreviewBackdrop(x: number, y: number): readonly [number, number, number, number] {
+  const t = y / HEIGHT;
+  const blend = t < 0.55 ? t / 0.55 : (t - 0.55) / 0.45;
+  const from = t < 0.55 ? [42, 61, 51] : [26, 35, 32];
+  const to = t < 0.55 ? [26, 35, 32] : [20, 27, 24];
+  const mix = (index: number): number => Math.round(from[index]! + (to[index]! - from[index]!) * blend + (x % 3 === 0 ? 1 : 0));
+  return [mix(0), mix(1), mix(2), 255];
+}
+
+/** A night scene: near-black sky, a lit moon, and building silhouettes a few levels off it. */
+function nightScene(x: number, y: number): readonly [number, number, number, number] {
+  const moon = (x - 250) ** 2 + (y - 30) ** 2 < 90;
+  if (moon) return [186, 184, 168, 255];
+  const skyline = 96 + 26 * Math.sin(x / 17) + 14 * Math.sin(x / 5.5);
+  const building = x % 46 < 26 && y > skyline - 34;
+  if (building) return [15, 18, 22, 255];
+  return y > skyline ? [9, 11, 13, 255] : [7, 9, 12, 255];
+}
+
+describe("sceneFrameProblem", () => {
+  const canvas = { x: 0, y: 0, width: WIDTH, height: HEIGHT };
+  const hud = { x: 0, y: 0, width: WIDTH, height: 62 };
+  const scoped = (data: Uint8Array, region = canvas) =>
+    computeShotMetrics(WIDTH, HEIGHT, data, { region, masks: [hud] });
+
+  test("refuses a page with no canvas when the shot asked for a 3D framing", () => {
+    const data = makeBuffer(WIDTH, HEIGHT, hudPreviewBackdrop);
+    const frame = computeShotMetrics(WIDTH, HEIGHT, data);
+    const problem = sceneFrameProblem({ frame, viewport: null, mode: "ui", wantsScene: true });
+    expect(problem).toContain("no 3D canvas");
+    expect(problem).toContain("--mode play");
+  });
+
+  test("an unframed HUD preview stays a legitimate capture", () => {
+    const frame = computeShotMetrics(WIDTH, HEIGHT, makeBuffer(WIDTH, HEIGHT, hudPreviewBackdrop));
+    expect(sceneFrameProblem({ frame, viewport: null, mode: "ui", wantsScene: false })).toBeNull();
+  });
+
+  test("a gradient canvas with a busy HUD over it is refused for having no geometry", () => {
+    const data = makeBuffer(WIDTH, HEIGHT, hudPreviewBackdrop);
+    const frame = computeShotMetrics(WIDTH, HEIGHT, data);
+    const viewport = scoped(data);
+    expect(viewport.nonblank).toBe(true);
+    expect(viewport.dominantColorShare).toBeLessThan(DEAD_VIEW_DOMINANT_SHARE);
+    expect(viewport.structureShare).toBeLessThan(MIN_STRUCTURE_SHARE);
+    expect(sceneFrameProblem({ region: canvas, frame, viewport, mode: "play", wantsScene: true })).toContain(
+      "no rendered geometry",
+    );
+  });
+
+  test("a genuinely dark night scene passes", () => {
+    const data = makeBuffer(WIDTH, HEIGHT, nightScene);
+    const frame = computeShotMetrics(WIDTH, HEIGHT, data);
+    const viewport = scoped(data);
+    expect(viewport.luminance.mean).toBeLessThan(40);
+    expect(viewport.structureShare).toBeGreaterThanOrEqual(MIN_STRUCTURE_SHARE);
+    expect(sceneFrameProblem({ region: canvas, frame, viewport, mode: "play", wantsScene: true })).toBeNull();
+  });
+
+  test("a live scene at the same view passes", () => {
+    const data = noisyBuffer(17);
+    const frame = computeShotMetrics(WIDTH, HEIGHT, data);
+    expect(sceneFrameProblem({ region: canvas, frame, viewport: scoped(data), mode: "play", wantsScene: true })).toBeNull();
   });
 });
 

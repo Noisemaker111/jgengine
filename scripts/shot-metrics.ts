@@ -13,6 +13,8 @@ export type ShotMetrics = {
   colorEntropyBits: number;
   dominantColorShare: number;
   edgeDensity: number;
+  /** Share of the grid carrying a luminance step — rendered geometry rather than a smooth fill. */
+  structureShare: number;
   luminance: LuminanceStats;
   nonblank: boolean;
   /** Fraction of the grid that survived masking; low means the HUD covers most of the region. */
@@ -64,6 +66,20 @@ export const ENTROPY_SPARSE_THRESHOLD = 3.0;
 export const DOMINANT_SHARE_SPARSE_THRESHOLD = 0.6;
 export const EDGE_DENSITY_PRIMITIVE_THRESHOLD = 0.04;
 export const CONTRAST_MURK_THRESHOLD = 60;
+
+/**
+ * Luminance step that counts as a rendered edge. Deliberately smaller than
+ * {@link EDGE_LUMINANCE_DELTA}: a night scene's silhouettes are steps of a few levels, while a
+ * smooth sky or backdrop gradient moves by a fraction of a level between grid samples.
+ */
+export const STRUCTURE_LUMINANCE_DELTA = 3;
+
+/**
+ * Share of the sampled region that must carry a luminance step for the region to be a picture.
+ * A flat fill scores 0, a smooth CSS gradient scores ~0, and every real frame measured scores
+ * 0.45 or more, so the floor sits far from both.
+ */
+export const MIN_STRUCTURE_SHARE = 0.01;
 
 function luminanceOf(r: number, g: number, b: number): number {
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
@@ -143,6 +159,7 @@ export function computeShotMetrics(
   const dominantColorShare = totalSamples > 0 ? dominantCount / totalSamples : 0;
 
   let edgeCount = 0;
+  let structureCount = 0;
   let edgeTotal = 0;
   for (let row = 0; row < rows - 1; row += 1) {
     for (let col = 0; col < cols - 1; col += 1) {
@@ -150,11 +167,14 @@ export function computeShotMetrics(
       const right = luminanceGrid[row][col + 1];
       const below = luminanceGrid[row + 1][col];
       if (l === null || right === null || below === null) continue;
-      if (Math.max(Math.abs(right - l), Math.abs(below - l)) > EDGE_LUMINANCE_DELTA) edgeCount += 1;
+      const step = Math.max(Math.abs(right - l), Math.abs(below - l));
+      if (step > EDGE_LUMINANCE_DELTA) edgeCount += 1;
+      if (step > STRUCTURE_LUMINANCE_DELTA) structureCount += 1;
       edgeTotal += 1;
     }
   }
   const edgeDensity = edgeTotal > 0 ? edgeCount / edgeTotal : 0;
+  const structureShare = edgeTotal > 0 ? structureCount / edgeTotal : 0;
 
   const mean = luminanceSamples.reduce((sum, v) => sum + v, 0) / Math.max(1, totalSamples);
   const variance = luminanceSamples.reduce((sum, v) => sum + (v - mean) ** 2, 0) / Math.max(1, totalSamples);
@@ -170,6 +190,7 @@ export function computeShotMetrics(
     colorEntropyBits: entropyBits,
     dominantColorShare,
     edgeDensity,
+    structureShare,
     luminance: { mean, p5, p95, contrast: p95 - p5 },
     nonblank,
     sampledShare: gridSamples > 0 ? (gridSamples - maskedSamples) / gridSamples : 0,
@@ -228,15 +249,23 @@ export function compareSignatures(a: readonly number[], b: readonly number[]): S
 }
 
 /**
- * Whether the sampled region rendered nothing — blank, or a single flat fill. Scored over
- * the 3D viewport with HUD panels masked out, because a busy HUD lifts whole-frame entropy
- * far enough to make a dead viewport read as a healthy screenshot.
+ * Whether the sampled region rendered nothing — blank, a single flat fill, or a smooth fill with no
+ * rendered geometry anywhere in it. Scored over the 3D viewport with HUD panels masked out, because
+ * a busy HUD lifts whole-frame entropy far enough to make a dead viewport read as a healthy
+ * screenshot.
+ *
+ * The structure rule is the one that closes the HUD-over-an-empty-canvas hole: a *gradient* backdrop
+ * keeps entropy, colour variety and contrast alive, so every distribution test above passes while
+ * nothing was drawn. Geometry leaves luminance steps; a gradient does not.
  */
 export function deadViewport(metrics: ShotMetrics): string | null {
   if ((metrics.sampledShare ?? 1) < MIN_SAMPLED_SHARE) return null;
   if (!metrics.nonblank) return "the 3D viewport is blank";
   if (metrics.dominantColorShare > DEAD_VIEW_DOMINANT_SHARE) {
     return `the 3D viewport is a single flat fill (${(metrics.dominantColorShare * 100).toFixed(1)}% one color)`;
+  }
+  if ((metrics.structureShare ?? 0) < MIN_STRUCTURE_SHARE) {
+    return `the 3D viewport has no rendered geometry (${((metrics.structureShare ?? 0) * 100).toFixed(2)}% of samples carry a luminance step, floor ${MIN_STRUCTURE_SHARE * 100}%)`;
   }
   return null;
 }
@@ -249,6 +278,44 @@ export function deadViewport(metrics: ShotMetrics): string | null {
 export function flatFrame(metrics: ShotMetrics): string | null {
   if (metrics.dominantColorShare < FLAT_FRAME_DOMINANT_SHARE) return null;
   return `the whole frame is one flat color (${(metrics.dominantColorShare * 100).toFixed(1)}%) - no scene reached the capture`;
+}
+
+export interface SceneFrameCheck {
+  /** Where the 3D canvas sits in the captured frame, absent when the page has no canvas at all. */
+  region?: ShotRect;
+  /** Metrics over the whole frame. */
+  frame: ShotMetrics;
+  /** Canvas-region metrics, or null when the HUD covers too much of the canvas to judge it. */
+  viewport: ShotMetrics | null;
+  /** Whether this capture promised a rendered game view (`--mode play|poster|preview`, `--view`, `--look`). */
+  wantsScene: boolean;
+  mode: string;
+}
+
+/**
+ * Why a captured frame is not evidence of a rendered scene, or null when it is.
+ *
+ * Judged before the PNG is written, and over the canvas rather than the composited frame: a page
+ * with no canvas at all (`--mode ui` renders the game's HUD preview over a CSS backdrop) satisfied
+ * every whole-frame test, so a HUD-only frame was written and cited as a scene shot. A HUD preview
+ * without a framing request is an honest capture of the UI surface; one that also asked for a
+ * `--view`/`--look` is a scene shot the page cannot produce, so it fails instead of writing a file
+ * whose name claims a view nobody rendered.
+ */
+export function sceneFrameProblem(check: SceneFrameCheck): string | null {
+  if (check.region === undefined) {
+    if (!check.wantsScene) return null;
+    const hint =
+      check.mode === "ui"
+        ? "--mode ui renders the game's HUD preview, which has no 3D canvas - add --mode play for a scene shot"
+        : "this capture cannot judge a world the page never created";
+    return `no 3D canvas on the page - the frame is HUD and backdrop only (${hint})`;
+  }
+  if (check.viewport !== null) {
+    const dead = deadViewport(check.viewport);
+    if (dead !== null) return dead;
+  }
+  return flatFrame(check.frame);
 }
 
 export function evaluateThresholds(metrics: ShotMetrics): ThresholdWarning[] {
