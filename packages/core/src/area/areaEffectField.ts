@@ -320,3 +320,5 @@ export function createAreaEffectField<P = unknown>(state?: AreaFieldState<P>): A
     },
   };
 }
+
+// Measurement line batch1.

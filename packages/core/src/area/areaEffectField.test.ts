@@ -325,3 +325,5 @@ describe("bounded candidate query", () => {
     expect(events[0]).toMatchObject({ kind: "enter", receiverId: "near" });
   });
 });
+
+// Measurement line batch1.
