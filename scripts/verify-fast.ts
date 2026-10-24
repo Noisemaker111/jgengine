@@ -26,13 +26,14 @@ import { walkTestFiles } from "./test-shard";
 
 const VERIFY_FAST_USAGE = {
   summary: "run only the tests and static gates this branch's diff reaches, in seconds",
-  usage: "bun run verify:fast [--full] [--plan] [--json] [--base <ref>] [--jobs <n>]",
+  usage: "bun run verify:fast [--full] [--plan] [--json] [--base <ref>] [--jobs <n>] [--skip-skill-api]",
   flags: [
     { flag: "--full", detail: "what CI runs, not just what this change reaches; minutes, before landing" },
     { flag: "--plan", detail: "print the steps and their commands, run nothing" },
     { flag: "--json", detail: "one { ok, ms, checks } document on stdout" },
     { flag: "--base <ref>", detail: "diff against this ref (default: origin/beta)" },
     { flag: "--jobs <n>", detail: "steps to run at once (default: half the cores, at most 6)" },
+    { flag: "--skip-skill-api", detail: "leave out the 21 s check-skill-api gate; CI still runs it" },
   ],
   example: "bun run verify:fast --plan",
   exits: [
@@ -72,6 +73,12 @@ export interface Step {
    * lanes sit idle. A stale number costs overlap, never correctness.
    */
   cost?: number;
+  /**
+   * What to run when this step fails because a committed artifact drifted from its
+   * generator. Named with the command and the files it rewrites, because "failed" left
+   * lanes guessing and pushed them to CI to find out.
+   */
+  fix?: string;
 }
 
 /**
@@ -272,15 +279,27 @@ export function importers(
 
 /**
  * The `quick` job's cheap static gates that can cover this change. Each of these
- * already runs in CI, so running it here never invents a rule. The `quick` steps that
- * need a build (`build`, `check-skill-api`, `check-export-manifest`) and the ones that
- * launch a browser or scaffold (`check:scaffold-launch`) are left to `--full`.
+ * already runs in CI, so running it here never invents a rule. The steps that launch a
+ * browser or scaffold (`check:scaffold-launch`) are left to `--full`.
+ *
+ * Both generated-file checks belong here because they are cheap against what a missed
+ * one costs: `check-export-manifest` reads package.json and the build tsconfig (0.1 s),
+ * and `check-skill-api` parses every package source through ts-morph (20.8 s on this PC,
+ * measured 2026-10-24, and it needs no build - it fails the same without `dist`). Neither
+ * needs `dist`, so a lane adding an export hears about a stale manifest and `api.md` in
+ * the same run instead of after a push and a full CI round trip. 20.8 s is too long to
+ * charge every run, so `check-skill-api` runs only when a package changed and
+ * `--skip-skill-api` takes it back out.
  */
 export function gatesFor(changed: readonly string[]): string[] {
   const gates = new Set(["check-artifacts", "check:fixture-location", "check:path-portability", "check-orphan-ratchet"]);
   const shippedSource = changed.filter((path) => /^packages\/[^/]+\/src\//.test(path) && !isTestFile(path));
   if (changed.some((path) => path.startsWith("scripts/")) || shippedSource.length > 0) gates.add("check:capture-hygiene");
   if (shippedSource.length > 0) gates.add("check-changelog");
+  if (changed.some((path) => path.startsWith("packages/"))) {
+    gates.add("check-export-manifest");
+    gates.add("check-skill-api");
+  }
   if (changed.some((path) => /\.(md|mdx)$/i.test(path) || path.startsWith(".claude/skills/"))) {
     gates.add("check-skills");
     gates.add("check-stage-skills");
@@ -324,12 +343,31 @@ export function buildPlan(input: {
   };
 }
 
+/**
+ * What a lane runs when a generated file is stale, and what that command rewrites. The
+ * generators name their own script; this names the one command that runs every generator
+ * in dependency order, so a lane that added an export fixes the manifest, `api.md` and the
+ * baselines in one go instead of discovering the next stale file in CI.
+ */
+export const GATE_FIX: Readonly<Record<string, string>> = {
+  "check-export-manifest":
+    "bun run gen  (rewrites scripts/export-manifest.json from the public subpaths the build will emit)",
+  "check-skill-api":
+    "bun run gen  (rewrites .claude/skills/*/api.md and prunes scripts/api-doc-baseline.json and scripts/api-orphan-baseline.json)",
+};
+
+/** Rough seconds per gate on this PC (2026-10-24), so the 21 s check starts before the 1 s ones. */
+const GATE_COST: Readonly<Record<string, number>> = {
+  "check-skill-api": 21,
+};
+
 /** The commands `bun run verify:fast` runs for a plan. */
-export function fastSteps(plan: Plan): Step[] {
+export function fastSteps(plan: Plan, options: { skipSkillApi?: boolean } = {}): Step[] {
   const steps: Step[] = [];
   for (const dir of plan.typechecks) steps.push({ name: `typecheck ${dir}`, command: ["bun", `--cwd=${dir}`, "run", "check-types"] });
   if (plan.tests.length > 0) steps.push({ name: `test ${plan.tests.length} file(s)`, command: ["bun", "test", "--timeout", "20000", ...plan.tests] });
-  for (const gate of plan.gates) steps.push({ name: gate, command: ["bun", "run", gate] });
+  const gates = options.skipSkillApi === true ? plan.gates.filter((gate) => gate !== "check-skill-api") : plan.gates;
+  for (const gate of gates) steps.push({ name: gate, command: ["bun", "run", gate], fix: GATE_FIX[gate], cost: GATE_COST[gate] });
   return steps;
 }
 
@@ -429,13 +467,13 @@ export async function fullSteps(root: string, changed: readonly string[]): Promi
     { name: "check-skills", command: ["bun", "run", "check-skills"] },
     { name: "check-changelog", command: ["bun", "run", "check-changelog"] },
     { name: "build", command: ["bun", "run", "build"], cost: 10 },
-    { name: "check-skill-api", command: ["bun", "run", "check-skill-api"], needs: ["build"], cost: 30 },
+    { name: "check-skill-api", command: ["bun", "run", "check-skill-api"], needs: ["build"], cost: 30, fix: GATE_FIX["check-skill-api"] },
     { name: "check-orphan-ratchet", command: ["bun", "run", "check-orphan-ratchet"] },
     { name: "check:fixture-location", command: ["bun", "run", "check:fixture-location"] },
     { name: "check:path-portability", command: ["bun", "run", "check:path-portability"] },
     { name: "check:scaffold-launch", command: ["bun", "run", "check:scaffold-launch"], exclusive: true },
     { name: "check:capture-hygiene", command: ["bun", "run", "check:capture-hygiene"] },
-    { name: "check-export-manifest", command: ["bun", "run", "check-export-manifest"], needs: ["build"] },
+    { name: "check-export-manifest", command: ["bun", "run", "check-export-manifest"], needs: ["build"], fix: GATE_FIX["check-export-manifest"] },
   ];
 
   steps.push({ name: "types (type-shard)", command: ["bun", "scripts/type-shard.ts"], cost: 40 });
@@ -686,6 +724,7 @@ async function main(argv: readonly string[]): Promise<number> {
   const full = argv.includes("--full");
   const planOnly = argv.includes("--plan");
   const json = argv.includes("--json");
+  const skipSkillApi = argv.includes("--skip-skill-api");
   const started = Date.now();
 
   let changed: string[];
@@ -742,6 +781,7 @@ async function main(argv: readonly string[]): Promise<number> {
         const suffix = result.blockedBy === undefined ? "" : `  (${result.output})`;
         console.log(`${result.ok ? "PASS" : "FAIL"}  ${step.name}  ${(result.ms / 1000).toFixed(1)}s${suffix}`);
         if (!result.ok && result.blockedBy === undefined) console.log(result.output);
+        if (!result.ok && result.blockedBy === undefined && step.fix !== undefined) console.log(`  fix: ${step.fix}`);
         return result;
       }),
     );
@@ -760,7 +800,7 @@ async function main(argv: readonly string[]): Promise<number> {
     readText: (path) => readFileSync(join(root, path), "utf8"),
     resolveSpecifier,
   });
-  const steps = fastSteps(plan);
+  const steps = fastSteps(plan, { skipSkillApi });
 
   if (json) {
     if (plan.unattributed.length > 0) {
@@ -772,6 +812,9 @@ async function main(argv: readonly string[]): Promise<number> {
   }
 
   console.log(`verify:fast against ${base}: ${plan.changed.length} changed file(s), ${plan.tests.length} test file(s), ${plan.gates.length} gate(s)`);
+  if (skipSkillApi && plan.gates.includes("check-skill-api")) {
+    console.log("verify:fast: --skip-skill-api left out check-skill-api; CI runs it and still fails on a stale api.md.");
+  }
   if (planOnly) {
     printPlan(plan, steps);
     return plan.unattributed.length === 0 ? EXIT_VERIFIED : EXIT_UNATTRIBUTED;
@@ -782,13 +825,17 @@ async function main(argv: readonly string[]): Promise<number> {
   }
 
   const failures: string[] = [];
-  for (const step of steps) {
-    const result = await run(step, root);
-    console.log(`${result.ok ? "PASS" : "FAIL"}  ${step.name}  ${(result.ms / 1000).toFixed(1)}s`);
-    if (!result.ok) {
-      failures.push(step.name);
-      console.log(result.output);
-    }
+  // The gates do not write each other's files and CI's `quick` job runs them as separate
+  // processes too, so they overlap here: the 21 s skill-api check hides behind the tests
+  // instead of adding to them.
+  const results = await runSteps(steps, DEFAULT_JOBS, (step) => run(step, root));
+  for (const result of results) {
+    const step = steps.find((candidate) => candidate.name === result.name);
+    console.log(`${result.ok ? "PASS" : "FAIL"}  ${result.name}  ${(result.ms / 1000).toFixed(1)}s`);
+    if (result.ok) continue;
+    failures.push(result.name);
+    if (result.output.length > 0) console.log(result.output);
+    if (step?.fix !== undefined) console.log(`  fix: ${step.fix}`);
   }
   const seconds = (Date.now() - started) / 1000;
   console.log(`\ntotal ${seconds.toFixed(1)}s — ${steps.length - failures.length} passed, ${failures.length} failed`);

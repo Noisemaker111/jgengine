@@ -222,6 +222,46 @@ describe("static gates", () => {
   test("a scripts change pays the capture hygiene gate", () => {
     expect(gatesFor(["scripts/lookArg.ts"])).toContain("check:capture-hygiene");
   });
+
+  test("a package change pays both generated-file checks, so a stale manifest or api.md fails here", () => {
+    const gates = gatesFor(["packages/core/src/world/terrain.ts"]);
+    expect(gates).toContain("check-export-manifest");
+    expect(gates).toContain("check-skill-api");
+  });
+
+  test("a change that cannot touch the public API does not pay the generated-file checks", () => {
+    expect(gatesFor(["scripts/lookArg.ts"])).not.toContain("check-export-manifest");
+    expect(gatesFor([".claude/skills/workflow/SKILL.md"])).not.toContain("check-skill-api");
+  });
+
+  test("a stale generated file names the command that rewrites it, not just the failure", () => {
+    const steps = fastSteps({
+      changed: ["packages/core/src/world/terrain.ts"],
+      typechecks: [],
+      tests: [],
+      gates: ["check-export-manifest", "check-skill-api"],
+      unattributed: [],
+    });
+    const manifest = steps.find((step) => step.name === "check-export-manifest");
+    const skillApi = steps.find((step) => step.name === "check-skill-api");
+    expect(manifest?.fix).toContain("bun run gen");
+    expect(manifest?.fix).toContain("scripts/export-manifest.json");
+    expect(skillApi?.fix).toContain("bun run gen");
+    expect(skillApi?.fix).toContain(".claude/skills/*/api.md");
+  });
+
+  test("--skip-skill-api leaves the slow generated check out and keeps the cheap one", () => {
+    const plan = {
+      changed: ["packages/core/src/world/terrain.ts"],
+      typechecks: [],
+      tests: [],
+      gates: ["check-artifacts", "check-export-manifest", "check-skill-api"],
+      unattributed: [],
+    };
+    const names = fastSteps(plan, { skipSkillApi: true }).map((step) => step.name);
+    expect(names).not.toContain("check-skill-api");
+    expect(names).toContain("check-export-manifest");
+  });
 });
 
 describe("commands", () => {
