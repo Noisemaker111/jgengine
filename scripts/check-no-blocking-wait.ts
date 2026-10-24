@@ -27,6 +27,15 @@ const CI_RULES: readonly { readonly rule: string; readonly pattern: RegExp }[] =
   { rule: "CI watch", pattern: /\bgh\s+pr\s+checks\b[^\n]*--watch\b/ },
 ];
 
+/**
+ * `packages/<pkg>/src/meta` holds documentation as data: the changelog mirror's entries are quoted prose
+ * that describes waits, and a release note saying a lane spent ten minutes of `Start-Sleep` is not a wait.
+ * Quoted prose and comments are masked in those files before matching; a template literal still counts,
+ * because that is the shape `Bun.$` executes. Everywhere else a quoted command stays a finding, since a
+ * script can hand the same string to a shell.
+ */
+const PROSE_PATH = /^packages\/[^/]+\/src\/meta\//;
+
 /** `// wait-ok: reason` or `# wait-ok: reason`; the reason must be words, not a bare marker. */
 const EXEMPTION = /(?:\/\/|#)\s*wait-ok:\s*[A-Za-z0-9]/i;
 const SLEEP_CALL = /\bStart-Sleep\b|(?<![\w-])sleep\s+\d|\btimeout\s+\/t\s+\d/i;
@@ -48,19 +57,77 @@ function exempt(lines: readonly string[], index: number): boolean {
   return isComment(previous) && EXEMPTION.test(previous);
 }
 
-/** Every foreground wait in `source`, by 1-based line. */
-export function findBlockingWaits(source: string): BlockingWait[] {
+/** Carried across lines: a block comment or a multi-line string masks everything it spans. */
+interface MaskState {
+  readonly block: boolean;
+  readonly quote: '"' | "'" | null;
+}
+
+const UNMASKED: MaskState = { block: false, quote: null };
+
+/**
+ * Blank out single- and double-quoted text and comments, keeping the rest of the line. Template literals
+ * stay, so a command handed to `Bun.$` is still read as a command.
+ */
+function maskProse(line: string, state: MaskState): { text: string; state: MaskState } {
+  let text = "";
+  let block = state.block;
+  let quote = state.quote;
+  for (let at = 0; at < line.length; at++) {
+    const char = line[at];
+    if (block) {
+      if (char === "*" && line[at + 1] === "/") {
+        block = false;
+        at++;
+        text += "  ";
+      } else text += " ";
+      continue;
+    }
+    if (quote !== null) {
+      if (char === "\\") {
+        text += "  ";
+        at++;
+      } else {
+        if (char === quote) quote = null;
+        text += " ";
+      }
+      continue;
+    }
+    if (char === "/" && line[at + 1] === "/") break;
+    if (char === "/" && line[at + 1] === "*") {
+      block = true;
+      text += "  ";
+      at++;
+      continue;
+    }
+    if (char === '"' || char === "'") {
+      quote = char;
+      text += " ";
+      continue;
+    }
+    text += char;
+  }
+  return { text, state: { block, quote } };
+}
+
+/** Every foreground wait in `source`, by 1-based line. `prose` masks quoted text before matching. */
+export function findBlockingWaits(source: string, options: { readonly prose?: boolean } = {}): BlockingWait[] {
   const lines = source.split("\n");
   const waits: BlockingWait[] = [];
+  let mask = UNMASKED;
   lines.forEach((line, index) => {
+    if (!options.prose) mask = UNMASKED;
+    const masked = options.prose ? maskProse(line, mask) : null;
+    if (masked !== null) mask = masked.state;
     const text = line.trim();
     if (text === "" || isComment(text) || exempt(lines, index)) return;
-    const ciWatch = CI_RULES.find(({ pattern }) => pattern.test(line));
+    const matched = masked?.text ?? line;
+    const ciWatch = CI_RULES.find(({ pattern }) => pattern.test(matched));
     if (ciWatch !== undefined) {
       waits.push({ line: index + 1, rule: ciWatch.rule, text });
       return;
     }
-    if (SLEEP_CALL.test(line)) waits.push({ line: index + 1, rule: "sleep", text });
+    if (SLEEP_CALL.test(matched)) waits.push({ line: index + 1, rule: "sleep", text });
   });
   return waits;
 }
@@ -85,8 +152,9 @@ export function scanRepository(root: string): { file: string; wait: BlockingWait
   const found: { file: string; wait: BlockingWait }[] = [];
   for (const dir of ROOTS) {
     for (const file of walk(join(root, dir))) {
-      for (const wait of findBlockingWaits(readFileSync(file, "utf8"))) {
-        found.push({ file: relative(root, file).replace(/\\/g, "/"), wait });
+      const path = relative(root, file).replace(/\\/g, "/");
+      for (const wait of findBlockingWaits(readFileSync(file, "utf8"), { prose: PROSE_PATH.test(path) })) {
+        found.push({ file: path, wait });
       }
     }
   }

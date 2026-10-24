@@ -81,6 +81,38 @@ test("a clean script passes and a scan reports the file and line it failed on", 
   ]);
 });
 
+test("a changelog entry that describes a wait is prose, not a wait", () => {
+  const root = workspace({
+    "packages/core/src/meta/changelog.ts":
+      [
+        "export const CHANGELOG = {",
+        '  "0.37.0": {',
+        "    changed: [",
+        '      "One lane spent 10 minutes of `Start-Sleep` calls watching a capture it had started.",',
+        '      "`bun run land:queue` waits once per PR, and a lane never runs `gh run watch` or `gh pr checks --watch`.",',
+        '      "Its body said: \'timeout /t 5\' and `sleep 30` are both banned.",',
+        "    ],",
+        "  },",
+        "};",
+      ].join("\n"),
+    "packages/core/src/meta/notes.ts": "/* Start-Sleep 5 and gh run watch 12 described in a block comment\n   spanning two lines */\nexport const note = 1;\n",
+  });
+  expect(scanRepository(root)).toEqual([]);
+});
+
+test("a real wait still fails beside that prose, including a command in a template literal", () => {
+  const root = workspace({
+    "packages/core/src/meta/changelog.ts":
+      'export const CHANGELOG = {\n  "0.37.0": {},\n};\nawait Bun.$`Start-Sleep -Seconds 5`;\n',
+    "scripts/waits.ts": 'await Bun.$`sleep 5`;\nawait Bun.$`gh pr checks 7 --watch`;\n',
+  });
+  expect(scanRepository(root).map(({ file, wait }) => [file, wait.line, wait.rule])).toEqual([
+    ["scripts/waits.ts", 1, "sleep"],
+    ["scripts/waits.ts", 2, "CI watch"],
+    ["packages/core/src/meta/changelog.ts", 4, "sleep"],
+  ]);
+});
+
 test("this repository has no blocking wait in scripts or packages", () => {
   expect(scanRepository(join(import.meta.dir, ".."))).toEqual([]);
 });
