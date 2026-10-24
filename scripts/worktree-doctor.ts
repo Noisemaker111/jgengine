@@ -18,7 +18,12 @@ import { existsSync, lstatSync, readFileSync, readdirSync, rmSync, statfsSync, s
 import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { linkAssets } from "./agent-worktree";
+import { gamesCheckout, type GamesCheckoutState } from "./games-scope";
+
 export type RepoKind = "engine" | "games";
+
+const short = (sha: string | null | undefined): string => (sha === null || sha === undefined ? "unknown" : sha.slice(0, 7));
 
 export interface WorktreeRef {
   path: string;
@@ -46,6 +51,10 @@ export interface WorktreeReport {
   staleInstall: boolean;
   dirty: boolean;
   changes: number;
+  /** Which `Games/` commit this tree's game gates read, against the pin (engine worktrees only). */
+  games?: GamesCheckoutState | null;
+  gamesHead?: string | null;
+  gamesPin?: string | null;
   severity: number;
 }
 
@@ -187,9 +196,20 @@ export function severityOf(row: Omit<WorktreeReport, "severity">): number {
   if (!row.directory) return 6;
   if (!row.nodeModules) return 5;
   if (row.missingDeps.length > 0) return BROKEN;
+  if (row.games === "stale" || row.games === "absent" || row.games === "unknown-head") return BROKEN;
   if (row.staleInstall) return 2;
   if (row.dirty) return 1;
   return 0;
+}
+
+/** Whether a rerun of `bun install` is what this row needs; a games row never is. */
+export function installBroken(row: WorktreeReport): boolean {
+  return row.directory && (!row.nodeModules || row.missingDeps.length > 0);
+}
+
+/** A worktree whose game gates read no Games/ commit at all: repairable with one junction. */
+export function gamesUnlinked(row: WorktreeReport): boolean {
+  return row.kind === "engine" && row.directory && (row.games === "absent" || row.games === "unknown-head");
 }
 
 export function statusOf(severity: number): string {
@@ -212,7 +232,19 @@ export function sortReports(rows: WorktreeReport[]): WorktreeReport[] {
 }
 
 function cell(row: WorktreeReport): string[] {
-  if (!row.directory) return [row.repo, row.name, row.branch ?? "detached", "gone", "-", "-", "-", "-", "-", statusOf(row.severity)];
+  const games =
+    row.kind !== "engine"
+      ? "-"
+      : row.games === undefined || row.games === null
+        ? "-"
+        : row.games === "at-pin"
+          ? "pin"
+          : row.games === "stale"
+            ? `stale ${short(row.gamesHead ?? null)}`
+            : row.games === "override"
+              ? "override"
+              : row.games;
+  if (!row.directory) return [row.repo, row.name, row.branch ?? "detached", "gone", "-", "-", "-", "-", "-", "-", statusOf(row.severity)];
   const install = row.nodeModules ? (row.staleInstall ? "ok(stale)" : "ok") : "missing";
   const deps = row.expectedDeps === 0 ? "-" : `${row.expectedDeps - row.missingDeps.length}/${row.expectedDeps}`;
   const jge = row.expectedJge === 0 ? "-" : `${row.expectedJge - row.missingJge.length}/${row.expectedJge}`;
@@ -227,11 +259,12 @@ function cell(row: WorktreeReport): string[] {
     dist,
     row.lock,
     row.dirty ? `dirty(${row.changes})` : "clean",
+    games,
     statusOf(row.severity),
   ];
 }
 
-const HEADER = ["REPO", "WORKTREE", "BRANCH", "INSTALL", "DEPS", "JGE", "DIST", "LOCK", "TREE", "STATUS"];
+const HEADER = ["REPO", "WORKTREE", "BRANCH", "INSTALL", "DEPS", "JGE", "DIST", "LOCK", "TREE", "GAMES", "STATUS"];
 
 export function formatTable(rows: WorktreeReport[]): string {
   const body = sortReports(rows).map(cell);
@@ -244,7 +277,7 @@ export function formatTable(rows: WorktreeReport[]): string {
 }
 
 export function planRepair(rows: WorktreeReport[]): { repair: WorktreeReport[]; refused: WorktreeReport[] } {
-  const broken = rows.filter((row) => row.severity >= BROKEN && row.directory);
+  const broken = rows.filter((row) => row.severity >= BROKEN && row.directory && installBroken(row));
   return {
     repair: broken.filter((row) => !row.dirty),
     refused: broken.filter((row) => row.dirty),
@@ -310,6 +343,7 @@ export function buildReport(input: {
   const status = git(ref.path, ["status", "--porcelain"]);
   const changes = status.out === "" ? 0 : status.out.split(/\r?\n/).filter(Boolean).length;
   const probe = probeInstall(ref.path, plan);
+  const checkout = kind === "engine" ? gamesCheckout(ref.path) : null;
   const base: Omit<WorktreeReport, "severity"> = {
     repo,
     kind,
@@ -327,6 +361,9 @@ export function buildReport(input: {
     staleInstall: installStale(ref.path),
     dirty: changes > 0,
     changes,
+    games: checkout?.state ?? null,
+    gamesHead: checkout?.head ?? null,
+    gamesPin: checkout?.pin ?? null,
   };
   return { ...base, severity: severityOf(base) };
 }
@@ -446,13 +483,37 @@ function summary(rows: WorktreeReport[]): string {
   const broken = rows.filter((row) => row.severity === BROKEN || row.severity === 5);
   const noInstall = rows.filter((row) => row.severity === 5);
   const warn = rows.filter((row) => row.severity === 2);
+  const gamesWrong = rows.filter(
+    (row) => row.kind === "engine" && (row.games === "stale" || row.games === "absent" || row.games === "unknown-head"),
+  );
   const parts = [
     `${rows.length} worktrees`,
     `${broken.length} broken (${noInstall.length} with no install at all)`,
     `${warn.length} warn`,
   ];
   if (gone.length > 0) parts.push(`${gone.length} directory missing (git still registers them - prune by hand)`);
+  if (gamesWrong.length > 0) parts.push(`${gamesWrong.length} do not measure the Games/ pin`);
   return parts.join(", ");
+}
+
+/** One line per Games/ problem, naming both commits so the wrong tree is never anonymous. */
+function gamesProblems(rows: WorktreeReport[]): string[] {
+  const stale = rows.filter((row) => row.games === "stale");
+  const lines: string[] = [];
+  if (stale.length > 0) {
+    const first = stale[0]!;
+    lines.push(
+      `worktree-doctor: ${stale.length} worktree(s) measure Games/ at ${short(first.gamesHead)}, pin is ${short(first.gamesPin)} — ` +
+        "one shared clone, so `bun run games:update` at the main checkout moves every lane to the pin",
+    );
+  }
+  const unlinked = rows.filter((row) => gamesUnlinked(row));
+  if (unlinked.length > 0) {
+    const names = unlinked.slice(0, 6).map((row) => row.name);
+    const more = unlinked.length > names.length ? ` (+${unlinked.length - names.length} more)` : "";
+    lines.push(`worktree-doctor: ${unlinked.length} worktree(s) have no Games/ link, so their game gates fail: ${names.join(", ")}${more}`);
+  }
+  return lines;
 }
 
 function help(): void {
@@ -470,10 +531,13 @@ Columns
   DIST     packages/core/dist present (informational: in-repo work resolves to source)
   LOCK     bun.lock matches the repo root's lockfile
   TREE     uncommitted changes in that worktree
+  GAMES    which Games/ commit that worktree's game gates read: "pin", or "stale <sha>" against the pin
 
-Exit 1 while a broken install is left unfixed. Repair only runs in a clean tree,
-deletes that tree's node_modules and reinstalls, and never touches a branch,
-a worktree or uncommitted work.`);
+Exit 1 while a broken install, or a worktree measuring a Games/ that is not the
+pin, is left unfixed. Repair only runs in a clean tree, deletes that tree's
+node_modules and reinstalls, and links a missing Games/ (one junction, no
+network). A stale Games/ is one shared clone: "bun run games:update" moves every
+lane to the pin. Neither touches a branch, a worktree or uncommitted work.`);
 }
 
 if (import.meta.main) {
@@ -510,8 +574,17 @@ if (import.meta.main) {
     const where = basename(path);
     if (row.severity >= BROKEN) {
       const detail = row.nodeModules ? row.missingDeps.slice(0, 3).join(", ") : "no node_modules";
-      console.error(`worktree-doctor: ${where} install is broken (${detail})`);
-      console.error("worktree-doctor: run `bun run worktree:doctor --repair` here, or `bun run agent:bootstrap`");
+      if (installBroken(row)) console.error(`worktree-doctor: ${where} install is broken (${detail})`);
+      if (row.games === "stale") {
+        console.error(
+          `worktree-doctor: ${where} measures Games/ at ${short(row.gamesHead)}, pin is ${short(row.gamesPin)} (measuring an unpinned checkout)`,
+        );
+        console.error("worktree-doctor: run `bun run games:update` — the clone is shared, so this moves every lane to the pin");
+      } else if (row.games === "absent" || row.games === "unknown-head") {
+        console.error(`worktree-doctor: ${where} has no Games/ link (pin ${short(row.gamesPin)}), so its game gates cannot run`);
+        console.error("worktree-doctor: run `bun run agent:worktree -- <name>` here, or `bun run worktree:doctor --repair`");
+      }
+      if (installBroken(row)) console.error("worktree-doctor: run `bun run worktree:doctor --repair` here, or `bun run agent:bootstrap`");
       process.exit(1);
     }
     console.log(`worktree-doctor: ${where} install ok`);
@@ -532,6 +605,7 @@ if (import.meta.main) {
   console.log("worktree-doctor: before");
   console.log(formatTable(before));
   console.log(`worktree-doctor: ${summary(before)}`);
+  for (const line of gamesProblems(before)) console.log(line);
   if (strays.length > 0) {
     console.log(`worktree-doctor: stray directories (not git worktrees, left alone): ${strays.join(", ")}`);
   }
@@ -545,6 +619,21 @@ if (import.meta.main) {
     const selected = filterOnly(before, only);
     if (only.length > 0) {
       console.log(`worktree-doctor: --only ${only.join(",")} selected ${selected.length} of ${before.length} worktrees`);
+    }
+    const unlinked = selected.filter(gamesUnlinked);
+    if (unlinked.length > 0) {
+      const games = existsSync(join(mainRoot, "Games"));
+      console.log(
+        games
+          ? `worktree-doctor: linking Games/ into ${unlinked.length} worktree(s) from the main checkout (one junction each, no install, no network)`
+          : "worktree-doctor: the main checkout has no Games/ clone, so no worktree can link one - run `bun run games:clone` there first",
+      );
+      if (games) {
+        for (const row of unlinked) {
+          const made = linkAssets(mainRoot, row.path, ["Games"]);
+          if (made.length > 0) console.log(`worktree-doctor: ${row.repo}/${row.name} linked ${made.join(", ")}`);
+        }
+      }
     }
     const { repair: queue, refused } = planRepair(selected);
     for (const row of refused) {

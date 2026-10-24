@@ -11,6 +11,7 @@ import {
   withBrowserSession,
 } from "./browser-lib";
 import { measureGame } from "./perf-play";
+import { requireGamesAtPin } from "./games-scope";
 import { parseGraphicsTier, type GraphicsTier } from "../packages/jgengine/src/templates/captureArgs";
 import { checkBudget, loadBudget, summarizeRecord, type LoadedBudget } from "./perf-budget";
 import { runPool } from "./type-shard";
@@ -217,9 +218,12 @@ async function main(): Promise<void> {
     );
   }
 
+  // Budgets describe a content snapshot, so numbers from another commit cannot be
+  // read as an engine regression. Fail before the ten-minute browser run (#2228).
+  requireGamesAtPin("perf gate", repoRoot);
+
   const server = await ensureDevServer(repoRoot);
   let rasterizerPrinted = false;
-  console.log(describeGamesLine(describeGamesCheckout(repoRoot)));
 
   const measureOne = async (game: string, index: number): Promise<GameOutcome> => {
     const loaded = budgets.get(game)!;

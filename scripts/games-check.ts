@@ -16,6 +16,7 @@ import { spawn } from "node:child_process";
 import { availableParallelism } from "node:os";
 
 import { engineSourcePaths, mergeGamePaths } from "./games-check-paths";
+import { requireGamesAtPin } from "./games-scope";
 
 const repoRoot = resolve(import.meta.dir, "..");
 const gamesRoot = join(repoRoot, "Games");
@@ -30,6 +31,7 @@ if (!existsSync(gamesRoot)) {
   console.error("games:check: ./Games is missing — run `bun run games:clone` (or symlink a games checkout there).");
   process.exit(1);
 }
+requireGamesAtPin("games:check", repoRoot);
 const gamesDir = realpathSync(gamesRoot);
 const games = readdirSync(gamesDir).filter(
   (name) =>

@@ -1,16 +1,11 @@
-import { existsSync } from "node:fs";
-import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { findModuleGlobals } from "./moduleGlobalState";
-import { ignoredGames, referenceGames, warnIgnoredGames } from "./games-scope";
+import { ignoredGames, referenceGames, requireGamesAtPin, warnIgnoredGames } from "./games-scope";
 import { runRatchet } from "./ratchet";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
-if (!existsSync(join(root, "Games"))) {
-  console.log("check-module-globals: clean — no Games/ checkout (games live in Noisemaker111/JGengine-games)");
-  process.exit(0);
-}
+requireGamesAtPin("check-module-globals", root);
 
 const games = referenceGames(root);
 warnIgnoredGames("check-module-globals", ignoredGames(root, games));
