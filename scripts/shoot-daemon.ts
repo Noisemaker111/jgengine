@@ -21,7 +21,9 @@ import {
   closeSync,
   existsSync,
   openSync,
+  readdirSync,
   readFileSync,
+  realpathSync,
   renameSync,
   statSync,
   unlinkSync,
@@ -63,7 +65,88 @@ export interface ShootDaemonState {
   webPort?: number;
   webBase?: string;
   webPid?: number;
+  /** Games world the dev server was booted against; a mismatch means its game list is stale. */
+  devWorld?: GamesWorld;
+  /** Games world the website server was booted against. */
+  webWorld?: GamesWorld;
   startedAt: string;
+}
+
+/**
+ * The part of the world a running Vite server froze at boot: its `@games/<id>`
+ * aliases and game glob are computed once, so a `Games` link created or
+ * repointed after boot is invisible to it.
+ */
+export interface GamesWorld {
+  /** Resolved path of the games checkout, or null when there is no `Games`. */
+  target: string | null;
+  /** `Games` entry mtime: changes when the link is created or repointed. */
+  linkMtimeMs: number | null;
+  /** Games checkout HEAD, read from its `.git/HEAD` file rather than a git process. */
+  head: string | null;
+  /** Game ids the runner can resolve. */
+  games: string[];
+}
+
+function readHead(checkout: string): string | null {
+  try {
+    const head = readFileSync(join(checkout, ".git", "HEAD"), "utf8").trim();
+    if (!head.startsWith("ref:")) return head;
+    return readFileSync(join(checkout, ".git", head.slice(4).trim()), "utf8").trim();
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Cheap fingerprint of the games world: one realpath, one lstat, one readdir and
+ * one HEAD read (no git process, no game source scan), so it can run on every
+ * shot without costing a rescan.
+ */
+export function gamesWorld(cwd = process.cwd()): GamesWorld {
+  const entry = join(cwd, "Games");
+  let linkMtimeMs: number | null = null;
+  try {
+    linkMtimeMs = statSync(entry).mtimeMs;
+  } catch {
+    return { target: null, linkMtimeMs: null, head: null, games: [] };
+  }
+  let target: string;
+  try {
+    target = realpathSync(entry);
+  } catch {
+    return { target: null, linkMtimeMs, head: null, games: [] };
+  }
+  const games: string[] = [];
+  try {
+    for (const item of readdirSync(target, { withFileTypes: true })) {
+      if (item.isDirectory() && existsSync(join(target, item.name, "src", "index.tsx"))) games.push(item.name);
+    }
+  } catch {
+    /* unreadable checkout: an empty list is the honest answer */
+  }
+  games.sort();
+  return { target, linkMtimeMs, head: readHead(target), games };
+}
+
+export function worldChanged(previous: GamesWorld | undefined, current: GamesWorld): boolean {
+  if (previous === undefined) return false;
+  if (previous.target !== current.target) return true;
+  if (previous.head !== current.head) return true;
+  if (previous.games.length !== current.games.length) return true;
+  return previous.games.some((game, index) => game !== current.games[index]);
+}
+
+/** One line naming what moved, so a restart is never a mystery. */
+export function describeWorldChange(previous: GamesWorld, current: GamesWorld): string {
+  const parts: string[] = [];
+  if (previous.target !== current.target) parts.push(`Games ${previous.target ?? "(none)"} → ${current.target ?? "(none)"}`);
+  if (previous.head !== current.head) parts.push(`games HEAD ${previous.head?.slice(0, 8) ?? "(none)"} → ${current.head?.slice(0, 8) ?? "(none)"}`);
+  const added = current.games.filter((game) => !previous.games.includes(game));
+  const removed = previous.games.filter((game) => !current.games.includes(game));
+  if (added.length > 0) parts.push(`+${added.join(", +")}`);
+  if (removed.length > 0) parts.push(`-${removed.join(", -")}`);
+  return parts.length > 0 ? parts.join("; ") : "game list changed";
 }
 
 type DaemonStartWaitOptions = {
@@ -298,6 +381,33 @@ export async function ensureDaemonTarget(
   cwd = process.cwd(),
   ensure: (cwd: string) => Promise<EnsureDevServerResult> = target === "web" ? ensureWebServer : ensureDevServer,
 ): Promise<EnsureDevServerResult> {
+  // A warm Vite server froze its `@games/<id>` aliases and game glob at boot, so
+  // a `Games` link created or repointed afterwards leaves it rejecting a game
+  // that exists on disk. Retire that server before the call, not on a timer and
+  // not after a failed capture.
+  const observed = gamesWorld(cwd);
+  await withDaemonStateLock(cwd, () => {
+    const latest = readDaemonState(cwd);
+    if (latest === null) throw new Error("shoot daemon: stopped while starting Vite target");
+    if (latest.identity !== state.identity) throw new Error(`shoot daemon: state belongs to ${latest.identity}`);
+    Object.assign(state, latest);
+    const previous = target === "web" ? state.webWorld : state.devWorld;
+    if (!worldChanged(previous, observed)) return;
+    const pid = target === "web" ? state.webPid : state.devPid;
+    if (pid !== undefined && pidAlive(pid)) killPid(pid, true);
+    if (target === "web") {
+      state.webPort = undefined;
+      state.webBase = undefined;
+      state.webPid = undefined;
+    } else {
+      state.devPort = undefined;
+      state.devBase = undefined;
+      state.devPid = undefined;
+    }
+    writeDaemonState(state, cwd);
+    console.error(`shoot daemon: ${describeWorldChange(previous!, observed)} — restarting the ${target} server against it`);
+  });
+
   const server = await ensure(cwd);
   try {
     await withDaemonStateLock(cwd, () => {
@@ -309,10 +419,12 @@ export async function ensureDaemonTarget(
         state.webPort = server.port;
         state.webBase = server.base;
         state.webPid = server.pid ?? server.child?.pid ?? state.webPid;
+        state.webWorld = observed;
       } else {
         state.devPort = server.port;
         state.devBase = server.base;
         state.devPid = server.pid ?? server.child?.pid ?? state.devPid;
+        state.devWorld = observed;
       }
       writeDaemonState(state, cwd);
     });
