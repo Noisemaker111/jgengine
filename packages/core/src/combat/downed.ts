@@ -40,7 +40,10 @@ export interface DownedState {
   phase(instanceId: string): DownedPhase;
   get(instanceId: string): DownedEntry | null;
   clear(instanceId: string): void;
+  /** Every tracked entity's phase, remaining bleed-out, revive progress and banner timer. */
   snapshot(): Record<string, DownedEntry>;
+  /** Replaces the tracked entities, resuming a saved bleed-out where it left off. */
+  restore(next: Record<string, DownedEntry>): void;
 }
 
 /**
@@ -142,6 +145,17 @@ export function createDownedState(config: DownedConfig): DownedState {
       const out: Record<string, DownedEntry> = {};
       for (const [instanceId, entry] of entries) out[instanceId] = { ...entry };
       return out;
+    },
+    restore(next) {
+      entries.clear();
+      for (const [instanceId, entry] of Object.entries(next)) {
+        entries.set(instanceId, {
+          phase: entry.phase,
+          bleedoutRemaining: entry.bleedoutRemaining,
+          reviveProgress: entry.reviveProgress,
+          bannerRemaining: entry.bannerRemaining,
+        });
+      }
     },
   };
 }

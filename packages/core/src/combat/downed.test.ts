@@ -79,4 +79,64 @@ describe("downed state machine", () => {
     const downed = createDownedState({ bleedoutSeconds: 10 });
     expect(downed.phase("stranger")).toBe("alive");
   });
+
+  test("a restored snapshot resumes a bleed-out mid-window", () => {
+    const before = createDownedState({ bleedoutSeconds: 30, reviveSeconds: 4 });
+    before.down("p1");
+    before.tick(12);
+    before.revive("p1", 1.5);
+
+    const after = createDownedState({ bleedoutSeconds: 30, reviveSeconds: 4 });
+    after.restore(before.snapshot());
+
+    expect(after.get("p1")).toEqual({ phase: "downed", bleedoutRemaining: 18, reviveProgress: 1.5, bannerRemaining: null });
+    expect(after.tick(18).map((e) => e.kind)).toEqual(["died"]);
+    expect(after.phase("p1")).toBe("dead");
+  });
+
+  test("restore keeps a partial revive alive after the same hold time", () => {
+    const before = createDownedState({ bleedoutSeconds: 30, reviveSeconds: 4, reviveHealthFraction: 0.5 });
+    before.down("p1");
+    before.revive("p1", 3);
+
+    const after = createDownedState({ bleedoutSeconds: 30, reviveSeconds: 4, reviveHealthFraction: 0.5 });
+    after.restore(before.snapshot());
+
+    expect(after.revive("p1", 1)).toEqual({ kind: "revived", instanceId: "p1", reviveHealthFraction: 0.5 });
+  });
+
+  test("restore carries the banner window of a dead entity", () => {
+    const before = createDownedState({ bleedoutSeconds: 10, banner: { expireSeconds: 60 } });
+    before.down("p1");
+    before.tick(10);
+    before.tick(20);
+
+    const after = createDownedState({ bleedoutSeconds: 10, banner: { expireSeconds: 60 } });
+    after.restore(before.snapshot());
+
+    expect(after.get("p1")).toEqual({ phase: "dead", bleedoutRemaining: 0, reviveProgress: 0, bannerRemaining: 40 });
+    expect(after.respawnFromBanner("p1")?.kind).toBe("respawned");
+  });
+
+  test("restore replaces the tracked set instead of merging into it", () => {
+    const downed = createDownedState({ bleedoutSeconds: 10 });
+    downed.down("stale");
+    downed.restore({});
+    expect(downed.get("stale")).toBeNull();
+    expect(downed.phase("stale")).toBe("alive");
+  });
+
+  test("a snapshot taken after restore is the state that was put back", () => {
+    const source = createDownedState({ bleedoutSeconds: 30, reviveSeconds: 4 });
+    source.down("p1");
+    source.tick(7);
+    const saved = source.snapshot();
+
+    const target = createDownedState({ bleedoutSeconds: 30, reviveSeconds: 4 });
+    target.restore(saved);
+
+    expect(target.snapshot()).toEqual(saved);
+    saved.p1!.bleedoutRemaining = 1;
+    expect(target.get("p1")?.bleedoutRemaining).toBe(23);
+  });
 });
