@@ -1,5 +1,5 @@
 /** Installed `@jgengine/core` semver — compare against {@link CHANGELOG} keys when migrating. */
-export const VERSION = "0.38.1";
+export const VERSION = "0.38.2";
 
 /** One release's migrate steps plus added/changed/removed notes (typed mirror of CHANGELOG.md). */
 export interface ChangelogEntry {
@@ -11,6 +11,29 @@ export interface ChangelogEntry {
 
 /** Per-version engine changelog keyed by semver string (e.g. `"0.10.0"`). */
 export const CHANGELOG: Record<string, ChangelogEntry> = {
+  "0.38.2": {
+    migrate: [
+      "Bump lockstep SDK packages to `^0.38.2`: `@jgengine/{core,rapier,react,ws,node,sql,convex,shell,editor,assets,navbake}`. CLI `jgengine` is `0.35.2`; `@jgengine/github` is `0.25.2`.",
+    ],
+    added: [
+      "`requestSceneCapture` and `requestSceneThumbnail` (`@jgengine/shell/render/sceneCapture`) ask the live scene for a frame or a save-card thumbnail. A request waits for `SceneCaptureBinding` to mount, waits for the canvas to paint, retries a blank read and resolves with the image or a stated failure (`no-binding`, `no-frame`, `undecodable`), so a game stops polling for the binding and waiting frames before a save screenshot.",
+      "`registerSceneCapture` (`@jgengine/shell/render/sceneCapture`) lets a host that owns its own canvas hand the capture path a reader.",
+      "`createDownedState` (`@jgengine/core/combat/downed`) exposes `restore(next)`, the counterpart to `snapshot()`, so a saved bleed-out resumes with the same remaining seconds, revive progress, phase and banner timer instead of being rebuilt around a guessed countdown.",
+    ],
+    changed: [
+      "Pin Games to the 0.38.1 adoption",
+      "`GameMenu`'s `style` and `detailStyle` accept `--jg-*` custom properties (`GameMenuStyle`), so a game passes `{ \"--jg-menu-surface-radius\": \"12px\" }` without a cast.",
+      "`GameMenu` sets `pointer-events: auto` on its own root while its painted backdrop stays `none`, so a menu inside a HUD wrapper that passes clicks through to the scene no longer has dead buttons.",
+      "`check-stateful-ratchet` skips a factory carrying `// stateless: <reason>`, the named case for a catalog whose only closure state is an index of its own config. `createBuildSocketCatalog` declares it instead of being baselined.",
+      "`bun run shoot` refuses a scene shot whose page has no 3D canvas, and scores rendered geometry inside the canvas region before writing the file. `bun run shoot <game> --view <name>` defaults to `--mode ui`, which renders the game's HUD preview over a CSS backdrop and creates no canvas; the whole-frame flat test was skipped without a region and the backdrop's full-screen paint withheld the viewport verdict, so a HUD-only frame was written with exit 0.",
+      "`countStaticBatchDraws` (`@jgengine/shell/world/staticObjectBatches`) counts the draws the static batches submit, so a variant level with no instance in a cell and a cell the camera culled are no longer reported as draws. `submitInstanceCount` (`@jgengine/shell/render/submittedDraws`) is the one place the batch, scatter, proxy and authored-primitive paths set an instance count and its visibility, and three issues a draw only when both say there is something to draw.",
+      "`createCastRunner.state()` carries the cast's `moveTolerance`, `moveDeadzone` and `movedTotal`, and `restore(next)` resumes it. A cast saved mid-fight used to come back with a fresh movement budget, so the caster could walk further than the ability allowed.",
+      "`createDecayMeterSet.serialize()` / `restore(next)` carry each meter's value, base rate and `setRateModifier` multiplier. A save used to drop a tuned rate, so a cold biome's faster warmth drain reset to the config rate on load.",
+      "`createAreaEffectField.restore(state)`, `createSelectionBookmarks.restore(snapshot)` and `createPlotPermissions.restore(snapshot)` are the state-in counterparts to their existing `serialize()` / `snapshot()`; restoring into a live field releases the members the saved state does not carry.",
+      "`check-stateful-ratchet` names the round-trip gap separately and caps it: a `snapshot()` with no `restore()`/`reset()` fails as `round-trip` debt, `--write` refuses to raise that ceiling, and a group paid below its ceiling must lower it. `createDownedState` was baselined when the ratchet shipped and never revisited; the restores in this release take the baseline from 113 entries to 93 and the `round-trip` ceiling from 8 to 2.",
+    ],
+    removed: [],
+  },
   "0.38.1": {
     migrate: [
       "Bump lockstep SDK packages to `^0.38.1`: `@jgengine/{core,rapier,react,ws,node,sql,convex,shell,editor,assets,navbake}`. CLI `jgengine` is `0.35.1`; `@jgengine/github` is `0.25.1`.",
