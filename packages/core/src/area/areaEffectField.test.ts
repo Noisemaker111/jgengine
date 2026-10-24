@@ -180,6 +180,39 @@ describe("serialize round-trip", () => {
     expect(events).toHaveLength(1);
     expect(events[0]).toMatchObject({ kind: "refresh", ticks: 1 });
   });
+
+  test("restore() resumes mid-cadence on a live field without enter/leave churn", () => {
+    const field = createAreaEffectField<{ dps: number }>();
+    field.setSource({ id: "poison", shape: sphere([0, 0, 0], 5), payload: { dps: 4 }, refreshMs: 1000 });
+    const w = world({ hero: [1, 0, 0] });
+    field.step({ dtMs: 0, ...w.input }); // enter
+    field.step({ dtMs: 700, ...w.input }); // phase 700ms
+
+    const saved = field.serialize();
+    const resumed = createAreaEffectField<{ dps: number }>();
+    expect(resumed.restore(saved)).toEqual([]);
+    resumed.setSource({ id: "poison", shape: sphere([0, 0, 0], 5), payload: { dps: 4 }, refreshMs: 1000 });
+
+    expect(resumed.isMember("poison", "hero")).toBe(true);
+    expect(resumed.step({ dtMs: 400, ...w.input })).toEqual([
+      { kind: "refresh", sourceId: "poison", receiverId: "hero", stackKey: "poison", payload: { dps: 4 }, ticks: 1 },
+    ]);
+  });
+
+  test("restore() releases members the saved state does not carry", () => {
+    const field = createAreaEffectField<{ dps: number }>();
+    field.setSource({ id: "poison", shape: sphere([0, 0, 0], 5), payload: { dps: 4 } });
+    const w = world({ hero: [1, 0, 0], ally: [2, 0, 0] });
+    field.step({ dtMs: 0, ...w.input });
+    expect(field.members("poison").sort()).toEqual(["ally", "hero"]);
+
+    const saved = field.serialize();
+    const keepHero = { ...saved, memberships: saved.memberships.filter((member) => member.receiverId === "hero") };
+    expect(field.restore(keepHero)).toEqual([
+      { kind: "leave", sourceId: "poison", receiverId: "ally", stackKey: "poison", payload: { dps: 4 }, reason: "cleared" },
+    ]);
+    expect(field.members("poison")).toEqual(["hero"]);
+  });
 });
 
 describe("stacking policies", () => {

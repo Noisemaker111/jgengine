@@ -71,4 +71,19 @@ export function createThing(): Thing {
 }`;
     expect(scan(source)).toEqual([]);
   });
+
+  test("a named `// stateless:` case clears an index-only factory", () => {
+    const source = `// stateless: the index is built from \`ids\` once and never written again
+export interface Thing {
+  lookup(id: string): number | null;
+}
+export function createThing(ids: readonly string[]): Thing {
+  const index = new Map(ids.map((id) => [id, 1]));
+  return { lookup: (id) => index.get(id) ?? null };
+}`;
+    expect(scan(source)).toEqual([]);
+    expect(scan(source.replace("// stateless: the index is built from `ids` once and never written again", "// stateless:"))).toEqual(
+      ["createThing"],
+    );
+  });
 });

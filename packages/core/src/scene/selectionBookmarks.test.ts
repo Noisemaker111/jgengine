@@ -86,6 +86,20 @@ describe("selection bookmarks store", () => {
     expect(restored.recall("1")).toEqual(["a", "b"]);
     expect(restored.has("2")).toBe(false);
   });
+
+  test("restore() replaces what a live store holds", () => {
+    const store = createSelectionBookmarks();
+    store.bind("1", ["a", "b"]);
+    const saved = store.serialize();
+    store.bind("2", ["c"]);
+    store.restore(saved);
+    expect(store.keys()).toEqual(["1"]);
+    expect(store.recall("1")).toEqual(["a", "b"]);
+
+    store.restore({ bookmarks: { squad: ["x", "x", "y"], empty: [] } });
+    expect(store.keys()).toEqual(["squad"]);
+    expect(store.recall("squad")).toEqual(["x", "y"]);
+  });
 });
 
 describe("recallSelectionBookmark composition", () => {

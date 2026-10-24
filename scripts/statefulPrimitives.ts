@@ -18,6 +18,13 @@ const STATE_IN = /\n\s+(?:readonly\s+)?(restore|reset|hydrate|load|adopt|setStat
 /** Closure-local mutable state — what makes the handle stateful rather than a pure adapter. */
 const MUTABLE_BODY = /\n\s{2}let\s|\n\s{2}const\s+\w+\s*(?::[^=]+)?=\s*(?:new (?:Map|Set)\b|\[\])/;
 
+/**
+ * A factory whose only closure state is an index of its own config declares that here, with the
+ * reason: `// stateless: <why nothing changes after construction>`. It names the case instead of
+ * baselining it, and a marker without a reason excuses nothing.
+ */
+const STATELESS_MARKER = /(?:^|\n)\s*\/\/\s*stateless:[^\S\n]*\S[^\n]*/;
+
 export interface StatefulPrimitive {
   key: string;
   factory: string;
@@ -60,6 +67,7 @@ export function findStatefulPrimitives(root: string): StatefulPrimitive[] {
       const rel = relative(root, file).replace(/\\/g, "/");
       for (const match of source.matchAll(/export function (create[A-Z]\w*)[^)]*\)\s*:\s*([A-Z]\w*)[<\s]/g)) {
         const [, factory, handle] = match as unknown as [string, string, string];
+        if (STATELESS_MARKER.test(source.slice(Math.max(0, match.index - 800), match.index))) continue;
         const declaration = source.match(new RegExp(`export interface ${handle}(?:<[^>]*>)?\\s*\\{`));
         if (declaration?.index === undefined) continue;
         const members = bodyOf(source, source.indexOf("{", declaration.index));

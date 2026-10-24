@@ -32,6 +32,8 @@ export interface PlotPermissions {
   setGuild(guildId: string | null, role?: BuildRole): void;
   transferOwner(userId: string): void;
   snapshot(): PlotPermissionSnapshot;
+  /** Replace owner, guild and grants from a {@link snapshot}; plot identity stays the config's. */
+  restore(next: PlotPermissionSnapshot): void;
 }
 
 export function createPlotPermissions(config: PlotPermissionConfig): PlotPermissions {
@@ -87,6 +89,15 @@ export function createPlotPermissions(config: PlotPermissionConfig): PlotPermiss
         roles: Object.fromEntries(roles),
         ...(guildRole === undefined ? {} : { guildRole }),
       };
+    },
+    restore(next) {
+      ownerId = next.ownerId;
+      guildId = next.guildId;
+      guildRole = next.guildRole;
+      roles.clear();
+      for (const [userId, role] of Object.entries(next.roles)) {
+        if (userId !== next.ownerId) roles.set(userId, role);
+      }
     },
   };
 }

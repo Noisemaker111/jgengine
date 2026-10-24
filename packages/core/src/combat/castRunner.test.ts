@@ -60,7 +60,51 @@ describe("castRunner", () => {
   });
 });
 
+describe("snapshot round trip", () => {
+  it("a saved cast resumes with the move budget it had already spent", () => {
+    const saved = createCastRunner();
+    saved.begin({ abilityId: "heal", castTimeMs: 2000, moveTolerance: 0.1, moveDeadzone: 0.02 });
+    saved.tick(0.5, 0.06);
+    const state = saved.state()!;
+    expect(state.moveTolerance).toBe(0.1);
+    expect(state.moveDeadzone).toBe(0.02);
+    expect(state.movedTotal).toBeCloseTo(0.06, 6);
+
+    const resumed = createCastRunner();
+    resumed.restore(state);
+    expect(resumed.casting()).toBe(true);
+    expect(resumed.state()).toEqual(state);
+
+    // 0.06 spent before the save + 0.05 now = 0.11 > 0.1, exactly as it would without the save.
+    expect(resumed.tick(0.1, 0.05)).toEqual({ kind: "interrupted", abilityId: "heal", reason: "moved" });
+  });
+
+  it("a restored cast keeps its noise floor and finishes where it would have", () => {
+    const saved = createCastRunner();
+    saved.begin({ abilityId: "heal", castTimeMs: 2000, moveDeadzone: 0.04 });
+    for (let i = 0; i < 60; i += 1) saved.tick(1 / 60, 0.01);
+    const state = saved.state()!;
+    expect(state.elapsedMs).toBeCloseTo(1000, 6);
+
+    const resumed = createCastRunner();
+    resumed.restore(state);
+    expect(resumed.tick(0.5, 0.01)).toBeNull();
+    // 1.0 of jitter total is far past the 0.04 tolerance; a fresh deadzone-less budget would have
+    // interrupted at the first half-second.
+    expect(resumed.tick(0.6, 0.01)).toEqual({ kind: "completed", abilityId: "heal" });
+  });
+
+  it("restore(null) clears the cast", () => {
+    const runner = createCastRunner();
+    runner.begin({ abilityId: "heal", castTimeMs: 2000 });
+    runner.restore(null);
+    expect(runner.casting()).toBe(false);
+    expect(runner.state()).toBeNull();
+  });
+});
+
 describe("moveDeadzone", () => {
+
   const CONFIG = { abilityId: "heal", castTimeMs: 2000, moveTolerance: 0.04, moveDeadzone: 0.04 };
 
   it("jitter under the deadzone never accumulates, however many frames pass", () => {
