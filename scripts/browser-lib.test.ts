@@ -20,6 +20,7 @@ import {
   softwareGlBackend,
   closePageTarget,
   navigateCapturePage,
+  watchPageExceptions,
   normalizeLoopbackUrl,
   resolveDevPort,
   resolveWebPort,
@@ -266,6 +267,25 @@ describe("capture navigation failures", () => {
   test("returns when the page declares the capture ready", async () => {
     const session = fakeSession({ captureStatus: "ready" });
     await expect(navigateCapturePage(session, "http://127.0.0.1:5712/playground", 1_000)).resolves.toBeUndefined();
+  });
+
+  test("records a page exception that lands after readiness, so a game that threw is not a pass", () => {
+    const handlers = new Map<string, (params: Record<string, unknown>) => void>();
+    const session = {
+      on(method: string, handler: (params: Record<string, unknown>) => void) {
+        handlers.set(method, handler);
+        return () => handlers.delete(method);
+      },
+    } as unknown as CdpSession;
+    const watch = watchPageExceptions(session);
+    handlers.get("Runtime.exceptionThrown")?.({
+      exceptionDetails: { text: "Uncaught", exception: { description: "Error: post-mount throw" } },
+    });
+    watch.stop();
+    handlers.get("Runtime.exceptionThrown")?.({
+      exceptionDetails: { text: "Uncaught", exception: { description: "Error: after stop" } },
+    });
+    expect(watch.exceptions).toEqual(["page exception: Error: post-mount throw"]);
   });
 
   test("ignores a failed document request from a subframe", async () => {
@@ -1097,3 +1117,4 @@ describe("stray browser sweep", () => {
     }
   });
 });
+
