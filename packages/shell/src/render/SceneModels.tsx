@@ -1,11 +1,12 @@
 import { useFrame, useLoader, useThree } from "@react-three/fiber";
-import { Component, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, type ReactNode } from "react";
+import { Component, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import * as THREE from "three";
 
 import type { EntitySpriteConfig, ModelConfig } from "@jgengine/core/game/playableGame";
 import { parseModelHiddenNodes } from "@jgengine/core/editor/modelNodeVisibility";
 import { createSpriteClipPlayer } from "@jgengine/core/render/sprite2d";
 import { reportFallbackSeam, type FallbackSeam } from "@jgengine/core/devtools/fallbackSeams";
+import { createModelVariantSelector } from "@jgengine/core/world/modelLod";
 import { useOptionalGameContext } from "@jgengine/react/provider";
 
 import { detectKtx2Support, sharedGltfLoader } from "./modelLoad";
@@ -18,6 +19,7 @@ import { useFootIk } from "./useFootIk";
 import { resolveRigNode } from "./rigNode";
 import { PartMotionRig } from "./PartMotion";
 import { syncSpriteFrame } from "./spriteRender";
+import { singleVariantLevel, singleVariantModel } from "./singleVariantLod";
 import { applyMaterialOverride } from "../materialOverride";
 import {
   applyPaintTextureToMaterials,
@@ -141,13 +143,59 @@ export function IsolatedEntityModel({
   measure?: MeasureTarget;
   fallback?: ReactNode;
 }) {
+  const levels = model.variants !== undefined && instanceId !== undefined;
   return (
     <ModelFallbackBoundary fallback={fallback ?? null} url={model.url} seam={measure?.target}>
       <Suspense fallback={null}>
-        <EntityModel model={model} instanceId={instanceId} measure={measure} />
+        {levels ? (
+          <SingleVariantModel model={model} instanceId={instanceId} measure={measure} />
+        ) : (
+          <EntityModel model={model} instanceId={instanceId} measure={measure} />
+        )}
       </Suspense>
     </ModelFallbackBoundary>
   );
+}
+
+/**
+ * One prop drawn on its own, at its own camera distance: the same level switch the batched prop path
+ * runs, so a prop placed at runtime (`scene.object.place`) drops to its cheaper asset exactly like an
+ * authored one. Only the active level mounts, so both levels never draw at once, and the level changes
+ * only when the shared selector clears its hysteresis edge. Distance is measured from the placement the
+ * scene store holds, through memoized scratch vectors, so a frame allocates nothing.
+ * @internal
+ */
+export function SingleVariantModel({
+  model,
+  instanceId,
+  measure,
+}: {
+  model: ModelConfig;
+  instanceId: string;
+  measure?: MeasureTarget;
+}) {
+  const ctx = useOptionalGameContext();
+  const variants = model.variants;
+  const selector = useMemo(
+    () => (variants === undefined ? null : createModelVariantSelector(variants)),
+    [variants],
+  );
+  const [level, setLevel] = useState(0);
+  const cameraAt = useMemo(() => new THREE.Vector3(), []);
+  const probe = useMemo(() => new THREE.Vector3(), []);
+  // Warm every level at mount, so the switch swaps a cached clone instead of suspending on a load.
+  for (const candidate of variants?.levels ?? []) useLoader.preload(sharedGltfLoader, candidate.url);
+  useFrame((state) => {
+    if (selector === null || ctx === null) return;
+    const placement = ctx.scene.object.get(instanceId)?.position ?? ctx.scene.entity.get(instanceId)?.position;
+    if (placement === undefined) return;
+    const next = singleVariantLevel(selector, instanceId, state.camera, placement, cameraAt, probe);
+    if (next !== level) setLevel(next);
+  });
+  const drawn = useMemo(() => singleVariantModel(model, level), [model, level]);
+  // The near level owns the measured bounds and collision mesh, like the batched path: a decimated
+  // asset must not redefine what the catalog entry collides as.
+  return <EntityModel model={drawn} instanceId={instanceId} measure={level === 0 ? measure : undefined} />;
 }
 
 function BoneAttachment({
