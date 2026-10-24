@@ -1067,6 +1067,7 @@
     "./scatter/InstancedScatter",
     "./scatter/scatterModels",
     "./scatter/scatterProxies",
+    "./scatter/scatterVariants",
     "./scene",
     "./scene/AuthoredScene",
     "./scene/CityRenderer",
