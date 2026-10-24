@@ -147,7 +147,8 @@ const ROW_HEIGHT: Record<GameMenuVariant, number> = { title: 58, pause: 46 };
 const VIGNETTE =
   "radial-gradient(125% 110% at 26% 42%, rgba(4,7,12,0.02) 0%, rgba(4,7,12,0.34) 66%, rgba(2,4,7,0.8) 100%)";
 
-const TINT = "linear-gradient(100deg, rgba(6,10,16,0.74) 0%, rgba(6,10,16,0.46) 40%, rgba(6,10,16,0.04) 74%, rgba(6,10,16,0.2) 100%)";
+const TINT =
+  "linear-gradient(100deg, rgba(6,10,16,0.9) 0%, rgba(6,10,16,0.74) 34%, rgba(6,10,16,0.34) 56%, rgba(6,10,16,0.08) 78%, rgba(6,10,16,0.28) 100%)";
 
 function logoNode(logo: GameMenuProps["logo"], title: string | undefined, reduced: boolean): ReactNode {
   if (logo === undefined || logo === null || logo === false) return null;
@@ -290,9 +291,47 @@ export function GameMenu({
         }),
   });
 
+  // A cursor that happens to rest over a row when the menu opens must not select it: hover only
+  // counts once the pointer has actually moved in this session.
+  const pointerMoved = useRef(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mark = (): void => { pointerMoved.current = true; };
+    window.addEventListener("pointermove", mark, { passive: true });
+    return () => window.removeEventListener("pointermove", mark);
+  }, []);
+  const hoverProps = (id: string) => {
+    const props = nav.itemProps(id);
+    return { ...props, onPointerEnter: () => { if (pointerMoved.current) props.onPointerEnter(); } };
+  };
+
   const activeId = nav.activeId;
   const activeIndex = allItems.findIndex((item) => item.id === activeId);
   const mounted = useRef(false);
+  const appliedInitial = useRef<string | undefined>(initialId);
+  // `initialId` is the verb the game wants focused (Continue when a save exists). When that changes
+  // after mount — a save finished loading, a screen swapped — move the selection rather than
+  // remounting the whole menu, which would replay the entry animation and drop focus.
+  useEffect(() => {
+    if (initialId === undefined || appliedInitial.current === initialId || disabled.includes(initialId)) return;
+    appliedInitial.current = initialId;
+    nav.setActive(initialId);
+  }, [initialId, disabled, nav.activeId, nav.setActive]);
+  // The first pass can run before item refs exist, so focus the selection once after paint when the
+  // menu owns an idle document. Arrow keys then land on the menu itself instead of the page.
+  useEffect(() => {
+    if (!open) return;
+    if (typeof requestAnimationFrame !== "function") return;
+    const frame = requestAnimationFrame(() => {
+      const active = typeof document === "undefined" ? null : (document.activeElement as HTMLElement | null);
+      const insideMenu = active !== null && typeof active.closest === "function" && active.closest("[data-jg-game-menu]") !== null;
+      if (insideMenu && active !== document.body) return;
+      const target = document.querySelector<HTMLElement>("[data-jg-game-menu] [data-jg-menu-item][aria-current='true']");
+      target?.focus({ preventScroll: true });
+    });
+    return () => cancelAnimationFrame(frame);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, activeId]);
   useEffect(() => {
     if (!mounted.current) {
       mounted.current = true;
@@ -477,7 +516,7 @@ export function GameMenu({
               <button
                 key={item.id}
                 type="button"
-                {...nav.itemProps(item.id)}
+                {...hoverProps(item.id)}
                 data-jg-game-menu-item={item.id}
                 data-active={active ? "" : undefined}
                 disabled={item.disabled === true}
@@ -505,7 +544,9 @@ export function GameMenu({
                   textAlign: "left",
                   cursor: item.disabled === true ? "not-allowed" : "pointer",
                   transition: reduced ? undefined : `padding ${hudDuration("base")} ${hudEase("spring")}, color ${hudDuration("fast")} linear`,
-                  textShadow: active ? "0 0 22px var(--jg-accent-soft, rgba(94,196,255,0.4))" : "none",
+                  textShadow: active
+                    ? "0 1px 12px rgba(0,0,0,0.8), 0 0 22px var(--jg-accent-soft, rgba(94,196,255,0.4))"
+                    : "0 1px 10px rgba(0,0,0,0.72)",
                   outline: "none",
                 }}
               >
@@ -543,7 +584,7 @@ export function GameMenu({
               <button
                 key={item.id}
                 type="button"
-                {...nav.itemProps(item.id)}
+                {...hoverProps(item.id)}
                 data-jg-game-menu-item={item.id}
                 data-secondary=""
                 data-active={active ? "" : undefined}
@@ -651,5 +692,12 @@ export function GamePauseMenu(
   const { onResume, onBack, ...rest } = props;
   return <GameMenu {...rest} variant="pause" onBack={onBack ?? onResume} label={rest.label ?? "Paused"} />;
 }
+
+
+
+
+
+
+
 
 

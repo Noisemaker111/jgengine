@@ -19,6 +19,8 @@ export const SAVE_SLOT_CHARACTER_KEY = "character";
 
 const cardSurface: CSSProperties = {
   position: "relative",
+  width: "100%",
+  boxSizing: "border-box",
   display: "flex",
   flexDirection: "column",
   gap: 8,
@@ -268,7 +270,7 @@ export function SaveSlotCard({
                 whiteSpace: "nowrap",
               }}
             >
-              {value}
+              <span style={{ opacity: 0.6, textTransform: "uppercase", letterSpacing: "0.08em", fontSize: 10 }}>{key}</span> {value}
             </span>
           ))}
         </div>
@@ -379,8 +381,8 @@ export interface SaveSlotsPaneProps {
   heading?: ReactNode;
   /** Clock (ms) for relative times. */
   now?: () => number;
-  /** Cards per row. Default 2. */
-  columns?: number;
+  /** Cards per row, or `"auto"` to fit as many as the pane allows (min 230px each). Default 2. */
+  columns?: number | "auto";
   className?: string;
   style?: CSSProperties;
 }
@@ -406,9 +408,10 @@ export function SaveSlotsPane({
 }: SaveSlotsPaneProps): ReactNode {
   const slots = useSaveSlots(model);
   const recent = model.mostRecent();
+  const tracks = columns === "auto" ? 3 : columns;
   const nav = useMenuNav({
     ids: slots.map((slot) => slot.id),
-    columns,
+    columns: tracks,
     wrap: false,
     onConfirm: (id) => {
       const slot = slots.find((candidate) => candidate.id === id);
@@ -456,7 +459,8 @@ export function SaveSlotsPane({
         data-save-slots-grid=""
         style={{
           display: "grid",
-          gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
+          gridTemplateColumns:
+            columns === "auto" ? "repeat(auto-fill, minmax(230px, 1fr))" : `repeat(${columns}, minmax(0, 1fr))`,
           gap: hudSpace("md"),
           minHeight: 0,
           overflowY: "auto",
@@ -582,14 +586,12 @@ export function ContinuePane({
           <span
             style={{
               position: "absolute",
-              inset: 0,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
+              left: 14,
+              bottom: 12,
               fontSize: hudType("xs"),
               letterSpacing: "0.16em",
               textTransform: "uppercase",
-              color: "rgba(203,213,225,0.4)",
+              color: "rgba(203,213,225,0.36)",
             }}
           >
             No capture yet
@@ -649,7 +651,7 @@ export function ContinuePane({
               fontWeight: 600,
             }}
           >
-            {value}
+            <span style={{ opacity: 0.6, textTransform: "uppercase", letterSpacing: "0.08em", fontSize: 11 }}>{key}</span> {value}
           </span>
         ))}
         {slot.savedAt === undefined ? null : (
@@ -1025,4 +1027,8 @@ export function CreditsPane({ sections, heading = "Credits", notice, className, 
     </div>
   );
 }
+
+
+
+
 

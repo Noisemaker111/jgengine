@@ -202,7 +202,7 @@ describe("GameMenu surface", () => {
     expect(card.name).toBe("Mara Vell");
     expect(card.character).toBe("Mara Vell");
     expect(card.playtime).toContain("4h 12m");
-    expect(card.chip).toBe("9");
+    expect(card.chip).toBe("level 9");
     expect(card.savedAt).toBe("1m ago");
     expect(card.thumb.startsWith("data:image/")).toBe(true);
     expect(card.recent).toBe("");
@@ -249,6 +249,7 @@ describe("GameMenu surface", () => {
     expect(chosen.at(-1)).toBe("credits");
   });
 });
+
 
 
 

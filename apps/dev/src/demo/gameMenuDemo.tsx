@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from "react";
 
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
-import { createGameSave } from "@jgengine/core/game/gameSave";
+import { createGameSave, type GameSaveDocument } from "@jgengine/core/game/gameSave";
 import { createSaveSlots } from "@jgengine/core/game/saveSlots";
 import { formatSavePlaytime, gameSaveSlotSource, refreshSaveSlots } from "@jgengine/core/game/saveSlotIndex";
 import { localSaveBackend } from "@jgengine/core/game/saveStore";
@@ -51,7 +51,9 @@ const screenStore = (() => {
 })();
 
 const progress = { waves: 0 };
+const run = { startedAt: Date.now() };
 const playtime = { seconds: 0 };
+const savedMeta: { character: string | null; thumbnail: string | null } = { character: null, thumbnail: null };
 const save = createGameSave({
   backend: localSaveBackend(),
   game: "game-menu-demo",
@@ -71,6 +73,19 @@ save.register({
     progress.waves = 0;
   },
 });
+save.register({
+  name: "meta",
+  snapshot: () => ({ character: savedMeta.character, thumbnail: savedMeta.thumbnail }),
+  restore: (next) => {
+    const value = next as { character: string | null; thumbnail: string | null };
+    savedMeta.character = value.character;
+    savedMeta.thumbnail = value.thumbnail;
+  },
+  reset: () => {
+    savedMeta.character = null;
+    savedMeta.thumbnail = null;
+  },
+});
 
 const SLOT_NAMES: Record<string, string> = { "slot-1": "Mara Vell" };
 const slotIndex = createSaveSlots({
@@ -82,12 +97,17 @@ const slotIndex = createSaveSlots({
   ],
 });
 const slotOptions = {
-  nameOf: (slot: string) => SLOT_NAMES[slot] ?? slot,
-  metaOf: (_slot: string, document: { playtime: number }) => ({
-    character: SLOT_NAMES["slot-1"] ?? "Wanderer",
-    waves: Math.max(1, progress.waves),
-    playtime: formatSavePlaytime(document.playtime),
-  }),
+  nameOf: (_slot: string, document: GameSaveDocument) =>
+    ((document.systems.meta ?? {}) as { character?: string | null }).character ?? "Wanderer",
+  metaOf: (_slot: string, document: GameSaveDocument) => {
+    const meta = (document.systems.meta ?? {}) as { character?: string | null; thumbnail?: string | null };
+    return {
+      character: meta.character ?? "Wanderer",
+      waves: Math.max(1, progress.waves),
+      playtime: formatSavePlaytime(document.playtime),
+      ...(typeof meta.thumbnail === "string" && meta.thumbnail.length > 0 ? { thumbnail: meta.thumbnail } : {}),
+    };
+  },
 };
 
 const credits = mergeCredits(
@@ -173,11 +193,54 @@ function DemoKeyArt(): ReactNode {
 }
 
 
+/**
+ * The card thumbnail when the frame cannot be read (a headless browser with no WebGL draws nothing
+ * into the canvas buffer). A real game gets its thumbnail from `captureCanvas`; this keeps the demo's
+ * card honest in a capture that has no scene.
+ */
+function posterThumbnail(): string | null {
+  if (typeof document === "undefined") return null;
+  const canvas = document.createElement("canvas");
+  canvas.width = 320;
+  canvas.height = 180;
+  const context = canvas.getContext("2d");
+  if (context === null) return null;
+  const sky = context.createLinearGradient(0, 0, 0, 180);
+  sky.addColorStop(0, "#0b1622");
+  sky.addColorStop(0.45, "#173244");
+  sky.addColorStop(1, "#08111a");
+  context.fillStyle = sky;
+  context.fillRect(0, 0, 320, 180);
+  const glow = context.createRadialGradient(176, 76, 2, 176, 76, 96);
+  glow.addColorStop(0, "rgba(125,211,252,0.75)");
+  glow.addColorStop(1, "rgba(125,211,252,0)");
+  context.fillStyle = glow;
+  context.fillRect(60, 0, 240, 180);
+  context.fillStyle = "#22404a";
+  context.beginPath();
+  context.moveTo(0, 180);
+  context.lineTo(0, 126);
+  context.lineTo(70, 104);
+  context.lineTo(132, 134);
+  context.lineTo(196, 92);
+  context.lineTo(258, 128);
+  context.lineTo(320, 108);
+  context.lineTo(320, 180);
+  context.closePath();
+  context.fill();
+  context.fillStyle = "rgba(216,193,105,0.85)";
+  context.fillRect(172, 62, 8, 26);
+  return canvas.toDataURL("image/jpeg", 0.6);
+}
+
 async function writeSave(name: string, thumbnail: string | null): Promise<void> {
-  await save.switchSlot("slot-1");
+  playtime.seconds = Math.max(playtime.seconds, Math.floor((Date.now() - run.startedAt) / 1000));
   SLOT_NAMES["slot-1"] = name;
   const capture = captureRef.current;
-  const shot = thumbnail ?? (capture === null ? null : await shrinkCapture(capture(), { width: 320, height: 180 }));
+  const shot = thumbnail ?? (capture === null ? null : await shrinkCapture(capture(), { width: 320, height: 180 })) ?? posterThumbnail();
+  savedMeta.character = name;
+  savedMeta.thumbnail = shot;
+  await save.save();
   slotIndex.write("slot-1", {
     name,
     meta: {
@@ -187,10 +250,7 @@ async function writeSave(name: string, thumbnail: string | null): Promise<void> 
       ...(shot === null ? {} : { thumbnail: shot }),
     },
   });
-  await save.save();
   await refreshSaveSlots(gameSaveSlotSource(save), slotIndex, slotOptions);
-  const written = slotIndex.get("slot-1");
-  if (written !== null && shot !== null) slotIndex.write("slot-1", { meta: { ...written.meta, thumbnail: shot } });
 }
 
 function SettingsBody(): ReactNode {
@@ -244,13 +304,15 @@ function GameMenuDemoUI(): ReactNode {
   }, []);
 
   const resume = (slotId: string): void => {
-    void save.switchSlot(slotId).then(() => {
+    run.startedAt = Date.now();
+    void save.switchSlot(slotId, { flush: false }).then(() => {
       void refreshSaveSlots(gameSaveSlotSource(save), slotIndex, slotOptions).then(() => setRecent(slotIndex.mostRecent()));
       screenStore.set("play");
     });
   };
 
   const detailFor = (id: string | null): ReactNode => {
+    ((window as unknown as { __menuLog?: string[] }).__menuLog ??= []).push(String(id));
     switch (id) {
       case "continue":
         return <ContinuePane slot={recent} onContinue={(slot) => resume(slot.id)} />;
@@ -270,6 +332,7 @@ function GameMenuDemoUI(): ReactNode {
             startLabel="Take the wall"
             onStart={(choice) => {
               SLOT_NAMES["slot-1"] = choice.name;
+              run.startedAt = Date.now();
               playtime.seconds = 0;
               progress.waves = 0;
               void writeSave(choice.name, null).then(() => screenStore.set("play"));
@@ -288,7 +351,7 @@ function GameMenuDemoUI(): ReactNode {
               SLOT_NAMES[slot.id] = name;
               playtime.seconds = 0;
               progress.waves = 0;
-              void save.switchSlot(slot.id).then(() => screenStore.set("play"));
+              void save.switchSlot(slot.id, { flush: false }).then(() => screenStore.set("play"));
             }}
             onDelete={(slot) => {
               slotIndex.clear(slot.id);
@@ -332,7 +395,6 @@ function GameMenuDemoUI(): ReactNode {
 
       <div style={{ position: "absolute", inset: 0, pointerEvents: screen === "title" ? "auto" : "none" }}>
         <GameMenu
-          key={`title-${focusId ?? ""}-${recent?.id ?? "none"}`}
           open={screen === "title"}
           initialId={focusId ?? (recent === null ? "new" : "continue")}
           background={<DemoKeyArt />}
@@ -436,6 +498,14 @@ export const gameMenuDemoGame: PlayableGame = {
     },
   },
 };
+
+
+
+
+
+
+
+
 
 
 
