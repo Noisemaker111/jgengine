@@ -376,7 +376,7 @@ export function closeLane(args: LaneCloseArgs, io: LaneIo): number {
     return landed.status;
   }
 
-  const pr = args.pr ?? mergedPr(branch, io);
+  const pr = args.pr ?? branchPr(branch, io);
   if (pr === null) {
     io.err(`lane:close: landed ${branch} but cannot name its PR; no checks or report to print`);
     return EXIT_CANNOT_ANSWER;
@@ -484,8 +484,12 @@ export function closeLane(args: LaneCloseArgs, io: LaneIo): number {
   return EXIT_CLOSED;
 }
 
-function mergedPr(branch: string, io: LaneIo): number | null {
-  const listed = io.sh(["gh", "pr", "list", "--head", branch, "--state", "merged", "--limit", "1", "--json", "number"], false);
+/**
+ * The PR this branch handed over: open and armed, or already merged. `land` no longer waits, so the
+ * PR a lane just produced is usually still open when the report is printed.
+ */
+function branchPr(branch: string, io: LaneIo): number | null {
+  const listed = io.sh(["gh", "pr", "list", "--head", branch, "--state", "all", "--limit", "1", "--json", "number"], false);
   if (listed.status !== 0) return null;
   const parsed = parseJson<{ number: number }[]>(listed.stdout);
   if (!("value" in parsed)) return null;

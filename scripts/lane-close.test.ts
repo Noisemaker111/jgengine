@@ -214,6 +214,29 @@ describe("lane:close end to end", () => {
     expect(calls).toContain("run land --commit");
   });
 
+  test("a PR that is still open and armed is named, not refused", () => {
+    const pending = JSON.stringify({
+      ok: true,
+      pr: 2278,
+      url: "https://github.com/o/r/pull/2278",
+      state: "OPEN",
+      verdict: "pending",
+      counts: { pass: 3, fail: 0, pending: 8 },
+      runIds: [40034099879],
+    });
+    const fake = io({ audit: audit([session()]), ci: pending });
+    expect(closeLane({}, fake)).toBe(EXIT_CLOSED);
+    const printed = fake.lines.out.join("\n");
+    expect(printed).toContain("- PR: #2278 open https://github.com/o/r/pull/2278");
+    expect(printed).toContain("- checks: 3 pass, 0 fail, 8 pending — pending");
+  });
+
+  test("a landing with no PR to name cannot answer", () => {
+    const fake = io({ pr: null, audit: audit([session()]) });
+    expect(closeLane({}, fake)).toBe(EXIT_CANNOT_ANSWER);
+    expect(fake.lines.err.join("\n")).toContain("cannot name its PR");
+  });
+
   test("the lane says which session it read and why", () => {
     const reason = "attributed ses_1 (14 references to /repo/.claude/worktrees/lane-attribution)";
     const fake = io({ audit: attributedAudit([session()], reason) });
