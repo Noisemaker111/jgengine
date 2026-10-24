@@ -54,10 +54,9 @@ import { applyLookSearchParams, parseLookAim } from "./lookArg";
 import {
   MIN_SAMPLED_SHARE,
   computeShotMetrics,
-  deadViewport,
   evaluateThresholds,
-  flatFrame,
   metricsPathFor,
+  sceneFrameProblem,
   shotSignature,
 } from "./shot-metrics";
 import {
@@ -496,14 +495,26 @@ async function shootOne(
     mark(`frame(${via})`);
     const decoded = decodePng(bytes);
     const frame = computeShotMetrics(decoded.width, decoded.height, decoded.data);
-    const flat = flatFrame(frame);
-    if (flat !== null && regions.region !== undefined) {
-      console.error(`shoot [${label}]: ${flat} - nothing was written`);
-      return false;
-    }
-    writePngAtomic(outPath, bytes);
     const scoped = computeShotMetrics(decoded.width, decoded.height, decoded.data, regions);
     const viewport = (scoped.sampledShare ?? 1) >= MIN_SAMPLED_SHARE ? scoped : null;
+    // Judged before the write, unlike the old post-write viewport warning: a frame that fails here
+    // is not evidence, and a file on disk is what gets cited later. `--view`/`--look` promise a 3D
+    // framing, so they demand a canvas whatever the mode; `--mode ui` alone is an honest HUD capture.
+    const problem = sceneFrameProblem({
+      ...(regions.region === undefined ? {} : { region: regions.region }),
+      frame,
+      viewport,
+      mode: args.mode,
+      wantsScene: args.mode !== "ui" || args.view !== undefined || args.look !== undefined,
+    });
+    if (problem !== null) {
+      console.error(`shoot [${label}]: ${problem} — nothing was written`);
+      return false;
+    }
+    if (regions.region === undefined) {
+      console.error(`shoot [${label}]: mode ui HUD preview, no 3D canvas — this frame is not evidence of the world`);
+    }
+    writePngAtomic(outPath, bytes);
     const record = buildShotRecord({
       bytes,
       command: shotCommand(),
@@ -529,15 +540,9 @@ async function shootOne(
     }
     const replacement = describeReplacement(record);
     if (replacement !== null) console.error(`shoot [${label}]: ${replacement}`);
-    // Viewport metrics are scored on every shot, not only under --inspect: a dead 3D view
-    // that nobody opens the PNG to notice is the failure this rung exists to catch. Skipped
-    // when the region is mostly covered (a HUD/menu capture has no 3D view to judge).
+    // Viewport metrics are advisory now: a dead 3D view is refused before the write, so anything
+    // reaching here is a frame that rendered something and is being measured for how it reads.
     if (viewport !== null) {
-      const dead = deadViewport(viewport);
-      if (dead !== null) {
-        console.error(`shoot [${label}]: ${dead} — the HUD alone is carrying this frame`);
-        ok = false;
-      }
       for (const warning of evaluateThresholds(viewport)) {
         console.error(`shoot [${label}]: viewport ${warning.message}`);
       }
