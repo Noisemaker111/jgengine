@@ -14,6 +14,8 @@ import { PreviewApp } from "./PreviewApp";
 import { StandaloneEditorApp } from "./StandaloneEditorApp";
 import "./index.css";
 
+throw new Error("boot replay: dev runner refuses to boot");
+
 createRoot(document.getElementById("root")!).render(
   EDITOR_STANDALONE ? (
     <StandaloneEditorApp />
@@ -28,4 +30,3 @@ createRoot(document.getElementById("root")!).render(
   ),
 );
 
-throw new Error("boot replay: dev runner refuses to boot");
