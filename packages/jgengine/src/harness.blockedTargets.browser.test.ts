@@ -1,6 +1,7 @@
 import { afterAll, describe, expect, test } from "bun:test";
 
 import {
+  HARNESS_TEST_TIMEOUT_MS,
   POINTER_BLOCKED,
   cleanupHarness,
   harnessBrowser as browser,
@@ -39,6 +40,6 @@ describe.skipIf(!hasChrome)("portable harness pointer-blocked targets in Chromiu
         server.stop(true);
         project.dispose();
       }
-    }, 45000);
+    }, HARNESS_TEST_TIMEOUT_MS);
   }
 });

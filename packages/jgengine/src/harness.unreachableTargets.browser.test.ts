@@ -1,6 +1,7 @@
 import { afterAll, describe, expect, test } from "bun:test";
 
 import {
+  HARNESS_TEST_TIMEOUT_MS,
   UNREACHABLE,
   cleanupHarness,
   harnessBrowser as browser,
@@ -39,6 +40,6 @@ describe.skipIf(!hasChrome)("portable harness unreachable targets in Chromium", 
         server.stop(true);
         project.dispose();
       }
-    }, 45000);
+    }, HARNESS_TEST_TIMEOUT_MS);
   }
 });

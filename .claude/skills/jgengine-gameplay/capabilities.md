@@ -652,6 +652,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## run-loop — bank or lose what a run carries, with one deterministic change per run
 
 - `createRunLoop` (function) · `import { createRunLoop } from "@jgengine/core/run/runLoop"`
+- `installRunProbe` (function) · `import { installRunProbe } from "@jgengine/core/run/runLoop"`
 
 ## run-modifiers — a roguelike run built from stacking drafted modifier picks
 
