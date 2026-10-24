@@ -3,6 +3,7 @@ import { escapeHtml } from "../escapeHtml";
 import { BROWSER_LAUNCH_BLOCK } from "./browserLaunch";
 import { CAPTURE_FLAGS, captureFlagHelp, parseCaptureArgs, rejectEngineOnlyFlags } from "./captureArgs";
 import { awaitGameView, holdDriveInput } from "./driveSteps";
+import { acquireDrivePointerLock, aimDriveAt, lookDrivePointer, moveDrivePointer } from "./driveAim";
 import { driveInputPointExpr } from "./driveInput";
 import { focusGameSurface, gameSurfaceCenter, holdComplete, mouseButtonForCode } from "./gameSurfaceFocus";
 import type { EditorSceneDoc, TemplateVariant } from "./types";
@@ -279,6 +280,14 @@ export ${captureFlagHelp.toString()}
 export ${holdDriveInput.toString()}
 
 export ${awaitGameView.toString()}
+
+export ${acquireDrivePointerLock.toString()}
+
+export ${moveDrivePointer.toString()}
+
+export ${lookDrivePointer.toString()}
+
+export ${aimDriveAt.toString()}
 
 /** Parse argv for a portable harness: the shared flag table, minus what only the engine runner honors. */
 export function parsePortableArgs(tool, argv) {
@@ -1120,6 +1129,7 @@ async function main() {
   for (const step of args.steps) {
     if (step.kind === "click-at") step.point = parseClickAt(step.spec, width, height);
   }
+  let pointer = null;
   const base = "http://127.0.0.1:" + args.port;
   const target = new URL(args.url ?? base);
   target.searchParams.set("capture", "1");
@@ -1159,6 +1169,17 @@ async function main() {
         if (step.kind === "click" || step.kind === "double-click") await click(session, step.text, step.kind === "double-click" ? 2 : 1);
         else if (step.kind === "fill") await fill(session, step.label, step.value);
         else if (step.kind === "click-at") await dispatchClickAt(session, step.point, step.button);
+        else if (step.kind === "move-mouse") pointer = { x: step.x, y: step.y }, await moveDrivePointer(session, pointer);
+        else if (step.kind === "look") {
+          await acquireDrivePointerLock(session);
+          const turned = await lookDrivePointer(session, step.dx, step.dy);
+          console.error("look: moved " + Math.round(turned.movement.x) + "," + Math.round(turned.movement.y) + "px");
+        } else if (step.kind === "aim-at") {
+          await acquireDrivePointerLock(session).catch(() => false);
+          const aimed = await aimDriveAt(session, pointer, step.expression, step.tolerancePx);
+          pointer = aimed.from;
+          console.error("aimAt: aimed " + Math.round(aimed.point.x) + "," + Math.round(aimed.point.y) + " in " + aimed.moves + " move(s)");
+        }
         else if (step.kind === "key") await holdKey(session, step.code, step.holdMs);
         else if (step.kind === "wait") await sleep(step.ms);
         else if (step.kind === "reload") await navigate(session, url, args.timeoutMs, args.settle);

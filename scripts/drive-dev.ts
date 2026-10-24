@@ -59,6 +59,7 @@ import {
 import { driveInputPointExpr } from "../packages/jgengine/src/templates/driveInput";
 import { CAPTURE_FLAGS, captureFlagHelp, describeFlow, describeStepFile, parseCaptureArgs, parseStepFile, rejectMixedStepFlags, type CaptureStep, type FlowFile, type FlowSource } from "../packages/jgengine/src/templates/captureArgs";
 import { awaitDriveCondition, awaitGameView, holdDriveInput, type DriveConditionClock, type DriveInputDeps, type DriveSession } from "../packages/jgengine/src/templates/driveSteps";
+import { acquireDrivePointerLock, aimDriveAt, lookDrivePointer, moveDrivePointer, type DrivePoint } from "../packages/jgengine/src/templates/driveAim";
 import { driveProjectDir, flowSourceFrom, flowsDirOf, listFlowNames, missingFlowsMessage } from "./driveFlows";
 import { evaluateAssertStep, runDriveSteps, type DriveStepRecord } from "./driveRun";
 import { gameSurfaceCenter, mouseButtonForCode } from "../packages/jgengine/src/templates/gameSurfaceFocus";
@@ -178,6 +179,12 @@ Script a drive:
   "shot" is a bare name: it lands in <game>/docs/<name>.png, never an absolute path,
   and a site target lands in apps/web/docs/. Coordinates are [x, y] numbers.
   "waitFor": "<expression>" is sugar for a step with only a before condition.
+  Aim steps: "moveMouse": [x, y] hovers the pointer at CSS viewport pixels; "look": [dx, dy]
+  turns a pointer-locked view by that many pixels of mouse movement (the step takes pointer
+  lock on the play canvas the way the game does, without clicking, so it cannot fire);
+  "aimAt": "<page expression>" resolves the expression to the target's { x, y } screen point
+  and turns until the crosshair is on it ("tolerancePx", default 6), measuring the game's own
+  look response instead of assuming a sensitivity. A goal is "aimAt", never a guessed "look".
   A fixed "wait" still parses for CI compatibility, but it is the last resort: a guessed
   sleep either wastes the difference or races the frame. Say what must be true instead.
   --steps cannot be mixed with step flags (--click, --key, --wait, --shot, ...).
@@ -888,6 +895,9 @@ async function driveSession(daemon: ShootDaemonState | null): Promise<number> {
           writeFileSync(logPath, "");
         }
 
+        /** Where the pointer was left by the previous aim step, so a relative look has an origin. */
+        let pointer: DrivePoint | null = null;
+
         const done = await runDriveSteps(args.steps, {
           now: () => performance.now(),
           line: (text) => console.error(text),
@@ -929,6 +939,21 @@ async function driveSession(daemon: ShootDaemonState | null): Promise<number> {
               await session.send("Page.bringToFront");
               await dispatchClickAt(session, clickPoints.get(step)!, step.button);
               if (recorder !== null) await recorder.advance(300);
+            } else if (step.kind === "move-mouse") {
+              await moveDrivePointer(session, { x: step.x, y: step.y });
+              pointer = { x: step.x, y: step.y };
+              if (recorder !== null) await recorder.advance(300);
+            } else if (step.kind === "look") {
+              await acquireDrivePointerLock(session);
+              const turned = await lookDrivePointer(session, step.dx, step.dy);
+              timings.push("moved " + Math.round(turned.movement.x) + "," + Math.round(turned.movement.y) + "px");
+              if (recorder !== null) await recorder.advance(300);
+            } else if (step.kind === "aim-at") {
+              await acquireDrivePointerLock(session).catch(() => false);
+              const aimed = await aimDriveAt(session, pointer, step.expression, step.tolerancePx);
+              pointer = aimed.from;
+              timings.push("aimed " + Math.round(aimed.point.x) + "," + Math.round(aimed.point.y) + " in " + aimed.moves + " move(s)");
+              if (recorder !== null) await recorder.advance(300);
             } else if (step.kind === "rpc") {
               await rpc(session, step.json);
               if (step.summarized) console.error(`drive: debug_snapshot printed its summary; pass {"method":"debug_snapshot","detail":"full"} for everything`);
@@ -937,6 +962,7 @@ async function driveSession(daemon: ShootDaemonState | null): Promise<number> {
               const metrics = await readProbe(session);
               console.log(JSON.stringify({ probe: step.name, metrics }));
             } else {
+              if (step.kind !== "shot") throw new Error("drive: steps[" + index + "] is a " + step.kind + " step with no executor");
               // A recording owns the screencast pump; a shot must not start/stop it underneath.
               const path = step.out ?? join(outDir, `${args.game}-${step.name}${sizeSuffix(args.size)}${qualitySuffix(args.quality)}${quickSuffix(args.quick)}.png`);
               const previous = preparedShots.has(path) ? preparedShots.get(path) : clearShotTarget(path);
