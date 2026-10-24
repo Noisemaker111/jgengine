@@ -332,3 +332,5 @@ describe("interrupted reloads", () => {
     expect("paused" in mag.snapshot()).toBe(false);
   });
 });
+
+// Measurement line one5.
