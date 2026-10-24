@@ -74,6 +74,7 @@ const CHECK_TYPES_STAGES: readonly Stage[] = [
     "check-source-paths",
     "check-test-spawn-timeouts",
     "check:fixture-location",
+    "check:path-portability",
     "check:no-blocking-wait",
     "check:script-help",
   ].map((name): Stage => ({

@@ -277,7 +277,7 @@ export function importers(
  * launch a browser or scaffold (`check:scaffold-launch`) are left to `--full`.
  */
 export function gatesFor(changed: readonly string[]): string[] {
-  const gates = new Set(["check-artifacts", "check:fixture-location", "check-orphan-ratchet"]);
+  const gates = new Set(["check-artifacts", "check:fixture-location", "check:path-portability", "check-orphan-ratchet"]);
   const shippedSource = changed.filter((path) => /^packages\/[^/]+\/src\//.test(path) && !isTestFile(path));
   if (changed.some((path) => path.startsWith("scripts/")) || shippedSource.length > 0) gates.add("check:capture-hygiene");
   if (shippedSource.length > 0) gates.add("check-changelog");
@@ -432,6 +432,7 @@ export async function fullSteps(root: string, changed: readonly string[]): Promi
     { name: "check-skill-api", command: ["bun", "run", "check-skill-api"], needs: ["build"], cost: 30 },
     { name: "check-orphan-ratchet", command: ["bun", "run", "check-orphan-ratchet"] },
     { name: "check:fixture-location", command: ["bun", "run", "check:fixture-location"] },
+    { name: "check:path-portability", command: ["bun", "run", "check:path-portability"] },
     { name: "check:scaffold-launch", command: ["bun", "run", "check:scaffold-launch"], exclusive: true },
     { name: "check:capture-hygiene", command: ["bun", "run", "check:capture-hygiene"] },
     { name: "check-export-manifest", command: ["bun", "run", "check-export-manifest"], needs: ["build"] },

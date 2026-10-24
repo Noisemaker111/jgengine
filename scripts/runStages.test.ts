@@ -159,8 +159,8 @@ describe("SDK validation ownership", () => {
       "ensure-ready", "check-artifacts", "check-release-set", "check-skills", "check-skill-api", "check-orphan-ratchet",
       "check-stateful-ratchet", "check-capabilities", "check-pack-texture-layout", "check-recipes",
       "check-doc-symbols", "check-hud-tokens", "check-street-rule-parity", "check-source-paths",
-      "check-test-spawn-timeouts", "check:fixture-location", "check:no-blocking-wait", "check:script-help",
-      "check-types-all",
+      "check-test-spawn-timeouts", "check:fixture-location", "check:path-portability", "check:no-blocking-wait",
+      "check:script-help", "check-types-all",
     ]);
   });
 

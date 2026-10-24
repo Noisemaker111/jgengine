@@ -1,13 +1,14 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { existsSync, lstatSync, mkdirSync, mkdtempSync, readlinkSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 
 import { assetLinks, canLinkDeps, linkAssets, linkDeps, worktreeTarget } from "./agent-worktree";
 
 describe("worktreeTarget", () => {
   test("places worktrees under the main checkout's .claude/worktrees", () => {
-    expect(worktreeTarget("/repo", "ui-fix")).toEqual({ path: join("/repo", ".claude", "worktrees", "ui-fix") });
+    const root = resolve("repo");
+    expect(worktreeTarget(root, "ui-fix")).toEqual({ path: join(root, ".claude", "worktrees", "ui-fix") });
   });
 
   test("rejects names that could escape or are not plain", () => {
@@ -54,7 +55,7 @@ describe("linking a worktree to the main checkout", () => {
     expect(linkDeps(main, target)).toEqual(["node_modules", "packages/shell/node_modules"]);
     expect(realpathSync(join(target, "node_modules"))).toBe(realpathSync(join(main, "node_modules")));
     const link = join(target, "packages", "shell", "node_modules", "@jgengine", "core");
-    expect(readlinkSync(link)).toBe("../../../core");
+    expect(readlinkSync(link)).toBe(join("..", "..", "..", "core"));
     expect(realpathSync(link)).toBe(realpathSync(join(target, "packages", "core")));
     expect(existsSync(join(target, "packages", "shell", "node_modules", ".vite"))).toBe(false);
     expect(linkDeps(main, target)).toEqual([]);
