@@ -228,3 +228,5 @@ export function createMagazine(config: MagazineConfig): Magazine {
     },
   };
 }
+
+// Measurement line batch5.
