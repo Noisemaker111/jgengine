@@ -3101,6 +3101,13 @@
 
 - `ScatterModelSource` (interface): interface ScatterModelSource — One instanceable draw source harvested from a resolved GLB — geometry stays shared with the loader cache, `localMatrix` bakes the model's own transform (from its scene root) plus scale/anchor normalization.
 
+## @jgengine/shell/scatter/scatterVariants
+
+- `ScatterVariantCamera` (interface): interface ScatterVariantCamera — A camera position the level pass measures from.
+- `ScatterVariantMember` (interface): interface ScatterVariantMember — A scatter placement as the level pass reads it: a stable id and a world position.
+- `scatterVariantTriangles` (function): function scatterVariantTriangles(counts: readonly number[], triangles: readonly number[]): number — Triangle total for per-level instance counts, so a fixture reports real geometry, not instance counts.
+- `writeScatterVariantLevel` (function): function writeScatterVariantLevel(level: number, selector: ModelVariantSelector, camera: ScatterVariantCamera, members: readonly ScatterVariantMember[], transforms: readonly THREE.Matrix4[], localMatrix: THREE.Matrix4, out: THREE.Matrix4[], keep?: (index: number) => boolean): number — Writes the matrices of the members the shared variant selector put on `level` into `out`, in source order, and returns how many were written. `out` is the level mesh's reserved capacity (one matrix per member), so a frame writes matrices and `count` without allocating.
+
 ## @jgengine/shell/scene
 
 - `AuthoredObjects` (function): function AuthoredObjects({ document, field, verticalOffset = 0, onExisting = "keep", synchronize = false, excludeKinds, }: AuthoredObjectsProps): null — Places every editor marker with a catalog id into `ctx.scene.object`, grounded on `field`. WorldScene renders them through the game's `objectModels` seam — no bespoke place loop. Pure headless twin: `resolveAuthoredObjects` / `placeAuthoredObjects`.
