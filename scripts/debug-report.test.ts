@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
+import { createServer, type Server } from "node:http";
 
 import { findReport, gameUrl, parseDebugArgs } from "./debug-report";
 import type { PerfReport } from "../packages/core/src/devtools/report";
@@ -9,15 +10,24 @@ import type { PerfReport } from "../packages/core/src/devtools/report";
  * the report found on whichever dev server has it.
  */
 
-const realFetch = globalThis.fetch;
+const openServers: Server[] = [];
 
-function stubFetch(handler: (url: string) => Response): void {
-  globalThis.fetch = ((input: string | URL | Request) => Promise.resolve(handler(String(input)))) as typeof fetch;
-}
-
-afterEach(() => {
-  globalThis.fetch = realFetch;
+afterEach(async () => {
+  for (const server of openServers.splice(0)) {
+    await new Promise<void>((resolve) => server.close(() => resolve()));
+  }
 });
+
+/** Serve each dev server on its real port: the report read uses node:http, so a fetch stub cannot stand in. */
+async function serve(port: number, handler: (path: string) => { status: number; body: unknown }): Promise<void> {
+  const server = createServer((request, response) => {
+    const { status, body } = handler(request.url ?? "/");
+    response.writeHead(status, { "content-type": "application/json" });
+    response.end(JSON.stringify(body));
+  });
+  await new Promise<void>((resolve) => server.listen(port, "127.0.0.1", resolve));
+  openServers.push(server);
+}
 
 function report(game = "deepward"): PerfReport {
   return {
@@ -83,28 +93,27 @@ describe("choosing a dev server", () => {
   });
 
   test("takes the report from the website dev server when it has one", async () => {
-    stubFetch((url) =>
-      url.startsWith("http://127.0.0.1:3001")
-        ? Response.json(report())
-        : Response.json({ error: "no report" }, { status: 404 }),
-    );
+    await serve(3001, () => ({ status: 200, body: report() }));
+    await serve(4680, () => ({ status: 404, body: { error: "no report" } }));
     const found = await findReport([website, runner], "deepward", 0);
     expect("error" in found).toBe(false);
     expect("error" in found ? null : found.server.base).toBe("http://127.0.0.1:3001");
   });
 
   test("falls through to the runner when the website server has no report", async () => {
-    stubFetch((url) =>
-      url.startsWith("http://127.0.0.1:4680")
-        ? Response.json(report())
-        : Response.json({ error: "no report" }, { status: 404 }),
-    );
+    await serve(3001, () => ({ status: 404, body: { error: "no report" } }));
+    await serve(4680, () => ({ status: 200, body: report() }));
     const found = await findReport([website, runner], "deepward", 0);
     expect("error" in found ? null : found.server.kind).toBe("runner");
   });
 
   test("says no report yet instead of inventing one, without waiting twice", async () => {
-    stubFetch(() => Response.json({ error: 'no report for "deepward" yet — open it in the browser and play for a second' }, { status: 404 }));
+    const missing = () => ({
+      status: 404,
+      body: { error: 'no report for "deepward" yet — open it in the browser and play for a second' },
+    });
+    await serve(3001, missing);
+    await serve(4680, missing);
     const started = Date.now();
     const found = await findReport([website, runner], "deepward", 0);
     expect("error" in found ? found.error : "").toContain("no report for \"deepward\" yet");

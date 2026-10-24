@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
 import { headRevision } from "./captureRevision";
+import { localOk, localRequest } from "./localhostHttp";
 
 /**
  * The marker every checkout's dev server writes, so a command can find a server
@@ -84,8 +85,8 @@ export function listMarkers(dir = tmpdir()): DevServerMarker[] {
 /** True when something answers HTTP with a 2xx or 3xx at `url`. */
 export async function isUp(url: string): Promise<boolean> {
   try {
-    const response = await fetch(url, { signal: AbortSignal.timeout(1_000) });
-    return response.ok;
+    const response = await localRequest(url, { timeoutMs: 1_000 });
+    return response.status >= 200 && response.status < 400;
   } catch {
     return false;
   }
@@ -109,7 +110,7 @@ export async function reachableBase(port: number, preferredHost?: string): Promi
 async function answers(base: string, timeoutMs = 3_000): Promise<boolean> {
   for (const path of ["/__jgengine/report?game=probe", "/"]) {
     try {
-      await fetch(`${base}${path}`, { signal: AbortSignal.timeout(timeoutMs) });
+      await localRequest(`${base}${path}`, { timeoutMs });
       return true;
     } catch {
       continue;
@@ -161,12 +162,7 @@ export async function listRunningDevServers(cwd = process.cwd(), dir = tmpdir())
 }
 
 async function servesWebsite(base: string): Promise<boolean> {
-  try {
-    const response = await fetch(`${base}/games`, { signal: AbortSignal.timeout(1_000) });
-    return response.ok;
-  } catch {
-    return false;
-  }
+  return localOk(`${base}/games`, 1_000);
 }
 
 /**

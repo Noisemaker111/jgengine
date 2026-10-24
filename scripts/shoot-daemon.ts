@@ -40,6 +40,7 @@ import {
   type ChromeProcess,
   type EnsureDevServerResult,
 } from "./browser-lib";
+import { localOk } from "./localhostHttp";
 
 export interface ShootDaemonState {
   identity: string;
@@ -139,10 +140,7 @@ export async function isDaemonLive(cwd = process.cwd()): Promise<boolean> {
   if (state === null) return false;
   if (state.identity !== checkoutIdentity(cwd)) return false;
   try {
-    const version = await fetch(`http://127.0.0.1:${state.chromePort}/json/version`, {
-      signal: AbortSignal.timeout(800),
-    });
-    if (!version.ok) return false;
+    if (!(await localOk(`http://127.0.0.1:${state.chromePort}/json/version`, 800))) return false;
   } catch {
     return false;
   }
@@ -255,8 +253,7 @@ export async function startDaemon(options: {
     if (await isDaemonLive(cwd)) return { state: readDaemonState(cwd)!, chrome: null, started: false };
     let occupied = false;
     try {
-      const endpoint = await fetch(`http://127.0.0.1:${chromePort}/json/version`, { signal: AbortSignal.timeout(800) });
-      occupied = endpoint.ok;
+      occupied = await localOk(`http://127.0.0.1:${chromePort}/json/version`, 800);
     } catch { /* no reachable debugger */ }
     if (occupied) {
       throw new Error(`shoot daemon: Chrome debug port ${chromePort} is already reachable without a live record for this checkout. Use a unique JG_CHROME_PORT to start a separate daemon, or explicitly --connect ${chromePort} to use the existing browser; its ownership and storage were not changed.`);

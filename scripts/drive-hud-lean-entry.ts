@@ -1,4 +1,5 @@
 /** Measure an actual CLI-created HUD game's cold entry and drive its native controls. */
+import { localGetJson, localOk } from "./localhostHttp";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import type { WorldSyncFrame } from "@jgengine/core/runtime/transport";
@@ -146,9 +147,9 @@ assert.ok(["127.0.0.1", "localhost"].includes(realm.hostname));
 const ws = new URL("/ws", realm); ws.protocol = "ws:";
 const identities = [];
 for (const [base, component] of [[url, "frontend"], [realm, "realm"]] as const) {
-  const response = await fetch(new URL("/__version", base), { signal: AbortSignal.timeout(5000) });
-  assert.ok(response.ok);
-  const identity = await response.json() as { component: string; revision: string };
+  const versionUrl = new URL("/__version", base);
+  assert.ok(await localOk(versionUrl, 5000));
+  const identity = (await localGetJson(versionUrl, 5000)) as { component: string; revision: string };
   assert.equal(identity.component, component); assert.equal(identity.revision, revision); identities.push(identity);
 }
 const artifact = JSON.parse(readFileSync(process.env["JG_HUD_AUTHORITY_ARTIFACT"]!, "utf8")) as { entryChunk: string };
@@ -415,7 +416,7 @@ try {
 } catch (error) { failure = String(error); throw error; }
 finally {
   const wire = await page.evaluate(() => (window as unknown as { __jgRecoveryWire: unknown }).__jgRecoveryWire).catch(() => null);
-  const serverTrace = await fetch(new URL("/__fixture/input-trace", ws.toString().replace(/^ws/, "http"))).then(response => response.json()).catch(() => null);
+  const serverTrace = await localGetJson(new URL("/__fixture/input-trace", ws.toString().replace(/^ws/, "http")), 5000).catch(() => null);
   const finalDom = await page.evaluate(() => ({ headings: [...document.querySelectorAll("h1,h2")].map(node => node.textContent), recovery: [...document.querySelectorAll("button")].map(node => node.textContent), canvasCount: document.querySelectorAll("canvas").length })).catch(() => null);
   await browser.close();
   writeFileSync(resolve(evidence, "result.json"), JSON.stringify({ outcome, failure, artifact, identities, sockets, frames, inputPackets, authoritativePoses, requests, responses, snapshots, wire, serverTrace, finalDom, errors, cleanup: { browserClosed: true } }, null, 2));

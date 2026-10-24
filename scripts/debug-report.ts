@@ -1,6 +1,7 @@
 import { fileURLToPath } from "node:url";
 
 import { listRunningDevServers } from "./devServerMarker";
+import { localRequest } from "./localhostHttp";
 import { checkBudget, loadBudget, summarizeRecord } from "./perf-budget";
 import { REPORT_ENDPOINT_PATH, type ReportRouteError } from "../packages/core/src/devtools/reportEndpoint";
 import type { PerfReport } from "../packages/core/src/devtools/report";
@@ -64,9 +65,15 @@ export async function fetchReport(base: string, game: string, waitMs: number): P
   const url = new URL(REPORT_ENDPOINT_PATH, base);
   url.searchParams.set("game", game);
   if (waitMs > 0) url.searchParams.set("wait", String(waitMs));
-  const response = await fetch(url, { signal: AbortSignal.timeout(Math.max(5_000, waitMs + 5_000)) });
-  const body = (await response.json()) as unknown;
-  if (!response.ok) {
+  const timeoutMs = Math.max(5_000, waitMs + 5_000);
+  const response = await localRequest(url, { timeoutMs });
+  let body: unknown;
+  try {
+    body = JSON.parse(response.body) as unknown;
+  } catch {
+    return { error: `the report route answered ${response.status} with a body that is not JSON` };
+  }
+  if (response.status < 200 || response.status >= 300) {
     const routeError = body as ReportRouteError;
     return { error: typeof routeError?.error === "string" ? routeError.error : `report route answered ${response.status}` };
   }

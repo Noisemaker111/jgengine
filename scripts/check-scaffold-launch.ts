@@ -18,8 +18,9 @@
  * Exit 0 agree, 1 drift.
  */
 import { createHash } from "node:crypto";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { createServer, type Server } from "node:http";
+import { join } from "node:path";
 
 import { gameTemplate } from "../packages/jgengine/src/templates";
 import {
@@ -224,6 +225,69 @@ function proxyHijackableProbes(file: string, text: string): string[] {
   return found;
 }
 
+/**
+ * Files allowed to call `fetch` because they never address this machine. Every waiver is
+ * listed in the failure output, so adding one is a visible decision, not a silent pass.
+ */
+const REMOTE_FETCH: Record<string, string> = {
+  "scripts/creator-app-fixture.ts": "browser-side page script inside a fixture app, not a Node probe",
+  "scripts/mirror-assets.ts": "api.github.com and uploads.github.com",
+  "scripts/pr-video.ts": "api.github.com",
+  "packages/assets/src/cli/pull.ts": "remote asset registry, URL from the caller",
+  "packages/editor/src/assetImport.ts": "an editor route the caller supplies, never a fixed local address",
+  "packages/github/src/server.ts": "api.github.com",
+  "packages/github/src/source.ts": "api.github.com",
+  "packages/jgengine/src/desktop.ts": "the hosted page URL a desktop wrapper opens",
+  "packages/jgengine/src/templates/editorWorkspace.ts": "browser-side page script, where HTTP_PROXY is the browser's",
+  "packages/jgengine/src/upgrade.ts": "the npm registry",
+  "packages/shell/src/audio/audioEngine.ts": "asset URLs the page loads",
+  "packages/shell/src/devtools/agentBridge.ts": "browser-side bridge to an endpoint the page was handed",
+  "packages/shell/src/devtools/frameSampler.ts": "browser-side sampler for an endpoint the page was handed",
+};
+
+function runtimeSources(cwd = process.cwd()): string[] {
+  const files: string[] = [];
+  const walk = (dir: string, keep: (path: string) => boolean): void => {
+    if (!existsSync(dir)) return;
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const path = join(dir, entry.name);
+      if (entry.isDirectory()) {
+        if (entry.name === "node_modules" || entry.name === "dist") continue;
+        walk(path, keep);
+      } else if (keep(path)) files.push(path);
+    }
+  };
+  walk(join(cwd, "scripts"), (path) => path.endsWith(".ts") && !path.endsWith(".test.ts"));
+  const packages = join(cwd, "packages");
+  if (existsSync(packages)) {
+    for (const entry of readdirSync(packages, { withFileTypes: true })) {
+      if (!entry.isDirectory()) continue;
+      walk(join(packages, entry.name, "src"), (path) => path.endsWith(".ts") && !path.includes(".test."));
+    }
+  }
+  return files;
+}
+
+/** `file:line` for every fetch() outside the remote-only list, so the fourth copy fails CI. */
+export async function scanForFetchEverywhere(cwd = process.cwd()): Promise<string[]> {
+  const offending: string[] = [];
+  for (const path of runtimeSources(cwd)) {
+    const relative = relativePath(cwd, path);
+    if (relative === "scripts/check-scaffold-launch.ts") continue;
+    if (REMOTE_FETCH[relative] !== undefined) continue;
+    const text = await Bun.file(path).text();
+    const lines = text.split("\n");
+    for (let index = 0; index < lines.length; index += 1) {
+      if (/(?<![\w.])fetch\(/.test(lines[index] as string)) offending.push(`${relative}:${index + 1}`);
+    }
+  }
+  return offending;
+}
+
+function relativePath(cwd: string, path: string): string {
+  return path.slice(cwd.length + 1).replace(/\\/g, "/");
+}
+
 async function withEnv<T>(vars: Record<string, string>, run: () => Promise<T>): Promise<T> {
   const saved = new Map<string, string | undefined>();
   for (const [name, value] of Object.entries(vars)) {
@@ -279,6 +343,17 @@ async function main(): Promise<void> {
     );
   }
 
+  const localFetches = await scanForFetchEverywhere();
+  if (localFetches.length > 0) {
+    fail(
+      `these ${localFetches.length} fetch() calls are not on the remote-only list, and fetch() in Bun sends a local address through HTTP_PROXY (#2278):\n` +
+        `  ${localFetches.join("\n  ")}\n` +
+        `  a probe of this machine goes through node:http (import from scripts/localhostHttp.ts);\n` +
+        `  a call that really reaches the internet goes on REMOTE_FETCH in this check with its reason\n` +
+        `  waivers in force:\n    ${Object.entries(REMOTE_FETCH).map(([file, why]) => `${file} (${why})`).join("\n    ")}`,
+    );
+  }
+
   for (const harness of ["scripts/shoot.mjs", "scripts/drive.mjs"]) {
     const source = files.get(harness);
     if (source === undefined) fail(`the scaffold no longer emits ${harness} (${TEMPLATE_FILE})`);
@@ -305,4 +380,6 @@ async function main(): Promise<void> {
   );
 }
 
-await main();
+if (import.meta.main) await main();
+
+

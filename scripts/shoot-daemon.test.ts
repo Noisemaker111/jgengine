@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { existsSync, mkdtempSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
 import { createServer } from "node:http";
+import { localOk } from "./localhostHttp";
 import type { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -193,7 +194,7 @@ describe("shoot daemon readiness", () => {
       await expect(startDaemon({ cwd })).rejects.toThrow(`explicitly --connect ${port}`);
       expect(readDaemonState(cwd)).toBeNull();
       expect(existsSync(daemonStatePath(cwd))).toBe(false);
-      expect((await fetch(`http://127.0.0.1:${port}/json/version`)).ok).toBe(true);
+      expect(await localOk(`http://127.0.0.1:${port}/json/version`, 2_000)).toBe(true);
     } finally {
       clearDaemonState(cwd);
       if (prior === undefined) delete process.env.JG_CHROME_PORT;
