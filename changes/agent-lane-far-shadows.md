@@ -1,0 +1,3 @@
+### Added
+
+- A model variant level can declare its own shadow participation, so a far level draws a cheaper mesh and stops paying the shadow pass for it. `variantLevels` (`@jgengine/shell/render/singleVariantLod`) accepts `shadows: "inherit" | "cast" | "receive" | "both" | "none"` on each level; `"inherit"`, the default, keeps the model's own `shadows`, so every existing model draws as before. `variantLevelModel` is now the one place that resolves what a level draws and how it shadows, and the single prop, batched prop and scatter paths all ask it, so a level's asset and its shadow answer cannot disagree.
