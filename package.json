@@ -30,6 +30,7 @@
     "ship:preflight": "bun scripts/agent-preflight.ts --ship",
     "land": "bun scripts/land.ts",
     "land:queue": "bun scripts/land-queue.ts",
+    "land:batch": "bun scripts/land-batch.ts",
     "ci:status": "bun scripts/ci-status.ts",
     "ci:scope": "bun scripts/ci-scope.ts",
     "lane:close": "bun scripts/lane-close.ts",
