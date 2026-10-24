@@ -42,8 +42,7 @@ describe("armed PR sweep", () => {
     expect(state.waiting).toEqual(["1 check(s) still running"]);
   });
 
-  test("a timed-out check and a commit status failure both count as red", () => {
-    const state = armState(
+  test("a timed-out check and a commit status failure both count as red", () => {    const state = armState(
       pr({
         statusCheckRollup: [
           { __typename: "CheckRun", name: "test (b)", status: "COMPLETED", conclusion: "TIMED_OUT" },
@@ -58,6 +57,19 @@ describe("armed PR sweep", () => {
     const green = [{ __typename: "CheckRun", name: "quick", status: "COMPLETED", conclusion: "SUCCESS" }];
     expect(armState(pr({ mergeable: "CONFLICTING", statusCheckRollup: green })).red).toEqual(["merge conflict with beta"]);
     expect(armState(pr({ isDraft: true, statusCheckRollup: green })).red).toEqual(["still a draft"]);
+  });
+
+  test("a cancelled run superseded by a newer push is waiting, not red", () => {
+    const state = armState(
+      pr({
+        statusCheckRollup: [
+          { __typename: "CheckRun", name: "types", status: "COMPLETED", conclusion: "CANCELLED" },
+          { __typename: "CheckRun", name: "quick", status: "COMPLETED", conclusion: "SUCCESS" },
+        ],
+      }),
+    );
+    expect(state.red).toEqual([]);
+    expect(state.waiting).toEqual(["1 cancelled check(s) from a superseded run"]);
   });
 
   test("checks that have not been created yet are waiting, not red", () => {

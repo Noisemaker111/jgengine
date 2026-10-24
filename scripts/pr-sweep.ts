@@ -37,7 +37,7 @@ export interface ArmState {
   waiting: string[];
 }
 
-const FAILED = new Set(["FAILURE", "TIMED_OUT", "CANCELLED", "ACTION_REQUIRED", "STARTUP_FAILURE", "ERROR"]);
+const FAILED = new Set(["FAILURE", "TIMED_OUT", "ACTION_REQUIRED", "STARTUP_FAILURE", "ERROR"]);
 
 function checkName(check: Check): string {
   return check.name ?? check.context ?? "unnamed check";
@@ -54,16 +54,21 @@ export function armState(pr: SweepPr): ArmState {
   if (pr.isDraft === true) red.push("still a draft");
   if (pr.mergeable === "CONFLICTING") red.push("merge conflict with beta");
   let running = 0;
+  let cancelled = 0;
   for (const check of pr.statusCheckRollup ?? []) {
     const verdict = check.conclusion ?? check.state ?? "";
     if (FAILED.has(verdict)) {
       const url = checkUrl(check);
       red.push(`${checkName(check)} ${verdict.toLowerCase()}${url === "" ? "" : ` ${url}`}`);
+    } else if (verdict === "CANCELLED") {
+      // A push to the branch cancels the run it superseded; the newer run decides, so this is not red.
+      cancelled += 1;
     } else if (verdict === "" || verdict === "PENDING" || verdict === "IN_PROGRESS" || verdict === "QUEUED" || check.status !== undefined && check.status !== "COMPLETED") {
       running += 1;
     }
   }
   if (running > 0) waiting.push(`${running} check(s) still running`);
+  else if (cancelled > 0) waiting.push(`${cancelled} cancelled check(s) from a superseded run`);
   else if ((pr.statusCheckRollup ?? []).length === 0) waiting.push("no checks reported yet");
   return { red, waiting };
 }
