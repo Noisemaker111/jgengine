@@ -187,7 +187,7 @@ export function canInstanceStaticScene(scene: THREE.Object3D, clips: readonly TH
   return supported;
 }
 
-/** Compact visible placements and update picking identities without allocating per instance. @internal */
+/** Compact visible placements and update picking identities without allocating per instance. `accept` narrows the range to one detail level of a variant model. @internal */
 export function syncStaticObjectSource(
   mesh: THREE.InstancedMesh,
   source: ScatterModelSource,
@@ -195,6 +195,7 @@ export function syncStaticObjectSource(
   get: (id: string) => SceneObject | null,
   visible: (id: string) => boolean,
   scratch: THREE.Object3D,
+  accept?: (live: SceneObject) => boolean,
 ): void {
   const ids = (mesh.userData[POINTER_OBJECT_INSTANCES_KEY] ??= []) as string[];
   const poses = (mesh.userData["jgStaticObjectPoses"] ??= []) as SceneObject[];
@@ -207,7 +208,7 @@ export function syncStaticObjectSource(
   const composed = scratch.matrixWorld;
   for (const object of objects) {
     const live = get(object.instanceId);
-    if (live === null || !visible(live.instanceId)) continue;
+    if (live === null || !visible(live.instanceId) || (accept !== undefined && !accept(live))) continue;
     if (poses[count] === live) {
       ids[count++] = live.instanceId;
       continue;

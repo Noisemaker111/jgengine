@@ -644,6 +644,7 @@
     "./world/minimap",
     "./world/minimapBake",
     "./world/minimapTrack",
+    "./world/modelLod",
     "./world/pathInstances",
     "./world/pathTerrain",
     "./world/place",

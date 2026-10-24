@@ -35,6 +35,18 @@ function hashSeed(text: string): number {
   return h >>> 0;
 }
 
+/**
+ * Index of the band `distance` falls in, `-1` past the last band. Bands must already be sorted near
+ * to far. The scheduler and `createModelVariantSelector` both read distances through this one
+ * function, so simulation throttling and mesh detail cannot disagree about what band an id is in.
+ */
+export function lodBandIndex(bands: readonly { maxDistance: number }[], distance: number): number {
+  for (let i = 0; i < bands.length; i++) {
+    if (distance <= bands[i]!.maxDistance) return i;
+  }
+  return -1;
+}
+
 export function createLodScheduler(config: LodSchedulerConfig): LodScheduler {
   const bands = [...config.bands].sort((a, b) => a.maxDistance - b.maxDistance);
   const beyondInterval = config.beyondInterval ?? null;
@@ -42,10 +54,7 @@ export function createLodScheduler(config: LodSchedulerConfig): LodScheduler {
   const buckets = new Map<string, number>();
 
   function bandIndex(distance: number): number {
-    for (let i = 0; i < bands.length; i++) {
-      if (distance <= bands[i]!.maxDistance) return i;
-    }
-    return -1;
+    return lodBandIndex(bands, distance);
   }
 
   function effectiveInterval(band: number): number | null {
