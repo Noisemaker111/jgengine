@@ -1,5 +1,5 @@
 /** Installed `@jgengine/core` semver — compare against {@link CHANGELOG} keys when migrating. */
-export const VERSION = "0.38.0";
+export const VERSION = "0.38.1";
 
 /** One release's migrate steps plus added/changed/removed notes (typed mirror of CHANGELOG.md). */
 export interface ChangelogEntry {
@@ -11,6 +11,23 @@ export interface ChangelogEntry {
 
 /** Per-version engine changelog keyed by semver string (e.g. `"0.10.0"`). */
 export const CHANGELOG: Record<string, ChangelogEntry> = {
+  "0.38.1": {
+    migrate: [
+      "Bump lockstep SDK packages to `^0.38.1`: `@jgengine/{core,rapier,react,ws,node,sql,convex,shell,editor,assets,navbake}`. CLI `jgengine` is `0.35.1`; `@jgengine/github` is `0.25.1`.",
+      "Nothing to migrate. `variantLevels()` was renamed to `ModelVariantConfig.shadows` before any release shipped it, so no published version ever exported it and no consumer can be holding one. A level that wants to stop paying the near level's shadow cost writes `{ url, shadows: \"none\" }`; leaving `shadows` out keeps the model's own answer.",
+    ],
+    added: [
+      "`ModelVariantConfig.shadows` (`@jgengine/core/world/modelLod`): a model variant level declares its own shadow participation as a plain field, `\"inherit\" | \"cast\" | \"receive\" | \"both\" | \"none\"`. `\"inherit\"`, the default, keeps the model's own `shadows`, so every existing model draws as before; a far level set to `\"none\"` leaves the shadow pass while still drawing its mesh.",
+      "`ModelShadowMode` (`@jgengine/core/world/modelLod`) names the four-value shadow vocabulary, and `ModelConfig.shadows` uses it.",
+      "`variantLevelModel` (`@jgengine/shell/render/singleVariantLod`) is the one place that resolves what a level draws and how it shadows; the single prop, batched prop and scatter paths all ask it, so a level's asset and its shadow answer cannot disagree.",
+    ],
+    changed: [
+      "`SaveSlotsPane` cards are one box each: equal tracks, `grid-auto-rows: 1fr`, a card edge that reads over a bright scene, and a name that ellipsises instead of widening the card. A save with a long name and one with none produce the same card box.",
+      "`GameMenu` puts the primary verbs on their own scrim, so their labels stay legible over whatever the live scene is showing instead of relying on a text shadow.",
+      "The theme emits three menu tokens the slot card and the verb surface read: `--jg-menu-card-height` (`clamp(244px, 27vh, 300px)`), `--jg-menu-card-thumb` (`clamp(88px, 14vh, 160px)`) and `--jg-menu-surface-radius` (`8px`). A game overrides them in its own `HudTheme` instead of patching the menu components.",
+    ],
+    removed: [],
+  },
   "0.38.0": {
     migrate: [
       "Bump lockstep SDK packages to `^0.38.0`: `@jgengine/{core,rapier,react,ws,node,sql,convex,shell,editor,assets,navbake}`. CLI `jgengine` is `0.35.0`; `@jgengine/github` is `0.25.0`.",
