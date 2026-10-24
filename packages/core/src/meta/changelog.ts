@@ -1,5 +1,5 @@
 /** Installed `@jgengine/core` semver — compare against {@link CHANGELOG} keys when migrating. */
-export const VERSION = "0.37.0";
+export const VERSION = "0.38.0";
 
 /** One release's migrate steps plus added/changed/removed notes (typed mirror of CHANGELOG.md). */
 export interface ChangelogEntry {
@@ -11,6 +11,41 @@ export interface ChangelogEntry {
 
 /** Per-version engine changelog keyed by semver string (e.g. `"0.10.0"`). */
 export const CHANGELOG: Record<string, ChangelogEntry> = {
+  "0.38.0": {
+    migrate: [
+      "Bump lockstep SDK packages to `^0.38.0`: `@jgengine/{core,rapier,react,ws,node,sql,convex,shell,editor,assets,navbake}`. CLI `jgengine` is `0.35.0`; `@jgengine/github` is `0.25.0`.",
+      "Composing a session loop directly: pass your rule as `settle`, `carries: false` when nothing is carried, and your authored options as `offers`. `createRunLoop` is removed one minor release after Beacon Bastion and Drift Foundry stop using it.",
+    ],
+    added: [
+      "`GameMenu` and `GamePauseMenu` (`@jgengine/react/gameMenu`): a full-bleed menu surface over the live scene or drifting key art, with a token-sized logo, an animated navigable verb list, a generated selection tick and a detail pane per verb. The document scroll is locked while it is open, so the surface is exactly the viewport at any size.",
+      "Panes for the detail slot: `ContinuePane`, `NewCharacterPane`, `SaveSlotsPane` (slot cards with a `meta.thumbnail`, playtime, progress, timestamp and a two-press delete) and `CreditsPane` (`@jgengine/react/gameMenuSaves`).",
+      "`shrinkCapture` (`@jgengine/react/saveThumbnail`) turns a `captureCanvas` frame into a card-sized thumbnail data URL.",
+      "`createSessionLoop` (`@jgengine/core/run/sessionLoop`) is one session loop for every game: a session opens, may carry a quantity, closes at its boundary, and the game's own `settle` callback decides what happens to what it carried. `carries: false` for a session with nothing at stake, and an optional `offers` table (with `present`/`choose`) for a game whose next session opens with an authored change; without a table nothing is drawn. `installSessionProbe` reports the live session on `window.__jgengineRun`.",
+    ],
+    changed: [
+      "`switchSlot(slot, { flush: false })` (`@jgengine/core/game/gameSave`) loads a slot without first writing the live state over it. Opening a save from a menu uses it so Continue cannot overwrite the save it resumes.",
+      "The dev runner's registry and environment modules import outside Vite, so a test or tool can read them.",
+      "`createRunLoop` is now a thin composition of `createSessionLoop` and is deprecated: bank-or-lose and a per-run change table are one game type's rules, so they live in the composition instead of the base. Its API, state shape and tests are unchanged. One difference: the option draw is seeded under `:offer:` rather than `:run:` (`seededRng(\\`${seed}:offer:${index}\\`)`), so a career that keeps its seed draws a different change on a given session than 0.37.0 did for the same seed. Ids, payloads and saves stay valid: a saved `changeId` still restores the same change.",
+      "`shoot` fails instead of writing a PNG when the whole frame is one flat colour, and when a scene is still behind its loading cover. Both used to write a plausible screenshot that read as evidence of a rendered frame.",
+      "The editor's play-mode pixel test waits for the warmup cover to clear before screenshotting. It shot the cover, so it read `0.9988` one-colour locally and passed in CI where the race fell the other way.",
+      "`shoot` prints the WebGL2 renderer it draws with and fails the capture outright when the launched browser has none.",
+      "`bun test scripts/shot-metrics.test.ts` - pass",
+      "`bun test packages/editor/src/CreatorApp.test.ts` - pass",
+      "`bun run shoot beacon-bastion --mode play --size half` - exit 0, scene renders",
+      "`bun run shoot --url <flat canvas page>` - exit 1, no PNG written",
+      "`bun run verify:fast` - pass",
+      "The publish workflow's last step no longer reports a whole release as unpublished because it ran seconds after `npm publish`. `check:release-artifacts --wait <seconds>` re-checks while the only failures are absent packages (no metadata, version missing, tarball 404) and gives up when the budget runs out; a wrong version in the tarball, a missing subpath or a main entry that will not import still fails on the first check. The 0.37.0 publish run failed this step at 04:48 listing all 13 packages, then npm served every one of them. The step now passes `-- --wait 300`.",
+      "A Playwright test file's `beforeAll` now outlives the Chrome launch it waits on, and `browser-test-budget` rejects a file that leaves the hook at or under Playwright's 30 s launch default. On `test (g)` in #2326 the hook's 30 s budget and that default expired together, so CI reported only `(unnamed) hook timed out` beside `killed 1 dangling process` and nothing named the launch.",
+      "`packages/react/src/dialogBehavior.test.ts` gives its browser navigation its own 20 s deadline and one retry inside a 60 s hook.",
+      "`bun scripts/browser-test-budget.ts` - pass, and the new rule names the unraised files on the previous tip",
+      "`bun test scripts/browser-test-budget.test.ts` - pass",
+      "`bun test packages/react/src/dialogBehavior.test.ts packages/react/src/scrollRail.test.ts packages/shell/src/settingsBoundary.test.ts` - pass",
+      "`bun run verify:fast` - pass",
+      "A prop placed at runtime honours its model's `variants` levels. `StaticObjectModels` applied the level switch only inside its batched branch, so a prop placed with `scene.object.place` — Harbor Heat's palm line — drew its full asset at every camera distance: 15 palms at 9,134 triangles each, and pointing the far level at a dispatch booth changed nothing on screen. `IsolatedEntityModel` now mounts `SingleVariantModel`, which asks the same `createModelVariantSelector` and `lodBandIndex` authority the batched path uses, at the prop's own camera distance, and keeps only the active level mounted so both levels never draw at once. The switch carries the selector's hysteresis, warms every level at mount, measures only the near level, and reads the placement from the scene store through scratch vectors, so a frame allocates nothing. One palm past 60 m draws 4,110 triangles instead of 9,134 (5,024 saved, 45% of the full level).",
+      "`singleVariantLevel` and `singleVariantModel` (`@jgengine/shell` internal, `render/singleVariantLod`) are the isolated path's level decision and the model it draws, so a fixture pins the same switch the component runs.",
+    ],
+    removed: [],
+  },
   "0.37.0": {
     migrate: [
       "Bump lockstep SDK packages to `^0.37.0`: `@jgengine/{core,rapier,react,ws,node,sql,convex,shell,editor,assets,navbake}`. CLI `jgengine` is `0.34.0`; `@jgengine/github` is `0.24.0`.",
