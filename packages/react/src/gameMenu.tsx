@@ -157,7 +157,16 @@ const VIGNETTE =
   "radial-gradient(125% 110% at 26% 42%, rgba(4,7,12,0.02) 0%, rgba(4,7,12,0.34) 66%, rgba(2,4,7,0.8) 100%)";
 
 const TINT =
-  "linear-gradient(100deg, rgba(6,10,16,0.9) 0%, rgba(6,10,16,0.74) 34%, rgba(6,10,16,0.34) 56%, rgba(6,10,16,0.08) 78%, rgba(6,10,16,0.28) 100%)";
+  "linear-gradient(100deg, rgba(6,10,16,0.92) 0%, rgba(6,10,16,0.8) 34%, rgba(6,10,16,0.5) 56%, rgba(6,10,16,0.28) 78%, rgba(6,10,16,0.44) 100%)";
+
+/**
+ * The detail pane's own surface. A live scene behind the menu is often brighter than the text
+ * sitting on it (a sunlit wall, a bloomed ceiling light), so the pane carries a scrim by default
+ * instead of leaving every game to invent one. A game that wants the pane straight on the scene
+ * passes `detailStyle={{ background: "none" }}`.
+ */
+const PANE_SURFACE =
+  "linear-gradient(100deg, rgba(4,7,11,0.72) 0%, rgba(4,7,11,0.66) 72%, rgba(4,7,11,0.54) 100%)";
 
 function logoNode(logo: GameMenuProps["logo"], title: string | undefined, reduced: boolean): ReactNode {
   if (logo === undefined || logo === null || logo === false) return null;
@@ -474,7 +483,7 @@ export function GameMenu({
             data-jg-game-menu-tagline=""
             style={{
               fontSize: hudType(isPause ? "sm" : "md"),
-              color: "var(--jg-text-dim, rgba(226,235,245,0.68))",
+              color: "var(--jg-text-dim, rgba(232,240,248,0.88))",
               maxWidth: "46ch",
             }}
           >
@@ -535,9 +544,10 @@ export function GameMenu({
               transition: reduced
                 ? undefined
                 : `transform ${hudDuration("base")} ${hudEase("spring")}, opacity ${hudDuration("fast")} ${hudEase("easeOut")}`,
-              background: "linear-gradient(90deg, var(--jg-accent-glow, rgba(94,196,255,0.22)) 0%, rgba(255,255,255,0.05) 62%, transparent 100%)",
-              boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.14), 0 10px 30px -14px rgba(0,0,0,0.9)",
-              borderLeft: "2px solid var(--jg-accent, #7dd3fc)",
+              background:
+                "linear-gradient(90deg, var(--jg-accent-glow, rgba(94,196,255,0.3)) 0%, rgba(255,255,255,0.18) 62%, rgba(255,255,255,0.04) 100%)",
+              boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.3), 0 10px 30px -14px rgba(0,0,0,0.9)",
+              borderLeft: "3px solid var(--jg-accent, #7dd3fc)",
             }}
           />
           {items.map((item) => {
@@ -588,7 +598,7 @@ export function GameMenu({
                         fontSize: hudType("xs"),
                         fontWeight: 500,
                         letterSpacing: 0,
-                        color: "var(--jg-text-dim, rgba(203,213,225,0.66))",
+                        color: "var(--jg-text-dim, rgba(219,228,239,0.84))",
                         whiteSpace: "nowrap",
                         overflow: "hidden",
                         textOverflow: "ellipsis",
@@ -662,7 +672,12 @@ export function GameMenu({
           overflow: "hidden",
           display: "flex",
           flexDirection: "column",
-          paddingTop: isPause ? 0 : "clamp(6px, 1.6vh, 20px)",
+          padding: isPause
+            ? "clamp(10px, 1.4vw, 18px)"
+            : "clamp(6px, 1.6vh, 20px) clamp(12px, 1.4vw, 22px) clamp(12px, 1.6vh, 20px)",
+          background: PANE_SURFACE,
+          borderRadius: "var(--jg-menu-surface-radius, 8px)",
+          boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.06)",
           ...detailStyle,
         }}
       >
