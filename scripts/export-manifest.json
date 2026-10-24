@@ -1052,6 +1052,7 @@
     "./render/shaderWarmup",
     "./render/shadowCasters",
     "./render/shadowTiers",
+    "./render/singleVariantLod",
     "./render/spriteRender",
     "./render/stableTextureSet",
     "./render/staticShapeInstances",
