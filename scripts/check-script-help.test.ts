@@ -161,6 +161,7 @@ describe("cli", () => {
     const result = spawnSync(process.execPath, [join(checkoutRoot, "scripts", "check-script-help.ts"), "--help"], {
       cwd: checkoutRoot,
       encoding: "utf8",
+      timeout: 60_000,
     });
     expect(result.status).toBe(0);
     expect(result.stdout).toContain("check-script-help:");
