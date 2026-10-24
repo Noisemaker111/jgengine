@@ -105,7 +105,7 @@ export function assessPrototypeLook(sources: readonly string[]): PrototypeLookVe
     signals,
     reasons,
     fix: isPrototype
-      ? 'wire entityModels/objectModels (e.g. entityModels: { player: "asset:person_casual" }) and choose a look for the art direction (look: "cinematic" | "photoreal" | "toon" | ..., or an explicit postProcessing stack). Write look: "neutral" only when unstyled output is deliberate.'
+      ? 'wire entityModels/objectModels (e.g. entityModels: { player: "asset:person_casual" }) and choose a look for the art direction (look: "cinematic" | "photoreal" | "toon" | ..., or an explicit postProcessing stack), plus a mood for the light (mood: "day" | "bright" | "golden" | "dusk" | "overcast" | "night"). Write look: "neutral" only when unstyled output is deliberate.'
       : undefined,
   };
 }

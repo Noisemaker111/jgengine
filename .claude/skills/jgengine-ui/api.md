@@ -63,9 +63,19 @@
 - `FALLBACK_KEY_LIGHT` (const): const FALLBACK_KEY_LIGHT: Readonly<DirectionalLightingConfig> — Soft key added when authored lighting has no directional light: high, off to one side, shadowless.
 - `balanceLightingForIbl` (function): function balanceLightingForIbl(lighting: LightingConfig | undefined): LightingConfig | undefined — Rebalance authored lighting for a scene that also has image-based light: trim the flat ambient term by `iblAmbientScale` (default 0.5) and, when no directional light is authored, add {@link FALLBACK_KEY_LIGHT} tinted by the ambient colour so forms keep a lit and a shaded side. Returns the input unchanged when there is nothing to adjust.
 
+## @jgengine/core/render/lookMood
+
+- `MOOD_PRESETS` (const): const MOOD_PRESETS: readonly MoodPreset[] — Every mood preset name, for pickers and validating a mood read from a URL or file.
+- `Mood` (type): type Mood = MoodPreset | MoodConfig — A mood: a preset name, or a preset with token overrides.
+- `MoodConfig` (interface): interface MoodConfig — A mood preset plus the few tokens a game's art direction usually moves. Unset fields keep the preset's value.
+- `MoodPreset` (type): type MoodPreset = "day" | "bright" | "golden" | "dusk" | "overcast" | "night" — Named lighting mood: one art-direction choice that sets the sun, the sky fill, the haze and the colour grade together, so they agree. `"day"` is a clear afternoon, `"bright"` a saturated high-fill cartoon day, `"golden"` a low warm late-afternoon sun with long shadows, `"dusk"` a sunset, `"overcast"` soft diffuse light under cloud, `"night"` moonlight.
+- `MoodSun` (interface): interface MoodSun — Where the key light stands and how strong it is. Angles in degrees: azimuth 0 = -Z, 90 = +X; elevation 90 = overhead.
+- `ResolvedMood` (interface): interface ResolvedMood — Concrete lighting, sky and grade a mood expands to.
+- `resolveMood` (function): function resolveMood(mood: Mood): ResolvedMood — Expand a mood into the lighting rig, sky and grade it stands for. The key light is the sun (the moon under `"night"`), casts cascaded shadows that follow the camera, and agrees with the dome's sun; a cool bounce opposite it keeps shadowed sides readable; the haze matches the horizon.
+
 ## @jgengine/core/render/lookPreset
 
-- `CINEMATIC_POST_PROCESSING` (const): const CINEMATIC_POST_PROCESSING: PostProcessingConfig — Tuned tone-map + bloom + gentle SSAO + vignette/grade stack — the shipped-game post look.
+- `CINEMATIC_POST_PROCESSING` (const): const CINEMATIC_POST_PROCESSING: PostProcessingConfig — Tuned tone-map + bloom + gentle SSAO + vignette/grade stack — the shipped-game post look. ACES, not the pipeline's AgX: under a sunny sky AgX's flat curve reads as a milky veil over the whole frame, and every shipped game had already switched this preset to ACES by hand.
 - `CINEMATIC_SKY` (const): const CINEMATIC_SKY: SkyEnvironmentConfig — A static day sky: a real dome plus the shell's view-following shadow-casting sun and hemisphere fill.
 - `COMIC_POST_PROCESSING` (const): const COMIC_POST_PROCESSING: PostProcessingConfig — Ink outlines, four cel bands and a punchy grade — a hand-inked comic look on any model.
 - `GameLookInput` (interface): interface GameLookInput — Explicit graphics knobs a game may set; the preset only fills the ones left undefined.
@@ -77,7 +87,7 @@
 - `ResolvedGameLook` (interface): interface ResolvedGameLook — Concrete lighting/backdrop/post the shell renders after the preset has filled unset knobs.
 - `TOON_POST_PROCESSING` (const): const TOON_POST_PROCESSING: PostProcessingConfig — Clean graphic presentation; toon materials remain game-owned while this sets the grade.
 - `mergePostProcessing` (function): function mergePostProcessing(preset: PostProcessingConfig, authored: PostProcessingConfig | undefined): PostProcessingConfig — Deep-merge a game's partial post chain over a preset's. Every field the game set wins, including `false` to drop a stage; fields it left unset come from the preset, and stage objects merge field by field (tuples such as `grade.lift` replace whole).
-- `resolveGameLook` (function): function resolveGameLook(input: GameLookInput): ResolvedGameLook — Expand a game's `look` into concrete lighting/backdrop/post. The default is `"neutral"`; `"flat"` passes the explicit knobs through untouched. Anything the game authored wins — the preset only fills unset knobs, and it never adds a sky when the world already owns one (so the sky's tuned sun/hemisphere serve as the lighting rig). A styled preset's post stages are deep-merged under a partial game `postProcessing` ({@link mergePostProcessing}); under `"neutral"` a game's own chain is used as authored.
+- `resolveGameLook` (function): function resolveGameLook(input: GameLookInput): ResolvedGameLook — Expand a game's `look` and `mood` into concrete lighting/backdrop/post. The default look is `"neutral"`; `"flat"` passes the explicit knobs through untouched.
 
 ## @jgengine/core/render/physicalSky
 
@@ -389,7 +399,7 @@
 - `resizePanelSize` (function): function resizePanelSize(current: HudSize, delta: { dw: number; dh: number }, axes: HudResizeAxes, limits?: { minWidth?: number; maxWidth?: number; minHeight?: number; maxHeight?: number; }): HudSize — Semantic resize: apply pixel deltas only on growable axes, clamped to min/max. Never scales content — callers reflow layout size (track length, list rows).
 - `resolveAction` (function): function resolveAction(def: ActionDef): ResolvedAction — Resolve one {@link ActionDef} into a {@link ResolvedAction}: normalize label, compute `enabled`, and order the blocking `reasons`. Pure — the same input always yields the same view model.
 - `resolveActionCollection` (function): function resolveActionCollection(defs: readonly ActionDef[]): ResolvedAction[] — Resolve an ordered list of actions, preserving input order.
-- `resolveGameLook` (function): function resolveGameLook(input: GameLookInput): ResolvedGameLook — Expand a game's `look` into concrete lighting/backdrop/post. The default is `"neutral"`; `"flat"` passes the explicit knobs through untouched. Anything the game authored wins — the preset only fills unset knobs, and it never adds a sky when the world already owns one (so the sky's tuned sun/hemisphere serve as the lighting rig). A styled preset's post stages are deep-merged under a partial game `postProcessing` ({@link mergePostProcessing}); under `"neutral"` a game's own chain is used as authored.
+- `resolveGameLook` (function): function resolveGameLook(input: GameLookInput): ResolvedGameLook — Expand a game's `look` and `mood` into concrete lighting/backdrop/post. The default look is `"neutral"`; `"flat"` passes the explicit knobs through untouched.
 - `resolveHudFit` (function): function resolveHudFit(config: HudViewportConfig | undefined, mobile: boolean): Required<HudFitConfig> — ⚠ undocumented
 - `resolveHudPanelLayout` (function): function resolveHudPanelLayout(docPanel: EditorUiPanelLayout | undefined, fallback: HudPanelFallback): ResolvedHudPanelLayout — Resolve a panel's layout: document entry wins field-by-field over TSX fallback. TSX props are fallback-only — the scene document is the source of truth once authored.
 - `resolveOrientationRequirement` (function): function resolveOrientationRequirement(orientation: GameOrientation | undefined, platform: "mobile" | "desktop"): OrientationRequirement — Resolve the game's orientation declaration into a concrete requirement for a platform. Desktop is always unconstrained.

@@ -518,6 +518,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `bakeIrradianceVolume` (function) · `import { bakeIrradianceVolume } from "@jgengine/core/render/lightProbes"`
 
+## lighting-mood — one field that lights a 3D game: sun, fill, sky, haze and grade that agree
+
+- `MoodPreset` (type) · `import { MoodPreset } from "@jgengine/core/render/lookMood"`
+- `resolveMood` (function) · `import { resolveMood } from "@jgengine/core/render/lookMood"`
+
 ## live-markers — a self-ticking MarkerSet kept in sync from the live scene each HUD tick — pass a rebuild(markers, ctx) that clears+repopulates, no hand-rolled setInterval
 
 - `useLiveMarkers` (function) · `import { useLiveMarkers } from "@jgengine/react"`
@@ -813,7 +818,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `requestSceneThumbnail` (function) · `import { requestSceneThumbnail } from "@jgengine/shell/render/sceneCapture"`
 
-## resolve-game-look — expand a look preset into concrete lighting/backdrop/post knobs
+## resolve-game-look — expand a look preset and lighting mood into concrete lighting/backdrop/post knobs
 
 - `resolveGameLook` (function) · `import { resolveGameLook } from "@jgengine/core/ui"`
 

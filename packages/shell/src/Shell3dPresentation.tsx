@@ -102,6 +102,7 @@ import { FpsCounter, FpsProbe, type FrameTally } from "./diagnostics/FpsCounter"
 import { ConfiguredLighting, BackdropFog } from "./render/SceneLighting";
 import { IrradianceVolumeLighting } from "./render/IrradianceVolumeLighting";
 import { usePresentationLook } from "./render/presentationLook";
+import type { GameLookInput } from "@jgengine/core/render/lookPreset";
 import { WorldView, RemotePlayers } from "./world/WorldScene";
 import { FrameDriver } from "./drivers/FrameDriver";
 import { GamepadSource } from "./input/gamepadSource";
@@ -138,6 +139,24 @@ function PixelPerfectCamera({ pixelsPerUnit, integerScale }: { pixelsPerUnit: nu
     camera.updateProjectionMatrix();
   }, 1);
   return null;
+}
+
+/**
+ * What the shell's look resolution sees: the look `defineGame` already resolved, the mood that
+ * produced it and the world's sky shape, so resolving again lands on the same light, sky and grade.
+ * @internal
+ */
+export function presentationLookInput(playable: PlayableGame, hasWorldSky: boolean): GameLookInput {
+  const world = playable.game.world;
+  return {
+    look: playable.look,
+    mood: playable.mood,
+    lighting: playable.lighting,
+    backdrop: playable.backdrop,
+    postProcessing: playable.postProcessing,
+    hasWorldSky,
+    worldSky: world?.kind === "environment" ? world.sky : undefined,
+  };
 }
 
 /** 3D play surface: canvas, world overlays, and shared chrome. @internal */
@@ -272,16 +291,7 @@ export function Shell3dPresentation({
     () => (playable.editorLayers === undefined ? undefined : colorGradeFromDocument(playable.editorLayers)),
     [playable.editorLayers],
   );
-  const { look: resolvedLook, backdropSky } = usePresentationLook(
-    {
-      look: playable.look,
-      lighting: playable.lighting,
-      backdrop: playable.backdrop,
-      postProcessing: playable.postProcessing,
-      hasWorldSky,
-    },
-    authoredGrade,
-  );
+  const { look: resolvedLook, backdropSky } = usePresentationLook(presentationLookInput(playable, hasWorldSky), authoredGrade);
   const cinematicLook = (playable.look ?? "cinematic") !== "flat";
   const backdrop = resolvedLook.backdrop;
   const authoredSky = backdropSky ?? worldSky;

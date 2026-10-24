@@ -57,6 +57,48 @@ describe("ExposureMeterPass", () => {
     pass.dispose();
   });
 
+  it("reads real samples through a WebGL2 pack buffer, not zeros", () => {
+    // A fake WebGL2 context with GL's rules: readPixels into a pack buffer smaller than the read
+    // fails without writing, and getBufferSubData copies whatever the buffer stores.
+    const PIXEL_PACK_BUFFER = 0x88eb;
+    const buffers = new Map<object, Uint8Array>();
+    let bound: object | null = null;
+    const errors: string[] = [];
+    const gl = {
+      PIXEL_PACK_BUFFER,
+      RGBA: 0x1908,
+      UNSIGNED_BYTE: 0x1401,
+      STREAM_READ: 0x88e1,
+      SYNC_GPU_COMMANDS_COMPLETE: 0x9117,
+      TIMEOUT_EXPIRED: 0x911b,
+      WAIT_FAILED: 0x911d,
+      createBuffer: () => { const buffer = {}; buffers.set(buffer, new Uint8Array(0)); return buffer; },
+      bindBuffer: (_target: number, buffer: object | null) => { bound = buffer; },
+      bufferData: (_target: number, size: number) => { if (bound !== null) buffers.set(bound, new Uint8Array(size)); },
+      readPixels: (_x: number, _y: number, width: number, height: number) => {
+        const store = bound === null ? undefined : buffers.get(bound);
+        if (store === undefined || store.length < width * height * 4) { errors.push("buffer too small"); return; }
+        store.fill(180);
+      },
+      fenceSync: () => ({}),
+      clientWaitSync: () => 0x911a,
+      deleteSync: () => {},
+      getBufferSubData: (_target: number, _offset: number, out: Uint8Array) => { out.set((bound === null ? undefined : buffers.get(bound))?.subarray(0, out.length) ?? new Uint8Array(out.length)); },
+      deleteBuffer: () => {},
+    };
+    const { renderer } = fakeRenderer();
+    (renderer as unknown as { getContext: () => unknown }).getContext = () => gl;
+    const samples: Float32Array[] = [];
+    const pass = new ExposureMeterPass((frame) => samples.push(Float32Array.from(frame)));
+    const write = new THREE.WebGLRenderTarget(4, 4);
+    const read = new THREE.WebGLRenderTarget(4, 4);
+    for (let frame = 0; frame < 3; frame += 1) pass.render(renderer, write, read, 1 / 60);
+    expect(errors).toEqual([]);
+    expect(samples.length).toBeGreaterThan(0);
+    expect(samples[0]![0]).toBeCloseTo(Math.pow(2, (180 / 255) * 24 - 16), 6);
+    pass.dispose();
+  });
+
   it("stops sampling once warmed up and never mutates the read buffer", () => {
     const samples: Float32Array[] = [];
     const pass = new ExposureMeterPass((frame) => samples.push(Float32Array.from(frame)), 1000);

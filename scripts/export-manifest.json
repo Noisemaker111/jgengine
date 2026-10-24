@@ -400,6 +400,7 @@
     "./render/environment",
     "./render/lightProbes",
     "./render/lightingBalance",
+    "./render/lookMood",
     "./render/lookPreset",
     "./render/physicalSky",
     "./render/postProcessing",

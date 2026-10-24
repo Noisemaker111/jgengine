@@ -19,10 +19,10 @@ export interface PresentationLook {
  * @internal
  */
 export function usePresentationLook(input: GameLookInput, authoredGrade: DocumentColorGrade | undefined): PresentationLook {
-  const { look, lighting, backdrop, postProcessing, hasWorldSky } = input;
+  const { look, mood, lighting, backdrop, postProcessing, hasWorldSky, worldSky } = input;
   return useMemo(() => {
-    const resolved = withAuthoredGrade(resolveGameLook({ look, lighting, backdrop, postProcessing, hasWorldSky }), authoredGrade);
+    const resolved = withAuthoredGrade(resolveGameLook({ look, mood, lighting, backdrop, postProcessing, hasWorldSky, worldSky }), authoredGrade);
     const sky = resolved.backdrop?.sky;
     return { look: resolved, backdropSky: sky === undefined ? undefined : resolveSkyDescriptor(sky) };
-  }, [look, lighting, backdrop, postProcessing, hasWorldSky, authoredGrade]);
+  }, [look, mood, lighting, backdrop, postProcessing, hasWorldSky, worldSky, authoredGrade]);
 }
