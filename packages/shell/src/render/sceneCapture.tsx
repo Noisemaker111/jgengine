@@ -50,22 +50,23 @@ export function downloadImage(dataUrl: string, filename = "screenshot.png"): voi
 /**
  * In-`<Canvas>` binder that hands the scene-capture function out to HUD code
  * living outside the reconciler (a photo-mode Capture button, a save slot's
- * thumbnail). Mount it inside the game's `WorldOverlay`; `bind` receives a
- * `() => string | null` that grabs the current frame, and the same reader is
+ * thumbnail). Mount it inside the game's `WorldOverlay`; the reader is
  * registered for `requestSceneCapture`/`requestSceneThumbnail`, which wait for
- * this mount and the first painted frame. Renders nothing.
+ * this mount and the first painted frame. `bind` is for code that wants the
+ * function directly and can be left out when a game only requests captures.
+ * Renders nothing.
  *
  * @capability scene-capture-binding expose the in-Canvas scene-capture function to outside-Canvas HUD (photo mode, save thumbnails)
  */
-export function SceneCaptureBinding({ bind }: { bind: (capture: () => string | null) => void }): null {
+export function SceneCaptureBinding({ bind }: { bind?: (capture: () => string | null) => void } = {}): null {
   const gl = useThree((state) => state.gl as unknown as THREE.WebGLRenderer & CaptureRenderer);
   useEffect(() => {
     const capture = (): string | null => captureCanvas(gl);
     const unbind = registerSceneCapture(capture);
-    bind(capture);
+    bind?.(capture);
     return () => {
       unbind();
-      bind(() => null);
+      bind?.(() => null);
     };
   }, [gl, bind]);
   return null;
