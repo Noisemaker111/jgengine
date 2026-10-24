@@ -523,6 +523,12 @@ export function closeLane(args: LaneCloseArgs, io: LaneIo): number {
     io.err(`lane:close: cannot report the checks: ${checksProblem}`);
     return EXIT_CANNOT_ANSWER;
   }
+  // A merged lane's worktree is a copy nobody will open again. Reaping here keeps
+  // `.claude/worktrees` bounded; this lane's own tree stays, since a process
+  // cannot delete the directory it runs in, and the next close takes it.
+  const reaped = io.sh(["run", "worktree:reap", "--fetch"], false);
+  const reapLine = lastLine(reaped.stdout);
+  if (reapLine.length > 0) io.out(`lane:close: ${reapLine}`);
   return EXIT_CLOSED;
 }
 
