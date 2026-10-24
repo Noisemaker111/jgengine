@@ -103,4 +103,4 @@ jobs:
             (cd "packages/$p" && npm publish --access public --tag "$tag" --loglevel verbose)
           done
       - name: Verify every published package installs
-        run: bun run check:release-artifacts
+        run: bun run check:release-artifacts -- --wait 300
