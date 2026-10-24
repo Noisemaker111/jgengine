@@ -44,7 +44,15 @@ const gameAliases = existsSync(gamesDir)
   : [];
 
 const devProxyTable = parseDevProxyTable(process.env.VITE_JGENGINE_DEV_PROXY);
-const devProxy: Record<string, string | ProxyOptions> = Object.fromEntries(
+
+// `bun run shoot <game> --game-dir <path>` serves one game from another checkout. Its files are
+// outside the workspace root, so Vite's allow-list has to name them or every game-local import 403s.
+const servedGameDir = process.env.VITE_JG_GAME_DIR;
+const allowedRoots = [
+  searchForWorkspaceRoot(process.cwd()),
+  ...(existsSync(gamesDir) ? [realpathSync(gamesDir)] : []),
+  ...(servedGameDir !== undefined && servedGameDir !== "" && existsSync(servedGameDir) ? [realpathSync(servedGameDir)] : []),
+];const devProxy: Record<string, string | ProxyOptions> = Object.fromEntries(
   Object.entries(devProxyTable).map(([routeName, target]) => [
     `/proxy/${routeName}`,
     {
@@ -66,7 +74,7 @@ export default defineConfig({
     proxy: devProxy,
     // `Games` is usually a symlink to a checkout outside this workspace; Vite's default allow-list
     // would 403 game-local assets (src/**/*.glb) imported by URL.
-    fs: { allow: [searchForWorkspaceRoot(process.cwd()), ...(existsSync(gamesDir) ? [realpathSync(gamesDir)] : [])] },
+    fs: { allow: allowedRoots },
   },
   resolve: {
     // Games are cloned outside this workspace package during clean hosting builds.

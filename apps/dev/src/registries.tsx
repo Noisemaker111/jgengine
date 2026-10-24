@@ -16,6 +16,7 @@ import type { GameRegistry, PlayableGame } from "@jgengine/shell/registry";
 
 import { CAM, resolvedLook, resolvedLookFrom } from "./appEnv";
 import { setCaptureStatus } from "./captureReady";
+import { servedGame, servedModule } from "./servedGame";
 import { formatAppliedAim, resolveLookCamera, type LookMarkers } from "./lookCamera";
 import { installCaptureCamera } from "@jgengine/core/world/captureCamera";
 const CAMERA_PRESETS: Record<string, GameCameraConfig> = {
@@ -114,6 +115,13 @@ const gameModules = (hasViteGlob ? import.meta.glob<{
   editorCatalogs?: import("@jgengine/core/editor/index").EditorCatalogsInput;
 }>("../../../Games/*/src/index.tsx") : {});
 
+type GameModule = {
+  game: PlayableGame;
+  uiScenario?: UiPreviewScenario;
+  editorLayers?: import("@jgengine/core/editor/index").EditorLayersInput;
+  editorCatalogs?: import("@jgengine/core/editor/index").EditorCatalogsInput;
+};
+
 const gameStyleModules = (hasViteGlob ? import.meta.glob<Record<string, unknown>>("../../../Games/*/src/style.css") : {});
 
 const gameSourceModules = (hasViteGlob ? import.meta.glob<Record<string, unknown>>([
@@ -123,6 +131,10 @@ const gameSourceModules = (hasViteGlob ? import.meta.glob<Record<string, unknown
 ]) : {});
 
 export async function loadGameStyle(gameId: string): Promise<void> {
+  if (servedGame?.id === gameId) {
+    await servedModule("src/style.css");
+    return;
+  }
   await gameStyleModules[`../../../Games/${gameId}/src/style.css`]?.();
 }
 
@@ -145,9 +157,12 @@ export async function discoverGameTunables(gameId: string, gameName: string): Pr
   applyStoredDevtoolsOverrides(gameName);
 }
 
-export const gameLoaders = Object.entries(gameModules).map(
-  ([path, loader]) => [path.split("/").at(-3)!, loader] as const,
-);
+export const gameLoaders = [
+  ...Object.entries(gameModules).map(([path, loader]) => [path.split("/").at(-3)!, loader] as const),
+  ...(servedGame === null
+    ? []
+    : [[servedGame.id, () => servedModule<GameModule>("src/index.tsx")] as const]),
+];
 
 const gameEntries = Object.fromEntries(
   gameLoaders.map(([id, loader]) => [id, () => loader().then((module) => module.game)]),
@@ -157,12 +172,22 @@ const editorSceneModules = (hasViteGlob ? import.meta.glob<{ default: unknown }>
   "../../../Games/*/src/editor.scene.json",
 ) : {});
 
-const editorSceneRegistry: Partial<Record<string, () => Promise<unknown>>> = Object.fromEntries(
-  Object.entries(editorSceneModules).map(([path, loader]) => [
-    path.split("/").at(-3)!,
-    () => loader().then((module) => module.default),
-  ]),
-);
+const editorSceneRegistry: Partial<Record<string, () => Promise<unknown>>> = {
+  ...Object.fromEntries(
+    Object.entries(editorSceneModules).map(([path, loader]) => [
+      path.split("/").at(-3)!,
+      () => loader().then((module) => module.default),
+    ]),
+  ),
+  ...(servedGame === null
+    ? {}
+    : {
+        [servedGame.id]: () =>
+          servedModule<{ default: unknown }>("src/editor.scene.json")
+            .then((module) => module.default)
+            .catch(() => undefined),
+      }),
+};
 
 export const editorLayerRegistry: Partial<
   Record<string, () => Promise<import("@jgengine/core/editor/index").EditorLayersInput | undefined>>
@@ -281,9 +306,14 @@ const previewModules = (hasViteGlob ? import.meta.glob<{
   states?: Record<string, PreviewComponent>;
 }>("../../../Games/*/src/preview.tsx") : {});
 
-export const previewLoaders = Object.fromEntries(
-  Object.entries(previewModules).map(([path, loader]) => [path.split("/").at(-3)!, loader] as const),
-);
+export const previewLoaders = {
+  ...Object.fromEntries(
+    Object.entries(previewModules).map(([path, loader]) => [path.split("/").at(-3)!, loader] as const),
+  ),
+  ...(servedGame === null
+    ? {}
+    : { [servedGame.id]: () => servedModule<{ default: PreviewComponent; states?: Record<string, PreviewComponent> }>("src/preview.tsx") }),
+};
 
 
 
