@@ -98,6 +98,23 @@ describe("swapCatalog", () => {
     const { kept } = swapCatalog(gamesManifest({ "@jgengine/core": "0.38.0", "@jgengine/github": "0.30.0" }), new Map([["@jgengine/core", "file:core.tgz"]]));
     expect(kept).toEqual(["@jgengine/github"]);
   });
+
+  test("the same tarballs become overrides, so a packed package's own ^range resolves before publish", () => {
+    const manifest = { ...gamesManifest({ "@jgengine/core": "0.38.4" }), overrides: { three: "0.182.0" } };
+    const { manifest: next } = swapCatalog(
+      manifest,
+      new Map([
+        ["@jgengine/core", "file:../tarballs/core.tgz"],
+        ["@jgengine/editor", "file:../tarballs/editor.tgz"],
+      ]),
+    );
+    // `@jgengine/editor@0.38.4` depends on `@jgengine/core@^0.38.4`, which the registry cannot answer yet.
+    expect(next.overrides).toEqual({
+      three: "0.182.0",
+      "@jgengine/core": "file:../tarballs/core.tgz",
+      "@jgengine/editor": "file:../tarballs/editor.tgz",
+    });
+  });
 });
 
 describe("parseTypeFailures", () => {
