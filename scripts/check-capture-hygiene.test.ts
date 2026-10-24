@@ -16,6 +16,7 @@ function run(args: string[]): { status: number | null; output: string } {
 }
 
 function withSource(source: string, check: (file: string) => void): void {
+  // fixture-location: allow the fixture is one line of source text for a text scan; it imports nothing and needs no @jgengine resolution
   const dir = mkdtempSync(join(tmpdir(), "capture-hygiene-"));
   const file = join(dir, "sample.ts");
   writeFileSync(file, source);
