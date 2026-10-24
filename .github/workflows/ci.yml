@@ -16,29 +16,35 @@ concurrency:
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
-  # Decides whether this run measures frame budgets and boots every game. Those two
-  # cost a runner and ~180 s per game, and a docs, skill or unrelated-package change
-  # cannot move either, so on a PR they run only when a changed path can reach them.
-  # A push (beta, or main through the release flow) and a release PR always run them.
-  # `ci` fails when `heavy` was true and a gated job did not pass, so a skip can never
-  # stand in for a pass.
+  # Decides how much of the game matrix this run pays for. Booting every reference game
+  # and measuring its frame budget costs a runner and ~90 s per game, and a docs, test or
+  # unrelated-package change cannot move either, so a PR runs them only when a changed path
+  # can reach them. `scripts/ci-scope.ts` owns the map; `scripts/ci-scope.test.ts` holds it.
   #
-  # The core paths are the ones the frame's own work runs through: the systems the tick
-  # loop calls (sim, ai, nav, physics), the movement queries that read them, the object
-  # and obstacle index they scan (scene), the stepper and its clock (runtime, time), and
-  # the scheduler that decides which systems run in a frame (game/systemRuntime.ts,
-  # game/systemSchedule.ts). #2218 cut movement and step time in exactly these files and
-  # merged with both gates skipped, so a regression there has to pay for the gate.
-  # `scripts/heavy-paths.test.ts` fails if one of them drops out of the pattern.
+  #   full  — smoke-game and perf-game: a package a game loads (core, shell, react, assets,
+  #           navbake, rapier, jgengine), Games/, a script that boots or measures a game,
+  #           a workflow, the release PR, or any path the map does not know.
+  #   smoke — smoke-game only: a rendered surface no game loads (the editor).
+  #   none  — neither: prose, skills, change notes, the web app, server and CLI packages,
+  #           lane tooling, repo config, test files.
+  #
+  # #2218 changed movement, scene and runtime and merged with both gates skipped; #2342
+  # changed the react menu and skipped them the same way, so a path a game loads always
+  # pays. `smoke` and `perf` fail when the verdict needed a job that did not run, and both
+  # print what a skip skipped.
   changes:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
-      heavy: ${{ steps.scope.outputs.heavy }}
+      games: ${{ steps.scope.outputs.games }}
+      reason: ${{ steps.scope.outputs.reason }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.2
       - id: scope
         env:
           EVENT: ${{ github.event_name }}
@@ -46,18 +52,12 @@ jobs:
         run: |
           if [ "$EVENT" != "pull_request" ]; then
             echo "push to ${{ github.ref }} runs the full gate"
-            echo "heavy=true" >> "$GITHUB_OUTPUT"
+            echo "games=full" >> "$GITHUB_OUTPUT"
+            echo "reason=a push runs the full gate" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           git fetch --no-tags origin "$BASE"
-          files=$(git diff --name-only "origin/$BASE...HEAD")
-          echo "$files"
-          # CHANGELOG.md is what `bun run release` rewrites, so its presence marks the release PR.
-          if echo "$files" | grep -Eq '^(packages/shell/|packages/core/src/(render|scene|sim|ai|nav|physics|movement|runtime|time)/|packages/core/src/game/system(Runtime|Schedule)\.ts|Games/|scripts/(perf-|smoke|ensure-games|games-ref|shoot)|scripts/.*capture|\.github/workflows/|CHANGELOG\.md)'; then
-            echo "heavy=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "heavy=false" >> "$GITHUB_OUTPUT"
-          fi
+          bun scripts/ci-scope.ts --base "origin/$BASE" --github-output
 
   quick:
     runs-on: ubuntu-latest
@@ -188,7 +188,7 @@ jobs:
   # matrix and SMOKE_GAMES disagree.
   smoke-game:
     needs: [changes]
-    if: needs.changes.outputs.heavy == 'true'
+    if: needs.changes.outputs.games != 'none'
     runs-on: ubuntu-latest
     timeout-minutes: 12
     strategy:
@@ -214,14 +214,28 @@ jobs:
           CHROME_PATH: /usr/bin/google-chrome
 
   # Green only when every smoke game booted clean, so one unplayable game still
-  # blocks the merge through the same `smoke` check as before.
+  # blocks the merge through the same `smoke` check as before. A skipped run says
+  # which paths let it skip, so a green check never hides an unrun boot.
   smoke:
     needs: [changes, smoke-game]
-    if: ${{ !cancelled() && needs.changes.outputs.heavy == 'true' }}
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - run: test "${{ needs.smoke-game.result }}" = "success"
+      - name: smoke verdict
+        env:
+          SCOPE: ${{ needs.changes.outputs.games }}
+          REASON: ${{ needs.changes.outputs.reason }}
+          BOOTS: ${{ needs.smoke-game.result }}
+        run: |
+          echo "scope=$SCOPE ($REASON)"
+          if [ "$SCOPE" = "none" ]; then
+            test "$BOOTS" = "skipped"
+            echo "skipped: no changed path can change what a game boots ($REASON)"
+            exit 0
+          fi
+          test "$BOOTS" = "success"
+          echo "every smoke game booted clean"
 
   # Frame-budget gate: every reference game plays under software GL (CI forces
   # ANGLE/SwiftShader or Mesa llvmpipe), then draws/triangles/nodes are compared
@@ -232,7 +246,7 @@ jobs:
   # matrix and PERF_GATE_GAMES disagree, so a ninth game cannot drop out of the gate.
   perf-game:
     needs: [changes]
-    if: needs.changes.outputs.heavy == 'true'
+    if: needs.changes.outputs.games == 'full'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     strategy:
@@ -296,19 +310,22 @@ jobs:
     steps:
       - name: perf verdict
         env:
-          HEAVY: ${{ needs.changes.outputs.heavy }}
+          SCOPE: ${{ needs.changes.outputs.games }}
+          REASON: ${{ needs.changes.outputs.reason }}
           FRAME: ${{ needs.perf-game.result }}
           CPU: ${{ needs.perf-cpu.result }}
         run: |
+          echo "scope=$SCOPE ($REASON)"
           test "$CPU" = "success"
-          if [ "$HEAVY" = "true" ]; then
+          if [ "$SCOPE" = "full" ]; then
             test "$FRAME" = "success"
-          else
-            case "$FRAME" in
-              success | skipped) ;;
-              *) echo "frame gate had to run and did not: $FRAME"; exit 1 ;;
-            esac
+            echo "frame budgets measured on every reference game"
+            exit 0
           fi
+          case "$FRAME" in
+            success | skipped) echo "frame budgets skipped: $REASON" ;;
+            *) echo "frame gate had to run and did not: $FRAME"; exit 1 ;;
+          esac
 
   # Three package tests fail on Windows only (#2119: workspaceDoctor's wildcard and dangling
   # symlink cases, and `Bun.build` returning `EINVAL: failed to open root directory: /C:/...` in
@@ -366,17 +383,33 @@ jobs:
       - name: every required job passed
         env:
           SCOPE: ${{ needs.changes.result }}
-          HEAVY: ${{ needs.changes.outputs.heavy }}
+          GAMES: ${{ needs.changes.outputs.games }}
+          REASON: ${{ needs.changes.outputs.reason }}
           SMOKE: ${{ needs.smoke.result }}
+          PERF: ${{ needs.perf.result }}
         run: |
           # A scope job that failed took the gated jobs down with it; never let that read as a pass.
           test "$SCOPE" = "success"
-          for result in "${{ needs.quick.result }}" "${{ needs.types.result }}" "${{ needs.test.result }}" "${{ needs.web-build.result }}" "${{ needs.perf.result }}" "${{ needs.windows.result }}"; do
+          for result in "${{ needs.quick.result }}" "${{ needs.types.result }}" "${{ needs.test.result }}" "${{ needs.web-build.result }}" "$PERF" "${{ needs.windows.result }}"; do
             test "$result" = "success"
           done
+          echo "game scope: $GAMES ($REASON)"
           # Smoke boots every game, so a skip is only acceptable when no changed path can affect it.
-          test "$SMOKE" = "success" && exit 0
-          test "$SMOKE" = "skipped" && test "$HEAVY" = "false"
+          case "$GAMES" in
+            none)
+              test "$SMOKE" = "skipped"
+              echo "skipped: smoke and frame gates ($REASON)"
+              ;;
+            *)
+              test "$SMOKE" = "success"
+              echo "ran: smoke boots every reference game"
+              ;;
+          esac
+          if [ "$GAMES" = "full" ]; then
+            echo "ran: frame budgets, every reference game"
+          else
+            echo "skipped: frame budgets ($REASON)"
+          fi
       - name: Track red main in one issue
         if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:

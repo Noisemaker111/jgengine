@@ -21,6 +21,7 @@ import { fileURLToPath } from "node:url";
 
 import { effectivePaths } from "./sourcePaths";
 import { assertCheckoutReady } from "./checkout-ready";
+import { scopePattern } from "./ci-scope";
 import { printHelpIfAsked } from "./script-help";
 import { walkTestFiles } from "./test-shard";
 
@@ -370,13 +371,9 @@ export function fastSteps(plan: Plan, options: { skillApi?: boolean } = {}): Ste
   return steps;
 }
 
-/** The paths whose change turns on CI's frame and smoke gates, read from the workflow so there is one list. */
-export function heavyPaths(root: string): RegExp {
-  const workflow = readFileSync(join(root, ".github/workflows/ci.yml"), "utf8");
-  const changes = /^ {2}changes:\n([\s\S]*?)(?=^ {2}\S)/m.exec(workflow)?.[1] ?? "";
-  const pattern = /grep -Eq '([^']+)'/.exec(changes)?.[1];
-  if (pattern === undefined) throw new Error("verify-fast: .github/workflows/ci.yml no longer has the `changes` job's path pattern");
-  return new RegExp(pattern);
+/** The paths whose change turns on CI's frame and smoke gates, from the same map the workflow calls. */
+export function heavyPaths(_root: string): RegExp {
+  return scopePattern();
 }
 
 /**
