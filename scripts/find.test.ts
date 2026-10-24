@@ -2,7 +2,7 @@ import { afterEach, expect, test } from "bun:test";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { globToRegExp, kindGlobs, parseArgs, ripgrepArgs, search, skipGlobs } from "./find";
+import { findInProcess, globToRegExp, kindGlobs, parseArgs, ripgrepArgs, search, skipGlobs } from "./find";
 
 const SCRATCH = join(import.meta.dir, "..", ".scratch");
 const made: string[] = [];
@@ -68,7 +68,7 @@ test("names are the only difference between a content search and a listing", () 
   expect(kindGlobs(["ts", ".tsx"])).toEqual(["*.ts", "*.tsx"]);
 });
 
-test("a name glob becomes a matcher for the no-ripgrep path", () => {
+test("a name glob becomes a matcher for the reader without ripgrep", () => {
   expect(globToRegExp("*.test.ts").test("rules.test.ts")).toBe(true);
   expect(globToRegExp("*.test.ts").test("rules.ts")).toBe(false);
   expect(globToRegExp("**/core/*.ts").test("packages/core/a.ts")).toBe(true);
@@ -83,10 +83,10 @@ test("finds file:line:match, skips node_modules, and honours --kind", () => {
     "packages/core/node_modules/dep/index.js": "hubLayout;\n",
     "docs/notes.md": "no mention\n",
   });
-  expect(search({ pattern: "hubLayout", in: root, noIgnore: true }).lines.sort()).toEqual(["packages/core/a.test.ts:1:hubLayout();", "packages/core/a.ts:1:export const hubLayout = 1;", "packages/core/b.tsx:1:hubLayout;"]);
-  expect(search({ pattern: "hubLayout", in: root, noIgnore: true, kind: ["tsx"] }).lines).toEqual(["packages/core/b.tsx:1:hubLayout;"]);
-  expect(search({ pattern: "hubLayout", in: root, noIgnore: true, glob: ["*.test.ts"] }).lines).toEqual(["packages/core/a.test.ts:1:hubLayout();"]);
-  expect(search({ pattern: "hubLayout", in: root, noIgnore: true, files: true }).lines.sort()).toEqual(["packages/core/a.test.ts", "packages/core/a.ts", "packages/core/b.tsx"]);
+  expect(findInProcess({ pattern: "hubLayout", in: root }).lines.sort()).toEqual(["packages/core/a.test.ts:1:hubLayout();", "packages/core/a.ts:1:export const hubLayout = 1;", "packages/core/b.tsx:1:hubLayout;"]);
+  expect(findInProcess({ pattern: "hubLayout", in: root, kind: ["tsx"] }).lines).toEqual(["packages/core/b.tsx:1:hubLayout;"]);
+  expect(findInProcess({ pattern: "hubLayout", in: root, glob: ["*.test.ts"] }).lines).toEqual(["packages/core/a.test.ts:1:hubLayout();"]);
+  expect(findInProcess({ pattern: "hubLayout", in: root, files: true }).lines.sort()).toEqual(["packages/core/a.test.ts", "packages/core/a.ts", "packages/core/b.tsx"]);
 });
 
 test("--files with no pattern lists names by glob, which is what a tree walk was for", () => {
@@ -96,12 +96,20 @@ test("--files with no pattern lists names by glob, which is what a tree walk was
     "packages/editor/b.test.ts": "",
     "packages/core/node_modules/dep/c.test.ts": "",
   });
-  expect(search({ files: true, in: root, noIgnore: true, kind: ["ts"] }).lines.sort()).toEqual(["packages/core/a.test.ts", "packages/core/a.ts", "packages/editor/b.test.ts"]);
-  expect(search({ files: true, in: root, noIgnore: true, glob: ["*.test.ts"] }).lines.length).toBe(2);
+  expect(findInProcess({ files: true, in: root, kind: ["ts"] }).lines.sort()).toEqual(["packages/core/a.test.ts", "packages/core/a.ts", "packages/editor/b.test.ts"]);
+  expect(findInProcess({ files: true, in: root, glob: ["*.test.ts"] }).lines.length).toBe(2);
 });
 
 test("no match is an empty answer, not an error, and a bad directory says so", () => {
   const root = workspace({ "a.ts": "nothing relevant\n" });
-  expect(search({ pattern: "needle", in: root, noIgnore: true }).lines).toEqual([]);
+  expect(search({ pattern: "needle", in: root }).lines).toEqual([]);
   expect(() => search({ pattern: "needle", in: join(root, "missing") })).toThrow("--in is not a directory");
+});
+
+test("the command itself searches this checkout's scripts, with ripgrep or without it", () => {
+  const scripts = join(import.meta.dir);
+  const hit = search({ pattern: "findRecursiveWalks", in: scripts, kind: ["ts"] }).lines;
+  expect(hit.length).toBeGreaterThan(0);
+  expect(hit.some((line) => line.startsWith("check-recursive-walk.ts:"))).toBe(true);
+  expect(search({ files: true, in: scripts, glob: ["*.test.ts"] }).lines.length).toBeGreaterThan(1);
 });

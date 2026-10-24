@@ -13,8 +13,8 @@
 //   bun run find --files --glob '*.test.ts'   names by glob, no content pattern
 //   bun run find useGame --kind ts,tsx --in packages/core/src
 import { spawnSync } from "node:child_process";
-import { readFileSync, statSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { readdirSync, readFileSync, statSync, type Dirent } from "node:fs";
+import { join, relative, resolve, sep } from "node:path";
 
 import { printHelpIfAsked, type Usage } from "./script-help";
 
@@ -89,7 +89,7 @@ export function ripgrepArgs(options: FindOptions): string[] {
   return args;
 }
 
-/** Globs as one regular expression, for the git fallback: `*`, `**`, `?` and `{a,b}`. */
+/** Globs as one regular expression, for the reader used when ripgrep is absent: `*`, `**`, `?` and `{a,b}`. */
 export function globToRegExp(glob: string): RegExp {
   let source = "";
   for (let index = 0; index < glob.length; index += 1) {
@@ -117,41 +117,61 @@ function escapeRegExp(text: string): string {
   return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-function hasRipgrep(): boolean {
+export function hasRipgrep(): boolean {
   return spawnSync("rg", ["--version"], { stdio: "ignore" }).status === 0;
 }
 
-/** The same answer without ripgrep: git's file list, read in this process. */
-function findWithGit(options: FindOptions): FindResult {
+/** Every file under `root`, pruning the same directories a ripgrep search never enters. */
+function readTree(root: string): string[] {
+  const found: string[] = [];
+  const visit = (dir: string): void => {
+    let entries: Dirent[];
+    try {
+      entries = readdirSync(dir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const entry of entries) {
+      if (entry.name.startsWith(".") || (SKIP_DIRS as readonly string[]).includes(entry.name)) continue;
+      const path = join(dir, entry.name);
+      if (entry.isDirectory()) visit(path);
+      else if (entry.isFile()) found.push(path);
+    }
+  };
+  visit(root);
+  return found;
+}
+
+/**
+ * The same answer without ripgrep, for a runner or a cloud session that has none. Slower and blind
+ * to `.gitignore`; the skipped directories are the same, so it still never reads node_modules.
+ */
+export function findInProcess(options: FindOptions): FindResult {
   const root = resolve(options.in ?? ".");
-  const listed = spawnSync("git", ["-C", root, "ls-files", "-z", "--cached", "--others", "--exclude-standard"], {
-    encoding: "utf8",
-    maxBuffer: 64 * 1024 * 1024,
-  });
-  if (listed.status !== 0) throw new Error(`git ls-files failed in ${root}: ${listed.stderr.trim()}`);
   const nameGlobs = [...kindGlobs(options.kind ?? []), ...(options.glob ?? [])].map(globToRegExp);
   const selected = (file: string): boolean =>
     nameGlobs.length === 0 || nameGlobs.some((glob) => glob.test(file) || glob.test(file.split("/").pop() ?? ""));
   const matcher = options.pattern === undefined ? undefined : new RegExp(options.pattern);
   const lines: string[] = [];
-  for (const file of listed.stdout.split("\0")) {
-    if (file === "" || !selected(file)) continue;
+  for (const path of readTree(root)) {
+    const file = relative(root, path).split(sep).join("/");
+    if (!selected(file)) continue;
     if (matcher === undefined) {
       lines.push(file);
-      continue;
-    }
-    let contents: string;
-    try {
-      contents = readFileSync(join(root, file), "utf8");
-    } catch {
-      continue;
-    }
-    if (options.files === true) {
-      if (matcher.test(contents)) lines.push(file);
     } else {
-      contents.split("\n").forEach((text, index) => {
-        if (matcher.test(text)) lines.push(`${file}:${index + 1}:${text}`);
-      });
+      let contents: string;
+      try {
+        contents = readFileSync(path, "utf8");
+      } catch {
+        continue;
+      }
+      if (options.files === true) {
+        if (matcher.test(contents)) lines.push(file);
+      } else {
+        contents.split("\n").forEach((text, index) => {
+          if (matcher.test(text)) lines.push(`${file}:${index + 1}:${text}`);
+        });
+      }
     }
     if (options.limit !== undefined && lines.length >= options.limit) break;
   }
@@ -174,7 +194,7 @@ export function search(options: FindOptions): FindResult {
     throw new Error(`--in is not a directory: ${root}`);
   }
   if (!statSync(root).isDirectory()) throw new Error(`--in is not a directory: ${root}`);
-  if (!hasRipgrep()) return findWithGit(options);
+  if (!hasRipgrep()) return findInProcess(options);
   const result = spawnSync("rg", ripgrepArgs(options), {
     cwd: root,
     encoding: "utf8",
@@ -259,7 +279,7 @@ function main(argv: readonly string[]): number {
   }
   try {
     const result = search(options);
-    if (!result.usedRipgrep) console.error("find: ripgrep not found; answered from git's file list instead (slower and blind to ignored files)");
+    if (!result.usedRipgrep) console.error("find: ripgrep not found; read the tree in this process instead (slower, and .gitignore is not applied)");
     if (result.lines.length === 0) {
       console.error(`find: no match for ${options.pattern ?? options.glob?.join(" ") ?? "--files"}`);
       return EXIT_NONE;
