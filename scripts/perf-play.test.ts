@@ -1,3 +1,4 @@
+import { createServer, type Server } from "node:http";
 import { join } from "node:path";
 
 import { expect, test } from "bun:test";
@@ -283,13 +284,18 @@ test("--uncapped asks Chrome for an unthrottled rAF clock; the default asks for 
 
 test("the frame clock the run asked for is what the browser launch receives", async () => {
   const seen: (ChromeLaunchOptions | undefined)[] = [];
-  const original = globalThis.fetch;
-  globalThis.fetch = (async () =>
-    new Response(JSON.stringify({ webSocketDebuggerUrl: "ws://127.0.0.1:1/devtools" }), { status: 200 })) as typeof fetch;
+  // A real endpoint: the probe asks with node:http, so a stubbed fetch proves nothing.
+  const server: Server = createServer((request, response) => {
+    response.writeHead(200, { "content-type": "application/json" });
+    response.end(JSON.stringify({ webSocketDebuggerUrl: "ws://127.0.0.1:1/devtools" }));
+  });
+  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const address = server.address();
+  if (address === null || typeof address === "string") throw new Error("no debugger port");
   try {
     for (const frameClock of ["uncapped", undefined] as const) {
       await startBrowser({
-        debugPort: 1,
+        debugPort: address.port,
         readyMs: 500,
         log: () => {},
         ...(frameClock === undefined ? {} : { frameClock }),
@@ -302,7 +308,7 @@ test("the frame clock the run asked for is what the browser launch receives", as
       });
     }
   } finally {
-    globalThis.fetch = original;
+    await new Promise<void>((resolve) => server.close(() => resolve()));
   }
   expect(seen).toEqual([{ frameClock: "uncapped" }, undefined]);
 });

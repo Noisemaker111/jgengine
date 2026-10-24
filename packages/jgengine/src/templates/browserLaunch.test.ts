@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { createServer, type Server } from "node:http";
 
 import { BROWSER_LAUNCH_BLOCK, LAUNCH_BLOCK_END, LAUNCH_BLOCK_START } from "./browserLaunch";
 import { browserLibMjs, driveMjs, shootMjs } from "./gameFiles";
@@ -7,6 +8,26 @@ import { browserLibMjs, driveMjs, shootMjs } from "./gameFiles";
 async function scaffoldBrowser(): Promise<Record<string, any>> {
   const encoded = Buffer.from(browserLibMjs, "utf8").toString("base64");
   return (await import(`data:text/javascript;base64,${encoded}`)) as Record<string, any>;
+}
+
+/** A debugger endpoint that answers `/json/version` at once, like a warm Chrome. */
+async function liveDebugger(): Promise<{ port: number; stop: () => Promise<void> }> {
+  const server: Server = createServer((request, response) => {
+    if (request.url !== "/json/version") {
+      response.writeHead(503);
+      response.end();
+      return;
+    }
+    response.writeHead(200, { "content-type": "application/json" });
+    response.end(JSON.stringify({ webSocketDebuggerUrl: "ws://127.0.0.1:1/devtools/browser/jg-proxy" }));
+  });
+  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const address = server.address();
+  if (address === null || typeof address === "string") throw new Error("no debugger port");
+  return {
+    port: address.port,
+    stop: () => new Promise<void>((resolve) => server.close(() => resolve())),
+  };
 }
 
 /** A launched Chrome stand-in. No real directory: the block only ever tries to delete the profile. */
@@ -116,6 +137,46 @@ describe("scaffold launch block", () => {
       waitForDebugger(1, 5_000, { browser: { exitCode: 1 }, profilePath: "/tmp/jg-profile" }),
     ).rejects.toThrow("the browser process exited (code 1) before binding the debugger on :1");
     expect(Date.now() - startedAt).toBeLessThan(1_000);
+  });
+
+  test("the debugger handshake ignores HTTP_PROXY", async () => {
+    const { startBrowser } = await scaffoldBrowser();
+    const debuggerEndpoint = await liveDebugger();
+    const saved = new Map<string, string | undefined>();
+    const proxy = {
+      HTTP_PROXY: "http://127.0.0.1:9",
+      http_proxy: "http://127.0.0.1:9",
+      HTTPS_PROXY: "http://127.0.0.1:9",
+      https_proxy: "http://127.0.0.1:9",
+      NO_PROXY: "",
+      no_proxy: "",
+    };
+    try {
+      for (const [name, value] of Object.entries(proxy)) {
+        saved.set(name, process.env[name]);
+        process.env[name] = value;
+      }
+      const started = await startBrowser({
+        debugPort: debuggerEndpoint.port,
+        readyMs: 1_000,
+        log: () => {},
+        launch: () => fakeChrome(1),
+        pageProbe: async () => {},
+      });
+      expect(started.attempts).toBe(1);
+    } finally {
+      for (const [name, value] of saved) {
+        if (value === undefined) delete process.env[name];
+        else process.env[name] = value;
+      }
+      await debuggerEndpoint.stop();
+    }
+  });
+
+  test("the shipped block probes the debugger without fetch", () => {
+    expect(BROWSER_LAUNCH_BLOCK).toContain('from "node:http"');
+    const fetchCall = BROWSER_LAUNCH_BLOCK.indexOf("fetch(");
+    expect({ fetch: fetchCall }).toEqual({ fetch: -1 });
   });
 
   test("missing Chrome is a configuration error, not a flake to retry", async () => {

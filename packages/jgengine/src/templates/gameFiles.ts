@@ -424,10 +424,11 @@ export function launchChrome(port, prefix) {
 
 export async function isUp(url) {
   try {
-    const r = await fetch(url, { signal: AbortSignal.timeout(1000) });
-    return r.ok || r.status === 404; // a served-but-routed page still means Vite is up
-  } catch {
-    return false;
+    await localGet(url, 1000);
+    return true;
+  } catch (error) {
+    // a served-but-routed page still means Vite is up
+    return error !== null && typeof error === "object" && error.status === 404;
   }
 }
 
@@ -574,20 +575,13 @@ export class Cdp {
 export async function openPage(debugPort) {
   for (const method of ["PUT", "GET"]) {
     try {
-      const r = await fetch("http://127.0.0.1:" + debugPort + "/json/new?about:blank", {
-        method,
-        signal: AbortSignal.timeout(10_000),
-      });
-      if (r.ok) {
-        const info = await r.json();
-        if (info.webSocketDebuggerUrl) return Cdp.connect(info.webSocketDebuggerUrl, 15_000);
-      }
+      const info = JSON.parse(await localGet("http://127.0.0.1:" + debugPort + "/json/new?about:blank", 10_000, method));
+      if (info.webSocketDebuggerUrl) return Cdp.connect(info.webSocketDebuggerUrl, 15_000);
     } catch {
       /* try next */
     }
   }
-  const list = await fetch("http://127.0.0.1:" + debugPort + "/json/list", { signal: AbortSignal.timeout(5000) });
-  const pages = await list.json();
+  const pages = JSON.parse(await localGet("http://127.0.0.1:" + debugPort + "/json/list", 5_000));
   const page = pages.find((p) => p.type === "page" && p.webSocketDebuggerUrl);
   if (!page) throw new Error("no CDP page target available");
   return Cdp.connect(page.webSocketDebuggerUrl, 15_000);

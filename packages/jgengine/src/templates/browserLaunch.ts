@@ -19,6 +19,8 @@ export const BROWSER_LAUNCH_BLOCK = `${LAUNCH_BLOCK_START}
 // failure discards that browser and its profile, then retries once with a fresh profile and
 // a doubled wait. A configuration error, and anything after the handshake, is reported once.
 
+import { request as httpRequest } from "node:http";
+
 const DEFAULT_CHROME_READY_MS = 30_000;
 const DEBUGGER_PROBE_TIMEOUT_MS = 2_000;
 const LAUNCH_ATTEMPTS = 2;
@@ -47,17 +49,51 @@ export class BrowserLaunchError extends Error {
 
 // A listening socket that has not finished booting HTTP is not a debugger, so each probe
 // asks for a parsed /json/version body and gives up on that one after a short timeout.
+// node:http, never fetch: Bun's fetch sends 127.0.0.1 through HTTP_PROXY, so on a machine
+// with a corporate proxy a healthy browser would read as dead in about a millisecond.
 async function debuggerVersionUrl(port) {
   try {
-    const response = await fetch("http://127.0.0.1:" + port + "/json/version", {
-      signal: AbortSignal.timeout(DEBUGGER_PROBE_TIMEOUT_MS),
-    });
-    if (!response.ok) return null;
-    const body = await response.json();
+    const body = JSON.parse(await localGet("http://127.0.0.1:" + port + "/json/version", DEBUGGER_PROBE_TIMEOUT_MS));
     return typeof body.webSocketDebuggerUrl === "string" ? body.webSocketDebuggerUrl : null;
   } catch {
     return null;
   }
+}
+
+/** GET a localhost URL without a proxy in the way; the body text, or a thrown status/error. */
+function localGet(url, timeoutMs, method) {
+  return new Promise((resolve, reject) => {
+    const target = new URL(url);
+    const request = httpRequest(
+      {
+        hostname: target.hostname,
+        port: target.port,
+        path: target.pathname + target.search,
+        method: method ?? "GET",
+        headers: { connection: "close" },
+      },
+      (response) => {
+        let body = "";
+        response.setEncoding("utf8");
+        response.on("data", (chunk) => {
+          if (body.length < 1_048_576) body += chunk;
+        });
+        response.on("end", () => {
+          const status = response.statusCode ?? 0;
+          if (status >= 200 && status < 300) resolve(body);
+          else {
+            const error = new Error("localhost " + target.pathname + " answered " + status);
+            error.status = status;
+            reject(error);
+          }
+        });
+        response.on("error", reject);
+      },
+    );
+    request.setTimeout(timeoutMs, () => request.destroy(new Error("localhost " + target.pathname + " timed out after " + timeoutMs + "ms")));
+    request.on("error", reject);
+    request.end();
+  });
 }
 
 export async function waitForDebugger(port, timeoutMs, context = {}) {

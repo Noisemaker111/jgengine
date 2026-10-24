@@ -9,13 +9,16 @@
  *   - the block the scaffold ships must be the canonical block, byte for byte;
  *   - the scaffold's `shoot`/`drive` must launch through `startBrowser`, not their own wait;
  *   - both `startBrowser` copies must report the same step, the same two log lines and the
- *     same failure text for the same scripted failures (#2131's hung first attempt).
+ *     same failure text for the same scripted failures (#2131's hung first attempt);
+ *   - neither copy may reach the debugger with `fetch`: Bun sends 127.0.0.1 through
+ *     `HTTP_PROXY`, so the handshake is also run with a dead proxy set and must still work.
  *
  *   bun run check:scaffold-launch
  *
  * Exit 0 agree, 1 drift.
  */
 import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { createServer, type Server } from "node:http";
 
 import { gameTemplate } from "../packages/jgengine/src/templates";
@@ -174,7 +177,67 @@ async function parity(engine: Implementation, scaffold: Implementation): Promise
   const missing = { debugPort: 1, readyMs: 60, launch: missingChrome };
   problems.push(...compare("no Chrome installed", await run(engine, missing), await run(scaffold, missing)));
 
+  // #2278: Bun's fetch sends 127.0.0.1 through HTTP_PROXY, so a set proxy read a healthy
+  // debugger as dead. A dead proxy proves both copies reach the debugger directly.
+  const proxyEndpoint = await slowDebugger(0);
+  const proxyVars = {
+    HTTP_PROXY: "http://127.0.0.1:9",
+    http_proxy: "http://127.0.0.1:9",
+    HTTPS_PROXY: "http://127.0.0.1:9",
+    https_proxy: "http://127.0.0.1:9",
+    NO_PROXY: "",
+    no_proxy: "",
+  };
+  const proxied = { debugPort: proxyEndpoint.port, readyMs: 1_000, launch: fakeLaunch([]), pageProbe: async () => {} };
+  let proxyEngine: ScenarioResult;
+  let proxyScaffold: ScenarioResult;
+  try {
+    proxyEngine = await withEnv(proxyVars, () => run(engine, proxied));
+    proxyScaffold = await withEnv(proxyVars, () => run(scaffold, proxied));
+  } finally {
+    await proxyEndpoint.stop();
+  }
+  problems.push(...compare("a debugger behind HTTP_PROXY", proxyEngine, proxyScaffold));
+  if (proxyEngine.outcome !== "ok:1" || proxyScaffold.outcome !== "ok:1") {
+    problems.push(
+      `a debugger behind HTTP_PROXY: HTTP_PROXY=http://127.0.0.1:9 must not carry the handshake\n` +
+        `  ${ENGINE_FILE}: ${proxyEngine.outcome}\n  ${SOURCE_FILE}: ${proxyScaffold.outcome}`,
+    );
+  }
+
   return problems;
+}
+
+/**
+ * `fetch` in Bun routes 127.0.0.1 through `HTTP_PROXY`, so a proxy turns a healthy debugger
+ * into a refused connection. Name every such call, so a revert fails here and not on a
+ * corporate laptop.
+ */
+function proxyHijackableProbes(file: string, text: string): string[] {
+  const found: string[] = [];
+  for (let at = text.indexOf("fetch("); at >= 0; at = text.indexOf("fetch(", at + 1)) {
+    const window = text.slice(at, at + 400);
+    if (!window.includes("/json/")) continue;
+    const line = text.slice(0, at).split("\n").length;
+    found.push(`${file}:${line}`);
+  }
+  return found;
+}
+
+async function withEnv<T>(vars: Record<string, string>, run: () => Promise<T>): Promise<T> {
+  const saved = new Map<string, string | undefined>();
+  for (const [name, value] of Object.entries(vars)) {
+    saved.set(name, process.env[name]);
+    process.env[name] = value;
+  }
+  try {
+    return await run();
+  } finally {
+    for (const [name, value] of saved) {
+      if (value === undefined) delete process.env[name];
+      else process.env[name] = value;
+    }
+  }
 }
 
 async function main(): Promise<void> {
@@ -204,6 +267,18 @@ async function main(): Promise<void> {
     );
   }
 
+  const hijackable = [
+    ...proxyHijackableProbes(`${TEMPLATE_FILE} -> scripts/browser.mjs`, shipped),
+    ...proxyHijackableProbes(ENGINE_FILE, readFileSync(ENGINE_FILE, "utf8")),
+  ];
+  if (hijackable.length > 0) {
+    fail(
+      `the debugger handshake still reaches 127.0.0.1 through fetch(), which Bun sends to HTTP_PROXY (#2278):\n` +
+        `  ${hijackable.join("\n  ")}\n` +
+        `  probe the debugger with node:http in both copies (${SOURCE_FILE} and ${ENGINE_FILE})`,
+    );
+  }
+
   for (const harness of ["scripts/shoot.mjs", "scripts/drive.mjs"]) {
     const source = files.get(harness);
     if (source === undefined) fail(`the scaffold no longer emits ${harness} (${TEMPLATE_FILE})`);
@@ -225,7 +300,8 @@ async function main(): Promise<void> {
 
   console.log(
     `check-scaffold-launch ok: ${SOURCE_FILE} block ${canonicalHash} shipped verbatim to scripts/browser.mjs; ` +
-      `shoot and drive route through startBrowser; ${ENGINE_FILE} agrees on 3 handshake scenarios`,
+      `shoot and drive route through startBrowser; no debugger probe uses fetch; ` +
+      `${ENGINE_FILE} agrees on 4 handshake scenarios, including one behind HTTP_PROXY`,
   );
 }
 
