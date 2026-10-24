@@ -46,6 +46,7 @@ import {
 import { decodePng } from "./png-reader";
 import { clearOriginStorage } from "./capture-storage";
 import { headRevision } from "./captureRevision";
+import { ALLOW_MISMATCH_FLAG, engineRecord, resolveEngineIdentity, type EngineRecord } from "./engineIdentity";
 import { externalCaptureUrl } from "./captureTarget";
 import { assertQuickIsIterationOnly, quickProfile, quickSuffix, quickTimingLine, splitQuickFlag } from "./capture-preset";
 import { CAPTURE_FLAGS, captureFlagHelp, parseCaptureArgs, parseGraphicsTier, type GraphicsTier } from "../packages/jgengine/src/templates/captureArgs";
@@ -80,6 +81,9 @@ import {
 
 /** One reload retry absorbs Vite's transient post-HMR rebuild window; see capture-retry.ts. */
 const CAPTURE_MAX_ATTEMPTS = 2;
+
+/** What this run served, set once the engine gate passes and stamped into every shot record. */
+let engineForRecord: EngineRecord | null = null;
 
 /**
  * Navigate to `url` and wait for an honest frame, reloading fresh once if the
@@ -127,6 +131,8 @@ type Args = {
   headed: boolean;
   /** 960x540 iteration preset: one settled frame, no evidence claims. */
   quick: boolean;
+  /** `--allow-engine-mismatch`: serve engine source older than the game's pin on purpose. */
+  allowEngineMismatch: boolean;
   help: boolean;
   timeoutMs: number;
   timeoutExplicit: boolean;
@@ -142,6 +148,12 @@ ${captureFlagHelp("shoot", "engine", CAPTURE_FLAGS)}
 
   JG_CAPTURE_SCREENCAST=0 forces Page.captureScreenshot instead of the screencast
   frame pump (same pixels, several times slower on software GL).
+
+Engine:
+  Every run prints the engine it actually renders: the dev runner serves this
+  checkout's source, so the line names its version and commit. The run stops when
+  that source is older than the version the game's catalog pins.
+  --allow-engine-mismatch serves older source on purpose and records that it did.
 
 Persistent daemon (started for you; no lane ever starts it by hand):
   bun run shoot <game> --mode play           # starts or reuses the daemon, then attaches
@@ -172,7 +184,14 @@ function parseArgs(argv: string[]): Args {
   // `--cold` is parsed here, not in CAPTURE_FLAGS: the portable harness has no daemon to skip.
   const cold = quick.argv.includes("--cold");
   const headed = quick.argv.includes("--headed");
-  const parsed = parseCaptureArgs("shoot", quick.argv.filter((arg) => arg !== "--headed" && arg !== "--cold"), CAPTURE_FLAGS);
+  // `--allow-engine-mismatch` is parsed here, not in CAPTURE_FLAGS: the portable harness renders the
+  // engine it ships with, so it has no checkout version to compare against a games pin.
+  const allowEngineMismatch = quick.argv.includes(ALLOW_MISMATCH_FLAG);
+  const parsed = parseCaptureArgs(
+    "shoot",
+    quick.argv.filter((arg) => arg !== "--headed" && arg !== "--cold" && arg !== ALLOW_MISMATCH_FLAG),
+    CAPTURE_FLAGS,
+  );
   const o = parsed.options;
   const str = (name: string): string | undefined => (typeof o[name] === "string" ? (o[name] as string) : undefined);
   const num = (name: string): number | undefined => (str(name) === undefined ? undefined : Number(str(name)));
@@ -212,6 +231,7 @@ function parseArgs(argv: string[]): Args {
     inspect: o.inspect === true,
     headed,
     quick: quick.quick,
+    allowEngineMismatch,
     help: parsed.help,
     timeoutMs: (num("timeout") ?? 60) * 1000,
     timeoutExplicit: str("timeout") !== undefined,
@@ -493,6 +513,7 @@ async function shootOne(
       height: decoded.height,
       ...(previous === undefined ? {} : { previous }),
       git: gitProvenance(),
+      ...(engineForRecord === null ? {} : { engine: engineForRecord }),
     });
     writeShotRecord(outPath, record);
     console.log(outPath);
@@ -717,6 +738,23 @@ async function shootSession(daemon: ShootDaemonState | null): Promise<number> {
       return code;
     },
   ));
+}
+
+/**
+ * Name the engine this run renders, and stop before any browser starts when it is older than the
+ * version the game pins. A `--url` page belongs to whatever server it points at, so it is not
+ * checked — the identity line would describe this checkout, not that page.
+ */
+{
+  const identity = resolveEngineIdentity({ game: args.game, allowMismatch: args.allowEngineMismatch, tool: "shoot" });
+  if (args.url === undefined) {
+    console.error(identity.line);
+    if (!identity.allowed) {
+      console.error(identity.refusal);
+      process.exit(1);
+    }
+    engineForRecord = engineRecord(identity);
+  }
 }
 
 const explicitTarget = args.connect !== undefined || args.port !== undefined || args.url !== undefined;

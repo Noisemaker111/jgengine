@@ -66,6 +66,7 @@ import { evaluateAssertStep, runDriveSteps, type DriveStepRecord } from "./drive
 import { gameSurfaceCenter, mouseButtonForCode } from "../packages/jgengine/src/templates/gameSurfaceFocus";
 import { dispatchClickAt, parseClickAt } from "../packages/jgengine/src/clickInput";
 import { decodePng } from "./png-reader";
+import { ALLOW_MISMATCH_FLAG, engineRecord, resolveEngineIdentity, type EngineRecord } from "./engineIdentity";
 import { shotSignature } from "./shot-metrics";
 import { buildShotRecord, clearShotTarget, describeReplacement, writeShotRecord, type PreviousShot } from "./shotProvenance";
 import { classifyRenderCadence, summarizePlaytest, type ProbeSample } from "./playtest";
@@ -75,6 +76,9 @@ import { assembleGif } from "./gif";
 import { assembleMp4 } from "./video";
 
 type Step = CaptureStep;
+
+/** What this run served, set once the engine gate passes and stamped into every saved record. */
+let engineForRecord: EngineRecord | null = null;
 
 /** A lockstep step that commits no new frame falls back to a forced capture after this. */
 const LOCKSTEP_FRAME_TIMEOUT_MS = 20_000;
@@ -132,6 +136,8 @@ type Args = {
   cold: boolean;
   /** 960x540 iteration preset: one settled frame in a 2s window, no video, no perf pass. */
   quick: boolean;
+  /** `--allow-engine-mismatch`: serve engine source older than the game's pin on purpose. */
+  allowEngineMismatch: boolean;
   /** Step file this run reads, when it reads one. */
   stepsFile?: string;
   /** Named flow this run reads, when it reads one. */
@@ -218,6 +224,12 @@ Notes:
   claim, so asking for either alongside it fails; re-run without --quick for
   evidence.
 
+Engine:
+  Every run prints the engine it actually renders: the dev runner serves this
+  checkout's source, so the line names its version and commit. The run stops when
+  that source is older than the version the game's catalog pins.
+  --allow-engine-mismatch serves older source on purpose and records that it did.
+
 Warm capture (started for you; no lane starts the daemon by hand):
   bun run drive <game> --click START --shot before      # reuses or starts the daemon
   --cold skips the daemon entirely: fresh Chrome and Vite, for evidence runs that
@@ -248,7 +260,14 @@ function parseArgs(argv: string[]): Args {  // `--headed` is parsed here, not in
   // `--cold` is parsed here, not in CAPTURE_FLAGS: the portable harness has no daemon to skip.
   const cold = quick.argv.includes("--cold");
   const headed = quick.argv.includes("--headed");
-  const parsed = parseCaptureArgs("drive", quick.argv.filter((arg) => arg !== "--headed" && arg !== "--cold"), CAPTURE_FLAGS);
+  // `--allow-engine-mismatch` is parsed here, not in CAPTURE_FLAGS: the portable harness renders the
+  // engine it ships with, so it has no checkout version to compare against a games pin.
+  const allowEngineMismatch = quick.argv.includes(ALLOW_MISMATCH_FLAG);
+  const parsed = parseCaptureArgs(
+    "drive",
+    quick.argv.filter((arg) => arg !== "--headed" && arg !== "--cold" && arg !== ALLOW_MISMATCH_FLAG),
+    CAPTURE_FLAGS,
+  );
   const o = parsed.options;
   const str = (name: string): string | undefined => (typeof o[name] === "string" ? (o[name] as string) : undefined);
   const num = (name: string): number | undefined => (str(name) === undefined ? undefined : Number(str(name)));
@@ -297,6 +316,7 @@ function parseArgs(argv: string[]): Args {  // `--headed` is parsed here, not in
     style: str("style"),
     headed,
     quick: quick.quick,
+    allowEngineMismatch,
     stepsFile: str("steps"),
     flow: str("flow"),
     flows: o.flows === true,
@@ -706,6 +726,7 @@ async function screenshot(
     width: decoded.width,
     height: decoded.height,
     ...(previous === undefined ? {} : { previous }),
+    ...(engineForRecord === null ? {} : { engine: engineForRecord }),
   });
   writeShotRecord(outPath, record);
   console.log(outPath);
@@ -914,7 +935,12 @@ async function driveSession(daemon: ShootDaemonState | null): Promise<number> {
           line: (text) => console.error(text),
           tier: reportedTier,
           ...(recorder === null ? {} : { virtualNow: () => recorder!.virtualNow }),
-          ...(logPath === undefined ? {} : { record: (entry: DriveStepRecord) => appendFileSync(logPath, JSON.stringify(entry) + "\n") }),
+          ...(logPath === undefined
+            ? {}
+            : {
+                record: (entry: DriveStepRecord) =>
+                  appendFileSync(logPath, JSON.stringify(engineForRecord === null ? entry : { ...entry, engine: engineForRecord }) + "\n"),
+              }),
           run: async (step, index) => {
             const label = "steps[" + index + "]";
             const timings: string[] = [];
@@ -1125,6 +1151,22 @@ async function attempt(daemon: ShootDaemonState | null): Promise<number> {
   } catch (error) {
     console.error(error instanceof Error ? error.message : error);
     return 1;
+  }
+}
+
+/**
+ * Name the engine this run renders, and stop before any browser starts when it is older than the
+ * version the game pins. A `--url` page belongs to whatever server it points at, so it is not checked.
+ */
+{
+  const identity = resolveEngineIdentity({ game: args.game, allowMismatch: args.allowEngineMismatch, tool: "drive" });
+  if (args.url === undefined) {
+    console.error(identity.line);
+    if (!identity.allowed) {
+      console.error(identity.refusal);
+      process.exit(1);
+    }
+    engineForRecord = engineRecord(identity);
   }
 }
 

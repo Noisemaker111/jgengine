@@ -12,6 +12,7 @@ import { createHash } from "node:crypto";
 import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 
 import { compareSignatures } from "./shot-metrics";
+import type { EngineRecord } from "./engineIdentity";
 
 export interface ShotRecord {
   v: 1;
@@ -25,6 +26,8 @@ export interface ShotRecord {
   height?: number;
   /** Commit the tree was on, plus whether the tree was dirty. */
   git?: { head: string; dirty: boolean };
+  /** Which engine the frame actually rendered, so a saved shot can be audited later. */
+  engine?: EngineRecord;
   /** Coarse luminance fingerprint, for comparing this shot against a later re-capture. */
   signature?: number[];
   /** sha256 of the shot this one replaced, when there was one. */
@@ -78,6 +81,7 @@ export function buildShotRecord(args: {
   width?: number;
   height?: number;
   git?: { head: string; dirty: boolean };
+  engine?: EngineRecord;
 }): ShotRecord {
   const { previous, signature } = args;
   const diff =
@@ -98,6 +102,7 @@ export function buildShotRecord(args: {
     ...(args.width === undefined ? {} : { width: args.width }),
     ...(args.height === undefined ? {} : { height: args.height }),
     ...(args.git === undefined ? {} : { git: args.git }),
+    ...(args.engine === undefined ? {} : { engine: args.engine }),
     ...(signature === undefined ? {} : { signature }),
     ...(previous === undefined ? {} : { replacedSha: previous.sha }),
     ...(unchanged === undefined ? {} : { unchanged }),
