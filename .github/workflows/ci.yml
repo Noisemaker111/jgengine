@@ -19,7 +19,7 @@ on:
 # 40116041724, 40111249236). A beta run now queues behind the previous one and completes.
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/beta' }}
+  cancel-in-progress: false
 
 jobs:
   # Decides how much of the game matrix this run pays for. Booting every reference game
