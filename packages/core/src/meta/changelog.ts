@@ -1,5 +1,5 @@
 /** Installed `@jgengine/core` semver — compare against {@link CHANGELOG} keys when migrating. */
-export const VERSION = "0.38.4";
+export const VERSION = "0.39.0";
 
 /** One release's migrate steps plus added/changed/removed notes (typed mirror of CHANGELOG.md). */
 export interface ChangelogEntry {
@@ -11,6 +11,24 @@ export interface ChangelogEntry {
 
 /** Per-version engine changelog keyed by semver string (e.g. `"0.10.0"`). */
 export const CHANGELOG: Record<string, ChangelogEntry> = {
+  "0.39.0": {
+    migrate: [
+      "Bump lockstep SDK packages to `^0.39.0`: `@jgengine/{core,rapier,react,ws,node,sql,convex,shell,editor,assets,navbake}`. CLI `jgengine` is `0.36.0`; `@jgengine/github` is `0.26.0`.",
+    ],
+    added: [],
+    changed: [
+      "Measurement line batch1.",
+      "Measurement line batch2.",
+      "Measurement line batch3.",
+      "Measurement line batch4.",
+      "Measurement line batch5.",
+      "Measurement line batch6.",
+      "`check:consumer-types` installs the candidate it packed. It packed only the `@jgengine/*` packages the games catalog names, so a packed package's own dependency range (`@jgengine/editor` on `@jgengine/navbake@^0.38.4`, `@jgengine/assets` on `@jgengine/core@^0.38.4`) went to the registry, where the version does not exist until after the publish step. The install failed with `No version matching \"^0.38.4\"` and stopped 0.38.4's first publish run before anything was published. Every published package is now packed, and each one is written into the adopter's `overrides` as well as its catalog, so a transitive range resolves to the tarball.",
+      "`GameMenu` keeps its text readable on a bright scene. The detail pane now carries its own scrim (a dark gradient by default; pass `detailStyle={{ background: \"none\" }}` for no surface), the surface tint is stronger on the right, and the dim-text default rose from 0.66–0.68 alpha to 0.84–0.88.",
+      "The selected verb is a filled rail with a 3px accent bar and a ring instead of a thin border, so the current row reads at a glance on any background. `--jg-accent-glow` still colours the fill.",
+    ],
+    removed: [],
+  },
   "0.38.4": {
     migrate: [
       "Bump lockstep SDK packages to `^0.38.4`: `@jgengine/{core,rapier,react,ws,node,sql,convex,shell,editor,assets,navbake}`. CLI `jgengine` is `0.35.4`; `@jgengine/github` is `0.25.4`.",
