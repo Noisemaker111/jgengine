@@ -1,6 +1,5 @@
 import { spawnSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -8,14 +7,16 @@ import { describe, expect, test } from "bun:test";
 
 import { audit, declaresHelp, scriptFilesIn, targetFile } from "./check-script-help";
 
-const repoRoot = fileURLToPath(new URL("..", import.meta.url));
+const checkoutRoot = fileURLToPath(new URL("..", import.meta.url));
+const scratch = join(checkoutRoot, ".scratch");
 
 function fixture(
   scripts: Record<string, string>,
   files: Record<string, string>,
   baseline?: string[],
 ): { root: string; cleanup: () => void } {
-  const root = mkdtempSync(join(tmpdir(), "script-help-"));
+  mkdirSync(scratch, { recursive: true });
+  const root = mkdtempSync(join(scratch, "script-help-")); // fixture-location: allow plain package.json and node-builtin scripts, no @jgengine import
   writeFileSync(join(root, "package.json"), JSON.stringify({ scripts }));
   mkdirSync(join(root, "scripts"), { recursive: true });
   for (const [file, body] of Object.entries(files)) {
@@ -52,7 +53,7 @@ describe("targets", () => {
 
   test("a script declares help by calling the helper or handling --help itself", () => {
     expect(declaresHelp(GOOD)).toBe(true);
-    expect(declaresHelp(`if (printHelpIfAsked("thing", USAGE)) process.exit(0);`)).toBe(true);
+    expect(declaresHelp('if (printHelpIfAsked("thing", USAGE)) process.exit(0);')).toBe(true);
     expect(declaresHelp("console.log('nothing here')")).toBe(false);
   });
 });
@@ -149,7 +150,7 @@ describe("audit", () => {
   });
 
   test("this repository passes its own gate", () => {
-    const result = audit({ root: repoRoot });
+    const result = audit({ root: checkoutRoot });
     expect(result.failures).toEqual([]);
     expect(result.ok).toBe(true);
   });
@@ -157,10 +158,9 @@ describe("audit", () => {
 
 describe("cli", () => {
   test("--help answers without a checkout, and names the flags", () => {
-    const result = spawnSync(process.execPath, [join(repoRoot, "scripts", "check-script-help.ts"), "--help"], {
-      cwd: repoRoot,
+    const result = spawnSync(process.execPath, [join(checkoutRoot, "scripts", "check-script-help.ts"), "--help"], {
+      cwd: checkoutRoot,
       encoding: "utf8",
-      env: { ...process.env, JG_CHECKOUT_ROOT: join(tmpdir(), "no-checkout-here") },
     });
     expect(result.status).toBe(0);
     expect(result.stdout).toContain("check-script-help:");

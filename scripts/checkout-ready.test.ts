@@ -1,6 +1,5 @@
 import { spawnSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -8,17 +7,19 @@ import { describe, expect, test } from "bun:test";
 
 import { checkoutProblem, EXIT_NOT_SET_UP } from "./checkout-ready";
 
-const repoRoot = fileURLToPath(new URL("..", import.meta.url));
+const checkoutRoot = fileURLToPath(new URL("..", import.meta.url));
+const scratch = join(checkoutRoot, ".scratch");
 
 function bareCheckout(): { root: string; cleanup: () => void } {
-  const root = mkdtempSync(join(tmpdir(), "checkout-ready-"));
+  mkdirSync(scratch, { recursive: true });
+  const root = mkdtempSync(join(scratch, "checkout-ready-")); // fixture-location: allow a bare package.json, no @jgengine import
   mkdirSync(join(root, "scripts"), { recursive: true });
   return { root, cleanup: () => rmSync(root, { recursive: true, force: true }) };
 }
 
 function run(script: string, args: string[], root: string) {
-  return spawnSync(process.execPath, [join(repoRoot, "scripts", script), ...args], {
-    cwd: repoRoot,
+  return spawnSync(process.execPath, [join(checkoutRoot, "scripts", script), ...args], {
+    cwd: checkoutRoot,
     encoding: "utf8",
     timeout: 60_000,
     env: { ...process.env, JG_CHECKOUT_ROOT: root },
@@ -49,7 +50,7 @@ describe("probe", () => {
   });
 
   test("this checkout is set up", () => {
-    expect(checkoutProblem(repoRoot)).toBeNull();
+    expect(checkoutProblem(checkoutRoot)).toBeNull();
   });
 });
 
@@ -110,32 +111,28 @@ describe("commands in a checkout that cannot run them", () => {
 
 describe("a real failure stays a real failure", () => {
   test("an installed checkout is not refused: verify:fast plans and exits on its own verdict", () => {
-    const result = run("verify-fast.ts", ["--plan"], repoRoot);
+    const result = run("verify-fast.ts", ["--plan"], checkoutRoot);
     expect(result.status).not.toBe(EXIT_NOT_SET_UP);
     expect(`${result.stdout}${result.stderr}`).not.toContain("this checkout cannot run that yet");
   });
 
   test("a script whose help is broken still fails the gate with exit 1", () => {
-    const root = mkdtempSync(join(tmpdir(), "checkout-ready-gate-"));
+    const { root, cleanup } = bareCheckout();
     try {
-      mkdirSync(join(root, "scripts"), { recursive: true });
-      writeFileSync(
-        join(root, "package.json"),
-        JSON.stringify({ scripts: { broken: "bun scripts/broken.ts" } }),
-      );
+      writeFileSync(join(root, "package.json"), JSON.stringify({ scripts: { broken: "bun scripts/broken.ts" } }));
       writeFileSync(
         join(root, "scripts", "broken.ts"),
         `if (process.argv.includes("--help")) { console.log("broken: usage"); process.exit(4); }\n`,
       );
-      const result = spawnSync(process.execPath, [join(repoRoot, "scripts", "check-script-help.ts"), "--root", root], {
-        cwd: repoRoot,
+      const result = spawnSync(process.execPath, [join(checkoutRoot, "scripts", "check-script-help.ts"), "--root", root], {
+        cwd: checkoutRoot,
         encoding: "utf8",
         timeout: 60_000,
       });
       expect(result.status).toBe(1);
       expect(result.stdout).toContain("exited 4");
     } finally {
-      rmSync(root, { recursive: true, force: true });
+      cleanup();
     }
   });
 });
