@@ -2705,6 +2705,7 @@
 - `SessionChoice` (interface): interface SessionChoice<T> — One option the next session could open with, in the shape a choice screen shows.
 - `SessionLoop` (interface): interface SessionLoop<T = never, I = void, R = void> — One session's lifecycle: open it, carry a quantity, close it at its boundary, and optionally open the next one with an option the game authored.
 - `SessionLoopConfig` (interface): interface SessionLoopConfig<T = never, I = void, R = void> — Configuration for {@link createSessionLoop}.
+- `SessionLoopPersistence` (interface): interface SessionLoopPersistence — Where a loop keeps what a live session carries, so a reload mid-session does not silently lose it. `load` runs once when the loop is created; `save` runs on each state change that a player can see - a carried amount (`every` carries between writes, default every one) and every open, adopt or close.
 - `SessionLoopState` (interface): interface SessionLoopState — Everything a session loop stores as plain JSON.
 - `SessionOffer` (interface): interface SessionOffer<T> — The option a session opens with, and which session it is.
 - `SessionOfferOption` (interface): interface SessionOfferOption<T> — One option the next session may open with. `T` is the game's own payload (a tighter rival line, an unlocked part, a shorter route) - the loop only draws and remembers which id was drawn.
