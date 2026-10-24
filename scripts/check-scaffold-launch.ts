@@ -285,6 +285,55 @@ export async function scanForFetchEverywhere(cwd = process.cwd()): Promise<strin
   return offending;
 }
 
+/**
+ * The files allowed to name Chrome's debugger flag: the engine's one launcher, and the template
+ * that embeds the scaffold's copy of it (which `check-scaffold-launch` compares by hash).
+ */
+const LAUNCHERS = new Set(["scripts/browser-lib.ts", "packages/jgengine/src/templates/gameFiles.ts"]);
+
+/**
+ * `file:line` for a second way to start Chrome. The engine launches through
+ * `scripts/browser-lib.ts` `startBrowser`, and every capture script - shoot, drive, perf, shots -
+ * imports it, so a lane that spawns its own browser is how the retry, the step-named failure and
+ * the proxy-free handshake get lost again (#2132).
+ */
+export async function scanForSecondLauncher(cwd = process.cwd()): Promise<string[]> {
+  const offending: string[] = [];
+  for (const path of runtimeSources(cwd)) {
+    const relative = relativePath(cwd, path);
+    if (LAUNCHERS.has(relative)) continue;
+    if (relative === "scripts/check-scaffold-launch.ts") continue;
+    const text = await Bun.file(path).text();
+    const lines = text.split("\n");
+    for (let index = 0; index < lines.length; index += 1) {
+      if (lines[index]?.includes("--remote-debugging-port")) offending.push(`${relative}:${index + 1}`);
+    }
+  }
+  return offending;
+}
+
+/** Capture scripts must launch through the shared path, never their own spawn or wait. */
+export const CAPTURE_SCRIPTS = ["scripts/shoot-dev.ts", "scripts/drive-dev.ts", "scripts/perf-play.ts"];
+
+export interface LauncherUse {
+  /** Scripts that do not import `startBrowser` from `scripts/browser-lib.ts`. */
+  missingImport: string[];
+  /** Scripts that still wait for the debugger themselves. */
+  ownWait: string[];
+}
+
+/** Which capture scripts reach the browser through the engine's `startBrowser`. */
+export function auditCaptureScripts(sources: Record<string, string>): LauncherUse {
+  const missingImport: string[] = [];
+  const ownWait: string[] = [];
+  for (const script of CAPTURE_SCRIPTS) {
+    const source = sources[script] ?? "";
+    if (!/\bfrom\s*["']\.\/browser-lib["']/.test(source)) missingImport.push(script);
+    if (/\bfunction\s+waitForDebugger\b|--remote-debugging-port/.test(source)) ownWait.push(script);
+  }
+  return { missingImport, ownWait };
+}
+
 function relativePath(cwd: string, path: string): string {
   return path.slice(cwd.length + 1).replace(/\\/g, "/");
 }
@@ -355,6 +404,26 @@ async function main(): Promise<void> {
     );
   }
 
+  const secondLauncher = await scanForSecondLauncher();
+  if (secondLauncher.length > 0) {
+    fail(
+      `a second way to start Chrome:\n  ${secondLauncher.join("\n  ")}\n` +
+        `  ${ENGINE_FILE} owns the engine's launch path and ${SOURCE_FILE} owns the scaffold's;\n` +
+        `  a capture script imports startBrowser from scripts/browser-lib.ts instead of spawning its own browser`,
+    );
+  }
+
+  const launcherUse = auditCaptureScripts(
+    Object.fromEntries(await Promise.all(CAPTURE_SCRIPTS.map(async (script) => [script, await Bun.file(script).text()]))),
+  );
+  if (launcherUse.missingImport.length > 0 || launcherUse.ownWait.length > 0) {
+    fail(
+      `a capture script does not launch through the shared path:\n` +
+        `  does not import startBrowser from ./browser-lib: ${launcherUse.missingImport.join(", ") || "none"}\n` +
+        `  waits for its own debugger: ${launcherUse.ownWait.join(", ") || "none"}`,
+    );
+  }
+
   for (const harness of ["scripts/shoot.mjs", "scripts/drive.mjs"]) {
     const source = files.get(harness);
     if (source === undefined) fail(`the scaffold no longer emits ${harness} (${TEMPLATE_FILE})`);
@@ -376,7 +445,7 @@ async function main(): Promise<void> {
 
   console.log(
     `check-scaffold-launch ok: ${SOURCE_FILE} block ${canonicalHash} shipped verbatim to scripts/browser.mjs; ` +
-      `shoot and drive route through startBrowser; no debugger probe uses fetch; ` +
+      `shoot and drive route through startBrowser; no other script starts Chrome; no debugger probe uses fetch; ` +
       `${ENGINE_FILE} agrees on 4 handshake scenarios, including one behind HTTP_PROXY`,
   );
 }
