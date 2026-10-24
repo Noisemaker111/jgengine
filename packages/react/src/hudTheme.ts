@@ -313,6 +313,10 @@ export function hudThemeVars(theme: HudTheme): CSSProperties {
     "--jg-frame-bg": frame.bg,
     "--jg-frame-border": frame.border,
     "--jg-frame-radius": frame.radius,
+    // The game menu's two design tokens: a logo sized off the display step and card corners that
+    // follow the frame radius, so a menu inherits the theme it is rendered under.
+    "--jg-menu-logo-size": "clamp(30px, 4.6vw, 66px)",
+    "--jg-menu-card-radius": frame.radius,
     "--jg-frame-glow": frame.glow,
     "--jg-slot-bg": slot.bg,
     "--jg-slot-border": slot.border,
