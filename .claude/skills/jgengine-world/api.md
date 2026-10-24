@@ -2655,7 +2655,7 @@
 - `ModelAssetRef` (interface): interface ModelAssetRef { url: string; anchor?: "center" | "origin"; dims?: ModelDims; collisionMesh?: CollisionMeshData; space?: AssetSpace; clips?: readonly string[] } — ⚠ undocumented · used by `createHostedWorldSessionAsync` (@jgengine/core/runtime/hostedWorldSession): Build a hosted session from an asynchronous persistence backend.
 - `ModelDims` (interface): interface ModelDims — Measured horizontal footprint, footprint center, and lowest Y of a model in model space.
 - `ModelNode` (interface): interface ModelNode — Generic named-socket reader for loaded 3D models. Walks a node tree (any object with `.name`, `.position`, and `.children` — structurally satisfied by `THREE.Object3D`) and collects the local offsets of nodes whose name marks an attachment point. Genre-agnostic: wire anchors on a pylon, muzzle/hand mounts on a character, hardpoints on a ship, seat/decal slots on furniture — anything an artist tags with an empty in the GLB. Pure data (no three.js import), so it lives in core.
-- `ModelVariantConfig` (interface): interface ModelVariantConfig — One mesh level of a {@link ModelVariantLodConfig}: a full or decimated GLB and how far it draws.
+- `ModelVariantConfig` (interface): interface ModelVariantConfig — One mesh level of a {@link ModelVariantLodConfig}: a full or decimated GLB, how far it draws and how it shadows.
 - `ModelVariantLodConfig` (interface): interface ModelVariantLodConfig — Ordered mesh detail levels for one model, switched per instance by camera distance. The first level is the full mesh the model's own `url` names; every later level is a cheaper asset. A tree line uses this so near trees keep their full mesh while far ones draw a decimated copy of the same species.
 - `ModelVariantSelector` (interface): interface ModelVariantSelector — Per-instance distance switch over a model's detail levels: one answer per id, held across a boundary until the instance clears it.
 - `ModelVariantSelectorState` (interface): interface ModelVariantSelectorState — Plain JSON state of a {@link ModelVariantSelector}: each id's current level index.
@@ -4041,7 +4041,8 @@
 ## @jgengine/core/world/modelLod
 
 - `DEFAULT_VARIANT_HYSTERESIS` (const): const DEFAULT_VARIANT_HYSTERESIS: 6 — Metres an instance must travel past a switch boundary before it changes level unless the model declares its own.
-- `ModelVariantConfig` (interface): interface ModelVariantConfig — One mesh level of a {@link ModelVariantLodConfig}: a full or decimated GLB and how far it draws.
+- `ModelShadowMode` (type): type ModelShadowMode = "cast" | "receive" | "both" | "none" — How a model, or one of its variant levels, takes part in the shadow pass.
+- `ModelVariantConfig` (interface): interface ModelVariantConfig — One mesh level of a {@link ModelVariantLodConfig}: a full or decimated GLB, how far it draws and how it shadows.
 - `ModelVariantLodConfig` (interface): interface ModelVariantLodConfig — Ordered mesh detail levels for one model, switched per instance by camera distance. The first level is the full mesh the model's own `url` names; every later level is a cheaper asset. A tree line uses this so near trees keep their full mesh while far ones draw a decimated copy of the same species.
 - `ModelVariantSelector` (interface): interface ModelVariantSelector — Per-instance distance switch over a model's detail levels: one answer per id, held across a boundary until the instance clears it.
 - `ModelVariantSelectorState` (interface): interface ModelVariantSelectorState — Plain JSON state of a {@link ModelVariantSelector}: each id's current level index.

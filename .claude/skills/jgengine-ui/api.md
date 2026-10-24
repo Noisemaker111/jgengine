@@ -3090,13 +3090,6 @@
 - `ShaderWarmupRenderer` (interface): interface ShaderWarmupRenderer — The renderer surface the warmup needs; a real `WebGLRenderer` satisfies it.
 - `ShaderWarmupState` (interface): interface ShaderWarmupState — Where the load-time shader warmup is: waiting for the scene to stop growing, compiling a round, finished, or skipped because the renderer refused. The loading screen renders it.
 
-## @jgengine/shell/render/singleVariantLod
-
-- `VariantShadowLevel` (interface): interface VariantShadowLevel extends ModelVariantConfig — One variant level as a game writes it: the level's asset, how far it draws, and whether that level shadows. A far level that stops casting leaves the shadow pass entirely, which is the pass that redraws it on top of the visible one.
-- `VariantShadowLodConfig` (interface): interface VariantShadowLodConfig extends Omit<ModelVariantLodConfig, "levels"> — Variant levels that may each declare their own shadow participation.
-- `VariantShadowMode` (type): type VariantShadowMode = "inherit" | NonNullable<ModelConfig["shadows"]> — Shadow participation one variant level may declare for itself. `"inherit"` (the default) keeps the model's own `shadows`, which is what every level did before a level could choose.
-- `variantLevels` (function): function variantLevels(config: VariantShadowLodConfig): ModelVariantLodConfig — Declares a model's detail levels, each able to say how it shadows. The result is a plain `ModelVariantLodConfig`; the level's `shadows` rides along and the renderer reads it, so a palm's far level can stop casting while a hero prop keeps its shadow.
-
 ## @jgengine/shell/render/staticShapeInstances
 
 - `StaticShapeInstance` (interface): interface StaticShapeInstance — One editor-derived static primitive. A box spans one unit; a cylinder has unit radius and height before scale.

@@ -1,12 +1,12 @@
 import { describe, expect, test } from "bun:test";
 import * as THREE from "three";
-import type { ModelConfig } from "@jgengine/core/game/playableGame";
+import type { ModelConfig, ModelVariantLodConfig } from "@jgengine/core/game/playableGame";
 import { createModelVariantSelector } from "@jgengine/core/world/modelLod";
 
 import { attributeTriangles } from "./triangleAttribution";
 import { cloneModelScene } from "./modelRender";
 import { buildScatterModelSources, disposeScatterModelSources } from "../scatter/scatterModels";
-import { variantLevelModel, variantLevelShadows, variantLevels } from "./singleVariantLod";
+import { variantLevelModel, variantLevelShadows } from "./singleVariantLod";
 
 /** Harbor's palm, as the repo's variant test states it: the full mesh near, a cheaper one far. */
 const NEAR_TRIANGLES = 9134;
@@ -42,21 +42,44 @@ function frameAt(model: ModelConfig, level: number): { triangles: number; caster
 }
 
 /** Harbor's palm as a game writes it: the same two assets, with the far level's shadow decided per level. */
-function palm(farShadows?: ModelConfig["shadows"] | "inherit"): ModelConfig {
+function palm(farShadows?: NonNullable<ModelConfig["variants"]>["levels"][number]["shadows"]): ModelConfig {
   return {
     url: "mainsail-palm.glb",
     targetHeight: 7.6,
     anchor: "origin",
-    variants: variantLevels({
+    variants: {
       levels: [
         { url: "mainsail-palm.glb", maxDistance: 60 },
         { url: "mainsail-palm-far.glb", ...(farShadows === undefined ? {} : { shadows: farShadows }) },
       ],
-    }),
+    },
   };
 }
 
 describe("per-level shadow policy", () => {
+  test("a level is a plain object literal: `shadows` is a field on the level, not a helper's argument", () => {
+    // This annotation is the type check: a game's `variants` is exactly this type, so a level written
+    // inline compiles without any wrapper. Before `shadows` moved onto `ModelVariantConfig` this
+    // literal was a type error.
+    const levels: ModelVariantLodConfig = {
+      levels: [
+        { url: "mainsail-palm.glb", maxDistance: 60 },
+        { url: "mainsail-palm-far.glb", shadows: "none" },
+      ],
+    };
+    const model: ModelConfig = { url: "mainsail-palm.glb", targetHeight: 7.6, anchor: "origin", variants: levels };
+
+    expect(model.variants!.levels[1]!.shadows).toBe("none");
+    expect(frameAt(model, 1).castShadow).toEqual([false]);
+    expect(frameAt(model, 1).triangles).toBe(FAR_TRIANGLES);
+
+    // Every mode the vocabulary names, written the same way.
+    for (const mode of ["inherit", "cast", "receive", "both", "none"] as const) {
+      const chosen: ModelVariantLodConfig = { levels: [{ url: "mainsail-palm.glb", maxDistance: 60 }, { url: "mainsail-palm-far.glb", shadows: mode }] };
+      expect(chosen.levels[1]!.shadows).toBe(mode);
+    }
+  });
+
   test("today: the far level casts, so a far palm costs its whole mesh again in the shadow pass", () => {
     const near = frameAt(palm(), 0);
     const far = frameAt(palm(), 1);
@@ -121,8 +144,7 @@ describe("per-level shadow policy", () => {
 
   test("the level a prop draws and the level its shadow answers come from one config", () => {
     const model = palm("none");
-    // A game's `variants` is still a plain `ModelVariantLodConfig`: the selector validates and switches it.
-    expect(variantLevels(model.variants as never)).toBe(model.variants as never);
+    // A game's `variants` is a plain `ModelVariantLodConfig`: the selector validates and switches it.
     const selector = createModelVariantSelector(model.variants!);
     expect(selector.level("palm", 30)).toBe(0);
     expect(selector.level("palm", 90)).toBe(1);
