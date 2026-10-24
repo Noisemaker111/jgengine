@@ -9,6 +9,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { ShellMultiplayer } from "../multiplayer";
 import type { PlayableGame } from "../registry";
 import { heavyModels } from "../render/modelLoad";
+import { triangleProbe } from "../render/triangleAttribution";
 import { buildLeanReport } from "./devtoolsReports";
 import { PerfPanel } from "./PerfPanel";
 import { LogsPanel } from "./LogsPanel";
@@ -30,8 +31,41 @@ const RENDER_PROBE_FRAME_PRIORITY = -10;
 export function DevtoolsRendererProbe() {
   useEffect(() => devtools.probes.register("heavyModels", () => heavyModels()), []);
   const gl = useThree((state) => state.gl);
+  const scene = useThree((state) => state.scene);
   const lastSampleAt = useRef(0);
   useEffect(() => devtools.probes.register("shaderPrograms", () => gl.info.programs?.length ?? 0), [gl]);
+  useEffect(() => {
+    // One walk serves the counters, the state line and the probe: a snapshot reads the same frame.
+    const probe = triangleProbe(scene);
+    let cachedAt = 0;
+    let cached = probe.table();
+    const read = () => {
+      const now = performance.now();
+      if (now - cachedAt > 500) {
+        cachedAt = now;
+        cached = probe.table();
+      }
+      return cached;
+    };
+    const disposeProbe = devtools.probes.register("render/triangles", () => read());
+    const disposeSystem = devtools.probes.registerSystem("render/triangles", {
+      counters: () => {
+        const { triangles, casters, lines } = read();
+        return { triangles, casters, lines: lines.length };
+      },
+      state: () => {
+        const { triangles, casters, lines } = read();
+        const top = lines[0];
+        return top === undefined
+          ? `${triangles} triangles`
+          : `${triangles} triangles · casters ${casters} · top ${top.label} ${top.triangles}`;
+      },
+    });
+    return () => {
+      disposeProbe();
+      disposeSystem();
+    };
+  }, [scene]);
   useEffect(() => {
     // three resets gl.info after every render() call, so with a multi-pass
     // composer the counters only ever hold the last fullscreen pass. Own the
