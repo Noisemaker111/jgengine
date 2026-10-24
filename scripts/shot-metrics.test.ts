@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { join, resolve } from "node:path";
 import {
   CONTRAST_MURK_THRESHOLD,
   DOMINANT_SHARE_SPARSE_THRESHOLD,
@@ -170,7 +171,8 @@ describe("metricsPathFor", () => {
   test("never collides with the shot path, with or without an image extension", () => {
     expect(metricsPathFor("/shots/hero.png")).toBe("/shots/hero.metrics.json");
     expect(metricsPathFor("/shots/hero")).toBe("/shots/hero.metrics.json");
-    expect(metricsPathFor("C:\\shots\\hero.PNG")).toBe("C:\\shots\\hero.metrics.json");
+    const root = resolve("shots");
+    expect(metricsPathFor(join(root, "hero.PNG"))).toBe(join(root, "hero.metrics.json"));
     expect(metricsPathFor("/shots/hero.webp")).toBe("/shots/hero.metrics.json");
     expect(metricsPathFor("/shots/hero.metrics.json")).toBe("/shots/hero.metrics.json.metrics.json");
   });

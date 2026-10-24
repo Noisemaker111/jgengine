@@ -84,6 +84,8 @@ jobs:
       - run: bun run check-skill-api
       - run: bun run check-orphan-ratchet
       - run: bun run check:fixture-location
+      # A test that asserts one platform's path separator passes here and fails on the other runner.
+      - run: bun run check:path-portability
       # One launch/retry block for the engine and for the scaffold every `jgengine create` ships.
       - run: bun run check:scaffold-launch
       # A hand-rolled capture script must stay headless; `--headed` is the only window.

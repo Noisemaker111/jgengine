@@ -52,6 +52,7 @@
     "gen:barrels": "bun scripts/gen-barrels.ts",
     "check-stateful-ratchet": "bun scripts/check-stateful-ratchet.ts",
     "check:fixture-location": "bun scripts/check-fixture-location.ts",
+    "check:path-portability": "bun scripts/check-path-portability.ts",
     "check:scaffold-launch": "bun scripts/check-scaffold-launch.ts",
     "check:fix-has-test": "bun scripts/check-fix-has-test.ts",
     "check:no-blocking-wait": "bun scripts/check-no-blocking-wait.ts",

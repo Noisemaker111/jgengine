@@ -1,0 +1,14 @@
+{
+  "entries": [
+    {
+      "file": "scripts/lane-audit.test.ts",
+      "match": "directoryMatches(",
+      "reason": "directoryMatches exists to compare a Windows path written either way by the PowerShell tool it reads; both separators are the subject, not an assumption"
+    },
+    {
+      "file": "packages/core/src/devtools/tunableSchema.test.ts",
+      "match": "escapePathSegment(",
+      "reason": "escapePathSegment escapes the separator character itself, so a backslash is its subject; the assertion is the same string on either OS"
+    }
+  ]
+}
