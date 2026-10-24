@@ -454,3 +454,5 @@ describe("node and world teardown", () => {
     expect(world.childrenOf("entity-7")).toEqual([]);
   });
 });
+
+// Measurement line one4.
