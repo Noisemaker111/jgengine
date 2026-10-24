@@ -256,6 +256,53 @@ export async function fetchTarball(url: string): Promise<TarballResponse> {
 
 export const liveRegistry: Registry = { metadata: fetchMetadata, tarball: fetchTarball };
 
+/**
+ * A freshly published version is served across npm's CDN minutes after the registry answers 202, so a
+ * check that runs in the publish job's next step sees "not published" for a package that is fine. Only
+ * absence is worth waiting out; a tarball that unpacks to the wrong version, a missing subpath or a
+ * broken main entry is a defect and fails on the first attempt.
+ */
+export function absenceOnly(failures: readonly string[]): boolean {
+  if (failures.length === 0) return false;
+  return failures.every(
+    (failure) =>
+      failure.includes("is not published") ||
+      failure.includes("has no metadata") ||
+      failure.includes("returned 404"),
+  );
+}
+
+export interface AwaitOptions {
+  /** Total budget in seconds; 0 checks once and returns. */
+  readonly waitSeconds: number;
+  /** One full check; returns the failure lines it found. */
+  readonly check: () => Promise<string[]>;
+  readonly now?: () => number;
+  readonly sleep?: (ms: number) => Promise<void>;
+}
+
+export interface AwaitResult {
+  readonly failures: string[];
+  readonly attempts: number;
+  readonly waitedMs: number;
+}
+
+/** Re-check while the only failures are absences and the budget lasts. */
+export async function awaitPublished(options: AwaitOptions): Promise<AwaitResult> {
+  const now = options.now ?? Date.now;
+  const sleep = options.sleep ?? ((ms: number) => Bun.sleep(ms));
+  const started = now();
+  const deadline = started + Math.max(0, options.waitSeconds) * 1000;
+  let failures = await options.check();
+  let attempts = 1;
+  while (absenceOnly(failures) && now() < deadline) {
+    await sleep(Math.min(10_000, Math.max(1_000, deadline - now())));
+    failures = await options.check();
+    attempts += 1;
+  }
+  return { failures, attempts, waitedMs: now() - started };
+}
+
 /** Unpack a tarball with the system `tar`, using paths relative to its own directory so Windows drive letters never reach it. */
 export function unpackWithTar(name: string, version: string, bytes: Uint8Array): UnpackedPackage {
   // Inside the checkout, so `import()` resolves peer dependencies through the repository's
@@ -363,14 +410,24 @@ async function main(): Promise<void> {
     process.exit(2);
   }
 
-  const verdicts = await checkReleaseArtifacts({
-    version,
-    packages,
-    manifest: readManifest(),
-    registry: liveRegistry,
-    unpack,
-    importEntry: importer,
+  const manifest = readManifest();
+  const runChecks = (): Promise<PackageVerdict[]> =>
+    checkReleaseArtifacts({ version, packages, manifest, registry: liveRegistry, unpack, importEntry: importer });
+
+  // The publish workflow runs this in the step after `npm publish`, and npm serves a new version from
+  // its CDN minutes after answering 202, so one immediate check reported a whole release as unpublished.
+  // wait-ok: registry propagation, bounded by --wait and retried only while packages are absent
+  let verdicts: PackageVerdict[] = [];
+  const waited = await awaitPublished({
+    waitSeconds: Number(argValue(args, "--wait") ?? "0") || 0,
+    check: async () => {
+      verdicts = await runChecks();
+      return verdicts.flatMap((verdict) => verdict.failures);
+    },
   });
+  if (waited.attempts > 1) {
+    console.log(`note: checked ${waited.attempts} time(s) over ${Math.round(waited.waitedMs / 1000)}s while the registry caught up on ${version}`);
+  }
 
   const failures = verdicts.flatMap((verdict) => verdict.failures);
   if (failures.length > 0) {
@@ -378,8 +435,7 @@ async function main(): Promise<void> {
     for (const failure of failures) console.error(`  - ${failure}`);
     process.exit(1);
   }
-  for (const note of verdicts.flatMap((verdict) => verdict.notes)) console.log(`note: ${note}`);
-  const subpaths = verdicts.reduce((total, verdict) => total + verdict.checkedSubpaths, 0);
+  for (const note of verdicts.flatMap((verdict) => verdict.notes)) console.log(`note: ${note}`);  const subpaths = verdicts.reduce((total, verdict) => total + verdict.checkedSubpaths, 0);
   console.log(`check-release-artifacts ok: ${verdicts.length} package(s) install from the registry and resolve ${subpaths} declared subpath(s) (${verdicts.map((v) => `${v.name}@${v.version}`).join(", ")})`);
 }
 

@@ -1,6 +1,8 @@
 import { describe, expect, test } from "bun:test";
 
 import {
+  absenceOnly,
+  awaitPublished,
   checkPackage,
   publishDecision,
   publishedState,
@@ -176,3 +178,65 @@ test("resolution errors name the package a missing dependency belongs to", () =>
   expect(unresolvableDependency("Unexpected while resolving package '@scope/pkg/sub' from 'y'")).toBe("@scope/pkg");
   expect(unresolvableDependency("SyntaxError: Unexpected token")).toBeNull();
 });
+
+describe("a fresh publish reaches the registry minutes later", () => {
+  test("only an absent package is worth waiting for", () => {
+    expect(absenceOnly(["@jgengine/core@0.37.0: 0.37.0 is not published (npm has 0.36.0)"])).toBe(true);
+    expect(absenceOnly(["@jgengine/shell@0.37.0: tarball https://x returned 404 - metadata without a tarball counts as unpublished"])).toBe(true);
+    expect(absenceOnly(["@jgengine/ws@0.37.0: the registry has no metadata for @jgengine/ws"])).toBe(true);
+    expect(absenceOnly(["@jgengine/core@0.37.0: ./agents/system resolves to ./dist/agents/system.js, which the tarball does not contain"])).toBe(false);
+    expect(absenceOnly(["@jgengine/core@0.37.0: the tarball's package.json says 0.36.0, so installing 0.37.0 would report the wrong version"])).toBe(false);
+    expect(absenceOnly([])).toBe(false);
+  });
+
+  test("an absent package is re-checked until it appears, then the cleaned-up failures are reported", async () => {
+    let clock = 0;
+    const sleeps: number[] = [];
+    let checks = 0;
+    const waited = await awaitPublished({
+      waitSeconds: 60,
+      now: () => clock,
+      sleep: async (ms) => {
+        sleeps.push(ms);
+        clock += ms;
+      },
+      check: async () => {
+        checks += 1;
+        return checks < 3 ? ["@jgengine/core@0.37.0: 0.37.0 is not published"] : [];
+      },
+    });
+    expect(waited).toEqual({ failures: [], attempts: 3, waitedMs: 20_000 });
+    expect(sleeps).toEqual([10_000, 10_000]);
+  });
+
+  test("a real packaging defect fails on the first check instead of waiting", async () => {
+    let checks = 0;
+    const waited = await awaitPublished({
+      waitSeconds: 300,
+      now: () => 0,
+      sleep: async () => {
+        throw new Error("should not wait");
+      },
+      check: async () => {
+        checks += 1;
+        return ["@jgengine/core@0.37.0: main entry ./dist/index.js failed to import: SyntaxError"];
+      },
+    });
+    expect(checks).toBe(1);
+    expect(waited.attempts).toBe(1);
+    expect(waited.failures).toHaveLength(1);
+  });
+
+  test("a zero budget checks once and never sleeps", async () => {
+    const waited = await awaitPublished({
+      waitSeconds: 0,
+      sleep: async () => {
+        throw new Error("should not wait");
+      },
+      check: async () => ["@jgengine/core@0.37.0: 0.37.0 is not published"],
+    });
+    expect(waited.attempts).toBe(1);
+    expect(waited.failures).toHaveLength(1);
+  });
+});
+
