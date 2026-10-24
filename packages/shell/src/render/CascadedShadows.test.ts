@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import * as THREE from "three";
 import { CSM } from "three/examples/jsm/csm/CSM.js";
 
-import { bindCsmMaterials, cascadeShadowCadence, patchSceneMaterials, releaseCascadedShadows, resolveShadowDistance, scheduleCascadeRefresh, type CsmMaterialSetup } from "./CascadedShadows";
+import { bindCsmMaterials, cascadeShadowCadence, createCascadeRefreshState, patchSceneMaterials, refreshCascadesOnTexelStep, releaseCascadedShadows, resolveShadowDistance, type CsmMaterialSetup } from "./CascadedShadows";
 import { resolveGraphicsProfile } from "@jgengine/core/settings/graphicsProfile";
 
 function fakeCsm(calls: THREE.Material[]): CsmMaterialSetup {
@@ -75,20 +75,34 @@ describe("cascade cadence and shadow reach", () => {
     expect(resolveShadowDistance(undefined)).toBe(200);
   });
 
-  test("three renders each cascade exactly as many times as its cadence allows", () => {
+  test("the cascade holding the player refreshes every frame, snapped or not", () => {
     const lights = Array.from({ length: 3 }, () => new THREE.DirectionalLight());
-    const refreshes = [0, 0, 0];
-    for (let frame = 0; frame < 8; frame++) {
-      scheduleCascadeRefresh(lights, frame);
-      lights.forEach((light, index) => {
-        const renders = light.shadow.autoUpdate || light.shadow.needsUpdate;
-        if (renders) {
-          refreshes[index]! += 1;
-          light.shadow.needsUpdate = false;
-        }
-      });
+    const state = createCascadeRefreshState(1);
+    const direction = new THREE.Vector3(-0.5, -1, -0.4).normalize();
+    for (let frame = 0; frame < 30; frame++) {
+      refreshCascadesOnTexelStep(lights, direction, state);
+      expect(lights[0]!.shadow.autoUpdate).toBe(true);
+      if (frame > 0) {
+        expect(lights[1]!.shadow.autoUpdate).toBe(false);
+        expect(lights[2]!.shadow.autoUpdate).toBe(false);
+      }
+      for (const light of lights) light.shadow.needsUpdate = false;
     }
-    expect(refreshes).toEqual([8, 4, 2]);
+    // 30 static frames: the player cascade each time, the far pair once at boot.
+    expect(state.refreshes).toBe(30 + 2);
+  });
+
+  test("every cascade renders its depth pass in the same frame as its light moves", () => {
+    const lights = Array.from({ length: 3 }, () => new THREE.DirectionalLight());
+    const state = createCascadeRefreshState(0);
+    const direction = new THREE.Vector3(-0.5, -1, -0.4).normalize();
+    for (let frame = 0; frame < 8; frame++) {
+      const moved = refreshCascadesOnTexelStep(lights, direction, state);
+      const passes = lights.filter((light) => light.shadow.autoUpdate || light.shadow.needsUpdate).length;
+      expect(passes).toBe(moved);
+      for (const light of lights) light.shadow.needsUpdate = false;
+    }
+    expect(state.refreshes).toBe(3);
   });
 });
 

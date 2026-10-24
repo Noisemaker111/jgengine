@@ -2829,6 +2829,8 @@
 
 ## @jgengine/shell/render/CascadedShadows
 
+- `CASCADE_DEPTH_STEP_TEXELS` (const): const CASCADE_DEPTH_STEP_TEXELS: 8 — Depth-axis steps worth of a texel the snapped light may drift before it re-anchors.
+- `CascadeRefreshState` (interface): interface CascadeRefreshState — Per-frame cascade refresh bookkeeping: the centre each map was last rendered with.
 - `CsmMaterialSetup` (interface): interface CsmMaterialSetup — Structural slice of CSM so the patcher is testable without a renderer.
 - `patchSceneMaterials` (function): function patchSceneMaterials(scene: THREE.Scene, csm: CsmMaterialSetup, patched: WeakSet<THREE.Material>): void — Run CSM's `setupMaterial` over every unpatched standard material in the scene, chaining rather than clobbering a material's own `onBeforeCompile`.
 
