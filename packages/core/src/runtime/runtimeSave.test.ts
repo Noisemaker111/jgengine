@@ -202,4 +202,210 @@ describe("createRuntimeSave", () => {
     const reopened = createRuntimeSave({ target: fakeWorld(), backend, mode: "manual" });
     expect(await reopened.load()).toBe(false);
   });
+
+  test("clear cancels a pending autosave, so the slot stays empty until the world changes", async () => {
+    const backend = memorySaveBackend();
+    const timers = manualTimers();
+    const host = fakeWorld({ store: { coins: 0 } });
+    const save = createRuntimeSave({ target: host, backend, mode: "autosave", timers });
+    await save.save();
+    host.hydrate({ store: { coins: 40 } });
+    host.bump();
+    expect(timers.pending()).toBe(1);
+
+    await save.clear();
+    expect(timers.pending()).toBe(0);
+    expect(await save.hasSave()).toBe(false);
+  });
 });
+
+describe("createRuntimeSave - peek", () => {
+  test("reading every slot leaves the live session and the stored bytes untouched", async () => {
+    const memory = memorySaveBackend();
+    const writes: string[] = [];
+    const backend: SaveBackend = {
+      read: (key) => memory.read(key),
+      write: (key, value) => {
+        writes.push(key);
+        return memory.write(key, value);
+      },
+      remove: (key) => memory.remove(key),
+    };
+    let clock = 1000;
+    const host = fakeWorld({ store: { level: 1 } });
+    const save = createRuntimeSave({ target: host, backend, mode: "manual", now: () => (clock += 1) });
+
+    await save.save();
+    await save.switchSlot("second");
+    host.hydrate({ store: { level: 2 } });
+    await save.save();
+    await save.switchSlot("third");
+    host.hydrate({ store: { level: 3 } });
+    await save.save();
+
+    const before = new Map<string, string | null>();
+    for (const slot of ["default", "second", "third"]) before.set(slot, await backend.read(`runtime:${slot}`));
+    const worldBefore = host.world;
+    const statusBefore = save.status();
+    writes.length = 0;
+
+    expect(await save.peek("default")).toEqual({ world: { store: { level: 1 } }, savedAt: 1001 });
+    expect(await save.peek("second")).toEqual({ world: { store: { level: 2 } }, savedAt: 1002 });
+    expect(await save.peek("third")).toEqual({ world: { store: { level: 3 } }, savedAt: 1003 });
+
+    expect(writes).toEqual([]);
+    expect(host.world).toBe(worldBefore);
+    expect(host.world).toEqual({ store: { level: 3 } });
+    expect(save.slot()).toBe("third");
+    expect(save.status()).toBe(statusBefore);
+    for (const slot of ["default", "second", "third"]) {
+      expect(await backend.read(`runtime:${slot}`)).toBe(before.get(slot)!);
+    }
+  });
+
+  test("peeking every slot then saving writes the same bytes as saving alone", async () => {
+    async function run(peekFirst: boolean): Promise<Record<string, string | null>> {
+      const backend = memorySaveBackend();
+      const host = fakeWorld({ store: { level: 4 } });
+      const save = createRuntimeSave({ target: host, backend, mode: "autosave", now: () => 500, timers: manualTimers() });
+      await save.save();
+      await save.switchSlot("second");
+      host.hydrate({ store: { level: 5 } });
+      await save.save();
+      await save.switchSlot("default");
+      if (peekFirst) {
+        await save.peek("default");
+        await save.peek("second");
+        await save.peek("missing");
+      }
+      await save.save();
+      const dump: Record<string, string | null> = {};
+      for (const key of ["runtime:default", "runtime:second", "runtime:__slots__"]) dump[key] = await backend.read(key);
+      return dump;
+    }
+
+    expect(await run(true)).toEqual(await run(false));
+  });
+
+  test("a payload written by an older version peeks migrated, and load applies that same document", async () => {
+    const backend = memorySaveBackend();
+    await backend.write("runtime:old", JSON.stringify({ version: 1, savedAt: 42, value: { store: { commander: "Mara Vell" }, legacy: true } }));
+    const host = fakeWorld({ store: { level: 9 } });
+    const save = createRuntimeSave({
+      target: host,
+      backend,
+      mode: "manual",
+      version: 4,
+      migrate: (data, from) => {
+        expect(from).toBe(1);
+        const { legacy, ...rest } = data as { legacy?: boolean; store: unknown };
+        expect(legacy).toBe(true);
+        return { ...rest, migrated: 4 };
+      },
+    });
+
+    const peeked = await save.peek("old");
+    expect(peeked).toEqual({ world: { store: { commander: "Mara Vell" }, migrated: 4 }, savedAt: 42 });
+    expect(host.world).toEqual({ store: { level: 9 } });
+    expect(save.slot()).toBe("default");
+
+    expect(await save.switchSlot("old")).toBe(true);
+    expect(host.world).toEqual(peeked!.world);
+  });
+
+  test("peek reads the stored slot, never the unsaved live world", async () => {
+    const backend = memorySaveBackend();
+    const timers = manualTimers();
+    const host = fakeWorld({ store: { coins: 0 } });
+    const save = createRuntimeSave({ target: host, backend, mode: "autosave", timers });
+    await save.save();
+    host.hydrate({ store: { coins: 70 } });
+    host.bump();
+    expect(timers.pending()).toBe(1);
+
+    expect(await save.peek("default")).toEqual({ world: { store: { coins: 0 } }, savedAt: expect.any(Number) });
+    expect(timers.pending()).toBe(1);
+    expect(host.world).toEqual({ store: { coins: 70 } });
+  });
+
+  test("peek of an empty slot is null and does not create it", async () => {
+    const save = createRuntimeSave({ target: fakeWorld({ store: { a: 1 } }), backend: memorySaveBackend(), mode: "manual" });
+    expect(await save.peek("nothing-here")).toBeNull();
+    expect(await save.slots()).toEqual([]);
+  });
+});
+
+describe("createRuntimeSave - deleteSlot", () => {
+  test("deletes an inactive slot, keeps the others readable, and refuses the active one", async () => {
+    const backend = memorySaveBackend();
+    const host = fakeWorld({ store: { level: 1 } });
+    const save = createRuntimeSave({ target: host, backend, mode: "manual" });
+    await save.save();
+    await save.switchSlot("keep-2");
+    host.hydrate({ store: { level: 2 } });
+    await save.save();
+
+    expect(await save.deleteSlot("default")).toBe(true);
+    expect(await save.slots()).toEqual(["keep-2"]);
+    expect(await save.peek("default")).toBeNull();
+    expect((await save.peek("keep-2"))?.world).toEqual({ store: { level: 2 } });
+
+    expect(await save.deleteSlot("default")).toBe(false);
+    expect(await save.deleteSlot("never-written")).toBe(false);
+
+    expect(await save.deleteSlot("keep-2")).toBe(false);
+    expect(await save.hasSave()).toBe(true);
+    expect(host.world).toEqual({ store: { level: 2 } });
+  });
+
+  test("a deleted slot does not come back on the next write, and a new save over the same backend sees the same list", async () => {
+    const backend = memorySaveBackend();
+    const timers = manualTimers();
+    const host = fakeWorld({ store: { level: 1 } });
+    const save = createRuntimeSave({ target: host, backend, mode: "autosave", timers });
+    await save.save();
+    await save.switchSlot("spare");
+    host.hydrate({ store: { level: 2 } });
+    await save.save();
+    await save.switchSlot("default");
+
+    expect(await save.deleteSlot("spare")).toBe(true);
+
+    host.hydrate({ store: { level: 8 } });
+    host.bump();
+    timers.runAll();
+    await save.save();
+
+    expect(await save.slots()).toEqual(["default"]);
+    expect(await save.peek("spare")).toBeNull();
+
+    const reopened = createRuntimeSave({ target: fakeWorld(), backend, mode: "manual" });
+    expect(await reopened.slots()).toEqual(["default"]);
+    expect(await reopened.peek("spare")).toBeNull();
+    expect((await reopened.peek("default"))?.world).toEqual({ store: { level: 8 } });
+    expect(await reopened.switchSlot("default")).toBe(true);
+    expect(reopened.status()).toBe("idle");
+  });
+
+  test("deleting an inactive slot leaves a pending autosave of the active slot alone", async () => {
+    const backend = memorySaveBackend();
+    const timers = manualTimers();
+    const host = fakeWorld({ store: { level: 1 } });
+    const save = createRuntimeSave({ target: host, backend, mode: "autosave", timers });
+    await save.save();
+    await save.switchSlot("other");
+    await save.save();
+    await save.switchSlot("default");
+    host.hydrate({ store: { level: 2 } });
+    host.bump();
+    expect(timers.pending()).toBe(1);
+
+    expect(await save.deleteSlot("other")).toBe(true);
+    timers.runAll();
+    await save.save();
+
+    expect((await save.peek("default"))?.world).toEqual({ store: { level: 2 } });
+    expect(await save.peek("other")).toBeNull();
+  });
+});
+

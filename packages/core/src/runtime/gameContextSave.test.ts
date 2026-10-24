@@ -217,6 +217,44 @@ describe("ctx.game.save", () => {
     expect(reboot.scene.entity.get("p1")?.position).toEqual([1, 0, 2]);
   });
 
+  test("a menu reads and deletes another campaign slot through ctx.game.save", async () => {
+    const backend = memorySaveBackend();
+    const campaign = (slot: string) =>
+      createGameContext({
+        definition: offlineGame(false),
+        content: {},
+        player: { userId: "p1", isNew: true },
+        save: { backend, mode: "manual", slot, now: () => 1000 },
+      });
+
+    const one = campaign("campaign-1");
+    one.game.economy.grant("p1", "gold", 40);
+    await one.game.save!.save();
+    const two = campaign("campaign-2");
+    two.game.economy.grant("p1", "gold", 90);
+    await two.game.save!.save();
+
+    const menu = campaign("campaign-1");
+    menu.game.economy.grant("p1", "gold", 5);
+    const live = menu.state();
+    const second = await menu.game.save!.peek("campaign-2");
+    expect(second?.world).toEqual(two.state());
+    expect(second?.savedAt).toBe(1000);
+    expect((await menu.game.save!.peek("campaign-1"))?.world).toEqual(one.state());
+    expect(menu.state()).toEqual(live);
+    expect(menu.game.save!.slot()).toBe("campaign-1");
+
+    expect(await menu.game.save!.deleteSlot("campaign-2")).toBe(true);
+    expect(await menu.game.save!.slots()).toEqual(["campaign-1"]);
+    expect(await menu.game.save!.peek("campaign-2")).toBeNull();
+    expect(await menu.game.save!.deleteSlot("campaign-1")).toBe(false);
+
+    const probe = campaign("campaign-2");
+    expect(await probe.game.save!.load()).toBe(false);
+    expect(await probe.game.save!.switchSlot("campaign-1")).toBe(true);
+    expect(probe.game.economy.balance("p1", "gold")).toBe(40);
+  });
+
   test("a store slot holding a live object stays out of state and survives restore in place", () => {
     const runStore = defineStore<{ turn(): number; subscribe(listener: () => void): () => void }>("save.run", () => ({ turn: () => 1, subscribe: () => () => {} }));
     const ctx = createGameContext({ definition: offlineGame(false), content: {}, player: { userId: "p1", isNew: true } });

@@ -52,6 +52,17 @@ export interface RuntimeSaveConfig {
 export type RuntimeSaveOptions = Omit<RuntimeSaveConfig, "target">;
 
 /**
+ * One stored slot as a save-select menu reads it: the world document a {@link RuntimeSave.load | load}
+ * of that slot would restore, and the wall-clock time (ms) it was written. The document is a plain
+ * {@link WorldSnapshot}, so a game reads its own systems out of it (commander, mission, playtime,
+ * thumbnail) with the same keys `ctx.state()` writes.
+ */
+export interface RuntimeSaveSlot {
+  world: WorldSnapshot;
+  savedAt: number;
+}
+
+/**
  * Whole-world save/load bound to a live world and a pluggable backend. `save()`
  * captures `target.state()` and writes it; `load()` reads it back and
  * calls `target.restore()`. Older targets use `snapshot()`/`hydrate()`. In `autosave` mode it also writes on a
@@ -69,12 +80,30 @@ export interface RuntimeSave {
   load(): Promise<boolean>;
   /** Whether the active slot holds a saved world — gate a title-screen "Continue" on it. Failed payload reads resolve false and report error status. */
   hasSave(): Promise<boolean>;
-  /** Delete the active slot's save. */
+  /** Delete the active slot's save. A pending autosave is cancelled, so the slot stays empty until the world changes again. */
   clear(): Promise<void>;
   /** Switch slot and load it, hydrating the world when that slot has a save. Failed payload reads resolve false without restoring cached state. */
   switchSlot(slot: string): Promise<boolean>;
   /** The slots this game has written — back a load/save menu. */
   slots(): Promise<string[]>;
+  /**
+   * Read any slot's stored world without applying it: no hydrate/restore, no slot switch, no write, no
+   * status change. This is a save-select menu's data source — the active slot's live session is left
+   * exactly as it was. Resolves `null` for an empty slot and for an unreadable one (the failure is
+   * reported through {@link RuntimeSaveConfig.onError}); an older payload resolves migrated through
+   * {@link RuntimeSaveConfig.migrate}, the same document `load()` would apply.
+   */
+  peek(slot: string): Promise<RuntimeSaveSlot | null>;
+  /**
+   * Delete one slot that is not active: its stored bytes and its entry in {@link RuntimeSave.slots} go,
+   * and every other slot stays readable. Resolves `true` when bytes were removed, `false` for a slot
+   * holding nothing and for the active slot, which it refuses — `clear()` owns that one.
+   *
+   * The active slot is refused because its state is the live world: deleting it would be silently
+   * undone by the next autosave (the game is still playing that save), so a delete that sticks has to
+   * come after leaving the slot.
+   */
+  deleteSlot(slot: string): Promise<boolean>;
   subscribe(listener: () => void): () => void;
   /** Stop autosave and release the world subscription. */
   dispose(): void;
@@ -186,13 +215,24 @@ export function createRuntimeSave(config: RuntimeSaveConfig): RuntimeSave {
       const snapshot = await store.load();
       return store.status() !== "error" && hasContent(snapshot);
     },
-    clear: () => store.clear(),
+    async clear() {
+      clearTimer();
+      await store.clear();
+    },
     async switchSlot(slot) {
       clearTimer();
       const snapshot = await store.switchSlot(slot);
       return store.status() !== "error" && applyLoaded(snapshot);
     },
     slots: () => store.slots(),
+    async peek(slot) {
+      const stored = await store.peek(slot);
+      return stored === null ? null : { world: stored.value, savedAt: stored.savedAt };
+    },
+    async deleteSlot(slot) {
+      if (slot === store.slot()) return false;
+      return store.deleteSlot(slot);
+    },
     subscribe: (listener) => store.subscribe(listener),
     dispose() {
       disposed = true;

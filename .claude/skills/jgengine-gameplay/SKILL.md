@@ -213,9 +213,12 @@ One document saves the whole world. `createGameSave` (`game/gameSave`) holds one
 system once by `name` with its `snapshot()`/`restore()`; `capture()` builds the document,
 `save()`/`touch()` persist it, `load()`/`switchSlot()` restore every section, and
 `digest()`/`digests()` hash the state for a save/reload determinism test. Pass `rng: { seed, stream }`
-so the world's shared seed and cursor survive the save. A snapshot field that means "never" must
-serialize as `null` and be mapped back on restore - `Infinity` becomes `null` through JSON, which
-silently changes a restored run.
+so the world's shared seed and cursor survive the save. A save-select menu reads the slots it is not
+on with `peek(slot)` and removes one with `deleteSlot(slot)` - never `switchSlot` to look - and
+`ctx.game.save` (the whole-world `RuntimeSave`) answers both the same way; it refuses to delete the
+active slot, because the next autosave would write it straight back, so `clear()` owns that one. A
+snapshot field that means "never" must serialize as `null` and be mapped back on restore - `Infinity`
+becomes `null` through JSON, which silently changes a restored run.
 
 For timed away missions, compose the pure transitions in `work/expedition` with
 your existing `defineStore` and clock. The [expedition recipe](recipes/expeditions.md)
