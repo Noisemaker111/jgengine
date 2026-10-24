@@ -10,6 +10,7 @@ import { beginFallbackSeam, reportFallbackSeam } from "@jgengine/core/devtools/f
 import { createModelVariantSelector, type ModelVariantSelector } from "@jgengine/core/world/modelLod";
 
 import { CAMERA_POST_FRAME_PRIORITY } from "../camera/cameraRigs";
+import { submitInstanceCount } from "../render/submittedDraws";
 import { variantLevelModel } from "../render/singleVariantLod";
 import { buildScatterProxy } from "./scatterProxies";
 import { buildScatterModelSources, disposeScatterModelSources, type ScatterModelSource } from "./scatterModels";
@@ -66,7 +67,7 @@ function ScatterBatchMesh({ batch, geometry }: { batch: ScatterBatch; geometry: 
     const mesh = meshRef.current;
     if (mesh === null) return;
     for (let i = 0; i < batch.matrices.length; i += 1) mesh.setMatrixAt(i, batch.matrices[i]!);
-    mesh.count = batch.matrices.length;
+    submitInstanceCount(mesh, batch.matrices.length);
     mesh.instanceMatrix.needsUpdate = true;
     mesh.computeBoundingSphere();
   }, [batch]);
@@ -88,7 +89,7 @@ function ScatterModelSourceInstances({ source, matrices }: { source: ScatterMode
       composed.multiplyMatrices(matrices[i]!, source.localMatrix);
       mesh.setMatrixAt(i, composed);
     }
-    mesh.count = matrices.length;
+    submitInstanceCount(mesh, matrices.length);
     mesh.instanceMatrix.needsUpdate = true;
     mesh.computeBoundingSphere();
   }, [matrices, source]);
@@ -124,8 +125,7 @@ function ScatterVariantSourceInstances({ source, batch, level, selector }: {
       source.localMatrix,
       slots,
     );
-    mesh.count = count;
-    mesh.visible = count > 0;
+    submitInstanceCount(mesh, count);
     mesh.instanceMatrix.needsUpdate = true;
     if (count > 0) mesh.computeBoundingSphere();
   }, [level, selector, batch, source, slots]);

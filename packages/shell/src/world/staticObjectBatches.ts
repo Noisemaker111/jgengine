@@ -4,6 +4,7 @@ import type { SceneObject } from "@jgengine/core/scene/objectStore";
 import type { GameContextObjectEntry } from "@jgengine/core/runtime/gameContext";
 import type { ScatterModelSource } from "../scatter/scatterModels";
 import { POINTER_OBJECT_INSTANCES_KEY } from "../pointer/pointerService";
+import { submitInstanceCount, submitsDraw } from "../render/submittedDraws";
 
 /** @internal */
 export interface StaticObjectCandidate {
@@ -140,16 +141,18 @@ export interface StaticBatchCounts {
 }
 
 /**
- * Sum the tagged draws in the live scene. `drawn` counts each instance once even though one instance
- * appears in every material source's draw, so it is the number of instances the renderer was asked to
- * draw this frame — a world-wide batch whose instances leave the view drops it without unmounting.
+ * Sum the tagged draws the batches actually submit. `drawn` counts each instance once even though one
+ * instance appears in every material source's draw, so it is the number of instances the renderer was
+ * asked to draw this frame — a world-wide batch whose instances leave the view drops it without
+ * unmounting. A variant level with no instance in a cell, or a cell the camera culled, submits nothing
+ * and is not a draw.
  * @internal
  */
 export function countStaticBatchDraws(scene: THREE.Object3D): StaticBatchCounts {
   let draws = 0;
   const drawn = new Set<string>();
   scene.traverse((node) => {
-    if (node.userData[STATIC_BATCH_MESH_KEY] !== true) return;
+    if (node.userData[STATIC_BATCH_MESH_KEY] !== true || !submitsDraw(node)) return;
     draws += 1;
     const ids = node.userData[POINTER_OBJECT_INSTANCES_KEY];
     if (Array.isArray(ids)) for (const id of ids as string[]) drawn.add(id);
@@ -228,8 +231,7 @@ export function syncStaticObjectSource(
   ids.length = count;
   poses.length = count;
   changed ||= mesh.count !== count;
-  mesh.count = count;
-  mesh.visible = count > 0;
+  submitInstanceCount(mesh, count);
   if (changed) {
     mesh.instanceMatrix.needsUpdate = true;
     mesh.computeBoundingSphere();
