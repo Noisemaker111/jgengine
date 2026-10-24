@@ -20,15 +20,17 @@ export const SAVE_SLOT_CHARACTER_KEY = "character";
 const cardSurface: CSSProperties = {
   position: "relative",
   width: "100%",
+  minWidth: 0,
   boxSizing: "border-box",
+  overflow: "hidden",
   display: "flex",
   flexDirection: "column",
   gap: 8,
-  minWidth: 0,
   padding: 10,
   borderRadius: "var(--jg-menu-card-radius, 12px)",
-  background: "linear-gradient(180deg, rgba(16,22,30,0.78), rgba(8,11,16,0.86))",
-  boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.09), 0 14px 34px -18px rgba(0,0,0,0.9)",
+  background: "linear-gradient(180deg, rgba(16,22,30,0.9), rgba(8,11,16,0.94))",
+  border: "1px solid rgba(255,255,255,0.14)",
+  boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.05), 0 14px 34px -18px rgba(0,0,0,0.9)",
   backdropFilter: "blur(6px)",
   color: "var(--jg-text, #f2f6fb)",
   fontFamily: hudFont.body,
@@ -113,7 +115,7 @@ export function SaveSlotCard({
           border: "none",
           boxShadow:
             "inset 0 0 0 1px rgba(255,255,255,0.07), inset 0 0 40px -18px rgba(125,211,252,0.4), 0 10px 26px -20px rgba(0,0,0,0.9)",
-          background: "linear-gradient(180deg, rgba(12,17,24,0.6), rgba(6,9,13,0.72))",
+          background: "linear-gradient(180deg, rgba(12,17,24,0.82), rgba(6,9,13,0.9))",
           ...style,
         }}
       >
@@ -212,6 +214,10 @@ export function SaveSlotCard({
             fontWeight: 800,
             letterSpacing: "0.01em",
             textShadow: "0 2px 12px rgba(0,0,0,0.8)",
+            maxWidth: "calc(100% - 16px)",
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
           }}
         >
           {slot.name ?? slot.id}
@@ -461,6 +467,9 @@ export function SaveSlotsPane({
           display: "grid",
           gridTemplateColumns:
             columns === "auto" ? "repeat(auto-fill, minmax(230px, 1fr))" : `repeat(${columns}, minmax(0, 1fr))`,
+          // Every card gets the same box: equal tracks, equal rows, and content that cannot widen it.
+          gridAutoRows: "1fr",
+          alignItems: "stretch",
           gap: hudSpace("md"),
           minHeight: 0,
           overflowY: "auto",
@@ -1027,6 +1036,10 @@ export function CreditsPane({ sections, heading = "Credits", notice, className, 
     </div>
   );
 }
+
+
+
+
 
 
 
