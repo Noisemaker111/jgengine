@@ -112,7 +112,8 @@
     "pr-video": "bun scripts/pr-video.ts",
     "host": "bun scripts/host-game.ts",
     "smoke": "bun scripts/guard.ts 600 'bun scripts/ensure-ready.ts && bun scripts/smoke-games.ts'",
-    "check:release-artifacts": "bun scripts/check-release-artifacts.ts"
+    "check:release-artifacts": "bun scripts/check-release-artifacts.ts",
+    "check:consumer-types": "bun scripts/check-consumer-types.ts"
   },
   "devDependencies": {
     "@ffmpeg-installer/ffmpeg": "^1.1.0",

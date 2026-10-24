@@ -81,6 +81,13 @@ jobs:
       - run: bun run games:clone
         env:
           GAMES_CLONE_TOKEN: ${{ secrets.GAMES_CLONE_TOKEN }}
+      # `check-release-artifacts` proves packages install and subpaths resolve; it never compiles a
+      # consumer, so 0.38.2 narrowed two public types in a patch and passed every artifact check
+      # before Harbor Heat and Beacon Bastion failed `check-types`. This packs the candidate,
+      # installs the tarballs into the pinned games checkout and compiles all of it. It exits 2 when
+      # it cannot check at all, which stops the release the same way a type error does.
+      - name: Compile a real adopter against the packed tarballs
+        run: bun run check:consumer-types
       - name: Publish packages that are not installable from the registry
         run: |
           # `npm view` reported success for a version whose tarball returned 404 (#2280), and a
