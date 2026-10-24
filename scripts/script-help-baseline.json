@@ -6,6 +6,8 @@
     "agent-worktree.ts",
     "authority-fixture.mjs",
     "bench-cpu.ts",
+    "bg-await.ts",
+    "bg-run.ts",
     "build-registry.ts",
     "check-art-direction.ts",
     "check-capture-hygiene.ts",
