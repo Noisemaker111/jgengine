@@ -755,3 +755,5 @@ describe("createKinematicVehicle — snapshot/restore", () => {
     expect(replica.snapshot()).toEqual(reference.snapshot());
   });
 });
+
+// Measurement line one6.
