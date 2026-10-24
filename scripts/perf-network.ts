@@ -389,6 +389,9 @@ interface GameMeasurement {
   requests: number;
   wsFrames: number;
   cacheHits: number;
+  /** Requests the dev server answered for its own modules: the number a production build removes. */
+  devRequests: number;
+  devBytes: number;
   perMinuteRequests: number;
   perMinuteBytes: number;
   largest: Array<{ url: string; bytes: number; type: string; cacheControl: string | null }>;

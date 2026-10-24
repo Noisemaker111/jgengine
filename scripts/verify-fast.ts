@@ -329,6 +329,11 @@ export function buildPlan(input: {
     const workspace = workspaceOf(file, input.workspaces);
     if (workspace?.checkTypes === true && !typechecks.includes(workspace.dir)) typechecks.push(workspace.dir);
   }
+  // `scripts/` is not a workspace but carries its own tsconfig and `check-types`; a script type
+  // error used to reach CI because no step here ran it.
+  if (!typechecks.includes("scripts") && changed.some((path) => path.startsWith("scripts/") && SOURCE_FILE.test(path) && !DECLARATION.test(path))) {
+    typechecks.push("scripts");
+  }
 
   const unattributed = runtime.filter(
     (path) => ownTests(path, input.testFiles).length === 0 && (importedBy.get(path) ?? []).length === 0,

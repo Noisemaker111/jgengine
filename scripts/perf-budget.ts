@@ -176,7 +176,7 @@ function unavailable(game: string, metric: string, reason: string): BudgetViolat
  * the counts it does carry and prints `drawsFrame n/a` rather than a zero.
  */
 export function checkBudget(
-  record: PerfReport,
+  record: BudgetRecord,
   budget: PerfBudget,
   options: { requireDrawsFrame?: boolean } = {},
 ): BudgetViolation[] {
@@ -221,8 +221,11 @@ export function checkBudget(
   return found;
 }
 
+/** What a budget compares and prints. `quality` is the graphics tier, which `PerfReport` types as the capture preset. */
+export type BudgetRecord = Omit<PerfReport, "quality"> & { quality: string };
+
 /** One line naming every measured count against its budget, for a passing run. */
-export function summarizeRecord(record: PerfReport, budget: PerfBudget): string {
+export function summarizeRecord(record: BudgetRecord, budget: PerfBudget): string {
   // A number measured with a setting on names that setting, so the line is reproducible as printed.
   const overrides = (record as PerfReport & { overrides?: readonly string[] }).overrides ?? [];
   return [

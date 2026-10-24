@@ -275,7 +275,8 @@ test("an unreadable scene is reported as unavailable, never as zero", async () =
  */
 test("--uncapped asks Chrome for an unthrottled rAF clock; the default asks for nothing", () => {
   expect(parsePerfArgs(["harbor-heat", "--uncapped"])).toMatchObject({ args: { frameClock: "uncapped" } });
-  expect(parsePerfArgs(["harbor-heat"]).kind === "run" && parsePerfArgs(["harbor-heat"]).args.frameClock).toBe("capped");
+  const plain = parsePerfArgs(["harbor-heat"]);
+  expect(plain.kind === "run" ? plain.args.frameClock : null).toBe("capped");
 
   expect(chromeFrameClockArgs("capped")).toEqual([]);
   expect(chromeFrameClockArgs()).toEqual([]);

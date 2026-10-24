@@ -58,7 +58,7 @@ export interface LaneCloseArgs {
   waive?: string;
   session?: string;
   /** Paths `land --commit` may take although its guards refuse them; repeatable. */
-  allow: string[];
+  allow?: string[];
 }
 
 export function parseArgs(argv: readonly string[]): LaneCloseArgs {
@@ -77,7 +77,7 @@ export function parseArgs(argv: readonly string[]): LaneCloseArgs {
     } else if (arg === "--allow") {
       const path = argv[(i += 1)];
       if (path === undefined || path.trim().length === 0) throw new Error("--allow needs a path");
-      args.allow.push(path.trim().replace(/\\/g, "/"));
+      (args.allow ??= []).push(path.trim().replace(/\\/g, "/"));
     } else if (arg === "--session") args.session = value(argv, (i += 1), arg);
     else throw new Error(`unknown argument ${arg}`);
   }

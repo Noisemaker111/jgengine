@@ -3,7 +3,7 @@ import { describe, expect, test } from "bun:test";
 import { checkPublishOrder, checkReleaseSet, lockstepSetFrom, publishListsFrom, versionPackagesFrom } from "./check-release-set";
 
 describe("check-release-set", () => {
-  const manifests = new Map([
+  const manifests = new Map<string, { name: string; dependencies?: Record<string, string> }>([
     ["core", { name: "@jgengine/core" }],
     ["navbake", { name: "@jgengine/navbake", dependencies: { "@jgengine/core": "^0.18.0" } }],
     ["editor", { name: "@jgengine/editor", dependencies: { "@jgengine/core": "^0.18.0", "@jgengine/navbake": "^0.18.0" } }],

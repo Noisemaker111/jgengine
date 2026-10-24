@@ -62,7 +62,7 @@ function gamePaths(tsconfigPath: string): Record<string, string[]> {
   const chain: string[] = [];
   while (path !== undefined && existsSync(path)) {
     chain.unshift(path);
-    const extendsValue = readJson(path).extends;
+    const extendsValue: unknown = readJson(path).extends;
     path = typeof extendsValue === "string" ? resolve(dirname(path), extendsValue) : undefined;
   }
   for (const file of chain) {

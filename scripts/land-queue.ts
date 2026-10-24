@@ -423,6 +423,12 @@ export function drain(args: QueueArgs, io: QueueIo): { code: number; drained: Dr
   return { code: landed === drained.length ? EXIT_DRAINED : EXIT_SOMETHING_FAILED, drained };
 }
 
+/** `spawnSync` reports no status when the process died on a signal; that is a failure, not a pass. */
+function run(command: string, cwd: string | undefined, args: string[]): Run {
+  const result = spawnSync(command, args, { encoding: "utf8", ...(cwd === undefined ? {} : { cwd }) });
+  return { status: result.status ?? 1, stdout: result.stdout ?? "", stderr: result.stderr ?? "" };
+}
+
 function main(): void {
   let args: QueueArgs;
   try {
@@ -433,8 +439,8 @@ function main(): void {
   }
 
   const result = drain(args, {
-    gh: (ghArgs) => spawnSync("gh", ghArgs, { encoding: "utf8" }),
-    git: (cwd, gitArgs) => spawnSync("git", gitArgs, { cwd, encoding: "utf8" }),
+    gh: (ghArgs) => run("gh", undefined, ghArgs),
+    git: (cwd, gitArgs) => run("git", cwd, gitArgs),
     pause,
     now: Date.now,
     log: (line) => console.log(`land:queue: ${line}`),

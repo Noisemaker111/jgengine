@@ -128,7 +128,7 @@ export async function resolveArchiveUrl(source: AssetSource, fetchImpl: FetchLik
 }
 
 /** @internal */
-export async function downloadArchive(url: string, fetchImpl: FetchLike = fetch): Promise<Uint8Array> {
+export async function downloadArchive(url: string, fetchImpl: FetchLike = fetch): Promise<Uint8Array<ArrayBuffer>> {
   const response = await fetchImpl(url, { redirect: "follow" });
   if (!response.ok) throw new Error(`download ${url} -> HTTP ${response.status}`);
   const declaredLength = response.headers.get("content-length");

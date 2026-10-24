@@ -293,7 +293,7 @@ test("landing prints one line per PR with that PR's wait and run, in readiness o
 });
 
 test("nothing ready prints one line and exits 0, and a failed PR reports and exits 1", () => {
-  const empty = io({ gh: scriptedGh({ list: [row({ number: 40 })] }).gh });
+  const empty = io({ gh: scriptedGh({ list: [row({ number: 40 })], views: {} }).gh });
   const nothing = drain({ base: "beta", label: "land:queue" }, empty);
   expect(nothing.code).toBe(EXIT_DRAINED);
   expect(empty.lines).toEqual([expect.stringMatching(/^nothing ready: no open PR into beta has auto-merge armed or the land:queue label$/)]);

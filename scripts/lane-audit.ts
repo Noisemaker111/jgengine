@@ -714,7 +714,7 @@ export function auditDatabase(database: Database, options: AuditOptions): AuditR
   const audits = sessions.map((session) => auditSession(session, calls.get(session.id) ?? []));
   const report = buildReport(audits);
   if (options.cwd === undefined) return report;
-  const lane = (audit: RankedAudit): LaneSession => ({
+  const lane = (audit: SessionAudit): LaneSession => ({
     id: audit.id,
     title: audit.title,
     directory: audit.directory,

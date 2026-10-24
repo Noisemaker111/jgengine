@@ -47,7 +47,7 @@ describe("published export manifest", () => {
 test("the manifest tracks exactly the packages the publish workflow ships", () => {
   const workflow = readFileSync(join(import.meta.dir, "..", ".github", "workflows", "publish.yml"), "utf8");
   const [shipped] = publishListsFrom(workflow);
-  expect([...publishedPackages].sort()).toEqual([...shipped!].sort());
+  expect([...publishedPackages].map((pkg) => String(pkg)).sort()).toEqual([...shipped!].sort());
 });
 
 describe("public subpaths come from source, not dist", () => {

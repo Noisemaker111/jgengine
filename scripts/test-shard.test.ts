@@ -4,9 +4,9 @@ import { fileURLToPath } from "node:url";
 import { assignShards, matchingShard, preparation, SHARDS, TEST_ROOTS, walkTestFiles, type Shard } from "./test-shard";
 
 const TABLE: Shard[] = [
-  { name: "hot", include: ["packages/core/src/combat"] },
-  { name: "core", include: ["packages/core"] },
-  { name: "rest", include: ["packages", "scripts"] },
+  { name: "hot", label: "the core combat tests", include: ["packages/core/src/combat"] },
+  { name: "core", label: "packages/core", include: ["packages/core"] },
+  { name: "rest", label: "everything else", include: ["packages", "scripts"] },
 ];
 
 test("the first matching include owns a file, so a prefix never runs twice", () => {
@@ -26,8 +26,8 @@ test("a file no shard covers fails loudly instead of being skipped", () => {
 test("duplicate shard names fail before any file is assigned", () => {
   expect(() =>
     assignShards([], [
-      { name: "same", include: ["scripts"] },
-      { name: "same", include: ["packages"] },
+      { name: "same", label: "first", include: ["scripts"] },
+      { name: "same", label: "second", include: ["packages"] },
     ]),
   ).toThrow("duplicate shard name same");
 });

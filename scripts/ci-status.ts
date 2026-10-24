@@ -448,11 +448,17 @@ export function cli(argv: readonly string[], io: CiIo, now: () => number = () =>
   return { code: exitCodeFor(status), stdout: [args.json ? jsonText(status) : formatText(status)], stderr: [] };
 }
 
+/** `spawnSync` reports no status when the process died on a signal; that is a failure, not a pass. */
+function run(command: string, args: string[]): Run {
+  const result = spawnSync(command, args, { encoding: "utf8" });
+  return { status: result.status ?? 1, stdout: result.stdout ?? "", stderr: result.stderr ?? "" };
+}
+
 function main(argv: readonly string[]): void {
   if (printHelpIfAsked("ci-status", CI_STATUS_USAGE, argv)) process.exit(EXIT_GREEN);
   const result = cli(argv, {
-    gh: (ghArgs) => spawnSync("gh", ghArgs, { encoding: "utf8" }),
-    git: (gitArgs) => spawnSync("git", gitArgs, { encoding: "utf8" }),
+    gh: (ghArgs) => run("gh", ghArgs),
+    git: (gitArgs) => run("git", gitArgs),
   });
   for (const line of result.stdout) console.log(line);
   for (const line of result.stderr) console.error(line);

@@ -1,0 +1,8 @@
+{
+  "name": "jgengine-scripts",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check-types": "tsgo --noEmit -p tsconfig.json"
+  }
+}

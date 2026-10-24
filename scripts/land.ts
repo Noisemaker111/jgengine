@@ -241,7 +241,7 @@ export interface PrBody {
  * lane left in the shared directory is named and skipped, so the body never claims work the diff lacks.
  */
 export function landBody(options: {
-  args: LandArgs;
+  args: Pick<LandArgs, "base" | "bodyFile">;
   branch: string;
   summary: string;
   read?: (path: string) => string;
@@ -947,7 +947,7 @@ export function updatePrBody(number: number, text: string, gh: Gh, log = (line: 
  * its old one, so a body left from an earlier run cannot keep a check that reads it red.
  */
 export function ensurePr(options: {
-  args: LandArgs;
+  args: Pick<LandArgs, "base" | "title" | "bodyFile">;
   branch: string;
   summary: string;
   body: PrBody;

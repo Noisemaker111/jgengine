@@ -121,6 +121,7 @@
   },
   "devDependencies": {
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
+    "@types/bun": "^1.4.4",
     "@typescript/native-preview": "^7.0.0-dev.20260705.1",
     "gifenc": "^1.0.3",
     "playwright-core": "^1.50.0",

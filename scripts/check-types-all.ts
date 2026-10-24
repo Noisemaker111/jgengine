@@ -2,6 +2,11 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 const ROOTS = ["packages", "apps", "examples"];
+/**
+ * Dirs that are not workspaces but carry their own tsconfig and `check-types`: the repository's
+ * `scripts/` are run as often as any package and had no typecheck until they were listed here.
+ */
+const EXTRA_DIRS = ["scripts"];
 const CONCURRENCY = 8;
 
 function workspaceDirs(): string[] {
@@ -13,6 +18,7 @@ function workspaceDirs(): string[] {
       if (entry.isDirectory()) dirs.push(join(root, entry.name));
     }
   }
+  dirs.push(...EXTRA_DIRS);
   if (existsSync(join(process.cwd(), "registry", "package.json"))) dirs.push("registry");
   return dirs.filter((dir) => {
     const pkgPath = join(process.cwd(), dir, "package.json");
