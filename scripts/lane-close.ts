@@ -57,7 +57,7 @@ function value(argv: readonly string[], at: number, flag: string): string {
   return found;
 }
 
-/** One command a session ran, as `lane:audit` reports it in `longest` or `calls`. */
+/** One command a session ran, as `lane:audit` reports it in `longest`. */
 export interface AuditCall {
   command?: string;
   cmd?: string;
@@ -66,6 +66,13 @@ export interface AuditCall {
   durationMs?: number;
   duration?: number;
   kind?: string;
+}
+
+/** A sleep or CI watch the audit counted, as `waits` reports it. */
+export interface AuditWait {
+  kind?: string;
+  ms: number;
+  command: string;
 }
 
 export interface AuditSession {
@@ -79,8 +86,11 @@ export interface AuditSession {
   waitingShare: number;
   /** Where this lane sits among recent lanes; the audit owns the population it comes from. */
   percentile?: number | null;
+  /** How many tool calls the lane made. A count, not a list: `waits` and `longest` carry the calls. */
+  calls?: number;
   longest?: AuditCall[];
-  calls?: AuditCall[];
+  /** Every sleep and CI watch, oldest first; absent from audit output older than #2300's follow-up. */
+  waits?: AuditWait[];
 }
 
 export interface AuditReport {
@@ -109,7 +119,7 @@ function callMs(call: AuditCall): number {
 
 /** Is this call one of the two unnecessary waits, rather than ordinary work? */
 export function isWaitingCall(call: AuditCall): boolean {
-  if (call.kind === "sleep" || call.kind === "ciWatch") return true;
+  if (call.kind === "sleep" || call.kind === "ciWatch" || call.kind === "ci-watch") return true;
   const command = callCommand(call);
   return SLEEP.test(command) || WATCH.test(command);
 }
@@ -118,17 +128,28 @@ export function isWaitingCall(call: AuditCall): boolean {
  * Any sleep or CI watch blocks, because neither is ever required: `ci:status`
  * answers in one shot and a condition wait is a command that returns. There is no
  * tolerable percentage - the count is the gate, not a share of a lane's span.
+ *
+ * The audits own the waits: `waits` lists every one of them, `longest` only the
+ * three slowest commands, so a wait shorter than those is invisible there.
  */
 export function waitingGate(session: AuditSession): Waiting & { blocked: boolean } {
   const sleepMs = session.sleepMs ?? 0;
   const ciWatchMs = session.ciWatchMs ?? 0;
-  const source = session.calls ?? session.longest ?? [];
-  const filtered = source.filter(isWaitingCall);
-  const named = (filtered.length > 0 ? filtered : source).map((call) => ({
-    command: callCommand(call) || "(command not reported)",
-    ms: callMs(call),
-  }));
-  return { sleepMs, ciWatchMs, calls: named, blocked: sleepMs > 0 || ciWatchMs > 0 };
+  const waits = Array.isArray(session.waits) ? session.waits : [];
+  const longest = Array.isArray(session.longest) ? session.longest : [];
+  const named: { command: string; ms: number }[] =
+    waits.length > 0
+      ? waits.map((wait) => ({ command: wait.command?.trim() ?? "", ms: wait.ms ?? 0 }))
+      : (longest.filter(isWaitingCall).length > 0 ? longest.filter(isWaitingCall) : longest).map((call) => ({
+          command: callCommand(call),
+          ms: callMs(call),
+        }));
+  return {
+    sleepMs,
+    ciWatchMs,
+    calls: named.map((call) => ({ command: call.command || "(command not reported)", ms: call.ms })),
+    blocked: sleepMs > 0 || ciWatchMs > 0,
+  };
 }
 
 /**
@@ -182,6 +203,61 @@ function waited(session: AuditSession): number {
 
 export function population(report: AuditReport): number {
   return report.totals?.sessions ?? report.totals?.count ?? report.totals?.n ?? report.sessions.length;
+}
+
+function kindOf(value: unknown): string {
+  if (value === null) return "null";
+  if (Array.isArray(value)) return "an array";
+  return typeof value === "number" ? "a number" : typeof value === "string" ? "a string" : typeof value === "object" ? "an object" : typeof value;
+}
+
+function shapeFailure(path: string, value: unknown, expected: string, keys?: readonly string[]): string {
+  const seen = keys === undefined || keys.length === 0 ? "" : ` (keys seen: ${keys.join(", ")})`;
+  return `the audit output shape changed: ${path} is ${kindOf(value)}, expected ${expected}${seen}`;
+}
+
+/**
+ * Everything `lane:close` reads out of `lane:audit --json`, checked before it is used. The two scripts
+ * drifted apart once already (`calls` is the lane's call count, not its calls), and a TypeError is not
+ * a report: a mismatch says which field and what the document actually carried.
+ */
+export function auditShapeProblem(value: unknown): string | null {
+  if (value === null || typeof value !== "object") return shapeFailure("the document", value, "an object");
+  const document = value as { sessions?: unknown };
+  if (!Array.isArray(document.sessions)) {
+    return shapeFailure("sessions", document.sessions, "an array", Object.keys(document));
+  }
+  for (const [index, entry] of document.sessions.entries()) {
+    if (entry === null || typeof entry !== "object") return shapeFailure(`sessions[${index}]`, entry, "an object");
+    const session = entry as Record<string, unknown>;
+    const keys = Object.keys(session);
+    for (const field of ["id", "title", "directory"] as const) {
+      if (typeof session[field] !== "string") return shapeFailure(`sessions[${index}].${field}`, session[field], "a string", keys);
+    }
+    for (const field of ["spanMs", "toolMs", "sleepMs", "ciWatchMs", "waitingShare"] as const) {
+      if (typeof session[field] !== "number") return shapeFailure(`sessions[${index}].${field}`, session[field], "a number", keys);
+    }
+    if (session.percentile !== undefined && session.percentile !== null && typeof session.percentile !== "number") {
+      return shapeFailure(`sessions[${index}].percentile`, session.percentile, "a number or null", keys);
+    }
+    if (session.calls !== undefined && typeof session.calls !== "number") {
+      return shapeFailure(`sessions[${index}].calls`, session.calls, "the lane's call count", keys);
+    }
+    for (const field of ["longest", "waits"] as const) {
+      const list = session[field];
+      if (list === undefined) continue;
+      if (!Array.isArray(list)) return shapeFailure(`sessions[${index}].${field}`, list, "an array", keys);
+      for (const [at, call] of list.entries()) {
+        if (call === null || typeof call !== "object") {
+          return shapeFailure(`sessions[${index}].${field}[${at}]`, call, "an object", keys);
+        }
+        if (typeof (call as { ms?: unknown }).ms !== "number") {
+          return shapeFailure(`sessions[${index}].${field}[${at}].ms`, (call as { ms?: unknown }).ms, "a number", keys);
+        }
+      }
+    }
+  }
+  return null;
 }
 
 function minutes(ms: number): string {
@@ -331,10 +407,18 @@ export function closeLane(args: LaneCloseArgs, io: LaneIo): number {
     );
     io.err("lane:close: cannot check this lane's waiting without it");
   }
-  const auditJson = parseJson<AuditReport>(audit.stdout);
-  const report: AuditReport | null = "value" in auditJson && Array.isArray(auditJson.value.sessions) ? auditJson.value : null;
-  if (report === null && audit.status === 0) {
-    io.err(`lane:close: lane:audit output is not the audit contract${"error" in auditJson ? ` (${auditJson.error})` : ""}`);
+  const auditJson = parseJson<unknown>(audit.stdout);
+  let report: AuditReport | null = null;
+  if ("error" in auditJson) {
+    if (audit.status === 0) io.err(`lane:close: lane:audit output is not JSON (${auditJson.error})`);
+  } else {
+    const problem = auditShapeProblem(auditJson.value);
+    if (problem !== null) {
+      io.err(`lane:close: ${problem}`);
+      io.err("lane:close: cannot judge this lane's waiting without a readable audit; the gate needs the fields it reads.");
+      return EXIT_CANNOT_ANSWER;
+    }
+    report = auditJson.value as AuditReport;
   }
 
   const picked =

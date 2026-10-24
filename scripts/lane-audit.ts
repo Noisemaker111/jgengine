@@ -551,6 +551,7 @@ export function toJson(report: AuditReport): string {
         percentile: audit.percentile,
         calls: audit.calls,
         longest: audit.longest.map((entry) => ({ ms: entry.ms, command: entry.command })),
+        waits: audit.waits.map((wait) => ({ kind: wait.kind, ms: wait.ms, command: wait.command })),
       })),
       totals: report.totals,
       population: report.population,
