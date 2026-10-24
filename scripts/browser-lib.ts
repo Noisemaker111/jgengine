@@ -21,6 +21,7 @@ import { checkoutIdentity, isUp, markerPath, readMarker, writeMarker } from "./d
 import { localGet } from "./localhostHttp";
 import { computeShotMetrics, deadViewport } from "./shot-metrics";
 import { decodePng } from "./png-reader";
+import type { GraphicsTier } from "../packages/jgengine/src/templates/captureArgs";
 
 export { checkoutIdentity, isUp };
 
@@ -2091,32 +2092,50 @@ export function parseSizeArg(value: string | undefined): SizeMode {
 
 /**
  * `draft` is the iteration profile: half-size viewport and the low graphics tier (`?quality=low`,
- * pinned for the page only, never persisted). `full` is the untouched honest path for PR evidence.
+ * pinned for the page only, never persisted). The tier itself is `--quality <low|medium|high|ultra>`
+ * and is independent of the viewport, so a perf or capture run can pin a real tier.
  */
-export type CaptureQuality = "full" | "draft";
+export type CaptureQuality = GraphicsTier;
 
-/** Validate a raw `--quality` argument, throwing the shared usage error. */
-export function parseQualityArg(value: string | undefined): CaptureQuality {
-  if (value !== "full" && value !== "draft") {
-    throw new Error(`--quality must be draft or full (got ${value ?? "nothing"})`);
-  }
-  return value;
-}
-
-/** Size a capture runs at: an explicit `--size` wins, otherwise draft halves the viewport. */
-export function sizeForQuality(quality: CaptureQuality, explicit: SizeMode | undefined): SizeMode {
-  return explicit ?? (quality === "draft" ? "half" : "full");
-}
-
-/** Add the shell's graphics-tier override for a draft capture; full leaves the URL untouched. */
-export function applyCaptureQuality(url: URL, quality: CaptureQuality): URL {
-  if (quality === "draft") url.searchParams.set("quality", "low");
+/** Add the shell's graphics-tier pin to a capture URL; no tier leaves the URL untouched. */
+export function applyCaptureQuality(url: URL, tier: GraphicsTier | undefined): URL {
+  if (tier !== undefined) url.searchParams.set("quality", tier);
   return url;
 }
 
+/** Size a capture runs at: an explicit `--size` wins, otherwise `--draft` halves the viewport. */
+export function sizeForDraft(draft: boolean, explicit: SizeMode | undefined): SizeMode {
+  return explicit ?? (draft ? "half" : "full");
+}
+
+/** Filename suffix naming a non-default tier, so an ultra shot never overwrites the high one. */
+export function qualitySuffix(tier: GraphicsTier | undefined): string {
+  return tier === undefined || tier === "high" ? "" : `-${tier}`;
+}
+
 /** Filename suffix marking a draft shot, so it never overwrites or passes for a full one. */
-export function qualitySuffix(quality: CaptureQuality): string {
-  return quality === "draft" ? "-draft" : "";
+export function draftSuffix(draft: boolean): string {
+  return draft ? "-draft" : "";
+}
+
+/**
+ * Throw when the page's reported tier is not the one `--quality` asked for. A tier flag that
+ * changes nothing is worse than no flag: the comparison would be two runs at the game's default
+ * and nobody would know until the numbers came out identical.
+ */
+export function assertQualityApplied(requested: GraphicsTier, reported: string | null): void {
+  if (reported === null || reported.length === 0) {
+    throw new Error(`--quality ${requested} never reached the page — no graphics tier was reported (data-jg-quality). The run would prove the game's default tier.`);
+  }
+  if (reported !== requested) {
+    throw new Error(`--quality ${requested} did not take — the page reports tier ${reported}, so this run would prove the wrong tier.`);
+  }
+}
+
+/** The graphics tier the page reports it resolved (`data-jg-quality`), or null when it reports none. */
+export async function readReportedQuality(session: CdpSession): Promise<string | null> {
+  const value = await session.evaluate<string | null>(`document.documentElement.dataset.jgQuality ?? null`);
+  return typeof value === "string" && value.length > 0 ? value : null;
 }
 
 export interface BrowserSession {

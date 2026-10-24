@@ -6,15 +6,16 @@ import {
   CdpSession,
   applyCaptureQuality,
   applyDevice,
+  assertQualityApplied,
   ensureDevServer,
   openPageSession,
-  parseQualityArg,
+  readReportedQuality,
   sweepCaptureProfiles,
   waitCaptureReady,
   withBrowserSession,
-  type CaptureQuality,
   type FrameClock,
 } from "./browser-lib";
+import { parseGraphicsTier, type GraphicsTier } from "../packages/jgengine/src/templates/captureArgs";
 import {
   acquireWarmCapture,
   daemonDiedUnder,
@@ -48,7 +49,7 @@ import {
  * counts, GL allocations made after warmup, and the hottest self-time
  * functions.
  *
- *   bun run perf <game> [--quality draft|full] [--profile] [--seconds n] [--state name] [--param k=v ...] [--set key=value ...]
+ *   bun run perf <game> [--quality low|medium|high|ultra] [--draft] [--profile] [--seconds n] [--state name] [--param k=v ...] [--set key=value ...]
  *
  * The JSON goes to stdout alone so it can be piped and diffed; notes and the
  * `--profile` inclusive table go to stderr. `measureGame` is the same sequence
@@ -115,7 +116,10 @@ const HARNESS_PARAMS: ReadonlySet<string> = new Set(["game", "capture", "device"
 
 export interface PerfArgs {
   game: string;
-  quality: CaptureQuality;
+  /** The tier `--quality` pinned; undefined measures the game's own tier, which the record still names. */
+  quality?: GraphicsTier;
+  /** `--draft`: the low-tier half-size iteration preset. */
+  draft: boolean;
   profile: boolean;
   seconds: number;
   /** In-page sampler on/off for the A/B frame-time overhead comparison. */
@@ -136,14 +140,17 @@ export interface PerfArgs {
 
 export type ArgResult = { kind: "run"; args: PerfArgs } | { kind: "help" };
 
-const USAGE = `usage: bun run perf <game> [--quality draft|full] [--profile] [--seconds n] [--telemetry on|off]
+const USAGE = `usage: bun run perf <game> [--quality low|medium|high|ultra] [--draft] [--profile] [--seconds n] [--telemetry on|off]
                     [--state name] [--param k=v ...] [--set key=value ...] [--uncapped] [--headed] [--cold]
 
   <game>            game id under Games/ (for example harbor-heat)
   --cold            skip the warm daemon and boot Chrome + Vite directly: fresh caches, larger
                     numbers than a warm run, for an evidence run that must prove a clean start.
                     Every run prints which it got: warm: reused :9261 (0.2s) / cold: started :9261 (4.1s)
-  --quality         graphics tier: full (default) or draft (?quality=low, half viewport)
+  --quality         the graphics tier the game renders at (low, medium, high, ultra), pinned on the
+                    page URL. The run fails when the page reports a different tier, so a record
+                    always names the tier it measured.
+  --draft           iteration preset: low tier and half viewport, for a smoke run you will not quote
   --profile         also print the inclusive-time table to stderr
   --seconds         measured window in seconds (default ${DEFAULT_SECONDS})
   --telemetry       in-page report sampler: on (default) or off (?telemetry=off) for an A/B run
@@ -270,7 +277,7 @@ export function undeclaredSettingErrors(
 export function perfPageUrl(options: {
   base: string;
   game: string;
-  quality: CaptureQuality;
+  quality?: GraphicsTier;
   telemetry?: "on" | "off";
   state?: string;
   params?: readonly (readonly [string, string])[];
@@ -316,7 +323,8 @@ export function droppedOverrides(
 export function parsePerfArgs(argv: readonly string[]): ArgResult {
   if (argv.includes("--help") || argv.includes("-h")) return { kind: "help" };
   let game: string | undefined;
-  let quality: CaptureQuality = "full";
+  let quality: GraphicsTier | undefined;
+  let draft = false;
   let profile = false;
   let seconds = DEFAULT_SECONDS;
   let telemetry: "on" | "off" = "on";
@@ -343,6 +351,10 @@ export function parsePerfArgs(argv: readonly string[]): ArgResult {
     }
     if (arg === "--cold") {
       cold = true;
+      continue;
+    }
+    if (arg === "--draft") {
+      draft = true;
       continue;
     }
     if (arg === "--state") {
@@ -383,7 +395,7 @@ export function parsePerfArgs(argv: readonly string[]): ArgResult {
       const value = argv[index + 1];
       if (value === undefined) throw new Error(`${arg} needs a value`);
       index += 1;
-      if (arg === "--quality") quality = parseQualityArg(value);
+      if (arg === "--quality") quality = parseGraphicsTier(value);
       else if (arg === "--telemetry") {
         if (value !== "on" && value !== "off") throw new Error(`--telemetry must be on or off (got ${value})`);
         telemetry = value;
@@ -399,7 +411,8 @@ export function parsePerfArgs(argv: readonly string[]): ArgResult {
     game = arg;
   }
   if (game === undefined) throw new Error("a game id is required");
-  return { kind: "run", args: { game, quality, profile, seconds, telemetry, settings, frameClock, ...(headed ? { headed: true } : {}), ...(cold ? { cold: true } : {}), ...(state === undefined ? {} : { state }), params } };
+  if (draft && quality !== undefined) throw new Error(`--draft is the iteration preset (low tier, half viewport), so drop it or drop --quality ${quality}`);
+  return { kind: "run", args: { game, ...(quality === undefined ? {} : { quality }), draft, profile, seconds, telemetry, settings, frameClock, ...(headed ? { headed: true } : {}), ...(cold ? { cold: true } : {}), ...(state === undefined ? {} : { state }), params } };
 }
 
 /** One sampled stack frame reduced to a readable key and its self time. */
@@ -795,7 +808,10 @@ export interface MeasureOptions {
   /** Dev-server base URL, e.g. `http://127.0.0.1:4601`. */
   base: string;
   game: string;
-  quality?: CaptureQuality;
+  /** The graphics tier to pin; omitted measures whatever tier the game itself resolves. */
+  quality?: GraphicsTier;
+  /** Half viewport at the low tier, for a quick smoke run. */
+  draft?: boolean;
   seconds?: number;
   warmupMs?: number;
   /** Run the CPU profiler pass afterwards; the budget gate does not need it. */
@@ -877,7 +893,8 @@ async function confirmSettings(session: CdpSession, settings: readonly PerfSetti
  * and scene counts, and read the GL objects created after warmup.
  */
 export async function measureGame(options: MeasureOptions): Promise<PerfMeasure> {
-  const { session, base, game, quality = "full", seconds = DEFAULT_SECONDS, warmupMs = WARMUP_MS } = options;
+  const { session, base, game, quality, seconds = DEFAULT_SECONDS, warmupMs = WARMUP_MS } = options;
+  const draft = options.draft ?? false;
   const profileRun = options.profile ?? true;
   const settings = options.settings ?? [];
   const params = options.params ?? [];
@@ -898,10 +915,14 @@ export async function measureGame(options: MeasureOptions): Promise<PerfMeasure>
   if (settings.length > 0) {
     await session.send("Page.addScriptToEvaluateOnNewDocument", { source: perfSettingsScript(settings) });
   }
-  await applyDevice(session, "desktop", quality === "draft" ? "half" : "full");
+  await applyDevice(session, "desktop", draft ? "half" : "full");
   const url = perfPageUrl({ base, game, quality, telemetry: options.telemetry, state: options.state, params });
   await session.send("Page.navigate", { url: url.toString() });
   await waitCaptureReady(session, 90_000);
+  // The tier the game resolved, not the flag: a record that names a tier it never rendered at is
+  // exactly the evidence gap this flag closes.
+  const reportedTier = await readReportedQuality(session);
+  if (quality !== undefined) assertQualityApplied(quality, reportedTier);
   if (settings.length > 0) await confirmSettings(session, settings);
   await session.evaluate(`window.__jgengineAgent?.handle?.({ method: "debug_perf_reset" })`);
 
@@ -963,7 +984,7 @@ export async function measureGame(options: MeasureOptions): Promise<PerfMeasure>
   const record: PerfRecord = {
     game,
     gpu,
-    quality,
+    quality: reportedTier ?? quality ?? "unknown",
     viewport: `${size?.w ?? 0}x${size?.h ?? 0}`,
     seconds: Math.round((windowMs / 1000) * 10) / 10,
     at: Date.now(),
@@ -1023,7 +1044,7 @@ async function main(): Promise<void> {
     console.log(USAGE);
     return;
   }
-  const { game, quality, profile, seconds, telemetry, settings, state, params, frameClock, headed } = parsed.args;
+  const { game, quality, draft, profile, seconds, telemetry, settings, state, params, frameClock, headed } = parsed.args;
 
   sweepCaptureProfiles();
 
@@ -1063,7 +1084,8 @@ async function main(): Promise<void> {
       async ({ debugPort }) => {
         const session = await openPageSession(debugPort);
         try {
-          const measured = await measureGame({ session, base: server.base, game, quality, seconds, telemetry, settings, state, params, frameClock });
+          const measured = await measureGame({ session, base: server.base, game, quality, draft, seconds, telemetry, settings, state, params, frameClock });
+          console.error(`perf: tier ${measured.record.quality}${draft ? " (draft: low tier, half viewport)" : ""}`);
           const pin = perfStateLine(state, params);
           if (pin !== null) console.error(pin);
           const clock = perfFrameClockLine(frameClock);

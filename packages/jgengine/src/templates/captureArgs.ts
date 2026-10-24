@@ -11,6 +11,21 @@
 /** Which CLI a flag belongs to. */
 export type CaptureTool = "shoot" | "drive";
 
+/** The graphics tiers a capture can pin; the game shell resolves the same four. */
+export type GraphicsTier = "low" | "medium" | "high" | "ultra";
+
+/**
+ * Parse a `--quality` value into a graphics tier, naming every valid tier when it is not one.
+ * A tier claim that cannot be forced is not provable, so an unknown value fails instead of
+ * falling back to the game's default.
+ */
+export function parseGraphicsTier(value: string | undefined): GraphicsTier {
+  const tiers = ["low", "medium", "high", "ultra"];
+  const found = tiers.find((tier) => tier === value);
+  if (found === undefined) throw new Error("--quality must be one of " + tiers.join(", ") + " (got " + (value ?? "nothing") + ")");
+  return found as GraphicsTier;
+}
+
 /** One capture CLI flag. `engineOnly` flags parse everywhere but only the engine dev runner honors them. */
 export interface CaptureFlag {
   flag: string;
@@ -53,7 +68,8 @@ export const CAPTURE_FLAGS: readonly CaptureFlag[] = [
   { flag: "--width", tools: ["shoot", "drive"], value: "required", arg: "<px>", help: "viewport width override in CSS pixels" },
   { flag: "--height", tools: ["shoot", "drive"], value: "required", arg: "<px>", help: "viewport height override in CSS pixels" },
   { flag: "--size", tools: ["shoot", "drive"], value: "required", arg: "<full|half>", help: "half halves both dimensions for cheap judge shots; full for final/PR shots" },
-  { flag: "--quality", tools: ["shoot", "drive"], value: "required", arg: "<full|draft>", engineOnly: RUNNER + " (draft pins ?quality=low and halves the viewport)", help: "draft = fast iteration run: low graphics tier and half size, -draft file names; full (default) for PR evidence" },
+  { flag: "--quality", tools: ["shoot", "drive"], value: "required", arg: "<low|medium|high|ultra>", engineOnly: RUNNER + " (the tier is pinned on the page URL the runner opens)", help: "graphics tier the game renders at; the run fails if the page reports a different tier" },
+  { flag: "--draft", tools: ["shoot", "drive"], value: "none", engineOnly: RUNNER + " (the iteration preset)", help: "fast iteration run: low tier and half size, -draft file names; drop --quality" },
   { flag: "--settle", tools: ["shoot", "drive"], value: "required", arg: "<ms>", help: "extra wait after the page reports an honest frame" },
   { flag: "--timeout", tools: ["shoot", "drive"], value: "required", arg: "<s>", help: "readiness/capture timeout in seconds (default 60)" },
   { flag: "--param", tools: ["shoot", "drive"], value: "required", repeat: true, arg: "<key=value>", help: "add a query parameter to the page URL (repeatable)" },
@@ -267,6 +283,13 @@ export function parseCaptureArgs(tool: CaptureTool, argv: readonly string[], fla
   }
   const size = out.options.size;
   if (typeof size === "string" && size !== "full" && size !== "half") throw new Error("--size must be full or half (got " + size + ")");
+  const quality = out.options.quality;
+  if (typeof quality === "string" && !["low", "medium", "high", "ultra"].includes(quality)) {
+    throw new Error(tool + ": --quality must be one of low, medium, high, ultra (got " + quality + ")");
+  }
+  if (out.options.draft === true && typeof quality === "string") {
+    throw new Error(tool + ": --draft is the iteration preset (low tier, half size), so drop it or drop --quality " + quality);
+  }
   const device = out.options.device;
   if (typeof device === "string" && !["desktop", "mobile", "mobile-landscape"].concat(tool === "shoot" ? ["both"] : []).includes(device)) {
     throw new Error("--device must be desktop, mobile, mobile-landscape" + (tool === "shoot" ? ", or both" : "") + " (got " + device + ")");

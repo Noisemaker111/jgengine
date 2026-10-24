@@ -33,7 +33,7 @@ function record(overrides: Partial<PerfRecord> = {}, render: Partial<PerfRecord[
   return {
     game: "harbor-heat",
     gpu: "ANGLE (NVIDIA)",
-    quality: "full",
+    quality: "high",
     viewport: "1600x900",
     seconds: 6,
     at: 1,
@@ -222,8 +222,17 @@ describe("loadBudget", () => {
 });
 
 describe("parseGateArgs", () => {
-  test("defaults to every reference game at full quality, four at a time", () => {
-    expect(parseGateArgs([])).toEqual({ games: [...PERF_GATE_GAMES], quality: "full", seconds: 6, jobs: 4 });
+  test("defaults to every reference game at each game's own tier, four at a time", () => {
+    expect(parseGateArgs([])).toEqual({ games: [...PERF_GATE_GAMES], draft: false, seconds: 6, jobs: 4 });
+  });
+
+  test("pins one tier for every game, and reads it back into the argument table", () => {
+    expect(parseGateArgs(["--quality", "ultra"]).quality).toBe("ultra");
+    const drafted = parseGateArgs(["--draft"]);
+    expect(drafted.draft).toBe(true);
+    expect(drafted.quality).toBeUndefined();
+    expect(() => parseGateArgs(["--quality", "highish"])).toThrow("--quality must be one of low, medium, high, ultra");
+    expect(() => parseGateArgs(["--draft", "--quality", "low"])).toThrow("--draft measures the low tier at half viewport");
   });
 
   test("narrows to named games for a local run", () => {
@@ -343,7 +352,7 @@ describe("gateVerdicts", () => {
 describe("summarizeRecord", () => {
   test("a run without overrides prints the same line as before", () => {
     expect(summarizeRecord(record(), BUDGET)).toBe(
-      "harbor-heat ok  drawsFrame 7,100/7,600 (340 frames)  draws 7,000  triangles 3,600,000/3,850,000  nodes 11,000/11,900  links 0/0  framebuffers 0/0  allocations 0  1600x900 full",
+      "harbor-heat ok  drawsFrame 7,100/7,600 (340 frames)  draws 7,000  triangles 3,600,000/3,850,000  nodes 11,000/11,900  links 0/0  framebuffers 0/0  allocations 0  1600x900 high",
     );
   });
 
@@ -353,3 +362,4 @@ describe("summarizeRecord", () => {
     );
   });
 });
+

@@ -35,6 +35,8 @@ export interface DriveStepRunnerDeps {
   /** Wall clock; a lockstep recording also reports virtual time. */
   now(): number;
   virtualNow?(): number;
+  /** The graphics tier the page resolved, so the summary states what the run measured. */
+  tier?: string | null;
 }
 
 /** Totals for the run, printed before a failure leaves the function. */
@@ -93,6 +95,7 @@ export async function runDriveSteps(steps: readonly CaptureStep[], deps: DriveSt
     deps.line("  failed   " + summary.failed);
     deps.line("  wall     " + summary.wallMs + "ms");
     deps.line("  virtual  " + summary.virtualMs + "ms");
+    deps.line("  tier     " + (deps.tier ?? "n/a"));
   }
   return summary;
 }

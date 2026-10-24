@@ -16,8 +16,10 @@ import {
   DEVICES,
   applyCaptureQuality,
   applyDevice,
+  assertQualityApplied,
   captureViewportPng,
   checkoutIdentity,
+  draftSuffix,
   ensureDevServer,
   ensureWebServer,
   forwardPageConsole,
@@ -28,15 +30,14 @@ import {
   isUp,
   navigateCapturePageWithRetry,
   openPageSession,
-  parseQualityArg,
+  readReportedQuality,
   parseSizeArg,
   qualitySuffix,
-  sizeForQuality,
+  sizeForDraft,
   sizeSuffix,
   sweepCaptureProfiles,
   withBrowserSession,
   writePngAtomic,
-  type CaptureQuality,
   type Device,
   type SizeMode,
 } from "./browser-lib";
@@ -45,7 +46,7 @@ import { clearOriginStorage } from "./capture-storage";
 import { headRevision } from "./captureRevision";
 import { externalCaptureUrl } from "./captureTarget";
 import { assertQuickIsIterationOnly, quickProfile, quickSuffix, quickTimingLine, splitQuickFlag } from "./capture-preset";
-import { CAPTURE_FLAGS, captureFlagHelp, parseCaptureArgs } from "../packages/jgengine/src/templates/captureArgs";
+import { CAPTURE_FLAGS, captureFlagHelp, parseCaptureArgs, parseGraphicsTier, type GraphicsTier } from "../packages/jgengine/src/templates/captureArgs";
 import { lookSearchParams, parseLookAim } from "./lookArg";
 import {
   MIN_SAMPLED_SHARE,
@@ -94,7 +95,10 @@ type Args = {
   mode: Mode;
   device: DeviceArg;
   size: SizeMode;
-  quality: CaptureQuality;
+  /** The tier `--quality` pinned; undefined leaves the game's own tier, which the summary still reports. */
+  quality?: GraphicsTier;
+  /** `--draft`: the low-tier half-size iteration preset. */
+  draft: boolean;
   stage?: boolean;
   state?: string;
   preview?: string;
@@ -174,12 +178,15 @@ function parseArgs(argv: string[]): Args {
   if (!["ui", "play", "poster", "preview"].includes(mode)) throw new Error(`--mode must be ui, play, poster, or preview (got ${mode})`);
   const run = str("run")?.split(",").map((name) => name.trim()).filter((name) => name.length > 0);
   const view = str("view");
+  const draft = o.draft === true;
+  const quality = draft ? "low" : str("quality") === undefined ? undefined : parseGraphicsTier(str("quality"));
   const args: Args = {
     game: str("game") ?? parsed.positionals[0] ?? "world-of-warcraft",
     mode: mode as Mode,
     device: (str("device") ?? "desktop") as DeviceArg,
-    quality: parseQualityArg(str("quality") ?? "full"),
-    size: sizeForQuality(parseQualityArg(str("quality") ?? "full"), str("size") === undefined ? undefined : parseSizeArg(str("size"))),
+    ...(quality === undefined ? {} : { quality }),
+    draft,
+    size: sizeForDraft(draft, str("size") === undefined ? undefined : parseSizeArg(str("size"))),
     stage: o.stage === true ? true : undefined,
     state: str("state"),
     preview: str("preview") ?? (mode === "preview" ? "" : undefined),
@@ -243,7 +250,7 @@ function outPathFor(args: Args, device: Device, outDir: string): string {
     if (dot <= 0) return `${resolved}-mobile`;
     return `${resolved.slice(0, dot)}-mobile${resolved.slice(dot)}`;
   }
-  const suffix = `${device === "mobile" ? "-mobile" : ""}${sizeSuffix(args.size)}${qualitySuffix(args.quality)}${quickSuffix(args.quick)}`;
+  const suffix = `${device === "mobile" ? "-mobile" : ""}${sizeSuffix(args.size)}${qualitySuffix(args.quality)}${draftSuffix(args.draft)}${quickSuffix(args.quick)}`;
   if (args.fixture !== undefined && args.fixture.length > 0) {
     const key = args.fixture.replace(/[^A-Za-z0-9._-]+/g, "_");
     return join(outDir, `fixture-${key}${suffix}.png`);
@@ -269,25 +276,30 @@ function outPathFor(args: Args, device: Device, outDir: string): string {
 }
 
 function targetUrl(args: Args, device: Device, devBase: string): string {
+  return applyCaptureQuality(rawTargetUrl(args, device, devBase), args.quality).toString();
+}
+
+/** The page a shot opens, before the tier pin: `--quality` reaches every target the same way. */
+function rawTargetUrl(args: Args, device: Device, devBase: string): URL {
   if (args.url !== undefined) {
     const url = new URL(args.url);
     url.searchParams.set("capture", "1");
     url.searchParams.set("device", device === "mobile-landscape" ? "mobile" : device);
-    return url.toString();
+    return url;
   }
   if (args.site !== undefined) {
     const path = args.site.startsWith("/") ? args.site : `/${args.site}`;
     const url = new URL(path, devBase);
     url.searchParams.set("capture", "1");
     url.searchParams.set("device", device === "mobile-landscape" ? "mobile" : device);
-    return url.toString();
+    return url;
   }
   if (args.fixture !== undefined && args.fixture.length > 0) {
     const url = new URL(devBase);
     url.searchParams.set("fixture", args.fixture);
     url.searchParams.set("device", device === "mobile-landscape" ? "mobile" : device);
     url.searchParams.set("capture", "1");
-    return url.toString();
+    return url;
   }
   const url = new URL(devBase);
   url.searchParams.set("game", args.game);
@@ -306,7 +318,7 @@ function targetUrl(args: Args, device: Device, devBase: string): string {
   if (aim !== undefined) {
     for (const [key, value] of Object.entries(lookSearchParams(aim))) url.searchParams.set(key, value);
   }
-  return applyCaptureQuality(url, args.quality).toString();
+  return url;
 }
 
 function shotCommand(): string {
@@ -399,6 +411,10 @@ async function shootOne(
     await navigateCapturePageWithRetry(session, url, devBase, args.timeoutMs, CAPTURE_MAX_ATTEMPTS, { legacyCanvas: args.url !== undefined });
     mark("ready");
     await reportAppliedAim(session, args);
+    // Read the tier the game resolved, not the flag: a tier that never reached the render path is
+    // the failure this readout exists to catch, and the summary line repeats it for the record.
+    const reportedTier = await readReportedQuality(session);
+    if (args.quality !== undefined) assertQualityApplied(args.quality, reportedTier);
     await new Promise((r) => setTimeout(r, 600));
     mark("settle");
     const expected = captureProfile(device, args.size, viewportSize);
@@ -435,7 +451,7 @@ async function shootOne(
     console.log(outPath);
     mark("score");
     const profile = DEVICES[device];
-    const label = `${device} ${profile.width}x${profile.height}${args.size === "half" ? " (half-res)" : ""}${args.quality === "draft" ? " (draft)" : ""}`;
+    const label = `${device} ${profile.width}x${profile.height}${args.size === "half" ? " (half-res)" : ""}${args.draft ? " (draft)" : ""} tier ${reportedTier ?? "n/a"}`;
     let ok = true;
     if (overflow !== null) {
       console.error(`HUD OVERFLOW [${label}]: panels escape the viewport — ${overflow}`);
@@ -475,8 +491,9 @@ async function shootOne(
             height: Math.round(expected.height * expected.deviceScaleFactor),
             device,
             phases: timings,
+            tier: reportedTier,
           })
-        : `shoot: timing ${device} ${timings.join(" ")} total=${total.toFixed(2)}s`,
+        : `shoot: timing ${device} tier ${reportedTier ?? "n/a"} ${timings.join(" ")} total=${total.toFixed(2)}s`,
     );
     return ok;
   } finally {

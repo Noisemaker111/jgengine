@@ -99,9 +99,10 @@ export function assertQuickIsIterationOnly(request: QuickRequest): void {
  */
 export function quickTimingLine(
   tool: CaptureTool,
-  args: { seconds: number; width: number; height: number; device?: string; phases?: readonly string[] },
+  args: { seconds: number; width: number; height: number; device?: string; phases?: readonly string[]; tier?: string | null },
 ): string {
   const device = args.device === undefined || args.device === "desktop" ? "" : ` ${args.device}`;
   const phases = args.phases === undefined || args.phases.length === 0 ? "" : ` ${args.phases.join(" ")}`;
-  return `${tool}: quick${device} ${args.width}x${args.height}${phases} total=${args.seconds.toFixed(2)}s — iteration only: ${QUICK_NOTICE}; re-run without --quick for the shot that goes in the PR`;
+  const tier = ` tier ${args.tier ?? "n/a"}`;
+  return `${tool}: quick${device} ${args.width}x${args.height}${tier}${phases} total=${args.seconds.toFixed(2)}s — iteration only: ${QUICK_NOTICE}; re-run without --quick for the shot that goes in the PR`;
 }

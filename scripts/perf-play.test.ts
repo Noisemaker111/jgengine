@@ -27,19 +27,24 @@ import {
 test("parsePerfArgs reads one game with its flags", () => {
   expect(parsePerfArgs(["harbor-heat"])).toEqual({
     kind: "run",
-    args: { game: "harbor-heat", quality: "full", profile: false, seconds: 6, telemetry: "on", settings: [], frameClock: "capped", params: [] },
+    args: { game: "harbor-heat", draft: false, profile: false, seconds: 6, telemetry: "on", settings: [], frameClock: "capped", params: [] },
   });
-  expect(parsePerfArgs(["deepward", "--quality", "draft", "--profile", "--seconds", "3"])).toEqual({
+  expect(parsePerfArgs(["deepward", "--quality", "ultra", "--profile", "--seconds", "3"])).toEqual({
     kind: "run",
-    args: { game: "deepward", quality: "draft", profile: true, seconds: 3, telemetry: "on", settings: [], frameClock: "capped", params: [] },
+    args: { game: "deepward", quality: "ultra", draft: false, profile: true, seconds: 3, telemetry: "on", settings: [], frameClock: "capped", params: [] },
   });
+  const drafted = parsePerfArgs(["deepward", "--draft"]);
+  expect(drafted.kind === "run" && drafted.args.draft).toBe(true);
+  expect(drafted.kind === "run" && drafted.args.quality).toBeUndefined();
   expect(parsePerfArgs(["--help"]).kind).toBe("help");
 });
 
 test("parsePerfArgs rejects unusable input", () => {
   expect(() => parsePerfArgs([])).toThrow("a game id is required");
   expect(() => parsePerfArgs(["a", "b"])).toThrow("one game per run");
-  expect(() => parsePerfArgs(["a", "--quality", "low"])).toThrow("--quality must be draft or full");
+  expect(() => parsePerfArgs(["a", "--quality", "highish"])).toThrow("--quality must be one of low, medium, high, ultra");
+  expect(() => parsePerfArgs(["a", "--quality", "draft"])).toThrow("--quality must be one of low, medium, high, ultra");
+  expect(() => parsePerfArgs(["a", "--draft", "--quality", "ultra"])).toThrow("--draft is the iteration preset");
   expect(() => parsePerfArgs(["a", "--seconds", "0"])).toThrow("--seconds must be a positive number");
   expect(() => parsePerfArgs(["a", "--bogus"])).toThrow("unknown flag --bogus");
 });
@@ -65,7 +70,6 @@ test("--param reaches the page as a query param, and cannot take a param the har
   const url = perfPageUrl({
     base: "http://127.0.0.1:4601",
     game: "deepward",
-    quality: "full",
     state: "paused",
     params: parsed.kind === "run" ? parsed.args.params : [],
   });
@@ -163,7 +167,7 @@ test("a value the engine does not offer fails, so a fallback is never measured a
 });
 
 test("the URL a run opens carries the harness's own params and nothing the override invented", () => {
-  const url = perfPageUrl({ base: "http://127.0.0.1:4601", game: "harbor-heat", quality: "full" });
+  const url = perfPageUrl({ base: "http://127.0.0.1:4601", game: "harbor-heat" });
   expect(url.searchParams.get("game")).toBe("harbor-heat");
   expect(url.searchParams.get("mode")).toBe("play");
   expect(url.searchParams.get("device")).toBe("desktop");
@@ -171,9 +175,12 @@ test("the URL a run opens carries the harness's own params and nothing the overr
   expect(url.searchParams.get("quality")).toBeNull();
   expect(url.searchParams.get("telemetry")).toBeNull();
 
-  const draft = perfPageUrl({ base: "http://127.0.0.1:4601", game: "deepward", quality: "draft", telemetry: "off" });
-  expect(draft.searchParams.get("quality")).toBe("low");
-  expect(draft.searchParams.get("telemetry")).toBe("off");
+  const pinned = perfPageUrl({ base: "http://127.0.0.1:4601", game: "harbor-heat", quality: "ultra" });
+  expect(pinned.searchParams.get("quality")).toBe("ultra");
+
+  const quiet = perfPageUrl({ base: "http://127.0.0.1:4601", game: "deepward", quality: "low", telemetry: "off" });
+  expect(quiet.searchParams.get("quality")).toBe("low");
+  expect(quiet.searchParams.get("telemetry")).toBe("off");
 });
 
 test("the override script writes the settings storage key the game reads at boot", () => {
@@ -387,3 +394,4 @@ test("whole-frame draws are the p95 of the sampled frames, so a cadenced pass is
   expect(summarizeFrameDraws([])).toEqual({ frames: 0, min: 0, p50: 0, p95: 0, max: 0 });
   expect(summarizeFrameDraws([Number.NaN, -4, 12])).toMatchObject({ frames: 1, p95: 12 });
 });
+
