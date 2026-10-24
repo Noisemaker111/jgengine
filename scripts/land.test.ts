@@ -3,9 +3,12 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node
 import { dirname, join } from "node:path";
 
 import {
+  EXIT_CHECKS_FAILED,
+  EXIT_LANDED,
   EXIT_VERIFY_FAILED,
   LOCK_STALE_MS,
   MERGE_ATTEMPTS,
+  QUEUE_LABEL,
   acquireLock,
   baseMoved,
   checkVerdict,
@@ -15,7 +18,9 @@ import {
   forcePushArgs,
   formatFailures,
   formatTiming,
+  handOffLines,
   landBody,
+  landBranch,
   landLocked,
   landRefusal,
   lockPath,
@@ -25,19 +30,22 @@ import {
   staleReason,
   syncOntoBase,
 } from "./land";
-import type { Gh, LockWait, Run } from "./land";
+import type { Gh, GhCheck, LandIo, LockWait, Run } from "./land";
 
 test("parses flags with values and defaults the base to beta", () => {
-  expect(parseArgs([])).toEqual({ base: "beta" });
+  expect(parseArgs([])).toEqual({ base: "beta", watch: false });
   expect(parseArgs(["--verify", "bun run ship:preflight"])).toEqual({
     base: "beta",
     verify: "bun run ship:preflight",
+    watch: false,
   });
   expect(parseArgs(["--title", "Menus", "--body-file", ".scratch/body.md", "--base", "beta"])).toEqual({
     base: "beta",
     title: "Menus",
     bodyFile: ".scratch/body.md",
+    watch: false,
   });
+  expect(parseArgs(["--watch"]).watch).toBe(true);
 });
 
 test("rejects a flag without a value and an unknown flag instead of guessing", () => {
@@ -602,7 +610,7 @@ if (cfg.startAt !== null) {
 }
 at("START");
 const code = land.landBranch({
-  args: { base: "beta", verify: cfg.verify },
+  args: { base: "beta", verify: cfg.verify, watch: true },
   branch: cfg.branch,
   lock: cfg.lock,
   waits,
@@ -876,6 +884,139 @@ test("a failed verify stops the landing before it merges", async () => {
 
   expect(landing.code).toBe(EXIT_VERIFY_FAILED);
   expect(landing.logs).toContain("verify the-command");
+  expect(landing.logs[0]).toContain("--watch is deprecated");
   expect(landing.errors).toContain("verify failed: the-command");
   expect(windows(landing.events, "MERGE-START", "MERGE-END").length).toBe(0);
 }, 120_000);
+
+/** Git for a hand-off: the push, the fetch and a branch already on top of the base. */
+function scriptedGit(answers: { behind?: string } = {}): { git: (args: string[]) => Run; calls: string[][] } {
+  const calls: string[][] = [];
+  const git = (args: string[]): Run => {
+    calls.push(args);
+    const joined = args.join(" ");
+    if (joined.startsWith("rev-list")) return { status: 0, stdout: `${answers.behind ?? "0"}\n`, stderr: "" };
+    if (joined.startsWith("log")) return { status: 0, stdout: "the commit subject\n", stderr: "" };
+    return { status: 0, stdout: "", stderr: "" };
+  };
+  return { git, calls };
+}
+
+const GREEN: GhCheck[] = [{ name: "ci", state: "SUCCESS", bucket: "pass" }];
+const URL_4242 = "https://github.com/Noisemaker111/JGengine/pull/4242";
+
+function handOffGh(options: { autoMerge?: Run; label?: Run; checks?: GhCheck[] } = {}): { gh: Gh; calls: string[][] } {
+  const calls: string[][] = [];
+  const gh: Gh = (args) => {
+    calls.push(args);
+    const joined = args.join(" ");
+    if (joined.startsWith("pr list")) return { status: 0, stdout: "[]", stderr: "" };
+    if (joined.startsWith("pr create")) return { status: 0, stdout: `${URL_4242}\n`, stderr: "" };
+    if (joined.startsWith("pr checks")) return { status: 0, stdout: JSON.stringify(options.checks ?? GREEN), stderr: "" };
+    if (joined.startsWith("pr merge")) return options.autoMerge ?? { status: 0, stdout: "", stderr: "" };
+    if (joined.startsWith("pr edit")) return options.label ?? { status: 0, stdout: "", stderr: "" };
+    return { status: 0, stdout: "", stderr: "" };
+  };
+  return { gh, calls };
+}
+
+/** An io whose watch and sleep ignite, so any polling on the default path fails the test loudly. */
+function handOffIo(parts: { git: (args: string[]) => Run; gh: Gh; verifyOk?: boolean }): {
+  io: LandIo;
+  logs: string[];
+  errors: string[];
+} {
+  const logs: string[] = [];
+  const errors: string[] = [];
+  const ignite = (what: string) => () => {
+    throw new Error(`land must not ${what} before handing the PR over`);
+  };
+  return {
+    io: {
+      git: parts.git,
+      gh: parts.gh,
+      verify: () => parts.verifyOk ?? true,
+      watch: ignite("watch checks"),
+      sleep: ignite("sleep"),
+      log: (line) => logs.push(line),
+      error: (line) => errors.push(line),
+    },
+    logs,
+    errors,
+  };
+}
+
+test("land hands the PR over in one pass: no watch, no sleep, the URL and the status command", () => {
+  const { git } = scriptedGit();
+  const { gh, calls } = handOffGh();
+  const { io, logs } = handOffIo({ git, gh });
+
+  const code = landBranch({ args: { base: "beta", watch: false }, branch: "agent/lane-x", lock: lockPathForTest(), io });
+
+  expect(code).toBe(EXIT_LANDED);
+  expect(calls).toContainEqual(["pr", "merge", "4242", "--auto", "--merge"]);
+  expect(logs).toContain(URL_4242);
+  expect(logs).toContain("status: bun run ci:status --pr 4242");
+  expect(logs).toContainEqual(expect.stringContaining("waiting: bun run land:queue"));
+  expect(logs.at(-1)).toMatch(/^worked (\d+s|<1s), waited 0s for the lock$/);
+  expect(handOffLines({ number: 7, url: "u" })[1]).toBe("status: bun run ci:status --pr 7");
+});
+
+test("an auto-merge the repo refuses labels the PR for the queue instead of failing the hand-off", () => {
+  const { git } = scriptedGit();
+  const { gh, calls } = handOffGh({ autoMerge: { status: 1, stdout: "", stderr: "auto-merge is not allowed here" } });
+  const { io, logs } = handOffIo({ git, gh });
+
+  const code = landBranch({ args: { base: "beta", watch: false }, branch: "agent/lane-x", lock: lockPathForTest(), io });
+
+  expect(code).toBe(EXIT_LANDED);
+  expect(calls).toContainEqual(["pr", "edit", "4242", "--add-label", QUEUE_LABEL]);
+  expect(logs).toContain(`auto-merge unavailable (auto-merge is not allowed here); labelled the PR ${QUEUE_LABEL}`);
+  expect(logs).toContain("status: bun run ci:status --pr 4242");
+});
+
+test("a base that moved before the hand-off is rebased and armed again, without watching", () => {
+  const { git, calls } = scriptedGit();
+  const { gh } = handOffGh();
+  let attempts = 0;
+  const arming: Gh = (args) => {
+    const joined = args.join(" ");
+    if (joined.startsWith("pr merge") && (attempts += 1) === 1) {
+      return { status: 1, stdout: "", stderr: "the base branch was modified. Review and try the merge again." };
+    }
+    return gh(args);
+  };
+  const { io, logs } = handOffIo({ git, gh: arming });
+
+  const code = landBranch({ args: { base: "beta", watch: false }, branch: "agent/lane-x", lock: lockPathForTest(), io });
+
+  expect(code).toBe(EXIT_LANDED);
+  expect(attempts).toBe(2);
+  expect(logs).toContainEqual(expect.stringMatching(/^origin\/beta moved before the hand-off/));
+  expect(calls.filter((call) => call.join(" ").startsWith("push -u origin HEAD")).length).toBe(2);
+  expect(logs).toContain("status: bun run ci:status --pr 4242");
+});
+
+test("checks that already failed stop the hand-off, and a failed verify never arms anything", () => {
+  const failing: GhCheck[] = [{ name: "test (ui)", state: "FAILURE", bucket: "fail", link: "https://example.test/job/9" }];
+  const failedChecks = handOffGh({ checks: failing });
+  const first = handOffIo({ git: scriptedGit().git, gh: failedChecks.gh });
+  expect(
+    landBranch({ args: { base: "beta", watch: false }, branch: "agent/lane-x", lock: lockPathForTest(), io: first.io }),
+  ).toBe(EXIT_CHECKS_FAILED);
+  expect(failedChecks.calls.some((call) => call[1] === "merge")).toBe(false);
+  expect(first.errors).toContain("  test (ui) https://example.test/job/9");
+
+  const unverified = handOffGh();
+  const second = handOffIo({ git: scriptedGit().git, gh: unverified.gh, verifyOk: false });
+  expect(
+    landBranch({
+      args: { base: "beta", watch: false, verify: "bun run ship:preflight" },
+      branch: "agent/lane-x",
+      lock: lockPathForTest(),
+      io: second.io,
+    }),
+  ).toBe(EXIT_VERIFY_FAILED);
+  expect(unverified.calls.some((call) => call[1] === "merge")).toBe(false);
+  expect(second.logs).toContain("verify bun run ship:preflight");
+});
