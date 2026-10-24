@@ -36,6 +36,21 @@ describe("createRapierBackend", () => {
     }
   });
 
+  test("fixedDt accumulates real time: 30 fps and 144 fps cover the same distance", async () => {
+    // The backend used to set `world.timestep = fixedDt` and step once per call, so 1 s of real time
+    // at 30 fps simulated 0.5 s and at 144 fps simulated 2.4 s — speed scaled with frame rate.
+    const travelled: number[] = [];
+    for (const fps of [30, 144]) {
+      const backend = await createRapierBackend({ gravity: [0, 0, 0], fixedDt: 1 / 60 });
+      const ball = backend.addBody({ shape: { kind: "sphere", radius: 0.2 }, position: [0, 0, 0], velocity: [10, 0, 0] });
+      for (let i = 0; i < fps; i += 1) backend.step(1 / fps);
+      travelled.push(backend.body(ball)!.position[0]);
+      backend.dispose();
+    }
+    expect(travelled[0]).toBeCloseTo(10, 0);
+    expect(Math.abs(travelled[0]! - travelled[1]!)).toBeLessThan(0.2);
+  });
+
   test("character controller lands and walks", async () => {
     const backend = await world();
     const c = controller();

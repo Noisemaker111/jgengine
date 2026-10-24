@@ -736,7 +736,7 @@ export class PhysicsWorld {
       this.posX[i]! += this.velX[i]! * dt;
       this.posY[i]! += this.velY[i]! * dt;
       this.posZ[i]! += this.velZ[i]! * dt;
-      this.constrainBounds(i);
+      this.constrainBounds(i, dt, true);
     }
     this.buildGrid();
     const iterations = this.solverIterations;
@@ -744,11 +744,11 @@ export class PhysicsWorld {
       this.solve(it === 0, it === iterations - 1);
       if (this.jointActiveCount > 0) this.solveJoints(dt);
     }
-    for (let a = 0; a < this.awakeCount; a += 1) this.constrainBounds(this.awakeList[a]!);
+    for (let a = 0; a < this.awakeCount; a += 1) this.constrainBounds(this.awakeList[a]!, dt, false);
     this.updateSleep();
   }
 
-  private constrainBounds(i: number): void {
+  private constrainBounds(i: number, dt: number, frictionPass: boolean): void {
     const min = this.bounds.min;
     const max = this.bounds.max;
     const e = this.restitution;
@@ -776,13 +776,33 @@ export class PhysicsWorld {
     if (this.posY[i]! < loY) {
       this.posY[i] = loY;
       if (this.velY[i]! < 0) this.velY[i]! = -this.velY[i]! < rt ? 0 : this.velY[i]! * -e;
-      const tf = 1 - this.friction;
-      this.velX[i]! *= tf;
-      this.velZ[i]! *= tf;
+      if (frictionPass) this.applyFloorFriction(i, dt);
     } else if (this.posY[i]! > hiY) {
       this.posY[i] = hiY;
       if (this.velY[i]! > 0) this.velY[i]! = this.velY[i]! < rt ? 0 : -this.velY[i]! * e;
     }
+  }
+
+  /**
+   * Coulomb friction against the bounds floor, using the same `friction` coefficient a contact
+   * applies: horizontal speed bleeds by `friction * |gravity| * dt` per substep. The old
+   * multiplicative form (`* (1 - friction)` every substep) removed 60 × 40% per second, so a body
+   * on the world floor stopped ~6× shorter than the same body on a static floor collider.
+   */
+  private applyFloorFriction(i: number, dt: number): void {
+    const decel = this.friction * Math.abs(this.gravity) * dt;
+    if (!(decel > 0)) return;
+    const vx = this.velX[i]!;
+    const vz = this.velZ[i]!;
+    const speed = Math.sqrt(vx * vx + vz * vz);
+    if (speed <= decel) {
+      this.velX[i] = 0;
+      this.velZ[i] = 0;
+      return;
+    }
+    const keep = (speed - decel) / speed;
+    this.velX[i] = vx * keep;
+    this.velZ[i] = vz * keep;
   }
 
   /**

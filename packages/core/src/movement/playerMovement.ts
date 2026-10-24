@@ -744,6 +744,9 @@ export function stepPlayerMovement(
       { buffer: state.jumpBuffer, externalGrounding: true, authoritativeStep: tuning.authoritativeStep },
     );
     state.controllerJumpHeld = intent.jumping;
+    // `jumpOffset` is this step's vertical displacement under the movement model's trapezoidal
+    // integration; the controller sweeps that instead of re-deriving `v * dt` from the end velocity.
+    const verticalStep = horizontal.jumpOffset;
     controller.restore({
       ...controller.state(),
       verticalVelocity: horizontal.verticalVelocity,
@@ -752,6 +755,7 @@ export function stepPlayerMovement(
     const result = controller.move(tuning.controller.backend, {
       motion: [horizontalStep.stepX, 0, horizontalStep.stepZ],
       dt: motionStepSeconds(dt, tuning.authoritativeStep),
+      verticalStep,
     });
     horizontal.verticalVelocity = controller.state().verticalVelocity;
     horizontal.jumpOffset = 0;

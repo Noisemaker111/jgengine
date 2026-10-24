@@ -369,9 +369,12 @@ export function advancePlayerMotion(
         : motion.verticalVelocity < 0
           ? (tuning?.fallGravityScale ?? 1)
           : 1;
+    const risingVelocity = motion.verticalVelocity;
     motion.verticalVelocity -= gravityAcceleration * gravityScale * deltaSeconds;
     if (motion.verticalVelocity <= 0) motion.jumpRising = false;
-    motion.jumpOffset += motion.verticalVelocity * deltaSeconds;
+    // Trapezoidal, not Euler: a jump integrates to v²/2g whatever the frame rate. First-order Euler
+    // undershot the apex by 11% at 30 fps and 2% at 144 fps, so the same jump reached different heights.
+    motion.jumpOffset += ((risingVelocity + motion.verticalVelocity) / 2) * deltaSeconds;
     if (motion.jumpOffset <= 0 && options?.externalGrounding !== true) {
       motion.jumpOffset = 0;
       motion.verticalVelocity = 0;
