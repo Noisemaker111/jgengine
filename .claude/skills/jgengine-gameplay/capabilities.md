@@ -649,7 +649,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `rerollRules` (function) · `import { rerollRules } from "@jgengine/core/gameplay"`
 - `selectRules` (function) · `import { selectRules } from "@jgengine/core/gameplay"`
 
-## run-loop — bank or lose what a run carries, with one deterministic change per run
+## run-loop — deprecated roguelike composition of session-loop - bank or lose what a run carries, with one deterministic change per run
 
 - `createRunLoop` (function) · `import { createRunLoop } from "@jgengine/core/run/runLoop"`
 - `installRunProbe` (function) · `import { installRunProbe } from "@jgengine/core/run/runLoop"`
@@ -677,6 +677,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## seeded-random — injected deterministic randomness for game logic — never `Math.random` in a simulation
 
 - `seededRng` (function) · `import { seededRng } from "@jgengine/core/gameplay"`
+
+## session-loop — open and close a game session, settle the quantity it carried and optionally draw the next session's authored option
+
+- `createSessionLoop` (function) · `import { createSessionLoop } from "@jgengine/core/run/sessionLoop"`
+- `installSessionProbe` (function) · `import { installSessionProbe } from "@jgengine/core/run/sessionLoop"`
 
 ## set — a bounded keyed value in a caller-owned serializable record
 
