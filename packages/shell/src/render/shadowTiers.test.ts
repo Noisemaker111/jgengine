@@ -1,14 +1,14 @@
 import { describe, expect, test } from "bun:test";
 import * as THREE from "three";
+import { CSM } from "three/examples/jsm/csm/CSM.js";
 
 import { resolveGraphicsProfile } from "@jgengine/core/settings/graphicsProfile";
 
-import { scheduleCascadeRefresh } from "./CascadedShadows";
+import { cascadeTexelSize, createCascadeRefreshState, refreshCascadesOnTexelStep } from "./CascadedShadows";
 import {
   minShadowCasterRadius,
   resolveCascadeCount,
   resolveShadowMapSize,
-  shadowRefreshScale,
 } from "./shadowTiers";
 
 describe("shadow map size by tier", () => {
@@ -46,31 +46,64 @@ describe("cascade count by tier", () => {
   });
 });
 
-describe("far-cascade refresh by tier", () => {
-  test("high and ultra keep the cadence the rig was measured with", () => {
-    expect(shadowRefreshScale(2048)).toBe(1);
-    expect(shadowRefreshScale(4096)).toBe(1);
-    expect(shadowRefreshScale(1024)).toBe(2);
-    expect(shadowRefreshScale(512)).toBe(2);
+describe("cascade light texel snapping", () => {
+  const direction = new THREE.Vector3(-0.5, -1, -0.4).normalize();
+  const cascadeLight = () => {
+    const light = new THREE.DirectionalLight();
+    const camera = light.shadow.camera as THREE.OrthographicCamera;
+    camera.left = -10;
+    camera.right = 10;
+    camera.top = 10;
+    camera.bottom = -10;
+    light.shadow.mapSize.set(2048, 2048);
+    light.castShadow = true;
+    light.target.position.set(0, 0, 0);
+    return light;
+  };
+
+  test("a light that does not move costs no depth pass", () => {
+    const light = cascadeLight();
+    light.position.set(12, 30, 8);
+    const state = createCascadeRefreshState(0);
+    refreshCascadesOnTexelStep([light], direction, state);
+    const afterFirst = state.refreshes;
+    for (let frame = 0; frame < 60; frame++) refreshCascadesOnTexelStep([light], direction, state);
+    expect(afterFirst).toBe(1);
+    expect(state.refreshes).toBe(1);
+    expect(light.shadow.autoUpdate).toBe(false);
   });
 
-  test("a stretched cadence halves how often each far cascade draws", () => {
-    const count = (scale: number) => {
-      const lights = Array.from({ length: 3 }, () => new THREE.DirectionalLight());
-      const refreshes = [0, 0, 0];
-      for (let frame = 0; frame < 8; frame++) {
-        scheduleCascadeRefresh(lights, frame, scale);
-        lights.forEach((light, index) => {
-          if (light.shadow.autoUpdate || light.shadow.needsUpdate) {
-            refreshes[index]! += 1;
-            light.shadow.needsUpdate = false;
-          }
-        });
-      }
-      return refreshes;
-    };
-    expect(count(1)).toEqual([8, 4, 2]);
-    expect(count(2)).toEqual([8, 2, 1]);
+  test("a move inside one texel refreshes zero times, a crossing refreshes once", () => {
+    const light = cascadeLight();
+    light.position.set(0, 30, 0);
+    const state = createCascadeRefreshState(0);
+    const texel = cascadeTexelSize(light);
+    expect(texel).toBeCloseTo(20 / 2048, 6);
+    refreshCascadesOnTexelStep([light], direction, state);
+    const base = state.refreshes;
+    light.position.x += texel * 0.4;
+    expect(refreshCascadesOnTexelStep([light], direction, state)).toBe(0);
+    expect(state.refreshes).toBe(base);
+    light.position.x += texel * 1.2;
+    expect(refreshCascadesOnTexelStep([light], direction, state)).toBe(1);
+    expect(state.refreshes).toBe(base + 1);
+  });
+
+  test("the depth pass never outruns the quantised step", () => {
+    const light = cascadeLight();
+    const state = createCascadeRefreshState(0);
+    const texel = cascadeTexelSize(light);
+    let steps = 0;
+    let previous: number | undefined;
+    for (let frame = 0; frame < 40; frame++) {
+      light.position.set(frame * texel * 0.5, 30, 0);
+      refreshCascadesOnTexelStep([light], direction, state);
+      const snapped = light.position.x;
+      if (previous !== undefined && snapped !== previous) steps += 1;
+      previous = snapped;
+    }
+    expect(state.refreshes).toBeLessThanOrEqual(steps + 1);
+    expect(state.refreshes).toBeLessThan(40);
   });
 });
 

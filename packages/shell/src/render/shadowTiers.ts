@@ -27,25 +27,6 @@ export function resolveCascadeCount(profile?: GraphicsProfile, authored?: number
 }
 
 /**
- * Multiplier on the far cascades' refresh interval, by shadow map size. A tier that halves its map
- * also accepts a far cascade lagging a frame or two longer: at 1024 and below the depth pass is
- * cheap per cascade but there are several of them, and a half-res silhouette moving is harder to
- * see than a full-res one. `high` and `ultra` keep the cadence they had.
- * @internal
- */
-export const SHADOW_REFRESH_SCALE_BY_MAP_SIZE: Readonly<Record<number, number>> = {
-  512: 2,
-  1024: 2,
-  2048: 1,
-  4096: 1,
-};
-
-/** Refresh-interval multiplier for a shadow map of `mapSize`. @internal */
-export function shadowRefreshScale(mapSize: number): number {
-  return SHADOW_REFRESH_SCALE_BY_MAP_SIZE[mapSize] ?? 1;
-}
-
-/**
  * Map size at which a caster's silhouette is still a few texels wide, the reference
  * {@link MIN_SHADOW_CASTER_RADIUS} was measured at. A smaller map resolves less, so the smallest
  * shadow worth a depth draw grows with it.

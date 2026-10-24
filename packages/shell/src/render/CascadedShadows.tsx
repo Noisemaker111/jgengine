@@ -5,7 +5,7 @@ import { CSM } from "three/examples/jsm/csm/CSM.js";
 
 import type { DirectionalLightingConfig } from "@jgengine/core/game/playableGame";
 import type { GraphicsProfile } from "@jgengine/core/settings/graphicsProfile";
-import { resolveCascadeCount, resolveShadowMapSize, shadowRefreshScale } from "./shadowTiers";
+import { resolveCascadeCount, resolveShadowMapSize } from "./shadowTiers";
 import type { DaylightModulation } from "./SceneLighting";
 
 /** @internal Default PCF penumbra in shadow-map texels for configured directional lights. */
@@ -40,9 +40,8 @@ export function resolveShadowDistance(profile?: GraphicsProfile, authored?: numb
 }
 
 /**
- * Frames between shadow-map refreshes for the cascade at `index`, nearest first. The nearest
- * cascades move several texels per frame and refresh every frame; the far ones cover ground a
- * slow camera barely crosses, so they pay the depth pass a half or a quarter as often.
+ * Frames between shadow-map refreshes for the cascade at `index`, nearest first.
+ * @deprecated Cascades refresh on a texel step; see {@link refreshCascadesOnTexelStep}.
  * @internal
  */
 export function cascadeShadowCadence(index: number, cascades: number): number {
@@ -51,27 +50,91 @@ export function cascadeShadowCadence(index: number, cascades: number): number {
   return 2 ** (index - (cascades - 3));
 }
 
+/** Depth-axis steps worth of a texel the snapped light may drift before it re-anchors. */
+export const CASCADE_DEPTH_STEP_TEXELS = 8;
+
+const UP = new THREE.Vector3(0, 1, 0);
+const orientMatrix = new THREE.Matrix4();
+const inverseOrient = new THREE.Matrix4();
+const localCentre = new THREE.Vector3();
+
+/** World size of one texel on a cascade's own shadow map. @internal */
+export function cascadeTexelSize(light: THREE.DirectionalLight): number {
+  const shadowCamera = light.shadow.camera as THREE.OrthographicCamera;
+  const span = Math.max(shadowCamera.right - shadowCamera.left, shadowCamera.top - shadowCamera.bottom);
+  return span / Math.max(1, light.shadow.mapSize.x);
+}
+
 /**
- * Set each cascade's shadow refresh policy for `frame`. A cascade that is not due keeps both
- * its matrix and its map from the last refresh, so the pair stays consistent with itself.
- * `refreshScale` stretches the far cascades' interval further on a tier whose maps are cheap
- * enough to lag; `1` is the cadence the cascade rig was measured with. The nearest cascade always
- * refreshes every frame: it is the one a moving camera crosses fastest.
+ * The cascade centre rounded to whole texels of its own shadow map, in the light's orientation.
+ * Lateral texels are what the eye sees move; the depth axis is coarser because it only shifts the
+ * ortho depth window. @internal
+ */
+export function snapCascadeCenter(
+  center: THREE.Vector3,
+  lightDirection: THREE.Vector3,
+  texelSize: number,
+  depthTexels = CASCADE_DEPTH_STEP_TEXELS,
+): THREE.Vector3 {
+  const texel = texelSize > 0 ? texelSize : 1;
+  orientMatrix.lookAt(new THREE.Vector3(), lightDirection, UP);
+  inverseOrient.copy(orientMatrix).invert();
+  localCentre.copy(center).applyMatrix4(inverseOrient);
+  localCentre.x = Math.round(localCentre.x / texel) * texel;
+  localCentre.y = Math.round(localCentre.y / texel) * texel;
+  const depth = texel * Math.max(1, Math.floor(depthTexels));
+  localCentre.z = Math.round(localCentre.z / depth) * depth;
+  return localCentre.applyMatrix4(orientMatrix);
+}
+
+/** Per-frame cascade refresh bookkeeping: the centre each map was last rendered with. */
+export interface CascadeRefreshState {
+  centres: THREE.Vector3[];
+  /** Depth passes requested since the state was created. */
+  refreshes: number;
+  /** Leading cascades that refresh every frame whatever the snap says: a moving caster must not freeze. */
+  floor: number;
+}
+
+/** @internal */
+export function createCascadeRefreshState(floor = 1): CascadeRefreshState {
+  return { centres: [], refreshes: 0, floor };
+}
+
+/**
+ * Pin each cascade's light to its texel grid and request a depth pass where that grid step moved
+ * the light, plus every frame for the `floor` nearest cascades. `floor: 1` keeps the cascade holding
+ * the player live so a walking actor's shadow follows it while the camera stands still; the far
+ * cascades skip until the camera crosses a texel. An unmoved light keeps `autoUpdate` off, so the
+ * map and the sampling matrix always stay the pair they were rendered as.
  * @internal
  */
-export function scheduleCascadeRefresh(
+export function refreshCascadesOnTexelStep(
   lights: readonly THREE.DirectionalLight[],
-  frame: number,
-  refreshScale = 1,
-): void {
-  const stretch = Math.max(1, Math.floor(refreshScale));
+  lightDirection: THREE.Vector3,
+  state: CascadeRefreshState,
+): number {
+  let refreshed = 0;
   for (let index = 0; index < lights.length; index += 1) {
-    const shadow = lights[index]!.shadow;
-    const base = cascadeShadowCadence(index, lights.length);
-    const cadence = base === 1 ? 1 : base * stretch;
-    shadow.autoUpdate = cadence === 1;
-    if (cadence > 1) shadow.needsUpdate = frame % cadence === 0;
+    const light = lights[index]!;
+    const snapped = snapCascadeCenter(light.position, lightDirection, cascadeTexelSize(light));
+    const known = state.centres[index];
+    const moved = known === undefined || known.distanceToSquared(snapped) > 1e-12;
+    const refresh = moved || index < state.floor;
+    light.position.copy(snapped);
+    light.target.position.copy(snapped).add(lightDirection);
+    light.shadow.autoUpdate = refresh;
+    light.shadow.needsUpdate = false;
+    if (moved) {
+      if (known === undefined) state.centres[index] = snapped.clone();
+      else known.copy(snapped);
+    }
+    if (refresh) {
+      refreshed += 1;
+      state.refreshes += 1;
+    }
   }
+  return refreshed;
 }
 
 function isStandardMaterial(mat: THREE.Material): mat is THREE.MeshStandardMaterial | THREE.MeshPhysicalMaterial {
@@ -99,12 +162,12 @@ export function CascadedShadows({
   const camera = useThree((s) => s.camera);
   const scene = useThree((s) => s.scene);
   const csmRef = useRef<CSM | null>(null);
-  const frameRef = useRef(0);
+  const lightDirectionRef = useRef(new THREE.Vector3());
+  const refreshRef = useRef<CascadeRefreshState>(createCascadeRefreshState());
   const baseIntensity = entry.intensity ?? 1.3;
   const maxFar = resolveShadowDistance(profile, entry.shadowMaxFar);
   const shadowMapSize = resolveShadowMapSize(profile, entry.shadowMapSize);
   const cascades = Math.max(2, Math.min(4, Math.floor(resolveCascadeCount(profile, entry.cascades))));
-  const refreshScale = shadowRefreshScale(shadowMapSize);
 
   useEffect(() => {
     const lightDirection = new THREE.Vector3(
@@ -136,6 +199,8 @@ export function CascadedShadows({
     }
     const unbind = bindCsmMaterials(scene, csm);
     csmRef.current = csm;
+    lightDirectionRef.current.copy(lightDirection);
+    refreshRef.current = createCascadeRefreshState();
     return () => {
       unbind();
       releaseCascadedShadows(csm);
@@ -169,7 +234,7 @@ export function CascadedShadows({
     }
     csm.camera = camera;
     csm.update();
-    scheduleCascadeRefresh(csm.lights, frameRef.current++, refreshScale);
+    refreshCascadesOnTexelStep(csm.lights, lightDirectionRef.current, refreshRef.current);
   });
 
   return null;
