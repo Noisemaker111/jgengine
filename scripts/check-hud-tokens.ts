@@ -19,6 +19,8 @@ const NON_THEME = [
   "--jg-card-",
   "--jg-font-card",
   "--jg-panel-padding",
+  // the game menu's opt-in logo size and card radius; every read falls back to a type/frame token
+  "--jg-menu-",
   // reduced-motion multiplier the engine stylesheet owns (0 under reduced motion)
   "--jg-motion-scale",
 ];
@@ -65,3 +67,4 @@ if (failures.length > 0) {
 }
 
 console.log(`check-hud-tokens: ok (${emitted.size} theme tokens)`);
+

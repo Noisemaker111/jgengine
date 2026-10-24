@@ -16,6 +16,9 @@ describe("game menu parts", () => {
     const sound = createGameMenuSound({ enabled: false });
     expect(() => sound.play("move")).not.toThrow();
     expect(() => sound.play("confirm")).not.toThrow();
+    expect(sound.state()).toEqual({ enabled: false, volume: 0.045, ready: false });
+    sound.restore({ enabled: false, volume: 0.2, ready: false });
+    expect(sound.state().volume).toBe(0.2);
     sound.dispose();
     sound.dispose();
   });
@@ -26,3 +29,4 @@ describe("game menu parts", () => {
     expect(await shrinkCapture("")).toBeNull();
   });
 });
+

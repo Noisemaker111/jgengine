@@ -13,9 +13,8 @@ describe("game menu demo", () => {
   });
 
   test("the runner registry exposes the demo without Vite", async () => {
-    const scope = globalThis as { window?: unknown };
-    scope.window ??= { location: { search: "" } };
     const { gameRegistry } = await import("../registries");
     expect(typeof gameRegistry["game-menu"]).toBe("function");
   });
 });
+

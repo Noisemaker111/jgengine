@@ -8,11 +8,24 @@
 export type GameMenuSoundKind = "move" | "confirm" | "back";
 
 /** A menu sound player. Give it to `GameMenu`'s `sound` prop, or call its methods from your own menu. */
+export interface GameMenuSoundState {
+  /** Whether the player will make sound. */
+  enabled: boolean;
+  /** Peak gain per tick. */
+  volume: number;
+  /** Whether an audio context exists and is running - what a test or a settings preview reads. */
+  ready: boolean;
+}
+
 export interface GameMenuSound {
   /** Play one tick. A no-op when audio is unavailable or the browser blocked it. */
   play(kind: GameMenuSoundKind): void;
   /** Release the audio context. Safe to call twice. */
   dispose(): void;
+  /** Read the player state without starting audio. */
+  state(): GameMenuSoundState;
+  /** Apply a saved player state - a settings toggle muting the menu without rebuilding it. */
+  restore(next: GameMenuSoundState): void;
 }
 
 /** How {@link createGameMenuSound} is tuned. */
@@ -36,8 +49,8 @@ const TONES: Record<GameMenuSoundKind, { frequency: number; ms: number; gain: nu
  * @capability menu-sound generated click for menu move/confirm/back, no audio asset
  */
 export function createGameMenuSound(config: GameMenuSoundConfig = {}): GameMenuSound {
-  const enabled = config.enabled ?? true;
-  const volume = config.volume ?? 0.045;
+  let enabled = config.enabled ?? true;
+  let volume = config.volume ?? 0.045;
   let context: AudioContext | null = null;
   let broken = false;
 
@@ -82,6 +95,14 @@ export function createGameMenuSound(config: GameMenuSoundConfig = {}): GameMenuS
       oscillator.start(start);
       oscillator.stop(end + 0.01);
     },
+    state() {
+      return { enabled, volume, ready: context !== null && context.state === "running" };
+    },
+    restore(next) {
+      enabled = next.enabled;
+      volume = next.volume;
+      if (!enabled) this.dispose();
+    },
     dispose() {
       const audio = context;
       context = null;
@@ -89,3 +110,4 @@ export function createGameMenuSound(config: GameMenuSoundConfig = {}): GameMenuS
     },
   };
 }
+

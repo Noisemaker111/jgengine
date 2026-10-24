@@ -182,7 +182,7 @@ function logoNode(logo: GameMenuProps["logo"], title: string | undefined, reduce
           lineHeight: 0.98,
           letterSpacing: "-0.02em",
           color: "var(--jg-text, #f7f9fc)",
-          textShadow: "0 2px 24px rgba(0,0,0,0.65), 0 0 60px var(--jg-accent-soft, rgba(88,196,255,0.25))",
+          textShadow: "0 2px 24px rgba(0,0,0,0.65), 0 0 60px var(--jg-accent-glow, rgba(88,196,255,0.25))",
           animation: reduced ? undefined : `jg-menu-rise 620ms ${hudEase("easeOut")} both`,
         }}
       >
@@ -200,7 +200,7 @@ function logoNode(logo: GameMenuProps["logo"], title: string | undefined, reduce
         lineHeight: 0.98,
         letterSpacing: "-0.02em",
         color: "var(--jg-text, #f7f9fc)",
-        textShadow: "0 2px 24px rgba(0,0,0,0.65), 0 0 60px var(--jg-accent-soft, rgba(88,196,255,0.25))",
+        textShadow: "0 2px 24px rgba(0,0,0,0.65), 0 0 60px var(--jg-accent-glow, rgba(88,196,255,0.25))",
         animation: reduced ? undefined : `jg-menu-rise 620ms ${hudEase("easeOut")} both`,
       }}
     >
@@ -505,7 +505,7 @@ export function GameMenu({
               transition: reduced
                 ? undefined
                 : `transform ${hudDuration("base")} ${hudEase("spring")}, opacity ${hudDuration("fast")} ${hudEase("easeOut")}`,
-              background: "linear-gradient(90deg, var(--jg-accent-soft, rgba(94,196,255,0.22)) 0%, rgba(255,255,255,0.05) 62%, transparent 100%)",
+              background: "linear-gradient(90deg, var(--jg-accent-glow, rgba(94,196,255,0.22)) 0%, rgba(255,255,255,0.05) 62%, transparent 100%)",
               boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.14), 0 10px 30px -14px rgba(0,0,0,0.9)",
               borderLeft: "2px solid var(--jg-accent, #7dd3fc)",
             }}
@@ -545,7 +545,7 @@ export function GameMenu({
                   cursor: item.disabled === true ? "not-allowed" : "pointer",
                   transition: reduced ? undefined : `padding ${hudDuration("base")} ${hudEase("spring")}, color ${hudDuration("fast")} linear`,
                   textShadow: active
-                    ? "0 1px 12px rgba(0,0,0,0.8), 0 0 22px var(--jg-accent-soft, rgba(94,196,255,0.4))"
+                    ? "0 1px 12px rgba(0,0,0,0.8), 0 0 22px var(--jg-accent-glow, rgba(94,196,255,0.4))"
                     : "0 1px 10px rgba(0,0,0,0.72)",
                   outline: "none",
                 }}
@@ -692,6 +692,7 @@ export function GamePauseMenu(
   const { onResume, onBack, ...rest } = props;
   return <GameMenu {...rest} variant="pause" onBack={onBack ?? onResume} label={rest.label ?? "Paused"} />;
 }
+
 
 
 

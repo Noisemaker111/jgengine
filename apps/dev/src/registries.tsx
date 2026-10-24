@@ -103,10 +103,10 @@ function rigConfigOf(config: GameCameraConfig): CameraRigConfig {
   return rest;
 }
 
-const hasViteGlob = typeof import.meta.glob === "function";
+// Vite rewrites every `import.meta.glob(...)` call below into a module map. Outside a browser
+// (a test or a tool importing this registry) those calls cannot run, so the registry has no Games.
+const hasViteGlob = typeof window !== "undefined";
 
-// Vite replaces `import.meta.glob` at build time; a test or a tool importing this registry outside
-// Vite has no glob and gets an empty map instead of a crash.
 const gameModules = (hasViteGlob ? import.meta.glob<{
   game: PlayableGame;
   uiScenario?: UiPreviewScenario;
@@ -284,4 +284,7 @@ const previewModules = (hasViteGlob ? import.meta.glob<{
 export const previewLoaders = Object.fromEntries(
   Object.entries(previewModules).map(([path, loader]) => [path.split("/").at(-3)!, loader] as const),
 );
+
+
+
 
