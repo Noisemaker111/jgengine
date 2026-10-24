@@ -3,6 +3,12 @@
 //   bun run release --dry-run    # print the plan, write nothing
 //   bun run release --no-gen     # skip the generated-artifact refresh
 //
+// A release is a milestone, not a step after each change: publish at most about once a day,
+// or when a game ships outside this machine. Lanes adopt unreleased commits with
+// `bun run engine:pin --ref <sha>` in JGengine-games, so nothing here has to run per PR.
+// Those fragments accumulate until a cut; cutting per change cost ~40 serial minutes each and
+// published 0.38.2, a patch that narrowed two public types for one field.
+//
 // It refuses a commit that does not contain origin/beta: a release cut from a stale main published
 // `@jgengine/core@0.35.0` four merges behind beta and six game lanes could not import `agents/system`.
 //

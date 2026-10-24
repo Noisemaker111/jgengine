@@ -21,12 +21,14 @@ different art directions and gameplay, not impose a common game or asset kit.
 
 A compatible framework fix reaches consumers as a package upgrade, not an implementation
 in every game; breaking API changes still need explicit migrations. A
-merge to `beta` alone changes nothing installed: `bun run release` cuts the changelog
-and bumps the lockstep versions, that commit fast-forwards `main`, and `publish.yml`
-publishes the versions npm does not already have — `next` for a prerelease, `latest`
-for a release — after `bun run check-release-set` proves the publish order matches the
-manifests. The games repository centralizes SDK versions in one root workspace
-catalog. The development and
+merge to `beta` alone changes nothing installed, and that is normal: publishing is a
+milestone, not a step after each change. Unreleased engine work reaches a game by
+pinning its commit in `JGengine-games` (`bun run engine:pin --ref <sha>`), with no
+publish. `bun run release` cuts the changelog and bumps the lockstep versions, that
+commit fast-forwards `main`, and `publish.yml` publishes the versions npm does not
+already have — `next` for a prerelease, `latest` for a release — after
+`bun run check-release-set` proves the publish order matches the manifests. The games
+repository centralizes SDK versions in one root workspace catalog. The development and
 adoption rules live in [AGENTS.md](AGENTS.md#game-changes-improve-the-framework).
 
 ## Packages
