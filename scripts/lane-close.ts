@@ -3,6 +3,7 @@
 //
 //   bun run lane:close                 # the current branch's lane
 //   bun run lane:close --pr 2274
+//   bun run lane:close --allow bun.lock  # keep a file the commit guards refuse
 //   bun run lane:close --waive "nightly build really is 20 minutes"
 //
 // It verifies, lands (staging and committing the lane's work first, with its `changes/`
@@ -56,10 +57,12 @@ export interface LaneCloseArgs {
   pr?: number;
   waive?: string;
   session?: string;
+  /** Paths `land --commit` may take although its guards refuse them; repeatable. */
+  allow: string[];
 }
 
 export function parseArgs(argv: readonly string[]): LaneCloseArgs {
-  const args: LaneCloseArgs = {};
+  const args: LaneCloseArgs = { allow: [] };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === "--pr") {
@@ -71,6 +74,10 @@ export function parseArgs(argv: readonly string[]): LaneCloseArgs {
       const reason = argv[(i += 1)];
       if (reason === undefined || reason.trim().length === 0) throw new Error("--waive needs a reason");
       args.waive = reason.trim();
+    } else if (arg === "--allow") {
+      const path = argv[(i += 1)];
+      if (path === undefined || path.trim().length === 0) throw new Error("--allow needs a path");
+      args.allow.push(path.trim().replace(/\\/g, "/"));
     } else if (arg === "--session") args.session = value(argv, (i += 1), arg);
     else throw new Error(`unknown argument ${arg}`);
   }
@@ -396,7 +403,8 @@ export function closeLane(args: LaneCloseArgs, io: LaneIo): number {
   }
 
   io.out("lane:close: land --commit");
-  const landed = io.sh(["run", "land", "--commit"], true);
+  const landArgs = ["run", "land", "--commit", ...(args.allow ?? []).flatMap((path) => ["--allow", path])];
+  const landed = io.sh(landArgs, true);
   if (landed.status !== 0) {
     io.err(`lane:close: land exited ${landed.status}; the lane is not closed`);
     return landed.status;

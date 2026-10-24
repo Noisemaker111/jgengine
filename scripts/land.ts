@@ -7,10 +7,13 @@
 //   bun run land --title "Menus" --body-file .scratch/body.md
 //
 // `--commit` is what lets a lane end with one command: it stages this worktree's
-// changes (tracked and new - ignored files such as `.scratch/` stay out), takes the
-// commit message from the branch's own `changes/` fragment, and writes that fragment
-// from the commit summary when the diff has none. Nothing to commit is not an error:
-// the landing runs as it does without the flag.
+// changes (tracked and new - ignored files such as `.scratch/` stay out), prints every
+// path it will commit, and refuses the ones a lane did not author: scratch artifacts,
+// a path git ignores, a lockfile staged without its `package.json` manifest, and a new
+// `changes/` fragment whose name is not part of the branch's name. The commit message
+// comes from that fragment, which is written from the commit summary when the diff has
+// none. `--allow <path>` keeps one refused file on purpose. Nothing to commit is not an
+// error: the landing runs as it does without the flag.
 //
 // It refuses on `main` or (without `--commit`) a dirty tree, pushes, rebases onto the base, reuses
 // an open PR or opens one (body: --body-file when given, else the `changes/`
@@ -109,13 +112,15 @@ export interface LandArgs {
   base: string;
   /** Stage and commit this worktree's changes first, so the lane needs no git command after land. */
   commit: boolean;
+  /** Paths to commit although a `--commit` guard refuses them; repeatable. */
+  allow: string[];
   /** Deprecated: wait and merge here, as land did before the queue owned waiting. */
   watch: boolean;
 }
 
-/** `--title`, `--body-file`, `--verify`, `--base beta`, `--commit` and deprecated `--watch`; anything else is a typo. */
+/** `--title`, `--body-file`, `--verify`, `--base beta`, `--commit`, `--allow <path>` and deprecated `--watch`; anything else is a typo. */
 export function parseArgs(argv: readonly string[]): LandArgs {
-  const args: LandArgs = { base: "beta", commit: false, watch: false };
+  const args: LandArgs = { base: "beta", commit: false, allow: [], watch: false };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === "--title") args.title = value(argv, (i += 1), arg);
@@ -123,6 +128,7 @@ export function parseArgs(argv: readonly string[]): LandArgs {
     else if (arg === "--verify") args.verify = value(argv, (i += 1), arg);
     else if (arg === "--base") args.base = value(argv, (i += 1), arg);
     else if (arg === "--commit") args.commit = true;
+    else if (arg === "--allow") args.allow.push(value(argv, (i += 1), arg).replace(/\\/g, "/"));
     else if (arg === "--watch") args.watch = true;
     else throw new Error(`unknown argument ${arg}`);
   }
@@ -299,6 +305,64 @@ export interface CommitOutcome {
   created?: boolean;
   code?: number;
   why?: string;
+  /** The paths this run refused to commit, so a caller can print them all. */
+  refused?: CommitGuard[];
+}
+
+/** One staged path `--commit` will not take, and the rule that stopped it. */
+export interface CommitGuard {
+  path: string;
+  why: string;
+}
+
+const LOCKFILES = new Set(["bun.lock", "bun.lockb", "package-lock.json", "yarn.lock", "pnpm-lock.yaml"]);
+const MANIFESTS = new Set(["package.json"]);
+/** Anything a run leaves behind rather than authors: scratch folders, edited captures, logs, temp files. */
+const SCRATCH_PATH = /^(?:\.scratch(?:\/|-)|.*(?:\.out|\.log|\.tmp|\.orig|\.rej)$)|^(?:tmp|\.cache)\//;
+
+/**
+ * Paths a lane's commit must not take on its own. Every rule is stated, so a refusal is a fact to
+ * read rather than a taste to argue with:
+ *
+ *  - scratch artifacts (`.scratch/`, `.scratch-*`, `*.out`, `*.log`, `*.tmp`, `tmp/`) are evidence,
+ *    never work;
+ *  - a path git ignores is not part of the repository at all;
+ *  - a lockfile without its manifest is not this lane's dependency change, it is drift from the
+ *    node_modules this checkout shares;
+ *  - a newly added `changes/` fragment whose name is not part of the branch's name is someone
+ *    else's note or a leftover a test wrote.
+ *
+ * `allow` names the paths the author wants anyway.
+ */
+export function commitGuards(options: {
+  staged: readonly string[];
+  added: readonly string[];
+  ignored: readonly string[];
+  branch: string;
+  allow?: readonly string[];
+}): CommitGuard[] {
+  const allowed = new Set(options.allow ?? []);
+  const staged = new Set(options.staged.map(normalizePath));
+  const added = new Set(options.added.map(normalizePath));
+  const ignored = new Set(options.ignored.map(normalizePath));
+  const branchName = options.branch.replace(/\//g, "-");
+  const refusal: CommitGuard[] = [];
+  for (const path of staged) {
+    if (allowed.has(path)) continue;
+    const name = basename(path);
+    if (ignored.has(path)) refusal.push({ path, why: "git ignores this path, so it is not part of the repository" });
+    else if (SCRATCH_PATH.test(path)) refusal.push({ path, why: "a run's own artifact, not authored work" });
+    else if (LOCKFILES.has(name) && ![...staged].some((other) => MANIFESTS.has(basename(other)))) {
+      refusal.push({ path, why: `a lockfile staged without its package.json manifest: this checkout's shared install, not this lane` });
+    } else if (added.has(path) && /^changes\/.+\.md$/.test(path) && !branchName.includes(name.replace(/\.md$/, ""))) {
+      refusal.push({ path, why: `a new changes/ fragment whose name is not part of ${options.branch}, so this lane did not write it` });
+    }
+  }
+  return refusal;
+}
+
+function normalizePath(path: string): string {
+  return path.trim().replace(/\\/g, "/");
 }
 
 export interface CommitOptions {
@@ -307,17 +371,22 @@ export interface CommitOptions {
   git: Git;
   /** The checkout the git runs in; the repo root by default. */
   checkout?: string;
+  /** Paths the author wants committed although a guard refuses them. */
+  allow?: readonly string[];
   /** Fragments in this checkout, `changes/` by default. */
   files?: () => readonly FragmentFile[];
   read?: (path: string) => string;
   write?: (path: string, text: string) => void;
   log?: (line: string) => void;
+  /** Where the refusals go; stdout by default, so the list is read before anything is committed. */
+  refuse?: (line: string) => void;
 }
 
 /**
- * Stage this worktree, then commit it with the branch's own fragment as the message. A branch with
- * no fragment of its own gets one written from its commit summary, so the message, the PR body and
- * `changes/` cannot disagree. Another lane's fragment in the shared directory is never used.
+ * Stage this worktree, print every path it will commit, refuse the ones a lane did not author, then
+ * commit with the branch's own fragment as the message. A branch with no fragment of its own gets one
+ * written from its commit summary, so the message, the PR body and `changes/` cannot disagree. Another
+ * lane's fragment in the shared directory is never used.
  */
 export function commitLane(options: CommitOptions): CommitOutcome {
   const { base, branch, git: runGit } = options;
@@ -325,6 +394,7 @@ export function commitLane(options: CommitOptions): CommitOutcome {
   const read = options.read ?? ((path: string) => readFileSync(path, "utf8"));
   const write = options.write ?? ((path: string, text: string) => writeFileSync(path, text));
   const log = options.log ?? (() => {});
+  const refuse = options.refuse ?? log;
 
   const dirty = runGit(["status", "--porcelain"]);
   if (dirty.status !== 0) return { kind: "failed", code: EXIT_COULD_NOT_MERGE, why: `git status failed: ${details(dirty)}` };
@@ -333,10 +403,31 @@ export function commitLane(options: CommitOptions): CommitOutcome {
   const staged = runGit(["add", "-A"]);
   if (staged.status !== 0) return { kind: "failed", code: EXIT_COULD_NOT_MERGE, why: `git add failed: ${details(staged)}` };
 
+  const stagedPaths = lines(runGit(["diff", "--name-only", "--cached"])).map(normalizePath);
+  const addedPaths = lines(runGit(["diff", "--name-status", "--cached", "--diff-filter=A"]))
+    .map((line) => normalizePath(line.split("\t").slice(-1)[0] ?? ""))
+    .filter(Boolean);
+  const ignoredPaths = stagedPaths.length === 0 ? [] : lines(runGit(["check-ignore", "--", ...stagedPaths]));
+  const blocked = commitGuards({
+    staged: stagedPaths,
+    added: addedPaths,
+    ignored: ignoredPaths,
+    branch,
+    allow: options.allow,
+  });
+
+  log(`committing ${stagedPaths.length} file(s):`);
+  for (const path of stagedPaths) log(`  ${blocked.some((entry) => entry.path === path) ? "refused" : "commit "} ${path}`);
+  if (blocked.length > 0) {
+    for (const entry of blocked) refuse(`land: refusing ${entry.path}: ${entry.why}`);
+    refuse("land: nothing was committed; the files above are staged. Unstage one with");
+    refuse("land:   git restore --staged <path>");
+    refuse("land: or keep it on purpose with: bun run lane:close --allow <path> (bun run land --commit --allow <path>)");
+    return { kind: "failed", code: EXIT_COULD_NOT_MERGE, why: `refused ${blocked.length} file(s) this lane did not author`, refused: blocked };
+  }
+
   const summary = firstLine(runGit(["log", "-1", "--format=%s"]).stdout) || branch;
-  const stagedPaths = lines(runGit(["diff", "--name-only", "--cached"]));
-  log(`staged ${stagedPaths.length} file(s): ${stagedPaths.slice(0, 8).join(", ")}${stagedPaths.length > 8 ? ", ..." : ""}`);
-  const candidates = new Set([...diffPaths(base, runGit), ...stagedPaths].map((path) => basename(path.trim())));
+  const candidates = new Set([...diffPaths(base, runGit), ...stagedPaths].map((path) => basename(normalizePath(path))));
   const files = options.files ?? (() => fragmentFiles());
   const own = files().filter((file) => candidates.has(basename(file.path)));
   let fragment = pickFragment(own, branch);
@@ -1072,6 +1163,8 @@ export function landBranch(run: LandRun): number {
         branch: run.branch,
         git: run.io.git,
         log: run.io.log,
+        refuse: run.io.error,
+        allow: run.args.allow,
         ...run.commitIo,
       });
       if (committed.kind === "failed") {
