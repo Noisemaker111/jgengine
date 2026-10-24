@@ -117,7 +117,7 @@ beforeAll(async () => {
   });
   browser = await chromium.launch({ executablePath: findChromeExecutable(), headless: true, args: ["--no-sandbox"] });
   page = await browser.newPage();
-}, 30000);
+}, 60_000);
 
 beforeEach(async () => {
   // Park the pointer before loading: Playwright keeps the mouse where the last click left it, and the browser

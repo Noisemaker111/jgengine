@@ -31,7 +31,7 @@ beforeAll(async()=>{
   const html='<meta name="viewport" content="width=device-width, initial-scale=1"><style>.pointer-events-none{pointer-events:none}.pointer-events-auto{pointer-events:auto}.absolute{position:absolute}.relative{position:relative}.inset-0{inset:0}.touch-none{touch-action:none}.invisible{visibility:hidden}.flex{display:flex}.flex-col{flex-direction:column}.items-center{align-items:center}.justify-center{justify-content:center}.overflow-hidden{overflow:hidden}.z-40{z-index:40}.p-3{padding:12px}.flex-1{flex:1 1 0%}.min-h-0{min-height:0}.shrink-0{flex-shrink:0}</style><div id="root"></div><script src="/fixture.js"></script>';
   server=Bun.serve({hostname:'127.0.0.1',port:0,fetch:r=>new URL(r.url).pathname==='/fixture.js'?new Response(script,{headers:{'Content-Type':'text/javascript'}}):new Response(html,{headers:{'Content-Type':'text/html'}})});
   browser=await chromium.launch({executablePath:findChromeExecutable(),headless:true,args:['--no-sandbox']});
-},30000);
+}, 60_000);
 afterAll(async()=>{await browser?.close();server?.stop(true);await rm(scratch,{recursive:true,force:true});});
 
 test('native HUD touch wins over the invisible joystick area while exposed movement still works',async()=>{

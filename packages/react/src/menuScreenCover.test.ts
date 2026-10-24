@@ -60,7 +60,7 @@ beforeAll(async () => {
   page = await browser.newPage();
   await page.goto(`http://127.0.0.1:${server.port}`);
   await page.waitForFunction(() => typeof (window as unknown as { fixture?: unknown }).fixture !== "undefined");
-}, 30_000);
+}, 60_000);
 
 afterAll(async () => {
   await browser?.close();

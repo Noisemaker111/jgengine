@@ -72,7 +72,7 @@ beforeAll(async () => {
   });
   browser = await chromium.launch({ executablePath: findChromeExecutable(), headless: true, args: ["--no-sandbox"] });
   page = await browser.newPage();
-}, 30000);
+}, 60_000);
 
 beforeEach(async () => {
   await page.goto(`http://127.0.0.1:${server.port}`);

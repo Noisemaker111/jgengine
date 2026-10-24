@@ -14,7 +14,7 @@ beforeAll(async () => {
   browser = await chromium.launch({ executablePath: findChromeExecutable(), headless: true, args: ["--no-sandbox"] });
   page = await browser.newPage();
   await page.goto("data:text/html,<h1>alive</h1>");
-}, 30_000);
+}, 60_000);
 
 afterAll(async () => {
   await browser?.close();

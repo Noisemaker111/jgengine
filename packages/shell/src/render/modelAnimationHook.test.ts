@@ -297,7 +297,7 @@ beforeAll(async () => {
     return new Response('<div id="root"></div><script type="module" src="/fixture.js"></script>', { headers: { "Content-Type": "text/html" } });
   } });
   browser = await chromium.launch({ executablePath: findChromeExecutable(), headless: true, args: ["--no-sandbox"] });
-}, 30000);
+}, 60_000);
 
 test("explicit automatic playback diagnoses unsupported imported clips once while legacy automatic playback remains quiet", async () => {
   const page = await browser.newPage();

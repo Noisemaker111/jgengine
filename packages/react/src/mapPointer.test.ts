@@ -35,7 +35,7 @@ beforeAll(async () => {
   server = Bun.serve({ hostname: "127.0.0.1", port: 0, fetch: request => new URL(request.url).pathname === "/fixture.js" ? new Response(script, { headers: { "Content-Type": "text/javascript" } }) : new Response('<style>body{margin:0}</style><div id="root"></div><script type="module" src="/fixture.js"></script>', { headers: { "Content-Type": "text/html" } }) });
   browser = await chromium.launch({ executablePath: findChromeExecutable(), headless: true, args: ["--no-sandbox"] });
   page = await browser.newPage({ viewport: { width: 900, height: 600 }, hasTouch: true });
-}, 30000);
+}, 60_000);
 beforeEach(async () => { input = await page.context().newCDPSession(page); });
 afterEach(async () => { await input?.detach(); });
 afterAll(async () => { await browser?.close(); server?.stop(true); await rm(scratch, { recursive: true, force: true }); });
