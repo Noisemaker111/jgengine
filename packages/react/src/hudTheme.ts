@@ -318,8 +318,8 @@ export function hudThemeVars(theme: HudTheme): CSSProperties {
     // whatever it holds and a game can retune the menu from its theme.
     "--jg-menu-logo-size": "clamp(30px, 4.6vw, 66px)",
     "--jg-menu-card-radius": frame.radius,
-    "--jg-menu-card-height": "clamp(220px, 26vh, 300px)",
-    "--jg-menu-card-thumb": "clamp(96px, 15vh, 168px)",
+    "--jg-menu-card-height": "clamp(244px, 27vh, 300px)",
+    "--jg-menu-card-thumb": "clamp(88px, 14vh, 160px)",
     "--jg-menu-surface-radius": "8px",
     "--jg-frame-glow": frame.glow,
     "--jg-slot-bg": slot.bg,
@@ -877,3 +877,4 @@ export function resolveHudTheme(theme?: HudThemePreset | HudTheme): HudTheme {
   if (typeof theme === "string") return HUD_THEME_PRESETS[theme] ?? defaultHudTheme;
   return theme;
 }
+

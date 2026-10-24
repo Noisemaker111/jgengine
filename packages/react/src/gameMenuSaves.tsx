@@ -21,7 +21,7 @@ const cardSurface: CSSProperties = {
   position: "relative",
   width: "100%",
   minWidth: 0,
-  height: "var(--jg-menu-card-height, clamp(220px, 26vh, 300px))",
+  height: "var(--jg-menu-card-height, clamp(244px, 27vh, 300px))",
   boxSizing: "border-box",
   overflow: "hidden",
   display: "flex",
@@ -165,7 +165,7 @@ export function SaveSlotCard({
           position: "relative",
           width: "100%",
           flexShrink: 0,
-          height: "var(--jg-menu-card-thumb, clamp(96px, 15vh, 168px))",
+          height: "var(--jg-menu-card-thumb, clamp(88px, 14vh, 160px))",
           borderRadius: 8,
           overflow: "hidden",
           background: "radial-gradient(120% 120% at 30% 20%, rgba(125,211,252,0.22), rgba(8,12,18,0.9))",
@@ -1038,6 +1038,7 @@ export function CreditsPane({ sections, heading = "Credits", notice, className, 
     </div>
   );
 }
+
 
 
 
