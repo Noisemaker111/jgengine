@@ -7,7 +7,7 @@
 /** Which feedback sound to play. */
 export type GameMenuSoundKind = "move" | "confirm" | "back";
 
-/** A menu sound player. Give it to `GameMenu`'s `sound` prop, or call its methods from your own menu. */
+/** The sound player's readable state: on/off, gain, and whether audio is actually running. */
 export interface GameMenuSoundState {
   /** Whether the player will make sound. */
   enabled: boolean;
@@ -17,6 +17,7 @@ export interface GameMenuSoundState {
   ready: boolean;
 }
 
+/** A menu sound player. Give it to `GameMenu`'s `sound` prop, or call its methods from your own menu. */
 export interface GameMenuSound {
   /** Play one tick. A no-op when audio is unavailable or the browser blocked it. */
   play(kind: GameMenuSoundKind): void;
@@ -110,4 +111,6 @@ export function createGameMenuSound(config: GameMenuSoundConfig = {}): GameMenuS
     },
   };
 }
+
+
 

@@ -794,6 +794,7 @@
 - `GameMenuSound` (interface): interface GameMenuSound — A menu sound player. Give it to `GameMenu`'s `sound` prop, or call its methods from your own menu.
 - `GameMenuSoundConfig` (interface): interface GameMenuSoundConfig — How {@link createGameMenuSound} is tuned.
 - `GameMenuSoundKind` (type): type GameMenuSoundKind = "move" | "confirm" | "back" — The short, quiet click a menu makes when the selection moves or is confirmed. Generated with an oscillator instead of shipped as an audio file, so a game gets menu feedback without authoring a sound and the whole thing unmounts with the screen.
+- `GameMenuSoundState` (interface): interface GameMenuSoundState — The sound player's readable state: on/off, gain, and whether audio is actually running.
 - `GameMenuVariant` (type): type GameMenuVariant = "title" | "pause" — How a {@link GameMenu} is used. `pause` is the same system at a smaller scale.
 - `GamePauseMenu` (function): function GamePauseMenu(props: Omit<GameMenuProps, "variant"> & { onResume?: () => void }): ReactNode — A pause menu built from {@link GameMenu}: the same surface and navigation at a smaller scale, so a game composes one menu system rather than a second one. Escape (or B/Start) resumes.
 - `GamePreviewComponent` (type): type GamePreviewComponent = ComponentType<GamePreviewProps> — ⚠ undocumented
@@ -1509,6 +1510,7 @@
 - `GameMenuSound` (interface): interface GameMenuSound — A menu sound player. Give it to `GameMenu`'s `sound` prop, or call its methods from your own menu.
 - `GameMenuSoundConfig` (interface): interface GameMenuSoundConfig — How {@link createGameMenuSound} is tuned.
 - `GameMenuSoundKind` (type): type GameMenuSoundKind = "move" | "confirm" | "back" — The short, quiet click a menu makes when the selection moves or is confirmed. Generated with an oscillator instead of shipped as an audio file, so a game gets menu feedback without authoring a sound and the whole thing unmounts with the screen.
+- `GameMenuSoundState` (interface): interface GameMenuSoundState — The sound player's readable state: on/off, gain, and whether audio is actually running.
 - `createGameMenuSound` (function): function createGameMenuSound(config: GameMenuSoundConfig = {}): GameMenuSound — A tiny WebAudio click generator for menu feedback: one oscillator burst per tick, created on the first play (so a browser autoplay policy does not log an error at mount) and reused after.
 
 ## @jgengine/react/gameViewport
