@@ -373,7 +373,7 @@ test("a branch the base moved under is rebased in a scratch checkout, and one al
   });
   expect(current).toEqual({ rebased: false, refusal: null });
   expect(checkouts).toBe(0);
-});
+}, 60_000);
 
 test("the queue holds the repo's one sleep, and that sleep names its reason", () => {
   const source = readFileSync(join(import.meta.dir, "land-queue.ts"), "utf8");

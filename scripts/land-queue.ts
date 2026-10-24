@@ -299,13 +299,18 @@ export interface Drained {
 export function formatOutcome(drained: Drained): string {
   const head = `#${drained.pr.number} ${drained.pr.branch} (${drained.pr.signal})`;
   const runs = drained.runIds.length > 0 ? `, run ${drained.runIds.join(", ")}` : "";
+  const detail = drained.detail
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0)
+    .join("; ");
   if (drained.outcome === "landed") {
     return drained.waitedMs === 0
       ? `${head} landed without waiting${runs}`
       : `${head} landed: waited ${duration(drained.waitedMs)}${runs}`;
   }
-  if (drained.outcome === "skipped") return `${head} skipped: ${drained.detail}`;
-  return `${head} not landed: waited ${duration(drained.waitedMs)}${runs}: ${drained.detail}`;
+  if (drained.outcome === "skipped") return `${head} skipped: ${detail}`;
+  return `${head} not landed: waited ${duration(drained.waitedMs)}${runs}: ${detail}`;
 }
 
 /** Land one ready PR: rebase if the base moved, wait once, merge, and report what it cost. */
