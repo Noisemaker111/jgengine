@@ -108,7 +108,7 @@
     "probe": "bun scripts/guard.ts 1200 'bun scripts/probe-commit.ts'",
     "new:game": "bun packages/jgengine/src/cli/index.ts create",
     "pr-shots": "bun scripts/pr-shots.ts",
-    "pr-sweep": "bun scripts/pr-sweep.ts",
+    "pr:sweep": "bun scripts/pr-sweep.ts",
     "pr-video": "bun scripts/pr-video.ts",
     "host": "bun scripts/host-game.ts",
     "smoke": "bun scripts/guard.ts 600 'bun scripts/ensure-ready.ts && bun scripts/smoke-games.ts'",
