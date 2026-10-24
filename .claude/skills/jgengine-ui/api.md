@@ -3034,6 +3034,12 @@
 
 - `drawProceduralTileLayer` (function): function drawProceduralTileLayer(canvas: CanvasFixture): TilemapWorldConfig — Draw the deterministic tile atlas used by textured tile-layer captures and tests.
 
+## @jgengine/shell/render/triangleAttribution
+
+- `TriangleAttribution` (interface): interface TriangleAttribution — Where one scene's triangles are, biggest line first.
+- `TriangleLine` (interface): interface TriangleLine — One line of the triangle table: the draws sharing one geometry inside one named model.
+- `attributeTriangles` (function): function attributeTriangles(root: THREE.Object3D, limit = 12): TriangleAttribution — Sum a scene's triangles by model and geometry, which is the attribution a triangle budget needs: a total says a frame is heavy, a table says which authored object made it heavy. Walks the graph once; call it on demand, never per frame.
+
 ## @jgengine/shell/render/triplanarMaterial
 
 - `TriplanarAssetMaterial` (function): function TriplanarAssetMaterial({ asset, ...options }: { asset: MaterialAsset } & { tileMetres?: number; sharpness?: number; normalScale?: number }): React.JSX.Element — Mounts {@link useTriplanarAssetMaterial} on a mesh; the R3F renderer owns disposal.
