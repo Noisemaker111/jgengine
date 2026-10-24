@@ -6,7 +6,7 @@ import { createDamageRuntime, type DamageRuntime } from "./damageRuntime";
 import type { DamageTableDef } from "./damageTable";
 import type { HitZoneTable } from "./hitZones";
 import type { WeaponDefinition } from "./weaponDefinition";
-import { createWeaponSystem, type WeaponSystemDeps } from "./weaponSystem";
+import { createWeaponSystem, type WeaponSystem, type WeaponSystemDeps } from "./weaponSystem";
 
 const damageTable: DamageTableDef = {
   types: [{ id: "kinetic", vs: { flesh: 1, armor: 0.5 } }],
@@ -454,5 +454,89 @@ describe("state, retune and probes", () => {
         origin: () => [0, 0, 0],
       }),
     ).toThrow(/sweep/);
+  });
+});
+
+describe("cadence belongs to the weapon, not the trigger", () => {
+  // 700 rpm is 85.714 ms between shots, so one second holds twelve shots and no shot lands near
+  // the second's edge to make the count a rounding coin flip.
+  const CADENCE_RPM = 700;
+  const SHOTS_PER_SECOND = 12;
+
+  function cadenceWeapon(patch: Partial<WeaponDefinition> = {}): WeaponSystem {
+    return createWeaponSystem(
+      fixture({ roundsPerMinute: CADENCE_RPM, magazine: { capacity: 120, reloadMs: 1_000 }, ...patch }),
+      makeDeps({ raycast: hitscanAt(20) }),
+    );
+  }
+
+  function heldOneSecond(fps: number): number {
+    const weapon = cadenceWeapon();
+    weapon.setTrigger(true);
+    let shots = 0;
+    for (let step = 0; step < fps; step += 1) shots += weapon.tick(1 / fps).shots.length;
+    return shots;
+  }
+
+  test("one second of held fire scores the same at 30, 60 and 144 steps", () => {
+    expect([heldOneSecond(30), heldOneSecond(60), heldOneSecond(144)]).toEqual([
+      SHOTS_PER_SECOND,
+      SHOTS_PER_SECOND,
+      SHOTS_PER_SECOND,
+    ]);
+  });
+
+  test("tapping the trigger fires at the weapon's cadence, not the input's", () => {
+    // Every step is a 30 Hz input repeat; every fifth step presses at about the weapon's own
+    // cadence. Neither may change how often the weapon actually fires.
+    for (const period of [5, 2]) {
+      const weapon = cadenceWeapon();
+      let shots = 0;
+      for (let step = 0; step < 60; step += 1) {
+        weapon.setTrigger(step % period === 0);
+        shots += weapon.tick(1 / 60).shots.length;
+      }
+      expect(shots).toBe(SHOTS_PER_SECOND);
+    }
+  });
+
+  test("a cooldown that finished with the trigger up fires on the next press", () => {
+    const weapon = createWeaponSystem(fixture({ roundsPerMinute: 120 }), makeDeps({ raycast: hitscanAt(20) }));
+    weapon.setTrigger(true);
+    expect(weapon.tick(1 / 60).shots.length).toBe(1);
+
+    weapon.setTrigger(false);
+    let whileReleased = 0;
+    for (let step = 0; step < 36; step += 1) whileReleased += weapon.tick(1 / 60).shots.length;
+    expect(whileReleased).toBe(0);
+
+    weapon.setTrigger(true);
+    expect(weapon.tick(1 / 60).shots.length).toBe(1);
+  });
+
+  test("a semi-auto refuses a second shot inside its cooldown however the trigger is worked", () => {
+    const weapon = createWeaponSystem(
+      fixture({ roundsPerMinute: 120, fireMode: "single" }),
+      makeDeps({ raycast: hitscanAt(20) }),
+    );
+    weapon.setTrigger(true);
+    expect(weapon.tick(1 / 60).shots.length).toBe(1);
+
+    let whileHeld = 0;
+    for (let step = 0; step < 12; step += 1) whileHeld += weapon.tick(1 / 60).shots.length;
+    expect(whileHeld).toBe(0);
+
+    let early = 0;
+    for (let pull = 0; pull < 4; pull += 1) {
+      weapon.setTrigger(false);
+      early += weapon.tick(1 / 60).shots.length;
+      weapon.setTrigger(true);
+      early += weapon.tick(1 / 60).shots.length;
+    }
+    expect(early).toBe(0);
+
+    let late = 0;
+    for (let step = 0; step < 30; step += 1) late += weapon.tick(1 / 60).shots.length;
+    expect(late).toBe(1);
   });
 });

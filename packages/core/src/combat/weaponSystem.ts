@@ -172,7 +172,7 @@ export interface WeaponSystem {
   /** Press or release the trigger. A press survives until the next tick that can use it. */
   setTrigger(down: boolean): void;
   trigger(): boolean;
-  /** Advance recoil, bloom, reload, pellets and the trigger by `dt`; returns what fired and what landed. */
+  /** Advance the cadence clock, recoil, bloom, reload, pellets and the trigger by `dt`; returns what fired and what landed. */
   tick(dt: number, stance?: WeaponStance): WeaponTickResult;
   /** True when a shot could leave right now: cadence ready, not reloading, ammo available. */
   canFire(): boolean;
@@ -514,7 +514,12 @@ export function createWeaponSystem(initial: WeaponDefinition, deps: WeaponSystem
     return true;
   }
 
-  function fireDue(dt: number, stance: WeaponStance | undefined, out: MutableTick): void {
+  function fireDue(
+    dt: number,
+    cadenceBeforeTickMs: number,
+    stance: WeaponStance | undefined,
+    out: MutableTick,
+  ): void {
     if (!wantsShot()) return;
     if (reloadState() !== "idle") {
       pendingPull = false;
@@ -530,9 +535,7 @@ export function createWeaponSystem(initial: WeaponDefinition, deps: WeaponSystem
       stats.burstPulls += 1;
     }
 
-    const elapsedBefore = cadence.elapsedMs();
-    const totalMs = elapsedBefore + Math.max(0, dt) * 1000;
-    cadence.tick(dt);
+    const totalMs = cadenceBeforeTickMs + Math.max(0, dt) * 1000;
     const due = Math.min(maxShotsPerTick, Math.floor(totalMs / intervalMs));
     let fired = 0;
     while (fired < due && wantsShot()) {
@@ -583,7 +586,9 @@ export function createWeaponSystem(initial: WeaponDefinition, deps: WeaponSystem
         if (wasReloading && !magazine.isReloading()) stats.reloadsCompleted += 1;
       }
       advancePellets(step, out);
-      fireDue(step, stance, out);
+      const cadenceBeforeTickMs = cadence.elapsedMs();
+      cadence.tick(step);
+      fireDue(step, cadenceBeforeTickMs, stance, out);
       return out;
     },
     canFire() {
