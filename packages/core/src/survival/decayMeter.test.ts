@@ -188,3 +188,37 @@ describe("pure decay meters", () => {
     expect(set.snapshot()).toEqual(decayMeterSnapshot(values, defs));
   });
 });
+
+describe("decay meter set save state", () => {
+  const configs: DecayMeterConfig[] = [
+    { id: "warmth", max: 100, rate: 1, start: 80 },
+    { id: "hunger", max: 100, rate: 2 },
+  ];
+
+  test("a tuned rate and modifier survive the trip through a save", () => {
+    const meters = createDecayMeterSet(configs);
+    meters.setRate("hunger", 5);
+    meters.setRateModifier("warmth", 4);
+    meters.tick(2); // warmth 80 - 1*4*2 = 72, hunger 100 - 5*2 = 90
+
+    const saved = JSON.parse(JSON.stringify(meters.serialize())) as ReturnType<typeof meters.serialize>;
+    expect(saved.values).toEqual({ warmth: 72, hunger: 90 });
+    expect(saved.rates).toEqual({ warmth: 1, hunger: 5 });
+    expect(saved.modifiers).toEqual({ warmth: 4 });
+
+    const resumed = createDecayMeterSet(configs);
+    resumed.restore(saved);
+    meters.tick(3);
+    resumed.tick(3);
+    expect(resumed.value("warmth")).toBe(meters.value("warmth"));
+    expect(resumed.value("hunger")).toBe(meters.value("hunger"));
+  });
+
+  test("restore clears a modifier the saved state does not carry", () => {
+    const meters = createDecayMeterSet([{ id: "oxygen", max: 100, rate: 1 }]);
+    meters.setRateModifier("oxygen", 5);
+    meters.restore({ values: { oxygen: 100 }, rates: { oxygen: 1 }, modifiers: {} });
+    meters.tick(1);
+    expect(meters.value("oxygen")).toBe(99);
+  });
+});

@@ -389,7 +389,7 @@
 
 ## @jgengine/core/combat/castRunner
 
-- `CastBarSnapshot` (interface): interface CastBarSnapshot { abilityId: string; castTimeMs: number; elapsedMs: number; remainingMs: number; fraction: number } — ⚠ undocumented
+- `CastBarSnapshot` (interface): interface CastBarSnapshot { abilityId: string; castTimeMs: number; elapsedMs: number; remainingMs: number; fraction: number; moveTolerance: number; moveDeadzone: number; movedTotal: number } — ⚠ undocumented
 - `CastConfig` (interface): interface CastConfig { abilityId: string; castTimeMs: number; moveTolerance?: number; moveDeadzone?: number } — ⚠ undocumented
 - `CastEvent` (type): type CastEvent = | { kind: "completed"; abilityId: string } | { kind: "interrupted"; abilityId: string; reason: CastInterruptReason } — ⚠ undocumented
 - `CastInterruptReason` (type): type CastInterruptReason = "moved" | "cancelled" | "replaced" — ⚠ undocumented

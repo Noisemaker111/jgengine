@@ -59,6 +59,8 @@ export interface SelectionBookmarks {
   prune(isValid: (id: string) => boolean): SelectionPruneResult;
   /** A plain-data copy of every bookmark — the exact input {@link createSelectionBookmarks} restores. */
   serialize(): SelectionBookmarkSnapshot;
+  /** Replace every bookmark with a {@link serialize} snapshot — re-deduped, empty sets dropped. */
+  restore(snapshot: SelectionBookmarkSnapshot): void;
 }
 
 function dedupe(ids: Iterable<string>): string[] {
@@ -81,12 +83,16 @@ function dedupe(ids: Iterable<string>): string[] {
  */
 export function createSelectionBookmarks(snapshot?: SelectionBookmarkSnapshot): SelectionBookmarks {
   const groups = new Map<string, string[]>();
-  if (snapshot !== undefined) {
-    for (const [key, ids] of Object.entries(snapshot.bookmarks)) {
+
+  function load(next: SelectionBookmarkSnapshot): void {
+    groups.clear();
+    for (const [key, ids] of Object.entries(next.bookmarks)) {
       const list = dedupe(ids);
       if (list.length > 0) groups.set(key, list);
     }
   }
+
+  if (snapshot !== undefined) load(snapshot);
 
   return {
     bind(key, ids) {
@@ -147,6 +153,7 @@ export function createSelectionBookmarks(snapshot?: SelectionBookmarkSnapshot): 
     serialize: () => ({
       bookmarks: Object.fromEntries([...groups].map(([key, list]) => [key, [...list]])),
     }),
+    restore: load,
   };
 }
 

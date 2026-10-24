@@ -123,6 +123,13 @@ export interface AreaEffectField<P> {
   clear(): AreaEffectEvent<P>[];
   /** Snapshot the persistent membership lifecycle for save/load; shapes are transient and re-supplied via `setSource`. */
   serialize(): AreaFieldState<P>;
+  /**
+   * Replace sources and membership with a {@link serialize} result — the save/load counterpart.
+   * Sources come back on a sentinel shape, so re-`setSource` live shapes before the next `step`.
+   * Members the restored state does not carry leave with reason `"cleared"`; survivors keep their
+   * refresh phase without an enter/leave churn.
+   */
+  restore(state: AreaFieldState<P>): AreaEffectEvent<P>[];
 }
 
 interface MemberRecord {
@@ -159,8 +166,9 @@ function shapeContains(shape: AreaShape, point: EntityPosition): boolean {
 export function createAreaEffectField<P = unknown>(state?: AreaFieldState<P>): AreaEffectField<P> {
   const sources = new Map<string, SourceRecord<P>>();
 
-  if (state !== undefined) {
-    for (const source of state.sources) {
+  function applyState(next: AreaFieldState<P>): void {
+    sources.clear();
+    for (const source of next.sources) {
       sources.set(source.id, {
         shape: SENTINEL_SHAPE,
         payload: source.payload,
@@ -170,12 +178,14 @@ export function createAreaEffectField<P = unknown>(state?: AreaFieldState<P>): A
         members: new Map(),
       });
     }
-    for (const membership of state.memberships) {
+    for (const membership of next.memberships) {
       sources.get(membership.sourceId)?.members.set(membership.receiverId, {
         sinceRefreshMs: membership.sinceRefreshMs,
       });
     }
   }
+
+  if (state !== undefined) applyState(state);
 
   function leaveAll(rec: SourceRecord<P>, sourceId: string, reason: AreaLeaveReason): AreaEffectEvent<P>[] {
     const events: AreaEffectEvent<P>[] = [];
@@ -294,6 +304,19 @@ export function createAreaEffectField<P = unknown>(state?: AreaFieldState<P>): A
         }
       }
       return out;
+    },
+    restore(next) {
+      const kept = new Set(next.memberships.map((membership) => `${membership.sourceId}\u0000${membership.receiverId}`));
+      const events: AreaEffectEvent<P>[] = [];
+      for (const [sourceId, rec] of sources) {
+        for (const receiverId of [...rec.members.keys()]) {
+          if (kept.has(`${sourceId}\u0000${receiverId}`)) continue;
+          rec.members.delete(receiverId);
+          events.push({ kind: "leave", sourceId, receiverId, stackKey: rec.stackKey, payload: rec.payload, reason: "cleared" });
+        }
+      }
+      applyState(next);
+      return events;
     },
   };
 }

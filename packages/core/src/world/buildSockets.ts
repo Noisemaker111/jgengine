@@ -221,6 +221,7 @@ export function pieceSocketsFromModel(
  *
  * @capability build-socket-catalog data-driven named-socket snap catalog for modular base building
  */
+// stateless: pieces, rules and their lookup indexes are built once from `config` and never written after the factory returns, so the constructor is the whole state
 export function createBuildSocketCatalog(config: BuildSocketCatalogConfig): BuildSocketCatalog {
   const cellSize = config.cellSize ?? 1;
   const pieces = new Map<string, BuildPieceDef>();

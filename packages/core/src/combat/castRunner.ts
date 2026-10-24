@@ -21,6 +21,12 @@ export interface CastBarSnapshot {
   remainingMs: number;
   /** Fill fraction in `[0, 1]` for the cast bar. */
   fraction: number;
+  /** Movement budget this cast was begun with; `Infinity` for a cast that tolerates travel. */
+  moveTolerance: number;
+  /** The caster's noise floor this cast was begun with. */
+  moveDeadzone: number;
+  /** Travel already spent against `moveTolerance` (sub-deadzone jitter excluded). */
+  movedTotal: number;
 }
 
 export type CastInterruptReason = "moved" | "cancelled" | "replaced";
@@ -39,7 +45,14 @@ export interface CastRunner {
   /** Start a cast; `false` while one is already in flight (interrupt or let it finish first). */
   begin(config: CastConfig): boolean;
   casting(): boolean;
+  /** The in-flight cast's timing and remaining move budget, or `null` when idle. */
   state(): CastBarSnapshot | null;
+  /**
+   * Replace the in-flight cast with a snapshot from {@link state} — resuming a saved cast with the
+   * movement already spent against its budget, or clearing it with `null`. The derived `fraction`
+   * and `remainingMs` are recomputed; everything else is kept as saved.
+   */
+  restore(next: CastBarSnapshot | null): void;
   /** Interrupt the in-flight cast now; returns the interruption event, or `null` when idle. */
   interrupt(reason?: CastInterruptReason): CastEvent | null;
   /**
@@ -77,6 +90,9 @@ export function createCastRunner(): CastRunner {
       elapsedMs: active.elapsedMs,
       remainingMs: Math.max(0, active.castTimeMs - active.elapsedMs),
       fraction,
+      moveTolerance: active.moveTolerance,
+      moveDeadzone: active.moveDeadzone,
+      movedTotal: active.movedTotal,
     };
   }
 
@@ -95,6 +111,20 @@ export function createCastRunner(): CastRunner {
     },
     casting: () => active !== null,
     state: snapshot,
+    restore(next) {
+      if (next === null) {
+        active = null;
+        return;
+      }
+      active = {
+        abilityId: next.abilityId,
+        castTimeMs: Math.max(0, next.castTimeMs),
+        moveTolerance: next.moveTolerance,
+        moveDeadzone: Math.max(0, next.moveDeadzone),
+        elapsedMs: Math.max(0, next.elapsedMs),
+        movedTotal: Math.max(0, next.movedTotal),
+      };
+    },
     interrupt(reason = "cancelled") {
       if (active === null) return null;
       const abilityId = active.abilityId;

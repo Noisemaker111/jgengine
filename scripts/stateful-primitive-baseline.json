@@ -1,16 +1,14 @@
 {
   "ceilings": {
-    "round-trip": 8
+    "round-trip": 2
   },
   "keys": [
     "packages/core/src/ai/crowd.ts#createVisitorLoop",
     "packages/core/src/ai/jobBoard.ts#createJobBoard",
     "packages/core/src/ai/mobBrain.ts#createMobBrain",
     "packages/core/src/ai/targetAcquisition.ts#createTargetAcquirer",
-    "packages/core/src/area/areaEffectField.ts#createAreaEffectField",
     "packages/core/src/behaviour/behaviour.ts#createBehaviourWorld",
     "packages/core/src/combat/animationState.ts#createAnimationState",
-    "packages/core/src/combat/castRunner.ts#createCastRunner",
     "packages/core/src/combat/comboString.ts#createComboRunner",
     "packages/core/src/combat/death.ts#createDeathSystem",
     "packages/core/src/combat/defensiveWindow.ts#createDefensiveWindow",
@@ -74,13 +72,11 @@
     "packages/core/src/scene/paintLayer.ts#createPaintLayer",
     "packages/core/src/scene/possession.ts#createPossession",
     "packages/core/src/scene/selection.ts#createSelectionSet",
-    "packages/core/src/scene/selectionBookmarks.ts#createSelectionBookmarks",
     "packages/core/src/scene/spatial.ts#createSpatialApi",
     "packages/core/src/scene/targeting.ts#createTargeting",
     "packages/core/src/sensor/frustumSensor.ts#createFrustumSensor",
     "packages/core/src/session/extraction.ts#createRaidSession",
     "packages/core/src/store/changeSignal.ts#createChangeSignal",
-    "packages/core/src/survival/decayMeter.ts#createDecayMeterSet",
     "packages/core/src/survival/moodle.ts#createMoodleStack",
     "packages/core/src/survival/regionHealth.ts#createMultiRegionHealth",
     "packages/core/src/tactics/snapshot.ts#createSnapshotStore",
@@ -93,8 +89,6 @@
     "packages/core/src/visibility/assetStreaming.ts#createAssetStreamingSystem",
     "packages/core/src/visibility/bounds.ts#createBoundsCache",
     "packages/core/src/visibility/visibilitySystem.ts#createVisibilitySystem",
-    "packages/core/src/world/buildPermissions.ts#createPlotPermissions",
-    "packages/core/src/world/buildSockets.ts#createBuildSocketCatalog",
     "packages/core/src/world/cellStates.ts#createCellStateGrid",
     "packages/core/src/world/fog.ts#createFogField",
     "packages/core/src/world/placementController.ts#createPlacementController",
