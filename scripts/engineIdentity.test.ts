@@ -47,7 +47,7 @@ function checkout(version: string): string {
     ["add", "."],
     ["-c", "user.email=fixture@example.com", "-c", "user.name=fixture", "commit", "--quiet", "-m", "fixture"],
   ]) {
-    const run = spawnSync("git", args, { cwd: root, encoding: "utf8" });
+    const run = spawnSync("git", args, { cwd: root, encoding: "utf8", timeout: 30_000 });
     if (run.status !== 0) throw new Error(`fixture git ${args.join(" ")}: ${run.stderr}`);
   }
   return root;
@@ -62,7 +62,7 @@ function games(version: string): string {
 }
 
 function headOf(root: string): string {
-  const run = spawnSync("git", ["rev-parse", "--short=8", "HEAD"], { cwd: root, encoding: "utf8" });
+  const run = spawnSync("git", ["rev-parse", "--short=8", "HEAD"], { cwd: root, encoding: "utf8", timeout: 30_000 });
   return run.stdout.trim();
 }
 
