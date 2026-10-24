@@ -41,6 +41,8 @@ import {
   type SizeMode,
 } from "./browser-lib";
 import { decodePng } from "./png-reader";
+import { clearOriginStorage } from "./capture-storage";
+import { headRevision } from "./captureRevision";
 import { externalCaptureUrl } from "./captureTarget";
 import { assertQuickIsIterationOnly, quickProfile, quickSuffix, quickTimingLine, splitQuickFlag } from "./capture-preset";
 import { CAPTURE_FLAGS, captureFlagHelp, parseCaptureArgs } from "../packages/jgengine/src/templates/captureArgs";
@@ -61,11 +63,13 @@ import {
   type PreviousShot,
 } from "./shotProvenance";
 import {
-  attachDaemon,
+  acquireWarmCapture,
+  daemonDiedUnder,
   ensureDaemonTarget,
   isDaemonArgv,
   runDaemonCommand,
   startDaemon,
+  withDaemonWatch,
   writeDaemonState,
   type ShootDaemonState,
 } from "./shoot-daemon";
@@ -109,6 +113,8 @@ type Args = {
   site?: string;
   connect?: number;
   keep: boolean;
+  /** `--cold`: boot Chrome and Vite directly, proving a clean start. */
+  cold: boolean;
   inspect: boolean;
   /** Show a real window (off-screen) instead of headless Chrome. */
   headed: boolean;
@@ -130,10 +136,13 @@ ${captureFlagHelp("shoot", "engine", CAPTURE_FLAGS)}
   JG_CAPTURE_SCREENCAST=0 forces Page.captureScreenshot instead of the screencast
   frame pump (same pixels, several times slower on software GL).
 
-Persistent daemon (preferred for multi-shot loops):
+Persistent daemon (started for you; no lane ever starts it by hand):
+  bun run shoot <game> --mode play           # starts or reuses the daemon, then attaches
+  --cold skips the daemon entirely: fresh Chrome and Vite, for evidence runs that
+  must prove a clean boot. Every run prints which happened and how long it took:
+    warm: reused :9261 (0.2s)      cold: started :9261 (4.1s)
   bun run shoot --serve                      # keep Chrome warm; Vite starts on demand
   bun run shoot daemon start|status|stop     # managed background service
-  bun run shoot <game> --mode play           # auto-attaches when daemon is live (<5s)
 
 Manual warm loop:
   bun run shoot <game> --mode play --keep                       # cold boot, stays warm
@@ -153,8 +162,10 @@ function parseArgs(argv: string[]): Args {
   // `--headed` is parsed here, not in CAPTURE_FLAGS: the scaffold's shoot.mjs has no local window to
   // show, so the flag stays engine-only instead of parsing there and doing nothing.
   const quick = splitQuickFlag("shoot", argv);
+  // `--cold` is parsed here, not in CAPTURE_FLAGS: the portable harness has no daemon to skip.
+  const cold = quick.argv.includes("--cold");
   const headed = quick.argv.includes("--headed");
-  const parsed = parseCaptureArgs("shoot", quick.argv.filter((arg) => arg !== "--headed"), CAPTURE_FLAGS);
+  const parsed = parseCaptureArgs("shoot", quick.argv.filter((arg) => arg !== "--headed" && arg !== "--cold"), CAPTURE_FLAGS);
   const o = parsed.options;
   const str = (name: string): string | undefined => (typeof o[name] === "string" ? (o[name] as string) : undefined);
   const num = (name: string): number | undefined => (str(name) === undefined ? undefined : Number(str(name)));
@@ -187,6 +198,7 @@ function parseArgs(argv: string[]): Args {
     site: str("site"),
     connect: num("connect"),
     keep: o.keep === true,
+    cold,
     inspect: o.inspect === true,
     headed,
     quick: quick.quick,
@@ -381,6 +393,9 @@ async function shootOne(
     const target = new URL(targetUrl(args, device, devBase));
     for (const [key, value] of args.params) target.searchParams.set(key, value);
     const url = target.toString();
+    // A warm profile keeps the previous run's saves and settings, so a reused browser would render
+    // "continue your story" where a clean one renders "hit the street" (#warm-capture signatures).
+    await clearOriginStorage(session, target.origin);
     await navigateCapturePageWithRetry(session, url, devBase, args.timeoutMs, CAPTURE_MAX_ATTEMPTS, { legacyCanvas: args.url !== undefined });
     mark("ready");
     await reportAppliedAim(session, args);
@@ -522,35 +537,30 @@ if (args.port !== undefined) process.env.JG_DEV_PORT = String(args.port);
 // start on a drive that cannot hold this capture.
 sweepCaptureProfiles();
 ensureCaptureFreeSpace();
-const daemon: ShootDaemonState | null =
-  args.connect === undefined && args.port === undefined ? await attachDaemon() : null;
 
-let server: ChildProcess | null = null;
-let serverPid: number | undefined;
-let devBase = "";
-let attachedDaemon = false;
-if (args.url !== undefined) {
-  if (args.site !== undefined) throw new Error("shoot: --url and --site select different targets; pass one");
-  if (!(await isUp(args.url))) {
-    throw new Error(`shoot: nothing is listening at ${args.url} — start that external server first`);
+interface ShootTarget {
+  devBase: string;
+  server: ChildProcess | null;
+  serverPid: number | undefined;
+  attachedDaemon: boolean;
+}
+
+/** Resolve the page this shot draws from: explicit URL, a daemon target, or a Vite this run owns. */
+async function resolveTarget(daemon: ShootDaemonState | null): Promise<ShootTarget> {
+  if (args.url !== undefined) {
+    if (args.site !== undefined) throw new Error("shoot: --url and --site select different targets; pass one");
+    if (!(await isUp(args.url))) {
+      throw new Error(`shoot: nothing is listening at ${args.url} — start that external server first`);
+    }
+    return { devBase: args.url, server: null, serverPid: undefined, attachedDaemon: daemon !== null };
   }
-  devBase = args.url;
-  attachedDaemon = daemon !== null;
-} else if (daemon !== null) {
-  const target = await ensureDaemonTarget(daemon, args.site !== undefined ? "web" : "dev");
-  devBase = target.base;
-  attachedDaemon = true;
-  console.error(`shoot: attached to daemon — chrome :${daemon.chromePort}, target ${devBase}`);
-} else if (args.site !== undefined) {
-  const web = await ensureWebServer();
-  server = web.child;
-  serverPid = web.pid;
-  devBase = web.base;
-} else if (args.url === undefined) {
-  const dev = await ensureDevServer();
-  server = dev.child;
-  serverPid = dev.pid;
-  devBase = dev.base;
+  if (daemon !== null) {
+    const target = await ensureDaemonTarget(daemon, args.site !== undefined ? "web" : "dev");
+    console.error(`shoot: attached to daemon — chrome :${daemon.chromePort}, target ${target.base}`);
+    return { devBase: target.base, server: null, serverPid: undefined, attachedDaemon: true };
+  }
+  const server = args.site === undefined ? await ensureDevServer() : await ensureWebServer();
+  return { devBase: server.base, server: server.child, serverPid: server.pid, attachedDaemon: false };
 }
 /**
  * Print the game's declared `capture.views`. The runner publishes them on `data-jg-shots` as soon
@@ -586,56 +596,92 @@ async function listViews(debugPort: number, base: string, game: string): Promise
   }
 }
 
-const exitCode = await withBrowserSession(
-  {
-    keep: args.keep,
-    connect: args.connect,
-    timeoutMs: args.timeoutMs,
-    server,
-    serverPid,
-    debugPort: daemon !== null ? daemon.chromePort : undefined,
-    attach: attachedDaemon,
-    leaveWarm: args.keep || attachedDaemon,
-    chromePrefix: "jg-shoot-",
-    headed: args.headed,
-    hardDeadlineMs:
-      args.site === undefined
-        ? args.timeoutMs * Math.max(targets.length, 1) + 120_000
-        : args.timeoutMs * CAPTURE_MAX_ATTEMPTS * Math.max(targets.length, 1) + 10_000,
-  },
-  async ({ debugPort, chrome }) => {
-    if (args.listViews) return listViews(debugPort, devBase, args.game);
-    let code = 0;
-    for (const device of targets) {
-      const outPath = outPathFor(args, device, outDir);
-      const previous = preparedShots.get(outPath);
-      const fits = await shootOne(debugPort, args, device, outPath, devBase, previous);
-      if (!fits) code = 1;
-    }
-    if (args.keep && !attachedDaemon) {
-      const state: ShootDaemonState = {
-        identity: checkoutIdentity(),
-        chromePort: debugPort,
-        chromePid: chrome?.pid,
-        userDataDir: chrome?.userDataDir,
-        startedAt: new Date().toISOString(),
-      };
-      const target = { port: Number(new URL(devBase).port), base: devBase, pid: serverPid ?? server?.pid };
-      if (args.url === undefined && args.site === undefined) {
-        state.devPort = target.port;
-        state.devBase = target.base;
-        state.devPid = target.pid;
-      } else if (args.url === undefined) {
-        state.webPort = target.port;
-        state.webBase = target.base;
-        state.webPid = target.pid;
+/**
+ * One capture pass against a resolved target. Kept a function so a run whose daemon
+ * died under it can be repeated once on the direct path instead of failing.
+ */
+async function shootSession(daemon: ShootDaemonState | null): Promise<number> {
+  const { devBase, server, serverPid, attachedDaemon } = await resolveTarget(daemon);
+  return withDaemonWatch(daemon, withBrowserSession(
+    {
+      keep: args.keep,
+      connect: args.connect,
+      timeoutMs: args.timeoutMs,
+      server,
+      serverPid,
+      debugPort: daemon !== null ? daemon.chromePort : undefined,
+      attach: attachedDaemon,
+      leaveWarm: args.keep || attachedDaemon,
+      chromePrefix: "jg-shoot-",
+      headed: args.headed,
+      hardDeadlineMs:
+        args.site === undefined
+          ? args.timeoutMs * Math.max(targets.length, 1) + 120_000
+          : args.timeoutMs * CAPTURE_MAX_ATTEMPTS * Math.max(targets.length, 1) + 10_000,
+    },
+    async ({ debugPort, chrome }) => {
+      if (args.listViews) return listViews(debugPort, devBase, args.game);
+      let code = 0;
+      for (const device of targets) {
+        const outPath = outPathFor(args, device, outDir);
+        const previous = preparedShots.get(outPath);
+        const fits = await shootOne(debugPort, args, device, outPath, devBase, previous);
+        if (!fits) code = 1;
       }
-      writeDaemonState(state);
-      console.error(`shoot: kept warm — chrome debug port ${debugPort}, dev server on ${devBase}`);
-      console.error(`shoot: next shot → bun run shoot ${args.url === undefined ? `${args.game} --mode ${args.mode}` : `--url ${args.url}`} (daemon auto-attach)`);
-      console.error(`shoot: or explicit → bun run shoot ${args.url === undefined ? `${args.game} --mode ${args.mode}` : `--url ${args.url}`} --connect ${debugPort} --size half`);
-    }
-    return code;
-  },
-);
+      if (args.keep && !attachedDaemon) {
+        const state: ShootDaemonState = {
+          identity: checkoutIdentity(),
+          chromePort: debugPort,
+          head: headRevision(),
+          chromePid: chrome?.pid,
+          userDataDir: chrome?.userDataDir,
+          startedAt: new Date().toISOString(),
+        };
+        const target = { port: Number(new URL(devBase).port), base: devBase, pid: serverPid ?? server?.pid };
+        if (args.url === undefined && args.site === undefined) {
+          state.devPort = target.port;
+          state.devBase = target.base;
+          state.devPid = target.pid;
+        } else if (args.url === undefined) {
+          state.webPort = target.port;
+          state.webBase = target.base;
+          state.webPid = target.pid;
+        }
+        writeDaemonState(state);
+        console.error(`shoot: kept warm — chrome debug port ${debugPort}, dev server on ${devBase}`);
+        console.error(`shoot: next shot → bun run shoot ${args.url === undefined ? `${args.game} --mode ${args.mode}` : `--url ${args.url}`} (daemon auto-attach)`);
+        console.error(`shoot: or explicit → bun run shoot ${args.url === undefined ? `${args.game} --mode ${args.mode}` : `--url ${args.url}`} --connect ${debugPort} --size half`);
+      }
+      return code;
+    },
+  ));
+}
+
+const explicitTarget = args.connect !== undefined || args.port !== undefined || args.url !== undefined;
+// The daemon's Chrome was launched headless with the display frame clock, so a run that needs a
+// window of its own must not borrow it. An external --url is not this checkout's app either.
+const ownBrowser = args.headed ? "--headed needs its own browser window" : undefined;
+const warm = explicitTarget
+  ? { daemon: null, mode: "cold" as const, seconds: 0 }
+  : await acquireWarmCapture({
+      cold: args.cold || ownBrowser !== undefined,
+      ...(ownBrowser === undefined ? {} : { because: ownBrowser }),
+    });
+/** Run one session, reporting a failure the same way `withBrowserSession` does. */
+async function attempt(daemon: ShootDaemonState | null): Promise<number> {
+  try {
+    return await shootSession(daemon);
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : error);
+    return 1;
+  }
+}
+
+let exitCode = await attempt(warm.daemon);
+if (warm.daemon !== null && exitCode !== 0 && (await daemonDiedUnder(warm.daemon))) {
+  console.error(
+    `cold: the daemon on :${warm.daemon.chromePort} died mid-run — falling back to a direct launch, no retry`,
+  );
+  exitCode = await attempt(null);
+}
 process.exit(exitCode);

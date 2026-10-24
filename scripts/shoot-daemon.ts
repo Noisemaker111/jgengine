@@ -3,11 +3,17 @@
  * starts and retains apps/dev or apps/web when a capture needs that target.
  * Later shots reuse browser, module, and shader caches.
  *
+ * Every capture lane (shoot, drive, perf) acquires it through
+ * {@link acquireWarmCapture}: reuse a live one, start one when none is running,
+ * replace one that serves another commit, and fall back to a direct launch when
+ * it cannot be had. `--cold` skips it entirely.
+ *
+ *   bun run shoot <game> --mode play   # starts or reuses the daemon, then attaches
+ *   bun run shoot <game> --cold        # no daemon: clean boot for evidence runs
  *   bun run shoot --serve              # start daemon (foreground)
  *   bun run shoot daemon start         # start daemon (background)
  *   bun run shoot daemon status
  *   bun run shoot daemon stop
- *   bun run shoot <game> --mode play   # auto-attaches when daemon is live
  */
 import type { ChildProcess } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -24,6 +30,7 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+import { headRevision, shortRevision } from "./captureRevision";
 import {
   checkoutIdentity,
   ensureDevServer,
@@ -45,6 +52,8 @@ import { localOk } from "./localhostHttp";
 export interface ShootDaemonState {
   identity: string;
   chromePort: number;
+  /** Engine commit this daemon's Chrome and Vite booted from; absent on records written before revision keying. */
+  head?: string;
   devPort?: number;
   devBase?: string;
   chromePid?: number;
@@ -158,6 +167,130 @@ export async function attachDaemon(cwd = process.cwd()): Promise<ShootDaemonStat
 
 export type ShootDaemonTarget = "dev" | "web";
 
+/** What a lane got when it asked for a warm capture. */
+export interface WarmCapture {
+  /** The daemon to attach to, or null when this run owns its own Chrome. */
+  daemon: ShootDaemonState | null;
+  /** `warm` reused a live daemon; `cold` started one, was refused one, or was told not to. */
+  mode: "warm" | "cold";
+  /** Wall time the acquisition cost, so a lane's own timing line accounts for it. */
+  seconds: number;
+}
+
+/**
+ * True when a daemon serves a different commit than the tree holds. A record with
+ * no recorded commit cannot prove what it serves, so it is retired rather than
+ * trusted; a non-git checkout has nothing to compare and keeps the old reuse.
+ */
+export function daemonRevisionDrift(recorded: string | undefined, current: string | undefined): boolean {
+  if (current === undefined) return false;
+  if (recorded === undefined) return true;
+  return recorded !== current;
+}
+
+/** Test seams: the acquisition talks to these instead of the real machine. */
+export interface AcquireWarmCaptureOptions {
+  cwd?: string;
+  /** `--cold`: never reuse or start a daemon; the lane boots its own Chrome. */
+  cold?: boolean;
+  /** Why this lane is cold when it was not `--cold`; printed instead of the default reason. */
+  because?: string;
+  /** Return the live daemon for this checkout, or null. Defaults to {@link attachDaemon}. */
+  probe?: (cwd: string) => Promise<ShootDaemonState | null>;
+  /** Start a daemon and return it. Defaults to {@link startDaemon}. */
+  start?: (cwd: string) => Promise<ShootDaemonState>;
+  /** Retire a daemon that serves another commit. Defaults to {@link stopDaemon}. */
+  stop?: (cwd: string) => Promise<boolean>;
+  /** Commit the tree holds. Defaults to {@link headRevision}. */
+  head?: (cwd: string) => string | undefined;
+}
+
+/**
+ * The one decision every capture lane makes: attach to the daemon, start it, or
+ * boot alone. Prints exactly one line saying which happened and how long it took,
+ * and never waits on a daemon that is not there — a failure to provide one is a
+ * printed fallback to the direct launch, not a retry.
+ */
+export async function acquireWarmCapture(options: AcquireWarmCaptureOptions = {}): Promise<WarmCapture> {
+  const cwd = options.cwd ?? process.cwd();
+  const startedAt = performance.now();
+  const head = options.head ?? headRevision;
+  const probe = options.probe ?? attachDaemon;
+  const start = options.start ?? ((root: string) => startDaemon({ cwd: root }));
+  const stop = options.stop ?? ((root: string) => stopDaemon({ cwd: root }));
+  const done = (daemon: ShootDaemonState | null, mode: WarmCapture["mode"], line: string): WarmCapture => {
+    console.error(line);
+    return { daemon, mode, seconds: (performance.now() - startedAt) / 1_000 };
+  };
+  const elapsed = (): string => ((performance.now() - startedAt) / 1_000).toFixed(1);
+
+  if (options.cold === true) {
+    return done(null, "cold", `cold: ${options.because ?? "--cold asked for a clean boot"} — no daemon reused or started`);
+  }
+
+  let live: ShootDaemonState | null = null;
+  try {
+    live = await probe(cwd);
+  } catch (error) {
+    return done(null, "cold", `cold: could not read the daemon (${reason(error)}) — direct launch, no retry`);
+  }
+
+  if (live !== null) {
+    const current = head(cwd);
+    if (daemonRevisionDrift(live.head, current)) {
+      try {
+        await stop(cwd);
+      } catch (error) {
+        return done(null, "cold", `cold: a stale daemon would not stop (${reason(error)}) — direct launch, no retry`);
+      }
+      console.error(
+        `cold: replaced daemon on :${live.chromePort} serving ${shortRevision(live.head)}, engine is ${shortRevision(current)}`,
+      );
+    } else {
+      return done(live, "warm", `warm: reused :${live.chromePort} (${elapsed()}s)`);
+    }
+  }
+
+  try {
+    const state = await start(cwd);
+    return done(state, "cold", `cold: started :${state.chromePort} (${elapsed()}s)`);
+  } catch (error) {
+    return done(null, "cold", `cold: daemon unavailable (${reason(error)}) — direct launch, no retry`);
+  }
+}
+
+function reason(error: unknown): string {
+  const text = error instanceof Error ? error.message : String(error);
+  return text.replace(/\s+/g, " ").trim().slice(0, 160) || "unknown error";
+}
+
+/**
+ * True when a run that attached to `daemon` then failed, and the daemon is gone:
+ * the failure is explained by the daemon dying, so the lane may boot once by itself.
+ */
+export async function daemonDiedUnder(daemon: ShootDaemonState | null, cwd = process.cwd()): Promise<boolean> {
+  if (daemon === null) return false;
+  return !(await isDaemonLive(cwd));
+}
+
+/**
+ * Settle only when the daemon stops answering. A CDP call into a browser that died
+ * does not fail — it waits — so a capture that attached to the daemon races this and
+ * fails in seconds, which turns a hang into the one-line fallback.
+ */
+export async function watchDaemon(daemon: ShootDaemonState, cwd = process.cwd(), intervalMs = 2_000): Promise<never> {
+  for (;;) {
+    await new Promise((resolve) => setTimeout(resolve, intervalMs));
+    if (!(await isDaemonLive(cwd))) throw new Error(`shoot daemon: :${daemon.chromePort} stopped answering mid-run`);
+  }
+}
+
+/** Run a capture session, failing early if the daemon it borrowed dies under it. */
+export async function withDaemonWatch<T>(daemon: ShootDaemonState | null, run: Promise<T>, cwd = process.cwd()): Promise<T> {
+  if (daemon === null) return run;
+  return Promise.race([run, watchDaemon(daemon, cwd)]);
+}
+
 /** Start or reuse one Vite target and persist its endpoint in daemon state. */
 export async function ensureDaemonTarget(
   state: ShootDaemonState,
@@ -267,7 +400,14 @@ export async function startDaemon(options: {
     const chrome = launched.browser.child;
     const chromePid = launched.browser.pid;
     const userDataDir = launched.browser.userDataDir;
-    const started: ShootDaemonState = { identity, chromePort, chromePid, userDataDir, startedAt: new Date().toISOString() };
+    const started: ShootDaemonState = {
+      identity,
+      chromePort,
+      head: headRevision(cwd),
+      chromePid,
+      userDataDir,
+      startedAt: new Date().toISOString(),
+    };
     writeDaemonState(started, cwd);
     return { state: started, chrome, started: true };
   }, 35_000);
