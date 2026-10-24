@@ -61,6 +61,28 @@ import { existsSync, readdirSync, readFileSync, renameSync, rmSync, statSync, wr
 import { basename, isAbsolute, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { FRAGMENT_PATTERN } from "./changelog-fragments";
+import { assertCheckoutReady } from "./checkout-ready";
+import { printHelpIfAsked } from "./script-help";
+
+const LAND_USAGE = {
+  summary: "push this branch, open or reuse its PR, verify it and hand it to the landing queue",
+  usage: "bun run land [--title <title>] [--body-file <path>] [--verify <command>] [--base <branch>] [--watch]",
+  flags: [
+    { flag: "--title <title>", detail: "PR title when land opens a PR" },
+    { flag: "--body-file <path>", detail: "PR body from this file; wins over a changes/ fragment" },
+    { flag: "--verify <command>", detail: "command to run before arming, e.g. \"bun run ship:preflight\"" },
+    { flag: "--base <branch>", detail: "branch to land into (default: beta)" },
+    { flag: "--watch", detail: "deprecated: watch the checks here instead of leaving waiting to land:queue" },
+  ],
+  example: 'bun run land --title "Menus" --body-file .scratch/body.md',
+  exits: [
+    "0 handed to the landing queue",
+    "1 --verify failed",
+    "2 the checks already failed",
+    "3 could not hand off (refused branch, dirty tree, no PR to reuse)",
+    "78 this checkout has no node_modules - run bun install, or bun run agent:bootstrap",
+  ],
+} as const;
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 
@@ -1147,6 +1169,8 @@ function watchAndMerge(run: LandRun, waits: LockWait[]): number {
 }
 
 function main(): void {
+  if (printHelpIfAsked("land", LAND_USAGE)) process.exit(EXIT_LANDED);
+  assertCheckoutReady("land", root);
   const args = parseArgs(process.argv.slice(2));
 
   if (args.bodyFile !== undefined && !existsSync(args.bodyFile)) {

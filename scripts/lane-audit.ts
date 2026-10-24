@@ -24,6 +24,22 @@ import { existsSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
 
+import { printHelpIfAsked } from "./script-help";
+
+const LANE_AUDIT_USAGE = {
+  summary: "account every child session in a time window: work, waiting, and the slowest commands",
+  usage: "bun run lane:audit [--hours <n>] [--db <path>] [--cwd <dir>] [--json] [--fail-on-waiting]",
+  flags: [
+    { flag: "--hours <n>", detail: "window to account, in hours (default: 40)" },
+    { flag: "--db <path>", detail: "OpenCode database, else OPENCODE_DB, else the user-data default" },
+    { flag: "--cwd <dir>", detail: "the one lane whose own commands name this path, and why it was picked" },
+    { flag: "--json", detail: "the same numbers as one document on stdout" },
+    { flag: "--fail-on-waiting", detail: "exit 2 when any selected session slept, polled or watched CI" },
+  ],
+  example: "bun run lane:audit --hours 40 --cwd .claude/worktrees/lane-x",
+  exits: ["0 reported", "1 nothing to report (no database, no session)", "2 --fail-on-waiting found a sleep or CI watch"],
+} as const;
+
 /** A call this long is where a lane's wall time went, so it is counted on its own. */
 export const OVER_MINUTE_MS = 60_000;
 
@@ -829,23 +845,14 @@ function parseArgs(argv: readonly string[]): Args {
     else if (flag === "--cwd") args.cwd = value();
     else if (flag === "--json") args.json = true;
     else if (flag === "--fail-on-waiting") args.failOnWaiting = true;
-    else if (flag === "--help" || flag === "-h") {
-      console.log(
-        "usage: bun run lane:audit [--hours N] [--db <path>] [--cwd <dir>] [--json] [--fail-on-waiting]\n" +
-          "  --hours N          window, default 40\n" +
-          "  --db <path>        OpenCode database, else OPENCODE_DB, else the user-data default\n" +
-          "  --cwd <dir>        the one lane whose own commands name this path, and why it was picked\n" +
-          "  --json             machine-readable document on stdout\n" +
-          "  --fail-on-waiting  exit 2 when any selected session has a sleep/poll or CI watch call",
-      );
-      process.exit(0);
-    } else throw new Error(`unknown flag ${flag}`);
+    else throw new Error(`unknown flag ${flag}`);
   }
   if (!Number.isFinite(args.hours) || args.hours <= 0) throw new Error("--hours must be a positive number");
   return args;
 }
 
 function main(argv: readonly string[]): number {
+  if (printHelpIfAsked("lane-audit", LANE_AUDIT_USAGE, argv)) return 0;
   let args: Args;
   try {
     args = parseArgs(argv);

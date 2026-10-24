@@ -24,6 +24,27 @@
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
+import { assertCheckoutReady } from "./checkout-ready";
+import { printHelpIfAsked } from "./script-help";
+
+const LANE_CLOSE_USAGE = {
+  summary: "verify, land, ask the checks once, and gate the lane on how it spent its own time",
+  usage: "bun run lane:close [--pr <number>] [--waive <reason>] [--session <id>]",
+  flags: [
+    { flag: "--pr <number>", detail: "the PR to close; default: the open PR for this branch" },
+    { flag: "--waive <reason>", detail: "record a reason and let a lane that waited through anyway" },
+    { flag: "--session <id>", detail: "the session lane:audit should account for; default: this one" },
+  ],
+  example: 'bun run lane:close --waive "nightly build really is 20 minutes"',
+  exits: [
+    "0 closed",
+    "1 verify or land failed",
+    "2 the lane slept or watched CI",
+    "3 cannot answer (no PR, no session, no audit)",
+    "78 this checkout has no node_modules - run bun install, or bun run agent:bootstrap",
+  ],
+} as const;
+
 export const EXIT_CLOSED = 0;
 export const EXIT_VERIFY_FAILED = 1;
 export const EXIT_WAITED = 2;
@@ -512,6 +533,8 @@ function filesChanged(io: LaneIo): string {
 }
 
 function main(argv: readonly string[]): void {
+  if (printHelpIfAsked("lane-close", LANE_CLOSE_USAGE, argv)) process.exit(EXIT_CLOSED);
+  assertCheckoutReady("lane:close", root);
   const parsed = parseOrRefuse(argv);
   if ("problem" in parsed) {
     console.error(`lane:close: ${parsed.problem}`);

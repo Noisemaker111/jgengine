@@ -75,6 +75,7 @@ const CHECK_TYPES_STAGES: readonly Stage[] = [
     "check-test-spawn-timeouts",
     "check:fixture-location",
     "check:no-blocking-wait",
+    "check:script-help",
   ].map((name): Stage => ({
     name,
     ...bun("run", name),
