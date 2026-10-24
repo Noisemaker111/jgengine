@@ -392,3 +392,95 @@ describe("world features", () => {
     }
   });
 });
+
+describe("terrain density", () => {
+  /** Harbor Heat's world bounds. */
+  const HARBOR = { w: 640, d: 640 } as const;
+  /** The density its old `segments: 150` implied — 640 / 150 m per quad. */
+  const HARBOR_CELL = 640 / 150;
+  /** Harbor's own ground roll: 2.2 m of relief, well under one 4.27 m quad's worth of detail. */
+  const harborHeight = (x: number, z: number) => 1.5 + Math.sin(x * 0.021) * Math.cos(z * 0.017) * 2.2;
+
+  const gridOf = (descriptor: ReturnType<typeof terrain>): { x: number; z: number } => {
+    const segments = descriptor.segments;
+    return typeof segments === "number" ? { x: segments, z: segments } : { x: segments![0], z: segments![1] };
+  };
+
+  /** The vertex positions the ground builder lays down for a descriptor: same placement, same order. */
+  function vertices(descriptor: ReturnType<typeof terrain>): number[] {
+    const { bounds } = descriptor;
+    const { x: segmentX, z: segmentZ } = gridOf(descriptor);
+    const out: number[] = [];
+    for (let zIndex = 0; zIndex <= segmentZ; zIndex += 1) {
+      const z = (zIndex / segmentZ - 0.5) * bounds.d;
+      for (let xIndex = 0; xIndex <= segmentX; xIndex += 1) {
+        const x = (xIndex / segmentX - 0.5) * bounds.w;
+        out.push(x, harborHeight(x, z), z);
+      }
+    }
+    return out;
+  }
+
+  test("cellSize resolves to the grid the equivalent segment count produced", () => {
+    const byCell = terrain({ bounds: HARBOR, cellSize: HARBOR_CELL });
+    const bySegments = terrain({ bounds: HARBOR, segments: 150 });
+    expect(byCell).toEqual(bySegments);
+    expect(gridOf(byCell)).toEqual({ x: 150, z: 150 });
+  });
+
+  test("150 segments and its equivalent cellSize build the same 45,000 triangles at the same vertices", () => {
+    const byCell = terrain({ bounds: HARBOR, cellSize: HARBOR_CELL });
+    const bySegments = terrain({ bounds: HARBOR, segments: 150 });
+    for (const descriptor of [byCell, bySegments]) {
+      const { x, z } = gridOf(descriptor);
+      expect(x * z * 2).toBe(45_000);
+    }
+    const cellVertices = vertices(byCell);
+    const segmentVertices = vertices(bySegments);
+    expect(cellVertices.length).toBe(segmentVertices.length);
+    let maxDelta = 0;
+    for (let index = 0; index < cellVertices.length; index += 1) {
+      maxDelta = Math.max(maxDelta, Math.abs(cellVertices[index]! - segmentVertices[index]!));
+    }
+    expect(maxDelta).toBeLessThanOrEqual(1e-9);
+  });
+
+  test("the same cellSize spends more cells on a bigger world, per axis", () => {
+    expect(terrain({ bounds: { w: 640, d: 640 }, cellSize: 4 }).segments).toBe(160);
+    expect(terrain({ bounds: { w: 1280, d: 1280 }, cellSize: 4 }).segments).toBe(320);
+    expect(terrain({ bounds: { w: 640, d: 320 }, cellSize: 4 }).segments).toEqual([160, 80]);
+  });
+
+  test("segments still carries a count through untouched", () => {
+    expect(terrain({ segments: 240 }).segments).toBe(240);
+    expect(terrain({ bounds: { w: 640, d: 320 }, segments: [120, 60] }).segments).toEqual([120, 60]);
+  });
+
+  test("segments and cellSize together fail, naming the one to use", () => {
+    const build = () => terrain({ bounds: HARBOR, segments: 150, cellSize: 4 });
+    expect(build).toThrow(/set segments or cellSize, not both/);
+    expect(build).toThrow(/Keep cellSize and drop segments/);
+  });
+
+  test("a cell size over the vertex ceiling fails with the numbers, and its advice passes", () => {
+    const message = (() => {
+      try {
+        terrain({ bounds: HARBOR, cellSize: 0.1 });
+        return "";
+      } catch (error) {
+        return (error as Error).message;
+      }
+    })();
+    expect(message).toContain("6400×6400 cells = 40,972,801 vertices");
+    expect(message).toContain("over the 1,000,000-vertex ceiling");
+    const advised = Number(/Use cellSize ([\d.]+) or larger/.exec(message)![1]);
+    expect(advised).toBeGreaterThan(0.1);
+    const { x, z } = gridOf(terrain({ bounds: HARBOR, cellSize: advised }));
+    expect((x + 1) * (z + 1)).toBeLessThanOrEqual(1_000_000);
+  });
+
+  test("a cell size that is not a positive finite number fails", () => {
+    expect(() => terrain({ bounds: HARBOR, cellSize: 0 })).toThrow(/cellSize must be a positive number/);
+    expect(() => terrain({ bounds: HARBOR, cellSize: Number.NaN })).toThrow(/cellSize must be a positive number/);
+  });
+});

@@ -230,7 +230,21 @@ export interface TerrainEnvironmentConfig {
   materialRegions?: readonly TerrainMaterialRegion[];
   /** Ordered z-banded ground palettes that cross-fade along the world's z axis (vale → marsh → peaks). Painted under `materialRegions`. */
   biomeBands?: readonly BiomeBand[];
-  segments?: number;
+  /**
+   * Grid segments per axis, or `[x, z]` for a non-square grid. Honoured as-is for compatibility,
+   * but a count says nothing about ground detail until you know the bounds — prefer `cellSize`.
+   */
+  segments?: number | readonly [x: number, z: number];
+  /**
+   * Ground resolution as world units per quad — the density form of `segments`. The per-axis grid is
+   * derived from `bounds`, so the same `cellSize` on a bigger world spends more cells instead of
+   * stretching one fixed count over it. Set this or `segments`, never both.
+   *
+   * A world that needs mixed density next (a coarse far ring around a fine playable core, or bands
+   * that tighten over a painted path) would carry `density?: readonly { cellSize: number; radius?: number }[]`
+   * in place of this single number. Not built.
+   */
+  cellSize?: number;
   seed?: string;
   frequency?: number;
   octaves?: number;
@@ -757,6 +771,61 @@ export function environment(config: EnvironmentWorldConfig = {}): EnvironmentWor
   };
 }
 
+/**
+ * Vertex ceiling for a terrain grid derived from `cellSize`. A density target that reads fine
+ * ("0.4 m cells") can quietly ask for millions of vertices on a large world; past this the
+ * declaration fails with its own numbers instead of booting a ground mesh nobody can afford.
+ */
+const TERRAIN_VERTEX_CEILING = 1_000_000;
+
+function gridVertices(bounds: WorldBounds, cellSize: number): { x: number; z: number; vertices: number } {
+  const x = Math.max(1, Math.round(bounds.w / cellSize));
+  const z = Math.max(1, Math.round(bounds.d / cellSize));
+  return { x, z, vertices: (x + 1) * (z + 1) };
+}
+
+/** Smallest `cellSize` whose derived grid fits the ceiling — quoted back in the failure, so the fix is one number. */
+function minimumCellSize(bounds: WorldBounds): number {
+  let lo = Math.sqrt((bounds.w * bounds.d) / TERRAIN_VERTEX_CEILING) * 0.5;
+  let hi = Math.max(bounds.w, bounds.d, 1);
+  for (let step = 0; step < 64; step += 1) {
+    const mid = (lo + hi) / 2;
+    if (gridVertices(bounds, mid).vertices > TERRAIN_VERTEX_CEILING) lo = mid;
+    else hi = mid;
+  }
+  return hi;
+}
+
+/**
+ * Resolves the authored grid: `segments` passes through, `cellSize` derives a per-axis count from the
+ * bounds. Both forms in one declaration is an error rather than a silent precedence rule, because the
+ * pair produces exactly the accidental density this API exists to remove.
+ */
+function terrainSegments(
+  bounds: WorldBounds,
+  config: TerrainEnvironmentConfig,
+): number | readonly [x: number, z: number] | undefined {
+  const { segments, cellSize } = config;
+  if (segments !== undefined && cellSize !== undefined) {
+    throw new Error(
+      "terrain: set segments or cellSize, not both — cellSize (world units per quad) derives the grid from the bounds, segments counts it directly. Keep cellSize and drop segments.",
+    );
+  }
+  if (cellSize === undefined) return segments;
+  if (!Number.isFinite(cellSize) || cellSize <= 0) {
+    throw new Error(`terrain: cellSize must be a positive number of world units per quad (got ${cellSize})`);
+  }
+  const { x, z, vertices } = gridVertices(bounds, cellSize);
+  if (vertices > TERRAIN_VERTEX_CEILING) {
+    // Rounded up: the quoted cell size has to pass the same check, not read well and fail again.
+    const minimum = Math.ceil(minimumCellSize(bounds) * 1_000) / 1_000;
+    throw new Error(
+      `terrain: cellSize ${cellSize} on ${bounds.w}×${bounds.d} bounds is ${x}×${z} cells = ${vertices.toLocaleString("en-US")} vertices, over the ${TERRAIN_VERTEX_CEILING.toLocaleString("en-US")}-vertex ceiling. Use cellSize ${minimum} or larger, or shrink the bounds.`,
+    );
+  }
+  return x === z ? x : ([x, z] as const);
+}
+
 /** Declares a heightfield terrain patch for `environment()` — bounds, noise, materials, and flatten masks. */
 export function terrain(config: TerrainEnvironmentConfig = {}): TerrainEnvironmentDescriptor {
   if (
@@ -769,10 +838,12 @@ export function terrain(config: TerrainEnvironmentConfig = {}): TerrainEnvironme
       "[jgengine:terrain] baseHeight is set but height is not — height is the noise amplitude (defaulting to 0 here), so this terrain is a flat plateau at baseHeight. Set height explicitly (height: 0 for an intentional plateau) to silence this.",
     );
   }
+  const bounds = config.bounds ?? { w: 512, d: 512 };
+  const segments = terrainSegments(bounds, config);
   return withOptional(
     {
       kind: "terrain" as const,
-      bounds: config.bounds ?? { w: 512, d: 512 },
+      bounds,
       height: config.height ?? 0,
     },
     {
@@ -782,7 +853,7 @@ export function terrain(config: TerrainEnvironmentConfig = {}): TerrainEnvironme
       ...(config.colors === undefined ? {} : { colors: config.colors }),
       ...(config.materialRegions === undefined ? {} : { materialRegions: config.materialRegions }),
       ...(config.biomeBands === undefined ? {} : { biomeBands: config.biomeBands }),
-      ...(config.segments === undefined ? {} : { segments: config.segments }),
+      ...(segments === undefined ? {} : { segments }),
       ...(config.seed === undefined ? {} : { seed: config.seed }),
       ...(config.frequency === undefined ? {} : { frequency: config.frequency }),
       ...(config.octaves === undefined ? {} : { octaves: config.octaves }),

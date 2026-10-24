@@ -47,7 +47,7 @@ import { headRevision } from "./captureRevision";
 import { externalCaptureUrl } from "./captureTarget";
 import { assertQuickIsIterationOnly, quickProfile, quickSuffix, quickTimingLine, splitQuickFlag } from "./capture-preset";
 import { CAPTURE_FLAGS, captureFlagHelp, parseCaptureArgs, parseGraphicsTier, type GraphicsTier } from "../packages/jgengine/src/templates/captureArgs";
-import { lookSearchParams, parseLookAim } from "./lookArg";
+import { applyLookSearchParams, parseLookAim } from "./lookArg";
 import {
   MIN_SAMPLED_SHARE,
   computeShotMetrics,
@@ -225,6 +225,11 @@ function parseArgs(argv: string[]): Args {
     size: str("size"),
     device: str("device"),
   });
+  if (args.site !== undefined && (args.look !== undefined || args.lookFrom !== undefined)) {
+    throw new Error(
+      "shoot: --look needs the dev-runner game shell, and --site renders a plain web page that never reads an aim. Serve the game from a dev runner and pass --url http://127.0.0.1:<port>/?game=<game> instead.",
+    );
+  }
   if (args.quick) {
     const preset = quickProfile(true);
     args.width = preset.width;
@@ -281,10 +286,16 @@ function targetUrl(args: Args, device: Device, devBase: string): string {
 
 /** The page a shot opens, before the tier pin: `--quality` reaches every target the same way. */
 function rawTargetUrl(args: Args, device: Device, devBase: string): URL {
+  const aim = parseLookAim(args.look, args.lookFrom, { withNamedView: args.view !== undefined });
   if (args.url !== undefined) {
     const url = new URL(args.url);
     url.searchParams.set("capture", "1");
     url.searchParams.set("device", device === "mobile-landscape" ? "mobile" : device);
+    // An external URL is commonly this engine's own dev runner on another checkout's Vite (a lane
+    // measuring its branch), so it reads the same aim params as the local one. A page with no runner
+    // publishes no applied aim, and `reportAppliedAim` fails the capture instead of returning a
+    // plausible wrong view.
+    applyLookSearchParams(url, aim);
     return url;
   }
   if (args.site !== undefined) {
@@ -314,10 +325,7 @@ function rawTargetUrl(args: Args, device: Device, devBase: string): URL {
   if (args.spawn !== undefined && args.spawn.length > 0) url.searchParams.set("spawn", args.spawn);
   if (args.style !== undefined && args.style.length > 0) url.searchParams.set("style", args.style);
   if (args.view !== undefined) url.searchParams.set("view", args.view);
-  const aim = parseLookAim(args.look, args.lookFrom, { withNamedView: args.view !== undefined });
-  if (aim !== undefined) {
-    for (const [key, value] of Object.entries(lookSearchParams(aim))) url.searchParams.set(key, value);
-  }
+  applyLookSearchParams(url, aim);
   return url;
 }
 
@@ -337,19 +345,34 @@ function gitProvenance(): { head: string; dirty: boolean } | undefined {
 }
 
 /**
- * Read back the aim the runner actually applied. An accepted `--look` always publishes it, so a
- * missing readout means the override never reached the camera — the silent-no-op that used to
- * return a plausible screenshot of the game's own view and cost a whole round of re-shooting.
+ * Read back the aim the page reports applying. The dev runner publishes it on `data-jg-look`, so a
+ * missing readout means the override never reached the camera — the silent-no-op that used to return
+ * a plausible screenshot of the game's own view and cost a whole round of re-shooting. A `--url` page
+ * that applies `?look=` itself can publish the same string on `window.__jgLook`; the refusal is about
+ * an unconfirmed camera, not about which checkout served the page.
  */
+async function readAppliedAim(session: CdpSession): Promise<{ applied: string | null; shot: string | null }> {
+  const read = `(() => {
+    const reported = (value) => (typeof value === "string" && value.length > 0 ? value : null);
+    const root = document.documentElement;
+    return {
+      applied:
+        reported(root.dataset.jgLook) ??
+        reported(window.__jgLook) ??
+        reported(window.__jgCaptureLook) ??
+        null,
+      shot: reported(root.dataset.jgView),
+    };
+  })()`;
+  return (await session.evaluate<{ applied: string | null; shot: string | null }>(read)) ?? { applied: null, shot: null };
+}
+
 async function reportAppliedAim(session: CdpSession, args: Args): Promise<void> {
   const aimed = args.look !== undefined && args.look.length > 0;
   // A `--view` can carry the aim instead of `--look`, and a view whose framing silently failed to
   // apply is the same wrong-view-that-looks-fine failure as a dropped `--look`.
   if (!aimed && args.view === undefined) return;
-  const { applied, shot } = (await session.evaluate<{ applied: string | null; shot: string | null }>(`({
-    applied: document.documentElement.dataset.jgLook ?? null,
-    shot: document.documentElement.dataset.jgView ?? null
-  })`)) ?? { applied: null, shot: null };
+  const { applied, shot } = await readAppliedAim(session);
   if (args.view !== undefined && shot !== args.view) {
     throw new Error(`--view ${args.view} never reached the runner — no declared view was applied`);
   }
@@ -359,8 +382,10 @@ async function reportAppliedAim(session: CdpSession, args: Args): Promise<void> 
       return;
     }
     throw new Error(
-      `--look ${args.look} never reached the camera — the runner reported no applied aim. ` +
-        `--look only works on the dev-runner game shell (not --url/--site/--preview/--fixture captures).`,
+      `--look ${args.look} never reached the camera — the page reported no applied aim. ` +
+        `A game dev runner publishes it for you, including one behind --url (?game=<game>); ` +
+        `a page that applies --param look= itself must report the aim it applied on ` +
+        `document.documentElement.dataset.jgLook (or window.__jgLook) after the frame.`,
     );
   }
   console.error(`shoot: ${args.view === undefined ? "look" : `view ${args.view}`} applied ${applied}`);
