@@ -27,6 +27,7 @@
     "agent:worktree": "bun scripts/agent-worktree.ts",
     "agent:preflight": "bun scripts/agent-preflight.ts",
     "worktree:doctor": "bun scripts/worktree-doctor.ts",
+    "worktree:reap": "bun scripts/worktree-reap.ts",
     "ship:preflight": "bun scripts/agent-preflight.ts --ship",
     "land": "bun scripts/land.ts",
     "land:queue": "bun scripts/land-queue.ts",

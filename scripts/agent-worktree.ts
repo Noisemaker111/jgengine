@@ -255,6 +255,23 @@ if (import.meta.main) {
     git(mainRoot, branchExists ? ["worktree", "add", target, branch] : ["worktree", "add", "-b", branch, target, "origin/beta"], 180_000);
   }
 
+  // A lane that ended without `lane:close` still leaves its worktree behind, so a
+  // new lane takes the merged ones with it. Unmerged and dirty trees stay.
+  const reaped = Bun.spawnSync(["bun", "run", "worktree:reap"], {
+    cwd: mainRoot,
+    stdout: "pipe",
+    stderr: "pipe",
+    timeout: 600_000,
+  });
+  const reapLine = (reaped.stdout?.toString() ?? "")
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0)
+    .pop();
+  if (reaped.exitCode === 0 && reapLine !== undefined && !reapLine.includes("no merged worktree")) {
+    console.log(`agent-worktree: ${reapLine}`);
+  }
+
   const readiness = ensureWorktreeReady(target);
   if (readiness === null) {
     console.error("agent-worktree: could not resolve the main checkout for this worktree");
