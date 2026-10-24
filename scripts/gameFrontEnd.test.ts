@@ -46,6 +46,15 @@ describe("findFrontEndGaps", () => {
     ).toEqual(["probe#settings"]);
   });
 
+  test("a GameMenu credits pane clears it - the menu the engine ships carries credits", () => {
+    expect(
+      scan({
+        "Games/probe/src/ui/menu/ProbeMenu.tsx":
+          'import { CreditsPane } from "@jgengine/react/gameMenuSaves";\nconst verbs = [{ id: "credits", label: "Credits" }];\n',
+      }),
+    ).toEqual(["probe#settings"]);
+  });
+
   test("generated asset credits also clear it", () => {
     expect(
       scan({ "Games/probe/src/ui.tsx": 'import { creditsForSourceIds } from "@jgengine/assets/credits";\n' }),

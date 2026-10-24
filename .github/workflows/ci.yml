@@ -377,8 +377,11 @@ jobs:
           fi
           case "$GAMES" in
             none)
-              test "$SMOKE" = "skipped"
-              echo "skipped: smoke and frame gates ($REASON)"
+              # A path the map calls no game surface can still trip a smoke job (a script under
+              # scripts/ is in the heavy set), and a smoke that ran and passed is more evidence
+              # than a skip, not a contradiction. Only a failure is wrong here.
+              [ "$SMOKE" = "skipped" ] || [ "$SMOKE" = "success" ]
+              echo "ran: smoke and frame gates ($REASON)"
               ;;
             surface)
               test "$SMOKE" = "success"

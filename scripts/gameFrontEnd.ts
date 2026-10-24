@@ -19,8 +19,10 @@ const REQUIREMENTS = [
   },
   {
     id: "credits",
-    pattern: /CreditsScreen|CreditsPanel|creditsFor(?:Source|Asset)Ids|creditsForSources|<Credits\b/,
-    fix: "add a credits screen — `creditsForSourceIds(ids)` generates the asset attribution, `CreditsScreen` renders it; see `Games/wreckway`",
+    // `CreditsPane` is the game menu's own detail pane (#2317). A game that puts credits in the menu
+    // the engine ships has shipped credits, and 0.38.4's pin saw Deepward reported as having none.
+    pattern: /CreditsScreen|CreditsPanel|CreditsPane|creditsFor(?:Source|Asset)Ids|creditsForSources|<Credits\b/,
+    fix: "add a credits screen - `creditsForSourceIds(ids)` generates the asset attribution, `CreditsPane` in a `GameMenu` detail slot or `CreditsScreen` renders it; see `Games/wreckway`",
   },
 ] as const;
 
