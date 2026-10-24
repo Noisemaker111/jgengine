@@ -1,4 +1,5 @@
 ### Fixed
 
-- A push to `beta` no longer cancels the previous beta run: `beta` serialises, so every push gets a finished verdict and a batch push is answered by the run it started. On 24 Oct 6 of 13 pushes to `beta` were cancelled, 122 runner-minutes were spent on runs killed mid-flight, and "is beta green" was answered by a run that never finished.
-- `main` keeps its behaviour (never cancelled) and a pull request still cancels its own superseded run.
+- A push to `beta` no longer cancels the run already in flight: `beta` serialises, so every verdict the branch reports was reached. On 24 Oct 11 of 44 pushes to `beta` were cancelled, 122 runner-minutes went on runs killed after they started, and "is beta green" was answered by a run that never finished.
+- GitHub still keeps only the newest pending run when a burst arrives; what changes is that no beta run is killed once it starts.
+- `main` is unchanged (never cancelled); a pull request still cancels its own superseded run.
