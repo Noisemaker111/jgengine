@@ -21,6 +21,7 @@ const cardSurface: CSSProperties = {
   position: "relative",
   width: "100%",
   minWidth: 0,
+  height: "var(--jg-menu-card-height, clamp(220px, 26vh, 300px))",
   boxSizing: "border-box",
   overflow: "hidden",
   display: "flex",
@@ -112,7 +113,7 @@ export function SaveSlotCard({
           cursor: onSelect === undefined ? "default" : "pointer",
           alignItems: "flex-start",
           justifyContent: "flex-end",
-          border: "none",
+          border: "1px solid rgba(255,255,255,0.1)",
           boxShadow:
             "inset 0 0 0 1px rgba(255,255,255,0.07), inset 0 0 40px -18px rgba(125,211,252,0.4), 0 10px 26px -20px rgba(0,0,0,0.9)",
           background: "linear-gradient(180deg, rgba(12,17,24,0.82), rgba(6,9,13,0.9))",
@@ -163,7 +164,8 @@ export function SaveSlotCard({
         style={{
           position: "relative",
           width: "100%",
-          aspectRatio: "16 / 9",
+          flexShrink: 0,
+          height: "var(--jg-menu-card-thumb, clamp(96px, 15vh, 168px))",
           borderRadius: 8,
           overflow: "hidden",
           background: "radial-gradient(120% 120% at 30% 20%, rgba(125,211,252,0.22), rgba(8,12,18,0.9))",
@@ -468,8 +470,9 @@ export function SaveSlotsPane({
           gridTemplateColumns:
             columns === "auto" ? "repeat(auto-fill, minmax(230px, 1fr))" : `repeat(${columns}, minmax(0, 1fr))`,
           // Every card gets the same box: equal tracks, equal rows, and content that cannot widen it.
-          gridAutoRows: "1fr",
+          gridAutoRows: "auto",
           alignItems: "stretch",
+          flex: 1,
           gap: hudSpace("md"),
           minHeight: 0,
           overflowY: "auto",
@@ -482,8 +485,8 @@ export function SaveSlotsPane({
         {slots.map((slot) => {
           const active = nav.activeId === slot.id;
           return (
-            <div key={slot.id} style={{ minWidth: 0, outline: active ? "none" : undefined }}>
-              <SaveSlotCard
+            <SaveSlotCard
+              key={slot.id}
                 slot={slot}
                 now={now}
                 recent={recent !== null && recent.id === slot.id}
@@ -497,7 +500,7 @@ export function SaveSlotsPane({
                     })}
                 {...(onDelete === undefined ? {} : { onDelete })}
                 style={{
-                  height: "100%",
+                  minWidth: 0,
                   ...(active
                     ? {
                         boxShadow:
@@ -508,7 +511,6 @@ export function SaveSlotsPane({
                     : {}),
                 }}
               />
-            </div>
           );
         })}
       </div>
@@ -1036,6 +1038,17 @@ export function CreditsPane({ sections, heading = "Credits", notice, className, 
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
 
 
 
