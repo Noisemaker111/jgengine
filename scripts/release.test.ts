@@ -80,6 +80,17 @@ interface Fixture {
   done: () => void;
 }
 
+const CHILD_DEADLINE_MS = 120_000;
+
+/** Sync spawn with a deadline: a child that stops answering fails the test naming it, instead of hanging CI. */
+function spawnWithin(command: string, args: string[], cwd: string, env: NodeJS.ProcessEnv = process.env) {
+  const out = spawnSync(command, args, { cwd, encoding: "utf8", env, timeout: CHILD_DEADLINE_MS });
+  if (out.error) {
+    throw new Error(`${command} ${args.join(" ")} in ${cwd} did not finish within ${CHILD_DEADLINE_MS}ms: ${out.error.message}`);
+  }
+  return out;
+}
+
 /** A throwaway repository whose `beta` branch is the branch everything lands on. */
 function makeRepo(name: string): Fixture {
   const dir = join(ROOT, ".scratch", `release-ancestor-${name}-${process.pid}`);
@@ -93,7 +104,7 @@ function makeRepo(name: string): Fixture {
     GIT_COMMITTER_EMAIL: "fixture@example.test",
   };
   const git = (...args: string[]): string => {
-    const out = spawnSync("git", args, { cwd: dir, encoding: "utf8", env: identity });
+    const out = spawnWithin("git", args, dir, identity);
     if (out.status !== 0) throw new Error(`git ${args.join(" ")} failed: ${out.stderr}`);
     return out.stdout.trim();
   };
@@ -166,12 +177,12 @@ describe("release ancestor guard", () => {
       repo.git("checkout", "-q", "main");
 
       const script = join(ROOT, "scripts", "check-release-ancestor.ts");
-      const refused = spawnSync("bun", [script, "--cwd", repo.dir, "--ref", "beta"], { encoding: "utf8" });
+      const refused = spawnWithin("bun", [script, "--cwd", repo.dir, "--ref", "beta"], ROOT);
       expect(refused.status).toBe(1);
       expect(`${refused.stdout}${refused.stderr}`).toContain("core: add agents/system");
 
       repo.git("merge", "-q", "--no-ff", "beta", "-m", "Merge beta");
-      const accepted = spawnSync("bun", [script, "--cwd", repo.dir, "--ref", "beta"], { encoding: "utf8" });
+      const accepted = spawnWithin("bun", [script, "--cwd", repo.dir, "--ref", "beta"], ROOT);
       expect(accepted.status).toBe(0);
       expect(accepted.stdout).toContain("check-release-ancestor ok");
     } finally {
