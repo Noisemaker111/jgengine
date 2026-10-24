@@ -1,5 +1,4 @@
-import { pickWeighted } from "../random/pick";
-import { seededRng } from "../random/rng";
+import { createSessionLoop, type SessionOffer } from "./sessionLoop";
 
 /** How a run ended: what it carried reached the bank, or it was lost. */
 export type RunOutcome = "banked" | "lost";
@@ -120,6 +119,16 @@ export interface RunLoop<T> {
   restore(next: RunLoopState): void;
 }
 
+interface RunBoundary {
+  outcome: RunOutcome;
+  multiplier?: number;
+}
+
+interface RunBank {
+  banked: number;
+  lost: number;
+}
+
 function positive(value: unknown): number {
   return typeof value === "number" && Number.isFinite(value) && value > 0 ? value : 0;
 }
@@ -130,112 +139,81 @@ function positive(value: unknown): number {
  * A run's haul banks when it ends in a bank and is lost when it ends in a loss; the money itself stays
  * with the game (pair it with `progression/careerBank`). After each settled run the loop draws the next
  * run's change from `changes`: eligible when `after <= completed`, never the change just played unless
- * it is the only one eligible, weighted by `weight`. The draw is `seededRng(seed:run:N)`, so the same
- * seed and the same run history give the same sequence, before or after a save/load. `present(count)`
- * draws several of those changes for a choice screen and `choose(id)` adopts the pick as the next run's
- * change.
+ * it is the only one eligible, weighted by `weight`. The draw is seeded, so the same seed and the same
+ * run history give the same sequence, before or after a save/load. `present(count)` draws several of
+ * those changes for a choice screen and `choose(id)` adopts the pick as the next run's change.
  *
- * @capability run-loop bank or lose what a run carries, with one deterministic change per run
+ * This is a composition of `createSessionLoop` (`run/sessionLoop`): the session loop owns opening,
+ * carrying, closing and restoring, and this module supplies the two things that make it a roguelike -
+ * a `settle` that banks or loses the haul, and a change table the next run can open with.
+ *
+ * @deprecated Bank-or-lose and a per-run change table are one game type's rules, not the engine's.
+ * Compose `createSessionLoop` with your own `settle` and `offers` instead. Kept unchanged for the two
+ * adopters (Beacon Bastion, Drift Foundry) that pin 0.37.0. Removal path: delete this module one minor
+ * release after both compose `createSessionLoop` directly.
+ *
+ * @capability run-loop deprecated roguelike composition of session-loop - bank or lose what a run carries, with one deterministic change per run
  */
 export function createRunLoop<T>(config: RunLoopConfig<T>): RunLoop<T> {
-  const table = config.changes ?? [];
-  const known = new Set<string>();
-  for (const change of table) {
-    if (known.has(change.id)) throw new Error(`run change "${change.id}" is declared twice`);
-    known.add(change.id);
-  }
-
-  let run = 0;
-  let completed = 0;
-  let haul = 0;
-  let changeId: string | null = null;
   let bankedTotal = 0;
   let lostTotal = 0;
   let bestHaul = 0;
 
-  function drawFor(index: number, previous: string | null): RunOffer<T> {
-    const pool = poolFor(index, previous);
-    const rng = seededRng(`${config.seed}:run:${index}`);
-    const drawn = pickWeighted(rng, pool, (change) => change.weight ?? 1) ?? null;
-    return { run: index, changeId: drawn?.id ?? null, change: drawn?.value ?? null };
-  }
-
-  /** The changes run `index` may open with: `after`-eligible, and never the one just played while others remain. */
-  function poolFor(index: number, previous: string | null): RunChange<T>[] {
-    const eligible = table.filter((change) => (change.after ?? 0) <= index - 1);
-    const fresh = eligible.filter((change) => change.id !== previous);
-    // A one-entry table still offers its change rather than nothing.
-    return fresh.length > 0 ? fresh : eligible;
-  }
-
-  function offer(): RunOffer<T> {
-    // An open run's change was adopted at `start`, so the offer repeats it instead of redrawing.
-    if (run > completed) {
-      const adopted = table.find((change) => change.id === changeId);
-      return { run, changeId, change: adopted?.value ?? null };
-    }
-    return drawFor(completed + 1, changeId);
-  }
-
-  return {
-    start() {
-      if (run > completed) return offer();
-      const next = offer();
-      run = next.run;
-      haul = 0;
-      changeId = next.changeId;
-      return next;
-    },
-    carry(amount) {
-      haul += positive(amount);
-      return haul;
-    },
-    haul: () => haul,
-    offer,
-    present(count) {
-      const index = run > completed ? run : completed + 1;
-      const remaining = poolFor(index, changeId);
-      const drawn: RunChoice<T>[] = [];
-      const wanted = Number.isFinite(count) ? Math.max(0, Math.floor(count)) : 0;
-      const rng = seededRng(`${config.seed}:present:${index}`);
-      while (drawn.length < wanted && remaining.length > 0) {
-        const picked = pickWeighted(rng, remaining, (change) => change.weight ?? 1);
-        if (picked === undefined) break;
-        drawn.push({ id: picked.id, change: picked.value });
-        remaining.splice(remaining.indexOf(picked), 1);
-      }
-      return drawn;
-    },
-    choose(nextChangeId) {
-      if (nextChangeId !== null && !known.has(nextChangeId)) return false;
-      // A settled loop has no run to adopt the pick, so the pick opens the next one.
-      if (run <= completed) {
-        run = completed + 1;
-        haul = 0;
-      }
-      changeId = nextChangeId;
-      return true;
-    },
-    settle(outcome, multiplier) {
-      if (run <= completed) throw new Error("run loop: no run is open to settle");
-      const settledHaul = haul;
-      const scale = Number.isFinite(multiplier) ? Math.max(0, multiplier ?? 1) : 1;
-      const banked = outcome === "banked" ? Math.round(settledHaul * scale) : 0;
-      const lost = outcome === "lost" ? settledHaul : 0;
+  const loop = createSessionLoop<T, RunBoundary, RunBank>({
+    kind: "run",
+    seed: config.seed,
+    offers: config.changes,
+    settle: ({ carried, input }) => {
+      const scale = Number.isFinite(input.multiplier) ? Math.max(0, input.multiplier ?? 1) : 1;
+      const banked = input.outcome === "banked" ? Math.round(carried * scale) : 0;
+      const lost = input.outcome === "lost" ? carried : 0;
       bankedTotal += banked;
       lostTotal += lost;
       bestHaul = Math.max(bestHaul, banked);
-      completed = run;
-      haul = 0;
-      return { outcome, haul: settledHaul, banked, lost, completed, bestHaul, next: drawFor(completed + 1, changeId) };
+      return { banked, lost };
     },
-    snapshot: () => ({ run, completed, haul, changeId, bankedTotal, lostTotal, bestHaul }),
+  });
+
+  const offerOf = (offer: SessionOffer<T>): RunOffer<T> => ({
+    run: offer.session,
+    changeId: offer.optionId,
+    change: offer.option,
+  });
+
+  return {
+    start: () => offerOf(loop.start()),
+    carry: (amount) => loop.carry(amount),
+    haul: () => loop.carried(),
+    offer: () => offerOf(loop.offer()),
+    present: (count) => loop.present(count).map((choice) => ({ id: choice.id, change: choice.value })),
+    choose: (changeId) => loop.choose(changeId),
+    settle(outcome, multiplier) {
+      if (loop.phase() !== "open") throw new Error("run loop: no run is open to settle");
+      const settlement = loop.settle({ outcome, multiplier });
+      return {
+        outcome,
+        haul: settlement.carried,
+        banked: settlement.result.banked,
+        lost: settlement.result.lost,
+        completed: settlement.closed,
+        bestHaul,
+        next: offerOf(settlement.next),
+      };
+    },
+    snapshot() {
+      const state = loop.snapshot();
+      return {
+        run: state.session,
+        completed: state.closed,
+        haul: state.carried,
+        changeId: state.optionId,
+        bankedTotal,
+        lostTotal,
+        bestHaul,
+      };
+    },
     restore(next) {
-      run = Math.max(0, Math.floor(next.run));
-      completed = Math.max(0, Math.floor(next.completed));
-      if (run < completed) run = completed;
-      haul = positive(next.haul);
-      changeId = next.changeId !== null && known.has(next.changeId) ? next.changeId : null;
+      loop.restore({ session: next.run, closed: next.completed, carried: next.haul, optionId: next.changeId });
       bankedTotal = positive(next.bankedTotal);
       lostTotal = positive(next.lostTotal);
       bestHaul = positive(next.bestHaul);
@@ -252,7 +230,10 @@ type RunProbeGlobal = typeof globalThis & { [RUN_PROBE_KEY]?: RunProbe };
  * the live run, what it carries, what it banked or lost and the change it offers. Reads only; it never
  * starts, settles or changes a run. Returns the uninstaller.
  *
- * @capability run-loop bank or lose what a run carries, with one deterministic change per run
+ * @deprecated Ships with {@link createRunLoop}; compose `installSessionProbe` from `run/sessionLoop`
+ * when you compose the session loop directly.
+ *
+ * @capability run-loop deprecated roguelike composition of session-loop - bank or lose what a run carries, with one deterministic change per run
  */
 export function installRunProbe<T>(loop: RunLoop<T>): () => void {
   const scope = globalThis as RunProbeGlobal;

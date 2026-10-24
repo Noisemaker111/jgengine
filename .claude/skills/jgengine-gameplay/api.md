@@ -2699,6 +2699,22 @@
 - `createRunLoop` (function): function createRunLoop<T>(config: RunLoopConfig<T>): RunLoop<T> — Bank-or-lose between runs, with one deterministic change per run drawn from an authored table.
 - `installRunProbe` (function): function installRunProbe<T>(loop: RunLoop<T>): () => void — Publish the loop's own readout on `window.__jgengineRun`, so a capture or devtools probe can state the live run, what it carries, what it banked or lost and the change it offers. Reads only; it never starts, settles or changes a run. Returns the uninstaller.
 
+## @jgengine/core/run/sessionLoop
+
+- `SessionChoice` (interface): interface SessionChoice<T> — One option the next session could open with, in the shape a choice screen shows.
+- `SessionLoop` (interface): interface SessionLoop<T = never, I = void, R = void> — One session's lifecycle: open it, carry a quantity, close it at its boundary, and optionally open the next one with an option the game authored.
+- `SessionLoopConfig` (interface): interface SessionLoopConfig<T = never, I = void, R = void> — Configuration for {@link createSessionLoop}.
+- `SessionLoopState` (interface): interface SessionLoopState — Everything a session loop stores as plain JSON.
+- `SessionOffer` (interface): interface SessionOffer<T> — The option a session opens with, and which session it is.
+- `SessionOfferOption` (interface): interface SessionOfferOption<T> — One option the next session may open with. `T` is the game's own payload (a tighter rival line, an unlocked part, a shorter route) - the loop only draws and remembers which id was drawn.
+- `SessionPhase` (type): type SessionPhase = "idle" | "open" | "closed" — Where a session stands: not opened yet, in progress, or closed at its boundary.
+- `SessionProbe` (interface): interface SessionProbe — Read-only handle a capture or devtools uses to prove a session loop is live, not merely imported.
+- `SessionReadout` (interface): interface SessionReadout — What the loop reports about the session it is playing, for a capture or devtools read.
+- `SessionSettlement` (interface): interface SessionSettlement<R = void, T = never> — What closing one session did, and what the next session opens with.
+- `SettlingSession` (interface): interface SettlingSession<I = void> — The session closing, handed to a game's own `settle`.
+- `createSessionLoop` (function): function createSessionLoop<T = never, I = void, R = void>(config: SessionLoopConfig<T, I, R> = {}): SessionLoop<T, I, R> — The shared shape of a game session, with the game's own rules supplied as config: a session opens, it may carry a quantity, its boundary closes it, and the game's `settle` callback decides what happens to what it carried. A park day, a night shift and a wave are the same base with a different `settle`, a different `kind` and, where nothing is at stake, `carries: false`.
+- `installSessionProbe` (function): function installSessionProbe<T, I, R>(loop: SessionLoop<T, I, R>): () => void — Publish the loop's own readout on `window.__jgengineRun`, so a capture or devtools probe can state which session is live, its phase, what it carries and the option it offers. Reads only; it never starts, closes or changes a session. Returns the uninstaller.
+
 ## @jgengine/core/session/contestedChannel
 
 - `ContestReaction` (type): type ContestReaction = "pause" | "decay" — ⚠ undocumented
