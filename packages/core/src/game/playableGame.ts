@@ -3,8 +3,8 @@ import type { AmbienceZoneDef } from "../audio/ambience";
 import type { AudioBusDef, SoundDef } from "../audio/audioFalloff";
 import type { AudioOcclusionConfig } from "../audio/occlusion";
 import type { MusicTheme } from "../audio/music";
-import type { ModelVariantLodConfig } from "../world/modelLod";
-export type { ModelVariantConfig, ModelVariantLodConfig } from "../world/modelLod";
+import type { ModelShadowMode, ModelVariantLodConfig } from "../world/modelLod";
+export type { ModelShadowMode, ModelVariantConfig, ModelVariantLodConfig } from "../world/modelLod";
 import type { UiCueOverrides } from "../audio/uiCues";
 import type { FeedbackCueOverrides } from "../audio/feedbackCues";
 import type { NoticeFeedConfig } from "./notices";
@@ -311,7 +311,7 @@ export interface ModelConfig {  url: string;
   /** Hide named visual subtrees on this instance before placement measurement. Exact runtime names or unique original imported names resolve without removing bones or changing the cached model; missing or ambiguous names warn and leave existing visibility unchanged. Malformed lists reject before model or texture allocation. Omit or pass [] to retain imported visibility. */
   hiddenNodes?: readonly string[];
   /** Shadow participation of every mesh in the model. Default `"both"` (casts and receives); `"none"` for foliage cards, decals, or viewmodels that must never shadow the world. */
-  shadows?: "cast" | "receive" | "both" | "none";
+  shadows?: ModelShadowMode;
   /**
    * Plays a GLTF animation clip on the model when the source has any (skinned or not).
    * A model resolved from a catalog id whose index carries `clips` animates automatically —

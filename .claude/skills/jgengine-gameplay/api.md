@@ -922,7 +922,8 @@
 - `ModelMaterialOverride` (interface): interface ModelMaterialOverride extends MaterialSurfaceParameters — Per-entity PBR material override (#151.3) applied to every standard or physical material in the model's cloned scene graph.
 - `ModelPart` (interface): interface ModelPart — Static child model stacked at a fixed local offset under its parent's transform — no bone/rig resolution, unlike `ModelAttachment`. Assembles a compound entity (e.g. a modular castle wall + tower + roof) from several single-mesh kit pieces.
 - `ModelRimLight` (interface): interface ModelRimLight — Fresnel rim-light term added on top of a model's lighting — see {@link ModelMaterialOverride.rim}.
-- `ModelVariantConfig` (interface): interface ModelVariantConfig — One mesh level of a {@link ModelVariantLodConfig}: a full or decimated GLB and how far it draws.
+- `ModelShadowMode` (type): type ModelShadowMode = "cast" | "receive" | "both" | "none" — How a model, or one of its variant levels, takes part in the shadow pass.
+- `ModelVariantConfig` (interface): interface ModelVariantConfig — One mesh level of a {@link ModelVariantLodConfig}: a full or decimated GLB, how far it draws and how it shadows.
 - `ModelVariantLodConfig` (interface): interface ModelVariantLodConfig — Ordered mesh detail levels for one model, switched per instance by camera distance. The first level is the full mesh the model's own `url` names; every later level is a cheaper asset. A tree line uses this so near trees keep their full mesh while far ones draw a decimated copy of the same species.
 - `ModelWindConfig` (interface): interface ModelWindConfig — Wind sway for a foliage model; see {@link ModelConfig.wind}.
 - `MovementCommitFrame` (interface): interface MovementCommitFrame — One frame's movement resolution handed to `PlayerMovementConfig.beforeCommit`.

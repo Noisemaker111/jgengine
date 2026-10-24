@@ -1,12 +1,21 @@
 import type { LodBand } from "./lod";
 import { lodBandIndex } from "./lod";
 
-/** One mesh level of a {@link ModelVariantLodConfig}: a full or decimated GLB and how far it draws. */
+/** How a model, or one of its variant levels, takes part in the shadow pass. */
+export type ModelShadowMode = "cast" | "receive" | "both" | "none";
+
+/** One mesh level of a {@link ModelVariantLodConfig}: a full or decimated GLB, how far it draws and how it shadows. */
 export interface ModelVariantConfig {
   /** GLB url for this level — the source asset for the near level, a decimated asset for the far ones. */
   url: string;
   /** Furthest distance in metres from the camera this level draws. The last level omits it and covers everything beyond the level before it. */
   maxDistance?: number;
+  /**
+   * This level's shadow participation. `"inherit"` (the default) keeps the model's own `shadows`, so a
+   * level that says nothing draws exactly as it did before levels could choose. A far level set to
+   * `"none"` leaves the shadow pass entirely while still drawing its mesh.
+   */
+  shadows?: ModelShadowMode | "inherit";
 }
 
 /**
