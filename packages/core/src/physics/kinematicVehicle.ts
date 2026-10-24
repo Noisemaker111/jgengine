@@ -719,3 +719,5 @@ const ENGINE_BRAKE_MAX_LEVERAGE = 2.5;
 function clampSigned(value: number, magnitude: number): number {
   return Math.max(-Math.abs(magnitude), Math.min(Math.abs(magnitude), value));
 }
+
+// Measurement line batch6.
