@@ -17,6 +17,10 @@
 // placed in the measured population by percentile. It exits 2 on waiting, 3 when
 // it cannot answer (no PR, no session, no audit), and prints a report skeleton a
 // lane can paste instead of writing prose.
+//
+// A PR whose checks have not registered yet is a hand-off, not a failure: the queue
+// owns the wait and `bun run ci:status --pr <n>` answers only later, so the report
+// says so and the lane still exits 0.
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
@@ -319,6 +323,7 @@ export function reportSkeleton(input: ReportInput): string {
     );
   }
   lines.push(`- files changed: ${input.filesChanged}`);
+  if (input.status === undefined) lines.push(`- ask again for the checks: bun run ci:status --pr ${input.pr}`);
   if (input.waive !== undefined) lines.push(`- waiting waived: ${input.waive}`);
   return lines.join("\n");
 }
@@ -477,7 +482,10 @@ export function closeLane(args: LaneCloseArgs, io: LaneIo): number {
     io.err(`lane:close: cannot check waiting: ${picked.note}`);
     return EXIT_CANNOT_ANSWER;
   }
-  if (status === undefined) {
+  // A PR whose checks have not registered yet is handed off, not unanswered: the queue owns the
+  // wait, and `ci:status` is the one command that answers later. Only a ci:status that produced no
+  // answer at all leaves the lane unable to report.
+  if (status === undefined && answer === null) {
     io.err(`lane:close: cannot report the checks: ${checksProblem}`);
     return EXIT_CANNOT_ANSWER;
   }

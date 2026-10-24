@@ -302,14 +302,23 @@ describe("lane:close end to end", () => {
     expect(fake.lines.out.join("\n")).toContain("span/time: unavailable");
   });
 
-  test("no checks answer is reported as unavailable and exits non-zero", () => {
+  test("checks that have not registered yet are a hand-off, and the lane still closes", () => {
     const fake = io({
       ci: JSON.stringify({ ok: false, reason: "no-checks", message: "PR #2278 has no checks yet" }),
       ciStatus: 3,
       audit: audit([session()]),
     });
+    expect(closeLane({}, fake)).toBe(EXIT_CLOSED);
+    const printed = fake.lines.out.join("\n");
+    expect(printed).toContain("checks: unavailable — PR #2278 has no checks yet");
+    expect(printed).toContain("ask again for the checks: bun run ci:status --pr 2278");
+    expect(fake.lines.err).toEqual([]);
+  });
+
+  test("a ci:status that answers nothing at all leaves the lane unable to report", () => {
+    const fake = io({ ci: "not json", audit: audit([session()]) });
     expect(closeLane({}, fake)).toBe(EXIT_CANNOT_ANSWER);
-    expect(fake.lines.out.join("\n")).toContain("checks: unavailable — PR #2278 has no checks yet");
+    expect(fake.lines.err.join("\n")).toContain("cannot report the checks");
   });
 
   test("the base branch is refused before anything runs", () => {
