@@ -322,6 +322,14 @@ function describe(run: Run): string {
   return text.length > 0 ? text.split("\n")[0] : `gh exited ${run.status}`;
 }
 
+/** `owner/name` for the line a lane reads, from `--repo` or this checkout's origin. */
+export function repoName(args: CiStatusArgs, git: Git): string {
+  if (args.repo !== undefined) return args.repo;
+  const remote = git(["remote", "get-url", "origin"]).stdout.trim();
+  const match = /github\.com[:/]+([^/]+)\/([^/]+?)(?:\.git)?$/.exec(remote);
+  return match === null ? "this repository" : `${match[1]}/${match[2]}`;
+}
+
 /** Resolve the one PR this question is about, without watching anything. */
 export function resolvePr(args: CiStatusArgs, io: CiIo): { pr: PrView } | Refusal {
   const repo = args.repo === undefined ? [] : ["-R", args.repo];
@@ -355,7 +363,7 @@ export function resolvePr(args: CiStatusArgs, io: CiIo): { pr: PrView } | Refusa
   }
   const found = rows[0];
   if (found === undefined) {
-    return { reason: "no-pr", message: `no open PR for branch ${branch}: nothing to report on` };
+    return { reason: "no-pr", message: `no open PR for ${branch} on ${repoName(args, io.git)} - nothing to answer` };
   }
   return { pr: found };
 }
@@ -416,10 +424,13 @@ export function cli(argv: readonly string[], io: CiIo, now: () => number = () =>
   const answer = ask(args, io);
   const wallMs = now() - startedAt;
   if ("reason" in answer) {
+    // A lane that pipes stdout saw silence here and fell back to polling; the reason is the answer.
     return {
       code: exitCodeFor(answer),
-      stdout: args.json ? [JSON.stringify({ ok: false, reason: answer.reason, message: answer.message }, null, 2)] : [],
-      stderr: args.json ? [] : [`ci:status: ${answer.message}`],
+      stdout: args.json
+        ? [JSON.stringify({ ok: false, reason: answer.reason, message: answer.message }, null, 2)]
+        : [`ci:status: ${answer.message}`],
+      stderr: [],
     };
   }
 

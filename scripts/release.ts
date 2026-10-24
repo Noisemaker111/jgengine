@@ -20,6 +20,7 @@ import { spawnSync } from "node:child_process";
 import { readFileSync, rmSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { foldFragments, readFragments } from "./changelog-fragments";
+import { awaitPublish } from "./release-await";
 
 export interface ChangelogSections {
   migrate: string[];
@@ -304,13 +305,88 @@ function main(): void {
   writeFileSync(changelogPath, nextMarkdown);
   writeFileSync(mirrorPath, nextMirror);
   for (const fragment of fragments) rmSync(fragment.path);
-  console.log(`release: cut ${sdk} — CHANGELOG.md and the typed mirror now carry ${total + 1} note(s).`);
+  console.log(`release: cut ${sdk} - CHANGELOG.md and the typed mirror now carry ${total + 1} note(s).`);
 
   if (!skipGen) {
     const gen = spawnSync("bun", ["scripts/gen-skill-api-safe.ts"], { cwd: root, stdio: "inherit" });
     if (gen.status !== 0) process.exit(gen.status ?? 1);
   }
-  console.log("release: review the diff, then commit and open the release PR.");
+  if (args.includes("--wait")) void landAndAwait(root, sdk);
+  else console.log("release: review the diff, then commit and open the release PR.");
+}
+
+/**
+ * The rest of a release that a lane used to do by hand: commit, hand the PR to `land` (which pushes,
+ * opens it and arms auto-merge), wait for the merge, fast-forward `main`, then wait for the Publish
+ * run and answer with the version. `--wait` is what keeps a lane out of `Start-Sleep 480; gh run view`.
+ */
+async function landAndAwait(root: string, version: string): Promise<never> {
+  const git = (args: readonly string[]) => spawnSync("git", [...args], { cwd: root, encoding: "utf8" });
+  const commit = git(["add", "-A"]);
+  if (commit.status !== 0) {
+    console.error(`release: staging the cut failed: ${commit.stderr.trim()}`);
+    process.exit(1);
+  }
+  const staged = git(["diff", "--cached", "--quiet"]);
+  if (staged.status !== 0) {
+    const made = git(["commit", "-m", `Release ${version}`]);
+    if (made.status !== 0) {
+      console.error(`release: committing the cut failed: ${made.stderr.trim()}`);
+      process.exit(1);
+    }
+  }
+  const land = spawnSync("bun", ["scripts/land.ts"], { cwd: root, stdio: "inherit" });
+  if (land.status !== 0) {
+    console.error("release: land did not finish; the cut is committed on this branch and the PR is not armed");
+    process.exit(land.status ?? 1);
+  }
+
+  const gh = (args: readonly string[]): { status: number; stdout: string; stderr: string } => {
+    const result = spawnSync("gh", [...args], { cwd: root, encoding: "utf8" });
+    return { status: result.status ?? 1, stdout: result.stdout ?? "", stderr: result.stderr ?? "" };
+  };
+  const merged = await waitForMerge(gh);
+  if (merged === null) process.exit(1);
+  const forward = git(["push", "origin", "origin/beta:main"]);
+  if (forward.status !== 0) {
+    console.error(`release: fast-forwarding main failed: ${forward.stderr.trim()}`);
+    process.exit(1);
+  }
+  const head = git(["rev-parse", "origin/main"]);
+  const result = await awaitPublish({
+    version,
+    sha: head.status === 0 ? head.stdout.trim() : "",
+    gh,
+    log: (line) => console.log(line),
+  });
+  console.log(result.line);
+  process.exit(result.code);
+}
+
+/** The release PR's own merge is the event the publish run follows, so this waits on that state. */
+async function waitForMerge(
+  gh: (args: readonly string[]) => { status: number; stdout: string; stderr: string },
+): Promise<string | null> {
+  const deadline = Date.now() + 45 * 60_000;
+  while (Date.now() < deadline) {
+    const state = gh(["pr", "view", "--json", "state,number"]).stdout.trim();
+    if (state !== "") {
+      try {
+        const parsed = JSON.parse(state) as { state?: string; number?: number };
+        if (parsed.state === "MERGED") return String(parsed.number ?? "");
+        if (parsed.state === "CLOSED") {
+          console.error("release: the release PR was closed without merging, so nothing was published");
+          return null;
+        }
+      } catch {
+        // A shape this does not know is not a merge; keep waiting inside the budget.
+      }
+    }
+    // wait-ok: the release PR's checks take minutes and the merge is the event this waits for; bounded above
+    await Bun.sleep(15_000);
+  }
+  console.error("release: the release PR did not merge within 45 minutes; nothing was published");
+  return null;
 }
 
 /** Compute the version a normal or patch release will publish. */
