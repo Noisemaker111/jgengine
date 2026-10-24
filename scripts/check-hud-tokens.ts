@@ -65,4 +65,3 @@ if (failures.length > 0) {
 }
 
 console.log(`check-hud-tokens: ok (${emitted.size} theme tokens)`);
-
