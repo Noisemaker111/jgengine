@@ -17,6 +17,7 @@ import {
   gamesWorld,
   isDaemonArgv,
   readDaemonState,
+  reapIdleDaemons,
   reapStaleDaemonState,
   stopDaemon,
   startDaemon,
@@ -278,7 +279,7 @@ describe("shoot daemon readiness", () => {
     const prior = process.env.JG_CHROME_PORT;
     process.env.JG_CHROME_PORT = String(port);
     try {
-      await expect(startDaemon({ cwd })).rejects.toThrow(`explicitly --connect ${port}`);
+      await expect(startDaemon({ cwd, reapIdle: false })).rejects.toThrow(`explicitly --connect ${port}`);
       expect(readDaemonState(cwd)).toBeNull();
       expect(existsSync(daemonStatePath(cwd))).toBe(false);
       expect(await localOk(`http://127.0.0.1:${port}/json/version`, 2_000)).toBe(true);
@@ -573,6 +574,100 @@ describe("capture lanes acquire a warm daemon by default", () => {
       await expect(daemonDiedUnder(liveState("abc12345"), cwd)).resolves.toBe(true);
     } finally {
       rmSync(cwd, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("shoot daemon idle sweep", () => {
+  const threeHoursAgo = () => new Date(Date.now() - 3 * 3_600_000).toISOString();
+
+  function idleRecord(dir: string, state: Record<string, unknown>): { record: string; profile: string } {
+    const profile = join(dir, "jg-shoot-daemon-idle");
+    mkdirSync(profile, { recursive: true });
+    const record = join(dir, "jgengine-shoot-daemon-9311-abc.json");
+    writeFileSync(record, JSON.stringify({ chromePid: 4242, userDataDir: profile, startedAt: threeHoursAgo(), ...state }));
+    return { record, profile };
+  }
+
+  test("retires a record whose last capture is past the idle window", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "jg-reap-idle-"));
+    const { record, profile } = idleRecord(dir, { identity: "lane-idle", chromePort: 9311, lastUsedAt: threeHoursAgo() });
+    const killed: number[] = [];
+    const removed: string[] = [];
+    try {
+      const report = await reapIdleDaemons({
+        dir,
+        alive: () => true,
+        kill: (pid) => { killed.push(pid); },
+        wait: async () => {},
+        remove: (path) => { removed.push(path); },
+      });
+      expect(killed).toEqual([4242]);
+      expect(removed).toEqual([profile]);
+      expect(existsSync(record)).toBe(false);
+      expect(report.retired.map((item) => item.identity)).toEqual(["lane-idle"]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  test("keeps a record a capture used inside the idle window", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "jg-reap-fresh-"));
+    const { record } = idleRecord(dir, { identity: "lane-warm", chromePort: 9312, lastUsedAt: new Date().toISOString() });
+    const killed: number[] = [];
+    try {
+      const report = await reapIdleDaemons({
+        dir,
+        alive: () => true,
+        kill: (pid) => { killed.push(pid); },
+        wait: async () => {},
+        remove: () => {},
+      });
+      expect(killed).toEqual([]);
+      expect(existsSync(record)).toBe(true);
+      expect(report.retired).toEqual([]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  test("falls back to startedAt when the record predates idle timing", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "jg-reap-legacy-"));
+    const { record } = idleRecord(dir, { identity: "lane-legacy", chromePort: 9313 });
+    const killed: number[] = [];
+    try {
+      await reapIdleDaemons({
+        dir,
+        alive: () => true,
+        kill: (pid) => { killed.push(pid); },
+        wait: async () => {},
+        remove: () => {},
+      });
+      expect(killed).toEqual([4242]);
+      expect(existsSync(record)).toBe(false);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  test("removes a profile directory left behind with no record", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "jg-reap-profile-"));
+    const profile = join(dir, "jg-shoot-daemon-orphan");
+    mkdirSync(profile, { recursive: true });
+    const removed: string[] = [];
+    try {
+      const report = await reapIdleDaemons({
+        dir,
+        now: Date.now() + 2 * 3_600_000,
+        alive: () => false,
+        kill: () => {},
+        wait: async () => {},
+        remove: (path) => { removed.push(path); },
+      });
+      expect(removed).toEqual([profile]);
+      expect(report.profilesRemoved).toBe(1);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
     }
   });
 });

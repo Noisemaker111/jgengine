@@ -161,6 +161,7 @@ Persistent daemon (started for you; no lane ever starts it by hand):
     warm: reused :9261 (0.2s)      cold: started :9261 (4.1s)
   bun run shoot --serve                      # keep Chrome warm; Vite starts on demand
   bun run shoot daemon start|status|stop     # managed background service
+  bun run shoot daemon reap                  # retire warm Chrome idle past JG_SHOOT_IDLE_MINUTES
 
 Manual warm loop:
   bun run shoot <game> --mode play --keep                       # cold boot, stays warm
