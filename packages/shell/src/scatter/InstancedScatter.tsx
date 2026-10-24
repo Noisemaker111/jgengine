@@ -11,6 +11,7 @@ import { createModelVariantSelector, type ModelVariantSelector } from "@jgengine
 
 import { CAMERA_POST_FRAME_PRIORITY } from "../camera/cameraRigs";
 import { submitInstanceCount } from "../render/submittedDraws";
+import { LEVEL_PASS_MIN_CAMERA_MOVE, levelPassNeeded } from "../render/levelPass";
 import { variantLevelModel } from "../render/singleVariantLod";
 import { buildScatterProxy } from "./scatterProxies";
 import { buildScatterModelSources, disposeScatterModelSources, type ScatterModelSource } from "./scatterModels";
@@ -136,7 +137,7 @@ function ScatterVariantSourceInstances({ source, batch, level, selector }: {
   }, [camera, writeLevel, cameraPosition]);
   useFrame((state) => {
     state.camera.getWorldPosition(cameraPosition);
-    if (cameraPosition.distanceToSquared(lastCamera.current) < 0.25) return;
+    if (!levelPassNeeded(lastCamera.current, cameraPosition, LEVEL_PASS_MIN_CAMERA_MOVE)) return;
     lastCamera.current.copy(cameraPosition);
     writeLevel(cameraPosition);
   }, CAMERA_POST_FRAME_PRIORITY + 0.1);
