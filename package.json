@@ -55,6 +55,7 @@
     "check:scaffold-launch": "bun scripts/check-scaffold-launch.ts",
     "check:fix-has-test": "bun scripts/check-fix-has-test.ts",
     "check:no-blocking-wait": "bun scripts/check-no-blocking-wait.ts",
+    "check:script-help": "bun scripts/check-script-help.ts",
     "lane:audit": "bun scripts/lane-audit.ts",
     "check:capture-hygiene": "bun scripts/check-capture-hygiene.ts",
     "check-module-globals": "bun scripts/check-module-globals.ts",

@@ -17,6 +17,26 @@
 // empty green-looking table is the one answer that must never be printed.
 import { spawnSync } from "node:child_process";
 
+import { printHelpIfAsked } from "./script-help";
+
+const CI_STATUS_USAGE = {
+  summary: "answer where this PR's checks stand right now, in a second, without watching",
+  usage: "bun run ci:status [--pr <number>] [--branch <name>] [--repo <owner/name>] [--json]",
+  flags: [
+    { flag: "--pr <number>", detail: "a merged or open PR by number; default: the PR for this branch" },
+    { flag: "--branch <name>", detail: "look up the PR for this branch instead of the current one" },
+    { flag: "--repo <owner/name>", detail: "another repo; default: the one this checkout names" },
+    { flag: "--json", detail: "one document on stdout, for a script" },
+  ],
+  example: "bun run ci:status --pr 2274 --json",
+  exits: [
+    "0 every check passed",
+    "1 a check failed",
+    "2 checks are still running",
+    "3 cannot answer: no PR, no checks yet, or gh unreadable",
+  ],
+} as const;
+
 export const EXIT_GREEN = 0;
 export const EXIT_FAILED = 1;
 export const EXIT_PENDING = 2;
@@ -336,6 +356,7 @@ export function cli(argv: readonly string[], io: CiIo, now: () => number = () =>
 }
 
 function main(argv: readonly string[]): void {
+  if (printHelpIfAsked("ci-status", CI_STATUS_USAGE, argv)) process.exit(EXIT_GREEN);
   const result = cli(argv, {
     gh: (ghArgs) => spawnSync("gh", ghArgs, { encoding: "utf8" }),
     git: (gitArgs) => spawnSync("git", gitArgs, { encoding: "utf8" }),

@@ -20,7 +20,28 @@ import { basename, dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { effectivePaths } from "./sourcePaths";
+import { assertCheckoutReady } from "./checkout-ready";
+import { printHelpIfAsked } from "./script-help";
 import { walkTestFiles } from "./test-shard";
+
+const VERIFY_FAST_USAGE = {
+  summary: "run only the tests and static gates this branch's diff reaches, in seconds",
+  usage: "bun run verify:fast [--full] [--plan] [--json] [--base <ref>] [--jobs <n>]",
+  flags: [
+    { flag: "--full", detail: "what CI runs, not just what this change reaches; minutes, before landing" },
+    { flag: "--plan", detail: "print the steps and their commands, run nothing" },
+    { flag: "--json", detail: "one { ok, ms, checks } document on stdout" },
+    { flag: "--base <ref>", detail: "diff against this ref (default: origin/beta)" },
+    { flag: "--jobs <n>", detail: "steps to run at once (default: half the cores, at most 6)" },
+  ],
+  example: "bun run verify:fast --plan",
+  exits: [
+    "0 verified",
+    "1 a step failed",
+    "2 a changed runtime file reached no test",
+    "78 this checkout has no node_modules - run bun install, or bun run agent:bootstrap",
+  ],
+} as const;
 
 export const BASE = "origin/beta";
 export const EXIT_VERIFIED = 0;
@@ -778,4 +799,9 @@ async function main(argv: readonly string[]): Promise<number> {
   return EXIT_VERIFIED;
 }
 
-if (import.meta.main) process.exit(await main(process.argv.slice(2)));
+if (import.meta.main) {
+  const argv = process.argv.slice(2);
+  if (printHelpIfAsked("verify-fast", VERIFY_FAST_USAGE, argv)) process.exit(EXIT_VERIFIED);
+  assertCheckoutReady("verify:fast");
+  process.exit(await main(argv));
+}
