@@ -7,7 +7,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import {
+  acquireWarmCapture,
   clearDaemonState,
+  daemonDiedUnder,
+  daemonRevisionDrift,
   daemonStatePath,
   ensureDaemonTarget,
   isDaemonArgv,
@@ -315,6 +318,176 @@ describe("shoot daemon readiness", () => {
       ).resolves.toBeNull();
     } finally {
       clearDaemonState(cwd);
+      rmSync(cwd, { recursive: true, force: true });
+    }
+  });
+});
+
+/** Collect the lines a lane prints while it decides, so the decision is asserted, not assumed. */
+async function captureStderr<T>(run: () => Promise<T>): Promise<{ value: T; lines: string[] }> {
+  const lines: string[] = [];
+  const original = console.error;
+  console.error = (...args: unknown[]) => {
+    lines.push(args.map((arg) => String(arg)).join(" "));
+  };
+  try {
+    return { value: await run(), lines };
+  } finally {
+    console.error = original;
+  }
+}
+
+const liveState = (head?: string): ShootDaemonState => ({
+  identity: "checkout",
+  chromePort: 9261,
+  ...(head === undefined ? {} : { head }),
+  startedAt: "fixture",
+});
+
+describe("capture lanes acquire a warm daemon by default", () => {
+  test("reuses a live daemon serving this commit and never starts another", async () => {
+    let started = 0;
+    const { value, lines } = await captureStderr(() =>
+      acquireWarmCapture({
+        cold: false,
+        probe: async () => liveState("abc12345"),
+        start: async () => {
+          started += 1;
+          return liveState("abc12345");
+        },
+        head: () => "abc12345",
+        stop: async () => false,
+      }),
+    );
+    expect(value.mode).toBe("warm");
+    expect(value.daemon?.chromePort).toBe(9261);
+    expect(started).toBe(0);
+    expect(lines).toHaveLength(1);
+    expect(lines[0]).toMatch(/^warm: reused :9261 \(\d+\.\ds\)$/);
+  });
+
+  test("starts one when none is live, and says so with the time it took", async () => {
+    let started = 0;
+    const { value, lines } = await captureStderr(() =>
+      acquireWarmCapture({
+        probe: async () => null,
+        start: async () => {
+          started += 1;
+          return liveState("abc12345");
+        },
+        head: () => "abc12345",
+        stop: async () => false,
+      }),
+    );
+    expect(value.mode).toBe("cold");
+    expect(value.daemon?.chromePort).toBe(9261);
+    expect(started).toBe(1);
+    expect(lines).toHaveLength(1);
+    expect(lines[0]).toMatch(/^cold: started :9261 \(\d+\.\ds\)$/);
+  });
+
+  test("--cold never probes, starts, or reuses a daemon", async () => {
+    let probed = 0;
+    let started = 0;
+    const { value, lines } = await captureStderr(() =>
+      acquireWarmCapture({
+        cold: true,
+        probe: async () => {
+          probed += 1;
+          return liveState("abc12345");
+        },
+        start: async () => {
+          started += 1;
+          return liveState("abc12345");
+        },
+        head: () => "abc12345",
+        stop: async () => false,
+      }),
+    );
+    expect(value).toMatchObject({ daemon: null, mode: "cold" });
+    expect({ probed, started }).toEqual({ probed: 0, started: 0 });
+    expect(lines).toHaveLength(1);
+    expect(lines[0]).toContain("--cold");
+    expect(lines[0]).toContain("no daemon reused");
+  });
+
+  test("replaces a daemon serving another commit instead of reusing it", async () => {
+    const stopped: string[] = [];
+    const { value, lines } = await captureStderr(() =>
+      acquireWarmCapture({
+        probe: async () => liveState("old00000"),
+        start: async () => liveState("new11111"),
+        head: () => "new11111",
+        stop: async () => {
+          stopped.push("stop");
+          return true;
+        },
+      }),
+    );
+    expect(stopped).toEqual(["stop"]);
+    expect(value.mode).toBe("cold");
+    expect(value.daemon?.head).toBe("new11111");
+    expect(lines[0]).toContain("replaced daemon on :9261 serving old00000");
+    expect(lines[1]).toMatch(/^cold: started :9261/);
+  });
+
+  test("falls back once, with one line, when the port is taken and no daemon can start", async () => {
+    let started = 0;
+    const { value, lines } = await captureStderr(() =>
+      acquireWarmCapture({
+        probe: async () => null,
+        start: async () => {
+          started += 1;
+          throw new Error("shoot daemon: Chrome debug port 9261 is already reachable without a live record");
+        },
+        head: () => "abc12345",
+        stop: async () => false,
+      }),
+    );
+    expect({ started, mode: value.mode, daemon: value.daemon }).toEqual({ started: 1, mode: "cold", daemon: null });
+    expect(lines).toHaveLength(1);
+    expect(lines[0]).toContain("cold: daemon unavailable");
+    expect(lines[0]).toContain("no retry");
+  });
+
+  test("falls back when the stale daemon refuses to stop", async () => {
+    const { value, lines } = await captureStderr(() =>
+      acquireWarmCapture({
+        probe: async () => liveState("old00000"),
+        start: async () => liveState("new11111"),
+        head: () => "new11111",
+        stop: async () => {
+          throw new Error("would not die");
+        },
+      }),
+    );
+    expect(value).toMatchObject({ daemon: null, mode: "cold" });
+    expect(lines).toHaveLength(1);
+    expect(lines[0]).toContain("would not stop");
+  });
+
+  test("a daemon record with no recorded commit is unproven, not reused", () => {
+    expect(daemonRevisionDrift(undefined, "abc12345")).toBe(true);
+    expect(daemonRevisionDrift("abc12345", "abc12345")).toBe(false);
+    expect(daemonRevisionDrift("old00000", "new11111")).toBe(true);
+    expect(daemonRevisionDrift(undefined, undefined)).toBe(false);
+    expect(daemonRevisionDrift("abc12345", undefined)).toBe(false);
+  });
+
+  test("a caller that must not share the daemon's browser says why", async () => {
+    const { lines } = await captureStderr(() =>
+      acquireWarmCapture({ cold: true, because: "--headed needs its own browser window" }),
+    );
+    expect(lines[0]).toContain("--headed needs its own browser window");
+    expect(lines[0]).toContain("no daemon reused or started");
+  });
+
+  test("a run only falls back cold when its daemon is really gone", async () => {
+    const cwd = mkdtempSync(join(tmpdir(), "jg-shoot-died-"));
+    try {
+      await expect(daemonDiedUnder(null, cwd)).resolves.toBe(false);
+      await expect(daemonDiedUnder(liveState("abc12345"), cwd)).resolves.toBe(true);
+    } finally {
       rmSync(cwd, { recursive: true, force: true });
     }
   });

@@ -16,6 +16,13 @@ import {
   type FrameClock,
 } from "./browser-lib";
 import {
+  acquireWarmCapture,
+  daemonDiedUnder,
+  ensureDaemonTarget,
+  withDaemonWatch,
+  type ShootDaemonState,
+} from "./shoot-daemon";
+import {
   summarizeFrameWindow,
   type FrameWindow,
   type PerfReport,
@@ -123,14 +130,19 @@ export interface PerfArgs {
   frameClock: FrameClock;
   /** Show a real window (off-screen) instead of headless Chrome. */
   headed?: boolean;
+  /** `--cold`: boot Chrome and Vite directly instead of reusing the warm daemon. */
+  cold?: boolean;
 }
 
 export type ArgResult = { kind: "run"; args: PerfArgs } | { kind: "help" };
 
 const USAGE = `usage: bun run perf <game> [--quality draft|full] [--profile] [--seconds n] [--telemetry on|off]
-                    [--state name] [--param k=v ...] [--set key=value ...] [--uncapped] [--headed]
+                    [--state name] [--param k=v ...] [--set key=value ...] [--uncapped] [--headed] [--cold]
 
   <game>            game id under Games/ (for example harbor-heat)
+  --cold            skip the warm daemon and boot Chrome + Vite directly: fresh caches, larger
+                    numbers than a warm run, for an evidence run that must prove a clean start.
+                    Every run prints which it got: warm: reused :9261 (0.2s) / cold: started :9261 (4.1s)
   --quality         graphics tier: full (default) or draft (?quality=low, half viewport)
   --profile         also print the inclusive-time table to stderr
   --seconds         measured window in seconds (default ${DEFAULT_SECONDS})
@@ -310,6 +322,7 @@ export function parsePerfArgs(argv: readonly string[]): ArgResult {
   let telemetry: "on" | "off" = "on";
   let frameClock: FrameClock = "capped";
   let headed = false;
+  let cold = false;
   let state: string | undefined;
   const params: [string, string][] = [];
   const settings: PerfSettingOverride[] = [];
@@ -326,6 +339,10 @@ export function parsePerfArgs(argv: readonly string[]): ArgResult {
     }
     if (arg === "--headed") {
       headed = true;
+      continue;
+    }
+    if (arg === "--cold") {
+      cold = true;
       continue;
     }
     if (arg === "--state") {
@@ -382,7 +399,7 @@ export function parsePerfArgs(argv: readonly string[]): ArgResult {
     game = arg;
   }
   if (game === undefined) throw new Error("a game id is required");
-  return { kind: "run", args: { game, quality, profile, seconds, telemetry, settings, frameClock, ...(headed ? { headed: true } : {}), ...(state === undefined ? {} : { state }), params } };
+  return { kind: "run", args: { game, quality, profile, seconds, telemetry, settings, frameClock, ...(headed ? { headed: true } : {}), ...(cold ? { cold: true } : {}), ...(state === undefined ? {} : { state }), params } };
 }
 
 /** One sampled stack frame reduced to a readable key and its self time. */
@@ -1014,37 +1031,78 @@ async function main(): Promise<void> {
     throw new Error(`no game "${game}" in Games/ — run \`bun run games:clone\` first, then retry`);
   }
 
-  const server = await ensureDevServer(repoRoot);
-  const exitCode = await withBrowserSession(
-    { keep: false, timeoutMs: 120_000, frameClock, headed, server: server.child, serverPid: server.pid },
-    async ({ debugPort }) => {
-      const session = await openPageSession(debugPort);
-      try {
-        const measured = await measureGame({ session, base: server.base, game, quality, seconds, telemetry, settings, state, params, frameClock });
-        const pin = perfStateLine(state, params);
-        if (pin !== null) console.error(pin);
-        const clock = perfFrameClockLine(frameClock);
-        if (clock !== null) console.error(clock);
-        if (measured.clockProbeMs !== null) {
-          console.error(`perf: blank page ticked at ${measured.clockProbeMs} ms on the uncapped clock`);
+  // The daemon's Chrome runs the display's frame clock and no window, so a run that pins its own
+  // clock or asks for a window must launch its own browser instead of borrowing the daemon's.
+  const ownBrowser = frameClock === "uncapped"
+    ? "--uncapped needs its own browser flags"
+    : headed
+      ? "--headed needs its own browser window"
+      : undefined;
+  const warm = await acquireWarmCapture({
+    cold: parsed.args.cold === true || ownBrowser !== undefined,
+    ...(ownBrowser === undefined ? {} : { because: ownBrowser }),
+  });
+  /**
+   * One measured run against a target: the warm daemon when there is one, otherwise a Vite and
+   * Chrome this run owns. A function so a daemon that dies under a run can be retried cold once.
+   */
+  const runPerf = async (daemon: ShootDaemonState | null): Promise<number> => {
+    const server = daemon === null ? await ensureDevServer(repoRoot) : await ensureDaemonTarget(daemon, "dev");
+    return withDaemonWatch(daemon, withBrowserSession(
+      {
+        keep: false,
+        timeoutMs: 120_000,
+        frameClock,
+        headed,
+        server: server.child,
+        serverPid: server.pid,
+        debugPort: daemon?.chromePort,
+        attach: daemon !== null,
+        leaveWarm: daemon !== null,
+      },
+      async ({ debugPort }) => {
+        const session = await openPageSession(debugPort);
+        try {
+          const measured = await measureGame({ session, base: server.base, game, quality, seconds, telemetry, settings, state, params, frameClock });
+          const pin = perfStateLine(state, params);
+          if (pin !== null) console.error(pin);
+          const clock = perfFrameClockLine(frameClock);
+          if (clock !== null) console.error(clock);
+          if (measured.clockProbeMs !== null) {
+            console.error(`perf: blank page ticked at ${measured.clockProbeMs} ms on the uncapped clock`);
+          }
+          if (measured.record.overrides.length > 0) {
+            console.error(`perf: overrides ${measured.record.overrides.join(" ")}`);
+          }
+          console.log(JSON.stringify(measured.record, null, 2));
+          if (profile && measured.profile !== null) {
+            printInclusive(aggregateInclusiveTime(measured.profile, measured.profileMs));
+          }
+          if (measured.record.profile?.top.length === 0) console.error("perf: the CPU profile produced no samples");
+          if (measured.record.gl.attached !== true) {
+            console.error("perf: GL allocation counters saw no activity — the WebGL hooks did not attach");
+          }
+          if (measured.record.render.nodes === null) console.error("perf: could not count scene nodes on this page");
+        } finally {
+          await session.close();
         }
-        if (measured.record.overrides.length > 0) {
-          console.error(`perf: overrides ${measured.record.overrides.join(" ")}`);
-        }
-        console.log(JSON.stringify(measured.record, null, 2));
-        if (profile && measured.profile !== null) {
-          printInclusive(aggregateInclusiveTime(measured.profile, measured.profileMs));
-        }
-        if (measured.record.profile?.top.length === 0) console.error("perf: the CPU profile produced no samples");
-        if (measured.record.gl.attached !== true) {
-          console.error("perf: GL allocation counters saw no activity — the WebGL hooks did not attach");
-        }
-        if (measured.record.render.nodes === null) console.error("perf: could not count scene nodes on this page");
-      } finally {
-        await session.close();
-      }
-    },
-  );
+      },
+    ));
+  };
+
+  let exitCode = await runPerf(warm.daemon).catch((error: unknown) => {
+    console.error(error instanceof Error ? error.message : error);
+    return 1;
+  });
+  if (warm.daemon !== null && exitCode !== 0 && (await daemonDiedUnder(warm.daemon))) {
+    console.error(
+      `cold: the daemon on :${warm.daemon.chromePort} died mid-run — falling back to a direct launch, no retry`,
+    );
+    exitCode = await runPerf(null).catch((error: unknown) => {
+      console.error(error instanceof Error ? error.message : error);
+      return 1;
+    });
+  }
   if (exitCode !== 0) process.exit(exitCode);
 }
 
