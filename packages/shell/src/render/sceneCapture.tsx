@@ -2,6 +2,21 @@ import { useThree } from "@react-three/fiber";
 import { useEffect } from "react";
 import type * as THREE from "three";
 
+import { registerSceneCapture } from "./sceneCaptureRequest";
+
+export {
+  registerSceneCapture,
+  requestSceneCapture,
+  requestSceneThumbnail,
+} from "./sceneCaptureRequest";
+export type {
+  SceneCapture,
+  SceneCaptureFailure,
+  SceneCaptureRequestOptions,
+  SceneCaptureResult,
+  SceneThumbnailResult,
+} from "./sceneCaptureRequest";
+
 /** The bit of a WebGL renderer scene capture needs — its backing `<canvas>`. */
 export interface CaptureRenderer {
   domElement: { toDataURL(type?: string): string };
@@ -34,17 +49,24 @@ export function downloadImage(dataUrl: string, filename = "screenshot.png"): voi
 
 /**
  * In-`<Canvas>` binder that hands the scene-capture function out to HUD code
- * living outside the reconciler (a photo-mode Capture button). Mount it inside
- * the game's `WorldOverlay`; call `bind` receives a `() => string | null` that
- * grabs the current frame. Renders nothing.
+ * living outside the reconciler (a photo-mode Capture button, a save slot's
+ * thumbnail). Mount it inside the game's `WorldOverlay`; `bind` receives a
+ * `() => string | null` that grabs the current frame, and the same reader is
+ * registered for `requestSceneCapture`/`requestSceneThumbnail`, which wait for
+ * this mount and the first painted frame. Renders nothing.
  *
- * @capability scene-capture-binding expose the in-Canvas scene-capture function to outside-Canvas HUD (photo mode)
+ * @capability scene-capture-binding expose the in-Canvas scene-capture function to outside-Canvas HUD (photo mode, save thumbnails)
  */
 export function SceneCaptureBinding({ bind }: { bind: (capture: () => string | null) => void }): null {
   const gl = useThree((state) => state.gl as unknown as THREE.WebGLRenderer & CaptureRenderer);
   useEffect(() => {
-    bind(() => captureCanvas(gl));
-    return () => bind(() => null);
+    const capture = (): string | null => captureCanvas(gl);
+    const unbind = registerSceneCapture(capture);
+    bind(capture);
+    return () => {
+      unbind();
+      bind(() => null);
+    };
   }, [gl, bind]);
   return null;
 }

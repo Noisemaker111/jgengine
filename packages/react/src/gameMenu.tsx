@@ -51,6 +51,12 @@ export interface GameMenuLogo {
 /** How a {@link GameMenu} is used. `pause` is the same system at a smaller scale. */
 export type GameMenuVariant = "title" | "pause";
 
+/**
+ * Inline style for a menu surface that also accepts `--jg-*` theme tokens, so a game sets a token
+ * with `{ "--jg-menu-radius": "12px" }` instead of casting the object to `CSSProperties`.
+ */
+export type GameMenuStyle = CSSProperties & Record<`--${string}`, string | number>;
+
 /** Props for {@link GameMenu}. */
 export interface GameMenuProps {
   /** Primary verbs, in focus order. */
@@ -99,9 +105,9 @@ export interface GameMenuProps {
   /** Accessible name of the surface. Default `"Main menu"` (`"Paused"` for the pause variant). */
   label?: string;
   className?: string;
-  style?: CSSProperties;
+  style?: GameMenuStyle;
   detailClassName?: string;
-  detailStyle?: CSSProperties;
+  detailStyle?: GameMenuStyle;
 }
 
 let scrollLocks = 0;
@@ -217,7 +223,9 @@ function logoNode(logo: GameMenuProps["logo"], title: string | undefined, reduce
  *
  * The engine owns the surface, layout, motion, focus order, sound and the save/character panes it
  * exports next to this component. The game owns the art, the logo, the wording, the verbs and what
- * each detail pane shows.
+ * each detail pane shows. The surface takes pointer input for itself and leaves its painted
+ * backdrop transparent to input, so a HUD wrapper that passes clicks through does not make the
+ * verbs dead; `style` and `detailStyle` accept `--jg-*` tokens without a cast.
  *
  * @capability game-menu full-bleed game menu — living background, token-sized logo, animated navigable verbs, detail pane, selection sound, pause variant, no page scrollbar
  */
@@ -376,6 +384,9 @@ export function GameMenu({
           ? "clamp(16px, 2.4vw, 34px) clamp(20px, 3.2vw, 56px)"
           : "clamp(18px, 3.2vw, 56px) clamp(20px, 3.6vw, 64px)",
         boxSizing: "border-box",
+        // The surface is an overlay: it takes its own input even when the HUD wrapper around it
+        // passes every pointer through to the scene.
+        pointerEvents: "auto",
         color: "var(--jg-text, #f5f7fa)",
         fontFamily: hudFont.body,
         animation: reduced ? undefined : `jg-fade-in ${hudDuration("slow")} ${hudEase("easeOut")} both`,
