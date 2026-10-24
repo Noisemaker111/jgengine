@@ -1,4 +1,5 @@
 /** Drive the actual isolated material failure, realm continuity and display Retry controls. */
+import { localGetJson, localOk } from "./localhostHttp";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -22,9 +23,9 @@ assert.ok(["127.0.0.1", "localhost"].includes(realm.hostname));
 const ws = new URL("/ws", realm); ws.protocol = "ws:";
 const identities = [];
 for (const [base, component] of [[url, "frontend"], [realm, "realm"]] as const) {
-  const response = await fetch(new URL("/__version", base), { signal: AbortSignal.timeout(5000) });
-  assert.ok(response.ok);
-  const identity = await response.json() as { component: string; revision: string };
+  const versionUrl = new URL("/__version", base);
+  assert.ok(await localOk(versionUrl, 5000));
+  const identity = (await localGetJson(versionUrl, 5000)) as { component: string; revision: string };
   assert.equal(identity.component, component); assert.equal(identity.revision, revision); identities.push(identity);
 }
 const evidence = resolve(evidencePath); mkdirSync(evidence, { recursive: true });
@@ -397,7 +398,7 @@ try {
   outcome = "pass";
 } finally {
   const wire = await page.evaluate(() => (window as unknown as { __jgRecoveryWire: unknown }).__jgRecoveryWire).catch(() => null);
-  const serverTrace = await fetch(new URL("/__fixture/input-trace", ws.toString().replace(/^ws/, "http"))).then(response => response.json()).catch(() => null);
+  const serverTrace = await localGetJson(new URL("/__fixture/input-trace", ws.toString().replace(/^ws/, "http")), 5000).catch(() => null);
   const loadClicks = await page.evaluate(() => (window as unknown as { __jgRecoveryLoadClicks: unknown }).__jgRecoveryLoadClicks).catch(() => null);
   const nativeKeys = await page.evaluate(() => (window as unknown as { __jgRecoveryKeys: unknown }).__jgRecoveryKeys).catch(() => null);
   const longTasks = await page.evaluate(() => (window as unknown as { __jgRecoveryLongTasks: unknown }).__jgRecoveryLongTasks).catch(() => null);

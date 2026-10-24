@@ -14,11 +14,11 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, dirname, join, parse, resolve } from "node:path";
-import { request as httpRequest } from "node:http";
 
 import { retrySettleMs, shouldRetryCapture } from "./capture-retry";
 import { clearViteCaches, headRevision, revisionDrifted, shortRevision } from "./captureRevision";
 import { checkoutIdentity, isUp, markerPath, readMarker, writeMarker } from "./devServerMarker";
+import { localGet } from "./localhostHttp";
 import { computeShotMetrics, deadViewport } from "./shot-metrics";
 import { decodePng } from "./png-reader";
 
@@ -588,41 +588,6 @@ export interface DebuggerWaitContext {
 
 /** Chrome answers `/json/version` with a JSON body; anything slower than this is still not a debugger. */
 const DEBUGGER_PROBE_TIMEOUT_MS = 2_000;
-
-/**
- * GET a localhost URL with `node:http`, never `fetch`: Bun's fetch routes 127.0.0.1 through
- * `HTTP_PROXY`, so a machine with a corporate proxy reads a healthy browser as dead.
- */
-async function localGet(url: string, timeoutMs: number, method = "GET"): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const target = new URL(url);
-    const request = httpRequest(
-      {
-        hostname: target.hostname,
-        port: target.port,
-        path: target.pathname + target.search,
-        method,
-        headers: { connection: "close" },
-      },
-      (response) => {
-        let body = "";
-        response.setEncoding("utf8");
-        response.on("data", (chunk: string) => {
-          if (body.length < 1_048_576) body += chunk;
-        });
-        response.on("end", () => {
-          const status = response.statusCode ?? 0;
-          if (status >= 200 && status < 300) resolve(body);
-          else reject(Object.assign(new Error(`localhost ${target.pathname} answered ${status}`), { status }));
-        });
-        response.on("error", reject);
-      },
-    );
-    request.setTimeout(timeoutMs, () => request.destroy(new Error(`localhost ${target.pathname} timed out after ${timeoutMs}ms`)));
-    request.on("error", reject);
-    request.end();
-  });
-}
 
 async function debuggerVersionUrl(port: number): Promise<string | null> {
   try {
