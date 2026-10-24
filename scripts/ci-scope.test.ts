@@ -42,6 +42,7 @@ describe("game scope", () => {
       "packages/navbake/src/bake.ts",
       "packages/rapier/src/world.ts",
       "packages/jgengine/src/index.ts",
+      "apps/dev/src/main.tsx",
     ]) {
       const verdict = gameScope([path]);
       expect(verdict.scope).toBe("surface");

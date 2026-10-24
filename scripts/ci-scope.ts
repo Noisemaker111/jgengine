@@ -72,6 +72,8 @@ const SURFACE = [
   /^packages\/(core|shell|react|editor|assets|navbake|rapier|jgengine)\//,
   // A dependency or compiler-setting change reaches every package a game loads.
   /^(?:package\.json|bun\.lock|tsconfig[^/]*\.json)$/,
+  // The dev runner mounts a game: it can break a boot without touching a package.
+  /^apps\/dev\//,
 ];
 
 /**
