@@ -12,6 +12,10 @@
  * `--json` prints the same numbers for another script to consume, `--cwd` scopes the table to one lane
  * and `--fail-on-waiting` turns it into a gate that exits 2.
  *
+ * `--cwd` resolves the lane by evidence: a child session records the directory of the agent that
+ * spawned it, which is often the repo root rather than the worktree, so the lane is the session whose
+ * own commands name that path. The pick and its reason are printed, never assumed.
+ *
  * Child sessions are `session_v2.parent_id is not null`; their turns and tool calls are
  * `session_message.type = 'assistant'`, one item per call under `data.content[]` with `type: "tool"`.
  */
@@ -55,6 +59,8 @@ export function classifyCommand(command: string): WaitKind | null {
 export interface ToolCall {
   readonly name: string;
   readonly command: string;
+  /** The whole call input, so a file path in a read or edit counts as evidence about which lane ran it. */
+  readonly input?: string;
   readonly startedAt: number;
   readonly endedAt: number;
   readonly ms: number;
@@ -95,6 +101,41 @@ export interface RankedAudit extends SessionAudit {
   readonly percentile: number;
 }
 
+/** One candidate lane and the evidence for and against calling it this worktree's lane. */
+export interface LaneCandidate {
+  readonly id: string;
+  readonly title: string;
+  readonly directory: string;
+  /** How many times this session's own calls name the target path. */
+  readonly references: number;
+  readonly waitingMs: number;
+  readonly timeUpdated: number;
+}
+
+export interface LaneAttribution {
+  /** The session this path belongs to, or null when nothing in the window is evidence for one. */
+  readonly session: string | null;
+  readonly target: string;
+  /** What the pick rests on: the lane's own commands, or only the directory it recorded. */
+  readonly basis: "commands" | "directory" | null;
+  readonly references: number;
+  /** True when several lanes named the path equally often, so the pick is the worst-waiting of them. */
+  readonly ambiguous: boolean;
+  /** One line naming the session and the evidence, printed wherever the resolution is used. */
+  readonly reason: string;
+  readonly candidates: readonly LaneCandidate[];
+}
+
+export interface LaneSession {
+  readonly id: string;
+  readonly title: string;
+  readonly directory: string;
+  readonly timeUpdated: number;
+  readonly waitingMs: number;
+  /** Everything this session's own calls said: commands, paths, patterns. */
+  readonly texts: readonly string[];
+}
+
 /** Tool calls in the order they ran, read out of the stored assistant message bodies. */
 export function toolCallsFromMessages(messages: readonly { readonly data: string }[]): ToolCall[] {
   const calls: ToolCall[] = [];
@@ -112,15 +153,27 @@ export function toolCallsFromMessages(messages: readonly { readonly data: string
       const entry = item as {
         name?: string;
         time?: { created?: number; ran?: number; completed?: number };
-        state?: { input?: { command?: unknown; cmd?: unknown } };
+        state?: { input?: unknown };
       };
       const startedAt = entry.time?.created ?? entry.time?.ran;
       const endedAt = entry.time?.completed;
       if (typeof startedAt !== "number" || typeof endedAt !== "number" || endedAt < startedAt) continue;
-      const raw = entry.state?.input?.command ?? entry.state?.input?.cmd ?? "";
+      const input = entry.state?.input;
+      const raw = (input as { command?: unknown; cmd?: unknown } | undefined)?.command ?? (input as { cmd?: unknown } | undefined)?.cmd ?? "";
+      // The command is counted once; the rest of the input (a file path, a pattern) is extra evidence
+      // about which lane made the call, without repeating the command that is already in `command`.
+      const rest =
+        input === undefined || typeof input !== "object"
+          ? ""
+          : JSON.stringify(
+              Object.fromEntries(
+                Object.entries(input as Record<string, unknown>).filter(([key]) => key !== "command" && key !== "cmd"),
+              ),
+            );
       calls.push({
         name: entry.name ?? "tool",
         command: typeof raw === "string" ? raw : JSON.stringify(raw),
+        input: rest === "{}" ? "" : rest,
         startedAt,
         endedAt,
         ms: endedAt - startedAt,
@@ -184,6 +237,8 @@ export interface AuditReport {
   readonly totals: AuditTotals;
   /** Every child session in the window, before `--cwd` narrowed the rows. */
   readonly population: number;
+  /** How `--cwd` found its lane; absent when the window was not narrowed. */
+  readonly attribution?: LaneAttribution;
 }
 
 /** Waiting minutes first: the lane that waits most is the one to fix first. */
@@ -231,6 +286,143 @@ export function directoryMatches(sessionDirectory: string, cwd: string): boolean
   if (wanted === "") return true;
   return session === wanted || session.startsWith(`${wanted}/`);
 }
+
+function lowerPath(path: string): string {
+  return path.replace(/\\\\/g, "/").replace(/\\/g, "/").replace(/\/+$/, "").toLowerCase();
+}
+
+/**
+ * The target and its distinctive tails, longest first. A command says a worktree either by its whole
+ * path or by the part of it a person types (`worktrees/lane-attribution`), so both count, once each.
+ */
+export function pathForms(target: string): string[] {
+  const full = lowerPath(target);
+  if (full === "") return [];
+  const segments = full.split("/").filter((segment) => segment.length > 0);
+  const forms = new Set<string>([full]);
+  if (segments.length > 2) forms.add(segments.slice(-2).join("/"));
+  if (segments.length > 3) forms.add(segments.slice(-3).join("/"));
+  return [...forms].sort((a, b) => b.length - a.length);
+}
+
+/**
+ * How many times these texts name the target path. A mention is counted once however many tails of
+ * the same path it matches, and a longer sibling name (`lane-attribution-2`) is not this lane.
+ */
+export function countReferences(texts: readonly string[], target: string): number {
+  const forms = pathForms(target);
+  if (forms.length === 0) return 0;
+  let count = 0;
+  for (const raw of texts) {
+    const text = lowerPath(raw);
+    let index = 0;
+    while (index < text.length) {
+      const form = forms.find((candidate) => text.startsWith(candidate, index));
+      if (form === undefined) {
+        index += 1;
+        continue;
+      }
+      const after = text.slice(index + form.length, index + form.length + 1);
+      if (after !== "" && /[a-z0-9_-]/.test(after)) {
+        index += 1;
+        continue;
+      }
+      count += 1;
+      index += form.length;
+    }
+  }
+  return count;
+}
+
+function candidateOf(session: LaneSession, references: number): LaneCandidate {
+  return {
+    id: session.id,
+    title: session.title,
+    directory: session.directory,
+    references,
+    waitingMs: session.waitingMs,
+    timeUpdated: session.timeUpdated,
+  };
+}
+
+function waitingMinutes(ms: number): string {
+  return (ms / 60_000).toFixed(1);
+}
+
+/**
+ * The lane a worktree path belongs to. A child session records the directory of the agent that spawned
+ * it, not the one it works in, so the recorded directory is not evidence; the session's own calls are.
+ * The most-referencing lane wins, an equal strongest tie goes to the worst-waiting one and says so.
+ */
+export function attributeLane(target: string, sessions: readonly LaneSession[]): LaneAttribution {
+  const scored = sessions.map((session) => ({ session, references: countReferences(session.texts, target) }));
+  const named = scored
+    .filter((entry) => entry.references > 0)
+    .sort((a, b) => b.references - a.references || b.session.timeUpdated - a.session.timeUpdated);
+
+  if (named.length === 0) {
+    const recorded = sessions
+      .filter((session) => directoryMatches(session.directory, target))
+      .sort((a, b) => b.timeUpdated - a.timeUpdated);
+    const first = recorded[0];
+    if (first === undefined) {
+      return {
+        session: null,
+        target,
+        basis: null,
+        references: 0,
+        ambiguous: false,
+        reason: `no session in the window names ${target} in its own calls, and none recorded that directory`,
+        candidates: [],
+      };
+    }
+    const shared = recorded.length > 1 ? `; ${recorded.length} sessions recorded it` : "";
+    return {
+      session: first.id,
+      target,
+      basis: "directory",
+      references: 0,
+      ambiguous: recorded.length > 1,
+      reason: `attributed ${first.id} (no command names ${target}; it records that directory itself${shared})`,
+      candidates: recorded.map((session) => candidateOf(session, 0)),
+    };
+  }
+
+  const top = named[0]!;
+  const tied = named.filter((entry) => entry.references === top.references);
+  if (tied.length > 1) {
+    const worst = tied.reduce(
+      (best, entry) =>
+        entry.session.waitingMs > best.session.waitingMs ||
+        (entry.session.waitingMs === best.session.waitingMs && entry.session.timeUpdated > best.session.timeUpdated)
+          ? entry
+          : best,
+      tied[0]!,
+    );
+    const list = tied.map((entry) => `${entry.session.id} ${waitingMinutes(entry.session.waitingMs)}m waiting`).join("; ");
+    return {
+      session: worst.session.id,
+      target,
+      basis: "commands",
+      references: worst.references,
+      ambiguous: true,
+      reason: `ambiguous: ${tied.length} sessions each name ${target} ${worst.references} time(s) (${list}) - picked ${worst.session.id}, the worst-waiting`,
+      candidates: tied.map((entry) => candidateOf(entry.session, entry.references)),
+    };
+  }
+
+  return {
+    session: top.session.id,
+    target,
+    basis: "commands",
+    references: top.references,
+    ambiguous: false,
+    reason: `attributed ${top.session.id} (${top.references} reference${top.references === 1 ? "" : "s"} to ${target})`,
+    candidates: named.map((entry) => candidateOf(entry.session, entry.references)),
+  };
+}
+
+/** The path a lane hands in, which may be a Windows path recorded on another machine. */
 
 export function formatTable(report: AuditReport, window: { readonly hours: number; readonly database: string }): string {
   const rows = report.sessions.map((audit) => [
@@ -327,10 +519,20 @@ export function readSessionCalls(database: Database, sessionIds: readonly string
 export function auditDatabase(database: Database, options: AuditOptions): AuditReport {
   const sessions = loadSessions(database, options);
   const calls = readSessionCalls(database, sessions.map((session) => session.id));
-  const report = buildReport(sessions.map((session) => auditSession(session, calls.get(session.id) ?? [])));
+  const audits = sessions.map((session) => auditSession(session, calls.get(session.id) ?? []));
+  const report = buildReport(audits);
   if (options.cwd === undefined) return report;
-  const selected = report.sessions.filter((session) => directoryMatches(session.directory, options.cwd!));
-  return { sessions: selected, totals: totals(selected), population: report.population };
+  const lane = (audit: RankedAudit): LaneSession => ({
+    id: audit.id,
+    title: audit.title,
+    directory: audit.directory,
+    timeUpdated: sessions.find((session) => session.id === audit.id)?.timeUpdated ?? 0,
+    waitingMs: waitingMs(audit),
+    texts: (calls.get(audit.id) ?? []).map((call) => `${call.command}\n${call.input ?? ""}`),
+  });
+  const attribution = attributeLane(options.cwd, audits.map(lane));
+  const selected = report.sessions.filter((session) => session.id === attribution.session);
+  return { sessions: selected, totals: totals(selected), population: report.population, attribution };
 }
 
 export function toJson(report: AuditReport): string {
@@ -352,6 +554,18 @@ export function toJson(report: AuditReport): string {
       })),
       totals: report.totals,
       population: report.population,
+      ...(report.attribution === undefined
+        ? {}
+        : {
+            attribution: {
+              session: report.attribution.session,
+              target: report.attribution.target,
+              basis: report.attribution.basis,
+              references: report.attribution.references,
+              ambiguous: report.attribution.ambiguous,
+              reason: report.attribution.reason,
+            },
+          }),
     },
     null,
     2,
@@ -443,7 +657,7 @@ function parseArgs(argv: readonly string[]): Args {
         "usage: bun run lane:audit [--hours N] [--db <path>] [--cwd <dir>] [--json] [--fail-on-waiting]\n" +
           "  --hours N          window, default 40\n" +
           "  --db <path>        OpenCode database, else OPENCODE_DB, else the user-data default\n" +
-          "  --cwd <dir>        only sessions whose directory is this path or under it\n" +
+          "  --cwd <dir>        the one lane whose own commands name this path, and why it was picked\n" +
           "  --json             machine-readable document on stdout\n" +
           "  --fail-on-waiting  exit 2 when any selected session has a sleep/poll or CI watch call",
       );
@@ -489,12 +703,16 @@ function main(argv: readonly string[]): number {
       cwd: args.cwd === undefined ? undefined : cwdFilter(args.cwd),
       now: Date.now(),
     });
+    if (report.attribution !== undefined) console.error(`lane:audit: ${report.attribution.reason}`);
     if (report.sessions.length === 0) {
+      const searched =
+        report.attribution === undefined
+          ? ""
+          : `\nsearched ${report.population} child session(s) alive in the last ${args.hours}h of ${resolved}.` +
+            "\nA child session records the directory of the agent that spawned it, so the worktree it worked in" +
+            "\nis only visible in its own commands; pass --cwd <worktree> and make sure its calls name that path.";
       console.error(
-        `lane:audit: no child sessions in the last ${args.hours}h${args.cwd === undefined ? "" : ` under ${args.cwd}`} (database ${resolved}).` +
-          (args.cwd === undefined
-            ? ""
-            : "\nA child session records the directory its parent ran in, which is often the repo root rather than the worktree."),
+        `lane:audit: no child sessions ${report.attribution === undefined ? `in the last ${args.hours}h` : `found for ${args.cwd} in the last ${args.hours}h`} (database ${resolved}).${searched}`,
       );
       return 1;
     }

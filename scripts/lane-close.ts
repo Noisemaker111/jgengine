@@ -86,6 +86,8 @@ export interface AuditSession {
 export interface AuditReport {
   sessions: AuditSession[];
   totals?: { sessions?: number; count?: number; n?: number };
+  /** Which session `--cwd` attributed this lane to, and why; the audit prints the same line. */
+  attribution?: { session: string | null; reason: string; basis?: string | null; references?: number };
 }
 
 export interface Waiting {
@@ -130,14 +132,18 @@ export function waitingGate(session: AuditSession): Waiting & { blocked: boolean
 }
 
 /**
- * The session this lane is: the one the harness names, else the only one in this
- * directory, else the one with the most waiting. A directory can hold more than one
- * session, and the gate judges the numbers the report prints, so an unnamed
- * ambiguous read takes the worst session rather than a hopeful one.
+ * The session this lane is: the one the harness names, else the one the audit attributed to this
+ * worktree by its own commands, else the only one in this directory, else the one with the most
+ * waiting. The audit's attribution is the only signal that survives a subagent recording its parent's
+ * directory, so it wins over the harness id when the harness id is not one of the rows.
  */
 export function pickSession(
   sessions: readonly AuditSession[],
-  options: { session?: string; env?: Record<string, string | undefined> } = {},
+  options: {
+    session?: string;
+    env?: Record<string, string | undefined>;
+    attribution?: { session: string | null; reason: string };
+  } = {},
 ): { session: AuditSession | null; note: string } {
   const want =
     options.session ??
@@ -147,9 +153,20 @@ export function pickSession(
     "";
   if (want.length > 0) {
     const found = sessions.find((session) => session.id === want);
-    if (found !== undefined) return { session: found, note: `session ${found.id}` };
-    return { session: null, note: `no session ${want} in the transcript store` };
+    if (found !== undefined) return { session: found, note: options.attribution?.reason ?? `session ${found.id}` };
   }
+  const attributed = options.attribution?.session ?? null;
+  if (attributed !== null) {
+    const found = sessions.find((session) => session.id === attributed);
+    if (found !== undefined) {
+      const reason = options.attribution!.reason;
+      return {
+        session: found,
+        note: want.length > 0 ? `${reason}; named session ${want} is not in this lane's rows` : reason,
+      };
+    }
+  }
+  if (want.length > 0) return { session: null, note: `no session ${want} in the transcript store` };
   if (sessions.length === 0) return { session: null, note: "no session in this directory in the last 6 hours" };
   if (sessions.length === 1) return { session: sessions[0]!, note: `session ${sessions[0]!.id}` };
   const worst = sessions.reduce((best, session) => (waited(session) > waited(best) || (waited(session) === waited(best) && session.spanMs > best.spanMs) ? session : best), sessions[0]!);
@@ -323,7 +340,7 @@ export function closeLane(args: LaneCloseArgs, io: LaneIo): number {
   const picked =
     report === null
       ? { session: null, note: "no audit report to read" }
-      : pickSession(report.sessions, { session: args.session, env: io.env });
+      : pickSession(report.sessions, { session: args.session, env: io.env, attribution: report.attribution });
   const lanes = report === null ? 0 : population(report);
   const gate = picked.session === null ? null : waitingGate(picked.session);
 
@@ -427,7 +444,8 @@ function realIo(): LaneIo {
       });
       return { status: run.status ?? 1, stdout: run.stdout ?? "", stderr: run.stderr ?? "" };
     },
-    cwd: process.cwd(),
+    /** The checkout this lane runs in, which is the worktree the audit must find. */
+    cwd: root,
     env: process.env,
     out: (line) => console.log(line),
     err: (line) => console.error(line),

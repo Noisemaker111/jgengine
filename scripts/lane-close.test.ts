@@ -90,6 +90,14 @@ function audit(sessions: AuditSession[], totals = { sessions: 193 }): string {
   return JSON.stringify({ sessions, totals });
 }
 
+function attributedAudit(sessions: AuditSession[], reason: string): string {
+  return JSON.stringify({
+    sessions,
+    totals: { sessions: 193 },
+    attribution: { session: sessions[0]?.id ?? null, target: "/repo", basis: "commands", references: 14, reason },
+  });
+}
+
 describe("the gate is the count, not a percentage", () => {
   test("no wait at all passes", () => {
     const gate = waitingGate(session());
@@ -162,6 +170,25 @@ describe("which session is this lane", () => {
     expect(picked.session?.id).toBe("b");
     expect(pickSession([], { env: {} }).session).toBeNull();
   });
+
+  test("the audit's attribution names the session and its reason", () => {
+    const picked = pickSession([session({ id: "ses_lane" })], {
+      env: {},
+      attribution: { session: "ses_lane", reason: "attributed ses_lane (14 references to C:/repo/.claude/worktrees/lane-x)" },
+    });
+    expect(picked.session?.id).toBe("ses_lane");
+    expect(picked.note).toBe("attributed ses_lane (14 references to C:/repo/.claude/worktrees/lane-x)");
+  });
+
+  test("a harness id that is not one of the lane's rows does not override the attribution", () => {
+    const picked = pickSession([session({ id: "ses_lane" })], {
+      env: { OPENCODE_SESSION_ID: "ses_parent" },
+      attribution: { session: "ses_lane", reason: "attributed ses_lane (9 references to C:/repo/.claude/worktrees/lane-x)" },
+    });
+    expect(picked.session?.id).toBe("ses_lane");
+    expect(picked.note).toContain("attributed ses_lane");
+    expect(picked.note).toContain("named session ses_parent is not in this lane's rows");
+  });
 });
 
 describe("lane:close end to end", () => {
@@ -175,6 +202,13 @@ describe("lane:close end to end", () => {
     expect(printed).toContain("- span 38 min, tool 34 min, waiting 0 min — 61st percentile of 193 recent lanes");
     expect(printed).toContain("- files changed: 3 files changed, 120 insertions(+), 4 deletions(-)");
     expect(fake.lines.err).toEqual([]);
+  });
+
+  test("the lane says which session it read and why", () => {
+    const reason = "attributed ses_1 (14 references to /repo/.claude/worktrees/lane-attribution)";
+    const fake = io({ audit: attributedAudit([session()], reason) });
+    expect(closeLane({}, fake)).toBe(EXIT_CLOSED);
+    expect(fake.lines.out.join("\n")).toContain(reason);
   });
 
   test("verify:fast failing stops before land", () => {
