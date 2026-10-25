@@ -1,3 +1,4 @@
+import { useActionBindings } from "@jgengine/react/uiKitRoot";
 import { useGame, useGameStore } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
 import { GameFrame } from "@jgengine/react/gameFrame";
@@ -8,7 +9,6 @@ import { actionLabel } from "@jgengine/core/input/actionBindings";
 import { buildPrompt } from "../../build/prompt";
 import { editorLayers } from "../../../editorLayers";
 import { TOWER_IDS, towerDef } from "../../entities/towers/catalog";
-import { keybinds } from "../../keybinds";
 import { buildCost, keep } from "../../keep";
 import { session } from "../../session";
 import { FIRE } from "../theme";
@@ -19,6 +19,7 @@ import { FIRE } from "../theme";
  * turns red; the chosen one is lit by the beacon. The rack steps back between decisions.
  */
 export function BuildBar() {
+  const keybinds = useActionBindings();
   const { commands } = useGame();
   const gameCtx = useGameContext();
   const gold = useGameStore((ctx) => keep.of(ctx).num("keep.gold"));

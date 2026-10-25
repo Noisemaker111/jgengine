@@ -1,9 +1,12 @@
 import { expect, test } from "bun:test";
 import { createInputSnapshot } from "@jgengine/core/runtime/inputSnapshot";
 import { createDriveInput } from "./input";
+import { game } from "../../game.config";
+
+const BINDINGS = game.game.input ?? {};
 
 test("keyboard and touch releases preserve the other held source, then reset clears both", () => {
-  const drive = createDriveInput();
+  const drive = createDriveInput(BINDINGS);
   const host = createInputSnapshot();
   drive.keyDown("KeyW");
   drive.press("throttle");
@@ -18,10 +21,10 @@ test("keyboard and touch releases preserve the other held source, then reset cle
 
 test("closing settings refreshes bindings and releases held keys without duplicating jump edges", () => {
   let code = "KeyW";
-  const drive = createDriveInput(() => ({ throttle: [code], jumpHop: ["Space"] }));
+  const drive = createDriveInput({ throttle: [code], jumpHop: ["Space"] });
   drive.keyDown("KeyW");
   code = "KeyI";
-  drive.refreshBindings();
+  drive.refreshBindings({ throttle: [code], jumpHop: ["Space"] });
   drive.keyDown("KeyW");
   expect(drive.isDown("throttle")).toBe(false);
   drive.keyDown("KeyI");
@@ -39,7 +42,7 @@ test("released keyboard pedals coast the real published vehicle into a savable p
   const { createRunSession } = await import("../run/session");
   const saved = new Map<string, string>();
   const session = createRunSession(undefined, { getItem: key => saved.get(key) ?? null, setItem: (key, value) => { saved.set(key, value); } });
-  const drive = createDriveInput();
+  const drive = createDriveInput(BINDINGS);
   const host = createInputSnapshot();
   const step = () => session.tick(1 / 30, drive.sample(1 / 30, host, true), { jumpPressed: false, plowBracing: false });
   session.start(); drive.keyDown("KeyW");
@@ -54,7 +57,7 @@ test("released keyboard pedals coast the real published vehicle into a savable p
 });
 
 test("released touch pedals retain another held source and intentionally small analog input", () => {
-  const drive = createDriveInput();
+  const drive = createDriveInput(BINDINGS);
   const host = createInputSnapshot();
   drive.press("throttle");drive.sample(.05, host, true);drive.release("throttle");
   expect(drive.sample(.05, host, true).throttle).toBe(0);

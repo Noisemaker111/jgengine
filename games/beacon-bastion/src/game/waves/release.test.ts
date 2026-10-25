@@ -94,7 +94,7 @@ describe("player released assaults", () => {
     expect((keep.of(runner.ctx).fact("keep.held") === true)).toBe(true);
     expect(gamePhase(runner.ctx)).toBe("ended");
     const banked = legacy.read(runner.ctx);
-    expect(banked.run.completed).toBe(1);
+    expect(banked.run.closed).toBe(1);
     expect(banked.bankedGold).toBeGreaterThan(0);
     expect(banked.offer).toHaveLength(3);
     runner.ui.invoke("defense.restart", {});

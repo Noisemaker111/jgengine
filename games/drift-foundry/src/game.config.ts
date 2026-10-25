@@ -6,7 +6,7 @@ import { editorLayers } from "./editorLayers";
 import { DRIFT_SOUNDS } from "./game/audio";
 import { assets } from "./game/assets";
 import { content } from "./game/content";
-import { keybinds } from "./game/keybinds";
+import { DEFAULT_DRIVE_CODES } from "@jgengine/core/input/actionBindings";
 import { entityModels, objectModels } from "./game/models";
 import { GameUI } from "./game/ui/GameUI";
 import { driftTheme } from "./game/ui/theme";
@@ -22,7 +22,16 @@ export const game = defineGame({
   // The kart, rivals, compactor and run clock all integrate `dt` per tick; a fixed 60 Hz step keeps a
   // corridor run the same distance at 30 and 144 fps.
   simulation: { hz: 60 },
-  input: keybinds,
+  input: {
+    ...DEFAULT_DRIVE_CODES,
+    handbrake: ["KeyX"],
+    jumpHop: ["Space"],
+    plowBrace: ["ShiftLeft", "ShiftRight"],
+    salvageSwap: { hold: ["KeyE"] },
+    restart: ["KeyR"],
+    startRun: ["Enter"],
+    pauseRun: ["KeyP"],
+  },
   assets,
   content,
   loop: { onInit, onNewPlayer, onTick },

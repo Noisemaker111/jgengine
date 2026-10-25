@@ -683,6 +683,7 @@
 - `ActionBarChrome` (function): function ActionBarChrome({ model, layout = "grid", itemSize = 52, gap = 6, ariaLabel = "Actions", renderItem, className, style, }: { model: ActionBarModel; layout?: "grid" | "list"; itemSize?: number; gap?: number; ariaLabel?: string; renderItem?: (action: ResolvedAction, ctx: ActionItemContext) => … — The composable RENDERER: lay the model's actions out as a `grid` or `list` toolbar with roving tabindex, arrow-key navigation, and a moved DOM focus. `renderItem` swaps per-item chrome; omit it for {@link ActionButton}. A radial or bespoke UI can skip this entirely and read the model. Purely a wiring/behavior layer — no panel skin — so a game art-directs freely.
 - `ActionBarKeyResult` (interface): interface ActionBarKeyResult — The intent a key press resolves to over an action bar: move focus, activate, or ignore.
 - `ActionBarModel` (interface): interface ActionBarModel — The live action-bar model returned by {@link useActionBar}.
+- `ActionBindingsProvider` (function): function ActionBindingsProvider({ bindings, children }: { bindings: ActionCodesMap; children?: ReactNode }): ReactNode — Hands the game's live input bindings (its `input` map with the player's rebinds applied) to every key hint below. The shell mounts it around each game, so HUD labels follow a rebind with no game code.
 - `ActionButton` (function): function ActionButton({ action, focused = false, hovered = false, size = 52, showHotkey = true, tabIndex, buttonRef, onActivate, onFocus, onHover, renderIcon, cue, onInteract, className, style, }: { action: ResolvedAction; /** Feedback cue name (default the action id), rendered as `data-jg-cue`. */ … — The default per-item chrome — a cooldown-aware action button with hotkey cap, cost line, radial cooldown wipe, and full rest/hover/focus/pressed/active/disabled states. Accessible: it is a real `<button>` with `aria-disabled`, `aria-pressed` for toggles, `aria-keyshortcuts`, and a native `title` describing why it is blocked. Swap it via `ActionBarChrome`'s `renderItem`, or drop it into a radial layout yourself.
 - `ActionItemContext` (interface): interface ActionItemContext — Render context passed to a custom {@link ActionBarChrome} item renderer.
 - `ActionKeyEvent` (interface): interface ActionKeyEvent — A minimal keyboard-event shape — a real `KeyboardEvent`/React synthetic satisfies it.
@@ -701,7 +702,7 @@
 - `BrowserSuspensionReason` (type): type BrowserSuspensionReason = "blur" | "hidden" | "pointer-lock-lost" — Browser events that can interrupt active play. The caller decides whether to pause.
 - `BrowserSuspensionSources` (interface): interface BrowserSuspensionSources — Event sources for a browser window, an iframe, or a test.
 - `CAPTURE_HOLD_KEY` (const): const CAPTURE_HOLD_KEY: "__jgengineCaptureHold" — Global a capture or drive host sets to `true` at document start. While it holds, window blur and a hidden page do not suspend play: a capture window loses focus and visibility whenever another window on the machine comes forward, and a drive that boots paused proves nothing.
-- `CameraShakeMeter` (function): function CameraShakeMeter({ controller, animate = false, title = "CAMERA SHAKE", kindLabels, variation = "glass", className, style, }: CameraShakeMeterProps): ReactNode — A drop-in HUD panel that visualizes a core {@link CameraShakeController}: a trauma meter (reusing the shared {@link StaminaBar} building block) plus a live percentage and the current impact `kind` label. Presentation only — it reads the controller and never interprets `kind`, mapping it through `kindLabels` for display. A shell component applies the same controller's `offset()` to the camera; this panel is the on-screen readout of how much shake is in flight.
+- `CameraShakeMeter` (function): function CameraShakeMeter({ controller, title = "CAMERA SHAKE", kindLabels, variation = "glass", className, style, }: CameraShakeMeterProps): ReactNode — A drop-in HUD panel that visualizes a core {@link CameraShakeController}: a trauma meter (reusing the shared {@link StaminaBar} building block) plus a live percentage and the current impact `kind` label. Presentation only — it reads the controller and never interprets `kind`, mapping it through `kindLabels` for display. The shell camera rig applies the same controller's `offset()` to the camera; this panel is the on-screen readout of how much shake is in flight.
 - `CameraShakeMeterProps` (interface): interface CameraShakeMeterProps — Props for {@link CameraShakeMeter}.
 - `CameraShakeReadout` (interface): interface CameraShakeReadout — A live read of a camera-shake controller: current trauma `0..1` and the last game-owned `kind`.
 - `CanvasCover` (interface): interface CanvasCover — A page-wide declaration that some surface paints over the whole game canvas.
@@ -1214,13 +1215,14 @@
 - `useAccessibility` (function): function useAccessibility(): AccessibilityContextValue — Read the live accessibility state + its store; throws without an {@link AccessibilityProvider} above.
 - `useAchievements` (function): function useAchievements(tracker: AchievementTracker): readonly AchievementView[] — Subscribe a component to an achievement tracker's live view list. The list keeps a stable identity between changes, so this re-renders only on unlock or progress — not every frame.
 - `useActionBar` (function): function useActionBar(defs: readonly ActionDef[], options?: UseActionBarOptions): ActionBarModel — The DATA/HOOK layer: resolve `defs` into a live view model with focus, hover, keyboard grid navigation, and hotkey activation. Rendering-agnostic — feed the returned model to {@link ActionBarChrome}, or read it directly to lay out a radial or a bespoke card.
+- `useActionBindings` (function): function useActionBindings(): ActionCodesMap — The game's live input bindings, rebinds included: feed it to `actionLabel(bindings, action)` for a key hint in a list, or use {@link useActionGlyph} for one action. Empty outside a shell.
 - `useActionGlyph` (function): function useActionGlyph(action: string, fallback?: string): string | undefined — The key hint for `action` on the device the player is using, from the kit root's live bindings — the bound key on keyboard, the pad button on gamepad, or `fallback` when unbound. On touch it is `undefined`: the button itself is the tap target. Put it on a button (`<KitButton glyph={useActionGlyph("pause", "P")}>`) so key hints never go stale after a rebind.
 - `useActivePrompt` (function): function useActivePrompt<T extends PositionedPrompt>(prompts?: readonly T[]): T | null — ⚠ undocumented
 - `useAuthedPlayer` (function): function useAuthedPlayer(options?: { guestSeed?: string }): PlayerIdentity | null — ⚠ undocumented
 - `useAutoScroll` (function): function useAutoScroll<T extends HTMLElement>(dep: unknown): React.RefObject<T | null> — Pin a scrollable element to its bottom whenever `dep` changes (typically a length or the list itself). Attach the returned ref to the scroll container. Owns the log/chat/console scroll-to-bottom effect so panels don't hand-roll it.
 - `useAxisChannel` (function): function useAxisChannel(config: AxisChannelConfig): UseAxisChannelResult — Wires useHeldKeys into a fresh AxisChannel, ready for a per-frame `channel.sample(dt, isDown)`. The channel is recreated when `config` identity changes, so pass a stable config (useMemo/module constant at the call site) unless a rebind is intended.
 - `useBrowserSuspension` (function): function useBrowserSuspension(onSuspend: (reason: BrowserSuspensionReason) => void, options: BrowserSuspensionOptions = {}): void — Observe browser interruptions while mounted, invoking the latest callback without replacing listeners.
-- `useCameraShake` (function): function useCameraShake(controller: CameraShakeController, animate = true): CameraShakeReadout — Subscribe to a camera-shake controller and re-render on every change (add / decay / clear). Optionally drives `update()` on an animation frame so the trauma meter bleeds down live even when no game loop ticks the controller. Returns the current trauma + kind for a HUD readout.
+- `useCameraShakeReadout` (function): function useCameraShakeReadout(controller: CameraShakeController): CameraShakeReadout — Subscribe to a camera-shake controller and re-render on every change (add / decay / clear). It only reads: the camera rig that applies the shake is what advances it. Returns the current trauma + kind for a HUD readout.
 - `useCanvasCover` (function): function useCanvasCover(declared: boolean): void — Declare the canvas fully covered while `declared` is true, and release on unmount.
 - `useCanvasCovered` (function): function useCanvasCovered(): boolean — True while a surface covers the canvas.
 - `useChat` (function): function useChat(channelId: string, options?: { limit?: number }): ChatMessage[] — ⚠ undocumented
@@ -1398,10 +1400,10 @@
 
 ## @jgengine/react/cameraShake
 
-- `CameraShakeMeter` (function): function CameraShakeMeter({ controller, animate = false, title = "CAMERA SHAKE", kindLabels, variation = "glass", className, style, }: CameraShakeMeterProps): ReactNode — A drop-in HUD panel that visualizes a core {@link CameraShakeController}: a trauma meter (reusing the shared {@link StaminaBar} building block) plus a live percentage and the current impact `kind` label. Presentation only — it reads the controller and never interprets `kind`, mapping it through `kindLabels` for display. A shell component applies the same controller's `offset()` to the camera; this panel is the on-screen readout of how much shake is in flight.
+- `CameraShakeMeter` (function): function CameraShakeMeter({ controller, title = "CAMERA SHAKE", kindLabels, variation = "glass", className, style, }: CameraShakeMeterProps): ReactNode — A drop-in HUD panel that visualizes a core {@link CameraShakeController}: a trauma meter (reusing the shared {@link StaminaBar} building block) plus a live percentage and the current impact `kind` label. Presentation only — it reads the controller and never interprets `kind`, mapping it through `kindLabels` for display. The shell camera rig applies the same controller's `offset()` to the camera; this panel is the on-screen readout of how much shake is in flight.
 - `CameraShakeMeterProps` (interface): interface CameraShakeMeterProps — Props for {@link CameraShakeMeter}.
 - `CameraShakeReadout` (interface): interface CameraShakeReadout — A live read of a camera-shake controller: current trauma `0..1` and the last game-owned `kind`.
-- `useCameraShake` (function): function useCameraShake(controller: CameraShakeController, animate = true): CameraShakeReadout — Subscribe to a camera-shake controller and re-render on every change (add / decay / clear). Optionally drives `update()` on an animation frame so the trauma meter bleeds down live even when no game loop ticks the controller. Returns the current trauma + kind for a HUD readout.
+- `useCameraShakeReadout` (function): function useCameraShakeReadout(controller: CameraShakeController): CameraShakeReadout — Subscribe to a camera-shake controller and re-render on every change (add / decay / clear). It only reads: the camera rig that applies the shake is what advances it. Returns the current trauma + kind for a HUD readout.
 
 ## @jgengine/react/canvasCover
 
@@ -2401,6 +2403,7 @@
 
 ## @jgengine/react/uiKitRoot
 
+- `ActionBindingsProvider` (function): function ActionBindingsProvider({ bindings, children }: { bindings: ActionCodesMap; children?: ReactNode }): ReactNode — Hands the game's live input bindings (its `input` map with the player's rebinds applied) to every key hint below. The shell mounts it around each game, so HUD labels follow a rebind with no game code.
 - `KitActionPrompt` (function): function KitActionPrompt({ action, label, progress, tone, onActivate, fallbackGlyph, className, style }: KitActionPromptProps): ReactNode — "Press E to take the parcel", drawn by the active kit with the right glyph for the device the player is using: the bound key, the bound pad button, or a tap target on touch. Renders nothing when the action is not bound on that device and no `fallbackGlyph` is given.
 - `KitActionPromptProps` (interface): interface KitActionPromptProps — Props for {@link KitActionPrompt}.
 - `KitButton` (function): function KitButton({ cue, onPointerEnter, onPointerDown, onClick, disabled, ...rest }: KitButtonProps & { cue?: string }): ReactNode — The active kit's button. Hover, press and activate report to the nearest `HudInteractProvider`, so the shell's UI cues sound without wiring.
@@ -2415,6 +2418,7 @@
 - `UiKitRootProps` (interface): interface UiKitRootProps — Props for {@link UiKitRoot}.
 - `UiKitScope` (function): function UiKitScope({ children }: { children?: ReactNode }): ReactNode — Re-applies the nearest kit's root (tokens and `data-jg-kit`) — wrap content you portal outside the kit root so it keeps the kit's look.
 - `ensureUiKitStyles` (function): function ensureUiKitStyles(kit: UiKit, doc: Document | undefined = typeof document === "undefined" ? undefined : document): void — Inserts a kit's stylesheet into the document once. Safe to call repeatedly and during SSR (no-op).
+- `useActionBindings` (function): function useActionBindings(): ActionCodesMap — The game's live input bindings, rebinds included: feed it to `actionLabel(bindings, action)` for a key hint in a list, or use {@link useActionGlyph} for one action. Empty outside a shell.
 - `useActionGlyph` (function): function useActionGlyph(action: string, fallback?: string): string | undefined — The key hint for `action` on the device the player is using, from the kit root's live bindings — the bound key on keyboard, the pad button on gamepad, or `fallback` when unbound. On touch it is `undefined`: the button itself is the tap target. Put it on a button (`<KitButton glyph={useActionGlyph("pause", "P")}>`) so key hints never go stale after a rebind.
 - `useHasUiKit` (function): function useHasUiKit(): boolean — True when a {@link UiKitRoot} is above: engine screens switch to kit parts only then.
 - `useKitPresence` (function): function useKitPresence(open: boolean, exitMs: number): { mounted: boolean; leaving: boolean } — Keeps something mounted through its exit motion: `leaving` turns true when `open` goes false, and `mounted` turns false `exitMs` later.
@@ -2636,13 +2640,10 @@
 - `CameraFollowListener` (type): type CameraFollowListener = (state: CameraFollowState) => void — ⚠ undocumented
 - `CameraOccluder` (interface): interface CameraOccluder — Minimal structural view of a raycast hit object: its own tags plus a parent link to walk. Keeps this filter free of a three.js import so it stays unit-testable.
 - `CameraPoint` (interface): interface CameraPoint — World-space point for camera boom math, matching the rigs' `Vec3`.
-- `CameraShakeChannel` (interface): interface CameraShakeChannel { shake(amplitude: number, decayPerSecond?: number): void; step(dt: number): void; sample(config?: Parameters<typeof shakeOffset>[1]): ShakeOffset; trauma(): number } — ⚠ undocumented · used by `defaultCameraShakeChannel`: Process-wide default channel.
-- `CameraShakeContext` (const): const CameraShakeContext: React.Context<CameraShakeChannel> — ⚠ undocumented
-- `ControllerCameraShake` (function): function ControllerCameraShake({ controller, priority = GAME_SIM_FRAME_PRIORITY, }: ControllerCameraShakeProps): ReactNode — The shell-side consumer of a core {@link CameraShakeController}: each frame it calls `controller.update(delta)` to bleed trauma, reads the pooled `controller.offset()`, and applies it additively to the active camera — a positional kick plus a pitch/yaw/roll rotation — so the view VISIBLY shakes on impacts. It runs after the camera rig (which re-poses the camera to its base every frame), so the shake composes with any rig without a manual save/restore and without fighting the built-in `shakeChannel`. Renders nothing.
-- `ControllerCameraShakeProps` (interface): interface ControllerCameraShakeProps — Props for {@link ControllerCameraShake}.
+- `CameraShakeContext` (const): const CameraShakeContext: React.Context<CameraShakeController> — Override which controller the rigs below apply; defaults to {@link defaultCameraShake}.
 - `FirstPersonMuzzleReader` (type): type FirstPersonMuzzleReader = (target: Vector3) => boolean — Writes a live presentation muzzle in world space; false means this rig has no muzzle available.
 - `GAME_SIM_FRAME_PRIORITY` (const): const GAME_SIM_FRAME_PRIORITY: 0 — Run simulation/movement before orbit follow so poses are current.
-- `GameCameraRig` (function): function GameCameraRig({ yawRef, pitchRef, config, onDragChange, pointerControls, panKeysEnabled, rotateKeysEnabled, director, viewmodel, }: GameCameraRigProps): React.JSX.Element — ⚠ undocumented
+- `GameCameraRig` (function): function GameCameraRig({ yawRef, pitchRef, config, onDragChange, pointerControls, panKeysEnabled, rotateKeysEnabled, director, viewmodel, }: GameCameraRigProps): React.JSX.Element | null — ⚠ undocumented
 - `GameCameraRigProps` (interface): interface GameCameraRigProps { yawRef: MutableRefObject<number>; pitchRef: MutableRefObject<number>; config?: GameCameraConfig; onDragChange?: (dragging: boolean) => void; pointerControls?: boolean; panKeysEnabled?: boolean; rotateKeysEnabled?: boolean; director?: Came… — ⚠ undocumented
 - `GameFirstPersonCamera` (function): function GameFirstPersonCamera({ yawRef, pitchRef, config, followEntityId, viewmodel, weapon, }: GameFirstPersonCameraProps): React.JSX.Element | null — ⚠ undocumented
 - `GameFirstPersonCameraProps` (interface): interface GameFirstPersonCameraProps { yawRef: MutableRefObject<number>; pitchRef: MutableRefObject<number>; config?: FirstPersonCameraConfig; followEntityId?: string; viewmodel?: ComponentType<ViewmodelProps>; weapon?: (entityId: string) => CameraWeaponView | null } — ⚠ undocumented
@@ -2654,22 +2655,18 @@
 - `PlayerFovSlider` (function): function PlayerFovSlider(): React.JSX.Element | null — ⚠ undocumented
 - `PlayerFovState` (interface): interface PlayerFovState { fov: number; bounds: PlayerFovBounds; enabled: boolean; persist: boolean; setFov: (value: number) => void; compose: (poseFov: number, mode?: "relative" | "absolute") => number } — ⚠ undocumented
 - `ViewmodelProps` (interface): interface ViewmodelProps — Props handed to a custom viewmodel component (#542): a live cue ref (velocity/bob/firing/reloading/recoil/hit) for the followed entity, driven from your own `useFrame` — read `cuesRef.current` there rather than storing it as render state.
+- `cameraShake` (function): function cameraShake(amplitude: number, decayPerSecond?: number): void — Add camera trauma from anywhere. `decayPerSecond`, when given, retunes how fast it bleeds off.
 - `clearCameraBoom` (function): function clearCameraBoom(input: CameraClearanceInput): CameraClearanceResult — Pull a camera in along its boom so it never sits inside world collision. A blocking surface rejects the desired position: the camera moves to `clearance` before it, and onto the pivot when the surface is closer than that (the pivot is inside, so no camera position is clear). Pulling in is immediate — a camera must not spend a frame inside a trunk — while releasing eases back at `releaseRate`, which is what makes the boom read as a spring arm instead of a hard stop.
-- `defaultCameraShakeChannel` (const): const defaultCameraShakeChannel: CameraShakeChannel — Process-wide default channel. A shell mounts its own channel via `CameraShakeContext`, but game systems that have no React context (e.g. a `loop.onTick` reacting to `entity.died`) can import `cameraShake` and feed the default channel directly.
+- `defaultCameraShake` (const): const defaultCameraShake: CameraShakeController — The one camera-shake controller the rigs apply. Game systems with no React context (a `loop.onTick` reacting to `entity.died`) feed it through {@link cameraShake}; a rig reads it through {@link useCameraShake}. It is the core `createCameraShake` model, so a demo or test can drive the same controller directly.
 - `isCameraOccluderTransparent` (function): function isCameraOccluderTransparent(object: CameraOccluder | null | undefined): boolean — Should the camera spring-arm ignore this raycast hit? Walks the object up its `.parent` chain and honors the nearest camera tag: `jgCameraCollide === true` blocks (opt back in), `jgCameraTransparent === true` passes through. Untagged geometry blocks as before, so engine-owned ground/entities are unaffected.
 - `readFirstPersonMuzzle` (function): function readFirstPersonMuzzle(target: THREE.Vector3, camera?: THREE.Camera): boolean — Presentation muzzle in world space; camera-scoped when supplied, false leaves target unchanged.
 - `registerFirstPersonMuzzle` (function): function registerFirstPersonMuzzle(camera: Camera, reader: FirstPersonMuzzleReader): () => void — Register a custom rig's presentation muzzle for its Three.js camera. Newest available custom reader wins over that camera's stock muzzle; call the returned cleanup on unmount.
 - `sceneCameraQuery` (function): function sceneCameraQuery(raycast: SceneRaycastApi["raycast"], options: { entities?: boolean; terrain?: boolean } = {}): CameraCollisionQuery — `CameraCollisionQuery` over the scene's existing collision query (`ctx.scene.raycast`), which already reads world solids, scene-object colliders and walls. Entities and terrain stay out by default: the followed body must not push its own camera, and looking down at the ground must not pull the boom.
 - `usePlayerFov` (function): function usePlayerFov(): PlayerFovState — ⚠ undocumented
 
-## @jgengine/shell/camera/ControllerCameraShake
-
-- `ControllerCameraShake` (function): function ControllerCameraShake({ controller, priority = GAME_SIM_FRAME_PRIORITY, }: ControllerCameraShakeProps): ReactNode — The shell-side consumer of a core {@link CameraShakeController}: each frame it calls `controller.update(delta)` to bleed trauma, reads the pooled `controller.offset()`, and applies it additively to the active camera — a positional kick plus a pitch/yaw/roll rotation — so the view VISIBLY shakes on impacts. It runs after the camera rig (which re-poses the camera to its base every frame), so the shake composes with any rig without a manual save/restore and without fighting the built-in `shakeChannel`. Renders nothing.
-- `ControllerCameraShakeProps` (interface): interface ControllerCameraShakeProps — Props for {@link ControllerCameraShake}.
-
 ## @jgengine/shell/camera/GameCameraRig
 
-- `GameCameraRig` (function): function GameCameraRig({ yawRef, pitchRef, config, onDragChange, pointerControls, panKeysEnabled, rotateKeysEnabled, director, viewmodel, }: GameCameraRigProps): React.JSX.Element — ⚠ undocumented
+- `GameCameraRig` (function): function GameCameraRig({ yawRef, pitchRef, config, onDragChange, pointerControls, panKeysEnabled, rotateKeysEnabled, director, viewmodel, }: GameCameraRigProps): React.JSX.Element | null — ⚠ undocumented
 - `GameCameraRigProps` (interface): interface GameCameraRigProps { yawRef: MutableRefObject<number>; pitchRef: MutableRefObject<number>; config?: GameCameraConfig; onDragChange?: (dragging: boolean) => void; pointerControls?: boolean; panKeysEnabled?: boolean; rotateKeysEnabled?: boolean; director?: Came… — ⚠ undocumented
 
 ## @jgengine/shell/camera/GameFirstPersonCamera
@@ -2771,10 +2768,6 @@
 
 ## @jgengine/shell/camera/rigMath
 
-- `CALIBRATED_TRAUMA_SHAKE_DECAY_PER_SECOND` (const): const CALIBRATED_TRAUMA_SHAKE_DECAY_PER_SECOND: 1.4 — Calibrated trauma decay for `traumaShake`/`impactPresets` (trauma/second).
-- `CALIBRATED_TRAUMA_SHAKE_FREQUENCY` (const): const CALIBRATED_TRAUMA_SHAKE_FREQUENCY: 32 — Calibrated shake noise frequency (Hz) for `traumaShake`.
-- `CALIBRATED_TRAUMA_SHAKE_MAX_OFFSET` (const): const CALIBRATED_TRAUMA_SHAKE_MAX_OFFSET: 0.55 — Calibrated positional shake amplitude at full trauma (world units) for `traumaShake`.
-- `CALIBRATED_TRAUMA_SHAKE_MAX_ROLL` (const): const CALIBRATED_TRAUMA_SHAKE_MAX_ROLL: 0.1 — Calibrated rotational shake amplitude at full trauma (radians) for `traumaShake`.
 - `CameraPose` (interface): interface CameraPose { position: Vec3; lookAt: Vec3; fov: number } — ⚠ undocumented
 - `ChaseBoomClamp` (type): type ChaseBoomClamp = (pivot: Vec3, desired: Vec3) => Vec3 — Pulls a desired camera position in toward `pivot` when something blocks the boom.
 - `ChaseRigState` (interface): interface ChaseRigState — Mutable per-rig chase state; {@link stepChase} advances it in place.
@@ -2788,19 +2781,14 @@
 - `ResolvedShoulder` (interface): interface ResolvedShoulder { shoulderOffset: number; heightOffset: number; distance: number; fov: number } — ⚠ undocumented
 - `ResolvedSideScroll` (interface): interface ResolvedSideScroll { axis: "x" | "z"; distance: number; height: number; lookHeight: number; followSmoothing: number } — ⚠ undocumented
 - `ResolvedTopDown` (interface): interface ResolvedTopDown { height: number; pitch: number; yaw: number; offset: Vec3; followSmoothing: number } — ⚠ undocumented
-- `ShakeOffset` (interface): interface ShakeOffset { x: number; y: number; roll: number } — ⚠ undocumented
 - `StaticCameraValues` (interface): interface StaticCameraValues { followEntityId?: string | null; cinematic?: CinematicCameraConfig } — ⚠ undocumented
-- `TraumaState` (interface): interface TraumaState { trauma: number; time: number } — ⚠ undocumented
 
 ## @jgengine/shell/camera/shakeChannel
 
-- `CameraShakeChannel` (interface): interface CameraShakeChannel { shake(amplitude: number, decayPerSecond?: number): void; step(dt: number): void; sample(config?: Parameters<typeof shakeOffset>[1]): ShakeOffset; trauma(): number } — ⚠ undocumented · used by `defaultCameraShakeChannel`: Process-wide default channel.
-- `CameraShakeContext` (const): const CameraShakeContext: React.Context<CameraShakeChannel> — ⚠ undocumented
-- `defaultCameraShakeChannel` (const): const defaultCameraShakeChannel: CameraShakeChannel — Process-wide default channel. A shell mounts its own channel via `CameraShakeContext`, but game systems that have no React context (e.g. a `loop.onTick` reacting to `entity.died`) can import `cameraShake` and feed the default channel directly.
-
-## @jgengine/shell/camera/shakeChannelMath
-
-- `CameraShakeChannel` (interface): interface CameraShakeChannel { shake(amplitude: number, decayPerSecond?: number): void; step(dt: number): void; sample(config?: Parameters<typeof shakeOffset>[1]): ShakeOffset; trauma(): number } — ⚠ undocumented · used by `defaultCameraShakeChannel` (@jgengine/shell/camera): Process-wide default channel.
+- `CALIBRATED_TRAUMA_DECAY_PER_SECOND` (const): const CALIBRATED_TRAUMA_DECAY_PER_SECOND: 1.4 — Trauma decay the engine's impact presets are calibrated against, trauma/second.
+- `CameraShakeContext` (const): const CameraShakeContext: React.Context<CameraShakeController> — Override which controller the rigs below apply; defaults to {@link defaultCameraShake}.
+- `cameraShake` (function): function cameraShake(amplitude: number, decayPerSecond?: number): void — Add camera trauma from anywhere. `decayPerSecond`, when given, retunes how fast it bleeds off.
+- `defaultCameraShake` (const): const defaultCameraShake: CameraShakeController — The one camera-shake controller the rigs apply. Game systems with no React context (a `loop.onTick` reacting to `entity.died`) feed it through {@link cameraShake}; a rig reads it through {@link useCameraShake}. It is the core `createCameraShake` model, so a demo or test can drive the same controller directly.
 
 ## @jgengine/shell/combat/ProjectileModels
 
@@ -3167,6 +3155,10 @@
 ## @jgengine/shell/pointer/PointerProbe
 
 - `PointerProbe` (function): function PointerProbe({ service, groundHeightAt }: { service: PointerService; groundHeightAt?: (x: number, z: number) => number }): null — Binds the pointer service to the live camera and scene; `groundHeightAt` lets clicks land on terrain.
+
+## @jgengine/shell/pointer/contextMenu
+
+- `ContextMenuEventLike` (interface): interface ContextMenuEventLike — What the shell needs from a `contextmenu` event to decide whether the browser's menu may open.
 
 ## @jgengine/shell/pointer/pointerService
 
@@ -3645,7 +3637,6 @@
 
 ## @jgengine/shell/shellMovement
 
-- `DEFAULT_WALK_CODES` (const): const DEFAULT_WALK_CODES: { readonly moveForward: readonly ["KeyW"]; readonly moveBack: readonly ["KeyS"]; readonly moveLeft: readonly ["KeyA"]; readonly moveRight: readonly ["KeyD"]; readonly jump: readonly ["Space"]; } — Default keyboard codes for the shell walk controller (WASD + Space). Use as the base of `defineGame({ input: { ...DEFAULT_WALK_CODES, interact: ["KeyE"] } })` instead of re-typing the same five bindings in every game.
 - `SHELL_MOVEMENT_ACTIONS` (const): const SHELL_MOVEMENT_ACTIONS: readonly ["moveForward", "moveBack", "moveLeft", "moveRight", "jump"] — Movement action names the shell drives via the walk controller.
 
 ## @jgengine/shell/structures

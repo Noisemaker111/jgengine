@@ -1,8 +1,6 @@
 import type { InputSnapshot } from "@jgengine/core/runtime/inputSnapshot";
 import type { DriveAxis } from "./controller";
 import { createActionStateTracker, toActionStateBindingMap, type ActionCodesMap } from "@jgengine/core/input/actionBindings";
-import { applyBindingOverrides, loadBindingOverrides } from "@jgengine/core/input/bindingOverrides";
-import { keybinds } from "../keybinds";
 
 /** Host semantic actions keep native controls and keyboard rebinds in agreement. */
 export interface DriveInput {
@@ -14,21 +12,21 @@ export interface DriveInput {
   keyDown(code: string): string | null;
   keyUp(code: string): void;
   isDown(action: string): boolean;
-  refreshBindings(): void;
+  /** Rebuild the keyboard tracker from the game's live bindings (its `input` map with rebinds applied). */
+  refreshBindings(bindings: ActionCodesMap): void;
 }
 
-export function createDriveInput(bindings: () => ActionCodesMap = () => applyBindingOverrides(keybinds, loadBindingOverrides("Drift Foundry"))): DriveInput {
+export function createDriveInput(initial: ActionCodesMap = {}): DriveInput {
   let axis: DriveAxis = { throttle: 0, brake: 0, steer: 0, handbrake: 0 };
   const touchHeld = new Set<string>();
   let jump = false;
-  const makeKeyboard = () => createActionStateTracker(toActionStateBindingMap(bindings()));
-  let keyboard = makeKeyboard();
+  const makeKeyboard = (bindings: ActionCodesMap) => createActionStateTracker(toActionStateBindingMap(bindings));
+  let keyboard = makeKeyboard(initial);
   return {
     reset() { axis = { throttle: 0, brake: 0, steer: 0, handbrake: 0 }; touchHeld.clear(); keyboard.reset(); jump = false; },
-    // Published shell 0.18.1 builds an empty tracker in the menu and does not
-    // rebuild it on phase changes. Own keyboard capture shares its persisted
-    // bindings while semantic host input still supports gamepads and touch.
-    refreshBindings() { this.reset(); keyboard = makeKeyboard(); },
+    // Own keyboard capture runs on the shell's live bindings, so a rebind in settings takes effect when
+    // the dialog closes, while semantic host input still supports gamepads and touch.
+    refreshBindings(bindings) { this.reset(); keyboard = makeKeyboard(bindings); },
     keyDown(code) {
       const action = keyboard.handleDown(code);
       if (action === "jumpHop" && keyboard.wasPressed(action)) jump = true;

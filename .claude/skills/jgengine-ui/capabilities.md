@@ -40,6 +40,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `useActionBar` (function) · `import { useActionBar } from "@jgengine/react"`
 
+## action-bindings-hook — the game's live key bindings, rebinds included, for HUD key labels
+
+- `useActionBindings` (function) · `import { useActionBindings } from "@jgengine/react"`
+
 ## action-button — cooldown/cost/hotkey action button with complete interaction states
 
 - `ActionButton` (function) · `import { ActionButton } from "@jgengine/react"`
@@ -121,6 +125,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `clearCameraBoom` (function) · `import { clearCameraBoom } from "@jgengine/shell/camera"`
 - `sceneCameraQuery` (function) · `import { sceneCameraQuery } from "@jgengine/shell/camera"`
+
+## camera-shake — add trauma to the active camera rig's shake from any game system
+
+- `cameraShake` (function) · `import { cameraShake } from "@jgengine/shell/camera"`
 
 ## camera-shake-meter — HUD readout for a core camera-shake controller — a trauma meter plus current impact-kind label, reskinnable and kind-labelled
 
@@ -215,10 +223,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `ContinuePane` (function) · `import { ContinuePane } from "@jgengine/react"`
 
-## controller-camera-shake — R3F consumer that applies a core camera-shake controller's pooled per-frame offset to the active camera (translation + pitch/yaw/roll) so the view visibly shakes
-
-- `ControllerCameraShake` (function) · `import { ControllerCameraShake } from "@jgengine/shell/camera"`
-
 ## controls-list — keybind-derived control legend that hides on touch
 
 - `ControlsList` (function) · `import { ControlsList } from "@jgengine/react"`
@@ -264,10 +268,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## default-look — one field that lights a scene like a shipped game (opt out with "flat")
 
 - `LookPreset` (type) · `import { LookPreset } from "@jgengine/core/ui"`
-
-## default-walk-codes — stock WASD + jump key codes for the shell walk controller
-
-- `DEFAULT_WALK_CODES` (const) · `import { DEFAULT_WALK_CODES } from "@jgengine/shell/shellMovement"`
 
 ## dialog-behavior — controlled dialog focus and keyboard behavior without owning markup or screen state
 
@@ -1144,9 +1144,9 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `useAccessibilitySettings` (function) · `import { useAccessibilitySettings } from "@jgengine/react/accessibilitySettings"`
 
-## use-camera-shake — React hook binding a camera-shake controller — subscribes for live trauma/kind and can self-drive its decay on a frame loop
+## use-camera-shake — React hook reading a camera-shake controller's live trauma and kind
 
-- `useCameraShake` (function) · `import { useCameraShake } from "@jgengine/react"`
+- `useCameraShakeReadout` (function) · `import { useCameraShakeReadout } from "@jgengine/react"`
 
 ## use-coach-marks — React hook binding a coach-mark sequence to a component — re-renders on advance/skip/gate changes
 

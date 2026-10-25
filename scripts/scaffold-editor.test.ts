@@ -5,7 +5,8 @@ import type { EditorDocument } from "../packages/core/src/editor/types";
 import { resolveAuthoredObjects } from "../packages/core/src/world/authoredObjects";
 import { authoredSpawnPosition } from "../packages/core/src/world/authoredSpawn";
 import { gameTemplate } from "../packages/jgengine/src/templates";
-import { DEFAULT_WALK_CODES, shellDrivesPlayerPose } from "../packages/shell/src/shellMovement";
+import { DEFAULT_WALK_CODES } from "../packages/core/src/input/actionBindings";
+import { shellDrivesPlayerPose } from "../packages/shell/src/shellMovement";
 
 /**
  * From-scratch loop, browserless: what `npx jgengine create` (also `bun run new:game` in-repo) scaffolds must be

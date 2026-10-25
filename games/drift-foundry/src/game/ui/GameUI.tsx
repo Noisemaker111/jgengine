@@ -6,6 +6,7 @@ import { useGame, useGameStore } from "@jgengine/react/hooks";
 import { useStore } from "@jgengine/react/store";
 import { GameIcon, type GameIconName } from "@jgengine/react/gameIcons";
 import { useGameFonts } from "@jgengine/react/gameFonts";
+import { useActionBindings } from "@jgengine/react/uiKitRoot";
 import { setGamePhase } from "@jgengine/core/game/gamePhase";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { runSessionStore, type RunSession, type SessionSnapshot } from "../run/session";
@@ -34,6 +35,7 @@ export function GameUI() {
   const { commands } = useGame();
   const ctx = useGameStore(context => context);
   const settings = useSettings();
+  const bindings = useActionBindings();
   const uiRef = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
     // The published shell listens on its focusable viewport. Removed menu/dialog
@@ -43,7 +45,7 @@ export function GameUI() {
     }
   }, [snapshot?.phase, snapshot?.paused, settings.isOpen]);
   useEffect(() => {
-    drive?.refreshBindings();
+    drive?.refreshBindings(bindings);
     const suspend = () => {
       session?.suspend(settings.isOpen || document.hidden);
       if (settings.isOpen || document.hidden) drive?.reset();
@@ -52,7 +54,7 @@ export function GameUI() {
     suspend();
     document.addEventListener("visibilitychange", suspend);
     return () => document.removeEventListener("visibilitychange", suspend);
-  }, [ctx, session, settings.isOpen, drive]);
+  }, [ctx, session, settings.isOpen, drive, bindings]);
   useBrowserSuspension(() => drive?.reset(), { hidden: false, pointerLockLost: false });
   useEffect(() => {
     const key = (event: KeyboardEvent) => {

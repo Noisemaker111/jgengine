@@ -1,24 +1,22 @@
 import { describe, expect, test } from "bun:test";
 
-import { createRunLoop } from "@jgengine/core/run/runLoop";
 
 import { COMPACTOR_PLAN, COMPACTOR_SURGES } from "../compactor/schedule";
 import { RIVAL_DEFS } from "../race/opponents";
-import { RUN_SEED } from "./constants";
-import { readRunState, RUN_STATE_KEY, saveRunState } from "./shiftState";
-import { compactorPlanForShift, rivalsForShift, shiftInfo, SHIFT_LABELS, SHIFT_TABLE, type ShiftEffect } from "./shifts";
+import { createShiftLoop, readRunState, RUN_STATE_KEY, saveRunState } from "./shiftState";
+import { compactorPlanForShift, rivalsForShift, shiftInfo, SHIFT_LABELS, SHIFT_TABLE } from "./shifts";
 
 function loop() {
-  return createRunLoop<ShiftEffect>({ seed: RUN_SEED, changes: SHIFT_TABLE });
+  return createShiftLoop();
 }
 
 function shiftSequence(runs: number): (string | null)[] {
   const run = loop();
   const played: (string | null)[] = [];
   for (let index = 0; index < runs; index += 1) {
-    played.push(run.start().changeId);
+    played.push(run.start().optionId);
     run.carry(100);
-    run.settle("banked");
+    run.settle({ outcome: "banked" });
   }
   return played;
 }
@@ -98,7 +96,7 @@ describe("drift foundry shifts", () => {
     for (let index = 0; index < 3; index += 1) {
       run.start();
       run.carry(40);
-      run.settle("banked");
+      run.settle({ outcome: "banked" });
     }
     expect(saveRunState(run.snapshot(), store)).toBe(true);
 
@@ -107,7 +105,7 @@ describe("drift foundry shifts", () => {
     expect(saved).not.toBeNull();
     reopened.restore(saved!);
     expect(reopened.snapshot()).toEqual(run.snapshot());
-    expect(reopened.start().changeId).toBe(run.start().changeId);
+    expect(reopened.start().optionId).toBe(run.start().optionId);
   });
 
   test("a saved run keeps its salvage at risk", () => {
@@ -118,7 +116,7 @@ describe("drift foundry shifts", () => {
     saveRunState(run.snapshot(), store);
     const reopened = loop();
     reopened.restore(readRunState(store)!);
-    expect(reopened.haul()).toBe(75);
+    expect(reopened.carried()).toBe(75);
   });
 
   test("a junk or impossible save is ignored instead of trusted", () => {
@@ -127,6 +125,8 @@ describe("drift foundry shifts", () => {
     const behind = storage({ [RUN_STATE_KEY]: JSON.stringify({ run: 1, completed: 4, haul: 0, changeId: null, bankedTotal: 0, lostTotal: 0, bestHaul: 0 }) });
     expect(readRunState(behind)).toBeNull();
     expect(readRunState(undefined)).toBeNull();
+    const legacy = storage({ [RUN_STATE_KEY]: JSON.stringify({ run: 3, completed: 2, haul: 5, changeId: "hobbs-line", bankedTotal: 0, lostTotal: 0, bestHaul: 0 }) });
+    expect(readRunState(legacy)).toEqual({ session: 3, closed: 2, carried: 5, optionId: "hobbs-line" });
     expect(readRunState(storage({ [RUN_STATE_KEY]: "not json" }))).toBeNull();
   });
 });

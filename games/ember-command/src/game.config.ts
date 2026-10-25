@@ -5,7 +5,6 @@ import { editorLayers } from "./editorLayers";
 import { assets } from "./game/assets";
 import { EMBER_SOUNDS } from "./game/audio";
 import { content } from "./game/content";
-import { keybinds } from "./game/keybinds";
 import { entityModels } from "./game/models";
 import { isPlayerSelectable } from "./game/session";
 import { systems } from "./game/systems";
@@ -20,7 +19,32 @@ export const game = defineGame({
   assets,
   world,
   physics,
-  input: keybinds,
+  input: {
+    // RTS command card laid out like the console grid (1 2 3 R · B G T F · Z X C V). No movement actions:
+    // there is no avatar, and the "rts" camera rig owns WASD/arrow panning, edge-scroll and zoom.
+    trainPeasant: ["Digit1"],
+    trainFootman: ["Digit2"],
+    trainRifleman: ["Digit3"],
+    attackMove: ["KeyR"],
+    buildBarracks: ["KeyB"],
+    buildFarm: ["KeyG"],
+    buildTower: ["KeyT"],
+    rally: ["KeyF"],
+    hold: ["KeyV"],
+    formationLine: ["KeyL"],
+    formationWedge: ["KeyJ"],
+    formationColumn: ["KeyK"],
+    selectArmy: ["KeyH"],
+    researchWeapons: ["KeyZ"],
+    researchArmor: ["KeyX"],
+    heroAbility: ["KeyC"],
+    heroMuster: ["Digit4"],
+    heroVolley: ["Digit5"],
+    heroWard: ["Digit6"],
+    // The level-up card's two options, so a pick never needs the mouse mid-battle.
+    heroPickFirst: ["Digit7"],
+    heroPickSecond: ["Digit8"],
+  },
   audio: { sounds: EMBER_SOUNDS },
   server: { mode: "single" },
   save: "none",

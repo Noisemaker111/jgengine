@@ -41,7 +41,7 @@ beforeEach(() => {
 /** A keep carrying one relic, written the way a loaded document would set it. */
 function carrying(id: string | null): LegacyState {
   const fresh = freshLegacy();
-  return { ...fresh, run: { ...fresh.run, changeId: id } };
+  return { ...fresh, run: { ...fresh.run, optionId: id } };
 }
 
 /** Reach wave `wave` and finish the defense there, the way the keep's death or a victory does. */
@@ -62,8 +62,7 @@ describe("what a finished defense banks", () => {
     const banked = legacy.read(runner.ctx);
     expect(banked.bankedGold).toBe(60);
     expect(banked.standing).toBe(7);
-    expect(banked.run.completed).toBe(1);
-    expect(banked.run.bankedTotal).toBe(60);
+    expect(banked.run.closed).toBe(1);
     expect(banked.offer).toHaveLength(BANK_RULE.offerCount);
   });
 
@@ -74,7 +73,7 @@ describe("what a finished defense banks", () => {
     finishAt(4, 10);
     const second = legacy.read(runner.ctx);
     expect(second.standing).toBe(10);
-    expect(second.run.completed).toBe(2);
+    expect(second.run.closed).toBe(2);
     expect(second.bankedGold).toBe(5);
   });
 
@@ -115,18 +114,18 @@ describe("the relic the next defense carries", () => {
   });
 
   test("opening gold is the flat purse plus the bank plus the relic", () => {
-    expect(openingGold({ ...freshLegacy(), bankedGold: 120, run: { ...freshLegacy().run, changeId: "spoils" } }))
+    expect(openingGold({ ...freshLegacy(), bankedGold: 120, run: { ...freshLegacy().run, optionId: "spoils" } }))
       .toBe(STARTING_GOLD + 120 + 60);
     expect(openingGold({ ...freshLegacy(), bankedGold: BANK_RULE.cap + 500 })).toBe(STARTING_GOLD + BANK_RULE.cap);
   });
 
   test("a life relic raises the keep above its authored twenty", () => {
-    expect(openingLives({ ...freshLegacy(), run: { ...freshLegacy().run, changeId: "gate" } })).toBe(STARTING_LIVES + 5);
+    expect(openingLives({ ...freshLegacy(), run: { ...freshLegacy().run, optionId: "gate" } })).toBe(STARTING_LIVES + 5);
     expect(openingLives(freshLegacy())).toBe(STARTING_LIVES);
   });
 
   test("a bounty relic multiplies kill pay and nothing else", () => {
-    expect(relicBountyScale({ ...freshLegacy(), run: { ...freshLegacy().run, changeId: "writ" } })).toBeCloseTo(1.4, 5);
+    expect(relicBountyScale({ ...freshLegacy(), run: { ...freshLegacy().run, optionId: "writ" } })).toBeCloseTo(1.4, 5);
     expect(relicBountyScale(freshLegacy())).toBe(1);
   });
 
@@ -147,7 +146,7 @@ describe("the relic the next defense carries", () => {
     const opened = legacy.read(runner.ctx);
     expect(carriedRelic(opened)?.id).toBe(pick);
     expect(opened.offer).toHaveLength(0);
-    expect(opened.run.run).toBe(opened.run.completed + 1);
+    expect(opened.run.session).toBe(opened.run.closed + 1);
     expect(gold()).toBe(STARTING_GOLD + banked.bankedGold + (effect.gold ?? 0));
     expect(gold()).toBe(openingGold(opened));
   });
@@ -164,16 +163,21 @@ describe("a stored keep", () => {
   test("the pre-loop document migrates into the engine's run state", () => {
     const migrated = upgradeLegacy({ standing: 12, runs: 3, bankedGold: 90, boonId: "gate", offer: [] });
     expect(migrated).not.toBeNull();
-    expect(migrated!.run.completed).toBe(3);
-    expect(migrated!.run.run).toBe(4);
-    expect(migrated!.run.changeId).toBe("gate");
+    expect(migrated!.run.closed).toBe(3);
+    expect(migrated!.run.session).toBe(4);
+    expect(migrated!.run.optionId).toBe("gate");
     expect(migrated!.standing).toBe(12);
+  });
+
+  test("a run state saved by the old run loop reads as the same session", () => {
+    const read = upgradeLegacy({ standing: 3, bankedGold: 10, offer: [], run: { run: 3, completed: 2, haul: 0, changeId: "gate", bankedTotal: 240, lostTotal: 0, bestHaul: 120 } });
+    expect(read!.run).toEqual({ session: 3, closed: 2, carried: 0, optionId: "gate" });
   });
 
   test("an unreadable section is refused rather than half applied", () => {
     expect(upgradeLegacy({ standing: -1, runs: 0, bankedGold: 0, boonId: null, offer: [] })).toBeNull();
     expect(upgradeLegacy({ standing: 1, runs: 0 })).toBeNull();
-    expect(upgradeLegacy({ ...freshLegacy(), run: { ...freshLegacy().run, run: 1, completed: 4 } })).toBeNull();
+    expect(upgradeLegacy({ ...freshLegacy(), run: { ...freshLegacy().run, session: 1, closed: 4 } })).toBeNull();
     expect(upgradeLegacy(freshLegacy())).not.toBeNull();
   });
 });

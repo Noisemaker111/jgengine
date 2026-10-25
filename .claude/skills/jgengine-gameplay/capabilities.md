@@ -657,11 +657,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `rerollRules` (function) · `import { rerollRules } from "@jgengine/core/gameplay"`
 - `selectRules` (function) · `import { selectRules } from "@jgengine/core/gameplay"`
 
-## run-loop — deprecated roguelike composition of session-loop - bank or lose what a run carries, with one deterministic change per run
-
-- `createRunLoop` (function) · `import { createRunLoop } from "@jgengine/core/run/runLoop"`
-- `installRunProbe` (function) · `import { installRunProbe } from "@jgengine/core/run/runLoop"`
-
 ## run-modifiers — a roguelike run built from stacking drafted modifier picks
 
 - `createRunDraft` (function) · `import { createRunDraft } from "@jgengine/core/gameplay"`

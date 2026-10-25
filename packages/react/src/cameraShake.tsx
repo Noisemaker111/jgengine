@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useRef, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useReducer, type CSSProperties, type ReactNode } from "react";
 
 import type { CameraShakeController } from "@jgengine/core/vfx/cameraShake";
 
@@ -14,37 +14,15 @@ export interface CameraShakeReadout {
 }
 
 /**
- * Subscribe to a camera-shake controller and re-render on every change (add /
- * decay / clear). Optionally drives `update()` on an animation frame so the trauma
- * meter bleeds down live even when no game loop ticks the controller. Returns the
- * current trauma + kind for a HUD readout.
+ * Subscribe to a camera-shake controller and re-render on every change (add / decay / clear). It only
+ * reads: the camera rig that applies the shake is what advances it. Returns the current trauma + kind
+ * for a HUD readout.
  *
- * @capability use-camera-shake React hook binding a camera-shake controller — subscribes for live trauma/kind and can self-drive its decay on a frame loop
+ * @capability use-camera-shake React hook reading a camera-shake controller's live trauma and kind
  */
-export function useCameraShake(controller: CameraShakeController, animate = true): CameraShakeReadout {
+export function useCameraShakeReadout(controller: CameraShakeController): CameraShakeReadout {
   const [, bump] = useReducer((n: number) => n + 1, 0);
-  const rafRef = useRef(0);
-
   useEffect(() => controller.subscribe(bump), [controller]);
-
-  useEffect(() => {
-    if (!animate) return;
-    let running = true;
-    let last = performance.now();
-    const loop = (): void => {
-      if (!running) return;
-      const nowMs = performance.now();
-      controller.update((nowMs - last) / 1000);
-      last = nowMs;
-      rafRef.current = requestAnimationFrame(loop);
-    };
-    rafRef.current = requestAnimationFrame(loop);
-    return () => {
-      running = false;
-      cancelAnimationFrame(rafRef.current);
-    };
-  }, [controller, animate]);
-
   return { trauma: controller.trauma(), kind: controller.kind() };
 }
 
@@ -52,12 +30,6 @@ export function useCameraShake(controller: CameraShakeController, animate = true
 export interface CameraShakeMeterProps {
   /** The controller to read. */
   controller: CameraShakeController;
-  /**
-   * Drive the controller's decay on an animation frame so the meter bleeds down
-   * live. Default `false` — leave off when a shell consumer already ticks
-   * `update()` each frame (the usual case), on to make the panel self-sufficient.
-   */
-  animate?: boolean;
   /** Header label. Default `"CAMERA SHAKE"`. */
   title?: string;
   /**
@@ -76,21 +48,20 @@ export interface CameraShakeMeterProps {
  * trauma meter (reusing the shared {@link StaminaBar} building block) plus a live
  * percentage and the current impact `kind` label. Presentation only — it reads the
  * controller and never interprets `kind`, mapping it through `kindLabels` for
- * display. A shell component applies the same controller's `offset()` to the
+ * display. The shell camera rig applies the same controller's `offset()` to the
  * camera; this panel is the on-screen readout of how much shake is in flight.
  *
  * @capability camera-shake-meter HUD readout for a core camera-shake controller — a trauma meter plus current impact-kind label, reskinnable and kind-labelled
  */
 export function CameraShakeMeter({
   controller,
-  animate = false,
   title = "CAMERA SHAKE",
   kindLabels,
   variation = "glass",
   className,
   style,
 }: CameraShakeMeterProps): ReactNode {
-  const { trauma, kind } = useCameraShake(controller, animate);
+  const { trauma, kind } = useCameraShakeReadout(controller);
   const pct = Math.round(trauma * 100);
   const kindLabel = kind === undefined ? "—" : kindLabels?.[kind] ?? kind;
 

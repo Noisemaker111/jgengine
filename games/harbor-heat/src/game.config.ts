@@ -4,7 +4,7 @@ import { assets } from "./game/assets";
 import { audio } from "./game/audio/catalog";
 import { content } from "./game/content";
 import { inventories } from "./game/inventories";
-import { keybinds } from "./game/keybinds";
+import { DEFAULT_WALK_CODES, hotbarSlotBindings } from "@jgengine/core/input/actionBindings";
 import { prompts } from "./game/prompts";
 import { entityModels, objectModels } from "./game/world/models";
 import { GameUI } from "./game/ui/GameUI";
@@ -41,7 +41,25 @@ export const game = defineGame({
   // wanted/search clocks advance identically on a 30 Hz and a 144 Hz machine.
   simulation: { hz: 60 },
   inventories,
-  input: keybinds,
+  input: {
+    ...DEFAULT_WALK_CODES,
+    sprint: ["ShiftLeft"],
+    flightThrottleUp: ["ArrowUp"],
+    flightThrottleDown: ["ArrowDown"],
+    flightYawLeft: ["KeyZ"],
+    flightYawRight: ["KeyC"],
+    flightAirbrake: ["KeyX"],
+    flightVectorToggle: ["KeyV"],
+    interact: ["KeyE"],
+    fire: { hold: ["mouse0"], repeatMs: 60 },
+    throwGrenade: ["KeyG"],
+    useMedkit: ["KeyQ"],
+    exitVehicle: ["KeyF"],
+    phone: ["KeyT"],
+    taxiDuty: ["KeyY"],
+    radio: ["KeyR"],
+    ...hotbarSlotBindings(4, { action: (slot) => `selectSlot${slot}` }),
+  },
   server: { mode: "openworld" },
   // Touch controls are context-curated (#1370): each mode shows only the verbs that context uses.
   // On foot the joystick walks (analog) and the cluster is the five gameplay verbs; flight and
@@ -113,6 +131,7 @@ export const game = defineGame({
       drive: ["game.start", { name: "drive.stage", input: { vehicle: "car_sport" } }],
       "drive-cop": ["game.start", { name: "drive.stage", input: { vehicle: "car_cop" } }],
       "drive-bus": ["game.start", { name: "drive.stage", input: { vehicle: "car_bus" } }],
+      "fly-heli": ["game.start", { name: "drive.stage", input: { vehicle: "air_helicopter" } }],
       shop: ["game.start", "shop.open"],
       garage: ["game.start", "garage.open"],
       dialogue: ["game.start", { name: "dialogue.open", input: { id: "person:marco" } }],

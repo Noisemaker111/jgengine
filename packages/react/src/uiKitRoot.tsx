@@ -27,6 +27,30 @@ interface UiKitContextValue {
 
 const UiKitContext = createContext<UiKitContextValue | null>(null);
 
+const ActionBindingsContext = createContext<ActionCodesMap | undefined>(undefined);
+
+/**
+ * Hands the game's live input bindings (its `input` map with the player's rebinds applied) to every key
+ * hint below. The shell mounts it around each game, so HUD labels follow a rebind with no game code.
+ */
+export function ActionBindingsProvider({ bindings, children }: { bindings: ActionCodesMap; children?: ReactNode }): ReactNode {
+  return <ActionBindingsContext.Provider value={bindings}>{children}</ActionBindingsContext.Provider>;
+}
+
+/**
+ * The game's live input bindings, rebinds included: feed it to `actionLabel(bindings, action)` for a key
+ * hint in a list, or use {@link useActionGlyph} for one action. Empty outside a shell.
+ *
+ * @capability action-bindings-hook the game's live key bindings, rebinds included, for HUD key labels
+ */
+export function useActionBindings(): ActionCodesMap {
+  const kitBindings = useContext(UiKitContext)?.bindings;
+  const shellBindings = useContext(ActionBindingsContext);
+  return kitBindings ?? shellBindings ?? EMPTY_BINDINGS;
+}
+
+const EMPTY_BINDINGS: ActionCodesMap = {};
+
 const injected = new Map<Document, Set<string>>();
 
 function cssKey(kit: UiKit): string {
@@ -75,9 +99,10 @@ export function UiKitRoot({ kit, bindings, glyphSet = "xbox", children, classNam
     ensureUiKitStyles(kit);
   }, [kit]);
   const parent = useContext(UiKitContext);
+  const shellBindings = useContext(ActionBindingsContext);
   const value = useMemo<UiKitContextValue>(
-    () => ({ kit, bindings: bindings ?? parent?.bindings, glyphSet }),
-    [kit, bindings, parent?.bindings, glyphSet],
+    () => ({ kit, bindings: bindings ?? parent?.bindings ?? shellBindings, glyphSet }),
+    [kit, bindings, parent?.bindings, shellBindings, glyphSet],
   );
   const rootStyle = useMemo<CSSProperties>(
     () => ({ ...(box ? {} : { display: "contents" }), ...uiKitVars(kit), ...style }),
@@ -121,9 +146,10 @@ export function useUiKit(): UiKit {
  */
 export function useActionGlyph(action: string, fallback?: string): string | undefined {
   const context = useContext(UiKitContext);
+  const bindings = useActionBindings();
   const device = useInputDevice();
   if (device === "touch") return undefined;
-  const glyph = context?.bindings === undefined ? null : actionGlyph(context.bindings, action, device, context.glyphSet);
+  const glyph = actionGlyph(bindings, action, device, context?.glyphSet ?? "xbox");
   return glyph ?? fallback;
 }
 
