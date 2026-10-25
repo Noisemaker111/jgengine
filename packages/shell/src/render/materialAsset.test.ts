@@ -221,6 +221,23 @@ describe("material assets render fidelity", () => {
     expect(mesh.material).toBe(before);
   });
 
+  test("a variant level whose simplification dropped a selected slot skips that selector, and the source level still throws", () => {
+    const body = new THREE.Mesh(new THREE.BoxGeometry(), [new THREE.MeshStandardMaterial({ name: "Paint 1 Carmine" })]);
+    body.name = "body";
+    const root = new THREE.Group().add(body);
+    const materials = body.material;
+    const original = (materials as THREE.Material[])[0];
+    const assignments = [{ materialId: "test-metal", selector: { slot: "Paint 2 Carmine" } }];
+    expect(() => validateMaterialAssignmentTargets(root, [asset()], assignments)).toThrow("matched no slots");
+    expect(() => applyMaterialAssignments(root, [asset()], assignments)).toThrow("matched no slots");
+    expect(body.material).toBe(materials);
+    expect(() => validateMaterialAssignmentTargets(root, [asset()], assignments, { unmatched: "skip" })).not.toThrow();
+    expect(applyMaterialAssignments(root, [asset()], assignments, new Map(), { unmatched: "skip" })).toEqual([]);
+    expect(body.material).toBe(materials);
+    expect(applyMaterialAssignments(root, [asset()], [...assignments, { materialId: "test-metal", selector: { slot: "Paint 1 Carmine" } }], new Map(), { unmatched: "skip" })).toHaveLength(1);
+    expect((materials as THREE.Material[])[0]).not.toBe(original);
+  });
+
   test("read-only preflight rejects blended transmission before any replacement", () => {
     const texture = new THREE.Texture();
     const panel = new THREE.MeshStandardMaterial({ map: texture }); panel.name = "panel";

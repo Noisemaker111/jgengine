@@ -201,7 +201,7 @@ export function SingleVariantModel({
   const drawn = useMemo(() => variantLevelModel(model, level), [model, level]);
   // The near level owns the measured bounds and collision mesh, like the batched path: a decimated
   // asset must not redefine what the catalog entry collides as.
-  return <EntityModel model={drawn} instanceId={instanceId} measure={level === 0 ? measure : undefined} />;
+  return <EntityModel model={drawn} instanceId={instanceId} measure={level === 0 ? measure : undefined} lodLevel={level} />;
 }
 
 function BoneAttachment({
@@ -283,10 +283,13 @@ export function EntityModel({
   model,
   instanceId,
   measure,
+  lodLevel = 0,
 }: {
   model: ModelConfig;
   instanceId?: string;
   measure?: MeasureTarget;
+  /** The variant level being drawn. Past the source level, a simplified asset may have dropped a selected slot. */
+  lodLevel?: number;
 }) {
   parseModelHiddenNodes(model.hiddenNodes);
   const renderer = useThree(state => state.gl);
@@ -303,9 +306,10 @@ export function EntityModel({
   const materialAssignments = model.materialAssignments;
   const assignmentSource = useLoader(sharedGltfLoader, materialAssignments?.length ? [model.url] : [])[0]?.scene;
   const assignmentKey = JSON.stringify(materialAssignments);
+  const unmatched = lodLevel > 0 ? "skip" : "throw";
   useMemo(() => {
-    if (assignmentSource !== undefined) validateMaterialAssignmentTargets(assignmentSource, materialAssets, materialAssignments!, { baseAlphaMode: material?.alphaMode });
-  }, [assignmentSource, materialAssets, assignmentKey, material?.alphaMode]);
+    if (assignmentSource !== undefined) validateMaterialAssignmentTargets(assignmentSource, materialAssets, materialAssignments!, { baseAlphaMode: material?.alphaMode, unmatched });
+  }, [assignmentSource, materialAssets, assignmentKey, material?.alphaMode, unmatched]);
   for (const urls of assets.textureGroups) useLoader.preload(MaterialTextureLoader, urls);
   const materialTextures = useModelMaterialTextures(model);
   const baseY = model.y ?? 0;
@@ -313,8 +317,8 @@ export function EntityModel({
 
   const configure = useCallback((content: THREE.Object3D) => {
     if (material !== undefined) applyMaterialOverride(content, material, { clone: false, textures: materialTextures.global, ownMaterial: replacement => ownModelMaterial(content, replacement) });
-    if (materialAssignments !== undefined) applyMaterialAssignments(content, materialAssets ?? [], materialAssignments, materialTextures.assets);
-  }, [material, materialTextures, materialAssets, materialAssignments]);
+    if (materialAssignments !== undefined) applyMaterialAssignments(content, materialAssets ?? [], materialAssignments, materialTextures.assets, { unmatched });
+  }, [material, materialTextures, materialAssets, materialAssignments, unmatched]);
   const { scene, scale, position } = useModelInstance(model, { instanceId, configure });
 
   // A model without index-measured dims can't drive the fitted-collider path, so report the live

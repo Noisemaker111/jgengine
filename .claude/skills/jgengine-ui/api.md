@@ -3256,7 +3256,7 @@
 
 ## @jgengine/shell/render/SceneModels
 
-- `EntityModel` (function): function EntityModel({ model, instanceId, measure, }: { model: ModelConfig; instanceId?: string; measure?: MeasureTarget; }): React.JSX.Element — ⚠ undocumented
+- `EntityModel` (function): function EntityModel({ model, instanceId, measure, lodLevel = 0, }: { model: ModelConfig; instanceId?: string; measure?: MeasureTarget; /** The variant level being drawn. Past the source level, a simplified asset may have dropped a selected slot. */ lodLevel?: number; }): React.JSX.Element — ⚠ undocumented
 - `EntitySprite` (function): function EntitySprite({ sprite }: { sprite: EntitySpriteConfig }): React.JSX.Element — ⚠ undocumented
 - `IsolatedEntityModel` (function): function IsolatedEntityModel({ model, instanceId, measure, fallback, }: { model: ModelConfig; instanceId?: string; measure?: MeasureTarget; fallback?: ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `MeasureTarget` (interface): interface MeasureTarget — Where a measured model reports its rendered bounds: an entity kind or an object catalog id.
@@ -3356,7 +3356,7 @@
 - `MaterialAssignmentTargetOptions` (interface): interface MaterialAssignmentTargetOptions extends MaterialAssignmentValidationOptions — Read-only target validation policy; source coverage can reflect an earlier all-slot override.
 - `ModelMaterialSlotInfo` (interface): interface ModelMaterialSlotInfo — Runtime imported-slot inventory for precise authoring selectors; indices address the mesh material array.
 - `applyMaterialAsset` (function): function applyMaterialAsset(material: THREE.Material, asset: MaterialAsset, textures?: MaterialOverrideTextures, overrides?: MaterialSurfaceParameters): THREE.MeshStandardMaterial — Apply one reusable material's parameters, map views and construction to an imported PBR slot.
-- `applyMaterialAssignments` (function): function applyMaterialAssignments(root: THREE.Object3D, assets: readonly MaterialAsset[], assignments: readonly MaterialAssignment[], textures: ReadonlyMap<string, MaterialOverrideTextures> = new Map()): THREE.Material[] — Apply intersecting mesh/slot selectors without changing omitted imported slots. Returns caller-owned replacements; model clones register them only after success.
+- `applyMaterialAssignments` (function): function applyMaterialAssignments(root: THREE.Object3D, assets: readonly MaterialAsset[], assignments: readonly MaterialAssignment[], textures: ReadonlyMap<string, MaterialOverrideTextures> = new Map(), options: Pick<MaterialAssignmentTargetOptions, "unmatched"> = {}): THREE.Material[] — Apply intersecting mesh/slot selectors without changing omitted imported slots. Returns caller-owned replacements; model clones register them only after success.
 - `configureMaterialTexture` (function): function configureMaterialTexture(role: MaterialTextureRole, metadata: MaterialTextureMetadata, source: THREE.Texture): THREE.Texture — Validate and configure an owned texture view while retaining the loader's immutable source.
 - `inspectModelMaterialSlots` (function): function inspectModelMaterialSlots(root: THREE.Object3D): ModelMaterialSlotInfo[] — Inspect imported names, local slot indices and directional/map prerequisites without mutating the source.
 - `materialAssetSurface` (function): function materialAssetSurface(asset: MaterialAsset, overrides: MaterialSurfaceParameters = {}): MaterialSurfaceParameters — Physical defaults adapt a declared construction; explicit authored parameters remain authoritative.
