@@ -308,6 +308,7 @@
     "./meta/changelog",
     "./mission/compositions",
     "./mission/mission",
+    "./mission/sideJobs",
     "./mission/triggers",
     "./movement/avatarGait",
     "./movement/avoidance",

@@ -712,6 +712,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createShopStock` (function) · `import { createShopStock } from "@jgengine/core/gameplay"`
 
+## side-jobs — offer and run repeatable side jobs (fares, deliveries, races) with fare math, deadlines, tips, streaks and wagers
+
+- `createSideJobs` (function) · `import { createSideJobs } from "@jgengine/core/mission/sideJobs"`
+
 ## skill-tree — spend, refuse and refund points over an authored tree with passives, actives and synergies
 
 - `createSkillTree` (function) · `import { createSkillTree } from "@jgengine/core/gameplay"`
