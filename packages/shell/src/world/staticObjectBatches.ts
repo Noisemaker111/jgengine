@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import type { ModelConfig, ObjectStyle } from "@jgengine/core/game/playableGame";
-import type { SceneObject } from "@jgengine/core/scene/objectStore";
+import { objectVisualScale, type SceneObject } from "@jgengine/core/scene/objectStore";
 import type { GameContextObjectEntry } from "@jgengine/core/runtime/gameContext";
 import type { ScatterModelSource } from "../scatter/scatterModels";
 import { POINTER_OBJECT_INSTANCES_KEY } from "../pointer/pointerService";
@@ -34,13 +34,19 @@ export function canBatchStaticObject(candidate: StaticObjectCandidate): boolean 
 export function isCompatibleStaticObject(object: SceneObject, model: ModelConfig | undefined, catalog: GameContextObjectEntry | null): boolean {
   const animation = object.animation ?? model?.animation;
   return model !== undefined &&
-    object.visual === undefined && object.state === undefined && object.slots === undefined &&
+    scaleOnlyVisual(object.visual) && object.state === undefined && object.slots === undefined &&
     catalog?.proximityPrompt === undefined && (catalog?.verbs?.length ?? 0) === 0 &&
     (catalog?.breakable === undefined || catalog.breakable === false) && catalog?.slotInventory === undefined &&
     (animation === undefined || animation === "auto" || animation === "none") && model.ik === undefined &&
     (model.scale ?? 1) >= 0 && (model.parts?.length ?? 0) === 0 && (model.attachments?.length ?? 0) === 0 &&
     model.partMotion === undefined && model.surfaceDetail !== false && model.material?.maps === undefined && (model.materialAssignments?.length ?? 0) === 0 &&
     (model.hiddenNodes === undefined || (Array.isArray(model.hiddenNodes) && model.hiddenNodes.length === 0));
+}
+
+/** A placement visual a batch can draw: none, or only a per-instance scale folded into its matrix. */
+function scaleOnlyVisual(visual: SceneObject["visual"]): boolean {
+  if (visual === undefined) return true;
+  return visual.color === undefined && visual.opacity === undefined && objectVisualScale(visual).every((axis) => axis > 0);
 }
 
 /** Stable exclusion snapshot; only compatibility transitions allocate. @internal */
@@ -218,6 +224,7 @@ export function syncStaticObjectSource(
     }
     scratch.position.fromArray(live.position);
     scratch.rotation.set(0, live.rotationY, 0);
+    scratch.scale.fromArray(objectVisualScale(live.visual));
     scratch.updateMatrix();
     composed.multiplyMatrices(scratch.matrix, source.localMatrix);
     const offset = count * 16;

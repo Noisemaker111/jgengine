@@ -22,6 +22,7 @@ export type LibraryGroup =
   | "concrete"
   | "stucco"
   | "brick"
+  | "facade"
   | "tile"
   | "metal"
   | "wood"
@@ -151,6 +152,15 @@ export const MATERIAL_LIBRARY: readonly LibraryMaterial[] = [
   { name: "plastic/matte", title: "Matte plastic", group: "fabric", source: "ambientcg-plastic006", surface: "opaque", tileMetres: 0.8, response: { metalness: 0, roughness: 0.5 } },
   { name: "stone/marble", title: "Marble", group: "stone", source: "ambientcg-marble001", surface: "opaque", tileMetres: 1.8, response: { metalness: 0, roughness: 0.22 } },
   { name: "stone/terrazzo", title: "Terrazzo", group: "stone", source: "ambientcg-terrazzo005", surface: "opaque", tileMetres: 1.6, response: { metalness: 0, roughness: 0.3 } },
+
+  // Facades: whole building walls with windows, one tile spanning six 3.33 m floors and six bays of
+  // brick (`facade/brick-*`) or ten floors of curtain-wall glass (`facade/glass-*`). Project them in
+  // metres (`material.scan`) so floors land where the building's storeys are.
+  { name: "facade/brick-red", title: "Red brick facade", group: "facade", source: "ambientcg-facade018a", surface: "opaque", tileMetres: 20, response: { metalness: 0, roughness: 0.82 } },
+  { name: "facade/brick-grey", title: "Grey brick facade", group: "facade", source: "ambientcg-facade019a", surface: "opaque", tileMetres: 20, response: { metalness: 0, roughness: 0.8 } },
+  { name: "facade/brick-brown", title: "Brown brick facade", group: "facade", source: "ambientcg-facade020a", surface: "opaque", tileMetres: 20, response: { metalness: 0, roughness: 0.8 } },
+  { name: "facade/glass-blue", title: "Blue glass curtain wall", group: "facade", source: "ambientcg-facade001", surface: "opaque", tileMetres: 34, response: { metalness: 0.4, roughness: 0.14 } },
+  { name: "facade/glass-mirror", title: "Mirror glass curtain wall", group: "facade", source: "ambientcg-facade005", surface: "opaque", tileMetres: 34, response: { metalness: 0.5, roughness: 0.1 } },
 
   // Glass: transmission and roughness carry the look. The smudged variant adds a scanned
   // fingerprint normal so glass is not a mathematically clean sheet.

@@ -246,6 +246,11 @@ export interface ModelMaterialOverride extends MaterialSurfaceParameters {
    * the scan's colour over them. Off on the `low` graphics tier and until the maps load.
    */
   scan?: TerrainDetailMaterialConfig;
+  /**
+   * Names of the model's own materials this override touches; others keep their authored look.
+   * Omit to override every material. `["paint"]` lacquers a car body and leaves its glass and tyres.
+   */
+  materials?: readonly string[];
 }
 
 /** Fresnel rim-light term added on top of a model's lighting — see {@link ModelMaterialOverride.rim}. */

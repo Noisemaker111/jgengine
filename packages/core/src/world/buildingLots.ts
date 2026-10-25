@@ -72,6 +72,12 @@ export interface BuildingLotOptions {
    */
   avoid?: readonly RoadFrontage[];
   /**
+   * Extra distance, world units, every lot keeps from any road it does NOT front (and from `avoid`
+   * corridors): the crossing street's sidewalk plus a corner sight line, so corner lots stop short of
+   * the junction instead of touching the cross street's asphalt. Default 0.
+   */
+  crossClearance?: number;
+  /**
    * Seed for the plot-variant rolls when `footprint` is a variant list (identical inputs always
    * yield the identical layout, with or without it). With a single footprint, lot geometry is
    * fully determined by the roads and dials; per-building variation (floors, massing) is seeded
@@ -211,9 +217,10 @@ export function deriveBuildingLots(options: BuildingLotOptions): PlacedBuildingL
   const streams = seededStreams(`plots:${options.seed ?? ""}`);
 
   const sides: readonly (1 | -1)[] = bothSides ? [1, -1] : [1];
-  const corridors: { path: readonly Vec2[]; half: number }[] = [];
-  for (const road of options.roads) corridors.push({ path: road.path, half: road.width / 2 });
-  for (const road of options.avoid ?? []) corridors.push({ path: road.path, half: road.width / 2 });
+  const crossClearance = Math.max(0, options.crossClearance ?? 0);
+  const corridors: { path: readonly Vec2[]; half: number; road: number }[] = [];
+  options.roads.forEach((road, index) => corridors.push({ path: road.path, half: road.width / 2, road: index }));
+  for (const road of options.avoid ?? []) corridors.push({ path: road.path, half: road.width / 2, road: -1 });
 
   const lots: PlacedBuildingLot[] = [];
   const accepted: OrientedRect[] = [];
@@ -271,7 +278,8 @@ export function deriveBuildingLots(options: BuildingLotOptions): PlacedBuildingL
         // corridors), so a plot can never straddle a crossing street.
         let onRoad = false;
         for (const corridor of corridors) {
-          if (!rectClearsPolyline(rect, corridor.path, corridor.half - roadClearanceSlack)) {
+          const half = corridor.road === r ? corridor.half : corridor.half + crossClearance;
+          if (!rectClearsPolyline(rect, corridor.path, half - roadClearanceSlack)) {
             onRoad = true;
             break;
           }

@@ -262,6 +262,18 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `deriveCityPlots` (function) · `import { deriveCityPlots } from "@jgengine/core/world"`
 - `resolveCityLotContent` (function) · `import { resolveCityLotContent } from "@jgengine/core/world"`
 
+## city-layout-sliders — live dev-runner sliders for every city layout number
+
+- `tuneCityLayout` (function) · `import { tuneCityLayout } from "@jgengine/core/world/cityLayout"`
+
+## city-layout-store — a city layout a game sets once and sliders change live
+
+- `createCityLayout` (function) · `import { createCityLayout } from "@jgengine/core/world/cityLayout"`
+
+## city-lots — lay zoned building lots, corners and driveways from one city layout
+
+- `cityLots` (function) · `import { cityLots } from "@jgengine/core/world/cityLayout"`
+
 ## companion-intent — resolve a companion's command + threat context into a per-tick follow/hold/engage/assist intent
 
 - `resolveCompanionIntent` (function) · `import { resolveCompanionIntent } from "@jgengine/core/scene/companion"`

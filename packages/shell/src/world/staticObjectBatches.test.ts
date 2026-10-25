@@ -124,10 +124,27 @@ describe("static authored object batching", () => {
       { model: { url: "a", materialAssignments: [{ materialId: "cloth", selector: { slot: "Shirt" } }] } },
       { object: { ...candidate(0).object, state: { locked: true } } },
       { style: { hidden: true } }, { style: { color: "red", opacity: 0.4 } },
-      { object: { ...candidate(0).object, visual: { scale: [2, 3, 0.5] } } },
+      { object: { ...candidate(0).object, visual: { scale: [2, -3, 0.5] } } },
       { object: { ...candidate(0).object, visual: { color: "blue", opacity: 0.7 } } },
     ];
     for (const patch of excluded) expect(groupStaticObjects(Array.from({ length: 10 }, (_, i) => candidate(i, patch))).batches).toHaveLength(0);
+  });
+
+  test("a positive per-placement scale batches and lands in the instance matrix", () => {
+    const scaled = Array.from({ length: 4 }, (_, i) => candidate(i, { object: { ...candidate(i).object, visual: { scale: [2, 3, 0.5] } } }));
+    const batch = groupStaticObjects(scaled).batches[0]!;
+    expect(batch.objects).toHaveLength(4);
+    const geometry = new THREE.BoxGeometry();
+    const source = { geometry, material: new THREE.MeshStandardMaterial(), localMatrix: new THREE.Matrix4() };
+    const mesh = new THREE.InstancedMesh(geometry, source.material, 4);
+    const byId = new Map(batch.objects.map((object) => [object.instanceId, object]));
+    syncStaticObjectSource(mesh, source, batch.objects, (id) => byId.get(id) ?? null, () => true, new THREE.Object3D());
+    const matrix = new THREE.Matrix4();
+    mesh.getMatrixAt(0, matrix);
+    const scale = new THREE.Vector3();
+    matrix.decompose(new THREE.Vector3(), new THREE.Quaternion(), scale);
+    expect([scale.x, scale.y, scale.z].map((v) => Number(v.toFixed(3)))).toEqual([2, 3, 0.5]);
+    mesh.dispose(); geometry.dispose(); source.material.dispose();
   });
 
   test("batches runtime placements whose catalog declares them scenery", () => {
@@ -148,6 +165,8 @@ describe("static authored object batching", () => {
     store.move("a-0", 3, 1, 4); store.rotate("a-0", 0.5);
     expect(incompatibleStaticObjectIds(first, store.get, () => null, excluded)).toBe(excluded);
     store.setVisual("a-0", { scale: [2, 3, 0.5] });
+    expect(incompatibleStaticObjectIds(first, store.get, () => null, excluded)).toBe(excluded);
+    store.setVisual("a-0", { scale: 2, color: "#ff0000" });
     excluded = incompatibleStaticObjectIds(first, store.get, () => null, excluded);
     expect(excluded).toEqual(["a-0"]);
     expect(canBatchStaticObject(candidate(0, { object: store.get("a-0")! }))).toBe(false);

@@ -197,6 +197,8 @@
         "@gltf-transform/functions": "4.2.1",
         "@jgengine/core": "^0.39.0",
         "fflate": "^0.8.2",
+        "jpeg-js": "0.4.4",
+        "meshoptimizer": "0.22.0",
       },
       "devDependencies": {
         "@types/node": "^24",
@@ -1161,6 +1163,8 @@
     "jgengine-registry": ["jgengine-registry@workspace:registry"],
 
     "jiti": ["jiti@2.7.0", "", { "bin": { "jiti": "lib/jiti-cli.mjs" } }, "sha512-AC/7JofJvZGrrneWNaEnJeOLUx+JlGt7tNa0wZiRPT4MY1wmfKjt2+6O2p2uz2+skll8OZZmJMNqeke7kKbNgQ=="],
+
+    "jpeg-js": ["jpeg-js@0.4.4", "", {}, "sha512-WZzeDOEtTOBK4Mdsar0IqEU5sMr3vSV2RqkAIzUEV2BHnUfKGyswWFPFwK5EeDo93K3FohSHbLAjj0s1Wzd+dg=="],
 
     "js-tokens": ["js-tokens@4.0.0", "", {}, "sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ=="],
 

@@ -82,6 +82,7 @@ export function applyMaterialOverrideToMaterial(
   textures: MaterialOverrideTextures | undefined,
 ): THREE.Material {
   if (!isStandardOrPhysicalMaterial(material)) return material;
+  if (override.materials !== undefined && !override.materials.includes(material.name)) return material;
   const promote = requiresPhysicalMaterial(override, textures) && !(material as THREE.MeshPhysicalMaterial).isMeshPhysicalMaterial;
   const target = promote ? new THREE.MeshPhysicalMaterial() : clone ? material.clone() : material;
   try {

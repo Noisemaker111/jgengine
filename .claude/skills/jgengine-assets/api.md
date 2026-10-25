@@ -23,24 +23,36 @@
 - `CollisionMeshData` (interface): interface CollisionMeshData — Compact, serializable triangle collision mesh measured at asset reindex — the renderer-free source of mesh-accurate hitboxes. Positions are welded onto a 16-bit grid spanning `min`..`max` (model space) and stored base64-encoded, so an opted-in catalog asset ships its collision triangles inside the generated index without the runtime ever touching the rendered scene graph.
 - `ExtractedMaterialMap` (interface): interface ExtractedMaterialMap — One normalized map pulled out of a material archive by `extractMaterialMaps`.
 - `ExtractedSpriteFile` (interface): interface ExtractedSpriteFile — One SVG/PNG file pulled out of a sprite/icon-pack archive by `extractSpriteFiles`.
+- `FindLibraryModelOptions` (interface): interface FindLibraryModelOptions — Narrowing for {@link findLibraryModel}.
 - `FindOptions` (interface): interface FindOptions { kind?: AssetKind; limit?: number } — ⚠ undocumented · used by `findAssets`: The ranked matches for a query — models, packs, HUD components, and icons in one list.
+- `GeneratedModelOrigin` (interface): interface GeneratedModelOrigin — A model a game generated itself (text or image to 3D, e.g. LLMville's fal.ai diorama-assets skill). The library never runs or pays for a generator: the game generates, reviews and commits the GLB, then registers it here with the generator and terms it was made under. `assets pull` skips these; `libraryModel` serves the committed file from `generatedBasePath`.
 - `GlbMetrics` (interface): interface GlbMetrics — Stored geometry and image inventory; triangles count mesh primitives once, regardless of scene instances.
 - `GlbTextureMetrics` (interface): interface GlbTextureMetrics — Dimensions and encoded bytes for one glTF image, including images referenced by texture extensions.
 - `ImportSpecValidation` (type): type ImportSpecValidation = { ok: true; entry: AssetImportSpec } | { ok: false; reason: string } — Result of validating an import description; a successful entry is an independent JSON snapshot.
 - `IndexEntry` (interface): interface IndexEntry — A source-owned model or sprite id, with optional offline model measurements.
-- `LibraryGroup` (type): type LibraryGroup = | "asphalt" | "concrete" | "stucco" | "brick" | "tile" | "metal" | "wood" | "foliage" | "ground" | "fabric" | "stone" | "glass" | "water" — Browse groups the library browser and `assets list` share.
+- `LibraryGroup` (type): type LibraryGroup = | "asphalt" | "concrete" | "stucco" | "brick" | "facade" | "tile" | "metal" | "wood" | "foliage" | "ground" | "fabric" | "stone" | "glass" | "water" — Browse groups the library browser and `assets list` share.
 - `LibraryMaterial` (interface): interface LibraryMaterial — One named material a game or the editor selects by name. `source` names the ambientCG catalog entry whose pulled maps it uses; glass and water carry response parameters only, because ambientCG publishes no scanned glass or water material and both are shader surfaces.
 - `LibraryMaterialOptions` (interface): interface LibraryMaterialOptions — Options for {@link libraryMaterialMaps} and {@link libraryMaterialAsset}.
+- `LibraryModelOptions` (interface): interface LibraryModelOptions — URL and LOD options for {@link libraryModel}.
 - `LibrarySurface` (type): type LibrarySurface = "opaque" | "foliage" | "glass" | "water" — How a library surface renders: an ordinary PBR surface, cut-out foliage, glass or water.
 - `MATERIAL_LIBRARY` (const): const MATERIAL_LIBRARY: readonly LibraryMaterial[] — The shared library: 40+ ambientCG PBR materials plus the glass and water surfaces that need a shader rather than a scan. `satisfies` keeps every entry complete, so a missing tile size or response is a type error instead of a silently grey surface.
 - `MATERIAL_MAP_FILES` (const): const MATERIAL_MAP_FILES: { readonly color: "color.jpg"; readonly normal: "normal.jpg"; readonly roughness: "roughness.jpg"; readonly ao: "ao.jpg"; readonly opacity: "opacity.jpg"; readonly displacement: "displacement.jpg"; readonly ktx2: "material.ktx2"; } — Normalized filenames a pulled material directory contains, keyed by map role. Kept in its own module so catalogs and editors can name a pulled file without loading the archive reader.
+- `MODEL_LIBRARY` (const): const MODEL_LIBRARY: readonly ModelLibraryEntry[] — Every library entry.
+- `MODEL_LIBRARY_GAPS` (const): const MODEL_LIBRARY_GAPS: readonly ModelLibraryGap[] — Known gaps: requests with no licensed realistic model yet, and how each would be closed.
+- `MODEL_LIBRARY_GENRES` (const): const MODEL_LIBRARY_GENRES: readonly ModelLibraryGenre[] — Every genre, in browse order.
 - `MaterialCatalog` (interface): interface MaterialCatalog — Resolves material ids and `material/…` aliases to `MaterialRef`s.
 - `MaterialMapRole` (type): type MaterialMapRole = keyof typeof MATERIAL_MAP_FILES — One PBR map's role within a material, including an optional compressed KTX2 asset.
 - `MaterialMaps` (interface): interface MaterialMaps — URLs of one material's PBR maps; `ao`/`roughness`/`opacity`/`ktx2`/`displacement` appear only when declared by its source.
 - `MaterialRef` (interface): interface MaterialRef — A resolved material: identity, attribution, and its normalized map URLs.
 - `ModelDims` (interface): interface ModelDims — Measured horizontal footprint, footprint center, and lowest Y of a model in model space.
+- `ModelLibraryEntry` (interface): interface ModelLibraryEntry — One named realistic model with its source, credit and license.
+- `ModelLibraryGap` (interface): interface ModelLibraryGap — Things games ask for that no licensed realistic source in the library covers yet, and the route to close each one. `findLibraryModel` returns the gap instead of a wrong-looking substitute.
+- `ModelLibraryGenre` (type): type ModelLibraryGenre = | "city" | "park" | "nature" | "creature" | "survival" | "industrial" | "scifi" | "tower-defense" | "office" — The realistic model library: real-world-scale, licensed, compressed models a game asks for by what it needs ("street lamp", "boulder", "office desk") rather than by pack and file name.
+- `ModelLibraryMatch` (interface): interface ModelLibraryMatch — One ranked answer to "what do you have for X".
+- `ModelLibraryOrigin` (type): type ModelLibraryOrigin = PolyHavenModelOrigin | GeneratedModelOrigin — Where an entry's bytes come from: a CC0 scan pulled from its source, or a game-committed generated model.
 - `ModelSnippetOptions` (interface): interface ModelSnippetOptions { basePath?: string; seam?: "objectModels" | "entityModels" } — ⚠ undocumented · used by `modelWiringSnippet`: Copy-paste wiring for a pulled GLB id: resolve through the catalog, drop into a model seam.
 - `PinnedDownload` (interface): interface PinnedDownload { url: string; sha256?: string } — ⚠ undocumented
+- `PolyHavenModelOrigin` (interface): interface PolyHavenModelOrigin — A Poly Haven model (CC0), fetched from `api.polyhaven.com` at its 1k texture tier.
 - `RankedMatch` (interface): interface RankedMatch { match: AssetMatch; score: number } — ⚠ undocumented · used by `rankAssets`: Rank every catalog entry — models, packs, HUD components, icons — against one query.
 - `ReferenceValidation` (interface): interface ReferenceValidation — The verdict for one {@link AssetReference}.
 - `RegistryCatalog` (interface): interface RegistryCatalog { homepage: string; components: readonly RegistryComponent[]; icons: readonly string[] } — ⚠ undocumented
@@ -73,6 +85,8 @@
 - `filterLibraryMaterials` (function): function filterLibraryMaterials(query: string, group?: LibraryGroup): readonly LibraryMaterial[] — Filter the library for a picker: case-insensitive match on name, title, group or source. Empty query returns everything, so a browser can render the full library first.
 - `findAssets` (function): function findAssets(query: string, options: FindOptions = {}): AssetMatch[] — The ranked matches for a query — models, packs, HUD components, and icons in one list.
 - `findLibraryMaterial` (function): function findLibraryMaterial(name: string): LibraryMaterial | null — Resolve a library name; unknown names return `null` so a caller can report them by name.
+- `findLibraryModel` (function): function findLibraryModel(query: string, options: FindLibraryModelOptions = {}): readonly ModelLibraryMatch[] — Rank library models for a plain-words request: an exact intent wins, then intent and title word overlap; a genre filter narrows the set. An empty result with a matching `libraryModelGap` means the library knows it has nothing realistic for that request.
+- `findLibraryModelByName` (function): function findLibraryModelByName(name: string): ModelLibraryEntry | null — The entry with this exact name, or `null`.
 - `gameiconsSources` (const): const gameiconsSources: readonly AssetSource[] — game-icons.net (https://game-icons.net) — ~4,000 CC BY 3.0 SVG item/ability icons from 40+ contributing artists, mirrored as one GitHub repo (github.com/game-icons/icons). `HEAD` resolves the default branch without pinning a name or commit, so this always mirrors the current set; the per-artist `license.txt` files inside the repo carry the individual credits behind this pack's single collective `author` field.
 - `generatedBySource` (const): const generatedBySource: Record<string, IndexEntry[]> — ⚠ undocumented
 - `generatedIndex` (const): const generatedIndex: IndexEntry[] — ⚠ undocumented
@@ -87,6 +101,11 @@
 - `libraryMaterialMaps` (function): function libraryMaterialMaps(entry: LibraryMaterial, options: LibraryMaterialOptions = {}): Partial<Record<MaterialTextureRole, MaterialTextureMetadata>> — Serialized runtime map URLs for a library material, matching what `assets pull <source>` writes into `<basePath>/<source-id>/`. Roles the archive does not ship are omitted, never invented. `displacement` is not loaded here: no standard-path renderer samples a height map, and a decoded 1K map per material would cost real GPU memory. Terrain callers get the URL through {@link libraryTerrainMaterial} instead.
 - `libraryMaterialNames` (function): function libraryMaterialNames(): readonly string[] — Every library name, in authored order.
 - `libraryMaterialRoles` (function): function libraryMaterialRoles(entry: LibraryMaterial): readonly LibraryMapRole[] — Map roles the pinned archive of `entry` actually ships, from its catalog source declaration.
+- `libraryModel` (function): function libraryModel(name: string, options: LibraryModelOptions = {}): ModelConfig — The `ModelConfig` that draws a library model: real-world size, grounded at its origin, with its near and far levels switched by distance. Throws for an unknown name, so a typo fails at boot.
+- `libraryModelCredits` (function): function libraryModelCredits(names: readonly string[]): readonly string[] — Credit lines for the library models a game uses, one per entry: title, author, license, page.
+- `libraryModelDir` (function): function libraryModelDir(name: string): string — Folder an entry's pulled files live in, relative to the models root: `library/<name>`.
+- `libraryModelGap` (function): function libraryModelGap(query: string): ModelLibraryGap | null — The known gap a request falls in, when the library has no realistic answer for it.
+- `libraryModelNames` (function): function libraryModelNames(): readonly string[] — Every entry name, in library order.
 - `materialAliases` (const): const materialAliases: readonly AssetAlias[] — Semantic keys onto the ambientCG catalog, mirroring the model alias layer.
 - `materialSources` (const): const materialSources: readonly AssetSource[] — Every `kind: "material"` source — one CC0 PBR material each, resolvable via `buildMaterialCatalog`.
 - `materialWiringSnippet` (function): function materialWiringSnippet(id: string, basePath = "/materials"): string — Copy-paste wiring for a pulled PBR material: resolve the map URLs through the material catalog, then apply them onto terrain or a model.
@@ -136,7 +155,7 @@
 ## @jgengine/assets/catalogs/materialLibrary
 
 - `LibraryBuildingSurfaceOptions` (interface): interface LibraryBuildingSurfaceOptions — Options for {@link libraryBuildingSurface}.
-- `LibraryGroup` (type): type LibraryGroup = | "asphalt" | "concrete" | "stucco" | "brick" | "tile" | "metal" | "wood" | "foliage" | "ground" | "fabric" | "stone" | "glass" | "water" — Browse groups the library browser and `assets list` share.
+- `LibraryGroup` (type): type LibraryGroup = | "asphalt" | "concrete" | "stucco" | "brick" | "facade" | "tile" | "metal" | "wood" | "foliage" | "ground" | "fabric" | "stone" | "glass" | "water" — Browse groups the library browser and `assets list` share.
 - `LibraryMapRole` (type): type LibraryMapRole = "color" | "normal" | "roughness" | "ao" | "opacity" | "displacement" — Map roles a library scan can carry: the PBR set plus cut-out coverage and a height map.
 - `LibraryMaterial` (interface): interface LibraryMaterial — One named material a game or the editor selects by name. `source` names the ambientCG catalog entry whose pulled maps it uses; glass and water carry response parameters only, because ambientCG publishes no scanned glass or water material and both are shader surfaces.
 - `LibraryMaterialOptions` (interface): interface LibraryMaterialOptions — Options for {@link libraryMaterialMaps} and {@link libraryMaterialAsset}.
@@ -154,6 +173,32 @@
 - `librarySurfaceParameters` (function): function librarySurfaceParameters(name: string): MaterialSurfaceParameters — A library name as the sparse surface parameters a `MaterialAsset` or a render-time override takes, so a material picked by name keeps its authored roughness, metalness and cut-out policy.
 - `librarySurfaceScan` (function): function librarySurfaceScan(name: string, options: LibraryTerrainOptions = {}): TerrainDetailMaterialConfig — A library name as a scanned surface for any renderer that tiles one over authored colour: terrain detail, a `road({ materials })` layer, or a model's `material.scan`. Tiling comes from the entry's authored metres and blend from its terrain policy (else full strength, full tint), so `road({ materials: { road: librarySurfaceScan("asphalt/dry") } })` shows real asphalt and `material: { scan: librarySurfaceScan("stucco/painted", { tint: 0 }) }` keeps a model's paint and adds the plaster's grain. Only maps the pulled archive ships are named.
 - `libraryTerrainMaterial` (function): function libraryTerrainMaterial(name: string, options: LibraryTerrainOptions = {}): TerrainDetailMaterialConfig — A library name as terrain detail material config: `terrain({ detail: { material: libraryTerrainMaterial("foliage/grass-macro") } })`. Tiling comes from the entry's authored metres and blend from its terrain policy, so a game selects a ground by name instead of assembling map URLs. A map the archive does not ship is omitted, so `displacement` is never a URL the caller had to invent.
+
+## @jgengine/assets/catalogs/modelLibrary
+
+- `FindLibraryModelOptions` (interface): interface FindLibraryModelOptions — Narrowing for {@link findLibraryModel}.
+- `GeneratedModelOrigin` (interface): interface GeneratedModelOrigin — A model a game generated itself (text or image to 3D, e.g. LLMville's fal.ai diorama-assets skill). The library never runs or pays for a generator: the game generates, reviews and commits the GLB, then registers it here with the generator and terms it was made under. `assets pull` skips these; `libraryModel` serves the committed file from `generatedBasePath`.
+- `LibraryModelOptions` (interface): interface LibraryModelOptions — URL and LOD options for {@link libraryModel}.
+- `MODEL_LIBRARY` (const): const MODEL_LIBRARY: readonly ModelLibraryEntry[] — Every library entry.
+- `MODEL_LIBRARY_GAPS` (const): const MODEL_LIBRARY_GAPS: readonly ModelLibraryGap[] — Known gaps: requests with no licensed realistic model yet, and how each would be closed.
+- `MODEL_LIBRARY_GENRES` (const): const MODEL_LIBRARY_GENRES: readonly ModelLibraryGenre[] — Every genre, in browse order.
+- `ModelLibraryEntry` (interface): interface ModelLibraryEntry — One named realistic model with its source, credit and license.
+- `ModelLibraryGap` (interface): interface ModelLibraryGap — Things games ask for that no licensed realistic source in the library covers yet, and the route to close each one. `findLibraryModel` returns the gap instead of a wrong-looking substitute.
+- `ModelLibraryGenre` (type): type ModelLibraryGenre = | "city" | "park" | "nature" | "creature" | "survival" | "industrial" | "scifi" | "tower-defense" | "office" — The realistic model library: real-world-scale, licensed, compressed models a game asks for by what it needs ("street lamp", "boulder", "office desk") rather than by pack and file name.
+- `ModelLibraryMatch` (interface): interface ModelLibraryMatch — One ranked answer to "what do you have for X".
+- `ModelLibraryOrigin` (type): type ModelLibraryOrigin = PolyHavenModelOrigin | GeneratedModelOrigin — Where an entry's bytes come from: a CC0 scan pulled from its source, or a game-committed generated model.
+- `PolyHavenModelOrigin` (interface): interface PolyHavenModelOrigin — A Poly Haven model (CC0), fetched from `api.polyhaven.com` at its 1k texture tier.
+- `findLibraryModel` (function): function findLibraryModel(query: string, options: FindLibraryModelOptions = {}): readonly ModelLibraryMatch[] — Rank library models for a plain-words request: an exact intent wins, then intent and title word overlap; a genre filter narrows the set. An empty result with a matching `libraryModelGap` means the library knows it has nothing realistic for that request.
+- `findLibraryModelByName` (function): function findLibraryModelByName(name: string): ModelLibraryEntry | null — The entry with this exact name, or `null`.
+- `libraryModel` (function): function libraryModel(name: string, options: LibraryModelOptions = {}): ModelConfig — The `ModelConfig` that draws a library model: real-world size, grounded at its origin, with its near and far levels switched by distance. Throws for an unknown name, so a typo fails at boot.
+- `libraryModelCredits` (function): function libraryModelCredits(names: readonly string[]): readonly string[] — Credit lines for the library models a game uses, one per entry: title, author, license, page.
+- `libraryModelDir` (function): function libraryModelDir(name: string): string — Folder an entry's pulled files live in, relative to the models root: `library/<name>`.
+- `libraryModelGap` (function): function libraryModelGap(query: string): ModelLibraryGap | null — The known gap a request falls in, when the library has no realistic answer for it.
+- `libraryModelNames` (function): function libraryModelNames(): readonly string[] — Every entry name, in library order.
+
+## @jgengine/assets/catalogs/modelLibraryEntries
+
+- `MODEL_LIBRARY_ENTRIES` (const): const MODEL_LIBRARY_ENTRIES: readonly ModelLibraryEntry[] — Curated library entries. Poly Haven models are CC0-1.0; authors are as Poly Haven credits them. Add an entry by name, title, genres, intents and origin; `assets pull model:<name>` fetches it.
 
 ## @jgengine/assets/catalogs/starter
 
@@ -286,6 +331,13 @@
 - `buildMaterialCatalog` (function): function buildMaterialCatalog(options: BuildMaterialCatalogOptions = {}): MaterialCatalog — A resolvable catalog over every `kind: "material"` source. Ids are source ids (`ambientcg-grass001`) plus the `material/…` aliases; every resolve returns the normalized map URLs under `basePath`, matching what `assets pull` writes into `<dir>/materials/<id>/`.
 - `extractMaterialMaps` (function): function extractMaterialMaps(archive: Uint8Array): ExtractedMaterialMap[] — Pulls the recognized PBR maps out of a material archive (ambientCG's flat `<Asset>_<Res>_<Map>.jpg` layout) and normalizes their names so resolved URLs never depend on the provider's naming or the pulled resolution.
 - `materialAliases` (const): const materialAliases: readonly AssetAlias[] — Semantic keys onto the ambientCG catalog, mirroring the model alias layer.
+
+## @jgengine/assets/modelLibraryPull
+
+- `PullLibraryModelOptions` (interface): interface PullLibraryModelOptions — Where {@link pullLibraryModel} writes and how it fetches.
+- `PulledLibraryModel` (interface): interface PulledLibraryModel — What one pull wrote: folder, bytes, triangle counts per level and measured size.
+- `downscaleJpeg` (function): function downscaleJpeg(bytes: Uint8Array, max: number): Uint8Array — Halve a JPEG (2x2 box filter) until its longest edge fits `max`; smaller maps pass through untouched.
+- `pullLibraryModel` (function): function pullLibraryModel(entry: ModelLibraryEntry, options: PullLibraryModelOptions): Promise<PulledLibraryModel> — Download one library model from its official source, simplify it into a near and a far level, meshopt-compress both and write them as `near.gltf` / `far.gltf` sharing one set of textures (so the far level costs geometry only). Every file is checked against the source's published md5.
 
 ## @jgengine/assets/packs/starter
 

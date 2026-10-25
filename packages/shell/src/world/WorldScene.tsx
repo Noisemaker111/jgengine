@@ -228,7 +228,13 @@ function ObjectMarker({
           {custom}
         </MeasuredBoundsGroup>
       ) : model !== undefined ? (
-        <IsolatedEntityModel model={model} instanceId={instanceId} measure={{ target: "object", key: object.catalogId }} />
+        object.visual?.scale === undefined ? (
+          <IsolatedEntityModel model={model} instanceId={instanceId} measure={{ target: "object", key: object.catalogId }} />
+        ) : (
+          <group scale={[scaleX, scaleY, scaleZ]}>
+            <IsolatedEntityModel model={model} instanceId={instanceId} />
+          </group>
+        )
       ) : style?.hidden === true ? null : (
         <mesh position-y={0.5 * scaleY} scale={[scaleX, scaleY, scaleZ]} castShadow receiveShadow>
           <boxGeometry args={[1, 1, 1]} />

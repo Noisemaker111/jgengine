@@ -48,7 +48,29 @@ export {
   type LibraryMaterial,
   type LibraryMaterialOptions,
   type LibrarySurface,
-} from "./catalogs/materialLibrary";export { classifyAssetFile, validateImportSpec, type AssetImportKind, type AssetImportSpec, type ImportSpecValidation } from "./importSpec";
+} from "./catalogs/materialLibrary";
+export {
+  MODEL_LIBRARY,
+  MODEL_LIBRARY_GAPS,
+  MODEL_LIBRARY_GENRES,
+  findLibraryModel,
+  findLibraryModelByName,
+  libraryModel,
+  libraryModelCredits,
+  libraryModelDir,
+  libraryModelGap,
+  libraryModelNames,
+  type FindLibraryModelOptions,
+  type GeneratedModelOrigin,
+  type LibraryModelOptions,
+  type ModelLibraryEntry,
+  type ModelLibraryGap,
+  type ModelLibraryGenre,
+  type ModelLibraryMatch,
+  type ModelLibraryOrigin,
+  type PolyHavenModelOrigin,
+} from "./catalogs/modelLibrary";
+export { classifyAssetFile, validateImportSpec, type AssetImportKind, type AssetImportSpec, type ImportSpecValidation } from "./importSpec";
 export { buildSpriteCatalog, type BuildSpriteCatalogOptions } from "./catalogs/buildSprites";
 export { createStarterCatalog } from "./catalogs/starter";
 export {
