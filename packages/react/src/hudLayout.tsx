@@ -412,6 +412,15 @@ const REGION_LAYOUT: Record<HudAnchor, CSSProperties> = {
   },
 };
 
+/**
+ * An element's size in the HUD's own CSS pixels. Lanes are placed in that space, inside the canvas zoom,
+ * so they are measured there too; `getBoundingClientRect` reports on-screen pixels, already shrunk by the
+ * zoom, and lanes measured that way stopped short of the right and bottom edges on compact displays.
+ */
+function localSize(element: HTMLElement): HudSize {
+  return { width: element.offsetWidth, height: element.offsetHeight };
+}
+
 function edgePad(envInset: string, extra: string | null, basePx: number, scale: number): string {
   const outer = extra === null ? envInset : `${envInset} + ${extra}`;
   return scale === 1 ? `calc(${outer} + ${basePx}px)` : `calc((${outer}) / ${scale} + ${basePx}px)`;
@@ -524,7 +533,7 @@ export function HudCanvas({
   useEffect(() => {
     if (laneLayer === null) return;
     const measure = () => {
-      const rect = laneLayer.getBoundingClientRect();
+      const rect = localSize(laneLayer);
       if (rect.width <= 0 || rect.height <= 0) return;
       setLaneFrame((prev) =>
         prev !== null && Math.abs(prev.width - rect.width) < 0.5 && Math.abs(prev.height - rect.height) < 0.5
@@ -1055,7 +1064,7 @@ export function HudPanel({
     const element = rootRef.current;
     if (element === null) return;
     const measure = () => {
-      const rect = element.getBoundingClientRect();
+      const rect = localSize(element);
       if (rect.width <= 0 && rect.height <= 0) return;
       setLaneSize((previous) =>
         previous !== null &&
