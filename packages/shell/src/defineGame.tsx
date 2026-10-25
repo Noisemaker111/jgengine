@@ -171,6 +171,7 @@ export function defineGame<TAssetRef extends ModelAssetRef = ModelAssetRef>(
     platforms,
     hudFit,
     hudTheme,
+    uiKit,
     ...engineFields
   } = config;
 
@@ -275,5 +276,6 @@ export function defineGame<TAssetRef extends ModelAssetRef = ModelAssetRef>(
     platforms,
     hudFit,
     hudTheme,
+    uiKit,
   };
 }

@@ -125,7 +125,7 @@ export function SettingsToggle({ row, itemProps }: { row: SettingsRow; itemProps
             width: 18,
             height: 18,
             borderRadius: 999,
-            background: "var(--jg-text, #fff)",
+            background: on ? "var(--jg-on-accent, var(--jg-text, #fff))" : "var(--jg-text, #fff)",
             transition: hudTransition("left"),
           }}
         />
@@ -154,7 +154,7 @@ export function SettingsSelect({ row, itemProps }: { row: SettingsRow; itemProps
                 borderRadius: 7,
                 border: "1px solid transparent",
                 background: selected ? "var(--jg-accent, #6ee7a8)" : "transparent",
-                color: selected ? "var(--jg-surface-deep, #0b0b0f)" : "var(--jg-text-dim, #94a3a0)",
+                color: selected ? "var(--jg-on-accent, var(--jg-surface-deep, #0b0b0f))" : "var(--jg-text-dim, #94a3a0)",
                 fontSize: hudType("sm"),
                 fontWeight: 600,
                 cursor: "pointer",
@@ -393,7 +393,7 @@ export function SettingsSection({
             fontWeight: 700,
             letterSpacing: "0.18em",
             textTransform: "uppercase",
-            color: "var(--jg-accent, #6ee7a8)",
+            color: "var(--jg-accent-text, var(--jg-accent, #6ee7a8))",
           }}
         >
           {category.label}
@@ -459,7 +459,7 @@ export function SettingsTabs({ categories, activeId, onSelect, leading, tabProps
                 borderRadius: 8,
                 border: "1px solid transparent",
                 background: selected ? "var(--jg-accent, #6ee7a8)" : "transparent",
-                color: selected ? "var(--jg-surface-deep, #0b0b0f)" : "var(--jg-text-dim, #94a3a0)",
+                color: selected ? "var(--jg-on-accent, var(--jg-surface-deep, #0b0b0f))" : "var(--jg-text-dim, #94a3a0)",
                 fontSize: hudType("sm"),
                 fontWeight: 600,
                 whiteSpace: "nowrap",

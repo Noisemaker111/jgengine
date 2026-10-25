@@ -8,8 +8,10 @@ import {
 
 import { useReducedMotion } from "./accessibility";
 import { createGameMenuSound, type GameMenuSound } from "./gameMenuSound";
+import { useGameViewportLayout } from "./gameViewport";
 import { hudDuration, hudEase, hudFont, hudType } from "./hudTokens";
 import { useMenuNav } from "./menuNav";
+import { KitMenu, KitPanel, useHasUiKit } from "./uiKitRoot";
 
 /**
  * A game's front-end menu: a full-bleed surface over a living background, a logo, primary verbs on
@@ -21,6 +23,32 @@ import { useMenuNav } from "./menuNav";
  * scroll is locked while it is open, so a tall menu can never grow a page scrollbar. Content that
  * genuinely scrolls (credits) scrolls inside its own pane.
  */
+
+
+/**
+ * Inside a kit's pane, the engine panes a menu hosts (settings, saves, credits) were drawn for a dark
+ * surface. Point their `--jg-*` colours and fonts at the kit's own tokens so they read on light kits
+ * (ink, paper, parchment) as well as dark ones, and pick up the kit's type.
+ */
+const KIT_PANE_BRIDGE = {
+  "--jg-text": "var(--kit-ink)",
+  "--jg-text-dim": "color-mix(in srgb, var(--kit-ink) 70%, transparent)",
+  "--jg-accent": "var(--kit-accent)",
+  "--jg-accent-glow": "color-mix(in srgb, var(--kit-accent) 32%, transparent)",
+  "--jg-on-accent": "var(--kit-accent-ink)",
+  // Accent-coloured text (section headings) darkened toward the ink, so a yellow accent reads on cream.
+  "--jg-accent-text": "color-mix(in srgb, var(--kit-accent) 45%, var(--kit-ink))",
+  "--jg-surface": "var(--kit-surface-alt)",
+  "--jg-surface-deep": "color-mix(in srgb, var(--kit-ink) 8%, transparent)",
+  "--jg-edge": "color-mix(in srgb, var(--kit-line) 30%, transparent)",
+  "--jg-edge-bright": "color-mix(in srgb, var(--kit-line) 55%, transparent)",
+  "--jg-font-display": "var(--kit-font-display)",
+  "--jg-font-body": "var(--kit-font-body)",
+  // Save cards and name fields keep their own dark tiles, so their text stays light.
+  "--jg-card-text": "#f2f6fb",
+  color: "var(--kit-ink)",
+  fontFamily: "var(--kit-font-body)",
+} as CSSProperties;
 
 /** One primary verb in a {@link GameMenu}. */
 export interface GameMenuItem {
@@ -268,6 +296,10 @@ export function GameMenu({
 }: GameMenuProps): ReactNode {
   const prefersReduced = useReducedMotion();
   const reduced = reducedMotion === undefined ? prefersReduced : reducedMotion || prefersReduced;
+  const kitted = useHasUiKit();
+  // A portrait phone (or any narrow portrait window) has no room for two columns.
+  const layout = useGameViewportLayout();
+  const stacked = layout.mode === "mobile-portrait" || (layout.orientation === "portrait" && layout.viewport.right - layout.viewport.left < 600);
   useViewportScrollLock(open);
 
   const allItems = useMemo(() => [...items, ...(secondary ?? [])], [items, secondary]);
@@ -375,6 +407,7 @@ export function GameMenu({
       data-jg-game-menu=""
       data-variant={variant}
       data-open=""
+      data-stacked={stacked ? "" : undefined}
       role="dialog"
       aria-modal="true"
       aria-label={surfaceLabel}
@@ -389,9 +422,11 @@ export function GameMenu({
         overflow: "hidden",
         overscrollBehavior: "contain",
         display: "grid",
-        gridTemplateRows: "auto minmax(0, 1fr) auto",
-        gridTemplateColumns: "minmax(232px, clamp(232px, 27vw, 360px)) minmax(0, 1fr)",
+        // A portrait phone has no room for two columns: verbs stack above the detail pane.
+        gridTemplateRows: stacked ? "auto auto minmax(0, 1fr) auto" : "auto minmax(0, 1fr) auto",
+        gridTemplateColumns: stacked ? "minmax(0, 1fr)" : "minmax(232px, clamp(232px, 27vw, 360px)) minmax(0, 1fr)",
         columnGap: "clamp(16px, 3vw, 56px)",
+        rowGap: stacked ? 14 : undefined,
         padding: isPause
           ? "clamp(16px, 2.4vw, 34px) clamp(20px, 3.2vw, 56px)"
           : "clamp(18px, 3.2vw, 56px) clamp(20px, 3.6vw, 64px)",
@@ -513,6 +548,21 @@ export function GameMenu({
             if (event.key === "ArrowDown" || event.key === "ArrowUp") event.stopPropagation();
           }}
         >
+          {kitted ? (
+            <KitMenu
+              variant={variant}
+              activeId={activeId}
+              items={allItems.map((item) => ({ ...item, secondary: (secondary ?? []).includes(item) }))}
+              itemProps={(id) => ({ ...hoverProps(id), "data-jg-game-menu-item": id })}
+              onSelect={(id) => {
+                const item = allItems.find((candidate) => candidate.id === id);
+                if (item === undefined || item.disabled === true) return;
+                soundRef.current?.play("confirm");
+                onSelect(id);
+              }}
+            />
+          ) : (
+          <>
           <div
             data-jg-game-menu-nav-surface=""
             aria-hidden="true"
@@ -656,6 +706,8 @@ export function GameMenu({
               </button>
             );
           })}
+          </>
+          )}
         </nav>
       </div>
 
@@ -675,9 +727,9 @@ export function GameMenu({
           padding: isPause
             ? "clamp(10px, 1.4vw, 18px)"
             : "clamp(6px, 1.6vh, 20px) clamp(12px, 1.4vw, 22px) clamp(12px, 1.6vh, 20px)",
-          background: PANE_SURFACE,
+          background: kitted ? "none" : PANE_SURFACE,
           borderRadius: "var(--jg-menu-surface-radius, 8px)",
-          boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.06)",
+          boxShadow: kitted ? "none" : "inset 0 0 0 1px rgba(255,255,255,0.06)",
           ...detailStyle,
         }}
       >
@@ -693,7 +745,13 @@ export function GameMenu({
               animation: reduced ? undefined : `jg-menu-pane-in ${hudDuration("slow")} ${hudEase("easeOut")} both`,
             }}
           >
-            {detailNode}
+            {kitted ? (
+              <KitPanel variant="pane" style={{ ...KIT_PANE_BRIDGE, flex: 1, minHeight: 0, overflow: "auto" }}>
+                {detailNode}
+              </KitPanel>
+            ) : (
+              detailNode
+            )}
           </div>
         )}
       </div>

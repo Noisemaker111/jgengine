@@ -33,7 +33,7 @@ const cardSurface: CSSProperties = {
   border: "1px solid rgba(255,255,255,0.14)",
   boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.05), 0 14px 34px -18px rgba(0,0,0,0.9)",
   backdropFilter: "blur(6px)",
-  color: "var(--jg-text, #f2f6fb)",
+  color: "var(--jg-card-text, var(--jg-text, #f2f6fb))",
   fontFamily: hudFont.body,
   textAlign: "left",
 };
@@ -558,12 +558,12 @@ export function ContinuePane({
           justifyContent: "center",
           gap: 10,
           minHeight: 0,
-          color: "rgba(226,235,245,0.62)",
+          color: "var(--jg-text-dim, rgba(226,235,245,0.62))",
           fontFamily: hudFont.body,
           ...style,
         }}
       >
-        <div style={{ fontFamily: hudFont.display, fontSize: hudType("xxl"), fontWeight: 800, color: "rgba(226,235,245,0.8)" }}>
+        <div style={{ fontFamily: hudFont.display, fontSize: hudType("xxl"), fontWeight: 800, color: "var(--jg-text, rgba(226,235,245,0.8))" }}>
           Nothing to continue
         </div>
         <p style={{ margin: 0, fontSize: hudType("md"), maxWidth: "42ch" }}>{emptyMessage}</p>
@@ -790,7 +790,7 @@ export function NewCharacterPane({
     >
       <div style={{ fontFamily: hudFont.display, fontSize: hudType("xxl"), fontWeight: 800 }}>{heading}</div>
       <label style={{ display: "flex", flexDirection: "column", gap: 6, maxWidth: 420 }}>
-        <span style={{ fontSize: hudType("xs"), letterSpacing: "0.16em", textTransform: "uppercase", color: "rgba(203,213,225,0.7)" }}>
+        <span style={{ fontSize: hudType("xs"), letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--jg-text-dim, rgba(203,213,225,0.7))" }}>
           {nameLabel}
         </span>
         <input
@@ -810,7 +810,7 @@ export function NewCharacterPane({
             borderRadius: 10,
             border: "1px solid rgba(148,163,184,0.35)",
             background: "rgba(8,12,18,0.72)",
-            color: "var(--jg-text, #f2f6fb)",
+            color: "var(--jg-card-text, var(--jg-text, #f2f6fb))",
             fontFamily: hudFont.display,
             fontSize: hudType("xl"),
             fontWeight: 700,
@@ -822,7 +822,7 @@ export function NewCharacterPane({
 
       {avatars === undefined || avatars.length === 0 ? null : (
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          <span style={{ fontSize: hudType("xs"), letterSpacing: "0.16em", textTransform: "uppercase", color: "rgba(203,213,225,0.7)" }}>
+          <span style={{ fontSize: hudType("xs"), letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--jg-text-dim, rgba(203,213,225,0.7))" }}>
             Avatar
           </span>
           <div data-new-character-avatars="" style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -841,7 +841,7 @@ export function NewCharacterPane({
                     borderRadius: 999,
                     border: picked ? "1px solid var(--jg-accent, #7dd3fc)" : "1px solid rgba(148,163,184,0.28)",
                     background: picked ? "rgba(125,211,252,0.2)" : "rgba(10,14,20,0.7)",
-                    color: "var(--jg-text, #f2f6fb)",
+                    color: "var(--jg-card-text, var(--jg-text, #f2f6fb))",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -861,7 +861,7 @@ export function NewCharacterPane({
 
       {palettes === undefined || palettes.length === 0 ? null : (
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          <span style={{ fontSize: hudType("xs"), letterSpacing: "0.16em", textTransform: "uppercase", color: "rgba(203,213,225,0.7)" }}>
+          <span style={{ fontSize: hudType("xs"), letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--jg-text-dim, rgba(203,213,225,0.7))" }}>
             Palette
           </span>
           <div data-new-character-palettes="" style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -1011,7 +1011,7 @@ export function CreditsPane({ sections, heading = "Credits", notice, className, 
                 fontSize: hudType("xs"),
                 letterSpacing: "0.22em",
                 textTransform: "uppercase",
-                color: "var(--jg-accent, #7dd3fc)",
+                color: "var(--jg-accent-text, var(--jg-accent, #7dd3fc))",
                 fontWeight: 700,
                 marginBottom: 6,
               }}
@@ -1025,14 +1025,14 @@ export function CreditsPane({ sections, heading = "Credits", notice, className, 
               >
                 <span style={{ fontWeight: 600 }}>{entry.label}</span>
                 {entry.detail === undefined ? null : (
-                  <span style={{ color: "rgba(203,213,225,0.62)", textAlign: "right" }}>{entry.detail}</span>
+                  <span style={{ color: "var(--jg-text-dim, rgba(203,213,225,0.62))", textAlign: "right" }}>{entry.detail}</span>
                 )}
               </div>
             ))}
           </section>
         ))}
         {notice === undefined ? null : (
-          <p style={{ margin: 0, fontSize: hudType("xs"), color: "rgba(203,213,225,0.5)", maxWidth: "60ch" }}>{notice}</p>
+          <p style={{ margin: 0, fontSize: hudType("xs"), color: "var(--jg-text-dim, rgba(203,213,225,0.5))", maxWidth: "60ch" }}>{notice}</p>
         )}
       </div>
     </div>

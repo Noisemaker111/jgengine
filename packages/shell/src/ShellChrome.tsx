@@ -1,10 +1,13 @@
-import { lazy, Suspense, useEffect, useState, type ComponentType } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState, type ComponentType, type ReactNode } from "react";
 
+import { applyBindingOverrides, loadBindingOverrides } from "@jgengine/core/input/bindingOverrides";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { useAccessibilitySettings } from "@jgengine/react/accessibilitySettings";
 import { HudThemeRoot } from "@jgengine/react/hudThemeRoot";
 import { HudViewportProvider } from "@jgengine/react/hudViewport";
 import { GameProvider } from "@jgengine/react/provider";
+import { UiKitRoot } from "@jgengine/react/uiKitRoot";
+import { resolveUiKit } from "@jgengine/react/uiKits";
 
 import {
   DiagnosticOverlay,
@@ -23,6 +26,21 @@ import type { PlayableGame } from "./registry";
 const DevtoolsOverlay = lazy(() =>
   import("./devtools/DevtoolsOverlay").then((module) => ({ default: module.DevtoolsOverlay })),
 );
+
+/** Mounts the game's `uiKit` (with its bindings, for prompts) around the GameUI; no kit renders children as-is. @internal */
+export function ShellUiKit({ playable, children }: { playable: PlayableGame; children?: ReactNode }): ReactNode {
+  const kit = useMemo(() => (playable.uiKit === undefined ? null : resolveUiKit(playable.uiKit)), [playable]);
+  const bindings = useMemo(
+    () => applyBindingOverrides(playable.game.input ?? {}, loadBindingOverrides(playable.game.name)),
+    [playable],
+  );
+  if (kit === null) return <>{children}</>;
+  return (
+    <UiKitRoot kit={kit} bindings={bindings}>
+      {children}
+    </UiKitRoot>
+  );
+}
 
 /** Shared GameUI mount: error boundary → GameProvider → phase stamp → HudViewport → HUD theme root. @internal */
 export function ShellGameUiChrome({
@@ -56,9 +74,11 @@ export function ShellGameUiChrome({
           {orientationGate ? null : (
             <ShellUiCues ctx={ctx} enabled={playable.audio?.hudCues !== false}>
               <HudThemeRoot theme={playable.hudTheme} accessibility={accessibility}>
-                <GameUI />
-                <ShellNotices ctx={ctx} config={playable.notices} scale={uiScale} />
-                <FeedbackHost ctx={ctx} engine={audioEngine} />
+                <ShellUiKit playable={playable}>
+                  <GameUI />
+                  <ShellNotices ctx={ctx} config={playable.notices} scale={uiScale} />
+                  <FeedbackHost ctx={ctx} engine={audioEngine} />
+                </ShellUiKit>
               </HudThemeRoot>
             </ShellUiCues>
           )}
