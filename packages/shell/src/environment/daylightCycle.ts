@@ -286,3 +286,13 @@ function normalize(v: readonly [number, number, number], fallback: readonly [num
   const length = Math.hypot(v[0], v[1], v[2]);
   return length < 1e-6 ? [fallback[0], fallback[1], fallback[2]] : [v[0] / length, v[1] / length, v[2] / length];
 }
+
+/**
+ * The fog color a biome-banded sky shows at the camera. Without a day cycle the bands own it: the
+ * sampled band color, which already falls back to the sky's authored fog between colorless bands.
+ * Under a day cycle the sky owns it (its authored fog, else the cycle's), so a fixed noon tint never
+ * hangs in a night sky.
+ */
+export function bandFogColor(input: { authored: string | undefined; timeOfDay: boolean; cycle: string; band: string }): string {
+  return input.timeOfDay ? (input.authored ?? input.cycle) : input.band;
+}

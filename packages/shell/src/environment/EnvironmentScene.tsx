@@ -1,3 +1,4 @@
+import { oceanColor } from "./oceanColor";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";import { useFrame } from "@react-three/fiber";
 import { PresentationAssetBoundary } from "../presentationRecovery";
 import { PresentationRecoveredDraw, useRecoverableTexture } from "../presentationRecovery3d";
@@ -460,14 +461,14 @@ function oceanConfig(ocean: OceanEnvironmentDescriptor) {
     amplitude: ocean.waveHeight,
     speed: ocean.waveSpeed,
     waveScale: ocean.waveScale,
-    color: { shallow: ocean.color },
+    color: oceanColor(ocean),
   };
 }
 
 function useOceanConfig(ocean: OceanEnvironmentDescriptor) {
   return useMemo(
     () => oceanConfig(ocean),
-    [ocean.bounds.w, ocean.bounds.d, ocean.waveHeight, ocean.waveSpeed, ocean.color],
+    [ocean.bounds.w, ocean.bounds.d, ocean.waveHeight, ocean.waveSpeed, ocean.color, ocean.palette?.deep, ocean.palette?.crest, ocean.palette?.foam, ocean.palette?.fresnel],
   );
 }
 

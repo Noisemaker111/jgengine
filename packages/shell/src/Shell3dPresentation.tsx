@@ -1,3 +1,4 @@
+import { biomeBandsForSky } from "./environment/skyBands";
 import { Canvas } from "@react-three/fiber";
 import {
   useMemo,
@@ -342,6 +343,7 @@ export function Shell3dPresentation({
    * Under a day cycle the sky scales the game's authored sun and ambient fill; without this a
    * time-of-day sky only repaints the dome and the world stays lit like noon after dark.
    */
+  const skyBands = useMemo(() => biomeBandsForSky(authoredSky, worldSky, biomeBands), [authoredSky, worldSky, biomeBands]);
   const authoredDaylight = effectiveSky?.timeOfDay === true && sceneLighting?.directional !== undefined;
   const daylightModulation = useMemo<DaylightModulation>(
     () => ({ sunFactor: 1, sunColor: effectiveSky?.sunColor ?? "#fff1c9", ambientFactor: 1 }),
@@ -735,14 +737,14 @@ export function Shell3dPresentation({
                       <TimeOfDayDaylight
                         sky={effectiveSky}
                         clock={ctx.time}
-                        bands={effectiveSky === worldSky ? biomeBands : undefined}
+                        bands={skyBands}
                         lights={skyEmitsLights(resolveSkyLightOwnership(lighting !== undefined))}
                         fogRange={backdrop?.fog}
                       />
                     ) : (
                       <SkyDaylight
                         sky={effectiveSky}
-                        bands={effectiveSky === worldSky ? biomeBands : undefined}
+                        bands={skyBands}
                         lights={skyEmitsLights(resolveSkyLightOwnership(lighting !== undefined))}
                         fogRange={backdrop?.fog}
                       />

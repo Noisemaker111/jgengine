@@ -824,6 +824,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createRigidAircraft` (function) · `import { createRigidAircraft } from "@jgengine/core/physics/aircraftDynamics"`
 
+## route-course — build a branching race course from track pieces: locate, wall clamp, checkpoints, hazard spans, racing lines
+
+- `buildRouteCourse` (function) · `import { buildRouteCourse } from "@jgengine/core/world/routeCourse"`
+
 ## rts-attack-clock — decide when an RTS AI launches growing attack waves, with a max-wait fallback
 
 - `createAttackClock` (function) · `import { createAttackClock } from "@jgengine/core/ai/buildOrder"`

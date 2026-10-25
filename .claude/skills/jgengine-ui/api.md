@@ -3002,11 +3002,20 @@
 - `DaylightCycleConfig` (interface): interface DaylightCycleConfig { horizonColor?: string; zenithColor?: string; sunIntensity?: number; ambientIntensity?: number; sun?: SkySunConfig; sunColor?: string; fogColor?: string; moonIntensity?: number; moonColor?: string } — ⚠ undocumented
 - `DaylightState` (interface): interface DaylightState { sunPosition: [number, number, number]; sunIntensity: number; sunColor: string; ambientIntensity: number; skyTop: string; skyBottom: string; background: string; fogColor: string; moonPosition: [number, number, number]; moonIntensity: numbe… — ⚠ undocumented
 - `SKY_PRESET_DAY_FRACTION` (const): const SKY_PRESET_DAY_FRACTION: Record<"day" | "dusk" | "night", number> — ⚠ undocumented
+- `bandFogColor` (function): function bandFogColor(input: { authored: string | undefined; timeOfDay: boolean; cycle: string; band: string }): string — The fog color a biome-banded sky shows at the camera. Without a day cycle the bands own it: the sampled band color, which already falls back to the sky's authored fog between colorless bands. Under a day cycle the sky owns it (its authored fog, else the cycle's), so a fixed noon tint never hangs in a night sky.
 
 ## @jgengine/shell/environment/groundPadMath
 
 - `PAD_THICKNESS` (const): const PAD_THICKNESS: 0.1 — ⚠ undocumented
 - `PadShape` (type): type PadShape = { circular: true; radius: number } | { circular: false; width: number; depth: number } — ⚠ undocumented
+
+## @jgengine/shell/environment/oceanColor
+
+- `oceanColor` (function): function oceanColor(ocean: Pick<OceanEnvironmentDescriptor, "color" | "palette">): { fresnelStrength?: number | undefined; foam?: string | undefined; crest?: string | undefined; deep?: string | undefined; shallow: string; } — The descriptor's colors in the shell Ocean's terms; unset palette fields keep the Ocean default.
+
+## @jgengine/shell/environment/skyBands
+
+- `biomeBandsForSky` (function): function biomeBandsForSky(authoredSky: SkyEnvironmentDescriptor | undefined, worldSky: SkyEnvironmentDescriptor | undefined, bands: readonly BiomeBand[] | undefined): readonly BiomeBand[] | undefined — The terrain biome bands a sky cross-fades through. They belong to the world's own sky, so they apply whenever the sky in force is that sky, even after the shell derives a copy of it (a sun bearing taken from the game's lighting, noon keyframes); a look preset's backdrop sky replaces the world's sky and drops them.
 
 ## @jgengine/shell/environment/skyLightingPolicy
 
