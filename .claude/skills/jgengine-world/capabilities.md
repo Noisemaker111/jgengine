@@ -948,6 +948,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `defineStopOrder` (function) · `import { defineStopOrder } from "@jgengine/core/world"`
 
+## storyteller — incident pacing by threat points that build with play time, with cooldowns, repeat damping and rest after big threats
+
+- `createStoryteller` (function) · `import { createStoryteller } from "@jgengine/core/ai/director/storyteller"`
+
 ## street-generator — build a deterministic street/track graph (nodes, edges, streets, junctions, sidewalks, bridges, tunnels) from sliders
 
 - `generateStreets` (function) · `import { generateStreets } from "@jgengine/core/world/streetGenerator"`
