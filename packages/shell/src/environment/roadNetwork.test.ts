@@ -2,7 +2,9 @@ import { describe, expect, test } from "bun:test";
 import { findRoadJunctions } from "@jgengine/core/world/streets";
 import type { RoadEnvironmentDescriptor } from "@jgengine/core/world/features";
 
-import { buildAuthoredRoadNetwork, insertJunctionNodes, roadJunctionInput } from "./RoadRibbons";
+import { Color } from "three";
+
+import { buildAuthoredRoadNetwork, buildKerbFaces, gutterColor, insertJunctionNodes, roadJunctionInput } from "./RoadRibbons";
 
 function road(path: readonly (readonly [number, number])[], width = 8): RoadEnvironmentDescriptor {
   return {
@@ -87,5 +89,37 @@ describe("buildAuthoredRoadNetwork", () => {
     expect(network.roadPaths[0]!.length).toBe(1);
     expect(network.roadPaths[0]![0]).toEqual([[-20, 0], [20, 0]]);
     expect(network.junctionSurfaces.length).toBe(0);
+  });
+});
+
+describe("kerbs and gutters", () => {
+  const luminance = (hex: string) => {
+    const c = new Color(hex);
+    return 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
+  };
+
+  test("the gutter is never darker than the carriageway, so edges never read as an outline", () => {
+    for (const roadColor of ["#33363f", "#3b3e47", "#5a5d63", "#1b1c20"]) {
+      expect(luminance(gutterColor(roadColor, "#cdc6b6"))).toBeGreaterThan(luminance(roadColor));
+      expect(luminance(gutterColor(roadColor, null))).toBeGreaterThan(luminance(roadColor));
+    }
+  });
+
+  test("kerb faces rise from the gutter to the sidewalk top on the road side and skirt the outer edge", () => {
+    const geometry = buildKerbFaces([[[0, 0], [0, 20]]], 10, 3, () => 1, 0.08)!;
+    const position = geometry.getAttribute("position");
+    // Two sides x (kerb + skirt) x two points x (bottom + top).
+    expect(position.count).toBe(16);
+    const ys = new Set<number>();
+    const xs = new Set<number>();
+    for (let i = 0; i < position.count; i += 1) {
+      ys.add(Number(position.getY(i).toFixed(3)));
+      xs.add(Number(Math.abs(position.getX(i)).toFixed(3)));
+    }
+    // Kerb base just under the gutter lift, skirt base below grade, one shared top 16 cm over the road.
+    expect([...ys].sort()).toEqual([0.95, 1.09, 1.24]);
+    expect([...xs].sort()).toEqual([5, 8]);
+    expect(geometry.getIndex()!.count).toBe(4 * 6);
+    expect(buildKerbFaces([], 10, 3, () => 0, 0)).toBeNull();
   });
 });

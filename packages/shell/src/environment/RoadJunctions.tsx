@@ -1,18 +1,91 @@
 import { useMemo } from "react";
 import { BufferAttribute, BufferGeometry, DoubleSide } from "three";
 import { buildRoadRibbon, GROUND_DECAL_LAYERS, type RoadPoint } from "@jgengine/core/world/roads";
+import type { TerrainDetailMaterialConfig } from "@jgengine/core/world/features";
 import { junctionMarkings, type RoadJunction } from "@jgengine/core/world/streets";
 import type { TerrainField } from "@jgengine/core/world/terrain";
+import { useSurfaceScan } from "../render/surfaceScanTextures";
 import { useSurfaceRibbonMaterial } from "../terrain/surfaceRibbonMaterial";
 import { useTerrainQuality } from "../terrain/terrainQuality";
 import type { JunctionSurface } from "./RoadRibbons";
 
-function JunctionPatch({ geometry, color, surfaceDetail }: { geometry: BufferGeometry; color: string; surfaceDetail: boolean }) {
+function JunctionPatch({
+  geometry,
+  color,
+  surfaceDetail,
+  scan,
+}: {
+  geometry: BufferGeometry;
+  color: string;
+  surfaceDetail: boolean;
+  scan: TerrainDetailMaterialConfig | undefined;
+}) {
   const quality = useTerrainQuality();
-  const material = useSurfaceRibbonMaterial(surfaceDetail ? { surface: "road", color, halfWidth: 1, quality } : null);
+  // The same world-XZ scan as the carriageway ribbons, so asphalt runs through the crossing unbroken.
+  const textures = useSurfaceScan(scan?.maps, surfaceDetail && quality !== "low");
+  const material = useSurfaceRibbonMaterial(
+    surfaceDetail
+      ? {
+          surface: "road",
+          color,
+          halfWidth: 1,
+          quality,
+          ...(scan === undefined || textures === null
+            ? {}
+            : { scan: { textures, projection: "world" as const, repeat: scan.repeat ?? 4, strength: scan.strength ?? 1, tint: scan.tint ?? 1 } }),
+        }
+      : null,
+  );
   return (
     <mesh geometry={geometry} receiveShadow {...(material === null ? {} : { material })}>
       {material === null ? <meshStandardMaterial color={color} roughness={0.95} metalness={0} side={DoubleSide} /> : null}
+    </mesh>
+  );
+}
+
+/** Stop-line and crosswalk paint tone. @internal */
+export const JUNCTION_PAINT = "#e6e9ee";
+
+/** White stop-line / crosswalk paint over a junction: worn through to the asphalt grain like the lane dashes. */
+function JunctionPaint({
+  geometry,
+  surfaceDetail,
+  scan,
+}: {
+  geometry: BufferGeometry;
+  surfaceDetail: boolean;
+  scan: TerrainDetailMaterialConfig | undefined;
+}) {
+  const quality = useTerrainQuality();
+  const textures = useSurfaceScan(scan?.maps, surfaceDetail && quality !== "low");
+  const material = useSurfaceRibbonMaterial(
+    surfaceDetail
+      ? {
+          surface: "road",
+          color: JUNCTION_PAINT,
+          halfWidth: 0.3,
+          roughness: 0.6,
+          quality,
+          polygonOffset: true,
+          paint: true,
+          ...(scan === undefined || textures === null
+            ? {}
+            : { scan: { textures, projection: "world" as const, repeat: scan.repeat ?? 4, strength: 0.85, tint: 0 } }),
+        }
+      : null,
+  );
+  if (material !== null) return <mesh geometry={geometry} renderOrder={1} receiveShadow material={material} />;
+  return (
+    <mesh geometry={geometry} renderOrder={1}>
+      <meshStandardMaterial
+        color={JUNCTION_PAINT}
+        roughness={0.85}
+        metalness={0}
+        side={DoubleSide}
+        polygonOffset
+        polygonOffsetFactor={-1}
+        polygonOffsetUnits={-1}
+      />
     </mesh>
   );
 }
@@ -69,12 +142,15 @@ export function RoadJunctions({
   junctions,
   field,
   surfaceDetail = true,
+  scan,
 }: {
   surfaces: readonly JunctionSurface[];
   junctions: readonly RoadJunction[];
   field: TerrainField;
   /** Shade the welded surfaces with the asphalt procedural surface, matching the ribbons. Default true. */
   surfaceDetail?: boolean;
+  /** Scanned carriageway from the first road that names one, so junctions match the ribbons. */
+  scan?: TerrainDetailMaterialConfig | undefined;
 }) {
   const patches = useMemo(
     () =>
@@ -104,34 +180,10 @@ export function RoadJunctions({
   return (
     <group>
       {patches.map((patch, index) => (
-        <JunctionPatch key={`junction-${index}`} geometry={patch.geometry} color={patch.color} surfaceDetail={surfaceDetail} />
+        <JunctionPatch key={`junction-${index}`} geometry={patch.geometry} color={patch.color} surfaceDetail={surfaceDetail} scan={scan} />
       ))}
-      {markings.stops !== null ? (
-        <mesh geometry={markings.stops} renderOrder={1}>
-          <meshStandardMaterial
-            color="#e6e9ee"
-            roughness={0.85}
-            metalness={0}
-            side={DoubleSide}
-            polygonOffset
-            polygonOffsetFactor={-1}
-            polygonOffsetUnits={-1}
-          />
-        </mesh>
-      ) : null}
-      {markings.crosswalks !== null ? (
-        <mesh geometry={markings.crosswalks} renderOrder={1}>
-          <meshStandardMaterial
-            color="#e6e9ee"
-            roughness={0.85}
-            metalness={0}
-            side={DoubleSide}
-            polygonOffset
-            polygonOffsetFactor={-1}
-            polygonOffsetUnits={-1}
-          />
-        </mesh>
-      ) : null}
+      {markings.stops !== null ? <JunctionPaint geometry={markings.stops} surfaceDetail={surfaceDetail} scan={scan} /> : null}
+      {markings.crosswalks !== null ? <JunctionPaint geometry={markings.crosswalks} surfaceDetail={surfaceDetail} scan={scan} /> : null}
     </group>
   );
 }

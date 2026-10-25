@@ -31,6 +31,17 @@ describe("world/roads", () => {
     expect(() => road({ path: [[0, 0]] })).toThrow();
   });
 
+  test("road() carries scanned layers and sidewalk slabs only when authored", () => {
+    const plain = road({ path: [[0, 0], [100, 0]] });
+    expect(plain.materials).toBeUndefined();
+    expect(plain.sidewalk).toEqual({ width: 2.6, color: "#a7adb8" });
+    const asphalt = { maps: { color: "/materials/a/color.jpg", normal: "/materials/a/normal.jpg" }, repeat: 4 };
+    const scanned = road({ path: [[0, 0], [100, 0]], materials: { road: asphalt }, sidewalk: { width: 4, slabs: false } });
+    expect(scanned.materials?.road).toBe(asphalt);
+    expect(scanned.materials?.sidewalk).toBeUndefined();
+    expect(scanned.sidewalk).toEqual({ width: 4, color: "#a7adb8", slabs: false });
+  });
+
   test("buildRoadRibbon drapes a subdivided two-sided strip", () => {
     const ribbon = buildRoadRibbon([[0, 0], [40, 0]], 8, (x) => x * 0.1, { maxSegmentLength: 10 });
     expect(ribbon.positions.length).toBe(5 * 6);

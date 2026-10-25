@@ -47,7 +47,15 @@ Paths and roads share those surface functions. An authored path (`<AuthoredPaths
 noise-warped edge that fades into the terrain around the authored width; pavement keeps a crisp
 edge with tyre lanes and cracks. Tune with `meta.edgeSoftness` (0 = hard) and `meta.wear` (0..1);
 `meta.surfaceDetail: false` or `<AuthoredScene pathSurfaceDetail={false}>` keeps flat ribbons.
-`road({ surface })` picks the carriageway surface (default `"road"`, `false` for flat colour), and
+`road({ surface })` picks the carriageway surface (default `"road"`, `false` for flat colour);
+`road({ materials: { road, sidewalk, curb } })` lays scanned PBR maps under that procedural wear
+(`librarySurfaceScan("asphalt/dry")`, `librarySurfaceScan("concrete/smooth", { tint: 0 })` from
+`@jgengine/assets/catalogs/materialLibrary`; carriageway and junctions tile in world XZ, sidewalks
+and gutters along the kerb; a missing map or the `low` tier keeps the procedural surface). Every
+sidewalk sits on a 14 cm kerb with a kerb face, laid in slabs (`sidewalk: { slabs }`, metres, default
+1.5, `false` for a paver scan with its own joints); lane paint is 15–30 cm, worn through to the
+asphalt. A model takes a scan too: `material: { color, scan: librarySurfaceScan("plaster/interior", { tint: 0 }) }`
+projects it triplanar from the model's own geometry, so a palette-atlas kit model gets real grain. And
 city studio ground takes `meta.surfaceDetail: false` on its volume. City ground layers fade out
 where the district's merged footprint meets bare terrain, keeping seams between layers crisp;
 `meta.edgeFade: false` on the volume keeps hard outer edges. Custom ribbons use

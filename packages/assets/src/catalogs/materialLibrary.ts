@@ -112,6 +112,11 @@ export const MATERIAL_LIBRARY: readonly LibraryMaterial[] = [
   { name: "metal/rust", title: "Rusted metal", group: "metal", source: "ambientcg-rust007", surface: "opaque", tileMetres: 1.4, response: { metalness: 0.35, roughness: 0.88 } },
   { name: "metal/plate", title: "Steel plate", group: "metal", source: "ambientcg-metalplates001", surface: "opaque", tileMetres: 1.6, response: { metalness: 0.85, roughness: 0.5 } },
 
+  // Painted finishes: response only, no scan. A kit car or prop keeps its palette colour and gains
+  // the lacquer that separates a painted body from matte clay: a sharp clearcoat over a soft base.
+  { name: "paint/gloss", title: "Gloss car paint", group: "metal", surface: "opaque", tileMetres: 1, response: { metalness: 0.15, roughness: 0.4, clearcoat: 1, clearcoatRoughness: 0.05 } },
+  { name: "paint/satin", title: "Satin paint", group: "metal", surface: "opaque", tileMetres: 1, response: { metalness: 0, roughness: 0.52, clearcoat: 0.4, clearcoatRoughness: 0.28 } },
+
   // Wood.
   { name: "wood/oak", title: "Oak", group: "wood", source: "ambientcg-wood026", surface: "opaque", tileMetres: 1.4, response: { metalness: 0, roughness: 0.66 } },
   { name: "wood/floor", title: "Wood floor", group: "wood", source: "ambientcg-woodfloor009", surface: "opaque", tileMetres: 1.8, response: { metalness: 0, roughness: 0.46 } },
@@ -304,12 +309,25 @@ export interface LibraryTerrainOptions {
  * @capability library-terrain-material put a named library material on terrain without faking optional maps
  */
 export function libraryTerrainMaterial(name: string, options: LibraryTerrainOptions = {}): TerrainDetailMaterialConfig {
+  return librarySurfaceScan(name, options);
+}
+
+/**
+ * A library name as a scanned surface for any renderer that tiles one over authored colour: terrain
+ * detail, a `road({ materials })` layer, or a model's `material.scan`. Tiling comes from the entry's
+ * authored metres and blend from its terrain policy (else full strength, full tint), so
+ * `road({ materials: { road: librarySurfaceScan("asphalt/dry") } })` shows real asphalt and
+ * `material: { scan: librarySurfaceScan("stucco/painted", { tint: 0 }) }` keeps a model's paint and
+ * adds the plaster's grain. Only maps the pulled archive ships are named.
+ * @capability library-surface-scan put a named scanned material on roads, terrain or kit models in one call
+ */
+export function librarySurfaceScan(name: string, options: LibraryTerrainOptions = {}): TerrainDetailMaterialConfig {
   const entry = requireLibraryMaterial(name);
   const basePath = options.basePath ?? "/materials";
   const color = mapUrl(entry, "color", basePath);
   const normal = mapUrl(entry, "normal", basePath);
   if (color === undefined || normal === undefined) {
-    throw new TypeError(`Library material "${name}" carries no pulled color/normal maps; terrain needs a scanned surface.`);
+    throw new TypeError(`Library material "${name}" carries no pulled color/normal maps; a surface scan needs a scanned material.`);
   }
   const roughness = mapUrl(entry, "roughness", basePath);
   const ao = mapUrl(entry, "ao", basePath);
