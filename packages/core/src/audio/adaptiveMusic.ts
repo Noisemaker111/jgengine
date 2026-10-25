@@ -99,6 +99,16 @@ export const DEFAULT_ADAPTIVE_TIERS: readonly MusicTier[] = [
 export interface CombatIntensity {
   bump(amount: number, nowMs: number): void;
   read(nowMs: number): number;
+  /** The level and when it was last settled, for save/load and tests. */
+  snapshot(): CombatIntensityState;
+  /** Put a snapshot back. */
+  restore(next: CombatIntensityState): void;
+}
+
+/** A saved combat intensity: its level (0..1) and the clock time it was read at. */
+export interface CombatIntensityState {
+  value: number;
+  atMs: number;
 }
 
 /** A fresh intensity at 0 that loses `decayPerSecond` per second of quiet. */
@@ -117,6 +127,11 @@ export function createCombatIntensity(decayPerSecond = 0.1): CombatIntensity {
     read(nowMs) {
       settle(nowMs);
       return value;
+    },
+    snapshot: () => ({ value, atMs: at }),
+    restore(next) {
+      value = Math.min(1, Math.max(0, next.value));
+      at = next.atMs;
     },
   };
 }

@@ -14,6 +14,14 @@ describe("createCombatIntensity", () => {
     expect(intensity.read(2000)).toBe(1);
     expect(intensity.read(60_000)).toBe(0);
   });
+
+  test("a snapshot restores into a fresh handle and keeps decaying from where it left off", () => {
+    const first = createCombatIntensity(0.1);
+    first.bump(0.8, 1000);
+    const copy = createCombatIntensity(0.1);
+    copy.restore(first.snapshot());
+    expect(copy.read(3000)).toBeCloseTo(0.6);
+  });
 });
 
 describe("built-in adaptive themes", () => {
