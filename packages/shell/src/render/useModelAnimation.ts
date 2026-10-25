@@ -1,3 +1,4 @@
+import { deathRemovesEntity } from "@jgengine/core/combat/death";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
@@ -488,7 +489,7 @@ export function useModelAnimation(
       if (event.instanceId === instanceId) fire("hit");
     });
     const offDied = ctx.game.events.on("entity.died", (event) => {
-      if (event.instanceId === instanceId) fire("death");
+      if (event.instanceId === instanceId && deathRemovesEntity(event)) fire("death");
     });
     return () => {
       offAnimation();

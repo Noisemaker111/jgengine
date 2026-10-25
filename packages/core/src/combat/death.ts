@@ -34,6 +34,12 @@ export interface OnDeathSpec {
   dropMode?: DropMode;
   /** Scatter-offset tuning when `dropMode` is `"world"`; defaults to `DEFAULT_SCATTER` from `game/worldItem`. */
   scatter?: ScatterOptions;
+  /**
+   * The game owns what a death means for this entity (a downed window, a revive, a respawn in place):
+   * `entity.died` still fires with `kept: true` and drops/commands still run, but the entity stays in
+   * the scene with its stats, and it can die again once something lifts its last pool off the floor.
+   */
+  keep?: boolean;
 }
 
 export interface NormalizedOnDeath {
@@ -41,6 +47,7 @@ export interface NormalizedOnDeath {
   command: OnDeathCommandRule | null;
   dropMode: DropMode;
   scatter?: ScatterOptions;
+  keep?: true;
 }
 
 export function normalizeOnDeath(spec: OnDeathSpec | null | undefined): NormalizedOnDeath {
@@ -50,6 +57,7 @@ export function normalizeOnDeath(spec: OnDeathSpec | null | undefined): Normaliz
   const command =
     spec.command === undefined ? null : typeof spec.command === "string" ? { name: spec.command } : spec.command;
   const normalized: NormalizedOnDeath = { drops, command, dropMode: spec.dropMode ?? "grant" };
+  if (spec.keep === true) normalized.keep = true;
   if (spec.scatter !== undefined) normalized.scatter = spec.scatter;
   return normalized;
 }
@@ -96,6 +104,7 @@ export function createDeathSystem(deps: DeathSystemDeps): DeathSystem {
       if (dead.has(instanceId)) return { status: "rejected", reason: "already-dead" };
       const identity = deps.resolveIdentity(instanceId);
       if (identity === null) return { status: "rejected", reason: "unknown-instance" };
+      const onDeath = normalizeOnDeath(deps.resolveOnDeath(instanceId, reason));
       dead.add(instanceId);
       const event: EntityDiedEvent = {
         instanceId,
@@ -107,8 +116,8 @@ export function createDeathSystem(deps: DeathSystemDeps): DeathSystem {
       if (identity.displayName !== undefined) event.displayName = identity.displayName;
       const source = reason.kind === "environment" ? reason.attacker ?? reason.source : reason.source;
       event.source = source;
+      if (onDeath.keep === true) event.kept = true;
       deps.events.emit("entity.died", event);
-      const onDeath = normalizeOnDeath(deps.resolveOnDeath(instanceId, reason));
       const drops: Drop[] = [];
       for (const rule of onDeath.drops) {
         if (matchesReason(rule.when, reason)) drops.push(...deps.loot.roll(rule.table));
@@ -122,7 +131,10 @@ export function createDeathSystem(deps: DeathSystemDeps): DeathSystem {
         deps.runCommand(onDeath.command.name, onDeath.command.args, reason);
         ranCommand = onDeath.command.name;
       }
-      deps.despawn(instanceId);
+      // A kept entity's pools sit at their floor, so the effect system refuses further drains
+      // ("pools-depleted") until it is healed; the latch can clear now so that later death counts.
+      if (onDeath.keep === true) dead.delete(instanceId);
+      else deps.despawn(instanceId);
       return { status: "resolved", drops, ranCommand };
     },
     revive(instanceId) {
@@ -147,4 +159,12 @@ export function deathReasonFromEffect(ctx: EffectDeathContext): DeathReason {
   return ctx.via?.item !== undefined
     ? { kind: "environment", source: ctx.via.item, attacker: ctx.from }
     : { kind: "environment", source: "effect", attacker: ctx.from };
+}
+
+/**
+ * Whether a death took the entity out of the scene. Presentation that plays a body's last moment
+ * (a ragdoll, a death clip, a topple) skips a kept death, whose entity the game keeps on its feet.
+ */
+export function deathRemovesEntity(event: Pick<EntityDiedEvent, "kept">): boolean {
+  return event.kept !== true;
 }

@@ -519,12 +519,13 @@
 - `DeathSystemDeps` (interface): interface DeathSystemDeps { resolveOnDeath(instanceId: string, reason?: DeathReason): OnDeathSpec | null | undefined; resolveIdentity(instanceId: string): DeathIdentity | null; loot: {roll(tableId: string): Drop[]}; events: GameEvents; runCommand?(name: string, args… — ⚠ undocumented · used by `createDeathSystem`: Resolve entity death and the on-death consequences — drops, respawn eligibility, kill credit.
 - `DropMode` (type): type DropMode = "grant" | "world" — ⚠ undocumented
 - `EffectDeathContext` (interface): interface EffectDeathContext { from: string; via?: EffectVia; userIdOf?(instanceId: string): string | undefined } — ⚠ undocumented
-- `NormalizedOnDeath` (interface): interface NormalizedOnDeath { drops: OnDeathDropRule[]; command: OnDeathCommandRule | null; dropMode: DropMode; scatter?: ScatterOptions } — ⚠ undocumented
+- `NormalizedOnDeath` (interface): interface NormalizedOnDeath { drops: OnDeathDropRule[]; command: OnDeathCommandRule | null; dropMode: DropMode; scatter?: ScatterOptions; keep?: true } — ⚠ undocumented
 - `OnDeathCommandRule` (interface): interface OnDeathCommandRule { name: string; args?: unknown; when?: {reason: DeathReasonKind} } — ⚠ undocumented
 - `OnDeathDropRule` (interface): interface OnDeathDropRule { table: string; when?: {reason: DeathReasonKind | "any"} } — ⚠ undocumented
 - `OnDeathSpec` (interface): interface OnDeathSpec — Catalog `onDeath` for an entity: loot tables to roll, `dropMode: "world"` to scatter drops on the ground (rendered with loot beams) instead of granting them into the killer's bag, and commands to run. Fires only when the entity dies through `ctx.scene.entity.effect`, not a raw `stats.delta`.
 - `createDeathSystem` (function): function createDeathSystem(deps: DeathSystemDeps): DeathSystem — Resolve entity death and the on-death consequences — drops, respawn eligibility, kill credit.
 - `deathReasonFromEffect` (function): function deathReasonFromEffect(ctx: EffectDeathContext): DeathReason — ⚠ undocumented
+- `deathRemovesEntity` (function): function deathRemovesEntity(event: Pick<EntityDiedEvent, "kept">): boolean — Whether a death took the entity out of the scene. Presentation that plays a body's last moment (a ragdoll, a death clip, a topple) skips a kept death, whose entity the game keeps on its feet.
 - `normalizeOnDeath` (function): function normalizeOnDeath(spec: OnDeathSpec | null | undefined): NormalizedOnDeath — ⚠ undocumented
 
 ## @jgengine/core/combat/deathReason

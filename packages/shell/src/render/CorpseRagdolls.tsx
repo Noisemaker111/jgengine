@@ -1,3 +1,4 @@
+import { deathRemovesEntity } from "@jgengine/core/combat/death";
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
@@ -91,6 +92,7 @@ export function CorpseRagdolls({ max = 6, lifeS = 5, sinkS = 1.5 }: { max?: numb
       state: () => `${stats.corpses} bodies dropped · ${stats.skippedNoRig} without a rig · ${stats.skippedKept} kept by the game`,
     });
     const off = ctx.game.events.on("entity.died", (event) => {
+      if (!deathRemovesEntity(event)) return;
       stats.deaths += 1;
       const source = bodies.get(event.instanceId);
       if (source === undefined) {

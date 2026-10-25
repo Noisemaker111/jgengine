@@ -236,7 +236,9 @@ export function createEffectSystem(deps: EffectSystemDeps): EffectSystem {
       const delta = result.applied;
       if (delta !== 0) applied.push({ statId, delta });
       remaining += delta;
-      if (statId === lastStatId && drainMagnitude > 0 && result.hitMin) lethal = true;
+      // Lethal is the hit that empties the last pool, not one landing on a pool already at its floor
+      // (a kept, downed entity whose shield regrew must not die again on the next graze).
+      if (statId === lastStatId && drainMagnitude > 0 && result.hitMin && delta !== 0) lethal = true;
     }
     return { instanceId, effect, applied, lethal };
   }
