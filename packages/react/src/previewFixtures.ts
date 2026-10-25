@@ -6,6 +6,7 @@ import { HudChromePreview } from "./hudChromePreview";
 import { HudLanesPreview } from "./hudLanesPreview";
 import { HudThemePreview } from "./hudThemePreview";
 import { IconsPreview } from "./iconsPreview";
+import { GameFramesPreview } from "./gameFramesPreview";
 import { StreetGeometryPreview } from "./streetGeometryPreview";
 import { SpriteClipPreview } from "./spriteClipPreview";
 import { TileLayerPreview } from "./tileLayerPreview";
@@ -83,6 +84,11 @@ export const PREVIEW_FIXTURES: Record<string, PreviewFixture> = {
   },
   HudSkinPreview: { name: "HudSkinPreview", description: "Two procedural HUD skins applied to frames, bars, and inventory slots.", component: HudSkinPreview },
   UiKitsPreview: { name: "UiKitsPreview", description: "Contact sheet: all eight built-in UI kits, every part each, over a game-like backdrop.", component: UiKitsPreview },
+  GameFramesPreview: {
+    name: "GameFramesPreview",
+    description: "Game-UI blocks: every frame material and cut, game buttons with each cursor style, and drawn sliders.",
+    component: GameFramesPreview,
+  },
   ...kitFixtures(),
 };
 

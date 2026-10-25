@@ -353,6 +353,30 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `GameContextBridge` (function) · `import { GameContextBridge } from "@jgengine/react"`
 
+## game-cursor — console-style selection cursor (brackets, chevron, bar) that glides to the focused menu item
+
+- `GameCursor` (function) · `import { GameCursor } from "@jgengine/react"`
+
+## game-font-stacks — display/body/numeric font stacks for a game's font pairing, with installed fallbacks
+
+- `gameFontStacks` (function) · `import { gameFontStacks } from "@jgengine/react"`
+
+## game-fonts — load a game's bundled display and body fonts
+
+- `useGameFonts` (function) · `import { useGameFonts } from "@jgengine/react"`
+
+## game-frame — material frame (steel, wood, stone, paper, glass…) with an angled or irregular cut, as a panel or a game button
+
+- `GameFrame` (const) · `import { GameFrame } from "@jgengine/react"`
+
+## game-frame-cut — clip path for an angled or irregular frame silhouette (chamfer, banner, ticket, torn…)
+
+- `gameCutPath` (function) · `import { gameCutPath } from "@jgengine/react"`
+
+## game-frame-style — CSS variables for a material frame on an element the game already owns
+
+- `gameFrameVars` (function) · `import { gameFrameVars } from "@jgengine/react"`
+
 ## game-menu — full-bleed game menu — living background, token-sized logo, animated navigable verbs, detail pane, selection sound, pause variant, no page scrollbar
 
 - `GameMenu` (function) · `import { GameMenu } from "@jgengine/react"`
@@ -360,6 +384,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## game-pause-menu — pause menu from the shared game-menu system — same navigation and surface, sized down
 
 - `GamePauseMenu` (function) · `import { GamePauseMenu } from "@jgengine/react"`
+
+## game-slider — drawn game slider (groove or pips) with keyboard, drag and screen reader support, no browser range input
+
+- `GameSlider` (function) · `import { GameSlider } from "@jgengine/react"`
 
 ## gesture-resume — unlock the audio context on the first pointer/key/touch gesture, so pre-gesture cues play instead of vanishing
 
@@ -403,6 +431,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `Coins` (function) · `import { Coins } from "@jgengine/react"`
 
+## hud-fade — HUD group that fades when idle and returns when its values change
+
+- `HudFade` (function) · `import { HudFade } from "@jgengine/react"`
+
 ## hud-frame — optional framed panel skins (glass/plate/retro/themed) — games own product chrome
 
 - `HudFrame` (function) · `import { HudFrame } from "@jgengine/react"`
@@ -414,6 +446,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## hud-icons — painted-icon treatment for hotbar/action slots — glyph + gradient + count badge
 
 - `IconSchool` (type) · `import { IconSchool } from "@jgengine/react"`
+
+## hud-idle — true while a HUD group's values are changing, false once they sit still
+
+- `useHudAwake` (function) · `import { useHudAwake } from "@jgengine/react"`
 
 ## hud-interact — one listener for hover/press/activate/open/close from every engine HUD primitive
 
