@@ -5,3 +5,10 @@
 - `thinIslands` and the Poly Haven origin's `thin` / `error` options make multi-million-triangle tree scans usable (jacaranda: 118k / 53k triangles, 2.7 MB).
 - `imageCodec`: TGA and PNG decode, PNG and JPEG encode, box downscale, Git blob sha.
 - `facade/glass-curtain` (ambientCG Facade006): glass curtain wall with aluminium mullions and spandrels, 28 m tile.
+
+### Fixed
+
+- Quantized glTF meshes (meshopt / `KHR_mesh_quantization`) no longer collapse into boxes when merged or baked into crowds: attributes are converted to float before transforms.
+- Crowd bakes no longer render people black: Rocketbox pulls drop the unused vertex colours and the crowd material turns `vertexColors` off.
+- Khronos pulls bake transmission glass into plain alpha glass and zero the emissive factor when the emissive map is removed (no more white-glowing tyres).
+- Road collision follows live road sources: `resolveEnvironmentField` rebuilds the road drape when the roads change, so ground under re-laid streets stays right.

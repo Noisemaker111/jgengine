@@ -215,6 +215,27 @@ describe("bakeSkinnedCrowd on a rig-less character", () => {
     expect(() => createCrowdUniforms(baked)).toThrow(/static/);
   });
 
+  test("a vertex-colour material bakes without the multiply, since the bake drops colours", () => {
+    const material = new THREE.MeshStandardMaterial({ vertexColors: true });
+    const baked = bakeSkinnedCrowd({ scene: rigidCharacter(material).scene, animations: [] }, {});
+    expect(baked.geometry.getAttribute("color")).toBeUndefined();
+    expect(baked.materials[0]!.vertexColors).toBe(false);
+    expect(material.vertexColors).toBe(true);
+  });
+
+  test("quantized parts bake at their real size", () => {
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute("position", new THREE.BufferAttribute(new Int16Array([-32767, 0, 0, 32767, 0, 0, 0, 32767, 0]), 3, true));
+    const mesh = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial());
+    mesh.scale.setScalar(3);
+    const scene = new THREE.Group();
+    scene.add(mesh);
+    scene.updateMatrixWorld(true);
+    const baked = bakeSkinnedCrowd({ scene, animations: [] }, {});
+    baked.geometry.computeBoundingBox();
+    expect(baked.geometry.boundingBox!.max.x).toBeCloseTo(3, 3);
+  });
+
   test("a rig with two materials is two draws for the batch", () => {
     const scene = new THREE.Group();
     const first = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial());

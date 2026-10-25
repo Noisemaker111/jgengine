@@ -248,6 +248,9 @@ export async function pullRocketboxModel(entry: ModelLibraryEntry, options: Pull
     if (!mesh.isMesh) return;
     triangles += (mesh.geometry.index?.count ?? mesh.geometry.getAttribute("position").count) / 3;
     if (mesh.isSkinnedMesh) bones = Math.max(bones, mesh.skeleton.bones.length);
+    // Max's export vertex colours carry no shading the textures do not; kept, they switch on
+    // vertex-colour multiply in every renderer, and one that drops the attribute draws the body black.
+    mesh.geometry.deleteAttribute("color");
     const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
     const replaced = materials.map((material) => {
       const phong = material as THREE.MeshPhongMaterial;

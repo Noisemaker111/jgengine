@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { mkdirSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { Document, NodeIO, type GLTF, type Node, type Texture } from "@gltf-transform/core";
+import { Document, NodeIO, type GLTF, type Material, type Node, type Texture } from "@gltf-transform/core";
 import { ALL_EXTENSIONS } from "@gltf-transform/extensions";
 import { compactPrimitive, dedup, getBounds, meshopt, prune, reorder, simplify, weld } from "@gltf-transform/functions";
 import jpeg from "jpeg-js";
@@ -125,7 +125,7 @@ function readPolyHaven(io: NodeIO, sources: Record<string, Uint8Array>, gltfName
 /**
  * Keep an evenly spread `share` of the connected triangle islands (leaf clusters) on every primitive
  * whose material name matches `material`, and grow each kept island about its own centre by
- * `share^-0.35` so the canopy keeps most of its cover — the usual foliage LOD trade, not a change
+ * `share^-0.35` so the canopy keeps most of its cover â€” the usual foliage LOD trade, not a change
  * to the tree's size. Returns the triangles removed.
  * @capability library-foliage-thinning thin a foliage scan's leaf clusters for a lighter level while keeping canopy cover
  */
@@ -321,6 +321,51 @@ function imageKey(texture: Texture | null): string | null {
  * every texture slot anywhere that shows the same picture as a dropped node's textures (the
  * trademark plates Khronos samples carry), plus the explicit `scrub` slots.
  */
+/** A texture's average colour in linear RGB, so a scrubbed map leaves its overall tone behind. */
+function meanLinearColor(texture: Texture): [number, number, number] | null {
+  const bytes = texture.getImage();
+  if (bytes === null) return null;
+  let image: RgbaImage;
+  try {
+    image = texture.getMimeType() === "image/png" ? decodePng(bytes) : (jpeg.decode(bytes, { useTArray: true, formatAsRGBA: true }) as RgbaImage);
+  } catch {
+    return null;
+  }
+  const sum = [0, 0, 0];
+  const pixels = image.width * image.height;
+  for (let i = 0; i < pixels; i += 1) for (let c = 0; c < 3; c += 1) sum[c]! += Math.pow(image.data[i * 4 + c]! / 255, 2.2);
+  return [sum[0]! / pixels, sum[1]! / pixels, sum[2]! / pixels];
+}
+
+/** Drop a base colour map but keep its average tone in the factor, so a scrubbed tyre wall stays dark rubber. */
+function clearBaseColor(material: Material): void {
+  const texture = material.getBaseColorTexture();
+  const mean = texture === null ? null : meanLinearColor(texture);
+  material.setBaseColorTexture(null);
+  if (mean === null) return;
+  const factor = material.getBaseColorFactor();
+  material.setBaseColorFactor([factor[0] * mean[0], factor[1] * mean[1], factor[2] * mean[2], factor[3]]);
+}
+
+/**
+ * Real-time engines without a transmission pass draw `KHR_materials_transmission` glass as milky
+ * white, so sample glass becomes thin tinted glass: blended, smooth and non-metallic.
+ */
+function bakeTransmissionGlass(document: Document): void {
+  for (const material of document.getRoot().listMaterials()) {
+    if (material.getExtension("KHR_materials_transmission") === null) continue;
+    material.setExtension("KHR_materials_transmission", null);
+    material.setExtension("KHR_materials_volume", null);
+    material.setExtension("KHR_materials_ior", null);
+    const factor = material.getBaseColorFactor();
+    material
+      .setAlphaMode("BLEND")
+      .setBaseColorFactor([factor[0] * 0.08, factor[1] * 0.09, factor[2] * 0.1, 0.42])
+      .setMetallicFactor(0)
+      .setRoughnessFactor(0.04);
+  }
+}
+
 function scrubKhronos(document: Document, origin: KhronosModelOrigin): void {
   const root = document.getRoot();
   const banned = new Set<string>();
@@ -340,9 +385,13 @@ function scrubKhronos(document: Document, origin: KhronosModelOrigin): void {
   }
   const scrub = new Set(origin.scrub ?? []);
   for (const material of root.listMaterials()) {
-    if (banned.has(imageKey(material.getBaseColorTexture()) ?? "") || scrub.has(`${material.getName()}/baseColor`)) material.setBaseColorTexture(null);
-    if (banned.has(imageKey(material.getEmissiveTexture()) ?? "") || scrub.has(`${material.getName()}/emissive`)) material.setEmissiveTexture(null);
+    if (banned.has(imageKey(material.getBaseColorTexture()) ?? "") || scrub.has(`${material.getName()}/baseColor`)) clearBaseColor(material);
+    if (banned.has(imageKey(material.getEmissiveTexture()) ?? "") || scrub.has(`${material.getName()}/emissive`)) {
+      // The factor multiplies the map; with the map gone it would glow on its own, so it goes dark too.
+      material.setEmissiveTexture(null).setEmissiveFactor([0, 0, 0]);
+    }
   }
+  bakeTransmissionGlass(document);
 }
 
 interface GitHubListing {
