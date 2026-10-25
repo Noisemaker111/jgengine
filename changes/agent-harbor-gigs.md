@@ -1,3 +1,0 @@
-### Added
-
-- `createSideJobs` (`@jgengine/core/mission/sideJobs`) runs repeatable side jobs (taxi fares, deliveries, tows, street races) as data-declared kinds: seeded offers from game spots or authored routes, pickup → drops → paid/failed against a `slack + distance / speed` clock, fare `base + perMetre × distance` plus time bonus, a comfort-scaled tip from the game's `comfortLoss` rule, a back-to-back streak bonus, cooldowns, a `wager` purse by place, and `race` kinds run on `RaceState` against rival positions the game reports. `snapshot`/`restore`, `retune` and optional `persist`. Pure helpers `sideJobFare`, `sideJobDeadline`, `sideJobTip`, `sideJobStreakBonus`.

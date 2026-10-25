@@ -26,6 +26,25 @@ At publish, rename this heading to the new version and mirror the entries into
 `packages/core/src/meta/changelog.ts` (the typed `CHANGELOG` export).
 -->
 
+## 0.42.0
+
+### Migrate
+
+- **Bump lockstep SDK packages to `^0.42.0`:** `@jgengine/{core,rapier,react,ws,node,sql,convex,shell,editor,assets,navbake}`. CLI `jgengine` is `0.39.0`; `@jgengine/github` is `0.29.0`.
+
+### Added
+
+- `createSideJobs` (`@jgengine/core/mission/sideJobs`) runs repeatable side jobs (taxi fares, deliveries, tows, street races) as data-declared kinds: seeded offers from game spots or authored routes, pickup → drops → paid/failed against a `slack + distance / speed` clock, fare `base + perMetre × distance` plus time bonus, a comfort-scaled tip from the game's `comfortLoss` rule, a back-to-back streak bonus, cooldowns, a `wager` purse by place, and `race` kinds run on `RaceState` against rival positions the game reports. `snapshot`/`restore`, `retune` and optional `persist`. Pure helpers `sideJobFare`, `sideJobDeadline`, `sideJobTip`, `sideJobStreakBonus`.
+- `OnDeathSpec.keep`: an entity whose game owns its death (a downed window, a revive in place) stays in the scene on a lethal hit; `entity.died` fires with `kept: true`, drops and commands still run. `deathRemovesEntity(event)` tells presentation whether the body left, and ragdolls, the dead flag and the death clip skip a kept death.
+- `planInteriorDressing` and `interiorWallRuns` (`@jgengine/core/world/interiorDressing`) plan an interior's trims, pipe runs with brackets and valves, sagging cables, stains, wall lamps and wall clutter slots from its room footprints, deterministic per seed, with kept-clear spots and a walkway left open. `nearestFixtures` picks the lamps nearest an eye for a light pool.
+- `InteriorDressing` and `PracticalLights` (`@jgengine/shell/render/InteriorDressing`) draw a plan in a handful of instanced draws (static shape batches, one merged cable mesh, one instanced decal mesh per stain style) and light the nearest lamps from a fixed, shadow-capped spot-light pool.
+- Decal styles `grime`, `leak`, `rust` and `wet`.
+- `postProcessing.atmosphere.indoor` keeps the haze running with no shadow-casting sun, and `atmosphere.lamps` makes the nearest point and spot lights (up to eight) glow in it. A light with `userData.haze === false` never glows.
+
+### Fixed
+
+- A hit is lethal only when it empties the target's last pool, not when it lands on a pool already at its floor.
+
 ## 0.41.0
 
 ### Migrate
