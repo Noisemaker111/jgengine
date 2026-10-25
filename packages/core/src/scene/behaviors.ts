@@ -25,6 +25,13 @@ export interface PursueBehavior {
   cooldownMode?: CooldownMode;
   /** Opt into a per-instance table available through `behaviorControl(ctx).threat(id)`. */
   threat?: ThreatTableConfig;
+  /**
+   * Entity whose side this one keeps: home moves with it, the leash is measured from it, and with no
+   * target the entity walks back to within a couple of metres of it. A pet, an escort, a tamed beast.
+   */
+  anchor?: string;
+  /** Entity catalog ids it attacks on sight instead of players: a guard that hunts raiders. */
+  hunts?: readonly string[];
 }
 
 export interface WanderBehavior {
@@ -100,6 +107,7 @@ export function pursue(options: Omit<PursueBehavior, "kind">): PursueBehavior {
   }
   if (!Number.isFinite(options.attack.amount)) throw new Error("pursue: attack amount must be finite");
   return { ...options, kind: "pursue", attack: { ...options.attack },
+    ...(options.hunts === undefined ? {} : { hunts: [...options.hunts] }),
     ...(options.threat === undefined ? {} : { threat: { ...options.threat } }) };
 }
 

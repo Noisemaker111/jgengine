@@ -3057,6 +3057,7 @@
 - `GameSpecActInput` (interface): interface GameSpecActInput — Input of the `<id>.act` command.
 - `GameSpecDecl` (interface): interface GameSpecDecl — Everything a game is, as data plus the code hooks the data names.
 - `GameSpecPlaceInput` (interface): interface GameSpecPlaceInput — Input of the `<id>.place` command.
+- `GameSpecShow` (interface): interface GameSpecShow — How a placed kind appears in the scene: one entity per built instance, with the instance's id.
 - `defineGameSpec` (function): function defineGameSpec(spec: GameSpecDecl): GameSpec — Turn a game declaration into an installable engine system with commands `<id>.place`, `<id>.remove`, `<id>.act`, `<id>.cancel` and `<id>.job.start`.
 
 ## @jgengine/core/worldModel/worldModel

@@ -12,6 +12,7 @@ import { defineSystem, type SystemDefinition } from "../game/defineSystem";
 import type { GameContext } from "../runtime/gameContext";
 import { perContext } from "../runtime/perContext";
 import { defineStore, type StoreHandle } from "../store/defineStore";
+import type { EntityRole } from "../scene/entityStore";
 import type { ScenePoint3 } from "../world/sceneShapes";
 import {
   createWorldModel,
@@ -29,6 +30,16 @@ import {
   type WorldRemoved,
 } from "./worldModel";
 
+/** How a placed kind appears in the scene: one entity per built instance, with the instance's id. */
+export interface GameSpecShow {
+  /** Entity catalog id to spawn (default: the instance's kind). */
+  entity?: string;
+  /** Scene role (default `"prop"`). */
+  role?: EntityRole;
+  /** Facing in radians. */
+  rotationY?: number;
+}
+
 /** Everything a game is, as data plus the code hooks the data names. */
 export interface GameSpecDecl {
   /** Store and command prefix: `<id>.place`, `<id>.act`, the `<id>.world` store. */
@@ -42,6 +53,17 @@ export interface GameSpecDecl {
   outputs?: Readonly<Record<string, (ctx: GameContext, amount: number, event: WorldEvent) => void>>;
   /** Pay a job's mission rewards through the game's own wallet. */
   onReward?(ctx: GameContext, rewards: MissionRewards, jobId: string): void;
+  /**
+   * Kinds (or tags) whose built instances the engine puts on screen itself: spawned on the ground at
+   * the instance's slot or cell when ready, despawned when removed, and rebuilt after a save loads.
+   * `true` spawns the kind's own catalog entry as a prop. `onReady`/`onRemoved`/`onRestored` still run.
+   */
+  show?: Readonly<Record<string, GameSpecShow | true>>;
+  /**
+   * Start the next story job by itself whenever none is running, so a campaign plays straight
+   * through without the player opening a contact. Side jobs still wait to be started.
+   */
+  autoStart?: boolean;
   /** Put a finished build on screen (spawn its entity). */
   onReady?(ctx: GameContext, instance: WorldInstanceView): void;
   /** Take a removed instance off screen; `removed.refund` is what came back. */
@@ -122,6 +144,35 @@ export function defineGameSpec(spec: GameSpecDecl): GameSpec {
   });
 
   const restorePending = perContext((_ctx: GameContext) => ({ value: true }));
+  const shown = perContext((_ctx: GameContext) => new Set<string>());
+  const showOf = (kind: string): GameSpecShow | null => {
+    if (spec.show === undefined) return null;
+    const direct = spec.show[kind];
+    if (direct !== undefined) return direct === true ? {} : direct;
+    for (const tag of def.kinds?.[kind]?.tags ?? []) {
+      const tagged = spec.show[tag];
+      if (tagged !== undefined) return tagged === true ? {} : tagged;
+    }
+    return null;
+  };
+  const showInstance = (ctx: GameContext, instance: WorldInstanceView) => {
+    const show = showOf(instance.kind);
+    if (show === null || instance.position === null) return;
+    if (shown(ctx).has(instance.id) && ctx.scene.entity.get(instance.id) !== null) return;
+    const [x, z] = instance.position;
+    ctx.scene.entity.despawn(instance.id);
+    ctx.scene.entity.spawn(show.entity ?? instance.kind, {
+      id: instance.id,
+      position: [x, ctx.world.groundHeightAt(x, z), z],
+      role: show.role ?? "prop",
+      ...(show.rotationY === undefined ? {} : { rotationY: show.rotationY }),
+    });
+    shown(ctx).add(instance.id);
+  };
+  const hideInstance = (ctx: GameContext, id: string) => {
+    if (!shown(ctx).delete(id)) return;
+    ctx.scene.entity.despawn(id);
+  };
   const closed = (ctx: GameContext) => {
     const message = spec.accepting?.(ctx) ?? null;
     return message === null ? null : { reason: "closed", message };
@@ -187,15 +238,34 @@ export function defineGameSpec(spec: GameSpecDecl): GameSpec {
       if (pending.value) {
         pending.value = false;
         const built = world.instances().filter((instance) => instance.ready);
+        const standing = new Set(built.map((instance) => instance.id));
+        // A load can drop instances the previous world had on screen.
+        for (const id of [...shown(ctx)]) if (!standing.has(id)) hideInstance(ctx, id);
+        for (const instance of built) showInstance(ctx, instance);
         // Whatever onRestored put back is not reported again as newly built this frame.
         if (built.length > 0 && spec.onRestored !== undefined) {
           for (const instance of built) restored.add(instance.id);
           spec.onRestored(ctx, built);
         }
       }
+      if (spec.autoStart === true && closed(ctx) === null) {
+        const next = world.next();
+        const job = next?.jobId == null ? null : world.job(next.jobId);
+        if (job !== null && job.kind === "story" && job.status === "available") {
+          const event = world.startJob(job.id);
+          if (event !== null) spec.onJob?.(ctx, event);
+        }
+      }
       const result = world.tick(dt, spec.input?.(ctx) ?? {});
-      for (const instance of result.ready ?? []) if (!restored.has(instance.id)) spec.onReady?.(ctx, instance);
-      for (const removed of result.removed ?? []) spec.onRemoved?.(ctx, removed);
+      for (const instance of result.ready ?? []) {
+        if (restored.has(instance.id)) continue;
+        showInstance(ctx, instance);
+        spec.onReady?.(ctx, instance);
+      }
+      for (const removed of result.removed ?? []) {
+        hideInstance(ctx, removed.id);
+        spec.onRemoved?.(ctx, removed);
+      }
       for (const entry of result.landed ?? []) spec.onLanded?.(ctx, entry.action, entry.target);
       for (const event of result.jobs) spec.onJob?.(ctx, event);
     },
