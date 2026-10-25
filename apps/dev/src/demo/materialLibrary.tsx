@@ -8,6 +8,7 @@ import { MaterialAssetSurface } from "@jgengine/shell/render/materialAsset";
 import { TriplanarAssetMaterial } from "@jgengine/shell/render/triplanarMaterial";
 
 import { demoGame } from "./demoGame";
+import { MATERIAL_SHEET_FLAT as FLAT } from "./materialLibraryFlat";
 
 /** Where `assets pull library --dir apps/dev/public/library-materials` writes the maps. */
 const BASE_PATH = "/library-materials/materials";
@@ -26,13 +27,6 @@ const SPACING = 1.2;
 const INSPECTION_TILE_METRES = Number(params.get("tile") ?? "0.9");
 /** Blend sharpness override, for judging the three projections independently. */
 const SHARPNESS = Number(params.get("sharp") ?? "8");
-
-/** One flat stand-in colour per group, used only by `?sheet=flat` to show what a placeable lacks. */
-const FLAT: Record<LibraryGroup, string> = {
-  asphalt: "#55575a", concrete: "#9a9a96", stucco: "#c9c2b4", brick: "#8d5b48", tile: "#a9a49b",
-  metal: "#8e949a", wood: "#7d5a3c", foliage: "#5c7a3d", ground: "#8a7a5c", fabric: "#a8a49c",
-  stone: "#b5b2ac", glass: "#a9c4c9", water: "#37555e",
-};
 
 /** Geometry without a `uv` attribute: the triplanar path must still show a textured surface. */
 function sphereFor(mode: "uv" | "triplanar"): THREE.SphereGeometry {

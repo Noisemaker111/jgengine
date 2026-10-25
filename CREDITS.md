@@ -15,6 +15,11 @@ glass entry adds ambientCG's `Fingerprints001` normal so glass is not mathematic
 
 Environment-map capture examples use free CC0 HDRIs from [Poly Haven](https://polyhaven.com/hdris).
 
+The realistic model library (`@jgengine/assets/catalogs/modelLibrary`) names 58 CC0 models from
+[Poly Haven](https://polyhaven.com/models). Each entry records its Poly Haven page and the authors
+Poly Haven credits (Josh Dean, James Ray Cock, Rico Cilliers, Rob Tuytel and others); the SDK ships
+the names only, and `assets pull` fetches the bytes from Poly Haven's own API and CDN.
+
 JGengine stands on the shoulders of open work by others.
 This file records that debt and thanks the people whose projects shaped ours.
 

@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 
 import { createAssetBudgetReport, type AssetBudget } from "../assetBudget";
 import { MATERIAL_LIBRARY } from "../catalogs/materialLibrary";
+import { MODEL_LIBRARY, findLibraryModelByName } from "../catalogs/modelLibrary";
 import { downloadPackArchive, extractGlbs, extractSpriteFiles } from "../download";
 import { type AssetKind, type AssetMatch, rankAssets } from "../find";
 import { generatedIndex } from "../generated";
@@ -13,6 +14,7 @@ import { generatedSpriteIndex } from "../generated-sprites";
 import { reindex } from "../indexGen";
 import { isScrapeDownload, type AssetSource, type SingleAsset } from "../manifest";
 import { extractMaterialMaps } from "../materials";
+import { pullLibraryModel } from "../modelLibraryPull";
 import { validateAssetReferences } from "../provisioning";
 import { registryCatalog } from "../registry";
 import {
@@ -187,6 +189,30 @@ export async function cmdPull(argv: string[]): Promise<void> {
       await cmdPull([entry.source, ...argv.slice(1)]);
     }
     console.log(`library: ${pulled.size} material(s) ready`);
+    return;
+  }
+  // `model:<name>` pulls one realistic library model; `model-library` pulls every Poly Haven entry.
+  if (sourceId === "model-library" || sourceId.startsWith("model:")) {
+    const outRoot = flag(argv, "dir") !== undefined ? resolve(flag(argv, "dir")!) : resolveDefaultOutputRoot(here);
+    const modelsRoot = join(outRoot, "models");
+    const entries =
+      sourceId === "model-library"
+        ? MODEL_LIBRARY.filter((entry) => entry.origin.provider === "polyhaven")
+        : [findLibraryModelByName(sourceId.slice("model:".length)) ?? fail(`unknown library model: ${sourceId.slice(6)}`)];
+    let total = 0;
+    for (const entry of entries) {
+      if (isPopulated(join(modelsRoot, "library", ...entry.name.split("/"))) && !argv.includes("--force")) {
+        console.log(`${entry.name}: already pulled`);
+        continue;
+      }
+      const pulled = await pullLibraryModel(entry, { modelsRoot, fetchImpl: cliFetch });
+      total += pulled.bytes;
+      console.log(
+        `${entry.name}: ${pulled.nearTriangles} / ${pulled.farTriangles} tris, ` +
+          `${(pulled.bytes / 1e6).toFixed(2)} MB, ${pulled.size.map((v) => v.toFixed(2)).join(" x ")} m -> ${pulled.dir}`,
+      );
+    }
+    console.log(`model library: ${entries.length} model(s), ${(total / 1e6).toFixed(2)} MB written`);
     return;
   }
   const source = sourceById.get(sourceId);

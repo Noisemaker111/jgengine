@@ -192,6 +192,16 @@ function EntityMarker({
   );
 }
 
+/**
+ * Whether an object draws its catalog model through a per-placement scale group. A scaled
+ * placement skips the per-catalog bounds measurement, which would otherwise record one instance's
+ * stretched size as every instance's footprint.
+ * @capability scaled-object-model stretch one placement of a catalog model with visual.scale
+ */
+export function drawsScaledModel(object: Pick<SceneObject, "visual">): boolean {
+  return object.visual?.scale !== undefined;
+}
+
 function ObjectMarker({
   object,
   custom,
@@ -228,7 +238,13 @@ function ObjectMarker({
           {custom}
         </MeasuredBoundsGroup>
       ) : model !== undefined ? (
-        <IsolatedEntityModel model={model} instanceId={instanceId} measure={{ target: "object", key: object.catalogId }} />
+        !drawsScaledModel(object) ? (
+          <IsolatedEntityModel model={model} instanceId={instanceId} measure={{ target: "object", key: object.catalogId }} />
+        ) : (
+          <group scale={[scaleX, scaleY, scaleZ]}>
+            <IsolatedEntityModel model={model} instanceId={instanceId} />
+          </group>
+        )
       ) : style?.hidden === true ? null : (
         <mesh position-y={0.5 * scaleY} scale={[scaleX, scaleY, scaleZ]} castShadow receiveShadow>
           <boxGeometry args={[1, 1, 1]} />

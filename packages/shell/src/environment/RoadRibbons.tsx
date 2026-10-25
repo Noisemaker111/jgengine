@@ -36,10 +36,16 @@ import { useTerrainQuality } from "../terrain/terrainQuality";
 const MARKING_LIFT = GROUND_DECAL_LAYERS.marking - GROUND_DECAL_LAYERS.road;
 const CURB_LIFT = 0.02;
 /**
- * Sidewalk top above the carriageway: a real 14 cm kerb over the gutter, the same step the generated
- * city draws (`CityRenderer`'s road 0.16 -> sidewalk 0.32). A 4 cm lip read as paint on the road.
+ * Default kerb height over the gutter, the same step the generated city draws (`CityRenderer`'s road
+ * 0.16 -> sidewalk 0.32). A 4 cm lip read as paint on the road; a road sets its own with `sidewalk.kerb`.
  */
-const SIDEWALK_LIFT = 0.16;
+const DEFAULT_KERB = 0.14;
+
+/** Sidewalk top above the carriageway: the gutter lift plus the road's kerb. @internal */
+export function sidewalkLiftOf(road: Pick<RoadEnvironmentDescriptor, "sidewalk">): number {
+  const kerb = road.sidewalk === false ? DEFAULT_KERB : road.sidewalk.kerb ?? DEFAULT_KERB;
+  return CURB_LIFT + Math.max(0, kerb);
+}
 /** Default paving slab length along the kerb, metres; across, the sidewalk divides into whole slabs near this. */
 const SLAB_METRES = 1.5;
 
@@ -71,6 +77,7 @@ export function buildKerbFaces(
   sidewalkWidth: number,
   sampleHeight: (x: number, z: number) => number,
   elevation: number,
+  sidewalkLift: number = CURB_LIFT + DEFAULT_KERB,
 ): BufferGeometry | null {
   const positions: number[] = [];
   const indices: number[] = [];
@@ -88,8 +95,8 @@ export function buildKerbFaces(
   };
   for (const path of paths) {
     for (const side of [1, -1]) {
-      strip(offsetPath(path, (roadWidth / 2) * side), elevation + CURB_LIFT - 0.01, elevation + SIDEWALK_LIFT);
-      strip(offsetPath(path, (roadWidth / 2 + sidewalkWidth) * side), -0.05, elevation + SIDEWALK_LIFT);
+      strip(offsetPath(path, (roadWidth / 2) * side), elevation + CURB_LIFT - 0.01, elevation + sidewalkLift);
+      strip(offsetPath(path, (roadWidth / 2 + sidewalkWidth) * side), -0.05, elevation + sidewalkLift);
     }
   }
   if (positions.length === 0) return null;
@@ -332,15 +339,18 @@ export function RoadRibbons({
     const ribbons: RoadRibbon[] = [];
     for (const path of paths) {
       for (const off of [offset, -offset]) {
-        ribbons.push(buildRoadRibbon(offsetPath(path, off), width, (x, z) => field.sampleHeight(x, z), { elevation: road.elevation + SIDEWALK_LIFT }));
+        ribbons.push(buildRoadRibbon(offsetPath(path, off), width, (x, z) => field.sampleHeight(x, z), { elevation: road.elevation + sidewalkLiftOf(road) }));
       }
     }
     return mergeRibbons(ribbons);
   }, [paths, road, field]);
   const sidewalkWidth = sidewalkWidthOf(road);
   const kerbs = useMemo(
-    () => (sidewalkWidth <= 0 ? null : buildKerbFaces(paths, road.width, sidewalkWidth, (x, z) => field.sampleHeight(x, z), road.elevation)),
-    [paths, road.width, sidewalkWidth, road.elevation, field],
+    () =>
+      sidewalkWidth <= 0
+        ? null
+        : buildKerbFaces(paths, road.width, sidewalkWidth, (x, z) => field.sampleHeight(x, z), road.elevation, sidewalkLiftOf(road)),
+    [paths, road, sidewalkWidth, field],
   );
 
   const quality = useTerrainQuality();

@@ -52,6 +52,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `libraryBuildingSurface` (function) · `import { libraryBuildingSurface } from "@jgengine/assets/catalogs/materialLibrary"`
 
+## library-model — draw a realistic library model at real size with its near and far LOD
+
+- `libraryModel` (function) · `import { libraryModel } from "@jgengine/assets"`
+
 ## library-surface-parameters — carry a named library material's response into authored overrides
 
 - `librarySurfaceParameters` (function) · `import { librarySurfaceParameters } from "@jgengine/assets/catalogs/materialLibrary"`
@@ -76,6 +80,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## material-surface-validation — diagnose unsupported or physically invalid sparse surface edits
 
 - `validateMaterialSurface` (function) · `import { validateMaterialSurface } from "@jgengine/core/material/materialAsset"`
+
+## model-library — ask for a realistic licensed model by what it is ("street lamp", "office desk")
+
+- `findLibraryModel` (function) · `import { findLibraryModel } from "@jgengine/assets"`
 
 ## sources-for-asset-ids — resolve the asset packs behind the ids a game actually ships
 

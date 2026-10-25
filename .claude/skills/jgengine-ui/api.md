@@ -2745,6 +2745,7 @@
 ## @jgengine/shell/devtools/TunePanel
 
 - `TunePanel` (function): function TunePanel({ gameName }: { gameName: string }): React.JSX.Element — ⚠ undocumented
+- `tuneControlLabels` (function): function tuneControlLabels(name: string): { range: string; number: string } — Accessible names for one tunable's inputs: the number field answers to the control name itself, so `drive --fill "<name>=<value>"` and a screen reader both find it; the range is `<name> slider`.
 
 ## @jgengine/shell/devtools/agentBridge
 
@@ -4179,6 +4180,7 @@
 
 - `RemotePlayers` (function): function RemotePlayers({ rows, presenceInterpolationMs = 100 }: { rows: PresencePoseRow[]; presenceInterpolationMs?: number }): React.JSX.Element — ⚠ undocumented
 - `WorldView` (function): function WorldView({ entitySprites, entityModels, objectModels, objectStyles, environment, assets, renderEntity, renderObject, selectedIds, hideLocalActor, editorLayers, }: { entitySprites: Record<string, EntitySpriteConfig> | undefined; entityModels: Record<string, string | ModelConfig> | undefined… — ⚠ undocumented
+- `drawsScaledModel` (function): function drawsScaledModel(object: Pick<SceneObject, "visual">): boolean — Whether an object draws its catalog model through a per-placement scale group. A scaled placement skips the per-catalog bounds measurement, which would otherwise record one instance's stretched size as every instance's footprint.
 
 ## @jgengine/shell/world/entityPose
 

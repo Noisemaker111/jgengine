@@ -223,3 +223,15 @@ test("shared source promotion and rim hooks are applied once per material", () =
   (a.material as THREE.MeshStandardMaterial).onBeforeCompile(shader as never, {} as THREE.WebGLRenderer);
   expect(shader.fragmentShader.split("uniform vec3 uJgRimColor;").length - 1).toBe(1);
 });
+
+describe("applyMaterialOverride materials", () => {
+  test("touches only the named materials", () => {
+    const paint = new THREE.MeshStandardMaterial({ color: "#ffffff", name: "paint" });
+    const glass = new THREE.MeshStandardMaterial({ color: "#ffffff", name: "glass" });
+    const group = new THREE.Group();
+    group.add(new THREE.Mesh(new THREE.BoxGeometry(), paint), new THREE.Mesh(new THREE.BoxGeometry(), glass));
+    applyMaterialOverride(group, { color: "#ff0000", materials: ["paint"] }, { clone: false });
+    expect(paint.color.getHexString()).toBe("ff0000");
+    expect(glass.color.getHexString()).toBe("ffffff");
+  });
+});

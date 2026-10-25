@@ -70,10 +70,21 @@ Material sources declare the map roles in their pinned archive through `AssetSou
 - Geometry without a `uv` attribute renders through `@jgengine/shell/render/triplanarMaterial` (`TriplanarAssetMaterial`, `useTriplanarAssetMaterial`, or `applyTriplanarProjection` on an owned material). It projects colour, normal, roughness and AO from world position at the asset's tile size, and instanced meshes project in instanced space. Use it for generated or imported world geometry; keep UV-mapped models on the ordinary path.
 - Metals need an environment to reflect. A metal entry under a bare clear colour reads as coloured chrome — pair `metal/*` with `EnvironmentLighting` or an authored sky.
 
+## Realistic model library
+
+`@jgengine/assets/catalogs/modelLibrary` is the realistic counterpart to the kit packs: `MODEL_LIBRARY` names 58 real-world-scale CC0 scans from [Poly Haven](https://polyhaven.com/models) across nine genres (`city`, `park`, `nature`, `creature`, `survival`, `industrial`, `scifi`, `tower-defense`, `office`). Ask by intent, draw by name:
+
+- `findLibraryModel("streetlight", { genre })` ranks entries by their `intents`, then title words. An empty answer with a `libraryModelGap(query)` means the library knows it has nothing realistic yet (cars, humans, palms, server racks, animals, robots) and names the route to close it; do not substitute a stylized kit model and call it realistic.
+- `libraryModel("city/street-lamp")` is the `ModelConfig`: real size (no `targetHeight` unless you pass one), grounded at its origin, with `near.gltf`/`far.gltf` switched at `farDistance` (default 40 m). Override materials with `material: { ..., materials: ["<material name>"] }` to touch one part, such as a lamp's glass.
+- `assets pull model:<name> --dir <public>` (or `model-library` for all 58, about 28 MB) fetches the 1k glTF from Poly Haven's API, checks every file against its published md5, halves textures to 512 px, simplifies to the entry's `near`/`far` triangle ratios, meshopt-compresses both levels and writes them with one shared texture set under `public/models/library/<name>/`. The games repo's `provision` pulls every library name a game's source quotes.
+- Credits follow from names: `libraryModelCredits(names)` gives one line per model with title, author, license and page. Every entry stores `author`, `license` and `homepage`.
+- Generated models (text- or image-to-3D) enter as `origin: { provider: "generated", generator, prompt, file }`: the game generates, reviews and commits the GLB under `/models/generated/`, records the generator's output terms as `license`, and `libraryModel` serves it. The library never calls or pays for a generator.
+- A new entry needs a single object at real scale; Poly Haven packs that ship variants side by side take `keep` (a node-name regex), and multi-piece modular kits or multi-million-triangle trees do not belong in the library.
+
 ## Source rules
 
 - Never use or reference Kenney.nl assets.
-- Prefer Quaternius or KayKit for CC0 3D, game-icons.net for icons, and ambientCG for PBR.
+- Prefer the realistic model library (Poly Haven CC0) when a game wants a realistic look; Quaternius or KayKit for a stylized one; game-icons.net for icons; ambientCG for PBR.
 - Preserve third-party license and attribution data with the catalog entry.
 - A permissive source allows copying assets, not transplanting another game's implementation.
 

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";import { useFrame } from "@react-three/fiber";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";import { useFrame } from "@react-three/fiber";
 import { PresentationAssetBoundary } from "../presentationRecovery";
 import { PresentationRecoveredDraw, useRecoverableTexture } from "../presentationRecovery3d";
 import * as THREE from "three";
@@ -14,6 +14,7 @@ import type {
   GrassEnvironmentDescriptor,
   OceanEnvironmentDescriptor,
   RainEnvironmentDescriptor,
+  RoadEnvironmentDescriptor,
   SnowEnvironmentDescriptor,
   TerrainEnvironmentDescriptor,
   TerrainMaterialMaps,
@@ -529,6 +530,21 @@ function Structures({ structures, field }: { structures: BuildingEnvironmentDesc
   );
 }
 
+const NO_ROADS: readonly RoadEnvironmentDescriptor[] = [];
+const NO_SUBSCRIPTION = () => () => {};
+
+/** The roads to draw: the live source when the world declares one, else the boot list. */
+function useLiveRoads(feature: EnvironmentWorldFeature): readonly RoadEnvironmentDescriptor[] {
+  const source = feature.roadSource;
+  const fallback = feature.roads ?? NO_ROADS;
+  const subscribe = useCallback(
+    (listener: () => void) => (source === undefined ? NO_SUBSCRIPTION() : source.subscribe(listener)),
+    [source],
+  );
+  const read = useCallback(() => (source === undefined ? fallback : source.current()), [source, fallback]);
+  return useSyncExternalStore(subscribe, read, read);
+}
+
 export function EnvironmentScene({ feature }: EnvironmentSceneProps) {
   const field = useMemo(() => resolveEnvironmentField(feature), [feature]);
   const vegetation = feature.vegetation ?? [];
@@ -536,7 +552,7 @@ export function EnvironmentScene({ feature }: EnvironmentSceneProps) {
   const structures = feature.structures ?? [];
   const pads = feature.pads ?? [];
   const islands = feature.islands ?? [];
-  const roads = feature.roads ?? [];
+  const roads = useLiveRoads(feature);
   const junctions = useMemo(() => findRoadJunctions(roads), [roads]);
   const roadNetwork = useMemo(
     () => buildAuthoredRoadNetwork(roads, junctions, (x, z) => field.sampleHeight(x, z)),

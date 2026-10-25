@@ -549,11 +549,12 @@ export interface RoadEnvironmentConfig {
   /** Lift above the terrain to avoid z-fighting; stagger overlapping roads. Default 0.08. */
   elevation?: number;
   /**
-   * Sidewalk bands on both edges, raised a 14 cm kerb above the carriageway; `false` for none.
+   * Sidewalk bands on both edges, raised a kerb above the carriageway; `false` for none.
    * Default `{ width: 2.6, color: "#a7adb8" }`. `slabs` is the paving slab length in metres, joints
    * square to the kerb (default 1.5); `false` for none, as a paver scan carries its own joints.
+   * `kerb` is the kerb height in metres (default 0.14; US kerbs run 0.15).
    */
-  sidewalk?: { width?: number; color?: string; slabs?: number | false } | false;
+  sidewalk?: { width?: number; color?: string; slabs?: number | false; kerb?: number } | false;
   /**
    * Procedural surface the carriageway shades with, named like terrain paint (`"asphalt"`,
    * `"gravel"`, `"dirt"`). `false` keeps flat colour. Default `"road"` (asphalt grain and tyre wear).
@@ -583,8 +584,8 @@ export interface RoadSurfaceScans {
 export type RoadEnvironmentDescriptor = { kind: "road" } & Required<
   Pick<RoadEnvironmentConfig, "path" | "width" | "color" | "markings" | "markingColor" | "elevation">
 > & {
-  /** Resolved sidewalk band, or `false` when the road has none. `slabs` absent means the 1.5 m default. */
-  sidewalk: { width: number; color: string; slabs?: number | false } | false;
+  /** Resolved sidewalk band, or `false` when the road has none. `slabs` absent means the 1.5 m default, `kerb` absent the 0.14 m kerb. */
+  sidewalk: { width: number; color: string; slabs?: number | false; kerb?: number } | false;
   /** Procedural carriageway surface; absent means `"road"`, `false` flat colour. */
   surface?: string | false;
   /** Scanned surfaces per layer, when the road declares any. */
@@ -609,6 +610,12 @@ export interface EnvironmentWorldConfig {
   structures?: EnvironmentDescriptorList<StructureEnvironmentDescriptor>;
   /** Road ribbons draped over the terrain — see `road()`. */
   roads?: EnvironmentDescriptorList<RoadEnvironmentDescriptor>;
+  /**
+   * Roads that change while the game runs, such as a city re-laid from a layout slider. The renderer
+   * draws `current()` and redraws on each notify; `roads` stays the boot value for collision and
+   * summaries. See `cityLayout`'s `cityRoadSource`.
+   */
+  roadSource?: LiveRoadSource;
   /** Ground pads, e.g. platforms or paved patches; each implicitly flattens the terrain beneath it. */
   pads?: readonly PadEnvironmentDescriptor[];
   /**
@@ -640,6 +647,15 @@ export interface EnvironmentWorldFeature {
   sculpt?: TerraformSnapshot;
   /** Clearance discs flattened into the ground — see {@link EnvironmentWorldConfig.clearings}. */
   clearings?: readonly AvoidZone[];
+  /** Live roads the renderer draws over `roads` — see {@link EnvironmentWorldConfig.roadSource}. */
+  roadSource?: LiveRoadSource;
+}
+
+/** A road list that changes at runtime: read `current()`, and `subscribe` to hear when it changed. */
+export interface LiveRoadSource {
+  current(): readonly RoadEnvironmentDescriptor[];
+  /** Calls `listener` after every change; returns the unsubscribe. */
+  subscribe(listener: () => void): () => void;
 }
 
 export interface WorldGridCell {
@@ -792,6 +808,7 @@ export function environment(config: EnvironmentWorldConfig = {}): EnvironmentWor
     ...(config.pads === undefined ? {} : { pads: config.pads }),
     ...(config.sculpt === undefined ? {} : { sculpt: config.sculpt }),
     ...(config.clearings === undefined || config.clearings.length === 0 ? {} : { clearings: config.clearings }),
+    ...(config.roadSource === undefined ? {} : { roadSource: config.roadSource }),
   };
 }
 
@@ -1038,6 +1055,7 @@ export function road(config: RoadEnvironmentConfig): RoadEnvironmentDescriptor {
             width: config.sidewalk?.width ?? 2.6,
             color: config.sidewalk?.color ?? "#a7adb8",
             ...(config.sidewalk?.slabs === undefined ? {} : { slabs: config.sidewalk.slabs }),
+            ...(config.sidewalk?.kerb === undefined ? {} : { kerb: Math.max(0, config.sidewalk.kerb) }),
           },
     ...(config.surface === undefined ? {} : { surface: config.surface }),
     ...(config.materials === undefined ? {} : { materials: config.materials }),

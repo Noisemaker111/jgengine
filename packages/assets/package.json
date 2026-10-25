@@ -39,7 +39,9 @@
     "@gltf-transform/extensions": "4.2.1",
     "@gltf-transform/functions": "4.2.1",
     "@jgengine/core": "^0.39.0",
-    "fflate": "^0.8.2"
+    "fflate": "^0.8.2",
+    "jpeg-js": "0.4.4",
+    "meshoptimizer": "0.22.0"
   },
   "devDependencies": {
     "@types/node": "^24"
