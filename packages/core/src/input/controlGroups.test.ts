@@ -23,6 +23,13 @@ describe("resolveControlGroupIntent", () => {
     expect(intent).toEqual({ kind: "bind", key: "1" });
   });
 
+  test("Shift+digit resolves to an append; Ctrl wins when both are held", () => {
+    expect(resolveControlGroupIntent({ digit: 4, bindModifier: false, appendModifier: true, now: 100, lastRecall: { key: "4", at: 90 } }))
+      .toEqual({ kind: "append", key: "4" });
+    expect(resolveControlGroupIntent({ digit: 4, bindModifier: true, appendModifier: true, now: 100, lastRecall: null }))
+      .toEqual({ kind: "bind", key: "4" });
+  });
+
   test("a bare digit with no prior recall resolves to recall", () => {
     const intent = resolveControlGroupIntent({ digit: 2, bindModifier: false, now: 100, lastRecall: null });
     expect(intent).toEqual({ kind: "recall", key: "2" });

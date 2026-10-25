@@ -12,6 +12,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `collectAuthoredTriggers` (function) · `import { collectAuthoredTriggers } from "@jgengine/shell/gameKit"`
 
+## camera-director — drive the camera at runtime (follow, rig swap, cinematic, chase tuning, FOV kick, RTS pan-to jump)
+
+- `CameraDirector` (interface) · `import { CameraDirector } from "@jgengine/core/runtime/cameraDirector"`
+
 ## chase-view-cycle — cycle a vehicle camera between chase, hood and cockpit views at runtime
 
 - `nextChaseView` (function) · `import { nextChaseView } from "@jgengine/core/runtime/cameraDirector"`

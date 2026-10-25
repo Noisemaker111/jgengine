@@ -167,6 +167,11 @@ export function nextChaseView(current: ChaseView, views: readonly ChaseView[] = 
   return views[(index + 1) % views.length]!;
 }
 
+/**
+ * Runtime camera policy at `ctx.camera`: follow target, rig overlay, cinematic, chase tuning, FOV kicks and RTS pan jumps.
+ *
+ * @capability camera-director drive the camera at runtime (follow, rig swap, cinematic, chase tuning, FOV kick, RTS pan-to jump)
+ */
 export interface CameraDirector {
   follow(entityId: string | null): void;
   /** `undefined` means no runtime override — the shell falls back to the static `playable.camera.followEntityId`. `null` means explicitly follow nothing. */
@@ -183,10 +188,18 @@ export interface CameraDirector {
   kickFov(degrees: number): void;
   /** Drain the FOV impulses queued since the last call; the shell's chase rig calls this once per frame. */
   takeFovKick(): number;
+  /**
+   * Queue a one-shot recentre of the panning rig (`rts`) on a ground point — minimap click-to-jump,
+   * control-group focus. The rig moves its pan center there on its next frame, clamped to `rts.bounds`;
+   * a later call before that frame wins. Transient: not part of {@link CameraDirector.snapshot}.
+   */
+  panTo(point: { x: number; z: number }): void;
+  /** Drain the point queued by {@link CameraDirector.panTo}, or null; the shell's RTS rig calls this once per frame. */
+  takePanTo(): { x: number; z: number } | null;
   snapshot(): CameraDirectorSnapshot;
   /** Invalid state throws before changing any camera field. */
   restore(state: CameraDirectorSnapshot): void;
-  /** Clear runtime policy and transient FOV kicks; configured camera data remains untouched. */
+  /** Clear runtime policy, transient FOV kicks and a queued pan jump; configured camera data remains untouched. */
   reset(): void;
   subscribe(listener: () => void): () => void;
 }
@@ -199,6 +212,7 @@ export function createCameraDirector(): CameraDirector {
   let chaseTuningPatch: ChaseCameraTuning | null = null;
   let rigOverride: CameraRigOverride | null = null;
   let pendingFovKick = 0;
+  let pendingPan: { x: number; z: number } | null = null;
 
   function notify(): void {
     for (const listener of listeners) listener();
@@ -234,6 +248,14 @@ export function createCameraDirector(): CameraDirector {
       pendingFovKick = 0;
       return kick;
     },
+    panTo(point) {
+      if (Number.isFinite(point.x) && Number.isFinite(point.z)) pendingPan = { x: point.x, z: point.z };
+    },
+    takePanTo() {
+      const pan = pendingPan;
+      pendingPan = null;
+      return pan;
+    },
     snapshot: () => JSON.parse(JSON.stringify({ ...(followEntity === undefined ? {} : { followEntityId: followEntity }), rig: rigOverride, cinematic: cinematicConfig, chase: chaseTuningPatch }, (_key, value) => {
       if (value === Infinity) return { $cameraNumber: "Infinity" };
       if (typeof value === "number" && !Number.isFinite(value)) throw new Error("invalid camera number");
@@ -247,6 +269,7 @@ export function createCameraDirector(): CameraDirector {
       cinematicConfig = decoded.cinematic;
       chaseTuningPatch = decoded.chase;
       pendingFovKick = 0;
+      pendingPan = null;
       notify();
     },
     reset() {
@@ -255,6 +278,7 @@ export function createCameraDirector(): CameraDirector {
       cinematicConfig = null;
       chaseTuningPatch = null;
       pendingFovKick = 0;
+      pendingPan = null;
       notify();
     },
     subscribe(listener) {

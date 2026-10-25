@@ -61,6 +61,7 @@ import type { ObjectRaycastHit, ObjectRaycastInput } from "../scene/objectQuery"
 import type { ObjectStore } from "../scene/objectStore";
 import type { Roster } from "../scene/roster";
 import type { SelectionSet } from "../scene/selection";
+import type { SelectionBookmarks } from "../scene/selectionBookmarks";
 import type { ConnectedPlayers } from "../game/connectedPlayers";
 import type { Possession } from "../scene/possession";
 import type { SceneRaycastHit, SceneRaycastInput } from "../scene/sceneRaycast";
@@ -321,6 +322,13 @@ export interface SceneEntityContext {
    * Mutations bump `ctx.version()`/notify `ctx.subscribe`; despawned ids drop out.
    */
   selection: SelectionSet;
+  /**
+   * Saved entity sets keyed by opaque strings — the RTS control groups `pointer.controlGroups` binds
+   * (Ctrl+digit), appends (Shift+digit) and recalls (digit) under keys `"0"`…`"9"`. HUDs read
+   * `keys()`/`size(key)`/`recall(key)` for a group bar; games may also write it. Mutations notify
+   * `ctx.subscribe`; a despawned id drops out of every group.
+   */
+  controlGroups: SelectionBookmarks;
   setTarget(fromId: string, toId: string | null): void;
   getTarget(fromId: string): string | null;
   cycleTarget(fromId: string, options?: CycleTargetOptions): string | null;

@@ -1,3 +1,4 @@
+import type { ControlGroupOptions } from "../input/controlGroups";
 import type { AnimGraph } from "../anim/animGraph";
 import type { AmbienceZoneDef } from "../audio/ambience";
 import type { AudioBusDef, SoundDef } from "../audio/audioFalloff";
@@ -91,7 +92,7 @@ export { CAMERA_FRUSTUM_DEFAULTS } from "./cameraConfig";
 /**
  * Mouse/touch pointer bindings for `defineGame({ pointer })`.
  *
- * @capability pointer-commands click an entity or the ground to run a command (click-to-target, click-to-move, grab loot, marquee select)
+ * @capability pointer-commands click an entity or the ground to run a command (click-to-target, click-to-move, grab loot, marquee select, Shift/double-click select modifiers, RTS control groups)
  */
 export interface PointerConfig {
   /**
@@ -100,10 +101,26 @@ export interface PointerConfig {
    * (`ctx.scene.entity.setTarget`). Suppresses the default left-click hotbar fire.
    */
   moveCommand?: string;
-  /** Enable left-drag marquee + single-click box-select of entities (RTS unit command). */
+  /**
+   * Enable left-drag marquee + single-click select of entities (RTS unit command), written to
+   * `ctx.scene.entity.selection`. Shift+click toggles an entity in or out, Shift+drag adds the box to
+   * the selection, and double-click or Ctrl+click selects every on-screen entity of the same
+   * {@link PointerConfig.selectKind}.
+   */
   select?: boolean;
   /** Only entities matching this pass are selectable/orderable; default all non-local entities. */
   selectFilter?: (entityId: string) => boolean;
+  /** The kind a double-click or Ctrl+click matches on (e.g. the unit type); null or omitted means no same-kind select for that entity. */
+  selectKind?: (entityId: string) => string | null;
+  /**
+   * RTS control groups over `ctx.scene.entity.controlGroups` (keys `"0"`…`"9"`, or `keyPrefix` + digit):
+   * Ctrl/Cmd+digit binds the selection, Shift+digit appends it, a digit recalls (dropping ids that no
+   * longer exist or fail `selectFilter`), and a second tap within `doubleTapMs` also centres the RTS
+   * camera on the group via `ctx.camera.panTo`. Needs `select`. While on, top-row and numpad digit keys
+   * (except with Alt) no longer reach `game.input` action bindings. Inactive while typing or while a
+   * menu blocks play controls. Browsers may keep Ctrl+1…9 for tab switching outside fullscreen.
+   */
+  controlGroups?: boolean | ControlGroupOptions;
   /** Right-click on ground runs this command with `{ selection, point }` — order the selection. */
   orderCommand?: string;
   /** Right-click on an entity/object opens the target's catalog verb menu (#31). */

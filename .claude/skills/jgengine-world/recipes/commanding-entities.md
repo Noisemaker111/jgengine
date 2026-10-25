@@ -118,7 +118,13 @@ The wiring above is fixed; four independent knobs turn it into different play:
 - Marquee/box-select and right-click-to-command come from the shell pointer seam
   (`PlayableGame.pointer`: `select`, `selectFilter`, `orderCommand`) — that is the
   pointer *picker* that fills `selection` and calls `commandSelection`; see
-  `jgengine-ui` for the pointer wiring.
+  `jgengine-ui` for the pointer wiring. With `select` on, Shift+click toggles,
+  Shift+drag adds, and double-click or Ctrl+click picks every on-screen entity of the
+  same `selectKind(id)`. `controlGroups: true` (or `{ doubleTapMs, keyPrefix }`) adds
+  Ctrl+digit bind, Shift+digit add, digit recall and double-tap focus; groups live at
+  `ctx.scene.entity.controlGroups` for a HUD group bar, digits stop reaching
+  `game.input` bindings, and focus jumps the `rts` rig with `ctx.camera.panTo({ x, z })`,
+  which a minimap click can call too.
 - Pathing for `moveToward` can use `findPath` (`@jgengine/core/nav/navGrid`) over a
   walkable grid; the mover adapter is where it plugs in.
 - Formations, order preemption policies, save/replication of in-flight orders, and

@@ -126,9 +126,22 @@ export function ShellDebugOverlays({
   );
 }
 
+/** Key-down fields the shell key handlers read. @internal */
+export type ShellKeyDownEvent = {
+  code: string;
+  target?: EventTarget | null;
+  defaultPrevented?: boolean;
+  ctrlKey?: boolean;
+  metaKey?: boolean;
+  shiftKey?: boolean;
+  altKey?: boolean;
+  repeat?: boolean;
+  preventDefault: () => void;
+};
+
 /** Key handler bundle shared by HUD and 3D presentation paths. @internal */
 export type ShellKeyHandlers = {
-  onKeyDown: (event: { code: string; target?: EventTarget | null; defaultPrevented?: boolean; preventDefault: () => void }) => void;
+  onKeyDown: (event: ShellKeyDownEvent) => void;
   onKeyUp: (event: { code: string; target?: EventTarget | null }) => void;
   onBlur: () => void;
 };
@@ -141,6 +154,7 @@ export function createShellKeyHandlers({
   setDevtoolsOpen,
   controlsActive,
   exitPointerLockOnDevtools = false,
+  claimKey,
 }: {
   f2HeldRef: { current: boolean };
   tracker: { handleDown: (code: string) => void; handleUp: (code: string) => void; reset: () => void };
@@ -149,7 +163,10 @@ export function createShellKeyHandlers({
   controlsActive: () => boolean;
   /** 3D path exits pointer lock when opening devtools. */
   exitPointerLockOnDevtools?: boolean;
+  /** Play-surface key-down hook that runs before action bindings; returning true consumes the key (and its key-up). */
+  claimKey?: (event: ShellKeyDownEvent) => boolean;
 }): ShellKeyHandlers {
+  const claimed = new Set<string>();
   return {
     onKeyDown: (event) => {
       if (event.defaultPrevented) {
@@ -181,11 +198,17 @@ export function createShellKeyHandlers({
         return;
       }
       if (controlsActive()) {
+        if (claimKey?.(event) === true) {
+          event.preventDefault();
+          claimed.add(event.code);
+          return;
+        }
         if (event.code === "Tab" || event.code === "Space") event.preventDefault();
         tracker.handleDown(event.code);
       }
     },
     onKeyUp: (event) => {
+      if (claimed.delete(event.code)) return;
       if (event.code === "F2") {
         f2HeldRef.current = false;
         return;
@@ -193,6 +216,7 @@ export function createShellKeyHandlers({
       if (controlsActive()) tracker.handleUp(event.code);
     },
     onBlur: () => {
+      claimed.clear();
       f2HeldRef.current = false;
       tracker.reset();
     },
