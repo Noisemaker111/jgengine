@@ -81,6 +81,14 @@ describe("parseStepFile", () => {
     throw new Error("expected the step file to be rejected");
   };
 
+  test("refuses a hold or a poll cap on a step whose runner ignores it", () => {
+    expect(error([{ click: "Start", ms: 500 }])).toContain("steps[0]: \"ms\" is a key step's hold length");
+    expect(error([{ waitFor: "ready", ms: 500 }])).toContain("ignores it on a waitFor step");
+    expect(error([{ click: "Start", timeoutMs: 5000 }])).toContain("steps[0]: \"timeoutMs\" is waitFor's own poll cap");
+    expect(error([{ assert: "x", timeoutMs: 5000 }])).toContain("ignores it on a assert step");
+    expect(parseStepFile({ steps: [{ key: "KeyW", ms: 50 }, { waitFor: "ready", timeoutMs: 900 }] }, "proof.json").map((step) => step.kind)).toEqual(["key", "waitFor"]);
+  });
+
   test("normalizes every kind into the flag executor's step list", () => {
     const steps = parseStepFile({
       steps: [
@@ -231,6 +239,21 @@ describe("parseStepFile flows", () => {
     expect(describeFlow("to-skirmish", steps.slice(1))).toContain("4 step(s)");
     expect(describeFlow("to-skirmish", steps.slice(1))).toContain("asserts menu.ready; skirmish.started");
     expect(describeFlow("no-assert", [{ kind: "click", text: "Start" }])).toContain("asserts nothing");
+  });
+
+  test("names the included file when its step is refused", () => {
+    const broken: Record<string, unknown> = { ...flows, "to-broken": { steps: [{ click: "Start", ms: 200 }] } };
+    const message = (() => {
+      try {
+        parseStepFile({ steps: [{ flow: "to-broken" }] }, "proof.json", {
+          flows: (name: string) => (broken[name] === undefined ? undefined : { json: broken[name], source: "flows/" + name + ".json" }),
+        });
+      } catch (caught) {
+        return caught instanceof Error ? caught.message : String(caught);
+      }
+      return "";
+    })();
+    expect(message).toStartWith("flows/to-broken.json steps[0]:");
   });
 
   test("rejects a cycle by name", () => {

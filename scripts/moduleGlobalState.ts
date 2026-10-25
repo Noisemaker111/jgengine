@@ -1,3 +1,4 @@
+import { moduleGlobalName } from "../packages/jgengine/src/gameShape";
 import { scanGameLines } from "./gameSourceScan";
 import type { RatchetFinding } from "./ratchet";
 
@@ -8,9 +9,8 @@ import type { RatchetFinding } from "./ratchet";
  */
 export function findModuleGlobals(root: string, games?: readonly string[]): RatchetFinding[] {
   return scanGameLines(root, (line, rel, lineNumber) => {
-    const match = /^(?:export )?let (\w+)/.exec(line);
-    if (match === null) return null;
-    const name = match[1]!;
+    const name = moduleGlobalName(line);
+    if (name === null) return null;
     return { key: `${rel}#${name}`, where: `${rel}:${lineNumber}` };
   }, games).sort((a, b) => a.key.localeCompare(b.key));
 }

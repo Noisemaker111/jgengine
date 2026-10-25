@@ -1,6 +1,8 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 
+import { isGameSourceFile } from "../packages/jgengine/src/gameShape";
+
 /** Every non-test `.ts`/`.tsx` under each game's `src`, as repo-relative paths with their source.
  * Games now live in Noisemaker111/JGengine-games and are cloned at build time into ephemeral ./Games.
  * When the directory is absent (fresh engine checkout with no clone), return no sources rather than throwing.
@@ -15,7 +17,7 @@ export function eachGameSource(root: string, games?: readonly string[]): { rel: 
       if (statSync(path).isDirectory()) {
         if (entry === "node_modules" || entry === "dist") continue;
         walk(path);
-      } else if (/\.tsx?$/.test(entry) && !/\.test\.tsx?$/.test(entry)) {
+      } else if (isGameSourceFile(entry)) {
         files.push({ rel: relative(root, path).replace(/\\/g, "/"), source: readFileSync(path, "utf8") });
       }
     }

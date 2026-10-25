@@ -401,6 +401,10 @@ export function parseStepFile(input: unknown, source: string, options: ParseStep
     if (step.is !== undefined && kind !== "assert") throw new Error(at + ": \"is\" is the assert expectation, so it cannot sit on a " + kind + " step");
     if (step.tolerancePx !== undefined && kind !== "aimAt") throw new Error(at + ": \"tolerancePx\" sizes an aimAt target, so it cannot sit on a " + kind + " step");
     if (step.until !== undefined && kind !== "key") throw new Error(at + ": \"until\" releases a held key, so it cannot sit on a " + kind + " step");
+    if (step.ms !== undefined && kind !== "key") throw new Error(at + ": \"ms\" is a key step's hold length, so the runner ignores it on a " + kind + " step; a step that waits states a condition (waitFor) or caps one in before / after");
+    if (step.timeoutMs !== undefined && kind !== "waitFor") {
+      throw new Error(at + ": \"timeoutMs\" is waitFor's own poll cap, so the runner ignores it on a " + kind + " step; cap a condition inside before / after { \"timeoutMs\": n }");
+    }
     if (kind === "flow") return expandFlow(flowNameAt(at + ".flow", value), at, source, options, step);
     const before = step.before === undefined ? undefined : conditionAt(at + ".before", step.before);
     const after = step.after === undefined ? undefined : conditionAt(at + ".after", step.after);
@@ -509,7 +513,12 @@ function expandFlow(name: string, at: string, includeSource: string, options: Pa
     throw new Error(at + ".flow: " + (error instanceof Error ? error.message : String(error)));
   }
   if (file === undefined) throw new Error(at + ".flow: no flow named \"" + name + "\" beside " + includeSource);
-  return parseStepFile(file.json, file.source, { flows: options.flows, stack: [...stack, name] });
+  try {
+    return parseStepFile(file.json, file.source, { flows: options.flows, stack: [...stack, name] });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(message.startsWith(file.source) ? message : file.source + " " + message);
+  }
 }
 
 /** How long a step can hold the run: its action plus the cap on each condition. */
