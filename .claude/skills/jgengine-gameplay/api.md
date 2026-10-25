@@ -3110,6 +3110,17 @@
 - `GameSpecShow` (interface): interface GameSpecShow — How a placed kind appears in the scene: one entity per built instance, with the instance's id.
 - `defineGameSpec` (function): function defineGameSpec(spec: GameSpecDecl): GameSpec — Turn a game declaration into an installable engine system with commands `<id>.place`, `<id>.remove`, `<id>.act`, `<id>.cancel` and `<id>.job.start`.
 
+## @jgengine/core/worldModel/turfWar
+
+- `TurfBlockDecl` (interface): interface TurfBlockDecl — One contested block: a declared place whose `owner` and `grip` facts the war moves.
+- `TurfBlockView` (interface): interface TurfBlockView — A block as a map, the phone or the news reads it.
+- `TurfFrontDecl` (interface): interface TurfFrontDecl — One side's standing campaign: where it pushes, how often and how hard.
+- `TurfHandover` (interface): interface TurfHandover — A block changing hands, read back from a fired trigger id.
+- `TurfWar` (interface): interface TurfWar — The war expanded into world-model declarations, plus readers over the live world.
+- `TurfWarDecl` (interface): interface TurfWarDecl — A turf war between any number of sides over a set of blocks.
+- `TurfWorldReader` (interface): interface TurfWorldReader — The part of a world model the readers need.
+- `defineTurfWar` (function): function defineTurfWar(decl: TurfWarDecl): TurfWar — Expand a turf war into the world model's own declarations: blocks change hands when a side's pushes wear the grip to zero, each side's front pushes on its own clock from the blocks it holds, and the world's log, ripples and hooks carry every push. Spread `triggers`, `ripples`, `schedule` and `facts` into `defineWorldModel`; a game event (a soldier dropped on a corner) pushes by setting the block's `attacker` along with its grip change.
+
 ## @jgengine/core/worldModel/upgradePaths
 
 - `UpgradeBranchDecl` (interface): interface UpgradeBranchDecl — One exclusive branch: its own ladder, open once the trunk is climbed and no other branch is taken.

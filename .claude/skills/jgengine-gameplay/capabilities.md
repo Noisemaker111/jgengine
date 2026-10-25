@@ -801,6 +801,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `listRuleEffects` (function) · `import { listRuleEffects } from "@jgengine/core/gameplay"`
 - `registerRuleEffect` (function) · `import { registerRuleEffect } from "@jgengine/core/gameplay"`
 
+## turf-war — blocks that change hands between any number of sides, with fronts that push on their own clock
+
+- `defineTurfWar` (function) · `import { defineTurfWar } from "@jgengine/core/worldModel/turfWar"`
+
 ## typed-keyed-store — a cast-free typed handle onto a per-owner keyed family of reactive game-store slots, replayable and host-authoritative
 
 - `defineKeyedStore` (function) · `import { defineKeyedStore } from "@jgengine/core/store/defineKeyedStore"`

@@ -713,6 +713,7 @@
     "./world/windZones",
     "./world/worldSolids",
     "./worldModel/gameSpec",
+    "./worldModel/turfWar",
     "./worldModel/upgradePaths",
     "./worldModel/worldModel"
   ],
