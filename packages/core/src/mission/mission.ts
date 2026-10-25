@@ -140,6 +140,11 @@ export interface MissionObjectiveDef {
   radius?: number;
   /** Seconds the actor must hold for `survive`. */
   duration?: number;
+  /**
+   * World facts that complete a `survive` objective once they hold (after any `duration`): "lose the
+   * police" is `until: { fact: "police_tier", atMost: 0 }`, not a game-side signal.
+   */
+  until?: MissionFactCondition | readonly MissionFactCondition[];
   /** Keep-close distance (m) for `pursue`. Default {@link DEFAULT_PURSUE_DISTANCE}. */
   distance?: number;
   /** Distance (m) past which a pursuit counts as escaped. Default `distance * 3`. */
@@ -630,7 +635,8 @@ export function createMissionRuntime(config: MissionRuntimeConfig): MissionRunti
           && markerWithin(from, to, objective.radius ?? DEFAULT_REACH_RADIUS, markerPlane, markerTolerance);
       }
       case "survive":
-        return state!.objectiveElapsed >= (objective.duration ?? 0);
+        if (state!.objectiveElapsed < (objective.duration ?? 0)) return false;
+        return objective.until === undefined || conditionHolds(objective.until, input);
       case "pursue": {
         const d = pursuitDistance(objective, input);
         return d !== undefined && d <= (objective.distance ?? DEFAULT_PURSUE_DISTANCE);
@@ -1099,8 +1105,8 @@ export function validateMissionCatalog(
         `Objective "${objective.id}" is a reach goal with no marker.`);
       require(objective.kind !== "reach" || objective.actor !== undefined, "missing-actor", "actor",
         `Objective "${objective.id}" is a reach goal with no actor.`);
-      require(objective.kind !== "survive" || objective.duration !== undefined, "missing-duration", "duration",
-        `Objective "${objective.id}" is a survive goal with no duration.`);
+      require(objective.kind !== "survive" || objective.duration !== undefined || objective.until !== undefined, "missing-duration", "duration",
+        `Objective "${objective.id}" is a survive goal with no duration or until.`);
       require(objective.kind !== "pursue" || objective.actor !== undefined, "missing-target", "actor",
         `Objective "${objective.id}" is a pursuit with no target.`);
       require(!isCounterObjective(objective.kind) || objective.count !== undefined, "missing-count", "count",

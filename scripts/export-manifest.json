@@ -695,7 +695,8 @@
     "./world/weather",
     "./world/wind",
     "./world/windZones",
-    "./world/worldSolids"
+    "./world/worldSolids",
+    "./worldModel/worldModel"
   ],
   "@jgengine/rapier": [
     ".",
