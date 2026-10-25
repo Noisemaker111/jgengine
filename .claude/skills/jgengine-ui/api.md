@@ -107,7 +107,7 @@
 ## @jgengine/core/render/postProcessing
 
 - `AoConfig` (interface): interface AoConfig — Ground-truth ambient occlusion stage — darkens contact creases and cavities for depth.
-- `AtmosphereConfig` (interface): interface AtmosphereConfig — Sunlit air over the lit frame: ground haze that thickens toward the ground and with distance, brighter toward the sun, and light shafts where the sky shows through gaps. Both need a shadow-casting sun, so an interior with no sun skips them.
+- `AtmosphereConfig` (interface): interface AtmosphereConfig — Air over the lit frame: ground haze that thickens toward the ground and with distance, brighter toward the sun, light shafts where the sky shows through gaps, and a glow around every nearby point and spot light as its light scatters in the same haze. Shafts need a shadow-casting sun. With no sun the whole pass is skipped unless `indoor` is set, which keeps the haze and the lamp glow running so a sunless interior gets its air and its lit lamps.
 - `BloomConfig` (interface): interface BloomConfig — UnrealBloom stage — soft HDR glow around bright pixels (sun, glints, emissive).
 - `ContactShadowConfig` (interface): interface ContactShadowConfig — Screen-space contact shadows: a short ray toward the sun from every pixel, against the depth buffer.
 - `DEFAULT_AO` (const): const DEFAULT_AO: Readonly<AoConfig> — Contact shading used when a post chain leaves `ao` unset: soft creases, no dark halos.
@@ -3166,6 +3166,10 @@
 - `ScreenEffectsOverlay` (function): function ScreenEffectsOverlay({ controller, blendMode = "normal", zIndex = 40, animate = true, }: ScreenEffectsOverlayProps): ReactNode — A DOM overlay that renders a {@link ScreenEffectsController} as full-screen color-grade layers over the game canvas — damage vignettes, heal flashes, a sustained low-health pulse — through the shell's postfx overlay layer, so a game gets screen feedback without hand-rolling shader or overlay timing. It subscribes to the model, drives `advance()` on an animation frame (unless the game ticks it), and paints one absolutely-positioned, pointer-transparent layer per active effect at its eased opacity. Presentation only: all timing and state live in the core model, and `kind` is never interpreted here.
 - `ScreenEffectsOverlayProps` (interface): interface ScreenEffectsOverlayProps — Reskin tokens for {@link ScreenEffectsOverlay}.
 
+## @jgengine/shell/postfx/atmospherePass
+
+- `MAX_HAZE_LAMPS` (const): const MAX_HAZE_LAMPS: 8 — Point and spot lights the haze glows around at once, nearest the camera first.
+
 ## @jgengine/shell/postfx/gradeShader
 
 - `createGradePass` (function): function createGradePass(config: GradeConfig = {}): ShaderPass — Build the display-space colour-grade pass and load its optional LUT. Dispose the pass to release its LUT; advance `uniforms.uTime.value` each frame to animate grain.
@@ -3210,6 +3214,15 @@
 ## @jgengine/shell/render/HairCards
 
 - `HairCards` (function): function HairCards({ cards, material }: { cards: HairCardAuthoring; material: MaterialAsset }): React.JSX.Element — Render authored guide ribbons with explicit UVs and strand tangents; motion and collision remain caller-owned.
+
+## @jgengine/shell/render/InteriorDressing
+
+- `DEFAULT_INTERIOR_SURFACES` (const): const DEFAULT_INTERIOR_SURFACES: InteriorDressingSurfaces — Plain defaults: grey paint, dull steel, a warm lens.
+- `InteriorDressing` (function): function InteriorDressing({ plan, surfaces, cableColor = "#141414", decalSeed = "interior", decals = true }: InteriorDressingProps): React.JSX.Element — The drawn side of a planned interior: trims, pipes, fittings and lamp housings as static instance batches, every cable as one merged tube, and every stain style as one instanced decal mesh. A whole floor costs a handful of draws however many pieces it has. Pair it with {@link PracticalLights} for the lamps' light.
+- `InteriorDressingProps` (interface): interface InteriorDressingProps — Props for {@link InteriorDressing}.
+- `InteriorDressingSurfaces` (interface): interface InteriorDressingSurfaces — The surface each dressing family wears. Any family left out falls back to a plain painted default.
+- `PracticalLights` (function): function PracticalLights({ fixtures, count = 6, shadowed = 0, color = "#ffe2b0", intensity = 14, distance = 9, angle = 1.05, penumbra = 0.6, reach = 28, every = 8 }: PracticalLightsProps): React.JSX.Element — A fixed pool of spot lights that follows the camera through a planned interior, lighting the lamps nearest the eye and aiming each down and out from its wall. The pool size and shadow count never change, so walking a floor of hundreds of lamps costs the same few lights.
+- `PracticalLightsProps` (interface): interface PracticalLightsProps — Props for {@link PracticalLights}.
 
 ## @jgengine/shell/render/PartMotion
 

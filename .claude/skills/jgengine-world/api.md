@@ -3873,9 +3873,9 @@
 - `DECAL_DEFAULTS` (const): const DECAL_DEFAULTS: DecalRules — Default decal rules: a small dirt smudge lying on the ground.
 - `DECAL_KIND` (const): const DECAL_KIND: "decal" — The editor marker kind marking a surface decal.
 - `DECAL_SCHEMA` (const): const DECAL_SCHEMA: ParamSchema — The decal parameter schema — drives the inspector and the `meta` parse.
-- `DECAL_STYLES` (const): const DECAL_STYLES: readonly ["dirt", "cracks", "paint", "blood"] — The four authored decal looks; each has its own deterministic procedural texture.
+- `DECAL_STYLES` (const): const DECAL_STYLES: readonly ["dirt", "cracks", "paint", "blood", "grime", "leak", "rust", "wet"] — The authored decal looks; each has its own deterministic procedural texture. `grime` is the dark band that collects along the foot of a wall, `leak` a streak running down from a pipe or seam, `rust` a bloom of corrosion and `wet` a standing puddle that renders glossy.
 - `DecalRules` (interface): interface DecalRules — Fully-defaulted decal params parsed from a marker's `meta`.
-- `DecalStyle` (type): type DecalStyle = (typeof DECAL_STYLES)[number] — One of the four authored decal looks.
+- `DecalStyle` (type): type DecalStyle = (typeof DECAL_STYLES)[number] — One of the authored decal looks.
 - `ResolvedDecal` (interface): interface ResolvedDecal — A resolved decal: its placed point/facing plus fully-defaulted rules.
 
 ## @jgengine/core/world/envField
@@ -4054,6 +4054,24 @@
 ## @jgengine/core/world/grounded
 
 - `grounded` (function): function grounded(ctx: Pick<GameContext, "world">, x: number, z: number): readonly [number, number, number] — Ground an XZ point onto the live world surface as `[x, groundY, z]`.
+
+## @jgengine/core/world/interiorDressing
+
+- `InteriorBox` (interface): interface InteriorBox — A box in world space, rotated about Y. `role` names what it dresses.
+- `InteriorCable` (interface): interface InteriorCable — A cable hung between anchors, already sampled into a sagging polyline.
+- `InteriorClearance` (interface): interface InteriorClearance — A point or circle the dressing must keep clear: a door, lift, pickup or spawn.
+- `InteriorClutterSlot` (interface): interface InteriorClutterSlot — A spot against a wall a game may fill with a prop of at most `depth` × `width`.
+- `InteriorDecal` (interface): interface InteriorDecal — A stain on a wall (standing, facing `normal`) or on the floor (lying flat).
+- `InteriorDecalStyle` (type): type InteriorDecalStyle = Extract<DecalStyle, "grime" | "leak" | "rust" | "dirt" | "wet"> — The procedural stains a dressing plan places; each is a {@link DecalStyle} with its own texture in the shell.
+- `InteriorDressingOptions` (interface): interface InteriorDressingOptions — What to place and how densely. Each family is on with its defaults unless set to `false`.
+- `InteriorDressingPlan` (interface): interface InteriorDressingPlan — Everything a dressing pass places.
+- `InteriorFixture` (interface): interface InteriorFixture — A practical lamp mounted on a wall: where its housing sits and where its light comes from.
+- `InteriorPipe` (interface): interface InteriorPipe — A straight pipe segment between two points.
+- `InteriorRect` (interface): interface InteriorRect — One axis-aligned walkable footprint, centre and full size on the ground plane.
+- `InteriorWallRun` (interface): interface InteriorWallRun — One straight stretch of wall bounding the union of footprints. `inward` is the unit normal that points into the room; a doorway between two footprints is a gap, so a run never crosses one.
+- `interiorWallRuns` (function): function interiorWallRuns(rects: readonly InteriorRect[]): InteriorWallRun[] — The wall runs bounding a union of footprints: every boundary edge of the union, merged into the longest straight runs with one inward normal each. Doorways between footprints leave no wall.
+- `nearestFixtures` (function): function nearestFixtures<T extends { light: Vec3 }>(fixtures: readonly T[], eye: Vec3, budget: number, reach = Infinity): T[] — Fixtures closest to `eye`, nearest first, capped at `budget`: which lamps a fixed light pool lights this frame.
+- `planInteriorDressing` (function): function planInteriorDressing(rects: readonly InteriorRect[], options: InteriorDressingOptions): InteriorDressingPlan — Plan the dressing for one floor: footprints in, every trim, pipe, cable, decal, lamp and clutter slot out. Density is per metre of wall and per square metre of floor, so a bigger floor gets more, and every family can be turned off or retuned in `options`.
 
 ## @jgengine/core/world/interiors
 

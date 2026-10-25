@@ -69,7 +69,6 @@
   "@jgengine/core/game/feed#recentFeedEntries",
   "@jgengine/core/game/gamePhase#isPlaying",
   "@jgengine/core/game/lootTable#grantDrops",
-  "@jgengine/core/game/objectives#evaluateObjectives",
   "@jgengine/core/game/quest#applyQuestRewards",
   "@jgengine/core/game/quest#createQuestEvaluator",
   "@jgengine/core/game/unlocks#grantUnlock",

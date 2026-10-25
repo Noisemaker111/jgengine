@@ -97,6 +97,52 @@ export function createDecalTexture(style: DecalStyle, seed: string, size = 128):
         red = 0.84 * shade;
         green = 0.8 * shade;
         blue = 0.72 * shade;
+      } else if (style === "grime") {
+        // A band that is darkest where the wall meets the floor and climbs raggedly up it.
+        const ragged = fbm(u * 6 + 2.1, v * 3 - 1.3, seedNumber + 2);
+        const climb = 1 - smoothstep(-0.55, 0.42, v + (ragged - 0.5) * 0.5);
+        const sides = 1 - smoothstep(0.28, 0.5, Math.abs(u) + (n - 0.5) * 0.12);
+        const grain = fbm(u * 24 - 5.2, v * 24 + 3.6, seedNumber + 7);
+        alpha = climb * sides * (0.55 + grain * 0.45);
+        const shade = 0.7 + grain * 0.5;
+        red = 0.085 * shade;
+        green = 0.072 * shade;
+        blue = 0.058 * shade;
+      } else if (style === "leak") {
+        // Streaks running down from the top edge, each with its own width, reach and drip.
+        let streak = 0;
+        for (let i = 0; i < 7; i += 1) {
+          const at = (hash(i, 2, seedNumber) - 0.5) * 0.7;
+          const width = 0.015 + hash(i, 4, seedNumber) * 0.05;
+          const reach = 0.35 + hash(i, 6, seedNumber) * 0.62;
+          const wobble = (fbm(v * 4 + i * 1.7, i * 3.1, seedNumber + i) - 0.5) * 0.06;
+          const across = 1 - smoothstep(width * 0.4, width, Math.abs(u - at - wobble));
+          const fromTop = 0.5 - v;
+          const along = (1 - smoothstep(reach * 0.75, reach, fromTop)) * (0.45 + 0.55 * (1 - fromTop / Math.max(reach, 1e-3)));
+          const drip = 1 - smoothstep(width * 0.5, width * 1.1, Math.hypot(u - at - wobble, (fromTop - reach * 0.92) * 0.7));
+          streak = Math.max(streak, across * Math.max(0, along), drip * 0.8);
+        }
+        const stainBand = smoothstep(0.32, 0.5, v) * (1 - smoothstep(0.3, 0.46, Math.abs(u))) * 0.5;
+        alpha = Math.max(streak, stainBand * n);
+        const shade = 0.8 + n * 0.4;
+        red = 0.3 * shade;
+        green = 0.16 * shade;
+        blue = 0.075 * shade;
+      } else if (style === "rust") {
+        const body = smoothstep(0.42, 0.6, n) * (1 - smoothstep(0.5, 1, r));
+        const pits = fbm(u * 28 + 6.6, v * 28 - 4.4, seedNumber + 13);
+        alpha = body * (0.5 + pits * 0.6);
+        const shade = 0.7 + pits * 0.6;
+        red = 0.48 * shade;
+        green = 0.22 * shade;
+        blue = 0.07 * shade;
+      } else if (style === "wet") {
+        // A standing puddle: a hard, wobbling edge and a nearly black body the renderer makes glossy.
+        const edge = smoothstep(0.38, 0.44, n + (1 - r) * 0.35 - 0.3);
+        alpha = edge * (1 - smoothstep(0.8, 1, r)) * 0.6;
+        red = 0.045;
+        green = 0.048;
+        blue = 0.052;
       } else {
         // Cracks: six warped radial lines plus two branches, faded toward the rim.
         let line = 0;
