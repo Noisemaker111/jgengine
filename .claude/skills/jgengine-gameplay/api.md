@@ -614,10 +614,11 @@
 ## @jgengine/core/game/events
 
 - `AnimationClipEvent` (interface): interface AnimationClipEvent — A named clip moment (`AnimGraph.events`) the rig just crossed — foot plant, hit frame, reload point. Audio and combat listen by `name`.
+- `AudioIntensityEvent` (interface): interface AudioIntensityEvent — Crossfade the procedural soundtrack to `theme` (null fades out), optionally transposing the incoming theme by `transpose` semitones.
 - `AudioLoopSetEvent` (interface): interface AudioLoopSetEvent — Live-update the retained loop `id`: `rate` re-pitches it (1 = authored, the shell clamps to 0.25–4), `gain` rescales its volume (0–1), and `at` repositions its emitter. Emitted every tick to track a live signal (RPM, tire slip); the shell smooths rate/gain and ignores an unknown `id` (#1051).
 - `AudioLoopStartEvent` (interface): interface AudioLoopStartEvent — Start (or idempotently keep) the retained, id-keyed audio loop `id` from catalog `sound`, optionally anchored at world `at`. Restarting with the same `sound` does not restart the source (no click); a different `sound` replaces it. Drives RPM-pitched engine loops and slip-scaled tire squeal (#1051).
 - `AudioLoopStopEvent` (interface): interface AudioLoopStopEvent — Stop and dispose the retained loop `id`; an unknown `id` is ignored (#1051).
-- `AudioMusicEvent` (interface): interface AudioMusicEvent — Crossfade the procedural soundtrack to `theme` (null fades out), optionally transposing the incoming theme by `transpose` semitones.
+- `AudioMusicEvent` (interface): interface AudioMusicEvent — Crossfade the procedural soundtrack to `theme` (null fades out), optionally shifted `transpose` semitones.
 - `AudioPlayEvent` (interface): interface AudioPlayEvent { sound: string; at?: readonly [number, number, number] } — ⚠ undocumented
 - `AudioResumeEvent` (type): type AudioResumeEvent = Record<string, never> — Request that the shell's audio engine resume its (browser-gesture-suspended) context; carries no payload.
 - `ChatMessageEvent` (interface): interface ChatMessageEvent { id: string; channelId: string; fromUserId: string; body: string; at: number; recipients?: readonly string[] } — ⚠ undocumented

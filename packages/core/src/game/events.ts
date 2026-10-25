@@ -333,6 +333,7 @@ export interface AudioIntensityEvent {
   amount: number;
 }
 
+/** Crossfade the procedural soundtrack to `theme` (null fades out), optionally shifted `transpose` semitones. */
 export interface AudioMusicEvent {
   theme: string | null;
   transpose?: number;
