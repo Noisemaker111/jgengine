@@ -6,6 +6,7 @@
     "./agents/relationships",
     "./agents/schedule",
     "./agents/system",
+    "./ai/buildOrder",
     "./ai/crowd",
     "./ai/decisionGraph",
     "./ai/difficulty",

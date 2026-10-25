@@ -216,9 +216,17 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `footprintCells` (function) · `import { footprintCells } from "@jgengine/core/world/buildSockets"`
 
+## build-requirements — list the unmet prerequisites of an RTS building, unit or research
+
+- `missingRequirements` (function) · `import { missingRequirements } from "@jgengine/core/ai/buildOrder"`
+
 ## build-socket-catalog — data-driven named-socket snap catalog for modular base building
 
 - `createBuildSocketCatalog` (function) · `import { createBuildSocketCatalog } from "@jgengine/core/world/buildSockets"`
+
+## build-tech-path — resolve an RTS want into the first missing prerequisite to make instead
+
+- `resolveTechPath` (function) · `import { resolveTechPath } from "@jgengine/core/ai/buildOrder"`
 
 ## building-generator — generate seeded buildings as placed facade parts — bays, floors, roof, decor
 
@@ -807,6 +815,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## rigid-aircraft — force-and-torque aircraft — lifting surfaces with stall and drag polar, control surfaces, inertia, loops and rolls
 
 - `createRigidAircraft` (function) · `import { createRigidAircraft } from "@jgengine/core/physics/aircraftDynamics"`
+
+## rts-attack-clock — decide when an RTS AI launches growing attack waves, with a max-wait fallback
+
+- `createAttackClock` (function) · `import { createAttackClock } from "@jgengine/core/ai/buildOrder"`
+
+## rts-build-planner — AI build order, tech path, supply and army composition for an RTS opponent economy
+
+- `createBuildPlanner` (function) · `import { createBuildPlanner } from "@jgengine/core/ai/buildOrder"`
 
 ## rts-control-groups — map Ctrl+digit / digit / double-tap presses onto selection-bookmark bind / recall / focus intents
 
