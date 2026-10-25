@@ -11,6 +11,15 @@ import { getSaveEndpoint } from "@jgengine/core/devtools/saveEndpoint";
 
 import { persistDevtoolsOverrides } from "./devtoolsOverrides";
 
+/**
+ * Accessible names for one tunable's inputs: the number field answers to the control name itself,
+ * so `drive --fill "<name>=<value>"` and a screen reader both find it; the range is `<name> slider`.
+ * @capability tune-control-labels find a Tune panel field by its control name (drive --fill, screen readers)
+ */
+export function tuneControlLabels(name: string): { range: string; number: string } {
+  return { range: `${name} slider`, number: name };
+}
+
 function ControlInput({ control, onWrite }: { control: DevtoolsControl; onWrite: () => void }) {
   const value = control.read();
   const write = (next: unknown) => {
@@ -39,7 +48,7 @@ function ControlInput({ control, onWrite }: { control: DevtoolsControl; onWrite:
       <div className="flex items-center gap-2">
         <input
           type="range"
-          aria-label={`${control.name} slider`}
+          aria-label={tuneControlLabels(control.name).range}
           className="h-1 w-28 accent-cyan-400"
           min={displayMin}
           max={displayMax}
@@ -52,7 +61,7 @@ function ControlInput({ control, onWrite }: { control: DevtoolsControl; onWrite:
         />
         <input
           type="number"
-          aria-label={control.name}
+          aria-label={tuneControlLabels(control.name).number}
           className="w-16 rounded-md border border-white/10 bg-black/40 px-1 py-0.5 font-mono text-neutral-100"
           step={displayStep}
           value={Number(displayValue.toFixed(4))}

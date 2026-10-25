@@ -886,6 +886,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `SaveSlotsPane` (function) · `import { SaveSlotsPane } from "@jgengine/react"`
 
+## scaled-object-model — stretch one placement of a catalog model with visual.scale
+
+- `drawsScaledModel` (function) · `import { drawsScaledModel } from "@jgengine/shell/world/WorldScene"`
+
 ## scene-capture-binding — expose the in-Canvas scene-capture function to outside-Canvas HUD (photo mode, save thumbnails)
 
 - `SceneCaptureBinding` (function) · `import { SceneCaptureBinding } from "@jgengine/shell/render/sceneCapture"`
@@ -1023,6 +1027,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## triangle-attribution — per-model triangle table with instance counts, for perf probes
 
 - `attributeTriangles` (function) · `import { attributeTriangles } from "@jgengine/shell/render/triangleAttribution"`
+
+## tune-control-labels — find a Tune panel field by its control name (drive --fill, screen readers)
+
+- `tuneControlLabels` (function) · `import { tuneControlLabels } from "@jgengine/shell/devtools/TunePanel"`
 
 ## tween-number — rolling number readout with an up/down delta flash
 
