@@ -1,5 +1,5 @@
 import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import type { IncomingMessage, ServerResponse } from "node:http";
 
 import { importEditorDocumentJson } from "../../packages/core/src/editor/document";
@@ -16,14 +16,19 @@ export const EDITOR_SCENE_FILENAME = "editor.scene.json";
 const GAME_ID_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
 const MAX_BODY_BYTES = 8 * 1024 * 1024;
 
-function gameSrcDir(gamesDir: string, gameId: string): string | null {
+/**
+ * Where a game's sources live: the checkout `--game-dir` serves when the id is that game, so a save
+ * from a lane's worktree lands in the worktree; otherwise `Games/<id>/src`.
+ */
+function gameSrcDir(gamesDir: string, gameId: string, servedDir?: string): string | null {
   if (!GAME_ID_PATTERN.test(gameId)) return null;
-  const dir = join(gamesDir, gameId, "src");
+  const served = servedDir === undefined || servedDir.trim() === "" ? null : servedDir.replace(/[\\/]+$/, "");
+  const dir = served !== null && basename(served) === gameId ? join(served, "src") : join(gamesDir, gameId, "src");
   return existsSync(dir) ? dir : null;
 }
 
-function saveEditorDocument(gamesDir: string, gameId: string, json: string): SaveEndpointResponse {
-  const dir = gameSrcDir(gamesDir, gameId);
+function saveEditorDocument(gamesDir: string, gameId: string, json: string, servedDir?: string): SaveEndpointResponse {
+  const dir = gameSrcDir(gamesDir, gameId, servedDir);
   if (dir === null) return { ok: false, error: `unknown game: ${gameId}` };
   const document = importEditorDocumentJson(json);
   const path = join(dir, EDITOR_SCENE_FILENAME);
@@ -62,8 +67,9 @@ function saveTunables(
   gamesDir: string,
   gameId: string,
   deltas: readonly { table: string; key: string; value: unknown }[],
+  servedDir?: string,
 ): SaveEndpointResponse {
-  const dir = gameSrcDir(gamesDir, gameId);
+  const dir = gameSrcDir(gamesDir, gameId, servedDir);
   if (dir === null) return { ok: false, error: `unknown game: ${gameId}` };
   const files = listSourceFiles(dir);
   const pending = new Map<string, string>();
@@ -111,19 +117,26 @@ function readBody(req: IncomingMessage): Promise<string> {
   });
 }
 
-export function handleSaveRequest(gamesDir: string, body: string): SaveEndpointResponse {
+/**
+ * Apply one save request. `servedDir` is the checkout a `--game-dir` run serves; saves for that game
+ * write there instead of `Games/<id>`.
+ */
+export function handleSaveRequest(gamesDir: string, body: string, servedDir?: string): SaveEndpointResponse {
   const request = JSON.parse(body) as SaveEndpointRequest;
   if (request.kind === "editor-document") {
-    return saveEditorDocument(gamesDir, request.gameId, request.json);
+    return saveEditorDocument(gamesDir, request.gameId, request.json, servedDir);
   }
   if (request.kind === "tunables") {
-    return saveTunables(gamesDir, request.gameId, request.deltas);
+    return saveTunables(gamesDir, request.gameId, request.deltas, servedDir);
   }
   return { ok: false, error: "unknown save kind" };
 }
 
-/** Dev-only Vite middleware: writes editor scene documents and tunable deltas into Games/<id>/src. */
-export function devSavePlugin(gamesDir: string): {
+/**
+ * Dev-only Vite middleware: writes editor scene documents and tunable deltas into Games/<id>/src, or
+ * into the `--game-dir` checkout (`servedDir`) when the save is for the game it serves.
+ */
+export function devSavePlugin(gamesDir: string, servedDir?: string): {
   name: string;
   apply: "serve";
   configureServer(server: {
@@ -146,7 +159,7 @@ export function devSavePlugin(gamesDir: string): {
         }
         void readBody(req)
           .then((body) => {
-            const result = handleSaveRequest(gamesDir, body);
+            const result = handleSaveRequest(gamesDir, body, servedDir);
             res.statusCode = result.ok ? 200 : 400;
             res.setHeader("content-type", "application/json");
             res.end(JSON.stringify(result));

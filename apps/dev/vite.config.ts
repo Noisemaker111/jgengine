@@ -67,7 +67,7 @@ const devProxy: Record<string, string | ProxyOptions> = Object.fromEntries(
 );
 
 export default defineConfig({
-  plugins: [devServerMarkerPlugin({ kind: "runner" }), tunableDiscoveryPlugin(), devSavePlugin(gamesDir), devReportPlugin(), gamePublicPlugin(servedGameDir, gamesDir, fileURLToPath(new URL("./public", import.meta.url))), react(), tailwindcss()],
+  plugins: [devServerMarkerPlugin({ kind: "runner" }), tunableDiscoveryPlugin(), devSavePlugin(gamesDir, servedGameDir), devReportPlugin(), gamePublicPlugin(servedGameDir, gamesDir, fileURLToPath(new URL("./public", import.meta.url))), react(), tailwindcss()],
   clearScreen: false,
   build: {
     target: "es2022",
