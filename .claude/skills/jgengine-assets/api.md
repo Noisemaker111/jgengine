@@ -212,11 +212,21 @@
 
 - `createStarterCatalog` (function): function createStarterCatalog(options: BuildCatalogOptions = {}): AssetCatalog<ModelAssetRef> — Catalog restricted to the curated starter packs (people/props/nature/urban). Prefer this for scaffolds and probes so `asset:person_casual` etc. resolve without pulling the whole library. Full index: {@link buildCatalog}.
 
+## @jgengine/assets/cli/githubToken
+
+- `GITHUB_TOKEN_HOSTS` (const): const GITHUB_TOKEN_HOSTS: ReadonlySet<string> — Hosts that rate-limit anonymous pulls (60 API calls an hour per IP, shared by every agent on the machine) and accept a token. Release downloads on github.com are left alone: they redirect to a signed storage URL that rejects a second credential.
+- `GhTokenReader` (type): type GhTokenReader = () => string | null — Run `gh auth token`; null when gh is missing, signed out or slow.
+- `resolveGithubToken` (function): function resolveGithubToken(env: NodeJS.ProcessEnv = process.env, readGh: GhTokenReader = readGhToken): string | undefined — `GITHUB_TOKEN`, then `GH_TOKEN`, then the signed-in gh CLI's token; undefined when none exists.
+- `wantsGithubToken` (function): function wantsGithubToken(url: string): boolean — True when `url` goes to a host that should carry the token.
+- `withGithubAuth` (function): function withGithubAuth(url: string, headers: HeadersInit | undefined, token: string | undefined): Headers — Request headers with `authorization` added for a GitHub host, unless the caller set one.
+
 ## @jgengine/assets/cli/pull
 
-- `cliFetch` (const): const cliFetch: typeof fetch — The runtime's own fetch, with a curl fallback for hosts it cannot reach — some proxied sandboxes tear down bun's TLS stream to GitHub's release-asset host while curl (which honors SSL_CERT_FILE) gets through fine.
+- `cliFetch` (const): const cliFetch: typeof fetch — The runtime's own fetch, with a curl fallback for hosts it cannot reach — some proxied sandboxes tear down bun's TLS stream to GitHub's release-asset host while curl (which honors SSL_CERT_FILE) gets through fine. GitHub hosts get the token, and every request has a hard budget, so a stalled body fails naming its URL instead of hanging the pull.
+- `fetchTimeoutMs` (function): function fetchTimeoutMs(env: NodeJS.ProcessEnv = process.env): number — One request's hard budget: `JG_FETCH_TIMEOUT_MS`, else ten minutes (the curl fallback's own cap).
 - `generatedDir` (const): const generatedDir: string — Sibling of `cli/` under `src/` (dev) or `dist/` (published) so reindex writes the tree consumers import.
 - `generatedSpritesDir` (const): const generatedSpritesDir: string — Sprite-pack counterpart of `generatedDir`.
+- `pullGithubToken` (function): function pullGithubToken(): string | undefined — The GitHub token every pull uses, read once per run: env first, then `gh auth token`.
 
 ## @jgengine/assets/collisionMeshAssets
 
