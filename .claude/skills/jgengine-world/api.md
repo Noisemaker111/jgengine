@@ -460,6 +460,7 @@
 - `ADAPTIVE_THEMES` (const): const ADAPTIVE_THEMES: Readonly<Record<string, MusicTheme>> — The built-in adaptive themes, keyed by id.
 - `AdaptiveMusicConfig` (interface): interface AdaptiveMusicConfig — Soundtrack that follows the fight: the shell raises an intensity when the local player deals or takes damage and lets it decay, and the tier ladder picks the theme. `true` uses the built-in explore / tension / fight themes; an object swaps in the game's own tiers and themes.
 - `CombatIntensity` (interface): interface CombatIntensity — A `0..1` combat intensity that jumps on events and decays linearly over quiet time.
+- `CombatIntensityState` (interface): interface CombatIntensityState — A saved combat intensity: its level (0..1) and the clock time it was read at.
 - `DEFAULT_ADAPTIVE_TIERS` (const): const DEFAULT_ADAPTIVE_TIERS: readonly MusicTier[] — Explore below 0.25, tension from 0.25, fight from 0.6 and held at least 6 s once it starts.
 - `createCombatIntensity` (function): function createCombatIntensity(decayPerSecond = 0.1): CombatIntensity — A fresh intensity at 0 that loses `decayPerSecond` per second of quiet.
 
