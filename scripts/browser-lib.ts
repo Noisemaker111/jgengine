@@ -17,7 +17,7 @@ import { basename, dirname, join, parse, resolve } from "node:path";
 
 import { retrySettleMs, shouldRetryCapture } from "./capture-retry";
 import { clearViteCaches, headRevision, revisionDrifted, shortRevision } from "./captureRevision";
-import { checkoutIdentity, devServerIdentity, isUp, listMarkers, markerPath, reachableBase, readMarker, writeMarker } from "./devServerMarker";
+import { checkMarkedServer, checkoutIdentity, devServerIdentity, isUp, listMarkers, markerPath, readMarker, readServerIdentity, writeMarker } from "./devServerMarker";
 import { localGet } from "./localhostHttp";
 import { computeShotMetrics, deadViewport } from "./shot-metrics";
 import { decodePng } from "./png-reader";
@@ -314,36 +314,41 @@ export function resolveWarmChromePort(cwd = process.cwd()): number {
   return 9223 + hashPortOffset(checkoutIdentity(cwd), 100);
 }
 
-/** True when something is listening *and* its marker matches this checkout. */
+/**
+ * True when the server on `port` itself reports `identity`. The marker only says where to look:
+ * a stale marker over another checkout's Vite on a reused port used to read as ours.
+ */
 export async function isOurDevServer(port: number, identity: string): Promise<boolean> {
-  const base = `http://127.0.0.1:${port}`;
-  if (!(await isUp(base))) return false;
   const marker = readMarker(port);
-  return marker !== null && marker.identity === identity;
+  if (marker === null) return false;
+  return (await checkMarkedServer(marker, identity)).status === "ours";
 }
 
 /**
  * Retire a warm server whose commit no longer matches the tree. Reusing it would
  * serve the previous commit's module graph — the "start menu still on screen"
  * / readiness-timeout failure that made every checkout-then-shoot loop flaky.
- * Killing it here means the caller's normal boot path starts a clean one.
+ * Killing it here means the caller's normal boot path starts a clean one. Only a
+ * server that reports this checkout's identity is killed, by the pid it reports.
  */
 export async function retireDriftedDevServer(port: number, cwd = process.cwd()): Promise<boolean> {
   const marker = readMarker(port);
   if (marker === null) return false;
-  if (!revisionDrifted(marker.head, headRevision(cwd))) return false;
-  if (!(await isUp(`http://127.0.0.1:${port}`))) return false;
-  killPid(marker.pid, true);
+  const checked = await checkMarkedServer(marker, marker.identity);
+  if (checked.status !== "ours" || checked.report.root !== checkoutIdentity(cwd)) return false;
+  const servedHead = checked.report.head ?? marker.head;
+  if (!revisionDrifted(servedHead, headRevision(cwd))) return false;
+  killPid(checked.report.pid, true);
   const cleared = clearViteCaches(cwd);
   console.error(
-    `capture: warm Vite on :${port} booted from ${shortRevision(marker.head)} but HEAD is ${shortRevision(headRevision(cwd))} — restarting it${cleared.length > 0 ? " and clearing the dep cache" : ""}`,
+    `capture: warm Vite on :${port} booted from ${shortRevision(servedHead)} but HEAD is ${shortRevision(headRevision(cwd))} — restarting it${cleared.length > 0 ? " and clearing the dep cache" : ""}`,
   );
   for (let attempt = 0; attempt < 40; attempt += 1) {
-    if (!(await isUp(`http://127.0.0.1:${port}`))) return true;
+    if (!(await isUp(checked.base))) return true;
     await new Promise((resolve) => setTimeout(resolve, 250));
   }
   throw new Error(
-    `capture: the Vite on :${port} from ${shortRevision(marker.head)} would not die — kill it by hand, then retry`,
+    `capture: the Vite on :${port} from ${shortRevision(servedHead)} would not die — kill it by hand, then retry`,
   );
 }
 
@@ -351,19 +356,42 @@ export async function retireDriftedDevServer(port: number, cwd = process.cwd()):
  * A live server this checkout already started on any port, current with HEAD. A
  * one-second `isUp` miss on a busy machine used to read as "port taken" and boot a
  * fresh server 17 ports along; twelve copies of one worktree's Vite piled up that way.
- * Drifted copies found on the way are retired so they do not linger either.
+ * Each candidate must report this identity itself; drifted copies are retired and
+ * markers the live server contradicts are deleted on the way.
  */
 async function findOwnedServer(identity: string, kind: "runner" | "website", cwd: string): Promise<number | null> {
   const head = headRevision(cwd);
   for (const marker of listMarkers()) {
     if (marker.identity !== identity || (marker.kind ?? "runner") !== kind) continue;
-    if (revisionDrifted(marker.head, head)) {
-      if (await isUp(`http://127.0.0.1:${marker.port}`)) killPid(marker.pid, true);
+    const checked = await checkMarkedServer(marker, identity);
+    if (checked.status !== "ours") continue;
+    if (revisionDrifted(checked.report.head ?? marker.head, head)) {
+      killPid(checked.report.pid, true);
       continue;
     }
-    if ((await reachableBase(marker.port, marker.host)) !== null) return marker.port;
+    return marker.port;
   }
   return null;
+}
+
+/**
+ * After a launch answers, confirm the server on the port is the one just started and record the pid
+ * it reports (the launcher only knows the `bun run` wrapper's). Another checkout's Vite that won the
+ * port race reports a different identity, and attaching to it would capture the wrong tree.
+ */
+async function confirmLaunchedServer(
+  base: string,
+  port: number,
+  identity: string,
+  kind: "runner" | "website",
+  cwd: string,
+): Promise<"ours" | "foreign" | "pending"> {
+  const report = await readServerIdentity(base);
+  if (report === null) return "pending";
+  if (report.identity !== identity) return "foreign";
+  const host = new URL(base).hostname;
+  writeMarker({ identity, port, pid: report.pid, head: report.head ?? headRevision(cwd), kind, host });
+  return "ours";
 }
 
 export interface EnsureDevServerResult {
@@ -446,7 +474,15 @@ export async function ensureDevServer(cwd = process.cwd()): Promise<EnsureDevSer
   const finalBase = `http://127.0.0.1:${port}`;
   for (let attempt = 0; attempt < 60; attempt += 1) {
     await new Promise((r) => setTimeout(r, 500));
-    if (await isUp(finalBase)) return { child, pid, port, base: finalBase };
+    if (await isUp(finalBase)) {
+      const confirmed = await confirmLaunchedServer(finalBase, port, identity, "runner", cwd);
+      if (confirmed === "ours") return { child, pid, port, base: finalBase };
+      if (confirmed === "foreign") {
+        if (child !== null) child.kill();
+        else killPid(pid, true);
+        throw new Error(`Dev server on :${port} answers for another checkout, not ${identity} — retry to pick a free port`);
+      }
+    }
     if (child?.exitCode !== null && child?.exitCode !== undefined) {
       throw new Error(`Dev server exited with code ${child.exitCode} before becoming reachable on :${port}`);
     }
@@ -505,7 +541,15 @@ export async function ensureWebServer(cwd = process.cwd()): Promise<EnsureDevSer
   const finalBase = `http://127.0.0.1:${port}`;
   for (let attempt = 0; attempt < 120; attempt += 1) {
     await new Promise((resolve) => setTimeout(resolve, 500));
-    if (await isUp(finalBase)) return { child, pid, port, base: finalBase };
+    if (await isUp(finalBase)) {
+      const confirmed = await confirmLaunchedServer(finalBase, port, identity, "website", cwd);
+      if (confirmed === "ours") return { child, pid, port, base: finalBase };
+      if (confirmed === "foreign") {
+        if (child !== null) killProcessTree(child);
+        else killPid(pid, true);
+        throw new Error(`Website dev server on :${port} answers for another checkout, not ${identity} — retry to pick a free port`);
+      }
+    }
     if (child?.exitCode !== null && child?.exitCode !== undefined) {
       throw new Error(`Website dev server exited with code ${child.exitCode} before becoming reachable on :${port}`);
     }
