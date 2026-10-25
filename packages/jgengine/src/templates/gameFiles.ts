@@ -1006,8 +1006,8 @@ const holdComplete = ${holdComplete.toString()};
 const mouseButtonForCode = ${mouseButtonForCode.toString()};
 const gameSurfaceCenter = ${gameSurfaceCenter.toString()};
 
-async function holdKey(session, code, holdMs) {
-  await holdDriveInput(session, code, holdMs, { focusGameSurface, holdComplete, mouseButtonForCode, gameSurfaceCenter, sleep, now: () => Date.now() });
+async function holdKey(session, code, holdMs, until) {
+  await holdDriveInput(session, code, holdMs, { focusGameSurface, holdComplete, mouseButtonForCode, gameSurfaceCenter, sleep, now: () => Date.now() }, until);
 }
 
 async function rpc(session, json) {
@@ -1180,7 +1180,7 @@ async function main() {
           pointer = aimed.from;
           console.error("aimAt: aimed " + Math.round(aimed.point.x) + "," + Math.round(aimed.point.y) + " in " + aimed.moves + " move(s)");
         }
-        else if (step.kind === "key") await holdKey(session, step.code, step.holdMs);
+        else if (step.kind === "key") await holdKey(session, step.code, step.holdMs, step.until === undefined ? undefined : { ...step.until, label: "until" });
         else if (step.kind === "wait") await sleep(step.ms);
         else if (step.kind === "reload") await navigate(session, url, args.timeoutMs, args.settle);
         else if (step.kind === "rpc") {

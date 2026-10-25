@@ -60,7 +60,7 @@ import {
 } from "./capture-preset";
 import { driveInputPointExpr } from "../packages/jgengine/src/templates/driveInput";
 import { CAPTURE_FLAGS, captureFlagHelp, describeFlow, describeStepFile, parseCaptureArgs, parseGraphicsTier, parseStepFile, rejectMixedStepFlags, type CaptureStep, type FlowFile, type FlowSource, type GraphicsTier } from "../packages/jgengine/src/templates/captureArgs";
-import { awaitDriveCondition, awaitGameView, holdDriveInput, type DriveConditionClock, type DriveInputDeps, type DriveSession } from "../packages/jgengine/src/templates/driveSteps";
+import { awaitDriveCondition, awaitGameView, conditionMatches, holdDriveInput, type DriveConditionClock, type DriveHoldUntil, type DriveInputDeps, type DriveSession } from "../packages/jgengine/src/templates/driveSteps";
 import { acquireDrivePointerLock, aimDriveAt, lookDrivePointer, moveDrivePointer, type DrivePoint } from "../packages/jgengine/src/templates/driveAim";
 import { driveProjectDir, flowSourceFrom, flowsDirOf, listFlowNames, missingFlowsMessage } from "./driveFlows";
 import { evaluateAssertStep, runDriveSteps, type DriveStepRecord } from "./driveRun";
@@ -515,8 +515,8 @@ const driveDeps = {
 } as unknown as DriveInputDeps;
 
 /** Shared with the portable drive.mjs: key, chord or mouse hold that waits for a rendered frame. */
-function holdKey(session: CdpSession, chord: string, holdMs: number): Promise<void> {
-  return holdDriveInput(session as unknown as DriveSession, chord, holdMs, driveDeps);
+function holdKey(session: CdpSession, chord: string, holdMs: number, until?: DriveHoldUntil): Promise<void> {
+  return holdDriveInput(session as unknown as DriveSession, chord, holdMs, driveDeps, until);
 }
 
 async function rpc(session: CdpSession, json: string): Promise<void> {
@@ -982,10 +982,22 @@ async function driveSession(daemon: ShootDaemonState | null): Promise<number> {
                 // held key, so no frame-starvation grace dance is needed.
                 await focusSurface(session);
                 await sendKeys(session, step.code, "keyDown");
-                await recorder.advance(step.holdMs);
-                await sendKeys(session, step.code, "keyUp");
+                try {
+                  await recorder.advance(step.holdMs);
+                  // `until` on the virtual clock: step the sim in short slices until the arrival holds.
+                  if (step.until !== undefined) {
+                    const cap = step.until.timeoutMs ?? 15_000;
+                    for (let held = 0; ; held += 100) {
+                      if (conditionMatches(await session.evaluate("(async () => (" + step.until.is + "))()", { awaitPromise: true }), step.until.value)) break;
+                      if (held >= cap) throw new Error(label + ".until: \"" + step.until.is + "\" did not become true within " + cap + "ms of virtual time");
+                      await recorder.advance(100);
+                    }
+                  }
+                } finally {
+                  await sendKeys(session, step.code, "keyUp");
+                }
               } else {
-                await holdKey(session, step.code, step.holdMs);
+                await holdKey(session, step.code, step.holdMs, step.until === undefined ? undefined : { ...step.until, label: label + ".until" });
               }
             } else if (step.kind === "wait") {
               if (recorder !== null) await recorder.advance(step.ms);

@@ -128,7 +128,7 @@ export type CaptureStep = (
   | { kind: "look"; dx: number; dy: number }
   | { kind: "aim-at"; expression: string; tolerancePx: number }
   | { kind: "fill"; label: string; value: string }
-  | { kind: "key"; code: string; holdMs: number }
+  | { kind: "key"; code: string; holdMs: number; until?: CaptureCondition }
   | { kind: "wait"; ms: number }
   | { kind: "waitFor"; expression: string; timeoutMs: number }
   | { kind: "reload" }
@@ -386,7 +386,7 @@ export function parseStepFile(input: unknown, source: string, options: ParseStep
   }
   if (!Array.isArray(top.steps)) throw new Error(source + ": expected {\"steps\":[...]}, got " + valueType(top.steps));
   if (top.steps.length === 0) throw new Error(source + ": the steps list is empty, so the run would prove nothing");
-  const modifiers = ["before", "after", "ms", "timeoutMs", "tolerancePx", "note", "is"];
+  const modifiers = ["before", "after", "until", "ms", "timeoutMs", "tolerancePx", "note", "is"];
   return top.steps.flatMap((raw, index) => {
     const at = "steps[" + index + "]";
     if (raw === null || typeof raw !== "object" || Array.isArray(raw)) throw new Error(at + ": expected a step object, got " + valueType(raw));
@@ -400,6 +400,7 @@ export function parseStepFile(input: unknown, source: string, options: ParseStep
     const value = step[kind];
     if (step.is !== undefined && kind !== "assert") throw new Error(at + ": \"is\" is the assert expectation, so it cannot sit on a " + kind + " step");
     if (step.tolerancePx !== undefined && kind !== "aimAt") throw new Error(at + ": \"tolerancePx\" sizes an aimAt target, so it cannot sit on a " + kind + " step");
+    if (step.until !== undefined && kind !== "key") throw new Error(at + ": \"until\" releases a held key, so it cannot sit on a " + kind + " step");
     if (kind === "flow") return expandFlow(flowNameAt(at + ".flow", value), at, source, options, step);
     const before = step.before === undefined ? undefined : conditionAt(at + ".before", step.before);
     const after = step.after === undefined ? undefined : conditionAt(at + ".after", step.after);
@@ -440,8 +441,12 @@ export function parseStepFile(input: unknown, source: string, options: ParseStep
         if (typeof field.value !== "string") throw new Error(at + ".fill.value: expected the text to type");
         return [shape({ kind: "fill", label: field.label, value: field.value })];
       }
-      case "key":
-        return [shape({ kind: "key", code: keyChordAt(at + ".key", value), holdMs: nonnegativeAt(at + ".ms", step.ms, 1000) })];
+      case "key": {
+        const code = keyChordAt(at + ".key", value);
+        if (step.until === undefined) return [shape({ kind: "key", code, holdMs: nonnegativeAt(at + ".ms", step.ms, 1000) })];
+        // With `until` the hold ends on arrival; `ms` is only a minimum, so it defaults to none.
+        return [shape({ kind: "key", code, holdMs: nonnegativeAt(at + ".ms", step.ms, 0), until: conditionAt(at + ".until", step.until) })];
+      }
       case "wait":
         return [shape({ kind: "wait", ms: nonnegativeAt(at + ".wait", value) })];
       case "waitFor": {
@@ -509,7 +514,7 @@ function expandFlow(name: string, at: string, includeSource: string, options: Pa
 
 /** How long a step can hold the run: its action plus the cap on each condition. */
 export function stepDurationMs(step: CaptureStep): number {
-  const own = step.kind === "key" ? step.holdMs : step.kind === "wait" ? step.ms : step.kind === "waitFor" ? step.timeoutMs : 0;
+  const own = step.kind === "key" ? Math.max(step.holdMs, step.until === undefined ? 0 : step.until.timeoutMs ?? DRIVE_CONDITION_TIMEOUT_MS) : step.kind === "wait" ? step.ms : step.kind === "waitFor" ? step.timeoutMs : 0;
   const before = step.before === undefined ? 0 : step.before.timeoutMs ?? DRIVE_CONDITION_TIMEOUT_MS;
   const after = step.after === undefined ? 0 : step.after.timeoutMs ?? DRIVE_CONDITION_TIMEOUT_MS;
   return own + before + after;
@@ -525,7 +530,7 @@ export function describeStep(step: CaptureStep): string {
     case "look": return "look " + step.dx + "," + step.dy + " px";
     case "aim-at": return "aimAt " + JSON.stringify(step.expression) + " within " + step.tolerancePx + "px";
     case "fill": return "fill \"" + step.label + "\" = \"" + step.value + "\"";
-    case "key": return "key " + step.code + " " + step.holdMs + "ms";
+    case "key": return "key " + step.code + (step.until === undefined ? " " + step.holdMs + "ms" : " until " + step.until.is);
     case "wait": return "wait " + step.ms + "ms (last resort: a guessed sleep)";
     case "waitFor": return "waitFor " + step.expression;
     case "reload": return "reload";

@@ -20,22 +20,56 @@ export interface DriveInputDeps {
   now: () => number;
 }
 
+/** Release a held input once this page expression matches, instead of after a guessed duration. */
+export interface DriveHoldUntil {
+  is: string;
+  /** Deep-equal value that counts as a match; omitted means any truthy result. */
+  value?: unknown;
+  /** How long the input may stay held before the step fails (default 15s). */
+  timeoutMs?: number;
+  /** Step label for the failure message (`steps[3].until`). */
+  label?: string;
+}
+
 /**
  * Hold a key, a `+`-joined chord (`KeyW+KeyD`) or a mouse button (`mouse0`/`mouse1`/`mouse2`, over
  * the play canvas) for `holdMs`, and on a frame-starved headless page until at least one frame
  * rendered under it (20s grace), so the sim actually steps. Focuses the play surface first and always releases.
+ *
+ * With `until`, `holdMs` is the minimum and the input stays down until the page expression matches,
+ * so a walk "to the door" covers the same ground whether the page renders at 60 fps or 3: a slow
+ * frame after a scene change no longer shortens the distance a fixed hold walks. A hold that never
+ * matches releases and throws at `until.timeoutMs`.
  */
-export async function holdDriveInput(session: DriveSession, chord: string, holdMs: number, deps: DriveInputDeps): Promise<void> {
+export async function holdDriveInput(session: DriveSession, chord: string, holdMs: number, deps: DriveInputDeps, until?: DriveHoldUntil): Promise<void> {
   await session.send("Page.bringToFront");
   await session.evaluate("(" + deps.focusGameSurface.toString() + ")(document)");
   await session.evaluate("(() => { if (globalThis.__jgFrames !== undefined) return; globalThis.__jgFrames = 0; const tick = () => { globalThis.__jgFrames++; requestAnimationFrame(tick); }; requestAnimationFrame(tick); })()");
   const startFrames = Number(await session.evaluate("globalThis.__jgFrames ?? 0")) || 0;
-  const deadlineMs = deps.now() + holdMs;
+  const startedMs = deps.now();
+  const deadlineMs = startedMs + holdMs;
+  const untilMs = until === undefined ? 0 : (until.timeoutMs ?? 15_000);
+  const matched = async (): Promise<{ ok: boolean; last: unknown }> => {
+    const last = await session.evaluate("(async () => (" + until!.is + "))()", { awaitPromise: true });
+    const ok = until!.value === undefined ? Boolean(last) : JSON.stringify(last) === JSON.stringify(until!.value);
+    return { ok, last };
+  };
   const waitHold = async () => {
     for (;;) {
-      await deps.sleep(100);
+      await deps.sleep(until === undefined ? 100 : 50);
       const framesElapsed = (Number(await session.evaluate("globalThis.__jgFrames ?? 0")) || 0) - startFrames;
-      if (deps.holdComplete({ nowMs: deps.now(), deadlineMs, hardCapMs: deadlineMs + 20_000, framesElapsed })) break;
+      if (until === undefined) {
+        if (deps.holdComplete({ nowMs: deps.now(), deadlineMs, hardCapMs: deadlineMs + 20_000, framesElapsed })) break;
+        continue;
+      }
+      if (deps.now() < deadlineMs || framesElapsed < 1) continue;
+      const check = await matched();
+      if (check.ok) break;
+      const elapsed = Math.round(deps.now() - startedMs);
+      if (elapsed >= untilMs) {
+        throw new Error((until.label ?? "until") + ": \"" + until.is + "\" did not become " + JSON.stringify(until.value === undefined ? true : until.value)
+          + " within " + untilMs + "ms of holding " + chord + " (last value: " + JSON.stringify(check.last ?? null) + ")");
+      }
     }
   };
   const mouse = deps.mouseButtonForCode(chord);
