@@ -625,6 +625,7 @@
 
 - `RadioAudioSink` (interface): interface RadioAudioSink — The audio surface radio playback drives; `ctx.game.audio` satisfies it.
 - `RadioPlayback` (interface): interface RadioPlayback — Turns a {@link Radio}'s cues into music and speech.
+- `RadioPlaybackSnapshot` (interface): interface RadioPlaybackSnapshot — Serializable playback state from {@link RadioPlayback.snapshot}.
 - `RadioVoice` (interface): interface RadioVoice — How one radio voice id should sound when spoken by the browser's speech synthesiser.
 - `SpeakOptions` (interface): interface SpeakOptions extends RadioVoice — Spoken-line options carried to the shell's speech channel.
 - `createRadioPlayback` (function): function createRadioPlayback(radio: Radio, sink: RadioAudioSink, options: { voices?: Readonly<Record<string, RadioVoice>> } = {}): RadioPlayback — Plays a radio through a game's audio seam with one call per tick: songs and beds as music themes started at the station's offset (so a retune lands mid-song), lines through speech in the voice mapped from their voice id. Pausing stops music and speech but not the radio's state; resuming re-cues the current segment. Speech is best effort: with no system voice the shell drops it and the HUD's now-playing line still carries the words.

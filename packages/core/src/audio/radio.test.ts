@@ -241,4 +241,27 @@ describe("createRadioPlayback", () => {
     expect(calls).toEqual(["hush", "music null 0 -"]);
     expect(playback.last()).toEqual({ kind: "off" });
   });
+  test("snapshot and restore carry pause and the spoken count, and an unpaused restore re-cues", () => {
+    const radio = createRadio(def({ initial: "news" }));
+    const { calls, audio } = sink();
+    const playback = createRadioPlayback(radio, audio);
+    for (let i = 0; i < 400; i++) playback.tick(0.1);
+    playback.pause();
+    const saved = playback.snapshot();
+    expect(saved.paused).toBe(true);
+    expect(saved.spoken).toBeGreaterThan(0);
+    expect(JSON.parse(JSON.stringify(saved))).toEqual(saved);
+
+    const copy = createRadioPlayback(radio, sink().audio);
+    copy.restore(saved);
+    expect(copy.paused()).toBe(true);
+    expect(copy.spoken()).toBe(saved.spoken);
+
+    calls.length = 0;
+    playback.restore({ paused: false, spoken: 2 });
+    expect(playback.paused()).toBe(false);
+    expect(playback.spoken()).toBeGreaterThanOrEqual(2);
+    expect(calls.slice(0, 2)).toEqual(["hush", "music null 0 -"]);
+    expect(calls.length).toBeGreaterThan(2);
+  });
 });

@@ -38,6 +38,16 @@ export interface RadioPlayback {
   spoken(): number;
   /** The last cue played, for a debug readout. */
   last(): RadioCue | null;
+  /** Playback's own state (paused, lines spoken); the radio itself snapshots separately. */
+  snapshot(): RadioPlaybackSnapshot;
+  /** Put a snapshot back. Restoring an unpaused playback re-cues the tuned station at its offset. */
+  restore(next: RadioPlaybackSnapshot): void;
+}
+
+/** Serializable playback state from {@link RadioPlayback.snapshot}. */
+export interface RadioPlaybackSnapshot {
+  paused: boolean;
+  spoken: number;
 }
 
 /**
@@ -97,5 +107,16 @@ export function createRadioPlayback(
     paused: () => isPaused,
     spoken: () => spoken,
     last: () => last,
+    snapshot: () => ({ paused: isPaused, spoken }),
+    restore(next) {
+      spoken = next.spoken;
+      last = null;
+      isPaused = next.paused;
+      sink.stopSpeech();
+      sink.music(null);
+      if (isPaused) return;
+      radio.cueCurrent();
+      for (const cue of radio.tick(0)) play(cue);
+    },
   };
 }
