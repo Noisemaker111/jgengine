@@ -347,20 +347,37 @@ async function landAndAwait(root: string, version: string): Promise<never> {
   };
   const merged = await waitForMerge(gh);
   if (merged === null) process.exit(1);
-  const forward = git(["push", "origin", "origin/beta:main"]);
-  if (forward.status !== 0) {
-    console.error(`release: fast-forwarding main failed: ${forward.stderr.trim()}`);
+  const forward = fastForwardMain(git);
+  if (!forward.ok) {
+    console.error(`release: fast-forwarding main failed: ${forward.error}`);
     process.exit(1);
   }
-  const head = git(["rev-parse", "origin/main"]);
   const result = await awaitPublish({
     version,
-    sha: head.status === 0 ? head.stdout.trim() : "",
+    sha: forward.sha,
     gh,
     log: (line) => console.log(line),
   });
   console.log(result.line);
   process.exit(result.code);
+}
+
+/**
+ * Push the merged release to `main`. The local `origin/beta` ref predates the merge `land` waited
+ * for, so it is fetched first: pushing the stale ref moved `main` to the commit before the release
+ * and 0.40.0 sat unpublished.
+ */
+export function fastForwardMain(
+  git: (args: readonly string[]) => { status: number | null; stdout: string; stderr: string },
+): { ok: true; sha: string } | { ok: false; error: string } {
+  const fetched = git(["fetch", "--quiet", "origin", "beta"]);
+  if (fetched.status !== 0) return { ok: false, error: `fetching origin/beta: ${fetched.stderr.trim()}` };
+  const tip = git(["rev-parse", "origin/beta"]);
+  if (tip.status !== 0) return { ok: false, error: `reading origin/beta: ${tip.stderr.trim()}` };
+  const sha = tip.stdout.trim();
+  const pushed = git(["push", "origin", `${sha}:main`]);
+  if (pushed.status !== 0) return { ok: false, error: pushed.stderr.trim() };
+  return { ok: true, sha };
 }
 
 /** The release PR's own merge is the event the publish run follows, so this waits on that state. */

@@ -121,6 +121,28 @@ describe("waiting on the publish run", () => {
     expect(result.line).toContain("succeeded but npm answers 0.38.3 for @jgengine/core, not 0.38.4");
   });
 
+  test("the run is found by SHA whatever branch GitHub reports, since publish.yml follows beta's CI run", async () => {
+    const sha = "a".repeat(40);
+    const listed: string[][] = [];
+    const result = await awaitPublish({
+      version: "0.38.4",
+      sha,
+      gh: (args) => {
+        if (args[0] === "run") {
+          listed.push([...args]);
+          return { status: 0, stdout: JSON.stringify(args.includes("--branch") ? [] : [run({ headSha: sha })]), stderr: "" };
+        }
+        return { status: 0, stdout: JSON.stringify(run({ headSha: sha })), stderr: "" };
+      },
+      npmView: () => ({ status: 0, stdout: "0.38.4\n", stderr: "" }),
+      graceMs: 0,
+      sleep: async () => {},
+      log: () => {},
+    });
+    expect(result.ok).toBe(true);
+    expect(listed[0]).not.toContain("--branch");
+  });
+
   test("a merge commit that never queued a run is reported by name, not waited on", async () => {
     const result = await awaitPublish({
       version: "0.38.4",

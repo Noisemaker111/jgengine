@@ -176,8 +176,8 @@ export async function awaitPublish(options: AwaitOptions): Promise<AwaitResult> 
       "list",
       "--workflow",
       PUBLISH_WORKFLOW,
-      "--branch",
-      "main",
+      // No --branch: publish.yml follows a CI run, and GitHub reports the triggering run's branch
+      // (beta), so filtering on main never found 0.40.0's run. The SHA is the match.
       "--limit",
       "10",
       "--json",
