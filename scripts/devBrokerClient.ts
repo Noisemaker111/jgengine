@@ -1,5 +1,5 @@
 import { spawn, spawnSync } from "node:child_process";
-import { readdirSync, readFileSync, realpathSync } from "node:fs";
+import { readdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -97,25 +97,14 @@ export async function ensureBroker(options: { log?: (line: string) => void; wait
   return null;
 }
 
-function readHead(checkout: string): string | null {
-  try {
-    const head = readFileSync(join(checkout, ".git", "HEAD"), "utf8").trim();
-    if (!head.startsWith("ref:")) return head;
-    return readFileSync(join(checkout, ".git", head.slice(4).trim()), "utf8").trim();
-  } catch {
-    return null;
-  }
-}
-
 /**
- * What a running server froze at boot: the engine commit, and the `Games` link, its commit and its
- * game list (Vite computes `@games/<id>` aliases once). A change restarts an unleased server.
+ * What a running server froze at boot: the commit and the game list (Vite computes
+ * `@games/<id>` aliases once). A change restarts an unleased server.
  */
 export function treeFingerprint(root: string, gameDir: string | null): string {
   const parts = [headRevision(root) ?? "no-head"];
   try {
-    const games = realpathSync(join(root, "Games"));
-    parts.push(games, readHead(games) ?? "no-games-head", readdirSync(games).sort().join(","));
+    parts.push(readdirSync(join(root, "games")).sort().join(","));
   } catch {
     parts.push("no-games");
   }

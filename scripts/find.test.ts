@@ -52,7 +52,7 @@ test("the ripgrep command skips dependencies, history, other checkouts and build
   const args = ripgrepArgs({ pattern: "needle", kind: ["ts", "tsx"], glob: ["*.test.ts"] });
   expect(args).toContain("--line-number");
   expect(args).not.toContain("--files-with-matches");
-  expect(args.filter((arg) => arg.startsWith("!"))).toEqual(["!**/node_modules/**", "!**/.git/**", "!**/.claude/**", "!**/dist/**", "!**/build/**", "!**/out/**", "!**/coverage/**", "!**/.turbo/**", "!**/.next/**", "!**/.scratch/**", "!**/Games/**"]);
+  expect(args.filter((arg) => arg.startsWith("!"))).toEqual(["!**/node_modules/**", "!**/.git/**", "!**/.claude/**", "!**/dist/**", "!**/build/**", "!**/out/**", "!**/coverage/**", "!**/.turbo/**", "!**/.next/**", "!**/.scratch/**"]);
   expect(args).toContain("*.ts");
   expect(args).toContain("*.tsx");
   expect(args).toContain("*.test.ts");

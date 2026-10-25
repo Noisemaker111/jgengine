@@ -42,7 +42,7 @@ describe("CUTLIST surface diet", () => {
     expect(desktop).toMatch(/SHOW_LAUNCHER/);
     expect(desktop).toMatch(/Launcher/);
     expect(desktop).not.toMatch(/"voxel-mine"/);
-    const gamesDir = join(root, "Games");
+    const gamesDir = join(root, "games");
     const tracked = readdirSync(gamesDir).filter((name) => {
       const pkg = join(gamesDir, name, "package.json");
       return existsSync(pkg) && statSync(join(gamesDir, name)).isDirectory();
@@ -53,7 +53,7 @@ describe("CUTLIST surface diet", () => {
 
   test("removed games stay out of the playable collection", () => {
     for (const id of ["wayfarer-deck", "resonant-crossing", "lantern-reach", "field-station"]) {
-      expect(existsSync(join(root, "Games", id, "src", "index.tsx"))).toBe(false);
+      expect(existsSync(join(root, "games", id, "src", "index.tsx"))).toBe(false);
       expect(existsSync(join(root, "apps/web/public/covers", `${id}.webp`))).toBe(false);
     }
   });
@@ -63,7 +63,7 @@ describe("CUTLIST surface diet", () => {
     const scripts = (JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as { scripts: Record<string, string> }).scripts;
     expect(readme).toMatch(/createGameContext/);
     const named = [...readme.matchAll(/bun run (games:[\w-]+)/g)].map((match) => match[1]!);
-    expect(named).toContain("games:clone");
+    expect(named).toContain("games:test");
     for (const script of named) expect(Object.keys(scripts)).toContain(script);
     expect(readme).not.toMatch(/createGameRuntime/);
     expect(readme).not.toMatch(/games:voxel-mine/);

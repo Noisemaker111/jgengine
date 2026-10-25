@@ -1,5 +1,4 @@
 import { existsSync, readFileSync } from "node:fs";
-import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
 
@@ -11,7 +10,6 @@ import {
   withBrowserSession,
 } from "./browser-lib";
 import { measureGame } from "./perf-play";
-import { requireGamesAtPin } from "./games-scope";
 import { parseGraphicsTier, type GraphicsTier } from "../packages/jgengine/src/templates/captureArgs";
 import { checkBudget, loadBudget, summarizeRecord, type LoadedBudget } from "./perf-budget";
 import { runPool } from "./type-shard";
@@ -143,40 +141,6 @@ const USAGE = `usage: bun run perf:gate [--games a,b] [--seconds n] [--quality l
   --set             not taken here: a setting override measures a cost against the defaults,
                     not a budget. Use \`bun run perf <game> --set key=value\` and compare records.`;
 
-/**
- * The games checkout the gate is about to measure, as the pin in
- * `scripts/games-ref.txt` and the clone's actual HEAD. Budgets describe a content
- * snapshot, so a run that does not say which snapshot it measured cannot be read
- * as an engine regression — the log names it instead.
- */
-export function describeGamesCheckout(root: string, head: (directory: string) => string | null = gamesHead): { pin: string | null; head: string | null } {
-  let pin: string | null = null;
-  try {
-    const raw = readFileSync(join(root, "scripts", "games-ref.txt"), "utf8").trim();
-    if (/^[0-9a-f]{40}$/.test(raw)) pin = raw;
-  } catch {
-    /* no pin file: the run still measures, it just cannot name the pinned content */
-  }
-  return { pin, head: head(join(root, "Games")) };
-}
-
-function gamesHead(directory: string): string | null {
-  try {
-    return execFileSync("git", ["-C", directory, "rev-parse", "HEAD"], { encoding: "utf8" }).trim() || null;
-  } catch {
-    return null;
-  }
-}
-
-/** One line naming the games content behind the numbers, flagging a clone that is not at the pin. */
-export function describeGamesLine(checkout: { pin: string | null; head: string | null }): string {
-  const short = (sha: string | null): string => (sha === null ? "unknown" : sha.slice(0, 7));
-  if (checkout.head === null) return "perf gate: games checkout unavailable — the numbers describe whatever Games/ holds";
-  const pinned = checkout.pin === null ? "no pin" : `pinned ${short(checkout.pin)}`;
-  const drift = checkout.pin !== null && checkout.pin !== checkout.head ? " (measuring unpinned content)" : "";
-  return `perf gate: games ${short(checkout.head)}, ${pinned}${drift}`;
-}
-
 interface GameOutcome {
   game: string;
   /** The printed ok line, or null when the game failed or was not measured. */
@@ -211,16 +175,12 @@ async function main(): Promise<void> {
   const budgets = new Map<string, LoadedBudget>();
   for (const game of games) budgets.set(game, loadBudget(game));
 
-  const missing = games.filter((game) => !existsSync(join(repoRoot, "Games", game, "src", "index.tsx")));
+  const missing = games.filter((game) => !existsSync(join(repoRoot, "games", game, "src", "index.tsx")));
   if (missing.length > 0) {
     throw new Error(
-      `perf gate: no game source for ${missing.join(", ")} — run \`bun run games:clone\` first (CI needs GAMES_CLONE_TOKEN)`,
+      `perf gate: no game source for ${missing.join(", ")} under games/`,
     );
   }
-
-  // Budgets describe a content snapshot, so numbers from another commit cannot be
-  // read as an engine regression. Fail before the ten-minute browser run (#2228).
-  requireGamesAtPin("perf gate", repoRoot);
 
   const server = await ensureDevServer(repoRoot);
   let rasterizerPrinted = false;
@@ -303,7 +263,7 @@ async function main(): Promise<void> {
     console.error(`\nperf gate FAILED — ${failures.length} problem(s) across ${games.length} games`);
     for (const failure of failures) console.error(`  ${failure}`);
     console.error(
-      "budgets live beside each game (Games/<id>/perf-budget.json), else scripts/perf-budget.json; raise drawsFrame only with a measured whole-frame baseline.",
+      "budgets live beside each game (games/<id>/perf-budget.json), else scripts/perf-budget.json; raise drawsFrame only with a measured whole-frame baseline.",
     );
     process.exit(1);
   }

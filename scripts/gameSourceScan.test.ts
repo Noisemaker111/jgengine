@@ -24,12 +24,12 @@ function fixture(files: Record<string, string>): string {
 describe("eachGameSource", () => {
   test("reads non-test sources of games with an index barrel", () => {
     const root = fixture({
-      "Games/arena/src/index.tsx": "export {};\n",
-      "Games/arena/src/game/loop.ts": "let timer = 0;\n",
-      "Games/arena/src/game/loop.test.ts": "let fixture = 1;\n",
-      "Games/notes/src/readme.ts": "let ignored = 1;\n",
+      "games/arena/src/index.tsx": "export {};\n",
+      "games/arena/src/game/loop.ts": "let timer = 0;\n",
+      "games/arena/src/game/loop.test.ts": "let fixture = 1;\n",
+      "games/notes/src/readme.ts": "let ignored = 1;\n",
     });
-    expect(eachGameSource(root).map((file) => file.rel).sort()).toEqual(["Games/arena/src/game/loop.ts", "Games/arena/src/index.tsx"]);
-    expect(findModuleGlobals(root).map((finding) => finding.where)).toEqual(["Games/arena/src/game/loop.ts:1"]);
+    expect(eachGameSource(root).map((file) => file.rel).sort()).toEqual(["games/arena/src/game/loop.ts", "games/arena/src/index.tsx"]);
+    expect(findModuleGlobals(root).map((finding) => finding.where)).toEqual(["games/arena/src/game/loop.ts:1"]);
   });
 });

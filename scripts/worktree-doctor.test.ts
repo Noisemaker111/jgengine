@@ -9,7 +9,6 @@ import {
   dependencyPlan,
   filterOnly,
   formatTable,
-  gamesUnlinked,
   installBroken,
   lockVerdict,
   missingPackages,
@@ -33,7 +32,6 @@ function tempDir(prefix: string): string {
 function report(overrides: Partial<WorktreeReport> = {}): WorktreeReport {
   const base = {
     repo: "jgengine",
-    kind: "engine" as const,
     name: "lane-a",
     path: "C:/repo/.claude/worktrees/lane-a",
     branch: "agent/lane-a",
@@ -110,24 +108,24 @@ describe("dependencyPlan", () => {
     }
   });
 
-  test("games repo: each game's own dependencies, installed inside the game", () => {
+  test("a game's own dependencies are planned inside the game", () => {
     const root = tempDir("jg-doctor-cat-");
     try {
       writeFileSync(
         join(root, "package.json"),
         JSON.stringify({
-          workspaces: { packages: ["*"], catalog: { "@jgengine/core": "0.27.0" } },
+          workspaces: { packages: ["games/*"] },
           devDependencies: { "@typescript/native-preview": "^7.0.0" },
         }),
       );
-      mkdirSync(join(root, "ember-command"), { recursive: true });
+      mkdirSync(join(root, "games", "ember-command"), { recursive: true });
       writeFileSync(
-        join(root, "ember-command", "package.json"),
-        JSON.stringify({ dependencies: { "@jgengine/core": "catalog:", vite: "^6.2.2" } }),
+        join(root, "games", "ember-command", "package.json"),
+        JSON.stringify({ dependencies: { "@jgengine/core": "workspace:*", vite: "catalog:" } }),
       );
       expect(dependencyPlan(root)).toEqual({
         root: ["@typescript/native-preview"],
-        workspaces: [{ dir: "ember-command", deps: ["@jgengine/core", "vite"] }],
+        workspaces: [{ dir: "games/ember-command", deps: ["@jgengine/core", "vite"] }],
       });
     } finally {
       rmSync(root, { recursive: true, force: true });
@@ -196,21 +194,10 @@ describe("severityOf", () => {
     expect(report({ nodeModules: false, missingDeps: [] }).severity).toBe(5);
   });
 
-  test("a worktree measuring a Games/ that is not the pin is broken, not fine", () => {
-    expect(report({ games: "stale", gamesHead: "67f6ed9bc5e66aadc15ad6dee391117f3aace947" }).severity).toBe(BROKEN);
-    expect(report({ games: "absent" }).severity).toBe(BROKEN);
-    expect(report({ games: "unknown-head" }).severity).toBe(BROKEN);
-    expect(report({ games: "at-pin" }).severity).toBe(0);
-    expect(report({ games: "no-pin" }).severity).toBe(0);
-  });
-
   test("only an install problem is repaired by reinstalling", () => {
-    const stale = report({ games: "stale" });
-    expect(installBroken(stale)).toBe(false);
     expect(installBroken(report({ missingDeps: ["vite"] }))).toBe(true);
-    expect(gamesUnlinked(stale)).toBe(false);
-    expect(gamesUnlinked(report({ games: "absent" }))).toBe(true);
-    expect(planRepair([stale]).repair).toHaveLength(0);
+    expect(installBroken(report({}))).toBe(false);
+    expect(planRepair([report({ staleInstall: true })]).repair).toHaveLength(0);
   });
 
   test("a lockfile that differs from the main checkout is reported, not warned about", () => {
@@ -219,10 +206,6 @@ describe("severityOf", () => {
 
   test("an unbuilt dist is informational only, not broken", () => {
     expect(report({ dist: false }).severity).toBe(0);
-  });
-
-  test("a games worktree has no dist to report", () => {
-    expect(report({ kind: "games", repo: "jgengine-games", dist: null }).severity).toBe(0);
   });
 
   test("status labels", () => {
@@ -273,7 +256,6 @@ describe("formatTable", () => {
     const lines = table.split("\n");
     expect(lines[0]).toContain("WORKTREE");
     expect(lines[0]).toContain("STATUS");
-    expect(lines[0]).toContain("GAMES");
     expect(lines[1]).toContain("lane-empty");
     expect(lines[1]).toContain("NO-INSTALL");
     expect(lines[2]).toContain("lane-half");
@@ -283,12 +265,6 @@ describe("formatTable", () => {
     expect(lines).toHaveLength(4);
   });
 
-  test("names the Games commit a row measures, and calls a stale one broken", () => {
-    const stale = report({ name: "lane-stale", games: "stale", gamesHead: "67f6ed9bc5e66aadc15ad6dee391117f3aace947" });
-    const lines = formatTable([stale]).split("\n");
-    expect(lines[1]).toContain("stale 67f6ed9");
-    expect(lines[1]).toContain("BROKEN");
-  });
 });
 
 describe("planRepair", () => {
@@ -339,11 +315,11 @@ describe("filterOnly", () => {
   test("matches repo/name by substring, keeps everything when no pattern is given", () => {
     const rows = [
       report({ name: "lane-budget-ratchet" }),
-      report({ name: "lane-budget-ratchet", repo: "jgengine-games", kind: "games", dist: null }),
+      report({ name: "lane-budget-ratchet", repo: "other-repo" }),
       report({ name: "lane-games-pin" }),
     ];
     expect(filterOnly(rows, []).length).toBe(3);
-    expect(filterOnly(rows, ["jgengine-games/lane-budget"]).map((row) => row.repo)).toEqual(["jgengine-games"]);
+    expect(filterOnly(rows, ["other-repo/lane-budget"]).map((row) => row.repo)).toEqual(["other-repo"]);
     expect(filterOnly(rows, ["lane-games-pin"]).map((row) => row.name)).toEqual(["lane-games-pin"]);
     expect(filterOnly(rows, ["pin", "ratchet"]).length).toBe(3);
   });

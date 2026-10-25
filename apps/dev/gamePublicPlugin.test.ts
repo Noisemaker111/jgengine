@@ -9,7 +9,7 @@ function fixture() {
   // fixture-location: allow plain bytes on disk; the plugin imports nothing from @jgengine
   const root = mkdtempSync(join(tmpdir(), "game-public-"));
   const runner = join(root, "runner-public");
-  const games = join(root, "Games");
+  const games = join(root, "games");
   const served = join(root, "lane", "dead-acre");
   for (const dir of [join(runner, "models"), join(games, "harbor", "public", "models", "library", "city", "lamp"), join(served, "public", "models", "library", "nature", "rock")]) mkdirSync(dir, { recursive: true });
   writeFileSync(join(runner, "models", "shared.glb"), "runner");
@@ -20,7 +20,7 @@ function fixture() {
 }
 
 describe("a game's provisioned models reach the dev runner", () => {
-  test("the --game-dir game's public folder comes before every Games/ folder", () => {
+  test("the --game-dir game's public folder comes before every games/ folder", () => {
     const { games, served } = fixture();
     expect(gamePublicRoots(served, games)).toEqual([join(served, "public"), join(games, "harbor", "public")]);
   });

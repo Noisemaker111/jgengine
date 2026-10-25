@@ -61,21 +61,21 @@ function fixture(files: Record<string, string>) {
 
 test("art gate ignores helper packages and validates playable game art", () => {
   const result = fixture({
-    "Games/registry/src/index.ts": "export {};",
-    "Games/shared/src/index.ts": "export {};",
-    "Games/studios/src/index.ts": "export {};",
-    "Games/probe/src/index.tsx": "export {};",
-    "Games/probe/src/art-direction.md": "## Palette\n- Amber against slate.\n",
+    "games/registry/src/index.ts": "export {};",
+    "games/shared/src/index.ts": "export {};",
+    "games/studios/src/index.ts": "export {};",
+    "games/probe/src/index.tsx": "export {};",
+    "games/probe/src/art-direction.md": "## Palette\n- Amber against slate.\n",
   });
   expect(result.status).toBe(0);
 });
 
 test("art gate requires documents for either game entry and rejects unfinished art", () => {
   const result = fixture({
-    "Games/entry/src/index.tsx": "export {};",
-    "Games/config/src/game.config.ts": "export {};",
-    "Games/unfinished/src/index.tsx": "export {};",
-    "Games/unfinished/src/art-direction.md": "## Palette\nTODO: fill in\n",
+    "games/entry/src/index.tsx": "export {};",
+    "games/config/src/game.config.ts": "export {};",
+    "games/unfinished/src/index.tsx": "export {};",
+    "games/unfinished/src/art-direction.md": "## Palette\nTODO: fill in\n",
   });
   expect(result.status).toBe(1);
   expect(result.stderr).toContain("entry: missing src/art-direction.md");

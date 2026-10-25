@@ -1,0 +1,255 @@
+{
+  "steps": [
+    {
+      "assert": "/First night/i.test(document.body.innerText)",
+      "before": {
+        "is": "/First night/i.test(document.body.innerText)",
+        "timeoutMs": 60000
+      },
+      "note": "arrival: a run is up and the first story beat started by itself"
+    },
+    {
+      "key": "Digit1",
+      "ms": 120,
+      "after": {
+        "is": "__jgProbe().built >= 1",
+        "timeoutMs": 8000
+      },
+      "note": "build a barricade in front of you"
+    },
+    {
+      "key": "KeyN",
+      "ms": 120,
+      "after": {
+        "is": "__jgProbe().wave >= 1",
+        "timeoutMs": 10000
+      },
+      "note": "call the first night early"
+    },
+    {
+      "assert": "__jgProbe().alive > 0",
+      "note": "arrival: the night spawned at the lairs, read from the game's own session"
+    },
+    {
+      "wait": 25000
+    },
+    {
+      "key": "mouse0",
+      "ms": 120
+    },
+    {
+      "wait": 400
+    },
+    {
+      "key": "mouse0",
+      "ms": 120
+    },
+    {
+      "wait": 400
+    },
+    {
+      "key": "mouse0",
+      "ms": 120
+    },
+    {
+      "wait": 400
+    },
+    {
+      "key": "mouse0",
+      "ms": 120
+    },
+    {
+      "wait": 400
+    },
+    {
+      "key": "mouse0",
+      "ms": 120
+    },
+    {
+      "wait": 400
+    },
+    {
+      "key": "mouse0",
+      "ms": 120
+    },
+    {
+      "wait": 400
+    },
+    {
+      "key": "mouse0",
+      "ms": 120
+    },
+    {
+      "wait": 400
+    },
+    {
+      "key": "mouse0",
+      "ms": 120
+    },
+    {
+      "wait": 400
+    },
+    {
+      "key": "mouse0",
+      "ms": 120
+    },
+    {
+      "wait": 400
+    },
+    {
+      "key": "mouse0",
+      "ms": 120
+    },
+    {
+      "wait": 400
+    },
+    {
+      "key": "mouse0",
+      "ms": 120
+    },
+    {
+      "wait": 400
+    },
+    {
+      "key": "mouse0",
+      "ms": 120
+    },
+    {
+      "wait": 400
+    },
+    {
+      "key": "mouse0",
+      "ms": 120
+    },
+    {
+      "wait": 400
+    },
+    {
+      "key": "mouse0",
+      "ms": 120
+    },
+    {
+      "wait": 400
+    },
+    {
+      "key": "mouse0",
+      "ms": 120
+    },
+    {
+      "wait": 400
+    },
+    {
+      "key": "mouse0",
+      "ms": 120
+    },
+    {
+      "wait": 400
+    },
+    {
+      "key": "mouse0",
+      "ms": 120
+    },
+    {
+      "wait": 400
+    },
+    {
+      "key": "mouse0",
+      "ms": 120
+    },
+    {
+      "wait": 400
+    },
+    {
+      "key": "mouse0",
+      "ms": 120
+    },
+    {
+      "wait": 400
+    },
+    {
+      "key": "mouse0",
+      "ms": 120
+    },
+    {
+      "wait": 400
+    },
+    {
+      "key": "mouse0",
+      "ms": 120
+    },
+    {
+      "wait": 400
+    },
+    {
+      "key": "mouse0",
+      "ms": 120
+    },
+    {
+      "wait": 400
+    },
+    {
+      "key": "mouse0",
+      "ms": 120
+    },
+    {
+      "wait": 400
+    },
+    {
+      "key": "mouse0",
+      "ms": 120
+    },
+    {
+      "wait": 400
+    },
+    {
+      "key": "mouse0",
+      "ms": 120
+    },
+    {
+      "wait": 400
+    },
+    {
+      "key": "mouse0",
+      "ms": 120
+    },
+    {
+      "wait": 400
+    },
+    {
+      "key": "mouse0",
+      "ms": 120
+    },
+    {
+      "wait": 400
+    },
+    {
+      "key": "mouse0",
+      "ms": 120
+    },
+    {
+      "wait": 400
+    },
+    {
+      "key": "mouse0",
+      "ms": 120
+    },
+    {
+      "wait": 400
+    },
+    {
+      "key": "mouse0",
+      "ms": 120
+    },
+    {
+      "wait": 400
+    },
+    {
+      "assert": "__jgProbe().alive < 3",
+      "before": {
+        "is": "__jgProbe().alive < 3",
+        "timeoutMs": 30000
+      },
+      "note": "arrival: swings landed and attackers fell, so the fight is real and not only the spawn"
+    }
+  ]
+}

@@ -194,22 +194,22 @@ describe("shoot daemon games world", () => {
   const fixture = (): { cwd: string; games: (names: string[]) => void } => {
     const cwd = mkdtempSync(join(tmpdir(), "jg-shoot-world-"));
     const games = (names: string[]): void => {
-      for (const name of names) mkdirSync(join(cwd, "Games", name, "src"), { recursive: true });
-      for (const name of names) writeFileSync(join(cwd, "Games", name, "src", "index.tsx"), "");
+      for (const name of names) mkdirSync(join(cwd, "games", name, "src"), { recursive: true });
+      for (const name of names) writeFileSync(join(cwd, "games", name, "src", "index.tsx"), "");
     };
     return { cwd, games };
   };
 
-  test("reports no world when there is no Games checkout", () => {
+  test("reports no games when there is no games/ folder", () => {
     const { cwd } = fixture();
     try {
-      expect(gamesWorld(cwd)).toEqual({ target: null, linkMtimeMs: null, head: null, games: [] });
+      expect(gamesWorld(cwd)).toEqual({ games: [] });
     } finally {
       rmSync(cwd, { recursive: true, force: true });
     }
   });
 
-  test("reports a repointed link and an added game as a change", () => {
+  test("reports an added game as a change", () => {
     const first = fixture();
     const second = fixture();
     try {

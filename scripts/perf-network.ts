@@ -29,7 +29,7 @@ export const ALL_GAMES = [
 
 const USAGE = `usage: bun run perf:network <game...> [--seconds n] [--all] [--json path]
 
-  <game...>       one or more game ids from Games/
+  <game...>       one or more game ids from games/
   --all           every reference game (${ALL_GAMES.join(", ")})
   --seconds n     play window per game (default 120)
   --json path     also append the JSON lines to a file
@@ -297,8 +297,8 @@ export function parseArgs(argv: readonly string[]): { games: string[]; seconds: 
   if (games.length === 0) throw new Error(`a game id is required\n\n${USAGE}`);
   for (const game of games) {
     if (url !== undefined) break;
-    if (!existsSync(join(repoRoot, "Games", game, "src", "index.tsx"))) {
-      throw new Error(`no game "${game}" in Games/ — run \`bun run games:clone\` first, then retry`);
+    if (!existsSync(join(repoRoot, "games", game, "src", "index.tsx"))) {
+      throw new Error(`no game "${game}" in games/`);
     }
   }
   return { games, seconds, json, timeoutSeconds, ...(dump === undefined ? {} : { dump }), ...(url === undefined ? {} : { url }) };

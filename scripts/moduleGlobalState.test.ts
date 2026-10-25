@@ -16,8 +16,8 @@ function scan(files: Record<string, string>): string[] {
 describe("findModuleGlobals", () => {
   test("flags module-level let, exported or not", () => {
     expect(
-      scan({ "Games/probe/src/loop.ts": "let timer = 0;\nexport let session = null;\n" }),
-    ).toEqual(["Games/probe/src/loop.ts#session", "Games/probe/src/loop.ts#timer"]);
+      scan({ "games/probe/src/loop.ts": "let timer = 0;\nexport let session = null;\n" }),
+    ).toEqual(["games/probe/src/loop.ts#session", "games/probe/src/loop.ts#timer"]);
   });
 
   test("ignores let inside a function or block", () => {
@@ -26,25 +26,25 @@ describe("findModuleGlobals", () => {
   return local;
 }
 `;
-    expect(scan({ "Games/probe/src/loop.ts": source })).toEqual([]);
+    expect(scan({ "games/probe/src/loop.ts": source })).toEqual([]);
   });
 
   test("ignores const and test files", () => {
     expect(
       scan({
-        "Games/probe/src/a.ts": "const fixed = 1;\n",
-        "Games/probe/src/b.test.ts": "let scratch = 0;\n",
+        "games/probe/src/a.ts": "const fixed = 1;\n",
+        "games/probe/src/b.test.ts": "let scratch = 0;\n",
       }),
     ).toEqual([]);
   });
 
   test("only looks inside a game's src tree", () => {
-    expect(scan({ "Games/probe/scripts/tool.ts": "let n = 0;\n" })).toEqual([]);
+    expect(scan({ "games/probe/scripts/tool.ts": "let n = 0;\n" })).toEqual([]);
   });
 
   test("reports a 1-indexed declaration line", () => {
-    const root = writeGameTree("module-globals-", { "Games/probe/src/loop.ts": "// header\n\nlet timer = 0;\n" });
-    expect(findModuleGlobals(root)[0]!.where).toBe("Games/probe/src/loop.ts:3");
+    const root = writeGameTree("module-globals-", { "games/probe/src/loop.ts": "// header\n\nlet timer = 0;\n" });
+    expect(findModuleGlobals(root)[0]!.where).toBe("games/probe/src/loop.ts:3");
     rmSync(root, { recursive: true, force: true });
   });
 });

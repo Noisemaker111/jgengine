@@ -17,8 +17,8 @@ function checkout(paths: string[]) {
 }
 
 describe("driveProjectDir", () => {
-  test("a fresh games worktree wins over the engine's own Games clone", () => {
-    const tree = checkout(["/wt/ember-command", "/wt/ember-command/package.json", "/engine/Games/ember-command", "/engine/Games/ember-command/package.json"]);
+  test("a fresh games worktree wins over this checkout's games/", () => {
+    const tree = checkout(["/wt/ember-command", "/wt/ember-command/package.json", "/engine/games/ember-command", "/engine/games/ember-command/package.json"]);
     const dir = driveProjectDir({ game: "ember-command" }, "/wt", "/engine", tree.exists);
     expect(dir).toContain("ember-command");
     expect(dir).not.toContain("engine");
@@ -27,12 +27,12 @@ describe("driveProjectDir", () => {
   test("standing in the game project uses that project", () => {
     const tree = checkout(["/wt/ember-command", "/wt/ember-command/package.json"]);
     expect(driveProjectDir({ game: "ember-command" }, "/wt/ember-command", "/engine", tree.exists)).toContain("ember-command");
-    expect(driveProjectDir({ game: "ember-command" }, "/wt/ember-command", "/engine", tree.exists)).not.toContain("Games");
+    expect(driveProjectDir({ game: "ember-command" }, "/wt/ember-command", "/engine", tree.exists)).not.toContain("games");
   });
 
   test("falls back to the engine checkout, and an external URL stays in the working directory", () => {
     const tree = checkout([]);
-    expect(driveProjectDir({ game: "ember-command" }, "/elsewhere", "/engine", tree.exists)).toContain("Games");
+    expect(driveProjectDir({ game: "ember-command" }, "/elsewhere", "/engine", tree.exists)).toContain("games");
     expect(driveProjectDir({ game: "url", external: true }, "/elsewhere", "/engine", tree.exists)).toBe("/elsewhere");
   });
 });

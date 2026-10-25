@@ -1,0 +1,1788 @@
+{
+  "steps": [
+    {
+      "key": "KeyW",
+      "ms": 400
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "approach",
+        "input": {}
+      }
+    },
+    {
+      "wait": 500
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "wait": 350
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "wait": 350
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "wait": 350
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "wait": 350
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "approach",
+        "input": {}
+      }
+    },
+    {
+      "wait": 500
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "wait": 350
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "wait": 350
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "wait": 350
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "wait": 350
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "approach",
+        "input": {}
+      }
+    },
+    {
+      "wait": 500
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "wait": 350
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "wait": 350
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "wait": 350
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "wait": 350
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "approach",
+        "input": {}
+      }
+    },
+    {
+      "wait": 500
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "wait": 350
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "wait": 350
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "wait": 350
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "wait": 350
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "approach",
+        "input": {}
+      }
+    },
+    {
+      "wait": 500
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "wait": 350
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "wait": 350
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "wait": 350
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "wait": 350
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "approach",
+        "input": {}
+      }
+    },
+    {
+      "wait": 500
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "wait": 350
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "wait": 350
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "wait": 350
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "wait": 350
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "approach",
+        "input": {}
+      }
+    },
+    {
+      "wait": 500
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "wait": 350
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "wait": 350
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "wait": 350
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "wait": 350
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "approach",
+        "input": {}
+      }
+    },
+    {
+      "wait": 500
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "wait": 350
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "wait": 350
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "wait": 350
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "fire",
+        "input": {}
+      }
+    },
+    {
+      "wait": 115
+    },
+    {
+      "wait": 350
+    },
+    {
+      "assert": "__jgProbe().health > 0",
+      "note": "arrival: still standing after the firefight"
+    }
+  ]
+}

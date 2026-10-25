@@ -1,0 +1,46 @@
+{
+  "steps": [
+    {
+      "assert": "/start race/i.test(document.body.innerText)",
+      "before": {
+        "is": "/start race/i.test(document.body.innerText)",
+        "timeoutMs": 60000
+      },
+      "note": "arrival: the career opens in the garage with the first race on the board"
+    },
+    {
+      "click": "Start race",
+      "after": {
+        "is": "__jgProbe().racing === 1",
+        "timeoutMs": 20000
+      },
+      "note": "line up; the count runs and the lights go green"
+    },
+    {
+      "assert": "__jgProbe().rivals > 0",
+      "note": "arrival: rivals are on the grid, read from the game's own session"
+    },
+    {
+      "key": "KeyT",
+      "ms": 120,
+      "after": {
+        "is": "__jgProbe().assist === 1",
+        "timeoutMs": 3000
+      },
+      "note": "steering assist on, so a held throttle follows the racing line"
+    },
+    {
+      "key": "KeyW",
+      "ms": 70000,
+      "note": "race the first event flat out"
+    },
+    {
+      "assert": "__jgProbe().racing === 0 && __jgProbe().cash > 200",
+      "before": {
+        "is": "__jgProbe().racing === 0",
+        "timeoutMs": 60000
+      },
+      "note": "arrival: the race finished on the podium and paid out, so the career loop turns"
+    }
+  ]
+}

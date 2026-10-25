@@ -182,7 +182,7 @@ export function createProjectSurfaceHost(options: {
     newGame(id, name) {
       const idError = validateNewGameId(id);
       if (idError !== null) return { ok: false, error: idError };
-      if (existsSync(join(gamesDir, id))) return { ok: false, error: `Games/${id} already exists` };
+      if (existsSync(join(gamesDir, id))) return { ok: false, error: `games/${id} already exists` };
       const command = buildShellCommand({ kind: "new-game", id, name });
       const key = processKey("new-game", id);
       try {

@@ -131,7 +131,7 @@ export function diagnose(dir: string): Finding[] {
     findings.push({
       ok: missing.length === 0,
       label: "in-repo tsconfig paths match the canonical game shape",
-      fix: `add compilerOptions.paths ${missing.map(([alias]) => `"${alias}"`).join(", ")} per Games/* (see check-game-shape)`,
+      fix: `add compilerOptions.paths ${missing.map(([alias]) => `"${alias}"`).join(", ")} per packages/jgengine/src/gameShape.ts`,
     });
   }
 

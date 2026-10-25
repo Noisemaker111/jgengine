@@ -65,7 +65,7 @@ describe("formatSummary", () => {
 
   test("non-script stages surface their real command as the re-run hint", () => {
     expect(rerunHint(PLANS["check-types"] ?? [], "check-types-all")).toBe("bun scripts/check-types-all.ts");
-    expect(rerunHint(PLANS["check-types"] ?? [], "check-game-shape")).toBe("bun run check-game-shape");
+    expect(rerunHint(PLANS["check-types"] ?? [], "check-content-gate")).toBe("bun run check-content-gate");
   });
 });
 
@@ -147,7 +147,7 @@ describe("generated-artifact drift", () => {
 describe("SDK validation ownership", () => {
   const externalGameChecks = [
     "check-module-globals", "check-game-determinism", "check-game-front-end", "check-game-feel",
-    "check-art-direction", "check-game-shape", "check-content-gate", "check-asset-availability",
+    "check-art-direction", "check-content-gate", "check-asset-availability",
   ];
 
   test("SDK retains every non-game validator and the full plan retains all game validators", () => {

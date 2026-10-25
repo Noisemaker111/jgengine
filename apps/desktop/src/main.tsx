@@ -13,7 +13,7 @@ const StandaloneEditor = lazy(async () => ({
   default: (await import("@jgengine/editor")).StandaloneEditor,
 }));
 
-const gameModules = import.meta.glob<{ game: PlayableGame }>("../../../Games/*/src/index.tsx");
+const gameModules = import.meta.glob<{ game: PlayableGame }>("../../../games/*/src/index.tsx");
 
 const gameEntries = Object.fromEntries(
   Object.entries(gameModules).map(([path, loader]) => [

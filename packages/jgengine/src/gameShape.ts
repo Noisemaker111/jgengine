@@ -1,5 +1,5 @@
 /**
- * Canonical game `src/` shape — single source of truth for doctor, check-game-shape,
+ * Canonical game `src/` shape — single source of truth for doctor
  * and create/template tests.
  *
  * `src/` holds only the skeleton; game-specific modules live under `src/game/`.

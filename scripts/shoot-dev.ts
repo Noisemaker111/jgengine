@@ -45,7 +45,7 @@ import {
 import { decodePng } from "./png-reader";
 import { clearOriginStorage } from "./capture-storage";
 import { headRevision } from "./captureRevision";
-import { ALLOW_MISMATCH_FLAG, engineRecord, resolveEngineIdentity, type EngineRecord } from "./engineIdentity";
+import { engineRecord, resolveEngineIdentity, type EngineRecord } from "./engineIdentity";
 import { externalCaptureUrl } from "./captureTarget";
 import { assertOneTarget, serveGameDir, splitGameDir } from "./servedGame";
 import { assertQuickIsIterationOnly, quickProfile, quickSuffix, quickTimingLine, splitQuickFlag } from "./capture-preset";
@@ -132,9 +132,7 @@ type Args = {
   headed: boolean;
   /** 960x540 iteration preset: one settled frame, no evidence claims. */
   quick: boolean;
-  /** `--allow-engine-mismatch`: serve engine source older than the game's pin on purpose. */
-  allowEngineMismatch: boolean;
-  /** `--game-dir`: serve this game from another checkout instead of `Games/<game>`. */
+  /** `--game-dir`: serve this game from another checkout instead of `games/<game>`. */
   gameDir: string | null;
   help: boolean;
   timeoutMs: number;
@@ -154,12 +152,10 @@ ${captureFlagHelp("shoot", "engine", CAPTURE_FLAGS)}
 
 Engine:
   Every run prints the engine it actually renders: the dev runner serves this
-  checkout's source, so the line names its version and commit. The run stops when
-  that source is older than the version the game's catalog pins.
-  --allow-engine-mismatch serves older source on purpose and records that it did.
+  checkout's source, so the line names its version and commit.
 
   --game-dir <path> serves <game> from another checkout - a lane's worktree, not
-  this repo's Games/<game> clone - and keeps the rest of this runner: this
+  this repo's games/<game> clone - and keeps the rest of this runner: this
   checkout's engine source, --state boot states, --view and the engine line. The
   folder is named after the game, and its parent is read for the engine pin.
 
@@ -193,14 +189,11 @@ function parseArgs(argv: string[]): Args {
   // `--cold` is parsed here, not in CAPTURE_FLAGS: the portable harness has no daemon to skip.
   const cold = quick.argv.includes("--cold");
   const headed = quick.argv.includes("--headed");
-  // `--allow-engine-mismatch` is parsed here, not in CAPTURE_FLAGS: the portable harness renders the
-  // engine it ships with, so it has no checkout version to compare against a games pin.
-  const allowEngineMismatch = quick.argv.includes(ALLOW_MISMATCH_FLAG);
-  // `--game-dir` is parsed here, not in CAPTURE_FLAGS: the portable harness has no `Games/` to swap.
+  // `--game-dir` is parsed here, not in CAPTURE_FLAGS: the portable harness has no `games/` to swap.
   const served = splitGameDir(quick.argv);
   const parsed = parseCaptureArgs(
     "shoot",
-    served.argv.filter((arg) => arg !== "--headed" && arg !== "--cold" && arg !== ALLOW_MISMATCH_FLAG),
+    served.argv.filter((arg) => arg !== "--headed" && arg !== "--cold"),
     CAPTURE_FLAGS,
   );
   const o = parsed.options;
@@ -242,7 +235,6 @@ function parseArgs(argv: string[]): Args {
     inspect: o.inspect === true,
     headed,
     quick: quick.quick,
-    allowEngineMismatch,
     gameDir: served.dir,
     help: parsed.help,
     timeoutMs: (num("timeout") ?? 60) * 1000,
@@ -772,13 +764,9 @@ async function shootSession(daemon: ShootDaemonState | null): Promise<number> {
  * checked — the identity line would describe this checkout, not that page.
  */
 {
-  const identity = resolveEngineIdentity({ game: args.game, allowMismatch: args.allowEngineMismatch, tool: "shoot" });
+  const identity = resolveEngineIdentity();
   if (args.url === undefined) {
     console.error(identity.line);
-    if (!identity.allowed) {
-      console.error(identity.refusal);
-      process.exit(1);
-    }
     engineForRecord = engineRecord(identity);
   }
 }

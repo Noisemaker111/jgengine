@@ -242,8 +242,8 @@ describe("registerRootGameScript", () => {
         name: "fixture-root",
         scripts: {
           build: "noop",
-          "games:annals": "bun run --cwd Games/annals dev",
-          "games:voxel-mine": "bun run --cwd Games/voxel-mine dev",
+          "games:annals": "bun run --cwd games/annals dev",
+          "games:voxel-mine": "bun run --cwd games/voxel-mine dev",
         },
       }),
     );
@@ -252,7 +252,7 @@ describe("registerRootGameScript", () => {
     const scripts = (JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as {
       scripts: Record<string, string>;
     }).scripts;
-    expect(scripts["games:probe-game"]).toBe("bun run --cwd Games/probe-game dev");
+    expect(scripts["games:probe-game"]).toBe("bun run --cwd games/probe-game dev");
     const gameKeys = Object.keys(scripts).filter((key) => key.startsWith("games:"));
     expect(gameKeys).toEqual(["games:annals", "games:probe-game", "games:voxel-mine"]);
 
@@ -266,6 +266,6 @@ describe("registerRootGameScript", () => {
     const scripts = (JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as {
       scripts: Record<string, string>;
     }).scripts;
-    expect(scripts["games:my-game-name"]).toBe("bun run --cwd Games/My-Game-Name dev");
+    expect(scripts["games:my-game-name"]).toBe("bun run --cwd games/My-Game-Name dev");
   });
 });

@@ -1,0 +1,183 @@
+{
+  "steps": [
+    {
+      "wait": 21000
+    },
+    {
+      "key": "KeyW",
+      "ms": 600
+    },
+    {
+      "key": "mouse0",
+      "ms": 120
+    },
+    {
+      "wait": 450
+    },
+    {
+      "key": "mouse0",
+      "ms": 120
+    },
+    {
+      "wait": 450
+    },
+    {
+      "key": "mouse0",
+      "ms": 120
+    },
+    {
+      "wait": 450
+    },
+    {
+      "key": "mouse0",
+      "ms": 120
+    },
+    {
+      "wait": 450
+    },
+    {
+      "key": "mouse0",
+      "ms": 120
+    },
+    {
+      "wait": 450
+    },
+    {
+      "key": "mouse0",
+      "ms": 120
+    },
+    {
+      "wait": 450
+    },
+    {
+      "key": "mouse0",
+      "ms": 120
+    },
+    {
+      "wait": 450
+    },
+    {
+      "key": "mouse0",
+      "ms": 120
+    },
+    {
+      "wait": 450
+    },
+    {
+      "key": "mouse0",
+      "ms": 120
+    },
+    {
+      "wait": 450
+    },
+    {
+      "key": "mouse0",
+      "ms": 120
+    },
+    {
+      "wait": 450
+    },
+    {
+      "key": "mouse0",
+      "ms": 120
+    },
+    {
+      "wait": 450
+    },
+    {
+      "key": "mouse0",
+      "ms": 120
+    },
+    {
+      "wait": 450
+    },
+    {
+      "key": "mouse0",
+      "ms": 120
+    },
+    {
+      "wait": 450
+    },
+    {
+      "key": "mouse0",
+      "ms": 120
+    },
+    {
+      "wait": 450
+    },
+    {
+      "key": "mouse0",
+      "ms": 120
+    },
+    {
+      "wait": 450
+    },
+    {
+      "key": "mouse0",
+      "ms": 120
+    },
+    {
+      "wait": 450
+    },
+    {
+      "key": "mouse0",
+      "ms": 120
+    },
+    {
+      "wait": 450
+    },
+    {
+      "key": "mouse0",
+      "ms": 120
+    },
+    {
+      "wait": 450
+    },
+    {
+      "key": "mouse0",
+      "ms": 120
+    },
+    {
+      "wait": 450
+    },
+    {
+      "key": "mouse0",
+      "ms": 120
+    },
+    {
+      "wait": 450
+    },
+    {
+      "key": "mouse0",
+      "ms": 120
+    },
+    {
+      "wait": 450
+    },
+    {
+      "key": "mouse0",
+      "ms": 120
+    },
+    {
+      "wait": 450
+    },
+    {
+      "key": "mouse0",
+      "ms": 120
+    },
+    {
+      "wait": 450
+    },
+    {
+      "key": "mouse0",
+      "ms": 120
+    },
+    {
+      "wait": 450
+    },
+    {
+      "assert": "__jgProbe().wave >= 1",
+      "note": "arrival: still in the night after the fight"
+    }
+  ]
+}

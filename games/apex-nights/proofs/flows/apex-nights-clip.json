@@ -1,0 +1,16 @@
+{
+  "steps": [
+    {
+      "key": "KeyT",
+      "ms": 120
+    },
+    {
+      "key": "KeyW",
+      "ms": 25000
+    },
+    {
+      "assert": "__jgProbe().racing === 1",
+      "note": "arrival: mid-race with assist on"
+    }
+  ]
+}

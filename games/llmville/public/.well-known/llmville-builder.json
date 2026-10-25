@@ -1,0 +1,33 @@
+{
+  "apiVersion": 1,
+  "audience": "coding-agents",
+  "summary": "LLMville 3D Builder dev API. Remote agents use HTTP only — no repository access required.",
+  "discover": "/.well-known/llmville-builder.json",
+  "openapi": "/dev-assets/builder-api.openapi.json",
+  "sceneApi": "/__llmville-builder",
+  "playbook": "/__llmville-builder/playbook",
+  "builderUrl": "/dev/build",
+  "status": "/__llmville-builder/status",
+  "createAsset": "/__llmville-builder/assets",
+  "firstStep": "GET /__llmville-builder/status, then POST /__llmville-builder/assets to create an object",
+  "agentRules": {
+    "context": "External agent with HTTP access only. Do not open or edit the LLMville source repository.",
+    "do": [
+      "GET /__llmville-builder/status before editing",
+      "POST /__llmville-builder/assets to create and save primitive/group objects",
+      "POST /screenshot/request with {\"angles\":[\"viewport\"]} to verify"
+    ],
+    "doNot": [
+      "Do not create scripts or files in the repo",
+      "Do not trust stale screenshot PNGs without a fresh requestId",
+      "Do not rely on catalog modelKey for new objects — many are placeholder GLBs"
+    ]
+  },
+  "screenshot": "/__llmville-builder/screenshot",
+  "screenshots": {
+    "index": "/__llmville-builder/screenshot",
+    "angles": ["viewport", "perspective", "top", "side"],
+    "prerequisite": "Browser tab at /dev/build must be open (check GET /status browserConnected).",
+    "exampleFetch": "curl -X POST http://localhost:3001/__llmville-builder/screenshot/request -d '{\"angles\":[\"viewport\"]}' && sleep 8 && curl -o viewport.png http://localhost:3001/__llmville-builder/screenshot/viewport.png"
+  }
+}

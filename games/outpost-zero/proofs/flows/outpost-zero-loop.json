@@ -1,0 +1,412 @@
+{
+  "steps": [
+    {
+      "assert": "/Boots on the dust/i.test(document.body.innerText)",
+      "before": {
+        "is": "/Boots on the dust/i.test(document.body.innerText)",
+        "timeoutMs": 60000
+      },
+      "note": "arrival: a run is up and the first beat started by itself"
+    },
+    {
+      "assert": "__jgProbe().guards > 0 && __jgProbe().health > 0",
+      "note": "arrival: the outposts are garrisoned and you are alive"
+    },
+    {
+      "key": "KeyW",
+      "ms": 400
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "approach",
+        "input": {}
+      }
+    },
+    {
+      "wait": 500
+    },
+    {
+      "key": "mouse0",
+      "ms": 550
+    },
+    {
+      "wait": 350
+    },
+    {
+      "key": "mouse0",
+      "ms": 550
+    },
+    {
+      "wait": 350
+    },
+    {
+      "key": "mouse0",
+      "ms": 550
+    },
+    {
+      "wait": 350
+    },
+    {
+      "key": "mouse0",
+      "ms": 550
+    },
+    {
+      "wait": 350
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "approach",
+        "input": {}
+      }
+    },
+    {
+      "wait": 500
+    },
+    {
+      "key": "mouse0",
+      "ms": 550
+    },
+    {
+      "wait": 350
+    },
+    {
+      "key": "mouse0",
+      "ms": 550
+    },
+    {
+      "wait": 350
+    },
+    {
+      "key": "mouse0",
+      "ms": 550
+    },
+    {
+      "wait": 350
+    },
+    {
+      "key": "mouse0",
+      "ms": 550
+    },
+    {
+      "wait": 350
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "approach",
+        "input": {}
+      }
+    },
+    {
+      "wait": 500
+    },
+    {
+      "key": "mouse0",
+      "ms": 550
+    },
+    {
+      "wait": 350
+    },
+    {
+      "key": "mouse0",
+      "ms": 550
+    },
+    {
+      "wait": 350
+    },
+    {
+      "key": "mouse0",
+      "ms": 550
+    },
+    {
+      "wait": 350
+    },
+    {
+      "key": "mouse0",
+      "ms": 550
+    },
+    {
+      "wait": 350
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "approach",
+        "input": {}
+      }
+    },
+    {
+      "wait": 500
+    },
+    {
+      "key": "mouse0",
+      "ms": 550
+    },
+    {
+      "wait": 350
+    },
+    {
+      "key": "mouse0",
+      "ms": 550
+    },
+    {
+      "wait": 350
+    },
+    {
+      "key": "mouse0",
+      "ms": 550
+    },
+    {
+      "wait": 350
+    },
+    {
+      "key": "mouse0",
+      "ms": 550
+    },
+    {
+      "wait": 350
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "approach",
+        "input": {}
+      }
+    },
+    {
+      "wait": 500
+    },
+    {
+      "key": "mouse0",
+      "ms": 550
+    },
+    {
+      "wait": 350
+    },
+    {
+      "key": "mouse0",
+      "ms": 550
+    },
+    {
+      "wait": 350
+    },
+    {
+      "key": "mouse0",
+      "ms": 550
+    },
+    {
+      "wait": 350
+    },
+    {
+      "key": "mouse0",
+      "ms": 550
+    },
+    {
+      "wait": 350
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "approach",
+        "input": {}
+      }
+    },
+    {
+      "wait": 500
+    },
+    {
+      "key": "mouse0",
+      "ms": 550
+    },
+    {
+      "wait": 350
+    },
+    {
+      "key": "mouse0",
+      "ms": 550
+    },
+    {
+      "wait": 350
+    },
+    {
+      "key": "mouse0",
+      "ms": 550
+    },
+    {
+      "wait": 350
+    },
+    {
+      "key": "mouse0",
+      "ms": 550
+    },
+    {
+      "wait": 350
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "approach",
+        "input": {}
+      }
+    },
+    {
+      "wait": 500
+    },
+    {
+      "key": "mouse0",
+      "ms": 550
+    },
+    {
+      "wait": 350
+    },
+    {
+      "key": "mouse0",
+      "ms": 550
+    },
+    {
+      "wait": 350
+    },
+    {
+      "key": "mouse0",
+      "ms": 550
+    },
+    {
+      "wait": 350
+    },
+    {
+      "key": "mouse0",
+      "ms": 550
+    },
+    {
+      "wait": 350
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "approach",
+        "input": {}
+      }
+    },
+    {
+      "wait": 500
+    },
+    {
+      "key": "mouse0",
+      "ms": 550
+    },
+    {
+      "wait": 350
+    },
+    {
+      "key": "mouse0",
+      "ms": 550
+    },
+    {
+      "wait": 350
+    },
+    {
+      "key": "mouse0",
+      "ms": 550
+    },
+    {
+      "wait": 350
+    },
+    {
+      "key": "mouse0",
+      "ms": 550
+    },
+    {
+      "wait": 350
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "approach",
+        "input": {}
+      }
+    },
+    {
+      "wait": 500
+    },
+    {
+      "key": "mouse0",
+      "ms": 550
+    },
+    {
+      "wait": 350
+    },
+    {
+      "key": "mouse0",
+      "ms": 550
+    },
+    {
+      "wait": 350
+    },
+    {
+      "key": "mouse0",
+      "ms": 550
+    },
+    {
+      "wait": 350
+    },
+    {
+      "key": "mouse0",
+      "ms": 550
+    },
+    {
+      "wait": 350
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "approach",
+        "input": {}
+      }
+    },
+    {
+      "wait": 500
+    },
+    {
+      "key": "mouse0",
+      "ms": 550
+    },
+    {
+      "wait": 350
+    },
+    {
+      "key": "mouse0",
+      "ms": 550
+    },
+    {
+      "wait": 350
+    },
+    {
+      "key": "mouse0",
+      "ms": 550
+    },
+    {
+      "wait": 350
+    },
+    {
+      "key": "mouse0",
+      "ms": 550
+    },
+    {
+      "wait": 350
+    },
+    {
+      "assert": "__jgProbe().kills >= 1",
+      "note": "arrival: shots landed through the projectile system and a guard died"
+    },
+    {
+      "assert": "__jgProbe().cleared >= 1 && __jgProbe().cash > 149",
+      "before": {
+        "is": "__jgProbe().cleared >= 1",
+        "timeoutMs": 15000
+      },
+      "note": "arrival: Drill Site is cleared and paid out, so the campaign turns"
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "steps": [
+    {
+      "assert": "window.__jgengineRun !== undefined && window.__jgengineRun.read().closed >= 1",
+      "before": {
+        "is": "window.__jgengineRun !== undefined && window.__jgengineRun.read().closed >= 1",
+        "timeoutMs": 30000
+      },
+      "note": "arrival: the campaign mission's boundary settled on the shared session loop"
+    },
+    {
+      "assert": "(() => { const readout = window.__jgengineRun.read(); return readout.kind === 'mission' && readout.phase === 'closed' && readout.closed === 1 && readout.carried === 0; })()",
+      "note": "arrival: the loop names the closed mission session and has handed back the pay it carried"
+    },
+    {
+      "assert": "document.body.innerText.includes('The Long Watch')",
+      "note": "arrival: the field desk offers the next order, so the mission cleared in the game and not only in the loop"
+    }
+  ]
+}

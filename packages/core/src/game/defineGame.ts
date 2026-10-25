@@ -289,8 +289,8 @@ export type GameDefinitionConfig<
   assets?: AssetCatalog<TAssetRef>;
   /**
    * The game's run-phase story — a {@link LifecycleConfig} or the `"always-live"` sentinel. Every
-   * game must state one (or drive phases by hand via {@link setGamePhase}); `check-game-shape`
-   * enforces it. See {@link GameLifecycle}.
+   * game must state one (or drive phases by hand via {@link setGamePhase}).
+   * See {@link GameLifecycle}.
    */
   lifecycle?: GameLifecycle;
 };

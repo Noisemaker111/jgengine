@@ -171,7 +171,7 @@ export function Launcher() {
         async () => {
           await refresh();
           setSelectedId(id);
-          setNotice(`Created Games/${id}`);
+          setNotice(`Created games/${id}`);
         },
       );
     } catch (error) {
@@ -227,7 +227,7 @@ export function Launcher() {
       <div className="grid min-h-0 flex-1 grid-cols-1 gap-0 lg:grid-cols-[320px_minmax(0,1fr)]">
         <aside className="min-h-0 overflow-y-auto border-r border-neutral-800 p-3">
           <div className="mb-2 text-[11px] font-medium uppercase tracking-wider text-neutral-500">
-            Games/{games.length}
+            games/{games.length}
           </div>
           <ul className="space-y-1.5">
             {games.map((game) => {
@@ -282,7 +282,7 @@ export function Launcher() {
                   <div>
                     <h1 className="text-lg font-semibold text-white">{selected.displayName}</h1>
                     <p className="text-xs text-neutral-400">
-                      Games/{selected.id}
+                      games/{selected.id}
                       {selected.hasEditorScene ? " · editor.scene.json" : ""}
                     </p>
                   </div>

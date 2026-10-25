@@ -26,7 +26,7 @@ bun packages/editor/src/mcp/cli.ts --game <id> \
   --rpc '{"method":"set_transform","id":"boss","x":10,"y":0,"z":-5}' --save
 ```
 
-Repeat `--rpc` to batch several mutations on one session; `--save` then writes the document back to `Games/<id>/src/editor.scene.json` in the same format as the GUI's Ctrl+S, and a failed RPC aborts the batch before anything is saved.
+Repeat `--rpc` to batch several mutations on one session; `--save` then writes the document back to `games/<id>/src/editor.scene.json` in the same format as the GUI's Ctrl+S, and a failed RPC aborts the batch before anything is saved.
 
 For a multi-object authoring operation, use `push_document_patch` with a `commands` patch and the current `document_revision` as `baseRevision`. The command batch stages atomically, produces one undo step and one document publication, and reports a zero-based failing command index without leaving earlier edits behind. Use stable caller-owned object ids so later commands can reference earlier placements; same-kind adds upsert, while cross-kind collisions fail. See [reference.md](reference.md#atomic-authoring-batches) for a complete request. Repeated independent `--rpc` calls still produce separate undo steps.
 

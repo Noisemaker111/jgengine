@@ -1,0 +1,31 @@
+{
+  "name": "@llmville/backend",
+  "version": "1.0.0",
+  "description": "",
+  "license": "ISC",
+  "author": "",
+  "scripts": {
+    "dev": "convex dev",
+    "dev:setup": "convex dev --configure --until-success",
+    "check-types": "tsgo --noEmit -p convex/tsconfig.json",
+    "generate:bot-jwt-keys": "bun scripts/generate-bot-jwt-keys.ts"
+  },
+  "dependencies": {
+    "@convex-dev/better-auth": "catalog:",
+    "@jgengine/convex": "workspace:*",
+    "@jgengine/core": "workspace:*",
+    "@llmville/game": "workspace:*",
+    "better-auth": "catalog:",
+    "convex": "catalog:",
+    "dotenv": "catalog:",
+    "jose": "^6.0.11",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "typescript": "catalog:"
+  },
+  "imports": {
+    "@llmville/game/*": "../game/src/*"
+  }
+}

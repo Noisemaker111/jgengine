@@ -1,0 +1,9 @@
+@import "@jgengine/react/styles.css";
+@import "tailwindcss";
+@import "./style.css";
+@source "../node_modules/@jgengine/react/dist";
+@source "../node_modules/@jgengine/shell/dist";
+@source "../../registry/jgengine";
+
+html, body, #root { width:100%; height:100%; margin:0; overflow:hidden; }
+body { background:#101e24; }

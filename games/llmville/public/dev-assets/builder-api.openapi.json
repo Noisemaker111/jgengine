@@ -1,0 +1,650 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "LLMville Builder API",
+    "version": "1.0.0",
+    "description": "Dev-server API for external LLM agents to read and manipulate the 3D builder scene. No auth required — runs on localhost:3001 only. Agents: start at GET /dev/build (Accept: application/json) or GET /__llmville-builder/playbook. Use HTTP only — do not create repo scripts. Verify builds with GET /screenshot/side.png."
+  },
+  "servers": [
+    { "url": "http://localhost:3001/__llmville-builder" }
+  ],
+  "paths": {
+    "/status": {
+      "get": {
+        "summary": "Builder health and sync status",
+        "description": "Returns scene version, browserConnected, screenshot readiness, and agent endpoint hints. Call this first.",
+        "responses": {
+          "200": { "description": "Status payload" }
+        }
+      }
+    },
+    "/assets": {
+      "post": {
+        "summary": "Create and save an object",
+        "description": "Places a primitive/group on the isolated stage, optionally saves to source-library + builder-library.json, and optionally queues a viewport screenshot.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["id", "label", "decor"],
+                "properties": {
+                  "id": { "type": "string" },
+                  "label": { "type": "string" },
+                  "tags": { "type": "array", "items": { "type": "string" } },
+                  "decor": { "$ref": "#/components/schemas/DecorItemSpec" },
+                  "footprint": { "type": "object", "properties": { "width": { "type": "number" }, "depth": { "type": "number" } } },
+                  "save": { "type": "boolean", "default": true },
+                  "verify": { "type": "boolean", "default": true },
+                  "prompt": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Created asset with scene + optional screenshot poll URL" }
+        }
+      }
+    },
+    "/heartbeat": {
+      "post": {
+        "summary": "Browser heartbeat",
+        "description": "Internal — posted by /dev/build every 2s so agents know the tab is live.",
+        "responses": { "204": { "description": "Acknowledged" } }
+      }
+    },
+    "/scene": {
+      "get": {
+        "summary": "Get current scene state",
+        "description": "Returns the full scene mapData and a monotonic version counter. Poll this to detect external changes.",
+        "responses": {
+          "200": {
+            "description": "Current scene",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SceneState" }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Replace full scene state",
+        "description": "Overwrites the entire scene. Creates an undo snapshot before applying.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["mapData"],
+                "properties": {
+                  "mapData": { "type": "object", "description": "Full TierMapData JSON" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "New version",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "version": { "type": "integer" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Missing mapData" }
+        }
+      }
+    },
+    "/scene/place": {
+      "post": {
+        "summary": "Place decor items into the scene",
+        "description": "Appends one or more DecorItemSpec objects to the scene's decor array. Auto-generates ids if missing.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "decor": { "$ref": "#/components/schemas/DecorItemSpec" },
+                  "items": {
+                    "type": "array",
+                    "items": { "$ref": "#/components/schemas/DecorItemSpec" }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Placed items with assigned ids",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "placed": { "type": "array", "items": { "$ref": "#/components/schemas/DecorItemSpec" } },
+                    "version": { "type": "integer" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "No decor or items provided" }
+        }
+      }
+    },
+    "/scene/delete": {
+      "post": {
+        "summary": "Delete decor items by id",
+        "description": "Removes all decor items whose id is in the provided ids array.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["ids"],
+                "properties": {
+                  "ids": { "type": "array", "items": { "type": "string" } }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Deleted count",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "deleted": { "type": "integer" },
+                    "version": { "type": "integer" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/scene/move": {
+      "post": {
+        "summary": "Move or rotate a decor item",
+        "description": "Updates position and optional rotation of a single decor item by id.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["id", "position"],
+                "properties": {
+                  "id": { "type": "string" },
+                  "position": { "type": "array", "items": { "type": "number" }, "minItems": 3, "maxItems": 3 },
+                  "rotation": { "type": "array", "items": { "type": "number" }, "minItems": 3, "maxItems": 3 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "New version",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "version": { "type": "integer" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Missing id or position" }
+        }
+      }
+    },
+    "/scene/clear": {
+      "post": {
+        "summary": "Clear all decor and walls",
+        "description": "Removes every decor item and wall segment. Keeps room geometry (floor, environment).",
+        "responses": {
+          "200": {
+            "description": "New version",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "version": { "type": "integer" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/scene/undo": {
+      "post": {
+        "summary": "Undo last scene mutation",
+        "description": "Restores the scene to the state before the most recent place/delete/move/clear operation.",
+        "responses": {
+          "200": {
+            "description": "Undo result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "version": { "type": "integer" },
+                    "undone": { "type": "boolean" },
+                    "reason": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/generate": {
+      "post": {
+        "summary": "Generate a decor asset from a text prompt",
+        "description": "Spawns a local LLM agent (OpenCode CLI) to generate a low-poly primitive group from a natural-language description.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["prompt"],
+                "properties": {
+                  "prompt": { "type": "string", "description": "Natural-language description of the object to build" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Generated asset",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "item": { "$ref": "#/components/schemas/DecorItemSpec" },
+                    "agent": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "502": { "description": "Agent failed or not installed" }
+        }
+      }
+    },
+    "/library": {
+      "get": {
+        "summary": "Get builder asset library",
+        "responses": {
+          "200": {
+            "description": "Asset library entries",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/BuilderAssetLibraryEntry" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Save builder asset library",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": { "$ref": "#/components/schemas/BuilderAssetLibraryEntry" }
+              }
+            }
+          }
+        },
+        "responses": { "204": { "description": "Saved" } }
+      }
+    },
+    "/recent": {
+      "get": {
+        "summary": "Get recently generated assets",
+        "responses": {
+          "200": {
+            "description": "Recent assets",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/BuilderRecentAsset" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Save recently generated assets",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": { "$ref": "#/components/schemas/BuilderRecentAsset" }
+              }
+            }
+          }
+        },
+        "responses": { "204": { "description": "Saved" } }
+      }
+    },
+    "/source-library": {
+      "post": {
+        "summary": "Update TypeScript source library file",
+        "description": "Writes entries as a typed const array into src/dev/builder/assetLibrary.ts. Dev-only.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["entries"],
+                "properties": {
+                  "entries": { "type": "array", "items": { "$ref": "#/components/schemas/BuilderAssetLibraryEntry" } }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "204": { "description": "Written" } }
+      }
+    },
+    "/screenshot/request": {
+      "post": {
+        "summary": "Request a fresh screenshot capture",
+        "description": "Queues an on-demand capture from the open /dev/build browser tab. Returns requestId — poll GET /screenshot?requestId=N until status.ready, then GET viewport.png for the live camera.",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "angles": {
+                    "type": "array",
+                    "items": { "type": "string", "enum": ["viewport", "perspective", "top", "side"] },
+                    "description": "Defaults to all four angles. viewport matches the live builder camera."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Capture queued",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "requestId": { "type": "integer" },
+                    "status": { "type": "string", "enum": ["pending"] },
+                    "poll": { "type": "string" },
+                    "viewport": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/screenshot/pending": {
+      "get": {
+        "summary": "Pending capture job (browser poll)",
+        "description": "Internal endpoint polled by /dev/build while waiting for screenshot work.",
+        "responses": {
+          "200": {
+            "description": "Pending job or null",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "requestId": { "type": ["integer", "null"] },
+                    "angles": { "type": "array", "items": { "type": "string" } }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/screenshot": {
+      "get": {
+        "summary": "Get scene screenshot URLs and capture status",
+        "description": "Returns PNG paths plus status.ready / status.capturedAt. Poll with ?requestId=N after POST /screenshot/request. GET viewport.png for the live builder camera.",
+        "responses": {
+          "200": {
+            "description": "PNG URLs keyed by angle",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ScreenshotBundle" }
+              }
+            }
+          },
+          "500": { "description": "Screenshot read failed" }
+        }
+      },
+      "post": {
+        "summary": "Upload one screenshot angle",
+        "description": "Internal endpoint used by the browser builder while capturing. Agents should use GET /screenshot instead.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["angle", "image"],
+                "properties": {
+                  "angle": { "type": "string", "enum": ["viewport", "perspective", "top", "side"] },
+                  "requestId": { "type": "integer" },
+                  "sceneVersion": { "type": "integer" },
+                  "image": { "type": "string", "description": "PNG as a data URL or raw base64" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": { "description": "Saved" },
+          "400": { "description": "Invalid angle or image" },
+          "500": { "description": "Screenshot save failed" }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "SceneState": {
+        "type": "object",
+        "properties": {
+          "mapData": { "$ref": "#/components/schemas/TierMapData" },
+          "version": { "type": "integer", "description": "Monotonic counter. Incremented on every mutation." }
+        }
+      },
+      "TierMapData": {
+        "type": "object",
+        "properties": {
+          "tier": { "type": "string", "enum": ["garage", "house", "datacenter"] },
+          "version": { "type": "integer", "const": 1 },
+          "grid": {
+            "type": "object",
+            "properties": {
+              "tileSize": { "type": "number" },
+              "floorTilesX": { "type": "integer" },
+              "floorTilesZ": { "type": "integer" }
+            }
+          },
+          "environment": {
+            "type": "object",
+            "properties": {
+              "wallHeight": { "type": "number" },
+              "wallThickness": { "type": "number" },
+              "floor": {
+                "type": "object",
+                "properties": {
+                  "width": { "type": "number" },
+                  "depth": { "type": "number" },
+                  "centerX": { "type": "number" },
+                  "centerZ": { "type": "number" }
+                }
+              },
+              "floorMaterial": { "type": "string" },
+              "wallMaterial": { "type": "string" },
+              "ceilingColor": { "type": "string" },
+              "wallColor": { "type": "string" },
+              "floorRepeat": { "type": "array", "items": { "type": "number" }, "minItems": 2, "maxItems": 2 }
+            }
+          },
+          "walls": { "type": "array", "items": { "$ref": "#/components/schemas/WallSegmentSpec" } },
+          "colliders": { "type": "array" },
+          "decor": { "type": "array", "items": { "$ref": "#/components/schemas/DecorItemSpec" } },
+          "landmarks": { "type": "array" },
+          "frontDoorPosition": { "type": "object", "properties": { "x": { "type": "number" }, "y": { "type": "number" }, "z": { "type": "number" } } },
+          "dropoffPosition": { "type": "object", "properties": { "x": { "type": "number" }, "y": { "type": "number" }, "z": { "type": "number" } } }
+        }
+      },
+      "WallSegmentSpec": {
+        "type": "object",
+        "properties": {
+          "args": { "type": "array", "items": { "type": "number" }, "minItems": 3, "maxItems": 3, "description": "[width, height, depth]" },
+          "position": { "type": "array", "items": { "type": "number" }, "minItems": 3, "maxItems": 3, "description": "[x, y, z] center" }
+        }
+      },
+      "DecorItemSpec": {
+        "type": "object",
+        "required": ["type"],
+        "properties": {
+          "id": { "type": "string" },
+          "type": { "type": "string", "enum": ["box", "plane", "cylinder", "sphere", "group", "model"] },
+          "assetType": { "type": "string", "enum": ["model", "primitive"] },
+          "modelKey": { "type": "string" },
+          "modelId": { "type": "string" },
+          "gridX": { "type": "integer" },
+          "gridZ": { "type": "integer" },
+          "footprint": {
+            "type": "object",
+            "properties": {
+              "width": { "type": "integer" },
+              "depth": { "type": "integer" }
+            }
+          },
+          "args": { "type": "array", "items": { "type": "number" }, "description": "Shape dimensions (varies by type)" },
+          "position": { "type": "array", "items": { "type": "number" }, "minItems": 3, "maxItems": 3 },
+          "rotation": { "type": "array", "items": { "type": "number" }, "minItems": 3, "maxItems": 3 },
+          "scale": { "oneOf": [{ "type": "number" }, { "type": "array", "items": { "type": "number" }, "minItems": 3, "maxItems": 3 }] },
+          "color": { "type": "string", "description": "Hex color #rrggbb" },
+          "roughness": { "type": "number", "minimum": 0, "maximum": 1 },
+          "metalness": { "type": "number", "minimum": 0, "maximum": 1 },
+          "emissive": { "type": "string" },
+          "emissiveIntensity": { "type": "number" },
+          "receiveShadow": { "type": "boolean" },
+          "castShadow": { "type": "boolean" },
+          "doubleSide": { "type": "boolean" },
+          "children": { "type": "array", "items": { "$ref": "#/components/schemas/DecorItemSpec" } },
+          "placeTier": { "type": "string" }
+        }
+      },
+      "BuilderAssetLibraryEntry": {
+        "type": "object",
+        "required": ["id", "label", "tags", "kind"],
+        "properties": {
+          "id": { "type": "string" },
+          "label": { "type": "string" },
+          "tags": { "type": "array", "items": { "type": "string" } },
+          "kind": { "type": "string", "enum": ["group", "place"] },
+          "footprint": { "type": "object", "properties": { "width": { "type": "integer" }, "depth": { "type": "integer" } } },
+          "decor": { "$ref": "#/components/schemas/DecorItemSpec" },
+          "place": { "type": "object" },
+          "prompt": { "type": "string" },
+          "suggestedPath": { "type": "string" },
+          "promotedModelKey": { "type": "string" }
+        }
+      },
+      "BuilderRecentAsset": {
+        "type": "object",
+        "required": ["id", "label", "prompt", "createdAt"],
+        "properties": {
+          "id": { "type": "string" },
+          "label": { "type": "string" },
+          "prompt": { "type": "string" },
+          "createdAt": { "type": "integer" },
+          "decor": { "$ref": "#/components/schemas/DecorItemSpec" },
+          "status": { "type": "string", "enum": ["pending", "ready", "error"] },
+          "error": { "type": "string" }
+        }
+      },
+      "ScreenshotBundle": {
+        "type": "object",
+        "description": "Self-documenting screenshot index. Read meta.usage first, then GET each angle path for image/png binary.",
+        "properties": {
+          "meta": {
+            "type": "object",
+            "properties": {
+              "usage": { "type": "array", "items": { "type": "string" } },
+              "angles": { "type": "array", "items": { "type": "string", "enum": ["viewport", "perspective", "top", "side"] } },
+              "playbook": { "type": "string" },
+              "openapi": { "type": "string" }
+            }
+          },
+          "status": {
+            "type": "object",
+            "properties": {
+              "ready": { "type": "boolean" },
+              "stale": { "type": "boolean" },
+              "requestId": { "type": ["integer", "null"] },
+              "sceneVersion": { "type": ["integer", "null"] },
+              "capturedAt": { "type": ["string", "null"] },
+              "pendingRequestId": { "type": ["integer", "null"] }
+            }
+          },
+          "viewport": { "type": "string", "description": "Live builder camera — image/png" },
+          "perspective": { "type": "string", "description": "GET this path for image/png binary" },
+          "top": { "type": "string", "description": "GET this path for image/png binary" },
+          "side": { "type": "string", "description": "GET this path for image/png binary" }
+        }
+      }
+    }
+  }
+}

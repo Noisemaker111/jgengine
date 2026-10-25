@@ -107,8 +107,8 @@ function GamePage() {
         <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-faint">
           <p>
             Runs in your browser. Source:{" "}
-            <a href={`https://github.com/Noisemaker111/JGengine-games/tree/stable/${id}`} className="link">
-              JGengine-games/{id}
+            <a href={`https://github.com/Noisemaker111/jgengine/tree/beta/games/${id}`} className="link">
+              games/{id}
             </a>
           </p>
           {credit !== null &&

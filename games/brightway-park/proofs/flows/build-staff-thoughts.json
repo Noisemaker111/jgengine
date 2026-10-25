@@ -1,0 +1,39 @@
+{ "steps": [
+  { "assert": "/gates open/i.test(document.body.innerText)",
+    "before": { "is": "/gates open/i.test(document.body.innerText)", "timeoutMs": 30000 },
+    "note": "arrival: the park day is running and the gate is open" },
+
+  { "key": "Digit1", "ms": 80, "note": "the palette's carousel hotkey" },
+  { "clickAt": [1120, 420], "note": "an empty plot right of the main path, clear of the palette" },
+  { "assert": "document.body.innerText.includes('8 rides · 3/8')",
+    "before": { "is": "document.body.innerText.includes('8 rides · 3/8')", "timeoutMs": 5000 },
+    "note": "arrival: the starter park's two rides plus the placed carousel" },
+
+  { "clickAt": [1120, 400], "note": "click the new carousel to inspect it" },
+  { "assert": "document.querySelector('.bw-side')?.innerText.includes('Needs an entrance') === true",
+    "before": { "is": "document.querySelector('.bw-side')?.innerText.includes('Connect it') === true", "timeoutMs": 5000 },
+    "note": "arrival: a new ride is shut until it has an entrance, an exit and a path, and says so" },
+  { "click": "Connect it" },
+  { "assert": "document.body.innerText.includes('Connected')",
+    "before": { "is": "document.body.innerText.includes('Connected')", "timeoutMs": 5000 },
+    "note": "arrival: Connect it laid the entrance, exit and paths, so the ride opens" },
+  { "shot": "brightway-connected" },
+
+  { "click": "Staff" },
+  { "click": "Handyman" },
+  { "clickAt": [1300, 470], "note": "grass right of the carousel, inside the fence" },
+  { "assert": "document.body.innerText.includes('Handyman built')",
+    "before": { "is": "document.body.innerText.includes('Handyman built')", "timeoutMs": 5000 },
+    "note": "arrival: a handyman is hired, the park's own notice confirming it" },
+
+  { "assert": "document.querySelectorAll('.bw-said li').length > 0",
+    "before": { "is": "document.querySelectorAll('.bw-said li').length > 0", "timeoutMs": 30000 },
+    "note": "arrival: the status card lists what the crowd is saying, from the live guests' thoughts" },
+  { "assert": "window.__jgengineAgent.handle({ method: 'run_command', name: 'park.pointer', input: { point: [0, 0, 0], entity: window.__brightway.read().thinkingGuests[0], object: null } }).status",
+    "is": "applied",
+    "note": "pick a live guest the way a click on one does: the pointer command with that guest as the hit entity" },
+  { "assert": "document.querySelector('.bw-thoughts li') !== null",
+    "before": { "is": "document.querySelector('.bw-thoughts li') !== null", "timeoutMs": 10000 },
+    "note": "arrival: the guest window shows that guest's own thoughts" },
+  { "shot": "brightway-guest-thoughts" }
+] }

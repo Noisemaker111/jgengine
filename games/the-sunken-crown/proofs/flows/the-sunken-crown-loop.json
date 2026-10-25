@@ -1,0 +1,61 @@
+{
+  "steps": [
+    {
+      "assert": "/The road out/i.test(document.body.innerText)",
+      "before": {
+        "is": "/The road out/i.test(document.body.innerText)",
+        "timeoutMs": 60000
+      },
+      "note": "arrival: a run is up and the first story beat started by itself"
+    },
+    {
+      "assert": "__jgProbe().found === 0 && __jgProbe().distance > 10",
+      "note": "arrival: nothing found yet, The Broken Gate is ahead on the compass"
+    },
+    {
+      "key": "KeyW",
+      "ms": 4200,
+      "after": {
+        "is": "__jgProbe().found >= 1",
+        "timeoutMs": 6000
+      },
+      "note": "walk forward to The Broken Gate: it is discovered"
+    },
+    {
+      "shot": "found"
+    },
+    {
+      "key": "KeyE",
+      "ms": 150,
+      "after": {
+        "is": "__jgProbe().relics >= 1",
+        "timeoutMs": 6000
+      },
+      "note": "take Wing of Aurel on its shrine"
+    },
+    {
+      "assert": "/Warden's Watch/i.test(document.body.innerText)",
+      "before": {
+        "is": "/Warden's Watch/i.test(document.body.innerText)",
+        "timeoutMs": 8000
+      },
+      "note": "arrival: the story moved on to the next beat"
+    },
+    {
+      "key": "Space",
+      "ms": 1800,
+      "after": {
+        "is": "__jgProbe().glided > 0.3",
+        "timeoutMs": 2000
+      },
+      "note": "jump and hold Space: the glide model carries you, read from the game's own glide clock"
+    },
+    {
+      "assert": "__jgProbe().relics >= 1",
+      "note": "arrival: still carrying the relic after the glide"
+    },
+    {
+      "shot": "glide"
+    }
+  ]
+}

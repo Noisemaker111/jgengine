@@ -1,7 +1,7 @@
 [
-  "Games/brightway-park/src/world.ts:building",
-  "Games/harbor-heat/src/world.ts:ocean",
-  "Games/scrap-signal/src/world.ts:building",
-  "Games/scrap-signal/src/world.ts:grass",
-  "Games/scrap-signal/src/world.ts:road"
+  "games/brightway-park/src/world.ts:building",
+  "games/harbor-heat/src/world.ts:ocean",
+  "games/scrap-signal/src/world.ts:building",
+  "games/scrap-signal/src/world.ts:grass",
+  "games/scrap-signal/src/world.ts:road"
 ]

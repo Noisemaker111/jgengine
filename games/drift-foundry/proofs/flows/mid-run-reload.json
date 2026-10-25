@@ -1,0 +1,33 @@
+{ "steps": [
+  { "waitFor": "document.body.innerText.includes('New run')", "timeoutMs": 40000,
+    "note": "the pit menu is up" },
+
+  { "key": "Enter", "ms": 200, "note": "New run" },
+
+  { "waitFor": "document.body.innerText.includes('AT RISK')", "timeoutMs": 20000,
+    "note": "the corridor HUD is live" },
+
+  { "key": "KeyW+KeyE", "ms": 8000, "note": "throttle through the salvage drops, holding E to swap" },
+
+  { "waitFor": "__jgProbe().z > 50", "timeoutMs": 20000,
+    "note": "the run advanced past three drops, so the haul is worth keeping" },
+
+  { "assert": "Number(sessionStorage.setItem('haul', document.body.innerText.match(/(\\d+) cr AT RISK/)?.[1] ?? '0') ?? sessionStorage.getItem('haul')) > 0",
+    "note": "record the haul the HUD shows before the reload, and that it is nonzero" },
+
+  { "reload": true },
+
+  { "waitFor": "/(\\d+) parts/.test(document.body.innerText)", "timeoutMs": 40000,
+    "note": "the pit offers the run the game kept: a checkpoint with parts, not an empty pit" },
+
+  { "key": "Enter", "ms": 200, "note": "Continue run" },
+
+  { "waitFor": "document.body.innerText.includes('AT RISK')", "timeoutMs": 20000,
+    "note": "the corridor HUD is live again" },
+
+  { "assert": "document.body.innerText.match(/(\\d+) cr AT RISK/)?.[1] === sessionStorage.getItem('haul')",
+    "note": "the haul after the reload is the haul before it" },
+
+  { "assert": "__jgProbe().z > 40",
+    "note": "and the route came back, not the start line" }
+] }

@@ -1,0 +1,1177 @@
+@import "@jgengine/react/styles.css";
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  background: #0a0a0a;
+}
+
+/* Ember Command is played over a war table. The title is a weathered survey of the vale under the
+   campaign's wax seal; the pause is a leather dispatch case holding the orders on hold; the HUD is
+   the table's trimmings: a ledger strip of stores, a pinned order, the survey map in its frame,
+   Bram's card with the army as stone tokens, and the command board in a leather case. The engine's
+   GameFrame draws paper, leather, wood and enamel; these rules set the ink, the type and the layout. */
+
+.ec-root {
+  --ec-ink: #2b1d10;
+  --ec-ink-dim: #5e4630;
+  --ec-wax: #8e1f17;
+  --ec-brass: #c99a4a;
+  --ec-parchment: #efe3c6;
+  --ec-cream: #f6e7cf;
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+  user-select: none;
+  font-family: var(--ec-font-body);
+  color: var(--ec-ink);
+}
+.ec-root :where(button) { touch-action: manipulation; font: inherit; color: inherit; }
+.ec-root button:focus-visible,
+.ec-root input:focus-visible,
+.ec-root [role="listitem"]:focus-visible,
+.ec-root a:focus-visible { outline: 2px solid var(--ec-wax); outline-offset: 3px; }
+
+/* ---- Shared ink ------------------------------------------------------------------------- */
+
+.ec-eyebrow,
+.ec-note-eyebrow {
+  display: block;
+  font-family: var(--ec-font-display);
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  color: var(--ec-wax);
+}
+
+/* A brass drawing pin holding a loose sheet to the table. */
+.ec-pin {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  width: 14px;
+  height: 14px;
+  margin-left: -7px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff1c4 0 14%, #d9a84e 34%, #7a5320 78%, #3d280c 100%);
+  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.55), 1px 3px 4px rgba(0, 0, 0, 0.3);
+  z-index: 2;
+}
+
+/* Ink on parchment: engine blocks drawn inside a sheet (settings rows, credits) take the sheet's ink. */
+.ec-ink-sheet {
+  --jg-text: #2b1d10;
+  --jg-text-dim: #5e4630;
+  --jg-accent: #8e1f17;
+  --jg-accent-soft: rgba(142, 31, 23, 0.12);
+  --jg-accent-glow: rgba(142, 31, 23, 0.2);
+  --jg-on-accent: #fff3df;
+  --jg-surface: transparent;
+  --jg-surface-deep: rgba(94, 70, 48, 0.1);
+  --jg-edge: rgba(94, 70, 48, 0.35);
+  --jg-edge-bright: rgba(94, 70, 48, 0.6);
+  --jg-control-radius: 2px;
+  --jg-font-display: var(--ec-font-display);
+  --jg-font-body: var(--ec-font-body);
+  --jg-control-font: var(--ec-font-display);
+  color: var(--ec-ink);
+}
+
+/* ---- The front: title and pause ---------------------------------------------------------- */
+
+.ec-front {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  grid-template-columns: minmax(0, 560px) minmax(0, 540px);
+  grid-template-rows: minmax(0, 1fr);
+  column-gap: 44px;
+  align-items: center;
+  padding: 28px 5vw 52px;
+  pointer-events: auto;
+  /* clip, not hidden: a focused control far down must never scroll the whole screen sideways. */
+  overflow: clip;
+  animation: ec-arrive 0.32s ease-out;
+}
+
+/* The vale beyond the table, pushed back so the sheets read. */
+.ec-table-dark {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(120% 100% at 78% 40%, rgba(16, 10, 5, 0.12) 0%, rgba(16, 10, 5, 0.7) 100%),
+    linear-gradient(90deg, rgba(16, 10, 5, 0.82) 0%, rgba(16, 10, 5, 0.42) 48%, rgba(16, 10, 5, 0.3) 100%);
+}
+.ec-dispatch .ec-table-dark {
+  background:
+    radial-gradient(110% 100% at 50% 45%, rgba(16, 10, 5, 0.45) 0%, rgba(16, 10, 5, 0.86) 100%);
+}
+
+/* The survey: the vale inked on a weathered sheet, the campaign's seal in its corner. */
+.ec-survey {
+  position: relative;
+  grid-column: 1;
+  grid-row: 1;
+  align-self: center;
+  max-height: calc(100% - 24px);
+  transform: rotate(-0.6deg);
+}
+.ec-survey > [data-jg-frame-face] {
+  position: relative !important;
+  display: flex !important;
+  flex-direction: column;
+  overflow: hidden;
+}
+.ec-map-art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  color: rgba(70, 45, 20, 0.2);
+  pointer-events: none;
+  /* Full strength behind the wordmark, a ghost behind the written orders. */
+  mask-image: linear-gradient(180deg, #000 0, #000 36%, rgba(0, 0, 0, 0.22) 52%, rgba(0, 0, 0, 0.22) 100%);
+}
+.ec-map-road { stroke: rgba(142, 31, 23, 0.32); }
+.ec-map-marks { stroke: rgba(142, 31, 23, 0.4); }
+.ec-survey > [data-jg-frame-face] > *:not(.ec-map-art) { position: relative; }
+
+.ec-survey-seal {
+  position: absolute !important;
+  top: -8px;
+  right: -6px;
+  transform: rotate(12deg);
+  z-index: 3;
+}
+
+.ec-wordmark {
+  display: flex;
+  flex-direction: column;
+  margin: 2px 0 6px;
+  font-family: var(--ec-font-display);
+  font-weight: 400;
+  font-size: 84px;
+  line-height: 0.86;
+  letter-spacing: 0.01em;
+  color: #24170b;
+  text-shadow: 0 1px 0 rgba(255, 246, 220, 0.6);
+}
+.ec-wordmark span:last-child { padding-left: 0.62em; color: var(--ec-wax); }
+
+.ec-survey-order {
+  margin: 4px 0 14px;
+  padding: 6px 0 8px;
+  border-top: 1.5px solid rgba(43, 29, 16, 0.45);
+  border-bottom: 1.5px solid rgba(43, 29, 16, 0.45);
+}
+.ec-survey-order .ec-eyebrow { font-size: 13px; }
+.ec-survey-order strong {
+  display: block;
+  font-family: var(--ec-font-display);
+  font-weight: 400;
+  font-size: 26px;
+  line-height: 1.1;
+  color: var(--ec-ink);
+}
+
+/* The orders, written down the sheet. The wax chevron follows the one in hand. */
+.ec-orders-list {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding-left: 26px;
+}
+.ec-order-row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  min-width: 0;
+}
+.ec-order-verb {
+  flex: none;
+  padding: 3px 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font-family: var(--ec-font-display) !important;
+  font-size: 27px;
+  line-height: 1.12;
+  color: var(--ec-ink) !important;
+  text-align: left;
+}
+.ec-order-verb:disabled { color: rgba(43, 29, 16, 0.35) !important; cursor: default; }
+.ec-order-row[data-active] .ec-order-verb { color: var(--ec-wax) !important; }
+.ec-order-verb:focus-visible { outline: none; text-decoration: underline 2px; text-underline-offset: 5px; }
+.ec-order-hint {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-style: italic;
+  font-size: 15px;
+  color: var(--ec-ink-dim);
+  opacity: 0;
+  transition: opacity 0.18s ease;
+}
+.ec-order-row[data-active] .ec-order-hint { opacity: 1; }
+.ec-order-row[data-quiet] { margin-top: 8px; }
+.ec-order-row[data-quiet] .ec-order-verb { font-size: 21px; color: var(--ec-ink-dim) !important; }
+.ec-order-row[data-quiet][data-active] .ec-order-verb { color: var(--ec-wax) !important; }
+
+/* Loose sheets pinned beside the survey: every detail pane. */
+.ec-detail {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: center;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  max-height: calc(100% - 24px);
+}
+.ec-sheet {
+  position: relative;
+  max-width: 540px;
+  min-height: 0;
+  transform: rotate(0.5deg);
+  animation: ec-lay 0.24s ease-out;
+}
+.ec-sheet > [data-jg-frame-face] {
+  display: flex !important;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+}
+.ec-sheet-title {
+  margin: 0;
+  font-family: var(--ec-font-display);
+  font-weight: 400;
+  font-size: 32px;
+  line-height: 1.05;
+  color: var(--ec-ink);
+}
+.ec-sheet-text {
+  margin: 0;
+  max-width: 46ch;
+  font-size: 17px;
+  line-height: 1.45;
+  color: #3a2814;
+}
+.ec-sheet-small {
+  margin: 0;
+  font-size: 14px;
+  font-style: italic;
+  color: var(--ec-ink-dim);
+}
+.ec-sheet-thumb {
+  width: 100%;
+  max-height: 210px;
+  object-fit: cover;
+  border: 2px solid rgba(43, 29, 16, 0.65);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.ec-seal-button,
+.ec-plank-button {
+  align-self: flex-start;
+  margin-top: 6px;
+  cursor: pointer;
+}
+.ec-seal-button > [data-jg-frame-face],
+.ec-plank-button > [data-jg-frame-face] {
+  font-family: var(--ec-font-display);
+  font-size: 20px;
+  letter-spacing: 0.04em;
+  color: #fff1dc;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.6);
+}
+.ec-seal-button:disabled { opacity: 0.5; cursor: default; }
+
+.ec-ink-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-width: 380px;
+}
+.ec-ink-field span {
+  font-family: var(--ec-font-display);
+  font-size: 14px;
+  color: var(--ec-wax);
+}
+.ec-ink-field input {
+  padding: 4px 2px 3px;
+  border: 0;
+  border-bottom: 2px solid rgba(43, 29, 16, 0.7);
+  background: transparent;
+  outline: none;
+  font-family: var(--ec-font-display);
+  font-size: 28px;
+  color: var(--ec-ink);
+  caret-color: var(--ec-wax);
+}
+.ec-ink-field input::placeholder { color: rgba(43, 29, 16, 0.35); font-style: italic; }
+.ec-ink-field input:focus-visible { outline: none; border-bottom-color: var(--ec-wax); }
+
+.ec-record-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  font-size: 15px;
+  color: #3a2814;
+}
+.ec-record-facts > span { display: inline-flex; align-items: center; gap: 5px; }
+
+/* Campaign records: three folios, each with its last look at the field. */
+.ec-folios {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.ec-folio {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 10px;
+  border-top: 1px solid rgba(43, 29, 16, 0.25);
+}
+.ec-folio:first-child { border-top: 0; }
+.ec-folio-plate {
+  display: grid;
+  place-items: center;
+  width: 92px;
+  height: 62px;
+  overflow: hidden;
+  border: 1.5px solid rgba(43, 29, 16, 0.55);
+  background: rgba(94, 70, 48, 0.12);
+}
+/* An aged tint laid over the plate instead of a sepia filter: no CSS filters over the live battlefield. */
+.ec-folio-plate { position: relative; }
+.ec-folio-plate::after { content: ""; position: absolute; inset: 0; background: rgba(112, 72, 30, 0.3); pointer-events: none; }
+.ec-folio-plate img { width: 100%; height: 100%; object-fit: cover; }
+.ec-folio-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.ec-folio-text strong { font-family: var(--ec-font-display); font-weight: 400; font-size: 20px; }
+.ec-folio-name { font-size: 15px; font-style: italic; color: #3a2814; }
+.ec-folio[data-empty] .ec-folio-text strong { color: var(--ec-ink-dim); }
+.ec-ink-button {
+  min-width: 74px;
+  padding: 5px 14px;
+  border: 1.5px solid rgba(43, 29, 16, 0.7);
+  background: rgba(255, 248, 230, 0.35);
+  cursor: pointer;
+  font-family: var(--ec-font-display) !important;
+  font-size: 17px;
+  color: var(--ec-ink) !important;
+  box-shadow: 1px 2px 0 rgba(43, 29, 16, 0.35);
+}
+.ec-ink-button[aria-current="true"] { border-color: var(--ec-wax); color: var(--ec-wax) !important; }
+
+.ec-ledger-lines { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 6px 0 0; }
+.ec-ledger-lines div { padding-top: 6px; border-top: 1.5px solid rgba(43, 29, 16, 0.45); }
+.ec-ledger-lines dt { font-family: var(--ec-font-display); font-size: 14px; color: var(--ec-wax); }
+.ec-ledger-lines dd { margin: 2px 0 0; font-family: var(--ec-font-display); font-size: 30px; color: var(--ec-ink); }
+
+/* Settings on the sheet: ink tick-boxes, then the shell's own rows written in the same ink. */
+.ec-settings-sheet > [data-jg-frame-face] { max-height: min(74vh, 640px); }
+.ec-sheet-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: none;
+  padding: 0 4px 18px 0;
+  mask-image: linear-gradient(180deg, #000 0, #000 calc(100% - 26px), transparent 100%);
+}
+.ec-sheet-body::-webkit-scrollbar { display: none; }
+.ec-ink-switches { display: flex; flex-direction: column; }
+.ec-ink-switch-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 7px 2px;
+  border-bottom: 1px dashed rgba(43, 29, 16, 0.3);
+}
+.ec-ink-switch-row strong { display: block; font-family: var(--ec-font-display); font-weight: 400; font-size: 19px; }
+.ec-ink-switch-row small { display: block; font-size: 14px; font-style: italic; color: var(--ec-ink-dim); }
+.ec-ink-switch {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  padding: 3px;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  color: var(--ec-ink) !important;
+}
+.ec-ink-switch svg { width: 100%; height: 100%; }
+
+.ec-tabs { margin-top: 6px; border-bottom: 1.5px solid rgba(43, 29, 16, 0.45); }
+.ec-ink-sheet [data-settings-tab] {
+  font-family: var(--ec-font-display) !important;
+  font-size: 17px !important;
+  font-weight: 400 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: var(--ec-ink-dim) !important;
+  box-shadow: inset 0 -3px 0 transparent;
+}
+.ec-ink-sheet [data-settings-tab][aria-pressed="true"] {
+  color: var(--ec-wax) !important;
+  box-shadow: inset 0 -3px 0 var(--ec-wax);
+}
+.ec-ink-sheet [data-scroll-rail] > button {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: linear-gradient(180deg, #6a3e24, #3f2414) !important;
+  color: #f6e7cf !important;
+  box-shadow: inset 0 1px 0 rgba(255, 220, 170, 0.25), 0 2px 3px rgba(0, 0, 0, 0.4) !important;
+  clip-path: polygon(5px 0, calc(100% - 5px) 0, 100% 5px, 100% calc(100% - 5px), calc(100% - 5px) 100%, 5px 100%, 0 calc(100% - 5px), 0 5px);
+}
+.ec-ink-sheet [data-scroll-rail] [role="group"] { scrollbar-width: none; }
+.ec-ink-sheet [data-settings-row],
+.ec-ink-sheet [data-settings-keybind] {
+  border: 0 !important;
+  border-radius: 0 !important;
+  border-bottom: 1px dashed rgba(43, 29, 16, 0.3) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+.ec-ink-sheet [data-settings-row] > span:first-child,
+.ec-ink-sheet [data-settings-keybind] > span:first-child {
+  font-family: var(--ec-font-display);
+  font-size: 17px;
+}
+.ec-ink-sheet [data-settings-row][aria-current="true"],
+.ec-ink-sheet [data-settings-keybind][aria-current="true"] {
+  background: rgba(142, 31, 23, 0.07) !important;
+  box-shadow: inset 3px 0 0 var(--ec-wax) !important;
+}
+.ec-ink-sheet [role="switch"]:not(.ec-ink-switch) {
+  border: 1.5px solid rgba(43, 29, 16, 0.7) !important;
+  border-radius: 2px !important;
+  background: rgba(255, 248, 230, 0.4) !important;
+  box-shadow: none !important;
+}
+.ec-ink-sheet [role="switch"]:not(.ec-ink-switch)[aria-checked="true"] { background: rgba(142, 31, 23, 0.85) !important; }
+.ec-ink-sheet [role="switch"]:not(.ec-ink-switch) > span {
+  border-radius: 1px !important;
+  background: #2b1d10 !important;
+  box-shadow: none !important;
+}
+.ec-ink-sheet [role="switch"]:not(.ec-ink-switch)[aria-checked="true"] > span { background: #f6e7cf !important; }
+.ec-ink-sheet [role="group"] > button { font-family: var(--ec-font-display) !important; border-radius: 0 !important; }
+.ec-ink-sheet [role="group"] > button[aria-pressed="true"] { background: var(--ec-wax) !important; color: #fff1dc !important; }
+.ec-ink-sheet [data-settings-capture] {
+  border: 1.5px solid rgba(43, 29, 16, 0.7) !important;
+  border-radius: 0 !important;
+  background: rgba(255, 248, 230, 0.4) !important;
+  color: var(--ec-ink) !important;
+  font-family: var(--ec-font-display) !important;
+  box-shadow: 1px 2px 0 rgba(43, 29, 16, 0.35);
+}
+
+.ec-credits-sheet > [data-jg-frame-face] { max-height: min(70vh, 600px); }
+.ec-credits-sheet [data-credits-pane] > div:first-child { font-family: var(--ec-font-display) !important; font-weight: 400 !important; color: var(--ec-ink); }
+.ec-credits-sheet [data-credits-scroller] { scrollbar-width: none; }
+
+/* The pause: a leather dispatch case, flap thrown back, the orders on hold inside. */
+.ec-case {
+  position: relative;
+  grid-column: 1;
+  grid-row: 1;
+  align-self: center;
+  max-width: 540px;
+  transform: rotate(-0.8deg);
+}
+.ec-case > [data-jg-frame-face] { position: relative !important; }
+.ec-case-flap {
+  position: absolute;
+  top: 0;
+  left: 18px;
+  right: 18px;
+  height: 22px;
+  border-bottom: 2px dashed rgba(246, 231, 207, 0.28);
+}
+.ec-buckle {
+  position: absolute;
+  top: 2px;
+  left: 50%;
+  width: 46px;
+  height: 22px;
+  margin-left: -23px;
+  border: 4px solid #c99a4a;
+  border-radius: 3px;
+  box-shadow: inset 0 0 0 1px #5b3d12, 0 2px 2px rgba(0, 0, 0, 0.6);
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.15));
+}
+.ec-letter { position: relative; }
+.ec-letter > [data-jg-frame-face] { position: relative !important; display: flex !important; flex-direction: column; gap: 8px; }
+.ec-letter-title {
+  margin: 0;
+  font-family: var(--ec-font-display);
+  font-weight: 400;
+  font-size: 46px;
+  line-height: 1;
+  color: var(--ec-ink);
+}
+.ec-letter-note { margin-top: 6px; padding-right: 70px; }
+.ec-letter-seal {
+  position: absolute;
+  right: 4px;
+  bottom: -6px;
+  transform: rotate(-14deg);
+}
+
+/* The table's near edge: the service record on a strip of dark wood. */
+.ec-desk-foot {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 5vw 12px;
+  background:
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.08) 0 2px, transparent 2px 9px),
+    linear-gradient(180deg, #3d2615, #22140a);
+  box-shadow: inset 0 2px 0 rgba(255, 210, 150, 0.16), 0 -4px 10px rgba(0, 0, 0, 0.45);
+  font-family: var(--ec-font-display);
+  font-size: 16px;
+  color: #e9d4ac;
+}
+.ec-keys b {
+  margin: 0 4px 0 12px;
+  padding: 0 6px;
+  border: 1px solid rgba(233, 212, 172, 0.45);
+  font-family: var(--ec-font-body);
+  font-weight: 600;
+  font-size: 13px;
+}
+
+/* Field reports belong to the battle: while a sheet is up on the table they wait. */
+body:has(.ec-front) [data-jg-notices] { visibility: hidden; }
+
+.ec-menu-busy {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: rgba(16, 10, 5, 0.78);
+}
+.ec-menu-busy > span {
+  padding: 6px 18px;
+  background: var(--ec-parchment);
+  font-family: var(--ec-font-display);
+  font-size: 19px;
+  color: var(--ec-ink);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.5);
+}
+.ec-menu-busy .ec-wax { animation: ec-press 0.9s ease-in-out infinite alternate; }
+
+/* ---- HUD: the war table's trimmings ------------------------------------------------------- */
+
+.ec-pause {
+  position: absolute;
+  top: 10px;
+  right: 14px;
+  z-index: 30;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: transform 0.12s ease;
+}
+.ec-pause:hover { transform: scale(1.06) rotate(-4deg); }
+.ec-pause:active { transform: scale(0.96); }
+.ec-pause svg { display: block; }
+
+/* The ledger strip: stores, both keeps' walls and the reinforcement clock. */
+.ec-stock-fade {
+  position: absolute;
+  top: 12px;
+  left: 14px;
+  z-index: 20;
+  max-width: calc(100% - 110px);
+}
+.ec-stock > [data-jg-frame-face] {
+  display: flex !important;
+  align-items: center;
+  gap: 22px;
+}
+.ec-ledger-stores { display: flex; gap: 16px; }
+.ec-ledger-entry { display: inline-flex; align-items: center; gap: 5px; }
+.ec-ledger-entry b,
+.ec-ledger-wave b {
+  font-family: var(--ec-font-display);
+  font-weight: 400;
+  font-size: 23px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.ec-ledger-glyph { width: 21px; height: 21px; color: #6a4a22; }
+.ec-ledger-entry[data-warn] b,
+.ec-ledger-entry[data-warn] .ec-ledger-glyph { color: var(--ec-wax); }
+.ec-ledger-keep {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 172px;
+  padding-left: 18px;
+  border-left: 1.5px solid rgba(43, 29, 16, 0.35);
+}
+.ec-ledger-keep-name {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--ec-font-display);
+  font-size: 14px;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+.ec-ledger-keep-name b { font-weight: 400; font-variant-numeric: tabular-nums; }
+.ec-ledger-keep[data-side="enemy"] .ec-ledger-keep-name { color: #8a2015; }
+.ec-ledger-keep[data-side="player"] .ec-ledger-keep-name { color: #22466e; }
+.ec-ledger-wave {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding-left: 18px;
+  border-left: 1.5px solid rgba(43, 29, 16, 0.35);
+  color: #6e1c12;
+}
+.ec-ledger-wave .ec-ledger-glyph { color: #8a2015; }
+.ec-ledger-wave > span { display: flex; flex-direction: column; }
+.ec-ledger-wave small { font-family: var(--ec-font-display); font-size: 13px; line-height: 1; }
+.ec-ledger-wave[data-warn] b { color: var(--ec-wax); animation: ec-throb 1s ease-in-out infinite alternate; }
+
+/* An ink-ruled bar: an outlined box filled with a hatched wash. */
+.ec-ink-bar {
+  position: relative;
+  display: block;
+  height: 9px;
+  border: 1.5px solid rgba(43, 29, 16, 0.85);
+  border-radius: 1px 3px 2px 1px;
+  background: rgba(255, 248, 230, 0.35);
+}
+.ec-ink-bar > span {
+  position: absolute;
+  inset: 1px auto 1px 1px;
+  width: calc(var(--fill) - 2px);
+  max-width: calc(100% - 2px);
+  background:
+    repeating-linear-gradient(115deg, rgba(0, 0, 0, 0) 0 3px, rgba(0, 0, 0, 0.2) 3px 4px),
+    var(--ink);
+  transition: width 0.25s linear;
+}
+.ec-ink-bar-thin { height: 6px; }
+
+/* The order pinned under the ledger. */
+.ec-objectives-fade {
+  position: absolute;
+  top: 82px;
+  left: 18px;
+  z-index: 20;
+  width: 270px;
+}
+.ec-objectives { transform: rotate(-0.8deg); }
+.ec-objectives > [data-jg-frame-face] { position: relative !important; display: flex !important; flex-direction: column; gap: 4px; }
+.ec-objectives .ec-pin { top: -4px; }
+.ec-note-eyebrow {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+}
+.ec-note-marks { display: inline-flex; gap: 3px; align-items: center; }
+.ec-note-marks i {
+  width: 8px;
+  height: 8px;
+  border: 1.5px solid var(--ec-ink);
+  transform: rotate(45deg);
+}
+.ec-note-marks i[data-done] { background: var(--ec-wax); border-color: var(--ec-wax); }
+.ec-note-objective {
+  font-family: var(--ec-font-display);
+  font-weight: 400;
+  font-size: 19px;
+  line-height: 1.12;
+  color: var(--ec-ink);
+}
+.ec-note-line { display: flex; align-items: center; gap: 10px; }
+.ec-note-line b { flex: none; font-family: var(--ec-font-display); font-weight: 400; font-size: 20px; font-variant-numeric: tabular-nums; }
+.ec-note-line .ec-ink-bar { flex: 1; }
+
+/* The bottom of the table: map, Bram's card, the command board. */
+.ec-console {
+  position: absolute;
+  left: 50%;
+  bottom: 10px;
+  z-index: 20;
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+.ec-console > * { pointer-events: auto; }
+
+.ec-map-panel > [data-jg-frame-face] { display: flex !important; flex-direction: column; gap: 6px; }
+.ec-map-sheet {
+  position: relative;
+  display: block;
+  padding: 3px;
+  background: #cdb88a;
+  box-shadow: inset 0 0 0 1.5px rgba(43, 29, 16, 0.7), 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+.ec-minimap { display: block; }
+.ec-map-north {
+  position: absolute;
+  top: 6px;
+  right: 9px;
+  font-family: var(--ec-font-display);
+  font-size: 15px;
+  color: var(--ec-ink);
+}
+.ec-formations { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+.ec-formation {
+  position: relative;
+  height: 28px;
+  padding: 0 0 0 12px;
+  border: 0;
+  border-radius: 2px;
+  background: var(--ec-stone);
+  background-blend-mode: var(--ec-stone-blend);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), inset 0 -2px 0 rgba(0, 0, 0, 0.35), 0 1px 2px rgba(0, 0, 0, 0.6);
+  cursor: pointer;
+  font-family: var(--ec-font-display) !important;
+  font-size: 14px;
+  color: #f6eedb !important;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.8);
+}
+.ec-formation[data-tone="active"] { box-shadow: inset 0 0 0 2px #c4442f, inset 0 -2px 0 rgba(0, 0, 0, 0.35), 0 0 8px rgba(196, 68, 47, 0.55); color: #ffe2b0 !important; }
+.ec-formation .ec-slot-key { top: 1px; left: 3px; }
+
+.ec-hero-panel { width: 360px; }
+.ec-hero-panel > [data-jg-frame-face] { display: flex !important; flex-direction: column; gap: 6px; }
+.ec-hero { display: flex; align-items: center; gap: 12px; }
+.ec-medallion {
+  position: relative;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 66px;
+  height: 66px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 36% 30%, #c4483a 0%, #8e1f17 45%, #4c0d08 100%);
+  box-shadow: inset 0 0 0 4px rgba(0, 0, 0, 0.25), inset 0 0 0 5px rgba(255, 210, 180, 0.15), 0 2px 3px rgba(0, 0, 0, 0.5);
+}
+.ec-medallion[data-fallen] { background: radial-gradient(circle at 36% 30%, #8a7a64, #4a4034 70%); }
+.ec-medallion-glyph { width: 40px; height: 40px; color: #f3d9a8; }
+.ec-medallion b {
+  position: absolute;
+  right: -4px;
+  bottom: -2px;
+  display: grid;
+  place-items: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 4px;
+  border-radius: 12px;
+  background: var(--ec-parchment);
+  box-shadow: inset 0 0 0 1.5px var(--ec-ink), 0 1px 2px rgba(0, 0, 0, 0.4);
+  font-family: var(--ec-font-display);
+  font-weight: 400;
+  font-size: 15px;
+  color: var(--ec-ink);
+}
+.ec-hero-lines { display: flex; flex: 1; flex-direction: column; gap: 4px; min-width: 0; }
+.ec-hero-name { font-family: var(--ec-font-display); font-weight: 400; font-size: 20px; line-height: 1; color: var(--ec-ink); }
+.ec-hero-bar { display: flex; align-items: center; gap: 8px; }
+.ec-hero-bar .ec-ink-bar { flex: 1; }
+.ec-hero-bar small { flex: none; min-width: 58px; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; color: #3a2814; text-align: right; }
+.ec-hero-stats { display: flex; gap: 14px; font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; color: #3a2814; }
+.ec-hero-stats > span { display: inline-flex; align-items: center; gap: 4px; }
+.ec-hero-stat-glyph { width: 15px; height: 15px; color: #6a4a22; }
+
+.ec-army-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 5px;
+  border-top: 1.5px solid rgba(43, 29, 16, 0.35);
+  font-family: var(--ec-font-display);
+  font-size: 14px;
+  color: var(--ec-wax);
+}
+.ec-army-workers { display: inline-flex; align-items: center; gap: 3px; margin-right: auto; margin-left: 10px; font-family: var(--ec-font-body); font-weight: 700; font-size: 13px; color: #3a2814; }
+.ec-army-call {
+  position: relative;
+  padding: 1px 6px 1px 22px;
+  border: 1px solid rgba(43, 29, 16, 0.5);
+  background: rgba(255, 248, 230, 0.3);
+  cursor: pointer;
+  font-family: var(--ec-font-display) !important;
+  font-size: 13px;
+  color: var(--ec-ink) !important;
+}
+.ec-army-call:disabled { opacity: 0.45; cursor: default; }
+.ec-army-call .ec-slot-key { top: 2px; left: 5px; color: var(--ec-wax); text-shadow: none; }
+.ec-army { display: flex; align-items: center; width: 100%; min-width: 0; height: 40px; }
+.ec-army-empty { font-size: 14px; font-style: italic; color: var(--ec-ink-dim); }
+.ec-army-list { display: flex; flex: 1; justify-content: flex-start; min-width: 0; overflow: hidden; }
+/* A round stone token whose rim is drawn as far round as the unit's health goes. */
+.ec-token {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  padding: 3px;
+  border-radius: 50%;
+  background: conic-gradient(#3f7a2c calc(var(--hp) * 1turn), rgba(43, 29, 16, 0.3) 0);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+}
+.ec-token[data-hurt] { background: conic-gradient(#a3291c calc(var(--hp) * 1turn), rgba(43, 29, 16, 0.3) 0); }
+.ec-token-stone {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: var(--ec-stone);
+  background-blend-mode: var(--ec-stone-blend);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), inset 0 -2px 2px rgba(0, 0, 0, 0.4);
+}
+.ec-token-glyph { width: 20px; height: 20px; color: #f6eedb; }
+.ec-wedge {
+  flex: 0 0 32px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  background: linear-gradient(180deg, #6a3e24, #3f2414);
+  clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
+  cursor: pointer;
+  font-family: var(--ec-font-display) !important;
+  font-size: 22px;
+  color: #f6e7cf !important;
+}
+.ec-wedge:disabled { opacity: 0.35; cursor: default; }
+.ec-production { display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 600; color: #3a2814; }
+.ec-production .ec-ink-bar { width: 90px; }
+
+/* The command board: sixteen stone tokens in a leather case. */
+.ec-board { position: relative; }
+.ec-board > [data-jg-frame-face] { position: relative !important; overflow: visible !important; }
+.ec-board-grid { display: grid; grid-template-columns: repeat(4, 54px); grid-auto-rows: 54px; gap: 5px; }
+.ec-slot {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 3px;
+  background: var(--ec-stone);
+  background-blend-mode: var(--ec-stone-blend);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), inset 0 -3px 0 rgba(0, 0, 0, 0.35), 0 2px 3px rgba(0, 0, 0, 0.6);
+  cursor: pointer;
+  transition: transform 0.1s ease, box-shadow 0.12s ease;
+}
+.ec-slot:not(:disabled):hover { transform: translateY(-1px); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), inset 0 -3px 0 rgba(0, 0, 0, 0.35), 0 0 0 2px rgba(233, 196, 120, 0.65), 0 3px 5px rgba(0, 0, 0, 0.6); }
+.ec-slot:not(:disabled):active { transform: translateY(1px); }
+.ec-slot-glyph { width: 32px; height: 32px; color: #f0cf86; }
+.ec-slot[data-tone="active"] { box-shadow: inset 0 0 0 2px #d4553e, inset 0 -3px 0 rgba(0, 0, 0, 0.35), 0 0 12px rgba(212, 85, 62, 0.75); }
+.ec-slot[data-tone="active"] .ec-slot-glyph { color: #ffe2b0; }
+.ec-slot[data-tone="locked"] { cursor: default; }
+/* Locked slots dim under a soot wash, not a filter. */
+.ec-slot[data-tone="locked"]::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background: rgba(30, 26, 22, 0.55); pointer-events: none; }
+.ec-slot[data-tone="locked"] .ec-slot-glyph { color: #b9b2a6; }
+.ec-slot-key {
+  position: absolute;
+  top: 2px;
+  left: 4px;
+  font-family: var(--ec-font-display);
+  font-size: 12px;
+  line-height: 1;
+  color: rgba(255, 246, 225, 0.85);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.9);
+}
+.ec-slot-foot {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 1px;
+  overflow: hidden;
+  padding: 0 2px;
+  text-align: center;
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: #ffe8bd;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.95), 0 0 3px rgba(0, 0, 0, 0.8);
+}
+.ec-slot-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  display: grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  background: radial-gradient(circle at 35% 30%, #c4483a, #8e1f17 60%, #4c0d08);
+  font-family: var(--ec-font-display);
+  font-size: 12px;
+  color: #ffe8bd;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+/* The writ unrolled over the board for the token in hand. */
+.ec-writ {
+  position: absolute !important;
+  right: 0;
+  bottom: calc(100% + 10px);
+  z-index: 30;
+  width: 290px;
+  pointer-events: none;
+}
+.ec-writ > [data-jg-frame-face] { display: flex !important; flex-direction: column; gap: 3px; }
+.ec-writ strong { font-family: var(--ec-font-display); font-weight: 400; font-size: 19px; color: var(--ec-ink); }
+.ec-writ > [data-jg-frame-face] > span { font-size: 14px; line-height: 1.35; color: #3a2814; }
+.ec-writ-chips { display: flex; gap: 14px; margin-top: 3px; font-weight: 700; }
+.ec-writ-chips span { display: inline-flex; align-items: center; gap: 4px; }
+.ec-writ-glyph { width: 15px; height: 15px; color: #6a4a22; }
+
+.ec-build-mode,
+.ec-order-mode {
+  font-family: var(--ec-font-display);
+  font-size: 16px;
+  color: var(--ec-ink);
+  white-space: nowrap;
+}
+.ec-build-mode {
+  position: absolute !important;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  transform: translateX(-50%);
+  pointer-events: none !important;
+}
+.ec-order-mode {
+  position: absolute !important;
+  top: 86px;
+  left: 50%;
+  z-index: 25;
+  transform: translateX(-50%);
+}
+
+.ec-levelup {
+  position: absolute !important;
+  left: 50%;
+  bottom: 260px;
+  z-index: 30;
+  width: 500px;
+  transform: translateX(-50%) rotate(-0.4deg);
+  pointer-events: auto;
+}
+.ec-levelup > [data-jg-frame-face] { display: flex !important; flex-direction: column; gap: 8px; }
+.ec-levelup .ec-note-eyebrow { font-size: 15px; }
+.ec-levelup .ec-note-eyebrow span { color: var(--ec-ink-dim); }
+.ec-levelup-picks { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.ec-levelup-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px;
+  border: 1.5px solid rgba(43, 29, 16, 0.55);
+  background: rgba(255, 248, 230, 0.35);
+  cursor: pointer;
+  text-align: left;
+}
+.ec-levelup-option:not(:disabled):hover { border-color: var(--ec-wax); box-shadow: inset 0 0 0 1px var(--ec-wax); }
+.ec-levelup-option:disabled { opacity: 0.55; cursor: default; }
+.ec-slot-static { flex: none; width: 46px; height: 46px; cursor: inherit; }
+.ec-slot-static .ec-slot-glyph { width: 28px; height: 28px; }
+.ec-levelup-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.ec-levelup-text strong { font-family: var(--ec-font-display); font-weight: 400; font-size: 18px; color: var(--ec-ink); }
+.ec-levelup-text small { font-family: var(--ec-font-display); font-size: 13px; color: var(--ec-wax); }
+.ec-levelup-text > span { font-size: 13px; line-height: 1.3; color: #3a2814; }
+.ec-levelup-foot { font-size: 13px; font-style: italic; color: var(--ec-ink-dim); }
+
+/* ---- Preferences ---------------------------------------------------------------------------- */
+
+.ec-large .ec-ledger-entry b,
+.ec-large .ec-ledger-wave b { font-size: 27px; }
+.ec-large .ec-ledger-keep-name,
+.ec-large .ec-note-eyebrow { font-size: 16px; }
+.ec-large .ec-note-objective { font-size: 22px; }
+.ec-large .ec-slot-foot { font-size: 13px; }
+.ec-large .ec-slot-key { font-size: 14px; }
+.ec-large .ec-hero-bar small,
+.ec-large .ec-hero-stats,
+.ec-large .ec-writ > [data-jg-frame-face] > span,
+.ec-large .ec-order-hint { font-size: 16px; }
+.ec-large .ec-sheet-text { font-size: 19px; }
+
+/* High contrast: heavier ink, a solid table behind the sheets, and the HUD always at full strength. */
+.ec-contrast { --ec-ink: #000; --ec-ink-dim: #2b1d10; --ec-wax: #7a1008; }
+.ec-contrast .ec-table-dark { background: rgba(10, 6, 3, 0.9); }
+.ec-contrast .ec-map-art { color: rgba(70, 45, 20, 0.08); }
+.ec-contrast .ec-stock-fade,
+.ec-contrast .ec-objectives-fade { opacity: 1 !important; }
+.ec-contrast .ec-ink-bar { border-color: #000; border-width: 2px; }
+.ec-contrast .ec-sheet-text,
+.ec-contrast .ec-hero-bar small,
+.ec-contrast .ec-hero-stats,
+.ec-contrast .ec-writ > [data-jg-frame-face] > span { color: #000; }
+.ec-contrast .ec-slot-foot { background: rgba(0, 0, 0, 0.7); }
+.ec-contrast .ec-order-hint { opacity: 1; }
+
+.ec-still *,
+.ec-still *::before,
+.ec-still *::after { animation: none !important; transition: none !important; }
+.ec-still .ec-front,
+.ec-still .ec-sheet { animation: none !important; }
+
+@keyframes ec-arrive { from { opacity: 0; } to { opacity: 1; } }
+@keyframes ec-lay { from { opacity: 0; transform: translateY(6px) rotate(0.5deg); } to { opacity: 1; transform: translateY(0) rotate(0.5deg); } }
+@keyframes ec-press { from { transform: scale(1); } to { transform: scale(0.92); } }
+@keyframes ec-throb { from { opacity: 1; } to { opacity: 0.55; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .ec-front,
+  .ec-sheet,
+  .ec-menu-busy .ec-wax,
+  .ec-ledger-wave[data-warn] b { animation: none; }
+  .ec-order-hint,
+  .ec-slot,
+  .ec-ink-bar > span,
+  .ec-pause { transition: none; }
+}
+
+/* ---- Narrow screens --------------------------------------------------------------------------- */
+
+@media (max-width: 1180px) {
+  .ec-front { grid-template-columns: minmax(0, 500px) minmax(0, 1fr); column-gap: 28px; padding-inline: 3vw; }
+  .ec-wordmark { font-size: 72px; }
+  .ec-desk-foot { padding-inline: 3vw; }
+  .ec-map-panel { display: none; }
+}
+
+@media (max-height: 760px) and (min-width: 701px) {
+  .ec-wordmark { font-size: 62px; }
+  .ec-order-verb { font-size: 23px; }
+  .ec-survey-order { margin-bottom: 8px; }
+  .ec-survey-seal { width: 72px; height: 72px; }
+}
+
+/* Phone: the sheets stack and the front scrolls; the HUD keeps the ledger, the order, Bram's card and the board. */
+@media (max-width: 700px) {
+  .ec-front {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+    padding: 14px 12px 0;
+    overflow-x: clip;
+    overflow-y: auto;
+    scrollbar-width: none;
+  }
+  .ec-front::-webkit-scrollbar { display: none; }
+  .ec-table-dark { position: fixed; background: rgba(16, 10, 5, 0.72); }
+  .ec-survey,
+  .ec-case { flex: none; align-self: stretch; max-height: none; transform: none; }
+  .ec-wordmark { font-size: 58px; }
+  .ec-survey-seal { width: 64px; height: 64px; top: -4px; right: -2px; }
+  .ec-survey-order strong { font-size: 21px; }
+  .ec-orders-list { padding-left: 22px; }
+  .ec-order-verb { font-size: 24px; padding: 5px 0; }
+  .ec-order-row { flex-wrap: wrap; gap: 0 10px; }
+  .ec-order-hint { flex-basis: 100%; font-size: 14px; white-space: normal; }
+  .ec-order-row:not([data-active]) .ec-order-hint { display: none; }
+  .ec-detail { flex: none; align-self: stretch; min-width: 0; max-height: none; }
+  .ec-sheet { width: 100%; min-width: 0; max-width: 100%; transform: none; }
+  .ec-sheet > [data-jg-frame-face] > * { min-width: 0; max-width: 100%; }
+  .ec-order-verb { white-space: normal; }
+  .ec-settings-sheet > [data-jg-frame-face],
+  .ec-credits-sheet > [data-jg-frame-face] { max-height: none; }
+  .ec-sheet-body { overflow: visible; mask-image: none; }
+  .ec-sheet-title { font-size: 27px; }
+  .ec-sheet-text { font-size: 16px; }
+  .ec-folio { grid-template-columns: 64px minmax(0, 1fr) auto; gap: 10px; padding-inline: 2px; }
+  .ec-folio-plate { width: 64px; height: 48px; }
+  .ec-letter-title { font-size: 38px; }
+  .ec-desk-foot {
+    position: sticky;
+    bottom: 0;
+    flex: none;
+    flex-direction: column;
+    gap: 4px;
+    margin: auto -12px 0;
+    padding: 10px 14px 12px;
+    font-size: 14px;
+  }
+  .ec-keys { display: none; }
+
+  .ec-pause { top: 6px; right: 6px; }
+  .ec-pause svg { width: 50px; height: 50px; }
+  /* The ledger keeps two rows: stores and the wave clock, then both keeps' walls. */
+  .ec-stock-fade { top: 6px; left: 6px; max-width: calc(100% - 66px); }
+  .ec-stock { --jg-gf-padding: 6px 12px 10px !important; }
+  .ec-stock > [data-jg-frame-face] { flex-wrap: wrap; gap: 3px 10px; }
+  .ec-ledger-stores { gap: 10px; order: 0; }
+  .ec-ledger-wave { order: 1; margin-left: auto; padding-left: 8px; }
+  .ec-ledger-keep { order: 2; width: calc(50% - 5px); padding-left: 0; border-left: 0; }
+  .ec-ledger-wave .ec-ledger-glyph { display: none; }
+  .ec-ledger-wave > span { flex-direction: row; align-items: baseline; gap: 5px; }
+  .ec-ledger-entry b,
+  .ec-ledger-wave b { font-size: 18px; }
+  .ec-ledger-glyph { width: 15px; height: 15px; }
+  .ec-ledger-keep-name { font-size: 12px; }
+  .ec-objectives-fade { top: 92px; left: 8px; width: 222px; }
+  .ec-objectives { --jg-gf-padding: 10px 12px !important; }
+  .ec-note-objective { font-size: 16px; }
+  .ec-note-line b { font-size: 17px; }
+  /* Bram's card across the width with the army beneath it, then the board as two rows of eight. */
+  .ec-console { left: 4px; right: 4px; bottom: 4px; flex-direction: column; align-items: stretch; gap: 4px; transform: none; }
+  .ec-hero-panel { width: auto; min-width: 0; }
+  .ec-hero-panel { --jg-gf-padding: 8px 10px !important; }
+  .ec-hero-panel > [data-jg-frame-face] { gap: 4px; }
+  .ec-hero { gap: 10px; }
+  .ec-medallion { width: 46px; height: 46px; }
+  .ec-medallion-glyph { width: 28px; height: 28px; }
+  .ec-medallion b { min-width: 19px; height: 19px; font-size: 12px; right: -5px; }
+  .ec-hero-name { font-size: 17px; }
+  .ec-hero-lines { display: grid; grid-template-columns: 1fr 1fr; gap: 3px 10px; }
+  .ec-hero-name,
+  .ec-hero-lines > .ec-ink-bar-thin,
+  .ec-hero-stats { grid-column: 1 / -1; }
+  .ec-hero-bar small { min-width: 0; font-size: 11px; }
+  .ec-hero-stats { gap: 12px; font-size: 12px; }
+  .ec-army-head { font-size: 13px; padding-top: 3px; }
+  .ec-army-call { font-size: 13px; }
+  .ec-board { align-self: stretch; }
+  .ec-board { --jg-gf-padding: 6px !important; }
+  .ec-board-grid { grid-template-columns: repeat(8, minmax(0, 1fr)); grid-auto-rows: 42px; gap: 3px; }
+  .ec-slot-glyph { width: 25px; height: 25px; }
+  .ec-slot-foot { font-size: 10px; }
+  .ec-slot-key { font-size: 11px; }
+  .ec-writ { width: min(290px, calc(100vw - 16px)); }
+  .ec-levelup { width: calc(100vw - 16px); bottom: 250px; }
+  .ec-levelup-picks { grid-template-columns: 1fr; gap: 6px; }
+  .ec-order-mode { top: 150px; font-size: 13px; white-space: normal; text-align: center; width: max-content; max-width: 90vw; }
+  .ec-build-mode { white-space: normal; width: 80vw; text-align: center; font-size: 13px; }
+}

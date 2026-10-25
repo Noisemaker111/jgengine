@@ -2,7 +2,6 @@ import { existsSync, lstatSync, readdirSync, readFileSync, realpathSync, rmSync 
 import { join } from "node:path";
 import { ensureWorktreeReady } from "./agent-worktree";
 import { scanStalePackages } from "./distStaleness";
-import { gamesCheckout, gamesCheckoutLine } from "./games-scope";
 
 function run(label: string, cmd: string[], timeoutMs: number): void {
   console.log(`ensure-ready: ${label}`);
@@ -22,7 +21,7 @@ function run(label: string, cmd: string[], timeoutMs: number): void {
 }
 
 // A tree created by `claude --worktree` or a bare `git worktree add` has no
-// node_modules and no Games link; agent:worktree is the only thing that made
+// node_modules; agent:worktree is the only thing that made
 // them, so every test/build/smoke run in such a tree failed on missing deps or
 // an empty game list. Link from the main checkout (instant) before installing.
 const readiness = ensureWorktreeReady(process.cwd(), {
@@ -34,15 +33,6 @@ if (readiness !== null && !readiness.unchanged) {
   if (readiness.deps.length > 0) did.push(`linked ${readiness.deps.length} node_modules`);
   if (readiness.assets.length > 0) did.push(`linked ${readiness.assets.join(", ")}`);
   console.log(`ensure-ready: ${did.join("; ")}`);
-}
-
-// A tree can be settled and still measure the wrong games: the Games clone is
-// shared with the main checkout, so a stale clone is every lane's stale clone.
-// Said only when it is wrong, so a ready tree stays quiet (this runs before every
-// test); the gate that cannot run then fails naming both commits (#2228).
-const checkout = gamesCheckout(process.cwd());
-if (checkout.state !== "at-pin" && checkout.state !== "override" && checkout.state !== "no-pin") {
-  console.warn(gamesCheckoutLine("ensure-ready", checkout));
 }
 
 const tsgo = join(process.cwd(), "node_modules", ".bin", process.platform === "win32" ? "tsgo.exe" : "tsgo");

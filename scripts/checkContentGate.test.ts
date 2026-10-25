@@ -27,9 +27,9 @@ function makeRoot(): string {
   return root;
 }
 
-/** Write one game under Games/<id>. `files` is a map of src-relative path -> contents. */
+/** Write one game under games/<id>. `files` is a map of src-relative path -> contents. */
 function writeGame(root: string, id: string, files: Record<string, string>): void {
-  const gameDir = join(root, "Games", id);
+  const gameDir = join(root, "games", id);
   mkdirSync(gameDir, { recursive: true });
   writeFileSync(join(gameDir, "package.json"), JSON.stringify({ name: id }));
   for (const [rel, contents] of Object.entries(files)) {
@@ -57,7 +57,7 @@ describe("content-fill detection", () => {
     const { code, err } = runGate(root);
     expect(code).toBe(1);
     expect(err).toContain("grass(...)");
-    expect(err).toContain("Games/turf-town/src/world.ts:");
+    expect(err).toContain("games/turf-town/src/world.ts:");
   });
 
   test("authored game calling building() fails the gate", () => {
@@ -113,7 +113,7 @@ describe("content-fill detection", () => {
     });
     writeFileSync(
       join(root, "scripts", "content-builder-baseline.json"),
-      JSON.stringify(["Games/turf-town/src/world.ts:grass"]),
+      JSON.stringify(["games/turf-town/src/world.ts:grass"]),
     );
     expect(runGate(root).code).toBe(0);
   });
@@ -126,7 +126,7 @@ describe("content-fill detection", () => {
     });
     writeFileSync(
       join(root, "scripts", "content-builder-baseline.json"),
-      JSON.stringify(["Games/turf-town/src/world.ts:grass"]),
+      JSON.stringify(["games/turf-town/src/world.ts:grass"]),
     );
     const { code, err } = runGate(root);
     expect(code).toBe(1);

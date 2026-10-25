@@ -1,0 +1,13 @@
+{ "steps": [
+  { "waitFor": "window.__harborCity !== undefined && window.__jgengineAgent !== undefined" },
+  { "assert": "(window.__hd = (n, i) => window.__jgengineAgent.handle({ method: 'run_command', name: n, input: i || {} }), __hd('city.dev.abandon'), ['jobs.welcome', 'jobs.dock_sweep', 'jobs.front_money', 'jobs.shake_heat', 'jobs.hot_wheels'].forEach((k) => __hd('city.dev.set', { key: k, value: 'done' })), __hd('city.dev.set', { key: 'port.owner', value: 'player' }), __hd('city.dev.cash', { amount: 8000 }), __hd('city.dev.warp', { x: 57, z: -57 }), true)",
+    "note": "act 2, standing at the Neon Lounge with cash" },
+  { "waitFor": "/buy neon lounge/i.test(document.body.innerText)" },
+  { "key": "KeyE", "ms": 150, "after": { "is": "window.__harborCity.read().fronts.front_lounge !== undefined" }, "note": "buy the front" },
+  { "assert": "(__hd('city.dev.warp', { x: 40, z: -75 }), __hd('city.job.start', { id: 'protection' }), true)", "note": "Sal's crew hits it" },
+  { "waitFor": "/defend neon lounge/i.test(document.body.innerText)", "timeoutMs": 4000 },
+  { "key": "KeyW", "ms": 1500, "note": "run at them" },
+  { "waitFor": "(() => { const r = window.__harborCity.read(); if (r.repelled >= 1) return true; const t = performance.now(); if (window.__ls === undefined || t - window.__ls > 900) { window.__ls = t; __hd('city.dev.shoot', { prefix: 'ganger_dock' }); } return false; })()", "timeoutMs": 40000,
+    "note": "drop the raiders" },
+  { "key": "KeyS", "ms": 1500, "note": "the job pays out" }
+] }

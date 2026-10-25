@@ -21,7 +21,7 @@
     ],
     "paths": {
       "@/*": ["./*"],
-      "@games/world-of-warcraft": ["../../Games/world-of-warcraft/src/index.ts"],
+      "@games/world-of-warcraft": ["../../games/world-of-warcraft/src/index.ts"],
       "@jgengine/assets": ["../../packages/assets/src/index.ts"],
       "@jgengine/assets/*": ["../../packages/assets/src/*"],
       "@jgengine/convex": ["../../packages/convex/src/index.ts"],

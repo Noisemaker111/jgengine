@@ -15,7 +15,7 @@ function scan(files: Record<string, string>): string[] {
 
 describe("findFrontEndGaps", () => {
   test("a bare game is missing both surfaces", () => {
-    expect(scan({ "Games/probe/src/main.tsx": "export const x = 1;\n" })).toEqual([
+    expect(scan({ "games/probe/src/main.tsx": "export const x = 1;\n" })).toEqual([
       "probe#credits",
       "probe#settings",
     ]);
@@ -23,12 +23,12 @@ describe("findFrontEndGaps", () => {
 
   test("a declared settings block clears settings", () => {
     expect(
-      scan({ "Games/probe/src/game.config.ts": "export const game = defineGame({\n  settings: { variant: \"sheet\" },\n});\n" }),
+      scan({ "games/probe/src/game.config.ts": "export const game = defineGame({\n  settings: { variant: \"sheet\" },\n});\n" }),
     ).toEqual(["probe#credits"]);
   });
 
   test("an imported SettingsTrigger alone does NOT clear settings — it renders null without a config block", () => {
-    expect(scan({ "Games/probe/src/ui.tsx": 'import { SettingsTrigger } from "@jgengine/react";\n' })).toEqual([
+    expect(scan({ "games/probe/src/ui.tsx": 'import { SettingsTrigger } from "@jgengine/react";\n' })).toEqual([
       "probe#credits",
       "probe#settings",
     ]);
@@ -36,20 +36,20 @@ describe("findFrontEndGaps", () => {
 
   test("a credits screen clears credits", () => {
     expect(
-      scan({ "Games/probe/src/ui.tsx": 'import { CreditsScreen } from "@jgengine/react/creditsScreen";\n' }),
+      scan({ "games/probe/src/ui.tsx": 'import { CreditsScreen } from "@jgengine/react/creditsScreen";\n' }),
     ).toEqual(["probe#settings"]);
   });
 
   test("the shipped credits panel clears it", () => {
     expect(
-      scan({ "Games/probe/src/ui.tsx": 'import { CreditsPanel } from "@jgengine/react/creditsPanel";\n' }),
+      scan({ "games/probe/src/ui.tsx": 'import { CreditsPanel } from "@jgengine/react/creditsPanel";\n' }),
     ).toEqual(["probe#settings"]);
   });
 
   test("a GameMenu credits pane clears it - the menu the engine ships carries credits", () => {
     expect(
       scan({
-        "Games/probe/src/ui/menu/ProbeMenu.tsx":
+        "games/probe/src/ui/menu/ProbeMenu.tsx":
           'import { CreditsPane } from "@jgengine/react/gameMenuSaves";\nconst verbs = [{ id: "credits", label: "Credits" }];\n',
       }),
     ).toEqual(["probe#settings"]);
@@ -57,15 +57,15 @@ describe("findFrontEndGaps", () => {
 
   test("generated asset credits also clear it", () => {
     expect(
-      scan({ "Games/probe/src/ui.tsx": 'import { creditsForSourceIds } from "@jgengine/assets/credits";\n' }),
+      scan({ "games/probe/src/ui.tsx": 'import { creditsForSourceIds } from "@jgengine/assets/credits";\n' }),
     ).toEqual(["probe#settings"]);
   });
 
   test("a game with both surfaces reports nothing", () => {
     expect(
       scan({
-        "Games/probe/src/game.config.ts": "defineGame({\n  settings: { variant: \"sheet\" },\n});\n",
-        "Games/probe/src/ui.tsx": 'import { CreditsScreen } from "@jgengine/react/creditsScreen";\n',
+        "games/probe/src/game.config.ts": "defineGame({\n  settings: { variant: \"sheet\" },\n});\n",
+        "games/probe/src/ui.tsx": 'import { CreditsScreen } from "@jgengine/react/creditsScreen";\n',
       }),
     ).toEqual([]);
   });

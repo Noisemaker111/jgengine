@@ -19,12 +19,10 @@ their rules, stories, items, assets, authored worlds and presentation. The engin
 the common machinery that makes those choices work. Shared behavior must preserve
 different art directions and gameplay, not impose a common game or asset kit.
 
-A compatible framework fix reaches consumers as a package upgrade, not an implementation
-in every game; breaking API changes still need explicit migrations. A
-merge to `beta` alone changes nothing installed, and that is normal: publishing is a
-milestone for outside users, not a step after each change. The games build and run
-against engine source: the engine `beta` commit in `JGengine-games/engine-ref.txt`,
-moved hourly by its `engine-bump` workflow or by a games PR that needs newer code. `bun run release` cuts the changelog and bumps the lockstep versions, that
+The games in [`games/`](games) are workspaces of this repo and run engine source from the
+same commit, so an engine change and the games it breaks are fixed in one PR. Outside users get
+engine changes as npm versions; a breaking change carries a semver bump and a migration note.
+Publishing is a milestone for outside users, not a step after each change. `bun run release` cuts the changelog and bumps the lockstep versions, that
 commit fast-forwards `main`, and `publish.yml` publishes the versions npm does not
 already have — `next` for a prerelease, `latest` for a release — after
 `bun run check-release-set` proves the publish order matches the manifests. The development and
@@ -89,7 +87,7 @@ The game the agent builds is **its own project in its own repo/directory**, on t
 
 It deploys to Cloudflare Workers through the official Cloudflare Vite plugin. Because the site is built from `.claude/skills/` and `packages/`, **shipping an engine or skill change redeploys the site with it** — the deploy of the engine is the deploy of the website. Setup in [`apps/web/README.md`](apps/web/README.md).
 
-The probe games in [`Noisemaker111/JGengine-games`](https://github.com/Noisemaker111/JGengine-games) are also playable on jgengine.com at `/games/<id>` — the page embeds the `apps/dev` runner, which the site bundles as a static build. The website clones the games repo at build time into an ephemeral `./Games` at the commit pinned in `scripts/games-ref.txt` (see `scripts/ensure-games.ts` / `bun run games:clone`; `bun run games:bump` moves the pin); the clone is gitignored and never committed. Root `bun dev` serves that same runner build locally (content-hash cached, rebuilt when game or engine sources change), so the games are playable at `/games/<id>`. To play one standalone, run `bun run --cwd Games/<id> dev` after cloning, or the dev harness inside any external game scaffolded per `jgengine`'s dev harness.
+The games in [`games/`](games) are also playable on jgengine.com at `/games/<id>` — the page embeds the `apps/dev` runner, which the site bundles as a static build. Root `bun dev` serves that same runner build locally (content-hash cached, rebuilt when game or engine sources change), so the games are playable at `/games/<id>`. To play one standalone, run `bun --cwd=games/<id> run dev`.
 
 ## Layering
 
@@ -108,17 +106,16 @@ bun run build        # tsgo + import-extension rewrite, per package; only for pa
 bun run gen           # regenerate every committed derived artifact, in dependency order
 bun run verify:fast   # seconds: the branch diff vs origin/beta mapped to the packages, tests and quick gates it reaches
 bun run lane:close    # verify:fast, land, one ci:status read, then refuse a lane that slept or watched
-bun run games:clone  # once: clone Noisemaker111/JGengine-games into ephemeral ./Games at the pinned commit
-bun run games:update # move an existing clone to the pin; games:bump pins the latest stable
-bun run games:check  # type-check + test every game in ./Games against THIS checkout's sources (no build, no copying dist)
-                     # games:check <id> for one game; --published re-runs against the games' installed @jgengine/*
-bun dev              # jgengine.com locally, games playable at /games/<id> when Games/ is present
+bun run games:check-types  # type-check every game in games/ against this checkout's engine source
+bun run games:test         # every game's tests and the games' own scripts
+bun run games:provision    # pull the asset packs the games reference (games:provision <id> for one game)
+bun dev              # jgengine.com locally, games playable at /games/<id>
 bun run perf <game>  # frame times, draws, triangles, node/GL counts and top self-time functions as JSON (--help; --state pins the scene, --param k=v pins a spawn/seed, --set key=value prices a setting)
 bun run debug <game> # the same JSON for a game already open in a browser, ~0.3 s, fails on a budget breach
-bun run perf:gate    # CI gate: plays all 8 reference games and fails on draws/triangles/nodes over Games/<id>/perf-budget.json (scripts/perf-budget.json when a game has none), or any program/framebuffer created after warmup (--help)
+bun run perf:gate    # CI gate: plays all 8 reference games and fails on draws/triangles/nodes over games/<id>/perf-budget.json (scripts/perf-budget.json when a game has none), or any program/framebuffer created after warmup (--help)
 bun run bench:cpu    # the CPU timing gate: re-runs the benchmarks that carry wall-clock budgets (nav crowd, perception, utility, visibility, off-screen, flock, paths) and fails when one exceeds it
-# a cloned game standalone:
-bun --cwd=Games/harbor-heat run dev
+# one game standalone:
+bun --cwd=games/harbor-heat run dev
 ```
 
 Windows: if `bun` is not recognized after installing, its install directory is missing from PATH — add `%USERPROFILE%\.bun\bin` (PowerShell: `[Environment]::SetEnvironmentVariable("Path", "$env:Path;$env:USERPROFILE\.bun\bin", "User")`) and reopen the terminal.

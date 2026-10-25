@@ -14,7 +14,7 @@ bun examples/express-host/src/server.ts
 # ws://localhost:8080/ws  ·  GET /healthz
 
 # terminal 2 — client
-VITE_JG_WS_URL=ws://localhost:8080/ws bun --cwd=Games/YOUR_GAME_ID run dev
+VITE_JG_WS_URL=ws://localhost:8080/ws bun --cwd=games/YOUR_GAME_ID run dev
 # or: bun run dev:runner  →  http://localhost:5173/?game=YOUR_GAME_ID
 ```
 

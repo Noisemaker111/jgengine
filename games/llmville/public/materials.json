@@ -1,0 +1,30 @@
+{
+    "apartment-drywall": {
+        "diffuse": "/textures/Aged drywall texture with repairs.webp",
+        "roughness": 0.95,
+        "metalness": 0.04,
+        "color": "#f2eee8",
+        "tileSize": 2.3
+    },
+    "apartment-floor": {
+        "diffuse": "/textures/apartment-flooring.webp"
+    },
+    "garage-floor": {
+        "diffuse": "/textures/garage-floor.webp"
+    },
+    "garage-wall": {
+        "diffuse": "/textures/garage-wall.webp"
+    },
+    "house-floor": {
+        "diffuse": "/textures/house-floor.png"
+    },
+    "house-wall": {
+        "diffuse": "/textures/house-wall.png"
+    },
+    "datacenter-floor": {
+        "diffuse": "/textures/datacenter-floor.png"
+    },
+    "datacenter-wall": {
+        "diffuse": "/textures/datacenter-wall.png"
+    }
+}

@@ -1,0 +1,32 @@
+{
+  "steps": [
+    {
+      "wait": 9000
+    },
+    {
+      "key": "KeyQ",
+      "ms": 700
+    },
+    {
+      "wait": 8000
+    },
+    {
+      "key": "KeyE",
+      "ms": 1400
+    },
+    {
+      "wait": 8000
+    },
+    {
+      "key": "KeyQ",
+      "ms": 700
+    },
+    {
+      "wait": 6000
+    },
+    {
+      "assert": "__jgProbe().kills >= 3",
+      "note": "arrival: the staged towers are killing the third wave"
+    }
+  ]
+}

@@ -1,15 +1,15 @@
 [
-  "Games/beacon-bastion/src/game/combat/pendingProjectiles.ts#queue",
-  "Games/beacon-bastion/src/game/combat/pendingProjectiles.ts#seq",
-  "Games/beacon-bastion/src/game/session.ts#session",
-  "Games/brightway-park/src/game/build/commands.ts#revision",
-  "Games/ember-command/src/game/hudStore.ts#snapshot",
-  "Games/ember-command/src/game/session.ts#session",
-  "Games/scrap-signal/src/game/characters.ts#activeCharacterId",
-  "Games/scrap-signal/src/game/characters.ts#activeTree",
-  "Games/scrap-signal/src/game/feel.ts#equippedGunId",
-  "Games/scrap-signal/src/game/feel.ts#gameNowMs",
-  "Games/scrap-signal/src/game/feel.ts#lastHealth",
-  "Games/scrap-signal/src/game/handroll/roll.ts#gunSerial",
-  "Games/scrap-signal/src/game/session.ts#slot"
+  "games/beacon-bastion/src/game/combat/pendingProjectiles.ts#queue",
+  "games/beacon-bastion/src/game/combat/pendingProjectiles.ts#seq",
+  "games/beacon-bastion/src/game/session.ts#session",
+  "games/brightway-park/src/game/build/commands.ts#revision",
+  "games/ember-command/src/game/hudStore.ts#snapshot",
+  "games/ember-command/src/game/session.ts#session",
+  "games/scrap-signal/src/game/characters.ts#activeCharacterId",
+  "games/scrap-signal/src/game/characters.ts#activeTree",
+  "games/scrap-signal/src/game/feel.ts#equippedGunId",
+  "games/scrap-signal/src/game/feel.ts#gameNowMs",
+  "games/scrap-signal/src/game/feel.ts#lastHealth",
+  "games/scrap-signal/src/game/handroll/roll.ts#gunSerial",
+  "games/scrap-signal/src/game/session.ts#slot"
 ]

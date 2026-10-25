@@ -532,13 +532,12 @@ export function serverEnv(base: NodeJS.ProcessEnv, request: ServerRequest, port:
   const env: Record<string, string> = {};
   for (const [key, value] of Object.entries(base)) {
     if (value === undefined) continue;
-    if (/^(VITE_)?JG_GAME_DIR$|^JG_GAMES_DIR$|^JG_(DEV|WEB)_PORT$|^JG_CAPTURE_SITE$|^JG_STEP_FILE$|^JG_DEV_IDLE_MINUTES$/.test(key)) continue;
+    if (/^(VITE_)?JG_GAME_DIR$|^JG_(DEV|WEB)_PORT$|^JG_CAPTURE_SITE$|^JG_STEP_FILE$|^JG_DEV_IDLE_MINUTES$/.test(key)) continue;
     env[key] = value;
   }
   if (request.gameDir !== null) {
     env.JG_GAME_DIR = request.gameDir;
     env.VITE_JG_GAME_DIR = request.gameDir.replace(/\\/g, "/");
-    env.JG_GAMES_DIR = join(request.gameDir, "..");
   }
   if (request.kind === "runner") env.JG_DEV_PORT = String(port);
   else {

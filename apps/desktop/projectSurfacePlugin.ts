@@ -185,7 +185,7 @@ export function projectSurfacePlugin(options?: {
 }): Plugin {
   const repoRoot =
     options?.repoRoot ?? fileURLToPath(new URL("../..", import.meta.url));
-  const gamesDir = options?.gamesDir ?? fileURLToPath(new URL("../../Games", import.meta.url));
+  const gamesDir = options?.gamesDir ?? fileURLToPath(new URL("../../games", import.meta.url));
   const host = createProjectSurfaceHost({ repoRoot, gamesDir });
 
   return {

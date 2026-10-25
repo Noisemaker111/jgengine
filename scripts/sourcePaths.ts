@@ -58,7 +58,7 @@ export function sourcePathEntries(configDir: string, root = repoRoot): Paths {
 }
 
 function readTsconfig(path: string): TsconfigJson {
-  return JSON.parse(readFileSync(path, "utf8")) as TsconfigJson;
+  return Bun.JSONC.parse(readFileSync(path, "utf8")) as TsconfigJson;
 }
 
 /** `paths` in effect for a config, with the directory they resolve against. */
@@ -76,7 +76,7 @@ function isJgengineKey(key: string): boolean {
 /** Every workspace tsconfig the source map governs (relative to root). */
 export function workspaceTsconfigs(root = repoRoot): string[] {
   const out = ["tsconfig.base.json", ...(existsSync(join(root, "tsconfig.json")) ? ["tsconfig.json"] : [])];
-  for (const group of ["packages", "apps", "examples"]) {
+  for (const group of ["packages", "apps", "examples", "games", "games/llmville/packages"]) {
     const base = join(root, group);
     if (!existsSync(base)) continue;
     for (const entry of readdirSync(base, { withFileTypes: true })) {
@@ -87,6 +87,8 @@ export function workspaceTsconfigs(root = repoRoot): string[] {
     }
   }
   if (existsSync(join(root, "registry", "tsconfig.json"))) out.push("registry/tsconfig.json");
+  const convex = "games/llmville/packages/backend/convex/tsconfig.json";
+  if (existsSync(join(root, convex))) out.push(convex);
   return out.sort();
 }
 
@@ -146,7 +148,7 @@ export function rewritePaths(text: string, configDir: string, root = repoRoot): 
     if (text[i] === "{") depth += 1;
     else if (text[i] === "}") depth -= 1;
   }
-  const current = (JSON.parse(text) as TsconfigJson).compilerOptions?.paths ?? {};
+  const current = (Bun.JSONC.parse(text) as TsconfigJson).compilerOptions?.paths ?? {};
   const next: Paths = {};
   for (const [key, value] of Object.entries(current)) if (!isJgengineKey(key)) next[key] = value;
   Object.assign(next, sourcePathEntries(configDir, root));

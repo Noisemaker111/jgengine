@@ -46,15 +46,13 @@ describe("splitGameDir", () => {
 });
 
 describe("serveGameDir", () => {
-  test("points the launcher, Vite and the pin reader at that checkout", () => {
+  test("points the launcher and Vite at that checkout", () => {
     remember("JG_GAME_DIR");
     remember("VITE_JG_GAME_DIR");
-    remember("JG_GAMES_DIR");
     const dir = game("serve");
     serveGameDir(dir, "harbor-heat");
     expect(posix(process.env["JG_GAME_DIR"]!)).toBe(posix(dir));
     expect(process.env["VITE_JG_GAME_DIR"]!).toBe(posix(dir));
-    expect(posix(process.env["JG_GAMES_DIR"]!)).toBe(posix(dir).split("/").slice(0, -1).join("/"));
   });
 
   test("refuses a folder that is not the named game, or not a game at all", () => {

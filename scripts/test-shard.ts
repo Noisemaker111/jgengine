@@ -1,5 +1,5 @@
-// The CI `test` job runs this once per shard. One bun process over `packages
-// apps/dev scripts` took 5m37s of test time on a runner, so the same files are
+// The CI `test` job runs this once per shard. One bun process over `packages apps scripts`
+// (apps/dev, web, desktop) took 5m37s of test time on a runner, so the same files are
 // split by measured cost into nine jobs. Every test file under those roots lands in
 // exactly one shard - the last entry covers the rest - and `--check` fails if
 // the split ever stops covering everything, so a new directory cannot drop its
@@ -37,10 +37,10 @@ import { spawnSync } from "node:child_process";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 
-export const TEST_ROOTS = ["packages", "apps/dev", "scripts"] as const;
+export const TEST_ROOTS = ["packages", "apps/dev", "apps/web", "apps/desktop", "scripts"] as const;
 
 const TEST_FILE = /\.(test|spec)\.[cm]?[jt]sx?$/;
-const SKIP_DIRS = new Set(["node_modules", "dist", ".git", ".claude", "coverage", ".turbo", ".scratch", "Games"]);
+const SKIP_DIRS = new Set(["node_modules", "dist", ".git", ".claude", "coverage", ".turbo", ".scratch", "games"]);
 
 export interface Shard {
   name: string;
@@ -49,10 +49,9 @@ export interface Shard {
   include: string[];
   /**
    * Preparation this shard's tests need before `bun test`: `build` for the tests that read
-   * published dist, `games` for the repo gates that read the `./Games` clone. Every test job
-   * used to pay both; only the shard that needs one pays it now.
+   * published dist. Only the shard that needs it pays for it.
    */
-  needs?: readonly ("build" | "games")[];
+  needs?: readonly "build"[];
 }
 
 /** Eight shards by measured cost; the CI matrix runs one job per entry, in this order. */
@@ -103,8 +102,8 @@ export const SHARDS: readonly Shard[] = [
   {
     name: "e",
     label: "harness drive",
-    // 42 s of harness drive plus the other 2 s of jgengine and apps/dev.
-    include: ["packages/jgengine/src/harness.browser.test.ts", "packages/jgengine", "apps/dev"],
+    // 42 s of harness drive plus the other 2 s of jgengine and apps/dev, and 1 s of apps/web and apps/desktop.
+    include: ["packages/jgengine/src/harness.browser.test.ts", "packages/jgengine", "apps/dev", "apps/web", "apps/desktop"],
     needs: [],
   },
   {
@@ -119,9 +118,9 @@ export const SHARDS: readonly Shard[] = [
     label: "react and the editor unit tests",
     // 41 s of react plus 3 s of editor tests that are not browser scenarios. React cannot fold
     // into another shard here without clearing 60 s, so this is the one job that is nearly a
-    // single package. It clones Games because one editor test opens a real game scene.
+    // single package.
     include: ["packages/react", "packages/editor"],
-    needs: ["games"],
+    needs: [],
   },
   {
     name: "h",
@@ -136,10 +135,9 @@ export const SHARDS: readonly Shard[] = [
     name: "i",
     label: "scripts and the built gate",
     // 35 s of repo gates and CLI tests; anything a new root adds lands here too. It is the only
-    // shard that reads a built dist and the only one that reads `./Games`, so it is the only job
-    // that pays for either: about 7 s on this step, and zero on the other eight.
+    // shard that reads a built dist, so it is the only job that pays for the build.
     include: ["scripts", ...TEST_ROOTS],
-    needs: ["build", "games"],
+    needs: ["build"],
   },
 ];
 
@@ -186,7 +184,6 @@ export function preparation(shard: Shard): string[][] {
   const commands: string[][] = [];
   for (const need of shard.needs ?? []) {
     if (need === "build") commands.push(["run", "build"]);
-    else commands.push(["run", "games:clone"]);
   }
   return commands;
 }

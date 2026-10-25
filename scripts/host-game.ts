@@ -22,7 +22,7 @@ if (gameId === undefined) {
   process.exit(1);
 }
 
-const entry = pathToFileURL(resolve(process.cwd(), "Games", gameId, "src", "index.tsx")).href;
+const entry = pathToFileURL(resolve(process.cwd(), "games", gameId, "src", "index.tsx")).href;
 const loaded = (await import(entry)) as {
   game: { game: GameDefinition<ModelAssetRef, unknown>; content: GameContextContent };
 };

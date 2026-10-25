@@ -16,7 +16,7 @@ export interface SaveEndpointResponse {
   error?: string;
 }
 
-/** Where dev-time saves land: the endpoint URL plus the Games/<gameId> directory it targets. */
+/** Where dev-time saves land: the endpoint URL plus the games/<gameId> directory it targets. */
 export interface SaveEndpointInfo {
   url: string;
   gameId: string;

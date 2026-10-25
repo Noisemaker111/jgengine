@@ -1,0 +1,19 @@
+{ "steps": [
+  { "waitFor": "document.body.innerText.includes('Give your GPUs a home')", "timeoutMs": 30000,
+    "note": "a fresh world on a signed-in account (local Convex: bun --cwd=llmville run convex:dev) opens on tutorial step 1" },
+  { "click": "Shop for a rack" },
+  { "click": "Buy ×1" },
+  { "assert": "document.body.innerText.includes('Place your rack')",
+    "note": "arrival: the $200 rack left the wallet and the tutorial asks for its spot" },
+  { "click": "Place your rack" },
+  { "wait": 1500 },
+  { "key": "KeyE", "ms": 120 },
+  { "waitFor": "document.body.innerText.includes('Power up your lab')", "timeoutMs": 15000,
+    "note": "the placed rack founded the plot on the server" },
+  { "click": "Shop for GPUs" },
+  { "click": "Buy ×1" },
+  { "wait": 1500 },
+  { "click": "Buy ×1" },
+  { "assert": "document.body.innerText.includes('Put your GPUs to work')",
+    "note": "arrival: two GPUs bought, tutorial step 4 of 9 (install, license, collect, train, serve follow)" }
+] }

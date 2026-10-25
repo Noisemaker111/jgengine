@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import type { PerfRecord } from "./perf-play";
-import { PERF_GATE_GAMES, DEBUG_PORT_BASE, checkBudget, debugPortFor, describeGamesCheckout, describeGamesLine, gateVerdicts, loadBudget, parseGateArgs, type PerfBudget } from "./perf-gate";
+import { PERF_GATE_GAMES, DEBUG_PORT_BASE, checkBudget, debugPortFor, gateVerdicts, loadBudget, parseGateArgs, type PerfBudget } from "./perf-gate";
 import { summarizeRecord } from "./perf-budget";
 import { FRAME_GAMES } from "./ci-scope";
 
@@ -144,7 +144,7 @@ describe("loadBudget", () => {
   }
 
   function writeGameBudget(root: string, game: string, budget: unknown): void {
-    const dir = join(root, "Games", game);
+    const dir = join(root, "games", game);
     mkdirSync(dir, { recursive: true });
     writeFileSync(join(dir, "perf-budget.json"), JSON.stringify(budget));
   }
@@ -164,7 +164,7 @@ describe("loadBudget", () => {
     writeGameBudget(root, "harbor-heat", { drawsFrame: 5000, triangles: 2_000_000, nodes: 9000 });
     const loaded = loadBudget("harbor-heat", root);
     expect(loaded.budget.drawsFrame).toBe(5000);
-    expect(loaded.source).toBe("Games/harbor-heat/perf-budget.json");
+    expect(loaded.source).toBe("games/harbor-heat/perf-budget.json");
   });
 
   test("the standalone game copy is the whole entry, not a table keyed by game id", () => {
@@ -192,7 +192,7 @@ describe("loadBudget", () => {
 
   test("a missing budget fails loudly and names both places it looked", () => {
     const root = tempRoot();
-    expect(() => loadBudget("harbor-heat", root)).toThrow(/no budget for "harbor-heat".*scripts[/\\]perf-budget\.json.*Games[/\\]harbor-heat[/\\]perf-budget\.json/s);
+    expect(() => loadBudget("harbor-heat", root)).toThrow(/no budget for "harbor-heat".*scripts[/\\]perf-budget\.json.*games[/\\]harbor-heat[/\\]perf-budget\.json/s);
   });
 
   test("a game missing from the baseline fails instead of skipping the gate", () => {
@@ -279,23 +279,6 @@ describe("debugPortFor", () => {
   });
 });
 
-describe("describeGamesLine", () => {
-  const pin = "c81aabc494295170c53c4b7a0763573162590a7f";
-  const other = "3385ce43256f4f88495ffd7fb2f6e4839a32f23e";
-
-  test("names the measured checkout and the pin when they agree", () => {
-    expect(describeGamesLine({ pin, head: pin })).toBe("perf gate: games c81aabc, pinned c81aabc");
-  });
-
-  test("says so when the clone is off the pin, since the budgets describe the pin", () => {
-    expect(describeGamesLine({ pin, head: other })).toBe("perf gate: games 3385ce4, pinned c81aabc (measuring unpinned content)");
-  });
-
-  test("still measures when Games/ is not a git checkout", () => {
-    expect(describeGamesLine({ pin, head: null })).toContain("games checkout unavailable");
-  });
-});
-
 describe("ci matrix", () => {
   const workflow = readFileSync(fileURLToPath(new URL("../.github/workflows/ci.yml", import.meta.url)), "utf8");
 
@@ -304,26 +287,6 @@ describe("ci matrix", () => {
     expect(job).toContain("game: ${{ fromJSON(needs.changes.outputs.gameList) }}");
     // `scripts/ci-scope.ts` cannot import this list: the `changes` job runs it with no node_modules.
     expect([...FRAME_GAMES]).toEqual([...PERF_GATE_GAMES]);
-  });
-});
-
-describe("describeGamesCheckout", () => {
-  test("reads the pin and reports the head the caller found", () => {
-    const root = tempRoot();
-    const pin = "c81aabc494295170c53c4b7a0763573162590a7f";
-    writeFileSync(join(root, "scripts", "games-ref.txt"), `${pin}\n`);
-    let asked = "";
-    const found = describeGamesCheckout(root, (directory) => {
-      asked = directory;
-      return pin;
-    });
-    expect(found).toEqual({ pin, head: pin });
-    expect(asked.endsWith("Games")).toBe(true);
-  });
-
-  test("reports no pin when the file is missing instead of failing the run", () => {
-    const root = tempRoot();
-    expect(describeGamesCheckout(root, () => null)).toEqual({ pin: null, head: null });
   });
 });
 

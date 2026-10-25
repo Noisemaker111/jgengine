@@ -1,0 +1,32 @@
+{
+  "steps": [
+    {
+      "wait": 9000
+    },
+    {
+      "key": "KeyQ",
+      "ms": 1400
+    },
+    {
+      "wait": 4000
+    },
+    {
+      "key": "KeyW",
+      "ms": 900
+    },
+    {
+      "wait": 6000
+    },
+    {
+      "key": "KeyE",
+      "ms": 1600
+    },
+    {
+      "wait": 9000
+    },
+    {
+      "assert": "__jgProbe().built >= 3",
+      "note": "arrival: the staged town is built and working"
+    }
+  ]
+}

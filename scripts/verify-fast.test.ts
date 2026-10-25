@@ -359,7 +359,7 @@ describe("commands", () => {
     expect(byName.get("check-skill-api")?.needs).toEqual(["build"]);
     expect(byName.get("check-export-manifest")?.needs).toEqual(["build"]);
     const shardHalves = steps.filter((step) => step.name.startsWith("test shard i"));
-    for (const step of shardHalves) expect(step.needs).toEqual(["build", "games:clone"]);
+    for (const step of shardHalves) expect(step.needs).toEqual(["build"]);
   });
 });
 

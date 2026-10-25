@@ -1,5 +1,5 @@
 /**
- * The dev runner's games come from `Games/*` through `import.meta.glob`, which is fixed when the
+ * The dev runner's games come from `games/*` through `import.meta.glob`, which is fixed when the
  * server boots. A run that serves a game from another checkout (`--game-dir`, which reaches here as
  * `VITE_JG_GAME_DIR`) adds that one directory beside the glob's games, loaded through the dev
  * server's own module pipeline (`/@fs/<path>`) so the same plugins, aliases and HMR apply.
@@ -17,7 +17,7 @@ export interface ServedGame {
   root: string;
 }
 
-/** The served game implied by a `VITE_JG_GAME_DIR` value, or null for the in-repo `Games/`. */
+/** The served game implied by a `VITE_JG_GAME_DIR` value, or null for the in-repo `games/`. */
 export function servedGameFrom(raw: string | undefined): ServedGame | null {
   if (raw === undefined || raw.trim() === "") return null;
   const root = toPosix(raw);
@@ -27,13 +27,13 @@ export function servedGameFrom(raw: string | undefined): ServedGame | null {
 export const servedGame: ServedGame | null = servedGameFrom(RAW);
 
 /**
- * Engine-copy source paths (`../../../Games/<id>/src/...`) a dev-runner scan may import for one
+ * Engine-copy source paths (`../../../games/<id>/src/...`) a dev-runner scan may import for one
  * game. The served game gets none: importing the engine's copy would pull in its stale style.css,
  * which then loads after the served game's sheet and wins.
  */
 export function engineCopySources(paths: readonly string[], gameId: string, served: ServedGame | null): string[] {
   if (served?.id === gameId) return [];
-  const prefix = `../../../Games/${gameId}/src/`;
+  const prefix = `../../../games/${gameId}/src/`;
   return paths.filter((path) => path.startsWith(prefix));
 }
 

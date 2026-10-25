@@ -15,7 +15,7 @@ describe("project surface host settings", () => {
   test("saveSettings patches game.config.ts in place", () => {
     const repoRoot = mkdtempSync(join(tmpdir(), "jg-project-host-"));
     roots.push(repoRoot);
-    const gamesDir = join(repoRoot, "Games");
+    const gamesDir = join(repoRoot, "games");
     const src = join(gamesDir, "demo", "src");
     mkdirSync(src, { recursive: true });
     writeFileSync(join(gamesDir, "demo", "package.json"), JSON.stringify({ name: "@games/demo" }));
@@ -49,7 +49,7 @@ describe("project surface host thumbnails", () => {
   test("readThumbnail returns the image bytes and content type when present", () => {
     const repoRoot = mkdtempSync(join(tmpdir(), "jg-project-host-"));
     roots.push(repoRoot);
-    const gamesDir = join(repoRoot, "Games");
+    const gamesDir = join(repoRoot, "games");
     makeGame(gamesDir, "withpng");
     const publicDir = join(gamesDir, "withpng", "public");
     mkdirSync(publicDir, { recursive: true });
@@ -66,7 +66,7 @@ describe("project surface host thumbnails", () => {
   test("readThumbnail returns null when the game has no thumbnail or is unknown", () => {
     const repoRoot = mkdtempSync(join(tmpdir(), "jg-project-host-"));
     roots.push(repoRoot);
-    const gamesDir = join(repoRoot, "Games");
+    const gamesDir = join(repoRoot, "games");
     makeGame(gamesDir, "nothumb");
 
     const host = createProjectSurfaceHost({ repoRoot, gamesDir });

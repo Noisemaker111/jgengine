@@ -132,7 +132,7 @@ describe("packReferencesForGame", () => {
 describe("referencedPacks (repo integration)", () => {
   test("every pack the real games reference resolves on this checkout", () => {
     const root = join(import.meta.dir, "..");
-    const refs = referencedPacks(join(root, "Games"));
+    const refs = referencedPacks(join(root, "games"));
     expect(refs.length).toBeGreaterThan(0);
     // The formerly-missing packs from #1339 must now be discovered as referenced.
     const packs = new Set(refs.map((r) => r.pack));

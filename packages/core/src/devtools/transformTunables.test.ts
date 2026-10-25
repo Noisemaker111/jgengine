@@ -73,10 +73,10 @@ describe("transformTunableExports", () => {
 
 describe("tunableModuleTable", () => {
   test("derives table names from game source paths only", () => {
-    expect(tunableModuleTable("/repo/Games/studio-showcase/src/game/worldgen.ts")).toBe("game/worldgen");
-    expect(tunableModuleTable("/repo/Games/studio-showcase/src/loop.ts")).toBe("loop");
-    expect(tunableModuleTable("/repo/Games/studio-showcase/src/main.tsx")).toBeNull();
-    expect(tunableModuleTable("/repo/Games/studio-showcase/src/game/handlers.test.ts")).toBeNull();
+    expect(tunableModuleTable("/repo/games/studio-showcase/src/game/worldgen.ts")).toBe("game/worldgen");
+    expect(tunableModuleTable("/repo/games/studio-showcase/src/loop.ts")).toBe("loop");
+    expect(tunableModuleTable("/repo/games/studio-showcase/src/main.tsx")).toBeNull();
+    expect(tunableModuleTable("/repo/games/studio-showcase/src/game/handlers.test.ts")).toBeNull();
     expect(tunableModuleTable("/repo/packages/core/src/devtools/devtools.ts")).toBeNull();
   });
 });
@@ -84,9 +84,9 @@ describe("tunableModuleTable", () => {
 describe("tunableDiscoveryPlugin", () => {
   test("transforms matching modules and skips the rest", () => {
     const plugin = tunableDiscoveryPlugin();
-    const hit = plugin.transform("export const SPEED = 4;", "/repo/Games/demo/src/game/tuning.ts");
+    const hit = plugin.transform("export const SPEED = 4;", "/repo/games/demo/src/game/tuning.ts");
     expect(hit?.code).toContain("export let SPEED = 4;");
     expect(plugin.transform("export const SPEED = 4;", "/repo/packages/core/src/x.ts")).toBeNull();
-    expect(plugin.transform("const SPEED = 4;", "/repo/Games/demo/src/game/tuning.ts")).toBeNull();
+    expect(plugin.transform("const SPEED = 4;", "/repo/games/demo/src/game/tuning.ts")).toBeNull();
   });
 });

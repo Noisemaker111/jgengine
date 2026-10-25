@@ -1,0 +1,353 @@
+{
+  "schema": 1,
+  "author": "Deepward project contributors",
+  "original": true,
+  "license": "CC0-1.0",
+  "source": "scripts/build-original-fitter.py",
+  "units": "metres",
+  "models": [
+    {
+      "id": "deepward/fitter-salvage-operator",
+      "url": "/models/imported/deepward/fitter/fitter-salvage-operator.glb",
+      "file": "fitter-salvage-operator.glb",
+      "sha256": "6be2a1e4dfc4588bfcbc3f0a195b6fe13be4e18cbd99363e1d1dabf666546d10",
+      "bytes": 2743952,
+      "triangles": 23644,
+      "primitives": 11,
+      "materials": 11,
+      "bounds": {
+        "min": [
+          -0.4660000801086426,
+          0,
+          -0.30000001192092896
+        ],
+        "max": [
+          0.4660000205039978,
+          1.8700001239776611,
+          0.28999996185302734
+        ]
+      },
+      "dims": [
+        0.932,
+        1.87,
+        0.59
+      ],
+      "pivot": "floor centre",
+      "forward": "+Z",
+      "clips": [
+        "idle",
+        "walk",
+        "windup"
+      ],
+      "images": [
+        {
+          "name": "Original fine manufactured grain normal",
+          "sha256": "509b3153efc109c7e58bc7adf0b21c6d7892c4bcaf1350e7a148e2cd9d621d7e",
+          "embedded": true,
+          "bytes": 123426
+        },
+        {
+          "name": "Original Aged ivory enamel color wear",
+          "sha256": "a5cfcee5dbb0bec30b46a3ae5c073f4c9cfaa2fe744f232e81d7fc9c973136de",
+          "embedded": true,
+          "bytes": 99236
+        },
+        {
+          "name": "Original Aged ivory enamel roughness",
+          "sha256": "b186e6266788bcfba6da7731775c9ab5d72db723e1e253fe715c6041adb03d64",
+          "embedded": true,
+          "bytes": 44926
+        },
+        {
+          "name": "Original Cast graphite iron color wear",
+          "sha256": "02917bfc00481ad2990aa38efe698bfe0b3ace34156ab25113129787fc37dc51",
+          "embedded": true,
+          "bytes": 61236
+        },
+        {
+          "name": "Original Cast graphite iron roughness",
+          "sha256": "191d47167d8f24f7e6a987c45b1ec317e55473cb41691939291ac2d6471ac4af",
+          "embedded": true,
+          "bytes": 44851
+        },
+        {
+          "name": "Original Copper ink plumbing color wear",
+          "sha256": "727b0a83c34332d5594b8590e9896c2a7a3d81be6a6504eff083107a98cb3fab",
+          "embedded": true,
+          "bytes": 87034
+        },
+        {
+          "name": "Original Copper ink plumbing roughness",
+          "sha256": "eb4405cba2c1f07058f2bce52aaef57578c9a0514d572f9bd8fdf3bdb9bef72b",
+          "embedded": true,
+          "bytes": 44940
+        },
+        {
+          "name": "Original Machined steel color wear",
+          "sha256": "828bb0aa49377fbf9e9e6f0df7802d6c35d3321c687678994978368937a0734f",
+          "embedded": true,
+          "bytes": 98095
+        },
+        {
+          "name": "Original Machined steel roughness",
+          "sha256": "b70ac993d01261636a417fd738bf8fac43b576127786d0f1d0d6084a4155c427",
+          "embedded": true,
+          "bytes": 44816
+        },
+        {
+          "name": "Original Petrol enamel color wear",
+          "sha256": "897c68081232a234fb8a4272dc57f55a82bef1ef02a72fff87ef6b8411922583",
+          "embedded": true,
+          "bytes": 83540
+        },
+        {
+          "name": "Original Petrol enamel roughness",
+          "sha256": "eb4405cba2c1f07058f2bce52aaef57578c9a0514d572f9bd8fdf3bdb9bef72b",
+          "embedded": true,
+          "bytes": 44940
+        },
+        {
+          "name": "Original Warning ochre color wear",
+          "sha256": "108685ec26fb5da16014ac009010d11cee236bf1a1c0d69d2649f5c096fa8efa",
+          "embedded": true,
+          "bytes": 97639
+        },
+        {
+          "name": "Original Warning ochre roughness",
+          "sha256": "bb7e053b9f61d1adf37a41cb8cf0e9ff777222a9e6c6cd9bd22d00b6995d4c1e",
+          "embedded": true,
+          "bytes": 44972
+        },
+        {
+          "name": "Original Fitter workcoat woven cotton",
+          "sha256": "d3e3437c842a1defbddd8604563adebabb8b9cd021974b56a28b03074f0f33dd",
+          "embedded": true,
+          "bytes": 91178
+        }
+      ],
+      "skinJoints": 17
+    },
+    {
+      "id": "deepward/service-sidearm",
+      "url": "/models/imported/deepward/fitter/service-sidearm.glb",
+      "file": "service-sidearm.glb",
+      "sha256": "d04fff66cae2e3114e8117408e1d4bab14ea103017d83a393a944808baae467f",
+      "bytes": 1231076,
+      "triangles": 4740,
+      "primitives": 7,
+      "materials": 7,
+      "bounds": {
+        "min": [
+          -0.0637846514582634,
+          -0.20000000298023224,
+          -0.2206999957561493
+        ],
+        "max": [
+          0.05700000002980232,
+          0.07600000500679016,
+          0.1470000147819519
+        ]
+      },
+      "dims": [
+        0.12078,
+        0.276,
+        0.3677
+      ],
+      "pivot": "grip centre",
+      "forward": "-Z",
+      "clips": [],
+      "images": [
+        {
+          "name": "Original fine manufactured grain normal",
+          "sha256": "509b3153efc109c7e58bc7adf0b21c6d7892c4bcaf1350e7a148e2cd9d621d7e",
+          "embedded": true,
+          "bytes": 123426
+        },
+        {
+          "name": "Original Petrol enamel color wear",
+          "sha256": "897c68081232a234fb8a4272dc57f55a82bef1ef02a72fff87ef6b8411922583",
+          "embedded": true,
+          "bytes": 83540
+        },
+        {
+          "name": "Original Petrol enamel roughness",
+          "sha256": "eb4405cba2c1f07058f2bce52aaef57578c9a0514d572f9bd8fdf3bdb9bef72b",
+          "embedded": true,
+          "bytes": 44940
+        },
+        {
+          "name": "Original Machined steel color wear",
+          "sha256": "828bb0aa49377fbf9e9e6f0df7802d6c35d3321c687678994978368937a0734f",
+          "embedded": true,
+          "bytes": 98095
+        },
+        {
+          "name": "Original Machined steel roughness",
+          "sha256": "b70ac993d01261636a417fd738bf8fac43b576127786d0f1d0d6084a4155c427",
+          "embedded": true,
+          "bytes": 44816
+        },
+        {
+          "name": "Original Cast graphite iron color wear",
+          "sha256": "02917bfc00481ad2990aa38efe698bfe0b3ace34156ab25113129787fc37dc51",
+          "embedded": true,
+          "bytes": 61236
+        },
+        {
+          "name": "Original Cast graphite iron roughness",
+          "sha256": "191d47167d8f24f7e6a987c45b1ec317e55473cb41691939291ac2d6471ac4af",
+          "embedded": true,
+          "bytes": 44851
+        },
+        {
+          "name": "Original Warning ochre color wear",
+          "sha256": "108685ec26fb5da16014ac009010d11cee236bf1a1c0d69d2649f5c096fa8efa",
+          "embedded": true,
+          "bytes": 97639
+        },
+        {
+          "name": "Original Warning ochre roughness",
+          "sha256": "bb7e053b9f61d1adf37a41cb8cf0e9ff777222a9e6c6cd9bd22d00b6995d4c1e",
+          "embedded": true,
+          "bytes": 44972
+        },
+        {
+          "name": "Original Aged ivory enamel color wear",
+          "sha256": "a5cfcee5dbb0bec30b46a3ae5c073f4c9cfaa2fe744f232e81d7fc9c973136de",
+          "embedded": true,
+          "bytes": 99236
+        },
+        {
+          "name": "Original Aged ivory enamel roughness",
+          "sha256": "b186e6266788bcfba6da7731775c9ab5d72db723e1e253fe715c6041adb03d64",
+          "embedded": true,
+          "bytes": 44926
+        },
+        {
+          "name": "Original Copper ink plumbing color wear",
+          "sha256": "727b0a83c34332d5594b8590e9896c2a7a3d81be6a6504eff083107a98cb3fab",
+          "embedded": true,
+          "bytes": 87034
+        },
+        {
+          "name": "Original Copper ink plumbing roughness",
+          "sha256": "eb4405cba2c1f07058f2bce52aaef57578c9a0514d572f9bd8fdf3bdb9bef72b",
+          "embedded": true,
+          "bytes": 44940
+        }
+      ],
+      "skinJoints": 0
+    },
+    {
+      "id": "deepward/service-rifle",
+      "url": "/models/imported/deepward/fitter/service-rifle.glb",
+      "file": "service-rifle.glb",
+      "sha256": "ca2154a625ec107768cdac25ab3939e424a2d57417c6f67ad5565bf5e803f9e0",
+      "bytes": 1313916,
+      "triangles": 5980,
+      "primitives": 7,
+      "materials": 7,
+      "bounds": {
+        "min": [
+          -0.0637846514582634,
+          -0.2094999998807907,
+          -0.5006999969482422
+        ],
+        "max": [
+          0.05700000002980232,
+          0.07600000500679016,
+          0.3695000112056732
+        ]
+      },
+      "dims": [
+        0.12078,
+        0.2855,
+        0.8702
+      ],
+      "pivot": "grip centre",
+      "forward": "-Z",
+      "clips": [],
+      "images": [
+        {
+          "name": "Original fine manufactured grain normal",
+          "sha256": "509b3153efc109c7e58bc7adf0b21c6d7892c4bcaf1350e7a148e2cd9d621d7e",
+          "embedded": true,
+          "bytes": 123426
+        },
+        {
+          "name": "Original Petrol enamel color wear",
+          "sha256": "897c68081232a234fb8a4272dc57f55a82bef1ef02a72fff87ef6b8411922583",
+          "embedded": true,
+          "bytes": 83540
+        },
+        {
+          "name": "Original Petrol enamel roughness",
+          "sha256": "eb4405cba2c1f07058f2bce52aaef57578c9a0514d572f9bd8fdf3bdb9bef72b",
+          "embedded": true,
+          "bytes": 44940
+        },
+        {
+          "name": "Original Machined steel color wear",
+          "sha256": "828bb0aa49377fbf9e9e6f0df7802d6c35d3321c687678994978368937a0734f",
+          "embedded": true,
+          "bytes": 98095
+        },
+        {
+          "name": "Original Machined steel roughness",
+          "sha256": "b70ac993d01261636a417fd738bf8fac43b576127786d0f1d0d6084a4155c427",
+          "embedded": true,
+          "bytes": 44816
+        },
+        {
+          "name": "Original Cast graphite iron color wear",
+          "sha256": "02917bfc00481ad2990aa38efe698bfe0b3ace34156ab25113129787fc37dc51",
+          "embedded": true,
+          "bytes": 61236
+        },
+        {
+          "name": "Original Cast graphite iron roughness",
+          "sha256": "191d47167d8f24f7e6a987c45b1ec317e55473cb41691939291ac2d6471ac4af",
+          "embedded": true,
+          "bytes": 44851
+        },
+        {
+          "name": "Original Warning ochre color wear",
+          "sha256": "108685ec26fb5da16014ac009010d11cee236bf1a1c0d69d2649f5c096fa8efa",
+          "embedded": true,
+          "bytes": 97639
+        },
+        {
+          "name": "Original Warning ochre roughness",
+          "sha256": "bb7e053b9f61d1adf37a41cb8cf0e9ff777222a9e6c6cd9bd22d00b6995d4c1e",
+          "embedded": true,
+          "bytes": 44972
+        },
+        {
+          "name": "Original Aged ivory enamel color wear",
+          "sha256": "a5cfcee5dbb0bec30b46a3ae5c073f4c9cfaa2fe744f232e81d7fc9c973136de",
+          "embedded": true,
+          "bytes": 99236
+        },
+        {
+          "name": "Original Aged ivory enamel roughness",
+          "sha256": "b186e6266788bcfba6da7731775c9ab5d72db723e1e253fe715c6041adb03d64",
+          "embedded": true,
+          "bytes": 44926
+        },
+        {
+          "name": "Original Copper ink plumbing color wear",
+          "sha256": "727b0a83c34332d5594b8590e9896c2a7a3d81be6a6504eff083107a98cb3fab",
+          "embedded": true,
+          "bytes": 87034
+        },
+        {
+          "name": "Original Copper ink plumbing roughness",
+          "sha256": "eb4405cba2c1f07058f2bce52aaef57578c9a0514d572f9bd8fdf3bdb9bef72b",
+          "embedded": true,
+          "bytes": 44940
+        }
+      ],
+      "skinJoints": 0
+    }
+  ]
+}

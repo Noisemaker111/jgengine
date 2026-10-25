@@ -1,0 +1,5562 @@
+{
+  "version": 1,
+  "markers": [
+    {
+      "id": "camp-pad",
+      "kind": "pad",
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "meta": {
+        "radius": 22,
+        "falloff": 30
+      }
+    },
+    {
+      "id": "home",
+      "kind": "home",
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "label": "Camp",
+      "meta": {
+        "grid": 14,
+        "cell": 2,
+        "clearance": 6
+      }
+    },
+    {
+      "id": "spawn",
+      "kind": "player_spawn",
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 10
+      },
+      "rotationY": 3.14,
+      "label": "Spawn",
+      "meta": {
+        "clearance": 3
+      }
+    },
+    {
+      "id": "lake-shore",
+      "kind": "pad",
+      "position": {
+        "x": -13,
+        "y": -0.1,
+        "z": 77
+      },
+      "meta": {
+        "radius": 30.4,
+        "falloff": 22,
+        "level": -0.09999999999999998
+      }
+    },
+    {
+      "id": "tree-1",
+      "kind": "prop",
+      "catalogId": "tree",
+      "position": {
+        "x": 34.4,
+        "y": 0,
+        "z": 22.6
+      },
+      "rotationY": 3.22,
+      "label": "Tree",
+      "meta": {
+        "node": "tree",
+        "clearance": 2
+      }
+    },
+    {
+      "id": "tree-2",
+      "kind": "prop",
+      "catalogId": "tree",
+      "position": {
+        "x": 34.4,
+        "y": 0,
+        "z": 17
+      },
+      "rotationY": 1.48,
+      "label": "Tree",
+      "meta": {
+        "node": "tree",
+        "clearance": 2
+      }
+    },
+    {
+      "id": "tree-3",
+      "kind": "prop",
+      "catalogId": "tree",
+      "position": {
+        "x": 39.1,
+        "y": 0,
+        "z": 18.2
+      },
+      "rotationY": 5.49,
+      "label": "Tree",
+      "meta": {
+        "node": "tree",
+        "clearance": 2
+      }
+    },
+    {
+      "id": "tree-4",
+      "kind": "prop",
+      "catalogId": "tree",
+      "position": {
+        "x": 6.3,
+        "y": 0,
+        "z": -28
+      },
+      "rotationY": 5.28,
+      "label": "Tree",
+      "meta": {
+        "node": "tree",
+        "clearance": 2
+      }
+    },
+    {
+      "id": "tree-5",
+      "kind": "prop",
+      "catalogId": "tree",
+      "position": {
+        "x": 11.7,
+        "y": 0,
+        "z": -27.8
+      },
+      "rotationY": 4.61,
+      "label": "Tree",
+      "meta": {
+        "node": "tree",
+        "clearance": 2
+      }
+    },
+    {
+      "id": "tree-6",
+      "kind": "prop",
+      "catalogId": "tree",
+      "position": {
+        "x": 3.7,
+        "y": 0,
+        "z": -22
+      },
+      "rotationY": 6.15,
+      "label": "Tree",
+      "meta": {
+        "node": "tree",
+        "clearance": 2
+      }
+    },
+    {
+      "id": "tree-7",
+      "kind": "prop",
+      "catalogId": "tree",
+      "position": {
+        "x": 43.3,
+        "y": 0,
+        "z": 14.5
+      },
+      "rotationY": 4.15,
+      "label": "Tree",
+      "meta": {
+        "node": "tree",
+        "clearance": 2
+      }
+    },
+    {
+      "id": "tree-8",
+      "kind": "prop",
+      "catalogId": "tree",
+      "position": {
+        "x": 49.8,
+        "y": 0,
+        "z": 9.6
+      },
+      "rotationY": 4.26,
+      "label": "Tree",
+      "meta": {
+        "node": "tree",
+        "clearance": 2
+      }
+    },
+    {
+      "id": "pine-1",
+      "kind": "prop",
+      "catalogId": "pine",
+      "position": {
+        "x": 13.1,
+        "y": 0,
+        "z": -54
+      },
+      "rotationY": 1.66,
+      "label": "Pine",
+      "meta": {
+        "node": "pine",
+        "clearance": 2
+      }
+    },
+    {
+      "id": "pine-2",
+      "kind": "prop",
+      "catalogId": "pine",
+      "position": {
+        "x": 17.8,
+        "y": 0,
+        "z": -53.2
+      },
+      "rotationY": 0.81,
+      "label": "Pine",
+      "meta": {
+        "node": "pine",
+        "clearance": 2
+      }
+    },
+    {
+      "id": "pine-3",
+      "kind": "prop",
+      "catalogId": "pine",
+      "position": {
+        "x": 18.3,
+        "y": 0,
+        "z": -45.2
+      },
+      "rotationY": 3.29,
+      "label": "Pine",
+      "meta": {
+        "node": "pine",
+        "clearance": 2
+      }
+    },
+    {
+      "id": "pine-4",
+      "kind": "prop",
+      "catalogId": "pine",
+      "position": {
+        "x": -25,
+        "y": 0,
+        "z": -26.4
+      },
+      "rotationY": 4.04,
+      "label": "Pine",
+      "meta": {
+        "node": "pine",
+        "clearance": 2
+      }
+    },
+    {
+      "id": "pine-5",
+      "kind": "prop",
+      "catalogId": "pine",
+      "position": {
+        "x": -20.8,
+        "y": 0,
+        "z": -29.6
+      },
+      "rotationY": 5.63,
+      "label": "Pine",
+      "meta": {
+        "node": "pine",
+        "clearance": 2
+      }
+    },
+    {
+      "id": "pine-6",
+      "kind": "prop",
+      "catalogId": "pine",
+      "position": {
+        "x": -18.8,
+        "y": 0,
+        "z": -24.5
+      },
+      "rotationY": 2.71,
+      "label": "Pine",
+      "meta": {
+        "node": "pine",
+        "clearance": 2
+      }
+    },
+    {
+      "id": "pine-7",
+      "kind": "prop",
+      "catalogId": "pine",
+      "position": {
+        "x": -31.6,
+        "y": 0,
+        "z": 40.6
+      },
+      "rotationY": 1.98,
+      "label": "Pine",
+      "meta": {
+        "node": "pine",
+        "clearance": 2
+      }
+    },
+    {
+      "id": "pine-8",
+      "kind": "prop",
+      "catalogId": "pine",
+      "position": {
+        "x": -29.2,
+        "y": 0,
+        "z": 32.3
+      },
+      "rotationY": 0.2,
+      "label": "Pine",
+      "meta": {
+        "node": "pine",
+        "clearance": 2
+      }
+    },
+    {
+      "id": "rock-1",
+      "kind": "prop",
+      "catalogId": "rock",
+      "position": {
+        "x": 46.5,
+        "y": 0,
+        "z": 30.6
+      },
+      "rotationY": 1.18,
+      "label": "Rock",
+      "meta": {
+        "node": "rock",
+        "clearance": 2
+      }
+    },
+    {
+      "id": "rock-2",
+      "kind": "prop",
+      "catalogId": "rock",
+      "position": {
+        "x": 42.9,
+        "y": 0,
+        "z": 24.9
+      },
+      "rotationY": 5.3,
+      "label": "Rock",
+      "meta": {
+        "node": "rock",
+        "clearance": 2
+      }
+    },
+    {
+      "id": "rock-3",
+      "kind": "prop",
+      "catalogId": "rock",
+      "position": {
+        "x": 42.5,
+        "y": 0,
+        "z": 32.7
+      },
+      "rotationY": 4.23,
+      "label": "Rock",
+      "meta": {
+        "node": "rock",
+        "clearance": 2
+      }
+    },
+    {
+      "id": "rock-4",
+      "kind": "prop",
+      "catalogId": "rock",
+      "position": {
+        "x": -7.1,
+        "y": 0,
+        "z": -40.6
+      },
+      "rotationY": 3.47,
+      "label": "Rock",
+      "meta": {
+        "node": "rock",
+        "clearance": 2
+      }
+    },
+    {
+      "id": "rock-5",
+      "kind": "prop",
+      "catalogId": "rock",
+      "position": {
+        "x": -9.9,
+        "y": 0,
+        "z": -34.3
+      },
+      "rotationY": 4.73,
+      "label": "Rock",
+      "meta": {
+        "node": "rock",
+        "clearance": 2
+      }
+    },
+    {
+      "id": "rock-6",
+      "kind": "prop",
+      "catalogId": "rock",
+      "position": {
+        "x": -5,
+        "y": 0,
+        "z": -36.3
+      },
+      "rotationY": 1.75,
+      "label": "Rock",
+      "meta": {
+        "node": "rock",
+        "clearance": 2
+      }
+    },
+    {
+      "id": "rock-7",
+      "kind": "prop",
+      "catalogId": "rock",
+      "position": {
+        "x": 22.8,
+        "y": 0,
+        "z": -27.2
+      },
+      "rotationY": 0.91,
+      "label": "Rock",
+      "meta": {
+        "node": "rock",
+        "clearance": 2
+      }
+    },
+    {
+      "id": "rock-8",
+      "kind": "prop",
+      "catalogId": "rock",
+      "position": {
+        "x": 16.8,
+        "y": 0,
+        "z": -24.2
+      },
+      "rotationY": 2.89,
+      "label": "Rock",
+      "meta": {
+        "node": "rock",
+        "clearance": 2
+      }
+    },
+    {
+      "id": "bush-1",
+      "kind": "prop",
+      "catalogId": "bush",
+      "position": {
+        "x": -11.5,
+        "y": 0,
+        "z": 45.6
+      },
+      "rotationY": 2.09,
+      "label": "Berry bush",
+      "meta": {
+        "node": "bush",
+        "clearance": 2
+      }
+    },
+    {
+      "id": "bush-2",
+      "kind": "prop",
+      "catalogId": "bush",
+      "position": {
+        "x": -18.3,
+        "y": 0,
+        "z": 46.5
+      },
+      "rotationY": 1.26,
+      "label": "Berry bush",
+      "meta": {
+        "node": "bush",
+        "clearance": 2
+      }
+    },
+    {
+      "id": "bush-3",
+      "kind": "prop",
+      "catalogId": "bush",
+      "position": {
+        "x": -15.5,
+        "y": 0,
+        "z": 39.1
+      },
+      "rotationY": 4.36,
+      "label": "Berry bush",
+      "meta": {
+        "node": "bush",
+        "clearance": 2
+      }
+    },
+    {
+      "id": "bush-4",
+      "kind": "prop",
+      "catalogId": "bush",
+      "position": {
+        "x": 38.6,
+        "y": 0,
+        "z": 47.9
+      },
+      "rotationY": 4.64,
+      "label": "Berry bush",
+      "meta": {
+        "node": "bush",
+        "clearance": 2
+      }
+    },
+    {
+      "id": "bush-5",
+      "kind": "prop",
+      "catalogId": "bush",
+      "position": {
+        "x": 30.7,
+        "y": 0,
+        "z": 52.5
+      },
+      "rotationY": 1.14,
+      "label": "Berry bush",
+      "meta": {
+        "node": "bush",
+        "clearance": 2
+      }
+    },
+    {
+      "id": "bush-6",
+      "kind": "prop",
+      "catalogId": "bush",
+      "position": {
+        "x": 34.9,
+        "y": 0,
+        "z": 44.2
+      },
+      "rotationY": 1.48,
+      "label": "Berry bush",
+      "meta": {
+        "node": "bush",
+        "clearance": 2
+      }
+    },
+    {
+      "id": "bush-7",
+      "kind": "prop",
+      "catalogId": "bush",
+      "position": {
+        "x": 54.2,
+        "y": 0,
+        "z": -6.8
+      },
+      "rotationY": 0.34,
+      "label": "Berry bush",
+      "meta": {
+        "node": "bush",
+        "clearance": 2
+      }
+    },
+    {
+      "id": "bush-8",
+      "kind": "prop",
+      "catalogId": "bush",
+      "position": {
+        "x": 53.6,
+        "y": 0,
+        "z": -1.7
+      },
+      "rotationY": 0.11,
+      "label": "Berry bush",
+      "meta": {
+        "node": "bush",
+        "clearance": 2
+      }
+    },
+    {
+      "id": "stag-1",
+      "kind": "herd",
+      "position": {
+        "x": 32.4,
+        "y": 0,
+        "z": -18.7
+      },
+      "rotationY": 1.07,
+      "label": "Stag",
+      "meta": {
+        "ally": "stag"
+      }
+    },
+    {
+      "id": "stag-2",
+      "kind": "herd",
+      "position": {
+        "x": 29.8,
+        "y": 0,
+        "z": -16
+      },
+      "rotationY": 3.63,
+      "label": "Stag",
+      "meta": {
+        "ally": "stag"
+      }
+    },
+    {
+      "id": "stag-3",
+      "kind": "herd",
+      "position": {
+        "x": 26.5,
+        "y": 0,
+        "z": -22.7
+      },
+      "rotationY": 2.31,
+      "label": "Stag",
+      "meta": {
+        "ally": "stag"
+      }
+    },
+    {
+      "id": "boar-1",
+      "kind": "herd",
+      "position": {
+        "x": -39.9,
+        "y": 0,
+        "z": -17.4
+      },
+      "rotationY": 5.26,
+      "label": "Boar",
+      "meta": {
+        "ally": "boar"
+      }
+    },
+    {
+      "id": "boar-2",
+      "kind": "herd",
+      "position": {
+        "x": -35.5,
+        "y": 0,
+        "z": -10
+      },
+      "rotationY": 5.17,
+      "label": "Boar",
+      "meta": {
+        "ally": "boar"
+      }
+    },
+    {
+      "id": "boar-3",
+      "kind": "herd",
+      "position": {
+        "x": -38.1,
+        "y": 0,
+        "z": -14.8
+      },
+      "rotationY": 3.1,
+      "label": "Boar",
+      "meta": {
+        "ally": "boar"
+      }
+    },
+    {
+      "id": "bull-1",
+      "kind": "herd",
+      "position": {
+        "x": -42.2,
+        "y": 0,
+        "z": -30.6
+      },
+      "rotationY": 5.02,
+      "label": "Aurochs",
+      "meta": {
+        "ally": "bull"
+      }
+    },
+    {
+      "id": "bull-2",
+      "kind": "herd",
+      "position": {
+        "x": -42.1,
+        "y": 0,
+        "z": -35.5
+      },
+      "rotationY": 3.21,
+      "label": "Aurochs",
+      "meta": {
+        "ally": "bull"
+      }
+    },
+    {
+      "id": "bull-3",
+      "kind": "herd",
+      "position": {
+        "x": -37.8,
+        "y": 0,
+        "z": -30.8
+      },
+      "rotationY": 5.16,
+      "label": "Aurochs",
+      "meta": {
+        "ally": "bull"
+      }
+    },
+    {
+      "id": "yard-1-1",
+      "kind": "prop",
+      "catalogId": "scenery1",
+      "position": {
+        "x": -41.8,
+        "y": 0,
+        "z": -2.6
+      },
+      "rotationY": 4.97,
+      "label": "Scenery",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "yard-1-2",
+      "kind": "prop",
+      "catalogId": "scenery3",
+      "position": {
+        "x": -40.7,
+        "y": 0,
+        "z": 1.5
+      },
+      "rotationY": 1.1,
+      "label": "Scenery",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "yard-1-3",
+      "kind": "prop",
+      "catalogId": "scenery1",
+      "position": {
+        "x": -37.5,
+        "y": 0,
+        "z": -2.2
+      },
+      "rotationY": 1.58,
+      "label": "Scenery",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "yard-1-4",
+      "kind": "prop",
+      "catalogId": "scenery3",
+      "position": {
+        "x": -42.5,
+        "y": 0,
+        "z": -6.4
+      },
+      "rotationY": 3.69,
+      "label": "Scenery",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "yard-2-1",
+      "kind": "prop",
+      "catalogId": "scenery2",
+      "position": {
+        "x": -18.3,
+        "y": 0,
+        "z": -46.1
+      },
+      "rotationY": 2.78,
+      "label": "Scenery",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "yard-2-2",
+      "kind": "prop",
+      "catalogId": "scenery4",
+      "position": {
+        "x": -15.1,
+        "y": 0,
+        "z": -43.5
+      },
+      "rotationY": 6.15,
+      "label": "Scenery",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "yard-2-3",
+      "kind": "prop",
+      "catalogId": "scenery2",
+      "position": {
+        "x": -13.6,
+        "y": 0,
+        "z": -47.2
+      },
+      "rotationY": 4.21,
+      "label": "Scenery",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "yard-2-4",
+      "kind": "prop",
+      "catalogId": "scenery4",
+      "position": {
+        "x": -16.5,
+        "y": 0,
+        "z": -49.5
+      },
+      "rotationY": 1.34,
+      "label": "Scenery",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "yard-3-1",
+      "kind": "prop",
+      "catalogId": "scenery3",
+      "position": {
+        "x": -28.1,
+        "y": 0,
+        "z": -13.7
+      },
+      "rotationY": 0.22,
+      "label": "Scenery",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "yard-3-2",
+      "kind": "prop",
+      "catalogId": "scenery5",
+      "position": {
+        "x": -28.5,
+        "y": 0,
+        "z": -10.1
+      },
+      "rotationY": 3.69,
+      "label": "Scenery",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "yard-3-3",
+      "kind": "prop",
+      "catalogId": "scenery3",
+      "position": {
+        "x": -31.7,
+        "y": 0,
+        "z": -13.9
+      },
+      "rotationY": 4.68,
+      "label": "Scenery",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "yard-3-4",
+      "kind": "prop",
+      "catalogId": "scenery5",
+      "position": {
+        "x": -24.3,
+        "y": 0,
+        "z": -10.8
+      },
+      "rotationY": 4.27,
+      "label": "Scenery",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "yard-4-1",
+      "kind": "prop",
+      "catalogId": "scenery4",
+      "position": {
+        "x": 45.2,
+        "y": 0,
+        "z": -25.4
+      },
+      "rotationY": 0.2,
+      "label": "Scenery",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "yard-4-2",
+      "kind": "prop",
+      "catalogId": "scenery6",
+      "position": {
+        "x": 40.9,
+        "y": 0,
+        "z": -25.7
+      },
+      "rotationY": 3.67,
+      "label": "Scenery",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "yard-4-3",
+      "kind": "prop",
+      "catalogId": "scenery4",
+      "position": {
+        "x": 42.3,
+        "y": 0,
+        "z": -21.8
+      },
+      "rotationY": 3.73,
+      "label": "Scenery",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "yard-4-4",
+      "kind": "prop",
+      "catalogId": "scenery6",
+      "position": {
+        "x": 42.9,
+        "y": 0,
+        "z": -29.1
+      },
+      "rotationY": 1.16,
+      "label": "Scenery",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "yard-5-1",
+      "kind": "prop",
+      "catalogId": "scenery5",
+      "position": {
+        "x": -9,
+        "y": 0,
+        "z": 27.8
+      },
+      "rotationY": 3.48,
+      "label": "Scenery",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "yard-5-2",
+      "kind": "prop",
+      "catalogId": "scenery1",
+      "position": {
+        "x": -11,
+        "y": 0,
+        "z": 24.4
+      },
+      "rotationY": 1.85,
+      "label": "Scenery",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "yard-5-3",
+      "kind": "prop",
+      "catalogId": "scenery5",
+      "position": {
+        "x": -7.6,
+        "y": 0,
+        "z": 22.9
+      },
+      "rotationY": 2.22,
+      "label": "Scenery",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "yard-5-4",
+      "kind": "prop",
+      "catalogId": "scenery1",
+      "position": {
+        "x": -7.2,
+        "y": 0,
+        "z": 31.6
+      },
+      "rotationY": 1.92,
+      "label": "Scenery",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "yard-6-1",
+      "kind": "prop",
+      "catalogId": "scenery6",
+      "position": {
+        "x": 42.9,
+        "y": 0,
+        "z": -13.2
+      },
+      "rotationY": 2.25,
+      "label": "Scenery",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "yard-6-2",
+      "kind": "prop",
+      "catalogId": "scenery2",
+      "position": {
+        "x": 45.7,
+        "y": 0,
+        "z": -16.1
+      },
+      "rotationY": 5.98,
+      "label": "Scenery",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "yard-6-3",
+      "kind": "prop",
+      "catalogId": "scenery6",
+      "position": {
+        "x": 41.1,
+        "y": 0,
+        "z": -16.4
+      },
+      "rotationY": 3.99,
+      "label": "Scenery",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "yard-6-4",
+      "kind": "prop",
+      "catalogId": "scenery2",
+      "position": {
+        "x": 47,
+        "y": 0,
+        "z": -12.5
+      },
+      "rotationY": 3.7,
+      "label": "Scenery",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "lair-1",
+      "kind": "lair",
+      "position": {
+        "x": 36,
+        "y": 0,
+        "z": 51
+      },
+      "label": "Hunt comes from here"
+    },
+    {
+      "id": "lair-2",
+      "kind": "lair",
+      "position": {
+        "x": -48,
+        "y": 0,
+        "z": 39
+      },
+      "label": "Hunt comes from here"
+    },
+    {
+      "id": "lair-3",
+      "kind": "lair",
+      "position": {
+        "x": -38,
+        "y": 0,
+        "z": -49
+      },
+      "label": "Hunt comes from here"
+    },
+    {
+      "id": "lair-4",
+      "kind": "lair",
+      "position": {
+        "x": 40,
+        "y": 0,
+        "z": -47
+      },
+      "label": "Hunt comes from here"
+    }
+  ],
+  "volumes": [
+    {
+      "id": "lake",
+      "kind": "water",
+      "shape": "box",
+      "center": {
+        "x": -13,
+        "y": -2.6,
+        "z": 77
+      },
+      "halfExtents": {
+        "x": 20,
+        "y": 2,
+        "z": 17
+      },
+      "label": "Lake",
+      "meta": {
+        "color": "#1f5a5c",
+        "shallowColor": "#4f9a8a",
+        "waveHeight": 0.08,
+        "foam": 1.6,
+        "opacity": 0.92
+      }
+    },
+    {
+      "id": "wild-meadow",
+      "kind": "grass_field",
+      "shape": "box",
+      "center": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "halfExtents": {
+        "x": 85,
+        "y": 0.01,
+        "z": 85
+      },
+      "label": "Meadow",
+      "meta": {
+        "density": 2.2,
+        "bladeHeight": 0.42,
+        "colorBase": "#4c6a2c",
+        "colorTip": "#9aa858",
+        "windStrength": 0.18,
+        "windSpeed": 1.2,
+        "seed": "wild-meadow"
+      }
+    }
+  ],
+  "paths": [
+    {
+      "id": "trail-1",
+      "kind": "trail",
+      "width": 3,
+      "points": [
+        {
+          "x": -2.7,
+          "y": 0,
+          "z": 15.8
+        },
+        {
+          "x": -0.3,
+          "y": 0,
+          "z": 26.4
+        },
+        {
+          "x": -2.1,
+          "y": 0,
+          "z": 36.3
+        },
+        {
+          "x": -4.1,
+          "y": 0,
+          "z": 46.1
+        },
+        {
+          "x": -9.4,
+          "y": 0,
+          "z": 55.4
+        }
+      ],
+      "meta": {
+        "surface": "dirt",
+        "color": "#7a6446",
+        "clearance": 2.5
+      }
+    },
+    {
+      "id": "lair-woods-1",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": 60.6,
+          "y": 0,
+          "z": 64
+        },
+        {
+          "x": 57,
+          "y": 0,
+          "z": 71.7
+        },
+        {
+          "x": 50.5,
+          "y": 0,
+          "z": 76
+        },
+        {
+          "x": 42.9,
+          "y": 0,
+          "z": 78.6
+        },
+        {
+          "x": 32.8,
+          "y": 0,
+          "z": 78.1
+        },
+        {
+          "x": 27.9,
+          "y": 0,
+          "z": 69
+        },
+        {
+          "x": 31.7,
+          "y": 0,
+          "z": 60.1
+        },
+        {
+          "x": 37.2,
+          "y": 0,
+          "z": 55
+        },
+        {
+          "x": 42.9,
+          "y": 0,
+          "z": 49.7
+        },
+        {
+          "x": 52,
+          "y": 0,
+          "z": 48.6
+        },
+        {
+          "x": 59.7,
+          "y": 0,
+          "z": 54.6
+        }
+      ],
+      "label": "Lair woods",
+      "meta": {
+        "palette": [
+          {
+            "item": "tree",
+            "weight": 3
+          },
+          {
+            "item": "tree2",
+            "weight": 3
+          },
+          {
+            "item": "tree3",
+            "weight": 2
+          },
+          {
+            "item": "fern",
+            "weight": 2.4
+          },
+          {
+            "item": "plant",
+            "weight": 1.2
+          },
+          {
+            "item": "bush",
+            "weight": 0.6
+          }
+        ],
+        "density": 0.16,
+        "minSpacing": 2.4,
+        "minScale": 0.8,
+        "maxScale": 1.35,
+        "edgeFalloff": 5.25,
+        "jitter": 1,
+        "maxSlope": 32,
+        "seed": "lair-woods-1"
+      }
+    },
+    {
+      "id": "lair-woods-2",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": -46.9,
+          "y": 0,
+          "z": 49
+        },
+        {
+          "x": -48.7,
+          "y": 0,
+          "z": 56.9
+        },
+        {
+          "x": -55.8,
+          "y": 0,
+          "z": 60.3
+        },
+        {
+          "x": -63.5,
+          "y": 0,
+          "z": 66.2
+        },
+        {
+          "x": -71.4,
+          "y": 0,
+          "z": 61.1
+        },
+        {
+          "x": -75,
+          "y": 0,
+          "z": 53.1
+        },
+        {
+          "x": -74.8,
+          "y": 0,
+          "z": 44.9
+        },
+        {
+          "x": -68,
+          "y": 0,
+          "z": 41
+        },
+        {
+          "x": -63.3,
+          "y": 0,
+          "z": 32.9
+        },
+        {
+          "x": -53.9,
+          "y": 0,
+          "z": 33.5
+        },
+        {
+          "x": -44.5,
+          "y": 0,
+          "z": 38.4
+        }
+      ],
+      "label": "Lair woods",
+      "meta": {
+        "palette": [
+          {
+            "item": "tree",
+            "weight": 3
+          },
+          {
+            "item": "tree2",
+            "weight": 3
+          },
+          {
+            "item": "tree3",
+            "weight": 2
+          },
+          {
+            "item": "fern",
+            "weight": 2.4
+          },
+          {
+            "item": "plant",
+            "weight": 1.2
+          },
+          {
+            "item": "bush",
+            "weight": 0.6
+          }
+        ],
+        "density": 0.16,
+        "minSpacing": 2.4,
+        "minScale": 0.8,
+        "maxScale": 1.35,
+        "edgeFalloff": 5.25,
+        "jitter": 1,
+        "maxSlope": 32,
+        "seed": "lair-woods-2"
+      }
+    },
+    {
+      "id": "lair-woods-3",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": -31.1,
+          "y": 0,
+          "z": -61
+        },
+        {
+          "x": -35.8,
+          "y": 0,
+          "z": -53.1
+        },
+        {
+          "x": -43.5,
+          "y": 0,
+          "z": -51.2
+        },
+        {
+          "x": -50.1,
+          "y": 0,
+          "z": -46.1
+        },
+        {
+          "x": -59.4,
+          "y": 0,
+          "z": -47.9
+        },
+        {
+          "x": -66.5,
+          "y": 0,
+          "z": -55.6
+        },
+        {
+          "x": -60.9,
+          "y": 0,
+          "z": -64.8
+        },
+        {
+          "x": -56.3,
+          "y": 0,
+          "z": -70.6
+        },
+        {
+          "x": -49.7,
+          "y": 0,
+          "z": -72.6
+        },
+        {
+          "x": -41.8,
+          "y": 0,
+          "z": -74.5
+        },
+        {
+          "x": -31.8,
+          "y": 0,
+          "z": -71.4
+        }
+      ],
+      "label": "Lair woods",
+      "meta": {
+        "palette": [
+          {
+            "item": "tree",
+            "weight": 3
+          },
+          {
+            "item": "tree2",
+            "weight": 3
+          },
+          {
+            "item": "tree3",
+            "weight": 2
+          },
+          {
+            "item": "fern",
+            "weight": 2.4
+          },
+          {
+            "item": "plant",
+            "weight": 1.2
+          },
+          {
+            "item": "bush",
+            "weight": 0.6
+          }
+        ],
+        "density": 0.16,
+        "minSpacing": 2.4,
+        "minScale": 0.8,
+        "maxScale": 1.35,
+        "edgeFalloff": 5.25,
+        "jitter": 1,
+        "maxSlope": 32,
+        "seed": "lair-woods-3"
+      }
+    },
+    {
+      "id": "lair-woods-4",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": 65.9,
+          "y": 0,
+          "z": -60
+        },
+        {
+          "x": 66.7,
+          "y": 0,
+          "z": -49.3
+        },
+        {
+          "x": 56.4,
+          "y": 0,
+          "z": -46
+        },
+        {
+          "x": 48.1,
+          "y": 0,
+          "z": -47.1
+        },
+        {
+          "x": 41,
+          "y": 0,
+          "z": -49.6
+        },
+        {
+          "x": 38.2,
+          "y": 0,
+          "z": -56.5
+        },
+        {
+          "x": 33.2,
+          "y": 0,
+          "z": -64.9
+        },
+        {
+          "x": 37.3,
+          "y": 0,
+          "z": -74.6
+        },
+        {
+          "x": 47.8,
+          "y": 0,
+          "z": -75.6
+        },
+        {
+          "x": 54.4,
+          "y": 0,
+          "z": -69.6
+        },
+        {
+          "x": 61.6,
+          "y": 0,
+          "z": -67.4
+        }
+      ],
+      "label": "Lair woods",
+      "meta": {
+        "palette": [
+          {
+            "item": "tree",
+            "weight": 3
+          },
+          {
+            "item": "tree2",
+            "weight": 3
+          },
+          {
+            "item": "tree3",
+            "weight": 2
+          },
+          {
+            "item": "fern",
+            "weight": 2.4
+          },
+          {
+            "item": "plant",
+            "weight": 1.2
+          },
+          {
+            "item": "bush",
+            "weight": 0.6
+          }
+        ],
+        "density": 0.16,
+        "minSpacing": 2.4,
+        "minScale": 0.8,
+        "maxScale": 1.35,
+        "edgeFalloff": 5.25,
+        "jitter": 1,
+        "maxSlope": 32,
+        "seed": "lair-woods-4"
+      }
+    },
+    {
+      "id": "grove-1",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": 23.7,
+          "y": 0,
+          "z": 26.6
+        },
+        {
+          "x": 23.4,
+          "y": 0,
+          "z": 31.8
+        },
+        {
+          "x": 19.7,
+          "y": 0,
+          "z": 36.1
+        },
+        {
+          "x": 14.3,
+          "y": 0,
+          "z": 34.3
+        },
+        {
+          "x": 10.9,
+          "y": 0,
+          "z": 31.8
+        },
+        {
+          "x": 10,
+          "y": 0,
+          "z": 28.2
+        },
+        {
+          "x": 6.9,
+          "y": 0,
+          "z": 24.1
+        },
+        {
+          "x": 8.5,
+          "y": 0,
+          "z": 18.6
+        },
+        {
+          "x": 14.2,
+          "y": 0,
+          "z": 18.2
+        },
+        {
+          "x": 18.7,
+          "y": 0,
+          "z": 19.3
+        },
+        {
+          "x": 20,
+          "y": 0,
+          "z": 23.6
+        }
+      ],
+      "label": "Grove",
+      "meta": {
+        "palette": [
+          {
+            "item": "tree",
+            "weight": 3
+          },
+          {
+            "item": "tree2",
+            "weight": 3
+          },
+          {
+            "item": "tree3",
+            "weight": 2
+          },
+          {
+            "item": "fern",
+            "weight": 2.4
+          },
+          {
+            "item": "plant",
+            "weight": 1.2
+          },
+          {
+            "item": "bush",
+            "weight": 0.6
+          }
+        ],
+        "density": 0.18,
+        "minSpacing": 2.4,
+        "minScale": 0.8,
+        "maxScale": 1.35,
+        "edgeFalloff": 2.838552760146558,
+        "jitter": 1,
+        "maxSlope": 32,
+        "seed": "grove-1"
+      }
+    },
+    {
+      "id": "grove-2",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": -24.3,
+          "y": 0,
+          "z": -43.9
+        },
+        {
+          "x": -25.6,
+          "y": 0,
+          "z": -38.8
+        },
+        {
+          "x": -28.5,
+          "y": 0,
+          "z": -32.8
+        },
+        {
+          "x": -34.9,
+          "y": 0,
+          "z": -34.8
+        },
+        {
+          "x": -39.8,
+          "y": 0,
+          "z": -36.7
+        },
+        {
+          "x": -39.8,
+          "y": 0,
+          "z": -42.1
+        },
+        {
+          "x": -42.2,
+          "y": 0,
+          "z": -46.4
+        },
+        {
+          "x": -41,
+          "y": 0,
+          "z": -52.4
+        },
+        {
+          "x": -35.1,
+          "y": 0,
+          "z": -54
+        },
+        {
+          "x": -29.5,
+          "y": 0,
+          "z": -52.9
+        },
+        {
+          "x": -25.9,
+          "y": 0,
+          "z": -48.8
+        }
+      ],
+      "label": "Grove",
+      "meta": {
+        "palette": [
+          {
+            "item": "tree",
+            "weight": 3
+          },
+          {
+            "item": "tree2",
+            "weight": 3
+          },
+          {
+            "item": "tree3",
+            "weight": 2
+          },
+          {
+            "item": "fern",
+            "weight": 2.4
+          },
+          {
+            "item": "plant",
+            "weight": 1.2
+          },
+          {
+            "item": "bush",
+            "weight": 0.6
+          }
+        ],
+        "density": 0.18,
+        "minSpacing": 2.4,
+        "minScale": 0.8,
+        "maxScale": 1.35,
+        "edgeFalloff": 3.3522361017297952,
+        "jitter": 1,
+        "maxSlope": 32,
+        "seed": "grove-2"
+      }
+    },
+    {
+      "id": "grove-3",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": -21.2,
+          "y": 0,
+          "z": 12.5
+        },
+        {
+          "x": -22.2,
+          "y": 0,
+          "z": 17.5
+        },
+        {
+          "x": -27,
+          "y": 0,
+          "z": 18.9
+        },
+        {
+          "x": -30.9,
+          "y": 0,
+          "z": 19.4
+        },
+        {
+          "x": -33.9,
+          "y": 0,
+          "z": 17.2
+        },
+        {
+          "x": -37.4,
+          "y": 0,
+          "z": 14.7
+        },
+        {
+          "x": -38.2,
+          "y": 0,
+          "z": 10.1
+        },
+        {
+          "x": -34.7,
+          "y": 0,
+          "z": 7
+        },
+        {
+          "x": -30.9,
+          "y": 0,
+          "z": 5.4
+        },
+        {
+          "x": -27.4,
+          "y": 0,
+          "z": 7.1
+        },
+        {
+          "x": -24,
+          "y": 0,
+          "z": 8.7
+        }
+      ],
+      "label": "Grove",
+      "meta": {
+        "palette": [
+          {
+            "item": "tree",
+            "weight": 3
+          },
+          {
+            "item": "tree2",
+            "weight": 3
+          },
+          {
+            "item": "tree3",
+            "weight": 2
+          },
+          {
+            "item": "fern",
+            "weight": 2.4
+          },
+          {
+            "item": "plant",
+            "weight": 1.2
+          },
+          {
+            "item": "bush",
+            "weight": 0.6
+          }
+        ],
+        "density": 0.18,
+        "minSpacing": 2.4,
+        "minScale": 0.8,
+        "maxScale": 1.35,
+        "edgeFalloff": 2.4899005561135708,
+        "jitter": 1,
+        "maxSlope": 32,
+        "seed": "grove-3"
+      }
+    },
+    {
+      "id": "grove-4",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": 16.7,
+          "y": 0,
+          "z": 48.9
+        },
+        {
+          "x": 18.9,
+          "y": 0,
+          "z": 54.3
+        },
+        {
+          "x": 14.1,
+          "y": 0,
+          "z": 56.7
+        },
+        {
+          "x": 9.1,
+          "y": 0,
+          "z": 58.4
+        },
+        {
+          "x": 6.1,
+          "y": 0,
+          "z": 54
+        },
+        {
+          "x": 5,
+          "y": 0,
+          "z": 50.5
+        },
+        {
+          "x": 1.8,
+          "y": 0,
+          "z": 46.3
+        },
+        {
+          "x": 4.1,
+          "y": 0,
+          "z": 41.6
+        },
+        {
+          "x": 9.1,
+          "y": 0,
+          "z": 39.5
+        },
+        {
+          "x": 14.2,
+          "y": 0,
+          "z": 40.9
+        },
+        {
+          "x": 17.2,
+          "y": 0,
+          "z": 44.6
+        }
+      ],
+      "label": "Grove",
+      "meta": {
+        "palette": [
+          {
+            "item": "tree",
+            "weight": 3
+          },
+          {
+            "item": "tree2",
+            "weight": 3
+          },
+          {
+            "item": "tree3",
+            "weight": 2
+          },
+          {
+            "item": "fern",
+            "weight": 2.4
+          },
+          {
+            "item": "plant",
+            "weight": 1.2
+          },
+          {
+            "item": "bush",
+            "weight": 0.6
+          }
+        ],
+        "density": 0.18,
+        "minSpacing": 2.4,
+        "minScale": 0.8,
+        "maxScale": 1.35,
+        "edgeFalloff": 2.874503060849383,
+        "jitter": 1,
+        "maxSlope": 32,
+        "seed": "grove-4"
+      }
+    },
+    {
+      "id": "grove-5",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": -36.9,
+          "y": 0,
+          "z": 31.7
+        },
+        {
+          "x": -38.3,
+          "y": 0,
+          "z": 35.2
+        },
+        {
+          "x": -41.1,
+          "y": 0,
+          "z": 37.7
+        },
+        {
+          "x": -44.8,
+          "y": 0,
+          "z": 38.7
+        },
+        {
+          "x": -49.7,
+          "y": 0,
+          "z": 38.5
+        },
+        {
+          "x": -50.9,
+          "y": 0,
+          "z": 33.8
+        },
+        {
+          "x": -49.1,
+          "y": 0,
+          "z": 30.1
+        },
+        {
+          "x": -47,
+          "y": 0,
+          "z": 28
+        },
+        {
+          "x": -44.6,
+          "y": 0,
+          "z": 25.9
+        },
+        {
+          "x": -40.7,
+          "y": 0,
+          "z": 24.9
+        },
+        {
+          "x": -37.1,
+          "y": 0,
+          "z": 27.4
+        }
+      ],
+      "label": "Grove",
+      "meta": {
+        "palette": [
+          {
+            "item": "tree",
+            "weight": 3
+          },
+          {
+            "item": "tree2",
+            "weight": 3
+          },
+          {
+            "item": "tree3",
+            "weight": 2
+          },
+          {
+            "item": "fern",
+            "weight": 2.4
+          },
+          {
+            "item": "plant",
+            "weight": 1.2
+          },
+          {
+            "item": "bush",
+            "weight": 0.6
+          }
+        ],
+        "density": 0.18,
+        "minSpacing": 2.4,
+        "minScale": 0.8,
+        "maxScale": 1.35,
+        "edgeFalloff": 2.51218447657302,
+        "jitter": 1,
+        "maxSlope": 32,
+        "seed": "grove-5"
+      }
+    },
+    {
+      "id": "grove-6",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": 37.7,
+          "y": 0,
+          "z": -45.7
+        },
+        {
+          "x": 37.8,
+          "y": 0,
+          "z": -42.8
+        },
+        {
+          "x": 36.3,
+          "y": 0,
+          "z": -38.9
+        },
+        {
+          "x": 32.3,
+          "y": 0,
+          "z": -39.1
+        },
+        {
+          "x": 29.2,
+          "y": 0,
+          "z": -41
+        },
+        {
+          "x": 27.1,
+          "y": 0,
+          "z": -43.9
+        },
+        {
+          "x": 28.9,
+          "y": 0,
+          "z": -47
+        },
+        {
+          "x": 29.8,
+          "y": 0,
+          "z": -49.6
+        },
+        {
+          "x": 32.2,
+          "y": 0,
+          "z": -52.6
+        },
+        {
+          "x": 36.5,
+          "y": 0,
+          "z": -52.9
+        },
+        {
+          "x": 37.6,
+          "y": 0,
+          "z": -48.6
+        }
+      ],
+      "label": "Grove",
+      "meta": {
+        "palette": [
+          {
+            "item": "tree",
+            "weight": 3
+          },
+          {
+            "item": "tree2",
+            "weight": 3
+          },
+          {
+            "item": "tree3",
+            "weight": 2
+          },
+          {
+            "item": "fern",
+            "weight": 2.4
+          },
+          {
+            "item": "plant",
+            "weight": 1.2
+          },
+          {
+            "item": "bush",
+            "weight": 0.6
+          }
+        ],
+        "density": 0.18,
+        "minSpacing": 2.4,
+        "minScale": 0.8,
+        "maxScale": 1.35,
+        "edgeFalloff": 2.1950324214529244,
+        "jitter": 1,
+        "maxSlope": 32,
+        "seed": "grove-6"
+      }
+    },
+    {
+      "id": "wild-forest-1",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": -95.2,
+          "y": 0,
+          "z": -127
+        },
+        {
+          "x": -111.4,
+          "y": 0,
+          "z": -107.2
+        },
+        {
+          "x": -130.9,
+          "y": 0,
+          "z": -102.3
+        },
+        {
+          "x": -146.3,
+          "y": 0,
+          "z": -98.7
+        },
+        {
+          "x": -162.7,
+          "y": 0,
+          "z": -103.4
+        },
+        {
+          "x": -179.3,
+          "y": 0,
+          "z": -116.1
+        },
+        {
+          "x": -176.3,
+          "y": 0,
+          "z": -137
+        },
+        {
+          "x": -166.3,
+          "y": 0,
+          "z": -154.9
+        },
+        {
+          "x": -146.1,
+          "y": 0,
+          "z": -153.9
+        },
+        {
+          "x": -128.2,
+          "y": 0,
+          "z": -157.6
+        },
+        {
+          "x": -110.2,
+          "y": 0,
+          "z": -147.6
+        }
+      ],
+      "label": "Woods",
+      "meta": {
+        "palette": [
+          {
+            "item": "tree",
+            "weight": 3
+          },
+          {
+            "item": "tree2",
+            "weight": 3
+          },
+          {
+            "item": "tree3",
+            "weight": 2
+          },
+          {
+            "item": "fern",
+            "weight": 2.4
+          },
+          {
+            "item": "plant",
+            "weight": 1.2
+          },
+          {
+            "item": "bush",
+            "weight": 0.6
+          }
+        ],
+        "density": 0.10972090137656779,
+        "minSpacing": 2.4,
+        "minScale": 0.8,
+        "maxScale": 1.35,
+        "edgeFalloff": 10,
+        "jitter": 1,
+        "maxSlope": 32,
+        "seed": "wild-forest-1"
+      }
+    },
+    {
+      "id": "wild-forest-2",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": 233.8,
+          "y": 0,
+          "z": -79.3
+        },
+        {
+          "x": 229.2,
+          "y": 0,
+          "z": -63.8
+        },
+        {
+          "x": 221.3,
+          "y": 0,
+          "z": -43.8
+        },
+        {
+          "x": 199.9,
+          "y": 0,
+          "z": -43.3
+        },
+        {
+          "x": 177.4,
+          "y": 0,
+          "z": -47.3
+        },
+        {
+          "x": 170.6,
+          "y": 0,
+          "z": -69.2
+        },
+        {
+          "x": 177.2,
+          "y": 0,
+          "z": -87.5
+        },
+        {
+          "x": 185.9,
+          "y": 0,
+          "z": -101.5
+        },
+        {
+          "x": 199.4,
+          "y": 0,
+          "z": -118.7
+        },
+        {
+          "x": 221.3,
+          "y": 0,
+          "z": -114.8
+        },
+        {
+          "x": 235.5,
+          "y": 0,
+          "z": -98.8
+        }
+      ],
+      "label": "Woods",
+      "meta": {
+        "palette": [
+          {
+            "item": "tree",
+            "weight": 3
+          },
+          {
+            "item": "tree2",
+            "weight": 3
+          },
+          {
+            "item": "tree3",
+            "weight": 2
+          },
+          {
+            "item": "fern",
+            "weight": 2.4
+          },
+          {
+            "item": "plant",
+            "weight": 1.2
+          },
+          {
+            "item": "bush",
+            "weight": 0.6
+          }
+        ],
+        "density": 0.10535667752381414,
+        "minSpacing": 2.4,
+        "minScale": 0.8,
+        "maxScale": 1.35,
+        "edgeFalloff": 10,
+        "jitter": 1,
+        "maxSlope": 32,
+        "seed": "wild-forest-2"
+      }
+    },
+    {
+      "id": "wild-forest-3",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": -26,
+          "y": 0,
+          "z": 121.7
+        },
+        {
+          "x": -39,
+          "y": 0,
+          "z": 136.2
+        },
+        {
+          "x": -47.9,
+          "y": 0,
+          "z": 151.4
+        },
+        {
+          "x": -67,
+          "y": 0,
+          "z": 160.1
+        },
+        {
+          "x": -85.2,
+          "y": 0,
+          "z": 149
+        },
+        {
+          "x": -97.5,
+          "y": 0,
+          "z": 132.3
+        },
+        {
+          "x": -95.7,
+          "y": 0,
+          "z": 111.7
+        },
+        {
+          "x": -82.8,
+          "y": 0,
+          "z": 97.1
+        },
+        {
+          "x": -65.8,
+          "y": 0,
+          "z": 92
+        },
+        {
+          "x": -45.7,
+          "y": 0,
+          "z": 87.1
+        },
+        {
+          "x": -25.2,
+          "y": 0,
+          "z": 98.4
+        }
+      ],
+      "label": "Woods",
+      "meta": {
+        "palette": [
+          {
+            "item": "tree",
+            "weight": 3
+          },
+          {
+            "item": "tree2",
+            "weight": 3
+          },
+          {
+            "item": "tree3",
+            "weight": 2
+          },
+          {
+            "item": "fern",
+            "weight": 2.4
+          },
+          {
+            "item": "plant",
+            "weight": 1.2
+          },
+          {
+            "item": "bush",
+            "weight": 0.6
+          }
+        ],
+        "density": 0.1391309914411977,
+        "minSpacing": 2.4,
+        "minScale": 0.8,
+        "maxScale": 1.35,
+        "edgeFalloff": 10,
+        "jitter": 1,
+        "maxSlope": 32,
+        "seed": "wild-forest-3"
+      }
+    },
+    {
+      "id": "wild-forest-4",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": 159.9,
+          "y": 0,
+          "z": -153.9
+        },
+        {
+          "x": 156.4,
+          "y": 0,
+          "z": -142.4
+        },
+        {
+          "x": 146,
+          "y": 0,
+          "z": -137.4
+        },
+        {
+          "x": 136.3,
+          "y": 0,
+          "z": -138.3
+        },
+        {
+          "x": 124.5,
+          "y": 0,
+          "z": -137.7
+        },
+        {
+          "x": 116.4,
+          "y": 0,
+          "z": -147.4
+        },
+        {
+          "x": 114.5,
+          "y": 0,
+          "z": -160.9
+        },
+        {
+          "x": 126.1,
+          "y": 0,
+          "z": -168.3
+        },
+        {
+          "x": 136.2,
+          "y": 0,
+          "z": -170.1
+        },
+        {
+          "x": 145,
+          "y": 0,
+          "z": -168.1
+        },
+        {
+          "x": 154.2,
+          "y": 0,
+          "z": -164
+        }
+      ],
+      "label": "Woods",
+      "meta": {
+        "palette": [
+          {
+            "item": "tree",
+            "weight": 3
+          },
+          {
+            "item": "tree2",
+            "weight": 3
+          },
+          {
+            "item": "tree3",
+            "weight": 2
+          },
+          {
+            "item": "fern",
+            "weight": 2.4
+          },
+          {
+            "item": "plant",
+            "weight": 1.2
+          },
+          {
+            "item": "bush",
+            "weight": 0.6
+          }
+        ],
+        "density": 0.10292400595266372,
+        "minSpacing": 2.4,
+        "minScale": 0.8,
+        "maxScale": 1.35,
+        "edgeFalloff": 6.844652927201241,
+        "jitter": 1,
+        "maxSlope": 32,
+        "seed": "wild-forest-4"
+      }
+    },
+    {
+      "id": "wild-forest-5",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": 67.3,
+          "y": 0,
+          "z": -141.2
+        },
+        {
+          "x": 67.1,
+          "y": 0,
+          "z": -128.7
+        },
+        {
+          "x": 57,
+          "y": 0,
+          "z": -120.8
+        },
+        {
+          "x": 44.9,
+          "y": 0,
+          "z": -121.4
+        },
+        {
+          "x": 37.2,
+          "y": 0,
+          "z": -129.1
+        },
+        {
+          "x": 33.6,
+          "y": 0,
+          "z": -137.1
+        },
+        {
+          "x": 27.3,
+          "y": 0,
+          "z": -147.2
+        },
+        {
+          "x": 32.3,
+          "y": 0,
+          "z": -159
+        },
+        {
+          "x": 44.8,
+          "y": 0,
+          "z": -161.6
+        },
+        {
+          "x": 55.1,
+          "y": 0,
+          "z": -157.3
+        },
+        {
+          "x": 61.3,
+          "y": 0,
+          "z": -150
+        }
+      ],
+      "label": "Woods",
+      "meta": {
+        "palette": [
+          {
+            "item": "tree",
+            "weight": 3
+          },
+          {
+            "item": "tree2",
+            "weight": 3
+          },
+          {
+            "item": "tree3",
+            "weight": 2
+          },
+          {
+            "item": "fern",
+            "weight": 2.4
+          },
+          {
+            "item": "plant",
+            "weight": 1.2
+          },
+          {
+            "item": "bush",
+            "weight": 0.6
+          }
+        ],
+        "density": 0.11768673081416638,
+        "minSpacing": 2.4,
+        "minScale": 0.8,
+        "maxScale": 1.35,
+        "edgeFalloff": 6.475544350873679,
+        "jitter": 1,
+        "maxSlope": 32,
+        "seed": "wild-forest-5"
+      }
+    },
+    {
+      "id": "wild-forest-6",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": -172.9,
+          "y": 0,
+          "z": 6.1
+        },
+        {
+          "x": -187.8,
+          "y": 0,
+          "z": 22.2
+        },
+        {
+          "x": -198.5,
+          "y": 0,
+          "z": 37.5
+        },
+        {
+          "x": -217.6,
+          "y": 0,
+          "z": 39.5
+        },
+        {
+          "x": -237.5,
+          "y": 0,
+          "z": 34.7
+        },
+        {
+          "x": -251.2,
+          "y": 0,
+          "z": 17.4
+        },
+        {
+          "x": -240.6,
+          "y": 0,
+          "z": -2.1
+        },
+        {
+          "x": -232.9,
+          "y": 0,
+          "z": -17.1
+        },
+        {
+          "x": -217,
+          "y": 0,
+          "z": -23.4
+        },
+        {
+          "x": -198,
+          "y": 0,
+          "z": -26.3
+        },
+        {
+          "x": -177.4,
+          "y": 0,
+          "z": -16.6
+        }
+      ],
+      "label": "Woods",
+      "meta": {
+        "palette": [
+          {
+            "item": "tree",
+            "weight": 3
+          },
+          {
+            "item": "tree2",
+            "weight": 3
+          },
+          {
+            "item": "tree3",
+            "weight": 2
+          },
+          {
+            "item": "fern",
+            "weight": 2.4
+          },
+          {
+            "item": "plant",
+            "weight": 1.2
+          },
+          {
+            "item": "bush",
+            "weight": 0.6
+          }
+        ],
+        "density": 0.13958405719604344,
+        "minSpacing": 2.4,
+        "minScale": 0.8,
+        "maxScale": 1.35,
+        "edgeFalloff": 10,
+        "jitter": 1,
+        "maxSlope": 32,
+        "seed": "wild-forest-6"
+      }
+    },
+    {
+      "id": "wild-forest-7",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": 174.1,
+          "y": 0,
+          "z": -20.9
+        },
+        {
+          "x": 165.8,
+          "y": 0,
+          "z": -6.7
+        },
+        {
+          "x": 152.1,
+          "y": 0,
+          "z": -2.5
+        },
+        {
+          "x": 141,
+          "y": 0,
+          "z": -2
+        },
+        {
+          "x": 126.3,
+          "y": 0,
+          "z": -0.8
+        },
+        {
+          "x": 110.8,
+          "y": 0,
+          "z": -11.2
+        },
+        {
+          "x": 110.4,
+          "y": 0,
+          "z": -30.7
+        },
+        {
+          "x": 127.3,
+          "y": 0,
+          "z": -39.9
+        },
+        {
+          "x": 140.4,
+          "y": 0,
+          "z": -43.7
+        },
+        {
+          "x": 153.7,
+          "y": 0,
+          "z": -42.8
+        },
+        {
+          "x": 170.2,
+          "y": 0,
+          "z": -37.9
+        }
+      ],
+      "label": "Woods",
+      "meta": {
+        "palette": [
+          {
+            "item": "tree",
+            "weight": 3
+          },
+          {
+            "item": "tree2",
+            "weight": 3
+          },
+          {
+            "item": "tree3",
+            "weight": 2
+          },
+          {
+            "item": "fern",
+            "weight": 2.4
+          },
+          {
+            "item": "plant",
+            "weight": 1.2
+          },
+          {
+            "item": "bush",
+            "weight": 0.6
+          }
+        ],
+        "density": 0.11165074774529786,
+        "minSpacing": 2.4,
+        "minScale": 0.8,
+        "maxScale": 1.35,
+        "edgeFalloff": 9.462361746653913,
+        "jitter": 1,
+        "maxSlope": 32,
+        "seed": "wild-forest-7"
+      }
+    },
+    {
+      "id": "wild-forest-8",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": 128,
+          "y": 0,
+          "z": -90
+        },
+        {
+          "x": 129.4,
+          "y": 0,
+          "z": -68.2
+        },
+        {
+          "x": 108.9,
+          "y": 0,
+          "z": -60.7
+        },
+        {
+          "x": 91.5,
+          "y": 0,
+          "z": -62
+        },
+        {
+          "x": 73.6,
+          "y": 0,
+          "z": -64.7
+        },
+        {
+          "x": 64,
+          "y": 0,
+          "z": -80.7
+        },
+        {
+          "x": 63.9,
+          "y": 0,
+          "z": -99.3
+        },
+        {
+          "x": 76.4,
+          "y": 0,
+          "z": -112
+        },
+        {
+          "x": 91.9,
+          "y": 0,
+          "z": -114.7
+        },
+        {
+          "x": 106.6,
+          "y": 0,
+          "z": -114.2
+        },
+        {
+          "x": 120.2,
+          "y": 0,
+          "z": -105.9
+        }
+      ],
+      "label": "Woods",
+      "meta": {
+        "palette": [
+          {
+            "item": "tree",
+            "weight": 3
+          },
+          {
+            "item": "tree2",
+            "weight": 3
+          },
+          {
+            "item": "tree3",
+            "weight": 2
+          },
+          {
+            "item": "fern",
+            "weight": 2.4
+          },
+          {
+            "item": "plant",
+            "weight": 1.2
+          },
+          {
+            "item": "bush",
+            "weight": 0.6
+          }
+        ],
+        "density": 0.11312839217018336,
+        "minSpacing": 2.4,
+        "minScale": 0.8,
+        "maxScale": 1.35,
+        "edgeFalloff": 10,
+        "jitter": 1,
+        "maxSlope": 32,
+        "seed": "wild-forest-8"
+      }
+    },
+    {
+      "id": "wild-forest-9",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": -64.5,
+          "y": 0,
+          "z": -135.6
+        },
+        {
+          "x": -67.3,
+          "y": 0,
+          "z": -124.2
+        },
+        {
+          "x": -75.3,
+          "y": 0,
+          "z": -114.1
+        },
+        {
+          "x": -89.1,
+          "y": 0,
+          "z": -108
+        },
+        {
+          "x": -105.3,
+          "y": 0,
+          "z": -112.3
+        },
+        {
+          "x": -105.9,
+          "y": 0,
+          "z": -129.5
+        },
+        {
+          "x": -101.9,
+          "y": 0,
+          "z": -140.5
+        },
+        {
+          "x": -99.8,
+          "y": 0,
+          "z": -152.5
+        },
+        {
+          "x": -88.7,
+          "y": 0,
+          "z": -160.8
+        },
+        {
+          "x": -71.7,
+          "y": 0,
+          "z": -164.9
+        },
+        {
+          "x": -63.2,
+          "y": 0,
+          "z": -149.7
+        }
+      ],
+      "label": "Woods",
+      "meta": {
+        "palette": [
+          {
+            "item": "tree",
+            "weight": 3
+          },
+          {
+            "item": "tree2",
+            "weight": 3
+          },
+          {
+            "item": "tree3",
+            "weight": 2
+          },
+          {
+            "item": "fern",
+            "weight": 2.4
+          },
+          {
+            "item": "plant",
+            "weight": 1.2
+          },
+          {
+            "item": "bush",
+            "weight": 0.6
+          }
+        ],
+        "density": 0.12651698380243034,
+        "minSpacing": 2.4,
+        "minScale": 0.8,
+        "maxScale": 1.35,
+        "edgeFalloff": 8.961387466825544,
+        "jitter": 1,
+        "maxSlope": 32,
+        "seed": "wild-forest-9"
+      }
+    },
+    {
+      "id": "wild-forest-10",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": 80.5,
+          "y": 0,
+          "z": 164.6
+        },
+        {
+          "x": 73.7,
+          "y": 0,
+          "z": 174.2
+        },
+        {
+          "x": 66.7,
+          "y": 0,
+          "z": 181.9
+        },
+        {
+          "x": 56,
+          "y": 0,
+          "z": 184.2
+        },
+        {
+          "x": 45.5,
+          "y": 0,
+          "z": 179.9
+        },
+        {
+          "x": 34,
+          "y": 0,
+          "z": 171.9
+        },
+        {
+          "x": 37.7,
+          "y": 0,
+          "z": 158.4
+        },
+        {
+          "x": 48.6,
+          "y": 0,
+          "z": 152.8
+        },
+        {
+          "x": 56.7,
+          "y": 0,
+          "z": 150.3
+        },
+        {
+          "x": 67.8,
+          "y": 0,
+          "z": 145
+        },
+        {
+          "x": 76.9,
+          "y": 0,
+          "z": 152.9
+        }
+      ],
+      "label": "Woods",
+      "meta": {
+        "palette": [
+          {
+            "item": "tree",
+            "weight": 3
+          },
+          {
+            "item": "tree2",
+            "weight": 3
+          },
+          {
+            "item": "tree3",
+            "weight": 2
+          },
+          {
+            "item": "fern",
+            "weight": 2.4
+          },
+          {
+            "item": "plant",
+            "weight": 1.2
+          },
+          {
+            "item": "bush",
+            "weight": 0.6
+          }
+        ],
+        "density": 0.11004175110254437,
+        "minSpacing": 2.4,
+        "minScale": 0.8,
+        "maxScale": 1.35,
+        "edgeFalloff": 7.138703607209027,
+        "jitter": 1,
+        "maxSlope": 32,
+        "seed": "wild-forest-10"
+      }
+    },
+    {
+      "id": "wild-forest-11",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": -36,
+          "y": 0,
+          "z": -1.7
+        },
+        {
+          "x": -36.8,
+          "y": 0,
+          "z": 18.2
+        },
+        {
+          "x": -52.8,
+          "y": 0,
+          "z": 31
+        },
+        {
+          "x": -71.8,
+          "y": 0,
+          "z": 27.1
+        },
+        {
+          "x": -84.9,
+          "y": 0,
+          "z": 18.1
+        },
+        {
+          "x": -89.1,
+          "y": 0,
+          "z": 4.6
+        },
+        {
+          "x": -101,
+          "y": 0,
+          "z": -11.5
+        },
+        {
+          "x": -87.2,
+          "y": 0,
+          "z": -24.3
+        },
+        {
+          "x": -71.9,
+          "y": 0,
+          "z": -30.7
+        },
+        {
+          "x": -57.1,
+          "y": 0,
+          "z": -25
+        },
+        {
+          "x": -46.3,
+          "y": 0,
+          "z": -15.5
+        }
+      ],
+      "label": "Woods",
+      "meta": {
+        "palette": [
+          {
+            "item": "tree",
+            "weight": 3
+          },
+          {
+            "item": "tree2",
+            "weight": 3
+          },
+          {
+            "item": "tree3",
+            "weight": 2
+          },
+          {
+            "item": "fern",
+            "weight": 2.4
+          },
+          {
+            "item": "plant",
+            "weight": 1.2
+          },
+          {
+            "item": "bush",
+            "weight": 0.6
+          }
+        ],
+        "density": 0.12213055612053722,
+        "minSpacing": 2.4,
+        "minScale": 0.8,
+        "maxScale": 1.35,
+        "edgeFalloff": 10,
+        "jitter": 1,
+        "maxSlope": 32,
+        "seed": "wild-forest-11"
+      }
+    },
+    {
+      "id": "wild-forest-12",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": 123.2,
+          "y": 0,
+          "z": 62.1
+        },
+        {
+          "x": 119.5,
+          "y": 0,
+          "z": 74.2
+        },
+        {
+          "x": 109,
+          "y": 0,
+          "z": 80.4
+        },
+        {
+          "x": 98.4,
+          "y": 0,
+          "z": 78.3
+        },
+        {
+          "x": 91.7,
+          "y": 0,
+          "z": 72.5
+        },
+        {
+          "x": 82.9,
+          "y": 0,
+          "z": 67.3
+        },
+        {
+          "x": 77.4,
+          "y": 0,
+          "z": 55.3
+        },
+        {
+          "x": 86.4,
+          "y": 0,
+          "z": 45.6
+        },
+        {
+          "x": 97.7,
+          "y": 0,
+          "z": 41
+        },
+        {
+          "x": 107.5,
+          "y": 0,
+          "z": 47.2
+        },
+        {
+          "x": 114.2,
+          "y": 0,
+          "z": 53.4
+        }
+      ],
+      "label": "Woods",
+      "meta": {
+        "palette": [
+          {
+            "item": "tree",
+            "weight": 3
+          },
+          {
+            "item": "tree2",
+            "weight": 3
+          },
+          {
+            "item": "tree3",
+            "weight": 2
+          },
+          {
+            "item": "fern",
+            "weight": 2.4
+          },
+          {
+            "item": "plant",
+            "weight": 1.2
+          },
+          {
+            "item": "bush",
+            "weight": 0.6
+          }
+        ],
+        "density": 0.156271360819228,
+        "minSpacing": 2.4,
+        "minScale": 0.8,
+        "maxScale": 1.35,
+        "edgeFalloff": 6.992359400913119,
+        "jitter": 1,
+        "maxSlope": 32,
+        "seed": "wild-forest-12"
+      }
+    },
+    {
+      "id": "wild-rocks-1",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": 16,
+          "y": 0,
+          "z": 128.8
+        },
+        {
+          "x": 12.1,
+          "y": 0,
+          "z": 131.7
+        },
+        {
+          "x": 9.3,
+          "y": 0,
+          "z": 132.7
+        },
+        {
+          "x": 5.9,
+          "y": 0,
+          "z": 133.5
+        },
+        {
+          "x": 3.4,
+          "y": 0,
+          "z": 130.7
+        },
+        {
+          "x": 2,
+          "y": 0,
+          "z": 126.4
+        },
+        {
+          "x": 6,
+          "y": 0,
+          "z": 124.3
+        },
+        {
+          "x": 9.4,
+          "y": 0,
+          "z": 124.1
+        },
+        {
+          "x": 12.6,
+          "y": 0,
+          "z": 125.5
+        }
+      ],
+      "label": "Outcrop",
+      "meta": {
+        "palette": [
+          {
+            "item": "rock",
+            "weight": 2
+          },
+          {
+            "item": "rock2",
+            "weight": 2
+          }
+        ],
+        "density": 0.16,
+        "minSpacing": 1.1,
+        "minScale": 0.8,
+        "maxScale": 2.2,
+        "edgeFalloff": 2.167198454029858,
+        "jitter": 1,
+        "seed": "wild-rocks-1"
+      }
+    },
+    {
+      "id": "wild-rocks-2",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": 75,
+          "y": 0,
+          "z": -197.5
+        },
+        {
+          "x": 73.2,
+          "y": 0,
+          "z": -192.2
+        },
+        {
+          "x": 67.9,
+          "y": 0,
+          "z": -191.8
+        },
+        {
+          "x": 63.5,
+          "y": 0,
+          "z": -191.6
+        },
+        {
+          "x": 59.4,
+          "y": 0,
+          "z": -194.8
+        },
+        {
+          "x": 59.6,
+          "y": 0,
+          "z": -200.2
+        },
+        {
+          "x": 63.1,
+          "y": 0,
+          "z": -204
+        },
+        {
+          "x": 68,
+          "y": 0,
+          "z": -204
+        },
+        {
+          "x": 72.9,
+          "y": 0,
+          "z": -202.5
+        }
+      ],
+      "label": "Outcrop",
+      "meta": {
+        "palette": [
+          {
+            "item": "rock",
+            "weight": 2
+          },
+          {
+            "item": "rock2",
+            "weight": 2
+          }
+        ],
+        "density": 0.16,
+        "minSpacing": 1.1,
+        "minScale": 0.8,
+        "maxScale": 2.2,
+        "edgeFalloff": 2.912121555302292,
+        "jitter": 1,
+        "seed": "wild-rocks-2"
+      }
+    },
+    {
+      "id": "wild-rocks-3",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": -95.8,
+          "y": 0,
+          "z": -172.4
+        },
+        {
+          "x": -96.1,
+          "y": 0,
+          "z": -169.9
+        },
+        {
+          "x": -98.1,
+          "y": 0,
+          "z": -166.6
+        },
+        {
+          "x": -101.6,
+          "y": 0,
+          "z": -168
+        },
+        {
+          "x": -102.9,
+          "y": 0,
+          "z": -171
+        },
+        {
+          "x": -103.5,
+          "y": 0,
+          "z": -174
+        },
+        {
+          "x": -101.8,
+          "y": 0,
+          "z": -177
+        },
+        {
+          "x": -98,
+          "y": 0,
+          "z": -178.6
+        },
+        {
+          "x": -94.8,
+          "y": 0,
+          "z": -176
+        }
+      ],
+      "label": "Outcrop",
+      "meta": {
+        "palette": [
+          {
+            "item": "rock",
+            "weight": 2
+          },
+          {
+            "item": "rock2",
+            "weight": 2
+          }
+        ],
+        "density": 0.16,
+        "minSpacing": 1.1,
+        "minScale": 0.8,
+        "maxScale": 2.2,
+        "edgeFalloff": 2.010123075917363,
+        "jitter": 1,
+        "seed": "wild-rocks-3"
+      }
+    },
+    {
+      "id": "wild-rocks-4",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": 117.1,
+          "y": 0,
+          "z": 8.6
+        },
+        {
+          "x": 116.7,
+          "y": 0,
+          "z": 14.6
+        },
+        {
+          "x": 111.1,
+          "y": 0,
+          "z": 17.1
+        },
+        {
+          "x": 106.7,
+          "y": 0,
+          "z": 13.6
+        },
+        {
+          "x": 102.9,
+          "y": 0,
+          "z": 11
+        },
+        {
+          "x": 101.4,
+          "y": 0,
+          "z": 5.6
+        },
+        {
+          "x": 105.2,
+          "y": 0,
+          "z": 0.9
+        },
+        {
+          "x": 110.7,
+          "y": 0,
+          "z": 2.3
+        },
+        {
+          "x": 115.3,
+          "y": 0,
+          "z": 3.8
+        }
+      ],
+      "label": "Outcrop",
+      "meta": {
+        "palette": [
+          {
+            "item": "rock",
+            "weight": 2
+          },
+          {
+            "item": "rock2",
+            "weight": 2
+          }
+        ],
+        "density": 0.16,
+        "minSpacing": 1.1,
+        "minScale": 0.8,
+        "maxScale": 2.2,
+        "edgeFalloff": 3.1402841969393194,
+        "jitter": 1,
+        "seed": "wild-rocks-4"
+      }
+    },
+    {
+      "id": "wild-rocks-5",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": 85.3,
+          "y": 0,
+          "z": -139.1
+        },
+        {
+          "x": 84.5,
+          "y": 0,
+          "z": -133.5
+        },
+        {
+          "x": 79.3,
+          "y": 0,
+          "z": -131.4
+        },
+        {
+          "x": 74.7,
+          "y": 0,
+          "z": -133.6
+        },
+        {
+          "x": 71.4,
+          "y": 0,
+          "z": -136.7
+        },
+        {
+          "x": 70.5,
+          "y": 0,
+          "z": -141.8
+        },
+        {
+          "x": 72.9,
+          "y": 0,
+          "z": -147.7
+        },
+        {
+          "x": 79.2,
+          "y": 0,
+          "z": -146.7
+        },
+        {
+          "x": 82.2,
+          "y": 0,
+          "z": -142.7
+        }
+      ],
+      "label": "Outcrop",
+      "meta": {
+        "palette": [
+          {
+            "item": "rock",
+            "weight": 2
+          },
+          {
+            "item": "rock2",
+            "weight": 2
+          }
+        ],
+        "density": 0.16,
+        "minSpacing": 1.1,
+        "minScale": 0.8,
+        "maxScale": 2.2,
+        "edgeFalloff": 2.891315654851496,
+        "jitter": 1,
+        "seed": "wild-rocks-5"
+      }
+    },
+    {
+      "id": "wild-rocks-6",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": 157.6,
+          "y": 0,
+          "z": -91.2
+        },
+        {
+          "x": 156.8,
+          "y": 0,
+          "z": -87
+        },
+        {
+          "x": 153.5,
+          "y": 0,
+          "z": -81
+        },
+        {
+          "x": 147.6,
+          "y": 0,
+          "z": -84
+        },
+        {
+          "x": 144.3,
+          "y": 0,
+          "z": -88.5
+        },
+        {
+          "x": 145.2,
+          "y": 0,
+          "z": -93.6
+        },
+        {
+          "x": 147.8,
+          "y": 0,
+          "z": -98
+        },
+        {
+          "x": 153.2,
+          "y": 0,
+          "z": -99.7
+        },
+        {
+          "x": 158.6,
+          "y": 0,
+          "z": -97
+        }
+      ],
+      "label": "Outcrop",
+      "meta": {
+        "palette": [
+          {
+            "item": "rock",
+            "weight": 2
+          },
+          {
+            "item": "rock2",
+            "weight": 2
+          }
+        ],
+        "density": 0.16,
+        "minSpacing": 1.1,
+        "minScale": 0.8,
+        "maxScale": 2.2,
+        "edgeFalloff": 3.119862573686987,
+        "jitter": 1,
+        "seed": "wild-rocks-6"
+      }
+    },
+    {
+      "id": "wild-rocks-7",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": 18.8,
+          "y": 0,
+          "z": 176.6
+        },
+        {
+          "x": 14.9,
+          "y": 0,
+          "z": 182
+        },
+        {
+          "x": 9.9,
+          "y": 0,
+          "z": 184.7
+        },
+        {
+          "x": 3.4,
+          "y": 0,
+          "z": 185.4
+        },
+        {
+          "x": -0.7,
+          "y": 0,
+          "z": 179.9
+        },
+        {
+          "x": 1.6,
+          "y": 0,
+          "z": 174.1
+        },
+        {
+          "x": 4.6,
+          "y": 0,
+          "z": 169.8
+        },
+        {
+          "x": 10.1,
+          "y": 0,
+          "z": 167.6
+        },
+        {
+          "x": 17.4,
+          "y": 0,
+          "z": 169.1
+        }
+      ],
+      "label": "Outcrop",
+      "meta": {
+        "palette": [
+          {
+            "item": "rock",
+            "weight": 2
+          },
+          {
+            "item": "rock2",
+            "weight": 2
+          }
+        ],
+        "density": 0.16,
+        "minSpacing": 1.1,
+        "minScale": 0.8,
+        "maxScale": 2.2,
+        "edgeFalloff": 3.647169134579599,
+        "jitter": 1,
+        "seed": "wild-rocks-7"
+      }
+    },
+    {
+      "id": "wild-rocks-8",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": -140.5,
+          "y": 0,
+          "z": 23
+        },
+        {
+          "x": -145,
+          "y": 0,
+          "z": 28.4
+        },
+        {
+          "x": -150.1,
+          "y": 0,
+          "z": 30.2
+        },
+        {
+          "x": -154.4,
+          "y": 0,
+          "z": 28.3
+        },
+        {
+          "x": -159.8,
+          "y": 0,
+          "z": 26
+        },
+        {
+          "x": -161.2,
+          "y": 0,
+          "z": 19.5
+        },
+        {
+          "x": -156.1,
+          "y": 0,
+          "z": 14.9
+        },
+        {
+          "x": -150.4,
+          "y": 0,
+          "z": 17.1
+        },
+        {
+          "x": -146,
+          "y": 0,
+          "z": 18.5
+        }
+      ],
+      "label": "Outcrop",
+      "meta": {
+        "palette": [
+          {
+            "item": "rock",
+            "weight": 2
+          },
+          {
+            "item": "rock2",
+            "weight": 2
+          }
+        ],
+        "density": 0.16,
+        "minSpacing": 1.1,
+        "minScale": 0.8,
+        "maxScale": 2.2,
+        "edgeFalloff": 3.2961711012758315,
+        "jitter": 1,
+        "seed": "wild-rocks-8"
+      }
+    },
+    {
+      "id": "wild-brush-1",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": -110.2,
+          "y": 0,
+          "z": -85.1
+        },
+        {
+          "x": -110.9,
+          "y": 0,
+          "z": -83
+        },
+        {
+          "x": -112.5,
+          "y": 0,
+          "z": -80.5
+        },
+        {
+          "x": -115.4,
+          "y": 0,
+          "z": -81.4
+        },
+        {
+          "x": -116.6,
+          "y": 0,
+          "z": -83.9
+        },
+        {
+          "x": -116.2,
+          "y": 0,
+          "z": -86.2
+        },
+        {
+          "x": -115.3,
+          "y": 0,
+          "z": -88.6
+        },
+        {
+          "x": -112.6,
+          "y": 0,
+          "z": -89.1
+        },
+        {
+          "x": -110.1,
+          "y": 0,
+          "z": -87.8
+        }
+      ],
+      "label": "Undergrowth",
+      "meta": {
+        "palette": [
+          {
+            "item": "fern",
+            "weight": 4
+          },
+          {
+            "item": "plant",
+            "weight": 2
+          },
+          {
+            "item": "bush",
+            "weight": 1
+          }
+        ],
+        "density": 0.3,
+        "minSpacing": 1.1,
+        "minScale": 0.7,
+        "maxScale": 1.4,
+        "edgeFalloff": 1.6086831897497178,
+        "jitter": 1,
+        "seed": "wild-brush-1"
+      }
+    },
+    {
+      "id": "wild-brush-2",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": -150.3,
+          "y": 0,
+          "z": 93.9
+        },
+        {
+          "x": -152.7,
+          "y": 0,
+          "z": 99
+        },
+        {
+          "x": -158,
+          "y": 0,
+          "z": 98.6
+        },
+        {
+          "x": -162.3,
+          "y": 0,
+          "z": 99.9
+        },
+        {
+          "x": -165.7,
+          "y": 0,
+          "z": 96.4
+        },
+        {
+          "x": -167.3,
+          "y": 0,
+          "z": 90.8
+        },
+        {
+          "x": -161.8,
+          "y": 0,
+          "z": 88.6
+        },
+        {
+          "x": -157.7,
+          "y": 0,
+          "z": 87.6
+        },
+        {
+          "x": -153.7,
+          "y": 0,
+          "z": 89.6
+        }
+      ],
+      "label": "Undergrowth",
+      "meta": {
+        "palette": [
+          {
+            "item": "fern",
+            "weight": 4
+          },
+          {
+            "item": "plant",
+            "weight": 2
+          },
+          {
+            "item": "bush",
+            "weight": 1
+          }
+        ],
+        "density": 0.3,
+        "minSpacing": 1.1,
+        "minScale": 0.7,
+        "maxScale": 1.4,
+        "edgeFalloff": 2.8137153159826997,
+        "jitter": 1,
+        "seed": "wild-brush-2"
+      }
+    },
+    {
+      "id": "wild-brush-3",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": 176.4,
+          "y": 0,
+          "z": 95.4
+        },
+        {
+          "x": 174.1,
+          "y": 0,
+          "z": 99.4
+        },
+        {
+          "x": 170.5,
+          "y": 0,
+          "z": 102
+        },
+        {
+          "x": 165.4,
+          "y": 0,
+          "z": 102.1
+        },
+        {
+          "x": 160.9,
+          "y": 0,
+          "z": 98.5
+        },
+        {
+          "x": 161.9,
+          "y": 0,
+          "z": 92.7
+        },
+        {
+          "x": 166.1,
+          "y": 0,
+          "z": 89.9
+        },
+        {
+          "x": 170.4,
+          "y": 0,
+          "z": 89.3
+        },
+        {
+          "x": 176.6,
+          "y": 0,
+          "z": 89.3
+        }
+      ],
+      "label": "Undergrowth",
+      "meta": {
+        "palette": [
+          {
+            "item": "fern",
+            "weight": 4
+          },
+          {
+            "item": "plant",
+            "weight": 2
+          },
+          {
+            "item": "bush",
+            "weight": 1
+          }
+        ],
+        "density": 0.3,
+        "minSpacing": 1.1,
+        "minScale": 0.7,
+        "maxScale": 1.4,
+        "edgeFalloff": 2.9663889415562155,
+        "jitter": 1,
+        "seed": "wild-brush-3"
+      }
+    },
+    {
+      "id": "wild-brush-4",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": -122.5,
+          "y": 0,
+          "z": 17.4
+        },
+        {
+          "x": -123.5,
+          "y": 0,
+          "z": 21.5
+        },
+        {
+          "x": -127,
+          "y": 0,
+          "z": 24.8
+        },
+        {
+          "x": -132.1,
+          "y": 0,
+          "z": 24
+        },
+        {
+          "x": -132.5,
+          "y": 0,
+          "z": 18.9
+        },
+        {
+          "x": -133.9,
+          "y": 0,
+          "z": 15.4
+        },
+        {
+          "x": -132.3,
+          "y": 0,
+          "z": 10.4
+        },
+        {
+          "x": -126.9,
+          "y": 0,
+          "z": 9.3
+        },
+        {
+          "x": -123.6,
+          "y": 0,
+          "z": 13.5
+        }
+      ],
+      "label": "Undergrowth",
+      "meta": {
+        "palette": [
+          {
+            "item": "fern",
+            "weight": 4
+          },
+          {
+            "item": "plant",
+            "weight": 2
+          },
+          {
+            "item": "bush",
+            "weight": 1
+          }
+        ],
+        "density": 0.3,
+        "minSpacing": 1.1,
+        "minScale": 0.7,
+        "maxScale": 1.4,
+        "edgeFalloff": 2.599979927018285,
+        "jitter": 1,
+        "seed": "wild-brush-4"
+      }
+    },
+    {
+      "id": "wild-brush-5",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": -6.2,
+          "y": 0,
+          "z": -65
+        },
+        {
+          "x": -7.6,
+          "y": 0,
+          "z": -61.4
+        },
+        {
+          "x": -10.7,
+          "y": 0,
+          "z": -58.4
+        },
+        {
+          "x": -15.9,
+          "y": 0,
+          "z": -58
+        },
+        {
+          "x": -18.8,
+          "y": 0,
+          "z": -62.5
+        },
+        {
+          "x": -16.2,
+          "y": 0,
+          "z": -66.6
+        },
+        {
+          "x": -14.3,
+          "y": 0,
+          "z": -69.2
+        },
+        {
+          "x": -10.6,
+          "y": 0,
+          "z": -72.6
+        },
+        {
+          "x": -6.5,
+          "y": 0,
+          "z": -69.5
+        }
+      ],
+      "label": "Undergrowth",
+      "meta": {
+        "palette": [
+          {
+            "item": "fern",
+            "weight": 4
+          },
+          {
+            "item": "plant",
+            "weight": 2
+          },
+          {
+            "item": "bush",
+            "weight": 1
+          }
+        ],
+        "density": 0.3,
+        "minSpacing": 1.1,
+        "minScale": 0.7,
+        "maxScale": 1.4,
+        "edgeFalloff": 2.439605759084225,
+        "jitter": 1,
+        "seed": "wild-brush-5"
+      }
+    },
+    {
+      "id": "wild-brush-6",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": -185.3,
+          "y": 0,
+          "z": -93.9
+        },
+        {
+          "x": -187.2,
+          "y": 0,
+          "z": -89.1
+        },
+        {
+          "x": -192.1,
+          "y": 0,
+          "z": -89.1
+        },
+        {
+          "x": -196.1,
+          "y": 0,
+          "z": -88.6
+        },
+        {
+          "x": -201.5,
+          "y": 0,
+          "z": -90.8
+        },
+        {
+          "x": -200.5,
+          "y": 0,
+          "z": -96.6
+        },
+        {
+          "x": -196.5,
+          "y": 0,
+          "z": -99.9
+        },
+        {
+          "x": -191.8,
+          "y": 0,
+          "z": -100.7
+        },
+        {
+          "x": -186.5,
+          "y": 0,
+          "z": -99.4
+        }
+      ],
+      "label": "Undergrowth",
+      "meta": {
+        "palette": [
+          {
+            "item": "fern",
+            "weight": 4
+          },
+          {
+            "item": "plant",
+            "weight": 2
+          },
+          {
+            "item": "bush",
+            "weight": 1
+          }
+        ],
+        "density": 0.3,
+        "minSpacing": 1.1,
+        "minScale": 0.7,
+        "maxScale": 1.4,
+        "edgeFalloff": 2.85382877252996,
+        "jitter": 1,
+        "seed": "wild-brush-6"
+      }
+    },
+    {
+      "id": "wild-brush-7",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": -176.3,
+          "y": 0,
+          "z": 135.4
+        },
+        {
+          "x": -176.1,
+          "y": 0,
+          "z": 138.9
+        },
+        {
+          "x": -179.3,
+          "y": 0,
+          "z": 140.6
+        },
+        {
+          "x": -182.5,
+          "y": 0,
+          "z": 139.4
+        },
+        {
+          "x": -183.1,
+          "y": 0,
+          "z": 136.4
+        },
+        {
+          "x": -184.5,
+          "y": 0,
+          "z": 133.8
+        },
+        {
+          "x": -182.8,
+          "y": 0,
+          "z": 130.9
+        },
+        {
+          "x": -179.3,
+          "y": 0,
+          "z": 130.1
+        },
+        {
+          "x": -177.4,
+          "y": 0,
+          "z": 133.1
+        }
+      ],
+      "label": "Undergrowth",
+      "meta": {
+        "palette": [
+          {
+            "item": "fern",
+            "weight": 4
+          },
+          {
+            "item": "plant",
+            "weight": 2
+          },
+          {
+            "item": "bush",
+            "weight": 1
+          }
+        ],
+        "density": 0.3,
+        "minSpacing": 1.1,
+        "minScale": 0.7,
+        "maxScale": 1.4,
+        "edgeFalloff": 1.7489675782620908,
+        "jitter": 1,
+        "seed": "wild-brush-7"
+      }
+    },
+    {
+      "id": "wild-brush-8",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": 67.3,
+          "y": 0,
+          "z": -109.1
+        },
+        {
+          "x": 65.3,
+          "y": 0,
+          "z": -104.2
+        },
+        {
+          "x": 60.4,
+          "y": 0,
+          "z": -103.5
+        },
+        {
+          "x": 55.8,
+          "y": 0,
+          "z": -102.9
+        },
+        {
+          "x": 52.1,
+          "y": 0,
+          "z": -106.4
+        },
+        {
+          "x": 50.7,
+          "y": 0,
+          "z": -112.3
+        },
+        {
+          "x": 55.7,
+          "y": 0,
+          "z": -115.5
+        },
+        {
+          "x": 60.2,
+          "y": 0,
+          "z": -113.5
+        },
+        {
+          "x": 64.9,
+          "y": 0,
+          "z": -113.7
+        }
+      ],
+      "label": "Undergrowth",
+      "meta": {
+        "palette": [
+          {
+            "item": "fern",
+            "weight": 4
+          },
+          {
+            "item": "plant",
+            "weight": 2
+          },
+          {
+            "item": "bush",
+            "weight": 1
+          }
+        ],
+        "density": 0.3,
+        "minSpacing": 1.1,
+        "minScale": 0.7,
+        "maxScale": 1.4,
+        "edgeFalloff": 2.83879949785769,
+        "jitter": 1,
+        "seed": "wild-brush-8"
+      }
+    },
+    {
+      "id": "wild-brush-9",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": 95.2,
+          "y": 0,
+          "z": -18.4
+        },
+        {
+          "x": 93.5,
+          "y": 0,
+          "z": -13.2
+        },
+        {
+          "x": 88.6,
+          "y": 0,
+          "z": -11.3
+        },
+        {
+          "x": 84.8,
+          "y": 0,
+          "z": -14.2
+        },
+        {
+          "x": 81.6,
+          "y": 0,
+          "z": -16.3
+        },
+        {
+          "x": 79.2,
+          "y": 0,
+          "z": -21.3
+        },
+        {
+          "x": 83,
+          "y": 0,
+          "z": -25.9
+        },
+        {
+          "x": 88.3,
+          "y": 0,
+          "z": -24.3
+        },
+        {
+          "x": 91.7,
+          "y": 0,
+          "z": -22.1
+        }
+      ],
+      "label": "Undergrowth",
+      "meta": {
+        "palette": [
+          {
+            "item": "fern",
+            "weight": 4
+          },
+          {
+            "item": "plant",
+            "weight": 2
+          },
+          {
+            "item": "bush",
+            "weight": 1
+          }
+        ],
+        "density": 0.3,
+        "minSpacing": 1.1,
+        "minScale": 0.7,
+        "maxScale": 1.4,
+        "edgeFalloff": 2.8769198007881642,
+        "jitter": 1,
+        "seed": "wild-brush-9"
+      }
+    },
+    {
+      "id": "wild-brush-10",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": -202.1,
+          "y": 0,
+          "z": -80.5
+        },
+        {
+          "x": -204.6,
+          "y": 0,
+          "z": -77.5
+        },
+        {
+          "x": -206.9,
+          "y": 0,
+          "z": -73.7
+        },
+        {
+          "x": -212.2,
+          "y": 0,
+          "z": -73.3
+        },
+        {
+          "x": -213.8,
+          "y": 0,
+          "z": -78.4
+        },
+        {
+          "x": -213.4,
+          "y": 0,
+          "z": -82.4
+        },
+        {
+          "x": -211.2,
+          "y": 0,
+          "z": -85.8
+        },
+        {
+          "x": -206.9,
+          "y": 0,
+          "z": -87.6
+        },
+        {
+          "x": -202.6,
+          "y": 0,
+          "z": -85.1
+        }
+      ],
+      "label": "Undergrowth",
+      "meta": {
+        "palette": [
+          {
+            "item": "fern",
+            "weight": 4
+          },
+          {
+            "item": "plant",
+            "weight": 2
+          },
+          {
+            "item": "bush",
+            "weight": 1
+          }
+        ],
+        "density": 0.3,
+        "minSpacing": 1.1,
+        "minScale": 0.7,
+        "maxScale": 1.4,
+        "edgeFalloff": 2.6199121769517664,
+        "jitter": 1,
+        "seed": "wild-brush-10"
+      }
+    },
+    {
+      "id": "wild-brush-11",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": -16.6,
+          "y": 0,
+          "z": -185.5
+        },
+        {
+          "x": -16.7,
+          "y": 0,
+          "z": -181.2
+        },
+        {
+          "x": -20.2,
+          "y": 0,
+          "z": -176.4
+        },
+        {
+          "x": -24.9,
+          "y": 0,
+          "z": -180.1
+        },
+        {
+          "x": -26.3,
+          "y": 0,
+          "z": -183.9
+        },
+        {
+          "x": -28,
+          "y": 0,
+          "z": -187.7
+        },
+        {
+          "x": -25.5,
+          "y": 0,
+          "z": -192
+        },
+        {
+          "x": -20.4,
+          "y": 0,
+          "z": -193.6
+        },
+        {
+          "x": -16,
+          "y": 0,
+          "z": -190.3
+        }
+      ],
+      "label": "Undergrowth",
+      "meta": {
+        "palette": [
+          {
+            "item": "fern",
+            "weight": 4
+          },
+          {
+            "item": "plant",
+            "weight": 2
+          },
+          {
+            "item": "bush",
+            "weight": 1
+          }
+        ],
+        "density": 0.3,
+        "minSpacing": 1.1,
+        "minScale": 0.7,
+        "maxScale": 1.4,
+        "edgeFalloff": 2.9165956608951094,
+        "jitter": 1,
+        "seed": "wild-brush-11"
+      }
+    },
+    {
+      "id": "wild-brush-12",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": 141.5,
+          "y": 0,
+          "z": -84.8
+        },
+        {
+          "x": 140.9,
+          "y": 0,
+          "z": -79.8
+        },
+        {
+          "x": 136.4,
+          "y": 0,
+          "z": -76.3
+        },
+        {
+          "x": 131.4,
+          "y": 0,
+          "z": -78.7
+        },
+        {
+          "x": 127.9,
+          "y": 0,
+          "z": -82.3
+        },
+        {
+          "x": 128,
+          "y": 0,
+          "z": -87.3
+        },
+        {
+          "x": 131.5,
+          "y": 0,
+          "z": -90.8
+        },
+        {
+          "x": 136.6,
+          "y": 0,
+          "z": -94.5
+        },
+        {
+          "x": 139.7,
+          "y": 0,
+          "z": -88.8
+        }
+      ],
+      "label": "Undergrowth",
+      "meta": {
+        "palette": [
+          {
+            "item": "fern",
+            "weight": 4
+          },
+          {
+            "item": "plant",
+            "weight": 2
+          },
+          {
+            "item": "bush",
+            "weight": 1
+          }
+        ],
+        "density": 0.3,
+        "minSpacing": 1.1,
+        "minScale": 0.7,
+        "maxScale": 1.4,
+        "edgeFalloff": 2.935155362263322,
+        "jitter": 1,
+        "seed": "wild-brush-12"
+      }
+    },
+    {
+      "id": "wild-brush-13",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": -157.9,
+          "y": 0,
+          "z": 104.8
+        },
+        {
+          "x": -158.7,
+          "y": 0,
+          "z": 108.8
+        },
+        {
+          "x": -162.3,
+          "y": 0,
+          "z": 111.6
+        },
+        {
+          "x": -167.4,
+          "y": 0,
+          "z": 111.5
+        },
+        {
+          "x": -170.7,
+          "y": 0,
+          "z": 107.4
+        },
+        {
+          "x": -169.1,
+          "y": 0,
+          "z": 102.7
+        },
+        {
+          "x": -166.7,
+          "y": 0,
+          "z": 99.2
+        },
+        {
+          "x": -162,
+          "y": 0,
+          "z": 96.3
+        },
+        {
+          "x": -156.6,
+          "y": 0,
+          "z": 99
+        }
+      ],
+      "label": "Undergrowth",
+      "meta": {
+        "palette": [
+          {
+            "item": "fern",
+            "weight": 4
+          },
+          {
+            "item": "plant",
+            "weight": 2
+          },
+          {
+            "item": "bush",
+            "weight": 1
+          }
+        ],
+        "density": 0.3,
+        "minSpacing": 1.1,
+        "minScale": 0.7,
+        "maxScale": 1.4,
+        "edgeFalloff": 2.800130173563957,
+        "jitter": 1,
+        "seed": "wild-brush-13"
+      }
+    },
+    {
+      "id": "wild-brush-14",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": 57.6,
+          "y": 0,
+          "z": 94.2
+        },
+        {
+          "x": 57.9,
+          "y": 0,
+          "z": 99.7
+        },
+        {
+          "x": 52.7,
+          "y": 0,
+          "z": 102.1
+        },
+        {
+          "x": 46.9,
+          "y": 0,
+          "z": 101.8
+        },
+        {
+          "x": 46.3,
+          "y": 0,
+          "z": 96
+        },
+        {
+          "x": 43.9,
+          "y": 0,
+          "z": 91.5
+        },
+        {
+          "x": 46.1,
+          "y": 0,
+          "z": 85.2
+        },
+        {
+          "x": 52.8,
+          "y": 0,
+          "z": 85.5
+        },
+        {
+          "x": 55.9,
+          "y": 0,
+          "z": 90.3
+        }
+      ],
+      "label": "Undergrowth",
+      "meta": {
+        "palette": [
+          {
+            "item": "fern",
+            "weight": 4
+          },
+          {
+            "item": "plant",
+            "weight": 2
+          },
+          {
+            "item": "bush",
+            "weight": 1
+          }
+        ],
+        "density": 0.3,
+        "minSpacing": 1.1,
+        "minScale": 0.7,
+        "maxScale": 1.4,
+        "edgeFalloff": 3.103790868446231,
+        "jitter": 1,
+        "seed": "wild-brush-14"
+      }
+    },
+    {
+      "id": "wild-brush-15",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": 26.3,
+          "y": 0,
+          "z": -224.1
+        },
+        {
+          "x": 26.3,
+          "y": 0,
+          "z": -218.9
+        },
+        {
+          "x": 21.7,
+          "y": 0,
+          "z": -214.9
+        },
+        {
+          "x": 16.1,
+          "y": 0,
+          "z": -217.2
+        },
+        {
+          "x": 15.2,
+          "y": 0,
+          "z": -222.3
+        },
+        {
+          "x": 12.8,
+          "y": 0,
+          "z": -226.8
+        },
+        {
+          "x": 15.8,
+          "y": 0,
+          "z": -231.5
+        },
+        {
+          "x": 21.8,
+          "y": 0,
+          "z": -233.8
+        },
+        {
+          "x": 25.8,
+          "y": 0,
+          "z": -228.8
+        }
+      ],
+      "label": "Undergrowth",
+      "meta": {
+        "palette": [
+          {
+            "item": "fern",
+            "weight": 4
+          },
+          {
+            "item": "plant",
+            "weight": 2
+          },
+          {
+            "item": "bush",
+            "weight": 1
+          }
+        ],
+        "density": 0.3,
+        "minSpacing": 1.1,
+        "minScale": 0.7,
+        "maxScale": 1.4,
+        "edgeFalloff": 3.115412772446871,
+        "jitter": 1,
+        "seed": "wild-brush-15"
+      }
+    },
+    {
+      "id": "wild-brush-16",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": 68.1,
+          "y": 0,
+          "z": 87.8
+        },
+        {
+          "x": 65.8,
+          "y": 0,
+          "z": 91.6
+        },
+        {
+          "x": 62.2,
+          "y": 0,
+          "z": 92.6
+        },
+        {
+          "x": 57.3,
+          "y": 0,
+          "z": 94.7
+        },
+        {
+          "x": 53,
+          "y": 0,
+          "z": 90.8
+        },
+        {
+          "x": 55.7,
+          "y": 0,
+          "z": 85.8
+        },
+        {
+          "x": 58.9,
+          "y": 0,
+          "z": 83.6
+        },
+        {
+          "x": 62.6,
+          "y": 0,
+          "z": 80.3
+        },
+        {
+          "x": 68.3,
+          "y": 0,
+          "z": 81.9
+        }
+      ],
+      "label": "Undergrowth",
+      "meta": {
+        "palette": [
+          {
+            "item": "fern",
+            "weight": 4
+          },
+          {
+            "item": "plant",
+            "weight": 2
+          },
+          {
+            "item": "bush",
+            "weight": 1
+          }
+        ],
+        "density": 0.3,
+        "minSpacing": 1.1,
+        "minScale": 0.7,
+        "maxScale": 1.4,
+        "edgeFalloff": 2.8576569695025684,
+        "jitter": 1,
+        "seed": "wild-brush-16"
+      }
+    },
+    {
+      "id": "wild-brush-17",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": 43.1,
+          "y": 0,
+          "z": -73.2
+        },
+        {
+          "x": 40.1,
+          "y": 0,
+          "z": -68.6
+        },
+        {
+          "x": 35.7,
+          "y": 0,
+          "z": -66.9
+        },
+        {
+          "x": 31.2,
+          "y": 0,
+          "z": -67.2
+        },
+        {
+          "x": 26.9,
+          "y": 0,
+          "z": -70.4
+        },
+        {
+          "x": 27.1,
+          "y": 0,
+          "z": -75.9
+        },
+        {
+          "x": 32.3,
+          "y": 0,
+          "z": -77.2
+        },
+        {
+          "x": 35.7,
+          "y": 0,
+          "z": -79.7
+        },
+        {
+          "x": 40.2,
+          "y": 0,
+          "z": -77.9
+        }
+      ],
+      "label": "Undergrowth",
+      "meta": {
+        "palette": [
+          {
+            "item": "fern",
+            "weight": 4
+          },
+          {
+            "item": "plant",
+            "weight": 2
+          },
+          {
+            "item": "bush",
+            "weight": 1
+          }
+        ],
+        "density": 0.3,
+        "minSpacing": 1.1,
+        "minScale": 0.7,
+        "maxScale": 1.4,
+        "edgeFalloff": 2.6648290261626246,
+        "jitter": 1,
+        "seed": "wild-brush-17"
+      }
+    },
+    {
+      "id": "wild-brush-18",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": 71.2,
+          "y": 0,
+          "z": 16.1
+        },
+        {
+          "x": 67.7,
+          "y": 0,
+          "z": 19.9
+        },
+        {
+          "x": 63.9,
+          "y": 0,
+          "z": 20.2
+        },
+        {
+          "x": 60.2,
+          "y": 0,
+          "z": 21.3
+        },
+        {
+          "x": 55.5,
+          "y": 0,
+          "z": 18.9
+        },
+        {
+          "x": 56.5,
+          "y": 0,
+          "z": 13.6
+        },
+        {
+          "x": 60.8,
+          "y": 0,
+          "z": 12
+        },
+        {
+          "x": 64,
+          "y": 0,
+          "z": 11.5
+        },
+        {
+          "x": 69.7,
+          "y": 0,
+          "z": 10.6
+        }
+      ],
+      "label": "Undergrowth",
+      "meta": {
+        "palette": [
+          {
+            "item": "fern",
+            "weight": 4
+          },
+          {
+            "item": "plant",
+            "weight": 2
+          },
+          {
+            "item": "bush",
+            "weight": 1
+          }
+        ],
+        "density": 0.3,
+        "minSpacing": 1.1,
+        "minScale": 0.7,
+        "maxScale": 1.4,
+        "edgeFalloff": 2.645895787701011,
+        "jitter": 1,
+        "seed": "wild-brush-18"
+      }
+    },
+    {
+      "id": "wild-brush-19",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": 151.4,
+          "y": 0,
+          "z": 41.7
+        },
+        {
+          "x": 151.1,
+          "y": 0,
+          "z": 45.3
+        },
+        {
+          "x": 147.8,
+          "y": 0,
+          "z": 47.4
+        },
+        {
+          "x": 145.2,
+          "y": 0,
+          "z": 44.4
+        },
+        {
+          "x": 143.8,
+          "y": 0,
+          "z": 42.8
+        },
+        {
+          "x": 142,
+          "y": 0,
+          "z": 40
+        },
+        {
+          "x": 143.8,
+          "y": 0,
+          "z": 36.4
+        },
+        {
+          "x": 147.5,
+          "y": 0,
+          "z": 37.6
+        },
+        {
+          "x": 149.8,
+          "y": 0,
+          "z": 39.2
+        }
+      ],
+      "label": "Undergrowth",
+      "meta": {
+        "palette": [
+          {
+            "item": "fern",
+            "weight": 4
+          },
+          {
+            "item": "plant",
+            "weight": 2
+          },
+          {
+            "item": "bush",
+            "weight": 1
+          }
+        ],
+        "density": 0.3,
+        "minSpacing": 1.1,
+        "minScale": 0.7,
+        "maxScale": 1.4,
+        "edgeFalloff": 1.7820560835301877,
+        "jitter": 1,
+        "seed": "wild-brush-19"
+      }
+    },
+    {
+      "id": "wild-brush-20",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": 4.8,
+          "y": 0,
+          "z": 159.7
+        },
+        {
+          "x": 3.7,
+          "y": 0,
+          "z": 162.5
+        },
+        {
+          "x": 0.9,
+          "y": 0,
+          "z": 162.3
+        },
+        {
+          "x": -1.9,
+          "y": 0,
+          "z": 163.6
+        },
+        {
+          "x": -5,
+          "y": 0,
+          "z": 161.7
+        },
+        {
+          "x": -3.1,
+          "y": 0,
+          "z": 158.4
+        },
+        {
+          "x": -1.4,
+          "y": 0,
+          "z": 156.6
+        },
+        {
+          "x": 1,
+          "y": 0,
+          "z": 156.4
+        },
+        {
+          "x": 3.9,
+          "y": 0,
+          "z": 156.7
+        }
+      ],
+      "label": "Undergrowth",
+      "meta": {
+        "palette": [
+          {
+            "item": "fern",
+            "weight": 4
+          },
+          {
+            "item": "plant",
+            "weight": 2
+          },
+          {
+            "item": "bush",
+            "weight": 1
+          }
+        ],
+        "density": 0.3,
+        "minSpacing": 1.1,
+        "minScale": 0.7,
+        "maxScale": 1.4,
+        "edgeFalloff": 1.6619227837771178,
+        "jitter": 1,
+        "seed": "wild-brush-20"
+      }
+    },
+    {
+      "id": "wild-brush-21",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": -56,
+          "y": 0,
+          "z": -165
+        },
+        {
+          "x": -60,
+          "y": 0,
+          "z": -161.3
+        },
+        {
+          "x": -63.3,
+          "y": 0,
+          "z": -158.7
+        },
+        {
+          "x": -69,
+          "y": 0,
+          "z": -157.1
+        },
+        {
+          "x": -74,
+          "y": 0,
+          "z": -161.5
+        },
+        {
+          "x": -71.3,
+          "y": 0,
+          "z": -167.5
+        },
+        {
+          "x": -67.8,
+          "y": 0,
+          "z": -170.9
+        },
+        {
+          "x": -63,
+          "y": 0,
+          "z": -172.7
+        },
+        {
+          "x": -58.4,
+          "y": 0,
+          "z": -170.1
+        }
+      ],
+      "label": "Undergrowth",
+      "meta": {
+        "palette": [
+          {
+            "item": "fern",
+            "weight": 4
+          },
+          {
+            "item": "plant",
+            "weight": 2
+          },
+          {
+            "item": "bush",
+            "weight": 1
+          }
+        ],
+        "density": 0.3,
+        "minSpacing": 1.1,
+        "minScale": 0.7,
+        "maxScale": 1.4,
+        "edgeFalloff": 3.0738844580948355,
+        "jitter": 1,
+        "seed": "wild-brush-21"
+      }
+    },
+    {
+      "id": "wild-brush-22",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": -36.8,
+          "y": 0,
+          "z": -11.3
+        },
+        {
+          "x": -38.2,
+          "y": 0,
+          "z": -8.8
+        },
+        {
+          "x": -40.3,
+          "y": 0,
+          "z": -6.8
+        },
+        {
+          "x": -43.8,
+          "y": 0,
+          "z": -6.6
+        },
+        {
+          "x": -45,
+          "y": 0,
+          "z": -9.9
+        },
+        {
+          "x": -44.4,
+          "y": 0,
+          "z": -12.5
+        },
+        {
+          "x": -42.8,
+          "y": 0,
+          "z": -14.3
+        },
+        {
+          "x": -40.3,
+          "y": 0,
+          "z": -15.9
+        },
+        {
+          "x": -36.9,
+          "y": 0,
+          "z": -14.8
+        }
+      ],
+      "label": "Undergrowth",
+      "meta": {
+        "palette": [
+          {
+            "item": "fern",
+            "weight": 4
+          },
+          {
+            "item": "plant",
+            "weight": 2
+          },
+          {
+            "item": "bush",
+            "weight": 1
+          }
+        ],
+        "density": 0.3,
+        "minSpacing": 1.1,
+        "minScale": 0.7,
+        "maxScale": 1.4,
+        "edgeFalloff": 1.7648896176367999,
+        "jitter": 1,
+        "seed": "wild-brush-22"
+      }
+    }
+  ]
+}

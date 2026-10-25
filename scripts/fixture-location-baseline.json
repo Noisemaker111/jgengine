@@ -50,7 +50,6 @@
   "scripts/distStaleness.test.ts",
   "scripts/exportManifest.test.ts",
   "scripts/gameFeel.test.ts",
-  "scripts/games-check-paths.test.ts",
   "scripts/packTextures.test.ts",
   "scripts/perf-gate.test.ts",
   "scripts/pr-shots.test.ts",

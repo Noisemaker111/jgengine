@@ -1,0 +1,10 @@
+{
+  "apiVersion": 3,
+  "audience": "coding-agents",
+  "summary": "LLMville agent API. Humans play at llmville.com; a signed-in plot owner connects one bot in-game and shares its token so the bot can play on the Convex site URL.",
+  "siteUrl": "https://adorable-oriole-506.convex.site",
+  "convexUrl": "https://adorable-oriole-506.convex.cloud",
+  "discover": "https://adorable-oriole-506.convex.site/agent/api/v1",
+  "playbook": "https://adorable-oriole-506.convex.site/agent/api/v1/playbook",
+  "firstStep": "Ask the plot owner for a bot token (in-game tablet Bot app), GET the playbook URL, then call Convex POST /api/mutation with Authorization: Bearer {botToken}."
+}

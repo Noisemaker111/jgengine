@@ -7,10 +7,10 @@ import {
   type SceneOwnershipManifest,
 } from "../packages/core/src/scene/sceneOwnership";
 
-import { ignoredGames, referenceGames, requireGamesAtPin, warnIgnoredGames } from "./games-scope";
+import { ignoredGames, referenceGames, warnIgnoredGames } from "./games-scope";
 
 const ROOT = process.cwd();
-const GAMES_DIR = join(ROOT, "Games");
+const GAMES_DIR = join(ROOT, "games");
 const CONTENT_BASELINE = join(ROOT, "scripts/content-gate-baseline.json");
 const COORD_BASELINE = join(ROOT, "scripts/coordinate-literal-baseline.json");
 const BUILDER_BASELINE = join(ROOT, "scripts/content-builder-baseline.json");
@@ -52,14 +52,14 @@ function readOwnershipDeclaration(id: string): OwnershipDeclaration {
   } catch (error) {
     return {
       declared: false,
-      problems: [`Games/${id}/src/${OWNERSHIP_MANIFEST}: not valid JSON (${String(error)}).`],
+      problems: [`games/${id}/src/${OWNERSHIP_MANIFEST}: not valid JSON (${String(error)}).`],
     };
   }
   if (!isSceneOwnershipManifest(parsed)) {
     return {
       declared: false,
       problems: [
-        `Games/${id}/src/${OWNERSHIP_MANIFEST}: not a valid scene-ownership manifest ` +
+        `games/${id}/src/${OWNERSHIP_MANIFEST}: not a valid scene-ownership manifest ` +
           `(expected { version: 1, declarations: [...] } with a valid provenance per declaration).`,
       ],
     };
@@ -71,7 +71,7 @@ function readOwnershipDeclaration(id: string): OwnershipDeclaration {
       declared: false,
       problems: violations.map(
         (v) =>
-          `Games/${id}/src/${OWNERSHIP_MANIFEST}: ${v.message} — declare a bake capability or a reason, ` +
+          `games/${id}/src/${OWNERSHIP_MANIFEST}: ${v.message} — declare a bake capability or a reason, ` +
           `or author the content in the scene document.`,
       ),
     };
@@ -83,7 +83,7 @@ function readOwnershipDeclaration(id: string): OwnershipDeclaration {
     return {
       declared: false,
       problems: [
-        `Games/${id}/src/${OWNERSHIP_MANIFEST}: declares no runtime/transient content, so it does not ` +
+        `games/${id}/src/${OWNERSHIP_MANIFEST}: declares no runtime/transient content, so it does not ` +
           `explain any hard-coded geometry. Remove it, or author the content in the scene document.`,
       ],
     };
@@ -165,7 +165,7 @@ interface GameScan {
   gameScore: number;
   authored: boolean;
   fileOffenders: string[];
-  /** `Games/<id>/src/<file>:<builder>` for each content-builder fill called in game source. */
+  /** `games/<id>/src/<file>:<builder>` for each content-builder fill called in game source. */
   builderOffenders: string[];
 }
 
@@ -248,11 +248,6 @@ function writeBaseline(path: string, values: string[]): void {
 }
 
 function main(argv: string[]): number {
-  const checkout = requireGamesAtPin("check-content-gate", ROOT);
-  if (!checkout.present) {
-    console.log("check-content-gate: nothing scanned — Games/ is absent and GAMES_ALLOW_STALE=1 permits it");
-    return 0;
-  }
   const scans = scanAll();
   const declared = new Set<string>();
   const declarationProblems: string[] = [];
@@ -283,8 +278,8 @@ function main(argv: string[]): number {
     if (!contentBaseline.has(id)) {
       const score = scans.find((s) => s.id === id)?.gameScore;
       problems.push(
-        `Games/${id}: hard-coded world/level geometry (coordinate-literal score ${score}) with no <AuthoredScene>/editor.scene.json. ` +
-          `Author the scene in the editor (jgengine-editor skill) and render it with <AuthoredScene>, or — if this game is legitimately procedural/geometry-free — declare its runtime-only content in Games/${id}/src/scene-ownership.json (a SceneOwnershipManifest with a reason per object).`,
+        `games/${id}: hard-coded world/level geometry (coordinate-literal score ${score}) with no <AuthoredScene>/editor.scene.json. ` +
+          `Author the scene in the editor (jgengine-editor skill) and render it with <AuthoredScene>, or — if this game is legitimately procedural/geometry-free — declare its runtime-only content in games/${id}/src/scene-ownership.json (a SceneOwnershipManifest with a reason per object).`,
       );
     }
   }
@@ -322,7 +317,7 @@ function main(argv: string[]): number {
         `${file}: authored game calls the content builder ${builder}(...). Parameterized fills author visible world content ` +
           `(vegetation/structures/roads/pads/bounded water), which belongs in the scene document — author it in the editor ` +
           `(jgengine-editor skill) as an editor.scene.json volume/kind and consume it at runtime, not as a code-side fill. If this ` +
-          `content is genuinely runtime-only, declare it in Games/${file.split("/")[1]}/src/scene-ownership.json (a SceneOwnershipManifest with a reason).`,
+          `content is genuinely runtime-only, declare it in games/${file.split("/")[1]}/src/scene-ownership.json (a SceneOwnershipManifest with a reason).`,
       );
     }
   }
@@ -347,7 +342,7 @@ function main(argv: string[]): number {
         `migrations land; all may only lose entries, never gain them. After a migration reseed with\n` +
         `  bun run check-content-gate --update\n` +
         `and commit the trimmed baselines. Genuinely procedural / geometry-free games declare their\n` +
-        `runtime-only content in Games/<id>/src/scene-ownership.json (a SceneOwnershipManifest) instead of a\n` +
+        `runtime-only content in games/<id>/src/scene-ownership.json (a SceneOwnershipManifest) instead of a\n` +
         `game-name exemption; the manifest is validated by the scene-ownership boundary in @jgengine/core.\n`,
     );
     return 1;

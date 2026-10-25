@@ -3,8 +3,7 @@
 import { GamePlayer } from "@jgengine/shell/GamePlayer";
 import type { GameRegistry } from "@jgengine/shell/registry";
 
-// Probe games now live in Noisemaker111/JGengine-games (ephemeral ./Games clone).
-// To host a real game here, add that games repo as a dependency or copy a game
+// The probe games live in this repo's games/. To host a real game here, copy one
 // into this project and point the registry at it:
 const gameRegistry: GameRegistry = {};
 

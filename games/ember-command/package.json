@@ -1,0 +1,41 @@
+{
+  "name": "@games/ember-command",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "desktop": "jgengine desktop",
+    "check-types": "tsgo --noEmit -p tsconfig.json",
+    "test": "bun test src",
+    "art:author": "node scripts/author-models.mjs"
+  },
+  "dependencies": {
+    "@jgengine/assets": "workspace:*",
+    "@jgengine/core": "workspace:*",
+    "@jgengine/editor": "workspace:*",
+    "@jgengine/react": "workspace:*",
+    "@jgengine/shell": "workspace:*",
+    "@react-three/drei": "catalog:",
+    "@react-three/fiber": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "three": "catalog:"
+  },
+  "devDependencies": {
+    "@jgengine/node": "workspace:*",
+    "@tailwindcss/vite": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@types/three": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "tailwindcss": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:"
+  },
+  "exports": {
+    ".": "./src/index.tsx",
+    "./*": "./src/*"
+  }
+}

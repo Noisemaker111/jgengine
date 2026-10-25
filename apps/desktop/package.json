@@ -14,8 +14,8 @@
     "@jgengine/editor": "workspace:*",
     "@jgengine/react": "workspace:*",
     "@jgengine/shell": "workspace:*",
-    "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react": "catalog:",
+    "react-dom": "catalog:"
   },
   "devDependencies": {
     "@tailwindcss/vite": "catalog:",

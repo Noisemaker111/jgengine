@@ -21,9 +21,7 @@ describe("game scope", () => {
       "packages/core/src/movement/characterController.ts",
       "packages/core/src/game/systemRuntime.ts",
       "packages/shell/src/render/SceneModels.tsx",
-      "Games/harbor-heat/src/main.ts",
       ".github/workflows/ci.yml",
-      "scripts/games-ref.txt",
       "scripts/perf-gate.ts",
       "CHANGELOG.md",
     ]) {
@@ -105,5 +103,46 @@ describe("test shards", () => {
   test("a game verdict carries the shard verdict for the same diff", () => {
     expect(gameScope(["changes/a.md"]).tests).toBe("none");
     expect(gameScope(["changes/a.md", "README.md"]).tests).toBe("all");
+  });
+});
+
+describe("games in this repo", () => {
+  const workspace = {
+    games: [
+      { id: "harbor-heat", engine: ["core", "shell", "react"] },
+      { id: "fernwild", engine: ["core", "shell"] },
+      { id: "llmville", engine: ["core", "convex"] },
+    ],
+  };
+
+  test("a change inside a reference game measures that game only", () => {
+    const verdict = gameScope(["games/harbor-heat/src/main.ts"], workspace);
+    expect(verdict.scope).toBe("surface");
+    expect(verdict.games).toEqual(["harbor-heat"]);
+    expect(verdict.gameChecks).toEqual(["harbor-heat"]);
+  });
+
+  test("a game outside the frame set runs its checks and no frame budget", () => {
+    const verdict = gameScope(["games/fernwild/src/game/garden.ts"], workspace);
+    expect(verdict.scope).toBe("none");
+    expect(verdict.gameChecks).toEqual(["fernwild"]);
+  });
+
+  test("an engine package change checks every game that declares it", () => {
+    expect(gameScope(["packages/convex/src/index.ts"], workspace).gameChecks).toEqual(["llmville"]);
+    expect(gameScope(["packages/shell/src/render/SceneModels.tsx"], workspace).gameChecks).toEqual(["fernwild", "harbor-heat"]);
+    expect(gameScope(["packages/core/src/combat/damage.test.ts"], workspace).gameChecks).toEqual([]);
+  });
+
+  test("what every game resolves checks every game", () => {
+    for (const path of ["bun.lock", "games/shared/viteEngineSource.ts", "games/scripts/framework-check.ts", "tsconfig.base.json"]) {
+      expect(gameScope([path], workspace).gameChecks).toEqual(["fernwild", "harbor-heat", "llmville"]);
+    }
+    expect(gameScope(["games/shared/viteEngineSource.ts"], workspace).scope).toBe("full");
+  });
+
+  test("prose and engine tooling check no game", () => {
+    expect(gameScope(["README.md", "scripts/lane-close.ts"], workspace).gameChecks).toEqual([]);
+    expect(gameScope(["games/docs/new-game.md"], workspace).scope).toBe("none");
   });
 });

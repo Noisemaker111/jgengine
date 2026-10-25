@@ -17,7 +17,7 @@ import type { RatchetFinding } from "./ratchet";
 import { runRatchet } from "./ratchet";
 
 const ROOTS = ["packages", "apps", "scripts", "examples", "registry"];
-const SKIP_DIRS = new Set(["node_modules", "dist", "build", "coverage", "Games"]);
+const SKIP_DIRS = new Set(["node_modules", "dist", "build", "coverage"]);
 const TEMP_CALLS = [
   { name: "tmpdir()", pattern: /\btmpdir\s*\(/ },
   { name: "mkdtemp()", pattern: /\bmkdtemp(Sync)?\s*\(/ },

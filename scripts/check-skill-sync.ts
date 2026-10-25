@@ -45,7 +45,9 @@ const allowedMarkdown = (path: string): boolean =>
   path.endsWith("/README.md") ||
   /^\.(claude|agents|github)\//.test(path) ||
   /^changes\/[^/]+\.md$/.test(path) ||
-  /^examples\//.test(path);
+  /^examples\//.test(path) ||
+  // A game owns its design notes, credits and asset sources next to its code.
+  /^games\//.test(path);
 const tracked = spawnSync("git", ["ls-files"], { cwd: root, encoding: "utf8" }).stdout.split("\n").filter(Boolean);
 for (const path of tracked) {
   if (path.startsWith("docs/")) problems.push(`${path}: no docs/ tree; put durable guidance in AGENTS.md, a README or the owning skill`);

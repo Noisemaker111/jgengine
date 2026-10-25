@@ -17,7 +17,6 @@ import { join } from "node:path";
 import { spawn } from "node:child_process";
 import { resolve } from "node:path";
 
-import { requireGamesAtPin } from "./games-scope";
 
 export const SMOKE_GAMES = ["harbor-heat", "scrap-signal", "drift-foundry", "deepward"] as const;
 
@@ -57,8 +56,6 @@ function boot(game: string): Promise<number> {
 
 async function main(): Promise<void> {
   const games = parseGames(process.argv.slice(2));
-
-  requireGamesAtPin("smoke", root);
 
   const failures: string[] = [];
   for (const game of games) {

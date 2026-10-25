@@ -248,7 +248,7 @@ const FOOTER_COLUMNS: { title: string; links: { label: string; to?: string; href
       { label: "GitHub", href: REPO_URL },
       { label: "Packages", href: `${REPO_URL}/tree/main/packages` },
       { label: "npm: jgengine", href: "https://www.npmjs.com/package/jgengine" },
-      { label: "Probe games", href: "https://github.com/Noisemaker111/JGengine-games" },
+      { label: "Probe games", href: "https://github.com/Noisemaker111/jgengine/tree/beta/games" },
       { label: "Credits", href: `${REPO_URL}/blob/main/CREDITS.md` },
     ],
   },

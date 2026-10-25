@@ -9,8 +9,8 @@ import { defineConfig } from "vite";
 import { projectSurfacePlugin } from "./projectSurfacePlugin";
 
 const src = (pkg: string) => fileURLToPath(new URL(`../../packages/${pkg}/src`, import.meta.url));
-const game = (name: string) => fileURLToPath(new URL(`../../Games/${name}/src`, import.meta.url));
-const gamesDir = fileURLToPath(new URL("../../Games", import.meta.url));
+const game = (name: string) => fileURLToPath(new URL(`../../games/${name}/src`, import.meta.url));
+const gamesDir = fileURLToPath(new URL("../../games", import.meta.url));
 const registryUi = fileURLToPath(new URL("../../registry/jgengine", import.meta.url));
 
 const gameAliases = readdirSync(gamesDir, { withFileTypes: true })

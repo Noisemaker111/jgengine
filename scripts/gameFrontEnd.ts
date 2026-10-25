@@ -22,7 +22,7 @@ const REQUIREMENTS = [
     // `CreditsPane` is the game menu's own detail pane (#2317). A game that puts credits in the menu
     // the engine ships has shipped credits, and 0.38.4's pin saw Deepward reported as having none.
     pattern: /CreditsScreen|CreditsPanel|CreditsPane|creditsFor(?:Source|Asset)Ids|creditsForSources|<Credits\b/,
-    fix: "add a credits screen - `creditsForSourceIds(ids)` generates the asset attribution, `CreditsPane` in a `GameMenu` detail slot or `CreditsScreen` renders it; see `Games/wreckway`",
+    fix: "add a credits screen - `creditsForSourceIds(ids)` generates the asset attribution, `CreditsPane` in a `GameMenu` detail slot or `CreditsScreen` renders it; see `games/wreckway`",
   },
 ] as const;
 
@@ -35,7 +35,7 @@ export function findFrontEndGaps(root: string, games?: readonly string[]): Ratch
     byGame.set(game, `${byGame.get(game) ?? ""}\n${source}`);
   }
 
-  const gamesDir = join(root, "Games");
+  const gamesDir = join(root, "games");
   if (!existsSync(gamesDir)) return [];
   const gaps: RatchetFinding[] = [];
   let folders: string[];
@@ -54,7 +54,7 @@ export function findFrontEndGaps(root: string, games?: readonly string[]): Ratch
     const source = byGame.get(game) ?? "";
     for (const requirement of REQUIREMENTS) {
       if (requirement.pattern.test(source)) continue;
-      gaps.push({ key: `${game}#${requirement.id}`, where: `Games/${game} — no ${requirement.id}: ${requirement.fix}` });
+      gaps.push({ key: `${game}#${requirement.id}`, where: `games/${game} — no ${requirement.id}: ${requirement.fix}` });
     }
   }
   return gaps.sort((a, b) => a.key.localeCompare(b.key));

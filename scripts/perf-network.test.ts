@@ -21,7 +21,7 @@ test("no game is an error, not a silent empty run", () => {
   expect(() => parseArgs([])).toThrow("a game id is required");
 });
 
-test("--url measures a deployed base without needing the game in Games/", () => {
+test("--url measures a deployed base without needing the game in games/", () => {
   const args = parseArgs(["deepward", "--url", "https://jgengine.com/play/"]);
   expect(args.url).toBe("https://jgengine.com/play/");
 });

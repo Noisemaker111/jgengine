@@ -1,0 +1,240 @@
+{
+  "steps": [
+    {
+      "wait": 2000
+    },
+    {
+      "key": "KeyE",
+      "ms": 120,
+      "after": {
+        "is": "__jgProbe().planted >= 1",
+        "timeoutMs": 4000
+      },
+      "note": "plant the plot in front"
+    },
+    {
+      "key": "KeyA",
+      "ms": 300
+    },
+    {
+      "wait": 500
+    },
+    {
+      "key": "KeyE",
+      "ms": 120,
+      "note": "the next plot"
+    },
+    {
+      "key": "KeyD",
+      "ms": 800
+    },
+    {
+      "wait": 500
+    },
+    {
+      "key": "KeyE",
+      "ms": 120,
+      "after": {
+        "is": "__jgProbe().planted >= 3",
+        "timeoutMs": 4000
+      },
+      "note": "and the one after"
+    },
+    {
+      "wait": 800
+    },
+    {
+      "rpc": {
+        "method": "time_scale",
+        "scale": 30
+      },
+      "note": "the morning runs by"
+    },
+    {
+      "assert": "__jgProbe().ripe >= 3",
+      "before": {
+        "is": "__jgProbe().ripe >= 3",
+        "timeoutMs": 30000
+      }
+    },
+    {
+      "rpc": {
+        "method": "time_scale",
+        "scale": 1
+      }
+    },
+    {
+      "wait": 700
+    },
+    {
+      "key": "KeyE",
+      "ms": 120,
+      "note": "harvest"
+    },
+    {
+      "key": "KeyA",
+      "ms": 300
+    },
+    {
+      "wait": 500
+    },
+    {
+      "key": "KeyE",
+      "ms": 120
+    },
+    {
+      "key": "KeyA",
+      "ms": 300
+    },
+    {
+      "wait": 500
+    },
+    {
+      "key": "KeyE",
+      "ms": 120,
+      "after": {
+        "is": "__jgProbe().harvested >= 3",
+        "timeoutMs": 4000
+      }
+    },
+    {
+      "key": "KeyD",
+      "ms": 600,
+      "note": "back toward the stall"
+    },
+    {
+      "wait": 600
+    },
+    {
+      "key": "KeyE",
+      "ms": 120,
+      "after": {
+        "is": "__jgProbe().shipped >= 3",
+        "timeoutMs": 4000
+      },
+      "note": "sell at the fish cart"
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "travel",
+        "input": {
+          "sign": "sign-water"
+        }
+      },
+      "note": "down the road to the bay"
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "key": "KeyE",
+      "ms": 120,
+      "note": "cast"
+    },
+    {
+      "assert": "__jgProbe().fishing === 2",
+      "before": {
+        "is": "__jgProbe().fishing === 2",
+        "timeoutMs": 9000
+      },
+      "note": "a bite"
+    },
+    {
+      "assert": "__jgProbe().inZone > 0",
+      "before": {
+        "is": "__jgProbe().inZone > 0",
+        "timeoutMs": 3000
+      }
+    },
+    {
+      "key": "KeyE",
+      "ms": 80,
+      "after": {
+        "is": "__jgProbe().caught >= 1",
+        "timeoutMs": 2000
+      },
+      "note": "reel in on the green"
+    },
+    {
+      "wait": 2200
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "travel",
+        "input": {
+          "sign": "sign-home-water"
+        }
+      },
+      "note": "home along the road"
+    },
+    {
+      "wait": 600
+    },
+    {
+      "key": "KeyE",
+      "ms": 120,
+      "after": {
+        "is": "__jgProbe().carrying === 0",
+        "timeoutMs": 4000
+      },
+      "note": "sell the catch"
+    },
+    {
+      "wait": 1200
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "travel",
+        "input": {
+          "sign": "sign-market"
+        }
+      },
+      "note": "to the harbor market"
+    },
+    {
+      "wait": 1800
+    },
+    {
+      "key": "Digit1",
+      "ms": 120,
+      "note": "buy cabbage seeds"
+    },
+    {
+      "wait": 2000
+    },
+    {
+      "rpc": {
+        "method": "run_command",
+        "name": "travel",
+        "input": {
+          "sign": "sign-home-market"
+        }
+      }
+    },
+    {
+      "wait": 400
+    },
+    {
+      "key": "KeyE",
+      "ms": 120,
+      "after": {
+        "is": "__jgProbe().day >= 2",
+        "timeoutMs": 4000
+      },
+      "note": "sleep: the day ends and saves"
+    },
+    {
+      "wait": 3000
+    },
+    {
+      "assert": "__jgProbe().harvested >= 3 && __jgProbe().caught >= 1 && __jgProbe().day >= 2",
+      "note": "arrival: a full day on camera"
+    }
+  ]
+}

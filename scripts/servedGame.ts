@@ -1,19 +1,19 @@
 /**
- * `--game-dir <path>` serves one game from a checkout outside this repo's `Games/`:
+ * `--game-dir <path>` serves one game from a checkout outside this repo's `games/`:
  *
- *   bun run shoot harbor-heat --game-dir ../jgengine-games/.claude/worktrees/lane/harbor-heat
+ *   bun run shoot harbor-heat --game-dir ../other-checkout/games/harbor-heat
  *
  * Everything that makes the dev-runner path worth using still holds: Vite aliases `@jgengine/*` to
  * this checkout's source (so the engine line names what renders), `--state`, `--view` and the
  * capture handshake come from the same runner app, and the game's own style, editor scene and
- * preview load from that directory. Without the flag nothing changes and `Games/<game>` is served.
+ * preview load from that directory. Without the flag nothing changes and `games/<game>` is served.
  */
 import { existsSync, statSync } from "node:fs";
-import { basename, dirname, resolve } from "node:path";
+import { basename, resolve } from "node:path";
 
 export const GAME_DIR_FLAG = "--game-dir";
 
-/** The game directory this run serves, or null when the dev runner serves `Games/<game>`. */
+/** The game directory this run serves, or null when the dev runner serves `games/<game>`. */
 export function servedGameDir(): string | null {
   const raw = process.env["JG_GAME_DIR"];
   return raw === undefined || raw.trim() === "" ? null : resolve(raw);
@@ -27,7 +27,7 @@ export interface GameDirOption {
 
 /**
  * Pull `--game-dir` out of argv before the shared capture parser sees it. The flag stays engine-only
- * because the portable harness has no `Games/` to swap and no second checkout to point at.
+ * because the portable harness has no `games/` to swap and no second checkout to point at.
  */
 export function splitGameDir(argv: string[]): GameDirOption {
   const rest: string[] = [];
@@ -68,9 +68,6 @@ export function serveGameDir(dir: string, game: string | undefined): string {
   }
   process.env["JG_GAME_DIR"] = resolved;
   process.env["VITE_JG_GAME_DIR"] = resolved.replace(/\\/g, "/");
-  // The identity line compares the served engine with the pin of the games checkout this game
-  // belongs to, which is the folder above it, not this repo's `Games/`.
-  process.env["JG_GAMES_DIR"] = dirname(resolved);
   return resolved;
 }
 

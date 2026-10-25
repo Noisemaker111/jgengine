@@ -17,7 +17,8 @@ export const EXIT_FAIL = 1;
 
 /** Programs that run another command as their argument: `--help` cannot reach the inner one. */
 const WRAPPERS = new Set(["guard.ts", "ensure-ready.ts", "agent-bootstrap.ts"]);
-const SCRIPT_FILE = /scripts\/([A-Za-z0-9_./-]+\.(?:ts|mjs|js))/g;
+/** The repo's own `scripts/`; `games/scripts/` belongs to the games and is not this check's. */
+const SCRIPT_FILE = /(?<![\w./-])scripts\/([A-Za-z0-9_./-]+\.(?:ts|mjs|js))/g;
 const BASELINE = "scripts/script-help-baseline.json";
 const DEFAULT_TIMEOUT_MS = 20_000;
 

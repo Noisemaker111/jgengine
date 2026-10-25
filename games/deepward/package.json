@@ -1,0 +1,37 @@
+{
+  "name": "@games/deepward",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/game.tsx",
+    "./*": "./src/*"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "check-types": "tsgo --noEmit -p tsconfig.json",
+    "test": "bun test src/game"
+  },
+  "dependencies": {
+    "@jgengine/assets": "workspace:*",
+    "@jgengine/core": "workspace:*",
+    "@jgengine/editor": "workspace:*",
+    "@jgengine/react": "workspace:*",
+    "@jgengine/shell": "workspace:*",
+    "@react-three/fiber": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "three": "catalog:"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@types/three": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "tailwindcss": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:"
+  }
+}

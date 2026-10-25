@@ -83,7 +83,7 @@ export function registerRootGameScript(rootDir: string, id: string, folderName: 
   const entries = Object.entries(scripts);
   const games = entries.filter(([k]) => k.startsWith("games:"));
   const rest = entries.filter(([k]) => !k.startsWith("games:"));
-  games.push([key, `bun run --cwd Games/${folderName} dev`]);
+  games.push([key, `bun run --cwd games/${folderName} dev`]);
   games.sort(([a], [b]) => a.localeCompare(b));
   root.scripts = Object.fromEntries([...rest, ...games]);
   writeFileSync(rootPackagePath, `${JSON.stringify(root, null, 2)}\n`);
@@ -253,18 +253,18 @@ export function runCreate(argv: string[]): number {
     if (variant === "in-repo") {
       if (!insideEngineRepo || workspaceRoot === null) {
         console.error(
-          "error: --in-repo requires the jgengine engine monorepo (packages/core + Games/)",
+          "error: --in-repo requires the jgengine engine monorepo (packages/core + games/)",
         );
         return 1;
       }
       if (parentHint === null) {
-        parentDir = join(workspaceRoot, "Games");
+        parentDir = join(workspaceRoot, "games");
         targetDir = join(parentDir, folderName);
       }
-      const gamesDir = join(workspaceRoot, "Games");
+      const gamesDir = join(workspaceRoot, "games");
       if (!isInsideDir(targetDir, gamesDir)) {
         console.error(
-          `error: in-repo games must live under Games/ (got ${targetDir}; expected under ${gamesDir})`,
+          `error: in-repo games must live under games/ (got ${targetDir}; expected under ${gamesDir})`,
         );
         return 1;
       }

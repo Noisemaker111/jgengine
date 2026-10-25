@@ -1,5 +1,5 @@
 declare module "virtual:jgengine-games" {
-  /** Directory names under Games/* with a src/index.tsx entry, sorted. */
+  /** Directory names under games/* with a src/index.tsx entry, sorted. */
   export const GAME_IDS: readonly string[];
 
   /** Per-game attribution parsed from each game's `export const credit`, keyed by game id. */
@@ -7,7 +7,7 @@ declare module "virtual:jgengine-games" {
     Record<string, { readonly text: string; readonly url?: string; readonly handle?: string }>
   >;
 
-  /** Title + one-line description per game id from the games repo README table. */
+  /** Title + one-line description per game id from the games/README.md table. */
   export const GAME_META: Readonly<Record<string, { readonly title: string; readonly blurb: string }>>;
 
   /** Game ids with a committed `public/covers/<id>.webp` cover. */

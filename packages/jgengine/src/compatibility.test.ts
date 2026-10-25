@@ -15,7 +15,7 @@ test("downgrades account for release candidates, numeric prereleases, and build 
 test("installed SDK identities follow hoisted dependencies and ignore the independent github tool", () => {
   const root = mkdtempSync(join(tmpdir(), "jgengine-sdk-identity-"));
   try {
-    const project = join(root, "Games", "example");
+    const project = join(root, "games", "example");
     mkdirSync(project, { recursive: true });
     writeFileSync(join(project, "package.json"), JSON.stringify({ dependencies: {
       "@jgengine/core": "workspace:*", "@jgengine/github": "^1.0.0", "@jgengine/shell": "^0.19.0",

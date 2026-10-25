@@ -7,8 +7,8 @@
  * inside another worktree. Branch: agent/<name> or the second argument, from origin/beta.
  *
  * Ready means: dependencies linked from the main checkout when bun.lock matches
- * (otherwise `bun install --frozen-lockfile`), `Games` and the dev runner's
- * gitignored public assets linked, and a clean `git status`. No build is needed:
+ * (otherwise `bun install --frozen-lockfile`), the gitignored public assets of the
+ * dev runner and the games linked, and a clean `git status`. No build is needed:
  * tests and type-checks resolve `@jgengine/*` to source (scripts/sourcePaths.ts).
  *
  * `claude --worktree` and a bare `git worktree add` skip all of that, so
@@ -18,12 +18,10 @@
 import { cpSync, existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, realpathSync, symlinkSync, unlinkSync } from "node:fs";
 import { dirname, join, resolve, sep } from "node:path";
 
-import { gamesCheckout, gamesCheckoutLine } from "./games-scope";
-
 export const NAME_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9._-]{0,63}$/;
 
 /** Workspace roots whose per-package node_modules hold the isolated linker's symlinks. */
-const WORKSPACE_GROUPS = ["packages", "apps", "examples"];
+const WORKSPACE_GROUPS = ["packages", "apps", "examples", "games", "games/llmville/packages"];
 
 /** Bundler caches that belong to one checkout and must not be shared. */
 const SKIPPED_CACHE = /^\.vite/;
@@ -97,17 +95,15 @@ export function linkDeps(mainRoot: string, target: string): string[] {
 }
 
 /**
- * Gitignored content the dev runner reads from the main checkout: the cloned
- * `Games` tree and pulled-in public assets (e.g. apps/dev/public/models/<pack>).
- * A worktree shares the main checkout's single Games clone, so its commit is
- * reported too: every game gate reads that one tree (#2217, #2228).
+ * Gitignored content the main checkout pulled once: public assets under apps/dev and under each
+ * game (models, materials and sprites from `assets pull`).
  * `ignored` is `git ls-files --others --ignored --exclude-standard --directory` output.
  */
 export function assetLinks(mainRoot: string, ignored: string[]): string[] {
-  const links = existsSync(join(mainRoot, "Games")) ? ["Games"] : [];
+  const links: string[] = [];
   for (const line of ignored) {
     const rel = line.replace(/\/$/, "");
-    if (/^apps\/dev\/public\/.+/.test(rel)) links.push(rel);
+    if (/^(?:apps\/dev|games\/[^/]+)\/public\/.+/.test(rel)) links.push(rel);
   }
   return links;
 }
@@ -183,7 +179,7 @@ function installed(target: string): boolean {
 
 /**
  * Make any tree usable: dependencies (linked from the main checkout when the
- * locks match, else installed) plus the `Games` and dev-runner asset links.
+ * locks match, else installed) plus the pulled asset links.
  *
  * Idempotent and cheap when repeated: the already-ready path costs a few
  * `existsSync` calls and no process spawn, so `ensure-ready` can call this on
@@ -194,8 +190,7 @@ export function ensureWorktreeReady(cwd: string, options: WorktreeReadyOptions =
   if (mainRoot === null || realpathSync(mainRoot) === realpathSync(cwd)) return null;
 
   const needsDeps = !installed(cwd);
-  const needsGames = existsSync(join(mainRoot, "Games")) && !existsSync(join(cwd, "Games"));
-  if (!needsDeps && !needsGames) return { mainRoot, deps: [], assets: [], installed: false, unchanged: true };
+  if (!needsDeps) return { mainRoot, deps: [], assets: [], installed: false, unchanged: true };
 
   const result: WorktreeReadiness = { mainRoot, deps: [], assets: [], installed: false, unchanged: false };
   if (needsDeps) {
@@ -294,15 +289,8 @@ if (import.meta.main) {
   if (readiness.deps.length > 0) did.push(`linked ${readiness.deps.length} node_modules from the main checkout`);
   if (readiness.assets.length > 0) did.push(`linked ${readiness.assets.join(", ")}`);
   console.log(
-    `agent-worktree: ready in ${seconds}s — ${did.length > 0 ? did.join("; ") : "already set up (deps, Games, assets present; nothing changed)"}`,
+    `agent-worktree: ready in ${seconds}s — ${did.length > 0 ? did.join("; ") : "already set up (deps and assets present; nothing changed)"}`,
   );
 
-  const checkout = gamesCheckout(target);
-  const gamesLine = gamesCheckoutLine("agent-worktree", checkout);
-  if (checkout.state === "at-pin" || checkout.state === "override" || checkout.state === "no-pin") {
-    console.log(gamesLine);
-  } else {
-    console.warn(`${gamesLine}\nagent-worktree: the game gates fail until the main checkout is at the pin — \`bun run games:clone\` in ${mainRoot}`);
-  }
   console.log(`agent-worktree: work in ${target} on ${branch}; tests run from source, no build needed`);
 }

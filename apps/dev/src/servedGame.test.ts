@@ -4,9 +4,9 @@ import { engineCopySources, servedGameFrom } from "./servedGame";
 
 describe("engineCopySources", () => {
   const paths = [
-    "../../../Games/deepward/src/index.tsx",
-    "../../../Games/deepward/src/ui/Hud.tsx",
-    "../../../Games/harbor-heat/src/index.tsx",
+    "../../../games/deepward/src/index.tsx",
+    "../../../games/deepward/src/ui/Hud.tsx",
+    "../../../games/harbor-heat/src/index.tsx",
   ];
 
   test("a served game imports none of the engine's copy, so its stale style.css never loads", () => {

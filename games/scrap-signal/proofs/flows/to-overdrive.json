@@ -1,0 +1,84 @@
+{
+  "steps": [
+    {
+      "waitFor": "document.body.innerText.toLowerCase().includes('overdrive the wreck')",
+      "note": "arrival (run with --state overdrive): the console at the wreck lists the ladder, seven tiers cleared, and tier VIII's brief"
+    },
+    {
+      "shot": "overdrive-console"
+    },
+    {
+      "click": "Overdrive the wreck",
+      "note": "the console's own start button"
+    },
+    {
+      "waitFor": "document.body.innerText.toLowerCase().includes('wave 1 / 4')",
+      "note": "arrival: the run card is live on the rig with its clock, wave and mutators"
+    },
+    {
+      "clickAt": [
+        800,
+        450
+      ],
+      "note": "capture the pointer and open fire"
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "look": [
+        -60,
+        0
+      ]
+    },
+    {
+      "clickAt": [
+        800,
+        450
+      ]
+    },
+    {
+      "wait": 1200
+    },
+    {
+      "clickAt": [
+        800,
+        450
+      ]
+    },
+    {
+      "wait": 1500
+    },
+    {
+      "look": [
+        120,
+        0
+      ]
+    },
+    {
+      "clickAt": [
+        800,
+        450
+      ]
+    },
+    {
+      "wait": 1200
+    },
+    {
+      "clickAt": [
+        800,
+        450
+      ]
+    },
+    {
+      "wait": 2000
+    },
+    {
+      "shot": "overdrive-fight"
+    },
+    {
+      "assert": "document.body.innerText.toLowerCase().includes('overdrive viii')",
+      "note": "the run card still names the tier: the run is live, not lost"
+    }
+  ]
+}

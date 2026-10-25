@@ -1,0 +1,76 @@
+{
+  "steps": [
+    {
+      "assert": "/A fresh start/i.test(document.body.innerText)",
+      "before": {
+        "is": "/A fresh start/i.test(document.body.innerText)",
+        "timeoutMs": 60000
+      },
+      "note": "arrival: a day is running and the first request started by itself"
+    },
+    {
+      "key": "KeyE",
+      "ms": 120,
+      "after": {
+        "is": "__jgProbe().planted >= 1",
+        "timeoutMs": 8000
+      },
+      "note": "plant turnip in the plot in front of you"
+    },
+    {
+      "assert": "__jgProbe().coins === 26",
+      "note": "the seed was paid for"
+    },
+    {
+      "rpc": {
+        "method": "time_scale",
+        "scale": 24
+      },
+      "note": "run the in-world clock fast, as a night's sleep does, so the crop grows"
+    },
+    {
+      "assert": "__jgProbe().ripe >= 1",
+      "before": {
+        "is": "__jgProbe().ripe >= 1",
+        "timeoutMs": 60000
+      },
+      "note": "arrival: the turnip ripened on the clock"
+    },
+    {
+      "rpc": {
+        "method": "time_scale",
+        "scale": 1
+      }
+    },
+    {
+      "key": "KeyE",
+      "ms": 120,
+      "after": {
+        "is": "__jgProbe().harvested >= 1 && __jgProbe().carrying > 0",
+        "timeoutMs": 8000
+      },
+      "note": "harvest it into the basket"
+    },
+    {
+      "key": "KeyE",
+      "ms": 120,
+      "after": {
+        "is": "__jgProbe().shipped >= 1",
+        "timeoutMs": 8000
+      },
+      "note": "sell the basket at the fish cart at your shoulder"
+    },
+    {
+      "assert": "__jgProbe().coins > 30",
+      "note": "arrival: the sale paid more than the seed cost"
+    },
+    {
+      "assert": "/Something for the pot/i.test(document.body.innerText)",
+      "before": {
+        "is": "/Something for the pot/i.test(document.body.innerText)",
+        "timeoutMs": 15000
+      },
+      "note": "arrival: the first request is done and the next one is up"
+    }
+  ]
+}

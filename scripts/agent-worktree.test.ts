@@ -61,24 +61,23 @@ describe("linking a worktree to the main checkout", () => {
     expect(linkDeps(main, target)).toEqual([]);
   });
 
-  test("links Games and ignored dev-runner assets, never tracked or non-public paths", () => {
-    mkdirSync(join(main, "Games", "beacon"), { recursive: true });
+  test("links ignored dev-runner and game assets, never tracked or non-public paths", () => {
     mkdirSync(join(main, "apps", "dev", "public", "models", "pack"), { recursive: true });
-    const links = assetLinks(main, ["apps/dev/public/models/pack/", "apps/dev/node_modules/", "apps/web/public/r/"]);
-    expect(links).toEqual(["Games", "apps/dev/public/models/pack"]);
+    mkdirSync(join(main, "games", "beacon", "public", "models", "pack"), { recursive: true });
+    const links = assetLinks(main, ["apps/dev/public/models/pack/", "games/beacon/public/models/pack/", "apps/dev/node_modules/", "apps/web/public/r/", "games/beacon/node_modules/"]);
+    expect(links).toEqual(["apps/dev/public/models/pack", "games/beacon/public/models/pack"]);
     expect(linkAssets(main, target, links)).toEqual(links);
-    expect(lstatSync(join(target, "Games")).isSymbolicLink()).toBe(true);
-    expect(realpathSync(join(target, "apps/dev/public/models/pack"))).toBe(realpathSync(join(main, "apps/dev/public/models/pack")));
+    expect(realpathSync(join(target, "games/beacon/public/models/pack"))).toBe(realpathSync(join(main, "games/beacon/public/models/pack")));
     expect(linkAssets(main, target, links)).toEqual([]);
   });
 
-  test("relinks a dangling Games junction instead of leaving the tree unusable", () => {
-    mkdirSync(join(main, "Games", "beacon"), { recursive: true });
-    mkdirSync(join(target, "Games"), { recursive: true });
-    rmSync(join(target, "Games"), { recursive: true, force: true });
-    symlinkSync(join(main, "gone-checkout"), join(target, "Games"), "junction");
-    expect(linkAssets(main, target, ["Games"])).toEqual(["Games"]);
-    expect(realpathSync(join(target, "Games"))).toBe(realpathSync(join(main, "Games")));
+  test("relinks a dangling asset junction instead of leaving the tree unusable", () => {
+    const rel = "apps/dev/public/models/pack";
+    mkdirSync(join(main, rel), { recursive: true });
+    mkdirSync(join(target, "apps", "dev", "public", "models"), { recursive: true });
+    symlinkSync(join(main, "gone-checkout"), join(target, rel), "junction");
+    expect(linkAssets(main, target, [rel])).toEqual([rel]);
+    expect(realpathSync(join(target, rel))).toBe(realpathSync(join(main, rel)));
   });
 });
 
@@ -101,7 +100,6 @@ describe("readiness for a worktree nobody linked", () => {
     }
     write(join(main, "node_modules", ".bin", "tsgo"));
     mkdirSync(join(main, ".git", "worktrees", "wt"), { recursive: true });
-    mkdirSync(join(main, "Games", "beacon", "src"), { recursive: true });
     mkdirSync(join(main, "apps", "dev", "public", "models", "pack"), { recursive: true });
     // `git worktree add` writes `.git` as a file; that is the only marker this needs.
     write(join(target, ".git"), `gitdir: ${join(main, ".git", "worktrees", "wt")}\n`);
@@ -120,11 +118,10 @@ describe("readiness for a worktree nobody linked", () => {
     expect(mainCheckoutRoot(join(base, "plain"))).toBeNull();
   });
 
-  test("a bare worktree gets dependencies and the Games link, and a second call changes nothing", () => {
+  test("a bare worktree gets dependencies and the asset links, and a second call changes nothing", () => {
     const first = ensureWorktreeReady(target, { ignored });
-    expect(first).toMatchObject({ installed: false, unchanged: false, assets: ["Games", "apps/dev/public/models/pack"] });
+    expect(first).toMatchObject({ installed: false, unchanged: false, assets: ["apps/dev/public/models/pack"] });
     expect(existsSync(join(target, "node_modules", ".bin", "tsgo"))).toBe(true);
-    expect(realpathSync(join(target, "Games"))).toBe(realpathSync(join(main, "Games")));
     expect(realpathSync(join(target, "apps/dev/public/models/pack"))).toBe(realpathSync(join(main, "apps/dev/public/models/pack")));
 
     const second = ensureWorktreeReady(target, { ignored: () => { throw new Error("second call must not list ignored files"); } });
@@ -147,7 +144,6 @@ describe("readiness for a worktree nobody linked", () => {
     });
     expect(installed).toBe(1);
     expect(result).toMatchObject({ installed: true, deps: [] });
-    expect(realpathSync(join(target, "Games"))).toBe(realpathSync(join(main, "Games")));
   });
 
   test("the main checkout itself is left alone", () => {

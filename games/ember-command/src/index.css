@@ -1,0 +1,4 @@
+@import "tailwindcss";
+@import "./style.css";
+@source "../node_modules/@jgengine/react/dist";
+@source "../node_modules/@jgengine/shell/dist";

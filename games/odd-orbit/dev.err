@@ -1,0 +1,2 @@
+$ vite --port "5391" --strictPort --host "127.0.0.1"
+ exited with code 255

@@ -1,0 +1,30 @@
+{ "steps": [
+  { "assert": "(() => { const pick = [...document.querySelectorAll('button')].find((el) => /^gunk/i.test(el.innerText.trim())); pick?.click(); return true; })()",
+    "note": "start the run: a fresh profile opens on character select (pick Gunk); a resumed one is already in the field" },
+
+  { "waitFor": "window.__jgengineAgent.handle({ method: 'player_pose' }).ok === true",
+    "before": { "is": "window.__jgengineAgent?.handle({ method: 'player_pose' }).ok === true", "timeoutMs": 60000 },
+    "note": "the chassis is standing in Rustflat Waste" },
+
+  { "clickAt": [800, 450],
+    "note": "capture the pointer; the first shot also tells the dev capture where the crosshair points" },
+
+  { "assert": "(() => { window.__jgengineAgent.handle({ method: 'run_command', name: 'perks.capture', input: { legendary: 'Chatterbox', husks: 0 } }); return true; })()",
+    "note": "dev-only capture: a Chatterbox (red-text Won't Shut Up: kills stack +10% damage, 5 high) goes into the held slot" },
+
+  { "waitFor": "/Won't Shut Up/i.test(document.querySelector('.ss-scan')?.innerText ?? '')",
+    "note": "arrival: the pickup scan shows the signature perk, its flavor line and the boss that drops it" },
+
+  { "shot": "perk-card" },
+
+  { "clickAt": [800, 450],
+    "note": "one more aimed shot, so the husks stand down the live crosshair" },
+
+  { "assert": "(() => { window.__jgengineAgent.handle({ method: 'run_command', name: 'perks.capture', input: { legendary: 'Chatterbox', husks: 3 } }); return true; })()",
+    "note": "three husks walk in down the line of fire, staggered" },
+
+  { "key": "mouse0", "ms": 400, "until": { "is": "/CHATTER x[2-5]/i.test(document.querySelector('.ss-perk-buffs')?.innerText ?? '')", "timeoutMs": 20000 },
+    "note": "hold the trigger until two kills have stacked the perk: the buff stamp under the magazine reads CHATTER x2" },
+
+  { "shot": "perk-proc" }
+] }

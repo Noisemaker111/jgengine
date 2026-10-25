@@ -4,11 +4,9 @@ import { join, relative } from "node:path";
 import { isGameSourceFile } from "../packages/jgengine/src/gameShape";
 
 /** Every non-test `.ts`/`.tsx` under each game's `src`, as repo-relative paths with their source.
- * Games now live in Noisemaker111/JGengine-games and are cloned at build time into ephemeral ./Games.
- * When the directory is absent (fresh engine checkout with no clone), return no sources rather than throwing.
- * Pass `games` to scan only those (the reference set); omitted scans every game folder the clone has. */
+ * Pass `games` to scan only those (the reference set); omitted scans every game folder. */
 export function eachGameSource(root: string, games?: readonly string[]): { rel: string; source: string }[] {
-  const gamesDir = join(root, "Games");
+  const gamesDir = join(root, "games");
   const files: { rel: string; source: string }[] = [];
 
   const walk = (dir: string): void => {

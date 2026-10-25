@@ -47,11 +47,6 @@ packages/*/skills/
 # Painted material maps a demo pulls with `assets pull library` (~360 MB for the whole library).
 apps/dev/public/library-materials/
 
-# Games are now in the separate Noisemaker111/JGengine-games repo.
-# The website clones them at build time into ephemeral ./Games (see scripts/ensure-games.ts).
-# Committed Games/* was removed — keep the directory gitignored so a local clone does not look dirty.
-# No trailing slash, so a worktree's Games symlink is ignored too.
-/Games
 
 # agent-bootstrap concurrency guard (never race two bun installs),
 # hook-spawned background log, and killed-install detection marker

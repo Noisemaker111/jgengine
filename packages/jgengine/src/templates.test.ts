@@ -52,7 +52,7 @@ const THIN_FILES = [
 /** The default set: the thin skeleton plus the world scaffold, which is now on unless --no-world. */
 const WORLD_FILES = [...THIN_FILES, "src/world.ts", "src/game/assets.ts", "src/game/models.ts"];
 
-describe("gameTemplate canonical shape (mirrors check-game-shape)", () => {
+describe("gameTemplate canonical shape (mirrors gameShape.ts)", () => {
   for (const variant of ["standalone", "in-repo"] as const) {
     test(`${variant}: default is the editor-first file set plus the world scaffold`, () => {
       expect(render(variant).map((file) => file.path).sort()).toEqual([...WORLD_FILES].sort());
@@ -171,7 +171,7 @@ describe("gameTemplate canonical shape (mirrors check-game-shape)", () => {
     });
   }
 
-  test("in-repo: tsconfig paths match the exact map check-game-shape requires", () => {
+  test("in-repo: tsconfig paths match the exact map doctor requires", () => {
     const tsconfig = JSON.parse(fileOf(render("in-repo"), "tsconfig.json")) as {
       compilerOptions: { paths: Record<string, string[]> };
     };

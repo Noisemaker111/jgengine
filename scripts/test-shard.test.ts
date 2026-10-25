@@ -57,22 +57,15 @@ test("the core suite and the scripts suite stay out of one shard", () => {
   expect(core.name).not.toBe(scripts.name);
 });
 
-test("the shard that reads Games is the shard that clones it, and the built gate is one shard", () => {
-  for (const file of ["scripts/cutlistSurface.test.ts", "packages/editor/src/mcp/loadGameLayers.test.ts"]) {
-    const shard = matchingShard(file)!;
-    expect(shard.needs ?? []).toContain("games");
-  }
+test("the built gate is one shard", () => {
   const scripts = matchingShard("scripts/cutlistSurface.test.ts")!;
   expect(scripts.include).toContain("scripts");
-  expect(preparation(scripts)).toEqual([
-    ["run", "build"],
-    ["run", "games:clone"],
-  ]);
+  expect(preparation(scripts)).toEqual([["run", "build"]]);
   expect(preparation({ name: "bare", label: "bare", include: [] })).toEqual([]);
 });
 
 test("the roots are the directories CI tests", () => {
-  expect([...TEST_ROOTS]).toEqual(["packages", "apps/dev", "scripts"]);
+  expect([...TEST_ROOTS]).toEqual(["packages", "apps/dev", "apps/web", "apps/desktop", "scripts"]);
 });
 
 /** The `shard:` list under `test:` in ci.yml, which is the only shard fact CI keeps. */

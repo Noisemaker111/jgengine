@@ -1,3 +1,4 @@
 [
-  "Games/ember-command/src/game/ui/kit/MapArt.tsx"
+  "games/deepward/src/game/fixtureArt.tsx",
+  "games/ember-command/src/game/ui/kit/MapArt.tsx"
 ]
