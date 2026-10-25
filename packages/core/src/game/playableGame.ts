@@ -331,8 +331,8 @@ export interface ModelConfig {  url: string;
    * A model resolved from a catalog id whose index carries `clips` animates automatically —
    * semantic clip roles build the idle/walk/run states and hit/death/attack one-shots (see
    * `defaultAnimationForClips`). `"auto"` forces that derivation, `"none"` opts out (bind pose),
-   * and an explicit config always wins. Omit on an inline (non-catalog) config to render the
-   * rig's bind pose.
+   * and an explicit config always wins. Omitted on a live entity it behaves as `"auto"`, so a rig
+   * with an identifiable idle clip never stands in its bind pose; previews keep the bind pose.
    */
   animation?: ModelAnimationConfig | "auto" | "none";
   /**
@@ -340,9 +340,11 @@ export interface ModelConfig {  url: string;
    * Feet follow slopes and steps while keeping each clip's swing lift, soles never sink below the
    * ground, the pelvis drops so the lower leg can reach, and the correction fades out while airborne.
    * `"auto"` finds the legs by bone name (`UpLeg`, `UpperLeg`, `Thigh`); bone names resolve on the
-   * loaded scene.
+   * loaded scene. Unset on a live entity, the shell runs `"auto"` feet plus a head turn toward the
+   * local player within a few metres, on every graphics tier but `low`, near the camera and until the
+   * entity dies. `"none"` turns all of it off.
    */
-  ik?: "auto" | ModelIkConfig;
+  ik?: "auto" | "none" | ModelIkConfig;
   /** Props/weapons parented to named bones on this model's rig; each follows its bone through animation. */
   attachments?: readonly ModelAttachment[];
   /** Static kit-of-parts pieces stacked at fixed local offsets — no bone/rig involved. Use this for a compound entity assembled from several modular meshes (a castle keep from base + mid + roof pieces); use `attachments` for props parented to an animated rig's bones. Tag parts with a `role` to procedurally animate a rig-less character composition. */

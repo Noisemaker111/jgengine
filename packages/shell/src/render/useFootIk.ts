@@ -8,8 +8,9 @@ import type { GameContext } from "@jgengine/core/runtime/gameContextTypes";
 import type { ModelConfig, ModelIkConfig, ModelLookAtConfig } from "@jgengine/core/game/playableGame";
 import type { SceneRaycastHit, SceneRaycastInput } from "@jgengine/core/scene/sceneRaycast";
 import { resolveRigNode } from "./rigNode";
+import { noteCharacterMotion } from "./characterLod";
 
-type FootIkConfig = NonNullable<ModelConfig["ik"]>;
+type FootIkConfig = Exclude<NonNullable<ModelConfig["ik"]>, "none">;
 type GroundProbe = (input: SceneRaycastInput) => SceneRaycastHit | null;
 
 interface IkLeg {
@@ -98,7 +99,7 @@ function isAncestor(ancestor: THREE.Object3D, child: THREE.Object3D): boolean {
  * Resolves foot-IK bones on a loaded rig: explicit chains, or legs found by bone name for `"auto"`
  * and configs without `feet`. Returns `null` when no leg resolves.
  */
-export function resolveFootIkRig(scene: THREE.Object3D, config: FootIkConfig): FootIkRig | null {
+export function resolveFootIkRig(scene: THREE.Object3D, config: FootIkConfig, quiet = false): FootIkRig | null {
   const options: ModelIkConfig = config === "auto" ? {} : config;
   const named = new Map<string, THREE.Object3D[]>();
   scene.traverse((object) => {
@@ -108,7 +109,9 @@ export function resolveFootIkRig(scene: THREE.Object3D, config: FootIkConfig): F
     else matches.push(object);
   });
   const available = [...named.keys()].filter((name) => named.get(name)!.some((object) => (object as THREE.Bone).isBone === true)).slice(0, 12).join(", ");
-  const warn = (message: string) => console.warn(`[jgengine foot IK] ${message}${available.length > 0 ? ` Available bones include: ${available}.` : ""}`);
+  const warn = (message: string) => {
+    if (!quiet) console.warn(`[jgengine foot IK] ${message}${available.length > 0 ? ` Available bones include: ${available}.` : ""}`);
+  };
   const resolve = (name: string, role: string): THREE.Object3D | null => {
     const matches = named.get(name);
     if (matches?.length === 1) return matches[0]!;
@@ -313,7 +316,9 @@ const IK_FILTER = { entities: false, objects: true, walls: false, terrain: true 
 /**
  * Runs foot IK after the model's animation mixer for `ModelConfig.ik`. Ground probes hit terrain and
  * blocking physical objects, never the model's own entity. `groundOffset` is the model-space height
- * its soles rest on (`ModelConfig.y`).
+ * its soles rest on (`ModelConfig.y`). `options.quiet` drops the rig diagnostics (the engine's own
+ * default IK on a model that never asked for it); `options.maxCameraDistance` skips characters
+ * further than that from the camera, fading their correction out.
  */
 export function useFootIk(
   scene: THREE.Object3D,
@@ -321,9 +326,12 @@ export function useFootIk(
   ctx: GameContext | null,
   instanceId?: string,
   groundOffset = 0,
+  options: { quiet?: boolean; maxCameraDistance?: number } = {},
 ): void {
   const camera = useThree((three) => three.camera);
-  const rig = useMemo(() => (config === undefined ? null : resolveFootIkRig(scene, config)), [scene, config]);
+  const quiet = options.quiet === true;
+  const maxCameraDistance = options.maxCameraDistance ?? Infinity;
+  const rig = useMemo(() => (config === undefined ? null : resolveFootIkRig(scene, config, quiet)), [scene, config, quiet]);
   const state = useRef<FootIkState>({ weight: 0, pelvis: 0 });
   const lookAtConfig = config === undefined || config === "auto" ? undefined : config.lookAt;
   const target = useRef<THREE.Vector3 | null>(null);
@@ -345,15 +353,24 @@ export function useFootIk(
     target.current = null;
     return () => {
       if (rig !== null) {
+        if (instanceId !== undefined) noteCharacterMotion(instanceId, "feet", false);
         restoreFootIkPose(rig);
         scene.updateMatrixWorld(true);
       }
     };
-  }, [rig, scene]);
+  }, [rig, scene, instanceId]);
   useFrame((_three, delta) => {
     if (rig === null || ctx === null || instanceId === undefined) return;
     const parent = scene.parent;
     const originY = parent === null ? scene.position.y : parent.localToWorld(scratch.a.set(0, groundOffset, 0)).y;
+    if (maxCameraDistance !== Infinity && camera.getWorldPosition(scratch.b).distanceTo(scene.getWorldPosition(scratch.a)) > maxCameraDistance) {
+      if (state.current.weight > 0) {
+        restoreFootIkPose(rig);
+        state.current = { weight: 0, pelvis: 0 };
+        if (rig.legs.length > 0) noteCharacterMotion(instanceId, "feet", false);
+      }
+      return;
+    }
     const aim = resolveLookAtTarget(lookAtConfig?.target, ctx, target.current, lookAtConfig?.entityEyeHeight ?? DEFAULT_EYE_HEIGHT);
     target.current = aim;
     if (aim === null) {
@@ -380,6 +397,7 @@ export function useFootIk(
       delta,
       lookAtPoint,
     );
+    if (rig.legs.length > 0) noteCharacterMotion(instanceId, "feet", state.current.weight > 0.01);
   });
 }
 

@@ -3,6 +3,7 @@ import { Component, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, 
 import * as THREE from "three";
 
 import type { EntitySpriteConfig, ModelConfig } from "@jgengine/core/game/playableGame";
+import type { GameContext } from "@jgengine/core/runtime/gameContextTypes";
 import { parseModelHiddenNodes } from "@jgengine/core/editor/modelNodeVisibility";
 import { createSpriteClipPlayer } from "@jgengine/core/render/sprite2d";
 import { reportFallbackSeam, type FallbackSeam } from "@jgengine/core/devtools/fallbackSeams";
@@ -18,6 +19,8 @@ import { applyMaterialAssignments, useModelMaterialTextures, MaterialTextureLoad
 import { useFootIk } from "./useFootIk";
 import { resolveRigNode } from "./rigNode";
 import { PartMotionRig } from "./PartMotion";
+import { useCharacterGlance } from "./characterGlance";
+import { useTerrainQuality } from "../terrain/terrainQuality";
 import { syncSpriteFrame } from "./spriteRender";
 import { singleVariantLevel, variantLevelModel } from "./singleVariantLod";
 import { applyMaterialOverride } from "../materialOverride";
@@ -341,7 +344,9 @@ export function EntityModel({
     if (triangles !== null) reportMeasuredCollisionMesh(ctx, measureTarget, measureKey, triangles);
   }, [ctx, scene, scale, positionX, positionY, positionZ, measureTarget, measureKey]);
 
-  useFootIk(scene, model.ik, ctx, instanceId, baseY);
+  const engineMotion = useEngineCharacterMotion(model, ctx, instanceId);
+  useFootIk(scene, engineMotion ? "auto" : model.ik === "none" ? undefined : model.ik, ctx, instanceId, baseY, engineMotion ? ENGINE_IK_OPTIONS : undefined);
+  useCharacterGlance(scene, engineMotion, ctx, instanceId, ENGINE_MOTION_CAMERA_DISTANCE);
 
   const paintCanvasRef = useRef<PaintCanvas | null>(null);
   const paintDrawnCountRef = useRef(0);
@@ -444,4 +449,27 @@ export function EntityModel({
       )}
     </>
   );
+}
+
+/** Characters further than this from the camera skip the engine's default foot IK and glance. */
+const ENGINE_MOTION_CAMERA_DISTANCE = 20;
+const ENGINE_IK_OPTIONS = { quiet: true, maxCameraDistance: ENGINE_MOTION_CAMERA_DISTANCE } as const;
+
+/**
+ * Whether the engine's default character motion runs on this model: foot IK on whatever legs the
+ * rig has and a head turn toward the local player. On for a live entity whose model leaves `ik`
+ * unset, off on the `low` graphics tier and once the entity has died (its death clip and any
+ * ragdoll own the pose from then on). `ik: "none"` turns it off.
+ */
+function useEngineCharacterMotion(model: ModelConfig, ctx: GameContext | null, instanceId: string | undefined): boolean {
+  const quality = useTerrainQuality();
+  const [dead, setDead] = useState(false);
+  useEffect(() => {
+    setDead(false);
+    if (ctx === null || instanceId === undefined) return;
+    return ctx.game.events.on("entity.died", (event) => {
+      if (event.instanceId === instanceId) setDead(true);
+    });
+  }, [ctx, instanceId]);
+  return model.ik === undefined && instanceId !== undefined && ctx !== null && quality !== "low" && !dead;
 }

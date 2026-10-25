@@ -1050,6 +1050,7 @@
     "./render/assetBase",
     "./render/authoredGrade",
     "./render/authoredSurfaceMaterial",
+    "./render/characterGlance",
     "./render/characterLod",
     "./render/crowdBatch",
     "./render/crowdRegistry",
