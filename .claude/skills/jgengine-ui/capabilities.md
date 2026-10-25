@@ -48,6 +48,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `actionFromAbilitySlot` (function) · `import { actionFromAbilitySlot } from "@jgengine/react"`
 
+## action-glyph — the key, pad button or tap label for an action on the device in use
+
+- `actionGlyph` (function) · `import { actionGlyph } from "@jgengine/react"`
+
 ## action-tooltip — structured action tooltip body (title, cost, cooldown, blocking notes)
 
 - `ActionTooltip` (function) · `import { ActionTooltip } from "@jgengine/react"`
@@ -490,6 +494,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `resolveRigNode` (function) · `import { resolveRigNode } from "@jgengine/shell/render/rigNode"`
 
+## input-device — which device the player last used (keyboard, gamepad, touch), live, for device-correct prompts
+
+- `useInputDevice` (function) · `import { useInputDevice } from "@jgengine/react"`
+
 ## interaction-prompt-host — screen-anchored "press E to…" callout rendering a prompt registry's active interactable — keybind cap+label, gauge hold bar, or plain label, theme- and per-prompt-accent skinnable
 
 - `InteractionPrompt` (function) · `import { InteractionPrompt } from "@jgengine/react"`
@@ -513,6 +521,46 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## kill-feed — vertical event/kill-feed ticker rendering a core event-ticker as a fading, newest-on-top stack of per-kind iconned, accent-colored rows over HudTheme tokens
 
 - `KillFeed` (function) · `import { KillFeed } from "@jgengine/react"`
+
+## kit-action-prompt — a device-correct "press X to do Y" prompt (keyboard key, pad button, tap) in the active UI kit
+
+- `KitActionPrompt` (function) · `import { KitActionPrompt } from "@jgengine/react"`
+
+## kit-banner — a phase-change banner (day, wave, run start) in the active UI kit, shown when its cue changes
+
+- `KitBanner` (function) · `import { KitBanner } from "@jgengine/react"`
+
+## kit-button — a button drawn by the active UI kit, with UI cue sounds
+
+- `KitButton` (function) · `import { KitButton } from "@jgengine/react"`
+
+## kit-menu — a verb list drawn by the active UI kit over shared menu navigation
+
+- `KitMenu` (function) · `import { KitMenu } from "@jgengine/react"`
+
+## kit-meter — a value meter (bar, segments, ring) drawn by the active UI kit
+
+- `KitMeter` (function) · `import { KitMeter } from "@jgengine/react"`
+
+## kit-minimap-frame — a minimap or radar frame drawn by the active UI kit
+
+- `KitMinimapFrame` (function) · `import { KitMinimapFrame } from "@jgengine/react"`
+
+## kit-objective — first-minute guidance in the active UI kit — goal, distance and direction, checklist, countdown with urgency warnings, idle hint, next-action prompt
+
+- `KitObjective` (function) · `import { KitObjective } from "@jgengine/react"`
+
+## kit-panel — a content surface drawn by the active UI kit, with the kit's enter/exit motion
+
+- `KitPanel` (function) · `import { KitPanel } from "@jgengine/react"`
+
+## kit-result-screen — run/day/level result screen in the active UI kit — scrim, summary, tally, keyboard/gamepad/touch choices, kit motion
+
+- `KitResultScreen` (function) · `import { KitResultScreen } from "@jgengine/react"`
+
+## kit-toast — a short message drawn by the active UI kit, with its enter/exit motion
+
+- `KitToast` (function) · `import { KitToast } from "@jgengine/react"`
 
 ## light-probes — bake an irradiance volume from authored sky, fill and lamp inputs
 
@@ -979,6 +1027,50 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## tweened-value — animate a displayed number toward its target, honouring reduced motion
 
 - `useTweenedValue` (function) · `import { useTweenedValue } from "@jgengine/react/tweenNumber"`
+
+## ui-kit-arcade — retro 8-bit arcade UI kit: stepped pixel frames, JRPG windows, depth buttons, hearts, score popups, chiptune cues
+
+- `arcadeKit` (const) · `import { arcadeKit } from "@jgengine/react"`
+
+## ui-kit-broadcast — sports broadcast UI kit — skewed slabs, score bugs, breaking-news bands, tote-board menus, shot-clock rings, wipe motion, whoosh and stinger sounds
+
+- `broadcastKit` (const) · `import { broadcastKit } from "@jgengine/react"`
+
+## ui-kit-customize — reshape a UI kit per game — tokens, swapped parts, extra CSS, motion and sounds — without losing any part
+
+- `customizeKit` (function) · `import { customizeKit } from "@jgengine/react"`
+
+## ui-kit-holo — sci-fi hologram UI kit — chamfered glass, bracket corners, hex tags, radar frames, projection motion and tone sweeps
+
+- `holoKit` (const) · `import { holoKit } from "@jgengine/react"`
+
+## ui-kit-ink — comic ink UI kit — outlines, halftone, caption tabs, speech balloons, pop motion, marker sounds
+
+- `inkKit` (const) · `import { inkKit } from "@jgengine/react"`
+
+## ui-kit-paper — paper and sticker UI kit — taped notes, ticket buttons, sticker badges, ruler meters, tag toasts, place-and-peel motion
+
+- `paperKit` (const) · `import { paperKit } from "@jgengine/react"`
+
+## ui-kit-parchment — painterly fantasy parchment UI kit — stained paper, wax seals, scroll panels, vial meters, compass rims, unfurl motion, plucked-string sounds
+
+- `parchmentKit` (const) · `import { parchmentKit } from "@jgengine/react"`
+
+## ui-kit-root — one line picks a complete UI language (shapes, type, motion, sound) for every kit part below it
+
+- `UiKitRoot` (function) · `import { UiKitRoot } from "@jgengine/react"`
+
+## ui-kit-signal — in-world signage UI kit — enamel plates, arrow and blade signs, route shields, LED departure boards, split-flap motion and clacks
+
+- `signalKit` (const) · `import { signalKit } from "@jgengine/react"`
+
+## ui-kit-terminal — brutalist phosphor terminal UI kit: double rules, ASCII meters, log toasts, scanlines, stepped reveals, square-wave beeps
+
+- `terminalKit` (const) · `import { terminalKit } from "@jgengine/react"`
+
+## ui-kits — eight complete built-in UI kits (ink, paper, parchment, terminal, holo, broadcast, arcade, signal) a game picks in one line
+
+- `UI_KITS` (const) · `import { UI_KITS } from "@jgengine/react"`
 
 ## ui-sound-cues — play click/hover/open/close/confirm/deny/notify UI sounds from any component
 

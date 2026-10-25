@@ -862,6 +862,7 @@
 - `IconTreatmentProps` (interface): interface IconTreatmentProps — Props for {@link IconTreatment}.
 - `IconsPreview` (function): function IconsPreview({ className }: { className?: string }): React.JSX.Element — Renders the school-gradient row and a treated-icon hotbar — the deterministic #1035 fixture.
 - `IdentitySource` (interface): interface IdentitySource { session: AuthSession | null; isLoading: boolean; signOut?: () => void } — ⚠ undocumented
+- `InputDevice` (type): type InputDevice = "keyboard" | "gamepad" | "touch" — The device the player last used: drives which glyph a prompt shows.
 - `InteractionPrompt` (function): function InteractionPrompt({ registry, playerPosition, theme, accentFor, keyFor, gaugeProgress, anchor = "bottom-center", zIndex = 40, className, style, }: InteractionPromptProps): ReactNode — A screen-anchored "Press E to …" interaction callout that renders the active prompt of a {@link PromptRegistry}. It subscribes to the registry and — when given `playerPosition` — re-resolves as the hero moves, showing the nearest in-range interactable and switching to a closer/higher-priority one as they cross radii. Each display kind renders as itself: a `keybind` shows a key cap plus its label ("Press [E] Open"), a `gauge` shows a hold bar filling with `gaugeProgress`, and a `label` shows plain text. Presentation only — the registry never branches on a prompt's meaning; the game colors each via `accentFor` and maps action ids to key glyphs via `keyFor`. HudTheme-skinnable through `--jg-accent` and {@link InteractionPromptTheme}.
 - `InteractionPromptAnchor` (type): type InteractionPromptAnchor = "bottom-center" | "top-center" | "center" — Where the callout sits over the scene.
 - `InteractionPromptProps` (interface): interface InteractionPromptProps — Props for {@link InteractionPrompt}.
@@ -881,6 +882,38 @@
 - `KillFeedKindStyle` (interface): interface KillFeedKindStyle — Per-`kind` styling for a kill-feed row — accent color and an optional icon.
 - `KillFeedProps` (interface): interface KillFeedProps — Props for {@link KillFeed}.
 - `KillFeedTheme` (interface): interface KillFeedTheme — Reskin tokens for {@link KillFeed}.
+- `KitActionPrompt` (function): function KitActionPrompt({ action, label, progress, tone, onActivate, fallbackGlyph, className, style }: KitActionPromptProps): ReactNode — "Press E to take the parcel", drawn by the active kit with the right glyph for the device the player is using: the bound key, the bound pad button, or a tap target on touch. Renders nothing when the action is not bound on that device and no `fallbackGlyph` is given.
+- `KitActionPromptProps` (interface): interface KitActionPromptProps — Props for {@link KitActionPrompt}.
+- `KitBanner` (function): function KitBanner({ cue, title, subtitle, tone, ms = 2400, initial = false, className, style }: KitBannerProps): ReactNode — A big moment banner in the active kit — "Day 2 · Gates open", "Wave 3", "Run started" — shown for a couple of seconds whenever `cue` changes, so phase changes read as transitions instead of a toast.
+- `KitBannerProps` (interface): interface KitBannerProps — Props for {@link KitBanner}.
+- `KitButton` (function): function KitButton({ cue, onPointerEnter, onPointerDown, onClick, disabled, ...rest }: KitButtonProps & { cue?: string }): ReactNode — The active kit's button. Hover, press and activate report to the nearest `HudInteractProvider`, so the shell's UI cues sound without wiring.
+- `KitButtonProps` (interface): interface KitButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, "type"> — A button in the kit's language. Every native button attribute passes through to the root `<button>`.
+- `KitDeadlineStage` (type): type KitDeadlineStage = "calm" | "warn" | "urgent" — How urgent a deadline is: `calm` above half, `warn` below half, `urgent` in the last stretch.
+- `KitDevice` (type): type KitDevice = "keyboard" | "gamepad" | "touch" — The input device a prompt is drawn for.
+- `KitMenu` (function): function KitMenu(props: KitMenuProps): ReactNode — The active kit's menu list. Navigation comes from `useMenuNav`.
+- `KitMenuItem` (interface): interface KitMenuItem — One verb in a {@link KitMenuProps} list.
+- `KitMenuProps` (interface): interface KitMenuProps — A list of verbs with one highlighted: title screen, pause, a choice. Navigation belongs to the host.
+- `KitMeter` (function): function KitMeter(props: KitMeterProps): ReactNode — The active kit's meter.
+- `KitMeterProps` (interface): interface KitMeterProps — A value against a maximum: health, a timer, progress.
+- `KitMinimapFrame` (function): function KitMinimapFrame(props: KitMinimapFrameProps): ReactNode — The active kit's minimap frame.
+- `KitMinimapFrameProps` (interface): interface KitMinimapFrameProps — The frame around a minimap or radar. The map itself is the child, drawn inside the frame's window.
+- `KitObjective` (function): function KitObjective({ title, eyebrow, steps, distance, bearing, deadline, urgentAt, hint, hintAfter = 12, progressKey, prompt, className, style, }: KitObjectiveProps): ReactNode — The one card that tells the player what to do next: a short goal, distance with a direction arrow, an optional checklist and countdown, and the next action as a device-correct prompt. The countdown warns before it runs out (warn tone under half, urgent tone and a cue near the end) and a hint appears when the player has been stuck for a while, so a run never fails without warning and a new player is never left guessing.
+- `KitObjectiveDeadline` (interface): interface KitObjectiveDeadline — A countdown on an objective.
+- `KitObjectiveProps` (interface): interface KitObjectiveProps — Props for {@link KitObjective}.
+- `KitObjectiveStep` (interface): interface KitObjectiveStep — One line of a {@link KitObjective} checklist.
+- `KitPanel` (function): function KitPanel({ open, ...props }: KitPanelHostProps): ReactNode — The active kit's panel. Give `open` to animate it in and out with the kit's own motion.
+- `KitPanelHostProps` (interface): interface KitPanelHostProps extends KitPanelProps — Props for {@link KitPanel}: the kit panel's props plus an `open` flag that plays enter and exit motion.
+- `KitPanelProps` (interface): interface KitPanelProps extends Omit<HTMLAttributes<HTMLElement>, "title"> — A surface that holds content. Kits must not draw it as a plain filled rounded rectangle.
+- `KitPrompt` (function): function KitPrompt(props: Omit<KitPromptProps, "device"> & { device?: KitPromptProps["device"] }): ReactNode — The active kit's prompt with an explicit glyph. Prefer {@link KitActionPrompt}, which picks the glyph per device.
+- `KitPromptProps` (interface): interface KitPromptProps — "Press this to do that": the contextual prompt, drawn for the device the player is using.
+- `KitResultAction` (interface): interface KitResultAction — One choice on a {@link KitResultScreen}.
+- `KitResultScreen` (function): function KitResultScreen({ open, tone = "neutral", eyebrow, title, summary, stats, actions, onAction, onBack, className, style }: KitResultScreenProps): ReactNode — The end of a run, a day or a level, in the active kit: a scrim, a dialog with what happened, a short tally and the next choices, navigable by keyboard, gamepad and touch. It animates in and out with the kit's motion and plays its open/close cues, so a loss reads as a moment instead of an abrupt cut.
+- `KitResultScreenProps` (interface): interface KitResultScreenProps — Props for {@link KitResultScreen}.
+- `KitResultStat` (interface): interface KitResultStat — One row of a {@link KitResultScreen} tally.
+- `KitSpecimen` (function): function KitSpecimen({ kit, className, style }: { kit: UiKit; className?: string; style?: CSSProperties }): ReactNode — Every kit part on a busy game-like backdrop, so one picture shows a kit's whole language.
+- `KitToast` (function): function KitToast(props: KitToastProps): ReactNode — The active kit's toast.
+- `KitToastProps` (interface): interface KitToastProps — A short-lived message.
+- `KitTone` (type): type KitTone = "neutral" | "accent" | "good" | "warn" | "bad" — The meaning a kit component carries; each kit draws it in its own language.
 - `LayoutRegionSpec` (type): type LayoutRegionSpec = Omit<LayoutRegion, "rect"> — A region descriptor without its measured rectangle — the caller supplies geometry through `useRegisterLayoutRegion`.
 - `LeavePartyButton` (function): function LeavePartyButton({ className, children, }: { className?: string; children?: ReactNode; }): React.JSX.Element | null — ⚠ undocumented
 - `LevelUpFlash` (function): function LevelUpFlash({ stat, durationMs = 1600, className, children, renderFlash, }: { stat?: string; durationMs?: number; className?: string; children?: ReactNode; renderFlash?: (event: StatLevelUpEvent) => ReactNode; }): React.JSX.Element | null — ⚠ undocumented
@@ -1038,6 +1071,20 @@
 - `TitleMenuProps` (interface): interface TitleMenuProps — Props for {@link TitleMenu}.
 - `ToastStack` (function): function ToastStack({ action, limit = 4, className, renderToast, }: { action: string; limit?: number; className?: string; renderToast?: (entry: FeedEntry, index: number) => ReactNode; }): React.JSX.Element | null — Render `ctx.game.feed`'s entries for `action` as a newest-first toast stack — the feed-backed sibling of `@jgengine/core/game/toasts`' `createToastQueue`. Reach for this when the message source is already an engine event bound onto `ctx.game.feed` (kill feed, quest updates, loot log); reach for a `createToastQueue` when the game raises ad-hoc messages that need their own TTL independent of the feed's ring buffer.
 - `Trans` (function): function Trans({ k, params }: { k: string; params?: TParams }): ReactNode — Render a translated message inline: `<Trans k="hud.score" params={{ value }} />`.
+- `UI_KITS` (const): const UI_KITS: Readonly<Record<UiKitName, UiKit>> — The eight built-in UI kits, each a complete visual language with every part: `ink` comic caper, `paper` cardboard and stickers, `parchment` painterly fantasy, `terminal` brutalist console, `holo` angular sci-fi hologram, `broadcast` sports TV graphics, `arcade` retro pixel cabinet, `signal` in-world signage and departure boards.
+- `UI_KIT_PARTS` (const): const UI_KIT_PARTS: readonly UiKitPart[] — Every part a kit must implement.
+- `UiKit` (interface): interface UiKit — A complete UI language: shapes, framing, type, motion, sound and the seven parts. A game picks one with `defineGame({ uiKit: "ink" })` and reshapes it with {@link customizeKit}.
+- `UiKitComponents` (interface): interface UiKitComponents — The seven parts every kit ships, so switching kits never breaks a game.
+- `UiKitCustomization` (interface): interface UiKitCustomization — What a game changes when it reshapes a kit.
+- `UiKitMotion` (interface): interface UiKitMotion — How a kit's surfaces enter and leave.
+- `UiKitName` (type): type UiKitName = "ink" | "paper" | "parchment" | "terminal" | "holo" | "broadcast" | "arcade" | "signal" — The built-in kit names a game can pick with `defineGame({ uiKit: "<name>" })`.
+- `UiKitPart` (type): type UiKitPart = keyof UiKitComponents — The names of {@link UiKitComponents}.
+- `UiKitPreview` (function): function UiKitPreview({ kit, className }: { kit: UiKit; className?: string }): ReactNode — One kit, large: the specimen plus its dialog and strip, for working on a single kit.
+- `UiKitRoot` (function): function UiKitRoot({ kit, bindings, glyphSet = "xbox", children, className, style, box = false }: UiKitRootProps): ReactNode — Puts a UI kit in charge of everything below it: injects its stylesheet, sets its `--kit-*` tokens and makes `KitButton`, `KitPanel`, `KitMeter`, `KitPrompt`, `KitToast`, `KitMenu` and `KitMinimapFrame` draw in its language. The shell mounts it for `defineGame({ uiKit })`; nest another to show a second kit.
+- `UiKitRootProps` (interface): interface UiKitRootProps — Props for {@link UiKitRoot}.
+- `UiKitScope` (function): function UiKitScope({ children }: { children?: ReactNode }): ReactNode — Re-applies the nearest kit's root (tokens and `data-jg-kit`) — wrap content you portal outside the kit root so it keeps the kit's look.
+- `UiKitTokens` (interface): interface UiKitTokens — The tokens every kit fills, so a game reshapes any kit with the same keys. Each becomes a `--kit-<kebab-name>` CSS variable on the kit root (`fontDisplay` → `--kit-font-display`). Kit-specific extras ride the index signature and land the same way.
+- `UiKitsPreview` (function): function UiKitsPreview({ className }: { className?: string }): ReactNode — Contact sheet: all eight built-in UI kits side by side, every part each.
 - `UseActionBarOptions` (interface): interface UseActionBarOptions — Options for {@link useActionBar}.
 - `UseAxisChannelResult` (interface): interface UseAxisChannelResult { channel: AxisChannel; isDown: (code: string) => boolean } — ⚠ undocumented · used by `useAxisChannel`: Wires useHeldKeys into a fresh AxisChannel, ready for a per-frame `channel.sample(dt, isDown)`.
 - `UseMenuNavOptions` (interface): interface UseMenuNavOptions — How {@link useMenuNav} is wired.
@@ -1070,43 +1117,64 @@
 - `abilityKitNeedsHeartbeat` (function): function abilityKitNeedsHeartbeat(kit: AbilityKit, resourceAvailable?: number): boolean — ⚠ undocumented
 - `actionBarKeyAction` (function): function actionBarKeyAction(actions: readonly ResolvedAction[], focusedId: string | null, columns: number, key: string, options?: { wrap?: boolean }): ActionBarKeyResult — Pure keyboard/controller resolver for an action bar: arrows/Home/End move grid focus, Enter/Space activate the focused action, and any other single key routes through {@link actionByHotkey}. Returns the resulting intent without touching the DOM, so it unit-tests headless and `useActionBar` is a thin shell over it.
 - `actionFromAbilitySlot` (function): function actionFromAbilitySlot(slot: AbilitySlotSnapshot, extra?: Partial<ActionDef> & { resourceId?: string }): ActionDef — Composable React renderers over the headless action view model (`@jgengine/core/ui/actionModel`) — the data/renderer/chrome split for an RTS command card, an ability action bar, a build menu, or a radial. `useActionBar` is the DATA/HOOK layer (resolution + focus/hover/keyboard/hotkey), `ActionBarChrome` is the composable RENDERER (swap `renderItem` for custom chrome, or ignore it and consume the model directly for a radial), and `ActionBar` is the batteries-included default. A game swaps renderer or chrome without forking the logic. Layout, dimensions, hotkeys, and catalog-id mapping stay caller-owned.
+- `actionGlyph` (function): function actionGlyph(map: ActionCodesMap, action: string, device: InputDevice, glyphSet: GamepadGlyphName = "xbox"): string | null — The glyph to show for `action` on `device`: the first keyboard/mouse code on keyboard, the first pad code on gamepad (in `glyphSet`'s names), `"Tap"` on touch. Null when nothing is bound for that device.
+- `arcadeKit` (const): const arcadeKit: UiKit — Cabinet: a retro 8-bit arcade and JRPG. Stepped pixel borders, JRPG windows with title tabs, chunky depth buttons, heart meters, score-popup toasts and chiptune blips.
 - `barTokens` (function): function barTokens(tokens: BarTokens): CSSProperties — A style object binding vitals tokens to CSS custom properties — spread onto any HUD ancestor to restyle every atomic bar under it at once. Only the keys you pass are set; the rest fall back to {@link DEFAULT_BAR_TOKENS} inside the bars. This is the single global-theming seam.
 - `betterAuthIdentity` (function): function betterAuthIdentity(state: BetterAuthSessionState, options?: { signOut?: () => void }): IdentitySource — ⚠ undocumented
+- `broadcastKit` (const): const broadcastKit: UiKit — Prime Time: sports TV graphics. Skewed navy slabs with team stripes, a score-bug header, a breaking-news band, ticker chevrons, a tote-board menu, shot-clock rings and wipe-in lower thirds.
 - `canvasCover` (const): const canvasCover: CanvasCover — The page's canvas cover. A full-screen menu (or a game's own opaque overlay) holds it; the shell stops drawing the world, its shadow passes and postfx while it is held, and draws again from the untouched scene when it lifts. A translucent scrim or a side panel must not hold it — anything the scene shows through has to keep drawing.
 - `chatTransportFromSync` (function): function chatTransportFromSync(sync: ChatSync): ChatTransport — Lifts a callback-style ChatSync (e.g. createWsBackend().chatSyncFor(serverId)) into the hook-shaped ChatTransport contract. Create once per sync — outside render or inside useMemo — so subscriptions survive re-renders.
 - `clerkIdentity` (function): function clerkIdentity(state: ClerkUserState, options?: { signOut?: () => void }): IdentitySource — ⚠ undocumented
 - `createGameMenuSound` (function): function createGameMenuSound(config: GameMenuSoundConfig = {}): GameMenuSound — A tiny WebAudio click generator for menu feedback: one oscillator burst per tick, created on the first play (so a browser autoplay policy does not log an error at mount) and reused after.
 - `createHeldKeyTracker` (function): function createHeldKeyTracker(target: HeldKeyEventTarget): { isDown: (code: string) => boolean; dispose: () => void; } — ⚠ undocumented
+- `customizeKit` (function): function customizeKit(base: UiKit, changes: UiKitCustomization): UiKit — Reshape a kit for one game: new tokens, a few swapped parts, extra CSS, other sounds. Everything not given stays the base kit's, so a customized kit is still complete.
+- `deadlineStage` (function): function deadlineStage(deadline: KitObjectiveDeadline, urgentAt?: number): KitDeadlineStage — The stage of a deadline: `urgent` at or under `urgentAt` seconds (default the larger of 10 s and a quarter of the total), `warn` under half, otherwise `calm`.
 - `defaultEquipLayout` (function): function defaultEquipLayout(items: Partial<Record<DefaultEquipSlotId, SlotItem | null>> = {}): EquipSlot[] — A sensible default paperdoll arrangement — worn armor down the left flank, held gear and jewelry down the right — that the game fills by passing worn items keyed by slot id. Every id is optional; unfilled slots render empty. Games that need a different slot set pass their own {@link EquipSlotLayout}.
 - `defaultHudTheme` (const): const defaultHudTheme: HudTheme — The engine's default HUD look, applied by the shell at the HUD root of every game that does not opt out: a strong system UI font stack, layered translucent panels with a lit top rim and crisp hairline borders, a 12px type floor, and motion that honours reduced-motion. Games override any part with their own theme on a HUD ancestor.
 - `deriveHudTheme` (function): function deriveHudTheme(seed: HudThemeSeed): HudTheme — Derives a coherent full theme from an accent/surface pair — shades, edges, dim text, frames, bar troughs, and slots all fall out of the seed, so a game gets one consistent look across the `packages/react` primitives and the `registry/jgengine` blocks without naming 50 tokens. Hex seeds only (`#rgb` or `#rrggbb`).
+- `ensureUiKitStyles` (function): function ensureUiKitStyles(kit: UiKit, doc: Document | undefined = typeof document === "undefined" ? undefined : document): void — Inserts a kit's stylesheet into the document once. Safe to call repeatedly and during SSR (no-op).
 - `eventMeterNeedsHeartbeat` (function): function eventMeterNeedsHeartbeat(meter: EventMeter, previous: EventMeterView | null): boolean — True when `meter`'s value/fraction/tier/ready diverge from `previous` — the re-render check `useEventMeter` polls on its heartbeat.
+- `formatCountdown` (function): function formatCountdown(seconds: number): string — `m:ss` for a countdown in seconds.
 - `formatHudOverlapReport` (function): function formatHudOverlapReport(overlaps: readonly HudBlockOverlap[], viewport: HudSize): string — The console block for a set of overlaps — one line per pair naming both block ids, plus the viewport they collided at. Empty string when nothing intersects.
 - `formatTimerMs` (function): function formatTimerMs(ms: number, format: TimerFormat = "mm:ss"): string — Format a millisecond duration as digital timer text — `mm:ss` (default), `m:ss.d` (with tenths), or `ss.d` (seconds + tenths). Negative inputs clamp to zero. No genre meaning: the same helper serves a round clock, a respawn countdown, or an ability charge readout.
+- `getInputDevice` (function): function getInputDevice(): InputDevice — The device the player last used, without subscribing.
 - `guestIdentity` (function): function guestIdentity(seed?: string): IdentitySource — ⚠ undocumented
+- `holoKit` (const): const holoKit: UiKit — Vector: an angular sci-fi hologram. Chamfered glass with scanlines and bracket corners, hex data tags, radar frames with degree bezels, projection-in motion and tone-sweep sounds.
 - `hudBlockOverlaps` (function): function hudBlockOverlaps(blocks: readonly HudBlockBounds[], options: HudBlockOverlapOptions = {}): HudBlockOverlap[] — Every pair of rendered HUD blocks that intersects. This is the development-time check behind the console report: it reads what actually hit the screen rather than what a layout intended, so a block that overflows its own box or a game override that lands on a neighbour is named too.
 - `hudSkinVars` (function): function hudSkinVars(skin?: HudSkin): CSSProperties — Converts a skin into the CSS variables consumed by shared HUD components.
 - `hudTheme` (function): function hudTheme(overrides: HudThemeOverrides): HudTheme — Builds a full {@link HudTheme} from per-group partials, filling the rest from {@link defaultHudTheme}. Reach for this when a game wants to name exact values; use {@link deriveHudTheme} when a seed color pair is enough.
 - `hudThemeVars` (function): function hudThemeVars(theme: HudTheme): CSSProperties — Emits theme CSS properties, resetting inherited bar fills when absent. Spread onto a HUD ancestor.
 - `hudVisibleInPhase` (function): function hudVisibleInPhase(showDuring: readonly GamePhase[] | undefined, phase: GamePhase): boolean — Whether a HUD element opted into `showDuring` is visible in the current phase; `undefined` = always visible (default).
+- `inkKit` (const): const inkKit: UiKit — Inkline: a comic-book caper. Heavy wobbly ink outlines, hard offset shadows, halftone dots, skewed caption tabs, speech-balloon toasts and jagged shout bursts; panels pop in with overshoot.
 - `isRedSuit` (function): function isRedSuit(suit: Suit): boolean — True for the red suits (hearts, diamonds).
+- `kitCueSound` (function): function kitCueSound(cue: UiCue, def: Omit<SoundDef, "id" | "bus" | "positional">): SoundDef — A kit's UI cue patch on the `ui` bus, for {@link UiKit.sounds}.
 - `latestChatBubbles` (function): function latestChatBubbles(messages: readonly ChatMessage[], nowMs: number, ttlMs: number): ChatBubble[] — ⚠ undocumented
 - `layoutEntityFrames` (function): function layoutEntityFrames<E extends EntityFrameEntry>(entries: readonly E[], project: ProjectEntity, options: EntityFrameLayoutOptions = {}): EntityFramePlacement<E>[] — Pure layout core: projects each entry, drops the ones behind the camera, off-screen (when `viewport` is set), or beyond `maxCount`, and returns the survivors sorted farthest-first so nearer frames render last (on top). Stable for equal depths via `id`. No React, no DOM — unit-testable in isolation.
 - `layoutFloatingText` (function): function layoutFloatingText(views: readonly FloatingTextView[], project: ProjectEntity, options: FloatingTextLayoutOptions = {}): FloatingTextPlacement[] — Pure layout core: projects each view, drops the ones behind the camera or (when `viewport` is set) off-screen, and returns the survivors sorted farthest-first so nearer text paints on top. No React, no DOM — unit-testable.
 - `localPlayerEntity` (function): function localPlayerEntity(ctx: GameContext): SceneEntity | null — ⚠ undocumented
+- `meterFraction` (function): function meterFraction(value: number, max = 1): number — Fill 0..1 for a meter, clamped; `max <= 0` reads as empty.
+- `meterSegmentsLit` (function): function meterSegmentsLit(value: number, max = 1, segments = 10): number — Cell states for a segmented meter: how many of `segments` are lit for `value / max`.
+- `missingKitParts` (function): function missingKitParts(kit: Pick<UiKit, "components">): UiKitPart[] — Parts a kit is missing, for tests and dev checks. Empty when the kit is complete.
 - `observeBrowserSuspension` (function): function observeBrowserSuspension(onSuspend: (reason: BrowserSuspensionReason) => void, options: BrowserSuspensionOptions = {}, sources: BrowserSuspensionSources | null = typeof window === "undefined" || typeof document === "undefined" ? null : { window, document }): () => void — Observe interruption events until detached. Lock loss requires a preceding lock; SSR attaches nothing.
 - `panelKeyAction` (function): function panelKeyAction(defs: readonly PanelDef[], state: PanelState, event: { code?: string; key?: string }): PanelKeyResult — Pure keybind resolver for a panel set: ESC resolves to `closeTop` when a closable window is open, and any other key routes through {@link panelByHotkey} (trying `code` then `key`) to a `toggle`. Returns the intent without touching the DOM, so it unit-tests headless and `usePanels` is a thin shell over it.
+- `paperKit` (const): const paperKit: UiKit — Fair Day: paper, cardboard and stickers. Torn paper notes held by washi tape, kraft cards, carnival ticket buttons with notched ends, sticker titles with die-cut white rims, highlighter meters on a ruler, luggage-tag toasts and a folded leaflet map; panels are placed by hand and peel away.
+- `parchmentKit` (const): const parchmentKit: UiKit — Grimoire: painterly fantasy parchment. Stained paper with torn or rolled edges, gold filigree corners, serif small caps, wax seals, glass vial meters, rune pips, a gold compass rim and unfurling banners.
 - `previewFixtureNames` (function): function previewFixtureNames(): string[] — Sorted list of registered fixture names, for discovery/listing.
 - `relativeSavedAt` (function): function relativeSavedAt(savedAt: number, nowMs = Date.now()): string — Turn a `savedAt` timestamp into a compact relative label ("just now", "4m ago", "2d ago"). Presentation-only helper — the model stores raw ms.
 - `resolveDialogueInvoke` (function): function resolveDialogueInvoke(choice: DialogueChoice, result: CheckResult | null): { command: string; args?: unknown } | null — ⚠ undocumented
 - `resolveHudLanes` (function): function resolveHudLanes(slots: readonly HudLaneSlot[], viewport: HudSize, config: HudLaneConfig = {}): HudLaneLayout — Resolve lane claims into non-overlapping rectangles for one frame.
 - `resolveHudTheme` (function): function resolveHudTheme(theme?: HudThemePreset | HudTheme): HudTheme — Resolves a preset name (or a full theme) to a `HudTheme`; falls back to the default theme.
 - `resolvePreviewFixture` (function): function resolvePreviewFixture(name: string): PreviewFixture | undefined — Resolve a fixture by name, or `undefined` when it is not registered.
+- `resolveUiKit` (function): function resolveUiKit(kit: UiKitName | UiKit): UiKit — A built-in kit by name, or a kit object as given (for example from `customizeKit`).
 - `runDialogueChoice` (function): function runDialogueChoice(commands: { run(name: string, input?: unknown): unknown }, choice: DialogueChoice, result: CheckResult | null): void — Route a {@link DialogueBox} choice through the `features.dialogue` bridge: resolve the choice's invoke (honoring a skill-check `result`), run that command, and otherwise close the dialogue — the write side that replaces a per-game `onChoice` that hand-rolls `resolveDialogueInvoke` + `dialogue.close`.
 - `schoolForAction` (function): function schoolForAction(action: string): IconSchool — Infers an {@link IconSchool} from an action id (keyword match); `neutral` when nothing matches.
 - `schoolForItem` (function): function schoolForItem(itemId: string): IconSchool — Infers an {@link IconSchool} from an item id (keyword match); `neutral` when nothing matches.
+- `setInputDevice` (function): function setInputDevice(device: InputDevice): void — Report the device the player just used. The shell's own input calls it; a game rarely needs to.
+- `signalKit` (const): const signalKit: UiKit — Wayfinder: in-world signage. Enamel road-sign plates with keylines and rivets, arrow and blade signs, route-marker shields, LED departure boards and lamp bulbs, with split-flap flips and clacks.
+- `terminalKit` (const): const terminalKit: UiKit — Mainframe: a brutalist phosphor terminal. Monospace everywhere, uppercase labels, double-ruled frames with the title set into the rule, ASCII meters, log-line toasts and a block cursor.
 - `treatedActionIcon` (function): function treatedActionIcon(action: { id?: string; label?: string; icon?: ReactNode }, size = 40): ReactNode — A ready-made `ActionButton` `renderIcon` that paints the action's `GameIcon` with a treatment.
 - `treatedItemIcon` (function): function treatedItemIcon(itemId: string, options: { size?: number; count?: number; keycap?: string } = {}): ReactNode — Maps an item id to a treated icon — resolves a `GameIcon` glyph and an inferred school.
+- `uiKitVars` (function): function uiKitVars(kit: UiKit): CSSProperties — The `--kit-*` CSS variables for a kit's tokens and motion, for the kit root's `style`.
 - `useAbilitySlot` (function): function useAbilitySlot(kit: AbilityKit, slotId: string, resourceAvailable?: number, options?: AbilitySlotBindingOptions): AbilitySlotSnapshot | null — ⚠ undocumented
 - `useAbilitySlots` (function): function useAbilitySlots(kit: AbilityKit, resourceAvailable?: number, options?: AbilitySlotBindingOptions): AbilitySlotSnapshot[] — ⚠ undocumented
 - `useAccessibility` (function): function useAccessibility(): AccessibilityContextValue — Read the live accessibility state + its store; throws without an {@link AccessibilityProvider} above.
@@ -1151,16 +1219,19 @@
 - `useGameStoreValue` (function): function useGameStoreValue<T>(key: string, fallback: T): T — Subscribe to a single keyed slice of the game store, returning `fallback` until the key is set.
 - `useGameViewportLayout` (function): function useGameViewportLayout(): GameViewportLayout — The live shared viewport layout. Returns a neutral default outside a `GameViewportProvider` so it never throws in previews.
 - `useHasSettings` (function): function useHasSettings(): boolean — True when the game has any setting or game-action to show — gate your own settings entry on it.
+- `useHasUiKit` (function): function useHasUiKit(): boolean — True when a {@link UiKitRoot} is above: engine screens switch to kit parts only then.
 - `useHeldKeys` (function): function useHeldKeys(): (code: string) => boolean — Held-key predicate backed by window keydown/keyup/blur listeners (blur clears held state so a released-off-window key doesn't stick). SSR-safe: listeners attach in an effect, never at module scope. The returned predicate is stable across renders.
 - `useHudFont` (function): function useHudFont(skin?: HudSkin): boolean — Loads a skin font in browsers and reports when it is available.
 - `useHudLayout` (function): function useHudLayout(options?: { storageKey?: string; snap?: number; locked?: boolean; /** * Scene-document `ui` section — source of truth for panel placement/size. * When provided, hydrates the layout store (and wins over legacy localStorage). */ documentUi?: EditorUiDocument; /** * When true (def… — Layout state for `HudCanvas` — panel placements, edit-mode drag/resize, and per-game persistence.
 - `useHudLayoutPersist` (function): function useHudLayoutPersist(): HudLayoutPersist | null — Injected panel-commit port, or `null` when no host has provided one.
 - `useHudViewport` (function): function useHudViewport(): HudViewportContextValue | null — ⚠ undocumented
 - `useI18n` (function): function useI18n(): I18n — Read the current {@link I18n} from context; throws when no {@link I18nProvider} is above.
+- `useInputDevice` (function): function useInputDevice(): InputDevice — The device the player is using right now — keyboard/mouse, gamepad or touch — switching the moment they touch another one. Prompts use it to show `E`, `A` or a tap target.
 - `useInteractionPrompt` (function): function useInteractionPrompt(registry: PromptRegistry, playerPosition: PromptPoint): PositionedPrompt | null — Subscribe to a {@link PromptRegistry} and re-`resolve` it whenever the player moves, returning the prompt to draw right now — or `null` when the player is out of range of every interactable. The registry notifies only on active-prompt *changes*, so this re-renders on transitions rather than every frame the hero moves. Feed it the player's `{ x, z }` position each frame; identical positions do no work.
 - `useInventory` (function): function useInventory(inventoryId: string): readonly InventorySlot[] — ⚠ undocumented
 - `useInventoryGrid` (function): function useInventoryGrid(inventoryId: string): InventoryGridBinding — Binds a live inventory to a HUD grid: `slots` from {@link useInventory}, and `move`/`split` that run the built-in `inventory.move`/`inventory.split` commands (which notify, so the grid re-renders).
 - `useKeyedStore` (function): function useKeyedStore<T>(handle: KeyedStoreHandle<T>, id: string): T — Subscribe a component to one owner's slot of a typed keyed-family store defined with `defineKeyedStore`. Returns the current value for `id` (or the definition's initial before any write for that id), re-rendering only when that owner's slot changes — the cast-free, boilerplate-free replacement for a hand-written `useGameStore((ctx) => ctx.game.store.get(`prefix:${id}`) as T)`.
+- `useKitPresence` (function): function useKitPresence(open: boolean, exitMs: number): { mounted: boolean; leaving: boolean } — Keeps something mounted through its exit motion: `leaving` turns true when `open` goes false, and `mounted` turns false `exitMs` later.
 - `useLayoutCollisions` (function): function useLayoutCollisions(): readonly LayoutCollision[] — Live forbidden/warned region collisions (empty outside a provider).
 - `useLeaderboard` (function): function useLeaderboard(stat: string, options: { scope: LeaderboardScope; limit?: number }): { userId: string; value: number }[] — ⚠ undocumented
 - `useLiveMarkers` (function): function useLiveMarkers(rebuild: (markers: MarkerSet, ctx: GameContext) => void, options?: { intervalMs?: number; deps?: DependencyList }): MarkerSet — A self-ticking {@link MarkerSet} kept in sync with the live scene: on a heartbeat (default 100ms, and once immediately) it clears the set and calls `rebuild(markers, ctx)` to repopulate it from the current scene, so a HUD map never hand-rolls a `setInterval` + `markers.clear()` + rescan. Each heartbeat also re-renders the calling component, so player-centered props derived from the live scene each tick (`center`, `facingYaw`, zone name) stay fresh — this fully subsumes the hand-rolled ticker, not just the marker rebuild. The set is stable across renders and re-seeded whenever `ctx`, `intervalMs`, or the supplied `deps` change. SSR-safe: the heartbeat only arms when `window` is available.
@@ -1208,6 +1279,7 @@
 - `useTarget` (function): function useTarget(fromInstanceId: string): string | null — The entity `fromInstanceId` currently targets (set by `ctx.scene.entity.setTarget` or `cycleTarget`), for a target frame.
 - `useTicker` (function): function useTicker(hz = 10): number — Re-render at a steady rate. Returns a monotonically increasing tick count driven by a setInterval, for HUD elements that display wall-clock-derived values (cooldowns, cast bars, swing timers) without an engine subscription to hang off. `hz <= 0` disables the ticker.
 - `useTimerRead` (function): function useTimerRead(timer: TimerSet, id: string, active = true): TimerRead | null — Subscribe to a single timer and re-read it every animation frame while mounted, so a HUD readout stays live without the game hand-rolling interval math. Reuses one read object (allocation-aware). Returns `null` for an unknown id. Pass `active={false}` to freeze the per-frame tick (e.g. an off-screen HUD).
+- `useUiKit` (function): function useUiKit(): UiKit — The kit in charge here: the nearest {@link UiKitRoot}'s, or the plain fallback kit outside one.
 - `useViewportMetrics` (function): function useViewportMetrics(): ViewportMetrics — Live visible viewport, tracking `window.visualViewport` (mobile browser chrome, pinch-zoom) with a layout-viewport fallback.
 - `useViewportScrollLock` (function): function useViewportScrollLock(active: boolean): void — Lock the page scroll while `active`, so a fixed full-bleed surface is exactly the viewport and the document behind it never gains a scrollbar. Nested and repeated locks are counted, and the previous inline styles are restored when the last one releases.
 - `useVoice` (function): function useVoice(options?: UseVoiceOptions): VoiceState — Mic capture + push-to-talk + channel roster over the VoiceTransport signaling seam. Transmission gates the captured tracks' `enabled` flag; the media plane that actually moves audio bytes (WebRTC/SFU) stays behind the transport, host-supplied. Call once per voice channel and hand the returned state to the voice components.
@@ -1786,6 +1858,14 @@
 - `useAuthedPlayer` (function): function useAuthedPlayer(options?: { guestSeed?: string }): PlayerIdentity | null — ⚠ undocumented
 - `useSession` (function): function useSession(): IdentitySource — ⚠ undocumented
 
+## @jgengine/react/inputDevice
+
+- `InputDevice` (type): type InputDevice = "keyboard" | "gamepad" | "touch" — The device the player last used: drives which glyph a prompt shows.
+- `actionGlyph` (function): function actionGlyph(map: ActionCodesMap, action: string, device: InputDevice, glyphSet: GamepadGlyphName = "xbox"): string | null — The glyph to show for `action` on `device`: the first keyboard/mouse code on keyboard, the first pad code on gamepad (in `glyphSet`'s names), `"Tap"` on touch. Null when nothing is bound for that device.
+- `getInputDevice` (function): function getInputDevice(): InputDevice — The device the player last used, without subscribing.
+- `setInputDevice` (function): function setInputDevice(device: InputDevice): void — Report the device the player just used. The shell's own input calls it; a game rarely needs to.
+- `useInputDevice` (function): function useInputDevice(): InputDevice — The device the player is using right now — keyboard/mouse, gamepad or touch — switching the moment they touch another one. Prompts use it to show `E`, `A` or a tap target.
+
 ## @jgengine/react/interactionPrompt
 
 - `InteractionPrompt` (function): function InteractionPrompt({ registry, playerPosition, theme, accentFor, keyFor, gaugeProgress, anchor = "bottom-center", zIndex = 40, className, style, }: InteractionPromptProps): ReactNode — A screen-anchored "Press E to …" interaction callout that renders the active prompt of a {@link PromptRegistry}. It subscribes to the registry and — when given `playerPosition` — re-resolves as the hero moves, showing the nearest in-range interactable and switching to a closer/higher-priority one as they cross radii. Each display kind renders as itself: a `keybind` shows a key cap plus its label ("Press [E] Open"), a `gauge` shows a hold bar filling with `gaugeProgress`, and a `label` shows plain text. Presentation only — the registry never branches on a prompt's meaning; the game colors each via `accentFor` and maps action ids to key glyphs via `keyFor`. HudTheme-skinnable through `--jg-accent` and {@link InteractionPromptTheme}.
@@ -1818,6 +1898,22 @@
 - `KillFeedProps` (interface): interface KillFeedProps — Props for {@link KillFeed}.
 - `KillFeedTheme` (interface): interface KillFeedTheme — Reskin tokens for {@link KillFeed}.
 - `useEventTicker` (function): function useEventTicker(ticker: EventTicker, animate = true): EventTickerView[] — Subscribe to an event ticker and re-render it on an animation frame (unless the game already ticks it), returning the live entries newest-first with `fade` applied. Driving the frame loop is what makes entries visibly fade and drop as they age out.
+
+## @jgengine/react/kitFlow
+
+- `KitBanner` (function): function KitBanner({ cue, title, subtitle, tone, ms = 2400, initial = false, className, style }: KitBannerProps): ReactNode — A big moment banner in the active kit — "Day 2 · Gates open", "Wave 3", "Run started" — shown for a couple of seconds whenever `cue` changes, so phase changes read as transitions instead of a toast.
+- `KitBannerProps` (interface): interface KitBannerProps — Props for {@link KitBanner}.
+- `KitDeadlineStage` (type): type KitDeadlineStage = "calm" | "warn" | "urgent" — How urgent a deadline is: `calm` above half, `warn` below half, `urgent` in the last stretch.
+- `KitObjective` (function): function KitObjective({ title, eyebrow, steps, distance, bearing, deadline, urgentAt, hint, hintAfter = 12, progressKey, prompt, className, style, }: KitObjectiveProps): ReactNode — The one card that tells the player what to do next: a short goal, distance with a direction arrow, an optional checklist and countdown, and the next action as a device-correct prompt. The countdown warns before it runs out (warn tone under half, urgent tone and a cue near the end) and a hint appears when the player has been stuck for a while, so a run never fails without warning and a new player is never left guessing.
+- `KitObjectiveDeadline` (interface): interface KitObjectiveDeadline — A countdown on an objective.
+- `KitObjectiveProps` (interface): interface KitObjectiveProps — Props for {@link KitObjective}.
+- `KitObjectiveStep` (interface): interface KitObjectiveStep — One line of a {@link KitObjective} checklist.
+- `KitResultAction` (interface): interface KitResultAction — One choice on a {@link KitResultScreen}.
+- `KitResultScreen` (function): function KitResultScreen({ open, tone = "neutral", eyebrow, title, summary, stats, actions, onAction, onBack, className, style }: KitResultScreenProps): ReactNode — The end of a run, a day or a level, in the active kit: a scrim, a dialog with what happened, a short tally and the next choices, navigable by keyboard, gamepad and touch. It animates in and out with the kit's motion and plays its open/close cues, so a loss reads as a moment instead of an abrupt cut.
+- `KitResultScreenProps` (interface): interface KitResultScreenProps — Props for {@link KitResultScreen}.
+- `KitResultStat` (interface): interface KitResultStat — One row of a {@link KitResultScreen} tally.
+- `deadlineStage` (function): function deadlineStage(deadline: KitObjectiveDeadline, urgentAt?: number): KitDeadlineStage — The stage of a deadline: `urgent` at or under `urgentAt` seconds (default the larger of 10 s and a quarter of the total), `warn` under half, otherwise `calm`.
+- `formatCountdown` (function): function formatCountdown(seconds: number): string — `m:ss` for a countdown in seconds.
 
 ## @jgengine/react/liveBind
 
@@ -1901,7 +1997,7 @@
 
 - `Notice` (interface): interface Notice — A live notice as the HUD renders it.
 - `NoticePlacement` (type): type NoticePlacement = "top" | "center" | "bottom" — Where {@link NoticeStack} sits: below top-edge HUD bars, over the play area, or above bottom action bars.
-- `NoticeStack` (function): function NoticeStack({ feed, placement = "top", offset, avoidHud = true, zIndex = 85, scale = 1, renderNotice, }: { /** Defaults to the surrounding game's `ctx.game.notices`. */ feed?: NoticeFeed; placement?: NoticePlacement; /** Distance from the band's screen edge (px or CSS length), added to the … — Animated, toned notice stack for a {@link NoticeFeed} — the default renderer the shell mounts for `ctx.game.notices` inside the HUD theme root. Uses `--jg-*` theme vars with fallbacks, 14px text, and never takes pointer input. A top or bottom stack keeps clear of HUD panels registered in its column and sits above modal overlays.
+- `NoticeStack` (function): function NoticeStack({ feed, placement = "top", offset, avoidHud = true, zIndex = 85, scale = 1, maxVisible = 3, renderNotice, }: { /** Defaults to the surrounding game's `ctx.game.notices`. */ feed?: NoticeFeed; placement?: NoticePlacement; /** Distance from the band's screen edge (px or CSS length… — Animated, toned notice stack for a {@link NoticeFeed} — the default renderer the shell mounts for `ctx.game.notices` inside the HUD theme root. Uses `--jg-*` theme vars with fallbacks, 14px text, and never takes pointer input. A top or bottom stack keeps clear of HUD panels registered in its column and sits above modal overlays.
 - `NoticeTone` (type): type NoticeTone = "info" | "success" | "warn" | "deny" — How a notice reads: neutral info, a win, a caution, or a refused action.
 - `useNoticeList` (function): function useNoticeList(feed: NoticeFeed | null): readonly Notice[] — Live notices of `feed`, re-rendering on change and pruning each one when it expires.
 
@@ -2168,6 +2264,100 @@
 - `playUiCue` (function): function playUiCue(ctx: Pick<GameContext, "game"> | null, cue: UiCue): void — Play UI cue `cue` through the game's audio seam (`ui.<cue>` in the shell catalog). No-op outside a game.
 - `uiCueForInteraction` (function): function uiCueForInteraction(event: HudInteractEvent): UiCue | null — The UI cue an engine HUD primitive interaction plays, or `null` for none: activating plays the primitive's `cue` when it names a {@link UiCue} (e.g. `cue="confirm"`), else `click`; hovering a button or action slot plays `hover`; panels and windows play `open`/`close`. Press and focus are silent.
 - `useUiCue` (function): function useUiCue(): (cue: UiCue) => void — Returns a stable `cue(name)` that plays a UI sound: click, hover, open, close, confirm, deny, notify. The shell ships soft procedural defaults on the "ui" bus (volume in Settings, muted with master); a game replaces one by declaring `audio.sounds["ui.click"]` or `audio.uiCues`. Safe outside a GameProvider.
+
+## @jgengine/react/uiKit
+
+- `KitButtonProps` (interface): interface KitButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, "type"> — A button in the kit's language. Every native button attribute passes through to the root `<button>`.
+- `KitDevice` (type): type KitDevice = "keyboard" | "gamepad" | "touch" — The input device a prompt is drawn for.
+- `KitMenuItem` (interface): interface KitMenuItem — One verb in a {@link KitMenuProps} list.
+- `KitMenuProps` (interface): interface KitMenuProps — A list of verbs with one highlighted: title screen, pause, a choice. Navigation belongs to the host.
+- `KitMeterProps` (interface): interface KitMeterProps — A value against a maximum: health, a timer, progress.
+- `KitMinimapFrameProps` (interface): interface KitMinimapFrameProps — The frame around a minimap or radar. The map itself is the child, drawn inside the frame's window.
+- `KitPanelProps` (interface): interface KitPanelProps extends Omit<HTMLAttributes<HTMLElement>, "title"> — A surface that holds content. Kits must not draw it as a plain filled rounded rectangle.
+- `KitPromptProps` (interface): interface KitPromptProps — "Press this to do that": the contextual prompt, drawn for the device the player is using.
+- `KitToastProps` (interface): interface KitToastProps — A short-lived message.
+- `KitTone` (type): type KitTone = "neutral" | "accent" | "good" | "warn" | "bad" — The meaning a kit component carries; each kit draws it in its own language.
+- `UI_KIT_PARTS` (const): const UI_KIT_PARTS: readonly UiKitPart[] — Every part a kit must implement.
+- `UiKit` (interface): interface UiKit — A complete UI language: shapes, framing, type, motion, sound and the seven parts. A game picks one with `defineGame({ uiKit: "ink" })` and reshapes it with {@link customizeKit}.
+- `UiKitComponents` (interface): interface UiKitComponents — The seven parts every kit ships, so switching kits never breaks a game.
+- `UiKitCustomization` (interface): interface UiKitCustomization — What a game changes when it reshapes a kit.
+- `UiKitMotion` (interface): interface UiKitMotion — How a kit's surfaces enter and leave.
+- `UiKitPart` (type): type UiKitPart = keyof UiKitComponents — The names of {@link UiKitComponents}.
+- `UiKitTokens` (interface): interface UiKitTokens — The tokens every kit fills, so a game reshapes any kit with the same keys. Each becomes a `--kit-<kebab-name>` CSS variable on the kit root (`fontDisplay` → `--kit-font-display`). Kit-specific extras ride the index signature and land the same way.
+- `customizeKit` (function): function customizeKit(base: UiKit, changes: UiKitCustomization): UiKit — Reshape a kit for one game: new tokens, a few swapped parts, extra CSS, other sounds. Everything not given stays the base kit's, so a customized kit is still complete.
+- `kitCueSound` (function): function kitCueSound(cue: UiCue, def: Omit<SoundDef, "id" | "bus" | "positional">): SoundDef — A kit's UI cue patch on the `ui` bus, for {@link UiKit.sounds}.
+- `meterFraction` (function): function meterFraction(value: number, max = 1): number — Fill 0..1 for a meter, clamped; `max <= 0` reads as empty.
+- `meterSegmentsLit` (function): function meterSegmentsLit(value: number, max = 1, segments = 10): number — Cell states for a segmented meter: how many of `segments` are lit for `value / max`.
+- `missingKitParts` (function): function missingKitParts(kit: Pick<UiKit, "components">): UiKitPart[] — Parts a kit is missing, for tests and dev checks. Empty when the kit is complete.
+- `uiKitVars` (function): function uiKitVars(kit: UiKit): CSSProperties — The `--kit-*` CSS variables for a kit's tokens and motion, for the kit root's `style`.
+
+## @jgengine/react/uiKitArcade
+
+- `arcadeKit` (const): const arcadeKit: UiKit — Cabinet: a retro 8-bit arcade and JRPG. Stepped pixel borders, JRPG windows with title tabs, chunky depth buttons, heart meters, score-popup toasts and chiptune blips.
+
+## @jgengine/react/uiKitBroadcast
+
+- `broadcastKit` (const): const broadcastKit: UiKit — Prime Time: sports TV graphics. Skewed navy slabs with team stripes, a score-bug header, a breaking-news band, ticker chevrons, a tote-board menu, shot-clock rings and wipe-in lower thirds.
+
+## @jgengine/react/uiKitHolo
+
+- `holoKit` (const): const holoKit: UiKit — Vector: an angular sci-fi hologram. Chamfered glass with scanlines and bracket corners, hex data tags, radar frames with degree bezels, projection-in motion and tone-sweep sounds.
+
+## @jgengine/react/uiKitInk
+
+- `inkKit` (const): const inkKit: UiKit — Inkline: a comic-book caper. Heavy wobbly ink outlines, hard offset shadows, halftone dots, skewed caption tabs, speech-balloon toasts and jagged shout bursts; panels pop in with overshoot.
+
+## @jgengine/react/uiKitPaper
+
+- `paperKit` (const): const paperKit: UiKit — Fair Day: paper, cardboard and stickers. Torn paper notes held by washi tape, kraft cards, carnival ticket buttons with notched ends, sticker titles with die-cut white rims, highlighter meters on a ruler, luggage-tag toasts and a folded leaflet map; panels are placed by hand and peel away.
+
+## @jgengine/react/uiKitParchment
+
+- `parchmentKit` (const): const parchmentKit: UiKit — Grimoire: painterly fantasy parchment. Stained paper with torn or rolled edges, gold filigree corners, serif small caps, wax seals, glass vial meters, rune pips, a gold compass rim and unfurling banners.
+
+## @jgengine/react/uiKitPlain
+
+- `plainKit` (const): const plainKit: UiKit — The fallback kit outside any `UiKitRoot`: quiet, neutral parts so kit components always render. Games pick a real kit with `defineGame({ uiKit })`.
+
+## @jgengine/react/uiKitRoot
+
+- `KitActionPrompt` (function): function KitActionPrompt({ action, label, progress, tone, onActivate, fallbackGlyph, className, style }: KitActionPromptProps): ReactNode — "Press E to take the parcel", drawn by the active kit with the right glyph for the device the player is using: the bound key, the bound pad button, or a tap target on touch. Renders nothing when the action is not bound on that device and no `fallbackGlyph` is given.
+- `KitActionPromptProps` (interface): interface KitActionPromptProps — Props for {@link KitActionPrompt}.
+- `KitButton` (function): function KitButton({ cue, onPointerEnter, onPointerDown, onClick, disabled, ...rest }: KitButtonProps & { cue?: string }): ReactNode — The active kit's button. Hover, press and activate report to the nearest `HudInteractProvider`, so the shell's UI cues sound without wiring.
+- `KitMenu` (function): function KitMenu(props: KitMenuProps): ReactNode — The active kit's menu list. Navigation comes from `useMenuNav`.
+- `KitMeter` (function): function KitMeter(props: KitMeterProps): ReactNode — The active kit's meter.
+- `KitMinimapFrame` (function): function KitMinimapFrame(props: KitMinimapFrameProps): ReactNode — The active kit's minimap frame.
+- `KitPanel` (function): function KitPanel({ open, ...props }: KitPanelHostProps): ReactNode — The active kit's panel. Give `open` to animate it in and out with the kit's own motion.
+- `KitPanelHostProps` (interface): interface KitPanelHostProps extends KitPanelProps — Props for {@link KitPanel}: the kit panel's props plus an `open` flag that plays enter and exit motion.
+- `KitPrompt` (function): function KitPrompt(props: Omit<KitPromptProps, "device"> & { device?: KitPromptProps["device"] }): ReactNode — The active kit's prompt with an explicit glyph. Prefer {@link KitActionPrompt}, which picks the glyph per device.
+- `KitToast` (function): function KitToast(props: KitToastProps): ReactNode — The active kit's toast.
+- `UiKitRoot` (function): function UiKitRoot({ kit, bindings, glyphSet = "xbox", children, className, style, box = false }: UiKitRootProps): ReactNode — Puts a UI kit in charge of everything below it: injects its stylesheet, sets its `--kit-*` tokens and makes `KitButton`, `KitPanel`, `KitMeter`, `KitPrompt`, `KitToast`, `KitMenu` and `KitMinimapFrame` draw in its language. The shell mounts it for `defineGame({ uiKit })`; nest another to show a second kit.
+- `UiKitRootProps` (interface): interface UiKitRootProps — Props for {@link UiKitRoot}.
+- `UiKitScope` (function): function UiKitScope({ children }: { children?: ReactNode }): ReactNode — Re-applies the nearest kit's root (tokens and `data-jg-kit`) — wrap content you portal outside the kit root so it keeps the kit's look.
+- `ensureUiKitStyles` (function): function ensureUiKitStyles(kit: UiKit, doc: Document | undefined = typeof document === "undefined" ? undefined : document): void — Inserts a kit's stylesheet into the document once. Safe to call repeatedly and during SSR (no-op).
+- `useHasUiKit` (function): function useHasUiKit(): boolean — True when a {@link UiKitRoot} is above: engine screens switch to kit parts only then.
+- `useKitPresence` (function): function useKitPresence(open: boolean, exitMs: number): { mounted: boolean; leaving: boolean } — Keeps something mounted through its exit motion: `leaving` turns true when `open` goes false, and `mounted` turns false `exitMs` later.
+- `useUiKit` (function): function useUiKit(): UiKit — The kit in charge here: the nearest {@link UiKitRoot}'s, or the plain fallback kit outside one.
+
+## @jgengine/react/uiKitSignal
+
+- `signalKit` (const): const signalKit: UiKit — Wayfinder: in-world signage. Enamel road-sign plates with keylines and rivets, arrow and blade signs, route-marker shields, LED departure boards and lamp bulbs, with split-flap flips and clacks.
+
+## @jgengine/react/uiKitTerminal
+
+- `terminalKit` (const): const terminalKit: UiKit — Mainframe: a brutalist phosphor terminal. Monospace everywhere, uppercase labels, double-ruled frames with the title set into the rule, ASCII meters, log-line toasts and a block cursor.
+
+## @jgengine/react/uiKits
+
+- `UI_KITS` (const): const UI_KITS: Readonly<Record<UiKitName, UiKit>> — The eight built-in UI kits, each a complete visual language with every part: `ink` comic caper, `paper` cardboard and stickers, `parchment` painterly fantasy, `terminal` brutalist console, `holo` angular sci-fi hologram, `broadcast` sports TV graphics, `arcade` retro pixel cabinet, `signal` in-world signage and departure boards.
+- `UiKitName` (type): type UiKitName = "ink" | "paper" | "parchment" | "terminal" | "holo" | "broadcast" | "arcade" | "signal" — The built-in kit names a game can pick with `defineGame({ uiKit: "<name>" })`.
+- `resolveUiKit` (function): function resolveUiKit(kit: UiKitName | UiKit): UiKit — A built-in kit by name, or a kit object as given (for example from `customizeKit`).
+
+## @jgengine/react/uiKitsPreview
+
+- `KitSpecimen` (function): function KitSpecimen({ kit, className, style }: { kit: UiKit; className?: string; style?: CSSProperties }): ReactNode — Every kit part on a busy game-like backdrop, so one picture shows a kit's whole language.
+- `UiKitPreview` (function): function UiKitPreview({ kit, className }: { kit: UiKit; className?: string }): ReactNode — One kit, large: the specimen plus its dialog and strip, for working on a single kit.
+- `UiKitsPreview` (function): function UiKitsPreview({ className }: { className?: string }): ReactNode — Contact sheet: all eight built-in UI kits side by side, every part each.
 
 ## @jgengine/react/useDebouncedCommit
 
