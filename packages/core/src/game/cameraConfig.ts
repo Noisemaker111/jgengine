@@ -127,7 +127,7 @@ export interface RtsCameraConfig extends TopDownCameraConfig {
   bounds?: { minX?: number; maxX?: number; minZ?: number; maxZ?: number };
   /** Start centered on this world point when there is no follow target. */
   start?: { x?: number; z?: number };
-  /** Read WASD/arrow pan, edge-scroll, Q/E rotate, and wheel zoom. `false` sits static at the start/bounds position — a backdrop camera, no input at all. Default true. */
+  /** Read WASD/arrow pan, edge-scroll, Q/E rotate, and wheel zoom (WASD and Q/E step aside when the game binds them). `false` sits static at the start/bounds position — a backdrop camera, no input at all. Default true. */
   pan?: boolean;
 }
 

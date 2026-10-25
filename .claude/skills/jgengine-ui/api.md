@@ -2632,8 +2632,8 @@
 - `ControllerCameraShakeProps` (interface): interface ControllerCameraShakeProps — Props for {@link ControllerCameraShake}.
 - `FirstPersonMuzzleReader` (type): type FirstPersonMuzzleReader = (target: Vector3) => boolean — Writes a live presentation muzzle in world space; false means this rig has no muzzle available.
 - `GAME_SIM_FRAME_PRIORITY` (const): const GAME_SIM_FRAME_PRIORITY: 0 — Run simulation/movement before orbit follow so poses are current.
-- `GameCameraRig` (function): function GameCameraRig({ yawRef, pitchRef, config, onDragChange, pointerControls, panKeysEnabled, director, viewmodel, }: GameCameraRigProps): React.JSX.Element — ⚠ undocumented
-- `GameCameraRigProps` (interface): interface GameCameraRigProps { yawRef: MutableRefObject<number>; pitchRef: MutableRefObject<number>; config?: GameCameraConfig; onDragChange?: (dragging: boolean) => void; pointerControls?: boolean; panKeysEnabled?: boolean; director?: CameraDirector; viewmodel?: Compo… — ⚠ undocumented
+- `GameCameraRig` (function): function GameCameraRig({ yawRef, pitchRef, config, onDragChange, pointerControls, panKeysEnabled, rotateKeysEnabled, director, viewmodel, }: GameCameraRigProps): React.JSX.Element — ⚠ undocumented
+- `GameCameraRigProps` (interface): interface GameCameraRigProps { yawRef: MutableRefObject<number>; pitchRef: MutableRefObject<number>; config?: GameCameraConfig; onDragChange?: (dragging: boolean) => void; pointerControls?: boolean; panKeysEnabled?: boolean; rotateKeysEnabled?: boolean; director?: Came… — ⚠ undocumented
 - `GameFirstPersonCamera` (function): function GameFirstPersonCamera({ yawRef, pitchRef, config, followEntityId, viewmodel, weapon, }: GameFirstPersonCameraProps): React.JSX.Element | null — ⚠ undocumented
 - `GameFirstPersonCameraProps` (interface): interface GameFirstPersonCameraProps { yawRef: MutableRefObject<number>; pitchRef: MutableRefObject<number>; config?: FirstPersonCameraConfig; followEntityId?: string; viewmodel?: ComponentType<ViewmodelProps>; weapon?: (entityId: string) => CameraWeaponView | null } — ⚠ undocumented
 - `GameInspectionCamera` (function): function GameInspectionCamera({ config: configPatch }: GameInspectionCameraProps): React.JSX.Element — Model-viewer / editor rig (#207.7, #866): left-click selects (editor), middle-drag pans, right-drag orbits, scroll zooms toward a configurable anchor. Orbits a fixed `target`; never reads player/entity state.
@@ -2659,8 +2659,8 @@
 
 ## @jgengine/shell/camera/GameCameraRig
 
-- `GameCameraRig` (function): function GameCameraRig({ yawRef, pitchRef, config, onDragChange, pointerControls, panKeysEnabled, director, viewmodel, }: GameCameraRigProps): React.JSX.Element — ⚠ undocumented
-- `GameCameraRigProps` (interface): interface GameCameraRigProps { yawRef: MutableRefObject<number>; pitchRef: MutableRefObject<number>; config?: GameCameraConfig; onDragChange?: (dragging: boolean) => void; pointerControls?: boolean; panKeysEnabled?: boolean; director?: CameraDirector; viewmodel?: Compo… — ⚠ undocumented
+- `GameCameraRig` (function): function GameCameraRig({ yawRef, pitchRef, config, onDragChange, pointerControls, panKeysEnabled, rotateKeysEnabled, director, viewmodel, }: GameCameraRigProps): React.JSX.Element — ⚠ undocumented
+- `GameCameraRigProps` (interface): interface GameCameraRigProps { yawRef: MutableRefObject<number>; pitchRef: MutableRefObject<number>; config?: GameCameraConfig; onDragChange?: (dragging: boolean) => void; pointerControls?: boolean; panKeysEnabled?: boolean; rotateKeysEnabled?: boolean; director?: Came… — ⚠ undocumented
 
 ## @jgengine/shell/camera/GameFirstPersonCamera
 
@@ -2718,7 +2718,7 @@
 - `LockOnRig` (function): function LockOnRig(props: RigProps): null — ⚠ undocumented
 - `ObserverRig` (function): function ObserverRig(props: RigProps): null — Detached spectator/photo cam (#120): binds to any entity or fixed point and auto-orbits it, reading no player input at all — the van CCTV / photo-mode / kill-cam rig. Distinct from every other rig, which drives from mouse/keys.
 - `RigProps` (interface): interface RigProps { yawRef: MutableRefObject<number>; pitchRef: MutableRefObject<number>; config?: GameCameraConfig; followEntityId?: string | null; absoluteFov?: boolean } — ⚠ undocumented · used by `ObserverRig`: Detached spectator/photo cam (#120): binds to any entity or fixed point and auto-orbits it, reading no player input at all — the van CCTV / …
-- `RtsRig` (function): function RtsRig(props: RigProps & { panKeysEnabled?: boolean }): null — ⚠ undocumented
+- `RtsRig` (function): function RtsRig(props: RigProps & { panKeysEnabled?: boolean; rotateKeysEnabled?: boolean }): null — ⚠ undocumented
 - `ShoulderRig` (function): function ShoulderRig(props: RigProps): null — ⚠ undocumented
 - `SideScrollRig` (function): function SideScrollRig(props: RigProps): null — Fixed side-on 2.5D follow rig: watches the followed entity from the perpendicular axis, never reading WASD/mouse-look.
 - `TopDownRig` (function): function TopDownRig(props: RigProps): null — ⚠ undocumented

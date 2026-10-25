@@ -54,6 +54,7 @@ import { SettingsProvider, type SettingsActionView } from "@jgengine/react/setti
 
 import { resolveWorldSky } from "./worldSky";
 import { resolveCaptureCameraConfig } from "./camera/rigResolve";
+import { rtsRotateKeysConflict } from "./camera/rigMath";
 import { pointerAimFor, pointerContextMenu, resolvePointerAim } from "./shellPointer";
 import { shellPointerInput } from "./shellPointerInput";
 import { createControlGroupKeys, groupCentroid } from "./pointer/controlGroupKeys";
@@ -274,6 +275,7 @@ export function Shell3dPresentation({
   const showReticle =
     (firstPerson && cameraConfig?.firstPerson?.reticle !== false) || rigKind === "shoulder";
   const rtsPanKeysEnabled = !rtsPanKeysConflict(playable.game.input);
+  const rtsRotateKeysEnabled = !rtsRotateKeysConflict(playable.game.input);
   const bars = resolveWorldOverlayBars(playable.worldHealthBars);
   const nameplates = resolveWorldOverlayBars(playable.nameplates);
   const effects = resolvePresentationEffects(playable.presentationEffects);
@@ -794,6 +796,7 @@ export function Shell3dPresentation({
                       viewmodel={playable.viewmodel}
                       pointerControls={pointerUsesLeft}
                       panKeysEnabled={rtsPanKeysEnabled}
+                      rotateKeysEnabled={rtsRotateKeysEnabled}
                       director={ctx.camera}
                       onDragChange={(dragging) => {
                         cameraDraggingRef.current = dragging;
