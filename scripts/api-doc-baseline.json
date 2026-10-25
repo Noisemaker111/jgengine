@@ -2666,7 +2666,6 @@
   "@jgengine/shell/multiplayer#resolveShellMultiplayer",
   "@jgengine/shell/pointer/PointerOverlays#ContextMenuView",
   "@jgengine/shell/pointer/PointerOverlays#MarqueeBox",
-  "@jgengine/shell/pointer/PointerProbe#PointerProbe",
   "@jgengine/shell/pointer/pointerService#POINTER_ENTITY_KEY",
   "@jgengine/shell/pointer/pointerService#POINTER_OBJECT_KEY",
   "@jgengine/shell/pointer/pointerService#PointerHitFilter",
