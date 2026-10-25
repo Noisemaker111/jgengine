@@ -3,7 +3,7 @@ import { spawnSync } from "node:child_process";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { checkReleaseAncestor, cutChangelog, lockstepBullet, mirrorEntry, nextReleaseVersion, parseSections, sectionLines, splitComment } from "./release";
+import { checkReleaseAncestor, cutChangelog, fastForwardMain, lockstepBullet, mirrorEntry, nextReleaseVersion, parseSections, sectionLines, splitComment } from "./release";
 
 const MARKDOWN = `# Changelog
 
@@ -188,5 +188,30 @@ describe("release ancestor guard", () => {
     } finally {
       repo.done();
     }
+  });
+});
+
+describe("fastForwardMain", () => {
+  test("fetches beta before pushing, and pushes the fetched tip rather than the stale ref", () => {
+    const calls: string[] = [];
+    let fetched = false;
+    const git = (args: readonly string[]) => {
+      calls.push(args.join(" "));
+      if (args[0] === "fetch") fetched = true;
+      if (args[0] === "rev-parse") return { status: 0, stdout: `${fetched ? "merged" : "stale"}\n`, stderr: "" };
+      return { status: 0, stdout: "", stderr: "" };
+    };
+    expect(fastForwardMain(git)).toEqual({ ok: true, sha: "merged" });
+    expect(calls).toEqual(["fetch --quiet origin beta", "rev-parse origin/beta", "push origin merged:main"]);
+  });
+
+  test("a failed fetch never pushes", () => {
+    const calls: string[] = [];
+    const git = (args: readonly string[]) => {
+      calls.push(args[0]);
+      return { status: args[0] === "fetch" ? 1 : 0, stdout: "", stderr: "offline" };
+    };
+    expect(fastForwardMain(git).ok).toBe(false);
+    expect(calls).toEqual(["fetch"]);
   });
 });

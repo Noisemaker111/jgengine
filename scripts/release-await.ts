@@ -48,7 +48,8 @@ export const PUBLISH_WORKFLOW = "publish.yml";
 export const PUBLISH_TIMEOUT_MS = 45 * 60_000;
 /** Long enough not to hammer the API, short enough that a lane never wonders if it is alive. */
 export const POLL_INTERVAL_MS = 10_000;
-export const START_GRACE_MS = 3 * 60_000;
+/** `publish.yml` is queued only when the `main` CI run of the commit finishes, which takes minutes. */
+export const START_GRACE_MS = 20 * 60_000;
 
 /** The run for `sha`, preferring the newest: a re-run replaces the failed attempt it retried. */
 export function pickRun(runs: readonly PublishRun[], sha: string): PublishRun | null {
