@@ -286,6 +286,20 @@ export function SkyDome({
           float d = length(fract(q) - 0.5 - jitter * 0.7);
           return smoothstep(0.18, 0.0, d) * smoothstep(0.984, 0.999, seed);
         }
+        // Single-scattering terms the authored gradient lacks: a forward-scattering (Mie) aureole around
+        // the sun, and a long path through the air when the sun is low that reddens the horizon on its side.
+        vec3 skyScatter(vec3 vd, vec3 sunDir, float h) {
+          float cosTheta = dot(vd, sunDir);
+          float g = 0.76;
+          float mie = (1.0 - g * g) / pow(1.0 + g * g - 2.0 * g * cosTheta, 1.5) * 0.0045;
+          float sunHeight = sunDir.y;
+          float lowSun = (1.0 - smoothstep(0.04, 0.42, sunHeight)) * smoothstep(-0.16, 0.0, sunHeight);
+          vec2 flatView = normalize(vd.xz + vec2(1e-5));
+          vec2 flatSun = normalize(sunDir.xz + vec2(1e-5));
+          float sunSide = pow(dot(flatView, flatSun) * 0.5 + 0.5, 2.0);
+          float band = pow(1.0 - h, 4.0);
+          return uSunColor * (mie * smoothstep(-0.1, 0.05, sunHeight) + band * sunSide * lowSun * 0.55);
+        }
         void main() {
           vec3 dir = normalize(vWorldPosition + vec3(0.0, offset, 0.0));
           float h = max(dir.y, 0.0);
@@ -296,9 +310,11 @@ export function SkyDome({
           float clouds = smoothstep(0.52, 0.82, sFbm(cuv));
           float band = smoothstep(0.08, 0.35, dir.y) * smoothstep(1.0, 0.35, dir.y);
           col = mix(col, mix(topColor, vec3(1.0), 0.6), clouds * band * uCloudiness);
-          float sd = max(dot(vd, normalize(uSunDirection)), 0.0);
+          vec3 sunDir = normalize(uSunDirection);
+          float sd = max(dot(vd, sunDir), 0.0);
           float glow = pow(sd, 8.0) * 0.35 + pow(sd, 128.0) * 2.6;
           col += uSunColor * glow * uSunIntensity * uSunGlow;
+          col += skyScatter(vd, sunDir, h) * uSunIntensity * uSunGlow;
           if (uStars > 0.001) {
             float stars = starField(vd) * smoothstep(0.02, 0.22, vd.y) * smoothstep(0.35, 0.9, uStars);
             col += vec3(0.86, 0.9, 1.0) * stars * uStars * 1.6;

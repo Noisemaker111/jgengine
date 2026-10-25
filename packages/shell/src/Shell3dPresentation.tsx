@@ -60,6 +60,7 @@ import { AudioListener, EntityAudioEmitters, ObjectAudioEmitters } from "./audio
 import type { AudioEngine } from "./audio/audioEngine";
 import { PostProcessing } from "./postfx/PostProcessing";
 import { EnvironmentLighting } from "./render/EnvironmentLighting";
+import { worldProbeForQuality } from "./render/worldReflectionProbe";
 import { CollisionDebugWorld } from "./devtools/CollisionDebugWorld";
 import { DevtoolsRendererProbe } from "./devtools/DevtoolsOverlay";
 import { FrameTelemetry } from "./devtools/FrameTelemetry";
@@ -298,6 +299,7 @@ export function Shell3dPresentation({
   const lighting = resolvedLook.lighting;
   const sunFromLighting = lighting?.directional?.[0]?.position;
   const sceneLighting = useMemo(() => (cinematicLook ? balanceLightingForIbl(lighting) : lighting), [cinematicLook, lighting]);
+  const worldProbe = useMemo(() => worldProbeForQuality(graphics.quality), [graphics.quality]);
   const effectiveSky = useMemo(() => {
     if (authoredSky === undefined) return undefined;
     const bearing =
@@ -640,6 +642,7 @@ export function Shell3dPresentation({
                       horizonTint={sceneLighting?.ambient?.color}
                       sunDirection={sceneLighting?.directional?.[0]?.position}
                       sunColor={sceneLighting?.directional?.[0]?.color ?? "#fff2d6"}
+                      worldProbe={worldProbe}
                       {...(authoredDaylight ? { daylight: daylightModulation } : {})}
                     />
                   ) : null}

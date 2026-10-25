@@ -59,6 +59,7 @@ const bare = {
   bloom: false as const,
   grade: false as const,
   contactShadows: false as const,
+  atmosphere: false as const,
 };
 
 test("a stage the config or the tier disables builds no pass, no scene draw and no target", () => {
@@ -169,8 +170,8 @@ test("a lower tier builds fewer passes and renders them into a smaller target", 
   const high = built("high");
   const ultra = built("ultra");
   try {
-    expect(high.stages).toEqual(["ao", "contactShadows", "bloom", "dof", "taa", "exposure", "grade"]);
-    expect(medium.stages).toEqual(["ao", "contactShadows", "bloom", "dof", "smaa", "exposure", "grade"]);
+    expect(high.stages).toEqual(["ao", "contactShadows", "atmosphere", "bloom", "dof", "taa", "exposure", "grade"]);
+    expect(medium.stages).toEqual(["ao", "contactShadows", "atmosphere", "bloom", "dof", "smaa", "exposure", "grade"]);
     expect(low.stages).toEqual(["bloom", "smaa", "exposure", "grade"]);
     expect(low.composer.passes.length).toBeLessThan(high.composer.passes.length);
     expect(high.composer.renderTarget1.width).toBe(320);

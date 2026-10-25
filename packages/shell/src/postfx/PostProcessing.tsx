@@ -9,7 +9,9 @@ import { SMAAPass } from "three/examples/jsm/postprocessing/SMAAPass.js";
 
 import {
   DEFAULT_AO,
+  DEFAULT_ATMOSPHERE,
   type AoConfig,
+  type AtmosphereConfig,
   type BloomConfig,
   type ContactShadowConfig,
   type DofConfig,
@@ -28,6 +30,7 @@ import {
 import type { GraphicsQuality } from "@jgengine/core/settings/settingsModel";
 
 import { ExposureMeterPass } from "./autoExposure";
+import { AtmospherePass } from "./atmospherePass";
 import { ContactShadowPass } from "./contactShadowPass";
 import { createGradePass } from "./gradeShader";
 import { postfxTierPolicy } from "./postfxTierPolicy";
@@ -120,7 +123,7 @@ const TONE_MAPPING: Record<ToneMappingMode, THREE.ToneMapping> = {
 };
 
 /** A post chain stage that costs its own draws; the plan names the ones a chain actually builds. @internal */
-export type PostfxStage = "ao" | "contactShadows" | "bloom" | "dof" | "smaa" | "taa" | "exposure" | "stylize" | "grade";
+export type PostfxStage = "ao" | "contactShadows" | "atmosphere" | "bloom" | "dof" | "smaa" | "taa" | "exposure" | "stylize" | "grade";
 
 /** What one chain will build, resolved from the game's config, the tier and the player's toggles. @internal */
 export interface PostfxStagePlan {
@@ -142,6 +145,9 @@ export interface PostfxStagePlan {
   /** Contact shadows toward the key light, read from the beauty depth; null when off. */
   contactShadows: ContactShadowConfig | null;
   contactShadowSteps: number;
+  /** Height haze and light shafts toward the key light, read from the beauty depth; null when off. */
+  atmosphere: Required<AtmosphereConfig> | null;
+  atmosphereSteps: number;
   bloom: BloomConfig | null;
   dof: DofConfig | null;
   smaa: boolean;
@@ -207,6 +213,17 @@ export function resolveContactShadowStage(config: PostProcessingConfig["contactS
   return config ?? {};
 }
 
+/** Atmosphere the chain runs: authored fields over {@link DEFAULT_ATMOSPHERE}, null when off, empty or skipped by the tier. @internal */
+export function resolveAtmosphereStage(config: PostProcessingConfig["atmosphere"], tierAllows: boolean): Required<AtmosphereConfig> | null {
+  if (!tierAllows || config === false) return null;
+  const settings = { ...DEFAULT_ATMOSPHERE, ...definedOnly(config ?? {}) };
+  return settings.fogDensity <= 0 && settings.shafts <= 0 ? null : settings;
+}
+
+function definedOnly<T extends object>(value: T): Partial<T> {
+  return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== undefined)) as Partial<T>;
+}
+
 /** The stages one chain asks for, before any pass is built. Pure data. @internal */
 export function planPostStages(
   config: PostProcessingConfig,
@@ -222,7 +239,8 @@ export function planPostStages(
   const taa = tierStages.smaa && aa === "taa";
   const smaa = tierStages.smaa && aa === "smaa";
   const contactShadows = resolveContactShadowStage(config.contactShadows, policy.contactShadowSteps > 0 && aa !== "msaa");
-  const sampledDepth = smaa || taa || aa === false || contactShadows !== null;
+  const atmosphere = resolveAtmosphereStage(config.atmosphere, policy.atmosphereSteps > 0 && aa !== "msaa");
+  const sampledDepth = smaa || taa || aa === false || contactShadows !== null || atmosphere !== null;
   return {
     samples: aa === false || sampledDepth ? 0 : 2,
     ao,
@@ -230,6 +248,8 @@ export function planPostStages(
     aoGbuffer: sampledDepth ? "beauty" : "prepass",
     contactShadows,
     contactShadowSteps: contactShadows === null ? 0 : policy.contactShadowSteps,
+    atmosphere,
+    atmosphereSteps: atmosphere === null ? 0 : policy.atmosphereSteps,
     bloom,
     dof: authoredDof === null ? null : { ...authoredDof, aperture: authoredDof.aperture ?? (quality === "high" ? 0.00025 : 0.00012) },
     smaa,
@@ -274,7 +294,7 @@ export function buildPostGraph(
   width: number,
   height: number,
 ): BuiltGraph {
-  const needsDepth = (plan.ao !== null && plan.aoGbuffer === "beauty") || plan.contactShadows !== null || plan.taa;
+  const needsDepth = (plan.ao !== null && plan.aoGbuffer === "beauty") || plan.contactShadows !== null || plan.atmosphere !== null || plan.taa;
   const beautyDepth = needsDepth ? new THREE.DepthTexture(width, height) : null;
   const target = new THREE.WebGLRenderTarget(width, height, {
     type: THREE.HalfFloatType,
@@ -304,6 +324,10 @@ export function buildPostGraph(
   if (plan.contactShadows !== null && beautyDepth !== null) {
     composer.addPass(new ContactShadowPass(scene, camera, beautyDepth, plan.contactShadows, plan.contactShadowSteps));
     built.push("contactShadows");
+  }
+  if (plan.atmosphere !== null && beautyDepth !== null) {
+    composer.addPass(new AtmospherePass(scene, camera, beautyDepth, plan.atmosphere, plan.atmosphereSteps));
+    built.push("atmosphere");
   }
 
   if (plan.bloom !== null) {

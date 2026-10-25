@@ -133,8 +133,26 @@ export interface ContactShadowConfig {
 }
 
 /**
- * Declarative post-processing chain (RenderPass → AO → contact shadows → Bloom → DOF → SMAA or
- * TAA → tone-map output → Grade). Present on a game means the shell mounts an `EffectComposer` and owns
+ * Sunlit air over the lit frame: ground haze that thickens toward the ground and with distance,
+ * brighter toward the sun, and light shafts where the sky shows through gaps. Both need a
+ * shadow-casting sun, so an interior with no sun skips them.
+ */
+export interface AtmosphereConfig {
+  /** Haze density per world unit at `fogHeight`; 0 turns the haze off. Default 0.0006. */
+  fogDensity?: number;
+  /** How fast the haze thins with height, per world unit. Default 0.15. */
+  fogFalloff?: number;
+  /** World height where the haze is densest. Default 0. */
+  fogHeight?: number;
+  /** Most the haze may cover a far surface, 0..1. Default 0.65. */
+  fogMax?: number;
+  /** Light-shaft strength; 0 turns shafts off. Default 0.3. */
+  shafts?: number;
+}
+
+/**
+ * Declarative post-processing chain (RenderPass → AO → contact shadows → atmosphere → Bloom → DOF
+ * → SMAA or TAA → tone-map output → Grade). Present on a game means the shell mounts an `EffectComposer` and owns
  * the render; absent means the renderer draws directly (unchanged). Each stage is
  * a config object, `false` to skip, or omitted for its default. Pure data — no
  * three.js types leak into core.
@@ -173,6 +191,11 @@ export interface PostProcessingConfig {
    * medium and up; `false` turns it off. Needs the beauty depth, so an `aa: "msaa"` chain skips it.
    */
   contactShadows?: ContactShadowConfig | false;
+  /**
+   * Height haze and sun shafts ({@link AtmosphereConfig}). Omitted runs {@link DEFAULT_ATMOSPHERE},
+   * tuned per `mood`, on medium and up; `false` turns both off.
+   */
+  atmosphere?: AtmosphereConfig | false;
   /** Depth-of-field / bokeh. Heavier stage — omit or `false` to skip. Default off (omitted). */
   dof?: DofConfig | false;
   grade?: GradeConfig | false;
@@ -189,6 +212,15 @@ export const DEFAULT_CONTACT_SHADOWS: Readonly<Required<ContactShadowConfig>> = 
   length: 0.45,
   thickness: 0.3,
   distance: 70,
+};
+
+/** Height haze and light shafts used when a post chain leaves `atmosphere` unset. */
+export const DEFAULT_ATMOSPHERE: Readonly<Required<AtmosphereConfig>> = {
+  fogDensity: 0.0006,
+  fogFalloff: 0.15,
+  fogHeight: 0,
+  fogMax: 0.65,
+  shafts: 0.3,
 };
 
 /**

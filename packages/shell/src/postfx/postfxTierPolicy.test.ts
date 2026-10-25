@@ -10,7 +10,7 @@ import { POSTFX_TIER_POLICY, postfxTierPolicy } from "./postfxTierPolicy";
 const TIERS: readonly GraphicsQuality[] = ["low", "medium", "high", "ultra"];
 
 /** Every stage a chain can build, so a plan's cost is its stage list plus its resolution. */
-const ALL_STAGES: readonly PostfxStage[] = ["ao", "contactShadows", "bloom", "dof", "smaa", "taa", "exposure", "stylize", "grade"];
+const ALL_STAGES: readonly PostfxStage[] = ["ao", "contactShadows", "atmosphere", "bloom", "dof", "smaa", "taa", "exposure", "stylize", "grade"];
 
 /** The stages `plan` builds, in the order the composer adds them. */
 function plannedStages(plan: PostfxStagePlan): PostfxStage[] {
@@ -18,6 +18,7 @@ function plannedStages(plan: PostfxStagePlan): PostfxStage[] {
     if (stage === "ao") return plan.ao !== null;
     if (stage === "contactShadows") return plan.contactShadows !== null;
     if (stage === "taa") return plan.taa;
+    if (stage === "atmosphere") return plan.atmosphere !== null;
     if (stage === "bloom") return plan.bloom !== null;
     if (stage === "dof") return plan.dof !== null;
     if (stage === "smaa") return plan.smaa;
@@ -90,6 +91,7 @@ describe("the tier's default stage set is the one the graphics profile names", (
     expect(low.smaa).toBe(true);
     expect(low.taa).toBe(false);
     expect(low.contactShadows).toBeNull();
+    expect(low.atmosphere).toBeNull();
     for (const quality of ["high", "ultra"] as const) {
       const plan = planPostStages(full, quality);
       expect(plan.taa, quality).toBe(true);
