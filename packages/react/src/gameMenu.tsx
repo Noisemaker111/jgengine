@@ -10,6 +10,7 @@ import { useReducedMotion } from "./accessibility";
 import { createGameMenuSound, type GameMenuSound } from "./gameMenuSound";
 import { hudDuration, hudEase, hudFont, hudType } from "./hudTokens";
 import { useMenuNav } from "./menuNav";
+import { KitMenu, KitPanel, useHasUiKit } from "./uiKitRoot";
 
 /**
  * A game's front-end menu: a full-bleed surface over a living background, a logo, primary verbs on
@@ -268,6 +269,7 @@ export function GameMenu({
 }: GameMenuProps): ReactNode {
   const prefersReduced = useReducedMotion();
   const reduced = reducedMotion === undefined ? prefersReduced : reducedMotion || prefersReduced;
+  const kitted = useHasUiKit();
   useViewportScrollLock(open);
 
   const allItems = useMemo(() => [...items, ...(secondary ?? [])], [items, secondary]);
@@ -513,6 +515,21 @@ export function GameMenu({
             if (event.key === "ArrowDown" || event.key === "ArrowUp") event.stopPropagation();
           }}
         >
+          {kitted ? (
+            <KitMenu
+              variant={variant}
+              activeId={activeId}
+              items={allItems.map((item) => ({ ...item, secondary: (secondary ?? []).includes(item) }))}
+              itemProps={(id) => ({ ...hoverProps(id), "data-jg-game-menu-item": id })}
+              onSelect={(id) => {
+                const item = allItems.find((candidate) => candidate.id === id);
+                if (item === undefined || item.disabled === true) return;
+                soundRef.current?.play("confirm");
+                onSelect(id);
+              }}
+            />
+          ) : (
+          <>
           <div
             data-jg-game-menu-nav-surface=""
             aria-hidden="true"
@@ -656,6 +673,8 @@ export function GameMenu({
               </button>
             );
           })}
+          </>
+          )}
         </nav>
       </div>
 
@@ -675,9 +694,9 @@ export function GameMenu({
           padding: isPause
             ? "clamp(10px, 1.4vw, 18px)"
             : "clamp(6px, 1.6vh, 20px) clamp(12px, 1.4vw, 22px) clamp(12px, 1.6vh, 20px)",
-          background: PANE_SURFACE,
+          background: kitted ? "none" : PANE_SURFACE,
           borderRadius: "var(--jg-menu-surface-radius, 8px)",
-          boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.06)",
+          boxShadow: kitted ? "none" : "inset 0 0 0 1px rgba(255,255,255,0.06)",
           ...detailStyle,
         }}
       >
@@ -693,7 +712,13 @@ export function GameMenu({
               animation: reduced ? undefined : `jg-menu-pane-in ${hudDuration("slow")} ${hudEase("easeOut")} both`,
             }}
           >
-            {detailNode}
+            {kitted ? (
+              <KitPanel variant="pane" style={{ flex: 1, minHeight: 0, overflow: "auto" }}>
+                {detailNode}
+              </KitPanel>
+            ) : (
+              detailNode
+            )}
           </div>
         )}
       </div>

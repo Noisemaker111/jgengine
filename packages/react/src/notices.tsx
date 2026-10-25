@@ -5,6 +5,8 @@ import type { LayoutRect, LayoutRegion } from "@jgengine/core/ui/gameLayout";
 
 import { useGameViewportLayout } from "./gameViewport";
 import { useOptionalGameContext } from "./provider";
+import type { KitTone } from "./uiKit";
+import { KitToast, useHasUiKit, useUiKit } from "./uiKitRoot";
 
 export type { Notice, NoticeTone } from "@jgengine/core/game/notices";
 
@@ -21,6 +23,19 @@ const TONE_COLOR: Record<NoticeTone, string> = {
   warn: "var(--jg-warning, #f5b544)",
   deny: "var(--jg-danger, #f26d6d)",
 };
+
+const KIT_TONE: Record<NoticeTone, KitTone> = { info: "accent", success: "good", warn: "warn", deny: "bad" };
+
+/** The entries a capped stack shows: every leaving one plus the newest `max` live ones. @internal */
+export function cappedShown<T extends { leaving: boolean }>(shown: readonly T[], max: number): T[] {
+  const live = shown.filter((entry) => !entry.leaving).length;
+  let skip = Math.max(0, live - Math.max(1, Math.floor(max)));
+  return shown.filter((entry) => {
+    if (entry.leaving || skip === 0) return true;
+    skip -= 1;
+    return false;
+  });
+}
 
 const TONE_LABEL: Record<NoticeTone, string> = { info: "Info", success: "Done", warn: "Warning", deny: "Can't do that" };
 
@@ -160,6 +175,7 @@ export function NoticeStack({
   avoidHud = true,
   zIndex = 85,
   scale = 1,
+  maxVisible = 3,
   renderNotice,
 }: {
   /** Defaults to the surrounding game's `ctx.game.notices`. */
@@ -173,8 +189,13 @@ export function NoticeStack({
   zIndex?: number;
   /** Multiplies text and spacing (the shell passes the player's UI scale). */
   scale?: number;
+  /** Most notices on screen at once; older ones wait their turn off screen. Default 3. */
+  maxVisible?: number;
   renderNotice?: (notice: Notice) => ReactNode;
 }) {
+  const kitted = useHasUiKit();
+  const kit = useUiKit();
+  const exitMs = kitted ? kit.motion.exitMs : EXIT_MS;
   const ctx = useOptionalGameContext();
   const source = feed ?? ctx?.game.notices ?? null;
   const live = useNoticeList(source);
@@ -199,9 +220,9 @@ export function NoticeStack({
   const anyLeaving = shown.some((entry) => entry.leaving);
   useEffect(() => {
     if (!anyLeaving) return;
-    const timer = setTimeout(() => setShown((previous) => previous.filter((entry) => !entry.leaving)), EXIT_MS);
+    const timer = setTimeout(() => setShown((previous) => previous.filter((entry) => !entry.leaving)), exitMs);
     return () => clearTimeout(timer);
-  }, [anyLeaving]);
+  }, [anyLeaving, exitMs]);
 
   if (shown.length === 0) return null;
   return (
@@ -226,7 +247,13 @@ export function NoticeStack({
       }}
     >
       <style>{KEYFRAMES}</style>
-      {shown.map(({ notice, leaving }) => (
+      {cappedShown(shown, maxVisible).map(({ notice, leaving }) => kitted && renderNotice === undefined ? (
+        <div key={notice.id} data-jg-notice-kit={notice.tone} style={{ maxWidth: "100%" }}>
+          <KitToast key={notice.count} tone={KIT_TONE[notice.tone]} count={notice.count} leaving={leaving}>
+            {notice.text}
+          </KitToast>
+        </div>
+      ) : (
         <div key={notice.id} data-jg-notice={notice.tone} data-leaving={leaving ? "" : undefined} style={{ maxWidth: "100%" }}>
           {renderNotice !== undefined ? renderNotice(notice) : (
             <div

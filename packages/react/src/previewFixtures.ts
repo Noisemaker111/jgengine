@@ -1,3 +1,5 @@
+import { createElement } from "react";
+
 import type { GamePreviewComponent } from "./preview";
 import { BarsPreview } from "./barsPreview";
 import { HudChromePreview } from "./hudChromePreview";
@@ -9,6 +11,8 @@ import { SpriteClipPreview } from "./spriteClipPreview";
 import { TileLayerPreview } from "./tileLayerPreview";
 import { HudSkinPreview } from "./hudSkinPreview";
 import { ScrollRailPreview } from "./scrollRailPreview";
+import { UI_KITS, type UiKitName } from "./uiKits";
+import { UiKitPreview, UiKitsPreview } from "./uiKitsPreview";
 
 /**
  * One entry in the engine preview-fixture registry: a deterministic, engine-level
@@ -78,7 +82,19 @@ export const PREVIEW_FIXTURES: Record<string, PreviewFixture> = {
     component: TileLayerPreview,
   },
   HudSkinPreview: { name: "HudSkinPreview", description: "Two procedural HUD skins applied to frames, bars, and inventory slots.", component: HudSkinPreview },
+  UiKitsPreview: { name: "UiKitsPreview", description: "Contact sheet: all eight built-in UI kits, every part each, over a game-like backdrop.", component: UiKitsPreview },
+  ...kitFixtures(),
 };
+
+function kitFixtures(): Record<string, PreviewFixture> {
+  const fixtures: Record<string, PreviewFixture> = {};
+  for (const name of Object.keys(UI_KITS) as UiKitName[]) {
+    const kit = UI_KITS[name];
+    const id = `UiKit-${name}`;
+    fixtures[id] = { name: id, description: `The ${kit.name} UI kit, large: every part, a dialog and a strip.`, component: ({ className }) => createElement(UiKitPreview, { kit, className }) };
+  }
+  return fixtures;
+}
 
 /** Sorted list of registered fixture names, for discovery/listing. */
 export function previewFixtureNames(): string[] {
