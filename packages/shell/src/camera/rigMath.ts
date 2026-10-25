@@ -127,6 +127,24 @@ export function rtsPanWorldDir(panX: number, panZ: number, yaw: number): Vec3 {
   return { x: x / len, y: 0, z: z / len };
 }
 
+/**
+ * Move an RTS pan center to a queued `ctx.camera.panTo` point (when any), then clamp it to the rig bounds.
+ * @internal
+ */
+export function applyRtsCenter(
+  center: Vec3,
+  jump: { x: number; z: number } | null,
+  bounds: { minX?: number; maxX?: number; minZ?: number; maxZ?: number } | undefined,
+): void {
+  if (jump !== null) {
+    center.x = jump.x;
+    center.z = jump.z;
+  }
+  if (bounds === undefined) return;
+  center.x = clamp(center.x, bounds.minX ?? -Infinity, bounds.maxX ?? Infinity);
+  center.z = clamp(center.z, bounds.minZ ?? -Infinity, bounds.maxZ ?? Infinity);
+}
+
 /** Exponential spring-arm approach toward a desired point (frame-rate independent).
  * @internal
  */

@@ -13,7 +13,10 @@
 
 /** What a control-group key press means once modifiers and double-tap timing are resolved. */
 export type ControlGroupIntent =
-  /** Ctrl+digit: save the current selection under `key`. */
+  | { kind: "bind"; key: string }
+  /** Shift+digit: add the current selection to the set saved under `key`. */
+  | { kind: "append"; key: string }
+/** Ctrl+digit: save the current selection under `key`. */
   | { kind: "bind"; key: string }
   /** Digit: recall the set saved under `key` into the active selection. */
   | { kind: "recall"; key: string }
@@ -26,6 +29,8 @@ export interface ControlGroupInput {
   digit: number;
   /** True when a bind modifier (Ctrl by default) was held. */
   bindModifier: boolean;
+  /** True when the append modifier (Shift by default) was held; ignored when `bindModifier` is also held. */
+  appendModifier?: boolean;
   /** Monotonic time of this press, same clock as `lastRecall`. */
   now: number;
   /** The previous recall (its key and time), or null if none — drives double-tap focus detection. */
@@ -68,6 +73,7 @@ export function resolveControlGroupIntent(
 ): ControlGroupIntent {
   const key = controlGroupKey(input.digit, options);
   if (input.bindModifier) return { kind: "bind", key };
+  if (input.appendModifier === true) return { kind: "append", key };
   const doubleTapMs = options.doubleTapMs ?? 300;
   const isDoubleTap =
     input.lastRecall !== null && input.lastRecall.key === key && input.now - input.lastRecall.at <= doubleTapMs;

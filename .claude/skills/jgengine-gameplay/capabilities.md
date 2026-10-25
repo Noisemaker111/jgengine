@@ -523,7 +523,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createPingSystem` (function) · `import { createPingSystem } from "@jgengine/core/gameplay"`
 
-## pointer-commands — click an entity or the ground to run a command (click-to-target, click-to-move, grab loot, marquee select)
+## pointer-commands — click an entity or the ground to run a command (click-to-target, click-to-move, grab loot, marquee select, Shift/double-click select modifiers, RTS control groups)
 
 - `PointerConfig` (interface) · `import { PointerConfig } from "@jgengine/core/gameplay"`
 

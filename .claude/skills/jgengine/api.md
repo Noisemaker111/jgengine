@@ -313,7 +313,7 @@
 ## @jgengine/core/runtime/cameraDirector
 
 - `CHASE_VIEWS` (const): const CHASE_VIEWS: readonly ChaseView[] — Default order {@link nextChaseView} cycles through.
-- `CameraDirector` (interface): interface CameraDirector { follow(entityId: string | null): void; followedEntityId(): string | null | undefined; setRig(kind: CameraRigKind | null, config?: CameraRigConfig): void; rig(): CameraRigOverride | null; setCinematic(config: CinematicCameraConfig | null):… — ⚠ undocumented
+- `CameraDirector` (interface): interface CameraDirector — Runtime camera policy at `ctx.camera`: follow target, rig overlay, cinematic, chase tuning, FOV kicks and RTS pan jumps.
 - `CameraDirectorSnapshot` (type): type CameraDirectorSnapshot = CameraSerialized<CameraDirectorState> — JSON-safe camera policy; documented instant chase responses use an explicit Infinity marker.
 - `CameraDirectorState` (interface): interface CameraDirectorState — Camera policy state before the JSON-safe snapshot number encoding.
 - `CameraRigConfig` (type): type CameraRigConfig = Omit<GameCameraConfig, "rig" | "projection" | "pixelPerfect" | "frustum" | "playerFov" | "weapon" | "onCameraFollow"> — Data overlay for an existing rig; callbacks and Canvas projection/preferences remain configured by the game.

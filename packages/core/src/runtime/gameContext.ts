@@ -524,6 +524,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
         ids: entities.ids,
         subscribeMembership: entities.subscribeMembership,
         selection: scene.entitySelection,
+        controlGroups: scene.entityControlGroups,
         subscribeBehaviors: entities.subscribeBehaviors,
         spawnPoseOf: entities.spawnPoseOf,
         resetToSpawn: entities.resetToSpawn,

@@ -32,6 +32,7 @@ import {
   resolveSideScrollPose,
   resolveTopDown,
   rtsPanWorldDir,
+  applyRtsCenter,
   seatPose,
   shoulderPose,
   sideScrollFollowBlend,
@@ -385,11 +386,7 @@ export function RtsRig(props: RigProps & { panKeysEnabled?: boolean }) {
       }
     }
 
-    const bounds = config?.bounds;
-    if (bounds !== undefined) {
-      center.x = clamp(center.x, bounds.minX ?? -Infinity, bounds.maxX ?? Infinity);
-      center.z = clamp(center.z, bounds.minZ ?? -Infinity, bounds.maxZ ?? Infinity);
-    }
+    applyRtsCenter(center, ctx.camera.takePanTo(), config?.bounds);
 
     props.yawRef.current = yawRef.current;
     const pose = topDownPose(

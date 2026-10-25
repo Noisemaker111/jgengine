@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import {
   addTrauma,
+  applyRtsCenter,
   angleDelta,
   bankRollStep,
   blendShoulder,
@@ -633,5 +634,17 @@ describe("chase yaw follow response (#1370)", () => {
 
   test("yawResponse: Infinity opts back into the legacy rigid follow", () => {
     expect(resolveChase({ yawResponse: Number.POSITIVE_INFINITY }).yawResponse).toBe(Number.POSITIVE_INFINITY);
+  });
+});
+
+describe("applyRtsCenter", () => {
+  test("jumps the pan center to a queued point and clamps it to the bounds", () => {
+    const center = { x: 1, y: 0, z: 1 };
+    applyRtsCenter(center, { x: 50, z: -3 }, { minX: -10, maxX: 10 });
+    expect(center).toEqual({ x: 10, y: 0, z: -3 });
+    applyRtsCenter(center, null, { minZ: 0 });
+    expect(center).toEqual({ x: 10, y: 0, z: 0 });
+    applyRtsCenter(center, { x: -4, z: 7 }, undefined);
+    expect(center).toEqual({ x: -4, y: 0, z: 7 });
   });
 });

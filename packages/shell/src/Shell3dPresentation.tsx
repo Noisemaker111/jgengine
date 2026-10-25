@@ -56,6 +56,13 @@ import { resolveWorldSky } from "./worldSky";
 import { resolveCaptureCameraConfig } from "./camera/rigResolve";
 import { pointerAimFor, pointerContextMenu, resolvePointerAim } from "./shellPointer";
 import { shellPointerInput } from "./shellPointerInput";
+import { createControlGroupKeys, groupCentroid } from "./pointer/controlGroupKeys";
+import {
+  isSelectDoubleClick,
+  resolveClickSelection,
+  resolveMarqueeSelection,
+  type SelectClickRecord,
+} from "./pointer/selectionGesture";
 import { AudioListener, EntityAudioEmitters, ObjectAudioEmitters } from "./audio/AudioComponents";
 import type { AudioEngine } from "./audio/audioEngine";
 import { PostProcessing } from "./postfx/PostProcessing";
@@ -275,6 +282,24 @@ export function Shell3dPresentation({
   const pointer: PointerConfig | undefined = playable.pointer;
   const pointerUsesLeft = pointer !== undefined && (pointer.select === true || pointer.moveCommand !== undefined);
   const selectFilter = pointer?.selectFilter;
+  const controlGroupConfig = pointer?.select === true ? pointer.controlGroups : undefined;
+  const controlGroupKeys = useMemo(
+    () =>
+      controlGroupConfig === undefined || controlGroupConfig === false
+        ? null
+        : createControlGroupKeys({
+            groups: ctx.scene.entity.controlGroups,
+            selection,
+            isValid: (id) => ctx.scene.entity.get(id) !== null && (selectFilter === undefined || selectFilter(id)),
+            focus: (ids) => {
+              const centroid = groupCentroid(ids, (id) => ctx.scene.entity.get(id)?.position ?? null);
+              if (centroid !== null) ctx.camera.panTo(centroid);
+            },
+            now: () => performance.now(),
+            options: controlGroupConfig === true ? {} : controlGroupConfig,
+          }),
+    [ctx, selection, selectFilter, controlGroupConfig],
+  );
   const worldSky = resolveWorldSky(playable.game.world);
   const world = playable.game.world;
   const biomeBands = world?.kind === "environment" ? world.terrain?.biomeBands : undefined;
@@ -326,6 +351,7 @@ export function Shell3dPresentation({
   const orthographic = playable.camera?.projection === "orthographic";
 
   const pointerDownRef = useRef<{ x: number; y: number } | null>(null);
+  const lastSelectClickRef = useRef<SelectClickRecord | null>(null);
   const marqueeStartRef = useRef<{ x: number; y: number } | null>(null);
   const [marquee, setMarquee] = useState<ScreenRect | null>(null);
   const selectionKey = useSyncExternalStore(ctx.subscribe, () => selection.list().join("\n"), () => selection.list().join("\n"));
@@ -343,14 +369,26 @@ export function Shell3dPresentation({
     selection.replace(ids);
   };
 
-  const finishMarquee = (rect: ScreenRect) => {
+  const finishMarquee = (rect: ScreenRect, additive: boolean) => {
     const candidates: { id: string; x: number; y: number }[] = [];
     for (const entity of ctx.scene.entity.list()) {
       if (selectFilter !== undefined && !selectFilter(entity.id)) continue;
       const screen = pointerService.screenOf(entity.position);
       if (screen !== null) candidates.push({ id: entity.id, x: screen.x, y: screen.y });
     }
-    commitSelection(selectWithinRect(candidates, rect));
+    commitSelection(resolveMarqueeSelection(selectWithinRect(candidates, rect), selection.list(), additive));
+  };
+
+  const onScreenSelectable = (): string[] => {
+    const bounds = wrapperRef.current?.getBoundingClientRect();
+    if (bounds === undefined) return [];
+    const ids: string[] = [];
+    for (const entity of ctx.scene.entity.list()) {
+      if (selectFilter !== undefined && !selectFilter(entity.id)) continue;
+      const screen = pointerService.screenOf(entity.position);
+      if (screen !== null && screen.x >= 0 && screen.y >= 0 && screen.x <= bounds.width && screen.y <= bounds.height) ids.push(entity.id);
+    }
+    return ids;
   };
 
   /** DOM UI sits in the same wrapper as the canvas — only canvas-targeted clicks are world input. */
@@ -419,7 +457,7 @@ export function Shell3dPresentation({
     const wasMarquee = marquee !== null && isMarquee(rect, PRIMARY_CLICK_MOVE_THRESHOLD_PX);
     setMarquee(null);
     if (pointer?.select === true && wasMarquee) {
-      finishMarquee(rect);
+      finishMarquee(rect, event.shiftKey);
       return;
     }
     if (cameraDraggingRef.current) return;
@@ -447,11 +485,18 @@ export function Shell3dPresentation({
     }
     if (pointer?.select === true) {
       const hit = pointerService.worldHit();
-      if (hit !== null && hit.entity !== null && (selectFilter === undefined || selectFilter(hit.entity))) {
-        commitSelection([hit.entity]);
-      } else {
-        commitSelection([]);
-      }
+      const entity = hit !== null && hit.entity !== null && (selectFilter === undefined || selectFilter(hit.entity)) ? hit.entity : null;
+      const click = { entity, at: performance.now(), x: end.x, y: end.y };
+      const doubleClick = isSelectDoubleClick(lastSelectClickRef.current, click);
+      lastSelectClickRef.current = doubleClick ? null : click;
+      commitSelection(resolveClickSelection({
+        hit: entity,
+        current: selection.list(),
+        additive: event.shiftKey,
+        sameKind: doubleClick || event.ctrlKey || event.metaKey,
+        kindOf: pointer.selectKind,
+        onScreen: onScreenSelectable,
+      }));
       return;
     }
     if (pointer?.moveCommand !== undefined) {
@@ -542,6 +587,7 @@ export function Shell3dPresentation({
     setDevtoolsOpen,
     controlsActive: () => playControlsActive(ctx),
     exitPointerLockOnDevtools: true,
+    claimKey: controlGroupKeys === null ? undefined : (event) => controlGroupKeys.handle(event),
   });
 
   return (

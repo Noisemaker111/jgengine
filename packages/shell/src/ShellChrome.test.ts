@@ -76,4 +76,27 @@ describe("shell keyboard ownership", () => {
     keys.handlers.onKeyUp({ code: "F2", target: within("button") });
     expect(keys.held.current).toBe(false);
   });
+
+  test("a claimed key skips action bindings on the play surface but never while typing or blocked", () => {
+    for (const [active, target, expectClaim] of [[true, undefined, true], [true, within("input"), false], [false, undefined, false]] as const) {
+      const down: string[] = [];
+      const up: string[] = [];
+      let claims = 0;
+      const handlers = createShellKeyHandlers({
+        f2HeldRef: { current: false },
+        tracker: { handleDown: (code) => down.push(code), handleUp: (code) => up.push(code), reset() {} },
+        devtoolsEnabled: false,
+        setDevtoolsOpen: () => {},
+        controlsActive: () => active,
+        claimKey: (event) => { claims++; return event.code === "Digit1"; },
+      });
+      handlers.onKeyDown({ code: "Digit1", target, preventDefault() {} });
+      handlers.onKeyUp({ code: "Digit1", target });
+      handlers.onKeyDown({ code: "KeyA", preventDefault() {} });
+      expect(claims).toBe(expectClaim ? 2 : active ? 1 : 0);
+      expect(down.includes("Digit1")).toBe(false);
+      if (expectClaim) expect(up).toEqual([]);
+      if (active) expect(down).toEqual(["KeyA"]);
+    }
+  });
 });
