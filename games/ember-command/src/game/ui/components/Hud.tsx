@@ -1,7 +1,7 @@
 import type { CSSProperties, ReactNode, RefObject } from "react";
 import { useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
-import { GameFrame } from "@jgengine/react/gameFrame";
-import { HudFade } from "@jgengine/react/hudFade";
+import { HudFade } from "@jgengine/react/hudLayout";
+import { KitPanel } from "@jgengine/react/uiKitRoot";
 import { useRegisterLayoutRegion } from "@jgengine/react/gameViewport";
 import { useEntityStat, useGame } from "@jgengine/react/hooks";
 
@@ -86,7 +86,7 @@ function Ledger() {
       idleMs={4500}
     >
       <div ref={region}>
-      <GameFrame material="paper" tint="#e9dbb7" cut="torn" depth={8} padding="7px 18px 11px" className="ec-stock" aria-label="Ledger">
+      <KitPanel material="paper" tint="#e9dbb7" cut="torn" depth={8} padding="7px 18px 11px" className="ec-stock" aria-label="Ledger">
         <span className="ec-ledger-stores">
           <LedgerEntry icon="gold" value={String(hud.gold)} label={`${hud.gold} gold`} />
           <LedgerEntry icon="lumber" value={String(hud.lumber)} label={`${hud.lumber} lumber`} />
@@ -116,7 +116,7 @@ function Ledger() {
             <b>{hud.nextWaveIn}s</b>
           </span>
         </span>
-      </GameFrame>
+      </KitPanel>
       </div>
     </HudFade>
   );
@@ -174,7 +174,7 @@ function OrdersNote() {
       idleMs={6000}
     >
       <div ref={region}>
-      <GameFrame material="paper" tint="#efe3c6" cut="box" depth={3} padding="12px 14px 12px" className="ec-objectives">
+      <KitPanel material="paper" tint="#efe3c6" cut="box" depth={3} padding="12px 14px 12px" className="ec-objectives">
         <i className="ec-pin" aria-hidden />
         {live ? (
           <CampaignOrders campaign={campaign} />
@@ -184,7 +184,7 @@ function OrdersNote() {
             <strong className="ec-note-objective">{campaign === null ? "Raze the Marauder Warcamp" : campaign.title}</strong>
           </>
         )}
-      </GameFrame>
+      </KitPanel>
       </div>
     </HudFade>
   );
@@ -335,9 +335,9 @@ function CommandBoard() {
   const barracksFoot = (id: string) => (hud.hasBarracks ? costFoot(TRAINABLE[id]!.cost.gold, TRAINABLE[id]!.cost.lumber) : "locked");
 
   return (
-    <GameFrame material="leather" tint="#4a2c19" cut="chamfer" depth={10} padding="9px" className="ec-board">
+    <KitPanel material="leather" tint="#4a2c19" cut="chamfer" depth={10} padding="9px" className="ec-board">
       {tip !== null ? (
-        <GameFrame material="paper" cut="torn" depth={8} padding="10px 14px 14px" className="ec-writ" role="tooltip">
+        <KitPanel material="paper" cut="torn" depth={8} padding="10px 14px 14px" className="ec-writ" role="tooltip">
           <strong>{tip.title}</strong>
           <span>{tip.desc}</span>
           {tip.chips.length > 0 ? (
@@ -350,7 +350,7 @@ function CommandBoard() {
               ))}
             </span>
           ) : null}
-        </GameFrame>
+        </KitPanel>
       ) : null}
       <div className="ec-board-grid">
         <Slot icon="peasant" hotkey="1" foot={costFoot(TRAINABLE.peasant!.cost.gold)} tone={trainTone(hud, "peasant")} setTip={setTip} onClick={() => commands.run("train.peasant", {})}
@@ -383,7 +383,7 @@ function CommandBoard() {
         <ActSlot act={hud.heroActs.find((entry) => entry.id === "ward")} setTip={setTip} />
         <KitSlot kit={hud.heroKit} setTip={setTip} />
       </div>
-    </GameFrame>
+    </KitPanel>
   );
 }
 
@@ -568,27 +568,27 @@ function Console() {
   const hud = useHud();
   return (
     <div className="ec-console">
-      <GameFrame material="wood" tint="#5b3b22" cut="chamfer" depth={10} padding="9px 9px 8px" className="ec-map-panel">
+      <KitPanel material="wood" tint="#5b3b22" cut="chamfer" depth={10} padding="9px 9px 8px" className="ec-map-panel">
         <span className="ec-map-sheet">
           <Minimap />
           <span className="ec-map-north" aria-hidden>N</span>
         </span>
         <FormationTabs />
-      </GameFrame>
+      </KitPanel>
 
-      <GameFrame material="paper" tint="#ece0c2" cut="box" depth={3} padding="10px 12px 10px" className="ec-hero-panel">
+      <KitPanel material="paper" tint="#ece0c2" cut="box" depth={3} padding="10px 12px 10px" className="ec-hero-panel">
         <HeroCard />
         <ArmyHeader />
         <ArmyRow />
         <ProductionLine />
-      </GameFrame>
+      </KitPanel>
 
       <CommandBoard />
 
       {hud.buildArmed !== null ? (
-        <GameFrame material="paper" cut="ticket" depth={8} padding="6px 16px" className="ec-build-mode">
+        <KitPanel material="paper" cut="ticket" depth={8} padding="6px 16px" className="ec-build-mode">
           Right-click your side of the field to place the {BUILD_LABELS[hud.buildArmed] ?? "building"}
-        </GameFrame>
+        </KitPanel>
       ) : null}
     </div>
   );
@@ -598,7 +598,7 @@ function Console() {
 function LevelUpWrit({ offer }: { offer: HeroOffer }) {
   const { commands } = useGame();
   return (
-    <GameFrame material="paper" cut="torn" depth={12} padding="14px 18px 22px" className="ec-levelup">
+    <KitPanel material="paper" cut="torn" depth={12} padding="14px 18px 22px" className="ec-levelup">
       <span className="ec-note-eyebrow">
         Bram reaches level {offer.level}
         <span>Choose one</span>
@@ -629,7 +629,7 @@ function LevelUpWrit({ offer }: { offer: HeroOffer }) {
         })}
       </span>
       <small className="ec-levelup-foot">Picks are kept with the campaign: Bram carries them into the next mission.</small>
-    </GameFrame>
+    </KitPanel>
   );
 }
 
@@ -643,9 +643,9 @@ export function RtsHud(): ReactNode {
       <Console />
       {hud.heroOffer !== null && hud.phase === "playing" ? <LevelUpWrit offer={hud.heroOffer} /> : null}
       {hud.rallyArmed || hud.attackMoveArmed ? (
-        <GameFrame material="paper" cut="ticket" depth={8} padding="6px 16px" className="ec-order-mode">
+        <KitPanel material="paper" cut="ticket" depth={8} padding="6px 16px" className="ec-order-mode">
           {hud.rallyArmed ? "Rally point" : "Attack-move"} · Right-click a destination · Esc to cancel
-        </GameFrame>
+        </KitPanel>
       ) : null}
     </>
   );

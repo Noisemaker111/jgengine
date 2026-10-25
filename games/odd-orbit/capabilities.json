@@ -5,7 +5,7 @@
     "game-cursor",
     "game-font-stacks",
     "game-fonts",
-    "game-frame",
+    "kit-panel",
     "game-slider",
     "hud-fade",
     "mount-game",

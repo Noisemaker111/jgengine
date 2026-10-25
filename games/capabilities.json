@@ -3174,17 +3174,6 @@
       "intent": "live velocity/bob/fire/reload/hit/death cues for a custom renderEntity or viewmodel component"
     },
     {
-      "id": "entity-summary",
-      "packages": [
-        "@jgengine/react"
-      ],
-      "module": "@jgengine/react/selectionHud",
-      "domain": "entity-summary",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "primary selected-entity detail panel (name, tags, vitals)"
-    },
-    {
       "id": "environment-motion",
       "packages": [
         "@jgengine/core"
@@ -3649,39 +3638,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "load a game's bundled display and body fonts"
-    },
-    {
-      "id": "game-frame",
-      "packages": [
-        "@jgengine/react"
-      ],
-      "module": "@jgengine/react/gameFrame",
-      "domain": "game-frame",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "material frame (steel, wood, stone, paper, glass…) with an angled or irregular cut, as a panel or a game button"
-    },
-    {
-      "id": "game-frame-cut",
-      "packages": [
-        "@jgengine/react"
-      ],
-      "module": "@jgengine/react/gameFrame",
-      "domain": "game-frame-cut",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "clip path for an angled or irregular frame silhouette (chamfer, banner, ticket, torn…)"
-    },
-    {
-      "id": "game-frame-style",
-      "packages": [
-        "@jgengine/react"
-      ],
-      "module": "@jgengine/react/gameFrame",
-      "domain": "game-frame-style",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "CSS variables for a material frame on an element the game already owns"
     },
     {
       "id": "game-kit",
@@ -4199,7 +4155,7 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/hudFade",
+      "module": "@jgengine/react/hudLayout",
       "domain": "hud-fade",
       "gameFacing": false,
       "probe": null,
@@ -4243,7 +4199,7 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/hudFade",
+      "module": "@jgengine/react/hudLayout",
       "domain": "hud-idle",
       "gameFacing": false,
       "probe": null,
@@ -4338,17 +4294,6 @@
       "intent": "atomic themed equipment/weapon/armor/potion slot grids with painted icons"
     },
     {
-      "id": "hud-stat-bar",
-      "packages": [
-        "@jgengine/react"
-      ],
-      "module": "@jgengine/react/hud",
-      "domain": "hud-stat-bar",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "optional stat-bound bar building block (health, mana, stamina) — prefer game-owned chrome"
-    },
-    {
       "id": "hud-surface",
       "packages": [
         "@jgengine/react"
@@ -4424,17 +4369,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "inline-style accessors for the HudTheme type scale, spacing, motion, elevation, and focus ring"
-    },
-    {
-      "id": "hud-vitals",
-      "packages": [
-        "@jgengine/react"
-      ],
-      "module": "@jgengine/react/bars",
-      "domain": "hud-vitals",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "atomic purpose-named vitals bars (token-themed parts, not a finished HUD)"
     },
     {
       "id": "i18n",
@@ -4900,6 +4834,17 @@
       "intent": "arcade car/kart driving physics with throttle, brake, steer and retunable handling"
     },
     {
+      "id": "kit-action-bar",
+      "packages": [
+        "@jgengine/react"
+      ],
+      "module": "@jgengine/react/kitHud",
+      "domain": "kit-action-bar",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "a HUD build/action bar — keyed kit buttons with costs, affordability and the held tool, progress meters, the interact prompt"
+    },
+    {
       "id": "kit-action-glyph",
       "packages": [
         "@jgengine/react"
@@ -4941,7 +4886,62 @@
       "domain": "kit-button",
       "gameFacing": false,
       "probe": null,
-      "intent": "a button drawn by the active UI kit, with UI cue sounds"
+      "intent": "a button drawn by the active UI kit, or made of a material (steel, wood, enamel…), with UI cue sounds"
+    },
+    {
+      "id": "kit-count",
+      "packages": [
+        "@jgengine/react"
+      ],
+      "module": "@jgengine/react/kitHud",
+      "domain": "kit-count",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "a HUD resource readout — a number and its word, with an optional rate line"
+    },
+    {
+      "id": "kit-counts",
+      "packages": [
+        "@jgengine/react"
+      ],
+      "module": "@jgengine/react/kitHud",
+      "domain": "kit-counts",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "a row of HUD resource counts"
+    },
+    {
+      "id": "kit-frame-cut",
+      "packages": [
+        "@jgengine/react"
+      ],
+      "module": "@jgengine/react/kitFrame",
+      "domain": "kit-frame-cut",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "clip path for an angled or irregular frame silhouette (chamfer, banner, ticket, torn…)"
+    },
+    {
+      "id": "kit-frame-style",
+      "packages": [
+        "@jgengine/react"
+      ],
+      "module": "@jgengine/react/kitFrame",
+      "domain": "kit-frame-style",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "CSS variables for a material frame on an element the game already owns"
+    },
+    {
+      "id": "kit-hint",
+      "packages": [
+        "@jgengine/react"
+      ],
+      "module": "@jgengine/react/kitHud",
+      "domain": "kit-hint",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "a HUD hint strip for the current tool or problem, with the phase banner"
     },
     {
       "id": "kit-menu",
@@ -4996,7 +4996,7 @@
       "domain": "kit-panel",
       "gameFacing": false,
       "probe": null,
-      "intent": "a content surface drawn by the active UI kit, with the kit's enter/exit motion"
+      "intent": "a content surface drawn by the active UI kit, or made of a material with a cut silhouette, with enter/exit motion"
     },
     {
       "id": "kit-result-screen",
@@ -5019,6 +5019,28 @@
       "gameFacing": false,
       "probe": null,
       "intent": "a short message drawn by the active UI kit, with its enter/exit motion"
+    },
+    {
+      "id": "kit-vitals",
+      "packages": [
+        "@jgengine/react"
+      ],
+      "module": "@jgengine/react/kitHud",
+      "domain": "kit-vitals",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "a HUD vitals card — meters that turn bad when low, extra readouts, the labeled current objective under it"
+    },
+    {
+      "id": "kit-wave-clock",
+      "packages": [
+        "@jgengine/react"
+      ],
+      "module": "@jgengine/react/kitHud",
+      "domain": "kit-wave-clock",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "a HUD wave clock — countdown or enemies left, a note, and the wave banner"
     },
     {
       "id": "lane-board",
@@ -10346,17 +10368,6 @@
         "kind": "devtools"
       },
       "intent": "a crowd whose on-site and daily counts are the bodies the game made"
-    },
-    {
-      "id": "vital-bar",
-      "packages": [
-        "@jgengine/react"
-      ],
-      "module": "@jgengine/react/selectionHud",
-      "domain": "vital-bar",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "compact current/max vital meter for an entity summary"
     },
     {
       "id": "volumetric-clouds",

@@ -1,13 +1,15 @@
 import type { ReactNode } from "react";
 import { useGameStore } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
-import { KitBanner, KitObjective, KitResultScreen } from "@jgengine/react/kitFlow";
+import { HUD_CORNER_WIDTH } from "@jgengine/react/hudLayout";
+import { KitResultScreen } from "@jgengine/react/kitFlow";
+import { KitActionBar, KitCount, KitCounts, KitHint, KitVitals } from "@jgengine/react/kitHud";
 import { KitButton, KitMeter, KitPanel } from "@jgengine/react/uiKitRoot";
+import { HudSlots } from "@jgengine/shell/gameKit";
 
 import { newGame } from "../flow";
 import { idea } from "../idea";
 import { holdView } from "../view";
-import { Count, Counts, HudFrame, PANEL_WIDTH } from "./HudFrame";
 
 const same = <T,>(a: T, b: T) => JSON.stringify(a) === JSON.stringify(b);
 const useHold = () => useGameStore(holdView, same);
@@ -17,23 +19,18 @@ function Hold(): ReactNode {
   const hold = useHold();
   const beat = idea.beats.find((entry) => entry.id === hold.mission?.missionId) ?? null;
   return (
-    <div style={{ width: PANEL_WIDTH, pointerEvents: "none" }}>
-      <KitPanel variant="hud" eyebrow={idea.name} title={idea.core.label}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          <Counts>
-            <Count id="lives" value={hold.lives} label="lives" />
-            <Count id="coin" value={hold.coin} label={coin} />
-            <Count id="kills" value={hold.kills} label="kills" />
-          </Counts>
-          <KitMeter size="sm" label="Lives" value={hold.lives} max={idea.core.lives} tone={hold.lives <= idea.core.lives / 4 ? "bad" : "good"} readout />
-        </div>
-      </KitPanel>
-      {beat === null ? null : (
-        <div style={{ marginTop: 8 }}>
-          <KitObjective eyebrow={idea.guide.name} title={beat.title} steps={[{ id: beat.id, label: beat.goal }]} progressKey={beat.id} />
-        </div>
-      )}
-    </div>
+    <KitVitals
+      eyebrow={idea.name}
+      title={idea.core.label}
+      vitals={[{ label: "Lives", value: hold.lives, max: idea.core.lives, tone: hold.lives <= idea.core.lives / 4 ? "bad" : "good" }]}
+      objective={beat === null ? null : { id: beat.id, label: idea.guide.name, title: beat.title, goal: beat.goal }}
+    >
+      <KitCounts>
+        <KitCount id="lives" value={hold.lives} label="lives" />
+        <KitCount id="coin" value={hold.coin} label={coin} />
+        <KitCount id="kills" value={hold.kills} label="kills" />
+      </KitCounts>
+    </KitVitals>
   );
 }
 
@@ -43,7 +40,7 @@ function Waves(): ReactNode {
   const hold = useHold();
   const next = Math.min(hold.wave + 1, idea.waves);
   return (
-    <div style={{ width: PANEL_WIDTH }}>
+    <div style={{ width: HUD_CORNER_WIDTH }}>
       <KitPanel variant="hud" eyebrow={`${idea.wave} ${Math.max(1, hold.wave)} of ${idea.waves}`} title={hold.raiding ? `${hold.marching} ${idea.foe.toLowerCase()} on the field` : `${idea.wave} ${next} in ${hold.calm}s`}>
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {hold.raiding ? (
@@ -63,14 +60,10 @@ function Hint(): ReactNode {
   const hold = useHold();
   const tower = idea.towers.find((entry) => entry.id === hold.armed) ?? null;
   return (
-    <div style={{ pointerEvents: "none" }}>
-      {tower === null ? null : (
-        <KitPanel variant="strip" tone="accent">
-          <span style={{ fontWeight: 700, letterSpacing: "0.06em", fontSize: 13 }}>Building {tower.label} - click near an empty pad, right click to stop</span>
-        </KitPanel>
-      )}
-      <KitBanner cue={hold.raiding ? hold.wave : null} title={`${idea.wave} ${hold.wave}`} subtitle={`${idea.foe} on the lanes`} tone="bad" />
-    </div>
+    <KitHint
+      text={tower === null ? null : `Building ${tower.label} - click near an empty pad, right click to stop`}
+      banner={{ cue: hold.raiding ? hold.wave : null, title: `${idea.wave} ${hold.wave}`, subtitle: `${idea.foe} on the lanes`, tone: "bad" }}
+    />
   );
 }
 
@@ -78,29 +71,24 @@ function BuildBar(): ReactNode {
   const ctx = useGameContext();
   const hold = useHold();
   return (
-    <KitPanel variant="strip">
-      <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", justifyContent: "center", maxWidth: 1000 }}>
-        {idea.towers.map((tower, index) => {
-          const open = hold.unlocked[index]?.open ?? true;
-          const short = hold.coin < tower.cost;
-          return (
-            <KitButton
-              key={tower.id}
-              data-build={tower.id}
-              size="sm"
-              variant={hold.armed === tower.id ? "primary" : short || !open ? "ghost" : "secondary"}
-              pressed={hold.armed === tower.id}
-              glyph={index < 9 ? String(index + 1) : undefined}
-              title={tower.blurb}
-              onClick={() => ctx.game.commands.run(`build${index + 1}`, {})}
-            >
-              {tower.label}
-              <span style={{ opacity: 0.65, marginLeft: 4, fontSize: "0.85em" }}>{open ? `${tower.cost} ${coin}` : `${idea.wave.toLowerCase()} ${tower.from}`}</span>
-            </KitButton>
-          );
-        })}
-      </div>
-    </KitPanel>
+    <KitActionBar
+      kind="build"
+      wrapAt={1000}
+      actions={idea.towers.map((tower, index) => {
+        const open = hold.unlocked[index]?.open ?? true;
+        const short = hold.coin < tower.cost;
+        return {
+          id: tower.id,
+          label: tower.label,
+          detail: open ? `${tower.cost} ${coin}` : `${idea.wave.toLowerCase()} ${tower.from}`,
+          glyph: index < 9 ? String(index + 1) : undefined,
+          variant: hold.armed === tower.id ? "primary" : short || !open ? "ghost" : "secondary",
+          pressed: hold.armed === tower.id,
+          title: tower.blurb,
+          onActivate: () => ctx.game.commands.run(`build${index + 1}`, {}),
+        };
+      })}
+    />
   );
 }
 
@@ -110,7 +98,7 @@ function Selected(): ReactNode {
   const picked = hold.selected;
   if (picked === null) return null;
   return (
-    <div style={{ width: PANEL_WIDTH }}>
+    <div style={{ width: HUD_CORNER_WIDTH }}>
       <KitPanel variant="hud" eyebrow={picked.ready ? `Level ${picked.level}` : "Being built"} title={picked.label}>
         <div style={{ display: "flex", flexDirection: "column", gap: 8, fontSize: 12 }}>
           <span style={{ opacity: 0.85 }}>
@@ -157,5 +145,5 @@ function Ending(): ReactNode {
 
 /** Everything on screen while playing: a few small panels at the edges, the end card over them. */
 export function Hud(): ReactNode {
-  return <HudFrame slots={{ topLeft: <Hold />, top: <Hint />, topRight: <Waves />, bottom: <BuildBar />, bottomRight: <Selected /> }} overlay={<Ending />} />;
+  return <HudSlots storageKey={idea.id} slots={{ topLeft: <Hold />, top: <Hint />, topRight: <Waves />, bottom: <BuildBar />, bottomRight: <Selected /> }} overlay={<Ending />} />;
 }

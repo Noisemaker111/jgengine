@@ -4,7 +4,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 
 import type { EntitySummaryDef } from "@jgengine/core/ui/selectionModel";
 
-import { EntityPortrait, EntitySummary, SelectionPanel } from "./selectionHud";
+import { EntityPortrait, SelectionPanel } from "./selectionHud";
 
 const marine: EntitySummaryDef = {
   id: "m1",
@@ -29,8 +29,8 @@ describe("selection renderers (SSR)", () => {
     expect(html).toContain('aria-label="Marine"');
   });
 
-  test("EntitySummary shows name, kind, tags, and vitals", () => {
-    const html = renderToStaticMarkup(createElement(EntitySummary, { entity: marine }));
+  test("the primary summary shows name, kind, tags, and its vitals as kit meters", () => {
+    const html = renderToStaticMarkup(createElement(SelectionPanel, { members: [marine] }));
     expect(html).toContain("Marine");
     expect(html).toContain("marine");
     expect(html).toContain("ranged");

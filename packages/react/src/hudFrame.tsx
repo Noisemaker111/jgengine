@@ -30,7 +30,7 @@ export function hudFrameStyle(
           boxShadow: "var(--jg-frame-glow, 0 4px 16px rgba(0,0,0,0.35))",
           borderImage: "var(--jg-frame-image, none) var(--jg-frame-slice, 0) / var(--jg-frame-scale, 1) var(--jg-frame-fill, stretch)",
           cursor: "var(--jg-skin-cursor, auto)",
-          color: "var(--jg-bar-text, #f4f6fb)",
+          color: "var(--jg-text, #f4f6fb)",
           fontFamily: hudFont.body,
         }
       : variation === "retro"

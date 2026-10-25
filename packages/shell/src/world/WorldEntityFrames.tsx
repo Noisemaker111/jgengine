@@ -63,7 +63,7 @@ export function projectWorldToScreen(
 export interface WorldEntityFramesProps<E extends EntityFrameEntry> extends EntityFrameLayoutOptions {
   /** Caller-owned entities to anchor; `worldPosition` is the overhead point. */
   entries: readonly E[];
-  /** Renders one entity's frame — compose `HealthBar value/max` + a name, themed via `barTokens`. */
+  /** Renders one entity's frame — compose a `KitMeter` (`value`/`max`) + a name, drawn by the active UI kit. */
   renderFrame: (entry: E, placement: EntityFramePlacement<E>) => ReactNode;
   /** Min ms between projection refreshes — trades smoothness for fewer re-renders at scale. Default 0 (every frame). */
   tickMs?: number;

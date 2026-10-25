@@ -89,16 +89,6 @@ export interface HudThemeFrame {
   glow: string;
 }
 
-/** Framed-trough tokens shared by every atomic bar. */
-export interface HudThemeBar {
-  track: string;
-  frame: string;
-  height: string;
-  radius: string;
-  bevel: string;
-  text: string;
-}
-
 /** Action/inventory slot tokens. */
 export interface HudThemeSlot {
   bg: string;
@@ -186,7 +176,6 @@ export interface HudTheme {
   font: HudThemeFont;
   rarity: HudThemeRarity;
   frame: HudThemeFrame;
-  bar: HudThemeBar;
   slot: HudThemeSlot;
   /** Minimap chrome ring color. */
   ring: string;
@@ -246,9 +235,9 @@ function focusRing(theme: HudTheme): string {
   return theme.state?.focusRing ?? `0 0 0 2px ${theme.surface.surfaceDeep}, 0 0 0 4px ${theme.palette.accent}`;
 }
 
-/** Emits theme CSS properties, resetting inherited bar fills when absent. Spread onto a HUD ancestor. */
+/** Emits theme CSS properties, resetting inherited skins when absent. Spread onto a HUD ancestor. */
 export function hudThemeVars(theme: HudTheme): CSSProperties {
-  const { palette, surface, status, font, rarity, frame, bar, slot } = theme;
+  const { palette, surface, status, font, rarity, frame, slot } = theme;
   return {
     "--jg-frame-image": "none",
     "--jg-frame-slice": "0",
@@ -257,13 +246,10 @@ export function hudThemeVars(theme: HudTheme): CSSProperties {
     "--jg-slot-image": "none",
     "--jg-slot-slice": "0",
     "--jg-slot-scale": "1",
-    "--jg-bar-skin-track": "none",
-    // `initial` clears inherited skins and lets var() fall back to the bar's palette color.
-    "--jg-bar-skin-fill": "initial",
     "--jg-skin-cursor": "auto",
     "--jg-text-scale": "1",
     ...hudSkinVars(theme.skin),
-    // atomic-bar tokens (same names the bars read — #1033)
+    // vital colours (damage direction, health readouts)
     "--jg-health": palette.health,
     "--jg-health-low": palette.healthLow,
     "--jg-health-deep": palette.healthDeep,
@@ -278,12 +264,6 @@ export function hudThemeVars(theme: HudTheme): CSSProperties {
     "--jg-soul": palette.soul,
     "--jg-ammo": palette.ammo,
     "--jg-boss": palette.boss,
-    "--jg-bar-track": bar.track,
-    "--jg-bar-frame": bar.frame,
-    "--jg-bar-height": bar.height,
-    "--jg-bar-radius": bar.radius,
-    "--jg-bar-bevel": bar.bevel,
-    "--jg-bar-text": bar.text,
     // shared chrome tokens
     "--jg-accent": palette.accent,
     "--jg-accent-deep": palette.accentDeep,
@@ -459,14 +439,6 @@ export const defaultHudTheme: HudTheme = {
     radius: "10px",
     glow: `${DEFAULT_ELEVATION.highlight}, ${DEFAULT_ELEVATION.raised}`,
   },
-  bar: {
-    track: "rgba(0,0,0,0.55)",
-    frame: "rgba(0,0,0,0.82)",
-    height: "18px",
-    radius: "4px",
-    bevel: "inset 0 2px 4px rgba(0,0,0,0.55), inset 0 -1px 2px rgba(255,255,255,0.08)",
-    text: "#f5f7fa",
-  },
   slot: {
     bg: "linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0) 50%), rgba(12,15,21,0.78)",
     border: "1px solid rgba(255,255,255,0.13)",
@@ -488,7 +460,6 @@ export interface HudThemeOverrides {
   font?: Partial<HudThemeFont>;
   rarity?: Partial<HudThemeRarity>;
   frame?: Partial<HudThemeFrame>;
-  bar?: Partial<HudThemeBar>;
   slot?: Partial<HudThemeSlot>;
   ring?: string;
   skin?: HudSkin;
@@ -514,7 +485,6 @@ export function hudTheme(overrides: HudThemeOverrides): HudTheme {
     font: { ...defaultHudTheme.font, ...overrides.font },
     rarity: { ...defaultHudTheme.rarity, ...overrides.rarity },
     frame: { ...defaultHudTheme.frame, ...overrides.frame },
-    bar: { ...defaultHudTheme.bar, ...overrides.bar },
     slot: { ...defaultHudTheme.slot, ...overrides.slot },
     ring: overrides.ring ?? defaultHudTheme.ring,
     skin: overrides.skin,
@@ -586,7 +556,6 @@ function chrome(spec: ChromeSpec): HudTheme {
       radius: "6px",
       glow: `0 6px 20px ${alpha(spec.surfaceDeep, 0.7)}`,
     },
-    bar: { track: alpha(spec.surfaceDeep, 0.8), frame: spec.surfaceDeep, text: spec.text },
     slot: { bg: alpha(spec.surface, 0.8), border: `1px solid ${spec.edge}`, radius: "6px" },
     ring: alpha(spec.edgeBright, 0.55),
   });
@@ -602,7 +571,6 @@ export const HUD_THEME_PRESETS = {
       radius: "6px",
       glow: "0 0 18px rgba(124,92,255,0.35)",
     },
-    bar: { frame: "#160f28", radius: "3px", height: "20px", track: "rgba(0,0,0,0.6)", bevel: "inset 0 2px 5px rgba(0,0,0,0.6)", text: "#efe7ff" },
     slot: { bg: "#241f38", border: "2px solid #6b5b95", radius: "5px" },
     ring: "rgba(124,92,255,0.5)",
   }),
@@ -614,7 +582,6 @@ export const HUD_THEME_PRESETS = {
       radius: "4px",
       glow: "0 4px 10px rgba(0,0,0,0.5)",
     },
-    bar: { frame: "#2a1c10", radius: "2px", height: "18px", track: "rgba(30,20,10,0.7)", bevel: "inset 0 2px 4px rgba(0,0,0,0.6)", text: "#f3e6cf" },
     slot: { bg: "#3a2a1a", border: "3px solid #6b4a2c", radius: "3px" },
     ring: "rgba(107,74,44,0.6)",
   }),
@@ -626,7 +593,6 @@ export const HUD_THEME_PRESETS = {
       radius: "2px",
       glow: "0 2px 6px rgba(0,0,0,0.5)",
     },
-    bar: { frame: "#161a12", radius: "0px", height: "16px", track: "rgba(0,0,0,0.6)", bevel: "inset 0 1px 2px rgba(0,0,0,0.7)", text: "#e8efdc" },
     slot: { bg: "#232a1e", border: "1px solid #4a5340", radius: "0px" },
     ring: "rgba(125,155,78,0.5)",
   }),
@@ -638,7 +604,6 @@ export const HUD_THEME_PRESETS = {
       radius: "3px",
       glow: "0 0 16px rgba(51,201,255,0.3)",
     },
-    bar: { frame: "rgba(51,201,255,0.5)", radius: "2px", height: "14px", track: "rgba(0,0,0,0.5)", bevel: "inset 0 1px 3px rgba(0,0,0,0.5)", text: "#eafaff" },
     slot: { bg: "rgba(12,18,26,0.8)", border: "1px solid rgba(51,201,255,0.4)", radius: "3px" },
     ring: "rgba(51,201,255,0.55)",
   }),
@@ -650,7 +615,6 @@ export const HUD_THEME_PRESETS = {
       radius: "9999px",
       glow: "0 0 20px rgba(217,164,65,0.35)",
     },
-    bar: { frame: "#1a1626", radius: "9999px", height: "16px", track: "rgba(0,0,0,0.55)", bevel: "inset 0 2px 4px rgba(0,0,0,0.6)", text: "#fff3d6" },
     slot: { bg: "#221f30", border: "2px solid #d9a441", radius: "9999px" },
     ring: "rgba(217,164,65,0.6)",
   }),
@@ -662,7 +626,6 @@ export const HUD_THEME_PRESETS = {
       radius: "2px",
       glow: "3px 3px 0 rgba(0,0,0,0.5)",
     },
-    bar: { frame: "#1e1e1e", radius: "0px", height: "18px", track: "rgba(0,0,0,0.6)", bevel: "inset 0 2px 3px rgba(0,0,0,0.6)", text: "#f4f4f4" },
     slot: { bg: "#4a4a4a", border: "3px solid #2a2a2a", radius: "0px" },
     ring: "rgba(240,192,64,0.5)",
   }),
@@ -812,7 +775,7 @@ export interface HudThemeSeed {
 
 /**
  * Derives a coherent full theme from an accent/surface pair — shades, edges, dim text, frames,
- * bar troughs, and slots all fall out of the seed, so a game gets one consistent look across the
+ * and slots all fall out of the seed, so a game gets one consistent look across the
  * `packages/react` primitives and the `registry/jgengine` blocks without naming 50 tokens.
  * Hex seeds only (`#rgb` or `#rrggbb`).
  *
@@ -866,7 +829,6 @@ export function deriveHudTheme(seed: HudThemeSeed): HudTheme {
       border: `1px solid ${edge}`,
       glow: `0 6px 20px ${alpha(surfaceDeep, 0.7)}`,
     },
-    bar: { track: alpha(surfaceDeep, 0.8), frame: surfaceDeep, text },
     slot: { bg: alpha(surface, 0.8), border: `1px solid ${edge}`, radius: "6px" },
     ring: alpha(edgeBright, 0.55),
   });

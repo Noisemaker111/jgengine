@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { GameCursor } from "@jgengine/react/gameCursor";
-import { GameFrame } from "@jgengine/react/gameFrame";
+import { KitButton, KitPanel } from "@jgengine/react/uiKitRoot";
 import { GameIcon } from "@jgengine/react/gameIcons";
 import { useMenuNav } from "@jgengine/react/menuNav";
 import { relativeSavedAt } from "@jgengine/react/saveSlots";
@@ -69,7 +69,7 @@ export function KeepNiches({
   };
   const nav = useMenuNav({ ids: slots.map((slot) => slot.id), columns: slots.length, enabled, onConfirm: take, onBack });
   return (
-    <GameFrame material="stone" tint="#57524a" cut="chamfer" depth={18} padding="18px 22px 22px" className="bb-tablet bb-keeps" data-keep-niches="">
+    <KitPanel material="stone" tint="#57524a" cut="chamfer" depth={18} padding="18px 22px 22px" className="bb-tablet bb-keeps" data-keep-niches="">
       <h2 className="bb-carved">Keeps</h2>
       <div className="bb-niches" {...nav.containerProps} data-jg-cursor-scope="">
         {slots.map((slot) => {
@@ -84,8 +84,7 @@ export function KeepNiches({
               <span className="bb-niche-name">{slot.empty ? "Unclaimed" : (facts.commander ?? slot.name ?? label)}</span>
               {slot.empty ? <span className="bb-niche-when">No defense kept here</span> : <KeepFacts slot={slot} />}
               {slot.empty || slot.savedAt === undefined ? null : <span className="bb-niche-when">Kept {relativeSavedAt(slot.savedAt)}</span>}
-              <GameFrame
-                as="button"
+              <KitButton
                 material={slot.empty ? "wood" : "enamel"}
                 tint={slot.empty ? undefined : "#8a2414"}
                 edge={slot.empty ? undefined : "#3a0e06"}
@@ -99,13 +98,13 @@ export function KeepNiches({
                 onClick={() => take(slot.id)}
               >
                 {slot.empty ? "Raise" : "Hold"}
-              </GameFrame>
+              </KitButton>
             </div>
           );
         })}
         <GameCursor variant="brackets" color={FIRE} gap={4} arm={10} thickness={2} />
       </div>
-    </GameFrame>
+    </KitPanel>
   );
 }
 
@@ -113,16 +112,16 @@ export function KeepNiches({
 export function KeepDispatch({ slot, onHold }: { slot: SaveSlotMeta | null; onHold: (slot: string) => void }): ReactNode {
   if (slot === null) {
     return (
-      <GameFrame material="paper" cut="torn" depth={12} padding="20px 24px 30px" className="bb-parchment">
+      <KitPanel material="paper" cut="torn" depth={12} padding="20px 24px 30px" className="bb-parchment">
         <h2 className="bb-ink-title">No keep held</h2>
         <p className="bb-ink-line">Raise one, then withdraw to the title to keep it.</p>
-      </GameFrame>
+      </KitPanel>
     );
   }
   const facts = keepFacts(slot);
   const label = KEEP_LABEL[slot.id] ?? slot.id;
   return (
-    <GameFrame material="paper" cut="torn" depth={12} padding="20px 24px 30px" className="bb-parchment bb-dispatch" data-keep-dispatch="">
+    <KitPanel material="paper" cut="torn" depth={12} padding="20px 24px 30px" className="bb-parchment bb-dispatch" data-keep-dispatch="">
       <h2 className="bb-ink-title">{label}</h2>
       {facts.thumb === null ? null : <img className="bb-dispatch-thumb" src={facts.thumb} alt="" />}
       <p className="bb-ink-line">
@@ -130,8 +129,7 @@ export function KeepDispatch({ slot, onHold }: { slot: SaveSlotMeta | null; onHo
         {slot.savedAt === undefined ? null : <>, kept {relativeSavedAt(slot.savedAt)}</>}.
       </p>
       <KeepFacts slot={slot} />
-      <GameFrame
-        as="button"
+      <KitButton
         material="enamel"
         tint="#8a2414"
         edge="#3a0e06"
@@ -144,7 +142,7 @@ export function KeepDispatch({ slot, onHold }: { slot: SaveSlotMeta | null; onHo
         onClick={() => onHold(slot.id)}
       >
         Return to the wall
-      </GameFrame>
-    </GameFrame>
+      </KitButton>
+    </KitPanel>
   );
 }

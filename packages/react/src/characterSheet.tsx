@@ -93,7 +93,7 @@ function SlotLabel({ children }: { children: ReactNode }) {
         letterSpacing: 0.6,
         fontVariant: "small-caps",
         textTransform: "lowercase",
-        color: "var(--jg-bar-text, #f4f6fb)",
+        color: "var(--jg-text, #f4f6fb)",
         opacity: 0.62,
         whiteSpace: "nowrap",
       }}
@@ -162,7 +162,7 @@ function Silhouette({ size }: { size: number }) {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        color: "var(--jg-bar-text, #f4f6fb)",
+        color: "var(--jg-text, #f4f6fb)",
         opacity: 0.28,
         fontSize: Math.round(size * 0.9),
         boxSizing: "border-box",
@@ -242,13 +242,13 @@ function StatListRow({ row }: { row: StatRow }) {
       data-stat-row={row.id}
       style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, padding: "2px 0" }}
     >
-      <span style={{ fontSize: hudType("xs"), fontVariant: "small-caps", letterSpacing: 0.5, color: "var(--jg-bar-text, #f4f6fb)", opacity: 0.72 }}>
+      <span style={{ fontSize: hudType("xs"), fontVariant: "small-caps", letterSpacing: 0.5, color: "var(--jg-text, #f4f6fb)", opacity: 0.72 }}>
         {row.label}
       </span>
       <span style={{ fontSize: 12, fontWeight: 700, fontVariantNumeric: "tabular-nums", color: "var(--jg-accent, #38bdf8)" }}>
         {row.value}
         {row.hint !== undefined ? (
-          <span style={{ marginLeft: 5, fontWeight: 500, color: "var(--jg-bar-text, #f4f6fb)", opacity: 0.5 }}>{row.hint}</span>
+          <span style={{ marginLeft: 5, fontWeight: 500, color: "var(--jg-text, #f4f6fb)", opacity: 0.5 }}>{row.hint}</span>
         ) : null}
       </span>
     </div>
@@ -282,7 +282,7 @@ export function StatList({ stats, className, style }: StatListProps): ReactNode 
                 textTransform: "uppercase",
                 opacity: 0.55,
                 margin: "6px 0 2px",
-                color: "var(--jg-bar-text, #f4f6fb)",
+                color: "var(--jg-text, #f4f6fb)",
               }}
             >
               {group.name}

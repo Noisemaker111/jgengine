@@ -1,6 +1,5 @@
 import { describe, expect, test } from "bun:test";
 
-import { BarsPreview } from "./barsPreview";
 import { HudThemePreview } from "./hudThemePreview";
 import { IconsPreview } from "./iconsPreview";
 import { StreetGeometryPreview } from "./streetGeometryPreview";
@@ -15,7 +14,6 @@ describe("previewFixtures registry", () => {
     const names = previewFixtureNames();
     expect(names).toEqual([...names].sort());
     expect(names).toContain("HudThemePreview");
-    expect(names).toContain("BarsPreview");
     expect(names).toContain("IconsPreview");
     expect(names).toContain("StreetGeometryPreview");
     expect(names).toContain("HudSkinPreview");
@@ -31,7 +29,6 @@ describe("previewFixtures registry", () => {
 
   test("resolvePreviewFixture returns the real exported components by name", () => {
     expect(resolvePreviewFixture("HudThemePreview")?.component).toBe(HudThemePreview);
-    expect(resolvePreviewFixture("BarsPreview")?.component).toBe(BarsPreview);
     expect(resolvePreviewFixture("IconsPreview")?.component).toBe(IconsPreview);
     expect(resolvePreviewFixture("StreetGeometryPreview")?.component).toBe(StreetGeometryPreview);
   });

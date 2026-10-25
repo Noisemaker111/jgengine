@@ -1,11 +1,11 @@
 import { type ReactNode, useEffect, useState } from "react";
 import { parkedRunMetres } from "../../run/progress";
 import { ContinuePane, CreditsPane } from "@jgengine/react/gameMenuSaves";
+import { KitPanel } from "@jgengine/react/uiKitRoot";
 import { GameMenu, GamePauseMenu } from "@jgengine/react/gameMenu";
 import { useGameContext } from "@jgengine/react/provider";
 import { useSettings } from "@jgengine/react/settings";
 import { SettingsSection, SettingsTabs } from "@jgengine/react/settingsBlocks";
-import { GameFrame } from "@jgengine/react/gameFrame";
 import { gameFontStacks } from "@jgengine/react/gameFonts";
 import { GAME_FONTS } from "../../../art/fonts/fonts";
 import { plate } from "../DashHud";
@@ -39,12 +39,12 @@ const MENU_TOKENS = {
 /** The factory gate's sign: stencilled steel between two hazard bands. */
 function GateLogo({ lines, sub, small = false }: { lines: readonly string[]; sub: ReactNode; small?: boolean }): ReactNode {
   return (
-    <GameFrame material="steel" cut="notch" depth={small ? 10 : 14} tint="#454c50" {...plate("#0b0d0e")} padding="0" className={`fd-rimmed fd-gate-sign${small ? " fd-gate-sign-small" : ""}`}>
+    <KitPanel material="steel" cut="notch" depth={small ? 10 : 14} tint="#454c50" {...plate("#0b0d0e")} padding="0" className={`fd-rimmed fd-gate-sign${small ? " fd-gate-sign-small" : ""}`}>
       <span className="fd-gate-band" aria-hidden="true" />
       <span className="fd-gate-word">{lines.map((line) => <span key={line}>{line}</span>)}</span>
       <span className="fd-gate-sub">{sub}</span>
       <span className="fd-gate-band" aria-hidden="true" />
-    </GameFrame>
+    </KitPanel>
   );
 }
 

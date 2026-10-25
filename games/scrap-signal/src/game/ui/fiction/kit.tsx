@@ -1,5 +1,6 @@
 import { forwardRef, type CSSProperties, type HTMLAttributes, type ReactNode, type Ref } from "react";
-import { GameFrame, gameCutPath, type GameCut, type GameFrameProps } from "@jgengine/react/gameFrame";
+import { kitCutPath, type KitCut } from "@jgengine/react/kitFrame";
+import { KitButton, KitPanel, type KitMaterialButtonProps, type KitMaterialPanelProps } from "@jgengine/react/uiKitRoot";
 
 /**
  * Scrap Signal's salvaged hardware: carbon and riveted hull housings with welded rims, CRT screens
@@ -25,7 +26,11 @@ export const SIGNAL = {
   rimHot: "#ffb400",
 } as const;
 
-type PlateProps = Omit<GameFrameProps, "material" | "edge" | "edgeWidth" | "shadow" | "glow"> & {
+type PlateProps = Omit<KitMaterialPanelProps, "material" | "edge" | "edgeWidth" | "shadow" | "glow" | "ref" | "as"> & {
+  /** `button` makes it a pressable control. */
+  as?: "button" | KitMaterialPanelProps["as"];
+  disabled?: boolean;
+  type?: "button" | "submit" | "reset";
   material?: "carbon" | "hull" | "steel";
   /** Welded rim colour, drawn as a backing plate under the cut (no filter). */
   rim?: string;
@@ -34,27 +39,25 @@ type PlateProps = Omit<GameFrameProps, "material" | "edge" | "edgeWidth" | "shad
 
 /**
  * A salvaged housing: a generated carbon or hull plate cut to shape, sitting on a welded rim. The rim
- * is a backing plate clipped to the same cut, never GameFrame's drop-shadow filter: a filter is
+ * is a backing plate clipped to the same cut, never a drop-shadow filter: a filter is
  * re-rasterised every time a readout changes, and these readouts change every shot over a live scene.
  */
 export const Plate = forwardRef<HTMLElement, PlateProps>(function Plate(
-  { material = "carbon", cut = "chamfer", depth = 10, rim = SIGNAL.rim, rimWidth = 2, className, style, ...rest },
+  { as, material = "carbon", cut = "chamfer", depth = 10, rim = SIGNAL.rim, rimWidth = 2, className, style, ...rest },
   ref,
 ) {
-  return (
-    <GameFrame
-      ref={ref}
-      {...rest}
-      material={material}
-      cut={cut}
-      depth={depth}
-      edge="none"
-      edgeWidth={0}
-      shadow={false}
-      className={`ss-plate ${className ?? ""}`}
-      style={{ "--ss-cut": gameCutPath(cut as GameCut, depth), "--ss-rim": rim, "--ss-rim-w": `${rimWidth}px`, ...style } as CSSProperties}
-    />
-  );
+  const look = {
+    material,
+    cut,
+    depth,
+    edge: "none",
+    edgeWidth: 0,
+    shadow: false,
+    className: `ss-plate ${className ?? ""}`,
+    style: { "--ss-cut": kitCutPath(cut as KitCut, depth), "--ss-rim": rim, "--ss-rim-w": `${rimWidth}px`, ...style } as CSSProperties,
+  };
+  if (as === "button") return <KitButton ref={ref as Ref<HTMLButtonElement>} {...(rest as Omit<KitMaterialButtonProps, "material">)} {...look} />;
+  return <KitPanel ref={ref} {...(rest as Omit<KitMaterialPanelProps, "material">)} as={as} {...look} />;
 });
 
 /** A CRT screen set into a housing: phosphor glass, scanlines and a dark bezel lip. */

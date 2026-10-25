@@ -2,11 +2,12 @@ import type { ReactNode } from "react";
 import { useGameStore } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
 import { KitBanner, KitResultScreen } from "@jgengine/react/kitFlow";
+import { KitCount, KitCounts } from "@jgengine/react/kitHud";
+import { HudSlots } from "@jgengine/shell/gameKit";
 import { KitButton, KitMeter, KitPanel } from "@jgengine/react/uiKitRoot";
 
 import { idea } from "../idea";
 import { raceView } from "../race";
-import { Count, Counts, HudFrame } from "./HudFrame";
 
 const same = <T,>(a: T, b: T) => JSON.stringify(a) === JSON.stringify(b);
 const useRace = () => useGameStore(raceView, same);
@@ -17,10 +18,10 @@ function Wallet(): ReactNode {
   const race = useRace();
   return (
     <KitPanel variant="strip">
-      <Counts>
-        <Count id="cash" value={race.cash} label={idea.currency.label} />
-        <Count id="wins" value={race.wins} label="wins" />
-      </Counts>
+      <KitCounts>
+        <KitCount id="cash" value={race.cash} label={idea.currency.label} />
+        <KitCount id="wins" value={race.wins} label="wins" />
+      </KitCounts>
     </KitPanel>
   );
 }
@@ -144,7 +145,8 @@ function Result(): ReactNode {
 export function Hud(): ReactNode {
   const garage = useGameStore((ctx) => raceView(ctx).phase === "garage");
   return (
-    <HudFrame
+    <HudSlots
+      storageKey={idea.id}
       slots={garage ? { topRight: <Wallet />, bottomLeft: <NextRace />, bottomRight: <Garage /> } : { topLeft: <Standing />, topRight: <Wallet />, top: <Countdown />, bottomRight: <Speedo /> }}
       overlay={<Result />}
     />

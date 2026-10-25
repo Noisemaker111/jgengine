@@ -1,8 +1,8 @@
 import { useGame, useGameStore } from "@jgengine/react/hooks";
+import { KitButton } from "@jgengine/react/uiKitRoot";
 import { useGameContext } from "@jgengine/react/provider";
-import { GameFrame } from "@jgengine/react/gameFrame";
 import { GameIcon } from "@jgengine/react/gameIcons";
-import { HudFade } from "@jgengine/react/hudFade";
+import { HudFade } from "@jgengine/react/hudLayout";
 import { actionLabel } from "@jgengine/core/input/actionBindings";
 
 import { buildPrompt } from "../../build/prompt";
@@ -41,9 +41,8 @@ export function BuildBar() {
             const isSelected = selected === id;
             const key = actionLabel(keybinds, `buildTower${index + 1}`);
             return (
-              <GameFrame
+              <KitButton
                 key={id}
-                as="button"
                 material="wood"
                 cut="notch"
                 depth={10}
@@ -68,7 +67,7 @@ export function BuildBar() {
                   <GameIcon name="coin" size={12} color={affordable ? "#f6cf5a" : "#e0624a"} />
                   {cost}
                 </span>
-              </GameFrame>
+              </KitButton>
             );
           })}
         </div>

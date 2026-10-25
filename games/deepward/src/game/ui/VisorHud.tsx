@@ -1,7 +1,7 @@
 import type { CSSProperties, ReactNode } from "react";
-import { GameFrame } from "@jgengine/react/gameFrame";
 import { GameIcon } from "@jgengine/react/gameIcons";
-import { HudFade } from "@jgengine/react/hudFade";
+import { KitButton, KitPanel } from "@jgengine/react/uiKitRoot";
+import { HudFade } from "@jgengine/react/hudLayout";
 
 /*
  * The diver's helmet. Everything in a dive is read off the visor glass: the dive computer on the
@@ -83,7 +83,7 @@ export function DiveComputer({ oxygen, tank, health, rail, sealed, low, hurt, bo
   return (
     <HudFade watch={[Math.floor(oxygen / 15), Math.ceil(health / 10), Math.round(rail / 8), Math.ceil((body?.food ?? 0) / 10), Math.ceil((body?.water ?? 0) / 10), seal?.crushing, belt?.ration, belt?.water, belt?.lure, belt?.lamp]} hold={low || hurt || health <= 35 || seal?.crushing === true || (body !== undefined && Math.min(body.food, body.water) <= 15)} idleMs={4000} dimTo={0.6}>
       <section className="dw-computer" aria-label="Dive computer" data-low={low ? "" : undefined}>
-        <GameFrame material="hull" cut="chamfer" depth={14} tint="#1b2c33" {...plate(low ? RED : "#04090b")} className="dw-rimmed" padding="10px 14px 10px 10px">
+        <KitPanel material="hull" cut="chamfer" depth={14} tint="#1b2c33" {...plate(low ? RED : "#04090b")} className="dw-rimmed" padding="10px 14px 10px 10px">
           <div className="dw-computer-face">
             <Dial fraction={fraction} color={color}>
               <strong style={{ color }}>{Math.ceil(oxygen)}</strong>
@@ -102,7 +102,7 @@ export function DiveComputer({ oxygen, tank, health, rail, sealed, low, hurt, bo
               <div className="dw-computer-row dw-computer-rail"><GameIcon name="flag" size={15} color={low ? RED : AMBER} /><span className="dw-tag">Rail</span><b>{Math.round(rail)}<small>m</small></b></div>
             </div>
           </div>
-        </GameFrame>
+        </KitPanel>
       </section>
     </HudFade>
   );
@@ -145,7 +145,7 @@ export function KitCounter({ weapon, loaded, capacity, reserve, reloading, items
   return (
     <HudFade watch={[loaded, reserve, reloading === null, items, mass]} hold={reloading !== null || emptyish} idleMs={4000} dimTo={0.6}>
       <section className="dw-kit" aria-label="Hand and cache">
-        <GameFrame material="hull" cut="chamfer" depth={14} tint="#1b2c33" {...plate("#04090b")} className="dw-rimmed" padding="12px 14px 10px 22px">
+        <KitPanel material="hull" cut="chamfer" depth={14} tint="#1b2c33" {...plate("#04090b")} className="dw-rimmed" padding="12px 14px 10px 22px">
           <div className="dw-kit-hand">
             <span className="dw-tag">{short}</span>
             <div className="dw-kit-ammo" data-low={emptyish ? "" : undefined}>
@@ -161,7 +161,7 @@ export function KitCounter({ weapon, loaded, capacity, reserve, reloading, items
             <kbd>Tab</kbd>
           </button>
           <span className="dw-kit-items">{items === 0 ? "Cache empty" : `${items} carried · lost if you die`}</span>
-        </GameFrame>
+        </KitPanel>
       </section>
     </HudFade>
   );
@@ -171,9 +171,9 @@ export function KitCounter({ weapon, loaded, capacity, reserve, reloading, items
 export function HoldTab({ onPause, disabled }: { onPause: () => void; disabled: boolean }): ReactNode {
   return (
     <HudFade watch={[disabled]} idleMs={3000} dimTo={0.6}>
-      <GameFrame as="button" type="button" material="hull" cut="hex" depth={10} tint="#22363f" {...plate("#04090b")} padding="7px 26px" className="dw-hold dw-hud-btn dw-rimmed" aria-label="Pause / Esc" disabled={disabled} onClick={onPause}>
+      <KitButton type="button" material="hull" cut="hex" depth={10} tint="#22363f" {...plate("#04090b")} padding="7px 26px" className="dw-hold dw-hud-btn dw-rimmed" aria-label="Pause / Esc" disabled={disabled} onClick={onPause}>
         <span className="dw-hold-face"><GameIcon name="pause" size={16} color={AMBER} /><kbd>Esc</kbd></span>
-      </GameFrame>
+      </KitButton>
     </HudFade>
   );
 }
@@ -221,7 +221,7 @@ export interface DocketProps {
 export function Docket({ life, scrip, stash, returns, lost, standing, next, last, brief, base }: DocketProps): ReactNode {
   return (
     <aside className="dw-docket" aria-label="Marrow departure">
-        <GameFrame material="paper" cut="torn" depth={9} {...plate("rgba(0,0,0,0.4)")} className="dw-rimmed" padding="14px 18px 22px">
+        <KitPanel material="paper" cut="torn" depth={9} {...plate("rgba(0,0,0,0.4)")} className="dw-rimmed" padding="14px 18px 22px">
           <span className="dw-docket-line"><span>Marrow · line 06</span><span>Life {String(life).padStart(2, "0")}</span></span>
           <h2>Rail departure / 06</h2>
           <p className="dw-docket-brief">{brief ?? "Ride to Bellwether. Fill the cache. Ride back before the air runs out."}</p>
@@ -241,7 +241,7 @@ export function Docket({ life, scrip, stash, returns, lost, standing, next, last
           <p className="dw-docket-standing"><b>Standing</b> {standing}</p>
           {last !== null && <p className="dw-docket-last" data-kind={last.kind}><span className="dw-stamp">{last.kind === "extracted" ? "Returned" : "Reprinted"}</span>{last.reason}</p>}
           <p className="dw-docket-keys" aria-hidden="true"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> walk <kbd>E</kbd> use <kbd>F</kbd> lamp <kbd>Q</kbd> eat <kbd>G</kbd> lure <kbd>C</kbd> scan <kbd>Esc</kbd> hold</p>
-      </GameFrame>
+      </KitPanel>
     </aside>
   );
 }
@@ -249,9 +249,9 @@ export function Docket({ life, scrip, stash, returns, lost, standing, next, last
 /** What the diver can act on, as a brass key plate; a search is a filling bar on the glass. */
 export function ActionPlate({ label, onAct }: { label: string; onAct: () => void }): ReactNode {
   return (
-    <GameFrame as="button" type="button" material="brass" cut="slant" depth={12} {...plate("#2a1e08")} padding="8px 22px 8px 12px" className="dw-act dw-hud-btn dw-rimmed" onClick={onAct}>
+    <KitButton type="button" material="brass" cut="slant" depth={12} {...plate("#2a1e08")} padding="8px 22px 8px 12px" className="dw-act dw-hud-btn dw-rimmed" onClick={onAct}>
       <span className="dw-act-face"><kbd>E</kbd><span>{label}</span></span>
-    </GameFrame>
+    </KitButton>
   );
 }
 

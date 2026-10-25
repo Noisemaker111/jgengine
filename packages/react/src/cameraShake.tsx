@@ -2,7 +2,7 @@ import { useEffect, useReducer, useRef, type CSSProperties, type ReactNode } fro
 
 import type { CameraShakeController } from "@jgengine/core/vfx/cameraShake";
 
-import { StaminaBar } from "./bars";
+import { KitMeter } from "./uiKitRoot";
 import { HudFrame, type HudFrameVariation } from "./hudFrame";
 
 /** A live read of a camera-shake controller: current trauma `0..1` and the last game-owned `kind`. */
@@ -73,7 +73,7 @@ export interface CameraShakeMeterProps {
 
 /**
  * A drop-in HUD panel that visualizes a core {@link CameraShakeController}: a
- * trauma meter (reusing the shared {@link StaminaBar} building block) plus a live
+ * trauma meter (reusing the shared {@link KitMeter}) plus a live
  * percentage and the current impact `kind` label. Presentation only — it reads the
  * controller and never interprets `kind`, mapping it through `kindLabels` for
  * display. A shell component applies the same controller's `offset()` to the
@@ -105,7 +105,7 @@ export function CameraShakeMeter({
       style={style}
     >
       <div data-camera-shake-meter="" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        <StaminaBar value={pct} max={100} label="TRAUMA" fill="#f97316" showValue={false} width="100%" />
+        <KitMeter value={pct} max={100} label="TRAUMA" tone="warn" />
         <div
           data-camera-shake-kind={kind ?? ""}
           style={{ display: "flex", justifyContent: "space-between", fontSize: 12, opacity: 0.85 }}

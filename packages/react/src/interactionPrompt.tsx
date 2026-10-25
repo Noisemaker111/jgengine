@@ -3,7 +3,7 @@ import { useEffect, useReducer, type CSSProperties, type ReactNode } from "react
 import type { PositionedPrompt, PromptPoint } from "@jgengine/core/interaction/proximityPrompt";
 import type { PromptRegistry } from "@jgengine/core/interaction/promptRegistry";
 
-import { StaminaBar } from "./bars";
+import { KitMeter } from "./uiKitRoot";
 import { KeyHint, Keycap } from "./keyHint";
 
 /**
@@ -179,7 +179,7 @@ export function InteractionPrompt({
     body = (
       <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
         <span style={{ fontSize: 13, fontWeight: 600, letterSpacing: 0.4, opacity: 0.85 }}>Hold</span>
-        <StaminaBar value={progress * 100} showValue={false} width={140} fill={accent} />
+        <KitMeter value={progress} tone="accent" style={{ width: 140, "--kit-accent": accent } as CSSProperties} />
       </span>
     );
   } else {

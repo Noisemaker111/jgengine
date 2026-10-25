@@ -1,14 +1,15 @@
 import type { ReactNode } from "react";
 import { useGameStore } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
-import { KitBanner, KitObjective, KitResultScreen } from "@jgengine/react/kitFlow";
+import { KitBanner, KitResultScreen } from "@jgengine/react/kitFlow";
+import { KitCount, KitCounts, KitVitals } from "@jgengine/react/kitHud";
+import { HudSlots } from "@jgengine/shell/gameKit";
 import { KitButton, KitMeter, KitPanel } from "@jgengine/react/uiKitRoot";
 
 import { continueGame, newGame } from "../flow";
 import { gunView } from "../guns";
 import { idea } from "../idea";
 import { opsView } from "../play";
-import { Count, Counts, HudFrame, PANEL_WIDTH } from "./HudFrame";
 
 const same = <T,>(a: T, b: T) => JSON.stringify(a) === JSON.stringify(b);
 
@@ -32,16 +33,11 @@ function Vitals(): ReactNode {
   const health = useHealth();
   const beat = idea.beats.find((entry) => entry.id === ops.mission?.missionId) ?? null;
   return (
-    <div style={{ width: PANEL_WIDTH, pointerEvents: "none" }}>
-      <KitPanel variant="hud" eyebrow={idea.name}>
-        <KitMeter size="sm" label={idea.hero.label} value={health.current} max={health.max} tone={health.current < health.max * 0.35 ? "bad" : "good"} readout />
-      </KitPanel>
-      {beat === null ? null : (
-        <div style={{ marginTop: 8 }}>
-          <KitObjective eyebrow={idea.guide.name} title={beat.title} steps={[{ id: beat.id, label: beat.goal }]} progressKey={beat.id} />
-        </div>
-      )}
-    </div>
+    <KitVitals
+      eyebrow={idea.name}
+      vitals={[{ label: idea.hero.label, value: health.current, max: health.max, lowAt: 0.35 }]}
+      objective={beat === null ? null : { id: beat.id, label: idea.guide.name, title: beat.title, goal: beat.goal }}
+    />
   );
 }
 
@@ -49,10 +45,10 @@ function Wallet(): ReactNode {
   const ops = useOps();
   return (
     <KitPanel variant="strip">
-      <Counts>
-        <Count id="cash" value={ops.cash} label={idea.currency.label} />
-        <Count id="kills" value={ops.kills} label="kills" />
-      </Counts>
+      <KitCounts>
+        <KitCount id="cash" value={ops.cash} label={idea.currency.label} />
+        <KitCount id="kills" value={ops.kills} label="kills" />
+      </KitCounts>
     </KitPanel>
   );
 }
@@ -152,5 +148,5 @@ function Ending(): ReactNode {
 
 /** Everything on screen while playing: small panels at the edges, the crosshair alone in the middle. */
 export function Hud(): ReactNode {
-  return <HudFrame slots={{ topLeft: <Vitals />, top: <Front />, topRight: <Wallet />, bottomRight: <Loadout /> }} overlay={<Ending />} />;
+  return <HudSlots storageKey={idea.id} slots={{ topLeft: <Vitals />, top: <Front />, topRight: <Wallet />, bottomRight: <Loadout /> }} overlay={<Ending />} />;
 }

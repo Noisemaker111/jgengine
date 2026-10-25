@@ -217,7 +217,7 @@ function TalentNode({
         borderRadius: "var(--jg-slot-radius, 12px)",
         border: s.border,
         background: s.bg,
-        color: "var(--jg-bar-text, #f4f6fb)",
+        color: "var(--jg-text, #f4f6fb)",
         opacity: s.opacity,
         boxShadow: interactive ? `${s.glow}, 0 0 0 2px color-mix(in srgb, var(--jg-accent, #38bdf8) 40%, transparent)` : s.glow,
         cursor: interactive ? "pointer" : "default",
@@ -239,7 +239,7 @@ function TalentNode({
             padding: "0 4px",
             borderRadius: 9,
             background: node.state === "maxed" ? "var(--jg-accent, #38bdf8)" : "rgba(6,10,16,0.92)",
-            color: node.state === "maxed" ? "#06121b" : "var(--jg-bar-text, #f4f6fb)",
+            color: node.state === "maxed" ? "#06121b" : "var(--jg-text, #f4f6fb)",
             border: "1px solid var(--jg-accent, #38bdf8)",
             fontSize: hudType("xs"),
             fontWeight: 800,
@@ -335,7 +335,7 @@ export function TalentTree<TStat extends string = string>({
               letterSpacing: 1.4,
               textTransform: "uppercase",
               opacity: 0.7,
-              color: "var(--jg-bar-text, #f4f6fb)",
+              color: "var(--jg-text, #f4f6fb)",
               whiteSpace: "nowrap",
             }}
           >

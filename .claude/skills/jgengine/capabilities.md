@@ -100,6 +100,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `Coins` (function) · `import { Coins } from "@jgengine/shell/gameKit"`
 
+## hud-fade — HUD group that fades when idle and returns when its values change
+
+- `HudFade` (function) · `import { HudFade } from "@jgengine/shell/gameKit"`
+
 ## hud-hotbar — optional inventory hotbar building block — games own slot chrome
 
 - `Hotbar` (function) · `import { Hotbar } from "@jgengine/shell/gameKit"`
@@ -112,9 +116,9 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `HudPanel` (function) · `import { HudPanel } from "@jgengine/shell/gameKit"`
 
-## hud-stat-bar — optional stat-bound bar building block (health, mana, stamina) — prefer game-owned chrome
+## hud-slots — a play HUD of edge-pinned, player-movable panels in one component
 
-- `StatBar` (function) · `import { StatBar } from "@jgengine/shell/gameKit"`
+- `HudSlots` (function) · `import { HudSlots } from "@jgengine/shell/gameKit"`
 
 ## input-recorder — tick-indexed input log for replay, rollback, and regression tests
 

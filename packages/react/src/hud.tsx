@@ -5,7 +5,7 @@ import { groundSpeed } from "@jgengine/core/scene/entityStore";
 import { iconForItemId } from "./gameIcons";
 import { hudFrameStyle } from "./hudFrame";
 import { IconTreatment, schoolForItem } from "./iconTreatment";
-import { useCurrency, useEntityStat, useGameClock, useGameStore, useInventory, localPlayerEntity } from "./hooks";
+import { useCurrency, useGameClock, useGameStore, useInventory, localPlayerEntity } from "./hooks";
 import { hudType } from "./hudTokens";
 
 /**
@@ -19,83 +19,6 @@ import { hudType } from "./hudTokens";
  */
 
 const PANEL: CSSProperties = hudFrameStyle("glass");
-
-/** Named color ramps for {@link StatBar} tones. `fn` maps fill fraction (0..1) → gradient stops. */
-const TONES: Record<string, (t: number) => [string, string]> = {
-  health: (t) => (t > 0.5 ? ["#22c55e", "#4ade80"] : t > 0.25 ? ["#f59e0b", "#fbbf24"] : ["#dc2626", "#f87171"]),
-  mana: () => ["#2563eb", "#60a5fa"],
-  stamina: () => ["#65a30d", "#a3e635"],
-  shield: () => ["#0891b2", "#22d3ee"],
-  xp: () => ["#7c3aed", "#a78bfa"],
-  neutral: () => ["#475569", "#94a3b8"],
-};
-
-/** A stat tone — picks the bar's color ramp. */
-export type StatTone = keyof typeof TONES;
-
-function useLocalPlayerId(entityId: string | undefined): string | null {
-  return useGameStore((ctx) => entityId ?? localPlayerEntity(ctx)?.id ?? null);
-}
-
-/**
- * A polished stat bar (health/mana/stamina/shield/xp) — a rounded, glassy meter with a tone-colored
- * fill and an optional value readout. Reads `statId` off `entityId` (defaults to the local player).
- * Renders nothing until the stat exists.
- *
- * @deprecated The `tone`-switched umbrella is being retired (#1033). Use the atomic, purpose-named,
- * token-themed bars from `@jgengine/react/bars` instead — `HealthBar`, `ShieldBar`, `ManaBar`,
- * `StaminaBar`, `ExperienceBar`, `SoulBar`, `BossBar`, `AmmoCounter` — each does one readout and is
- * restyled globally via the shared `--jg-*` tokens (`barTokens`). Kept as a thin shim during migration.
-  *
- * @capability hud-stat-bar optional stat-bound bar building block (health, mana, stamina) — prefer game-owned chrome
- */
-export function StatBar({
-  statId = "health",
-  entityId,
-  tone = "health",
-  label,
-  showValue = true,
-  width = 200,
-  icon,
-  style,
-  className,
-}: {
-  statId?: string;
-  entityId?: string;
-  tone?: StatTone;
-  label?: string;
-  showValue?: boolean;
-  width?: number;
-  icon?: ReactNode;
-  style?: CSSProperties;
-  className?: string;
-}) {
-  const id = useLocalPlayerId(entityId);
-  const stat = useEntityStat(id ?? "", statId);
-  if (id === null || stat === null) return null;
-  const range = stat.max - stat.min;
-  const fraction = range <= 0 ? 0 : Math.max(0, Math.min(1, (stat.current - stat.min) / range));
-  const [from, to] = (TONES[tone] ?? TONES.neutral!)(fraction);
-  return (
-    <div className={className} style={{ ...PANEL, padding: "6px 8px", width, ...style }} data-stat={statId}>
-      {(label !== undefined || icon !== undefined || showValue) && (
-        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4, fontSize: hudType("xs"), fontWeight: 600, letterSpacing: 0.3 }}>
-          {icon}
-          <span style={{ textTransform: "uppercase", opacity: 0.75 }}>{label ?? statId}</span>
-          {showValue ? (
-            <span style={{ marginLeft: "auto", fontVariantNumeric: "tabular-nums", opacity: 0.9 }}>
-              {Math.round(stat.current)}
-              <span style={{ opacity: 0.5 }}> / {Math.round(stat.max)}</span>
-            </span>
-          ) : null}
-        </div>
-      )}
-      <div style={{ height: 8, borderRadius: 999, background: "rgba(255,255,255,0.10)", overflow: "hidden" }}>
-        <div style={{ width: `${fraction * 100}%`, height: "100%", borderRadius: 999, background: `linear-gradient(90deg, ${from}, ${to})`, transition: "width 160ms ease" }} />
-      </div>
-    </div>
-  );
-}
 
 /**
  * A numbered hotbar bound to an inventory — painted iconed slots (a `GameIcon` glyph over a

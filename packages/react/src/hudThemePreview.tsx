@@ -1,14 +1,14 @@
 import { type CSSProperties } from "react";
 
-import { AmmoCounter, ExperienceBar, HealthBar, ManaBar, ShieldBar } from "./bars";
 import { HudFrame } from "./hudFrame";
 import { HUD_THEME_PRESETS, defaultHudTheme, hudThemeVars, type HudTheme } from "./hudTheme";
 import { hudType } from "./hudTokens";
+import { KitMeter } from "./uiKitRoot";
 
 /**
- * A deterministic preset matrix for {@link HudTheme} (#1034): every genre preset × (bars + a themed
+ * A deterministic preset matrix for {@link HudTheme} (#1034): every genre preset × (kit meters + a themed
  * frame + a slot row), rendered from static values. One `hudThemeVars(theme)` block per cell drives
- * the atomic bars, the `HudFrame variation="themed"`, and the slot chrome together — proof that a
+ * the `HudFrame variation="themed"`, and the slot chrome together — proof that a
  * single theme restyles all the shared chrome at once. Renders identically every time (screenshots).
  */
 
@@ -25,7 +25,7 @@ function Slot({ index }: { index: number }) {
         alignItems: "center",
         justifyContent: "center",
         fontSize: hudType("xs"),
-        color: "var(--jg-bar-text, #f4f6fb)",
+        color: "var(--jg-text, #f4f6fb)",
         opacity: index === 0 ? 1 : 0.6,
       }}
     >
@@ -39,11 +39,10 @@ function ThemeCell({ name, theme }: { name: string; theme: HudTheme }) {
     <div style={{ ...(hudThemeVars(theme) as CSSProperties), width: 260 }}>
       <HudFrame variation="themed" title={name} padding={12}>
         <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
-          <HealthBar value={78} max={100} label="HP" width="100%" />
-          <ManaBar value={50} max={80} label="MP" width="100%" />
-          <ShieldBar value={30} max={60} label="SH" width="100%" />
-          <ExperienceBar value={4} max={10} segments={10} showValue={false} label="XP" width="100%" />
-          <AmmoCounter loaded={17} reserve={90} magazine={30} width="100%" />
+          <KitMeter size="sm" value={78} max={100} label="HP" tone="good" readout />
+          <KitMeter size="sm" value={50} max={80} label="MP" tone="accent" readout />
+          <KitMeter size="sm" value={30} max={60} label="SH" tone="neutral" readout />
+          <KitMeter size="sm" value={4} max={10} variant="segments" segments={10} label="XP" tone="warn" />
           <div style={{ display: "flex", gap: 6, marginTop: 2 }}>
             {[0, 1, 2, 3].map((index) => (
               <Slot key={index} index={index} />

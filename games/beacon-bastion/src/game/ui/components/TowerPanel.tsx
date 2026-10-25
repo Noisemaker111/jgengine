@@ -1,6 +1,6 @@
 import { useGame, useGameStore } from "@jgengine/react/hooks";
+import { KitButton, KitPanel } from "@jgengine/react/uiKitRoot";
 import { actionLabel } from "@jgengine/core/input/actionBindings";
-import { GameFrame } from "@jgengine/react/gameFrame";
 import { GameIcon, type GameIconName } from "@jgengine/react/gameIcons";
 
 import { editorLayers } from "../../../editorLayers";
@@ -46,16 +46,16 @@ export function TowerPanel() {
 
   if (!tower.ready) {
     return (
-      <GameFrame material="stone" tint="#57524a" cut="chamfer" depth={12} padding="12px 16px" className="bb-mason" data-jg="tower-panel">
+      <KitPanel material="stone" tint="#57524a" cut="chamfer" depth={12} padding="12px 16px" className="bb-mason" data-jg="tower-panel">
         <h3 className="bb-mason-name">{tower.label}</h3>
         <span className="bb-mason-rising">
           <span style={{ width: `${Math.round(view.progress * 100)}%` }} />
         </span>
         <span className="bb-mason-stat">{`Raising · ${Math.round(view.progress * 100)}%`}</span>
-        <GameFrame as="button" material="wood" cut="notch" depth={8} padding="6px 14px" className="bb-small-plank" onClick={() => commands.run("beacon.remove", { id: tower.id })}>
+        <KitButton material="wood" cut="notch" depth={8} padding="6px 14px" className="bb-small-plank" onClick={() => commands.run("beacon.remove", { id: tower.id })}>
           Cancel build
-        </GameFrame>
-      </GameFrame>
+        </KitButton>
+      </KitPanel>
     );
   }
 
@@ -75,7 +75,7 @@ export function TowerPanel() {
   if (stats.crit_every > 0) extras.push({ icon: "skull", text: `×${stats.crit_mult} every ${stats.crit_every}` });
 
   return (
-    <GameFrame material="stone" tint="#57524a" cut="chamfer" depth={12} padding="12px 16px 14px" className="bb-mason" data-jg="tower-panel">
+    <KitPanel material="stone" tint="#57524a" cut="chamfer" depth={12} padding="12px 16px 14px" className="bb-mason" data-jg="tower-panel">
       <h3 className="bb-mason-name">{tower.label}</h3>
       {view.branchLabel === null ? null : <span className="bb-mason-path">{view.branchLabel}</span>}
       <span className="bb-pips" aria-label={`Rank ${stats.level} of ${MAX_TOWER_LEVEL}`}>
@@ -107,8 +107,7 @@ export function TowerPanel() {
           </span>
         ))}
       </div>
-      <GameFrame
-        as="button"
+      <KitButton
         material="wood"
         cut="notch"
         depth={6}
@@ -119,21 +118,20 @@ export function TowerPanel() {
       >
         <GameIcon name="eye" size={13} /> {`Aim: ${AIM_LABEL[stats.aim] ?? stats.aim}`}
         {aimKey === null ? null : <kbd>{aimKey}</kbd>}
-      </GameFrame>
+      </KitButton>
       {fork ? <span className="bb-mason-fork">Choose a path — the other closes</span> : null}
       <div className={fork ? "bb-mason-branches" : "bb-mason-acts"}>
         {view.options.length === 0 ? (
-          <GameFrame as="button" material="wood" cut="notch" depth={8} padding="6px 12px" className="bb-small-plank" data-dim="" aria-disabled>
+          <KitButton material="wood" cut="notch" depth={8} padding="6px 12px" className="bb-small-plank" data-dim="" aria-disabled>
             Mastered
-          </GameFrame>
+          </KitButton>
         ) : null}
         {view.options.map((option) => {
           const ready = option.refusal === null;
           const cost = -((option.cost["keep.gold"] as number | undefined) ?? 0);
           return (
-            <GameFrame
+            <KitButton
               key={option.action}
-              as="button"
               material={fork ? "paper" : "wood"}
               cut="notch"
               depth={8}
@@ -161,13 +159,12 @@ export function TowerPanel() {
                   {upgradeKey === null ? null : <kbd>{upgradeKey}</kbd>}
                 </>
               )}
-            </GameFrame>
+            </KitButton>
           );
         })}
       </div>
       <div className="bb-mason-acts">
-        <GameFrame
-          as="button"
+        <KitButton
           material="enamel"
           tint="#6e1f14"
           edge="#250804"
@@ -179,8 +176,8 @@ export function TowerPanel() {
         >
           {`Sell ${view.refund}`}
           {sellKey === null ? null : <kbd>{sellKey}</kbd>}
-        </GameFrame>
+        </KitButton>
       </div>
-    </GameFrame>
+    </KitPanel>
   );
 }

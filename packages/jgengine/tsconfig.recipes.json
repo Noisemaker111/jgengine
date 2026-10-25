@@ -32,5 +32,6 @@
       "@jgengine/ws/*": ["../ws/src/*"]
     }
   },
-  "include": ["src/recipes/snippets"]
+  "include": ["src/recipes/snippets"],
+  "exclude": ["src/recipes/snippets/**/*.test.ts"]
 }

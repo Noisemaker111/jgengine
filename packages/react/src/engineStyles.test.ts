@@ -6,7 +6,6 @@ import { renderToStaticMarkup } from "react-dom/server";
 
 import { ENGINE_STYLESHEET } from "./engineStyles";
 import { HudButton } from "./hudButton";
-import { HudPanel } from "./hudPanel";
 import { HudSurface } from "./hudSurface";
 import { HudThemeRoot } from "./hudThemeRoot";
 import { defaultHudTheme, hudTheme } from "./hudTheme";
@@ -102,10 +101,6 @@ describe("HudButton", () => {
 });
 
 describe("HudSurface", () => {
-  test("the deprecated HudPanel name is the same component", () => {
-    expect(HudPanel).toBe(HudSurface);
-  });
-
   test("renders as a landmark element and leaves padding to CSS unless asked", () => {
     const plain = renderToStaticMarkup(createElement(HudSurface, { as: "aside", "aria-label": "Crew" }, "x"));
     expect(plain.startsWith("<aside")).toBe(true);
