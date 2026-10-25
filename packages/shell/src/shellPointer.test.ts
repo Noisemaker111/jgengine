@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { pointerAimFor, pointerContextMenu } from "./shellPointer";
+import { pointerAimFor, pointerContextMenu, resolvePointerAim } from "./shellPointer";
 
 function ctxStub(options: {
   possession?: string | null;
@@ -32,7 +32,7 @@ function ctxStub(options: {
 
 describe("pointerAimFor", () => {
   test("returns undefined when the pointer has no world hit", () => {
-    const service = { worldHit: () => null };
+    const service = { worldHit: () => null, cursorRay: () => null };
     const ctx = ctxStub({
       entities: { p1: { id: "p1", name: "hero", position: [0, 0, 0] } },
     });
@@ -45,7 +45,7 @@ describe("pointerAimFor", () => {
   });
 
   test("aims from player eye height toward the hit point", () => {
-    const service = { worldHit: () => ({ point: [10, 0, 0] as const, entity: null, object: null }) };
+    const service = { worldHit: () => ({ point: [10, 0, 0] as const, entity: null, object: null }), cursorRay: () => null };
     const ctx = ctxStub({
       entities: { p1: { id: "p1", name: "hero", position: [0, 0, 0] } },
       colliders: [{ halfExtents: [0.3, 0.9, 0.3] }],
@@ -55,6 +55,34 @@ describe("pointerAimFor", () => {
     expect(aim!.origin).toBeDefined();
     expect(aim!.direction).toBeDefined();
     expect(aim!.direction[0]).toBeGreaterThan(0.9);
+  });
+});
+
+describe("pointerAimFor through the collision world", () => {
+  function withRaycast(hit: { point: [number, number, number]; distance: number } | null) {
+    const ctx = ctxStub({ entities: { p1: { id: "p1", name: "hero", position: [0, 0, 0] } } }) as unknown as {
+      scene: { raycast?: (input: { excludeInstanceIds?: string[] }) => unknown };
+    };
+    const seen: { excludeInstanceIds?: string[] }[] = [];
+    ctx.scene.raycast = (input) => {
+      seen.push(input);
+      return hit;
+    };
+    return { ctx: ctx as never, seen };
+  }
+  const service = { cursorRay: () => ({ origin: [0, 10, -10] as const, direction: [0, -Math.SQRT1_2, Math.SQRT1_2] as const }), worldHit: () => null };
+
+  test("aims at what the cursor ray hits, never at the shooter itself", () => {
+    const { ctx, seen } = withRaycast({ point: [0, 0, 0.5], distance: 14 });
+    const aim = pointerAimFor(ctx, service as never) as { direction: readonly number[] };
+    expect(seen[0]!.excludeInstanceIds).toEqual(["p1"]);
+    expect(aim.direction[1]).toBeLessThan(0);
+  });
+
+  test("over open sky it aims along the cursor ray", () => {
+    const { ctx } = withRaycast(null);
+    const aim = pointerAimFor(ctx, service as never) as { direction: readonly number[] };
+    expect(aim.direction[2]).toBeGreaterThan(0.5);
   });
 });
 
@@ -101,5 +129,21 @@ describe("pointerContextMenu", () => {
       { point: [0, 0, 0], entity: null, object: null },
     );
     expect(menu).toBeNull();
+  });
+});
+
+describe("resolvePointerAim", () => {
+  test("rigs that look at the shooter from outside aim at the cursor by default", () => {
+    for (const rig of ["chase", "orbit", "topDown", "rts", "sideScroll", undefined]) expect(resolvePointerAim(undefined, rig)).toBe(true);
+  });
+
+  test("first-person and shoulder rigs keep the crosshair", () => {
+    expect(resolvePointerAim(undefined, "first")).toBe(false);
+    expect(resolvePointerAim(undefined, "shoulder")).toBe(false);
+  });
+
+  test("a game's own pointer.aim wins either way", () => {
+    expect(resolvePointerAim(false, "chase")).toBe(false);
+    expect(resolvePointerAim(true, "first")).toBe(true);
   });
 });

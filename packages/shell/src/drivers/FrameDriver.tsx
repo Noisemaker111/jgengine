@@ -265,13 +265,24 @@ export function FrameDriver({
         });
       }
     }
-    const aimOverride = pointerAim ? pointerAimFor(ctx, pointerService) : undefined;
-    const commandAim: Aim = aimOverride ?? { yaw: yawRef.current, pitch: pitchRef.current };
+    // The cursor ray is a whole-scene raycast, so it runs only on a frame that fires something.
+    // A locked pointer (mouse-look) has no cursor to aim at; it keeps the crosshair aim.
+    let aimResolved = false;
+    let aimOverrideValue: Aim | undefined;
+    const aimOverrideNow = (): Aim | undefined => {
+      if (!aimResolved) {
+        aimResolved = true;
+        const locked = typeof document !== "undefined" && document.pointerLockElement !== null;
+        aimOverrideValue = pointerAim && !locked ? pointerAimFor(ctx, pointerService) : undefined;
+      }
+      return aimOverrideValue;
+    };
+    const commandAimNow = (): Aim => aimOverrideNow() ?? { yaw: yawRef.current, pitch: pitchRef.current };
     if (collisionDebug.getState().layers.aimLaser) {
       const aimFrom = ctx.player.possession.active(playerId) ?? playerId;
       collisionDebug.setAimProbe({
         from: aimFrom,
-        aim: commandAim,
+        aim: commandAimNow(),
         originPolicy: { kind: "converge" },
         maxDistance: 100,
       });
@@ -296,12 +307,12 @@ export function FrameDriver({
       }
       if (!shouldFireBoundAction(tracker, action, playable.game.input, repeatFiredAtRef.current, nowMs)) continue;
       repeatFiredAtRef.current.set(action, nowMs);
-      dispatchBoundAction(ctx, action, yawRef.current, pitchRef.current, commandAim, RESERVED_INPUT_ACTIONS, commandSink);
+      dispatchBoundAction(ctx, action, yawRef.current, pitchRef.current, commandAimNow(), RESERVED_INPUT_ACTIONS, commandSink);
     }
     if (hotbarId !== null) {
       for (const { action, slot } of slotActions) {
         if (!tracker.wasPressed(action)) continue;
-        const result = executeHotbarSlot(ctx, playerId, hotbarId, slot, yawRef.current, pitchRef.current, aimOverride);
+        const result = executeHotbarSlot(ctx, playerId, hotbarId, slot, yawRef.current, pitchRef.current, aimOverrideNow());
         if (!result.ok) console.warn(`[jgengine:item-use] ${result.error}`);
       }
       const usePrimary =
@@ -315,7 +326,7 @@ export function FrameDriver({
             ? preferred
             : slots.findIndex((stack) => stack !== null);
         if (slot >= 0) {
-          const result = executeHotbarSlot(ctx, playerId, hotbarId, slot, yawRef.current, pitchRef.current, aimOverride);
+          const result = executeHotbarSlot(ctx, playerId, hotbarId, slot, yawRef.current, pitchRef.current, aimOverrideNow());
           if (!result.ok) console.warn(`[jgengine:item-use] ${result.error}`);
         }
       }

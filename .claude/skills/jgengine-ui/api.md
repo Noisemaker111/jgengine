@@ -3138,7 +3138,7 @@
 - `POINTER_ENTITY_KEY` (const): const POINTER_ENTITY_KEY: "jgEntityId" — ⚠ undocumented
 - `POINTER_OBJECT_KEY` (const): const POINTER_OBJECT_KEY: "jgObjectId" — ⚠ undocumented
 - `PointerHitFilter` (type): type PointerHitFilter = (object: THREE.Object3D) => boolean — ⚠ undocumented
-- `PointerService` (interface): interface PointerService { worldHit(): PointerHit | null; worldHitCenter(): PointerHit | null; screenOf(world: PointerVec3): {x: number; y: number} | null; hasCursor(): boolean; bind(deps: PointerDeps | null): void; setCursor(ndcX: number, ndcY: number, present: bo… — ⚠ undocumented
+- `PointerService` (interface): interface PointerService { worldHit(): PointerHit | null; worldHitCenter(): PointerHit | null; screenOf(world: PointerVec3): {x: number; y: number} | null; hasCursor(): boolean; cursorRay(): {origin: PointerVec3; direction: PointerVec3} | null; bind(deps: PointerDe… — ⚠ undocumented
 - `createPointerService` (function): function createPointerService(): PointerService — ⚠ undocumented
 
 ## @jgengine/shell/postfx/PostProcessing
@@ -3280,6 +3280,14 @@
 ## @jgengine/shell/render/decalTexture
 
 - `DecalTextureData` (interface): interface DecalTextureData — Row-major RGBA bytes plus their edge length, ready for a `THREE.DataTexture`.
+
+## @jgengine/shell/render/entityMuzzle
+
+- `EntityMuzzleReader` (type): type EntityMuzzleReader = (target: THREE.Vector3) => boolean — Writes where an entity's shots visibly leave from, in world space; false when it has none right now.
+- `findMuzzleBone` (function): function findMuzzleBone(scene: THREE.Object3D): THREE.Object3D | null — The bone a rigged character's shots leave from: a `muzzle` node when the model has one, else its right hand (KayKit `handslot.r`, Mixamo `RightHand`, Rocketbox `Bip01 R Hand`, Quaternius `Hand.R`), else its left. Exported for tests.
+- `readEntityMuzzle` (function): function readEntityMuzzle(instanceId: string, target: THREE.Vector3): boolean — The visible muzzle of `instanceId` into `target`; false leaves `target` unchanged.
+- `registerEntityMuzzle` (function): function registerEntityMuzzle(instanceId: string, reader: EntityMuzzleReader): () => void — Register where shots fired by `instanceId` visibly leave from (a gun hand, a turret barrel, a staff tip). Tracers and muzzle effects start there instead of at the shot's rule origin; the rule origin still decides what is hit. Returns the cleanup.
+- `useEntityMuzzle` (function): function useEntityMuzzle(scene: THREE.Object3D, instanceId: string | undefined, facingYaw: () => number): void — Register a placed character's visible muzzle: its muzzle node, or a point just in front of its shooting hand along its facing. A model with no hand bone registers nothing.
 
 ## @jgengine/shell/render/materialAppearanceSignals
 
@@ -4231,7 +4239,7 @@
 
 - `CombatCameraShake` (function): function CombatCameraShake(): null — ⚠ undocumented
 - `NameplateSample` (interface): interface NameplateSample — Projected nameplate with optional health and distance from the render camera.
-- `ProjectileTracers` (function): function ProjectileTracers({ lifeMs = 130 }: { lifeMs?: number }): React.JSX.Element — ⚠ undocumented
+- `ProjectileTracers` (function): function ProjectileTracers({ lifeMs = 200 }: { lifeMs?: number }): React.JSX.Element — ⚠ undocumented
 - `Reticle` (function): function Reticle({ className }: { className?: string }): React.JSX.Element — ⚠ undocumented
 - `WorldBarSample` (interface): interface WorldBarSample { entityId?: string; x: number; y: number; percent: number; pxPerMeter?: number } — ⚠ undocumented
 - `WorldEntityBars` (function): function WorldEntityBars({ statId, height = 2.2, roles, resolveRole, maxDistance, occlude = true, tickMs = 80, maxSamples = 64, }: { statId: string; height?: number; roles?: readonly CatalogEntityRole[]; resolveRole?: (entity: SceneEntity) => CatalogEntityRole | undefined; /** Hide bars beyond this … — ⚠ undocumented
@@ -4241,6 +4249,7 @@
 - `WorldObjectHighlights` (function): function WorldObjectHighlights({ color = "#facc15", radius, y = 0.05 }: WorldObjectHighlightsProps): React.JSX.Element — Ground ring over every `ctx.scene.object.selection`-ed placed object — the object-layer counterpart to `WorldEntityBars`/`WorldNameplates`. Mount it once in the game's scene (headless: no defaults are imposed beyond a visible ring) instead of hand-rolling a selection highlight through `WorldOverlay` against external state.
 - `WorldObjectHighlightsProps` (interface): interface WorldObjectHighlightsProps — Props for {@link WorldObjectHighlights}.
 - `WorldTelegraphs` (function): function WorldTelegraphs(): React.JSX.Element — ⚠ undocumented
+- `startFromMuzzle` (function): function startFromMuzzle(ctx: GameContext, from: string, camera: THREE.Camera, start: THREE.Vector3): void — Where a shot's tracer visibly starts. The rule origin (eye or fixed muzzle offset) decides what is hit; the line starts at the shooter's gun: a first-person viewmodel's registered muzzle, else the bottom-right of the view where a held gun sits, and for anyone seen from outside, their registered hand or barrel. Exported for tests.
 
 ## @jgengine/shell/world/WorldItems
 

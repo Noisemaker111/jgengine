@@ -305,6 +305,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `projectWorldToScreen` (function) · `import { projectWorldToScreen } from "@jgengine/shell/world/WorldEntityFrames"`
 - `useWorldProjection` (function) · `import { useWorldProjection } from "@jgengine/shell/world/WorldEntityFrames"`
 
+## entity-muzzle — draw a character's or turret's shots leaving from its hand or barrel
+
+- `registerEntityMuzzle` (function) · `import { registerEntityMuzzle } from "@jgengine/shell/render/entityMuzzle"`
+
 ## entity-portrait — selectable entity portrait tile with vitals and selected/focus states
 
 - `EntityPortrait` (function) · `import { EntityPortrait } from "@jgengine/react"`

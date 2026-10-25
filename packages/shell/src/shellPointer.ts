@@ -16,19 +16,55 @@ export type PointerPlayable = {
   };
 };
 
-/** Aim from the possessed/local player eye toward the current pointer world hit. @internal */
+/** How far a cursor aim reaches when the cursor is over open sky. */
+const CURSOR_AIM_REACH_M = 250;
+
+/**
+ * Aim from the possessed/local player eye toward what is under the cursor. The cursor ray is tested
+ * against the game's collision world (entities, objects, walls, terrain) rather than every drawn
+ * triangle, so aiming costs a spatial query instead of a full-scene raycast on each shot; over open
+ * sky the aim goes along the cursor ray. @internal
+ */
 export function pointerAimFor(ctx: GameContext, service: PointerService): Aim | undefined {
-  const hit = service.worldHit();
-  if (hit === null) return undefined;
   const shooter =
     ctx.scene.entity.get(ctx.player.possession.active(ctx.player.userId)) ??
     ctx.scene.entity.get(ctx.player.userId);
   if (shooter === null) return undefined;
   const eye = eyeHeightFromColliders(ctx.scene.entity.collidersOf(shooter.id));
-  return aimToPoint(
-    [shooter.position[0], shooter.position[1] + eye, shooter.position[2]],
-    hit.point,
-  );
+  const from: [number, number, number] = [shooter.position[0], shooter.position[1] + eye, shooter.position[2]];
+  const ray = service.cursorRay();
+  if (ray === null) {
+    const hit = service.worldHit();
+    return hit === null ? undefined : aimToPoint(from, hit.point);
+  }
+  const hit = ctx.scene.raycast({
+    origin: ray.origin,
+    direction: ray.direction,
+    maxDistance: CURSOR_AIM_REACH_M,
+    excludeInstanceIds: [shooter.id],
+  });
+  const reach = hit?.distance ?? CURSOR_AIM_REACH_M;
+  const point: readonly [number, number, number] = hit?.point ?? [
+    ray.origin[0] + ray.direction[0] * reach,
+    ray.origin[1] + ray.direction[1] * reach,
+    ray.origin[2] + ray.direction[2] * reach,
+  ];
+  return aimToPoint(from, point);
+}
+
+/** Camera rigs that show a free cursor over a world seen from outside the shooter. */
+const CURSOR_AIM_RIGS: ReadonlySet<string> = new Set(["chase", "orbit", "topDown", "rts", "sideScroll"]);
+
+/**
+ * Whether shots and abilities aim at the cursor's world point. `pointer.aim` decides when a game
+ * sets it; otherwise a rig that looks at the shooter from outside (chase, orbit, top-down, RTS,
+ * side view) aims at the cursor, and first-person and shoulder rigs keep the crosshair. At runtime
+ * a locked pointer always falls back to the crosshair (see {@link FrameDriver}).
+ * @internal
+ */
+export function resolvePointerAim(pointerAim: boolean | undefined, rig: string | undefined): boolean {
+  if (pointerAim !== undefined) return pointerAim;
+  return CURSOR_AIM_RIGS.has(rig ?? "orbit");
 }
 
 /** Context menu for an entity/object pointer hit, or null for empty ground. @internal */
