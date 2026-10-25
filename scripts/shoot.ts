@@ -4,7 +4,7 @@
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
-import { isHelpAsked, renderUsage } from "./script-help";
+import { printHelpIfAsked } from "./script-help";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 
@@ -29,7 +29,7 @@ export function shootCommand(argv: readonly string[]): string[] {
 
 if (import.meta.main) {
   const argv = process.argv.slice(2);
-  if (argv[0] !== "--prove" && isHelpAsked(argv)) console.log(renderUsage("shoot", SHOOT_USAGE));
+  if (argv[0] !== "--prove") printHelpIfAsked("shoot", SHOOT_USAGE, argv);
   const run = spawnSync(process.execPath, shootCommand(argv), { cwd: root, stdio: "inherit" });
   process.exit(run.status ?? 1);
 }
