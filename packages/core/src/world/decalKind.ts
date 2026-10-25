@@ -15,9 +15,10 @@ export const DECAL_KIND = "decal";
 /**
  * The authored decal looks; each has its own deterministic procedural texture. `grime` is the dark
  * band that collects along the foot of a wall, `leak` a streak running down from a pipe or seam,
- * `rust` a bloom of corrosion and `wet` a standing puddle that renders glossy.
+ * `rust` a bloom of corrosion, `wet` a standing puddle that renders glossy, `paper` a few dropped
+ * sheets, `scorch` a soot burn and `hazard` a worn yellow-and-black stripe border painted round a spot.
  */
-export const DECAL_STYLES = ["dirt", "cracks", "paint", "blood", "grime", "leak", "rust", "wet"] as const;
+export const DECAL_STYLES = ["dirt", "cracks", "paint", "blood", "grime", "leak", "rust", "wet", "paper", "scorch", "hazard"] as const;
 /** One of the authored decal looks. */
 export type DecalStyle = (typeof DECAL_STYLES)[number];
 

@@ -60,7 +60,7 @@ describe("planInteriorDressing", () => {
       expect(end[1]).toBeLessThan(4);
       expect(end[1]).toBeGreaterThan(0);
     }
-    for (const cable of plan.cables) {
+    for (const cable of plan.cables.filter((entry) => !entry.id.endsWith(":floor-cable"))) {
       expect(cable.points.length).toBe(11);
       const lowest = Math.min(...cable.points.map((point) => point[1]));
       expect(lowest).toBeLessThan(cable.points[0]![1]);
@@ -80,9 +80,82 @@ describe("planInteriorDressing", () => {
   });
 
   test("every family can be turned off", () => {
-    const plan = planInteriorDressing([HALL], { ...options, trims: false, pipes: false, cables: false, decals: false, fixtures: false, clutter: false });
+    const plan = planInteriorDressing([HALL], { ...options, trims: false, pipes: false, cables: false, decals: false, fixtures: false, clutter: false, panels: false, debris: false });
     expect(plan.walls).toHaveLength(4);
-    expect([plan.trims, plan.pipes, plan.fittings, plan.cables, plan.decals, plan.fixtures, plan.clutter].every((list) => list.length === 0)).toBe(true);
+    expect([plan.trims, plan.pipes, plan.fittings, plan.cables, plan.decals, plan.fixtures, plan.clutter, plan.panels, plan.debris].every((list) => list.length === 0)).toBe(true);
+  });
+
+  test("the newer families leave an existing plan's pipes, cables, stains and clutter where they were", () => {
+    const full = planInteriorDressing([HALL, WING], options);
+    const bare = planInteriorDressing([HALL, WING], { ...options, panels: false, debris: false, cables: { floor: 0 }, decals: { paper: 0, scorch: 0 } });
+    expect(bare.pipes).toEqual(full.pipes);
+    expect(bare.clutter).toEqual(full.clutter);
+    expect(bare.cables).toEqual(full.cables.filter((cable) => !cable.id.endsWith(":floor-cable")));
+    // Floor stains stack a hair apart in height by order, so compare where they lie on the floor.
+    const flat = (list: typeof full.decals) => list.map((decal) => ({ ...decal, position: [decal.position[0], 0, decal.position[2]] }));
+    expect(flat(bare.decals)).toEqual(flat(full.decals.filter((decal) => decal.style !== "paper" && decal.style !== "scorch")));
+  });
+
+  test("walls break up into wainscot plates and hatches that sit on the wall, inside the room", () => {
+    const plan = planInteriorDressing([HALL, WING], { ...options, panels: { chance: 1, hatches: 1 } });
+    const plates = plan.panels.filter((panel) => panel.role === "panel");
+    expect(plates.length).toBeGreaterThan(plan.walls.length);
+    expect(plan.panels.some((panel) => panel.role === "hatch")).toBe(true);
+    for (const panel of plan.panels) {
+      expect(panel.center[1] - panel.size[1] / 2).toBeGreaterThanOrEqual(0);
+      expect(panel.center[1] + panel.size[1] / 2).toBeLessThan(4);
+    }
+    expect(planInteriorDressing([HALL], { ...options, panels: { chance: 0, hatches: 0 } }).panels).toHaveLength(0);
+  });
+
+  test("debris hugs walls, piles in inside corners, lies in the open and never on a kept-clear spot", () => {
+    const keep = { x: 0, z: 0, radius: 1.2 };
+    const plan = planInteriorDressing([HALL, WING], { ...options, keepClear: [keep], debris: { wall: 1, corners: 3, open: 0.2 } });
+    const kinds = new Set(plan.debris.map((slot) => slot.along));
+    expect([...kinds].sort()).toEqual(["corner", "open", "wall"]);
+    for (const slot of plan.debris) {
+      expect(Math.hypot(slot.position[0] - keep.x, slot.position[2] - keep.z)).toBeGreaterThan(keep.radius);
+      const inHall = Math.abs(slot.position[0]) < 4 && Math.abs(slot.position[2]) < 3;
+      const inWing = Math.abs(slot.position[0] - 6) < 2 && Math.abs(slot.position[2] - 2) < 5;
+      expect(inHall || inWing).toBe(true);
+    }
+    // The hall's south-west corner is an inside corner; the doorway edge at (4, 3) is not one.
+    const corners = plan.debris.filter((slot) => slot.along === "corner");
+    expect(corners.some((slot) => slot.position[0] < -3 && slot.position[2] < -2)).toBe(true);
+  });
+
+  test("density scales how lived-in a floor is, from bare to wrecked", () => {
+    const count = (density: number) => {
+      const plan = planInteriorDressing([HALL, WING], { ...options, density });
+      return plan.decals.length + plan.debris.length;
+    };
+    expect(count(0)).toBe(0);
+    expect(count(2)).toBeGreaterThan(count(1));
+    expect(count(1)).toBeGreaterThan(count(0.5));
+    expect(() => planInteriorDressing([HALL], { ...options, density: -1 })).toThrow();
+  });
+
+  test("some lamps are dead or flicker, and a marked clearance gets hazard stripes", () => {
+    const plan = planInteriorDressing([{ x: 0, z: 0, w: 60, d: 40 }], { ...options, keepClear: [{ x: 0, z: 0, radius: 2, mark: true }], fixtures: { spacing: 3, dead: 0.3, flicker: 0.2 } });
+    const states = plan.fixtures.map((fixture) => fixture.state);
+    expect(states).toContain("dead");
+    expect(states).toContain("flicker");
+    expect(states.filter((state) => state === "lit").length).toBeGreaterThan(states.length / 3);
+    const hazard = plan.decals.filter((decal) => decal.style === "hazard");
+    expect(hazard).toHaveLength(1);
+    expect(hazard[0]!.width).toBeCloseTo(4.3);
+    const steady = planInteriorDressing([HALL], { ...options, fixtures: { dead: 0, flicker: 0 } });
+    expect(steady.fixtures.every((fixture) => fixture.state === "lit")).toBe(true);
+  });
+
+  test("a floor cable drops from the ceiling and lies along the foot of its wall", () => {
+    const plan = planInteriorDressing([HALL], { ...options, cables: { chance: 0, floor: 1 } });
+    const floor = plan.cables.filter((cable) => cable.id.endsWith(":floor-cable"));
+    expect(floor).toHaveLength(4);
+    for (const cable of floor) {
+      expect(cable.points[0]![1]).toBeGreaterThan(3);
+      expect(cable.points.at(-1)![1]).toBeLessThan(0.1);
+    }
   });
 
   test("refuses a ceiling below the floor", () => {

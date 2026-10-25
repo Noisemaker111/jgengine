@@ -42,6 +42,7 @@ export function atmosphereFragment(steps: number): string {
   uniform vec4 uLampSpot[${MAX_HAZE_LAMPS}];
   uniform vec2 uLampShape[${MAX_HAZE_LAMPS}];
   uniform float uLampStrength;
+  uniform float uBeams;
   varying vec2 vUv;
 
   vec3 viewPosition(vec2 uv, float depth) {
@@ -123,12 +124,14 @@ export function atmosphereFragment(steps: number): string {
         vec3 toLamp = lamp - uCameraPosition;
         float closest = length(toLamp - dir * clamp(dot(toLamp, dir), 0.0, reach));
         // A halo, not a wash: the glow dies off within about a fifth of the light's range of the ray.
-        float spread = range > 0.0 ? range * 0.2 : 4.0;
+        // A spot with beams on reaches further, and its cone keeps that glow a shaft, not a cloud.
+        bool spot = uLampSpot[i].w > -1.5;
+        float spread = (range > 0.0 ? range : 20.0) * (spot ? 0.2 + 0.45 * uBeams : 0.2);
         float window = exp(-(closest * closest) / (2.0 * spread * spread));
         if (window < 0.01) continue;
         float density = uFogDensity * exp(-uFogFalloff * (lamp.y - uFogHeight));
         float scatter = lampScatter(uCameraPosition, dir, reach, lamp, uLampShape[i].y);
-        glow += uLampColor[i] * scatter * density * window * spotCone(uCameraPosition, dir, reach, lamp, uLampSpot[i]);
+        glow += uLampColor[i] * scatter * density * window * spotCone(uCameraPosition, dir, reach, lamp, uLampSpot[i]) * (spot ? 1.0 + uBeams : 1.0);
       }
       // Isotropic phase (1 / 4pi); the strength knob lets a game push a smoky interior further.
       glow *= uLampStrength * 0.0796;
@@ -257,6 +260,7 @@ export class AtmospherePass extends Pass {
         uLampSpot: { value: Array.from({ length: MAX_HAZE_LAMPS }, () => new THREE.Vector4(0, 0, 0, -2)) },
         uLampShape: { value: Array.from({ length: MAX_HAZE_LAMPS }, () => new THREE.Vector2()) },
         uLampStrength: { value: settings.lamps },
+        uBeams: { value: Math.min(1, Math.max(0, settings.beams)) },
       },
       vertexShader,
       fragmentShader: atmosphereFragment(Math.max(1, steps)),
@@ -283,7 +287,9 @@ export class AtmospherePass extends Pass {
 
   private keyLight(): THREE.DirectionalLight | null {
     this.framesSinceScan += 1;
-    const lost = this.light !== null && (this.light.parent === null || !this.light.castShadow);
+    // A lamp taken out of the scene means its pool was swapped (a new floor, a remounted rig): look
+    // again now, so the replacements glow on their first frame instead of up to a rescan later.
+    const lost = (this.light !== null && (this.light.parent === null || !this.light.castShadow)) || this.lamps.some((lamp) => lamp.parent === null);
     if (lost || this.framesSinceScan >= LIGHT_RESCAN_FRAMES) {
       this.light = findKeyLight(this.scene);
       this.lamps = this.material.uniforms.uLampStrength!.value > 0 ? findHazeLamps(this.scene) : [];

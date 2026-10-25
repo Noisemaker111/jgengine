@@ -44,6 +44,28 @@ function scatterModelBaseTransform(scene: THREE.Object3D, model: ModelConfig): T
   );
 }
 
+const unmorphed = new WeakMap<THREE.BufferGeometry, THREE.BufferGeometry>();
+/**
+ * The geometry an instanced copy draws: a model exported with morph targets (a shape key left on a
+ * wheel, say) keeps its rest shape, since an `InstancedMesh` carries no morph influences and three
+ * cannot draw morph attributes without them. The stripped view shares the cached buffers and is made
+ * once per cached geometry. @internal
+ */
+export function withoutMorphTargets(geometry: THREE.BufferGeometry): THREE.BufferGeometry {
+  if (Object.keys(geometry.morphAttributes).length === 0) return geometry;
+  const known = unmorphed.get(geometry);
+  if (known !== undefined) return known;
+  const rest = new THREE.BufferGeometry();
+  rest.setIndex(geometry.index);
+  for (const [name, attribute] of Object.entries(geometry.attributes)) rest.setAttribute(name, attribute);
+  for (const group of geometry.groups) rest.addGroup(group.start, group.count, group.materialIndex);
+  rest.setDrawRange(geometry.drawRange.start, geometry.drawRange.count);
+  rest.boundingBox = geometry.boundingBox?.clone() ?? null;
+  rest.boundingSphere = geometry.boundingSphere?.clone() ?? null;
+  unmorphed.set(geometry, rest);
+  return rest;
+}
+
 /**
  * Clones a loaded GLTF scene (so shared cache materials stay untouched), applies the model's material
  * override, then harvests every mesh as a {@link ScatterModelSource} — one `InstancedMesh` draw per
@@ -69,7 +91,7 @@ export function buildScatterModelSources(
     const mesh = node as THREE.Mesh;
     if (!mesh.isMesh) return;
     sources.push({
-      geometry: mesh.geometry,
+      geometry: withoutMorphTargets(mesh.geometry),
       material: mesh.material,
       localMatrix: base.clone().multiply(mesh.matrixWorld),
       castShadow: mesh.castShadow,
