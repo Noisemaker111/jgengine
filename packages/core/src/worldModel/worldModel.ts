@@ -123,6 +123,8 @@ export interface WorldJobDecl {
   repeatable?: boolean;
   /** One line said when the job is offered. */
   pitch?: string;
+  /** A code hook (from `options.hooks`) run when the job is done, for what a beat can't declare. */
+  hook?: string;
 }
 
 /** How one kind of world event spreads. */
@@ -141,6 +143,22 @@ export interface WorldRippleDecl {
   out?: Readonly<Record<string, number>>;
   /** A line for the world log and news feed; `{place}` is replaced by the place label. */
   note?: string;
+  /** Only spread while these facts hold, so the same event lands differently as the world changes. */
+  when?: WorldConditions;
+  /** A code hook (from `options.hooks`) run after the changes land, for what can't be declared. */
+  hook?: string;
+}
+
+/** A ripple the world fires on its own clock: paydays, upkeep, shifts, waves, weather. */
+export interface WorldScheduleDecl {
+  /** Seconds of world time between firings. */
+  every: number;
+  /** The ripple to fire. */
+  ripple: string;
+  /** Where it lands, for its `place`/`owner`/`people` changes. */
+  place?: string;
+  /** Only fire while these facts hold. */
+  when?: WorldConditions;
 }
 
 /** Everything a game declares about its world: factions, places, people, things, jobs and ripples. */
@@ -151,6 +169,7 @@ export interface WorldModelDecl {
   things?: Readonly<Record<string, WorldThingDecl>>;
   jobs?: Readonly<Record<string, WorldJobDecl>>;
   ripples?: Readonly<Record<string, WorldRippleDecl>>;
+  schedule?: Readonly<Record<string, WorldScheduleDecl>>;
   /** Facts not tied to one subject (`story.act`), keyed absolutely. */
   facts?: WorldFactsDecl;
 }
@@ -210,6 +229,16 @@ export interface WorldModelOptions {
   /** Mission actor id for `pursue` objectives that name no pursuer. */
   defaultPursuer?: string;
   logSize?: number;
+  /** Code a declaration names with `hook`: the escape hatch for what facts and ripples can't say. */
+  hooks?: Readonly<Record<string, (hook: WorldHookCall) => void>>;
+}
+
+/** What a code hook is handed: the live world, and the event or job that ran it. */
+export interface WorldHookCall {
+  world: WorldModel;
+  event: WorldEvent | null;
+  place: string | null;
+  jobId: string | null;
 }
 
 /** A job as menus, the phone and dialogue show it. */
@@ -271,6 +300,8 @@ export interface WorldModel {
   facts(): Readonly<Record<string, WorldFactValue>>;
   /** Apply absolute `subject.fact` changes (numbers add, others set). */
   change(changes: WorldChanges, scale?: number): void;
+  /** Apply changes all-or-nothing: refused (false) when any number would drop below its floor (`min`, else 0). */
+  spend(changes: WorldChanges): boolean;
   set(key: string, value: WorldFactValue): void;
   test(conditions: WorldConditions | undefined): boolean;
   placeAt(x: number, z: number): string | null;
@@ -329,6 +360,11 @@ export function defineWorldModel(decl: WorldModelDecl): WorldModelDef {
     if (!is(job.giver, "person")) issue(`job "${id}" giver "${job.giver}" is not a person`);
     if (!is(job.at, "place")) issue(`job "${id}" starts at unknown place "${job.at}"`);
     for (const need of job.requires ?? []) if (jobs[need] === undefined) issue(`job "${id}" requires unknown job "${need}"`);
+  }
+  for (const [id, timer] of Object.entries(decl.schedule ?? {})) {
+    if (!(timer.every > 0)) issue(`schedule "${id}" needs every > 0 seconds`);
+    if (decl.ripples?.[timer.ripple] === undefined) issue(`schedule "${id}" fires unknown ripple "${timer.ripple}"`);
+    if (!is(timer.place, "place")) issue(`schedule "${id}" lands at unknown place "${timer.place}"`);
   }
   const missions = Object.values(jobs).map((job) => job.mission);
   const errors = validateMissionCatalog(missions).filter((entry) => entry.severity === "error");
@@ -403,6 +439,15 @@ export function createWorldModel(def: WorldModelDef, options: WorldModelOptions 
     ...(options.defaultPursuer !== undefined ? { defaultPursuer: options.defaultPursuer } : {}),
   });
   let restoredFrom: MissionRuntimeSnapshot | null | undefined;
+  const pendingHooks: { name: string; call: WorldHookCall }[] = [];
+  const runHooks = () => {
+    while (pendingHooks.length > 0) {
+      const { name, call } = pendingHooks.shift()!;
+      const hook = options.hooks?.[name];
+      if (hook === undefined) throw new Error(`world model: no hook named "${name}" in options.hooks`);
+      hook(call);
+    }
+  };
   let decayClock = 0;
 
   const state = (): WorldModelState => {
@@ -527,6 +572,7 @@ export function createWorldModel(def: WorldModelDef, options: WorldModelOptions 
         changeAll(facts, "", job.beat, 1);
         next = { ...next, facts, activeJob: null, log: pushLog(next, { at: next.time, kind: "job-done", place: job.at ?? null, text: job.title }) };
         out.push({ kind: "job-done", jobId, beat: job.beat ?? null });
+        if (job.hook !== undefined) pendingHooks.push({ name: job.hook, call: { world: model, event: null, place: job.at ?? null, jobId } });
       } else if (event.kind === "failed") {
         next = { ...next, facts: { ...next.facts, [`jobs.${jobId}`]: "failed" }, activeJob: null };
         out.push({ kind: "job-failed", jobId, reason: event.reason });
@@ -566,6 +612,18 @@ export function createWorldModel(def: WorldModelDef, options: WorldModelOptions 
       changeAll(facts, "", changes, scale);
       write({ ...current, facts });
     },
+    spend(changes) {
+      const current = state();
+      const facts = { ...current.facts };
+      for (const [key, value] of Object.entries(changes)) {
+        if (typeof value !== "number" || value >= 0) continue;
+        const have = facts[key];
+        if ((typeof have === "number" ? have : 0) + value < (specs.get(key)?.min ?? 0)) return false;
+      }
+      changeAll(facts, "", changes, 1);
+      write({ ...current, facts });
+      return true;
+    },
     set(key, value) {
       const current = state();
       write({ ...current, facts: { ...current.facts, [key]: value } });
@@ -577,7 +635,7 @@ export function createWorldModel(def: WorldModelDef, options: WorldModelOptions 
       const ripple = def.ripples?.[event.kind];
       const current = state();
       const place = event.place ?? (event.at === undefined ? null : placeAt(event.at[0], event.at.length === 3 ? event.at[2] : event.at[1]));
-      if (ripple === undefined) return null;
+      if (ripple === undefined || !test(ripple.when, current.facts)) return null;
       const scale = event.scale ?? 1;
       const facts = { ...current.facts };
       if (place !== null) {
@@ -594,6 +652,10 @@ export function createWorldModel(def: WorldModelDef, options: WorldModelOptions 
       const entry: WorldLogEntry = { at: current.time, kind: event.kind, place, text };
       write({ ...current, facts, log: ripple.note === undefined ? current.log : pushLog(current, entry) });
       for (const [name, amount] of Object.entries(ripple.out ?? {})) options.onOutput?.(name, amount * scale, event);
+      if (ripple.hook !== undefined) {
+        pendingHooks.push({ name: ripple.hook, call: { world: model, event, place, jobId: null } });
+        runHooks();
+      }
       return entry;
     },
     tick(dt, input = {}) {
@@ -617,6 +679,14 @@ export function createWorldModel(def: WorldModelDef, options: WorldModelOptions 
       }
       // The clock and calming facts are written four times a second, not every frame.
       if (stepped || missionEvents.length > 0) write(next);
+      runHooks();
+      if (stepped) {
+        for (const timer of Object.values(def.schedule ?? {})) {
+          if (Math.floor(next.time / timer.every) > Math.floor(current.time / timer.every) && test(timer.when, next.facts)) {
+            model.emit({ kind: timer.ripple, ...(timer.place !== undefined ? { place: timer.place } : {}) });
+          }
+        }
+      }
       return { mission: missionEvents, jobs: jobEvents };
     },
     jobs: () => {
@@ -639,6 +709,7 @@ export function createWorldModel(def: WorldModelDef, options: WorldModelOptions 
       const events = runtime.signal(jobs[current.activeJob]!.mission.id, objectiveId);
       const settled = settleMission(events, current);
       write(settled.next);
+      runHooks();
       return { mission: events, jobs: settled.jobs };
     },
     abandonJob() {

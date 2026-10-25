@@ -167,3 +167,41 @@ describe("world model outside a city", () => {
     expect(world.num("guests.mood")).toBeGreaterThan(50);
   });
 });
+
+describe("world model depth without a fork", () => {
+  const lab = defineWorldModel({
+    factions: { lab: { facts: { cash: { value: 500, min: 0 }, compute: 2 } } },
+    things: { rack_a: { owner: "lab", facts: { up: true } } },
+    ripples: {
+      payday: { world: { "lab.cash": 120 }, when: { "rack_a.up": true }, note: "Clients paid." },
+      outage: { world: { "rack_a.up": false, "lab.compute": -1 }, hook: "page_oncall", note: "A rack went dark." },
+    },
+    schedule: { payroll: { every: 10, ripple: "payday" } },
+  });
+
+  test("a schedule fires its ripple on the world clock, only while its condition holds", () => {
+    const world = createWorldModel(lab, { hooks: { page_oncall: () => {} } });
+    for (let i = 0; i < 40; i += 1) world.tick(0.25);
+    expect(world.num("lab.cash")).toBe(620);
+    world.emit({ kind: "outage" });
+    for (let i = 0; i < 40; i += 1) world.tick(0.25);
+    expect(world.num("lab.cash")).toBe(620);
+  });
+
+  test("a spend is all-or-nothing against the fact's floor", () => {
+    const world = createWorldModel(lab);
+    expect(world.spend({ "lab.cash": -600, "lab.compute": 1 })).toBe(false);
+    expect(world.num("lab.compute")).toBe(2);
+    expect(world.spend({ "lab.cash": -450, "lab.compute": 1 })).toBe(true);
+    expect(world.num("lab.cash")).toBe(50);
+    expect(world.num("lab.compute")).toBe(3);
+  });
+
+  test("what can't be declared drops to a named code hook", () => {
+    const calls: string[] = [];
+    const world = createWorldModel(lab, { hooks: { page_oncall: ({ world: w, event }) => calls.push(`${event?.kind}:${String(w.fact("rack_a.up"))}`) } });
+    world.emit({ kind: "outage" });
+    expect(calls).toEqual(["outage:false"]);
+    expect(() => defineWorldModel({ ripples: { a: {} }, schedule: { b: { every: 5, ripple: "missing" } } })).toThrow(/unknown ripple/);
+  });
+});
