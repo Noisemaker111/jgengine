@@ -134,8 +134,7 @@ describe("waiting on the publish run", () => {
         }
         return { status: 0, stdout: JSON.stringify(run({ headSha: sha })), stderr: "" };
       },
-      npmView: () => ({ status: 0, stdout: "0.38.4
-", stderr: "" }),
+      npmView: () => ({ status: 0, stdout: "0.38.4\n", stderr: "" }),
       graceMs: 0,
       sleep: async () => {},
       log: () => {},
