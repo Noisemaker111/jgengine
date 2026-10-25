@@ -2471,6 +2471,37 @@
 - `isCounterObjective` (function): function isCounterObjective(kind: MissionObjectiveKind): boolean — True when an objective kind completes from a counter rather than a world condition — the test the counter-only lint is built on.
 - `validateMissionCatalog` (function): function validateMissionCatalog(missions: readonly MissionDef[], options: MissionValidationOptions = {}): MissionIssue[] — Validate a mission catalog without mutation: duplicate ids, unknown branch/next targets, unknown fail states and markers, per-kind required fields, unreachable objectives, and the counter-only rule — a mission that has a completion path made entirely of `kill`/`collect` objectives is an error, because it can be won on a counter alone.
 
+## @jgengine/core/mission/sideJobs
+
+- `SideJobActive` (interface): interface SideJobActive — An accepted job's live state.
+- `SideJobComfortSample` (interface): interface SideJobComfortSample — What a game hands a kind's comfort rule each tick while a job is on board.
+- `SideJobDeadlineDef` (interface): interface SideJobDeadlineDef — How long a job allows: `slack + distance / speed` seconds, never below `min`.
+- `SideJobEvent` (type): type SideJobEvent = | { type: "offered"; offer: SideJobOffer } | { type: "expired"; offerId: string } | { type: "accepted"; jobId: string } | { type: "boarded"; jobId: string } | { type: "race-started"; jobId: string; rivals: readonly string[] } | { type: "leg"; jobId: string; leg: number; of: numbe… — What happened during one call, for cues, notices and audio.
+- `SideJobFailReason` (type): type SideJobFailReason = "late" | "spoiled" | "placed" | (string & {}) — Why a job failed: the clock ran out, cargo was spoiled, a race placed out of the money, or the game's own reason.
+- `SideJobFareDef` (interface): interface SideJobFareDef — How a kind prices a job: `base + perMetre × distance`, clamped, plus `perSecondLeft` for each unused second.
+- `SideJobGenerateOptions` (interface): interface SideJobGenerateOptions — Options for {@link SideJobs.generate}.
+- `SideJobKindDef` (interface): interface SideJobKindDef — One kind of side job declared as data: taxi fare, delivery, tow, ambulance run, street race.
+- `SideJobOffer` (interface): interface SideJobOffer — A job on offer: where it starts, where it goes, and what it pays if run clean.
+- `SideJobPhase` (type): type SideJobPhase = "pickup" | "en-route" | "paid" | "failed" — Where an accepted job stands.
+- `SideJobRaceDef` (interface): interface SideJobRaceDef — Makes a kind a street race run on {@link RaceState}: the job's drops are the checkpoints, the last one the finish.
+- `SideJobReceipt` (interface): interface SideJobReceipt — One resolved job's settlement, for a receipt or pager.
+- `SideJobRoute` (interface): interface SideJobRoute — An authored, ordered route a kind can run instead of drawing spots: the first point is the pickup or start line.
+- `SideJobSpot` (interface): interface SideJobSpot — A place a side job can start or end: a kerb, a shop counter, a start line. `tags` say which kinds use it.
+- `SideJobStreakDef` (interface): interface SideJobStreakDef — Back-to-back jobs raise a bonus: `step × streak` of the fare, capped at `max`, if the next job is accepted within `window` seconds of the last payout.
+- `SideJobTickInput` (interface): interface SideJobTickInput — The world as the game reports it each tick.
+- `SideJobTipDef` (interface): interface SideJobTipDef — A tip paid on top of the fare, scaled by how comfortable the ride stayed (comfort 0–100).
+- `SideJobView` (interface): interface SideJobView — What a HUD shows for the job in hand.
+- `SideJobWagerDef` (interface): interface SideJobWagerDef — A cash stake the player puts up to accept, paid back as `stake × payouts[place - 1]` (a race purse).
+- `SideJobs` (interface): interface SideJobs — A side-job board: offers, the job in hand, the streak and the last receipt.
+- `SideJobsConfig` (interface): interface SideJobsConfig — Configuration for {@link createSideJobs}.
+- `SideJobsPersistence` (interface): interface SideJobsPersistence — Durable home for the board's state; `save` runs on each change a player can see, never per tick.
+- `SideJobsState` (interface): interface SideJobsState — Everything a side-job board stores as plain JSON.
+- `createSideJobs` (function): function createSideJobs(config: SideJobsConfig): SideJobs — Side jobs any open-world game runs between story work: taxi fares, deliveries, tows, ambulance runs and street races, each a kind declared as data. Offers are drawn from game-supplied spots (or authored routes) with a seeded stream, so the same seed and calls replay the same board. An accepted job walks pickup → each drop → paid or failed, against a clock of `slack + distance / speed`; arrival means inside `radius` and stopped. The fare is `base + perMetre × distance` plus a bonus per second left, a comfort-scaled tip (the game's `comfortLoss` rule says what a crash or a chase costs) and a streak bonus for back-to-back jobs. A kind with `race` runs its drops as checkpoints on {@link RaceState} against rivals whose positions the game reports, and a `wager` pays the stake back by place. The board keeps its own clock, so pausing the game pauses every deadline.
+- `sideJobDeadline` (function): function sideJobDeadline(deadline: SideJobDeadlineDef, distance: number): number — Seconds a kind allows for `distance` metres.
+- `sideJobFare` (function): function sideJobFare(fare: SideJobFareDef, distance: number): number — The fare a kind charges for `distance` metres, before time bonus, tip and streak.
+- `sideJobStreakBonus` (function): function sideJobStreakBonus(streak: SideJobStreakDef | undefined, fare: number, count: number): number — The streak bonus a fare earns when `streak` jobs were paid back to back before it.
+- `sideJobTip` (function): function sideJobTip(tip: SideJobTipDef | undefined, fare: number, comfort: number): number — The tip for a fare at a comfort level (0–100).
+
 ## @jgengine/core/mission/triggers
 
 - `MISSION_TRIGGER_ACTIONS` (const): const MISSION_TRIGGER_ACTIONS: readonly TriggerActionDefinition[] — The mission actions a game registers so the editor inspector can assign them to a marker or volume. Params land flat on the object's `meta` beside `on`/`action`, like any authored trigger.

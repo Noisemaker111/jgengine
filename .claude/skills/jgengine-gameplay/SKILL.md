@@ -94,6 +94,13 @@ registry (`applyMissionRewards`). `validateMissionCatalog` is the content gate a
 whose success path is counters alone — `createMissionRuntime` runs it at construction, so a
 counter-only mission throws instead of shipping.
 
+Repeatable side jobs (taxi fares, deliveries, tows, street races) are `createSideJobs`
+(`mission/sideJobs`), not one mission per fare: kinds are data, offers are drawn from game-supplied
+spots or authored routes with a seeded stream, and a job walks pickup → drops → paid/failed against
+a `slack + distance / speed` clock. Fare, tip (scaled by the game's `comfortLoss` rule), streak bonus
+and a `wager` purse are config; a `race` kind runs its drops as `RaceState` checkpoints against rival
+positions the game reports. The board keeps its own clock, so pause stops every deadline.
+
 Report what happened instead of polling your own counters: `tick(dt, { events })` takes
 `MissionWorldEvent`s (`kill`/`collect`/`deliver` with a target, actor and tags), an objective's `match`
 filter credits only matching ones - a decoy, a wrong weapon or a rival's kill does not advance it - and
