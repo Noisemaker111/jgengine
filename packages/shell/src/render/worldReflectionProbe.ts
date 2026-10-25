@@ -24,14 +24,25 @@ export function worldProbeForQuality(quality: GraphicsQuality): WorldProbeSettin
   return { size: 256, interval: 2, moveDistance: 15 };
 }
 
-/** Whether the probe is due: never captured, the camera moved far enough, or the interval passed. @internal */
+/**
+ * Frames that must pass between captures, whatever the clock says. A slow machine then spends its
+ * few frames on the scene, not on refreshing reflections: at 60 fps this is 5 s, at 1 fps 5 min. @internal
+ */
+export const PROBE_MIN_FRAMES = 300;
+
+/**
+ * Whether the probe is due: never captured, or at least {@link PROBE_MIN_FRAMES} frames since the last
+ * capture and then either the camera moved far enough or the interval passed. @internal
+ */
 export function probeDue(
   last: { x: number; y: number; z: number } | null,
   position: { x: number; y: number; z: number },
   secondsSince: number,
   settings: WorldProbeSettings,
+  framesSince = PROBE_MIN_FRAMES,
 ): boolean {
   if (last === null) return true;
+  if (framesSince < PROBE_MIN_FRAMES) return false;
   const dx = position.x - last.x;
   const dy = position.y - last.y;
   const dz = position.z - last.z;
@@ -67,6 +78,7 @@ export class WorldReflectionProbe {
   private face = -1;
   private lastPosition: THREE.Vector3 | null = null;
   private sinceCapture = 0;
+  private framesSince = 0;
   private readonly assigned = new Set<THREE.MeshStandardMaterial>();
 
   constructor(
@@ -88,11 +100,17 @@ export class WorldReflectionProbe {
    */
   step(scene: THREE.Scene, eye: THREE.Vector3, delta: number): boolean {
     this.sinceCapture += delta;
+    this.framesSince += 1;
     if (this.face < 0) {
-      if (!probeDue(this.lastPosition, eye, this.sinceCapture, this.settings)) return false;
+      if (!probeDue(this.lastPosition, eye, this.sinceCapture, this.settings, this.framesSince)) return false;
       this.cubeCamera.position.copy(eye);
       this.cubeCamera.updateMatrixWorld(true);
       this.face = 0;
+      // The first capture lands while the scene is still loading in, so it takes all six faces at
+      // once rather than costing six steady-state frames an extra scene draw each.
+      if (this.lastPosition === null) {
+        for (; this.face < FACES; this.face += 1) this.renderFace(scene, this.face);
+      }
     }
     if (this.face < FACES) {
       this.renderFace(scene, this.face);
@@ -103,6 +121,7 @@ export class WorldReflectionProbe {
     this.assign(scene, this.envTarget.texture);
     this.lastPosition = (this.lastPosition ?? new THREE.Vector3()).copy(this.cubeCamera.position);
     this.sinceCapture = 0;
+    this.framesSince = 0;
     this.face = -1;
     return true;
   }
