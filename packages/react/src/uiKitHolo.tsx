@@ -379,7 +379,7 @@ const CSS = `
 .${P}-eyebrow { display: inline-flex; gap: 2px; font: 500 calc(12px * var(--kit-text)) / 1 var(--kit-font-mono); letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap; }
 .${P}-panel[data-variant="hud"] .${P}-title { font-size: calc(15px * var(--kit-text)); letter-spacing: 0.14em; }
 .${P}-eyebrow i { font-style: normal; text-transform: none; color: var(--jgk-holo-tone); text-shadow: 0 0 8px var(--kit-glow); }
-.${P}-title { color: var(--kit-ink); font: 400 calc(17px * var(--kit-text)) / 1 var(--kit-font-display); letter-spacing: 0.2em; text-transform: uppercase; white-space: nowrap; text-shadow: 0 0 10px var(--kit-glow); }
+.${P}-title { color: var(--kit-ink); font: 400 calc(17px * var(--kit-text)) / 1 var(--kit-font-display); letter-spacing: 0.2em; text-transform: uppercase; overflow-wrap: anywhere; text-shadow: 0 0 10px var(--kit-glow); }
 .${P}-panel[data-tone] .${P}-title { color: var(--jgk-holo-tone); }
 .${P}-panel[data-variant="dialog"] .${P}-title { font-size: calc(26px * var(--kit-text)); letter-spacing: 0.22em; }
 .${P}-rule { flex: 1; min-width: 12px; height: 1px; background: linear-gradient(90deg, var(--jgk-holo-tone), transparent); opacity: 0.8; }

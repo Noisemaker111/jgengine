@@ -118,9 +118,17 @@ export function KitObjective({
     distance === undefined ? undefined : (
       <span data-jg-objective-distance="" style={{ display: "inline-flex", alignItems: "center", gap: 6, whiteSpace: "nowrap" }}>
         {bearing === undefined ? null : (
-          <span aria-hidden="true" style={{ display: "inline-block", transform: `rotate(${bearing}rad)`, transition: "transform 120ms linear" }}>
-            ▲
-          </span>
+          <svg
+            data-jg-objective-arrow=""
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+            width="1.15em"
+            height="1.15em"
+            style={{ display: "block", flex: "none", transform: `rotate(${bearing}rad)`, transition: "transform 120ms linear" }}
+          >
+            {/* A notched arrowhead: unlike a triangle it reads the same at no other angle. */}
+            <path d="M12 1.5 L21 21.5 L12 16.5 L3 21.5 Z" fill="currentColor" stroke="var(--kit-surface, #fff)" strokeWidth="1.5" strokeLinejoin="round" />
+          </svg>
         )}
         {Math.round(distance)} m
       </span>
@@ -212,7 +220,8 @@ export function KitResultScreen({ open, tone = "neutral", eyebrow, title, summar
       style={{
         position: "fixed",
         inset: 0,
-        zIndex: 82,
+        // Above notices (85) and captions (84): the scrim dims a toast instead of the toast covering the title.
+        zIndex: 86,
         display: "grid",
         placeItems: "center",
         padding: "max(16px, var(--jg-safe-top, 0px)) 16px max(16px, var(--jg-safe-bottom, 0px))",

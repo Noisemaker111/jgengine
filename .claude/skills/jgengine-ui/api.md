@@ -797,7 +797,7 @@
 - `GameIdentityProvider` (function): function GameIdentityProvider({ source, children, }: { source: IdentitySource; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `GameMenu` (function): function GameMenu({ items, initialId, onSelect, onBack, onHighlight, detail, logo, eyebrow, tagline, background, art, secondary, footer, controlHint, sound = true, variant = "title", open = true, reducedMotion, label, className, style, detailClassName, detailStyle, }: GameMenuProps): ReactNode — A game front-end menu: full-bleed over a living background, with a logo, an animated primary list and a detail pane that follows the highlighted verb. One system covers the main menu and the pause menu (`variant="pause"`), keyboard and gamepad navigation come from `useMenuNav`, confirmation ticks are generated (no audio asset), and the document never scrolls while it is open.
 - `GameMenuAvatar` (interface): interface GameMenuAvatar — One avatar/portrait choice in {@link NewCharacterPane}.
-- `GameMenuItem` (interface): interface GameMenuItem — A game's front-end menu: a full-bleed surface over a living background, a logo, primary verbs on the left that animate as the selection moves, and a detail pane on the right that changes with the highlighted verb. It is the block a main menu, a pause menu and their sub-screens are built from, so a game composes one menu system instead of a stack of modal panels.
+- `GameMenuItem` (interface): interface GameMenuItem — One primary verb in a {@link GameMenu}.
 - `GameMenuLogo` (interface): interface GameMenuLogo — The logo slot. Give it `image` for art, or `text` for a styled wordmark.
 - `GameMenuPalette` (interface): interface GameMenuPalette — One palette choice in {@link NewCharacterPane}.
 - `GameMenuProps` (interface): interface GameMenuProps — Props for {@link GameMenu}.
@@ -1076,6 +1076,7 @@
 - `UiKit` (interface): interface UiKit — A complete UI language: shapes, framing, type, motion, sound and the seven parts. A game picks one with `defineGame({ uiKit: "ink" })` and reshapes it with {@link customizeKit}.
 - `UiKitComponents` (interface): interface UiKitComponents — The seven parts every kit ships, so switching kits never breaks a game.
 - `UiKitCustomization` (interface): interface UiKitCustomization — What a game changes when it reshapes a kit.
+- `UiKitMenuPreview` (function): function UiKitMenuPreview({ kit, pane = "settings", className }: { kit: UiKit; pane?: "settings" | "credits"; className?: string }): ReactNode — A kit's pause menu with the engine's own settings pane in it (or credits), so one picture shows that engine panes read in the kit's colours and type.
 - `UiKitMotion` (interface): interface UiKitMotion — How a kit's surfaces enter and leave.
 - `UiKitName` (type): type UiKitName = "ink" | "paper" | "parchment" | "terminal" | "holo" | "broadcast" | "arcade" | "signal" — The built-in kit names a game can pick with `defineGame({ uiKit: "<name>" })`.
 - `UiKitPart` (type): type UiKitPart = keyof UiKitComponents — The names of {@link UiKitComponents}.
@@ -1180,6 +1181,7 @@
 - `useAccessibility` (function): function useAccessibility(): AccessibilityContextValue — Read the live accessibility state + its store; throws without an {@link AccessibilityProvider} above.
 - `useAchievements` (function): function useAchievements(tracker: AchievementTracker): readonly AchievementView[] — Subscribe a component to an achievement tracker's live view list. The list keeps a stable identity between changes, so this re-renders only on unlock or progress — not every frame.
 - `useActionBar` (function): function useActionBar(defs: readonly ActionDef[], options?: UseActionBarOptions): ActionBarModel — The DATA/HOOK layer: resolve `defs` into a live view model with focus, hover, keyboard grid navigation, and hotkey activation. Rendering-agnostic — feed the returned model to {@link ActionBarChrome}, or read it directly to lay out a radial or a bespoke card.
+- `useActionGlyph` (function): function useActionGlyph(action: string, fallback?: string): string | undefined — The glyph for `action` on the device the player is using, from the kit root's live bindings — the bound key on keyboard, the pad button on gamepad, `"Tap"` on touch, or `fallback` when unbound. Put it on a button (`<KitButton glyph={useActionGlyph("pause")}>`) so key hints never go stale after a rebind.
 - `useActivePrompt` (function): function useActivePrompt<T extends PositionedPrompt>(prompts?: readonly T[]): T | null — ⚠ undocumented
 - `useAuthedPlayer` (function): function useAuthedPlayer(options?: { guestSeed?: string }): PlayerIdentity | null — ⚠ undocumented
 - `useAutoScroll` (function): function useAutoScroll<T extends HTMLElement>(dep: unknown): React.RefObject<T | null> — Pin a scrollable element to its bottom whenever `dep` changes (typically a length or the list itself). Attach the returned ref to the scroll container. Owns the log/chat/console scroll-to-bottom effect so panels don't hand-roll it.
@@ -1563,7 +1565,7 @@
 ## @jgengine/react/gameMenu
 
 - `GameMenu` (function): function GameMenu({ items, initialId, onSelect, onBack, onHighlight, detail, logo, eyebrow, tagline, background, art, secondary, footer, controlHint, sound = true, variant = "title", open = true, reducedMotion, label, className, style, detailClassName, detailStyle, }: GameMenuProps): ReactNode — A game front-end menu: full-bleed over a living background, with a logo, an animated primary list and a detail pane that follows the highlighted verb. One system covers the main menu and the pause menu (`variant="pause"`), keyboard and gamepad navigation come from `useMenuNav`, confirmation ticks are generated (no audio asset), and the document never scrolls while it is open.
-- `GameMenuItem` (interface): interface GameMenuItem — A game's front-end menu: a full-bleed surface over a living background, a logo, primary verbs on the left that animate as the selection moves, and a detail pane on the right that changes with the highlighted verb. It is the block a main menu, a pause menu and their sub-screens are built from, so a game composes one menu system instead of a stack of modal panels.
+- `GameMenuItem` (interface): interface GameMenuItem — One primary verb in a {@link GameMenu}.
 - `GameMenuLogo` (interface): interface GameMenuLogo — The logo slot. Give it `image` for art, or `text` for a styled wordmark.
 - `GameMenuProps` (interface): interface GameMenuProps — Props for {@link GameMenu}.
 - `GameMenuStyle` (type): type GameMenuStyle = CSSProperties & Record<`--${string}`, string | number> — Inline style for a menu surface that also accepts `--jg-*` theme tokens, so a game sets a token with `{ "--jg-menu-radius": "12px" }` instead of casting the object to `CSSProperties`.
@@ -2335,6 +2337,7 @@
 - `UiKitRootProps` (interface): interface UiKitRootProps — Props for {@link UiKitRoot}.
 - `UiKitScope` (function): function UiKitScope({ children }: { children?: ReactNode }): ReactNode — Re-applies the nearest kit's root (tokens and `data-jg-kit`) — wrap content you portal outside the kit root so it keeps the kit's look.
 - `ensureUiKitStyles` (function): function ensureUiKitStyles(kit: UiKit, doc: Document | undefined = typeof document === "undefined" ? undefined : document): void — Inserts a kit's stylesheet into the document once. Safe to call repeatedly and during SSR (no-op).
+- `useActionGlyph` (function): function useActionGlyph(action: string, fallback?: string): string | undefined — The glyph for `action` on the device the player is using, from the kit root's live bindings — the bound key on keyboard, the pad button on gamepad, `"Tap"` on touch, or `fallback` when unbound. Put it on a button (`<KitButton glyph={useActionGlyph("pause")}>`) so key hints never go stale after a rebind.
 - `useHasUiKit` (function): function useHasUiKit(): boolean — True when a {@link UiKitRoot} is above: engine screens switch to kit parts only then.
 - `useKitPresence` (function): function useKitPresence(open: boolean, exitMs: number): { mounted: boolean; leaving: boolean } — Keeps something mounted through its exit motion: `leaving` turns true when `open` goes false, and `mounted` turns false `exitMs` later.
 - `useUiKit` (function): function useUiKit(): UiKit — The kit in charge here: the nearest {@link UiKitRoot}'s, or the plain fallback kit outside one.
@@ -2356,6 +2359,7 @@
 ## @jgengine/react/uiKitsPreview
 
 - `KitSpecimen` (function): function KitSpecimen({ kit, className, style }: { kit: UiKit; className?: string; style?: CSSProperties }): ReactNode — Every kit part on a busy game-like backdrop, so one picture shows a kit's whole language.
+- `UiKitMenuPreview` (function): function UiKitMenuPreview({ kit, pane = "settings", className }: { kit: UiKit; pane?: "settings" | "credits"; className?: string }): ReactNode — A kit's pause menu with the engine's own settings pane in it (or credits), so one picture shows that engine panes read in the kit's colours and type.
 - `UiKitPreview` (function): function UiKitPreview({ kit, className }: { kit: UiKit; className?: string }): ReactNode — One kit, large: the specimen plus its dialog and strip, for working on a single kit.
 - `UiKitsPreview` (function): function UiKitsPreview({ className }: { className?: string }): ReactNode — Contact sheet: all eight built-in UI kits side by side, every part each.
 

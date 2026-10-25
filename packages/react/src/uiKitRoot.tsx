@@ -111,6 +111,20 @@ export function useUiKit(): UiKit {
   return useContext(UiKitContext)?.kit ?? plainKit;
 }
 
+/**
+ * The glyph for `action` on the device the player is using, from the kit root's live bindings — the
+ * bound key on keyboard, the pad button on gamepad, `"Tap"` on touch, or `fallback` when unbound. Put it
+ * on a button (`<KitButton glyph={useActionGlyph("pause")}>`) so key hints never go stale after a rebind.
+ *
+ * @capability kit-action-glyph the bound key, pad button or tap label for an action, live, for any kit part
+ */
+export function useActionGlyph(action: string, fallback?: string): string | undefined {
+  const context = useContext(UiKitContext);
+  const device = useInputDevice();
+  const glyph = context?.bindings === undefined ? null : actionGlyph(context.bindings, action, device, context.glyphSet);
+  return glyph ?? fallback;
+}
+
 /** True when a {@link UiKitRoot} is above: engine screens switch to kit parts only then. */
 export function useHasUiKit(): boolean {
   return useContext(UiKitContext) !== null;

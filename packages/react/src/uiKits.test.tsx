@@ -3,13 +3,23 @@ import { renderToStaticMarkup } from "react-dom/server";
 
 import { UI_CUES } from "@jgengine/core/audio/uiCues";
 
+import { GameMenu } from "./gameMenu";
 import { actionGlyph } from "./inputDevice";
 import { deadlineStage, formatCountdown, KitObjective, KitResultScreen } from "./kitFlow";
 import { cappedShown } from "./notices";
 import { customizeKit, meterFraction, meterSegmentsLit, missingKitParts, uiKitVars, type UiKit } from "./uiKit";
-import { KitActionPrompt, KitButton, KitMenu, KitMeter, KitMinimapFrame, KitPanel, KitPrompt, KitToast, UiKitRoot } from "./uiKitRoot";
+import { arcadeKit } from "./uiKitArcade";
+import { broadcastKit } from "./uiKitBroadcast";
+import { holoKit } from "./uiKitHolo";
+import { inkKit } from "./uiKitInk";
+import { paperKit } from "./uiKitPaper";
+import { parchmentKit } from "./uiKitParchment";
+import { plainKit } from "./uiKitPlain";
+import { KitActionPrompt, KitButton, KitMenu, KitMeter, KitMinimapFrame, KitPanel, KitPrompt, KitToast, UiKitRoot, useActionGlyph } from "./uiKitRoot";
 import { resolveUiKit, UI_KITS, type UiKitName } from "./uiKits";
 import { UiKitsPreview } from "./uiKitsPreview";
+import { signalKit } from "./uiKitSignal";
+import { terminalKit } from "./uiKitTerminal";
 
 const NAMES = Object.keys(UI_KITS) as UiKitName[];
 
@@ -110,6 +120,19 @@ describe("built-in UI kits", () => {
     expect(resolveUiKit(custom)).toBe(custom);
   });
 
+  test("the registry holds each kit module's own export, and the plain fallback is complete too", () => {
+    expect(UI_KITS).toEqual({ ink: inkKit, paper: paperKit, parchment: parchmentKit, terminal: terminalKit, holo: holoKit, broadcast: broadcastKit, arcade: arcadeKit, signal: signalKit });
+    expect(missingKitParts(plainKit)).toEqual([]);
+    expect(everyPart(plainKit)).toContain('data-jg-kit="plain"');
+  });
+
+  test("panel titles may wrap: no kit forces a long title onto one line past its panel", () => {
+    for (const name of ["ink", "paper", "holo", "broadcast"] as const) {
+      const rule = UI_KITS[name].css.match(new RegExp(`\\.jgk-${name}-title \\{[^}]*\\}`))?.[0] ?? "";
+      expect({ name, nowrap: rule.includes("nowrap") }).toEqual({ name, nowrap: false });
+    }
+  });
+
   test("the contact sheet renders all eight", () => {
     const html = renderToStaticMarkup(<UiKitsPreview />);
     for (const name of NAMES) expect(html).toContain(`data-jg-kit="${name}"`);
@@ -160,6 +183,18 @@ describe("prompts per device", () => {
     expect(actionGlyph(map, "missing", "keyboard")).toBeNull();
   });
 
+  test("useActionGlyph reads the kit root's bindings, with a fallback when unbound", () => {
+    function Probe() {
+      return <i>{useActionGlyph("interact") ?? "none"}|{useActionGlyph("pause", "P") ?? "none"}|{useActionGlyph("missing") ?? "none"}</i>;
+    }
+    const html = renderToStaticMarkup(
+      <UiKitRoot kit={UI_KITS.ink} bindings={map}>
+        <Probe />
+      </UiKitRoot>,
+    );
+    expect(html).toContain("<i>E|P|none</i>");
+  });
+
   test("an action prompt shows the bound key", () => {
     const html = renderToStaticMarkup(
       <UiKitRoot kit={UI_KITS.terminal} bindings={map}>
@@ -193,6 +228,8 @@ describe("flow", () => {
     expect(html).toContain("0:12");
     expect(html).toContain('data-stage="urgent"');
     expect(html).toContain("Drop parcel");
+    expect(html).toContain("data-jg-objective-arrow");
+    expect(html).toContain("rotate(0.5rad)");
   });
 
   test("the result screen renders its tally and choices, and nothing when closed", () => {
@@ -206,6 +243,19 @@ describe("flow", () => {
     expect(html).toContain("$64");
     expect(html).toContain("Try again");
     expect(renderToStaticMarkup(<KitResultScreen open={false} {...props} />)).toBe("");
+    // The scrim sits over notices (z 85), so a toast never covers the result's title.
+    expect(Number(html.match(/z-index:(\d+)/)?.[1])).toBeGreaterThan(85);
+  });
+
+  test("a kitted menu hands its panes the kit's colours, so engine settings read on light kits", () => {
+    const html = renderToStaticMarkup(
+      <UiKitRoot kit={UI_KITS.paper}>
+        <GameMenu items={[{ id: "settings", label: "Settings" }]} onSelect={() => undefined} detail={<p>rows</p>} />
+      </UiKitRoot>,
+    );
+    expect(html).toContain("--jg-text:var(--kit-ink)");
+    expect(html).toContain("--jg-on-accent:var(--kit-accent-ink)");
+    expect(html).toContain("<p>rows</p>");
   });
 });
 

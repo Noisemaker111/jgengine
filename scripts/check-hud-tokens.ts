@@ -19,6 +19,10 @@ const NON_THEME = [
   "--jg-card-",
   "--jg-font-card",
   "--jg-panel-padding",
+  // text on an accent fill; a UI kit's menu pane sets it, every read falls back to --jg-surface-deep
+  "--jg-on-accent",
+  // accent-coloured text on a kit pane; every read falls back to --jg-accent
+  "--jg-accent-text",
   // reduced-motion multiplier the engine stylesheet owns (0 under reduced motion)
   "--jg-motion-scale",
 ];

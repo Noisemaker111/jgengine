@@ -1,5 +1,9 @@
 import type { CSSProperties, ReactNode } from "react";
 
+import { GamePauseMenu } from "./gameMenu";
+import { CreditsPane } from "./gameMenuSaves";
+import type { SettingsCategoryView } from "./settings";
+import { SettingsSection, SettingsTabs } from "./settingsBlocks";
 import type { UiKit } from "./uiKit";
 import { KitButton, KitMenu, KitMeter, KitMinimapFrame, KitPanel, KitPrompt, KitToast, UiKitRoot } from "./uiKitRoot";
 import { UI_KITS, type UiKitName } from "./uiKits";
@@ -135,5 +139,54 @@ export function UiKitPreview({ kit, className }: { kit: UiKit; className?: strin
       <KitSpecimen kit={kit} />
       <KitDialogs kit={kit} />
     </div>
+  );
+}
+
+const percent = (value: number) => `${Math.round(value * 100)}%`;
+const SOUND: SettingsCategoryView = {
+  id: "audio",
+  label: "Sound",
+  rows: [
+    { id: "master", label: "Master volume", kind: "slider", value: 0.8, min: 0, max: 1, step: 0.05, format: percent, set: noop },
+    { id: "music", label: "Music", kind: "slider", value: 0.45, min: 0, max: 1, step: 0.05, format: percent, set: noop },
+    { id: "mute", label: "Mute all", kind: "toggle", value: false, set: noop },
+    { id: "captions", label: "Captions", kind: "toggle", value: true, set: noop },
+  ],
+  keybinds: [
+    { action: "interact", label: "Interact", bindingLabel: "E", isDefault: true, rebind: noop, reset: noop },
+    { action: "pause", label: "Pause", bindingLabel: "P", isDefault: false, rebind: noop, reset: noop },
+  ],
+};
+const TABS: SettingsCategoryView[] = [SOUND, { ...SOUND, id: "graphics", label: "Graphics" }, { ...SOUND, id: "controls", label: "Controls" }];
+
+/**
+ * A kit's pause menu with the engine's own settings pane in it (or credits), so one picture shows that
+ * engine panes read in the kit's colours and type.
+ */
+export function UiKitMenuPreview({ kit, pane = "settings", className }: { kit: UiKit; pane?: "settings" | "credits"; className?: string }): ReactNode {
+  return (
+    <UiKitRoot kit={kit} box className={className} style={{ ...SCENE, width: "100vw", height: "100vh" }}>
+      <GamePauseMenu
+        items={[
+          { id: "resume", label: "Resume" },
+          { id: "settings", label: "Settings" },
+          { id: "credits", label: "Credits" },
+        ]}
+        initialId={pane}
+        onSelect={noop}
+        logo={{ text: kit.name, title: kit.name }}
+        tagline="Paused. The world waits."
+        detail={(id) =>
+          id === "credits" ? (
+            <CreditsPane sections={[{ heading: "Made by", entries: [{ label: "Design", detail: "Jon" }, { label: "Engine", detail: "JGengine" }] }]} notice="Fonts and sounds under their own licences." />
+          ) : (
+            <div style={{ display: "grid", gap: 14 }}>
+              <SettingsTabs categories={TABS} activeId="audio" onSelect={noop} />
+              <SettingsSection category={SOUND} enabled={false} />
+            </div>
+          )
+        }
+      />
+    </UiKitRoot>
   );
 }

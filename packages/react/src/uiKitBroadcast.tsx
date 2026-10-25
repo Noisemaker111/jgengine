@@ -296,7 +296,7 @@ const CSS = `
 .${P}-panel-cap { display: flex; align-items: center; gap: 14px; min-width: 0; margin: 0 0 0 -12px; padding: 7px 20px 6px 16px; background: var(--jgk-broadcast-gloss), var(--kit-accent); color: var(--kit-accent-ink); transform: skewX(-12deg); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55); }
 .${P}-panel-head { display: grid; gap: 2px; min-width: 0; }
 .${P}-eyebrow { display: inline-flex; justify-self: start; font: 700 calc(13px * var(--kit-text)) / 1 var(--kit-font-display); letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.8; }
-.${P}-title { display: block; font: 700 calc(22px * var(--kit-text)) / 1 var(--kit-font-display); letter-spacing: 0.05em; text-transform: uppercase; white-space: nowrap; }
+.${P}-title { display: block; font: 700 calc(22px * var(--kit-text)) / 1.05 var(--kit-font-display); letter-spacing: 0.05em; text-transform: uppercase; overflow-wrap: anywhere; }
 .${P}-aside { display: inline-flex; margin-left: auto; padding: 4px 10px 3px; background: var(--kit-surface); color: var(--kit-ink); box-shadow: inset 0 -3px 0 var(--kit-stripe); font: 700 calc(22px * var(--kit-text)) / 1 var(--kit-font-display); font-variant-numeric: tabular-nums; }
 .${P}-panel-slab { position: relative; padding: 12px 18px 12px 22px; background: var(--jgk-broadcast-gloss), var(--kit-surface); color: var(--kit-ink); transform: skewX(-12deg); box-shadow: inset 9px 0 0 var(--kit-stripe), inset 0 1px 0 rgba(255, 255, 255, 0.3); }
 .${P}-panel-body { font: 500 calc(16px * var(--kit-text)) / 1.35 var(--kit-font-body); letter-spacing: 0.01em; color: var(--kit-ink); }

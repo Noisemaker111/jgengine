@@ -12,7 +12,7 @@ import { TileLayerPreview } from "./tileLayerPreview";
 import { HudSkinPreview } from "./hudSkinPreview";
 import { ScrollRailPreview } from "./scrollRailPreview";
 import { UI_KITS, type UiKitName } from "./uiKits";
-import { UiKitPreview, UiKitsPreview } from "./uiKitsPreview";
+import { UiKitMenuPreview, UiKitPreview, UiKitsPreview } from "./uiKitsPreview";
 
 /**
  * One entry in the engine preview-fixture registry: a deterministic, engine-level
@@ -92,6 +92,8 @@ function kitFixtures(): Record<string, PreviewFixture> {
     const kit = UI_KITS[name];
     const id = `UiKit-${name}`;
     fixtures[id] = { name: id, description: `The ${kit.name} UI kit, large: every part, a dialog and a strip.`, component: ({ className }) => createElement(UiKitPreview, { kit, className }) };
+    const menu = `UiKitMenu-${name}`;
+    fixtures[menu] = { name: menu, description: `The ${kit.name} UI kit's pause menu hosting the engine settings pane.`, component: ({ className }) => createElement(UiKitMenuPreview, { kit, className }) };
   }
   return fixtures;
 }

@@ -522,6 +522,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `KillFeed` (function) · `import { KillFeed } from "@jgengine/react"`
 
+## kit-action-glyph — the bound key, pad button or tap label for an action, live, for any kit part
+
+- `useActionGlyph` (function) · `import { useActionGlyph } from "@jgengine/react"`
+
 ## kit-action-prompt — a device-correct "press X to do Y" prompt (keyboard key, pad button, tap) in the active UI kit
 
 - `KitActionPrompt` (function) · `import { KitActionPrompt } from "@jgengine/react"`

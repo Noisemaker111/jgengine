@@ -267,7 +267,7 @@ ${TONED}[data-tone="neutral"] { --jgk-arcade-tone: var(--kit-surface-alt); }
 .${P}-panel[data-state="closed"] { animation: ${P}-out calc(var(--kit-exit-ms) * var(--kit-motion)) steps(3, end) both; pointer-events: none; }
 .${P}-panel-head { position: absolute; top: -14px; left: 14px; z-index: 2; display: flex; align-items: center; gap: 10px; max-width: calc(100% - 28px); }
 .${P}-eyebrow { padding: 5px 8px 3px; background: var(--kit-shade); color: var(--kit-ink); font: 700 calc(12px * var(--kit-text)) / 1 var(--kit-font-display); letter-spacing: 0.06em; text-transform: uppercase; text-shadow: none; white-space: nowrap; box-shadow: ${frame(2)}; }
-.${P}-title { padding: 7px 12px 5px; background: var(--jgk-arcade-tone, var(--kit-accent)); color: var(--kit-accent-ink); font: 700 calc(13px * var(--kit-text)) / 1 var(--kit-font-display); letter-spacing: 0.08em; text-transform: uppercase; text-shadow: none; white-space: nowrap; box-shadow: ${frame(4)}; }
+.${P}-title { padding: 7px 12px 5px; background: var(--jgk-arcade-tone, var(--kit-accent)); color: var(--kit-accent-ink); font: 700 calc(13px * var(--kit-text)) / 1 var(--kit-font-display); letter-spacing: 0.08em; text-transform: uppercase; text-shadow: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; box-shadow: ${frame(4)}; }
 .${P}-panel[data-tone="neutral"] > .${P}-panel-head .${P}-title { color: var(--kit-ink); }
 .${P}-panel[data-tone="bad"] > .${P}-panel-head .${P}-title { color: var(--kit-ink); text-shadow: ${OUTLINE}; }
 .${P}-aside { margin-left: auto; color: var(--kit-accent); font: 700 calc(13px * var(--kit-text)) / 1 var(--kit-font-display); text-shadow: ${OUTLINE}; }
