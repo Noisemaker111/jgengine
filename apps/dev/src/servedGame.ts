@@ -26,6 +26,17 @@ export function servedGameFrom(raw: string | undefined): ServedGame | null {
 
 export const servedGame: ServedGame | null = servedGameFrom(RAW);
 
+/**
+ * Engine-copy source paths (`../../../Games/<id>/src/...`) a dev-runner scan may import for one
+ * game. The served game gets none: importing the engine's copy would pull in its stale style.css,
+ * which then loads after the served game's sheet and wins.
+ */
+export function engineCopySources(paths: readonly string[], gameId: string, served: ServedGame | null): string[] {
+  if (served?.id === gameId) return [];
+  const prefix = `../../../Games/${gameId}/src/`;
+  return paths.filter((path) => path.startsWith(prefix));
+}
+
 /** One file of the served game, as the browser would fetch it through the dev server. */
 export function servedModule<T>(relative: string): Promise<T> {
   if (servedGame === null) return Promise.reject(new Error("no served game: pass --game-dir"));

@@ -16,7 +16,7 @@ import type { GameRegistry, PlayableGame } from "@jgengine/shell/registry";
 
 import { CAM, resolvedLook, resolvedLookFrom } from "./appEnv";
 import { setCaptureStatus } from "./captureReady";
-import { servedGame, servedModule } from "./servedGame";
+import { engineCopySources, servedGame, servedModule } from "./servedGame";
 import { formatAppliedAim, resolveLookCamera, type LookMarkers } from "./lookCamera";
 import { installCaptureCamera } from "@jgengine/core/world/captureCamera";
 const CAMERA_PRESETS: Record<string, GameCameraConfig> = {
@@ -139,8 +139,20 @@ export async function loadGameStyle(gameId: string): Promise<void> {
 }
 
 export async function discoverGameTunables(gameId: string, gameName: string): Promise<void> {
-  const prefix = `../../../Games/${gameId}/src/`;
-  const loaders = Object.entries(gameSourceModules).filter(([path]) => path.startsWith(prefix));
+  // A `--game-dir` game must not import the engine's own `Games/<id>` copy: those modules pull in
+  // that copy's style.css, whose stale rules then load after the served game's and win. Scan only
+  // the served entry, which Vite cannot glob beyond.
+  if (servedGame?.id === gameId) {
+    try {
+      devtools.discover.scanModule(await servedModule<Record<string, unknown>>("src/index.tsx"));
+    } catch (error) {
+      console.warn(`[jgengine:devtools] skipped the served ${gameId} during tunable discovery`, error);
+    }
+    applyStoredDevtoolsOverrides(gameName);
+    return;
+  }
+  const wanted = new Set(engineCopySources(Object.keys(gameSourceModules), gameId, servedGame));
+  const loaders = Object.entries(gameSourceModules).filter(([path]) => wanted.has(path));
   const loaded = await Promise.all(
     loaders.map(async ([path, loader]) => {
       try {
