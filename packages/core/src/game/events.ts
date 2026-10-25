@@ -328,6 +328,12 @@ export interface FeedbackCueEvent {
 }
 
 /** Crossfade the procedural soundtrack to `theme` (null fades out), optionally transposing the incoming theme by `transpose` semitones. */
+/** Raise the adaptive soundtrack's intensity by `amount` (`0..1`). */
+export interface AudioIntensityEvent {
+  amount: number;
+}
+
+/** Crossfade the procedural soundtrack to `theme` (null fades out), optionally shifted `transpose` semitones. */
 export interface AudioMusicEvent {
   theme: string | null;
   transpose?: number;
@@ -410,6 +416,7 @@ export interface GameEventMap {
   "form.changed": FormChangedEvent;
   "audio.play": AudioPlayEvent;
   "audio.music": AudioMusicEvent;
+  "audio.intensity": AudioIntensityEvent;
   "audio.resume": AudioResumeEvent;
   "audio.loopStart": AudioLoopStartEvent;
   "audio.loopSet": AudioLoopSetEvent;

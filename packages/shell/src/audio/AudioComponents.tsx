@@ -8,12 +8,47 @@ import { createEmitterTracker, type EmitterPose, type EmitterSources, type Emitt
 import { groundFocusListener, type ListenerAnchor } from "./listenerAnchor";
 import { createListenerVelocityTrack, stepListenerVelocity, type ListenerVelocityTrack } from "./loopParams";
 import { sceneLineBlocked } from "./occlusion";
+import { enclosurePreset, type EnclosureSample } from "@jgengine/core/audio/reverb";
+import { devtools } from "@jgengine/core/devtools/devtools";
+import { sampleEnclosure } from "./reverb";
+
+/** How often the shell listens for walls and a ceiling around the player, seconds. */
+const ENCLOSURE_INTERVAL_S = 0.5;
+
+/**
+ * Where the player hears the room from: their body's head (what they drive, else their own body),
+ * not the chase camera floating above it; the listener itself when there is no body. @internal
+ */
+export function hearingPoint(
+  ctx: {
+    player: { userId: string; possession: { active(userId: string): string | null | undefined } };
+    scene: { entity: { get(id: string): { position: readonly [number, number, number] } | null } };
+  },
+  fallback: { x: number; y: number; z: number },
+): { x: number; y: number; z: number } {
+  const bodyId = ctx.player.possession.active(ctx.player.userId) ?? ctx.player.userId;
+  const body = ctx.scene.entity.get(bodyId);
+  return body === null ? fallback : { x: body.position[0], y: body.position[1] + 1.5, z: body.position[2] };
+}
 
 export function AudioListener({ engine, anchor = "camera" }: { engine: AudioEngine; anchor?: ListenerAnchor }) {
   const camera = useThree((state) => state.camera);
   const ctx = useGameContext();
   const trackRef = useRef<ListenerVelocityTrack>(createListenerVelocityTrack());
   const scratchRef = useRef({ direction: new Vector3(), up: new Vector3(), quaternion: new Quaternion() });
+  const enclosureClock = useRef(ENCLOSURE_INTERVAL_S);
+  const lastEnclosure = useRef<EnclosureSample | null>(null);
+  useEffect(
+    () =>
+      devtools.probes.registerSystem("audio/enclosure", {
+        counters: () => {
+          const sample = lastEnclosure.current;
+          return { ceilingM: sample?.ceiling ?? -1, wallHits: sample?.walls.filter((wall) => wall !== null).length ?? 0 };
+        },
+        state: () => `${engine.spatialStats().reverb} · ceiling ${lastEnclosure.current?.ceiling?.toFixed(1) ?? "open"} · walls ${lastEnclosure.current?.walls.map((wall) => (wall === null ? "-" : wall.toFixed(0))).join(" ") ?? "?"}`,
+      }),
+    [engine],
+  );
   useEffect(() => {
     engine.setOcclusionSource((from, to) => sceneLineBlocked(ctx.scene, from, to));
     return () => engine.setOcclusionSource(null);
@@ -31,6 +66,12 @@ export function AudioListener({ engine, anchor = "camera" }: { engine: AudioEngi
       up: { x: up.x, y: up.y, z: up.z },
       velocity: stepListenerVelocity(trackRef.current, position, dt),
     });
+    enclosureClock.current += dt;
+    if (enclosureClock.current < ENCLOSURE_INTERVAL_S) return;
+    enclosureClock.current = 0;
+    const sample = sampleEnclosure(ctx.scene, hearingPoint(ctx, position));
+    lastEnclosure.current = sample;
+    engine.setReverbEnvironment(enclosurePreset(sample));
   });
   return null;
 }

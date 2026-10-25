@@ -622,6 +622,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
           events.emit("audio.loopStart", options?.at === undefined ? { id, sound } : { id, sound, at: options.at }),
         setLoop: (id, params) => events.emit("audio.loopSet", { id, ...params }),
         stopLoop: (id) => events.emit("audio.loopStop", { id }),
+        intensity: (amount) => events.emit("audio.intensity", { amount }),
       },
       feedback: {
         cue: (cue, caption) => events.emit("feedback.cue", caption === undefined ? { cue } : { cue, caption }),

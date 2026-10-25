@@ -1,4 +1,4 @@
-import type { AudioAmbienceState, AudioEngine, AudioLevel, AudioOcclusionStats } from "./audioEngine";
+import type { AudioAmbienceState, AudioEngine, AudioLevel, AudioOcclusionStats, AudioSpatialStats } from "./audioEngine";
 
 /** The read-only handle a capture script or devtools uses to prove the mix is producing sound. */
 export interface AudioProbe {
@@ -12,6 +12,8 @@ export interface AudioProbe {
   ambience(): AudioAmbienceState;
   /** Cumulative geometry-occlusion cost, so a capture can state the measured per-test price. */
   occlusion(): AudioOcclusionStats;
+  /** Panned and reverb-sent voices, muffled one-shots, and the space positioned sounds ring in now. */
+  spatial(): AudioSpatialStats;
 }
 
 declare global {
@@ -35,6 +37,7 @@ export function installAudioProbe(engine: AudioEngine): () => void {
     busLevel: (busId) => engine.busLevel(busId),
     ambience: () => engine.ambience(),
     occlusion: () => engine.occlusionStats(),
+    spatial: () => engine.spatialStats(),
   };
   window.__jgengineAudio = probe;
   return () => {

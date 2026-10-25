@@ -45,6 +45,8 @@ import { readUrlFlag, subscribeUrlChange, writeUrlParam } from "@jgengine/core/d
 
 import { createAudioEngine } from "./audio/audioEngine";
 import { attachAudioEventWire } from "./audio/audioWire";
+import { attachAdaptiveMusic, type AdaptiveMusicSource } from "./audio/adaptiveMusicWire";
+import { ADAPTIVE_THEMES } from "@jgengine/core/audio/adaptiveMusic";
 import { resolvePlayableAudio } from "./audio/playableAudio";
 import { installAgentBridge } from "./devtools/agentBridge";
 import { attachPlaytestProbe } from "./devtools/playtestProbe";
@@ -316,10 +318,14 @@ export function GamePlayerShell({
         maxVoices: playable.audio?.maxVoices,
         voiceOverflow: playable.audio?.voiceOverflow,
         buses: resolvePlayableAudio(playable).buses,
-        music: playable.audio?.music,
+        music: playable.audio?.adaptiveMusic === undefined || playable.audio.adaptiveMusic === false
+          ? playable.audio?.music
+          : { ...ADAPTIVE_THEMES, ...playable.audio.music },
         musicBus: playable.audio?.musicBus,
         zones: playable.audio?.zones,
         occlusion: playable.audio?.occlusion,
+        panning: playable.audio?.panning,
+        reverb: playable.audio?.reverb,
       }),
     [playable],
   );
@@ -328,6 +334,15 @@ export function GamePlayerShell({
     if (ctx === null) return;
     return attachAudioEventWire(ctx.game.events, audioEngine);
   }, [ctx, audioEngine]);
+  useEffect(() => {
+    const adaptive = playable.audio?.adaptiveMusic;
+    if (ctx === null || adaptive === undefined || adaptive === false) return;
+    return attachAdaptiveMusic(
+      { on: ctx.game.events.on.bind(ctx.game.events) as AdaptiveMusicSource["on"], isLocal: (id) => id !== undefined && (id === ctx.player.userId || id === ctx.player.possession.active(ctx.player.userId)) },
+      (theme) => audioEngine.playMusic(theme),
+      adaptive === true ? {} : adaptive,
+    );
+  }, [ctx, audioEngine, playable]);
   useEffect(() => {
     if (typeof document === "undefined") return;
     document.documentElement.dataset.jgPresentation = playable.presentation ?? "3d";
