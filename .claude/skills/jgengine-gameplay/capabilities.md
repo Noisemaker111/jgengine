@@ -869,6 +869,12 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `queuedJobs` (function) · `import { queuedJobs } from "@jgengine/core/gameplay"`
 
+## world-model — declare a fact that calms back toward its resting value over time
+
+- `calm` (function) · `import { calm } from "@jgengine/core/worldModel/worldModel"`
+- `createWorldModel` (function) · `import { createWorldModel } from "@jgengine/core/worldModel/worldModel"`
+- `defineWorldModel` (function) · `import { defineWorldModel } from "@jgengine/core/worldModel/worldModel"`
+
 ## xp-curve — resolve an authored xp growth rule into per-level thresholds, totals and a level cap
 
 - `defineXpCurve` (function) · `import { defineXpCurve } from "@jgengine/core/gameplay"`

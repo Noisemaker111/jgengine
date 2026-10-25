@@ -396,3 +396,27 @@ describe("mission validation", () => {
     expect(codes).toContain("missing-start");
   });
 });
+
+describe("survive until a world fact holds", () => {
+  test("a survive objective with until completes when the fact holds, not before", () => {
+    const runtime = createMissionRuntime({
+      missions: [{
+        id: "shake",
+        title: "Shake the heat",
+        objectives: [
+          { id: "raise", kind: "survive", until: { fact: "police_tier", atLeast: 3 }, next: "lose" },
+          { id: "lose", kind: "survive", until: { fact: "police_tier", atMost: 0 }, next: "done" },
+        ],
+      }],
+    });
+    runtime.start("shake");
+    runtime.tick(1, { facts: { police_tier: 1 } });
+    expect(runtime.state()?.objective).toBe("raise");
+    runtime.tick(1, { facts: { police_tier: 3 } });
+    expect(runtime.state()?.objective).toBe("lose");
+    runtime.tick(1, { facts: { police_tier: 2 } });
+    expect(runtime.state()?.objective).toBe("lose");
+    const events = runtime.tick(1, { facts: { police_tier: 0 } });
+    expect(events.some((event) => event.kind === "completed")).toBe(true);
+  });
+});

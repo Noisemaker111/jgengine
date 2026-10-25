@@ -3049,3 +3049,38 @@
 - `UnitTrainingOptions` (interface): interface UnitTrainingOptions — Config knobs for {@link unitTrainingConfig}.
 - `UnitTrainingSpec` (interface): interface UnitTrainingSpec — What the caller asks the queue to build.
 - `unitTrainingConfig` (function): function unitTrainingConfig(options: UnitTrainingOptions): WorkQueueConfig<UnitTrainingSpec, UnitReservation, UnitSpawnOrder> — Build a {@link WorkQueueConfig} for training units from a catalog. Reservation is the unit's cost + population; duration is its train time; completion output is a {@link UnitSpawnOrder} for the caller to route to its spawn primitive.
+
+## @jgengine/core/worldModel/worldModel
+
+- `WorldBlip` (interface): interface WorldBlip — One thing to draw on a map: a place, person, thing, open job or the live objective.
+- `WorldBlipDecl` (interface): interface WorldBlipDecl — What a map draws for a subject.
+- `WorldChanges` (type): type WorldChanges = Readonly<Record<string, WorldFactValue>> — Fact changes: a number adds, a string or flag sets. Keys are relative to the subject the change lands on.
+- `WorldCondition` (type): type WorldCondition = WorldFactValue | { atLeast?: number; atMost?: number; is?: WorldFactValue; not?: boolean } — A test on one fact: equal to a value, or a numeric band, optionally negated.
+- `WorldConditions` (type): type WorldConditions = Readonly<Record<string, WorldCondition>> — Every keyed fact must pass. `jobs.<id>` reads a job's status (`done`, `active`, `failed`).
+- `WorldContact` (interface): interface WorldContact — A phone contact: a known person with their current line and the jobs they offer.
+- `WorldEvent` (interface): interface WorldEvent — Something that happened, reported by the game.
+- `WorldFactSpec` (interface): interface WorldFactSpec — A fact that settles back toward `rest` by `decay` per second, clamped to `[min, max]`.
+- `WorldFactValue` (type): type WorldFactValue = number | string | boolean — A fact's value: a number that moves, a name (an owner, a place) or a flag.
+- `WorldFactionDecl` (interface): interface WorldFactionDecl extends SubjectDecl — A faction: a group with shared facts (mood, money) that places and things can belong to.
+- `WorldFactsDecl` (type): type WorldFactsDecl = Readonly<Record<string, WorldFactValue | WorldFactSpec>> — Facts a subject starts with: a plain value, or a {@link WorldFactSpec} for one that calms down.
+- `WorldJobDecl` (interface): interface WorldJobDecl — A story or side job: a mission the giver offers once its gates hold, and the beat it leaves behind.
+- `WorldJobEvent` (type): type WorldJobEvent = | { kind: "job-started"; jobId: string } | { kind: "job-done"; jobId: string; beat: WorldChanges | null } | { kind: "job-failed"; jobId: string; reason: string } — A job moved, as `tick` and `startJob` report it.
+- `WorldJobStatus` (type): type WorldJobStatus = "locked" | "available" | "active" | "done" | "failed" — Where a job stands for the player right now.
+- `WorldJobView` (interface): interface WorldJobView — A job as menus, the phone and dialogue show it.
+- `WorldLine` (interface): interface WorldLine — One thing a person can say, shown while its conditions hold; the first that holds is current.
+- `WorldLogEntry` (interface): interface WorldLogEntry — One line of the world's recent history.
+- `WorldModel` (interface): interface WorldModel — A live world: facts, events that ripple, jobs, and the views every screen reads.
+- `WorldModelDecl` (interface): interface WorldModelDecl — Everything a game declares about its world: factions, places, people, things, jobs and ripples.
+- `WorldModelDef` (interface): interface WorldModelDef extends WorldModelDecl — A checked declaration.
+- `WorldModelOptions` (interface): interface WorldModelOptions — Hooks that connect a world model to a game: markers, storage, rewards and outputs such as heat.
+- `WorldModelState` (interface): interface WorldModelState — The saved form of a world model: facts, live mission and news log.
+- `WorldModelStorage` (interface): interface WorldModelStorage — Where a world model keeps its state, usually a store so saves and co-op sync come for free.
+- `WorldNext` (interface): interface WorldNext — The one thing the player should do next, with where to go.
+- `WorldPersonDecl` (interface): interface WorldPersonDecl extends SubjectDecl — A person: where they are, whether they are on the phone, and what they say as the world changes.
+- `WorldPlaceDecl` (interface): interface WorldPlaceDecl extends SubjectDecl — A place in the world: a marker or position with a radius, an owner faction and its own facts.
+- `WorldRippleDecl` (interface): interface WorldRippleDecl — How one kind of world event spreads.
+- `WorldThingDecl` (interface): interface WorldThingDecl extends SubjectDecl — Anything owned and located that is not a person: a car, a tower, a ride, a server rack.
+- `WorldTickResult` (interface): interface WorldTickResult — What changed during one tick: jobs finished or failed and objectives cleared.
+- `calm` (function): function calm(value: number, perSecond: number, bounds: { rest?: number; min?: number; max?: number } = {}): WorldFactSpec — A number fact that drifts back to `rest` (default its start) at `perSecond`, kept within 0-100 unless the bounds say otherwise.
+- `createWorldModel` (function): function createWorldModel(def: WorldModelDef, options: WorldModelOptions = {}): WorldModel — Run a declared world: facts that ripple and calm, jobs on the shared mission machine, and every view a HUD, phone, map, dialogue or resident needs, all over one serializable state.
+- `defineWorldModel` (function): function defineWorldModel(decl: WorldModelDecl): WorldModelDef — Check a world declaration once: subject ids unique across kinds, owners and factions declared, people at declared places, job givers, requirements and missions valid.
