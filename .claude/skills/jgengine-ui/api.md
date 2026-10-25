@@ -3994,10 +3994,25 @@
 ## @jgengine/shell/touch/TouchControlsOverlay
 
 - `TouchCodeSink` (interface): interface TouchCodeSink { onCodeDown(code: string): void; onCodeUp(code: string): void; onAnalog?(values: Readonly<Record<string, number>> | null): void } — ⚠ undocumented
-- `TouchControlsDock` (function): function TouchControlsDock({ scheme, sink, style, scale = 1, joystickVariant = "floating", }: { scheme: TouchScheme; sink: TouchCodeSink; /** Player-selected skin; falls back to the scheme's game default. */ style?: TouchStyle; scale?: number; /** Player-selected joystick behavior (Settings → Contro… — ⚠ undocumented
+- `TouchControlsDock` (function): function TouchControlsDock({ scheme, sink, style, scale = 1, joystickVariant = "floating", shortSide, }: { scheme: TouchScheme; sink: TouchCodeSink; /** Player-selected skin; falls back to the scheme's game default. */ style?: TouchStyle; /** Multiplies the joystick and side-rail buttons; the thumb … — ⚠ undocumented
 - `TouchPlaySurface` (function): function TouchPlaySurface({ scheme, sink, yawRef, pitchRef, maxPitch, onPrimaryTap, }: { scheme: TouchScheme; sink: TouchCodeSink; yawRef: MutableRefObject<number>; pitchRef: MutableRefObject<number>; maxPitch: number; onPrimaryTap: () => void; }): React.JSX.Element — ⚠ undocumented
-- `primaryButtonOffsets` (function): function primaryButtonOffsets(count: number, scale = 1): { right: number; bottom: number }[] | null — Thumb-arc placement for primary buttons around the bottom-right corner: up to three on an inner ring, the rest on an outer ring. Null means too many buttons for an arc — the dock falls back to a wrapping grid.
-- `touchDockClearance` (function): function touchDockClearance(scheme: TouchScheme | null, scale = 1): number — Vertical space (px, excluding device safe areas) that *bottom-docked* clusters occupy above the bottom edge. The shell publishes it as `--jg-hud-dock-clearance` so `HudCanvas` regions never collide with touch controls. Side rails and top clusters reserve their own rectangles through the layout registry instead of this scalar.
+- `TouchViewport` (interface): interface TouchViewport — Viewport size in CSS px the touch dock lays out against.
+- `touchDockClearance` (function): function touchDockClearance(scheme: TouchScheme | null, scale = 1, shortSide = DEFAULT_TOUCH_SHORT_SIDE): number — Tallest bottom-edge space the dock occupies (px, excluding device safe areas). The shell publishes it as `--jg-hud-dock-clearance`; {@link touchDockInsets} gives each bottom third its own value so HUD at bottom-centre is not pushed up by controls that only fill the corners.
+
+## @jgengine/shell/touch/touchClusterLayout
+
+- `ClusterPlacement` (interface): interface ClusterPlacement — A button box's offset from the cluster's bottom-right corner, in px.
+- `DEFAULT_TOUCH_SHORT_SIDE` (const): const DEFAULT_TOUCH_SHORT_SIDE: 390 — Fallback short side when no viewport is measurable (tests, SSR): a phone held in landscape.
+- `DOCK_GEOMETRY` (const): const DOCK_GEOMETRY: { readonly joystick: 132; readonly joystickThumb: 52; readonly railButton: 64; readonly basePadding: 20; readonly edgeMargin: 12; } — Dock geometry constants shared by the renderer and the clearance math.
+- `TouchClusterLayout` (interface): interface TouchClusterLayout — Where every cluster button sits, plus the cluster box size.
+- `TouchClusterSizes` (interface): interface TouchClusterSizes — Button sizes for the thumb cluster, in CSS px, derived from the screen's short side.
+- `TouchDockInsets` (interface): interface TouchDockInsets — Bottom-edge space (px, excluding safe areas) the dock occupies in each third of the screen.
+- `UTILITY_INLINE_LIMIT` (const): const UTILITY_INLINE_LIMIT: 2 — Utility buttons past this count fold into one overflow button.
+
+## @jgengine/shell/touch/touchIcons
+
+- `TouchButtonFace` (type): type TouchButtonFace = { kind: "glyph"; name: GameIconName | TouchGlyphName } | { kind: "text"; text: string } — What a touch button face shows: a drawn glyph, or a 1–3 character text glyph when nothing fits.
+- `TouchGlyphName` (type): type TouchGlyphName = keyof typeof TOUCH_GLYPHS — A glyph the touch dock draws itself, beyond the shared `GameIcon` catalog.
 
 ## @jgengine/shell/useShellMultiplayerSync
 

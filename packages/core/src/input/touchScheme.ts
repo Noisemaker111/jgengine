@@ -129,7 +129,7 @@ export interface TouchLayoutConfig {
   movement?: TouchAnchor;
   /** Primary action cluster. Default `bottom-right`. */
   actions?: TouchAnchor;
-  /** Utility chip row. Default `bottom-center`. */
+  /** Utility (menu-type) buttons. Default `bottom-right`: small icon buttons above the action cluster, folded into one overflow button past two. */
   utility?: TouchAnchor;
 }
 
@@ -143,8 +143,10 @@ export interface ResolvedTouchLayout {
 export interface TouchButtonSpec {
   action: string;
   label?: string;
-  /** Glyph name from the capture layer's icon catalog (`@jgengine/react/gameIcons` `GameIconName`); unset derives one from the action name, `false` forces the text label. */
+  /** Glyph for the button face: a `GameIconName` (`@jgengine/react/gameIcons`) or touch glyph (`fire`, `reload`, `aim`), or a 1–3 character text glyph such as `"R"`; unset derives one from the action name, `false` shows short initials of the label. */
   icon?: string | false;
+  /** Makes this the large main button the thumb cluster arcs around. Unset picks the first fire/shoot/attack action, else the first primary button. */
+  main?: boolean;
   /** Overrides the derived classification: `primary` renders as a large thumb button, `utility` as a small chip away from the thumb zones. */
   kind?: TouchButtonKind;
   /** Physical silhouette; unset derives one from the action name (`brake`→pedal, `handbrake`→lever, `fire`→trigger, …). */
@@ -203,8 +205,10 @@ export type TouchButtonKind = "primary" | "utility";
 export interface TouchButton {
   action: string;
   label: string;
-  /** Glyph hint for the capture layer: a name to render, `false` to force text, null to derive from the action name. */
+  /** Glyph hint for the capture layer: a name or short text glyph to render, `false` to force initials, null to derive from the action name. */
   icon: string | false | null;
+  /** Set when the game marked this the cluster's main button; otherwise the dock picks one. */
+  main?: boolean;
   /** `primary` = frequent gameplay verb, rendered as a large thumb button; `utility` = meta action (start, restart, pause, toggles), rendered as a small chip. */
   kind: TouchButtonKind;
   /** Physical silhouette to draw. */
@@ -218,6 +222,8 @@ export interface TouchButton {
 export interface TouchScheme {
   joystick: TouchJoystick | null;
   buttons: readonly TouchButton[];
+  /** Weapon/item slot actions (`selectSlot1`…), in slot order, collapsed into one small numbered strip instead of a big button each. */
+  slots: readonly string[];
   gestures: TouchGestureBindings | null;
   look: boolean;
   lookSensitivity: number;
@@ -232,7 +238,7 @@ const DEFAULT_LOOK_SENSITIVITY = 0.005;
 const DEFAULT_TOUCH_LAYOUT: ResolvedTouchLayout = {
   movement: "bottom-left",
   actions: "bottom-right",
-  utility: "bottom-center",
+  utility: "bottom-right",
 };
 
 const SHAPE_BY_ACTION: ReadonlyMap<string, TouchButtonShape> = new Map([
@@ -362,6 +368,41 @@ function gestureActions(gestures: TouchGestureBindings | undefined): Set<string>
   return used;
 }
 
+/** Game-routed slot pickers (`selectSlot2`, `equipSlot1`, `weaponSlot3`); the bare `slot1`/`hotbarSlot1` the shell selects natively stay off the dock. */
+const TOUCH_SLOT_ACTION = /^(?:select|equip|use|switchTo|weapon|item)(?:hotbar|weapon|item)?slot(\d+)$/i;
+
+/**
+ * 1-based slot number for a game-routed slot picker action (`selectSlot2` → 2), or null.
+ *
+ * @capability touch-controls collapse numbered slot pickers into one compact touch slot strip
+ */
+export function touchSlotNumber(action: string): number | null {
+  const match = TOUCH_SLOT_ACTION.exec(action);
+  return match === null ? null : Number(match[1]);
+}
+
+/** Thumb-cluster closeness: lower ranks sit on the inner ring next to the main button. */
+const ACTION_PRIORITY: readonly (readonly [readonly string[], number])[] = [
+  [["fire", "shoot", "attack"], 0],
+  [["aim", "ads", "scope"], 1],
+  [["jump"], 2],
+  [["reload"], 3],
+  [["crouch", "slide", "prone"], 4],
+  [["interact", "use"], 5],
+  [["sprint", "dash", "dodge"], 6],
+  [["grenade", "throw", "ability", "ult"], 7],
+];
+
+function actionPriority(action: string): number {
+  const id = action.toLowerCase();
+  // Healing items (`useHealthVial`) read as consumables, not as the interact verb `use` would suggest.
+  if (/heal|vial|medkit|potion|bandage/.test(id)) return 8;
+  for (const [keywords, rank] of ACTION_PRIORITY) {
+    if (keywords.some((keyword) => id.includes(keyword))) return rank;
+  }
+  return 9;
+}
+
 export interface DeriveTouchSchemeOptions {
   reserved: ReadonlySet<string>;
   firstPerson: boolean;
@@ -383,10 +424,11 @@ function resolveModeConfig(
 }
 
 /**
- * Auto-derived button count past which the dock stops being playable — two full thumb arcs. A
- * curated `touch.buttons` list may exceed it deliberately; blind derivation may not.
+ * Auto-derived thumb-cluster button count past which the dock stops being playable — the main
+ * button plus two full arcs. Slot pickers and menu-type buttons fold into small chips and do not
+ * count. A curated `touch.buttons` list may exceed it deliberately; blind derivation may not.
  */
-const DERIVED_BUTTON_BUDGET = 8;
+const DERIVED_BUTTON_BUDGET = 9;
 
 /**
  * Null means "render no touch controls" — either the game opted out or there
@@ -426,7 +468,7 @@ export function deriveTouchScheme(
 
   let buttons: TouchButton[];
   if (config?.buttons !== undefined) {
-    buttons = config.buttons.map((spec) =>
+    buttons = config.buttons.map((spec): TouchButton =>
       typeof spec === "string"
         ? {
             action: spec,
@@ -445,6 +487,7 @@ export function deriveTouchScheme(
             shape: spec.shape ?? touchButtonShape(spec.action),
             anchor: spec.anchor ?? null,
             image: spec.image ?? null,
+            ...(spec.main === true ? { main: true } : {}),
           },
     );
   } else {
@@ -463,22 +506,31 @@ export function deriveTouchScheme(
         shape: touchButtonShape(action),
         anchor: null,
         image: null,
-      }));
-    if (buttons.length > DERIVED_BUTTON_BUDGET) {
+      }))
+      .sort((a, b) => actionPriority(a.action) - actionPriority(b.action));
+    const thumbButtons = buttons.filter((button) => button.kind === "primary" && touchSlotNumber(button.action) === null);
+    if (thumbButtons.length > DERIVED_BUTTON_BUDGET) {
       console.warn(
-        `[jgengine:touch] derived ${buttons.length} on-screen buttons (${buttons
+        `[jgengine:touch] derived ${thumbButtons.length} thumb buttons (${thumbButtons
           .map((button) => button.action)
           .join(", ")}) — more than a thumb can reach. Curate touch.buttons, hide actions with touch.hidden, or split contexts with touch.modes.`,
       );
     }
   }
 
+  const slots = buttons
+    .filter((button) => button.anchor === null && touchSlotNumber(button.action) !== null)
+    .sort((a, b) => (touchSlotNumber(a.action) ?? 0) - (touchSlotNumber(b.action) ?? 0))
+    .map((button) => button.action);
+  if (slots.length > 0) buttons = buttons.filter((button) => !slots.includes(button.action));
+
   const look = config?.look ?? firstPerson;
-  if (joystick === null && buttons.length === 0 && gestures === null && !look) return null;
+  if (joystick === null && buttons.length === 0 && slots.length === 0 && gestures === null && !look) return null;
 
   return {
     joystick,
     buttons,
+    slots,
     gestures,
     look,
     lookSensitivity: config?.lookSensitivity ?? DEFAULT_LOOK_SENSITIVITY,

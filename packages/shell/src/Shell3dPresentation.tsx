@@ -98,9 +98,11 @@ import { GridWorldScene } from "./world/GridWorldScene";
 import { PlaceScene } from "./world/PlaceScene";
 import { WorldItems } from "./world/WorldItems";
 import type { ShellMultiplayer } from "./multiplayer";
+import { defaultHudTheme, hudThemeVars } from "@jgengine/react/hudTheme";
 import type { PlayableGame } from "./registry";
 import type { AuthoritativeFrameHandler } from "./worldSync";
-import { TouchControlsDock, TouchPlaySurface, touchDockClearance, type TouchCodeSink } from "./touch/TouchControlsOverlay";
+import { TouchControlsDock, TouchPlaySurface, useTouchViewport, type TouchCodeSink } from "./touch/TouchControlsOverlay";
+import { floatingJoystickZoneHeight, touchDockInsets } from "./touch/touchClusterLayout";
 import { SettingsRuntime } from "./settings/SettingsRuntime";
 import { SettingsChrome } from "./settings/SettingsChrome";
 import { resolvePlayableAudio } from "./audio/playableAudio";
@@ -580,7 +582,21 @@ export function Shell3dPresentation({
     coarsePointer &&
     controlsActive &&
     touchScheme !== null &&
-    (touchScheme.joystick !== null || touchScheme.buttons.length > 0);
+    (touchScheme.joystick !== null || touchScheme.buttons.length > 0 || touchScheme.slots.length > 0);
+  const touchViewport = useTouchViewport();
+  const dockInsets = dockMounted
+    ? touchDockInsets(
+        touchScheme,
+        touchScale,
+        touchViewport.shortSide,
+        touchJoystickVariant === "floating" ? floatingJoystickZoneHeight(touchViewport.height, touchScale) : undefined,
+      )
+    : { left: 0, center: 0, right: 0 };
+  // The dock sits outside the GameUI theme root; carry the game's HudTheme tokens so its default skin matches the HUD.
+  const dockThemeVars = useMemo(
+    () => (playable.hudTheme === false ? undefined : hudThemeVars(playable.hudTheme ?? defaultHudTheme)),
+    [playable.hudTheme],
+  );
 
   const keys = createShellKeyHandlers({
     f2HeldRef,
@@ -625,7 +641,10 @@ export function Shell3dPresentation({
             className="relative h-full w-full bg-neutral-950 outline-none"
             style={
               {
-                "--jg-hud-dock-clearance": `${dockMounted ? touchDockClearance(touchScheme, touchScale) : 0}px`,
+                "--jg-hud-dock-clearance": `${Math.max(dockInsets.left, dockInsets.center, dockInsets.right)}px`,
+                "--jg-hud-dock-clearance-left": `${dockInsets.left}px`,
+                "--jg-hud-dock-clearance-center": `${dockInsets.center}px`,
+                "--jg-hud-dock-clearance-right": `${dockInsets.right}px`,
               } as CSSProperties
             }
             onKeyDown={keys.onKeyDown}
@@ -891,13 +910,16 @@ export function Shell3dPresentation({
               />
               {!poster && !orientationGate && showReticle ? <Reticle /> : null}
               {dockMounted && touchScheme !== null ? (
-                <TouchControlsDock
-                  scheme={touchScheme}
-                  sink={touchSink}
-                  style={touchStyle}
-                  scale={touchScale}
-                  joystickVariant={touchJoystickVariant}
-                />
+                <div className="pointer-events-none absolute inset-0" style={dockThemeVars}>
+                  <TouchControlsDock
+                    scheme={touchScheme}
+                    sink={touchSink}
+                    style={touchStyle}
+                    scale={touchScale}
+                    joystickVariant={touchJoystickVariant}
+                    shortSide={touchViewport.shortSide}
+                  />
+                </div>
               ) : null}
               {orientationGateEl}
               {marquee !== null ? <MarqueeBox rect={marquee} /> : null}

@@ -1200,6 +1200,8 @@
     "./terrain/terrainSurfaces",
     "./touch/OrientationHint",
     "./touch/TouchControlsOverlay",
+    "./touch/touchClusterLayout",
+    "./touch/touchIcons",
     "./useShellMultiplayerSync",
     "./vfx/ParticleField",
     "./vfx/WorldFloatingText",
