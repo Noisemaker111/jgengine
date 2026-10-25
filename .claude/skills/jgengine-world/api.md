@@ -601,6 +601,35 @@
 - `ResolvedAudioOcclusionConfig` (interface): interface ResolvedAudioOcclusionConfig — A fully specified occlusion policy, with every unset field replaced by its default.
 - `resolveOcclusionConfig` (function): function resolveOcclusionConfig(config: AudioOcclusionConfig | false = {}): ResolvedAudioOcclusionConfig — Fill in the occlusion defaults and clamp each field to a workable range: a finite test budget, a non-negative retest interval and distance cap, and an attenuation in `0..1`.
 
+## @jgengine/core/audio/radio
+
+- `Radio` (interface): interface Radio — A radio with a running broadcast.
+- `RadioBulletin` (interface): interface RadioBulletin — A game event the radio should talk about ("shots fired in Port Carmine").
+- `RadioBulletinPolicy` (interface): interface RadioBulletinPolicy — How a station reads bulletins the game reports.
+- `RadioCue` (type): type RadioCue = | { kind: "segment"; station: string; segment: RadioSegment; offset: number } /** A line started: speak it. */ | { kind: "line"; station: string; segment: RadioSegment; line: RadioLine } /** The radio went silent (powered off). */ | { kind: "off" } — Something the playback should do now for the station being listened to.
+- `RadioDef` (interface): interface RadioDef extends RadioTiming — A whole radio: its dial and how it times speech.
+- `RadioLine` (interface): interface RadioLine — A line as scheduled inside a resolved segment.
+- `RadioLineDef` (interface): interface RadioLineDef — A spoken line inside a segment. A bare string in a definition is a line in the station's default voice.
+- `RadioNowPlaying` (interface): interface RadioNowPlaying — HUD view of a station's programme.
+- `RadioSegment` (interface): interface RadioSegment — A segment resolved for air: lengths fixed, lines timed. Plain data, so it snapshots.
+- `RadioSegmentDef` (interface): interface RadioSegmentDef — An authored programme segment: a song (a music theme id), a DJ link, an ad, a talk bit or a news item.
+- `RadioSegmentKind` (type): type RadioSegmentKind = "song" | "dj" | "ad" | "talk" | "news" | "jingle" | "bulletin" — One kind of programme segment. `bulletin` is reserved for segments the radio builds from reported game events.
+- `RadioSnapshot` (interface): interface RadioSnapshot — Serializable radio state: every station's place in its programme, the queues, cooldowns and the dial.
+- `RadioStationDef` (interface): interface RadioStationDef — One station on the dial.
+- `RadioStationKind` (type): type RadioStationKind = "music" | "talk" | "news" — What a station mostly broadcasts; a HUD can style or group stations by it.
+- `RadioTiming` (interface): interface RadioTiming — Timing knobs a game may retune during play.
+- `createRadio` (function): function createRadio(def: RadioDef): Radio — A pure, serializable radio: stations with their own running order of songs, DJ links, ads, talk bits and news, all broadcasting on one clock whether or not anyone listens, so tuning back lands mid-programme. Game events reported with {@link Radio.report} queue bulletins with priority, per-topic cooldown and expiry; a high enough priority breaks into the current segment. `tick` returns cues (segment on air, line started, off) that a playback seam turns into music and speech; nothing here touches audio, so it runs headless and in tests.
+- `estimateSpeechSeconds` (function): function estimateSpeechSeconds(text: string, wordsPerSecond = 2.6): number — Seconds a line takes to say at `wordsPerSecond`, with a short floor so one-word stings still register.
+
+## @jgengine/core/audio/radioPlayback
+
+- `RadioAudioSink` (interface): interface RadioAudioSink — The audio surface radio playback drives; `ctx.game.audio` satisfies it.
+- `RadioPlayback` (interface): interface RadioPlayback — Turns a {@link Radio}'s cues into music and speech.
+- `RadioPlaybackSnapshot` (interface): interface RadioPlaybackSnapshot — Serializable playback state from {@link RadioPlayback.snapshot}.
+- `RadioVoice` (interface): interface RadioVoice — How one radio voice id should sound when spoken by the browser's speech synthesiser.
+- `SpeakOptions` (interface): interface SpeakOptions extends RadioVoice — Spoken-line options carried to the shell's speech channel.
+- `createRadioPlayback` (function): function createRadioPlayback(radio: Radio, sink: RadioAudioSink, options: { voices?: Readonly<Record<string, RadioVoice>> } = {}): RadioPlayback — Plays a radio through a game's audio seam with one call per tick: songs and beds as music themes started at the station's offset (so a retune lands mid-song), lines through speech in the voice mapped from their voice id. Pausing stops music and speech but not the radio's state; resuming re-cues the current segment. Speech is best effort: with no system voice the shell drops it and the HUD's now-playing line still carries the words.
+
 ## @jgengine/core/audio/reverb
 
 - `AudioReverbConfig` (interface): interface AudioReverbConfig — World reverb for positioned sounds. Authored zones win; outside them the shell listens for walls and a ceiling around the listener (`auto`, default on) and picks `room`, `hall` or `outdoor`.

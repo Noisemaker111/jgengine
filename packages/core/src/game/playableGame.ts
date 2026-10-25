@@ -901,6 +901,8 @@ export interface PlayableGame<
     buses?: Record<string, AudioBusDef>;
     music?: Record<string, MusicTheme>;
     musicBus?: string;
+    /** Bus whose volume sets spoken lines from `ctx.game.audio.speak` (radio DJs, announcers). Default: `musicBus`. */
+    speechBus?: string;
     /** Play UI cues for engine HUD controls (`HudButton` click/hover, `HudSurface` and window open/close, action slots). Independent of notice sounds (`notices.cues`). Default true. */
     hudCues?: boolean;
     /** Default UI cues (`ui.click`, `ui.deny`, ...) on a "ui" bus. A sound named `ui.<cue>` in `sounds` replaces one; a map entry replaces or (`false`) silences one; `false` silences all. */

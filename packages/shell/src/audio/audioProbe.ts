@@ -1,3 +1,4 @@
+import type { SpeechStats } from "./speech";
 import type { AudioAmbienceState, AudioEngine, AudioLevel, AudioOcclusionStats, AudioSpatialStats } from "./audioEngine";
 
 /** The read-only handle a capture script or devtools uses to prove the mix is producing sound. */
@@ -14,6 +15,8 @@ export interface AudioProbe {
   occlusion(): AudioOcclusionStats;
   /** Panned and reverb-sent voices, muffled one-shots, and the space positioned sounds ring in now. */
   spatial(): AudioSpatialStats;
+  /** Spoken lines said and dropped, whether a system voice exists, and the last line asked for. */
+  speech(): SpeechStats;
 }
 
 declare global {
@@ -38,6 +41,7 @@ export function installAudioProbe(engine: AudioEngine): () => void {
     ambience: () => engine.ambience(),
     occlusion: () => engine.occlusionStats(),
     spatial: () => engine.spatialStats(),
+    speech: () => engine.speechStats(),
   };
   window.__jgengineAudio = probe;
   return () => {

@@ -1,6 +1,7 @@
 import type { AuthoredSimulationRuntime } from "../world/authoredSimulation";
 import type { Territory } from "../world/territory";
 import type { FeedbackCue } from "../audio/feedbackCues";
+import type { SpeakOptions } from "../audio/radioPlayback";
 import type { NoticeFeed } from "../game/notices";
 import type { CurrencyDefinition } from "../economy/currency";
 import type { CardPile, CardPileConfig } from "../cards/cardPile";
@@ -495,8 +496,25 @@ export interface GameFeedback {
 
 /** Reachable audio seam on `ctx.game`: `play`, `music`, and `resume` route through the `audio.play`/`audio.music`/`audio.resume` events the shell's audio engine listens on, so game code triggers sound without importing the shell. Retained `loop`/`setLoop`/`stopLoop` add id-keyed loops with live pitch/gain control over `audio.loopStart`/`audio.loopSet`/`audio.loopStop` (#1051). */
 export interface GameAudio {  play(sound: string, at?: readonly [number, number, number]): void;
-  /** Crossfade the procedural soundtrack to `theme` (null fades out); `transpose` shifts the incoming theme's key in semitones. */
-  music(theme: string | null, transpose?: number): void;
+  /**
+   * Crossfade the procedural soundtrack to `theme` (null fades out); `transpose` shifts the incoming
+   * theme's key in semitones, and `options.offset` starts it that many seconds into its loop (a radio
+   * tuned back in lands mid-song).
+   */
+  music(theme: string | null, transpose?: number, options?: { offset?: number }): void;
+  /**
+   * Say `text` through the browser's speech synthesiser on the speech bus (emits `audio.speak`). Best
+   * effort: with no system voice, or headless, nothing is heard, so show the words on screen too.
+   */
+  speak(text: string, options?: SpeakOptions): void;
+  /** Stop the line being said and drop any queued ones (emits `audio.speechStop`). */
+  stopSpeech(): void;
+  /**
+   * Hold bus `bus` lowered by `amount` (0..1) under the key `id` until called again; `amount` 0
+   * releases it. The strongest hold on a bus wins and release restores the player's own volume
+   * (emits `audio.duck`): a radio sitting under a revving engine, dialogue over music.
+   */
+  duck(id: string, bus: string, amount: number): void;
   resume(): void;
   /**
    * Raise the adaptive soundtrack's intensity by `amount` (`0..1`, decays in quiet) for fights the

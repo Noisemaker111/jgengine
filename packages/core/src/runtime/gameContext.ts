@@ -616,8 +616,15 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
       playEntityAnimation: (instanceId, event) => events.emit("entity.animation", { instanceId, event }),
       audio: {
         play: (sound, at) => events.emit("audio.play", at === undefined ? { sound } : { sound, at }),
-        music: (theme, transpose) =>
-          events.emit("audio.music", transpose === undefined ? { theme } : { theme, transpose }),
+        music: (theme, transpose, options) =>
+          events.emit("audio.music", {
+            theme,
+            ...(transpose === undefined ? {} : { transpose }),
+            ...(options?.offset === undefined ? {} : { offset: options.offset }),
+          }),
+        speak: (text, options) => events.emit("audio.speak", { ...options, text }),
+        stopSpeech: () => events.emit("audio.speechStop", {}),
+        duck: (id, bus, amount) => events.emit("audio.duck", { id, bus, amount }),
         resume: () => events.emit("audio.resume", {}),
         loop: (id, sound, options) =>
           events.emit("audio.loopStart", options?.at === undefined ? { id, sound } : { id, sound, at: options.at }),

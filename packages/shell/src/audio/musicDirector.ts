@@ -23,6 +23,8 @@ interface Layer {
 export interface CrossfadeOptions {
   /** Semitone shift applied to every note of the incoming theme (per-zone key). Default 0. */
   transpose?: number;
+  /** Seconds into the incoming theme's loop to start from, so a radio tuned back in lands mid-song. Default 0. */
+  offset?: number;
 }
 
 /**
@@ -107,8 +109,10 @@ export class MusicDirector {
       layer.gain.gain.setTargetAtTime(target, now, rising ? FADE_IN : FADE_OUT);
       if (rising) {
         layer.active = true;
-        layer.anchor = now + 0.15;
-        layer.nextFrom = layer.anchor - 1e-6;
+        const start = now + 0.15;
+        const offset = options.offset !== undefined && Number.isFinite(options.offset) ? Math.max(0, options.offset) : 0;
+        layer.anchor = start - offset;
+        layer.nextFrom = start - 1e-6;
         layer.transpose = options.transpose ?? 0;
       } else {
         layer.active = false;

@@ -180,3 +180,47 @@ describe("attachAudioEventWire", () => {
     expect(created.map((c) => c.calls.stopped)).toEqual([1, 1]);
   });
 });
+
+describe("attachAudioEventWire radio seams", () => {
+  test("music offset, speech and keyed duck holds reach the engine", () => {
+    const bus = busStub();
+    const calls: string[] = [];
+    let releases = 0;
+    const off = attachAudioEventWire(bus.events, {
+      playOneShot: () => undefined,
+      playLoop: () => null,
+      playMusic: (theme, options) => calls.push(`music ${theme} ${options?.offset ?? "-"} ${options?.transpose ?? "-"}`),
+      resume: () => undefined,
+      speak: (text, options) => calls.push(`speak ${text} ${options?.voiceKey}`),
+      stopSpeech: () => calls.push("hush"),
+      duck: (busId, options) => {
+        calls.push(`duck ${busId} ${options?.amount}`);
+        return () => {
+          releases += 1;
+        };
+      },
+    });
+    bus.emit("audio.music", { theme: "song", offset: 12.5 });
+    bus.emit("audio.music", { theme: null });
+    bus.emit("audio.speak", { text: "Hello Mainsail", voiceKey: "dj" });
+    bus.emit("audio.speechStop");
+    bus.emit("audio.duck", { id: "engine", bus: "radio", amount: 0.4 });
+    bus.emit("audio.duck", { id: "engine", bus: "radio", amount: 0.2 });
+    expect(releases).toBe(1);
+    bus.emit("audio.duck", { id: "engine", bus: "radio", amount: 0 });
+    expect(releases).toBe(2);
+    bus.emit("audio.duck", { id: "engine", bus: "radio", amount: 0.5 });
+    off();
+    expect(releases).toBe(3);
+    expect(calls).toEqual([
+      "music song 12.5 -",
+      "music null - -",
+      "speak Hello Mainsail dj",
+      "hush",
+      "duck radio 0.4",
+      "duck radio 0.2",
+      "duck radio 0.5",
+      "hush",
+    ]);
+  });
+});

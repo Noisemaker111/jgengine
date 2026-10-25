@@ -322,6 +322,7 @@ export function GamePlayerShell({
           ? playable.audio?.music
           : { ...ADAPTIVE_THEMES, ...playable.audio.music },
         musicBus: playable.audio?.musicBus,
+        speechBus: playable.audio?.speechBus,
         zones: playable.audio?.zones,
         occlusion: playable.audio?.occlusion,
         panning: playable.audio?.panning,
