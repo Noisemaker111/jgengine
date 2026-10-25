@@ -1,23 +1,27 @@
-import { useMemo } from "react";
+import { Fragment, useMemo } from "react";
 import { BufferAttribute, BufferGeometry, Color, DoubleSide } from "three";
-import type { RoadEnvironmentDescriptor, TerrainDetailMaterialConfig } from "@jgengine/core/world/features";
+import { isAsphaltSurface, type RoadEnvironmentDescriptor, type TerrainDetailMaterialConfig } from "@jgengine/core/world/features";
 import {
   buildJunctionSurface,
   buildRoadRibbon,
   dashSegments,
   GROUND_DECAL_LAYERS,
+  roundPathCorners,
   trimPathAtJunctions,
   type JunctionApproach,
   type RoadJunctionInput,
   type RoadPoint,
   type RoadRibbon,
 } from "@jgengine/core/world/roads";
-import { offsetPath, sidewalkWidthOf, type RoadJunction } from "@jgengine/core/world/streets";
+import { findRoadJunctions, offsetPath, sidewalkWidthOf, type RoadJunction } from "@jgengine/core/world/streets";
 import type { TerrainField } from "@jgengine/core/world/terrain";
 
 import { useSurfaceScan, type SurfaceScanTextures } from "../render/surfaceScanTextures";
+import { RoadJunctions } from "./RoadJunctions";
 import {
+  isSoftRibbonSurface,
   resolvePathSurface,
+  ribbonEdgeMargin,
   RIBBON_FRAME_ATTRIBUTE,
   ribbonSurfaceFrame,
   useSurfaceRibbonMaterial,
@@ -296,12 +300,28 @@ export function RoadRibbons({
   field: TerrainField;
   paths: readonly (readonly RoadPoint[])[];
 }) {
+  const detailed = road.surface !== false;
+  const style = useMemo(
+    () =>
+      detailed
+        ? resolvePathSurface("road", road.width, {
+            surface: road.surface ?? "road",
+            ...(road.wear === undefined ? {} : { wear: road.wear }),
+            ...(road.edgeSoftness === undefined ? {} : { edgeSoftness: road.edgeSoftness }),
+          })
+        : null,
+    [detailed, road.surface, road.width, road.wear, road.edgeSoftness],
+  );
+  // Unpaved ground (dirt, gravel, sand) fades into the terrain instead of meeting it at a gutter.
+  const soft = style !== null && isSoftRibbonSurface(style.surface);
+  // A soft edge needs the ribbon wider than authored so the fade straddles the authored edge.
+  const margin = soft && road.sidewalk === false && style !== null ? ribbonEdgeMargin(style) : 0;
   const asphalt = useMemo(
     () =>
       mergeRibbons(
-        paths.map((path) => buildRoadRibbon(path, road.width, (x, z) => field.sampleHeight(x, z), { elevation: road.elevation })),
+        paths.map((path) => buildRoadRibbon(path, road.width + margin, (x, z) => field.sampleHeight(x, z), { elevation: road.elevation, maxSegmentLength: 2 })),
       ),
-    [paths, road.width, road.elevation, field],
+    [paths, road.width, margin, road.elevation, field],
   );
   const markingWidth = roadMarkingWidth(road.width);
   const dashes = useMemo(() => {
@@ -321,6 +341,7 @@ export function RoadRibbons({
     [road.color, road.sidewalk, sidewalkColor],
   );
   const curbs = useMemo(() => {
+    if (soft && road.sidewalk === false) return null;
     // The gutter: a narrow strip inside each asphalt edge, lifted just above the ribbon.
     const strip = Math.min(0.6, Math.max(0.35, road.width * 0.045));
     const edge = road.width / 2 - strip / 2;
@@ -331,7 +352,7 @@ export function RoadRibbons({
       }
     }
     return mergeRibbons(ribbons);
-  }, [paths, road.width, road.elevation, field]);
+  }, [paths, road.width, road.elevation, road.sidewalk, soft, field]);
   const sidewalks = useMemo(() => {
     const width = sidewalkWidthOf(road);
     if (width <= 0) return null;
@@ -354,16 +375,16 @@ export function RoadRibbons({
   );
 
   const quality = useTerrainQuality();
-  const detailed = road.surface !== false;
   const scanned = detailed && quality !== "low";
   const roadScan = ribbonScan(road.materials?.road, useSurfaceScan(road.materials?.road?.maps, scanned), "world");
   const sidewalkScan = ribbonScan(road.materials?.sidewalk, useSurfaceScan(road.materials?.sidewalk?.maps, scanned), "frame");
   const curbScan = ribbonScan(road.materials?.curb, useSurfaceScan(road.materials?.curb?.maps, scanned), "frame");
-  const style = detailed ? resolvePathSurface("road", road.width, { surface: road.surface ?? "road" }) : null;
   const asphaltMaterial = useSurfaceRibbonMaterial(
     style === null
       ? null
-      : { surface: style.surface, wear: style.wear, color: road.color, halfWidth: road.width / 2, quality, ...(roadScan === undefined ? {} : { scan: roadScan }) },
+      : soft
+        ? { ...style, color: road.color, halfWidth: road.width / 2, quality, ...(roadScan === undefined ? {} : { scan: roadScan }) }
+        : { surface: style.surface, wear: style.wear, color: road.color, halfWidth: road.width / 2, quality, ...(roadScan === undefined ? {} : { scan: roadScan }) },
   );
   const curbMaterial = useSurfaceRibbonMaterial(
     detailed
@@ -443,5 +464,88 @@ export function RoadRibbons({
         </mesh>
       ) : null}
     </group>
+  );
+}
+
+/** A road's centreline as drawn: a closed loop rejoined at a straight seam, sharp bends filleted. @internal */
+export function drawnRoadPath(road: Pick<RoadEnvironmentDescriptor, "path" | "width" | "closed" | "cornerRadius">): RoadPoint[] {
+  const points = road.path.map((point) => [point[0], point[1]] as RoadPoint);
+  let line = points;
+  if (road.closed === true && points.length >= 3) {
+    // Start mid-way along the first segment so every authored vertex, the first included, gets filleted.
+    const a = points[0]!;
+    const b = points[1]!;
+    const mid: RoadPoint = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+    line = [mid, ...points.slice(1), a, mid];
+  }
+  const radius = road.cornerRadius ?? Math.max(1.5, road.width * 0.9);
+  const rounded = radius > 0 ? roundPathCorners(line, radius, 6) : line;
+  // Neighbouring fillets on short segments meet at the same midpoint; a zero-length step has no
+  // normal, and offset kerbs and sidewalks would spike across the road there.
+  const out: RoadPoint[] = [rounded[0]!];
+  for (let i = 1; i < rounded.length; i += 1) {
+    const prev = out[out.length - 1]!;
+    const next = rounded[i]!;
+    if (Math.hypot(next[0] - prev[0], next[1] - prev[1]) > 1e-3) out.push(next);
+  }
+  return out;
+}
+
+/** Roads that weld into each other at crossings: the paved network, or one unpaved surface. */
+function surfaceGroup(road: RoadEnvironmentDescriptor): string {
+  if (road.surface === false) return "flat";
+  return isAsphaltSurface(road.surface) ? "paved" : road.surface ?? "paved";
+}
+
+function RoadGroup({ roads, field, group }: { roads: readonly RoadEnvironmentDescriptor[]; field: TerrainField; group: string }) {
+  const junctions = useMemo(() => findRoadJunctions(roads), [roads]);
+  const network = useMemo(() => buildAuthoredRoadNetwork(roads, junctions, (x, z) => field.sampleHeight(x, z)), [roads, junctions, field]);
+  const paved = group === "paved";
+  return (
+    <>
+      {roads.map((entry, index) => (
+        <RoadRibbons key={`road-${index}`} road={entry} field={field} paths={network.roadPaths[index] ?? []} />
+      ))}
+      <RoadJunctions
+        surfaces={network.junctionSurfaces}
+        junctions={paved ? junctions : []}
+        field={field}
+        surfaceDetail={group !== "flat"}
+        surface={paved || group === "flat" ? "road" : group}
+        scan={roads.find((road) => road.materials?.road !== undefined)?.materials?.road}
+      />
+    </>
+  );
+}
+
+/**
+ * The engine's one road renderer: `road()` descriptors from an environment and authored editor
+ * paths (streets, race tracks, trails, routes) all draw here. Each road is rounded at sharp bends,
+ * closed loops rejoin cleanly, crossings of the same surface weld into one junction (paved
+ * crossings get stop lines and crosswalks), and each road layers asphalt (scanned by default),
+ * gutters, lane paint, kerbs and sidewalks as its descriptor asks; unpaved ground fades into the
+ * terrain with soft edges.
+ */
+export function Roads({ roads, field }: { roads: readonly RoadEnvironmentDescriptor[]; field: TerrainField }) {
+  const groups = useMemo(() => {
+    const byGroup = new Map<string, RoadEnvironmentDescriptor[]>();
+    for (const entry of roads) {
+      if (entry.path.length < 2) continue;
+      const drawn = { ...entry, path: drawnRoadPath(entry) };
+      const key = surfaceGroup(entry);
+      const bucket = byGroup.get(key);
+      if (bucket === undefined) byGroup.set(key, [drawn]);
+      else bucket.push(drawn);
+    }
+    return [...byGroup.entries()];
+  }, [roads]);
+  return (
+    <>
+      {groups.map(([group, entries]) => (
+        <Fragment key={group}>
+          <RoadGroup roads={entries} field={field} group={group} />
+        </Fragment>
+      ))}
+    </>
   );
 }

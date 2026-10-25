@@ -1293,7 +1293,6 @@
       },
       "label": "Meadow",
       "meta": {
-        "density": 2.2,
         "bladeHeight": 0.35,
         "colorBase": "#4c6a2e",
         "colorTip": "#a3b065",
@@ -1318,7 +1317,6 @@
       },
       "label": "Meadow",
       "meta": {
-        "density": 2.2,
         "bladeHeight": 0.35,
         "colorBase": "#4c6a2e",
         "colorTip": "#a3b065",
@@ -1343,7 +1341,6 @@
       },
       "label": "Meadow",
       "meta": {
-        "density": 2.2,
         "bladeHeight": 0.35,
         "colorBase": "#4c6a2e",
         "colorTip": "#a3b065",
@@ -1391,7 +1388,6 @@
       },
       "label": "Meadow",
       "meta": {
-        "density": 2.2,
         "bladeHeight": 0.35,
         "colorBase": "#4c6a2e",
         "colorTip": "#a3b065",

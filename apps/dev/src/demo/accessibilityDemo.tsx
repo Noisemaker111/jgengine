@@ -29,7 +29,7 @@ const SWATCHES: readonly { label: string; color: string }[] = [
 
 const terrainFeature = environment({
   terrain: terrain({ bounds: { w: 70, d: 70 }, height: 2, frequency: 0.03, seed: "a11y" }),
-  vegetation: grass({ area: { w: 60, d: 60 }, density: 3, colors: ["#2f4f1e", "#8fbf4a"], seed: "a11y" }),
+  vegetation: grass({ area: { w: 60, d: 60 }, colorBase: "#2f4f1e", colorTip: "#8fbf4a", seed: "a11y" }),
 });
 
 const entityCatalog: Record<string, GameContextEntityEntry> = {

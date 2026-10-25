@@ -10,7 +10,6 @@ import {
   type EditorSession,
   type EditorVolume,
 } from "@jgengine/core/editor/index";
-import { readVegetationSettings, vegetationFootprint } from "@jgengine/core/world/vegetation";
 import {
   getSceneKind,
   isSceneKind,
@@ -22,7 +21,6 @@ import type { TriggerSourceKind } from "@jgengine/core/scene/authoredTriggers";
 import type { AuthoredAnimationDiagnostic } from "@jgengine/core/world/authoredAnimation";
 import { markerCatalogId } from "@jgengine/core/world/authoredObjects";
 import { useGameContext } from "@jgengine/react/provider";
-import { useDebouncedCommit } from "@jgengine/react/useDebouncedCommit";
 
 import {
   canAuthorTrigger,
@@ -58,103 +56,12 @@ import type { EditorHostApi } from "./session";
 import type { EditorUiStore } from "./uiStore";
 import { TERRAIN_MATERIALS } from "./uiStore";
 import { shallowArrayEqual, useStoreSelector } from "./useStoreSelector";
-import { INPUT } from "./chromeStyles";
-import { NumberField } from "./chromeFields";
 import { AxisNumberField, FieldRow, SectionAction } from "./shell/fields";
 import { Icon, kindIcon } from "./shell/icons";
 import { CoverageSection } from "./shell/scatterCoverage";
 import type { InspectorTab } from "./shell/layoutStore";
 import { FOCUS_RING, INPUT_CLS, NUMERIC } from "./shell/theme";
 import { CollapsibleSection, EmptyState, IconButton, PanelTabs } from "./shell/ui";
-
-/** Live-mirrored, debounced density slider — grass regen only fires on pause/release, not per step (#1372). */
-function VegetationDensitySlider({
-  density,
-  sliderMax,
-  onMeta,
-}: {
-  density: number;
-  sliderMax: number;
-  onMeta: (patch: Record<string, unknown>, coalesce: string) => void;
-}) {
-  const { value: local, onInput, flush } = useDebouncedCommit(density, (next) => onMeta({ density: next }, "veg:density"));
-  return (
-    <label className="block space-y-1">
-      <span className="flex items-center justify-between">
-        <span className="text-[9px] font-semibold uppercase tracking-wider text-neutral-500">density /m²</span>
-        <span className="text-cyan-200">{local.toFixed(2)}</span>
-      </span>
-      <input
-        type="range"
-        min={0}
-        max={sliderMax}
-        step={sliderMax / 200}
-        className="w-full accent-emerald-400"
-        value={Math.min(local, sliderMax)}
-        onChange={(event) => onInput(Number(event.target.value))}
-        onPointerUp={flush}
-        onKeyUp={flush}
-        onBlur={flush}
-      />
-    </label>
-  );
-}
-
-/** Live-mirrored, debounced item/seed text — avoids a scene patch (and grass regen) per keystroke (#1372). */
-function VegetationTextField({
-  label,
-  field,
-  value,
-  placeholder,
-  onMeta,
-}: {
-  label: string;
-  field: "item" | "seed";
-  value: string;
-  placeholder: string;
-  onMeta: (patch: Record<string, unknown>, coalesce: string) => void;
-}) {
-  const { value: local, onInput, flush } = useDebouncedCommit(value, (next) => onMeta({ [field]: next }, `veg:${field}`));
-  return (
-    <label className="flex items-center justify-between gap-2">
-      <span className="text-[9px] font-semibold uppercase tracking-wider text-neutral-500">{label}</span>
-      <input
-        className={`w-32 ${INPUT}`}
-        value={local}
-        placeholder={placeholder}
-        onChange={(event) => onInput(event.target.value)}
-        onBlur={flush}
-      />
-    </label>
-  );
-}
-
-function VegetationFields({
-  volume,
-  onMeta,
-}: {
-  volume: EditorVolume;
-  onMeta: (patch: Record<string, unknown>, coalesce: string) => void;
-}) {
-  const settings = readVegetationSettings(volume);
-  if (settings === null) return null;
-  const footprint = vegetationFootprint(volume);
-  const areaM2 = (footprint.maxX - footprint.minX) * (footprint.maxZ - footprint.minZ);
-  const sliderMax = settings.item === "grass" ? 12 : 1;
-  const estimated = Math.floor(areaM2 * settings.density);
-  return (
-    <div className="space-y-2">
-      <VegetationTextField label="item" field="item" value={settings.item} placeholder="grass" onMeta={onMeta} />
-      <VegetationDensitySlider density={settings.density} sliderMax={sliderMax} onMeta={onMeta} />
-      <NumberField label="density" step={0.01} value={settings.density} onCommit={(value) => onMeta({ density: Math.max(0, value) }, "veg:density")} />
-      <NumberField label="min scale" step={0.05} value={settings.minScale} onCommit={(value) => onMeta({ minScale: value }, "veg:minScale")} />
-      <NumberField label="max scale" step={0.05} value={settings.maxScale} onCommit={(value) => onMeta({ maxScale: value }, "veg:maxScale")} />
-      <NumberField label="spacing" step={0.25} value={settings.minDistance} onCommit={(value) => onMeta({ minDistance: Math.max(0, value) }, "veg:minDistance")} />
-      <VegetationTextField label="seed" field="seed" value={settings.seed} placeholder="reroll…" onMeta={onMeta} />
-      <div className="text-[10px] text-neutral-500">≈ {estimated.toLocaleString()} {settings.item === "grass" ? "blades" : "placements"} over {Math.round(areaM2).toLocaleString()} m²</div>
-    </div>
-  );
-}
 
 /** Builds the resolver-facing view of a document object for a registered scene kind's inspector. */
 function markerObject(marker: { id: string; kind: string; position: { x: number; y: number; z: number }; rotationY?: number; meta?: Record<string, unknown> }): SceneKindObject {
@@ -1052,7 +959,6 @@ export function InspectorPanel({
     };
     const hasTrigger = hasAuthoredTrigger(volume.meta);
     const hasMaterial = hasMaterialAssignment(volume.meta);
-    const hasVegetation = readVegetationSettings(volume) !== null;
     const hasKindParams = isSceneKind(volume.kind);
     const componentCards = (
       <>
@@ -1100,15 +1006,7 @@ export function InspectorPanel({
             </div>
           </Section>
         ) : null}
-        {hasVegetation ? (
-          <Section id="vegetation" title="Vegetation" icon="terrain" sections={sections}>
-            <div className="mb-1.5 text-[10px] text-neutral-500">
-              Owned by volume kind <span className={NUMERIC}>vegetation</span> — change kind in Inspector to remove.
-            </div>
-            <VegetationFields volume={volume} onMeta={onMeta} />
-          </Section>
-        ) : null}
-        {!hasKindParams && !hasTrigger && !hasMaterial && !hasVegetation && !canAuthorTrigger("volume") ? (
+        {!hasKindParams && !hasTrigger && !hasMaterial && !canAuthorTrigger("volume") ? (
           <EmptyState
             icon="settings"
             title="No components"

@@ -1116,7 +1116,6 @@
       },
       "label": "Meadow",
       "meta": {
-        "density": 2.2,
         "bladeHeight": 0.3,
         "colorBase": "#4a4a36",
         "colorTip": "#7a7350",
@@ -1252,10 +1251,6 @@
           {
             "item": "bush",
             "weight": 1.2
-          },
-          {
-            "item": "grass",
-            "weight": 1.7999999999999998
           }
         ],
         "density": 0.16,
@@ -1346,10 +1341,6 @@
           {
             "item": "bush",
             "weight": 1.2
-          },
-          {
-            "item": "grass",
-            "weight": 1.7999999999999998
           }
         ],
         "density": 0.16,
@@ -1440,10 +1431,6 @@
           {
             "item": "bush",
             "weight": 1.2
-          },
-          {
-            "item": "grass",
-            "weight": 1.7999999999999998
           }
         ],
         "density": 0.16,
@@ -1534,10 +1521,6 @@
           {
             "item": "bush",
             "weight": 1.2
-          },
-          {
-            "item": "grass",
-            "weight": 1.7999999999999998
           }
         ],
         "density": 0.16,
@@ -1628,10 +1611,6 @@
           {
             "item": "bush",
             "weight": 1.2
-          },
-          {
-            "item": "grass",
-            "weight": 1.7999999999999998
           }
         ],
         "density": 0.18,
@@ -1722,10 +1701,6 @@
           {
             "item": "bush",
             "weight": 1.2
-          },
-          {
-            "item": "grass",
-            "weight": 1.7999999999999998
           }
         ],
         "density": 0.18,
@@ -1816,10 +1791,6 @@
           {
             "item": "bush",
             "weight": 1.2
-          },
-          {
-            "item": "grass",
-            "weight": 1.7999999999999998
           }
         ],
         "density": 0.18,
@@ -1910,10 +1881,6 @@
           {
             "item": "bush",
             "weight": 1.2
-          },
-          {
-            "item": "grass",
-            "weight": 1.7999999999999998
           }
         ],
         "density": 0.18,
@@ -2004,10 +1971,6 @@
           {
             "item": "bush",
             "weight": 1.2
-          },
-          {
-            "item": "grass",
-            "weight": 1.7999999999999998
           }
         ],
         "density": 0.18,
@@ -2098,10 +2061,6 @@
           {
             "item": "bush",
             "weight": 1.2
-          },
-          {
-            "item": "grass",
-            "weight": 1.7999999999999998
           }
         ],
         "density": 0.18,
@@ -2192,10 +2151,6 @@
           {
             "item": "bush",
             "weight": 1.2
-          },
-          {
-            "item": "grass",
-            "weight": 1.7999999999999998
           }
         ],
         "density": 0.14117928814142944,
@@ -2286,10 +2241,6 @@
           {
             "item": "bush",
             "weight": 1.2
-          },
-          {
-            "item": "grass",
-            "weight": 1.7999999999999998
           }
         ],
         "density": 0.1461210412159562,
@@ -2380,10 +2331,6 @@
           {
             "item": "bush",
             "weight": 1.2
-          },
-          {
-            "item": "grass",
-            "weight": 1.7999999999999998
           }
         ],
         "density": 0.10275849875062705,
@@ -2474,10 +2421,6 @@
           {
             "item": "bush",
             "weight": 1.2
-          },
-          {
-            "item": "grass",
-            "weight": 1.7999999999999998
           }
         ],
         "density": 0.13039311338216067,
@@ -2568,10 +2511,6 @@
           {
             "item": "bush",
             "weight": 1.2
-          },
-          {
-            "item": "grass",
-            "weight": 1.7999999999999998
           }
         ],
         "density": 0.12830680649727583,
@@ -2662,10 +2601,6 @@
           {
             "item": "bush",
             "weight": 1.2
-          },
-          {
-            "item": "grass",
-            "weight": 1.7999999999999998
           }
         ],
         "density": 0.13304763244464995,
@@ -2756,10 +2691,6 @@
           {
             "item": "bush",
             "weight": 1.2
-          },
-          {
-            "item": "grass",
-            "weight": 1.7999999999999998
           }
         ],
         "density": 0.148275923775509,
@@ -2850,10 +2781,6 @@
           {
             "item": "bush",
             "weight": 1.2
-          },
-          {
-            "item": "grass",
-            "weight": 1.7999999999999998
           }
         ],
         "density": 0.13346002993173897,
@@ -2944,10 +2871,6 @@
           {
             "item": "bush",
             "weight": 1.2
-          },
-          {
-            "item": "grass",
-            "weight": 1.7999999999999998
           }
         ],
         "density": 0.1578481184411794,
@@ -3038,10 +2961,6 @@
           {
             "item": "bush",
             "weight": 1.2
-          },
-          {
-            "item": "grass",
-            "weight": 1.7999999999999998
           }
         ],
         "density": 0.134747989596799,
@@ -3132,10 +3051,6 @@
           {
             "item": "bush",
             "weight": 1.2
-          },
-          {
-            "item": "grass",
-            "weight": 1.7999999999999998
           }
         ],
         "density": 0.15635416244156658,
@@ -3226,10 +3141,6 @@
           {
             "item": "bush",
             "weight": 1.2
-          },
-          {
-            "item": "grass",
-            "weight": 1.7999999999999998
           }
         ],
         "density": 0.12249787476845087,
@@ -3834,10 +3745,6 @@
           {
             "item": "bush",
             "weight": 2
-          },
-          {
-            "item": "grass",
-            "weight": 3
           }
         ],
         "density": 0.3,
@@ -3905,10 +3812,6 @@
           {
             "item": "bush",
             "weight": 2
-          },
-          {
-            "item": "grass",
-            "weight": 3
           }
         ],
         "density": 0.3,
@@ -3976,10 +3879,6 @@
           {
             "item": "bush",
             "weight": 2
-          },
-          {
-            "item": "grass",
-            "weight": 3
           }
         ],
         "density": 0.3,
@@ -4047,10 +3946,6 @@
           {
             "item": "bush",
             "weight": 2
-          },
-          {
-            "item": "grass",
-            "weight": 3
           }
         ],
         "density": 0.3,
@@ -4118,10 +4013,6 @@
           {
             "item": "bush",
             "weight": 2
-          },
-          {
-            "item": "grass",
-            "weight": 3
           }
         ],
         "density": 0.3,
@@ -4189,10 +4080,6 @@
           {
             "item": "bush",
             "weight": 2
-          },
-          {
-            "item": "grass",
-            "weight": 3
           }
         ],
         "density": 0.3,
@@ -4260,10 +4147,6 @@
           {
             "item": "bush",
             "weight": 2
-          },
-          {
-            "item": "grass",
-            "weight": 3
           }
         ],
         "density": 0.3,
@@ -4331,10 +4214,6 @@
           {
             "item": "bush",
             "weight": 2
-          },
-          {
-            "item": "grass",
-            "weight": 3
           }
         ],
         "density": 0.3,
@@ -4402,10 +4281,6 @@
           {
             "item": "bush",
             "weight": 2
-          },
-          {
-            "item": "grass",
-            "weight": 3
           }
         ],
         "density": 0.3,
@@ -4473,10 +4348,6 @@
           {
             "item": "bush",
             "weight": 2
-          },
-          {
-            "item": "grass",
-            "weight": 3
           }
         ],
         "density": 0.3,
@@ -4544,10 +4415,6 @@
           {
             "item": "bush",
             "weight": 2
-          },
-          {
-            "item": "grass",
-            "weight": 3
           }
         ],
         "density": 0.3,
@@ -4615,10 +4482,6 @@
           {
             "item": "bush",
             "weight": 2
-          },
-          {
-            "item": "grass",
-            "weight": 3
           }
         ],
         "density": 0.3,
@@ -4686,10 +4549,6 @@
           {
             "item": "bush",
             "weight": 2
-          },
-          {
-            "item": "grass",
-            "weight": 3
           }
         ],
         "density": 0.3,
@@ -4757,10 +4616,6 @@
           {
             "item": "bush",
             "weight": 2
-          },
-          {
-            "item": "grass",
-            "weight": 3
           }
         ],
         "density": 0.3,
@@ -4828,10 +4683,6 @@
           {
             "item": "bush",
             "weight": 2
-          },
-          {
-            "item": "grass",
-            "weight": 3
           }
         ],
         "density": 0.3,
@@ -4899,10 +4750,6 @@
           {
             "item": "bush",
             "weight": 2
-          },
-          {
-            "item": "grass",
-            "weight": 3
           }
         ],
         "density": 0.3,
@@ -4970,10 +4817,6 @@
           {
             "item": "bush",
             "weight": 2
-          },
-          {
-            "item": "grass",
-            "weight": 3
           }
         ],
         "density": 0.3,
@@ -5041,10 +4884,6 @@
           {
             "item": "bush",
             "weight": 2
-          },
-          {
-            "item": "grass",
-            "weight": 3
           }
         ],
         "density": 0.3,
@@ -5112,10 +4951,6 @@
           {
             "item": "bush",
             "weight": 2
-          },
-          {
-            "item": "grass",
-            "weight": 3
           }
         ],
         "density": 0.3,
@@ -5183,10 +5018,6 @@
           {
             "item": "bush",
             "weight": 2
-          },
-          {
-            "item": "grass",
-            "weight": 3
           }
         ],
         "density": 0.3,
@@ -5254,10 +5085,6 @@
           {
             "item": "bush",
             "weight": 2
-          },
-          {
-            "item": "grass",
-            "weight": 3
           }
         ],
         "density": 0.3,
@@ -5325,10 +5152,6 @@
           {
             "item": "bush",
             "weight": 2
-          },
-          {
-            "item": "grass",
-            "weight": 3
           }
         ],
         "density": 0.3,

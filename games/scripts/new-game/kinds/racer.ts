@@ -14,7 +14,7 @@ const CITY = "/models/kaykit-city-builder";
 
 const DRESSING: Dressing = {
   forest: [{ item: "tree", weight: 3 }, { item: "tree2", weight: 2 }, { item: "pine", weight: 2 }],
-  brush: [{ item: "bush", weight: 3 }, { item: "grass", weight: 2 }],
+  brush: [{ item: "bush", weight: 3 }],
   rocks: [{ item: "rock", weight: 2 }],
   grass: { base: "#2f3d2a", tip: "#5d6a44", height: 0.28 },
   trail: { surface: "gravel", color: "#55545a", width: 4 },
@@ -41,7 +41,6 @@ function read(text: string, _said: readonly string[], options: { name?: string }
         tree2: { model: `${NATURE}/CommonTree_4.glb`, height: 12 },
         pine: { model: `${NATURE}/Pine_2.glb`, height: 11 },
         bush: { model: `${NATURE}/Bush_Common.glb`, height: 1.2 },
-        grass: { model: `${NATURE}/Grass_Common_Tall.glb`, height: 0.6 },
         rock: { model: `${NATURE}/Rock_Medium_1.glb`, height: 1.6 },
       },
       // The first race starts at sunset; a day is 24 minutes, so the career runs on into the night.

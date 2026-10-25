@@ -55,6 +55,18 @@ export function missingPulls(text: string, publicDir: string, catalogs: AssetCat
   return jobs;
 }
 
+/** The scan behind `DEFAULT_ROAD_SCAN` (`@jgengine/core/world/features`), the library's `asphalt/dry`. */
+export const DEFAULT_ROAD_SCAN_SOURCE = "ambientcg-asphalt003";
+const PAVED_PATH = /"kind":\s*"(road|street|track|avenue|highway)"/;
+
+/**
+ * Whether a game draws a paved road — a `road(` call in its source or a paved path kind in its
+ * scene document — and so wears the engine's default scanned asphalt, which it must have on disk.
+ */
+export function drawsPavedRoad(sourceText: string, sceneText: string): boolean {
+  return /\broad\(/.test(sourceText) || PAVED_PATH.test(sceneText);
+}
+
 async function loadCatalogs(): Promise<AssetCatalogs> {
   const module = (await import(join(assetsDir, "src/index.ts"))) as {
     sources: AssetCatalogs["sources"];
@@ -80,7 +92,12 @@ function runPull(gameDir: string, target: string): Promise<boolean> {
  * skipped, so a provisioned game costs one source scan. Returns the targets that failed.
  */
 export async function provisionGame(gameDir: string, log: (line: string) => void = console.log): Promise<string[]> {
-  const jobs = missingPulls(sourceText(join(gameDir, "src")), join(gameDir, "public"), await loadCatalogs());
+  const text = sourceText(join(gameDir, "src"));
+  const scene = join(gameDir, "src", "editor.scene.json");
+  const sceneText = existsSync(scene) ? readFileSync(scene, "utf8") : "";
+  // Paved roads wear the default scanned asphalt even though no source line names its pack.
+  const referenced = drawsPavedRoad(text, sceneText) ? `${text}\n"${DEFAULT_ROAD_SCAN_SOURCE}"` : text;
+  const jobs = missingPulls(referenced, join(gameDir, "public"), await loadCatalogs());
   const failed: string[] = [];
   for (const job of jobs) {
     log(`${basename(gameDir)}: pulling ${job.target}`);

@@ -393,7 +393,6 @@
       },
       "label": "Meadow",
       "meta": {
-        "density": 2.2,
         "bladeHeight": 0.14,
         "colorBase": "#7a3e2a",
         "colorTip": "#a8603e",

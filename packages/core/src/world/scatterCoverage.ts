@@ -22,11 +22,17 @@
 export type ScatterCoverageKind = "grass_field" | "scatter" | "city";
 
 /**
- * Max blade/placement instances a single `grass_field` or `scatter` patch places. Mirrors the grass
- * renderer's instance-buffer ceiling; the scatter resolver truncates to it too, so a patch never
- * renders more than this many placements regardless of density × area.
+ * Max placements a single `scatter` patch places; the scatter resolver truncates to it, so a patch
+ * never renders more than this many placements regardless of density × area.
  */
 export const SCATTER_INSTANCE_BUDGET = 250_000;
+
+/**
+ * Max blades one `grass_field` patch places. Grass draws by distance-LOD chunks (only near chunks
+ * draw every blade), so the ceiling sits far above the scatter budget: a 400 m meadow at the
+ * density floor still fits without thinning.
+ */
+export const GRASS_BLADE_BUDGET = 3_000_000;
 
 /** Max buildings a single `city` district generates — the block/parcel pipeline's bounded lot cap. */
 export const CITY_BUILDING_BUDGET = 2_600;
@@ -44,7 +50,7 @@ export interface ScatterCoverageSpec {
 
 /** The coverage spec per scatterable kind — the single source for its unit + budget. */
 export const SCATTER_COVERAGE_SPECS: Record<ScatterCoverageKind, ScatterCoverageSpec> = {
-  grass_field: { kind: "grass_field", unit: "blades", perArea: true, budget: SCATTER_INSTANCE_BUDGET },
+  grass_field: { kind: "grass_field", unit: "blades", perArea: true, budget: GRASS_BLADE_BUDGET },
   scatter: { kind: "scatter", unit: "placements", perArea: true, budget: SCATTER_INSTANCE_BUDGET },
   city: { kind: "city", unit: "buildings", perArea: false, budget: CITY_BUILDING_BUDGET },
 };

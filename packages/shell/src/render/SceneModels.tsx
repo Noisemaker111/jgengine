@@ -14,6 +14,7 @@ import { useOptionalGameContext } from "@jgengine/react/provider";
 import { detectKtx2Support, sharedGltfLoader } from "./modelLoad";
 import { modelAssetRequests } from "./modelAssets";
 import { measureLocalBounds, reportMeasuredBounds } from "./measureBounds";
+import { recordRenderBounds } from "../visibility/renderBounds";
 import { measureLocalCollisionTriangles, reportMeasuredCollisionMesh } from "./measureCollisionMesh";
 import { useModelInstance } from "./useModelInstance";
 import { applyMaterialAssignments, useModelMaterialTextures, MaterialTextureLoader, validateMaterialAssignmentTargets } from "./materialAsset";
@@ -330,14 +331,17 @@ export function EntityModel({
   const [positionX, positionY, positionZ] = position;
   // Measure before the instance hook's passive animation effects can move imported root nodes.
   useLayoutEffect(() => {
-    if (ctx === null || measureTarget === undefined || measureKey === undefined || dimsMaxY !== undefined) return;
+    if (ctx === null || measureTarget === undefined || measureKey === undefined) return;
     const raw = measureLocalBounds(scene);
     if (raw === null) return;
-    reportMeasuredBounds(ctx, measureTarget, measureKey, {
-      min: [raw.min[0] * scale + positionX, raw.min[1] * scale + positionY, raw.min[2] * scale + positionZ],
-      max: [raw.max[0] * scale + positionX, raw.max[1] * scale + positionY, raw.max[2] * scale + positionZ],
+    const mounted = {
+      min: [raw.min[0] * scale + positionX, raw.min[1] * scale + positionY, raw.min[2] * scale + positionZ] as [number, number, number],
+      max: [raw.max[0] * scale + positionX, raw.max[1] * scale + positionY, raw.max[2] * scale + positionZ] as [number, number, number],
       meshCount: raw.meshCount,
-    });
+    };
+    // Culling always wraps what mounted; colliders take it only when the index has no dims.
+    recordRenderBounds(ctx, measureTarget, measureKey, mounted);
+    if (dimsMaxY === undefined) reportMeasuredBounds(ctx, measureTarget, measureKey, mounted);
   }, [ctx, scene, scale, positionX, positionY, positionZ, measureTarget, measureKey, dimsMaxY]);
 
   // Runs with or without index dims: the loaded geometry upgrades whatever box the kind resolved

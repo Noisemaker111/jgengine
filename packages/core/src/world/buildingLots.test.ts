@@ -192,10 +192,35 @@ describe("resolveStructureBuildings — along mode", () => {
     expect(built.some((b) => Math.abs((b.rotationY ?? 0)) > 0.01)).toBe(true);
   });
 
-  test("grid mode is unchanged and carries no rotation", () => {
-    const grid = resolveStructureBuildings(building({ count: 4, footprint: { w: 8, d: 8 } }));
-    expect(grid.length).toBe(4);
-    for (const b of grid) expect(b.rotationY).toBeUndefined();
+  test("without roads, buildings face each other across a lane through position", () => {
+    const placed = resolveStructureBuildings(building({ count: 4, position: [50, 20], footprint: { w: 8, d: 8 }, spacing: 6 }));
+    expect(placed.length).toBe(4);
+    for (const b of placed) {
+      expect(typeof b.rotationY).toBe("number");
+      // Front face sits on the lane edge (3 m off its centreline) on either side.
+      expect(Math.abs(Math.abs(b.center[1] - 20) - (3 + 4))).toBeLessThan(1e-6);
+    }
+  });
+
+  test("a settlement a street runs through lines that street and keeps its full count", () => {
+    const street = { path: line([-80, 10], [80, 10]), width: 8, sidewalk: 2 };
+    const placed = resolveStructureBuildings(building({ count: 8, position: [0, 10], footprint: { w: 7, d: 7 }, spacing: 5 }), [street]);
+    expect(placed.length).toBe(8);
+    for (const b of placed) {
+      // Lots square up to the street they front: half a depth clears the kerb, the sidewalk and the setback.
+      expect(Math.abs(b.center[1] - 10) - 3.5).toBeGreaterThanOrEqual(4 + 2 + 1 - 0.05);
+      expect(Math.abs(b.center[0])).toBeLessThan(80);
+    }
+  });
+
+  test("no building stands on another street's carriageway or sidewalk", () => {
+    const street = { path: line([40, -60], [40, 60]), width: 10, sidewalk: { width: 3 } };
+    const placed = resolveStructureBuildings(building({ count: 12, position: [40, 0], footprint: { w: 8, d: 8 }, spacing: 6 }), [street]);
+    expect(placed.length).toBeGreaterThan(0);
+    for (const b of placed) {
+      const nearest = Math.abs(b.center[0] - 40) - 4;
+      expect(nearest).toBeGreaterThanOrEqual(5 + 3 - 0.05);
+    }
   });
 
   test("same seed ⇒ identical resolved layout in along mode", () => {
@@ -207,6 +232,18 @@ describe("resolveStructureBuildings — along mode", () => {
     const b = make();
     expect(a.length).toBe(b.length);
     expect(a.map((x) => [x.center, x.rotationY])).toEqual(b.map((x) => [x.center, x.rotationY]));
+  });
+});
+
+describe("deriveBuildingLots — sidewalks", () => {
+  test("setback is measured from the back of the sidewalk, and no lot stands on it", () => {
+    const road = { path: line([-60, 0], [60, 0]), width: 10 };
+    const bare = deriveBuildingLots({ roads: [road], footprint: { w: 10, d: 8 }, setback: 1 });
+    const walked = deriveBuildingLots({ roads: [{ ...road, sidewalk: 4 }], footprint: { w: 10, d: 8 }, setback: 1 });
+    expect(bare[0]!.frontDistance).toBe(6);
+    expect(walked[0]!.frontDistance).toBe(10);
+    for (const lot of walked) expect(Math.abs(lot.center[1]) - 4).toBeGreaterThanOrEqual(10 - 1e-6);
+    expect(deriveBuildingLots({ roads: [{ ...road, sidewalk: { width: 4 } }], footprint: { w: 10, d: 8 }, setback: 1 })).toEqual(walked);
   });
 });
 

@@ -67,7 +67,7 @@ const sparks = createParticleSystem({
 
 const terrainFeature = environment({
   terrain: terrain({ bounds: { w: 60, d: 60 }, height: 1.5, frequency: 0.03, seed: "particles" }),
-  vegetation: grass({ area: { w: 52, d: 52 }, density: 3, colors: ["#2f4f1e", "#6f9f3a"], seed: "particles" }),
+  vegetation: grass({ area: { w: 52, d: 52 }, colorBase: "#2f4f1e", colorTip: "#6f9f3a", seed: "particles" }),
 });
 
 const entityCatalog: Record<string, GameContextEntityEntry> = {

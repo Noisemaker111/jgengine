@@ -23,6 +23,8 @@ export interface GrassDistanceFadeOptions {
 export interface GrassMaterialOptions {
   colorBase?: THREE.ColorRepresentation;
   colorTip?: THREE.ColorRepresentation;
+  /** Tip color of accent-species tufts. Defaults to `colorTip`. */
+  accentColor?: THREE.ColorRepresentation;
   /** Ground color the blade roots blend into (pass the terrain color under the patch so blades grow *out of* the ground instead of floating on it). Defaults to a darkened `colorBase`. */
   colorGround?: THREE.ColorRepresentation;
   colorVariation?: number;
@@ -43,6 +45,7 @@ export interface GrassShaderUniforms {
   uWindFlutter: THREE.IUniform<number>;
   uColorBase: THREE.IUniform<THREE.Color>;
   uColorTip: THREE.IUniform<THREE.Color>;
+  uAccentColor: THREE.IUniform<THREE.Color>;
   uColorGround: THREE.IUniform<THREE.Color>;
   uColorVariation: THREE.IUniform<number>;
   uDistanceFade: THREE.IUniform<THREE.Vector2>;
@@ -115,6 +118,7 @@ export function createGrassMaterial(options: GrassMaterialOptions = {}): GrassMa
     uWindFlutter: { value: wind.flutter },
     uColorBase: { value: colorBase },
     uColorTip: { value: new THREE.Color(options.colorTip ?? "#a6cc58") },
+    uAccentColor: { value: new THREE.Color(options.accentColor ?? options.colorTip ?? "#a6cc58") },
     uColorGround: { value: colorGround },
     uColorVariation: { value: options.colorVariation ?? 0.28 },
     uDistanceFade: { value: new THREE.Vector2(fade.start, fade.end) },
@@ -141,6 +145,7 @@ attribute float instanceWidth;
 attribute float instanceBend;
 attribute float instancePhase;
 attribute float instanceColorMix;
+attribute float instanceAccent;
 attribute vec2 bladeOffset;
 attribute vec4 bladeVary;
 attribute float bladeBendScale;
@@ -155,6 +160,7 @@ uniform float uNormalLift;
 varying float vGrassBladeT;
 varying float vGrassColorMix;
 varying float vGrassFade;
+varying float vGrassAccent;
 vec3 jgGrassPosition;
 vec3 jgGrassNormal;
 void jgComputeGrassBlade() {
@@ -206,6 +212,7 @@ ${
   vGrassBladeT = t;
   vGrassColorMix = instanceColorMix;
   vGrassFade = fadeT;
+  vGrassAccent = instanceAccent;
 }
 `,
       )
@@ -219,18 +226,20 @@ ${
 #include <common>
 uniform vec3 uColorBase;
 uniform vec3 uColorTip;
+uniform vec3 uAccentColor;
 uniform vec3 uColorGround;
 uniform float uColorVariation;
 varying float vGrassBladeT;
 varying float vGrassColorMix;
 varying float vGrassFade;
+varying float vGrassAccent;
 `,
       )
       .replace(
         "#include <color_fragment>",
         `
 #include <color_fragment>
-vec3 grassColor = mix(uColorBase, uColorTip, smoothstep(0.0, 1.0, vGrassBladeT));
+vec3 grassColor = mix(uColorBase, mix(uColorTip, uAccentColor, vGrassAccent), smoothstep(0.0, 1.0, vGrassBladeT));
 grassColor *= mix(1.0 - uColorVariation, 1.0 + uColorVariation, vGrassColorMix);
 // Roots take the ground color so blades grow out of the terrain instead of floating on it,
 // and distant blades converge back toward it so the fade band blends into the mottled ground.

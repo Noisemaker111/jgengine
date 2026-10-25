@@ -1,14 +1,4 @@
-export {
-  Daylight,
-  SkyDaylight,
-  SkyDome,
-  TimeOfDayDaylight,
-  type DaylightProps,
-  type SkyDaylightProps,
-  type SkyDomeProps,
-  type TimeOfDayDaylightProps,
-} from "./Daylight";
-export { DayNightSky, type DayNightSkyProps } from "./DayNightSky";
+export { Sky, SkyDome, type SkyDomeProps, type SkyProps } from "./Daylight";
 export { EnvironmentScene, type EnvironmentSceneProps } from "./EnvironmentScene";
 export { VolumetricClouds, type VolumetricCloudsProps } from "./VolumetricClouds";
 export {

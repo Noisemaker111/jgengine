@@ -285,8 +285,11 @@ describe("environment structures are solid to every system that reads ctx.world.
     expect(generatedHit).not.toBeNull();
     expect(generatedHit).toMatchObject({ targetKind: "wall", purpose: "physical", damageEligible: false, blocks: true });
     expect(generatedHit.distance).toBeCloseTo(placedHit.distance);
-    expect(generatedHit.point).toEqual(placedHit.point);
-    expect(generatedHit.normal).toEqual(placedHit.normal);
+    // A generated building is yawed to face its lane, so its face normal carries float noise.
+    for (let axis = 0; axis < 3; axis += 1) {
+      expect(generatedHit.point[axis]!).toBeCloseTo(placedHit.point[axis]!, 9);
+      expect(generatedHit.normal[axis]!).toBeCloseTo(placedHit.normal[axis]!, 9);
+    }
 
     for (const ctx of [generated, placed]) {
       const senses = createPerception({ sightRange: 30, sightConeDeg: 360, hearingRange: 0, memorySeconds: 1,

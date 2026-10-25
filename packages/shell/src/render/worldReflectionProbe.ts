@@ -2,6 +2,8 @@ import * as THREE from "three";
 
 import type { GraphicsQuality } from "@jgengine/core/settings/settingsModel";
 
+import { modelLoadIdleMs, modelLoadStarts } from "./modelLoad";
+
 /** How often and how sharply the world reflection probe captures the scene. @internal */
 export interface WorldProbeSettings {
   /** Cube face size in pixels. */
@@ -51,6 +53,33 @@ export function probeDue(
 
 const FACES = 6;
 
+/** Model streaming as the probe sees it: how long the loader has been idle, and how many bursts it has started. @internal */
+export interface ProbeStreaming {
+  idleMs(): number;
+  starts(): number;
+}
+
+const SHARED_STREAMING: ProbeStreaming = { idleMs: modelLoadIdleMs, starts: modelLoadStarts };
+
+/** The model loader must have been idle this long before a capture starts. @internal */
+export const PROBE_SETTLE_MS = 500;
+
+/**
+ * Frames the very first capture waits for streaming to settle before it captures anyway, so a world
+ * that never stops streaming still gets reflections. @internal
+ */
+export const PROBE_FIRST_WAIT_FRAMES = 600;
+
+/**
+ * Whether streaming is quiet enough to capture. A capture taken while models pop in bakes a
+ * half-loaded world into every reflection, and the next one swaps it out: that swap is the flicker.
+ * @internal
+ */
+export function probeStreamingQuiet(idleMs: number, captured: boolean, framesWaiting: number): boolean {
+  if (idleMs >= PROBE_SETTLE_MS) return true;
+  return !captured && framesWaiting >= PROBE_FIRST_WAIT_FRAMES;
+}
+
 /**
  * Whether a material should reflect the captured world: metals, glossy paint and glass. Rough
  * dielectrics keep the soft procedural sky light, so the world's diffuse colour does not shift.
@@ -79,11 +108,13 @@ export class WorldReflectionProbe {
   private lastPosition: THREE.Vector3 | null = null;
   private sinceCapture = 0;
   private framesSince = 0;
+  private captureStarts = 0;
   private readonly assigned = new Set<THREE.MeshStandardMaterial>();
 
   constructor(
     private readonly renderer: THREE.WebGLRenderer,
     private readonly settings: WorldProbeSettings,
+    private readonly streaming: ProbeStreaming = SHARED_STREAMING,
   ) {
     this.cubeTarget = new THREE.WebGLCubeRenderTarget(settings.size, { type: THREE.HalfFloatType, generateMipmaps: false });
     this.cubeCamera = new THREE.CubeCamera(0.3, 600, this.cubeTarget);
@@ -97,12 +128,16 @@ export class WorldReflectionProbe {
 
   /**
    * Advance the capture by at most one face. Returns true on the frame a new environment is ready.
+   * A capture starts only once model streaming has settled, and one that streaming interrupts is
+   * dropped, keeping the last finished environment on screen.
    */
   step(scene: THREE.Scene, eye: THREE.Vector3, delta: number): boolean {
     this.sinceCapture += delta;
     this.framesSince += 1;
     if (this.face < 0) {
       if (!probeDue(this.lastPosition, eye, this.sinceCapture, this.settings, this.framesSince)) return false;
+      if (!probeStreamingQuiet(this.streaming.idleMs(), this.lastPosition !== null, this.framesSince)) return false;
+      this.captureStarts = this.streaming.starts();
       this.cubeCamera.position.copy(eye);
       this.cubeCamera.updateMatrixWorld(true);
       this.face = 0;
@@ -111,6 +146,10 @@ export class WorldReflectionProbe {
       if (this.lastPosition === null) {
         for (; this.face < FACES; this.face += 1) this.renderFace(scene, this.face);
       }
+    }
+    if (this.streaming.starts() !== this.captureStarts) {
+      this.face = -1;
+      return false;
     }
     if (this.face < FACES) {
       this.renderFace(scene, this.face);
@@ -135,6 +174,7 @@ export class WorldReflectionProbe {
       for (const material of materials) {
         if (material === undefined || !reflectsWorld(material)) continue;
         const standard = material as THREE.MeshStandardMaterial;
+        // Only a material that had no map recompiles; later captures refill the same texture in place.
         standard.envMap = texture;
         standard.needsUpdate = true;
         this.assigned.add(standard);

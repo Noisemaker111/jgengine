@@ -1,6 +1,6 @@
 import * as THREE from "three";
 
-import { createSeededRandom, type TerrainSeed } from "./random";
+import { createSeededRandom, hashNoise2, type TerrainSeed } from "./random";
 import { resolveTerrainSize, type TerrainArea, type TerrainHeightSampler } from "./terrainMath";
 
 export type GrassRange = number | readonly [min: number, max: number];
@@ -38,6 +38,14 @@ export interface GrassBladeGeometryOptions {
   heightAt?: TerrainHeightSampler;
   /** Patch-local coverage, 0..1, composed with explicit rectangular exclusions. */
   coverageAt?: TerrainHeightSampler;
+  /** 0..1 share of tufts gathered around clump centres (thicker, taller turf); 0 spreads them evenly. */
+  clumping?: number;
+  /** Typical clump radius in metres. Default 2.5. */
+  clumpSize?: number;
+  /** 0..1 share of tufts grown as the accent species. Default 0. */
+  accentShare?: number;
+  /** Accent tuft height multiplier. Default 1.8. */
+  accentHeight?: number;
 }
 
 export interface ResolvedGrassBladeGeometryOptions {
@@ -54,6 +62,10 @@ export interface ResolvedGrassBladeGeometryOptions {
   exclude: readonly GrassExclusion[];
   heightAt: TerrainHeightSampler;
   coverageAt: TerrainHeightSampler;
+  clumping: number;
+  clumpSize: number;
+  accentShare: number;
+  accentHeight: number;
 }
 
 /** @internal */
@@ -67,7 +79,7 @@ export function resolveGrassBladeGeometryOptions(
   options: GrassBladeGeometryOptions = {},
 ): ResolvedGrassBladeGeometryOptions {
   return {
-    count: Math.max(0, Math.floor(options.count ?? 1500)),
+    count: Math.max(0, Math.floor(options.count ?? 0)),
     area: options.area ?? 40,
     seed: options.seed ?? 1,
     segments: Math.max(1, Math.floor(options.segments ?? 4)),
@@ -80,6 +92,10 @@ export function resolveGrassBladeGeometryOptions(
     exclude: options.exclude ?? [],
     heightAt: options.heightAt ?? (() => 0),
     coverageAt: options.coverageAt ?? (() => 1),
+    clumping: Math.max(0, Math.min(1, options.clumping ?? 0)),
+    clumpSize: Math.max(0.25, options.clumpSize ?? 2.5),
+    accentShare: Math.max(0, Math.min(1, options.accentShare ?? 0)),
+    accentHeight: Math.max(0.1, options.accentHeight ?? 1.8),
   };
 }
 
@@ -160,17 +176,41 @@ export function createGrassBladeGeometry(options: GrassBladeGeometryOptions = {}
   const bend = new Float32Array(tuftCount);
   const phase = new Float32Array(tuftCount);
   const colorMix = new Float32Array(tuftCount);
+  const accent = new Float32Array(tuftCount);
 
   const halfW = size.width / 2;
   const halfD = size.depth / 2;
+  // Clump centres on a jittered grid one clump wide: a clumped tuft lands near one of them, so
+  // turf gathers into thick tussocks while the rest of the tufts keep the gaps covered.
+  const clumpSize = resolved.clumpSize;
+  const clumpColumns = Math.max(1, Math.ceil(size.width / (clumpSize * 2)));
+  const clumpRows = Math.max(1, Math.ceil(size.depth / (clumpSize * 2)));
+  const clumpSeed = typeof resolved.seed === "number" ? resolved.seed + 104729 : `${resolved.seed}/clump`;
   for (let index = 0; index < tuftCount; index += 1) {
-    const x = (random() - 0.5) * size.width;
-    const z = (random() - 0.5) * size.depth;
+    let x = (random() - 0.5) * size.width;
+    let z = (random() - 0.5) * size.depth;
+    const clumpRoll = random();
+    const clumpAngle = random() * Math.PI * 2;
+    const clumpReach = Math.sqrt(random()) * clumpSize;
+    if (clumpRoll < resolved.clumping * 0.6) {
+      const column = Math.min(clumpColumns - 1, Math.floor((x / size.width + 0.5) * clumpColumns));
+      const row = Math.min(clumpRows - 1, Math.floor((z / size.depth + 0.5) * clumpRows));
+      const cx = ((column + 0.5 + (hashNoise2(column, row, clumpSeed) - 0.5) * 0.8) / clumpColumns - 0.5) * size.width;
+      const cz = ((row + 0.5 + (hashNoise2(row, column, clumpSeed) - 0.5) * 0.8) / clumpRows - 0.5) * size.depth;
+      x = Math.max(-halfW, Math.min(halfW, cx + Math.cos(clumpAngle) * clumpReach));
+      z = Math.max(-halfD, Math.min(halfD, cz + Math.sin(clumpAngle) * clumpReach));
+    }
+    const isAccent = random() < resolved.accentShare;
     offsets[index * 3] = x;
     offsets[index * 3 + 1] = resolved.heightAt(x, z);
     offsets[index * 3 + 2] = z;
     yaw[index] = random() * Math.PI * 2;
-    let heightScale = randomRange(random, resolved.height);
+    let heightScale = randomRange(random, resolved.height) * (isAccent ? resolved.accentHeight : 1);
+    if (resolved.clumping > 0) {
+      // Clumped ground grows taller tussocks; open ground between clumps stays a shorter turf.
+      const tussock = hashNoise2(Math.floor(x / clumpSize), Math.floor(z / clumpSize), clumpSeed);
+      heightScale *= 1 + resolved.clumping * (tussock - 0.5) * 0.6;
+    }
     // Two random draws happen on every path so the seeded stream stays aligned regardless of feather.
     const gate = random();
     const settle = random();
@@ -191,6 +231,7 @@ export function createGrassBladeGeometry(options: GrassBladeGeometryOptions = {}
     bend[index] = randomRange(random, resolved.bend);
     phase[index] = random() * Math.PI * 2;
     colorMix[index] = random();
+    accent[index] = isAccent ? 1 : 0;
   }
 
   geometry.setAttribute("instanceOffset", new THREE.InstancedBufferAttribute(offsets, 3));
@@ -200,8 +241,9 @@ export function createGrassBladeGeometry(options: GrassBladeGeometryOptions = {}
   geometry.setAttribute("instanceBend", new THREE.InstancedBufferAttribute(bend, 1));
   geometry.setAttribute("instancePhase", new THREE.InstancedBufferAttribute(phase, 1));
   geometry.setAttribute("instanceColorMix", new THREE.InstancedBufferAttribute(colorMix, 1));
+  geometry.setAttribute("instanceAccent", new THREE.InstancedBufferAttribute(accent, 1));
   geometry.instanceCount = tuftCount;
-  geometry.boundingSphere = new THREE.Sphere(new THREE.Vector3(0, 0, 0), Math.max(size.width, size.depth) * 0.75 + resolved.height[1]);
+  geometry.boundingSphere = new THREE.Sphere(new THREE.Vector3(0, 0, 0), Math.max(size.width, size.depth) * 0.75 + resolved.height[1] * Math.max(1, resolved.accentHeight) * 1.3);
   return geometry;
 }
 

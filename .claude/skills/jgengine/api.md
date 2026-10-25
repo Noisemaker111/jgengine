@@ -44,7 +44,7 @@
 - `contextVerb` (function): function contextVerb(label: string, command: string, args?: Record<string, unknown>): ContextVerb — Builds a {@link ContextVerb} for a right-click menu entry.
 - `environment` (function): function environment(config: EnvironmentWorldConfig = {}): EnvironmentWorldFeature — Composes an `environment()` feature from terrain, sky, weather, vegetation, water, structures, roads, and pads.
 - `flat` (function): function flat(): WorldFeature — Declares an empty flat world — the minimal `WorldFeature` for games with no terrain of their own.
-- `grass` (function): function grass(config: GrassEnvironmentConfig = {}): GrassEnvironmentDescriptor — Declares a grass vegetation patch for `environment()` — area, blade sizing, density, and colors.
+- `grass` (function): function grass(config: GrassEnvironmentConfig = {}): GrassEnvironmentDescriptor — Declares a grass vegetation patch for `environment()` — the same blade field and knobs as an editor `grass_field` volume.
 - `isSceneOwnershipManifest` (function): function isSceneOwnershipManifest(value: unknown): value is SceneOwnershipManifest — Narrow unknown parsed JSON to a {@link SceneOwnershipManifest}. Structural only — verifies the version, the declarations array, and each declaration's provenance shape; it does not judge whether declarations satisfy the boundary (use {@link auditManifest} for that).
 - `lootTable` (function): function lootTable(def: LootTableDef): LootTableDef — Validates a loot table definition and returns it unchanged, for use with {@link createLootRegistry}.
 - `ocean` (function): function ocean(config: OceanEnvironmentConfig = {}): OceanEnvironmentDescriptor — Declares an ocean water body for `environment()` — bounds, level, and wave tuning.

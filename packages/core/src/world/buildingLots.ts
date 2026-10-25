@@ -15,12 +15,24 @@ import { rectClearsPolyline, rectsSeparated, type OrientedRect, type Vec2 } from
 import type { WorldBounds } from "./features";
 import { seededStreams } from "../random/rng";
 
-/** One road the frontage placer lines with buildings: a centerline polyline and its full width. */
+/** One road the frontage placer lines with buildings: a centerline polyline, its width and its sidewalks. */
 export interface RoadFrontage {
   /** Road centerline vertices in world XZ; at least two points. */
   path: readonly Vec2[];
-  /** Road full width in world units; lots set back from `width / 2`. */
+  /** Carriageway full width in world units, kerb to kerb. */
   width: number;
+  /**
+   * Sidewalk on each side, metres from the kerb: a number, a `road()` descriptor's sidewalk band,
+   * or `false`/absent for none. Lots set back from the sidewalk's back edge and never stand on it.
+   */
+  sidewalk?: number | { width: number } | false;
+}
+
+/** Sidewalk width, metres, one side of a frontage road. @internal */
+export function frontageSidewalk(road: Pick<RoadFrontage, "sidewalk">): number {
+  const value = road.sidewalk;
+  if (value === undefined || value === false) return 0;
+  return Math.max(0, typeof value === "number" ? value : value.width);
 }
 
 /** Rectangular clip region lots must fall within (world center + half-extents). */
@@ -51,7 +63,10 @@ export interface BuildingLotOptions {
   footprint?: WorldBounds | readonly PlotVariant[];
   /** Gap between neighbouring lots along a frontage, world units. Default 2. */
   spacing?: number;
-  /** Sidewalk strip between the curb (`width / 2`) and the building front, world units. Default 3. */
+  /**
+   * Gap between the back of the sidewalk (the kerb when a road has none) and the building front,
+   * world units. Default 3.
+   */
   setback?: number;
   /**
    * Manhattan streetwall dial (0..1). Omit (default) keeps the legacy look byte-for-byte. When set,
@@ -100,7 +115,7 @@ export interface PlacedBuildingLot {
   road: number;
   /** Which side of the road: +1 = left normal, -1 = right normal. */
   side: 1 | -1;
-  /** Distance from the lot's front face to the road centerline (= `width / 2 + setback`). */
+  /** Distance from the lot's front face to the road centerline (= `width / 2 + sidewalk + setback`). */
   frontDistance: number;
 }
 
@@ -219,8 +234,9 @@ export function deriveBuildingLots(options: BuildingLotOptions): PlacedBuildingL
   const sides: readonly (1 | -1)[] = bothSides ? [1, -1] : [1];
   const crossClearance = Math.max(0, options.crossClearance ?? 0);
   const corridors: { path: readonly Vec2[]; half: number; road: number }[] = [];
-  options.roads.forEach((road, index) => corridors.push({ path: road.path, half: road.width / 2, road: index }));
-  for (const road of options.avoid ?? []) corridors.push({ path: road.path, half: road.width / 2, road: -1 });
+  // A corridor is the carriageway plus its sidewalks: no lot ever stands on either.
+  options.roads.forEach((road, index) => corridors.push({ path: road.path, half: road.width / 2 + frontageSidewalk(road), road: index }));
+  for (const road of options.avoid ?? []) corridors.push({ path: road.path, half: road.width / 2 + frontageSidewalk(road), road: -1 });
 
   const lots: PlacedBuildingLot[] = [];
   const accepted: OrientedRect[] = [];
@@ -239,7 +255,7 @@ export function deriveBuildingLots(options: BuildingLotOptions): PlacedBuildingL
     if (road.path.length < 2) continue;
     const total = polylineLength(road.path);
     if (total < 1e-6) continue;
-    const front = road.width / 2 + setback;
+    const front = road.width / 2 + frontageSidewalk(road) + setback;
     // Each side walks its own seeded cursor so variant runs differ across the street — terraces
     // can face detached houses. With a single variant the walk degenerates to the fixed pitch.
     for (const side of sides) {

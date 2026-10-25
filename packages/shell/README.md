@@ -53,9 +53,10 @@ Building parts are batched into one `InstancedMesh` per part kind, so a whole bu
 
 ```tsx
 import { InstancedBuildings } from "@jgengine/shell/structures/GeneratedBuilding";
-import { generateBuildingDistrict } from "@jgengine/core/world/buildings";
+import { building } from "@jgengine/core/world/features";
+import { resolveStructureBuildings } from "@jgengine/core/world/environmentSummary";
 
-const district = generateBuildingDistrict({ rows: 3, cols: 3, seed: "downtown" });
+const district = resolveStructureBuildings(building({ count: 9, seed: "downtown" }));
 
 <InstancedBuildings buildings={district.map((building) => ({ building }))} />;
 ```

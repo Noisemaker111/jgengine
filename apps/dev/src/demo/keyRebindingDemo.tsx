@@ -24,7 +24,7 @@ const ACTIONS = [
 
 const terrainFeature = environment({
   terrain: terrain({ bounds: { w: 60, d: 60 }, height: 2, frequency: 0.03, seed: "rebind" }),
-  vegetation: grass({ area: { w: 52, d: 52 }, density: 3, colors: ["#1c3320", "#5f9a55"], seed: "rebind" }),
+  vegetation: grass({ area: { w: 52, d: 52 }, colorBase: "#1c3320", colorTip: "#5f9a55", seed: "rebind" }),
 });
 
 const entityCatalog: Record<string, GameContextEntityEntry> = {

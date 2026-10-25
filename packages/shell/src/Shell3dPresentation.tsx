@@ -84,8 +84,7 @@ import {
 } from "./camera";
 import { CullingProvider } from "./visibility/CullingProvider";
 import { BuildingRenderBudget } from "./structures/BuildingRenderBudget";
-import { SkyDaylight, TimeOfDayDaylight } from "./environment";
-import { AuthoredDaylight } from "./environment/AuthoredDaylight";
+import { Sky } from "./environment";
 import { bearingFromDirection } from "./environment/daylightCycle";
 import type { DaylightModulation } from "./render/SceneLighting";
 import { colorGradeFromDocument, lightProbesFromDocument } from "@jgengine/core/editor/environment";
@@ -729,26 +728,15 @@ export function Shell3dPresentation({
                       <directionalLight position={[10, 16, 6]} intensity={1.3} />
                     </>
                   ) : null}
-                  {authoredDaylight && effectiveSky !== undefined ? (
-                    <AuthoredDaylight sky={effectiveSky} clock={ctx.time} modulation={daylightModulation} />
-                  ) : null}
                   {effectiveSky !== undefined ? (
-                    effectiveSky.timeOfDay ? (
-                      <TimeOfDayDaylight
-                        sky={effectiveSky}
-                        clock={ctx.time}
-                        bands={skyBands}
-                        lights={skyEmitsLights(resolveSkyLightOwnership(lighting !== undefined))}
-                        fogRange={backdrop?.fog}
-                      />
-                    ) : (
-                      <SkyDaylight
-                        sky={effectiveSky}
-                        bands={skyBands}
-                        lights={skyEmitsLights(resolveSkyLightOwnership(lighting !== undefined))}
-                        fogRange={backdrop?.fog}
-                      />
-                    )
+                    <Sky
+                      sky={effectiveSky}
+                      clock={ctx.time}
+                      {...(skyBands === undefined ? {} : { bands: skyBands })}
+                      lights={skyEmitsLights(resolveSkyLightOwnership(lighting !== undefined))}
+                      {...(authoredDaylight ? { modulation: daylightModulation } : {})}
+                      {...(backdrop?.fog === undefined ? {} : { fogRange: backdrop.fog })}
+                    />
                   ) : null}
   {irradianceVolumes.length > 0 ? <IrradianceVolumeLighting volumes={irradianceVolumes} /> : null}
                   {/* One fog owner: a mounted sky always drives scene fog, so a second `<fog>` here would only shadow it. */}

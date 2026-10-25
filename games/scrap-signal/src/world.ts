@@ -152,51 +152,31 @@ const terrainDescriptor = terrain({
   pathProfiles: roadPathProfiles((x, z) => rawField.sampleHeight(x, z)),
 });
 
-// Dry-grass scrub in two silhouettes: a short dense ground tuft that carries most of the coverage,
-// and a sparse taller accent clump reserved for pockets — the 70/30 split that reads as vegetation
-// growing where it can instead of one blade stamped everywhere.
-//
-// Roots lifted well off black: the old #6b5526 root meant every side-lit blade rendered as a dark
-// strip against bright sand — the "black cardboard" read. Ochre roots into straw tips keeps the
-// warm-world rule while the whole blade stays in a value the light can actually model.
-const SCRUB_COLORS = ["#6e5a34", "#94794a", "#b9a064"] as const;
-
+// Dry-grass scrub: a short dense ground tuft carries the coverage and a tall dry accent species
+// rises out of it in pockets, so vegetation reads as growth where it can rather than one blade
+// stamped everywhere. Ochre roots into straw tips keep every side-lit blade in a value the light
+// can model instead of a black strip against bright sand.
 const scrubClump = (x: number, z: number, size: number, seed: string): GrassEnvironmentDescriptor =>
   grass({
     area: { w: size, d: size, position: [x, z] },
-    // Blades per square metre. At 4.6 an individual clump was see-through — a handful of crossed
-    // planes with sand between every one — which is what made the midground read as bare dirt.
-    density: 8,
-    // Low ground tufts: short enough to hold a silhouette and keep the ground plane readable.
-    bladeHeight: [0.16, 0.48],
-    bladeWidth: 0.05,
+    bladeHeight: 0.48,
+    heightVariation: 0.66,
+    bladeWidthMin: 0.04,
+    bladeWidthMax: 0.06,
     windStrength: 0.55,
-    colors: [...SCRUB_COLORS],
+    colorBase: "#6e5a34",
+    colorTip: "#b9a064",
     seed,
-    // Wind-combed curl plus a wide tuft splay: each instance reads as a bushy clump, not a lone card.
-    bladeBend: [0.25, 0.6],
+    bladeBendMin: 0.25,
+    bladeBendMax: 0.6,
     tuftRadius: 0.3,
-    // High brightness jitter breaks the repeated-blade read; near-full normal lift stops side-lit
-    // blades from going black — the sun models the clump as a soft mound instead of dark planes.
     colorVariation: 0.3,
     normalLift: 0.8,
-  });
-
-// Tall dry accent plants — the 10% silhouette tier. Sparse on purpose: a few reeds catching light
-// over the low scrub reads as growth in a protected pocket, a field of them reads as giant reeds.
-const accentClump = (x: number, z: number, size: number, seed: string): GrassEnvironmentDescriptor =>
-  grass({
-    area: { w: size, d: size, position: [x, z] },
-    density: 1.6,
-    bladeHeight: [0.55, 1.0],
-    bladeWidth: 0.045,
-    windStrength: 0.7,
-    colors: ["#8a6d38", "#c0a052", "#e2c878"],
-    seed,
-    bladeBend: [0.35, 0.75],
-    tuftRadius: 0.22,
-    colorVariation: 0.4,
-    normalLift: 0.65,
+    clumping: 0.6,
+    clumpSize: 1.8,
+    accentShare: 0.1,
+    accentHeight: 2.1,
+    accentColor: "#e2c878",
   });
 
 const scrubClumps = (
@@ -212,14 +192,7 @@ const scrubClumps = (
   for (let index = 0; index < count; index += 1) {
     const angle = rng() * Math.PI * 2;
     const distance = spread * (0.15 + rng() * 0.85);
-    const x = cx + Math.cos(angle) * distance;
-    const z = cz + Math.sin(angle) * distance;
-    clumps.push(scrubClump(x, z, size[0] + rng() * size[1], `${seed}-${index}`));
-    // Every third patch grows a small stand of tall accents inside it — height variation clustered
-    // where scrub already holds, never scattered alone on open sand.
-    if (index % 3 === 0) {
-      clumps.push(accentClump(x + (rng() - 0.5) * 4, z + (rng() - 0.5) * 4, 3 + rng() * 3, `${seed}-acc-${index}`));
-    }
+    clumps.push(scrubClump(cx + Math.cos(angle) * distance, cz + Math.sin(angle) * distance, size[0] + rng() * size[1], `${seed}-${index}`));
   }
   return clumps;
 };

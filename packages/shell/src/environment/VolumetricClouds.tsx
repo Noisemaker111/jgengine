@@ -9,7 +9,7 @@ import { useDisposable } from "../render/useDisposable";
 /** Props for {@link VolumetricClouds} — fully-resolved cloud rules plus the shared sun direction. */
 export interface VolumetricCloudsProps {
   rules: VolumetricCloudsRules;
-  /** Direction toward the sun (same vector `SkyDome`/`Daylight` use for the sun disc). */
+  /** Direction toward the sun (same vector `SkyDome`/`Sky` use for the sun disc). */
   sunDirection: readonly [number, number, number];
 }
 
@@ -183,7 +183,7 @@ void main() {
  * A raymarched volumetric cloud slab: a large horizontal box straddling `[height, height+thickness]`,
  * following the camera in XZ (like `SkyDome`), whose fragment shader raymarches 3D FBM noise inside
  * the slab and accumulates density-weighted color with a sun-facing forward-scatter term. Mounted
- * from `Daylight`/`SkyDaylight`/`TimeOfDayDaylight` whenever a sky descriptor carries
+ * from `Sky` whenever a sky descriptor carries
  * `volumetricClouds`; off by default (the component itself is simply not rendered). A game never
  * mounts this directly — author clouds via `sky({ volumetricClouds })`.
  * @internal

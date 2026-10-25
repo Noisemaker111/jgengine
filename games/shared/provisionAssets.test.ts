@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { missingPulls, shouldProvision } from "./provisionAssets";
+import { missingPulls, shouldProvision, drawsPavedRoad } from "./provisionAssets";
 
 const catalogs = {
   sources: [{ id: "kaykit-city" }, { id: "ambient-rock", kind: "material" }, { id: "unused-pack" }],
@@ -36,4 +36,10 @@ describe("when dev provisions", () => {
     expect(shouldProvision({ CI: "true", JG_DEV_PROVISION: "1" })).toBe(true);
     expect(shouldProvision({ JG_DEV_PROVISION: "0" })).toBe(false);
   });
+});
+
+test("a game that draws a paved road needs the default asphalt scan", () => {
+  expect(drawsPavedRoad("roads: [road({ path, width: 8 })]", "")).toBe(true);
+  expect(drawsPavedRoad("", '{ "kind": "track", "points": [] }')).toBe(true);
+  expect(drawsPavedRoad("const broad = 1;", '{ "kind": "trail" }')).toBe(false);
 });

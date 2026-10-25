@@ -72,7 +72,7 @@ const run = createDialogueRun(conversation);
 
 const terrainFeature = environment({
   terrain: terrain({ bounds: { w: 60, d: 60 }, height: 2, frequency: 0.03, seed: "dialogue" }),
-  vegetation: grass({ area: { w: 52, d: 52 }, density: 3, colors: ["#3a5220", "#93c14e"], seed: "dialogue" }),
+  vegetation: grass({ area: { w: 52, d: 52 }, colorBase: "#3a5220", colorTip: "#93c14e", seed: "dialogue" }),
 });
 
 const entityCatalog: Record<string, GameContextEntityEntry> = {

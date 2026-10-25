@@ -592,7 +592,6 @@
       },
       "label": "Maintained park lawn",
       "meta": {
-        "density": 2,
         "bladeHeight": 0.1,
         "bladeWidthMin": 0.012,
         "bladeWidthMax": 0.022,

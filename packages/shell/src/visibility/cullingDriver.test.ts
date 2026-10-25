@@ -4,6 +4,7 @@ import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { createGameContext } from "@jgengine/core/runtime/gameContext";
 import type { VisibilityConfig } from "@jgengine/core/visibility/config";
 import { buildCullingDriver } from "./cullingDriver";
+import { recordRenderBounds } from "./renderBounds";
 
 function fixture(config?: VisibilityConfig) {
   const definition = defineGameDefinition({ name: "culling", assets: createAssetCatalog() });
@@ -88,5 +89,32 @@ describe("shell culling driver", () => {
       expect(driver.system.boundsOf(entities[0]!)).toBeUndefined();
       expect(driver.system.boundsOf(objects[0]!)).toBeUndefined();
     }
+  });
+
+  test("a long model stays drawn while any of its measured bounds is on screen, at any yaw", () => {
+    const { ctx, driver } = fixture({ culling: { preloadMargin: 0, hysteresis: 0 } });
+    // A 20 m bridge whose centre is 13 m off-frame: the old 1 m guess hid it while its end was in view.
+    const id = ctx.scene.object.place("bridge", 13, 0, -20, { rotationY: 1.1 });
+    driver.system.update();
+    expect(driver.system.isVisible(id)).toBe(false);
+
+    recordRenderBounds(ctx, "object", "bridge", { min: [-10, 0, -1], max: [10, 3, 1] });
+    driver.system.update();
+    expect(driver.system.isVisible(id)).toBe(true);
+    expect(driver.system.boundsOf(id)!.radius).toBeGreaterThanOrEqual(Math.hypot(Math.hypot(10, 1), 1.5));
+
+    ctx.scene.object.move(id, 40, 0, -20);
+    driver.system.update();
+    expect(driver.system.isVisible(id)).toBe(false);
+  });
+
+  test("measured entity bounds replace the fixed 2 m guess", () => {
+    const { ctx, driver } = fixture({ culling: { preloadMargin: 0, hysteresis: 0 } });
+    const id = ctx.scene.entity.spawn("titan", { position: [14, 0, -20] });
+    driver.system.update();
+    expect(driver.system.isVisible(id)).toBe(false);
+    recordRenderBounds(ctx, "entity", "titan", { min: [-4, 0, -4], max: [4, 30, 4] });
+    driver.system.update();
+    expect(driver.system.isVisible(id)).toBe(true);
   });
 });

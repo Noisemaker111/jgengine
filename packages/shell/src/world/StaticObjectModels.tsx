@@ -12,6 +12,7 @@ import { variantLevelModel } from "../render/singleVariantLod";
 import { assignVariantLevels, createLevelPassGate, levelPassProbe, noteLevelPass, noteLevelPassFrame, variantSwitchOf } from "../render/levelPass";
 import { freezeStaticTransforms } from "../render/staticTransforms";
 import { measureLocalBounds, reportMeasuredBounds } from "../render/measureBounds";
+import { recordRenderBounds } from "../visibility/renderBounds";
 import { measureLocalCollisionTriangles, reportMeasuredCollisionMesh } from "../render/measureCollisionMesh";
 import { buildScatterModelSources, disposeScatterModelSources, type ScatterModelSource } from "../scatter/scatterModels";
 import { useRenderVisibility } from "../visibility/CullingProvider";
@@ -111,9 +112,11 @@ function LoadedStaticObjects({ batch, single }: { batch: StaticObjectBatch; sing
       root.add(mesh);
     }
     const key = batch.objects[0]!.catalogId;
-    if (batch.model.dims?.maxY === undefined) {
-      const bounds = measureLocalBounds(root);
-      if (bounds !== null) reportMeasuredBounds(ctx, "object", key, bounds);
+    const bounds = measureLocalBounds(root);
+    if (bounds !== null) {
+      recordRenderBounds(ctx, "object", key, bounds);
+      // Index dims keep priority for colliders; culling always uses what was really mounted.
+      if (batch.model.dims?.maxY === undefined) reportMeasuredBounds(ctx, "object", key, bounds);
     }
     const triangles = measureLocalCollisionTriangles(root);
     if (triangles !== null) reportMeasuredCollisionMesh(ctx, "object", key, triangles);
@@ -244,9 +247,11 @@ function VariantLevel({ url, model, batch, objects, level, assignment, measure, 
       root.add(mesh);
     }
     const key = batch.objects[0]!.catalogId;
-    if (batch.model.dims?.maxY === undefined) {
-      const bounds = measureLocalBounds(root);
-      if (bounds !== null) reportMeasuredBounds(ctx, "object", key, bounds);
+    const bounds = measureLocalBounds(root);
+    if (bounds !== null) {
+      recordRenderBounds(ctx, "object", key, bounds);
+      // Index dims keep priority for colliders; culling always uses what was really mounted.
+      if (batch.model.dims?.maxY === undefined) reportMeasuredBounds(ctx, "object", key, bounds);
     }
     const triangles = measureLocalCollisionTriangles(root);
     if (triangles !== null) reportMeasuredCollisionMesh(ctx, "object", key, triangles);

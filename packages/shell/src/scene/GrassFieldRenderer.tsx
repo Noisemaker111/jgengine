@@ -7,7 +7,6 @@ import { clearanceMasksFrom, DEFAULT_CLEARANCE_KINDS } from "@jgengine/core/worl
 import { masksInfluence } from "@jgengine/core/world/geometry";
 
 import { GrassField } from "../terrain/GrassField";
-import { GrassCover } from "../terrain/GrassCover";
 import type { GrassExclusion } from "../terrain/grassGeometry";
 import { registerSceneKindRenderer, type SceneKindRenderContext } from "./sceneKindRenderers";
 
@@ -38,22 +37,13 @@ function grassExclusionsFrom(
   return zones;
 }
 
-function hashSeed(text: string): number {
-  let h = 2166136261 >>> 0;
-  for (let i = 0; i < text.length; i += 1) {
-    h ^= text.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  return (h >>> 0) % 100000;
-}
-
 function sampleHeight(field: TerrainField, x: number, z: number): number {
   return field.sampleHeight(x, z);
 }
 
 /**
- * One authored grass volume → an instanced vertex-wind `GrassField` over its footprint.
- * `area`/`bladeHeight`/`wind`/`heightAt` are memoized so `GrassField`'s internal geometry and
+ * One authored grass volume → the shared `GrassField` over its footprint.
+ * `area`/`heightAt`/`coverageAt` are memoized so `GrassField`'s internal geometry and
  * material `useMemo`s see stable references across re-renders — otherwise every re-render (the
  * live-sync document context object is recreated per render) rebuilds the blade geometry and
  * shader material from scratch, which shows up as recurring render hitches.
@@ -66,12 +56,6 @@ function OneGrass({ object, context }: { object: SceneKindObject; context: Scene
     () => (resolved === null ? null : [resolved.size[0], resolved.size[1]]),
     [resolved],
   );
-  const bladeHeight = useMemo<[number, number] | null>(
-    () => (resolved === null ? null : [resolved.rules.bladeHeight * 0.7, resolved.rules.bladeHeight]),
-    [resolved],
-  );
-  const bladeWidth = useMemo(() => resolved === null ? undefined : [resolved.rules.bladeWidthMin, resolved.rules.bladeWidthMax] as const, [resolved]);
-  const bladeBend = useMemo(() => resolved === null ? undefined : [resolved.rules.bladeBendMin, resolved.rules.bladeBendMax] as const, [resolved]);
   const { markers, paths } = context.document;
   const masks = useMemo(() => {
     const authored = clearanceMasksFrom(context.document, {
@@ -85,13 +69,6 @@ function OneGrass({ object, context }: { object: SceneKindObject; context: Scene
   }, [markers, paths, context.document.volumes]);
   const coverageAt = useCallback((x: number, z: number) => resolved === null ? 0 :
     1 - masksInfluence(x + resolved.center[0], z + resolved.center[2], masks), [resolved, masks]);
-  const wind = useMemo(
-    () =>
-      resolved === null
-        ? null
-        : { strength: resolved.rules.windStrength, speed: resolved.rules.windSpeed, gustScale: resolved.rules.windGust },
-    [resolved],
-  );
   // Depends on the volumes slice, not the context object — the live-sync context is recreated
   // per render and would otherwise rebuild the tuft geometry every frame.
   const volumes = context.document.volumes;
@@ -100,50 +77,20 @@ function OneGrass({ object, context }: { object: SceneKindObject; context: Scene
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [volumes, resolved],
   );
-  if (resolved === null || area === null || bladeHeight === null || wind === null || exclude === null) return null;
+  if (resolved === null || area === null || exclude === null) return null;
   const { rules, center } = resolved;
-  // Size the instance buffer to the authored patch (bounded): the default 1500-blade buffer reads
-  // as stubble on anything bigger than a lawn, silently ignoring the authored density. The 250k cap
-  // is independent of the (now wider) camera distance fade — instances are placed across the patch
-  // footprint, and the fade only thins how many *draw* at range in the vertex shader — so a deeper
-  // meadow reads expansive without raising the instance ceiling.
-  const instanceCount = Math.max(1500, Math.min(250000, Math.ceil(rules.density * area[0] * area[1])));
   return (
-    <>
-      <GrassCover
-        position={[center[0], center[1], center[2]]}
-        area={area}
-        seed={hashSeed(rules.seed.length > 0 ? rules.seed : object.id)}
-        colorBase={rules.colorBase}
-        colorTip={rules.colorTip}
-        strength={rules.groundCover}
-        edgeFeather={2.2}
-        heightAt={heightAt}
-        coverageAt={coverageAt}
-      />
-      <GrassField
-        position={[center[0], center[1], center[2]]}
-        area={area}
-        count={instanceCount}
-        density={rules.density}
-        bladeHeight={bladeHeight}
-        bladeWidth={bladeWidth}
-        bladeBend={bladeBend}
-        tuftRadius={rules.tuftRadius}
-        normalLift={rules.normalLift}
-        colorBase={rules.colorBase}
-        colorTip={rules.colorTip}
-        colorGround={context.groundColorAt?.(center[0], center[2])}
-        colorVariation={rules.colorVariation}
-        roughness={rules.roughness}
-        seed={hashSeed(rules.seed.length > 0 ? rules.seed : object.id)}
-        heightAt={heightAt}
-        coverageAt={coverageAt}
-        wind={wind}
-        edgeFeather={2.2}
-        exclude={exclude}
-      />
-    </>
+    <GrassField
+      position={[center[0], center[1], center[2]]}
+      rules={rules}
+      area={area}
+      seed={object.id}
+      colorGround={context.groundColorAt?.(center[0], center[2])}
+      heightAt={heightAt}
+      coverageAt={coverageAt}
+      edgeFeather={2.2}
+      exclude={exclude}
+    />
   );
 }
 

@@ -61,7 +61,7 @@ function seed(): void {
 
 const terrainFeature = environment({
   terrain: terrain({ bounds: { w: 50, d: 50 }, height: 1.5, frequency: 0.03, seed: "floating" }),
-  vegetation: grass({ area: { w: 44, d: 44 }, density: 3, colors: ["#2f4f1e", "#8fbf4a"], seed: "floating" }),
+  vegetation: grass({ area: { w: 44, d: 44 }, colorBase: "#2f4f1e", colorTip: "#8fbf4a", seed: "floating" }),
 });
 
 const entityCatalog: Record<string, GameContextEntityEntry> = {

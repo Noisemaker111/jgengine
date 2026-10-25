@@ -108,26 +108,6 @@ export interface GeneratedBuilding {
   rotationY?: number;
 }
 
-export interface BuildingLot {
-  id: string;
-  center: Vec2;
-  footprint: Footprint;
-  quarterTurns: number;
-  config: BuildingConfig;
-}
-
-export interface BuildingGridConfig {
-  rows: number;
-  columns: number;
-  origin?: Vec2;
-  lotSize?: Footprint;
-  streetWidth?: number;
-  seed?: BuildingSeed;
-  idPrefix?: string;
-  base?: BuildingConfigInput;
-  floorRange?: readonly [number, number];
-}
-
 const DEFAULT_PROBABILITIES: BuildingProbabilities = {
   window: 0.88,
   openStore: 0.58,
@@ -480,12 +460,6 @@ function chance(seed: BuildingSeed, key: string, p: number): boolean {
   return hash01(seed, key) < probability(p);
 }
 
-function rangeInt(seed: BuildingSeed, key: string, min: number, max: number): number {
-  const lo = Math.min(min, max);
-  const hi = Math.max(min, max);
-  return lo + Math.floor(hash01(seed, key) * (hi - lo + 1));
-}
-
 /**
  * Fill a partial building description out to a complete {@link BuildingConfig}, clamping counts and
  * probabilities. Use it to inspect or adjust the resolved shape before generating.
@@ -812,52 +786,3 @@ export function generateBuilding(input: BuildingConfigInput = {}): GeneratedBuil
   };
 }
 
-/** @internal */
-export function createBuildingGrid(config: BuildingGridConfig): BuildingLot[] {
-  const rows = positiveInt(config.rows, 1);
-  const columns = positiveInt(config.columns, 1);
-  const lotSize = config.lotSize ?? { w: 14, d: 10 };
-  const streetWidth = Math.max(0, config.streetWidth ?? 4);
-  const origin = config.origin ?? [0, 0];
-  const seed = config.seed ?? 0;
-  const idPrefix = config.idPrefix ?? "building";
-  const lots: BuildingLot[] = [];
-  for (let row = 0; row < rows; row += 1) {
-    for (let column = 0; column < columns; column += 1) {
-      const index = row * columns + column;
-      const id = `${idPrefix}-${row}-${column}`;
-      const center: Vec2 = [
-        origin[0] + column * (lotSize.w + streetWidth),
-        origin[1] + row * (lotSize.d + streetWidth),
-      ];
-      const floorRange = config.floorRange ?? [3, 9];
-      const floors = rangeInt(seed, `${id}:floors`, floorRange[0], floorRange[1]);
-      const base = config.base ?? {};
-      const bayWidth = positiveNumber(base.bayWidth ?? DEFAULT_BUILDING_CONFIG.bayWidth, DEFAULT_BUILDING_CONFIG.bayWidth);
-      const baysWide = Math.max(1, Math.floor(lotSize.w / bayWidth));
-      const baysDeep = Math.max(1, Math.floor(lotSize.d / bayWidth));
-      const buildingConfig = createBuildingConfig({
-        ...base,
-        id,
-        seed: `${seed}:${index}`,
-        center,
-        floors,
-        baysWide: base.baysWide ?? baysWide,
-        baysDeep: base.baysDeep ?? baysDeep,
-        bayWidth,
-      });
-      lots.push({ id, center, footprint: lotSize, quarterTurns: 0, config: buildingConfig });
-    }
-  }
-  return lots;
-}
-
-/**
- * Generate a grid of buildings on lots sized by `lotSize` and separated by `streetWidth`, each with
- * its floor count rolled from `floorRange`.
- *
- * @capability building-generator generate a grid district of seeded buildings
- */
-export function generateBuildingDistrict(config: BuildingGridConfig): GeneratedBuilding[] {
-  return createBuildingGrid(config).map((lot) => generateBuilding(lot.config));
-}

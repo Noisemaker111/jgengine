@@ -53,7 +53,7 @@ const i18n: I18n = createI18n({ catalog: CATALOG, locale: "en", fallbackLocale: 
 
 const terrainFeature = environment({
   terrain: terrain({ bounds: { w: 80, d: 80 }, height: 3, frequency: 0.03, seed: "l10n" }),
-  vegetation: grass({ area: { w: 68, d: 68 }, density: 3, colors: ["#2f4f1e", "#8fbf4a"], seed: "l10n" }),
+  vegetation: grass({ area: { w: 68, d: 68 }, colorBase: "#2f4f1e", colorTip: "#8fbf4a", seed: "l10n" }),
 });
 
 const entityCatalog: Record<string, GameContextEntityEntry> = {
