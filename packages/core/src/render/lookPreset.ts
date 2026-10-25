@@ -5,10 +5,10 @@ import type { PostProcessingConfig } from "./postProcessing";
 
 /**
  * Named look preset composing the existing lighting/sky/fog/post knobs into one field.
- * `"neutral"` (the default when unset) keeps presentation unstyled; `"cinematic"` draws a scene lit like a shipped game — a real day sky
+ * `"cinematic"` (the default when unset) draws a scene lit like a shipped game — a real day sky
  * with a view-following shadow-casting sun + hemisphere fill, a network-free image-based-lighting
- * environment so PBR surfaces catch soft reflections, and a tuned tone-map/bloom/AO/vignette post
- * stack. `"comic"` adds ink outlines and cel bands over a saturated grade (Borderlands-style);
+ * environment so PBR surfaces catch soft reflections, and a tuned tone-map/bloom/AO/contact-shadow/vignette
+ * post stack, antialiased temporally on high and ultra. `"neutral"` keeps presentation unstyled. `"comic"` adds ink outlines and cel bands over a saturated grade (Borderlands-style);
  * `"retro"` pixelates and posterizes the frame. `"flat"` opts out of the sky/IBL/post rig to the bare ambient+directional default (pre-#773).
  * The upgraded default primitive materials — tuned roughness/metalness plus subtle procedural surface
  * detail so un-modeled boxes/capsules stop reading as flat plastic — apply under both presets.
@@ -52,10 +52,16 @@ export const CINEMATIC_SKY: SkyEnvironmentConfig = { preset: "day" };
  */
 export const CINEMATIC_POST_PROCESSING: PostProcessingConfig = {
   toneMapping: "aces",
-  bloom: {},
+  bloom: { strength: 0.22, radius: 0.5, threshold: 0.95 },
   ao: { intensity: 1.4 },
   grade: {},
 };
+
+/**
+ * For a game that lit its own scene and left `look` unset: ACES and the cinematic bloom, with AO,
+ * grade, contact shadows and antialiasing at the engine defaults.
+ */
+const OWN_RIG_POST_PROCESSING: PostProcessingConfig = { toneMapping: "aces", bloom: CINEMATIC_POST_PROCESSING.bloom };
 
 /** Unstyled baseline: no bloom or grade; contact AO stays at the graphics-tier default. */
 export const NEUTRAL_POST_PROCESSING: PostProcessingConfig = {
@@ -196,7 +202,7 @@ function moodTokenPost(mood: Mood | undefined, gradeOn: boolean): PostProcessing
 
 /**
  * Expand a game's `look` and `mood` into concrete lighting/backdrop/post. The default look is
- * `"neutral"`; `"flat"` passes the explicit knobs through untouched.
+ * `"cinematic"`; `"flat"` passes the explicit knobs through untouched.
  *
  * `look` is the rendering style (tone map, bloom, AO, outlines, pixelation); `mood` is the light:
  * the key sun with cascaded shadows, a bounce opposite it, hemisphere fill, ambient, the dome's
@@ -204,6 +210,9 @@ function moodTokenPost(mood: Mood | undefined, gradeOn: boolean): PostProcessing
  * (anything but `"neutral"`/`"flat"`) with no mood and no authored key or fill gets the mood its sky
  * implies (`"day"`, or `"dusk"`/`"night"` under those sky presets) for its light, haze and grade,
  * leaving an authored sky's colours alone; a sky on a day cycle keeps its own moving sun instead.
+ * A game that leaves `look` unset but authors its own light rig (an interior, a cave) keeps that
+ * rig and its colours: no sky or sun is added, and its post chain gets ACES, restrained bloom and
+ * the engine-default AO, grade, contact shadows and antialiasing.
  * The scene sky's sun placement and `sunIntensity`/`ambientIntensity` steer the mood's rig, so the
  * editor's lighting controls still move the light.
  *
@@ -217,11 +226,12 @@ function moodTokenPost(mood: Mood | undefined, gradeOn: boolean): PostProcessing
  * @capability resolve-game-look expand a look preset and lighting mood into concrete lighting/backdrop/post knobs
  */
 export function resolveGameLook(input: GameLookInput): ResolvedGameLook {
-  const look = input.look ?? "neutral";
+  const look = input.look ?? "cinematic";
   if (look === "flat") {
     return { lighting: input.lighting, backdrop: input.backdrop, postProcessing: input.postProcessing };
   }
   const styled = look !== "neutral";
+  const ownRig = input.look === undefined && input.mood === undefined && authorsLightRig(input.lighting);
   const worldHasSky = input.worldSky !== undefined || input.hasWorldSky === true;
   const authoredSky = input.backdrop?.sky;
   const sceneSky = authoredSky ?? overlaySky(input.worldSky, input.documentSky);
@@ -237,7 +247,7 @@ export function resolveGameLook(input: GameLookInput): ResolvedGameLook {
     if (input.worldSky?.hazeStrength !== undefined) painted.hazeStrength = input.worldSky.hazeStrength;
     sky = overlaySky(painted, input.documentSky);
   } else if (input.documentSky !== undefined) sky = overlaySky(input.worldSky, input.documentSky);
-  else if (styled && !worldHasSky) sky = CINEMATIC_SKY;
+  else if (styled && !worldHasSky && !ownRig) sky = CINEMATIC_SKY;
   const fog = input.backdrop?.fog ?? mood?.fog;
   const backdrop: BackdropConfig | undefined =
     sky === authoredSky && fog === input.backdrop?.fog
@@ -254,7 +264,7 @@ export function resolveGameLook(input: GameLookInput): ResolvedGameLook {
   if (look === "neutral" && mood === undefined) {
     return { lighting, backdrop, postProcessing: input.postProcessing ?? NEUTRAL_POST_PROCESSING };
   }
-  const stylePost = look === "neutral" ? NEUTRAL_POST_PROCESSING : PRESET_POST[look];
+  const stylePost = look === "neutral" ? NEUTRAL_POST_PROCESSING : ownRig ? OWN_RIG_POST_PROCESSING : PRESET_POST[look];
   const styleOverMood = mood === undefined ? stylePost : mergePostProcessing(mood.postProcessing, stylePost);
   const tokens = moodTokenPost(input.mood, styleOverMood.grade !== false);
   const base = tokens === undefined ? styleOverMood : mergePostProcessing(styleOverMood, tokens);

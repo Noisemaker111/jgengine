@@ -10,12 +10,14 @@ import { POSTFX_TIER_POLICY, postfxTierPolicy } from "./postfxTierPolicy";
 const TIERS: readonly GraphicsQuality[] = ["low", "medium", "high", "ultra"];
 
 /** Every stage a chain can build, so a plan's cost is its stage list plus its resolution. */
-const ALL_STAGES: readonly PostfxStage[] = ["ao", "bloom", "dof", "smaa", "exposure", "stylize", "grade"];
+const ALL_STAGES: readonly PostfxStage[] = ["ao", "contactShadows", "bloom", "dof", "smaa", "taa", "exposure", "stylize", "grade"];
 
 /** The stages `plan` builds, in the order the composer adds them. */
 function plannedStages(plan: PostfxStagePlan): PostfxStage[] {
   return ALL_STAGES.filter((stage) => {
     if (stage === "ao") return plan.ao !== null;
+    if (stage === "contactShadows") return plan.contactShadows !== null;
+    if (stage === "taa") return plan.taa;
     if (stage === "bloom") return plan.bloom !== null;
     if (stage === "dof") return plan.dof !== null;
     if (stage === "smaa") return plan.smaa;
@@ -58,7 +60,8 @@ describe("a tier's post chain costs what it claims", () => {
   test("medium keeps AO and DOF but samples AO less and renders smaller than high", () => {
     const medium = planPostStages(full, "medium");
     const high = planPostStages(full, "high");
-    expect(plannedStages(medium)).toEqual(plannedStages(high));
+    expect(plannedStages(medium)).toEqual(plannedStages(high).map((stage) => (stage === "taa" ? "smaa" : stage)));
+    expect(medium.contactShadowSteps).toBeLessThan(high.contactShadowSteps);
     expect(medium.aoSamples).toBeLessThan(high.aoSamples);
     expect(medium.resolutionScale).toBeLessThan(high.resolutionScale);
   });
@@ -78,7 +81,27 @@ describe("the tier's default stage set is the one the graphics profile names", (
     for (const quality of TIERS) {
       const authored = DEFAULT_GRAPHICS_PROFILES[quality].postStages;
       const plan = planPostStages(full, quality, undefined);
-      expect({ ao: plan.ao !== null, bloom: plan.bloom !== null, dof: plan.dof !== null, smaa: plan.smaa }, quality).toEqual(authored);
+      expect({ ao: plan.ao !== null, bloom: plan.bloom !== null, dof: plan.dof !== null, smaa: plan.smaa || plan.taa }, quality).toEqual(authored);
+    }
+  });
+
+  test("low keeps SMAA and no contact shadows; high and ultra resolve edges temporally", () => {
+    const low = planPostStages(full, "low");
+    expect(low.smaa).toBe(true);
+    expect(low.taa).toBe(false);
+    expect(low.contactShadows).toBeNull();
+    for (const quality of ["high", "ultra"] as const) {
+      const plan = planPostStages(full, quality);
+      expect(plan.taa, quality).toBe(true);
+      expect(plan.smaa, quality).toBe(false);
+      expect(plan.contactShadows, quality).not.toBeNull();
+    }
+  });
+
+  test("an authored AA mode holds on every tier", () => {
+    for (const quality of TIERS) {
+      expect(planPostStages({ ...full, aa: "smaa" }, quality).taa, quality).toBe(false);
+      expect(planPostStages({ ...full, aa: "taa" }, quality).taa, quality).toBe(true);
     }
   });
 

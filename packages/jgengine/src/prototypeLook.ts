@@ -16,7 +16,7 @@ export interface PrototypeLookSignals {
   hasAuthoredScene: boolean;
   /** Explicit lighting or postProcessing config present. */
   hasAuthoredGraphics: boolean;
-  /** No `look` preset named; the engine then renders the unstyled "neutral" look. */
+  /** No `look` preset named; the engine then renders the default "cinematic" look. */
   lookUnset: boolean;
   /** Explicit `postProcessing` config present. */
   hasPostProcessing: boolean;
@@ -81,8 +81,7 @@ export function assessPrototypeLook(sources: readonly string[]): PrototypeLookVe
 
   const flagFlat = flatLook && !hasAuthoredGraphics;
   const flagBoxes = !hasModelSeams && !hasCustomRender && !hasAuthoredScene;
-  const flagUnstyled = lookUnset && !hasPostProcessing;
-  const isPrototype = flagFlat || flagBoxes || flagUnstyled;
+  const isPrototype = flagFlat || flagBoxes;
 
   const reasons: string[] = [];
   if (flagFlat) {
@@ -94,18 +93,12 @@ export function assessPrototypeLook(sources: readonly string[]): PrototypeLookVe
     );
   }
 
-  if (flagUnstyled) {
-    reasons.push(
-      'no look preset or postProcessing — the scene renders with the unstyled "neutral" look (no tone-map grade, AO or bloom)',
-    );
-  }
-
   return {
     isPrototype,
     signals,
     reasons,
     fix: isPrototype
-      ? 'wire entityModels/objectModels (e.g. entityModels: { player: "asset:person_casual" }) and choose a look for the art direction (look: "cinematic" | "photoreal" | "toon" | ..., or an explicit postProcessing stack), plus a mood for the light (mood: "day" | "bright" | "golden" | "dusk" | "overcast" | "night"). Write look: "neutral" only when unstyled output is deliberate.'
+      ? 'wire entityModels/objectModels (e.g. entityModels: { player: "asset:person_casual" }) and, if cinematic is not the art direction, a look (look: "photoreal" | "toon" | "comic" | ...), plus a mood for the light (mood: "day" | "bright" | "golden" | "dusk" | "overcast" | "night"). Write look: "neutral" only when unstyled output is deliberate.'
       : undefined,
   };
 }

@@ -112,15 +112,29 @@ export interface StylizeConfig {
 }
 
 /**
- * Edge antialiasing for the post chain. SMAA runs in linear-sRGB before the output
- * tone-map and cleans alpha-tested foliage/particles that MSAA samples alone leave crawling.
- * `"msaa"` keeps only the render-target multisample resolve; `false` disables AA stages.
+ * Edge antialiasing for the post chain. `"taa"` jitters the camera a fraction of a pixel each frame
+ * and blends the frames, which also settles shimmering foliage, thin wires and specular sparkle.
+ * SMAA runs in linear-sRGB before the output tone-map and cleans alpha-tested foliage/particles that
+ * MSAA samples alone leave crawling. `"msaa"` keeps only the render-target multisample resolve;
+ * `false` disables AA stages.
  */
-export type PostAaMode = "smaa" | "msaa" | false;
+export type PostAaMode = "taa" | "smaa" | "msaa" | false;
+
+/** Screen-space contact shadows: a short ray toward the sun from every pixel, against the depth buffer. */
+export interface ContactShadowConfig {
+  /** How dark a contact shadow gets, 0..1. Default 0.6. */
+  intensity?: number;
+  /** Ray length toward the sun in world units; longer reaches further from a contact. Default 0.45. */
+  length?: number;
+  /** Depth an occluder is assumed to have, world units. Default 0.3. */
+  thickness?: number;
+  /** Camera distance in world units where contact shadows have faded out. Default 70. */
+  distance?: number;
+}
 
 /**
- * Declarative post-processing chain (RenderPass → AO → Bloom → SMAA → tone-map output →
- * Grade). Present on a game means the shell mounts an `EffectComposer` and owns
+ * Declarative post-processing chain (RenderPass → AO → contact shadows → Bloom → DOF → SMAA or
+ * TAA → tone-map output → Grade). Present on a game means the shell mounts an `EffectComposer` and owns
  * the render; absent means the renderer draws directly (unchanged). Each stage is
  * a config object, `false` to skip, or omitted for its default. Pure data — no
  * three.js types leak into core.
@@ -142,8 +156,9 @@ export interface PostProcessingConfig {
    */
   autoExposure?: AutoExposureConfig | false;
   /**
-   * Antialiasing. Default `"smaa"` (plus a light MSAA resolve on the beauty target).
-   * Set `"msaa"` to skip the SMAA pass, or `false` for neither.
+   * Antialiasing. Omitted lets the graphics tier choose: temporal AA on high and ultra, SMAA below.
+   * `"taa"` or `"smaa"` pins one on every tier, `"msaa"` keeps only the multisample resolve, and
+   * `false` turns antialiasing off.
    */
   aa?: PostAaMode;
   bloom?: BloomConfig | false;
@@ -152,6 +167,12 @@ export interface PostProcessingConfig {
    * `postStages.ao` is on (medium and up); `false` turns it off everywhere.
    */
   ao?: AoConfig | false;
+  /**
+   * Short screen-space shadows toward the sun, so feet, wheels, crates and props sit on the ground
+   * where the shadow map is too coarse to show it. Omitted runs {@link DEFAULT_CONTACT_SHADOWS} on
+   * medium and up; `false` turns it off. Needs the beauty depth, so an `aa: "msaa"` chain skips it.
+   */
+  contactShadows?: ContactShadowConfig | false;
   /** Depth-of-field / bokeh. Heavier stage — omit or `false` to skip. Default off (omitted). */
   dof?: DofConfig | false;
   grade?: GradeConfig | false;
@@ -161,6 +182,14 @@ export interface PostProcessingConfig {
 
 /** Contact shading used when a post chain leaves `ao` unset: soft creases, no dark halos. */
 export const DEFAULT_AO: Readonly<AoConfig> = { radius: 1.3, intensity: 1.3, distanceFalloff: 2.8, blend: 1 };
+
+/** Contact shadows used when a post chain leaves `contactShadows` unset. */
+export const DEFAULT_CONTACT_SHADOWS: Readonly<Required<ContactShadowConfig>> = {
+  intensity: 0.6,
+  length: 0.45,
+  thickness: 0.3,
+  distance: 70,
+};
 
 /**
  * A cinematic "product shot" post preset — the full chain on (contact-AO, soft bloom, a warm film

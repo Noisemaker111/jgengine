@@ -11,6 +11,7 @@ import {
   DEFAULT_AO,
   type AoConfig,
   type BloomConfig,
+  type ContactShadowConfig,
   type DofConfig,
   type GradeConfig,
   type PostProcessingConfig,
@@ -27,11 +28,13 @@ import {
 import type { GraphicsQuality } from "@jgengine/core/settings/settingsModel";
 
 import { ExposureMeterPass } from "./autoExposure";
+import { ContactShadowPass } from "./contactShadowPass";
 import { createGradePass } from "./gradeShader";
 import { postfxTierPolicy } from "./postfxTierPolicy";
 import { releasePostfxOverlayTracking } from "./postfxOverlay";
 import { StylizePass } from "./stylizePass";
 import { renderShadowlessPrepass } from "./shadowPrepass";
+import { JitteredRenderPass, TemporalAaPass } from "./temporalAaPass";
 
 /**
  * GTAO renders the scene with an `overrideMaterial` normal/depth prepass when it has no GBuffer,
@@ -117,7 +120,7 @@ const TONE_MAPPING: Record<ToneMappingMode, THREE.ToneMapping> = {
 };
 
 /** A post chain stage that costs its own draws; the plan names the ones a chain actually builds. @internal */
-export type PostfxStage = "ao" | "bloom" | "dof" | "smaa" | "exposure" | "stylize" | "grade";
+export type PostfxStage = "ao" | "contactShadows" | "bloom" | "dof" | "smaa" | "taa" | "exposure" | "stylize" | "grade";
 
 /** What one chain will build, resolved from the game's config, the tier and the player's toggles. @internal */
 export interface PostfxStagePlan {
@@ -135,9 +138,15 @@ export interface PostfxStagePlan {
    * single-sampled whenever AO reads it, so an `aa: "smaa"` chain keeps SMAA's edge resolve without
    * the extra MSAA one; `aa: "msaa"` has no other antialiasing and keeps the prepass.
    */
-  aoGbuffer: "beauty" | "prepass";  bloom: BloomConfig | null;
+  aoGbuffer: "beauty" | "prepass";
+  /** Contact shadows toward the key light, read from the beauty depth; null when off. */
+  contactShadows: ContactShadowConfig | null;
+  contactShadowSteps: number;
+  bloom: BloomConfig | null;
   dof: DofConfig | null;
   smaa: boolean;
+  /** Temporal AA in place of SMAA; the beauty pass then renders jittered into a single-sampled target. */
+  taa: boolean;
   autoExposure: AutoExposureConfig | null;
   stylize: StylizeConfig | null;
   grade: GradeConfig | null;
@@ -192,27 +201,39 @@ export function resolveAoStage(ao: PostProcessingConfig["ao"], tierAllowsAo: boo
   return ao ?? DEFAULT_AO;
 }
 
+/** Contact shadows the chain runs: authored config, defaults when unset, null when off or the tier skips it. @internal */
+export function resolveContactShadowStage(config: PostProcessingConfig["contactShadows"], tierAllows: boolean): ContactShadowConfig | null {
+  if (!tierAllows || config === false) return null;
+  return config ?? {};
+}
+
 /** The stages one chain asks for, before any pass is built. Pure data. @internal */
 export function planPostStages(
   config: PostProcessingConfig,
   quality: GraphicsQuality = "high",
   stages?: { ao: boolean; bloom: boolean; dof: boolean; smaa: boolean },
 ): PostfxStagePlan {
-  const aa = config.aa === undefined ? "smaa" : config.aa;
   const policy = postfxTierPolicy(quality);
+  const aa = config.aa === undefined ? (policy.temporalAa ? "taa" : "smaa") : config.aa;
   const tierStages = stages ?? policy.stages;
   const ao = resolveAoStage(config.ao, tierStages.ao);
   const authoredDof = tierStages.dof && config.dof !== undefined && config.dof !== false ? config.dof : null;
   const bloom = tierStages.bloom && config.bloom !== false ? (config.bloom ?? {}) : null;
+  const taa = tierStages.smaa && aa === "taa";
   const smaa = tierStages.smaa && aa === "smaa";
+  const contactShadows = resolveContactShadowStage(config.contactShadows, policy.contactShadowSteps > 0 && aa !== "msaa");
+  const sampledDepth = smaa || taa || aa === false || contactShadows !== null;
   return {
-    samples: aa === false ? 0 : 2,
+    samples: aa === false || sampledDepth ? 0 : 2,
     ao,
     aoSamples: policy.aoSamples,
-    aoGbuffer: smaa || aa === false ? "beauty" : "prepass",
+    aoGbuffer: sampledDepth ? "beauty" : "prepass",
+    contactShadows,
+    contactShadowSteps: contactShadows === null ? 0 : policy.contactShadowSteps,
     bloom,
     dof: authoredDof === null ? null : { ...authoredDof, aperture: authoredDof.aperture ?? (quality === "high" ? 0.00025 : 0.00012) },
     smaa,
+    taa,
     autoExposure: config.autoExposure === false ? null : { ...DEFAULT_AUTO_EXPOSURE, ...(config.autoExposure ?? {}) },
     stylize: config.stylize !== undefined && config.stylize !== false ? config.stylize : null,
     grade: config.grade !== false ? (config.grade ?? {}) : null,
@@ -236,7 +257,7 @@ export function availablePostfxStages(config: PostProcessingConfig): readonly Po
   if (plan.ao !== null) stages.push("ao");
   if (plan.bloom !== null) stages.push("bloom");
   if (plan.dof !== null) stages.push("dof");
-  if (plan.smaa) stages.push("smaa");
+  if (plan.smaa || plan.taa) stages.push("smaa");
   return stages;
 }
 
@@ -253,7 +274,8 @@ export function buildPostGraph(
   width: number,
   height: number,
 ): BuiltGraph {
-  const beautyDepth = plan.ao !== null && plan.aoGbuffer === "beauty" ? new THREE.DepthTexture(width, height) : null;
+  const needsDepth = (plan.ao !== null && plan.aoGbuffer === "beauty") || plan.contactShadows !== null || plan.taa;
+  const beautyDepth = needsDepth ? new THREE.DepthTexture(width, height) : null;
   const target = new THREE.WebGLRenderTarget(width, height, {
     type: THREE.HalfFloatType,
     samples: beautyDepth === null ? plan.samples : 0,
@@ -261,7 +283,8 @@ export function buildPostGraph(
   });
   const composer = new EffectComposer(gl, target);
   const built: PostfxStage[] = [];
-  composer.addPass(new RenderPass(scene, camera));
+  const taa = plan.taa && beautyDepth !== null ? new TemporalAaPass(camera, beautyDepth, width, height) : null;
+  composer.addPass(taa === null ? new RenderPass(scene, camera) : new JitteredRenderPass(scene, camera, taa));
 
   if (plan.ao !== null) {
     const ao = new OverlayAwareGTAOPass(scene, camera, width, height);
@@ -276,6 +299,11 @@ export function buildPostGraph(
     });
     composer.addPass(ao);
     built.push("ao");
+  }
+
+  if (plan.contactShadows !== null && beautyDepth !== null) {
+    composer.addPass(new ContactShadowPass(scene, camera, beautyDepth, plan.contactShadows, plan.contactShadowSteps));
+    built.push("contactShadows");
   }
 
   if (plan.bloom !== null) {
@@ -304,6 +332,10 @@ export function buildPostGraph(
   if (plan.smaa) {
     composer.addPass(new SMAAPass());
     built.push("smaa");
+  }
+  if (taa !== null) {
+    composer.addPass(taa);
+    built.push("taa");
   }
 
   // Clamped auto-exposure meters the pre-tone-map buffer, so the meter sits before OutputPass and

@@ -19,7 +19,7 @@ export const GRAPHICS_POST_STAGE_LABELS: Record<GraphicsPostStage, string> = {
   ao: "Ambient occlusion",
   bloom: "Bloom",
   dof: "Depth of field",
-  smaa: "Anti-aliasing (SMAA)",
+  smaa: "Anti-aliasing",
 };
 
 /** Setting id that stores one stage toggle (`graphics.post.<stage>`). */

@@ -4,10 +4,10 @@ import { CINEMATIC_POST_PROCESSING, COMIC_POST_PROCESSING, RETRO_POST_PROCESSING
 import { resolveMood } from "./lookMood";
 
 describe("resolveGameLook", () => {
-  it("defaults to neutral without injecting a stylistic rig", () => {
+  it("defaults to the cinematic look, lit by the mood", () => {
     const look = resolveGameLook({});
-    expect(look.backdrop).toBeUndefined();
-    expect(look.postProcessing).toEqual(NEUTRAL_POST_PROCESSING);
+    expect(look.postProcessing).toMatchObject(CINEMATIC_POST_PROCESSING);
+    expect(look.backdrop?.sky).toMatchObject(CINEMATIC_SKY);
   });
 
   it('cinematic post stack carries tonemap + bloom + gentle SSAO + grade/vignette', () => {
@@ -44,10 +44,20 @@ describe("resolveGameLook", () => {
     const lighting = { ambient: { intensity: 0.2 } };
     const backdrop = { sky: { preset: "night" as const }, fog: { color: "#000" } };
     const postProcessing = { bloom: false as const };
-    const look = resolveGameLook({ lighting, backdrop, postProcessing });
+    const look = resolveGameLook({ look: "neutral", lighting, backdrop, postProcessing });
     expect(look.lighting).toBe(lighting);
     expect(look.backdrop).toBe(backdrop);
     expect(look.postProcessing).toBe(postProcessing);
+    expect(resolveGameLook({ lighting, backdrop, postProcessing }).postProcessing?.bloom).toBe(false);
+  });
+
+  it("an unset look over an authored light rig adds no sky or sun", () => {
+    const lighting = { ambient: { intensity: 0.7 } };
+    const look = resolveGameLook({ lighting, backdrop: { background: "#000" } });
+    expect(look.backdrop?.sky).toBeUndefined();
+    expect(look.lighting).toBe(lighting);
+    expect(look.postProcessing).toEqual({ toneMapping: "aces", bloom: CINEMATIC_POST_PROCESSING.bloom });
+    expect(resolveGameLook({ look: "cinematic", lighting }).backdrop?.sky).toMatchObject(CINEMATIC_SKY);
   });
 
   it("cinematic fills the sky while preserving an authored background/fog", () => {
