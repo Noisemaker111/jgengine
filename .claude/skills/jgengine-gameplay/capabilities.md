@@ -411,6 +411,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `maturationStage` (function) · `import { maturationStage } from "@jgengine/core/game/breeding"`
 
+## medal-board — per-event bronze/silver/gold targets over a stored best, with tiers that open on medal points
+
+- `createMedalBoard` (function) · `import { createMedalBoard } from "@jgengine/core/progression/medalBoard"`
+
 ## merge-credits — fold generated and hand-authored credit documents into one, deduped by entry
 
 - `mergeCredits` (function) · `import { mergeCredits } from "@jgengine/core/game/credits"`
