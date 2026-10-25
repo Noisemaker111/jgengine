@@ -236,12 +236,22 @@ describe("what the conversions asked for: tags, full refunds, busy guards, free 
     expect(world.num("keep.gold")).toBe(390);
   });
 
-  test("free placement seeds a layout without paying, already built", () => {
+  test("free placement seeds a layout without paying, already built; selling it still returns its share", () => {
     const world = createWorldModel(keep);
     expect(world.place("cannon", { slot: "a1" }, { free: true, built: true })).toMatchObject({ ok: true, queued: false });
     expect(world.num("keep.gold")).toBe(500);
     world.act("sell", "cannon-1");
-    expect(world.num("keep.gold")).toBe(500);
+    expect(world.num("keep.gold")).toBe(600);
+  });
+
+  test("a free build cancelled mid-rise returns nothing", () => {
+    const world = createWorldModel(defineWorldModel({
+      factions: { keep: { facts: { gold: 100 } } },
+      kinds: { wall: { label: "Wall", cost: { "keep.gold": -40 }, takes: 5 } },
+    }));
+    world.place("wall", {}, { free: true });
+    world.remove("wall-1");
+    expect(world.num("keep.gold")).toBe(100);
   });
 
   test("hooks hear which instance they are about", () => {

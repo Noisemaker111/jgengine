@@ -330,8 +330,10 @@ export interface WorldInstance {
   slot?: string;
   cell?: readonly [number, number];
   ready: boolean;
-  /** Everything spent on it so far (build plus upgrades), which a removal's refund is a share of. */
+  /** What it is worth: its price plus every upgrade paid, which a removal's refund is a share of. */
   paid?: WorldChanges;
+  /** Placed without paying (a starting layout): cancelling it mid-build returns nothing. */
+  free?: boolean;
 }
 
 /** An instance that was removed, with what came back. */
@@ -359,7 +361,7 @@ export interface WorldModelState {
   orders?: Record<string, WorkQueueState<WorldOrderSpec, WorldChanges>>;
 }
 
-/** How to place: `free` skips the cost (a starting layout, a reward, a scenario's seed). */
+/** How to place: `free` skips paying (a starting layout, a reward); a sale still refunds its share of the price. */
 export interface WorldPlaceOptions {
   free?: boolean;
   /** Placed already built, skipping `takes`. */
@@ -1349,6 +1351,7 @@ export function createWorldModel(def: WorldModelDef, options: WorldModelOptions 
       const refusal = placeRefusal(kindId, at, current, options);
       if (refusal !== null) return refusal;
       const kind = kinds[kindId]!;
+      // A free placement charges nothing, but the instance is still worth its price when sold.
       const paid = options.free === true ? {} : (kind.cost ?? {});
       const facts = { ...current.facts };
       changeAll(facts, "", paid, 1);
@@ -1363,7 +1366,8 @@ export function createWorldModel(def: WorldModelDef, options: WorldModelOptions 
         ...(at.slot !== undefined && kind.slot !== undefined ? { slot: at.slot } : {}),
         ...(at.cell !== undefined && kind.grid !== undefined ? { cell: [at.cell[0], at.cell[1]] as const } : {}),
         ready: takes === 0,
-        paid,
+        paid: kind.cost ?? {},
+        ...(options.free === true ? { free: true } : {}),
       };
       let next: WorldModelState = { ...current, facts, seq, instances: { ...(current.instances ?? {}), [id]: instance } };
       if (takes > 0) {
@@ -1393,7 +1397,7 @@ export function createWorldModel(def: WorldModelDef, options: WorldModelOptions 
           const cancelled = cancelJob(queue, queueConfig(name), `order-${id}`);
           if (cancelled.ok) next = { ...next, orders: { ...next.orders, [name]: cancelled.state } };
         }
-        write(dropInstance(next, id, 1));
+        write(dropInstance(next, id, instance.free === true ? 0 : 1));
       } else {
         write(dropInstance(next, id, kinds[instance.kind]?.refund ?? 0));
       }

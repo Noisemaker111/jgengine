@@ -3095,7 +3095,7 @@
 - `WorldOrderView` (interface): interface WorldOrderView — Queued work as a progress bar reads it.
 - `WorldPersonDecl` (interface): interface WorldPersonDecl extends SubjectDecl — A person: where they are, whether they are on the phone, and what they say as the world changes.
 - `WorldPlaceDecl` (interface): interface WorldPlaceDecl extends SubjectDecl — A place in the world: a marker or position with a radius, an owner faction and its own facts.
-- `WorldPlaceOptions` (interface): interface WorldPlaceOptions — How to place: `free` skips the cost (a starting layout, a reward, a scenario's seed).
+- `WorldPlaceOptions` (interface): interface WorldPlaceOptions — How to place: `free` skips paying (a starting layout, a reward); a sale still refunds its share of the price.
 - `WorldPlacement` (interface): interface WorldPlacement — Where to place an instance.
 - `WorldQueueDecl` (interface): interface WorldQueueDecl — A queue timed work waits in, and how many orders run at once.
 - `WorldRefusal` (interface): interface WorldRefusal — Why something was refused, with what was short, in words a HUD can show.
