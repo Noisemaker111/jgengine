@@ -1,10 +1,12 @@
 import { reportTextureLoadError } from "@jgengine/core/devtools/textureErrors";
 import { useThree, useFrame } from "@react-three/fiber";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { EXRLoader } from "three/examples/jsm/loaders/EXRLoader.js";
 import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
 import type { EnvironmentSource } from "@jgengine/core/render/environment";
+
+import { WorldReflectionProbe, type WorldProbeSettings } from "./worldReflectionProbe";
 
 /** @internal Props for shell {@link EnvironmentLighting}. */
 export interface EnvironmentLightingProps {
@@ -31,6 +33,11 @@ export interface EnvironmentLightingProps {
    * night while the IBL keeps lighting the world like noon.
    */
   daylight?: { sunFactor: number; ambientFactor: number };
+  /**
+   * Capture the world around the camera for metal, glossy paint and glass, so they reflect the real
+   * scene. Null keeps the procedural probe alone. An authored HDRI or cube map always wins.
+   */
+  worldProbe?: WorldProbeSettings | null;
 }
 
 /**
@@ -51,9 +58,22 @@ export function EnvironmentLighting({
   sunDirection,
   sunColor = "#fff2d6",
   daylight,
+  worldProbe = null,
 }: EnvironmentLightingProps): null {
   const gl = useThree((state) => state.gl);
   const scene = useThree((state) => state.scene);
+  const probeRef = useRef<WorldReflectionProbe | null>(null);
+  const authoredMap = source?.kind === "hdri" || source?.kind === "cube";
+
+  useEffect(() => {
+    if (worldProbe === null || authoredMap) return;
+    const probe = new WorldReflectionProbe(gl, worldProbe);
+    probeRef.current = probe;
+    return () => {
+      probeRef.current = null;
+      probe.dispose();
+    };
+  }, [gl, scene, authoredMap, worldProbe?.size, worldProbe?.interval, worldProbe?.moveDistance]);
 
   useEffect(() => {
     const pmrem = new THREE.PMREMGenerator(gl);
@@ -129,7 +149,9 @@ export function EnvironmentLighting({
     return release;
   }, [gl, scene, source, intensity, skyColor, groundColor, horizonTint, sunColor, sunDirection?.[0], sunDirection?.[1], sunDirection?.[2]]);
 
-  useFrame(() => {
+  useFrame((state, delta) => {
+    const probe = probeRef.current;
+    probe?.step(scene, state.camera.getWorldPosition(probeEye), delta);
     if (daylight === undefined || scene.environment === null) return;
     // Ambient fill and the probe's sun lobe fade together; the probe's colours stay authored.
     scene.environmentIntensity = (source?.intensity ?? intensity) * (daylight.ambientFactor * 0.6 + daylight.sunFactor * 0.4);
@@ -137,6 +159,8 @@ export function EnvironmentLighting({
 
   return null;
 }
+
+const probeEye = new THREE.Vector3();
 
 /** @internal Default IBL strength for the procedural probe: enough sky fill and sun lobe to model forms. */
 export const DEFAULT_IBL_INTENSITY = 0.45;

@@ -66,6 +66,7 @@ interface MoodTokens {
   shadowSoftness: number;
   exposure: number;
   grade: { lift: Rgb; gain: Rgb; gamma: number; saturation: number; contrast: number };
+  atmosphere: { fogDensity: number; shafts: number };
 }
 
 const MOODS: Record<MoodPreset, MoodTokens> = {
@@ -84,6 +85,7 @@ const MOODS: Record<MoodPreset, MoodTokens> = {
     shadowSoftness: 1.25,
     exposure: 1,
     grade: { lift: [0, 0.003, 0.01], gain: [1.04, 1.01, 0.97], gamma: 1.03, saturation: 1.15, contrast: 1 },
+    atmosphere: { fogDensity: 0.0006, shafts: 0.28 },
   },
   bright: {
     skyPreset: "day",
@@ -100,6 +102,7 @@ const MOODS: Record<MoodPreset, MoodTokens> = {
     shadowSoftness: 1.6,
     exposure: 1.32,
     grade: { lift: [0, 0.002, 0.008], gain: [1.03, 1.02, 0.98], gamma: 1, saturation: 1.14, contrast: 1 },
+    atmosphere: { fogDensity: 0.0004, shafts: 0.2 },
   },
   golden: {
     skyPreset: "day",
@@ -116,6 +119,7 @@ const MOODS: Record<MoodPreset, MoodTokens> = {
     shadowSoftness: 1.4,
     exposure: 0.96,
     grade: { lift: [0.006, 0.004, 0.012], gain: [1.06, 1, 0.93], gamma: 0.97, saturation: 1.12, contrast: 1 },
+    atmosphere: { fogDensity: 0.0012, shafts: 0.5 },
   },
   dusk: {
     skyPreset: "day",
@@ -132,6 +136,7 @@ const MOODS: Record<MoodPreset, MoodTokens> = {
     shadowSoftness: 1.8,
     exposure: 1.05,
     grade: { lift: [0.018, 0.008, 0.032], gain: [1.08, 0.98, 0.92], gamma: 0.97, saturation: 1.1, contrast: 1 },
+    atmosphere: { fogDensity: 0.0016, shafts: 0.6 },
   },
   overcast: {
     skyPreset: "day",
@@ -148,6 +153,7 @@ const MOODS: Record<MoodPreset, MoodTokens> = {
     shadowSoftness: 4,
     exposure: 1.06,
     grade: { lift: [0.01, 0.012, 0.016], gain: [1, 1, 1.02], gamma: 0.98, saturation: 0.96, contrast: 1.06 },
+    atmosphere: { fogDensity: 0.0018, shafts: 0 },
   },
   night: {
     skyPreset: "night",
@@ -164,6 +170,7 @@ const MOODS: Record<MoodPreset, MoodTokens> = {
     shadowSoftness: 1.6,
     exposure: 0.8,
     grade: { lift: [0, 0.004, 0.022], gain: [0.95, 1, 1.08], gamma: 1, saturation: 0.9, contrast: 1 },
+    atmosphere: { fogDensity: 0.0008, shafts: 0.12 },
   },
 };
 
@@ -254,7 +261,7 @@ export function resolveMood(mood: Mood): ResolvedMood {
     lighting,
     sky,
     fog: fogRange === undefined ? undefined : { color: haze, near: fogRange.near, far: fogRange.far },
-    postProcessing: { exposure: config.exposure ?? tokens.exposure, grade },
+    postProcessing: { exposure: config.exposure ?? tokens.exposure, grade, atmosphere: { ...tokens.atmosphere } },
   };
 }
 
