@@ -6,8 +6,7 @@ import { type CSSProperties, type ReactNode } from "react";
  * tracks entities in the 3D world. The game keeps owning its entities: it passes
  * a plain array of `{ id, worldPosition }` entries and a `project` function that
  * turns a world position into a screen point, and composes each frame's markup
- * itself (typically the shipped {@link ./bars!HealthBar} plus a name) reskinned
- * through `HudTheme`/`barTokens`. This primitive owns only the reusable behavior:
+ * itself (typically a `KitMeter` plus a name) drawn by the active UI kit. This primitive owns only the reusable behavior:
  * projecting, offsetting, culling entries that are off-screen or behind the
  * camera, and stacking nearer entities above farther ones.
  *
@@ -126,8 +125,8 @@ export interface EntityFramesProps<E extends EntityFrameEntry> extends EntityFra
   /** World→screen projector; return `null` to cull. */
   project: ProjectEntity;
   /**
-   * Renders one entity's frame — compose the shipped bars (`HealthBar value/max`)
-   * and a name here, reskinned via `barTokens`/`HudTheme`. The wrapper handles
+   * Renders one entity's frame — compose a `KitMeter` (`value`/`max`)
+   * and a name here, drawn by the active UI kit. The wrapper handles
    * positioning; render your content anchored at bottom-center of the point.
    */
   renderFrame: (entry: E, placement: EntityFramePlacement<E>) => ReactNode;

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { gameFrameVars } from "@jgengine/react/gameFrame";
+import { kitFrameVars } from "@jgengine/react/kitFrame";
 import { GameCursor } from "@jgengine/react/gameCursor";
 import { gameFontStacks } from "@jgengine/react/gameFonts";
 import { customizeKit, type KitMenuProps, type KitPanelProps } from "@jgengine/react/uiKit";
@@ -32,7 +32,7 @@ function Menu({ items, activeId, itemProps, onSelect, variant = "list", classNam
         data-secondary={item.secondary === true ? "" : undefined}
         data-jg-frame="hull"
         data-interactive=""
-        style={gameFrameVars({
+        style={kitFrameVars({
           material: "hull",
           cut: item.secondary === true ? "slant" : "notch",
           depth: item.secondary === true ? 8 : 11,
@@ -69,7 +69,7 @@ function Panel({ eyebrow, title, aside, footer, tone, variant = "hud", as: Tag =
   const head = title !== undefined || eyebrow !== undefined || aside !== undefined;
   return (
     <Tag {...rest} className={`jgk-deepward-panel ${className ?? ""}`} data-variant={variant} data-tone={tone} data-state={leaving === true ? "closed" : "open"} style={style}>
-      <div className="jgk-deepward-bezel" data-jg-frame="hull" style={gameFrameVars({ material: "hull", cut: "chamfer", depth: 16, tint: "#22363f", edge: "#050b0e", edgeWidth: 2, padding: "12px" })}>
+      <div className="jgk-deepward-bezel" data-jg-frame="hull" style={kitFrameVars({ material: "hull", cut: "chamfer", depth: 16, tint: "#22363f", edge: "#050b0e", edgeWidth: 2, padding: "12px" })}>
         <div data-jg-frame-face="" className="jgk-deepward-bezel-face">
           <div className="jgk-deepward-screen">
             {head ? (

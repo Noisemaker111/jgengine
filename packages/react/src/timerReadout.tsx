@@ -102,7 +102,7 @@ export interface TimerReadoutProps {
  * A live digital timer readout (mm:ss / m:ss.d) driven off a {@link TimerSet}.
  * It re-reads every frame and formats remaining or elapsed time — a round clock,
  * a respawn countdown, or an ability charge, all the same widget. HudTheme-skinned
- * via `--jg-bar-text`; reskin with `style` or the theme tokens.
+ * via `--jg-text`; reskin with `style` or the theme tokens.
  *
  * @capability timer-readout live digital mm:ss/m:ss.d timer readout bound to a TimerSet
  */
@@ -124,7 +124,7 @@ export function TimerReadout({
       style={{
         fontVariantNumeric: "tabular-nums",
         fontWeight: 700,
-        color: "var(--jg-bar-text, #e2e8f0)",
+        color: "var(--jg-text, #e2e8f0)",
         ...style,
       }}
     >
@@ -166,7 +166,7 @@ export interface TimerRingProps {
  * Re-reads every frame and sweeps an SVG arc as the timer advances — ability
  * charge, cooldown wipe, respawn ring, capture progress, all the same widget.
  * `mode` chooses filling vs. draining; center `children` can hold a readout.
- * HudTheme-skinned via `--jg-accent` / `--jg-bar-track`.
+ * HudTheme-skinned via `--jg-accent` / `--jg-surface-deep`.
  *
  * @capability timer-ring radial SVG charge/cooldown ring bound to a TimerSet's progress
  */
@@ -177,7 +177,7 @@ export function TimerRing({
   thickness = 8,
   mode = "fill",
   color = "var(--jg-accent, #38bdf8)",
-  trackColor = "var(--jg-bar-track, rgba(148,163,184,0.25))",
+  trackColor = "var(--jg-surface-deep, rgba(148,163,184,0.25))",
   children,
   active = true,
   className,

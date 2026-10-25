@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react";
 import { useSyncExternalStore } from "react";
 import { useGameFonts } from "@jgengine/react/gameFonts";
-import { GAME_MATERIALS } from "@jgengine/react/gameFrame";
+import { KIT_MATERIALS } from "@jgengine/react/kitFrame";
 import { useGameContext } from "@jgengine/react/provider";
 
 import { GAME_FONTS } from "../../art/fonts/fonts";
@@ -18,8 +18,8 @@ const ROOT_VARS = {
   "--ec-font-display": EMBER_FONTS.fontDisplay,
   "--ec-font-body": EMBER_FONTS.fontBody,
   "--ec-font-numeric": EMBER_FONTS.fontNumeric,
-  "--ec-stone": `${GAME_MATERIALS.stone.layers}, ${GAME_MATERIALS.stone.base}`,
-  "--ec-stone-blend": `${GAME_MATERIALS.stone.blend}, normal`,
+  "--ec-stone": `${KIT_MATERIALS.stone.layers}, ${KIT_MATERIALS.stone.base}`,
+  "--ec-stone-blend": `${KIT_MATERIALS.stone.blend}, normal`,
 } as CSSProperties;
 
 /** Ember Command's war table: the ledger strip and pinned orders along the top, the survey map, Bram's

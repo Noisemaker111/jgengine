@@ -1,6 +1,5 @@
 import {
   createElement,
-  forwardRef,
   useInsertionEffect,
   type CSSProperties,
   type ElementType,
@@ -9,9 +8,10 @@ import {
   type MouseEvent,
   type PointerEvent,
   type ReactNode,
+  type Ref,
 } from "react";
 
-import { useHudInteract, type HudInteractListener } from "./hudInteract";
+import type { HudInteractKind } from "./hudInteract";
 
 /**
  * What a frame is made of. Every material is a generated texture (SVG turbulence and lighting, no
@@ -29,7 +29,7 @@ import { useHudInteract, type HudInteractListener } from "./hudInteract";
  * - `carbon`: woven fibre, for racing and tech.
  * - `leather`: stitched hide, for journals and saddlebags.
  */
-export type GameMaterial = "steel" | "brass" | "hull" | "wood" | "stone" | "paper" | "enamel" | "glass" | "carbon" | "leather";
+export type KitMaterial = "steel" | "brass" | "hull" | "wood" | "stone" | "paper" | "enamel" | "glass" | "carbon" | "leather";
 
 /**
  * The frame's silhouette. Every cut is a clip path in pixels, so corners stay the same size at any
@@ -46,10 +46,10 @@ export type GameMaterial = "steel" | "brass" | "hull" | "wood" | "stone" | "pape
  * - `torn`: a ragged bottom edge.
  * - `hex`: pointed ends, for buttons and chips.
  */
-export type GameCut = "box" | "chamfer" | "notch" | "slant" | "tab" | "banner" | "shield" | "ticket" | "torn" | "hex";
+export type KitCut = "box" | "chamfer" | "notch" | "slant" | "tab" | "banner" | "shield" | "ticket" | "torn" | "hex";
 
 /** Everything a material decides: its texture, base colour, lighting, text colour and default edge. */
-export interface GameMaterialLook {
+export interface KitMaterialLook {
   /** Base colour under the texture; `tint` replaces it. */
   base: string;
   /** Text drawn on the material. */
@@ -118,10 +118,10 @@ const WEAVE =
 const STITCH = "linear-gradient(transparent, transparent)";
 
 /**
- * The built-in materials. A game reads one to match its own pieces (`GAME_MATERIALS.wood.ink`), or
- * passes `tint` / `edge` to `GameFrame` to recolour one.
+ * The built-in materials. A game reads one to match its own pieces (`KIT_MATERIALS.wood.ink`), or
+ * passes `tint` / `edge` to a material `KitPanel` or `KitButton` to recolour one.
  */
-export const GAME_MATERIALS: Readonly<Record<GameMaterial, GameMaterialLook>> = {
+export const KIT_MATERIALS: Readonly<Record<KitMaterial, KitMaterialLook>> = {
   steel: {
     base: "#5d6672",
     ink: "#f2f5f8",
@@ -198,9 +198,9 @@ export const GAME_MATERIALS: Readonly<Record<GameMaterial, GameMaterialLook>> = 
 /**
  * The clip path for a cut at a corner size of `depth` pixels.
  *
- * @capability game-frame-cut clip path for an angled or irregular frame silhouette (chamfer, banner, ticket, torn…)
+ * @capability kit-frame-cut clip path for an angled or irregular frame silhouette (chamfer, banner, ticket, torn…)
  */
-export function gameCutPath(cut: GameCut, depth = 14): string {
+export function kitCutPath(cut: KitCut, depth = 14): string {
   const c = `${depth}px`;
   const h = `${depth / 2}px`;
   switch (cut) {
@@ -232,12 +232,15 @@ export function gameCutPath(cut: GameCut, depth = 14): string {
   }
 }
 
-/** Props for {@link GameFrame}. */
-export interface GameFrameProps extends Omit<HTMLAttributes<HTMLElement>, "color"> {
-  /** What it is made of. Default `steel`. */
-  material?: GameMaterial;
+/**
+ * How a material surface looks: what it is made of, its silhouette and rim. Give `material` to a
+ * `KitPanel` or `KitButton` and it draws as that object instead of in the kit's own language.
+ */
+export interface KitFrameLook {
+  /** What it is made of. */
+  material: KitMaterial;
   /** Silhouette. Default `chamfer`. */
-  cut?: GameCut;
+  cut?: KitCut;
   /** Corner and notch size in px. Default 14. */
   depth?: number;
   /** Replaces the material's base colour (e.g. a team or rarity colour). */
@@ -252,17 +255,6 @@ export interface GameFrameProps extends Omit<HTMLAttributes<HTMLElement>, "color
   glow?: string;
   /** Inner padding. Default `12px 16px`. */
   padding?: CSSProperties["padding"];
-  /** Element to render. Default `div`; `button` makes it a pressable game button. */
-  as?: ElementType;
-  /** Draws hover lift, press sink and the engine UI sounds; set automatically for `as="button"`. */
-  interactive?: boolean;
-  /** UI cue name for hover/activate sounds. Default `"confirm"` on interactive frames. */
-  cue?: string;
-  onInteract?: HudInteractListener;
-  /** Anything a `button` takes when `as="button"`. */
-  type?: "button" | "submit" | "reset";
-  disabled?: boolean;
-  children?: ReactNode;
 }
 
 // No CSS `filter` or `backdrop-filter` anywhere: over a live 3D canvas a filtered element is re-rendered
@@ -287,7 +279,7 @@ button[data-jg-frame] { appearance: none; border: 0; margin: 0; background: none
 [data-jg-frame]:disabled { cursor: not-allowed; opacity: 0.6; --jg-gf-light: rgba(40, 40, 44, 0.45); }
 }`;
 
-const FRAME_STYLE_ID = "jg-game-frame-styles";
+const FRAME_STYLE_ID = "jg-kit-frame-styles";
 
 function ensureFrameStyles(): void {
   if (typeof document === "undefined" || document.getElementById(FRAME_STYLE_ID) !== null) return;
@@ -301,15 +293,15 @@ function ensureFrameStyles(): void {
 const FACE_CORNER_SHRINK = Math.SQRT2 - 1;
 
 /**
- * The CSS variables that dress a frame. `GameFrame` sets them; spread them on your own element (with
- * `data-jg-frame` on it and `data-jg-frame-face` on its single child) to dress one by hand. Add
- * `data-shadow` for the cast shadow or `data-glow` for the lit ring; `shadow` itself is read by `GameFrame`.
- * It also installs the frame stylesheet, so a hand-dressed element looks right even when no
- * `GameFrame` has mounted yet (a HUD that starts in play, with no menu before it).
+ * The CSS variables that dress a material frame. A material `KitPanel`/`KitButton` sets them;
+ * spread them on your own element (with `data-jg-frame` on it and `data-jg-frame-face` on its single
+ * child) to dress one by hand. Add `data-shadow` for the cast shadow or `data-glow` for the lit
+ * ring. It also installs the frame stylesheet, so a hand-dressed element looks right even when no
+ * material panel has mounted yet (a HUD that starts in play, with no menu before it).
  *
- * @capability game-frame-style CSS variables for a material frame on an element the game already owns
+ * @capability kit-frame-style CSS variables for a material frame on an element the game already owns
  */
-export function gameFrameVars({
+export function kitFrameVars({
   material = "steel",
   cut = "chamfer",
   depth = 14,
@@ -318,9 +310,9 @@ export function gameFrameVars({
   edgeWidth = 2,
   glow,
   padding,
-}: Pick<GameFrameProps, "material" | "cut" | "depth" | "tint" | "edge" | "edgeWidth" | "shadow" | "glow" | "padding"> = {}): CSSProperties {
+}: Partial<KitFrameLook> = {}): CSSProperties {
   ensureFrameStyles();
-  const look = GAME_MATERIALS[material];
+  const look = KIT_MATERIALS[material];
   const rim = edge ?? look.edge;
   const rimWidth = rim === "none" ? 0 : Math.max(0, edgeWidth);
   const vars: Record<string, string | number | undefined> = {
@@ -328,8 +320,8 @@ export function gameFrameVars({
     "--jg-gf-layers": look.layers,
     "--jg-gf-blend": `${look.blend}, normal`,
     "--jg-gf-ink": look.ink,
-    "--jg-gf-cut": gameCutPath(cut, depth),
-    "--jg-gf-face-cut": gameCutPath(cut, Math.max(0, depth - rimWidth * FACE_CORNER_SHRINK)),
+    "--jg-gf-cut": kitCutPath(cut, depth),
+    "--jg-gf-face-cut": kitCutPath(cut, Math.max(0, depth - rimWidth * FACE_CORNER_SHRINK)),
     "--jg-gf-rim": rimWidth === 0 ? "transparent" : rim,
     "--jg-gf-rim-w": `${rimWidth}px`,
     "--jg-gf-glow": glow,
@@ -338,56 +330,51 @@ export function gameFrameVars({
   return vars as CSSProperties;
 }
 
+/** Props of the material surface a material `KitPanel`/`KitButton` renders. @internal */
+export interface KitFrameProps extends KitFrameLook, Omit<HTMLAttributes<HTMLElement>, "color"> {
+  as?: ElementType;
+  pressable: boolean;
+  report: (kind: HudInteractKind) => void;
+  type?: "button" | "submit" | "reset";
+  disabled?: boolean;
+  ref?: Ref<HTMLElement>;
+  children?: ReactNode;
+}
+
 /**
- * A panel, card or button made of a material, with a cut silhouette and a rim: the building block
- * for screens that look like part of the game rather than a web page. `as="button"` makes it a game
- * button that lifts on hover, sinks on press, shows a glow on keyboard focus and plays the engine
- * UI sounds.
- *
- * ```tsx
- * <GameFrame material="wood" cut="banner">Wave 4</GameFrame>
- * <GameFrame as="button" material="enamel" tint="#1f6feb" cut="hex" onClick={start}>Open the park</GameFrame>
- * ```
- *
- * @capability game-frame material frame (steel, wood, stone, paper, glass…) with an angled or irregular cut, as a panel or a game button
+ * A material surface: a cut silhouette with a rim, a cast shadow or glow, and a generated texture.
+ * Pressable ones lift on hover, sink on press, glow on keyboard focus and report UI cues.
+ * @internal
  */
-export const GameFrame = forwardRef<HTMLElement, GameFrameProps>(function GameFrame(
-  {
-    material = "steel",
-    cut = "chamfer",
-    depth,
-    tint,
-    edge,
-    edgeWidth,
-    shadow,
-    glow,
-    padding,
-    as,
-    interactive,
-    cue,
-    onInteract,
-    type,
-    disabled,
-    style,
-    children,
-    onPointerEnter,
-    onClick,
-    onFocus,
-    ...rest
-  },
-  ref,
-) {
+export function KitFrame({
+  material,
+  cut = "chamfer",
+  depth,
+  tint,
+  edge,
+  edgeWidth,
+  shadow,
+  glow,
+  padding,
+  as,
+  pressable,
+  report,
+  type,
+  disabled,
+  style,
+  children,
+  onPointerEnter,
+  onClick,
+  onFocus,
+  ...rest
+}: KitFrameProps): ReactNode {
   useInsertionEffect(ensureFrameStyles, []);
   const tag: ElementType = as ?? "div";
-  const pressable = interactive ?? tag === "button";
-  const report = useHudInteract("frame", cue ?? (pressable ? "confirm" : undefined), onInteract);
-  const look = GAME_MATERIALS[material];
-  const vars = gameFrameVars({ material, cut, depth, tint, edge, edgeWidth, shadow, glow, padding });
+  const vars = kitFrameVars({ material, cut, depth, tint, edge, edgeWidth, glow, padding });
   return createElement(
     tag,
     {
       ...rest,
-      ref,
       "data-jg-frame": material,
       "data-cut": cut,
       "data-interactive": pressable ? "" : undefined,
@@ -395,7 +382,7 @@ export const GameFrame = forwardRef<HTMLElement, GameFrameProps>(function GameFr
       "data-glow": glow === undefined ? undefined : "",
       "data-shadow": glow === undefined && shadow !== false ? "" : undefined,
       ...(tag === "button" ? { type: type ?? "button", disabled } : {}),
-      style: { ...vars, ...look.extra, ...style },
+      style: { ...vars, ...KIT_MATERIALS[material].extra, ...style },
       onPointerEnter: (event: PointerEvent<HTMLElement>) => {
         if (pressable && !disabled) report("hover");
         onPointerEnter?.(event);
@@ -411,4 +398,4 @@ export const GameFrame = forwardRef<HTMLElement, GameFrameProps>(function GameFr
     },
     createElement("span", { "data-jg-frame-face": "", style: { display: "block" } }, children),
   );
-});
+}

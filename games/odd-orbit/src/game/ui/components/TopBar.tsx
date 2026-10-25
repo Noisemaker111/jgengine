@@ -1,6 +1,6 @@
-import { GameFrame } from "@jgengine/react/gameFrame";
 import { GameIcon } from "@jgengine/react/gameIcons";
-import { HudFade } from "@jgengine/react/hudFade";
+import { KitPanel } from "@jgengine/react/uiKitRoot";
+import { HudFade } from "@jgengine/react/hudLayout";
 import { useGame, useGameClock, useSceneObjects } from "@jgengine/react/hooks";
 import { useStore } from "@jgengine/react/store";
 import { householdStore } from "../../session/store";
@@ -23,11 +23,11 @@ export function HouseClock({ compact = false }: { compact?: boolean }) {
   return (
     <section className="orbit-wall" aria-label="Household time">
       <WallClock hour={hour} minute={minute} size={compact ? 62 : 84} />
-      <GameFrame material="paper" cut="torn" depth={6} padding="0" edgeWidth={0} shadow={false} className="orbit-calendar">
+      <KitPanel material="paper" cut="torn" depth={6} padding="0" edgeWidth={0} shadow={false} className="orbit-calendar">
         <span className="orbit-calendar-band">Day {cal.day + 1}</span>
         <strong>{String(hour).padStart(2, "0")}:{String(minute).padStart(2, "0")}</strong>
         <small>{PHASE_WORD[phase] ?? phase}</small>
-      </GameFrame>
+      </KitPanel>
       <div className="orbit-knobs" role="group" aria-label="Simulation speed">
         <Enamel as="button" tone={clock.paused ? "butter" : "cream"} radius={99} padding="0" className="orbit-knob" aria-label={clock.paused ? "Resume time" : "Pause time"} aria-pressed={clock.paused} onClick={() => commands.run("pauseToggle", {})}>
           <GameIcon name={clock.paused ? "arrowRight" : "pause"} size={16} />
@@ -60,9 +60,9 @@ export function FridgeMagnets({ compact = false }: { compact?: boolean }) {
           <Enamel tone={lowFood ? "coral" : "mint"} radius={16} padding="6px 12px 6px 8px" className="orbit-magnet" title="Rations">
             <GameIcon name="bread" size={20} /><b>{household.pantry}</b><small>rations</small>
           </Enamel>
-          <GameFrame material="paper" cut="ticket" depth={10} padding="5px 14px" edgeWidth={0} shadow={false} className={`orbit-bill ${short ? "warning" : ""}`} title="Due at midnight">
+          <KitPanel material="paper" cut="ticket" depth={10} padding="5px 14px" edgeWidth={0} shadow={false} className={`orbit-bill ${short ? "warning" : ""}`} title="Due at midnight">
             <GameIcon name="hourglass" size={17} /><b>{Math.round(bill)}</b><small>midnight bill</small>
-          </GameFrame>
+          </KitPanel>
           {household.debt > 0 && (
             <Enamel tone="coral" radius={16} padding="6px 12px 6px 8px" className="orbit-magnet" title="Debt">
               <GameIcon name="debuffArrow" size={18} /><b>{creditsText(household.debt)}</b><small>debt</small>
@@ -70,9 +70,9 @@ export function FridgeMagnets({ compact = false }: { compact?: boolean }) {
           )}
         </div>
         {!compact && (
-          <GameFrame material="paper" cut="box" padding="8px 12px 9px" edgeWidth={0} shadow={false} tint="#fff3b8" className="orbit-sticky" role="status">
+          <KitPanel material="paper" cut="box" padding="8px 12px 9px" edgeWidth={0} shadow={false} tint="#fff3b8" className="orbit-sticky" role="status">
             {goal}
-          </GameFrame>
+          </KitPanel>
         )}
       </section>
     </HudFade>

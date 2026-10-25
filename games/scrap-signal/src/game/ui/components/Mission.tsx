@@ -1,5 +1,5 @@
 import { GameIcon, type GameIconName } from "@jgengine/react/gameIcons";
-import { HudFade } from "@jgengine/react/hudFade";
+import { HudFade } from "@jgengine/react/hudLayout";
 import { useCurrency, useGame, useQuestJournal } from "@jgengine/react/hooks";
 import { useStore } from "@jgengine/react/store";
 import { quests } from "../../quests/catalog";

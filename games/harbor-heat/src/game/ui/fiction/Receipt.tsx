@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useDisplayProfile } from "@jgengine/react/display";
-import { GameFrame } from "@jgengine/react/gameFrame";
+import { KitButton, KitPanel } from "@jgengine/react/uiKitRoot";
 import { useViewportScrollLock } from "@jgengine/react/gameMenu";
 import { useGameStore } from "@jgengine/react/hooks";
 import { useMenuNav } from "@jgengine/react/menuNav";
@@ -71,7 +71,7 @@ export function ReceiptScreen({ slip, onAction }: { slip: Slip; onAction: (id: s
           <i className="hh-rubber" data-tone={slip.tone} aria-hidden="true">{slip.stamp}</i>
         </div>
       ) : (
-        <GameFrame material="paper" tint="#efe6cf" cut="torn" depth={12} edge="none" padding="0" className="hh-tabloid">
+        <KitPanel material="paper" tint="#efe6cf" cut="torn" depth={12} edge="none" padding="0" className="hh-tabloid">
           <header>
             <span>Late edition · {stamp.clock}</span>
             <b>Harbor Tribune</b>
@@ -87,13 +87,12 @@ export function ReceiptScreen({ slip, onAction }: { slip: Slip; onAction: (id: s
               ))}
             </dl>
           )}
-        </GameFrame>
+        </KitPanel>
       )}
       <nav className="hh-slip-actions" aria-label="What next" {...nav.containerProps}>
         {slip.actions.map((action) => (
-          <GameFrame
+          <KitButton
             key={action.id}
-            as="button"
             material="enamel"
             tint={action.primary === true ? HH.amber : HH.ink}
             cut="slant"
@@ -108,7 +107,7 @@ export function ReceiptScreen({ slip, onAction }: { slip: Slip; onAction: (id: s
             onClick={() => { nav.setActive(action.id); pick(action.id); }}
           >
             {action.label}
-          </GameFrame>
+          </KitButton>
         ))}
       </nav>
       {compact ? null : <KeyLegend items={[{ keys: ["←", "→"], label: "choose" }, { keys: ["Enter"], label: "go" }]} />}

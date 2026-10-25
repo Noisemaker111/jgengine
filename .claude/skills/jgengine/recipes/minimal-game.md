@@ -81,9 +81,9 @@ export function onNewPlayer(ctx: GameContext): void {
 
 `GameUI` starts as an empty `HudCanvas` (`useHudLayout` + `HudCanvas` from the kit). That is
 intentional: **every game owns its UI composition** — layout, terminology, placement, and art
-direction. Compose the shipped building blocks the moment you need them (`StatBar`, `Hotbar`,
-`Coins`, `InventoryGrid`, `CharacterSheet`, window shells from `jgengine-ui`), then reskin via
-`HudTheme` tokens. Reaching for those is using the engine correctly, not incomplete work. What
+direction. Compose the shipped building blocks the moment you need them (`HudSlots`, `KitVitals`, `KitActionBar`,
+`Hotbar`, `Coins`, `InventoryGrid`, `CharacterSheet`, window shells from `jgengine-ui`), then reskin via
+the UI kit's tokens (`customizeKit`). Reaching for those is using the engine correctly, not incomplete work. What
 the engine does not ship is a whole finished game *face* or genre theme preset — do not leave an
 unarranged, unskinned generic dashboard as the product. Custom markup can use headless
 SDK behavior; a missing reusable behavior is an upstream gap (see `jgengine-ui`).

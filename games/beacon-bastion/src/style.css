@@ -7,7 +7,7 @@ body,
 
 /* Beacon Bastion's screens are made of the keep's own things: a carved stone lintel lit by the
    beacon, timber planks and signs, a war banner, a stone tablet, parchment writs. The engine's
-   GameFrame draws the materials; these rules set the keep's type, fire and layout. */
+   Material kit panels draw the materials; these rules set the keep's type, fire and layout. */
 
 .bb-menu {
   --bb-fire: #ffb347;

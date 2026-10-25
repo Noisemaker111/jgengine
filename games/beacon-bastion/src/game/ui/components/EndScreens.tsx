@@ -1,6 +1,6 @@
 import { useGame, useGameStore } from "@jgengine/react/hooks";
+import { KitButton, KitPanel } from "@jgengine/react/uiKitRoot";
 import { GameCursor } from "@jgengine/react/gameCursor";
-import { GameFrame } from "@jgengine/react/gameFrame";
 import { GameIcon } from "@jgengine/react/gameIcons";
 import { useMenuNav } from "@jgengine/react/menuNav";
 
@@ -51,7 +51,7 @@ function Memorial({ victory }: { victory: boolean }) {
   return (
     <div className="bb-memorial" data-outcome={victory ? "victory" : "defeat"}>
       <div className="bb-memorial-dark" aria-hidden />
-      <GameFrame material="stone" tint="#5a554d" cut="chamfer" depth={22} padding="18px 30px 24px" className="bb-memorial-stone">
+      <KitPanel material="stone" tint="#5a554d" cut="chamfer" depth={22} padding="18px 30px 24px" className="bb-memorial-stone">
         <Brazier size={48} strength={victory ? 1 : 0} className="bb-memorial-fire" />
         <h2 className="bb-memorial-title">{victory ? "The Keep Holds" : "The Keep Has Fallen"}</h2>
         <span className="bb-stars" data-jg="result-stars" aria-label={`${stars} stars on ${DIFFICULTIES[difficulty].label}`}>
@@ -72,9 +72,8 @@ function Memorial({ victory }: { victory: boolean }) {
         <p className="bb-memorial-ask">Carry one relic into the next keep</p>
         <nav className="bb-writs" {...nav.containerProps} data-jg-cursor-scope="">
           {offers.map((offer) => (
-            <GameFrame
+            <KitButton
               key={offer.id}
-              as="button"
               material="paper"
               cut="torn"
               depth={8}
@@ -88,10 +87,9 @@ function Memorial({ victory }: { victory: boolean }) {
               </i>
               <strong>{offer.boon === null ? offer.raw : offer.boon.label}</strong>
               <span>{offer.boon === null ? "" : offer.boon.detail}</span>
-            </GameFrame>
+            </KitButton>
           ))}
-          <GameFrame
-            as="button"
+          <KitButton
             material="wood"
             cut="notch"
             depth={10}
@@ -101,10 +99,10 @@ function Memorial({ victory }: { victory: boolean }) {
             onClick={() => choose("restart")}
           >
             <span className="bb-plank-label" data-text="Defend again">Defend again</span>
-          </GameFrame>
+          </KitButton>
           <GameCursor variant="diamond" color={FIRE} arm={16} gap={8} />
         </nav>
-      </GameFrame>
+      </KitPanel>
     </div>
   );
 }
@@ -139,9 +137,8 @@ function WarCouncil() {
         </span>
         <span className="bb-difficulty" role="radiogroup" aria-label="Next defense difficulty">
           {DIFFICULTY_IDS.map((id) => (
-            <GameFrame
+            <KitButton
               key={id}
-              as="button"
               material={view.difficulty === id ? "enamel" : "wood"}
               tint={view.difficulty === id ? "#8a2414" : undefined}
               cut="notch"
@@ -155,7 +152,7 @@ function WarCouncil() {
               onClick={() => commands.run("campaign.difficulty", { difficulty: id })}
             >
               {DIFFICULTIES[id].label}
-            </GameFrame>
+            </KitButton>
           ))}
         </span>
       </div>
@@ -166,9 +163,8 @@ function WarCouncil() {
             {view.seats
               .filter((seat) => seat.node.branch === branch.id)
               .map(({ node, rank, open }) => (
-                <GameFrame
+                <KitButton
                   key={node.id}
-                  as="button"
                   material="stone"
                   tint={rank > 0 ? "#6b5a2e" : "#3f3b35"}
                   cut="chamfer"
@@ -182,15 +178,15 @@ function WarCouncil() {
                 >
                   <span>{node.label}</span>
                   <b>{`${rank}/${node.maxRank ?? 1}`}</b>
-                </GameFrame>
+                </KitButton>
               ))}
           </div>
         ))}
       </div>
       {view.points > view.free ? (
-        <GameFrame as="button" material="wood" cut="notch" depth={5} padding="3px 10px" className="bb-small-plank bb-council-reset" onClick={() => commands.run("council.reset", {})}>
+        <KitButton material="wood" cut="notch" depth={5} padding="3px 10px" className="bb-small-plank bb-council-reset" onClick={() => commands.run("council.reset", {})}>
           Return every seat
-        </GameFrame>
+        </KitButton>
       ) : null}
     </div>
   );

@@ -13,7 +13,7 @@ import type { StatLevelUpEvent } from "@jgengine/core/game/events";
 import { rollCheck, type CheckAdvantage, type CheckResult } from "@jgengine/core/stats/rollCheck";
 import { dialogueSlot } from "@jgengine/core/game/dialogue";
 import { useGameContext } from "./provider";
-import { useCurrency, useEntityStat, useFeed, useInventory, useLocalPlayerDead } from "./hooks";
+import { useCurrency, useFeed, useInventory, useLocalPlayerDead } from "./hooks";
 import { useStore } from "./store";
 import { paintQteStepDom, paintSkillCheckDom } from "./skillCheckPaint";
 
@@ -40,42 +40,6 @@ export function SlotGrid({
               : null}
         </div>
       ))}
-    </div>
-  );
-}
-
-/**
- * A headless, unstyled stat meter — an accessible `role="progressbar"` you paint entirely through
- * `className`/`fillClassName`. This is the class-hook primitive for teams supplying their own CSS;
- * for a batteries-included themed bar use the atomic, token-styled components in
- * `@jgengine/react/bars` (`HealthBar`, `ShieldBar`, …). Renamed from `HealthBar` in #1033 so the
- * purpose-named atomic bar owns that name and no two components share it.
- */
-export function StatMeter({
-  instanceId,
-  statId,
-  className,
-  fillClassName,
-}: {
-  instanceId: string;
-  statId: string;
-  className?: string;
-  fillClassName?: string;
-}) {
-  const stat = useEntityStat(instanceId, statId);
-  if (stat === null) return null;
-  const range = stat.max - stat.min;
-  const percent = range <= 0 ? 0 : ((stat.current - stat.min) / range) * 100;
-  return (
-    <div
-      className={className}
-      role="progressbar"
-      aria-valuemin={stat.min}
-      aria-valuemax={stat.max}
-      aria-valuenow={stat.current}
-      data-stat={statId}
-    >
-      <div className={fillClassName} style={{ width: `${percent}%`, height: "100%" }} />
     </div>
   );
 }

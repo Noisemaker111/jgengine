@@ -4,7 +4,7 @@ import { defineGame, defineSystem } from "@jgengine/shell/gameKit";
 // (or null on open ground), so one command turns clicks into ctx.scene.entity.setTarget.
 // Tab cycles hostiles with cycleTarget. The HUD reads the same target:
 //   const target = useTarget(userId)   (@jgengine/react)
-//   <StatBar entityId={target ?? ""} statId="health" />   (@jgengine/shell/gameKit)
+//   const hp = useEntityStat(target ?? "", "health")   then <KitMeter value={hp.current} max={hp.max} />
 const targeting = defineSystem({
   id: "targeting",
   create(ctx) {

@@ -6,8 +6,10 @@ import type {
   GameContextItemEntry,
 } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
-import { CurrencyPill, SlotGrid, StatMeter } from "@jgengine/react/components";
-import { useFeed, useGameClock, useGameStore, usePlayer, useTarget } from "@jgengine/react/hooks";
+import { CurrencyPill, SlotGrid } from "@jgengine/react/components";
+import { useEntityStat, useFeed, useGameClock, useGameStore, usePlayer, useTarget } from "@jgengine/react/hooks";
+import type { KitTone } from "@jgengine/react/uiKit";
+import { KitMeter } from "@jgengine/react/uiKitRoot";
 
 import type { PlayableGame } from "@jgengine/shell/registry";
 
@@ -175,21 +177,16 @@ function onTick(ctx: GameContext, dt: number): void {
   }
 }
 
+function Stat({ id, stat, tone }: { id: string; stat: string; tone: KitTone }) {
+  const value = useEntityStat(id, stat);
+  return value === null ? null : <KitMeter size="sm" value={value.current - value.min} max={value.max - value.min} tone={tone} />;
+}
+
 function VitalsPanel({ userId }: { userId: string }) {
   return (
     <div className="rounded bg-black/60 p-2">
-      <StatMeter
-        instanceId={userId}
-        statId="health"
-        className="h-2.5 overflow-hidden rounded bg-white/15"
-        fillClassName="bg-emerald-400"
-      />
-      <StatMeter
-        instanceId={userId}
-        statId="mana"
-        className="mt-1 h-1.5 overflow-hidden rounded bg-white/15"
-        fillClassName="bg-sky-400"
-      />
+      <Stat id={userId} stat="health" tone="good" />
+      <Stat id={userId} stat="mana" tone="accent" />
     </div>
   );
 }
@@ -205,12 +202,7 @@ function TargetPanel({ userId }: { userId: string }) {
   return (
     <div className="rounded bg-black/60 p-2">
       <p className="text-xs uppercase tracking-wide text-red-300">{targetName}</p>
-      <StatMeter
-        instanceId={targetId}
-        statId="health"
-        className="mt-1 h-2 overflow-hidden rounded bg-white/15"
-        fillClassName="bg-red-400"
-      />
+      <Stat id={targetId} stat="health" tone="bad" />
     </div>
   );
 }

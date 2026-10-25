@@ -28,7 +28,7 @@ export interface DialogueViewTheme {
   radius?: string;
   /** Panel outer glow / drop shadow. Default reads `--jg-frame-glow`. */
   glow?: string;
-  /** Body/line text color. Default reads `--jg-bar-text`. */
+  /** Body/line text color. Default reads `--jg-text`. */
   text?: string;
   /** Accent for the speaker name and choice hover/focus. Default reads `--jg-accent`. */
   accent?: string;
@@ -46,7 +46,7 @@ function resolveTheme(theme: DialogueViewTheme | undefined): Required<DialogueVi
     border: theme?.border ?? "var(--jg-frame-border, 1px solid rgba(255,255,255,0.12))",
     radius: theme?.radius ?? "var(--jg-frame-radius, 12px)",
     glow: theme?.glow ?? "var(--jg-frame-glow, 0 18px 48px rgba(0,0,0,0.5))",
-    text: theme?.text ?? "var(--jg-bar-text, #e5e9f0)",
+    text: theme?.text ?? "var(--jg-text, #e5e9f0)",
     accent: theme?.accent ?? "var(--jg-accent, #38bdf8)",
     choiceBackground: theme?.choiceBackground ?? "var(--jg-slot-bg, rgba(12,14,20,0.72))",
     choiceBorder: theme?.choiceBorder ?? "var(--jg-slot-border, 1px solid rgba(148,163,184,0.28))",

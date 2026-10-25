@@ -4,7 +4,6 @@ import { renderToStaticMarkup } from "react-dom/server";
 
 import fixture from "./hudThemeChromePresets.fixture.json";
 
-import { HealthBar } from "./bars";
 import { HudFrame } from "./hudFrame";
 import {
   HUD_THEME_PRESETS,
@@ -16,30 +15,16 @@ import {
 } from "./hudTheme";
 
 describe("hudThemeVars", () => {
-  test("emits the atomic-bar tokens plus frame/slot/ring tokens", () => {
+  test("emits the vital colours plus frame/slot/ring tokens", () => {
     const vars = hudThemeVars(defaultHudTheme) as Record<string, string>;
-    // bar tokens (same names the atomic bars read — proves one theme drives the bars)
     expect(vars["--jg-health"]).toBe(defaultHudTheme.palette.health);
     expect(vars["--jg-shield"]).toBe(defaultHudTheme.palette.shield);
-    expect(vars["--jg-bar-height"]).toBe(defaultHudTheme.bar.height);
     // shared chrome tokens
     expect(vars["--jg-frame-bg"]).toBe(defaultHudTheme.frame.bg);
     expect(vars["--jg-slot-border"]).toBe(defaultHudTheme.slot.border);
     expect(vars["--jg-ring"]).toBe(defaultHudTheme.ring);
   });
 
-  test("a theme without a bar skin clears inherited fill without suppressing the palette fallback", () => {
-    const vars = hudThemeVars(defaultHudTheme) as Record<string, string>;
-    expect(vars["--jg-bar-skin-fill"]).toBe("initial");
-    expect(vars["--jg-bar-skin-track"]).toBe("none");
-  });
-
-  test("each theme supplies its own bar skin instead of the default fill reset", () => {
-    const parent = hudTheme({ skin: { bar: { fill: "#112233", track: "none" } } });
-    const child = hudTheme({ skin: { bar: { fill: "#445566", track: "none" } } });
-    expect((hudThemeVars(parent) as Record<string, string>)["--jg-bar-skin-fill"]).toBe("#112233");
-    expect((hudThemeVars(child) as Record<string, string>)["--jg-bar-skin-fill"]).toBe("#445566");
-  });
 });
 
 describe("presets", () => {
@@ -74,12 +59,6 @@ describe("one theme drives multiple primitives", () => {
     expect(html).toContain("var(--jg-frame-glow");
   });
 
-  test("a bar under a theme block reads the same tokens the theme sets", () => {
-    const html = renderToStaticMarkup(createElement(HealthBar, { value: 50, max: 100 }));
-    // the bar references --jg-health, which hudThemeVars sets — so the theme restyles it
-    expect(html).toContain("var(--jg-health");
-    expect(Object.keys(hudThemeVars(defaultHudTheme))).toContain("--jg-health");
-  });
 });
 
 describe("the token vocabulary is one set (#1573)", () => {
@@ -131,7 +110,6 @@ describe("deriveHudTheme", () => {
     // the seed reaches the groups a HudTheme could previously not express
     expect(derived.surface.edge).not.toBe(defaultHudTheme.surface.edge);
     expect(derived.frame.bg).toContain("23, 18, 13");
-    expect(derived.bar.frame).toBe(derived.surface.surfaceDeep);
   });
 
   test("hudTheme fills unnamed groups from the default", () => {

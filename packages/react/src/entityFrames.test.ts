@@ -9,7 +9,7 @@ import {
   type EntityScreenProjection,
   type ProjectEntity,
 } from "./entityFrames";
-import { HealthBar } from "./bars";
+import { KitMeter } from "./uiKitRoot";
 
 interface Enemy extends EntityFrameEntry {
   name: string;
@@ -90,7 +90,7 @@ describe("layoutEntityFrames", () => {
 });
 
 describe("EntityFrames component", () => {
-  test("renders caller-composed frames using the shipped HealthBar primitive", () => {
+  test("renders caller-composed frames using the shipped kit meter", () => {
     const html = renderToStaticMarkup(
       createElement(EntityFrames<Enemy>, {
         entries: enemies,
@@ -101,7 +101,7 @@ describe("EntityFrames component", () => {
             "div",
             null,
             createElement("span", { "data-name": "" }, enemy.name),
-            createElement(HealthBar, { value: enemy.hp, max: enemy.maxHp, width: 78, showValue: false }),
+            createElement(KitMeter, { value: enemy.hp, max: enemy.maxHp, tone: "bad", size: "sm" }),
           ),
       }),
     );
@@ -111,7 +111,7 @@ describe("EntityFrames component", () => {
     expect(html).not.toContain('data-entity-frame="behind"');
     expect(html).not.toContain('data-entity-frame="offscreen"');
     // The shipped bar renders inside the frame.
-    expect(html).toContain('data-bar="health"');
+    expect(html).toContain('role="meter"');
     // Nearest ("near") is last in DOM → highest z-index, painting over "far".
     expect(html.indexOf('data-entity-frame="far"')).toBeLessThan(html.indexOf('data-entity-frame="near"'));
   });

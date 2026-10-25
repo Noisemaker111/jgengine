@@ -18,12 +18,14 @@ import {
   type SelectionWindow,
 } from "@jgengine/core/ui/selectionModel";
 import { hudType } from "./hudTokens";
+import type { KitTone } from "./uiKit";
+import { KitMeter } from "./uiKitRoot";
 
 /**
  * Composable React renderers over the headless selection view model
  * (`@jgengine/core/ui/selectionModel`) — the data/renderer/chrome split for an RTS selection panel, a
  * party frame, or a squad summary. `useSelectionView` is the DATA/HOOK layer (summary + focus +
- * virtualization), `EntityPortrait`/`EntitySummary`/`SelectionCollectionChrome` are composable
+ * virtualization), `EntityPortrait`/`SelectionCollectionChrome` are composable
  * renderers, and `SelectionPanel` is the batteries-included default. A game supplies the entity data
  * from wherever selection lives and swaps renderer or chrome without forking the logic.
  */
@@ -116,48 +118,6 @@ const VITAL_TONES: Record<string, [string, string]> = {
   neutral: ["#64748b", "#94a3b8"],
 };
 
-/**
- * A compact current/max vital meter for an entity summary; tone maps to a colour ramp. Reuse it as
- * the vital row inside {@link EntitySummary} or any custom entity panel.
- *
- * @deprecated The `tone`/`vital`-API umbrella is retired (#1033). Use the atomic, purpose-named,
- * token-themed bars from `@jgengine/react/bars` (`HealthBar`, `ShieldBar`, `ManaBar`, …) and compose
- * your own panel — each does one readout and restyles globally via the shared `--jg-*` tokens.
- * @capability vital-bar compact current/max vital meter for an entity summary
- */
-export function VitalBar({
-  vital,
-  width = 120,
-  showLabel = true,
-  className,
-  style,
-}: {
-  vital: EntityVital;
-  width?: number;
-  showLabel?: boolean;
-  className?: string;
-  style?: CSSProperties;
-}) {
-  const denom = vital.max <= 0 ? 1 : vital.max;
-  const fraction = Math.max(0, Math.min(1, vital.current / denom));
-  const [from, to] = VITAL_TONES[vital.tone ?? "neutral"] ?? VITAL_TONES.neutral!;
-  return (
-    <div className={className} data-vital={vital.id} style={{ width, ...style }}>
-      {showLabel ? (
-        <div style={{ display: "flex", fontSize: hudType("xs"), opacity: 0.75, marginBottom: 2 }}>
-          <span>{vital.label ?? vital.id}</span>
-          <span style={{ marginLeft: "auto", fontVariantNumeric: "tabular-nums" }}>
-            {Math.round(vital.current)}/{Math.round(vital.max)}
-          </span>
-        </div>
-      ) : null}
-      <div style={{ height: 6, borderRadius: 999, background: "rgba(255,255,255,0.12)", overflow: "hidden" }}>
-        <div style={{ width: `${fraction * 100}%`, height: "100%", background: `linear-gradient(90deg, ${from}, ${to})` }} />
-      </div>
-    </div>
-  );
-}
-
 const PORTRAIT_BASE: CSSProperties = {
   position: "relative",
   boxSizing: "border-box",
@@ -241,29 +201,12 @@ export function EntityPortrait({
   );
 }
 
-/**
- * The primary-entity detail chrome — name, tags, and full vital bars for the focused member. The
- * "who is selected" summary a single-selection or the head of a multi-selection shows. Swap the vital
- * rows via `renderVital`.
- *
- * @deprecated Bundling a whole vitals array in one component is the combo anti-pattern #1033 retires.
- * Compose your own summary — name/tags plus the atomic `@jgengine/react/bars` (`HealthBar`, …) you
- * need — so no engine component packages multiple readouts by default. Kept during migration.
- * @capability entity-summary primary selected-entity detail panel (name, tags, vitals)
- */
-export function EntitySummary({
-  entity,
-  renderVital,
-  className,
-  style,
-}: {
-  entity: EntitySummaryDef;
-  renderVital?: (vital: EntityVital) => ReactNode;
-  className?: string;
-  style?: CSSProperties;
-}) {
+const VITAL_KIT_TONES: Record<string, KitTone> = { health: "good", shield: "accent", energy: "accent" };
+
+/** The focused member: name, kind, tags and one kit meter per vital. Swap a vital row via `renderVital`. */
+function PrimarySummary({ entity, renderVital }: { entity: EntitySummaryDef; renderVital?: (vital: EntityVital) => ReactNode }) {
   return (
-    <div className={className} data-entity-summary={entity.id} style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 140, ...style }}>
+    <div data-entity-summary={entity.id} style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 140 }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
         <strong style={{ fontSize: 14 }}>{entity.name ?? entity.id}</strong>
         {entity.kind !== undefined ? (
@@ -278,7 +221,13 @@ export function EntitySummary({
         </div>
       ) : null}
       {(entity.vitals ?? []).map((vital) => (
-        <div key={vital.id}>{renderVital ? renderVital(vital) : <VitalBar vital={vital} />}</div>
+        <div key={vital.id} data-vital={vital.id}>
+          {renderVital ? (
+            renderVital(vital)
+          ) : (
+            <KitMeter size="sm" label={vital.label ?? vital.id} value={vital.current} max={vital.max} tone={VITAL_KIT_TONES[vital.tone ?? ""] ?? "neutral"} readout />
+          )}
+        </div>
       ))}
     </div>
   );
@@ -419,7 +368,7 @@ const PANEL: CSSProperties = {
 };
 
 /**
- * Convenience composition: skinned glass panel with {@link EntitySummary} for the primary member
+ * Convenience composition: skinned glass panel with the primary member's name, tags and kit meters
  * beside {@link SelectionCollectionChrome} for the rest — demos/scaffold only, not a finished game
  * face. Pass `members` (or a prebuilt `model`); swap sub-renderers or compose the headless pieces
  * under game-owned chrome for product UI.
@@ -458,7 +407,7 @@ export function SelectionPanel({
   return (
     <div className={className} data-selection-panel="" style={{ ...PANEL, display: "flex", gap: 12, alignItems: "flex-start", ...style }}>
       {view.primary !== null ? (
-        <div>{renderPrimary ? renderPrimary(view.primary) : <EntitySummary entity={view.primary} renderVital={renderVital} />}</div>
+        <div>{renderPrimary ? renderPrimary(view.primary) : <PrimarySummary entity={view.primary} renderVital={renderVital} />}</div>
       ) : null}
       {view.count > 1 ? (
         <SelectionCollectionChrome

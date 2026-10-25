@@ -1,5 +1,5 @@
 import { useGame, useGameStore } from "@jgengine/react/hooks";
-import { GameFrame } from "@jgengine/react/gameFrame";
+import { KitButton, KitPanel } from "@jgengine/react/uiKitRoot";
 import { GameIcon, type GameIconName } from "@jgengine/react/gameIcons";
 import { actionLabel } from "@jgengine/core/input/actionBindings";
 import { summarizeWave } from "@jgengine/core/ai/director/wavePreview";
@@ -8,7 +8,7 @@ import { abilityDef } from "../../combat/abilities";
 import { creepTraits } from "../../entities/enemies/catalog";
 import { keybinds } from "../../keybinds";
 import { FLANK_POINT_KEY } from "../../world/path";
-import { HudFade } from "@jgengine/react/hudFade";
+import { HudFade } from "@jgengine/react/hudLayout";
 
 import { keep } from "../../keep";
 import { TOTAL_WAVES } from "../../waves/manifest";
@@ -40,19 +40,19 @@ export function KeepSigns() {
       <HudFade watch={[lives]} hold={danger} dimTo={0.45} idleMs={4000}>
         <div className="bb-beacon" data-danger={danger ? "" : undefined} aria-label={`Keep lives ${lives} of ${livesMax}`}>
           <Brazier size={46} strength={0.15 + ratio * 0.85} />
-          <GameFrame material="stone" cut="chamfer" depth={8} padding="4px 12px 5px" className="bb-plinth">
+          <KitPanel material="stone" cut="chamfer" depth={8} padding="4px 12px 5px" className="bb-plinth">
             <span className="bb-plinth-num">{lives}</span>
             <span className="bb-plinth-max">/{livesMax}</span>
-          </GameFrame>
+          </KitPanel>
         </div>
       </HudFade>
       <HudFade watch={[gold, pay]} dimTo={0.45} idleMs={4000}>
         <div className="bb-purse">
           <span className="bb-chains" aria-hidden />
-          <GameFrame material="wood" cut="notch" depth={8} padding="5px 14px 6px 10px" className="bb-purse-sign" aria-label={`${gold} gold`}>
+          <KitPanel material="wood" cut="notch" depth={8} padding="5px 14px 6px 10px" className="bb-purse-sign" aria-label={`${gold} gold`}>
             <GameIcon name="coin" size={20} color="#f6cf5a" />
             <span className="bb-purse-num">{gold}</span>
-          </GameFrame>
+          </KitPanel>
           <span className="bb-pay" title="Kill pay this wave">
             ×{pay.toFixed(2)} bounty
           </span>
@@ -84,18 +84,18 @@ export function WaveBoard() {
   return (
     <HudFade watch={[shown, remaining, started, releasing]} hold={bossText !== null} dimTo={0.4} idleMs={5000}>
       <div className="bb-waveboard">
-        <GameFrame material="wood" cut="banner" depth={12} padding="6px 22px 16px" className="bb-board">
+        <KitPanel material="wood" cut="banner" depth={12} padding="6px 22px 16px" className="bb-board">
           <span className="bb-board-label">Wave</span>
           <span className="bb-board-num">
             {shown}
             <small>/{TOTAL_WAVES}</small>
           </span>
-        </GameFrame>
+        </KitPanel>
         <span className="bb-road">{status}</span>
         {bossText === null ? null : (
-          <GameFrame material="enamel" tint="#7d1d12" edge="#2a0804" cut="banner" depth={8} padding="4px 14px 10px" className="bb-pennant">
+          <KitPanel material="enamel" tint="#7d1d12" edge="#2a0804" cut="banner" depth={8} padding="4px 14px 10px" className="bb-pennant">
             <GameIcon name="skull" size={14} /> {bossText}
-          </GameFrame>
+          </KitPanel>
         )}
       </div>
     </HudFade>
@@ -139,7 +139,7 @@ export function ReleaseHorn() {
 
   return (
     <div className="bb-horn">
-      <GameFrame material="paper" cut="torn" depth={8} padding="8px 12px 14px" className="bb-orders">
+      <KitPanel material="paper" cut="torn" depth={8} padding="8px 12px 14px" className="bb-orders">
         <span className="bb-orders-line">{preview.replace(/^Next · /, "")}</span>
         {traits.length === 0 && !flank ? null : (
           <span className="bb-traits" data-jg="wave-traits">
@@ -161,9 +161,8 @@ export function ReleaseHorn() {
         <span className="bb-orders-sub">
           {started ? `Director ${tierLabel(tier)}` : "Build on the rings, then sound the horn"}
         </span>
-      </GameFrame>
-      <GameFrame
-        as="button"
+      </KitPanel>
+      <KitButton
         material="enamel"
         tint="#8a2414"
         edge="#2a0804"
@@ -179,7 +178,7 @@ export function ReleaseHorn() {
         <GameIcon name="flag" size={18} />
         <span>{started ? `Send wave ${wave + 1}` : "Begin first assault"}</span>
         {bonus > 0 ? <small>+{bonus} gold</small> : null}
-      </GameFrame>
+      </KitButton>
       {clock === null ? null : (
         <span className="bb-clock" aria-label={`Marches in ${clock.left} seconds`} style={{ ["--bb-clock" as string]: `${Math.round(clock.share * 360)}deg` }}>
           <GameIcon name="hourglass" size={13} />
@@ -206,9 +205,8 @@ export function AbilityStones() {
         if (def === null) return null;
         const key = actionLabel(keybinds, def.action);
         return (
-          <GameFrame
+          <KitButton
             key={slot.id}
-            as="button"
             material="stone"
             tint={def.tint}
             cut="hex"
@@ -226,7 +224,7 @@ export function AbilityStones() {
             <GameIcon name={def.icon} size={22} />
             <span className="bb-rite-name">{slot.ready ? def.label : `${slot.left}s`}</span>
             {key === null ? null : <kbd>{key}</kbd>}
-          </GameFrame>
+          </KitButton>
         );
       })}
     </div>

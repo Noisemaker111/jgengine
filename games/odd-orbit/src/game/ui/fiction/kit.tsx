@@ -1,6 +1,6 @@
 import { forwardRef, type CSSProperties, type ReactNode, type Ref } from "react";
-import { GameFrame, type GameFrameProps } from "@jgengine/react/gameFrame";
 import type { GameIconName } from "@jgengine/react/gameIcons";
+import { KitButton, KitPanel, type KitMaterialButtonProps, type KitMaterialPanelProps } from "@jgengine/react/uiKitRoot";
 import type { NeedId } from "../../needs/needs";
 import { NEED_COLORS } from "../../palette";
 
@@ -13,7 +13,7 @@ export function navItem<P extends { ref: unknown }>(props: P): Omit<P, "ref"> & 
 /**
  * Odd Orbit's household objects: rounded enamel fridge magnets and appliance plates, pinned paper
  * notes, and the habitat's 24-hour wall clock. Everything is a generated material from the engine's
- * `GameFrame`, never a web card.
+ * material `KitPanel`/`KitButton`, never a web card.
  */
 
 /** Plum ink: what a pastel magnet or a paper note is written in. */
@@ -35,7 +35,11 @@ export type EnamelTone = keyof typeof ENAMEL;
 /** The game icon for each need, used on magnets, rings and the furnishing catalogue. */
 export const NEED_ICON: Record<NeedId, GameIconName> = { hunger: "apple", energy: "feather", social: "heart", fun: "star" };
 
-type EnamelProps = Omit<GameFrameProps, "material" | "cut" | "tint"> & {
+type EnamelProps = Omit<KitMaterialPanelProps, "material" | "cut" | "tint" | "as" | "ref"> & {
+  /** `button` makes it a pressable household control. */
+  as?: "button" | KitMaterialPanelProps["as"];
+  disabled?: boolean;
+  type?: "button" | "submit" | "reset";
   tone?: EnamelTone;
   /** A colour outside the household set (a member's own hue). */
   tint?: string;
@@ -47,28 +51,26 @@ type EnamelProps = Omit<GameFrameProps, "material" | "cut" | "tint"> & {
 
 /** A rounded enamel magnet or plate. `as="button"` makes it a pressable household control. */
 export const Enamel = forwardRef<HTMLElement, EnamelProps>(function Enamel(
-  { tone = "cream", tint, radius = 18, ink, edge = "#2a1733", edgeWidth = 2, glow, className, style, ...rest },
+  { as, tone = "cream", tint, radius = 18, ink, edge = "#2a1733", edgeWidth = 2, glow, className, style, ...rest },
   ref,
 ) {
   const color = tint ?? ENAMEL[tone];
   const text = ink ?? (tone === "plum" ? "#fff0d6" : ORBIT_INK);
   // The rim, lip and cast shadow are a CSS border and box shadows on the rounded face (style.css), not
-  // GameFrame's filter rim: a filter is re-rasterised whenever a magnet's number changes, and the HUD
+  // a filter rim: a filter is re-rasterised whenever a magnet's number changes, and the HUD
   // magnets change every second over a live 3D scene.
-  return (
-    <GameFrame
-      ref={ref}
-      {...rest}
-      material="enamel"
-      cut="box"
-      tint={color}
-      edge="none"
-      edgeWidth={0}
-      shadow={false}
-      className={`orbit-round ${glow !== undefined ? "orbit-glow" : ""} ${className ?? ""}`}
-      style={{ "--orbit-r": `${radius}px`, "--orbit-rim": edge, "--orbit-rim-w": `${edgeWidth}px`, "--orbit-glow": glow, "--jg-gf-ink": text, color: text, ...style } as CSSProperties}
-    />
-  );
+  const look = {
+    material: "enamel",
+    cut: "box",
+    tint: color,
+    edge: "none",
+    edgeWidth: 0,
+    shadow: false,
+    className: `orbit-round ${glow !== undefined ? "orbit-glow" : ""} ${className ?? ""}`,
+    style: { "--orbit-r": `${radius}px`, "--orbit-rim": edge, "--orbit-rim-w": `${edgeWidth}px`, "--orbit-glow": glow, "--jg-gf-ink": text, color: text, ...style } as CSSProperties,
+  } as const;
+  if (as === "button") return <KitButton ref={ref as Ref<HTMLButtonElement>} {...(rest as Omit<KitMaterialButtonProps, "material">)} {...look} />;
+  return <KitPanel ref={ref} {...(rest as Omit<KitMaterialPanelProps, "material">)} as={as} {...look} />;
 });
 
 /** A paper note held to the habitat wall with a pushpin. */
@@ -80,12 +82,12 @@ export function PaperNote({ children, className, style, tilt = 0, pin = "#f6a6cf
   pin?: string | null;
   torn?: boolean;
   padding?: CSSProperties["padding"];
-} & Omit<GameFrameProps, "material" | "cut" | "children" | "padding">) {
+} & Omit<KitMaterialPanelProps, "material" | "cut" | "children" | "padding">) {
   return (
     <div className={`orbit-note ${className ?? ""}`} style={{ rotate: `${tilt}deg`, ...style }}>
-      <GameFrame material="paper" cut={torn ? "torn" : "box"} depth={12} edge="#6b4c3a" edgeWidth={1} padding={padding ?? "22px 22px 26px"} {...rest} className="orbit-note-paper">
+      <KitPanel material="paper" cut={torn ? "torn" : "box"} depth={12} edge="#6b4c3a" edgeWidth={1} padding={padding ?? "22px 22px 26px"} {...rest} className="orbit-note-paper">
         {children}
-      </GameFrame>
+      </KitPanel>
       {pin !== null && <Pushpin color={pin} />}
     </div>
   );

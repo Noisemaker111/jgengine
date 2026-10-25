@@ -3,33 +3,34 @@ import { renderToStaticMarkup } from "react-dom/server";
 
 import { GameCursor } from "./gameCursor";
 import { gameFontStacks } from "./gameFonts";
-import { GameFramesPreview } from "./gameFramesPreview";
-import { GAME_MATERIALS, GameFrame, gameCutPath, gameFrameVars, type GameCut, type GameMaterial } from "./gameFrame";
+import { KitFramesPreview } from "./kitFramesPreview";
+import { KIT_MATERIALS, kitCutPath, kitFrameVars, type KitCut, type KitMaterial } from "./kitFrame";
 import { GameSlider, snapSliderValue } from "./gameSlider";
-import { HudFade } from "./hudFade";
+import { HudFade } from "./hudLayout";
+import { KitButton, KitPanel } from "./uiKitRoot";
 
-const CUTS: readonly GameCut[] = ["box", "chamfer", "notch", "slant", "tab", "banner", "shield", "ticket", "torn", "hex"];
+const CUTS: readonly KitCut[] = ["box", "chamfer", "notch", "slant", "tab", "banner", "shield", "ticket", "torn", "hex"];
 
-describe("gameCutPath", () => {
+describe("kitCutPath", () => {
   test("every cut but box is a polygon sized by depth", () => {
     for (const cut of CUTS) {
-      const path = gameCutPath(cut, 10);
+      const path = kitCutPath(cut, 10);
       if (cut === "box") expect(path).toBe("none");
       else {
         expect(path.startsWith("polygon(")).toBe(true);
-        expect(path).not.toBe(gameCutPath(cut, 20));
+        expect(path).not.toBe(kitCutPath(cut, 20));
       }
     }
   });
 
   test("the torn foot is the same every call, so a panel never re-tears", () => {
-    expect(gameCutPath("torn", 12)).toBe(gameCutPath("torn", 12));
+    expect(kitCutPath("torn", 12)).toBe(kitCutPath("torn", 12));
   });
 });
 
-describe("GameFrame", () => {
+describe("material KitPanel and KitButton", () => {
   test("a panel carries its material, cut and face, with no browser border or radius", () => {
-    const html = renderToStaticMarkup(<GameFrame material="wood" cut="banner">Wave 4</GameFrame>);
+    const html = renderToStaticMarkup(<KitPanel material="wood" cut="banner">Wave 4</KitPanel>);
     expect(html).toContain('data-jg-frame="wood"');
     expect(html).toContain('data-cut="banner"');
     expect(html).toContain("data-jg-frame-face");
@@ -38,11 +39,11 @@ describe("GameFrame", () => {
     expect(html).not.toContain("border-radius");
   });
 
-  test("as a button it is a pressable game button with type=button", () => {
+  test("a material button is a pressable game button with type=button", () => {
     const html = renderToStaticMarkup(
-      <GameFrame as="button" material="enamel" cut="hex" tint="#1f6feb">
+      <KitButton material="enamel" cut="hex" tint="#1f6feb">
         Open the park
-      </GameFrame>,
+      </KitButton>,
     );
     expect(html.startsWith("<button")).toBe(true);
     expect(html).toContain('type="button"');
@@ -51,7 +52,7 @@ describe("GameFrame", () => {
   });
 
   test("every material has a base, ink, edge and a texture layer", () => {
-    for (const [name, look] of Object.entries(GAME_MATERIALS) as [GameMaterial, (typeof GAME_MATERIALS)[GameMaterial]][]) {
+    for (const [name, look] of Object.entries(KIT_MATERIALS) as [KitMaterial, (typeof KIT_MATERIALS)[KitMaterial]][]) {
       expect(look.base.length, name).toBeGreaterThan(0);
       expect(look.ink.length, name).toBeGreaterThan(0);
       expect(look.edge.length, name).toBeGreaterThan(0);
@@ -60,18 +61,18 @@ describe("GameFrame", () => {
   });
 
   test("the rim is a clipped backing plate, never a filter, and can be turned off", () => {
-    const rim = gameFrameVars({ material: "steel", cut: "chamfer", depth: 14, edge: "#fff", edgeWidth: 2 }) as Record<string, string>;
+    const rim = kitFrameVars({ material: "steel", cut: "chamfer", depth: 14, edge: "#fff", edgeWidth: 2 }) as Record<string, string>;
     expect(rim["--jg-gf-rim"]).toBe("#fff");
     expect(rim["--jg-gf-rim-w"]).toBe("2px");
     // The face's corners shrink by the rim's diagonal so a 45-degree rim stays as thick as a straight one.
     expect(rim["--jg-gf-face-cut"]).not.toBe(rim["--jg-gf-cut"]);
     expect(Object.keys(rim).some((key) => key.includes("filter"))).toBe(false);
-    const bare = gameFrameVars({ material: "steel", edge: "none" }) as Record<string, string>;
+    const bare = kitFrameVars({ material: "steel", edge: "none" }) as Record<string, string>;
     expect(bare["--jg-gf-rim"]).toBe("transparent");
     expect(bare["--jg-gf-rim-w"]).toBe("0px");
   });
 
-  test("gameFrameVars installs the frame stylesheet once, so a hand-dressed element works with no GameFrame mounted", () => {
+  test("kitFrameVars installs the frame stylesheet once, so a hand-dressed element works with no material panel mounted", () => {
     const added: Array<{ id: string; textContent: string }> = [];
     const fake = {
       getElementById: (id: string) => added.find((node) => node.id === id) ?? null,
@@ -81,22 +82,22 @@ describe("GameFrame", () => {
     const saved = (globalThis as { document?: unknown }).document;
     (globalThis as { document?: unknown }).document = fake;
     try {
-      gameFrameVars({ material: "brass", cut: "notch" });
-      gameFrameVars({ material: "wood" });
+      kitFrameVars({ material: "brass", cut: "notch" });
+      kitFrameVars({ material: "wood" });
     } finally {
       (globalThis as { document?: unknown }).document = saved;
     }
     expect(added.length).toBe(1);
-    expect(added[0]!.id).toBe("jg-game-frame-styles");
+    expect(added[0]!.id).toBe("jg-kit-frame-styles");
     expect(added[0]!.textContent).toContain("[data-jg-frame]");
   });
 
   test("a glow replaces the cast shadow, and shadow={false} drops it", () => {
-    const lit = renderToStaticMarkup(<GameFrame glow="#ffd23f">Charged</GameFrame>);
+    const lit = renderToStaticMarkup(<KitPanel material="steel" glow="#ffd23f">Charged</KitPanel>);
     expect(lit).toContain("data-glow");
     expect(lit).not.toContain("data-shadow");
-    expect(renderToStaticMarkup(<GameFrame>Plain</GameFrame>)).toContain("data-shadow");
-    expect(renderToStaticMarkup(<GameFrame shadow={false}>Flat</GameFrame>)).not.toContain("data-shadow");
+    expect(renderToStaticMarkup(<KitPanel material="steel">Plain</KitPanel>)).toContain("data-shadow");
+    expect(renderToStaticMarkup(<KitPanel material="steel" shadow={false}>Flat</KitPanel>)).not.toContain("data-shadow");
   });
 });
 
@@ -151,10 +152,10 @@ describe("HudFade and GameCursor", () => {
   });
 });
 
-describe("GameFramesPreview", () => {
+describe("KitFramesPreview", () => {
   test("the contact sheet shows every material and no browser range input", () => {
-    const html = renderToStaticMarkup(<GameFramesPreview />);
-    for (const material of Object.keys(GAME_MATERIALS)) expect(html).toContain(`data-jg-frame="${material}"`);
+    const html = renderToStaticMarkup(<KitFramesPreview />);
+    for (const material of Object.keys(KIT_MATERIALS)) expect(html).toContain(`data-jg-frame="${material}"`);
     expect(html.match(/role="slider"/g)?.length).toBe(2);
     expect(html).not.toContain('type="range"');
   });

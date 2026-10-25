@@ -1,7 +1,7 @@
 import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { useDisplayProfile } from "@jgengine/react";
 import { GameCursor } from "@jgengine/react/gameCursor";
-import { GameFrame } from "@jgengine/react/gameFrame";
+import { KitPanel } from "@jgengine/react/uiKitRoot";
 import { GameIcon, type GameIconName } from "@jgengine/react/gameIcons";
 import { useViewportScrollLock } from "@jgengine/react/gameMenu";
 import { useGame, useGameClock } from "@jgengine/react/hooks";
@@ -286,9 +286,9 @@ function Stamp({ icon, text }: { icon: GameIconName; text: string }): ReactNode 
 /** A household's saved frame, hung in a little wooden portrait frame. */
 function PortraitFrame({ thumb }: { thumb: string | null }): ReactNode {
   return (
-    <GameFrame material="wood" cut="box" padding="8px" edge="#2b160a" className="orbit-portrait-frame">
+    <KitPanel material="wood" cut="box" padding="8px" edge="#2b160a" className="orbit-portrait-frame">
       {thumb !== null ? <img src={thumb} alt="The household as it was left" /> : <span className="orbit-portrait-empty"><GameIcon name="eye" size={28} /></span>}
-    </GameFrame>
+    </KitPanel>
   );
 }
 
@@ -296,7 +296,7 @@ function Polaroid({ slot, tilt, onOpen, onNew, onClear }: { slot: SaveSlotMeta; 
   const thumb = slot.meta.thumbnail;
   return (
     <div className="orbit-polaroid" style={{ rotate: `${tilt}deg` }}>
-      <GameFrame material="paper" cut="box" padding="8px 8px 10px" edge="#6b4c3a" edgeWidth={1}>
+      <KitPanel material="paper" cut="box" padding="8px 8px 10px" edge="#6b4c3a" edgeWidth={1}>
         <span className="orbit-polaroid-shot">{typeof thumb === "string" ? <img src={thumb} alt="" /> : <GameIcon name={slot.empty ? "key" : "eye"} size={26} />}</span>
         <strong>{slot.empty ? orbitSlotLabel(slot.id) : (slot.name ?? orbitSlotLabel(slot.id))}</strong>
         <small>{slot.empty ? "Empty rooms" : `${slot.meta.day ?? ""} · ${slot.meta.credits ?? ""}`}</small>
@@ -308,7 +308,7 @@ function Polaroid({ slot, tilt, onOpen, onNew, onClear }: { slot: SaveSlotMeta; 
                 <Enamel as="button" tone="coral" radius={10} padding="4px 10px" onClick={onClear} aria-label={`Clear ${orbitSlotLabel(slot.id)}`}><GameIcon name="cross" size={14} /></Enamel>
               </>}
         </span>
-      </GameFrame>
+      </KitPanel>
     </div>
   );
 }
@@ -393,19 +393,19 @@ function Handbook({ preferences, onPreference, whileLoading }: Prefs & { whileLo
     <div className={`orbit-pause ${compact ? "compact" : ""}`} role="dialog" aria-label="The household is paused">
       <div className="orbit-pause-dim" aria-hidden="true" />
       <div className="orbit-book">
-        <GameFrame material="leather" cut="box" padding={compact ? "10px" : "14px"} edge="#24110a" className="orbit-book-cover">
+        <KitPanel material="leather" cut="box" padding={compact ? "10px" : "14px"} edge="#24110a" className="orbit-book-cover">
           <div className="orbit-book-pages">
             {showLeft && (
-              <GameFrame material="paper" cut="box" padding={compact ? "18px 18px 16px" : "26px 30px 22px"} edge="none" className="orbit-page left">
+              <KitPanel material="paper" cut="box" padding={compact ? "18px 18px 16px" : "26px 30px 22px"} edge="none" className="orbit-page left">
                 <span className="orbit-page-eyebrow">Household handbook · {slotLabel}</span>
                 <h1>Day {household.day + 1}<small>{String(hour).padStart(2, "0")}:{String(minute).padStart(2, "0")}</small></h1>
                 {entity !== null && (
                   <div className="orbit-family-portrait">
-                    <GameFrame material="wood" cut="box" padding="6px" edge="#2b160a">
+                    <KitPanel material="wood" cut="box" padding="6px" edge="#2b160a">
                       <EntityPreview mood="studio" environment={false} cameraPosition={[0, 0.25, 3.7]} fov={30} dpr={[1, 1.5]} faceCamera className="orbit-portrait-canvas">
                         <group position={[0, -0.85, 0]}><AlienMesh entity={entity} /></group>
                       </EntityPreview>
-                    </GameFrame>
+                    </KitPanel>
                     <span className="orbit-portrait-caption">{working !== null ? `${working.name} is on shift` : "Between shifts"}</span>
                   </div>
                 )}
@@ -420,16 +420,16 @@ function Handbook({ preferences, onPreference, whileLoading }: Prefs & { whileLo
                   ))}
                   <GameCursor variant="chevron" color="#c2477f" gap={2} />
                 </nav>
-              </GameFrame>
+              </KitPanel>
             )}
             {showRight && (
-              <GameFrame material="paper" cut="box" padding={compact ? "18px 18px 16px" : "26px 30px 22px"} edge="none" className="orbit-page right">
+              <KitPanel material="paper" cut="box" padding={compact ? "18px 18px 16px" : "26px 30px 22px"} edge="none" className="orbit-page right">
                 {compact && <button type="button" className="orbit-leaf-back" onClick={() => { setLeaf(false); setInSettings(false); }}><GameIcon name="arrowLeft" size={16} /> Contents</button>}
                 {rightPage}
-              </GameFrame>
+              </KitPanel>
             )}
           </div>
-        </GameFrame>
+        </KitPanel>
         <span className="orbit-ribbon" aria-hidden="true" />
       </div>
       <p className="orbit-pause-foot">{household.credits} credits · {household.pantry} rations · {household.debt} debt</p>

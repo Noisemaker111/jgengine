@@ -1370,3 +1370,137 @@ export function HudPanel({
     </div>
   );
 }
+
+/** Props for {@link HudFade}. */
+export interface HudFadeProps {
+  /**
+   * Values the group shows. When any changes (health drops, cash comes in, ammo is spent) the group
+   * comes back to full strength, then fades again after `idleMs`.
+   */
+  watch: readonly unknown[];
+  /** Quiet time before fading, in ms. Default 3500. */
+  idleMs?: number;
+  /** Opacity once faded; 0 hides it entirely. Default 0.18. */
+  dimTo?: number;
+  /** Keep it at full strength (in combat, low health, aiming, a menu open). */
+  hold?: boolean;
+  children?: ReactNode;
+  className?: string;
+  style?: CSSProperties;
+}
+
+/**
+ * Whether a HUD group should be at full strength: true for `idleMs` after any watched value
+ * changes, and whenever `hold` is set.
+ *
+ * @capability hud-idle true while a HUD group's values are changing, false once they sit still
+ */
+export function useHudAwake(watch: readonly unknown[], idleMs = 3500, hold = false): boolean {
+  const [awake, setAwake] = useState(true);
+  const first = useRef(true);
+  const key = JSON.stringify(watch, (_, value: unknown) => (typeof value === "number" ? Math.round(value * 100) / 100 : value));
+  useEffect(() => {
+    if (hold) {
+      setAwake(true);
+      return;
+    }
+    if (!first.current) setAwake(true);
+    first.current = false;
+    const timer = setTimeout(() => setAwake(false), idleMs);
+    return () => clearTimeout(timer);
+  }, [key, idleMs, hold]);
+  return awake || hold;
+}
+
+/**
+ * A HUD group that steps back when nothing is happening: it fades after a quiet spell and comes back
+ * the moment a watched value changes, so the world fills the screen and the HUD speaks only when it
+ * has news. Hovering it also brings it back.
+ *
+ * ```tsx
+ * <HudFade watch={[health, armour]} hold={health < 30}>
+ *   <KitMeter value={hp} max={100} />
+ * </HudFade>
+ * ```
+ *
+ * @capability hud-fade HUD group that fades when idle and returns when its values change
+ */
+export function HudFade({ watch, idleMs = 3500, dimTo = 0.18, hold = false, children, className, style }: HudFadeProps): ReactNode {
+  const [hovered, setHovered] = useState(false);
+  const awake = useHudAwake(watch, idleMs, hold || hovered);
+  return (
+    <div
+      data-jg-hud-fade={awake ? "awake" : "idle"}
+      className={className}
+      onPointerEnter={() => setHovered(true)}
+      onPointerLeave={() => setHovered(false)}
+      style={{
+        opacity: awake ? 1 : dimTo,
+        transition: `opacity calc(${awake ? 160 : 900}ms * var(--jg-motion-scale, 1)) ease`,
+        ...style,
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+/** The eight edge slots of {@link HudSlots}. */
+export type HudSlot = "topLeft" | "top" | "topRight" | "left" | "right" | "bottomLeft" | "bottom" | "bottomRight";
+
+const HUD_SLOT_ANCHORS: Record<HudSlot, { anchor: HudAnchor; inset: { x: number; y: number } }> = {
+  topLeft: { anchor: "top-left", inset: { x: 16, y: 16 } },
+  top: { anchor: "top", inset: { x: 0, y: 14 } },
+  topRight: { anchor: "top-right", inset: { x: 16, y: 16 } },
+  left: { anchor: "left", inset: { x: 16, y: 0 } },
+  right: { anchor: "right", inset: { x: 16, y: 0 } },
+  bottomLeft: { anchor: "bottom-left", inset: { x: 16, y: 16 } },
+  bottom: { anchor: "bottom", inset: { x: 0, y: 16 } },
+  bottomRight: { anchor: "bottom-right", inset: { x: 16, y: 16 } },
+};
+
+const HUD_SLOT_ORDER = Object.keys(HUD_SLOT_ANCHORS) as HudSlot[];
+
+/** The widest a corner card draws, at the 1600x900 design size the HUD scales from. */
+export const HUD_CORNER_WIDTH = 248;
+
+/** Props for {@link HudSlots}. */
+export interface HudSlotsProps {
+  /** Remembers the player's moved panels under this key (the game's id). */
+  storageKey: string;
+  /** What sits at each edge; unset or `null` slots draw nothing. */
+  slots: Partial<Record<HudSlot, ReactNode>>;
+  /** Drawn over the slots (an end card, a centred moment). */
+  overlay?: ReactNode;
+  /** Phases the HUD shows in. Default playing and ended. */
+  showDuring?: readonly GamePhase[];
+}
+
+const DEFAULT_SLOT_PHASES: readonly GamePhase[] = ["playing", "ended"];
+
+/**
+ * The play HUD in one line: a few small panels pinned to the screen's edges, scaled from a 1600x900
+ * design to any window and movable by the player (the layout is remembered per `storageKey`). Keep
+ * it to a handful of slots; the world is the picture.
+ *
+ * ```tsx
+ * <HudSlots storageKey={idea.id} slots={{ topLeft: <Vitals />, top: <WaveClock />, bottom: <BuildBar /> }} overlay={<Ending />} />
+ * ```
+ *
+ * @capability hud-slots a play HUD of edge-pinned, player-movable panels in one component
+ */
+export function HudSlots({ storageKey, slots, overlay, showDuring = DEFAULT_SLOT_PHASES }: HudSlotsProps): ReactNode {
+  const layout = useHudLayout({ storageKey });
+  return (
+    <HudCanvas layout={layout} showDuring={showDuring}>
+      {HUD_SLOT_ORDER.map((slot) =>
+        slots[slot] === undefined || slots[slot] === null ? null : (
+          <HudPanel key={slot} id={slot} anchor={HUD_SLOT_ANCHORS[slot].anchor} inset={HUD_SLOT_ANCHORS[slot].inset}>
+            {slots[slot]}
+          </HudPanel>
+        ),
+      )}
+      {overlay}
+    </HudCanvas>
+  );
+}

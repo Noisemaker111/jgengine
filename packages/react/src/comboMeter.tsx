@@ -2,7 +2,7 @@ import { useEffect, useReducer, useRef, type CSSProperties, type ReactNode } fro
 
 import type { ComboMeter, ComboMeterView } from "@jgengine/core/combat/comboMeter";
 
-import { StaminaBar } from "./bars";
+import { KitMeter } from "./uiKitRoot";
 
 /**
  * Subscribe to a combo meter and re-render it each animation frame so the decay
@@ -164,14 +164,7 @@ export function ComboMeterHud({
         ) : null}
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <StaminaBar
-          value={view.fraction * 100}
-          max={100}
-          fill={tierColor}
-          showValue={false}
-          width={barWidth}
-          shape="pill"
-        />
+        <KitMeter value={view.fraction} tone="accent" style={{ width: barWidth, "--kit-accent": tierColor } as CSSProperties} />
         <span
           data-combo-multiplier=""
           style={{
