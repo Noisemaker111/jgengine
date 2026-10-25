@@ -2785,7 +2785,7 @@
       "domain": "physics",
       "gameFacing": false,
       "probe": null,
-      "intent": "drive a car from throttle/steer/handbrake input each tick: step the vehicle sim and pose its entity"
+      "intent": "drive a car from throttle/steer/handbrake input each tick: step the vehicle sim, pose its entity, mark and smoke its tires"
     },
     {
       "id": "durability",
@@ -4843,17 +4843,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "vertical event/kill-feed ticker rendering a core event-ticker as a fading, newest-on-top stack of per-kind iconned, accent-colored rows over HudTheme tokens"
-    },
-    {
-      "id": "kinematic-vehicle",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/physics/kinematicVehicle",
-      "domain": "physics",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "arcade car/kart driving physics with throttle, brake, steer and retunable handling"
     },
     {
       "id": "kit-action-bar",
@@ -9564,6 +9553,17 @@
       "intent": "radial SVG charge/cooldown ring bound to a TimerSet's progress"
     },
     {
+      "id": "tire-marks",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/tireMarks",
+      "domain": "physics",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "skid marks laid by sliding wheels that fade over time from a fixed pool"
+    },
+    {
       "id": "title-menu",
       "packages": [
         "@jgengine/react"
@@ -10307,7 +10307,7 @@
       "domain": "physics",
       "gameFacing": false,
       "probe": null,
-      "intent": "compose data-driven tuning parts (tires, engine, brakes) onto a vehicle tuning and read the resulting feel"
+      "intent": "compose data-driven tuning parts (tires, engine, brakes) onto a vehicle spec and read the resulting feel"
     },
     {
       "id": "vehicle-seats",
@@ -10319,6 +10319,17 @@
       "gameFacing": false,
       "probe": null,
       "intent": "enter, exit and swap seats in a car or mount (GTA-style boarding) with driver and passenger slots"
+    },
+    {
+      "id": "vehicle-spec",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/vehicleSpec",
+      "domain": "physics",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "describe a car by feel (top speed, accel, grip, turn rate, drift, assists) and get force-based handling tuned from it"
     },
     {
       "id": "vfx-preset-resolve",
