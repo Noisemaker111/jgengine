@@ -127,6 +127,19 @@ describe("world interlocks: variants by place, triggers, targeted schedules, liv
     expect(world.num("rang")).toBe(1);
   });
 
+  test("a trigger sees a value an event set before calming moves it back", () => {
+    const calming = defineWorldModel({
+      factions: { crew: {} },
+      places: { docks: { label: "the docks", position: [0, 0], radius: 50, owner: "crew", facts: { grip: { value: 20, rest: 60, decay: 0.5, min: 0, max: 100 } } } },
+      ripples: { soldier_down: { place: { grip: -20 } } },
+      triggers: { take: { when: { "docks.owner": "crew", "docks.grip": { atMost: 0 } }, then: { "docks.owner": "player", "docks.grip": 25 } } },
+    });
+    const world = createWorldModel(calming);
+    world.emit({ kind: "soldier_down", place: "docks" });
+    expect(world.tick(0.3).fired).toEqual(["take"]);
+    expect(world.fact("docks.owner")).toBe("player");
+  });
+
   test("declarations are checked", () => {
     expect(() => defineWorldModel({ triggers: { t: { when: {}, then: {} } } })).toThrow(/needs conditions/);
     expect(() => defineWorldModel({ triggers: { t: { when: { a: 1 }, emit: "nope" } } })).toThrow(/unknown ripple/);

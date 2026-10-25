@@ -1380,6 +1380,9 @@ export function createWorldModel(def: WorldModelDef, options: WorldModelOptions 
       return entry;
     },
     tick(dt, input = {}) {
+      // A change made between ticks (an emit, a set) is judged at the value it reached, before
+      // calming nudges it back: a grip knocked to exactly zero still flips its block.
+      const early = decayClock + Math.max(0, dt) >= DECAY_STEP ? runTriggers() : [];
       const current = state();
       let facts = current.facts;
       decayClock += Math.max(0, dt);
@@ -1415,7 +1418,7 @@ export function createWorldModel(def: WorldModelDef, options: WorldModelOptions 
           if (index > Math.floor(current.time / timer.every)) fireSchedule(id, timer, index);
         }
       }
-      const fired = stepped ? runTriggers() : [];
+      const fired = stepped ? [...early, ...runTriggers()] : early;
       const after = state();
       const ready = pendingReady.map((id) => instanceView(id, after)).filter((entry): entry is WorldInstanceView => entry !== null);
       const result: WorldTickResult = {
