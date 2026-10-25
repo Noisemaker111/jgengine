@@ -17,6 +17,52 @@ interface PointerDeps {
   height: number;
   layers?: THREE.Layers;
   filter?: PointerHitFilter;
+  /**
+   * The world's terrain height at x/z (bound only for a world with a real terrain, not a flat
+   * arena, so geometry below y=0 stays clickable there). When bound, a cursor over open ground lands on the ground
+   * itself (terrain hills included) even where no ground mesh answers the raycast, and a mesh hit
+   * farther away than the ground (a sky dome, a backdrop) loses to the ground in front of it.
+   */
+  groundHeightAt?: (x: number, z: number) => number;
+}
+
+/** Furthest the pointer looks for ground along the cursor ray, metres. */
+const GROUND_REACH_M = 4000;
+/** First march step along the ray before the crossing is refined by bisection, metres; steps grow with distance. */
+const GROUND_STEP_M = 1;
+
+/**
+ * Where a ray first meets a height field: march forward until the ray dips below the ground, then
+ * bisect the crossing. Null when it never does within `reach` (looking at the sky) or when the
+ * ray starts under the ground.
+ * @internal
+ */
+export function rayGroundHit(
+  origin: THREE.Vector3,
+  direction: THREE.Vector3,
+  groundHeightAt: (x: number, z: number) => number,
+  reach = GROUND_REACH_M,
+): THREE.Vector3 | null {
+  const above = (t: number) => origin.y + direction.y * t - groundHeightAt(origin.x + direction.x * t, origin.z + direction.z * t);
+  if (!(above(0) >= 0)) return null;
+  let previous = 0;
+  for (let t = GROUND_STEP_M; t <= reach; t += Math.max(GROUND_STEP_M, t * 0.02)) {
+    const height = above(t);
+    if (!Number.isFinite(height)) return null;
+    if (height > 0) {
+      previous = t;
+      continue;
+    }
+    let low = previous;
+    let high = t;
+    for (let step = 0; step < 24; step += 1) {
+      const mid = (low + high) / 2;
+      if (above(mid) > 0) low = mid;
+      else high = mid;
+    }
+    return origin.clone().addScaledVector(direction, high);
+  }
+  return null;
 }
 
 export interface PointerService {
@@ -70,7 +116,11 @@ export function createPointerService(): PointerService {
     else raycaster.layers.enableAll();
     raycaster.setFromCamera(target, deps.camera);
     const intersects = raycaster.intersectObjects(deps.scene.children, true);
+    const ground = deps.groundHeightAt === undefined ? null : rayGroundHit(raycaster.ray.origin, raycaster.ray.direction, deps.groundHeightAt);
+    const groundDistance = ground === null ? Infinity : ground.distanceTo(raycaster.ray.origin);
     for (const hit of intersects) {
+      // Anything behind the ground (a sky dome, a far backdrop) is not what the cursor is over.
+      if (hit.distance > groundDistance + 0.25) break;
       if (deps.filter !== undefined && !deps.filter(hit.object)) continue;
       const mesh = hit.object as THREE.Mesh;
       if (!mesh.isMesh) continue;
@@ -99,6 +149,7 @@ export function createPointerService(): PointerService {
         ...(hit.instanceId !== undefined ? { instanceId: hit.instanceId } : {}),
       };
     }
+    if (ground !== null) return { point: [ground.x, ground.y, ground.z], normal: [0, 1, 0], entity: null, object: null };
     const grounded = raycaster.ray.intersectPlane(groundPlane, scratch);
     if (grounded === null) return null;
     return { point: [grounded.x, grounded.y, grounded.z], normal: [0, 1, 0], entity: null, object: null };

@@ -753,7 +753,7 @@ export function Shell3dPresentation({
                         cameraDraggingRef.current = dragging;
                       }}
                     />
-                    <PointerProbe service={pointerService} />
+                    <PointerProbe service={pointerService} {...(ctx.world.ground.bounds === undefined ? {} : { groundHeightAt: ctx.world.groundHeightAt })} />
                     </BuildingRenderBudget>
                     </TerrainQualityContext.Provider>
                   </GameProvider>

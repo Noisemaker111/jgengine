@@ -3147,14 +3147,14 @@
 
 ## @jgengine/shell/pointer/PointerProbe
 
-- `PointerProbe` (function): function PointerProbe({ service }: { service: PointerService }): null — ⚠ undocumented
+- `PointerProbe` (function): function PointerProbe({ service, groundHeightAt }: { service: PointerService; groundHeightAt?: (x: number, z: number) => number }): null — Binds the pointer service to the live camera and scene; `groundHeightAt` lets clicks land on terrain.
 
 ## @jgengine/shell/pointer/pointerService
 
 - `POINTER_ENTITY_KEY` (const): const POINTER_ENTITY_KEY: "jgEntityId" — ⚠ undocumented
 - `POINTER_OBJECT_KEY` (const): const POINTER_OBJECT_KEY: "jgObjectId" — ⚠ undocumented
 - `PointerHitFilter` (type): type PointerHitFilter = (object: THREE.Object3D) => boolean — ⚠ undocumented
-- `PointerService` (interface): interface PointerService { worldHit(): PointerHit | null; worldHitCenter(): PointerHit | null; screenOf(world: PointerVec3): {x: number; y: number} | null; hasCursor(): boolean; cursorRay(): {origin: PointerVec3; direction: PointerVec3} | null; bind(deps: PointerDe… — ⚠ undocumented
+- `PointerService` (interface): interface PointerService { worldHit(): PointerHit | null; worldHitCenter(): PointerHit | null; screenOf(world: PointerVec3): {x: number; y: number} | null; hasCursor(): boolean; cursorRay(): {origin: PointerVec3; direction: PointerVec3} | null; bind(deps: PointerDe… — ⚠ undocumented · used by `PointerProbe` (@jgengine/shell/pointer/PointerProbe): Binds the pointer service to the live camera and scene; `groundHeightAt` lets clicks land on terrain.
 - `createPointerService` (function): function createPointerService(): PointerService — ⚠ undocumented
 
 ## @jgengine/shell/postfx/PostProcessing
