@@ -16,7 +16,7 @@ import type { GameRegistry, PlayableGame } from "@jgengine/shell/registry";
 
 import { CAM, resolvedLook, resolvedLookFrom } from "./appEnv";
 import { setCaptureStatus } from "./captureReady";
-import { servedGame, servedModule } from "./servedGame";
+import { engineCopySources, servedGame, servedModule } from "./servedGame";
 import { formatAppliedAim, resolveLookCamera, type LookMarkers } from "./lookCamera";
 import { installCaptureCamera } from "@jgengine/core/world/captureCamera";
 const CAMERA_PRESETS: Record<string, GameCameraConfig> = {
@@ -151,8 +151,8 @@ export async function discoverGameTunables(gameId: string, gameName: string): Pr
     applyStoredDevtoolsOverrides(gameName);
     return;
   }
-  const prefix = `../../../Games/${gameId}/src/`;
-  const loaders = Object.entries(gameSourceModules).filter(([path]) => path.startsWith(prefix));
+  const wanted = new Set(engineCopySources(Object.keys(gameSourceModules), gameId, servedGame));
+  const loaders = Object.entries(gameSourceModules).filter(([path]) => wanted.has(path));
   const loaded = await Promise.all(
     loaders.map(async ([path, loader]) => {
       try {
