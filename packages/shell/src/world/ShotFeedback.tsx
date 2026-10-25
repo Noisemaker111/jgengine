@@ -10,8 +10,8 @@ import { useGameContext } from "@jgengine/react/provider";
 
 import { startFromMuzzle } from "./WorldHud";
 
-/** Whether `source` is the local player or what they currently drive. */
-function isLocalSource(ctx: GameContext, source: string | undefined): boolean {
+/** Whether `source` is the local player or what they currently drive. Exported for tests. @internal */
+export function isLocalSource(ctx: GameContext, source: string | undefined): boolean {
   if (source === undefined) return false;
   return source === ctx.player.userId || source === ctx.player.possession.active(ctx.player.userId);
 }
