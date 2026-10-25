@@ -301,7 +301,11 @@ export interface CityLot extends PlacedBuildingLot {
  */
 export function cityLots(layout: CityLayout, options: CityLotOptions): CityLot[] {
   const maxLots = Math.max(0, Math.floor(options.maxLots ?? 400));
-  const roads: RoadFrontage[] = options.roads.map((entry) => ({ path: entry.path, width: cityRoadWidth(layout, entry.roadClass) }));
+  const roads: RoadFrontage[] = options.roads.map((entry) => ({
+    path: entry.path,
+    width: cityRoadWidth(layout, entry.roadClass),
+    sidewalk: layout.sidewalkWidth,
+  }));
   const accepted: OrientedRect[] = [];
   const lots: CityLot[] = [];
   const streams = seededStreams(`city-lots:${options.seed ?? ""}`);
@@ -312,8 +316,8 @@ export function cityLots(layout: CityLayout, options: CityLotOptions): CityLot[]
       roads,
       footprint: { w: params.frontage, d: params.depth },
       spacing,
-      setback: layout.sidewalkWidth + params.setback,
-      crossClearance: layout.sidewalkWidth + layout.cornerClearance,
+      setback: params.setback,
+      crossClearance: layout.cornerClearance,
       ...(options.avoid === undefined ? {} : { avoid: options.avoid }),
       ...(options.area === undefined ? {} : { area: options.area }),
       seed: `${options.seed ?? ""}:${zone}`,

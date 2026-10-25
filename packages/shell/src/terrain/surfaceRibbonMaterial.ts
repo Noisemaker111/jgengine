@@ -66,6 +66,11 @@ export interface RibbonSurfaceScan extends SurfaceScanBlend {
 
 const SOFT_GROUND: ReadonlySet<TerrainSurfaceClass> = new Set(["dirt", "mud", "sand", "gravel", "grass", "ground", "snow"]);
 
+/** Whether a ribbon surface id is unpaved ground (dirt, gravel, sand, …) that fades into the terrain. @internal */
+export function isSoftRibbonSurface(surface: string): boolean {
+  return SOFT_GROUND.has(terrainSurfaceClass(surface));
+}
+
 const clamp = (value: number, min: number, max: number): number => Math.min(max, Math.max(min, value));
 
 /**

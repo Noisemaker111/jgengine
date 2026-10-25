@@ -810,7 +810,6 @@
       },
       "label": "Vale ground cover",
       "meta": {
-        "density": 2.5,
         "bladeHeight": 0.26,
         "bladeWidthMin": 0.018,
         "bladeWidthMax": 0.04,

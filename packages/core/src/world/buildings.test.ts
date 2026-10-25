@@ -4,9 +4,7 @@ import {
   BUILDING_STYLE_PALETTES,
   buildingSurfaceColor,
   createBuildingConfig,
-  createBuildingGrid,
   generateBuilding,
-  generateBuildingDistrict,
   resolveBuildingPalette,
   resolveBuildingSurface,
 } from "./buildings";
@@ -91,25 +89,6 @@ describe("buildings", () => {
     expect(building.parts.every((part) => part.position.length === 3)).toBe(true);
   });
 
-  test("creates a seeded district grid", () => {
-    const lots = createBuildingGrid({
-      rows: 2,
-      columns: 2,
-      origin: [1, 2],
-      lotSize: { w: 8, d: 6 },
-      streetWidth: 3,
-      seed: "district",
-      floorRange: [2, 4],
-    });
-    expect(lots.map((lot) => lot.center)).toEqual([
-      [1, 2],
-      [12, 2],
-      [1, 11],
-      [12, 11],
-    ]);
-    expect(lots.every((lot) => lot.config.floors >= 2 && lot.config.floors <= 4)).toBe(true);
-    expect(generateBuildingDistrict({ rows: 1, columns: 2, seed: "district" })).toHaveLength(2);
-  });
 });
 
 describe("open storefronts are backed, not holes", () => {

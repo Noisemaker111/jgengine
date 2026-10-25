@@ -13,11 +13,13 @@ function JunctionPatch({
   geometry,
   color,
   surfaceDetail,
+  surface,
   scan,
 }: {
   geometry: BufferGeometry;
   color: string;
   surfaceDetail: boolean;
+  surface: string;
   scan: TerrainDetailMaterialConfig | undefined;
 }) {
   const quality = useTerrainQuality();
@@ -26,7 +28,7 @@ function JunctionPatch({
   const material = useSurfaceRibbonMaterial(
     surfaceDetail
       ? {
-          surface: "road",
+          surface,
           color,
           halfWidth: 1,
           quality,
@@ -142,6 +144,7 @@ export function RoadJunctions({
   junctions,
   field,
   surfaceDetail = true,
+  surface = "road",
   scan,
 }: {
   surfaces: readonly JunctionSurface[];
@@ -149,6 +152,8 @@ export function RoadJunctions({
   field: TerrainField;
   /** Shade the welded surfaces with the asphalt procedural surface, matching the ribbons. Default true. */
   surfaceDetail?: boolean;
+  /** Surface the welded crossings shade with, as the roads meeting there do. Default `"road"`. */
+  surface?: string;
   /** Scanned carriageway from the first road that names one, so junctions match the ribbons. */
   scan?: TerrainDetailMaterialConfig | undefined;
 }) {
@@ -180,7 +185,7 @@ export function RoadJunctions({
   return (
     <group>
       {patches.map((patch, index) => (
-        <JunctionPatch key={`junction-${index}`} geometry={patch.geometry} color={patch.color} surfaceDetail={surfaceDetail} scan={scan} />
+        <JunctionPatch key={`junction-${index}`} geometry={patch.geometry} color={patch.color} surfaceDetail={surfaceDetail} surface={surface} scan={scan} />
       ))}
       {markings.stops !== null ? <JunctionPaint geometry={markings.stops} surfaceDetail={surfaceDetail} scan={scan} /> : null}
       {markings.crosswalks !== null ? <JunctionPaint geometry={markings.crosswalks} surfaceDetail={surfaceDetail} scan={scan} /> : null}

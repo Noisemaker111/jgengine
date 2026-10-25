@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { validateMaterialAsset } from "@jgengine/core/material/materialAsset";
+import { DEFAULT_ROAD_SCAN } from "@jgengine/core/world/features";
 
 import {
   MATERIAL_LIBRARY,
@@ -178,4 +179,8 @@ describe("shared material library", () => {
     expect(librarySurfaceParameters("paint/satin").clearcoat).toBeLessThan(1);
     expect(libraryMaterialAsset("paint/gloss").textures).toBeUndefined();
   });
+});
+
+test("the engine's default road scan is the library's dry asphalt", () => {
+  expect(DEFAULT_ROAD_SCAN).toEqual(librarySurfaceScan("asphalt/dry"));
 });

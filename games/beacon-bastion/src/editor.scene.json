@@ -192,7 +192,6 @@
       },
       "label": "Approach meadow",
       "meta": {
-        "density": 3.4,
         "bladeHeight": 0.32,
         "bladeWidthMin": 0.024,
         "bladeWidthMax": 0.055,
@@ -298,10 +297,6 @@
           {
             "item": "bush",
             "weight": 4
-          },
-          {
-            "item": "grass",
-            "weight": 3
           },
           {
             "item": "rock",
@@ -565,10 +560,6 @@
           {
             "item": "bush",
             "weight": 3
-          },
-          {
-            "item": "grass",
-            "weight": 2
           }
         ]
       }
@@ -667,10 +658,6 @@
           {
             "item": "bush",
             "weight": 3
-          },
-          {
-            "item": "grass",
-            "weight": 2
           }
         ]
       }
@@ -820,10 +807,6 @@
           {
             "item": "rock",
             "weight": 3
-          },
-          {
-            "item": "grass",
-            "weight": 2
           }
         ]
       }

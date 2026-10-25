@@ -29,7 +29,7 @@ const SIDE_QUEST: QuestDef = {
 
 const terrainFeature = environment({
   terrain: terrain({ bounds: { w: 70, d: 70 }, height: 3, frequency: 0.03, seed: "quest" }),
-  vegetation: grass({ area: { w: 60, d: 60 }, density: 3, colors: ["#2f4f1e", "#8fbf4a"], seed: "quest" }),
+  vegetation: grass({ area: { w: 60, d: 60 }, colorBase: "#2f4f1e", colorTip: "#8fbf4a", seed: "quest" }),
 });
 
 const entityCatalog: Record<string, GameContextEntityEntry> = {

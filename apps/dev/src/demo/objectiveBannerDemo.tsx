@@ -24,7 +24,7 @@ const kindThemes: Record<string, ObjectiveBannerTheme> = {
 
 const terrainFeature = environment({
   terrain: terrain({ bounds: { w: 60, d: 60 }, height: 2, frequency: 0.03, seed: "banner" }),
-  vegetation: grass({ area: { w: 52, d: 52 }, density: 3, colors: ["#26401a", "#7fb04a"], seed: "banner" }),
+  vegetation: grass({ area: { w: 52, d: 52 }, colorBase: "#26401a", colorTip: "#7fb04a", seed: "banner" }),
 });
 
 const entityCatalog: Record<string, GameContextEntityEntry> = {

@@ -931,7 +931,6 @@
       },
       "label": "Meadow",
       "meta": {
-        "density": 2.2,
         "bladeHeight": 0.36,
         "colorBase": "#557236",
         "colorTip": "#a6b264",
@@ -1144,10 +1143,6 @@
           {
             "item": "flower",
             "weight": 1.7999999999999998
-          },
-          {
-            "item": "grass",
-            "weight": 1.2
           }
         ],
         "density": 0.18,
@@ -1242,10 +1237,6 @@
           {
             "item": "flower",
             "weight": 1.7999999999999998
-          },
-          {
-            "item": "grass",
-            "weight": 1.2
           }
         ],
         "density": 0.18,
@@ -1340,10 +1331,6 @@
           {
             "item": "flower",
             "weight": 1.7999999999999998
-          },
-          {
-            "item": "grass",
-            "weight": 1.2
           }
         ],
         "density": 0.18,
@@ -1438,10 +1425,6 @@
           {
             "item": "flower",
             "weight": 1.7999999999999998
-          },
-          {
-            "item": "grass",
-            "weight": 1.2
           }
         ],
         "density": 0.18,
@@ -1536,10 +1519,6 @@
           {
             "item": "flower",
             "weight": 1.7999999999999998
-          },
-          {
-            "item": "grass",
-            "weight": 1.2
           }
         ],
         "density": 0.18,
@@ -1634,10 +1613,6 @@
           {
             "item": "flower",
             "weight": 1.7999999999999998
-          },
-          {
-            "item": "grass",
-            "weight": 1.2
           }
         ],
         "density": 0.18,
@@ -1732,10 +1707,6 @@
           {
             "item": "flower",
             "weight": 1.7999999999999998
-          },
-          {
-            "item": "grass",
-            "weight": 1.2
           }
         ],
         "density": 0.18,
@@ -1808,10 +1779,6 @@
           {
             "item": "flower",
             "weight": 3
-          },
-          {
-            "item": "grass",
-            "weight": 2
           }
         ],
         "density": 0.35,
@@ -1883,10 +1850,6 @@
           {
             "item": "flower",
             "weight": 3
-          },
-          {
-            "item": "grass",
-            "weight": 2
           }
         ],
         "density": 0.35,
@@ -1958,10 +1921,6 @@
           {
             "item": "flower",
             "weight": 3
-          },
-          {
-            "item": "grass",
-            "weight": 2
           }
         ],
         "density": 0.35,
@@ -2033,10 +1992,6 @@
           {
             "item": "flower",
             "weight": 3
-          },
-          {
-            "item": "grass",
-            "weight": 2
           }
         ],
         "density": 0.35,
@@ -2108,10 +2063,6 @@
           {
             "item": "flower",
             "weight": 3
-          },
-          {
-            "item": "grass",
-            "weight": 2
           }
         ],
         "density": 0.35,
@@ -2205,10 +2156,6 @@
           {
             "item": "flower",
             "weight": 1.7999999999999998
-          },
-          {
-            "item": "grass",
-            "weight": 1.2
           }
         ],
         "density": 0.15,
@@ -2303,10 +2250,6 @@
           {
             "item": "flower",
             "weight": 1.7999999999999998
-          },
-          {
-            "item": "grass",
-            "weight": 1.2
           }
         ],
         "density": 0.15,
@@ -2401,10 +2344,6 @@
           {
             "item": "flower",
             "weight": 1.7999999999999998
-          },
-          {
-            "item": "grass",
-            "weight": 1.2
           }
         ],
         "density": 0.15,
@@ -2499,10 +2438,6 @@
           {
             "item": "flower",
             "weight": 1.7999999999999998
-          },
-          {
-            "item": "grass",
-            "weight": 1.2
           }
         ],
         "density": 0.12145597971510143,
@@ -2597,10 +2532,6 @@
           {
             "item": "flower",
             "weight": 1.7999999999999998
-          },
-          {
-            "item": "grass",
-            "weight": 1.2
           }
         ],
         "density": 0.12290013304445893,
@@ -2695,10 +2626,6 @@
           {
             "item": "flower",
             "weight": 1.7999999999999998
-          },
-          {
-            "item": "grass",
-            "weight": 1.2
           }
         ],
         "density": 0.10826384081039578,
@@ -2793,10 +2720,6 @@
           {
             "item": "flower",
             "weight": 1.7999999999999998
-          },
-          {
-            "item": "grass",
-            "weight": 1.2
           }
         ],
         "density": 0.14366776979062706,
@@ -2891,10 +2814,6 @@
           {
             "item": "flower",
             "weight": 1.7999999999999998
-          },
-          {
-            "item": "grass",
-            "weight": 1.2
           }
         ],
         "density": 0.11974760113749654,
@@ -2989,10 +2908,6 @@
           {
             "item": "flower",
             "weight": 1.7999999999999998
-          },
-          {
-            "item": "grass",
-            "weight": 1.2
           }
         ],
         "density": 0.15876010975334792,
@@ -3087,10 +3002,6 @@
           {
             "item": "flower",
             "weight": 1.7999999999999998
-          },
-          {
-            "item": "grass",
-            "weight": 1.2
           }
         ],
         "density": 0.14109038052614778,
@@ -3185,10 +3096,6 @@
           {
             "item": "flower",
             "weight": 1.7999999999999998
-          },
-          {
-            "item": "grass",
-            "weight": 1.2
           }
         ],
         "density": 0.1316722249565646,
@@ -3283,10 +3190,6 @@
           {
             "item": "flower",
             "weight": 1.7999999999999998
-          },
-          {
-            "item": "grass",
-            "weight": 1.2
           }
         ],
         "density": 0.10198485195171089,
@@ -3381,10 +3284,6 @@
           {
             "item": "flower",
             "weight": 1.7999999999999998
-          },
-          {
-            "item": "grass",
-            "weight": 1.2
           }
         ],
         "density": 0.12277649594936521,
@@ -3479,10 +3378,6 @@
           {
             "item": "flower",
             "weight": 1.7999999999999998
-          },
-          {
-            "item": "grass",
-            "weight": 1.2
           }
         ],
         "density": 0.11005859112832696,
@@ -3577,10 +3472,6 @@
           {
             "item": "flower",
             "weight": 1.7999999999999998
-          },
-          {
-            "item": "grass",
-            "weight": 1.2
           }
         ],
         "density": 0.10119734717067332,
@@ -4150,10 +4041,6 @@
           {
             "item": "flower",
             "weight": 3
-          },
-          {
-            "item": "grass",
-            "weight": 2
           }
         ],
         "density": 0.3,
@@ -4225,10 +4112,6 @@
           {
             "item": "flower",
             "weight": 3
-          },
-          {
-            "item": "grass",
-            "weight": 2
           }
         ],
         "density": 0.3,
@@ -4300,10 +4183,6 @@
           {
             "item": "flower",
             "weight": 3
-          },
-          {
-            "item": "grass",
-            "weight": 2
           }
         ],
         "density": 0.3,
@@ -4375,10 +4254,6 @@
           {
             "item": "flower",
             "weight": 3
-          },
-          {
-            "item": "grass",
-            "weight": 2
           }
         ],
         "density": 0.3,
@@ -4450,10 +4325,6 @@
           {
             "item": "flower",
             "weight": 3
-          },
-          {
-            "item": "grass",
-            "weight": 2
           }
         ],
         "density": 0.3,
@@ -4525,10 +4396,6 @@
           {
             "item": "flower",
             "weight": 3
-          },
-          {
-            "item": "grass",
-            "weight": 2
           }
         ],
         "density": 0.3,
@@ -4600,10 +4467,6 @@
           {
             "item": "flower",
             "weight": 3
-          },
-          {
-            "item": "grass",
-            "weight": 2
           }
         ],
         "density": 0.3,
@@ -4675,10 +4538,6 @@
           {
             "item": "flower",
             "weight": 3
-          },
-          {
-            "item": "grass",
-            "weight": 2
           }
         ],
         "density": 0.3,
@@ -4750,10 +4609,6 @@
           {
             "item": "flower",
             "weight": 3
-          },
-          {
-            "item": "grass",
-            "weight": 2
           }
         ],
         "density": 0.3,
@@ -4825,10 +4680,6 @@
           {
             "item": "flower",
             "weight": 3
-          },
-          {
-            "item": "grass",
-            "weight": 2
           }
         ],
         "density": 0.3,
@@ -4900,10 +4751,6 @@
           {
             "item": "flower",
             "weight": 3
-          },
-          {
-            "item": "grass",
-            "weight": 2
           }
         ],
         "density": 0.3,
@@ -4975,10 +4822,6 @@
           {
             "item": "flower",
             "weight": 3
-          },
-          {
-            "item": "grass",
-            "weight": 2
           }
         ],
         "density": 0.3,
@@ -5050,10 +4893,6 @@
           {
             "item": "flower",
             "weight": 3
-          },
-          {
-            "item": "grass",
-            "weight": 2
           }
         ],
         "density": 0.3,
@@ -5125,10 +4964,6 @@
           {
             "item": "flower",
             "weight": 3
-          },
-          {
-            "item": "grass",
-            "weight": 2
           }
         ],
         "density": 0.3,
@@ -5200,10 +5035,6 @@
           {
             "item": "flower",
             "weight": 3
-          },
-          {
-            "item": "grass",
-            "weight": 2
           }
         ],
         "density": 0.3,
@@ -5275,10 +5106,6 @@
           {
             "item": "flower",
             "weight": 3
-          },
-          {
-            "item": "grass",
-            "weight": 2
           }
         ],
         "density": 0.3,
@@ -5350,10 +5177,6 @@
           {
             "item": "flower",
             "weight": 3
-          },
-          {
-            "item": "grass",
-            "weight": 2
           }
         ],
         "density": 0.3,
@@ -5425,10 +5248,6 @@
           {
             "item": "flower",
             "weight": 3
-          },
-          {
-            "item": "grass",
-            "weight": 2
           }
         ],
         "density": 0.3,
@@ -5500,10 +5319,6 @@
           {
             "item": "flower",
             "weight": 3
-          },
-          {
-            "item": "grass",
-            "weight": 2
           }
         ],
         "density": 0.3,
@@ -5575,10 +5390,6 @@
           {
             "item": "flower",
             "weight": 3
-          },
-          {
-            "item": "grass",
-            "weight": 2
           }
         ],
         "density": 0.3,
@@ -5650,10 +5461,6 @@
           {
             "item": "flower",
             "weight": 3
-          },
-          {
-            "item": "grass",
-            "weight": 2
           }
         ],
         "density": 0.3,
@@ -5725,10 +5532,6 @@
           {
             "item": "flower",
             "weight": 3
-          },
-          {
-            "item": "grass",
-            "weight": 2
           }
         ],
         "density": 0.3,

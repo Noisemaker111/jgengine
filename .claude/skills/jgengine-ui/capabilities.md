@@ -251,9 +251,9 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `DamageDirectionOverlay` (function) · `import { DamageDirectionOverlay } from "@jgengine/react"`
 
-## day-night-sky — drop-in R3F presenter that drives the engine's existing sky dome and lights from a serializable day-night cycle for a moving, color-graded day-night look
+## day-night-sky — one sky for a fixed look, a day-night cycle, biome bands and authored lights
 
-- `DayNightSky` (function) · `import { DayNightSky } from "@jgengine/shell/environment"`
+- `Sky` (function) · `import { Sky } from "@jgengine/shell/environment"`
 - `skyNoonKeyframes` (function) · `import { skyNoonKeyframes } from "@jgengine/core/render/skyOwnedLighting"`
 - `splitSkyOwnedLighting` (function) · `import { splitSkyOwnedLighting } from "@jgengine/core/render/skyOwnedLighting"`
 

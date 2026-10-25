@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { environment, road } from "./features";
+import { DEFAULT_ROAD_SCAN, environment, road } from "./features";
 import { summarizeEnvironment } from "./environmentSummary";
 import {
   GROUND_DECAL_LAYERS,
@@ -31,9 +31,11 @@ describe("world/roads", () => {
     expect(() => road({ path: [[0, 0]] })).toThrow();
   });
 
-  test("road() carries scanned layers and sidewalk slabs only when authored", () => {
+  test("a paved road wears the scanned asphalt by default; unpaved and authored scans keep their own", () => {
     const plain = road({ path: [[0, 0], [100, 0]] });
-    expect(plain.materials).toBeUndefined();
+    expect(plain.materials).toEqual({ road: DEFAULT_ROAD_SCAN });
+    expect(road({ path: [[0, 0], [100, 0]], surface: "dirt" }).materials).toBeUndefined();
+    expect(road({ path: [[0, 0], [100, 0]], surface: false }).materials).toBeUndefined();
     expect(plain.sidewalk).toEqual({ width: 2.6, color: "#a7adb8" });
     const asphalt = { maps: { color: "/materials/a/color.jpg", normal: "/materials/a/normal.jpg" }, repeat: 4 };
     const scanned = road({ path: [[0, 0], [100, 0]], materials: { road: asphalt }, sidewalk: { width: 4, slabs: false } });

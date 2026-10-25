@@ -1,7 +1,6 @@
 import {
   DEFAULT_BUILDING_CONFIG,
   generateBuilding,
-  generateBuildingDistrict,
   resolveBuildingPalette,
   resolveBuildingProbabilities,
   type BuildingPalette,
@@ -11,7 +10,7 @@ import {
   type GeneratedBuilding,
 } from "./buildings";
 import { buildingKitVariantCounts, type BuildingKit } from "./buildingKit";
-import { deriveBuildingLots, type PlacedBuildingLot } from "./buildingLots";
+import { deriveBuildingLots, type PlacedBuildingLot, type RoadFrontage } from "./buildingLots";
 import type {
   BuildingEnvironmentDescriptor,
   EnvironmentArea,
@@ -23,32 +22,35 @@ import type { Aabb } from "./geometry";
 import { pathLength } from "./roads";
 import { resolveTerrainField, resolveTerrainPalette, type TerrainPalette } from "./terrain";
 
-export function resolveStructureBuildings(descriptor: BuildingEnvironmentDescriptor): GeneratedBuilding[] {
+/**
+ * The buildings one `building()` descriptor places, always through the one frontage placer
+ * ({@link deriveBuildingLots}): along its `along` roads; else, when the world's streets pass through
+ * the settlement, along those streets near `position`; else in two rows facing a lane through
+ * `position` (`spacing` wide). `roads` are the world's streets: no lot ever stands on their
+ * carriageway or sidewalks.
+ */
+export function resolveStructureBuildings(
+  descriptor: BuildingEnvironmentDescriptor,
+  roads: readonly RoadFrontage[] = [],
+): GeneratedBuilding[] {
   if (descriptor.along !== undefined) {
-    return resolveFrontageBuildings(descriptor, descriptor.along);
+    return resolveFrontageBuildings(descriptor, descriptor.along, roads);
   }
-  const columns = Math.max(1, Math.ceil(Math.sqrt(descriptor.count)));
-  const rows = Math.max(1, Math.ceil(descriptor.count / columns));
-  const spacing = descriptor.spacing;
-  const [centerX, centerZ] = descriptor.position ?? [0, 0];
-  const origin: readonly [number, number] = [
-    centerX - ((columns - 1) * (descriptor.footprint.w + spacing)) / 2,
-    centerZ - ((rows - 1) * (descriptor.footprint.d + spacing)) / 2,
-  ];
-  return generateBuildingDistrict({
-    rows,
-    columns,
-    origin,
-    lotSize: descriptor.footprint,
-    streetWidth: spacing,
-    floorRange: descriptor.stories,
-    base: {
-      floorHeight: descriptor.storyHeight,
-      probabilities: resolveBuildingProbabilities(descriptor.style, descriptor.probabilities),
-      ...kitVariants(descriptor.kit),
-    },
-    ...(descriptor.seed === undefined ? {} : { seed: descriptor.seed }),
-  }).slice(0, descriptor.count);
+  const perSide = Math.max(1, Math.ceil(descriptor.count / 2));
+  const length = perSide * (descriptor.footprint.w + descriptor.spacing) + 1;
+  const [x, z] = descriptor.position ?? [0, 0];
+  const lane: RoadFrontage = { path: [[x - length / 2, z], [x + length / 2, z]], width: descriptor.spacing };
+  let best = resolveFrontageBuildings(descriptor, { roads: [lane], setback: 0, maxLots: descriptor.count }, roads);
+  if (best.length >= descriptor.count || roads.length === 0) return best;
+  // A street runs through the settlement: line it, widening the catchment until the count fits.
+  for (const reach of [1, 1.5, 2, 3]) {
+    const half = (length / 2 + descriptor.footprint.d) * reach;
+    const area = { center: [x, z] as const, halfExtents: [half, half] as const };
+    const lined = resolveFrontageBuildings(descriptor, { roads, setback: 1, maxLots: descriptor.count, area }, []);
+    if (lined.length > best.length) best = lined;
+    if (best.length >= descriptor.count) break;
+  }
+  return best;
 }
 
 /** Spread seeded variant picks across exactly the models a kit binds, so no bound variant goes unused. */
@@ -80,6 +82,7 @@ function hashU32(input: string): number {
 function resolveFrontageBuildings(
   descriptor: BuildingEnvironmentDescriptor,
   along: NonNullable<BuildingEnvironmentDescriptor["along"]>,
+  avoid: readonly RoadFrontage[],
 ): GeneratedBuilding[] {
   const seed = descriptor.seed ?? "buildings";
   const lots = deriveBuildingLots({
@@ -91,6 +94,7 @@ function resolveFrontageBuildings(
     ...(along.setback === undefined ? {} : { setback: along.setback }),
     ...(along.bothSides === undefined ? {} : { bothSides: along.bothSides }),
     ...(along.area === undefined ? {} : { area: along.area }),
+    ...(avoid.length === 0 ? {} : { avoid }),
   });
   const [floorsMin, floorsMax] = descriptor.stories;
   const bayWidth = DEFAULT_BUILDING_CONFIG.bayWidth;
@@ -248,8 +252,8 @@ function unionAabb(buildings: readonly GeneratedBuilding[]): Aabb {
   return { minX, minZ, maxX, maxZ };
 }
 
-function summarizeStructures(descriptor: BuildingEnvironmentDescriptor): StructureSummary {
-  const buildings = resolveStructureBuildings(descriptor);
+function summarizeStructures(descriptor: BuildingEnvironmentDescriptor, roads: readonly RoadFrontage[]): StructureSummary {
+  const buildings = resolveStructureBuildings(descriptor, roads);
   return {
     style: descriptor.style,
     palette: resolveBuildingPalette(descriptor.style, descriptor.palette),
@@ -275,10 +279,10 @@ export function summarizeEnvironment(feature: EnvironmentWorldFeature): Environm
     ...summarizeTerrain({ ...entry, kind: "terrain" }),
     origin: entry.origin,
   }));
-  const structures = (feature.structures ?? []).map(summarizeStructures);
+  const structures = (feature.structures ?? []).map((entry) => summarizeStructures(entry, feature.roads ?? []));
   const vegetation: VegetationSummary[] = (feature.vegetation ?? []).map((entry) => ({
     area: entry.area,
-    density: entry.density,
+    density: entry.rules.density,
   }));
   const water: WaterSummary[] = (feature.water ?? []).map((entry) => ({
     level: entry.level,

@@ -9,6 +9,7 @@ import {
   scatterCoverageSpec,
   scatterFootprintArea,
   SCATTER_COVERAGE_SPECS,
+  GRASS_BLADE_BUDGET,
   SCATTER_INSTANCE_BUDGET,
 } from "./scatterCoverage";
 
@@ -56,10 +57,10 @@ describe("densityCoverage (grass / scatter, per-m²)", () => {
     expect(cov.unit).toBe("blades");
   });
 
-  test("caps at the shared instance budget and flags it", () => {
+  test("caps at the grass blade budget and flags it", () => {
     const cov = densityCoverage("grass_field", 100_000, 160);
     expect(cov.requested).toBe(16_000_000);
-    expect(cov.count).toBe(SCATTER_INSTANCE_BUDGET);
+    expect(cov.count).toBe(GRASS_BLADE_BUDGET);
     expect(cov.capped).toBe(true);
   });
 
@@ -99,7 +100,7 @@ describe("budgetWarning / describeScatterCoverage", () => {
 
   test("per-m² kinds show requested and budget", () => {
     const cov = densityCoverage("grass_field", 100_000, 160);
-    expect(budgetWarning(cov)).toBe(" · requested 16,000,000, capped at 250,000 (budget)");
+    expect(budgetWarning(cov)).toBe(" · requested 16,000,000, capped at 3,000,000 (budget)");
   });
 
   test("known-count kinds show only the ceiling", () => {

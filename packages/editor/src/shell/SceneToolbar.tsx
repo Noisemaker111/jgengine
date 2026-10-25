@@ -1,7 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 
 import { WELL_KNOWN_MARKER_KINDS } from "@jgengine/core/editor/index";
-import { VEGETATION_VOLUME_KIND } from "@jgengine/core/world/vegetation";
 import { listSceneKinds } from "@jgengine/core/scene/sceneKinds";
 
 import {
@@ -28,8 +27,6 @@ export const ADD_VOLUME_ENTRIES: readonly { label: string; tool: PlacementTool }
   { label: "Leash range", tool: { tool: "volume", kind: "leash", shape: "sphere" } },
   { label: "Discover area", tool: { tool: "volume", kind: "discover", shape: "sphere" } },
   { label: "Capture area", tool: { tool: "volume", kind: "capture", shape: "cylinder" } },
-  { label: "Vegetation (box)", tool: { tool: "volume", kind: VEGETATION_VOLUME_KIND, shape: "box" } },
-  { label: "Vegetation (circle)", tool: { tool: "volume", kind: VEGETATION_VOLUME_KIND, shape: "sphere" } },
 ];
 
 const GRID_SIZES: readonly number[] = [0.5, 1, 2, 4, 8];

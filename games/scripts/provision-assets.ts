@@ -36,6 +36,17 @@ function isPopulated(dir: string): boolean {
   return existsSync(dir) && readdirSync(dir).length > 0;
 }
 
+/** The scan behind `DEFAULT_ROAD_SCAN` (`@jgengine/core/world/features`), the library's `asphalt/dry`. */
+const DEFAULT_ROAD_SCAN_SOURCE = "ambientcg-asphalt003";
+const PAVED_PATH = /"kind":\s*"(road|street|track|avenue|highway)"/;
+
+/** Whether a game draws a paved road: a `road(` call or a paved path kind in its scene documents. */
+function drawsPavedRoad(gameDir: string, text: string): boolean {
+  if (/\broad\(/.test(text)) return true;
+  const scenes = [join(gameDir, "src", "editor.scene.json")];
+  return scenes.some((path) => existsSync(path) && PAVED_PATH.test(readFileSync(path, "utf8")));
+}
+
 const only = process.argv.slice(2);
 let failed = false;
 for (const game of gameDirs(only)) {
@@ -45,7 +56,11 @@ for (const game of gameDirs(only)) {
     MODEL_LIBRARY?: readonly { name: string; origin: { provider: string } }[];
   };
   const text = sourceText(join(gameDir, "src"));
-  const referenced = sources.filter((source) => text.includes(`"${source.id}"`) || text.includes(`'${source.id}'`));
+  // Paved roads wear the engine's default scanned asphalt, so a game that draws one needs the scan.
+  const extra = drawsPavedRoad(gameDir, text) ? [DEFAULT_ROAD_SCAN_SOURCE] : [];
+  const referenced = sources.filter(
+    (source) => extra.includes(source.id) || text.includes(`"${source.id}"`) || text.includes(`'${source.id}'`),
+  );
   for (const source of referenced) {
     const subdir = source.kind === "material" ? "materials" : source.kind === "sprite" ? "sprites" : "models";
     if (isPopulated(join(gameDir, "public", subdir, source.id))) continue;

@@ -2,10 +2,10 @@ import { expect, test } from "bun:test";
 import { act, createRoot, extend } from "@react-three/fiber";
 import { createElement, type ReactElement } from "react";
 import * as THREE from "three";
-import { GrassField, type GrassFieldProps } from "./GrassField";
+import { GRASS_DEFAULTS, type GrassRules } from "@jgengine/core/world/grassKind";
+import { GrassField, grassBladeCount, grassLodShare, type GrassFieldProps } from "./GrassField";
 import { registerGrassFieldRenderer } from "../scene/GrassFieldRenderer";
 import { getSceneKindRenderer, type SceneKindRenderContext } from "../scene/sceneKindRenderers";
-import { createGrassBladeGeometry } from "./grassGeometry";
 
 async function mounted(camera: THREE.Camera, element: ReactElement, run: (scene: THREE.Scene, render: (element: ReactElement | null) => Promise<void>) => Promise<void>) {
   const environment = globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean };
@@ -77,19 +77,19 @@ function submission(scene: THREE.Scene, camera: THREE.Camera, shadow = false) {
   return { triangles, draws };
 }
 
+const rules = (over: Partial<GrassRules>): GrassRules => ({ ...GRASS_DEFAULTS, groundCover: 0, ...over });
+
 test("fully faded grass contributes no submitted instance triangles", async () => {
   const camera = cameraAt();
-  await mounted(camera, createElement(GrassField, { count: 64_800, density: 18, area: 60, seed: "meadow", wind: false }), async (scene) => {
-    const work = submission(scene, camera);
-    console.log("distant wind-off public geometry submission", work);
-    expect(work).toEqual({ triangles: 0, draws: 0 });
+  await mounted(camera, createElement(GrassField, { rules: rules({ density: 18, seed: "meadow", windStrength: 0 }), area: 60 }), async (scene) => {
+    expect(submission(scene, camera)).toEqual({ triangles: 0, draws: 0 });
   });
 });
 
 test("each camera decides independently; transformed patches and disabled fade retain their budget", async () => {
   const far = cameraAt();
-  const props: GrassFieldProps = { count: 2500, density: 100, budget: 1200, area: [35, 20], seed: "reeds", tuftBlades: 3,
-    bladeHeight: [1, 2], wind: { strength: 1.5, flutter: 0.3 }, colorBase: "#123456", colorTip: "#abcdef", castShadow: true, frustumCulled: false };
+  const props: GrassFieldProps = { rules: rules({ density: 100, seed: "reeds", bladeHeight: 2, heightVariation: 0.5, windStrength: 1.5,
+    colorBase: "#123456", colorTip: "#abcdef" }), budget: 1200, area: [35, 20], tuftBlades: 3, castShadow: true, frustumCulled: false };
   const tree = (fade: GrassFieldProps["distanceFade"]) => createElement("group", { position: [70, 3, 20], scale: [3, 1.5, 0.5], rotation: [0, 0.6, 0] },
     createElement(GrassField, { ...props, position: [4, 1, 2], rotation: [0, 0.8, 0], distanceFade: fade }));
   await mounted(far, tree({ start: 20, end: 50 }), async (scene, render) => {
@@ -109,11 +109,11 @@ test("each camera decides independently; transformed patches and disabled fade r
   });
 });
 
-test("chunk frusta reject offscreen work without resampling or disposing on camera/budget changes", async () => {
+test("chunk frusta reject offscreen work without resampling or disposing on culling changes", async () => {
   const camera = cameraAt(0, 2, 0);
   camera.lookAt(0, 2, -20);
   camera.updateMatrixWorld();
-  const props: GrassFieldProps = { count: 64_800, density: 18, area: 60, seed: "budget", distanceFade: false };
+  const props: GrassFieldProps = { rules: rules({ density: 18, seed: "budget" }), area: 60, distanceFade: false };
   await mounted(camera, createElement(GrassField, props), async (scene, render) => {
     const original = meshes(scene);
     const material = original[0]!.material;
@@ -125,13 +125,9 @@ test("chunk frusta reject offscreen work without resampling or disposing on came
     expect(work.triangles).toBeLessThan(518400);
     expect(original.length).toBeLessThanOrEqual(64);
     expect(new Set(original.map((mesh) => mesh.material)).size).toBe(1);
-    await render(createElement(GrassField, { ...props, budget: 500, frustumCulled: false }));
+    await render(createElement(GrassField, { ...props, frustumCulled: false }));
     expect(meshes(scene).map((mesh) => mesh.geometry)).toEqual(original.map((mesh) => mesh.geometry));
-    expect(submission(scene, camera).triangles).toBe(4000);
-    const selectedPhases = meshes(scene).flatMap((mesh) => Array.from({ length: mesh.geometry.instanceCount }, (_, i) => mesh.geometry.getAttribute("instancePhase").getX(i))).sort((a, b) => a - b);
-    const source = createGrassBladeGeometry({ count: props.count, area: props.area, seed: props.seed });
-    expect(selectedPhases).toEqual(Array.from({ length: 100 }, (_, i) => source.getAttribute("instancePhase").getX(i)).sort((a, b) => a - b));
-    source.dispose();
+    expect(submission(scene, camera).triangles).toBe(518400);
     expect(geometriesDisposed + materialsDisposed).toBe(0);
     await render(null);
     expect(geometriesDisposed).toBe(original.length);
@@ -139,17 +135,32 @@ test("chunk frusta reject offscreen work without resampling or disposing on came
   });
 });
 
-test("main and shadow hooks keep caller callbacks and conservative sampled/wind bounds", async () => {
+test("distance LOD thins far chunks but never below the floor share, and shadows draw every tuft", async () => {
+  expect(grassLodShare(10)).toBe(1);
+  expect(grassLodShare(36)).toBeCloseTo(0.25, 5);
+  expect(grassLodShare(5000)).toBeGreaterThan(0);
+  const camera = cameraAt(0, 2, 30);
+  camera.lookAt(0, 0, -60);
+  camera.updateMatrixWorld();
+  await mounted(camera, createElement(GrassField, { rules: rules({ density: 18, seed: "lod" }), area: [40, 160], distanceFade: { start: 400, end: 500 } }), async (scene) => {
+    const main = submission(scene, camera).triangles;
+    const shadow = submission(scene, camera, true).triangles;
+    expect(main).toBeGreaterThan(0);
+    expect(main).toBeLessThan(shadow);
+    expect(shadow).toBe(Math.floor(18 * 40 * 160) * 8);
+  });
+});
+
+test("blade count follows density over the footprint up to the budget", () => {
+  expect(grassBladeCount(24, [10, 10])).toBe(2400);
+  expect(grassBladeCount(24, [10, 10], 1000)).toBe(1000);
+});
+
+test("sampled and wind-swept blades stay inside conservative chunk bounds", async () => {
   const camera = cameraAt();
-  let mainCalls = 0, shadowCalls = 0;
-  const props: GrassFieldProps = { count: 2500, area: [60, 20], seed: "high-bounds", heightAt: (x) => 400 + x * 2,
-    bladeHeight: [3, 7], bladeWidth: [0.1, 0.4], bladeBend: [0.5, 2], wind: { strength: 4, flutter: 2 }, castShadow: true,
-    onBeforeRender() { mainCalls++; }, onBeforeShadow() { shadowCalls++; } };
+  const props: GrassFieldProps = { rules: rules({ density: 2500 / 1200, seed: "high-bounds", bladeHeight: 7, heightVariation: 4 / 7,
+    bladeWidthMin: 0.1, bladeWidthMax: 0.4, bladeBendMin: 0.5, bladeBendMax: 2, windStrength: 4 }), area: [60, 20], heightAt: (x) => 400 + x * 2, castShadow: true };
   await mounted(camera, createElement(GrassField, props), async (scene) => {
-    submission(scene, camera);
-    submission(scene, camera, true);
-    expect(mainCalls).toBe(meshes(scene).length);
-    expect(shadowCalls).toBe(meshes(scene).length);
     for (const mesh of meshes(scene)) {
       const offsets = mesh.geometry.getAttribute("instanceOffset");
       for (let i = 0; i < offsets.count; i++) {

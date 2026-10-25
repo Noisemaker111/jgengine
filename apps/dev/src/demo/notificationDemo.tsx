@@ -24,7 +24,7 @@ const SAMPLES: readonly { kind: string; title: string; body?: string; ago: numbe
 
 const terrainFeature = environment({
   terrain: terrain({ bounds: { w: 60, d: 60 }, height: 2, frequency: 0.03, seed: "notify" }),
-  vegetation: grass({ area: { w: 52, d: 52 }, density: 3, colors: ["#2f4f1e", "#8fbf4a"], seed: "notify" }),
+  vegetation: grass({ area: { w: 52, d: 52 }, colorBase: "#2f4f1e", colorTip: "#8fbf4a", seed: "notify" }),
 });
 
 const entityCatalog: Record<string, GameContextEntityEntry> = {

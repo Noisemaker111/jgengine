@@ -7,6 +7,7 @@ import type { TerraformSnapshot } from "./terraform";
 import type { SpriteAtlas } from "../assets/spriteAtlas";
 import type { VolumetricCloudsConfig } from "./volumetricClouds";
 import { warnOnce } from "../devtools/warnOnce";
+import { readGrassRules, type GrassRules } from "./grassKind";
 
 export interface WorldBounds {
   w: number;
@@ -314,26 +315,15 @@ export interface SnowEnvironmentConfig {
   opacity?: number;
 }
 
-export interface GrassEnvironmentConfig {
+/**
+ * Config for {@link grass}: where the patch grows plus any {@link GrassRules} knob (species, colour,
+ * height, density, wind, clumping). Unset knobs take the shared grass defaults, and density never
+ * drops below `GRASS_MIN_DENSITY`.
+ */
+export interface GrassEnvironmentConfig extends Partial<GrassRules> {
   area?: EnvironmentArea;
   /** World-space center `[x, z]` of the band, matching `building()`/`ocean()` — sugar for `area.position`, letting a biome zone site its own vegetation away from the origin. */
   position?: EnvironmentVec2;
-  density?: number;
-  bladeHeight?: readonly [number, number];
-  bladeWidth?: number;
-  windStrength?: number;
-  colors?: readonly string[];
-  seed?: string;
-  /** Blade curl range (arc amount, min..max). Shell default [0.12, 0.42] — raise for wind-combed scrub, lower for stiff turf. */
-  bladeBend?: readonly [number, number];
-  /** Tuft spread radius in meters — how far a clump's blades splay from its root. Shell default 0.16; wider reads as bushy clumps rather than lone blades. */
-  tuftRadius?: number;
-  /** Per-tuft brightness jitter 0..1 (shell default 0.28) — higher breaks up the field so it never reads as one repeated blade. */
-  colorVariation?: number;
-  /** 0..1 blend of blade normals toward straight-up (shell default 0.6). Low values light each blade plane individually and go dark when side-lit; high values light the field like a soft carpet. */
-  normalLift?: number;
-  /** 0..1 strength of the turf ground-cover mat painted under the blades (shell default 0.9); 0 leaves the ground bare. */
-  groundCover?: number;
 }
 
 export interface OceanEnvironmentConfig {
@@ -430,12 +420,14 @@ export interface SkyEnvironmentConfig {
   volumetricClouds?: VolumetricCloudsConfig;
 }
 
-/** One road a `building({ along })` frontage lines with buildings: centerline + full width. */
+/** One road a `building({ along })` frontage lines with buildings: centerline, width and sidewalks. A `road()` descriptor fits as-is. */
 export interface BuildingFrontageRoad {
   /** Road centerline vertices in world XZ; at least two points. */
   path: readonly EnvironmentVec2[];
-  /** Road full width in world units; lots set back from `width / 2`. */
+  /** Carriageway full width in world units, kerb to kerb. */
   width: number;
+  /** Sidewalk on each side: metres, a `road()` sidewalk band, or `false`/absent for none. Lots stand behind it. */
+  sidewalk?: number | { width: number } | false;
 }
 
 /**
@@ -447,7 +439,7 @@ export interface BuildingFrontageRoad {
 export interface BuildingFrontageConfig {
   /** Roads whose frontage is lined with lots. */
   roads: readonly BuildingFrontageRoad[];
-  /** Sidewalk strip between the curb (`width / 2`) and the building front, world units. Default 3. */
+  /** Gap between the back of the sidewalk (the kerb when there is none) and the building front, world units. Default 3. */
   setback?: number;
   /** Place lots on both sides of each road. Default true. */
   bothSides?: boolean;
@@ -526,10 +518,12 @@ export type SnowEnvironmentDescriptor = { kind: "snow" } & Required<
   Pick<SnowEnvironmentConfig, "area" | "density" | "speed" | "flakeSize" | "drift" | "wind" | "color" | "opacity">
 >;
 
-export type GrassEnvironmentDescriptor = { kind: "grass" } & Required<
-  Pick<GrassEnvironmentConfig, "area" | "density" | "bladeHeight" | "bladeWidth" | "windStrength" | "colors">
-> &
-  Pick<GrassEnvironmentConfig, "seed" | "bladeBend" | "tuftRadius" | "colorVariation" | "normalLift" | "groundCover">;
+/** A resolved grass patch: its area and the fully-defaulted {@link GrassRules} the shell draws. */
+export interface GrassEnvironmentDescriptor {
+  kind: "grass";
+  area: EnvironmentArea;
+  rules: GrassRules;
+}
 
 export type OceanEnvironmentDescriptor = { kind: "ocean" } & Required<
   Pick<OceanEnvironmentConfig, "bounds" | "level" | "waveHeight" | "waveScale" | "waveSpeed" | "color">
@@ -585,6 +579,40 @@ export interface RoadEnvironmentConfig {
    * surface. `tint` 1 (the default) shows the scan's own colour, lower keeps `color` and takes its grain.
    */
   materials?: RoadSurfaceScans;
+  /** The path loops: its last point joins back to its first (a circuit, a ring road). Default false. */
+  closed?: boolean;
+  /**
+   * Fillet radius for sharp bends, metres, so a turn reads as an arc instead of overlapping
+   * rectangles. Default `max(1.5, width × 0.9)`; 0 keeps hard corners.
+   */
+  cornerRadius?: number;
+  /** Tyre ruts and polished lanes, 0..1. Default 1 on soft ground, 0.6 on paving. */
+  wear?: number;
+  /** Multiplier on the soft edge fade of an unpaved surface. Default 1; 0 keeps a hard edge. */
+  edgeSoftness?: number;
+}
+
+/**
+ * The scanned carriageway every paved road wears unless it names its own `materials.road`: the
+ * library's `asphalt/dry` (ambientCG Asphalt003), exactly `librarySurfaceScan("asphalt/dry")`.
+ * A game that has not pulled the scan keeps the procedural asphalt.
+ */
+export const DEFAULT_ROAD_SCAN: TerrainDetailMaterialConfig = {
+  maps: {
+    color: "/materials/ambientcg-asphalt003/color.jpg",
+    normal: "/materials/ambientcg-asphalt003/normal.jpg",
+    roughness: "/materials/ambientcg-asphalt003/roughness.jpg",
+    ao: "/materials/ambientcg-asphalt003/ao.jpg",
+    displacement: "/materials/ambientcg-asphalt003/displacement.jpg",
+  },
+  repeat: 4,
+  strength: 1,
+  tint: 1,
+};
+
+/** Surfaces a road paves with asphalt (and so wears {@link DEFAULT_ROAD_SCAN} by default). @internal */
+export function isAsphaltSurface(surface: string | false | undefined): boolean {
+  return surface === undefined || surface === "road" || surface === "asphalt" || surface === "street";
 }
 
 /** Scanned surfaces for each layer of a {@link road}; see {@link RoadEnvironmentConfig.materials}. */
@@ -605,8 +633,13 @@ export type RoadEnvironmentDescriptor = { kind: "road" } & Required<
   sidewalk: { width: number; color: string; slabs?: number | false; kerb?: number } | false;
   /** Procedural carriageway surface; absent means `"road"`, `false` flat colour. */
   surface?: string | false;
-  /** Scanned surfaces per layer, when the road declares any. */
+  /** Scanned surfaces per layer; a paved road carries {@link DEFAULT_ROAD_SCAN} on `road` unless it names one. */
   materials?: RoadSurfaceScans;
+  /** Fillet radius for bends, metres; 0 for hard corners. Absent means `max(1.5, width × 0.9)`. */
+  cornerRadius?: number;
+  closed?: boolean;
+  wear?: number;
+  edgeSoftness?: number;
 };
 
 export type WeatherEnvironmentDescriptor = RainEnvironmentDescriptor | SnowEnvironmentDescriptor;
@@ -1018,22 +1051,13 @@ export function snow(config: SnowEnvironmentConfig = {}): SnowEnvironmentDescrip
   };
 }
 
-/** Declares a grass vegetation patch for `environment()` — area, blade sizing, density, and colors. */
+/** Declares a grass vegetation patch for `environment()` — the same blade field and knobs as an editor `grass_field` volume. */
 export function grass(config: GrassEnvironmentConfig = {}): GrassEnvironmentDescriptor {
+  const { area, position, ...knobs } = config;
   return {
     kind: "grass" as const,
-    area: withAreaPosition(config.area ?? { w: 128, d: 128 }, config.position),
-    density: config.density ?? 4,
-    bladeHeight: config.bladeHeight ?? [0.25, 0.9],
-    bladeWidth: config.bladeWidth ?? 0.035,
-    windStrength: config.windStrength ?? 0.35,
-    colors: config.colors ?? ["#3f7d2d", "#66a83f"],
-    ...(config.seed === undefined ? {} : { seed: config.seed }),
-    ...(config.bladeBend === undefined ? {} : { bladeBend: config.bladeBend }),
-    ...(config.tuftRadius === undefined ? {} : { tuftRadius: config.tuftRadius }),
-    ...(config.colorVariation === undefined ? {} : { colorVariation: config.colorVariation }),
-    ...(config.normalLift === undefined ? {} : { normalLift: config.normalLift }),
-    ...(config.groundCover === undefined ? {} : { groundCover: config.groundCover }),
+    area: withAreaPosition(area ?? { w: 128, d: 128 }, position),
+    rules: readGrassRules(knobs as Record<string, unknown>),
   };
 }
 
@@ -1076,8 +1100,18 @@ export function road(config: RoadEnvironmentConfig): RoadEnvironmentDescriptor {
             ...(config.sidewalk?.kerb === undefined ? {} : { kerb: Math.max(0, config.sidewalk.kerb) }),
           },
     ...(config.surface === undefined ? {} : { surface: config.surface }),
-    ...(config.materials === undefined ? {} : { materials: config.materials }),
+    ...roadMaterials(config),
+    ...(config.cornerRadius === undefined ? {} : { cornerRadius: Math.max(0, config.cornerRadius) }),
+    ...(config.closed === true ? { closed: true } : {}),
+    ...(config.wear === undefined ? {} : { wear: Math.min(1, Math.max(0, config.wear)) }),
+    ...(config.edgeSoftness === undefined ? {} : { edgeSoftness: Math.max(0, config.edgeSoftness) }),
   };
+}
+
+function roadMaterials(config: RoadEnvironmentConfig): { materials?: RoadSurfaceScans } {
+  const paved = isAsphaltSurface(config.surface);
+  if (!paved || config.materials?.road !== undefined) return config.materials === undefined ? {} : { materials: config.materials };
+  return { materials: { ...config.materials, road: DEFAULT_ROAD_SCAN } };
 }
 
 export function island(config: TerrainIslandConfig): TerrainIslandDescriptor {

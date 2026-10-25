@@ -8,7 +8,6 @@ import { useGameContext } from "@jgengine/react/provider";
 
 import { resolveBuildingPalette } from "@jgengine/core/world/buildings";
 import { resolveStructureBuildings } from "@jgengine/core/world/environmentSummary";
-import { findRoadJunctions } from "@jgengine/core/world/streets";
 import type {
   BuildingEnvironmentDescriptor,
   EnvironmentWorldFeature,
@@ -34,12 +33,10 @@ import { useDisposable } from "../render/useDisposable";
 import { editableTerrainFromSnapshot, type TerraformSnapshot } from "@jgengine/core/world/terraform";
 import { createTerrainPaintColorSampler } from "../terrain/terrainPaintColor";
 import { GroundPad } from "./GroundPad";
-import { RoadJunctions } from "./RoadJunctions";
-import { buildAuthoredRoadNetwork, RoadRibbons } from "./RoadRibbons";
+import { Roads } from "./RoadRibbons";
 import { terrainGroundColorSampler } from "./terrainGroundColor";
 import { InstancedBuildings, type InstancedBuildingPlacement } from "../structures/GeneratedBuilding";
 import { GrassField } from "../terrain/GrassField";
-import { GrassCover } from "../terrain/GrassCover";
 import { CarvedTerrain, type CarvedTerrainProps } from "../terrain/CarvedTerrain";
 import { createTerrainDetailMaterial } from "../terrain/terrainDetailMaterial";
 import { MAX_TERRAIN_LAYER_MAPS, type TerrainDetailMaterialTextures, type TerrainLayerMap } from "../terrain/terrainDetailMaterial";
@@ -352,41 +349,8 @@ function Vegetation({
     [cx, cz, field],
   );
   const area = useMemo(() => [grass.area.w, grass.area.d] as const, [grass.area.w, grass.area.d]);
-  const wind = useMemo(() => ({ strength: grass.windStrength }), [grass.windStrength]);
-  const colorBase = grass.colors[0];
-  const colorTip = grass.colors[grass.colors.length - 1];
   return (
-    <group position={[cx, 0, cz]}>
-      <GrassCover
-        area={area}
-        seed={typeof grass.seed === "number" ? grass.seed : 1}
-        colorBase={colorBase ?? "#3f7d2d"}
-        colorTip={colorTip ?? "#66a83f"}
-        strength={grass.groundCover ?? 0.9}
-        edgeFeather={Math.min(8, Math.max(1.5, Math.min(grass.area.w, grass.area.d) * 0.12))}
-        heightAt={heightAt}
-        coverageAt={() => 1}
-      />
-      <GrassField
-        area={area}
-        count={Math.max(1500, Math.min(250000, Math.ceil(grass.density * grass.area.w * grass.area.d)))}
-        density={grass.density}
-        seed={grass.seed}
-        bladeHeight={grass.bladeHeight}
-        bladeWidth={grass.bladeWidth}
-        bladeBend={grass.bladeBend}
-        tuftRadius={grass.tuftRadius}
-        colorVariation={grass.colorVariation}
-        normalLift={grass.normalLift}
-        heightAt={heightAt}
-        colorBase={colorBase}
-        colorTip={colorTip}
-        colorGround={groundColor}
-        wind={wind}
-        edgeFeather={Math.min(8, Math.max(1.5, Math.min(grass.area.w, grass.area.d) * 0.12))}
-        frustumCulled
-      />
-    </group>
+    <GrassField position={[cx, 0, cz]} rules={grass.rules} area={area} heightAt={heightAt} colorGround={groundColor} />
   );
 }
 
@@ -507,15 +471,23 @@ function Water({ ocean }: { ocean: OceanEnvironmentDescriptor }) {
   return <Ocean position={[x, ocean.level, z]} config={config} depthAt={depthAt} />;
 }
 
-function Structures({ structures, field }: { structures: BuildingEnvironmentDescriptor; field: TerrainField }) {
+function Structures({
+  structures,
+  field,
+  roads,
+}: {
+  structures: BuildingEnvironmentDescriptor;
+  field: TerrainField;
+  roads: readonly RoadEnvironmentDescriptor[];
+}) {
   const placements = useMemo<InstancedBuildingPlacement[]>(
     () =>
-      resolveStructureBuildings(structures).map((building) => ({
+      resolveStructureBuildings(structures, roads).map((building) => ({
         building,
         position: [0, field.sampleHeight(building.center[0], building.center[1]), 0],
         ...(building.rotationY === undefined ? {} : { rotationY: building.rotationY, pivot: building.center }),
       })),
-    [structures, field],
+    [structures, field, roads],
   );
   const palette = useMemo(
     () => resolveBuildingPalette(structures.style, structures.palette),
@@ -554,11 +526,6 @@ export function EnvironmentScene({ feature }: EnvironmentSceneProps) {
   const pads = feature.pads ?? [];
   const islands = feature.islands ?? [];
   const roads = useLiveRoads(feature);
-  const junctions = useMemo(() => findRoadJunctions(roads), [roads]);
-  const roadNetwork = useMemo(
-    () => buildAuthoredRoadNetwork(roads, junctions, (x, z) => field.sampleHeight(x, z)),
-    [roads, junctions, field],
-  );
   return (
     <>
       {feature.terrain !== undefined ? <TerrainGround terrain={feature.terrain} field={field} sculpt={feature.sculpt} /> : null}
@@ -568,18 +535,9 @@ export function EnvironmentScene({ feature }: EnvironmentSceneProps) {
       {water.map((ocean, index) => (
         <Water key={`ocean-${index}`} ocean={ocean} />
       ))}
-      {roads.map((entry, index) => (
-        <RoadRibbons key={`road-${index}`} road={entry} field={field} paths={roadNetwork.roadPaths[index] ?? []} />
-      ))}
-      <RoadJunctions
-        surfaces={roadNetwork.junctionSurfaces}
-        junctions={junctions}
-        field={field}
-        surfaceDetail={roads.some((road) => road.surface !== false)}
-        scan={roads.find((road) => road.materials?.road !== undefined)?.materials?.road}
-      />
+      <Roads roads={roads} field={field} />
       {structures.map((entry, index) => (
-        <Structures key={`structures-${index}`} structures={entry} field={field} />
+        <Structures key={`structures-${index}`} structures={entry} field={field} roads={roads} />
       ))}
       {pads.map((entry, index) => (
         <GroundPad key={`pad-${index}`} pad={entry} field={field} />

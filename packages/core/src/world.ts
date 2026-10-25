@@ -1057,7 +1057,6 @@ export {
   type SurfaceGridLine,
   type SurfaceGridOptions,
 } from "./world/terrainGuides";
-export { VEGETATION_VOLUME_KIND } from "./world/vegetation";
 export {
   VISIBILITY_HIDDEN,
   VISIBILITY_OBSERVED,

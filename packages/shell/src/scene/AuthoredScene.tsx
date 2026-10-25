@@ -1,7 +1,6 @@
 import { AuthoredFlocks } from "../world/AuthoredFlocks";
 import { AuthoredWeatherLayer } from "../weather/AuthoredWeatherLayer";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from "react";
-import * as THREE from "three";
 
 import type { EditorDocument, EditorMarker, EditorPath, EditorVolume } from "@jgengine/core/editor/index";
 import {
@@ -18,22 +17,15 @@ import {
   type ResolveAuthoredObjectsOptions,
 } from "@jgengine/core/world/authoredObjects";
 import { syncAuthoredSolids } from "@jgengine/core/world/authoredSolids";
-import { buildRoadRibbon, GROUND_DECAL_LAYERS, roundPathCorners } from "@jgengine/core/world/roads";
+import type { RoadEnvironmentDescriptor } from "@jgengine/core/world/features";
+import { pathRoad } from "@jgengine/core/world/pathRoads";
 import { isScatterPath, resolveScatter } from "@jgengine/core/world/scatterRegion";
 import type { TerrainField } from "@jgengine/core/world/terrain";
 
 import { getAssetGenerator } from "@jgengine/core/scene/assetGenerator";
 import { useGameContext } from "@jgengine/react/provider";
 
-import {
-  resolvePathSurface,
-  RIBBON_FRAME_ATTRIBUTE,
-  ribbonEdgeMargin,
-  ribbonSurfaceFrame,
-  useSurfaceRibbonMaterial,
-  type RibbonSurfaceStyle,
-} from "../terrain/surfaceRibbonMaterial";
-import { useTerrainQuality } from "../terrain/terrainQuality";
+import { Roads } from "../environment/RoadRibbons";
 
 import { createModelMapResolver } from "../render/resolveModel";
 import { InstancedScatter } from "../scatter/InstancedScatter";
@@ -140,58 +132,6 @@ function AuthoredStudios({ document, context }: { document: EditorDocument; cont
   );
 }
 
-const DEFAULT_PATH_COLOR = "#7a6444";
-
-/** One editor path drawn as a ground-draped ribbon — subdivided and sampled against the live field. */
-function DrapedPath({
-  points,
-  width,
-  color,
-  field,
-  surface,
-}: {
-  points: readonly (readonly [number, number])[];
-  width: number;
-  color: string;
-  field: TerrainField;
-  surface: RibbonSurfaceStyle | null;
-}) {
-  const quality = useTerrainQuality();
-  const margin = surface === null ? 0 : ribbonEdgeMargin(surface);
-  const geometry = useMemo(() => {
-    // Fillet sharp turns first so bends read as smooth arcs, not overlapping rectangles.
-    const rounded = roundPathCorners(points, Math.max(1.5, width * 0.9), 6);
-    // A soft edge needs the ribbon wider than authored so the fade straddles the authored edge.
-    const ribbon = buildRoadRibbon(rounded, width + margin, (x, z) => field.sampleHeight(x, z), {
-      // Generic authored paths (dirt roads, routes, corridors) drape on the shared road decal layer.
-      elevation: GROUND_DECAL_LAYERS.road,
-      maxSegmentLength: 1,
-    });
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute("position", new THREE.BufferAttribute(ribbon.positions, 3));
-    geo.setAttribute(RIBBON_FRAME_ATTRIBUTE, new THREE.BufferAttribute(ribbonSurfaceFrame([ribbon.positions]), 3));
-    geo.setIndex(new THREE.BufferAttribute(ribbon.indices, 1));
-    geo.computeVertexNormals();
-    return geo;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [points, width, margin, field]);
-  useEffect(() => () => geometry.dispose(), [geometry]);
-  const material = useSurfaceRibbonMaterial(
-    surface === null ? null : { ...surface, color, halfWidth: width / 2, quality },
-  );
-  if (points.length < 2) return null;
-  return (
-    <mesh geometry={geometry} receiveShadow {...(material === null ? {} : { material })}>
-      {material === null ? <meshStandardMaterial color={color} roughness={1} metalness={0} side={THREE.DoubleSide} /> : null}
-    </mesh>
-  );
-}
-
-function pathColor(meta: Record<string, unknown> | undefined, color: string | undefined): string {
-  if (typeof meta?.["color"] === "string") return meta["color"] as string;
-  return color ?? DEFAULT_PATH_COLOR;
-}
-
 /** Props for {@link AuthoredPaths}: the document, the ground field to drape over, and a kind filter. */
 export interface AuthoredPathsProps {
   document: EditorDocument;
@@ -212,23 +152,15 @@ export interface AuthoredPathsProps {
  * `path.meta.surface` or the kind (see `resolvePathSurface`). A game never hand-rolls path meshes.
  */
 export function AuthoredPaths({ document, field, kinds, surfaceDetail = true }: AuthoredPathsProps) {
-  const paths = document.paths.filter(
-    (path) => !isScatterPath(path) && getSceneKindRenderer(path.kind) === undefined && (kinds === undefined || kinds.includes(path.kind)),
+  const roads = useMemo(
+    () =>
+      document.paths
+        .filter((path) => !isScatterPath(path) && getSceneKindRenderer(path.kind) === undefined && (kinds === undefined || kinds.includes(path.kind)))
+        .map((path) => pathRoad(path, { surfaceDetail }))
+        .filter((entry): entry is RoadEnvironmentDescriptor => entry !== null),
+    [document.paths, kinds, surfaceDetail],
   );
-  return (
-    <>
-      {paths.map((path) => (
-        <DrapedPath
-          key={path.id}
-          points={path.points.map((point) => [point.x, point.z] as const)}
-          width={path.width ?? 4}
-          color={pathColor(path.meta, path.color)}
-          field={field}
-          surface={surfaceDetail ? resolvePathSurface(path.kind, path.width ?? 4, path.meta) : null}
-        />
-      ))}
-    </>
-  );
+  return <Roads roads={roads} field={field} />;
 }
 
 /** Props for {@link AuthoredObjects}: document, ground field, and optional lift / onExisting. */

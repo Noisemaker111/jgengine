@@ -317,10 +317,6 @@ export const idea: Idea = {
         "model": "/models/imported/quaternius-stylized-nature/Bush_Common.glb",
         "height": 1.1
       },
-      "grass": {
-        "model": "/models/imported/quaternius-stylized-nature/Grass_Wispy_Tall.glb",
-        "height": 0.7
-      },
       "rock": {
         "model": "/models/imported/quaternius-stylized-nature/Rock_Medium_2.glb",
         "height": 1.6

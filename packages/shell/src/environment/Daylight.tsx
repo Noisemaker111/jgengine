@@ -4,12 +4,19 @@ import * as THREE from "three";
 
 import type { BiomeBand, SkyEnvironmentDescriptor } from "@jgengine/core/world/features";
 import { createBiomeFogSampler, createBiomeSkySampler } from "@jgengine/core/world/terrain";
-import { resolveVolumetricClouds, type VolumetricCloudsConfig } from "@jgengine/core/world/volumetricClouds";
+import { resolveVolumetricClouds } from "@jgengine/core/world/volumetricClouds";
 
 import { warnOnce } from "@jgengine/core/devtools/warnOnce";
 
 import { DisplayColorWriter } from "../render/displayColor";
-import { bandFogColor, daylightStateAt, SKY_PRESET_DAY_FRACTION } from "./daylightCycle";
+import type { DaylightModulation } from "../render/SceneLighting";
+import {
+  bandFogColor,
+  daylightStateAt,
+  DEFAULT_DAY_AMBIENT_INTENSITY,
+  DEFAULT_DAY_SUN_INTENSITY,
+  SKY_PRESET_DAY_FRACTION,
+} from "./daylightCycle";
 import { SUN_SHADOW, sunLightPosition, sunShadowFocus } from "./sunShadowMath";
 import { VolumetricClouds } from "./VolumetricClouds";
 
@@ -50,8 +57,6 @@ function normalizeVec3(v: readonly [number, number, number]): THREE.Vector3 {
 
 const SKY_TOP = "#3fa4f2";
 const SKY_HORIZON = "#e3f4ff";
-const FOG_COLOR = "#e9f6ff";
-const SUN_COLOR = "#fff1c9";
 const MOON_COLOR = "#cfdcf2";
 const HEMI_SKY = "#bfe3ff";
 const HEMI_GROUND = "#4c6b34";
@@ -373,69 +378,29 @@ function aimSkySun(material: THREE.ShaderMaterial, position: readonly [number, n
   (material.uniforms.uSunDirection!.value as THREE.Vector3).set(position[0], position[1], position[2]).normalize();
 }
 
-export interface DaylightProps {
-  sky?: SkyDomeProps | false;
-  fog?: { color?: string; near?: number; far?: number } | false;
-  sun?: { position?: readonly [number, number, number]; intensity?: number; color?: string };
-  moon?: { position?: readonly [number, number, number]; intensity?: number; color?: string; stars?: number };
-  ambient?: { skyColor?: string; groundColor?: string; intensity?: number };
-  /** When false, only the sky dome and fog mount — use with authored `PlayableGame.lighting`. Default true. */
-  lights?: boolean;
-  /** Raymarched volumetric cloud layer over the sky dome. Omit for no clouds — off by default. */
-  clouds?: VolumetricCloudsConfig;
-}
-
-/** @internal */
-export function Daylight({ sky, fog, sun, ambient, moon, lights = true, clouds }: DaylightProps = {}) {
-  const sunPosition = sun?.position ?? [120, 160, 70];
-  const moonIntensity = moon?.intensity ?? 0;
-  return (
-    <>
-      {sky === false ? null : (
-        <SkyDome
-          {...(sky ?? {})}
-          sunDirection={sunPosition}
-          sunColor={sun?.color ?? SUN_COLOR}
-          sunIntensity={sun?.intensity ?? 1}
-          {...(moon?.position === undefined ? {} : { moonDirection: moon.position })}
-          {...(moon?.color === undefined ? {} : { moonColor: moon.color })}
-          moonIntensity={moonIntensity}
-          starOpacity={moon?.stars ?? 0}
-        />
-      )}
-      {clouds === undefined ? null : (
-        <VolumetricClouds rules={resolveVolumetricClouds(clouds)} sunDirection={sunPosition} />
-      )}
-      {fog === false ? null : (
-        <SkyFog color={fog?.color ?? FOG_COLOR} near={fog?.near ?? 70} far={fog?.far ?? 260} />
-      )}
-      {lights ? (
-        <>
-          <hemisphereLight
-            args={[ambient?.skyColor ?? HEMI_SKY, ambient?.groundColor ?? HEMI_GROUND, ambient?.intensity ?? 0.55]}
-          />
-          <SunLight direction={sunPosition} intensity={sun?.intensity ?? 0.85} color={sun?.color ?? SUN_COLOR} />
-          {moonIntensity > 0 && moon?.position !== undefined ? (
-            <MoonLight direction={moon.position} intensity={moonIntensity} color={moon.color ?? MOON_COLOR} />
-          ) : null}
-        </>
-      ) : null}
-    </>
-  );
-}
-
-export interface SkyDaylightProps {
+/** Props for {@link Sky}: the sky descriptor, the clock that runs it, who owns the lights, and biome bands. */
+export interface SkyProps {
   sky: SkyEnvironmentDescriptor;
+  /**
+   * The world's `SimClock` (or a stub exposing `calendar().dayFraction`). With `sky.timeOfDay` it
+   * drives the sun, moon, dome and fog through the day; absent, the sky holds its preset's look.
+   */
+  clock?: { calendar(): { dayFraction: number } };
+  /**
+   * Mount the sky's own hemisphere fill, sun and moon. Default true. `false` keeps only dome and
+   * fog, for a game that authors `PlayableGame.lighting`.
+   */
   lights?: boolean;
-  /** Terrain `biomeBands`; when any carries `fog`/`sky`, fog and cross-fade per camera z. */
+  /**
+   * Authored lights to drive through the day: each frame the sky writes the sun/ambient factors
+   * and sun tint the configured lights read (the authored values are the noon keyframe) and mounts
+   * the moon. Use with `lights={false}` under a time-of-day sky.
+   */
+  modulation?: DaylightModulation;
+  /** Terrain `biomeBands`; any band carrying `fog`/`sky` cross-fades fog, dome and light per camera z. */
   bands?: readonly BiomeBand[];
   /** Fog range authored on the game's `backdrop.fog`, used when the sky descriptor sets none. */
   fogRange?: { near?: number; far?: number };
-}
-
-/** True when at least one band overrides fog or sky — the trigger for the per-frame biome driver. */
-function bandsDriveSkyOrFog(bands: readonly BiomeBand[] | undefined): bands is readonly BiomeBand[] {
-  return bands !== undefined && bands.some((band) => band.fog !== undefined || band.sky !== undefined);
 }
 
 /**
@@ -459,16 +424,8 @@ export function useMoonAboveHorizon(initialUp: boolean): [boolean, (intensity: n
 }
 
 /** Fog range: the sky's own fields win, then the authored backdrop, then the caller's default. */
-function skyFogRange(sky: SkyEnvironmentDescriptor, fogRange: SkyDaylightProps["fogRange"], fallback: { near: number; far: number }) {
+function skyFogRange(sky: SkyEnvironmentDescriptor, fogRange: SkyProps["fogRange"], fallback: { near: number; far: number }) {
   return { near: sky.fog?.near ?? fogRange?.near ?? fallback.near, far: sky.fog?.far ?? fogRange?.far ?? fallback.far };
-}
-
-/** Renders a fixed sky/sun/fog look sampled from `sky`'s preset (or, when `timeOfDay` is on but no clock drives it, its noon look). No per-frame updates.
- * @internal
- */
-export function SkyDaylight({ sky, lights = true, bands, fogRange }: SkyDaylightProps) {
-  if (bandsDriveSkyOrFog(bands)) return <BiomeDaylight sky={sky} bands={bands} lights={lights} fogRange={fogRange} />;
-  return <StaticSkyDaylight sky={sky} lights={lights} fogRange={fogRange} />;
 }
 
 /** Dome-shape overrides (radius, haze, sun-glow) carried by the sky descriptor, spread onto `SkyDome`; unset fields keep the dome defaults. */
@@ -484,73 +441,18 @@ function skyDomeShape(
   };
 }
 
-function StaticSkyDaylight({
-  sky,
-  lights,
-  fogRange,
-}: {
-  sky: SkyEnvironmentDescriptor;
-  lights: boolean;
-  fogRange?: SkyDaylightProps["fogRange"];
-}) {
-  const state = useMemo(() => daylightStateAt(SKY_PRESET_DAY_FRACTION[sky.preset], sky), [sky]);
-  const range = skyFogRange(sky, fogRange, { near: 70, far: 260 });
-  return (
-    <Daylight
-      sky={{ topColor: state.skyTop, horizonColor: state.skyBottom, ...skyDomeShape(sky) }}
-      fog={{ color: sky.fog?.color ?? state.fogColor, ...range }}
-      sun={{ position: state.sunPosition, intensity: state.sunIntensity, color: state.sunColor }}
-      moon={{ position: state.moonPosition, intensity: state.moonIntensity, color: state.moonColor, stars: state.starOpacity }}
-      ambient={{ intensity: state.ambientIntensity }}
-      lights={lights}
-      clouds={sky.volumetricClouds}
-    />
-  );
-}
-
-export interface TimeOfDayDaylightProps {
-  sky: SkyEnvironmentDescriptor;
-  /** The world's `SimClock` (or a stub exposing `calendar().dayFraction`). Absent means static rendering. */
-  clock?: { calendar(): { dayFraction: number } };
-  lights?: boolean;
-  /** Terrain `biomeBands`; when any carries `fog`/`sky`, fog and dome cross-fade per camera z. */
-  bands?: readonly BiomeBand[];
-  /** Fog range authored on the game's `backdrop.fog`, used when the sky descriptor sets none. */
-  fogRange?: { near?: number; far?: number };
-}
+const NO_BANDS: readonly BiomeBand[] = [];
 
 /**
- * Drives sky/fog (and optional default lights) from the world clock when `sky.timeOfDay` and `clock`
- * are both present. Authored `PlayableGame.lighting` is never rewritten — pass `lights={false}` so
- * only dome colors and fog track the day fraction; `AuthoredDaylight` scales those authored lights
- * from the same state.
-  * @internal
-  */
-export function TimeOfDayDaylight({ sky, clock, lights = true, bands, fogRange }: TimeOfDayDaylightProps) {
-  if (bandsDriveSkyOrFog(bands)) return <BiomeDaylight sky={sky} bands={bands} clock={clock} lights={lights} fogRange={fogRange} />;
-  if (!sky.timeOfDay || clock === undefined) return <SkyDaylight sky={sky} lights={lights} bands={bands} fogRange={fogRange} />;
-  return <DrivenDaylight sky={sky} clock={clock} lights={lights} fogRange={fogRange} />;
-}
-
-/**
- * Per-frame biome fog/sky driver: cross-fades fog color/range, dome colors, and sun/ambient intensity
- * along the camera's z through the terrain's `biomeBands`. Base look is the sky preset (or, when
- * `sky.timeOfDay` and a `clock` are present, the live day fraction); bands ride on top.
+ * The engine's one sky: a dome with sun, moon and stars, volumetric clouds when the descriptor asks,
+ * the scene fog, and (unless `lights={false}`) the sun, moon and hemisphere fill. It holds the
+ * preset's look, follows the world clock under `sky.timeOfDay`, cross-fades through terrain
+ * `biomeBands` by camera z, and can drive a game's authored lights through the day via
+ * `modulation`. Every frame it rewrites uniforms and light values in place, never remounting.
+ * @capability day-night-sky one sky for a fixed look, a day-night cycle, biome bands and authored lights
  */
-function BiomeDaylight({
-  sky,
-  bands,
-  clock,
-  lights,
-  fogRange,
-}: {
-  sky: SkyEnvironmentDescriptor;
-  bands: readonly BiomeBand[];
-  clock?: { calendar(): { dayFraction: number } };
-  lights: boolean;
-  fogRange?: { near?: number; far?: number };
-}) {
-  const timeOfDay = sky.timeOfDay && clock !== undefined;
+export function Sky({ sky, clock, lights = true, modulation, bands = NO_BANDS, fogRange }: SkyProps) {
+  const timeOfDay = sky.timeOfDay === true && clock !== undefined;
   const baseFraction = timeOfDay ? clock!.calendar().dayFraction : SKY_PRESET_DAY_FRACTION[sky.preset];
   const initial = useMemo(() => daylightStateAt(baseFraction, sky), [sky, baseFraction]);
   const sunRef = useRef<THREE.DirectionalLight>(null);
@@ -561,14 +463,11 @@ function BiomeDaylight({
   const fogRef = useRef<THREE.Fog>(null);
   const skyMaterialRef = useRef<THREE.ShaderMaterial | null>(null);
   const range = skyFogRange(sky, fogRange, { near: 70, far: 260 });
+  const noonSun = sky.sunIntensity ?? DEFAULT_DAY_SUN_INTENSITY;
+  const noonAmbient = sky.ambientIntensity ?? DEFAULT_DAY_AMBIENT_INTENSITY;
 
   const fogFallback = useMemo(
-    () => ({
-      color: sky.fog?.color ?? initial.fogColor,
-      near: range.near,
-      far: range.far,
-      density: 0,
-    }),
+    () => ({ color: sky.fog?.color ?? initial.fogColor, near: range.near, far: range.far, density: 0 }),
     [sky.fog?.color, range.near, range.far, initial.fogColor],
   );
   const skyFallback = useMemo(
@@ -582,21 +481,28 @@ function BiomeDaylight({
   );
   const fogSampler = useMemo(() => createBiomeFogSampler(bands, fogFallback), [bands, fogFallback]);
   const skySampler = useMemo(() => createBiomeSkySampler(bands, skyFallback), [bands, skyFallback]);
+  const banded = bands.some((band) => band.fog !== undefined || band.sky !== undefined);
+  const mountMoon = lights || modulation !== undefined;
   const [moonUp, syncMoon] = useMoonAboveHorizon(initial.moonIntensity > 0);
 
   useFrame((state) => {
+    if (!timeOfDay && !banded) return;
     const base = timeOfDay ? daylightStateAt(clock!.calendar().dayFraction, sky) : initial;
     syncMoon(base.moonIntensity);
     const z = state.camera.position.z;
-    const fog = fogSampler(z);
-    const skyValue = skySampler(z);
+    const fog = banded ? fogSampler(z) : null;
+    const skyValue = banded
+      ? skySampler(z)
+      : { zenithColor: base.skyTop, horizonColor: base.skyBottom, sunIntensity: base.sunIntensity, ambientIntensity: base.ambientIntensity };
     const fogNode = fogRef.current;
     if (fogNode !== null) {
       // Under a day cycle the sky owns the fog color (bands still own its range): a fixed noon
       // tint would leave bright haze hanging in a black night sky.
-      setSkyFogColor(fogNode, bandFogColor({ authored: sky.fog?.color, timeOfDay, cycle: base.fogColor, band: fog.color }));
-      fogNode.near = fog.near;
-      fogNode.far = fog.far;
+      setSkyFogColor(fogNode, bandFogColor({ authored: sky.fog?.color, timeOfDay, cycle: base.fogColor, band: fog?.color ?? fogFallback.color }));
+      if (fog !== null) {
+        fogNode.near = fog.near;
+        fogNode.far = fog.far;
+      }
     }
     const skyMaterial = skyMaterialRef.current;
     if (skyMaterial !== null) {
@@ -607,7 +513,10 @@ function BiomeDaylight({
     sunDirectionRef.current = base.sunPosition;
     moonDirectionRef.current = base.moonPosition;
     const moon = moonRef.current;
-    if (moon !== null) moon.intensity = base.moonIntensity;
+    if (moon !== null) {
+      moon.intensity = base.moonIntensity;
+      moon.color.set(base.moonColor);
+    }
     const sun = sunRef.current;
     if (sun !== null) {
       sun.intensity = skyValue.sunIntensity;
@@ -615,6 +524,11 @@ function BiomeDaylight({
     }
     const hemi = hemiRef.current;
     if (hemi !== null) hemi.intensity = skyValue.ambientIntensity;
+    if (modulation !== undefined) {
+      modulation.sunFactor = skyValue.sunIntensity / noonSun;
+      modulation.sunColor = base.sunColor;
+      modulation.ambientFactor = skyValue.ambientIntensity / noonAmbient;
+    }
   });
 
   return (
@@ -645,93 +559,16 @@ function BiomeDaylight({
             intensity={initial.sunIntensity}
             color={initial.sunColor}
           />
-          {moonUp ? (
-          <MoonLight
-            direction={initial.moonPosition}
-            directionRef={moonDirectionRef}
-            lightRef={moonRef}
-            intensity={initial.moonIntensity}
-            color={initial.moonColor}
-          />
-          ) : null}
         </>
       ) : null}
-    </>
-  );
-}
-
-function DrivenDaylight({
-  sky,
-  clock,
-  lights,
-  fogRange,
-}: {
-  sky: SkyEnvironmentDescriptor;
-  clock: { calendar(): { dayFraction: number } };
-  lights: boolean;
-  fogRange?: { near?: number; far?: number };
-}) {
-  const initial = useMemo(() => daylightStateAt(clock.calendar().dayFraction, sky), [clock, sky]);
-  const sunRef = useRef<THREE.DirectionalLight>(null);
-  const sunDirectionRef = useRef<readonly [number, number, number]>(initial.sunPosition);
-  const moonRef = useRef<THREE.DirectionalLight>(null);
-  const moonDirectionRef = useRef<readonly [number, number, number]>(initial.moonPosition);
-  const hemiRef = useRef<THREE.HemisphereLight>(null);
-  const fogRef = useRef<THREE.Fog>(null);
-  const skyMaterialRef = useRef<THREE.ShaderMaterial | null>(null);
-  const range = skyFogRange(sky, fogRange, { near: 70, far: 260 });
-  const [moonUp, syncMoon] = useMoonAboveHorizon(initial.moonIntensity > 0);
-
-  useFrame(() => {
-    const state = daylightStateAt(clock.calendar().dayFraction, sky);
-    sunDirectionRef.current = state.sunPosition;
-    moonDirectionRef.current = state.moonPosition;
-    syncMoon(state.moonIntensity);
-    const sun = sunRef.current;
-    if (sun !== null) {
-      sun.intensity = state.sunIntensity;
-      sun.color.set(state.sunColor);
-    }
-    const moon = moonRef.current;
-    if (moon !== null) moon.intensity = state.moonIntensity;
-    const hemi = hemiRef.current;
-    if (hemi !== null) hemi.intensity = state.ambientIntensity;
-    const fog = fogRef.current;
-    if (fog !== null) setSkyFogColor(fog, sky.fog?.color ?? state.fogColor);
-    const skyMaterial = skyMaterialRef.current;
-    if (skyMaterial !== null) {
-      setSkyDomeColors(skyMaterial, state.skyTop, state.skyBottom);
-      aimSkySun(skyMaterial, state.sunPosition);
-      setSkyMoon(skyMaterial, state.moonPosition, state.moonColor, state.moonIntensity, state.starOpacity);
-    }
-  });
-
-  return (
-    <>
-      <SkyDome
-        topColor={initial.skyTop}
-        horizonColor={initial.skyBottom}
-        sunDirection={initial.sunPosition}
-        sunColor={initial.sunColor}
-        materialRef={skyMaterialRef}
-        moonDirection={initial.moonPosition}
-        moonColor={initial.moonColor}
-        moonIntensity={initial.moonIntensity}
-        starOpacity={initial.starOpacity}
-        {...skyDomeShape(sky)}
-      />
-      {sky.volumetricClouds === undefined ? null : (
-        <VolumetricClouds rules={resolveVolumetricClouds(sky.volumetricClouds)} sunDirection={initial.sunPosition} />
-      )}
-      <SkyFog fogRef={fogRef} color={sky.fog?.color ?? initial.fogColor} near={range.near} far={range.far} />
-      {lights ? (
-        <>
-          <hemisphereLight ref={hemiRef} args={[HEMI_SKY, HEMI_GROUND, initial.ambientIntensity]} />
-          <SunLight direction={initial.sunPosition} directionRef={sunDirectionRef} lightRef={sunRef} intensity={initial.sunIntensity} color={initial.sunColor} />
-          {moonUp ? (
-            <MoonLight direction={initial.moonPosition} directionRef={moonDirectionRef} lightRef={moonRef} intensity={initial.moonIntensity} color={initial.moonColor} />
-          ) : null}
-        </>
+      {mountMoon && moonUp ? (
+        <MoonLight
+          direction={initial.moonPosition}
+          directionRef={moonDirectionRef}
+          lightRef={moonRef}
+          intensity={initial.moonIntensity}
+          color={initial.moonColor}
+        />
       ) : null}
     </>
   );

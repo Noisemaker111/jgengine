@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { GRASS_DEFAULTS, readGrassRules, resolveGrassObject } from "./grassKind";
+import { GRASS_DEFAULTS, GRASS_MIN_DENSITY, readGrassRules, resolveGrassObject } from "./grassKind";
 
 describe("readGrassRules", () => {
   test("fills defaults and reads overrides", () => {
@@ -29,5 +29,21 @@ describe("resolveGrassObject", () => {
 
   test("returns null without a center", () => {
     expect(resolveGrassObject({ id: "x", kind: "grass_field" })).toBeNull();
+  });
+});
+
+describe("grass density floor", () => {
+  test("sparse authored density is lifted to the floor so grass never reads as scattered tufts", () => {
+    expect(readGrassRules({ density: 2.2 }).density).toBe(GRASS_MIN_DENSITY);
+    expect(readGrassRules({ density: 0 }).density).toBe(GRASS_MIN_DENSITY);
+    expect(readGrassRules({ density: 90 }).density).toBe(90);
+    expect(GRASS_DEFAULTS.density).toBeGreaterThanOrEqual(GRASS_MIN_DENSITY);
+  });
+
+  test("clumping and accent knobs read and clamp", () => {
+    const rules = readGrassRules({ clumping: 3, accentShare: 0.2, accentColor: "#e2c878" });
+    expect(rules.clumping).toBeLessThanOrEqual(1);
+    expect(rules.accentShare).toBe(0.2);
+    expect(rules.accentColor).toBe("#e2c878");
   });
 });

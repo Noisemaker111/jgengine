@@ -37,7 +37,7 @@ let filled = false;
 
 const terrainFeature = environment({
   terrain: terrain({ bounds: { w: 60, d: 60 }, height: 2, frequency: 0.03, seed: "killfeed" }),
-  vegetation: grass({ area: { w: 52, d: 52 }, density: 3, colors: ["#1f3320", "#5f8a3a"], seed: "killfeed" }),
+  vegetation: grass({ area: { w: 52, d: 52 }, colorBase: "#1f3320", colorTip: "#5f8a3a", seed: "killfeed" }),
 });
 
 const entityCatalog: Record<string, GameContextEntityEntry> = {

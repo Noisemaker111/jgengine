@@ -2,7 +2,15 @@ import { expect, test } from "bun:test";
 
 import * as THREE from "three";
 
-import { PROBE_MIN_FRAMES, probeDue, reflectsWorld, worldProbeForQuality } from "./worldReflectionProbe";
+import {
+  PROBE_FIRST_WAIT_FRAMES,
+  PROBE_MIN_FRAMES,
+  PROBE_SETTLE_MS,
+  probeDue,
+  probeStreamingQuiet,
+  reflectsWorld,
+  worldProbeForQuality,
+} from "./worldReflectionProbe";
 
 test("low keeps the procedural probe; higher tiers capture sharper and more often", () => {
   expect(worldProbeForQuality("low")).toBeNull();
@@ -39,4 +47,14 @@ test("a recapture waits for the frame floor, so a slow machine is not refreshing
   expect(probeDue(origin, origin, 60, settings, PROBE_MIN_FRAMES - 1)).toBe(false);
   expect(probeDue(origin, { x: 100, y: 0, z: 0 }, 60, settings, 10)).toBe(false);
   expect(probeDue(origin, origin, 60, settings, PROBE_MIN_FRAMES)).toBe(true);
+});
+
+test("no capture starts while models are still streaming in", () => {
+  expect(probeStreamingQuiet(0, true, 10_000)).toBe(false);
+  expect(probeStreamingQuiet(PROBE_SETTLE_MS - 1, true, 10_000)).toBe(false);
+  expect(probeStreamingQuiet(PROBE_SETTLE_MS, true, 0)).toBe(true);
+  expect(probeStreamingQuiet(Number.POSITIVE_INFINITY, false, 0)).toBe(true);
+  // A world that never stops streaming still gets its first reflections, eventually.
+  expect(probeStreamingQuiet(0, false, PROBE_FIRST_WAIT_FRAMES - 1)).toBe(false);
+  expect(probeStreamingQuiet(0, false, PROBE_FIRST_WAIT_FRAMES)).toBe(true);
 });

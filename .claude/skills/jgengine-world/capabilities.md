@@ -236,7 +236,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createBuildingConfig` (function) · `import { createBuildingConfig } from "@jgengine/core/world/buildings"`
 - `generateBuilding` (function) · `import { generateBuilding } from "@jgengine/core/world/buildings"`
-- `generateBuildingDistrict` (function) · `import { generateBuildingDistrict } from "@jgengine/core/world/buildings"`
 
 ## building-kit — bind generated facade part slots to real models instead of untextured blocks
 

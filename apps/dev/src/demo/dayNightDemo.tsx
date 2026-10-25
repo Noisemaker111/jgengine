@@ -4,9 +4,9 @@ import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import type { GameContext, GameContextEntityEntry } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { createDayNightCycle, type DayNightKeyframe } from "@jgengine/core/time/dayNightCycle";
-import { environment, grass, terrain } from "@jgengine/core/world/features";
+import { environment, grass, sky, terrain } from "@jgengine/core/world/features";
 
-import { DayNightSky } from "@jgengine/shell/environment/DayNightSky";
+import { Sky } from "@jgengine/shell/environment/Daylight";
 import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
 import type { PlayableGame } from "@jgengine/shell/registry";
 
@@ -24,9 +24,13 @@ const KEYFRAMES: readonly DayNightKeyframe[] = [
 // slowly onward so any settle frame lands on a clearly tinted, non-noon sky.
 const cycle = createDayNightCycle({ keyframes: KEYFRAMES, dayLengthMs: 600_000, start: 0.75 });
 
+/** The engine's one sky, run on the cycle's clock: the cycle's keyframes tint the HUD swatch. */
+const daySky = sky({ preset: "day", timeOfDay: true });
+const cycleClock = { calendar: () => ({ dayFraction: cycle.sample().dayFraction }) };
+
 const terrainFeature = environment({
   terrain: terrain({ bounds: { w: 80, d: 80 }, height: 3, frequency: 0.03, seed: "daynight" }),
-  vegetation: grass({ area: { w: 70, d: 70 }, density: 3, colors: ["#2f4f1e", "#8fbf4a"], seed: "daynight" }),
+  vegetation: grass({ area: { w: 70, d: 70 }, colorBase: "#2f4f1e", colorTip: "#8fbf4a", seed: "daynight" }),
 });
 
 const entityCatalog: Record<string, GameContextEntityEntry> = {
@@ -130,11 +134,11 @@ export const dayNightDemoGame: PlayableGame = {
   content: { entityById: (catalogId) => entityCatalog[catalogId] ?? null, objectById: () => null },
   loop: { onInit: () => {}, onNewPlayer, onTick: () => {}, onReset: () => {}, onDispose: () => {} },
   GameUI: DayNightUI,
-  // Opt out of the cinematic default sky so this demo's own DayNightSky is the only sky/lighting.
+  // Opt out of the cinematic default sky so this demo's cycle-driven sky is the only sky/lighting.
   look: "flat",
   environment: () => (
     <>
-      <DayNightSky cycle={cycle} />
+      <Sky sky={daySky} clock={cycleClock} />
       <EnvironmentScene feature={terrainFeature} />
     </>
   ),
