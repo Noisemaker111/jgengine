@@ -2385,11 +2385,11 @@
         "@jgengine/core",
         "@jgengine/shell"
       ],
-      "module": "@jgengine/core/render/skyOwnedLighting",
-      "domain": "render",
+      "module": "@jgengine/shell/environment/Daylight",
+      "domain": "environment",
       "gameFacing": false,
       "probe": null,
-      "intent": "hand the sun and ambient fill to the day cycle while authored lamps keep running"
+      "intent": "one sky for a fixed look, a day-night cycle, biome bands and authored lights"
     },
     {
       "id": "death-system",
