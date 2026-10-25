@@ -294,6 +294,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `measureCourse` (function) · `import { measureCourse } from "@jgengine/core/physics/handlingProbe"`
 
+## creature-temperament — passive, territorial and predator creatures that react to what perception senses, including light, noise and scent
+
+- `decideTemperament` (function) · `import { decideTemperament } from "@jgengine/core/ai/temperament"`
+
 ## crouch-prone — stance/pose transitions that change the hitbox
 
 - `createPoseState` (function) · `import { createPoseState } from "@jgengine/core/world"`

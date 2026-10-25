@@ -69,7 +69,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `classifyClip` (function) · `import { classifyClip } from "@jgengine/core/game/clipRoles"`
 - `defaultAnimationForClips` (function) · `import { defaultAnimationForClips } from "@jgengine/core/game/clipRoles"`
 
-## codex — codex/bestiary/lorebook of defined entries with discovery tracking, categories, secret masking, completion, an onDiscover seam, and serializable state
+## codex — codex/bestiary/lorebook of defined entries with discovery tracking, fragment scans, categories, secret masking, completion, an onDiscover seam, and serializable state
 
 - `createCodex` (function) · `import { createCodex } from "@jgengine/core/gameplay"`
 

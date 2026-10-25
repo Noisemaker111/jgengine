@@ -4,15 +4,21 @@ import { sightLineBlocked, type SightSolids } from "./sightLine";
 /** A world position used by perception, in `[x, y, z]` order. */
 export type PerceptionPosition = readonly [number, number, number];
 
-/** The kinds of stimulus the perception service can retain. */
-export type PerceptionStimulusKind = "sight" | "sound" | "damage";
+/**
+ * The kinds of stimulus the perception service can retain. A `scent` (blood, bait, fuel) carries
+ * `scentRange × loudness` and, like a sound, needs no clear line: it seeps around corners.
+ */
+export type PerceptionStimulusKind = "sight" | "sound" | "damage" | "scent";
 
 /** An event that can seed an observer's memory. */
 export interface PerceptionStimulus {
   kind: PerceptionStimulusKind;
   sourceId: string;
   position: PerceptionPosition;
-  /** Multiplies `hearingRange` for this sound: a footstep might be `0.3`, a gunshot `4`. Default `1`. */
+  /**
+   * Multiplies the range of this signal: `hearingRange` for a sound (a footstep might be `0.3`, a
+   * gunshot `4`), `scentRange` for a scent (a graze `0.5`, an open wound `2`). Default `1`.
+   */
   loudness?: number;
   at: number;
 }
@@ -28,6 +34,11 @@ export interface PerceptionObserver {
 export interface PerceptionCandidate {
   id: string;
   position: PerceptionPosition;
+  /**
+   * How far this target can be seen, as a multiple of `sightRange`: a diver with a lamp on in a dark
+   * hall might be `1.6`, one standing unlit `0.35`. Default `1`. Range only; the cone is unchanged.
+   */
+  visibility?: number;
 }
 
 /** A remembered target and its linearly decaying confidence. */
@@ -42,6 +53,12 @@ export interface PerceptionMemory {
   sourceId: string;
   /** Observe pass that recorded the fact, so a shared sighting is attributable to the tick it arrived. */
   sourceTick: number;
+  /**
+   * Which sense produced the fact: a predator that only smelled blood investigates, one that saw
+   * you charges. A squadmate's shared sighting reads `"sight"`. Absent on facts restored from an
+   * older save.
+   */
+  cue?: PerceptionStimulusKind;
 }
 
 /** Configuration for sight, hearing, memory decay, squad sharing and optional occlusion. */
@@ -49,6 +66,8 @@ export interface PerceptionConfig {
   sightRange: number;
   sightConeDeg: number;
   hearingRange: number;
+  /** How far a scent of loudness 1 carries. Default `0`: the observer smells nothing. */
+  scentRange?: number;
   memorySeconds: number;
   /** Most stimuli retained at once; the oldest are dropped first. Default 256. */
   maxStimuli?: number;
@@ -98,7 +117,7 @@ export interface PerceptionStats {
   occlusionDropped: number;
   /** Pairs that produced the observer's own sighting. */
   sightings: number;
-  /** Sound and damage stimuli an observer resolved inside its hearing range. */
+  /** Sound, scent and damage stimuli an observer resolved inside its range. */
   heard: number;
   /** Sightings written into a squadmate's memory. */
   shares: number;
@@ -151,6 +170,7 @@ function validate(config: PerceptionConfig): void {
   if (!Number.isFinite(config.sightRange) || config.sightRange < 0) throw new Error("sightRange must be non-negative.");
   if (!Number.isFinite(config.sightConeDeg) || config.sightConeDeg < 0 || config.sightConeDeg > 360) throw new Error("sightConeDeg must be between 0 and 360.");
   if (!Number.isFinite(config.hearingRange) || config.hearingRange < 0) throw new Error("hearingRange must be non-negative.");
+  if (config.scentRange !== undefined && (!Number.isFinite(config.scentRange) || config.scentRange < 0)) throw new Error("scentRange must be non-negative.");
   if (!Number.isFinite(config.memorySeconds) || config.memorySeconds <= 0) throw new Error("memorySeconds must be positive.");
   if (config.maxStimuli !== undefined && (!Number.isInteger(config.maxStimuli) || config.maxStimuli < 1)) throw new Error("maxStimuli must be a positive integer.");
   if (config.maxSharesPerTick !== undefined && (!Number.isInteger(config.maxSharesPerTick) || config.maxSharesPerTick < 0)) {
@@ -211,6 +231,7 @@ export function createPerception(initial: PerceptionConfig): PerceptionService {
     confidence: number,
     sourceId: string,
     sourceTick: number,
+    cue: PerceptionStimulusKind | undefined,
   ): void {
     if (confidence <= 0) return;
     let observerMemories = memories.get(observerId);
@@ -227,6 +248,7 @@ export function createPerception(initial: PerceptionConfig): PerceptionService {
         confidence,
         sourceId,
         sourceTick,
+        ...(cue === undefined ? {} : { cue }),
       });
     }
   }
@@ -258,7 +280,7 @@ export function createPerception(initial: PerceptionConfig): PerceptionService {
     const existing = memories.get(mateId)?.get(sighting.id);
     // The mate's own sighting at or after this instant is better evidence than a hand-off.
     if (existing !== undefined && existing.lastSeenAt >= nowMs) return;
-    remember(mateId, sighting.id, sighting.position, nowMs, 1, seerId, tick);
+    remember(mateId, sighting.id, sighting.position, nowMs, 1, seerId, tick, "sight");
   }
 
   function rememberedCount(): number {
@@ -279,7 +301,7 @@ export function createPerception(initial: PerceptionConfig): PerceptionService {
   return {
     pushStimulus(stimulus) {
       if (!Number.isFinite(stimulus.at)) throw new Error("stimulus.at must be finite.");
-      if (stimulus.kind === "sound" && stimulus.loudness !== undefined && (!Number.isFinite(stimulus.loudness) || stimulus.loudness < 0)) {
+      if ((stimulus.kind === "sound" || stimulus.kind === "scent") && stimulus.loudness !== undefined && (!Number.isFinite(stimulus.loudness) || stimulus.loudness < 0)) {
         throw new Error("stimulus.loudness must be non-negative.");
       }
       let index = stimuli.length;
@@ -305,7 +327,9 @@ export function createPerception(initial: PerceptionConfig): PerceptionService {
         const dx = candidate.position[0] - observer.position[0];
         const dz = candidate.position[2] - observer.position[2];
         const range = Math.sqrt(dx * dx + dz * dz);
-        if (range > config.sightRange) {
+        const visibility = candidate.visibility ?? 1;
+        if (!(visibility >= 0)) throw new Error("candidate.visibility must be non-negative.");
+        if (range > config.sightRange * visibility) {
           stats.rangeCulled += 1;
           continue;
         }
@@ -329,7 +353,7 @@ export function createPerception(initial: PerceptionConfig): PerceptionService {
           if (sightLineBlocked(solids, observer.position, candidate.position)) continue;
         }
         stats.sightings += 1;
-        remember(observer.id, candidate.id, candidate.position, nowMs, 1, observer.id, tick);
+        remember(observer.id, candidate.id, candidate.position, nowMs, 1, observer.id, tick, "sight");
         fresh.push(candidate);
       }
 
@@ -368,10 +392,15 @@ export function createPerception(initial: PerceptionConfig): PerceptionService {
           const audible = config.hearingRange * (stimulus.loudness ?? 1);
           if (range >= audible) continue;
           stats.heard += 1;
-          remember(observer.id, stimulus.sourceId, stimulus.position, stimulus.at, 1 - range / audible, observer.id, tick);
+          remember(observer.id, stimulus.sourceId, stimulus.position, stimulus.at, 1 - range / audible, observer.id, tick, "sound");
+        } else if (stimulus.kind === "scent") {
+          const carries = (config.scentRange ?? 0) * (stimulus.loudness ?? 1);
+          if (range >= carries) continue;
+          stats.heard += 1;
+          remember(observer.id, stimulus.sourceId, stimulus.position, stimulus.at, 1 - range / carries, observer.id, tick, "scent");
         } else if (stimulus.kind === "damage") {
           stats.heard += 1;
-          remember(observer.id, stimulus.sourceId, stimulus.position, stimulus.at, 1, observer.id, tick);
+          remember(observer.id, stimulus.sourceId, stimulus.position, stimulus.at, 1, observer.id, tick, "damage");
         }
       }
       heard.set(observer.id, Math.min(judged, firstFuture - 1));
@@ -452,7 +481,7 @@ export function createPerception(initial: PerceptionConfig): PerceptionService {
       nextSeq = Math.max(snapshot.nextSeq ?? 0, seq + 1);
       for (const entry of snapshot.memories) {
         const saved = entry.memory;
-        remember(entry.observerId, saved.targetId, saved.lastKnownPos, saved.lastSeenAt, saved.confidence, saved.sourceId ?? entry.observerId, saved.sourceTick ?? 0);
+        remember(entry.observerId, saved.targetId, saved.lastKnownPos, saved.lastSeenAt, saved.confidence, saved.sourceId ?? entry.observerId, saved.sourceTick ?? 0, saved.cue);
       }
       pruneAll();
     },
