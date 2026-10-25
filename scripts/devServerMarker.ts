@@ -120,6 +120,96 @@ async function answers(base: string, timeoutMs = 3_000): Promise<boolean> {
   return false;
 }
 
+/** Route every dev server answers with who it is, so reuse asks the live server instead of a marker file. */
+export const SERVER_IDENTITY_PATH = "/__jgengine/server";
+
+/** What a live dev server reports about itself at {@link SERVER_IDENTITY_PATH}. */
+export interface ServerIdentityReport {
+  /** Same string as {@link devServerIdentity}: the checkout, plus `|game-dir:` when it serves one. */
+  identity: string;
+  /** The checkout this server runs from. */
+  root: string;
+  gameDir: string | null;
+  /** The Vite process itself, never the `bun run` wrapper that launched it. */
+  pid: number;
+  kind: "website" | "runner";
+  head?: string;
+}
+
+/** The identity a server on `base` reports, or null when it does not answer the route (or is not ours at all). */
+export async function readServerIdentity(base: string, timeoutMs = 2_000): Promise<ServerIdentityReport | null> {
+  try {
+    const response = await localRequest(`${base}${SERVER_IDENTITY_PATH}`, { timeoutMs });
+    if (response.status !== 200) return null;
+    const parsed = JSON.parse(response.body) as Partial<ServerIdentityReport> | null;
+    if (typeof parsed?.identity !== "string" || typeof parsed.pid !== "number") return null;
+    return parsed as ServerIdentityReport;
+  } catch {
+    return null;
+  }
+}
+
+function processAlive(pid: number | undefined): boolean {
+  if (pid === undefined || !Number.isFinite(pid) || pid <= 0) return false;
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    return (error as NodeJS.ErrnoException).code === "EPERM";
+  }
+}
+
+export type MarkedServer =
+  | { status: "ours"; base: string; report: ServerIdentityReport }
+  /** Answers, but reports another identity (or none): never attach to it. */
+  | { status: "foreign"; base: string; report: ServerIdentityReport | null }
+  /** Nothing answers yet, but the marker's process lives: a slow boot. */
+  | { status: "booting" }
+  | { status: "dead" };
+
+/**
+ * Ask the server on a marker's port who it is and compare with `expected`. A marker only says
+ * where to look: ports are reused, a dead server's marker outlives it and another checkout's Vite can
+ * take the port, so attaching on the marker's word put captures on someone else's tree.
+ *
+ * The marker file is repaired on the way: one whose server is dead goes, one the live server
+ * contradicts goes, and a marker for `expected` gets the pid the server reports.
+ */
+export async function checkMarkedServer(
+  marker: DevServerMarker,
+  expected: string,
+  options: { dir?: string; isAlive?: (pid: number | undefined) => boolean } = {},
+): Promise<MarkedServer> {
+  const isAlive = options.isAlive ?? processAlive;
+  const base = await reachableBase(marker.port, marker.host);
+  if (base === null) {
+    if (isAlive(marker.pid)) return { status: "booting" };
+    removeExactMarker(marker, options.dir);
+    return { status: "dead" };
+  }
+  const report = await readServerIdentity(base);
+  // A server with no identity route predates it; only a marker naming `expected` is provably wrong
+  // there, since this checkout's own server answers the route.
+  const lying = report === null ? marker.identity === expected : report.identity !== marker.identity;
+  if (lying) removeExactMarker(marker, options.dir);
+  if (report === null || report.identity !== expected) return { status: "foreign", base, report };
+  if (!lying && marker.pid !== report.pid) {
+    writeMarker({ ...marker, pid: report.pid, ...(report.head === undefined ? {} : { head: report.head }) }, options.dir);
+  }
+  return { status: "ours", base, report };
+}
+
+/** Delete `marker` only when the file still holds it, so a server that just re-published keeps its own. */
+function removeExactMarker(marker: DevServerMarker, dir?: string): void {
+  const current = readMarker(marker.port, dir);
+  if (current === null || current.identity !== marker.identity || current.pid !== marker.pid) return;
+  try {
+    unlinkSync(markerPath(marker.port, dir));
+  } catch {
+    /* already gone */
+  }
+}
+
 /**
  * Who a warm runner belongs to. A run that serves a game from another checkout (`--game-dir`) boots
  * a runner that renders that directory, so it must not attach to - or share a port with - the
@@ -166,6 +256,8 @@ export async function listRunningDevServers(cwd = process.cwd(), dir = tmpdir())
   for (const marker of candidates) {
     const base = await reachableBase(marker.port, marker.host);
     if (base === null) continue;
+    // Another checkout's Vite can sit on a reused port under this marker; read only a server that says it is this one.
+    if ((await readServerIdentity(base))?.identity !== marker.identity) continue;
     // The website dev server serves games at /games/<id>; the runner serves them at /?game=<id>.
     const kind = marker.kind ?? ((await servesWebsite(base)) ? "website" : "runner");
     running.push({ port: marker.port, base, kind, ...(marker.head === undefined ? {} : { head: marker.head }) });
@@ -196,8 +288,12 @@ type ViteServerLike = {
     once(event: string, listener: () => void): void;
     on?(event: "connection", listener: (socket: SocketLike) => void): void;
   } | null;
-  middlewares?: unknown;
+  middlewares?: {
+    use(path: string, handler: (req: unknown, res: IdentityResponse, next: () => void) => void): void;
+  };
 };
+
+type IdentityResponse = { statusCode: number; setHeader(name: string, value: string): void; end(body: string): void };
 
 /** Minutes a dev server may sit with no open connection before it exits. */
 export const DEFAULT_IDLE_EXIT_MINUTES = 20;
@@ -300,11 +396,27 @@ export function devServerMarkerPlugin(options: { kind: RunningDevServer["kind"];
     configureServer(server) {
       const httpServer = server.httpServer;
       if (httpServer === null || httpServer === undefined) return;
+      let report: ServerIdentityReport | null = null;
+      const identify = (): ServerIdentityReport =>
+        (report ??= {
+          identity: devServerIdentity(server.config.root),
+          root: checkoutIdentity(server.config.root),
+          gameDir: servedGameDir(),
+          pid: process.pid,
+          kind: options.kind,
+          head: headRevision(server.config.root),
+        });
+      server.middlewares?.use(SERVER_IDENTITY_PATH, (_req, res) => {
+        res.statusCode = 200;
+        res.setHeader("content-type", "application/json");
+        res.setHeader("cache-control", "no-store");
+        res.end(JSON.stringify(identify()));
+      });
       const publish = (): void => {
         const address = httpServer.address();
         if (address === null || typeof address === "string") return;
         // Same identity the launcher wrote, game dir included, or a `--game-dir` run never finds it again.
-        const identity = devServerIdentity(server.config.root);
+        const { identity, head } = identify();
         // Record the host that actually answers: `localhost` may be IPv6-only, where a
         // 127.0.0.1 read hangs until it times out.
         const host = "family" in address && address.family === "IPv6" ? "localhost" : "127.0.0.1";
@@ -314,7 +426,7 @@ export function devServerMarkerPlugin(options: { kind: RunningDevServer["kind"];
             identity,
             port: address.port,
             pid: process.pid,
-            head: headRevision(server.config.root),
+            head,
             kind: options.kind,
             host,
           },

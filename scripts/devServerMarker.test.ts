@@ -1,9 +1,12 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
+import { createServer, type Server } from "node:http";
 import { join } from "node:path";
 
 import {
+  SERVER_IDENTITY_PATH,
+  checkMarkedServer,
   devServerIdentity,
   devServerMarkerPlugin,
   idleVerdict,
@@ -30,8 +33,94 @@ function markerDir(): string {
   return dir;
 }
 
+const servers: Server[] = [];
+
 afterEach(() => {
   while (dirs.length > 0) rmSync(dirs.pop()!, { recursive: true, force: true });
+  while (servers.length > 0) servers.pop()!.close();
+});
+
+/** A stand-in dev server on a free port; `report` is what its identity route answers, or none. */
+async function liveServer(report: { identity: string; pid: number } | null): Promise<number> {
+  const server = createServer((req, res) => {
+    if (req.url === SERVER_IDENTITY_PATH && report !== null) {
+      res.setHeader("content-type", "application/json");
+      res.end(JSON.stringify({ root: "x", gameDir: null, kind: "runner", ...report }));
+      return;
+    }
+    res.statusCode = req.url === SERVER_IDENTITY_PATH ? 404 : 200;
+    res.end("ok");
+  });
+  servers.push(server);
+  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const address = server.address();
+  if (address === null || typeof address === "string") throw new Error("no port");
+  return address.port;
+}
+
+describe("a marker is checked against the live server before reuse", () => {
+  test("another checkout's Vite on a stale marker's port is foreign, and the lying marker goes", async () => {
+    const dir = markerDir();
+    const port = await liveServer({ identity: "C:/other-tree", pid: 777 });
+    const marker = { identity: "C:/my-tree", port, pid: 111, kind: "runner" as const, host: "127.0.0.1" };
+    writeMarker(marker, dir);
+    const checked = await checkMarkedServer(marker, "C:/my-tree", { dir });
+    expect(checked.status).toBe("foreign");
+    expect(readMarker(port, dir)).toBeNull();
+  });
+
+  test("our own server is reused and the marker gets the pid the server reports, not the wrapper's", async () => {
+    const dir = markerDir();
+    const port = await liveServer({ identity: "C:/my-tree", pid: 4242 });
+    const marker = { identity: "C:/my-tree", port, pid: 111, kind: "runner" as const, host: "127.0.0.1" };
+    writeMarker(marker, dir);
+    const checked = await checkMarkedServer(marker, "C:/my-tree", { dir });
+    expect(checked.status).toBe("ours");
+    expect(readMarker(port, dir)?.pid).toBe(4242);
+  });
+
+  test("a server with no identity route never passes for ours, and a marker claiming ours over it goes", async () => {
+    const dir = markerDir();
+    const port = await liveServer(null);
+    const mine = { identity: "C:/my-tree", port, pid: 111, host: "127.0.0.1" };
+    writeMarker(mine, dir);
+    expect((await checkMarkedServer(mine, "C:/my-tree", { dir })).status).toBe("foreign");
+    expect(readMarker(port, dir)).toBeNull();
+
+    const theirs = { identity: "C:/old-tree", port, pid: 222, host: "127.0.0.1" };
+    writeMarker(theirs, dir);
+    expect((await checkMarkedServer(theirs, "C:/my-tree", { dir })).status).toBe("foreign");
+    expect(readMarker(port, dir)).not.toBeNull();
+  });
+
+  test("a dead server's marker is deleted; a booting one (process alive) is kept", async () => {
+    const dir = markerDir();
+    const port = await liveServer(null);
+    servers.pop()!.close();
+    const marker = { identity: "C:/my-tree", port, pid: 111, host: "127.0.0.1" };
+    writeMarker(marker, dir);
+    expect((await checkMarkedServer(marker, "C:/my-tree", { dir, isAlive: () => true })).status).toBe("booting");
+    expect(readMarker(port, dir)).not.toBeNull();
+    expect((await checkMarkedServer(marker, "C:/my-tree", { dir, isAlive: () => false })).status).toBe("dead");
+    expect(readMarker(port, dir)).toBeNull();
+  });
+
+  test("the Vite plugin answers the identity route with its own pid and identity", () => {
+    const dir = markerDir();
+    let handler: ((req: unknown, res: never, next: () => void) => void) | undefined;
+    devServerMarkerPlugin({ kind: "runner", dir }).configureServer({
+      config: { root: process.cwd() },
+      httpServer: { listening: false, address: () => null, once() {} },
+      middlewares: {
+        use(path, fn) {
+          if (path === SERVER_IDENTITY_PATH) handler = fn as typeof handler;
+        },
+      },
+    });
+    let body = "";
+    handler!({}, { statusCode: 0, setHeader() {}, end: (text: string) => (body = text) } as never, () => {});
+    expect(JSON.parse(body)).toMatchObject({ identity: devServerIdentity(process.cwd()), pid: process.pid, kind: "runner" });
+  });
 });
 
 describe("dev server marker", () => {
