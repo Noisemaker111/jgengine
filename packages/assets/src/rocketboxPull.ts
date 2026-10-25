@@ -98,8 +98,14 @@ function fbxLoader(): FBXLoader {
     },
   };
   manager.addHandler(/\.(tga|png|jpe?g|bmp|tiff?|dds)$/i, placeholder as unknown as THREE.Loader);
-  THREE.TextureLoader.prototype.load = placeholder.load as never;
   return new FBXLoader(manager);
+}
+
+/** FBXLoader builds its own TextureLoader inside `parse`, so the placeholder is swapped onto the prototype for that call only. */
+function placeholderTexture(url: string): THREE.Texture {
+  const texture = new THREE.Texture();
+  (texture.userData as TextureRef).url = url;
+  return texture;
 }
 
 function fileName(url: string | undefined): string | undefined {
@@ -146,7 +152,15 @@ class RocketboxSource {
 }
 
 function parseFbx(loader: FBXLoader, bytes: Uint8Array): THREE.Group {
-  return loader.parse(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer, "");
+  const prototype = THREE.TextureLoader.prototype;
+  const original = prototype.load;
+  // Restored afterwards: a stub left on the shared prototype hangs every later texture load in the process.
+  prototype.load = placeholderTexture as never;
+  try {
+    return loader.parse(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer, "");
+  } finally {
+    prototype.load = original;
+  }
 }
 
 /** Drop a clip's travel on the ground plane so it plays in place; vertical bob and turning stay. */
