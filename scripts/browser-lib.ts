@@ -1926,6 +1926,33 @@ export interface CaptureRegions {
 /** Cap on returned mask rects; the largest are kept, so the tail costs nothing to drop. */
 const MAX_CAPTURE_MASKS = 200;
 
+/** One model the page replaced with a placeholder box, as the shell's loader publishes it. */
+export interface MissingModel {
+  name: string;
+  url: string;
+  message: string;
+}
+
+/**
+ * Every model the page could not load and drew as a placeholder box (`__jgengineMissingModels`,
+ * published by the shell's model loader). A capture that rendered one is not evidence of the game.
+ */
+export async function readMissingModels(session: CdpSession): Promise<MissingModel[]> {
+  const raw = await session.evaluate<MissingModel[] | null>(`(() => {
+    const list = globalThis.__jgengineMissingModels;
+    return Array.isArray(list) ? list.map((entry) => ({ name: String(entry.name), url: String(entry.url), message: String(entry.message) })) : [];
+  })()`);
+  return raw ?? [];
+}
+
+/** The line a capture prints when models are missing, or null when none are. */
+export function missingModelsProblem(missing: readonly MissingModel[]): string | null {
+  if (missing.length === 0) return null;
+  const names = missing.slice(0, 8).map((entry) => entry.name).join(", ");
+  const more = missing.length > 8 ? ` and ${missing.length - 8} more` : "";
+  return `MISSING MODELS: ${missing.length} drawn as placeholder boxes - ${names}${more}. Run bun run games:provision <game> or fix the path.`;
+}
+
 /** Layout status the shot is judged against, read in the same pass as the regions. */
 export interface CapturePageState extends CaptureRegions {
   overflow: string | null;

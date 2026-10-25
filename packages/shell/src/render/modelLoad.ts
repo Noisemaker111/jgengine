@@ -79,19 +79,74 @@ export async function probeModelUrl(
 }
 
 /**
+ * The short name a missing model is reported by: its folder and file name without the extension,
+ * so `/models/kaykit-city-builder/building_A.glb` reads `kaykit-city-builder/building_A`.
+ * @internal
+ */
+export function missingModelName(url: string): string {
+  const path = url.split(/[?#]/)[0] ?? url;
+  const parts = path.split("/").filter((part) => part !== "");
+  let file = (parts.pop() ?? path).replace(/\.(glb|gltf)$/i, "");
+  // Library models are `<category>/<name>/model.glb`: the folders carry the name.
+  if (/^(model|scene|index)$/i.test(file) && parts.length > 0) file = parts.pop()!;
+  const folder = parts.pop();
+  return folder === undefined || folder === "models" || folder === "library" ? file : `${folder}/${file}`;
+}
+
+let labelMissingModels = false;
+
+/**
+ * Write each missing model's name on its placeholder box. The shell turns it on with devtools (dev
+ * builds), so a broken asset reads by name in the world instead of as one more identical box.
+ * @internal
+ */
+export function armMissingModelLabels(on: boolean): void {
+  labelMissingModels = on;
+}
+
+function nameLabelTexture(name: string): THREE.Texture | null {
+  if (typeof document === "undefined") return null;
+  const canvas = document.createElement("canvas");
+  canvas.width = 256;
+  canvas.height = 256;
+  const c = canvas.getContext("2d");
+  if (c === null) return null;
+  c.fillStyle = "#d63384";
+  c.fillRect(0, 0, 256, 256);
+  c.strokeStyle = "#1a0710";
+  c.lineWidth = 10;
+  c.strokeRect(5, 5, 246, 246);
+  c.fillStyle = "#ffffff";
+  c.textAlign = "center";
+  c.textBaseline = "middle";
+  c.font = "bold 30px sans-serif";
+  c.fillText("MISSING", 128, 58);
+  const lines = name.split("/").slice(-2);
+  const longest = Math.max(...lines.map((line) => line.length), 1);
+  const size = Math.max(14, Math.min(34, Math.floor(380 / longest)));
+  c.font = `bold ${size}px sans-serif`;
+  lines.forEach((line, index) => c.fillText(line, 128, 124 + index * (size + 10)));
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+}
+
+/**
  * Build a stand-in {@link GLTF} whose scene is a single magenta placeholder box,
  * returned in place of a model that could not be loaded. Consumers clone and
  * mount `gltf.scene` exactly as they would a real model, so one broken asset
- * degrades to a visible primitive instead of taking down the scene. The optional
+ * degrades to a visible primitive instead of taking down the scene. With labels
+ * armed (dev builds) every face carries the model's `name`. The optional
  * `diagnosis` is stashed on `userData.jgengineDiagnosis` for debugging.
  * @internal
  */
-export function createFallbackModel(diagnosis?: AssetLoadDiagnosis): GLTF {
+export function createFallbackModel(diagnosis?: AssetLoadDiagnosis, name?: string): GLTF {
   const scene = new THREE.Group();
   scene.name = "jgengine-missing-model";
+  const label = name !== undefined && labelMissingModels ? nameLabelTexture(name) : null;
   const mesh = new THREE.Mesh(
     new THREE.BoxGeometry(1, 1, 1),
-    new THREE.MeshStandardMaterial({ color: 0xd63384, roughness: 0.7, metalness: 0 }),
+    new THREE.MeshStandardMaterial({ color: label === null ? 0xd63384 : 0xffffff, map: label, roughness: 0.7, metalness: 0 }),
   );
   mesh.name = "jgengine-missing-model-box";
   mesh.castShadow = true;
@@ -99,6 +154,7 @@ export function createFallbackModel(diagnosis?: AssetLoadDiagnosis): GLTF {
   scene.add(mesh);
   const userData: Record<string, unknown> = { jgengineFallback: true };
   if (diagnosis !== undefined) userData.jgengineDiagnosis = diagnosis;
+  if (name !== undefined) userData.jgengineMissingModel = name;
   return {
     scene,
     scenes: [scene],
@@ -145,11 +201,34 @@ export async function handleModelLoadFailure(
     return;
   }
   (overrides.warn ?? warnMissingModel)(diagnosis.message);
-  servedFallbacks.push({ url: resolvedUrl, message: diagnosis.message });
-  onLoad(createFallbackModel(diagnosis));
+  const name = missingModelName(resolvedUrl);
+  recordMissingModel({ name, url: resolvedUrl, message: diagnosis.message });
+  onLoad(createFallbackModel(diagnosis, name));
 }
 
-const servedFallbacks: { url: string; message: string }[] = [];
+/** A model the loader could not load and replaced with a placeholder box. */
+export interface MissingModelRecord {
+  /** Folder and file name (`kaykit-city-builder/building_A`). */
+  name: string;
+  url: string;
+  /** Why it failed: a missing file, the dev server's HTML fallback, a corrupt or unsupported body. */
+  message: string;
+}
+
+let servedFallbacks: readonly MissingModelRecord[] = [];
+const fallbackListeners = new Set<() => void>();
+
+function publishMissingModels(): void {
+  // `shoot` and `drive` read this off the page and fail a run that rendered a placeholder.
+  (globalThis as { __jgengineMissingModels?: readonly MissingModelRecord[] }).__jgengineMissingModels = servedFallbacks;
+  for (const listener of fallbackListeners) listener();
+}
+
+function recordMissingModel(record: MissingModelRecord): void {
+  if (servedFallbacks.some((entry) => entry.url === record.url)) return;
+  servedFallbacks = [...servedFallbacks, record];
+  publishMissingModels();
+}
 
 /**
  * Every model the shared loader diagnosed as broken and replaced with a magenta placeholder, in
@@ -161,13 +240,22 @@ const servedFallbacks: { url: string; message: string }[] = [];
  * a smoke test can require it to be empty.
  * @capability model-fallbacks models the loader replaced with a placeholder, for capture and smoke assertions
  */
-export function modelLoadFallbacks(): readonly { url: string; message: string }[] {
+export function modelLoadFallbacks(): readonly MissingModelRecord[] {
   return servedFallbacks;
+}
+
+/** Calls `listener` each time a model joins {@link modelLoadFallbacks}; returns the unsubscribe. @internal */
+export function subscribeModelLoadFallbacks(listener: () => void): () => void {
+  fallbackListeners.add(listener);
+  return () => {
+    fallbackListeners.delete(listener);
+  };
 }
 
 /** Drops the recorded placeholder list. For tests and between capture runs. @internal */
 export function clearModelLoadFallbacks(): void {
-  servedFallbacks.length = 0;
+  servedFallbacks = [];
+  publishMissingModels();
 }
 
 /** Per-model triangle ceiling before the loader warns. A prop is a few thousand triangles; a hero rig tens of thousands. */

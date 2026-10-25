@@ -3,6 +3,7 @@ import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
 import { viteIdleExit } from "../shared/viteIdleExit";
+import { viteProvisionAssets } from "../shared/provisionAssets";
 import { engineSource } from "../shared/viteEngineSource";
 import { appendFile } from "node:fs/promises";
 import { join } from "node:path";
@@ -12,7 +13,7 @@ const evidenceDirectory = process.env.BRIGHTWAY_EVIDENCE_DIR;
 
 export default defineConfig({
   resolve: engineSource(new URL(".", import.meta.url)),
-  plugins: [react(), tailwindcss(), viteIdleExit(), evidenceDirectory && {
+  plugins: [react(), tailwindcss(), viteIdleExit(), viteProvisionAssets(), evidenceDirectory && {
     name: "brightway-native-evidence",
     apply: "serve",
     configureServer(server) {

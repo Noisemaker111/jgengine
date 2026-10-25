@@ -991,6 +991,7 @@
     "./devtools/FrameTelemetry",
     "./devtools/KeysPanel",
     "./devtools/LogsPanel",
+    "./devtools/MissingModelsNotice",
     "./devtools/NetPanel",
     "./devtools/PerfPanel",
     "./devtools/TunePanel",
