@@ -143,6 +143,56 @@ export function createDecalTexture(style: DecalStyle, seed: string, size = 128):
         red = 0.045;
         green = 0.048;
         blue = 0.052;
+      } else if (style === "paper") {
+        // A few dropped sheets: seeded rectangles at their own angles, ruled with faint print lines.
+        let sheet = 0;
+        let ink = 0;
+        for (let i = 0; i < 4; i += 1) {
+          const cx = (hash(i, 2, seedNumber) - 0.5) * 0.5;
+          const cy = (hash(i, 3, seedNumber) - 0.5) * 0.5;
+          const turn = hash(i, 5, seedNumber) * Math.PI;
+          const lu = (u - cx) * Math.cos(turn) + (v - cy) * Math.sin(turn);
+          const lv = -(u - cx) * Math.sin(turn) + (v - cy) * Math.cos(turn);
+          const w = 0.1 + hash(i, 7, seedNumber) * 0.06;
+          const h = w * 1.35;
+          const inside = (1 - smoothstep(w * 0.94, w, Math.abs(lu))) * (1 - smoothstep(h * 0.94, h, Math.abs(lv)));
+          if (inside > sheet) {
+            sheet = inside;
+            const ruled = Math.abs(lu) < w * 0.75 && Math.abs(lv) < h * 0.8 ? 1 - smoothstep(0.15, 0.35, Math.abs(((lv * 40) % 1 + 1) % 1 - 0.5) * 2) : 0;
+            ink = ruled * 0.5;
+          }
+        }
+        alpha = sheet * (0.85 + n * 0.15);
+        // Trodden-on, damp, yellowed: never a clean white that glares under a work lamp.
+        const shade = (0.5 + n * 0.28) * (1 - ink);
+        red = 0.8 * shade;
+        green = 0.75 * shade;
+        blue = 0.62 * shade;
+      } else if (style === "scorch") {
+        // Soot: a black core that feathers out into a brown ring, broken up by noise.
+        const body = 1 - smoothstep(0.25, 0.95, r + (n - 0.5) * 0.45);
+        const grain = fbm(u * 20 - 3.3, v * 20 + 1.9, seedNumber + 17);
+        alpha = body * (0.7 + grain * 0.3);
+        const core = 1 - smoothstep(0.1, 0.6, r);
+        red = 0.03 + (1 - core) * 0.12;
+        green = 0.025 + (1 - core) * 0.07;
+        blue = 0.02 + (1 - core) * 0.03;
+      } else if (style === "hazard") {
+        // A painted border of diagonal yellow-and-black bands, scuffed through where boots wear it.
+        const edge = Math.max(Math.abs(u), Math.abs(v));
+        const band = smoothstep(0.34, 0.36, edge) * (1 - smoothstep(0.455, 0.47, edge));
+        const stripe = ((((u + v) * 9) % 1) + 1) % 1 < 0.5;
+        const wear = smoothstep(0.32, 0.55, fbm(u * 14 + 2.2, v * 14 - 6.1, seedNumber + 29));
+        alpha = band * (0.35 + wear * 0.65);
+        if (stripe) {
+          red = 0.85;
+          green = 0.62;
+          blue = 0.08;
+        } else {
+          red = 0.05;
+          green = 0.045;
+          blue = 0.04;
+        }
       } else {
         // Cracks: six warped radial lines plus two branches, faded toward the rim.
         let line = 0;

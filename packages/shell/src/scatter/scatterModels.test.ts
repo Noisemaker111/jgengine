@@ -43,6 +43,20 @@ describe("buildScatterModelSources", () => {
     expect(sources[0]!.geometry).toBe(mesh.geometry);
   });
 
+  test("a mesh with morph targets is drawn at its rest shape, sharing the cached buffers, one view per geometry", () => {
+    const { scene, mesh } = meshScene();
+    const position = mesh.geometry.getAttribute("position");
+    mesh.geometry.morphAttributes.position = [position.clone()];
+    mesh.updateMorphTargets();
+    const first = buildScatterModelSources(scene, { url: "wheel.glb" }).sources[0]!.geometry;
+    expect(first).not.toBe(mesh.geometry);
+    expect(Object.keys(first.morphAttributes)).toHaveLength(0);
+    expect(first.getAttribute("position")).toBe(position);
+    expect(first.index).toBe(mesh.geometry.index);
+    expect(Object.keys(mesh.geometry.morphAttributes)).toHaveLength(1);
+    expect(buildScatterModelSources(scene, { url: "wheel.glb" }).sources[0]!.geometry).toBe(first);
+  });
+
   test("bakes the mesh's own local transform into localMatrix", () => {
     const { scene, mesh } = meshScene();
     mesh.position.set(1, 0.5, -2);

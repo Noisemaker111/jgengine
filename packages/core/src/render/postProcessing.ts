@@ -157,6 +157,12 @@ export interface AtmosphereConfig {
    */
   lamps?: number;
   /**
+   * How far a spot light's glow reaches down its cone as a visible beam, 0..1. At 0 a spot glows only
+   * round its bulb, like a point light; at 1 the haze lights up most of its range inside the cone, so
+   * a ceiling lamp throws a shaft onto the floor. Default 0.
+   */
+  beams?: number;
+  /**
    * Run with no shadow-casting sun: the haze and the lamp glow stay on and only the shafts drop
    * out. Default false, which skips the whole pass while there is no sun.
    */
@@ -235,6 +241,7 @@ export const DEFAULT_ATMOSPHERE: Readonly<Required<AtmosphereConfig>> = {
   fogMax: 0.65,
   shafts: 0.3,
   lamps: 1,
+  beams: 0,
   indoor: false,
 };
 

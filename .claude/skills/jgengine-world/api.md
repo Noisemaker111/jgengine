@@ -3902,7 +3902,7 @@
 - `DECAL_DEFAULTS` (const): const DECAL_DEFAULTS: DecalRules — Default decal rules: a small dirt smudge lying on the ground.
 - `DECAL_KIND` (const): const DECAL_KIND: "decal" — The editor marker kind marking a surface decal.
 - `DECAL_SCHEMA` (const): const DECAL_SCHEMA: ParamSchema — The decal parameter schema — drives the inspector and the `meta` parse.
-- `DECAL_STYLES` (const): const DECAL_STYLES: readonly ["dirt", "cracks", "paint", "blood", "grime", "leak", "rust", "wet"] — The authored decal looks; each has its own deterministic procedural texture. `grime` is the dark band that collects along the foot of a wall, `leak` a streak running down from a pipe or seam, `rust` a bloom of corrosion and `wet` a standing puddle that renders glossy.
+- `DECAL_STYLES` (const): const DECAL_STYLES: readonly ["dirt", "cracks", "paint", "blood", "grime", "leak", "rust", "wet", "paper", "scorch", "hazard"] — The authored decal looks; each has its own deterministic procedural texture. `grime` is the dark band that collects along the foot of a wall, `leak` a streak running down from a pipe or seam, `rust` a bloom of corrosion, `wet` a standing puddle that renders glossy, `paper` a few dropped sheets, `scorch` a soot burn and `hazard` a worn yellow-and-black stripe border painted round a spot.
 - `DecalRules` (interface): interface DecalRules — Fully-defaulted decal params parsed from a marker's `meta`.
 - `DecalStyle` (type): type DecalStyle = (typeof DECAL_STYLES)[number] — One of the authored decal looks.
 - `ResolvedDecal` (interface): interface ResolvedDecal — A resolved decal: its placed point/facing plus fully-defaulted rules.
@@ -4091,11 +4091,13 @@
 - `InteriorCable` (interface): interface InteriorCable — A cable hung between anchors, already sampled into a sagging polyline.
 - `InteriorClearance` (interface): interface InteriorClearance — A point or circle the dressing must keep clear: a door, lift, pickup or spawn.
 - `InteriorClutterSlot` (interface): interface InteriorClutterSlot — A spot against a wall a game may fill with a prop of at most `depth` × `width`.
+- `InteriorDebrisSlot` (interface): interface InteriorDebrisSlot — A small loose object on the floor: a can, a rag, a tool, a pile of rubble. Debris does not block a walk, so it may sit anywhere but a kept-clear spot; `along` says whether it hugs a wall, gathers in a corner or lies out in the open, and `pick` lets a game choose which model lies there.
 - `InteriorDecal` (interface): interface InteriorDecal — A stain on a wall (standing, facing `normal`) or on the floor (lying flat).
-- `InteriorDecalStyle` (type): type InteriorDecalStyle = Extract<DecalStyle, "grime" | "leak" | "rust" | "dirt" | "wet"> — The procedural stains a dressing plan places; each is a {@link DecalStyle} with its own texture in the shell.
+- `InteriorDecalStyle` (type): type InteriorDecalStyle = Extract<DecalStyle, "grime" | "leak" | "rust" | "dirt" | "wet" | "paper" | "scorch" | "hazard"> — The procedural stains a dressing plan places; each is a {@link DecalStyle} with its own texture in the shell.
 - `InteriorDressingOptions` (interface): interface InteriorDressingOptions — What to place and how densely. Each family is on with its defaults unless set to `false`.
 - `InteriorDressingPlan` (interface): interface InteriorDressingPlan — Everything a dressing pass places.
 - `InteriorFixture` (interface): interface InteriorFixture — A practical lamp mounted on a wall: where its housing sits and where its light comes from.
+- `InteriorFixtureState` (type): type InteriorFixtureState = "lit" | "flicker" | "dead" — Whether a planned lamp burns steadily, stutters or has failed.
 - `InteriorPipe` (interface): interface InteriorPipe — A straight pipe segment between two points.
 - `InteriorRect` (interface): interface InteriorRect — One axis-aligned walkable footprint, centre and full size on the ground plane.
 - `InteriorWallRun` (interface): interface InteriorWallRun — One straight stretch of wall bounding the union of footprints. `inward` is the unit normal that points into the room; a doorway between two footprints is a gap, so a run never crosses one.

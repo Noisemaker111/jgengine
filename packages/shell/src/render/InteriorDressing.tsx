@@ -23,6 +23,12 @@ export interface InteriorDressingSurfaces {
   housing: AuthoredSurfaceConfig;
   /** Lamp lenses; give it an emissive colour so the lamp reads lit. */
   lens: AuthoredSurfaceConfig;
+  /** The lens of a dead lamp: no glow. */
+  lensOff: AuthoredSurfaceConfig;
+  /** Wainscot plates: a second finish that breaks a long wall up. */
+  panel: AuthoredSurfaceConfig;
+  /** Access hatches. */
+  hatch: AuthoredSurfaceConfig;
 }
 
 /** Plain defaults: grey paint, dull steel, a warm lens. */
@@ -32,6 +38,9 @@ export const DEFAULT_INTERIOR_SURFACES: InteriorDressingSurfaces = {
   fitting: { color: "#3c3a36", roughness: 0.55, metalness: 0.7 },
   housing: { color: "#26282b", roughness: 0.6, metalness: 0.6 },
   lens: { color: "#fff2d6", emissive: "#ffe2b0", emissiveIntensity: 3, roughness: 0.3, metalness: 0 },
+  lensOff: { color: "#4a4844", roughness: 0.35, metalness: 0 },
+  panel: { color: "#4a4f55", roughness: 0.6, metalness: 0.35 },
+  hatch: { color: "#55585c", roughness: 0.5, metalness: 0.6 },
 };
 
 const UP = new THREE.Vector3(0, 1, 0);
@@ -51,6 +60,7 @@ export function interiorDressingShapes(plan: InteriorDressingPlan, surfaces: Par
   const use = { ...DEFAULT_INTERIOR_SURFACES, ...surfaces };
   const shapes: StaticShapeInstance[] = [];
   for (const trim of plan.trims) shapes.push({ shape: "box", position: trim.center, rotation: [0, trim.rotationY, 0], scale: trim.size, surface: use.trim, shadows: "receive" });
+  for (const panel of plan.panels) shapes.push({ shape: "box", position: panel.center, rotation: [0, panel.rotationY, 0], scale: panel.size, surface: panel.role === "hatch" ? use.hatch : use.panel, shadows: "receive" });
   for (const fitting of plan.fittings) {
     shapes.push(fitting.role === "valve"
       ? { shape: "cylinder", position: fitting.center, rotation: [Math.PI / 2, fitting.rotationY, 0], scale: [fitting.size[0] / 2, fitting.size[2], fitting.size[0] / 2], surface: use.fitting, shadows: "receive", radialSegments: 10 }
@@ -74,7 +84,7 @@ export function interiorDressingShapes(plan: InteriorDressingPlan, surfaces: Par
   }
   for (const fixture of plan.fixtures) {
     shapes.push({ shape: "box", position: fixture.position, rotation: [0, fixture.rotationY, 0], scale: HOUSING, surface: use.housing, shadows: "none" });
-    shapes.push({ shape: "box", position: [fixture.position[0], fixture.position[1] - HOUSING[1] / 2, fixture.position[2]], rotation: [0, fixture.rotationY, 0], scale: LENS, surface: use.lens, shadows: "none" });
+    shapes.push({ shape: "box", position: [fixture.position[0], fixture.position[1] - HOUSING[1] / 2, fixture.position[2]], rotation: [0, fixture.rotationY, 0], scale: LENS, surface: fixture.state === "dead" ? use.lensOff : use.lens, shadows: "none" });
   }
   return shapes;
 }
@@ -144,7 +154,8 @@ function DecalStyleBatch({ style, decals, seed }: { style: InteriorDecalStyle; d
   const material = useDisposable(() => {
     // Instance colour carries each stain's opacity; the alpha map is the coverage.
     const wet = style === "wet";
-    const surface = new THREE.MeshStandardMaterial({ map: texture, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2, roughness: wet ? 0.06 : 0.95, metalness: wet ? 0.2 : 0 });
+    const roughness = wet ? 0.06 : style === "hazard" ? 0.6 : style === "paper" ? 0.85 : 0.95;
+    const surface = new THREE.MeshStandardMaterial({ map: texture, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2, roughness, metalness: wet ? 0.2 : 0 });
     surface.onBeforeCompile = (shader) => {
       shader.fragmentShader = shader.fragmentShader.replace("#include <color_fragment>", "#include <color_fragment>\n#ifdef USE_INSTANCING_COLOR\n diffuseColor.a *= vColor.r;\n diffuseColor.rgb /= max(vColor.rgb, vec3(1e-3));\n#endif");
     };
@@ -186,6 +197,24 @@ export function InteriorDressing({ plan, surfaces, cableColor = "#141414", decal
   </group>;
 }
 
+/**
+ * How bright a flickering lamp is at time `t` seconds, 0..1: mostly on, with seeded stutters and the
+ * odd drop-out, never a smooth sine. Pure so a test can pin it. @internal
+ */
+export function practicalFlicker(t: number, phase: number): number {
+  const slot = Math.floor(t * 9 + phase * 31);
+  const roll = Math.abs(Math.sin(slot * 12.9898 + phase * 78.233) * 43758.5453) % 1;
+  if (roll < 0.12) return 0.05;
+  if (roll < 0.3) return 0.45 + roll;
+  return 0.92 + 0.08 * Math.sin(t * 47 + phase * 6.28);
+}
+
+function phaseOf(id: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < id.length; i += 1) h = Math.imul(h ^ id.charCodeAt(i), 16777619);
+  return (h >>> 0) / 4294967296;
+}
+
 /** Props for {@link PracticalLights}. */
 export interface PracticalLightsProps {
   fixtures: readonly InteriorFixture[];
@@ -213,6 +242,9 @@ export interface PracticalLightsProps {
  * @capability practical-lights light the planned lamps nearest the camera with a fixed, shadow-capped spot-light pool
  */
 export function PracticalLights({ fixtures, count = 6, shadowed = 0, color = "#ffe2b0", intensity = 14, distance = 9, angle = 1.05, penumbra = 0.6, reach = 28, every = 8 }: PracticalLightsProps) {
+  // A dead lamp never takes a light from the pool; a fixture planned without a state burns.
+  const burning = useMemo(() => fixtures.filter((fixture) => fixture.state !== "dead"), [fixtures]);
+  const flickers = useRef<(number | null)[]>([]);
   const lights = useMemo(() => Array.from({ length: Math.max(0, count) }, (_, index) => {
     const light = new THREE.SpotLight(color, 0, distance, angle, penumbra, 2);
     light.castShadow = index < shadowed;
@@ -238,19 +270,28 @@ export function PracticalLights({ fixtures, count = 6, shadowed = 0, color = "#f
     for (const light of lights) light.dispose();
   }, [lights]);
   const frame = useRef(every);
-  useFrame(({ camera }) => {
+  useFrame(({ camera, clock }) => {
     frame.current += 1;
-    if (frame.current < every) return;
+    if (frame.current < every) {
+      const t = clock.elapsedTime;
+      flickers.current.forEach((phase, index) => {
+        if (phase !== null && lights[index] !== undefined) lights[index]!.intensity = intensity * practicalFlicker(t, phase);
+      });
+      return;
+    }
     frame.current = 0;
     const eye = camera.position;
-    const picked = nearestFixtures(fixtures, [eye.x, eye.y, eye.z], lights.length, reach);
+    const picked = nearestFixtures(burning, [eye.x, eye.y, eye.z], lights.length, reach);
     lights.forEach((light, index) => {
       const fixture = picked[index];
       if (fixture === undefined) {
         light.intensity = 0;
+        flickers.current[index] = null;
         return;
       }
-      light.intensity = intensity;
+      const phase = fixture.state === "flicker" ? phaseOf(fixture.id) : null;
+      flickers.current[index] = phase;
+      light.intensity = phase === null ? intensity : intensity * practicalFlicker(clock.elapsedTime, phase);
       light.position.set(...fixture.light);
       light.target.position.set(fixture.light[0] + fixture.normal[0] * 1.6, fixture.light[1] - 2.4, fixture.light[2] + fixture.normal[2] * 1.6);
       light.target.updateMatrixWorld();

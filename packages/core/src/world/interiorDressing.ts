@@ -35,7 +35,7 @@ export interface InteriorWallRun {
 /** A box in world space, rotated about Y. `role` names what it dresses. */
 export interface InteriorBox {
   id: string;
-  role: "skirting" | "rail" | "crown" | "rib" | "bracket" | "valve";
+  role: "skirting" | "rail" | "crown" | "rib" | "bracket" | "valve" | "panel" | "hatch";
   center: Vec3;
   size: Vec3;
   rotationY: number;
@@ -57,7 +57,7 @@ export interface InteriorCable {
 }
 
 /** The procedural stains a dressing plan places; each is a {@link DecalStyle} with its own texture in the shell. */
-export type InteriorDecalStyle = Extract<DecalStyle, "grime" | "leak" | "rust" | "dirt" | "wet">;
+export type InteriorDecalStyle = Extract<DecalStyle, "grime" | "leak" | "rust" | "dirt" | "wet" | "paper" | "scorch" | "hazard">;
 
 /** A stain on a wall (standing, facing `normal`) or on the floor (lying flat). */
 export interface InteriorDecal {
@@ -83,6 +83,27 @@ export interface InteriorFixture {
   /** Unit vector the lamp faces (into the room). */
   normal: Vec3;
   rotationY: number;
+  /** A `dead` lamp stays dark (a gap of shadow along the wall); a `flicker` one stutters. */
+  state: InteriorFixtureState;
+}
+
+/** Whether a planned lamp burns steadily, stutters or has failed. */
+export type InteriorFixtureState = "lit" | "flicker" | "dead";
+
+/**
+ * A small loose object on the floor: a can, a rag, a tool, a pile of rubble. Debris does not block a
+ * walk, so it may sit anywhere but a kept-clear spot; `along` says whether it hugs a wall, gathers in
+ * a corner or lies out in the open, and `pick` lets a game choose which model lies there.
+ */
+export interface InteriorDebrisSlot {
+  id: string;
+  position: Vec3;
+  rotationY: number;
+  /** Size multiplier around 1, so a repeated model does not read as a stamp. */
+  scale: number;
+  along: "wall" | "corner" | "open";
+  /** Deterministic 0..1 pick a game uses to choose which model lies here. */
+  pick: number;
 }
 
 /** A spot against a wall a game may fill with a prop of at most `depth` × `width`. */
@@ -103,6 +124,8 @@ export interface InteriorClearance {
   x: number;
   z: number;
   radius: number;
+  /** Paint a hazard-stripe border on the floor around it, as round a lift cage or loading bay. */
+  mark?: boolean;
 }
 
 /** What to place and how densely. Each family is on with its defaults unless set to `false`. */
@@ -110,17 +133,43 @@ export interface InteriorDressingOptions {
   seed: string | number;
   floorY: number;
   ceilingY: number;
+  /**
+   * One knob for how lived-in the place is: multiplies every per-metre and per-square-metre count
+   * (stains, debris, clutter slots, cable chance). 1 is the default dressing, 0.5 a tidy floor, 2 a
+   * wrecked one.
+   */
+  density?: number;
   /** Spots nothing on the floor may cover: doors, lifts, pickups, spawns. */
   keepClear?: readonly InteriorClearance[];
   trims?: { skirting?: number | false; rail?: number | false; crown?: boolean; ribSpacing?: number | false; depth?: number } | false;
   /** Pipe runs along the top of each wall: how many per wall and their radius. */
   pipes?: { perWall?: number; radius?: number; minLength?: number; bracketSpacing?: number; drops?: number } | false;
-  /** Cables hung along walls under the pipes: chance per wall and how far they sag. */
-  cables?: { chance?: number; sag?: number; span?: number; radius?: number } | false;
-  /** Stains per metre of wall (`grime`, `leak`) and per square metre of floor (`dirt`, `wet`). */
-  decals?: { grime?: number; leaks?: number; rust?: number; floor?: number; wet?: number } | false;
-  /** Wall lamps: metres between them along a wall and their height under the ceiling. */
-  fixtures?: { spacing?: number; drop?: number } | false;
+  /**
+   * Cables hung along walls under the pipes: chance per wall and how far they sag. `floor` is the
+   * chance a wall also gets a cable that drops from the ceiling and snakes along the floor at its foot.
+   */
+  cables?: { chance?: number; sag?: number; span?: number; radius?: number; floor?: number } | false;
+  /**
+   * Stains per metre of wall (`grime`, `leak`, `rust`, `scorch`) and per square metre of floor
+   * (`dirt`, `wet`, `paper` litter). Kept-clear spots with `mark` get hazard stripes regardless.
+   */
+  decals?: { grime?: number; leaks?: number; rust?: number; floor?: number; wet?: number; paper?: number; scorch?: number } | false;
+  /**
+   * Wall lamps: metres between them along a wall, their height under the ceiling, and the share that
+   * are `dead` (dark gaps that give a corridor its contrast) or `flicker`.
+   */
+  fixtures?: { spacing?: number; drop?: number; dead?: number; flicker?: number } | false;
+  /**
+   * Wall breakup, so a long wall is not one even sheet: per wall bay, the chance of a lower wainscot
+   * plate (`chance`, up to `height` metres) and of a tall access hatch (`hatches`). Bays are `bay`
+   * metres wide.
+   */
+  panels?: { chance?: number; hatches?: number; height?: number; bay?: number } | false;
+  /**
+   * Loose floor debris: pieces per metre of wall at its foot (`wall`), pieces piled in each inside
+   * corner (`corners`) and pieces per square metre out in the open (`open`).
+   */
+  debris?: { wall?: number; corners?: number; open?: number } | false;
   /** Clutter slots: metres between them, their depth and the walkway that must stay open in front. */
   clutter?: { spacing?: number; depth?: number; width?: number; passage?: number; chance?: number } | false;
 }
@@ -135,6 +184,9 @@ export interface InteriorDressingPlan {
   decals: InteriorDecal[];
   fixtures: InteriorFixture[];
   clutter: InteriorClutterSlot[];
+  /** Wainscot plates and access hatches standing proud of the walls. */
+  panels: InteriorBox[];
+  debris: InteriorDebrisSlot[];
 }
 
 const EPS = 1e-6;
@@ -208,6 +260,64 @@ function clear(keepClear: readonly InteriorClearance[], x: number, z: number, pa
   return keepClear.every((spot) => Math.hypot(x - spot.x, z - spot.z) > spot.radius + pad);
 }
 
+type PanelOptions = { chance: number; hatches: number; height: number; bay: number };
+
+/** Wainscot plates and access hatches for one wall run, bay by bay, a hand's width proud of it. */
+function dressPanels(plan: InteriorDressingPlan, run: InteriorWallRun, turn: number, dir: readonly [number, number], floorY: number, ceilingY: number, panels: PanelOptions, trims: { skirting?: number | false } | null, rng: () => number): void {
+  const bays = Math.max(1, Math.round(run.length / panels.bay));
+  const bayLength = run.length / bays;
+  const base = floorY + (trims === null || trims.skirting === false ? 0.02 : (trims.skirting ?? 0.16) + 0.02);
+  const wide = (w: number, tall: number, deep: number): Vec3 => (Math.abs(dir[0]) > 0.5 ? [w, tall, deep] : [deep, tall, w]);
+  for (let b = 0; b < bays; b++) {
+    const t = (b + 0.5) / bays;
+    const plate = rng(), hatch = rng(), jitter = rng();
+    if (plate < panels.chance) {
+      const tall = panels.height * (0.85 + jitter * 0.3);
+      plan.panels.push({ id: `${run.id}:panel:${b}`, role: "panel", center: along(run, t, 0.018, base + tall / 2), size: wide(bayLength * 0.94, tall, 0.024), rotationY: 0 });
+    }
+    if (hatch < panels.hatches && bayLength > 1.1) {
+      const w = Math.min(bayLength * 0.6, 0.7 + jitter * 0.45), tall = Math.min(ceilingY - floorY - 0.8, 1.5 + jitter * 0.6);
+      plan.panels.push({ id: `${run.id}:hatch:${b}`, role: "hatch", center: along(run, t + ((jitter - 0.5) * 0.2) / bays, 0.03, floorY + 0.35 + tall / 2), size: [w, tall, 0.045], rotationY: turn });
+    }
+  }
+}
+
+/** A cable that drops from under the ceiling near one end of a wall and snakes along its foot. */
+function floorCable(run: InteriorWallRun, floorY: number, ceilingY: number, radius: number, rng: () => number): InteriorCable {
+  const start = 0.08 + rng() * 0.25, end = Math.min(0.95, start + 0.35 + rng() * 0.55);
+  const lie = floorY + radius;
+  const bend = 0.35 / run.length;
+  const points: Vec3[] = [along(run, start, 0.05, ceilingY - 0.55), along(run, start + bend * 0.4, 0.07, floorY + 0.6), along(run, start + bend, 0.14, lie)];
+  const steps = Math.max(4, Math.round(((end - start) * run.length) / 0.6));
+  const phase = rng() * Math.PI * 2, wave = 0.6 + rng() * 0.8;
+  for (let i = 1; i <= steps; i++) {
+    const t = start + bend + (end - start - bend) * (i / steps);
+    points.push(along(run, t, 0.16 + Math.sin(phase + i * wave) * 0.09, lie));
+  }
+  return { id: `${run.id}:floor-cable`, points, radius };
+}
+
+/** Debris at the foot of one wall and piled in its inside corners. */
+function dressDebris(plan: InteriorDressingPlan, run: InteriorWallRun, rects: readonly InteriorRect[], keepClear: readonly InteriorClearance[], floorY: number, debris: { wall: number; corners: number }, rng: () => number): void {
+  const put = (id: string, at: Vec3, where: InteriorDebrisSlot["along"]) => {
+    const pick = rng(), spin = rng() * Math.PI * 2, scale = 0.75 + rng() * 0.5;
+    if (!inside(rects, at[0], at[2]) || !clear(keepClear, at[0], at[2], 0.25)) return;
+    plan.debris.push({ id, position: at, rotationY: spin, scale, along: where, pick });
+  };
+  const count = Math.round(run.length * debris.wall);
+  for (let i = 0; i < count; i++) put(`${run.id}:debris:${i}`, along(run, 0.04 + rng() * 0.92, 0.12 + rng() * 0.3, floorY), "wall");
+  const dir: [number, number] = [(run.to[0] - run.from[0]) / run.length, (run.to[1] - run.from[1]) / run.length];
+  for (const [end, sign] of [[0, -1], [1, 1]] as const) {
+    const corner = along(run, end, 0, floorY);
+    // An inside corner has wall just past the run's end; a doorway edge has more room there.
+    if (inside(rects, corner[0] + dir[0] * sign * 0.3 + run.inward[0] * 0.3, corner[2] + dir[1] * sign * 0.3 + run.inward[1] * 0.3)) continue;
+    for (let i = 0; i < debris.corners; i++) {
+      const back = 0.15 + rng() * 0.55, out = 0.12 + rng() * 0.5;
+      put(`${run.id}:corner:${end}:${i}`, [corner[0] - dir[0] * sign * back + run.inward[0] * out, floorY, corner[2] - dir[1] * sign * back + run.inward[1] * out], "corner");
+    }
+  }
+}
+
 /**
  * Plan the dressing for one floor: footprints in, every trim, pipe, cable, decal, lamp and clutter
  * slot out. Density is per metre of wall and per square metre of floor, so a bigger floor gets more,
@@ -220,14 +330,24 @@ export function planInteriorDressing(rects: readonly InteriorRect[], options: In
   const keepClear = options.keepClear ?? [];
   const rng = seededRng(options.seed);
   const walls = interiorWallRuns(rects);
-  const plan: InteriorDressingPlan = { walls, trims: [], pipes: [], fittings: [], cables: [], decals: [], fixtures: [], clutter: [] };
+  const plan: InteriorDressingPlan = { walls, trims: [], pipes: [], fittings: [], cables: [], decals: [], fixtures: [], clutter: [], panels: [], debris: [] };
+  const density = options.density ?? 1;
+  if (!Number.isFinite(density) || density < 0) throw new Error("Interior dressing density must be a finite number of at least 0");
 
   const trims = options.trims === false ? null : options.trims ?? {};
   const pipes = options.pipes === false ? null : { perWall: 2, radius: 0.07, minLength: 2.5, bracketSpacing: 1.6, drops: 0.25, ...options.pipes };
-  const cables = options.cables === false ? null : { chance: 0.6, sag: 0.22, span: 1.8, radius: 0.012, ...options.cables };
-  const decals = options.decals === false ? null : { grime: 0.6, leaks: 0.18, rust: 0.12, floor: 0.05, wet: 0.025, ...options.decals };
-  const fixtures = options.fixtures === false ? null : { spacing: 6, drop: 0.7, ...options.fixtures };
-  const clutter = options.clutter === false ? null : { spacing: 2.2, depth: 0.7, width: 1, passage: 1.6, chance: 0.75, ...options.clutter };
+  const cables = options.cables === false ? null : { chance: 0.6, sag: 0.22, span: 1.8, radius: 0.012, floor: 0.3, ...options.cables };
+  const rawDecals = options.decals === false ? null : { grime: 0.6, leaks: 0.18, rust: 0.12, floor: 0.05, wet: 0.025, paper: 0.03, scorch: 0.02, ...options.decals };
+  const decals = rawDecals === null ? null : (Object.fromEntries(Object.entries(rawDecals).map(([key, value]) => [key, value * density])) as typeof rawDecals);
+  const fixtures = options.fixtures === false ? null : { spacing: 6, drop: 0.7, dead: 0.15, flicker: 0.08, ...options.fixtures };
+  const rawClutter = options.clutter === false ? null : { spacing: 2.2, depth: 0.7, width: 1, passage: 1.6, chance: 0.75, ...options.clutter };
+  const clutter = rawClutter === null || density === 0 ? null : { ...rawClutter, spacing: rawClutter.spacing / Math.sqrt(density), chance: Math.min(1, rawClutter.chance * Math.sqrt(density)) };
+  const panels = options.panels === false ? null : { chance: 0.45, hatches: 0.12, height: Math.min(1.2, height * 0.32), bay: 2.4, ...options.panels };
+  const debris = options.debris === false ? null : { wall: 0.5, corners: 3, open: 0.04, ...options.debris };
+  const debrisCounts = debris === null ? null : { wall: debris.wall * density, corners: Math.round(debris.corners * density), open: debris.open * density };
+  // The newer families draw from their own stream, so adding them never reshuffles the pipes,
+  // cables, stains or clutter an existing plan already had.
+  const extra = seededRng(`${String(options.seed)}:extra`);
 
   for (const run of walls) {
     const turn = facing(run.inward);
@@ -284,7 +404,7 @@ export function planInteriorDressing(rects: readonly InteriorRect[], options: In
       }
     }
 
-    if (cables !== null && run.length >= cables.span && rng() < cables.chance) {
+    if (cables !== null && run.length >= cables.span && rng() < Math.min(1, cables.chance * density)) {
       const y = ceilingY - 0.18 - (pipes === null ? 0 : 0.5) - rng() * 0.2;
       const spans = Math.max(1, Math.round(run.length / cables.span));
       const strands = 1 + Math.floor(rng() * 2);
@@ -316,7 +436,9 @@ export function planInteriorDressing(rects: readonly InteriorRect[], options: In
       for (let i = 0; i < lamps; i++) {
         const t = (i + 0.5) / lamps;
         const position = along(run, t, 0.08, ceilingY - fixtures.drop);
-        plan.fixtures.push({ id: `${run.id}:lamp:${i}`, position, light: along(run, t, 0.45, ceilingY - fixtures.drop - 0.1), normal: [run.inward[0], 0, run.inward[1]], rotationY: turn });
+        const roll = extra();
+        const state: InteriorFixtureState = roll < fixtures.dead ? "dead" : roll < fixtures.dead + fixtures.flicker ? "flicker" : "lit";
+        plan.fixtures.push({ id: `${run.id}:lamp:${i}`, position, light: along(run, t, 0.45, ceilingY - fixtures.drop - 0.1), normal: [run.inward[0], 0, run.inward[1]], rotationY: turn, state });
       }
     }
 
@@ -337,6 +459,37 @@ export function planInteriorDressing(rects: readonly InteriorRect[], options: In
         plan.clutter.push({ id: `${run.id}:clutter:${i}`, position, rotationY: turn, width: clutter.width, depth: clutter.depth, wallId: run.id, pick });
       }
     }
+
+    if (panels !== null) dressPanels(plan, run, turn, dir, floorY, ceilingY, panels, trims, extra);
+    if (cables !== null && extra() < Math.min(1, cables.floor * density)) plan.cables.push(floorCable(run, floorY, ceilingY, cables.radius * 1.8, extra));
+    if (decals !== null) {
+      const scorches = Math.round(run.length * decals.scorch * extra() * 2);
+      for (let i = 0; i < scorches; i++) {
+        const size = 0.6 + extra() * 1.2;
+        plan.decals.push({ id: `${run.id}:scorch:${i}`, style: "scorch", surface: "wall", position: along(run, 0.08 + extra() * 0.84, 0.016, floorY + 0.3 + extra() * Math.max(0.2, height - 1.2)), normal: [run.inward[0], 0, run.inward[1]], spin: extra() * Math.PI * 2, width: size, height: size * (0.7 + extra() * 0.6), opacity: 0.45 + extra() * 0.4 });
+      }
+    }
+    if (debrisCounts !== null) dressDebris(plan, run, rects, keepClear, floorY, debrisCounts, extra);
+  }
+
+  if (debrisCounts !== null) {
+    for (const [index, rect] of rects.entries()) {
+      const count = Math.round(rect.w * rect.d * debrisCounts.open);
+      for (let i = 0; i < count; i++) {
+        const x = rect.x + (extra() - 0.5) * Math.max(0, rect.w - 1.2), z = rect.z + (extra() - 0.5) * Math.max(0, rect.d - 1.2);
+        const pick = extra(), spin = extra() * Math.PI * 2, scale = 0.75 + extra() * 0.5;
+        if (!clear(keepClear, x, z, 0.4)) continue;
+        plan.debris.push({ id: `floor:${index}:debris:${i}`, position: [x, floorY, z], rotationY: spin, scale, along: "open", pick });
+      }
+    }
+  }
+
+  if (decals !== null) {
+    for (const [index, spot] of keepClear.entries()) {
+      if (spot.mark !== true) continue;
+      const size = spot.radius * 2 + 0.3;
+      plan.decals.push({ id: `hazard:${index}`, style: "hazard", surface: "floor", position: [spot.x, floorY + 0.007, spot.z], normal: [0, 1, 0], spin: 0, width: size, height: size, opacity: 0.85 });
+    }
   }
 
   if (decals !== null) {
@@ -351,6 +504,12 @@ export function planInteriorDressing(rects: readonly InteriorRect[], options: In
       };
       place("dirt", Math.round(area * decals.floor), [1, 2.6], [0.45, 0.85]);
       place("wet", Math.round(area * decals.wet), [0.8, 2.2], [0.7, 1]);
+      const papers = Math.round(area * decals.paper);
+      for (let i = 0; i < papers; i++) {
+        const x = rect.x + (extra() - 0.5) * (rect.w - 0.8), z = rect.z + (extra() - 0.5) * (rect.d - 0.8);
+        const s = 0.5 + extra() * 0.7;
+        plan.decals.push({ id: `floor:${index}:paper:${i}`, style: "paper", surface: "floor", position: [x, floorY + 0.006 + plan.decals.length * 1e-5, z], normal: [0, 1, 0], spin: extra() * Math.PI * 2, width: s, height: s, opacity: 0.75 + extra() * 0.25 });
+      }
     }
   }
   return plan;

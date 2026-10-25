@@ -128,3 +128,40 @@ test("a sunless interior still renders its haze and writes the lamps it glows ar
   pass.dispose();
   frame.dispose();
 });
+
+test("spot beams are off by default, clamp to 0..1 and reach the shader", () => {
+  const make = (beams: number) => new AtmospherePass(new THREE.Scene(), new THREE.PerspectiveCamera(), new THREE.DepthTexture(8, 8), { ...DEFAULT_ATMOSPHERE, indoor: true, beams }, 16);
+  expect(DEFAULT_ATMOSPHERE.beams).toBe(0);
+  expect(resolveAtmosphereStage({ indoor: true, beams: 0.6 }, true)).toMatchObject({ beams: 0.6 });
+  for (const [given, used] of [[0.6, 0.6], [3, 1], [-1, 0]] as const) {
+    const pass = make(given);
+    expect(pass.material.uniforms.uBeams!.value).toBe(used);
+    pass.dispose();
+  }
+  expect(atmosphereFragment(16)).toContain("uBeams");
+});
+
+test("swapping a lamp pool rescans at once, so the new lamps glow on their first frame", () => {
+  const scene = new THREE.Scene();
+  const old = new THREE.PointLight(0xffffff, 4, 10);
+  old.position.set(0, 3, 0);
+  scene.add(old);
+  scene.updateMatrixWorld(true);
+  const camera = new THREE.PerspectiveCamera();
+  camera.updateMatrixWorld(true);
+  const pass = new AtmospherePass(scene, camera, new THREE.DepthTexture(8, 8), { ...DEFAULT_ATMOSPHERE, fogDensity: 0.05, indoor: true }, 16);
+  const renderer = { setRenderTarget: () => {}, render: () => {}, getRenderTarget: () => null, autoClear: true } as unknown as THREE.WebGLRenderer;
+  const frame = new THREE.WebGLRenderTarget(8, 8);
+  pass.render(renderer, frame, frame, 0, false);
+  expect(pass.material.uniforms.uLampCount!.value).toBe(1);
+  scene.remove(old);
+  const replacement = new THREE.PointLight(0xff8844, 6, 10);
+  replacement.position.set(2, 3, 0);
+  scene.add(replacement);
+  scene.updateMatrixWorld(true);
+  pass.render(renderer, frame, frame, 0, false);
+  expect(pass.material.uniforms.uLampCount!.value).toBe(1);
+  expect((pass.material.uniforms.uLampPosition!.value[0] as THREE.Vector3).x).toBeCloseTo(2);
+  pass.dispose();
+  frame.dispose();
+});
