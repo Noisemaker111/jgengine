@@ -52,6 +52,18 @@ describe("a merged, clean worktree is taken; everything else stays", () => {
     expect(plan.kept).toContainEqual({ name: "a", reason: "this session" });
   });
 
+  test("a new lane whose branch has not moved since it was created is left alone", () => {
+    const plan = selectReap({
+      refs: refs(["fresh", "landed"]),
+      mainRoot: MAIN,
+      skip: [],
+      isMerged: () => true,
+      hasCommitted: (branch) => branch === "agent/landed",
+    });
+    expect(plan.reap.map((row) => row.name)).toEqual(["landed"]);
+    expect(plan.kept).toContainEqual({ name: "fresh", reason: "new lane, nothing committed yet" });
+  });
+
   test("a worktree outside the worktrees directory is never removed, whatever its branch says", () => {
     const plan = selectReap({
       refs: refs([], { outside: [resolve("somewhere", "else")] }),

@@ -54,6 +54,11 @@ export function selectReap(args: {
   mainRoot: string;
   skip: string[];
   isMerged: (branch: string) => boolean;
+  /**
+   * False for a branch that has not moved since it was created. A new lane's branch sits on
+   * origin/beta and so reads as merged; without this, a second lane starting up deleted it.
+   */
+  hasCommitted?: (branch: string) => boolean;
 }): ReapSelection {
   const skip = new Set(args.skip.map((path) => safeRealpath(path)));
   const reap: ReapCandidate[] = [];
@@ -65,6 +70,7 @@ export function selectReap(args: {
     else if (ref.branch === null) kept.push({ name, reason: "detached" });
     else if (skip.has(safeRealpath(ref.path))) kept.push({ name, reason: "this session" });
     else if (!args.isMerged(ref.branch)) kept.push({ name, reason: "not merged into origin/beta" });
+    else if (args.hasCommitted !== undefined && !args.hasCommitted(ref.branch)) kept.push({ name, reason: "new lane, nothing committed yet" });
     else reap.push({ path: ref.path, name, branch: ref.branch });
   }
   return { reap, kept };
@@ -170,6 +176,10 @@ function main(argv: readonly string[]): void {
     mainRoot,
     skip: skipPaths(argv, process.cwd()),
     isMerged: (branch) => git(mainRoot, ["merge-base", "--is-ancestor", branch, "origin/beta"]).ok,
+    hasCommitted: (branch) => {
+      const log = git(mainRoot, ["reflog", "show", "--format=%H", `refs/heads/${branch}`]);
+      return !log.ok || log.stdout.trim().split("\n").length > 1;
+    },
   });
 
   if (dryRun) {
