@@ -205,7 +205,6 @@ function logoNode(logo: GameMenuProps["logo"], title: string | undefined, reduce
             height: `calc(${size} * 1.15)`,
             maxWidth: "min(420px, 46vw)",
             objectFit: "contain",
-            filter: "drop-shadow(0 8px 30px rgba(0,0,0,0.6))",
           }}
         />
       );
@@ -566,8 +565,6 @@ export function GameMenu({
                 "linear-gradient(96deg, rgba(4,7,11,0.6) 0%, rgba(4,7,11,0.34) 56%, rgba(4,7,11,0) 100%)",
               maskImage: "linear-gradient(180deg, transparent 0, #000 9%, #000 91%, transparent 100%)",
               WebkitMaskImage: "linear-gradient(180deg, transparent 0, #000 9%, #000 91%, transparent 100%)",
-              backdropFilter: "blur(2px)",
-              WebkitBackdropFilter: "blur(2px)",
               pointerEvents: "none",
             }}
           />

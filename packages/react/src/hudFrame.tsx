@@ -50,10 +50,9 @@ export function hudFrameStyle(
             boxShadow: hudElevation("raised"),
           }
         : {
-            background: "rgba(10,12,16,0.62)",
+            // No backdrop blur: over a live 3D scene it re-renders every frame.
+            background: "rgba(10,12,16,0.8)",
             backgroundImage: "linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0) 45%)",
-            backdropFilter: "blur(8px) saturate(1.2)",
-            WebkitBackdropFilter: "blur(8px) saturate(1.2)",
             border: "1px solid rgba(255,255,255,0.12)",
             borderRadius: 10,
             color: "#f4f6fb",

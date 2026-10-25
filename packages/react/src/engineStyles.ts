@@ -99,7 +99,7 @@ export const ENGINE_STYLESHEET = `/* @jgengine/react engine stylesheet */
 [data-jg-window][data-state="closed"] { animation: jg-panel-out ${FAST} ${EASE} both; pointer-events: none !important; }
 [data-jg-panel-header] { display: flex; align-items: center; justify-content: space-between; gap: var(--jg-space-sm, 8px); font-size: var(--jg-type-xs, 12px); font-weight: 650; letter-spacing: var(--jg-tracking-label, 0.08em); text-transform: uppercase; color: var(--jg-text-dim, #94a3b8); }
 
-[data-modal-backdrop] { animation: jg-fade-in ${BASE} ${EASE_OUT} both; -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
+[data-modal-backdrop] { animation: jg-fade-in ${BASE} ${EASE_OUT} both; }
 [data-modal-host] > [role="dialog"] { animation: jg-panel-in ${BASE} ${EASE_OUT} both; }
 [data-toast] { animation: jg-slide-up ${BASE} ${EASE_OUT} both; }
 [data-levelup] { animation: jg-pop ${SLOW} ${SPRING} both; }

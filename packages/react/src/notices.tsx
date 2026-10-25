@@ -269,8 +269,6 @@ export function NoticeStack({
                 background: "var(--jg-surface, rgba(13, 18, 27, 0.9))",
                 border: "1px solid var(--jg-edge, rgba(255, 255, 255, 0.12))",
                 boxShadow: `inset 3px 0 0 ${TONE_COLOR[notice.tone]}, 0 8px 24px rgba(0, 0, 0, 0.35)`,
-                backdropFilter: "blur(8px)",
-                WebkitBackdropFilter: "blur(8px)",
                 color: "var(--jg-text, #f1f5f9)",
                 fontFamily: "var(--jg-font-body, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif)",
                 fontSize: 14 * scale,

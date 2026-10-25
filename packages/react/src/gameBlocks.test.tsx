@@ -59,11 +59,24 @@ describe("GameFrame", () => {
     }
   });
 
-  test("the rim is drawn as drop shadows and can be turned off", () => {
-    const rim = gameFrameVars({ material: "steel", edge: "#fff", edgeWidth: 2, shadow: false }) as Record<string, string>;
-    expect(rim["--jg-gf-filter"]!.match(/drop-shadow/g)?.length).toBe(8);
-    const bare = gameFrameVars({ material: "steel", edge: "none", shadow: false }) as Record<string, string>;
-    expect(bare["--jg-gf-filter"]).toBe("none");
+  test("the rim is a clipped backing plate, never a filter, and can be turned off", () => {
+    const rim = gameFrameVars({ material: "steel", cut: "chamfer", depth: 14, edge: "#fff", edgeWidth: 2 }) as Record<string, string>;
+    expect(rim["--jg-gf-rim"]).toBe("#fff");
+    expect(rim["--jg-gf-rim-w"]).toBe("2px");
+    // The face's corners shrink by the rim's diagonal so a 45-degree rim stays as thick as a straight one.
+    expect(rim["--jg-gf-face-cut"]).not.toBe(rim["--jg-gf-cut"]);
+    expect(Object.keys(rim).some((key) => key.includes("filter"))).toBe(false);
+    const bare = gameFrameVars({ material: "steel", edge: "none" }) as Record<string, string>;
+    expect(bare["--jg-gf-rim"]).toBe("transparent");
+    expect(bare["--jg-gf-rim-w"]).toBe("0px");
+  });
+
+  test("a glow replaces the cast shadow, and shadow={false} drops it", () => {
+    const lit = renderToStaticMarkup(<GameFrame glow="#ffd23f">Charged</GameFrame>);
+    expect(lit).toContain("data-glow");
+    expect(lit).not.toContain("data-shadow");
+    expect(renderToStaticMarkup(<GameFrame>Plain</GameFrame>)).toContain("data-shadow");
+    expect(renderToStaticMarkup(<GameFrame shadow={false}>Flat</GameFrame>)).not.toContain("data-shadow");
   });
 });
 

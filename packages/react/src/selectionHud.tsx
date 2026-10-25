@@ -410,9 +410,8 @@ export function SelectionCollectionChrome({
 const PANEL: CSSProperties = {
   padding: 8,
   borderRadius: 12,
-  background: "rgba(10,12,16,0.6)",
-  backdropFilter: "blur(6px)",
-  WebkitBackdropFilter: "blur(6px)",
+  // No backdrop blur: over a live 3D scene it re-renders every frame. A denser fill keeps the text readable.
+  background: "rgba(10,12,16,0.78)",
   border: "1px solid rgba(255,255,255,0.1)",
   boxShadow: "0 4px 16px rgba(0,0,0,0.35)",
   color: "#eef2f8",

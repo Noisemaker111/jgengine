@@ -439,9 +439,8 @@ export function ActionBarChrome({
 const PANEL: CSSProperties = {
   padding: 8,
   borderRadius: "var(--jg-frame-radius, 12px)",
-  background: "var(--jg-frame-bg, rgba(10,12,16,0.6))",
-  backdropFilter: "blur(6px)",
-  WebkitBackdropFilter: "blur(6px)",
+  // No backdrop blur: over a live 3D scene it re-renders every frame. A denser fill keeps the text readable.
+  background: "var(--jg-frame-bg, rgba(10,12,16,0.78))",
   border: "var(--jg-frame-border, 1px solid rgba(255,255,255,0.1))",
   boxShadow: "var(--jg-frame-glow, 0 4px 16px rgba(0,0,0,0.35))",
 };

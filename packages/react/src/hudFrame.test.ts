@@ -6,7 +6,9 @@ import { HudFrame, hudFrameStyle } from "./hudFrame";
 
 describe("hudFrameStyle", () => {
   test("glass matches the shared dark-glass panel", () => {
-    expect(hudFrameStyle("glass").background).toBe("rgba(10,12,16,0.62)");
+    expect(hudFrameStyle("glass").background).toBe("rgba(10,12,16,0.8)");
+    // No backdrop blur over a live 3D scene; the denser fill carries the readability instead.
+    expect(hudFrameStyle("glass").backdropFilter).toBeUndefined();
   });
 
   test("retro uses a hard black outline", () => {
@@ -28,7 +30,7 @@ describe("HudFrame", () => {
 
   test("glass frame carries the dark-glass background", () => {
     const html = renderToStaticMarkup(createElement(HudFrame, { variation: "glass" }));
-    expect(html).toContain("rgba(10,12,16,0.62)");
+    expect(html).toContain("rgba(10,12,16,0.8)");
   });
 
   test("retro frame carries the hard black outline", () => {

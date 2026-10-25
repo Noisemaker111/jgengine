@@ -256,7 +256,8 @@ ${TONED}[data-tone="neutral"] { --jgk-arcade-tone: var(--kit-surface-alt); }
 .${P}-btn[data-size="lg"] { min-height: 62px; padding: 16px 26px 14px; font-size: calc(18px * var(--kit-text)); }
 .${P}-btn-icon { display: inline-flex; }
 .${P}-glyph { display: inline-grid; place-items: center; min-width: 22px; height: 22px; padding: 0 5px; background: var(--kit-shade); color: var(--kit-ink); font: 700 calc(12px * var(--kit-text)) / 1 var(--kit-font-display); text-shadow: none; box-shadow: ${frame(2)}; }
-@media (hover: hover) { .${P}-btn:not(:disabled):hover { filter: brightness(1.14); } }
+/* Lit with an overlay instead of a CSS filter, which re-renders every frame over a live 3D scene. */
+@media (hover: hover) { .${P}-btn:not(:disabled):not([data-variant="ghost"]):hover { background-image: linear-gradient(rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.14)); } }
 .${P}-btn:not(:disabled):active, .${P}-btn[data-pressed] { transform: translateY(4px); box-shadow: 0 -4px 0 0 var(--kit-line), -4px 0 0 0 var(--kit-line), 4px 0 0 0 var(--kit-line), 0 4px 0 0 var(--kit-line); }
 .${P}-btn[data-variant="ghost"]:not(:disabled):active, .${P}-btn[data-variant="ghost"][data-pressed] { box-shadow: none; }
 .${P}-btn:disabled { opacity: 0.45; cursor: not-allowed; box-shadow: none; }

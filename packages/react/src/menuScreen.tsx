@@ -55,11 +55,8 @@ const KEYFRAMES: Record<Exclude<MenuScreenTransition, "none">, { enter: string; 
 const SCRIMS: Record<MenuScreenScrim, CSSProperties> = {
   none: {},
   dim: { background: "radial-gradient(140% 130% at 50% 45%, rgba(0,0,0,0.34), rgba(0,0,0,0.78))" },
-  blur: {
-    background: "radial-gradient(140% 130% at 50% 45%, rgba(0,0,0,0.38), rgba(0,0,0,0.8))",
-    backdropFilter: "blur(4px)",
-    WebkitBackdropFilter: "blur(4px)",
-  },
+  // Kept for compatibility: a deeper dim instead of a backdrop blur, which re-renders every frame over a live 3D scene.
+  blur: { background: "radial-gradient(140% 130% at 50% 45%, rgba(0,0,0,0.5), rgba(0,0,0,0.86))" },
 };
 
 function now(): number {
