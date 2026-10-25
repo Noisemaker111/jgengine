@@ -105,6 +105,20 @@ describe("parseStepFile", () => {
     expect(describeStepFile(steps, "proof.json")).toContain("#1 click \"Free skirmish\" before<=15000ms after<=4000ms");
   });
 
+  test("a key with until holds to arrival, with ms only a minimum", () => {
+    const steps = parseStepFile({ steps: [
+      { key: "KeyW", until: { is: "probe().z < -3.5", timeoutMs: 8000 } },
+      { key: "KeyA", ms: 200, until: { is: "probe().x < -3.8" } },
+    ] }, "proof.json");
+    expect(steps[0]).toEqual({ kind: "key", code: "KeyW", holdMs: 0, until: { is: "probe().z < -3.5", timeoutMs: 8000 } });
+    expect(steps[1]).toMatchObject({ kind: "key", holdMs: 200, until: { is: "probe().x < -3.8" } });
+    expect(describeStepFile(steps, "proof.json")).toContain("#1 key KeyW until probe().z < -3.5 (8000ms cap)");
+  });
+
+  test("refuses until on a step that holds nothing", () => {
+    expect(error([{ click: "Start", until: { is: "menu.ready" } }])).toContain("steps[0]: \"until\" releases a held key, so it cannot sit on a click step");
+  });
+
   test("names the index and the valid kinds for an unknown step kind", () => {
     const message = error([{ click: "Start" }, { tapp: "Free skirmish" }]);
     expect(message).toContain("steps[1]");
