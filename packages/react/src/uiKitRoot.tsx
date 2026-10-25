@@ -112,15 +112,17 @@ export function useUiKit(): UiKit {
 }
 
 /**
- * The glyph for `action` on the device the player is using, from the kit root's live bindings — the
- * bound key on keyboard, the pad button on gamepad, `"Tap"` on touch, or `fallback` when unbound. Put it
- * on a button (`<KitButton glyph={useActionGlyph("pause")}>`) so key hints never go stale after a rebind.
+ * The key hint for `action` on the device the player is using, from the kit root's live bindings — the
+ * bound key on keyboard, the pad button on gamepad, or `fallback` when unbound. On touch it is
+ * `undefined`: the button itself is the tap target. Put it on a button
+ * (`<KitButton glyph={useActionGlyph("pause", "P")}>`) so key hints never go stale after a rebind.
  *
  * @capability kit-action-glyph the bound key, pad button or tap label for an action, live, for any kit part
  */
 export function useActionGlyph(action: string, fallback?: string): string | undefined {
   const context = useContext(UiKitContext);
   const device = useInputDevice();
+  if (device === "touch") return undefined;
   const glyph = context?.bindings === undefined ? null : actionGlyph(context.bindings, action, device, context.glyphSet);
   return glyph ?? fallback;
 }
