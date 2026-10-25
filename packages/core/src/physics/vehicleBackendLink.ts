@@ -16,7 +16,7 @@ export interface VehicleBackendLinkOptions {
   groundNormalY?: number;
 }
 
-/** The pose fields {@link VehicleBackendLink.sync} reads; any vehicle step (`VehicleDynamicsStep`, `KinematicVehicleStep`) fits. */
+/** The pose fields {@link VehicleBackendLink.sync} reads; a `VehicleDynamicsStep` fits. */
 export interface VehicleLinkPose {
   position: readonly [number, number, number];
   heading: number;
@@ -64,7 +64,7 @@ function poseQuat(heading: number, pitch: number, roll: number): PhysicsQuat {
 }
 
 /**
- * Puts a vehicle sim (`createVehicleDynamics`, `createKinematicVehicle`) into a {@link PhysicsBackend} world without
+ * Puts a vehicle sim (`createVehicleDynamics`) into a {@link PhysicsBackend} world without
  * handing its handling to the rigid-body solver: the sim still owns grip and balance, while a kinematic chassis box
  * follows it so Rapier or `PhysicsWorld` props get shoved, and `clampMove` sweeps that box so walls and parked cars
  * stop it and it slides along them.

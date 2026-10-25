@@ -1,3 +1,4 @@
+import type { TireMarks } from "@jgengine/core/physics/tireMarks";
 import { createGameFeed } from "@jgengine/core/game/feed";
 import type { NoticeFeed, NoticeTone } from "@jgengine/core/game/notices";
 import { damagedAxis, type VehicleDamageEffectResolved, type VehicleDamageZoneState } from "@jgengine/core/physics/vehicleDamage";
@@ -34,6 +35,12 @@ import { DEFAULT_EVENT_ID, eventById, eventCompactor, eventRivals, formatMetric,
  * Where a run stands, in the player's words. It is derived, never stored: a settled run reports the
  * outcome the shared run loop closed it with, and an open run is playing once it has begun.
  */
+
+/** Where the kart's sliding tires leave skid marks and smoke; omitted in headless runs and tests. */
+export interface KartTireEffects {
+  marks?: TireMarks;
+  particles?: { play(name: string, request?: { position?: readonly [number, number, number]; burst?: number }): void };
+}
 export type RunPhase = "start" | "running" | "won" | "crushed";
 
 export interface RadioLine {
@@ -179,7 +186,7 @@ export interface RunSession {
   park(): boolean;
   togglePause(): void;
   suspend(value: boolean): void;
-  tick(dt: number, axis: DriveAxis, input: { jumpPressed: boolean; plowBracing: boolean; salvageSwap?: boolean }): void;
+  tick(dt: number, axis: DriveAxis, input: { jumpPressed: boolean; plowBracing: boolean; salvageSwap?: boolean; effects?: KartTireEffects }): void;
 }
 
 export const runSessionStore = defineStore<RunSession>("runSession", () => createRunSession());
@@ -308,7 +315,7 @@ export function createRunSession(
   let announcedPlace = standings.placeOf(PLAYER_RACER_ID);
   const restPose = (position: readonly [number, number, number], heading: number): VehiclePose => {
     const fix = track.locate(position[0], position[2]);
-    return { position, heading, speedKmh: 0, slip: 0, surface: 1, loadGrip: 1, airborne: false, blockedByGate: false, run: track.run(fix), lateral: fix.offset, route: fix.route, roadY: fix.elevation, hazards: [] };
+    return { position, heading, speedKmh: 0, slip: 0, surface: 1, airborne: false, blockedByGate: false, run: track.run(fix), lateral: fix.offset, route: fix.route, roadY: fix.elevation, hazards: [] };
   };
   let announcedHazards = new Set<string>();
   let pose: VehiclePose = {
@@ -316,7 +323,7 @@ export function createRunSession(
     speedKmh: 0,
     slip: 0,
     surface: 1,
-    loadGrip: 1,
+   
     airborne: false,
     blockedByGate: false,
   };
@@ -735,7 +742,7 @@ export function createRunSession(
 
       // A bent frame pulls the wheel on its own; the last stage of a nose zone adds that bias here.
       const approachKmh = pose.speedKmh;
-      pose = vehicle.tick(dt, damagedAxis({ ...axis, handbrake: axis.handbrake ?? 0 }, damageEffect), tuning, { ...input, time: runTime }, groundHeightAt);
+      pose = vehicle.tick(dt, damagedAxis({ ...axis, handbrake: axis.handbrake ?? 0 }, damageEffect), tuning, { jumpPressed: input.jumpPressed, plowBracing: input.plowBracing, time: runTime, ...input.effects }, groundHeightAt);
       if (ghostRecording) ghostRecorder.record(runTime, { position: pose.position, rotationY: pose.heading });
 
       // A barricade the build cannot clear stops the kart on the nose. One impulse per approach at the

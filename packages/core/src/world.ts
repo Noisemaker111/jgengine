@@ -374,17 +374,7 @@ export {
   type GravityVector,
   type PointGravityOptions,
 } from "./physics/gravityField";
-export {
-  createKinematicVehicle,
-  type KinematicChassisTuning,
-  type KinematicDynamicsTuning,
-  type KinematicPowertrainTuning,
-  type KinematicSteeringTuning,
-  type KinematicVehicle,
-  type KinematicVehicleStep,
-  type KinematicVehicleTuning,
-  type KinematicWeightTransferTuning,
-} from "./physics/kinematicVehicle";
+export { DEFAULT_GRIP_CURVE, gripCurvePeak, sampleGripCurve, type GripCurve } from "./physics/gripCurve";
 export {
   PhysicsWorld,
   SHAPE_BOX,
@@ -396,12 +386,12 @@ export {
 export { createRagdoll } from "./physics/ragdoll";
 export { SpatialGrid } from "./physics/spatialGrid";
 export { StructureGraph, type CollapseEvent, type StructureMaterial } from "./physics/structure";
+export { createTireMarks, type TireMark, type TireMarks, type TireMarksState } from "./physics/tireMarks";
 export { Glide, Grapple } from "./physics/traversal";
-export { DEFAULT_GRIP_CURVE, createVehicleBody, sampleGripCurve, type GripCurve } from "./physics/vehicleBody";
 export {
   createVehicleDamage,
   damagedAxis,
-  damagedTuning,
+  damagedSpec,
   type VehicleDamage,
   type VehicleDamageConfig,
   type VehicleDamageEffect,
@@ -413,8 +403,17 @@ export {
   type VehicleDeformation,
 } from "./physics/vehicleDamage";
 export {
+  createVehicleDynamics,
+  type VehicleDynamics,
+  type VehicleDynamicsModifiers,
+  type VehicleDynamicsOptions,
+  type VehicleDynamicsStep,
+  type VehicleDynamicsTuning,
+} from "./physics/vehicleDynamics";
+export {
   createVehicleObstacleClamp,
   type VehicleImpact,
+  type VehicleMoveClamp,
   type VehicleObstacleClamp,
 } from "./physics/vehicleObstacles";
 export {
@@ -427,6 +426,7 @@ export {
   type VehicleSetup,
   type VehicleStat,
 } from "./physics/vehicleParts";
+export { VEHICLE_STYLES, vehicleTuning, type VehicleSpec, type VehicleSpecGearbox } from "./physics/vehicleSpec";
 export {
   type ObjectSlotRejection,
   type ObjectSlotResult,

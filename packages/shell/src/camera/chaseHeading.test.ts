@@ -2,7 +2,8 @@ import { describe, expect, test } from "bun:test";
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import type { ChaseCameraConfig, ChaseView } from "@jgengine/core/game/playableGame";
 import { resolvePlayerMovementTuning, stepPlayerMovement } from "@jgengine/core/movement/playerMovement";
-import { createKinematicVehicle } from "@jgengine/core/physics/kinematicVehicle";
+import { createVehicleDynamics } from "@jgengine/core/physics/vehicleDynamics";
+import { vehicleTuning } from "@jgengine/core/physics/vehicleSpec";
 import { createGameContext } from "@jgengine/core/runtime/gameContext";
 import { createCameraDirector } from "@jgengine/core/runtime/cameraDirector";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
@@ -85,7 +86,7 @@ describe("chase heading ownership", () => {
   });
 
   test("the default and explicit body source still follow a turning vehicle and return its chase aim", () => {
-    const car = createKinematicVehicle({ engineAccel: 12, brakeAccel: 18, topSpeed: 20, reverseSpeed: 6, turnRate: 2, turnSpeedRef: 5, gripStrength: 7, handbrakeGrip: 0.4 });
+    const car = createVehicleDynamics(vehicleTuning({ topSpeed: 20, accel: 9, brake: 12, turnRate: 2, grip: 1.3, handbrakeGrip: 0.4 }));
     const camera = createChaseRigState();
     const resolved = resolveChase({ yawResponse: 5 });
     let inputYaw = -2;

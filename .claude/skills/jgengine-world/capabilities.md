@@ -369,7 +369,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `dopplerRate` (function) · `import { dopplerRate } from "@jgengine/core/audio/doppler"`
 
-## drivable-vehicle — drive a car from throttle/steer/handbrake input each tick: step the vehicle sim and pose its entity
+## drivable-vehicle — drive a car from throttle/steer/handbrake input each tick: step the vehicle sim, pose its entity, mark and smoke its tires
 
 - `tickDrivableVehicle` (function) · `import { tickDrivableVehicle } from "@jgengine/core/world"`
 
@@ -554,10 +554,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## key-rebinding — conflict-aware key-remap session over the action-binding model — capture/reassign, conflict detection, reset-to-defaults, persist overrides, snapshot/restore
 
 - `createRebindSession` (function) · `import { createRebindSession } from "@jgengine/core/input/rebindSession"`
-
-## kinematic-vehicle — arcade car/kart driving physics with throttle, brake, steer and retunable handling
-
-- `createKinematicVehicle` (function) · `import { createKinematicVehicle } from "@jgengine/core/world"`
 
 ## lane-graph — directed lane topology with junctions, signals and parking for vehicle traffic
 
@@ -1047,6 +1043,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `territoryChunkKeys` (function) · `import { territoryChunkKeys } from "@jgengine/core/world/territory"`
 
+## tire-marks — skid marks laid by sliding wheels that fade over time from a fixed pool
+
+- `createTireMarks` (function) · `import { createTireMarks } from "@jgengine/core/world"`
+
 ## touch-controls — switch the on-screen touch control set when gameplay context changes (enter/exit vehicle, mount, build mode)
 
 - `setTouchControlsMode` (function) · `import { setTouchControlsMode } from "@jgengine/core/input/touchControlsMode"`
@@ -1079,15 +1079,19 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## vehicle-dynamics — force-based car handling — tires, load transfer, drivetrain, assists — tuned with physical numbers
 
-- `createVehicleDynamics` (function) · `import { createVehicleDynamics } from "@jgengine/core/physics/vehicleDynamics"`
+- `createVehicleDynamics` (function) · `import { createVehicleDynamics } from "@jgengine/core/world"`
 
-## vehicle-parts — compose data-driven tuning parts (tires, engine, brakes) onto a vehicle tuning and read the resulting feel
+## vehicle-parts — compose data-driven tuning parts (tires, engine, brakes) onto a vehicle spec and read the resulting feel
 
 - `applyVehicleParts` (function) · `import { applyVehicleParts } from "@jgengine/core/world"`
 
 ## vehicle-seats — enter, exit and swap seats in a car or mount (GTA-style boarding) with driver and passenger slots
 
 - `createVehicleSeats` (function) · `import { createVehicleSeats } from "@jgengine/core/world"`
+
+## vehicle-spec — describe a car by feel (top speed, accel, grip, turn rate, drift, assists) and get force-based handling tuned from it
+
+- `vehicleTuning` (function) · `import { vehicleTuning } from "@jgengine/core/world"`
 
 ## visibility-field — per-viewer-group observed/remembered/hidden fog-of-war knowledge with terrain memory and authoritative entity disclosure
 

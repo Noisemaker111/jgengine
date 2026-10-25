@@ -1,6 +1,7 @@
-import type { KinematicVehicleTuning } from "@jgengine/core/physics/kinematicVehicle";
-import { DEFAULT_GRIP_CURVE } from "@jgengine/core/physics/vehicleBody";
-import { damagedTuning, type VehicleDamageEffectResolved } from "@jgengine/core/physics/vehicleDamage";
+import { DEFAULT_GRIP_CURVE } from "@jgengine/core/physics/gripCurve";
+import { damagedSpec, type VehicleDamageEffectResolved } from "@jgengine/core/physics/vehicleDamage";
+import type { VehicleDynamicsTuning } from "@jgengine/core/physics/vehicleDynamics";
+import { VEHICLE_STYLES, vehicleTuning, type VehicleSpec } from "@jgengine/core/physics/vehicleSpec";
 import {
   applyVehicleParts,
   feelOf,
@@ -33,25 +34,27 @@ export function swapPart(installed: readonly DriftFoundryPartDef[], part: DriftF
 
 export interface KartTuning {
   topSpeed: number;
-  engineAccel: number;
+  accel: number;
   turnRate: number;
   jumpPower: number;
   hasPlow: boolean;
   armorCharges: number;
-  /** The composed sim tuning handed to `createKinematicVehicle`/`retune`, damage already baked in. */
-  handling: KinematicVehicleTuning;
+  /** The composed feel spec, damage already baked in. */
+  handling: VehicleSpec;
+  /** `handling` as the sim tuning `createVehicleDynamics`/`retune` take. */
+  sim: VehicleDynamicsTuning;
   /** The handling numbers behind that tuning - what the shop screen, the HUD and tests read. */
   feel: VehicleFeel;
 }
 
 /** Brake force as a multiple of engine accel - a kart stops harder than it launches. */
 const BRAKE_ACCEL_FACTOR = 1.3;
-/** Reverse tops out at this fraction of forward top speed... */
+/** Reverse tops out at this fraction of forward top speed. */
 const REVERSE_SPEED_FRACTION = 0.35;
-/** ...and pushes at this fraction of engine accel getting there. */
-const REVERSE_FORCE_SCALE = 0.6;
 /** Downward acceleration on a hop, world units/s² - snappier than real gravity so airs stay short. */
 export const HOP_GRAVITY = 22;
+/** Baseline hop every kart gets before `jumpPower` from installed springs is added, m/s. */
+export const STUB_HOP_SPEED = 3.2;
 
 const MIN_TOP_SPEED = 3;
 const MIN_ACCEL = 4;
@@ -60,40 +63,44 @@ const MIN_TURN_RATE = 0.6;
 /**
  * The bare chassis the salvage drops bolt onto. Every number here is authored feel for a physics kart
  * down a corridor: quick steering, soft top end, a flat road-load coast and a hop that stays short.
- * Grip is the shared tire curve; weight transfer is a kart-sized geometry (1900 mm wheelbase, 1350 mm
- * track, 450 mm centre of mass) with a mild load sensitivity, so braking or cornering hard costs a few
- * percent of grip without turning the corridor into an ice rink.
+ * Grip is the shared tire curve on a light kart-sized body (1900 mm wheelbase, 1350 mm track, 450 mm
+ * centre of mass), so braking or cornering hard moves a little weight without turning the corridor
+ * into an ice rink.
  */
-export const BASE_HANDLING: KinematicVehicleTuning = {
+export const BASE_HANDLING: VehicleSpec = {
+  ...VEHICLE_STYLES.arcade,
   topSpeed: 6.5,
-  engineAccel: 9,
-  brakeAccel: 9 * BRAKE_ACCEL_FACTOR,
+  accel: 9,
+  brake: 9 * BRAKE_ACCEL_FACTOR,
   reverseSpeed: 6.5 * REVERSE_SPEED_FRACTION,
-  reverseForceScale: REVERSE_FORCE_SCALE,
   turnRate: 1.7,
-  turnSpeedRef: 6,
-  grip: DEFAULT_GRIP_CURVE,
-  gripStrength: 7,
+  turnSpeed: 6,
+  grip: 2,
+  gripCurve: DEFAULT_GRIP_CURVE,
+  drift: 0.35,
   // Handbrake drills the kart around loose debris: the tire lets go, the yaw still answers steer.
   handbrakeGrip: 0.45,
-  coastDeceleration: 3.5,
-  hopGravity: HOP_GRAVITY,
-  weightTransfer: { comHeight: 0.45, wheelbase: 1.9, trackWidth: 1.35, sensitivity: 0.12 },
+  coast: 3.5,
+  weight: 220,
+  wheelbase: 1.9,
+  trackWidth: 1.35,
+  comHeight: 0.45,
+  hop: { speed: STUB_HOP_SPEED, gravity: HOP_GRAVITY },
 };
 
 /**
  * Brakes and reverse follow the engine the build actually bolted on, then the authored floors clamp a
  * stripped-down kart to something drivable rather than a trolley.
  */
-function finalizeHandling(composed: KinematicVehicleTuning): KinematicVehicleTuning {
+function finalizeHandling(composed: VehicleSpec): VehicleSpec {
   const topSpeed = Math.max(MIN_TOP_SPEED, composed.topSpeed);
-  const engineAccel = Math.max(MIN_ACCEL, composed.engineAccel);
+  const accel = Math.max(MIN_ACCEL, composed.accel);
   return {
     ...composed,
     topSpeed,
-    engineAccel,
+    accel,
     turnRate: Math.max(MIN_TURN_RATE, composed.turnRate),
-    brakeAccel: engineAccel * BRAKE_ACCEL_FACTOR,
+    brake: accel * BRAKE_ACCEL_FACTOR,
     reverseSpeed: topSpeed * REVERSE_SPEED_FRACTION,
   };
 }
@@ -104,8 +111,8 @@ export function claimedChange(part: DriftFoundryPartDef, stat: VehicleStat): num
 }
 
 export function tuningFrom(parts: readonly DriftFoundryPartDef[], damage?: VehicleDamageEffectResolved): KartTuning {
-  const composed = applyVehicleParts(BASE_HANDLING, parts).tuning;
-  const handling = finalizeHandling(damage === undefined ? composed : damagedTuning(composed, damage));
+  const composed = applyVehicleParts(BASE_HANDLING, parts).spec;
+  const handling = finalizeHandling(damage === undefined ? composed : damagedSpec(composed, damage));
   const grants = parts.reduce(
     (total, part) => ({
       plow: total.plow + (part.grants?.plow ?? 0),
@@ -116,12 +123,13 @@ export function tuningFrom(parts: readonly DriftFoundryPartDef[], damage?: Vehic
   );
   return {
     topSpeed: handling.topSpeed,
-    engineAccel: handling.engineAccel,
+    accel: handling.accel,
     turnRate: handling.turnRate,
     jumpPower: Math.max(0, grants.jumpPower),
     hasPlow: grants.plow > 0,
     armorCharges: Math.max(0, Math.round(grants.armor)),
     handling,
+    sim: vehicleTuning(handling),
     feel: feelOf(handling),
   };
 }

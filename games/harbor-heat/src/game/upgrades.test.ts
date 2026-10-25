@@ -33,7 +33,7 @@ describe("Harbor Heat upgrades", () => {
     if (car.dynamics.type !== "ground") throw new Error("car_compact is a ground car");
     const stock = car.dynamics.tuning;
     const tuned = moddedTuning(ctx, stock);
-    expect(tuned.engineAccel).toBeCloseTo(stock.engineAccel * 1.12);
+    expect(tuned.accel).toBeCloseTo(stock.accel * 1.12);
     expect(tuned.brakeAccel).toBe(stock.brakeAccel);
     ctx.game.commands.run("upgrade.buy", { id: "car_engine" });
     ctx.game.commands.run("upgrade.buy", { id: "car_engine" });

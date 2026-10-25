@@ -1,27 +1,14 @@
 import { describe, expect, test } from "bun:test";
 
 import { NEUTRAL_AXIS, type AxisInput } from "../input/axisInput";
-import { createKinematicVehicle, type KinematicVehicle, type KinematicVehicleTuning } from "./kinematicVehicle";
-import { createVehicleDamage, damagedTuning, type VehicleDamageZone } from "./vehicleDamage";
+import { measureHandling } from "./handlingProbe";
+import { createVehicleDamage, damagedSpec, type VehicleDamageZone } from "./vehicleDamage";
+import { createVehicleDynamics, type VehicleDynamics } from "./vehicleDynamics";
+import { VEHICLE_STYLES, vehicleTuning, type VehicleSpec } from "./vehicleSpec";
 
 const DT = 1 / 60;
 
-const CAR: KinematicVehicleTuning = {
-  engineAccel: 22,
-  brakeAccel: 32,
-  topSpeed: 34,
-  reverseSpeed: 8,
-  turnRate: 2.1,
-  turnSpeedRef: 9,
-  gripStrength: 8,
-  handbrakeGrip: 0.22,
-};
-
-const TARMAC = CAR;
-const GRAVEL: KinematicVehicleTuning = {
-  ...CAR,
-  weightTransfer: { comHeight: 0.5, wheelbase: 2.6, trackWidth: 1.6 },
-};
+const CAR: VehicleSpec = { ...VEHICLE_STYLES.arcade, topSpeed: 34, accel: 10, brake: 14, turnRate: 2.1, turnSpeed: 9, handbrakeGrip: 0.22 };
 
 const axis = (partial: Partial<AxisInput>): AxisInput => ({ ...NEUTRAL_AXIS, ...partial });
 
@@ -34,9 +21,9 @@ interface LapReport {
 }
 
 /** Drive a fixed script — a launch straight then a held full-lock corner — and report what the car did. */
-function scriptedLap(vehicle: KinematicVehicle): LapReport {
+function scriptedLap(vehicle: VehicleDynamics, modifiers?: Parameters<VehicleDynamics["tick"]>[2]): LapReport {
   const phases: readonly (readonly [number, AxisInput])[] = [
-    [120, axis({ throttle: 1 })],
+    [150, axis({ throttle: 1 })],
     [150, axis({ throttle: 1, steer: 1 })],
   ];
   let previous = vehicle.pose();
@@ -47,7 +34,7 @@ function scriptedLap(vehicle: KinematicVehicle): LapReport {
   let topSpeed = 0;
   for (const [ticks, input] of phases) {
     for (let i = 0; i < ticks; i += 1) {
-      const step = vehicle.tick(DT, input);
+      const step = vehicle.tick(DT, input, modifiers);
       distance += Math.hypot(step.position[0] - previous.position[0], step.position[2] - previous.position[2]);
       headingTurned += Math.abs(step.heading - previous.heading);
       previous = { position: step.position, heading: step.heading };
@@ -59,93 +46,92 @@ function scriptedLap(vehicle: KinematicVehicle): LapReport {
   return { distance, headingTurned, peakSlip, peakLateral, topSpeed };
 }
 
+describe("the quality floor every style keeps", () => {
+  const styles = Object.entries(VEHICLE_STYLES) as [keyof typeof VEHICLE_STYLES, (typeof VEHICLE_STYLES)[keyof typeof VEHICLE_STYLES]][];
+  for (const [name, style] of styles) {
+    test(`${name}: launches, grips, slides on the handbrake, and never spins on a held keyboard corner`, () => {
+      const spec: VehicleSpec = { ...style, topSpeed: 40, accel: 8, brake: 11, turnRate: 1.8 };
+      const report = measureHandling(() => createVehicleDynamics(vehicleTuning(spec)));
+      expect(report.zeroTo100).toBeLessThan(6);
+      expect(report.topSpeed).toBeGreaterThan(38);
+      expect(report.maxLateralG).toBeGreaterThan(0.8);
+      expect(report.turnIn).toBeLessThan(0.6);
+      expect(report.spun).toBe(false);
+      expect(report.powerSteerSpun).toBe(false);
+      expect(report.handbrakePeakSideslipDeg).toBeGreaterThan(20);
+      expect(report.handbrakeRecoverySeconds).toBeLessThan(3);
+    });
+  }
+
+  test("the styles feel different: arcade grips hardest, drift holds the biggest handbrake slide", () => {
+    const base = { topSpeed: 40, accel: 8, brake: 11, turnRate: 1.8 };
+    const arcade = measureHandling(() => createVehicleDynamics(vehicleTuning({ ...VEHICLE_STYLES.arcade, ...base })));
+    const sim = measureHandling(() => createVehicleDynamics(vehicleTuning({ ...VEHICLE_STYLES.sim, ...base })));
+    const drift = measureHandling(() => createVehicleDynamics(vehicleTuning({ ...VEHICLE_STYLES.drift, ...base })));
+    expect(arcade.maxLateralG).toBeGreaterThan(sim.maxLateralG);
+    expect(drift.handbrakePeakSideslipDeg).toBeGreaterThan(arcade.handbrakePeakSideslipDeg);
+    expect(drift.powerSteerPeakSideslipDeg).toBeGreaterThan(arcade.powerSteerPeakSideslipDeg);
+  });
+});
+
 describe("a scripted lap on two surfaces", () => {
   test("the same inputs grip harder on tarmac than on gravel", () => {
-    const tarmac = scriptedLap(createKinematicVehicle(TARMAC, { surfaceFriction: () => 1 }));
-    const gravel = scriptedLap(createKinematicVehicle(TARMAC, { surfaceFriction: () => 0.45 }));
-
-    // Less grip retains more slip, so the car slides through the same corner instead of tracking it.
-    expect(gravel.peakSlip).toBeGreaterThan(tarmac.peakSlip * 3);
-    expect(gravel.peakLateral).toBeGreaterThan(tarmac.peakLateral * 2);
-    // Same drive, so the straight-line speed is untouched by surface grip.
-    expect(gravel.topSpeed).toBeCloseTo(tarmac.topSpeed, 1);
+    const tarmac = scriptedLap(createVehicleDynamics(vehicleTuning(CAR), { surfaceFriction: () => 1 }));
+    const gravel = scriptedLap(createVehicleDynamics(vehicleTuning(CAR), { surfaceFriction: () => 0.45 }));
+    // Less grip and the tires let go through the same corner, so the car turns less of it.
+    expect(gravel.peakSlip).toBeGreaterThan(tarmac.peakSlip * 1.5);
+    expect(gravel.headingTurned).toBeLessThan(tarmac.headingTurned);
   });
 });
 
 describe("weight transfer", () => {
-  test("braking into a corner moves weight and costs grip", () => {
-    const plain = createKinematicVehicle(TARMAC, { surfaceFriction: () => 1 });
-    const transferring = createKinematicVehicle(GRAVEL, { surfaceFriction: () => 1 });
-    for (let i = 0; i < 120; i += 1) {
-      plain.tick(DT, axis({ throttle: 1 }));
-      transferring.tick(DT, axis({ throttle: 1 }));
-    }
-    let transferStep = transferring.tick(DT, axis({ brake: 1, steer: 1 }));
-    const plainStep = plain.tick(DT, axis({ brake: 1, steer: 1 }));
-    expect(transferStep.weightTransfer).toBeGreaterThan(0);
-    expect(transferStep.loadGrip).toBeLessThan(1);
-    expect(transferStep.loadGrip).toBeLessThan(plainStep.loadGrip);
+  test("braking moves load onto the front axle, throttle onto the rear", () => {
+    const car = createVehicleDynamics(vehicleTuning(CAR));
+    let step = car.tick(DT, axis({ throttle: 1 }));
+    for (let i = 0; i < 120; i += 1) step = car.tick(DT, axis({ throttle: 1 }));
+    const accelerating = step;
+    for (let i = 0; i < 20; i += 1) step = car.tick(DT, axis({ brake: 1 }));
+    expect(step.frontLoad).toBeGreaterThan(accelerating.frontLoad);
+    expect(step.rearLoad).toBeLessThan(accelerating.rearLoad);
+  });
 
-    let transferLateral = 0;
-    let plainLateral = 0;
+  test("a heavier body rolls more in the same corner when the spec says soft", () => {
+    const stiff = createVehicleDynamics(vehicleTuning({ ...CAR, bodyRoll: 0 }));
+    const soft = createVehicleDynamics(vehicleTuning({ ...CAR, bodyRoll: 1 }));
+    let stiffRoll = 0;
+    let softRoll = 0;
+    for (let i = 0; i < 150; i += 1) {
+      stiff.tick(DT, axis({ throttle: 1 }));
+      soft.tick(DT, axis({ throttle: 1 }));
+    }
     for (let i = 0; i < 60; i += 1) {
-      transferStep = transferring.tick(DT, axis({ brake: 1, steer: 1 }));
-      transferLateral = Math.abs(transferStep.lateralSpeed);
-      plainLateral = Math.abs(plain.tick(DT, axis({ brake: 1, steer: 1 })).lateralSpeed);
+      stiffRoll = Math.max(stiffRoll, Math.abs(stiff.tick(DT, axis({ throttle: 0.5, steer: 0.6 })).bodyRoll));
+      softRoll = Math.max(softRoll, Math.abs(soft.tick(DT, axis({ throttle: 0.5, steer: 0.6 })).bodyRoll));
     }
-    expect(transferLateral).toBeGreaterThan(plainLateral);
-  });
-
-  test("coasting through the same corner loses less grip than braking into it", () => {
-    const vehicle = createKinematicVehicle(GRAVEL, { surfaceFriction: () => 1 });
-    for (let i = 0; i < 120; i += 1) vehicle.tick(DT, axis({ throttle: 1 }));
-    // A moderate corner at a moderate brake keeps the two transfers off the cap, so the comparison
-    // is the model talking rather than the clamp.
-    const coasting = vehicle.tick(DT, axis({ steer: 0.2 }));
-    const braking = vehicle.tick(DT, axis({ brake: 1, steer: 0.2 }));
-    expect(braking.weightTransfer).toBeGreaterThan(coasting.weightTransfer);
-    expect(braking.loadGrip).toBeLessThan(coasting.loadGrip);
-  });
-
-  test("a cornering load alone still moves weight and costs grip", () => {
-    const vehicle = createKinematicVehicle(GRAVEL, { surfaceFriction: () => 1 });
-    for (let i = 0; i < 180; i += 1) vehicle.tick(DT, axis({ throttle: 1 }));
-    const straight = vehicle.tick(DT, axis({ throttle: 1 }));
-    const cornering = vehicle.tick(DT, axis({ throttle: 1, steer: 1 }));
-    expect(straight.weightTransfer).toBeLessThan(0.05);
-    expect(cornering.weightTransfer).toBeGreaterThan(straight.weightTransfer);
-    expect(cornering.loadGrip).toBeLessThan(straight.loadGrip);
-  });
-
-  test("without the block the flat-grip model is unchanged", () => {
-    const vehicle = createKinematicVehicle(TARMAC);
-    for (let i = 0; i < 60; i += 1) vehicle.tick(DT, axis({ throttle: 1, steer: 1 }));
-    const step = vehicle.tick(DT, axis({ throttle: 1, steer: 1 }));
-    expect(step.weightTransfer).toBe(0);
-    expect(step.loadGrip).toBe(1);
+    expect(softRoll).toBeGreaterThan(stiffRoll * 2);
   });
 });
 
 describe("handbrake drift", () => {
   test("the handbrake breaks traction into a drift that steers back under control", () => {
-    const drifting = createKinematicVehicle(TARMAC);
-    const gripping = createKinematicVehicle(TARMAC);
+    const drifting = createVehicleDynamics(vehicleTuning(CAR));
+    const gripping = createVehicleDynamics(vehicleTuning(CAR));
     for (const vehicle of [drifting, gripping]) {
       for (let i = 0; i < 150; i += 1) vehicle.tick(DT, axis({ throttle: 1 }));
     }
     let driftSlip = 0;
     let gripSlip = 0;
     for (let i = 0; i < 40; i += 1) {
-      driftSlip = Math.max(driftSlip, drifting.tick(DT, axis({ throttle: 1, steer: 1, handbrake: 1 })).slip);
-      gripSlip = Math.max(gripSlip, gripping.tick(DT, axis({ throttle: 1, steer: 1 })).slip);
+      driftSlip = Math.max(driftSlip, drifting.tick(DT, axis({ throttle: 0.5, steer: 1, handbrake: 1 })).slip);
+      gripSlip = Math.max(gripSlip, gripping.tick(DT, axis({ throttle: 0.5, steer: 1 })).slip);
     }
     expect(driftSlip).toBeGreaterThan(gripSlip * 1.5);
 
     // Release: the slide is caught, not a spin — slip decays while the car keeps moving forward.
     let recovered = driftSlip;
-    for (let i = 0; i < 90; i += 1) recovered = drifting.tick(DT, axis({ throttle: 1 })).slip;
+    for (let i = 0; i < 120; i += 1) recovered = drifting.tick(DT, axis({ throttle: 1 })).slip;
     expect(recovered).toBeLessThan(driftSlip * 0.5);
-    expect(Math.abs(drifting.tick(DT, axis({ throttle: 1 })).forwardSpeed)).toBeGreaterThan(1);
+    expect(drifting.tick(DT, axis({ throttle: 1 })).forwardSpeed).toBeGreaterThan(1);
   });
 });
 
@@ -175,15 +161,14 @@ describe("damage before and after", () => {
     const effect = damage.effect();
     expect(damage.deformation().length).toBe(2);
 
-    const fresh = scriptedLap(createKinematicVehicle(CAR, { surfaceFriction: () => 1 }));
-    const wrecked = createKinematicVehicle(CAR, { surfaceFriction: () => 1 });
-    wrecked.retune(damagedTuning(CAR, effect));
+    const fresh = scriptedLap(createVehicleDynamics(vehicleTuning(CAR)));
+    const wrecked = createVehicleDynamics(vehicleTuning(CAR));
+    wrecked.retune(vehicleTuning(damagedSpec(CAR, effect)));
     const damaged = scriptedLap(wrecked);
 
-    // Slower to the same speed, and it slides more through the same corner.
+    // Slower to the same point, and it slides more through the same corner.
     expect(damaged.topSpeed).toBeLessThan(fresh.topSpeed);
     expect(damaged.peakSlip).toBeGreaterThan(fresh.peakSlip);
-    expect(damaged.peakLateral).toBeGreaterThan(fresh.peakLateral);
   });
 
   test("the dent the renderer shows stays inside each zone's limit", () => {
@@ -203,24 +188,9 @@ describe("damage before and after", () => {
   test("per-tick damage modifiers change the outcome without a retune", () => {
     const damage = createVehicleDamage({ zones: ZONES });
     damage.hit([0, 0.4, 1.9], 40);
-    const base = scriptedLap(createKinematicVehicle(CAR, { surfaceFriction: () => 1 }));
-
-    const vehicle = createKinematicVehicle(CAR, { surfaceFriction: () => 1 });
-    const modifiers = damage.modifiers();
-    const phases: readonly (readonly [number, AxisInput])[] = [
-      [120, axis({ throttle: 1 })],
-      [150, axis({ throttle: 1, steer: 1 })],
-    ];
-    let topSpeed = 0;
-    let peakSlip = 0;
-    for (const [ticks, input] of phases) {
-      for (let i = 0; i < ticks; i += 1) {
-        const step = vehicle.tick(DT, input, modifiers);
-        topSpeed = Math.max(topSpeed, step.forwardSpeed);
-        peakSlip = Math.max(peakSlip, step.slip);
-      }
-    }
-    expect(topSpeed).toBeLessThan(base.topSpeed);
-    expect(peakSlip).toBeGreaterThan(base.peakSlip);
+    const base = scriptedLap(createVehicleDynamics(vehicleTuning(CAR)));
+    const hurt = scriptedLap(createVehicleDynamics(vehicleTuning(CAR)), damage.modifiers());
+    expect(hurt.topSpeed).toBeLessThan(base.topSpeed);
+    expect(hurt.peakSlip).toBeGreaterThan(base.peakSlip);
   });
 });

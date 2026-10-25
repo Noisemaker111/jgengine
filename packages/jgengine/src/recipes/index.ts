@@ -528,20 +528,18 @@ export function rollGun(seed: string) {
 
 const ENTER_VEHICLE = `import { DEFAULT_WALK_CODES, defineGame, defineSystem } from "@jgengine/shell/gameKit";
 import { boardVehicle, createVehicleSeats, leaveVehicle, type VehicleSeats } from "@jgengine/core/scene/vehicleSeat";
-import { createKinematicVehicle, type KinematicVehicle } from "@jgengine/core/physics/kinematicVehicle";
+import { createVehicleDynamics, type VehicleDynamics } from "@jgengine/core/physics/vehicleDynamics";
+import { VEHICLE_STYLES, vehicleTuning } from "@jgengine/core/physics/vehicleSpec";
 import { tickDrivableVehicle } from "@jgengine/core/physics/drivableVehicle";
 import type { GameContext } from "@jgengine/shell/gameKit";
 
-const TUNING = {
-  engineAccel: 14, brakeAccel: 22, topSpeed: 28, reverseSpeed: 8,
-  turnRate: 2.2, turnSpeedRef: 10, gripStrength: 8, handbrakeGrip: 2,
-};
+const TUNING = vehicleTuning({ ...VEHICLE_STYLES.arcade, topSpeed: 28, accel: 9, brake: 14, turnRate: 2.2 });
 const DRIVE = {
   throttle: { positive: ["moveForward"] }, brake: { positive: ["moveBack"] },
   steer: { positive: ["moveRight"], negative: ["moveLeft"] }, handbrake: { positive: ["jump"] },
 };
 const PEDAL = { min: 0, max: 1 };
-const states = new WeakMap<GameContext, { seats: VehicleSeats; sims: Map<string, KinematicVehicle> }>();
+const states = new WeakMap<GameContext, { seats: VehicleSeats; sims: Map<string, VehicleDynamics> }>();
 
 function toggleSeat(ctx: GameContext): void {
   const { seats } = states.get(ctx)!;
@@ -589,11 +587,13 @@ const driving = defineSystem({
     if (vehicle === null) return;
     let sim = sims.get(vehicleId);
     if (sim === undefined) {
-      sim = createKinematicVehicle(TUNING, { position: vehicle.position, heading: vehicle.rotationY });
+      sim = createVehicleDynamics(TUNING, { position: vehicle.position, heading: vehicle.rotationY });
       sims.set(vehicleId, sim);
     }
     const axis = ctx.input.axis(DRIVE, { throttle: PEDAL, brake: PEDAL, handbrake: PEDAL });
-    const drive = tickDrivableVehicle(sim, dt, axis);
+    const drive = tickDrivableVehicle(sim, dt, axis, {
+      tires: { id: vehicleId, time: ctx.time.now(), marks: ctx.tireMarks, particles: ctx.particles },
+    });
     ctx.scene.entity.setPose(vehicleId, drive.pose);
     ctx.scene.entity.setPose(riderId, drive.pose);
   },
@@ -605,7 +605,7 @@ export const game = defineGame({
   input: { ...DEFAULT_WALK_CODES, "use-vehicle": ["KeyF"] },
   systems: [driving],
 });
-// Place catalog kind "car" in the editor. Handling remains caller data; see vehicle-feel for force-based motors.
+// Place catalog kind "car" in the editor. The spec is the feel: see the vehicle-feel recipe for its knobs.
 `;
 
 const NARRATIVE_AUTHORING = `import {

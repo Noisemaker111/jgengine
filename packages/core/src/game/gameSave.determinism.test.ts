@@ -15,7 +15,8 @@ import { createNavCrowd } from "../nav/navCrowd";
 import type { NavMeshData } from "../nav/navMesh";
 import { createNavRuntime } from "../nav/navRuntime";
 import { createTraffic } from "../nav/traffic";
-import { createKinematicVehicle, type KinematicVehicleTuning } from "../physics/kinematicVehicle";
+import { createVehicleDynamics } from "../physics/vehicleDynamics";
+import { vehicleTuning, type VehicleSpec } from "../physics/vehicleSpec";
 import { createVehicleDamage } from "../physics/vehicleDamage";
 import { createSkillTree, type SkillTreeConfig } from "../progression/skillTree";
 import { seededRng } from "../random/rng";
@@ -136,16 +137,7 @@ const SKILL_TREE: SkillTreeConfig = {
   ],
 };
 
-const VEHICLE_TUNING: KinematicVehicleTuning = {
-  engineAccel: 20,
-  brakeAccel: 30,
-  topSpeed: 30,
-  reverseSpeed: 8,
-  turnRate: 2,
-  turnSpeedRef: 8,
-  gripStrength: 8,
-  handbrakeGrip: 0.25,
-};
+const VEHICLE_SPEC: VehicleSpec = { topSpeed: 30, accel: 8, brake: 11, turnRate: 2, grip: 1.3, handbrakeGrip: 0.25 };
 
 const DAMAGE_TABLE = {
   types: [
@@ -243,7 +235,7 @@ function createSim(seed: string, backend: SaveBackend): Sim {
     tuning: { fleetPerTick: 3 },
   });
 
-  const vehicle = createKinematicVehicle(VEHICLE_TUNING);
+  const vehicle = createVehicleDynamics(vehicleTuning(VEHICLE_SPEC));
   const vehicleDamage = createVehicleDamage({
     zones: [
       { id: "front", at: [0, 0, 2], thresholds: [20, 50, 90], deform: [0, 0, 0.2], effect: { engineScale: 0.6, drag: 0.4 } },

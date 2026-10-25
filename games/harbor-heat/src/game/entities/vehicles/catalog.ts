@@ -1,7 +1,7 @@
-import type { AircraftAssistTuning, GripCurve, KinematicVehicleTuning, RigidAircraftTuning } from "@jgengine/core/world";
+import { VEHICLE_STYLES, type AircraftAssistTuning, type GripCurve, type RigidAircraftTuning, type VehicleSpec } from "@jgengine/core/world";
 
 export type VehicleDynamics =
-  | { type: "ground"; tuning: KinematicVehicleTuning }
+  | { type: "ground"; tuning: VehicleSpec }
   | {
       type: "aircraft";
       /** Wings, a rotor, or a VTOL that switches between its lift rotors and its wings. */
@@ -29,9 +29,9 @@ export interface VehicleDef {
 /**
  * The data-first ground-car spec (#1051): a mass-and-force chassis (`massKg`/`engineForce`/`brakeForce`/
  * `tireGrip`/`comHeight`/`trackWidth`) plus steering geometry and top speed. The
- * builder below turns each row into a full {@link KinematicVehicleTuning} with a chassis block, so a
- * heavy high-CoM bus and a light low-CoM sports car drive measurably differently from their numbers
- * rather than from hand-tuned per-car acceleration constants. Aircraft stay on their own tuning.
+ * builder below turns each row into a {@link VehicleSpec} for the engine's one car sim, so a heavy
+ * high-CoM bus and a light low-CoM sports car drive measurably differently from their numbers rather
+ * than from hand-tuned per-car constants. Aircraft stay on their own tuning.
  */
 interface CarSpec {
   id: string;
@@ -57,10 +57,8 @@ interface CarSpec {
   /** Lateral grip retained under handbrake (lower = looser slides). */
   handbrakeGrip: number;
   collisionRadius: number;
-  /** Aero downforce (grip gain with speed); default 0.32, sport ~0.5. */
+  /** Aero downforce area, m² (grip gain with speed); default 0.3, sport ~0.5. */
   downforce?: number;
-  /** Steering rack response; default 10, sport snappier (~12), bus lazy (~6). */
-  steerResponse?: number;
   /** Max steering lock, rad; default 0.58, bus tighter-locked (0.42) for a wide circle. */
   maxAngle?: number;
   /** Gearbox ratios; default is a 6-speed, SUV a 5-speed, bus a 4-speed. */
@@ -71,7 +69,7 @@ interface CarSpec {
   torqueCurve?: GripCurve;
 }
 
-/** Street torque: strong enough off-idle that launch is not a crawl (paired with the kinematic launch floor). */
+/** Street torque: strong enough off-idle that launch is not a crawl. */
 const TORQUE_DEFAULT: GripCurve = { points: [[0, 0.78], [0.28, 0.94], [0.55, 1], [0.85, 0.9], [1, 0.6]] };
 /** Fat low-end so a muscle car saturates its friction budget off the line and wheelspins. */
 const TORQUE_MUSCLE: GripCurve = { points: [[0, 0.94], [0.28, 1], [0.6, 0.95], [0.82, 0.86], [1, 0.6]] };
@@ -80,70 +78,40 @@ const GEARS_DEFAULT: readonly number[] = [3.2, 2.18, 1.57, 1.21, 0.97, 0.8];
 const GEARS_SUV: readonly number[] = [3.4, 2.1, 1.45, 1.05, 0.82];
 const GEARS_BUS: readonly number[] = [4.2, 2.3, 1.4, 0.95];
 
-function car(spec: CarSpec): KinematicVehicleTuning {
-  const topSpeed = spec.topSpeed;
-  const gears = spec.gears ?? GEARS_DEFAULT;
-  const redlineRpm = spec.redlineRpm ?? 7600;
-  const downforce = spec.downforce ?? 0.32;
-  const steerResponse = spec.steerResponse ?? 10;
+/** Speed the steering lock is quoted at: `turnRate` there puts full lock on the car's own geometry. */
+const TURN_SPEED = 7;
+
+function car(spec: CarSpec): VehicleSpec {
   const maxAngle = spec.maxAngle ?? 0.58;
-  // Lateral grip-bleed tracks tyre μ; slightly softer than pure μ·10 so street drifts stay steerable.
-  const gripStrength = spec.tireGrip * 8.5;
   return {
-    // Legacy arcade fallbacks (superseded by `chassis` below, but the type requires them): keep them
-    // coherent as force/mass so a chassis-less consumer would still drive roughly right.
-    engineAccel: spec.engineForce / spec.massKg,
-    brakeAccel: spec.brakeForce / spec.massKg,
-    topSpeed,
+    // Street cars on real tyre μ, a little looser than arcade so launch bite and handbrake slides read
+    // as player skill, not ESC.
+    ...VEHICLE_STYLES.arcade,
+    assist: 0.55,
+    drift: 0.3,
+    topSpeed: spec.topSpeed,
+    accel: spec.engineForce / spec.massKg,
+    brake: spec.brakeForce / spec.massKg,
     // Reverse top is a hard, low ceiling (~10–16 mph): useful for three-points, never scaled up for sports cars.
-    reverseSpeed: Math.min(7, Math.max(4.5, Math.round(topSpeed * 0.16 * 10) / 10)),
-    turnRate: 2.3,
-    turnSpeedRef: 7,
-    gripStrength,
+    reverseSpeed: Math.min(7, Math.max(4.5, Math.round(spec.topSpeed * 0.16 * 10) / 10)),
+    turnRate: (Math.tan(maxAngle) * TURN_SPEED) / spec.wheelbase,
+    turnSpeed: TURN_SPEED,
+    grip: spec.tireGrip,
     handbrakeGrip: spec.handbrakeGrip,
-    // Coasting is handled physically by the chassis (rolling resistance μ·m·g + gear-routed engine
-    // braking), so no extra top-level rolling decay is layered on.
-    rollingResistance: 0,
-    chassis: {
-      massKg: spec.massKg,
-      engineForce: spec.engineForce,
-      brakeForce: spec.brakeForce,
-      tireGrip: spec.tireGrip,
-      comHeight: spec.comHeight,
-      trackWidth: spec.trackWidth,
-      reverseForceScale: 0.42,
-    },
-    powertrain: {
+    // Lifting off scrubs speed like a real car rolling on its tyres, on top of engine braking.
+    coast: 1.2,
+    weight: spec.massKg,
+    comHeight: spec.comHeight,
+    trackWidth: spec.trackWidth,
+    wheelbase: spec.wheelbase,
+    downforce: spec.downforce ?? 0.3,
+    gearbox: {
+      gears: spec.gears ?? GEARS_DEFAULT,
       idleRpm: 850,
-      redlineRpm,
-      shiftUpRpm: redlineRpm - 700,
-      shiftDownRpm: 2300,
+      redlineRpm: spec.redlineRpm ?? 7600,
       shiftSeconds: 0.12,
-      finalDrive: 3.7,
       wheelRadius: 0.34,
-      gears,
       torqueCurve: spec.torqueCurve ?? TORQUE_DEFAULT,
-    },
-    steering: {
-      wheelbase: spec.wheelbase,
-      maxAngle,
-      highSpeedAngle: 0.15,
-      highSpeedAt: topSpeed,
-      response: steerResponse,
-      yawDamping: 9.5,
-    },
-    dynamics: {
-      aerodynamicDrag: 0.0004,
-      downforce,
-      // Slightly looser assists so launch bite and handbrake slides read as player skill, not ESC.
-      tractionControl: 0.55,
-      abs: 0.82,
-      stabilityControl: 0.22,
-      bodyPitchFactor: 0.008,
-      bodyRollFactor: 0.012,
-      maxBodyPitch: 0.1,
-      maxBodyRoll: 0.14,
-      attitudeResponse: 8,
     },
   };
 }
@@ -151,15 +119,15 @@ function car(spec: CarSpec): KinematicVehicleTuning {
 /**
  * Fleet forces are tuned so a midsize (cruiser/SUV class) hits ~10–13 m/s after 2 s full throttle
  * from rest, reverse stays crawl-useful (~0.2× top), and handbrakeGrip leaves enough bite for
- * controlled rear-lock slides (paired with kinematic handbrake oversteer).
+ * controlled rear-lock slides.
  */
 const CAR_SPECS: readonly CarSpec[] = [
   { id: "car_compact", label: "Pico", body: "#f2c14e", cabin: "#26292f", price: 800, massKg: 1150, engineForce: 9800, brakeForce: 11000, tireGrip: 0.92, comHeight: 0.56, trackWidth: 1.48, wheelbase: 2.42, topSpeed: 34, handbrakeGrip: 0.28, collisionRadius: 1.4 },
   { id: "car_muscle", label: "Bandolero", body: "#d64545", cabin: "#26292f", price: 2400, massKg: 1650, engineForce: 15500, brakeForce: 14000, tireGrip: 0.88, comHeight: 0.52, trackWidth: 1.6, wheelbase: 2.75, topSpeed: 42, handbrakeGrip: 0.22, collisionRadius: 1.4, torqueCurve: TORQUE_MUSCLE },
-  { id: "car_sport", label: "Cicada GT", body: "#33c1b1", cabin: "#1f2228", price: 6500, massKg: 1350, engineForce: 14200, brakeForce: 17000, tireGrip: 1.08, comHeight: 0.44, trackWidth: 1.62, wheelbase: 2.58, topSpeed: 52, handbrakeGrip: 0.24, collisionRadius: 1.4, downforce: 0.5, steerResponse: 12 },
+  { id: "car_sport", label: "Cicada GT", body: "#33c1b1", cabin: "#1f2228", price: 6500, massKg: 1350, engineForce: 14200, brakeForce: 17000, tireGrip: 1.08, comHeight: 0.44, trackWidth: 1.62, wheelbase: 2.58, topSpeed: 52, handbrakeGrip: 0.24, collisionRadius: 1.4, downforce: 0.5 },
   { id: "car_cop", label: "HHPD Cruiser", body: "#e8ecf2", cabin: "#1b2f52", price: 0, massKg: 1750, engineForce: 13800, brakeForce: 15500, tireGrip: 0.95, comHeight: 0.55, trackWidth: 1.6, wheelbase: 2.79, topSpeed: 40, handbrakeGrip: 0.26, collisionRadius: 1.4 },
   { id: "car_suv", label: "Vagabond", body: "#6b7d52", cabin: "#20242c", price: 3800, massKg: 2350, engineForce: 15200, brakeForce: 16500, tireGrip: 0.82, comHeight: 0.98, trackWidth: 1.66, wheelbase: 2.85, topSpeed: 36, handbrakeGrip: 0.3, collisionRadius: 1.6, gears: GEARS_SUV },
-  { id: "car_bus", label: "Islander", body: "#e0a53c", cabin: "#2a2d34", price: 9000, massKg: 11000, engineForce: 34000, brakeForce: 50000, tireGrip: 0.68, comHeight: 1.35, trackWidth: 2.05, wheelbase: 7.2, topSpeed: 24, handbrakeGrip: 0.48, collisionRadius: 2.6, maxAngle: 0.42, steerResponse: 6, gears: GEARS_BUS, redlineRpm: 4600 },
+  { id: "car_bus", label: "Islander", body: "#e0a53c", cabin: "#2a2d34", price: 9000, massKg: 11000, engineForce: 34000, brakeForce: 50000, tireGrip: 0.68, comHeight: 1.35, trackWidth: 2.05, wheelbase: 7.2, topSpeed: 24, handbrakeGrip: 0.48, collisionRadius: 2.6, maxAngle: 0.42, gears: GEARS_BUS, redlineRpm: 4600 },
 ];
 
 const AIR_DENSITY = 1.225;

@@ -58,7 +58,7 @@ export function hazardFeel(hazards: readonly ActiveHazard[]): { drag: number; to
   let topSpeedScale = 1;
   let push = 0;
   for (const hazard of hazards) {
-    if (hazard.kind === "flood") drag += 0.7 + 1.1 * hazard.push;
+    if (hazard.kind === "flood") drag += 0.5 + 0.75 * hazard.push;
     else if (hazard.kind === "slag") topSpeedScale = Math.min(topSpeedScale, 0.55);
     else if (hazard.kind === "belt") push += hazard.push;
   }

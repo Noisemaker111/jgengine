@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
-import type { KinematicVehicleTuning } from "@jgengine/core/world";
+import type { VehicleSpec } from "@jgengine/core/world";
 
 import { game } from "../../game.config";
 import { loop } from "../../loop";
@@ -23,10 +23,10 @@ function boot(): GameContext {
   return ctx;
 }
 
-function spawnCar(ctx: GameContext): { id: string; base: KinematicVehicleTuning } {
+function spawnCar(ctx: GameContext): { id: string; base: VehicleSpec } {
   const ground = ctx.world.groundHeightAt(10, 10);
   ctx.scene.entity.spawn("car_compact", { id: "car_body", position: [10, ground, 10], role: "prop" });
-  return { id: "car_body", base: vehicleById("car_compact")!.dynamics.tuning as KinematicVehicleTuning };
+  return { id: "car_body", base: vehicleById("car_compact")!.dynamics.tuning as VehicleSpec };
 }
 
 describe("harbor-heat vehicle damage", () => {
@@ -43,7 +43,7 @@ describe("harbor-heat vehicle damage", () => {
   test("a hard front-end crash dents the front zone, costs grip, and escalates on the next hit", () => {
     const ctx = boot();
     const car = spawnCar(ctx);
-    const retunes: KinematicVehicleTuning[] = [];
+    const retunes: VehicleSpec[] = [];
 
     const first = crashVehicle(
       ctx,
@@ -56,9 +56,9 @@ describe("harbor-heat vehicle damage", () => {
     expect(first[0]!.stage).toBe(1);
     expect(retunes).toHaveLength(1);
     // The re-bake is the shared one: grip and drag move, the authored numbers are not mutated.
-    expect(retunes[0]!.gripStrength).toBeLessThan(car.base.gripStrength);
-    expect(retunes[0]!.coastDeceleration).toBeGreaterThan(car.base.coastDeceleration ?? 0);
-    expect(car.base.gripStrength).toBe(vehicleById("car_compact")!.dynamics.tuning.gripStrength);
+    expect(retunes[0]!.grip).toBeLessThan(car.base.grip);
+    expect(retunes[0]!.coast ?? 1).toBeGreaterThan(car.base.coast ?? 1);
+    expect(car.base.grip).toBe(vehicleById("car_compact")!.dynamics.tuning.grip);
 
     const readout = vehicleDamageReadout(ctx, car.id)!;
     expect(readout.worstStage).toBe(1);
@@ -74,7 +74,7 @@ describe("harbor-heat vehicle damage", () => {
     );
     expect(second[0]!.previousStage).toBe(1);
     expect(second[0]!.stage).toBe(2);
-    expect(retunes[1]!.gripStrength).toBeLessThan(retunes[0]!.gripStrength);
+    expect(retunes[1]!.grip).toBeLessThan(retunes[0]!.grip);
     expect(vehicleDamageReadout(ctx, car.id)!.worstStage).toBe(2);
   });
 
@@ -88,7 +88,7 @@ describe("harbor-heat vehicle damage", () => {
 
     const reboot = boot();
     const restored = spawnCar(reboot);
-    const retuned: KinematicVehicleTuning[] = [];
+    const retuned: VehicleSpec[] = [];
     restoreVehicleDamage(
       reboot,
       saved,

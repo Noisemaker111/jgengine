@@ -179,10 +179,6 @@
       "kind": "not-applicable",
       "reason": "No ride simulation in LLMville: racks train and serve models, but there are no ride cycles, queues or breakdowns."
     },
-    "run-loop": {
-      "kind": "not-applicable",
-      "reason": "No runs in LLMville: a world is persistent and shared, with no start, bank-or-lose or reset between attempts."
-    },
     "rvo-avoidance": {
       "kind": "not-applicable",
       "reason": "No crowd steering in LLMville: a handful of player and bot avatars walk with solid-obstacle collision, not reciprocal avoidance."

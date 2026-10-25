@@ -127,10 +127,6 @@
       "kind": "not-applicable",
       "reason": "Ride simulation is not part of harbor-heat: no ride or queue exists in an open city."
     },
-    "run-loop": {
-      "kind": "not-applicable",
-      "reason": "The roguelike run composition - bank or lose a haul plus one authored change per run - is not a Harbor Heat contract; its missions run on the genre-free session loop."
-    },
     "rvo-avoidance": {
       "kind": "not-applicable",
       "reason": "Crowd steering is not part of harbor-heat: residents keep to authored routes without reciprocal avoidance."

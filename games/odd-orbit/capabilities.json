@@ -149,10 +149,6 @@
       "kind": "not-applicable",
       "reason": "Ride simulation is not part of odd-orbit: no ride or queue exists in a habitat."
     },
-    "run-loop": {
-      "kind": "not-applicable",
-      "reason": "The roguelike run composition - bank or lose a haul plus one authored change per run - is not an Odd Orbit shift; its careers run on the genre-free session loop."
-    },
     "rvo-avoidance": {
       "kind": "not-applicable",
       "reason": "Crowd steering is not part of odd-orbit: room-mates walk around furniture without reciprocal avoidance."

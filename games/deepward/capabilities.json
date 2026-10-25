@@ -131,10 +131,6 @@
       "kind": "not-applicable",
       "reason": "Ride simulation is not part of deepward: no ride or queue exists on the station."
     },
-    "run-loop": {
-      "kind": "not-applicable",
-      "reason": "The roguelike run composition - bank or lose a haul plus one authored change per run - is not a Bellwether dive; its runs settle on the genre-free session loop through the shared haul rules."
-    },
     "rvo-avoidance": {
       "kind": "not-applicable",
       "reason": "Crowd steering is not part of deepward: at most one fitter walks the station, and nothing needs crowd steering."

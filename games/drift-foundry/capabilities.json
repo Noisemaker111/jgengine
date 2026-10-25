@@ -9,7 +9,6 @@
     "hud-fade",
     "mount-game",
     "route-course",
-    "run-loop",
     "session-loop",
     "vehicle-damage"
   ],

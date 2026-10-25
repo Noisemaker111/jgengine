@@ -193,10 +193,6 @@
       "kind": "not-applicable",
       "reason": "Saltwick has no ride simulation yet: it is a cozy farming and fishing starter, and nothing in its loop uses ride-sim."
     },
-    "run-loop": {
-      "kind": "not-applicable",
-      "reason": "Saltwick has no run yet: it is a cozy farming and fishing starter, and nothing in its loop uses run-loop."
-    },
     "rvo-avoidance": {
       "kind": "not-applicable",
       "reason": "Saltwick has no crowd steering yet: it is a cozy farming and fishing starter, and nothing in its loop uses rvo-avoidance."

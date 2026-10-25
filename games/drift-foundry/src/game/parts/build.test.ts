@@ -8,7 +8,7 @@ describe("drift-foundry modular kart handling", () => {
   test("bare chassis is the authored base handling and has no route capabilities", () => {
     const tuning = tuningFrom([]);
     expect(tuning.topSpeed).toBeCloseTo(BASE_HANDLING.topSpeed, 5);
-    expect(tuning.engineAccel).toBeCloseTo(BASE_HANDLING.engineAccel, 5);
+    expect(tuning.accel).toBeCloseTo(BASE_HANDLING.accel, 5);
     expect(tuning.turnRate).toBeCloseTo(BASE_HANDLING.turnRate, 5);
     expect(tuning.hasPlow).toBe(false);
     expect(tuning.jumpPower).toBe(0);
@@ -95,7 +95,7 @@ describe("drift-foundry modular kart handling", () => {
 
   test("brakes and reverse follow the composed engine rather than the bare chassis", () => {
     const truck = tuningFrom(swapPart([], partById("truck_engine")!).installed);
-    expect(truck.handling.brakeAccel).toBeCloseTo(truck.engineAccel * 1.3, 5);
+    expect(truck.handling.brake).toBeCloseTo(truck.accel * 1.3, 5);
     expect(truck.handling.reverseSpeed).toBeCloseTo(truck.topSpeed * 0.35, 5);
   });
 
@@ -112,7 +112,7 @@ describe("drift-foundry modular kart handling", () => {
     const clean = tuningFrom([]);
     const bent = tuningFrom([], { gripScale: 1, engineScale: 1, brakeScale: 1, topSpeedScale: 0.95, steerPull: 0.035, drag: 0 });
     expect(bent.topSpeed).toBeLessThan(clean.topSpeed);
-    expect(bent.handling.brakeAccel).toBeCloseTo(bent.engineAccel * 1.3, 5);
+    expect(bent.handling.brake).toBeCloseTo(bent.accel * 1.3, 5);
   });
 
   test("every part id resolves through the catalog", () => {

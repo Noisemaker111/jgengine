@@ -20,7 +20,6 @@
     "hud-layout",
     "hud-panel",
     "hud-ticker",
-    "kinematic-vehicle",
     "kit-action-glyph",
     "kit-action-prompt",
     "kit-banner",
@@ -193,10 +192,6 @@
     "ride-sim": {
       "kind": "not-applicable",
       "reason": "Apex Nights has no ride simulation yet: it is a circuit racing career starter, and nothing in its loop uses ride-sim."
-    },
-    "run-loop": {
-      "kind": "not-applicable",
-      "reason": "Apex Nights has no run yet: it is a circuit racing career starter, and nothing in its loop uses run-loop."
     },
     "rvo-avoidance": {
       "kind": "not-applicable",

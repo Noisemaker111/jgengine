@@ -200,10 +200,6 @@
       "kind": "not-applicable",
       "reason": "The Sunken Crown has no ride simulation yet: it is a open-world exploration (landmarks, relics, glide) starter, and nothing in its loop uses ride-sim."
     },
-    "run-loop": {
-      "kind": "not-applicable",
-      "reason": "The Sunken Crown has no run yet: it is a open-world exploration (landmarks, relics, glide) starter, and nothing in its loop uses run-loop."
-    },
     "rvo-avoidance": {
       "kind": "not-applicable",
       "reason": "The Sunken Crown has no crowd steering yet: it is a open-world exploration (landmarks, relics, glide) starter, and nothing in its loop uses rvo-avoidance."

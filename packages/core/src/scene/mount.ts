@@ -47,7 +47,7 @@ interface Registered {
  * Mount / rideable control-transfer (issue #83). Registers rideables (each with one or more seats — a
  * control seat drives, the rest ride) and tracks who is on what. It owns no camera or physics: game code
  * reads `cameraTarget(riderId)` to point the follow camera at the mount, and `driveTarget(riderId)` to
- * route that rider's {@link import("../physics/vehicleBody").AxisInput}-driven input at the mount's
+ * route that rider's {@link import("../input/axisInput").AxisInput}-driven input at the mount's
  * movement kit — the same seam a horse, a truck, or a shared multi-seat ship all plug into.
  */
 export class MountController {

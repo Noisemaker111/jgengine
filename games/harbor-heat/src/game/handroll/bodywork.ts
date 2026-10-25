@@ -1,19 +1,19 @@
 import {
   createVehicleDamage,
-  damagedTuning,
+  damagedSpec,
   type VehicleDamage,
   type VehicleDamageState,
   type VehicleDamageTransition,
   type VehicleDamageZone,
 } from "@jgengine/core/physics/vehicleDamage";
-import type { KinematicVehicleTuning } from "@jgengine/core/world";
+import type { VehicleSpec } from "@jgengine/core/world";
 import { perContext } from "@jgengine/core/runtime/perContext";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 /**
  * Harbor Heat's bodywork. A crash feeds one impulse to the zone nearest the impact; zones step
  * through stages on authored thresholds, each stage costs grip, engine, top speed or steering, and
- * the sum is baked into the shared kinematic tuning with `damagedTuning`. The chassis hull (the
+ * the sum is baked into the car's spec with `damagedSpec`. The chassis hull (the
  * `health` pool a car explodes at) stays the game's destroy rule and is not duplicated here.
  *
  * The dent a stage earns (`deformation()`) is data: the shell has no hook to displace a vehicle's
@@ -63,7 +63,7 @@ export function bodyPoint(offsetRight: number, offsetForward: number): readonly 
 interface CarDamage {
   damage: VehicleDamage;
   /** The undamaged tuning, so a repair or a stage change re-bakes from the authored numbers. */
-  base: KinematicVehicleTuning;
+  base: VehicleSpec;
   /** Set once a stage changed handling, so the sim is only retuned when something actually moved. */
   applied: string;
 }
@@ -71,7 +71,7 @@ interface CarDamage {
 const bodyworkOf = perContext((): Map<string, CarDamage> => new Map());
 
 /** The bodywork for one car, built on its first crash from the authored tuning. */
-export function carDamage(ctx: GameContext, vehicleId: string, base: KinematicVehicleTuning): VehicleDamage {
+export function carDamage(ctx: GameContext, vehicleId: string, base: VehicleSpec): VehicleDamage {
   const bodywork = bodyworkOf(ctx);
   const existing = bodywork.get(vehicleId);
   if (existing !== undefined) return existing.damage;
@@ -87,9 +87,9 @@ export function carDamage(ctx: GameContext, vehicleId: string, base: KinematicVe
 export function crashVehicle(
   ctx: GameContext,
   vehicleId: string,
-  base: KinematicVehicleTuning,
+  base: VehicleSpec,
   input: { closingSpeed: number; offsetRight: number; offsetForward: number },
-  retune: (next: KinematicVehicleTuning) => void,
+  retune: (next: VehicleSpec) => void,
 ): readonly VehicleDamageTransition[] {
   const damage = carDamage(ctx, vehicleId, base);
   const transitions = damage.hit(bodyPoint(input.offsetRight, input.offsetForward), crashImpulse(input.closingSpeed));
@@ -99,7 +99,7 @@ export function crashVehicle(
   const signature = `${effect.gripScale}:${effect.engineScale}:${effect.brakeScale}:${effect.topSpeedScale}:${effect.steerPull}:${effect.drag}`;
   if (record.applied !== signature) {
     record.applied = signature;
-    retune(damagedTuning(record.base, effect));
+    retune(damagedSpec(record.base, effect));
   }
   return transitions;
 }
@@ -130,8 +130,8 @@ export function vehicleDamageSave(ctx: GameContext): Record<string, VehicleDamag
 export function restoreVehicleDamage(
   ctx: GameContext,
   sections: Record<string, VehicleDamageState>,
-  tuningOf: (vehicleId: string) => KinematicVehicleTuning | null,
-  retune: (vehicleId: string, next: KinematicVehicleTuning) => void,
+  tuningOf: (vehicleId: string) => VehicleSpec | null,
+  retune: (vehicleId: string, next: VehicleSpec) => void,
 ): void {
   for (const [vehicleId, state] of Object.entries(sections)) {
     const base = tuningOf(vehicleId);
@@ -140,16 +140,16 @@ export function restoreVehicleDamage(
     damage.restore(state);
     const record = bodyworkOf(ctx).get(vehicleId)!;
     record.applied = "restored";
-    retune(vehicleId, damagedTuning(record.base, damage.effect()));
+    retune(vehicleId, damagedSpec(record.base, damage.effect()));
   }
 }
 
 /** Swap a car's pre-dent handling (a mod was bought) and return what it drives like now, dents included. */
-export function rebaseVehicleDamage(ctx: GameContext, vehicleId: string, base: KinematicVehicleTuning): KinematicVehicleTuning {
+export function rebaseVehicleDamage(ctx: GameContext, vehicleId: string, base: VehicleSpec): VehicleSpec {
   const record = bodyworkOf(ctx).get(vehicleId);
   if (record === undefined) return base;
   record.base = base;
-  return damagedTuning(base, record.damage.effect());
+  return damagedSpec(base, record.damage.effect());
 }
 
 /** Forget one car's bodywork (it burned or was despawned). */
