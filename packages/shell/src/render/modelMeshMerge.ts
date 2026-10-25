@@ -3,6 +3,34 @@ import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js
 
 const MERGED_NAMES_KEY = "jgMergedMeshNames";
 
+/**
+ * A plain float copy of a vertex attribute. Quantized glTF (KHR_mesh_quantization, what meshopt
+ * compression writes) stores positions, normals and UVs as normalized integers inside a node scale;
+ * baking a transform into those integers clamps every vertex to the unit cube, and merging them
+ * with float parts fails. Every bake and merge goes through float first.
+ * @internal
+ */
+export function floatAttribute(attribute: THREE.BufferAttribute | THREE.InterleavedBufferAttribute): THREE.BufferAttribute {
+  const { count, itemSize } = attribute;
+  if (attribute instanceof THREE.BufferAttribute && attribute.array instanceof Float32Array && attribute.normalized !== true) {
+    return attribute.clone();
+  }
+  const array = new Float32Array(count * itemSize);
+  for (let i = 0; i < count; i += 1) {
+    for (let c = 0; c < itemSize; c += 1) array[i * itemSize + c] = attribute.getComponent(i, c);
+  }
+  return new THREE.BufferAttribute(array, itemSize);
+}
+
+/** A copy of a geometry whose every attribute is plain float, ready to transform and merge. @internal */
+export function floatGeometry(source: THREE.BufferGeometry): THREE.BufferGeometry {
+  const geometry = new THREE.BufferGeometry();
+  for (const [name, attribute] of Object.entries(source.attributes)) geometry.setAttribute(name, floatAttribute(attribute));
+  if (source.index !== null) geometry.setIndex(source.index.clone());
+  for (const group of source.groups) geometry.addGroup(group.start, group.count, group.materialIndex);
+  return geometry;
+}
+
 let mergeEnabled = true;
 
 /**
@@ -64,7 +92,8 @@ function attributeKey(geometry: THREE.BufferGeometry): string {
   const parts = [geometry.index === null ? "plain" : "indexed"];
   for (const name of Object.keys(geometry.attributes).sort()) {
     const attribute = geometry.attributes[name]!;
-    parts.push(`${name}:${attribute.itemSize}:${attribute.normalized === true ? 1 : 0}`);
+    // Parts are converted to float before merging, so quantized and float parts can share a draw.
+    parts.push(`${name}:${attribute.itemSize}`);
   }
   return parts.join(",");
 }
@@ -130,7 +159,7 @@ export function mergeModelSubMeshes(
       kept += group.meshes.length;
       continue;
     }
-    const parts = group.meshes.map(({ mesh, relative }) => mesh.geometry.clone().applyMatrix4(relative));
+    const parts = group.meshes.map(({ mesh, relative }) => floatGeometry(mesh.geometry).applyMatrix4(relative));
     const geometry = mergeGeometries(parts, false);
     for (const part of parts) part.dispose();
     if (geometry === null) {
@@ -225,7 +254,7 @@ export function mergeSkinnedModelParts(root: THREE.Object3D): ModelMeshMergeRepo
     for (const mesh of group.meshes) {
       const source = mesh.geometry;
       const part = new THREE.BufferGeometry();
-      for (const [name, attribute] of Object.entries(source.attributes)) part.setAttribute(name, attribute.clone());
+      for (const [name, attribute] of Object.entries(source.attributes)) part.setAttribute(name, floatAttribute(attribute));
       if (source.index !== null) part.setIndex(source.index.clone());
       part.applyMatrix4(mesh.bindMatrix);
 

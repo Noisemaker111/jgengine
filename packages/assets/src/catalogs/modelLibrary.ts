@@ -1,6 +1,7 @@
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
 
 import { MODEL_LIBRARY_ENTRIES } from "./modelLibraryEntries";
+import { MODEL_LIBRARY_RIGGED_ENTRIES } from "./modelLibraryRiggedEntries";
 
 /**
  * The realistic model library: real-world-scale, licensed, compressed models a game asks for by what
@@ -52,6 +53,16 @@ export interface PolyHavenModelOrigin {
    * variants side by side (a clean and an aged hydrant); this keeps one.
    */
   keep?: string;
+  /**
+   * Simplifier error budget for the near and far levels (defaults 0.002 and 0.03). Foliage scans
+   * with hundreds of thousands of leaf triangles need a looser budget to reach their ratio.
+   */
+  error?: readonly [near: number, far: number];
+  /**
+   * Leaf-card thinning for foliage: loose cards cannot be simplified (each is its own island), so
+   * the levels keep this share of the islands on primitives whose material name matches `material`.
+   */
+  thin?: { material: string; near: number; far: number };
 }
 
 /**
@@ -70,8 +81,66 @@ export interface GeneratedModelOrigin {
   file: string;
 }
 
-/** Where an entry's bytes come from: a CC0 scan pulled from its source, or a game-committed generated model. */
-export type ModelLibraryOrigin = PolyHavenModelOrigin | GeneratedModelOrigin;
+/** One animation a Rocketbox entry carries, taken from the shared Rocketbox animation library. */
+export interface RocketboxClip {
+  /** Clip name in the output GLB; `Idle`, `Walk` and `Run` drive the engine's locomotion states. */
+  name: string;
+  /** File in Rocketbox's `Assets/Animations/all_animations_max_motextr_<folder>`. */
+  file: string;
+  /** `static` clips are already in place; `xy` clips travel and take `inPlace`. */
+  folder: "static" | "xy";
+  /** Remove the clip's travel along the ground so the game's own movement carries the body. */
+  inPlace?: boolean;
+}
+
+/**
+ * A rigged Microsoft Rocketbox avatar or animal (MIT), converted from FBX at a pinned commit of
+ * `github.com/microsoft/Microsoft-Rocketbox`. One skinned GLB with its clips; no far level.
+ */
+export interface RocketboxModelOrigin {
+  provider: "rocketbox";
+  /** Folder under `Assets/`, e.g. `Avatars/Professions/Police_Male_01`. */
+  path: string;
+  /** Root bone name the in-place pass edits. */
+  rootBone: string;
+  clips: readonly RocketboxClip[];
+  /** Names for the clips embedded in the model file itself, in order (Rocketbox animals). */
+  embeddedClips?: readonly string[];
+  roughness?: number;
+}
+
+/**
+ * A Khronos glTF Sample Assets model, fetched from `KhronosGroup/glTF-Sample-Assets` at a pinned
+ * commit. `drop` names nodes to remove before compression (trademarked logos the license excludes).
+ */
+export interface KhronosModelOrigin {
+  provider: "khronos";
+  model: string;
+  near: number;
+  far: number;
+  drop?: string;
+  /** Node names (regex, matched anywhere in the tree) the far level leaves out, such as an interior nobody sees past 40 m. */
+  farDrop?: string;
+  /** `Material/slot` texture slots to clear (`slot` is `baseColor` or `emissive`), e.g. a logo on a tyre wall. */
+  scrub?: readonly string[];
+}
+
+/**
+ * A model the engine builds itself from code and CC0 materials (no download), for shapes no licensed
+ * scan covers. `builder` names the function in `modelLibraryAuthored`.
+ */
+export interface AuthoredModelOrigin {
+  provider: "authored";
+  builder: string;
+}
+
+/** Where an entry's bytes come from: a scan or rig pulled from its source, an engine-authored model, or a game-committed generated one. */
+export type ModelLibraryOrigin =
+  | PolyHavenModelOrigin
+  | RocketboxModelOrigin
+  | KhronosModelOrigin
+  | AuthoredModelOrigin
+  | GeneratedModelOrigin;
 
 /** One named realistic model with its source, credit and license. */
 export interface ModelLibraryEntry {
@@ -103,39 +172,29 @@ export interface ModelLibraryGap {
 /** Known gaps: requests with no licensed realistic model yet, and how each would be closed. */
 export const MODEL_LIBRARY_GAPS: readonly ModelLibraryGap[] = [
   {
-    intents: ["car", "sedan", "vehicle", "truck", "bus", "van", "police car", "taxi"],
-    reason: "Poly Haven and ambientCG publish no drivable vehicles; the only CC0 car is a covered car.",
-    route: "Khronos glTF sample CarConcept (CC-BY 4.0, credit required) or a generated model.",
-  },
-  {
-    intents: ["human", "person", "pedestrian", "worker", "character", "npc", "police officer"],
-    reason: "No CC0 realistic rigged humans in glTF. Microsoft Rocketbox (MIT) is realistic but ships FBX.",
-    route: "Convert Rocketbox FBX to glTF with Blender, then register it as a library entry.",
+    intents: ["truck", "bus", "van", "police car", "taxi", "pickup", "motorcycle"],
+    reason: "The one license-clean realistic car is the Khronos concept car (`vehicle/sports-car`); no CC0 or CC-BY trucks, buses, vans or liveried cars exist on the official sources.",
+    route: "Tint `vehicle/sports-car` per role, or register a generated model.",
   },
   {
     intents: ["palm tree", "palm", "coconut tree"],
-    reason: "No CC0 scanned palm at game size; Poly Haven's island trees run to millions of triangles.",
+    reason: "No CC0 scanned palm at game size; Poly Haven's island trees run to millions of triangles and ambientCG has no palm frond atlas.",
     route: "A game-authored or generated palm.",
   },
   {
-    intents: ["server rack", "data center", "gpu", "computer rack"],
-    reason: "No CC0 server hardware; `industrial/metal-rack` is the nearest shape.",
-    route: "A generated model (LLMville's fal.ai diorama-assets pipeline), registered as `generated`.",
-  },
-  {
-    intents: ["dog", "cat", "deer", "wolf", "bear", "zombie", "monster", "bird", "fish"],
-    reason: "The only CC0 scanned creature is `creature/rat`.",
+    intents: ["cat", "wolf", "bear", "zombie", "monster", "fish", "lion"],
+    reason: "Rocketbox covers farm animals, dogs, deer and birds; nothing licensed covers predators, cats or monsters.",
     route: "A generated model, or a licensed rigged creature pack.",
   },
   {
-    intents: ["spaceship", "robot", "drone", "mech"],
-    reason: "No CC0 realistic sci-fi vehicles or robots.",
+    intents: ["spaceship", "drone", "mech", "humanoid robot", "android"],
+    reason: "No CC0 or MIT realistic sci-fi vehicles or humanoid robots; `scifi/robot-arm` covers industrial robots.",
     route: "A generated model.",
   },
 ];
 
 /** Every library entry. */
-export const MODEL_LIBRARY: readonly ModelLibraryEntry[] = MODEL_LIBRARY_ENTRIES;
+export const MODEL_LIBRARY: readonly ModelLibraryEntry[] = [...MODEL_LIBRARY_ENTRIES, ...MODEL_LIBRARY_RIGGED_ENTRIES];
 
 const byName = new Map(MODEL_LIBRARY.map((entry) => [entry.name, entry]));
 
@@ -231,6 +290,22 @@ export function libraryModel(name: string, options: LibraryModelOptions = {}): M
     };
   }
   const dir = `${options.basePath ?? "/models"}/${libraryModelDir(name)}`;
+  const size = options.targetHeight === undefined ? {} : { targetHeight: options.targetHeight };
+  if (entry.origin.provider === "rocketbox") {
+    const names = new Set(entry.origin.clips.map((clip) => clip.name));
+    const embedded = entry.origin.embeddedClips ?? [];
+    for (const clip of embedded) names.add(clip);
+    const idle = names.has("Idle") ? "Idle" : [...names][0];
+    if (idle === undefined) return { url: `${dir}/model.glb`, anchor: "origin", ...size };
+    const walk = names.has("Walk") ? "Walk" : idle;
+    return {
+      url: `${dir}/model.glb`,
+      anchor: "origin",
+      ...size,
+      animation: { states: { idle, walk, ...(names.has("Run") ? { run: "Run" } : {}), walkSpeed: 0.3, runSpeed: 3.2 } },
+    };
+  }
+  if (entry.origin.provider === "authored") return { url: `${dir}/model.glb`, anchor: "origin", ...size };
   const near = `${dir}/near.gltf`;
   return {
     url: near,

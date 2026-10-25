@@ -6,6 +6,7 @@ import { clone as cloneSkinned } from "three/examples/jsm/utils/SkeletonUtils.js
 
 import { planBoneTexture, type BoneTextureLayout } from "@jgengine/core/anim/boneTexture";
 
+import { floatAttribute } from "./modelMeshMerge";
 import { sharedGltfLoader } from "./modelLoad";
 
 /** A rig to bake: a loaded scene with skinned meshes and its clips. */
@@ -110,11 +111,11 @@ function flatten(geometry: THREE.BufferGeometry): THREE.BufferGeometry {
 function bakePart(mesh: THREE.Mesh, relative: THREE.Matrix4): { geometry: THREE.BufferGeometry; layout: string; material: THREE.Material } {
   const source = mesh.geometry;
   const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute("position", source.getAttribute("position").clone());
-  if (source.getAttribute("normal") !== undefined) geometry.setAttribute("normal", source.getAttribute("normal").clone());
+  geometry.setAttribute("position", floatAttribute(source.getAttribute("position")));
+  if (source.getAttribute("normal") !== undefined) geometry.setAttribute("normal", floatAttribute(source.getAttribute("normal")));
   else geometry.setAttribute("normal", new THREE.Float32BufferAttribute(new Float32Array(source.getAttribute("position").count * 3), 3));
   const uv = source.getAttribute("uv");
-  geometry.setAttribute("uv", uv !== undefined ? uv.clone() : new THREE.Float32BufferAttribute(new Float32Array(source.getAttribute("position").count * 2), 2));
+  geometry.setAttribute("uv", uv !== undefined ? floatAttribute(uv) : new THREE.Float32BufferAttribute(new Float32Array(source.getAttribute("position").count * 2), 2));
   if (source.index !== null) geometry.setIndex(source.index.clone());
   geometry.applyMatrix4(relative);
   return { geometry: flatten(geometry), layout: "", material: firstMaterial(mesh.material) };
@@ -166,11 +167,11 @@ export function bakeSkinnedCrowd(source: SkinnedCrowdSource, options: BakeSkinne
     if (skinned.isSkinnedMesh === true) {
       const source = mesh.geometry;
       const geometry = new THREE.BufferGeometry();
-      geometry.setAttribute("position", source.getAttribute("position").clone());
-      if (source.getAttribute("normal") !== undefined) geometry.setAttribute("normal", source.getAttribute("normal").clone());
+      geometry.setAttribute("position", floatAttribute(source.getAttribute("position")));
+      if (source.getAttribute("normal") !== undefined) geometry.setAttribute("normal", floatAttribute(source.getAttribute("normal")));
       else geometry.setAttribute("normal", new THREE.Float32BufferAttribute(new Float32Array(source.getAttribute("position").count * 3), 3));
       const uv = source.getAttribute("uv");
-      geometry.setAttribute("uv", uv !== undefined ? uv.clone() : new THREE.Float32BufferAttribute(new Float32Array(source.getAttribute("position").count * 2), 2));
+      geometry.setAttribute("uv", uv !== undefined ? floatAttribute(uv) : new THREE.Float32BufferAttribute(new Float32Array(source.getAttribute("position").count * 2), 2));
       if (source.index !== null) geometry.setIndex(source.index.clone());
       geometry.applyMatrix4(skinned.bindMatrix);
 
@@ -226,7 +227,9 @@ export function bakeSkinnedCrowd(source: SkinnedCrowdSource, options: BakeSkinne
 
   for (const group of groups.values()) {
     geometries.push(group.geometry);
-    materials.push(group.material);
+    // The bake keeps position, normal and uv only, so a material that multiplies vertex colours would
+    // read the missing attribute as black.
+    materials.push(group.material.vertexColors ? Object.assign(group.material.clone(), { vertexColors: false }) : group.material);
   }
   if (geometries.length === 0) throw new Error("bakeSkinnedCrowd: the source has no drawable mesh");
   // The shader transforms a normal by the slot matrix, which is only exact for uniform scale.

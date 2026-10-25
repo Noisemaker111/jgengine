@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import * as THREE from "three";
 
-import { mergedMeshNames, mergeModelSubMeshes, mergeSkinnedModelParts, meshMatchesName, setModelSubMeshMerge } from "./modelMeshMerge";
+import { floatAttribute, mergedMeshNames, mergeModelSubMeshes, mergeSkinnedModelParts, meshMatchesName, setModelSubMeshMerge } from "./modelMeshMerge";
 
 afterEach(() => setModelSubMeshMerge(true));
 
@@ -22,6 +22,40 @@ function meshes(root: THREE.Object3D): THREE.Mesh[] {
 function triangles(root: THREE.Object3D): number {
   return meshes(root).reduce((total, mesh) => total + (mesh.geometry.index?.count ?? 0) / 3, 0);
 }
+
+/** A unit-cube triangle stored the way meshopt quantization writes it: normalized int16 inside a node scale. */
+function quantizedMesh(material: THREE.Material, scale: number, x: number): THREE.Mesh {
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute("position", new THREE.BufferAttribute(new Int16Array([-32767, 0, 0, 32767, 0, 0, 0, 32767, 0]), 3, true));
+  geometry.setAttribute("uv", new THREE.BufferAttribute(new Uint16Array([0, 0, 65535, 0, 0, 65535]), 2, true));
+  geometry.setIndex([0, 1, 2]);
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.scale.setScalar(scale);
+  mesh.position.x = x;
+  return mesh;
+}
+
+describe("quantized meshes", () => {
+  test("floatAttribute dequantizes normalized integers", () => {
+    const attribute = floatAttribute(new THREE.BufferAttribute(new Int16Array([32767, -32767]), 1, true));
+    expect(attribute.array).toBeInstanceOf(Float32Array);
+    expect(attribute.getX(0)).toBeCloseTo(1, 4);
+    expect(attribute.getX(1)).toBeCloseTo(-1, 4);
+  });
+
+  test("merging keeps each part's node scale instead of clamping it to the unit cube", () => {
+    const root = new THREE.Group();
+    const paint = new THREE.MeshStandardMaterial();
+    root.add(quantizedMesh(paint, 2, 0), quantizedMesh(paint, 2, 10));
+    root.updateMatrixWorld(true);
+    expect(mergeModelSubMeshes(root).merged).toBe(1);
+    const [merged] = meshes(root);
+    merged!.geometry.computeBoundingBox();
+    expect(merged!.geometry.boundingBox!.min.x).toBeCloseTo(-2, 3);
+    expect(merged!.geometry.boundingBox!.max.x).toBeCloseTo(12, 3);
+    expect(merged!.geometry.getAttribute("uv").getX(1)).toBeCloseTo(1, 3);
+  });
+});
 
 describe("mergeModelSubMeshes", () => {
   test("collapses meshes sharing a material and keeps the vertex positions they had", () => {

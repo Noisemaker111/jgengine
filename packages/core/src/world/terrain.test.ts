@@ -771,3 +771,24 @@ describe("indexed sampling", () => {
     expect(onRoad).toBeGreaterThan(20);
   });
 });
+
+describe("live road drape", () => {
+  test("ground collision follows a road source as its streets widen", () => {
+    let width = 6;
+    const listeners = new Set<() => void>();
+    const source = {
+      current: () => [road({ path: [[-50, 0], [50, 0]], width, elevation: 0.2 })],
+      subscribe(listener: () => void) {
+        listeners.add(listener);
+        return () => listeners.delete(listener);
+      },
+    };
+    const world = environment({ roads: source.current(), roadSource: source });
+    const field = resolveEnvironmentField(world);
+    const flat = flatField().sampleHeight(0, 4);
+    expect(field.sampleHeight(0, 4)).toBeCloseTo(flat, 5);
+    width = 10;
+    for (const listener of listeners) listener();
+    expect(field.sampleHeight(0, 4)).toBeCloseTo(flat + 0.2, 5);
+  });
+});

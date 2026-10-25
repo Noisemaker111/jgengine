@@ -20,6 +20,22 @@ The realistic model library (`@jgengine/assets/catalogs/modelLibrary`) names 58 
 Poly Haven credits (Josh Dean, James Ray Cock, Rico Cilliers, Rob Tuytel and others); the SDK ships
 the names only, and `assets pull` fetches the bytes from Poly Haven's own API and CDN.
 
+## Microsoft Rocketbox
+
+The library's rigged humans and animals are converted from the
+[Microsoft Rocketbox Avatar Library](https://github.com/microsoft/Microsoft-Rocketbox), by Microsoft
+(Rocketbox Studios GmbH), released under the MIT License, Copyright (c) Microsoft Corporation.
+`assets pull` reads them from the repository at a pinned commit; games that ship them carry the
+MIT copyright and permission notice in their credits.
+
+## Khronos glTF Sample Assets
+
+`vehicle/sports-car` is **CarConcept** from the
+[Khronos glTF Sample Assets](https://github.com/KhronosGroup/glTF-Sample-Assets), by Eric Chadwick
+and Darmstadt Graphics Group GmbH, licensed [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+The pull removes the licence plate and the Khronos and glTF logos (trademarks the license does not
+grant) and simplifies the mesh. A game that ships it must show that credit.
+
 JGengine stands on the shoulders of open work by others.
 This file records that debt and thanks the people whose projects shaped ours.
 

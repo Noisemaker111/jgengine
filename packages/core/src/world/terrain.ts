@@ -1,6 +1,7 @@
 import type {
   BiomeBand,
   EnvironmentWorldFeature,
+  LiveRoadSource,
   RoadEnvironmentDescriptor,
   TerrainColors,
   TerrainDetailConfig,
@@ -400,6 +401,25 @@ export function flattenFieldAround(base: TerrainField, zones: readonly AvoidZone
 }
 
 /**
+ * {@link roadDrapedField} over roads that change while the game runs: the drape follows every notify
+ * from `source`, so a street a layout slider widened lifts bodies across its new width and a narrowed
+ * one stops lifting the old kerb line.
+ * @internal — reached through `environment({ roadSource })`; not called directly by games.
+ */
+export function liveRoadDrapedField(base: TerrainField, source: LiveRoadSource): TerrainField {
+  let draped = roadDrapedField(base, source.current());
+  source.subscribe(() => {
+    draped = roadDrapedField(base, source.current());
+  });
+  return {
+    sampleHeight: (x, z) => draped.sampleHeight(x, z),
+    sampleNormal: base.sampleNormal,
+    ...(base.bounds === undefined ? {} : { bounds: base.bounds }),
+    ...(base.waterLevel === undefined ? {} : { waterLevel: base.waterLevel }),
+  };
+}
+
+/**
  * The full ground field for an environment world: base `terrain` composed with any `islands`, then
  * any authored `sculpt` snapshot, then any `clearings` flattened on top — so an editor-sculpted
  * heightfield drives both the rendered mesh and player collision, and gameplay spots stay level,
@@ -443,7 +463,8 @@ export function roadDrapedField(base: TerrainField, roads: readonly RoadEnvironm
  * any authored `sculpt` snapshot, then any `clearings`, then any `roads` draped on top — so an
  * editor-sculpted heightfield drives both the rendered mesh and player collision, gameplay spots
  * stay level, and anything grounded on a road stands on the drawn asphalt rather than the bare
- * terrain beneath it, through the one seam every consumer already reads.
+ * terrain beneath it, through the one seam every consumer already reads. A live `roadSource` wins
+ * over the boot `roads`, so collision follows the streets the renderer draws.
  * @internal
  */
 export function resolveEnvironmentField(feature: EnvironmentWorldFeature): TerrainField {
@@ -457,6 +478,7 @@ export function resolveEnvironmentField(feature: EnvironmentWorldFeature): Terra
     feature.clearings === undefined || feature.clearings.length === 0
       ? sculpted
       : flattenFieldAround(sculpted, feature.clearings);
+  if (feature.roadSource !== undefined) return liveRoadDrapedField(cleared, feature.roadSource);
   return feature.roads === undefined || feature.roads.length === 0
     ? cleared
     : roadDrapedField(cleared, feature.roads);
