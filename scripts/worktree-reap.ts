@@ -16,6 +16,7 @@ const WORKTREE_REAP_USAGE = {
   flags: [
     { flag: "--dry-run", detail: "print what would go, remove nothing" },
     { flag: "--fetch", detail: "fetch origin/beta first, so a merge that just landed counts" },
+    { flag: "--skip <path>", detail: "never remove this worktree (repeatable); the caller's own directory is always skipped" },
   ],
   example: "bun run worktree:reap --dry-run",
 } as const;
@@ -136,6 +137,16 @@ function git(cwd: string, args: string[]): { ok: boolean; stdout: string } {
   }
 }
 
+/** The caller's directory plus every `--skip <path>`: a lane that was just created sits at `origin/beta` and would otherwise count as merged. */
+export function skipPaths(argv: readonly string[], cwd: string): string[] {
+  const paths = [cwd];
+  argv.forEach((arg, index) => {
+    const next = argv[index + 1];
+    if (arg === "--skip" && next !== undefined) paths.push(next);
+  });
+  return paths;
+}
+
 function main(argv: readonly string[]): void {
   if (printHelpIfAsked("worktree-reap", WORKTREE_REAP_USAGE, argv)) process.exit(0);
   const dryRun = argv.includes("--dry-run");
@@ -157,7 +168,7 @@ function main(argv: readonly string[]): void {
   const selection = selectReap({
     refs: parseWorktreeList(listed.stdout),
     mainRoot,
-    skip: [process.cwd()],
+    skip: skipPaths(argv, process.cwd()),
     isMerged: (branch) => git(mainRoot, ["merge-base", "--is-ancestor", branch, "origin/beta"]).ok,
   });
 
