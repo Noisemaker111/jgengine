@@ -72,3 +72,17 @@ export function isAllowedGameSrcEntry(name: string, isDirectory: boolean): boole
 export function gameSkeletonRequiredSummary(): string {
   return GAME_SKELETON_REQUIRED_FILES.join(", ");
 }
+
+/**
+ * A source line that declares mutable module state (#1579): `let x` or `export let x` at the start
+ * of a line. Module scope is shared by every `GameContext` in a process, so per-run state belongs in
+ * `defineStore` / `perContext`. Returns the declared name, or null for any other line.
+ */
+export function moduleGlobalName(line: string): string | null {
+  return /^(?:export )?let (\w+)/.exec(line)?.[1] ?? null;
+}
+
+/** A game source file the source gates read: a non-test `.ts` / `.tsx` under a game's `src`. */
+export function isGameSourceFile(fileName: string): boolean {
+  return /\.tsx?$/.test(fileName) && !/\.test\.tsx?$/.test(fileName);
+}
