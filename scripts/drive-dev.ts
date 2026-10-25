@@ -16,6 +16,7 @@
  * remains available. `--size half` is the cheap iteration mode; `--quick` is the
  * cheaper one (960x540, one settled frame in a 2s window, no video, no perf pass).
  */
+import { provisionCapturedGame } from "./provisionCapture";
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync, appendFileSync } from "node:fs";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 import {
@@ -35,6 +36,8 @@ import {
   parseSizeArg,
   qualitySuffix,
   readCapturePageState,
+  readMissingModels,
+  missingModelsProblem,
   readReportedQuality,
   sizeForDraft,
   screencastCapturesFully,
@@ -780,6 +783,9 @@ if (args.flows) {
 }
 
 sweepCaptureProfiles();
+// A game captured from this checkout pulls the packs it references first, the way its own `dev` does,
+// so a missing model in the shot is a real path bug rather than an unprovisioned checkout.
+if (args.url === undefined && args.site === undefined) await provisionCapturedGame(args.gameDir ?? resolve(import.meta.dir, "../games", args.game));
 const startedAt = performance.now();
 
 const outDir = resolve(import.meta.dir, "../shots");
@@ -1155,6 +1161,11 @@ async function driveSession(daemon: ShootDaemonState | null): Promise<number> {
           } else if (args.steps.every((step) => step.kind !== "key")) {
             console.error("drive: --playtest ran with no --key hold — nothing drove input, so progress is unproven.");
           }
+        }
+        const missingModels = missingModelsProblem(await readMissingModels(session));
+        if (missingModels !== null) {
+          console.error(`drive: ${missingModels}`);
+          code = 1;
         }
         if (args.quick) {
           const shotProfile = captureProfile(args.device, args.size, viewport);

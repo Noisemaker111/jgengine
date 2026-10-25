@@ -54,6 +54,7 @@ export function createCombatFx(d: CombatFxDeps): CombatFx {
     nova: 520,
     glow: 700,
     spark: 240,
+    arc: 220,
   };
   let vfxSeq = 0;
 
@@ -90,6 +91,11 @@ export function createCombatFx(d: CombatFxDeps): CombatFx {
       durationMs: resolved.durationMs ?? vfxDefaultDurationMs[resolved.kind],
     };
     if (to !== undefined) event.to = to;
+    else if (resolved.kind === "arc" && typeof input.from === "string") {
+      // A swing with no target sweeps where the attacker faces (`rotationY` 0 faces +z).
+      const yaw = entities.get(input.from)?.rotationY ?? 0;
+      event.to = [from[0] + Math.sin(yaw) * 1.5, from[1], from[2] + Math.cos(yaw) * 1.5];
+    }
     if (resolved.radius !== undefined) event.radius = resolved.radius;
     events.emit("combat.vfx", event);
   }

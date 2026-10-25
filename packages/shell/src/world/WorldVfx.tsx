@@ -23,7 +23,35 @@ const PARTICLE_COUNT: Record<VfxKind, number> = {
   nova: 14,
   glow: 10,
   spark: 12,
+  arc: 16,
 };
+
+/** Half the sweep of a melee arc, in radians (about 130 degrees end to end). */
+const ARC_HALF_SWEEP = 1.15;
+
+/**
+ * Where point `t` (0..1, one blade edge to the other) of a melee swing arc sits: a curve of radius
+ * `reach` in front of the attacker at `from`, centred on the direction to `to` and tilted so the
+ * swing runs high to low, never a burst at the body centre. Writes into `out`.
+ * @internal
+ */
+export function slashArcPoint(
+  from: THREE.Vector3,
+  to: THREE.Vector3,
+  t: number,
+  out: THREE.Vector3,
+): THREE.Vector3 {
+  const dx = to.x - from.x;
+  const dz = to.z - from.z;
+  const length = Math.hypot(dx, dz);
+  const fx = length < 1e-4 ? 0 : dx / length;
+  const fz = length < 1e-4 ? 1 : dz / length;
+  const reach = length < 1e-4 ? 1 : Math.min(1.2, Math.max(0.7, length * 0.6));
+  const angle = (t - 0.5) * 2 * ARC_HALF_SWEEP;
+  const forward = Math.cos(angle) * reach;
+  const side = Math.sin(angle) * reach;
+  return out.set(from.x + fx * forward - fz * side, from.y + 0.25 - (t - 0.5) * 0.7, from.z + fz * forward + fx * side);
+}
 
 function planarDir(): THREE.Vector3 {
   const angle = Math.random() * Math.PI * 2;
@@ -55,6 +83,8 @@ function makeParticles(kind: VfxKind): Particle[] {
       });
     } else if (kind === "beam") {
       out.push({ offset: new THREE.Vector3(), dir: new THREE.Vector3(), speed: 0, size: 0.45 + Math.random() * 0.3, delay: 0 });
+    } else if (kind === "arc") {
+      out.push({ offset: new THREE.Vector3(), dir: new THREE.Vector3(), speed: 0, size: 0.34, delay: i / Math.max(1, count - 1) });
     } else {
       out.push({
         offset: sphereDir().multiplyScalar(0.12),
@@ -140,6 +170,13 @@ function VfxItem({ event, texture }: { event: CombatVfxEvent; texture: THREE.Tex
       } else if (kind === "nova") {
         pos.set(event.from[0], event.from[1] + 0.4, event.from[2]).addScaledVector(particle.dir, radius * p);
         opacity = (1 - p) * 0.9;
+      } else if (kind === "arc") {
+        // The blade sweeps edge to edge in the first 60% of the life, then the trail fades.
+        const t = particle.delay;
+        slashArcPoint(from, to, t, pos);
+        const head = p / 0.6;
+        opacity = t <= head ? (1 - p) * (0.35 + 0.65 * t) : 0;
+        scale = particle.size * (0.55 + 0.75 * Math.sin(Math.PI * t));
       } else if (kind === "glow") {
         const local = clamp01(p - particle.delay);
         pos.copy(from).add(particle.offset).addScaledVector(particle.dir, particle.speed * local);

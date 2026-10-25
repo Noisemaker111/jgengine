@@ -21,7 +21,7 @@ export interface VfxPreset {
  * so `ctx.scene.entity.vfx({ preset: "arrow", from, to })` renders a visible bolt with
  * zero tuning, and `"lightning"`, `"web"`, `"slash"`, `"shield"`, `"heal"`, `"explosion"`
  * likewise just work. Each entry only picks a `kind` (`projectile | beam | nova | glow |
- * spark`), a color, and a lifetime; it is visual vocabulary (like named CSS colors), not a
+ * spark | arc`), a color, and a lifetime; it is visual vocabulary (like named CSS colors), not a
  * gameplay archetype — combat numbers stay in the caller's own effect/ability data. Any
  * field passed to `vfx()` overrides the preset, and unknown names fall back to `spark` so a
  * flavor typo still shows *something* rather than nothing.
@@ -51,10 +51,11 @@ export const vfxPresets = {
   web: { kind: "beam", color: 0xf0f0f0, durationMs: 320 },
   chain: { kind: "beam", color: 0xffe9a0 },
 
-  // Melee / impact — a spark scatters at the point of contact.
-  slash: { kind: "spark", color: 0xd6d0c4 },
-  sword: { kind: "spark", color: 0xd6d0c4 },
-  melee: { kind: "spark", color: 0xd6d0c4 },
+  // Melee swings — a blade arc sweeps across the attacker's front, toward the target.
+  slash: { kind: "arc", color: 0xffb35c },
+  sword: { kind: "arc", color: 0xffc27a },
+  melee: { kind: "arc", color: 0xff9a4d },
+  // Impacts — a spark scatters at the point of contact.
   spark: { kind: "spark", color: 0xfff2b0 },
   hit: { kind: "spark", color: 0xffd27a },
 

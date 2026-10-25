@@ -15,6 +15,7 @@ import {
   type RuntimeDiagnostic,
 } from "./diagnostics/RuntimeDiagnostics";
 import { DevtoolsRuntime } from "./devtools/DevtoolsRuntime";
+import { MissingModelsNotice } from "./devtools/MissingModelsNotice";
 import { FeedbackHost } from "./audio/FeedbackHost";
 import type { AudioEngine } from "./audio/audioEngine";
 import { GamePhaseStamp } from "./GamePhaseStamp";
@@ -114,6 +115,7 @@ export function ShellDebugOverlays({
   return (
     <>
       {devtoolsEnabled ? <DevtoolsRuntime ctx={ctx} playable={playable} /> : null}
+      {devtoolsEnabled ? <MissingModelsNotice /> : null}
       {devtoolsEnabled && (devtoolsOpen || openedOnce) ? (
         <Suspense fallback={devtoolsOpen ? <div role="status" style={{ position: "absolute", right: 16, top: 16, zIndex: 90, color: "#e2e8f0", background: "#0f172a", padding: "10px 14px", borderRadius: 8 }}>Loading developer tools…</div> : null}>
           <DevtoolsOverlay open={devtoolsOpen} ctx={ctx} playable={playable} multiplayer={multiplayer} />

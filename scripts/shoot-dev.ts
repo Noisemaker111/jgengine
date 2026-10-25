@@ -7,6 +7,7 @@
  * starts apps/dev or apps/web lazily on first use. Manual `--keep`/`--connect`
  * remains available. See `jgengine-verify`.
  */
+import { provisionCapturedGame } from "./provisionCapture";
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import type { ChildProcess } from "node:child_process";
@@ -24,6 +25,8 @@ import {
   ensureWebServer,
   forwardPageConsole,
   readCapturePageState,
+  readMissingModels,
+  missingModelsProblem,
   captureProfile,
   ensureCaptureFreeSpace,
   screencastCapturesFully,
@@ -544,6 +547,11 @@ async function shootOne(
       console.error(`MOBILE LAYOUT COLLISION [${label}]: ${formatCollisionReport(collision)}`);
       ok = false;
     }
+    const missingModels = missingModelsProblem(await readMissingModels(session));
+    if (missingModels !== null) {
+      console.error(`${missingModels} [${label}]`);
+      ok = false;
+    }
     const replacement = describeReplacement(record);
     if (replacement !== null) console.error(`shoot [${label}]: ${replacement}`);
     // Viewport metrics are advisory now: a dead 3D view is refused before the write, so anything
@@ -634,6 +642,9 @@ if (args.gameDir !== null) {
 // Reclaim profiles that killed runs left behind before this one can add to them, and refuse to
 // start on a drive that cannot hold this capture.
 sweepCaptureProfiles();
+// A game captured from this checkout pulls the packs it references first, the way its own `dev` does,
+// so a missing model in the shot is a real path bug rather than an unprovisioned checkout.
+if (args.url === undefined && args.site === undefined) await provisionCapturedGame(args.gameDir ?? resolve(import.meta.dir, "../games", args.game));
 ensureCaptureFreeSpace();
 
 interface ShootTarget {

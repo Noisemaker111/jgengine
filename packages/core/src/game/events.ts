@@ -185,8 +185,8 @@ export interface EntityFloatTextEvent {
   scale?: number;
 }
 
-/** The visual archetype of a spell/ability effect burst: a traveling bolt, a connecting beam, an expanding ground nova, a soft aura glow, or a scattering impact spark. */
-export type VfxKind = "projectile" | "beam" | "nova" | "glow" | "spark";
+/** The visual archetype of a spell/ability effect burst: a traveling bolt, a connecting beam, an expanding ground nova, a soft aura glow, a scattering impact spark, or a melee swing arc drawn across the attacker's front. */
+export type VfxKind = "projectile" | "beam" | "nova" | "glow" | "spark" | "arc";
 
 /** A transient sprite-particle effect the shell renders once and expires — one burst of `kind`, tinted `color`, anchored at `from` (and `to` for travel/beam effects). */
 export interface CombatVfxEvent {
