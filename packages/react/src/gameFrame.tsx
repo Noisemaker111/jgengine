@@ -304,6 +304,8 @@ const FACE_CORNER_SHRINK = Math.SQRT2 - 1;
  * The CSS variables that dress a frame. `GameFrame` sets them; spread them on your own element (with
  * `data-jg-frame` on it and `data-jg-frame-face` on its single child) to dress one by hand. Add
  * `data-shadow` for the cast shadow or `data-glow` for the lit ring; `shadow` itself is read by `GameFrame`.
+ * It also installs the frame stylesheet, so a hand-dressed element looks right even when no
+ * `GameFrame` has mounted yet (a HUD that starts in play, with no menu before it).
  *
  * @capability game-frame-style CSS variables for a material frame on an element the game already owns
  */
@@ -317,6 +319,7 @@ export function gameFrameVars({
   glow,
   padding,
 }: Pick<GameFrameProps, "material" | "cut" | "depth" | "tint" | "edge" | "edgeWidth" | "shadow" | "glow" | "padding"> = {}): CSSProperties {
+  ensureFrameStyles();
   const look = GAME_MATERIALS[material];
   const rim = edge ?? look.edge;
   const rimWidth = rim === "none" ? 0 : Math.max(0, edgeWidth);
