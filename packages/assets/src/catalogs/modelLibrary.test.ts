@@ -27,6 +27,11 @@ describe("model library", () => {
         expect(entry.homepage).toBe(`https://polyhaven.com/a/${entry.origin.asset}`);
         expect(entry.origin.far).toBeLessThanOrEqual(entry.origin.near);
       }
+      if (entry.origin.provider === "rocketbox") {
+        expect(entry.license).toBe("MIT");
+        expect(entry.homepage).toBe(`https://github.com/microsoft/Microsoft-Rocketbox/tree/master/Assets/${entry.origin.path}`);
+      }
+      if (entry.origin.provider === "khronos") expect(entry.license).toBe("CC-BY-4.0");
     }
   });
 
@@ -45,9 +50,9 @@ describe("model library", () => {
   });
 
   test("requests the library cannot answer realistically name their gap", () => {
-    expect(findLibraryModel("sedan")).toEqual([]);
-    expect(libraryModelGap("sedan")?.route).toContain("CarConcept");
-    expect(libraryModelGap("server rack")?.route).toContain("generated");
+    expect(findLibraryModel("palm tree")[0]?.entry.name).not.toBe("nature/jacaranda");
+    expect(libraryModelGap("palm tree")?.route).toContain("generated");
+    expect(libraryModelGap("bus")?.route).toContain("vehicle/sports-car");
     expect(libraryModelGap("street lamp")).toBeNull();
   });
 
@@ -62,6 +67,24 @@ describe("model library", () => {
     ]);
     expect(libraryModel("park/bench", { basePath: "/m", targetHeight: 1 }).url).toBe("/m/library/park/bench/near.gltf");
     expect(() => libraryModel("city/nope")).toThrow("Unknown library model");
+  });
+
+  test("the former gaps answer with rigged humans, animals, a car and a server rack", () => {
+    expect(findLibraryModel("police officer")[0]!.entry.name).toBe("human/police-officer");
+    expect(findLibraryModel("worker human")[0]!.entry.name.startsWith("human/")).toBe(true);
+    expect(findLibraryModel("sedan")[0]!.entry.name).toBe("vehicle/sports-car");
+    expect(findLibraryModel("server rack")[0]!.entry.name).toBe("scifi/server-rack");
+    expect(findLibraryModel("dog")[0]!.entry.name.startsWith("creature/dog")).toBe(true);
+    expect(findLibraryModel("tree")[0]!.entry.name).toBe("nature/jacaranda");
+  });
+
+  test("a rigged human walks on the engine's locomotion states and an animal stands still", () => {
+    const human = libraryModel("human/businessman");
+    expect(human.url).toBe("/models/library/human/businessman/model.glb");
+    expect(human.variants).toBeUndefined();
+    expect(human.animation).toEqual({ states: { idle: "Idle", walk: "Walk", run: "Run", walkSpeed: 0.3, runSpeed: 3.2 } });
+    expect(libraryModel("creature/deer").animation).toBeUndefined();
+    expect(libraryModel("scifi/server-rack").url).toBe("/models/library/scifi/server-rack/model.glb");
   });
 
   test("credits carry title, author, license and page", () => {

@@ -49,7 +49,7 @@
 - `ModelLibraryGap` (interface): interface ModelLibraryGap — Things games ask for that no licensed realistic source in the library covers yet, and the route to close each one. `findLibraryModel` returns the gap instead of a wrong-looking substitute.
 - `ModelLibraryGenre` (type): type ModelLibraryGenre = | "city" | "park" | "nature" | "creature" | "survival" | "industrial" | "scifi" | "tower-defense" | "office" — The realistic model library: real-world-scale, licensed, compressed models a game asks for by what it needs ("street lamp", "boulder", "office desk") rather than by pack and file name.
 - `ModelLibraryMatch` (interface): interface ModelLibraryMatch — One ranked answer to "what do you have for X".
-- `ModelLibraryOrigin` (type): type ModelLibraryOrigin = PolyHavenModelOrigin | GeneratedModelOrigin — Where an entry's bytes come from: a CC0 scan pulled from its source, or a game-committed generated model.
+- `ModelLibraryOrigin` (type): type ModelLibraryOrigin = | PolyHavenModelOrigin | RocketboxModelOrigin | KhronosModelOrigin | AuthoredModelOrigin | GeneratedModelOrigin — Where an entry's bytes come from: a scan or rig pulled from its source, an engine-authored model, or a game-committed generated one.
 - `ModelSnippetOptions` (interface): interface ModelSnippetOptions { basePath?: string; seam?: "objectModels" | "entityModels" } — ⚠ undocumented · used by `modelWiringSnippet`: Copy-paste wiring for a pulled GLB id: resolve through the catalog, drop into a model seam.
 - `PinnedDownload` (interface): interface PinnedDownload { url: string; sha256?: string } — ⚠ undocumented
 - `PolyHavenModelOrigin` (interface): interface PolyHavenModelOrigin — A Poly Haven model (CC0), fetched from `api.polyhaven.com` at its 1k texture tier.
@@ -176,8 +176,10 @@
 
 ## @jgengine/assets/catalogs/modelLibrary
 
+- `AuthoredModelOrigin` (interface): interface AuthoredModelOrigin — A model the engine builds itself from code and CC0 materials (no download), for shapes no licensed scan covers. `builder` names the function in `modelLibraryAuthored`.
 - `FindLibraryModelOptions` (interface): interface FindLibraryModelOptions — Narrowing for {@link findLibraryModel}.
 - `GeneratedModelOrigin` (interface): interface GeneratedModelOrigin — A model a game generated itself (text or image to 3D, e.g. LLMville's fal.ai diorama-assets skill). The library never runs or pays for a generator: the game generates, reviews and commits the GLB, then registers it here with the generator and terms it was made under. `assets pull` skips these; `libraryModel` serves the committed file from `generatedBasePath`.
+- `KhronosModelOrigin` (interface): interface KhronosModelOrigin — A Khronos glTF Sample Assets model, fetched from `KhronosGroup/glTF-Sample-Assets` at a pinned commit. `drop` names nodes to remove before compression (trademarked logos the license excludes).
 - `LibraryModelOptions` (interface): interface LibraryModelOptions — URL and LOD options for {@link libraryModel}.
 - `MODEL_LIBRARY` (const): const MODEL_LIBRARY: readonly ModelLibraryEntry[] — Every library entry.
 - `MODEL_LIBRARY_GAPS` (const): const MODEL_LIBRARY_GAPS: readonly ModelLibraryGap[] — Known gaps: requests with no licensed realistic model yet, and how each would be closed.
@@ -186,8 +188,10 @@
 - `ModelLibraryGap` (interface): interface ModelLibraryGap — Things games ask for that no licensed realistic source in the library covers yet, and the route to close each one. `findLibraryModel` returns the gap instead of a wrong-looking substitute.
 - `ModelLibraryGenre` (type): type ModelLibraryGenre = | "city" | "park" | "nature" | "creature" | "survival" | "industrial" | "scifi" | "tower-defense" | "office" — The realistic model library: real-world-scale, licensed, compressed models a game asks for by what it needs ("street lamp", "boulder", "office desk") rather than by pack and file name.
 - `ModelLibraryMatch` (interface): interface ModelLibraryMatch — One ranked answer to "what do you have for X".
-- `ModelLibraryOrigin` (type): type ModelLibraryOrigin = PolyHavenModelOrigin | GeneratedModelOrigin — Where an entry's bytes come from: a CC0 scan pulled from its source, or a game-committed generated model.
+- `ModelLibraryOrigin` (type): type ModelLibraryOrigin = | PolyHavenModelOrigin | RocketboxModelOrigin | KhronosModelOrigin | AuthoredModelOrigin | GeneratedModelOrigin — Where an entry's bytes come from: a scan or rig pulled from its source, an engine-authored model, or a game-committed generated one.
 - `PolyHavenModelOrigin` (interface): interface PolyHavenModelOrigin — A Poly Haven model (CC0), fetched from `api.polyhaven.com` at its 1k texture tier.
+- `RocketboxClip` (interface): interface RocketboxClip — One animation a Rocketbox entry carries, taken from the shared Rocketbox animation library.
+- `RocketboxModelOrigin` (interface): interface RocketboxModelOrigin — A rigged Microsoft Rocketbox avatar or animal (MIT), converted from FBX at a pinned commit of `github.com/microsoft/Microsoft-Rocketbox`. One skinned GLB with its clips; no far level.
 - `findLibraryModel` (function): function findLibraryModel(query: string, options: FindLibraryModelOptions = {}): readonly ModelLibraryMatch[] — Rank library models for a plain-words request: an exact intent wins, then intent and title word overlap; a genre filter narrows the set. An empty result with a matching `libraryModelGap` means the library knows it has nothing realistic for that request.
 - `findLibraryModelByName` (function): function findLibraryModelByName(name: string): ModelLibraryEntry | null — The entry with this exact name, or `null`.
 - `libraryModel` (function): function libraryModel(name: string, options: LibraryModelOptions = {}): ModelConfig — The `ModelConfig` that draws a library model: real-world size, grounded at its origin, with its near and far levels switched by distance. Throws for an unknown name, so a typo fails at boot.
@@ -199,6 +203,10 @@
 ## @jgengine/assets/catalogs/modelLibraryEntries
 
 - `MODEL_LIBRARY_ENTRIES` (const): const MODEL_LIBRARY_ENTRIES: readonly ModelLibraryEntry[] — Curated library entries. Poly Haven models are CC0-1.0; authors are as Poly Haven credits them. Add an entry by name, title, genres, intents and origin; `assets pull model:<name>` fetches it.
+
+## @jgengine/assets/catalogs/modelLibraryRiggedEntries
+
+- `MODEL_LIBRARY_RIGGED_ENTRIES` (const): const MODEL_LIBRARY_RIGGED_ENTRIES: readonly ModelLibraryEntry[] — The library entries beyond the Poly Haven scans: rigged Rocketbox humans and animals, the Khronos sports car, foliage scans that need thinning and the engine-authored sci-fi props.
 
 ## @jgengine/assets/catalogs/starter
 
@@ -282,6 +290,10 @@
 - `inspectGlbMaterials` (function): function inspectGlbMaterials(bytes: Uint8Array, assetId: string): GltfMaterialInspection — Inspect the JSON chunk of complete GLB v2 bytes, including models with compressed geometry. This measures material metadata only; it never decodes geometry or resolves image URLs.
 - `inspectGltfMaterials` (function): function inspectGltfMaterials(json: GLTF.IGLTF, assetId: string): GltfMaterialInspection — Inventory validated glTF JSON without flattening slots, decoding compressed geometry, or changing materials. IDs use the supplied model namespace plus source indices, and remain stable while its pinned bytes remain stable.
 
+## @jgengine/assets/imageCodec
+
+- `RgbaImage` (interface): interface RgbaImage — A decoded image as top-row-first RGBA.
+
 ## @jgengine/assets/importSpec
 
 - `AssetImportKind` (type): type AssetImportKind = "model" | "texture" | "material" | "sprite" | "spriteSheet" | "audio" | "font" | "hdri" — Supported logical kinds for user-supplied assets.
@@ -332,12 +344,20 @@
 - `extractMaterialMaps` (function): function extractMaterialMaps(archive: Uint8Array): ExtractedMaterialMap[] — Pulls the recognized PBR maps out of a material archive (ambientCG's flat `<Asset>_<Res>_<Map>.jpg` layout) and normalizes their names so resolved URLs never depend on the provider's naming or the pulled resolution.
 - `materialAliases` (const): const materialAliases: readonly AssetAlias[] — Semantic keys onto the ambientCG catalog, mirroring the model alias layer.
 
+## @jgengine/assets/modelLibraryAuthored
+
+- `AUTHORED_BUILDERS` (const): const AUTHORED_BUILDERS: Readonly<Record<string, () => Builder>> — Every engine-authored builder, by the `builder` an entry names.
+- `BuiltAuthoredModel` (interface): interface BuiltAuthoredModel — What an authored pull wrote.
+- `buildAuthoredModel` (function): function buildAuthoredModel(entry: ModelLibraryEntry, modelsRoot: string): Promise<BuiltAuthoredModel> — Build an authored entry and write `<modelsRoot>/library/<name>/model.glb`. Nothing is downloaded.
+
 ## @jgengine/assets/modelLibraryPull
 
+- `KHRONOS_COMMIT` (const): const KHRONOS_COMMIT: "8f492390ddc7a2ae221a1369ef560589cf8c70fb" — The commit of `KhronosGroup/glTF-Sample-Assets` every Khronos entry is read from.
 - `PullLibraryModelOptions` (interface): interface PullLibraryModelOptions — Where {@link pullLibraryModel} writes and how it fetches.
 - `PulledLibraryModel` (interface): interface PulledLibraryModel — What one pull wrote: folder, bytes, triangle counts per level and measured size.
 - `downscaleJpeg` (function): function downscaleJpeg(bytes: Uint8Array, max: number): Uint8Array — Halve a JPEG (2x2 box filter) until its longest edge fits `max`; smaller maps pass through untouched.
 - `pullLibraryModel` (function): function pullLibraryModel(entry: ModelLibraryEntry, options: PullLibraryModelOptions): Promise<PulledLibraryModel> — Download one library model from its official source, simplify it into a near and a far level, meshopt-compress both and write them as `near.gltf` / `far.gltf` sharing one set of textures (so the far level costs geometry only). Every file is checked against the source's published md5.
+- `thinIslands` (function): function thinIslands(document: Document, material: RegExp, share: number): number — Keep an evenly spread `share` of the connected triangle islands (leaf clusters) on every primitive whose material name matches `material`, and grow each kept island about its own centre by `share^-0.35` so the canopy keeps most of its cover � the usual foliage LOD trade, not a change to the tree's size. Returns the triangles removed.
 
 ## @jgengine/assets/packs/starter
 
@@ -366,6 +386,13 @@
 - `RegistryComponent` (interface): interface RegistryComponent { name: string; title: string; description: string } — ⚠ undocumented · used by `componentWiringSnippet` (@jgengine/assets): Copy-paste wiring for a HUD component: the `shadcn add` command plus import + usage.
 - `componentInstallUrl` (function): function componentInstallUrl(name: string): string — The `shadcn add` URL for a HUD component, e.g. `https://jgengine.com/r/vital-bar.json`.
 - `registryCatalog` (const): const registryCatalog: RegistryCatalog — ⚠ undocumented
+
+## @jgengine/assets/rocketboxPull
+
+- `PullRocketboxOptions` (interface): interface PullRocketboxOptions — Fetch and settings for {@link pullRocketboxModel}.
+- `PulledRocketboxModel` (interface): interface PulledRocketboxModel — What one Rocketbox pull wrote.
+- `ROCKETBOX_COMMIT` (const): const ROCKETBOX_COMMIT: "0943055db6ec570bcef9f2c8b41c9e5467c808f9" — Microsoft Rocketbox (MIT) ships rigged avatars and animals as FBX with 2048 px TGA maps. This converts one into a single meshopt-compressed GLB the engine can draw and animate: the avatar's skinned mesh and bones, the requested clips retargeted by bone name (the library is one skeleton family), metres instead of centimetres, and JPEG/PNG maps halved to the texture budget. Every file comes from the repository at a pinned commit and is checked against Git's own blob hash.
+- `pullRocketboxModel` (function): function pullRocketboxModel(entry: ModelLibraryEntry, options: PullRocketboxOptions): Promise<PulledRocketboxModel> — Pull one Rocketbox avatar or animal and write `<modelsRoot>/library/<name>/model.glb`: the skinned mesh, its bones, the entry's clips (in place), base colour and normal maps.
 
 ## @jgengine/assets/singles
 

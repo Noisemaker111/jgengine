@@ -41,10 +41,12 @@
     "@jgengine/core": "^0.39.0",
     "fflate": "^0.8.2",
     "jpeg-js": "0.4.4",
-    "meshoptimizer": "0.22.0"
+    "meshoptimizer": "0.22.0",
+    "three": "^0.182.0"
   },
   "devDependencies": {
-    "@types/node": "^24"
+    "@types/node": "^24",
+    "@types/three": "^0.182.0"
   },
   "publishConfig": {
     "access": "public"

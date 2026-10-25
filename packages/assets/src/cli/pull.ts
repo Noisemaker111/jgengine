@@ -14,7 +14,9 @@ import { generatedSpriteIndex } from "../generated-sprites";
 import { reindex } from "../indexGen";
 import { isScrapeDownload, type AssetSource, type SingleAsset } from "../manifest";
 import { extractMaterialMaps } from "../materials";
+import { buildAuthoredModel } from "../modelLibraryAuthored";
 import { pullLibraryModel } from "../modelLibraryPull";
+import { pullRocketboxModel } from "../rocketboxPull";
 import { validateAssetReferences } from "../provisioning";
 import { registryCatalog } from "../registry";
 import {
@@ -191,13 +193,14 @@ export async function cmdPull(argv: string[]): Promise<void> {
     console.log(`library: ${pulled.size} material(s) ready`);
     return;
   }
-  // `model:<name>` pulls one realistic library model; `model-library` pulls every Poly Haven entry.
+  // `model:<name>` pulls one realistic library model; `model-library` pulls every pullable entry.
   if (sourceId === "model-library" || sourceId.startsWith("model:")) {
     const outRoot = flag(argv, "dir") !== undefined ? resolve(flag(argv, "dir")!) : resolveDefaultOutputRoot(here);
     const modelsRoot = join(outRoot, "models");
+    const githubToken = process.env.GITHUB_TOKEN ?? process.env.GH_TOKEN;
     const entries =
       sourceId === "model-library"
-        ? MODEL_LIBRARY.filter((entry) => entry.origin.provider === "polyhaven")
+        ? MODEL_LIBRARY.filter((entry) => entry.origin.provider !== "generated")
         : [findLibraryModelByName(sourceId.slice("model:".length)) ?? fail(`unknown library model: ${sourceId.slice(6)}`)];
     let total = 0;
     for (const entry of entries) {
@@ -205,7 +208,26 @@ export async function cmdPull(argv: string[]): Promise<void> {
         console.log(`${entry.name}: already pulled`);
         continue;
       }
-      const pulled = await pullLibraryModel(entry, { modelsRoot, fetchImpl: cliFetch });
+      if (entry.origin.provider === "rocketbox") {
+        const pulled = await pullRocketboxModel(entry, { modelsRoot, fetchImpl: cliFetch, ...(githubToken === undefined ? {} : { githubToken }) });
+        total += pulled.bytes;
+        console.log(
+          `${entry.name}: ${pulled.triangles} tris, ${pulled.bones} bones, clips ${pulled.clips.join("/") || "none"}, ` +
+            `${(pulled.bytes / 1e6).toFixed(2)} MB, ${pulled.height.toFixed(2)} m tall -> ${pulled.file}`,
+        );
+        continue;
+      }
+      if (entry.origin.provider === "authored") {
+        const built = await buildAuthoredModel(entry, modelsRoot);
+        total += built.bytes;
+        console.log(`${entry.name}: ${built.triangles} tris, ${(built.bytes / 1e6).toFixed(2)} MB (built) -> ${built.file}`);
+        continue;
+      }
+      if (entry.origin.provider === "generated") {
+        console.log(`${entry.name}: generated - the game commits it; nothing to pull`);
+        continue;
+      }
+      const pulled = await pullLibraryModel(entry, { modelsRoot, fetchImpl: cliFetch, ...(githubToken === undefined ? {} : { githubToken }) });
       total += pulled.bytes;
       console.log(
         `${entry.name}: ${pulled.nearTriangles} / ${pulled.farTriangles} tris, ` +

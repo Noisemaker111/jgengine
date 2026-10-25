@@ -160,6 +160,8 @@ export const MATERIAL_LIBRARY: readonly LibraryMaterial[] = [
   { name: "facade/brick-grey", title: "Grey brick facade", group: "facade", source: "ambientcg-facade019a", surface: "opaque", tileMetres: 20, response: { metalness: 0, roughness: 0.8 } },
   { name: "facade/brick-brown", title: "Brown brick facade", group: "facade", source: "ambientcg-facade020a", surface: "opaque", tileMetres: 20, response: { metalness: 0, roughness: 0.8 } },
   { name: "facade/glass-blue", title: "Blue glass curtain wall", group: "facade", source: "ambientcg-facade001", surface: "opaque", tileMetres: 34, response: { metalness: 0.4, roughness: 0.14 } },
+  // Curtain wall with aluminium mullions and spandrel bands: eight 3.5 m floors and fourteen 2 m panes per tile.
+  { name: "facade/glass-curtain", title: "Glass curtain wall with mullions", group: "facade", source: "ambientcg-facade006", surface: "opaque", tileMetres: 28, response: { metalness: 0.7, roughness: 0.16 } },
   { name: "facade/glass-mirror", title: "Mirror glass curtain wall", group: "facade", source: "ambientcg-facade005", surface: "opaque", tileMetres: 34, response: { metalness: 0.5, roughness: 0.1 } },
 
   // Glass: transmission and roughness carry the look. The smudged variant adds a scanned

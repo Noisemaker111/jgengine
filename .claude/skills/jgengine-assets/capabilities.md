@@ -52,6 +52,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `libraryBuildingSurface` (function) · `import { libraryBuildingSurface } from "@jgengine/assets/catalogs/materialLibrary"`
 
+## library-foliage-thinning — thin a foliage scan's leaf clusters for a lighter level while keeping canopy cover
+
+- `thinIslands` (function) · `import { thinIslands } from "@jgengine/assets/modelLibraryPull"`
+
 ## library-model — draw a realistic library model at real size with its near and far LOD
 
 - `libraryModel` (function) · `import { libraryModel } from "@jgengine/assets"`
@@ -84,6 +88,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## model-library — ask for a realistic licensed model by what it is ("street lamp", "office desk")
 
 - `findLibraryModel` (function) · `import { findLibraryModel } from "@jgengine/assets"`
+
+## model-library-authored — build an engine-authored library model (server rack, robot arm) without a download
+
+- `buildAuthoredModel` (function) · `import { buildAuthoredModel } from "@jgengine/assets/modelLibraryAuthored"`
+
+## model-library-rigged — pull a rigged, animated Microsoft Rocketbox human or animal into a game as one GLB
+
+- `pullRocketboxModel` (function) · `import { pullRocketboxModel } from "@jgengine/assets/rocketboxPull"`
 
 ## sources-for-asset-ids — resolve the asset packs behind the ids a game actually ships
 
