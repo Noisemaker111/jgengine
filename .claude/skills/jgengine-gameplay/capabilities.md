@@ -821,6 +821,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createUnlockCatalog` (function) · `import { createUnlockCatalog } from "@jgengine/core/gameplay"`
 
+## upgrade-options — list the next upgrade steps a placed thing can take, priced and checked by the world
+
+- `upgradeOptions` (function) · `import { upgradeOptions } from "@jgengine/core/worldModel/upgradePaths"`
+
+## upgrade-paths — branching upgrade ladders for placed things: a shared trunk, then exclusive branches priced and refused by the world model
+
+- `upgradePathActions` (function) · `import { upgradePathActions } from "@jgengine/core/worldModel/upgradePaths"`
+
 ## upgrade-tree — ranked upgrades priced by a cost curve, gated by prerequisites and standing
 
 - `createUpgradeTree` (function) · `import { createUpgradeTree } from "@jgengine/core/progression/upgrades"`

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { createAutoTargeter, selectAutoTarget, type AutoTargetDeps } from "./autoTarget";
+import { AUTO_TARGET_POLICIES, createAutoTargeter, nextAutoTargetPolicy, selectAutoTarget, type AutoTargetDeps } from "./autoTarget";
 
 const positions: Record<string, number> = { a: 5, b: 12, c: 2, d: 20 };
 const health: Record<string, number> = { a: 100, b: 30, c: 60, d: 10 };
@@ -58,5 +58,22 @@ describe("createAutoTargeter", () => {
     targeter.setPolicy("strongest");
     expect(targeter.policy()).toBe("strongest");
     expect(targeter.pick("hero")).toBe("a");
+  });
+});
+
+describe("eligibility and cycling", () => {
+  it("an ineligible candidate is never picked, even when it leads", () => {
+    const grounded: AutoTargetDeps = { ...deps, eligible: (to) => to !== "b" };
+    expect(selectAutoTarget("first", "tower", grounded)).toBe("d");
+    expect(selectAutoTarget("first", "tower", { ...deps, eligible: () => false })).toBeNull();
+  });
+
+  it("cycling steps through the allowed policies and wraps", () => {
+    expect(nextAutoTargetPolicy("first")).toBe("last");
+    expect(nextAutoTargetPolicy("random")).toBe(AUTO_TARGET_POLICIES[0]);
+    const allowed = ["first", "strongest", "nearest"] as const;
+    expect(nextAutoTargetPolicy("nearest", allowed)).toBe("first");
+    expect(nextAutoTargetPolicy("last", allowed)).toBe("first");
+    expect(nextAutoTargetPolicy("last", [])).toBe("last");
   });
 });

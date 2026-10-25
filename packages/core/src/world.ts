@@ -468,7 +468,12 @@ export {
   type TriggerHandlers,
   type TriggerSourceKind,
 } from "./scene/authoredTriggers";
-export { selectAutoTarget, type AutoTargetPolicy } from "./scene/autoTarget";
+export {
+  AUTO_TARGET_POLICIES,
+  nextAutoTargetPolicy,
+  selectAutoTarget,
+  type AutoTargetPolicy,
+} from "./scene/autoTarget";
 export {
   advanceBehaviors,
   behaviorControl,
