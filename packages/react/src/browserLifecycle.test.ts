@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { observeBrowserSuspension, useBrowserSuspension, type BrowserSuspensionReason, type BrowserSuspensionSources } from "./browserLifecycle";
+import { CAPTURE_HOLD_KEY, observeBrowserSuspension, useBrowserSuspension, type BrowserSuspensionReason, type BrowserSuspensionSources } from "./browserLifecycle";
 
 function browser(initiallyLocked = false, initiallyHidden = false) {
   const win = new EventTarget();
@@ -45,6 +45,24 @@ describe("browser suspension", () => {
     source.blur();
     expect(reasons).toEqual(["pointer-lock-lost", "hidden", "blur"]);
     detach();
+  });
+
+  test("a capture host's hold keeps blur and a hidden page from pausing a drive; lock loss still reports", () => {
+    const scope = globalThis as Record<string, unknown>;
+    scope[CAPTURE_HOLD_KEY] = true;
+    try {
+      const source = browser(true);
+      const reasons: BrowserSuspensionReason[] = [];
+      const detach = observeBrowserSuspension(reason => reasons.push(reason), {}, source.sources);
+      source.blur();
+      source.visibility(true);
+      expect(reasons).toEqual([]);
+      source.lock(false);
+      expect(reasons).toEqual(["pointer-lock-lost"]);
+      detach();
+    } finally {
+      delete scope[CAPTURE_HOLD_KEY];
+    }
   });
 
   test("disabled triggers do not notify", () => {
