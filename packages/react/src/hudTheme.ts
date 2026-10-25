@@ -314,8 +314,9 @@ export function hudThemeVars(theme: HudTheme): CSSProperties {
     "--jg-frame-border": frame.border,
     "--jg-frame-radius": frame.radius,
     // The game menu's design tokens: a logo sized off the display step, card corners that follow the
-    // frame radius, and the card's fixed height and thumbnail band, so a slot card is the same box
-    // whatever it holds and a game can retune the menu from its theme.
+    // frame radius, and the card's least height and thumbnail band, so slot cards line up whatever
+    // they hold (a card whose chips wrap on a phone grows rather than clips) and a game can retune
+    // the menu from its theme.
     "--jg-menu-logo-size": "clamp(30px, 4.6vw, 66px)",
     "--jg-menu-card-radius": frame.radius,
     "--jg-menu-card-height": "clamp(244px, 27vh, 300px)",

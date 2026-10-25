@@ -227,17 +227,18 @@ const CSS = `
 .${P}-panel[data-variant="hud"] .${P}-tape { top: -4px; height: 14px; width: 52px; margin-left: -26px; }
 .${P}-panel[data-variant="strip"] .${P}-tape { display: none; }
 .${P}-panel[data-variant="dialog"] .${P}-tape { left: 0; margin-left: -10px; top: 6px; rotate: -38deg; }
-.${P}-panel-head { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 10px; margin-bottom: 10px; }
+/* Grid, not wrap: a long title wraps inside its own column and the aside stays on its row. */
+.${P}-panel-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 4px 10px; margin-bottom: 10px; }
 .${P}-panel[data-variant="strip"] .${P}-panel-head { margin: 0; }
-.${P}-eyebrow { flex-basis: 100%; font: 700 calc(12px * var(--kit-text)) / 1 var(--kit-font-body); letter-spacing: 0.1em; text-transform: uppercase; color: var(--kit-pencil); }
-.${P}-title { display: inline-block; padding: 4px 12px 5px; border-radius: 6px 10px 8px 12px; background: var(--kit-accent); color: var(--kit-accent-ink); font: 700 calc(19px * var(--kit-text)) / 1.1 var(--kit-font-display); max-width: 100%; overflow-wrap: anywhere; box-shadow: 0 0 0 3px #fff, 0 3px 0 3px rgba(60, 40, 10, 0.2); rotate: -2deg; }
+.${P}-eyebrow { grid-column: 1 / -1; font: 700 calc(12px * var(--kit-text)) / 1 var(--kit-font-body); letter-spacing: 0.1em; text-transform: uppercase; color: var(--kit-pencil); }
+.${P}-title { grid-column: 1; justify-self: start; display: inline-block; padding: 4px 12px 5px; border-radius: 6px 10px 8px 12px; background: var(--kit-accent); color: var(--kit-accent-ink); font: 700 calc(19px * var(--kit-text)) / 1.1 var(--kit-font-display); max-width: 100%; overflow-wrap: break-word; box-shadow: 0 0 0 3px #fff, 0 3px 0 3px rgba(60, 40, 10, 0.2); rotate: -2deg; }
 .${P}-panel[data-variant="strip"] .${P}-title { background: none; box-shadow: none; padding: 0; color: inherit; rotate: 0deg; }
 .${P}-panel[data-variant="dialog"] .${P}-title { font-size: calc(32px * var(--kit-text)); padding: 6px 18px 8px; }
 .${P}-panel[data-tone="good"] .${P}-title { background: var(--kit-good); }
 .${P}-panel[data-tone="warn"] .${P}-title { background: var(--kit-warn); color: var(--kit-ink); }
 .${P}-panel[data-tone="bad"] .${P}-title { background: var(--kit-bad); }
 .${P}-panel[data-tone="neutral"] .${P}-title { background: var(--kit-ink); color: var(--kit-surface); }
-.${P}-aside { margin-left: auto; font: 700 calc(16px * var(--kit-text)) / 1 var(--kit-font-display); color: var(--kit-pencil); }
+.${P}-aside { grid-column: 2; white-space: nowrap; font: 700 calc(16px * var(--kit-text)) / 1 var(--kit-font-display); color: var(--kit-pencil); }
 .${P}-panel[data-variant="strip"] .${P}-aside { color: inherit; }
 .${P}-panel-body { font: 600 calc(14px * var(--kit-text)) / 1.35 var(--kit-font-body); }
 .${P}-panel-foot { margin-top: 16px; padding-top: 12px; border-top: 2px dashed rgba(45, 42, 38, 0.3); display: flex; gap: 14px; flex-wrap: wrap; align-items: center; }

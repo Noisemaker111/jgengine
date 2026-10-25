@@ -4,6 +4,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { UI_CUES } from "@jgengine/core/audio/uiCues";
 
 import { GameMenu } from "./gameMenu";
+import { ContinuePane } from "./gameMenuSaves";
 import { actionGlyph } from "./inputDevice";
 import { deadlineStage, formatCountdown, KitObjective, KitResultScreen } from "./kitFlow";
 import { cappedShown } from "./notices";
@@ -15,7 +16,7 @@ import { inkKit } from "./uiKitInk";
 import { paperKit } from "./uiKitPaper";
 import { parchmentKit } from "./uiKitParchment";
 import { plainKit } from "./uiKitPlain";
-import { KitActionPrompt, KitButton, KitMenu, KitMeter, KitMinimapFrame, KitPanel, KitPrompt, KitToast, UiKitRoot, useActionGlyph } from "./uiKitRoot";
+import { KitActionPrompt, KitButton, kitHudBridge, KitMenu, KitMeter, KitMinimapFrame, KitPanel, KitPrompt, KitToast, UiKitRoot, useActionGlyph } from "./uiKitRoot";
 import { resolveUiKit, UI_KITS, type UiKitName } from "./uiKits";
 import { UiKitsPreview } from "./uiKitsPreview";
 import { signalKit } from "./uiKitSignal";
@@ -256,6 +257,55 @@ describe("flow", () => {
     expect(html).toContain("--jg-text:var(--kit-ink)");
     expect(html).toContain("--jg-on-accent:var(--kit-accent-ink)");
     expect(html).toContain("<p>rows</p>");
+  });
+
+  test("a kitted menu pane scrolls inside the kit panel, so the panel's ground covers what scrolls", () => {
+    const html = renderToStaticMarkup(
+      <UiKitRoot kit={UI_KITS.parchment}>
+        <GameMenu items={[{ id: "saves", label: "Saves" }]} onSelect={() => undefined} detail={<p>rows</p>} />
+      </UiKitRoot>,
+    );
+    expect(html).toContain('<div data-jg-kit-pane-content=""><p>rows</p></div>');
+    expect(html).toContain(":has([data-jg-kit-pane-content])");
+    const panel = html.match(/<section[^>]*data-variant="pane"[^>]*>/)?.[0] ?? "";
+    expect(panel).toContain("overflow:hidden");
+  });
+
+  test("the dialog bridge grounds a settings dialog on the kit's surface", () => {
+    const dialog = kitHudBridge("dialog") as Record<string, string>;
+    const pane = kitHudBridge("pane") as Record<string, string>;
+    expect(dialog["--jg-surface"]).toBe("var(--kit-surface)");
+    expect(dialog["--jg-surface-deep"]).toBe("var(--kit-surface-alt)");
+    expect(pane["--jg-surface"]).toBe("var(--kit-surface-alt)");
+    expect(dialog["--jg-text"]).toBe(pane["--jg-text"]);
+  });
+
+  test("the continue card keeps its name light on the picture and its saved line in the theme's dim text", () => {
+    const html = renderToStaticMarkup(
+      <ContinuePane slot={{ id: "a", name: "Mara Vell", empty: false, savedAt: 1_000, meta: { playtime: 90 } }} onContinue={() => undefined} now={() => 61_000} />,
+    );
+    const name = html.match(/<div data-continue-name=""[^>]*>/)?.[0] ?? "";
+    expect(name).toContain("color:var(--jg-card-text, var(--jg-text, #f2f6fb))");
+    expect(html.match(/<span data-continue-saved-at=""[^>]*>/)?.[0]).toContain("var(--jg-text-dim");
+    expect(html.match(/<button[^>]*data-continue-action=""[^>]*>/)?.[0]).toContain("var(--jg-on-accent");
+    // On a short pane the picture shrinks first, so Resume stays on screen.
+    expect(html).toContain("flex-shrink:1;min-height:96px");
+  });
+
+  test("ink and paper heads keep the aside on the title's row however long the title is", () => {
+    for (const name of ["ink", "paper"] as const) {
+      const head = UI_KITS[name].css.match(new RegExp(`\\.jgk-${name}-panel-head \\{[^}]*\\}`))?.[0] ?? "";
+      expect({ name, grid: head.includes("display: grid") }).toEqual({ name, grid: true });
+      // Titles wrap between words, never mid-word ("DOWNT / OWN").
+      const title = UI_KITS[name].css.match(new RegExp(`\\.jgk-${name}-title \\{[^}]*\\}`))?.[0] ?? "";
+      expect({ name, wrap: title.includes("overflow-wrap: break-word") }).toEqual({ name, wrap: true });
+    }
+    // A long ink eyebrow ("WELCOME TO THE ISLE") pushes the title under it instead of squeezing it to a sliver.
+    expect(UI_KITS.ink.css).toMatch(/\.jgk-ink-head-main \{[^}]*flex-wrap: wrap/);
+    const html = renderToStaticMarkup(
+      <UiKitRoot kit={UI_KITS.ink}><KitPanel eyebrow="Welcome to the isle" title="Find Marco under the downtown neon" aside="258 m" /></UiKitRoot>,
+    );
+    expect(html).toMatch(/<span class="jgk-ink-head-main"><span class="jgk-ink-eyebrow">Welcome to the isle<\/span><span class="jgk-ink-title">/);
   });
 });
 

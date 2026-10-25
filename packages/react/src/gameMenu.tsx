@@ -11,7 +11,7 @@ import { createGameMenuSound, type GameMenuSound } from "./gameMenuSound";
 import { useGameViewportLayout } from "./gameViewport";
 import { hudDuration, hudEase, hudFont, hudType } from "./hudTokens";
 import { useMenuNav } from "./menuNav";
-import { KitMenu, KitPanel, useHasUiKit } from "./uiKitRoot";
+import { kitHudBridge, KitMenu, KitPanel, useHasUiKit } from "./uiKitRoot";
 
 /**
  * A game's front-end menu: a full-bleed surface over a living background, a logo, primary verbs on
@@ -25,30 +25,22 @@ import { KitMenu, KitPanel, useHasUiKit } from "./uiKitRoot";
  */
 
 
+/** Inside a kit's pane, the engine panes a menu hosts (settings, saves, credits) take the kit's colours and type. */
+const KIT_PANE_BRIDGE = kitHudBridge("pane");
+
 /**
- * Inside a kit's pane, the engine panes a menu hosts (settings, saves, credits) were drawn for a dark
- * surface. Point their `--jg-*` colours and fonts at the kit's own tokens so they read on light kits
- * (ink, paper, parchment) as well as dark ones, and pick up the kit's type.
+ * The kit panel stays the pane's fixed frame and the pane's content scrolls inside it, so a kit's
+ * painted ground (paper's kraft, parchment's face) always covers what scrolls, and a pane that fills
+ * its height (`flex: 1; min-height: 0`, like the save grid) keeps its heading in view. Kits wrap their
+ * body differently (parchment's face, broadcast's slab), so every element between the panel and the
+ * content joins the flex column. The content's children keep their height unless they ask to shrink,
+ * as they do in an unkitted menu.
  */
-const KIT_PANE_BRIDGE = {
-  "--jg-text": "var(--kit-ink)",
-  "--jg-text-dim": "color-mix(in srgb, var(--kit-ink) 70%, transparent)",
-  "--jg-accent": "var(--kit-accent)",
-  "--jg-accent-glow": "color-mix(in srgb, var(--kit-accent) 32%, transparent)",
-  "--jg-on-accent": "var(--kit-accent-ink)",
-  // Accent-coloured text (section headings) darkened toward the ink, so a yellow accent reads on cream.
-  "--jg-accent-text": "color-mix(in srgb, var(--kit-accent) 45%, var(--kit-ink))",
-  "--jg-surface": "var(--kit-surface-alt)",
-  "--jg-surface-deep": "color-mix(in srgb, var(--kit-ink) 8%, transparent)",
-  "--jg-edge": "color-mix(in srgb, var(--kit-line) 30%, transparent)",
-  "--jg-edge-bright": "color-mix(in srgb, var(--kit-line) 55%, transparent)",
-  "--jg-font-display": "var(--kit-font-display)",
-  "--jg-font-body": "var(--kit-font-body)",
-  // Save cards and name fields keep their own dark tiles, so their text stays light.
-  "--jg-card-text": "#f2f6fb",
-  color: "var(--kit-ink)",
-  fontFamily: "var(--kit-font-body)",
-} as CSSProperties;
+const KIT_PANE_SCROLL_CSS = `
+[data-jg-game-menu-pane] > [data-variant="pane"] :has([data-jg-kit-pane-content]) { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+[data-jg-kit-pane-content] { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; overflow: auto; overscroll-behavior: contain; }
+[data-jg-kit-pane-content] > * { flex-shrink: 0; }
+`;
 
 /** One primary verb in a {@link GameMenu}. */
 export interface GameMenuItem {
@@ -746,9 +738,12 @@ export function GameMenu({
             }}
           >
             {kitted ? (
-              <KitPanel variant="pane" style={{ ...KIT_PANE_BRIDGE, flex: 1, minHeight: 0, overflow: "auto" }}>
-                {detailNode}
-              </KitPanel>
+              <>
+                <style>{KIT_PANE_SCROLL_CSS}</style>
+                <KitPanel variant="pane" style={{ ...KIT_PANE_BRIDGE, flex: 1, minHeight: 0, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+                  <div data-jg-kit-pane-content="">{detailNode}</div>
+                </KitPanel>
+              </>
             ) : (
               detailNode
             )}

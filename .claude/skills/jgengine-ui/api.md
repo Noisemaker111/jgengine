@@ -1076,7 +1076,8 @@
 - `UiKit` (interface): interface UiKit — A complete UI language: shapes, framing, type, motion, sound and the seven parts. A game picks one with `defineGame({ uiKit: "ink" })` and reshapes it with {@link customizeKit}.
 - `UiKitComponents` (interface): interface UiKitComponents — The seven parts every kit ships, so switching kits never breaks a game.
 - `UiKitCustomization` (interface): interface UiKitCustomization — What a game changes when it reshapes a kit.
-- `UiKitMenuPreview` (function): function UiKitMenuPreview({ kit, pane = "settings", className }: { kit: UiKit; pane?: "settings" | "credits"; className?: string }): ReactNode — A kit's pause menu with the engine's own settings pane in it (or credits), so one picture shows that engine panes read in the kit's colours and type.
+- `UiKitMenuPreview` (function): function UiKitMenuPreview({ kit, pane = "settings", className }: { kit: UiKit; pane?: UiKitMenuPreviewPane; className?: string }): ReactNode — A kit's pause menu with one of the engine's own panes in it (settings, credits, continue or saves), so one picture shows that engine panes read in the kit's colours and type.
+- `UiKitMenuPreviewPane` (type): type UiKitMenuPreviewPane = "settings" | "credits" | "continue" | "saves" — The engine panes a kit's menu can host, for {@link UiKitMenuPreview}.
 - `UiKitMotion` (interface): interface UiKitMotion — How a kit's surfaces enter and leave.
 - `UiKitName` (type): type UiKitName = "ink" | "paper" | "parchment" | "terminal" | "holo" | "broadcast" | "arcade" | "signal" — The built-in kit names a game can pick with `defineGame({ uiKit: "<name>" })`.
 - `UiKitPart` (type): type UiKitPart = keyof UiKitComponents — The names of {@link UiKitComponents}.
@@ -2359,7 +2360,8 @@
 ## @jgengine/react/uiKitsPreview
 
 - `KitSpecimen` (function): function KitSpecimen({ kit, className, style }: { kit: UiKit; className?: string; style?: CSSProperties }): ReactNode — Every kit part on a busy game-like backdrop, so one picture shows a kit's whole language.
-- `UiKitMenuPreview` (function): function UiKitMenuPreview({ kit, pane = "settings", className }: { kit: UiKit; pane?: "settings" | "credits"; className?: string }): ReactNode — A kit's pause menu with the engine's own settings pane in it (or credits), so one picture shows that engine panes read in the kit's colours and type.
+- `UiKitMenuPreview` (function): function UiKitMenuPreview({ kit, pane = "settings", className }: { kit: UiKit; pane?: UiKitMenuPreviewPane; className?: string }): ReactNode — A kit's pause menu with one of the engine's own panes in it (settings, credits, continue or saves), so one picture shows that engine panes read in the kit's colours and type.
+- `UiKitMenuPreviewPane` (type): type UiKitMenuPreviewPane = "settings" | "credits" | "continue" | "saves" — The engine panes a kit's menu can host, for {@link UiKitMenuPreview}.
 - `UiKitPreview` (function): function UiKitPreview({ kit, className }: { kit: UiKit; className?: string }): ReactNode — One kit, large: the specimen plus its dialog and strip, for working on a single kit.
 - `UiKitsPreview` (function): function UiKitsPreview({ className }: { className?: string }): ReactNode — Contact sheet: all eight built-in UI kits side by side, every part each.
 

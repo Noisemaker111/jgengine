@@ -132,6 +132,35 @@ export function useHasUiKit(): boolean {
   return useContext(UiKitContext) !== null;
 }
 
+/**
+ * `--jg-*` overrides that point the engine's own screens (settings, saves, credits) at the kit's
+ * tokens, so screens drawn for a dark HUD read on light kits (ink, paper, parchment) as well as dark
+ * ones, in the kit's type. Spread it on the element that hosts such a screen inside a kit: `"pane"`
+ * when the screen sits on a kit panel, `"dialog"` when it brings its own ground (the settings dialog).
+ * @internal
+ */
+export function kitHudBridge(ground: "pane" | "dialog"): CSSProperties {
+  return {
+    "--jg-text": "var(--kit-ink)",
+    "--jg-text-dim": "color-mix(in srgb, var(--kit-ink) 70%, transparent)",
+    "--jg-accent": "var(--kit-accent)",
+    "--jg-accent-glow": "color-mix(in srgb, var(--kit-accent) 32%, transparent)",
+    "--jg-on-accent": "var(--kit-accent-ink)",
+    // Accent-coloured text (section headings) darkened toward the ink, so a yellow accent reads on cream.
+    "--jg-accent-text": "color-mix(in srgb, var(--kit-accent) 45%, var(--kit-ink))",
+    "--jg-surface": ground === "pane" ? "var(--kit-surface-alt)" : "var(--kit-surface)",
+    "--jg-surface-deep": ground === "pane" ? "color-mix(in srgb, var(--kit-ink) 8%, transparent)" : "var(--kit-surface-alt)",
+    "--jg-edge": "color-mix(in srgb, var(--kit-line) 30%, transparent)",
+    "--jg-edge-bright": "color-mix(in srgb, var(--kit-line) 55%, transparent)",
+    "--jg-font-display": "var(--kit-font-display)",
+    "--jg-font-body": "var(--kit-font-body)",
+    // Save cards and name fields keep their own dark tiles, so their text stays light.
+    "--jg-card-text": "#f2f6fb",
+    color: "var(--kit-ink)",
+    fontFamily: "var(--kit-font-body)",
+  } as CSSProperties;
+}
+
 function FallbackStyles({ kit }: { kit: UiKit }): null {
   useInsertionEffect(() => {
     ensureUiKitStyles(kit);

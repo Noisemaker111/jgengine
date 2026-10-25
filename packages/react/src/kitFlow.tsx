@@ -126,8 +126,8 @@ export function KitObjective({
             height="1.15em"
             style={{ display: "block", flex: "none", transform: `rotate(${bearing}rad)`, transition: "transform 120ms linear" }}
           >
-            {/* A notched arrowhead: unlike a triangle it reads the same at no other angle. */}
-            <path d="M12 1.5 L21 21.5 L12 16.5 L3 21.5 Z" fill="currentColor" stroke="var(--kit-surface, #fff)" strokeWidth="1.5" strokeLinejoin="round" />
+            {/* Head and shaft: a bare arrowhead turned to 5 o'clock reads as pointing left. */}
+            <path d="M12 1.5 L21.5 11.5 L15.5 11.5 L15.5 22.5 L8.5 22.5 L8.5 11.5 L2.5 11.5 Z" fill="currentColor" stroke="var(--kit-surface, #fff)" strokeWidth="1.5" strokeLinejoin="round" />
           </svg>
         )}
         {Math.round(distance)} m

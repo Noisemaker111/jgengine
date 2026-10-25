@@ -94,6 +94,10 @@ function kitFixtures(): Record<string, PreviewFixture> {
     fixtures[id] = { name: id, description: `The ${kit.name} UI kit, large: every part, a dialog and a strip.`, component: ({ className }) => createElement(UiKitPreview, { kit, className }) };
     const menu = `UiKitMenu-${name}`;
     fixtures[menu] = { name: menu, description: `The ${kit.name} UI kit's pause menu hosting the engine settings pane.`, component: ({ className }) => createElement(UiKitMenuPreview, { kit, className }) };
+    for (const pane of ["continue", "saves"] as const) {
+      const id = `UiKitMenu-${name}-${pane}`;
+      fixtures[id] = { name: id, description: `The ${kit.name} UI kit's pause menu hosting the engine ${pane} pane.`, component: ({ className }) => createElement(UiKitMenuPreview, { kit, pane, className }) };
+    }
   }
   return fixtures;
 }

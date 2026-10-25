@@ -262,7 +262,8 @@ describe("GameMenu surface", () => {
         columns: getComputedStyle(grid).gridTemplateColumns.split(" ").filter((entry) => entry.endsWith("px")),
       };
     });
-    expect(["auto", "1fr", "minmax(0px, 1fr)"]).toContain(tracks.rows);
+    // Rows follow the cards (never a fixed height); max-content keeps a scrolling pane from squeezing them.
+    expect(["auto", "max-content", "1fr", "minmax(0px, 1fr)"]).toContain(tracks.rows);
     expect(new Set(tracks.columns).size).toBe(1);
   });
 
