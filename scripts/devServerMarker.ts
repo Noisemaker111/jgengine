@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -174,11 +174,95 @@ export async function findRunningDevServer(cwd = process.cwd(), dir = tmpdir()):
   return servers[0] ?? null;
 }
 
+type SocketLike = { once(event: "close", listener: () => void): void };
+
 type ViteServerLike = {
   config: { root: string };
-  httpServer?: { listening: boolean; address(): { port: number } | string | null; once(event: string, listener: () => void): void } | null;
+  httpServer?: {
+    listening: boolean;
+    address(): { port: number } | string | null;
+    once(event: string, listener: () => void): void;
+    on?(event: "connection", listener: (socket: SocketLike) => void): void;
+  } | null;
   middlewares?: unknown;
 };
+
+/** Minutes a dev server may sit with no open connection before it exits. */
+export const DEFAULT_IDLE_EXIT_MINUTES = 20;
+
+/** `JG_DEV_IDLE_MINUTES`, else 20; `0` keeps the server up forever. */
+export function resolveIdleExitMs(env: NodeJS.ProcessEnv = process.env): number {
+  const raw = env.JG_DEV_IDLE_MINUTES;
+  if (raw === undefined || raw.trim() === "") return DEFAULT_IDLE_EXIT_MINUTES * 60_000;
+  const minutes = Number(raw);
+  return Number.isFinite(minutes) && minutes > 0 ? minutes * 60_000 : 0;
+}
+
+export type IdleVerdict = "keep" | "idle" | "orphaned";
+
+/**
+ * Whether a dev server should stay up. Captures and agents start servers that nothing
+ * ever stops, so they piled up by the dozen; a server now leaves on its own once its
+ * checkout is deleted, or once no browser, HMR socket or request has touched it for
+ * `idleMs`. An open connection (a tab, a capture) always keeps it.
+ */
+export function idleVerdict(state: {
+  now: number;
+  lastActivity: number;
+  openSockets: number;
+  rootExists: boolean;
+  idleMs: number;
+}): IdleVerdict {
+  if (!state.rootExists) return "orphaned";
+  if (state.idleMs <= 0 || state.openSockets > 0) return "keep";
+  return state.now - state.lastActivity >= state.idleMs ? "idle" : "keep";
+}
+
+/** Watch one server's sockets and exit the process when {@link idleVerdict} says so. */
+export function startIdleWatchdog(
+  server: ViteServerLike,
+  options: {
+    idleMs?: number;
+    checkEveryMs?: number;
+    now?: () => number;
+    rootExists?: (root: string) => boolean;
+    exit?: (verdict: Exclude<IdleVerdict, "keep">) => void;
+  } = {},
+): { check(): IdleVerdict; stop(): void } | null {
+  const idleMs = options.idleMs ?? resolveIdleExitMs();
+  const httpServer = server.httpServer;
+  if (httpServer?.on === undefined) return null;
+  const now = options.now ?? Date.now;
+  const rootExists = options.rootExists ?? existsSync;
+  const exit =
+    options.exit ??
+    ((verdict) => {
+      console.error(
+        verdict === "orphaned"
+          ? `jgengine dev: ${server.config.root} is gone, stopping this server`
+          : `jgengine dev: no connection for ${Math.round(idleMs / 60_000)} min, stopping (JG_DEV_IDLE_MINUTES=0 keeps it up)`,
+      );
+      process.exit(0);
+    });
+  let lastActivity = now();
+  let openSockets = 0;
+  httpServer.on("connection", (socket) => {
+    openSockets += 1;
+    lastActivity = now();
+    socket.once("close", () => {
+      openSockets -= 1;
+      lastActivity = now();
+    });
+  });
+  const check = (): IdleVerdict => {
+    const verdict = idleVerdict({ now: now(), lastActivity, openSockets, rootExists: rootExists(server.config.root), idleMs });
+    if (verdict !== "keep") exit(verdict);
+    return verdict;
+  };
+  const timer = setInterval(check, options.checkEveryMs ?? 60_000);
+  timer.unref?.();
+  return { check, stop: () => clearInterval(timer) };
+}
 
 /**
  * Dev-only Vite plugin: publish this server's marker once it is listening and remove
@@ -226,7 +310,11 @@ export function devServerMarkerPlugin(options: { kind: RunningDevServer["kind"];
       };
       if (httpServer.listening) publish();
       else httpServer.once("listening", publish);
-      httpServer.once("close", cleanup);
+      const watchdog = startIdleWatchdog(server);
+      httpServer.once("close", () => {
+        watchdog?.stop();
+        cleanup();
+      });
       for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"] as const) process.once(signal, cleanup);
       process.once("exit", cleanup);
     },

@@ -3,7 +3,17 @@ import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { listMarkers, markerPath, readMarker, removeMarker, writeMarker, devServerMarkerPlugin } from "./devServerMarker";
+import {
+  devServerMarkerPlugin,
+  idleVerdict,
+  listMarkers,
+  markerPath,
+  readMarker,
+  removeMarker,
+  resolveIdleExitMs,
+  startIdleWatchdog,
+  writeMarker,
+} from "./devServerMarker";
 
 /**
  * The marker is how `bun run debug` finds the dev server Jon started with `bun dev`:
@@ -79,5 +89,57 @@ describe("dev server marker", () => {
 
     listeners.get("close")!();
     expect(readMarker(30_111, dir)).toBeNull();
+  });
+});
+
+describe("idle dev servers exit", () => {
+  const base = { now: 0, lastActivity: 0, openSockets: 0, rootExists: true, idleMs: 60_000 };
+
+  test("a server nobody touched for the idle window leaves; an open socket keeps it", () => {
+    expect(idleVerdict({ ...base, now: 59_999 })).toBe("keep");
+    expect(idleVerdict({ ...base, now: 60_000 })).toBe("idle");
+    expect(idleVerdict({ ...base, now: 600_000, openSockets: 1 })).toBe("keep");
+    expect(idleVerdict({ ...base, now: 600_000, idleMs: 0 })).toBe("keep");
+  });
+
+  test("a server whose checkout was deleted leaves at once, even with a tab open", () => {
+    expect(idleVerdict({ ...base, rootExists: false, openSockets: 3 })).toBe("orphaned");
+  });
+
+  test("JG_DEV_IDLE_MINUTES sets the window and 0 turns it off", () => {
+    expect(resolveIdleExitMs({})).toBe(20 * 60_000);
+    expect(resolveIdleExitMs({ JG_DEV_IDLE_MINUTES: "5" })).toBe(5 * 60_000);
+    expect(resolveIdleExitMs({ JG_DEV_IDLE_MINUTES: "0" })).toBe(0);
+  });
+
+  test("the watchdog counts sockets and exits once the last one has been closed for the window", () => {
+    let clock = 0;
+    let onConnection: ((socket: { once(event: "close", listener: () => void): void }) => void) | undefined;
+    const exits: string[] = [];
+    const watchdog = startIdleWatchdog(
+      {
+        config: { root: process.cwd() },
+        httpServer: {
+          listening: true,
+          address: () => ({ port: 1 }),
+          once() {},
+          on(_event, listener) {
+            onConnection = listener;
+          },
+        },
+      },
+      { idleMs: 1_000, checkEveryMs: 1_000_000, now: () => clock, rootExists: () => true, exit: (v) => exits.push(v) },
+    )!;
+    let close: () => void = () => {};
+    onConnection!({ once: (_e, listener) => (close = listener) });
+    clock = 5_000;
+    expect(watchdog.check()).toBe("keep");
+    close();
+    clock = 5_999;
+    expect(watchdog.check()).toBe("keep");
+    clock = 6_000;
+    expect(watchdog.check()).toBe("idle");
+    expect(exits).toEqual(["idle"]);
+    watchdog.stop();
   });
 });
