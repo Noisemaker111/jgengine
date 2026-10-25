@@ -356,10 +356,18 @@ function restorePursue(entry: PursueNav, snapshot: PursueBehaviorSnapshot): void
   else entry.threat?.clear();
 }
 
+/** Metres a follower keeps from its anchor when it has nothing to fight. */
+const FOLLOW_GAP = 2.5;
+
 function stepPursue(ctx: GameContext, id: string, entry: PursueNav, dt: number): void {
   const entity = ctx.scene.entity.get(id);
   if (entity === null) return;
-  const { behavior, home } = entry;
+  const { behavior } = entry;
+  const anchor = behavior.anchor === undefined ? null : ctx.scene.entity.get(behavior.anchor);
+  if (anchor !== null) entry.home = [anchor.position[0], anchor.position[1], anchor.position[2]];
+  const home = entry.home;
+  // A follower is home anywhere beside its anchor; a guard is home only on its spawn point.
+  const settled = anchor === null ? .1 : FOLLOW_GAP + .5;
   const homeDistance = distanceBetween(entity.position, home);
   const policy = pursuitPolicies.get(ctx);
   const eligible = (candidate: string): boolean => candidate !== id && ctx.scene.entity.get(candidate) !== null
@@ -372,7 +380,10 @@ function stepPursue(ctx: GameContext, id: string, entry: PursueNav, dt: number):
     if (explicit !== null && eligible(explicit)) entry.targetId = explicit;
     else if (forced !== null && eligible(forced)) entry.targetId = forced;
     else {
-      const nearby = ctx.scene.entity.inRadius(id, behavior.aggroRadius, candidate => ctx.scene.entity.get(candidate)?.role === "player");
+      const hunts = behavior.hunts;
+      const nearby = ctx.scene.entity.inRadius(id, behavior.aggroRadius, hunts === undefined
+        ? candidate => ctx.scene.entity.get(candidate)?.role === "player"
+        : candidate => hunts.includes(ctx.scene.entity.get(candidate)?.name ?? ""));
       if (entry.targetId !== null && !nearby.includes(entry.targetId)) nearby.push(entry.targetId);
       const held = entry.targetId;
       entry.targetId = acquireTarget({ candidates: () => nearby, distance: ctx.scene.entity.distance,
@@ -386,13 +397,13 @@ function stepPursue(ctx: GameContext, id: string, entry: PursueNav, dt: number):
   const targetDistance = entry.targetId === null ? null : ctx.scene.entity.distance(id, entry.targetId);
   const action = advancePursuit(entry.pursuit, dt, targetDistance, behavior.reach,
     behavior.cooldownMode, homeDistance, behavior.leashRange);
-  if (action === "leash" || (targetDistance === null && homeDistance > .1)) entry.returning = true;
+  if (action === "leash" || (targetDistance === null && homeDistance > settled)) entry.returning = true;
   if (entry.returning) {
     entry.targetId = null;
     ctx.scene.entity.setTarget(id, null);
-    ctx.scene.entity.moveTowardCommit(id, home, { speed: behavior.speed, stopDistance: 0, dt, face: true });
+    ctx.scene.entity.moveTowardCommit(id, home, { speed: behavior.speed, stopDistance: anchor === null ? 0 : FOLLOW_GAP, dt, face: true });
     const position = ctx.scene.entity.get(id)?.position;
-    if (position !== undefined && distanceBetween(position, home) <= .1) resetPursue(ctx, id, entry);
+    if (position !== undefined && distanceBetween(position, home) <= settled) resetPursue(ctx, id, entry);
   } else if (action === "pursue" && entry.targetId !== null) {
     ctx.scene.entity.moveTowardCommit(id, entry.targetId, { speed: behavior.speed, stopDistance: behavior.reach, dt, face: true });
   } else if (action === "attack" && entry.targetId !== null) {

@@ -248,6 +248,8 @@ Warm capture (started for you; no lane starts the daemon by hand):
 
 /** The game (or site) project a run targets: its flows, docs/ and evidence live under it. */
 function projectDirOf(args: Args): string {
+  // A game served from another checkout keeps its flows and docs there too.
+  if (args.gameDir !== null) return resolve(args.gameDir);
   return driveProjectDir(
     { game: args.game, ...(args.site === undefined ? {} : { site: args.site }), external: args.game === "url" },
     process.cwd(),

@@ -116,3 +116,77 @@ describe("a game without onRestored", () => {
     expect(ready).toEqual(["shed-1"]);
   });
 });
+
+describe("show puts built instances on screen without game code", () => {
+  const camp = defineGameSpec({
+    id: "campspec",
+    world: {
+      grids: { yard: { cols: 4, rows: 4, cell: 2, origin: [10, 20] } },
+      kinds: {
+        wall: { label: "Wall", grid: "yard", tags: ["defense"] },
+        hut: { label: "Hut", grid: "yard" },
+      },
+      actions: { tear: { label: "Tear down", on: "defense", removes: true } },
+    },
+    show: { defense: { entity: "barricade" }, hut: true },
+  });
+  const def = defineGameDefinition({ name: "camp-spec", multiplayer: "off", systems: [camp.system] });
+  const start = () => {
+    const ctx = createGameContext({ definition: def, content: {}, player: { userId: "keeper", isNew: true } });
+    def.loop?.onInit?.(ctx);
+    return ctx;
+  };
+
+  test("a build spawns at its cell centre under the instance id and leaves when removed", () => {
+    const ctx = start();
+    ctx.game.commands.run("campspec.place", { kind: "wall", cell: [1, 0] });
+    ctx.game.commands.run("campspec.place", { kind: "hut", cell: [0, 2] });
+    def.loop?.onTick?.(ctx, 0.25);
+    expect(ctx.scene.entity.get("wall-1")).toMatchObject({ name: "barricade", role: "prop", position: [13, 0, 21] });
+    expect(ctx.scene.entity.get("hut-2")?.name).toBe("hut");
+    ctx.game.commands.run("campspec.act", { action: "tear", target: "wall-1" });
+    def.loop?.onTick?.(ctx, 0.25);
+    expect(ctx.scene.entity.get("wall-1")).toBeNull();
+  });
+
+  test("a loaded save rebuilds what it holds and clears what it doesn't", () => {
+    const live = start();
+    live.game.commands.run("campspec.place", { kind: "wall", cell: [0, 0] });
+    def.loop?.onTick?.(live, 0.25);
+    const saved = JSON.parse(JSON.stringify(live.state()));
+    live.game.commands.run("campspec.place", { kind: "hut", cell: [3, 3] });
+    def.loop?.onTick?.(live, 0.25);
+    expect(live.scene.entity.get("hut-2")).not.toBeNull();
+    live.restore(saved);
+    def.loop?.onTick?.(live, 0.25);
+    expect(live.scene.entity.get("hut-2")).toBeNull();
+    expect(live.scene.entity.get("wall-1")?.name).toBe("barricade");
+  });
+});
+
+describe("autoStart runs the story without a contact", () => {
+  test("the first story job starts by itself and the next follows when it is done", () => {
+    const hold = (id: string, duration = 0.5) => ({ id, title: id, objectives: [{ id: `${id}-hold`, kind: "survive" as const, actor: "player", duration }] });
+    const story = defineGameSpec({
+      id: "storyspec",
+      world: {
+        jobs: {
+          first: { title: "First", kind: "story", act: 1, mission: hold("first") },
+          second: { title: "Second", kind: "story", act: 2, requires: ["first"], mission: hold("second", 30) },
+          errand: { title: "Errand", kind: "side", mission: hold("errand") },
+        },
+      },
+      autoStart: true,
+      input: () => ({ actors: { player: { alive: true } } }),
+    });
+    const def = defineGameDefinition({ name: "story-spec", multiplayer: "off", systems: [story.system] });
+    const ctx = createGameContext({ definition: def, content: {}, player: { userId: "keeper", isNew: true } });
+    def.loop?.onInit?.(ctx);
+    def.loop?.onTick?.(ctx, 0.25);
+    expect(story.of(ctx).job("first")?.status).not.toBe("available");
+    for (let t = 0; t < 1; t += 0.25) def.loop?.onTick?.(ctx, 0.25);
+    expect(story.of(ctx).job("first")?.status).toBe("done");
+    expect(story.of(ctx).job("second")?.status).toBe("active");
+    expect(story.of(ctx).job("errand")?.status).toBe("available");
+  });
+});

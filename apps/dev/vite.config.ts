@@ -11,6 +11,7 @@ import { tunableDiscoveryPlugin } from "../../packages/core/src/devtools/transfo
 import { devServerMarkerPlugin } from "../../scripts/devServerMarker";
 import { devSavePlugin } from "./devSavePlugin";
 import { devReportPlugin } from "./devReportPlugin";
+import { gamePublicPlugin } from "./gamePublicPlugin";
 
 const src = (pkg: string) => fileURLToPath(new URL(`../../packages/${pkg}/src`, import.meta.url));
 const game = (name: string) => fileURLToPath(new URL(`../../Games/${name}/src`, import.meta.url));
@@ -52,7 +53,9 @@ const allowedRoots = [
   searchForWorkspaceRoot(process.cwd()),
   ...(existsSync(gamesDir) ? [realpathSync(gamesDir)] : []),
   ...(servedGameDir !== undefined && servedGameDir !== "" && existsSync(servedGameDir) ? [realpathSync(servedGameDir)] : []),
-];const devProxy: Record<string, string | ProxyOptions> = Object.fromEntries(
+];
+
+const devProxy: Record<string, string | ProxyOptions> = Object.fromEntries(
   Object.entries(devProxyTable).map(([routeName, target]) => [
     `/proxy/${routeName}`,
     {
@@ -64,7 +67,7 @@ const allowedRoots = [
 );
 
 export default defineConfig({
-  plugins: [devServerMarkerPlugin({ kind: "runner" }), tunableDiscoveryPlugin(), devSavePlugin(gamesDir), devReportPlugin(), react(), tailwindcss()],
+  plugins: [devServerMarkerPlugin({ kind: "runner" }), tunableDiscoveryPlugin(), devSavePlugin(gamesDir), devReportPlugin(), gamePublicPlugin(servedGameDir, gamesDir, fileURLToPath(new URL("./public", import.meta.url))), react(), tailwindcss()],
   clearScreen: false,
   build: {
     target: "es2022",

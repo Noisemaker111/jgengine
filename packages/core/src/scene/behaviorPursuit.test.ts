@@ -260,3 +260,23 @@ test("pursuit replication projects the same visible entity set before cold hydra
   expect(client.scene.entity.ids()).toEqual(["near", "hero"]);
   expect(behaviorControl(client).serialize("near")).toEqual(behaviorControl(host).serialize("near"));
 });
+
+test("an anchored hunter keeps beside its anchor, fights only what it hunts, then comes back", () => {
+  const ctx = context();
+  const ally = pursue({ ...descriptor, aggroRadius: 6, leashRange: 12, anchor: "hero", hunts: ["mob"] });
+  ctx.scene.entity.spawn("pet", { id: "pet", position: [0, 0, 0], behaviors: [ally] });
+  ctx.scene.entity.spawn("hero", { id: "hero", role: "player", position: [10, 0, 0] });
+  for (let i = 0; i < 6; i++) advanceBehaviors(ctx, 1);
+  const beside = ctx.scene.entity.get("pet")!.position[0];
+  expect(beside).toBeGreaterThan(6.5);
+  expect(beside).toBeLessThan(10);
+  expect(ctx.scene.entity.stats.get("hero", "health")!.current).toBe(100);
+  ctx.scene.entity.spawn("mob", { id: "raider", position: [10, 0, 4] });
+  for (let i = 0; i < 4; i++) advanceBehaviors(ctx, 1);
+  expect(ctx.scene.entity.stats.get("raider", "health")!.current).toBeLessThan(100);
+  ctx.scene.entity.despawn("raider");
+  ctx.scene.entity.setPose("hero", { position: [-10, 0, 0] });
+  for (let i = 0; i < 12; i++) advanceBehaviors(ctx, 1);
+  const back = ctx.scene.entity.get("pet")!.position;
+  expect(Math.hypot(back[0] + 10, back[2])).toBeLessThan(3.5);
+});
