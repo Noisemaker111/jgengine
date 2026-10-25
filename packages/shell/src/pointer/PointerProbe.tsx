@@ -3,18 +3,19 @@ import { useEffect } from "react";
 
 import type { PointerService } from "./pointerService";
 
-export function PointerProbe({ service }: { service: PointerService }) {
+/** Binds the pointer service to the live camera and scene; `groundHeightAt` lets clicks land on terrain. */
+export function PointerProbe({ service, groundHeightAt }: { service: PointerService; groundHeightAt?: (x: number, z: number) => number }) {
   const camera = useThree((state) => state.camera);
   const scene = useThree((state) => state.scene);
   const gl = useThree((state) => state.gl);
   const size = useThree((state) => state.size);
 
   useEffect(() => {
-    service.bind({ camera, scene, width: size.width, height: size.height });
+    service.bind({ camera, scene, width: size.width, height: size.height, ...(groundHeightAt === undefined ? {} : { groundHeightAt }) });
     return () => {
       service.bind(null);
     };
-  }, [service, camera, scene, size.width, size.height]);
+  }, [service, camera, scene, size.width, size.height, groundHeightAt]);
 
   useEffect(() => {
     const el = gl.domElement;

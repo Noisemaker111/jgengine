@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import * as THREE from "three";
 
-import { createPointerService } from "./pointerService";
+import { createPointerService, rayGroundHit } from "./pointerService";
 
 function setup() {
   const service = createPointerService();
@@ -115,5 +115,57 @@ describe("pointerService worldHitCenter", () => {
     const hit = service.worldHitCenter();
     expect(hit).not.toBeNull();
     expect(hit?.point[2]).toBeCloseTo(0.5, 1);
+  });
+});
+
+describe("pointerService ground", () => {
+  function hillScene() {
+    const service = createPointerService();
+    const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 5000);
+    camera.position.set(0, 30, 40);
+    camera.lookAt(0, 0, 0);
+    camera.updateMatrixWorld();
+    const scene = new THREE.Scene();
+    // A sky dome around everything: the only mesh the cursor ray meets.
+    const sky = new THREE.Mesh(new THREE.SphereGeometry(1500, 16, 8), new THREE.MeshBasicMaterial({ side: THREE.BackSide }));
+    scene.add(sky);
+    scene.updateMatrixWorld();
+    return { service, camera, scene };
+  }
+
+  test("a cursor over open ground lands on the ground height field, not the sky dome", () => {
+    const { service, camera, scene } = hillScene();
+    const groundHeightAt = () => 3;
+    service.bind({ camera, scene, width: 800, height: 600, groundHeightAt });
+    const hit = service.worldHitCenter();
+    expect(hit).not.toBeNull();
+    expect(hit!.point[1]).toBeCloseTo(3, 2);
+    expect(Math.hypot(hit!.point[0], hit!.point[2])).toBeLessThan(60);
+  });
+
+  test("without a ground sampler the sky dome still answers (old behaviour)", () => {
+    const { service, camera, scene } = hillScene();
+    service.bind({ camera, scene, width: 800, height: 600 });
+    const hit = service.worldHitCenter();
+    expect(Math.hypot(hit!.point[0], hit!.point[1], hit!.point[2])).toBeGreaterThan(1000);
+  });
+
+  test("a mesh in front of the ground still wins", () => {
+    const { service, camera, scene } = hillScene();
+    const box = new THREE.Mesh(new THREE.BoxGeometry(4, 4, 4), new THREE.MeshBasicMaterial());
+    box.position.set(0, 1, 0);
+    box.userData["jgEntityId"] = "tower";
+    scene.add(box);
+    scene.updateMatrixWorld();
+    service.bind({ camera, scene, width: 800, height: 600, groundHeightAt: () => 0 });
+    expect(service.worldHitCenter()?.entity).toBe("tower");
+  });
+
+  test("rayGroundHit finds a hill crossing and misses when looking up", () => {
+    const hill = (x: number) => Math.max(0, 10 - Math.abs(x - 50) * 0.5);
+    const along = rayGroundHit(new THREE.Vector3(0, 5, 0), new THREE.Vector3(1, 0, 0), (x) => hill(x));
+    expect(along).not.toBeNull();
+    expect(along!.x).toBeCloseTo(40, 1);
+    expect(rayGroundHit(new THREE.Vector3(0, 5, 0), new THREE.Vector3(0, 1, 0), () => 0)).toBeNull();
   });
 });
