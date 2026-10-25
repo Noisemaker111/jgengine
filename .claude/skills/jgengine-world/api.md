@@ -2,6 +2,32 @@
 
 # jgengine-world — exported API surface
 
+## @jgengine/core/ai/buildOrder
+
+- `AttackClock` (interface): interface AttackClock — A running attack clock.
+- `AttackClockConfig` (interface): interface AttackClockConfig — When attack waves launch and how they grow.
+- `AttackClockInput` (interface): interface AttackClockInput — What the game reports to the attack clock.
+- `AttackClockState` (interface): interface AttackClockState — Serializable attack-clock state.
+- `AttackDecision` (interface): interface AttackDecision — Whether to launch now, the wave number (1-based) being gathered, and the army it needs.
+- `BuildCatalog` (type): type BuildCatalog = Readonly<Record<string, BuildCatalogEntry>> — Everything the AI can make, keyed by id.
+- `BuildCatalogEntry` (interface): interface BuildCatalogEntry — One thing the AI can make.
+- `BuildDecision` (type): type BuildDecision = | { kind: "make"; id: string; reason: BuildMakeReason } | { kind: "wait"; reason: BuildWaitReason; id?: string } — One decision: make `id`, or wait (naming what it waits on when there is one).
+- `BuildKind` (type): type BuildKind = "building" | "unit" | "research" — What a catalog entry is: a structure, a trained unit, or a one-time research.
+- `BuildMakeReason` (type): type BuildMakeReason = "order" | "requirement" | "supply" | "workers" | "composition" — Why the planner chose to make something.
+- `BuildPlanConfig` (interface): interface BuildPlanConfig — The plan: catalog, opening order and sustain policy. Change it mid-game with `retune`.
+- `BuildPlanner` (interface): interface BuildPlanner — A running build planner.
+- `BuildPlannerOptions` (interface): interface BuildPlannerOptions — Options for {@link createBuildPlanner}.
+- `BuildPlannerState` (interface): interface BuildPlannerState — Serializable planner state.
+- `BuildPlannerTuning` (interface): interface BuildPlannerTuning — The planner's derived pacing, for a HUD or debug readout.
+- `BuildPlannerView` (interface): interface BuildPlannerView — What the game reports to the planner each decision.
+- `BuildStep` (interface): interface BuildStep — One build-order line: hold `count` (default 1) of `make`, owned plus pending.
+- `BuildWaitReason` (type): type BuildWaitReason = "afford" | "supply" | "producer" | "requirement" | "think" | "done" — Why the planner is not making anything this decision.
+- `TechPathStep` (type): type TechPathStep = | { status: "ready"; id: string } | { status: "pending"; id: string } | { status: "blocked"; id: string } — Where a tech path leads: something makeable now, a prerequisite already in progress, or nothing.
+- `createAttackClock` (function): function createAttackClock(config: AttackClockConfig, initial?: AttackClockState): AttackClock — Attack-wave timing for an RTS opponent: nothing before `firstAt`, then a wave launches when the army reaches `minArmy + growPerWave × waves launched`, or after `maxWait` seconds with whatever army exists. Waves are spaced by `minGap`.
+- `createBuildPlanner` (function): function createBuildPlanner(config: BuildPlanConfig, options: BuildPlannerOptions = {}): BuildPlanner — An RTS economy planner: follows `config.steps` in order, inserting the tech path for any unmet requirement, then sustains workers and an army `composition`, building supply ahead of a block. The {@link DifficultyProfile} sets how often it decides (`reactionSeconds` × `intervalPerReaction`), how often a composition pick is worse than the best (`decisionNoise`), and whether it saves for unaffordable wants. Returns a decision per call; the game executes it.
+- `missingRequirements` (function): function missingRequirements(catalog: BuildCatalog, id: string, view: Pick<BuildPlannerView, "owned">): string[] — Requirement ids of `id` (its `requires` plus its `producer`) that the view does not own complete. Unknown ids return an empty list.
+- `resolveTechPath` (function): function resolveTechPath(catalog: BuildCatalog, id: string, view: Pick<BuildPlannerView, "owned" | "pending">): TechPathStep — Walk the tech path toward `id`: `ready` names the first thing makeable now (the id itself when nothing is missing, else the deepest unmet prerequisite), `pending` names a prerequisite already queued that the path waits on, `blocked` means an unknown id or a requirement cycle. A prerequisite in progress is skipped in favour of another missing one, so "make 4 knights" builds the stables and the smithy side by side. Cycle-safe.
+
 ## @jgengine/core/ai/crowd
 
 - `CrowdField` (interface): interface CrowdField { enter(point: NavPoint): void; leave(point: NavPoint): void; count(point: NavPoint): number; cellCount(col: number, row: number): number; penalty(weight?: number): (col: number, row: number) => number; reset(): void } — ⚠ undocumented
