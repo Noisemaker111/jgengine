@@ -10,6 +10,7 @@ import {
 } from "../scene/sceneRaycast";
 import type { Aim } from "../scene/spatial";
 import type { CombatSpatialDeps, EffectResult, EffectSystem, EffectVia } from "./effects";
+import type { ImpactClass } from "./impactProfile";
 import { resolveShotSpec, shotArc, shotHitOutcome, shotSpecFromStats, type ResolvedShotSpec, type ShotSpec } from "./shotSpec";
 import {
   aimDirection,
@@ -30,6 +31,11 @@ export interface ProjectileShotInput {
   originPolicy?: ShotOriginPolicy;
   /** Opt into simulation-owned travel. Values are captured at launch; time is in game-seconds. */
   travel?: ProjectileTravelConfig;
+  /**
+   * How the landing reads on screen (sparks, scorch, blast, camera kick), for presentation only; it changes
+   * nothing about travel or damage. Omitted, the impact layer guesses from `via.item` and `effect`.
+   */
+  impact?: ImpactClass;
 }
 
 /** Captured launch settings for authoritative live travel. */
@@ -151,6 +157,10 @@ export interface ProjectileSettleReport {
    * Presentation uses it to keep straight-line tracers off arced projectiles.
    */
   ballistic: boolean;
+  /** The catalog item the shot was fired with (`via.item`), so presentation can tell a grenade from a bullet. */
+  item?: string;
+  /** The shot's `impact` tag, when it set one. */
+  impact?: ImpactClass;
 }
 
 export interface ProjectileObjectsDeps {
@@ -243,6 +253,13 @@ export interface ProjectileSystem {
 
 function copyPosition(position: EntityPosition): EntityPosition {
   return [position[0], position[1], position[2]];
+}
+
+function tagsOf(input: Pick<ProjectileShotInput, "via" | "impact">): { item?: string; impact?: ImpactClass } {
+  return {
+    ...(input.via.item === undefined ? {} : { item: input.via.item }),
+    ...(input.impact === undefined ? {} : { impact: input.impact }),
+  };
 }
 
 function copyAim(aim: Aim): Aim {
@@ -410,7 +427,7 @@ export function createProjectileSystem(deps: ProjectileSystemDeps): ProjectileSy
     liveCount -= 1;
     const origin = shot.origin!;
     const at = shot.at ?? shot.flights![0]!.position;
-    deps.onSettle?.({ shotId: shot.shotId, hits: structuredClone(shot.hits), from: shot.input.from, origin: copyPosition(origin), at: copyPosition(at), effect: shot.input.effect, hit: shot.hits.length > 0, ballistic: true });
+    deps.onSettle?.({ shotId: shot.shotId, hits: structuredClone(shot.hits), from: shot.input.from, origin: copyPosition(origin), at: copyPosition(at), effect: shot.input.effect, hit: shot.hits.length > 0, ballistic: true, ...tagsOf(shot.input) });
     pruneSettled();
     return { status: "settled", shotId: shot.shotId, at: [at[0], at[1], at[2]], origin: [origin[0], origin[1], origin[2]], hits: shot.hits };
   }
@@ -757,7 +774,7 @@ export function createProjectileSystem(deps: ProjectileSystemDeps): ProjectileSy
           radius: splash?.radius ?? spec.body!.radius,
           falloff: splash?.falloff ?? "none",
         });
-        deps.onSettle?.({ shotId, hits: structuredClone(hits), from: input.from, origin, at, effect: input.effect, hit: hits.length > 0, ballistic: true });
+        deps.onSettle?.({ shotId, hits: structuredClone(hits), from: input.from, origin, at, effect: input.effect, hit: hits.length > 0, ballistic: true, ...tagsOf(input) });
         return { status: "settled", shotId, at, hits, origin: originTuple };
       }
 
@@ -816,7 +833,7 @@ export function createProjectileSystem(deps: ProjectileSystemDeps): ProjectileSy
       }
       at ??= missPoint(input);
 
-      deps.onSettle?.({ shotId, hits: structuredClone(hits), from: input.from, origin, at, effect: input.effect, hit: hits.length > 0, ballistic: false });
+      deps.onSettle?.({ shotId, hits: structuredClone(hits), from: input.from, origin, at, effect: input.effect, hit: hits.length > 0, ballistic: false, ...tagsOf(input) });
       return { status: "settled", shotId, at, hits, origin: originTuple };
     },
   };

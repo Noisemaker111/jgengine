@@ -38,6 +38,7 @@ import type { GameCameraConfig } from "./cameraConfig";
 import type { ViewportsConfig } from "./viewports";
 import type { LootFilterRule } from "./lootFilter";
 import type { RarityStyle } from "./worldItem";
+import type { ImpactClass } from "../combat/impactProfile";
 
 /** How the shell presents `ctx.game.notices`; every field is optional. */
 export interface NoticePresentationConfig extends NoticeFeedConfig {
@@ -685,6 +686,17 @@ export interface PresentationEffectsConfig {
   hitMarkers?: boolean;
   /** A short flash where each direct-fire shot leaves the gun. Defaults to the `tracers` setting. */
   muzzleFlash?: boolean;
+  /**
+   * The default impact layer. It is on by default; `false` turns it off.
+   * - Sparks and dust at every hit, sized by weapon class.
+   * - Scorch marks where shots miss into a surface.
+   * - Camera kick and rumble near explosions and crashes.
+   * - A short hit-stop on the local player's heavy hits, hits taken and kills.
+   * - Killed rigged characters fall as ragdolls, lie 5 s, then sink away (off on the low tier).
+   *
+   * An object tunes it: `classes` maps a damage type or effect id to an `ImpactClass`; `marks: false`, `hitstop: false` or `ragdolls: false` drop one part.
+   */
+  impacts?: boolean | { classes?: Readonly<Record<string, ImpactClass>>; marks?: boolean; hitstop?: boolean; ragdolls?: boolean };
 }
 
 /** How a screenshot host reaches live gameplay in this game — the data behind `shoot --mode play`. */

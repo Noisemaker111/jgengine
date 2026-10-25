@@ -220,8 +220,9 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createImmunityWindow` (function) · `import { createImmunityWindow } from "@jgengine/core/combat"`
 
-## impact-feel — calibrated hitstop + trauma preset for a named impact event
+## impact-feel — default impact sparks, surface marks and hit-stop per weapon or vehicle class
 
+- `IMPACT_PROFILES` (const) · `import { IMPACT_PROFILES } from "@jgengine/core/combat/impactProfile"`
 - `impactPresets` (const) · `import { impactPresets } from "@jgengine/core/combat"`
 - `resolveHitReaction` (function) · `import { resolveHitReaction } from "@jgengine/core/combat"`
 

@@ -21,6 +21,7 @@ import { resolveRigNode } from "./rigNode";
 import { PartMotionRig } from "./PartMotion";
 import { useCharacterGlance } from "./characterGlance";
 import { useEntityMuzzle } from "./entityMuzzle";
+import { registerEntityBody } from "./CorpseRagdolls";
 import { useTerrainQuality } from "../terrain/terrainQuality";
 import { syncSpriteFrame } from "./spriteRender";
 import { singleVariantLevel, variantLevelModel } from "./singleVariantLod";
@@ -350,6 +351,7 @@ export function EntityModel({
   useCharacterGlance(scene, engineMotion, ctx, instanceId, ENGINE_MOTION_CAMERA_DISTANCE);
   const muzzleFacing = useCallback(() => (instanceId === undefined ? undefined : ctx?.scene.entity.get(instanceId)?.rotationY) ?? 0, [ctx, instanceId]);
   useEntityMuzzle(scene, instanceId, muzzleFacing);
+  useLayoutEffect(() => (instanceId === undefined ? undefined : registerEntityBody(instanceId, scene)), [instanceId, scene]);
 
   const paintCanvasRef = useRef<PaintCanvas | null>(null);
   const paintDrawnCountRef = useRef(0);
