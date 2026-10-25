@@ -19,6 +19,8 @@ export interface EntityDiedEvent {
   source?: string;
   position: [number, number, number];
   serverId?: string;
+  /** The catalog's `onDeath.keep`: the entity stayed in the scene and the game decides what comes next. */
+  kept?: true;
 }
 
 /**

@@ -1,3 +1,4 @@
+import { deathRemovesEntity } from "@jgengine/core/combat/death";
 import { useFrame, useLoader, useThree } from "@react-three/fiber";
 import { Component, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import * as THREE from "three";
@@ -473,7 +474,7 @@ function useEngineCharacterMotion(model: ModelConfig, ctx: GameContext | null, i
     setDead(false);
     if (ctx === null || instanceId === undefined) return;
     return ctx.game.events.on("entity.died", (event) => {
-      if (event.instanceId === instanceId) setDead(true);
+      if (event.instanceId === instanceId && deathRemovesEntity(event)) setDead(true);
     });
   }, [ctx, instanceId]);
   return model.ik === undefined && instanceId !== undefined && ctx !== null && quality !== "low" && !dead;
