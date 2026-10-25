@@ -1064,6 +1064,7 @@
     "./render/decalTexture",
     "./render/defaultSurface",
     "./render/displayColor",
+    "./render/entityMuzzle",
     "./render/levelPass",
     "./render/materialAppearanceSignals",
     "./render/materialAsset",
