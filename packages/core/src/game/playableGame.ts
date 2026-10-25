@@ -2,6 +2,8 @@ import type { AnimGraph } from "../anim/animGraph";
 import type { AmbienceZoneDef } from "../audio/ambience";
 import type { AudioBusDef, SoundDef } from "../audio/audioFalloff";
 import type { AudioOcclusionConfig } from "../audio/occlusion";
+import type { AdaptiveMusicConfig } from "../audio/adaptiveMusic";
+import type { AudioReverbConfig } from "../audio/reverb";
 import type { MusicTheme } from "../audio/music";
 import type { ModelShadowMode, ModelVariantLodConfig } from "../world/modelLod";
 export type { ModelShadowMode, ModelVariantConfig, ModelVariantLodConfig } from "../world/modelLod";
@@ -896,6 +898,24 @@ export interface PlayableGame<
     zones?: readonly AmbienceZoneDef[];
     /** Geometry occlusion for retained positional loops. Unset uses the engine defaults; `false` keeps distance-only attenuation everywhere. */
     occlusion?: AudioOcclusionConfig | false;
+    /**
+     * Left/right placement of positioned sounds with no `spatial` block of their own: "hrtf" (default)
+     * places them around the head, "equalpower" is a cheaper stereo pan, "off" keeps them centred.
+     */
+    panning?: "hrtf" | "equalpower" | "off";
+    /**
+     * World reverb on positioned sounds, on by default: authored `zones` (sphere or box, each a
+     * preset), else the shell listens for walls and a ceiling around the player and picks room, hall
+     * or outdoor. `false` keeps every sound dry.
+     */
+    reverb?: AudioReverbConfig | false;
+    /**
+     * A soundtrack that follows the fight: hits the local player deals or takes raise an intensity
+     * that decays in quiet, and the tiers crossfade explore, tension and fight. `true` uses the
+     * engine's built-in themes; an object sets the game's own tiers (themes from `music`). Off by
+     * default, and leave it off when the game calls `ctx.game.audio.music` itself.
+     */
+    adaptiveMusic?: boolean | AdaptiveMusicConfig;
   };
   /** Continuous positional emitter keyed by entity kind name: while a matching entity exists, the shell plays and repositions the mapped `audio.sounds` id (looping engine hum, campfire crackle, footstep loop) with listener-distance falloff. */
   entitySounds?: Record<string, string>;

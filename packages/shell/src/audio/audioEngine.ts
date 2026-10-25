@@ -3,12 +3,14 @@ import { distance3, resolveEmitterGain, type AudioBusDef, type SoundDef } from "
 import { dopplerRate } from "@jgengine/core/audio/doppler";
 import { resolveOcclusionConfig, type AudioOcclusionConfig, type ResolvedAudioOcclusionConfig } from "@jgengine/core/audio/occlusion";
 import type { MusicTheme } from "@jgengine/core/audio/music";
+import { reverbZoneAt, type AudioReverbConfig, type ReverbPreset } from "@jgengine/core/audio/reverb";
 import { patchDuration, type SynthPatch } from "@jgengine/core/audio/synth";
 import { createVoiceAllocator, type VoiceAllocator, type VoiceAllocatorConfig } from "@jgengine/core/audio/voiceAllocator";
 import { createDisposer } from "@jgengine/core/game/defineGame";
 
 import { clampLoopCutoff, clampLoopGain, clampLoopRate, MIN_LOOP_CUTOFF, MAX_LOOP_CUTOFF } from "./loopParams";
 import { MusicDirector, type CrossfadeOptions } from "./musicDirector";
+import { createReverbRack, type ReverbRack } from "./reverb";
 import { createNoiseBuffer, realizeSynthPatch, type SynthPlayback } from "./synthEngine";
 
 /** setTargetAtTime time constant (~20 ms) for zipper-free live rate/gain ramps on retained loops (#1051). */
@@ -21,6 +23,10 @@ const BED_SMOOTH_TC = 0.08;
 const DUCK_SMOOTH_TC = 0.03;
 
 const ZERO_VELOCITY: Vec3 = { x: 0, y: 0, z: 0 };
+
+/** One-shot occlusion budget: at most this many line tests per window. */
+const ONE_SHOT_TESTS_PER_WINDOW = 6;
+const ONE_SHOT_WINDOW_MS = 100;
 
 export interface Vec3 {
   x: number;
@@ -54,6 +60,28 @@ export interface AudioSceneConfig {
   zones?: readonly AmbienceZoneDef[];
   /** Geometry occlusion budget/policy for retained positional loops. Unset keeps the defaults; `false` keeps distance-only. */
   occlusion?: AudioOcclusionConfig | false;
+  /**
+   * Left/right placement for positioned sounds that declare no `spatial` block of their own: "hrtf"
+   * (default) places them around the head, "equalpower" is a cheaper plain stereo pan, "off" keeps
+   * them centred. Distance loudness still follows each sound's `falloff`.
+   */
+  panning?: "hrtf" | "equalpower" | "off";
+  /** World reverb on positioned sounds: authored zones, else the space the shell hears around the listener. `false` keeps them dry. */
+  reverb?: AudioReverbConfig | false;
+}
+
+/** What the spatial mix did, cumulative since the engine was created, plus the space it rings in now. */
+export interface AudioSpatialStats {
+  /** Positioned cues and loops placed left/right by the engine's default panner. */
+  panned: number;
+  /** Positioned cues and loops sent into the world reverb. */
+  reverbSends: number;
+  /** One-shots that started behind geometry and were muffled. */
+  occludedOneShots: number;
+  /** The space positioned sounds ring in now. */
+  reverb: ReverbPreset;
+  /** Authored reverb zone holding the listener, or null. */
+  reverbZone: string | null;
 }
 
 export interface AudioEmitterHandle {
@@ -129,6 +157,13 @@ export interface AudioEngine {
   setOcclusionSource(blocked: ((from: Vec3, to: Vec3) => boolean) | null): void;
   /** Cumulative occlusion cost, for a capture probe or a perf readout. */
   occlusionStats(): AudioOcclusionStats;
+  /**
+   * The space the shell hears around the listener (from its walls and ceiling), used outside every
+   * authored reverb zone; null falls back to the config's `fallback`.
+   */
+  setReverbEnvironment(preset: ReverbPreset | null): void;
+  /** Panning, reverb and one-shot occlusion counts, for a capture probe. */
+  spatialStats(): AudioSpatialStats;
   /** Current zone mix, for a capture probe or a HUD readout. */
   ambience(): AudioAmbienceState;
   /**
@@ -176,6 +211,8 @@ function createNoopEngine(): AudioEngine {
     playMusic: () => undefined,
     setOcclusionSource: () => undefined,
     occlusionStats: () => stats,
+    setReverbEnvironment: () => undefined,
+    spatialStats: () => ({ panned: 0, reverbSends: 0, occludedOneShots: 0, reverb: "none", reverbZone: null }),
     ambience: () => ({ zone: null, levels: [] }),
     duck: () => () => undefined,
     setBusGain: () => undefined,
@@ -237,6 +274,21 @@ function createPanner(context: BaseAudioContext, spatial: NonNullable<SoundDef["
 }
 
 /**
+ * A panner that only places a sound left/right/behind: no distance law (rolloff 0), so the sound's
+ * own `falloff` keeps owning how loud it is.
+ */
+function createPanOnly(context: BaseAudioContext, model: "hrtf" | "equalpower", position: Vec3): PannerNode {
+  const panner = context.createPanner();
+  panner.panningModel = model === "hrtf" ? "HRTF" : "equalpower";
+  panner.distanceModel = "linear";
+  panner.refDistance = 1;
+  panner.maxDistance = 10_000;
+  panner.rolloffFactor = 0;
+  setPannerPosition(panner, position);
+  return panner;
+}
+
+/**
  * Game-owned sound catalog playback with bounded SFX reservations, spatial panning, and shared buses.
  * @capability bounded-spatial-audio play positional or flat cues with listener orientation, voice budgets, and per-source cleanup
  */
@@ -257,6 +309,58 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
     masterGain.connect(context.destination);
   } catch {
     return createNoopEngine();
+  }
+
+  const panningModel = config.panning ?? "hrtf";
+  const reverbConfig = config.reverb === false ? null : config.reverb ?? {};
+  let reverbRack: ReverbRack | null = null;
+  if (reverbConfig !== null) {
+    try {
+      reverbRack = createReverbRack(context, masterGain);
+    } catch {
+      reverbRack = null;
+    }
+  }
+  let reverbEnvironment: ReverbPreset | null = null;
+  let reverbZone: string | null = null;
+  const spatialCounts = { panned: 0, reverbSends: 0, occludedOneShots: 0 };
+
+  function applyReverb(): void {
+    if (reverbRack === null || reverbConfig === null) return;
+    const zone = reverbZoneAt(reverbConfig.zones ?? [], listenerPosition.x, listenerPosition.y, listenerPosition.z);
+    reverbZone = zone?.id ?? null;
+    const auto = reverbConfig.auto !== false ? reverbEnvironment : null;
+    try {
+      reverbRack.select(zone?.preset ?? auto ?? reverbConfig.fallback ?? "outdoor");
+    } catch {
+      // A context that cannot convolve plays dry rather than failing the listener update.
+      reverbRack.dispose();
+      reverbRack = null;
+    }
+  }
+
+  /** The default panner for a positioned sound with no `spatial` block, or null. */
+  function defaultPanner(sound: SoundDef, positioned: boolean, at: Vec3): PannerNode | null {
+    if (!positioned || sound.positional === false || sound.spatial !== undefined || panningModel === "off") return null;
+    try {
+      const panner = createPanOnly(context, panningModel, at);
+      spatialCounts.panned += 1;
+      return panner;
+    } catch {
+      return null;
+    }
+  }
+
+  /** Feed a positioned voice's output into the world reverb as well as its bus. */
+  function sendToReverb(node: AudioNode, sound: SoundDef, positioned: boolean): void {
+    if (reverbRack === null || !positioned || sound.positional === false) return;
+    try {
+      const send = reverbSendFor(sound.bus);
+      if (send === null) return;
+      node.connect(send);
+      spatialCounts.reverbSends += 1;
+    } catch {
+    }
   }
 
   const busGains = new Map<string, GainNode>();
@@ -309,6 +413,23 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
   function applyBus(busId: string): void {
     const node = busGains.get(busId);
     if (node !== undefined) node.gain.value = busLevel(busId);
+    const send = reverbSends.get(busId);
+    if (send !== undefined) send.gain.value = busLevel(busId);
+  }
+
+  // Each bus sends to the reverb through its own gain that follows the bus, so muting or turning a
+  // bus down silences its echo too.
+  const reverbSends = new Map<string, GainNode>();
+  function reverbSendFor(busId: string): GainNode | null {
+    if (reverbRack === null) return null;
+    let send = reverbSends.get(busId);
+    if (send === undefined) {
+      send = context.createGain();
+      send.gain.value = busLevel(busId);
+      send.connect(reverbRack.input);
+      reverbSends.set(busId, send);
+    }
+    return send;
   }
 
   interface DuckHold {
@@ -493,12 +614,16 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
     occlusionTestsLeft -= 1;
     target.lastTest = now;
     target.tested = true;
+    target.set(runOcclusionTest(occlusionBlocked, target) ? 1 : 0);
+  }
+
+  function runOcclusionTest(test: (from: Vec3, to: Vec3) => boolean, at: Vec3): boolean {
     const started = clockMs();
     let blocked = false;
     const from = { x: listenerPosition.x, y: listenerPosition.y, z: listenerPosition.z };
-    const to = { x: target.x, y: target.y, z: target.z };
+    const to = { x: at.x, y: at.y, z: at.z };
     try {
-      blocked = occlusionBlocked(from, to);
+      blocked = test(from, to);
     } catch {
       blocked = false;
     }
@@ -506,7 +631,27 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
     occlusionStatsState.tests += 1;
     occlusionStatsState.lastTest = { from, to, blocked };
     if (blocked) occlusionStatsState.blocked += 1;
-    target.set(blocked ? 1 : 0);
+    return blocked;
+  }
+
+  // One-shots are tested once, as they start, on a budget of their own: a burst of gunfire behind a
+  // wall muffles its first few shots per window and lets the rest through on distance alone.
+  let oneShotWindowStart = -Infinity;
+  let oneShotTestsInWindow = 0;
+  function oneShotOccluded(sound: SoundDef, positioned: boolean, at: Vec3): boolean {
+    if (!positioned || sound.positional === false || occlusionBlocked === null || occlusionConfig.maxTestsPerTick <= 0) return false;
+    const distance = distance3(at, listenerPosition);
+    if (distance < 1 || distance > occlusionConfig.maxDistance) return false;
+    const now = clockMs();
+    if (now - oneShotWindowStart > ONE_SHOT_WINDOW_MS) {
+      oneShotWindowStart = now;
+      oneShotTestsInWindow = 0;
+    }
+    if (oneShotTestsInWindow >= ONE_SHOT_TESTS_PER_WINDOW) return false;
+    oneShotTestsInWindow += 1;
+    const blocked = runOcclusionTest(occlusionBlocked, at);
+    if (blocked) spatialCounts.occludedOneShots += 1;
+    return blocked;
   }
 
   function stepOcclusion(): void {
@@ -704,19 +849,24 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
     let bus: GainNode;
     try { bus = busGainNode(sound.bus); } catch { allocator.release(voiceId); return null; }
     const currentPosition = { ...(position ?? listenerPosition) };
+    const positioned = position !== undefined;
 
     if (sound.synth !== undefined && !loop) {
       applyCueDuck(sound, patchDuration(sound.synth));
       let cueGain: GainNode | null = null;
+      let muffle: BiquadFilterNode | null = null;
       let panner: PannerNode | null = null;
+      const spatial = sound.positional === false ? undefined : sound.spatial;
+      const muffled = oneShotOccluded(sound, positioned, currentPosition);
+      const blockedGain = muffled ? occlusionConfig.attenuation : 1;
       let playback: SynthPlayback | null = null;
       let stopped = false;
       let writtenCueGain = NaN;
       function updateGain(): void {
         if (cueGain === null) return;
-        const gain = panner === null
+        const gain = (spatial === undefined
           ? resolveEmitterGain(distance3(currentPosition, listenerPosition), sound, 1)
-          : sound.gain ?? 1;
+          : sound.gain ?? 1) * blockedGain;
         if (gain === writtenCueGain) return;
         writtenCueGain = gain;
         cueGain.gain.value = gain;
@@ -729,16 +879,28 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
         allocator.release(voiceId);
         playback?.stop();
         cueGain?.disconnect();
+        muffle?.disconnect();
         panner?.disconnect();
       }
       activeVoices.set(voiceId, stop);
       try {
         cueGain = context.createGain();
-        const spatial = sound.positional === false ? undefined : sound.spatial;
-        panner = spatial === undefined ? null : createPanner(context, spatial, currentPosition);
+        panner = spatial === undefined ? defaultPanner(sound, positioned, currentPosition) : createPanner(context, spatial, currentPosition);
         updateGain();
-        cueGain.connect(panner ?? bus);
-        panner?.connect(bus);
+        let tail: AudioNode = cueGain;
+        if (muffled) {
+          muffle = context.createBiquadFilter();
+          muffle.type = "lowpass";
+          muffle.frequency.value = Math.min(occlusionConfig.lowpassHz, nyquist);
+          tail.connect(muffle);
+          tail = muffle;
+        }
+        if (panner !== null) {
+          tail.connect(panner);
+          tail = panner;
+        }
+        tail.connect(bus);
+        sendToReverb(tail, sound, positioned);
         playback = realizeSynthPatch(context, cueGain, sharedNoiseBuffer(), sound.synth);
         activeSpatialUpdaters.add(updateGain);
         playback.onEnded(stop);
@@ -754,7 +916,7 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
     else if (sound.url !== undefined) bufferPromise = loadBuffer(sound.url);
     else return null;
 
-    return playBufferSource(sound, bus, bufferPromise, currentPosition, loop, voiceId);
+    return playBufferSource(sound, bus, bufferPromise, currentPosition, loop, voiceId, positioned);
   }
 
   function playBufferSource(
@@ -764,7 +926,9 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
     initialPosition: Vec3,
     loop: boolean,
     voiceId: number,
+    startedPositioned: boolean,
   ): AudioEmitterHandle {
+    let positioned = startedPositioned;
     const disposer = createDisposer();
     let currentPosition = { ...initialPosition };
     let stopped = false;
@@ -809,7 +973,8 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
       tested: false,
       set: applyOcclusionAmount,
     };
-    if (loop) occlusionTargets.add(occlusionTarget);
+    if (loop && positioned) occlusionTargets.add(occlusionTarget);
+    if (!loop && oneShotOccluded(sound, positioned, initialPosition)) currentOcclusion = 1;
 
     function effectiveRate(): number {
       if (dopplerFactor === 0) return currentRate;
@@ -923,7 +1088,7 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
       falloffGain = fGain;
       writtenFalloff = resolveEmitterGain(distance3(currentPosition, listenerPosition), sound, 1);
       fGain.gain.value = writtenFalloff;
-      if (loop) {
+      if (loop || currentOcclusion > 0) {
         const lp = context.createBiquadFilter();
         lowpassNode = lp;
         lp.type = "lowpass";
@@ -951,15 +1116,26 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
         fGain.connect(panner);
         panner.connect(bus);
       } else {
-        fGain.connect(bus);
+        const panner = defaultPanner(sound, positioned, currentPosition);
+        pannerNode = panner;
+        if (panner !== null) {
+          writtenPannerX = currentPosition.x;
+          writtenPannerY = currentPosition.y;
+          writtenPannerZ = currentPosition.z;
+          fGain.connect(panner);
+          panner.connect(bus);
+        } else {
+          fGain.connect(bus);
+        }
       }
+      sendToReverb(pannerNode ?? fGain, sound, positioned);
 
       src.onended = () => handle.stop();
       src.start();
     }).catch(() => handle.stop());
 
     activeSpatialUpdaters.add(updateFalloff);
-    if (loop) requestOcclusionTest(occlusionTarget);
+    if (loop && positioned) requestOcclusionTest(occlusionTarget);
 
     const handle: AudioEmitterHandle = {
       isPlaying: () => !stopped,
@@ -972,6 +1148,10 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
         occlusionTarget.y = next.y;
         occlusionTarget.z = next.z;
         updateFalloff();
+        if (loop && !positioned) {
+          positioned = true;
+          occlusionTargets.add(occlusionTarget);
+        }
         if (loop) requestOcclusionTest(occlusionTarget);
       },
       setRate(rate) {
@@ -1037,6 +1217,7 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
       if (positionChanged || !ambienceInitialized) {
         ambienceInitialized = true;
         applyAmbience();
+        applyReverb();
       }
       let listenerMoved = writeChanged(listenerWritten, 0, listener.positionX, pose.position.x);
       listenerMoved = writeChanged(listenerWritten, 1, listener.positionY, pose.position.y) || listenerMoved;
@@ -1077,6 +1258,14 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
         return;
       }
       stepOcclusion();
+    },
+    setReverbEnvironment(preset) {
+      if (disposed || preset === reverbEnvironment) return;
+      reverbEnvironment = preset;
+      applyReverb();
+    },
+    spatialStats() {
+      return { ...spatialCounts, reverb: reverbRack?.active() ?? "none", reverbZone };
     },
     occlusionStats() {
       const { tests, blocked, testMs, lastTest } = occlusionStatsState;
@@ -1144,6 +1333,9 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
       director?.dispose();
       for (const node of busGains.values()) node.disconnect();
       busGains.clear();
+      for (const node of reverbSends.values()) node.disconnect();
+      reverbSends.clear();
+      reverbRack?.dispose();
       masterGain.disconnect();
       void context.close().catch(() => undefined);
     },

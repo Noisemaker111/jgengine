@@ -455,6 +455,14 @@
 - `sumMagnitude` (function): function sumMagnitude<P>(memberships: readonly AreaMembership<P>[], magnitudeOf: MagnitudeOf<P>): number — Sum a numeric magnitude across memberships — additive aggregation for a total field strength (total damage per tick, total slow). A terminal reducer, not a filter, so it returns the number.
 - `uniqueByStackKey` (function): function uniqueByStackKey<P>(magnitudeOf?: MagnitudeOf<P>): AreaStackPolicy<P> — Keep at most one membership per `stackKey`. With `magnitudeOf` the strongest per key wins (ties broken by `sourceId` for determinism); without it the first-seen per key wins. Use for unique-by-key buffs where reapplying the same aura should not stack.
 
+## @jgengine/core/audio/adaptiveMusic
+
+- `ADAPTIVE_THEMES` (const): const ADAPTIVE_THEMES: Readonly<Record<string, MusicTheme>> — The built-in adaptive themes, keyed by id.
+- `AdaptiveMusicConfig` (interface): interface AdaptiveMusicConfig — Soundtrack that follows the fight: the shell raises an intensity when the local player deals or takes damage and lets it decay, and the tier ladder picks the theme. `true` uses the built-in explore / tension / fight themes; an object swaps in the game's own tiers and themes.
+- `CombatIntensity` (interface): interface CombatIntensity — A `0..1` combat intensity that jumps on events and decays linearly over quiet time.
+- `DEFAULT_ADAPTIVE_TIERS` (const): const DEFAULT_ADAPTIVE_TIERS: readonly MusicTier[] — Explore below 0.25, tension from 0.25, fight from 0.6 and held at least 6 s once it starts.
+- `createCombatIntensity` (function): function createCombatIntensity(decayPerSecond = 0.1): CombatIntensity — A fresh intensity at 0 that loses `decayPerSecond` per second of quiet.
+
 ## @jgengine/core/audio/ambience
 
 - `AmbienceWeight` (interface): interface AmbienceWeight — One zone's share of the ambience mix at a listener position, 0..1.
@@ -528,6 +536,15 @@
 - `AudioOcclusionConfig` (interface): interface AudioOcclusionConfig — Geometry occlusion for retained positional loops: a cheap line test between the listener and an emitter behind blocking geometry, bounded so a busy scene can never turn audio into a raycast pass. The shell runs the test against the scene's blockable colliders; the engine applies the resulting attenuation and low-pass to the loop it already owns.
 - `ResolvedAudioOcclusionConfig` (interface): interface ResolvedAudioOcclusionConfig — A fully specified occlusion policy, with every unset field replaced by its default.
 - `resolveOcclusionConfig` (function): function resolveOcclusionConfig(config: AudioOcclusionConfig | false = {}): ResolvedAudioOcclusionConfig — Fill in the occlusion defaults and clamp each field to a workable range: a finite test budget, a non-negative retest interval and distance cap, and an attenuation in `0..1`.
+
+## @jgengine/core/audio/reverb
+
+- `AudioReverbConfig` (interface): interface AudioReverbConfig — World reverb for positioned sounds. Authored zones win; outside them the shell listens for walls and a ceiling around the listener (`auto`, default on) and picks `room`, `hall` or `outdoor`.
+- `EnclosureSample` (interface): interface EnclosureSample — What the listener's surroundings look like: the ceiling height and how far each wall ray ran.
+- `ReverbPreset` (type): type ReverbPreset = "none" | "outdoor" | "room" | "hall" | "cave" — How a space rings. `outdoor` is a short, faint tail; `room` a tight one; `hall` long and wide; `cave` long, dark and wet. `none` is dry.
+- `ReverbZoneDef` (type): type ReverbZoneDef = | { id: string; preset: ReverbPreset; center: readonly [number, number, number]; radius: number } | { id: string; preset: ReverbPreset; min: readonly [number, number, number]; max: readonly [number, number, number] } — A world region that rings a set way while the listener is inside it.
+- `enclosurePreset` (function): function enclosurePreset(sample: EnclosureSample): ReverbPreset — Pick a preset from the space around the listener. A roof with walls on most sides is a room, or a hall when they are far; a roof alone (an awning, an overpass) is a room; open sky is outdoor.
+- `reverbZoneAt` (function): function reverbZoneAt(zones: readonly ReverbZoneDef[], x: number, y: number, z: number): ReverbZoneDef | null — The zone holding a point, or null. Spheres and boxes; the first listed wins where they overlap.
 
 ## @jgengine/core/audio/stepCadence
 

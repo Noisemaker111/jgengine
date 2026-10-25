@@ -2516,6 +2516,7 @@
 - `AudioLevel` (interface): interface AudioLevel — Master-output level, `0..1`. Pooled by {@link AudioEngine.measure} - read it, don't retain it.
 - `AudioOcclusionStats` (interface): interface AudioOcclusionStats — Measured geometry-occlusion work, cumulative since the engine was created.
 - `AudioSceneConfig` (interface): interface AudioSceneConfig { sounds?: Record<string, SoundDef>; maxVoices?: number; voiceOverflow?: VoiceAllocatorConfig["overflow"]; voiceAllocator?: VoiceAllocator; buses?: Record<string, AudioBusDef>; music?: Record<string, MusicTheme>; musicBus?: string; zones?: … — ⚠ undocumented · used by `createAudioEngine`: Game-owned sound catalog playback with bounded SFX reservations, spatial panning, and shared buses.
+- `AudioSpatialStats` (interface): interface AudioSpatialStats — What the spatial mix did, cumulative since the engine was created, plus the space it rings in now.
 - `DuckOptions` (interface): interface DuckOptions — How long and how far to duck buses for {@link AudioEngine.duck}.
 - `ListenerPose` (interface): interface ListenerPose — Position and orientation for a spatial-audio listener.
 - `MAX_PENDING_CUES` (const): const MAX_PENDING_CUES: 16 — Cues held while the browser keeps the audio context suspended, before any user gesture.
@@ -2588,6 +2589,10 @@
 
 - `BlockingRaycastSource` (interface): interface BlockingRaycastSource — The narrow slice of the scene a line-of-hearing test needs.
 - `sceneLineBlocked` (function): function sceneLineBlocked(source: BlockingRaycastSource, from: Vec3, to: Vec3): boolean — Whether blocking world geometry (objects and wall segments, never creatures or terrain) lies between the listener and an emitter. One scene query per call; the engine owns how often it runs.
+
+## @jgengine/shell/audio/reverb
+
+- `EnclosureRaycastSource` (interface): interface EnclosureRaycastSource — The narrow slice of the scene an enclosure test needs.
 
 ## @jgengine/shell/audio/synthEngine
 
