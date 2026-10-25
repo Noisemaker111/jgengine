@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import {
+  devServerIdentity,
   devServerMarkerPlugin,
   idleVerdict,
   listMarkers,
@@ -89,6 +90,32 @@ describe("dev server marker", () => {
 
     listeners.get("close")!();
     expect(readMarker(30_111, dir)).toBeNull();
+  });
+
+  test("a --game-dir server's marker keeps the game dir, so the next run for that folder reuses it", () => {
+    const dir = markerDir();
+    const gameDir = markerDir();
+    const before = process.env["JG_GAME_DIR"];
+    process.env["JG_GAME_DIR"] = gameDir;
+    try {
+      const listeners = new Map<string, () => void>();
+      const httpServer = {
+        listening: false,
+        address: () => ({ address: "127.0.0.1", family: "IPv4", port: 30_112 }),
+        once(event: string, listener: () => void) {
+          listeners.set(event, listener);
+        },
+      };
+      devServerMarkerPlugin({ kind: "runner", dir }).configureServer({ config: { root: process.cwd() }, httpServer });
+      listeners.get("listening")!();
+      const marker = readMarker(30_112, dir);
+      expect(marker?.identity).toBe(devServerIdentity(process.cwd()));
+      expect(marker?.identity).toContain(`|game-dir:${gameDir}`);
+      listeners.get("close")!();
+    } finally {
+      if (before === undefined) delete process.env["JG_GAME_DIR"];
+      else process.env["JG_GAME_DIR"] = before;
+    }
   });
 });
 
