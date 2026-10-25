@@ -1,3 +1,0 @@
-### Added
-
-- Impostors: repeated models with a bounding radius of 2.2 m or more (trees, palms, buildings) placed as scatter or as batched static objects draw as camera-facing cards past a distance that grows with the model's size and the graphics tier (70 m plus 16 m per metre of radius on high). Each model is baked once at load into an albedo and normal atlas seen from 64 directions over the upper hemisphere (36 on low), so far cards keep their lighting and cast shadows. Every far placement of a model shares one instanced card draw, whichever batch cell it sits in. Low tier keeps impostors with a smaller atlas; models that fail to bake keep drawing as meshes.
