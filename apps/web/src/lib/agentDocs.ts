@@ -11,7 +11,7 @@ cd Game-Name
 # follow the installed \`jgengine\` skill: intake → foundation + only the domains the game needs → build`;
 
 const RULES = [
-  `The game is **its own project** on the published npm packages. Never clone the jgengine GitHub repo to build a game, and never copy code, assets, or content from its \`Games/*\` directory — those are private in-repo test games, not templates.`,
+  `The game is **its own project** on the published npm packages. Never clone the jgengine GitHub repo to build a game, and never copy code, assets, or content from its \`games/*\` directory — those are private in-repo test games, not templates.`,
   `\`create\` installs agent skills into the project under \`.claude/skills/\` (recovery: \`npx jgengine skills -p\`). They cover intake/routing, world, gameplay, combat, UI, multiplayer, editor authoring, assets, verification, and game/level design — follow them instead of guessing at the API.`,
   `Author world content (scenes, placement, terrain, foliage) in the editor (\`npx jgengine editor\`), not as hardcoded coordinate arrays.`,
   `"jgengine" is this game engine SDK, not anything automotive.`,

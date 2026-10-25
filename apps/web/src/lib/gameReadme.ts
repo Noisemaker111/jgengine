@@ -1,10 +1,10 @@
-/** A probe game's display title and one-line description from the games repo README table. */
+/** A probe game's display title and one-line description from the games/README.md table. */
 export interface GameReadmeEntry {
   readonly title: string;
   readonly blurb: string;
 }
 
-/** Reads the `| Game | Id | Description |` table in JGengine-games' README.md. */
+/** Reads the `| Game | Id | Description |` table in games/README.md. */
 export function parseGameReadme(markdown: string): Record<string, GameReadmeEntry> {
   const entries: Record<string, GameReadmeEntry> = {};
   for (const line of markdown.split("\n")) {

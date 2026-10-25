@@ -1,0 +1,12 @@
+{ "steps": [
+  { "flow": "to-menu" },
+  { "click": "Free skirmish",
+    "after": { "is": "document.querySelector('.ec-pause') !== null", "timeoutMs": 15000 } },
+  { "assert": "document.querySelectorAll('[aria-label=\"army units\"] [role=\"listitem\"]').length",
+    "is": 5,
+    "before": { "is": "document.querySelectorAll('[aria-label=\"army units\"] [role=\"listitem\"]').length >= 5", "timeoutMs": 5000,
+      "note": "the roster fills a frame after the match starts" },
+    "note": "arrival: five footmen on the field, not just a click that landed" },
+  { "assert": "document.querySelector('.ec-stock') !== null",
+    "note": "arrival: the live-match stockpile strip is up" }
+] }

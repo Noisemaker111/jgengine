@@ -18,7 +18,7 @@ cd Game-Name
 # follow the installed `jgengine` skill: intake → foundation + only the domains the game needs → build
 ```
 
-The game is **its own project** on the published npm packages. Never clone the jgengine GitHub repo to build a game, and never copy code, assets, or content from its `Games/*` directory — those are private in-repo test games, not templates.
+The game is **its own project** on the published npm packages. Never clone the jgengine GitHub repo to build a game, and never copy code, assets, or content from its `games/*` directory — those are private in-repo test games, not templates.
 
 Skills ship inside this package under `skills/` and are installed into the project by `create` (recovery: `npx jgengine skills -p`). They cover intake/routing, world, gameplay, combat, UI, multiplayer, editor authoring, assets, verification, and game/level design.
 

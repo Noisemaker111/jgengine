@@ -1,0 +1,5402 @@
+{
+  "version": 1,
+  "markers": [
+    {
+      "id": "base-pad",
+      "kind": "pad",
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "meta": {
+        "radius": 20,
+        "falloff": 26
+      }
+    },
+    {
+      "id": "home",
+      "kind": "home",
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": -4
+      },
+      "label": "Forward Base",
+      "meta": {
+        "clearance": 8
+      }
+    },
+    {
+      "id": "spawn",
+      "kind": "player_spawn",
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 6
+      },
+      "rotationY": 0,
+      "label": "Spawn",
+      "meta": {
+        "clearance": 3
+      }
+    },
+    {
+      "id": "outpost1-pad",
+      "kind": "pad",
+      "position": {
+        "x": 26,
+        "y": 0,
+        "z": 52
+      },
+      "meta": {
+        "radius": 22,
+        "falloff": 24
+      }
+    },
+    {
+      "id": "outpost1",
+      "kind": "outpost",
+      "position": {
+        "x": 26,
+        "y": 0,
+        "z": 52
+      },
+      "label": "Drill Site",
+      "meta": {
+        "outpost": "outpost1",
+        "clearance": 10
+      }
+    },
+    {
+      "id": "outpost1-guard1",
+      "kind": "guard",
+      "position": {
+        "x": 26,
+        "y": 0,
+        "z": 52
+      },
+      "rotationY": -2.68,
+      "label": "Cyclop gunner",
+      "meta": {
+        "outpost": "outpost1",
+        "enemy": "cyclop"
+      }
+    },
+    {
+      "id": "outpost1-guard2",
+      "kind": "guard",
+      "position": {
+        "x": 23.3,
+        "y": 0,
+        "z": 57.1
+      },
+      "rotationY": -2.75,
+      "label": "Cyclop gunner",
+      "meta": {
+        "outpost": "outpost1",
+        "enemy": "cyclop"
+      }
+    },
+    {
+      "id": "outpost1-guard3",
+      "kind": "guard",
+      "position": {
+        "x": 22.9,
+        "y": 0,
+        "z": 47.3
+      },
+      "rotationY": -2.69,
+      "label": "Cyclop gunner",
+      "meta": {
+        "outpost": "outpost1",
+        "enemy": "cyclop"
+      }
+    },
+    {
+      "id": "outpost1-cover1-1",
+      "kind": "prop",
+      "catalogId": "cover1",
+      "position": {
+        "x": 29.6,
+        "y": 0,
+        "z": 62.7
+      },
+      "rotationY": 1.53,
+      "label": "Drill Site cover",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "outpost1-cover1-2",
+      "kind": "prop",
+      "catalogId": "cover3",
+      "position": {
+        "x": 30.7,
+        "y": 0,
+        "z": 66.2
+      },
+      "rotationY": 0.24,
+      "label": "Drill Site cover",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "outpost1-cover1-4",
+      "kind": "prop",
+      "catalogId": "cover3",
+      "position": {
+        "x": 33.2,
+        "y": 0,
+        "z": 62.9
+      },
+      "rotationY": 3.58,
+      "label": "Drill Site cover",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "outpost1-cover2-1",
+      "kind": "prop",
+      "catalogId": "cover2",
+      "position": {
+        "x": 36.1,
+        "y": 0,
+        "z": 53.3
+      },
+      "rotationY": 6.17,
+      "label": "Drill Site cover",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "outpost1-cover2-2",
+      "kind": "prop",
+      "catalogId": "cover4",
+      "position": {
+        "x": 38.9,
+        "y": 0,
+        "z": 55.6
+      },
+      "rotationY": 6.04,
+      "label": "Drill Site cover",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "outpost1-cover2-4",
+      "kind": "prop",
+      "catalogId": "cover4",
+      "position": {
+        "x": 35.2,
+        "y": 0,
+        "z": 57
+      },
+      "rotationY": 5.71,
+      "label": "Drill Site cover",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "outpost1-cover3-1",
+      "kind": "prop",
+      "catalogId": "cover3",
+      "position": {
+        "x": 15.4,
+        "y": 0,
+        "z": 53.1
+      },
+      "rotationY": 3.27,
+      "label": "Drill Site cover",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "outpost1-cover3-3",
+      "kind": "prop",
+      "catalogId": "cover3",
+      "position": {
+        "x": 14.5,
+        "y": 0,
+        "z": 56.9
+      },
+      "rotationY": 1.85,
+      "label": "Drill Site cover",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "outpost1-cover3-4",
+      "kind": "prop",
+      "catalogId": "cover5",
+      "position": {
+        "x": 11.5,
+        "y": 0,
+        "z": 53.8
+      },
+      "rotationY": 4.66,
+      "label": "Drill Site cover",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "outpost1-landmark",
+      "kind": "prop",
+      "catalogId": "cover5",
+      "position": {
+        "x": 21,
+        "y": 0,
+        "z": 60
+      },
+      "rotationY": 5.02,
+      "label": "Drill Site",
+      "meta": {
+        "clearance": 3
+      }
+    },
+    {
+      "id": "outpost2-pad",
+      "kind": "pad",
+      "position": {
+        "x": -63,
+        "y": 0,
+        "z": 39
+      },
+      "meta": {
+        "radius": 22,
+        "falloff": 24
+      }
+    },
+    {
+      "id": "outpost2",
+      "kind": "outpost",
+      "position": {
+        "x": -63,
+        "y": 0,
+        "z": 39
+      },
+      "label": "Crater Nest",
+      "meta": {
+        "outpost": "outpost2",
+        "clearance": 10
+      }
+    },
+    {
+      "id": "outpost2-guard1",
+      "kind": "guard",
+      "position": {
+        "x": -63,
+        "y": 0,
+        "z": 39
+      },
+      "rotationY": 2.13,
+      "label": "Cyclop gunner",
+      "meta": {
+        "outpost": "outpost2",
+        "enemy": "cyclop"
+      }
+    },
+    {
+      "id": "outpost2-guard2",
+      "kind": "guard",
+      "position": {
+        "x": -62.2,
+        "y": 0,
+        "z": 45.4
+      },
+      "rotationY": 2.2,
+      "label": "Scolitex",
+      "meta": {
+        "outpost": "outpost2",
+        "enemy": "scolitex"
+      }
+    },
+    {
+      "id": "outpost2-guard3",
+      "kind": "guard",
+      "position": {
+        "x": -68.8,
+        "y": 0,
+        "z": 39.9
+      },
+      "rotationY": 2.1,
+      "label": "Scolitex",
+      "meta": {
+        "outpost": "outpost2",
+        "enemy": "scolitex"
+      }
+    },
+    {
+      "id": "outpost2-guard4",
+      "kind": "guard",
+      "position": {
+        "x": -62.5,
+        "y": 0,
+        "z": 34.7
+      },
+      "rotationY": 2.08,
+      "label": "Cyclop gunner",
+      "meta": {
+        "outpost": "outpost2",
+        "enemy": "cyclop"
+      }
+    },
+    {
+      "id": "outpost2-cover1-1",
+      "kind": "prop",
+      "catalogId": "cover2",
+      "position": {
+        "x": -59.5,
+        "y": 0,
+        "z": 51.1
+      },
+      "rotationY": 4.66,
+      "label": "Crater Nest cover",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "outpost2-cover1-4",
+      "kind": "prop",
+      "catalogId": "cover4",
+      "position": {
+        "x": -55.8,
+        "y": 0,
+        "z": 52.2
+      },
+      "rotationY": 1.37,
+      "label": "Crater Nest cover",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "outpost2-cover2-1",
+      "kind": "prop",
+      "catalogId": "cover3",
+      "position": {
+        "x": -50.5,
+        "y": 0,
+        "z": 41.4
+      },
+      "rotationY": 3.69,
+      "label": "Crater Nest cover",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "outpost2-cover2-2",
+      "kind": "prop",
+      "catalogId": "cover5",
+      "position": {
+        "x": -53.8,
+        "y": 0,
+        "z": 39.5
+      },
+      "rotationY": 4.79,
+      "label": "Crater Nest cover",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "outpost2-cover2-3",
+      "kind": "prop",
+      "catalogId": "cover3",
+      "position": {
+        "x": -53.8,
+        "y": 0,
+        "z": 43.1
+      },
+      "rotationY": 2.92,
+      "label": "Crater Nest cover",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "outpost2-cover3-1",
+      "kind": "prop",
+      "catalogId": "cover4",
+      "position": {
+        "x": -74.2,
+        "y": 0,
+        "z": 41.8
+      },
+      "rotationY": 5.27,
+      "label": "Crater Nest cover",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "outpost2-cover3-3",
+      "kind": "prop",
+      "catalogId": "cover4",
+      "position": {
+        "x": -73,
+        "y": 0,
+        "z": 38.2
+      },
+      "rotationY": 1.73,
+      "label": "Crater Nest cover",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "outpost2-cover3-4",
+      "kind": "prop",
+      "catalogId": "cover1",
+      "position": {
+        "x": -76.7,
+        "y": 0,
+        "z": 39
+      },
+      "rotationY": 2.64,
+      "label": "Crater Nest cover",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "outpost2-landmark",
+      "kind": "prop",
+      "catalogId": "cover5",
+      "position": {
+        "x": -68,
+        "y": 0,
+        "z": 47
+      },
+      "rotationY": 3.86,
+      "label": "Crater Nest",
+      "meta": {
+        "clearance": 3
+      }
+    },
+    {
+      "id": "outpost3-pad",
+      "kind": "pad",
+      "position": {
+        "x": -37,
+        "y": 0,
+        "z": -82
+      },
+      "meta": {
+        "radius": 22,
+        "falloff": 24
+      }
+    },
+    {
+      "id": "outpost3",
+      "kind": "outpost",
+      "position": {
+        "x": -37,
+        "y": 0,
+        "z": -82
+      },
+      "label": "Relay Hive",
+      "meta": {
+        "outpost": "outpost3",
+        "clearance": 10
+      }
+    },
+    {
+      "id": "outpost3-guard1",
+      "kind": "guard",
+      "position": {
+        "x": -37,
+        "y": 0,
+        "z": -82
+      },
+      "rotationY": 0.42,
+      "label": "Cyclop gunner",
+      "meta": {
+        "outpost": "outpost3",
+        "enemy": "cyclop"
+      }
+    },
+    {
+      "id": "outpost3-guard2",
+      "kind": "guard",
+      "position": {
+        "x": -36.1,
+        "y": 0,
+        "z": -76.5
+      },
+      "rotationY": 0.44,
+      "label": "Scolitex",
+      "meta": {
+        "outpost": "outpost3",
+        "enemy": "scolitex"
+      }
+    },
+    {
+      "id": "outpost3-guard3",
+      "kind": "guard",
+      "position": {
+        "x": -40.5,
+        "y": 0,
+        "z": -79.7
+      },
+      "rotationY": 0.47,
+      "label": "Oculichrysalis brute",
+      "meta": {
+        "outpost": "outpost3",
+        "enemy": "brute"
+      }
+    },
+    {
+      "id": "outpost3-guard4",
+      "kind": "guard",
+      "position": {
+        "x": -41.3,
+        "y": 0,
+        "z": -84.5
+      },
+      "rotationY": 0.45,
+      "label": "Scolitex",
+      "meta": {
+        "outpost": "outpost3",
+        "enemy": "scolitex"
+      }
+    },
+    {
+      "id": "outpost3-guard5",
+      "kind": "guard",
+      "position": {
+        "x": -36.2,
+        "y": 0,
+        "z": -87.7
+      },
+      "rotationY": 0.39,
+      "label": "Cyclop gunner",
+      "meta": {
+        "outpost": "outpost3",
+        "enemy": "cyclop"
+      }
+    },
+    {
+      "id": "outpost3-cover1-1",
+      "kind": "prop",
+      "catalogId": "cover3",
+      "position": {
+        "x": -33.2,
+        "y": 0,
+        "z": -71.2
+      },
+      "rotationY": 1.62,
+      "label": "Relay Hive cover",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "outpost3-cover1-2",
+      "kind": "prop",
+      "catalogId": "cover5",
+      "position": {
+        "x": -32.8,
+        "y": 0,
+        "z": -67.6
+      },
+      "rotationY": 4.7,
+      "label": "Relay Hive cover",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "outpost3-cover1-4",
+      "kind": "prop",
+      "catalogId": "cover5",
+      "position": {
+        "x": -29.8,
+        "y": 0,
+        "z": -70
+      },
+      "rotationY": 4.84,
+      "label": "Relay Hive cover",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "outpost3-cover2-1",
+      "kind": "prop",
+      "catalogId": "cover4",
+      "position": {
+        "x": -25.1,
+        "y": 0,
+        "z": -79.3
+      },
+      "rotationY": 3.36,
+      "label": "Relay Hive cover",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "outpost3-cover2-3",
+      "kind": "prop",
+      "catalogId": "cover4",
+      "position": {
+        "x": -26.5,
+        "y": 0,
+        "z": -83
+      },
+      "rotationY": 5.74,
+      "label": "Relay Hive cover",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "outpost3-cover2-4",
+      "kind": "prop",
+      "catalogId": "cover1",
+      "position": {
+        "x": -28.9,
+        "y": 0,
+        "z": -79.4
+      },
+      "rotationY": 3.41,
+      "label": "Relay Hive cover",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "outpost3-cover3-1",
+      "kind": "prop",
+      "catalogId": "cover5",
+      "position": {
+        "x": -48.3,
+        "y": 0,
+        "z": -79
+      },
+      "rotationY": 5.15,
+      "label": "Relay Hive cover",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "outpost3-cover3-3",
+      "kind": "prop",
+      "catalogId": "cover5",
+      "position": {
+        "x": -47.2,
+        "y": 0,
+        "z": -82.7
+      },
+      "rotationY": 0.42,
+      "label": "Relay Hive cover",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "outpost3-cover3-4",
+      "kind": "prop",
+      "catalogId": "cover2",
+      "position": {
+        "x": -44.6,
+        "y": 0,
+        "z": -79.4
+      },
+      "rotationY": 1.96,
+      "label": "Relay Hive cover",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "outpost3-landmark",
+      "kind": "prop",
+      "catalogId": "cover5",
+      "position": {
+        "x": -42,
+        "y": 0,
+        "z": -74
+      },
+      "rotationY": 6.04,
+      "label": "Relay Hive",
+      "meta": {
+        "clearance": 3
+      }
+    },
+    {
+      "id": "outpost4-pad",
+      "kind": "pad",
+      "position": {
+        "x": 98,
+        "y": 0,
+        "z": -40
+      },
+      "meta": {
+        "radius": 22,
+        "falloff": 24
+      }
+    },
+    {
+      "id": "outpost4",
+      "kind": "outpost",
+      "position": {
+        "x": 98,
+        "y": 0,
+        "z": -40
+      },
+      "label": "Queen's Spire",
+      "meta": {
+        "outpost": "outpost4",
+        "clearance": 10
+      }
+    },
+    {
+      "id": "outpost4-guard1",
+      "kind": "guard",
+      "position": {
+        "x": 98,
+        "y": 0,
+        "z": -40
+      },
+      "rotationY": -1.18,
+      "label": "Oculichrysalis brute",
+      "meta": {
+        "outpost": "outpost4",
+        "enemy": "brute"
+      }
+    },
+    {
+      "id": "outpost4-guard2",
+      "kind": "guard",
+      "position": {
+        "x": 100.2,
+        "y": 0,
+        "z": -37.3
+      },
+      "rotationY": -1.21,
+      "label": "Scolitex",
+      "meta": {
+        "outpost": "outpost4",
+        "enemy": "scolitex"
+      }
+    },
+    {
+      "id": "outpost4-guard3",
+      "kind": "guard",
+      "position": {
+        "x": 95,
+        "y": 0,
+        "z": -35
+      },
+      "rotationY": -1.22,
+      "label": "Cyclop gunner",
+      "meta": {
+        "outpost": "outpost4",
+        "enemy": "cyclop"
+      }
+    },
+    {
+      "id": "outpost4-guard4",
+      "kind": "guard",
+      "position": {
+        "x": 93.5,
+        "y": 0,
+        "z": -41.2
+      },
+      "rotationY": -1.16,
+      "label": "Oculichrysalis brute",
+      "meta": {
+        "outpost": "outpost4",
+        "enemy": "brute"
+      }
+    },
+    {
+      "id": "outpost4-guard5",
+      "kind": "guard",
+      "position": {
+        "x": 95.6,
+        "y": 0,
+        "z": -44
+      },
+      "rotationY": -1.14,
+      "label": "Scolitex",
+      "meta": {
+        "outpost": "outpost4",
+        "enemy": "scolitex"
+      }
+    },
+    {
+      "id": "outpost4-guard6",
+      "kind": "guard",
+      "position": {
+        "x": 99.5,
+        "y": 0,
+        "z": -43.3
+      },
+      "rotationY": -1.16,
+      "label": "Cyclop gunner",
+      "meta": {
+        "outpost": "outpost4",
+        "enemy": "cyclop"
+      }
+    },
+    {
+      "id": "outpost4-cover1-1",
+      "kind": "prop",
+      "catalogId": "cover4",
+      "position": {
+        "x": 100.9,
+        "y": 0,
+        "z": -26.8
+      },
+      "rotationY": 0.05,
+      "label": "Queen's Spire cover",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "outpost4-cover1-2",
+      "kind": "prop",
+      "catalogId": "cover1",
+      "position": {
+        "x": 104.4,
+        "y": 0,
+        "z": -27.8
+      },
+      "rotationY": 3.74,
+      "label": "Queen's Spire cover",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "outpost4-cover1-3",
+      "kind": "prop",
+      "catalogId": "cover4",
+      "position": {
+        "x": 101.2,
+        "y": 0,
+        "z": -30.9
+      },
+      "rotationY": 0.12,
+      "label": "Queen's Spire cover",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "outpost4-cover2-1",
+      "kind": "prop",
+      "catalogId": "cover5",
+      "position": {
+        "x": 109,
+        "y": 0,
+        "z": -39.6
+      },
+      "rotationY": 4.07,
+      "label": "Queen's Spire cover",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "outpost4-cover2-2",
+      "kind": "prop",
+      "catalogId": "cover2",
+      "position": {
+        "x": 108.1,
+        "y": 0,
+        "z": -35.7
+      },
+      "rotationY": 3.97,
+      "label": "Queen's Spire cover",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "outpost4-cover2-3",
+      "kind": "prop",
+      "catalogId": "cover5",
+      "position": {
+        "x": 111.7,
+        "y": 0,
+        "z": -36.6
+      },
+      "rotationY": 4.62,
+      "label": "Queen's Spire cover",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "outpost4-cover3-1",
+      "kind": "prop",
+      "catalogId": "cover1",
+      "position": {
+        "x": 87.9,
+        "y": 0,
+        "z": -39.2
+      },
+      "rotationY": 6.15,
+      "label": "Queen's Spire cover",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "outpost4-cover3-2",
+      "kind": "prop",
+      "catalogId": "cover3",
+      "position": {
+        "x": 85.5,
+        "y": 0,
+        "z": -36.2
+      },
+      "rotationY": 1.55,
+      "label": "Queen's Spire cover",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "outpost4-cover3-4",
+      "kind": "prop",
+      "catalogId": "cover3",
+      "position": {
+        "x": 84.3,
+        "y": 0,
+        "z": -39.7
+      },
+      "rotationY": 2.33,
+      "label": "Queen's Spire cover",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "outpost4-landmark",
+      "kind": "prop",
+      "catalogId": "cover5",
+      "position": {
+        "x": 93,
+        "y": 0,
+        "z": -32
+      },
+      "rotationY": 1.46,
+      "label": "Queen's Spire",
+      "meta": {
+        "clearance": 3
+      }
+    },
+    {
+      "id": "yard-1-1",
+      "kind": "prop",
+      "catalogId": "scenery1",
+      "position": {
+        "x": 28.6,
+        "y": 0,
+        "z": 16.4
+      },
+      "rotationY": 4.16,
+      "label": "Forward Base",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "yard-1-2",
+      "kind": "prop",
+      "catalogId": "scenery4",
+      "position": {
+        "x": 34.9,
+        "y": 0,
+        "z": 17.6
+      },
+      "rotationY": 4.61,
+      "label": "Forward Base",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "yard-1-3",
+      "kind": "prop",
+      "catalogId": "scenery1",
+      "position": {
+        "x": 33.7,
+        "y": 0,
+        "z": 13.1
+      },
+      "rotationY": 3.71,
+      "label": "Forward Base",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "yard-3-1",
+      "kind": "prop",
+      "catalogId": "scenery3",
+      "position": {
+        "x": -21.3,
+        "y": 0,
+        "z": -6
+      },
+      "rotationY": 2.94,
+      "label": "Forward Base",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "yard-3-2",
+      "kind": "prop",
+      "catalogId": "scenery6",
+      "position": {
+        "x": -23.2,
+        "y": 0,
+        "z": -10.1
+      },
+      "rotationY": 2.92,
+      "label": "Forward Base",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "yard-3-3",
+      "kind": "prop",
+      "catalogId": "scenery3",
+      "position": {
+        "x": -27.2,
+        "y": 0,
+        "z": -7.5
+      },
+      "rotationY": 6.1,
+      "label": "Forward Base",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "yard-6-1",
+      "kind": "prop",
+      "catalogId": "scenery6",
+      "position": {
+        "x": -27.4,
+        "y": 0,
+        "z": 3.4
+      },
+      "rotationY": 6.24,
+      "label": "Forward Base",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "yard-6-2",
+      "kind": "prop",
+      "catalogId": "scenery3",
+      "position": {
+        "x": -30.9,
+        "y": 0,
+        "z": 0
+      },
+      "rotationY": 1.78,
+      "label": "Forward Base",
+      "meta": {
+        "clearance": 1
+      }
+    },
+    {
+      "id": "yard-6-3",
+      "kind": "prop",
+      "catalogId": "scenery6",
+      "position": {
+        "x": -26.2,
+        "y": 0,
+        "z": -1.3
+      },
+      "rotationY": 2.32,
+      "label": "Forward Base",
+      "meta": {
+        "clearance": 1
+      }
+    }
+  ],
+  "volumes": [],
+  "paths": [
+    {
+      "id": "trail-1",
+      "kind": "trail",
+      "width": 4,
+      "points": [
+        {
+          "x": 7.2,
+          "y": 0,
+          "z": 14.3
+        },
+        {
+          "x": 8.2,
+          "y": 0,
+          "z": 20
+        },
+        {
+          "x": 9.2,
+          "y": 0,
+          "z": 25.6
+        },
+        {
+          "x": 13.2,
+          "y": 0,
+          "z": 29.9
+        },
+        {
+          "x": 17.1,
+          "y": 0,
+          "z": 34.1
+        }
+      ],
+      "meta": {
+        "surface": "gravel",
+        "color": "#7a4c38",
+        "clearance": 3
+      }
+    },
+    {
+      "id": "trail-2",
+      "kind": "trail",
+      "width": 4,
+      "points": [
+        {
+          "x": -13.6,
+          "y": 0,
+          "z": 8.4
+        },
+        {
+          "x": -23.6,
+          "y": 0,
+          "z": 10.4
+        },
+        {
+          "x": -31.7,
+          "y": 0,
+          "z": 15.3
+        },
+        {
+          "x": -39.9,
+          "y": 0,
+          "z": 20.2
+        },
+        {
+          "x": -46,
+          "y": 0,
+          "z": 28.5
+        }
+      ],
+      "meta": {
+        "surface": "gravel",
+        "color": "#7a4c38",
+        "clearance": 3
+      }
+    },
+    {
+      "id": "trail-3",
+      "kind": "trail",
+      "width": 4,
+      "points": [
+        {
+          "x": -6.6,
+          "y": 0,
+          "z": -14.6
+        },
+        {
+          "x": -17.1,
+          "y": 0,
+          "z": -24.6
+        },
+        {
+          "x": -23.2,
+          "y": 0,
+          "z": -36.7
+        },
+        {
+          "x": -27,
+          "y": 0,
+          "z": -49.8
+        },
+        {
+          "x": -28.8,
+          "y": 0,
+          "z": -63.8
+        }
+      ],
+      "meta": {
+        "surface": "gravel",
+        "color": "#7a4c38",
+        "clearance": 3
+      }
+    },
+    {
+      "id": "trail-4",
+      "kind": "trail",
+      "width": 4,
+      "points": [
+        {
+          "x": 14.8,
+          "y": 0,
+          "z": -6
+        },
+        {
+          "x": 24.1,
+          "y": 0,
+          "z": -14
+        },
+        {
+          "x": 33.1,
+          "y": 0,
+          "z": -22.9
+        },
+        {
+          "x": 43.7,
+          "y": 0,
+          "z": -27.6
+        },
+        {
+          "x": 55.7,
+          "y": 0,
+          "z": -29.1
+        },
+        {
+          "x": 67.2,
+          "y": 0,
+          "z": -31.6
+        },
+        {
+          "x": 79.5,
+          "y": 0,
+          "z": -32.4
+        }
+      ],
+      "meta": {
+        "surface": "gravel",
+        "color": "#7a4c38",
+        "clearance": 3
+      }
+    },
+    {
+      "id": "grove-1",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": 68.5,
+          "y": 0,
+          "z": -93.6
+        },
+        {
+          "x": 64.1,
+          "y": 0,
+          "z": -88.8
+        },
+        {
+          "x": 59.7,
+          "y": 0,
+          "z": -87.1
+        },
+        {
+          "x": 55.3,
+          "y": 0,
+          "z": -84
+        },
+        {
+          "x": 50.8,
+          "y": 0,
+          "z": -86.8
+        },
+        {
+          "x": 46,
+          "y": 0,
+          "z": -90.5
+        },
+        {
+          "x": 47.4,
+          "y": 0,
+          "z": -96.3
+        },
+        {
+          "x": 50.7,
+          "y": 0,
+          "z": -100.5
+        },
+        {
+          "x": 55.4,
+          "y": 0,
+          "z": -103
+        },
+        {
+          "x": 60.8,
+          "y": 0,
+          "z": -102.5
+        },
+        {
+          "x": 65.7,
+          "y": 0,
+          "z": -99.4
+        }
+      ],
+      "label": "Grove",
+      "meta": {
+        "palette": [
+          {
+            "item": "deadtree",
+            "weight": 3
+          },
+          {
+            "item": "deadtree2",
+            "weight": 2
+          },
+          {
+            "item": "boulder",
+            "weight": 1
+          },
+          {
+            "item": "pebble",
+            "weight": 1.7999999999999998
+          },
+          {
+            "item": "rock2",
+            "weight": 0.6
+          }
+        ],
+        "density": 0.18,
+        "minSpacing": 2.4,
+        "minScale": 0.8,
+        "maxScale": 1.35,
+        "edgeFalloff": 3.4491567402146757,
+        "jitter": 1,
+        "maxSlope": 32,
+        "seed": "grove-1"
+      }
+    },
+    {
+      "id": "grove-2",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": -59.8,
+          "y": 0,
+          "z": 75.8
+        },
+        {
+          "x": -63.3,
+          "y": 0,
+          "z": 81.4
+        },
+        {
+          "x": -67.8,
+          "y": 0,
+          "z": 85
+        },
+        {
+          "x": -73.3,
+          "y": 0,
+          "z": 84.8
+        },
+        {
+          "x": -77.8,
+          "y": 0,
+          "z": 82.5
+        },
+        {
+          "x": -82.1,
+          "y": 0,
+          "z": 78.8
+        },
+        {
+          "x": -82.8,
+          "y": 0,
+          "z": 72.6
+        },
+        {
+          "x": -79.5,
+          "y": 0,
+          "z": 67.2
+        },
+        {
+          "x": -73.4,
+          "y": 0,
+          "z": 66.2
+        },
+        {
+          "x": -68.7,
+          "y": 0,
+          "z": 68.6
+        },
+        {
+          "x": -63.5,
+          "y": 0,
+          "z": 70.3
+        }
+      ],
+      "label": "Grove",
+      "meta": {
+        "palette": [
+          {
+            "item": "deadtree",
+            "weight": 3
+          },
+          {
+            "item": "deadtree2",
+            "weight": 2
+          },
+          {
+            "item": "boulder",
+            "weight": 1
+          },
+          {
+            "item": "pebble",
+            "weight": 1.7999999999999998
+          },
+          {
+            "item": "rock2",
+            "weight": 0.6
+          }
+        ],
+        "density": 0.18,
+        "minSpacing": 2.4,
+        "minScale": 0.8,
+        "maxScale": 1.35,
+        "edgeFalloff": 3.487829469377175,
+        "jitter": 1,
+        "maxSlope": 32,
+        "seed": "grove-2"
+      }
+    },
+    {
+      "id": "grove-3",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": -60.1,
+          "y": 0,
+          "z": -59.9
+        },
+        {
+          "x": -63.1,
+          "y": 0,
+          "z": -55.9
+        },
+        {
+          "x": -66.5,
+          "y": 0,
+          "z": -53.5
+        },
+        {
+          "x": -70.4,
+          "y": 0,
+          "z": -52.8
+        },
+        {
+          "x": -75,
+          "y": 0,
+          "z": -53.4
+        },
+        {
+          "x": -78.5,
+          "y": 0,
+          "z": -57.2
+        },
+        {
+          "x": -76.5,
+          "y": 0,
+          "z": -62
+        },
+        {
+          "x": -73.4,
+          "y": 0,
+          "z": -64.6
+        },
+        {
+          "x": -70.2,
+          "y": 0,
+          "z": -65.3
+        },
+        {
+          "x": -66.4,
+          "y": 0,
+          "z": -66.6
+        },
+        {
+          "x": -62.1,
+          "y": 0,
+          "z": -64.6
+        }
+      ],
+      "label": "Grove",
+      "meta": {
+        "palette": [
+          {
+            "item": "deadtree",
+            "weight": 3
+          },
+          {
+            "item": "deadtree2",
+            "weight": 2
+          },
+          {
+            "item": "boulder",
+            "weight": 1
+          },
+          {
+            "item": "pebble",
+            "weight": 1.7999999999999998
+          },
+          {
+            "item": "rock2",
+            "weight": 0.6
+          }
+        ],
+        "density": 0.18,
+        "minSpacing": 2.4,
+        "minScale": 0.8,
+        "maxScale": 1.35,
+        "edgeFalloff": 2.6109818559139963,
+        "jitter": 1,
+        "maxSlope": 32,
+        "seed": "grove-3"
+      }
+    },
+    {
+      "id": "grove-4",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": -0.6,
+          "y": 0,
+          "z": -76.6
+        },
+        {
+          "x": -2,
+          "y": 0,
+          "z": -72.5
+        },
+        {
+          "x": -5.1,
+          "y": 0,
+          "z": -69.5
+        },
+        {
+          "x": -9.4,
+          "y": 0,
+          "z": -69.9
+        },
+        {
+          "x": -12.5,
+          "y": 0,
+          "z": -71.9
+        },
+        {
+          "x": -16.3,
+          "y": 0,
+          "z": -74.3
+        },
+        {
+          "x": -15.9,
+          "y": 0,
+          "z": -78.8
+        },
+        {
+          "x": -12.8,
+          "y": 0,
+          "z": -81.7
+        },
+        {
+          "x": -9.3,
+          "y": 0,
+          "z": -82.8
+        },
+        {
+          "x": -6,
+          "y": 0,
+          "z": -81.9
+        },
+        {
+          "x": -3.3,
+          "y": 0,
+          "z": -79.9
+        }
+      ],
+      "label": "Grove",
+      "meta": {
+        "palette": [
+          {
+            "item": "deadtree",
+            "weight": 3
+          },
+          {
+            "item": "deadtree2",
+            "weight": 2
+          },
+          {
+            "item": "boulder",
+            "weight": 1
+          },
+          {
+            "item": "pebble",
+            "weight": 1.7999999999999998
+          },
+          {
+            "item": "rock2",
+            "weight": 0.6
+          }
+        ],
+        "density": 0.18,
+        "minSpacing": 2.4,
+        "minScale": 0.8,
+        "maxScale": 1.35,
+        "edgeFalloff": 2.540521888947114,
+        "jitter": 1,
+        "maxSlope": 32,
+        "seed": "grove-4"
+      }
+    },
+    {
+      "id": "grove-5",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": 12.9,
+          "y": 0,
+          "z": 77.6
+        },
+        {
+          "x": 14.7,
+          "y": 0,
+          "z": 84.2
+        },
+        {
+          "x": 9.4,
+          "y": 0,
+          "z": 88.4
+        },
+        {
+          "x": 3,
+          "y": 0,
+          "z": 87.5
+        },
+        {
+          "x": -0.6,
+          "y": 0,
+          "z": 83.4
+        },
+        {
+          "x": -2.8,
+          "y": 0,
+          "z": 79.7
+        },
+        {
+          "x": -5.7,
+          "y": 0,
+          "z": 74.6
+        },
+        {
+          "x": -3.6,
+          "y": 0,
+          "z": 68.4
+        },
+        {
+          "x": 2.8,
+          "y": 0,
+          "z": 66.1
+        },
+        {
+          "x": 8.1,
+          "y": 0,
+          "z": 69.5
+        },
+        {
+          "x": 10.4,
+          "y": 0,
+          "z": 73.7
+        }
+      ],
+      "label": "Grove",
+      "meta": {
+        "palette": [
+          {
+            "item": "deadtree",
+            "weight": 3
+          },
+          {
+            "item": "deadtree2",
+            "weight": 2
+          },
+          {
+            "item": "boulder",
+            "weight": 1
+          },
+          {
+            "item": "pebble",
+            "weight": 1.7999999999999998
+          },
+          {
+            "item": "rock2",
+            "weight": 0.6
+          }
+        ],
+        "density": 0.18,
+        "minSpacing": 2.4,
+        "minScale": 0.8,
+        "maxScale": 1.35,
+        "edgeFalloff": 3.4789743934758004,
+        "jitter": 1,
+        "maxSlope": 32,
+        "seed": "grove-5"
+      }
+    },
+    {
+      "id": "grove-6",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": -13.2,
+          "y": 0,
+          "z": -104.3
+        },
+        {
+          "x": -14.8,
+          "y": 0,
+          "z": -101.2
+        },
+        {
+          "x": -17.5,
+          "y": 0,
+          "z": -99.7
+        },
+        {
+          "x": -20.7,
+          "y": 0,
+          "z": -96.9
+        },
+        {
+          "x": -24.2,
+          "y": 0,
+          "z": -99
+        },
+        {
+          "x": -27.2,
+          "y": 0,
+          "z": -102.1
+        },
+        {
+          "x": -25.9,
+          "y": 0,
+          "z": -106.1
+        },
+        {
+          "x": -23.7,
+          "y": 0,
+          "z": -109.1
+        },
+        {
+          "x": -20.4,
+          "y": 0,
+          "z": -109.6
+        },
+        {
+          "x": -16.5,
+          "y": 0,
+          "z": -111.2
+        },
+        {
+          "x": -13.6,
+          "y": 0,
+          "z": -108.1
+        }
+      ],
+      "label": "Grove",
+      "meta": {
+        "palette": [
+          {
+            "item": "deadtree",
+            "weight": 3
+          },
+          {
+            "item": "deadtree2",
+            "weight": 2
+          },
+          {
+            "item": "boulder",
+            "weight": 1
+          },
+          {
+            "item": "pebble",
+            "weight": 1.7999999999999998
+          },
+          {
+            "item": "rock2",
+            "weight": 0.6
+          }
+        ],
+        "density": 0.18,
+        "minSpacing": 2.4,
+        "minScale": 0.8,
+        "maxScale": 1.35,
+        "edgeFalloff": 2.286558671528473,
+        "jitter": 1,
+        "maxSlope": 32,
+        "seed": "grove-6"
+      }
+    },
+    {
+      "id": "grove-7",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": 46,
+          "y": 0,
+          "z": -95.6
+        },
+        {
+          "x": 46.7,
+          "y": 0,
+          "z": -89.9
+        },
+        {
+          "x": 42.5,
+          "y": 0,
+          "z": -85.5
+        },
+        {
+          "x": 36.5,
+          "y": 0,
+          "z": -86.1
+        },
+        {
+          "x": 32.5,
+          "y": 0,
+          "z": -89.3
+        },
+        {
+          "x": 29.6,
+          "y": 0,
+          "z": -93.2
+        },
+        {
+          "x": 28.1,
+          "y": 0,
+          "z": -98.5
+        },
+        {
+          "x": 31.7,
+          "y": 0,
+          "z": -102.7
+        },
+        {
+          "x": 36.6,
+          "y": 0,
+          "z": -104.9
+        },
+        {
+          "x": 40.7,
+          "y": 0,
+          "z": -101.8
+        },
+        {
+          "x": 44.1,
+          "y": 0,
+          "z": -99.6
+        }
+      ],
+      "label": "Grove",
+      "meta": {
+        "palette": [
+          {
+            "item": "deadtree",
+            "weight": 3
+          },
+          {
+            "item": "deadtree2",
+            "weight": 2
+          },
+          {
+            "item": "boulder",
+            "weight": 1
+          },
+          {
+            "item": "pebble",
+            "weight": 1.7999999999999998
+          },
+          {
+            "item": "rock2",
+            "weight": 0.6
+          }
+        ],
+        "density": 0.18,
+        "minSpacing": 2.4,
+        "minScale": 0.8,
+        "maxScale": 1.35,
+        "edgeFalloff": 2.9901391318067905,
+        "jitter": 1,
+        "maxSlope": 32,
+        "seed": "grove-7"
+      }
+    },
+    {
+      "id": "brush-1",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": 34.6,
+          "y": 0,
+          "z": 94.4
+        },
+        {
+          "x": 33.8,
+          "y": 0,
+          "z": 96.5
+        },
+        {
+          "x": 31.6,
+          "y": 0,
+          "z": 96.7
+        },
+        {
+          "x": 29.6,
+          "y": 0,
+          "z": 97.1
+        },
+        {
+          "x": 27.8,
+          "y": 0,
+          "z": 95.6
+        },
+        {
+          "x": 28.1,
+          "y": 0,
+          "z": 93.3
+        },
+        {
+          "x": 29.7,
+          "y": 0,
+          "z": 91.7
+        },
+        {
+          "x": 31.6,
+          "y": 0,
+          "z": 92
+        },
+        {
+          "x": 33.9,
+          "y": 0,
+          "z": 92.2
+        }
+      ],
+      "label": "Undergrowth",
+      "meta": {
+        "palette": [
+          {
+            "item": "pebble",
+            "weight": 3
+          },
+          {
+            "item": "rock2",
+            "weight": 1
+          }
+        ],
+        "density": 0.35,
+        "minSpacing": 1.1,
+        "minScale": 0.7,
+        "maxScale": 1.4,
+        "edgeFalloff": 1.2752899269573392,
+        "jitter": 1,
+        "seed": "brush-1"
+      }
+    },
+    {
+      "id": "brush-2",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": 22.8,
+          "y": 0,
+          "z": 104.1
+        },
+        {
+          "x": 21.7,
+          "y": 0,
+          "z": 107.7
+        },
+        {
+          "x": 18.4,
+          "y": 0,
+          "z": 109.1
+        },
+        {
+          "x": 16,
+          "y": 0,
+          "z": 106.8
+        },
+        {
+          "x": 13.3,
+          "y": 0,
+          "z": 105.6
+        },
+        {
+          "x": 12.4,
+          "y": 0,
+          "z": 102.2
+        },
+        {
+          "x": 14.8,
+          "y": 0,
+          "z": 99.5
+        },
+        {
+          "x": 18.1,
+          "y": 0,
+          "z": 100.5
+        },
+        {
+          "x": 21.1,
+          "y": 0,
+          "z": 101.1
+        }
+      ],
+      "label": "Undergrowth",
+      "meta": {
+        "palette": [
+          {
+            "item": "pebble",
+            "weight": 3
+          },
+          {
+            "item": "rock2",
+            "weight": 1
+          }
+        ],
+        "density": 0.35,
+        "minSpacing": 1.1,
+        "minScale": 0.7,
+        "maxScale": 1.4,
+        "edgeFalloff": 1.904760977625847,
+        "jitter": 1,
+        "seed": "brush-2"
+      }
+    },
+    {
+      "id": "brush-3",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": -21.6,
+          "y": 0,
+          "z": 23.4
+        },
+        {
+          "x": -22.7,
+          "y": 0,
+          "z": 26.1
+        },
+        {
+          "x": -25.3,
+          "y": 0,
+          "z": 26.9
+        },
+        {
+          "x": -28,
+          "y": 0,
+          "z": 27
+        },
+        {
+          "x": -30.8,
+          "y": 0,
+          "z": 25.2
+        },
+        {
+          "x": -30.5,
+          "y": 0,
+          "z": 21.7
+        },
+        {
+          "x": -27.7,
+          "y": 0,
+          "z": 20.3
+        },
+        {
+          "x": -25.2,
+          "y": 0,
+          "z": 19.5
+        },
+        {
+          "x": -22.7,
+          "y": 0,
+          "z": 20.7
+        }
+      ],
+      "label": "Undergrowth",
+      "meta": {
+        "palette": [
+          {
+            "item": "pebble",
+            "weight": 3
+          },
+          {
+            "item": "rock2",
+            "weight": 1
+          }
+        ],
+        "density": 0.35,
+        "minSpacing": 1.1,
+        "minScale": 0.7,
+        "maxScale": 1.4,
+        "edgeFalloff": 1.5993961692787708,
+        "jitter": 1,
+        "seed": "brush-3"
+      }
+    },
+    {
+      "id": "brush-4",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": 41.9,
+          "y": 0,
+          "z": -66.3
+        },
+        {
+          "x": 40.5,
+          "y": 0,
+          "z": -62.8
+        },
+        {
+          "x": 37.3,
+          "y": 0,
+          "z": -61
+        },
+        {
+          "x": 34.7,
+          "y": 0,
+          "z": -63.4
+        },
+        {
+          "x": 32.2,
+          "y": 0,
+          "z": -64.8
+        },
+        {
+          "x": 30.5,
+          "y": 0,
+          "z": -68.5
+        },
+        {
+          "x": 33.2,
+          "y": 0,
+          "z": -71.9
+        },
+        {
+          "x": 37.2,
+          "y": 0,
+          "z": -71
+        },
+        {
+          "x": 40.1,
+          "y": 0,
+          "z": -69.4
+        }
+      ],
+      "label": "Undergrowth",
+      "meta": {
+        "palette": [
+          {
+            "item": "pebble",
+            "weight": 3
+          },
+          {
+            "item": "rock2",
+            "weight": 1
+          }
+        ],
+        "density": 0.35,
+        "minSpacing": 1.1,
+        "minScale": 0.7,
+        "maxScale": 1.4,
+        "edgeFalloff": 1.9707400945946576,
+        "jitter": 1,
+        "seed": "brush-4"
+      }
+    },
+    {
+      "id": "brush-5",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": -10.8,
+          "y": 0,
+          "z": 37.7
+        },
+        {
+          "x": -13,
+          "y": 0,
+          "z": 40.5
+        },
+        {
+          "x": -15.8,
+          "y": 0,
+          "z": 40.6
+        },
+        {
+          "x": -18.3,
+          "y": 0,
+          "z": 41.2
+        },
+        {
+          "x": -21.1,
+          "y": 0,
+          "z": 39.4
+        },
+        {
+          "x": -21.2,
+          "y": 0,
+          "z": 35.9
+        },
+        {
+          "x": -18.4,
+          "y": 0,
+          "z": 34.1
+        },
+        {
+          "x": -15.8,
+          "y": 0,
+          "z": 34.7
+        },
+        {
+          "x": -12.7,
+          "y": 0,
+          "z": 34.7
+        }
+      ],
+      "label": "Undergrowth",
+      "meta": {
+        "palette": [
+          {
+            "item": "pebble",
+            "weight": 3
+          },
+          {
+            "item": "rock2",
+            "weight": 1
+          }
+        ],
+        "density": 0.35,
+        "minSpacing": 1.1,
+        "minScale": 0.7,
+        "maxScale": 1.4,
+        "edgeFalloff": 1.7024216045625509,
+        "jitter": 1,
+        "seed": "brush-5"
+      }
+    },
+    {
+      "id": "brush-6",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": -100.2,
+          "y": 0,
+          "z": -17.9
+        },
+        {
+          "x": -100.1,
+          "y": 0,
+          "z": -15.7
+        },
+        {
+          "x": -102,
+          "y": 0,
+          "z": -13.9
+        },
+        {
+          "x": -104.3,
+          "y": 0,
+          "z": -15
+        },
+        {
+          "x": -105.2,
+          "y": 0,
+          "z": -17
+        },
+        {
+          "x": -104.8,
+          "y": 0,
+          "z": -18.7
+        },
+        {
+          "x": -104.4,
+          "y": 0,
+          "z": -20.8
+        },
+        {
+          "x": -102,
+          "y": 0,
+          "z": -21.7
+        },
+        {
+          "x": -100.3,
+          "y": 0,
+          "z": -19.9
+        }
+      ],
+      "label": "Undergrowth",
+      "meta": {
+        "palette": [
+          {
+            "item": "pebble",
+            "weight": 3
+          },
+          {
+            "item": "rock2",
+            "weight": 1
+          }
+        ],
+        "density": 0.35,
+        "minSpacing": 1.1,
+        "minScale": 0.7,
+        "maxScale": 1.4,
+        "edgeFalloff": 1.2254642190411689,
+        "jitter": 1,
+        "seed": "brush-6"
+      }
+    },
+    {
+      "id": "brush-7",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": 17.1,
+          "y": 0,
+          "z": -19.5
+        },
+        {
+          "x": 16.1,
+          "y": 0,
+          "z": -17.8
+        },
+        {
+          "x": 14.5,
+          "y": 0,
+          "z": -17.1
+        },
+        {
+          "x": 12.2,
+          "y": 0,
+          "z": -16.2
+        },
+        {
+          "x": 10.6,
+          "y": 0,
+          "z": -18.2
+        },
+        {
+          "x": 11.7,
+          "y": 0,
+          "z": -20.4
+        },
+        {
+          "x": 12.9,
+          "y": 0,
+          "z": -21.6
+        },
+        {
+          "x": 14.6,
+          "y": 0,
+          "z": -22.4
+        },
+        {
+          "x": 16.8,
+          "y": 0,
+          "z": -21.8
+        }
+      ],
+      "label": "Undergrowth",
+      "meta": {
+        "palette": [
+          {
+            "item": "pebble",
+            "weight": 3
+          },
+          {
+            "item": "rock2",
+            "weight": 1
+          }
+        ],
+        "density": 0.35,
+        "minSpacing": 1.1,
+        "minScale": 0.7,
+        "maxScale": 1.4,
+        "edgeFalloff": 1.2679056848399342,
+        "jitter": 1,
+        "seed": "brush-7"
+      }
+    },
+    {
+      "id": "brush-8",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": 15.2,
+          "y": 0,
+          "z": -32.9
+        },
+        {
+          "x": 13.4,
+          "y": 0,
+          "z": -30.5
+        },
+        {
+          "x": 11.1,
+          "y": 0,
+          "z": -29.5
+        },
+        {
+          "x": 8.5,
+          "y": 0,
+          "z": -29.4
+        },
+        {
+          "x": 5.6,
+          "y": 0,
+          "z": -31.1
+        },
+        {
+          "x": 6.4,
+          "y": 0,
+          "z": -34.4
+        },
+        {
+          "x": 9,
+          "y": 0,
+          "z": -35.6
+        },
+        {
+          "x": 11.1,
+          "y": 0,
+          "z": -36.3
+        },
+        {
+          "x": 13.9,
+          "y": 0,
+          "z": -35.8
+        }
+      ],
+      "label": "Undergrowth",
+      "meta": {
+        "palette": [
+          {
+            "item": "pebble",
+            "weight": 3
+          },
+          {
+            "item": "rock2",
+            "weight": 1
+          }
+        ],
+        "density": 0.35,
+        "minSpacing": 1.1,
+        "minScale": 0.7,
+        "maxScale": 1.4,
+        "edgeFalloff": 1.5626116409897806,
+        "jitter": 1,
+        "seed": "brush-8"
+      }
+    },
+    {
+      "id": "wild-forest-1",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": -179,
+          "y": 0,
+          "z": -54
+        },
+        {
+          "x": -186.1,
+          "y": 0,
+          "z": -38.4
+        },
+        {
+          "x": -200.4,
+          "y": 0,
+          "z": -32.4
+        },
+        {
+          "x": -213.6,
+          "y": 0,
+          "z": -30.9
+        },
+        {
+          "x": -230.2,
+          "y": 0,
+          "z": -31.1
+        },
+        {
+          "x": -246.8,
+          "y": 0,
+          "z": -43.3
+        },
+        {
+          "x": -243.8,
+          "y": 0,
+          "z": -63.8
+        },
+        {
+          "x": -228.1,
+          "y": 0,
+          "z": -74.6
+        },
+        {
+          "x": -213.2,
+          "y": 0,
+          "z": -74.4
+        },
+        {
+          "x": -198.5,
+          "y": 0,
+          "z": -79.9
+        },
+        {
+          "x": -179.1,
+          "y": 0,
+          "z": -74.1
+        }
+      ],
+      "label": "Woods",
+      "meta": {
+        "palette": [
+          {
+            "item": "deadtree",
+            "weight": 3
+          },
+          {
+            "item": "deadtree2",
+            "weight": 2
+          },
+          {
+            "item": "boulder",
+            "weight": 1
+          },
+          {
+            "item": "pebble",
+            "weight": 1.7999999999999998
+          },
+          {
+            "item": "rock2",
+            "weight": 0.6
+          }
+        ],
+        "density": 0.1072258482594043,
+        "minSpacing": 2.4,
+        "minScale": 0.8,
+        "maxScale": 1.35,
+        "edgeFalloff": 10,
+        "jitter": 1,
+        "maxSlope": 32,
+        "seed": "wild-forest-1"
+      }
+    },
+    {
+      "id": "wild-forest-2",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": -8.6,
+          "y": 0,
+          "z": 168.8
+        },
+        {
+          "x": -18.6,
+          "y": 0,
+          "z": 185.4
+        },
+        {
+          "x": -31.4,
+          "y": 0,
+          "z": 197.6
+        },
+        {
+          "x": -50.2,
+          "y": 0,
+          "z": 208.7
+        },
+        {
+          "x": -70.8,
+          "y": 0,
+          "z": 199.1
+        },
+        {
+          "x": -87.3,
+          "y": 0,
+          "z": 181.4
+        },
+        {
+          "x": -79.5,
+          "y": 0,
+          "z": 158.5
+        },
+        {
+          "x": -65.5,
+          "y": 0,
+          "z": 144.6
+        },
+        {
+          "x": -49,
+          "y": 0,
+          "z": 137.2
+        },
+        {
+          "x": -28.2,
+          "y": 0,
+          "z": 133
+        },
+        {
+          "x": -6.7,
+          "y": 0,
+          "z": 144.5
+        }
+      ],
+      "label": "Woods",
+      "meta": {
+        "palette": [
+          {
+            "item": "deadtree",
+            "weight": 3
+          },
+          {
+            "item": "deadtree2",
+            "weight": 2
+          },
+          {
+            "item": "boulder",
+            "weight": 1
+          },
+          {
+            "item": "pebble",
+            "weight": 1.7999999999999998
+          },
+          {
+            "item": "rock2",
+            "weight": 0.6
+          }
+        ],
+        "density": 0.12825787101872266,
+        "minSpacing": 2.4,
+        "minScale": 0.8,
+        "maxScale": 1.35,
+        "edgeFalloff": 10,
+        "jitter": 1,
+        "maxSlope": 32,
+        "seed": "wild-forest-2"
+      }
+    },
+    {
+      "id": "wild-forest-3",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": -158.3,
+          "y": 0,
+          "z": -165.5
+        },
+        {
+          "x": -161.7,
+          "y": 0,
+          "z": -153.4
+        },
+        {
+          "x": -172.3,
+          "y": 0,
+          "z": -147.5
+        },
+        {
+          "x": -182.8,
+          "y": 0,
+          "z": -149.7
+        },
+        {
+          "x": -191.5,
+          "y": 0,
+          "z": -152.8
+        },
+        {
+          "x": -196.4,
+          "y": 0,
+          "z": -160.8
+        },
+        {
+          "x": -202.9,
+          "y": 0,
+          "z": -172.1
+        },
+        {
+          "x": -193.9,
+          "y": 0,
+          "z": -180.9
+        },
+        {
+          "x": -183,
+          "y": 0,
+          "z": -182.8
+        },
+        {
+          "x": -174.3,
+          "y": 0,
+          "z": -179
+        },
+        {
+          "x": -165.1,
+          "y": 0,
+          "z": -175.4
+        }
+      ],
+      "label": "Woods",
+      "meta": {
+        "palette": [
+          {
+            "item": "deadtree",
+            "weight": 3
+          },
+          {
+            "item": "deadtree2",
+            "weight": 2
+          },
+          {
+            "item": "boulder",
+            "weight": 1
+          },
+          {
+            "item": "pebble",
+            "weight": 1.7999999999999998
+          },
+          {
+            "item": "rock2",
+            "weight": 0.6
+          }
+        ],
+        "density": 0.11415214029140772,
+        "minSpacing": 2.4,
+        "minScale": 0.8,
+        "maxScale": 1.35,
+        "edgeFalloff": 6.352775220712647,
+        "jitter": 1,
+        "maxSlope": 32,
+        "seed": "wild-forest-3"
+      }
+    },
+    {
+      "id": "wild-forest-4",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": 68.8,
+          "y": 0,
+          "z": -190.3
+        },
+        {
+          "x": 62.4,
+          "y": 0,
+          "z": -179.5
+        },
+        {
+          "x": 56.1,
+          "y": 0,
+          "z": -167.1
+        },
+        {
+          "x": 41.2,
+          "y": 0,
+          "z": -160.2
+        },
+        {
+          "x": 25.8,
+          "y": 0,
+          "z": -167.6
+        },
+        {
+          "x": 23.6,
+          "y": 0,
+          "z": -183.9
+        },
+        {
+          "x": 22.2,
+          "y": 0,
+          "z": -197.1
+        },
+        {
+          "x": 28.2,
+          "y": 0,
+          "z": -210.2
+        },
+        {
+          "x": 41.4,
+          "y": 0,
+          "z": -218.8
+        },
+        {
+          "x": 56.5,
+          "y": 0,
+          "z": -214.5
+        },
+        {
+          "x": 69.2,
+          "y": 0,
+          "z": -205.6
+        }
+      ],
+      "label": "Woods",
+      "meta": {
+        "palette": [
+          {
+            "item": "deadtree",
+            "weight": 3
+          },
+          {
+            "item": "deadtree2",
+            "weight": 2
+          },
+          {
+            "item": "boulder",
+            "weight": 1
+          },
+          {
+            "item": "pebble",
+            "weight": 1.7999999999999998
+          },
+          {
+            "item": "rock2",
+            "weight": 0.6
+          }
+        ],
+        "density": 0.15440786262042822,
+        "minSpacing": 2.4,
+        "minScale": 0.8,
+        "maxScale": 1.35,
+        "edgeFalloff": 8.882275939872487,
+        "jitter": 1,
+        "maxSlope": 32,
+        "seed": "wild-forest-4"
+      }
+    },
+    {
+      "id": "wild-forest-5",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": -169.8,
+          "y": 0,
+          "z": 120.6
+        },
+        {
+          "x": -176.2,
+          "y": 0,
+          "z": 135.1
+        },
+        {
+          "x": -189.6,
+          "y": 0,
+          "z": 140.8
+        },
+        {
+          "x": -201.6,
+          "y": 0,
+          "z": 140.2
+        },
+        {
+          "x": -213.4,
+          "y": 0,
+          "z": 137.4
+        },
+        {
+          "x": -227.1,
+          "y": 0,
+          "z": 128.9
+        },
+        {
+          "x": -224.6,
+          "y": 0,
+          "z": 113
+        },
+        {
+          "x": -218.2,
+          "y": 0,
+          "z": 98.2
+        },
+        {
+          "x": -202.3,
+          "y": 0,
+          "z": 96
+        },
+        {
+          "x": -190,
+          "y": 0,
+          "z": 101.4
+        },
+        {
+          "x": -181.3,
+          "y": 0,
+          "z": 109.3
+        }
+      ],
+      "label": "Woods",
+      "meta": {
+        "palette": [
+          {
+            "item": "deadtree",
+            "weight": 3
+          },
+          {
+            "item": "deadtree2",
+            "weight": 2
+          },
+          {
+            "item": "boulder",
+            "weight": 1
+          },
+          {
+            "item": "pebble",
+            "weight": 1.7999999999999998
+          },
+          {
+            "item": "rock2",
+            "weight": 0.6
+          }
+        ],
+        "density": 0.1536609632987529,
+        "minSpacing": 2.4,
+        "minScale": 0.8,
+        "maxScale": 1.35,
+        "edgeFalloff": 8.519789573689922,
+        "jitter": 1,
+        "maxSlope": 32,
+        "seed": "wild-forest-5"
+      }
+    },
+    {
+      "id": "wild-forest-6",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": 64.4,
+          "y": 0,
+          "z": -234.2
+        },
+        {
+          "x": 54.3,
+          "y": 0,
+          "z": -219.8
+        },
+        {
+          "x": 39.2,
+          "y": 0,
+          "z": -218.2
+        },
+        {
+          "x": 28.2,
+          "y": 0,
+          "z": -208.7
+        },
+        {
+          "x": 14.4,
+          "y": 0,
+          "z": -214
+        },
+        {
+          "x": -0.5,
+          "y": 0,
+          "z": -224.7
+        },
+        {
+          "x": 5.9,
+          "y": 0,
+          "z": -241.8
+        },
+        {
+          "x": 15.7,
+          "y": 0,
+          "z": -252.9
+        },
+        {
+          "x": 29.3,
+          "y": 0,
+          "z": -252.4
+        },
+        {
+          "x": 42,
+          "y": 0,
+          "z": -256.3
+        },
+        {
+          "x": 56.7,
+          "y": 0,
+          "z": -250.1
+        }
+      ],
+      "label": "Woods",
+      "meta": {
+        "palette": [
+          {
+            "item": "deadtree",
+            "weight": 3
+          },
+          {
+            "item": "deadtree2",
+            "weight": 2
+          },
+          {
+            "item": "boulder",
+            "weight": 1
+          },
+          {
+            "item": "pebble",
+            "weight": 1.7999999999999998
+          },
+          {
+            "item": "rock2",
+            "weight": 0.6
+          }
+        ],
+        "density": 0.12043408636935056,
+        "minSpacing": 2.4,
+        "minScale": 0.8,
+        "maxScale": 1.35,
+        "edgeFalloff": 9.002117269625886,
+        "jitter": 1,
+        "maxSlope": 32,
+        "seed": "wild-forest-6"
+      }
+    },
+    {
+      "id": "wild-forest-7",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": 204.3,
+          "y": 0,
+          "z": 142.7
+        },
+        {
+          "x": 203,
+          "y": 0,
+          "z": 164.5
+        },
+        {
+          "x": 187.8,
+          "y": 0,
+          "z": 183.6
+        },
+        {
+          "x": 162.5,
+          "y": 0,
+          "z": 188.5
+        },
+        {
+          "x": 149.1,
+          "y": 0,
+          "z": 165.8
+        },
+        {
+          "x": 145.4,
+          "y": 0,
+          "z": 149.7
+        },
+        {
+          "x": 139.5,
+          "y": 0,
+          "z": 134
+        },
+        {
+          "x": 140.1,
+          "y": 0,
+          "z": 109.2
+        },
+        {
+          "x": 162.8,
+          "y": 0,
+          "z": 99.1
+        },
+        {
+          "x": 185.5,
+          "y": 0,
+          "z": 106.7
+        },
+        {
+          "x": 194.6,
+          "y": 0,
+          "z": 126.3
+        }
+      ],
+      "label": "Woods",
+      "meta": {
+        "palette": [
+          {
+            "item": "deadtree",
+            "weight": 3
+          },
+          {
+            "item": "deadtree2",
+            "weight": 2
+          },
+          {
+            "item": "boulder",
+            "weight": 1
+          },
+          {
+            "item": "pebble",
+            "weight": 1.7999999999999998
+          },
+          {
+            "item": "rock2",
+            "weight": 0.6
+          }
+        ],
+        "density": 0.1558865946251899,
+        "minSpacing": 2.4,
+        "minScale": 0.8,
+        "maxScale": 1.35,
+        "edgeFalloff": 10,
+        "jitter": 1,
+        "maxSlope": 32,
+        "seed": "wild-forest-7"
+      }
+    },
+    {
+      "id": "wild-forest-8",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": 246.7,
+          "y": 0,
+          "z": -42.7
+        },
+        {
+          "x": 247,
+          "y": 0,
+          "z": -22.2
+        },
+        {
+          "x": 226.8,
+          "y": 0,
+          "z": -17.1
+        },
+        {
+          "x": 211.9,
+          "y": 0,
+          "z": -20.3
+        },
+        {
+          "x": 197.9,
+          "y": 0,
+          "z": -22.9
+        },
+        {
+          "x": 190.7,
+          "y": 0,
+          "z": -35.5
+        },
+        {
+          "x": 183.8,
+          "y": 0,
+          "z": -51.9
+        },
+        {
+          "x": 193.2,
+          "y": 0,
+          "z": -68
+        },
+        {
+          "x": 211.5,
+          "y": 0,
+          "z": -67.8
+        },
+        {
+          "x": 227.1,
+          "y": 0,
+          "z": -68.9
+        },
+        {
+          "x": 239.4,
+          "y": 0,
+          "z": -58.3
+        }
+      ],
+      "label": "Woods",
+      "meta": {
+        "palette": [
+          {
+            "item": "deadtree",
+            "weight": 3
+          },
+          {
+            "item": "deadtree2",
+            "weight": 2
+          },
+          {
+            "item": "boulder",
+            "weight": 1
+          },
+          {
+            "item": "pebble",
+            "weight": 1.7999999999999998
+          },
+          {
+            "item": "rock2",
+            "weight": 0.6
+          }
+        ],
+        "density": 0.1425645696092397,
+        "minSpacing": 2.4,
+        "minScale": 0.8,
+        "maxScale": 1.35,
+        "edgeFalloff": 10,
+        "jitter": 1,
+        "maxSlope": 32,
+        "seed": "wild-forest-8"
+      }
+    },
+    {
+      "id": "wild-forest-9",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": -166.3,
+          "y": 0,
+          "z": 26.6
+        },
+        {
+          "x": -169.5,
+          "y": 0,
+          "z": 37.1
+        },
+        {
+          "x": -178.2,
+          "y": 0,
+          "z": 43.1
+        },
+        {
+          "x": -188.6,
+          "y": 0,
+          "z": 46.3
+        },
+        {
+          "x": -200.9,
+          "y": 0,
+          "z": 44
+        },
+        {
+          "x": -205.5,
+          "y": 0,
+          "z": 32.4
+        },
+        {
+          "x": -201.4,
+          "y": 0,
+          "z": 22
+        },
+        {
+          "x": -194.8,
+          "y": 0,
+          "z": 16.2
+        },
+        {
+          "x": -188.3,
+          "y": 0,
+          "z": 9.4
+        },
+        {
+          "x": -177.3,
+          "y": 0,
+          "z": 8
+        },
+        {
+          "x": -165.6,
+          "y": 0,
+          "z": 13.6
+        }
+      ],
+      "label": "Woods",
+      "meta": {
+        "palette": [
+          {
+            "item": "deadtree",
+            "weight": 3
+          },
+          {
+            "item": "deadtree2",
+            "weight": 2
+          },
+          {
+            "item": "boulder",
+            "weight": 1
+          },
+          {
+            "item": "pebble",
+            "weight": 1.7999999999999998
+          },
+          {
+            "item": "rock2",
+            "weight": 0.6
+          }
+        ],
+        "density": 0.1531508116144687,
+        "minSpacing": 2.4,
+        "minScale": 0.8,
+        "maxScale": 1.35,
+        "edgeFalloff": 7.1057227672543375,
+        "jitter": 1,
+        "maxSlope": 32,
+        "seed": "wild-forest-9"
+      }
+    },
+    {
+      "id": "wild-forest-10",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": -71.5,
+          "y": 0,
+          "z": -221.3
+        },
+        {
+          "x": -79,
+          "y": 0,
+          "z": -207.9
+        },
+        {
+          "x": -88.6,
+          "y": 0,
+          "z": -196.4
+        },
+        {
+          "x": -104,
+          "y": 0,
+          "z": -192.6
+        },
+        {
+          "x": -123.8,
+          "y": 0,
+          "z": -193.7
+        },
+        {
+          "x": -131.1,
+          "y": 0,
+          "z": -212.1
+        },
+        {
+          "x": -121.5,
+          "y": 0,
+          "z": -227.6
+        },
+        {
+          "x": -116.1,
+          "y": 0,
+          "z": -240
+        },
+        {
+          "x": -104.2,
+          "y": 0,
+          "z": -251.3
+        },
+        {
+          "x": -86.9,
+          "y": 0,
+          "z": -249.7
+        },
+        {
+          "x": -71.1,
+          "y": 0,
+          "z": -239.8
+        }
+      ],
+      "label": "Woods",
+      "meta": {
+        "palette": [
+          {
+            "item": "deadtree",
+            "weight": 3
+          },
+          {
+            "item": "deadtree2",
+            "weight": 2
+          },
+          {
+            "item": "boulder",
+            "weight": 1
+          },
+          {
+            "item": "pebble",
+            "weight": 1.7999999999999998
+          },
+          {
+            "item": "rock2",
+            "weight": 0.6
+          }
+        ],
+        "density": 0.13921483968384565,
+        "minSpacing": 2.4,
+        "minScale": 0.8,
+        "maxScale": 1.35,
+        "edgeFalloff": 10,
+        "jitter": 1,
+        "maxSlope": 32,
+        "seed": "wild-forest-10"
+      }
+    },
+    {
+      "id": "wild-forest-11",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": 132.1,
+          "y": 0,
+          "z": -149.4
+        },
+        {
+          "x": 127.6,
+          "y": 0,
+          "z": -140
+        },
+        {
+          "x": 122.1,
+          "y": 0,
+          "z": -129.5
+        },
+        {
+          "x": 109.7,
+          "y": 0,
+          "z": -126.5
+        },
+        {
+          "x": 98.4,
+          "y": 0,
+          "z": -132.6
+        },
+        {
+          "x": 98.4,
+          "y": 0,
+          "z": -145.1
+        },
+        {
+          "x": 96.8,
+          "y": 0,
+          "z": -154.1
+        },
+        {
+          "x": 99.7,
+          "y": 0,
+          "z": -164.7
+        },
+        {
+          "x": 109.2,
+          "y": 0,
+          "z": -175.6
+        },
+        {
+          "x": 122,
+          "y": 0,
+          "z": -169.1
+        },
+        {
+          "x": 126.5,
+          "y": 0,
+          "z": -158.1
+        }
+      ],
+      "label": "Woods",
+      "meta": {
+        "palette": [
+          {
+            "item": "deadtree",
+            "weight": 3
+          },
+          {
+            "item": "deadtree2",
+            "weight": 2
+          },
+          {
+            "item": "boulder",
+            "weight": 1
+          },
+          {
+            "item": "pebble",
+            "weight": 1.7999999999999998
+          },
+          {
+            "item": "rock2",
+            "weight": 0.6
+          }
+        ],
+        "density": 0.15996289161033928,
+        "minSpacing": 2.4,
+        "minScale": 0.8,
+        "maxScale": 1.35,
+        "edgeFalloff": 7.149397467216477,
+        "jitter": 1,
+        "maxSlope": 32,
+        "seed": "wild-forest-11"
+      }
+    },
+    {
+      "id": "wild-forest-12",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": -222.8,
+          "y": 0,
+          "z": 19.3
+        },
+        {
+          "x": -231.6,
+          "y": 0,
+          "z": 34.5
+        },
+        {
+          "x": -242.8,
+          "y": 0,
+          "z": 46.6
+        },
+        {
+          "x": -260.1,
+          "y": 0,
+          "z": 52.5
+        },
+        {
+          "x": -281.3,
+          "y": 0,
+          "z": 49.3
+        },
+        {
+          "x": -281.5,
+          "y": 0,
+          "z": 27
+        },
+        {
+          "x": -277.3,
+          "y": 0,
+          "z": 12.8
+        },
+        {
+          "x": -272.2,
+          "y": 0,
+          "z": -0.2
+        },
+        {
+          "x": -259.3,
+          "y": 0,
+          "z": -8.5
+        },
+        {
+          "x": -241,
+          "y": 0,
+          "z": -12.1
+        },
+        {
+          "x": -224.5,
+          "y": 0,
+          "z": -0.5
+        }
+      ],
+      "label": "Woods",
+      "meta": {
+        "palette": [
+          {
+            "item": "deadtree",
+            "weight": 3
+          },
+          {
+            "item": "deadtree2",
+            "weight": 2
+          },
+          {
+            "item": "boulder",
+            "weight": 1
+          },
+          {
+            "item": "pebble",
+            "weight": 1.7999999999999998
+          },
+          {
+            "item": "rock2",
+            "weight": 0.6
+          }
+        ],
+        "density": 0.1551537280343473,
+        "minSpacing": 2.4,
+        "minScale": 0.8,
+        "maxScale": 1.35,
+        "edgeFalloff": 10,
+        "jitter": 1,
+        "maxSlope": 32,
+        "seed": "wild-forest-12"
+      }
+    },
+    {
+      "id": "wild-rocks-1",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": 170.4,
+          "y": 0,
+          "z": 33.8
+        },
+        {
+          "x": 168.1,
+          "y": 0,
+          "z": 38.9
+        },
+        {
+          "x": 163.9,
+          "y": 0,
+          "z": 44.5
+        },
+        {
+          "x": 156.6,
+          "y": 0,
+          "z": 43.1
+        },
+        {
+          "x": 154.4,
+          "y": 0,
+          "z": 36.6
+        },
+        {
+          "x": 153.8,
+          "y": 0,
+          "z": 30.8
+        },
+        {
+          "x": 157.9,
+          "y": 0,
+          "z": 26.6
+        },
+        {
+          "x": 164,
+          "y": 0,
+          "z": 22.7
+        },
+        {
+          "x": 168.5,
+          "y": 0,
+          "z": 28.4
+        }
+      ],
+      "label": "Outcrop",
+      "meta": {
+        "palette": [
+          {
+            "item": "rock",
+            "weight": 2
+          },
+          {
+            "item": "boulder",
+            "weight": 2
+          },
+          {
+            "item": "rock2",
+            "weight": 1
+          }
+        ],
+        "density": 0.16,
+        "minSpacing": 1.1,
+        "minScale": 0.8,
+        "maxScale": 2.2,
+        "edgeFalloff": 3.4960013176314533,
+        "jitter": 1,
+        "seed": "wild-rocks-1"
+      }
+    },
+    {
+      "id": "wild-rocks-2",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": -93.2,
+          "y": 0,
+          "z": -112.1
+        },
+        {
+          "x": -96.1,
+          "y": 0,
+          "z": -108.9
+        },
+        {
+          "x": -98.9,
+          "y": 0,
+          "z": -106
+        },
+        {
+          "x": -104.2,
+          "y": 0,
+          "z": -104.9
+        },
+        {
+          "x": -108,
+          "y": 0,
+          "z": -109.2
+        },
+        {
+          "x": -106.8,
+          "y": 0,
+          "z": -114.6
+        },
+        {
+          "x": -102.3,
+          "y": 0,
+          "z": -116.1
+        },
+        {
+          "x": -98.8,
+          "y": 0,
+          "z": -119
+        },
+        {
+          "x": -93.2,
+          "y": 0,
+          "z": -117.8
+        }
+      ],
+      "label": "Outcrop",
+      "meta": {
+        "palette": [
+          {
+            "item": "rock",
+            "weight": 2
+          },
+          {
+            "item": "boulder",
+            "weight": 2
+          },
+          {
+            "item": "rock2",
+            "weight": 1
+          }
+        ],
+        "density": 0.16,
+        "minSpacing": 1.1,
+        "minScale": 0.8,
+        "maxScale": 2.2,
+        "edgeFalloff": 2.6891449904069304,
+        "jitter": 1,
+        "seed": "wild-rocks-2"
+      }
+    },
+    {
+      "id": "wild-rocks-3",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": 65.9,
+          "y": 0,
+          "z": 145.7
+        },
+        {
+          "x": 66.1,
+          "y": 0,
+          "z": 149.9
+        },
+        {
+          "x": 62.4,
+          "y": 0,
+          "z": 153.1
+        },
+        {
+          "x": 57.9,
+          "y": 0,
+          "z": 151.2
+        },
+        {
+          "x": 56.5,
+          "y": 0,
+          "z": 147.4
+        },
+        {
+          "x": 55.1,
+          "y": 0,
+          "z": 143.5
+        },
+        {
+          "x": 57.3,
+          "y": 0,
+          "z": 139.1
+        },
+        {
+          "x": 62.4,
+          "y": 0,
+          "z": 138.3
+        },
+        {
+          "x": 65.6,
+          "y": 0,
+          "z": 142
+        }
+      ],
+      "label": "Outcrop",
+      "meta": {
+        "palette": [
+          {
+            "item": "rock",
+            "weight": 2
+          },
+          {
+            "item": "boulder",
+            "weight": 2
+          },
+          {
+            "item": "rock2",
+            "weight": 1
+          }
+        ],
+        "density": 0.16,
+        "minSpacing": 1.1,
+        "minScale": 0.8,
+        "maxScale": 2.2,
+        "edgeFalloff": 2.5400458998046815,
+        "jitter": 1,
+        "seed": "wild-rocks-3"
+      }
+    },
+    {
+      "id": "wild-rocks-4",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": 142.8,
+          "y": 0,
+          "z": 165.1
+        },
+        {
+          "x": 138.9,
+          "y": 0,
+          "z": 170.6
+        },
+        {
+          "x": 133.3,
+          "y": 0,
+          "z": 171
+        },
+        {
+          "x": 128.8,
+          "y": 0,
+          "z": 171.2
+        },
+        {
+          "x": 123.8,
+          "y": 0,
+          "z": 168.2
+        },
+        {
+          "x": 124.3,
+          "y": 0,
+          "z": 162.2
+        },
+        {
+          "x": 128.5,
+          "y": 0,
+          "z": 158.5
+        },
+        {
+          "x": 133.5,
+          "y": 0,
+          "z": 158
+        },
+        {
+          "x": 138.4,
+          "y": 0,
+          "z": 159.9
+        }
+      ],
+      "label": "Outcrop",
+      "meta": {
+        "palette": [
+          {
+            "item": "rock",
+            "weight": 2
+          },
+          {
+            "item": "boulder",
+            "weight": 2
+          },
+          {
+            "item": "rock2",
+            "weight": 1
+          }
+        ],
+        "density": 0.16,
+        "minSpacing": 1.1,
+        "minScale": 0.8,
+        "maxScale": 2.2,
+        "edgeFalloff": 3.1146494122222066,
+        "jitter": 1,
+        "seed": "wild-rocks-4"
+      }
+    },
+    {
+      "id": "wild-rocks-5",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": 15.8,
+          "y": 0,
+          "z": 230.8
+        },
+        {
+          "x": 15.3,
+          "y": 0,
+          "z": 236.5
+        },
+        {
+          "x": 10.4,
+          "y": 0,
+          "z": 241.5
+        },
+        {
+          "x": 4.6,
+          "y": 0,
+          "z": 237.6
+        },
+        {
+          "x": 2.6,
+          "y": 0,
+          "z": 233
+        },
+        {
+          "x": -1.1,
+          "y": 0,
+          "z": 227.3
+        },
+        {
+          "x": 2.4,
+          "y": 0,
+          "z": 220.2
+        },
+        {
+          "x": 10,
+          "y": 0,
+          "z": 222.3
+        },
+        {
+          "x": 15.2,
+          "y": 0,
+          "z": 225.2
+        }
+      ],
+      "label": "Outcrop",
+      "meta": {
+        "palette": [
+          {
+            "item": "rock",
+            "weight": 2
+          },
+          {
+            "item": "boulder",
+            "weight": 2
+          },
+          {
+            "item": "rock2",
+            "weight": 1
+          }
+        ],
+        "density": 0.16,
+        "minSpacing": 1.1,
+        "minScale": 0.8,
+        "maxScale": 2.2,
+        "edgeFalloff": 3.6155984536744654,
+        "jitter": 1,
+        "seed": "wild-rocks-5"
+      }
+    },
+    {
+      "id": "wild-rocks-6",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": -106.5,
+          "y": 0,
+          "z": 150.7
+        },
+        {
+          "x": -107.2,
+          "y": 0,
+          "z": 154.7
+        },
+        {
+          "x": -110.9,
+          "y": 0,
+          "z": 156.9
+        },
+        {
+          "x": -114.6,
+          "y": 0,
+          "z": 155.3
+        },
+        {
+          "x": -115.3,
+          "y": 0,
+          "z": 151.9
+        },
+        {
+          "x": -116.7,
+          "y": 0,
+          "z": 149
+        },
+        {
+          "x": -115.3,
+          "y": 0,
+          "z": 144.9
+        },
+        {
+          "x": -111,
+          "y": 0,
+          "z": 144.9
+        },
+        {
+          "x": -108.5,
+          "y": 0,
+          "z": 147.7
+        }
+      ],
+      "label": "Outcrop",
+      "meta": {
+        "palette": [
+          {
+            "item": "rock",
+            "weight": 2
+          },
+          {
+            "item": "boulder",
+            "weight": 2
+          },
+          {
+            "item": "rock2",
+            "weight": 1
+          }
+        ],
+        "density": 0.16,
+        "minSpacing": 1.1,
+        "minScale": 0.8,
+        "maxScale": 2.2,
+        "edgeFalloff": 2.160640561953187,
+        "jitter": 1,
+        "seed": "wild-rocks-6"
+      }
+    },
+    {
+      "id": "wild-rocks-7",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": -105.4,
+          "y": 0,
+          "z": -67.3
+        },
+        {
+          "x": -107.8,
+          "y": 0,
+          "z": -61
+        },
+        {
+          "x": -113.8,
+          "y": 0,
+          "z": -58.8
+        },
+        {
+          "x": -119.9,
+          "y": 0,
+          "z": -59.4
+        },
+        {
+          "x": -124.3,
+          "y": 0,
+          "z": -64
+        },
+        {
+          "x": -125.8,
+          "y": 0,
+          "z": -71.1
+        },
+        {
+          "x": -120.8,
+          "y": 0,
+          "z": -76.8
+        },
+        {
+          "x": -113.8,
+          "y": 0,
+          "z": -76
+        },
+        {
+          "x": -109.1,
+          "y": 0,
+          "z": -72.5
+        }
+      ],
+      "label": "Outcrop",
+      "meta": {
+        "palette": [
+          {
+            "item": "rock",
+            "weight": 2
+          },
+          {
+            "item": "boulder",
+            "weight": 2
+          },
+          {
+            "item": "rock2",
+            "weight": 1
+          }
+        ],
+        "density": 0.16,
+        "minSpacing": 1.1,
+        "minScale": 0.8,
+        "maxScale": 2.2,
+        "edgeFalloff": 3.715342632960528,
+        "jitter": 1,
+        "seed": "wild-rocks-7"
+      }
+    },
+    {
+      "id": "wild-rocks-8",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": -151.4,
+          "y": 0,
+          "z": -106.3
+        },
+        {
+          "x": -153.4,
+          "y": 0,
+          "z": -100
+        },
+        {
+          "x": -159.6,
+          "y": 0,
+          "z": -99.1
+        },
+        {
+          "x": -164.1,
+          "y": 0,
+          "z": -100.8
+        },
+        {
+          "x": -168.7,
+          "y": 0,
+          "z": -103.5
+        },
+        {
+          "x": -170,
+          "y": 0,
+          "z": -109.6
+        },
+        {
+          "x": -165.6,
+          "y": 0,
+          "z": -114.4
+        },
+        {
+          "x": -159.7,
+          "y": 0,
+          "z": -113.1
+        },
+        {
+          "x": -156.1,
+          "y": 0,
+          "z": -110.3
+        }
+      ],
+      "label": "Outcrop",
+      "meta": {
+        "palette": [
+          {
+            "item": "rock",
+            "weight": 2
+          },
+          {
+            "item": "boulder",
+            "weight": 2
+          },
+          {
+            "item": "rock2",
+            "weight": 1
+          }
+        ],
+        "density": 0.16,
+        "minSpacing": 1.1,
+        "minScale": 0.8,
+        "maxScale": 2.2,
+        "edgeFalloff": 2.981262951157987,
+        "jitter": 1,
+        "seed": "wild-rocks-8"
+      }
+    },
+    {
+      "id": "wild-rocks-9",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": 160,
+          "y": 0,
+          "z": 89.1
+        },
+        {
+          "x": 157.9,
+          "y": 0,
+          "z": 91.9
+        },
+        {
+          "x": 155.9,
+          "y": 0,
+          "z": 96.3
+        },
+        {
+          "x": 151.2,
+          "y": 0,
+          "z": 94.9
+        },
+        {
+          "x": 149.4,
+          "y": 0,
+          "z": 91
+        },
+        {
+          "x": 150.5,
+          "y": 0,
+          "z": 87.6
+        },
+        {
+          "x": 151.3,
+          "y": 0,
+          "z": 83.4
+        },
+        {
+          "x": 155.9,
+          "y": 0,
+          "z": 81.8
+        },
+        {
+          "x": 158.9,
+          "y": 0,
+          "z": 85.5
+        }
+      ],
+      "label": "Outcrop",
+      "meta": {
+        "palette": [
+          {
+            "item": "rock",
+            "weight": 2
+          },
+          {
+            "item": "boulder",
+            "weight": 2
+          },
+          {
+            "item": "rock2",
+            "weight": 1
+          }
+        ],
+        "density": 0.16,
+        "minSpacing": 1.1,
+        "minScale": 0.8,
+        "maxScale": 2.2,
+        "edgeFalloff": 2.394887246657163,
+        "jitter": 1,
+        "seed": "wild-rocks-9"
+      }
+    },
+    {
+      "id": "wild-rocks-10",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": 120.7,
+          "y": 0,
+          "z": -74.3
+        },
+        {
+          "x": 121.4,
+          "y": 0,
+          "z": -69.1
+        },
+        {
+          "x": 116.8,
+          "y": 0,
+          "z": -65.1
+        },
+        {
+          "x": 110.9,
+          "y": 0,
+          "z": -66.8
+        },
+        {
+          "x": 108.1,
+          "y": 0,
+          "z": -71.7
+        },
+        {
+          "x": 109,
+          "y": 0,
+          "z": -76.5
+        },
+        {
+          "x": 110.7,
+          "y": 0,
+          "z": -82.2
+        },
+        {
+          "x": 116.6,
+          "y": 0,
+          "z": -82
+        },
+        {
+          "x": 121.8,
+          "y": 0,
+          "z": -79.8
+        }
+      ],
+      "label": "Outcrop",
+      "meta": {
+        "palette": [
+          {
+            "item": "rock",
+            "weight": 2
+          },
+          {
+            "item": "boulder",
+            "weight": 2
+          },
+          {
+            "item": "rock2",
+            "weight": 1
+          }
+        ],
+        "density": 0.16,
+        "minSpacing": 1.1,
+        "minScale": 0.8,
+        "maxScale": 2.2,
+        "edgeFalloff": 3.0154640786349773,
+        "jitter": 1,
+        "seed": "wild-rocks-10"
+      }
+    },
+    {
+      "id": "wild-brush-1",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": 9.4,
+          "y": 0,
+          "z": -145.9
+        },
+        {
+          "x": 8.1,
+          "y": 0,
+          "z": -141.9
+        },
+        {
+          "x": 4,
+          "y": 0,
+          "z": -142.5
+        },
+        {
+          "x": 1.1,
+          "y": 0,
+          "z": -141.9
+        },
+        {
+          "x": -1.4,
+          "y": 0,
+          "z": -144.1
+        },
+        {
+          "x": -3,
+          "y": 0,
+          "z": -148.2
+        },
+        {
+          "x": 0.6,
+          "y": 0,
+          "z": -150.7
+        },
+        {
+          "x": 4.1,
+          "y": 0,
+          "z": -149.8
+        },
+        {
+          "x": 7.3,
+          "y": 0,
+          "z": -149.2
+        }
+      ],
+      "label": "Undergrowth",
+      "meta": {
+        "palette": [
+          {
+            "item": "pebble",
+            "weight": 3
+          },
+          {
+            "item": "rock2",
+            "weight": 1
+          }
+        ],
+        "density": 0.3,
+        "minSpacing": 1.1,
+        "minScale": 0.7,
+        "maxScale": 1.4,
+        "edgeFalloff": 2.066054416820407,
+        "jitter": 1,
+        "seed": "wild-brush-1"
+      }
+    },
+    {
+      "id": "wild-brush-2",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": -84.1,
+          "y": 0,
+          "z": 92.8
+        },
+        {
+          "x": -85,
+          "y": 0,
+          "z": 96.3
+        },
+        {
+          "x": -87.8,
+          "y": 0,
+          "z": 100.6
+        },
+        {
+          "x": -92.6,
+          "y": 0,
+          "z": 98.7
+        },
+        {
+          "x": -94.6,
+          "y": 0,
+          "z": 94.8
+        },
+        {
+          "x": -94.2,
+          "y": 0,
+          "z": 91
+        },
+        {
+          "x": -92,
+          "y": 0,
+          "z": 87.9
+        },
+        {
+          "x": -88,
+          "y": 0,
+          "z": 85.7
+        },
+        {
+          "x": -84.7,
+          "y": 0,
+          "z": 89
+        }
+      ],
+      "label": "Undergrowth",
+      "meta": {
+        "palette": [
+          {
+            "item": "pebble",
+            "weight": 3
+          },
+          {
+            "item": "rock2",
+            "weight": 1
+          }
+        ],
+        "density": 0.3,
+        "minSpacing": 1.1,
+        "minScale": 0.7,
+        "maxScale": 1.4,
+        "edgeFalloff": 2.444161678105593,
+        "jitter": 1,
+        "seed": "wild-brush-2"
+      }
+    },
+    {
+      "id": "wild-brush-3",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": -109.4,
+          "y": 0,
+          "z": 33.3
+        },
+        {
+          "x": -109,
+          "y": 0,
+          "z": 38.8
+        },
+        {
+          "x": -114.5,
+          "y": 0,
+          "z": 39.6
+        },
+        {
+          "x": -118.2,
+          "y": 0,
+          "z": 37.8
+        },
+        {
+          "x": -120.9,
+          "y": 0,
+          "z": 35.2
+        },
+        {
+          "x": -122,
+          "y": 0,
+          "z": 31
+        },
+        {
+          "x": -119.9,
+          "y": 0,
+          "z": 25.9
+        },
+        {
+          "x": -114.4,
+          "y": 0,
+          "z": 26.5
+        },
+        {
+          "x": -112.5,
+          "y": 0,
+          "z": 30.7
+        }
+      ],
+      "label": "Undergrowth",
+      "meta": {
+        "palette": [
+          {
+            "item": "pebble",
+            "weight": 3
+          },
+          {
+            "item": "rock2",
+            "weight": 1
+          }
+        ],
+        "density": 0.3,
+        "minSpacing": 1.1,
+        "minScale": 0.7,
+        "maxScale": 1.4,
+        "edgeFalloff": 2.5872916001826525,
+        "jitter": 1,
+        "seed": "wild-brush-3"
+      }
+    },
+    {
+      "id": "wild-brush-4",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": 20.3,
+          "y": 0,
+          "z": -117.3
+        },
+        {
+          "x": 19.5,
+          "y": 0,
+          "z": -115.5
+        },
+        {
+          "x": 18.1,
+          "y": 0,
+          "z": -113
+        },
+        {
+          "x": 14.9,
+          "y": 0,
+          "z": -113.1
+        },
+        {
+          "x": 13.3,
+          "y": 0,
+          "z": -115.8
+        },
+        {
+          "x": 14.5,
+          "y": 0,
+          "z": -118.3
+        },
+        {
+          "x": 15.5,
+          "y": 0,
+          "z": -120.5
+        },
+        {
+          "x": 18.3,
+          "y": 0,
+          "z": -122.8
+        },
+        {
+          "x": 21.2,
+          "y": 0,
+          "z": -120.6
+        }
+      ],
+      "label": "Undergrowth",
+      "meta": {
+        "palette": [
+          {
+            "item": "pebble",
+            "weight": 3
+          },
+          {
+            "item": "rock2",
+            "weight": 1
+          }
+        ],
+        "density": 0.3,
+        "minSpacing": 1.1,
+        "minScale": 0.7,
+        "maxScale": 1.4,
+        "edgeFalloff": 1.6407810911536218,
+        "jitter": 1,
+        "seed": "wild-brush-4"
+      }
+    },
+    {
+      "id": "wild-brush-5",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": 32.3,
+          "y": 0,
+          "z": 134.3
+        },
+        {
+          "x": 31.3,
+          "y": 0,
+          "z": 138.4
+        },
+        {
+          "x": 27.5,
+          "y": 0,
+          "z": 139.8
+        },
+        {
+          "x": 24.5,
+          "y": 0,
+          "z": 137.7
+        },
+        {
+          "x": 21.8,
+          "y": 0,
+          "z": 136
+        },
+        {
+          "x": 20.9,
+          "y": 0,
+          "z": 132.3
+        },
+        {
+          "x": 23.7,
+          "y": 0,
+          "z": 129.4
+        },
+        {
+          "x": 27.4,
+          "y": 0,
+          "z": 129.3
+        },
+        {
+          "x": 29.7,
+          "y": 0,
+          "z": 131.6
+        }
+      ],
+      "label": "Undergrowth",
+      "meta": {
+        "palette": [
+          {
+            "item": "pebble",
+            "weight": 3
+          },
+          {
+            "item": "rock2",
+            "weight": 1
+          }
+        ],
+        "density": 0.3,
+        "minSpacing": 1.1,
+        "minScale": 0.7,
+        "maxScale": 1.4,
+        "edgeFalloff": 2.224599073454738,
+        "jitter": 1,
+        "seed": "wild-brush-5"
+      }
+    },
+    {
+      "id": "wild-brush-6",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": -52.6,
+          "y": 0,
+          "z": -215.4
+        },
+        {
+          "x": -55.1,
+          "y": 0,
+          "z": -213.2
+        },
+        {
+          "x": -57.1,
+          "y": 0,
+          "z": -211.4
+        },
+        {
+          "x": -59.5,
+          "y": 0,
+          "z": -212.4
+        },
+        {
+          "x": -63.2,
+          "y": 0,
+          "z": -213.4
+        },
+        {
+          "x": -62,
+          "y": 0,
+          "z": -216.9
+        },
+        {
+          "x": -59.7,
+          "y": 0,
+          "z": -218.8
+        },
+        {
+          "x": -57.1,
+          "y": 0,
+          "z": -219.4
+        },
+        {
+          "x": -54.1,
+          "y": 0,
+          "z": -218.5
+        }
+      ],
+      "label": "Undergrowth",
+      "meta": {
+        "palette": [
+          {
+            "item": "pebble",
+            "weight": 3
+          },
+          {
+            "item": "rock2",
+            "weight": 1
+          }
+        ],
+        "density": 0.3,
+        "minSpacing": 1.1,
+        "minScale": 0.7,
+        "maxScale": 1.4,
+        "edgeFalloff": 1.6782048322260381,
+        "jitter": 1,
+        "seed": "wild-brush-6"
+      }
+    },
+    {
+      "id": "wild-brush-7",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": 123.1,
+          "y": 0,
+          "z": 70.8
+        },
+        {
+          "x": 123.2,
+          "y": 0,
+          "z": 73.9
+        },
+        {
+          "x": 120.7,
+          "y": 0,
+          "z": 77.1
+        },
+        {
+          "x": 117.1,
+          "y": 0,
+          "z": 75.2
+        },
+        {
+          "x": 115.2,
+          "y": 0,
+          "z": 72.4
+        },
+        {
+          "x": 115.3,
+          "y": 0,
+          "z": 69.2
+        },
+        {
+          "x": 117.3,
+          "y": 0,
+          "z": 66.9
+        },
+        {
+          "x": 120.6,
+          "y": 0,
+          "z": 65
+        },
+        {
+          "x": 123.9,
+          "y": 0,
+          "z": 67.2
+        }
+      ],
+      "label": "Undergrowth",
+      "meta": {
+        "palette": [
+          {
+            "item": "pebble",
+            "weight": 3
+          },
+          {
+            "item": "rock2",
+            "weight": 1
+          }
+        ],
+        "density": 0.3,
+        "minSpacing": 1.1,
+        "minScale": 0.7,
+        "maxScale": 1.4,
+        "edgeFalloff": 1.922624870762229,
+        "jitter": 1,
+        "seed": "wild-brush-7"
+      }
+    },
+    {
+      "id": "wild-brush-8",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": 83.7,
+          "y": 0,
+          "z": 169.6
+        },
+        {
+          "x": 83.1,
+          "y": 0,
+          "z": 173
+        },
+        {
+          "x": 79.9,
+          "y": 0,
+          "z": 174.9
+        },
+        {
+          "x": 77.5,
+          "y": 0,
+          "z": 172.2
+        },
+        {
+          "x": 75,
+          "y": 0,
+          "z": 171
+        },
+        {
+          "x": 75.1,
+          "y": 0,
+          "z": 168.2
+        },
+        {
+          "x": 76.5,
+          "y": 0,
+          "z": 165.3
+        },
+        {
+          "x": 79.8,
+          "y": 0,
+          "z": 164.8
+        },
+        {
+          "x": 82.1,
+          "y": 0,
+          "z": 167
+        }
+      ],
+      "label": "Undergrowth",
+      "meta": {
+        "palette": [
+          {
+            "item": "pebble",
+            "weight": 3
+          },
+          {
+            "item": "rock2",
+            "weight": 1
+          }
+        ],
+        "density": 0.3,
+        "minSpacing": 1.1,
+        "minScale": 0.7,
+        "maxScale": 1.4,
+        "edgeFalloff": 1.7981771737337113,
+        "jitter": 1,
+        "seed": "wild-brush-8"
+      }
+    },
+    {
+      "id": "wild-brush-9",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": -191,
+          "y": 0,
+          "z": -5.9
+        },
+        {
+          "x": -191.7,
+          "y": 0,
+          "z": -2.7
+        },
+        {
+          "x": -194.4,
+          "y": 0,
+          "z": 0.1
+        },
+        {
+          "x": -199,
+          "y": 0,
+          "z": 0.1
+        },
+        {
+          "x": -201.4,
+          "y": 0,
+          "z": -3.8
+        },
+        {
+          "x": -199.6,
+          "y": 0,
+          "z": -7.4
+        },
+        {
+          "x": -198.4,
+          "y": 0,
+          "z": -11
+        },
+        {
+          "x": -194.3,
+          "y": 0,
+          "z": -12.9
+        },
+        {
+          "x": -189.9,
+          "y": 0,
+          "z": -10.6
+        }
+      ],
+      "label": "Undergrowth",
+      "meta": {
+        "palette": [
+          {
+            "item": "pebble",
+            "weight": 3
+          },
+          {
+            "item": "rock2",
+            "weight": 1
+          }
+        ],
+        "density": 0.3,
+        "minSpacing": 1.1,
+        "minScale": 0.7,
+        "maxScale": 1.4,
+        "edgeFalloff": 2.5866562712937595,
+        "jitter": 1,
+        "seed": "wild-brush-9"
+      }
+    },
+    {
+      "id": "wild-brush-10",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": 141.3,
+          "y": 0,
+          "z": -53.1
+        },
+        {
+          "x": 137.6,
+          "y": 0,
+          "z": -49.4
+        },
+        {
+          "x": 134.3,
+          "y": 0,
+          "z": -46.9
+        },
+        {
+          "x": 128.4,
+          "y": 0,
+          "z": -44.8
+        },
+        {
+          "x": 124.8,
+          "y": 0,
+          "z": -50
+        },
+        {
+          "x": 125.3,
+          "y": 0,
+          "z": -56
+        },
+        {
+          "x": 130.7,
+          "y": 0,
+          "z": -57.5
+        },
+        {
+          "x": 134.5,
+          "y": 0,
+          "z": -60.7
+        },
+        {
+          "x": 140,
+          "y": 0,
+          "z": -58.8
+        }
+      ],
+      "label": "Undergrowth",
+      "meta": {
+        "palette": [
+          {
+            "item": "pebble",
+            "weight": 3
+          },
+          {
+            "item": "rock2",
+            "weight": 1
+          }
+        ],
+        "density": 0.3,
+        "minSpacing": 1.1,
+        "minScale": 0.7,
+        "maxScale": 1.4,
+        "edgeFalloff": 3.169978947937489,
+        "jitter": 1,
+        "seed": "wild-brush-10"
+      }
+    },
+    {
+      "id": "wild-brush-11",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": -57.2,
+          "y": 0,
+          "z": -171
+        },
+        {
+          "x": -57.8,
+          "y": 0,
+          "z": -168.4
+        },
+        {
+          "x": -60.2,
+          "y": 0,
+          "z": -166.8
+        },
+        {
+          "x": -63.7,
+          "y": 0,
+          "z": -166.1
+        },
+        {
+          "x": -65,
+          "y": 0,
+          "z": -169.5
+        },
+        {
+          "x": -64.8,
+          "y": 0,
+          "z": -172.4
+        },
+        {
+          "x": -62.8,
+          "y": 0,
+          "z": -174.3
+        },
+        {
+          "x": -59.9,
+          "y": 0,
+          "z": -176.4
+        },
+        {
+          "x": -56.7,
+          "y": 0,
+          "z": -174.5
+        }
+      ],
+      "label": "Undergrowth",
+      "meta": {
+        "palette": [
+          {
+            "item": "pebble",
+            "weight": 3
+          },
+          {
+            "item": "rock2",
+            "weight": 1
+          }
+        ],
+        "density": 0.3,
+        "minSpacing": 1.1,
+        "minScale": 0.7,
+        "maxScale": 1.4,
+        "edgeFalloff": 1.7573632929474117,
+        "jitter": 1,
+        "seed": "wild-brush-11"
+      }
+    },
+    {
+      "id": "wild-brush-12",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": -101.2,
+          "y": 0,
+          "z": 162.3
+        },
+        {
+          "x": -100.5,
+          "y": 0,
+          "z": 167.7
+        },
+        {
+          "x": -105.6,
+          "y": 0,
+          "z": 169.5
+        },
+        {
+          "x": -110.1,
+          "y": 0,
+          "z": 167.8
+        },
+        {
+          "x": -112.5,
+          "y": 0,
+          "z": 164.3
+        },
+        {
+          "x": -113.5,
+          "y": 0,
+          "z": 159.9
+        },
+        {
+          "x": -111.5,
+          "y": 0,
+          "z": 154.4
+        },
+        {
+          "x": -105.6,
+          "y": 0,
+          "z": 154.9
+        },
+        {
+          "x": -103.2,
+          "y": 0,
+          "z": 159.2
+        }
+      ],
+      "label": "Undergrowth",
+      "meta": {
+        "palette": [
+          {
+            "item": "pebble",
+            "weight": 3
+          },
+          {
+            "item": "rock2",
+            "weight": 1
+          }
+        ],
+        "density": 0.3,
+        "minSpacing": 1.1,
+        "minScale": 0.7,
+        "maxScale": 1.4,
+        "edgeFalloff": 2.807545077800751,
+        "jitter": 1,
+        "seed": "wild-brush-12"
+      }
+    },
+    {
+      "id": "wild-brush-13",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": 192.5,
+          "y": 0,
+          "z": -55.8
+        },
+        {
+          "x": 188.8,
+          "y": 0,
+          "z": -52.5
+        },
+        {
+          "x": 185.8,
+          "y": 0,
+          "z": -50.8
+        },
+        {
+          "x": 181.9,
+          "y": 0,
+          "z": -50.5
+        },
+        {
+          "x": 176.7,
+          "y": 0,
+          "z": -52.8
+        },
+        {
+          "x": 178.3,
+          "y": 0,
+          "z": -58.2
+        },
+        {
+          "x": 181.7,
+          "y": 0,
+          "z": -61.3
+        },
+        {
+          "x": 185.9,
+          "y": 0,
+          "z": -61.2
+        },
+        {
+          "x": 191.1,
+          "y": 0,
+          "z": -61
+        }
+      ],
+      "label": "Undergrowth",
+      "meta": {
+        "palette": [
+          {
+            "item": "pebble",
+            "weight": 3
+          },
+          {
+            "item": "rock2",
+            "weight": 1
+          }
+        ],
+        "density": 0.3,
+        "minSpacing": 1.1,
+        "minScale": 0.7,
+        "maxScale": 1.4,
+        "edgeFalloff": 2.637555066868663,
+        "jitter": 1,
+        "seed": "wild-brush-13"
+      }
+    },
+    {
+      "id": "wild-brush-14",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": -55.8,
+          "y": 0,
+          "z": 121.7
+        },
+        {
+          "x": -59,
+          "y": 0,
+          "z": 124.4
+        },
+        {
+          "x": -61.3,
+          "y": 0,
+          "z": 126.7
+        },
+        {
+          "x": -64.8,
+          "y": 0,
+          "z": 126.2
+        },
+        {
+          "x": -67.5,
+          "y": 0,
+          "z": 123.6
+        },
+        {
+          "x": -67.7,
+          "y": 0,
+          "z": 119.7
+        },
+        {
+          "x": -64.3,
+          "y": 0,
+          "z": 118
+        },
+        {
+          "x": -61.5,
+          "y": 0,
+          "z": 117.5
+        },
+        {
+          "x": -57.7,
+          "y": 0,
+          "z": 117.9
+        }
+      ],
+      "label": "Undergrowth",
+      "meta": {
+        "palette": [
+          {
+            "item": "pebble",
+            "weight": 3
+          },
+          {
+            "item": "rock2",
+            "weight": 1
+          }
+        ],
+        "density": 0.3,
+        "minSpacing": 1.1,
+        "minScale": 0.7,
+        "maxScale": 1.4,
+        "edgeFalloff": 2.1117184437811374,
+        "jitter": 1,
+        "seed": "wild-brush-14"
+      }
+    }
+  ]
+}

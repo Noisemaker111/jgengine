@@ -1,0 +1,209 @@
+{
+  "adopts": [
+    "audio-probe",
+    "game-cursor",
+    "game-font-stacks",
+    "game-fonts",
+    "game-frame",
+    "game-slider",
+    "hud-fade",
+    "mount-game",
+    "route-course",
+    "run-loop",
+    "session-loop",
+    "vehicle-damage"
+  ],
+  "probes": {
+    "@jgengine/shell/audio/audioProbe": [
+      "window:__jgengineAudio"
+    ]
+  },
+  "declines": {
+    "agents": {
+      "kind": "not-applicable",
+      "reason": "Agent loop is not part of drift-foundry: rivals are scripted route runners, not beings with needs or thoughts."
+    },
+    "cover-field": {
+      "kind": "not-applicable",
+      "reason": "Cover is not part of drift-foundry: a race corridor has barricades, not cover to hold."
+    },
+    "cover-points-from-solids": {
+      "kind": "not-applicable",
+      "reason": "Cover is not part of drift-foundry: a race corridor has barricades, not cover to hold."
+    },
+    "cover-points-near": {
+      "kind": "not-applicable",
+      "reason": "Cover is not part of drift-foundry: a race corridor has barricades, not cover to hold."
+    },
+    "cover-score": {
+      "kind": "not-applicable",
+      "reason": "Cover is not part of drift-foundry: a race corridor has barricades, not cover to hold."
+    },
+    "cover-select": {
+      "kind": "not-applicable",
+      "reason": "Cover is not part of drift-foundry: a race corridor has barricades, not cover to hold."
+    },
+    "damage-runtime": {
+      "kind": "not-applicable",
+      "reason": "Damage table is not part of drift-foundry: crashes resolve through the shared vehicle damage zones, and nothing has a health pool or armor profile to hit."
+    },
+    "damage-target-unknown": {
+      "kind": "not-applicable",
+      "reason": "Damage table is not part of drift-foundry: crashes resolve through the shared vehicle damage zones, and nothing has a health pool or armor profile to hit."
+    },
+    "equipment-slot-inventory": {
+      "kind": "not-applicable",
+      "reason": "Equipment slots is not part of drift-foundry: parts are built into the kart through the shared vehicle part slots, not worn gear."
+    },
+    "game-save": {
+      "kind": "debt",
+      "reason": "records.ts and shiftState.ts keep their own keys and shapes; adopt the shared save document for career and run state.",
+      "issue": 2481
+    },
+    "game-save-digest": {
+      "kind": "debt",
+      "reason": "Run records and shift state have no shared digest to compare; adopt the shared save document's digest.",
+      "issue": 2481
+    },
+    "loan-schedule": {
+      "kind": "not-applicable",
+      "reason": "Loans is not part of drift-foundry: credits are earned in the pit and carried through the shared career bank, and no loan exists."
+    },
+    "loans": {
+      "kind": "not-applicable",
+      "reason": "Loans is not part of drift-foundry: credits are earned in the pit and carried through the shared career bank, and no loan exists."
+    },
+    "loot-comparison": {
+      "kind": "not-applicable",
+      "reason": "Loot rolling is not part of drift-foundry: salvage pickups are authored by hand in run/pickups.ts, and nothing rolls."
+    },
+    "loot-generation": {
+      "kind": "not-applicable",
+      "reason": "Loot rolling is not part of drift-foundry: salvage pickups are authored by hand in run/pickups.ts, and nothing rolls."
+    },
+    "loot-roller": {
+      "kind": "not-applicable",
+      "reason": "Loot rolling is not part of drift-foundry: salvage pickups are authored by hand in run/pickups.ts, and nothing rolls."
+    },
+    "loot-score": {
+      "kind": "not-applicable",
+      "reason": "Loot rolling is not part of drift-foundry: salvage pickups are authored by hand in run/pickups.ts, and nothing rolls."
+    },
+    "loot-validation": {
+      "kind": "not-applicable",
+      "reason": "Loot rolling is not part of drift-foundry: salvage pickups are authored by hand in run/pickups.ts, and nothing rolls."
+    },
+    "mission-events": {
+      "kind": "not-applicable",
+      "reason": "Mission runtime is not part of drift-foundry: a run is a loop with shifts and gates, not an objective state machine."
+    },
+    "mission-rewards": {
+      "kind": "not-applicable",
+      "reason": "Mission runtime is not part of drift-foundry: a run is a loop with shifts and gates, not an objective state machine."
+    },
+    "mission-runtime": {
+      "kind": "not-applicable",
+      "reason": "Mission runtime is not part of drift-foundry: a run is a loop with shifts and gates, not an objective state machine."
+    },
+    "mission-validation": {
+      "kind": "not-applicable",
+      "reason": "Mission runtime is not part of drift-foundry: a run is a loop with shifts and gates, not an objective state machine."
+    },
+    "nav-crowd": {
+      "kind": "not-applicable",
+      "reason": "Navigation is not part of drift-foundry: rivals hold an authored route, and no navigation mesh is baked."
+    },
+    "nav-runtime": {
+      "kind": "not-applicable",
+      "reason": "Navigation is not part of drift-foundry: rivals hold an authored route, and no navigation mesh is baked."
+    },
+    "navmesh-from-scene": {
+      "kind": "not-applicable",
+      "reason": "Navigation is not part of drift-foundry: rivals hold an authored route, and no navigation mesh is baked."
+    },
+    "near-agents": {
+      "kind": "not-applicable",
+      "reason": "Agent loop is not part of drift-foundry: rivals are scripted route runners, not beings with needs or thoughts."
+    },
+    "offscreen-world": {
+      "kind": "not-applicable",
+      "reason": "Offscreen simulation is not part of drift-foundry: the whole corridor is one loaded run, and nothing is simulated offscreen."
+    },
+    "perception-service": {
+      "kind": "not-applicable",
+      "reason": "Perception is not part of drift-foundry: opponents read the route, never sight or sound."
+    },
+    "police-response": {
+      "kind": "not-applicable",
+      "reason": "Police heat is not part of drift-foundry: a wasteland race has no law or heat."
+    },
+    "police-roads": {
+      "kind": "not-applicable",
+      "reason": "Police heat is not part of drift-foundry: a wasteland race has no law or heat."
+    },
+    "ride-appeal": {
+      "kind": "not-applicable",
+      "reason": "Ride simulation is not part of drift-foundry: rides and queues belong to a park, and this is a race."
+    },
+    "ride-choice": {
+      "kind": "not-applicable",
+      "reason": "Ride simulation is not part of drift-foundry: rides and queues belong to a park, and this is a race."
+    },
+    "ride-sim": {
+      "kind": "not-applicable",
+      "reason": "Ride simulation is not part of drift-foundry: rides and queues belong to a park, and this is a race."
+    },
+    "rvo-avoidance": {
+      "kind": "not-applicable",
+      "reason": "Crowd steering is not part of drift-foundry: rivals keep their own racing line, and no crowd steering layer is wanted."
+    },
+    "skill-tree": {
+      "kind": "not-applicable",
+      "reason": "Skill tree is not part of drift-foundry: career upgrades are spent on the shared upgrade tree, so a skill tree would duplicate it."
+    },
+    "squad-combat": {
+      "kind": "not-applicable",
+      "reason": "Squad combat is not part of drift-foundry: no squad fights in a time trial."
+    },
+    "status-runtime": {
+      "kind": "not-applicable",
+      "reason": "Status effects is not part of drift-foundry: damage is structural, and nothing is burned, shocked or slowed."
+    },
+    "status-unknown": {
+      "kind": "not-applicable",
+      "reason": "Status effects is not part of drift-foundry: damage is structural, and nothing is burned, shocked or slowed."
+    },
+    "supply-demand-pricing": {
+      "kind": "not-applicable",
+      "reason": "Market pricing is not part of drift-foundry: parts have fixed prices in the catalog, and no market moves them."
+    },
+    "traffic": {
+      "kind": "not-applicable",
+      "reason": "Traffic is not part of drift-foundry: only racers are on the route, and no traffic system exists."
+    },
+    "transaction-ledger": {
+      "kind": "not-applicable",
+      "reason": "Transaction ledger is not part of drift-foundry: credits already move through the shared career bank, so a transaction ledger would be a second one."
+    },
+    "turf-war": {
+      "kind": "not-applicable",
+      "reason": "Turf war is not part of drift-foundry: yard karts race to a gate, and nobody holds any stretch of the yard."
+    },
+    "utility-brain": {
+      "kind": "not-applicable",
+      "reason": "Agent loop is not part of drift-foundry: rivals are scripted route runners, not beings with needs or thoughts."
+    },
+    "visitor-population": {
+      "kind": "not-applicable",
+      "reason": "Park population is not part of drift-foundry: no visitors exist in the corridor."
+    },
+    "wait-queue": {
+      "kind": "not-applicable",
+      "reason": "Queue is not part of drift-foundry: the start gate is a grid, not a measured line."
+    },
+    "weapon-system": {
+      "kind": "not-applicable",
+      "reason": "Weapon runtime is not part of drift-foundry: the kart carries no weapon, ammo or reload."
+    }
+  }
+}

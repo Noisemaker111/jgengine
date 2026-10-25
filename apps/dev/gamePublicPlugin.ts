@@ -22,7 +22,7 @@ const TYPES: Readonly<Record<string, string>> = {
 
 /**
  * The `public/` folders a runner serves after its own: the `--game-dir` game first, then every
- * game under `Games/`. A game's provisioned models (`public/models/library/...`) and pulled packs
+ * game under `games/`. A game's provisioned models (`public/models/library/...`) and pulled packs
  * live in its own folder, not in `apps/dev/public`, so without this a game drawn by `bun run drive`
  * shows placeholder boxes where its standalone dev server shows the real models.
  */

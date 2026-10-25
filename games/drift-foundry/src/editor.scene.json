@@ -1,0 +1,850 @@
+{
+  "version": 1,
+  "markers": [
+    {
+      "id": "d03-1-wreck_pile",
+      "kind": "prop",
+      "position": {
+        "x": -25.5,
+        "y": 0,
+        "z": 26
+      },
+      "rotationY": 0,
+      "catalogId": "prop_wreck_pile",
+      "meta": {
+        "catalogId": "prop_wreck_pile"
+      }
+    },
+    {
+      "id": "d03-2-tire_wall",
+      "kind": "prop",
+      "position": {
+        "x": 25.5,
+        "y": 0,
+        "z": 52
+      },
+      "rotationY": 0.7,
+      "catalogId": "prop_tire_wall",
+      "meta": {
+        "catalogId": "prop_tire_wall"
+      }
+    },
+    {
+      "id": "d03-3-dumpster",
+      "kind": "prop",
+      "position": {
+        "x": -25.5,
+        "y": 0,
+        "z": 78
+      },
+      "rotationY": 1.4,
+      "catalogId": "prop_dumpster",
+      "meta": {
+        "catalogId": "prop_dumpster"
+      }
+    },
+    {
+      "id": "d03-4-stripped_car",
+      "kind": "prop",
+      "position": {
+        "x": 25.5,
+        "y": 0,
+        "z": 104
+      },
+      "rotationY": 2.0999999999999996,
+      "catalogId": "prop_stripped_car",
+      "meta": {
+        "catalogId": "prop_stripped_car"
+      }
+    },
+    {
+      "id": "d03-5-appliance_stack",
+      "kind": "prop",
+      "position": {
+        "x": -25.5,
+        "y": 0,
+        "z": 130
+      },
+      "rotationY": 2.8,
+      "catalogId": "prop_appliance_stack",
+      "meta": {
+        "catalogId": "prop_appliance_stack"
+      }
+    },
+    {
+      "id": "d03-6-scrap_heap",
+      "kind": "prop",
+      "position": {
+        "x": 25.5,
+        "y": 0,
+        "z": 156
+      },
+      "rotationY": 3.5,
+      "catalogId": "prop_scrap_heap",
+      "meta": {
+        "catalogId": "prop_scrap_heap"
+      }
+    },
+    {
+      "id": "d03-7-wreck_pile",
+      "kind": "prop",
+      "position": {
+        "x": -25.5,
+        "y": 0,
+        "z": 182
+      },
+      "rotationY": 4.199999999999999,
+      "catalogId": "prop_wreck_pile",
+      "meta": {
+        "catalogId": "prop_wreck_pile"
+      }
+    },
+    {
+      "id": "d03-8-tire_wall",
+      "kind": "prop",
+      "position": {
+        "x": 25.5,
+        "y": 0,
+        "z": 208
+      },
+      "rotationY": 4.8999999999999995,
+      "catalogId": "prop_tire_wall",
+      "meta": {
+        "catalogId": "prop_tire_wall"
+      }
+    },
+    {
+      "id": "d03-9-dumpster",
+      "kind": "prop",
+      "position": {
+        "x": -25.5,
+        "y": 0,
+        "z": 234
+      },
+      "rotationY": 5.6,
+      "catalogId": "prop_dumpster",
+      "meta": {
+        "catalogId": "prop_dumpster"
+      }
+    },
+    {
+      "id": "d03-10-stripped_car",
+      "kind": "prop",
+      "position": {
+        "x": 25.5,
+        "y": 0,
+        "z": 260
+      },
+      "rotationY": 6.3,
+      "catalogId": "prop_stripped_car",
+      "meta": {
+        "catalogId": "prop_stripped_car"
+      }
+    },
+    {
+      "id": "d03-11-appliance_stack",
+      "kind": "prop",
+      "position": {
+        "x": -25.5,
+        "y": 0,
+        "z": 286
+      },
+      "rotationY": 7,
+      "catalogId": "prop_appliance_stack",
+      "meta": {
+        "catalogId": "prop_appliance_stack"
+      }
+    },
+    {
+      "id": "d03-12-scrap_heap",
+      "kind": "prop",
+      "position": {
+        "x": 25.5,
+        "y": 0,
+        "z": 312
+      },
+      "rotationY": 7.699999999999999,
+      "catalogId": "prop_scrap_heap",
+      "meta": {
+        "catalogId": "prop_scrap_heap"
+      }
+    },
+    {
+      "id": "d03-13-wreck_pile",
+      "kind": "prop",
+      "position": {
+        "x": -25.5,
+        "y": 0,
+        "z": 338
+      },
+      "rotationY": 8.399999999999999,
+      "catalogId": "prop_wreck_pile",
+      "meta": {
+        "catalogId": "prop_wreck_pile"
+      }
+    },
+    {
+      "id": "d03-14-tire_wall",
+      "kind": "prop",
+      "position": {
+        "x": 25.5,
+        "y": 0,
+        "z": 364
+      },
+      "rotationY": 9.1,
+      "catalogId": "prop_tire_wall",
+      "meta": {
+        "catalogId": "prop_tire_wall"
+      }
+    },
+    {
+      "id": "d03-15-dumpster",
+      "kind": "prop",
+      "position": {
+        "x": -25.5,
+        "y": 0,
+        "z": 390
+      },
+      "rotationY": 9.799999999999999,
+      "catalogId": "prop_dumpster",
+      "meta": {
+        "catalogId": "prop_dumpster"
+      }
+    },
+    {
+      "id": "d03-16-stripped_car",
+      "kind": "prop",
+      "position": {
+        "x": 25.5,
+        "y": 0,
+        "z": 416
+      },
+      "rotationY": 10.5,
+      "catalogId": "prop_stripped_car",
+      "meta": {
+        "catalogId": "prop_stripped_car"
+      }
+    },
+    {
+      "id": "d03-17-appliance_stack",
+      "kind": "prop",
+      "position": {
+        "x": -25.5,
+        "y": 0,
+        "z": 442
+      },
+      "rotationY": 11.2,
+      "catalogId": "prop_appliance_stack",
+      "meta": {
+        "catalogId": "prop_appliance_stack"
+      }
+    },
+    {
+      "id": "d03-18-yard_tower",
+      "kind": "prop",
+      "position": {
+        "x": -31,
+        "y": 0,
+        "z": 58
+      },
+      "rotationY": 0,
+      "label": "yard water tower",
+      "catalogId": "prop_yard_tower",
+      "meta": {
+        "catalogId": "prop_yard_tower"
+      }
+    },
+    {
+      "id": "d03-19-yard_tower",
+      "kind": "prop",
+      "position": {
+        "x": 33,
+        "y": 0,
+        "z": 76
+      },
+      "rotationY": 0,
+      "label": "yard water tower",
+      "catalogId": "prop_yard_tower",
+      "meta": {
+        "catalogId": "prop_yard_tower"
+      }
+    },
+    {
+      "id": "d03-20-yard_tower",
+      "kind": "prop",
+      "position": {
+        "x": -30,
+        "y": 0,
+        "z": 118
+      },
+      "rotationY": 0,
+      "label": "yard water tower",
+      "catalogId": "prop_yard_tower",
+      "meta": {
+        "catalogId": "prop_yard_tower"
+      }
+    },
+    {
+      "id": "d03-21-yard_tower",
+      "kind": "prop",
+      "position": {
+        "x": -33,
+        "y": 0,
+        "z": 182
+      },
+      "rotationY": 0,
+      "label": "yard water tower",
+      "catalogId": "prop_yard_tower",
+      "meta": {
+        "catalogId": "prop_yard_tower"
+      }
+    },
+    {
+      "id": "d03-22-yard_tower",
+      "kind": "prop",
+      "position": {
+        "x": 35,
+        "y": 0,
+        "z": 214
+      },
+      "rotationY": 0,
+      "label": "yard water tower",
+      "catalogId": "prop_yard_tower",
+      "meta": {
+        "catalogId": "prop_yard_tower"
+      }
+    },
+    {
+      "id": "d03-23-yard_tower",
+      "kind": "prop",
+      "position": {
+        "x": -30,
+        "y": 0,
+        "z": 262
+      },
+      "rotationY": 0,
+      "label": "yard water tower",
+      "catalogId": "prop_yard_tower",
+      "meta": {
+        "catalogId": "prop_yard_tower"
+      }
+    },
+    {
+      "id": "d03-24-yard_tower",
+      "kind": "prop",
+      "position": {
+        "x": -34,
+        "y": 0,
+        "z": 322
+      },
+      "rotationY": 0,
+      "label": "yard water tower",
+      "catalogId": "prop_yard_tower",
+      "meta": {
+        "catalogId": "prop_yard_tower"
+      }
+    },
+    {
+      "id": "d03-25-yard_tower",
+      "kind": "prop",
+      "position": {
+        "x": 32,
+        "y": 0,
+        "z": 356
+      },
+      "rotationY": 0,
+      "label": "yard water tower",
+      "catalogId": "prop_yard_tower",
+      "meta": {
+        "catalogId": "prop_yard_tower"
+      }
+    },
+    {
+      "id": "d03-26-yard_tower",
+      "kind": "prop",
+      "position": {
+        "x": -31,
+        "y": 0,
+        "z": 402
+      },
+      "rotationY": 0,
+      "label": "yard water tower",
+      "catalogId": "prop_yard_tower",
+      "meta": {
+        "catalogId": "prop_yard_tower"
+      }
+    },
+    {
+      "id": "d03-27-yard_tower",
+      "kind": "prop",
+      "position": {
+        "x": 36,
+        "y": 0,
+        "z": 436
+      },
+      "rotationY": 0,
+      "label": "yard water tower",
+      "catalogId": "prop_yard_tower",
+      "meta": {
+        "catalogId": "prop_yard_tower"
+      }
+    },
+    {
+      "id": "d03-28-crane_leg",
+      "kind": "prop",
+      "position": {
+        "x": -23.5,
+        "y": 0,
+        "z": 150
+      },
+      "rotationY": 0,
+      "catalogId": "prop_crane_leg",
+      "meta": {
+        "catalogId": "prop_crane_leg"
+      }
+    },
+    {
+      "id": "d03-29-crane_leg",
+      "kind": "prop",
+      "position": {
+        "x": 23.5,
+        "y": 0,
+        "z": 150
+      },
+      "rotationY": 0,
+      "catalogId": "prop_crane_leg",
+      "meta": {
+        "catalogId": "prop_crane_leg"
+      }
+    },
+    {
+      "id": "d03-30-crane_leg",
+      "kind": "prop",
+      "position": {
+        "x": -23.5,
+        "y": 0,
+        "z": 300
+      },
+      "rotationY": 0,
+      "catalogId": "prop_crane_leg",
+      "meta": {
+        "catalogId": "prop_crane_leg"
+      }
+    },
+    {
+      "id": "d03-31-crane_leg",
+      "kind": "prop",
+      "position": {
+        "x": 23.5,
+        "y": 0,
+        "z": 300
+      },
+      "rotationY": 0,
+      "catalogId": "prop_crane_leg",
+      "meta": {
+        "catalogId": "prop_crane_leg"
+      }
+    },
+    {
+      "id": "d03-32-crane_leg",
+      "kind": "prop",
+      "position": {
+        "x": -23.5,
+        "y": 0,
+        "z": 470
+      },
+      "rotationY": 0,
+      "catalogId": "prop_crane_leg",
+      "meta": {
+        "catalogId": "prop_crane_leg"
+      }
+    },
+    {
+      "id": "d03-33-crane_leg",
+      "kind": "prop",
+      "position": {
+        "x": 23.5,
+        "y": 0,
+        "z": 470
+      },
+      "rotationY": 0,
+      "catalogId": "prop_crane_leg",
+      "meta": {
+        "catalogId": "prop_crane_leg"
+      }
+    },
+    {
+      "id": "d03-34-container_stack",
+      "kind": "prop",
+      "position": {
+        "x": -30,
+        "y": 0,
+        "z": 84
+      },
+      "rotationY": 0.4,
+      "catalogId": "prop_container_stack",
+      "meta": {
+        "catalogId": "prop_container_stack"
+      }
+    },
+    {
+      "id": "d03-35-container_stack",
+      "kind": "prop",
+      "position": {
+        "x": -34,
+        "y": 0,
+        "z": 96
+      },
+      "rotationY": 0.4,
+      "catalogId": "prop_container_stack",
+      "meta": {
+        "catalogId": "prop_container_stack"
+      }
+    },
+    {
+      "id": "d03-36-container_stack",
+      "kind": "prop",
+      "position": {
+        "x": 30,
+        "y": 0,
+        "z": 66
+      },
+      "rotationY": 0.4,
+      "catalogId": "prop_container_stack",
+      "meta": {
+        "catalogId": "prop_container_stack"
+      }
+    },
+    {
+      "id": "d03-37-appliance_stack",
+      "kind": "prop",
+      "position": {
+        "x": -29,
+        "y": 0,
+        "z": 226
+      },
+      "rotationY": 0.9,
+      "catalogId": "prop_appliance_stack",
+      "meta": {
+        "catalogId": "prop_appliance_stack"
+      }
+    },
+    {
+      "id": "d03-38-appliance_stack",
+      "kind": "prop",
+      "position": {
+        "x": -33,
+        "y": 0,
+        "z": 238
+      },
+      "rotationY": 0.9,
+      "catalogId": "prop_appliance_stack",
+      "meta": {
+        "catalogId": "prop_appliance_stack"
+      }
+    },
+    {
+      "id": "d03-39-appliance_stack",
+      "kind": "prop",
+      "position": {
+        "x": 31,
+        "y": 0,
+        "z": 232
+      },
+      "rotationY": 0.9,
+      "catalogId": "prop_appliance_stack",
+      "meta": {
+        "catalogId": "prop_appliance_stack"
+      }
+    },
+    {
+      "id": "d03-40-appliance_stack",
+      "kind": "prop",
+      "position": {
+        "x": 35,
+        "y": 0,
+        "z": 246
+      },
+      "rotationY": 0.9,
+      "catalogId": "prop_appliance_stack",
+      "meta": {
+        "catalogId": "prop_appliance_stack"
+      }
+    },
+    {
+      "id": "d03-41-crane_leg",
+      "kind": "prop",
+      "position": {
+        "x": -29,
+        "y": 0,
+        "z": 312
+      },
+      "rotationY": 0,
+      "catalogId": "prop_crane_leg",
+      "meta": {
+        "catalogId": "prop_crane_leg"
+      }
+    },
+    {
+      "id": "d03-42-container_stack",
+      "kind": "prop",
+      "position": {
+        "x": 30,
+        "y": 0,
+        "z": 320
+      },
+      "rotationY": 0,
+      "catalogId": "prop_container_stack",
+      "meta": {
+        "catalogId": "prop_container_stack"
+      }
+    },
+    {
+      "id": "d03-43-crane_leg",
+      "kind": "prop",
+      "position": {
+        "x": 29,
+        "y": 0,
+        "z": 334
+      },
+      "rotationY": 0,
+      "catalogId": "prop_crane_leg",
+      "meta": {
+        "catalogId": "prop_crane_leg"
+      }
+    },
+    {
+      "id": "d03-44-container_stack",
+      "kind": "prop",
+      "position": {
+        "x": -31,
+        "y": 0,
+        "z": 342
+      },
+      "rotationY": 0.5,
+      "catalogId": "prop_container_stack",
+      "meta": {
+        "catalogId": "prop_container_stack"
+      }
+    },
+    {
+      "id": "d03-45-crane_leg",
+      "kind": "prop",
+      "position": {
+        "x": -29,
+        "y": 0,
+        "z": 356
+      },
+      "rotationY": 0,
+      "catalogId": "prop_crane_leg",
+      "meta": {
+        "catalogId": "prop_crane_leg"
+      }
+    },
+    {
+      "id": "d03-46-container_stack",
+      "kind": "prop",
+      "position": {
+        "x": 30,
+        "y": 0,
+        "z": 364
+      },
+      "rotationY": 1,
+      "catalogId": "prop_container_stack",
+      "meta": {
+        "catalogId": "prop_container_stack"
+      }
+    },
+    {
+      "id": "d03-47-crane_leg",
+      "kind": "prop",
+      "position": {
+        "x": 29,
+        "y": 0,
+        "z": 378
+      },
+      "rotationY": 0,
+      "catalogId": "prop_crane_leg",
+      "meta": {
+        "catalogId": "prop_crane_leg"
+      }
+    },
+    {
+      "id": "d03-48-container_stack",
+      "kind": "prop",
+      "position": {
+        "x": -31,
+        "y": 0,
+        "z": 386
+      },
+      "rotationY": 1.5,
+      "catalogId": "prop_container_stack",
+      "meta": {
+        "catalogId": "prop_container_stack"
+      }
+    },
+    {
+      "id": "d03-49-crane_leg",
+      "kind": "prop",
+      "position": {
+        "x": -29,
+        "y": 0,
+        "z": 400
+      },
+      "rotationY": 0,
+      "catalogId": "prop_crane_leg",
+      "meta": {
+        "catalogId": "prop_crane_leg"
+      }
+    },
+    {
+      "id": "d03-50-container_stack",
+      "kind": "prop",
+      "position": {
+        "x": 30,
+        "y": 0,
+        "z": 408
+      },
+      "rotationY": 2,
+      "catalogId": "prop_container_stack",
+      "meta": {
+        "catalogId": "prop_container_stack"
+      }
+    },
+    {
+      "id": "d03-51-crane_leg",
+      "kind": "prop",
+      "position": {
+        "x": 29,
+        "y": 0,
+        "z": 422
+      },
+      "rotationY": 0,
+      "catalogId": "prop_crane_leg",
+      "meta": {
+        "catalogId": "prop_crane_leg"
+      }
+    },
+    {
+      "id": "d03-52-container_stack",
+      "kind": "prop",
+      "position": {
+        "x": -31,
+        "y": 0,
+        "z": 430
+      },
+      "rotationY": 2.5,
+      "catalogId": "prop_container_stack",
+      "meta": {
+        "catalogId": "prop_container_stack"
+      }
+    },
+    {
+      "id": "d03-53-crane_leg",
+      "kind": "prop",
+      "position": {
+        "x": -29,
+        "y": 0,
+        "z": 444
+      },
+      "rotationY": 0,
+      "catalogId": "prop_crane_leg",
+      "meta": {
+        "catalogId": "prop_crane_leg"
+      }
+    },
+    {
+      "id": "d03-54-container_stack",
+      "kind": "prop",
+      "position": {
+        "x": 30,
+        "y": 0,
+        "z": 452
+      },
+      "rotationY": 3,
+      "catalogId": "prop_container_stack",
+      "meta": {
+        "catalogId": "prop_container_stack"
+      }
+    }
+  ],
+  "volumes": [
+    {
+      "id": "launch_apron",
+      "kind": "soil",
+      "shape": "box",
+      "center": {
+        "x": 0,
+        "y": 0,
+        "z": 12
+      },
+      "halfExtents": {
+        "x": 7,
+        "y": 0,
+        "z": 16
+      },
+      "label": "launch apron",
+      "meta": {
+        "baseColor": "#93806a",
+        "crackScale": 1.5,
+        "crackColor": "#584735",
+        "crackIntensity": 0.16,
+        "mossCoverage": 0,
+        "seed": "launch_apron"
+      }
+    },
+    {
+      "id": "left_worn_shoulder",
+      "kind": "soil",
+      "shape": "box",
+      "center": {
+        "x": -11,
+        "y": 0,
+        "z": 24
+      },
+      "halfExtents": {
+        "x": 2.5,
+        "y": 0,
+        "z": 26
+      },
+      "label": "left worn shoulder",
+      "meta": {
+        "baseColor": "#685b4d",
+        "crackScale": 1.5,
+        "crackColor": "#584735",
+        "crackIntensity": 0.16,
+        "mossCoverage": 0,
+        "seed": "left_worn_shoulder"
+      }
+    },
+    {
+      "id": "right_worn_shoulder",
+      "kind": "soil",
+      "shape": "box",
+      "center": {
+        "x": 11,
+        "y": 0,
+        "z": 24
+      },
+      "halfExtents": {
+        "x": 2.5,
+        "y": 0,
+        "z": 26
+      },
+      "label": "right worn shoulder",
+      "meta": {
+        "baseColor": "#685b4d",
+        "crackScale": 1.5,
+        "crackColor": "#584735",
+        "crackIntensity": 0.16,
+        "mossCoverage": 0,
+        "seed": "right_worn_shoulder"
+      }
+    }
+  ],
+  "paths": [],
+  "annotations": [],
+  "prefabs": [],
+  "collections": [],
+  "catalogs": []
+}

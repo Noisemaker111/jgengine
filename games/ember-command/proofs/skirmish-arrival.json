@@ -1,0 +1,10 @@
+{ "steps": [
+  { "flow": "to-skirmish" },
+  { "shot": "skirmish-arrival", "note": "the field the flow just proved it reached" },
+  { "click": "Pause battle",
+    "before": { "is": "document.querySelector('.ec-pause') !== null" },
+    "after": { "is": "document.querySelector('.ec-front') !== null", "timeoutMs": 8000 } },
+  { "assert": "document.querySelector('.ec-front') !== null",
+    "note": "the pause card opened; a shot of a panel that never opened would prove nothing" },
+  { "shot": "skirmish-paused" }
+] }

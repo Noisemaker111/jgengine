@@ -5,7 +5,7 @@ import { join } from "node:path";
 /**
  * Clean-checkout asset-pack availability gate.
  *
- * Every model pack a `Games/*` references must resolve to bytes that exist on a
+ * Every model pack a `games/*` references must resolve to bytes that exist on a
  * fresh `git clone` — otherwise the game hard-crashes on boot for anyone who
  * checks the repo out without a manual asset pull. A pack is available when it is
  * either **committed** (git-tracked bytes under `apps/dev/public/models/<pack>/`,
@@ -122,8 +122,7 @@ export function packReferencesForGame(game: string, srcDir: string): PackReferen
   return [...refs.values()];
 }
 
-/** Every game's pack references, scanning each `Games/<id>/src` tree.
- * When Games/ is absent (games live in Noisemaker111/JGengine-games), return no references.
+/** Every game's pack references, scanning each `games/<id>/src` tree.
  * Only real games (src/index.tsx) are scanned — helper packages like `studios` are ignored. */
 export function referencedPacks(gamesDir: string): PackReference[] {
   if (!existsSync(gamesDir)) return [];
@@ -175,9 +174,9 @@ export function provisionedPacks(root: string): Set<string> {
 
 if (import.meta.main) {
   const root = process.cwd();
-  const gamesDir = join(root, "Games");
+  const gamesDir = join(root, "games");
   if (!existsSync(gamesDir)) {
-    console.log("check-asset-availability: clean — no Games/ checkout (games live in Noisemaker111/JGengine-games)");
+    console.log("check-asset-availability: clean — no games/ folder");
     process.exit(0);
   }
   const references = referencedPacks(gamesDir);

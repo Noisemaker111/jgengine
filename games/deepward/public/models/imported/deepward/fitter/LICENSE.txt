@@ -1,0 +1,31 @@
+Original Deepward Fitter and service weapons
+
+The Fitter salvage operator, service sidearm, service rifle, their embedded
+material maps, skeleton, animation clips, and source generator
+deepward/scripts/build-original-fitter.py are original art authored for Deepward
+by the Deepward project contributors. The shared original material and geometry
+helpers are in deepward/scripts/build-original-machinery.py. No other game's
+art, downloaded character, weapon kit, scanned texture, or third-party mesh is
+included. Embedded basecolor/roughness/normal enamel maps and the woven workcoat
+map are reproducible authored patterns, not scans. All embedded images are 256px.
+
+To the extent possible under law, the Deepward project contributors have waived
+all copyright and related or neighboring rights to these assets, skeleton and
+animations, texture maps, and their generator under CC0 1.0 Universal:
+https://creativecommons.org/publicdomain/zero/1.0/
+
+Fitter: metres, glTF +Y up, +Z facing, floor-centre origin. The original seventeen
+joint skeleton provides idle (2s), walk (1s), and windup (0.7s) clips. Shoulders
+have bind pivots (+/-0.36,1.3,0) in glTF space. Rifle and maintenance spanner are
+skinned to the hands; neither is a runtime damage/collision authority.
+
+Weapons: metres, glTF +Y up, -Z firing direction, grip origin. The bore centre
+matches runtime muzzle anchors (0,0,-0.22) and (0,0,-0.5). The weapons are static
+authored props; accepted kick/reload motion remains in the game renderer.
+
+Build: blender -b -t 2 -P deepward/scripts/build-original-fitter.py
+Inspect: DEEPWARD_ASSET_SET=fitter blender -b -t 2 -P deepward/scripts/inspect-original-machinery.py
+
+Decoded file hashes, image hashes, bounds, stored triangles, material groups,
+and clip/skin metadata are recorded in asset-manifest.json. Offline art previews
+do not prove native gameplay integration or locomotion timing.

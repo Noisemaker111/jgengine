@@ -13,8 +13,8 @@ export interface Adoption {
 }
 
 const CONSUMER_GLOBS = [
-  "Games/**/*.ts",
-  "Games/**/*.tsx",
+  "games/**/*.ts",
+  "games/**/*.tsx",
   "examples/**/*.ts",
   "examples/**/*.tsx",
   "apps/**/*.ts",

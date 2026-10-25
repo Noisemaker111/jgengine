@@ -65,14 +65,14 @@ export function decodeGameCatalogs(resolved: unknown): LoadGameCatalogsResult {
 }
 
 /**
- * Node-only: resolves a game's `editorCatalogs` export from Games/<id>/src and validates its shape
+ * Node-only: resolves a game's `editorCatalogs` export from games/<id>/src and validates its shape
  * before it reaches a live editor session.
  * @internal
  */
 export async function loadGameCatalogs(gameId: string): Promise<LoadGameCatalogsResult> {
   let resolved: unknown;
   try {
-    const path = new URL(`../../../../Games/${gameId}/src/editorCatalogs.ts`, import.meta.url);
+    const path = new URL(`../../../../games/${gameId}/src/editorCatalogs.ts`, import.meta.url);
     const mod = await importOptionalGameModule(path);
     if (mod?.editorCatalogs === undefined) return { ok: true, catalogs: [] };
     const value = mod.editorCatalogs as EditorCatalogsInput;

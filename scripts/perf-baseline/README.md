@@ -7,7 +7,7 @@ Build measured (both commits, in full):
 
 - engine `jgengine` `54792323ac0bd8344517d33e85020a339cb521d0` (origin/beta)
 - games `Noisemaker111/JGengine-games` `c81aabc494295170c53c4b7a0763573162590a7f`
-  (the pin in [../games-ref.txt](../games-ref.txt))
+  (the games repo before it moved into this repo's `games/`)
 
 Device: Windows 11, Chrome, ANGLE/D3D11 on an RTX 3070, 1600x900 CSS viewport,
 desktop profile, `full` graphics quality, one `shoot` daemon.

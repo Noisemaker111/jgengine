@@ -4,7 +4,7 @@
 
 `bun packages/editor/src/mcp/cli.ts --game <id> --rpc '<json>' … --save` runs the RPC batch on one
 in-memory session and, when every RPC succeeds, writes the session document to
-`Games/<id>/src/editor.scene.json` (dev-save format: 2-space JSON + trailing newline, identical to
+`games/<id>/src/editor.scene.json` (dev-save format: 2-space JSON + trailing newline, identical to
 the GUI's Ctrl+S through `devSavePlugin`). Without `--save`, `--rpc` mutations are discarded on
 exit — use it for read-only inspection only, or capture `export_document` yourself.
 
@@ -131,7 +131,7 @@ bun packages/editor/src/mcp/cli.ts --game <id> \
 `add_marker` is the *scripted* path (an agent/CLI types coordinates). To let a **designer click the world to drop** a game's own logical kind (a stash, checkpoint, bounty…), register it as a placeable scene kind with **`definePlaceableMarkerKind`** (`@jgengine/core/scene/sceneKinds`) — the light path that skips a full studio's schema/resolver:
 
 ```ts
-// Games/<id>/src/editorKinds.ts — imported for its side effect by the game's editorLayers.ts
+// games/<id>/src/editorKinds.ts — imported for its side effect by the game's editorLayers.ts
 import { definePlaceableMarkerKind } from "@jgengine/core/scene/sceneKinds";
 export const STASH_KIND = definePlaceableMarkerKind({
   kind: "stash", label: "Stash", category: "My Game", accent: "#38d6c4",

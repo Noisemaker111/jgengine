@@ -1,0 +1,77 @@
+{
+  "steps": [
+    {
+      "waitFor": "window.__harborCity !== undefined && window.__jgengineAgent !== undefined && window.__harborCity.read().place !== undefined",
+      "note": "the city is live"
+    },
+    {
+      "assert": "(window.__hd = (n, i) => window.__jgengineAgent.handle({ method: 'run_command', name: n, input: i || {} }), __hd('city.dev.abandon'), ['jobs.welcome', 'jobs.dock_sweep', 'jobs.front_money', 'jobs.shake_heat', 'jobs.hot_wheels'].forEach((k) => __hd('city.dev.set', { key: k, value: 'done' })), __hd('city.dev.set', { key: 'port.owner', value: 'player' }), __hd('city.dev.set', { key: 'dee.known', value: true }), __hd('city.dev.cash', { amount: 8000 }), true)",
+      "note": "skip to act 2: docks taken, Dee met"
+    },
+    {
+      "assert": "(__hd('city.dev.warp', { x: -135, z: 96 }), true)",
+      "note": "drive over to the Marina, Carmine turf"
+    },
+    {
+      "waitFor": "window.__harborCity.read().crews.some((id) => id.startsWith('crew_marina'))",
+      "before": {
+        "is": "true",
+        "timeoutMs": 6000
+      },
+      "note": "gangs: the Carmines have a crew standing on their block"
+    },
+    {
+      "shot": "turf-01-marina-crew"
+    },
+    {
+      "waitFor": "(() => { const r = window.__harborCity.read(); if (r.turf.marina.owner === 'player') return true; const t = performance.now(); if (window.__ls === undefined || t - window.__ls > 800) { window.__ls = t; __hd('city.dev.shoot', { prefix: 'ganger_dock' }); } return false; })()",
+      "timeoutMs": 40000,
+      "note": "gangs: dropping the crew wears the block's hold to zero and it changes hands"
+    },
+    {
+      "assert": "window.__harborCity.read().log.some((line) => line === 'You took the Marina from the Carmines.')",
+      "note": "the city log says so"
+    },
+    {
+      "shot": "turf-02-marina-taken"
+    },
+    {
+      "assert": "(__hd('city.dev.set', { key: 'carmine.mood', value: -60 }), __hd('city.dev.warp', { x: 20, z: -30 }), window.__jgengineAgent.handle({ method: 'time_scale', scale: 20 }), true)",
+      "note": "walk off with the Carmines furious: their front starts pushing into what you took"
+    },
+    {
+      "waitFor": "window.__harborCity.read().turf.marina.attacker === 'carmine'",
+      "timeoutMs": 30000,
+      "note": "turf war: a Carmine push lands on the Marina and marks them as the attacker"
+    },
+    {
+      "waitFor": "window.__harborCity.read().turf.marina.owner === 'carmine'",
+      "timeoutMs": 90000,
+      "note": "turf war: the pushes wear the hold to zero and the Carmines take the Marina back"
+    },
+    {
+      "assert": "(window.__jgengineAgent.handle({ method: 'time_scale', scale: 1 }), window.__harborCity.read().log.some((line) => line === 'The Carmines took the Marina from you.'))",
+      "note": "the city log names the handover"
+    },
+    {
+      "assert": "window.__harborCity.read().turf.marina.grip >= 39 && window.__harborCity.read().turf.marina.attacker === ''",
+      "note": "the retaken block starts at a hold of 40 with no one pushing"
+    },
+    {
+      "shot": "turf-03-marina-retaken"
+    },
+    {
+      "assert": "(__hd('city.dev.set', { key: 'war.on', value: true }), window.__jgengineAgent.handle({ method: 'time_scale', scale: 20 }), true)",
+      "note": "Rising Tide's result: the Carmines and the Riptides are at war"
+    },
+    {
+      "waitFor": "window.__harborCity.read().log.some((line) => /shooting it out/.test(line))",
+      "timeoutMs": 60000,
+      "note": "turf war: the two crews push into each other's neighbouring blocks on their own clocks"
+    },
+    {
+      "assert": "(window.__jgengineAgent.handle({ method: 'time_scale', scale: 1 }), Object.values(window.__harborCity.read().turf).some((b) => (b.owner === 'carmine' && b.attacker === 'riptide') || (b.owner === 'riptide' && b.attacker === 'carmine')))",
+      "note": "a crew block now has the other crew as its attacker"
+    }
+  ]
+}

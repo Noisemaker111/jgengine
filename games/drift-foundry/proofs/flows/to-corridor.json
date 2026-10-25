@@ -1,0 +1,11 @@
+{ "steps": [
+  { "assert": "document.body.innerText.includes('LAP 1/1')",
+    "before": { "is": "document.body.innerText.includes('LAP 1/1')", "timeoutMs": 30000 },
+    "note": "arrival: a run is live and the HUD's own race line is up, not the pit menu" },
+
+  { "key": "KeyW", "ms": 3000, "note": "throttle down the corridor" },
+
+  { "assert": "__jgProbe().z > 12",
+    "before": { "is": "__jgProbe().z > 12", "timeoutMs": 15000 },
+    "note": "arrival: the buggy travelled past 12 m of the 470 m corridor (it starts at z=4), so the run state advanced and not just the keypress" }
+] }

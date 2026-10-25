@@ -1,0 +1,16 @@
+{ "steps": [
+  { "assert": "__jgProbe().members === 4 && __jgProbe().term === 0",
+    "before": { "is": "typeof __jgProbe === 'function' && __jgProbe().members === 4", "timeoutMs": 40000 },
+    "note": "arrival: a fresh household of four is live in the charter's first term" },
+
+  { "assert": "__jgProbe().incident === 1 && /incoming transmission/i.test(document.body.innerText)",
+    "before": { "is": "__jgProbe().incident === 1", "timeoutMs": 240000 },
+    "note": "arrival: the storyteller sent a transmission that waits on an answer, and its slip is on screen" },
+
+  { "click": "default",
+    "after": { "is": "__jgProbe().incident === 0", "timeoutMs": 10000 },
+    "note": "taking the default answer clears the slip; a click alone proves nothing, so the after waits on the household state" },
+
+  { "assert": "__jgProbe().incident === 0 && !/incoming transmission/i.test(document.body.innerText)",
+    "note": "arrival: the transmission is resolved and its slip is gone" }
+] }

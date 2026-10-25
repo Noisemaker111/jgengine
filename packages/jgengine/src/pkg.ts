@@ -96,7 +96,7 @@ export function resolveDependencyRange(
 
 /** @internal */
 export function isEngineMonorepo(rootDir: string): boolean {
-  return existsSync(join(rootDir, "packages", "core", "src")) && existsSync(join(rootDir, "Games"));
+  return existsSync(join(rootDir, "packages", "core", "src")) && existsSync(join(rootDir, "games"));
 }
 
 /** @internal */

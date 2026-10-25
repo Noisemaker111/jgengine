@@ -29,12 +29,17 @@ jobs:
   # unrelated-package change cannot move either, so a PR runs them only when a changed path
   # can reach them. `scripts/ci-scope.ts` owns the map; `scripts/ci-scope.test.ts` holds it.
   #
-  #   full  — smoke-game and perf-game: a package a game loads (core, shell, react, assets,
-  #           navbake, rapier, jgengine), Games/, a script that boots or measures a game,
-  #           a workflow, the release PR, or any path the map does not know.
-  #   smoke — smoke-game only: a rendered surface no game loads (the editor).
-  #   none  — neither: prose, skills, change notes, the web app, server and CLI packages,
-  #           lane tooling, repo config, test files.
+  #   full    — perf-game on every reference game: frame work in a package a game loads,
+  #             games/shared, a script that boots or measures a game, a workflow, the release
+  #             PR, or any path the map does not know.
+  #   surface — perf-game on the representative game plus any reference game whose own
+  #             files changed: a shared surface, or one game's source.
+  #   none    — neither: prose, skills, change notes, the web app, server and CLI packages,
+  #             lane tooling, repo config, test files, a game outside the frame set.
+  #
+  # `gameChecks` is the separate list the `games` job type-checks and tests: each game a
+  # changed file sits in, each game that declares a changed engine package, and every game
+  # for the root install, compiler settings, games/shared or the games' own scripts.
   #
   # #2218 changed movement, scene and runtime and merged with both gates skipped; #2342
   # changed the react menu and skipped them the same way, so a path a game loads always
@@ -46,6 +51,7 @@ jobs:
     outputs:
       games: ${{ steps.scope.outputs.games }}
       gameList: ${{ steps.scope.outputs.gameList }}
+      gameChecks: ${{ steps.scope.outputs.gameChecks }}
       tests: ${{ steps.scope.outputs.tests }}
       reason: ${{ steps.scope.outputs.reason }}
     steps:
@@ -117,7 +123,6 @@ jobs:
       - run: bun run check-export-manifest
 
   # PRs run everything main runs, split into parallel jobs, so squash auto-merge cannot land a red main.
-  # Games/ is cloned at the SHA in scripts/games-ref.txt; a games-repo push changes nothing here until a PR bumps it.
   # `bun run check-types` ran its independent stages one after another: 59 s on a runner, of
   # which the tsc fan-out was 21 s and three generators 23 s. scripts/type-shard.ts runs the
   # same stages from the same plan with four in flight, heaviest first, and keeps this one
@@ -138,9 +143,6 @@ jobs:
           restore-keys: bun-${{ runner.os }}-
       - run: bun install --frozen-lockfile
       - run: bun run build
-      - run: bun run games:clone
-        env:
-          GAMES_CLONE_TOKEN: ${{ secrets.GAMES_CLONE_TOKEN }}
       - run: bun scripts/type-shard.ts
 
   # One bun process over every test file took 5m37s of test time on a runner. The same
@@ -172,11 +174,8 @@ jobs:
           key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
           restore-keys: bun-${{ runner.os }}-
       - run: bun install --frozen-lockfile
-      # The shard runs the build and the Games clone only when its own tests read them,
-      # which is why seven of these eight jobs no longer pay either.
+      # The shard runs the build only when its own tests read a built dist.
       - run: bun scripts/test-shard.ts ${{ matrix.shard }}
-        env:
-          GAMES_CLONE_TOKEN: ${{ secrets.GAMES_CLONE_TOKEN }}
 
   web-build:
     runs-on: ubuntu-latest
@@ -220,9 +219,19 @@ jobs:
           key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
           restore-keys: bun-${{ runner.os }}-
       - run: bun install --frozen-lockfile
-      - run: bun run games:clone
+      # A game draws library models and scanned materials that are not in git, so the leg
+      # pulls them first, from the same cache the games job fills.
+      - uses: actions/cache@v4
+        with:
+          path: |
+            games/*/public/models
+            games/*/public/materials
+            games/*/public/sprites
+          key: game-assets-${{ hashFiles('bun.lock', 'games/*/src/game/assets.ts') }}
+          restore-keys: game-assets-
+      - run: bun run games:provision -- ${{ matrix.game }}
         env:
-          GAMES_CLONE_TOKEN: ${{ secrets.GAMES_CLONE_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       # 2 of the first 32 leg runs died on a cold Chrome start ("debugger not ready
       # … within 30000ms") and passed on a plain rerun. A budget breach fails again,
       # so the retry hides nothing; it stops a launch flake from paging a PR owner.
@@ -230,6 +239,66 @@ jobs:
       # even when a later step passes, so the retry only counts from inside the step.
       - name: perf gate (one retry after a browser launch flake)
         run: bun run perf:gate --games ${{ matrix.game }} || bun run perf:gate --games ${{ matrix.game }}
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
+
+  # The games under games/ run engine source from this checkout, so an engine change and the
+  # games it breaks are fixed in one PR. This job checks the games `changes` named in
+  # `gameChecks`: the games' own gates over every game (seconds each), then the type-check,
+  # tests and boot probes of the reached games only. An empty list skips it, and `ci` holds
+  # that skip to the verdict.
+  games:
+    needs: [changes]
+    if: needs.changes.outputs.gameChecks != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GAMES: ${{ needs.changes.outputs.gameChecks }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.2
+      - uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: bun-${{ runner.os }}-
+      - run: bun install --frozen-lockfile
+      - uses: actions/cache@v4
+        with:
+          path: |
+            games/*/public/models
+            games/*/public/materials
+            games/*/public/sprites
+          key: game-assets-${{ hashFiles('bun.lock', 'games/*/src/game/assets.ts') }}
+          restore-keys: game-assets-
+      # Rocketbox and Khronos library models list files through the GitHub contents API;
+      # anonymous runners share a 60-an-hour limit and get HTTP 403, so the pull sends this token.
+      - run: bun run games:provision -- $GAMES
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - run: git fetch --no-tags origin beta
+      - run: bun run games:check-framework -- --base origin/beta
+      - run: bun run games:check-module-globals
+      - run: bun run games:check-save-states
+      - run: bun run games:check-design
+      - run: bun run games:capabilities-sync -- --check
+      - run: bun run games:check-capabilities -- --summary
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: type-check the reached games
+        run: |
+          failed=""
+          for game in $GAMES; do
+            bun --cwd="games/$game" run check-types || failed="$failed $game"
+          done
+          test -z "$failed" || { echo "type errors in:$failed"; exit 1; }
+      - name: test the games' scripts and the reached games
+        run: bun test games/scripts games/shared $(for game in $GAMES; do printf 'games/%s ' "$game"; done)
+      - run: bun run games:capabilities-probe -- $GAMES
         env:
           CHROME_PATH: /usr/bin/google-chrome
 
@@ -352,7 +421,7 @@ jobs:
           echo "windows suite skipped: pull requests and main pushes run the Ubuntu suite; a push to beta or a manual run covers Windows"
 
   ci:
-    needs: [changes, quick, types, test, web-build, smoke, perf, windows]
+    needs: [changes, quick, types, test, web-build, games, smoke, perf, windows]
     # A superseded run is cancelled, not failed; reporting it as a failure only pages the PR's owner.
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
@@ -369,6 +438,8 @@ jobs:
           SMOKE: ${{ needs.smoke.result }}
           PERF: ${{ needs.perf.result }}
           TEST: ${{ needs.test.result }}
+          GAME_CHECKS: ${{ needs.changes.outputs.gameChecks }}
+          GAMES_JOB: ${{ needs.games.result }}
         run: |
           # A scope job that failed took the gated jobs down with it; never let that read as a pass.
           test "$SCOPE" = "success"
@@ -376,6 +447,13 @@ jobs:
             test "$result" = "success"
           done
           echo "game scope: $GAMES ($REASON)"
+          if [ -z "$GAME_CHECKS" ]; then
+            test "$GAMES_JOB" = "skipped"
+            echo "skipped: game checks, no game reached"
+          else
+            test "$GAMES_JOB" = "success"
+            echo "ran: game checks on $GAME_CHECKS"
+          fi
           if [ "$SHARDS" = "none" ]; then
             test "$TEST" = "skipped"
             echo "skipped: test shards, change notes only"

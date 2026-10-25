@@ -75,8 +75,8 @@ describe("recipe catalog", () => {
     }
   });
 
-  test("no recipe references Games/* — snippets are self-contained", () => {
-    for (const recipe of RECIPES) expect(recipe.code).not.toContain("Games/");
+  test("no recipe references games/* — snippets are self-contained", () => {
+    for (const recipe of RECIPES) expect(recipe.code).not.toContain("games/");
   });
 });
 

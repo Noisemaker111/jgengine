@@ -1,0 +1,243 @@
+{
+  "adopts": [
+    "advance-ledger",
+    "auto-scroll",
+    "cancel-scheduled-rule",
+    "current-target",
+    "dom-event",
+    "event-meter-hud",
+    "fire-input",
+    "game-context-bridge",
+    "hud-clock",
+    "hud-coins",
+    "hud-hotbar",
+    "hud-stat-bar",
+    "hud-ticker",
+    "join-gate",
+    "lifecycle",
+    "live-markers",
+    "multiplayer-offline",
+    "multiplayer-ws",
+    "pause-scheduled-rule",
+    "policy-annotate",
+    "policy-cap",
+    "policy-curve",
+    "policy-redirect",
+    "policy-reject",
+    "policy-tax",
+    "policy-threshold",
+    "proximity-prompt",
+    "raf-loop",
+    "resource-ledger",
+    "resume-scheduled-rule",
+    "server-session",
+    "solid-obstacles",
+    "standing-on-objects",
+    "territory-overlay",
+    "walker-solid-step",
+    "walker-solid-step-source"
+  ],
+  "probes": {},
+  "declines": {
+    "agents": {
+      "kind": "not-applicable",
+      "reason": "No agent loop in LLMville: residents are other players and LLM bots driven through the agent REST API, nothing runs needs, thoughts or mood on a world clock."
+    },
+    "audio-probe": {
+      "kind": "not-applicable",
+      "reason": "LLMville has no audio mix at all: the miniature lab plays no music, ambience or sound effects, so there is no bus to read."
+    },
+    "cover-field": {
+      "kind": "not-applicable",
+      "reason": "Cover does not exist in LLMville: it is a cosy lab tycoon with no combat, no threats and nothing that takes cover."
+    },
+    "cover-points-from-solids": {
+      "kind": "not-applicable",
+      "reason": "No cover positions in LLMville: racks and desks are build pieces, not combat cover, because the game has no fighting."
+    },
+    "cover-points-near": {
+      "kind": "not-applicable",
+      "reason": "No nearest-cover query in LLMville: nobody is shot at in the shared lab world, so cover is never searched for."
+    },
+    "cover-score": {
+      "kind": "not-applicable",
+      "reason": "No threat scoring of cover in LLMville: the co-op lab game has no enemies or threats to score cover against."
+    },
+    "cover-select": {
+      "kind": "not-applicable",
+      "reason": "No cover selection in LLMville: there are no combat roles, flanks or ranges in a model-training tycoon."
+    },
+    "damage-runtime": {
+      "kind": "not-applicable",
+      "reason": "No damage table in LLMville: nothing has health or takes hits; the risk in the game is money and overdue bills, not damage."
+    },
+    "damage-target-unknown": {
+      "kind": "not-applicable",
+      "reason": "No damage table in LLMville, and no hit targets: without combat there are no resistance or armor profiles for a hit to miss."
+    },
+    "equipment-slot-inventory": {
+      "kind": "not-applicable",
+      "reason": "No worn gear in LLMville: the player inventory holds lab hardware to place (GPUs, racks, decor), not equipment slots on a body."
+    },
+    "game-save": {
+      "kind": "not-applicable",
+      "reason": "No client save document in LLMville: each world's labs, racks, models and wallet live in Convex tables on the server, written by authenticated mutations."
+    },
+    "game-save-digest": {
+      "kind": "not-applicable",
+      "reason": "No save document to hash in LLMville: persistence is server-side Convex rows per world, not one versioned client save to digest."
+    },
+    "loan-schedule": {
+      "kind": "not-applicable",
+      "reason": "No loans in LLMville: players pay utility bills with late fees but never borrow, so no repayment schedule exists."
+    },
+    "loans": {
+      "kind": "not-applicable",
+      "reason": "No loans in LLMville, and no borrowing: money comes only from serving trained models and goes to hardware, upgrades and bills; there is no loan to draw or default."
+    },
+    "loot-comparison": {
+      "kind": "not-applicable",
+      "reason": "No loot rolling in LLMville, and no rolled items: store hardware has fixed catalog stats, so there are no random rolls to compare."
+    },
+    "loot-generation": {
+      "kind": "not-applicable",
+      "reason": "No loot rolling in LLMville: hardware is bought from a fixed store catalog; nothing drops or rolls affixes."
+    },
+    "loot-roller": {
+      "kind": "not-applicable",
+      "reason": "No loot rolling in LLMville, and no drop tables: the game has no enemies or chests, items come only from the hardware store."
+    },
+    "loot-score": {
+      "kind": "not-applicable",
+      "reason": "No loot rolling in LLMville, and no loot stat scoring: hardware stats are catalog constants (TFLOPs, VRAM, power), not rolled stat blocks."
+    },
+    "loot-validation": {
+      "kind": "not-applicable",
+      "reason": "No loot rolling in LLMville, and no rolled-item catalog to validate: the only items are fixed store hardware and decorations."
+    },
+    "mission-events": {
+      "kind": "not-applicable",
+      "reason": "No mission runtime in LLMville: there are no kills or failure events; progress is income and model quality, not missions."
+    },
+    "mission-rewards": {
+      "kind": "not-applicable",
+      "reason": "No mission runtime in LLMville, and no mission payouts: rewards come from serving models over time, not from completing objectives."
+    },
+    "mission-runtime": {
+      "kind": "not-applicable",
+      "reason": "No mission runtime in LLMville, and no missions: the loop is build, train, serve and expand in a persistent world, with a tutorial but no objective state machine."
+    },
+    "mission-validation": {
+      "kind": "not-applicable",
+      "reason": "No mission runtime in LLMville, and no mission objectives to validate: the onboarding tutorial is a step list, not counted objective kinds."
+    },
+    "mount-game": {
+      "kind": "not-applicable",
+      "reason": "No game host in LLMville, and no GameHost mount: it is a TanStack Router web app with accounts, menus and a Convex-backed session route, mounting its own React Three Fiber scene."
+    },
+    "nav-crowd": {
+      "kind": "not-applicable",
+      "reason": "No navigation in LLMville, and no nav-mesh crowd: avatars are steered directly by players or bots with walk-and-collide movement, never routed as a crowd."
+    },
+    "nav-runtime": {
+      "kind": "not-applicable",
+      "reason": "No navigation routing in LLMville: there are no AI walkers that need paths; players walk the lab themselves."
+    },
+    "navmesh-from-scene": {
+      "kind": "not-applicable",
+      "reason": "No navigation in LLMville, and no baked nav mesh: the world is tiled player-built plots with no editor-authored nav data or pathing agents."
+    },
+    "near-agents": {
+      "kind": "not-applicable",
+      "reason": "No agent loop in LLMville, and no on-screen resident crowd: every avatar in the lab world is a connected player or an API-driven bot, so there are no needs-driven residents."
+    },
+    "offscreen-world": {
+      "kind": "not-applicable",
+      "reason": "No offscreen simulation in LLMville, and no offscreen agent simulation: income accrues server-side from serving state, and there are no far-away agents to keep cheap."
+    },
+    "perception-service": {
+      "kind": "not-applicable",
+      "reason": "No perception in LLMville: nothing sees, hears or remembers the player; there are no guards or creatures."
+    },
+    "police-response": {
+      "kind": "not-applicable",
+      "reason": "No police heat in LLMville: a cosy lab tycoon has no crimes, witnesses or wanted level."
+    },
+    "police-roads": {
+      "kind": "not-applicable",
+      "reason": "No police heat in LLMville, and no roadblocks: the world has no roads, lane graph or police, only player lab plots."
+    },
+    "ride-appeal": {
+      "kind": "not-applicable",
+      "reason": "No ride simulation in LLMville, and no rides: it is an AI-lab tycoon, not a theme park; guests and ride ratings do not exist."
+    },
+    "ride-choice": {
+      "kind": "not-applicable",
+      "reason": "No ride simulation in LLMville, and no guests choosing rides: the only things people use are the players' own GPU racks and lab props."
+    },
+    "ride-sim": {
+      "kind": "not-applicable",
+      "reason": "No ride simulation in LLMville: racks train and serve models, but there are no ride cycles, queues or breakdowns."
+    },
+    "run-loop": {
+      "kind": "not-applicable",
+      "reason": "No runs in LLMville: a world is persistent and shared, with no start, bank-or-lose or reset between attempts."
+    },
+    "rvo-avoidance": {
+      "kind": "not-applicable",
+      "reason": "No crowd steering in LLMville: a handful of player and bot avatars walk with solid-obstacle collision, not reciprocal avoidance."
+    },
+    "session-loop": {
+      "kind": "not-applicable",
+      "reason": "No run in LLMville, and no session settle: players drop in and out of a persistent shared world and keep everything; nothing is settled at session end."
+    },
+    "skill-tree": {
+      "kind": "not-applicable",
+      "reason": "No skill tree in LLMville: progression is buying hardware, unlocking store tiers and training better models, not spending points on a tree."
+    },
+    "squad-combat": {
+      "kind": "not-applicable",
+      "reason": "No squad combat in LLMville: co-op means sharing a lab world and chat, never fighting together."
+    },
+    "status-runtime": {
+      "kind": "not-applicable",
+      "reason": "No status effects in LLMville: there is no burn, slow or shock; nothing in the lab has ticking conditions."
+    },
+    "status-unknown": {
+      "kind": "not-applicable",
+      "reason": "No status ids in LLMville to reject: the game defines no status effects because it has no combat."
+    },
+    "supply-demand-pricing": {
+      "kind": "not-applicable",
+      "reason": "No market pricing in LLMville, and no stock-priced goods market: store hardware has fixed prices; serving income is shaped by a frontier benchmark and daily market modifier on the server, not finite stock."
+    },
+    "traffic": {
+      "kind": "not-applicable",
+      "reason": "No traffic in LLMville: there are no roads or cars in the lab world."
+    },
+    "transaction-ledger": {
+      "kind": "not-applicable",
+      "reason": "No minor-unit transaction ledger in LLMville: balances are Convex wallet rows changed by gameplay mutations; there is no per-account money-movement log to keep."
+    },
+    "utility-brain": {
+      "kind": "not-applicable",
+      "reason": "No agent loop in LLMville, and no utility-brain decisions: bots choose actions from an external LLM over the agent API, not from decaying-need appeal curves."
+    },
+    "vehicle-damage": {
+      "kind": "not-applicable",
+      "reason": "No vehicle damage in LLMville, and no vehicles: players walk around the shared lab world, nothing is driven or crashed."
+    },
+    "visitor-population": {
+      "kind": "not-applicable",
+      "reason": "No park population in LLMville, and no park visitors: the only people in the world are signed-in players and their bots."
+    },
+    "wait-queue": {
+      "kind": "not-applicable",
+      "reason": "No physical waiting line in LLMville: training jobs queue on hardware, but no bodies stand in a line with a measured throughput."
+    },
+    "weapon-system": {
+      "kind": "not-applicable",
+      "reason": "No weapon runtime in LLMville, and no weapons: it is a peaceful co-op AI-lab tycoon with nothing to fire or reload."
+    }
+  }
+}

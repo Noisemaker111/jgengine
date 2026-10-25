@@ -1,0 +1,87 @@
+{
+  "steps": [
+    {
+      "assert": "/A roof for everyone/i.test(document.body.innerText)",
+      "before": {
+        "is": "/A roof for everyone/i.test(document.body.innerText)",
+        "timeoutMs": 60000
+      },
+      "note": "arrival: the realm is up and the first story beat started by itself"
+    },
+    {
+      "assert": "__jgProbe().people >= 1",
+      "before": {
+        "is": "__jgProbe().people >= 1",
+        "timeoutMs": 10000
+      },
+      "note": "arrival: the lord's hall stands and houses its first people"
+    },
+    {
+      "key": "Digit1",
+      "ms": 120,
+      "after": {
+        "is": "__jgProbe().armed === 1",
+        "timeoutMs": 5000
+      },
+      "note": "pick up a cottage"
+    },
+    {
+      "clickAt": [
+        420,
+        330
+      ],
+      "after": {
+        "is": "__jgProbe().building + __jgProbe().built >= 1",
+        "timeoutMs": 5000
+      },
+      "note": "click the ground left of the hall: the home goes up"
+    },
+    {
+      "key": "Digit3",
+      "ms": 120,
+      "after": {
+        "is": "__jgProbe().armed === 3",
+        "timeoutMs": 5000
+      },
+      "note": "pick up a lumber camp"
+    },
+    {
+      "clickAt": [
+        1150,
+        560
+      ],
+      "after": {
+        "is": "__jgProbe().building + __jgProbe().built >= 2",
+        "timeoutMs": 5000
+      },
+      "note": "click the ground right of the hall: the workplace goes up"
+    },
+    {
+      "rightClickAt": [
+        640,
+        260
+      ],
+      "after": {
+        "is": "__jgProbe().armed === 0",
+        "timeoutMs": 5000
+      },
+      "note": "right click puts the tool down"
+    },
+    {
+      "assert": "__jgProbe().built >= 2",
+      "before": {
+        "is": "__jgProbe().built >= 2 && __jgProbe().building === 0",
+        "timeoutMs": 30000
+      },
+      "note": "arrival: both finished building"
+    },
+    {
+      "assert": "__jgProbe().wood > window.__made0",
+      "before": {
+        "is": "window.__made0 === undefined ? (window.__made0 = __jgProbe().wood, false) : __jgProbe().wood >= window.__made0 + 3",
+        "timeoutMs": 30000
+      },
+      "note": "arrival: the workplace is working - wood piles up"
+    }
+  ]
+}

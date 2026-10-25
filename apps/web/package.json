@@ -18,20 +18,20 @@
     "@jgengine/github": "workspace:*",
     "@tanstack/react-router": "^1.121.0",
     "@tanstack/react-start": "^1.121.0",
-    "react": "19.2.3",
-    "react-dom": "19.2.3",
-    "three": "^0.182.0"
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "three": "catalog:"
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.54.2",
-    "@tailwindcss/vite": "^4.0.15",
+    "@tailwindcss/vite": "catalog:",
     "@types/node": "^24",
-    "@types/react": "^19",
-    "@types/react-dom": "19.2.3",
-    "@types/three": "^0.182.0",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@types/three": "catalog:",
     "@vitejs/plugin-react": "^6.0.3",
-    "tailwindcss": "^4.0.15",
-    "typescript": "^5",
+    "tailwindcss": "catalog:",
+    "typescript": "catalog:",
     "vite": "^8.1.3",
     "wrangler": "^4.127.1"
   }

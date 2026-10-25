@@ -1,0 +1,9 @@
+{ "steps": [
+  { "click": "Pause battle",
+    "before": { "is": "document.querySelector('.ec-pause') !== null", "note": "a fresh capture boot lands in a live match, the only screen that offers Pause" },
+    "after": { "is": "document.querySelector('.ec-front') !== null", "timeoutMs": 5000 } },
+  { "click": "Return to title",
+    "after": { "is": "document.querySelector('.ec-pause') === null", "timeoutMs": 10000 } },
+  { "assert": "document.querySelector('.ec-front') !== null && [...document.querySelectorAll('.ec-front button')].some(b => (b.innerText || '').trim() === 'Take command')",
+    "note": "arrival: the title screen offers Take command, so this is the menu and not the pause card" }
+] }

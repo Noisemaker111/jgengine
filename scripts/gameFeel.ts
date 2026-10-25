@@ -22,14 +22,14 @@ function sources(root: string, games?: readonly string[]): { rel: string; source
       else if (/\.tsx?$/.test(entry) && !/\.test\.tsx?$/.test(entry)) result.push({ rel: relative(root, path).replace(/\\/g, "/"), source: readFileSync(path, "utf8") });
     }
   };
-  const gamesDir = join(root, "Games");
+  const gamesDir = join(root, "games");
   if (games === undefined) walk(gamesDir);
   else for (const game of games) walk(join(gamesDir, game));
   if (existsSync(join(root, "created-game", "src"))) walk(join(root, "created-game"));
   return result;
 }
 
-/** A game owns `src/`; the games repo also keeps tooling folders (`scripts/`, `.github/`) beside its games. */
+/** A game owns `src/`; `games/` also keeps tooling folders (`scripts/`, `shared/`) beside the games. */
 function isGameDir(root: string, dir: string): boolean {
   return existsSync(join(root, dir, "src"));
 }
@@ -40,8 +40,8 @@ export function findGameFeelGaps(root: string, games?: readonly string[]): Ratch
   const gameDirs = new Map<string, boolean>();
   for (const { rel, source } of files) {
     const parts = rel.split("/");
-    const game = parts[0] === "Games" ? parts[1]! : "created-game";
-    const dir = parts[0] === "Games" ? join("Games", game) : "created-game";
+    const game = parts[0] === "games" ? parts[1]! : "created-game";
+    const dir = parts[0] === "games" ? join("games", game) : "created-game";
     const known = gameDirs.get(dir) ?? isGameDir(root, dir);
     gameDirs.set(dir, known);
     if (!known) continue;

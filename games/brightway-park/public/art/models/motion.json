@@ -1,0 +1,96 @@
+{
+  "ride_carousel": {
+    "model": "carousel_rotor",
+    "kind": "spin",
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "speed": 0.25
+  },
+  "ride_teacups": {
+    "model": "ride_teacups_motion",
+    "kind": "spin",
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "speed": 0.6
+  },
+  "ride_ferris": {
+    "model": "ferris_rotor",
+    "kind": "wheel",
+    "pivot": [
+      0,
+      6,
+      0
+    ],
+    "speed": 0.09,
+    "level": "Cabin_"
+  },
+  "ride_obs": {
+    "model": "ride_obs_motion",
+    "kind": "drop",
+    "pivot": [
+      0,
+      0.32,
+      0
+    ],
+    "speed": 0.05,
+    "amplitude": 13
+  },
+  "ride_swings": {
+    "model": "ride_swings_motion",
+    "kind": "spin",
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "speed": 0.9
+  },
+  "ride_pirate": {
+    "model": "ride_pirate_motion",
+    "kind": "swing",
+    "pivot": [
+      0,
+      7.4,
+      0
+    ],
+    "speed": 0.12,
+    "amplitude": 0.75
+  },
+  "ride_topspin": {
+    "model": "ride_topspin_motion",
+    "kind": "wheel",
+    "pivot": [
+      0,
+      4,
+      0
+    ],
+    "speed": 0.8
+  },
+  "ride_enterprise": {
+    "model": "ride_enterprise_motion",
+    "kind": "wheel",
+    "pivot": [
+      0,
+      5.7,
+      0
+    ],
+    "speed": 1
+  },
+  "ride_dropzone": {
+    "model": "drop_carriage",
+    "kind": "drop",
+    "pivot": [
+      0,
+      1,
+      0
+    ],
+    "speed": 0.08333333333333333,
+    "amplitude": 8.5
+  }
+}

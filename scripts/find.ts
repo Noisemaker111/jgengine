@@ -1,5 +1,5 @@
 // A lane that searches with a recursive directory listing asks Windows to walk
-// every file under node_modules, Games and a hundred worktrees before it answers.
+// every file under node_modules and a hundred worktrees before it answers.
 // Eight of the ten hard timeouts in three hours of transcripts were exactly that
 // (a PowerShell tree listing over the engine repo, `~/Projects` or `studios/registry`,
 // against a 120 s limit), while every other call had a 10.5 s p90.
@@ -34,7 +34,6 @@ export const SKIP_DIRS = [
   ".turbo",
   ".next",
   ".scratch",
-  "Games",
 ] as const;
 
 export interface FindOptions {

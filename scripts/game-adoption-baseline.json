@@ -1,6 +1,0 @@
-[
-  "Games/beacon-bastion/src/game/session.ts:export-let",
-  "Games/brightway-park/src/game/ui/components/TopBar.tsx:local-widget-Chip",
-  "Games/ember-command/src/game/session.ts:export-let",
-  "Games/ember-command/src/game/ui/components/Hud.tsx:local-widget-Slot"
-]

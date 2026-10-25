@@ -68,7 +68,7 @@ import { evaluateAssertStep, runDriveSteps, type DriveStepRecord } from "./drive
 import { gameSurfaceCenter, mouseButtonForCode } from "../packages/jgengine/src/templates/gameSurfaceFocus";
 import { dispatchClickAt, parseClickAt } from "../packages/jgengine/src/clickInput";
 import { decodePng } from "./png-reader";
-import { ALLOW_MISMATCH_FLAG, engineRecord, resolveEngineIdentity, type EngineRecord } from "./engineIdentity";
+import { engineRecord, resolveEngineIdentity, type EngineRecord } from "./engineIdentity";
 import { shotSignature } from "./shot-metrics";
 import { buildShotRecord, clearShotTarget, describeReplacement, writeShotRecord, type PreviousShot } from "./shotProvenance";
 import { classifyRenderCadence, summarizePlaytest, type ProbeSample } from "./playtest";
@@ -138,9 +138,7 @@ type Args = {
   cold: boolean;
   /** 960x540 iteration preset: one settled frame in a 2s window, no video, no perf pass. */
   quick: boolean;
-  /** `--allow-engine-mismatch`: serve engine source older than the game's pin on purpose. */
-  allowEngineMismatch: boolean;
-  /** `--game-dir`: serve this game from another checkout instead of `Games/<game>`. */
+  /** `--game-dir`: serve this game from another checkout instead of `games/<game>`. */
   gameDir: string | null;
   /** Step file this run reads, when it reads one. */
   stepsFile?: string;
@@ -230,12 +228,10 @@ Notes:
 
 Engine:
   Every run prints the engine it actually renders: the dev runner serves this
-  checkout's source, so the line names its version and commit. The run stops when
-  that source is older than the version the game's catalog pins.
-  --allow-engine-mismatch serves older source on purpose and records that it did.
+  checkout's source, so the line names its version and commit.
 
   --game-dir <path> serves <game> from another checkout - a lane's worktree, not
-  this repo's Games/<game> clone - and reads that checkout's flows and writes its
+  this repo's games/<game> clone - and reads that checkout's flows and writes its
   shots beside them. The folder is named after the game, and its parent is read for
   the engine pin.
 
@@ -271,17 +267,14 @@ function parseArgs(argv: string[]): Args {  // `--headed` is parsed here, not in
   // `--cold` is parsed here, not in CAPTURE_FLAGS: the portable harness has no daemon to skip.
   const cold = quick.argv.includes("--cold");
   const headed = quick.argv.includes("--headed");
-  // `--allow-engine-mismatch` is parsed here, not in CAPTURE_FLAGS: the portable harness renders the
-  // engine it ships with, so it has no checkout version to compare against a games pin.
-  const allowEngineMismatch = quick.argv.includes(ALLOW_MISMATCH_FLAG);
-  // `--game-dir` is parsed here, not in CAPTURE_FLAGS: the portable harness has no `Games/` to swap.
+  // `--game-dir` is parsed here, not in CAPTURE_FLAGS: the portable harness has no `games/` to swap.
   const served = splitGameDir(quick.argv);
   // Flows resolve inside parseCaptureArgs, so the served folder must be known first or `--flow`
-  // reads the engine's own `Games/<game>` copy. serveGameDir validates the folder later.
+  // reads the engine's own `games/<game>` copy. serveGameDir validates the folder later.
   if (served.dir !== null) process.env["JG_GAME_DIR"] = resolve(served.dir);
   const parsed = parseCaptureArgs(
     "drive",
-    served.argv.filter((arg) => arg !== "--headed" && arg !== "--cold" && arg !== ALLOW_MISMATCH_FLAG),
+    served.argv.filter((arg) => arg !== "--headed" && arg !== "--cold"),
     CAPTURE_FLAGS,
   );
   const o = parsed.options;
@@ -332,7 +325,6 @@ function parseArgs(argv: string[]): Args {  // `--headed` is parsed here, not in
     style: str("style"),
     headed,
     quick: quick.quick,
-    allowEngineMismatch,
     gameDir: served.dir,
     stepsFile: str("steps"),
     flow: str("flow"),
@@ -1203,13 +1195,9 @@ async function attempt(daemon: ShootDaemonState | null): Promise<number> {
  * version the game pins. A `--url` page belongs to whatever server it points at, so it is not checked.
  */
 {
-  const identity = resolveEngineIdentity({ game: args.game, allowMismatch: args.allowEngineMismatch, tool: "drive" });
+  const identity = resolveEngineIdentity();
   if (args.url === undefined) {
     console.error(identity.line);
-    if (!identity.allowed) {
-      console.error(identity.refusal);
-      process.exit(1);
-    }
     engineForRecord = engineRecord(identity);
   }
 }

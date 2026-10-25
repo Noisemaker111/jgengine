@@ -304,7 +304,7 @@ describe("broker capture turns", () => {
 describe("broker server environment", () => {
   test("a client's own game dir and ports never leak into another checkout's server", () => {
     const env = serverEnv(
-      { PATH: "/bin", JG_GAME_DIR: "/x", VITE_JG_GAME_DIR: "/x", JG_DEV_PORT: "1", JG_STEP_FILE: "/s", JG_GAMES_DIR: "/" },
+      { PATH: "/bin", JG_GAME_DIR: "/x", VITE_JG_GAME_DIR: "/x", JG_DEV_PORT: "1", JG_STEP_FILE: "/s" },
       request({ kind: "website" }),
       5123,
       600_000,

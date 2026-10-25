@@ -7,7 +7,7 @@
  * (O(points) per sample), and serializable; it composes onto any height sampler and pairs with
  * `resolveTerrainField` so the same authored path drives both the rendered mesh and player collision.
  * @capability path-terrain flatten / grade / carve a heightfield from an authored path with retaining profiles
- * @consumer packages/core/src/world/terrain.ts (resolveTerrainField), Games/scrap-signal roads
+ * @consumer packages/core/src/world/terrain.ts (resolveTerrainField), games/scrap-signal roads
  */
 import type { Vec2 } from "./geometry";
 import { buildPolylineIndex, type PolylineIndex } from "./polylineIndex";

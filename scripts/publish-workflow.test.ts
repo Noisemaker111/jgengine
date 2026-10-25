@@ -36,7 +36,6 @@ describe("publish workflow", () => {
       "bun run check-artifacts",
       "bun run check-release-set",
       "bun run check-types:sdk",
-      "bun run check:consumer-types",
       "bun run check:release-artifacts",
       "bun run build",
       "bun scripts/check-release-ancestor.ts",

@@ -1647,7 +1647,7 @@ You are in a **JGengine** game project. JGengine is a pure-TypeScript game engin
 
 **How people use JGengine:** they say *Make a game that … with jgengine* to an agent. They do **not** start from a CLI tutorial. \`npx jgengine\` is for **you** (scaffold, skills, docs).
 
-**This project is the game.** Build here, on the \`@jgengine/*\` npm packages. Never clone the jgengine GitHub repo, and never copy code, assets, or content from its \`Games/*\` directory — those are private in-repo test games, not templates, and their content is not licensed for reuse.
+**This project is the game.** Build here, on the \`@jgengine/*\` npm packages. Never clone the jgengine GitHub repo, and never copy code, assets, or content from its \`games/*\` directory — those are private in-repo test games, not templates, and their content is not licensed for reuse.
 
 ## Framework-first game development
 

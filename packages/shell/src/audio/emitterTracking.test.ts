@@ -4,7 +4,7 @@ import { createObjectStore } from "@jgengine/core/scene/objectStore";
 import type { AudioEmitterHandle, Vec3 } from "./audioEngine";
 import { createEmitterTracker, type EmitterPose, type EmitterSources } from "./emitterTracking";
 
-/** scrap-signal's catalog ids that hum or crackle (`Games/scrap-signal/src/game/audio/catalog.ts`). */
+/** scrap-signal's catalog ids that hum or crackle (`games/scrap-signal/src/game/audio/catalog.ts`). */
 const OBJECT_SOUNDS: Record<string, string> = {
   water_tower: "mach_hum",
   rebuild_station: "mach_hum",
@@ -15,7 +15,7 @@ const OBJECT_SOUNDS: Record<string, string> = {
   reactor_gate: "gate_drone",
 };
 
-/** Marker counts from `Games/scrap-signal/src/editor.scene.json`: 69 of its 560 placed props declare a sound. */
+/** Marker counts from `games/scrap-signal/src/editor.scene.json`: 69 of its 560 placed props declare a sound. */
 const PLACEMENTS: readonly [string, number][] = [
   ["wreck", 56],
   ["cover_crate", 94],

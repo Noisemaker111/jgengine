@@ -1,0 +1,48 @@
+{
+  "steps": [
+    {
+      "waitFor": "window.__harborGigs !== undefined && window.__harborGigs.read().duty === true && window.__harborGigs.read().offers.some((o) => o.kindId === 'taxi')",
+      "timeoutMs": 15000,
+      "note": "arrival (run with --state taxi): in a car, taxi light on, a fare hailing at the nearest kerb"
+    },
+    {
+      "waitFor": "/fare hailing/i.test(document.body.innerText)",
+      "timeoutMs": 5000,
+      "note": "the pager names the hail and its fare"
+    },
+    {
+      "assert": "(window.__hg = (n, i) => window.__jgengineAgent.handle({ method: 'run_command', name: n, input: i || {} }), __hg('gigs.warp', { short: 0 }), true)",
+      "note": "pull up beside the waving fare"
+    },
+    {
+      "waitFor": "window.__harborGigs.read().view !== null && window.__harborGigs.read().view.phase === 'en-route'",
+      "timeoutMs": 10000,
+      "note": "stopped beside them: the fare climbs in and the clock starts"
+    },
+    {
+      "waitFor": "/drop at/i.test(document.body.innerText) && /tip 100%/i.test(document.body.innerText)",
+      "timeoutMs": 5000,
+      "note": "the pager shows the drop, the fare so far and the tip"
+    },
+    { "shot": "gigs-taxi-aboard" },
+    {
+      "assert": "(window.__cashBefore = window.__harborGigs.read().view.fareSoFar, __hg('gigs.warp', { short: 0 }), true)",
+      "note": "arrive at the drop kerb"
+    },
+    {
+      "waitFor": "window.__harborGigs.read().receipt !== null && window.__harborGigs.read().receipt.outcome === 'paid'",
+      "timeoutMs": 10000,
+      "note": "stopped at the drop: paid"
+    },
+    {
+      "assert": "(() => { const r = window.__harborGigs.read().receipt; return r.total >= r.fare && r.tip > 0 && r.streak === 1; })()",
+      "note": "fare, time bonus and a full tip landed, and the streak counts one"
+    },
+    {
+      "waitFor": "/ paid [$]/i.test(document.body.innerText)",
+      "timeoutMs": 4000,
+      "note": "the receipt notice is on screen"
+    },
+    { "shot": "gigs-taxi-paid" }
+  ]
+}

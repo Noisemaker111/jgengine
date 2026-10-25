@@ -24,7 +24,6 @@ import {
   openSync,
   readdirSync,
   readFileSync,
-  realpathSync,
   renameSync,
   statSync,
   unlinkSync,
@@ -68,9 +67,9 @@ export interface ShootDaemonState {
   webPort?: number;
   webBase?: string;
   webPid?: number;
-  /** Games world the dev server was booted against; a mismatch means its game list is stale. */
+  /** Game list the dev server was booted against; a mismatch means it is stale. */
   devWorld?: GamesWorld;
-  /** Games world the website server was booted against. */
+  /** Game list the website server was booted against. */
   webWorld?: GamesWorld;
   startedAt: string;
   /** Last capture that attached to this daemon; absent on records written before idle sweeping. */
@@ -83,66 +82,30 @@ export interface ShootDaemonState {
 }
 
 /**
- * The part of the world a running Vite server froze at boot: its `@games/<id>`
- * aliases and game glob are computed once, so a `Games` link created or
- * repointed after boot is invisible to it.
+ * The part of the world a running Vite server froze at boot: its `@games/<id>` aliases and game
+ * glob are computed once, so a game added or removed after boot is invisible to it.
  */
 export interface GamesWorld {
-  /** Resolved path of the games checkout, or null when there is no `Games`. */
-  target: string | null;
-  /** `Games` entry mtime: changes when the link is created or repointed. */
-  linkMtimeMs: number | null;
-  /** Games checkout HEAD, read from its `.git/HEAD` file rather than a git process. */
-  head: string | null;
   /** Game ids the runner can resolve. */
   games: string[];
 }
 
-function readHead(checkout: string): string | null {
-  try {
-    const head = readFileSync(join(checkout, ".git", "HEAD"), "utf8").trim();
-    if (!head.startsWith("ref:")) return head;
-    return readFileSync(join(checkout, ".git", head.slice(4).trim()), "utf8").trim();
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Cheap fingerprint of the games world: one realpath, one lstat, one readdir and
- * one HEAD read (no git process, no game source scan), so it can run on every
- * shot without costing a rescan.
- */
+/** Cheap fingerprint of the game list: one readdir, no game source scan, so it runs on every shot. */
 export function gamesWorld(cwd = process.cwd()): GamesWorld {
-  const entry = join(cwd, "Games");
-  let linkMtimeMs: number | null = null;
-  try {
-    linkMtimeMs = statSync(entry).mtimeMs;
-  } catch {
-    return { target: null, linkMtimeMs: null, head: null, games: [] };
-  }
-  let target: string;
-  try {
-    target = realpathSync(entry);
-  } catch {
-    return { target: null, linkMtimeMs, head: null, games: [] };
-  }
+  const dir = join(cwd, "games");
   const games: string[] = [];
   try {
-    for (const item of readdirSync(target, { withFileTypes: true })) {
-      if (item.isDirectory() && existsSync(join(target, item.name, "src", "index.tsx"))) games.push(item.name);
+    for (const item of readdirSync(dir, { withFileTypes: true })) {
+      if (item.isDirectory() && existsSync(join(dir, item.name, "src", "index.tsx"))) games.push(item.name);
     }
   } catch {
-    /* unreadable checkout: an empty list is the honest answer */
+    /* no games/ here: an empty list is the honest answer */
   }
-  games.sort();
-  return { target, linkMtimeMs, head: readHead(target), games };
+  return { games: games.sort() };
 }
 
 export function worldChanged(previous: GamesWorld | undefined, current: GamesWorld): boolean {
   if (previous === undefined) return false;
-  if (previous.target !== current.target) return true;
-  if (previous.head !== current.head) return true;
   if (previous.games.length !== current.games.length) return true;
   return previous.games.some((game, index) => game !== current.games[index]);
 }
@@ -150,8 +113,6 @@ export function worldChanged(previous: GamesWorld | undefined, current: GamesWor
 /** One line naming what moved, so a restart is never a mystery. */
 export function describeWorldChange(previous: GamesWorld, current: GamesWorld): string {
   const parts: string[] = [];
-  if (previous.target !== current.target) parts.push(`Games ${previous.target ?? "(none)"} → ${current.target ?? "(none)"}`);
-  if (previous.head !== current.head) parts.push(`games HEAD ${previous.head?.slice(0, 8) ?? "(none)"} → ${current.head?.slice(0, 8) ?? "(none)"}`);
   const added = current.games.filter((game) => !previous.games.includes(game));
   const removed = previous.games.filter((game) => !current.games.includes(game));
   if (added.length > 0) parts.push(`+${added.join(", +")}`);
@@ -446,8 +407,7 @@ export async function ensureDaemonTarget(
   // The broker keys servers by checkout and game dir and restarts one whose tree moved itself.
   if (state.broker === true) return ensure(cwd);
   // A warm Vite server froze its `@games/<id>` aliases and game glob at boot, so
-  // a `Games` link created or repointed afterwards leaves it rejecting a game
-  // that exists on disk. Retire that server before the call, not on a timer and
+  // a game added afterwards leaves it rejecting a game that exists on disk. Retire that server before the call, not on a timer and
   // not after a failed capture.
   const observed = gamesWorld(cwd);
   await withDaemonStateLock(cwd, () => {

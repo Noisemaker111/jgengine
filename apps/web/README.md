@@ -10,12 +10,7 @@ The landing page for JGengine and the front door for agents. It runs TanStack St
 
 `bun --cwd=apps/web run build` builds the SDK packages before Vite builds the site and the `games-player` plugin builds `apps/dev` into `public/play`.
 CI runs this command on cold checkouts for pushes and PRs; deploy uses the same build.
-The ignored `Games` checkout must be a real `Noisemaker111/JGengine-games` clone with its dependencies installed:
-
-```sh
-bun run games:clone
-bun --cwd=Games install
-```
+The site lists every game under `games/` in this repo; a root `bun install` is all it needs.
 
 The dev server serves the same runner build and restores it from the content-hash cache when game and engine sources have not changed.
 
@@ -24,7 +19,7 @@ The dev server serves the same runner build and restores it from the content-has
 - Colors, type and surfaces are CSS tokens at the top of [`src/styles.css`](src/styles.css), exposed to Tailwind as `bg`, `raised`, `sunken`, `line`, `fg`, `muted`, `faint`, `accent`, `accent-text` and `live`. Use those names, not raw palette classes, so both themes work.
 - [`src/home.css`](src/home.css) owns the graphite/lime editorial layout. The homepage hero uses actual game covers and links to those games; the procedural playground is a separate technical tool, not homepage proof of game quality.
 - The theme follows the system until the visitor toggles it; `?theme=light|dark` forces one for a page view (captures, shared links). Sections that sit on a live 3D canvas pin `data-theme="dark"`.
-- Game titles and descriptions come from the `Games/README.md` table; covers are `public/covers/<id>.webp` (800×450, from `bun run shoot <id> --mode play`).
+- Game titles and descriptions come from the `games/README.md` table; covers are `public/covers/<id>.webp` (800×450, from `bun run shoot <id> --mode play`).
 - The landing's "big games from small blocks" rows are keys into the skills' generated `capabilities.md`; `src/lib/capabilityIndex.test.ts` fails if one disappears.
 - Pages flag `data-jg-capture="ready"` after fonts load; live canvases mark it `pending` until they draw, so `bun run shoot --site <route>` works on every page.
 

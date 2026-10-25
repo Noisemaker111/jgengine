@@ -1,6 +1,6 @@
 /**
  * Runner registries: the `import.meta.glob` discovery that turns every
- * `Games/*` folder into lazy game/preview/editor loaders, the built-in demo
+ * `games/*` folder into lazy game/preview/editor loaders, the built-in demo
  * registry, and the camera-preset overlay. All loaders are lazy — importing
  * this module scans no game code until something is actually requested.
  */
@@ -113,7 +113,7 @@ const gameModules = (hasViteGlob ? import.meta.glob<{
   uiScenario?: UiPreviewScenario;
   editorLayers?: import("@jgengine/core/editor/index").EditorLayersInput;
   editorCatalogs?: import("@jgengine/core/editor/index").EditorCatalogsInput;
-}>("../../../Games/*/src/index.tsx") : {});
+}>("../../../games/*/src/index.tsx") : {});
 
 type GameModule = {
   game: PlayableGame;
@@ -122,10 +122,12 @@ type GameModule = {
   editorCatalogs?: import("@jgengine/core/editor/index").EditorCatalogsInput;
 };
 
-const gameStyleModules = (hasViteGlob ? import.meta.glob<Record<string, unknown>>("../../../Games/*/src/style.css") : {});
+const gameStyleModules = (hasViteGlob ? import.meta.glob<Record<string, unknown>>("../../../games/*/src/style.css") : {});
 
 const gameSourceModules = (hasViteGlob ? import.meta.glob<Record<string, unknown>>([
-  "../../../Games/*/src/**/*.{ts,tsx}",
+  "../../../games/*/src/**/*.{ts,tsx}",
+  // llmville is its own TanStack app with its own `@/` aliases, not a runner game.
+  "!../../../games/llmville/**",
   "!**/main.tsx",
   "!**/*.test.*",
 ]) : {});
@@ -135,11 +137,11 @@ export async function loadGameStyle(gameId: string): Promise<void> {
     await servedModule("src/style.css");
     return;
   }
-  await gameStyleModules[`../../../Games/${gameId}/src/style.css`]?.();
+  await gameStyleModules[`../../../games/${gameId}/src/style.css`]?.();
 }
 
 export async function discoverGameTunables(gameId: string, gameName: string): Promise<void> {
-  // A `--game-dir` game must not import the engine's own `Games/<id>` copy: those modules pull in
+  // A `--game-dir` game must not import the engine's own `games/<id>` copy: those modules pull in
   // that copy's style.css, whose stale rules then load after the served game's and win. Scan only
   // the served entry, which Vite cannot glob beyond.
   if (servedGame?.id === gameId) {
@@ -181,7 +183,7 @@ const gameEntries = Object.fromEntries(
 );
 
 const editorSceneModules = (hasViteGlob ? import.meta.glob<{ default: unknown }>(
-  "../../../Games/*/src/editor.scene.json",
+  "../../../games/*/src/editor.scene.json",
 ) : {});
 
 const editorSceneRegistry: Partial<Record<string, () => Promise<unknown>>> = {
@@ -316,7 +318,7 @@ export type PreviewComponent = ComponentType<{ className?: string }>;
 const previewModules = (hasViteGlob ? import.meta.glob<{
   default: PreviewComponent;
   states?: Record<string, PreviewComponent>;
-}>("../../../Games/*/src/preview.tsx") : {});
+}>("../../../games/*/src/preview.tsx") : {});
 
 export const previewLoaders = {
   ...Object.fromEntries(

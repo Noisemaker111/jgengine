@@ -1,0 +1,37 @@
+{
+  "name": "@games/odd-orbit",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "check-types": "tsgo --noEmit -p tsconfig.json",
+    "test": "bun test src"
+  },
+  "dependencies": {
+    "@jgengine/assets": "workspace:*",
+    "@jgengine/core": "workspace:*",
+    "@jgengine/editor": "workspace:*",
+    "@jgengine/react": "workspace:*",
+    "@jgengine/shell": "workspace:*",
+    "@react-three/fiber": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "three": "catalog:"
+  },
+  "devDependencies": {
+    "@react-three/drei": "catalog:",
+    "@tailwindcss/vite": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@types/three": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "tailwindcss": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:"
+  },
+  "exports": {
+    ".": "./src/index.tsx",
+    "./*": "./src/*"
+  }
+}

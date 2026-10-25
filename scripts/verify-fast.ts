@@ -23,7 +23,7 @@ import { effectivePaths } from "./sourcePaths";
 import { assertCheckoutReady } from "./checkout-ready";
 import { scopePattern } from "./ci-scope";
 import { printHelpIfAsked } from "./script-help";
-import { walkTestFiles } from "./test-shard";
+import { TEST_ROOTS, walkTestFiles } from "./test-shard";
 
 const VERIFY_FAST_USAGE = {
   summary: "run only the tests and static gates this branch's diff reaches, in seconds",
@@ -53,7 +53,8 @@ export const EXIT_UNATTRIBUTED = 2;
 const TEST_FILE = /\.(test|spec)\.[cm]?[jt]sx?$/;
 const SOURCE_FILE = /\.[cm]?[jt]sx?$/;
 const DECLARATION = /\.d\.[cm]?ts$/;
-const RUNTIME_ROOTS = [/^packages\/[^/]+\/src\//, /^apps\/[^/]+\/src\//, /^scripts\/[^/]+\.[cm]?tsx?$/];
+const RUNTIME_ROOTS = [/^packages\/[^/]+\/src\//, /^apps\/[^/]+\/src\//, /^scripts\/[^/]+\.[cm]?tsx?$/, /^games\/[^/]+\/src\//];
+const GAME_DIR = /^games\/[^/]+$/;
 
 export interface Step {
   name: string;
@@ -93,6 +94,10 @@ export const DEFAULT_JOBS = Math.max(2, Math.min(6, Math.floor(availableParallel
 export interface Workspace {
   dir: string;
   checkTypes: boolean;
+  /** The package name, when the manifest has one. */
+  name?: string;
+  /** Workspace packages this one depends on (`workspace:*`). */
+  dependsOn?: string[];
 }
 
 export interface Plan {
@@ -161,9 +166,16 @@ export function workspaces(root: string): Workspace[] {
     .filter((dir) => existsSync(join(root, dir, "package.json")))
     .map((dir) => {
       const pkg = JSON.parse(readFileSync(join(root, dir, "package.json"), "utf8")) as {
+        name?: string;
         scripts?: Record<string, string>;
+        dependencies?: Record<string, string>;
+        devDependencies?: Record<string, string>;
       };
-      return { dir, checkTypes: typeof pkg.scripts?.["check-types"] === "string" };
+      const dependsOn = Object.entries({ ...pkg.devDependencies, ...pkg.dependencies })
+        .filter(([, version]) => version.startsWith("workspace:"))
+        .map(([name]) => name)
+        .sort();
+      return { dir, checkTypes: typeof pkg.scripts?.["check-types"] === "string", ...(pkg.name === undefined ? {} : { name: pkg.name }), dependsOn };
     })
     .sort((a, b) => a.dir.localeCompare(b.dir));
 }
@@ -300,6 +312,9 @@ export function gatesFor(changed: readonly string[]): string[] {
     gates.add("check-export-manifest");
     gates.add("check-skill-api");
   }
+  if (changed.some((path) => path.startsWith("games/"))) {
+    for (const gate of ["games:check-framework", "games:check-module-globals", "games:check-save-states", "games:check-design"]) gates.add(gate);
+  }
   if (changed.some((path) => /\.(md|mdx)$/i.test(path) || path.startsWith(".claude/skills/"))) {
     gates.add("check-skills");
     gates.add("check-stage-skills");
@@ -335,8 +350,28 @@ export function buildPlan(input: {
     typechecks.push("scripts");
   }
 
+  // A game is reached by its own files and by every engine package it depends on: an engine
+  // change runs the type-check and tests of each game that imports the changed package.
+  const changedPackages = new Set(
+    changed
+      .filter((path) => /^packages\/[^/]+\//.test(path) && !isTestFile(path))
+      .map((path) => workspaceOf(path, input.workspaces)?.name)
+      .filter((name): name is string => name !== undefined),
+  );
+  for (const workspace of input.workspaces) {
+    if (!GAME_DIR.test(workspace.dir)) continue;
+    const touched = changed.some((path) => path.startsWith(`${workspace.dir}/`));
+    const imports = (workspace.dependsOn ?? []).some((name) => changedPackages.has(name));
+    if (!touched && !imports) continue;
+    if (workspace.checkTypes && !typechecks.includes(workspace.dir)) typechecks.push(workspace.dir);
+    for (const test of input.testFiles) if (test.startsWith(`${workspace.dir}/`)) tests.add(test);
+  }
+
   const unattributed = runtime.filter(
-    (path) => ownTests(path, input.testFiles).length === 0 && (importedBy.get(path) ?? []).length === 0,
+    (path) =>
+      ownTests(path, input.testFiles).length === 0 &&
+      (importedBy.get(path) ?? []).length === 0 &&
+      !(GAME_DIR.test(path.split("/").slice(0, 2).join("/")) && [...tests].some((test) => test.startsWith(`${path.split("/").slice(0, 2).join("/")}/`))),
   );
 
   return {
@@ -399,11 +434,11 @@ export const SHARD_COST: Readonly<Record<string, number>> = {
 };
 
 /**
- * Shard i is the one `test` job that prepares a build and the Games clone before its
+ * Shard i is the one `test` job that prepares a build before its
  * tests, and on Windows its 74 files take 136 s alone - longer than any other step and
  * past the two minutes this command is meant to stay under. `scripts/test-shard.ts`
  * still owns which files shard i runs (this asks it with `--print i`), and the list runs
- * as two halves with the build and the clone as their own steps.
+ * as two halves with the build as its own step.
  *
  * Measured alone on this PC (2026-10-23): land.test.ts 30 s, tarballInstall 22 s,
  * changelog-fragments 21 s, the other 71 files 63 s together, 126-136 s in total. Those
@@ -427,11 +462,10 @@ export function shardISteps(root: string): Step[] {
   }
   const halves = splitByCost(files, SHARD_I_MEASURED_COST);
   return [
-    { name: "games:clone", command: ["bun", "run", "games:clone"] },
     ...halves.map((half, index) => ({
       name: `test shard i (${index + 1}/${halves.length}, ${half.length} files)`,
       command: ["bun", "test", "--timeout", "20000", ...half],
-      needs: ["build", "games:clone"],
+      needs: ["build"],
       cost: 50,
     })),
   ];
@@ -456,8 +490,7 @@ export function splitByCost(files: readonly string[], cost: Readonly<Record<stri
  * a changed path can reach them. CI runs these as parallel jobs on fresh runners;
  * here they run a few at a time in this checkout, so the wall clock approaches the
  * slowest step instead of the sum. `needs` keeps the ordering that matters: the
- * steps that read a built `dist`, and shard i's tests, wait for `build`, and the
- * Games-reading gates wait for `games:clone`.
+ * steps that read a built `dist`, and shard i's tests, wait for `build`.
  */
 export async function fullSteps(root: string, changed: readonly string[]): Promise<Step[]> {
   // Costs are the seconds each step took here at `--jobs 8` (2026-10-23); only start order
@@ -796,7 +829,7 @@ async function main(argv: readonly string[]): Promise<number> {
   const resolveSpecifier = makeResolver(root);
   const plan = buildPlan({
     changed,
-    testFiles: walkTestFiles(root),
+    testFiles: walkTestFiles(root, [...TEST_ROOTS, "games"]),
     workspaces: workspaces(root),
     readText: (path) => readFileSync(join(root, path), "utf8"),
     resolveSpecifier,

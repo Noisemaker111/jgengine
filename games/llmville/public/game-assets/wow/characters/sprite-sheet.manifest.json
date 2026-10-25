@@ -1,0 +1,223 @@
+{
+  "version": 1,
+  "source": {
+    "name": "codex-clipboard-81ebfa83-8ce8-4a71-b7d3-53e40e722194.png",
+    "width": 1024,
+    "height": 768
+  },
+  "grid": {
+    "columns": 4,
+    "rows": 3,
+    "marginX": 0,
+    "marginY": 0,
+    "gapX": 0,
+    "gapY": 0,
+    "cellWidth": 256,
+    "cellHeight": 256
+  },
+  "slices": [
+    {
+      "id": "0-0",
+      "name": "player-armored-adventurer",
+      "row": 0,
+      "column": 0,
+      "x": 0,
+      "y": 0,
+      "width": 256,
+      "height": 256
+    },
+    {
+      "id": "0-1",
+      "name": "robed-elemental-caster",
+      "row": 0,
+      "column": 1,
+      "x": 256,
+      "y": 0,
+      "width": 256,
+      "height": 256
+    },
+    {
+      "id": "0-2",
+      "name": "hooded-forest-archer",
+      "row": 0,
+      "column": 2,
+      "x": 512,
+      "y": 0,
+      "width": 256,
+      "height": 256
+    },
+    {
+      "id": "0-3",
+      "name": "small-raider-enemy",
+      "row": 0,
+      "column": 3,
+      "x": 768,
+      "y": 0,
+      "width": 256,
+      "height": 256
+    },
+    {
+      "id": "1-0",
+      "name": "stone-guardian-enemy",
+      "row": 1,
+      "column": 0,
+      "x": 0,
+      "y": 256,
+      "width": 256,
+      "height": 256
+    },
+    {
+      "id": "1-1",
+      "name": "shadow-hound-enemy",
+      "row": 1,
+      "column": 1,
+      "x": 256,
+      "y": 256,
+      "width": 256,
+      "height": 256
+    },
+    {
+      "id": "1-2",
+      "name": "skeletal-knight-enemy",
+      "row": 1,
+      "column": 2,
+      "x": 512,
+      "y": 256,
+      "width": 256,
+      "height": 256
+    },
+    {
+      "id": "1-3",
+      "name": "village-merchant",
+      "row": 1,
+      "column": 3,
+      "x": 768,
+      "y": 256,
+      "width": 256,
+      "height": 256
+    },
+    {
+      "id": "2-0",
+      "name": "elder-quest-giver",
+      "row": 2,
+      "column": 0,
+      "x": 0,
+      "y": 512,
+      "width": 256,
+      "height": 256
+    },
+    {
+      "id": "2-1",
+      "name": "traveling-pack-vendor",
+      "row": 2,
+      "column": 1,
+      "x": 256,
+      "y": 512,
+      "width": 256,
+      "height": 256
+    },
+    {
+      "id": "2-2",
+      "name": "leather-inventory-backpack",
+      "row": 2,
+      "column": 2,
+      "x": 512,
+      "y": 512,
+      "width": 256,
+      "height": 256
+    },
+    {
+      "id": "2-3",
+      "name": "spell-journal-book",
+      "row": 2,
+      "column": 3,
+      "x": 768,
+      "y": 512,
+      "width": 256,
+      "height": 256
+    }
+  ],
+  "processing": {
+    "backgroundMode": "checker",
+    "tolerance": 28,
+    "trim": true,
+    "trimPadding": 4
+  },
+  "output": {
+    "directory": "C:\\Users\\Jk101\\Projects\\ai-lab-game\\apps\\web\\public\\game-assets\\wow\\characters",
+    "files": [
+      {
+        "name": "player-armored-adventurer",
+        "file": "player-armored-adventurer.png",
+        "width": 204,
+        "height": 217
+      },
+      {
+        "name": "robed-elemental-caster",
+        "file": "robed-elemental-caster.png",
+        "width": 256,
+        "height": 256
+      },
+      {
+        "name": "hooded-forest-archer",
+        "file": "hooded-forest-archer.png",
+        "width": 187,
+        "height": 223
+      },
+      {
+        "name": "small-raider-enemy",
+        "file": "small-raider-enemy.png",
+        "width": 141,
+        "height": 165
+      },
+      {
+        "name": "stone-guardian-enemy",
+        "file": "stone-guardian-enemy.png",
+        "width": 256,
+        "height": 255
+      },
+      {
+        "name": "shadow-hound-enemy",
+        "file": "shadow-hound-enemy.png",
+        "width": 256,
+        "height": 255
+      },
+      {
+        "name": "skeletal-knight-enemy",
+        "file": "skeletal-knight-enemy.png",
+        "width": 256,
+        "height": 255
+      },
+      {
+        "name": "village-merchant",
+        "file": "village-merchant.png",
+        "width": 256,
+        "height": 255
+      },
+      {
+        "name": "elder-quest-giver",
+        "file": "elder-quest-giver.png",
+        "width": 164,
+        "height": 229
+      },
+      {
+        "name": "traveling-pack-vendor",
+        "file": "traveling-pack-vendor.png",
+        "width": 154,
+        "height": 222
+      },
+      {
+        "name": "leather-inventory-backpack",
+        "file": "leather-inventory-backpack.png",
+        "width": 193,
+        "height": 199
+      },
+      {
+        "name": "spell-journal-book",
+        "file": "spell-journal-book.png",
+        "width": 187,
+        "height": 186
+      }
+    ]
+  }
+}

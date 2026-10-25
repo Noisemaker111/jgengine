@@ -1,0 +1,32 @@
+{
+  "steps": [
+    {
+      "wait": 7000
+    },
+    {
+      "key": "KeyQ",
+      "ms": 700
+    },
+    {
+      "wait": 8000
+    },
+    {
+      "key": "KeyE",
+      "ms": 1400
+    },
+    {
+      "wait": 8000
+    },
+    {
+      "key": "KeyQ",
+      "ms": 700
+    },
+    {
+      "wait": 7000
+    },
+    {
+      "assert": "__jgProbe().gathered >= 10 && (__jgProbe().raiding === 1 || __jgProbe().raids >= 1)",
+      "note": "arrival: the crew hauled loads and the raid hit the base"
+    }
+  ]
+}

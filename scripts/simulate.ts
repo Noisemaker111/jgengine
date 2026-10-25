@@ -13,7 +13,7 @@ import type { PlayableGame } from "@jgengine/shell/registry";
  *
  *   bun run simulate <game> <script> [--seed <seed>] [--json]
  *
- * `<game>` is a directory under ./Games (the ephemeral Noisemaker111/JGengine-games clone), `<script>`
+ * `<game>` is a directory under ./games, `<script>`
  * is a file inside it exporting a PlayScript (as `script`, `play`, or the default export). Prints the
  * tick timeline and every assertion, and exits 1 when one fails, naming it.
  *
@@ -35,7 +35,7 @@ interface Args {
 function usage(message?: string): never {
   if (message !== undefined) console.error(`simulate: ${message}`);
   console.error("usage: bun run simulate <game> <script> [--seed <seed>] [--json]");
-  console.error("  <game>   directory under ./Games, e.g. scrap-signal");
+  console.error("  <game>   directory under ./games, e.g. scrap-signal");
   console.error("  <script> play script file inside that game, e.g. scripts/scrap-hit.play.ts");
   process.exit(2);
 }
@@ -59,7 +59,7 @@ function parseArgs(argv: readonly string[]): Args {
 }
 
 const repoRoot = resolve(import.meta.dir, "..");
-const gamesRoot = join(repoRoot, "Games");
+const gamesRoot = join(repoRoot, "games");
 
 function gameEntry(gameDir: string): string {
   const manifestPath = join(gameDir, "package.json");
@@ -142,7 +142,7 @@ async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
   const gameDir = join(gamesRoot, args.game);
   if (!existsSync(gameDir)) {
-    console.error(`simulate: no game "${args.game}" under ${relative(repoRoot, gamesRoot)}\\ — run bun run games:clone first`);
+    console.error(`simulate: no game "${args.game}" under ${relative(repoRoot, gamesRoot)}`);
     process.exit(2);
   }
   if (process.env[CHILD_FLAG] !== "1") relaunchWithMergedTsconfig(gameDir);

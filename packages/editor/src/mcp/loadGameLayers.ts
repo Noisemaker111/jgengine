@@ -20,14 +20,14 @@ export function decodeGameLayers(resolved: unknown): LoadGameLayersResult {
   return decodeEditorDocument(resolved);
 }
 
-/** Node-only: resolves a game's `editorLayers` export straight from Games/<id>/src and validates
+/** Node-only: resolves a game's `editorLayers` export straight from games/<id>/src and validates
  * its shape before it reaches a live editor session — the untrusted-input boundary between
  * game-authored code and the engine.
  */
 export async function loadGameLayers(gameId: string): Promise<LoadGameLayersResult> {
   let resolved: unknown;
   try {
-    const path = new URL(`../../../../Games/${gameId}/src/editorLayers.ts`, import.meta.url);
+    const path = new URL(`../../../../games/${gameId}/src/editorLayers.ts`, import.meta.url);
     const mod = await importOptionalGameModule(path);
     if (mod?.editorLayers === undefined) return { ok: true, document: createEmptyEditorDocument() };
     resolved = typeof mod.editorLayers === "function" ? (mod.editorLayers as () => unknown)() : mod.editorLayers;

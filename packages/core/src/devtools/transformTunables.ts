@@ -29,7 +29,7 @@ export function transformTunableExports(code: string, table: string): TunableTra
   };
 }
 
-const GAME_MODULE_PATTERN = /[/\\]Games[/\\][^/\\]+[/\\]src[/\\](.+)\.(ts|tsx)$/;
+const GAME_MODULE_PATTERN = /[/\\]games[/\\][^/\\]+[/\\]src[/\\](.+)\.(ts|tsx)$/;
 const SKIP_MODULE_PATTERN = /(\.test\.|[/\\]main\.tsx$)/;
 
 /** @internal */

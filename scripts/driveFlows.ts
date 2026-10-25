@@ -18,7 +18,7 @@ export interface DriveTarget {
 
 /**
  * The project directory a run reads and writes. A checkout you are standing in wins over the
- * engine's own `Games/` clone, so a fresh games worktree proves things about its own flows and
+ * engine's own `games/` clone, so a fresh games worktree proves things about its own flows and
  * writes shots next to them; only when neither matches does the engine checkout answer.
  */
 export function driveProjectDir(
@@ -39,7 +39,7 @@ export function driveProjectDir(
   if (exists(join(cwd, target.game))) return join(cwd, target.game);
   // Standing inside the game project itself: its own proofs/ and docs/ are the ones to read.
   if (basename(cwd) === target.game && exists(join(cwd, "package.json"))) return cwd;
-  return join(engineRoot, "Games", target.game);
+  return join(engineRoot, "games", target.game);
 }
 
 /** The flow folder a game owns. */

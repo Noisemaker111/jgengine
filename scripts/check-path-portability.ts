@@ -20,7 +20,7 @@ import { printHelpIfAsked, type Usage } from "./script-help";
 
 const ROOTS = ["scripts", "packages"];
 const SELF = "check-path-portability.test.ts";
-const SKIP_DIRS = new Set(["node_modules", "dist", "build", "coverage", "Games", ".scratch"]);
+const SKIP_DIRS = new Set(["node_modules", "dist", "build", "coverage", ".scratch"]);
 const ALLOW_REL = "scripts/path-portability-allow.json";
 
 /** What the assertion is compared against, and where the separator comes from. */

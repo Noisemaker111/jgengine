@@ -45,15 +45,15 @@
     "three": ">=0.170.0"
   },
   "devDependencies": {
-    "@react-three/drei": "^10.7.7",
-    "@react-three/fiber": "^9.5.0",
+    "@react-three/drei": "catalog:",
+    "@react-three/fiber": "catalog:",
     "@types/node": "^24",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "@types/three": "^0.182.0",
-    "react": "19.2.3",
-    "react-dom": "19.2.3",
-    "three": "^0.182.0"
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@types/three": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "three": "catalog:"
   },
   "publishConfig": {
     "access": "public"

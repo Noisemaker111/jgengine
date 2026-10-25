@@ -1,0 +1,508 @@
+/*
+ * The play HUD as things a Mainsail courier carries or sees: a pager clipped top-left, a police scanner
+ * that switches on with the heat, cash painted like a billboard price, a round harbor chart under a
+ * brass bezel with the district's street sign, a belt of pouches, a dash dial while driving, and the
+ * burner phone held up on the right. No blur or glow filters: glows are text-shadow and plates.
+ */
+
+/* ───────────────────────── shared bits ───────────────────────── */
+
+.hh-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.hh-street {
+  display: inline-block;
+  padding: 4px 13px 3px;
+  background: #0f6a43;
+  border-radius: 4px;
+  box-shadow: inset 0 0 0 2px #0f6a43, inset 0 0 0 3.5px #eaf6ee, 0 3px 0 rgba(0, 0, 0, 0.45);
+}
+.hh-street b { font: 700 12px/1.2 var(--hh-body); letter-spacing: 0.14em; text-transform: uppercase; color: #f4fbf6; white-space: nowrap; }
+
+/* the dispatch ticket: the key and what it does, for whatever is in reach */
+.hh-act {
+  appearance: none;
+  border: 0;
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 5px 14px 4px 7px;
+  font: 400 19px/1 var(--hh-display);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--hh-ink);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0) 45%),
+    #f7ead0;
+  border-left: 5px solid var(--hh-coral);
+  border-radius: 2px 4px 4px 2px;
+  box-shadow: 0 3px 0 rgba(3, 12, 16, 0.55), 0 6px 14px rgba(3, 12, 16, 0.3);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.hh-act:hover { background: linear-gradient(180deg, rgba(255, 255, 255, 0.6) 0%, rgba(255, 255, 255, 0) 45%), #fff6e2; }
+.hh-act:active { translate: 0 2px; box-shadow: 0 1px 0 rgba(3, 12, 16, 0.55); }
+.hh-act .hh-keycap { background: linear-gradient(180deg, #2b3a40 0%, #142228 100%); color: var(--hh-cream); box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.5), 0 1px 0 rgba(255, 255, 255, 0.4); }
+.hh-act.rush { border-left-color: var(--hh-ink); background: linear-gradient(180deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0) 45%), var(--hh-amber); font-size: 16px; }
+.hh-act.passive { cursor: default; font-size: 16px; }
+
+/* ───────────────────────── the courier pager ───────────────────────── */
+
+.hh-obj { display: grid; gap: 9px; justify-items: start; width: 336px; margin: 6px 0 0 6px; }
+.hh-pager {
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 18px 10px 11px 12px;
+  border-radius: 12px 12px 18px 18px;
+  background: linear-gradient(180deg, #343d42 0%, #1b2226 40%, #11171a 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    inset 0 -4px 0 rgba(0, 0, 0, 0.55),
+    inset 3px 0 0 rgba(255, 255, 255, 0.04),
+    0 5px 0 rgba(0, 0, 0, 0.4),
+    0 12px 22px rgba(0, 0, 0, 0.3);
+}
+.hh-pager-clip {
+  position: absolute;
+  left: -7px;
+  top: 22px;
+  width: 9px;
+  height: 46px;
+  border-radius: 3px 0 0 3px;
+  background: linear-gradient(90deg, #0a0d0f, #2a3236);
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.4);
+}
+.hh-pager-brand {
+  position: absolute;
+  top: 4px;
+  left: 16px;
+  font: 700 8.5px/1 var(--hh-body);
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+  color: rgba(220, 230, 232, 0.5);
+}
+.hh-pager-brand b { margin-left: 4px; color: var(--hh-amber); letter-spacing: 0.1em; text-transform: lowercase; font-style: italic; }
+.hh-pager-lcd { display: grid; gap: 4px; padding: 7px 11px 9px; border-radius: 5px; }
+.hh-pager-top { position: relative; z-index: 1; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.hh-pager-top small { font: 700 11px/1.15 var(--hh-body); letter-spacing: 0.16em; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hh-pager-clock { font: 400 24px/0.9 var(--hh-display); letter-spacing: 0.06em; }
+.hh-pager[data-stage="urgent"] .hh-pager-clock { animation: hh-blink calc(1s * var(--jg-motion-scale, 1)) steps(2) infinite; }
+.hh-pager-main { position: relative; z-index: 1; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.hh-pager-title {
+  font: 400 27px/0.98 var(--hh-display);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  text-shadow: 1.5px 1.5px 0 rgba(90, 38, 0, 0.2);
+}
+.hh-pager-way { flex: none; display: grid; justify-items: center; gap: 1px; padding-left: 10px; border-left: 2px solid rgba(42, 23, 4, 0.35); }
+.hh-pager-way > span { font: 400 19px/1 var(--hh-display); letter-spacing: 0.05em; text-transform: uppercase; white-space: nowrap; }
+.hh-pager-arrow { width: 30px; height: 30px; transition: transform calc(140ms * var(--jg-motion-scale, 1)) linear; }
+.hh-pager-arrow path { fill: var(--lcd-fg); }
+.hh-pager-fuse { position: relative; z-index: 1; display: flex; gap: 2px; margin-top: 2px; }
+.hh-pager-fuse > i { flex: 1; height: 7px; background: rgba(42, 23, 4, 0.14); }
+.hh-pager-fuse > i[data-lit] { background: var(--lcd-fg); }
+.hh-pager-hint {
+  position: relative;
+  z-index: 1;
+  padding-top: 5px;
+  border-top: 1.5px dashed rgba(42, 23, 4, 0.45);
+  font: 600 12.5px/1.3 var(--hh-body);
+  animation: hh-type-in calc(400ms * var(--jg-motion-scale, 1)) steps(8);
+}
+@keyframes hh-type-in { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+@keyframes hh-blink { 50% { opacity: 0.25; } }
+
+/* ───────────────────────── the police scanner ───────────────────────── */
+
+.hh-scanner { display: grid; justify-items: center; width: 300px; margin-top: 8px; }
+.hh-lightbar {
+  display: flex;
+  gap: 2px;
+  width: 168px;
+  height: 11px;
+  padding: 2px;
+  box-sizing: border-box;
+  border-radius: 7px 7px 1px 1px;
+  background: #15191b;
+  box-shadow: 0 -1px 0 rgba(255, 255, 255, 0.12);
+}
+.hh-lightbar > i { flex: 1; border-radius: 3px; background: #4a1414; }
+.hh-lightbar > i:nth-child(n + 3) { background: #142046; }
+.hh-scanner[data-hunting] .hh-lightbar > i:nth-child(-n + 2) { animation: hh-red calc(0.7s * var(--jg-motion-scale, 1)) steps(1) infinite; }
+.hh-scanner[data-hunting] .hh-lightbar > i:nth-child(n + 3) { animation: hh-blue calc(0.7s * var(--jg-motion-scale, 1)) steps(1) infinite; }
+@keyframes hh-red { 0% { background: #ff3b3b; box-shadow: 0 0 10px 2px rgba(255, 50, 50, 0.75); } 50% { background: #4a1414; box-shadow: none; } }
+@keyframes hh-blue { 0% { background: #142046; box-shadow: none; } 50% { background: #4f86ff; box-shadow: 0 0 10px 2px rgba(80, 130, 255, 0.75); } }
+.hh-scanner-body {
+  display: grid;
+  justify-items: center;
+  gap: 7px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 10px 10px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #2d3439 0%, #171c1f 55%, #0f1315 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), inset 0 -3px 0 rgba(0, 0, 0, 0.5), 0 5px 0 rgba(0, 0, 0, 0.4), 0 12px 22px rgba(0, 0, 0, 0.3);
+}
+.hh-scanner-stars { position: relative; display: flex; gap: 5px; }
+.hh-badge {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  color: rgba(220, 230, 232, 0.16);
+  background: radial-gradient(circle at 40% 35%, #2e363a 0%, #14191b 75%);
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.07);
+}
+.hh-badge[data-lit] {
+  color: #ffd257;
+  background: radial-gradient(circle at 40% 35%, #4a3a12 0%, #1d1505 80%);
+  box-shadow: inset 0 0 0 2px #c08d2c, 0 0 12px rgba(255, 190, 60, 0.45);
+}
+.hh-led {
+  display: grid;
+  gap: 5px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 6px 10px 7px;
+  border-radius: 4px;
+  background:
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.35) 0 1px, transparent 1px 3px),
+    #1a0707;
+  box-shadow: inset 0 2px 7px #000;
+  text-align: center;
+}
+.hh-led-line {
+  font: 700 14px/1.1 var(--hh-body);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #ff6a55;
+  text-shadow: 0 0 6px rgba(255, 60, 40, 0.75);
+}
+.hh-scanner[data-hunting] .hh-led-line { color: #ff8a70; }
+.hh-led-heat { display: flex; gap: 2px; }
+.hh-led-heat > i { flex: 1; height: 6px; background: rgba(255, 80, 60, 0.13); }
+.hh-led-heat > i[data-lit] { background: #ff4a3a; box-shadow: 0 0 4px rgba(255, 70, 50, 0.8); }
+.hh-led-search { font: 600 11px/1.2 var(--hh-body); letter-spacing: 0.12em; text-transform: uppercase; color: #ffb3a3; text-shadow: 0 0 5px rgba(255, 60, 40, 0.5); }
+
+/* ───────────────────────── cash and vitals ───────────────────────── */
+
+.hh-wallet { display: grid; justify-items: end; gap: 6px; width: 210px; margin-top: 8px; }
+.hh-wallet-top { display: flex; align-items: center; gap: 10px; }
+.hh-cash {
+  font: 400 42px/0.9 var(--hh-display);
+  letter-spacing: 0.03em;
+  color: #a7f2a4;
+  text-shadow:
+    -2px -2px 0 var(--hh-night), 2px -2px 0 var(--hh-night), -2px 2px 0 var(--hh-night), 2px 2px 0 var(--hh-night),
+    0 -2px 0 var(--hh-night), 0 2px 0 var(--hh-night), -2px 0 0 var(--hh-night), 2px 0 0 var(--hh-night),
+    0 5px 0 var(--hh-night);
+}
+.hh-cred {
+  padding: 4px 8px 2px;
+  font: 400 15px/1 var(--hh-display);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--hh-cream);
+  background: var(--hh-coral);
+  border-radius: 2px;
+  transform: rotate(-4deg);
+  box-shadow: 0 2px 0 rgba(3, 12, 16, 0.6), inset 0 0 0 1.5px rgba(255, 240, 210, 0.5);
+}
+.hh-strip { display: grid; grid-template-columns: 52px 1fr; align-items: center; gap: 8px; width: 100%; }
+.hh-strip small { font: 700 10px/1 var(--hh-body); letter-spacing: 0.16em; text-transform: uppercase; color: var(--hh-cream); text-align: right; text-shadow: 0 1px 2px #000, 0 0 4px rgba(0, 0, 0, 0.8); }
+.hh-strip-track {
+  position: relative;
+  height: 9px;
+  overflow: hidden;
+  background: rgba(7, 29, 37, 0.78);
+  border-radius: 2px;
+  box-shadow: inset 0 0 0 1.5px rgba(255, 240, 210, 0.75), 0 2px 0 rgba(0, 0, 0, 0.45);
+}
+.hh-strip-track::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(90deg, transparent 0 13px, rgba(7, 29, 37, 0.85) 13px 15px);
+}
+.hh-strip-track > i { display: block; height: 100%; background: linear-gradient(180deg, #9af0a6, #3fbf5a); transition: width calc(250ms * var(--jg-motion-scale, 1)) ease-out; }
+.hh-strip[data-tone="low"] .hh-strip-track > i { background: linear-gradient(180deg, #ff8a70, var(--hh-coral)); animation: hh-blink calc(0.9s * var(--jg-motion-scale, 1)) steps(2) infinite; }
+.hh-strip[data-tone="armor"] .hh-strip-track > i { background: linear-gradient(180deg, #9cc4ff, #4f7de8); }
+
+/* ───────────────────────── the harbor chart ───────────────────────── */
+
+.hh-chart { display: grid; justify-items: center; gap: 7px; margin: 0 0 4px 4px; }
+.hh-chart-bezel {
+  position: relative;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: linear-gradient(150deg, #f0d68e 0%, #b48a3a 35%, #6f5220 60%, #d8b468 100%);
+  box-shadow: inset 0 0 0 2px rgba(40, 25, 5, 0.6), inset 0 0 0 5px rgba(255, 236, 180, 0.35), 0 6px 0 rgba(3, 12, 16, 0.45), 0 10px 20px rgba(3, 12, 16, 0.35);
+}
+.hh-chart-bezel::before {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  border-radius: 50%;
+  background: repeating-conic-gradient(from -0.75deg, rgba(40, 25, 5, 0.6) 0 1.5deg, transparent 1.5deg 15deg);
+  pointer-events: none;
+}
+.hh-chart-map { position: relative; z-index: 1; display: block; border-radius: 50%; }
+.hh-chart-north {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  margin: -10px 0 0 -10px;
+  border-radius: 50%;
+  font: 400 13px/1 var(--hh-display);
+  color: var(--hh-cream);
+  background: var(--hh-coral);
+  box-shadow: inset 0 0 0 1.5px var(--hh-cream), 0 2px 0 rgba(0, 0, 0, 0.45);
+}
+
+/* ───────────────────────── the belt ───────────────────────── */
+
+.hh-belt {
+  display: flex;
+  gap: 7px;
+  padding: 6px 9px 7px;
+  margin-bottom: 4px;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #4a3020 0%, #2d1d12 60%, #22160d 100%);
+  box-shadow: inset 0 0 0 1px rgba(255, 220, 170, 0.14), inset 0 -3px 0 rgba(0, 0, 0, 0.4), 0 4px 0 rgba(0, 0, 0, 0.4);
+  outline: 1.5px dashed rgba(255, 214, 150, 0.32);
+  outline-offset: -4px;
+}
+.hh-pouch {
+  appearance: none;
+  border: 0;
+  margin: 0;
+  position: relative;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 3px;
+  width: 66px;
+  height: 58px;
+  padding: 6px 4px 5px;
+  border-radius: 6px;
+  color: var(--hh-cream);
+  background: linear-gradient(180deg, #273136 0%, #12181b 100%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08), inset 0 -3px 0 rgba(0, 0, 0, 0.45), 0 3px 0 rgba(0, 0, 0, 0.45);
+  cursor: pointer;
+  transition: translate calc(120ms * var(--jg-motion-scale, 1)) ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.hh-pouch[aria-pressed="true"] { translate: 0 -5px; box-shadow: inset 0 0 0 2px var(--hh-amber), inset 0 -3px 0 rgba(0, 0, 0, 0.45), 0 8px 0 rgba(0, 0, 0, 0.4); }
+.hh-pouch-key { position: absolute; top: 3px; left: 5px; font: 400 12px/1 var(--hh-display); color: rgba(255, 240, 210, 0.6); }
+.hh-pouch-name { max-width: 60px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 700 9px/1 var(--hh-body); letter-spacing: 0.08em; text-transform: uppercase; color: rgba(255, 240, 210, 0.82); }
+.hh-pouch-ammo { position: absolute; top: -5px; right: -4px; padding: 2px 4px 1px; font: 400 12px/1 var(--hh-display); letter-spacing: 0.04em; color: var(--hh-lcd-ink); background: var(--hh-amber); border-radius: 2px; box-shadow: 0 2px 0 rgba(0, 0, 0, 0.45); }
+
+/* ───────────────────────── the dash dial ───────────────────────── */
+
+.hh-dash { display: grid; justify-items: end; gap: 10px; margin: 0 6px 6px 0; }
+.hh-dash-gauge { position: relative; width: 172px; height: 172px; }
+.hh-dial { display: block; width: 100%; height: 100%; }
+.hh-dial-rim { fill: #1b2226; stroke: #a9b2b6; stroke-width: 3; }
+.hh-dial-face { fill: #f6ead0; }
+.hh-dial-red { fill: none; stroke: var(--hh-coral); stroke-width: 7; }
+.hh-dial-major { stroke: #1b1410; stroke-width: 2.6; stroke-linecap: round; }
+.hh-dial-minor { stroke: #1b1410; stroke-width: 1.3; }
+.hh-dial-num { font: 400 11px/1 var(--hh-display); fill: #1b1410; text-anchor: middle; }
+.hh-dial-num[data-long] { font-size: 9.5px; letter-spacing: -0.02em; }
+.hh-dial-needle { fill: var(--hh-coral); stroke: #7a1e10; stroke-width: 0.6; }
+.hh-dial-hub { fill: #1b2226; stroke: var(--hh-coral); stroke-width: 2; }
+.hh-dash-lcd {
+  position: absolute;
+  left: 50%;
+  bottom: 33px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+  padding: 3px 7px 1px;
+  color: var(--hh-lcd-ink);
+  background: radial-gradient(130% 90% at 45% 30%, #ffcd6a 0%, #f7ae35 60%, #dc8a1c 100%);
+  border-radius: 3px;
+  box-shadow: inset 0 0 0 1.5px #1b2226, inset 0 2px 4px rgba(0, 0, 0, 0.35);
+}
+.hh-dash-lcd b { font: 400 22px/1 var(--hh-display); letter-spacing: 0.05em; min-width: 2.2ch; text-align: right; }
+.hh-dash-lcd small { font: 700 9px/1 var(--hh-body); letter-spacing: 0.1em; text-transform: uppercase; }
+/* The gear the box is in, printed on its own cell at the left of the LCD; reverse lights it coral. */
+.hh-dash-gear {
+  align-self: center;
+  margin-right: 3px;
+  padding: 1px 4px 0;
+  font: 400 15px/1 var(--hh-display);
+  font-style: normal;
+  color: #ffcd6a;
+  background: var(--hh-lcd-ink);
+  border-radius: 2px;
+}
+.hh-dash-gear[data-reverse] { color: var(--hh-cream); background: var(--hh-coral); }
+/* Ten rev lamps between the LCD and the badge: amber, the last two red, lit up to the revs. */
+.hh-dash-revs {
+  position: absolute;
+  left: 50%;
+  bottom: 23px;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 2px;
+}
+.hh-dash-revs i { width: 5px; height: 5px; border-radius: 50%; background: #3a3128; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.4); }
+.hh-dash-revs i[data-on] { background: var(--hh-amber); }
+.hh-dash-revs i[data-on][data-red] { background: var(--hh-coral); }
+.hh-dash-badge {
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  padding: 4px 11px 2px;
+  font: 400 15px/1 var(--hh-display);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--hh-cream);
+  background: var(--hh-ink);
+  border-radius: 3px;
+  box-shadow: inset 0 0 0 1.5px rgba(255, 240, 210, 0.55), 0 3px 0 rgba(0, 0, 0, 0.45);
+}
+.hh-dash-lamp {
+  position: absolute;
+  top: 2px;
+  right: -8px;
+  padding: 3px 8px 2px;
+  font: 700 10px/1 var(--hh-body);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--hh-amber);
+  background: #1b2226;
+  border-radius: 9px;
+  box-shadow: inset 0 0 0 1.5px #a9b2b6;
+}
+.hh-dash-lamp[data-alarm] { color: var(--hh-cream); background: var(--hh-coral); animation: hh-blink calc(0.6s * var(--jg-motion-scale, 1)) steps(2) infinite; }
+.hh-dash-prompts { display: grid; gap: 6px; justify-items: end; }
+
+/* ───────────────────────── HUD keys: phone and pause ───────────────────────── */
+
+.hh-hudkeys { display: flex; gap: 8px; }
+.hh-hudkey {
+  appearance: none;
+  border: 0;
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 7px 5px 8px;
+  border-radius: 8px;
+  font: 400 15px/1 var(--hh-display);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--hh-cream);
+  background: linear-gradient(180deg, #333c41 0%, #161b1e 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), inset 0 -3px 0 rgba(0, 0, 0, 0.5), 0 3px 0 rgba(0, 0, 0, 0.45);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.hh-hudkey:active { translate: 0 2px; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 1px 0 rgba(0, 0, 0, 0.45); }
+.hh-hudkey-icon { display: grid; place-items: center; width: 16px; height: 18px; color: var(--hh-amber); }
+.hh-hudkey kbd { padding: 2px 5px 1px; font: 400 12px/1 var(--hh-display); color: var(--hh-ink); background: linear-gradient(180deg, #fff8e6, #efdcb6); border-radius: 3px; box-shadow: inset 0 -2px 0 rgba(14, 44, 56, 0.35); }
+.hh-mini-phone { position: relative; display: block; width: 10px; height: 17px; border-radius: 2px 2px 3px 3px; background: #0b0f11; box-shadow: inset 0 0 0 1.5px var(--hh-amber); }
+.hh-mini-phone::before { content: ""; position: absolute; left: 2.5px; right: 2.5px; top: 3px; height: 6px; background: var(--hh-amber); }
+
+/* ───────────────────────── the city phone ───────────────────────── */
+
+.hh-city-phone { width: 300px; margin-right: 10px; transform: rotate(-2deg); }
+.hh-city-phone .hh-phone-lcd { height: min(380px, calc(100dvh - 260px)); }
+.hh-city { position: relative; z-index: 1; display: grid; gap: 6px; align-content: start; height: 100%; overflow-y: auto; padding: 6px 12px 10px; box-sizing: border-box; scrollbar-width: thin; scrollbar-color: var(--hh-lcd-ink) transparent; }
+.hh-city-msg { display: grid; gap: 4px; padding: 6px 8px 8px; border: 2px solid var(--lcd-fg); border-radius: 3px; }
+.hh-city-msg small { font: 700 10px/1 var(--hh-body); letter-spacing: 0.16em; text-transform: uppercase; }
+.hh-city-msg p { margin: 0; font: italic 600 13px/1.3 var(--hh-body); }
+.hh-city-btn {
+  appearance: none;
+  border: 0;
+  margin: 2px 0 0;
+  padding: 6px 8px 5px;
+  font: 800 12px/1.2 var(--hh-body);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: left;
+  color: var(--hh-amber);
+  background: var(--lcd-fg);
+  border-radius: 2px;
+  cursor: pointer;
+}
+.hh-city-contact { display: grid; gap: 2px; }
+.hh-city-contact b { font: 400 18px/1 var(--hh-display); letter-spacing: 0.06em; text-transform: uppercase; }
+.hh-city-contact q { font: italic 500 12.5px/1.3 var(--hh-body); }
+.hh-city-row { display: flex; justify-content: space-between; gap: 10px; font: 600 12.5px/1.35 var(--hh-body); }
+.hh-city-row em { flex: none; font-style: normal; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; font-size: 11.5px; }
+.hh-city-row em[data-tone="bad"] { padding: 0 4px; color: var(--hh-amber); background: var(--lcd-fg); border-radius: 2px; }
+.hh-city-head { margin: 6px 0 0; padding-bottom: 1px; font: 400 16px/1 var(--hh-display); letter-spacing: 0.12em; text-transform: uppercase; border-bottom: 2px solid var(--lcd-fg); }
+.hh-city-news { margin: 0; padding-left: 8px; font: 500 12px/1.3 var(--hh-body); border-left: 2px solid rgba(42, 23, 4, 0.4); }
+
+/* ───────────────────────── compact screens ───────────────────────── */
+
+.hh-hud-compact .hh-obj { width: 228px; margin: 2px 0 0 2px; gap: 7px; }
+.hh-hud-compact .hh-pager { padding: 15px 8px 9px 10px; }
+.hh-hud-compact .hh-pager-title { font-size: 19px; }
+.hh-hud-compact .hh-pager-clock { font-size: 19px; }
+.hh-hud-compact .hh-pager-top small { font-size: 9.5px; }
+.hh-hud-compact .hh-pager-way > span { font-size: 15px; }
+.hh-hud-compact .hh-pager-arrow { width: 22px; height: 22px; }
+.hh-hud-compact .hh-act { font-size: 15px; padding: 4px 10px 3px 6px; }
+.hh-hud-compact .hh-wallet { width: 132px; gap: 4px; margin-top: 6px; }
+.hh-hud-compact .hh-cash { font-size: 29px; }
+.hh-hud-compact .hh-cred { font-size: 12px; }
+.hh-hud-compact .hh-strip { grid-template-columns: 1fr; gap: 2px; }
+.hh-hud-compact .hh-strip small { display: none; }
+.hh-hud-compact .hh-hudkey { font-size: 13px; padding: 4px 6px; }
+.hh-hud-compact .hh-hudkey kbd { display: none; }
+.hh-hud-compact .hh-scanner { width: 178px; margin-top: 6px; }
+.hh-hud-compact .hh-lightbar { width: 110px; }
+.hh-hud-compact .hh-badge { width: 22px; height: 22px; }
+.hh-hud-compact .hh-badge svg { width: 15px; height: 15px; }
+.hh-hud-compact .hh-led-line { font-size: 10.5px; letter-spacing: 0.1em; }
+.hh-hud-compact .hh-led-search { font-size: 9px; }
+.hh-hud-compact .hh-street b { font-size: 9.5px; }
+.hh-hud-compact .hh-chart-north { width: 16px; height: 16px; margin: -8px 0 0 -8px; font-size: 11px; }
+.hh-hud-compact .hh-belt { gap: 5px; padding: 5px 7px 6px; }
+.hh-hud-compact .hh-pouch { width: 52px; height: 48px; }
+.hh-hud-compact .hh-pouch-name { display: none; }
+.hh-hud-compact .hh-dash-gauge { width: 128px; height: 128px; }
+.hh-hud-compact .hh-dash-lcd { bottom: 24px; }
+.hh-hud-compact .hh-dash-lcd b { font-size: 17px; }
+.hh-hud-compact .hh-dash-badge { font-size: 12px; }
+.hh-hud-compact .hh-dash-revs { display: none; }
+.hh-hud-compact .hh-dash-gear { font-size: 12px; }
+.hh-hud-compact .hh-city-phone { width: min(300px, 82vw); margin-right: 0; transform: none; }
+.hh-hud-compact .hh-city-phone .hh-phone-lcd { height: 272px; }
+
+/* landscape phone: a wider pager so the job takes two lines, a smaller dial, and a phone that fits the height */
+.hh-hud-short .hh-obj { width: 312px; }
+.hh-hud-short .hh-chart { margin: 0 0 0 4px; }
+.hh-hud-short .hh-dash { margin: 4px 2px 0 0; }
+.hh-hud-short .hh-dash-gauge { width: 104px; height: 104px; }
+.hh-hud-short .hh-dash-lcd { bottom: 16px; }
+.hh-hud-short .hh-dash-lcd b { font-size: 14px; }
+.hh-hud-short .hh-city-phone { width: 280px; }
+.hh-hud-short .hh-city-phone .hh-phone-antenna { display: none; }
+.hh-hud-short .hh-city-phone .hh-phone-lcd { height: 180px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .hh-scanner[data-hunting] .hh-lightbar > i, .hh-pager-clock, .hh-strip-track > i, .hh-dash-lamp, .hh-pager-hint { animation: none !important; }
+}

@@ -33,7 +33,7 @@ AGENT RESPONSE (you run these; do not dump this as homework for the user):
 
 The game is its own project on the npm packages. NEVER clone the jgengine
 GitHub repo to build a game, and NEVER copy code/assets/content from its
-Games/* directory — those are private in-repo test games, not templates.
+games/* directory — those are private in-repo test games, not templates.
 
 usage: jgengine <command> [...args]
 

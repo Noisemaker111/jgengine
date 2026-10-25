@@ -1,0 +1,38 @@
+{ "steps": [
+  { "assert": "__jgProbe().inDive === 0 && /rail departure/i.test(document.body.innerText)",
+    "note": "arrival: the diver is standing at Marrow's departure rail, not the title card" },
+
+  { "key": "KeyW", "until": { "is": "__jgProbe().z < 9.5", "timeoutMs": 10000 },
+    "note": "walk down the workshop to the Garage anchor" },
+
+  { "key": "KeyE", "ms": 120,
+    "after": { "is": "__jgProbe().inDive === 1", "timeoutMs": 15000 },
+    "note": "take the rail: the world swaps to Bellwether and the air tank starts" },
+
+  { "key": "KeyW", "until": { "is": "__jgProbe().z < -3.5", "timeoutMs": 10000 },
+    "note": "walk into Bellwether's receiving floor; the rail is behind at z 1.9, so any z below -3.5 is the corridor crossed. Held to arrival: the first vault frames are slow on software GL, so a fixed hold walked too short" },
+
+  { "key": "KeyA", "until": { "is": "__jgProbe().x < -3.8", "timeoutMs": 10000 },
+    "after": { "is": "__jgProbe().x < -3.8 && __jgProbe().x > -6", "timeoutMs": 2000 },
+    "note": "stand at the receiving spool of wire" },
+
+  { "key": "KeyE", "ms": 120,
+    "after": { "is": "__jgProbe().carried >= 1", "timeoutMs": 15000 },
+    "note": "arrival: the 1.4 s search channel finished and the wire is in the 4 x 3 cache, so the loot is carried and not just spotted" },
+
+  { "key": "KeyS", "ms": 300,
+    "note": "hand control back: the search's completion sheet swallows a key hold that starts on the frame it closes" },
+
+  { "key": "KeyD", "until": { "is": "__jgProbe().x > -1.4", "timeoutMs": 10000 },
+    "note": "step back across the receiving floor to the rail's line" },
+
+  { "key": "KeyS", "until": { "is": "__jgProbe().z > 1.2", "timeoutMs": 10000 } },
+
+  { "key": "KeyE", "ms": 120,
+    "before": { "is": "Math.hypot(__jgProbe().x, __jgProbe().z - 1.9) < 1.9", "timeoutMs": 10000 },
+    "after": { "is": "__jgProbe().returns === 1", "timeoutMs": 20000 },
+    "note": "arrival: the rail settled the dive and counted one return, so this dive reached extraction and not just the rail's doorway" },
+
+  { "assert": "__jgProbe().inDive === 0 && __jgProbe().banked > 0",
+    "note": "arrival: the carried wire is banked at Marrow - the haul survived the return, which is what makes the next dive different" }
+] }

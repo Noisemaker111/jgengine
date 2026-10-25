@@ -1,0 +1,7 @@
+{
+  "drawsFrame": 401,
+  "previousDraws": 486,
+  "triangles": 750190,
+  "nodes": 253,
+  "baseline": "2026-10-23 bun run perf odd-orbit --seconds 6, whole-frame p95 as the gate compares it, GeForce RTX 3070 D3D11, 1600x900 full, engine 02162d4a at pinned Games dac3865e; three runs read drawsFrame 365 / 365 / 365, triangles 333,441 / 333,441 / 404,593, nodes 230 / 230 / 230. The draw ceiling is +10% over the highest of the three (365), rounded down, so a full 10% regression lands over it. The triangle ceiling stays where it was: a triangle count is one sample at snapshot time, not a window p95, and it moved far more than 10% between runs, so it is not ratcheted here. Previous draws 486 (itself from 640)."
+}

@@ -1,0 +1,68 @@
+{
+  "steps": [
+    {
+      "wait": 2000
+    },
+    {
+      "key": "KeyD",
+      "ms": 700
+    },
+    {
+      "key": "KeyW",
+      "ms": 1500
+    },
+    {
+      "key": "KeyW+Space",
+      "ms": 2600
+    },
+    {
+      "key": "KeyD",
+      "ms": 1200
+    },
+    {
+      "key": "KeyS",
+      "ms": 2500
+    },
+    {
+      "key": "KeyT",
+      "ms": 120
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "key": "KeyA",
+      "ms": 3000
+    },
+    {
+      "key": "KeyA+Space",
+      "ms": 2600
+    },
+    {
+      "key": "KeyA+ShiftLeft",
+      "ms": 5000
+    },
+    {
+      "key": "KeyA+KeyW",
+      "ms": 3000
+    },
+    {
+      "key": "mouse0",
+      "ms": 120
+    },
+    {
+      "wait": 400
+    },
+    {
+      "key": "mouse0",
+      "ms": 120
+    },
+    {
+      "wait": 2000
+    },
+    {
+      "assert": "__jgProbe().found >= 2 && __jgProbe().glided > 0.3",
+      "note": "arrival: two places on the map and a glide flown during the clip"
+    }
+  ]
+}

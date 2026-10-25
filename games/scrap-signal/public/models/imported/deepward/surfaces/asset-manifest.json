@@ -1,0 +1,81 @@
+{
+  "schema": 1,
+  "author": "Deepward project contributors",
+  "original": true,
+  "license": "CC0-1.0",
+  "source": "scripts/build-original-surfaces.py",
+  "tileable": true,
+  "maps": "Original authored enamel grain/scuffs and mineral floor grain/grease; not scanned PBR data. Neutral color maps multiply the editor palette.",
+  "recommendedRepeatMetres": {
+    "station-enamel": 1.2,
+    "station-floor": 1.0
+  },
+  "images": [
+    {
+      "id": "deepward/station-enamel/color",
+      "file": "station-enamel-color.png",
+      "url": "/models/imported/deepward/surfaces/station-enamel-color.png",
+      "role": "color",
+      "colorSpace": "srgb",
+      "width": 256,
+      "height": 256,
+      "bytes": 70263,
+      "sha256": "2767184a71217c42f1482e6b0eb1231fdf9310d67489cfaa322161d5b78586d2"
+    },
+    {
+      "id": "deepward/station-enamel/roughness",
+      "file": "station-enamel-roughness.png",
+      "url": "/models/imported/deepward/surfaces/station-enamel-roughness.png",
+      "role": "roughness",
+      "colorSpace": "linear",
+      "width": 256,
+      "height": 256,
+      "bytes": 21327,
+      "sha256": "fe4bde3b75c931e4ef66981b457194a3f83279c2c0f821d013e434e11f0cab04"
+    },
+    {
+      "id": "deepward/station-enamel/normal",
+      "file": "station-enamel-normal.png",
+      "url": "/models/imported/deepward/surfaces/station-enamel-normal.png",
+      "role": "normal",
+      "colorSpace": "linear",
+      "width": 256,
+      "height": 256,
+      "bytes": 58224,
+      "sha256": "2c30ff20ba672b8a76a003cf2428386ffbe243007c282df811c55b0387b94979"
+    },
+    {
+      "id": "deepward/station-floor/color",
+      "file": "station-floor-color.png",
+      "url": "/models/imported/deepward/surfaces/station-floor-color.png",
+      "role": "color",
+      "colorSpace": "srgb",
+      "width": 256,
+      "height": 256,
+      "bytes": 101309,
+      "sha256": "d48949b4411de378fb1652e6c335f90fef6de63682d9fdd2fac20bb88c1ba9d0"
+    },
+    {
+      "id": "deepward/station-floor/roughness",
+      "file": "station-floor-roughness.png",
+      "url": "/models/imported/deepward/surfaces/station-floor-roughness.png",
+      "role": "roughness",
+      "colorSpace": "linear",
+      "width": 256,
+      "height": 256,
+      "bytes": 24286,
+      "sha256": "205d44b124ad1935f7d924914d940ce3c04fdf09ee03af18ca26eb2cefec49c9"
+    },
+    {
+      "id": "deepward/station-floor/normal",
+      "file": "station-floor-normal.png",
+      "url": "/models/imported/deepward/surfaces/station-floor-normal.png",
+      "role": "normal",
+      "colorSpace": "linear",
+      "width": 256,
+      "height": 256,
+      "bytes": 105612,
+      "sha256": "fa42111d8100f3164f7df59d072ab24aed7843b2a885a62a8bd909b2b887afdb"
+    }
+  ]
+}

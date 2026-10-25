@@ -17,7 +17,7 @@ import { shouldRouteMdRequestToSsr } from "./src/lib/mdSsrRoute";
 
 const repoRoot = fileURLToPath(new URL("../..", import.meta.url));
 const devAppRoot = fileURLToPath(new URL("../dev", import.meta.url));
-const gamesDir = fileURLToPath(new URL("../../Games", import.meta.url));
+const gamesDir = fileURLToPath(new URL("../../games", import.meta.url));
 const githubSrc = fileURLToPath(new URL("../../packages/github/src", import.meta.url));
 const coreSrc = fileURLToPath(new URL("../../packages/core/src", import.meta.url));
 
@@ -51,11 +51,7 @@ const parseGameCredit = (
   return { text, ...(url !== undefined ? { url } : {}), ...(handle !== undefined ? { handle } : {}) };
 };
 
-/** Exposes the Games/* ids and per-game credit to routes as `virtual:jgengine-games`, resolved at build time.
- * Games now live in the separate Noisemaker111/JGengine-games repo and are cloned
- * at build time into ephemeral ./Games (see scripts/ensure-games.ts). When the
- * directory is absent (fresh engine checkout with no clone), the site builds with
- * an empty game list rather than throwing at build time. */
+/** Exposes the games/* ids and per-game credit to routes as `virtual:jgengine-games`, resolved at build time. */
 const gamesIndexPlugin = (): Plugin => ({
   name: "jgengine-games-index",
   resolveId(id) {
@@ -63,13 +59,6 @@ const gamesIndexPlugin = (): Plugin => ({
   },
   load(id) {
     if (id !== `\0${GAMES_INDEX_ID}`) return;
-    if (!existsSync(gamesDir)) {
-      console.warn("[jgengine-games-index] Games/ not found — site will build with no games. Run bun run games:clone to fetch Noisemaker111/JGengine-games.");
-      return `export const GAME_IDS = [];
-export const GAME_CREDITS = {};
-export const GAME_META = {};
-export const GAME_THUMBS = [];`;
-    }
     const ids = readdirSync(gamesDir, { withFileTypes: true })
       .filter((entry) => entry.isDirectory() && existsSync(join(gamesDir, entry.name, "src/index.tsx")))
       .map((entry) => entry.name)
@@ -109,27 +98,6 @@ const registryPlugin = (): Plugin => ({
   },
 });
 
-const ensureGamesScript = fileURLToPath(new URL("../../scripts/ensure-games.ts", import.meta.url));
-
-let gamesEnsured = false;
-
-const ensureGamesPlugin = (): Plugin => ({
-  name: "jgengine-ensure-games",
-  buildStart() {
-    if (gamesEnsured) return;
-    gamesEnsured = true;
-    if (existsSync(gamesDir)) return;
-    // In CI, the games repo is not committed — clone it so the site has games.
-    // Locally this also makes `bun dev` work after a fresh clone without a manual `bun run games:clone`.
-    // If the clone fails (offline, no git), we fall back to an empty games list rather than breaking the build.
-    console.log("[jgengine-ensure-games] Games/ not found — cloning Noisemaker111/JGengine-games…");
-    const result = spawnSync("bun", [ensureGamesScript], { stdio: "inherit", cwd: repoRoot });
-    if (result.status !== 0) {
-      console.warn("[jgengine-ensure-games] clone failed — site will build with no games");
-    }
-  },
-});
-
 let gamePlayerBuilt = false;
 
 const gamesPlayerPlugin = (): Plugin => ({
@@ -139,7 +107,7 @@ const gamesPlayerPlugin = (): Plugin => ({
     if (gamePlayerBuilt) return;
     gamePlayerBuilt = true;
     if (restoreFromCache()) {
-      console.log("[games-player] cache hit — Games/* unchanged, skipped rebuild");
+      console.log("[games-player] cache hit — games/* unchanged, skipped rebuild");
       return;
     }
     const result = spawnSync("bun", ["run", "--cwd", devAppRoot, "build:site"], {
@@ -168,7 +136,7 @@ const playerStatusPage = (title: string, body: string, refresh: boolean) => `<!d
 
 /**
  * Dev serves the same static runner build production ships — one server, no
- * proxy. A content-hash cache makes the build a restore when Games/* and the
+ * proxy. A content-hash cache makes the build a restore when games/* and the
  * engine packages are unchanged; otherwise it rebuilds in the background and
  * /play shows a self-refreshing "building" page until the output lands.
  */
@@ -308,7 +276,6 @@ export default defineConfig({
     } as Parameters<typeof tanstackStart>[0]),
     viteReact(),
     registryPlugin(),
-    ensureGamesPlugin(),
     gamesIndexPlugin(),
     gamesPlayerPlugin(),
     gamesPlayerDevPlugin(),

@@ -1,0 +1,343 @@
+/* Row Six HUD: the buggy's dash on the foundry floor. Stencil numbers, hazard paint, gunmetal. */
+.fd-ui { position:absolute; inset:0; pointer-events:none; color:#ece3cc; font-family:"Barlow Condensed","Arial Narrow",sans-serif; font-size:15px; line-height:1.3; }
+.fd-ui * { box-sizing:border-box; }
+.fd-ui kbd { display:inline-block; font:13px/1 "Saira Stencil One",sans-serif; color:#141414; background:#f2c230; padding:3px 5px 2px; clip-path:polygon(3px 0,100% 0,100% calc(100% - 3px),calc(100% - 3px) 100%,0 100%,0 3px); }
+
+/* Frames paint their rim as a clipped backing plate the face sits inset on, never a filter (see DashHud). */
+[data-jg-frame].fd-rimmed { clip-path:var(--jg-gf-cut); background:var(--df-rim,#0b0d0e); padding:2px; }
+button[data-jg-frame].fd-rimmed { cursor:pointer; }
+button[data-jg-frame].fd-rimmed:focus-visible { background:#f2c230; }
+@media (hover:hover) { button[data-jg-frame].fd-rimmed:not(:disabled):hover { background:#b8901c; } }
+.fd-hud-btn { pointer-events:auto; border:0; font:inherit; color:inherit; }
+
+/* Pit-lane timing board, top left. */
+.fd-tower-wrap { position:absolute; left:18px; top:18px; }
+.fd-tower { width:176px; background:#121416; clip-path:polygon(0 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%); }
+.fd-tower-head { display:flex; align-items:stretch; }
+.fd-tower-pos { display:flex; align-items:baseline; padding:6px 10px 4px 9px; background:#f2c230; color:#141414; font:38px/1 "Saira Stencil One",sans-serif; }
+.fd-tower-pos small { font-size:17px; margin-right:1px; }
+.fd-tower-pos em { font-style:normal; font-size:16px; opacity:.72; margin-left:2px; }
+.fd-tower-lap { flex:1; display:flex; flex-direction:column; justify-content:center; padding:4px 10px; background:linear-gradient(180deg,#3a4044,#24292c); font-size:15px; letter-spacing:.12em; color:#ece3cc; }
+.fd-tower-lap em { font-style:normal; font:17px/1.1 "Saira Stencil One",sans-serif; letter-spacing:.02em; color:#f2c230; font-variant-numeric:tabular-nums; }
+.fd-tower-field { list-style:none; margin:0; padding:3px 0 10px; }
+.fd-tower-field li { display:flex; align-items:center; gap:8px; height:24px; padding:0 10px 0 6px; font-size:16px; letter-spacing:.1em; text-transform:uppercase; color:#cfc8b6; }
+.fd-tower-field li + li { border-top:1px solid rgba(255,255,255,.06); }
+.fd-tower-field li b { width:20px; text-align:center; font:15px/1 "Saira Stencil One",sans-serif; font-weight:400; color:#f2c230; }
+.fd-tower-field li[data-you] { background:#5de0ce; color:#0f1b1d; }
+.fd-tower-field li[data-you] b { color:#0f1b1d; }
+
+/* The next barrier: a painted gate sign hung over the road. */
+.fd-sign-wrap { position:absolute; left:50%; top:14px; transform:translateX(-50%); }
+.fd-ui .fd-sign { width:min(470px,40vw); }
+.fd-sign > [data-jg-frame-face] { color:#141414; }
+.fd-sign[data-tone="stop"] > [data-jg-frame-face] { color:#fff4e0; }
+.fd-sign-band { display:block; height:9px; background:repeating-linear-gradient(-45deg,#141414 0 10px,transparent 10px 20px); }
+.fd-sign-body { display:flex; flex-direction:column; align-items:center; text-align:center; padding:5px 16px 8px; }
+.fd-sign-eyebrow { font-size:14px; letter-spacing:.18em; }
+.fd-sign-call { font:25px/1.05 "Saira Stencil One",sans-serif; font-weight:400; letter-spacing:.02em; }
+.fd-sign-sub { font-size:14px; letter-spacing:.1em; text-transform:uppercase; opacity:.78; }
+
+/* Dash rail: pause tab and the settings key, top right. */
+.fd-dash-rail { position:absolute; right:18px; top:18px; display:flex; gap:6px; align-items:center; }
+.fd-tab-face { display:flex; align-items:center; gap:8px; }
+.fd-ui .fd-gear { pointer-events:auto; appearance:none; border:0; margin:0; width:44px; height:36px; padding:2px; cursor:pointer; background:#0b0d0e; clip-path:polygon(9px 0,100% 0,calc(100% - 9px) 100%,0 100%); }
+.fd-gear-face { display:grid; place-items:center; width:100%; height:100%; clip-path:polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%); background:linear-gradient(180deg,#5b6266,#3a4044 55%,#2a2f31); }
+.fd-ui .fd-gear:focus-visible { background:#f2c230; outline:none; }
+
+/* Four sockets for what is bolted on. */
+.fd-rack-wrap { position:absolute; right:18px; top:66px; }
+.fd-rack { display:flex; align-items:center; gap:8px; padding:5px 8px 5px 12px; background:linear-gradient(180deg,#3a4044,#24292c); clip-path:polygon(10px 0,100% 0,100% 100%,0 100%,0 10px); }
+.fd-rack-label { font:14px/1 "Saira Stencil One",sans-serif; color:#f2c230; letter-spacing:.04em; }
+.fd-rack-sockets { display:flex; gap:4px; }
+.fd-socket { display:flex; flex-direction:column; align-items:center; width:40px; padding:4px 0 2px; background:radial-gradient(circle at 50% 38%,#33393c,#16191b); box-shadow:inset 0 0 0 1px #4a5256,inset 0 2px 3px rgba(0,0,0,.65); }
+.fd-socket svg { width:24px; height:24px; }
+.fd-socket small { font-size:11px; letter-spacing:.12em; color:#b9b4a6; }
+.fd-socket[data-empty] svg { opacity:.55; }
+
+/* A manila tag tied on for a swap. */
+.fd-ui .fd-tag { position:absolute; right:18px; top:122px; width:min(300px,38vw); }
+.fd-tag > [data-jg-frame-face] { color:#2a2419; font-size:15px; line-height:1.22; }
+.fd-tag-head { display:block; font-size:13px; letter-spacing:.14em; text-transform:uppercase; color:#a8380f; }
+.fd-tag-head b { font:16px/1 "Saira Stencil One",sans-serif; font-weight:400; letter-spacing:.02em; }
+.fd-tag strong { display:block; margin:2px 0 4px; font:19px/1.08 "Saira Stencil One",sans-serif; font-weight:400; }
+.fd-tag p { margin:3px 0; }
+.fd-tag-delta { font-weight:600; }
+.fd-tag-how { display:block; margin-top:6px; font-size:14px; font-weight:600; }
+
+/* The gauge cluster. */
+.fd-dash { position:absolute; left:16px; bottom:10px; width:220px; }
+.fd-tach { position:relative; width:100%; aspect-ratio:1; }
+.fd-tach > svg { position:absolute; inset:0; width:100%; height:100%; }
+.fd-tach-major { stroke:#efe6cf; stroke-width:2.6; }
+.fd-tach-minor { stroke:rgba(239,230,207,.5); stroke-width:1.4; }
+.fd-tach-major[data-red], .fd-tach-minor[data-red] { stroke:#ff4934; }
+.fd-tach-num { fill:#efe6cf; font:14px "Saira Stencil One",sans-serif; text-anchor:middle; }
+.fd-tach-num[data-red] { fill:#ff6a52; }
+.fd-tach-redline { fill:none; stroke:#b8261a; stroke-width:6; }
+.fd-tach-lit { fill:none; stroke:#f2c230; stroke-width:6; }
+.fd-tach-brand { fill:rgba(239,230,207,.32); font:10px "Saira Stencil One",sans-serif; text-anchor:middle; letter-spacing:.24em; }
+.fd-tach-needle { position:absolute; inset:0; will-change:transform; transition:transform 90ms linear; }
+.fd-tach-needle svg { display:block; width:100%; height:100%; }
+.fd-tach-needle path { fill:#ff5a24; }
+.fd-tach-needle circle { fill:#25292b; stroke:#9aa2a6; stroke-width:2.5; }
+.fd-tach-read { position:absolute; left:0; right:0; top:59%; display:flex; flex-direction:column; align-items:center; line-height:1; }
+.fd-tach-read b { font:36px/1 "Saira Stencil One",sans-serif; font-weight:400; color:#f4ecd8; font-variant-numeric:tabular-nums; }
+.fd-tach-read small { margin-top:1px; font-size:12px; letter-spacing:.2em; color:#f2c230; }
+.fd-tach-lamps { position:absolute; left:50%; bottom:7%; transform:translateX(-50%); display:flex; gap:7px; }
+.fd-lamp { display:flex; align-items:center; gap:3px; font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:rgba(239,230,207,.32); }
+.fd-lamp i { width:7px; height:7px; border-radius:50%; background:#2a2f31; box-shadow:inset 0 1px 1px rgba(0,0,0,.7); }
+.fd-lamp[data-on] { color:#efe6cf; }
+.fd-lamp[data-on][data-tone="teal"] i { background:#5de0ce; box-shadow:0 0 6px #5de0ce; }
+.fd-lamp[data-on][data-tone="red"] i { background:#ff4934; box-shadow:0 0 6px #ff4934; }
+.fd-lamp[data-on][data-tone="yellow"] i { background:#f2c230; box-shadow:0 0 6px #f2c230; }
+
+/* The compactor behind you: a crusher bar, bottom centre. */
+.fd-crusher-wrap { position:absolute; left:50%; bottom:22px; transform:translateX(-50%); width:min(440px,34vw); }
+.fd-crusher { display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:10px; padding:7px 22px; background:linear-gradient(180deg,#3a4044,#1c2022); clip-path:polygon(14px 0,calc(100% - 14px) 0,100% 50%,calc(100% - 14px) 100%,14px 100%,0 50%); }
+.fd-crusher-label { font:15px/1 "Saira Stencil One",sans-serif; color:#f2c230; letter-spacing:.05em; }
+.fd-crusher-label em { font-style:normal; color:#ff4934; text-transform:uppercase; }
+.fd-crusher-track { position:relative; height:14px; overflow:hidden; background:#0c0e0f; box-shadow:inset 0 0 0 1px #4a5256; }
+.fd-crusher-jaw { position:absolute; inset:0; will-change:transform; background:repeating-linear-gradient(-45deg,#141414 0 8px,#f2c230 8px 16px); }
+.fd-crusher-car { position:absolute; right:3px; top:3px; bottom:3px; width:12px; background:#5de0ce; clip-path:polygon(0 0,65% 0,100% 50%,65% 100%,0 100%); }
+.fd-crusher-gap { font-size:14px; letter-spacing:.1em; white-space:nowrap; }
+.fd-crusher-gap b { font:19px/1 "Saira Stencil One",sans-serif; font-weight:400; color:#f4ecd8; letter-spacing:.02em; }
+.fd-crusher[data-danger] .fd-crusher-jaw { background:repeating-linear-gradient(-45deg,#141414 0 8px,#ff4934 8px 16px); }
+.fd-crusher[data-danger] .fd-crusher-gap b, .fd-crusher[data-danger] .fd-crusher-label { color:#ff6a52; }
+.fd-crusher[data-danger] { animation:fd-alarm .8s steps(2,jump-none) infinite; }
+@keyframes fd-alarm { 50% { opacity:.62; } }
+
+/* The corridor rule, bottom right. */
+.fd-route-wrap { position:absolute; right:18px; bottom:18px; width:330px; }
+.fd-route { padding:8px 14px 9px; background:linear-gradient(180deg,#3a4044,#1c2022); clip-path:polygon(12px 0,100% 0,100% 100%,0 100%,0 12px); }
+.fd-route-head { display:flex; justify-content:space-between; align-items:baseline; font-size:14px; letter-spacing:.14em; text-transform:uppercase; color:#b9b4a6; }
+.fd-route-head b { font:18px/1 "Saira Stencil One",sans-serif; font-weight:400; color:#f2c230; letter-spacing:0; }
+.fd-route-rule { position:relative; height:14px; margin:8px 8px 7px 2px; background:linear-gradient(180deg,#8a9397,#3a4044) 0 9px/100% 4px no-repeat, repeating-linear-gradient(90deg,rgba(239,230,207,.42) 0 1px,transparent 1px 10.638%) 0 0/100% 8px no-repeat; }
+.fd-route-gate { position:absolute; top:3px; bottom:0; width:7px; margin-left:-3.5px; background:#6e777b; clip-path:polygon(50% 0,100% 35%,100% 100%,0 100%,0 35%); }
+.fd-route-gate[data-kind="jump"] { background:#3c8f86; }
+.fd-route-gate[data-cleared] { background:#f2c230; }
+.fd-route-ride { position:absolute; inset:0; will-change:transform; }
+.fd-route-car { position:absolute; left:-6px; top:-4px; width:12px; height:18px; background:#5de0ce; clip-path:polygon(50% 0,100% 100%,0 100%); }
+.fd-route-flag { position:absolute; right:-10px; top:-6px; }
+.fd-route-next { margin:0; font-size:14px; letter-spacing:.06em; color:#ece3cc; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.fd-route-risk { margin:2px 0 0; font-size:15px; }
+.fd-route-risk b { font:17px/1.1 "Saira Stencil One",sans-serif; font-weight:400; color:#f2c230; letter-spacing:.02em; }
+
+/* Touch pads: steering paddles, pedals and three action keys. */
+.fd-touch { display:none; position:absolute; left:12px; right:12px; bottom:12px; justify-content:space-between; align-items:flex-end; gap:10px; }
+.fd-touch-steer { display:flex; gap:8px; }
+.fd-touch-act { display:grid; grid-template-columns:repeat(3,56px); gap:6px; }
+.fd-ui .fd-pad { pointer-events:auto; touch-action:none; user-select:none; -webkit-user-select:none; -webkit-tap-highlight-color:transparent; appearance:none; border:0; margin:0; padding:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; color:#ece3cc; font:13px/1 "Saira Stencil One",sans-serif; letter-spacing:.06em; cursor:pointer;
+  background:linear-gradient(180deg,rgba(255,255,255,.14),rgba(255,255,255,0) 30%),linear-gradient(180deg,#4a5256,#2a2f31 60%,#1c2022);
+  clip-path:polygon(9px 0,100% 0,100% calc(100% - 9px),calc(100% - 9px) 100%,0 100%,0 9px); box-shadow:inset 0 0 0 2px #0b0d0e; }
+.fd-ui .fd-pad:active { translate:0 2px; }
+.fd-pad[data-kind="steer"] { width:68px; height:68px; color:#f2c230; }
+.fd-pad[data-kind="act"] { height:50px; }
+.fd-pad[data-kind="brake"] { height:64px; background:repeating-linear-gradient(45deg,rgba(255,255,255,.07) 0 3px,transparent 3px 9px),linear-gradient(180deg,#5a2a22,#36160f); }
+.fd-ui .fd-pad[data-kind="go"] { grid-column:2 / 4; height:64px; color:#141414; font-size:18px; background:repeating-linear-gradient(-45deg,rgba(0,0,0,.08) 0 3px,transparent 3px 9px),linear-gradient(180deg,#f6d25a,#d8a81c); }
+@media (pointer:coarse) {
+  .fd-touch { display:flex; }
+  .fd-dash { bottom:150px; }
+  .fd-crusher-wrap { bottom:154px; }
+  .fd-route-wrap { bottom:150px; }
+}
+
+/* Narrow screens and phones. */
+@media (max-width:900px) {
+  .fd-ui .fd-sign { width:min(400px,46vw); }
+  .fd-sign-call { font-size:21px; }
+  .fd-route-wrap { width:280px; }
+  .fd-dash { width:180px; }
+}
+@media (max-height:520px) {
+  .fd-tower-field { display:none; }
+  .fd-tower { width:150px; }
+  .fd-dash { width:150px; }
+  .fd-tach-read b { font-size:26px; }
+  .fd-tach-num { font-size:15px; }
+  .fd-crusher-wrap { width:min(340px,38vw); }
+}
+@media (pointer:coarse) and (max-height:520px) {
+  .fd-touch { bottom:8px; left:10px; right:10px; }
+  .fd-dash { left:auto; right:50%; bottom:8px; margin-right:-75px; }
+  .fd-crusher-wrap { bottom:auto; top:64px; }
+  .fd-route-wrap { bottom:128px; width:240px; }
+  .fd-touch-act { grid-template-columns:repeat(3,52px); }
+  .fd-pad[data-kind="act"] { height:42px; }
+  .fd-pad[data-kind="brake"], .fd-ui .fd-pad[data-kind="go"] { height:54px; }
+}
+@media (max-width:520px) {
+  .fd-sign-wrap { left:10px; right:122px; top:10px; transform:none; }
+  .fd-ui .fd-sign { width:100%; }
+  .fd-sign-band { height:7px; }
+  .fd-sign-body { padding:3px 8px 5px; }
+  .fd-sign-eyebrow { font-size:12px; letter-spacing:.1em; }
+  .fd-sign-call { font-size:15px; }
+  .fd-sign-sub { display:none; }
+  .fd-dash-rail { right:10px; top:10px; gap:4px; }
+  .fd-tab-face kbd { display:none; }
+  .fd-tower-wrap { left:10px; top:86px; }
+  .fd-tower { width:136px; }
+  .fd-tower-pos { font-size:28px; padding:4px 7px 3px 6px; }
+  .fd-tower-lap { font-size:13px; padding:3px 8px; }
+  .fd-tower-lap em { font-size:15px; }
+  .fd-tower-field li { height:21px; font-size:14px; }
+  .fd-rack-wrap { right:10px; top:86px; }
+  .fd-rack { padding:4px 6px 4px 9px; gap:5px; }
+  .fd-rack-label { display:none; }
+  .fd-socket { width:30px; }
+  .fd-socket svg { width:20px; height:20px; }
+  .fd-socket small { font-size:9px; }
+  .fd-ui .fd-tag { right:10px; top:142px; width:min(214px,55vw); }
+  .fd-tag > [data-jg-frame-face] { font-size:14px; }
+  .fd-tag strong { font-size:16px; }
+  .fd-tag-blurb { display:none; }
+  .fd-dash { width:136px; left:8px; }
+  .fd-tach-read b { font-size:24px; }
+  .fd-tach-read small { font-size:10px; }
+  .fd-tach-lamps { gap:4px; bottom:4%; }
+  .fd-lamp { font-size:9px; letter-spacing:.04em; }
+  .fd-route-wrap { left:152px; right:10px; width:auto; }
+  .fd-route { padding:7px 10px 8px; }
+  .fd-route-head { font-size:12px; }
+  .fd-route-next { font-size:12px; }
+  .fd-route-risk { font-size:13px; }
+  .fd-route-risk b { font-size:15px; }
+  .fd-crusher-wrap { left:10px; right:10px; width:auto; transform:none; }
+  .fd-crusher { padding:6px 18px; gap:8px; }
+  .fd-crusher-label { font-size:13px; }
+  .fd-crusher-gap { font-size:12px; }
+  .fd-crusher-gap b { font-size:16px; }
+}
+@media (pointer:coarse) and (max-width:520px) {
+  .fd-crusher-wrap { bottom:142px; }
+  .fd-dash { bottom:184px; }
+  .fd-route-wrap { bottom:190px; }
+}
+@media (prefers-reduced-motion:reduce) { .fd-ui * { transition:none!important; animation:none!important; } }
+
+/* Run results (unchanged card): plain buttons and text, scoped to the card. */
+.df-overlay { pointer-events:auto; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; padding:28px; overflow-y:auto; background:linear-gradient(125deg,#101e24ef,#15292bc9); z-index:30; font-family:Arial,Helvetica,sans-serif; font-size:14px; line-height:1.5; }
+.df-overlay button, .df-overlay .df-button { pointer-events:auto; white-space:normal; display:inline-flex; justify-content:center; align-items:center; gap:10px; min-height:42px; padding:9px 16px; border:1px solid #758d9670; background:#16282e; color:#eee0c4; border-radius:3px; cursor:pointer; font:800 11px Arial,sans-serif; letter-spacing:1.2px; text-decoration:none; }
+.df-overlay button:hover { border-color:#edc565; background:#2b4248; }
+.df-overlay button:focus-visible { outline:3px solid #5de0ce; outline-offset:3px; }
+.df-overlay button.df-primary { background:#edc565; border-color:#edc565; color:#16282e; }
+.df-overlay kbd { font:700 10px Arial,sans-serif; padding:3px 5px; border:1px solid currentColor; opacity:.8; border-radius:2px; color:inherit; background:none; clip-path:none; }
+.df-card { width:min(660px,100%); padding:32px; }
+.fd-ui .df-card { border:1px solid #758d9660; border-top:4px solid #edc565; background:#142329f2; box-shadow:0 24px 90px #0007; }
+.df-eyebrow { font-size:10px; font-weight:800; letter-spacing:2px; color:#edc565; }
+.df-overlay h1 { margin:18px 0; font-size:clamp(34px,5vw,64px); font-weight:900; letter-spacing:-2.5px; line-height:.92; }
+.df-overlay h1 em { color:#edc565; font-style:normal; }
+.df-overlay p { color:#b7c3c0; margin:16px 0; }
+.df-actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:24px; }
+.df-field-order { display:flex; flex-wrap:wrap; gap:6px 14px; margin:0 0 14px; font-size:10px; letter-spacing:.8px; color:#758d96; }
+.df-field-order i { font-style:normal; color:#edc565; margin-right:4px; }
+.df-field-order .df-you { background:#5de0ce; color:#16282e; padding:0 5px; border-radius:2px; font-weight:800; }
+.df-field-order .df-you i { color:#16282e; }
+.df-result-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(88px,1fr)); gap:16px; padding:20px 0; border-block:1px solid #758d9640; }
+.df-result-grid b { display:block; color:#edc565; font-size:26px; }
+.df-result-grid span { font-size:8px; color:#758d96; letter-spacing:1px; }
+.df-result-build { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:18px; font-size:11px; }
+.df-result-build span { display:flex; align-items:center; gap:8px; }
+.df-result-build svg { width:24px; height:24px; }
+.fd-ui .df-save-status { color:#5de0ce; font-size:10px; }
+
+/* The pit wall: menus over the yard. The kit draws the plates and the clipboard; this is the chrome. */
+.fd-menu { position:absolute; inset:0; z-index:40; pointer-events:none; }
+.fd-menu:has(> *) { pointer-events:auto; }
+.fd-pitwall { font-family:"Barlow Condensed","Arial Narrow",sans-serif; }
+.fd-pitwall [data-jg-game-menu-tint] { background:linear-gradient(100deg,rgba(12,11,10,.92) 0%,rgba(12,11,10,.74) 34%,rgba(12,11,10,.34) 62%,rgba(12,11,10,.14) 100%) !important; }
+.fd-pitwall[data-variant="pause"] [data-jg-game-menu-tint] { background:linear-gradient(100deg,rgba(12,11,10,.94) 0%,rgba(12,11,10,.8) 40%,rgba(12,11,10,.6) 100%) !important; }
+.fd-pitwall [data-jg-game-menu-logo] { text-shadow:none !important; }
+.fd-pitwall [data-jg-game-menu-tagline] { font-size:18px !important; letter-spacing:.02em; color:rgba(236,227,204,.82) !important; }
+.fd-pitwall [data-jg-game-menu-detail] { width:100%; max-width:640px; padding:12px 0 0 !important; align-self:start; max-height:100%; }
+.fd-pitwall [data-jg-game-menu-footer] { font-family:"Barlow Condensed",sans-serif; font-size:15px !important; letter-spacing:.1em !important; color:rgba(236,227,204,.72) !important; text-shadow:0 1px 2px #000; }
+.fd-pitwall-foot { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+/* The factory gate's sign. */
+.fd-gate-sign { display:inline-block; }
+.fd-gate-sign > [data-jg-frame-face] { display:flex !important; flex-direction:column; align-items:flex-start; }
+.fd-gate-band { display:block; align-self:stretch; height:14px; background:repeating-linear-gradient(-45deg,#141414 0 12px,#f2c230 12px 24px); box-shadow:inset 0 -2px 0 rgba(0,0,0,.35); }
+.fd-gate-word { display:flex; flex-direction:column; padding:12px 28px 2px 24px; font:clamp(40px,4.6vw,76px)/.92 "Saira Stencil One",sans-serif; letter-spacing:.04em; color:#f2c230; text-shadow:0 0 2px rgba(242,194,48,.55),0 2px 0 rgba(0,0,0,.35); }
+.fd-gate-sub { padding:7px 28px 12px 26px; font:600 clamp(13px,1.1vw,17px)/1 "Barlow Condensed",sans-serif; letter-spacing:.32em; text-transform:uppercase; color:#ece3cc; }
+/* Seven pit verbs must clear the footer on a short screen: the sign gives up height first. */
+@media (max-height:1000px) { .fd-gate-word { font-size:min(clamp(40px,4.6vw,76px),6.1vh); padding-top:10px; } .fd-gate-sub { padding-bottom:9px; } }
+.fd-gate-sign-small .fd-gate-band { height:10px; }
+.fd-gate-sign-small .fd-gate-word { padding:10px 24px 0 20px; font-size:clamp(34px,4vw,60px); }
+.fd-gate-sign-small .fd-gate-sub { padding:6px 24px 10px 22px; letter-spacing:.16em; }
+
+/* What is written on the pit sheet. */
+.fd-sheet { display:flex; flex-direction:column; gap:12px; min-height:0; color:#2a2419; font-family:"Barlow Condensed","Arial Narrow",sans-serif; }
+.fd-sheet-fill { flex:1 1 auto; }
+.fd-sheet-scroll { overflow-y:auto; }
+.fd-sheet-head { display:flex; align-items:baseline; gap:10px; padding-bottom:6px; border-bottom:2px solid #2a2419; }
+.fd-sheet-title { font:clamp(26px,2.3vw,36px)/1 "Saira Stencil One",sans-serif; color:#2a2419; }
+.fd-sheet-tag { margin-left:auto; font-size:14px; letter-spacing:.14em; text-transform:uppercase; color:#b2400f; white-space:nowrap; }
+.fd-sheet-line { margin:0; font-size:19px; line-height:1.3; max-width:46ch; }
+.fd-sheet-stamp { margin:0; align-self:flex-start; padding:5px 10px 4px; font:14px/1.2 "Saira Stencil One",sans-serif; color:#b2400f; border:2px solid #b2400f; transform:rotate(-1.2deg); }
+.fd-sheet-note { margin:0; font-size:16px; line-height:1.3; color:rgba(42,36,25,.74); }
+.fd-sheet-stats { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); margin:0; border:2px solid #2a2419; }
+.fd-sheet-stats > div { padding:6px 10px; min-width:0; }
+.fd-sheet-stats > div + div { border-left:1px solid rgba(42,36,25,.35); }
+.fd-sheet-stats dt { font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:rgba(42,36,25,.7); }
+.fd-sheet-stats dd { margin:2px 0 0; font:28px/1.05 "Saira Stencil One",sans-serif; white-space:nowrap; }
+.fd-sheet-stats dd small { margin-left:2px; font:600 14px "Barlow Condensed",sans-serif; color:rgba(42,36,25,.7); }
+.fd-sheet-stats [data-warn] dd { color:#b2400f; }
+.fd-sheet-row { display:flex; gap:12px; align-items:center; justify-content:space-between; padding:6px 0; border-bottom:1px solid rgba(42,36,25,.25); }
+.fd-sheet-row-text { min-width:0; }
+.fd-sheet-row strong { display:block; font-size:19px; font-weight:600; }
+.fd-sheet-row small { font-size:14px; color:rgba(42,36,25,.66); }
+.fd-stamp-btn { flex:0 0 auto; appearance:none; border:2px solid #2a2419; background:#2a2419; color:#f6eedb; font:15px/1 "Saira Stencil One",sans-serif; padding:7px 12px; cursor:pointer; letter-spacing:.04em; }
+.fd-stamp-btn:hover:not(:disabled) { background:#b2400f; border-color:#b2400f; }
+.fd-stamp-btn:disabled { background:transparent; color:rgba(42,36,25,.5); border-color:rgba(42,36,25,.35); cursor:not-allowed; }
+.fd-sheet-build { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px 14px; }
+.fd-sheet-build > span { display:flex; align-items:center; gap:8px; font-size:17px; min-width:0; }
+.fd-sheet-build svg { flex:0 0 auto; width:28px; height:28px; }
+.fd-sheet-build small { display:block; font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:rgba(42,36,25,.6); }
+.fd-sheet-build [data-empty] { color:rgba(42,36,25,.5); }
+.fd-menu-busy { position:fixed; inset:0; display:grid; place-items:center; background:rgba(12,11,10,.7); }
+.fd-menu-busy span { font:15px "Saira Stencil One",sans-serif; letter-spacing:.12em; text-transform:uppercase; color:#141414; background:#f2c230; padding:12px 20px; clip-path:polygon(10px 0,100% 0,calc(100% - 10px) 100%,0 100%); }
+@media (max-width:700px) {
+  .fd-pitwall [data-jg-game-menu-detail] { max-width:none; }
+  .fd-pitwall [data-jg-game-menu-footer-hint] { display:none; }
+  .fd-pitwall [data-jg-game-menu-tagline] { display:none; }
+  .fd-gate-word { font-size:46px; padding:10px 20px 0 18px; }
+  .fd-gate-sub { font-size:12px; letter-spacing:.2em; padding:6px 20px 10px 18px; }
+  .fd-gate-sign-small .fd-gate-word { font-size:28px; padding-top:7px; }
+  .fd-gate-sign-small .fd-gate-sub { font-size:11px; letter-spacing:.1em; }
+  .fd-sheet { gap:9px; }
+  .fd-sheet-stats { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .fd-sheet-stats > div:nth-child(3) { border-left:0; }
+  .fd-sheet-stats > div:nth-child(n+3) { border-top:1px solid rgba(42,36,25,.35); }
+  .fd-sheet-stats dd { font-size:24px; }
+  .fd-sheet-line { font-size:17px; }
+  .fd-sheet-title { font-size:21px; }
+  .fd-sheet-tag { font-size:12px; letter-spacing:.08em; }
+}
+
+/* Yard calendar medals: stamped shields, lit up to the medal held. */
+.fd-medal { display:inline-flex; align-items:center; justify-content:center; flex:0 0 auto; }
+.fd-medal:not([data-earned]) { opacity:.5; }
+.fd-cal-row .fd-sheet-row-text { flex:1 1 auto; }
+.fd-medal-row { display:inline-flex; gap:3px; align-items:center; flex:0 0 auto; }
+.fd-sheet-medals { display:inline-flex; gap:8px; align-items:center; }
+.fd-cal-tier { margin:6px 0 4px; }
+.fd-cal-tier-head { display:flex; justify-content:space-between; align-items:baseline; margin:8px 0 2px; padding-bottom:3px; border-bottom:2px solid #2a2419; font:18px/1.1 "Saira Stencil One",sans-serif; letter-spacing:.04em; }
+.fd-cal-tier-head small { font:13px/1 "Barlow Condensed",sans-serif; letter-spacing:.08em; text-transform:uppercase; color:rgba(42,36,25,.66); }
+.fd-cal-tier:not([data-open]) .fd-cal-row { opacity:.62; }
+.fd-cal-row[data-selected] { background:rgba(242,194,48,.22); box-shadow:inset 4px 0 0 #b2400f; padding-left:8px; }
+.fd-tower-event { display:flex; flex-direction:column; gap:1px; padding:5px 10px 12px; background:#1b1f21; border-top:2px solid #f2c230; font-size:13px; letter-spacing:.1em; text-transform:uppercase; color:#ece3cc; }
+.fd-tower-event em { font-style:normal; font-size:12px; letter-spacing:.04em; text-transform:none; color:#f2c230; }
+.fd-tower-event[data-medal="bronze"] em { color:#d99a62; }
+.fd-tower-event[data-medal="silver"] em { color:#dfe5e8; }
+.df-event { margin:14px 0; padding:12px 14px; border:1px solid #758d9640; background:#0d191d; }
+.df-event-head { display:flex; flex-wrap:wrap; align-items:center; gap:10px 14px; font-size:11px; font-weight:800; letter-spacing:2px; color:#b7c3c0; }
+.df-event-head b { color:#edc565; font-size:22px; letter-spacing:0; }
+.df-event-head em { font-style:normal; font-size:10px; color:#5de0ce; }
+.df-event-head .fd-medal-row { margin-left:auto; }
+.df-event-pay { display:flex; flex-wrap:wrap; gap:8px 16px; margin-top:10px; font-size:11px; font-weight:800; letter-spacing:1px; color:#edc565; }
+.df-event-pay span { display:inline-flex; align-items:center; gap:6px; }
+.df-overlay p.df-event-open { margin:10px 0 0; color:#5de0ce; font-size:11px; font-weight:800; letter-spacing:1.5px; }
+.df-overlay p.df-event-next { margin:8px 0 0; font-size:12px; }
+.fd-cal-row .fd-stamp-btn { min-width:9.2em; }
+.fd-tower-ghost { margin-top:2px; font:13px/1.1 "Saira Stencil One",sans-serif; font-weight:400; letter-spacing:.04em; color:#ff8a6a; font-variant-numeric:tabular-nums; }
+.fd-tower-ghost[data-ahead] { color:#5de0ce; }

@@ -1,0 +1,15 @@
+[
+  "beacon-bastion/src/game/combat/pendingProjectiles.ts#queue",
+  "beacon-bastion/src/game/combat/pendingProjectiles.ts#seq",
+  "beacon-bastion/src/game/session.ts#session",
+  "brightway-park/src/game/build/commands.ts#revision",
+  "ember-command/src/game/hudStore.ts#snapshot",
+  "ember-command/src/game/session.ts#session",
+  "scrap-signal/src/game/characters.ts#activeCharacterId",
+  "scrap-signal/src/game/characters.ts#activeTree",
+  "scrap-signal/src/game/feel.ts#equippedGunId",
+  "scrap-signal/src/game/feel.ts#gameNowMs",
+  "scrap-signal/src/game/feel.ts#lastHealth",
+  "scrap-signal/src/game/handroll/roll.ts#gunSerial",
+  "scrap-signal/src/game/session.ts#slot"
+]

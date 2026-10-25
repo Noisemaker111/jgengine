@@ -9,8 +9,8 @@ const hashFile = join(cacheDir, "input-hash.txt");
 const cachedOutput = join(cacheDir, "output");
 const outputDir = join(root, "apps", "web", "public", "play");
 
-const HASH_ROOTS = [
-  "Games",
+export const HASH_ROOTS = [
+  "games",
   "apps/dev/src",
   "apps/dev/index.html",
   "apps/dev/vite.config.ts",

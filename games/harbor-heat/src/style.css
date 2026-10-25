@@ -1,0 +1,11 @@
+@import "@jgengine/react/styles.css";
+@import "./game/ui/fiction/harbor.css";
+@import "./game/ui/fiction/hud.css";
+@import "./game/ui/fiction/radio.css";
+@import "./game/ui/fiction/screens.css";
+
+:root { color-scheme: dark; }
+html, body, #root { width: 100%; height: 100%; margin: 0; overflow: hidden; }
+#root { height: 100dvh; background: #102e3b; }
+button { touch-action: manipulation; }
+button:focus-visible { outline: 3px solid #fff3d8; outline-offset: 4px; }

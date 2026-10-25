@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+Allow: /about
+Allow: /.well-known/llmville-agent.json
+Allow: /.well-known/llmville-builder.json
+Disallow: /game/
+Disallow: /dashboard
+Disallow: /settings
+
+# Coding agents: agent API discovery (Convex site URL, not the game UI)
+# https://llmville.com/.well-known/llmville-agent.json
+
+Sitemap: https://llmville.com/sitemap.xml

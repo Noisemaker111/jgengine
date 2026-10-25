@@ -33,13 +33,13 @@ describe("broker client", () => {
     expect(captureWaitMs({ JG_CAPTURE_WAIT_MINUTES: "2" })).toBe(120_000);
   });
 
-  test("the fingerprint moves when the Games link's game list changes", () => {
+  test("the fingerprint moves when the game list changes", () => {
 
     const root = join(import.meta.dir, "..", ".scratch", `broker-fingerprint-${process.pid}`);
     try {
-      mkdirSync(join(root, "Games", "harbor-heat"), { recursive: true });
+      mkdirSync(join(root, "games", "harbor-heat"), { recursive: true });
       const before = treeFingerprint(root, null);
-      mkdirSync(join(root, "Games", "zombie-yard"));
+      mkdirSync(join(root, "games", "zombie-yard"));
       const after = treeFingerprint(root, null);
       expect(after).not.toBe(before);
       expect(treeFingerprint(root, "C:/lane/harbor-heat")).toContain("C:/lane/harbor-heat");

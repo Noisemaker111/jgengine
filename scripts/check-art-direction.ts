@@ -1,10 +1,9 @@
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { ignoredGames, referenceGames, requireGamesAtPin, warnIgnoredGames } from "./games-scope";
+import { ignoredGames, referenceGames, warnIgnoredGames } from "./games-scope";
 const root = fileURLToPath(new URL("..", import.meta.url));
-const gamesRoot = join(root, "Games");
-if (!existsSync(join(process.cwd(), "src", "game.config.ts"))) requireGamesAtPin("check-art-direction", root);
+const gamesRoot = join(root, "games");
 if (existsSync(gamesRoot)) warnIgnoredGames("check-art-direction", ignoredGames(root, referenceGames(root)));
 const scope = referenceGames(root);
 const games = existsSync(gamesRoot) ? readdirSync(gamesRoot, { withFileTypes: true }).filter((e) => e.isDirectory() && !e.name.startsWith(".") && scope.includes(e.name) && (existsSync(join(gamesRoot, e.name, "src/index.tsx")) || existsSync(join(gamesRoot, e.name, "src/game.config.ts")))).map((e) => join(gamesRoot, e.name)) : [];
@@ -20,7 +19,7 @@ for (const dir of targets) {
     if (line.trim() === "TODO: fill in") gaps.push(`${label}: ${section}: TODO: fill in`);
   }
 }
-// Games/ is the separately versioned probe-games repo; its known gaps are a shrink-only baseline so its pushes cannot redden this repo.
+// The games' known gaps are a shrink-only baseline: a fix removes its entry, and nothing adds one.
 const baselinePath = join(root, "scripts", "art-direction-baseline.json");
 if (games.length && process.argv.includes("--write")) {
   writeFileSync(baselinePath, `${JSON.stringify(gaps.sort(), null, 2)}\n`);

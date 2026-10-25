@@ -11,7 +11,7 @@ import { join } from "node:path";
  *  1. Every `@jgengine/*` import statement resolves to a real published subpath
  *     (the reviewed `scripts/export-manifest.json`). A recipe can never point an
  *     agent at an export that does not exist or has been renamed.
- *  2. No recipe references `Games/*`. Recipes are self-contained — an agent must
+ *  2. No recipe references `games/*`. Recipes are self-contained — an agent must
  *     be able to build from the recipe alone, never by reading a sibling game.
  *
  * The recipe layer is organized by *composition seam* (what connects to what),
@@ -66,9 +66,9 @@ for (const file of files) {
   const text = readFileSync(file, "utf8");
 
   for (const [lineNo, line] of text.split("\n").entries()) {
-    if (line.includes("Games/")) {
+    if (line.includes("games/")) {
       problems.push(
-        `${rel(file)}:${lineNo + 1}: references Games/* — recipes must be self-contained (build from the recipe alone, never a sibling game)`,
+        `${rel(file)}:${lineNo + 1}: references games/* — recipes must be self-contained (build from the recipe alone, never a sibling game)`,
       );
     }
     for (const match of line.matchAll(IMPORT_SPECIFIER)) {
@@ -88,10 +88,10 @@ if (problems.length > 0) {
       problems.map((p) => `  ${p}`).join("\n") +
       `\n\nRecipes live at .claude/skills/<skill>/recipes/*.md and show how primitives\n` +
       `compose into a running game. Every @jgengine import must resolve to a real\n` +
-      `published subpath, and no recipe may reference Games/* — an agent builds from\n` +
+      `published subpath, and no recipe may reference games/* — an agent builds from\n` +
       `the recipe alone.\n`,
   );
   process.exit(1);
 }
 
-console.log(`check-recipes: clean — ${files.length} recipe(s) resolve against the published surface, no Games/* references`);
+console.log(`check-recipes: clean — ${files.length} recipe(s) resolve against the published surface, no games/* references`);

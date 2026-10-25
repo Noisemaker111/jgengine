@@ -213,7 +213,7 @@ function removeExactMarker(marker: DevServerMarker, dir?: string): void {
 /**
  * Who a warm runner belongs to. A run that serves a game from another checkout (`--game-dir`) boots
  * a runner that renders that directory, so it must not attach to - or share a port with - the
- * runner that serves this checkout's `Games/`. The launcher and the Vite plugin both write this, so
+ * runner that serves this checkout's `games/`. The launcher and the Vite plugin both write this, so
  * a later `--game-dir` run for the same folder finds and reuses the server.
  */
 export function devServerIdentity(cwd = process.cwd()): string {

@@ -1,0 +1,2 @@
+export const REMOTE_AVATAR_INTERPOLATION_MS = 60;
+export const REMOTE_AVATAR_RENDER_CAP = 40;

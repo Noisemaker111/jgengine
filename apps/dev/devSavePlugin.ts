@@ -18,7 +18,7 @@ const MAX_BODY_BYTES = 8 * 1024 * 1024;
 
 /**
  * Where a game's sources live: the checkout `--game-dir` serves when the id is that game, so a save
- * from a lane's worktree lands in the worktree; otherwise `Games/<id>/src`.
+ * from a lane's worktree lands in the worktree; otherwise `games/<id>/src`.
  */
 function gameSrcDir(gamesDir: string, gameId: string, servedDir?: string): string | null {
   if (!GAME_ID_PATTERN.test(gameId)) return null;
@@ -119,7 +119,7 @@ function readBody(req: IncomingMessage): Promise<string> {
 
 /**
  * Apply one save request. `servedDir` is the checkout a `--game-dir` run serves; saves for that game
- * write there instead of `Games/<id>`.
+ * write there instead of `games/<id>`.
  */
 export function handleSaveRequest(gamesDir: string, body: string, servedDir?: string): SaveEndpointResponse {
   const request = JSON.parse(body) as SaveEndpointRequest;
@@ -133,7 +133,7 @@ export function handleSaveRequest(gamesDir: string, body: string, servedDir?: st
 }
 
 /**
- * Dev-only Vite middleware: writes editor scene documents and tunable deltas into Games/<id>/src, or
+ * Dev-only Vite middleware: writes editor scene documents and tunable deltas into games/<id>/src, or
  * into the `--game-dir` checkout (`servedDir`) when the save is for the game it serves.
  */
 export function devSavePlugin(gamesDir: string, servedDir?: string): {

@@ -1,10 +1,12 @@
 // Which game checks and which test shards a pull request's diff has to pay for. CI's
-// `changes` job calls this and the `smoke` and `perf` verdicts read the answer, so a skip
-// can never stand in for a pass. `scripts/ci-scope.test.ts` holds the map.
+// `changes` job calls this and the `smoke`, `perf` and `games` verdicts read the answer, so
+// a skip can never stand in for a pass. `scripts/ci-scope.test.ts` holds the map.
 //
 //   bun scripts/ci-scope.ts --base origin/beta
 //   bun scripts/ci-scope.ts --files packages/react/src/gameMenu.tsx
 import { spawnSync } from "node:child_process";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 
 import { printHelpIfAsked, type Usage } from "./script-help";
 
@@ -40,6 +42,8 @@ export interface Verdict {
   tests: "all" | "none";
   /** The game matrix the `perf-game` job runs; never empty, so the matrix always expands. */
   games: readonly string[];
+  /** The games under `games/` whose type-check and tests the `games` job runs; empty skips it. */
+  gameChecks: readonly string[];
   /** One line for the check summary: what ran, and what a skip skipped. */
   reason: string;
   /** Changed paths that decided it. */
@@ -56,8 +60,9 @@ const FULL = [
   /^packages\/core\/src\/(render|scene|sim|ai|nav|physics|movement|runtime|time)\//,
   /^packages\/core\/src\/game\/system(Runtime|Schedule)\.ts/,
   /^packages\/shell\/src\/(render|postfx|scatter|world)\//,
-  /^Games\//,
-  /^scripts\/(?:perf-|smoke|ensure-games|ensure-ready|games-ref|browser-lib)/,
+  // Every game boots through the shared Vite engine-source resolution.
+  /^games\/shared\//,
+  /^scripts\/(?:perf-|smoke|ensure-ready|browser-lib)/,
   /^\.github\/workflows\//,
   // `bun run release` rewrites CHANGELOG.md, so its presence marks the release PR.
   /^CHANGELOG\.md$/,
@@ -74,7 +79,14 @@ const SURFACE = [
   /^(?:package\.json|bun\.lock|tsconfig[^/]*\.json)$/,
   // The dev runner mounts a game: it can break a boot without touching a package.
   /^apps\/dev\//,
+  /^games\/tsconfig[^/]*\.json$/,
 ];
+
+/** `games/<id>/...`: a change inside one game reaches that game and no other. */
+const GAME_PATH = /^games\/([^/]+)\//;
+
+/** The folders under `games/` that hold no game. */
+const NON_GAME_DIRS = new Set(["shared", "scripts", "docs", "registry", "node_modules"]);
 
 /**
  * Paths that cannot execute inside a game: prose, skills, change notes, the web app,
@@ -83,6 +95,10 @@ const SURFACE = [
 const INERT = [
   /^(?:README|AGENTS|CREDITS|LICENSE)/,
   /^(?:\.claude|changes|examples|docs|\.github\/(?:ISSUE|PULL)_TEMPLATE)\//,
+  // The games' own gates, docs, registry and ledger; the `games` job runs them, no game frame does.
+  /^games\/(?:scripts|docs|registry)\//,
+  /^games\/[^/]+\.(?:md|json)$/,
+  /^games\/\.gitignore$/,
   /^apps\//,
   // Scaffold templates are copied into a new game, never loaded by a reference game.
   /^packages\/jgengine\/src\/templates\//,
@@ -120,26 +136,101 @@ export function testsNeeded(paths: readonly string[]): "all" | "none" {
  * The game run this diff has to pay for. Unknown paths are not inert: a path this map has
  * never seen measures every game, so a new package cannot slip past the gate.
  */
-export function gameScope(paths: readonly string[]): Verdict {
+export function gameScope(paths: readonly string[], workspace: GameWorkspace = readGameWorkspace()): Verdict {
   const changed = paths.map((path) => path.trim()).filter(Boolean);
-  if (changed.length === 0) return verdict("none", "no changed paths", [], paths);
+  const checks = gameChecks(changed, workspace);
+  if (changed.length === 0) return verdict("none", "no changed paths", [], paths, checks);
   // A test file ships nothing a game boots, so it never pays for a game run - even when its
   // directory is one a game loads.
   const live = changed.filter((path) => !isTestPath(path));
-  if (live.length === 0) return verdict("none", `test files only: ${summary(changed)}`, changed, paths);
+  if (live.length === 0) return verdict("none", `test files only: ${summary(changed)}`, changed, paths, checks);
   const full = live.filter((path) => FULL.some((pattern) => pattern.test(path)));
-  if (full.length > 0) return verdict("full", `frame work changed: ${summary(full)}`, full, paths);
+  if (full.length > 0) return verdict("full", `frame work changed: ${summary(full)}`, full, paths, checks);
+  // A change inside one reference game measures that game; a game outside the frame set has
+  // no budget, and the `games` job still checks it.
+  const inGame = live.filter((path) => gameOf(path) !== null);
+  const framed = [...new Set(inGame.map(gameOf))].filter((id): id is string => (FRAME_GAMES as readonly string[]).includes(id ?? ""));
   const surface = live.filter((path) => SURFACE.some((pattern) => pattern.test(path)));
-  if (surface.length > 0) return verdict("surface", `shared surface changed: ${summary(surface)}`, surface, paths);
-  const unknown = live.filter((path) => !isInertPath(path));
-  if (unknown.length > 0) return verdict("full", `unmapped path, so every game: ${summary(unknown)}`, unknown, paths);
-  return verdict("none", `no runtime change: ${summary(changed)}`, changed, paths);
+  if (surface.length > 0 || framed.length > 0) {
+    const games = surface.length > 0 ? [...new Set([REPRESENTATIVE_GAME, ...framed])] : framed;
+    const why = surface.length > 0 ? `shared surface changed: ${summary(surface)}` : `game changed: ${framed.join(", ")}`;
+    return verdict("surface", why, [...surface, ...inGame], paths, checks, games);
+  }
+  const unknown = live.filter((path) => !isInertPath(path) && gameOf(path) === null);
+  if (unknown.length > 0) return verdict("full", `unmapped path, so every game: ${summary(unknown)}`, unknown, paths, checks);
+  return verdict("none", `no runtime change: ${summary(changed)}`, changed, paths, checks);
 }
 
-function verdict(scope: GameScope, reason: string, matched: readonly string[], paths: readonly string[]): Verdict {
-  const games = scope === "full" ? [...FRAME_GAMES] : scope === "surface" ? [REPRESENTATIVE_GAME] : [REPRESENTATIVE_GAME];
+function verdict(
+  scope: GameScope,
+  reason: string,
+  matched: readonly string[],
+  paths: readonly string[],
+  gameChecks: readonly string[],
+  games: readonly string[] = scope === "full" ? [...FRAME_GAMES] : [REPRESENTATIVE_GAME],
+): Verdict {
   // A `none` verdict still names one game so the matrix expands; the job's `if` is what skips it.
-  return { scope, tests: testsNeeded(paths), games, reason, matched: [...matched] };
+  return { scope, tests: testsNeeded(paths), games, gameChecks, reason, matched: [...matched] };
+}
+
+/** The game a path sits in, or `null` outside `games/<id>/`. */
+function gameOf(path: string): string | null {
+  const id = GAME_PATH.exec(path)?.[1];
+  return id === undefined || NON_GAME_DIRS.has(id) || id.startsWith(".") ? null : id;
+}
+
+/** Every game under `games/` and the engine packages it declares. */
+export interface GameWorkspace {
+  games: readonly { id: string; engine: readonly string[] }[];
+}
+
+export function readGameWorkspace(root: string = process.cwd()): GameWorkspace {
+  const dir = join(root, "games");
+  if (!existsSync(dir)) return { games: [] };
+  const games: { id: string; engine: string[] }[] = [];
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    if (!entry.isDirectory() || NON_GAME_DIRS.has(entry.name) || entry.name.startsWith(".")) continue;
+    const manifest = join(dir, entry.name, "package.json");
+    if (!existsSync(manifest)) continue;
+    const pkg = JSON.parse(readFileSync(manifest, "utf8")) as {
+      dependencies?: Record<string, string>;
+      devDependencies?: Record<string, string>;
+    };
+    const engine = Object.keys({ ...pkg.devDependencies, ...pkg.dependencies })
+      .filter((name) => name.startsWith("@jgengine/"))
+      .map((name) => name.slice("@jgengine/".length));
+    games.push({ id: entry.name, engine });
+  }
+  return { games: games.sort((a, b) => a.id.localeCompare(b.id)) };
+}
+
+/**
+ * Paths that reach every game's type-check and tests: what every game resolves (the root
+ * install, compiler settings, the shared Vite resolution) and the games' own gates.
+ */
+const EVERY_GAME = [
+  /^(?:package\.json|bun\.lock|tsconfig[^/]*\.json)$/,
+  /^games\/(?:shared|scripts|registry)\//,
+  /^games\/(?:package\.json|tsconfig[^/]*\.json|capabilities\.json)$/,
+  /^\.github\/workflows\/ci\.yml$/,
+];
+
+/**
+ * The games the `games` job type-checks and tests: each game a changed file sits in, each game
+ * that declares a changed engine package, and every game for a change they all resolve.
+ */
+export function gameChecks(paths: readonly string[], workspace: GameWorkspace): string[] {
+  const all = workspace.games.map((game) => game.id).sort();
+  if (paths.some((path) => EVERY_GAME.some((pattern) => pattern.test(path)))) return all;
+  const reached = new Set<string>();
+  for (const path of paths) {
+    const id = gameOf(path);
+    if (id !== null && all.includes(id)) reached.add(id);
+    const pkg = /^packages\/([^/]+)\//.exec(path)?.[1];
+    if (pkg === undefined || isTestPath(path)) continue;
+    for (const game of workspace.games) if (game.engine.includes(pkg)) reached.add(game.id);
+  }
+  return all.filter((id) => reached.has(id));
 }
 
 /** `a, b and 3 more`, so a check summary stays one line. */
@@ -160,7 +251,7 @@ const USAGE: Usage = {
     { flag: "--base <ref>", detail: "diff `<ref>...HEAD` and scope the changed paths" },
     { flag: "--files <path...>", detail: "scope these paths instead of a diff" },
     { flag: "--all", detail: "every game and every test shard: a push runs the full gate" },
-    { flag: "--github-output", detail: "append `games`, `gameList`, `tests` and `reason` to $GITHUB_OUTPUT" },
+    { flag: "--github-output", detail: "append `games`, `gameList`, `gameChecks`, `tests` and `reason` to $GITHUB_OUTPUT" },
   ],
   example: "bun scripts/ci-scope.ts --base origin/beta",
   exits: ["0  always: the verdict is printed, not an exit code"],
@@ -174,7 +265,8 @@ export function renderVerdict(verdict: Verdict): string {
         ? `perf-game on ${verdict.games.join(", ")}`
         : "no game job";
   const tests = verdict.tests === "all" ? "every test shard" : "no test shard";
-  return `games=${verdict.scope} runs ${runs}, ${tests}: ${verdict.reason}`;
+  const checks = verdict.gameChecks.length === 0 ? "no game checks" : `game checks on ${verdict.gameChecks.length} game(s)`;
+  return `games=${verdict.scope} runs ${runs}, ${tests}, ${checks}: ${verdict.reason}`;
 }
 
 function changedPaths(argv: readonly string[]): string[] {
@@ -195,7 +287,14 @@ if (import.meta.main) {
     try {
       const args = process.argv.slice(2);
       const verdict = args.includes("--all")
-        ? { scope: "full" as const, tests: "all" as const, games: [...FRAME_GAMES], reason: "--all: a push runs the full gate", matched: [] }
+        ? {
+            scope: "full" as const,
+            tests: "all" as const,
+            games: [...FRAME_GAMES],
+            gameChecks: readGameWorkspace().games.map((game) => game.id),
+            reason: "--all: a push runs the full gate",
+            matched: [],
+          }
         : gameScope(changedPaths(args));
       console.log(renderVerdict(verdict));
       const output = process.env.GITHUB_OUTPUT;
@@ -206,6 +305,7 @@ if (import.meta.main) {
           [
             `games=${verdict.scope}`,
             `gameList=${JSON.stringify(verdict.games)}`,
+            `gameChecks=${verdict.gameChecks.join(" ")}`,
             `tests=${verdict.tests}`,
             `reason=${verdict.reason.replace(/[\r\n]+/g, " ")}`,
             "",

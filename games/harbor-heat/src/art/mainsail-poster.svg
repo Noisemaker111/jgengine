@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 800">
+  <defs>
+    <linearGradient id="sky" x2="0" y2="1"><stop stop-color="#103b4d"/><stop offset=".65" stop-color="#f17e69"/><stop offset="1" stop-color="#ffe2ad"/></linearGradient>
+    <linearGradient id="sea" x2="0" y2="1"><stop stop-color="#57c8bb"/><stop offset="1" stop-color="#0c667c"/></linearGradient>
+    <pattern id="grain" width="8" height="8" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r=".7" fill="#ffe4ae" opacity=".1"/></pattern>
+  </defs>
+  <path fill="url(#sky)" d="M0 0h960v800H0z"/>
+  <circle fill="#ffc879" cx="564" cy="338" r="145"/>
+  <path fill="#215164" d="M440 540V390h60v-34h72v184h30V300h92v240h18V376h90v164h23V330h74v210h61v260H0V540z"/>
+  <g fill="#f8bd83" opacity=".75"><path d="M622 326h11v70h-11zm22 0h11v70h-11zm22 0h11v70h-11zm181 27h9v128h-9zM752 404h30v7h-30zm0 22h30v7h-30z"/></g>
+  <path fill="url(#sea)" d="M0 520h465l-35 280H0z"/>
+  <path fill="#ffe2ad" d="M460 520h38L375 800H260z"/>
+  <path fill="#18434d" d="M510 520h38L710 800H376z"/>
+  <path fill="#f8bc70" d="m548 552 10 0 6 20h-12zm13 42h10l8 28h-12zm20 62h13l14 46h-18z"/>
+  <g fill="none" stroke="#8ee2cf" stroke-width="3" opacity=".5"><path d="M0 580h172m28 0h75M30 635h148M0 717h124m-98 36h151M230 564h110"/></g>
+  <g fill="#113b47">
+    <path d="M162 692 126 320h19l39 372zM138 325C70 275 18 279 0 302c73-7 114 29 138 23zm0 0C48 312 10 352 6 386c50-38 91-53 132-61zm0 0C175 253 230 249 273 260c-63 11-89 35-135 65zm0 0c63-2 117 39 135 84-49-41-91-67-135-84zm0 0c-6-58-33-87-74-97 36 39 52 64 74 97z"/>
+    <path d="m793 692 29-329h17l-22 329zM830 369c-56-68-104-73-149-55 78 9 100 26 149 55zm0 0c-83-11-118 22-139 61 63-31 98-58 139-61zm0 0c44-63 88-74 130-60-58 15-95 37-130 60zm0 0c57 8 101 35 130 78-54-33-93-60-130-78zm0 0c2-49 31-88 71-102-36 38-55 68-71 102z"/>
+  </g>
+  <g transform="translate(476 650) rotate(-9)">
+    <path fill="#112e3b" d="M-102 24h228v62h-228z"/>
+    <path fill="#f38266" stroke="#112e3b" stroke-width="6" d="m-90 9 24-69h131l43 69h20v62h-231V9z"/>
+    <path fill="#ffe1ab" d="m-53-48-13 45H27v-45zm94 0v45h52L64-48z"/>
+    <path fill="#38b6ac" d="M-82 17h82v38h-82z"/>
+    <path fill="#ffe4ae" d="M-71 33h51v7h-51zM95 31h21v16H95z"/>
+    <circle cx="-60" cy="72" r="24" fill="#112e3b"/><circle cx="87" cy="72" r="24" fill="#112e3b"/>
+    <circle cx="-60" cy="72" r="11" fill="#ffe1ab"/><circle cx="87" cy="72" r="11" fill="#ffe1ab"/>
+  </g>
+  <path fill="url(#grain)" d="M0 0h960v800H0z"/>
+</svg>

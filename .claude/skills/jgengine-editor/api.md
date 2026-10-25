@@ -795,7 +795,7 @@
 
 - `LoadGameLayersResult` (type): type LoadGameLayersResult = | { ok: true; document: EditorDocument } | { ok: false; errors: EditorDocumentDiagnostic[] } — Result of {@link loadGameLayers}: a validated document, or every diagnostic collected while decoding it.
 - `decodeGameLayers` (function): function decodeGameLayers(resolved: unknown): LoadGameLayersResult — Validates an already-resolved `editorLayers` export value (post module-load, post factory-call) against the editor document schema — the exact check {@link loadGameLayers} applies at the untrusted-input boundary between game-authored code and a live editor session.
-- `loadGameLayers` (function): function loadGameLayers(gameId: string): Promise<LoadGameLayersResult> — Node-only: resolves a game's `editorLayers` export straight from Games/<id>/src and validates its shape before it reaches a live editor session — the untrusted-input boundary between game-authored code and the engine.
+- `loadGameLayers` (function): function loadGameLayers(gameId: string): Promise<LoadGameLayersResult> — Node-only: resolves a game's `editorLayers` export straight from games/<id>/src and validates its shape before it reaches a live editor session — the untrusted-input boundary between game-authored code and the engine.
 
 ## @jgengine/editor/mcp/rpcPayload
 

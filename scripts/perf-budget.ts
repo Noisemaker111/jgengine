@@ -108,14 +108,14 @@ function parseBudgetEntry(raw: unknown, game: string, source: string): PerfBudge
 }
 
 /**
- * The budget for one game. A game's own `perf-budget.json` in its `Games/<id>/`
- * directory wins, so the games repo can own its numbers and a content PR carries
+ * The budget for one game. A game's own `perf-budget.json` in its `games/<id>/`
+ * directory wins, so a game owns its numbers and a content PR carries
  * its budget; the engine copy is the fallback this gate and its CI job land with.
  * No file anywhere is a failure, never a skip. The returned `source` names the
  * file that was used, because a verdict means nothing without it.
  */
 export function loadBudget(game: string, root = repoRoot): LoadedBudget {
-  const gameFile = join(root, "Games", game, "perf-budget.json");
+  const gameFile = join(root, "games", game, "perf-budget.json");
   if (existsSync(gameFile)) {
     let parsed: unknown;
     try {
@@ -129,7 +129,7 @@ export function loadBudget(game: string, root = repoRoot): LoadedBudget {
   const engineFile = join(root, BASELINE_RELATIVE);
   if (!existsSync(engineFile)) {
     throw new Error(
-      `perf gate: no budget for "${game}" — ${BASELINE_RELATIVE} is missing and Games/${game}/perf-budget.json does not exist`,
+      `perf gate: no budget for "${game}" — ${BASELINE_RELATIVE} is missing and games/${game}/perf-budget.json does not exist`,
     );
   }
   let parsed: unknown;

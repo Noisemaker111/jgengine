@@ -1,11 +1,10 @@
 import { fileURLToPath } from "node:url";
 
 import { findRandomnessLeaks } from "./gameDeterminism";
-import { ignoredGames, referenceGames, requireGamesAtPin, warnIgnoredGames } from "./games-scope";
+import { ignoredGames, referenceGames, warnIgnoredGames } from "./games-scope";
 import { runRatchet } from "./ratchet";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
-requireGamesAtPin("check-game-determinism", root);
 
 const games = referenceGames(root);
 warnIgnoredGames("check-game-determinism", ignoredGames(root, games));

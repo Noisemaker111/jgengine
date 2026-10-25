@@ -1,0 +1,52 @@
+{
+  /* This TypeScript project config describes the environment that
+   * Convex functions run in and is used to typecheck them.
+   * You can modify it, but some settings are required to use Convex.
+   */
+  "compilerOptions": {
+    /* These settings are not required by Convex and can be modified. */
+    "allowJs": true,
+    "strict": true,
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
+    "skipLibCheck": true,
+    "allowSyntheticDefaultImports": true,
+
+    /* These compiler options are required by Convex */
+    "target": "ESNext",
+    "lib": ["ES2022", "dom"],
+    "forceConsistentCasingInFileNames": true,
+    "module": "ESNext",
+    "isolatedModules": true,
+    "noEmit": true,
+    "types": ["node"],
+    "paths": {
+      "@llmville/game/*": ["../../game/src/*"],
+      "@jgengine/assets": ["../../../../../packages/assets/src/index.ts"],
+      "@jgengine/assets/*": ["../../../../../packages/assets/src/*"],
+      "@jgengine/convex": ["../../../../../packages/convex/src/index.ts"],
+      "@jgengine/convex/*": ["../../../../../packages/convex/src/*"],
+      "@jgengine/core": ["../../../../../packages/core/src/index.ts"],
+      "@jgengine/core/*": ["../../../../../packages/core/src/*"],
+      "@jgengine/editor": ["../../../../../packages/editor/src/index.ts"],
+      "@jgengine/editor/*": ["../../../../../packages/editor/src/*"],
+      "@jgengine/github": ["../../../../../packages/github/src/index.ts"],
+      "@jgengine/github/*": ["../../../../../packages/github/src/*"],
+      "@jgengine/navbake": ["../../../../../packages/navbake/src/index.ts"],
+      "@jgengine/navbake/*": ["../../../../../packages/navbake/src/*"],
+      "@jgengine/node": ["../../../../../packages/node/src/index.ts"],
+      "@jgengine/node/*": ["../../../../../packages/node/src/*"],
+      "@jgengine/rapier": ["../../../../../packages/rapier/src/index.ts"],
+      "@jgengine/rapier/*": ["../../../../../packages/rapier/src/*"],
+      "@jgengine/react": ["../../../../../packages/react/src/index.ts"],
+      "@jgengine/react/*": ["../../../../../packages/react/src/*"],
+      "@jgengine/shell/*": ["../../../../../packages/shell/src/*"],
+      "@jgengine/sql": ["../../../../../packages/sql/src/index.ts"],
+      "@jgengine/sql/*": ["../../../../../packages/sql/src/*"],
+      "@jgengine/ws": ["../../../../../packages/ws/src/index.ts"],
+      "@jgengine/ws/*": ["../../../../../packages/ws/src/*"]
+    }
+  },
+  "include": ["./**/*"],
+  "exclude": ["./_generated"]
+}

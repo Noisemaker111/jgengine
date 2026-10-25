@@ -1,0 +1,5 @@
+shots/
+**/public/models/*
+!**/public/models/imported/
+**/public/materials/*
+!**/public/materials/imported/

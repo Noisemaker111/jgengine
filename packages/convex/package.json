@@ -37,9 +37,9 @@
     "react": "^19.0.0"
   },
   "devDependencies": {
-    "convex": "^1.31.2",
-    "react": "19.2.3",
-    "@types/react": "^19"
+    "convex": "catalog:",
+    "react": "catalog:",
+    "@types/react": "catalog:"
   },
   "publishConfig": {
     "access": "public"

@@ -29,11 +29,11 @@ import { EDITOR_MCP_TOOLS } from "./tools";
 function printHelp(): void {
   console.log(`jgengine editor-mcp
 
-  --game <id>          game id under Games/ (default the-robots)
+  --game <id>          game id under games/ (default the-robots)
   --port <n>           HTTP bridge port (default 17373)
   --rpc '<json>'       run an RPC and exit; repeat to run several in order on one session
   --save               after a successful --rpc/--rpc-file batch, write the session document
-                       back to Games/<id>/src/editor.scene.json
+                       back to games/<id>/src/editor.scene.json
   --stdio              MCP JSON-RPC over stdin/stdout
   --tools              list MCP tool names
   --serve              keep the localhost HTTP bridge up (default when no --rpc/--rpc-file/--stdio)
@@ -102,7 +102,7 @@ export type SaveSceneResult = { ok: true; saved: string } | { ok: false; error: 
  * @internal
  */
 export function saveSceneDocument(gameId: string, document: EditorDocument, gamesRoot?: string): SaveSceneResult {
-  const root = gamesRoot ?? fileURLToPath(new URL("../../../../Games/", import.meta.url));
+  const root = gamesRoot ?? fileURLToPath(new URL("../../../../games/", import.meta.url));
   const srcDir = join(root, gameId, "src");
   if (!existsSync(srcDir)) return { ok: false, error: `--save: no src directory for game "${gameId}" at ${srcDir}` };
   const decoded = decodeEditorDocument(document);

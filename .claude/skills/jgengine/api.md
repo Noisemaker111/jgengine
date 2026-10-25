@@ -208,7 +208,7 @@
 
 ## @jgengine/core/devtools/saveEndpoint
 
-- `SaveEndpointInfo` (interface): interface SaveEndpointInfo — Where dev-time saves land: the endpoint URL plus the Games/<gameId> directory it targets.
+- `SaveEndpointInfo` (interface): interface SaveEndpointInfo — Where dev-time saves land: the endpoint URL plus the games/<gameId> directory it targets.
 - `SaveEndpointRequest` (type): type SaveEndpointRequest = | { kind: "editor-document"; gameId: string; json: string } | { kind: "tunables"; gameId: string; deltas: readonly { table: string; key: string; value: unknown }[]; } — One write request the dev save endpoint accepts: a scene document or tunable deltas.
 - `SaveEndpointResponse` (interface): interface SaveEndpointResponse — Result envelope the dev save endpoint returns for every write request.
 

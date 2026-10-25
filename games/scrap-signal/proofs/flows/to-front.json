@@ -1,0 +1,31 @@
+{ "steps": [
+  { "waitFor": "__jgProbe().frontStarted === 1 && __jgProbe().frontBossHealth > 0",
+    "note": "arrival: the Rustflat Front is live and its Foreman is on the field, read from the encounter's own state" },
+
+  { "assert": "(() => { window.__frontBefore = __jgProbe().frontBossHealth; return window.__frontBefore > 0; })()",
+    "note": "the Foreman's health before the shots, kept for the arrival comparison" },
+
+  { "clickAt": [800, 450],
+    "note": "click the field to capture the pointer, the same gesture the game asks for; it also fires the first aimed shot" },
+
+  { "look": [-90, 0],
+    "note": "a measured turn off the wreck. Scrap projects no entity screen point, so aimAt has nothing to aim at yet; look is the only aim step with a real crosshair behind it" },
+
+  { "clickAt": [800, 450],
+    "note": "control shot with the crosshair off the Foreman: reported, not asserted, because a moving target can wander into it" },
+
+  { "probe": "off-target" },
+
+  { "look": [90, 0],
+    "note": "the same measured turn back onto the wreck, so the crosshair sits where the Foreman stands" },
+
+  { "clickAt": [800, 450] },
+  { "clickAt": [800, 450] },
+
+  { "assert": "__jgProbe().frontBossHealth < window.__frontBefore",
+    "before": { "is": "__jgProbe().frontBossHealth < window.__frontBefore", "timeoutMs": 15000 },
+    "note": "arrival: the Foreman lost health to fire aimed at it - a hit landed, judged by the game's own stat and not by the keypress" },
+
+  { "probe": "arrival",
+    "note": "the before and after health prints beside the step so the drop is a number, not a claim" }
+] }

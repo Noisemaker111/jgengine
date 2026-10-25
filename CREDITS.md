@@ -144,10 +144,10 @@ commercial use; credited here per its terms.
 
 ## game-icons.net (Ironhold HUD)
 
-The **[Ironhold](Games/ironhold)** command-console HUD uses vector glyphs from
+The **[Ironhold](games/ironhold)** command-console HUD uses vector glyphs from
 **[game-icons.net](https://game-icons.net)** (CC BY 3.0) for its resource, unit,
 building, research, and ability icons
-([`Games/ironhold/src/game/ui/iconData.ts`](Games/ironhold/src/game/ui/iconData.ts)).
+([`games/ironhold/src/game/ui/iconData.ts`](games/ironhold/src/game/ui/iconData.ts)).
 The individual icons are by **Lorc**, **Delapouite**, and **sbed** — coins,
 wood-pile, meat, despair, miner, broadsword, high-shot, crossed-swords, barracks,
 wheat, watchtower, checkered-flag, palm, pointy-sword, breastplate,
@@ -172,7 +172,7 @@ JGengine's editor-owned world and reusable-package workflow.
 
 ## Game concepts
 
-Some of the games in `Games/*` are our own take on someone else's idea. We
+Some of the games in `games/*` are our own take on someone else's idea. We
 credit the originators here, in the game's on-screen HUD (which each game
 renders itself — for example, Lantern Reach ships a `CreditLine`
 in its HUD), and on the game's jgengine.com page. Each game declares its own
@@ -182,7 +182,7 @@ sourced from the game's config rather than a hand-maintained web registry.
 
 ### Levy Street — *World of ClaudeCraft*
 
-**[Lantern Reach](Games/lantern-reach)** began as a port of
+**[Lantern Reach](games/lantern-reach)** began as a port of
 **[world-of-claudecraft](https://github.com/levy-street/world-of-claudecraft)**
 by **[Levy Street](https://github.com/levy-street)** (MIT) — a from-scratch,
 browser-based classic-era MMORPG built almost entirely with AI coding agents:
@@ -203,7 +203,7 @@ KayKit and Quaternius sections above.
 
 ### Classic games (Wave 2)
 
-A handful of genre-anchor classics in `Games/*` are our own builds of decades-old
+A handful of genre-anchor classics in `games/*` are our own builds of decades-old
 game concepts — original code, art, and levels, but the mechanics trace back to
 specific inventors and titles. Credited here and on each game's HUD; all
 lineages this wave are corporate or traditional, so each game shows a
@@ -211,8 +211,8 @@ genre-homage line rather than crediting a named individual creator.
 
 | Game | id | Lineage |
 | --- | --- | --- |
-| **[Vice Isle](Games/vice-isle)** | `vice-isle` | Rockstar Games's **Grand Theft Auto** series, in the cel-shaded look of Gearbox's **Borderlands** — genre homage. |
-| **[Ironhold](Games/ironhold)** | `ironhold` | Blizzard Entertainment's **Warcraft III** — the base-and-army real-time-strategy skirmish (select, command, attack-move, focus-fire). Original code, art, and map; only the feel and verb set are harvested. |
+| **[Vice Isle](games/vice-isle)** | `vice-isle` | Rockstar Games's **Grand Theft Auto** series, in the cel-shaded look of Gearbox's **Borderlands** — genre homage. |
+| **[Ironhold](games/ironhold)** | `ironhold` | Blizzard Entertainment's **Warcraft III** — the base-and-army real-time-strategy skirmish (select, command, attack-move, focus-fire). Original code, art, and map; only the feel and verb set are harvested. |
 
 ## First-party generated assets
 

@@ -1,0 +1,52 @@
+{
+  "steps": [
+    {
+      "waitFor": "window.__harborGigs !== undefined && window.__jgengineAgent !== undefined && window.__harborGigs.read().duty === true",
+      "timeoutMs": 15000,
+      "note": "arrival (run with --state taxi): in a car with $250"
+    },
+    {
+      "assert": "(window.__hg = (n, i) => window.__jgengineAgent.handle({ method: 'run_command', name: n, input: i || {} }), __hg('taxiDuty'), __hg('gigs.race'), true)",
+      "note": "taxi light off, then the phone's Find a street race: the $200 stake is paid"
+    },
+    {
+      "waitFor": "(() => { const v = window.__harborGigs.read().view; return v !== null && v.kindId === 'street' && v.phase === 'pickup' && /get to the start line/i.test(document.body.innerText); })()",
+      "timeoutMs": 5000,
+      "note": "the pager points at the start line"
+    },
+    {
+      "assert": "(__hg('gigs.warp', { short: 0 }), true)",
+      "note": "pull onto the start line"
+    },
+    {
+      "waitFor": "(() => { const v = window.__harborGigs.read().view; return v !== null && v.phase === \"en-route\" && v.rivals.length === 2; })()",
+      "timeoutMs": 8000,
+      "note": "stopped on the line: two rival cars line up and the race goes"
+    },
+    {
+      "key": "KeyW",
+      "ms": 2500,
+      "note": "launch off the line beside the rivals"
+    },
+    {
+      "shot": "gigs-race-start"
+    },
+    {
+      "waitFor": "(() => { const g = window.__harborGigs.read(); if (g.receipt !== null) return true; const t = performance.now(); if (window.__lw === undefined || t - window.__lw > 700) { window.__lw = t; __hg('gigs.warp', { short: 0 }); } return false; })()",
+      "timeoutMs": 40000,
+      "note": "run every gate in order until the finish"
+    },
+    {
+      "assert": "(() => { const r = window.__harborGigs.read().receipt; return r.kindId === 'street' && r.place === 1 && r.purse === 600; })()",
+      "note": "first place pays three times the stake"
+    },
+    {
+      "waitFor": "/won .* — [$]600 purse/i.test(document.body.innerText)",
+      "timeoutMs": 4000,
+      "note": "the purse notice is on screen"
+    },
+    {
+      "shot": "gigs-race-won"
+    }
+  ]
+}

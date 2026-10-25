@@ -14,8 +14,8 @@ import { devReportPlugin } from "./devReportPlugin";
 import { gamePublicPlugin } from "./gamePublicPlugin";
 
 const src = (pkg: string) => fileURLToPath(new URL(`../../packages/${pkg}/src`, import.meta.url));
-const game = (name: string) => fileURLToPath(new URL(`../../Games/${name}/src`, import.meta.url));
-const gamesDir = fileURLToPath(new URL("../../Games", import.meta.url));
+const game = (name: string) => fileURLToPath(new URL(`../../games/${name}/src`, import.meta.url));
+const gamesDir = fileURLToPath(new URL("../../games", import.meta.url));
 const studios = fileURLToPath(new URL("../../examples/studios/src", import.meta.url));
 const registryUi = fileURLToPath(new URL("../../registry/jgengine", import.meta.url));
 
@@ -75,14 +75,14 @@ export default defineConfig({
   server: {
     host: true,
     proxy: devProxy,
-    // `Games` is usually a symlink to a checkout outside this workspace; Vite's default allow-list
+    // A game served with --game-dir can sit outside this workspace; Vite's default allow-list
     // would 403 game-local assets (src/**/*.glb) imported by URL.
     fs: { allow: allowedRoots },
   },
   resolve: {
-    // Games are cloned outside this workspace package during clean hosting builds.
+    // Games sit outside this workspace package.
     // Resolve their shared runtime dependencies from apps/dev so Bun's workspace
-    // links are used even when the importing file lives under ../../Games.
+    // links are used even when the importing file lives under ../../games.
     dedupe: ["react", "react-dom", "three", "@react-three/fiber", "@react-three/drei"],
     extensions: [".ts", ".tsx", ".mjs", ".js", ".jsx", ".json"],
     alias: [

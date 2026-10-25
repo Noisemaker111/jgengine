@@ -1,0 +1,92 @@
+{
+  "steps": [
+    {
+      "assert": "/First line/i.test(document.body.innerText)",
+      "before": {
+        "is": "/First line/i.test(document.body.innerText)",
+        "timeoutMs": 60000
+      },
+      "note": "arrival: the field is up and the first story beat started by itself"
+    },
+    {
+      "assert": "__jgProbe().lives === 20 && __jgProbe().calm > 0",
+      "note": "arrival: orbital relay stands, the first wave is counting down"
+    },
+    {
+      "key": "Digit1",
+      "ms": 120,
+      "after": {
+        "is": "__jgProbe().armed === 1",
+        "timeoutMs": 5000
+      },
+      "note": "pick up a pulse turret"
+    },
+    {
+      "clickAt": [
+        640,
+        360
+      ],
+      "after": {
+        "is": "__jgProbe().towers >= 1",
+        "timeoutMs": 5000
+      },
+      "note": "click the middle of the field: the tower goes up on the nearest pad"
+    },
+    {
+      "key": "Digit2",
+      "ms": 120,
+      "after": {
+        "is": "__jgProbe().armed === 2",
+        "timeoutMs": 5000
+      },
+      "note": "pick up a rail cannon"
+    },
+    {
+      "clickAt": [
+        752,
+        388
+      ],
+      "after": {
+        "is": "__jgProbe().towers >= 2",
+        "timeoutMs": 5000
+      },
+      "note": "click near another pad: a second tower"
+    },
+    {
+      "rightClickAt": [
+        640,
+        220
+      ],
+      "after": {
+        "is": "__jgProbe().armed === 0",
+        "timeoutMs": 5000
+      },
+      "note": "right click puts the tool down"
+    },
+    {
+      "key": "KeyN",
+      "ms": 120,
+      "after": {
+        "is": "__jgProbe().raiding === 1",
+        "timeoutMs": 5000
+      },
+      "note": "N sends the first wave early"
+    },
+    {
+      "assert": "__jgProbe().kills >= 1",
+      "before": {
+        "is": "__jgProbe().kills >= 1",
+        "timeoutMs": 60000
+      },
+      "note": "arrival: the towers kill what marches past"
+    },
+    {
+      "assert": "__jgProbe().cleared >= 1",
+      "before": {
+        "is": "__jgProbe().cleared >= 1",
+        "timeoutMs": 120000
+      },
+      "note": "arrival: the first wave is held and the next calm starts"
+    }
+  ]
+}

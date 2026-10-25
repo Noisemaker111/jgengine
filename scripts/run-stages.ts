@@ -63,7 +63,6 @@ const CHECK_TYPES_STAGES: readonly Stage[] = [
     "check-game-feel",
     "check-art-direction",
     "check-capabilities",
-    "check-game-shape",
     "check-content-gate",
     "check-asset-availability",
     "check-pack-texture-layout",
@@ -92,14 +91,13 @@ const CHECK_TYPES_STAGES: readonly Stage[] = [
   },
 ];
 
-// External game content has its own Games gate; SDK publication retains every package validator.
+// The publish run checks the SDK alone: CI already ran these game gates on the same commit.
 const EXTERNAL_GAME_CHECKS = new Set([
   "check-module-globals",
   "check-game-determinism",
   "check-game-front-end",
   "check-game-feel",
   "check-art-direction",
-  "check-game-shape",
   "check-content-gate",
   "check-asset-availability",
 ]);

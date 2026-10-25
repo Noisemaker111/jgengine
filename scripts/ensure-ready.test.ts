@@ -11,7 +11,7 @@ function write(path: string, body = ""): void {
 }
 
 describe("ensure-ready in a worktree nobody linked", () => {
-  test("links dependencies and Games the way agent:worktree would", () => {
+  test("links dependencies the way agent:worktree would", () => {
     const base = join(scratch, "ensure-ready-fixture");
     rmSync(base, { recursive: true, force: true });
     const main = join(base, "main");
@@ -23,7 +23,6 @@ describe("ensure-ready in a worktree nobody linked", () => {
       }
       write(join(main, "node_modules", ".bin", "tsgo")); write(join(main, "node_modules", ".bin", "tsgo.exe"));
       mkdirSync(join(main, ".git", "worktrees", "wt"), { recursive: true });
-      mkdirSync(join(main, "Games", "beacon", "src"), { recursive: true });
       write(join(worktree, ".git"), `gitdir: ${join(main, ".git", "worktrees", "wt")}\n`);
 
       const run = Bun.spawnSync([process.execPath, script, "--install-only"], {
@@ -34,9 +33,8 @@ describe("ensure-ready in a worktree nobody linked", () => {
       });
       expect(run.stderr.toString()).toBe("");
       expect(run.exitCode).toBe(0);
-      expect(run.stdout.toString()).toContain("Games");
+      expect(run.stdout.toString()).toContain("node_modules");
       expect(existsSync(join(worktree, "node_modules", ".bin", "tsgo"))).toBe(true);
-      expect(realpathSync(join(worktree, "Games"))).toBe(realpathSync(join(main, "Games")));
 
       const again = Bun.spawnSync([process.execPath, script, "--install-only"], {
         cwd: worktree,
