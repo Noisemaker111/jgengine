@@ -25,6 +25,7 @@ import {
   type WorldModelDef,
   type WorldModelState,
   type WorldRefusal,
+  type WorldRemoved,
 } from "./worldModel";
 
 /** Everything a game is, as data plus the code hooks the data names. */
@@ -42,8 +43,15 @@ export interface GameSpecDecl {
   onReward?(ctx: GameContext, rewards: MissionRewards, jobId: string): void;
   /** Put a finished build on screen (spawn its entity). */
   onReady?(ctx: GameContext, instance: WorldInstanceView): void;
-  /** Take a removed instance off screen. */
-  onRemoved?(ctx: GameContext, id: string): void;
+  /** Take a removed instance off screen; `removed.refund` is what came back. */
+  onRemoved?(ctx: GameContext, removed: WorldRemoved): void;
+  /**
+   * Put every built instance back on screen: runs on the first frame of a world and again after a
+   * save loads, so a game never has to respawn its own buildings.
+   */
+  onRestored?(ctx: GameContext, instances: readonly WorldInstanceView[]): void;
+  /** Return a message to refuse every command right now ("The park is closed"), or null to accept. */
+  accepting?(ctx: GameContext): string | null;
   /** React to an action landing (sound, effect). */
   onLanded?(ctx: GameContext, action: string, target: string | null): void;
   onJob?(ctx: GameContext, event: WorldJobEvent): void;
@@ -109,31 +117,38 @@ export function defineGameSpec(spec: GameSpecDecl): GameSpec {
     });
   });
 
+  const restorePending = perContext((_ctx: GameContext) => ({ value: true }));
+  const closed = (ctx: GameContext) => {
+    const message = spec.accepting?.(ctx) ?? null;
+    return message === null ? null : { reason: "closed", message };
+  };
   const system = defineSystem({
     id: `${spec.id}.world`,
     tick: { type: "frame" },
     create(ctx) {
       ctx.game.commands.define<GameSpecPlaceInput>(`${spec.id}.place`, {
-        validate: (state, input) => refusal(of(state).canPlace(input.kind, placement(input))),
+        validate: (state, input) => closed(state) ?? refusal(of(state).canPlace(input.kind, placement(input))),
         apply(state, input) {
           of(state).place(input.kind, placement(input));
           return state;
         },
       });
       ctx.game.commands.define<{ id: string }>(`${spec.id}.remove`, {
+        validate: (state, input) => closed(state) ?? (of(state).instance(input.id) === null ? { reason: "missing", message: "Nothing to remove there" } : null),
         apply(state, input) {
           of(state).remove(input.id);
           return state;
         },
       });
       ctx.game.commands.define<GameSpecActInput>(`${spec.id}.act`, {
-        validate: (state, input) => refusal(of(state).canAct(input.action, input.target)),
+        validate: (state, input) => closed(state) ?? refusal(of(state).canAct(input.action, input.target)),
         apply(state, input) {
           of(state).act(input.action, input.target);
           return state;
         },
       });
       ctx.game.commands.define<{ order: string }>(`${spec.id}.cancel`, {
+        validate: (state) => closed(state),
         apply(state, input) {
           of(state).cancel(input.order);
           return state;
@@ -141,6 +156,8 @@ export function defineGameSpec(spec: GameSpecDecl): GameSpec {
       });
       ctx.game.commands.define<{ id: string }>(`${spec.id}.job.start`, {
         validate(state, input) {
+          const shut = closed(state);
+          if (shut !== null) return shut;
           const status = of(state).job(input.id)?.status;
           return status === "available" || status === "failed" ? null : { reason: "job-unavailable" };
         },
@@ -151,10 +168,27 @@ export function defineGameSpec(spec: GameSpecDecl): GameSpec {
         },
       });
     },
+    save: (ctx) => ({
+      // The world itself saves through its store; this only marks that a load happened.
+      key: `${spec.id}.restored`,
+      snapshot: () => 1,
+      hydrate: () => {
+        restorePending(ctx).value = true;
+      },
+    }),
     update(ctx, dt) {
-      const result = of(ctx).tick(dt, spec.input?.(ctx) ?? {});
-      for (const instance of result.ready ?? []) spec.onReady?.(ctx, instance);
-      for (const id of result.removed ?? []) spec.onRemoved?.(ctx, id);
+      const world = of(ctx);
+      const pending = restorePending(ctx);
+      const restored = new Set<string>();
+      if (pending.value) {
+        pending.value = false;
+        const built = world.instances().filter((instance) => instance.ready);
+        for (const instance of built) restored.add(instance.id);
+        if (built.length > 0) spec.onRestored?.(ctx, built);
+      }
+      const result = world.tick(dt, spec.input?.(ctx) ?? {});
+      for (const instance of result.ready ?? []) if (!restored.has(instance.id)) spec.onReady?.(ctx, instance);
+      for (const removed of result.removed ?? []) spec.onRemoved?.(ctx, removed);
       for (const entry of result.landed ?? []) spec.onLanded?.(ctx, entry.action, entry.target);
       for (const event of result.jobs) spec.onJob?.(ctx, event);
     },

@@ -3095,9 +3095,11 @@
 - `WorldOrderView` (interface): interface WorldOrderView — Queued work as a progress bar reads it.
 - `WorldPersonDecl` (interface): interface WorldPersonDecl extends SubjectDecl — A person: where they are, whether they are on the phone, and what they say as the world changes.
 - `WorldPlaceDecl` (interface): interface WorldPlaceDecl extends SubjectDecl — A place in the world: a marker or position with a radius, an owner faction and its own facts.
+- `WorldPlaceOptions` (interface): interface WorldPlaceOptions — How to place: `free` skips the cost (a starting layout, a reward, a scenario's seed).
 - `WorldPlacement` (interface): interface WorldPlacement — Where to place an instance.
 - `WorldQueueDecl` (interface): interface WorldQueueDecl — A queue timed work waits in, and how many orders run at once.
 - `WorldRefusal` (interface): interface WorldRefusal — Why something was refused, with what was short, in words a HUD can show.
+- `WorldRemoved` (interface): interface WorldRemoved — An instance that was removed, with what came back.
 - `WorldResult` (type): type WorldResult = { ok: true; id: string | null; queued: boolean } | WorldRefusal — What placing, acting or removing did.
 - `WorldRippleDecl` (interface): interface WorldRippleDecl — How one kind of world event spreads.
 - `WorldScheduleDecl` (interface): interface WorldScheduleDecl — A ripple the world fires on its own clock: paydays, upkeep, shifts, waves, weather.
