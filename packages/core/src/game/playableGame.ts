@@ -31,7 +31,7 @@ import type { SceneEntity } from "../scene/entityStore";
 import type { ModelDims } from "../scene/assetCatalog";
 import type { PartMotionParams, PartRole } from "./partAnimation";
 import type { CollisionMeshData } from "../scene/collisionMesh";
-import type { SkyEnvironmentConfig } from "../world/features";
+import type { SkyEnvironmentConfig, TerrainDetailMaterialConfig } from "../world/features";
 import type { VisibilityConfig } from "../visibility/config";
 import type { GameDefinition, GameLoop } from "./defineGame";
 import type { GameCameraConfig } from "./cameraConfig";
@@ -238,6 +238,14 @@ export interface ModelMaterialOverride extends MaterialSurfaceParameters {
    * Omit for no rim.
    */
   rim?: ModelRimLight;
+  /**
+   * A scanned surface projected onto the model from its own geometry (triplanar, in metres), so a kit
+   * model whose UVs only address a palette atlas still reads as stucco, brick, wood or cardboard:
+   * `librarySurfaceScan("stucco/painted", { tint: 0 })` from `@jgengine/assets/catalogs/materialLibrary`.
+   * `tint` 0 keeps the model's own colours and takes the scan's grain, normal and roughness; 1 paints
+   * the scan's colour over them. Off on the `low` graphics tier and until the maps load.
+   */
+  scan?: TerrainDetailMaterialConfig;
 }
 
 /** Fresnel rim-light term added on top of a model's lighting — see {@link ModelMaterialOverride.rim}. */

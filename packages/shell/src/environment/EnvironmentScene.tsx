@@ -559,6 +559,7 @@ export function EnvironmentScene({ feature }: EnvironmentSceneProps) {
         junctions={junctions}
         field={field}
         surfaceDetail={roads.some((road) => road.surface !== false)}
+        scan={roads.find((road) => road.materials?.road !== undefined)?.materials?.road}
       />
       {structures.map((entry, index) => (
         <Structures key={`structures-${index}`} structures={entry} field={field} />

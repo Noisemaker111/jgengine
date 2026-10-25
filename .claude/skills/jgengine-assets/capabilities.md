@@ -56,6 +56,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `librarySurfaceParameters` (function) · `import { librarySurfaceParameters } from "@jgengine/assets/catalogs/materialLibrary"`
 
+## library-surface-scan — put a named scanned material on roads, terrain or kit models in one call
+
+- `librarySurfaceScan` (function) · `import { librarySurfaceScan } from "@jgengine/assets/catalogs/materialLibrary"`
+
 ## library-terrain-material — put a named library material on terrain without faking optional maps
 
 - `libraryTerrainMaterial` (function) · `import { libraryTerrainMaterial } from "@jgengine/assets/catalogs/materialLibrary"`

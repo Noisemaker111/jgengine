@@ -7,7 +7,8 @@ names 56 PBR surfaces whose maps come from **[ambientCG](https://ambientcg.com)*
 scan per name, pulled with `assets pull library` rather than committed. Credits are recorded
 per entry: `MaterialAsset.provenance` and every texture's `provenance` carry `ambientCG` and
 `CC0-1.0` plus the scan's own page. The four shader-only entries (clear glass, frosted glass,
-ocean and puddle) publish no ambientCG scan; they are response parameters, and the smudged
+ocean and puddle) and the two painted finishes (`paint/gloss`, `paint/satin`) publish no ambientCG
+scan; they are response parameters, and the smudged
 glass entry adds ambientCG's `Fingerprints001` normal so glass is not mathematically clean.
 
 ## Poly Haven
@@ -105,7 +106,7 @@ PBR material families (CC0-1.0) — grass, ground, rock, gravel, snow, lava, bar
 wood, planks, bricks, paving, tiles, concrete, asphalt, metal, fabric, leather,
 marble, and more, over 400 materials generated per numbered family
 ([`packages/assets/src/sources/ambientcg.ts`](packages/assets/src/sources/ambientcg.ts));
-`Grass001` and `MetalPlates001` ship pre-mirrored under
+`Grass001`, `MetalPlates001`, `Asphalt003` and `Concrete006` (among others) ship pre-mirrored under
 [`apps/dev/public/materials/`](apps/dev/public/materials). CC0 — no attribution
 required, credited here anyway. The gold standard for free PBR; go support it.
 

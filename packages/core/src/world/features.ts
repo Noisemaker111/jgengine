@@ -548,23 +548,47 @@ export interface RoadEnvironmentConfig {
   markingColor?: string;
   /** Lift above the terrain to avoid z-fighting; stagger overlapping roads. Default 0.08. */
   elevation?: number;
-  /** Sidewalk bands on both edges; `false` for none. Default `{ width: 2.6, color: "#a7adb8" }`. */
-  sidewalk?: { width?: number; color?: string } | false;
+  /**
+   * Sidewalk bands on both edges, raised a 14 cm kerb above the carriageway; `false` for none.
+   * Default `{ width: 2.6, color: "#a7adb8" }`. `slabs` is the paving slab length in metres, joints
+   * square to the kerb (default 1.5); `false` for none, as a paver scan carries its own joints.
+   */
+  sidewalk?: { width?: number; color?: string; slabs?: number | false } | false;
   /**
    * Procedural surface the carriageway shades with, named like terrain paint (`"asphalt"`,
    * `"gravel"`, `"dirt"`). `false` keeps flat colour. Default `"road"` (asphalt grain and tyre wear).
    */
   surface?: string | false;
+  /**
+   * Scanned PBR maps for the carriageway, sidewalks and curb, e.g.
+   * `{ road: librarySurfaceScan("asphalt/dry"), sidewalk: librarySurfaceScan("concrete/smooth") }` from
+   * `@jgengine/assets/catalogs/materialLibrary`. The procedural tyre wear and edge grime still layer on
+   * top; a layer left out, a map that fails to load, or the `low` graphics tier keeps the procedural
+   * surface. `tint` 1 (the default) shows the scan's own colour, lower keeps `color` and takes its grain.
+   */
+  materials?: RoadSurfaceScans;
+}
+
+/** Scanned surfaces for each layer of a {@link road}; see {@link RoadEnvironmentConfig.materials}. */
+export interface RoadSurfaceScans {
+  /** Carriageway, tiled in world XZ so junctions and ribbons meet without a seam. */
+  road?: TerrainDetailMaterialConfig;
+  /** Sidewalk bands, tiled along the road so slabs line up with the kerb. */
+  sidewalk?: TerrainDetailMaterialConfig;
+  /** Gutter strip and kerb face. */
+  curb?: TerrainDetailMaterialConfig;
 }
 
 /** Resolved road descriptor produced by {@link road} and rendered by the shell environment scene. */
 export type RoadEnvironmentDescriptor = { kind: "road" } & Required<
   Pick<RoadEnvironmentConfig, "path" | "width" | "color" | "markings" | "markingColor" | "elevation">
 > & {
-  /** Resolved sidewalk band, or `false` when the road has none. */
-  sidewalk: { width: number; color: string } | false;
+  /** Resolved sidewalk band, or `false` when the road has none. `slabs` absent means the 1.5 m default. */
+  sidewalk: { width: number; color: string; slabs?: number | false } | false;
   /** Procedural carriageway surface; absent means `"road"`, `false` flat colour. */
   surface?: string | false;
+  /** Scanned surfaces per layer, when the road declares any. */
+  materials?: RoadSurfaceScans;
 };
 
 export type WeatherEnvironmentDescriptor = RainEnvironmentDescriptor | SnowEnvironmentDescriptor;
@@ -1010,8 +1034,13 @@ export function road(config: RoadEnvironmentConfig): RoadEnvironmentDescriptor {
     sidewalk:
       config.sidewalk === false
         ? false
-        : { width: config.sidewalk?.width ?? 2.6, color: config.sidewalk?.color ?? "#a7adb8" },
+        : {
+            width: config.sidewalk?.width ?? 2.6,
+            color: config.sidewalk?.color ?? "#a7adb8",
+            ...(config.sidewalk?.slabs === undefined ? {} : { slabs: config.sidewalk.slabs }),
+          },
     ...(config.surface === undefined ? {} : { surface: config.surface }),
+    ...(config.materials === undefined ? {} : { materials: config.materials }),
   };
 }
 

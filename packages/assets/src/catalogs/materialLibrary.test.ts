@@ -11,6 +11,7 @@ import {
   libraryMaterialMaps,
   libraryMaterialRoles,
   librarySurfaceParameters,
+  librarySurfaceScan,
   libraryTerrainMaterial,
 } from "./materialLibrary";
 import { sourceById } from "../sources";
@@ -154,5 +155,27 @@ describe("shared material library", () => {
     parameters.roughness = 0.1;
     expect(librarySurfaceParameters("foliage/leaf").roughness).toBe(0.55);
     expect(() => librarySurfaceParameters("nope/nope")).toThrow(/Unknown library material/);
+  });
+
+  test("librarySurfaceScan names a scan for roads and models at full tint unless the entry blends", () => {
+    const asphalt = librarySurfaceScan("asphalt/dry");
+    expect(asphalt.maps.color).toBe("/materials/ambientcg-asphalt003/color.jpg");
+    expect(asphalt.maps.normal).toBe("/materials/ambientcg-asphalt003/normal.jpg");
+    expect(asphalt.repeat).toBe(4);
+    expect(asphalt.strength).toBe(1);
+    expect(asphalt.tint).toBe(1);
+    expect(librarySurfaceScan("plaster/interior", { tint: 0 }).tint).toBe(0);
+    expect(librarySurfaceScan("foliage/grass-macro")).toEqual(libraryTerrainMaterial("foliage/grass-macro"));
+    expect(() => librarySurfaceScan("paint/gloss")).toThrow(/no pulled color\/normal maps/);
+  });
+
+  test("painted finishes are a lacquer response with no invented scan", () => {
+    const gloss = librarySurfaceParameters("paint/gloss");
+    expect(findLibraryMaterial("paint/gloss")!.source).toBeUndefined();
+    expect(gloss.clearcoat).toBe(1);
+    expect(gloss.clearcoatRoughness).toBeLessThan(0.1);
+    expect(gloss.roughness).toBeLessThan(0.5);
+    expect(librarySurfaceParameters("paint/satin").clearcoat).toBeLessThan(1);
+    expect(libraryMaterialAsset("paint/gloss").textures).toBeUndefined();
   });
 });

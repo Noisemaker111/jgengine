@@ -2,6 +2,8 @@ import * as THREE from "three";
 
 import type { ModelMaterialOverride, ModelRimLight } from "@jgengine/core/game/playableGame";
 
+import { applyModelScan } from "./render/modelScan";
+
 export interface MaterialOverrideOptions {
   clone?: boolean;
   /** Loaded PBR textures matching `ModelMaterialOverride.maps`' roles, applied onto each standard or physical material alongside the tint override. The caller (a React component, via `useTexture`) owns loading; this function never fetches a URL. */
@@ -111,6 +113,7 @@ export function applyMaterialOverrideToMaterial(
     }
     if (textures !== undefined) target.needsUpdate = true;
     if (override.rim !== undefined) applyRimLight(target, override.rim);
+    if (override.scan !== undefined) applyModelScan(target, override.scan);
     if (override.alphaMode !== undefined || override.doubleSided !== undefined) target.needsUpdate = true;
     return target;
   } catch (error) {

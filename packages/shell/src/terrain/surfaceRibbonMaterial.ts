@@ -3,6 +3,8 @@ import * as THREE from "three";
 
 import type { GraphicsQuality } from "@jgengine/core/settings/settingsModel";
 
+import { SURFACE_SCAN_PARS_GLSL, surfaceScanDefines, surfaceScanKeyPart, surfaceScanUniforms, type SurfaceScanBlend } from "../render/surfaceScanShader";
+import type { SurfaceScanTextures } from "../render/surfaceScanTextures";
 import { NOISE_GLSL, SURFACE_BUMP_NORMAL_GLSL, SURFACE_FUNCTIONS_GLSL } from "./terrainSurfaceShader";
 import { terrainSurfaceClass, terrainSurfaceClassIndex, terrainSurfaceRoughness, type TerrainSurfaceClass } from "./terrainSurfaces";
 
@@ -37,6 +39,29 @@ export interface SurfaceRibbonMaterialOptions extends Partial<RibbonSurfaceStyle
   polygonOffset?: boolean;
   /** Multiply by the geometry's `color` attribute, as city ground meshes carry per-vertex tints. */
   vertexColors?: boolean;
+  /**
+   * Paving slabs `[along, across]` in metres, laid on the ribbon frame so joints run square to the
+   * kerb: each slab takes its own tone and the joints darken and dip. Omit for none.
+   */
+  slabs?: readonly [number, number];
+  /** A loaded scanned surface layered under the procedural wear; see {@link RibbonSurfaceScan}. */
+  scan?: RibbonSurfaceScan;
+  /**
+   * Road paint (lane dashes, stop lines): blends over the surface below and wears through in
+   * tyre-polished patches and flakes, so a marking reads as paint on asphalt, not a plastic strip.
+   */
+  paint?: boolean;
+}
+
+/** A scanned surface on a ribbon: maps, blend, and whether it tiles in world XZ or along the ribbon. */
+export interface RibbonSurfaceScan extends SurfaceScanBlend {
+  textures: SurfaceScanTextures;
+  /**
+   * `"world"` tiles in world XZ, so a carriageway and its welded junctions meet without a seam, with a
+   * second rotated sample breaking up the repeat; `"frame"` tiles along/across the ribbon, so slabs
+   * and setts square up with the kerb. Default `"world"`.
+   */
+  projection?: "world" | "frame";
 }
 
 const SOFT_GROUND: ReadonlySet<TerrainSurfaceClass> = new Set(["dirt", "mud", "sand", "gravel", "grass", "ground", "snow"]);
@@ -118,17 +143,61 @@ vec3 jgCol = jgS.albedo;
 float jgRough = jgS.rough;
 float jgBumpH = jgS.bump;
 float jgAcross = vJgRibbon.y;
+#ifdef JG_SCAN
+#ifdef JG_SCAN_FRAME
+vec2 jgScanUvA = vec2(vJgRibbon.x, vJgRibbon.y + uJgHalfWidth) / uScanRepeat;
+#define JG_SCAN_SAMPLE(tex) texture2D(tex, jgScanUvA)
+#else
+// Two samples of the same scan, the second rotated and shifted, blended by low-frequency noise so
+// a long carriageway never shows the tile repeating.
+vec2 jgScanUvA = jgWp / uScanRepeat;
+vec2 jgScanUvB = mat2(0.8, -0.6, 0.6, 0.8) * jgScanUvA + vec2(0.37, 0.71);
+float jgScanW = smoothstep(0.3, 0.7, jgVNoise(jgWp / 9.0 + 4.2));
+#define JG_SCAN_SAMPLE(tex) mix(texture2D(tex, jgScanUvA), texture2D(tex, jgScanUvB), jgScanW)
+#endif
+jgCol = jgScanAlbedo(diffuseColor.rgb, JG_SCAN_SAMPLE(uScanColor).rgb);
+jgBumpH *= 1.0 - 0.75 * uScanStrength;
+#ifdef JG_SCAN_ROUGH
+jgRough = uJgRough + (JG_SCAN_SAMPLE(uScanRough).g - jgScanRoughMean()) * uScanStrength * 0.8;
+#else
+jgRough = uJgRough;
+#endif
+#endif
 jgCol *= 1.0 + (jgFbm2(jgWp / 14.0 + vec2(3.7, 61.2)) - 0.5) * 0.24;
 #if defined(JG_RIBBON_PAVED) && !defined(JG_SURFACE_LOW)
 {
-  // Weathered pavement: resurfaced patches, exposed aggregate and a partial crack network.
-  jgCol *= 1.0 + (jgFbm3o(jgWp / 5.0 + 11.0) - 0.5) * 0.34;
+  // Weathered pavement: resurfaced patches, then (procedural only) exposed aggregate and a sparse,
+  // hairline crack network that wanders instead of tracing a cell grid.
+  jgCol *= 1.0 + (jgFbm3o(jgWp / 5.0 + 11.0) - 0.5) * 0.3;
+#ifndef JG_SCAN
   jgCol *= 1.0 + (jgVNoise(jgWp * 16.0) - 0.5) * 0.26 * jgBand(16.0);
-  vec3 jgCell = jgVoronoi(jgWp * 0.32 + 5.1);
-  float jgCrack = (1.0 - smoothstep(0.0, 0.03, jgCell.y)) * smoothstep(0.45, 0.6, jgVNoise(jgWp * 0.45 + 3.3)) * jgBand(2.0);
-  jgCol *= 1.0 - 0.4 * jgCrack;
+#ifndef JG_RIBBON_SLABS
+  vec2 jgCw = jgWp * 0.22 + (vec2(jgVNoise(jgWp * 0.7 + 1.3), jgVNoise(jgWp * 0.7 + 8.1)) - 0.5) * 0.45;
+  vec3 jgCell = jgVoronoi(jgCw + 5.1);
+  float jgCrack = (1.0 - smoothstep(0.0, 0.007, jgCell.y)) * smoothstep(0.6, 0.74, jgVNoise(jgWp * 0.21 + 3.3)) * jgBand(3.0);
+  jgCol *= 1.0 - 0.32 * jgCrack;
   jgRough += 0.05 * jgCrack;
-  jgBumpH -= jgCrack * 0.004;
+  jgBumpH -= jgCrack * 0.003;
+#endif
+#endif
+}
+#endif
+#ifdef JG_RIBBON_SLABS
+{
+  // Slabs on the ribbon frame: joints square to the kerb, one tone per slab, joints fading out
+  // before a pixel spans them so distance never shimmers.
+  vec2 jgSl = vec2(vJgRibbon.x, vJgRibbon.y + uJgHalfWidth) / uJgSlab;
+  vec2 jgSlCell = floor(jgSl);
+  vec2 jgSlF = abs(fract(jgSl) - 0.5) * 2.0;
+  vec2 jgSlD = (1.0 - jgSlF) * 0.5 * uJgSlab;
+  float jgJointD = min(jgSlD.x, jgSlD.y);
+  float jgJoint = (1.0 - smoothstep(0.004, 0.012 + jgFootprint * 0.5, jgJointD)) * (1.0 - smoothstep(0.03, 0.09, jgFootprint));
+  float jgSlTone = jgHash(jgSlCell + vec2(17.0, 3.0));
+  jgCol *= 0.93 + 0.14 * jgSlTone;
+  jgRough += (jgSlTone - 0.5) * 0.06;
+  jgCol *= 1.0 - 0.38 * jgJoint;
+  jgRough += 0.06 * jgJoint;
+  jgBumpH -= jgJoint * 0.004;
 }
 #endif
 #ifdef JG_RIBBON_WEAR
@@ -169,6 +238,13 @@ jgCol *= 1.0 + (jgFbm2(jgWp / 14.0 + vec2(3.7, 61.2)) - 0.5) * 0.24;
   jgBumpH *= jgAlpha;
 }
 #endif
+#ifdef JG_RIBBON_PAINT
+{
+  // Worn paint: broad polished patches plus fine flaking let the surface beneath show through.
+  float jgPaintWear = smoothstep(0.45, 0.85, jgFbm2(jgWp * 1.7 + 13.1)) * 0.6 + (jgVNoise(jgWp * 9.0 + 2.1) - 0.5) * 0.3 * jgBand(9.0);
+  diffuseColor.a *= clamp(1.0 - jgPaintWear, 0.3, 1.0);
+}
+#endif
 #ifdef USE_COLOR_ALPHA
 {
   // A per-vertex fade interpolated across big triangles draws straight iso-lines; warp it with noise
@@ -181,6 +257,29 @@ jgCol *= 1.0 + (jgFbm2(jgWp / 14.0 + vec2(3.7, 61.2)) - 0.5) * 0.24;
 }
 #endif
 diffuseColor.rgb = jgCol;
+`;
+
+const RIBBON_SCAN_NORMAL_GLSL = /* glsl */ `
+#ifdef JG_SCAN
+{
+  vec3 jgScanP = -vViewPosition;
+  vec3 jgScanNa = texture2D(uScanNormal, jgScanUvA).xyz * 2.0 - 1.0;
+  // Scans are captured under raking light; at full depth a concrete pour reads as sandpaper.
+  float jgScanDepth = uScanStrength * 0.6;
+  vec3 jgScanN = jgScanPerturb(normal, jgScanP, jgScanUvA, jgScanNa, jgScanDepth);
+#ifndef JG_SCAN_FRAME
+  vec3 jgScanNb = texture2D(uScanNormal, jgScanUvB).xyz * 2.0 - 1.0;
+  jgScanN = normalize(mix(jgScanN, jgScanPerturb(normal, jgScanP, jgScanUvB, jgScanNb, jgScanDepth), jgScanW));
+#endif
+  normal = jgScanN;
+}
+#endif
+`;
+
+const RIBBON_SCAN_AO_GLSL = /* glsl */ `
+#if defined(JG_SCAN) && defined(JG_SCAN_AO)
+reflectedLight.indirectDiffuse *= mix(1.0, JG_SCAN_SAMPLE(uScanAo).r, uScanStrength);
+#endif
 `;
 
 /**
@@ -200,13 +299,18 @@ export function createSurfaceRibbonMaterial(options: SurfaceRibbonMaterialOption
   const wear = clamp(options.wear ?? 0, 0, 1);
   const paved = cls === "road" || cls === "rock";
   const roughness = options.roughness ?? terrainSurfaceRoughness(cls);
+  const slabs = options.slabs;
+  const scan = options.scan;
+  const frame = scan?.projection === "frame";
+  const paint = options.paint === true;
 
   const material = new THREE.MeshStandardMaterial({
     color: options.color,
     roughness,
     metalness: 0,
     side: THREE.DoubleSide,
-    transparent: edge,
+    transparent: edge || paint,
+    ...(paint ? { depthWrite: false } : {}),
     vertexColors: options.vertexColors === true,
     ...(options.polygonOffset === true ? { polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 } : {}),
   });
@@ -217,6 +321,8 @@ export function createSurfaceRibbonMaterial(options: SurfaceRibbonMaterialOption
     uJgFeather: { value: Math.max(1e-3, feather) },
     uJgWarp: { value: Math.max(0, options.warp ?? 0) },
     uJgWear: { value: wear },
+    uJgSlab: { value: new THREE.Vector2(Math.max(0.1, slabs?.[0] ?? 1), Math.max(0.1, slabs?.[1] ?? 1)) },
+    ...(scan === undefined ? {} : surfaceScanUniforms(scan, scan.textures)),
   };
   material.defines = {
     JG_RIBBON_CLASS: String(classIndex),
@@ -225,6 +331,9 @@ export function createSurfaceRibbonMaterial(options: SurfaceRibbonMaterialOption
     ...(edge ? { JG_RIBBON_EDGE: "" } : {}),
     ...(wear > 0 ? { JG_RIBBON_WEAR: "" } : {}),
     ...(paved ? { JG_RIBBON_PAVED: "" } : {}),
+    ...(slabs === undefined ? {} : { JG_RIBBON_SLABS: "" }),
+    ...(paint ? { JG_RIBBON_PAINT: "" } : {}),
+    ...(scan === undefined ? {} : { ...surfaceScanDefines(scan.textures), ...(frame ? { JG_SCAN_FRAME: "" } : {}) }),
   };
   material.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, uniforms);
@@ -254,8 +363,10 @@ uniform float uJgHalfWidth;
 uniform float uJgFeather;
 uniform float uJgWarp;
 uniform float uJgWear;
+uniform vec2 uJgSlab;
 ${NOISE_GLSL}
-${SURFACE_FUNCTIONS_GLSL}`,
+${SURFACE_FUNCTIONS_GLSL}
+${SURFACE_SCAN_PARS_GLSL}`,
       )
       .replace("#include <color_fragment>", `#include <color_fragment>\n${RIBBON_FRAGMENT_GLSL}`)
       .replace(
@@ -266,11 +377,17 @@ roughnessFactor = clamp(jgRough, 0.04, 1.0);`,
       .replace(
         "#include <normal_fragment_maps>",
         `#include <normal_fragment_maps>
-${SURFACE_BUMP_NORMAL_GLSL}`,
+${SURFACE_BUMP_NORMAL_GLSL}
+${RIBBON_SCAN_NORMAL_GLSL}`,
+      )
+      .replace(
+        "#include <aomap_fragment>",
+        `#include <aomap_fragment>
+${RIBBON_SCAN_AO_GLSL}`,
       );
   };
   material.customProgramCacheKey = () =>
-    `jgengine-surface-ribbon-${classIndex}-${low ? "low" : "full"}-${edge ? "edge" : "hard"}-${wear > 0 ? "wear" : "clean"}`;
+    `jgengine-surface-ribbon-${classIndex}-${low ? "low" : "full"}-${edge ? "edge" : "hard"}-${wear > 0 ? "wear" : "clean"}-${slabs === undefined ? "poured" : "slabs"}-${surfaceScanKeyPart(scan?.textures ?? null)}-${frame ? "frame" : "world"}-${paint ? "paint" : "base"}`;
   return material;
 }
 
@@ -283,7 +400,7 @@ export function useSurfaceRibbonMaterial(options: SurfaceRibbonMaterialOptions |
   const material = useMemo(
     () => (o === null ? null : createSurfaceRibbonMaterial(o)),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [o === null, o?.color, o?.halfWidth, o?.surface, o?.feather, o?.warp, o?.wear, o?.roughness, o?.scale, o?.quality, o?.polygonOffset, o?.vertexColors],
+    [o === null, o?.color, o?.halfWidth, o?.surface, o?.feather, o?.warp, o?.wear, o?.roughness, o?.scale, o?.quality, o?.polygonOffset, o?.vertexColors, o?.slabs?.[0], o?.slabs?.[1], o?.scan?.textures, o?.scan?.repeat, o?.scan?.strength, o?.scan?.tint, o?.scan?.projection, o?.paint],
   );
   useEffect(() => () => material?.dispose(), [material]);
   return material;

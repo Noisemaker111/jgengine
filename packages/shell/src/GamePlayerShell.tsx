@@ -51,6 +51,7 @@ import { attachPlaytestProbe } from "./devtools/playtestProbe";
 import { withDevtoolsLatency } from "./devtools/latencyInstrumentation";
 import { resolveRigKind } from "./camera/rigResolve";
 import { contextModels } from "./render/resolveModel";
+import { configureModelScan } from "./render/modelScan";
 import { configureModelSurface } from "./render/modelSurface";
 import type { ShellMultiplayer } from "./multiplayer";
 import type { PlayableGame } from "./registry";
@@ -226,6 +227,7 @@ export function GamePlayerShell({
   }
   const graphics = useGraphicsSettings(settingsStore, playable.shadows ?? true, playable.graphics);
   useLayoutEffect(() => configureModelSurface(playable.surfaceDetail !== false, graphics.profile.surfaceDetail), [playable.surfaceDetail, graphics.profile.surfaceDetail]);
+  useLayoutEffect(() => configureModelScan(graphics.profile.surfaceDetail === "full"), [graphics.profile.surfaceDetail]);
   const trackPointerAxis = (event: { clientX: number; clientY: number }) => {
     const rect = wrapperRef.current?.getBoundingClientRect();
     if (rect === undefined) return;

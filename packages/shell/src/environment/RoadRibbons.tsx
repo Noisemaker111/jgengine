@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { BufferAttribute, BufferGeometry, Color, DoubleSide } from "three";
-import type { RoadEnvironmentDescriptor } from "@jgengine/core/world/features";
+import type { RoadEnvironmentDescriptor, TerrainDetailMaterialConfig } from "@jgengine/core/world/features";
 import {
   buildJunctionSurface,
   buildRoadRibbon,
@@ -15,11 +15,13 @@ import {
 import { offsetPath, sidewalkWidthOf, type RoadJunction } from "@jgengine/core/world/streets";
 import type { TerrainField } from "@jgengine/core/world/terrain";
 
+import { useSurfaceScan, type SurfaceScanTextures } from "../render/surfaceScanTextures";
 import {
   resolvePathSurface,
   RIBBON_FRAME_ATTRIBUTE,
   ribbonSurfaceFrame,
   useSurfaceRibbonMaterial,
+  type RibbonSurfaceScan,
 } from "../terrain/surfaceRibbonMaterial";
 import { useTerrainQuality } from "../terrain/terrainQuality";
 
@@ -33,13 +35,87 @@ import { useTerrainQuality } from "../terrain/terrainQuality";
  */
 const MARKING_LIFT = GROUND_DECAL_LAYERS.marking - GROUND_DECAL_LAYERS.road;
 const CURB_LIFT = 0.02;
-const SIDEWALK_LIFT = 0.06;
+/**
+ * Sidewalk top above the carriageway: a real 14 cm kerb over the gutter, the same step the generated
+ * city draws (`CityRenderer`'s road 0.16 -> sidewalk 0.32). A 4 cm lip read as paint on the road.
+ */
+const SIDEWALK_LIFT = 0.16;
+/** Default paving slab length along the kerb, metres; across, the sidewalk divides into whole slabs near this. */
+const SLAB_METRES = 1.5;
 
-/** Darken an asphalt color toward black for a curb/edge strip (deterministic, no alloc churn). */
-function darken(hex: string, amount: number): string {
-  const c = new Color(hex);
-  c.multiplyScalar(1 - amount);
+/** Mix two colours (deterministic, no alloc churn). @internal */
+export function mixColor(a: string, b: string, t: number): string {
+  const c = new Color(a).lerp(new Color(b), t);
   return `#${c.getHexString()}`;
+}
+
+/**
+ * The gutter strip's colour: poured concrete between kerb and asphalt where there is a sidewalk,
+ * else a dusty shoulder a shade paler than the road. Never darker than the carriageway: a dark
+ * band along every edge reads as a cartoon outline. @internal
+ */
+export function gutterColor(roadColor: string, sidewalkColor: string | null): string {
+  return sidewalkColor === null
+    ? mixColor(roadColor, "#9a968c", 0.22)
+    : mixColor(mixColor(sidewalkColor, roadColor, 0.35), "#000000", 0.08);
+}
+
+/**
+ * Vertical faces along each sidewalk edge: the kerb face from the gutter up to the sidewalk top on the
+ * road side, and a skirt down to the ground on the outer side, so the raised slab never floats.
+ * @internal
+ */
+export function buildKerbFaces(
+  paths: readonly (readonly RoadPoint[])[],
+  roadWidth: number,
+  sidewalkWidth: number,
+  sampleHeight: (x: number, z: number) => number,
+  elevation: number,
+): BufferGeometry | null {
+  const positions: number[] = [];
+  const indices: number[] = [];
+  const strip = (line: readonly RoadPoint[], bottom: number, top: number) => {
+    if (line.length < 2) return;
+    const base = positions.length / 3;
+    for (const [x, z] of line) {
+      const h = sampleHeight(x, z);
+      positions.push(x, h + bottom, z, x, h + top, z);
+    }
+    for (let i = 0; i < line.length - 1; i += 1) {
+      const a = base + i * 2;
+      indices.push(a, a + 2, a + 1, a + 1, a + 2, a + 3);
+    }
+  };
+  for (const path of paths) {
+    for (const side of [1, -1]) {
+      strip(offsetPath(path, (roadWidth / 2) * side), elevation + CURB_LIFT - 0.01, elevation + SIDEWALK_LIFT);
+      strip(offsetPath(path, (roadWidth / 2 + sidewalkWidth) * side), -0.05, elevation + SIDEWALK_LIFT);
+    }
+  }
+  if (positions.length === 0) return null;
+  const geometry = new BufferGeometry();
+  geometry.setAttribute("position", new BufferAttribute(new Float32Array(positions), 3));
+  geometry.setIndex(new BufferAttribute(new Uint32Array(indices), 1));
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+/**
+ * Lane paint width for a carriageway: 15–30 cm, as real centre lines are. The old 3.5%-of-width
+ * rule drew half-metre bars on a city avenue, the chunkiest toy cue on the street. @internal
+ */
+export function roadMarkingWidth(roadWidth: number): number {
+  return Math.min(0.3, Math.max(0.15, roadWidth * 0.015));
+}
+
+/** A loaded scan as ribbon material input, or `undefined` while it loads, failed, or was never asked for. */
+function ribbonScan(
+  config: TerrainDetailMaterialConfig | undefined,
+  textures: SurfaceScanTextures | null,
+  projection: "world" | "frame",
+): RibbonSurfaceScan | undefined {
+  if (config === undefined || textures === null) return undefined;
+  return { textures, projection, repeat: config.repeat ?? 4, strength: config.strength ?? 1, tint: config.tint ?? 1 };
 }
 
 function toGeometry(positions: Float32Array, indices: Uint32Array): BufferGeometry | null {
@@ -220,9 +296,10 @@ export function RoadRibbons({
       ),
     [paths, road.width, road.elevation, field],
   );
+  const markingWidth = roadMarkingWidth(road.width);
   const dashes = useMemo(() => {
     if (!road.markings) return null;
-    const width = Math.max(0.25, road.width * 0.035);
+    const width = markingWidth;
     const ribbons: RoadRibbon[] = [];
     for (const path of paths) {
       for (const dash of dashSegments(path, 3.2, 4)) {
@@ -230,11 +307,15 @@ export function RoadRibbons({
       }
     }
     return mergeRibbons(ribbons);
-  }, [paths, road.markings, road.width, road.elevation, field]);
-  const curbColor = useMemo(() => darken(road.color, 0.45), [road.color]);
+  }, [paths, road.markings, markingWidth, road.elevation, field]);
+  const sidewalkColor = road.sidewalk === false ? "#a7adb8" : road.sidewalk.color;
+  const curbColor = useMemo(
+    () => gutterColor(road.color, road.sidewalk === false ? null : sidewalkColor),
+    [road.color, road.sidewalk, sidewalkColor],
+  );
   const curbs = useMemo(() => {
-    // A thin strip straddling each asphalt edge, lifted just above the ribbon.
-    const strip = Math.max(0.4, road.width * 0.09);
+    // The gutter: a narrow strip inside each asphalt edge, lifted just above the ribbon.
+    const strip = Math.min(0.6, Math.max(0.35, road.width * 0.045));
     const edge = road.width / 2 - strip / 2;
     const ribbons: RoadRibbon[] = [];
     for (const path of paths) {
@@ -256,19 +337,64 @@ export function RoadRibbons({
     }
     return mergeRibbons(ribbons);
   }, [paths, road, field]);
+  const sidewalkWidth = sidewalkWidthOf(road);
+  const kerbs = useMemo(
+    () => (sidewalkWidth <= 0 ? null : buildKerbFaces(paths, road.width, sidewalkWidth, (x, z) => field.sampleHeight(x, z), road.elevation)),
+    [paths, road.width, sidewalkWidth, road.elevation, field],
+  );
 
   const quality = useTerrainQuality();
   const detailed = road.surface !== false;
+  const scanned = detailed && quality !== "low";
+  const roadScan = ribbonScan(road.materials?.road, useSurfaceScan(road.materials?.road?.maps, scanned), "world");
+  const sidewalkScan = ribbonScan(road.materials?.sidewalk, useSurfaceScan(road.materials?.sidewalk?.maps, scanned), "frame");
+  const curbScan = ribbonScan(road.materials?.curb, useSurfaceScan(road.materials?.curb?.maps, scanned), "frame");
   const style = detailed ? resolvePathSurface("road", road.width, { surface: road.surface ?? "road" }) : null;
   const asphaltMaterial = useSurfaceRibbonMaterial(
-    style === null ? null : { surface: style.surface, wear: style.wear, color: road.color, halfWidth: road.width / 2, quality },
+    style === null
+      ? null
+      : { surface: style.surface, wear: style.wear, color: road.color, halfWidth: road.width / 2, quality, ...(roadScan === undefined ? {} : { scan: roadScan }) },
   );
   const curbMaterial = useSurfaceRibbonMaterial(
-    detailed ? { surface: "concrete", color: curbColor, halfWidth: road.width / 2, roughness: 0.9, quality } : null,
+    detailed
+      ? { surface: "concrete", color: curbColor, halfWidth: road.width / 2, roughness: 0.9, quality, ...(curbScan === undefined ? {} : { scan: curbScan }) }
+      : null,
   );
-  const sidewalkColor = road.sidewalk === false ? "#a7adb8" : road.sidewalk.color;
+  const slabSize = road.sidewalk === false ? false : road.sidewalk.slabs ?? SLAB_METRES;
+  const slabs = useMemo(() => {
+    if (slabSize === false || slabSize <= 0) return undefined;
+    const across = sidewalkWidth / Math.max(1, Math.round(sidewalkWidth / slabSize));
+    return [slabSize, across] as const;
+  }, [sidewalkWidth, slabSize]);
   const sidewalkMaterial = useSurfaceRibbonMaterial(
-    detailed && sidewalks !== null ? { surface: "pavement", color: sidewalkColor, halfWidth: road.width / 2, roughness: 0.9, scale: 1.6, quality } : null,
+    detailed && sidewalks !== null
+      ? {
+          surface: "pavement",
+          color: sidewalkColor,
+          halfWidth: Math.max(0.01, sidewalkWidth / 2),
+          roughness: 0.9,
+          scale: 1.6,
+          quality,
+          ...(slabs === undefined ? {} : { slabs }),
+          ...(sidewalkScan === undefined ? {} : { scan: sidewalkScan }),
+        }
+      : null,
+  );
+  const kerbColor = useMemo(() => mixColor(sidewalkColor, "#000000", 0.12), [sidewalkColor]);
+  // Paint takes the asphalt's grain (tint 0 keeps the marking colour) and wears through to it.
+  const dashMaterial = useSurfaceRibbonMaterial(
+    detailed && dashes !== null
+      ? {
+          surface: "road",
+          color: road.markingColor,
+          halfWidth: markingWidth / 2,
+          roughness: 0.6,
+          quality,
+          polygonOffset: true,
+          paint: true,
+          ...(roadScan === undefined ? {} : { scan: { ...roadScan, tint: 0, strength: 0.85 } }),
+        }
+      : null,
   );
 
   if (asphalt === null) return null;
@@ -282,7 +408,8 @@ export function RoadRibbons({
           {curbMaterial === null ? <meshStandardMaterial color={curbColor} roughness={0.9} metalness={0} side={DoubleSide} /> : null}
         </mesh>
       ) : null}
-      {dashes !== null ? (
+      {dashes !== null && dashMaterial !== null ? <mesh geometry={dashes} renderOrder={1} receiveShadow material={dashMaterial} /> : null}
+      {dashes !== null && dashMaterial === null ? (
         <mesh geometry={dashes} renderOrder={1}>
           <meshStandardMaterial
             color={road.markingColor}
@@ -298,6 +425,11 @@ export function RoadRibbons({
       {sidewalks !== null ? (
         <mesh geometry={sidewalks} receiveShadow {...(sidewalkMaterial === null ? {} : { material: sidewalkMaterial })}>
           {sidewalkMaterial === null ? <meshStandardMaterial color={sidewalkColor} roughness={0.9} metalness={0} side={DoubleSide} /> : null}
+        </mesh>
+      ) : null}
+      {kerbs !== null ? (
+        <mesh geometry={kerbs} receiveShadow>
+          <meshStandardMaterial color={kerbColor} roughness={0.88} metalness={0} side={DoubleSide} />
         </mesh>
       ) : null}
     </group>

@@ -3135,6 +3135,18 @@
 - `freezeStaticTransforms` (function): function freezeStaticTransforms(root: THREE.Object3D): void — Bake a subtree's world matrices from its current pose and take it out of three's per-frame `updateMatrixWorld` pass. Three recomposes every node that keeps `matrixAutoUpdate` and then forces its whole subtree to rebuild the world matrix, so authored scenery — terrain, batched props, scatter, instanced ground — pays that cost every frame for a pose it never changes (#2038).
 - `thawStaticTransforms` (function): function thawStaticTransforms(root: THREE.Object3D): void — Put a subtree back on the per-frame matrix pass after {@link freezeStaticTransforms} — for the authored seam that moves on an event rather than every frame.
 
+## @jgengine/shell/render/surfaceScanShader
+
+- `SURFACE_SCAN_PARS_GLSL` (const): const SURFACE_SCAN_PARS_GLSL: "\n#ifdef JG_SCAN\nuniform sampler2D uScanColor;\nuniform sampler2D uScanNormal;\n#ifdef JG_SCAN_ROUGH\nuniform sampler2D uScanRough;\n#endif\n#ifdef JG_SCAN_AO\nuniform sampler2D uScanAo;\n#endif\nuniform float uScanRepeat;\nuniform float uScanStrength;\nuniform float … — Fragment helpers for a scanned surface: uniforms, the scan's mean tone (its last mip), the grain/tint recolour, mean-relative roughness and a derivative cotangent frame for its normal map. Guarded by `JG_SCAN`, so a material compiled before its maps arrive carries none of it.
+- `SurfaceScanBlend` (interface): interface SurfaceScanBlend — Blend settings for one scanned layer.
+- `SurfaceScanUniforms` (interface): interface SurfaceScanUniforms — Uniform values a scanned-surface shader reads; one object per material, maps shared.
+
+## @jgengine/shell/render/surfaceScanTextures
+
+- `SurfaceScanLoader` (type): type SurfaceScanLoader = (url: string, onLoad: (texture: THREE.Texture) => void, onError: () => void) => void — Loads one map; the default goes through `THREE.TextureLoader`.
+- `SurfaceScanTextures` (interface): interface SurfaceScanTextures — Decoded maps of one scanned surface, shared by every material that tiles it.
+- `useSurfaceScan` (function): function useSurfaceScan(maps: TerrainMaterialMaps | undefined, enabled = true): SurfaceScanTextures | null — React handle on a scan's maps: `null` while loading, after a load failure, or when `maps` is undefined or `enabled` is false (the `low` tier). Every component naming the same URLs shares one decode.
+
 ## @jgengine/shell/render/testFixtures/proceduralTileLayer
 
 - `drawProceduralTileLayer` (function): function drawProceduralTileLayer(canvas: CanvasFixture): TilemapWorldConfig — Draw the deterministic tile atlas used by textured tile-layer captures and tests.
@@ -3610,6 +3622,7 @@
 ## @jgengine/shell/terrain/surfaceRibbonMaterial
 
 - `RIBBON_FRAME_ATTRIBUTE` (const): const RIBBON_FRAME_ATTRIBUTE: "jgRibbon" — Vertex attribute {@link ribbonSurfaceFrame} fills: metres along the ribbon, signed metres across it, metres to its far end.
+- `RibbonSurfaceScan` (interface): interface RibbonSurfaceScan extends SurfaceScanBlend — A scanned surface on a ribbon: maps, blend, and whether it tiles in world XZ or along the ribbon.
 - `RibbonSurfaceStyle` (interface): interface RibbonSurfaceStyle — How a ground ribbon (path, road, sidewalk) shades: procedural surface, edge blend and wear.
 - `SurfaceRibbonMaterialOptions` (interface): interface SurfaceRibbonMaterialOptions extends Partial<RibbonSurfaceStyle> — Options for {@link createSurfaceRibbonMaterial}.
 - `createSurfaceRibbonMaterial` (function): function createSurfaceRibbonMaterial(options: SurfaceRibbonMaterialOptions): THREE.MeshStandardMaterial — A `MeshStandardMaterial` that shades a ground ribbon (path, road, sidewalk) with the terrain's own procedural surface functions, so a dirt track or asphalt strip matches painted ground: the authored colour varied by the surface class's grain, roughness and micro-normal, wheel ruts or tyre lanes, and (with `feather > 0`) a noise-warped edge that fades into the terrain. The geometry needs a {@link RIBBON_FRAME_ATTRIBUTE} attribute from {@link ribbonSurfaceFrame}; build it wider by {@link ribbonEdgeMargin} so the fade straddles the authored edge. The caller disposes the material.
