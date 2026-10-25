@@ -17,7 +17,7 @@ import { basename, dirname, join, parse, resolve } from "node:path";
 
 import { retrySettleMs, shouldRetryCapture } from "./capture-retry";
 import { clearViteCaches, headRevision, revisionDrifted, shortRevision } from "./captureRevision";
-import { checkoutIdentity, isUp, markerPath, readMarker, writeMarker } from "./devServerMarker";
+import { checkoutIdentity, isUp, listMarkers, markerPath, reachableBase, readMarker, writeMarker } from "./devServerMarker";
 import { localGet } from "./localhostHttp";
 import { computeShotMetrics, deadViewport } from "./shot-metrics";
 import { decodePng } from "./png-reader";
@@ -357,6 +357,25 @@ export async function retireDriftedDevServer(port: number, cwd = process.cwd()):
   );
 }
 
+/**
+ * A live server this checkout already started on any port, current with HEAD. A
+ * one-second `isUp` miss on a busy machine used to read as "port taken" and boot a
+ * fresh server 17 ports along; twelve copies of one worktree's Vite piled up that way.
+ * Drifted copies found on the way are retired so they do not linger either.
+ */
+async function findOwnedServer(identity: string, kind: "runner" | "website", cwd: string): Promise<number | null> {
+  const head = headRevision(cwd);
+  for (const marker of listMarkers()) {
+    if (marker.identity !== identity || (marker.kind ?? "runner") !== kind) continue;
+    if (revisionDrifted(marker.head, head)) {
+      if (await isUp(`http://127.0.0.1:${marker.port}`)) killPid(marker.pid, true);
+      continue;
+    }
+    if ((await reachableBase(marker.port, marker.host)) !== null) return marker.port;
+  }
+  return null;
+}
+
 export interface EnsureDevServerResult {
   child: ChildProcess | null;
   /** PID only when this invocation launched and therefore owns the server. */
@@ -402,6 +421,8 @@ export async function ensureDevServer(cwd = process.cwd()): Promise<EnsureDevSer
   if (await isOurDevServer(port, identity)) {
     return { child: null, port, base };
   }
+  const owned = await findOwnedServer(identity, "runner", cwd);
+  if (owned !== null) return { child: null, port: owned, base: `http://127.0.0.1:${owned}` };
 
   if (await isUp(base)) {
     // Something else owns this port — try a few offsets rather than attach wrong.
@@ -458,6 +479,8 @@ export async function ensureWebServer(cwd = process.cwd()): Promise<EnsureDevSer
   const base = `http://127.0.0.1:${port}`;
   await retireDriftedDevServer(port, cwd);
   if (await isOurDevServer(port, identity)) return { child: null, port, base };
+  const owned = await findOwnedServer(identity, "website", cwd);
+  if (owned !== null) return { child: null, port: owned, base: `http://127.0.0.1:${owned}` };
 
   if (await isUp(base)) {
     for (let step = 1; step <= 20; step += 1) {
