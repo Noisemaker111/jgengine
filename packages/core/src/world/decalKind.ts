@@ -12,9 +12,13 @@ import { registerSceneKind, type ParamSchema, type SceneKindObject } from "../sc
 /** The editor marker kind marking a surface decal. */
 export const DECAL_KIND = "decal";
 
-/** The four authored decal looks; each has its own deterministic procedural texture. */
-export const DECAL_STYLES = ["dirt", "cracks", "paint", "blood"] as const;
-/** One of the four authored decal looks. */
+/**
+ * The authored decal looks; each has its own deterministic procedural texture. `grime` is the dark
+ * band that collects along the foot of a wall, `leak` a streak running down from a pipe or seam,
+ * `rust` a bloom of corrosion and `wet` a standing puddle that renders glossy.
+ */
+export const DECAL_STYLES = ["dirt", "cracks", "paint", "blood", "grime", "leak", "rust", "wet"] as const;
+/** One of the authored decal looks. */
 export type DecalStyle = (typeof DECAL_STYLES)[number];
 
 /** Fully-defaulted decal params parsed from a marker's `meta`. */

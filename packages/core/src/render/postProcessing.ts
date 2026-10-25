@@ -133,9 +133,11 @@ export interface ContactShadowConfig {
 }
 
 /**
- * Sunlit air over the lit frame: ground haze that thickens toward the ground and with distance,
- * brighter toward the sun, and light shafts where the sky shows through gaps. Both need a
- * shadow-casting sun, so an interior with no sun skips them.
+ * Air over the lit frame: ground haze that thickens toward the ground and with distance, brighter
+ * toward the sun, light shafts where the sky shows through gaps, and a glow around every nearby
+ * point and spot light as its light scatters in the same haze. Shafts need a shadow-casting sun.
+ * With no sun the whole pass is skipped unless `indoor` is set, which keeps the haze and the lamp
+ * glow running so a sunless interior gets its air and its lit lamps.
  */
 export interface AtmosphereConfig {
   /** Haze density per world unit at `fogHeight`; 0 turns the haze off. Default 0.0006. */
@@ -148,6 +150,17 @@ export interface AtmosphereConfig {
   fogMax?: number;
   /** Light-shaft strength; 0 turns shafts off. Default 0.3. */
   shafts?: number;
+  /**
+   * How strongly the nearest point and spot lights (up to eight) glow in the haze; 0 turns the glow
+   * off. The glow scales with `fogDensity`, so open-air haze barely shows it and a smoky interior
+   * shows it plainly. A light with `userData.haze === false` never glows. Default 1.
+   */
+  lamps?: number;
+  /**
+   * Run with no shadow-casting sun: the haze and the lamp glow stay on and only the shafts drop
+   * out. Default false, which skips the whole pass while there is no sun.
+   */
+  indoor?: boolean;
 }
 
 /**
@@ -221,6 +234,8 @@ export const DEFAULT_ATMOSPHERE: Readonly<Required<AtmosphereConfig>> = {
   fogHeight: 0,
   fogMax: 0.65,
   shafts: 0.3,
+  lamps: 1,
+  indoor: false,
 };
 
 /**

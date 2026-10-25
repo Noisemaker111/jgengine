@@ -542,6 +542,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `InteractionPrompt` (function) · `import { InteractionPrompt } from "@jgengine/react"`
 
+## interior-dressing — render a planned interior's trims, pipes, cables, lamps and stains in a few instanced draws
+
+- `InteriorDressing` (function) · `import { InteriorDressing } from "@jgengine/shell/render/InteriorDressing"`
+
 ## join-gate — block gameplay until joined and show failures with retry
 
 - `JoinGate` (function) · `import { JoinGate } from "@jgengine/shell/JoinGate"`
@@ -865,6 +869,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## popover — viewport-flipping, viewport-clamped anchored popover/tooltip shell
 
 - `Popover` (function) · `import { Popover } from "@jgengine/react"`
+
+## practical-lights — light the planned lamps nearest the camera with a fixed, shadow-capped spot-light pool
+
+- `PracticalLights` (function) · `import { PracticalLights } from "@jgengine/shell/render/InteriorDressing"`
 
 ## presence — keep a closing element mounted through its exit transition
 

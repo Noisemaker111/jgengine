@@ -36,12 +36,41 @@ export function atmosphereFragment(steps: number): string {
   uniform float uSunVisible;
   uniform float uAspect;
   uniform float uFrame;
+  uniform int uLampCount;
+  uniform vec3 uLampPosition[${MAX_HAZE_LAMPS}];
+  uniform vec3 uLampColor[${MAX_HAZE_LAMPS}];
+  uniform vec4 uLampSpot[${MAX_HAZE_LAMPS}];
+  uniform vec2 uLampShape[${MAX_HAZE_LAMPS}];
+  uniform float uLampStrength;
   varying vec2 vUv;
 
   vec3 viewPosition(vec2 uv, float depth) {
     vec4 clip = vec4(uv * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
     vec4 view = uProjectionInverse * clip;
     return view.xyz / view.w;
+  }
+
+  // Light a lamp scatters toward the eye along the first dist units of the view ray: the closed-form
+  // integral of an inverse-square point light, softened by soft so the ray through the bulb stays finite.
+  float lampScatter(vec3 origin, vec3 dir, float dist, vec3 lamp, float soft) {
+    vec3 toLamp = lamp - origin;
+    float t0 = dot(toLamp, dir);
+    float h = sqrt(max(dot(toLamp, toLamp) - t0 * t0, 0.0) + soft * soft);
+    return (atan((dist - t0) / h) - atan(-t0 / h)) / h;
+  }
+
+  float spotCone(vec3 origin, vec3 dir, float dist, vec3 lamp, vec4 spot) {
+    if (spot.w <= -1.5) return 1.0;
+    vec3 toLamp = lamp - origin;
+    float t0 = clamp(dot(toLamp, dir), 0.0, dist);
+    float h = length(toLamp - dir * t0) + 0.25;
+    float cone = 0.0;
+    for (int k = 0; k < 4; k++) {
+      float t = clamp(t0 + h * (float(k) - 1.5), 0.0, dist);
+      vec3 fromLamp = normalize(origin + dir * t - lamp);
+      cone += smoothstep(spot.w, mix(spot.w, 1.0, 0.35), dot(fromLamp, spot.xyz));
+    }
+    return cone * 0.25;
   }
 
   float interleavedNoise(vec2 pixel) {
@@ -84,7 +113,27 @@ export function atmosphereFragment(steps: number): string {
       }
       shafts = uSunColor * (light / ${steps.toFixed(1)}) * uShafts * uSunVisible * 3.0;
     }
-    gl_FragColor = vec4(haze * cover + shafts, cover);
+    vec3 glow = vec3(0.0);
+    if (uLampStrength > 0.0 && uFogDensity > 0.0) {
+      float reach = sky ? 60.0 : dist;
+      for (int i = 0; i < ${MAX_HAZE_LAMPS}; i++) {
+        if (i >= uLampCount) break;
+        vec3 lamp = uLampPosition[i];
+        float range = uLampShape[i].x;
+        vec3 toLamp = lamp - uCameraPosition;
+        float closest = length(toLamp - dir * clamp(dot(toLamp, dir), 0.0, reach));
+        // A halo, not a wash: the glow dies off within about a fifth of the light's range of the ray.
+        float spread = range > 0.0 ? range * 0.2 : 4.0;
+        float window = exp(-(closest * closest) / (2.0 * spread * spread));
+        if (window < 0.01) continue;
+        float density = uFogDensity * exp(-uFogFalloff * (lamp.y - uFogHeight));
+        float scatter = lampScatter(uCameraPosition, dir, reach, lamp, uLampShape[i].y);
+        glow += uLampColor[i] * scatter * density * window * spotCone(uCameraPosition, dir, reach, lamp, uLampSpot[i]);
+      }
+      // Isotropic phase (1 / 4pi); the strength knob lets a game push a smoky interior further.
+      glow *= uLampStrength * 0.0796;
+    }
+    gl_FragColor = vec4(haze * cover + shafts + glow, cover);
   }
 `;
 }
@@ -98,6 +147,42 @@ const applyFragment = /* glsl */ `
 `;
 
 const LIGHT_RESCAN_FRAMES = 90;
+/** Point and spot lights the haze glows around at once, nearest the camera first. */
+export const MAX_HAZE_LAMPS = 8;
+const lampWorld = new THREE.Vector3();
+const lampTarget = new THREE.Vector3();
+
+/** A local light the haze can glow around. @internal */
+export type HazeLamp = THREE.PointLight | THREE.SpotLight;
+
+/** Every visible point or spot light in `scene` that may glow in the haze. @internal */
+export function findHazeLamps(scene: THREE.Object3D): HazeLamp[] {
+  const lamps: HazeLamp[] = [];
+  scene.traverseVisible((object) => {
+    const light = object as HazeLamp;
+    if (!(light as THREE.PointLight).isPointLight && !(light as THREE.SpotLight).isSpotLight) return;
+    if (light.userData?.haze === false) return;
+    lamps.push(light);
+  });
+  return lamps;
+}
+
+/**
+ * The lit lamps nearest `eye`, nearest first and at most {@link MAX_HAZE_LAMPS}; a dark lamp or one
+ * further away than three times its own range is skipped. @internal
+ */
+export function nearestHazeLamps(lamps: readonly HazeLamp[], eye: THREE.Vector3): HazeLamp[] {
+  const lit: { lamp: HazeLamp; distance: number }[] = [];
+  for (const lamp of lamps) {
+    if (lamp.intensity <= 0 || lamp.parent === null || !lamp.visible) continue;
+    lamp.getWorldPosition(lampWorld);
+    const distance = lampWorld.distanceTo(eye);
+    if (lamp.distance > 0 && distance > lamp.distance * 3) continue;
+    lit.push({ lamp, distance });
+  }
+  lit.sort((a, b) => a.distance - b.distance);
+  return lit.slice(0, MAX_HAZE_LAMPS).map((entry) => entry.lamp);
+}
 const FALLBACK_FOG = new THREE.Color(0.62, 0.7, 0.78);
 const sunPoint = new THREE.Vector3();
 const projected = new THREE.Vector4();
@@ -120,7 +205,8 @@ export function sunShaftVisibility(uv: { x: number; y: number }, inFront: boolea
  * Sunlit air over the lit HDR frame: exponential height haze that fades distant ground into the sky
  * and brightens toward the sun, plus screen-space shafts where the sky shows through gaps. It reads
  * the beauty depth, so like contact shadows it draws into a target of its own and blends that over the
- * frame. Skipped while the scene has no shadow-casting sun, so interiors keep their own air.
+ * frame. With no shadow-casting sun it is skipped, unless the config is `indoor`: then the shafts drop
+ * out and the haze and lamp glow keep running.
  * @internal
  */
 export class AtmospherePass extends Pass {
@@ -130,9 +216,11 @@ export class AtmospherePass extends Pass {
   private readonly quad: FullScreenQuad;
   private readonly applyQuad: FullScreenQuad;
   private light: THREE.DirectionalLight | null = null;
+  private lamps: HazeLamp[] = [];
   private framesSinceScan = LIGHT_RESCAN_FRAMES;
   private frame = 0;
   private aspect = 1;
+  private readonly indoor: boolean;
 
   constructor(
     private readonly scene: THREE.Scene,
@@ -143,6 +231,7 @@ export class AtmospherePass extends Pass {
   ) {
     super();
     this.needsSwap = false;
+    this.indoor = settings.indoor;
     this.target = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, depthBuffer: false });
     this.material = new THREE.ShaderMaterial({
       uniforms: {
@@ -162,6 +251,12 @@ export class AtmospherePass extends Pass {
         uSunVisible: { value: 0 },
         uAspect: { value: 1 },
         uFrame: { value: 0 },
+        uLampCount: { value: 0 },
+        uLampPosition: { value: Array.from({ length: MAX_HAZE_LAMPS }, () => new THREE.Vector3()) },
+        uLampColor: { value: Array.from({ length: MAX_HAZE_LAMPS }, () => new THREE.Vector3()) },
+        uLampSpot: { value: Array.from({ length: MAX_HAZE_LAMPS }, () => new THREE.Vector4(0, 0, 0, -2)) },
+        uLampShape: { value: Array.from({ length: MAX_HAZE_LAMPS }, () => new THREE.Vector2()) },
+        uLampStrength: { value: settings.lamps },
       },
       vertexShader,
       fragmentShader: atmosphereFragment(Math.max(1, steps)),
@@ -191,6 +286,7 @@ export class AtmospherePass extends Pass {
     const lost = this.light !== null && (this.light.parent === null || !this.light.castShadow);
     if (lost || this.framesSinceScan >= LIGHT_RESCAN_FRAMES) {
       this.light = findKeyLight(this.scene);
+      this.lamps = this.material.uniforms.uLampStrength!.value > 0 ? findHazeLamps(this.scene) : [];
       this.framesSinceScan = 0;
     }
     return this.light;
@@ -203,10 +299,12 @@ export class AtmospherePass extends Pass {
 
   override render(renderer: THREE.WebGLRenderer, _writeBuffer: THREE.WebGLRenderTarget, readBuffer: THREE.WebGLRenderTarget): void {
     const light = this.keyLight();
-    if (light === null) return;
+    if (light === null && !this.indoor) return;
     const uniforms = this.material.uniforms;
-    const sun = towardLight(light, uniforms.uSunDirection!.value as THREE.Vector3);
-    (uniforms.uSunColor!.value as THREE.Color).copy(light.color).multiplyScalar(Math.min(light.intensity, 3) * 0.35);
+    // No sun indoors: the haze and the lamp glow still run, the shafts and the sun's warmth do not.
+    const sun = light === null ? (uniforms.uSunDirection!.value as THREE.Vector3).set(0, 1, 0) : towardLight(light, uniforms.uSunDirection!.value as THREE.Vector3);
+    if (light === null) (uniforms.uSunColor!.value as THREE.Color).setRGB(0, 0, 0);
+    else (uniforms.uSunColor!.value as THREE.Color).copy(light.color).multiplyScalar(Math.min(light.intensity, 3) * 0.35);
     const fog = this.scene.fog;
     const background = this.scene.background;
     (uniforms.uFogColor!.value as THREE.Color).copy(
@@ -222,7 +320,8 @@ export class AtmospherePass extends Pass {
     const inFront = projected.w > 0;
     const sunUv = uniforms.uSunUv!.value as THREE.Vector2;
     if (inFront) sunUv.set((projected.x / projected.w) * 0.5 + 0.5, (projected.y / projected.w) * 0.5 + 0.5);
-    uniforms.uSunVisible!.value = sunShaftVisibility(sunUv, inFront, sun.y);
+    uniforms.uSunVisible!.value = light === null ? 0 : sunShaftVisibility(sunUv, inFront, sun.y);
+    this.writeLamps(cameraPosition);
     uniforms.uAspect!.value = this.aspect;
     this.frame = (this.frame + 1) % 64;
     uniforms.uFrame!.value = this.frame;
@@ -234,6 +333,27 @@ export class AtmospherePass extends Pass {
     renderer.setRenderTarget(readBuffer);
     this.applyQuad.render(renderer);
     renderer.autoClear = autoClear;
+  }
+
+  private writeLamps(eye: THREE.Vector3): void {
+    const uniforms = this.material.uniforms;
+    const nearest = this.lamps.length === 0 ? [] : nearestHazeLamps(this.lamps, eye);
+    const positions = uniforms.uLampPosition!.value as THREE.Vector3[];
+    const colors = uniforms.uLampColor!.value as THREE.Vector3[];
+    const spots = uniforms.uLampSpot!.value as THREE.Vector4[];
+    const shapes = uniforms.uLampShape!.value as THREE.Vector2[];
+    nearest.forEach((lamp, index) => {
+      lamp.getWorldPosition(positions[index]!);
+      colors[index]!.set(lamp.color.r, lamp.color.g, lamp.color.b).multiplyScalar(lamp.intensity);
+      shapes[index]!.set(lamp.distance, 0.18);
+      if ((lamp as THREE.SpotLight).isSpotLight) {
+        const spot = lamp as THREE.SpotLight;
+        spot.target.getWorldPosition(lampTarget);
+        lampTarget.sub(positions[index]!).normalize();
+        spots[index]!.set(lampTarget.x, lampTarget.y, lampTarget.z, Math.cos(spot.angle));
+      } else spots[index]!.set(0, 0, 0, -2);
+    });
+    uniforms.uLampCount!.value = nearest.length;
   }
 
   override dispose(): void {

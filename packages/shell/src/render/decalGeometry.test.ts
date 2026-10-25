@@ -1,5 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
+import { DECAL_STYLES } from "@jgengine/core/world/decalKind";
+
 import { createDecalDrapeGeometry } from "./decalGeometry";
 import { createDecalTexture } from "./decalTexture";
 
@@ -15,7 +17,7 @@ function alphaStats(data: Uint8Array): { covered: number; opaque: number } {
 
 describe("decal textures", () => {
   test("every style bakes deterministic coverage with empty corners", () => {
-    for (const style of ["dirt", "cracks", "paint", "blood"] as const) {
+    for (const style of DECAL_STYLES) {
       const first = createDecalTexture(style, "wall");
       const second = createDecalTexture(style, "wall");
       expect(Array.from(first.data)).toEqual(Array.from(second.data));
