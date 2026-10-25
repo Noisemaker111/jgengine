@@ -26,6 +26,48 @@ At publish, rename this heading to the new version and mirror the entries into
 `packages/core/src/meta/changelog.ts` (the typed `CHANGELOG` export).
 -->
 
+## 0.41.0
+
+### Migrate
+
+- **Bump lockstep SDK packages to `^0.41.0`:** `@jgengine/{core,rapier,react,ws,node,sql,convex,shell,editor,assets,navbake}`. CLI `jgengine` is `0.38.0`; `@jgengine/github` is `0.28.0`.
+
+### Added
+
+- `upgradePathActions`, `upgradePathFacts`, `upgradeOptions` and `upgradeProgress` (`@jgengine/core/worldModel/upgradePaths`) compile a placed kind's upgrade ladder - a shared trunk, then exclusive branches - into world actions, and list the next steps an instance can take with the world's price and refusal.
+- `createWaveCountdown` (`@jgengine/core/ai/director/waveCountdown`) runs the intermission between waves: the next wave goes out when it runs down, and `callEarly()` prices the seconds skipped.
+- `summarizeWave` (`@jgengine/core/ai/director/wavePreview`) totals an authored wave's units by first arrival, with trait counts and the entries it uses, for a preview card or a balance test.
+- `AutoTargetDeps.eligible` keeps a picker off candidates it cannot hit; `nextAutoTargetPolicy` and `AUTO_TARGET_POLICIES` step a player-chosen targeting priority.
+- Creatures with temperaments: `decideTemperament` (`@jgengine/core/ai/temperament`) turns a creature's perception memory into flee, investigate, stalk, attack, guard or return. Passive creatures keep their distance, territorial ones defend the ground around their den and go home after, predators charge what they saw and follow a smell or a noise to where it came from. Light draws or drives off a creature, and a badly hurt one breaks off.
+- Perception senses scent and light: a `"scent"` stimulus (blood, bait) reaches as far as `scentRange` times its strength, a candidate's `visibility` stretches or shrinks how far it is seen (a lamp on, crouched in the dark), and every memory records the `cue` that produced it.
+- Codex fragments: an entry with `fragments: n` is learned after `n` calls to `codex.scan(id)`, the view shows `scanned` of `fragments`, and partial scans survive save and load. Old saves still load.
+- `createMedalBoard` (`@jgengine/core/progression/medalBoard`): per-event bronze/silver/gold targets over a stored best (lower- or higher-is-better), tiers of events that open on medal points, and a `submit` that names medals earned for the first time so a game pays one-time rewards. Snapshot/restore as plain JSON.
+- Drive key steps take `until`: `{ "key": "KeyW", "until": { "is": "__jgProbe().z < -3.5" } }` holds the key until the page expression holds, then releases (`ms` is a minimum, `timeoutMs` caps the hold and fails the step). Engine `drive`, lockstep `--record` and the portable `drive.mjs` all honor it, so a walk to a place no longer depends on how fast the page renders.
+- `createStoryteller` (`@jgengine/core/ai/director/storyteller`) paces incidents by threat points: points build with play time (scaled by what the game reads as wealth), each gap draws an incident the points can afford, with cooldowns, conditions, repeat damping and extra quiet after a big threat. State, snapshot, restore and retune are plain values.
+- `createBuildPlanner` (`@jgengine/core/ai/buildOrder`) plans an RTS opponent's economy: an ordered build order, tech paths inserted for unmet requirements (`resolveTechPath`, `missingRequirements`), supply providers made ahead of a block, a worker target and an army composition. A `DifficultyProfile` sets how often it decides, how often it picks a worse unit, and whether it saves or floats money. `snapshot`/`restore`/`retune`.
+- `createAttackClock` (same module) launches growing attack waves once the army is big enough, or after `maxWait` with whatever army exists.
+- `pointer.select` modifiers: Shift+click toggles an entity, Shift+drag adds the box to the selection, and double-click or Ctrl+click selects every on-screen entity of the same `pointer.selectKind(id)`.
+- `pointer.controlGroups` (`true` or `ControlGroupOptions`): Ctrl/Cmd+digit binds the selection, Shift+digit appends, a digit recalls (dropping dead or filtered ids), a second tap centres the camera. While on, digit keys no longer reach `game.input` action bindings.
+- `ctx.scene.entity.controlGroups`, the `SelectionBookmarks` store those keys write; a despawned entity drops out of every group.
+- `ctx.camera.panTo({ x, z })` queues a one-shot jump of the `rts` rig's pan center (clamped to `rts.bounds`) for minimap clicks and group focus.
+- `resolveControlGroupIntent` takes `appendModifier` and returns an `append` intent.
+
+### Changed
+
+- The `rts` camera rig stops rotating on Q/E when the game's input map binds either key, the same way it already gives up WASD panning, so a grid command card (QWER / ASDF / ZXCV) can use them. Arrows, edge-scroll and the wheel still move the camera.
+- The touch dock's right-thumb cluster is shooter-shaped: one big main button (the `fire`/`shoot`/`attack` action, or a `touch.buttons` spec marked `main: true`) in the corner with secondaries on tight arcs around it, sized from the screen's short side. The old wrapping grid of large buttons is gone.
+- Every touch button shows an icon or a 1–3 character glyph, never its label text: shooter verbs (fire, aim, reload, grenade, heal, skills, ability) get glyphs, unknown actions get initials, and `TouchButtonSpec.icon` takes a `GameIconName`, a touch glyph or a short text glyph. The label stays as the accessible name.
+- `selectSlotN` (and `equipSlotN`, `weaponSlotN`) actions collapse into one row of small numbered chips (`TouchScheme.slots`) instead of a big button each.
+- Menu-type touch actions (`openSkills`, `toggleMap`, …) render as small icon chips beside the slot row, folded into a `⋯` overflow chip past two; `layout.utility` now defaults to `bottom-right`.
+- The dock reserves only the bottom corners it occupies: the shell publishes `--jg-hud-dock-clearance-left|center|right` and `HudCanvas` lifts each bottom region by its own value, so bottom-centre HUD is no longer pushed up.
+- The default `glass` touch skin reads the game's HudTheme tokens (`--jg-surface-deep`, `--jg-text`, `--jg-accent`).
+
+### Fixed
+
+- Saving the scene (`save_scene`, Ctrl+S) or tuned values while the dev runner serves a game with `--game-dir` now writes into that checkout. It used to write into `Games/<id>`, editing a different checkout than the one on screen.
+- Pointer clicks on worlds with terrain land on the ground under the cursor instead of the sky dome or the y=0 plane under the hills. `PointerProbe` takes an optional `groundHeightAt`, which `Shell3dPresentation` passes for bounded terrains; flat arenas are unchanged.
+- `gameFrameVars()` installs the frame stylesheet itself. An element dressed by hand used to show up bare when no `GameFrame` had mounted yet, for example a HUD in a game that starts straight in play with no menu before it.
+
 ## 0.40.0
 
 ### Migrate
