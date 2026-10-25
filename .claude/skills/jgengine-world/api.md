@@ -275,6 +275,16 @@
 - `acquireTarget` (function): function acquireTarget(policy: AcquisitionPolicy, selfId: string, held: string | null = null): AcquisitionResult — Run one acquisition pass and pick the best target under `policy`. Pass the currently `held` target so retention hysteresis (`switchMargin`, `dropRangeScale`) can keep the lock stable; pass `null` for a cold acquire. Pure and allocation-light — the caller owns the held-target state.
 - `createTargetAcquirer` (function): function createTargetAcquirer(policy: AcquisitionPolicy): TargetAcquirer — Wrap an {@link AcquisitionPolicy} in a small object that remembers the held target between passes, so callers get retention hysteresis for free without threading the previous target by hand. The only state is the held id (a string) — trivially serializable; round-trip it with {@link TargetAcquirer.hold}.
 
+## @jgengine/core/ai/temperament
+
+- `TemperamentConfig` (interface): interface TemperamentConfig — One species' temperament: its kind plus the ranges and thresholds that tune it.
+- `TemperamentInput` (interface): interface TemperamentInput — One decision's inputs: where the creature is, its den, its health, and its perception memory.
+- `TemperamentIntent` (interface): interface TemperamentIntent — The decision: a mode, who it is about, and the point to move toward (null to hold position).
+- `TemperamentKind` (type): type TemperamentKind = "passive" | "territorial" | "predator" — How a creature treats what it senses. `passive` keeps its distance, `territorial` defends an area and ignores what stays outside it, `predator` hunts what it senses and closes to strike.
+- `TemperamentLight` (type): type TemperamentLight = "attracted" | "averse" | "none" — What light does to a creature: draws it toward a lit target, drives it away, or nothing.
+- `TemperamentMode` (type): type TemperamentMode = "idle" | "flee" | "investigate" | "stalk" | "attack" | "guard" | "return" — What a creature is doing about what it senses.
+- `decideTemperament` (function): function decideTemperament(config: TemperamentConfig, input: TemperamentInput): TemperamentIntent — Decide what one creature does about what its perception remembers, from its temperament alone: a passive grazer flees what comes near, a territorial guard attacks only intruders inside its area and returns home when they leave, a predator charges what it saw and follows a smell or a noise to where it came from. Light bends all three: an attracted creature walks toward a lit target it senses, an averse one backs away from it. Pure and deterministic, so a game calls it per creature per tick and moves the creature toward `goal` with its own navigation.
+
 ## @jgengine/core/ai/threat
 
 - `HighestThreatOptions` (interface): interface HighestThreatOptions { current?: string | null; stickiness?: number } — ⚠ undocumented
@@ -2054,7 +2064,7 @@
 - `PerceptionSnapshot` (interface): interface PerceptionSnapshot — Serializable state for a perception service.
 - `PerceptionStats` (interface): interface PerceptionStats — Counters a perf test or a devtools probe reads. Reset with {@link PerceptionService.resetStats}.
 - `PerceptionStimulus` (interface): interface PerceptionStimulus — An event that can seed an observer's memory.
-- `PerceptionStimulusKind` (type): type PerceptionStimulusKind = "sight" | "sound" | "damage" — The kinds of stimulus the perception service can retain.
+- `PerceptionStimulusKind` (type): type PerceptionStimulusKind = "sight" | "sound" | "damage" | "scent" — The kinds of stimulus the perception service can retain. A `scent` (blood, bait, fuel) carries `scentRange × loudness` and, like a sound, needs no clear line: it seeps around corners.
 - `createPerception` (function): function createPerception(initial: PerceptionConfig): PerceptionService — Creates a deterministic sight, sound, and damage perception service with expiring target memory. Signals are judged in the order the caller supplies them, never from the wall clock.
 
 ## @jgengine/core/sensor/recordingBuffer
@@ -2770,7 +2780,7 @@
 - `PerceptionSnapshot` (interface): interface PerceptionSnapshot — Serializable state for a perception service.
 - `PerceptionStats` (interface): interface PerceptionStats — Counters a perf test or a devtools probe reads. Reset with {@link PerceptionService.resetStats}.
 - `PerceptionStimulus` (interface): interface PerceptionStimulus — An event that can seed an observer's memory.
-- `PerceptionStimulusKind` (type): type PerceptionStimulusKind = "sight" | "sound" | "damage" — The kinds of stimulus the perception service can retain.
+- `PerceptionStimulusKind` (type): type PerceptionStimulusKind = "sight" | "sound" | "damage" | "scent" — The kinds of stimulus the perception service can retain. A `scent` (blood, bait, fuel) carries `scentRange × loudness` and, like a sound, needs no clear line: it seeps around corners.
 - `PhysicsStats` (interface): interface PhysicsStats { count: number; awake: number; sleeping: number; contacts: number; pairs: number; substeps: number; stepMs: number } — ⚠ undocumented
 - `PhysicsWorld` (class): class PhysicsWorld — ⚠ undocumented
 - `PlaceAssetResult` (interface): interface PlaceAssetResult — Shared place-asset verb: one resolved payload for editor `place_asset` and in-game build-mode commits. Convert with {@link toStructureInput} / {@link toEditorMarker}.
