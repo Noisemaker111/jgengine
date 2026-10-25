@@ -24,10 +24,10 @@ const KIT_FILES = readdirSync(SRC).filter((name) => /^uiKit[A-Z]\w*\.tsx$/.test(
 const NO_FILTER = [
   ...KIT_FILES,
   "uiKit.ts",
-  "gameFrame.tsx",
+  "kitFrame.tsx",
   "gameCursor.tsx",
   "gameSlider.tsx",
-  "hudFade.tsx",
+  "hudLayout.tsx",
   "gameMenu.tsx",
   "gameMenuSaves.tsx",
   "actionHud.tsx",

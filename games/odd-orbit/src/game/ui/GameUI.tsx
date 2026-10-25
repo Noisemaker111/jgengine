@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { HudCanvas, HudPanel, useHudLayout, useDisplayProfile, usePanels } from "@jgengine/react";
-import { GameFrame } from "@jgengine/react/gameFrame";
 import { useGameFonts } from "@jgengine/react/gameFonts";
+import { KitPanel } from "@jgengine/react/uiKitRoot";
 import { GameIcon } from "@jgengine/react/gameIcons";
 import { HudButton } from "@jgengine/react/hudButton";
 import { useGame, useSceneObjects } from "@jgengine/react/hooks";
@@ -80,7 +80,7 @@ export function GameUI() {
         {!(phone && sheetOpen) && <HudPanel id="roster" anchor={phone ? "bottom" : "left"} order={phone ? 1 : 0} priority="critical"><RosterPanel compact={compact} /></HudPanel>}
         {household.selectedMemberId && !drawer && <HudPanel id="inspector" anchor={phone ? "bottom" : "right"} order={phone ? 2 : 0} priority="secondary"><Inspector /></HudPanel>}
         {drawer && <HudPanel id="drawer" anchor={phone ? "bottom" : "right"} order={phone ? 2 : 0} priority="secondary">
-          <GameFrame material="paper" cut="box" padding="0" edgeWidth={0} shadow={false} className="orbit-drawer" as="section" aria-label={drawer === "build" ? "Habitat furnishings" : "Daily balance"}>
+          <KitPanel material="paper" cut="box" padding="0" edgeWidth={0} shadow={false} className="orbit-drawer" as="section" aria-label={drawer === "build" ? "Habitat furnishings" : "Daily balance"}>
             <header>
               <span className="orbit-drawer-icon"><GameIcon name={drawer === "build" ? "hammer" : "bread"} size={22} /></span>
               <h2>{drawer === "build" ? "Furnishings catalogue" : "Pantry & bills"}</h2>
@@ -110,7 +110,7 @@ export function GameUI() {
                 </>}
               </>}
             </div>
-          </GameFrame>
+          </KitPanel>
         </HudPanel>}
         <HudPanel id="actions" anchor={landscape ? "bottom-left" : "bottom"} priority="critical">
           <nav className="orbit-tray" aria-label="Habitat tools">
@@ -126,10 +126,10 @@ export function GameUI() {
           </nav>
         </HudPanel>
         {household.buildTool && <HudPanel id="placement" anchor="bottom" order={1} priority="critical">
-          <GameFrame material="paper" cut="ticket" depth={10} padding="8px 18px" edgeWidth={0} className="orbit-placement">
+          <KitPanel material="paper" cut="ticket" depth={10} padding="8px 18px" edgeWidth={0} className="orbit-placement">
             <span>Tap open floor to place it.</span>
             <Enamel as="button" tone="coral" radius={12} padding="4px 12px" onClick={() => command("build.cancel")}>Cancel</Enamel>
-          </GameFrame>
+          </KitPanel>
         </HudPanel>}
       </>}
     </HudCanvas>

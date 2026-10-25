@@ -1,4 +1,6 @@
-import { Clock, Coins, Crosshair, HudCanvas, HudPanel, Hotbar, Speedometer, StatBar, WaveBanner, useHudLayout } from "@jgengine/react";
+import { Clock, Coins, Crosshair, HudCanvas, HudPanel, Hotbar, Speedometer, WaveBanner, useEntityStat, useHudLayout, usePlayer } from "@jgengine/react";
+import { KitMeter } from "@jgengine/react/uiKitRoot";
+import type { KitTone } from "@jgengine/react/uiKit";
 import type { PlayableGame } from "@jgengine/shell/registry";
 
 import { demoGame } from "./demoGame";
@@ -8,6 +10,11 @@ import { demoGame } from "./demoGame";
  * game UI. Every real game owns custom chrome and art direction; this page only exercises the
  * stock widgets against demo gameplay data so layout/hooks stay testable in isolation.
  */
+function PlayerStat({ stat, tone, label }: { stat: string; tone: KitTone; label: string }) {
+  const value = useEntityStat(usePlayer().userId, stat);
+  return value === null ? null : <KitMeter size="sm" label={label} value={value.current - value.min} max={value.max - value.min} tone={tone} readout style={{ width: 170 }} />;
+}
+
 function HudShowcaseUI() {
   const layout = useHudLayout({ storageKey: "hud-showcase" });
   return (
@@ -23,8 +30,8 @@ function HudShowcaseUI() {
       </HudPanel>
       <HudPanel id="vitals" anchor="bottom-left">
         <div style={{ display: "grid", gap: 6 }}>
-          <StatBar statId="health" tone="health" label="Health" />
-          <StatBar statId="mana" tone="mana" label="Mana" width={170} />
+          <PlayerStat stat="health" tone="good" label="Health" />
+          <PlayerStat stat="mana" tone="accent" label="Mana" />
         </div>
       </HudPanel>
       <HudPanel id="hotbar" anchor="bottom">

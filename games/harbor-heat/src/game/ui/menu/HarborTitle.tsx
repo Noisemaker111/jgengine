@@ -1,7 +1,8 @@
 import { createElement, useEffect, useRef, useState, type CSSProperties, type ReactNode, type Ref } from "react";
 import type { SaveSlotMeta } from "@jgengine/core/game/saveSlots";
 import { GameCursor } from "@jgengine/react/gameCursor";
-import { GameFrame, gameCutPath } from "@jgengine/react/gameFrame";
+import { KitButton, KitPanel } from "@jgengine/react/uiKitRoot";
+import { kitCutPath } from "@jgengine/react/kitFrame";
 import { GameIcon } from "@jgengine/react/gameIcons";
 import { useViewportScrollLock } from "@jgengine/react/gameMenu";
 import { useMenuNav, type MenuNavItemProps } from "@jgengine/react/menuNav";
@@ -46,7 +47,7 @@ function MarqueeLetters({ text, seed }: { text: string; seed: number }) {
 /** The roadside sign's neon: two words in glass tube over an enamel box ringed with chaser bulbs. */
 export function NeonSign({ small = false }: { small?: boolean }) {
   return (
-    <GameFrame material="enamel" tint="#0b3742" cut="chamfer" depth={small ? 12 : 20} edge={HH.cream} edgeWidth={small ? 3 : 4} padding="0" className={`hh-sign-box ${small ? "small" : ""}`}>
+    <KitPanel material="enamel" tint="#0b3742" cut="chamfer" depth={small ? 12 : 20} edge={HH.cream} edgeWidth={small ? 3 : 4} padding="0" className={`hh-sign-box ${small ? "small" : ""}`}>
       <i className="hh-bulbs top" aria-hidden="true" />
       <i className="hh-bulbs bottom" aria-hidden="true" />
       <i className="hh-bulbs left" aria-hidden="true" />
@@ -74,7 +75,7 @@ export function NeonSign({ small = false }: { small?: boolean }) {
           </g>
         </svg>
       </span>
-    </GameFrame>
+    </KitPanel>
   );
 }
 
@@ -184,9 +185,9 @@ export function HarborTitle({
 export function StampButton({ children, tone = "coral", onClick, disabled, className, ref, ...rest }: { children: ReactNode; tone?: "coral" | "teal" | "ink"; onClick?: () => void; disabled?: boolean; className?: string; ref?: Ref<HTMLElement> } & Record<`data-${string}` | `aria-${string}`, unknown> & Partial<Omit<MenuNavItemProps, "ref">>) {
   const tint = tone === "coral" ? HH.coral : tone === "teal" ? HH.teal : HH.ink;
   return (
-    <GameFrame ref={ref as never} as="button" material="enamel" tint={tint} cut="slant" depth={10} edge={HH.night} edgeWidth={2} padding="8px 20px 7px" className={`hh-stamp-btn ${className ?? ""}`} disabled={disabled} onClick={onClick} {...rest}>
+    <KitButton ref={ref as never} material="enamel" tint={tint} cut="slant" depth={10} edge={HH.night} edgeWidth={2} padding="8px 20px 7px" className={`hh-stamp-btn ${className ?? ""}`} disabled={disabled} onClick={onClick} {...rest}>
       {children}
-    </GameFrame>
+    </KitButton>
   );
 }
 
@@ -194,7 +195,7 @@ export function StampButton({ children, tone = "coral", onClick, disabled, class
 export function ContinueTag({ slot, bayLabel, active, onContinue }: { slot: SaveSlotMeta | null; bayLabel: string; active: boolean; onContinue: () => void }) {
   const nav = useMenuNav({ ids: ["go"], enabled: active && slot !== null, onConfirm: onContinue });
   return (
-    <GameFrame material="paper" tint="#f7ead0" cut="ticket" depth={18} edge="#3a2a18" edgeWidth={2} padding="0" className="hh-tag hh-tag-wide">
+    <KitPanel material="paper" tint="#f7ead0" cut="ticket" depth={18} edge="#3a2a18" edgeWidth={2} padding="0" className="hh-tag hh-tag-wide">
       <i className="hh-tag-hole" aria-hidden="true" />
       <span className="hh-tag-head"><span>Mainsail express</span><b>Parcel tag</b></span>
       {slot === null ? (
@@ -215,7 +216,7 @@ export function ContinueTag({ slot, bayLabel, active, onContinue }: { slot: Save
         </span>
       )}
       {active && slot !== null ? <GameCursor variant="brackets" color={HH.coral} /> : null}
-    </GameFrame>
+    </KitPanel>
   );
 }
 
@@ -241,7 +242,7 @@ export function CourierLicence({ name, onName, bayLabel, active, onBegin }: { na
   }, [active, touch]);
   const model = entityModels.street_runner;
   return (
-    <GameFrame material="paper" tint="#f3e7cc" cut="notch" depth={18} edge={HH.ink} edgeWidth={3} padding="0" className="hh-licence" data-new-dispatch-pane="">
+    <KitPanel material="paper" tint="#f3e7cc" cut="notch" depth={18} edge={HH.ink} edgeWidth={3} padding="0" className="hh-licence" data-new-dispatch-pane="">
       <span className="hh-licence-band"><span>Mainsail express</span><b>Courier licence</b></span>
       <span className="hh-licence-body">
         <span className="hh-licence-photo">
@@ -281,13 +282,13 @@ export function CourierLicence({ name, onName, bayLabel, active, onBegin }: { na
         </span>
       </span>
       <span className="hh-licence-stamp" aria-hidden="true">Valid · Mainsail</span>
-    </GameFrame>
+    </KitPanel>
   );
 }
 
 /** The bay's verb and its chips are cut on a slant like the stamp buttons, at a smaller depth. */
-const VERB_CUT: CSSProperties = { clipPath: gameCutPath("slant", 8) };
-const CHIP_CUT: CSSProperties = { clipPath: gameCutPath("slant", 6) };
+const VERB_CUT: CSSProperties = { clipPath: kitCutPath("slant", 8) };
+const CHIP_CUT: CSSProperties = { clipPath: kitCutPath("slant", 6) };
 
 /** One dispatch bay's tag: who is kept there, how long they've run, and what you can do with it. */
 export function BayTags({ bays, labels, active, onLoad, onNew, onClear }: {
@@ -317,9 +318,8 @@ export function BayTags({ bays, labels, active, onLoad, onNew, onClear }: {
   return (
     <div className="hh-bays" {...nav.containerProps}>
       {bays.map((bay, index) => (
-        <GameFrame
+        <KitButton
           key={bay.id}
-          as="button"
           material="paper"
           tint={bay.empty ? "#e9dcc0" : "#f7ead0"}
           cut="ticket"
@@ -350,7 +350,7 @@ export function BayTags({ bays, labels, active, onLoad, onNew, onClear }: {
             </span>
           )}
           <span className="hh-bay-verb" style={VERB_CUT}>{bay.empty ? "Start here" : "Load"}</span>
-        </GameFrame>
+        </KitButton>
       ))}
       <span className="hh-bay-tools">
         {bays.filter((bay) => !bay.empty).map((bay) => (
@@ -402,7 +402,7 @@ export function TitlePhone({ active, onBack }: { active: boolean; onBack: () => 
 export function TribuneCredits() {
   const assets = tribuneAds();
   return (
-    <GameFrame material="paper" tint="#efe6d2" cut="torn" depth={14} edge="none" padding="0" className="hh-tribune">
+    <KitPanel material="paper" tint="#efe6d2" cut="torn" depth={14} edge="none" padding="0" className="hh-tribune">
       <span className="hh-tribune-mast"><b>The Mainsail Tribune</b><small>Late edition · Credits</small></span>
       <span className="hh-tribune-head">Who made the heat</span>
       <span className="hh-tribune-lede">
@@ -420,6 +420,6 @@ export function TribuneCredits() {
           </span>
         ))}
       </span>
-    </GameFrame>
+    </KitPanel>
   );
 }

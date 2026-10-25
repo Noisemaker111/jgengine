@@ -321,10 +321,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `useEntityRenderCues` (function) · `import { useEntityRenderCues } from "@jgengine/shell/render/useEntityRenderCues"`
 
-## entity-summary — primary selected-entity detail panel (name, tags, vitals)
-
-- `EntitySummary` (function) · `import { EntitySummary } from "@jgengine/react"`
-
 ## event-feedback — map announced gameplay events (damage, kill, pickup, objective, wave, refusal) to a sound, gamepad pulse, camera shake and caption through one data mapping
 
 - `createEventFeedback` (function) · `import { createEventFeedback } from "@jgengine/shell/audio/eventFeedback"`
@@ -368,18 +364,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## game-fonts — load a game's bundled display and body fonts
 
 - `useGameFonts` (function) · `import { useGameFonts } from "@jgengine/react"`
-
-## game-frame — material frame (steel, wood, stone, paper, glass…) with an angled or irregular cut, as a panel or a game button
-
-- `GameFrame` (const) · `import { GameFrame } from "@jgengine/react"`
-
-## game-frame-cut — clip path for an angled or irregular frame silhouette (chamfer, banner, ticket, torn…)
-
-- `gameCutPath` (function) · `import { gameCutPath } from "@jgengine/react"`
-
-## game-frame-style — CSS variables for a material frame on an element the game already owns
-
-- `gameFrameVars` (function) · `import { gameFrameVars } from "@jgengine/react"`
 
 ## game-menu — full-bleed game menu — living background, token-sized logo, animated navigable verbs, detail pane, selection sound, pause variant, no page scrollbar
 
@@ -485,13 +469,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `HudPanel` (function) · `import { HudPanel } from "@jgengine/react"`
 
-## hud-slots — atomic themed equipment/weapon/armor/potion slot grids with painted icons
+## hud-slots — a play HUD of edge-pinned, player-movable panels in one component
 
+- `HudSlots` (function) · `import { HudSlots } from "@jgengine/react"`
 - `SlotItem` (interface) · `import { SlotItem } from "@jgengine/react"`
-
-## hud-stat-bar — optional stat-bound bar building block (health, mana, stamina) — prefer game-owned chrome
-
-- `StatBar` (function) · `import { StatBar } from "@jgengine/react"`
 
 ## hud-surface — themed panel frame with elevation, header slots, landmark element, and open/close transitions
 
@@ -520,11 +501,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## hud-tokens — inline-style accessors for the HudTheme type scale, spacing, motion, elevation, and focus ring
 
 - `HudTypeStep` (type) · `import { HudTypeStep } from "@jgengine/react/hudTokens"`
-
-## hud-vitals — atomic purpose-named vitals bars (token-themed parts, not a finished HUD)
-
-- `BarTokens` (interface) · `import { BarTokens } from "@jgengine/react"`
-- `barTokens` (function) · `import { barTokens } from "@jgengine/react"`
 
 ## i18n — translate a message catalog with fallback-locale lookup, `{param}` interpolation, and Intl pluralization; observable active-locale switching
 
@@ -566,6 +542,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `KillFeed` (function) · `import { KillFeed } from "@jgengine/react"`
 
+## kit-action-bar — a HUD build/action bar — keyed kit buttons with costs, affordability and the held tool, progress meters, the interact prompt
+
+- `KitActionBar` (function) · `import { KitActionBar } from "@jgengine/react/kitHud"`
+
 ## kit-action-glyph — the bound key, pad button or tap label for an action, live, for any kit part
 
 - `useActionGlyph` (function) · `import { useActionGlyph } from "@jgengine/react"`
@@ -578,9 +558,29 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `KitBanner` (function) · `import { KitBanner } from "@jgengine/react"`
 
-## kit-button — a button drawn by the active UI kit, with UI cue sounds
+## kit-button — a button drawn by the active UI kit, or made of a material (steel, wood, enamel…), with UI cue sounds
 
 - `KitButton` (function) · `import { KitButton } from "@jgengine/react"`
+
+## kit-count — a HUD resource readout — a number and its word, with an optional rate line
+
+- `KitCount` (function) · `import { KitCount } from "@jgengine/react/kitHud"`
+
+## kit-counts — a row of HUD resource counts
+
+- `KitCounts` (function) · `import { KitCounts } from "@jgengine/react/kitHud"`
+
+## kit-frame-cut — clip path for an angled or irregular frame silhouette (chamfer, banner, ticket, torn…)
+
+- `kitCutPath` (function) · `import { kitCutPath } from "@jgengine/react"`
+
+## kit-frame-style — CSS variables for a material frame on an element the game already owns
+
+- `kitFrameVars` (function) · `import { kitFrameVars } from "@jgengine/react"`
+
+## kit-hint — a HUD hint strip for the current tool or problem, with the phase banner
+
+- `KitHint` (function) · `import { KitHint } from "@jgengine/react/kitHud"`
 
 ## kit-menu — a verb list drawn by the active UI kit over shared menu navigation
 
@@ -598,7 +598,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `KitObjective` (function) · `import { KitObjective } from "@jgengine/react"`
 
-## kit-panel — a content surface drawn by the active UI kit, with the kit's enter/exit motion
+## kit-panel — a content surface drawn by the active UI kit, or made of a material with a cut silhouette, with enter/exit motion
 
 - `KitPanel` (function) · `import { KitPanel } from "@jgengine/react"`
 
@@ -609,6 +609,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## kit-toast — a short message drawn by the active UI kit, with its enter/exit motion
 
 - `KitToast` (function) · `import { KitToast } from "@jgengine/react"`
+
+## kit-vitals — a HUD vitals card — meters that turn bad when low, extra readouts, the labeled current objective under it
+
+- `KitVitals` (function) · `import { KitVitals } from "@jgengine/react/kitHud"`
+
+## kit-wave-clock — a HUD wave clock — countdown or enemies left, a note, and the wave banner
+
+- `KitWaveClock` (function) · `import { KitWaveClock } from "@jgengine/react/kitHud"`
 
 ## light-probes — bake an irradiance volume from authored sky, fill and lamp inputs
 
@@ -1231,10 +1239,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## use-waypoints — React binding that returns a waypoint tracker's live list (or a passthrough array)
 
 - `useWaypoints` (function) · `import { useWaypoints } from "@jgengine/react"`
-
-## vital-bar — compact current/max vital meter for an entity summary
-
-- `VitalBar` (function) · `import { VitalBar } from "@jgengine/react"`
 
 ## wave-hud — drop-in wave/spawn HUD over a wave runner — big WAVE N label, wave-progress bar, spawned/total + budget + alert readouts, theme-skinnable
 

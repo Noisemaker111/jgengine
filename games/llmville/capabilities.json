@@ -11,7 +11,7 @@
     "hud-clock",
     "hud-coins",
     "hud-hotbar",
-    "hud-stat-bar",
+    "kit-meter",
     "hud-ticker",
     "join-gate",
     "lifecycle",

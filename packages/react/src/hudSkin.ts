@@ -12,7 +12,6 @@ export interface HudSkinMaterial {
 export interface HudSkin {
   frame?: HudSkinMaterial;
   slot?: HudSkinMaterial;
-  bar?: { fill: string; track: string; cap?: string };
   font?: { family: string; src: string; weight?: number; pixel?: boolean };
   cursor?: string;
 }
@@ -30,11 +29,6 @@ export function hudSkinVars(skin?: HudSkin): CSSProperties {
   };
   material("frame", skin.frame);
   material("slot", skin.slot);
-  if (skin.bar) {
-    vars["--jg-bar-skin-fill"] = skin.bar.fill;
-    vars["--jg-bar-skin-track"] = skin.bar.track;
-    if (skin.bar.cap) vars["--jg-bar-skin-cap"] = `url(${skin.bar.cap})`;
-  }
   if (skin.font) {
     vars["--jg-skin-font"] = skin.font.family;
     if (skin.font.pixel) vars["--jg-skin-font-rendering"] = "pixelated";

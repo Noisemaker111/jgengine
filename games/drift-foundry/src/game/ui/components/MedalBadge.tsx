@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import { GameFrame } from "@jgengine/react/gameFrame";
 import { GameIcon } from "@jgengine/react/gameIcons";
+import { KitPanel } from "@jgengine/react/uiKitRoot";
 
 import type { MedalId } from "../../events/catalog";
 
@@ -9,7 +9,7 @@ const TINT: Record<MedalId, string> = { bronze: "#b8763d", silver: "#c9d0d4", go
 /** A stamped medal: a shield cut in the medal's metal, or an empty socket when it is still to earn. */
 export function MedalBadge({ medal, earned = true, size = 26 }: { medal: MedalId; earned?: boolean; size?: number }): ReactNode {
   return (
-    <GameFrame
+    <KitPanel
       material={earned ? "brass" : "steel"}
       cut="hex"
       depth={Math.round(size / 3.4)}
@@ -24,7 +24,7 @@ export function MedalBadge({ medal, earned = true, size = 26 }: { medal: MedalId
       style={{ width: size, height: size }}
     >
       <GameIcon name="star" size={Math.round(size * 0.62)} color={earned ? "#1b1407" : "#6c7175"} />
-    </GameFrame>
+    </KitPanel>
   );
 }
 

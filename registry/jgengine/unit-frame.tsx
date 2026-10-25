@@ -1,5 +1,5 @@
-// DEPRECATED (#1033): a portrait + a bundled vitals array is the combo anti-pattern this retires.
-// Compose your own frame from a portrait plus the atomic `@jgengine/react/bars` you need.
+// A copy-in portrait + vitals frame for shadcn projects. Inside a jgengine game compose `KitVitals`
+// from `@jgengine/react/kitHud`.
 import type { ReactNode } from "react";
 
 import { VitalBar, type VitalTone, type VitalValue } from "@/components/ui/vital-bar";

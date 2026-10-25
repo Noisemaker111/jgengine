@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { HudFade } from "@jgengine/react/hudFade";
+import { HudFade } from "@jgengine/react/hudLayout";
 import { useEntityStat, usePlayer } from "@jgengine/react/hooks";
 import { useStore } from "@jgengine/react/store";
 import { CHARACTERS } from "../../characters";

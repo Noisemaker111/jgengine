@@ -1,13 +1,15 @@
 import type { ReactNode } from "react";
 import { useGameStore } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
-import { KitBanner, KitObjective, KitResultScreen } from "@jgengine/react/kitFlow";
-import { KitButton, KitMeter, KitPanel } from "@jgengine/react/uiKitRoot";
+import { HUD_CORNER_WIDTH } from "@jgengine/react/hudLayout";
+import { KitResultScreen } from "@jgengine/react/kitFlow";
+import { KitActionBar, KitCount, KitCounts, KitHint, KitVitals } from "@jgengine/react/kitHud";
+import { KitButton, KitPanel } from "@jgengine/react/uiKitRoot";
+import { HudSlots } from "@jgengine/shell/gameKit";
 
 import { newGame } from "../flow";
 import { idea } from "../idea";
 import { realmView } from "../town";
-import { Count, Counts, HudFrame, PANEL_WIDTH } from "./HudFrame";
 
 const same = <T,>(a: T, b: T) => JSON.stringify(a) === JSON.stringify(b);
 const useRealm = () => useGameStore(realmView, same);
@@ -21,25 +23,18 @@ function Realm(): ReactNode {
   const realm = useRealm();
   const beat = idea.beats.find((entry) => entry.id === realm.mission?.missionId) ?? null;
   return (
-    <div style={{ width: PANEL_WIDTH, pointerEvents: "none" }}>
-      <KitPanel variant="hud" eyebrow={idea.name} title={realm.tierLabel}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          <Counts>
-            <Count id="people" value={realm.people} label={idea.people.label} />
-            <Count id="working" value={realm.jobs} label="working" />
-            <Count id="idle" value={realm.idle} label="free" />
-          </Counts>
-          {realm.nextTier === null ? null : (
-            <KitMeter size="sm" label={`To ${realm.nextTier.label.toLowerCase()}`} value={Math.min(realm.people, realm.nextTier.people)} max={realm.nextTier.people} tone="accent" readout />
-          )}
-        </div>
-      </KitPanel>
-      {beat === null ? null : (
-        <div style={{ marginTop: 8 }}>
-          <KitObjective eyebrow={idea.guide.name} title={beat.title} steps={[{ id: beat.id, label: beat.goal }]} progressKey={beat.id} />
-        </div>
-      )}
-    </div>
+    <KitVitals
+      eyebrow={idea.name}
+      title={realm.tierLabel}
+      vitals={realm.nextTier === null ? [] : [{ label: `To ${realm.nextTier.label.toLowerCase()}`, value: Math.min(realm.people, realm.nextTier.people), max: realm.nextTier.people, tone: "accent" }]}
+      objective={beat === null ? null : { id: beat.id, label: idea.guide.name, title: beat.title, goal: beat.goal }}
+    >
+      <KitCounts>
+        <KitCount id="people" value={realm.people} label={idea.people.label} />
+        <KitCount id="working" value={realm.jobs} label="working" />
+        <KitCount id="idle" value={realm.idle} label="free" />
+      </KitCounts>
+    </KitVitals>
   );
 }
 
@@ -47,17 +42,18 @@ function Stores(): ReactNode {
   const realm = useRealm();
   return (
     <KitPanel variant="strip">
-      <Counts>
+      <KitCounts>
         {realm.resources.map((resource) => (
-          <span key={resource.id} style={{ display: "inline-flex", flexDirection: "column", alignItems: "flex-start" }}>
-            <Count id={resource.id} value={resource.amount} label={resource.label} />
-            <span style={{ fontSize: 10, opacity: 0.7, color: resource.perMinute < 0 ? "#ff8a7a" : undefined }}>
-              {resource.perMinute >= 0 ? "+" : ""}
-              {resource.perMinute}/min
-            </span>
-          </span>
+          <KitCount
+            key={resource.id}
+            id={resource.id}
+            value={resource.amount}
+            label={resource.label}
+            detail={`${resource.perMinute >= 0 ? "+" : ""}${resource.perMinute}/min`}
+            detailBad={resource.perMinute < 0}
+          />
         ))}
-      </Counts>
+      </KitCounts>
     </KitPanel>
   );
 }
@@ -67,14 +63,11 @@ function Hint(): ReactNode {
   const held = idea.buildings.find((building) => building.id === realm.armed) ?? null;
   const text = held !== null ? `Placing ${held.label} - click the ground, right click to stop` : !realm.fed ? `Out of ${label(idea.resources[0]!.id).toLowerCase()}: work has stopped` : null;
   return (
-    <div style={{ pointerEvents: "none" }}>
-      {text === null ? null : (
-        <KitPanel variant="strip" tone={held !== null ? "accent" : "bad"}>
-          <span style={{ fontWeight: 700, letterSpacing: "0.06em", fontSize: 13 }}>{text}</span>
-        </KitPanel>
-      )}
-      <KitBanner cue={realm.tier > 1 ? realm.tier : null} title={realm.tierLabel} subtitle="New buildings unlocked" tone="good" />
-    </div>
+    <KitHint
+      text={text}
+      tone={held !== null ? "accent" : "bad"}
+      banner={{ cue: realm.tier > 1 ? realm.tier : null, title: realm.tierLabel, subtitle: "New buildings unlocked", tone: "good" }}
+    />
   );
 }
 
@@ -83,33 +76,25 @@ function BuildBar(): ReactNode {
   const realm = useRealm();
   const have = Object.fromEntries(realm.resources.map((resource) => [resource.id, resource.amount]));
   return (
-    <KitPanel variant="strip">
-      <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", justifyContent: "center", maxWidth: 1100 }}>
-        {idea.buildings.map((building, index) => {
-          const state = realm.buildings[index]!;
-          const short = Object.entries(building.cost).some(([id, amount]) => (have[id] ?? 0) < amount);
-          const tier = idea.tiers[building.tier - 1]?.label ?? "";
-          return (
-            <KitButton
-              key={building.id}
-              data-build={building.id}
-              size="sm"
-              variant={realm.armed === building.id ? "primary" : short || !state.unlocked ? "ghost" : "secondary"}
-              pressed={realm.armed === building.id}
-              glyph={index < 9 ? String(index + 1) : undefined}
-              title={building.blurb}
-              onClick={() => ctx.game.commands.run(`build${index + 1}`, {})}
-            >
-              {building.label}
-              <span style={{ opacity: 0.65, marginLeft: 4, fontSize: "0.85em" }}>{state.unlocked ? price(building.cost) : tier}</span>
-            </KitButton>
-          );
-        })}
-        {realm.building.map((order) => (
-          <KitMeter key={order.id} label={order.label} value={order.progress} max={1} size="sm" style={{ width: 96 }} />
-        ))}
-      </div>
-    </KitPanel>
+    <KitActionBar
+      kind="build"
+      wrapAt={1100}
+      actions={idea.buildings.map((building, index) => {
+        const state = realm.buildings[index]!;
+        const short = Object.entries(building.cost).some(([id, amount]) => (have[id] ?? 0) < amount);
+        return {
+          id: building.id,
+          label: building.label,
+          detail: state.unlocked ? price(building.cost) : (idea.tiers[building.tier - 1]?.label ?? ""),
+          glyph: index < 9 ? String(index + 1) : undefined,
+          variant: realm.armed === building.id ? "primary" : short || !state.unlocked ? "ghost" : "secondary",
+          pressed: realm.armed === building.id,
+          title: building.blurb,
+          onActivate: () => ctx.game.commands.run(`build${index + 1}`, {}),
+        };
+      })}
+      progress={realm.building.map((order) => ({ id: order.id, label: order.label, value: order.progress }))}
+    />
   );
 }
 
@@ -128,7 +113,7 @@ function Selected(): ReactNode {
           ? `${word.staff ?? 0} work here - ${Math.round((word.rate ?? 0) * picked.level * 60)} ${label(word.makes ?? "").toLowerCase()} a minute`
           : word.blurb;
   return (
-    <div style={{ width: PANEL_WIDTH }}>
+    <div style={{ width: HUD_CORNER_WIDTH }}>
       <KitPanel variant="hud" eyebrow={picked.ready ? `Level ${picked.level}` : "Being built"} title={picked.label}>
         <div style={{ display: "flex", flexDirection: "column", gap: 8, fontSize: 12 }}>
           <span style={{ opacity: 0.85 }}>{does}</span>
@@ -180,5 +165,5 @@ function Ending(): ReactNode {
 
 /** Everything on screen while playing: a few small panels at the edges, the end card over them. */
 export function Hud(): ReactNode {
-  return <HudFrame slots={{ topLeft: <Realm />, top: <Hint />, topRight: <Stores />, bottom: <BuildBar />, bottomRight: <Selected /> }} overlay={<Ending />} />;
+  return <HudSlots storageKey={idea.id} slots={{ topLeft: <Realm />, top: <Hint />, topRight: <Stores />, bottom: <BuildBar />, bottomRight: <Selected /> }} overlay={<Ending />} />;
 }

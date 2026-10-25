@@ -1,13 +1,15 @@
 import type { ReactNode } from "react";
 import { useGameStore } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
-import { KitBanner, KitObjective, KitResultScreen } from "@jgengine/react/kitFlow";
-import { KitButton, KitMeter, KitPanel } from "@jgengine/react/uiKitRoot";
+import { HUD_CORNER_WIDTH } from "@jgengine/react/hudLayout";
+import { KitResultScreen } from "@jgengine/react/kitFlow";
+import { KitActionBar, KitCount, KitCounts, KitHint, KitVitals } from "@jgengine/react/kitHud";
+import { KitButton, KitPanel } from "@jgengine/react/uiKitRoot";
+import { HudSlots } from "@jgengine/shell/gameKit";
 
 import { newGame } from "../flow";
 import { idea } from "../idea";
 import { colonyView } from "../view";
-import { Count, Counts, HudFrame, PANEL_WIDTH } from "./HudFrame";
 
 const same = <T,>(a: T, b: T) => JSON.stringify(a) === JSON.stringify(b);
 const useColony = () => useGameStore(colonyView, same);
@@ -22,27 +24,22 @@ function Stores(): ReactNode {
   const beat = idea.beats.find((entry) => entry.id === colony.mission?.missionId) ?? null;
   const [food] = colony.resources;
   return (
-    <div style={{ width: PANEL_WIDTH, pointerEvents: "none" }}>
-      <KitPanel variant="hud" eyebrow={idea.name} title={idea.hq.label}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          <Counts>
-            {colony.resources.map((resource) => (
-              <Count key={resource.id} id={resource.id} value={resource.value} label={resource.label.toLowerCase()} />
-            ))}
-          </Counts>
-          <Counts>
-            <Count id="people" value={`${colony.people}/${colony.beds}`} label={people} />
-            <Count id="raids" value={colony.raids} label="raids held" />
-          </Counts>
-          {food === undefined || food.value > 20 ? null : <KitMeter size="sm" label={`${food.label} low`} value={food.value} max={20} tone="bad" readout />}
-        </div>
-      </KitPanel>
-      {beat === null ? null : (
-        <div style={{ marginTop: 8 }}>
-          <KitObjective eyebrow={idea.guide.name} title={beat.title} steps={[{ id: beat.id, label: beat.goal }]} progressKey={beat.id} />
-        </div>
-      )}
-    </div>
+    <KitVitals
+      eyebrow={idea.name}
+      title={idea.hq.label}
+      vitals={food === undefined || food.value > 20 ? [] : [{ label: `${food.label} low`, value: food.value, max: 20, tone: "bad" }]}
+      objective={beat === null ? null : { id: beat.id, label: idea.guide.name, title: beat.title, goal: beat.goal }}
+    >
+      <KitCounts>
+        {colony.resources.map((resource) => (
+          <KitCount key={resource.id} id={resource.id} value={resource.value} label={resource.label.toLowerCase()} />
+        ))}
+      </KitCounts>
+      <KitCounts>
+        <KitCount id="people" value={`${colony.people}/${colony.beds}`} label={people} />
+        <KitCount id="raids" value={colony.raids} label="raids held" />
+      </KitCounts>
+    </KitVitals>
   );
 }
 
@@ -51,7 +48,7 @@ function Watch(): ReactNode {
   const ctx = useGameContext();
   const colony = useColony();
   return (
-    <div style={{ width: PANEL_WIDTH }}>
+    <div style={{ width: HUD_CORNER_WIDTH }}>
       <KitPanel
         variant="hud"
         tone={colony.raiding ? "bad" : undefined}
@@ -86,14 +83,10 @@ function Hint(): ReactNode {
         ? `${colony.selected} selected - right click a node to gather, a raider to fight, ground to walk`
         : null;
   return (
-    <div style={{ pointerEvents: "none" }}>
-      {text === null ? null : (
-        <KitPanel variant="strip" tone="accent">
-          <span style={{ fontWeight: 700, letterSpacing: "0.06em", fontSize: 13 }}>{text}</span>
-        </KitPanel>
-      )}
-      <KitBanner cue={colony.raiding ? colony.raids + 1 : null} title={`Raid ${colony.raids + 1}`} subtitle={`${idea.raiders.label} are coming`} tone="bad" />
-    </div>
+    <KitHint
+      text={text}
+      banner={{ cue: colony.raiding ? colony.raids + 1 : null, title: `Raid ${colony.raids + 1}`, subtitle: `${idea.raiders.label} are coming`, tone: "bad" }}
+    />
   );
 }
 
@@ -101,28 +94,20 @@ function BuildBar(): ReactNode {
   const ctx = useGameContext();
   const colony = useColony();
   return (
-    <KitPanel variant="strip">
-      <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", justifyContent: "center", maxWidth: 1040 }}>
-        {idea.structures.map((structure, index) => {
-          const short = colony.afford[index] !== true;
-          return (
-            <KitButton
-              key={structure.id}
-              data-build={structure.id}
-              size="sm"
-              variant={colony.armed === structure.id ? "primary" : short ? "ghost" : "secondary"}
-              pressed={colony.armed === structure.id}
-              glyph={index < 9 ? String(index + 1) : undefined}
-              title={structure.blurb}
-              onClick={() => ctx.game.commands.run(`build${index + 1}`, {})}
-            >
-              {structure.label}
-              <span style={{ opacity: 0.65, marginLeft: 4, fontSize: "0.85em" }}>{costText(structure.cost)}</span>
-            </KitButton>
-          );
-        })}
-      </div>
-    </KitPanel>
+    <KitActionBar
+      kind="build"
+      wrapAt={1040}
+      actions={idea.structures.map((structure, index) => ({
+        id: structure.id,
+        label: structure.label,
+        detail: costText(structure.cost),
+        glyph: index < 9 ? String(index + 1) : undefined,
+        variant: colony.armed === structure.id ? "primary" : colony.afford[index] !== true ? "ghost" : "secondary",
+        pressed: colony.armed === structure.id,
+        title: structure.blurb,
+        onActivate: () => ctx.game.commands.run(`build${index + 1}`, {}),
+      }))}
+    />
   );
 }
 
@@ -149,5 +134,5 @@ function Ending(): ReactNode {
 
 /** Everything on screen while playing: a few small panels at the edges, the end card over them. */
 export function Hud(): ReactNode {
-  return <HudFrame slots={{ topLeft: <Stores />, top: <Hint />, topRight: <Watch />, bottom: <BuildBar /> }} overlay={<Ending />} />;
+  return <HudSlots storageKey={idea.id} slots={{ topLeft: <Stores />, top: <Hint />, topRight: <Watch />, bottom: <BuildBar /> }} overlay={<Ending />} />;
 }

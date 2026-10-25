@@ -34,8 +34,8 @@ export type { GameCameraConfig } from "@jgengine/core/game/playableGame";
 export { DEFAULT_WALK_CODES } from "./shellMovement";
 
 // HUD layout + drop-in building blocks — compose these, reskin with HudTheme; games own layout/terminology/art direction.
-export { HudCanvas, HudPanel, useHudLayout } from "@jgengine/react/hudLayout";
-export { StatBar, Hotbar, Clock, Coins } from "@jgengine/react/hud";
+export { HudCanvas, HudFade, HudPanel, HudSlots, useHudLayout } from "@jgengine/react/hudLayout";
+export { Hotbar, Clock, Coins } from "@jgengine/react/hud";
 
 // Deterministic randomness (inject seeds; never Math.random in game logic).
 export { seededRng } from "@jgengine/core/random/rng";

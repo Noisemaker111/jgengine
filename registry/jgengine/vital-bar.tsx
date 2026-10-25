@@ -1,6 +1,5 @@
-// DEPRECATED (#1033): this `tone`-switched umbrella is retired. Prefer the atomic, purpose-named,
-// token-themed bars from `@jgengine/react/bars` (HealthBar, ShieldBar, ManaBar, …) — each does one
-// readout and restyles globally via the shared `--jg-*` tokens / HudTheme. Kept for reference.
+// A copy-in current/max vital bar for shadcn projects. Inside a jgengine game use `KitMeter` from
+// `@jgengine/react/uiKitRoot`, which the active UI kit themes.
 import type { CSSProperties } from "react";
 
 export interface VitalValue {

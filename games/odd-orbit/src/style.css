@@ -19,7 +19,7 @@ html, body, #root {
   --orbit-rose: #c2477f;
 }
 
-/* Rounded enamel: GameFrame's box cut with a rounded face, so the rim follows the curve. */
+/* Rounded enamel: the material frame's box cut with a rounded face, so the rim follows the curve. */
 .orbit-round > [data-jg-frame-face] {
   border-radius: var(--orbit-r, 18px);
   border: var(--orbit-rim-w, 2px) solid var(--orbit-rim, #2a1733);
@@ -29,7 +29,7 @@ html, body, #root {
   box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.55), inset 0 -4px 0 rgba(42, 23, 51, 0.13), 0 3px 0 var(--orbit-rim, #2a1733), 0 0 0 4px var(--orbit-glow), 0 7px 14px rgba(20, 10, 32, 0.38);
 }
 /* No CSS filters in this UI: it sits over the live habitat, where a filtered element re-renders every
-   frame. Hover, press and disabled tint the face through GameFrame's light overlay, rounded to match. */
+   frame. Hover, press and disabled tint the face through the material frame's light overlay, rounded to match. */
 .orbit-round > [data-jg-frame-face]::after { border-radius: calc(var(--orbit-r, 18px) - var(--orbit-rim-w, 2px)); }
 .orbit-round[data-interactive]:not(:disabled):hover { --jg-gf-light: rgba(255, 255, 255, 0.1); }
 .orbit-round[data-interactive]:not(:disabled):active { --jg-gf-light: rgba(42, 23, 51, 0.08); }

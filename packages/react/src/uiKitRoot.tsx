@@ -1,10 +1,24 @@
-import { createContext, useContext, useEffect, useInsertionEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useInsertionEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ButtonHTMLAttributes,
+  type CSSProperties,
+  type HTMLAttributes,
+  type ReactNode,
+  type Ref,
+} from "react";
 
 import type { ActionCodesMap } from "@jgengine/core/input/actionBindings";
 import type { GamepadGlyphName } from "@jgengine/core/input/gamepadModel";
 
 import { useHudInteract } from "./hudInteract";
 import { actionGlyph, useInputDevice } from "./inputDevice";
+import { KitFrame, type KitFrameLook } from "./kitFrame";
 import {
   uiKitVars,
   type KitButtonProps,
@@ -185,15 +199,36 @@ export function useKitPresence(open: boolean, exitMs: number): { mounted: boolea
   return { mounted: open || mounted, leaving: !open && mounted };
 }
 
+/** A {@link KitButton} made of a material instead of drawn by the kit: every native button attribute passes through. */
+export interface KitMaterialButtonProps extends KitFrameLook, Omit<ButtonHTMLAttributes<HTMLButtonElement>, "type" | "color"> {
+  type?: "button" | "submit" | "reset";
+  /** UI cue name for hover and activate sounds. Default `"confirm"`. */
+  cue?: string;
+  ref?: Ref<HTMLButtonElement>;
+}
+
+/** Props for {@link KitButton}: the kit's button, or a material one when `material` is set. */
+export type KitButtonHostProps = (KitButtonProps & { cue?: string; material?: undefined }) | KitMaterialButtonProps;
+
 /**
  * The active kit's button. Hover, press and activate report to the nearest `HudInteractProvider`, so
- * the shell's UI cues sound without wiring.
+ * the shell's UI cues sound without wiring. Give `material` (and optionally `cut`, `tint`, `edge`,
+ * …) and it is a game button made of that material instead, lifting on hover and sinking on press:
  *
- * @capability kit-button a button drawn by the active UI kit, with UI cue sounds
+ * ```tsx
+ * <KitButton material="enamel" tint="#1f6feb" cut="hex" onClick={start}>Open the park</KitButton>
+ * ```
+ *
+ * @capability kit-button a button drawn by the active UI kit, or made of a material (steel, wood, enamel…), with UI cue sounds
  */
-export function KitButton({ cue, onPointerEnter, onPointerDown, onClick, disabled, ...rest }: KitButtonProps & { cue?: string }): ReactNode {
+export function KitButton(props: KitButtonHostProps): ReactNode {
   const kit = useUiKit();
-  const report = useHudInteract("button", cue);
+  const report = useHudInteract("button", props.cue ?? (props.material === undefined ? undefined : "confirm"));
+  if (props.material !== undefined) {
+    const { cue: _cue, ...frame } = props;
+    return <KitFrame {...frame} as="button" pressable report={report} />;
+  }
+  const { cue: _cue, onPointerEnter, onPointerDown, onClick, disabled, material: _material, ...rest } = props;
   const Button = kit.components.Button;
   return (
     <>
@@ -218,20 +253,35 @@ export function KitButton({ cue, onPointerEnter, onPointerDown, onClick, disable
   );
 }
 
-/** Props for {@link KitPanel}: the kit panel's props plus an `open` flag that plays enter and exit motion. */
-export interface KitPanelHostProps extends KitPanelProps {
-  /** Omit for always-shown panels. `false` plays the kit's exit motion, then unmounts. */
+/** A {@link KitPanel} made of a material instead of drawn by the kit; it holds its children as given. */
+export interface KitMaterialPanelProps extends KitFrameLook, Omit<HTMLAttributes<HTMLElement>, "color"> {
+  /** Omit for always-shown panels. `false` unmounts it. */
   open?: boolean;
+  /** Landmark element. Default `div`. */
+  as?: "div" | "section" | "aside" | "nav" | "header" | "span";
+  ref?: Ref<HTMLElement>;
+  children?: ReactNode;
 }
 
+/** Props for {@link KitPanel}: the kit panel's props plus an `open` flag that plays enter and exit motion, or a material panel. */
+export type KitPanelHostProps = (KitPanelProps & { open?: boolean; material?: undefined }) | KitMaterialPanelProps;
+
 /**
- * The active kit's panel. Give `open` to animate it in and out with the kit's own motion.
+ * The active kit's panel. Give `open` to animate it in and out with the kit's own motion. Give
+ * `material` (and optionally `cut`, `tint`, `edge`, `glow`, …) and it is a surface made of that
+ * material instead — steel, brass, hull plate, wood, stone, paper, enamel, glass, carbon or leather —
+ * so a panel reads as an object in the game's world:
  *
- * @capability kit-panel a content surface drawn by the active UI kit, with the kit's enter/exit motion
+ * ```tsx
+ * <KitPanel material="wood" cut="banner">Wave 4</KitPanel>
+ * ```
+ *
+ * @capability kit-panel a content surface drawn by the active UI kit, or made of a material with a cut silhouette, with enter/exit motion
  */
-export function KitPanel({ open, ...props }: KitPanelHostProps): ReactNode {
+export function KitPanel(props: KitPanelHostProps): ReactNode {
+  const { open } = props;
   const kit = useUiKit();
-  const presence = useKitPresence(open ?? true, kit.motion.exitMs);
+  const presence = useKitPresence(open ?? true, props.material === undefined ? kit.motion.exitMs : 0);
   const report = useHudInteract("panel");
   const wasOpen = useRef(open);
   useEffect(() => {
@@ -240,11 +290,16 @@ export function KitPanel({ open, ...props }: KitPanelHostProps): ReactNode {
     report(open ? "open" : "close");
   }, [open, report]);
   if (!presence.mounted) return null;
+  if (props.material !== undefined) {
+    const { open: _open, ...frame } = props;
+    return <KitFrame {...frame} pressable={false} report={report} />;
+  }
+  const { open: _open, material: _material, ...panel } = props;
   const Panel = kit.components.Panel;
   return (
     <>
       <FallbackStyles kit={kit} />
-      <Panel {...props} leaving={props.leaving === true || presence.leaving} />
+      <Panel {...panel} leaving={panel.leaving === true || presence.leaving} />
     </>
   );
 }

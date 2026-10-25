@@ -2,7 +2,7 @@ import { useEffect, useReducer, type CSSProperties, type ReactNode } from "react
 
 import type { WaveRunner, WaveView } from "@jgengine/core/ai/waveRunner";
 
-import { ExperienceBar } from "./bars";
+import { KitMeter } from "./uiKitRoot";
 import { HudFrame, type HudFrameVariation } from "./hudFrame";
 import { hudType } from "./hudTokens";
 
@@ -68,10 +68,10 @@ function Stat({ caption, value, muted }: { caption: string; value: string; muted
 
 /**
  * A drop-in wave/spawn HUD panel over a {@link WaveRunner}: a big "WAVE N" label,
- * a wave-progress bar (the shared {@link ExperienceBar}), and the live spawned /
+ * a wave-progress bar (the shared {@link KitMeter}), and the live spawned /
  * total, budget, and alert readouts — the visible face of "the brain behind WAVE 3".
  * It subscribes to the runner and re-renders on change; the game drives the runner's
- * clock. Reskin with {@link WaveHudTheme} and the shared HudTheme bar tokens. When
+ * clock. Reskin with {@link WaveHudTheme} and the active UI kit. When
  * the final wave finishes it shows a "WAVES CLEARED" state. Presentation only: the
  * schedule, budget, and RNG live in the core model, and spawn `kind`s are never read.
  *
@@ -107,14 +107,7 @@ export function WaveHud({ runner, theme, variation = "plate", width = 260, class
           {view.done ? "Waves Cleared" : `Wave ${view.wave}`}
         </div>
 
-        <ExperienceBar
-          value={view.waveProgress * 100}
-          max={100}
-          fill={t.accent}
-          label="Wave"
-          showValue={false}
-          width="100%"
-        />
+        <KitMeter value={view.waveProgress} label="Wave" tone="accent" style={{ "--kit-accent": t.accent } as CSSProperties} />
 
         <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
           <Stat caption="Spawned" value={`${view.spawnedThisWave}`} muted={t.muted} />

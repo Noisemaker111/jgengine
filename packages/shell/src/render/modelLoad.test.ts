@@ -15,7 +15,11 @@ import {
   configureModelLoaders,
   countSceneTriangles,
   createFallbackModel,
+  clearModelLoadFallbacks,
   handleModelLoadFailure,
+  missingModelName,
+  modelLoadFallbacks,
+  subscribeModelLoadFallbacks,
   heavyModels,
   probeModelUrl,
   recordManagerLoadError,
@@ -253,5 +257,35 @@ describe("model triangle budget", () => {
     setModelTriangleBudget(0);
     recordModelTriangles("/models/pack/Mid.glb", DEFAULT_MODEL_TRIANGLE_BUDGET, { warn: () => {} });
     expect(heavyModels()).toEqual([]);
+  });
+});
+
+describe("missing models are named", () => {
+  afterEach(() => clearModelLoadFallbacks());
+
+  test("a missing model reads by its folder and file name", () => {
+    expect(missingModelName("/models/kaykit-city-builder/building_A.glb")).toBe("kaykit-city-builder/building_A");
+    expect(missingModelName("/models/Tree.gltf?v=2")).toBe("Tree");
+    expect(missingModelName("/models/library/creature/dog-shepherd/model.glb")).toBe("creature/dog-shepherd");
+    expect(missingModelName("http://127.0.0.1:5173/games/x/models/pack/sub/Rock.glb#a")).toBe("sub/Rock");
+  });
+
+  test("a placeholder records its name once, publishes it for captures and tells subscribers", async () => {
+    const diagnosis: AssetLoadDiagnosis = { kind: "missing", ok: false, url: "/models/pack/Crate.glb", message: "404" };
+    let told = 0;
+    const off = subscribeModelLoadFallbacks(() => {
+      told += 1;
+    });
+    let gltf: GLTF | null = null;
+    for (let i = 0; i < 2; i += 1) {
+      await handleModelLoadFailure("/models/pack/Crate.glb", new Error("x"), (loaded) => {
+        gltf = loaded;
+      }, () => undefined, { probe: async () => diagnosis, warn: () => undefined });
+    }
+    off();
+    expect(modelLoadFallbacks().map((entry) => entry.name)).toEqual(["pack/Crate"]);
+    expect((globalThis as { __jgengineMissingModels?: unknown }).__jgengineMissingModels).toEqual(modelLoadFallbacks());
+    expect((gltf as unknown as GLTF).userData.jgengineMissingModel).toBe("pack/Crate");
+    expect(told).toBe(1);
   });
 });

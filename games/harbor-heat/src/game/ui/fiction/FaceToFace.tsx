@@ -1,7 +1,7 @@
 import { createElement, useMemo } from "react";
 import { useDisplayProfile } from "@jgengine/react/display";
+import { KitPanel } from "@jgengine/react/uiKitRoot";
 import { GameCursor } from "@jgengine/react/gameCursor";
-import { GameFrame } from "@jgengine/react/gameFrame";
 import { useMenuNav } from "@jgengine/react/menuNav";
 import { EntityPreview } from "@jgengine/shell/render/EntityPreview";
 import { IsolatedEntityModel } from "@jgengine/shell/render/SceneModels";
@@ -60,12 +60,12 @@ export function FaceToFace({ speaker, lines, replies, onLeave }: { speaker: Spea
             </span>
           )}
         </span>
-        <GameFrame material="enamel" tint={PLATE[speaker.faction ?? ""] ?? HH.ink} cut="chamfer" depth={8} edge={HH.cream} edgeWidth={2} padding="6px 14px 5px" className="hh-plate">
+        <KitPanel material="enamel" tint={PLATE[speaker.faction ?? ""] ?? HH.ink} cut="chamfer" depth={8} edge={HH.cream} edgeWidth={2} padding="6px 14px 5px" className="hh-plate">
           <span className="hh-plate-text">
             <b>{speaker.name}</b>
             {speaker.crew === undefined ? null : <small>{speaker.crew}</small>}
           </span>
-        </GameFrame>
+        </KitPanel>
       </div>
       <div className="hh-talk-say">
         <div className="hh-balloon">

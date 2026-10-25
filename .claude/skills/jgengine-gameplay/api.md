@@ -658,7 +658,7 @@
 - `SocialWorldAcceptedEvent` (interface): interface SocialWorldAcceptedEvent { inviteId: string; userId: string; fromUserId: string; serverId: string; joinCode?: string } — ⚠ undocumented
 - `SocialWorldInvitedEvent` (interface): interface SocialWorldInvitedEvent { inviteId: string; fromUserId: string; toUserId: string; serverId: string; joinCode?: string } — ⚠ undocumented
 - `StatLevelUpEvent` (interface): interface StatLevelUpEvent { userId: string; stat: string; level: number } — ⚠ undocumented
-- `VfxKind` (type): type VfxKind = "projectile" | "beam" | "nova" | "glow" | "spark" — The visual archetype of a spell/ability effect burst: a traveling bolt, a connecting beam, an expanding ground nova, a soft aura glow, or a scattering impact spark.
+- `VfxKind` (type): type VfxKind = "projectile" | "beam" | "nova" | "glow" | "spark" | "arc" — The visual archetype of a spell/ability effect burst: a traveling bolt, a connecting beam, an expanding ground nova, a soft aura glow, a scattering impact spark, or a melee swing arc drawn across the attacker's front.
 - `VfxRef` (type): type VfxRef = string | readonly [number, number, number] — An endpoint of a retained VFX instance: either an entity instance id (a renderer resolves and follows its live pose each frame) or a fixed `[x, y, z]` world point. Kept serializable so the effect replicates as plain data.
 - `WorldItemDroppedEvent` (interface): interface WorldItemDroppedEvent { instanceId: string; itemId: string; rarity: string; count: number; position: [number, number, number]; source?: string } — ⚠ undocumented
 - `WorldItemPickedUpEvent` (interface): interface WorldItemPickedUpEvent { instanceId: string; userId: string; itemId: string; rarity: string; count: number } — ⚠ undocumented
@@ -1806,7 +1806,7 @@
 - `VfxInstanceStopOptions` (interface): interface VfxInstanceStopOptions — Options for {@link VfxInstanceStore.stop}.
 - `VfxInstanceStore` (interface): interface VfxInstanceStore — A headless registry of retained VFX instances: create/replace, partially update, and stop long-lived effects addressed by stable id, independent of any renderer. It owns the authoritative serializable state and exposes inspection counts; wire {@link VfxInstanceStoreOptions.onOp} to a renderer (via the `combat.vfxInstance` event) to drive visuals.
 - `VfxInstanceStoreOptions` (interface): interface VfxInstanceStoreOptions — Options for {@link createVfxInstanceStore}.
-- `VfxKind` (type): type VfxKind = "projectile" | "beam" | "nova" | "glow" | "spark" — The visual archetype of a spell/ability effect burst: a traveling bolt, a connecting beam, an expanding ground nova, a soft aura glow, or a scattering impact spark.
+- `VfxKind` (type): type VfxKind = "projectile" | "beam" | "nova" | "glow" | "spark" | "arc" — The visual archetype of a spell/ability effect burst: a traveling bolt, a connecting beam, an expanding ground nova, a soft aura glow, a scattering impact spark, or a melee swing arc drawn across the attacker's front.
 - `VfxRef` (type): type VfxRef = string | readonly [number, number, number] — An endpoint of a retained VFX instance: either an entity instance id (a renderer resolves and follows its live pose each frame) or a fixed `[x, y, z]` world point. Kept serializable so the effect replicates as plain data.
 - `Visitor` (interface): interface Visitor — One visitor on site: the id its body, its needs and its money are keyed by.
 - `VisitorFlow` (interface): interface VisitorFlow — What a flow policy reads to decide how many arrive and when one has had enough.

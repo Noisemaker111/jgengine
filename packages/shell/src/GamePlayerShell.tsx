@@ -41,6 +41,7 @@ import {
 import { devtools } from "@jgengine/core/devtools/devtools";
 import { armFallbackSeams } from "@jgengine/core/devtools/fallbackSeams";
 import { armTextureErrors } from "@jgengine/core/devtools/textureErrors";
+import { armMissingModelLabels } from "./render/modelLoad";
 import { readUrlFlag, subscribeUrlChange, writeUrlParam } from "@jgengine/core/devtools/urlFlags";
 
 import { createAudioEngine } from "./audio/audioEngine";
@@ -134,6 +135,7 @@ export function GamePlayerShell({
   const devtoolsEnabled = playable.devtools !== false && !poster;
   armFallbackSeams(devtoolsEnabled);
   armTextureErrors(devtoolsEnabled);
+  armMissingModelLabels(devtoolsEnabled);
   // `?debug` mirrors the devtools overlay into the URL: open with a link, strip the param to close.
   const [devtoolsOpen, setDevtoolsOpen] = useState(() => devtoolsEnabled && readUrlFlag(DEBUG_PARAM));
   const devtoolsOpenRef = useRef(false);

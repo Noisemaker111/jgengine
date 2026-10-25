@@ -1,5 +1,5 @@
-import { GameFrame } from "@jgengine/react/gameFrame";
 import { GameIcon, type GameIconName } from "@jgengine/react/gameIcons";
+import { KitPanel } from "@jgengine/react/uiKitRoot";
 import { useGame, useGameClock, useSceneObjects } from "@jgengine/react/hooks";
 import { useStore } from "@jgengine/react/store";
 
@@ -23,17 +23,17 @@ export function CharterNote({ compact = false }: { compact?: boolean }) {
   if (charter.outcome !== "active") {
     const grade = charterGrade(charter);
     return (
-      <GameFrame material="paper" cut="box" padding="8px 12px" edgeWidth={0} shadow={false} tint="#d9f2e4" className="orbit-charter" role="status">
+      <KitPanel material="paper" cut="box" padding="8px 12px" edgeWidth={0} shadow={false} tint="#d9f2e4" className="orbit-charter" role="status">
         <b className="orbit-charter-head"><GameIcon name="flag" size={15} /> {charter.outcome === "kept" ? `Charter kept · ${grade.word}` : "Evicted"}</b>
         <small>{grade.stars} of {grade.of} goals across the charter</small>
-      </GameFrame>
+      </KitPanel>
     );
   }
   const term = TERMS[charter.term]!;
   const sheet = termGoals(household, objects);
   const dayOfTerm = household.day - charter.term * TERM_DAYS + 1;
   return (
-    <GameFrame material="paper" cut="box" padding="8px 12px 9px" edgeWidth={0} shadow={false} tint="#e8f0ff" className="orbit-charter" role="region" aria-label="Habitat charter">
+    <KitPanel material="paper" cut="box" padding="8px 12px 9px" edgeWidth={0} shadow={false} tint="#e8f0ff" className="orbit-charter" role="region" aria-label="Habitat charter">
       <b className="orbit-charter-head">
         <GameIcon name="scroll" size={15} /> Term {charter.term + 1}/{TERMS.length} · {term.name}
         <span className="orbit-strikes" aria-label={`${charter.strikes} of ${STRIKES_TO_EVICT} strikes`}>
@@ -55,7 +55,7 @@ export function CharterNote({ compact = false }: { compact?: boolean }) {
           })}
         </ul>
       )}
-    </GameFrame>
+    </KitPanel>
   );
 }
 

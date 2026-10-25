@@ -1,7 +1,8 @@
 import type { CSSProperties, ReactNode } from "react";
-import { GameFrame, type GameMaterial } from "@jgengine/react/gameFrame";
+import { type KitMaterial } from "@jgengine/react/kitFrame";
+import { KitButton, KitPanel } from "@jgengine/react/uiKitRoot";
 import { GameIcon, type GameIconName } from "@jgengine/react/gameIcons";
-import { HudFade } from "@jgengine/react/hudFade";
+import { HudFade } from "@jgengine/react/hudLayout";
 import type { RaceSnapshot } from "../race/standings";
 import type { DriftFoundryPartDef, PartSlotId } from "../parts/catalog";
 import { PART_SLOTS } from "../parts/catalog";
@@ -124,14 +125,14 @@ export function GateSign({ eyebrow, call, sub, tone }: { eyebrow: string; call: 
   const tint = tone === "launch" ? TEAL : tone === "stop" ? "#e2452e" : YELLOW;
   return (
     <HudFade watch={[call, eyebrow.replace(/\d+ ?m$/, "")]} hold={tone === "launch" || tone === "stop"} idleMs={6000} dimTo={0.7} className="fd-sign-wrap">
-      <GameFrame material="enamel" cut="chamfer" depth={10} tint={tint} {...plate("#151515")} padding="0" className="fd-rimmed fd-sign" data-tone={tone}>
+      <KitPanel material="enamel" cut="chamfer" depth={10} tint={tint} {...plate("#151515")} padding="0" className="fd-rimmed fd-sign" data-tone={tone}>
         <span className="fd-sign-band" aria-hidden="true" />
         <span className="fd-sign-body" role="status">
           <span className="fd-sign-eyebrow">{eyebrow}</span>
           <b className="fd-sign-call">{call}</b>
           <span className="fd-sign-sub">{sub}</span>
         </span>
-      </GameFrame>
+      </KitPanel>
     </HudFade>
   );
 }
@@ -199,18 +200,18 @@ export function BuildRack({ installed }: { installed: Readonly<Record<PartSlotId
 /** A manila parts tag tied on when a swap is coming up. */
 export function SalvageTag({ children }: { children: ReactNode }): ReactNode {
   return (
-    <GameFrame as="aside" material="paper" cut="ticket" depth={10} {...plate("rgba(40,26,10,0.55)")} padding="12px 16px 12px 20px" className="fd-rimmed fd-tag" aria-label="Salvage decision">
+    <KitPanel as="aside" material="paper" cut="ticket" depth={10} {...plate("rgba(40,26,10,0.55)")} padding="12px 16px 12px 20px" className="fd-rimmed fd-tag" aria-label="Salvage decision">
       {children}
-    </GameFrame>
+    </KitPanel>
   );
 }
 
 /** A steel tab on the dash rail. */
-export function DashTab({ icon, label, keyCap, onPress, material = "steel" }: { icon: GameIconName; label: string; keyCap?: string; onPress: () => void; material?: GameMaterial }): ReactNode {
+export function DashTab({ icon, label, keyCap, onPress, material = "steel" }: { icon: GameIconName; label: string; keyCap?: string; onPress: () => void; material?: KitMaterial }): ReactNode {
   return (
-    <GameFrame as="button" type="button" material={material} cut="slant" depth={9} tint="#3d4448" {...plate("#0b0d0e")} padding="7px 18px 7px 14px" className="fd-rimmed fd-hud-btn fd-tab" aria-label={label} onClick={onPress}>
+    <KitButton type="button" material={material} cut="slant" depth={9} tint="#3d4448" {...plate("#0b0d0e")} padding="7px 18px 7px 14px" className="fd-rimmed fd-hud-btn fd-tab" aria-label={label} onClick={onPress}>
       <span className="fd-tab-face"><GameIcon name={icon} size={16} color={YELLOW} />{keyCap === undefined ? null : <kbd>{keyCap}</kbd>}</span>
-    </GameFrame>
+    </KitButton>
   );
 }
 

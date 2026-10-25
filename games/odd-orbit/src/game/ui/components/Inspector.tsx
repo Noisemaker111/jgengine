@@ -1,5 +1,5 @@
 import { HudButton } from "@jgengine/react/hudButton";
-import { GameFrame } from "@jgengine/react/gameFrame";
+import { KitPanel } from "@jgengine/react/uiKitRoot";
 import { useGame, useGameClock, useSceneObjects } from "@jgengine/react/hooks";
 import { useStore } from "@jgengine/react/store";
 import { NEEDS } from "../../needs/needs";
@@ -43,7 +43,7 @@ export function Inspector() {
   const bonds = household.order.filter(other => other !== id).map(other => ({ id: other, name: household.members[other]?.name ?? "?", value: household.relationships[pairKey(id, other)] ?? 0 })).sort((a,b) => b.value - a.value);
   const book = householdBook(household);
   const company = member.action.kind === "wander" && member.action.company !== undefined ? household.members[member.action.company]?.name : undefined;
-  return <GameFrame material="paper" cut="box" padding="0" edgeWidth={0} shadow={false} className="orbit-inspector" as="section" aria-label={`${member.name} care and schedule`}>
+  return <KitPanel material="paper" cut="box" padding="0" edgeWidth={0} shadow={false} className="orbit-inspector" as="section" aria-label={`${member.name} care and schedule`}>
     <header><AlienSwatch plan={member.bodyPlan} size={52}/><div><h2>{member.name}</h2><small>{member.job}</small></div><HudButton className="orbit-close" aria-label="Close member care" onClick={() => commands.run("member.select",{ id:null })}>×</HudButton></header>
     <div className="orbit-inspector-body">
     <div className="orbit-member-state"><MoodBadge tier={mood.tier} face={mood.face} label={mood.label}/><span>{activeGoalLabel(member, company)}</span></div>
@@ -78,6 +78,6 @@ export function Inspector() {
     <div className="orbit-bonds">{bonds.map(bond => <div key={bond.id}><span><strong>{bond.name}</strong><small>{bondWord(book, id, bond.id)} · {Math.round(bond.value)}</small></span><HudButton onClick={() => commands.run("member.socialize", { id, withId:bond.id })}>Talk</HudButton></div>)}</div>
     <p className="orbit-fine">Select a furnishing in the habitat to direct this being. A Bond Ring used alone can only restore Social to 55.</p>
     </div>
-  </GameFrame>;
+  </KitPanel>;
 }
 

@@ -1,5 +1,5 @@
 import { iconForItemId } from "@jgengine/react/gameIcons";
-import { HudFade } from "@jgengine/react/hudFade";
+import { HudFade } from "@jgengine/react/hudLayout";
 import { useEntityStat, useGame, useInventory, usePlayer } from "@jgengine/react/hooks";
 import { IconTreatment, schoolForItem } from "@jgengine/react/iconTreatment";
 import { actionGlyph, useInputDevice } from "@jgengine/react/inputDevice";

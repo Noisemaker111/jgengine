@@ -3,14 +3,15 @@ import { resolveActivePrompt } from "@jgengine/core/interaction/proximityPrompt"
 import { useGameStore } from "@jgengine/react/hooks";
 import { Compass } from "@jgengine/react/map";
 import { useGameContext } from "@jgengine/react/provider";
-import { KitBanner, KitObjective, KitResultScreen } from "@jgengine/react/kitFlow";
-import { KitActionPrompt, KitMeter, KitPanel } from "@jgengine/react/uiKitRoot";
+import { KitBanner, KitResultScreen } from "@jgengine/react/kitFlow";
+import { KitCount, KitCounts, KitVitals } from "@jgengine/react/kitHud";
+import { KitActionPrompt, KitPanel } from "@jgengine/react/uiKitRoot";
+import { HudSlots } from "@jgengine/shell/gameKit";
 
 import { newGame, openTitle } from "../flow";
 import { idea } from "../idea";
 import { journeyView } from "../journey";
 import { prompts } from "../prompts";
-import { Count, Counts, HudFrame, PANEL_WIDTH } from "./HudFrame";
 
 const same = <T,>(a: T, b: T) => JSON.stringify(a) === JSON.stringify(b);
 
@@ -33,19 +34,14 @@ function Vitals(): ReactNode {
   const hero = useHealth(ctx.player.userId);
   const beat = idea.beats.find((entry) => entry.id === view.mission?.missionId) ?? null;
   return (
-    <div style={{ width: PANEL_WIDTH, pointerEvents: "none" }}>
-      <KitPanel variant="hud" eyebrow={idea.name}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          <KitMeter size="sm" label={idea.hero.label} value={hero.current} max={hero.max} tone={hero.current < hero.max * 0.35 ? "bad" : "good"} readout />
-          <KitMeter size="sm" label={view.winded ? "Winded" : "Stamina"} value={view.stamina} max={view.staminaMax} tone={view.winded ? "bad" : "accent"} readout />
-        </div>
-      </KitPanel>
-      {beat === null ? null : (
-        <div style={{ marginTop: 8 }}>
-          <KitObjective eyebrow={idea.guide.name} title={beat.title} steps={[{ id: beat.id, label: beat.goal }]} progressKey={beat.id} />
-        </div>
-      )}
-    </div>
+    <KitVitals
+      eyebrow={idea.name}
+      vitals={[
+        { label: idea.hero.label, value: hero.current, max: hero.max, lowAt: 0.35 },
+        { label: view.winded ? "Winded" : "Stamina", value: view.stamina, max: view.staminaMax, tone: view.winded ? "bad" : "accent" },
+      ]}
+      objective={beat === null ? null : { id: beat.id, label: idea.guide.name, title: beat.title, goal: beat.goal }}
+    />
   );
 }
 
@@ -76,10 +72,10 @@ function Satchel(): ReactNode {
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6, pointerEvents: "none" }}>
       <KitPanel variant="strip">
-        <Counts>
-          <Count id="relics" value={`${view.relics}/${view.needed}`} label="relics" />
-          <Count id="found" value={`${view.found}/${view.total}`} label="places" />
-        </Counts>
+        <KitCounts>
+          <KitCount id="relics" value={`${view.relics}/${view.needed}`} label="relics" />
+          <KitCount id="found" value={`${view.found}/${view.total}`} label="places" />
+        </KitCounts>
       </KitPanel>
       {view.abilities.length === 0 ? null : (
         <KitPanel variant="strip">
@@ -147,5 +143,5 @@ function Ending(): ReactNode {
 
 /** Everything on screen while walking: vitals, the compass and the next place, what you carry, what E does. */
 export function Hud(): ReactNode {
-  return <HudFrame slots={{ topLeft: <Vitals />, top: <Heading />, topRight: <Satchel />, bottom: <Actions /> }} overlay={<Ending />} />;
+  return <HudSlots storageKey={idea.id} slots={{ topLeft: <Vitals />, top: <Heading />, topRight: <Satchel />, bottom: <Actions /> }} overlay={<Ending />} />;
 }

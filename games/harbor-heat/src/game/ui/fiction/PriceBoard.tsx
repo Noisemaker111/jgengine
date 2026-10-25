@@ -1,7 +1,7 @@
 import { useEffect, useMemo, type ReactNode } from "react";
 import { useDisplayProfile } from "@jgengine/react/display";
+import { KitButton, KitPanel } from "@jgengine/react/uiKitRoot";
 import { GameCursor } from "@jgengine/react/gameCursor";
-import { GameFrame } from "@jgengine/react/gameFrame";
 import { useViewportScrollLock } from "@jgengine/react/gameMenu";
 import { useMenuNav } from "@jgengine/react/menuNav";
 import { HH, KeyLegend, money, navItem, useMenuSound, useMoveTick, useScreenTouch } from "./kit";
@@ -102,7 +102,7 @@ export function PriceBoard({ look, kicker, title, sub, sections, cash, cred, onL
   }, [nav.activeId]);
   return (
     <div className={`hh-counter ${compact ? "compact" : ""}`} data-look={look} role="presentation">
-      <GameFrame material={look === "pawn" ? "wood" : "enamel"} tint={look === "pawn" ? "#5b3a22" : look === "house" ? "#2c5a3c" : "#14505c"} cut={look === "pawn" ? "box" : "chamfer"} depth={14} edge={look === "pawn" ? "#2a170b" : HH.cream} edgeWidth={look === "pawn" ? 3 : 3} padding="0" className="hh-board" role="dialog" aria-label={title}>
+      <KitPanel material={look === "pawn" ? "wood" : "enamel"} tint={look === "pawn" ? "#5b3a22" : look === "house" ? "#2c5a3c" : "#14505c"} cut={look === "pawn" ? "box" : "chamfer"} depth={14} edge={look === "pawn" ? "#2a170b" : HH.cream} edgeWidth={look === "pawn" ? 3 : 3} padding="0" className="hh-board" role="dialog" aria-label={title}>
         <header className="hh-board-head">
           <span className="hh-board-kicker">{kicker}</span>
           <h2 className="hh-board-title">{title}</h2>
@@ -151,8 +151,7 @@ export function PriceBoard({ look, kicker, title, sub, sections, cash, cred, onL
           </span>
           <span className="hh-board-why" role="status">{whyLine(active, cash, cred)}</span>
           {aside === undefined || aside === null ? null : <span className="hh-board-aside">{aside}</span>}
-          <GameFrame
-            as="button"
+          <KitButton
             material="enamel"
             tint={HH.coral}
             cut="slant"
@@ -166,14 +165,14 @@ export function PriceBoard({ look, kicker, title, sub, sections, cash, cred, onL
             onClick={leave}
           >
             Leave
-          </GameFrame>
+          </KitButton>
         </footer>
         {compact ? null : (
           <div className="hh-board-keys">
             <KeyLegend items={[{ keys: ["↑", "↓"], label: "choose" }, { keys: ["Enter"], label: "buy" }, { keys: ["Esc"], label: "leave" }]} />
           </div>
         )}
-      </GameFrame>
+      </KitPanel>
     </div>
   );
 }

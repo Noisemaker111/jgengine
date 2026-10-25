@@ -1,6 +1,6 @@
 import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { GameCursor } from "@jgengine/react/gameCursor";
-import { GameFrame } from "@jgengine/react/gameFrame";
+import { KitButton, KitPanel } from "@jgengine/react/uiKitRoot";
 import { GameIcon } from "@jgengine/react/gameIcons";
 import { useGamePhase } from "@jgengine/react/hooks";
 import { CreditsPane } from "@jgengine/react/gameMenuSaves";
@@ -118,7 +118,7 @@ function Commission({
 }): ReactNode {
   const label = slot === null ? "No keep available" : (KEEP_LABEL[slot] ?? slot);
   return (
-    <GameFrame material="paper" cut="torn" depth={12} padding="20px 24px 30px" className="bb-parchment" data-new-keep-pane="">
+    <KitPanel material="paper" cut="torn" depth={12} padding="20px 24px 30px" className="bb-parchment" data-new-keep-pane="">
       <h2 className="bb-ink-title">Commission</h2>
       <label className="bb-ink-field">
         <span>Commander</span>
@@ -138,9 +138,8 @@ function Commission({
       </label>
       <div className="bb-oath" role="radiogroup" aria-label="Difficulty">
         {DIFFICULTY_IDS.map((id) => (
-          <GameFrame
+          <KitButton
             key={id}
-            as="button"
             material={difficulty === id ? "enamel" : "wood"}
             tint={difficulty === id ? "#8a2414" : undefined}
             cut="notch"
@@ -153,7 +152,7 @@ function Commission({
             onClick={() => onDifficultyChange(id)}
           >
             {DIFFICULTIES[id].label}
-          </GameFrame>
+          </KitButton>
         ))}
       </div>
       <p className="bb-oath-detail">{DIFFICULTIES[difficulty].detail}</p>
@@ -165,8 +164,7 @@ function Commission({
           </span>
         ))}
       </div>
-      <GameFrame
-        as="button"
+      <KitButton
         material="enamel"
         tint="#8a2414"
         edge="#3a0e06"
@@ -180,8 +178,8 @@ function Commission({
         onClick={onBegin}
       >
         Raise {label}
-      </GameFrame>
-    </GameFrame>
+      </KitButton>
+    </KitPanel>
   );
 }
 
@@ -274,9 +272,9 @@ export function BeaconMenu() {
   const held = keeps.filter((slot) => !slot.empty).length;
 
   const credits = (
-    <GameFrame material="paper" cut="torn" depth={12} padding="18px 22px 28px" className="bb-parchment bb-scroll">
+    <KitPanel material="paper" cut="torn" depth={12} padding="18px 22px 28px" className="bb-parchment bb-scroll">
       <CreditsPane sections={BEACON_CREDITS.sections} notice={BEACON_CREDITS.notice} />
-    </GameFrame>
+    </KitPanel>
   );
 
   if (phase === "menu") {
@@ -347,12 +345,12 @@ export function BeaconMenu() {
         <div className="bb-dusk" aria-hidden />
         <header className="bb-lintel-wrap">
           <Brazier size={78} className="bb-lintel-fire" />
-          <GameFrame material="stone" cut="chamfer" depth={20} padding="18px 38px 16px" className="bb-lintel">
+          <KitPanel material="stone" cut="chamfer" depth={20} padding="18px 38px 16px" className="bb-lintel">
             <h1 className="bb-wordmark">
               <span data-text="Beacon">Beacon</span>
               <span data-text="Bastion">Bastion</span>
             </h1>
-          </GameFrame>
+          </KitPanel>
           <p className="bb-motto">Hold the road the raiders carved.</p>
         </header>
         <VerbList
@@ -363,9 +361,8 @@ export function BeaconMenu() {
           onPick={pick}
           onActive={setActive}
           render={(verb, itemProps, choose) => (
-            <GameFrame
+            <KitButton
               key={verb.id}
-              as="button"
               material="wood"
               cut="notch"
               depth={11}
@@ -378,7 +375,7 @@ export function BeaconMenu() {
             >
               <span className="bb-plank-label" data-text={verb.label}>{verb.label}</span>
               {verb.hint === undefined ? null : <span className="bb-plank-hint">{verb.hint}</span>}
-            </GameFrame>
+            </KitButton>
           )}
         />
         <section className="bb-detail" aria-live="polite">
@@ -466,8 +463,8 @@ export function BeaconMenu() {
 /** Icon used by the HUD's pause sigil; kept beside the menu it opens. */
 export function PauseSigil({ onPress }: { onPress: () => void }) {
   return (
-    <GameFrame as="button" material="stone" cut="shield" depth={7} padding="8px 10px 14px" className="bb-sigil" aria-label="Pause the defense" onClick={onPress}>
+    <KitButton material="stone" cut="shield" depth={7} padding="8px 10px 14px" className="bb-sigil" aria-label="Pause the defense" onClick={onPress}>
       <GameIcon name="pause" size={20} />
-    </GameFrame>
+    </KitButton>
   );
 }

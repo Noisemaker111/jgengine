@@ -147,7 +147,7 @@ function StatusEffectIcon({
             fontSize: hudType("xs"),
             fontWeight: 700,
             fontVariantNumeric: "tabular-nums",
-            color: "var(--jg-bar-text, #f5f7fa)",
+            color: "var(--jg-text, #f5f7fa)",
             textShadow: "0 1px 2px rgba(0,0,0,0.9)",
             lineHeight: 1,
           }}

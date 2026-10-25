@@ -2,13 +2,14 @@ import type { ReactNode } from "react";
 import { resolveActivePrompt } from "@jgengine/core/interaction/proximityPrompt";
 import { useGameStore } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
-import { KitBanner, KitObjective, KitResultScreen } from "@jgengine/react/kitFlow";
-import { KitActionPrompt, KitButton, KitMeter, KitPanel } from "@jgengine/react/uiKitRoot";
+import { KitResultScreen } from "@jgengine/react/kitFlow";
+import { KitActionBar, KitCount, KitCounts, KitVitals, KitWaveClock } from "@jgengine/react/kitHud";
+import { KitActionPrompt, KitPanel } from "@jgengine/react/uiKitRoot";
+import { HudSlots } from "@jgengine/shell/gameKit";
 
 import { continueGame, newGame } from "../flow";
 import { idea } from "../idea";
 import { campView, prompts } from "../prompts";
-import { Count, Counts, HudFrame, PANEL_WIDTH } from "./HudFrame";
 
 const same = <T,>(a: T, b: T) => JSON.stringify(a) === JSON.stringify(b);
 
@@ -29,25 +30,16 @@ function Vitals(): ReactNode {
   const hero = useHealth(ctx.player.userId);
   const home = useHealth("home");
   const beat = idea.beats.find((entry) => entry.id === camp.mission?.missionId) ?? null;
+  const title = beat?.title ?? camp.next?.text ?? "";
   return (
-    <div style={{ width: PANEL_WIDTH, pointerEvents: "none" }}>
-      <KitPanel variant="hud" eyebrow={idea.name}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          <KitMeter size="sm" label="You" value={hero.current} max={hero.max} tone={hero.current < hero.max * 0.35 ? "bad" : "good"} readout />
-          <KitMeter size="sm" label={idea.home.label} value={home.current} max={home.max} tone={home.current < home.max * 0.35 ? "bad" : "accent"} readout />
-        </div>
-      </KitPanel>
-      {beat === null && camp.next === null ? null : (
-        <div style={{ marginTop: 8 }}>
-          <KitObjective
-            eyebrow={idea.guide.name}
-            title={beat?.title ?? camp.next?.text ?? ""}
-            steps={beat === null ? [] : [{ id: beat.id, label: beat.goal }]}
-            progressKey={beat?.id}
-          />
-        </div>
-      )}
-    </div>
+    <KitVitals
+      eyebrow={idea.name}
+      vitals={[
+        { label: "You", value: hero.current, max: hero.max, lowAt: 0.35 },
+        { label: idea.home.label, value: home.current, max: home.max, tone: "accent", lowAt: 0.35 },
+      ]}
+      objective={beat === null && camp.next === null ? null : { id: beat?.id, label: idea.guide.name, title, goal: beat?.goal }}
+    />
   );
 }
 
@@ -55,29 +47,25 @@ function Stockpile(): ReactNode {
   const camp = useCamp();
   return (
     <KitPanel variant="strip">
-      <Counts>
+      <KitCounts>
         {camp.resources.map((resource) => (
-          <Count key={resource.id} id={resource.id} value={resource.amount} label={resource.label} />
+          <KitCount key={resource.id} id={resource.id} value={resource.amount} label={resource.label} />
         ))}
-        {idea.allies.length > 0 ? <Count id="tamed" value={camp.tamed} label="tamed" /> : null}
-      </Counts>
+        {idea.allies.length > 0 ? <KitCount id="tamed" value={camp.tamed} label="tamed" /> : null}
+      </KitCounts>
     </KitPanel>
   );
 }
 
 function WaveClock(): ReactNode {
   const camp = useCamp();
-  const text = camp.raiding ? `${idea.wave} ${camp.wave} - ${camp.alive} left` : `${idea.wave} ${camp.wave + 1} in ${camp.duskIn}s`;
   return (
-    <div style={{ pointerEvents: "none" }}>
-      <KitPanel variant="strip" tone={camp.raiding ? "bad" : "neutral"}>
-        <span data-wave-clock="" style={{ fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", fontSize: 13 }}>
-          {text}
-        </span>
-        <span style={{ marginLeft: 10, opacity: 0.7, fontSize: 11 }}>{camp.raiding ? `held ${camp.held}` : "N - call it early"}</span>
-      </KitPanel>
-      <KitBanner cue={camp.raiding ? camp.wave : null} title={`${idea.wave} ${camp.wave}`} subtitle={`Hold ${idea.home.label}`} tone="bad" />
-    </div>
+    <KitWaveClock
+      alarm={camp.raiding}
+      text={camp.raiding ? `${idea.wave} ${camp.wave} - ${camp.alive} left` : `${idea.wave} ${camp.wave + 1} in ${camp.duskIn}s`}
+      detail={camp.raiding ? `held ${camp.held}` : "N - call it early"}
+      banner={{ cue: camp.raiding ? camp.wave : null, title: `${idea.wave} ${camp.wave}`, subtitle: `Hold ${idea.home.label}`, tone: "bad" }}
+    />
   );
 }
 
@@ -87,27 +75,21 @@ function BuildBar(): ReactNode {
   const have = Object.fromEntries(camp.resources.map((resource) => [resource.id, resource.amount]));
   const active = usePrompt();
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
-      {active === null ? null : <KitActionPrompt action="interact" label={active} fallbackGlyph="E" />}
-      <KitPanel variant="strip">
-        <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-          {idea.structures.map((structure, index) => {
-            const short = Object.entries(structure.cost).some(([id, amount]) => (have[id] ?? 0) < amount);
-            const cost = Object.entries(structure.cost)
-              .map(([id, amount]) => `${amount} ${idea.resources.find((resource) => resource.id === id)?.label ?? id}`)
-              .join(" + ");
-            return (
-              <KitButton key={structure.id} data-build={structure.id} size="sm" variant={short ? "ghost" : "secondary"} glyph={String(index + 1)} onClick={() => ctx.game.commands.run(`build${index + 1}`, {})}>
-                {structure.label} <span style={{ opacity: 0.65, marginLeft: 4, fontSize: "0.85em" }}>{cost}</span>
-              </KitButton>
-            );
-          })}
-          {camp.building.map((order) => (
-            <KitMeter key={order.id} label={order.label} value={order.progress} max={1} size="sm" style={{ width: 96 }} />
-          ))}
-        </div>
-      </KitPanel>
-    </div>
+    <KitActionBar
+      kind="build"
+      prompt={active === null ? null : <KitActionPrompt action="interact" label={active} fallbackGlyph="E" />}
+      actions={idea.structures.map((structure, index) => ({
+        id: structure.id,
+        label: `${structure.label} `,
+        detail: Object.entries(structure.cost)
+          .map(([id, amount]) => `${amount} ${idea.resources.find((resource) => resource.id === id)?.label ?? id}`)
+          .join(" + "),
+        glyph: String(index + 1),
+        variant: Object.entries(structure.cost).some(([id, amount]) => (have[id] ?? 0) < amount) ? "ghost" : "secondary",
+        onActivate: () => ctx.game.commands.run(`build${index + 1}`, {}),
+      }))}
+      progress={camp.building.map((order) => ({ id: order.id, label: order.label, value: order.progress }))}
+    />
   );
 }
 
@@ -148,5 +130,5 @@ function Ending(): ReactNode {
 
 /** Everything on screen while playing: four small panels at the edges, the end card over them. */
 export function Hud(): ReactNode {
-  return <HudFrame slots={{ topLeft: <Vitals />, top: <WaveClock />, topRight: <Stockpile />, bottom: <BuildBar /> }} overlay={<Ending />} />;
+  return <HudSlots storageKey={idea.id} slots={{ topLeft: <Vitals />, top: <WaveClock />, topRight: <Stockpile />, bottom: <BuildBar /> }} overlay={<Ending />} />;
 }

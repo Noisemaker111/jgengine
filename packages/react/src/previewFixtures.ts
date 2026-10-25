@@ -1,12 +1,11 @@
 import { createElement } from "react";
 
 import type { GamePreviewComponent } from "./preview";
-import { BarsPreview } from "./barsPreview";
 import { HudChromePreview } from "./hudChromePreview";
 import { HudLanesPreview } from "./hudLanesPreview";
 import { HudThemePreview } from "./hudThemePreview";
 import { IconsPreview } from "./iconsPreview";
-import { GameFramesPreview } from "./gameFramesPreview";
+import { KitFramesPreview } from "./kitFramesPreview";
 import { StreetGeometryPreview } from "./streetGeometryPreview";
 import { SpriteClipPreview } from "./spriteClipPreview";
 import { TileLayerPreview } from "./tileLayerPreview";
@@ -30,7 +29,7 @@ export interface PreviewFixture {
 
 /**
  * Registry of deterministic, engine-level preview fixtures — the *real* exported
- * `@jgengine/react` components (`HudThemePreview`, `BarsPreview`, `IconsPreview`, …) that render
+ * `@jgengine/react` components (`HudThemePreview`, `IconsPreview`, …) that render
  * identically every time from static values, so they can be screenshotted as regression evidence
  * without booting a game.
  *
@@ -54,13 +53,8 @@ export const PREVIEW_FIXTURES: Record<string, PreviewFixture> = {
   },
   HudThemePreview: {
     name: "HudThemePreview",
-    description: "Every HudTheme genre preset × atomic bars + a themed frame + a slot row.",
+    description: "Every HudTheme genre preset × kit meters + a themed frame + a slot row.",
     component: HudThemePreview,
-  },
-  BarsPreview: {
-    name: "BarsPreview",
-    description: "Atomic vitals under BarTokens blocks, explicit fills, skins, and nested theme resets.",
-    component: BarsPreview,
   },
   IconsPreview: {
     name: "IconsPreview",
@@ -82,12 +76,12 @@ export const PREVIEW_FIXTURES: Record<string, PreviewFixture> = {
     description: "A procedural 3x3 atlas-backed tile layer preview.",
     component: TileLayerPreview,
   },
-  HudSkinPreview: { name: "HudSkinPreview", description: "Two procedural HUD skins applied to frames, bars, and inventory slots.", component: HudSkinPreview },
+  HudSkinPreview: { name: "HudSkinPreview", description: "Two procedural HUD skins applied to frames and inventory slots.", component: HudSkinPreview },
   UiKitsPreview: { name: "UiKitsPreview", description: "Contact sheet: all eight built-in UI kits, every part each, over a game-like backdrop.", component: UiKitsPreview },
-  GameFramesPreview: {
-    name: "GameFramesPreview",
+  KitFramesPreview: {
+    name: "KitFramesPreview",
     description: "Game-UI blocks: every frame material and cut, game buttons with each cursor style, and drawn sliders.",
-    component: GameFramesPreview,
+    component: KitFramesPreview,
   },
   ...kitFixtures(),
 };

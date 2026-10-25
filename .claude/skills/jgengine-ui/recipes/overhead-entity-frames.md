@@ -26,12 +26,12 @@ needs no `GameProvider`. The `@jgengine/shell` piece is a thin R3F convenience.
 
 `WorldEntityFrames` mounts inside the R3F scene, samples the live camera each
 frame, and renders the frames through a fullscreen overlay. Pass the entities you
-already have and a `renderFrame` that composes the shipped `HealthBar` plus a
+already have and a `renderFrame` that composes the kit's `KitMeter` plus a
 name. Projection, culling, and stacking come for free.
 
 ```tsx
 import { WorldEntityFrames } from "@jgengine/shell/world/WorldEntityFrames";
-import { HealthBar, barTokens } from "@jgengine/react/bars";
+import { KitMeter } from "@jgengine/react/uiKitRoot";
 
 interface Enemy {
   id: string;
@@ -54,7 +54,7 @@ export function EnemyNameplates({ enemies }: { enemies: readonly Enemy[] }) {
       entries={entries}
       maxCount={24} // keep the nearest 24 when a crowd is on screen
       renderFrame={({ enemy }) => (
-        <div style={{ ...barTokens({ health: "#e5484d" }), textAlign: "center" }}>
+        <div style={{ textAlign: "center", width: 78 }}>
           <span
             style={{
               fontSize: 12,
@@ -66,7 +66,7 @@ export function EnemyNameplates({ enemies }: { enemies: readonly Enemy[] }) {
           >
             {enemy.name}
           </span>
-          <HealthBar value={enemy.hp} max={enemy.maxHp} width={78} showValue={false} shape="pill" />
+          <KitMeter size="sm" value={enemy.hp} max={enemy.maxHp} tone="bad" />
         </div>
       )}
     />
@@ -74,8 +74,8 @@ export function EnemyNameplates({ enemies }: { enemies: readonly Enemy[] }) {
 }
 ```
 
-Reskin the whole set with one `HudTheme`/`barTokens` object on an ancestor —
-health color, frame material, radius, and glow flow to every plate's `HealthBar`.
+Reskin the whole set through the UI kit's tokens (`customizeKit`) — the meter
+colors, radius and track flow to every plate's `KitMeter`.
 The `enemy` payload rides along on each entry, so `renderFrame` reads live values
 without a second lookup.
 
@@ -88,7 +88,7 @@ screen point — return `null`, or `{ behind: true }`, to cull an entry. `depth`
 
 ```tsx
 import { EntityFrames, type ProjectEntity } from "@jgengine/react/entityFrames";
-import { HealthBar } from "@jgengine/react/bars";
+import { KitMeter } from "@jgengine/react/uiKitRoot";
 
 const project: ProjectEntity = (world) => {
   const screen = myCamera.worldToScreen(world); // your renderer's projection
@@ -104,7 +104,7 @@ export function Nameplates({ enemies }: { enemies: readonly Enemy[] }) {
       offsetY={-24}
       viewport={{ width: window.innerWidth, height: window.innerHeight }}
       renderFrame={({ enemy }) => (
-        <HealthBar value={enemy.hp} max={enemy.maxHp} width={78} showValue={false} />
+        <KitMeter size="sm" value={enemy.hp} max={enemy.maxHp} tone="bad" style={{ width: 78 }} />
       )}
     />
   );

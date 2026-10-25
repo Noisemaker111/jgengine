@@ -1,7 +1,7 @@
 import { type ReactNode, useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { CreditsPane } from "@jgengine/react/gameMenuSaves";
+import { KitButton, KitPanel } from "@jgengine/react/uiKitRoot";
 import { GameCursor } from "@jgengine/react/gameCursor";
-import { GameFrame } from "@jgengine/react/gameFrame";
 import { GameIcon } from "@jgengine/react/gameIcons";
 import { useGame } from "@jgengine/react/hooks";
 import { useMenuNav } from "@jgengine/react/menuNav";
@@ -119,10 +119,10 @@ function enterSheet(selector: string, tries = 6): void {
 /** A loose sheet pinned to the war table: every detail pane is written on one. */
 function Sheet({ children, className, pane }: { children: ReactNode; className?: string; pane: string }) {
   return (
-    <GameFrame material="paper" cut="box" depth={4} padding="26px 28px 26px" className={`ec-sheet ec-ink-sheet ${className ?? ""}`} data-pane={pane}>
+    <KitPanel material="paper" cut="box" depth={4} padding="26px 28px 26px" className={`ec-sheet ec-ink-sheet ${className ?? ""}`} data-pane={pane}>
       <i className="ec-pin" aria-hidden />
       {children}
-    </GameFrame>
+    </KitPanel>
   );
 }
 
@@ -163,9 +163,9 @@ function TakeCommandSheet({ recent, campaign, onTake }: { recent: SaveSlotMeta |
       <h2 className="ec-sheet-title">{recent === null ? order.title : (recent.name ?? "Commander")}</h2>
       {recent !== null && thumbOf(recent) !== null ? <img className="ec-sheet-thumb" src={thumbOf(recent)!} alt="" /> : null}
       {recent === null ? <p className="ec-sheet-text">{order.brief}</p> : <RecordFacts slot={recent} />}
-      <GameFrame as="button" material="enamel" tint={WAX} edge="#3a0b06" cut="hex" depth={14} padding="11px 26px" className="ec-seal-button" onClick={onTake}>
+      <KitButton material="enamel" tint={WAX} edge="#3a0b06" cut="hex" depth={14} padding="11px 26px" className="ec-seal-button" onClick={onTake}>
         {recent === null ? "March out" : "Return to the field"}
-      </GameFrame>
+      </KitButton>
     </Sheet>
   );
 }
@@ -189,9 +189,9 @@ function CommissionSheet({ slot, name, onName, onBegin }: { slot: string | null;
         />
       </label>
       <p className="ec-sheet-small">{slot === null ? "No campaign record is free." : `This opens ${campaignLabel(slot)}; a record already there is replaced.`}</p>
-      <GameFrame as="button" material="enamel" tint={WAX} edge="#3a0b06" cut="hex" depth={14} padding="11px 26px" className="ec-seal-button" data-new-campaign-start="" disabled={slot === null} onClick={onBegin}>
+      <KitButton material="enamel" tint={WAX} edge="#3a0b06" cut="hex" depth={14} padding="11px 26px" className="ec-seal-button" data-new-campaign-start="" disabled={slot === null} onClick={onBegin}>
         Seal the commission
-      </GameFrame>
+      </KitButton>
     </Sheet>
   );
 }
@@ -249,9 +249,9 @@ function SkirmishSheet({ onMarch }: { onMarch: () => void }) {
       <span className="ec-eyebrow">No orders</span>
       <h2 className="ec-sheet-title">Free skirmish</h2>
       <p className="ec-sheet-text">The vale as it stands: a keep, a purse and the Warcamp across the river. No campaign track, no carried stores. Raze the Warcamp to win.</p>
-      <GameFrame as="button" material="wood" cut="notch" depth={10} padding="10px 22px" className="ec-plank-button" onClick={onMarch}>
+      <KitButton material="wood" cut="notch" depth={10} padding="10px 22px" className="ec-plank-button" onClick={onMarch}>
         Into the vale
-      </GameFrame>
+      </KitButton>
     </Sheet>
   );
 }
@@ -441,19 +441,19 @@ export function CommandMenu(): ReactNode {
     return (
       <div className="ec-front ec-dispatch" aria-label="Orders on hold">
         <div className="ec-table-dark" aria-hidden />
-        <GameFrame material="leather" tint="#5a3520" cut="chamfer" depth={16} padding="34px 18px 20px" className="ec-case">
+        <KitPanel material="leather" tint="#5a3520" cut="chamfer" depth={16} padding="34px 18px 20px" className="ec-case">
           <span className="ec-case-flap" aria-hidden>
             <i className="ec-buckle" />
           </span>
-          <GameFrame material="paper" cut="torn" depth={12} padding="22px 24px 34px" className="ec-letter ec-ink-sheet">
+          <KitPanel material="paper" cut="torn" depth={12} padding="22px 24px 34px" className="ec-letter ec-ink-sheet">
             <span className="ec-eyebrow">{campaign === null ? order.eyebrow : `${order.eyebrow} · ${campaign.title}`}</span>
             <h1 className="ec-letter-title">Orders on hold</h1>
             <p className="ec-sheet-text">The field is frozen. Review the plan before the next wave.</p>
             <OrderList verbs={verbs} initialId={menuFocus.id ?? "resume"} enabled={busy === null} onPick={pick} onBack={() => run("match.resume")} onActive={setActive} />
             <p className="ec-sheet-small ec-letter-note">{notice ?? `${hud.gold} gold · ${hud.lumber} lumber in the stores`}</p>
             <WaxSeal size={62} className="ec-letter-seal" />
-          </GameFrame>
-        </GameFrame>
+          </KitPanel>
+        </KitPanel>
         <section className="ec-detail" aria-live="polite">
           {active === "settings" ? <FieldSettings /> : active === "credits" ? <CreditsSheet /> : null}
         </section>
@@ -512,7 +512,7 @@ export function CommandMenu(): ReactNode {
   return (
     <div className="ec-front ec-title" data-title-menu="" aria-label="Ember Command">
       <div className="ec-table-dark" aria-hidden />
-      <GameFrame material="paper" tint="#e6d3a8" cut="torn" depth={16} padding="30px 34px 44px" className="ec-survey ec-ink-sheet">
+      <KitPanel material="paper" tint="#e6d3a8" cut="torn" depth={16} padding="30px 34px 44px" className="ec-survey ec-ink-sheet">
         <MapArt />
         <WaxSeal size={92} className="ec-survey-seal" />
         <span className="ec-eyebrow">The Highland Vale</span>
@@ -534,7 +534,7 @@ export function CommandMenu(): ReactNode {
             if (id === "missions") refreshCampaignSlots();
           }}
         />
-      </GameFrame>
+      </KitPanel>
       <section className="ec-detail" aria-live="polite">
         {detail(active)}
       </section>

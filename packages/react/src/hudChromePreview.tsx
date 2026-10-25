@@ -1,7 +1,6 @@
 import { actionCooldownFromFraction, actionCost, resolveAction } from "@jgengine/core/ui/actionModel";
 
 import { ActionButton } from "./actionHud";
-import { HealthBar, ManaBar } from "./bars";
 import { HudButton } from "./hudButton";
 import { HudFrame } from "./hudFrame";
 import { HudSurface } from "./hudSurface";
@@ -9,6 +8,7 @@ import { HudThemeRoot } from "./hudThemeRoot";
 import { ConfirmDialog, PauseMenu } from "./modals";
 import { Window } from "./panels";
 import { TweenNumber } from "./tweenNumber";
+import { KitMeter } from "./uiKitRoot";
 
 const ACTIONS = [
   resolveAction({ id: "slash", label: "Slash", icon: "⚔", hotkey: "1" }),
@@ -34,8 +34,8 @@ export function HudChromePreview({ className }: { className?: string }) {
         <div style={{ position: "absolute", left: 24, top: 24, width: 280 }}>
           <HudFrame title="Warden · Lv 12" aside={<TweenNumber value={12480} />} padding={12}>
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              <HealthBar value={78} max={100} label="HP" width="100%" />
-              <ManaBar value={50} max={80} label="MP" width="100%" />
+              <KitMeter value={78} max={100} label="HP" tone="good" readout />
+              <KitMeter value={50} max={80} label="MP" tone="accent" readout />
             </div>
           </HudFrame>
         </div>

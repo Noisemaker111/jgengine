@@ -1,5 +1,6 @@
 import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { ContinuePane, CreditsPane, SaveSlotsPane } from "@jgengine/react/gameMenuSaves";
+import { KitButton, KitPanel } from "@jgengine/react/uiKitRoot";
 import { GameMenu, GamePauseMenu } from "@jgengine/react/gameMenu";
 import { useGameStore, useOptionalGamePhase } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
@@ -8,7 +9,6 @@ import { useSettings } from "@jgengine/react/settings";
 import { SettingsSection, SettingsTabs } from "@jgengine/react/settingsBlocks";
 import { useStore } from "@jgengine/react/store";
 import type { SaveSlotMeta } from "@jgengine/core/game/saveSlots";
-import { GameFrame } from "@jgengine/react/gameFrame";
 
 import { DEEPWARD_CREDITS } from "../../credits";
 import { loadRecordSlot, beginRecordSlot, openTitle, persistRecord, recordOf, withdrawToTitle, viewStore } from "../../controls";
@@ -32,10 +32,10 @@ const MENU_TOKENS = {
 /** A stencilled hull nameplate: the console's own name, riveted on. */
 function Nameplate({ word, sub, small = false }: { word: string; sub: ReactNode; small?: boolean }): ReactNode {
   return (
-    <GameFrame material="hull" cut="notch" depth={small ? 12 : 16} tint="#26404b" edge="#060d10" edgeWidth={2} padding={small ? "10px 22px 11px" : "14px 30px 16px"} className={`dw-nameplate${small ? " dw-nameplate-small" : ""}`}>
+    <KitPanel material="hull" cut="notch" depth={small ? 12 : 16} tint="#26404b" edge="#060d10" edgeWidth={2} padding={small ? "10px 22px 11px" : "14px 30px 16px"} className={`dw-nameplate${small ? " dw-nameplate-small" : ""}`}>
       <span className="dw-nameplate-word">{word}</span>
       <span className="dw-nameplate-sub">{sub}</span>
-    </GameFrame>
+    </KitPanel>
   );
 }
 
@@ -92,8 +92,7 @@ function NewDivePane({ slot, onBegin }: { slot: string | null; onBegin: () => vo
         <div><dt>Life</dt><dd>{view.home.life}</dd></div>
       </dl>
       {replacing && slot !== null ? <p className="dw-log-warn">{recordLabel(slot)} is held. A new dive replaces it.</p> : null}
-      <GameFrame
-        as="button"
+      <KitButton
         data-new-dive-start=""
         material="brass"
         cut="hex"
@@ -104,7 +103,7 @@ function NewDivePane({ slot, onBegin }: { slot: string | null; onBegin: () => vo
         className="dw-log-go"
       >
         Take the rail
-      </GameFrame>
+      </KitButton>
     </div>
   );
 }
