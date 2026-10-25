@@ -89,17 +89,25 @@ export async function provisionGame(gameDir: string, log: (line: string) => void
   return failed;
 }
 
+/** Whether a dev server should pull missing assets: on by default, off in CI, `JG_DEV_PROVISION` overrides both. */
+export function shouldProvision(env: Readonly<Record<string, string | undefined>>): boolean {
+  if (env.JG_DEV_PROVISION === "0") return false;
+  if (env.JG_DEV_PROVISION === "1") return true;
+  return env.CI === undefined || env.CI === "" || env.CI === "false";
+}
+
 /**
  * Dev-only Vite plugin: before the game's dev server starts, pull any asset pack the game
  * references and does not have yet, so `bun run dev` on a fresh checkout shows real models instead
- * of placeholder boxes. `JG_DEV_PROVISION=0` skips it (offline work).
+ * of placeholder boxes. `JG_DEV_PROVISION=0` skips it (offline work); CI skips it unless
+ * `JG_DEV_PROVISION=1`, since a check booting a dev server must not wait on downloads.
  */
 export function viteProvisionAssets(): { name: string; apply: "serve"; configureServer(server: { config: { root: string } }): Promise<void> } {
   return {
     name: "jg-dev-provision-assets",
     apply: "serve",
     async configureServer(server) {
-      if (process.env.JG_DEV_PROVISION === "0") return;
+      if (!shouldProvision(process.env)) return;
       const failed = await provisionGame(server.config.root, (line) => console.error(`dev: ${line}`));
       if (failed.length > 0) {
         console.error(`dev: could not pull ${failed.join(", ")} - those models will show as named MISSING boxes`);

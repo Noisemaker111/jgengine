@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { missingPulls } from "./provisionAssets";
+import { missingPulls, shouldProvision } from "./provisionAssets";
 
 const catalogs = {
   sources: [{ id: "kaykit-city" }, { id: "ambient-rock", kind: "material" }, { id: "unused-pack" }],
@@ -26,5 +26,14 @@ describe("dev provisions what a game references", () => {
     } finally {
       rmSync(publicDir, { recursive: true, force: true });
     }
+  });
+});
+
+describe("when dev provisions", () => {
+  test("on by default, off in CI, and the override wins either way", () => {
+    expect(shouldProvision({})).toBe(true);
+    expect(shouldProvision({ CI: "true" })).toBe(false);
+    expect(shouldProvision({ CI: "true", JG_DEV_PROVISION: "1" })).toBe(true);
+    expect(shouldProvision({ JG_DEV_PROVISION: "0" })).toBe(false);
   });
 });
