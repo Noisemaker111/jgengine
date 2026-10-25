@@ -183,8 +183,11 @@ export function defineGameSpec(spec: GameSpecDecl): GameSpec {
       if (pending.value) {
         pending.value = false;
         const built = world.instances().filter((instance) => instance.ready);
-        for (const instance of built) restored.add(instance.id);
-        if (built.length > 0) spec.onRestored?.(ctx, built);
+        // Whatever onRestored put back is not reported again as newly built this frame.
+        if (built.length > 0 && spec.onRestored !== undefined) {
+          for (const instance of built) restored.add(instance.id);
+          spec.onRestored(ctx, built);
+        }
       }
       const result = world.tick(dt, spec.input?.(ctx) ?? {});
       for (const instance of result.ready ?? []) if (!restored.has(instance.id)) spec.onReady?.(ctx, instance);

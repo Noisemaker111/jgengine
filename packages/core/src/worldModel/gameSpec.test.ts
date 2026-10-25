@@ -103,3 +103,16 @@ describe("a game spec runs as an engine system", () => {
     expect(() => defineGameSpec({ id: "broken", world: { ripples: { boom: { hook: "explode" } } } })).toThrow(/names hook "explode"/);
   });
 });
+
+describe("a game without onRestored", () => {
+  test("still hears onReady for a build that stood before its first frame", () => {
+    const ready: string[] = [];
+    const yard = defineGameSpec({ id: "yardspec", world: { kinds: { shed: { label: "Shed" } } }, onReady: (_ctx, shed) => ready.push(shed.id) });
+    const def = defineGameDefinition({ name: "yard-spec", multiplayer: "off", systems: [yard.system] });
+    const ctx = createGameContext({ definition: def, content: {}, player: { userId: "keeper", isNew: true } });
+    def.loop?.onInit?.(ctx);
+    ctx.game.commands.run("yardspec.place", { kind: "shed" });
+    def.loop?.onTick?.(ctx, 0.25);
+    expect(ready).toEqual(["shed-1"]);
+  });
+});
