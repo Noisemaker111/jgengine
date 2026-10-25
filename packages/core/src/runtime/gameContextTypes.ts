@@ -491,6 +491,12 @@ export interface GameAudio {  play(sound: string, at?: readonly [number, number,
   music(theme: string | null, transpose?: number): void;
   resume(): void;
   /**
+   * Raise the adaptive soundtrack's intensity by `amount` (`0..1`, decays in quiet) for fights the
+   * local player's own hits do not show: a wave released, a base under attack, a boss arriving.
+   * Emits `audio.intensity`; does nothing unless the game sets `audio.adaptiveMusic`.
+   */
+  intensity(amount: number): void;
+  /**
    * Start — or idempotently keep — the retained, id-keyed loop `id` playing catalog `sound`, emitting
    * `audio.loopStart`. Re-calling with the same `sound` does not restart it (no click); a different `sound`
    * replaces the source. Pair with {@link GameAudio.setLoop} to track a live signal — an RPM-pitched engine

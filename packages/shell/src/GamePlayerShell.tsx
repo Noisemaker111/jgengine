@@ -45,7 +45,7 @@ import { readUrlFlag, subscribeUrlChange, writeUrlParam } from "@jgengine/core/d
 
 import { createAudioEngine } from "./audio/audioEngine";
 import { attachAudioEventWire } from "./audio/audioWire";
-import { attachAdaptiveMusic } from "./audio/adaptiveMusicWire";
+import { attachAdaptiveMusic, type AdaptiveMusicSource } from "./audio/adaptiveMusicWire";
 import { ADAPTIVE_THEMES } from "@jgengine/core/audio/adaptiveMusic";
 import { resolvePlayableAudio } from "./audio/playableAudio";
 import { installAgentBridge } from "./devtools/agentBridge";
@@ -338,7 +338,7 @@ export function GamePlayerShell({
     const adaptive = playable.audio?.adaptiveMusic;
     if (ctx === null || adaptive === undefined || adaptive === false) return;
     return attachAdaptiveMusic(
-      { on: (event, handler) => ctx.game.events.on(event, handler), isLocal: (id) => id !== undefined && (id === ctx.player.userId || id === ctx.player.possession.active(ctx.player.userId)) },
+      { on: ctx.game.events.on.bind(ctx.game.events) as AdaptiveMusicSource["on"], isLocal: (id) => id !== undefined && (id === ctx.player.userId || id === ctx.player.possession.active(ctx.player.userId)) },
       (theme) => audioEngine.playMusic(theme),
       adaptive === true ? {} : adaptive,
     );

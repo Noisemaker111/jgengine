@@ -9,3 +9,5 @@
 ### Fixed
 
 - A retained loop started without a position is no longer occlusion-tested from where it began, so a world-wide bed is not muffled when the player walks behind a wall.
+- `ctx.game.audio.intensity(amount)` (event `audio.intensity`) lets a game with no avatar of its own (a tower defense, an RTS) raise the adaptive soundtrack: a released wave, raiders on the field.
+- `audio/enclosure` probe shows the ceiling and wall distances behind the automatic reverb choice.

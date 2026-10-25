@@ -8,7 +8,8 @@ import { createEmitterTracker, type EmitterPose, type EmitterSources, type Emitt
 import { groundFocusListener, type ListenerAnchor } from "./listenerAnchor";
 import { createListenerVelocityTrack, stepListenerVelocity, type ListenerVelocityTrack } from "./loopParams";
 import { sceneLineBlocked } from "./occlusion";
-import { enclosurePreset } from "@jgengine/core/audio/reverb";
+import { enclosurePreset, type EnclosureSample } from "@jgengine/core/audio/reverb";
+import { devtools } from "@jgengine/core/devtools/devtools";
 import { sampleEnclosure } from "./reverb";
 
 /** How often the shell listens for walls and a ceiling around the player, seconds. */
@@ -36,6 +37,18 @@ export function AudioListener({ engine, anchor = "camera" }: { engine: AudioEngi
   const trackRef = useRef<ListenerVelocityTrack>(createListenerVelocityTrack());
   const scratchRef = useRef({ direction: new Vector3(), up: new Vector3(), quaternion: new Quaternion() });
   const enclosureClock = useRef(ENCLOSURE_INTERVAL_S);
+  const lastEnclosure = useRef<EnclosureSample | null>(null);
+  useEffect(
+    () =>
+      devtools.probes.registerSystem("audio/enclosure", {
+        counters: () => {
+          const sample = lastEnclosure.current;
+          return { ceilingM: sample?.ceiling ?? -1, wallHits: sample?.walls.filter((wall) => wall !== null).length ?? 0 };
+        },
+        state: () => `${engine.spatialStats().reverb} · ceiling ${lastEnclosure.current?.ceiling?.toFixed(1) ?? "open"} · walls ${lastEnclosure.current?.walls.map((wall) => (wall === null ? "-" : wall.toFixed(0))).join(" ") ?? "?"}`,
+      }),
+    [engine],
+  );
   useEffect(() => {
     engine.setOcclusionSource((from, to) => sceneLineBlocked(ctx.scene, from, to));
     return () => engine.setOcclusionSource(null);
@@ -56,7 +69,9 @@ export function AudioListener({ engine, anchor = "camera" }: { engine: AudioEngi
     enclosureClock.current += dt;
     if (enclosureClock.current < ENCLOSURE_INTERVAL_S) return;
     enclosureClock.current = 0;
-    engine.setReverbEnvironment(enclosurePreset(sampleEnclosure(ctx.scene, hearingPoint(ctx, position))));
+    const sample = sampleEnclosure(ctx.scene, hearingPoint(ctx, position));
+    lastEnclosure.current = sample;
+    engine.setReverbEnvironment(enclosurePreset(sample));
   });
   return null;
 }

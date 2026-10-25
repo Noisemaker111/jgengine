@@ -1,11 +1,12 @@
 import { createCombatIntensity, DEFAULT_ADAPTIVE_TIERS, type AdaptiveMusicConfig } from "@jgengine/core/audio/adaptiveMusic";
 import { createMusicState, resolveMusicState } from "@jgengine/core/audio/musicState";
 import { devtools } from "@jgengine/core/devtools/devtools";
-import type { DamageAppliedEvent } from "@jgengine/core/game/events";
+import type { AudioIntensityEvent, DamageAppliedEvent } from "@jgengine/core/game/events";
 
 /** The slice of the game an adaptive soundtrack listens to. @internal */
 export interface AdaptiveMusicSource {
   on(event: "combat.damage", handler: (event: DamageAppliedEvent) => void): () => void;
+  on(event: "audio.intensity", handler: (event: AudioIntensityEvent) => void): () => void;
   /** Whether an id is the local player or what they drive. */
   isLocal(id: string | undefined): boolean;
 }
@@ -47,6 +48,11 @@ export function attachAdaptiveMusic(
     intensity.bump(amount, now());
     tick();
   });
+  const offPush = source.on("audio.intensity", ({ amount }) => {
+    if (!(amount > 0)) return;
+    intensity.bump(amount, now());
+    tick();
+  });
   const offProbe = devtools.probes.registerSystem("audio/adaptiveMusic", {
     counters: () => ({ intensityPct: Math.round(intensity.read(now()) * 100), changes }),
     state: () => `${state.tierId ?? "none"} · ${theme ?? "silent"} · intensity ${intensity.read(now()).toFixed(2)}`,
@@ -56,6 +62,7 @@ export function attachAdaptiveMusic(
   return () => {
     clearInterval(timer);
     off();
+    offPush();
     offProbe();
   };
 }

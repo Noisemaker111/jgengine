@@ -2,20 +2,24 @@ import { describe, expect, test } from "bun:test";
 
 import type { DamageAppliedEvent } from "@jgengine/core/game/events";
 
-import { attachAdaptiveMusic } from "./adaptiveMusicWire";
+import { attachAdaptiveMusic, type AdaptiveMusicSource } from "./adaptiveMusicWire";
 
 function bus() {
-  const handlers: ((event: DamageAppliedEvent) => void)[] = [];
+  const handlers = new Map<string, ((event: never) => void)[]>();
+  const listOf = (name: string) => handlers.get(name) ?? handlers.set(name, []).get(name)!;
   return {
-    on: (_event: "combat.damage", handler: (event: DamageAppliedEvent) => void) => {
-      handlers.push(handler);
-      return () => handlers.splice(handlers.indexOf(handler), 1);
-    },
+    on: ((name: string, handler: (event: never) => void) => {
+      listOf(name).push(handler);
+      return () => listOf(name).splice(listOf(name).indexOf(handler), 1);
+    }) as AdaptiveMusicSource["on"],
     isLocal: (id: string | undefined) => id === "me",
     emit: (event: Partial<DamageAppliedEvent>) => {
-      for (const handler of [...handlers]) handler({ amount: 10, lethal: false, ...event } as DamageAppliedEvent);
+      for (const handler of [...listOf("combat.damage")]) handler({ amount: 10, lethal: false, ...event } as never);
     },
-    count: () => handlers.length,
+    push: (amount: number) => {
+      for (const handler of [...listOf("audio.intensity")]) handler({ amount } as never);
+    },
+    count: () => [...handlers.values()].reduce((sum, list) => sum + list.length, 0),
   };
 }
 
@@ -38,5 +42,16 @@ describe("attachAdaptiveMusic", () => {
     expect(played.at(-1)).toBe("jg.fight");
     off();
     expect(events.count()).toBe(0);
+  });
+
+  test("a game with no avatar pushes its own intensity: a released wave brings the fight in", () => {
+    const events = bus();
+    const played: (string | null)[] = [];
+    const off = attachAdaptiveMusic(events, (theme) => played.push(theme), {}, () => 0);
+    events.push(0.7);
+    expect(played).toEqual(["jg.explore", "jg.fight"]);
+    events.push(-1);
+    expect(played).toHaveLength(2);
+    off();
   });
 });
