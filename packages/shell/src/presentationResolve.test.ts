@@ -49,6 +49,7 @@ describe("resolvePresentationEffects", () => {
       shake: true,
       hitMarkers: true,
       muzzleFlash: false,
+      impacts: {},
     });
     expect(resolvePresentationEffects(true)).toEqual(resolvePresentationEffects(undefined));
   });
@@ -62,6 +63,7 @@ describe("resolvePresentationEffects", () => {
       shake: false,
       hitMarkers: false,
       muzzleFlash: false,
+      impacts: null,
     });
   });
 
@@ -75,6 +77,7 @@ describe("resolvePresentationEffects", () => {
       shake: true,
       hitMarkers: true,
       muzzleFlash: true,
+      impacts: {},
     });
   });
 
@@ -87,6 +90,7 @@ describe("resolvePresentationEffects", () => {
       shake: true,
       hitMarkers: true,
       muzzleFlash: false,
+      impacts: {},
     });
   });
 
@@ -105,6 +109,13 @@ describe("resolvePresentationEffects", () => {
       shake: false,
       hitMarkers: true,
       muzzleFlash: true,
+      impacts: {},
     });
+  });
+
+  test("impacts are on by default and take their options or false", () => {
+    expect(resolvePresentationEffects({ impacts: false }).impacts).toBeNull();
+    expect(resolvePresentationEffects({ impacts: true }).impacts).toEqual({});
+    expect(resolvePresentationEffects({ impacts: { marks: false } }).impacts).toEqual({ marks: false });
   });
 });

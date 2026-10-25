@@ -2,6 +2,7 @@ import type { EffectResult } from "../combat/effects";
 import type { DeathReason } from "../combat/deathReason";
 import type { TelegraphShape } from "../combat/telegraph";
 import type { CameraShake } from "../combat/hitReaction";
+import type { ImpactClass } from "../combat/impactProfile";
 import type { FeedbackCue } from "../audio/feedbackCues";
 import type { CombatVfxInstanceEvent } from "./vfxInstance";
 
@@ -262,6 +263,10 @@ export interface ProjectileSettledEvent {
    * Straight muzzle→impact tracers only make sense for direct-fire shots, so renderers skip the arced ones.
    */
   ballistic: boolean;
+  /** The catalog item the shot was fired with, when it named one (`via.item`). */
+  item?: string;
+  /** The shot's presentation `impact` tag (`"explosive"` for a grenade), when it set one. */
+  impact?: ImpactClass;
 }
 
 export interface WorldItemDroppedEvent {

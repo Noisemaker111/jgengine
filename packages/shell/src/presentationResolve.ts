@@ -1,6 +1,7 @@
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
 import type { CatalogEntityRole } from "@jgengine/core/runtime/gameContext";
 import type { PresentationEffectsConfig } from "@jgengine/core/game/playableGame";
+import type { ImpactFeedbackOptions } from "./world/ImpactFeedback";
 
 /** Resolved world-bar / nameplate config, or `null` when the feature is off. @internal */
 export interface ResolvedWorldOverlayBars {
@@ -60,6 +61,8 @@ export interface ResolvedPresentationEffects {
   shake: boolean;
   hitMarkers: boolean;
   muzzleFlash: boolean;
+  /** The impact layer's options, or `null` when it is off. */
+  impacts: ImpactFeedbackOptions | null;
 }
 
 // Every channel defaults on EXCEPT tracers. `fireProjectile` is a generic seam (bullets,
@@ -74,6 +77,7 @@ const DEFAULTS: ResolvedPresentationEffects = {
   shake: true,
   hitMarkers: true,
   muzzleFlash: false,
+  impacts: {},
 };
 
 const ALL_OFF: ResolvedPresentationEffects = {
@@ -84,11 +88,12 @@ const ALL_OFF: ResolvedPresentationEffects = {
   shake: false,
   hitMarkers: false,
   muzzleFlash: false,
+  impacts: null,
 };
 
 /**
  * Resolve `presentationEffects` for the 3D shell.
- * - `undefined` / `true` → default channels (telegraphs, vfx, floatText, shake, hit markers on; tracers and muzzle flash off).
+ * - `undefined` / `true` → default channels (telegraphs, vfx, floatText, shake, hit markers, impacts on; tracers and muzzle flash off).
  * - `false` → none.
  * - object → per-channel; missing keys default on, EXCEPT `tracers`, which is opt-in and only
  *   enabled by an explicit `tracers: true`; `muzzleFlash` follows `tracers` unless set.
@@ -107,5 +112,6 @@ export function resolvePresentationEffects(
     shake: config.shake !== false,
     hitMarkers: config.hitMarkers !== false,
     muzzleFlash: config.muzzleFlash ?? config.tracers === true,
+    impacts: config.impacts === false ? null : config.impacts === undefined || config.impacts === true ? {} : config.impacts,
   };
 }

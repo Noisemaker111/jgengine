@@ -1190,3 +1190,13 @@ test("a cursor (ray) aim strays inside its spread cone like a look aim does", ()
   const strayed = fireAt(8);
   expect(Math.hypot(strayed[0], strayed[1] - 0.9)).toBeGreaterThan(0.001);
 });
+
+test("the settle report carries the shot's item and presentation impact tag", () => {
+  const reports: { item?: string; impact?: string }[] = [];
+  const { projectiles } = createRange({}, [], undefined, undefined, undefined, { onSettle: (report) => void reports.push(report) });
+  projectiles.settleProjectile(projectiles.fireProjectile({
+    from: "shooter", via: { item: "pistol" }, impact: "explosive",
+    aim: { origin: [0, 0.9, 0], direction: [0, 0, 1] }, effect: "damage",
+  }));
+  expect(reports[0]).toMatchObject({ item: "pistol", impact: "explosive" });
+});

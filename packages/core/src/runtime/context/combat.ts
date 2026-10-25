@@ -255,6 +255,8 @@ export function createCombatSubsystem(d: CombatSubsystemDeps): CombatSubsystem {
           effect: report.effect,
           hit: report.hit,
           ballistic: report.ballistic,
+          ...(report.item === undefined ? {} : { item: report.item }),
+          ...(report.impact === undefined ? {} : { impact: report.impact }),
         });
       },
     });
