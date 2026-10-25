@@ -1079,22 +1079,24 @@ describe("stray browser sweep", () => {
     }
   });
 
-  test("a headless browser is left for the profile sweep, so a warm daemon survives", () => {
+  test("a warm daemon's recorded Chrome survives; one no daemon record names is reaped", () => {
     const root = mkdtempSync(join(tmpdir(), "jg-stray-headless-"));
     try {
-      const dir = profile(root, "jg-shoot-daemon-warm", undefined);
+      const warm = profile(root, "jg-shoot-daemon-warm", undefined);
+      const orphan = profile(root, "jg-shoot-daemon-orphan", undefined);
+      writeFileSync(join(root, "jgengine-shoot-daemon-9300-abc.json"), JSON.stringify({ chromePid: 6001, userDataDir: warm }));
+      const fourHours = Date.now() - 4 * 60 * 60 * 1000;
+      const killed: number[] = [];
       const result = sweepStrayBrowsers(root, {
+        kill: (pid) => killed.push(pid),
         processes: [
-          {
-            pid: 6001,
-            parentPid: DEAD_PID,
-            startedAt: Date.now() - 4 * 60 * 60 * 1000,
-            commandLine: `chrome.exe --user-data-dir=${dir} --headless=new`,
-          },
+          { pid: 6001, parentPid: DEAD_PID, startedAt: fourHours, commandLine: `chrome.exe --user-data-dir=${warm} --headless=new` },
+          { pid: 6002, parentPid: DEAD_PID, startedAt: fourHours, commandLine: `chrome.exe --user-data-dir=${orphan} --headless=new` },
         ],
       });
-      expect(result.killed).toBe(0);
-      expect(existsSync(dir)).toBe(true);
+      expect(killed).toEqual([6002]);
+      expect(result.killed).toBe(1);
+      expect(existsSync(warm)).toBe(true);
     } finally {
       rmSync(root, { recursive: true, force: true });
     }

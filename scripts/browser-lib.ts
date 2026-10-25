@@ -1128,6 +1128,27 @@ function profileMtimeMs(dir: string): number | undefined {
   }
 }
 
+/** Profile directories some warm shoot daemon's state file still records. */
+export function daemonProfiles(root = tmpdir()): Set<string> {
+  const profiles = new Set<string>();
+  let names: string[] = [];
+  try {
+    names = readdirSync(root);
+  } catch {
+    return profiles;
+  }
+  for (const name of names) {
+    if (!name.startsWith("jgengine-shoot-daemon-") || !name.endsWith(".json")) continue;
+    try {
+      const state = JSON.parse(readFileSync(join(root, name), "utf8")) as { userDataDir?: unknown };
+      if (typeof state.userDataDir === "string") profiles.add(resolve(state.userDataDir));
+    } catch {
+      /* unreadable record — it protects nothing */
+    }
+  }
+  return profiles;
+}
+
 export interface StrayBrowserSweepOptions {
   now?: number;
   /** Age past which an unowned visible browser is leaked; defaults to {@link STRAY_BROWSER_MS}. */
@@ -1167,7 +1188,11 @@ export function sweepStrayBrowsers(root = tmpdir(), options: StrayBrowserSweepOp
     if (runPid !== undefined) {
       stray = !isAlive(runPid);
     } else if (headless) {
-      continue;
+      // A warm daemon's Chrome is recorded in its state file and retired by its idle sweep.
+      // One no record names was orphaned by a crashed or cleared daemon: four sat for ten hours.
+      if (!basename(dir).startsWith("jg-shoot-daemon-") || daemonProfiles(root).has(resolve(dir))) continue;
+      const startedAt = process.startedAt ?? profileMtimeMs(dir);
+      stray = !isAlive(process.parentPid) && startedAt !== undefined && now - startedAt >= maxAgeMs;
     } else {
       const startedAt = process.startedAt ?? profileMtimeMs(dir);
       stray = !isAlive(process.parentPid) && startedAt !== undefined && now - startedAt >= maxAgeMs;
