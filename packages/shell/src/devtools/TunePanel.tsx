@@ -39,6 +39,7 @@ function ControlInput({ control, onWrite }: { control: DevtoolsControl; onWrite:
       <div className="flex items-center gap-2">
         <input
           type="range"
+          aria-label={`${control.name} slider`}
           className="h-1 w-28 accent-cyan-400"
           min={displayMin}
           max={displayMax}
@@ -51,6 +52,7 @@ function ControlInput({ control, onWrite }: { control: DevtoolsControl; onWrite:
         />
         <input
           type="number"
+          aria-label={control.name}
           className="w-16 rounded-md border border-white/10 bg-black/40 px-1 py-0.5 font-mono text-neutral-100"
           step={displayStep}
           value={Number(displayValue.toFixed(4))}
