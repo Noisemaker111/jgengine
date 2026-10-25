@@ -93,7 +93,8 @@ export function HudOnlyDriver({
           if (!shouldFireBoundAction(tracker, action, playable.game.input, repeatFiredAtRef.current, nowMs)) continue;
           repeatFiredAtRef.current.set(action, nowMs);
           dispatchBoundAction(ctx, action, 0, 0, { yaw: 0, pitch: 0 }, EMPTY_RESERVED,
-            resolveCommandSink(ctx, { serverAuthoritative, backend: multiplayer?.backend ?? null, serverId: serverIdRef.current }));
+            resolveCommandSink(ctx, { serverAuthoritative, backend: multiplayer?.backend ?? null, serverId: serverIdRef.current }),
+            !tracker.wasPressed(action));
         }
         tracker.endFrame();
         endPhase();

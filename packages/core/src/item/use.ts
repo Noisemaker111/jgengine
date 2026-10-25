@@ -5,6 +5,8 @@ export interface ItemUseInput {
   itemId: string;
   inventoryId?: string;
   aim?: Aim;
+  /** True when this use is a held trigger's repeat rather than a fresh press; a single-shot gun ignores it. */
+  held?: boolean;
 }
 
 export interface ItemUseRejection {
