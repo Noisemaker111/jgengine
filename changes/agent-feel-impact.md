@@ -1,5 +1,0 @@
-### Added
-
-- Impact layer (`presentationEffects.impacts`, on by default): sparks and dust at every hit sized by weapon class (light, medium, heavy, melee, explosive, vehicle; `impactClassFor` reads weapon words, `classes` overrides), bullet holes and scorch marks where shots miss into a surface (on the drawn road or wall, not the physics floor under it), camera kick and rumble near blasts and crashes with distance falloff, and a short hit-stop on the local player's heavy hits, hits taken and kills. Reduced motion drops the camera kick. `render/impacts` probe.
-- Fallen bodies: a killed rigged character's last pose drops as a physics ragdoll, lies 5 s, then sinks away; up to 6 at once, off on the low tier, `impacts: { ragdolls: false }` turns it off. A game that keeps its dead entity is left alone. `render/ragdolls` probe.
-- `fireProjectile({ impact })` tags how a shot's landing reads (`"explosive"` for a grenade) without changing its flight or damage; `projectile.settled` now carries `item` and `impact`.
