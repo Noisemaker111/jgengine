@@ -410,7 +410,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `findEffect` (function) · `import { findEffect } from "@jgengine/core/vfx/effectLibrary"`
 
-## fire-input — bind a key or mouse button to a named action that runs the same-named command with the aim; repeatMs auto-fires while held
+## fire-input — bind a key or mouse button to a named action that runs the same-named command with the aim; repeatMs auto-fires while held, `held` tells a click from a held trigger
 
 - `ActionCodesMap` (type) · `import { ActionCodesMap } from "@jgengine/core/input/actionBindings"`
 

@@ -10,7 +10,7 @@
 
 ## @jgengine/core/authoring
 
-- `ActionCodesMap` (type): type ActionCodesMap<TAction extends string = string, TCode extends string = string> = Record< TAction, ActionCodes<TCode> > — Maps each game action name to the input codes (hold/toggle keys, repeat rate) that trigger it. In a `defineGame({ input })`, pressing an action runs the same-named command with `{ yaw, pitch, aim }`; `repeatMs` re-fires it while held (automatic weapons).
+- `ActionCodesMap` (type): type ActionCodesMap<TAction extends string = string, TCode extends string = string> = Record< TAction, ActionCodes<TCode> > — Maps each game action name to the input codes (hold/toggle keys, repeat rate) that trigger it. In a `defineGame({ input })`, pressing an action runs the same-named command with `{ yaw, pitch, aim, held }`; `repeatMs` re-fires it while held (automatic weapons), with `held: true` on those re-fires so one binding can drive a single-shot pistol (ignore `held`) and an automatic rifle (accept it).
 - `AuthoredProvenance` (interface): interface AuthoredProvenance — A first-class entry in the scene document — the editor fully owns and persists it.
 - `Drop` (interface): interface Drop — A resolved loot outcome — one item or currency grant with its rolled count.
 - `GameDefinition` (interface): interface GameDefinition<TAssetRef extends ModelAssetRef = ModelAssetRef, TMultiplayer = unknown> — Fully-resolved game description produced by {@link defineGameDefinition} — assets, scene, and opted-in subsystems.

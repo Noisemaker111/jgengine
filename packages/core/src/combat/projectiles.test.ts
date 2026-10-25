@@ -908,7 +908,7 @@ describe("sampled per-pellet shooting", () => {
     let draws = 0;
     const { projectiles } = createRange({ center: target([0, 0, 10]) }, [], undefined, undefined, undefined, { rng: () => { draws++; return 1; } });
     const result = projectiles.settleProjectile(projectiles.fireProjectile({
-      ...input, aim: { origin: [0, 0.9, 0], direction: [0, 0, 1] },
+      ...input, aim: { origin: [0, 0.9, 0], direction: [0, 0, 1], spread: 0 },
     }));
     expect(result.status).toBe("settled");
     if (result.status !== "settled") return;
@@ -1173,4 +1173,20 @@ test("detached spread inputs still observe receiver LOS changed after firing", (
   if (result.status !== "settled") return;
   expect(result.hits).toEqual([]);
   expect(stats.enemy!.health!.current).toBe(100);
+});
+
+test("a cursor (ray) aim strays inside its spread cone like a look aim does", () => {
+  const fireAt = (spread: number | undefined) => {
+    const { projectiles } = createRange({}, []);
+    const result = projectiles.settleProjectile(projectiles.fireProjectile({
+      from: "shooter", via: { item: "pistol" },
+      aim: { origin: [0, 0.9, 0], direction: [0, 0, 1], ...(spread === undefined ? {} : { spread }) }, effect: "damage",
+    }));
+    if (result.status !== "settled") throw new Error(result.reason);
+    return result.at;
+  };
+  const straight = fireAt(undefined);
+  expect(straight[0]).toBeCloseTo(0, 6);
+  const strayed = fireAt(8);
+  expect(Math.hypot(strayed[0], strayed[1] - 0.9)).toBeGreaterThan(0.001);
 });

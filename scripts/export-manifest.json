@@ -947,6 +947,7 @@
     "./camera/GameOrbitCamera",
     "./camera/PlayerFov",
     "./camera/Viewports",
+    "./camera/aimRecoil",
     "./camera/cameraBlendMath",
     "./camera/cameraCollision",
     "./camera/cameraRigs",
