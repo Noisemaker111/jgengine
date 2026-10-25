@@ -47,6 +47,8 @@ describe("resolvePresentationEffects", () => {
       floatText: true,
       tracers: false,
       shake: true,
+      hitMarkers: true,
+      muzzleFlash: false,
     });
     expect(resolvePresentationEffects(true)).toEqual(resolvePresentationEffects(undefined));
   });
@@ -58,6 +60,8 @@ describe("resolvePresentationEffects", () => {
       floatText: false,
       tracers: false,
       shake: false,
+      hitMarkers: false,
+      muzzleFlash: false,
     });
   });
 
@@ -69,6 +73,8 @@ describe("resolvePresentationEffects", () => {
       floatText: true,
       tracers: true,
       shake: true,
+      hitMarkers: true,
+      muzzleFlash: true,
     });
   });
 
@@ -79,7 +85,15 @@ describe("resolvePresentationEffects", () => {
       floatText: true,
       tracers: false,
       shake: true,
+      hitMarkers: true,
+      muzzleFlash: false,
     });
+  });
+
+  test("hit markers default on; muzzle flash follows tracers unless set", () => {
+    expect(resolvePresentationEffects({ hitMarkers: false }).hitMarkers).toBe(false);
+    expect(resolvePresentationEffects({ tracers: true, muzzleFlash: false }).muzzleFlash).toBe(false);
+    expect(resolvePresentationEffects({ muzzleFlash: true }).muzzleFlash).toBe(true);
   });
 
   test("object form can disable multiple channels while opting into tracers", () => {
@@ -89,6 +103,8 @@ describe("resolvePresentationEffects", () => {
       floatText: true,
       tracers: true,
       shake: false,
+      hitMarkers: true,
+      muzzleFlash: true,
     });
   });
 });

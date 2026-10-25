@@ -58,6 +58,8 @@ export interface ResolvedPresentationEffects {
   floatText: boolean;
   tracers: boolean;
   shake: boolean;
+  hitMarkers: boolean;
+  muzzleFlash: boolean;
 }
 
 // Every channel defaults on EXCEPT tracers. `fireProjectile` is a generic seam (bullets,
@@ -70,6 +72,8 @@ const DEFAULTS: ResolvedPresentationEffects = {
   floatText: true,
   tracers: false,
   shake: true,
+  hitMarkers: true,
+  muzzleFlash: false,
 };
 
 const ALL_OFF: ResolvedPresentationEffects = {
@@ -78,14 +82,16 @@ const ALL_OFF: ResolvedPresentationEffects = {
   floatText: false,
   tracers: false,
   shake: false,
+  hitMarkers: false,
+  muzzleFlash: false,
 };
 
 /**
  * Resolve `presentationEffects` for the 3D shell.
- * - `undefined` / `true` → default channels (telegraphs, vfx, floatText, shake on; tracers off).
+ * - `undefined` / `true` → default channels (telegraphs, vfx, floatText, shake, hit markers on; tracers and muzzle flash off).
  * - `false` → none.
  * - object → per-channel; missing keys default on, EXCEPT `tracers`, which is opt-in and only
- *   enabled by an explicit `tracers: true`.
+ *   enabled by an explicit `tracers: true`; `muzzleFlash` follows `tracers` unless set.
  * @internal
  */
 export function resolvePresentationEffects(
@@ -99,5 +105,7 @@ export function resolvePresentationEffects(
     floatText: config.floatText !== false,
     tracers: config.tracers === true,
     shake: config.shake !== false,
+    hitMarkers: config.hitMarkers !== false,
+    muzzleFlash: config.muzzleFlash ?? config.tracers === true,
   };
 }

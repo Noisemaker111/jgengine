@@ -5,6 +5,7 @@ import {
   WorldTelegraphs,
 } from "./world/WorldHud";
 import { WorldSpellVfx } from "./world/WorldVfx";
+import { HitMarkers, MuzzleFlashes } from "./world/ShotFeedback";
 import { RetainedVfx } from "./world/RetainedVfx";
 import { POSTFX_OVERLAY_USERDATA } from "./postfx/postfxOverlay";
 import type { ResolvedPresentationEffects } from "./presentationResolve";
@@ -25,6 +26,8 @@ export function CombatPresentation({ effects }: { effects: ResolvedPresentationE
       {effects.floatText ? <WorldFloatText /> : null}
       {effects.tracers ? <ProjectileTracers /> : null}
       {effects.shake ? <CombatCameraShake /> : null}
+      {effects.hitMarkers ? <HitMarkers /> : null}
+      {effects.muzzleFlash ? <MuzzleFlashes /> : null}
     </group>
   );
 }

@@ -1210,6 +1210,7 @@
     "./world/InstancedJoints",
     "./world/PlaceScene",
     "./world/RetainedVfx",
+    "./world/ShotFeedback",
     "./world/SpriteBatch",
     "./world/StaticObjectModels",
     "./world/TileLayerRenderer",
