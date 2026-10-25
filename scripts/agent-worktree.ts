@@ -261,7 +261,7 @@ if (import.meta.main) {
 
   // A lane that ended without `lane:close` still leaves its worktree behind, so a
   // new lane takes the merged ones with it. Unmerged and dirty trees stay.
-  const reaped = Bun.spawnSync(["bun", "run", "worktree:reap"], {
+  const reaped = Bun.spawnSync(["bun", "run", "worktree:reap", "--skip", target], {
     cwd: mainRoot,
     stdout: "pipe",
     stderr: "pipe",

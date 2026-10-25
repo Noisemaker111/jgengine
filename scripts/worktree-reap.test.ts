@@ -4,7 +4,7 @@ import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { randomUUID } from "node:crypto";
 
-import { livesUnderWorktrees, reap, selectReap, summarise, type ReapCandidate } from "./worktree-reap";
+import { livesUnderWorktrees, reap, selectReap, skipPaths, summarise, type ReapCandidate } from "./worktree-reap";
 
 const MAIN = resolve("repo-root");
 const WORKTREES = join(MAIN, ".claude", "worktrees");
@@ -169,3 +169,16 @@ function candidate(name: string): ReapCandidate {
 function candidateAt(path: string, name: string): ReapCandidate {
   return { path, name, branch: `agent/${name}` };
 }
+
+describe("a lane created at the beta tip survives the reap that follows it", () => {
+  test("--skip adds the new tree to the caller's own", () => {
+    expect(skipPaths(["--skip", "C:/m/.claude/worktrees/new"], "C:/m")).toEqual(["C:/m", "C:/m/.claude/worktrees/new"]);
+    const plan = selectReap({
+      refs: refs(["new"]),
+      mainRoot: MAIN,
+      skip: skipPaths(["--skip", `${MAIN}/.claude/worktrees/new`], MAIN),
+      isMerged: () => true,
+    });
+    expect(plan.reap).toEqual([]);
+  });
+});
