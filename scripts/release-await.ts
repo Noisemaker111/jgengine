@@ -44,10 +44,17 @@ export interface JobStep {
 }
 
 export const PUBLISH_WORKFLOW = "publish.yml";
+/** publish.yml starts on `workflow_run` of this workflow completing on main, never before it. */
+export const CI_WORKFLOW = "ci.yml";
 /** A publish run is build + sharded tests + pack/install/compile + 13 publishes + verify: ~11 min measured. */
 export const PUBLISH_TIMEOUT_MS = 45 * 60_000;
 /** Long enough not to hammer the API, short enough that a lane never wonders if it is alive. */
 export const POLL_INTERVAL_MS = 10_000;
+/**
+ * How long a publish run may take to appear once main's CI run for the commit has finished. While that
+ * CI run is still going, publish.yml cannot have queued yet, so the wait keeps going (bounded by the
+ * overall timeout): 0.41.0's main CI took ~5 minutes and a 3-minute window reported it unpublished.
+ */
 export const START_GRACE_MS = 3 * 60_000;
 
 /** The run for `sha`, preferring the newest: a re-run replaces the failed attempt it retried. */
@@ -187,18 +194,52 @@ export async function awaitPublish(options: AwaitOptions): Promise<AwaitResult> 
     return parseJson<PublishRun[]>(result.stdout) ?? [];
   };
 
+  /** Main's CI run for the commit: publish.yml is queued only after it completes. */
+  const readCiRun = (): PublishRun | null => {
+    const result = gh([
+      "run",
+      "list",
+      "--workflow",
+      CI_WORKFLOW,
+      "--commit",
+      options.sha,
+      "--limit",
+      "10",
+      "--json",
+      "databaseId,status,conclusion,headSha,url",
+    ]);
+    if (result.status !== 0) return null;
+    return pickRun(parseJson<PublishRun[]>(result.stdout) ?? [], options.sha);
+  };
+
   let run = options.runId === undefined ? pickRun(listRuns(), options.sha) : readRun(options.runId);
-  // A run that has not been queued yet is normal for a few seconds after the merge; give it a window.
-  while (run === null && now() - started < grace) {
-    // wait-ok: the merge commit reaches the workflow queue in seconds and this window is bounded
+  // Publish starts only after main's CI for the commit finishes; until then a missing run is expected.
+  // Once CI is done, a run not yet queued is normal for a few seconds; give it the grace window.
+  let ci: PublishRun | null = null;
+  let graceFrom = started;
+  while (run === null && options.runId === undefined && now() - started < timeout) {
+    ci = readCiRun();
+    if (ci !== null && ci.status !== "completed") graceFrom = now();
+    else if (ci !== null && ci.conclusion !== "success") break;
+    if (now() - graceFrom >= grace) break;
+    // wait-ok: bounded by the overall timeout while CI runs, then by the grace window
     await sleep(interval);
-    run = options.runId === undefined ? pickRun(listRuns(), options.sha) : readRun(options.runId);
+    run = pickRun(listRuns(), options.sha);
+  }
+  while (run === null && options.runId !== undefined && now() - started < grace) {
+    // wait-ok: the run id is known; reading it can fail briefly, and this window is bounded
+    await sleep(interval);
+    run = readRun(options.runId);
   }
   if (run === null) {
-    const line =
-      options.runId === undefined
-        ? `release: no ${PUBLISH_WORKFLOW} run for ${options.sha.slice(0, 8)} on main after ${Math.round(grace / 1000)}s - nothing was queued, so ${options.version} is not published`
-        : `release: publish run ${options.runId} could not be read`;
+    let line: string;
+    if (options.runId !== undefined) line = `release: publish run ${options.runId} could not be read`;
+    else if (ci !== null && ci.status === "completed" && ci.conclusion !== "success")
+      line = `release: CI run ${ci.databaseId} on main for ${options.sha.slice(0, 8)} ended ${ci.conclusion ?? "without a conclusion"}, so ${PUBLISH_WORKFLOW} never starts and ${options.version} is not published (${ci.url})`;
+    else if (ci !== null && ci.status !== "completed")
+      line = `release: CI run ${ci.databaseId} on main for ${options.sha.slice(0, 8)} still running after ${Math.round(timeout / 60_000)} minutes, so ${PUBLISH_WORKFLOW} has not started (${ci.url})`;
+    else
+      line = `release: no ${PUBLISH_WORKFLOW} run for ${options.sha.slice(0, 8)} on main ${Math.round(grace / 1000)}s after its CI finished - nothing was queued, so ${options.version} is not published`;
     return { ok: false, line, runId: options.runId ?? null, code: 1 };
   }
   log(`release: waiting on publish run ${run.databaseId} (${run.url})`);
