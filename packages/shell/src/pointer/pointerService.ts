@@ -27,6 +27,8 @@ export interface PointerService {
   /** Project a world point to CSS pixels for the marquee / HUD; null before the probe binds. */
   screenOf(world: PointerVec3): { x: number; y: number } | null;
   hasCursor(): boolean;
+  /** The world ray under the cursor, with no scene test; null when the cursor is off-canvas or nothing is bound. */
+  cursorRay(): { origin: PointerVec3; direction: PointerVec3 } | null;
   bind(deps: PointerDeps | null): void;
   setCursor(ndcX: number, ndcY: number, present: boolean): void;
 }
@@ -117,6 +119,12 @@ export function createPointerService(): PointerService {
     },
     worldHitCenter() {
       return hitAtNdc(centerNdc);
+    },
+    cursorRay() {
+      if (!cursorPresent || deps === null) return null;
+      raycaster.setFromCamera(ndc, deps.camera);
+      const { origin, direction } = raycaster.ray;
+      return { origin: [origin.x, origin.y, origin.z], direction: [direction.x, direction.y, direction.z] };
     },
     screenOf(world) {
       if (deps === null) return null;

@@ -54,7 +54,7 @@ import { SettingsProvider, type SettingsActionView } from "@jgengine/react/setti
 
 import { resolveWorldSky } from "./worldSky";
 import { resolveCaptureCameraConfig } from "./camera/rigResolve";
-import { pointerAimFor, pointerContextMenu } from "./shellPointer";
+import { pointerAimFor, pointerContextMenu, resolvePointerAim } from "./shellPointer";
 import { shellPointerInput } from "./shellPointerInput";
 import { AudioListener, EntityAudioEmitters, ObjectAudioEmitters } from "./audio/AudioComponents";
 import type { AudioEngine } from "./audio/audioEngine";
@@ -483,7 +483,7 @@ export function Shell3dPresentation({
       return;
     }
     if (pointer.secondaryCommand !== undefined && ctx.game.commands.has(pointer.secondaryCommand)) {
-      const aim: Aim = (pointer.aim === true ? pointerAimFor(ctx, pointerService) : undefined) ?? {
+      const aim: Aim = (resolvePointerAim(pointer.aim, playable.camera?.rig) ? pointerAimFor(ctx, pointerService) : undefined) ?? {
         yaw: yawRef.current,
         pitch: pitchRef.current,
       };
@@ -767,7 +767,7 @@ export function Shell3dPresentation({
                     multiplayer={multiplayer}
                     serverIdRef={serverIdRef}
                     pointerService={pointerService}
-                    pointerAim={pointer?.aim === true}
+                    pointerAim={resolvePointerAim(pointer?.aim, playable.camera?.rig)}
                     pingCommand={pointer?.pingCommand}
                     poster={poster}
                     onPosterSettled={onPosterSettled}

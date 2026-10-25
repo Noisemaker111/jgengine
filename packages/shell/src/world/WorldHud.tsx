@@ -8,9 +8,11 @@ import type { TelegraphShape } from "@jgengine/core/combat/telegraph";
 import type { CatalogEntityRole } from "@jgengine/core/runtime/gameContext";
 import { useGameStore } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
+import type { GameContext } from "@jgengine/core/runtime/gameContextTypes";
 import { useCameraShake } from "../camera/shakeChannel";
 import { CALIBRATED_TRAUMA_SHAKE_DECAY_PER_SECOND } from "../camera/rigMath";
 import { readFirstPersonMuzzle } from "../camera/GameFirstPersonCamera";
+import { readEntityMuzzle } from "../render/entityMuzzle";
 import { resolveFloatTextStyle } from "./floatTextStyle";
 import {
   collectNameplateSamples,
@@ -559,7 +561,28 @@ interface Tracer {
   points: [THREE.Vector3, THREE.Vector3];
 }
 
-export function ProjectileTracers({ lifeMs = 130 }: { lifeMs?: number }) {
+const FIRST_PERSON_GUN = new THREE.Vector3(0.22, -0.2, -0.55);
+const scratchForward = new THREE.Vector3();
+
+/**
+ * Where a shot's tracer visibly starts. The rule origin (eye or fixed muzzle offset) decides what is
+ * hit; the line starts at the shooter's gun: a first-person viewmodel's registered muzzle, else the
+ * bottom-right of the view where a held gun sits, and for anyone seen from outside, their registered
+ * hand or barrel. Exported for tests.
+ */
+export function startFromMuzzle(ctx: GameContext, from: string, camera: THREE.Camera, start: THREE.Vector3): void {
+  const local = from === ctx.player.userId || from === ctx.player.possession.active(ctx.player.userId);
+  if (local && readFirstPersonMuzzle(start, camera)) return;
+  // In first person the camera sits inside the shooter, so the line starts where the gun is drawn.
+  const eyeDistance = camera.getWorldPosition(scratchForward).distanceTo(start);
+  if (local && eyeDistance < 0.9) {
+    start.copy(FIRST_PERSON_GUN).applyMatrix4(camera.matrixWorld);
+    return;
+  }
+  readEntityMuzzle(from, start);
+}
+
+export function ProjectileTracers({ lifeMs = 200 }: { lifeMs?: number }) {
   const ctx = useGameContext();
   const camera = useThree((state) => state.camera);
   const [tracers, setTracers] = useState<Tracer[]>([]);
@@ -573,7 +596,7 @@ export function ProjectileTracers({ lifeMs = 130 }: { lifeMs?: number }) {
       if (event.ballistic) return;
       const id = nextId.current++;
       const start = new THREE.Vector3(event.origin[0], event.origin[1], event.origin[2]);
-      if (event.from === ctx.player.userId) readFirstPersonMuzzle(start, camera);
+      startFromMuzzle(ctx, event.from, camera, start);
       setTracers((current) => [
         ...current,
         {
@@ -596,7 +619,7 @@ export function ProjectileTracers({ lifeMs = 130 }: { lifeMs?: number }) {
   return (
     <>
       {tracers.map((tracer) => (
-        <Line key={tracer.id} points={tracer.points} color="#fde68a" lineWidth={2} transparent opacity={0.85} />
+        <Line key={tracer.id} points={tracer.points} color="#fde68a" lineWidth={3} transparent opacity={0.9} />
       ))}
     </>
   );

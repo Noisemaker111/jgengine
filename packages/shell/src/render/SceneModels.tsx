@@ -20,6 +20,7 @@ import { useFootIk } from "./useFootIk";
 import { resolveRigNode } from "./rigNode";
 import { PartMotionRig } from "./PartMotion";
 import { useCharacterGlance } from "./characterGlance";
+import { useEntityMuzzle } from "./entityMuzzle";
 import { useTerrainQuality } from "../terrain/terrainQuality";
 import { syncSpriteFrame } from "./spriteRender";
 import { singleVariantLevel, variantLevelModel } from "./singleVariantLod";
@@ -347,6 +348,8 @@ export function EntityModel({
   const engineMotion = useEngineCharacterMotion(model, ctx, instanceId);
   useFootIk(scene, engineMotion ? "auto" : model.ik === "none" ? undefined : model.ik, ctx, instanceId, baseY, engineMotion ? ENGINE_IK_OPTIONS : undefined);
   useCharacterGlance(scene, engineMotion, ctx, instanceId, ENGINE_MOTION_CAMERA_DISTANCE);
+  const muzzleFacing = useCallback(() => (instanceId === undefined ? undefined : ctx?.scene.entity.get(instanceId)?.rotationY) ?? 0, [ctx, instanceId]);
+  useEntityMuzzle(scene, instanceId, muzzleFacing);
 
   const paintCanvasRef = useRef<PaintCanvas | null>(null);
   const paintDrawnCountRef = useRef(0);
