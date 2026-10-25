@@ -155,6 +155,65 @@ describe("waiting on the publish run", () => {
     expect(result.ok).toBe(false);
     expect(result.line).toContain("no publish.yml run for cccccccc on main");
   });
+
+  test("main CI running longer than the grace window keeps the wait going until publish queues", async () => {
+    // 0.41.0: main CI took ~5 minutes, publish.yml queued after it, and a 3-minute window gave up.
+    const sha = "d".repeat(40);
+    let clock = 0;
+    const ciDoneAt = 5 * 60_000;
+    const gh = (args: readonly string[]) => {
+      const ci = args.includes("ci.yml");
+      if (args[0] === "run" && ci) {
+        const done = clock >= ciDoneAt;
+        const ciRun = run({ headSha: sha, databaseId: 1, status: done ? "completed" : "in_progress", conclusion: done ? "success" : null });
+        return { status: 0, stdout: JSON.stringify([ciRun]), stderr: "" };
+      }
+      // Publish queues 20 s after CI completes.
+      const queued = clock >= ciDoneAt + 20_000;
+      if (args[0] === "run") return { status: 0, stdout: JSON.stringify(queued ? [run({ headSha: sha })] : []), stderr: "" };
+      return { status: 0, stdout: JSON.stringify(run({ headSha: sha })), stderr: "" };
+    };
+    const result = await awaitPublish({
+      version: "0.41.0",
+      sha,
+      gh,
+      npmView: () => ({ status: 0, stdout: "0.41.0\n", stderr: "" }),
+      graceMs: 3 * 60_000,
+      intervalMs: 10_000,
+      now: () => clock,
+      sleep: async (ms) => {
+        clock += ms;
+      },
+      log: () => {},
+    });
+    expect(result.ok).toBe(true);
+    expect(result.line).toBe("release: published @jgengine/core@0.41.0 (publish run 40107700057)");
+    expect(clock).toBeGreaterThan(ciDoneAt);
+  });
+
+  test("a main CI run that failed is named, since publish.yml never starts after it", async () => {
+    const sha = "e".repeat(40);
+    let slept = 0;
+    const gh = (args: readonly string[]) => {
+      if (args[0] === "run" && args.includes("ci.yml"))
+        return { status: 0, stdout: JSON.stringify([run({ headSha: sha, databaseId: 7, conclusion: "failure" })]), stderr: "" };
+      if (args[0] === "run") return { status: 0, stdout: "[]", stderr: "" };
+      return { status: 1, stdout: "", stderr: "unexpected" };
+    };
+    const result = await awaitPublish({
+      version: "0.41.0",
+      sha,
+      gh,
+      graceMs: 3 * 60_000,
+      sleep: async () => {
+        slept++;
+      },
+      log: () => {},
+    });
+    expect(result.ok).toBe(false);
+    expect(result.line).toContain("CI run 7 on main for eeeeeeee ended failure");
+    expect(slept).toBe(0);
+  });
 });
 
 describe("arguments", () => {
