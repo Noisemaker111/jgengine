@@ -1,5 +1,8 @@
 import { useFrame, useThree } from "@react-three/fiber";
+import { useEffect, useMemo } from "react";
 import * as THREE from "three";
+
+import { reportRain, reportWind } from "../render/livingWorld";
 
 import { useDisposable } from "../render/useDisposable";
 import { createWeatherQuadGeometry } from "./weatherGeometry";
@@ -32,6 +35,11 @@ const DEFAULT_VOLUME: WeatherVector = [56, 42, 56];
 const DEFAULT_ORIGIN: WeatherVector = [0, 0, 0];
 const DEFAULT_RAIN_COLOR = "#b8c4d8";
 
+/** How much rain a field reports to the living world, 0..1: the default density is a steady shower. @internal */
+export function rainAmount(density: number, localRain: number): number {
+  return Math.min(1, (Math.max(0, density) / DEFAULT_RAIN_DENSITY) * 0.8) * localRain;
+}
+
 export function RainField({
   count = DEFAULT_RAIN_COUNT,
   density = DEFAULT_RAIN_DENSITY,
@@ -54,6 +62,15 @@ export function RainField({
 }: RainFieldProps) {
   const { camera } = useThree();
   const shared = useWeatherUniformSet({ wind, lightning, timeScale, timeSeconds });
+  const source = useMemo(() => ({}), []);
+  useEffect(() => () => {
+    reportRain(source, 0);
+    reportWind(source, null);
+  }, [source]);
+  useFrame(() => {
+    reportRain(source, rainAmount(density, shared.rain.value));
+    reportWind(source, [shared.wind.value.x, shared.wind.value.z]);
+  });
   const geometry = useDisposable(() => createWeatherQuadGeometry(count, seed), [count, seed]);
   const material = useDisposable(() => {
     const uniforms = {

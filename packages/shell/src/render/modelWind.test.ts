@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import * as THREE from "three";
 
-import { applyModelWind, applyModelWindToScene, resolveModelWind, windClock } from "./modelWind";
+import { applyModelWind, applyModelWindToScene, defaultWindKind, resolveModelWind, windClock, windGust } from "./modelWind";
 
 function compiled(material: THREE.MeshStandardMaterial): { vertexShader: string; uniforms: Record<string, THREE.IUniform> } {
   const shader = {
@@ -55,5 +55,40 @@ describe("model wind", () => {
     rigid.add(new THREE.Mesh(new THREE.BoxGeometry(), untouched));
     applyModelWindToScene(rigid, undefined, 3);
     expect(untouched.userData["jgWind"]).toBeUndefined();
+  });
+
+  test("reads foliage and cloth from model names and leaves everything else rigid", () => {
+    expect(defaultWindKind(["PalmTree_01"])).toBe("foliage");
+    expect(defaultWindKind(["Mesh", "Leaves"])).toBe("foliage");
+    expect(defaultWindKind(["oakTrunk"])).toBe("foliage");
+    expect(defaultWindKind(["shopAwning"])).toBe("cloth");
+    expect(defaultWindKind(["Flags"])).toBe("cloth");
+    expect(defaultWindKind(["Street", "Glass", "Grassland_Rock"])).toBeNull();
+    expect(defaultWindKind(["Brass", "Sedan"])).toBeNull();
+  });
+
+  test("an unconfigured plant sways and follows the weather's gust; only a model's cloth flutters", () => {
+    const plant = new THREE.Group();
+    const leaf = new THREE.MeshStandardMaterial({ name: "Leaves" });
+    plant.add(new THREE.Mesh(new THREE.BoxGeometry(), leaf));
+    applyModelWindToScene(plant, undefined, 3);
+    expect(leaf.userData["jgWind"]).toBeDefined();
+    expect(compiled(leaf).uniforms.uJgWindGust).toBe(windGust);
+
+    const stall = new THREE.Group();
+    const awning = new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshStandardMaterial());
+    awning.name = "Awning";
+    const counter = new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshStandardMaterial());
+    counter.name = "Counter";
+    stall.add(awning, counter);
+    applyModelWindToScene(stall, undefined, 3);
+    expect((awning.material as THREE.Material).userData["jgWind"]).toBeDefined();
+    expect((counter.material as THREE.Material).userData["jgWind"]).toBeUndefined();
+
+    const held = new THREE.Group();
+    const rigidLeaf = new THREE.MeshStandardMaterial({ name: "Leaves" });
+    held.add(new THREE.Mesh(new THREE.BoxGeometry(), rigidLeaf));
+    applyModelWindToScene(held, false, 3);
+    expect(rigidLeaf.userData["jgWind"]).toBeUndefined();
   });
 });
