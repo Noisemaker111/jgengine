@@ -172,6 +172,8 @@ function materialAssetSurfaceForSlot(material: THREE.Material, asset: MaterialAs
 export interface MaterialAssignmentTargetOptions extends MaterialAssignmentValidationOptions {
   /** Coverage applied to every imported slot before named assignments; never mutates the source. */
   baseAlphaMode?: MaterialSurfaceParameters["alphaMode"];
+  /** `skip` lets a selector that matches no slot pass: a simplified variant level may have dropped that slot. */
+  unmatched?: "throw" | "skip";
 }
 
 /**
@@ -209,7 +211,7 @@ function materialAssignmentTargets(root: THREE.Object3D, assets: readonly Materi
         selected.push({ mesh, index });
       });
     });
-    if (selected.length === 0) throw new Error(`Material selector ${JSON.stringify(assignment.selector)} matched no slots`);
+    if (selected.length === 0 && options.unmatched !== "skip") throw new Error(`Material selector ${JSON.stringify(assignment.selector)} matched no slots`);
     return { assignment, asset, selected };
   });
   const final = new Map<THREE.Mesh, Map<number, { assignment: MaterialAssignment; asset: MaterialAsset }>>();
@@ -229,8 +231,8 @@ function materialAssignmentTargets(root: THREE.Object3D, assets: readonly Materi
  * Apply intersecting mesh/slot selectors without changing omitted imported slots. Returns caller-owned replacements; model clones register them only after success.
  * @capability material-assets assign reusable physical assets to independent imported model slots
  */
-export function applyMaterialAssignments(root: THREE.Object3D, assets: readonly MaterialAsset[], assignments: readonly MaterialAssignment[], textures: ReadonlyMap<string, MaterialOverrideTextures> = new Map()): THREE.Material[] {
-  const final = materialAssignmentTargets(root, assets, assignments);
+export function applyMaterialAssignments(root: THREE.Object3D, assets: readonly MaterialAsset[], assignments: readonly MaterialAssignment[], textures: ReadonlyMap<string, MaterialOverrideTextures> = new Map(), options: Pick<MaterialAssignmentTargetOptions, "unmatched"> = {}): THREE.Material[] {
+  const final = materialAssignmentTargets(root, assets, assignments, options);
   const owned: THREE.Material[] = [];
   const originals: { mesh: THREE.Mesh; index: number; source: THREE.Material }[] = [];
   try {
