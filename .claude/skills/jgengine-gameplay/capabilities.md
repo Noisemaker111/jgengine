@@ -869,9 +869,8 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `queuedJobs` (function) · `import { queuedJobs } from "@jgengine/core/gameplay"`
 
-## world-model — declare a fact that calms back toward its resting value over time
+## world-model — one declarative world of people, places, factions, things, jobs and ripples
 
-- `calm` (function) · `import { calm } from "@jgengine/core/worldModel/worldModel"`
 - `createWorldModel` (function) · `import { createWorldModel } from "@jgengine/core/worldModel/worldModel"`
 - `defineWorldModel` (function) · `import { defineWorldModel } from "@jgengine/core/worldModel/worldModel"`
 

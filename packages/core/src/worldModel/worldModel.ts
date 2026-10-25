@@ -39,8 +39,6 @@ export type WorldFactsDecl = Readonly<Record<string, WorldFactValue | WorldFactS
 /**
  * A number fact that drifts back to `rest` (default its start) at `perSecond`, kept within 0-100
  * unless the bounds say otherwise.
- *
- * @capability world-model declare a fact that calms back toward its resting value over time
  */
 export function calm(value: number, perSecond: number, bounds: { rest?: number; min?: number; max?: number } = {}): WorldFactSpec {
   return { value, decay: perSecond, rest: bounds.rest ?? value, min: bounds.min ?? 0, max: bounds.max ?? 100 };
