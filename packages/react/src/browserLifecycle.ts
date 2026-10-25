@@ -10,6 +10,17 @@ export interface BrowserSuspensionOptions {
   pointerLockLost?: boolean;
 }
 
+/**
+ * Global a capture or drive host sets to `true` at document start. While it holds, window blur and a
+ * hidden page do not suspend play: a capture window loses focus and visibility whenever another
+ * window on the machine comes forward, and a drive that boots paused proves nothing.
+ */
+export const CAPTURE_HOLD_KEY = "__jgengineCaptureHold";
+
+function captureHolds(): boolean {
+  return (globalThis as Record<string, unknown>)[CAPTURE_HOLD_KEY] === true;
+}
+
 /** Event sources for a browser window, an iframe, or a test. */
 export interface BrowserSuspensionSources {
   window: Pick<EventTarget, "addEventListener" | "removeEventListener">;
@@ -21,6 +32,7 @@ export interface BrowserSuspensionSources {
 
 /**
  * Observe interruption events until detached. Lock loss requires a preceding lock; SSR attaches nothing.
+ * Blur and hidden are ignored while a capture host holds play ({@link CAPTURE_HOLD_KEY}).
  * @capability browser-suspension-observer observe browser interruptions outside React with caller-owned pause policy and event sources
  */
 export function observeBrowserSuspension(
@@ -31,8 +43,8 @@ export function observeBrowserSuspension(
   if (sources === null) return () => {};
   const { window: win, document: doc } = sources;
   let locked = doc.pointerLockElement !== null;
-  const blur = () => onSuspend("blur");
-  const visibility = () => { if (doc.hidden) onSuspend("hidden"); };
+  const blur = () => { if (!captureHolds()) onSuspend("blur"); };
+  const visibility = () => { if (doc.hidden && !captureHolds()) onSuspend("hidden"); };
   const lock = () => {
     const next = doc.pointerLockElement !== null;
     const lost = locked && !next;

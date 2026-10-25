@@ -7,8 +7,10 @@ import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
 import { deflateSync } from "node:zlib";
 
+import { CAPTURE_HOLD_KEY } from "../packages/react/src/browserLifecycle";
 import {
   type CdpSession,
+  CAPTURE_HOLD_SOURCE,
   DEVICES,
   BrowserLaunchError,
   buildBrowserFixture,
@@ -262,6 +264,28 @@ describe("capture navigation failures", () => {
     await expect(navigateCapturePage(session, "http://127.0.0.1:5712/playground", 60_000)).rejects.toThrow(
       "page exception: Error: broken route",
     );
+  });
+
+  test("every capture page boots with play held and focus emulated, so a window switch cannot auto-pause it", async () => {
+    const sent: Array<{ method: string; params?: Record<string, unknown> }> = [];
+    const session = fakeSession({ captureStatus: "ready" });
+    const send = session.send.bind(session);
+    (session as unknown as { send: typeof send }).send = (async (method: string, params?: Record<string, unknown>) => {
+      sent.push({ method, params });
+      return send(method as never, params as never);
+    }) as typeof send;
+    await navigateCapturePage(session, "http://127.0.0.1:5712/?game=deepward", 1_000);
+    const hold = sent.findIndex((call) => call.method === "Page.addScriptToEvaluateOnNewDocument" && call.params?.source === CAPTURE_HOLD_SOURCE);
+    expect(hold).toBeGreaterThanOrEqual(0);
+    expect(hold).toBeLessThan(sent.findIndex((call) => call.method === "Page.navigate"));
+    expect(sent.some((call) => call.method === "Emulation.setFocusEmulationEnabled" && call.params?.enabled === true)).toBe(true);
+    const scope = globalThis as Record<string, unknown>;
+    try {
+      new Function(CAPTURE_HOLD_SOURCE)();
+      expect(scope[CAPTURE_HOLD_KEY]).toBe(true);
+    } finally {
+      delete scope[CAPTURE_HOLD_KEY];
+    }
   });
 
   test("returns when the page declares the capture ready", async () => {

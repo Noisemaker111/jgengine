@@ -2023,6 +2023,24 @@ const readinessInstalled = new WeakSet<CdpSession>();
  * is set; a MutationObserver reports it in the task that sets it. Installation is best-effort —
  * the poll below stays as the backstop, so an older page or a failed binding still works.
  */
+/**
+ * Runs at document start in every capture page: tells the engine's browser-suspension observer that a
+ * capture host holds play, so a focus or visibility change on this shared machine never auto-pauses
+ * the game mid-drive. Must name `CAPTURE_HOLD_KEY` from `@jgengine/react`'s `browserLifecycle`.
+ */
+export const CAPTURE_HOLD_SOURCE = "globalThis.__jgengineCaptureHold = true;";
+
+const playHeld = new WeakSet<CdpSession>();
+
+/** Keep a capture page focused and unpausable by window switches; best-effort on older Chrome. */
+async function holdCapturePlay(session: CdpSession): Promise<void> {
+  if (playHeld.has(session)) return;
+  playHeld.add(session);
+  await session.send("Page.addScriptToEvaluateOnNewDocument", { source: CAPTURE_HOLD_SOURCE });
+  // Chrome then reports the page focused even while another window is in front, so no blur fires.
+  await session.send("Emulation.setFocusEmulationEnabled", { enabled: true }).catch(() => {});
+}
+
 async function installReadinessSignal(session: CdpSession): Promise<void> {
   if (readinessInstalled.has(session)) return;
   readinessInstalled.add(session);
@@ -2112,6 +2130,7 @@ export async function navigateCapturePage(
   try {
     await session.send("Network.enable");
     await installReadinessSignal(session).catch(() => {});
+    await holdCapturePlay(session).catch(() => {});
     const navigation = await session.send("Page.navigate", { url });
     if (typeof navigation.errorText === "string" && navigation.errorText.length > 0) {
       throw new Error(`navigation failed for ${url}: ${navigation.errorText}`);
