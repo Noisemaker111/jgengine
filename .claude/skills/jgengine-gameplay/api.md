@@ -3076,6 +3076,20 @@
 - `GameSpecShow` (interface): interface GameSpecShow — How a placed kind appears in the scene: one entity per built instance, with the instance's id.
 - `defineGameSpec` (function): function defineGameSpec(spec: GameSpecDecl): GameSpec — Turn a game declaration into an installable engine system with commands `<id>.place`, `<id>.remove`, `<id>.act`, `<id>.cancel` and `<id>.job.start`.
 
+## @jgengine/core/worldModel/upgradePaths
+
+- `UpgradeBranchDecl` (interface): interface UpgradeBranchDecl — One exclusive branch: its own ladder, open once the trunk is climbed and no other branch is taken.
+- `UpgradeOption` (interface): interface UpgradeOption — One step an instance can take next, priced for it, with the refusal if it can't be taken now.
+- `UpgradePathFactNames` (interface): interface UpgradePathFactNames — The fact names a ladder writes on each instance.
+- `UpgradePathsDecl` (interface): interface UpgradePathsDecl — A kind's whole ladder.
+- `UpgradeProgress` (interface): interface UpgradeProgress — Where one instance stands on its ladder.
+- `UpgradeStepDecl` (interface): interface UpgradeStepDecl — One rung: what it is called, what it costs and what it changes on the instance.
+- `upgradeOptions` (function): function upgradeOptions(world: WorldModel, decl: UpgradePathsDecl, instanceId: string): UpgradeOption[] — The steps an instance can take next: the next trunk step while the trunk is unfinished, then the first step of every branch, then only the next step of the branch it took. Each option is priced and checked by the world, so a panel can show the cost and grey out what the purse can't cover.
+- `upgradePathActions` (function): function upgradePathActions(decl: UpgradePathsDecl): Record<string, WorldActionDecl> — Compile a ladder into world actions, one per step. A trunk step opens when the instance has taken the steps before it; a branch's first step opens once the trunk is done and no branch is taken, and writes the branch's id, which closes every other branch.
+- `upgradePathFacts` (function): function upgradePathFacts(decl: UpgradePathsDecl): WorldFactsDecl — The facts a kind declares so its ladder can read them: no trunk steps, no branch. Spread them into the kind's own `facts`.
+- `upgradeProgress` (function): function upgradeProgress(world: WorldModel, decl: UpgradePathsDecl, instanceId: string): UpgradeProgress — Where an instance stands on its ladder, read from the facts the ladder writes.
+- `upgradeStepAction` (function): function upgradeStepAction(kind: string, branch: string | null, step: number): string — The action id of one step: `<kind>:trunk:<n>` or `<kind>:<branch>:<n>`, 1-based.
+
 ## @jgengine/core/worldModel/worldModel
 
 - `WorldActionDecl` (interface): interface WorldActionDecl — Something the player can do that may be refused: upgrade a tower, fix a ride, train a model, sell. Costs are absolute facts; `effect` lands on the target. With `takes` it waits in a queue.

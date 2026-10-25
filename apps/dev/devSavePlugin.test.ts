@@ -23,6 +23,18 @@ afterEach(() => {
 });
 
 describe("dev save endpoint", () => {
+  test("a save for the game served from another checkout lands in that checkout, not Games/<id>", () => {
+    const gamesDir = makeGamesDir("beacon-bastion", { [EDITOR_SCENE_FILENAME]: "{}\n" });
+    const lane = makeGamesDir("beacon-bastion", {});
+    const json = JSON.stringify({ version: 1, markers: [], volumes: [], paths: [], annotations: [] });
+    const body = JSON.stringify({ kind: "editor-document", gameId: "beacon-bastion", json });
+    const result = handleSaveRequest(gamesDir, body, join(lane, "beacon-bastion"));
+    expect(result).toMatchObject({ ok: true, path: join(lane, "beacon-bastion", "src", EDITOR_SCENE_FILENAME) });
+    expect(readFileSync(join(gamesDir, "beacon-bastion", "src", EDITOR_SCENE_FILENAME), "utf8")).toBe("{}\n");
+    // Another game still saves to Games/<id>.
+    expect(handleSaveRequest(gamesDir, body, join(lane, "other-game"))).toMatchObject({ ok: true, path: join(gamesDir, "beacon-bastion", "src", EDITOR_SCENE_FILENAME) });
+  });
+
   test("editor document round-trips to Games/<id>/src", () => {
     const gamesDir = makeGamesDir("proving-grounds", {});
     const json = JSON.stringify({

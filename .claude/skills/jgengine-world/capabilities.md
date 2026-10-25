@@ -172,6 +172,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `validateAuthoredWeather` (function) · `import { validateAuthoredWeather } from "@jgengine/core/world/authoredWeather"`
 
+## auto-target-cycle — step a player-chosen targeting priority to the next allowed policy
+
+- `nextAutoTargetPolicy` (function) · `import { nextAutoTargetPolicy } from "@jgengine/core/world"`
+
 ## axis-shaping — shape raw input per axis — deadzone, response curve, keyboard ramp, self-centring, speed-sensitive scaling
 
 - `createAxisShaper` (function) · `import { createAxisShaper } from "@jgengine/core/input/axisShaper"`
@@ -1076,6 +1080,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## walker-solid-step-source — slide a step against solid geometry from a pure rules package
 
 - `resolveSourceWalkerStep` (function) · `import { resolveSourceWalkerStep } from "@jgengine/core/movement/solidObstacles"`
+
+## wave-countdown — intermission clock between waves that releases the next one when it runs out and prices calling it early
+
+- `createWaveCountdown` (function) · `import { createWaveCountdown } from "@jgengine/core/ai/director/waveCountdown"`
+
+## wave-preview — summarize an authored wave before it opens: units by first arrival, trait counts and entries used
+
+- `summarizeWave` (function) · `import { summarizeWave } from "@jgengine/core/ai/director/wavePreview"`
 
 ## wave-runner — observable serializable wave/spawn runner over the seeded spawn director — WAVE N, wave progress, budget/alert readout, onSpawn sink, snapshot/restore
 

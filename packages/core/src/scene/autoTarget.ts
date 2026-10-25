@@ -14,6 +14,26 @@ export interface AutoTargetDeps {
   strength?: (toId: string) => number;
   progress?: (toId: string) => number;
   rng?: () => number;
+  /** Candidates this picker may not choose (a cannon that cannot hit flyers); omitted means all. */
+  eligible?: (toId: string) => boolean;
+}
+
+/** Every policy, in the order a "cycle targeting" button steps through them. */
+export const AUTO_TARGET_POLICIES: readonly AutoTargetPolicy[] = ["first", "last", "strongest", "weakest", "nearest", "farthest", "random"];
+
+/**
+ * The policy after `current` in `allowed` (default {@link AUTO_TARGET_POLICIES}), wrapping at the end;
+ * a policy outside `allowed` steps to its first entry.
+ *
+ * @capability auto-target-cycle step a player-chosen targeting priority to the next allowed policy
+ */
+export function nextAutoTargetPolicy(
+  current: AutoTargetPolicy,
+  allowed: readonly AutoTargetPolicy[] = AUTO_TARGET_POLICIES,
+): AutoTargetPolicy {
+  if (allowed.length === 0) return current;
+  const index = allowed.indexOf(current);
+  return allowed[(index + 1) % allowed.length]!;
 }
 
 function metric(policy: AutoTargetPolicy, fromId: string, toId: string, deps: AutoTargetDeps): number | null {
@@ -41,7 +61,8 @@ export function selectAutoTarget(
   fromId: string,
   deps: AutoTargetDeps,
 ): string | null {
-  const candidates = deps.candidates(fromId).filter((id) => id !== fromId);
+  const eligible = deps.eligible;
+  const candidates = deps.candidates(fromId).filter((id) => id !== fromId && (eligible === undefined || eligible(id)));
   if (candidates.length === 0) return null;
 
   if (policy === "random") {

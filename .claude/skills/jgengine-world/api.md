@@ -124,6 +124,23 @@
 - `SoundHunter` (interface): interface SoundHunter — A unit that could hear a noise: its id and where it stands when the noise lands.
 - `createSoundHunt` (function): function createSoundHunt(config: SoundHuntConfig): SoundHunt — Make enemies investigate a noise, reusing the hearing owner.
 
+## @jgengine/core/ai/director/waveCountdown
+
+- `EarlyCall` (interface): interface EarlyCall — What an early call did: the wave it released, the seconds it skipped and what that paid.
+- `EarlyCallBonus` (interface): interface EarlyCallBonus — The clock between waves: once a wave has finished arriving, the next one goes out on its own when the intermission runs down, and calling it early pays for the seconds skipped. Tower defense's "send early" economy, a horde mode's breather, an arena's next round: the game decides what a release is and what the bonus buys; this owns the timing and the price.
+- `WaveCountdown` (interface): interface WaveCountdown — The clock between waves: arm it when a wave has arrived, tick it, and release on the tick it runs out.
+- `WaveCountdownConfig` (interface): interface WaveCountdownConfig — How long each intermission runs and what calling a wave early pays.
+- `WaveCountdownState` (interface): interface WaveCountdownState — Serializable clock state.
+- `WaveCountdownView` (interface): interface WaveCountdownView extends WaveCountdownState — The clock as a HUD reads it.
+- `createWaveCountdown` (function): function createWaveCountdown(config: WaveCountdownConfig): WaveCountdown — Build the clock between waves.
+
+## @jgengine/core/ai/director/wavePreview
+
+- `WavePreview` (interface): interface WavePreview — One authored wave summarized for a preview card.
+- `WavePreviewOptions` (interface): interface WavePreviewOptions — How {@link summarizeWave} reads traits and elite groups.
+- `WavePreviewUnit` (interface): interface WavePreviewUnit — One unit in a wave, totalled across its groups.
+- `summarizeWave` (function): function summarizeWave(wave: EncounterWave, options: WavePreviewOptions = {}): WavePreview — Summarize one authored wave for a preview.
+
 ## @jgengine/core/ai/driver
 
 - `DrivePathPoint` (type): type DrivePathPoint = readonly [number, number] — A 2D polyline point (`[x, z]`), structurally compatible with authored road path centerlines.
@@ -1716,10 +1733,12 @@
 
 ## @jgengine/core/scene/autoTarget
 
-- `AutoTargetDeps` (interface): interface AutoTargetDeps { candidates: (fromId: string) => readonly string[]; distance: (fromId: string, toId: string) => number | null; strength?: (toId: string) => number; progress?: (toId: string) => number; rng?: () => number } — ⚠ undocumented
-- `AutoTargetPolicy` (type): type AutoTargetPolicy = | "nearest" | "farthest" | "random" | "strongest" | "weakest" | "first" | "last" — ⚠ undocumented
+- `AUTO_TARGET_POLICIES` (const): const AUTO_TARGET_POLICIES: readonly AutoTargetPolicy[] — Every policy, in the order a "cycle targeting" button steps through them.
+- `AutoTargetDeps` (interface): interface AutoTargetDeps { candidates: (fromId: string) => readonly string[]; distance: (fromId: string, toId: string) => number | null; strength?: (toId: string) => number; progress?: (toId: string) => number; rng?: () => number; eligible?: (toId: string) => boole… — ⚠ undocumented
+- `AutoTargetPolicy` (type): type AutoTargetPolicy = | "nearest" | "farthest" | "random" | "strongest" | "weakest" | "first" | "last" — ⚠ undocumented · used by `AUTO_TARGET_POLICIES`: Every policy, in the order a "cycle targeting" button steps through them.
 - `AutoTargeter` (interface): interface AutoTargeter { policy(): AutoTargetPolicy; setPolicy(policy: AutoTargetPolicy): void; pick(fromId: string): string | null } — ⚠ undocumented
 - `createAutoTargeter` (function): function createAutoTargeter(policy: AutoTargetPolicy, deps: AutoTargetDeps): AutoTargeter — ⚠ undocumented
+- `nextAutoTargetPolicy` (function): function nextAutoTargetPolicy(current: AutoTargetPolicy, allowed: readonly AutoTargetPolicy[] = AUTO_TARGET_POLICIES): AutoTargetPolicy — The policy after `current` in `allowed` (default {@link AUTO_TARGET_POLICIES}), wrapping at the end; a policy outside `allowed` steps to its first entry.
 - `selectAutoTarget` (function): function selectAutoTarget(policy: AutoTargetPolicy, fromId: string, deps: AutoTargetDeps): string | null — ⚠ undocumented
 
 ## @jgengine/core/scene/behaviorRuntime
@@ -2412,6 +2431,7 @@
 ## @jgengine/core/world
 
 - `ANNOTATION_FEED_ACTION` (const): const ANNOTATION_FEED_ACTION: "map.annotation" — Feed action shared drawings ride by default (pair with the party feed, like pings).
+- `AUTO_TARGET_POLICIES` (const): const AUTO_TARGET_POLICIES: readonly AutoTargetPolicy[] — Every policy, in the order a "cycle targeting" button steps through them.
 - `Aabb` (interface): interface Aabb { minX: number; minZ: number; maxX: number; maxZ: number } — ⚠ undocumented · used by `polygonBounds`: Axis-aligned bounds of a polygon, or null if it has no points.
 - `AcquisitionEnvelope` (type): type AcquisitionEnvelope = number | ((selfId: string, candidateId: string) => number) — Composable target acquisition: the "which enemy do I lock onto?" decision split into the independent concerns every aggro system tangles together — a bounded candidate provider, an eligibility filter, a per-pair acquisition envelope (dynamic range), a perception/LOS gate, scoring, deterministic tie-break, and retention hysteresis. This owns *policy*; threat, brains, and movement stay separate. Feed `candidates` a spatial-index query, never a full-world scan.
 - `AcquisitionPolicy` (interface): interface AcquisitionPolicy — A fully composed acquisition policy. Every concern is an independent, injectable seam; the only required pieces are the bounded `candidates` provider and the `distance` metric. Omit the rest to fall back to the thin default — a static/unbounded range, everything eligible and perceptible, nearest-wins scoring, id tie-break, no hysteresis — which matches a plain proximity aggro radius.
@@ -2451,7 +2471,7 @@
 - `AuthoredNavLink` (interface): interface AuthoredNavLink — A connection the scene author places between two spots — a door through a wall, a ladder to a deck, a jump across a gap. Authored as world points, not polygon ids, so it survives a re-bake: {@link NavRuntime.applyMesh} resolves each end onto the nearest walkable polygon.
 - `AuthoredTrigger` (interface): interface AuthoredTrigger — One resolved trigger binding from a document object.
 - `AuthoredTriggerRuntime` (interface): interface AuthoredTriggerRuntime — Runtime handle that watches authored triggers against moving actors each tick.
-- `AutoTargetPolicy` (type): type AutoTargetPolicy = | "nearest" | "farthest" | "random" | "strongest" | "weakest" | "first" | "last" — ⚠ undocumented
+- `AutoTargetPolicy` (type): type AutoTargetPolicy = | "nearest" | "farthest" | "random" | "strongest" | "weakest" | "first" | "last" — ⚠ undocumented · used by `AUTO_TARGET_POLICIES`: Every policy, in the order a "cycle targeting" button steps through them.
 - `AvoidZone` (interface): interface AvoidZone — A circular clearance around a gameplay spot (spawn, plot, path point, POI): scatter is repelled from it and terrain is flattened toward its center. `feather` (meters) is the soft outer band — full effect within `radius - feather`, ramping to zero at `radius`.
 - `AvoidanceAgent` (interface): interface AvoidanceAgent — A circular agent that avoidance may push on the XZ plane.
 - `BallisticSweep` (type): type BallisticSweep = ( origin: readonly [number, number, number], velocity: readonly [number, number, number], gravity: number, maxTime: number, ) => BallisticSweepHit | null — ⚠ undocumented · used by `createBallisticSweep`: Sweeps each short chord of the closed-form arc through live body AABBs, including sleeping bodies.
@@ -3290,6 +3310,7 @@
 - `minimapBakeToPngDataUri` (function): function minimapBakeToPngDataUri(bake: MinimapBake): string — Encodes a bake as a `data:image/png;base64,...` URI — the exact string the `Minimap` / `WorldMap` `background` prop takes. Deterministic for a fixed bake.
 - `mtof` (function): function mtof(midi: number): number — Standard equal-temperament MIDI-to-frequency (A4 = 440 Hz at MIDI 69).
 - `navMeshFromBake` (function): function navMeshFromBake(bakes: readonly SceneBake[] | undefined, id = "main"): NavMeshData | null — Read the named navigation bake an editor wrote onto a scene document. Returns `null` when the document holds no such bake yet, and throws when the stored bake is not a valid nav mesh — a corrupt bake should fail at load, not as agents walking through walls.
+- `nextAutoTargetPolicy` (function): function nextAutoTargetPolicy(current: AutoTargetPolicy, allowed: readonly AutoTargetPolicy[] = AUTO_TARGET_POLICIES): AutoTargetPolicy — The policy after `current` in `allowed` (default {@link AUTO_TARGET_POLICIES}), wrapping at the end; a policy outside `allowed` steps to its first entry.
 - `normalizeDegrees` (function): function normalizeDegrees(degrees: number): number — Wrap `degrees` into `[0, 360)` — the canonical heading range every policy and conversion here works in. Non-finite input collapses to `0` so bad metadata never leaks a `NaN` heading downstream.
 - `notesInWindow` (function): function notesInWindow(theme: MusicTheme, anchorSec: number, fromSec: number, toSec: number): ScheduledNote[] — Pure lookahead scheduler: every note occurrence of `theme` whose onset falls in the half-open window `(fromSec, toSec]`, given the theme's loop-zero at `anchorSec`. Handles any number of loop wraps, so a director calls it once per tick with a non-overlapping window and never double-schedules a note.
 - `objectVisualScale` (function): function objectVisualScale(visual: ObjectVisual | undefined): readonly [number, number, number] — ⚠ undocumented
