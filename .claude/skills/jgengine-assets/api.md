@@ -357,7 +357,7 @@
 - `PulledLibraryModel` (interface): interface PulledLibraryModel — What one pull wrote: folder, bytes, triangle counts per level and measured size.
 - `downscaleJpeg` (function): function downscaleJpeg(bytes: Uint8Array, max: number): Uint8Array — Halve a JPEG (2x2 box filter) until its longest edge fits `max`; smaller maps pass through untouched.
 - `pullLibraryModel` (function): function pullLibraryModel(entry: ModelLibraryEntry, options: PullLibraryModelOptions): Promise<PulledLibraryModel> — Download one library model from its official source, simplify it into a near and a far level, meshopt-compress both and write them as `near.gltf` / `far.gltf` sharing one set of textures (so the far level costs geometry only). Every file is checked against the source's published md5.
-- `thinIslands` (function): function thinIslands(document: Document, material: RegExp, share: number): number — Keep an evenly spread `share` of the connected triangle islands (leaf clusters) on every primitive whose material name matches `material`, and grow each kept island about its own centre by `share^-0.35` so the canopy keeps most of its cover � the usual foliage LOD trade, not a change to the tree's size. Returns the triangles removed.
+- `thinIslands` (function): function thinIslands(document: Document, material: RegExp, share: number): number — Keep an evenly spread `share` of the connected triangle islands (leaf clusters) on every primitive whose material name matches `material`, and grow each kept island about its own centre by `share^-0.35` so the canopy keeps most of its cover — the usual foliage LOD trade, not a change to the tree's size. Returns the triangles removed.
 
 ## @jgengine/assets/packs/starter
 
