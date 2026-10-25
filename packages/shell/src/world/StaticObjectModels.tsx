@@ -1,8 +1,8 @@
-import { useFrame, useLoader } from "@react-three/fiber";
+import { useFrame, useLoader, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, useState, useCallback, type ReactNode } from "react";
 import * as THREE from "three";
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
-import type { SceneObject } from "@jgengine/core/scene/objectStore";
+import { objectVisualScale, type SceneObject } from "@jgengine/core/scene/objectStore";
 import { createModelVariantSelector } from "@jgengine/core/world/modelLod";
 import { devtools } from "@jgengine/core/devtools/devtools";
 import { useGameContext } from "@jgengine/react/provider";
@@ -15,6 +15,9 @@ import { measureLocalBounds, reportMeasuredBounds } from "../render/measureBound
 import { measureLocalCollisionTriangles, reportMeasuredCollisionMesh } from "../render/measureCollisionMesh";
 import { buildScatterModelSources, disposeScatterModelSources, type ScatterModelSource } from "../scatter/scatterModels";
 import { useRenderVisibility } from "../visibility/CullingProvider";
+import { acquireImpostor, IMPOSTOR_MIN_RADIUS, impostorCard, impostorDistance, impostorSettingsForQuality, impostorSwitch, releaseImpostor, sourceRadius, type ImpostorEntry } from "../render/impostor";
+import { acquireImpostorCardPool, ImpostorCardPool, releaseImpostorCardPool, type ImpostorCardSlice } from "../render/impostorCardPool";
+import { useTerrainQuality } from "../terrain/terrainQuality";
 import { CAMERA_POST_FRAME_PRIORITY } from "../camera/cameraRigs";
 import { canInstanceStaticScene, countStaticBatchDraws, incompatibleStaticObjectIds, isCompatibleStaticObject, STATIC_BATCH_MESH_KEY, syncStaticObjectSource, type StaticObjectBatch } from "./staticObjectBatches";
 
@@ -115,12 +118,105 @@ function LoadedStaticObjects({ batch, single }: { batch: StaticObjectBatch; sing
     const triangles = measureLocalCollisionTriangles(root);
     if (triangles !== null) reportMeasuredCollisionMesh(ctx, "object", key, triangles);
   }, [ctx, harvested, batch]);
+  const radius = useMemo(() => harvested === null ? 0 : sourceRadius(harvested.sources), [harvested]);
   if (harvested === null) return <>{batch.objects.map(single)}</>;
+  if (radius >= IMPOSTOR_MIN_RADIUS && objects.length > 0) {
+    return <>
+      <ImpostorStaticObjects batch={batch} objects={objects} sources={harvested.sources} radius={radius} />
+      {excluded.map((id) => { const live = ctx.scene.object.get(id); return live === null ? null : single(live); })}
+    </>;
+  }
   return <>
     {harvested.sources.map((source, index) => objects.length === 0 ? null : <ObjectSource key={index} source={source} objects={objects} batch={batch} />)}
     {excluded.map((id) => { const live = ctx.scene.object.get(id); return live === null ? null : single(live); })}
   </>;
 }
+
+const IMPOSTOR_SPLIT_MOVE = 1;
+
+/**
+ * A batch of a model big enough to read from afar: near placements draw the real model, far ones
+ * one impostor card each in a single instanced draw. The split reruns when the camera moves or a
+ * placement does.
+ */
+function ImpostorStaticObjects({ batch, objects, sources, radius }: {
+  batch: StaticObjectBatch;
+  objects: readonly SceneObject[];
+  sources: readonly ScatterModelSource[];
+  radius: number;
+}) {
+  const ctx = useGameContext();
+  const gl = useThree((state) => state.gl);
+  const quality = useTerrainQuality();
+  const settings = useMemo(() => impostorSettingsForQuality(quality), [quality]);
+  const key = useMemo(() => `object:${batch.model.url}:${JSON.stringify(batch.model)}`, [batch.model]);
+  const [entry, setEntry] = useState<ImpostorEntry | null>(null);
+  useEffect(() => {
+    setEntry(acquireImpostor(key, gl, sources, settings));
+    return () => releaseImpostor(key, settings);
+  }, [key, gl, sources, settings]);
+  const scene = useThree((state) => state.scene);
+  const visibility = useRenderVisibility();
+  const [card, setCard] = useState<{ pool: ImpostorCardPool; slice: ImpostorCardSlice } | null>(null);
+  useEffect(() => {
+    if (entry?.atlas == null || entry.materials === null) return;
+    const atlas = entry.atlas;
+    const materials = entry.materials;
+    const poolKey = `${key}:${settings.frames}x${settings.cell}`;
+    const pool = acquireImpostorCardPool(poolKey, scene, () => new ImpostorCardPool(impostorCard(atlas), materials.material, materials.depth));
+    const slice = pool.slice(objects.length);
+    setCard({ pool, slice });
+    return () => {
+      pool.drop(slice);
+      releaseImpostorCardPool(poolKey, pool);
+      setCard(null);
+    };
+  }, [entry, key, settings, scene, objects.length]);
+  const assignment = useMemo(() => new Map<string, number>(), []);
+  const camera = useMemo(() => new THREE.Vector3(), []);
+  const last = useRef<{ at: THREE.Vector3; version: number; card: unknown; objects: readonly SceneObject[] } | null>(null);
+  useFrame((state) => {
+    state.camera.getWorldPosition(camera);
+    const version = ctx.scene.object.version();
+    const previous = last.current;
+    if (previous !== null && previous.card === card && previous.objects === objects && previous.version === version &&
+      previous.at.distanceToSquared(camera) < IMPOSTOR_SPLIT_MOVE * IMPOSTOR_SPLIT_MOVE) return;
+    for (const object of objects) {
+      const live = ctx.scene.object.get(object.instanceId);
+      if (live === null) continue;
+      const scale = Math.max(...objectVisualScale(live.visual));
+      const distance = camera.distanceTo(probe.fromArray(live.position));
+      const far = card !== null && impostorSwitch(distance, impostorDistance(radius * scale, quality), assignment.get(live.instanceId) === 1);
+      assignment.set(live.instanceId, far ? 1 : 0);
+    }
+    last.current = { at: (previous?.at ?? new THREE.Vector3()).copy(camera), version, card, objects };
+  }, CAMERA_POST_FRAME_PRIORITY + 0.1);
+  useFrame(() => {
+    if (card === null) return;
+    const { slice } = card;
+    let count = 0;
+    for (const object of objects) {
+      if (assignment.get(object.instanceId) !== 1) continue;
+      const live = ctx.scene.object.get(object.instanceId);
+      if (live === null || !visibility.current(live.instanceId)) continue;
+      cardPose.position.fromArray(live.position);
+      cardPose.rotation.set(0, live.rotationY, 0);
+      cardPose.scale.fromArray(objectVisualScale(live.visual));
+      cardPose.updateMatrix();
+      slice.matrices.set(cardPose.matrix.elements, count * 16);
+      slice.ids[count++] = live.instanceId;
+    }
+    slice.count = count;
+    slice.ids.length = count;
+  }, CAMERA_POST_FRAME_PRIORITY + 0.2);
+  useFrame((state) => card?.pool.pack(state.clock.elapsedTime), CAMERA_POST_FRAME_PRIORITY + 0.3);
+  return <>
+    {sources.map((source, index) => <ObjectSource key={index} source={source} objects={objects} batch={batch} assignment={assignment} level={0} />)}
+  </>;
+}
+
+const probe = new THREE.Vector3();
+const cardPose = new THREE.Object3D();
 
 /** One detail level's GLB, harvested into instanced draws that only claim the instances the selector put on this level. */
 function VariantLevel({ url, model, batch, objects, level, assignment, measure, single }: {

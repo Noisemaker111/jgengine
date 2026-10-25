@@ -16,6 +16,8 @@ import { variantLevelModel } from "../render/singleVariantLod";
 import { buildScatterProxy } from "./scatterProxies";
 import { buildScatterModelSources, disposeScatterModelSources, type ScatterModelSource } from "./scatterModels";
 import { writeScatterVariantLevel } from "./scatterVariants";
+import { IMPOSTOR_MIN_RADIUS, sourceRadius } from "../render/impostor";
+import { ScatterImpostorField } from "./ScatterImpostorField";
 
 /** Chunk edge (m): dense fields split into this-sized buckets, each frustum-culled independently. */
 const DEFAULT_CHUNK_SIZE = 24;
@@ -203,13 +205,21 @@ function ScatterVariantSpecies({ model, batches }: { model: ModelConfig; batches
   );
 }
 
-/** Loads one species' real catalog GLB once, harvests its instanceable draw sources, then GPU-instances them across every chunk that species appears in. */
+/**
+ * Loads one species' real catalog GLB once, harvests its instanceable draw sources, then GPU-instances
+ * them across every chunk that species appears in. A species big enough to read from afar (trees,
+ * rocks, huts) draws its distant placements as impostor cards in one draw for the whole field.
+ */
 function ScatterSingleSpecies({ model, batches }: { model: ModelConfig; batches: ScatterBatch[] }) {
   const gltf = useLoader(GLTFLoader, model.url, (loader) => {
     loader.setMeshoptDecoder(MeshoptDecoder);
   });
   const { sources, root } = useMemo(() => buildScatterModelSources(gltf.scene, model), [gltf, model]);
   useEffect(() => () => disposeScatterModelSources(root), [root]);
+  const radius = useMemo(() => sourceRadius(sources), [sources]);
+  if (radius >= IMPOSTOR_MIN_RADIUS) {
+    return <ScatterImpostorField cacheKey={`scatter:${model.url}:${JSON.stringify(model)}`} sources={sources} batches={batches} radius={radius} />;
+  }
   return (
     <>
       {sources.map((source, sourceIndex) =>
