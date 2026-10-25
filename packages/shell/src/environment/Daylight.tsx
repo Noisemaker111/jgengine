@@ -191,11 +191,25 @@ export function setSkyFogColor(fog: THREE.Fog, color: THREE.ColorRepresentation)
 
 const fogDisplayColors = new WeakMap<THREE.Fog, THREE.Color>();
 
+/** Dome radius when the sky leaves it unset. */
+const DEFAULT_SKY_RADIUS = 260;
+
+/**
+ * The dome's radius: the authored one, else the default pulled inside a short camera far plane so an
+ * interior or close-camera game that never asked for a sky still gets one instead of a black clip.
+ * @internal
+ */
+export function skyDomeRadius(authored: number | undefined, far: number | undefined): number {
+  if (authored !== undefined) return authored;
+  if (typeof far !== "number" || !Number.isFinite(far) || far <= 0) return DEFAULT_SKY_RADIUS;
+  return Math.min(DEFAULT_SKY_RADIUS, far * 0.9);
+}
+
 /** @internal */
 export function SkyDome({
   topColor = SKY_TOP,
   horizonColor = SKY_HORIZON,
-  radius = 260,
+  radius: authoredRadius,
   offset = 24,
   exponent = 0.65,
   sunDirection,
@@ -211,6 +225,8 @@ export function SkyDome({
   materialRef,
 }: SkyDomeProps = {}) {
   const meshRef = useRef<THREE.Mesh>(null);
+  const far = useThree((state) => (state.camera as THREE.PerspectiveCamera).far);
+  const radius = skyDomeRadius(authoredRadius, far);
   const material = useMemo(() => {
     const dome = new THREE.ShaderMaterial({
       uniforms: {
@@ -312,16 +328,14 @@ export function SkyDome({
       if (materialRef !== undefined) materialRef.current = null;
     };
   }, [material, materialRef]);
-  const camera = useThree((state) => state.camera);
   const writers = useMemo(() => ({ top: new DisplayColorWriter(), bottom: new DisplayColorWriter() }), []);
   useEffect(() => {
-    const far = (camera as THREE.PerspectiveCamera).far;
-    if (typeof far !== "number" || radius < far) return;
+    if (authoredRadius === undefined || typeof far !== "number" || radius < far) return;
     warnOnce(
       "sky-dome-radius",
       `[jgengine] sky radius ${radius} is at or beyond the camera far plane ${far}; the dome depth-clips to black. Lower sky.radius or raise camera.frustum.far.`,
     );
-  }, [camera, radius]);
+  }, [authoredRadius, far, radius]);
   useFrame((state) => {
     const display = material.userData as SkyDomeDisplay;
     writers.top.write(material.uniforms.topColor!.value as THREE.Color, display.top, state.gl);

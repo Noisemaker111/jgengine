@@ -98,7 +98,7 @@ describe("assessPrototypeLook", () => {
     expect(verdict.isPrototype).toBe(false);
   });
 
-  test("flags a 3D game that never chooses a look or post stack", () => {
+  test("passes a 3D game that leaves the look unset, which renders cinematic", () => {
     const verdict = assessPrototypeLook([
       `export const game = defineGame({
         name: "Unstyled",
@@ -107,9 +107,8 @@ describe("assessPrototypeLook", () => {
         camera: { perspective: "third", look: "@marker:player_spawn" },
       });`,
     ]);
-    expect(verdict.isPrototype).toBe(true);
+    expect(verdict.isPrototype).toBe(false);
     expect(verdict.signals.lookUnset).toBe(true);
-    expect(verdict.reasons.some((r) => r.includes("neutral"))).toBe(true);
   });
 
   test("passes a deliberate neutral look", () => {

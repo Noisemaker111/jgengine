@@ -895,7 +895,7 @@ export interface PlayableGame<
   collision?: VoxelCollisionConfig;
   /** Movement-control levers (axis/grid constraints, object collision, pre-commit hook) for the shell-driven walk controller. */
   movement?: PlayerMovementConfig;
-  /** Graphics look profile (#1680). Unset/`"neutral"` keeps the output unstyled; `"photoreal"` and `"toon"` select authored presentation profiles, while `"cinematic"` and `"flat"` remain compatibility aliases. Explicit `lighting`/`backdrop`/`postProcessing` always wins. */
+  /** Graphics look profile. Unset is `"cinematic"`: tone mapping, restrained bloom, AO, contact shadows and temporal AA by tier, lit by `mood`. `"neutral"` keeps the output unstyled; `"photoreal"`, `"toon"`, `"comic"` and `"retro"` select other styles and `"flat"` opts out of the rig. Explicit `lighting`/`backdrop`/`postProcessing` always wins. */
   look?: LookPreset;
   /**
    * Lighting mood: the sun, sky fill, haze and grade tint as one art-direction choice (`"day"`, `"bright"`,
