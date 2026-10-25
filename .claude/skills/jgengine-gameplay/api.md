@@ -2507,6 +2507,21 @@
 - `compareGearSets` (function): function compareGearSets(a: Readonly<Record<string, GearSlotItem | null | undefined>>, b: Readonly<Record<string, GearSlotItem | null | undefined>>, options: GearScoreOptions = {}): { a: GearScore; b: GearScore; delta: number; better: "a" | "b" | "equal" } — Compare two loadouts; negative means `a` scores lower.
 - `gearScore` (function): function gearScore(set: Readonly<Record<string, GearSlotItem | null | undefined>>, options: GearScoreOptions = {}): GearScore — Score a whole loadout with one documented formula:
 
+## @jgengine/core/progression/medalBoard
+
+- `MedalBoard` (interface): interface MedalBoard — Per-event medals over a stored best, with tiers that open on the points those medals add up to.
+- `MedalBoardConfig` (interface): interface MedalBoardConfig — Configuration for {@link createMedalBoard}.
+- `MedalBoardState` (interface): interface MedalBoardState — Everything a medal board stores, as plain JSON: each event's best result.
+- `MedalDef` (interface): interface MedalDef — One medal grade. Listed lowest first; `points` is what holding it counts toward tiers.
+- `MedalDirection` (type): type MedalDirection = "lower" | "higher" — Whether a smaller result (a lap time) or a larger one (a score) is the better run.
+- `MedalEventDef` (interface): interface MedalEventDef — One event on the board: a metric, which way is better, and the result each medal needs. A medal left out of `targets` cannot be earned on this event.
+- `MedalSubmission` (interface): interface MedalSubmission — What one submitted result did to the board.
+- `MedalTarget` (interface): interface MedalTarget — The next medal an event offers and the result it needs, for a "beat 41.0 s for gold" line.
+- `MedalTierDef` (interface): interface MedalTierDef — A group of events that opens once the board holds `requires` medal points.
+- `MedalTierStatus` (interface): interface MedalTierStatus — A tier and how far the board is from it.
+- `assertMedalBoard` (function): function assertMedalBoard(config: MedalBoardConfig): void — Check an authored board; throws `RangeError` naming the medal, event or tier at fault.
+- `createMedalBoard` (function): function createMedalBoard(config: MedalBoardConfig): MedalBoard — A medal board: every event keeps its best result, each medal is a target on that result, and tiers of events open on the medal points the board holds - Trials' and Trackmania's bronze/silver/gold ladder, or a puzzle game's stars. `submit` reports which medals a result earned for the first time, so a game pays one-time rewards from that list.
+
 ## @jgengine/core/progression/skillTree
 
 - `SkillActiveDef` (interface): interface SkillActiveDef — An action a node or synergy unlocks, shaped to bind straight into `createAbilityKit`'s slot config.

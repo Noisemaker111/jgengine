@@ -385,6 +385,7 @@
     "./progression/careerBank",
     "./progression/gates",
     "./progression/gearScore",
+    "./progression/medalBoard",
     "./progression/skillTree",
     "./progression/standing",
     "./progression/statGraph",
