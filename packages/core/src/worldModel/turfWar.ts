@@ -50,7 +50,7 @@ export interface TurfWarDecl {
   onTake?: Readonly<Record<string, WorldChanges>>;
   /** Changes when a side loses a block, keyed by the loser. */
   onLose?: Readonly<Record<string, WorldChanges>>;
-  /** Log line when a block changes hands; `{taker}`, `{loser}` and `{place}` are filled in. */
+  /** Log line when a block changes hands; `{taker}`, `{loser}` and `{place}` are filled in, and a lowercase label opening the line is capitalised, so `labels: { player: "you", red: "the Reds" }` reads "You took..." and "The Reds took...". */
   note?: string;
   fronts?: Readonly<Record<string, TurfFrontDecl>>;
 }
@@ -104,6 +104,8 @@ const TRIGGER = "turf:";
 const PUSH = "turf_push:";
 const STAGGER = 3;
 
+const sentence = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
+
 function fail(message: string): never {
   throw new RangeError(`turf war: ${message}`);
 }
@@ -151,7 +153,7 @@ export function defineTurfWar(decl: TurfWarDecl): TurfWar {
             ...(decl.onLose?.[from] ?? {}),
           },
           place: block,
-          note: note.replace("{taker}", label(to)).replace("{loser}", label(from)),
+          note: sentence(note.replace("{taker}", label(to)).replace("{loser}", label(from))),
         };
       }
     }

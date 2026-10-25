@@ -101,6 +101,12 @@ describe("turf war", () => {
     expect(result.gained["war.tension"]).toBe(5);
   });
 
+  test("a lowercase label that opens the log line is capitalised, and stays lowercase mid-line", () => {
+    const lower = defineTurfWar({ blocks: { a: {} }, sides: ["player", "red"], labels: { player: "you", red: "the Reds" } });
+    expect(lower.triggers["turf:a:red:player"]?.note).toBe("You took {place} from the Reds.");
+    expect(lower.triggers["turf:a:player:red"]?.note).toBe("The Reds took {place} from you.");
+  });
+
   test("bad declarations fail loudly", () => {
     expect(() => defineTurfWar({ blocks: { a: {} }, sides: ["x"] })).toThrow("at least two sides");
     expect(() => defineTurfWar({ blocks: { a: { borders: ["b"] } }, sides: ["x", "y"] })).toThrow('unknown block "b"');
