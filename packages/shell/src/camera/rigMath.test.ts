@@ -24,6 +24,7 @@ import {
   resolveSideScroll,
   resolveSideScrollPose,
   rtsPanKeysConflict,
+  rtsRotateKeysConflict,
   rtsPanWorldDir,
   seatPose,
   shakeOffset,
@@ -454,6 +455,18 @@ describe("rtsPanKeysConflict", () => {
 
   test("arrow keys and Q/E never count as a conflict", () => {
     expect(rtsPanKeysConflict({ turn: ["ArrowLeft", "ArrowRight"], lean: ["KeyQ", "KeyE"] })).toBe(false);
+  });
+});
+
+describe("rtsRotateKeysConflict", () => {
+  test("no conflict without Q or E bindings", () => {
+    expect(rtsRotateKeysConflict(undefined)).toBe(false);
+    expect(rtsRotateKeysConflict({ moveForward: ["KeyW"], turn: ["ArrowLeft"] })).toBe(false);
+  });
+
+  test("a grid command card that binds Q or E claims them from camera rotation", () => {
+    expect(rtsRotateKeysConflict({ cardSlot1: ["KeyQ"] })).toBe(true);
+    expect(rtsRotateKeysConflict({ cardSlot3: { hold: ["KeyE"] } })).toBe(true);
   });
 });
 

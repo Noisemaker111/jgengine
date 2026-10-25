@@ -30,6 +30,8 @@ export interface GameCameraRigProps {
   pointerControls?: boolean;
   /** False when the game's own input map already claims WASD, so the RTS rig should stop panning on those keys. */
   panKeysEnabled?: boolean;
+  /** False when the game's own input map already claims Q or E, so the RTS rig should stop rotating on those keys. */
+  rotateKeysEnabled?: boolean;
   /** Runtime follow/cinematic override (#196.2). While present it wins over the static `config` for any field it reports non-`undefined`/non-`null`; absent (or an all-`undefined` snapshot) is a no-op. */
   director?: CameraDirector;
   /** Custom first-person viewmodel (#542); read only when the resolved rig is `"first"`. */
@@ -43,6 +45,7 @@ export function GameCameraRig({
   onDragChange,
   pointerControls,
   panKeysEnabled,
+  rotateKeysEnabled,
   director,
   viewmodel,
 }: GameCameraRigProps) {
@@ -115,6 +118,7 @@ export function GameCameraRig({
             config={config}
             followEntityId={followEntityId}
             panKeysEnabled={panKeysEnabled}
+            rotateKeysEnabled={rotateKeysEnabled}
           />
         );
       case "shoulder":

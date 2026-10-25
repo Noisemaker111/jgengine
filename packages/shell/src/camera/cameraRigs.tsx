@@ -297,8 +297,9 @@ function useHeldKeys(codes: readonly string[]): MutableRefObject<Set<string>> {
 
 const RTS_PAN_KEYS = ["KeyW", "KeyA", "KeyS", "KeyD", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "KeyQ", "KeyE"];
 const RTS_WASD_KEYS = new Set(["KeyW", "KeyA", "KeyS", "KeyD"]);
+const RTS_ROTATE_KEYS = new Set(["KeyQ", "KeyE"]);
 
-export function RtsRig(props: RigProps & { panKeysEnabled?: boolean }) {
+export function RtsRig(props: RigProps & { panKeysEnabled?: boolean; rotateKeysEnabled?: boolean }) {
   const { userId } = usePlayer();
   const ctx = useGameContext();
   const followId = resolveFollowId(props.followEntityId, userId);
@@ -306,9 +307,11 @@ export function RtsRig(props: RigProps & { panKeysEnabled?: boolean }) {
   const resolved = useMemo(() => resolveTopDown(config), [config]);
   const { camera, commit, beginTransition } = useCameraCommit(props, followId);
   const wasdPanEnabled = followId === null && props.panKeysEnabled !== false;
+  const rotateKeysEnabled = props.rotateKeysEnabled !== false;
   const heldCodes = useMemo(
-    () => (wasdPanEnabled ? RTS_PAN_KEYS : RTS_PAN_KEYS.filter((code) => !RTS_WASD_KEYS.has(code))),
-    [wasdPanEnabled],
+    () => RTS_PAN_KEYS.filter((code) =>
+      (wasdPanEnabled || !RTS_WASD_KEYS.has(code)) && (rotateKeysEnabled || !RTS_ROTATE_KEYS.has(code))),
+    [wasdPanEnabled, rotateKeysEnabled],
   );
   const held = useHeldKeys(heldCodes);
   const centerRef = useRef<Vec3>({

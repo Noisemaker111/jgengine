@@ -19,6 +19,7 @@ export interface CameraPose {
 }
 
 const RTS_WASD_CODES: readonly string[] = ["KeyW", "KeyA", "KeyS", "KeyD"];
+const RTS_ROTATE_CODES: readonly string[] = ["KeyQ", "KeyE"];
 
 function actionCodeList(codes: ActionCodes): readonly string[] {
   if (Array.isArray(codes)) return codes as readonly string[];
@@ -26,12 +27,19 @@ function actionCodeList(codes: ActionCodes): readonly string[] {
   return [...(modes.hold ?? []), ...(modes.toggle ?? [])];
 }
 
+function bindsAny(input: ActionCodesMap | undefined, wanted: readonly string[]): boolean {
+  if (input === undefined) return false;
+  return Object.values(input).some((codes) => actionCodeList(codes).some((code) => wanted.includes(code)));
+}
+
 /** @internal */
 export function rtsPanKeysConflict(input: ActionCodesMap | undefined): boolean {
-  if (input === undefined) return false;
-  return Object.values(input).some((codes) =>
-    actionCodeList(codes).some((code) => RTS_WASD_CODES.includes(code)),
-  );
+  return bindsAny(input, RTS_WASD_CODES);
+}
+
+/** True when the game's input map binds Q or E, so the RTS rig leaves rotation to the mouse. @internal */
+export function rtsRotateKeysConflict(input: ActionCodesMap | undefined): boolean {
+  return bindsAny(input, RTS_ROTATE_CODES);
 }
 
 /** @internal */
