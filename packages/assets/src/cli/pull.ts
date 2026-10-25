@@ -19,6 +19,7 @@ import { pullLibraryModel } from "../modelLibraryPull";
 import { pullRocketboxModel } from "../rocketboxPull";
 import { validateAssetReferences } from "../provisioning";
 import { registryCatalog } from "../registry";
+import { resolveGithubToken, withGithubAuth } from "./githubToken";
 import {
   componentWiringSnippet,
   iconWiringSnippet,
@@ -62,21 +63,52 @@ function fail(message: string): never {
   process.exit(1);
 }
 
+let cachedToken: { value: string | undefined } | null = null;
+
+/** The GitHub token every pull uses, read once per run: env first, then `gh auth token`. */
+export function pullGithubToken(): string | undefined {
+  cachedToken ??= { value: resolveGithubToken() };
+  return cachedToken.value;
+}
+
+/** One request's hard budget: `JG_FETCH_TIMEOUT_MS`, else ten minutes (the curl fallback's own cap). */
+export function fetchTimeoutMs(env: NodeJS.ProcessEnv = process.env): number {
+  const ms = Number(env.JG_FETCH_TIMEOUT_MS);
+  return Number.isFinite(ms) && ms > 0 ? ms : 600_000;
+}
+
 /**
  * The runtime's own fetch, with a curl fallback for hosts it cannot reach —
  * some proxied sandboxes tear down bun's TLS stream to GitHub's release-asset
- * host while curl (which honors SSL_CERT_FILE) gets through fine.
+ * host while curl (which honors SSL_CERT_FILE) gets through fine. GitHub hosts
+ * get the token, and every request has a hard budget, so a stalled body fails
+ * naming its URL instead of hanging the pull.
  */
 export const cliFetch: typeof fetch = (async (input: string | URL | Request, init?: RequestInit) => {
+  const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+  const token = pullGithubToken();
+  const timeoutMs = fetchTimeoutMs();
+  const headers = withGithubAuth(url, init?.headers, token);
   try {
-    return await fetch(input, init);
+    return await fetch(input, { ...init, headers, signal: init?.signal ?? AbortSignal.timeout(timeoutMs) });
   } catch (error) {
-    const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+    if (error instanceof Error && error.name === "TimeoutError") {
+      throw new Error(`download hung: ${url} gave no complete answer within ${Math.round(timeoutMs / 1000)}s`, { cause: error });
+    }
     if (init?.method !== undefined && init.method !== "GET") throw error;
     try {
-      const bytes = execFileSync("curl", ["-fsSL", "--max-time", "600", url], {
-        maxBuffer: 1024 * 1024 * 1024,
-      });
+      const auth = headers.get("authorization");
+      const bytes = execFileSync(
+        "curl",
+        // The header comes in on stdin so the token never shows in the process list.
+        ["-fsSL", "--max-time", String(Math.ceil(timeoutMs / 1000)), ...(auth === null ? [] : ["-H", "@-"]), url],
+        {
+          maxBuffer: 1024 * 1024 * 1024,
+          timeout: timeoutMs + 10_000,
+          windowsHide: true,
+          ...(auth === null ? {} : { input: `authorization: ${auth}\n` }),
+        },
+      );
       return new Response(new Uint8Array(bytes));
     } catch {
       throw error;
@@ -197,7 +229,7 @@ export async function cmdPull(argv: string[]): Promise<void> {
   if (sourceId === "model-library" || sourceId.startsWith("model:")) {
     const outRoot = flag(argv, "dir") !== undefined ? resolve(flag(argv, "dir")!) : resolveDefaultOutputRoot(here);
     const modelsRoot = join(outRoot, "models");
-    const githubToken = process.env.GITHUB_TOKEN ?? process.env.GH_TOKEN;
+    const githubToken = pullGithubToken();
     const entries =
       sourceId === "model-library"
         ? MODEL_LIBRARY.filter((entry) => entry.origin.provider !== "generated")

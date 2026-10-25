@@ -50,6 +50,8 @@ import {
   type ChromeProcess,
   type EnsureDevServerResult,
 } from "./browser-lib";
+import { brokerEnabled } from "./devBroker";
+import { brokerCaptureTurn, brokerChrome } from "./devBrokerClient";
 import { localOk } from "./localhostHttp";
 
 export interface ShootDaemonState {
@@ -73,6 +75,11 @@ export interface ShootDaemonState {
   startedAt: string;
   /** Last capture that attached to this daemon; absent on records written before idle sweeping. */
   lastUsedAt?: string;
+  /**
+   * The machine broker's shared browser rather than a per-checkout daemon: no state file, servers
+   * come from the broker, and captures take turns through {@link brokerTurn}.
+   */
+  broker?: true;
 }
 
 /**
@@ -303,6 +310,11 @@ export interface AcquireWarmCaptureOptions {
   stop?: (cwd: string) => Promise<boolean>;
   /** Commit the tree holds. Defaults to {@link headRevision}. */
   head?: (cwd: string) => string | undefined;
+  /**
+   * The machine broker's shared browser, or null when the broker is off or unreachable. Defaults to
+   * {@link brokerChrome} unless `JG_BROKER=0`; the per-checkout daemon is the fallback.
+   */
+  broker?: ((cwd: string) => Promise<{ chromePort: number; started: boolean } | null>) | null;
 }
 
 /**
@@ -326,6 +338,25 @@ export async function acquireWarmCapture(options: AcquireWarmCaptureOptions = {}
 
   if (options.cold === true) {
     return done(null, "cold", `cold: ${options.because ?? "--cold asked for a clean boot"} — no daemon reused or started`);
+  }
+
+  const broker = options.broker === undefined ? (brokerEnabled() ? brokerChrome : null) : options.broker;
+  if (broker !== null) {
+    try {
+      const shared = await broker(cwd);
+      if (shared !== null) {
+        const state: ShootDaemonState = {
+          identity: checkoutIdentity(cwd),
+          chromePort: shared.chromePort,
+          head: head(cwd),
+          startedAt: new Date().toISOString(),
+          broker: true,
+        };
+        return done(state, shared.started ? "cold" : "warm", `${shared.started ? "cold: started" : "warm: reused"} the shared browser :${shared.chromePort} (${elapsed()}s)`);
+      }
+    } catch (error) {
+      console.error(`broker: no shared browser (${reason(error)}) — trying this checkout's daemon`);
+    }
   }
 
   let live: ShootDaemonState | null = null;
@@ -370,7 +401,21 @@ function reason(error: unknown): string {
  */
 export async function daemonDiedUnder(daemon: ShootDaemonState | null, cwd = process.cwd()): Promise<boolean> {
   if (daemon === null) return false;
-  return !(await isDaemonLive(cwd));
+  return !(await daemonAnswers(daemon, cwd));
+}
+
+async function daemonAnswers(daemon: ShootDaemonState, cwd: string): Promise<boolean> {
+  if (daemon.broker !== true) return isDaemonLive(cwd);
+  return localOk(`http://127.0.0.1:${daemon.chromePort}/json/version`, 800).catch(() => false);
+}
+
+/**
+ * The capture-turn hook for {@link withBrowserSession}: a run on the shared browser waits for its
+ * turn, so two pages never compete for one frame clock. Undefined for a browser this run owns.
+ */
+export function brokerTurn(daemon: ShootDaemonState | null, cwd = process.cwd()): (() => Promise<() => Promise<void>>) | undefined {
+  if (daemon?.broker !== true) return undefined;
+  return async () => (await brokerCaptureTurn(cwd)).release;
 }
 
 /**
@@ -381,7 +426,7 @@ export async function daemonDiedUnder(daemon: ShootDaemonState | null, cwd = pro
 export async function watchDaemon(daemon: ShootDaemonState, cwd = process.cwd(), intervalMs = 2_000): Promise<never> {
   for (;;) {
     await new Promise((resolve) => setTimeout(resolve, intervalMs));
-    if (!(await isDaemonLive(cwd))) throw new Error(`shoot daemon: :${daemon.chromePort} stopped answering mid-run`);
+    if (!(await daemonAnswers(daemon, cwd))) throw new Error(`shoot daemon: :${daemon.chromePort} stopped answering mid-run`);
   }
 }
 
@@ -398,6 +443,8 @@ export async function ensureDaemonTarget(
   cwd = process.cwd(),
   ensure: (cwd: string) => Promise<EnsureDevServerResult> = target === "web" ? ensureWebServer : ensureDevServer,
 ): Promise<EnsureDevServerResult> {
+  // The broker keys servers by checkout and game dir and restarts one whose tree moved itself.
+  if (state.broker === true) return ensure(cwd);
   // A warm Vite server froze its `@games/<id>` aliases and game glob at boot, so
   // a `Games` link created or repointed afterwards leaves it rejecting a game
   // that exists on disk. Retire that server before the call, not on a timer and

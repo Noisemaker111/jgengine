@@ -1401,6 +1401,7 @@
     "./catalogs/modelLibraryEntries",
     "./catalogs/modelLibraryRiggedEntries",
     "./catalogs/starter",
+    "./cli/githubToken",
     "./cli/paths",
     "./cli/pull",
     "./collisionMeshAssets",

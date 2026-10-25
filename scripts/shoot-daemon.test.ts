@@ -8,6 +8,7 @@ import { join } from "node:path";
 
 import {
   acquireWarmCapture,
+  brokerTurn,
   clearDaemonState,
   daemonDiedUnder,
   daemonRevisionDrift,
@@ -434,6 +435,7 @@ describe("capture lanes acquire a warm daemon by default", () => {
     let started = 0;
     const { value, lines } = await captureStderr(() =>
       acquireWarmCapture({
+        broker: null,
         cold: false,
         probe: async () => liveState("abc12345"),
         start: async () => {
@@ -455,6 +457,7 @@ describe("capture lanes acquire a warm daemon by default", () => {
     let started = 0;
     const { value, lines } = await captureStderr(() =>
       acquireWarmCapture({
+        broker: null,
         probe: async () => null,
         start: async () => {
           started += 1;
@@ -476,6 +479,7 @@ describe("capture lanes acquire a warm daemon by default", () => {
     let started = 0;
     const { value, lines } = await captureStderr(() =>
       acquireWarmCapture({
+        broker: null,
         cold: true,
         probe: async () => {
           probed += 1;
@@ -500,6 +504,7 @@ describe("capture lanes acquire a warm daemon by default", () => {
     const stopped: string[] = [];
     const { value, lines } = await captureStderr(() =>
       acquireWarmCapture({
+        broker: null,
         probe: async () => liveState("old00000"),
         start: async () => liveState("new11111"),
         head: () => "new11111",
@@ -520,6 +525,7 @@ describe("capture lanes acquire a warm daemon by default", () => {
     let started = 0;
     const { value, lines } = await captureStderr(() =>
       acquireWarmCapture({
+        broker: null,
         probe: async () => null,
         start: async () => {
           started += 1;
@@ -538,6 +544,7 @@ describe("capture lanes acquire a warm daemon by default", () => {
   test("falls back when the stale daemon refuses to stop", async () => {
     const { value, lines } = await captureStderr(() =>
       acquireWarmCapture({
+        broker: null,
         probe: async () => liveState("old00000"),
         start: async () => liveState("new11111"),
         head: () => "new11111",
@@ -669,5 +676,48 @@ describe("shoot daemon idle sweep", () => {
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
+  });
+});
+describe("capture lanes use the machine broker's shared browser first", () => {
+  test("a broker browser is returned as a broker daemon and no per-checkout daemon starts", async () => {
+    let started = 0;
+    const { value, lines } = await captureStderr(() =>
+      acquireWarmCapture({
+        broker: async () => ({ chromePort: 9444, started: false }),
+        probe: async () => null,
+        start: async () => {
+          started += 1;
+          return liveState("abc12345");
+        },
+        head: () => "abc12345",
+      }),
+    );
+    expect(value.mode).toBe("warm");
+    expect(value.daemon).toMatchObject({ chromePort: 9444, broker: true, head: "abc12345" });
+    expect(started).toBe(0);
+    expect(lines[0]).toMatch(/^warm: reused the shared browser :9444/);
+    expect(brokerTurn(value.daemon)).toBeFunction();
+    expect(brokerTurn(liveState("abc12345"))).toBeUndefined();
+  });
+
+  test("a broker that fails falls back to this checkout's daemon", async () => {
+    const { value, lines } = await captureStderr(() =>
+      acquireWarmCapture({
+        broker: async () => {
+          throw new Error("broker refused");
+        },
+        probe: async () => liveState("abc12345"),
+        head: () => "abc12345",
+        stop: async () => false,
+      }),
+    );
+    expect(value.daemon?.chromePort).toBe(9261);
+    expect(lines[0]).toContain("broker refused");
+  });
+
+  test("a broker daemon gets its server from ensure directly, with no state file", async () => {
+    const state = { identity: "x", chromePort: 9444, startedAt: "", broker: true as const };
+    const server = await ensureDaemonTarget(state, "dev", process.cwd(), async () => ({ child: null, port: 4600, base: "http://127.0.0.1:4600" }));
+    expect(server.base).toBe("http://127.0.0.1:4600");
   });
 });

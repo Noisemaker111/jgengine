@@ -5,6 +5,7 @@
  */
 import { describeStep, type CaptureStep } from "../packages/jgengine/src/templates/captureArgs";
 import { conditionMatches } from "../packages/jgengine/src/templates/driveSteps";
+import { withStepDeadline } from "./hangReport";
 
 /** An assert mismatch: the step line prints the actual value, and the message names the contract. */
 export class AssertionMismatch extends Error {
@@ -37,6 +38,11 @@ export interface DriveStepRunnerDeps {
   virtualNow?(): number;
   /** The graphics tier the page resolved, so the summary states what the run measured. */
   tier?: string | null;
+  /**
+   * Hard wall-clock budget for one step. A CDP call into a frozen page never rejects by itself, so
+   * past this the step fails naming itself instead of the run sitting until the outer guard kills it.
+   */
+  stepTimeoutMs?(step: CaptureStep, index: number): number;
 }
 
 /** Totals for the run, printed before a failure leaves the function. */
@@ -65,7 +71,8 @@ export async function runDriveSteps(steps: readonly CaptureStep[], deps: DriveSt
       const name = describeStep(step);
       let detail: string;
       try {
-        detail = await deps.run(step, index);
+        const budget = deps.stepTimeoutMs?.(step, index) ?? 0;
+        detail = await withStepDeadline(`drive step #${index + 1} ${name}`, budget, () => deps.run(step, index));
       } catch (error) {
         const ms = Math.round(deps.now() - startedAt);
         const detailText = error instanceof Error ? error.message : String(error);

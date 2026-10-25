@@ -18,7 +18,7 @@ const MAX_BODY_BYTES = 4 * 1_048_576;
 
 export function localRequest(
   url: string | URL,
-  options: { method?: string; timeoutMs: number; maxBytes?: number } = { timeoutMs: 1_000 },
+  options: { method?: string; timeoutMs: number; maxBytes?: number; body?: string } = { timeoutMs: 1_000 },
 ): Promise<LocalResponse> {
   return new Promise((resolve, reject) => {
     const target = typeof url === "string" ? new URL(url) : url;
@@ -28,7 +28,12 @@ export function localRequest(
         port: target.port,
         path: target.pathname + target.search,
         method: options.method ?? "GET",
-        headers: { connection: "close" },
+        headers: {
+          connection: "close",
+          ...(options.body === undefined
+            ? {}
+            : { "content-type": "application/json", "content-length": String(Buffer.byteLength(options.body)) }),
+        },
       },
       (response) => {
         let body = "";
@@ -45,7 +50,7 @@ export function localRequest(
       request.destroy(new Error(`localhost ${target.pathname} timed out after ${options.timeoutMs}ms`)),
     );
     request.on("error", reject);
-    request.end();
+    request.end(options.body);
   });
 }
 
@@ -73,4 +78,14 @@ export async function localOk(url: string | URL, timeoutMs: number): Promise<boo
   } catch {
     return false;
   }
+}
+
+/** POST a JSON body to a local address and parse the JSON answer, whatever its status. */
+export async function localPostJson<T = unknown>(
+  url: string | URL,
+  body: unknown,
+  timeoutMs: number,
+): Promise<{ status: number; body: T }> {
+  const response = await localRequest(url, { method: "POST", timeoutMs, body: JSON.stringify(body) });
+  return { status: response.status, body: (response.body === "" ? null : JSON.parse(response.body)) as T };
 }

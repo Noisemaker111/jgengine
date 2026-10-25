@@ -66,6 +66,7 @@ import {
   writeShotRecord,
   type PreviousShot,
 } from "./shotProvenance";
+import { markStep, SERVER_STEP_MS, withStepDeadline } from "./hangReport";
 import {
   acquireWarmCapture,
   daemonDiedUnder,
@@ -74,6 +75,7 @@ import {
   runDaemonCommand,
   startDaemon,
   withDaemonWatch,
+  brokerTurn,
   writeDaemonState,
   type ShootDaemonState,
 } from "./shoot-daemon";
@@ -471,6 +473,7 @@ async function shootOne(
     // A warm profile keeps the previous run's saves and settings, so a reused browser would render
     // "continue your story" where a clean one renders "hit the street" (#warm-capture signatures).
     await clearOriginStorage(session, target.origin);
+    markStep(`open ${url}`);
     await navigateCapturePageWithRetry(session, url, devBase, args.timeoutMs, CAPTURE_MAX_ATTEMPTS, { legacyCanvas: args.url !== undefined });
     mark("ready");
     await reportAppliedAim(session, args);
@@ -658,11 +661,13 @@ async function resolveTarget(daemon: ShootDaemonState | null): Promise<ShootTarg
     return { devBase: args.url, server: null, serverPid: undefined, attachedDaemon: daemon !== null };
   }
   if (daemon !== null) {
-    const target = await ensureDaemonTarget(daemon, args.site !== undefined ? "web" : "dev");
+    const target = await withStepDeadline("start or reuse the dev server", SERVER_STEP_MS, () =>
+      ensureDaemonTarget(daemon, args.site !== undefined ? "web" : "dev"));
     console.error(`shoot: attached to daemon — chrome :${daemon.chromePort}, target ${target.base}`);
     return { devBase: target.base, server: null, serverPid: undefined, attachedDaemon: true };
   }
-  const server = args.site === undefined ? await ensureDevServer() : await ensureWebServer();
+  const server = await withStepDeadline("start or reuse the dev server", SERVER_STEP_MS, () =>
+    args.site === undefined ? ensureDevServer() : ensureWebServer());
   return { devBase: server.base, server: server.child, serverPid: server.pid, attachedDaemon: false };
 }
 /**
@@ -716,6 +721,7 @@ async function shootSession(daemon: ShootDaemonState | null): Promise<number> {
       attach: attachedDaemon,
       leaveWarm: args.keep || attachedDaemon,
       chromePrefix: "jg-shoot-",
+      turn: brokerTurn(daemon),
       headed: args.headed,
       hardDeadlineMs:
         args.site === undefined

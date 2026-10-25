@@ -46,7 +46,8 @@ import {
   type Device,
   type ViewportOverride,
 } from "./browser-lib";
-import { acquireWarmCapture, daemonDiedUnder, ensureDaemonTarget, withDaemonWatch, type ShootDaemonState } from "./shoot-daemon";
+import { markStep, SERVER_STEP_MS, withStepDeadline } from "./hangReport";
+import { acquireWarmCapture, daemonDiedUnder, ensureDaemonTarget, withDaemonWatch, brokerTurn, type ShootDaemonState } from "./shoot-daemon";
 import { lookSearchParams, parseLookAim } from "./lookArg";
 import { driveTargetUrl, externalCaptureUrl, parseCaptureDevice, requireReusableCaptureStorage } from "./captureTarget";
 import { assertOneTarget, serveGameDir, splitGameDir } from "./servedGame";
@@ -59,7 +60,7 @@ import {
   splitQuickFlag,
 } from "./capture-preset";
 import { driveInputPointExpr } from "../packages/jgengine/src/templates/driveInput";
-import { CAPTURE_FLAGS, captureFlagHelp, describeFlow, describeStepFile, parseCaptureArgs, parseGraphicsTier, parseStepFile, rejectMixedStepFlags, type CaptureStep, type FlowFile, type FlowSource, type GraphicsTier } from "../packages/jgengine/src/templates/captureArgs";
+import { CAPTURE_FLAGS, captureFlagHelp, describeFlow, describeStepFile, parseCaptureArgs, parseGraphicsTier, parseStepFile, rejectMixedStepFlags, stepDurationMs, type CaptureStep, type FlowFile, type FlowSource, type GraphicsTier } from "../packages/jgengine/src/templates/captureArgs";
 import { awaitDriveCondition, awaitGameView, conditionMatches, holdDriveInput, type DriveConditionClock, type DriveHoldUntil, type DriveInputDeps, type DriveSession } from "../packages/jgengine/src/templates/driveSteps";
 import { acquireDrivePointerLock, aimDriveAt, lookDrivePointer, moveDrivePointer, type DrivePoint } from "../packages/jgengine/src/templates/driveAim";
 import { driveProjectDir, flowSourceFrom, flowsDirOf, listFlowNames, missingFlowsMessage } from "./driveFlows";
@@ -817,9 +818,10 @@ async function driveSession(daemon: ShootDaemonState | null): Promise<number> {
   }
   const dev = args.url !== undefined
     ? { base: args.url, child: null, pid: undefined }
-    : daemon === null
-      ? args.site === undefined ? await ensureDevServer() : await ensureWebServer()
-      : await ensureDaemonTarget(daemon, args.site === undefined ? "dev" : "web");
+    : await withStepDeadline("start or reuse the dev server", SERVER_STEP_MS, async () =>
+        daemon === null
+          ? args.site === undefined ? await ensureDevServer() : await ensureWebServer()
+          : await ensureDaemonTarget(daemon, args.site === undefined ? "dev" : "web"));
 
   const lockstep = args.record !== undefined && !args.recordRealtime && !args.playtest;
   const lockstepVirtualMs = args.steps.reduce(
@@ -839,6 +841,7 @@ async function driveSession(daemon: ShootDaemonState | null): Promise<number> {
       attach: daemon !== null,
       leaveWarm: args.keep || daemon !== null,
       chromePrefix: "jg-drive-",
+      turn: brokerTurn(daemon),
       headed: args.headed,
       // One real render + capture per output frame — give the watchdog room.
       ...(lockstep ? { hardDeadlineMs: args.timeoutMs + 120_000 + lockstepProjected * 3_000 } : {}),
@@ -866,6 +869,7 @@ async function driveSession(daemon: ShootDaemonState | null): Promise<number> {
         }
         if (args.playtest) url.searchParams.set("seed", String(args.seed));
         if (!args.reuseStorage) await clearOriginStorage(session, new URL(url.toString()).origin);
+        markStep(`open ${url.pathname}${url.search}`);
         await navigateCapturePageWithRetry(session, url.toString(), dev.base, args.timeoutMs, 2, { legacyCanvas: args.url !== undefined });
         // The tier the game resolved, not the flag: a tier that never reached the render path is
         // the failure this readout exists to catch, and the run summary repeats it.
@@ -958,6 +962,9 @@ async function driveSession(daemon: ShootDaemonState | null): Promise<number> {
           now: () => performance.now(),
           line: (text) => console.error(text),
           tier: reportedTier,
+          // A lockstep frame is a real render, up to ~3s each on software GL, so virtual time costs more wall clock.
+          stepTimeoutMs: (step) =>
+            args.timeoutMs + stepDurationMs(step) * (lockstep ? 3_000 / Math.max(20, Math.round(1000 / args.recordFps)) : 1),
           ...(recorder === null ? {} : { virtualNow: () => recorder!.virtualNow }),
           ...(logPath === undefined
             ? {}
