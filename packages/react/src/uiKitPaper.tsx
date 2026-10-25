@@ -326,6 +326,8 @@ export const paperKit: UiKit = {
   name: "Fair Day",
   description: "Paper, cardboard and stickers: taped notes, ticket buttons, sticker titles and tag toasts.",
   tokens: {
+    // Corner of engine controls (settings rows, tabs) drawn on this kit's panes.
+    radius: "12px",
     ink: "#2d2a26",
     surface: "#fbf6ea",
     surfaceAlt: "#e9dcc0",

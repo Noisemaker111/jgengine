@@ -302,6 +302,8 @@ export const inkKit: UiKit = {
   name: "Inkline",
   description: "Comic-book ink: wobbly outlines, hard shadows, halftone, caption tabs and speech balloons.",
   tokens: {
+    // Corner of engine controls (settings rows, tabs) drawn on this kit's panes.
+    radius: "0px",
     ink: "#141218",
     surface: "#fffaf0",
     surfaceAlt: "#efe2c4",

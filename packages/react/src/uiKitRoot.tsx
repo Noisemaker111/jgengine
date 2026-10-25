@@ -155,7 +155,7 @@ export function kitHudBridge(ground: "pane" | "dialog"): CSSProperties {
     "--jg-font-display": "var(--kit-font-display)",
     "--jg-font-body": "var(--kit-font-body)",
     // Save cards and name fields keep their own dark tiles, so their text stays light.
-    "--jg-card-text": "#f2f6fb",
+    "--jg-card-text": "#f2f6fb", "--jg-control-radius": "var(--kit-radius, 8px)", "--jg-control-font": "var(--kit-font-display)",
     color: "var(--kit-ink)",
     fontFamily: "var(--kit-font-body)",
   } as CSSProperties;

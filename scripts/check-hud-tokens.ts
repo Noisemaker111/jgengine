@@ -19,6 +19,8 @@ const NON_THEME = [
   "--jg-card-",
   "--jg-font-card",
   "--jg-panel-padding",
+  // control shape and tab type; a UI kit's panes set them, every read carries an engine-default fallback
+  "--jg-control-",
   // text on an accent fill; a UI kit's menu pane sets it, every read falls back to --jg-surface-deep
   "--jg-on-accent",
   // accent-coloured text on a kit pane; every read falls back to --jg-accent

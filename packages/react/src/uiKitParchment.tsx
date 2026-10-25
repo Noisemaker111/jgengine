@@ -482,6 +482,8 @@ export const parchmentKit: UiKit = {
   name: "Grimoire",
   description: "Painterly fantasy parchment: stained paper, rolled scrolls, wax seals, gold filigree and vial meters.",
   tokens: {
+    // Corner of engine controls (settings rows, tabs) drawn on this kit's panes.
+    radius: "3px",
     ink: "#2b1d12",
     surface: "#f1e3c2",
     surfaceAlt: "#e0c99a",

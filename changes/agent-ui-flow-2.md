@@ -8,6 +8,7 @@
   - Long chips trim on phone cards.
   - The pane scrolls inside the kit panel, and its heading stays put.
 - Ink and paper panel heads keep the aside (distance, count) on the title's row. A long eyebrow pushes the title under it, and titles wrap only between words.
+- Settings rows and tabs on a kit pane take the kit's corners and display type: square on ink, arcade and terminal, soft on paper. Every kit gets a `radius` token, and the slider readout never runs off a phone-width row.
 - The `KitObjective` direction arrow has a shaft, so it reads as pointing where it points.
 
 ### Added

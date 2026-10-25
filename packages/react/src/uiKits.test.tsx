@@ -278,6 +278,11 @@ describe("flow", () => {
     expect(dialog["--jg-surface-deep"]).toBe("var(--kit-surface-alt)");
     expect(pane["--jg-surface"]).toBe("var(--kit-surface-alt)");
     expect(dialog["--jg-text"]).toBe(pane["--jg-text"]);
+    // Settings rows and tabs take the kit's corner and display type: square on ink, soft on paper.
+    expect(pane["--jg-control-radius"]).toBe("var(--kit-radius, 8px)");
+    expect(pane["--jg-control-font"]).toBe("var(--kit-font-display)");
+    for (const name of Object.keys(UI_KITS) as UiKitName[]) expect({ name, radius: UI_KITS[name].tokens.radius !== undefined }).toEqual({ name, radius: true });
+    expect(UI_KITS.ink.tokens.radius).toBe("0px");
   });
 
   test("the continue card keeps its name light on the picture and its saved line in the theme's dim text", () => {
