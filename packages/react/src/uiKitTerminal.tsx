@@ -399,6 +399,8 @@ export const terminalKit: UiKit = {
   name: "Mainframe",
   description: "Brutalist phosphor terminal: monospace, double rules, ASCII meters, log-line toasts and a blinking block cursor.",
   tokens: {
+    // Corner of engine controls (settings rows, tabs) drawn on this kit's panes.
+    radius: "0px",
     ink: "#9dff8a",
     surface: "#050a05",
     surfaceAlt: "#0c1a0c",

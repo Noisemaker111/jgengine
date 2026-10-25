@@ -12,9 +12,15 @@ const edge = "var(--jg-edge, #2b2b35)";
 const text = "var(--jg-text, #ececef)";
 const textDim = "var(--jg-text-dim, #9494a0)";
 const accent = "var(--jg-accent, #6ee7a8)";
-const onAccent = "var(--jg-surface-deep, #0b0b0f)";
+const onAccent = "var(--jg-on-accent, var(--jg-surface-deep, #0b0b0f))";
 const danger = "var(--jg-danger, #e0574e)";
 const fontDisplay = "var(--jg-font-display, inherit)";
+const fontBody = "var(--jg-font-body, inherit)";
+/** Above the HUD, captions (84), notices (85), the result screen (86) and a game's menus; below devtools (90). */
+const LAYER = 88;
+/** Hairlines and washes from the theme's own edge and text colours, so they show on a light theme too. */
+const hairline = "var(--jg-edge, rgba(255,255,255,0.1))";
+const wash = "color-mix(in srgb, var(--jg-text, #ececef) 6%, transparent)";
 
 interface Tab {
   id: string;
@@ -37,7 +43,7 @@ function CloseButton({ onClose }: { onClose: () => void }) {
       onClick={onClose}
       aria-label="Close settings"
       className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition hover:bg-white/10"
-      style={{ color: textDim, border: "1px solid rgba(255,255,255,0.1)" }}
+      style={{ color: textDim, border: `1px solid ${hairline}` }}
     >
       <GlyphClose />
     </button>
@@ -55,8 +61,8 @@ function ActionRow({ action, onClose }: { action: SettingsActionView; onClose: (
       }}
       className="flex w-full items-center justify-between gap-3 rounded-xl px-4 py-3.5 text-left transition hover:brightness-110"
       style={{
-        background: isDanger ? "rgba(224,87,78,0.12)" : "rgba(255,255,255,0.05)",
-        border: `1px solid ${isDanger ? danger : "rgba(255,255,255,0.1)"}`,
+        background: isDanger ? "rgba(224,87,78,0.12)" : wash,
+        border: `1px solid ${isDanger ? danger : hairline}`,
       }}
     >
       <span className="flex flex-col gap-0.5">
@@ -109,13 +115,14 @@ const panelStyle: CSSProperties = {
   background: surface,
   color: text,
   border: `1px solid ${edge}`,
-  fontFamily: fontDisplay,
+  fontFamily: fontBody,
 };
 
 function Backdrop({ children, onClose, align }: { children: ReactNode; onClose: () => void; align: string }) {
   return (
     <div
-      className={`pointer-events-auto absolute inset-0 z-40 flex justify-center bg-black/55 p-3 backdrop-blur-sm ${align}`}
+      className={`pointer-events-auto absolute inset-0 flex justify-center bg-black/55 p-3 backdrop-blur-sm ${align}`}
+      style={{ zIndex: LAYER }}
       onClick={onClose}
     >
       {children}
@@ -152,17 +159,17 @@ export function SettingsMenu({
 
   const bodyProps: BodyProps = { tab: active, actions: controller.actions, onClose };
   const title = (
-    <h2 className="text-base font-semibold tracking-wide" style={{ color: text }}>
+    <h2 className="text-base font-semibold tracking-wide" style={{ color: text, fontFamily: fontDisplay }}>
       Settings
     </h2>
   );
 
   if (controller.variant === "fullscreen") {
     return (
-      <div ref={dialogRef} role="dialog" aria-modal="true" aria-label="Settings" tabIndex={-1} className="pointer-events-auto absolute inset-0 z-40 flex flex-col" style={{ background: surface, color: text, fontFamily: fontDisplay }}>
+      <div ref={dialogRef} role="dialog" aria-modal="true" aria-label="Settings" tabIndex={-1} className="pointer-events-auto absolute inset-0 flex flex-col" style={{ zIndex: LAYER, background: surface, color: text, fontFamily: fontBody }}>
         <div className="mx-auto flex h-full w-full max-w-2xl flex-col px-4">
           <div className="flex items-center justify-between gap-3 pb-4 pt-6">
-            <h2 className="text-2xl font-bold tracking-wide" style={{ color: text }}>
+            <h2 className="text-2xl font-bold tracking-wide" style={{ color: text, fontFamily: fontDisplay }}>
               Settings
             </h2>
             <CloseButton onClose={onClose} />
@@ -219,7 +226,7 @@ export function SettingsMenu({
           style={{ ...panelStyle, width: "min(100%, 640px)", height: "min(84vh, 620px)" }}
         >
           <div className="flex flex-col items-center pt-2.5">
-            <span className="h-1.5 w-10 rounded-full" style={{ background: "rgba(255,255,255,0.25)" }} />
+            <span className="h-1.5 w-10 rounded-full" style={{ background: "var(--jg-edge-bright, rgba(255,255,255,0.25))" }} />
           </div>
           <div className="flex items-center justify-between gap-3 px-4 py-3">
             {title}

@@ -14,7 +14,8 @@ const rowStyle: CSSProperties = {
   justifyContent: "space-between",
   gap: hudSpace("md"),
   padding: `${hudSpace("sm")} ${hudSpace("md")}`,
-  borderRadius: 10,
+  // A UI kit sets its own control shape (square ink, soft paper); the engine default stays rounded.
+  borderRadius: "var(--jg-control-radius, 10px)",
   background: "var(--jg-surface-deep, rgba(255,255,255,0.04))",
   border: "1px solid var(--jg-edge, rgba(255,255,255,0.08))",
 };
@@ -29,6 +30,8 @@ const valueStyle: CSSProperties = {
   color: "var(--jg-text, #ececef)",
   fontVariantNumeric: "tabular-nums",
   minWidth: 48,
+  flexShrink: 0,
+  whiteSpace: "nowrap",
   textAlign: "right",
 };
 
@@ -36,7 +39,8 @@ function RowShell({ label, children, itemProps }: { label: string; children: Rea
   return (
     <div data-settings-row="" style={rowStyle} {...itemProps}>
       <span style={labelStyle}>{label}</span>
-      <div style={{ display: "flex", alignItems: "center", gap: hudSpace("sm"), minWidth: 0 }}>{children}</div>
+      {/* The control side shrinks before the value does, so "100%" never runs off a phone-width row. */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: hudSpace("sm"), minWidth: 0, flexShrink: 1 }}>{children}</div>
     </div>
   );
 }
@@ -87,7 +91,7 @@ export function SettingsSlider({ row, itemProps }: { row: SettingsRow; itemProps
         onPointerUp={flush}
         onKeyUp={flush}
         onBlur={flush}
-        style={{ flex: 1, minWidth: 120, accentColor: "var(--jg-accent, #6ee7a8)" }}
+        style={{ flex: "0 1 140px", minWidth: 64, accentColor: "var(--jg-accent, #6ee7a8)" }}
       />
       <span style={valueStyle}>{row.format?.(value) ?? String(value)}</span>
     </RowShell>
@@ -151,7 +155,7 @@ export function SettingsSelect({ row, itemProps }: { row: SettingsRow; itemProps
               style={{
                 minHeight: 30,
                 padding: `0 ${hudSpace("sm")}`,
-                borderRadius: 7,
+                borderRadius: "var(--jg-control-radius, 7px)",
                 border: "1px solid transparent",
                 background: selected ? "var(--jg-accent, #6ee7a8)" : "transparent",
                 color: selected ? "var(--jg-on-accent, var(--jg-surface-deep, #0b0b0f))" : "var(--jg-text-dim, #94a3a0)",
@@ -212,7 +216,7 @@ export function SettingsKeybindControl({ row, armed = false, onArm, buttonProps,
             minWidth: 84,
             minHeight: 30,
             padding: `0 ${hudSpace("sm")}`,
-            borderRadius: 7,
+            borderRadius: "var(--jg-control-radius, 7px)",
             border: `1px solid ${armed ? "var(--jg-accent, #6ee7a8)" : "var(--jg-edge-bright, rgba(255,255,255,0.14))"}`,
             background: armed ? "var(--jg-accent-glow, rgba(110,231,168,0.25))" : "var(--jg-surface-deep, rgba(15,18,24,0.9))",
             color: armed ? "var(--jg-accent, #6ee7a8)" : "var(--jg-text, #ececef)",
@@ -232,7 +236,7 @@ export function SettingsKeybindControl({ row, armed = false, onArm, buttonProps,
           style={{
             width: 30,
             height: 30,
-            borderRadius: 7,
+            borderRadius: "var(--jg-control-radius, 7px)",
             border: "none",
             background: "transparent",
             color: "var(--jg-text-dim, #94a3a0)",
@@ -456,10 +460,11 @@ export function SettingsTabs({ categories, activeId, onSelect, leading, tabProps
                 minHeight: 34,
                 padding: `0 ${hudSpace("md")}`,
                 marginRight: hudSpace("xs"),
-                borderRadius: 8,
+                borderRadius: "var(--jg-control-radius, 8px)",
                 border: "1px solid transparent",
                 background: selected ? "var(--jg-accent, #6ee7a8)" : "transparent",
                 color: selected ? "var(--jg-on-accent, var(--jg-surface-deep, #0b0b0f))" : "var(--jg-text-dim, #94a3a0)",
+                fontFamily: "var(--jg-control-font, inherit)",
                 fontSize: hudType("sm"),
                 fontWeight: 600,
                 whiteSpace: "nowrap",

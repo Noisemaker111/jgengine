@@ -21,7 +21,8 @@ const cardSurface: CSSProperties = {
   position: "relative",
   width: "100%",
   minWidth: 0,
-  height: "var(--jg-menu-card-height, clamp(244px, 27vh, 300px))",
+  // A floor, not a fixed height: a narrow card whose chips wrap grows instead of clipping its Load button.
+  minHeight: "var(--jg-menu-card-height, clamp(244px, 27vh, 300px))",
   boxSizing: "border-box",
   overflow: "hidden",
   display: "flex",
@@ -125,7 +126,9 @@ export function SaveSlotCard({
           data-empty=""
           style={{
             width: "100%",
-            aspectRatio: "16 / 9",
+            // Fills what the card's floor leaves, so an empty card is the same box as a filled one at any width.
+            flex: "1 1 0",
+            minHeight: 60,
             borderRadius: 8,
             border: "1px dashed rgba(203,213,225,0.28)",
             display: "flex",
@@ -234,7 +237,7 @@ export function SaveSlotCard({
               padding: "2px 7px",
               borderRadius: 999,
               background: "var(--jg-accent, #7dd3fc)",
-              color: "#04121b",
+              color: "var(--jg-on-accent, #04121b)",
               fontSize: 10,
               fontWeight: 800,
               letterSpacing: "0.09em",
@@ -276,6 +279,10 @@ export function SaveSlotCard({
                 fontSize: 11,
                 fontWeight: 600,
                 whiteSpace: "nowrap",
+                // A long value on a narrow (phone) card trims instead of running past the card edge.
+                maxWidth: "100%",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
               }}
             >
               <span style={{ opacity: 0.6, textTransform: "uppercase", letterSpacing: "0.08em", fontSize: 10 }}>{key}</span> {value}
@@ -449,7 +456,7 @@ export function SaveSlotsPane({
               borderRadius: 999,
               border: "none",
               background: "var(--jg-accent, #7dd3fc)",
-              color: "#04121b",
+              color: "var(--jg-on-accent, #04121b)",
               fontSize: hudType("sm"),
               fontWeight: 800,
               letterSpacing: "0.06em",
@@ -470,8 +477,12 @@ export function SaveSlotsPane({
           gridTemplateColumns:
             columns === "auto" ? "repeat(auto-fill, minmax(230px, 1fr))" : `repeat(${columns}, minmax(0, 1fr))`,
           // Every card gets the same box: equal tracks, equal rows, and content that cannot widen it.
-          gridAutoRows: "auto",
+          // Rows fit their tallest card even when the grid is shorter than its cards (it scrolls then);
+          // `auto` rows would squeeze a clipping card down to its least height.
+          gridAutoRows: "max-content",
           alignItems: "stretch",
+          // A grid taller than its cards keeps them at the top instead of spreading rows apart.
+          alignContent: "start",
           flex: 1,
           gap: hudSpace("md"),
           minHeight: 0,
@@ -580,13 +591,16 @@ export function ContinuePane({
       data-continue-pane=""
       data-save-slot-id={slot.id}
       className={className}
-      style={{ display: "flex", flexDirection: "column", gap: hudSpace("md"), minHeight: 0, ...style }}
+      style={{ display: "flex", flexDirection: "column", flex: "1 1 auto", gap: hudSpace("md"), minHeight: 0, ...style }}
     >
       <div
         style={{
           position: "relative",
           width: "min(100%, 560px)",
           aspectRatio: "16 / 9",
+          // On a short pane (a phone) the picture gives up height first, so Resume stays on screen.
+          flexShrink: 1,
+          minHeight: 96,
           borderRadius: 14,
           overflow: "hidden",
           boxShadow: "0 30px 70px -30px rgba(0,0,0,0.95), inset 0 0 0 1px rgba(255,255,255,0.12)",
@@ -623,19 +637,19 @@ export function ContinuePane({
           }}
         />
         <div style={{ position: "absolute", left: 14, bottom: 10, right: 14 }}>
-          <div style={{ fontSize: hudType("xs"), letterSpacing: "0.2em", textTransform: "uppercase", color: "var(--jg-accent, #7dd3fc)", fontWeight: 700 }}>
+          <div style={{ fontSize: hudType("xs"), letterSpacing: "0.2em", textTransform: "uppercase", color: "color-mix(in srgb, var(--jg-accent, #7dd3fc) 55%, #ffffff)", fontWeight: 700, textShadow: "0 1px 8px rgba(0,0,0,0.7)" }}>
             Continue
           </div>
           <div
             data-continue-name=""
-            style={{ fontFamily: hudFont.display, fontSize: hudType("display"), fontWeight: 800, lineHeight: 1.05 }}
+            style={{ fontFamily: hudFont.display, fontSize: hudType("display"), fontWeight: 800, lineHeight: 1.05, color: "var(--jg-card-text, var(--jg-text, #f2f6fb))", textShadow: "0 2px 12px rgba(0,0,0,0.8)", overflowWrap: "anywhere" }}
           >
             {slot.name ?? slot.id}
           </div>
         </div>
       </div>
 
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", flexShrink: 0 }}>
         {playtime === null ? null : (
           <span
             data-continue-playtime=""
@@ -666,7 +680,7 @@ export function ContinuePane({
           </span>
         ))}
         {slot.savedAt === undefined ? null : (
-          <span data-continue-saved-at="" style={{ fontSize: hudType("sm"), color: "rgba(203,213,225,0.62)" }}>
+          <span data-continue-saved-at="" style={{ fontSize: hudType("sm"), color: "var(--jg-text-dim, rgba(203,213,225,0.62))" }}>
             Saved {relativeSavedAt(slot.savedAt, now())} · {new Date(slot.savedAt).toLocaleString()}
           </span>
         )}
@@ -679,11 +693,12 @@ export function ContinuePane({
           onClick={() => onContinue(slot)}
           style={{
             alignSelf: "flex-start",
+            flexShrink: 0,
             padding: "11px 22px",
             borderRadius: 10,
             border: "none",
             background: "var(--jg-accent, #7dd3fc)",
-            color: "#04121b",
+            color: "var(--jg-on-accent, #04121b)",
             fontFamily: hudFont.display,
             fontSize: hudType("lg"),
             fontWeight: 800,

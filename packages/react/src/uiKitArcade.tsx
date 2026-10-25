@@ -364,6 +364,8 @@ export const arcadeKit: UiKit = {
   name: "Cabinet",
   description: "Retro 8-bit arcade and JRPG: stepped pixel frames, JRPG windows, depth buttons, hearts and score-popup toasts.",
   tokens: {
+    // Corner of engine controls (settings rows, tabs) drawn on this kit's panes.
+    radius: "0px",
     ink: "#fff1e8",
     surface: "#1d2b53",
     surfaceAlt: "#29366f",

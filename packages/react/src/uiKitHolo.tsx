@@ -522,6 +522,8 @@ export const holoKit: UiKit = {
   name: "Vector",
   description: "Angular sci-fi hologram: chamfered glass, scanlines, bracket corners, hex data tags and radar.",
   tokens: {
+    // Corner of engine controls (settings rows, tabs) drawn on this kit's panes.
+    radius: "2px",
     ink: "#d9fbff",
     surface: "#04202a",
     surfaceAlt: "#07323f",

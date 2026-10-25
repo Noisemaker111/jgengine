@@ -446,6 +446,8 @@ export const broadcastKit: UiKit = {
   name: "Prime Time",
   description: "Sports TV graphics: skewed navy slabs with team stripes, score bugs, tickers and wipe-in lower thirds.",
   tokens: {
+    // Corner of engine controls (settings rows, tabs) drawn on this kit's panes.
+    radius: "0px",
     ink: "#ffffff",
     surface: "#0d1b3d",
     surfaceAlt: "#172a59",

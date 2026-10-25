@@ -180,6 +180,8 @@ export const plainKit: UiKit = {
   name: "Plain",
   description: "Neutral fallback parts used when no kit is chosen.",
   tokens: {
+    // Corner of engine controls (settings rows, tabs) drawn on this kit's panes.
+    radius: "10px",
     ink: "#f5f7fa",
     surface: "rgba(12, 15, 21, 0.9)",
     surfaceAlt: "rgba(255, 255, 255, 0.1)",

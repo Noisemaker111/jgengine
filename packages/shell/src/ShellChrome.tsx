@@ -3,10 +3,10 @@ import { lazy, Suspense, useEffect, useMemo, useState, type ComponentType, type 
 import { applyBindingOverrides, loadBindingOverrides } from "@jgengine/core/input/bindingOverrides";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { useAccessibilitySettings } from "@jgengine/react/accessibilitySettings";
-import { HudThemeRoot } from "@jgengine/react/hudThemeRoot";
+import { HudOverlayHost, HudThemeRoot } from "@jgengine/react/hudThemeRoot";
 import { HudViewportProvider } from "@jgengine/react/hudViewport";
 import { GameProvider } from "@jgengine/react/provider";
-import { UiKitRoot } from "@jgengine/react/uiKitRoot";
+import { kitHudBridge, UiKitRoot } from "@jgengine/react/uiKitRoot";
 import { resolveUiKit } from "@jgengine/react/uiKits";
 
 import {
@@ -34,10 +34,13 @@ export function ShellUiKit({ playable, children }: { playable: PlayableGame; chi
     () => applyBindingOverrides(playable.game.input ?? {}, loadBindingOverrides(playable.game.name)),
     [playable],
   );
-  if (kit === null) return <>{children}</>;
+  // The overlay host lets the shell's settings dialog draw inside the HUD theme and the kit, so it takes
+  // the game's `hudTheme` colours, or the kit's colours and type, instead of the engine default.
+  if (kit === null) return <>{children}<HudOverlayHost /></>;
   return (
     <UiKitRoot kit={kit} bindings={bindings}>
       {children}
+      <HudOverlayHost style={kitHudBridge("dialog")} />
     </UiKitRoot>
   );
 }

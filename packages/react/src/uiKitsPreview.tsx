@@ -1,7 +1,9 @@
 import type { CSSProperties, ReactNode } from "react";
 
+import { createSaveSlots, type SaveSlotMeta } from "@jgengine/core/game/saveSlots";
+
 import { GamePauseMenu } from "./gameMenu";
-import { CreditsPane } from "./gameMenuSaves";
+import { ContinuePane, CreditsPane, SaveSlotsPane } from "./gameMenuSaves";
 import type { SettingsCategoryView } from "./settings";
 import { SettingsSection, SettingsTabs } from "./settingsBlocks";
 import type { UiKit } from "./uiKit";
@@ -159,17 +161,31 @@ const SOUND: SettingsCategoryView = {
 };
 const TABS: SettingsCategoryView[] = [SOUND, { ...SOUND, id: "graphics", label: "Graphics" }, { ...SOUND, id: "controls", label: "Controls" }];
 
+/** Fixed save times, so preview pictures do not change between runs. */
+const SAVED_AT = Date.UTC(2026, 9, 24, 21, 30);
+const SAVES: SaveSlotMeta[] = [
+  { id: "slot-1", name: "Mara Vell", empty: false, savedAt: SAVED_AT, meta: { playtime: 5_400, chapter: "Shore Steps", cash: "$1,240" } },
+  { id: "slot-2", name: "Dockside run", empty: false, savedAt: SAVED_AT - 86_400_000, meta: { playtime: 1_800, chapter: "Old Pier" } },
+  { id: "slot-3", empty: true, meta: {} },
+];
+const saveSlots = createSaveSlots({ slots: SAVES, now: () => SAVED_AT });
+
+/** The engine panes a kit's menu can host, for {@link UiKitMenuPreview}. */
+export type UiKitMenuPreviewPane = "settings" | "credits" | "continue" | "saves";
+
 /**
- * A kit's pause menu with the engine's own settings pane in it (or credits), so one picture shows that
- * engine panes read in the kit's colours and type.
+ * A kit's pause menu with one of the engine's own panes in it (settings, credits, continue or saves),
+ * so one picture shows that engine panes read in the kit's colours and type.
  */
-export function UiKitMenuPreview({ kit, pane = "settings", className }: { kit: UiKit; pane?: "settings" | "credits"; className?: string }): ReactNode {
+export function UiKitMenuPreview({ kit, pane = "settings", className }: { kit: UiKit; pane?: UiKitMenuPreviewPane; className?: string }): ReactNode {
   return (
     <UiKitRoot kit={kit} box className={className} style={{ ...SCENE, width: "100vw", height: "100vh" }}>
       <GamePauseMenu
         items={[
           { id: "resume", label: "Resume" },
           { id: "settings", label: "Settings" },
+          { id: "continue", label: "Continue" },
+          { id: "saves", label: "Saves" },
           { id: "credits", label: "Credits" },
         ]}
         initialId={pane}
@@ -177,7 +193,11 @@ export function UiKitMenuPreview({ kit, pane = "settings", className }: { kit: U
         logo={{ text: kit.name, title: kit.name }}
         tagline="Paused. The world waits."
         detail={(id) =>
-          id === "credits" ? (
+          id === "continue" ? (
+            <ContinuePane slot={saveSlots.mostRecent()} onContinue={noop} now={() => SAVED_AT + 60_000} />
+          ) : id === "saves" ? (
+            <SaveSlotsPane model={saveSlots} heading="Saves" onLoad={noop} onNew={noop} onContinue={noop} now={() => SAVED_AT + 60_000} />
+          ) : id === "credits" ? (
             <CreditsPane sections={[{ heading: "Made by", entries: [{ label: "Design", detail: "Jon" }, { label: "Engine", detail: "JGengine" }] }]} notice="Fonts and sounds under their own licences." />
           ) : (
             <div style={{ display: "grid", gap: 14 }}>

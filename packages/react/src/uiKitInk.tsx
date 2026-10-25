@@ -45,8 +45,10 @@ function Panel({ eyebrow, title, aside, footer, tone, variant = "hud", as: Tag =
     <Tag {...rest} className={cx(`${P}-panel`, className)} data-variant={variant} data-tone={tone} data-state={leaving === true ? "closed" : "open"}>
       {head ? (
         <header className={`${P}-panel-head`}>
-          {eyebrow === undefined ? null : <span className={`${P}-eyebrow`}>{eyebrow}</span>}
-          {title === undefined ? null : <span className={`${P}-title`}>{title}</span>}
+          <span className={`${P}-head-main`}>
+            {eyebrow === undefined ? null : <span className={`${P}-eyebrow`}>{eyebrow}</span>}
+            {title === undefined ? null : <span className={`${P}-title`}>{title}</span>}
+          </span>
           {aside === undefined ? null : <span className={`${P}-aside`}>{aside}</span>}
         </header>
       ) : null}
@@ -209,16 +211,19 @@ const CSS = `
 .${P}-panel[data-variant="pane"] { padding: 20px 22px; transform: none; }
 .${P}-panel[data-variant="strip"] { display: flex; align-items: center; gap: 12px; padding: 6px 16px; transform: skewX(-10deg); background: var(--kit-accent); }
 .${P}-panel[data-variant="strip"] > * { transform: skewX(10deg); }
-.${P}-panel-head { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 6px 10px; margin: -24px 0 8px -4px; }
+/* The aside (distance, count) keeps its own column; the eyebrow and title share the rest, and a title that
+   does not fit beside the eyebrow drops under it at full width, wrapping between words. */
+.${P}-panel-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; margin: -24px 0 8px -4px; }
+.${P}-head-main { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 6px 10px; min-width: 0; }
 .${P}-panel[data-variant="strip"] .${P}-panel-head { margin: 0; }
 .${P}-eyebrow { font: 700 calc(12px * var(--kit-text)) / 1 var(--kit-font-body); letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 7px; border: 2px solid var(--kit-line); background: var(--kit-surface); transform: rotate(-3deg); }
-.${P}-title { max-width: 100%; overflow-wrap: anywhere; padding: 4px 10px 3px; border: 3px solid var(--kit-line); background: var(--kit-accent); color: var(--kit-accent-ink); font: 400 calc(18px * var(--kit-text)) / 1 var(--kit-font-display); letter-spacing: 0.05em; text-transform: uppercase; transform: skewX(-10deg) rotate(-1.5deg); box-shadow: 3px 3px 0 var(--kit-line); }
+.${P}-title { max-width: 100%; overflow-wrap: break-word; padding: 4px 10px 3px; border: 3px solid var(--kit-line); background: var(--kit-accent); color: var(--kit-accent-ink); font: 400 calc(18px * var(--kit-text)) / 1 var(--kit-font-display); letter-spacing: 0.05em; text-transform: uppercase; transform: skewX(-10deg) rotate(-1.5deg); box-shadow: 3px 3px 0 var(--kit-line); }
 .${P}-panel[data-variant="dialog"] .${P}-title { font-size: calc(34px * var(--kit-text)); padding: 6px 16px 4px; color: var(--kit-surface); background: var(--kit-bad); -webkit-text-stroke: 1.5px var(--kit-line); paint-order: stroke fill; text-shadow: 3px 3px 0 var(--kit-line); }
 .${P}-panel[data-tone="good"] .${P}-title { background: var(--kit-good); }
 .${P}-panel[data-tone="warn"] .${P}-title { background: var(--kit-warn); }
 .${P}-panel[data-tone="bad"] .${P}-title { background: var(--kit-bad); color: var(--kit-surface); }
 .${P}-panel[data-tone="neutral"] .${P}-title { background: var(--kit-surface); color: var(--kit-ink); }
-.${P}-aside { margin-left: auto; font: 400 calc(18px * var(--kit-text)) / 1 var(--kit-font-display); }
+.${P}-aside { margin-left: 10px; white-space: nowrap; font: 400 calc(18px * var(--kit-text)) / 1 var(--kit-font-display); }
 .${P}-panel-body { font: 700 calc(14px * var(--kit-text)) / 1.3 var(--kit-font-body); text-transform: uppercase; letter-spacing: 0.02em; }
 .${P}-panel-foot { margin-top: 12px; padding-top: 8px; border-top: 3px dotted var(--kit-line); display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
 
@@ -297,6 +302,8 @@ export const inkKit: UiKit = {
   name: "Inkline",
   description: "Comic-book ink: wobbly outlines, hard shadows, halftone, caption tabs and speech balloons.",
   tokens: {
+    // Corner of engine controls (settings rows, tabs) drawn on this kit's panes.
+    radius: "0px",
     ink: "#141218",
     surface: "#fffaf0",
     surfaceAlt: "#efe2c4",

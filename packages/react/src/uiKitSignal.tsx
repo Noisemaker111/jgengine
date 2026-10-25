@@ -379,6 +379,8 @@ export const signalKit: UiKit = {
   name: "Wayfinder",
   description: "Diegetic signage: enamel road-sign plates, arrow and blade signs, LED departure boards and split-flap motion.",
   tokens: {
+    // Corner of engine controls (settings rows, tabs) drawn on this kit's panes.
+    radius: "4px",
     ink: "#ffffff",
     surface: "#00664f",
     surfaceAlt: "#0b1a14",
