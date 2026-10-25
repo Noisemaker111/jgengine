@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { spawn } from "node:child_process";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { createServer } from "node:net";
 import { join } from "node:path";
 
@@ -34,7 +34,8 @@ describe("broker client", () => {
   });
 
   test("the fingerprint moves when the Games link's game list changes", () => {
-    const root = mkdtempSync(join(import.meta.dir, ".fingerprint-"));
+
+    const root = join(import.meta.dir, "..", ".scratch", `broker-fingerprint-${process.pid}`);
     try {
       mkdirSync(join(root, "Games", "harbor-heat"), { recursive: true });
       const before = treeFingerprint(root, null);

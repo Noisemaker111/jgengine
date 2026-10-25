@@ -1,12 +1,14 @@
 import { describe, expect, test } from "bun:test";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
 
 import { currentStep, describeHang, markStep, readStepFile, StepTimeoutError, STEP_FILE_ENV, withStepDeadline } from "./hangReport";
 
 describe("hang reports", () => {
   test("a marked step lands in the guard's file and reads back", () => {
-    const dir = mkdtempSync(join(import.meta.dir, ".hang-"));
+
+    const dir = join(import.meta.dir, "..", ".scratch", `hang-report-${process.pid}`);
+    mkdirSync(dir, { recursive: true });
     try {
       const path = join(dir, "step.json");
       markStep("open /?game=harbor-heat", { [STEP_FILE_ENV]: path }, 1_000);
