@@ -681,6 +681,10 @@ export interface PresentationEffectsConfig {
   tracers?: boolean;
   /** Trauma-driven combat camera shake. Default true. */
   shake?: boolean;
+  /** A tick over the spot the local player's attack damaged; red and larger on a kill. Default true. */
+  hitMarkers?: boolean;
+  /** A short flash where each direct-fire shot leaves the gun. Defaults to the `tracers` setting. */
+  muzzleFlash?: boolean;
 }
 
 /** How a screenshot host reaches live gameplay in this game — the data behind `shoot --mode play`. */
