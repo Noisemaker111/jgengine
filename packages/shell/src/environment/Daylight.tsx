@@ -9,7 +9,7 @@ import { resolveVolumetricClouds, type VolumetricCloudsConfig } from "@jgengine/
 import { warnOnce } from "@jgengine/core/devtools/warnOnce";
 
 import { DisplayColorWriter } from "../render/displayColor";
-import { daylightStateAt, SKY_PRESET_DAY_FRACTION } from "./daylightCycle";
+import { bandFogColor, daylightStateAt, SKY_PRESET_DAY_FRACTION } from "./daylightCycle";
 import { SUN_SHADOW, sunLightPosition, sunShadowFocus } from "./sunShadowMath";
 import { VolumetricClouds } from "./VolumetricClouds";
 
@@ -594,7 +594,7 @@ function BiomeDaylight({
     if (fogNode !== null) {
       // Under a day cycle the sky owns the fog color (bands still own its range): a fixed noon
       // tint would leave bright haze hanging in a black night sky.
-      setSkyFogColor(fogNode, sky.fog?.color ?? (timeOfDay ? base.fogColor : fog.color));
+      setSkyFogColor(fogNode, bandFogColor({ authored: sky.fog?.color, timeOfDay, cycle: base.fogColor, band: fog.color }));
       fogNode.near = fog.near;
       fogNode.far = fog.far;
     }

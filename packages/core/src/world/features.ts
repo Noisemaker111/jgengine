@@ -352,6 +352,23 @@ export interface OceanEnvironmentConfig {
   waveScale?: number;
   waveSpeed?: number;
   color?: string;
+  /**
+   * The rest of the surface's colors, for a body that is not sea water — molten slag, toxic sludge,
+   * oil. `color` stays the shallow tone; any field left out keeps the shell's ocean default.
+   */
+  palette?: OceanPalette;
+}
+
+/** Optional ocean surface colors beyond the shallow `color` (all hex). */
+export interface OceanPalette {
+  /** The tone the body reaches at full depth. */
+  deep?: string;
+  /** Wave-crest highlight. */
+  crest?: string;
+  /** Shoreline and crest foam. */
+  foam?: string;
+  /** How much of the sky the surface mirrors, 0..1 (default 0.7). */
+  fresnel?: number;
 }
 
 /**
@@ -517,7 +534,7 @@ export type GrassEnvironmentDescriptor = { kind: "grass" } & Required<
 export type OceanEnvironmentDescriptor = { kind: "ocean" } & Required<
   Pick<OceanEnvironmentConfig, "bounds" | "level" | "waveHeight" | "waveScale" | "waveSpeed" | "color">
 > &
-  Pick<OceanEnvironmentConfig, "position" | "levelAt">;
+  Pick<OceanEnvironmentConfig, "position" | "levelAt" | "palette">;
 
 export type BuildingEnvironmentDescriptor = { kind: "building" } & Required<
   Pick<BuildingEnvironmentConfig, "count" | "footprint" | "stories" | "storyHeight" | "spacing" | "style">
@@ -1032,6 +1049,7 @@ export function ocean(config: OceanEnvironmentConfig = {}): OceanEnvironmentDesc
     color: config.color ?? "#1d7fa3",
     ...(config.position === undefined ? {} : { position: config.position }),
     ...(config.levelAt === undefined ? {} : { levelAt: config.levelAt }),
+    ...(config.palette === undefined ? {} : { palette: { ...config.palette } }),
   };
 }
 

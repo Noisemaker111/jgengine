@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import {
+  bandFogColor,
   bearingFromDirection,
   DEFAULT_DAY_AMBIENT_INTENSITY,
   DEFAULT_SUN_ELEVATION_DEG,
@@ -200,5 +201,16 @@ describe("authored sun bearing", () => {
     const legacy = unit(daylightStateAt(0.5).sunPosition);
     const authored = unit(daylightStateAt(0.5, { sun: { azimuth: 180, elevation: DEFAULT_SUN_ELEVATION_DEG } }).sunPosition);
     expect(authored[1]).toBeCloseTo(legacy[1], 6);
+  });
+});
+
+describe("bandFogColor", () => {
+  test("a static sky's banded fog follows the band, not the sky's authored fog", () => {
+    expect(bandFogColor({ authored: "#7a4a24", timeOfDay: false, cycle: "#000000", band: "#0e1224" })).toBe("#0e1224");
+  });
+
+  test("under a day cycle the sky owns the fog color", () => {
+    expect(bandFogColor({ authored: "#7a4a24", timeOfDay: true, cycle: "#101010", band: "#0e1224" })).toBe("#7a4a24");
+    expect(bandFogColor({ authored: undefined, timeOfDay: true, cycle: "#101010", band: "#0e1224" })).toBe("#101010");
   });
 });
