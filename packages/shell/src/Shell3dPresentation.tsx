@@ -61,6 +61,7 @@ import type { AudioEngine } from "./audio/audioEngine";
 import { PostProcessing } from "./postfx/PostProcessing";
 import { EnvironmentLighting } from "./render/EnvironmentLighting";
 import { worldProbeForQuality } from "./render/worldReflectionProbe";
+import { LivingWorld } from "./render/LivingWorldLayer";
 import { CollisionDebugWorld } from "./devtools/CollisionDebugWorld";
 import { DevtoolsRendererProbe } from "./devtools/DevtoolsOverlay";
 import { FrameTelemetry } from "./devtools/FrameTelemetry";
@@ -646,6 +647,7 @@ export function Shell3dPresentation({
                       {...(authoredDaylight ? { daylight: daylightModulation } : {})}
                     />
                   ) : null}
+                  <LivingWorld ambientLife={playable.ambientLife} lowTier={graphics.quality === "low"} outdoor={effectiveSky !== undefined} />
                   {sceneLighting !== undefined ? (
                     <ConfiguredLighting
                       lighting={sceneLighting}

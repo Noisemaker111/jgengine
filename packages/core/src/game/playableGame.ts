@@ -18,6 +18,7 @@ import type { EnvironmentSource } from "../render/environment";
 import type { SpriteAtlas } from "../assets/spriteAtlas";
 import type { LookPreset } from "../render/lookPreset";
 import type { Mood } from "../render/lookMood";
+import type { AmbientLifeConfig } from "../render/ambientLife";
 import type { GamepadFeelConfig } from "../input/gamepadModel";
 import type { LocalPlayersConfig } from "../runtime/localPlayers";
 import type { TouchControlsConfig } from "../input/touchScheme";
@@ -936,6 +937,8 @@ export interface PlayableGame<
    * `backdrop` and `postProcessing` fields still win.
    */
   mood?: Mood;
+  /** Birds overhead, litter in wind and steam from vents, driven by weather and time of day. Birds are on by default outdoors; `false` turns all of it off. */
+  ambientLife?: AmbientLifeConfig | false;
   /** Declarative ambient/directional/hemisphere lighting (#207.5); replaces the shell's hardcoded default lights when present, regardless of world kind. */
   lighting?: LightingConfig;
   /** Image-based environment source; omit to use the procedural gradient probe. */

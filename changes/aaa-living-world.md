@@ -1,0 +1,5 @@
+### Added
+
+- Wet surfaces: while it rains, every lit opaque surface darkens and turns glossy over about 14 s, and up-facing ground collects puddles that mirror the sky and the world reflection probe; it dries over about 70 s after the rain stops. A world that opens in rain starts soaked. Glass, water and custom shaders stay as they are; `material.userData.noWetness = true` opts a material out.
+- Wind from the weather: plants and cloth bend in the rain field's wind direction and harder as it rises. Models without a `wind` setting now sway when their mesh or material names read as foliage (palm, leaves, bush, tree…) and only their cloth parts flutter when they read as cloth (flag, banner, awning…); `wind: false` keeps a model rigid.
+- `ambientLife` (`AmbientLifeConfig`): a flock of gulls circles over the ground in view under a sky in fair daylight and leaves in rain or at night (on by default, `birds: false` to turn off); `litter` blows paper along the ground when the wind picks up; `steam` vents breathe plumes that thicken in rain and at night. `ambientLife: false` turns all of it off.

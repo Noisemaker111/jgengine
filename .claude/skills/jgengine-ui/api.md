@@ -33,6 +33,11 @@
 - `createI18n` (function): function createI18n(options: I18nOptions): I18n — Create a translator over a message catalog: active-locale lookup with a fallback-locale chain, `{param}` interpolation, and `Intl.PluralRules`-based pluralization. Observable (`subscribe`) so React re-renders on `setLocale`; the catalog is caller-owned static data, the locale is the only state.
 - `interpolate` (function): function interpolate(template: string, params?: TParams): string — Replace `{name}` placeholders in `template` with `params[name]`. Unknown placeholders are left intact. Pure and locale-independent.
 
+## @jgengine/core/render/ambientLife
+
+- `AmbientLifeConfig` (interface): interface AmbientLifeConfig — Small life the renderer adds around the camera, driven by the weather and the time of day. Birds circle overhead in fair daylight and leave in rain or at night; litter blows along the ground when the wind picks up; steam rises from vents, thicker when it is cold, wet or dark.
+- `SteamVent` (interface): interface SteamVent — A point that breathes steam: a manhole, a vent, a hot spring, a kettle on a stall.
+
 ## @jgengine/core/render/colorPipeline
 
 - `AutoExposureConfig` (interface): interface AutoExposureConfig — Bounds and adaptation policy for clamped auto-exposure.
@@ -3298,6 +3303,11 @@
 - `registerEntityMuzzle` (function): function registerEntityMuzzle(instanceId: string, reader: EntityMuzzleReader): () => void — Register where shots fired by `instanceId` visibly leave from (a gun hand, a turret barrel, a staff tip). Tracers and muzzle effects start there instead of at the shot's rule origin; the rule origin still decides what is hit. Returns the cleanup.
 - `useEntityMuzzle` (function): function useEntityMuzzle(scene: THREE.Object3D, instanceId: string | undefined, facingYaw: () => number): void — Register a placed character's visible muzzle: its muzzle node, or a point just in front of its shooting hand along its facing. A model with no hand bone registers nothing.
 
+## @jgengine/shell/render/livingWorld
+
+- `DRY_SECONDS` (const): const DRY_SECONDS: 70 — Seconds of dry weather until soaked surfaces are dry again.
+- `WET_SECONDS` (const): const WET_SECONDS: 14 — Seconds of steady rain until surfaces are soaked.
+
 ## @jgengine/shell/render/materialAppearanceSignals
 
 - `RenderMaterialAppearanceBaseline` (interface): interface RenderMaterialAppearanceBaseline extends MaterialAppearanceBaseline — Immutable resolved baseline for one caller-owned assigned material, including its original card exposure.
@@ -3364,6 +3374,7 @@
 - `applyModelWind` (function): function applyModelWind(material: THREE.MeshStandardMaterial, wind: ResolvedModelWind): THREE.MeshStandardMaterial — Compiles height-ramped wind sway into a standard material's vertex shader. Idempotent per material; the clock and direction are shared module uniforms, so the whole scene advances with one write per frame and no per-material bookkeeping.
 - `windClock` (const): const windClock: { value: number; } — Shared gust clock every foliage material reads; advanced once per frame by `WindClock`.
 - `windDirection` (const): const windDirection: Vector2 — Shared gust direction (XZ); a model may override it with its own authored direction.
+- `windGust` (const): const windGust: { value: number; } — Shared gust strength multiplier; the weather's wind raises it, so a storm bends every plant harder.
 
 ## @jgengine/shell/render/projectedOverdraw
 
