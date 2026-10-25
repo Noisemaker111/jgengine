@@ -1,3 +1,0 @@
-### Fixed
-
-- `check:consumer-types` installs the candidate it packed. It packed only the `@jgengine/*` packages the games catalog names, so a packed package's own dependency range (`@jgengine/editor` on `@jgengine/navbake@^0.38.4`, `@jgengine/assets` on `@jgengine/core@^0.38.4`) went to the registry, where the version does not exist until after the publish step. The install failed with `No version matching "^0.38.4"` and stopped 0.38.4's first publish run before anything was published. Every published package is now packed, and each one is written into the adopter's `overrides` as well as its catalog, so a transitive range resolves to the tarball.

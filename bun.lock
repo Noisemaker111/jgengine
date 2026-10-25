@@ -187,7 +187,7 @@
     },
     "packages/assets": {
       "name": "@jgengine/assets",
-      "version": "0.38.4",
+      "version": "0.39.0",
       "bin": {
         "assets": "dist/cli/pull.js",
       },
@@ -195,7 +195,7 @@
         "@gltf-transform/core": "4.2.1",
         "@gltf-transform/extensions": "4.2.1",
         "@gltf-transform/functions": "4.2.1",
-        "@jgengine/core": "^0.38.0",
+        "@jgengine/core": "^0.39.0",
         "fflate": "^0.8.2",
       },
       "devDependencies": {
@@ -204,9 +204,9 @@
     },
     "packages/convex": {
       "name": "@jgengine/convex",
-      "version": "0.38.4",
+      "version": "0.39.0",
       "dependencies": {
-        "@jgengine/core": "^0.38.0",
+        "@jgengine/core": "^0.39.0",
       },
       "devDependencies": {
         "@types/react": "^19",
@@ -220,17 +220,17 @@
     },
     "packages/core": {
       "name": "@jgengine/core",
-      "version": "0.38.4",
+      "version": "0.39.0",
     },
     "packages/editor": {
       "name": "@jgengine/editor",
-      "version": "0.38.4",
+      "version": "0.39.0",
       "dependencies": {
-        "@jgengine/assets": "^0.38.0",
-        "@jgengine/core": "^0.38.0",
-        "@jgengine/navbake": "^0.38.0",
-        "@jgengine/react": "^0.38.0",
-        "@jgengine/shell": "^0.38.0",
+        "@jgengine/assets": "^0.39.0",
+        "@jgengine/core": "^0.39.0",
+        "@jgengine/navbake": "^0.39.0",
+        "@jgengine/react": "^0.39.0",
+        "@jgengine/shell": "^0.39.0",
       },
       "devDependencies": {
         "@react-three/drei": "^10.7.7",
@@ -253,16 +253,16 @@
     },
     "packages/github": {
       "name": "@jgengine/github",
-      "version": "0.25.4",
+      "version": "0.26.0",
     },
     "packages/jgengine": {
       "name": "jgengine",
-      "version": "0.35.4",
+      "version": "0.36.0",
       "bin": {
         "jgengine": "dist/cli/index.js",
       },
       "dependencies": {
-        "@jgengine/assets": "^0.38.0",
+        "@jgengine/assets": "^0.39.0",
       },
       "devDependencies": {
         "@types/node": "^24",
@@ -270,18 +270,18 @@
     },
     "packages/navbake": {
       "name": "@jgengine/navbake",
-      "version": "0.38.4",
+      "version": "0.39.0",
       "dependencies": {
-        "@jgengine/core": "^0.38.0",
+        "@jgengine/core": "^0.39.0",
         "recast-navigation": "^0.34.0",
       },
     },
     "packages/node": {
       "name": "@jgengine/node",
-      "version": "0.38.4",
+      "version": "0.39.0",
       "dependencies": {
-        "@jgengine/core": "^0.38.0",
-        "@jgengine/ws": "^0.38.0",
+        "@jgengine/core": "^0.39.0",
+        "@jgengine/ws": "^0.39.0",
         "ws": "^8.18.0",
       },
       "devDependencies": {
@@ -294,17 +294,17 @@
     },
     "packages/rapier": {
       "name": "@jgengine/rapier",
-      "version": "0.38.4",
+      "version": "0.39.0",
       "dependencies": {
         "@dimforge/rapier3d-compat": "0.19.3",
-        "@jgengine/core": "^0.38.0",
+        "@jgengine/core": "^0.39.0",
       },
     },
     "packages/react": {
       "name": "@jgengine/react",
-      "version": "0.38.4",
+      "version": "0.39.0",
       "dependencies": {
-        "@jgengine/core": "^0.38.0",
+        "@jgengine/core": "^0.39.0",
       },
       "devDependencies": {
         "@types/react": "^19",
@@ -319,11 +319,11 @@
     },
     "packages/shell": {
       "name": "@jgengine/shell",
-      "version": "0.38.4",
+      "version": "0.39.0",
       "dependencies": {
-        "@jgengine/core": "^0.38.0",
-        "@jgengine/react": "^0.38.0",
-        "@jgengine/ws": "^0.38.0",
+        "@jgengine/core": "^0.39.0",
+        "@jgengine/react": "^0.39.0",
+        "@jgengine/ws": "^0.39.0",
       },
       "devDependencies": {
         "@react-three/drei": "^10.7.7",
@@ -344,9 +344,9 @@
     },
     "packages/sql": {
       "name": "@jgengine/sql",
-      "version": "0.38.4",
+      "version": "0.39.0",
       "dependencies": {
-        "@jgengine/core": "^0.38.0",
+        "@jgengine/core": "^0.39.0",
       },
       "devDependencies": {
         "pg-mem": "^3.0.5",
@@ -354,9 +354,9 @@
     },
     "packages/ws": {
       "name": "@jgengine/ws",
-      "version": "0.38.4",
+      "version": "0.39.0",
       "dependencies": {
-        "@jgengine/core": "^0.38.0",
+        "@jgengine/core": "^0.39.0",
       },
     },
     "registry": {
