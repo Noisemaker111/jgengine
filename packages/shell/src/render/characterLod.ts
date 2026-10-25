@@ -103,6 +103,15 @@ let poseWrites = 0;
 let poses = 0;
 let frames = 0;
 const crowdInstances = new Map<string, number>();
+const planted = new Set<string>();
+const glancing = new Set<string>();
+
+/** Record whether a character's feet are planted by IK / its head is turned this frame, for the probe. @internal */
+export function noteCharacterMotion(instanceId: string, kind: "feet" | "glance", active: boolean): void {
+  const set = kind === "feet" ? planted : glancing;
+  if (active) set.add(instanceId);
+  else set.delete(instanceId);
+}
 
 /** Record a mounted character rig so the probe can report its parts and bones. @internal */
 export function registerCharacterRig(instanceId: string, parts: number, bones: number): void {
@@ -114,6 +123,8 @@ export function unregisterCharacterRig(instanceId: string): void {
   rigs.delete(instanceId);
   tiers.delete(instanceId);
   phases.delete(instanceId);
+  planted.delete(instanceId);
+  glancing.delete(instanceId);
 }
 
 /** The tier the world marker decided this frame; the animation driver reads it instead of measuring distance twice. @internal */
@@ -179,6 +190,8 @@ export function resetCharacterLodStats(): void {
   poses = 0;
   frames = 0;
   crowdInstances.clear();
+  planted.clear();
+  glancing.clear();
 }
 
 function readCharacterLod(): { counters: Record<string, number>; line: string } {
@@ -205,8 +218,10 @@ function readCharacterLod(): { counters: Record<string, number>; line: string } 
       halfRate: counts.half,
       quarterRate: counts.quarter,
       crowdRate: counts.crowd,
+      footIk: planted.size,
+      glancing: glancing.size,
     },
-    line: `${rigs.size} rigs · ${parts} skinned parts · ${boneWrites}/${bones} bone writes/frame · crowd ${crowd}`,
+    line: `${rigs.size} rigs · ${parts} skinned parts · ${boneWrites}/${bones} bone writes/frame · crowd ${crowd} · feet planted ${planted.size} · glancing ${glancing.size}`,
   };
 }
 

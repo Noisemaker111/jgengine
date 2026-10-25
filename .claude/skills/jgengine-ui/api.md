@@ -3172,6 +3172,17 @@
 - `SurfaceShape` (type): type SurfaceShape = "box" | "cylinder" — Primitive UV layout whose physical dimensions drive `repeatMetres`.
 - `useAuthoredSurfaceMaterial` (function): function useAuthoredSurfaceMaterial(config: AuthoredSurfaceConfig, shape: SurfaceShape = "box"): THREE.MeshStandardMaterial — Load declared surface-map roles and own the material/map clones (cached textures remain untouched). Colour, emissive, sheen-colour and specular-colour maps are sRGB; numeric maps are linear. Cylinder side metres use the RMS ellipse circumference approximation. Static batches and custom meshes share this lifecycle.
 
+## @jgengine/shell/render/characterGlance
+
+- `DEFAULT_GLANCE` (const): const DEFAULT_GLANCE: GlanceTuning — Default glance: starts at 7 m, lets go at 8.5 m, head turns up to 65° sideways and 30° up or down.
+- `GlanceRig` (interface): interface GlanceRig — Head and neck bones the glance turns, found by name on the loaded rig.
+- `GlanceState` (interface): interface GlanceState — Carried between frames: the smoothed aim and the faded weight.
+- `GlanceTuning` (interface): interface GlanceTuning — Tuning for the default head turn a rigged character makes toward the local player. Angles are radians, distances metres.
+- `applyGlance` (function): function applyGlance(rig: GlanceRig, facingYaw: number, target: THREE.Vector3 | null, state: GlanceState, delta: number, tuning: GlanceTuning = DEFAULT_GLANCE): void — One frame of the glance, after the animation mixer and foot IK. The turn is added on top of the animated pose relative to the character's own heading (`facingYaw`, engine convention: forward is `(sin yaw, cos yaw)`), so it does not depend on which axis a rig's head bone points along. `target` is a world point or `null` for nothing to look at; the turn fades out either way. Exported for tests.
+- `createGlanceState` (function): function createGlanceState(): GlanceState — A fresh glance state: looking straight ahead with no turn applied.
+- `findGlanceRig` (function): function findGlanceRig(scene: THREE.Object3D): GlanceRig | null — Finds the head (and neck) of a humanoid or animal rig by bone name: KayKit `head`, Mixamo `mixamorigHead`, Rocketbox `Bip01 Head`, Quaternius `Head`. End markers (`HeadTop_End`) are skipped. Returns `null` when no head bone exists.
+- `useCharacterGlance` (function): function useCharacterGlance(scene: THREE.Object3D, enabled: boolean, ctx: GameContext | null, instanceId: string | undefined, maxCameraDistance: number): void — Default glance for a rigged character: its head turns toward the local player when they come close, from any angle in front of it, and turns back when they leave. The local player's own model never glances. `maxCameraDistance` skips the work for characters too far away to read.
+
 ## @jgengine/shell/render/characterLod
 
 - `CharacterLodPolicy` (interface): interface CharacterLodPolicy — Distance policy a character model's {@link ModelLodConfig} resolves to; every distance is metres.
@@ -3376,8 +3387,8 @@
 - `FootIkRig` (interface): interface FootIkRig — Bones resolved once per loaded scene for {@link applyFootIk}.
 - `FootIkState` (interface): interface FootIkState — Per-model state carried between frames: the faded weight and the smoothed pelvis drop.
 - `applyFootIk` (function): function applyFootIk(rig: FootIkRig, originY: number, probe: GroundProbe, state: FootIkState, delta: number, lookAtTarget?: readonly [number, number, number]): boolean — Applies one frame of foot IK after the animation mixer: probes the ground under each foot, resolves targets with `placeFeet`, lowers the pelvis, solves each leg with `solveTwoBone` bending toward the animated knee, and tilts planted feet to the ground. Turns the look-at bone toward `lookAtTarget` when the rig has one. Returns whether the feet are grounded; `state` carries the faded weight between frames. Exported for tests and custom hosts.
-- `resolveFootIkRig` (function): function resolveFootIkRig(scene: THREE.Object3D, config: FootIkConfig): FootIkRig | null — Resolves foot-IK bones on a loaded rig: explicit chains, or legs found by bone name for `"auto"` and configs without `feet`. Returns `null` when no leg resolves.
-- `useFootIk` (function): function useFootIk(scene: THREE.Object3D, config: FootIkConfig | undefined, ctx: GameContext | null, instanceId?: string, groundOffset = 0): void — Runs foot IK after the model's animation mixer for `ModelConfig.ik`. Ground probes hit terrain and blocking physical objects, never the model's own entity. `groundOffset` is the model-space height its soles rest on (`ModelConfig.y`).
+- `resolveFootIkRig` (function): function resolveFootIkRig(scene: THREE.Object3D, config: FootIkConfig, quiet = false): FootIkRig | null — Resolves foot-IK bones on a loaded rig: explicit chains, or legs found by bone name for `"auto"` and configs without `feet`. Returns `null` when no leg resolves.
+- `useFootIk` (function): function useFootIk(scene: THREE.Object3D, config: FootIkConfig | undefined, ctx: GameContext | null, instanceId?: string, groundOffset = 0, options: { quiet?: boolean; maxCameraDistance?: number } = {}): void — Runs foot IK after the model's animation mixer for `ModelConfig.ik`. Ground probes hit terrain and blocking physical objects, never the model's own entity. `groundOffset` is the model-space height its soles rest on (`ModelConfig.y`). `options.quiet` drops the rig diagnostics (the engine's own default IK on a model that never asked for it); `options.maxCameraDistance` skips characters further than that from the camera, fading their correction out.
 
 ## @jgengine/shell/render/useModelAnimation
 

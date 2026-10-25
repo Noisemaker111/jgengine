@@ -71,7 +71,7 @@ export function useModelInstance(model: ModelInstanceConfig, options: ModelInsta
     registerCharacterRig(instanceId, parts, bones);
     return () => unregisterCharacterRig(instanceId);
   }, [content, instanceId, lodKey]);
-  useModelAnimation(content, gltf.animations, model.animation, instanceId);
+  useModelAnimation(content, gltf.animations, model.animation ?? (instanceId === undefined ? undefined : "auto"), instanceId);
   return { content, scene, ...placement };
 }
 
