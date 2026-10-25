@@ -13,7 +13,7 @@ import { frontProbe } from "./game/encounters/front";
 import { reserveProbe } from "./game/handroll/reserve";
 import { content } from "./game/content";
 import { inventories } from "./game/inventories";
-import { keybinds } from "./game/keybinds";
+import { DEFAULT_WALK_CODES, hotbarSlotBindings } from "@jgengine/core/input/actionBindings";
 import { RARITY_COLORS } from "./game/palette";
 import { session } from "./game/session";
 import { RELAY } from "./game/relay";
@@ -228,7 +228,21 @@ export const game = defineGame({
   // produce the same run on a slow and a fast machine.
   simulation: { hz: 60 },
   inventories,
-  input: keybinds,
+  input: {
+    ...DEFAULT_WALK_CODES,
+    sprint: ["ShiftLeft"],
+    crouch: { hold: ["KeyC"] },
+    interact: ["KeyE"],
+    fire: { hold: ["mouse0"], repeatMs: 30 },
+    aim: { hold: ["mouse2"] },
+    reload: ["KeyR"],
+    throwGrenade: ["KeyG"],
+    useHealthVial: ["KeyQ"],
+    ...hotbarSlotBindings(4, { action: (slot) => `selectSlot${slot}` }),
+    openSkills: ["KeyK"],
+    "relay.overclock": ["KeyV"],
+    "rift.callWave": ["KeyN"],
+  },
   // The context-specific relay button lives beside its stakes and progress.
   touch: { hidden: ["relay.overclock", "rift.callWave"] },
   server: { mode: "campaign" },

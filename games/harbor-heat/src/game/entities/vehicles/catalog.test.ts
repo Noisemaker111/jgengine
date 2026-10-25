@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { createKinematicVehicle } from "@jgengine/core/world";
+import { measureHandling } from "@jgengine/core/physics/handlingProbe";
+import { createVehicleDynamics, vehicleTuning, type VehicleSpec } from "@jgengine/core/world";
 
 import { VEHICLES, vehicleById } from "./catalog";
 
@@ -8,29 +9,27 @@ const GRAVITY = 9.81;
 
 const groundCars = VEHICLES.filter((v) => v.dynamics.type === "ground");
 
-function chassisOf(id: string) {
+function specOf(id: string): VehicleSpec {
   const def = vehicleById(id);
   if (def === undefined || def.dynamics.type !== "ground") throw new Error(`${id} is not a ground vehicle`);
-  const chassis = def.dynamics.tuning.chassis;
-  if (chassis === undefined) throw new Error(`${id} has no chassis`);
-  return chassis;
+  return def.dynamics.tuning;
 }
 
 function turningRadius(id: string): number {
-  const def = vehicleById(id);
-  if (def === undefined || def.dynamics.type !== "ground") throw new Error(`${id} is not a ground vehicle`);
-  const steering = def.dynamics.tuning.steering;
-  if (steering === undefined) throw new Error(`${id} has no steering`);
   // Bicycle-model minimum turning radius at full lock: wheelbase / tan(maxAngle).
-  return steering.wheelbase / Math.tan(steering.maxAngle);
+  const steering = vehicleTuning(specOf(id)).steering!;
+  return vehicleTuning(specOf(id)).wheelbase / Math.tan(steering.maxAngle);
 }
 
+const simOf = (spec: VehicleSpec) => createVehicleDynamics(vehicleTuning(spec), { position: [0, 0, 0], heading: 0 });
+
 describe("harbor-heat vehicle catalog (#1051)", () => {
-  test("every ground vehicle drives on a mass-and-force chassis", () => {
+  test("every ground vehicle is a weighed car with a gearbox", () => {
     expect(groundCars.length).toBeGreaterThanOrEqual(6);
     for (const car of groundCars) {
       if (car.dynamics.type !== "ground") continue;
-      expect(car.dynamics.tuning.chassis, `${car.id} chassis`).toBeDefined();
+      expect(car.dynamics.tuning.weight, `${car.id} weight`).toBeGreaterThan(0);
+      expect(car.dynamics.tuning.gearbox?.gears.length, `${car.id} gears`).toBeGreaterThan(3);
       expect(car.collisionRadius).toBeGreaterThan(0);
     }
   });
@@ -43,7 +42,7 @@ describe("harbor-heat vehicle catalog (#1051)", () => {
 
   test("mass orders bus > suv > cop > muscle > sport > compact", () => {
     const order = ["car_bus", "car_suv", "car_cop", "car_muscle", "car_sport", "car_compact"];
-    const masses = order.map((id) => chassisOf(id).massKg);
+    const masses = order.map((id) => specOf(id).weight!);
     for (let i = 0; i < masses.length - 1; i += 1) {
       expect(masses[i]!, `${order[i]} heavier than ${order[i + 1]}`).toBeGreaterThan(masses[i + 1]!);
     }
@@ -52,8 +51,7 @@ describe("harbor-heat vehicle catalog (#1051)", () => {
   test("service-brake deceleration stays in a plausible 0.35–1.3 g band", () => {
     for (const car of groundCars) {
       if (car.dynamics.type !== "ground") continue;
-      const chassis = car.dynamics.tuning.chassis!;
-      const brakeG = chassis.brakeForce / (chassis.massKg * GRAVITY);
+      const brakeG = car.dynamics.tuning.brake / GRAVITY;
       expect(brakeG, `${car.id} brake g`).toBeGreaterThanOrEqual(0.35);
       expect(brakeG, `${car.id} brake g`).toBeLessThanOrEqual(1.3);
     }
@@ -69,7 +67,7 @@ describe("harbor-heat vehicle catalog (#1051)", () => {
     const dt = 1 / 60;
     for (const car of groundCars) {
       if (car.dynamics.type !== "ground") continue;
-      const vehicle = createKinematicVehicle(car.dynamics.tuning, { position: [0, 0, 0], heading: 0 });
+      const vehicle = simOf(car.dynamics.tuning);
       for (let i = 0; i < 3000; i += 1) {
         const step = vehicle.tick(dt, { throttle: 1, brake: 0, steer: 0, handbrake: 0 });
         if (Math.abs(step.forwardSpeed) * 3.6 >= 30) break;
@@ -100,7 +98,7 @@ describe("harbor-heat vehicle catalog (#1051)", () => {
     for (const [id, band] of Object.entries(targets)) {
       const def = vehicleById(id);
       if (def === undefined || def.dynamics.type !== "ground") throw new Error(id);
-      const vehicle = createKinematicVehicle(def.dynamics.tuning);
+      const vehicle = simOf(def.dynamics.tuning);
       let step = vehicle.tick(dt, { throttle: 1, brake: 0, steer: 0, handbrake: 0 });
       for (let i = 1; i < 120; i += 1) step = vehicle.tick(dt, { throttle: 1, brake: 0, steer: 0, handbrake: 0 });
       expect(step.forwardSpeed, `${id} 2s launch ${step.forwardSpeed.toFixed(2)} m/s`).toBeGreaterThanOrEqual(band.min);
@@ -112,14 +110,26 @@ describe("harbor-heat vehicle catalog (#1051)", () => {
     const dt = 1 / 60;
     for (const car of groundCars) {
       if (car.dynamics.type !== "ground") continue;
-      const vehicle = createKinematicVehicle(car.dynamics.tuning);
+      const vehicle = simOf(car.dynamics.tuning);
       let step = vehicle.tick(dt, { throttle: 0, brake: 1, steer: 0, handbrake: 0 });
       for (let i = 1; i < 120; i += 1) step = vehicle.tick(dt, { throttle: 0, brake: 1, steer: 0, handbrake: 0 });
       // Bus is intentionally sluggish; everything else should reverse with intent by 2 s.
       const minReverse = car.id === "car_bus" ? -1.5 : -3;
       expect(step.forwardSpeed, `${car.id} reverse`).toBeLessThan(minReverse);
       // Cap near reverseSpeed (~0.18× top) — never rocket reverse.
-      expect(step.forwardSpeed, `${car.id} reverse`).toBeGreaterThan(-(car.dynamics.tuning.reverseSpeed + 0.6));
+      expect(step.forwardSpeed, `${car.id} reverse`).toBeGreaterThan(-(car.dynamics.tuning.reverseSpeed! + 0.6));
+    }
+  });
+
+  test("every car holds a keyboard corner, slides on the handbrake and catches it", () => {
+    for (const car of groundCars) {
+      if (car.dynamics.type !== "ground") continue;
+      const report = measureHandling(() => simOf(car.dynamics.tuning), { cornerSpeed: 15 });
+      expect(report.spun, `${car.id} spun`).toBe(false);
+      expect(report.powerSteerSpun, `${car.id} power-steer spun`).toBe(false);
+      // An eleven-tonne bus only scrubs on the handbrake; every car swings its tail out.
+      expect(report.handbrakePeakSideslipDeg, `${car.id} handbrake slide`).toBeGreaterThan(car.id === "car_bus" ? 2 : 30);
+      expect(report.handbrakeRecoverySeconds, `${car.id} handbrake recovery`).toBeLessThan(3);
     }
   });
 });

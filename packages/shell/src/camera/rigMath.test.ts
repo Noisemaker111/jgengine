@@ -1,18 +1,13 @@
 import { describe, expect, test } from "bun:test";
 
 import {
-  addTrauma,
   applyRtsCenter,
   angleDelta,
   bankRollStep,
   blendShoulder,
-  CALIBRATED_TRAUMA_SHAKE_FREQUENCY,
-  CALIBRATED_TRAUMA_SHAKE_MAX_OFFSET,
-  CALIBRATED_TRAUMA_SHAKE_MAX_ROLL,
   chaseDesiredPosition,
   cinematicSample,
   clamp,
-  createTrauma,
   crossfadePose,
   leadFollowPoint,
   lockOnPose,
@@ -27,16 +22,13 @@ import {
   rtsRotateKeysConflict,
   rtsPanWorldDir,
   seatPose,
-  shakeOffset,
   shoulderPose,
   sideScrollFollowBlend,
   smoothstep,
   smoothYaw,
   speedToFov,
   springArmStep,
-  stepTrauma,
   topDownPose,
-  traumaShake,
   velocityYawTarget,
   yawTo,
 } from "./rigMath";
@@ -119,88 +111,6 @@ describe("springArmStep", () => {
     expect(one.x).toBeGreaterThan(0);
     expect(one.x).toBeLessThan(10);
     expect(near(one.x, split.x, 1e-9)).toBe(true);
-  });
-});
-
-describe("trauma shake channel", () => {
-  test("addTrauma clamps to [0,1]", () => {
-    const s = createTrauma();
-    addTrauma(s, 0.7);
-    addTrauma(s, 0.7);
-    expect(s.trauma).toBe(1);
-  });
-
-  test("decays to zero over time", () => {
-    const s = createTrauma();
-    addTrauma(s, 1);
-    for (let i = 0; i < 100; i += 1) stepTrauma(s, 1.6, 0.1);
-    expect(s.trauma).toBe(0);
-  });
-
-  test("shake magnitude scales with trauma^exponent and vanishes at zero", () => {
-    const cfg = { maxOffset: 1, maxRoll: 0.1, exponent: 2, frequency: 24 };
-    const half = createTrauma();
-    addTrauma(half, 0.5);
-    half.time = 0.37;
-    const full = createTrauma();
-    addTrauma(full, 1);
-    full.time = 0.37;
-    const halfMag = Math.hypot(shakeOffset(half, cfg).x, shakeOffset(half, cfg).y);
-    const fullMag = Math.hypot(shakeOffset(full, cfg).x, shakeOffset(full, cfg).y);
-    expect(fullMag).toBeGreaterThan(halfMag);
-    const zero = createTrauma();
-    expect(shakeOffset(zero, cfg)).toEqual({ x: 0, y: 0, roll: 0 });
-  });
-
-  test("shake is deterministic for identical state", () => {
-    const a = createTrauma();
-    addTrauma(a, 0.8);
-    a.time = 1.25;
-    const b = createTrauma();
-    addTrauma(b, 0.8);
-    b.time = 1.25;
-    expect(shakeOffset(a, undefined)).toEqual(shakeOffset(b, undefined));
-  });
-});
-
-describe("traumaShake", () => {
-  test("small trauma stays tiny relative to full trauma", () => {
-    const small = traumaShake(0.05, 0.37);
-    const full = traumaShake(1, 0.37);
-    const smallMag = Math.hypot(small.x, small.y);
-    const fullMag = Math.hypot(full.x, full.y);
-    expect(smallMag).toBeGreaterThanOrEqual(0);
-    expect(smallMag).toBeLessThan(fullMag);
-  });
-
-  test("zero trauma produces zero offset", () => {
-    expect(traumaShake(0, 1.1)).toEqual({ x: 0, y: 0, roll: 0 });
-  });
-
-  test("offset and roll stay within the calibrated caps at full trauma", () => {
-    for (let i = 0; i <= 20; i += 1) {
-      const offset = traumaShake(1, i * 0.031);
-      expect(Math.abs(offset.x)).toBeLessThanOrEqual(CALIBRATED_TRAUMA_SHAKE_MAX_OFFSET + 1e-9);
-      expect(Math.abs(offset.y)).toBeLessThanOrEqual(CALIBRATED_TRAUMA_SHAKE_MAX_OFFSET + 1e-9);
-      expect(Math.abs(offset.roll)).toBeLessThanOrEqual(CALIBRATED_TRAUMA_SHAKE_MAX_ROLL + 1e-9);
-    }
-  });
-
-  test("out-of-range trauma clamps into [0,1]", () => {
-    expect(traumaShake(-1, 0.5)).toEqual(traumaShake(0, 0.5));
-    expect(traumaShake(5, 0.5)).toEqual(traumaShake(1, 0.5));
-  });
-
-  test("matches shakeOffset driven by the calibrated constants directly", () => {
-    const direct = shakeOffset(
-      { trauma: 1, time: 0.6 },
-      {
-        maxOffset: CALIBRATED_TRAUMA_SHAKE_MAX_OFFSET,
-        maxRoll: CALIBRATED_TRAUMA_SHAKE_MAX_ROLL,
-        frequency: CALIBRATED_TRAUMA_SHAKE_FREQUENCY,
-      },
-    );
-    expect(traumaShake(1, 0.6)).toEqual(direct);
   });
 });
 

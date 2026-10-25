@@ -1,5 +1,5 @@
 import type { Curve } from "@jgengine/core/game/progression";
-import type { KinematicVehicleTuning } from "@jgengine/core/physics/kinematicVehicle";
+import type { VehicleSpec } from "@jgengine/core/physics/vehicleSpec";
 import { createUpgradeTree, type UpgradeBuy, type UpgradeNodeDef, type UpgradeState } from "@jgengine/core/progression/upgrades";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { defineStore } from "@jgengine/core/store/defineStore";
@@ -57,21 +57,19 @@ export function nextUpgradeCost(ctx: GameContext, id: string): number | null {
 }
 
 /** An owned car's handling with the bay's mods on it. A stranger's car drives stock. */
-export function moddedTuning(ctx: GameContext, base: KinematicVehicleTuning): KinematicVehicleTuning {
+export function moddedTuning(ctx: GameContext, base: VehicleSpec): VehicleSpec {
   const engine = 1 + 0.12 * upgradeRank(ctx, "car_engine");
   const brakes = 1 + 0.2 * upgradeRank(ctx, "car_brakes");
   const grip = 1 + 0.1 * upgradeRank(ctx, "car_grip");
   if (engine === 1 && brakes === 1 && grip === 1) return base;
-  const chassis = (base as { chassis?: { engineForce: number; brakeForce: number; tireGrip: number } }).chassis;
   return {
     ...base,
-    engineAccel: base.engineAccel * engine,
-    brakeAccel: base.brakeAccel * brakes,
+    accel: base.accel * engine,
+    brake: base.brake * brakes,
     topSpeed: base.topSpeed * (1 + (engine - 1) / 2),
-    gripStrength: base.gripStrength * grip,
+    grip: base.grip * grip,
     turnRate: base.turnRate * (1 + (grip - 1) / 2),
-    ...(chassis === undefined ? {} : { chassis: { ...chassis, engineForce: chassis.engineForce * engine, brakeForce: chassis.brakeForce * brakes, tireGrip: chassis.tireGrip * grip } }),
-  } as KinematicVehicleTuning;
+  };
 }
 
 /** Share of a crash an owned car still takes, 1 stock down to 0.4 fully armored. */

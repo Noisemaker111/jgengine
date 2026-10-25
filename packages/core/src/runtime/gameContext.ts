@@ -44,6 +44,7 @@ import { createSimContext } from "./simContext";
 import { seededRng } from "../random/rng";
 import { createCameraDirector, installCameraPersistence } from "./cameraDirector";
 import { createParticleDirector } from "../vfx/particleDirector";
+import { createTireMarks } from "../physics/tireMarks";
 import { createInputSnapshot } from "./inputSnapshot";
 import { baselineDescriptors, type BaselineDeps } from "./descriptors/baseline";
 import { featureDescriptors, type FeatureDeps } from "./descriptors/features";
@@ -358,6 +359,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   const { pile, loop, raceState, cardPiles, turnLoops } = createContextRegistries(signal.notify);
   const camera = notifyAfter(createCameraDirector(), ["follow", "setCinematic", "setChaseTuning", "setRig", "restore", "reset"], signal.notify);
   const particles = createParticleDirector();
+  const tireMarks = createTireMarks();
   const authoredEnvironment = createAuthoredSimulation({ document: definition.authoredDocument, timeSeconds: time.now, particles });
   const input = createInputSnapshot();
 
@@ -696,6 +698,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     sim: createSimContext({ config: definition.simulation, entities, time }),
     camera,
     particles,
+    tireMarks,
     input,
     subscribe: signal.subscribe,
     version: signal.version,

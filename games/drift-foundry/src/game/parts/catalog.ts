@@ -1,4 +1,4 @@
-import { DEFAULT_GRIP_CURVE, type GripCurve } from "@jgengine/core/physics/vehicleBody";
+import { DEFAULT_GRIP_CURVE, type GripCurve } from "@jgengine/core/physics/gripCurve";
 import type { VehiclePart } from "@jgengine/core/physics/vehicleParts";
 
 export type PartSlotId = "engine" | "front" | "wheels" | "frame";
@@ -59,7 +59,7 @@ export const PARTS: readonly DriftFoundryPartDef[] = [
     label: "Salvage V6",
     radioLine: "SALVAGE SIX BOLTED — SHE'S BREATHING FIRE",
     blurb: "A balanced yard-find inline six. Reliable pull, nothing fancy.",
-    effects: { topSpeed: { add: 4.5 }, engineAccel: { add: 4 }, turnRate: { add: -0.1 } },
+    effects: { topSpeed: { add: 4.5 }, accel: { add: 4 }, turnRate: { add: -0.1 } },
   },
   {
     id: "truck_engine",
@@ -68,7 +68,7 @@ export const PARTS: readonly DriftFoundryPartDef[] = [
     label: "Truck Engine",
     radioLine: "TRUCK ENGINE BOLTED — HOLD HER STRAIGHT!",
     blurb: "Diesel brute out of a wrecked flatbed. Huge top end, fishtails hard.",
-    effects: { topSpeed: { add: 9.5 }, engineAccel: { add: 7 }, turnRate: { add: -0.7 } },
+    effects: { topSpeed: { add: 9.5 }, accel: { add: 7 }, turnRate: { add: -0.7 } },
   },
   {
     id: "ev_conversion",
@@ -77,7 +77,7 @@ export const PARTS: readonly DriftFoundryPartDef[] = [
     label: "EV Conversion",
     radioLine: "EV SWAP BOLTED — QUIET BUT QUICK",
     blurb: "Scavenged battery motor. Snappy off the line, gentle on the wheel.",
-    effects: { topSpeed: { add: 3 }, engineAccel: { add: 6 }, turnRate: { add: 0.5 } },
+    effects: { topSpeed: { add: 3 }, accel: { add: 6 }, turnRate: { add: 0.5 } },
   },
   {
     id: "plow_blade",
@@ -114,7 +114,7 @@ export const PARTS: readonly DriftFoundryPartDef[] = [
     label: "Coil Springs",
     radioLine: "COIL SPRINGS BOLTED — SEND IT OVER THE TOP",
     blurb: "Stacked garage-door springs on the axles. Real air, real distance.",
-    effects: { topSpeed: { add: -0.5 }, engineAccel: { add: -0.5 }, turnRate: { add: 0.1 } },
+    effects: { topSpeed: { add: -0.5 }, accel: { add: -0.5 }, turnRate: { add: 0.1 } },
     grants: { jumpPower: 9 },
   },
   {
@@ -134,7 +134,7 @@ export const PARTS: readonly DriftFoundryPartDef[] = [
     label: "Monster Treads",
     radioLine: "MONSTER TREADS BOLTED — GRIP FOR DAYS",
     blurb: "Off a crushed dump truck. Huge grip, drags on the top speed.",
-    effects: { topSpeed: { add: -2 }, turnRate: { add: 1 }, gripStrength: { scale: 1.15 } },
+    effects: { topSpeed: { add: -2 }, turnRate: { add: 1 }, grip: { scale: 1.15 } },
     gripCurve: MONSTER_TREAD_CURVE,
   },
   {
@@ -163,7 +163,7 @@ export const PARTS: readonly DriftFoundryPartDef[] = [
     label: "Armor Plating",
     radioLine: "ARMOR PLATING BOLTED — GOOD LUCK, COMPACTOR",
     blurb: "Bolted-on container steel. Heavy, but it'll eat a crusher clip for you.",
-    effects: { topSpeed: { add: -1.5 }, engineAccel: { add: -1 }, turnRate: { add: -0.4 } },
+    effects: { topSpeed: { add: -1.5 }, accel: { add: -1 }, turnRate: { add: -0.4 } },
     grants: { armor: 1 },
   },
 ];

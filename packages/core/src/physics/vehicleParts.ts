@@ -1,18 +1,18 @@
-import type { KinematicVehicleTuning } from "./kinematicVehicle";
-import { DEFAULT_GRIP_CURVE, sampleGripCurve, type GripCurve } from "./vehicleBody";
+import { DEFAULT_GRIP_CURVE, gripCurvePeak, type GripCurve } from "./gripCurve";
+import type { VehicleSpec } from "./vehicleSpec";
 
-/** A tunable vehicle number a part can move; each names a {@link KinematicVehicleTuning} field. */
+/** A tunable vehicle number a part can move; each names a numeric {@link VehicleSpec} field. */
 export type VehicleStat =
-  | "engineAccel"
-  | "brakeAccel"
   | "topSpeed"
+  | "accel"
+  | "brake"
   | "reverseSpeed"
   | "turnRate"
-  | "turnSpeedRef"
-  | "gripStrength"
+  | "grip"
+  | "drift"
   | "handbrakeGrip"
-  | "rollingResistance"
-  | "coastDeceleration";
+  | "coast"
+  | "weight";
 
 /** How one part moves a stat: multiply the base by `scale`, then add `add`. Both default to no change. */
 export interface VehiclePartEffect {
@@ -34,84 +34,81 @@ export interface VehiclePart {
 }
 
 /**
- * Comparable handling numbers derived from a tuning — what "the numbers and the feel" means to a shop
+ * Comparable handling numbers derived from a spec — what "the numbers and the feel" means to a shop
  * screen, a HUD or a test. Grip is reported as the curve's own shape, so a compound change shows up as
  * a moved peak rather than a single scalar.
  */
 export interface VehicleFeel {
   topSpeed: number;
-  engineAccel: number;
-  brakeAccel: number;
+  accel: number;
+  brake: number;
   turnRate: number;
   handbrakeGrip: number;
-  /** Grip available before the tire breaks away (the curve's highest point). */
+  /** Grip available before the tire breaks away, g (the spec's grip times the curve's highest point). */
   peakGrip: number;
   /** Slip where that peak sits — the far end of a flat plateau, so it reads as the breakaway slip. */
   peakSlip: number;
-  /** Grip left once the tire is fully sliding (the curve at slip 1). */
+  /** Share of the peak left once the tire is fully sliding (the curve at slip 1 over its peak). */
   slideGrip: number;
 }
 
-/** Read the handling numbers out of any tuning — base or parts-composed. */
-export function feelOf(tuning: KinematicVehicleTuning): VehicleFeel {
-  const curve = tuning.grip ?? DEFAULT_GRIP_CURVE;
-  let peakGrip = 0;
-  let peakSlip = 0;
-  for (const [slip, grip] of curve.points) {
-    if (grip >= peakGrip) {
-      peakGrip = grip;
-      peakSlip = slip;
-    }
-  }
+/** Read the handling numbers out of any spec — base or parts-composed. */
+export function feelOf(spec: VehicleSpec): VehicleFeel {
+  const curve = gripCurvePeak(spec.gripCurve ?? DEFAULT_GRIP_CURVE);
   return {
-    topSpeed: tuning.topSpeed,
-    engineAccel: tuning.engineAccel,
-    brakeAccel: tuning.brakeAccel,
-    turnRate: tuning.turnRate,
-    handbrakeGrip: tuning.handbrakeGrip,
-    peakGrip,
-    peakSlip,
-    slideGrip: sampleGripCurve(curve, 1),
+    topSpeed: spec.topSpeed,
+    accel: spec.accel,
+    brake: spec.brake,
+    turnRate: spec.turnRate,
+    handbrakeGrip: spec.handbrakeGrip ?? 0.5 - 0.1 * (spec.drift ?? 0.2),
+    peakGrip: spec.grip * curve.peakGrip,
+    peakSlip: curve.peakSlip,
+    slideGrip: curve.peakGrip > 0 ? curve.slideGrip / curve.peakGrip : 0,
   };
 }
 
-/** A composed vehicle: the tuning to hand the sim, the feel it produces, and what was installed. */
+/** A composed vehicle: the spec to build the sim from, the feel it produces, and what was installed. */
 export interface VehicleSetup {
-  tuning: KinematicVehicleTuning;
+  spec: VehicleSpec;
   feel: VehicleFeel;
   /** Installed part ids, in install order. */
   parts: readonly string[];
 }
 
-function statOf(tuning: KinematicVehicleTuning, stat: VehicleStat): number {
-  return tuning[stat] ?? 0;
-}
+const STAT_DEFAULTS: Record<VehicleStat, (spec: VehicleSpec) => number> = {
+  topSpeed: (spec) => spec.topSpeed,
+  accel: (spec) => spec.accel,
+  brake: (spec) => spec.brake,
+  reverseSpeed: (spec) => spec.reverseSpeed ?? Math.min(9, spec.topSpeed * 0.3),
+  turnRate: (spec) => spec.turnRate,
+  grip: (spec) => spec.grip,
+  drift: (spec) => spec.drift ?? 0.2,
+  handbrakeGrip: (spec) => spec.handbrakeGrip ?? 0.5 - 0.1 * (spec.drift ?? 0.2),
+  coast: (spec) => spec.coast ?? 1,
+  weight: (spec) => spec.weight ?? 1300,
+};
 
 /**
- * Fold parts onto a base tuning: every effect scales then adds onto the running value, in array order,
- * so a setup is deterministic and a caller can reason about which part moved what. The base tuning is
- * never mutated, so the same base can seed several builds.
+ * Fold parts onto a base spec: every effect scales then adds onto the running value, in array order,
+ * so a setup is deterministic and a caller can reason about which part moved what. The base spec is
+ * never mutated, so the same base can seed several builds. Hand `setup.spec` to `vehicleTuning`.
  *
- * @capability vehicle-parts compose data-driven tuning parts (tires, engine, brakes) onto a vehicle tuning and read the resulting feel
+ * @capability vehicle-parts compose data-driven tuning parts (tires, engine, brakes) onto a vehicle spec and read the resulting feel
  */
-export function applyVehicleParts(
-  base: KinematicVehicleTuning,
-  parts: readonly VehiclePart[],
-): VehicleSetup {
-  const tuning: KinematicVehicleTuning = { ...base };
+export function applyVehicleParts(base: VehicleSpec, parts: readonly VehiclePart[]): VehicleSetup {
+  const spec: VehicleSpec = { ...base };
   const ids: string[] = [];
   for (const part of parts) {
     ids.push(part.id);
-    if (part.gripCurve !== undefined) tuning.grip = part.gripCurve;
+    if (part.gripCurve !== undefined) spec.gripCurve = part.gripCurve;
     if (part.effects === undefined) continue;
     for (const stat of Object.keys(part.effects) as VehicleStat[]) {
       const effect = part.effects[stat];
       if (effect === undefined) continue;
-      const scaled = statOf(tuning, stat) * (effect.scale ?? 1) + (effect.add ?? 0);
-      tuning[stat] = scaled;
+      spec[stat] = STAT_DEFAULTS[stat](spec) * (effect.scale ?? 1) + (effect.add ?? 0);
     }
   }
-  return { tuning, feel: feelOf(tuning), parts: ids };
+  return { spec, feel: feelOf(spec), parts: ids };
 }
 
 /**

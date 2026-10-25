@@ -17,7 +17,7 @@ import { executionError, type DifficultyProfile } from "./difficulty";
 export interface DriverPose {
   x: number;
   z: number;
-  /** Yaw with the same convention as the kinematic vehicle sim: `atan2(dx, dz)`. */
+  /** Yaw with the same convention as the vehicle sim: `atan2(dx, dz)`. */
   heading: number;
   /** Signed forward speed in world units/second (negative while reversing). */
   speed: number;

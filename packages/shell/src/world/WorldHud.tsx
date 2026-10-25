@@ -9,8 +9,7 @@ import type { CatalogEntityRole } from "@jgengine/core/runtime/gameContext";
 import { useGameStore } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
 import type { GameContext } from "@jgengine/core/runtime/gameContextTypes";
-import { useCameraShake } from "../camera/shakeChannel";
-import { CALIBRATED_TRAUMA_SHAKE_DECAY_PER_SECOND } from "../camera/rigMath";
+import { CALIBRATED_TRAUMA_DECAY_PER_SECOND, useCameraShake } from "../camera/shakeChannel";
 import { readFirstPersonMuzzle } from "../camera/GameFirstPersonCamera";
 import { readEntityMuzzle } from "../render/entityMuzzle";
 import { resolveFloatTextStyle } from "./floatTextStyle";
@@ -546,11 +545,13 @@ export function CombatCameraShake() {
   useEffect(() => {
     return ctx.game.events.on("combat.hitReaction", (event) => {
       if (event.trauma !== undefined) {
-        shake.shake(event.trauma, CALIBRATED_TRAUMA_SHAKE_DECAY_PER_SECOND);
+        shake.configure({ decayPerSecond: CALIBRATED_TRAUMA_DECAY_PER_SECOND });
+        shake.add(event.trauma);
         return;
       }
       if (event.shake === undefined) return;
-      shake.shake(event.shake.amplitude, event.shake.decay);
+      if (event.shake.decay !== undefined) shake.configure({ decayPerSecond: event.shake.decay });
+      shake.add(event.shake.amplitude);
     });
   }, [ctx, shake]);
   return null;

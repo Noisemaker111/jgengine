@@ -34,7 +34,7 @@ describe("game scope", () => {
     for (const path of [
       "packages/react/src/gameMenu.tsx",
       "packages/core/src/combat/projectiles.ts",
-      "packages/core/src/run/runLoop.ts",
+      "packages/core/src/run/sessionLoop.ts",
       "packages/editor/src/CreatorApp.tsx",
       "packages/assets/models/crate.glb",
       "packages/navbake/src/bake.ts",

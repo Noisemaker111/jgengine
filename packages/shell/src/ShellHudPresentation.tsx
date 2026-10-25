@@ -1,5 +1,6 @@
 import { useEffect, type Dispatch, type MutableRefObject, type RefObject, type SetStateAction } from "react";
 
+import { suppressBrowserContextMenu } from "./pointer/contextMenu";
 import type { PointerAxisState } from "@jgengine/core/input/pointerAxis";
 import type { ActionStateTracker } from "@jgengine/core/input/actionBindings";
 import { playControlsActive } from "@jgengine/core/game/controlGate";
@@ -158,6 +159,7 @@ export function ShellHudPresentation({
           onPointerMove={trackPointerAxis}
           onPointerLeave={deactivatePointerAxis}
           onPointerCancel={deactivatePointerAxis}
+          onContextMenu={suppressBrowserContextMenu}
         >
           <GameViewportProvider platforms={playable.platforms}>
             <HudOnlyDriver

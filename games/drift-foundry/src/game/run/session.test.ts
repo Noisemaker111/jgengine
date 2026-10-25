@@ -382,6 +382,8 @@ test("a reload mid-run comes back carrying the salvage and the route", () => {
   const after = second.snapshot();
   expect(after.salvageAtRisk).toBe(before.salvageAtRisk);
   expect(Math.abs(after.runTime - before.runTime)).toBeLessThan(1);
-  expect(Math.abs(after.pose.position[2] - before.pose.position[2])).toBeLessThan(5);
+  // The autosave lands on each pickup, about a second of driving apart at a built kart's pace.
+  expect(Math.abs(after.pose.position[2] - before.pose.position[2])).toBeLessThan(18);
+  expect(after.pose.position[2]).toBeGreaterThan(40);
   expect(after.collectedIds).toEqual(before.collectedIds);
 });

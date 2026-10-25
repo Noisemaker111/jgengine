@@ -18,7 +18,7 @@ export function dialTop(topKmh: number): number {
 function topKmhOf(name: string | undefined): number {
   const def = name === undefined ? undefined : vehicleById(name);
   if (def === undefined) return 220;
-  return (def.dynamics.type === "ground" ? def.dynamics.tuning.topSpeed : def.dynamics.tuning.maxSpeed) * 3.6;
+  return (def.dynamics.type === "ground" ? def.dynamics.tuning.topSpeed : def.dynamics.topSpeed) * 3.6;
 }
 
 function speedoView(ctx: GameContext) {
@@ -28,7 +28,7 @@ function speedoView(ctx: GameContext) {
   const name = ctx.scene.entity.get(id)?.name;
   const def = name === undefined ? undefined : vehicleById(name);
   const air = t.mode !== "aircraft" ? null : t.stalled ? "Stall" : `${Math.round(t.altitude)} m up`;
-  const redline = def?.dynamics.type === "ground" ? def.dynamics.tuning.powertrain?.redlineRpm ?? 7600 : 0;
+  const redline = def?.dynamics.type === "ground" ? def.dynamics.tuning.gearbox?.redlineRpm ?? 7600 : 0;
   // Revs in tenths of the redline, so the store only republishes when a lamp changes.
   const revs = t.mode === "aircraft" || redline <= 0 ? null : Math.min(10, Math.round((t.rpm / redline) * 10));
   const gear = t.mode === "aircraft" ? null : t.gear < 0 ? "R" : t.gear === 0 ? "N" : String(t.gear);

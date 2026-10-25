@@ -1,3 +1,4 @@
+import { useActionBindings } from "@jgengine/react/uiKitRoot";
 import { useGame, useGameStore } from "@jgengine/react/hooks";
 import { KitButton, KitPanel } from "@jgengine/react/uiKitRoot";
 import { actionLabel } from "@jgengine/core/input/actionBindings";
@@ -8,7 +9,6 @@ import type { DamageType } from "../../combat/damage";
 import { towerDef } from "../../entities/towers/catalog";
 import { TOWER_LADDERS } from "../../entities/towers/ladders";
 import { keep, MAX_TOWER_LEVEL, sellAction, sellValue, towerOptions, towerStats } from "../../keep";
-import { keybinds } from "../../keybinds";
 import { session } from "../../session";
 
 const AIM_LABEL: Record<string, string> = { first: "First", last: "Last", strongest: "Strongest", nearest: "Nearest" };
@@ -21,6 +21,7 @@ const TYPE_LABEL: Record<DamageType, string> = { pierce: "Pierce", blast: "Blast
  * plank for a shared rank, two branch cards at the fork.
  */
 export function TowerPanel() {
+  const keybinds = useActionBindings();
   const { commands } = useGame();
   const inspectedId = useGameStore(() => session.inspectedTowerId);
   const view = useGameStore((ctx) => {

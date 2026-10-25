@@ -464,7 +464,10 @@ export function createPursuit(driving: Driving): Pursuit {
       // that passes it straight through steers away from the player and never closes.
       const axis = { throttle: drive.throttle, brake: drive.brake, steer: -drive.steer, handbrake: 0 };
       driving.refreshClamp(ctx, cruiser.id, pose.position, dt);
-      const result = tickDrivableVehicle(vehicle, dt, axis, { groundHeight: (x, z) => ctx.world.groundHeightAt(x, z) });
+      const result = tickDrivableVehicle(vehicle, dt, axis, {
+        groundHeight: (x, z) => ctx.world.groundHeightAt(x, z),
+        tires: { id: cruiser.id, time: ctx.time.now(), marks: ctx.tireMarks, particles: ctx.particles },
+      });
       ctx.scene.entity.setPose(cruiser.id, result.pose);
       const drivenId = driving.drivingVehicleId();
       if (dist < 4 && drivenId !== null) {

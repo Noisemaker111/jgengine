@@ -110,7 +110,7 @@ pursue({ anchor: ctx.player.userId, hunts: threatNames, ... })         // heels 
 **Driving and racing.** The racer's car, rivals and laps are engine parts:
 
 ```ts
-car = createKinematicVehicle(BASE, { position, heading });  tickDrivableVehicle(car, dt, axis, modifiers);
+car = createVehicleDynamics(vehicleTuning(BASE), { position, heading });  tickDrivableVehicle(car, dt, axis, { modifiers, tires });
 state.race = createRaceState({ track: trackOf(circuit, race.laps) });     // checkpoints read off the circuit path
 camera: { rig: "chase", chase: { distance: 7.5, fov: { base: 66, max: 84, speedForMax: 40 } } }
 ```

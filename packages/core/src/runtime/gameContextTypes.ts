@@ -1,3 +1,4 @@
+import type { TireMarks } from "../physics/tireMarks";
 import type { AuthoredSimulationRuntime } from "../world/authoredSimulation";
 import type { Territory } from "../world/territory";
 import type { FeedbackCue } from "../audio/feedbackCues";
@@ -666,6 +667,8 @@ export interface GameContext {
   camera: CameraDirector;
   /** Particle VFX seam (#1659): queue bursts / standing emitters as data; the shell renders them quality-capped. */
   particles: ParticleDirector;
+  /** Skid marks every car's sliding tires lay (`tickDrivableVehicle`'s `tires` option); the shell draws them on the ground. */
+  tireMarks: TireMarks;
   /** Held-input snapshot published by the shell each frame before `onTick` (#164.1). */
   input: InputSnapshot;
   subscribe(listener: () => void): () => void;

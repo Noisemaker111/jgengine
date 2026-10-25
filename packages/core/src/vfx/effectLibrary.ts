@@ -104,6 +104,10 @@ export const EFFECT_LIBRARY: readonly ParticleEffect[] = [
     name: "smoke/puff", title: "Smoke puff", group: "smoke", priority: EFFECT_PRIORITY.smoke, mode: "burst", burst: 12, texture: "smoke", blending: "normal",
     config: { max: 64, direction: [0, 1, 0], spread: 0.7, speed: { min: 0.4, max: 1.1 }, drag: 0.8, lifetime: { min: 0.8, max: 1.6 }, size: { start: 0.6, end: 2.4 }, colorStart: 0x9aa0a6, colorEnd: 0x2f3438, alpha: { start: 0.45, end: 0 } },
   },
+  {
+    name: "smoke/tire", title: "Tire smoke", group: "smoke", priority: EFFECT_PRIORITY.smoke, mode: "burst", burst: 6, texture: "smoke", blending: "normal",
+    config: { max: 160, direction: [0, 0.6, 0], spread: 1.2, speed: { min: 0.3, max: 1.4 }, gravity: [0, 0.25, 0], drag: 1.2, lifetime: { min: 1.1, max: 2.2 }, size: { start: 0.5, end: 2.8 }, colorStart: 0xe4e6e8, colorEnd: 0x9a9ea2, alpha: { start: 0.42, end: 0 } },
+  },
 
   // Sparks — additive streaks under strong gravity.
   {

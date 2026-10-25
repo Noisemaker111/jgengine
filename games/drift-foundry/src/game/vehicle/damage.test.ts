@@ -40,7 +40,7 @@ describe("drift-foundry crash damage", () => {
     damage.hit(noseHitPoint(0), impactImpulse(40));
     const bent = tuningFrom([], damage.effect());
     expect(bent.topSpeed).toBeLessThan(CLEAN.topSpeed);
-    expect(bent.handling.brakeAccel).toBeCloseTo(bent.engineAccel * 1.3, 5);
+    expect(bent.handling.brake).toBeCloseTo(bent.accel * 1.3, 5);
     // The clean base tuning is never mutated, so a repair is the same call with no damage.
     expect(CLEAN.topSpeed).toBeCloseTo(tuningFrom([]).topSpeed, 6);
   });

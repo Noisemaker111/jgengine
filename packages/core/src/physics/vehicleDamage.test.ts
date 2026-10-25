@@ -1,11 +1,11 @@
 import { describe, expect, test } from "bun:test";
 
 import { NEUTRAL_AXIS } from "../input/axisInput";
-import type { KinematicVehicleTuning } from "./kinematicVehicle";
+import type { VehicleSpec } from "./vehicleSpec";
 import {
   createVehicleDamage,
   damagedAxis,
-  damagedTuning,
+  damagedSpec,
   type VehicleDamageZone,
 } from "./vehicleDamage";
 
@@ -26,16 +26,7 @@ const ZONES: readonly VehicleDamageZone[] = [
   },
 ];
 
-const BASE: KinematicVehicleTuning = {
-  engineAccel: 20,
-  brakeAccel: 30,
-  topSpeed: 30,
-  reverseSpeed: 8,
-  turnRate: 2,
-  turnSpeedRef: 8,
-  gripStrength: 8,
-  handbrakeGrip: 0.25,
-};
+const BASE: VehicleSpec = { topSpeed: 30, accel: 8, brake: 9, turnRate: 2, grip: 1.1, handbrakeGrip: 0.25 };
 
 describe("createVehicleDamage", () => {
   test("impulse steps a zone through its thresholds and reports transitions once", () => {
@@ -134,8 +125,8 @@ describe("createVehicleDamage", () => {
     const damage = createVehicleDamage({ zones: ZONES });
     damage.impact("front", 100);
     expect(damage.modifiers()).toEqual({
-      topSpeedScale: 0.8,
-      accelScale: 0.7,
+      speedLimitScale: 0.8,
+      driveScale: 0.7,
       brakeScale: 1,
       gripScale: 0.6,
     });
@@ -178,16 +169,16 @@ describe("createVehicleDamage", () => {
 });
 
 describe("damage changes handling", () => {
-  test("damagedTuning folds the effect into the tuning without mutating the base", () => {
+  test("damagedSpec folds the effect into the spec without mutating the base", () => {
     const damage = createVehicleDamage({ zones: ZONES });
     damage.impact("front", 100);
-    const tuned = damagedTuning(BASE, damage.effect());
-    expect(tuned.engineAccel).toBeCloseTo(BASE.engineAccel * 0.7, 6);
+    const tuned = damagedSpec(BASE, damage.effect());
+    expect(tuned.accel).toBeCloseTo(BASE.accel * 0.7, 6);
     expect(tuned.topSpeed).toBeCloseTo(BASE.topSpeed * 0.8, 6);
-    expect(tuned.gripStrength).toBeCloseTo(BASE.gripStrength * 0.6, 6);
-    expect(tuned.coastDeceleration).toBeCloseTo(0.5, 6);
-    expect(BASE.coastDeceleration).toBeUndefined();
-    expect(BASE.engineAccel).toBe(20);
+    expect(tuned.grip).toBeCloseTo(BASE.grip * 0.6, 6);
+    expect(tuned.coast).toBeCloseTo(1.5, 6);
+    expect(BASE.coast).toBeUndefined();
+    expect(BASE.accel).toBe(8);
   });
 
   test("damagedAxis adds the steer pull and clamps to the input range", () => {

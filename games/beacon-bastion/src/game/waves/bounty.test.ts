@@ -126,5 +126,5 @@ describe("the seeded relic offer", () => {
 /** The keep as a loaded document would leave it: one relic carried, nothing at risk. */
 function carrying(id: string | null): LegacyState {
   const fresh = freshLegacy();
-  return { ...fresh, run: { ...fresh.run, run: 1, changeId: id } };
+  return { ...fresh, run: { ...fresh.run, session: 1, optionId: id } };
 }

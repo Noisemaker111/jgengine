@@ -1,22 +1,17 @@
 import { NEUTRAL_AXIS } from "@jgengine/core/input/axisInput";
 import { tickDrivableVehicle } from "@jgengine/core/physics/drivableVehicle";
-import {
-  createKinematicVehicle,
-  type KinematicVehicle,
-  type KinematicVehicleModifiers,
-  type KinematicVehicleTuning,
-} from "@jgengine/core/physics/kinematicVehicle";
+import type { TireMarks } from "@jgengine/core/physics/tireMarks";
+import { createVehicleDynamics, type VehicleDynamics, type VehicleDynamicsModifiers, type VehicleDynamicsTuning } from "@jgengine/core/physics/vehicleDynamics";
 import type { CourseFix } from "@jgengine/core/world/routeCourse";
 
 import { blockedZ, courseBlock } from "../route/gates";
 import { CORRIDOR_DRIVE_HALF_WIDTH } from "../run/constants";
-import type { KartTuning } from "../parts/build";
+import { BASE_HANDLING, STUB_HOP_SPEED, type KartTuning } from "../parts/build";
+import { vehicleTuning } from "@jgengine/core/physics/vehicleSpec";
 import type { ActiveHazard, Track } from "../tracks/catalog";
 import { hazardFeel, surfaceAt, surfaceFrictionAt } from "./surface";
 
 const METERS_PER_SECOND_TO_KMH = 3.6;
-/** Baseline hop every kart gets before `jumpPower` from installed springs is added. */
-const STUB_HOP_IMPULSE = 3.2;
 const BRACE_ACCEL_BONUS = 0.18;
 const BRACE_TURN_PENALTY = 0.25;
 
@@ -32,12 +27,10 @@ export interface VehiclePose {
   position: readonly [number, number, number];
   heading: number;
   speedKmh: number;
-  /** Lateral/forward slip ratio this tick - drives drift reads and evidence. */
+  /** How hard the tires slide this tick, `0..1` - drives drift reads and evidence. */
   slip: number;
   /** Surface grip multiplier the sim sampled under the kart this tick. */
   surface: number;
-  /** Grip left after weight transfer this tick (1 = a straight, unloaded kart). */
-  loadGrip: number;
   airborne: boolean;
   blockedByGate: boolean;
   /** Run metres along the track (world z when no track is laid). */
@@ -59,7 +52,7 @@ export interface VehicleController {
     dt: number,
     axis: DriveAxis,
     tuning: KartTuning,
-    input: { jumpPressed: boolean; plowBracing: boolean; time?: number },
+    input: { jumpPressed: boolean; plowBracing: boolean; time?: number; marks?: TireMarks; particles?: { play(name: string, request?: { position?: readonly [number, number, number]; burst?: number }): void } },
     groundHeightAt: (x: number, z: number) => number,
   ): VehiclePose;
   resetTo(position: readonly [number, number, number], heading: number): void;
@@ -70,11 +63,11 @@ export interface VehicleController {
 }
 
 /** A braced plow stiffens the whole drivetrain: more push and stopping power, less turn-in. */
-const BRACED: KinematicVehicleModifiers = {
-  accelScale: 1 + BRACE_ACCEL_BONUS,
-  topSpeedScale: 1 + BRACE_ACCEL_BONUS,
+const BRACED: VehicleDynamicsModifiers = {
+  driveScale: 1 + BRACE_ACCEL_BONUS,
+  speedLimitScale: 1 + BRACE_ACCEL_BONUS,
   brakeScale: 1 + BRACE_ACCEL_BONUS,
-  turnRateScale: 1 - BRACE_TURN_PENALTY,
+  steerScale: 1 - BRACE_TURN_PENALTY,
 };
 
 /**
@@ -123,9 +116,9 @@ export function createVehicleController(
     return [held.x, held.z];
   };
 
-  const vehicle: KinematicVehicle = createKinematicVehicle(
-    // Placeholder handling: the first tick retunes to the kart's real, parts-composed tuning.
-    { engineAccel: 1, brakeAccel: 1, topSpeed: 1, reverseSpeed: 0, turnRate: 1, turnSpeedRef: 6, gripStrength: 7, handbrakeGrip: 1 },
+  const vehicle: VehicleDynamics = createVehicleDynamics(
+    // The bare chassis until the first tick retunes to the kart's real, parts-composed tuning.
+    vehicleTuning(BASE_HANDLING),
     {
       position: spawn.position,
       heading: spawn.heading,
@@ -144,7 +137,7 @@ export function createVehicleController(
     },
   );
 
-  let appliedHandling: KinematicVehicleTuning | null = null;
+  let appliedHandling: VehicleDynamicsTuning | null = null;
 
   const shove = (dx: number, dz: number): void => {
     // `restore` carries velocity, so a knock moves the kart and leaves the wheel and pedal work
@@ -167,9 +160,9 @@ export function createVehicleController(
     tick(dt, axis, tuning, input, groundHeightAt) {
       // Parts installed mid-run, and damage bent into the frame, arrive as a fresh composed tuning
       // object; `retune` swaps it in without costing the kart the momentum a rebuilt sim would drop.
-      if (tuning.handling !== appliedHandling) {
-        vehicle.retune(tuning.handling);
-        appliedHandling = tuning.handling;
+      if (tuning.sim !== appliedHandling) {
+        vehicle.retune(tuning.sim);
+        appliedHandling = tuning.sim;
       }
       frameTuning = tuning;
       blockedByGate = false;
@@ -185,9 +178,9 @@ export function createVehicleController(
       }
 
       const braced = input.plowBracing && tuning.hasPlow;
-      if (input.jumpPressed) vehicle.hop(STUB_HOP_IMPULSE + tuning.jumpPower);
-      const modifiers: KinematicVehicleModifiers | undefined =
-        feel.topSpeedScale < 1 ? { ...(braced ? BRACED : {}), topSpeedScale: (braced ? BRACED.topSpeedScale! : 1) * feel.topSpeedScale } : braced ? BRACED : undefined;
+      if (input.jumpPressed) vehicle.jump(STUB_HOP_SPEED + tuning.jumpPower);
+      const modifiers: VehicleDynamicsModifiers | undefined =
+        feel.topSpeedScale < 1 ? { ...(braced ? BRACED : {}), speedLimitScale: (braced ? BRACED.speedLimitScale! : 1) * feel.topSpeedScale } : braced ? BRACED : undefined;
 
       const drive = tickDrivableVehicle(
         vehicle,
@@ -199,7 +192,13 @@ export function createVehicleController(
           steer: axis.steer,
           handbrake: axis.handbrake ?? 0,
         },
-        { groundHeight: groundHeightAt, modifiers },
+        {
+          groundHeight: groundHeightAt,
+          modifiers,
+          ...(input.marks === undefined && input.particles === undefined
+            ? {}
+            : { tires: { id: "kart", time, ...(input.marks === undefined ? {} : { marks: input.marks }), ...(input.particles === undefined ? {} : { particles: input.particles }) } }),
+        },
       );
       airHeight = drive.step.airOffset;
       let position = drive.pose.position;
@@ -218,7 +217,6 @@ export function createVehicleController(
         speedKmh: Math.abs(drive.step.forwardSpeed) * METERS_PER_SECOND_TO_KMH,
         slip: drive.step.slip,
         surface: drive.step.surface,
-        loadGrip: drive.step.loadGrip,
         airborne: drive.step.airborne,
         blockedByGate,
         run: fix === null || track === undefined ? position[2] : track.run(fix),

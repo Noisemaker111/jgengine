@@ -1,22 +1,14 @@
 import { describe, expect, test } from "bun:test";
 
-import { createKinematicVehicle, type KinematicVehicleTuning } from "./kinematicVehicle";
-import { applyVehicleParts, feelOf, withPart, type VehiclePart } from "./vehicleParts";
-import { DEFAULT_GRIP_CURVE } from "./vehicleBody";
 import { NEUTRAL_AXIS } from "../input/axisInput";
+import { DEFAULT_GRIP_CURVE } from "./gripCurve";
+import { createVehicleDynamics } from "./vehicleDynamics";
+import { applyVehicleParts, feelOf, withPart, type VehiclePart } from "./vehicleParts";
+import { vehicleTuning, type VehicleSpec } from "./vehicleSpec";
 
 const DT = 1 / 60;
 
-const BASE: KinematicVehicleTuning = {
-  engineAccel: 20,
-  brakeAccel: 30,
-  topSpeed: 30,
-  reverseSpeed: 8,
-  turnRate: 2,
-  turnSpeedRef: 8,
-  gripStrength: 8,
-  handbrakeGrip: 0.25,
-};
+const BASE: VehicleSpec = { topSpeed: 30, accel: 8, brake: 9, turnRate: 1.6, grip: 1.1, handbrakeGrip: 0.25 };
 
 const SLICK: VehiclePart = {
   id: "tires/hard",
@@ -28,7 +20,7 @@ const ENGINE: VehiclePart = {
   id: "engine/v8",
   slot: "engine",
   effects: {
-    engineAccel: { scale: 1.4 },
+    accel: { scale: 1.4 },
     topSpeed: { add: 8 },
   },
 };
@@ -36,28 +28,34 @@ const ENGINE: VehiclePart = {
 const BRAKES: VehiclePart = {
   id: "brakes/race",
   slot: "brakes",
-  effects: { brakeAccel: { scale: 1.25 }, gripStrength: { scale: 1.05 } },
+  effects: { brake: { scale: 1.25 }, grip: { scale: 1.05 } },
 };
 
 describe("applyVehicleParts", () => {
   test("scales then adds in install order and leaves the base untouched", () => {
     const setup = applyVehicleParts(BASE, [ENGINE, BRAKES]);
-    expect(setup.tuning.engineAccel).toBeCloseTo(BASE.engineAccel * 1.4, 6);
-    expect(setup.tuning.topSpeed).toBeCloseTo(BASE.topSpeed + 8, 6);
-    expect(setup.tuning.brakeAccel).toBeCloseTo(BASE.brakeAccel * 1.25, 6);
-    expect(setup.tuning.gripStrength).toBeCloseTo(BASE.gripStrength * 1.05, 6);
+    expect(setup.spec.accel).toBeCloseTo(BASE.accel * 1.4, 6);
+    expect(setup.spec.topSpeed).toBeCloseTo(BASE.topSpeed + 8, 6);
+    expect(setup.spec.brake).toBeCloseTo(BASE.brake * 1.25, 6);
+    expect(setup.spec.grip).toBeCloseTo(BASE.grip * 1.05, 6);
     expect(setup.parts).toEqual(["engine/v8", "brakes/race"]);
     // The base is a seed, never mutated, so one base can build several cars.
-    expect(BASE.engineAccel).toBe(20);
+    expect(BASE.accel).toBe(8);
     expect(BASE.topSpeed).toBe(30);
-    expect(BASE.gripStrength).toBe(8);
+    expect(BASE.grip).toBe(1.1);
+  });
+
+  test("an effect on an unset stat starts from the spec's default", () => {
+    const setup = applyVehicleParts(BASE, [{ id: "ballast", slot: "body", effects: { weight: { add: 200 }, drift: { add: 0.3 } } }]);
+    expect(setup.spec.weight).toBe(1500);
+    expect(setup.spec.drift).toBeCloseTo(0.5, 6);
   });
 
   test("a tire compound replaces the grip curve and moves the reported feel", () => {
     const stock = applyVehicleParts(BASE, []);
     const slick = applyVehicleParts(BASE, [SLICK]);
-    expect(stock.tuning.grip).toBeUndefined();
-    expect(slick.tuning.grip).toBe(SLICK.gripCurve);
+    expect(stock.spec.gripCurve).toBeUndefined();
+    expect(slick.spec.gripCurve).toBe(SLICK.gripCurve);
     expect(slick.feel.peakGrip).toBeLessThan(stock.feel.peakGrip);
     expect(slick.feel.slideGrip).toBeLessThan(stock.feel.slideGrip);
     expect(slick.feel.peakSlip).not.toBeCloseTo(stock.feel.peakSlip, 3);
@@ -65,7 +63,7 @@ describe("applyVehicleParts", () => {
 
   test("feelOf reads the curve's own shape, defaulting to the stock compound", () => {
     const feel = feelOf(BASE);
-    expect(feel.peakGrip).toBe(1);
+    expect(feel.peakGrip).toBeCloseTo(1.1, 6);
     expect(feel.peakSlip).toBeCloseTo(0.2, 6);
     expect(feel.slideGrip).toBeCloseTo(DEFAULT_GRIP_CURVE.points[3]![1], 6);
     expect(feel.topSpeed).toBe(30);
@@ -73,17 +71,17 @@ describe("applyVehicleParts", () => {
 
   test("withPart swaps a slot in place, keeping install order stable", () => {
     const parts = [ENGINE, BRAKES];
-    const swapped = withPart(parts, { id: "engine/i4", slot: "engine", effects: { engineAccel: { scale: 0.8 } } });
+    const swapped = withPart(parts, { id: "engine/i4", slot: "engine", effects: { accel: { scale: 0.8 } } });
     expect(swapped.map((part) => part.id)).toEqual(["engine/i4", "brakes/race"]);
-    const added = withPart(swapped, { id: "tires/soft", slot: "tires", effects: { gripStrength: { scale: 1.2 } } });
+    const added = withPart(swapped, { id: "tires/soft", slot: "tires", effects: { grip: { scale: 1.2 } } });
     expect(added.map((part) => part.id)).toEqual(["engine/i4", "brakes/race", "tires/soft"]);
   });
 });
 
 describe("vehicle parts change the numbers and the feel", () => {
   test("a built car accelerates harder and tops out higher than the stock car", () => {
-    const stock = createKinematicVehicle(BASE);
-    const built = createKinematicVehicle(applyVehicleParts(BASE, [ENGINE]).tuning);
+    const stock = createVehicleDynamics(vehicleTuning(BASE));
+    const built = createVehicleDynamics(vehicleTuning(applyVehicleParts(BASE, [ENGINE]).spec));
     let stockSpeed = 0;
     let builtSpeed = 0;
     for (let i = 0; i < 240; i += 1) {
@@ -93,28 +91,28 @@ describe("vehicle parts change the numbers and the feel", () => {
     expect(builtSpeed).toBeGreaterThan(stockSpeed);
   });
 
-  test("a hard tire compound retains more lateral slip through the same corner", () => {
-    const stock = createKinematicVehicle(BASE);
-    const slick = createKinematicVehicle(applyVehicleParts(BASE, [SLICK]).tuning);
-    const axis = { ...NEUTRAL_AXIS, throttle: 1, steer: 1 };
-    for (let i = 0; i < 120; i += 1) {
+  test("a hard tire compound slides further through the same corner", () => {
+    const stock = createVehicleDynamics(vehicleTuning(BASE));
+    const slick = createVehicleDynamics(vehicleTuning(applyVehicleParts(BASE, [SLICK]).spec));
+    for (let i = 0; i < 150; i += 1) {
       stock.tick(DT, { ...NEUTRAL_AXIS, throttle: 1 });
       slick.tick(DT, { ...NEUTRAL_AXIS, throttle: 1 });
     }
     let stockSlip = 0;
     let slickSlip = 0;
+    const axis = { ...NEUTRAL_AXIS, throttle: 1, steer: 1 };
     for (let i = 0; i < 60; i += 1) {
-      stockSlip = stock.tick(DT, axis).slip;
-      slickSlip = slick.tick(DT, axis).slip;
+      stockSlip = Math.max(stockSlip, stock.tick(DT, axis).slip);
+      slickSlip = Math.max(slickSlip, slick.tick(DT, axis).slip);
     }
     expect(slickSlip).toBeGreaterThan(stockSlip);
   });
 
   test("installing parts mid-play retunes in place and keeps momentum", () => {
-    const vehicle = createKinematicVehicle(BASE);
+    const vehicle = createVehicleDynamics(vehicleTuning(BASE));
     for (let i = 0; i < 60; i += 1) vehicle.tick(DT, { ...NEUTRAL_AXIS, throttle: 1 });
     const [vx, vz] = vehicle.velocity();
-    vehicle.retune(applyVehicleParts(BASE, [ENGINE]).tuning);
+    vehicle.retune(vehicleTuning(applyVehicleParts(BASE, [ENGINE]).spec));
     expect(vehicle.velocity()[0]).toBeCloseTo(vx, 9);
     expect(vehicle.velocity()[1]).toBeCloseTo(vz, 9);
   });

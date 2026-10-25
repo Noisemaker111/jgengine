@@ -97,9 +97,9 @@ function gearLine(item: GearDef): string {
 }
 function carLine(car: VehicleDef): string {
   if (car.dynamics.type !== "ground") {
-    const tuning = car.dynamics.tuning;
-    const what = tuning.kind === "rotorcraft" ? "Helicopter" : tuning.kind === "fixedWing" ? "Plane, needs a runway" : "Jump jet, lifts off straight up";
-    return `${what} · tops out near ${Math.round(tuning.maxSpeed * 3.6)} km/h`;
+    const air = car.dynamics;
+    const what = air.kind === "rotorcraft" ? "Helicopter" : air.kind === "fixedWing" ? "Plane, needs a runway" : "Jump jet, lifts off straight up";
+    return `${what} · tops out near ${Math.round(air.topSpeed * 3.6)} km/h`;
   }
   const top = Math.round(car.dynamics.tuning.topSpeed * 3.6);
   return `Tops out near ${top} km/h · ${car.collisionRadius >= 2 ? "heavy" : car.collisionRadius >= 1.5 ? "sturdy" : "light"} build`;

@@ -144,10 +144,6 @@
       "kind": "not-applicable",
       "reason": "Police heat is not part of brightway-park: a park has no police response, witnesses or heat."
     },
-    "run-loop": {
-      "kind": "not-applicable",
-      "reason": "The roguelike run composition - bank or lose a haul plus one authored change per run - is not a Brightway park day; its days run on the genre-free session loop with no carried quantity."
-    },
     "rvo-avoidance": {
       "kind": "not-applicable",
       "reason": "Crowd steering is not part of brightway-park: guests use the shared agent loop's movement and never crowd-steer."

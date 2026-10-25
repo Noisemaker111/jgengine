@@ -14,15 +14,7 @@ export {
   usePlayerFov,
   type PlayerFovState,
 } from "./PlayerFov";
-export {
-  CameraShakeContext,
-  cameraShake,
-  createCameraShakeChannel,
-  defaultCameraShakeChannel,
-  useCameraShake,
-  type CameraShakeChannel,
-} from "./shakeChannel";
-export { ControllerCameraShake, type ControllerCameraShakeProps } from "./ControllerCameraShake";
+export { CameraShakeContext, cameraShake, defaultCameraShake, useCameraShake } from "./shakeChannel";
 export { rtsPanKeysConflict } from "./rigMath";
 export { GAME_SIM_FRAME_PRIORITY } from "./orbitCameraMath";
 export {

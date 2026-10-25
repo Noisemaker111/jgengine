@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useSyncExternalStore, type ComponentType, type MutableRefObject } from "react";
+import { useCallback, useEffect, useRef, useSyncExternalStore, type ComponentType, type MutableRefObject } from "react";
 
 import type { GameCameraConfig } from "@jgengine/core/game/playableGame";
 import type { CameraDirector } from "@jgengine/core/runtime/cameraDirector";
@@ -18,7 +18,8 @@ import { GameInspectionCamera } from "./GameInspectionCamera";
 import { GameOrbitCamera } from "./GameOrbitCamera";
 import { resolveDirectedCamera } from "./rigMath";
 import { resolveCaptureCameraConfig, resolveRigKind, turntableAsObserver } from "./rigResolve";
-import { CameraShakeContext, createCameraShakeChannel } from "./shakeChannel";
+import { CameraShakeApplier } from "./CameraShakeApplier";
+import { rigShakeConfig, useCameraShake } from "./shakeChannel";
 
 export { resolveRigKind } from "./rigResolve";
 
@@ -50,10 +51,11 @@ export function GameCameraRig({
   viewmodel,
 }: GameCameraRigProps) {
   config = resolveCaptureCameraConfig(config, director?.rig());
-  const channel = useMemo(
-    () => createCameraShakeChannel(config?.shake?.decayPerSecond),
-    [config?.shake?.decayPerSecond],
-  );
+  const shake = useCameraShake();
+  const shakeConfig = config?.shake;
+  useEffect(() => {
+    shake.configure(rigShakeConfig(shakeConfig));
+  }, [shake, shakeConfig?.maxOffset, shakeConfig?.maxRoll, shakeConfig?.decayPerSecond, shakeConfig?.exponent, shakeConfig?.frequency]);
 
   const directorVersionRef = useRef(0);
   const subscribeDirector = useCallback(
@@ -99,14 +101,17 @@ export function GameCameraRig({
     switch (kind) {
       case "first":
         return (
-          <GameFirstPersonCamera
-            yawRef={yawRef}
-            pitchRef={pitchRef}
-            config={config?.firstPerson}
-            followEntityId={followEntityId ?? undefined}
-            viewmodel={viewmodel}
-            weapon={config?.weapon}
-          />
+          <>
+            <GameFirstPersonCamera
+              yawRef={yawRef}
+              pitchRef={pitchRef}
+              config={config?.firstPerson}
+              followEntityId={followEntityId ?? undefined}
+              viewmodel={viewmodel}
+              weapon={config?.weapon}
+            />
+            <CameraShakeApplier />
+          </>
         );
       case "topDown":
         return <TopDownRig yawRef={yawRef} pitchRef={pitchRef} config={config} followEntityId={followEntityId} />;
@@ -141,23 +146,31 @@ export function GameCameraRig({
       case "sideScroll":
         return <SideScrollRig yawRef={yawRef} pitchRef={pitchRef} config={config} followEntityId={followEntityId} />;
       case "inspection":
-        return <GameInspectionCamera config={config?.inspection} />;
+        return (
+          <>
+            <GameInspectionCamera config={config?.inspection} />
+            <CameraShakeApplier />
+          </>
+        );
       case "none":
         return null;
       default:
         return (
-          <GameOrbitCamera
-            yawRef={yawRef}
-            pitchRef={pitchRef}
-            config={config}
-            followEntityId={followEntityId ?? undefined}
-            onCameraFollow={config?.onCameraFollow}
-            onDragChange={onDragChange}
-            pointerControls={pointerControls}
-          />
+          <>
+            <GameOrbitCamera
+              yawRef={yawRef}
+              pitchRef={pitchRef}
+              config={config}
+              followEntityId={followEntityId ?? undefined}
+              onCameraFollow={config?.onCameraFollow}
+              onDragChange={onDragChange}
+              pointerControls={pointerControls}
+            />
+            <CameraShakeApplier />
+          </>
         );
     }
   })();
 
-  return <CameraShakeContext.Provider value={channel}>{rig}</CameraShakeContext.Provider>;
+  return rig;
 }

@@ -91,3 +91,14 @@ describe("recipe helpers", () => {
     for (const name of SEED) expect(listing).toContain(name);
   });
 });
+
+describe("enter-vehicle snippet", () => {
+  test("the shipped snippet builds a game on the one car sim, and the recipe text matches it", async () => {
+    const { game } = await import("./snippets/enter-vehicle");
+    expect(game).toBeDefined();
+    const code = getRecipe("enter-vehicle")!.code;
+    expect(code).toContain("createVehicleDynamics");
+    expect(code).toContain("vehicleTuning");
+    expect(code).toContain("tires:");
+  });
+});

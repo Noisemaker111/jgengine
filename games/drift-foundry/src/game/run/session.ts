@@ -1,14 +1,15 @@
+import type { TireMarks } from "@jgengine/core/physics/tireMarks";
 import { createGameFeed } from "@jgengine/core/game/feed";
 import type { NoticeFeed, NoticeTone } from "@jgengine/core/game/notices";
 import { damagedAxis, type VehicleDamageEffectResolved, type VehicleDamageZoneState } from "@jgengine/core/physics/vehicleDamage";
 import { defineStore } from "@jgengine/core/store/defineStore";
 
-import { createRunLoop, type RunSettlement } from "@jgengine/core/run/runLoop";
+import type { SessionSettlement } from "@jgengine/core/run/sessionLoop";
 
 import { activeSurge, compactorGap, compactorZAt, type CompactorPlan, type CompactorSurge } from "../compactor/schedule";
 import { lineReading } from "./haul";
-import { compactorPlanForShift, rivalsForShift, shiftInfo, SHIFT_TABLE, type ShiftEffect } from "./shifts";
-import { readRunState, saveRunState } from "./shiftState";
+import { compactorPlanForShift, rivalsForShift, shiftInfo, type ShiftEffect } from "./shifts";
+import { createShiftLoop, readRunState, saveRunState, type RunBank } from "./shiftState";
 import { createGhostRecorder, readGhosts, replayGhost, saveGhost, type GhostPose, type GhostReplay } from "./ghost";
 import { resolveCrusherContact } from "../compactor/contact";
 import { partInSlotId, tuningFrom, type KartTuning } from "../parts/build";
@@ -21,7 +22,7 @@ import { createStandings, PLAYER_RACER_ID, type RaceSnapshot, type Standings } f
 import { grantPickup, nearestUncollected, PICKUPS, type PickupDef } from "./pickups";
 import { gateSatisfied, gateStanding, inLane } from "../route/gates";
 import { createVehicleController, type DriveAxis, type VehicleController, type VehiclePose } from "../vehicle/controller";
-import { NEAR_MISS_ENTER, NEAR_MISS_EXIT, RUN_SEED } from "./constants";
+import { NEAR_MISS_ENTER, NEAR_MISS_EXIT } from "./constants";
 import { zoneProgress, type TrackZone } from "../zones/catalog";
 import { ROW_SIX_TRACK, trackById, type ActiveHazard, type Track } from "../tracks/catalog";
 import { FLAT_YARD_GROUND } from "../tracks/ground";
@@ -34,6 +35,12 @@ import { DEFAULT_EVENT_ID, eventById, eventCompactor, eventRivals, formatMetric,
  * Where a run stands, in the player's words. It is derived, never stored: a settled run reports the
  * outcome the shared run loop closed it with, and an open run is playing once it has begun.
  */
+
+/** Where the kart's sliding tires leave skid marks and smoke; omitted in headless runs and tests. */
+export interface KartTireEffects {
+  marks?: TireMarks;
+  particles?: { play(name: string, request?: { position?: readonly [number, number, number]; burst?: number }): void };
+}
 export type RunPhase = "start" | "running" | "won" | "crushed";
 
 export interface RadioLine {
@@ -179,7 +186,7 @@ export interface RunSession {
   park(): boolean;
   togglePause(): void;
   suspend(value: boolean): void;
-  tick(dt: number, axis: DriveAxis, input: { jumpPressed: boolean; plowBracing: boolean; salvageSwap?: boolean }): void;
+  tick(dt: number, axis: DriveAxis, input: { jumpPressed: boolean; plowBracing: boolean; salvageSwap?: boolean; effects?: KartTireEffects }): void;
 }
 
 export const runSessionStore = defineStore<RunSession>("runSession", () => createRunSession());
@@ -254,18 +261,14 @@ export function createRunSession(
   // run draws. The money stays in the career bank; this only decides how much of it arrives. Every
   // carry writes the loop's own state and a checkpoint of the live run, so a reload or a crash
   // mid-run comes back to the haul and the route instead of the pit.
-  const loop = createRunLoop<ShiftEffect>({
-    seed: RUN_SEED,
-    changes: SHIFT_TABLE,
-    persist: {
-      load: () => readRunState(storage),
-      save: (state) => {
-        runSaved = saveRunState(state, storage);
-      },
+  const loop = createShiftLoop({
+    load: () => readRunState(storage),
+    save: (state) => {
+      runSaved = saveRunState(state, storage);
     },
   });
-  let shift: { id: string; label: string; hint: string } | null = shiftInfo(loop.offer().changeId);
-  let compactor: CompactorPlan = eventCompactor(event, compactorPlanForShift(loop.offer().changeId));
+  let shift: { id: string; label: string; hint: string } | null = shiftInfo(loop.offer().optionId);
+  let compactor: CompactorPlan = eventCompactor(event, compactorPlanForShift(loop.offer().optionId));
 
   // Handling is composed from the installed parts and the damage baked into the body, then handed to
   // the sim as one object. The controller retunes by reference, so an installed part or a bent nose
@@ -286,7 +289,7 @@ export function createRunSession(
     return createOpponentField({
       groundHeightAt,
       track,
-      defs: eventRivals(event, rivalsForShift(loop.offer().changeId)),
+      defs: eventRivals(event, rivalsForShift(loop.offer().optionId)),
       // A rival's bumper is real: contact moves the player's kart too, without costing either kart the
       // momentum their driver had built up.
       onPlayerKnock: (dx, dz) => {
@@ -312,7 +315,7 @@ export function createRunSession(
   let announcedPlace = standings.placeOf(PLAYER_RACER_ID);
   const restPose = (position: readonly [number, number, number], heading: number): VehiclePose => {
     const fix = track.locate(position[0], position[2]);
-    return { position, heading, speedKmh: 0, slip: 0, surface: 1, loadGrip: 1, airborne: false, blockedByGate: false, run: track.run(fix), lateral: fix.offset, route: fix.route, roadY: fix.elevation, hazards: [] };
+    return { position, heading, speedKmh: 0, slip: 0, surface: 1, airborne: false, blockedByGate: false, run: track.run(fix), lateral: fix.offset, route: fix.route, roadY: fix.elevation, hazards: [] };
   };
   let announcedHazards = new Set<string>();
   let pose: VehiclePose = {
@@ -320,7 +323,7 @@ export function createRunSession(
     speedKmh: 0,
     slip: 0,
     surface: 1,
-    loadGrip: 1,
+   
     airborne: false,
     blockedByGate: false,
   };
@@ -439,11 +442,11 @@ export function createRunSession(
     loadGhost();
     // Salvage a run still carried when the player walks away from it is gone, and the run counts.
     if (!keepRun) {
-      if (loop.haul() > 0) loop.settle("lost");
+      if (loop.carried() > 0) loop.settle({ outcome: "lost" });
       loop.start();
     }
-    shift = shiftInfo(loop.offer().changeId);
-    compactor = eventCompactor(event, compactorPlanForShift(loop.offer().changeId));
+    shift = shiftInfo(loop.offer().optionId);
+    compactor = eventCompactor(event, compactorPlanForShift(loop.offer().optionId));
     collected = new Set<string>();
     gateAnnounced = new Set<string>();
     announcedSurge = null;
@@ -585,7 +588,7 @@ export function createRunSession(
     };
   }
 
-  function recordOutcome(settlement: RunSettlement<ShiftEffect>): void {
+  function recordOutcome(settlement: SessionSettlement<RunBank, ShiftEffect>): void {
     const completed = completeRun(records, { kind: outcome?.kind === "won" ? "won" : "crushed", time: runTime, distance: Math.max(0, Math.min(track.exitAt, runOf(pose))) });
     records = completed.records;
     personalBest = completed.personalBest;
@@ -595,7 +598,7 @@ export function createRunSession(
     career = settleRun(career, {
       kind: outcome?.kind === "won" ? "escape" : "crushed",
       place: standings.placeOf(PLAYER_RACER_ID),
-      haul: outcome?.kind === "won" ? settlement.banked + (outcome?.event.reward ?? 0) : settlement.lost,
+      haul: outcome?.kind === "won" ? settlement.result.banked + (outcome?.event.reward ?? 0) : settlement.result.lost,
       medals: pendingMedals,
     });
     pendingMedals = undefined;
@@ -638,9 +641,9 @@ export function createRunSession(
         armorSavesUsed,
         outcome,
         collectedIds: collected,
-        salvageAtRisk: loop.haul(),
+        salvageAtRisk: loop.carried(),
         shift,
-        runsPlayed: loop.snapshot().completed,
+        runsPlayed: loop.snapshot().closed,
         runSaved,
         race: standings.snapshot(),
         rivals: opponents.bodies(),
@@ -739,7 +742,7 @@ export function createRunSession(
 
       // A bent frame pulls the wheel on its own; the last stage of a nose zone adds that bias here.
       const approachKmh = pose.speedKmh;
-      pose = vehicle.tick(dt, damagedAxis({ ...axis, handbrake: axis.handbrake ?? 0 }, damageEffect), tuning, { ...input, time: runTime }, groundHeightAt);
+      pose = vehicle.tick(dt, damagedAxis({ ...axis, handbrake: axis.handbrake ?? 0 }, damageEffect), tuning, { jumpPressed: input.jumpPressed, plowBracing: input.plowBracing, time: runTime, ...input.effects }, groundHeightAt);
       if (ghostRecording) ghostRecorder.record(runTime, { position: pose.position, rotationY: pose.heading });
 
       // A barricade the build cannot clear stops the kart on the nose. One impulse per approach at the
@@ -803,7 +806,7 @@ export function createRunSession(
         notify("ARMOR PLATE SAVED YOUR HIDE", "warn");
         pushRadio("ARMOR PLATE TOOK THE HIT — KEEP MOVING");
       } else if (contact.outcome === "crushed") {
-        const settlement = loop.settle("lost");
+        const settlement = loop.settle({ outcome: "lost" });
         outcome = {
           kind: "crushed",
           time: runTime,
@@ -814,12 +817,12 @@ export function createRunSession(
           zoneLabel: track.zoneAt(runOf(pose)).label,
           place: standings.placeOf(PLAYER_RACER_ID),
           fieldSize: FIELD_SIZE,
-          carried: settlement.haul,
+          carried: settlement.carried,
           lineMultiplier: 0,
           lineNotes: [],
-          banked: settlement.banked,
-          lost: settlement.lost,
-          nextShift: shiftInfo(settlement.next.changeId),
+          banked: settlement.result.banked,
+          lost: settlement.result.lost,
+          nextShift: shiftInfo(settlement.next.optionId),
           event: scoreEvent(false, standings.placeOf(PLAYER_RACER_ID)),
         };
         recordOutcome(settlement);
@@ -840,7 +843,7 @@ export function createRunSession(
           gates: track.gates.length,
           par: track.def.par,
         });
-        const settlement = loop.settle("banked", line.multiplier);
+        const settlement = loop.settle({ outcome: "banked", multiplier: line.multiplier });
         const key = ghostKey(event);
         const previousGhost = ghosts[key];
         if (event.metric === "time" && ghostRecording && (previousGhost === undefined || runTime < previousGhost.time)) {
@@ -858,12 +861,12 @@ export function createRunSession(
           zoneLabel: track.zoneAt(runOf(pose)).label,
           place,
           fieldSize: FIELD_SIZE,
-          carried: settlement.haul,
+          carried: settlement.carried,
           lineMultiplier: line.multiplier,
           lineNotes: line.notes,
-          banked: settlement.banked,
-          lost: settlement.lost,
-          nextShift: shiftInfo(settlement.next.changeId),
+          banked: settlement.result.banked,
+          lost: settlement.result.lost,
+          nextShift: shiftInfo(settlement.next.optionId),
           event: scoreEvent(true, place),
         };
         recordOutcome(settlement);

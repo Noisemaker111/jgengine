@@ -1,7 +1,7 @@
 import type { AxisInput } from "../input/axisInput";
-import type { KinematicVehicleOptions } from "./kinematicVehicle";
-import type { GripCurve } from "./vehicleBody";
-import { sampleGripCurve } from "./vehicleBody";
+import type { CollisionObstacle } from "../movement/movementModel";
+import { createVehicleObstacleClamp, type VehicleImpact, type VehicleMoveClamp } from "./vehicleObstacles";
+import { sampleGripCurve, type GripCurve } from "./gripCurve";
 
 /**
  * One axle's tire, in physical terms. Lateral force follows a simplified Pacejka curve
@@ -39,6 +39,8 @@ export interface VehicleGearboxTuning {
   efficiency?: number;
   /** Engine-braking torque at the crank with the throttle closed, N·m (default `0.12 · peakTorque`). */
   engineBrakeTorque?: number;
+  /** Extra throttle-off drag at the wheels on top of engine braking, N (default `0`). */
+  coastForce?: number;
   /** Clutch-slip rpm the engine holds while launching from rest (default halfway between idle and peak). */
   launchRpm?: number;
 }
@@ -165,6 +167,11 @@ export interface VehicleJumpTuning {
   count?: number;
   /** Seconds after leaving the ground during which later jumps are allowed (default `Infinity`). */
   window?: number;
+  /**
+   * Downward pull on a hop without `suspension`, m/s² (default `9.81`). Without springs the car hops on a
+   * flat air layer above the ground: a kart's short snappy hop wants more than real gravity.
+   */
+  gravity?: number;
 }
 
 /**
@@ -247,6 +254,8 @@ export interface VehicleDynamicsModifiers {
   brakeScale?: number;
   gripScale?: number;
   steerScale?: number;
+  /** Scale `speedLimit` this tick (nitro, a slow zone, an off-road penalty); ignored without a `speedLimit`. */
+  speedLimitScale?: number;
   /** Thrust along the heading that bypasses the tires, N — boost, a rocket, a tow. */
   thrust?: number;
   /** Air-control input this tick; omitted, throttle−brake pitches and steer yaws while airborne. */
@@ -260,7 +269,17 @@ export interface VehicleDynamicsOptions {
   /** Grip multiplier by world position (gravel, ice, wet paint); default `1`. */
   surfaceFriction?: (x: number, z: number) => number;
   /** Clamp a planar move; optional result `motion` separates permitted displacement from position recovery. Called once per physics substep. */
-  clampMove?: KinematicVehicleOptions["clampMove"];
+  clampMove?: VehicleMoveClamp;
+  /**
+   * World solids near the car, sampled once per tick (buildings, props, other cars). The car slides along
+   * them instead of driving through, after any `clampMove`, and the hardest hit shows up as the step's
+   * `impact`. Hand back an already-filtered nearby set; the call is per tick, not per substep.
+   */
+  obstacles?: () => readonly CollisionObstacle[];
+  /** Body radius the `obstacles` footprints are inflated by, m (default `1.2`). */
+  bodyRadius?: number;
+  /** Extra velocity damping per second by world position (mud, sand, deep grass); default `0`. */
+  dragAt?: (x: number, z: number) => number;
   /** Terrain height under a point; read per wheel when `suspension` is set (ramps, hills, ledges). Default flat at the spawn height. */
   groundHeight?: (x: number, z: number) => number;
 }
@@ -298,6 +317,8 @@ export interface VehicleDynamicsState {
   jumpsUsed: number;
   /** Seconds since leaving the ground (`0` while grounded). */
   airTime: number;
+  /** Height above the ground from a hop without `suspension`, m. */
+  hopHeight: number;
 }
 
 /** Result of one {@link VehicleDynamics.tick}: pose plus the telemetry camera, audio, haptics and HUD read. */
@@ -306,7 +327,7 @@ export interface VehicleDynamicsStep {
   heading: number;
   /** Signed speed along the heading, m/s. */
   forwardSpeed: number;
-  /** Lateral speed, m/s (same sign convention as `KinematicVehicleStep.lateralSpeed`). */
+  /** Lateral speed, m/s, positive toward the car's right. */
   lateralSpeed: number;
   yawRate: number;
   /** Front-wheel angle, rad; positive steers the heading down, like `AxisInput.steer`. */
@@ -351,6 +372,13 @@ export interface VehicleDynamicsStep {
   wheelie: boolean;
   /** Braking has taken all the load off the rear axle. */
   stoppie: boolean;
+  /**
+   * How hard the tires are sliding, `0..1`: sideways slide (`1` at about 30° of sideslip), tires pushed past
+   * their peak (a plowing front), wheelspin and locked wheels. Squeal, tire smoke, skid marks and drift scoring key off it.
+   */
+  slip: number;
+  /** The hardest hit on an `obstacles` solid this tick, or `null`. */
+  impact: VehicleImpact | null;
 }
 
 /**
@@ -371,9 +399,11 @@ export interface VehicleDynamics {
   applyImpulse(dvx: number, dvz: number, dvy?: number): void;
   /**
    * Jump if the tuning's `jump` block allows it now: from the ground, or in the air while jumps remain inside
-   * the window. Returns `false` and changes nothing otherwise, so a held key cannot stack jumps.
+   * the window. Returns `false` and changes nothing otherwise, so a held key cannot stack jumps. `speed`
+   * overrides the tuning's takeoff speed for this jump (a spring upgrade, a ramp). Without `suspension` the
+   * car hops on a flat air layer, pulled down by `jump.gravity`.
    */
-  jump(): boolean;
+  jump(speed?: number): boolean;
   /** Add angular velocity to the body, rad/s: `pitch > 0` noses down, `yaw` in heading sense, `roll > 0` drops the left side (dodges, flips, hits). */
   applyAngularImpulse(pitch: number, yaw: number, roll: number): void;
   /** Swap tuning in place (upgrades, damage, a live tuning panel) without losing momentum. */
@@ -418,7 +448,19 @@ export function createVehicleDynamics(
   let frontShape = tireShape(tuning.front);
   let rearShape = tireShape(tuning.rear ?? tuning.front);
   const surfaceFriction = options.surfaceFriction ?? (() => 1);
-  const clampMove = options.clampMove;
+  const obstacleFrame = { list: [] as readonly CollisionObstacle[], dt: 0 };
+  const obstacleClamp =
+    options.obstacles === undefined
+      ? null
+      : createVehicleObstacleClamp({ obstacles: () => obstacleFrame.list, dt: () => obstacleFrame.dt, radius: options.bodyRadius ?? 1.2 });
+  const userClamp = options.clampMove;
+  const clampMove: VehicleMoveClamp | undefined =
+    obstacleClamp === null
+      ? userClamp
+      : userClamp === undefined
+        ? obstacleClamp.clampMove
+        : (from, to) => obstacleClamp.clampMove(from, userClamp(from, to));
+  const dragAt = options.dragAt;
   const spawnGround = options.position?.[1] ?? 0;
   const groundAt = options.groundHeight ?? (() => spawnGround);
 
@@ -461,12 +503,34 @@ export function createVehicleDynamics(
     const h = steps > 0 ? dt / steps : 0;
     const telemetry = emptyTelemetry();
     const surface = surfaceFriction(state.x, state.z);
+    const drag = dragAt === undefined ? 0 : Math.max(0, dragAt(state.x, state.z));
     telemetry.airborne = state.airborne;
-    for (let i = 0; i < steps; i += 1) substep(h, input, modifiers, surface, telemetry);
-    if (steps === 0) substep(0, input, modifiers, surface, telemetry);
+    if (obstacleClamp !== null && options.obstacles !== undefined) {
+      obstacleFrame.list = options.obstacles();
+      obstacleFrame.dt = h;
+    }
+    let impact: VehicleImpact | null = null;
+    for (let i = 0; i < steps; i += 1) {
+      substep(h, input, modifiers, surface, drag, telemetry);
+      const hit = obstacleClamp?.takeImpact() ?? null;
+      if (hit !== null && (impact === null || hit.closingSpeed > impact.closingSpeed)) impact = hit;
+    }
+    if (steps === 0) substep(0, input, modifiers, surface, drag, telemetry);
     const [fx, fz] = forwardOf(state.heading);
     const forwardSpeed = state.vx * fx + state.vz * fz;
     const lateralSpeed = -state.vx * fz + state.vz * fx;
+    const planar = Math.hypot(forwardSpeed, lateralSpeed);
+    const slide = planar < 2 ? 0 : Math.abs(lateralSpeed) / planar;
+    const slip = state.airborne
+      ? 0
+      : clamp01(
+          Math.max(
+            slide * 2,
+            planar > 3 ? (Math.max(telemetry.satFront, telemetry.satRear) - 1) * 0.5 : 0,
+            telemetry.wheelspin && planar > 1 ? 0.6 : 0,
+            telemetry.wheelLock && planar > 3 ? 0.8 : 0,
+          ),
+        );
     return {
       position: [state.x, baseHeight(), state.z],
       heading: state.heading,
@@ -494,13 +558,15 @@ export function createVehicleDynamics(
       stabilityActive: telemetry.stability,
       bodyPitch: state.bodyPitch,
       bodyRoll: state.bodyRoll,
-      airOffset: tuning.suspension === undefined ? 0 : Math.max(0, baseHeight() - groundAt(state.x, state.z)),
+      airOffset: tuning.suspension === undefined ? state.hopHeight : Math.max(0, baseHeight() - groundAt(state.x, state.z)),
       airborne: state.airborne,
       landingSpeed: telemetry.landingSpeed,
       wheelLoads: telemetry.wheelLoads,
       lean: tuning.lean === undefined ? 0 : balanceLean(state.lateralAccel),
       wheelie: telemetry.wheelie,
       stoppie: telemetry.stoppie,
+      slip,
+      impact,
     };
   }
 
@@ -509,6 +575,7 @@ export function createVehicleDynamics(
     input: AxisInput,
     modifiers: VehicleDynamicsModifiers | undefined,
     surface: number,
+    groundDrag: number,
     out: Telemetry,
   ): void {
     const t = tuning;
@@ -587,13 +654,28 @@ export function createVehicleDynamics(
     let slopeLong = 0;
     let slopeLat = 0;
     if (suspension === undefined) {
+      if (state.hopHeight > 0 || state.vy > 0) {
+        // A hop without springs: a flat air layer over the ground, with no tire contact until it lands.
+        state.vy -= (t.jump?.gravity ?? GRAVITY) * h;
+        state.hopHeight += state.vy * h;
+        state.airTime += h;
+        if (state.hopHeight <= 0) {
+          out.landingSpeed = Math.max(out.landingSpeed, -state.vy);
+          state.hopHeight = 0;
+          state.vy = 0;
+          state.jumpsUsed = 0;
+          state.airTime = 0;
+        }
+      }
+      grounded = state.hopHeight <= 0;
+      state.airborne = !grounded;
       const transferLong = (m * state.longitudinalAccel * t.comHeight) / L;
       const rawFront = weight * (b / L) - transferLong + downforce * downFront;
       const rawRear = weight * (a / L) + transferLong + downforce * (1 - downFront);
       if (rawFront <= 0) out.wheelie = true;
       if (rawRear <= 0) out.stoppie = true;
-      loadFront = Math.max(0, rawFront);
-      loadRear = Math.max(0, rawRear);
+      loadFront = grounded ? Math.max(0, rawFront) : 0;
+      loadRear = grounded ? Math.max(0, rawRear) : 0;
       // A single-track vehicle leans instead of shifting load across an axle.
       const transferLat = t.lean !== undefined ? 0 : (m * Math.abs(state.lateralAccel) * t.comHeight) / Math.max(0.3, t.trackWidth);
       transferFront = transferLat * rsf;
@@ -641,7 +723,7 @@ export function createVehicleDynamics(
     let drive = driveForce(throttle, wantReverseDrive ? brakeInput : 0, u, h, out) * (modifiers?.driveScale ?? 1);
     // A governor cuts drive like a limiter: forcing speed down after the fact would leave full drive
     // consuming the tire budget, and a car pinned at its cap could not turn.
-    if (t.speedLimit !== undefined && drive > 0) drive *= clamp01((t.speedLimit - u) / 0.5);
+    if (t.speedLimit !== undefined && drive > 0) drive *= clamp01((t.speedLimit * (modifiers?.speedLimitScale ?? 1) - u) / 0.5);
     let brakeTotal = 0;
     if (!wantReverseDrive && brakeInput > 0 && Math.abs(u) > 0.05) brakeTotal = brakeInput * t.brakeForce * (modifiers?.brakeScale ?? 1);
     const brakeFrontShare = t.brakeFront ?? 0.65;
@@ -739,7 +821,7 @@ export function createVehicleDynamics(
     let forceLong = fxFront * cosD + fyFront * sinD + fxRear + (modifiers?.thrust ?? 0) + slopeLong;
     const forceLat = frontLat + fyRear + slopeLat;
     const drag = q * (aero?.dragArea ?? 0) * Math.sign(u);
-    const rollingLoad = suspension === undefined ? weight : loadFront + loadRear;
+    const rollingLoad = suspension === undefined ? (grounded ? weight : 0) : loadFront + loadRear;
     const rolling = (aero?.rollingResistance ?? 0.015) * rollingLoad * Math.sign(u) * Math.min(1, Math.abs(u) / 0.5);
     forceLong -= drag + rolling;
     // Lateral force ahead of the CG yaws the heading negative in this frame, force behind it positive.
@@ -768,12 +850,23 @@ export function createVehicleDynamics(
     let nu = u + du * h;
     let nv = v + dv * h;
     let nr = r + dr * h;
+    if (groundDrag > 0 && h > 0) {
+      const keep = Math.max(0, 1 - groundDrag * h);
+      nu *= keep;
+      nv *= keep;
+    }
     const slopePull = Math.hypot(slopeLong, slopeLat);
     const holds = slopePull <= (aero?.rollingResistance ?? 0.015) * weight * 2 || brakeInput > 0 || handbrake > 0;
     if (h > 0 && grounded && holds && speed < 0.3 && throttle <= 0 && brakeInput <= 0 && Math.abs(modifiers?.thrust ?? 0) === 0) {
       nu *= Math.max(0, 1 - 6 * h);
       nv *= Math.max(0, 1 - 6 * h);
       nr *= Math.max(0, 1 - 6 * h);
+      // Rest snap: a parked car settles to exactly zero instead of creeping on an endless decay.
+      if (Math.hypot(nu, nv) < 0.02 && Math.abs(nr) < 0.02) {
+        nu = 0;
+        nv = 0;
+        nr = 0;
+      }
     }
     // Near rest, held brakes grip statically: they cancel motion up to what the braked axles can hold,
     // so a car parks on a slope instead of creeping at whatever speed a damped slide settles to.
@@ -793,8 +886,15 @@ export function createVehicleDynamics(
     const toZ = state.z + nvz * h;
     if (clampMove !== undefined && h > 0) {
       const allowed = clampMove([state.x, state.z], [toX, toZ]);
+      const wanted = Math.hypot(nvx, nvz);
       nvx = (allowed.motion?.[0] ?? allowed[0] - state.x) / h;
       nvz = (allowed.motion?.[1] ?? allowed[1] - state.z) / h;
+      // A clamp that pushes the car back onto the road moves it, but never hands it speed it did not have.
+      const kept = Math.hypot(nvx, nvz);
+      if (kept > wanted && kept > 0) {
+        nvx *= wanted / kept;
+        nvz *= wanted / kept;
+      }
       state.x = allowed[0];
       state.z = allowed[1];
     } else {
@@ -970,7 +1070,7 @@ export function createVehicleDynamics(
       return (reverse > 0 ? -1 : 1) * torque * toWheel;
     }
     if (Math.abs(u) < 0.5) return 0;
-    return -Math.sign(u) * (pt.engineBrakeTorque ?? pt.peakTorque * 0.12) * toWheel;
+    return -Math.sign(u) * ((pt.engineBrakeTorque ?? pt.peakTorque * 0.12) * toWheel + (pt.coastForce ?? 0));
   }
 
   return {
@@ -982,12 +1082,18 @@ export function createVehicleDynamics(
       state.vz *= factor;
       state.yawRate *= factor;
     },
-    jump() {
+    jump(speed) {
       const jump = tuning.jump;
-      if (jump === undefined || tuning.suspension === undefined) return false;
+      if (jump === undefined) return false;
+      const takeoff = speed ?? jump.speed;
+      if (!(takeoff > 0)) return false;
       if (!state.airborne && state.jumpsUsed === 0) {
-        state.vy = Math.max(state.vy, 0) + jump.speed;
+        state.vy = Math.max(state.vy, 0) + takeoff;
         state.jumpsUsed = 1;
+        if (tuning.suspension === undefined) {
+          state.hopHeight = Math.max(state.hopHeight, 1e-6);
+          state.airborne = true;
+        }
         return true;
       }
       const count = jump.count ?? 1;
@@ -995,7 +1101,7 @@ export function createVehicleDynamics(
       if (state.jumpsUsed >= count || !inWindow) return false;
       // An air jump always takes off from a first jump (or a ledge) and counts as one used either way.
       state.jumpsUsed = Math.max(state.jumpsUsed, 1) + 1;
-      state.vy = Math.max(state.vy, 0) + jump.speed;
+      state.vy = Math.max(state.vy, 0) + takeoff;
       return true;
     },
     applyAngularImpulse(pitch, yaw, roll) {
@@ -1159,6 +1265,7 @@ function freshState(
     leanTrim: 0,
     jumpsUsed: 0,
     airTime: 0,
+    hopHeight: 0,
   };
 }
 

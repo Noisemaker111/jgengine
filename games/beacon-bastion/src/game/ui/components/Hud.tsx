@@ -1,3 +1,4 @@
+import { useActionBindings } from "@jgengine/react/uiKitRoot";
 import { useGame, useGameStore } from "@jgengine/react/hooks";
 import { KitButton, KitPanel } from "@jgengine/react/uiKitRoot";
 import { GameIcon, type GameIconName } from "@jgengine/react/gameIcons";
@@ -6,7 +7,6 @@ import { summarizeWave } from "@jgengine/core/ai/director/wavePreview";
 
 import { abilityDef } from "../../combat/abilities";
 import { creepTraits } from "../../entities/enemies/catalog";
-import { keybinds } from "../../keybinds";
 import { FLANK_POINT_KEY } from "../../world/path";
 import { HudFade } from "@jgengine/react/hudLayout";
 
@@ -195,6 +195,7 @@ export function ReleaseHorn() {
  * a click on the road.
  */
 export function AbilityStones() {
+  const keybinds = useActionBindings();
   const { commands } = useGame();
   const armed = useGameStore(() => session.armedAbility);
   const slots = useGameStore(() => session.abilities.snapshot().map((slot) => ({ id: slot.id, ready: slot.ready, fraction: slot.cooldownFraction, left: Math.ceil(slot.cooldownRemainingMs / 1000) })));

@@ -191,10 +191,6 @@
       "kind": "not-applicable",
       "reason": "Hold the Line has no ride simulation yet: it is a camp survival (gather by day, hold the night) starter, and nothing in its loop uses ride-sim."
     },
-    "run-loop": {
-      "kind": "not-applicable",
-      "reason": "Hold the Line has no run yet: it is a camp survival (gather by day, hold the night) starter, and nothing in its loop uses run-loop."
-    },
     "rvo-avoidance": {
       "kind": "not-applicable",
       "reason": "Hold the Line has no crowd steering yet: it is a camp survival (gather by day, hold the night) starter, and nothing in its loop uses rvo-avoidance."

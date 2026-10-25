@@ -3,7 +3,6 @@ import { createHeadlessRunner } from "@jgengine/core/runtime/headlessRunner";
 import { closeTopPanel, createPanelState, isOpen, panelByHotkey, togglePanel } from "@jgengine/core/ui/panelModel";
 
 import { game } from "../../game.config";
-import { keybinds } from "../keybinds";
 import { content } from "../content";
 import { session } from "../session";
 import { park } from "../park";
@@ -29,7 +28,7 @@ describe("the build palette is a toggleable window", () => {
   });
 
   test("the palette hotkey does not collide with a park action key", () => {
-    const codes = Object.values(keybinds).flatMap((value) =>
+    const codes = Object.values(game.game.input ?? {}).flatMap((value) =>
       Array.isArray(value) ? [...value] : [...(value.hold ?? []), ...(value.toggle ?? [])],
     );
     expect(PARK_PANELS.length).toBeGreaterThan(0);

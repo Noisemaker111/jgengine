@@ -3,7 +3,8 @@ import { createAssetCatalog } from "./assetCatalog";
 import { defineGameDefinition } from "../game/defineGame";
 import { createGameContext } from "../runtime/gameContext";
 import { boardVehicle, createVehicleSeats, leaveVehicle } from "./vehicleSeat";
-import { createKinematicVehicle } from "../physics/kinematicVehicle";
+import { createVehicleDynamics } from "../physics/vehicleDynamics";
+import { vehicleTuning } from "../physics/vehicleSpec";
 import { createBoatDynamics } from "../physics/boatDynamics";
 import { tickDrivableVehicle, type DrivableSimStep } from "../physics/drivableVehicle";
 import { resolvePlayerMovementTuning, snapshotPlayerMovement, stepPlayerMovement } from "../movement/playerMovement";
@@ -42,8 +43,7 @@ for (const kind of ["ground", "boat"] as const) {
     const frozen = ctx.scene.entity.get("local")!.position;
     stepPlayerMovement(ctx, "local", { held: ["moveForward"], pointer: null }, 0.25, movement);
     expect(ctx.scene.entity.get("local")!.position).toEqual(frozen);
-    const sim = kind === "ground" ? createKinematicVehicle({ engineAccel: 8, brakeAccel: 10, topSpeed: 15, reverseSpeed: 3,
-      turnRate: 1, turnSpeedRef: 4, gripStrength: 5, handbrakeGrip: 1 }) : createBoatDynamics({
+    const sim = kind === "ground" ? createVehicleDynamics(vehicleTuning({ topSpeed: 15, accel: 8, brake: 10, reverseSpeed: 3, turnRate: 1, grip: 1, handbrakeGrip: 1 })) : createBoatDynamics({
       massKg: 5000, length: 9, beam: 3, maxThrust: 20000, propSpeed: 8, steering: { kind: "rudder", area: 1 },
     });
     ctx.input.publish(["moveForward"]);

@@ -1,7 +1,7 @@
 import type { AxisInput } from "../input/axisInput";
 import type { AircraftVector, RigidAircraft, RigidAircraftInput, RigidAircraftStep } from "./aircraftDynamics";
 
-/** The slice of a vehicle sim {@link measureHandling} drives: `VehicleDynamics` and `KinematicVehicle` both fit. */
+/** The slice of a vehicle sim {@link measureHandling} drives; `VehicleDynamics` fits. */
 export interface HandlingSubject {
   tick(dt: number, input: AxisInput): { forwardSpeed: number; lateralSpeed: number; yawRate: number };
   velocity(): readonly [number, number];

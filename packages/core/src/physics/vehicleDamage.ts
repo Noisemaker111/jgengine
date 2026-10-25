@@ -1,6 +1,7 @@
 import { devtools } from "../devtools/devtools";
 import type { AxisInput } from "../input/axisInput";
-import type { KinematicVehicleModifiers, KinematicVehicleTuning } from "./kinematicVehicle";
+import type { VehicleDynamicsModifiers } from "./vehicleDynamics";
+import type { VehicleSpec } from "./vehicleSpec";
 
 /**
  * Handling change one damage zone applies at its *last* stage. Multiplier fields read `1` = undamaged,
@@ -16,7 +17,7 @@ export interface VehicleDamageEffect {
   topSpeedScale?: number;
   /** Steering bias in radians at full damage — a bent frame that pulls one way. */
   steerPull?: number;
-  /** Extra coast drag per second at full damage. */
+  /** Extra coast deceleration at full damage, m/s². */
   drag?: number;
 }
 
@@ -121,9 +122,9 @@ export interface VehicleDamage {
   disabled(): boolean;
   /**
    * Per-tick modifiers the sim applies for one frame. Use this for a scratch or a reset that should not
-   * rebuild the tuning; for lasting damage call {@link damagedTuning} and `retune` once per change.
+   * rebuild the tuning; for lasting damage call {@link damagedSpec} and `retune` once per change.
    */
-  modifiers(): KinematicVehicleModifiers;
+  modifiers(): VehicleDynamicsModifiers;
   snapshot(): VehicleDamageState;
   restore(next: VehicleDamageState): void;
   reset(): void;
@@ -282,8 +283,8 @@ export function createVehicleDamage(config: VehicleDamageConfig): VehicleDamage 
     modifiers() {
       const effect = resolveEffect();
       return {
-        topSpeedScale: effect.topSpeedScale,
-        accelScale: effect.engineScale,
+        speedLimitScale: effect.topSpeedScale,
+        driveScale: effect.engineScale,
         brakeScale: effect.brakeScale,
         gripScale: effect.gripScale,
       };
@@ -321,21 +322,18 @@ export function createVehicleDamage(config: VehicleDamageConfig): VehicleDamage 
 }
 
 /**
- * Bake a damage effect into a tuning — the lasting-damage path. Hand the result to the sim's `retune`,
- * which keeps the vehicle's momentum; the base tuning is not mutated, so a repair is the same call with
- * the undamaged base.
+ * Bake a damage effect into a spec — the lasting-damage path. Hand `vehicleTuning(result)` to the sim's
+ * `retune`, which keeps the vehicle's momentum; the base spec is not mutated, so a repair is the same call
+ * with the undamaged base.
  */
-export function damagedTuning(
-  base: KinematicVehicleTuning,
-  effect: VehicleDamageEffectResolved,
-): KinematicVehicleTuning {
+export function damagedSpec(base: VehicleSpec, effect: VehicleDamageEffectResolved): VehicleSpec {
   return {
     ...base,
-    engineAccel: base.engineAccel * effect.engineScale,
-    brakeAccel: base.brakeAccel * effect.brakeScale,
+    accel: base.accel * effect.engineScale,
+    brake: base.brake * effect.brakeScale,
     topSpeed: base.topSpeed * effect.topSpeedScale,
-    gripStrength: base.gripStrength * effect.gripScale,
-    coastDeceleration: (base.coastDeceleration ?? 0) + effect.drag,
+    grip: base.grip * effect.gripScale,
+    coast: (base.coast ?? 1) + effect.drag,
   };
 }
 

@@ -4,7 +4,6 @@ import { BRIGHTWAY_SOUNDS } from "./game/audio";
 import { assets } from "./game/assets";
 import { DAY_LENGTH } from "./game/catalog";
 import { content } from "./game/content";
-import { keybinds } from "./game/keybinds";
 import { entityModels, objectModels } from "./game/models";
 import { BrightwayParkWorldOverlay } from "./game/render/WorldOverlay";
 import { session } from "./game/session";
@@ -20,7 +19,18 @@ export const game = defineGame({
   world,
   physics,
   assets,
-  input: keybinds,
+  input: {
+    pauseToggle: ["KeyP"],
+    clearTool: ["KeyX"],
+    rotateTool: ["KeyZ"],
+    undoBuild: ["KeyU"],
+    pickCarousel: ["Digit1"],
+    pickCoaster: ["Digit2"],
+    pickTrack: ["Digit3"],
+    pickFood: ["Digit4"],
+    pickTree: ["Digit5"],
+    pickPath: ["Digit6"],
+  },
   server: { mode: "solo" },
   save: "none",
   // The park is one declaration (`game/park.ts`); its system runs the world and its commands.

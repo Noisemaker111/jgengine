@@ -1,5 +1,5 @@
 import { createRunDraft, type RunModifierOffer } from "@jgengine/core/game/runDraft";
-import { createRunLoop, type RunChange, type RunLoop, type RunLoopState } from "@jgengine/core/run/runLoop";
+import { createSessionLoop, type SessionLoop, type SessionLoopState, type SessionOfferOption } from "@jgengine/core/run/sessionLoop";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";
 import { defineStore } from "@jgengine/core/store/defineStore";
@@ -39,11 +39,11 @@ export const BOONS: readonly BoonDef[] = [
 ];
 
 /**
- * The relics are the run loop's authored change table: one entry per relic, with the weight the old
+ * The relics are the session loop's authored offer table: one entry per relic, with the weight the old
  * local draw used. `after: 1` keeps the first defense plain, so a relic only rides in once a defense
  * has been banked.
  */
-export const RELIC_TABLE: readonly RunChange<BoonEffect>[] = BOONS.map((boon) => ({
+export const RELIC_TABLE: readonly SessionOfferOption<BoonEffect>[] = BOONS.map((boon) => ({
   id: boon.id,
   value: boon.effect,
   weight: boon.weight,
@@ -68,8 +68,8 @@ export interface LegacyState {
   bankedGold: number;
   /** The relics the result card is offering right now, in draw order. */
   offer: string[];
-  /** The engine run loop: the run in progress, what it banked or lost, and the relic it opened with. */
-  run: RunLoopState;
+  /** The engine session loop: the defense in progress, the purse it carries, and the relic it opened with. */
+  run: SessionLoopState;
 }
 
 /** A keep with nothing banked: no run has opened, so the first defense starts plain. */
@@ -78,21 +78,36 @@ export function freshLegacy(): LegacyState {
     standing: 0,
     bankedGold: 0,
     offer: [],
-    run: { run: 0, completed: 0, haul: 0, changeId: null, bankedTotal: 0, lostTotal: 0, bestHaul: 0 },
+    run: { session: 0, closed: 0, carried: 0, optionId: null },
   };
 }
 
 /** The keep's banked progress, in the reactive store so the HUD and the save document see one value. */
 export const legacy = defineStore<LegacyState>("beacon:legacy", freshLegacy);
 
+/** What a settled defense hands the bank: the purse share it kept. */
+export interface DefenseBank {
+  banked: number;
+}
+
+export type RelicLoop = SessionLoop<BoonEffect, { share: number }, DefenseBank>;
+
 /**
- * Each keep's engine run loop: it holds the purse at risk, banks the half the keep keeps, and
+ * Each keep's engine session loop: it holds the purse at risk, banks the share the keep keeps, and
  * remembers the relic the defense in progress opened with. Per context, because a host can serve
  * several keeps at once.
  */
-const loops = perContext(() => createRunLoop<BoonEffect>({ seed: DIRECTOR_SEED, changes: RELIC_TABLE }));
+const loops = perContext(
+  (): RelicLoop =>
+    createSessionLoop<BoonEffect, { share: number }, DefenseBank>({
+      kind: "defense",
+      seed: DIRECTOR_SEED,
+      offers: RELIC_TABLE,
+      settle: ({ carried, input }) => ({ banked: Math.round(carried * Math.max(0, input.share)) }),
+    }),
+);
 
-export function relicLoop(ctx: GameContext): RunLoop<BoonEffect> {
+export function relicLoop(ctx: GameContext): RelicLoop {
   return loops(ctx);
 }
 
@@ -103,7 +118,7 @@ export function boonDef(id: string | null): BoonDef | null {
 
 /** The relic the defense in progress opened with, as the engine loop holds it. */
 export function carriedRelic(state: LegacyState): BoonDef | null {
-  return boonDef(state.run.changeId);
+  return boonDef(state.run.optionId);
 }
 
 /**
@@ -132,12 +147,12 @@ export function finishRun(ctx: GameContext): void {
   const loop = relicLoop(ctx);
   const wave = Math.max(1, Math.min(TOTAL_WAVES, currentWaveNumber()));
   loop.carry(world.num("keep.gold"));
-  const settlement = loop.settle("banked", BANK_RULE.share);
+  const settlement = loop.settle({ share: BANK_RULE.share });
   const previous = legacy.read(ctx);
   legacy.write(ctx, {
     standing: previous.standing + wave,
-    bankedGold: Math.min(BANK_RULE.cap, settlement.banked),
-    offer: drawRelics(`${DIRECTOR_SEED}:${settlement.completed}:${settlement.next.changeId ?? "none"}`),
+    bankedGold: Math.min(BANK_RULE.cap, settlement.result.banked),
+    offer: drawRelics(`${DIRECTOR_SEED}:${settlement.closed}:${settlement.next.optionId ?? "none"}`),
     run: loop.snapshot(),
   });
 }
@@ -153,9 +168,9 @@ export function chooseRelic(ctx: GameContext, id: string | null): boolean {
   const state = loop.snapshot();
   loop.restore({
     ...state,
-    // A settled run leaves no run open; the pick opens the next one around the chosen relic.
-    run: state.run > state.completed ? state.run : state.completed + 1,
-    changeId: id,
+    // A settled defense leaves none open; the pick opens the next one around the chosen relic.
+    session: state.session > state.closed ? state.session : state.closed + 1,
+    optionId: id,
   });
   legacy.write(ctx, { ...previous, offer: [], run: loop.snapshot() });
   return true;
@@ -169,8 +184,8 @@ export function chooseRelic(ctx: GameContext, id: string | null): boolean {
 export function startDefense(ctx: GameContext): void {
   const loop = relicLoop(ctx);
   const state = loop.snapshot();
-  if (state.run <= state.completed) {
-    loop.restore({ ...state, run: state.completed + 1, changeId: state.changeId });
+  if (state.session <= state.closed) {
+    loop.restore({ ...state, session: state.closed + 1 });
   }
   loop.start();
   legacy.write(ctx, { ...legacy.read(ctx), run: loop.snapshot() });
@@ -207,35 +222,28 @@ const count = (value: unknown): value is number =>
   typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
 
 /** A loop state plain JSON can carry, or `null` when it is not one this loop could have written. */
-function readRun(value: unknown): RunLoopState | null {
+function readRun(value: unknown): SessionLoopState | null {
   if (typeof value !== "object" || value === null) return null;
-  const run = value as RunLoopState;
-  if (!count(run.run) || !count(run.completed) || run.run < run.completed) return null;
-  if (!count(run.haul) || !count(run.bankedTotal) || !count(run.lostTotal) || !count(run.bestHaul)) return null;
-  if (run.changeId !== null && typeof run.changeId !== "string") return null;
-  return {
-    run: run.run,
-    completed: run.completed,
-    haul: run.haul,
-    changeId: run.changeId,
-    bankedTotal: run.bankedTotal,
-    lostTotal: run.lostTotal,
-    bestHaul: run.bestHaul,
-  };
+  const run = value as Partial<SessionLoopState> & { run?: unknown; completed?: unknown; haul?: unknown; changeId?: unknown };
+  // Saves written before the session loop named the same four numbers run/completed/haul/changeId.
+  const session = run.session ?? run.run;
+  const closed = run.closed ?? run.completed;
+  const carried = run.carried ?? run.haul;
+  const optionId = run.optionId !== undefined ? run.optionId : run.changeId;
+  if (!count(session) || !count(closed) || session < closed || !count(carried)) return null;
+  if (optionId !== null && typeof optionId !== "string") return null;
+  return { session, closed, carried, optionId };
 }
 
 /** A document written before the run loop: `runs` finished defenses and `boonId` the carried relic. */
-function migratedRun(runs: unknown, boonId: unknown): RunLoopState | null {
+function migratedRun(runs: unknown, boonId: unknown): SessionLoopState | null {
   if (!count(runs) || (boonId !== null && typeof boonId !== "string")) return null;
   return {
-    // The stored defense is the one in progress, so its run sits open above the finished ones.
-    run: runs + 1,
-    completed: runs,
-    haul: 0,
-    changeId: boonId !== null && RELIC_TABLE.some((relic) => relic.id === boonId) ? boonId : null,
-    bankedTotal: 0,
-    lostTotal: 0,
-    bestHaul: 0,
+    // The stored defense is the one in progress, so its session sits open above the finished ones.
+    session: runs + 1,
+    closed: runs,
+    carried: 0,
+    optionId: boonId !== null && RELIC_TABLE.some((relic) => relic.id === boonId) ? boonId : null,
   };
 }
 

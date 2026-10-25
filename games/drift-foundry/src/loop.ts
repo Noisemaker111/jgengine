@@ -103,8 +103,9 @@ export function onTick(ctx: GameContext, dt: number): void {
   const jumpPressed = input.consumeJump() || ctx.input.justPressed("jumpHop");
   const plowBracing = ctx.input.isDown("plowBrace") || input.isDown("plowBrace");
   const pilot = autopilotFrame(ctx, before, track);
-  if (pilot !== null) session.tick(dt, pilot.axis, pilot.input);
-  else session.tick(dt, axis, { jumpPressed, plowBracing, salvageSwap: ctx.input.isDown("salvageSwap") || input.isDown("salvageSwap") });
+  const effects = { marks: ctx.tireMarks, particles: ctx.particles };
+  if (pilot !== null) session.tick(dt, pilot.axis, { ...pilot.input, effects });
+  else session.tick(dt, axis, { jumpPressed, plowBracing, salvageSwap: ctx.input.isDown("salvageSwap") || input.isDown("salvageSwap"), effects });
 
   const snapshot = session.snapshot();
   for (const burst of impactBursts(before, snapshot)) {

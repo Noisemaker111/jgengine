@@ -203,10 +203,6 @@
       "kind": "not-applicable",
       "reason": "Red Frontier has no ride simulation yet: it is a colony RTS (select colonists, gather, build, survive raids) starter, and nothing in its loop uses ride-sim."
     },
-    "run-loop": {
-      "kind": "not-applicable",
-      "reason": "Red Frontier has no run yet: it is a colony RTS (select colonists, gather, build, survive raids) starter, and nothing in its loop uses run-loop."
-    },
     "rvo-avoidance": {
       "kind": "not-applicable",
       "reason": "Red Frontier has no crowd steering yet: it is a colony RTS (select colonists, gather, build, survive raids) starter, and nothing in its loop uses rvo-avoidance."

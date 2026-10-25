@@ -2,7 +2,8 @@ import { gamePhase } from "@jgengine/core/game/gamePhase";
 import { createRaceState, type RaceState } from "@jgengine/core/game/race";
 import type { AxisInput } from "@jgengine/core/input/axisInput";
 import { tickDrivableVehicle } from "@jgengine/core/physics/drivableVehicle";
-import { createKinematicVehicle, type KinematicVehicle, type KinematicVehicleModifiers, type KinematicVehicleTuning } from "@jgengine/core/physics/kinematicVehicle";
+import { createVehicleDynamics, type VehicleDynamics, type VehicleDynamicsModifiers } from "@jgengine/core/physics/vehicleDynamics";
+import { VEHICLE_STYLES, vehicleTuning, type VehicleSpec } from "@jgengine/core/physics/vehicleSpec";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";
 import { createSessionLoop, type SessionLoop } from "@jgengine/core/run/sessionLoop";
@@ -35,17 +36,21 @@ const NITRO_REFILL = 0.06;
 const PAYOUT = [1, 0.55, 0.3] as const;
 
 /** The stock car: quick, grippy, forgiving. Upgrades scale it; nothing else does. */
-export const BASE: KinematicVehicleTuning = {
+export const BASE: VehicleSpec = {
+  ...VEHICLE_STYLES.arcade,
   topSpeed: 36,
-  engineAccel: 10,
-  brakeAccel: 20,
+  accel: 10,
+  brake: 20,
   reverseSpeed: 8,
   turnRate: 1.5,
-  turnSpeedRef: 14,
-  gripStrength: 9,
-  handbrakeGrip: 0.4,
-  coastDeceleration: 2.5,
+  turnSpeed: 14,
+  grip: 2.4,
+  handbrakeGrip: 0.55,
+  coast: 2.5,
 };
+
+/** The sim tuning every car on the grid runs. */
+export const BASE_TUNING = vehicleTuning(BASE);
 
 export const circuit = circuitOf(editorLayers);
 
@@ -57,7 +62,7 @@ interface Session {
   clock: number;
   startedAt: number;
   race: RaceState | null;
-  cars: Map<string, KinematicVehicle>;
+  cars: Map<string, VehicleDynamics>;
   rivals: string[];
   skill: Map<string, number>;
   speedKmh: number;
@@ -113,17 +118,17 @@ function payout(ctx: GameContext, raceId: string, place: number): number {
   return pay;
 }
 
-function carFor(state: Session, id: string, slot: number): KinematicVehicle {
+function carFor(state: Session, id: string, slot: number): VehicleDynamics {
   const grid = gridSlot(circuit, slot);
   let car = state.cars.get(id);
   if (car === undefined) {
-    car = createKinematicVehicle(BASE, { position: grid.position, heading: grid.heading });
+    car = createVehicleDynamics(BASE_TUNING, { position: grid.position, heading: grid.heading });
     state.cars.set(id, car);
   } else car.resetTo(grid.position, grid.heading);
   return car;
 }
 
-function place(ctx: GameContext, id: string, car: KinematicVehicle): void {
+function place(ctx: GameContext, id: string, car: VehicleDynamics): void {
   const pose = car.pose();
   const y = ctx.world.groundHeightAt(pose.position[0], pose.position[2]);
   ctx.scene.entity.setPose(id, { position: [pose.position[0], y, pose.position[2]], rotationY: pose.heading });
@@ -175,7 +180,7 @@ export function toGarage(ctx: GameContext): void {
   parkPlayer(ctx);
 }
 
-function playerAxis(ctx: GameContext, racing: boolean, car: KinematicVehicle | undefined): AxisInput {
+function playerAxis(ctx: GameContext, racing: boolean, car: VehicleDynamics | undefined): AxisInput {
   if (!racing) return PARKED;
   const value = (action: string) => Math.max(ctx.input.value(action), ctx.input.isDown(action) ? 1 : 0);
   const manual = value("steerRight") - value("steerLeft");
@@ -184,7 +189,7 @@ function playerAxis(ctx: GameContext, racing: boolean, car: KinematicVehicle | u
 }
 
 /** A rival aims a few points down the racing line and lifts when the turn ahead is sharp. */
-export function rivalAxis(car: KinematicVehicle, racing: boolean): AxisInput {
+export function rivalAxis(car: VehicleDynamics, racing: boolean): AxisInput {
   if (!racing) return PARKED;
   const pose = car.pose();
   const { index } = nearestOnLine(circuit, pose.position[0], pose.position[2]);
@@ -200,7 +205,7 @@ export function rivalAxis(car: KinematicVehicle, racing: boolean): AxisInput {
   return { throttle: sharp ? 0.3 : 1, brake: sharp ? 0.4 : 0, steer, handbrake: 0 };
 }
 
-function offRoad(car: KinematicVehicle): boolean {
+function offRoad(car: VehicleDynamics): boolean {
   const pose = car.pose();
   return nearestOnLine(circuit, pose.position[0], pose.position[2]).off > circuit.width / 2 + 2;
 }
@@ -234,13 +239,14 @@ export function tickRace(ctx: GameContext, dt: number): void {
   state.nitro = Math.max(0, Math.min(1, state.nitro + (burning ? -NITRO_DRAIN : NITRO_REFILL) * dt));
 
   const positions = new Map<string, readonly [number, number, number]>();
-  const drive = (id: string, axis: AxisInput, modifiers: KinematicVehicleModifiers) => {
+  const drive = (id: string, axis: AxisInput, modifiers: VehicleDynamicsModifiers) => {
     const car = state.cars.get(id);
     if (car === undefined || ctx.scene.entity.get(id) === null) return;
     const slowed = offRoad(car) ? 0.55 : 1;
     const step = tickDrivableVehicle(car, dt, axis, {
       groundHeight: (x, z) => ctx.world.groundHeightAt(x, z),
-      modifiers: { ...modifiers, topSpeedScale: (modifiers.topSpeedScale ?? 1) * slowed },
+      modifiers: { ...modifiers, speedLimitScale: (modifiers.speedLimitScale ?? 1) * slowed },
+      tires: { id, time: ctx.time.now(), marks: ctx.tireMarks, particles: ctx.particles },
     });
     ctx.scene.entity.setPose(id, { position: step.pose.position, rotationY: step.pose.rotationY });
     positions.set(id, step.pose.position);
@@ -248,9 +254,9 @@ export function tickRace(ctx: GameContext, dt: number): void {
   };
 
   drive(ctx.player.userId, playerAxis(ctx, racing, state.cars.get(ctx.player.userId)), {
-    topSpeedScale: 1 + engine + (burning ? 0.22 + nitroBoost : 0),
-    accelScale: 1 + engine + (burning ? 0.6 + nitroBoost : 0),
-    turnRateScale: 1 + grip * 0.5,
+    speedLimitScale: 1 + engine + (burning ? 0.22 + nitroBoost : 0),
+    driveScale: 1 + engine + (burning ? 0.6 + nitroBoost : 0),
+    steerScale: 1 + grip * 0.5,
     gripScale: 1 + grip,
   });
   const playerProgress = state.race?.progressOf(ctx.player.userId)?.progress ?? 0;
@@ -259,7 +265,7 @@ export function tickRace(ctx: GameContext, dt: number): void {
     if (car === undefined) continue;
     const behind = (state.race?.progressOf(id)?.progress ?? 0) < playerProgress;
     const skill = (state.skill.get(id) ?? 0.9) + (behind ? 0.05 : 0);
-    drive(id, rivalAxis(car, racing), { topSpeedScale: skill, accelScale: skill });
+    drive(id, rivalAxis(car, racing), { speedLimitScale: skill, driveScale: skill });
   }
 
   if (!racing || state.race === null) return;

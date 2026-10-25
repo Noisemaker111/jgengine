@@ -140,10 +140,6 @@
       "kind": "not-applicable",
       "reason": "Ride simulation is not part of ember-command: no ride or queue exists in a skirmish."
     },
-    "run-loop": {
-      "kind": "not-applicable",
-      "reason": "The roguelike run composition - bank or lose a haul plus one authored change per run - is not an Ember Command mission; its orders run on the genre-free session loop."
-    },
     "rvo-avoidance": {
       "kind": "not-applicable",
       "reason": "Crowd steering is not part of ember-command: units collide and hold formation, and no reciprocal avoidance layer is authored."

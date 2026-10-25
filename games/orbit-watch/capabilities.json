@@ -192,10 +192,6 @@
       "kind": "not-applicable",
       "reason": "Orbit Watch has no ride simulation yet: it is a tower defense (towers on pads, waves down lanes) starter, and nothing in its loop uses ride-sim."
     },
-    "run-loop": {
-      "kind": "not-applicable",
-      "reason": "Orbit Watch has no run yet: it is a tower defense (towers on pads, waves down lanes) starter, and nothing in its loop uses run-loop."
-    },
     "rvo-avoidance": {
       "kind": "not-applicable",
       "reason": "Orbit Watch has no crowd steering yet: it is a tower defense (towers on pads, waves down lanes) starter, and nothing in its loop uses rvo-avoidance."

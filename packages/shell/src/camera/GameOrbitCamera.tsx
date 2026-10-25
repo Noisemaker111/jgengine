@@ -24,6 +24,18 @@ import { usePlayerFov } from "./PlayerFov";
 
 type OrbitControlsImpl = NonNullable<ComponentRef<typeof OrbitControls>>;
 
+
+/**
+ * Mouse mapping for the orbit rig. Right-drag always orbits; left-drag orbits too unless the game uses the
+ * left button for picking (`pointerControls`), where the middle button also orbits.
+ * @internal
+ */
+export function orbitMouseButtons(pointerControls: boolean): { LEFT?: MOUSE; MIDDLE?: MOUSE; RIGHT?: MOUSE } {
+  return pointerControls
+    ? { LEFT: undefined, MIDDLE: MOUSE.ROTATE, RIGHT: MOUSE.ROTATE }
+    : { LEFT: MOUSE.ROTATE, MIDDLE: MOUSE.DOLLY, RIGHT: MOUSE.ROTATE };
+}
+
 export type CameraFollowListener = (state: CameraFollowState) => void;
 
 export interface GameOrbitCameraProps {
@@ -191,11 +203,7 @@ export function GameOrbitCamera({
       maxPolarAngle={config.maxPolarAngle}
       minPolarAngle={config.minPolarAngle}
       screenSpacePanning={false}
-      mouseButtons={
-        pointerControls
-          ? { LEFT: undefined, MIDDLE: MOUSE.ROTATE, RIGHT: undefined }
-          : { LEFT: MOUSE.ROTATE, MIDDLE: MOUSE.DOLLY, RIGHT: undefined }
-      }
+      mouseButtons={orbitMouseButtons(pointerControls === true)}
       onStart={() => {
         draggingRef.current = true;
         onDragChange?.(true);

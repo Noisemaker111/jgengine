@@ -196,10 +196,6 @@
       "kind": "not-applicable",
       "reason": "Outpost Zero has no ride simulation yet: it is a third-person shooter (clear the outposts) starter, and nothing in its loop uses ride-sim."
     },
-    "run-loop": {
-      "kind": "not-applicable",
-      "reason": "Outpost Zero has no run yet: it is a third-person shooter (clear the outposts) starter, and nothing in its loop uses run-loop."
-    },
     "rvo-avoidance": {
       "kind": "not-applicable",
       "reason": "Outpost Zero has no crowd steering yet: it is a third-person shooter (clear the outposts) starter, and nothing in its loop uses rvo-avoidance."

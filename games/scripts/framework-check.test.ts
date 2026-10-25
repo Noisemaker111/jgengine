@@ -248,7 +248,7 @@ export const damage = createDamageRuntime({ table: DAMAGE_TABLE });
  * it fails and points at #2351.
  */
 describe("state machine: composition passes, a fresh machine fails", () => {
-  const DRIFT = `import { createRunLoop } from "@jgengine/core/run/runLoop";
+  const DRIFT = `import { createSessionLoop } from "@jgengine/core/run/sessionLoop";
 
 export type RunPhase = "start" | "running" | "won" | "crushed";
 

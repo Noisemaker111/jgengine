@@ -1,5 +1,15 @@
 import { resolveObstacleStep, type CollisionObstacle } from "../movement/movementModel";
-import type { KinematicVehicleOptions } from "./kinematicVehicle";
+
+/**
+ * Veto or clamp a planar move before it commits — walls, closed gates, arena bounds. Given the attempted
+ * `from`→`to` on the XZ plane, return the destination actually allowed; velocity is rederived from the
+ * permitted displacement, so motion blocked on an axis stops on that axis. A result may carry `motion`, the
+ * permitted XZ displacement before position recovery, when the endpoint also depenetrates the body.
+ */
+export type VehicleMoveClamp = (
+  from: readonly [number, number],
+  to: readonly [number, number],
+) => readonly [number, number] & { readonly motion?: readonly [number, number] };
 
 /**
  * A single blocked-move event a car can react to (#1051): crash damage, screen shake, a metal-crunch
@@ -15,13 +25,13 @@ export interface VehicleImpact {
 }
 
 /**
- * A planar move clamp for a kinematic car: feed {@link clampMove} to a vehicle's `clampMove` hook so
+ * A planar move clamp for a car: feed {@link clampMove} to a vehicle's `clampMove` hook so
  * an attempted XZ displacement slides along world solids instead of driving through them, and read
  * {@link takeImpact} once per tick for the crash it produced.
  */
 export interface VehicleObstacleClamp {
   /** Resolve an attempted XZ move; recovery endpoints carry permitted world-unit displacement in `motion`. */
-  clampMove: NonNullable<KinematicVehicleOptions["clampMove"]>;
+  clampMove: VehicleMoveClamp;
   /** Impact recorded since last take, consumed on read (null when none). Closing speed is the velocity component into the obstacle at block time, units/s. */
   takeImpact(): VehicleImpact | null;
 }

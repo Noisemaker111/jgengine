@@ -1,4 +1,4 @@
-import type { RunChange } from "@jgengine/core/run/runLoop";
+import type { SessionOfferOption } from "@jgengine/core/run/sessionLoop";
 
 import { COMPACTOR_SURGES, type CompactorPlan, type CompactorSurge } from "../compactor/schedule";
 import { RIVAL_DEFS, type RivalDef } from "../race/opponents";
@@ -44,7 +44,7 @@ export const SHIFT_LABELS: Record<ShiftId, { label: string; hint: string }> = {
   },
 };
 
-export const SHIFT_TABLE: readonly RunChange<ShiftEffect>[] = [
+export const SHIFT_TABLE: readonly SessionOfferOption<ShiftEffect>[] = [
   // `after: 1` keeps the first run honest - every run after it differs.
   { id: "hobbs-line", value: { rival: { id: "rival_hobbs", paceScale: 1.04, lineScale: 0.55 } }, after: 1 },
   { id: "tally-honest", value: { rival: { id: "rival_tally", band: 0.15 } }, after: 1 },

@@ -18,7 +18,7 @@
  *   - the damage seam is a model type, a model implementation or a table constant no shared model
  *     owns; an authored `DAMAGE_TABLE: DamageTableDef` handed to `createDamageRuntime`, and a
  *     `resolveDamage` / `applyDamage` wrapper over shared primitives, are both content and pass;
- *   - a module that runs `@jgengine/core/run/runLoop` composes the shared loop, so a local
+ *   - a module that runs `@jgengine/core/run/sessionLoop` composes the shared loop, so a local
  *     `RunPhase` there passes: it is adoption debt tracked by an issue, not a second engine.
  *
  * Usage: bun run games:check-framework [--base origin/beta] [--allow "<reason>"]
@@ -111,7 +111,7 @@ function definesStateMachine(code: string): boolean {
  * readout, and that is tracked as an issue rather than a gate red - a gate that pushed a lane to
  * rename a phase field would be the same disease as judging a filename.
  */
-const SHARED_RUN_LOOP = /from\s+"@jgengine\/core\/run\/(?:runLoop|sessionLoop)"/;
+const SHARED_RUN_LOOP = /from\s+"@jgengine\/core\/run\/sessionLoop"/;
 
 /**
  * A game authors its own damage rows and hands them to the shared model - `const DAMAGE_TABLE:

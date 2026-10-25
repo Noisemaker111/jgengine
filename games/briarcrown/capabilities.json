@@ -188,10 +188,6 @@
       "kind": "not-applicable",
       "reason": "Briarcrown has no ride simulation yet: it is a settlement builder (house, feed and grow a realm) starter, and nothing in its loop uses ride-sim."
     },
-    "run-loop": {
-      "kind": "not-applicable",
-      "reason": "Briarcrown has no run yet: it is a settlement builder (house, feed and grow a realm) starter, and nothing in its loop uses run-loop."
-    },
     "rvo-avoidance": {
       "kind": "not-applicable",
       "reason": "Briarcrown has no crowd steering yet: it is a settlement builder (house, feed and grow a realm) starter, and nothing in its loop uses rvo-avoidance."

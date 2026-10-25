@@ -23,6 +23,7 @@ import type { PresencePoseRow } from "@jgengine/core/runtime/transport";
 import { useDisplayProfile } from "@jgengine/react/display";
 import { RotateDeviceScreen } from "@jgengine/react/rotateDevice";
 import { canvasCover } from "@jgengine/react/canvasCover";
+import { ActionBindingsProvider } from "@jgengine/react/uiKitRoot";
 import { createSettingsStore } from "@jgengine/core/settings/settingsModel";
 import { parseGraphicsQuality, withGraphicsQualityOverride } from "@jgengine/core/settings/graphicsSettings";
 import {
@@ -508,6 +509,7 @@ export function GamePlayerShell({
 
   if (rigKind === "none" || playable.presentation === "hud") {
     return (
+      <ActionBindingsProvider bindings={effectiveInput}>
       <PresentationRecovery ctx={ctx} onRuntimeError={reportRuntimeError} onRetryCommitted={() => wrapperRef.current?.focus({ preventScroll: true })} onRecoveredDraw={retireRecoveredPresentation} onRecoveryEvent={traceRecovery}>
         <ShellHudPresentation
           {...shared}
@@ -522,10 +524,12 @@ export function GamePlayerShell({
           poster={poster}
         />
       </PresentationRecovery>
+      </ActionBindingsProvider>
     );
   }
 
   return (
+    <ActionBindingsProvider bindings={effectiveInput}>
     <PresentationRecovery ctx={ctx} onRuntimeError={reportRuntimeError} onRetryCommitted={() => wrapperRef.current?.focus({ preventScroll: true })} onRecoveredDraw={retireRecoveredPresentation} onRecoveryEvent={traceRecovery}>
       <LazyShell3dPresentation
         {...shared}
@@ -552,5 +556,6 @@ export function GamePlayerShell({
         authoritativeFrameRef={authoritativeFrameRef}
       />
     </PresentationRecovery>
+    </ActionBindingsProvider>
   );
 }

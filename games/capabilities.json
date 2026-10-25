@@ -124,6 +124,17 @@
       "intent": "headless action-collection model with focus, hover, keyboard, and hotkey routing"
     },
     {
+      "id": "action-bindings-hook",
+      "packages": [
+        "@jgengine/react"
+      ],
+      "module": "@jgengine/react/uiKitRoot",
+      "domain": "action-bindings-hook",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "the game's live key bindings, rebinds included, for HUD key labels"
+    },
+    {
       "id": "action-button",
       "packages": [
         "@jgengine/react"
@@ -1827,17 +1838,6 @@
       "intent": "Suspend player input across overlapping menus without stopping shared simulation."
     },
     {
-      "id": "controller-camera-shake",
-      "packages": [
-        "@jgengine/shell"
-      ],
-      "module": "@jgengine/shell/camera/ControllerCameraShake",
-      "domain": "camera",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "R3F consumer that applies a core camera-shake controller's pooled per-frame offset to the active camera (translation + pitch/yaw/roll) so the view visibly shakes"
-    },
-    {
       "id": "controls-list",
       "packages": [
         "@jgengine/react"
@@ -2447,6 +2447,17 @@
       "intent": "serializable data-driven conditions with no callbacks in saved content"
     },
     {
+      "id": "default-drive-codes",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/input/actionBindings",
+      "domain": "input",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "stock WASD/arrow throttle, brake, steer and handbrake key codes"
+    },
+    {
       "id": "default-look",
       "packages": [
         "@jgengine/core"
@@ -2460,10 +2471,10 @@
     {
       "id": "default-walk-codes",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/shellMovement",
-      "domain": "default-walk-codes",
+      "module": "@jgengine/core/input/actionBindings",
+      "domain": "input",
       "gameFacing": false,
       "probe": null,
       "intent": "stock WASD + jump key codes for the shell walk controller"
@@ -2774,7 +2785,7 @@
       "domain": "physics",
       "gameFacing": false,
       "probe": null,
-      "intent": "drive a car from throttle/steer/handbrake input each tick: step the vehicle sim and pose its entity"
+      "intent": "drive a car from throttle/steer/handbrake input each tick: step the vehicle sim, pose its entity, mark and smoke its tires"
     },
     {
       "id": "durability",
@@ -4096,6 +4107,17 @@
       "intent": "Persist hosted authoritative world snapshots in SQL."
     },
     {
+      "id": "hotbar-slot-bindings",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/input/actionBindings",
+      "domain": "input",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "number-row key codes for a run of numbered actions (hotbar, build menu, tools)"
+    },
+    {
       "id": "hud-button",
       "packages": [
         "@jgengine/react"
@@ -4821,17 +4843,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "vertical event/kill-feed ticker rendering a core event-ticker as a fading, newest-on-top stack of per-kind iconned, accent-colored rows over HudTheme tokens"
-    },
-    {
-      "id": "kinematic-vehicle",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/physics/kinematicVehicle",
-      "domain": "physics",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "arcade car/kart driving physics with throttle, brake, steer and retunable handling"
     },
     {
       "id": "kit-action-bar",
@@ -7943,20 +7954,6 @@
       "intent": "deterministically select rules from a tagged pool under compatibility/exclusion constraints"
     },
     {
-      "id": "run-loop",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/run/runLoop",
-      "domain": "run",
-      "gameFacing": true,
-      "probe": {
-        "kind": "window",
-        "global": "__jgengineRun"
-      },
-      "intent": "deprecated roguelike composition of session-loop - bank or lose what a run carries, with one deterministic change per run"
-    },
-    {
       "id": "run-modifiers",
       "packages": [
         "@jgengine/core"
@@ -9556,6 +9553,17 @@
       "intent": "radial SVG charge/cooldown ring bound to a TimerSet's progress"
     },
     {
+      "id": "tire-marks",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/tireMarks",
+      "domain": "physics",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "skid marks laid by sliding wheels that fade over time from a fixed pool"
+    },
+    {
       "id": "title-menu",
       "packages": [
         "@jgengine/react"
@@ -9998,7 +10006,7 @@
       "domain": "use-camera-shake",
       "gameFacing": false,
       "probe": null,
-      "intent": "React hook binding a camera-shake controller — subscribes for live trauma/kind and can self-drive its decay on a frame loop"
+      "intent": "React hook reading a camera-shake controller's live trauma and kind"
     },
     {
       "id": "use-coach-marks",
@@ -10299,7 +10307,7 @@
       "domain": "physics",
       "gameFacing": false,
       "probe": null,
-      "intent": "compose data-driven tuning parts (tires, engine, brakes) onto a vehicle tuning and read the resulting feel"
+      "intent": "compose data-driven tuning parts (tires, engine, brakes) onto a vehicle spec and read the resulting feel"
     },
     {
       "id": "vehicle-seats",
@@ -10311,6 +10319,17 @@
       "gameFacing": false,
       "probe": null,
       "intent": "enter, exit and swap seats in a car or mount (GTA-style boarding) with driver and passenger slots"
+    },
+    {
+      "id": "vehicle-spec",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/vehicleSpec",
+      "domain": "physics",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "describe a car by feel (top speed, accel, grip, turn rate, drift, assists) and get force-based handling tuned from it"
     },
     {
       "id": "vfx-preset-resolve",

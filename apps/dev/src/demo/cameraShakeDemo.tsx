@@ -1,31 +1,22 @@
 import { useEffect, type CSSProperties, type ReactNode } from "react";
 
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
-import { createCameraShake } from "@jgengine/core/vfx/cameraShake";
 import type { GameContext, GameContextEntityEntry } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { environment, grass, terrain } from "@jgengine/core/world/features";
 import { CameraShakeMeter } from "@jgengine/react/cameraShake";
 
-import { ControllerCameraShake } from "@jgengine/shell/camera";
+import { defaultCameraShake } from "@jgengine/shell/camera";
 import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
 import type { PlayableGame } from "@jgengine/shell/registry";
 
 const HERO = "hero";
 
-// One shared controller: the HUD buttons feed it impacts, the shell consumer
-// applies its offset to the camera, and the meter reads its trauma. A fixed seed
-// keeps the shake deterministic; bigger maxRotation makes the tilt read in a still.
-// `decayPerSecond: 0` holds the opening impulse so the demo shakes continuously
-// (the noise time cursor still advances each frame, so it genuinely oscillates) —
-// a game would use the default decay (~1.6) and add trauma on real impacts.
-const shake = createCameraShake({
-  seed: "camera-shake-demo",
-  decayPerSecond: 0,
-  maxTranslation: [0.8, 0.8, 0.5],
-  maxRotation: [0.14, 0.14, 0.24],
-  frequency: 12,
-});
+// The shell's one shake controller: the HUD buttons feed it impacts, the camera rig
+// applies its offset, and the meter reads its trauma. `decayPerSecond: 0` (in the
+// camera config below) holds the opening impulse so the demo shakes continuously —
+// a game would keep the default decay (~1.6) and add trauma on real impacts.
+const shake = defaultCameraShake;
 
 // Human labels per game-owned kind — the model never interprets these strings.
 const kindLabels: Record<string, string> = {
@@ -119,7 +110,6 @@ function ShakeStage(): ReactNode {
         <sphereGeometry args={[1.1, 24, 24]} />
         <meshStandardMaterial color="#4ade80" metalness={0.2} roughness={0.4} />
       </mesh>
-      <ControllerCameraShake controller={shake} />
     </>
   );
 }
@@ -130,5 +120,5 @@ export const cameraShakeDemoGame: PlayableGame = {
   loop: { onInit: () => {}, onNewPlayer, onTick: () => {}, onReset: () => {}, onDispose: () => {} },
   GameUI: CameraShakeUI,
   environment: () => <ShakeStage />,
-  camera: { initialDistance: 12, initialHeight: 6, minDistance: 6, maxDistance: 30, targetHeight: 1, maxPolarAngle: 1.3 },
+  camera: { initialDistance: 12, initialHeight: 6, minDistance: 6, maxDistance: 30, targetHeight: 1, maxPolarAngle: 1.3, shake: { maxOffset: 0.8, maxRoll: 0.24, decayPerSecond: 0, frequency: 12 } },
 };

@@ -3,18 +3,17 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { ChaseCameraTuning } from "@jgengine/core/runtime/cameraDirector";
 import type { AxisBindingMap } from "@jgengine/core/input/axisInput";
 import {
-  createAircraftDynamics,
-  createKinematicVehicle,
-  createVehicleObstacleClamp,
+  createRigidAircraft,
+  createVehicleDynamics,
   distanceToRoadEdge,
   roadSurfaceSampler,
-  type AircraftDynamics,
-  type AircraftStep,
+  vehicleTuning,
   type CollisionObstacle,
-  type KinematicVehicle,
-  type KinematicVehicleStep,
-  type KinematicVehicleTuning,
-  type VehicleObstacleClamp,
+  type RigidAircraft,
+  type RigidAircraftStep,
+  type VehicleDynamics,
+  type VehicleDynamicsStep,
+  type VehicleSpec,
 } from "@jgengine/core/world";
 import type { AxisInput } from "@jgengine/core/input/axisInput";
 import { tickDrivableVehicle } from "@jgengine/core/physics/drivableVehicle";
@@ -95,25 +94,25 @@ export interface Driving {
   placeVehicle(ctx: GameContext, vehicleId: string, position: readonly [number, number, number], heading: number): void;
   makeCarSim(
     vehicleId: string,
-    tuning: KinematicVehicleTuning,
+    tuning: VehicleSpec,
     radius: number,
     position: readonly [number, number, number],
     heading: number,
-  ): KinematicVehicle;
+  ): VehicleDynamics;
   refreshClamp(ctx: GameContext, vehicleId: string, position: readonly [number, number, number], dt: number): void;
   dropCarSim(vehicleId: string): void;
-  readonly cruiserVehicles: Map<string, KinematicVehicle>;
+  readonly cruiserVehicles: Map<string, VehicleDynamics>;
 }
 
 export function createDriving(): Driving {
-  const carVehicles = new Map<string, KinematicVehicle>();
-  const cruiserVehicles = new Map<string, KinematicVehicle>();
-  /** Per-car slide-along clamp + the tick-fresh solid set / dt its hooks read. Keyed by scene entity id. */
-  const carClamps = new Map<string, { clamp: VehicleObstacleClamp; frame: { obstacles: CollisionObstacle[]; dt: number }; radius: number }>();
-  /** A crashed car's re-baked tuning, so a car re-entered after a reload still drives dented. */
-  const carTunings = new Map<string, KinematicVehicleTuning>();
+  const carVehicles = new Map<string, VehicleDynamics>();
+  const cruiserVehicles = new Map<string, VehicleDynamics>();
+  /** Per-car tick-fresh solid set the sim slides along, and the car's body radius. Keyed by scene entity id. */
+  const carSolids = new Map<string, { obstacles: CollisionObstacle[]; radius: number }>();
+  /** A crashed car's re-baked spec, so a car re-entered after a reload still drives dented. */
+  const carTunings = new Map<string, VehicleSpec>();
   const drivingAudio: DrivingAudio = createDrivingAudio();
-  const aircraft = new Map<string, AircraftDynamics>();
+  const aircraft = new Map<string, RigidAircraft>();
   const flightThrottles = new Map<string, number>();
   const vtolModes = new Map<string, boolean>();
   const vehicleSeats: VehicleSeats = createVehicleSeats();
@@ -161,52 +160,47 @@ export function createDriving(): Driving {
     return result;
   }
 
-  /** Build a road-aware car sim with a slide-along obstacle clamp, and register the clamp for tick refresh. */
+  /** Build a road-aware car sim that slides along nearby solids, and register its solid set for tick refresh. */
   function makeCarSim(
     vehicleId: string,
-    tuning: KinematicVehicleTuning,
+    tuning: VehicleSpec,
     radius: number,
     position: readonly [number, number, number],
     heading: number,
-  ): KinematicVehicle {
-    const frame = { obstacles: [] as CollisionObstacle[], dt: 0 };
-    const clamp = createVehicleObstacleClamp({
-      obstacles: () => frame.obstacles,
-      dt: () => frame.dt,
-      radius,
-    });
-    carClamps.set(vehicleId, { clamp, frame, radius });
-    return createKinematicVehicle(tuning, {
+  ): VehicleDynamics {
+    const solids = { obstacles: [] as CollisionObstacle[], radius };
+    carSolids.set(vehicleId, solids);
+    return createVehicleDynamics(vehicleTuning(tuning), {
       position,
       heading,
       surfaceFriction: SURFACE_SAMPLER,
       dragAt: offRoadDrag,
-      clampMove: clamp.clampMove,
+      obstacles: () => solids.obstacles,
+      bodyRadius: radius,
     });
   }
 
-  /** Refresh a car's clamp with this tick's nearby solids and dt, right before stepping its sim. */
-  function refreshClamp(ctx: GameContext, vehicleId: string, position: readonly [number, number, number], dt: number): void {
-    const record = carClamps.get(vehicleId);
+  /** Refresh a car's nearby solids right before stepping its sim. */
+  function refreshClamp(ctx: GameContext, vehicleId: string, position: readonly [number, number, number], _dt: number): void {
+    const record = carSolids.get(vehicleId);
     if (record === undefined) return;
-    record.frame.obstacles = gatherObstacles(ctx, vehicleId, position, record.radius);
-    record.frame.dt = dt;
+    record.obstacles = gatherObstacles(ctx, vehicleId, position, record.radius);
   }
 
   function dropCarSim(vehicleId: string): void {
     carVehicles.delete(vehicleId);
     cruiserVehicles.delete(vehicleId);
-    carClamps.delete(vehicleId);
+    carSolids.delete(vehicleId);
   }
 
   /** A car's handling before dents: stock for a stranger's car, with the bay's mods for one you own. */
-  function baseTuning(ctx: GameContext, vehicleId: string, def: VehicleDef): KinematicVehicleTuning | null {
+  function baseTuning(ctx: GameContext, vehicleId: string, def: VehicleDef): VehicleSpec | null {
     if (def.dynamics.type !== "ground") return null;
     const owned = (ctx.scene.entity.get(vehicleId)?.meta as { owned?: boolean } | undefined)?.owned === true;
     return owned ? moddedTuning(ctx, def.dynamics.tuning) : def.dynamics.tuning;
   }
 
-  function carVehicleFor(ctx: GameContext, vehicleId: string): KinematicVehicle {
+  function carVehicleFor(ctx: GameContext, vehicleId: string): VehicleDynamics {
     const existing = carVehicles.get(vehicleId);
     if (existing !== undefined) return existing;
     const entity = ctx.scene.entity.get(vehicleId);
@@ -226,26 +220,25 @@ export function createDriving(): Driving {
   }
 
   /**
-   * Crash / prop / pedestrian reactions plus engine audio for the player's driven car (#1051): consume
-   * the obstacle clamp's impact for shake + a metal-crunch cue (and hull damage on a hard hit), flatten
+   * Crash / prop / pedestrian reactions plus engine audio for the player's driven car (#1051): read
+   * the step's hardest solid impact for shake + a metal-crunch cue (and hull damage on a hard hit), flatten
    * light props the car drove through, run over any ped/cop under the wheels, and feed the driving audio.
    */
   function tickDrivingReactions(
     ctx: GameContext,
     vehicleId: string,
-    sim: KinematicVehicle,
-    step: KinematicVehicleStep,
+    sim: VehicleDynamics,
+    step: VehicleDynamicsStep,
     axis: AxisInput,
     def: VehicleDef | undefined,
   ): void {
     const entity = ctx.scene.entity.get(vehicleId);
     if (entity === null) return;
     const pos = entity.position;
-    const record = carClamps.get(vehicleId);
-    const radius = record?.radius ?? 1.4;
+    const radius = carSolids.get(vehicleId)?.radius ?? 1.4;
     const speed = Math.abs(step.forwardSpeed);
 
-    const impact = record?.clamp.takeImpact() ?? null;
+    const impact = step.impact;
     if (impact !== null && impact.closingSpeed > 3) {
       // Armored panels soak part of every crash an owned car takes.
       const share = (entity.meta as { owned?: boolean } | undefined)?.owned === true ? crashShare(ctx) : 1;
@@ -272,7 +265,7 @@ export function createDriving(): Driving {
             },
             (next) => {
               carTunings.set(vehicleId, next);
-              sim.retune(next);
+              sim.retune(vehicleTuning(next));
             },
           );
         }
@@ -326,9 +319,9 @@ export function createDriving(): Driving {
       }
     }
 
-    const powertrain = def?.dynamics.type === "ground" ? def.dynamics.tuning.powertrain : undefined;
-    const idle = powertrain?.idleRpm ?? 850;
-    const redline = powertrain?.redlineRpm ?? 7600;
+    const gearbox = def?.dynamics.type === "ground" ? def.dynamics.tuning.gearbox : undefined;
+    const idle = gearbox?.idleRpm ?? 850;
+    const redline = gearbox?.redlineRpm ?? 7600;
     drivingAudio.tick(ctx, {
       position: pos,
       throttle: axis.throttle,
@@ -340,31 +333,34 @@ export function createDriving(): Driving {
     });
   }
 
-  function aircraftFor(ctx: GameContext, vehicleId: string): AircraftDynamics {
+  function aircraftFor(ctx: GameContext, vehicleId: string): RigidAircraft {
     const existing = aircraft.get(vehicleId);
     if (existing !== undefined) return existing;
     const entity = ctx.scene.entity.get(vehicleId);
     const definition = vehicleById(entity?.name ?? "");
     if (definition?.dynamics.type !== "aircraft") throw new Error(`vehicle ${entity?.name ?? vehicleId} has no aircraft tuning`);
-    const created = createAircraftDynamics(definition.dynamics.tuning, {
+    const created = createRigidAircraft(definition.dynamics.tuning, {
       position: entity?.position ?? [0, 0, 0],
-      rotation: [entity?.rotationX ?? 0, entity?.rotationY ?? 0, entity?.rotationZ ?? 0],
+      heading: entity?.rotationY ?? 0,
       groundHeight: (x, z) => ctx.world.groundHeightAt(x, z),
     });
     aircraft.set(vehicleId, created);
-    flightThrottles.set(vehicleId, definition.dynamics.tuning.kind === "rotorcraft" ? 0.78 : 0.62);
-    vtolModes.set(vehicleId, definition.dynamics.tuning.kind === "vtol");
+    // Rotor craft start a touch under hover collective so they sit until the pilot lifts; planes at a taxi throttle.
+    flightThrottles.set(vehicleId, definition.dynamics.kind === "fixedWing" ? 0.62 : 0.45);
+    vtolModes.set(vehicleId, definition.dynamics.kind === "vtol");
     return created;
   }
 
-  function tickAircraft(ctx: GameContext, vehicleId: string, dt: number): AircraftStep {
+  function tickAircraft(ctx: GameContext, vehicleId: string, dt: number): RigidAircraftStep {
     const entity = ctx.scene.entity.get(vehicleId)!;
     const definition = vehicleById(entity.name)!;
+    if (definition.dynamics.type !== "aircraft") throw new Error(`vehicle ${entity.name} has no aircraft tuning`);
+    const dynamics = definition.dynamics;
     const model = aircraftFor(ctx, vehicleId);
     const throttleRate = 0.42;
     const throttle = Math.max(0, Math.min(1, (flightThrottles.get(vehicleId) ?? 0.6) + ((ctx.input.isDown("flightThrottleUp") ? 1 : 0) - (ctx.input.isDown("flightThrottleDown") ? 1 : 0)) * throttleRate * dt));
     flightThrottles.set(vehicleId, throttle);
-    if (ctx.input.justPressed("flightVectorToggle") && definition.dynamics.type === "aircraft" && definition.dynamics.tuning.kind === "vtol") {
+    if (ctx.input.justPressed("flightVectorToggle") && dynamics.kind === "vtol") {
       vtolModes.set(vehicleId, !(vtolModes.get(vehicleId) ?? true));
     }
     // Analog stick sample (#1370): a touch joystick banks/pitches at its deflection; held keys
@@ -374,31 +370,40 @@ export function createDriving(): Driving {
       roll: { positive: ["moveRight"], negative: ["moveLeft"] },
       yaw: { positive: ["flightYawRight"], negative: ["flightYawLeft"] },
     });
-    const step = model.tick(dt, {
-      throttle,
-      collective: throttle,
-      pitch: stick.pitch,
-      roll: stick.roll,
-      yaw: stick.yaw,
-      airbrake: ctx.input.isDown("flightAirbrake") ? 1 : 0,
-      afterburner: ctx.input.isDown("jump") ? 1 : 0,
-      vectoring: vtolModes.get(vehicleId) === true ? 1 : 0,
-    });
+    // On a rotor the throttle keys are the collective and the rotor runs at full speed; a VTOL in hover mode
+    // flies on its lift rotors with the main engine near idle, then on its wings once switched.
+    const hovering = dynamics.kind === "rotorcraft" || (dynamics.kind === "vtol" && vtolModes.get(vehicleId) === true);
+    const airbrake = ctx.input.isDown("flightAirbrake") ? 1 : 0;
+    const afterburner = dynamics.afterburner !== undefined && ctx.input.isDown("jump") ? dynamics.afterburner : 1;
+    const step = model.tick(
+      dt,
+      {
+        throttle: hovering ? 1 : throttle,
+        collective: hovering ? throttle : 0,
+        pitch: stick.pitch,
+        roll: stick.roll,
+        yaw: stick.yaw,
+        brake: airbrake,
+      },
+      { thrustScale: dynamics.kind === "vtol" && hovering ? 0 : afterburner, dragScale: 1 + 2.5 * airbrake },
+    );
+    // three.js convention on the entity: positive rotationX is nose down.
     ctx.scene.entity.setPose(vehicleId, {
       position: step.position,
-      rotationX: step.rotation[0],
-      rotationY: step.rotation[1],
-      rotationZ: step.rotation[2],
+      rotationX: -step.pitch,
+      rotationY: step.heading,
+      rotationZ: step.bank,
       dt,
     });
     lastTelemetry = {
       mode: "aircraft",
       speedMs: step.airspeed,
       altitude: step.position[1] - ctx.world.groundHeightAt(step.position[0], step.position[2]),
-      verticalSpeed: step.verticalSpeed,
+      verticalSpeed: step.velocity[1],
       gear: 0,
       rpm: throttle * 100,
-      stalled: step.stalled,
+      // Only wings stall: a rotor in a hover reads its tail surfaces at any angle.
+      stalled: !hovering && step.stalled,
       vtol: vtolModes.get(vehicleId) === true,
     };
     return step;
@@ -493,7 +498,7 @@ export function createDriving(): Driving {
         },
         (vehicleId, next) => {
           carTunings.set(vehicleId, next);
-          carVehicles.get(vehicleId)?.retune(next);
+          carVehicles.get(vehicleId)?.retune(vehicleTuning(next));
         },
       );
     },
@@ -505,7 +510,7 @@ export function createDriving(): Driving {
         if (base === null) continue;
         const next = rebaseVehicleDamage(ctx, entity.id, base);
         carTunings.set(entity.id, next);
-        carVehicles.get(entity.id)?.retune(next);
+        carVehicles.get(entity.id)?.retune(vehicleTuning(next));
       }
     },
     explodeVehicle(ctx, vehicleId, at) {
@@ -544,10 +549,13 @@ export function createDriving(): Driving {
           if (definition?.dynamics.type === "aircraft") {
             tickAircraft(ctx, driving, dt);
           } else {
-            const kinematic = carVehicleFor(ctx, driving);
+            const car = carVehicleFor(ctx, driving);
             const axis = ctx.input.axis(DRIVE_AXIS_BINDINGS);
-            refreshClamp(ctx, driving, kinematic.pose().position, dt);
-            const result = tickDrivableVehicle(kinematic, dt, axis, { groundHeight: (x, z) => ctx.world.groundHeightAt(x, z) });
+            refreshClamp(ctx, driving, car.pose().position, dt);
+            const result = tickDrivableVehicle(car, dt, axis, {
+              groundHeight: (x, z) => ctx.world.groundHeightAt(x, z),
+              tires: { id: driving, time: ctx.time.now(), marks: ctx.tireMarks, particles: ctx.particles },
+            });
             lastTelemetry = {
               mode: "ground",
               speedMs: Math.abs(result.step.forwardSpeed),
@@ -559,7 +567,7 @@ export function createDriving(): Driving {
               vtol: false,
             };
             ctx.scene.entity.setPose(driving, result.pose);
-            tickDrivingReactions(ctx, driving, kinematic, result.step, axis, definition);
+            tickDrivingReactions(ctx, driving, car, result.step, axis, definition);
           }
           const driven = ctx.scene.entity.get(driving);
           if (driven === null) return;

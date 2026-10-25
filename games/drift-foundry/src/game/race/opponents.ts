@@ -23,7 +23,7 @@ import { createVehicleController, type VehicleController, type VehiclePose } fro
  * Three yard karts that race the same authored corridor as the player. The driving itself is the
  * shared brain (`@jgengine/core/ai/driver`): `pathTargetAhead` walks the rival's line and `driveStep`
  * turns pose + goal + a `DifficultyProfile` into throttle/brake/steer for the same composed
- * `KinematicVehicle` the player drives. This module is the grid, the lines, and the contact rule.
+ * `VehicleDynamics` kart the player drives. This module is the grid, the lines, and the contact rule.
  */
 
 /** The kart a rival drives, and the line it drives. All numbers are authored feel. */
@@ -216,7 +216,7 @@ function createRival(def: RivalDef, groundHeightAt: (x: number, z: number) => nu
     rng: seededRng(`${seed}:rival:${def.id}`),
     line: rivalLine(def, track),
     vehicle: createVehicleController({ position: [grid.x, groundHeightAt(grid.x, grid.z), grid.z], heading: grid.heading }, track),
-    pose: { position: [grid.x, grid.elevation, grid.z], heading: grid.heading, speedKmh: 0, slip: 0, surface: 1, loadGrip: 1, airborne: false, blockedByGate: false, run: def.grid.z, lateral: def.grid.x, route: MAIN_ROUTE, roadY: grid.elevation },
+    pose: { position: [grid.x, grid.elevation, grid.z], heading: grid.heading, speedKmh: 0, slip: 0, surface: 1, airborne: false, blockedByGate: false, run: def.grid.z, lateral: def.grid.x, route: MAIN_ROUTE, roadY: grid.elevation },
     recoverSeconds: 0,
   };
 }
