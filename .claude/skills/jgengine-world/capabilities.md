@@ -1032,6 +1032,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `setTouchControlsMode` (function) · `import { setTouchControlsMode } from "@jgengine/core/input/touchControlsMode"`
 - `touchButtonShape` (function) · `import { touchButtonShape } from "@jgengine/core/input/touchScheme"`
+- `touchSlotNumber` (function) · `import { touchSlotNumber } from "@jgengine/core/input/touchScheme"`
 
 ## traffic — lane-graph traffic with car following, signals, right-of-way, lane changes and parking
 

@@ -246,7 +246,6 @@
   "@jgengine/shell/structures/GeneratedBuilding#InstancedBuildings",
   "@jgengine/shell/touch/OrientationHint#OrientationHint",
   "@jgengine/shell/touch/TouchControlsOverlay#TouchControlsDock",
-  "@jgengine/shell/touch/TouchControlsOverlay#primaryButtonOffsets",
   "@jgengine/shell/touch/TouchControlsOverlay#touchDockClearance",
   "@jgengine/shell/useShellMultiplayerSync#useShellMultiplayerSync",
   "@jgengine/shell/visibility/CullingProvider#useRenderVisibility",

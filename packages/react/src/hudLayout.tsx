@@ -381,6 +381,9 @@ function HudEditBar({ layout }: { layout: HudLayoutStore }) {
 
 const PAD_TOP = "var(--jg-hud-pad-top)";
 const PAD_BOTTOM = "var(--jg-hud-pad-bottom)";
+const PAD_BOTTOM_LEFT = "var(--jg-hud-pad-bottom-left, var(--jg-hud-pad-bottom))";
+const PAD_BOTTOM_CENTER = "var(--jg-hud-pad-bottom-center, var(--jg-hud-pad-bottom))";
+const PAD_BOTTOM_RIGHT = "var(--jg-hud-pad-bottom-right, var(--jg-hud-pad-bottom))";
 const PAD_LEFT = "var(--jg-hud-pad-left)";
 const PAD_RIGHT = "var(--jg-hud-pad-right)";
 
@@ -392,20 +395,20 @@ const REGION_LAYOUT: Record<HudAnchor, CSSProperties> = {
   center: { left: "50%", top: "50%", transform: "translate(-50%, -50%)", alignItems: "center" },
   right: { right: PAD_RIGHT, top: "50%", transform: "translateY(-50%)", alignItems: "flex-end" },
   "bottom-left": {
-    bottom: PAD_BOTTOM,
+    bottom: PAD_BOTTOM_LEFT,
     left: PAD_LEFT,
     flexDirection: "column-reverse",
     alignItems: "flex-start",
   },
   bottom: {
-    bottom: PAD_BOTTOM,
+    bottom: PAD_BOTTOM_CENTER,
     left: "50%",
     transform: "translateX(-50%)",
     flexDirection: "column-reverse",
     alignItems: "center",
   },
   "bottom-right": {
-    bottom: PAD_BOTTOM,
+    bottom: PAD_BOTTOM_RIGHT,
     right: PAD_RIGHT,
     flexDirection: "column-reverse",
     alignItems: "flex-end",
@@ -735,6 +738,18 @@ export function HudCanvas({
       "var(--jg-hud-dock-clearance, 0px)",
       basePad,
       scale,
+    ),
+    // Each bottom region clears only the touch-dock corner beneath it, so bottom-centre HUD is not lifted by corner controls.
+    ...Object.fromEntries(
+      (["left", "center", "right"] as const).map((side) => [
+        `--jg-hud-pad-bottom-${side}`,
+        edgePad(
+          "env(safe-area-inset-bottom, 0px)",
+          `var(--jg-hud-dock-clearance-${side}, var(--jg-hud-dock-clearance, 0px))`,
+          basePad,
+          scale,
+        ),
+      ]),
     ),
     "--jg-hud-pad-left": edgePad("env(safe-area-inset-left, 0px)", null, basePad, scale),
     "--jg-hud-pad-right": edgePad("env(safe-area-inset-right, 0px)", null, basePad, scale),

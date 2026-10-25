@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { createActionStateTracker, toActionStateBindingMap } from "./actionBindings";
-import { deriveTouchScheme, touchButtonKind, touchButtonShape, touchCode, withTouchCodes } from "./touchScheme";
+import { deriveTouchScheme, touchButtonKind, touchButtonShape, touchCode, touchSlotNumber, withTouchCodes } from "./touchScheme";
 
 const RESERVED = new Set([
   "moveForward",
@@ -51,7 +51,7 @@ describe("deriveTouchScheme", () => {
       { action: "jump", label: "Jump", icon: null, kind: "primary", shape: "circle", anchor: null, image: null },
     ]);
     expect(scheme?.look).toBe(false);
-    expect(scheme?.layout).toEqual({ movement: "bottom-left", actions: "bottom-right", utility: "bottom-center" });
+    expect(scheme?.layout).toEqual({ movement: "bottom-left", actions: "bottom-right", utility: "bottom-right" });
     expect(scheme?.style).toBe("glass");
   });
 
@@ -165,7 +165,7 @@ describe("deriveTouchScheme", () => {
       { fire: ["KeyF"] },
       { reserved: RESERVED, firstPerson: false, config: { layout: { actions: "right" }, style: "arcade" } },
     );
-    expect(custom?.layout).toEqual({ movement: "bottom-left", actions: "right", utility: "bottom-center" });
+    expect(custom?.layout).toEqual({ movement: "bottom-left", actions: "right", utility: "bottom-right" });
     expect(custom?.style).toBe("arcade");
   });
 
@@ -185,7 +185,7 @@ describe("deriveTouchScheme", () => {
       { reserved: RESERVED, firstPerson: false },
     );
     expect(scheme?.joystick).toEqual({ up: "pitchUp", down: "pitchDown", left: "yawLeft", right: "yawRight" });
-    expect(scheme?.buttons.map((button) => button.action)).toEqual(["thrust", "airbrake", "dodge"]);
+    expect(scheme?.buttons.map((button) => button.action)).toEqual(["dodge", "thrust", "airbrake"]);
   });
 
   test("session-lifecycle actions never auto-derive a button, but an explicit list still docks them", () => {
@@ -228,6 +228,39 @@ describe("deriveTouchScheme", () => {
     expect(scheme?.look).toBe(true);
     expect(scheme?.lookSensitivity).toBeGreaterThan(0);
     expect(deriveTouchScheme({ moveForward: ["KeyW"] }, { reserved: RESERVED, firstPerson: true, config: false })).toBeNull();
+  });
+
+  test("numbered slot pickers collapse into one slot strip instead of a button each", () => {
+    const scheme = deriveTouchScheme(
+      { fire: ["mouse0"], selectSlot2: ["Digit2"], selectSlot1: ["Digit1"], equipSlot3: ["Digit3"], slot4: ["Digit4"], openSkills: ["KeyK"] },
+      { reserved: RESERVED, firstPerson: true },
+    );
+    expect(scheme?.slots).toEqual(["selectSlot1", "selectSlot2", "equipSlot3"]);
+    expect(scheme?.buttons.map((button) => button.action)).toEqual(["fire", "openSkills"]);
+    const hidden = deriveTouchScheme(
+      { fire: ["mouse0"], selectSlot1: ["Digit1"] },
+      { reserved: RESERVED, firstPerson: true, config: { hidden: ["selectSlot1"] } },
+    );
+    expect(hidden?.slots).toEqual([]);
+    expect(touchSlotNumber("selectSlot12")).toBe(12);
+    expect(touchSlotNumber("slot1")).toBeNull();
+    expect(touchSlotNumber("selectSlotMachine")).toBeNull();
+  });
+
+  test("derived buttons order by thumb priority so fire and aim sit nearest the thumb", () => {
+    const scheme = deriveTouchScheme(
+      { taunt: ["KeyT"], useHealthVial: ["KeyQ"], reload: ["KeyR"], jump: ["Space"], aim: ["mouse2"], fire: ["mouse0"] },
+      { reserved: RESERVED, firstPerson: true },
+    );
+    expect(scheme?.buttons.map((button) => button.action)).toEqual(["fire", "aim", "jump", "reload", "useHealthVial", "taunt"]);
+  });
+
+  test("a curated button can be marked the cluster's main button", () => {
+    const scheme = deriveTouchScheme(
+      { fire: ["mouse0"], cast: ["KeyQ"] },
+      { reserved: RESERVED, firstPerson: false, config: { buttons: ["fire", { action: "cast", main: true }] } },
+    );
+    expect(scheme?.buttons.map((button) => button.main)).toEqual([undefined, true]);
   });
 
   test("returns null when nothing is derivable", () => {

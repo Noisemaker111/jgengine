@@ -16,11 +16,16 @@ beforeAll(async()=>{
     import {TouchControlsDock} from '@jgengine/shell/touch/TouchControlsOverlay';
     import {SettingsMenu} from '@jgengine/shell/settings/SettingsMenu';
     window.trace={selected:0,codes:[],analog:null};
-    const scheme={joystick:{up:'up',down:'down',left:'left',right:'right'},buttons:[],gestures:null,look:false,lookSensitivity:1,style:'minimal',layout:{movement:'bottom-left',actions:'bottom-right',utility:'bottom-center'}};
+    const btn=(action,kind='primary',shape='circle')=>({action,label:action.replace(/([a-z])([A-Z])/g,'$1 $2'),icon:null,kind,shape,anchor:null,image:null});
+    const shooter=location.hash==='#shooter';
+    const scheme=shooter
+      ?{joystick:{up:'up',down:'down',left:'left',right:'right'},buttons:['fire','aim','jump','reload','crouch','interact','sprint','throwGrenade','useHealthVial'].map(a=>btn(a,'primary',a==='fire'?'trigger':'circle')).concat([btn('openSkills','utility')]),slots:['selectSlot1','selectSlot2','selectSlot3','selectSlot4'],gestures:null,look:true,lookSensitivity:1,style:'glass',layout:{movement:'bottom-left',actions:'bottom-right',utility:'bottom-right'}}
+      :{joystick:{up:'up',down:'down',left:'left',right:'right'},buttons:[],slots:[],gestures:null,look:false,lookSensitivity:1,style:'minimal',layout:{movement:'bottom-left',actions:'bottom-right',utility:'bottom-right'}};
     const sink={onCodeDown:code=>window.trace.codes.push(code),onCodeUp:()=>{},onAnalog:v=>window.trace.analog=v};
     function Fixture() {
       const [open,setOpen]=useState(false);
       const controller={variant:'panel',actions:[],categories:[{id:'controls',label:'Controls',rows:[],keybinds:[{action:'jump',label:'Jump',bindingLabel:'K',isDefault:true,rebind:()=>{},reset:()=>{}}]}]};
+      if (shooter) return <div style={{position:'fixed',inset:0,pointerEvents:'none'}}><TouchControlsDock scheme={scheme} sink={sink}/></div>;
       return <><button id="settings-opener" onClick={()=>setOpen(true)}>Open settings</button>{open&&<SettingsMenu controller={controller} onClose={()=>setOpen(false)}/>}<div style={{position:'fixed',inset:0,pointerEvents:'none'}}>
       <div style={{position:'absolute',inset:0,zIndex:20,pointerEvents:'none'}}><button id="slot" style={{position:'absolute',left:100,bottom:240,width:60,height:44,pointerEvents:'auto'}} onClick={()=>window.trace.selected++}>Slot 2</button></div>
       <TouchControlsDock scheme={scheme} sink={sink}/></div></>;
@@ -53,6 +58,33 @@ test('native HUD touch wins over the invisible joystick area while exposed movem
   await page.close();
 },30000);
 
+
+test('shooter dock: one big main button in the corner, icon faces, collapsed slots, multi-touch',async()=>{
+  const page=await browser.newPage({viewport:{width:740,height:360},hasTouch:true,isMobile:true});
+  await page.goto(`http://127.0.0.1:${server.port}/#shooter`);await page.locator('[data-touch-main]').waitFor();
+  const boxes=await page.evaluate(()=>[...document.querySelectorAll('[data-touch-action]')].map(el=>{const r=el.getBoundingClientRect();return {action:el.getAttribute('data-touch-action'),main:el.hasAttribute('data-touch-main'),chip:el.hasAttribute('data-touch-chip'),text:(el.textContent??'').trim(),x:r.x,y:r.y,w:r.width,h:r.height};}));
+  const main=boxes.find(b=>b.main)!;
+  expect(main.action).toBe('fire');
+  expect(main.x).toBeGreaterThan(740*0.7);
+  expect(main.y+main.h).toBeGreaterThan(360-main.h-40);
+  const secondaries=boxes.filter(b=>!b.main&&!b.chip);
+  expect(secondaries).toHaveLength(8);
+  for (const b of secondaries) { expect(b.w).toBeLessThan(main.w*0.75); expect(b.x).toBeGreaterThan(740/2); expect(b.y).toBeGreaterThanOrEqual(0); }
+  for (const b of boxes) expect(b.text.length).toBeLessThanOrEqual(3);
+  const chips=boxes.filter(b=>b.chip);
+  expect(chips.map(b=>b.action)).toEqual(['selectSlot1','selectSlot2','selectSlot3','selectSlot4','openSkills']);
+  const slot2=chips[1]!;
+  await page.touchscreen.tap(slot2.x+slot2.w/2,slot2.y+slot2.h/2);
+  expect(await page.evaluate(()=>(window as any).trace.codes)).toContain('touch:selectSlot2');
+  const aim=secondaries.find(b=>b.action==='aim')!;
+  const cdp=await page.context().newCDPSession(page);
+  await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:main.x+main.w/2,y:main.y+main.h/2,id:1},{x:aim.x+aim.w/2,y:aim.y+aim.h/2,id:2}]});
+  const codes=await page.evaluate(()=>(window as any).trace.codes);
+  expect(codes).toContain('touch:fire');
+  expect(codes).toContain('touch:aim');
+  await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+  await page.close();
+},30000);
 
 test('shared settings traps Tab, cancels rebind Escape, then restores the opener on close',async()=>{
   const page=await browser.newPage();
