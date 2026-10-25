@@ -49,8 +49,8 @@ export function brokerIdleMs(env: NodeJS.ProcessEnv = process.env): number {
   return minutesEnv(env, "JG_BROKER_IDLE_MINUTES", 10);
 }
 
-export function brokerStatePath(dir = tmpdir()): string {
-  return join(dir, "jgengine-broker.json");
+export function brokerStatePath(port = brokerPort(), dir = tmpdir()): string {
+  return join(dir, `jgengine-broker-${port}.json`);
 }
 
 export function brokerLogPath(dir = tmpdir()): string {
@@ -840,8 +840,8 @@ export async function serveBroker(env: NodeJS.ProcessEnv = process.env): Promise
     writeLog(`broker stopping: ${reason}`);
     await core.shutdown();
     try {
-      const state = JSON.parse(readFileSync(brokerStatePath(), "utf8")) as { pid?: number };
-      if (state.pid === process.pid) unlinkSync(brokerStatePath());
+      const state = JSON.parse(readFileSync(brokerStatePath(brokerPort(env)), "utf8")) as { pid?: number };
+      if (state.pid === process.pid) unlinkSync(brokerStatePath(brokerPort(env)));
     } catch {
       /* no state to clear */
     }
@@ -858,7 +858,7 @@ export async function serveBroker(env: NodeJS.ProcessEnv = process.env): Promise
     });
     http.listen(port, "127.0.0.1", () => resolve());
   });
-  writeFileSync(brokerStatePath(), JSON.stringify({ pid: process.pid, port, protocol: BROKER_PROTOCOL, startedAt: new Date().toISOString() }));
+  writeFileSync(brokerStatePath(port), JSON.stringify({ pid: process.pid, port, protocol: BROKER_PROTOCOL, startedAt: new Date().toISOString() }));
   writeLog(`broker ready on :${port} (pid ${process.pid}, idle ${Math.round(idleMs / 60_000)}m)`);
   for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"] as const) process.once(signal, () => void stop(signal));
   const sweepMs = Number(env.JG_BROKER_SWEEP_MS) > 0 ? Number(env.JG_BROKER_SWEEP_MS) : 2_000;
