@@ -3061,6 +3061,7 @@
 ## @jgengine/core/worldModel/worldModel
 
 - `WorldActionDecl` (interface): interface WorldActionDecl — Something the player can do that may be refused: upgrade a tower, fix a ride, train a model, sell. Costs are absolute facts; `effect` lands on the target. With `takes` it waits in a queue.
+- `WorldAdvanceResult` (interface): interface WorldAdvanceResult — What {@link WorldModel.advance} did over the skipped time.
 - `WorldBlip` (interface): interface WorldBlip — One thing to draw on a map: a place, person, thing, open job or the live objective.
 - `WorldBlipDecl` (interface): interface WorldBlipDecl — What a map draws for a subject.
 - `WorldChanges` (type): type WorldChanges = Readonly<Record<string, WorldFactValue>> — Fact changes: a number adds, a string or flag sets. Keys are relative to the subject the change lands on.
@@ -3102,11 +3103,12 @@
 - `WorldRemoved` (interface): interface WorldRemoved — An instance that was removed, with what came back.
 - `WorldResult` (type): type WorldResult = { ok: true; id: string | null; queued: boolean } | WorldRefusal — What placing, acting or removing did.
 - `WorldRippleDecl` (interface): interface WorldRippleDecl — How one kind of world event spreads.
-- `WorldScheduleDecl` (interface): interface WorldScheduleDecl — A ripple the world fires on its own clock: paydays, upkeep, shifts, waves, weather.
+- `WorldScheduleDecl` (interface): interface WorldScheduleDecl — A ripple the world fires on its own clock: paydays, upkeep, shifts, raids, weather.
 - `WorldSlotDecl` (interface): interface WorldSlotDecl — One spot in a slot group, positioned by a marker or a position.
 - `WorldThingDecl` (interface): interface WorldThingDecl extends SubjectDecl — Anything owned and located that is not a person: a car, a tower, a ride, a server rack.
 - `WorldTickResult` (interface): interface WorldTickResult — What changed during one tick: jobs finished or failed and objectives cleared.
 - `WorldTotalDecl` (interface): interface WorldTotalDecl — A fact computed over subjects of one kind: a park's rating, towers standing, a lab's income.
+- `WorldTriggerDecl` (interface): interface WorldTriggerDecl — A rule the world watches: the moment its conditions become true it applies `then`, fires its ripple, logs its note and runs its hook. It fires again only after the conditions have lapsed, or never again with `once`. Turf changing hands, a shop closing at night, a district rioting.
 - `calm` (function): function calm(value: number, perSecond: number, bounds: { rest?: number; min?: number; max?: number } = {}): WorldFactSpec — A number fact that drifts back to `rest` (default its start) at `perSecond`, kept within 0-100 unless the bounds say otherwise.
 - `createWorldModel` (function): function createWorldModel(def: WorldModelDef, options: WorldModelOptions = {}): WorldModel — Run a declared world: facts that ripple and calm, jobs on the shared mission machine, and every view a HUD, phone, map, dialogue or resident needs, all over one serializable state.
 - `defineWorldModel` (function): function defineWorldModel(decl: WorldModelDecl): WorldModelDef — Check a world declaration once: subject ids unique across kinds, owners and factions declared, people at declared places, job givers, requirements and missions valid.

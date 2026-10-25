@@ -110,6 +110,11 @@ export interface PoliceTuning {
   spawnRingRadius?: readonly [number, number];
   /** Seed for the injected generator that rolls spawn points. Same seed, same ring. */
   seed?: number;
+  /**
+   * How much faster the trail goes cold while the suspect is hidden (a garage, a safehouse, a
+   * hideout): the escape timer and the heat bleed both run this many times quicker. Default 3.
+   */
+  hiddenRate: number;
 }
 
 /** The starting policy: linear decay, a six-second escape and a search area that grows at 2 m/s. */
@@ -125,6 +130,7 @@ export const DEFAULT_POLICE_TUNING: PoliceTuning = {
   searchLaneLimit: 12,
   roadblockLimit: 4,
   seed: 1,
+  hiddenRate: 3,
 };
 
 /** Everything {@link createPoliceResponse} needs: the witness seam, the roster and the caller's policy. */
@@ -162,6 +168,11 @@ export interface PoliceTickContext {
   activePursuers: number;
   /** Origin for spawn points; usually the suspect. */
   around: HeatPoint;
+  /**
+   * The suspect is in cover no witness can see into: sightings stop counting, crimes reported now
+   * go unwitnessed, and the trail goes cold `hiddenRate` times faster.
+   */
+  hidden?: boolean;
 }
 
 /** One tick's answer: the heat, the tier, the search area, the cordon and the escape. */
@@ -234,6 +245,11 @@ export interface PoliceResponseState {
 export interface PoliceResponse {
   /** Report a crime. Whether it raises heat is decided on the next tick, from witness memory. */
   reportCrime(amount: number): void;
+  /**
+   * Take heat off the books at once (a bribe, a favour, a paid fine); returns the heat left. The tier
+   * and stand-down follow on the next tick.
+   */
+  forgive(amount: number): number;
   tick(dt: number, ctx: PoliceTickContext): PoliceStep;
   /** Heat right now and the tier it resolves to. */
   wanted(): { heat: number; tier: PoliceTier | null; response: PoliceResponseKind };
@@ -265,6 +281,7 @@ function resolveTuning(base: PoliceTuning, patch: Partial<PoliceTuning> | undefi
       "searchRadiusMax",
       "searchLaneLimit",
       "roadblockLimit",
+      "hiddenRate",
     ] as const) {
       const value = patch[key];
       if (typeof value === "number" && Number.isFinite(value)) next[key] = Math.max(0, value);
@@ -384,8 +401,11 @@ export function createPoliceResponse(config: PoliceResponseConfig): PoliceRespon
 
   function advance(dt: number, ctx: PoliceTickContext): PoliceStep {
     const started = performance.now();
-    const sighting = freshest();
+    const hidden = ctx.hidden === true;
+    const sighting = hidden ? null : freshest();
     const inView = sighting !== null && ctx.nowMs - sighting.lastSeenAt <= tuning.inViewGraceSeconds * 1000;
+    // Hidden, the cold-trail clocks run faster: escape, heat bleed and stand-down alike.
+    const coldDt = hidden ? dt * Math.max(1, tuning.hiddenRate) : dt;
     if (sighting !== null && (lastSighting === null || sighting.lastSeenAt > lastSighting.at)) {
       lastSighting = {
         position: [sighting.lastKnownPos[0], sighting.lastKnownPos[2]],
@@ -396,7 +416,7 @@ export function createPoliceResponse(config: PoliceResponseConfig): PoliceRespon
       counters.sightings += 1;
     }
 
-    outOfSightSeconds = inView ? 0 : outOfSightSeconds + dt;
+    outOfSightSeconds = inView ? 0 : outOfSightSeconds + coldDt;
     const nowEscaped = outOfSightSeconds >= tuning.escapeSeconds;
     if (nowEscaped && !escaped) counters.escapes += 1;
     escaped = nowEscaped;
@@ -407,7 +427,7 @@ export function createPoliceResponse(config: PoliceResponseConfig): PoliceRespon
     if (inView) counters.witnessed += pending.length;
     pending.length = 0;
 
-    const heatStep = advanceHeat(heatConfigOf(tuning), heatState, dt, gains, {
+    const heatStep = advanceHeat(heatConfigOf(tuning), heatState, inView ? dt : coldDt, gains, {
       nearWitness: !escaped,
       activePursuers: ctx.activePursuers,
       around: ctx.around,
@@ -478,6 +498,12 @@ export function createPoliceResponse(config: PoliceResponseConfig): PoliceRespon
       if (!Number.isFinite(amount) || amount <= 0) throw new Error("reportCrime amount must be positive.");
       pending.push(amount);
       if (pending.length > MAX_PENDING_CRIMES) pending.shift();
+    },
+    forgive(amount) {
+      if (!Number.isFinite(amount) || amount < 0) throw new Error("forgive amount must be non-negative.");
+      heatState = { ...heatState, heat: Math.max(0, heatState.heat - amount) };
+      lastTier = tierFor(tuning.tiers, heatState.heat);
+      return heatState.heat;
     },
     tick(dt, ctx) {
       if (!Number.isFinite(dt) || dt < 0) throw new Error("dt must be finite and non-negative.");

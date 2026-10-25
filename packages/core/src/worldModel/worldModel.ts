@@ -144,6 +144,8 @@ export interface WorldKindDecl extends SubjectDecl {
 export interface WorldSlotDecl {
   marker?: string;
   position?: readonly [number, number];
+  /** What the spot is called in notes (`{target}`): "the Neon Lounge" rather than the kind's label. */
+  label?: string;
 }
 
 /** A grid of cells things are placed on with a footprint: a park lot, a ship deck, a base floor. */
@@ -259,11 +261,17 @@ export interface WorldRippleDecl {
   note?: string;
   /** Only spread while these facts hold, so the same event lands differently as the world changes. */
   when?: WorldConditions;
+  /** Only spread when the place it lands on holds these facts (`{ owner: "player" }`), read relative to that place. */
+  whenPlace?: WorldConditions;
+  /** Only spread when the event's target holds these facts, read relative to the target. */
+  whenTarget?: WorldConditions;
+  /** Changes on the event's `target` (an instance or thing), relative to it. */
+  target?: WorldChanges;
   /** A code hook (from `options.hooks`) run after the changes land, for what can't be declared. */
   hook?: string;
 }
 
-/** A ripple the world fires on its own clock: paydays, upkeep, shifts, waves, weather. */
+/** A ripple the world fires on its own clock: paydays, upkeep, shifts, raids, weather. */
 export interface WorldScheduleDecl {
   /** Seconds of world time between firings. */
   every: number;
@@ -273,6 +281,35 @@ export interface WorldScheduleDecl {
   place?: string;
   /** Only fire while these facts hold. */
   when?: WorldConditions;
+  /**
+   * Aim each firing at one built instance (or thing) of this kind or tag, picked deterministically
+   * from the world clock; the ripple's `target` changes land on it and it lands at that instance's place.
+   */
+  on?: string;
+  /** With `on`, only instances holding these facts (read relative to the instance) can be picked. */
+  whenTarget?: WorldConditions;
+  /** Share of firings that happen, 0-1, rolled deterministically from the world clock (default 1). */
+  chance?: number;
+}
+
+/**
+ * A rule the world watches: the moment its conditions become true it applies `then`, fires its
+ * ripple, logs its note and runs its hook. It fires again only after the conditions have lapsed,
+ * or never again with `once`. Turf changing hands, a shop closing at night, a district rioting.
+ */
+export interface WorldTriggerDecl {
+  when: WorldConditions;
+  /** Absolute `subject.fact` changes applied when it fires. */
+  then?: WorldChanges;
+  /** A ripple to fire when it fires. */
+  emit?: string;
+  /** Where that ripple lands. */
+  place?: string;
+  /** A line for the world log. */
+  note?: string;
+  hook?: string;
+  /** Fire the first time only. */
+  once?: boolean;
 }
 
 /** Everything a game declares about its world: factions, places, people, things, jobs and ripples. */
@@ -282,8 +319,10 @@ export interface WorldModelDecl {
   people?: Readonly<Record<string, WorldPersonDecl>>;
   things?: Readonly<Record<string, WorldThingDecl>>;
   jobs?: Readonly<Record<string, WorldJobDecl>>;
-  ripples?: Readonly<Record<string, WorldRippleDecl>>;
+  /** How each event kind spreads; a list holds variants, each spreading when its own conditions hold. */
+  ripples?: Readonly<Record<string, WorldRippleDecl | readonly WorldRippleDecl[]>>;
   schedule?: Readonly<Record<string, WorldScheduleDecl>>;
+  triggers?: Readonly<Record<string, WorldTriggerDecl>>;
   kinds?: Readonly<Record<string, WorldKindDecl>>;
   slots?: Readonly<Record<string, Readonly<Record<string, WorldSlotDecl>>>>;
   grids?: Readonly<Record<string, WorldGridDecl>>;
@@ -309,6 +348,8 @@ export interface WorldEvent {
   place?: string;
   by?: string;
   faction?: string;
+  /** The instance or thing it happened to, for a ripple's `target` changes and `{target}` in its note. */
+  target?: string;
   /** Multiplies every numeric change and output (default 1). */
   scale?: number;
 }
@@ -359,6 +400,8 @@ export interface WorldModelState {
   instances?: Record<string, WorldInstance>;
   seq?: number;
   orders?: Record<string, WorkQueueState<WorldOrderSpec, WorldChanges>>;
+  /** Each trigger's conditions as last seen (true while they hold, and forever once a `once` trigger fired). */
+  triggers?: Record<string, boolean>;
 }
 
 /** How to place: `free` skips paying (a starting layout, a reward); a sale still refunds its share of the price. */
@@ -428,6 +471,20 @@ export interface WorldModelOptions {
   logSize?: number;
   /** Code a declaration names with `hook`: the escape hatch for what facts and ripples can't say. */
   hooks?: Readonly<Record<string, (hook: WorldHookCall) => void>>;
+  /**
+   * Facts the game computes and the world only reads (`clock.hour`, `police.stars`, `player.driving`):
+   * conditions, lines, jobs, flows and triggers see them, and they are never saved.
+   */
+  live?: () => Readonly<Record<string, WorldFactValue>>;
+}
+
+/** What {@link WorldModel.advance} did over the skipped time. */
+export interface WorldAdvanceResult {
+  seconds: number;
+  /** How much each numeric fact moved, for a "while you were away" summary. */
+  gained: Readonly<Record<string, number>>;
+  /** Log lines written while catching up. */
+  log: readonly WorldLogEntry[];
 }
 
 /** What a code hook is handed: the live world, and the event or job that ran it. */
@@ -495,6 +552,8 @@ export interface WorldTickResult {
   removed?: readonly WorldRemoved[];
   /** Actions that landed, queued or immediate. */
   landed?: readonly { action: string; target: string | null }[];
+  /** Triggers that fired. */
+  fired?: readonly string[];
 }
 
 /** A live world: facts, events that ripple, jobs, and the views every screen reads. */
@@ -513,6 +572,12 @@ export interface WorldModel {
   position(subject: string): readonly [number, number] | null;
   emit(event: WorldEvent): WorldLogEntry | null;
   tick(dt: number, input?: MissionTickInput): WorldTickResult;
+  /**
+   * Catch up `seconds` of world time in one step, for time spent away: facts calm, flows pay, queues
+   * finish, triggers fire, and each schedule fires at most `maxFires` times (default 1). Missions do
+   * not advance. The caller caps how much time it hands over.
+   */
+  advance(seconds: number, options?: { maxFires?: number }): WorldAdvanceResult;
   jobs(): readonly WorldJobView[];
   job(id: string): WorldJobView | null;
   startJob(id: string): WorldJobEvent | null;
@@ -624,6 +689,15 @@ export function defineWorldModel(decl: WorldModelDecl): WorldModelDef {
   }
   for (const [id, flow] of Object.entries(decl.flows ?? {})) {
     if (flow.to.length === 0) issue(`flow "${id}" needs a fact to flow into`);
+  }
+  for (const [id, timer] of Object.entries(decl.schedule ?? {})) {
+    if (timer.on !== undefined && !isKind(timer.on)) issue(`schedule "${id}" aims at unknown kind "${timer.on}"`);
+    if (timer.chance !== undefined && !(timer.chance >= 0 && timer.chance <= 1)) issue(`schedule "${id}" chance must be within 0-1`);
+  }
+  for (const [id, trigger] of Object.entries(decl.triggers ?? {})) {
+    if (Object.keys(trigger.when).length === 0) issue(`trigger "${id}" needs conditions in "when"`);
+    if (trigger.emit !== undefined && decl.ripples?.[trigger.emit] === undefined) issue(`trigger "${id}" emits unknown ripple "${trigger.emit}"`);
+    if (!is(trigger.place, "place")) issue(`trigger "${id}" lands at unknown place "${trigger.place}"`);
   }
   const missions = Object.values(jobs).map((job) => job.mission);
   const errors = validateMissionCatalog(missions).filter((entry) => entry.severity === "error");
@@ -812,6 +886,16 @@ export function createWorldModel(def: WorldModelDef, options: WorldModelOptions 
   // Totals are computed per state, so every read of one state sees the same numbers.
   let totalsCache: { from: WorldModelState; facts: Record<string, WorldFactValue> } | null = null;
   const allFacts = (current: WorldModelState): Readonly<Record<string, WorldFactValue>> => {
+    const base = withTotals(current);
+    const live = options.live?.();
+    if (live === undefined) return base;
+    const keys = Object.keys(live);
+    if (keys.length === 0) return base;
+    const merged: Record<string, WorldFactValue> = { ...base };
+    for (const key of keys) merged[key] = live[key]!;
+    return merged;
+  };
+  const withTotals = (current: WorldModelState): Readonly<Record<string, WorldFactValue>> => {
     if (def.totals === undefined) return current.facts;
     if (totalsCache !== null && totalsCache.from === current) return totalsCache.facts;
     const facts: Record<string, WorldFactValue> = { ...current.facts };
@@ -1001,7 +1085,10 @@ export function createWorldModel(def: WorldModelDef, options: WorldModelOptions 
     if (action.removes === true && target !== null) out = dropInstance(out, target, kinds[kindOf(target, out) ?? ""]?.refund ?? 0);
     pendingLanded.push({ action: actionId, target });
     if (action.hook !== undefined) pendingHooks.push({ name: action.hook, call: { world: model, event: null, place: where, jobId: null, target } });
-    return { next: out, ripple: action.emit === undefined ? null : { kind: action.emit, ...(where !== null ? { place: where } : {}) } };
+    return {
+      next: out,
+      ripple: action.emit === undefined ? null : { kind: action.emit, ...(where !== null ? { place: where } : {}), ...(target !== null ? { target } : {}) },
+    };
   };
 
   /** Count what an action cost toward its target's refund. */
@@ -1065,6 +1152,25 @@ export function createWorldModel(def: WorldModelDef, options: WorldModelOptions 
     if (kind === "person") return def.people?.[id]?.name ?? id;
     if (kind === "faction") return def.factions?.[id]?.label ?? id;
     return def.things?.[id]?.label ?? id;
+  };
+
+  /** An instance by its slot's name, else its kind's label; a thing or subject by its label. */
+  const targetLabel = (id: string, current: WorldModelState): string => {
+    const instance = current.instances?.[id];
+    if (instance === undefined) return label(id);
+    if (instance.slot !== undefined) {
+      const group = slotGroup(instance.slot);
+      const slotLabel = group === null ? undefined : def.slots?.[group]?.[instance.slot]?.label;
+      if (slotLabel !== undefined) return slotLabel;
+    }
+    return kinds[instance.kind]?.label ?? instance.kind;
+  };
+  /** The place an instance or thing stands in. */
+  const targetPlace = (id: string | null, current: WorldModelState): string | null => {
+    if (id === null) return null;
+    const instance = current.instances?.[id];
+    const at = instance === undefined ? position(id) : instancePosition(id, instance, current);
+    return at === null ? null : placeAt(at[0], at[1]);
   };
 
   const pushLog = (current: WorldModelState, entry: WorldLogEntry): WorldLogEntry[] => {
@@ -1152,6 +1258,58 @@ export function createWorldModel(def: WorldModelDef, options: WorldModelOptions 
     return moved;
   };
 
+  /** A stable 0-1 roll for one key, so a replayed or reloaded world rolls the same. */
+  const roll = (key: string): number => {
+    let hash = 0x811c9dc5;
+    for (let index = 0; index < key.length; index += 1) {
+      hash ^= key.charCodeAt(index);
+      hash = Math.imul(hash, 0x01000193);
+    }
+    return (hash >>> 0) / 0x100000000;
+  };
+  const fireSchedule = (id: string, timer: WorldScheduleDecl, index: number) => {
+    const current = state();
+    if (!test(timer.when, current)) return;
+    if (timer.chance !== undefined && roll(`${id}:${index}:chance`) >= timer.chance) return;
+    let target: string | null = null;
+    if (timer.on !== undefined) {
+      const seen = allFacts(current);
+      const candidates = membersOf(timer.on, current, false).filter((member) => testOn(timer.whenTarget, member, seen)).sort();
+      if (candidates.length === 0) return;
+      target = candidates[Math.floor(roll(`${id}:${index}`) * candidates.length)]!;
+    }
+    model.emit({ kind: timer.ripple, ...(timer.place !== undefined ? { place: timer.place } : {}), ...(target !== null ? { target } : {}) });
+  };
+  const runTriggers = (): string[] => {
+    const fired: string[] = [];
+    for (const [id, trigger] of Object.entries(def.triggers ?? {})) {
+      const current = state();
+      const was = current.triggers?.[id] === true;
+      if (was && trigger.once === true) continue;
+      const now = test(trigger.when, current);
+      if (now === was) continue;
+      let facts = current.facts;
+      let log = current.log;
+      if (now) {
+        facts = { ...current.facts };
+        changeAll(facts, "", trigger.then, 1);
+        if (trigger.note !== undefined) {
+          const text = trigger.note.replace("{place}", trigger.place === undefined ? "the city" : label(trigger.place));
+          log = pushLog(current, { at: current.time, kind: id, place: trigger.place ?? null, text });
+        }
+      }
+      write({ ...current, facts, log, triggers: { ...(current.triggers ?? {}), [id]: now } });
+      if (!now) continue;
+      fired.push(id);
+      if (trigger.emit !== undefined) model.emit({ kind: trigger.emit, ...(trigger.place !== undefined ? { place: trigger.place } : {}) });
+      if (trigger.hook !== undefined) {
+        pendingHooks.push({ name: trigger.hook, call: { world: model, event: null, place: trigger.place ?? null, jobId: null, target: null } });
+      }
+    }
+    runHooks();
+    return fired;
+  };
+
   const view = (): WorldModel => model;
   const model: WorldModel = {
     def,
@@ -1180,30 +1338,45 @@ export function createWorldModel(def: WorldModelDef, options: WorldModelOptions 
     placeAt,
     position,
     emit(event) {
-      const ripple = def.ripples?.[event.kind];
+      const declared = def.ripples?.[event.kind];
+      if (declared === undefined) return null;
+      const variants: readonly WorldRippleDecl[] = Array.isArray(declared) ? declared : [declared as WorldRippleDecl];
       const current = state();
-      const place = event.place ?? (event.at === undefined ? null : placeAt(event.at[0], event.at.length === 3 ? event.at[2] : event.at[1]));
-      if (ripple === undefined || !test(ripple.when, current)) return null;
+      const target = event.target ?? null;
+      const place = event.place ?? (event.at === undefined ? targetPlace(target, current) : placeAt(event.at[0], event.at.length === 3 ? event.at[2] : event.at[1]));
+      const seen = allFacts(current);
       const scale = event.scale ?? 1;
       const facts = { ...current.facts };
-      if (place !== null) {
-        changeAll(facts, place, ripple.place, scale);
-        const owner = facts[`${place}.owner`];
-        if (typeof owner === "string" && def.subjects.get(owner) === "faction") changeAll(facts, owner, ripple.owner, scale);
-        if (ripple.people !== undefined) {
-          for (const person of Object.keys(def.people ?? {})) if (facts[`${person}.at`] === place) changeAll(facts, person, ripple.people, scale);
+      let log = current.log;
+      let entry: WorldLogEntry | null = null;
+      const outputs: [string, number][] = [];
+      for (const ripple of variants) {
+        if (!test(ripple.when, current)) continue;
+        if (ripple.whenPlace !== undefined && (place === null || !testOn(ripple.whenPlace, place, seen))) continue;
+        if (ripple.whenTarget !== undefined && (target === null || !testOn(ripple.whenTarget, target, seen))) continue;
+        if (place !== null) {
+          changeAll(facts, place, ripple.place, scale);
+          const owner = facts[`${place}.owner`];
+          if (typeof owner === "string" && def.subjects.get(owner) === "faction") changeAll(facts, owner, ripple.owner, scale);
+          if (ripple.people !== undefined) {
+            for (const person of Object.keys(def.people ?? {})) if (facts[`${person}.at`] === place) changeAll(facts, person, ripple.people, scale);
+          }
         }
+        if (event.faction !== undefined) changeAll(facts, event.faction, ripple.faction, scale);
+        if (target !== null) changeAll(facts, target, ripple.target, scale);
+        changeAll(facts, "", ripple.world, scale);
+        const text = (ripple.note ?? event.kind)
+          .replace("{place}", place === null ? "the city" : label(place))
+          .replace("{target}", target === null ? "" : targetLabel(target, current));
+        entry = { at: current.time, kind: event.kind, place, text };
+        if (ripple.note !== undefined) log = pushLog({ ...current, log }, entry);
+        for (const [name, amount] of Object.entries(ripple.out ?? {})) outputs.push([name, amount * scale]);
+        if (ripple.hook !== undefined) pendingHooks.push({ name: ripple.hook, call: { world: model, event, place, jobId: null, target } });
       }
-      if (event.faction !== undefined) changeAll(facts, event.faction, ripple.faction, scale);
-      changeAll(facts, "", ripple.world, scale);
-      const text = (ripple.note ?? event.kind).replace("{place}", place === null ? "the city" : label(place));
-      const entry: WorldLogEntry = { at: current.time, kind: event.kind, place, text };
-      write({ ...current, facts, log: ripple.note === undefined ? current.log : pushLog(current, entry) });
-      for (const [name, amount] of Object.entries(ripple.out ?? {})) options.onOutput?.(name, amount * scale, event);
-      if (ripple.hook !== undefined) {
-        pendingHooks.push({ name: ripple.hook, call: { world: model, event, place, jobId: null, target: null } });
-        runHooks();
-      }
+      if (entry === null) return null;
+      write({ ...current, facts, log });
+      for (const [name, amount] of outputs) options.onOutput?.(name, amount, event);
+      runHooks();
       return entry;
     },
     tick(dt, input = {}) {
@@ -1237,12 +1410,12 @@ export function createWorldModel(def: WorldModelDef, options: WorldModelOptions 
       for (const ripple of ripples) model.emit(ripple);
       runHooks();
       if (stepped) {
-        for (const timer of Object.values(def.schedule ?? {})) {
-          if (Math.floor(next.time / timer.every) > Math.floor(current.time / timer.every) && test(timer.when, next)) {
-            model.emit({ kind: timer.ripple, ...(timer.place !== undefined ? { place: timer.place } : {}) });
-          }
+        for (const [id, timer] of Object.entries(def.schedule ?? {})) {
+          const index = Math.floor(next.time / timer.every);
+          if (index > Math.floor(current.time / timer.every)) fireSchedule(id, timer, index);
         }
       }
+      const fired = stepped ? runTriggers() : [];
       const after = state();
       const ready = pendingReady.map((id) => instanceView(id, after)).filter((entry): entry is WorldInstanceView => entry !== null);
       const result: WorldTickResult = {
@@ -1251,11 +1424,39 @@ export function createWorldModel(def: WorldModelDef, options: WorldModelOptions 
         ...(ready.length > 0 ? { ready } : {}),
         ...(pendingRemoved.length > 0 ? { removed: pendingRemoved } : {}),
         ...(pendingLanded.length > 0 ? { landed: pendingLanded } : {}),
+        ...(fired.length > 0 ? { fired } : {}),
       };
       pendingReady = [];
       pendingRemoved = [];
       pendingLanded = [];
       return result;
+    },
+    advance(seconds, advanceOptions = {}) {
+      if (!Number.isFinite(seconds) || seconds <= 0) return { seconds: 0, gained: {}, log: [] };
+      const current = state();
+      const facts = { ...current.facts };
+      decay(facts, seconds, current);
+      const ordered = tickOrders({ ...current, time: current.time + seconds, facts }, seconds);
+      write(ordered.next);
+      for (const ripple of ordered.ripples) model.emit(ripple);
+      runHooks();
+      const maxFires = Math.max(0, Math.floor(advanceOptions.maxFires ?? 1));
+      const end = current.time + seconds;
+      for (const [id, timer] of Object.entries(def.schedule ?? {})) {
+        const last = Math.floor(end / timer.every);
+        const first = Math.max(Math.floor(current.time / timer.every) + 1, last - maxFires + 1);
+        for (let index = first; index <= last; index += 1) fireSchedule(id, timer, index);
+      }
+      runTriggers();
+      const after = state();
+      const gained: Record<string, number> = {};
+      for (const [key, value] of Object.entries(after.facts)) {
+        if (typeof value !== "number") continue;
+        const before = current.facts[key];
+        const delta = value - (typeof before === "number" ? before : 0);
+        if (delta !== 0) gained[key] = delta;
+      }
+      return { seconds, gained, log: after.log.filter((entry) => !current.log.includes(entry)) };
     },
     jobs: () => {
       const current = state();

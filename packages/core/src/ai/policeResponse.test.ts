@@ -426,3 +426,48 @@ describe("policeResponse determinism and budget", () => {
     expect(Number.isFinite(stats.slowestTickMs)).toBe(true);
   });
 });
+
+describe("policeResponse cover and pay-offs", () => {
+  test("hiding ignores sightings and runs the cold trail hiddenRate times faster", () => {
+    const perception = eyes(30);
+    const open = police({ witness: perception, observers: () => ["cop"], escapeSeconds: 6 });
+    const hid = police({ witness: perception, observers: () => ["cop"], escapeSeconds: 6, hiddenRate: 3 });
+    witnessedTick(open, perception, 0, 120);
+    witnessedTick(hid, perception, 0, 120);
+    let openStep: PoliceStep | null = null;
+    let hidStep: PoliceStep | null = null;
+    for (let tick = 1; tick <= 150; tick += 1) {
+      const nowMs = tick * (1000 / 60);
+      perception.observe({ id: "cop", position: AT_ORIGIN, yaw: 0 }, [{ id: SUSPECT, position: AT_ORIGIN }], nowMs);
+      openStep = open.tick(1 / 60, { nowMs, activePursuers: 0, around: [0, 0] });
+      hidStep = hid.tick(1 / 60, { nowMs, activePursuers: 0, around: [0, 0], hidden: true });
+    }
+    expect(openStep!.outOfSightSeconds).toBe(0);
+    expect(openStep!.heat).toBe(120);
+    expect(hidStep!.escaped).toBe(true);
+    expect(hidStep!.outOfSightSeconds).toBeCloseTo(7.5, 5);
+    expect(hidStep!.heat).toBeLessThan(120);
+  });
+
+  test("a crime reported while hidden goes unwitnessed", () => {
+    const perception = eyes();
+    const service = police({ witness: perception, observers: () => ["cop"] });
+    perception.observe({ id: "cop", position: AT_ORIGIN, yaw: 0 }, [{ id: SUSPECT, position: AT_ORIGIN }], 0);
+    service.reportCrime(80);
+    const step = service.tick(1 / 60, { nowMs: 0, activePursuers: 0, around: [0, 0], hidden: true });
+    expect(step.heat).toBe(0);
+    expect(service.stats().witnessed).toBe(0);
+  });
+
+  test("forgive takes heat off at once, never below zero, and the tier follows", () => {
+    const perception = eyes();
+    const service = police({ witness: perception, observers: () => ["cop"] });
+    witnessedTick(service, perception, 0, 150);
+    expect(service.wanted().response).not.toBe("patrol");
+    expect(service.forgive(100)).toBe(50);
+    expect(service.wanted().heat).toBe(50);
+    expect(service.forgive(500)).toBe(0);
+    expect(service.wanted().response).toBe("patrol");
+    expect(() => service.forgive(-1)).toThrow();
+  });
+});

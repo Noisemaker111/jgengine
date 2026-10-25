@@ -17,6 +17,7 @@ import {
   createWorldModel,
   defineWorldModel,
   type WorldEvent,
+  type WorldFactValue,
   type WorldHookCall,
   type WorldInstanceView,
   type WorldJobEvent,
@@ -59,6 +60,8 @@ export interface GameSpecDecl {
   input?(ctx: GameContext): MissionTickInput;
   /** Mission actor id for `pursue` objectives that name no pursuer. */
   defaultPursuer?: string;
+  /** Facts the game computes each read (`clock.hour`, `police.stars`); conditions see them, saves never hold them. */
+  live?(ctx: GameContext): Readonly<Record<string, WorldFactValue>>;
 }
 
 /** A running game spec: its checked world, the system to install, and the live world per context. */
@@ -114,6 +117,7 @@ export function defineGameSpec(spec: GameSpecDecl): GameSpec {
       onOutput: (name, amount, event) => spec.outputs?.[name]?.(ctx, amount, event),
       ...(spec.onReward !== undefined ? { onReward: (rewards: MissionRewards, jobId: string) => spec.onReward!(ctx, rewards, jobId) } : {}),
       ...(spec.defaultPursuer !== undefined ? { defaultPursuer: spec.defaultPursuer } : {}),
+      ...(spec.live !== undefined ? { live: () => spec.live!(ctx) } : {}),
     });
   });
 
@@ -209,7 +213,8 @@ function namedHooks(def: WorldModelDef): string[] {
   const add = (hook: string | undefined) => {
     if (hook !== undefined) out.add(hook);
   };
-  for (const ripple of Object.values(def.ripples ?? {})) add(ripple.hook);
+  for (const declared of Object.values(def.ripples ?? {})) for (const ripple of [declared].flat()) add(ripple.hook);
+  for (const trigger of Object.values(def.triggers ?? {})) add(trigger.hook);
   for (const job of Object.values(def.jobs ?? {})) add(job.hook);
   for (const kind of Object.values(def.kinds ?? {})) add(kind.hook);
   for (const action of Object.values(def.actions ?? {})) add(action.hook);
