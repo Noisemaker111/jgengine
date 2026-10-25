@@ -126,6 +126,8 @@ const gameStyleModules = (hasViteGlob ? import.meta.glob<Record<string, unknown>
 
 const gameSourceModules = (hasViteGlob ? import.meta.glob<Record<string, unknown>>([
   "../../../games/*/src/**/*.{ts,tsx}",
+  // llmville is its own TanStack app with its own `@/` aliases, not a runner game.
+  "!../../../games/llmville/**",
   "!**/main.tsx",
   "!**/*.test.*",
 ]) : {});

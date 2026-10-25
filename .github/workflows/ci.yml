@@ -219,6 +219,19 @@ jobs:
           key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
           restore-keys: bun-${{ runner.os }}-
       - run: bun install --frozen-lockfile
+      # A game draws library models and scanned materials that are not in git, so the leg
+      # pulls them first, from the same cache the games job fills.
+      - uses: actions/cache@v4
+        with:
+          path: |
+            games/*/public/models
+            games/*/public/materials
+            games/*/public/sprites
+          key: game-assets-${{ hashFiles('bun.lock', 'games/*/src/game/assets.ts') }}
+          restore-keys: game-assets-
+      - run: bun run games:provision -- ${{ matrix.game }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       # 2 of the first 32 leg runs died on a cold Chrome start ("debugger not ready
       # … within 30000ms") and passed on a plain rerun. A budget breach fails again,
       # so the retry hides nothing; it stops a launch flake from paging a PR owner.
