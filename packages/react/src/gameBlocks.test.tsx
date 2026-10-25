@@ -71,6 +71,26 @@ describe("GameFrame", () => {
     expect(bare["--jg-gf-rim-w"]).toBe("0px");
   });
 
+  test("gameFrameVars installs the frame stylesheet once, so a hand-dressed element works with no GameFrame mounted", () => {
+    const added: Array<{ id: string; textContent: string }> = [];
+    const fake = {
+      getElementById: (id: string) => added.find((node) => node.id === id) ?? null,
+      createElement: () => ({ id: "", textContent: "" }),
+      head: { appendChild: (node: { id: string; textContent: string }) => { added.push(node); } },
+    };
+    const saved = (globalThis as { document?: unknown }).document;
+    (globalThis as { document?: unknown }).document = fake;
+    try {
+      gameFrameVars({ material: "brass", cut: "notch" });
+      gameFrameVars({ material: "wood" });
+    } finally {
+      (globalThis as { document?: unknown }).document = saved;
+    }
+    expect(added.length).toBe(1);
+    expect(added[0]!.id).toBe("jg-game-frame-styles");
+    expect(added[0]!.textContent).toContain("[data-jg-frame]");
+  });
+
   test("a glow replaces the cast shadow, and shadow={false} drops it", () => {
     const lit = renderToStaticMarkup(<GameFrame glow="#ffd23f">Charged</GameFrame>);
     expect(lit).toContain("data-glow");
