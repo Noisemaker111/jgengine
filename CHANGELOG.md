@@ -26,6 +26,26 @@ At publish, rename this heading to the new version and mirror the entries into
 `packages/core/src/meta/changelog.ts` (the typed `CHANGELOG` export).
 -->
 
+## 0.43.0
+
+### Migrate
+
+- **Bump lockstep SDK packages to `^0.43.0`:** `@jgengine/{core,rapier,react,ws,node,sql,convex,shell,editor,assets,navbake}`. CLI `jgengine` is `0.40.0`; `@jgengine/github` is `0.30.0`.
+
+### Added
+
+- `buildRouteCourse` (`@jgengine/core/world/routeCourse`) lays a purpose-built course from `straight` and `turn` pieces with branches that leave and rejoin the main line, tagged hazard spans with timers, a leg-aware `clamp` wall, `checkpoints` for `raceTrack`, racing `line`s through chosen shortcuts, wall `edges` with junction openings and terrain `groundHeight`/`terrainProfiles` that ride the course's climb.
+- `ocean({ palette: { deep, crest, foam, fresnel } })` recolors the whole water surface, not just the shallows, for liquids that are not sea water.
+- `createRadio` (`@jgengine/core/audio/radio`): serializable car-radio stations (music, talk, news) on one shared clock, so tuning back lands mid-programme. Tune next/previous/off, a priority bulletin queue fed by game events with per-topic cooldowns, expiry and break-in, per-station wording, a `nowPlaying` view for the HUD, and `snapshot`/`restore`/`retune`.
+- `createRadioPlayback` (`@jgengine/core/audio/radioPlayback`): drives a radio's cues into a sink — generated music themes with a start offset, spoken lines with per-voice pitch and rate — and pauses with the game.
+- `ctx.game.audio.speak(text, options)`, `stopSpeech()` and `duck(id, bus, amount)`, plus `music(theme, transpose, { offset })`. The shell speaks through Web Speech on the game's `audio.speechBus` (text-only when no voice exists), holds keyed bus ducks, and starts a theme partway in.
+- `window.__jgengineAudio.speech()` reports whether speech is available, how many voices, and lines spoken and dropped.
+
+### Fixed
+
+- Terrain `biomeBands` `sky` and `fog` now cross-fade in a game that also declares `lighting` with a directional sun; the shell dropped the bands whenever it derived the sun bearing from that light.
+- A static sky's banded fog color now follows the band instead of being pinned to `sky.fog.color`.
+
 ## 0.42.0
 
 ### Migrate
