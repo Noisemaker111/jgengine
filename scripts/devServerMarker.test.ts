@@ -218,6 +218,11 @@ describe("idle dev servers exit", () => {
     expect(idleVerdict({ ...base, now: 600_000, idleMs: 0 })).toBe("keep");
   });
 
+  test("a broker-owned server leaves once its broker is gone, even with a tab open", () => {
+    expect(idleVerdict({ ...base, ownerAlive: false, openSockets: 2 })).toBe("orphaned");
+    expect(idleVerdict({ ...base, ownerAlive: true })).toBe("keep");
+  });
+
   test("a server whose checkout was deleted leaves at once, even with a tab open", () => {
     expect(idleVerdict({ ...base, rootExists: false, openSockets: 3 })).toBe("orphaned");
   });

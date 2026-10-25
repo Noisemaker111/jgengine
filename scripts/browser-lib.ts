@@ -17,7 +17,9 @@ import { basename, dirname, join, parse, resolve } from "node:path";
 
 import { retrySettleMs, shouldRetryCapture } from "./capture-retry";
 import { clearViteCaches, headRevision, revisionDrifted, shortRevision } from "./captureRevision";
+import { brokerServer } from "./devBrokerClient";
 import { checkMarkedServer, checkoutIdentity, devServerIdentity, isUp, listMarkers, markerPath, readMarker, readServerIdentity, writeMarker } from "./devServerMarker";
+import { currentStep, describeHang, markStep } from "./hangReport";
 import { localGet } from "./localhostHttp";
 import { computeShotMetrics, deadViewport } from "./shot-metrics";
 import { decodePng } from "./png-reader";
@@ -426,11 +428,26 @@ function launchPersistentCommand(
 }
 
 /**
+ * The machine broker's server for this checkout, or null when the broker is off, unreachable or the
+ * caller pinned a port. A brokered server carries no pid: the broker owns it and stops it when idle,
+ * so a run that ends (or is killed) never leaves it behind and never kills it under another run.
+ */
+async function serverFromBroker(cwd: string, kind: "runner" | "website", portEnv: string): Promise<EnsureDevServerResult | null> {
+  const pinned = process.env[portEnv];
+  if (pinned !== undefined && pinned !== "") return null;
+  const preferredPort = kind === "runner" ? resolveDevPort(cwd) : resolveWebPort(cwd);
+  const server = await brokerServer(cwd, kind, preferredPort);
+  return server === null ? null : { child: null, port: server.port, base: server.base };
+}
+
+/**
  * Boot (or reuse) the apps/dev Vite server for **this** checkout only.
  * Port is derived from the worktree path; a live server on that port is
  * reused only when a marker file proves it belongs to this identity.
  */
 export async function ensureDevServer(cwd = process.cwd()): Promise<EnsureDevServerResult> {
+  const brokered = await serverFromBroker(cwd, "runner", "JG_DEV_PORT");
+  if (brokered !== null) return brokered;
   const identity = devServerIdentity(cwd);
   let port = resolveDevPort(cwd);
   const base = `http://127.0.0.1:${port}`;
@@ -500,6 +517,8 @@ export async function ensureDevServer(cwd = process.cwd()): Promise<EnsureDevSer
 
 /** Boot or reuse this checkout's website Vite server for `shoot --site` captures. */
 export async function ensureWebServer(cwd = process.cwd()): Promise<EnsureDevServerResult> {
+  const brokered = await serverFromBroker(cwd, "website", "JG_WEB_PORT");
+  if (brokered !== null) return brokered;
   const identity = checkoutIdentity(cwd);
   let port = resolveWebPort(cwd);
   const base = `http://127.0.0.1:${port}`;
@@ -567,7 +586,7 @@ export async function ensureWebServer(cwd = process.cwd()): Promise<EnsureDevSer
 export function killPid(pid: number | undefined, tree = false): void {
   if (pid === undefined || !Number.isFinite(pid) || pid <= 0) return;
   if (process.platform === "win32") {
-    spawnSync("taskkill", ["/pid", String(pid), "/T", "/F"], { stdio: "ignore", windowsHide: true });
+    spawnSync("taskkill", ["/pid", String(pid), "/T", "/F"], { stdio: "ignore", windowsHide: true, timeout: 15_000 });
     return;
   }
   if (tree) {
@@ -2331,6 +2350,11 @@ export interface WithBrowserSessionOptions {
   frameClock?: FrameClock;
   /** Launch a real (off-screen) window instead of headless Chrome; only `--headed` sets it. */
   headed?: boolean;
+  /**
+   * Wait for a turn in a shared browser before the session starts; resolves with its release.
+   * The wait sits outside the hard deadline, which covers only this run's own work.
+   */
+  turn?: () => Promise<() => Promise<void>>;
 }
 
 /**
@@ -2354,9 +2378,20 @@ export async function withBrowserSession(
   let chrome: ChromeProcess | null = null;
   let exitCode = 0;
 
+  let releaseTurn: (() => Promise<void>) | null = null;
+  if (options.turn !== undefined) {
+    markStep("wait for a turn in the shared browser");
+    try {
+      releaseTurn = await options.turn();
+    } catch (error) {
+      console.error(error instanceof Error ? error.message : error);
+      return 1;
+    }
+  }
+
   const watchdog = setTimeout(() => {
     console.error(
-      `browser session: still running after the ${Math.round(hardDeadlineMs / 1000)}s hard deadline — force-killing Chrome and dev server`,
+      `browser session: still running after the ${Math.round(hardDeadlineMs / 1000)}s hard deadline, ${describeHang(currentStep())} — force-killing Chrome and dev server`,
     );
     // Daemon-owned Chrome/server are never handed to us (both null here), so
     // these are no-ops when attached — safe to run unconditionally.
@@ -2369,6 +2404,7 @@ export async function withBrowserSession(
   watchdog.unref();
 
   try {
+    markStep(options.connect !== undefined || attach ? `attach to Chrome :${debugPort}` : `launch Chrome :${debugPort}`);
     if (options.connect !== undefined || attach) {
       await waitForDebugger(debugPort, 5_000);
     } else {
@@ -2382,6 +2418,7 @@ export async function withBrowserSession(
       });
       chrome = started.browser;
     }
+    markStep("run the capture");
     const result = await fn({ debugPort, chrome });
     if (typeof result === "number") exitCode = result;
   } catch (error) {
@@ -2389,6 +2426,7 @@ export async function withBrowserSession(
     console.error(error instanceof Error ? error.message : error);
   } finally {
     clearTimeout(watchdog);
+    await releaseTurn?.().catch(() => {});
     if (!leaveWarm) {
       launchedProfiles.delete(debugPort);
       killProcessTree(chrome);

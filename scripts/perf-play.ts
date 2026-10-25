@@ -23,6 +23,7 @@ import {
   daemonDiedUnder,
   ensureDaemonTarget,
   withDaemonWatch,
+  brokerTurn,
   type ShootDaemonState,
 } from "./shoot-daemon";
 import {
@@ -1118,6 +1119,7 @@ async function main(): Promise<void> {
         debugPort: daemon?.chromePort,
         attach: daemon !== null,
         leaveWarm: daemon !== null,
+        turn: brokerTurn(daemon, repoRoot),
       },
       async ({ debugPort }) => {
         const session = await openPageSession(debugPort);

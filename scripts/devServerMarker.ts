@@ -320,8 +320,10 @@ export function idleVerdict(state: {
   openSockets: number;
   rootExists: boolean;
   idleMs: number;
+  /** False once the broker that started this server is gone; nothing would ever stop it then. */
+  ownerAlive?: boolean;
 }): IdleVerdict {
-  if (!state.rootExists) return "orphaned";
+  if (!state.rootExists || state.ownerAlive === false) return "orphaned";
   if (state.idleMs <= 0 || state.openSockets > 0) return "keep";
   return state.now - state.lastActivity >= state.idleMs ? "idle" : "keep";
 }
@@ -334,6 +336,9 @@ export function startIdleWatchdog(
     checkEveryMs?: number;
     now?: () => number;
     rootExists?: (root: string) => boolean;
+    /** Pid of the broker that owns this server (`JG_BROKER_PID`); its death stops the server. */
+    ownerPid?: number;
+    isAlive?: (pid: number) => boolean;
     exit?: (verdict: Exclude<IdleVerdict, "keep">) => void;
   } = {},
 ): { check(): IdleVerdict; stop(): void } | null {
@@ -342,12 +347,14 @@ export function startIdleWatchdog(
   if (httpServer?.on === undefined) return null;
   const now = options.now ?? Date.now;
   const rootExists = options.rootExists ?? existsSync;
+  const ownerPid = options.ownerPid ?? (Number(process.env.JG_BROKER_PID) > 0 ? Number(process.env.JG_BROKER_PID) : undefined);
+  const isAlive = options.isAlive ?? ((pid: number) => processAlive(pid));
   const exit =
     options.exit ??
     ((verdict) => {
       console.error(
         verdict === "orphaned"
-          ? `jgengine dev: ${server.config.root} is gone, stopping this server`
+          ? `jgengine dev: ${server.config.root} or the broker that started it is gone, stopping this server`
           : `jgengine dev: no connection for ${Math.round(idleMs / 60_000)} min, stopping (JG_DEV_IDLE_MINUTES=0 keeps it up)`,
       );
       process.exit(0);
@@ -363,7 +370,14 @@ export function startIdleWatchdog(
     });
   });
   const check = (): IdleVerdict => {
-    const verdict = idleVerdict({ now: now(), lastActivity, openSockets, rootExists: rootExists(server.config.root), idleMs });
+    const verdict = idleVerdict({
+      now: now(),
+      lastActivity,
+      openSockets,
+      rootExists: rootExists(server.config.root),
+      idleMs,
+      ...(ownerPid === undefined ? {} : { ownerAlive: isAlive(ownerPid) }),
+    });
     if (verdict !== "keep") exit(verdict);
     return verdict;
   };

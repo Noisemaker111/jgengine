@@ -1,6 +1,11 @@
 import { spawn, spawnSync, type ChildProcess, type SpawnOptions } from "node:child_process";
 
+import { unlinkSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
 import { sweepOrphanProfiles } from "./browser-lib";
+import { describeHang, readStepFile, STEP_FILE_ENV } from "./hangReport";
 
 /**
  * Split a shell-free command string into an argv array on whitespace. Used only
@@ -66,7 +71,16 @@ if (import.meta.main) {
 
   const isWin = process.platform === "win32";
   const plan = buildSpawn(process.platform, command, extra);
-  const child: ChildProcess = spawn(plan.file, plan.args, plan.options);
+  // The child keeps this file naming its current step, so a kill can say what hung.
+  const stepFile = join(tmpdir(), `jg-guard-step-${process.pid}.json`);
+  const child: ChildProcess = spawn(plan.file, plan.args, { ...plan.options, env: { ...process.env, [STEP_FILE_ENV]: stepFile } });
+  const clearStepFile = (): void => {
+    try {
+      unlinkSync(stepFile);
+    } catch {
+      /* the child never marked a step */
+    }
+  };
 
   /**
    * A capture killed here cannot release its own Chrome profile, and on Windows a forced kill
@@ -100,13 +114,17 @@ if (import.meta.main) {
   }
 
   const timer = setTimeout(() => {
-    console.error(`\nguard: '${command}' exceeded the ${budgetSeconds}s hard limit — killing its process tree`);
+    console.error(
+      `\nguard: '${command}' exceeded the ${budgetSeconds}s hard limit, ${describeHang(readStepFile(stepFile))} — killing its process tree`,
+    );
     killTree("SIGKILL");
+    clearStepFile();
     process.exit(124);
   }, budgetSeconds * 1000);
 
   child.on("exit", (code, signal) => {
     clearTimeout(timer);
+    clearStepFile();
     process.exit(code ?? (signal === null ? 0 : 1));
   });
 

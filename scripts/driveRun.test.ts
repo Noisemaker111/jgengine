@@ -63,6 +63,12 @@ describe("runDriveSteps", () => {
     expect(host.lines.some((line) => line.startsWith("#3 shot after FAIL") && line.includes("did not become true"))).toBe(true);
   });
 
+  test("a step that never returns fails at its budget, naming itself", async () => {
+    const host = harness(async (step) => (step.kind === "assert" ? new Promise<string>(() => {}) : ""));
+    await expect(runDriveSteps(steps, { ...host.deps, stepTimeoutMs: () => 20 })).rejects.toThrow(/drive step #2 assert .* hung: no result after 0s/);
+    expect(host.lines.some((line) => line.startsWith("#2 assert") && line.includes("FAIL") && line.includes("hung"))).toBe(true);
+  });
+
   test("the step summary states the graphics tier the page resolved", async () => {
     const host = harness(async () => "");
     await runDriveSteps(steps, { ...host.deps, tier: "ultra" });
