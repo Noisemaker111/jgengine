@@ -17,15 +17,15 @@ describe("defineGame document sky", () => {
   });
 
   test("keeps other backdrop fields when adding the document sky", () => {
-    const playable = defineGame({ name: "Doc sky", backdrop: { background: "#123" }, editorLayers: doc({ preset: "day" }) });
+    const playable = defineGame({ name: "Doc sky", look: "neutral", backdrop: { background: "#123" }, editorLayers: doc({ preset: "day" }) });
     expect(playable.backdrop).toEqual({ background: "#123", sky: { preset: "day" } });
   });
 
   test("an environment with only point lights leaves the world sky alone and keeps its lamps", () => {
-    const lamps = defineGame({ name: "Lamps", editorLayers: doc({ pointLights: [{ position: [0, 2, 0] }] }) });
+    const lamps = defineGame({ name: "Lamps", look: "neutral", editorLayers: doc({ pointLights: [{ position: [0, 2, 0] }] }) });
     expect(lamps.backdrop).toBeUndefined();
     expect(lamps.lighting?.point).toEqual([{ position: [0, 2, 0] }]);
-    expect(defineGame({ name: "Bare", editorLayers: doc(undefined) }).backdrop).toBeUndefined();
+    expect(defineGame({ name: "Bare", look: "neutral", editorLayers: doc(undefined) }).backdrop).toBeUndefined();
   });
 });
 
@@ -86,7 +86,7 @@ describe("defineGame document sky compatibility", () => {
   test("an explicit game backdrop stays authoritative over world and document skies", () => {
     const backdrop = { sky: { preset: "night" as const, hazeStrength: 0.1 }, background: "#000" };
     const before = structuredClone(backdrop);
-    const playable = defineGame({ name: "Explicit backdrop", world: environment({ sky: sky({ volumetricClouds: { coverage: 0.8 } }) }),
+    const playable = defineGame({ name: "Explicit backdrop", look: "neutral", world: environment({ sky: sky({ volumetricClouds: { coverage: 0.8 } }) }),
       editorLayers: doc({ preset: "dusk", sunAzimuth: 120 }), backdrop });
     expect(playable.backdrop).toEqual(backdrop);
     expect(backdrop).toEqual(before);
