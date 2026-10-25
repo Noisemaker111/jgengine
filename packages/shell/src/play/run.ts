@@ -239,7 +239,7 @@ export function runPlayScript(
       }
       if (!shouldFireBoundAction(tracker, action, definition.input, repeatFiredAt, clockMs)) continue;
       repeatFiredAt.set(action, clockMs);
-      dispatchBoundAction(ctx, action, yaw, pitch, commandAim(), RESERVED_INPUT_ACTIONS, sink);
+      dispatchBoundAction(ctx, action, yaw, pitch, commandAim(), RESERVED_INPUT_ACTIONS, sink, !wasPressed(action));
     }
     if (hotbarId !== null) {
       for (const { action, slot } of slotActions) {

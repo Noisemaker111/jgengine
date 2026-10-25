@@ -51,7 +51,12 @@ export function shouldFireBoundAction(
   });
 }
 
-/** Resolves and runs the command bound to `action` via the shell's action→command convention (shared by `FrameDriver` and `HudOnlyDriver`). @internal */
+/**
+ * Resolves and runs the command bound to `action` via the shell's action→command convention (shared by
+ * `FrameDriver` and `HudOnlyDriver`). The input carries `held: true` when this run is a `repeatMs`
+ * re-fire of a trigger still down, and `false` on the press itself, so a command can fire a pistol once
+ * per click and an SMG while held from the same binding. @internal
+ */
 export function dispatchBoundAction(
   ctx: GameContext,
   action: string,
@@ -60,7 +65,8 @@ export function dispatchBoundAction(
   aim: Aim,
   reserved: ReadonlySet<string> = RESERVED_INPUT_ACTIONS,
   sink: CommandSink = localCommandSink(ctx),
+  held = false,
 ): void {
   const command = resolveActionCommand(action, (name) => ctx.game.commands.has(name), reserved);
-  if (command !== null) sink.run(command, { yaw, pitch, aim });
+  if (command !== null) sink.run(command, { yaw, pitch, aim, held });
 }

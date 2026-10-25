@@ -65,10 +65,11 @@ export type ActionCodes<TCode extends string = string> =
 
 /**
  * Maps each game action name to the input codes (hold/toggle keys, repeat rate) that trigger it. In a
- * `defineGame({ input })`, pressing an action runs the same-named command with `{ yaw, pitch, aim }`;
- * `repeatMs` re-fires it while held (automatic weapons).
+ * `defineGame({ input })`, pressing an action runs the same-named command with `{ yaw, pitch, aim, held }`;
+ * `repeatMs` re-fires it while held (automatic weapons), with `held: true` on those re-fires so one
+ * binding can drive a single-shot pistol (ignore `held`) and an automatic rifle (accept it).
  *
- * @capability fire-input bind a key or mouse button to a named action that runs the same-named command with the aim; repeatMs auto-fires while held
+ * @capability fire-input bind a key or mouse button to a named action that runs the same-named command with the aim; repeatMs auto-fires while held, `held` tells a click from a held trigger
  */
 export type ActionCodesMap<TAction extends string = string, TCode extends string = string> = Record<
   TAction,

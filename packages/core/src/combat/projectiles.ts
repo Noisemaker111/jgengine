@@ -420,7 +420,7 @@ export function createProjectileSystem(deps: ProjectileSystemDeps): ProjectileSy
   }
 
   function withWeaponSpread(via: EffectVia, aim: Aim): Aim {
-    if ("origin" in aim || aim.spread !== undefined) return aim;
+    if (aim.spread !== undefined) return aim;
     const spread = itemStat(via, "spread");
     return spread === null ? aim : { ...aim, spread };
   }

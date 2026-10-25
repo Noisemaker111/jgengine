@@ -1,7 +1,11 @@
 import type { EntityPosition } from "./entityStore";
 
+/**
+ * Where a shot or ability points: a world ray (cursor aim) or a look angle (crosshair aim). `spread`
+ * is the cone half-angle in degrees a projectile strays inside, on either form.
+ */
 export type Aim =
-  | { origin: EntityPosition; direction: EntityPosition }
+  | { origin: EntityPosition; direction: EntityPosition; spread?: number }
   | { yaw: number; pitch: number; spread?: number };
 
 export interface QueryArcOptions {

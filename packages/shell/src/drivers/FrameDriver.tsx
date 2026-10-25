@@ -24,6 +24,7 @@ import { devtools } from "@jgengine/core/devtools/devtools";
 import type { ActionStateTracker } from "@jgengine/core/input/actionBindings";
 
 import { collisionDebug } from "../devtools/collisionDebug";
+import { createAimRecoil } from "../camera/aimRecoil";
 import { registerSimStepper } from "../devtools/simStepper";
 import { GAME_SIM_FRAME_PRIORITY } from "../camera";
 import { NO_ACTIONS } from "../shellConstants";
@@ -81,6 +82,29 @@ export function FrameDriver({
   const posterDoneRef = useRef(false);
   const hasReportedTickError = useRef(false);
   const repeatFiredAtRef = useRef<Map<string, number>>(new Map());
+  const recoil = useMemo(createAimRecoil, []);
+  useEffect(() => {
+    let kicks = 0;
+    let peak = 0;
+    const off = ctx.game.events.on("combat.recoil", (event) => {
+      const local = event.from === ctx.player.userId || event.from === ctx.player.possession.active(ctx.player.userId);
+      if (!local) return;
+      recoil.kick(event.pitch, event.yaw, event.recover);
+      kicks += 1;
+    });
+    const offProbe = devtools.probes.registerSystem("input/recoil", {
+      counters: () => {
+        const climb = recoil.debt().pitch;
+        peak = Math.max(peak, climb);
+        return { kicks, climbMrad: Math.round(climb * 1000), peakMrad: Math.round(peak * 1000) };
+      },
+      state: () => `${kicks} kicks · climb ${(recoil.debt().pitch * 1000).toFixed(0)} mrad`,
+    });
+    return () => {
+      off();
+      offProbe();
+    };
+  }, [ctx, recoil]);
   const slotActions = useMemo(() => findHotbarSlotActions(playable.game.input), [playable]);
   const hotbarId = useMemo(() => hotbarIdFor(playable), [playable]);
   const movementTuning = useMemo(
@@ -177,6 +201,13 @@ export function FrameDriver({
     sendInput();
     const turnInput = (tracker.isDown("turnRight") ? 1 : 0) - (tracker.isDown("turnLeft") ? 1 : 0);
     if (turnInput !== 0) yawRef.current = steerYaw(yawRef.current, turnInput, TURN_SPEED, dt);
+    // Recoil moves the look only where the look is the aim; a free cursor aims on its own.
+    const kick = recoil.step(dt);
+    const cursorAims = pointerAim && (typeof document === "undefined" || document.pointerLockElement === null);
+    if (!cursorAims && (kick.pitch !== 0 || kick.yaw !== 0)) {
+      pitchRef.current = Math.max(-1.2, Math.min(1.2, pitchRef.current + kick.pitch));
+      yawRef.current += kick.yaw;
+    }
     endPhase();
 
     const playerId = ctx.player.possession.active(ctx.player.userId);
@@ -307,7 +338,7 @@ export function FrameDriver({
       }
       if (!shouldFireBoundAction(tracker, action, playable.game.input, repeatFiredAtRef.current, nowMs)) continue;
       repeatFiredAtRef.current.set(action, nowMs);
-      dispatchBoundAction(ctx, action, yawRef.current, pitchRef.current, commandAimNow(), RESERVED_INPUT_ACTIONS, commandSink);
+      dispatchBoundAction(ctx, action, yawRef.current, pitchRef.current, commandAimNow(), RESERVED_INPUT_ACTIONS, commandSink, !pressed);
     }
     if (hotbarId !== null) {
       for (const { action, slot } of slotActions) {

@@ -232,6 +232,21 @@ export interface CombatHitReactionEvent {
   trauma?: number;
 }
 
+/**
+ * A gun's kick on its shooter's view: emit it when a shot leaves. The shell climbs the local player's
+ * look by `pitch` (radians, up is positive) and `yaw` (radians) over a few frames, then settles back at
+ * `recover`, in views that aim with the look (first person, shoulder, locked pointer). In a
+ * cursor-aimed view the look is not the aim, so a game shows recoil as spread instead.
+ */
+export interface CombatRecoilEvent {
+  /** The shooter; only the local player's (or what they drive) moves the view. */
+  from: string;
+  pitch: number;
+  yaw?: number;
+  /** Share of the climb the view gives back per second. Default 6 (about 85% back within 0.3 s). `0` keeps the climb. */
+  recover?: number;
+}
+
 /** Exactly-once projectile result for shot-specific game policy and presentation. */
 export interface ProjectileSettledEvent {
   shotId: string;
@@ -368,6 +383,7 @@ export interface GameEventMap {
   "combat.vfxInstance": CombatVfxInstanceEvent;
   "combat.telegraphCancelled": CombatTelegraphCancelledEvent;
   "combat.hitReaction": CombatHitReactionEvent;
+  "combat.recoil": CombatRecoilEvent;
   "loot.granted": LootGrantedEvent;
   "inventory.added": InventoryAddedEvent;
   "quest.accepted": QuestAcceptedEvent;

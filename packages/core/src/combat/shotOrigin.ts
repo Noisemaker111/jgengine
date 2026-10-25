@@ -78,7 +78,7 @@ export function aimDirection(aim: Aim): EntityPosition | null {
 }
 
 export function aimSpreadDeg(aim: Aim): number {
-  return "origin" in aim ? 0 : aim.spread ?? 0;
+  return aim.spread ?? 0;
 }
 
 /**

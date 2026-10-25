@@ -598,7 +598,7 @@
 - `ActionBindingMap` (type): type ActionBindingMap<TAction extends string, TCode extends string = string> = Record< TAction, ActionBinding<TCode> > — ⚠ undocumented
 - `ActionBindingModes` (interface): interface ActionBindingModes<TCode extends string = string> { hold?: ActionBinding<TCode>[]; toggle?: ActionBinding<TCode>[] } — ⚠ undocumented
 - `ActionCodes` (type): type ActionCodes<TCode extends string = string> = | readonly TCode[] | { hold?: readonly TCode[]; toggle?: readonly TCode[]; repeatMs?: number } — ⚠ undocumented
-- `ActionCodesMap` (type): type ActionCodesMap<TAction extends string = string, TCode extends string = string> = Record< TAction, ActionCodes<TCode> > — Maps each game action name to the input codes (hold/toggle keys, repeat rate) that trigger it. In a `defineGame({ input })`, pressing an action runs the same-named command with `{ yaw, pitch, aim }`; `repeatMs` re-fires it while held (automatic weapons).
+- `ActionCodesMap` (type): type ActionCodesMap<TAction extends string = string, TCode extends string = string> = Record< TAction, ActionCodes<TCode> > — Maps each game action name to the input codes (hold/toggle keys, repeat rate) that trigger it. In a `defineGame({ input })`, pressing an action runs the same-named command with `{ yaw, pitch, aim, held }`; `repeatMs` re-fires it while held (automatic weapons), with `held: true` on those re-fires so one binding can drive a single-shot pistol (ignore `held`) and an automatic rifle (accept it).
 - `ActionStateBindingMap` (type): type ActionStateBindingMap<TAction extends string, TCode extends string = string> = Record< TAction, ActionBindingConfig<TCode> > — ⚠ undocumented
 - `ActionStateTracker` (interface): interface ActionStateTracker<TAction extends string> { handleDown(code: string): TAction | null; handleUp(code: string): TAction | null; isDown(action: TAction): boolean; wasPressed(action: TAction): boolean; endFrame(): void; reset(): void; rebind(map: ActionStateBindingMap<TAction, string>)… — ⚠ undocumented · used by `rebindGamepadPoll` (@jgengine/shell/input/gamepadPoll): Swap the pad bindings mid-game (a context push) without touching keyboard state: release the codes of pad-held actions whose pad codes chang…
 - `ShouldDispatchActionInput` (interface): interface ShouldDispatchActionInput { pressed: boolean; down: boolean; repeatMs: number | undefined; lastFiredAt: number | null; now: number } — ⚠ undocumented
@@ -1952,7 +1952,7 @@
 
 ## @jgengine/core/scene/spatial
 
-- `Aim` (type): type Aim = | { origin: EntityPosition; direction: EntityPosition } | { yaw: number; pitch: number; spread?: number } — ⚠ undocumented · used by `aimToPoint` (@jgengine/core/input/pointer): Build an `origin → point` aim for `item.use` / projectiles, firing toward the cursor.
+- `Aim` (type): type Aim = | { origin: EntityPosition; direction: EntityPosition; spread?: number } | { yaw: number; pitch: number; spread?: number } — Where a shot or ability points: a world ray (cursor aim) or a look angle (crosshair aim). `spread` is the cone half-angle in degrees a projectile strays inside, on either form.
 - `MoveTowardOptions` (interface): interface MoveTowardOptions { speed: number; stopDistance?: number; dt: number; avoidSolids?: boolean } — ⚠ undocumented
 - `QueryArcOptions` (interface): interface QueryArcOptions { from: string; aim: Aim; radius: number; halfAngleDeg?: number } — ⚠ undocumented
 - `SpatialApi` (interface): interface SpatialApi { distance(aInstanceId: string, bInstanceId: string): number | null; inRadius(center: EntityPosition | string, radius: number, filter?: (instanceId: string) => boolean): string[]; hasLineOfSight(fromInstanceId: string, toInstanceId: string)… — ⚠ undocumented · used by `createSpatialApi`: Spatial queries with an optional notified incremental broadphase.
@@ -2364,7 +2364,7 @@
 - `AcquisitionResult` (interface): interface AcquisitionResult — Outcome of one acquisition pass.
 - `AcquisitionRetention` (interface): interface AcquisitionRetention — Retention hysteresis that keeps an already-held target from flickering under churn.
 - `AddBodyOptions` (type): type AddBodyOptions = BoxBodyOptions | SphereBodyOptions — ⚠ undocumented
-- `Aim` (type): type Aim = | { origin: EntityPosition; direction: EntityPosition } | { yaw: number; pitch: number; spread?: number } — ⚠ undocumented · used by `aimToPoint` (@jgengine/core/input/pointer): Build an `origin → point` aim for `item.use` / projectiles, firing toward the cursor.
+- `Aim` (type): type Aim = | { origin: EntityPosition; direction: EntityPosition; spread?: number } | { yaw: number; pitch: number; spread?: number } — Where a shot or ability points: a world ray (cursor aim) or a look angle (crosshair aim). `spread` is the cone half-angle in degrees a projectile strays inside, on either form.
 - `AircraftAxis` (type): type AircraftAxis = "pitch" | "roll" | "yaw" | "throttle" | "collective" | "airbrake" | "afterburner" | "vectoring" — Axes an aircraft can bind — which actions drive each flight control.
 - `AircraftDynamics` (interface): interface AircraftDynamics — Stateful six-degree-of-freedom aircraft simulation.
 - `AircraftKind` (type): type AircraftKind = "fixedWing" | "rotorcraft" | "vtol" — Supported aerodynamic/propulsion families.
