@@ -781,7 +781,7 @@ export function brokerHandler(core: BrokerCore, onStop: () => void) {
         return send(res, 200, await core.acquireChrome(number(body.clientPid, "clientPid"), String(body.label ?? "client")));
       }
       if (url.pathname === "/v1/capture") {
-        const waitMs = typeof body.waitMs === "number" && body.waitMs > 0 ? body.waitMs : 15 * 60_000;
+        const waitMs = typeof body.waitMs === "number" && body.waitMs > 0 ? body.waitMs : 5 * 60_000;
         const turn = core.acquireCapture(number(body.clientPid, "clientPid"), String(body.label ?? "client"), waitMs);
         // A client that gave up while queued must not be granted a turn nobody will release.
         res.once("close", () => {

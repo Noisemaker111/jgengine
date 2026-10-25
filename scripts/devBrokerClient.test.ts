@@ -28,8 +28,8 @@ describe("broker client", () => {
     }
   });
 
-  test("the capture wait defaults to 15 minutes", () => {
-    expect(captureWaitMs({})).toBe(900_000);
+  test("the capture wait defaults to 5 minutes, under the shoot guard", () => {
+    expect(captureWaitMs({})).toBe(300_000);
     expect(captureWaitMs({ JG_CAPTURE_WAIT_MINUTES: "2" })).toBe(120_000);
   });
 

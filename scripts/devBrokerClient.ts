@@ -201,10 +201,13 @@ export async function brokerChrome(cwd: string, log: (line: string) => void = (l
   return { chromePort: response.body.chromePort, started: response.body.started };
 }
 
-/** Default wait for a turn in the shared browser: 15 minutes, `JG_CAPTURE_WAIT_MINUTES` overrides. */
+/**
+ * Default wait for a turn in the shared browser: 5 minutes, `JG_CAPTURE_WAIT_MINUTES` overrides. It
+ * stays under `bun run shoot`'s 420 s guard, so a long queue fails naming the holder, not as a kill.
+ */
 export function captureWaitMs(env: NodeJS.ProcessEnv = process.env): number {
   const minutes = Number(env.JG_CAPTURE_WAIT_MINUTES);
-  return (Number.isFinite(minutes) && minutes > 0 ? minutes : 15) * 60_000;
+  return (Number.isFinite(minutes) && minutes > 0 ? minutes : 5) * 60_000;
 }
 
 /**
