@@ -3063,6 +3063,7 @@
 - `WorldFactValue` (type): type WorldFactValue = number | string | boolean — A fact's value: a number that moves, a name (an owner, a place) or a flag.
 - `WorldFactionDecl` (interface): interface WorldFactionDecl extends SubjectDecl — A faction: a group with shared facts (mood, money) that places and things can belong to.
 - `WorldFactsDecl` (type): type WorldFactsDecl = Readonly<Record<string, WorldFactValue | WorldFactSpec>> — Facts a subject starts with: a plain value, or a {@link WorldFactSpec} for one that calms down.
+- `WorldHookCall` (interface): interface WorldHookCall — What a code hook is handed: the live world, and the event or job that ran it.
 - `WorldJobDecl` (interface): interface WorldJobDecl — A story or side job: a mission the giver offers once its gates hold, and the beat it leaves behind.
 - `WorldJobEvent` (type): type WorldJobEvent = | { kind: "job-started"; jobId: string } | { kind: "job-done"; jobId: string; beat: WorldChanges | null } | { kind: "job-failed"; jobId: string; reason: string } — A job moved, as `tick` and `startJob` report it.
 - `WorldJobStatus` (type): type WorldJobStatus = "locked" | "available" | "active" | "done" | "failed" — Where a job stands for the player right now.
@@ -3079,6 +3080,7 @@
 - `WorldPersonDecl` (interface): interface WorldPersonDecl extends SubjectDecl — A person: where they are, whether they are on the phone, and what they say as the world changes.
 - `WorldPlaceDecl` (interface): interface WorldPlaceDecl extends SubjectDecl — A place in the world: a marker or position with a radius, an owner faction and its own facts.
 - `WorldRippleDecl` (interface): interface WorldRippleDecl — How one kind of world event spreads.
+- `WorldScheduleDecl` (interface): interface WorldScheduleDecl — A ripple the world fires on its own clock: paydays, upkeep, shifts, waves, weather.
 - `WorldThingDecl` (interface): interface WorldThingDecl extends SubjectDecl — Anything owned and located that is not a person: a car, a tower, a ride, a server rack.
 - `WorldTickResult` (interface): interface WorldTickResult — What changed during one tick: jobs finished or failed and objectives cleared.
 - `calm` (function): function calm(value: number, perSecond: number, bounds: { rest?: number; min?: number; max?: number } = {}): WorldFactSpec — A number fact that drifts back to `rest` (default its start) at `perSecond`, kept within 0-100 unless the bounds say otherwise.
