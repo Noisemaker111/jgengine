@@ -1,9 +1,9 @@
 // Ten finished branches land with one CI run, not ten.
 //
-//   bun run land:batch agent/a agent/b agent/c
-//   bun run land:batch --file .scratch/branches.txt   # one branch per line, # comments allowed
-//   bun run land:batch agent/a agent/b --dry-run      # build and verify the chain, push nothing
-//   bun run land:batch --explain                      # after a red batch: name the commit that broke it
+//   bun run lane:close --batch agent/a agent/b agent/c
+//   bun run lane:close --batch --file .scratch/branches.txt   # one branch per line, # comments allowed
+//   bun run lane:close --batch agent/a agent/b --dry-run      # build and verify the chain, push nothing
+//   bun run lane:close --batch --explain                      # after a red batch: name the commit that broke it
 //
 // Each branch is merged onto the chain in the order given, inside this checkout, so the verify
 // command uses the install that already exists here. A branch that conflicts or fails verify is
@@ -33,7 +33,7 @@ const root = fileURLToPath(new URL("..", import.meta.url));
 
 const BATCH_USAGE = {
   summary: "land several finished branches as one push, so CI runs once instead of once per branch",
-  usage: "bun run land:batch [branch ...] [--file <path>] [--base <branch>] [--verify <command>] [--skill-api] [--dry-run] [--explain]",
+  usage: "bun run lane:close --batch [branch ...] [--file <path>] [--base <branch>] [--verify <command>] [--skill-api] [--dry-run] [--explain]",
   flags: [
     { flag: "<branch ...>", detail: "branches to land, in the order given" },
     { flag: "--file <path>", detail: "also read branches from this file, one per line (# comments allowed)" },
@@ -43,7 +43,7 @@ const BATCH_USAGE = {
     { flag: "--dry-run", detail: "build and verify the chain, then stop without pushing" },
     { flag: "--explain", detail: "read the last batch and name the commit a red tip most likely came from" },
   ],
-  example: "bun run land:batch agent/menus agent/audio agent/hud --file .scratch/more.txt",
+  example: "bun run lane:close --batch agent/menus agent/audio agent/hud --file .scratch/more.txt",
   exits: [
     "0 every branch landed and reached the base in one push",
     "1 some branches landed, the rest were skipped with a reason",
@@ -368,7 +368,7 @@ export function handOffLines(tip: string, base: string, runId: number | null = n
     runId === null
       ? `status: gh run list --branch ${base} --limit 1 --json databaseId,headSha,conclusion`
       : `status: gh run view ${runId} --json status,conclusion`,
-    `red batch: bun run land:batch --explain`,
+    `red batch: bun run lane:close --batch --explain`,
     `the batch is ${short(tip)}; this command is done and waits for nothing`,
   ];
 }
@@ -435,7 +435,7 @@ export function explainCommand(verify: string, baseSha: string): string {
 export function explainBatch(args: BatchArgs, io: ExplainIo): number {
   const record = readRecord(io.git);
   if (record === null || record.entries.length === 0) {
-    io.error("no batch record to explain: run bun run land:batch first, then --explain if its tip goes red");
+    io.error("no batch record to explain: run bun run lane:close --batch first, then --explain if its tip goes red");
     return EXIT_BATCH_REFUSED;
   }
   const original = io.git(["rev-parse", "--abbrev-ref", "HEAD"]).stdout.trim() || record.base;
@@ -472,7 +472,7 @@ function runVerify(command: string): boolean {
 }
 
 function main(): void {
-  if (printHelpIfAsked("land:batch", BATCH_USAGE)) process.exit(EXIT_BATCH_LANDED);
+  if (printHelpIfAsked("lane:close --batch", BATCH_USAGE)) process.exit(EXIT_BATCH_LANDED);
   assertCheckoutReady("land:batch", root);
 
   let args: BatchArgs;

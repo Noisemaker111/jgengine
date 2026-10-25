@@ -1040,7 +1040,7 @@ test("land hands the PR over in one pass: no watch, no sleep, the URL and the st
   expect(calls).toContainEqual(["pr", "merge", "4242", "--auto", "--merge"]);
   expect(logs).toContain(URL_4242);
   expect(logs).toContain("status: bun run ci:status --pr 4242");
-  expect(logs).toContainEqual(expect.stringContaining("waiting: bun run land:queue"));
+  expect(logs).toContainEqual(expect.stringContaining("waiting: bun run lane:close --queue"));
   expect(logs.at(-1)).toMatch(/^worked (\d+s|<1s), waited 0s for the lock$/);
   expect(handOffLines({ number: 7, url: "u" })[1]).toBe("status: bun run ci:status --pr 7");
 });

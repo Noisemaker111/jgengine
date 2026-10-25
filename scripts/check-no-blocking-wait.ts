@@ -168,7 +168,7 @@ if (import.meta.main) {
     console.error("check-no-blocking-wait: a script waits in the foreground\n");
     for (const { file, wait } of found) console.error(`  ${file}:${wait.line}  ${wait.rule}  ${wait.text.slice(0, 100)}`);
     console.error(
-      "\nNo allowance: a sleep or a CI watch is never necessary. `bun run land` owns the landing without" +
+      "\nNo allowance: a sleep or a CI watch is never necessary. `bun run lane:close` owns the landing without" +
         "\nyou watching CI, and one `gh run list` (or `gh pr checks <n>` without `--watch`) answers status" +
         "\nin a later turn. Start the work and ask later instead of sleeping or watching." +
         "\nIf the wait is genuinely required, name the reason on the line or the comment above it:" +
