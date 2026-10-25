@@ -8,7 +8,7 @@ const run = (world: ReturnType<typeof createWorldModel>, seconds: number) => {
   for (let t = 0; t < seconds; t += 0.25) {
     const result = world.tick(0.25);
     for (const entry of result.ready ?? []) ready.push(entry.id);
-    for (const id of result.removed ?? []) removed.push(id);
+    for (const gone of result.removed ?? []) removed.push(gone.id);
     for (const entry of result.landed ?? []) landed.push(entry.action);
   }
   return { ready, removed, landed };
@@ -54,7 +54,7 @@ describe("tower defense: slots, refusing costs, timed builds, upgrades by level"
     expect(world.num("archer-1.level")).toBe(1);
   });
 
-  test("upgrades cost more per level, stop at the cap, and feed the totals; selling refunds half", () => {
+  test("upgrades cost more per level, stop at the cap, and feed the totals; selling refunds half of everything paid", () => {
     const world = createWorldModel(keep);
     world.place("archer", { slot: "a1" });
     run(world, 2);
@@ -67,7 +67,7 @@ describe("tower defense: slots, refusing costs, timed builds, upgrades by level"
     expect(world.canAct("upgrade", "archer-1")?.reason).toBe("locked");
     expect(world.num("keep.firepower")).toBe(28);
     expect(world.act("sell", "archer-1").ok).toBe(true);
-    expect(world.num("keep.gold")).toBe(545);
+    expect(world.num("keep.gold")).toBe(635);
     expect(world.occupant("a1")).toBeNull();
     expect(world.fact("archer-1.level")).toBeUndefined();
     expect(run(world, 0.25).removed).toEqual(["archer-1"]);
@@ -181,5 +181,78 @@ describe("AI lab tycoon: hardware into training into serving income", () => {
     expect(() => defineWorldModel({ kinds: { tower: { slot: "plot" } } })).toThrow(/unknown slot group/);
     expect(() => defineWorldModel({ actions: { up: { effect: { level: 1 } } } })).toThrow(/names no kind/);
     expect(() => defineWorldModel({ totals: { "a.b": { of: "ghost" } } })).toThrow(/unknown kind/);
+  });
+});
+
+describe("what the conversions asked for: tags, full refunds, busy guards, free seeding, own refusal words", () => {
+  const keep = defineWorldModel({
+    factions: { keep: { facts: { gold: { value: 500, min: 0 } } } },
+    slots: { plot: { a1: { position: [0, 0] }, a2: { position: [4, 0] }, a3: { position: [8, 0] } } },
+    kinds: {
+      archer: { label: "Archer tower", tags: ["tower"], slot: "plot", cost: { "keep.gold": -100 }, refund: 0.5, facts: { level: 1 } },
+      cannon: { label: "Cannon", tags: ["tower"], slot: "plot", cost: { "keep.gold": -200 }, refund: 0.5, facts: { level: 1 } },
+      vault: { label: "Vault", slot: "plot", cost: { "keep.gold": -50 }, when: { "keep.gold": { atLeast: 10000 } }, refuse: "The vault opens at 10,000 gold" },
+    },
+    actions: {
+      upgrade: { label: "Upgrade", on: "tower", whenTarget: { level: { atMost: 1 } }, refuse: "Already at top level", cost: { "keep.gold": -60 }, effect: { level: 1 } },
+      reinforce: { label: "Reinforce", on: "tower", takes: 3, cost: { "keep.gold": -10 } },
+      sell: { label: "Sell", on: "tower", removes: true },
+    },
+    totals: { "keep.towers": { of: "tower" } },
+  });
+
+  test("one action and one total cover every kind carrying a tag", () => {
+    const world = createWorldModel(keep);
+    world.place("archer", { slot: "a1" });
+    world.place("cannon", { slot: "a2" });
+    expect(world.num("keep.towers")).toBe(2);
+    expect(world.act("upgrade", "cannon-2")).toMatchObject({ ok: true });
+    expect(world.instances("tower").map((tower) => tower.id)).toEqual(["archer-1", "cannon-2"]);
+  });
+
+  test("selling refunds a share of everything paid, upgrades included, and says what came back", () => {
+    const world = createWorldModel(keep);
+    world.place("archer", { slot: "a1" });
+    world.act("upgrade", "archer-1");
+    expect(world.num("keep.gold")).toBe(340);
+    world.act("sell", "archer-1");
+    expect(world.num("keep.gold")).toBe(420);
+    expect(world.tick(0.25).removed).toEqual([{ id: "archer-1", kind: "archer", label: "Archer tower", refund: { "keep.gold": 80 } }]);
+  });
+
+  test("a refusal can use the game's own words", () => {
+    const world = createWorldModel(keep);
+    world.place("archer", { slot: "a1" });
+    world.act("upgrade", "archer-1");
+    expect(world.canAct("upgrade", "archer-1")?.message).toBe("Already at top level");
+    expect(world.canPlace("vault", { slot: "a3" })?.message).toBe("The vault opens at 10,000 gold");
+  });
+
+  test("the same timed action can't be queued twice on one target", () => {
+    const world = createWorldModel(keep);
+    world.place("archer", { slot: "a1" });
+    expect(world.act("reinforce", "archer-1")).toMatchObject({ ok: true, queued: true });
+    expect(world.canAct("reinforce", "archer-1")?.reason).toBe("busy");
+    expect(world.num("keep.gold")).toBe(390);
+  });
+
+  test("free placement seeds a layout without paying, already built", () => {
+    const world = createWorldModel(keep);
+    expect(world.place("cannon", { slot: "a1" }, { free: true, built: true })).toMatchObject({ ok: true, queued: false });
+    expect(world.num("keep.gold")).toBe(500);
+    world.act("sell", "cannon-1");
+    expect(world.num("keep.gold")).toBe(500);
+  });
+
+  test("hooks hear which instance they are about", () => {
+    const heard: (string | null)[] = [];
+    const world = createWorldModel(
+      defineWorldModel({ kinds: { lamp: { label: "Lamp", hook: "light" } }, actions: { poke: { label: "Poke", on: "lamp", hook: "light" } } }),
+      { hooks: { light: (call) => heard.push(call.target) } },
+    );
+    world.place("lamp", {});
+    world.act("poke", "lamp-1");
+    world.tick(0.25);
+    expect(heard).toEqual(["lamp-1", "lamp-1"]);
   });
 });

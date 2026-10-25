@@ -112,6 +112,10 @@ export interface WorldThingDecl extends SubjectDecl {
  * any declared thing.
  */
 export interface WorldKindDecl extends SubjectDecl {
+  /** Groups this kind belongs to (`tower`, `ride`); an action `on` or a total `of` a tag covers every kind carrying it. */
+  tags?: readonly string[];
+  /** What a refusal says when `when` doesn't hold (default "<label> isn't available yet"). */
+  refuse?: string;
   /** Absolute changes paid on placing (negative numbers spend); refused when unaffordable. */
   cost?: WorldChanges;
   /** Seconds to build; the spot is reserved at once and the instance is `ready` when its order finishes. */
@@ -158,7 +162,7 @@ export interface WorldGridDecl {
  */
 export interface WorldActionDecl {
   label?: string;
-  /** Kind the target must be (a placed instance or a thing declaring that `kind`); omit for no target. */
+  /** Kind or tag the target must be (a placed instance, or a thing declaring that `kind`); omit for no target. */
   on?: string;
   /** Absolute facts that must hold. */
   when?: WorldConditions;
@@ -181,11 +185,13 @@ export interface WorldActionDecl {
   /** A line for the news log; `{target}` is the target's label. */
   note?: string;
   hook?: string;
+  /** What a refusal says when `when` or `whenTarget` doesn't hold ("Already at top level"). */
+  refuse?: string;
 }
 
 /** A fact computed over subjects of one kind: a park's rating, towers standing, a lab's income. */
 export interface WorldTotalDecl {
-  /** Kind counted: placed instances and things declaring that `kind`. */
+  /** Kind or tag counted: placed instances and things declaring that `kind`. */
   of: string;
   /** Sum this fact across them; with neither `sum` nor `max` the total counts them. */
   sum?: string;
@@ -324,6 +330,16 @@ export interface WorldInstance {
   slot?: string;
   cell?: readonly [number, number];
   ready: boolean;
+  /** Everything spent on it so far (build plus upgrades), which a removal's refund is a share of. */
+  paid?: WorldChanges;
+}
+
+/** An instance that was removed, with what came back. */
+export interface WorldRemoved {
+  id: string;
+  kind: string;
+  label: string;
+  refund: WorldChanges;
 }
 
 /** What a queued order does when it finishes. */
@@ -341,6 +357,13 @@ export interface WorldModelState {
   instances?: Record<string, WorldInstance>;
   seq?: number;
   orders?: Record<string, WorkQueueState<WorldOrderSpec, WorldChanges>>;
+}
+
+/** How to place: `free` skips the cost (a starting layout, a reward, a scenario's seed). */
+export interface WorldPlaceOptions {
+  free?: boolean;
+  /** Placed already built, skipping `takes`. */
+  built?: boolean;
 }
 
 /** Where to place an instance. */
@@ -411,6 +434,8 @@ export interface WorldHookCall {
   event: WorldEvent | null;
   place: string | null;
   jobId: string | null;
+  /** The instance or thing an action landed on, or the instance that just became ready. */
+  target: string | null;
 }
 
 /** A job as menus, the phone and dialogue show it. */
@@ -465,7 +490,7 @@ export interface WorldTickResult {
   /** Instances whose build finished, for the game to spawn. */
   ready?: readonly WorldInstanceView[];
   /** Instances removed (sold, demolished, cancelled), for the game to despawn. */
-  removed?: readonly string[];
+  removed?: readonly WorldRemoved[];
   /** Actions that landed, queued or immediate. */
   landed?: readonly { action: string; target: string | null }[];
 }
@@ -500,8 +525,8 @@ export interface WorldModel {
   snapshot(): WorldModelState;
   restore(next: WorldModelState): void;
   /** Place an instance of a kind: pays its cost, takes its slot or cells, and builds over `takes`. */
-  place(kind: string, at?: WorldPlacement): WorldResult;
-  canPlace(kind: string, at?: WorldPlacement): WorldRefusal | null;
+  place(kind: string, at?: WorldPlacement, options?: WorldPlaceOptions): WorldResult;
+  canPlace(kind: string, at?: WorldPlacement, options?: WorldPlaceOptions): WorldRefusal | null;
   /** Remove an instance, paying back its kind's `refund` share of its cost. */
   remove(id: string): WorldResult;
   /** Do an action on an optional target: refused, landed now, or queued. */
@@ -563,7 +588,8 @@ export function defineWorldModel(decl: WorldModelDecl): WorldModelDef {
   }
   const kinds = decl.kinds ?? {};
   const thingKinds = new Set(Object.values(decl.things ?? {}).map((thing) => thing.kind).filter((kind) => kind !== undefined));
-  const isKind = (id: string) => kinds[id] !== undefined || thingKinds.has(id);
+  const kindTags = new Set(Object.values(kinds).flatMap((kind) => kind.tags ?? []));
+  const isKind = (id: string) => kinds[id] !== undefined || thingKinds.has(id) || kindTags.has(id);
   const slotIds = new Set<string>();
   for (const [group, slots] of Object.entries(decl.slots ?? {})) {
     for (const id of Object.keys(slots)) {
@@ -601,6 +627,15 @@ export function defineWorldModel(decl: WorldModelDecl): WorldModelDef {
   const errors = validateMissionCatalog(missions).filter((entry) => entry.severity === "error");
   if (errors.length > 0) issue(errors.map((entry) => entry.message).join("; "));
   return { ...decl, subjects };
+}
+
+function addChanges(a: WorldChanges, b: WorldChanges): WorldChanges {
+  const out: Record<string, WorldFactValue> = { ...a };
+  for (const [key, value] of Object.entries(b)) {
+    const before = out[key];
+    out[key] = typeof value === "number" && typeof before === "number" ? before + value : value;
+  }
+  return out;
 }
 
 function specOf(value: WorldFactValue | WorldFactSpec): WorldFactSpec {
@@ -702,7 +737,7 @@ export function createWorldModel(def: WorldModelDef, options: WorldModelOptions 
   };
   // Instants placed or removed and actions landed since the last tick, reported on the next one.
   let pendingReady: string[] = [];
-  let pendingRemoved: string[] = [];
+  let pendingRemoved: WorldRemoved[] = [];
   let pendingLanded: { action: string; target: string | null }[] = [];
 
   const state = (): WorldModelState => {
@@ -755,12 +790,15 @@ export function createWorldModel(def: WorldModelDef, options: WorldModelOptions 
     for (const [fact, value] of Object.entries(changes)) applyInto(facts, prefix === "" ? fact : `${prefix}.${fact}`, value, scale);
   };
 
+  /** A kind id matches itself and every tag it carries. */
+  const matchesKind = (kindId: string | null, want: string): boolean =>
+    kindId !== null && (kindId === want || (kinds[kindId]?.tags ?? []).includes(want));
   const kindOf = (id: string, current: WorldModelState): string | null =>
     current.instances?.[id]?.kind ?? def.things?.[id]?.kind ?? null;
   const membersOf = (kind: string, current: WorldModelState, building: boolean): string[] => {
     const out: string[] = [];
-    for (const [id, thing] of Object.entries(def.things ?? {})) if (thing.kind === kind) out.push(id);
-    for (const [id, instance] of Object.entries(current.instances ?? {})) if (instance.kind === kind && (building || instance.ready)) out.push(id);
+    for (const [id, thing] of Object.entries(def.things ?? {})) if (thing.kind !== undefined && matchesKind(thing.kind, kind)) out.push(id);
+    for (const [id, instance] of Object.entries(current.instances ?? {})) if (matchesKind(instance.kind, kind) && (building || instance.ready)) out.push(id);
     return out;
   };
   const testOn = (conditions: WorldConditions | undefined, subject: string, facts: Readonly<Record<string, WorldFactValue>>): boolean => {
@@ -882,11 +920,11 @@ export function createWorldModel(def: WorldModelDef, options: WorldModelOptions 
     output: (job) => job.spec,
   });
 
-  const placeRefusal = (kindId: string, at: WorldPlacement, current: WorldModelState): WorldRefusal | null => {
+  const placeRefusal = (kindId: string, at: WorldPlacement, current: WorldModelState, options: WorldPlaceOptions = {}): WorldRefusal | null => {
     const kind = kinds[kindId];
     if (kind === undefined) return refuse("unknown", `Nothing called "${kindId}" can be placed`);
     const what = kind.label ?? kindId;
-    if (!test(kind.when, current)) return refuse("locked", `${what} isn't available yet`);
+    if (!test(kind.when, current)) return refuse("locked", kind.refuse ?? `${what} isn't available yet`);
     const placed = Object.entries(current.instances ?? {}).filter(([, instance]) => instance.kind === kindId);
     if (kind.limit !== undefined && placed.length >= kind.limit) return refuse("limit", `Only ${kind.limit} ${what} allowed`);
     if (kind.slot !== undefined) {
@@ -905,7 +943,7 @@ export function createWorldModel(def: WorldModelDef, options: WorldModelOptions 
         if (cellsOverlap(cell, size, other.cell, footprint(other.kind))) return refuse("taken", "Something is already built there");
       }
     }
-    return costRefusal(kind.cost, 1, current, what);
+    return options.free === true ? null : costRefusal(kind.cost, 1, current, what);
   };
 
   const actionScale = (action: WorldActionDecl, target: string | null, current: WorldModelState): number =>
@@ -915,11 +953,16 @@ export function createWorldModel(def: WorldModelDef, options: WorldModelOptions 
     if (action === undefined) return refuse("unknown", `No action called "${actionId}"`);
     const what = action.label ?? actionId;
     if (action.on !== undefined) {
-      if (target === null || kindOf(target, current) !== action.on) return refuse("target", `${what} needs a ${action.on}`);
+      if (target === null || !matchesKind(kindOf(target, current), action.on)) return refuse("target", `${what} needs a ${action.on}`);
       if (current.instances?.[target]?.ready === false) return refuse("busy", `${what}: still being built`);
     }
-    if (!test(action.when, current)) return refuse("locked", `${what} isn't available yet`);
-    if (target !== null && !testOn(action.whenTarget, target, allFacts(current))) return refuse("locked", `${what} can't be done to that`);
+    if (!test(action.when, current)) return refuse("locked", action.refuse ?? `${what} isn't available yet`);
+    if (target !== null && !testOn(action.whenTarget, target, allFacts(current))) return refuse("locked", action.refuse ?? `${what} can't be done to that`);
+    if (target !== null && action.takes !== undefined && action.takes > 0) {
+      const queued = Object.values(current.orders ?? {}).some((queue) =>
+        queue.jobs.some((job) => job.spec.type === "act" && job.spec.action === actionId && job.spec.target === target));
+      if (queued) return refuse("busy", `${what} is already under way`);
+    }
     return costRefusal(action.cost, actionScale(action, target, current), current, what);
   };
 
@@ -929,10 +972,11 @@ export function createWorldModel(def: WorldModelDef, options: WorldModelOptions 
     if (instance === undefined) return next;
     const facts: Record<string, WorldFactValue> = {};
     for (const [key, value] of Object.entries(next.facts)) if (!key.startsWith(`${id}.`)) facts[key] = value;
-    changeAll(facts, "", payback(kinds[instance.kind]?.cost ?? {}, share), 1);
+    const refund = payback(instance.paid ?? kinds[instance.kind]?.cost ?? {}, share);
+    changeAll(facts, "", refund, 1);
     const instances = { ...next.instances };
     delete instances[id];
-    pendingRemoved.push(id);
+    pendingRemoved.push({ id, kind: instance.kind, label: kinds[instance.kind]?.label ?? instance.kind, refund });
     return { ...next, facts, instances };
   };
 
@@ -954,8 +998,15 @@ export function createWorldModel(def: WorldModelDef, options: WorldModelOptions 
     }
     if (action.removes === true && target !== null) out = dropInstance(out, target, kinds[kindOf(target, out) ?? ""]?.refund ?? 0);
     pendingLanded.push({ action: actionId, target });
-    if (action.hook !== undefined) pendingHooks.push({ name: action.hook, call: { world: model, event: null, place: where, jobId: null } });
+    if (action.hook !== undefined) pendingHooks.push({ name: action.hook, call: { world: model, event: null, place: where, jobId: null, target } });
     return { next: out, ripple: action.emit === undefined ? null : { kind: action.emit, ...(where !== null ? { place: where } : {}) } };
+  };
+
+  /** Count what an action cost toward its target's refund. */
+  const addPaid = (current: WorldModelState, target: string | null, paid: WorldChanges): WorldModelState => {
+    const owned = target === null ? undefined : current.instances?.[target];
+    if (owned === undefined || target === null || Object.keys(paid).length === 0) return current;
+    return { ...current, instances: { ...current.instances, [target]: { ...owned, paid: addChanges(owned.paid ?? {}, paid) } } };
   };
 
   /** Advance every queue by `dt`, landing what finished. */
@@ -979,10 +1030,10 @@ export function createWorldModel(def: WorldModelDef, options: WorldModelOptions 
           out = { ...out, instances: { ...out.instances, [spec.instance]: { ...instance, ready: true } } };
           pendingReady.push(spec.instance);
           const hook = kinds[instance.kind]?.hook;
-          if (hook !== undefined) pendingHooks.push({ name: hook, call: { world: model, event: null, place: null, jobId: null } });
+          if (hook !== undefined) pendingHooks.push({ name: hook, call: { world: model, event: null, place: null, jobId: null, target: spec.instance } });
         } else {
           if (spec.target !== null && out.instances?.[spec.target] === undefined && def.things?.[spec.target] === undefined) continue;
-          const landed = landAction(out, spec.action, spec.target, spec.scale);
+          const landed = landAction(addPaid(out, spec.target, spec.paid), spec.action, spec.target, spec.scale);
           out = landed.next;
           if (landed.ripple !== null) ripples.push(landed.ripple);
         }
@@ -1059,7 +1110,7 @@ export function createWorldModel(def: WorldModelDef, options: WorldModelOptions 
         changeAll(facts, "", job.beat, 1);
         next = { ...next, facts, activeJob: null, log: pushLog(next, { at: next.time, kind: "job-done", place: job.at ?? null, text: job.title }) };
         out.push({ kind: "job-done", jobId, beat: job.beat ?? null });
-        if (job.hook !== undefined) pendingHooks.push({ name: job.hook, call: { world: model, event: null, place: job.at ?? null, jobId } });
+        if (job.hook !== undefined) pendingHooks.push({ name: job.hook, call: { world: model, event: null, place: job.at ?? null, jobId, target: null } });
       } else if (event.kind === "failed") {
         next = { ...next, facts: { ...next.facts, [`jobs.${jobId}`]: "failed" }, activeJob: null };
         out.push({ kind: "job-failed", jobId, reason: event.reason });
@@ -1148,7 +1199,7 @@ export function createWorldModel(def: WorldModelDef, options: WorldModelOptions 
       write({ ...current, facts, log: ripple.note === undefined ? current.log : pushLog(current, entry) });
       for (const [name, amount] of Object.entries(ripple.out ?? {})) options.onOutput?.(name, amount * scale, event);
       if (ripple.hook !== undefined) {
-        pendingHooks.push({ name: ripple.hook, call: { world: model, event, place, jobId: null } });
+        pendingHooks.push({ name: ripple.hook, call: { world: model, event, place, jobId: null, target: null } });
         runHooks();
       }
       return entry;
@@ -1292,13 +1343,13 @@ export function createWorldModel(def: WorldModelDef, options: WorldModelOptions 
       return { text: giver === null ? `${retry}: ${job.title}` : `${retry} ${giver}: ${job.title}`, jobId: job.id, target: job.position };
     },
     log: () => state().log,
-    canPlace: (kind, at = {}) => placeRefusal(kind, at, state()),
-    place(kindId, at = {}) {
+    canPlace: (kind, at = {}, options = {}) => placeRefusal(kind, at, state(), options),
+    place(kindId, at = {}, options = {}) {
       const current = state();
-      const refusal = placeRefusal(kindId, at, current);
+      const refusal = placeRefusal(kindId, at, current, options);
       if (refusal !== null) return refusal;
       const kind = kinds[kindId]!;
-      const paid = kind.cost ?? {};
+      const paid = options.free === true ? {} : (kind.cost ?? {});
       const facts = { ...current.facts };
       changeAll(facts, "", paid, 1);
       const seq = (current.seq ?? 0) + 1;
@@ -1306,12 +1357,13 @@ export function createWorldModel(def: WorldModelDef, options: WorldModelOptions 
       for (const [fact, raw] of Object.entries(kind.facts ?? {})) facts[`${id}.${fact}`] = specOf(raw).value;
       if (kind.owner !== undefined) facts[`${id}.owner`] = kind.owner;
       if (kind.at !== undefined) facts[`${id}.at`] = kind.at;
-      const takes = Math.max(0, kind.takes ?? 0);
+      const takes = options.built === true ? 0 : Math.max(0, kind.takes ?? 0);
       const instance: WorldInstance = {
         kind: kindId,
         ...(at.slot !== undefined && kind.slot !== undefined ? { slot: at.slot } : {}),
         ...(at.cell !== undefined && kind.grid !== undefined ? { cell: [at.cell[0], at.cell[1]] as const } : {}),
         ready: takes === 0,
+        paid,
       };
       let next: WorldModelState = { ...current, facts, seq, instances: { ...(current.instances ?? {}), [id]: instance } };
       if (takes > 0) {
@@ -1323,7 +1375,7 @@ export function createWorldModel(def: WorldModelDef, options: WorldModelOptions 
       write(next);
       if (takes === 0) {
         pendingReady.push(id);
-        if (kind.hook !== undefined) pendingHooks.push({ name: kind.hook, call: { world: model, event: null, place: null, jobId: null } });
+        if (kind.hook !== undefined) pendingHooks.push({ name: kind.hook, call: { world: model, event: null, place: null, jobId: null, target: id } });
         runHooks();
       }
       return { ok: true, id, queued: takes > 0 };
@@ -1372,7 +1424,7 @@ export function createWorldModel(def: WorldModelDef, options: WorldModelOptions 
         write({ ...next, orders: { ...(next.orders ?? {}), [name]: queued.state } });
         return { ok: true, id: queued.job.id, queued: true };
       }
-      const landed = landAction(next, actionId, target, scale);
+      const landed = landAction(addPaid(next, target, paid), actionId, target, scale);
       write(landed.next);
       if (landed.ripple !== null) model.emit(landed.ripple);
       runHooks();
@@ -1396,7 +1448,7 @@ export function createWorldModel(def: WorldModelDef, options: WorldModelOptions 
     instances(kind) {
       const current = state();
       return Object.keys(current.instances ?? {})
-        .filter((id) => kind === undefined || current.instances![id]!.kind === kind)
+        .filter((id) => kind === undefined || matchesKind(current.instances![id]!.kind, kind))
         .map((id) => instanceView(id, current)!);
     },
     instance: (id) => instanceView(id, state()),

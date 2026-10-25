@@ -20,7 +20,7 @@ const bastion = defineGameSpec({
   },
   hooks: { shake_camera: (_ctx, call) => paged.push(call.event?.kind ?? "") },
   onReady: (_ctx, tower) => spawned.push(`${tower.id}@${tower.position?.join(",")}`),
-  onRemoved: (_ctx, id) => removed.push(id),
+  onRemoved: (_ctx, gone) => removed.push(gone.id),
 });
 
 const game = defineGameDefinition({ name: "bastion-spec", multiplayer: "off", systems: [bastion.system] });
@@ -59,6 +59,44 @@ describe("a game spec runs as an engine system", () => {
     restored.restore(saved);
     expect(bastion.of(restored).orders()[0]?.progress).toBeCloseTo(0.5);
     expect(bastion.of(restored).num("keep.gold")).toBe(50);
+  });
+
+  test("after a save loads, every built instance comes back through onRestored once", () => {
+    const back: string[] = [];
+    const ready: string[] = [];
+    const keep = defineGameSpec({
+      id: "keepspec",
+      world: { kinds: { wall: { label: "Wall", takes: 1 } } },
+      onReady: (_ctx, wall) => ready.push(wall.id),
+      onRestored: (_ctx, walls) => back.push(...walls.map((wall) => wall.id)),
+    });
+    const def = defineGameDefinition({ name: "keep-spec", multiplayer: "off", systems: [keep.system] });
+    const start = () => {
+      const ctx = createGameContext({ definition: def, content: {}, player: { userId: "keeper", isNew: true } });
+      def.loop?.onInit?.(ctx);
+      return ctx;
+    };
+    const live = start();
+    keep.of(live).place("wall", {});
+    for (let t = 0; t < 1.5; t += 0.25) def.loop?.onTick?.(live, 0.25);
+    expect(ready).toEqual(["wall-1"]);
+    const restored = start();
+    restored.restore(JSON.parse(JSON.stringify(live.state())));
+    def.loop?.onTick?.(restored, 0.25);
+    def.loop?.onTick?.(restored, 0.25);
+    expect(back).toEqual(["wall-1"]);
+    expect(ready).toEqual(["wall-1"]);
+  });
+
+  test("accepting refuses every command with the game's own words", () => {
+    let open = false;
+    const park = defineGameSpec({ id: "shutpark", world: { kinds: { bench: { label: "Bench" } } }, accepting: () => (open ? null : "The park is closed") });
+    const def = defineGameDefinition({ name: "shut-park", multiplayer: "off", systems: [park.system] });
+    const ctx = createGameContext({ definition: def, content: {}, player: { userId: "keeper", isNew: true } });
+    def.loop?.onInit?.(ctx);
+    expect(ctx.game.commands.run("shutpark.place", { kind: "bench" })).toMatchObject({ status: "rejected", reason: "closed", message: "The park is closed" });
+    open = true;
+    expect(ctx.game.commands.run("shutpark.place", { kind: "bench" })).toMatchObject({ status: "applied" });
   });
 
   test("a declaration that names a hook the spec doesn't supply is refused up front", () => {
