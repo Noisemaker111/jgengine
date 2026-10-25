@@ -5,6 +5,7 @@ import type { SettingValue } from "@jgengine/core/settings/settingsModel";
 import { hudSpace, hudType, hudTransition } from "./hudTokens";
 import { useMenuNav, type MenuNavItemProps } from "./menuNav";
 import type { SettingsCategoryView, SettingsKeybindRow, SettingsRow } from "./settings";
+import { GameSlider } from "./gameSlider";
 import { ScrollRail } from "./scrollRail";
 import { useDebouncedCommit } from "./useDebouncedCommit";
 
@@ -78,22 +79,22 @@ export function adjustSettingRow(row: SettingsRow, delta: -1 | 1): SettingValue 
  */
 export function SettingsSlider({ row, itemProps }: { row: SettingsRow; itemProps?: MenuNavItemProps }): ReactNode {
   const { value, onInput, flush } = useDebouncedCommit(Number(row.value), (next) => row.set(next));
+  const readout = row.format?.(value) ?? String(value);
   return (
     <RowShell label={row.label} itemProps={itemProps}>
-      <input
-        type="range"
-        min={row.min}
-        max={row.max}
-        step={row.step}
+      {/* A drawn game slider, never the browser's range input; bounds default like a native range. */}
+      <GameSlider
+        min={row.min ?? 0}
+        max={row.max ?? 100}
+        step={row.step ?? 1}
         value={value}
-        aria-label={row.label}
-        onChange={(event) => onInput(Number(event.target.value))}
-        onPointerUp={flush}
-        onKeyUp={flush}
-        onBlur={flush}
-        style={{ flex: "0 1 140px", minWidth: 64, accentColor: "var(--jg-accent, #6ee7a8)" }}
+        label={row.label}
+        valueText={readout}
+        onChange={onInput}
+        onCommit={flush}
+        style={{ flex: "0 1 140px", minWidth: 64 }}
       />
-      <span style={valueStyle}>{row.format?.(value) ?? String(value)}</span>
+      <span style={valueStyle}>{readout}</span>
     </RowShell>
   );
 }

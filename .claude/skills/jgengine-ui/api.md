@@ -793,8 +793,20 @@
 - `FriendsList` (function): function FriendsList({ className, rowClassName, dotClassName, emptyState, renderFriend, }: { className?: string; rowClassName?: string; dotClassName?: string; emptyState?: ReactNode; renderFriend?: (friend: FriendEntry) => ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `FullscreenMap` (function): function FullscreenMap({ open = true, bounds, contentWidth = 900, minScale = 0.5, maxScale = 8, title = "Map", onClose, onWorldClick, tool = "pan", onStrokeComplete, drawTone = "info", drawWidth = 3, children, overlayClassName, overlayStyle, ...surfaceProps }: FullscreenMapProps): ReactNode — Fullscreen pan/zoom world-map overlay — the enlarged "press M" map. Wheel to zoom (toward the cursor), drag to pan, and click to place (wire `onWorldClick` to a waypoint/annotation store). Switch `tool` to `"draw"` to freehand-draw strokes committed to `onStrokeComplete` (wire to `createAnnotationLayer`). Reuses {@link WorldMapSurface} for rendering, so terrain bake, fog, routes, zones, markers, and the player arrow all appear; a drag never fires `onWorldClick`. Compose a {@link MapLegend} or tool palette via `children`.
 - `FullscreenMapProps` (interface): interface FullscreenMapProps extends Omit<WorldMapSurfaceProps, "canvasWidth" | "canvasHeight" | "viewport" | "width" | "height" | "style"> — Props for {@link FullscreenMap}.
+- `GAME_MATERIALS` (const): const GAME_MATERIALS: Readonly<Record<GameMaterial, GameMaterialLook>> — The built-in materials. A game reads one to match its own pieces (`GAME_MATERIALS.wood.ink`), or passes `tint` / `edge` to `GameFrame` to recolour one.
 - `GameContextBridge` (function): function GameContextBridge({ context, children, }: { context: GameContext | null; children?: ReactNode; }): React.JSX.Element — Re-provide a captured {@link GameContext} across a nested React reconciler boundary. The `<Canvas>` of `@react-three/fiber` renders its children in a *separate* React root, so a `GameProvider` in the outer tree does NOT reach inside it — hooks like `useGameContext` / `useEntityRenderCues` throw. The fix the shell already uses internally: capture the context outside the boundary (with {@link useOptionalGameContext}) and wrap the inner tree in `GameContextBridge`. A `null` context renders children unchanged, so the same code works in showcases with no running game. This is the seam behind `EntityPreview` — reach for it directly when building a bespoke nested canvas.
+- `GameCursor` (function): function GameCursor({ variant = "brackets", color, gap = 6, thickness = 3, arm = 14, className, style }: GameCursorProps): ReactNode — A game-style selection cursor for a menu: corner brackets, a pointer or a bar that glides to whichever item the keyboard, gamepad or mouse selects, instead of a browser focus ring. Drop it inside the menu's positioned container; it follows the `useMenuNav` current item, then focus, then the hovered control, and hides when nothing is selected. Reduced motion makes it jump.
+- `GameCursorProps` (interface): interface GameCursorProps — Props for {@link GameCursor}.
+- `GameCursorStyle` (type): type GameCursorStyle = "brackets" | "chevron" | "bar" | "diamond" | "frame" — How the cursor marks the selected item.
+- `GameCut` (type): type GameCut = "box" | "chamfer" | "notch" | "slant" | "tab" | "banner" | "shield" | "ticket" | "torn" | "hex" — The frame's silhouette. Every cut is a clip path in pixels, so corners stay the same size at any panel size.
+- `GameFontFace` (interface): interface GameFontFace — One font file a game ships (an OFL or other licensed TTF/WOFF2 bundled with the game).
+- `GameFontPairing` (interface): interface GameFontPairing — The pair of fonts that gives a game its voice: a display face for titles and numbers, a body face for reading.
+- `GameFrame` (const): const GameFrame: React.ForwardRefExoticComponent<GameFrameProps & React.RefAttributes<HTMLElement>> — A panel, card or button made of a material, with a cut silhouette and a rim: the building block for screens that look like part of the game rather than a web page. `as="button"` makes it a game button that lifts on hover, sinks on press, shows a glow on keyboard focus and plays the engine UI sounds.
+- `GameFrameProps` (interface): interface GameFrameProps extends Omit<HTMLAttributes<HTMLElement>, "color"> — Props for {@link GameFrame}.
+- `GameFramesPreview` (function): function GameFramesPreview({ className }: { className?: string }): ReactNode — Contact sheet for the game-UI building blocks: every material and cut, game buttons with each cursor, and the drawn sliders, over a sunset backdrop.
 - `GameIdentityProvider` (function): function GameIdentityProvider({ source, children, }: { source: IdentitySource; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
+- `GameMaterial` (type): type GameMaterial = "steel" | "brass" | "hull" | "wood" | "stone" | "paper" | "enamel" | "glass" | "carbon" | "leather" — What a frame is made of. Every material is a generated texture (SVG turbulence and lighting, no downloaded art) under real lighting, so a panel reads as an object in the game's world instead of a web page's flat or blurred rectangle.
+- `GameMaterialLook` (interface): interface GameMaterialLook — Everything a material decides: its texture, base colour, lighting, text colour and default edge.
 - `GameMenu` (function): function GameMenu({ items, initialId, onSelect, onBack, onHighlight, detail, logo, eyebrow, tagline, background, art, secondary, footer, controlHint, sound = true, variant = "title", open = true, reducedMotion, label, className, style, detailClassName, detailStyle, }: GameMenuProps): ReactNode — A game front-end menu: full-bleed over a living background, with a logo, an animated primary list and a detail pane that follows the highlighted verb. One system covers the main menu and the pause menu (`variant="pause"`), keyboard and gamepad navigation come from `useMenuNav`, confirmation ticks are generated (no audio asset), and the document never scrolls while it is open.
 - `GameMenuAvatar` (interface): interface GameMenuAvatar — One avatar/portrait choice in {@link NewCharacterPane}.
 - `GameMenuItem` (interface): interface GameMenuItem — One primary verb in a {@link GameMenu}.
@@ -812,6 +824,8 @@
 - `GamePreviewProps` (type): type GamePreviewProps = { className?: string; } — ⚠ undocumented
 - `GamePreviewStates` (type): type GamePreviewStates = Record<string, GamePreviewComponent> — ⚠ undocumented
 - `GameProvider` (function): function GameProvider({ context, children }: { context: GameContext; children?: ReactNode }): React.JSX.Element — ⚠ undocumented
+- `GameSlider` (function): function GameSlider({ value, min = 0, max = 1, step = 0.01, onChange, onCommit, label, valueText, variant = "groove", pips = 10, disabled = false, className, style, }: GameSliderProps): ReactNode — A slider drawn as part of the game (a cut groove with a knurled knob, or lit pips), never the browser's range input. Full keyboard (arrows, Page Up/Down, Home/End), pointer drag and screen reader support through `role="slider"`.
+- `GameSliderProps` (interface): interface GameSliderProps — Props for {@link GameSlider}.
 - `GameViewportProvider` (function): function GameViewportProvider({ platforms, className, style, children, }: { platforms?: readonly HudPlatform[]; className?: string; style?: CSSProperties; children?: ReactNode; }): React.JSX.Element — Provides the shared game viewport layout to everything it wraps. Mount it once around the whole game presentation (world, HUD, controls, system UI) so every subsystem reads one coordinated geometry and registers its rect for collision detection. Publishes live `--jg-viewport-*` / `--jg-visual-viewport-*` / `--jg-safe-*` CSS variables on its root.
 - `HUD_THEME_PRESETS` (const): const HUD_THEME_PRESETS: { "arcane-stone": HudTheme; "survival-wood": HudTheme; "military-flat": HudTheme; "sleek-hex": HudTheme; "elemental-circle": HudTheme; "sandbox-slot": HudTheme; ember: HudTheme; synthwave: HudTheme; fieldkit: HudTheme; } — Built-in theme presets for demos/scaffold only — not product identity; games author their own theme.
 - `HealthBar` (const): const HealthBar: (props: AtomicBarProps) => React.JSX.Element — Player/enemy health — danger-flashes to `--jg-health-low` below a quarter full.
@@ -822,6 +836,8 @@
 - `HudCanvas` (function): function HudCanvas({ layout, editChord, compactScale, showDuring, className, style, children, }: { layout: HudLayoutStore; editChord?: HudEditChord | false; /** Zoom applied to the whole HUD on compact displays. Default 0.85. */ compactScale?: number; /** Opt-in play-phase gate: render the HUD only … — Full-viewport HUD surface. Panels declared with `HudPanel` flow into nine anchor regions and stack automatically with a gap — no per-panel pixel offsets, no manual clearance for sibling panels, the touch-control dock (`--jg-hud-dock-clearance`), or device safe areas. On compact displays the whole surface scales down and each panel applies its `compact` behavior.
 - `HudCompactMode` (type): type HudCompactMode = "keep" | "chip" | "hide" — How a panel behaves on compact (phone-scale) displays. `keep` stays visible at the global compact scale, `chip` collapses to a small tap-to-expand pill, `hide` unmounts entirely.
 - `HudEditChord` (interface): interface HudEditChord { hold: string; press: string } — ⚠ undocumented · used by `HudCanvas`: Full-viewport HUD surface.
+- `HudFade` (function): function HudFade({ watch, idleMs = 3500, dimTo = 0.18, hold = false, children, className, style }: HudFadeProps): ReactNode — A HUD group that steps back when nothing is happening: it fades after a quiet spell and comes back the moment a watched value changes, so the world fills the screen and the HUD speaks only when it has news. Hovering it also brings it back.
+- `HudFadeProps` (interface): interface HudFadeProps — Props for {@link HudFade}.
 - `HudFrame` (function): function HudFrame({ variation = "glass", shape = "rounded", title, aside, padding, width, interactive, className, style, children, }: HudFrameProps): ReactNode — Optional framed panel primitive — a single `<div data-hud-frame>` with a `glass`, `plate`, `retro`, or `themed` skin, optional `title`/`aside` header, and caller `style` merged last. Shared building block for demos and token-themed widgets; games own product chrome and art direction (see AGENTS.md).
 - `HudFrameProps` (interface): interface HudFrameProps — Props for {@link HudFrame}.
 - `HudFrameShape` (type): type HudFrameShape = "rounded" | "circle" | "square" — Frame corner shape — `rounded` (the variation's default radius), `circle` (fully round), or `square` (no radius).
@@ -1139,6 +1155,10 @@
 - `formatCountdown` (function): function formatCountdown(seconds: number): string — `m:ss` for a countdown in seconds.
 - `formatHudOverlapReport` (function): function formatHudOverlapReport(overlaps: readonly HudBlockOverlap[], viewport: HudSize): string — The console block for a set of overlaps — one line per pair naming both block ids, plus the viewport they collided at. Empty string when nothing intersects.
 - `formatTimerMs` (function): function formatTimerMs(ms: number, format: TimerFormat = "mm:ss"): string — Format a millisecond duration as digital timer text — `mm:ss` (default), `m:ss.d` (with tenths), or `ss.d` (seconds + tenths). Negative inputs clamp to zero. No genre meaning: the same helper serves a round clock, a respawn countdown, or an ability charge readout.
+- `gameCursorTarget` (function): function gameCursorTarget(scope: ParentNode, hovered: Element | null): Element | null — The item the cursor should sit on inside `scope`, or null.
+- `gameCutPath` (function): function gameCutPath(cut: GameCut, depth = 14): string — The clip path for a cut at a corner size of `depth` pixels.
+- `gameFontStacks` (function): function gameFontStacks(pairing: GameFontPairing): { fontDisplay: string; fontBody: string; fontNumeric: string } — The CSS font stacks for a pairing, with installed fallbacks, ready for a `hudTheme` or a kit: `{ fontDisplay, fontBody, fontNumeric }`.
+- `gameFrameVars` (function): function gameFrameVars({ material = "steel", cut = "chamfer", depth = 14, tint, edge, edgeWidth = 2, shadow = true, glow, padding, }: Pick<GameFrameProps, "material" | "cut" | "depth" | "tint" | "edge" | "edgeWidth" | "shadow" | "glow" | "padding"> = {}): CSSProperties — The CSS variables that dress a frame. `GameFrame` sets them; spread them on your own element (with `data-jg-frame` on it and `data-jg-frame-face` on its single child) to dress one by hand.
 - `getInputDevice` (function): function getInputDevice(): InputDevice — The device the player last used, without subscribing.
 - `guestIdentity` (function): function guestIdentity(seed?: string): IdentitySource — ⚠ undocumented
 - `holoKit` (const): const holoKit: UiKit — Vector: an angular sci-fi hologram. Chamfered glass with scanlines and bracket corners, hex data tags, radar frames with degree bezels, projection-in motion and tone-sweep sounds.
@@ -1153,6 +1173,7 @@
 - `latestChatBubbles` (function): function latestChatBubbles(messages: readonly ChatMessage[], nowMs: number, ttlMs: number): ChatBubble[] — ⚠ undocumented
 - `layoutEntityFrames` (function): function layoutEntityFrames<E extends EntityFrameEntry>(entries: readonly E[], project: ProjectEntity, options: EntityFrameLayoutOptions = {}): EntityFramePlacement<E>[] — Pure layout core: projects each entry, drops the ones behind the camera, off-screen (when `viewport` is set), or beyond `maxCount`, and returns the survivors sorted farthest-first so nearer frames render last (on top). Stable for equal depths via `id`. No React, no DOM — unit-testable in isolation.
 - `layoutFloatingText` (function): function layoutFloatingText(views: readonly FloatingTextView[], project: ProjectEntity, options: FloatingTextLayoutOptions = {}): FloatingTextPlacement[] — Pure layout core: projects each view, drops the ones behind the camera or (when `viewport` is set) off-screen, and returns the survivors sorted farthest-first so nearer text paints on top. No React, no DOM — unit-testable.
+- `loadGameFonts` (function): function loadGameFonts(faces: readonly GameFontFace[]): void — Registers `faces` with the document's font set once each and starts loading them. Safe on the server.
 - `localPlayerEntity` (function): function localPlayerEntity(ctx: GameContext): SceneEntity | null — ⚠ undocumented
 - `meterFraction` (function): function meterFraction(value: number, max = 1): number — Fill 0..1 for a meter, clamped; `max <= 0` reads as empty.
 - `meterSegmentsLit` (function): function meterSegmentsLit(value: number, max = 1, segments = 10): number — Cell states for a segmented meter: how many of `segments` are lit for `value / max`.
@@ -1173,6 +1194,7 @@
 - `schoolForItem` (function): function schoolForItem(itemId: string): IconSchool — Infers an {@link IconSchool} from an item id (keyword match); `neutral` when nothing matches.
 - `setInputDevice` (function): function setInputDevice(device: InputDevice): void — Report the device the player just used. The shell's own input calls it; a game rarely needs to.
 - `signalKit` (const): const signalKit: UiKit — Wayfinder: in-world signage. Enamel road-sign plates with keylines and rivets, arrow and blade signs, route-marker shields, LED departure boards and lamp bulbs, with split-flap flips and clacks.
+- `snapSliderValue` (function): function snapSliderValue(raw: number, min: number, max: number, step: number): number — Snaps `raw` to `step` from `min` and clamps it to the range, without float noise.
 - `terminalKit` (const): const terminalKit: UiKit — Mainframe: a brutalist phosphor terminal. Monospace everywhere, uppercase labels, double-ruled frames with the title set into the rule, ASCII meters, log-line toasts and a block cursor.
 - `treatedActionIcon` (function): function treatedActionIcon(action: { id?: string; label?: string; icon?: ReactNode }, size = 40): ReactNode — A ready-made `ActionButton` `renderIcon` that paints the action's `GameIcon` with a treatment.
 - `treatedItemIcon` (function): function treatedItemIcon(itemId: string, options: { size?: number; count?: number; keycap?: string } = {}): ReactNode — Maps an item id to a treated icon — resolves a `GameIcon` glyph and an inferred school.
@@ -1215,6 +1237,7 @@
 - `useGame` (function): function useGame(): { commands: Omit<GameContext["game"]["commands"], "run"> & { run(name: string, input: unknown): DispatchedCommandResult }; events: GameEvents } — UI command surface. Hosted commands return a promise; await it to display acknowledgement or rejection. Registration and runAs remain trusted local APIs.
 - `useGameClock` (function): function useGameClock(): ClockSnapshot & { controls: SimClock } — ⚠ undocumented
 - `useGameContext` (function): function useGameContext(): GameContext — ⚠ undocumented
+- `useGameFonts` (function): function useGameFonts(fonts: GameFontPairing | readonly GameFontFace[]): void — Loads a game's bundled fonts (its display and body faces) so titles, HUD numbers and menus use them instead of the browser's default sans. Pair it with {@link gameFontStacks} for the CSS.
 - `useGameLayoutMode` (function): function useGameLayoutMode(): GameLayoutMode — The resolved explicit composition mode (`desktop-wide` … `mobile-portrait`).
 - `useGameOrientation` (function): function useGameOrientation(): LayoutOrientation — The live device orientation.
 - `useGamePhase` (function): function useGamePhase(): { phase: GamePhase; setPhase: (phase: GamePhase) => void } — Live run phase + a setter that also gates the shell's touch controls. `menu`/`paused`/`ended` hide the touch dock; `playing` shows it.
@@ -1224,6 +1247,7 @@
 - `useHasSettings` (function): function useHasSettings(): boolean — True when the game has any setting or game-action to show — gate your own settings entry on it.
 - `useHasUiKit` (function): function useHasUiKit(): boolean — True when a {@link UiKitRoot} is above: engine screens switch to kit parts only then.
 - `useHeldKeys` (function): function useHeldKeys(): (code: string) => boolean — Held-key predicate backed by window keydown/keyup/blur listeners (blur clears held state so a released-off-window key doesn't stick). SSR-safe: listeners attach in an effect, never at module scope. The returned predicate is stable across renders.
+- `useHudAwake` (function): function useHudAwake(watch: readonly unknown[], idleMs = 3500, hold = false): boolean — Whether a HUD group should be at full strength: true for `idleMs` after any watched value changes, and whenever `hold` is set.
 - `useHudFont` (function): function useHudFont(skin?: HudSkin): boolean — Loads a skin font in browsers and reports when it is available.
 - `useHudLayout` (function): function useHudLayout(options?: { storageKey?: string; snap?: number; locked?: boolean; /** * Scene-document `ui` section — source of truth for panel placement/size. * When provided, hydrates the layout store (and wins over legacy localStorage). */ documentUi?: EditorUiDocument; /** * When true (def… — Layout state for `HudCanvas` — panel placements, edit-mode drag/resize, and per-game persistence.
 - `useHudLayoutPersist` (function): function useHudLayoutPersist(): HudLayoutPersist | null — Injected panel-commit port, or `null` when no host has provided one.
@@ -1554,6 +1578,36 @@
 - `FogCellRect` (interface): interface FogCellRect { x: number; y: number; width: number; height: number } — ⚠ undocumented
 - `FogPaintSurface` (interface): interface FogPaintSurface { fillStyle: string | CanvasGradient | CanvasPattern; fillRect(x: number, y: number, width: number, height: number): void; clearRect(x: number, y: number, width: number, height: number): void } — ⚠ undocumented
 
+## @jgengine/react/gameCursor
+
+- `GameCursor` (function): function GameCursor({ variant = "brackets", color, gap = 6, thickness = 3, arm = 14, className, style }: GameCursorProps): ReactNode — A game-style selection cursor for a menu: corner brackets, a pointer or a bar that glides to whichever item the keyboard, gamepad or mouse selects, instead of a browser focus ring. Drop it inside the menu's positioned container; it follows the `useMenuNav` current item, then focus, then the hovered control, and hides when nothing is selected. Reduced motion makes it jump.
+- `GameCursorProps` (interface): interface GameCursorProps — Props for {@link GameCursor}.
+- `GameCursorStyle` (type): type GameCursorStyle = "brackets" | "chevron" | "bar" | "diamond" | "frame" — How the cursor marks the selected item.
+- `gameCursorTarget` (function): function gameCursorTarget(scope: ParentNode, hovered: Element | null): Element | null — The item the cursor should sit on inside `scope`, or null.
+
+## @jgengine/react/gameFonts
+
+- `GameFontFace` (interface): interface GameFontFace — One font file a game ships (an OFL or other licensed TTF/WOFF2 bundled with the game).
+- `GameFontPairing` (interface): interface GameFontPairing — The pair of fonts that gives a game its voice: a display face for titles and numbers, a body face for reading.
+- `gameFontStacks` (function): function gameFontStacks(pairing: GameFontPairing): { fontDisplay: string; fontBody: string; fontNumeric: string } — The CSS font stacks for a pairing, with installed fallbacks, ready for a `hudTheme` or a kit: `{ fontDisplay, fontBody, fontNumeric }`.
+- `loadGameFonts` (function): function loadGameFonts(faces: readonly GameFontFace[]): void — Registers `faces` with the document's font set once each and starts loading them. Safe on the server.
+- `useGameFonts` (function): function useGameFonts(fonts: GameFontPairing | readonly GameFontFace[]): void — Loads a game's bundled fonts (its display and body faces) so titles, HUD numbers and menus use them instead of the browser's default sans. Pair it with {@link gameFontStacks} for the CSS.
+
+## @jgengine/react/gameFrame
+
+- `GAME_MATERIALS` (const): const GAME_MATERIALS: Readonly<Record<GameMaterial, GameMaterialLook>> — The built-in materials. A game reads one to match its own pieces (`GAME_MATERIALS.wood.ink`), or passes `tint` / `edge` to `GameFrame` to recolour one.
+- `GameCut` (type): type GameCut = "box" | "chamfer" | "notch" | "slant" | "tab" | "banner" | "shield" | "ticket" | "torn" | "hex" — The frame's silhouette. Every cut is a clip path in pixels, so corners stay the same size at any panel size.
+- `GameFrame` (const): const GameFrame: React.ForwardRefExoticComponent<GameFrameProps & React.RefAttributes<HTMLElement>> — A panel, card or button made of a material, with a cut silhouette and a rim: the building block for screens that look like part of the game rather than a web page. `as="button"` makes it a game button that lifts on hover, sinks on press, shows a glow on keyboard focus and plays the engine UI sounds.
+- `GameFrameProps` (interface): interface GameFrameProps extends Omit<HTMLAttributes<HTMLElement>, "color"> — Props for {@link GameFrame}.
+- `GameMaterial` (type): type GameMaterial = "steel" | "brass" | "hull" | "wood" | "stone" | "paper" | "enamel" | "glass" | "carbon" | "leather" — What a frame is made of. Every material is a generated texture (SVG turbulence and lighting, no downloaded art) under real lighting, so a panel reads as an object in the game's world instead of a web page's flat or blurred rectangle.
+- `GameMaterialLook` (interface): interface GameMaterialLook — Everything a material decides: its texture, base colour, lighting, text colour and default edge.
+- `gameCutPath` (function): function gameCutPath(cut: GameCut, depth = 14): string — The clip path for a cut at a corner size of `depth` pixels.
+- `gameFrameVars` (function): function gameFrameVars({ material = "steel", cut = "chamfer", depth = 14, tint, edge, edgeWidth = 2, shadow = true, glow, padding, }: Pick<GameFrameProps, "material" | "cut" | "depth" | "tint" | "edge" | "edgeWidth" | "shadow" | "glow" | "padding"> = {}): CSSProperties — The CSS variables that dress a frame. `GameFrame` sets them; spread them on your own element (with `data-jg-frame` on it and `data-jg-frame-face` on its single child) to dress one by hand.
+
+## @jgengine/react/gameFramesPreview
+
+- `GameFramesPreview` (function): function GameFramesPreview({ className }: { className?: string }): ReactNode — Contact sheet for the game-UI building blocks: every material and cut, game buttons with each cursor, and the drawn sliders, over a sunset backdrop.
+
 ## @jgengine/react/gameIcons
 
 - `GAME_ICON_NAMES` (const): const GAME_ICON_NAMES: readonly ["sword", "dagger", "axe", "hammer", "bow", "arrow", "staff", "wand", "spear", "crossbow", "gun", "bomb", "shield", "helmet", "chestplate", "boots", "gauntlet", "ring", "amulet", "cloak", "backpack", "torch", "potionRed", "potionBlue", "scroll", "tome", "meat", "bread… — ⚠ undocumented
@@ -1599,6 +1653,12 @@
 - `GameMenuSoundKind` (type): type GameMenuSoundKind = "move" | "confirm" | "back" — The short, quiet click a menu makes when the selection moves or is confirmed. Generated with an oscillator instead of shipped as an audio file, so a game gets menu feedback without authoring a sound and the whole thing unmounts with the screen.
 - `GameMenuSoundState` (interface): interface GameMenuSoundState — The sound player's readable state: on/off, gain, and whether audio is actually running.
 - `createGameMenuSound` (function): function createGameMenuSound(config: GameMenuSoundConfig = {}): GameMenuSound — A tiny WebAudio click generator for menu feedback: one oscillator burst per tick, created on the first play (so a browser autoplay policy does not log an error at mount) and reused after.
+
+## @jgengine/react/gameSlider
+
+- `GameSlider` (function): function GameSlider({ value, min = 0, max = 1, step = 0.01, onChange, onCommit, label, valueText, variant = "groove", pips = 10, disabled = false, className, style, }: GameSliderProps): ReactNode — A slider drawn as part of the game (a cut groove with a knurled knob, or lit pips), never the browser's range input. Full keyboard (arrows, Page Up/Down, Home/End), pointer drag and screen reader support through `role="slider"`.
+- `GameSliderProps` (interface): interface GameSliderProps — Props for {@link GameSlider}.
+- `snapSliderValue` (function): function snapSliderValue(raw: number, min: number, max: number, step: number): number — Snaps `raw` to `step` from `min` and clamps it to the range, without float noise.
 
 ## @jgengine/react/gameViewport
 
@@ -1690,6 +1750,12 @@
 ## @jgengine/react/hudChromePreview
 
 - `HudChromePreview` (function): function HudChromePreview({ className }: { className?: string }): React.JSX.Element — The shared HUD chrome under the shell's default root theme, from static values: a glass frame with vitals and a counter, an action bar, a window, a confirm dialog, a pause menu, and the button variants. Screenshots identically; the before/after evidence for theme and primitive changes.
+
+## @jgengine/react/hudFade
+
+- `HudFade` (function): function HudFade({ watch, idleMs = 3500, dimTo = 0.18, hold = false, children, className, style }: HudFadeProps): ReactNode — A HUD group that steps back when nothing is happening: it fades after a quiet spell and comes back the moment a watched value changes, so the world fills the screen and the HUD speaks only when it has news. Hovering it also brings it back.
+- `HudFadeProps` (interface): interface HudFadeProps — Props for {@link HudFade}.
+- `useHudAwake` (function): function useHudAwake(watch: readonly unknown[], idleMs = 3500, hold = false): boolean — Whether a HUD group should be at full strength: true for `idleMs` after any watched value changes, and whenever `hold` is set.
 
 ## @jgengine/react/hudFrame
 

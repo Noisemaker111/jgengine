@@ -27,6 +27,9 @@ const NON_THEME = [
   "--jg-accent-text",
   // reduced-motion multiplier the engine stylesheet owns (0 under reduced motion)
   "--jg-motion-scale",
+  // game frames and the game cursor: component-scoped, set inline by gameFrameVars() / GameCursor props
+  "--jg-gf-",
+  "--jg-cursor-",
 ];
 
 const ROOTS = ["packages/react/src", "registry/jgengine"];

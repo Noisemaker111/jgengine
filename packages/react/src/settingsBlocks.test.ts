@@ -27,7 +27,7 @@ const CATEGORY: SettingsCategoryView = {
 describe("SettingsRowControl", () => {
   test("a slider row keeps its readout whole on a narrow row and takes a kit's control shape", () => {
     const html = renderToStaticMarkup(createElement(SettingsRowControl, { row: { ...CATEGORY.rows[2]!, format: (value: number | boolean | string) => `${Math.round(Number(value) * 100)}%` } }));
-    // The readout never shrinks or wraps; the range gives way first ("100%" ran off a phone row).
+    // The readout never shrinks or wraps; the slider gives way first ("100%" ran off a phone row).
     expect(html).toMatch(/<span style="[^"]*flex-shrink:0;white-space:nowrap[^"]*">40%<\/span>/);
     expect(html).toContain("min-width:64px");
     expect(html).toContain("border-radius:var(--jg-control-radius, 10px)");
@@ -39,9 +39,11 @@ describe("SettingsRowControl", () => {
     expect(html).toContain("border-radius:var(--jg-control-radius, 8px)");
   });
 
-  test("renders a slider with its readout and a labelled range input", () => {
+  test("renders a slider with its readout and a drawn game slider, never a browser range input", () => {
     const html = renderToStaticMarkup(createElement(SettingsRowControl, { row: CATEGORY.rows[2]! }));
-    expect(html).toContain('type="range"');
+    expect(html).not.toContain('type="range"');
+    expect(html).toContain('role="slider"');
+    expect(html).toContain('aria-valuenow="0.4"');
     expect(html).toContain('aria-label="Master volume"');
     expect(html).toContain("0.4");
   });
