@@ -273,6 +273,9 @@ function parseArgs(argv: string[]): Args {  // `--headed` is parsed here, not in
   const allowEngineMismatch = quick.argv.includes(ALLOW_MISMATCH_FLAG);
   // `--game-dir` is parsed here, not in CAPTURE_FLAGS: the portable harness has no `Games/` to swap.
   const served = splitGameDir(quick.argv);
+  // Flows resolve inside parseCaptureArgs, so the served folder must be known first or `--flow`
+  // reads the engine's own `Games/<game>` copy. serveGameDir validates the folder later.
+  if (served.dir !== null) process.env["JG_GAME_DIR"] = resolve(served.dir);
   const parsed = parseCaptureArgs(
     "drive",
     served.argv.filter((arg) => arg !== "--headed" && arg !== "--cold" && arg !== ALLOW_MISMATCH_FLAG),

@@ -5,6 +5,7 @@ import { join, resolve } from "node:path";
 
 import { headRevision } from "./captureRevision";
 import { localOk, localRequest } from "./localhostHttp";
+import { servedGameDir } from "./servedGame";
 
 /**
  * The marker every checkout's dev server writes, so a command can find a server
@@ -117,6 +118,17 @@ async function answers(base: string, timeoutMs = 3_000): Promise<boolean> {
     }
   }
   return false;
+}
+
+/**
+ * Who a warm runner belongs to. A run that serves a game from another checkout (`--game-dir`) boots
+ * a runner that renders that directory, so it must not attach to - or share a port with - the
+ * runner that serves this checkout's `Games/`. The launcher and the Vite plugin both write this, so
+ * a later `--game-dir` run for the same folder finds and reuses the server.
+ */
+export function devServerIdentity(cwd = process.cwd()): string {
+  const served = servedGameDir();
+  return served === null ? checkoutIdentity(cwd) : `${checkoutIdentity(cwd)}|game-dir:${served}`;
 }
 
 /** Stable identity for this checkout (worktree path or monorepo root). */
@@ -291,7 +303,8 @@ export function devServerMarkerPlugin(options: { kind: RunningDevServer["kind"];
       const publish = (): void => {
         const address = httpServer.address();
         if (address === null || typeof address === "string") return;
-        const identity = checkoutIdentity(server.config.root);
+        // Same identity the launcher wrote, game dir included, or a `--game-dir` run never finds it again.
+        const identity = devServerIdentity(server.config.root);
         // Record the host that actually answers: `localhost` may be IPv6-only, where a
         // 127.0.0.1 read hangs until it times out.
         const host = "family" in address && address.family === "IPv6" ? "localhost" : "127.0.0.1";

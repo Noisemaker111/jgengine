@@ -17,14 +17,13 @@ import { basename, dirname, join, parse, resolve } from "node:path";
 
 import { retrySettleMs, shouldRetryCapture } from "./capture-retry";
 import { clearViteCaches, headRevision, revisionDrifted, shortRevision } from "./captureRevision";
-import { checkoutIdentity, isUp, listMarkers, markerPath, reachableBase, readMarker, writeMarker } from "./devServerMarker";
+import { checkoutIdentity, devServerIdentity, isUp, listMarkers, markerPath, reachableBase, readMarker, writeMarker } from "./devServerMarker";
 import { localGet } from "./localhostHttp";
 import { computeShotMetrics, deadViewport } from "./shot-metrics";
 import { decodePng } from "./png-reader";
-import { servedGameDir } from "./servedGame";
 import type { GraphicsTier } from "../packages/jgengine/src/templates/captureArgs";
 
-export { checkoutIdentity, isUp };
+export { checkoutIdentity, devServerIdentity, isUp };
 
 /**
  * Default port when no worktree key is needed — kept for docs/bench that still
@@ -282,15 +281,6 @@ export function resolveDevPort(cwd = process.cwd()): number {
   return 4517 + hashPortOffset(devServerIdentity(cwd), 483);
 }
 
-/**
- * Who a warm runner belongs to. A run that serves a game from another checkout (`--game-dir`) boots
- * a runner that renders that directory, so it must not attach to - or share a port with - the
- * runner that serves this checkout's `Games/`.
- */
-export function devServerIdentity(cwd = process.cwd()): string {
-  const served = servedGameDir();
-  return served === null ? checkoutIdentity(cwd) : `${checkoutIdentity(cwd)}|game-dir:${served}`;
-}
 
 export function resolveDevBase(cwd = process.cwd()): string {
   return `http://127.0.0.1:${resolveDevPort(cwd)}`;
