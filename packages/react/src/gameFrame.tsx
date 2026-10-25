@@ -60,7 +60,7 @@ export interface GameMaterialLook {
   layers: string;
   /** Blend for the layers over the base colour. */
   blend: string;
-  /** Extra declarations (e.g. a backdrop filter for glass). */
+  /** Extra declarations a material needs. Never a `filter` or `backdrop-filter`: those re-render every frame over a live 3D scene. */
   extra?: CSSProperties;
 }
 
@@ -172,12 +172,12 @@ export const GAME_MATERIALS: Readonly<Record<GameMaterial, GameMaterialLook>> = 
     blend: "normal, overlay",
   },
   glass: {
-    base: "rgba(18, 64, 82, 0.46)",
+    // No backdrop blur: it re-renders every frame over a live 3D scene. A denser tint reads as a visor instead.
+    base: "rgba(12, 46, 60, 0.74)",
     ink: "#dcfbff",
     edge: "rgba(150, 240, 255, 0.85)",
     layers: `linear-gradient(160deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.04) 22%, rgba(255,255,255,0) 50%, rgba(140,240,255,0.08) 100%), ${SCANLINES}`,
     blend: "screen, normal",
-    extra: { backdropFilter: "blur(6px) saturate(1.4)", WebkitBackdropFilter: "blur(6px) saturate(1.4)" },
   },
   carbon: {
     base: "#1a1c20",
@@ -246,9 +246,9 @@ export interface GameFrameProps extends Omit<HTMLAttributes<HTMLElement>, "color
   edge?: string;
   /** Rim thickness in px. Default 2. */
   edgeWidth?: number;
-  /** Drop shadow under the frame. Default true. */
+  /** A hard cast shadow under the frame (a clipped plate, not a filter). Default true; a `glow` replaces it. */
   shadow?: boolean;
-  /** Outer glow colour, e.g. for a selected or charged frame. */
+  /** Outer ring colour for a selected or charged frame (a clipped plate 3px wide, not a blur). */
   glow?: string;
   /** Inner padding. Default `12px 16px`. */
   padding?: CSSProperties["padding"];
@@ -265,17 +265,26 @@ export interface GameFrameProps extends Omit<HTMLAttributes<HTMLElement>, "color
   children?: ReactNode;
 }
 
+// No CSS `filter` or `backdrop-filter` anywhere: over a live 3D canvas a filtered element is re-rendered
+// every frame, and a HUD of twenty drop-shadow rims took a game from 57 fps to 5. The rim is a clipped
+// backing plate the face sits inset on, the cast shadow and glow are more plates under it, and hover and
+// press light the face with an overlay.
 const FRAME_CSS = `@layer components.jgengine {
-[data-jg-frame] { position: relative; box-sizing: border-box; display: block; isolation: isolate; color: var(--jg-gf-ink); filter: var(--jg-gf-filter); transition: translate calc(var(--jg-motion-fast, 120ms) * var(--jg-motion-scale, 1)) var(--jg-ease, ease), filter calc(var(--jg-motion-fast, 120ms) * var(--jg-motion-scale, 1)) var(--jg-ease, ease), scale calc(var(--jg-motion-fast, 120ms) * var(--jg-motion-scale, 1)) var(--jg-ease-spring, ease); }
-[data-jg-frame] > [data-jg-frame-face] { position: relative; box-sizing: border-box; height: 100%; padding: var(--jg-gf-padding, 12px 16px); clip-path: var(--jg-gf-cut); background: var(--jg-gf-layers), var(--jg-gf-base); background-blend-mode: var(--jg-gf-blend); background-color: var(--jg-gf-base); }
+[data-jg-frame] { position: relative; box-sizing: border-box; display: block; isolation: isolate; padding: var(--jg-gf-rim-w, 2px); color: var(--jg-gf-ink); transition: translate calc(var(--jg-motion-fast, 120ms) * var(--jg-motion-scale, 1)) var(--jg-ease, ease), scale calc(var(--jg-motion-fast, 120ms) * var(--jg-motion-scale, 1)) var(--jg-ease-spring, ease); }
+[data-jg-frame]::before { content: ""; position: absolute; inset: 0; z-index: -1; clip-path: var(--jg-gf-cut); background: var(--jg-gf-rim, transparent); pointer-events: none; }
+[data-jg-frame][data-shadow]::after { content: ""; position: absolute; inset: 0; z-index: -2; translate: 0 var(--jg-gf-shadow-y, 4px); clip-path: var(--jg-gf-cut); background: rgba(0, 0, 0, 0.36); pointer-events: none; }
+[data-jg-frame][data-glow]::after { content: ""; position: absolute; inset: -3px; z-index: -2; clip-path: var(--jg-gf-cut); background: var(--jg-gf-glow); opacity: 0.85; pointer-events: none; }
+[data-jg-frame] > [data-jg-frame-face] { position: relative; box-sizing: border-box; height: 100%; isolation: isolate; padding: var(--jg-gf-padding, 12px 16px); clip-path: var(--jg-gf-face-cut, var(--jg-gf-cut)); background: var(--jg-gf-layers), var(--jg-gf-base); background-blend-mode: var(--jg-gf-blend); background-color: var(--jg-gf-base); }
+[data-jg-frame] > [data-jg-frame-face]::after { content: ""; position: absolute; inset: 0; z-index: -1; background: var(--jg-gf-light, transparent); pointer-events: none; transition: background-color calc(var(--jg-motion-fast, 120ms) * var(--jg-motion-scale, 1)) var(--jg-ease, ease); }
 [data-jg-frame][data-interactive] { cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent; }
-button[data-jg-frame] { appearance: none; border: 0; margin: 0; padding: 0; background: none; font: inherit; color: var(--jg-gf-ink); text-align: inherit; }
+button[data-jg-frame] { appearance: none; border: 0; margin: 0; background: none; font: inherit; color: var(--jg-gf-ink); text-align: inherit; }
 @media (hover: hover) {
-  [data-jg-frame][data-interactive]:not(:disabled):hover { translate: 0 -2px; filter: var(--jg-gf-filter) brightness(1.1); }
+  [data-jg-frame][data-interactive]:not(:disabled):hover { translate: 0 -2px; --jg-gf-light: rgba(255, 255, 255, 0.1); }
 }
-[data-jg-frame][data-interactive]:not(:disabled):active { translate: 0 1px; scale: 0.98; filter: var(--jg-gf-filter) brightness(0.92); }
-[data-jg-frame][data-interactive]:focus-visible { outline: none; filter: var(--jg-gf-filter) drop-shadow(0 0 6px var(--jg-accent, #ffd23f)) brightness(1.08); }
-[data-jg-frame]:disabled { cursor: not-allowed; filter: var(--jg-gf-filter) grayscale(0.7) brightness(0.7); }
+[data-jg-frame][data-interactive]:not(:disabled):active { translate: 0 1px; scale: 0.98; --jg-gf-light: rgba(0, 0, 0, 0.12); }
+[data-jg-frame][data-interactive]:focus-visible { outline: none; }
+[data-jg-frame][data-interactive]:focus-visible::after { content: ""; position: absolute; inset: -3px; z-index: -2; translate: 0 0; clip-path: var(--jg-gf-cut); background: var(--jg-accent, #ffd23f); opacity: 1; pointer-events: none; }
+[data-jg-frame]:disabled { cursor: not-allowed; opacity: 0.6; --jg-gf-light: rgba(40, 40, 44, 0.45); }
 }`;
 
 const FRAME_STYLE_ID = "jg-game-frame-styles";
@@ -288,23 +297,13 @@ function ensureFrameStyles(): void {
   document.head.appendChild(style);
 }
 
-/** The rim as eight offset drop shadows (a clip path hides borders), then the cast shadow and glow. */
-function frameFilter(edge: string, width: number, shadow: boolean, glow: string | undefined): string {
-  const parts: string[] = [];
-  if (edge !== "none" && width > 0) {
-    const w = `${width}px`;
-    for (const [x, y] of [[w, "0"], [`-${w}`, "0"], ["0", w], ["0", `-${w}`], [w, w], [`-${w}`, w], [w, `-${w}`], [`-${w}`, `-${w}`]] as const) {
-      parts.push(`drop-shadow(${x} ${y} 0 ${edge})`);
-    }
-  }
-  if (glow !== undefined) parts.push(`drop-shadow(0 0 10px ${glow})`);
-  if (shadow) parts.push("drop-shadow(0 8px 10px rgba(0,0,0,0.45))");
-  return parts.length === 0 ? "none" : parts.join(" ");
-}
+/** A rim this many px wide makes the face's cut corners this much smaller, so the rim stays even along a 45-degree cut. */
+const FACE_CORNER_SHRINK = Math.SQRT2 - 1;
 
 /**
  * The CSS variables that dress a frame. `GameFrame` sets them; spread them on your own element (with
- * `data-jg-frame` on it and `data-jg-frame-face` on its single child) to dress one by hand.
+ * `data-jg-frame` on it and `data-jg-frame-face` on its single child) to dress one by hand. Add
+ * `data-shadow` for the cast shadow or `data-glow` for the lit ring; `shadow` itself is read by `GameFrame`.
  *
  * @capability game-frame-style CSS variables for a material frame on an element the game already owns
  */
@@ -315,18 +314,22 @@ export function gameFrameVars({
   tint,
   edge,
   edgeWidth = 2,
-  shadow = true,
   glow,
   padding,
 }: Pick<GameFrameProps, "material" | "cut" | "depth" | "tint" | "edge" | "edgeWidth" | "shadow" | "glow" | "padding"> = {}): CSSProperties {
   const look = GAME_MATERIALS[material];
+  const rim = edge ?? look.edge;
+  const rimWidth = rim === "none" ? 0 : Math.max(0, edgeWidth);
   const vars: Record<string, string | number | undefined> = {
     "--jg-gf-base": tint ?? look.base,
     "--jg-gf-layers": look.layers,
     "--jg-gf-blend": `${look.blend}, normal`,
     "--jg-gf-ink": look.ink,
     "--jg-gf-cut": gameCutPath(cut, depth),
-    "--jg-gf-filter": frameFilter(edge ?? look.edge, edgeWidth, shadow, glow),
+    "--jg-gf-face-cut": gameCutPath(cut, Math.max(0, depth - rimWidth * FACE_CORNER_SHRINK)),
+    "--jg-gf-rim": rimWidth === 0 ? "transparent" : rim,
+    "--jg-gf-rim-w": `${rimWidth}px`,
+    "--jg-gf-glow": glow,
     "--jg-gf-padding": typeof padding === "number" ? `${padding}px` : padding,
   };
   return vars as CSSProperties;
@@ -385,6 +388,9 @@ export const GameFrame = forwardRef<HTMLElement, GameFrameProps>(function GameFr
       "data-jg-frame": material,
       "data-cut": cut,
       "data-interactive": pressable ? "" : undefined,
+      // A lit frame glows instead of casting a shadow; both are clipped plates under the rim, never filters.
+      "data-glow": glow === undefined ? undefined : "",
+      "data-shadow": glow === undefined && shadow !== false ? "" : undefined,
       ...(tag === "button" ? { type: type ?? "button", disabled } : {}),
       style: { ...vars, ...look.extra, ...style },
       onPointerEnter: (event: PointerEvent<HTMLElement>) => {

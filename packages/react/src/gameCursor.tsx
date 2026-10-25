@@ -32,7 +32,7 @@ const TARGETS = '[data-jg-menu-item], button, [role="button"], [role="tab"], [ro
 
 const CURSOR_CSS = `@layer components.jgengine {
 [data-jg-cursor-scope] :focus-visible { outline: none; }
-[data-jg-game-cursor] { position: absolute; left: 0; top: 0; pointer-events: none; z-index: 3; color: var(--jg-cursor-color, var(--jg-accent, #ffd23f)); transition: transform calc(140ms * var(--jg-motion-scale, 1)) cubic-bezier(0.2, 0.9, 0.3, 1.2), width calc(140ms * var(--jg-motion-scale, 1)) cubic-bezier(0.2, 0.9, 0.3, 1.2), height calc(140ms * var(--jg-motion-scale, 1)) cubic-bezier(0.2, 0.9, 0.3, 1.2), opacity calc(120ms * var(--jg-motion-scale, 1)) ease; filter: drop-shadow(0 0 6px color-mix(in srgb, currentColor 55%, transparent)); }
+[data-jg-game-cursor] { position: absolute; left: 0; top: 0; pointer-events: none; z-index: 3; color: var(--jg-cursor-color, var(--jg-accent, #ffd23f)); transition: transform calc(140ms * var(--jg-motion-scale, 1)) cubic-bezier(0.2, 0.9, 0.3, 1.2), width calc(140ms * var(--jg-motion-scale, 1)) cubic-bezier(0.2, 0.9, 0.3, 1.2), height calc(140ms * var(--jg-motion-scale, 1)) cubic-bezier(0.2, 0.9, 0.3, 1.2), opacity calc(120ms * var(--jg-motion-scale, 1)) ease; }
 [data-jg-game-cursor][data-hidden] { opacity: 0; }
 [data-jg-game-cursor="brackets"] { --a: var(--jg-cursor-arm, 14px); --t: var(--jg-cursor-thickness, 3px);
   background:
@@ -45,7 +45,7 @@ const CURSOR_CSS = `@layer components.jgengine {
     linear-gradient(currentColor, currentColor) bottom right / var(--a) var(--t) no-repeat,
     linear-gradient(currentColor, currentColor) bottom right / var(--t) var(--a) no-repeat;
   animation: jg-cursor-breathe calc(1400ms * var(--jg-motion-scale, 1)) ease-in-out infinite; }
-[data-jg-game-cursor="frame"] { box-shadow: 0 0 0 var(--jg-cursor-thickness, 3px) currentColor, 0 0 18px currentColor; animation: jg-cursor-breathe calc(1400ms * var(--jg-motion-scale, 1)) ease-in-out infinite; }
+[data-jg-game-cursor="frame"] { box-shadow: 0 0 0 var(--jg-cursor-thickness, 3px) currentColor, 0 0 0 calc(var(--jg-cursor-thickness, 3px) + 2px) rgba(0, 0, 0, 0.35); animation: jg-cursor-breathe calc(1400ms * var(--jg-motion-scale, 1)) ease-in-out infinite; }
 [data-jg-game-cursor="bar"]::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: var(--jg-cursor-thickness, 3px); background: currentColor; }
 [data-jg-game-cursor="chevron"]::before { content: ""; position: absolute; top: 50%; left: calc(-1 * var(--jg-cursor-arm, 14px)); width: var(--jg-cursor-arm, 14px); height: var(--jg-cursor-arm, 14px); translate: 0 -50%; background: currentColor; clip-path: polygon(0 0, 100% 50%, 0 100%, 30% 50%); animation: jg-cursor-nudge calc(900ms * var(--jg-motion-scale, 1)) ease-in-out infinite; }
 [data-jg-game-cursor="diamond"]::before { content: ""; position: absolute; top: 50%; left: calc(-1 * var(--jg-cursor-arm, 14px)); width: calc(var(--jg-cursor-arm, 14px) * 0.7); height: calc(var(--jg-cursor-arm, 14px) * 0.7); translate: 0 -50%; rotate: 45deg; background: currentColor; box-shadow: 0 0 0 2px rgba(0,0,0,0.5); animation: jg-cursor-spin calc(2400ms * var(--jg-motion-scale, 1)) linear infinite; }

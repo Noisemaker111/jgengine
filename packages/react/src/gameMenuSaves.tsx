@@ -33,7 +33,6 @@ const cardSurface: CSSProperties = {
   background: "linear-gradient(180deg, rgba(16,22,30,0.9), rgba(8,11,16,0.94))",
   border: "1px solid rgba(255,255,255,0.14)",
   boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.05), 0 14px 34px -18px rgba(0,0,0,0.9)",
-  backdropFilter: "blur(6px)",
   color: "var(--jg-card-text, var(--jg-text, #f2f6fb))",
   fontFamily: hudFont.body,
   textAlign: "left",

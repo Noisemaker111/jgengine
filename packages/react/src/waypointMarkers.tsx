@@ -267,7 +267,7 @@ function WaypointArrow({ waypoint, x, y, angle, color, theme, distanceText }: Ar
         viewBox="0 0 24 24"
         aria-hidden="true"
         // Point the triangle (drawn pointing right at 0rad) along the bearing.
-        style={{ transform: `rotate(${angle}rad)`, display: "block", filter: `drop-shadow(0 0 6px ${color})` }}
+        style={{ transform: `rotate(${angle}rad)`, display: "block" }}
       >
         <path d="M22 12 L6 21 L11 12 L6 3 Z" fill={color} stroke="rgba(255,255,255,0.85)" strokeWidth={1.2} strokeLinejoin="round" />
       </svg>
