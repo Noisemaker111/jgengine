@@ -3,17 +3,17 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { ChaseCameraTuning } from "@jgengine/core/runtime/cameraDirector";
 import type { AxisBindingMap } from "@jgengine/core/input/axisInput";
 import {
-  createAircraftDynamics,
   createKinematicVehicle,
+  createRigidAircraft,
   createVehicleObstacleClamp,
   distanceToRoadEdge,
   roadSurfaceSampler,
-  type AircraftDynamics,
-  type AircraftStep,
   type CollisionObstacle,
   type KinematicVehicle,
   type KinematicVehicleStep,
   type KinematicVehicleTuning,
+  type RigidAircraft,
+  type RigidAircraftStep,
   type VehicleObstacleClamp,
 } from "@jgengine/core/world";
 import type { AxisInput } from "@jgengine/core/input/axisInput";
@@ -113,7 +113,7 @@ export function createDriving(): Driving {
   /** A crashed car's re-baked tuning, so a car re-entered after a reload still drives dented. */
   const carTunings = new Map<string, KinematicVehicleTuning>();
   const drivingAudio: DrivingAudio = createDrivingAudio();
-  const aircraft = new Map<string, AircraftDynamics>();
+  const aircraft = new Map<string, RigidAircraft>();
   const flightThrottles = new Map<string, number>();
   const vtolModes = new Map<string, boolean>();
   const vehicleSeats: VehicleSeats = createVehicleSeats();
@@ -340,31 +340,34 @@ export function createDriving(): Driving {
     });
   }
 
-  function aircraftFor(ctx: GameContext, vehicleId: string): AircraftDynamics {
+  function aircraftFor(ctx: GameContext, vehicleId: string): RigidAircraft {
     const existing = aircraft.get(vehicleId);
     if (existing !== undefined) return existing;
     const entity = ctx.scene.entity.get(vehicleId);
     const definition = vehicleById(entity?.name ?? "");
     if (definition?.dynamics.type !== "aircraft") throw new Error(`vehicle ${entity?.name ?? vehicleId} has no aircraft tuning`);
-    const created = createAircraftDynamics(definition.dynamics.tuning, {
+    const created = createRigidAircraft(definition.dynamics.tuning, {
       position: entity?.position ?? [0, 0, 0],
-      rotation: [entity?.rotationX ?? 0, entity?.rotationY ?? 0, entity?.rotationZ ?? 0],
+      heading: entity?.rotationY ?? 0,
       groundHeight: (x, z) => ctx.world.groundHeightAt(x, z),
     });
     aircraft.set(vehicleId, created);
-    flightThrottles.set(vehicleId, definition.dynamics.tuning.kind === "rotorcraft" ? 0.78 : 0.62);
-    vtolModes.set(vehicleId, definition.dynamics.tuning.kind === "vtol");
+    // Rotor craft start a touch under hover collective so they sit until the pilot lifts; planes at a taxi throttle.
+    flightThrottles.set(vehicleId, definition.dynamics.kind === "fixedWing" ? 0.62 : 0.45);
+    vtolModes.set(vehicleId, definition.dynamics.kind === "vtol");
     return created;
   }
 
-  function tickAircraft(ctx: GameContext, vehicleId: string, dt: number): AircraftStep {
+  function tickAircraft(ctx: GameContext, vehicleId: string, dt: number): RigidAircraftStep {
     const entity = ctx.scene.entity.get(vehicleId)!;
     const definition = vehicleById(entity.name)!;
+    if (definition.dynamics.type !== "aircraft") throw new Error(`vehicle ${entity.name} has no aircraft tuning`);
+    const dynamics = definition.dynamics;
     const model = aircraftFor(ctx, vehicleId);
     const throttleRate = 0.42;
     const throttle = Math.max(0, Math.min(1, (flightThrottles.get(vehicleId) ?? 0.6) + ((ctx.input.isDown("flightThrottleUp") ? 1 : 0) - (ctx.input.isDown("flightThrottleDown") ? 1 : 0)) * throttleRate * dt));
     flightThrottles.set(vehicleId, throttle);
-    if (ctx.input.justPressed("flightVectorToggle") && definition.dynamics.type === "aircraft" && definition.dynamics.tuning.kind === "vtol") {
+    if (ctx.input.justPressed("flightVectorToggle") && dynamics.kind === "vtol") {
       vtolModes.set(vehicleId, !(vtolModes.get(vehicleId) ?? true));
     }
     // Analog stick sample (#1370): a touch joystick banks/pitches at its deflection; held keys
@@ -374,31 +377,40 @@ export function createDriving(): Driving {
       roll: { positive: ["moveRight"], negative: ["moveLeft"] },
       yaw: { positive: ["flightYawRight"], negative: ["flightYawLeft"] },
     });
-    const step = model.tick(dt, {
-      throttle,
-      collective: throttle,
-      pitch: stick.pitch,
-      roll: stick.roll,
-      yaw: stick.yaw,
-      airbrake: ctx.input.isDown("flightAirbrake") ? 1 : 0,
-      afterburner: ctx.input.isDown("jump") ? 1 : 0,
-      vectoring: vtolModes.get(vehicleId) === true ? 1 : 0,
-    });
+    // On a rotor the throttle keys are the collective and the rotor runs at full speed; a VTOL in hover mode
+    // flies on its lift rotors with the main engine near idle, then on its wings once switched.
+    const hovering = dynamics.kind === "rotorcraft" || (dynamics.kind === "vtol" && vtolModes.get(vehicleId) === true);
+    const airbrake = ctx.input.isDown("flightAirbrake") ? 1 : 0;
+    const afterburner = dynamics.afterburner !== undefined && ctx.input.isDown("jump") ? dynamics.afterburner : 1;
+    const step = model.tick(
+      dt,
+      {
+        throttle: hovering ? 1 : throttle,
+        collective: hovering ? throttle : 0,
+        pitch: stick.pitch,
+        roll: stick.roll,
+        yaw: stick.yaw,
+        brake: airbrake,
+      },
+      { thrustScale: dynamics.kind === "vtol" && hovering ? 0 : afterburner, dragScale: 1 + 2.5 * airbrake },
+    );
+    // three.js convention on the entity: positive rotationX is nose down.
     ctx.scene.entity.setPose(vehicleId, {
       position: step.position,
-      rotationX: step.rotation[0],
-      rotationY: step.rotation[1],
-      rotationZ: step.rotation[2],
+      rotationX: -step.pitch,
+      rotationY: step.heading,
+      rotationZ: step.bank,
       dt,
     });
     lastTelemetry = {
       mode: "aircraft",
       speedMs: step.airspeed,
       altitude: step.position[1] - ctx.world.groundHeightAt(step.position[0], step.position[2]),
-      verticalSpeed: step.verticalSpeed,
+      verticalSpeed: step.velocity[1],
       gear: 0,
       rpm: throttle * 100,
-      stalled: step.stalled,
+      // Only wings stall: a rotor in a hover reads its tail surfaces at any angle.
+      stalled: !hovering && step.stalled,
       vtol: vtolModes.get(vehicleId) === true,
     };
     return step;

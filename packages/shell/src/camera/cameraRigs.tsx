@@ -43,7 +43,7 @@ import {
   type ChaseRigState,
 } from "./rigMath";
 import { usePlayerFov } from "./PlayerFov";
-import { useCameraShake } from "./shakeChannel";
+import { applyCameraShake, useCameraShake } from "./shakeChannel";
 import {
   applyCameraBlendStep,
   captureCameraBlendFrom,
@@ -118,7 +118,6 @@ function useCameraCommit(props: RigProps, followId: string | null) {
   const camera = useThree((state) => state.camera);
   const shake = useCameraShake();
   const playerFov = usePlayerFov();
-  const shakeConfig = props.config?.shake;
   const transitionSeconds = props.config?.transitionSeconds ?? 0.6;
   const blendScratchRef = useRef(createCameraBlendScratch(Vector3, Quaternion));
   const blendingRef = useRef(false);
@@ -162,13 +161,7 @@ function useCameraCommit(props: RigProps, followId: string | null) {
       if (done) blendingRef.current = false;
     }
 
-    shake.step(dt);
-    const offset = shake.sample(shakeConfig);
-    if (offset.x !== 0 || offset.y !== 0 || offset.roll !== 0) {
-      camera.translateX(offset.x);
-      camera.translateY(offset.y);
-      camera.rotateZ(offset.roll);
-    }
+    applyCameraShake(camera, shake, dt);
 
     props.config?.onCameraFollow?.({
       entityId: followId ?? "",
@@ -619,7 +612,7 @@ export function ChaseRig(props: RigProps) {
     }
 
     if (resolved.shakePerSpeed > 0 && step.speed > 0) {
-      shake.shake(Math.min(resolved.shakePerSpeed * step.speed * dt, 0.1));
+      shake.add(Math.min(resolved.shakePerSpeed * step.speed * dt, 0.1));
     }
 
     commit(step.pose, dt);

@@ -348,23 +348,23 @@ export {
   type OrderTickReport,
   type OrderVec3,
 } from "./orders/orderQueue";
+export {
+  aircraftAttitudeQuaternion,
+  aircraftHeadingQuaternion,
+  createRigidAircraft,
+  type AircraftAssistTuning,
+  type RigidAircraft,
+  type RigidAircraftInput,
+  type RigidAircraftModifiers,
+  type RigidAircraftOptions,
+  type RigidAircraftStep,
+  type RigidAircraftTuning,
+} from "./physics/aircraftDynamics";
 export { createBallisticSweep, type BallisticSweep, type BallisticSweepHit } from "./physics/ballisticSweep";
 export { createBuoyantBody } from "./physics/buoyancy";
 export { Carryable, carrySpeedMultiplier } from "./physics/carryable";
 export { createDamageModel } from "./physics/damageZones";
 export { tickDrivableVehicle } from "./physics/drivableVehicle";
-export {
-  createAircraftDynamics,
-  type AircraftAxis,
-  type AircraftDynamics,
-  type AircraftKind,
-  type AircraftOptions,
-  type AircraftStep,
-  type AircraftTuning,
-  type FlightControlInput,
-  type FlightControlRates,
-  type FlightVector,
-} from "./physics/flightDynamics";
 export { ForceVolume, PlatformCarry } from "./physics/forceVolume";
 export {
   combineGravity,

@@ -40,6 +40,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `readQuantity` (function) · `import { readQuantity } from "@jgengine/core/runtime/commandInput"`
 
+## default-drive-codes — stock WASD/arrow throttle, brake, steer and handbrake key codes
+
+- `DEFAULT_DRIVE_CODES` (const) · `import { DEFAULT_DRIVE_CODES } from "@jgengine/shell/gameKit"`
+
 ## default-walk-codes — stock WASD + jump key codes for the shell walk controller
 
 - `DEFAULT_WALK_CODES` (const) · `import { DEFAULT_WALK_CODES } from "@jgengine/shell/gameKit"`
@@ -87,6 +91,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## host-listing-filter — exclude private sessions from public browse results
 
 - `isListablePublicly` (function) · `import { isListablePublicly } from "@jgengine/core/runtime/hostPolicy"`
+
+## hotbar-slot-bindings — number-row key codes for a run of numbered actions (hotbar, build menu, tools)
+
+- `hotbarSlotBindings` (function) · `import { hotbarSlotBindings } from "@jgengine/shell/gameKit"`
 
 ## hud-canvas — the HUD root surface — design-resolution scaling plus live panel-placement editing (F2+C)
 

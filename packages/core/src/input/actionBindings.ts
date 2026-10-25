@@ -132,7 +132,43 @@ const HOTBAR_DIGIT_CODES = [
   "Digit0",
 ] as const;
 
-/** @internal */
+/**
+ * Stock keyboard codes for the shell walk controller: WASD to move, Space to jump. Spread it as the base
+ * of a game's map (`input: { ...DEFAULT_WALK_CODES, sprint: ["ShiftLeft"], interact: ["KeyE"] }`) instead
+ * of re-typing the same five bindings in every game.
+ *
+ * @capability default-walk-codes stock WASD + jump key codes for the shell walk controller
+ */
+export const DEFAULT_WALK_CODES = {
+  moveForward: ["KeyW"],
+  moveBack: ["KeyS"],
+  moveLeft: ["KeyA"],
+  moveRight: ["KeyD"],
+  jump: ["Space"],
+} as const satisfies ActionCodesMap;
+
+/**
+ * Stock keyboard codes for driving a vehicle: WASD or the arrows for throttle, brake and steering, Space for
+ * the handbrake. Spread it as the base of a racing map and override what the game uses differently
+ * (`input: { ...DEFAULT_DRIVE_CODES, handbrake: ["KeyX"], hop: ["Space"] }`).
+ *
+ * @capability default-drive-codes stock WASD/arrow throttle, brake, steer and handbrake key codes
+ */
+export const DEFAULT_DRIVE_CODES = {
+  throttle: ["KeyW", "ArrowUp"],
+  brake: ["KeyS", "ArrowDown"],
+  steerLeft: ["KeyA", "ArrowLeft"],
+  steerRight: ["KeyD", "ArrowRight"],
+  handbrake: ["Space"],
+} as const satisfies ActionCodesMap;
+
+/**
+ * Number-row bindings for `count` numbered actions: slot 1 on Digit1 through slot 10 on Digit0. Name the
+ * actions with `action` (`hotbarSlotBindings(4, { action: (slot) => `buildTower${slot}` })`); the
+ * default names are `hotbarSlot1`…, which the shell routes to the hotbar on its own.
+ *
+ * @capability hotbar-slot-bindings number-row key codes for a run of numbered actions (hotbar, build menu, tools)
+ */
 export function hotbarSlotBindings(
   count: number,
   options?: { action?: (slot: number) => string },

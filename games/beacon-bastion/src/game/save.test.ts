@@ -129,7 +129,7 @@ describe("the keep's save document", () => {
       standing: 18,
       bankedGold: 120,
       offer: drawRelics("beacon:save"),
-      run: { run: 3, completed: 2, haul: 0, changeId: "gate", bankedTotal: 240, lostTotal: 0, bestHaul: 120 },
+      run: { session: 3, closed: 2, carried: 0, optionId: "gate" },
     };
     writeLegacy(runner.ctx, banked);
     expect(world().fact("keep.banked")).toBe(false);

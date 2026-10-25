@@ -1,6 +1,8 @@
 import { describe, expect, test } from "bun:test";
 
-import { DEFAULT_WALK_CODES, shellDrivesPlayerPose, SHELL_MOVEMENT_ACTIONS } from "./shellMovement";
+import { DEFAULT_WALK_CODES } from "@jgengine/core/input/actionBindings";
+
+import { shellDrivesPlayerPose, SHELL_MOVEMENT_ACTIONS } from "./shellMovement";
 
 describe("shellDrivesPlayerPose", () => {
   test("is false when no movement actions are bound", () => {

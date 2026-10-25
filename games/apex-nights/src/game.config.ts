@@ -1,3 +1,4 @@
+import { DEFAULT_DRIVE_CODES } from "@jgengine/core/input/actionBindings";
 import { defineGame } from "@jgengine/shell/gameKit";
 
 import { editorLayers } from "./editorLayers";
@@ -16,11 +17,7 @@ export const game = defineGame({
   time,
   // No walk bindings: the race loop drives the car from these actions.
   input: {
-    throttle: ["KeyW", "ArrowUp"],
-    brake: ["KeyS", "ArrowDown"],
-    steerLeft: ["KeyA", "ArrowLeft"],
-    steerRight: ["KeyD", "ArrowRight"],
-    handbrake: ["Space"],
+    ...DEFAULT_DRIVE_CODES,
     nitro: ["ShiftLeft"],
     race: ["Enter"],
     assist: ["KeyT"],

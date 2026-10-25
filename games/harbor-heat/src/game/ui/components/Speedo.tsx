@@ -18,7 +18,7 @@ export function dialTop(topKmh: number): number {
 function topKmhOf(name: string | undefined): number {
   const def = name === undefined ? undefined : vehicleById(name);
   if (def === undefined) return 220;
-  return (def.dynamics.type === "ground" ? def.dynamics.tuning.topSpeed : def.dynamics.tuning.maxSpeed) * 3.6;
+  return (def.dynamics.type === "ground" ? def.dynamics.tuning.topSpeed : def.dynamics.topSpeed) * 3.6;
 }
 
 function speedoView(ctx: GameContext) {

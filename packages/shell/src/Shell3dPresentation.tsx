@@ -93,6 +93,7 @@ import { EnvironmentScene } from "./environment/EnvironmentScene";
 import { PointerProbe } from "./pointer/PointerProbe";
 import { MarqueeBox, ContextMenuView } from "./pointer/PointerOverlays";
 import { createPointerService } from "./pointer/pointerService";
+import { isSecondaryDrag, suppressBrowserContextMenu } from "./pointer/contextMenu";
 import { Reticle, WorldEntityBars, WorldNameplates } from "./world/WorldHud";
 import { GridWorldScene } from "./world/GridWorldScene";
 import { PlaceScene } from "./world/PlaceScene";
@@ -356,6 +357,7 @@ export function Shell3dPresentation({
   const orthographic = playable.camera?.projection === "orthographic";
 
   const pointerDownRef = useRef<{ x: number; y: number } | null>(null);
+  const secondaryDownRef = useRef<{ x: number; y: number } | null>(null);
   const lastSelectClickRef = useRef<SelectClickRecord | null>(null);
   const marqueeStartRef = useRef<{ x: number; y: number } | null>(null);
   const [marquee, setMarquee] = useState<ScreenRect | null>(null);
@@ -433,6 +435,7 @@ export function Shell3dPresentation({
     trackPointerAxis(event);
     audioEngine.resume();
     if (contextMenu !== null) setContextMenu(null);
+    if (event.button === 2) secondaryDownRef.current = isWorldPointerTarget(event) ? localXY(event) : null;
     if (event.button === 0 && isWorldPointerTarget(event)) {
       const point = localXY(event);
       pointerDownRef.current = point;
@@ -516,9 +519,13 @@ export function Shell3dPresentation({
   };
 
   const handleContextMenu = (event: ReactMouseEvent<HTMLDivElement>) => {
+    if (!suppressBrowserContextMenu(event)) return;
+    const secondaryStart = secondaryDownRef.current;
+    secondaryDownRef.current = null;
     if (pointer === undefined) return;
     if (!isWorldPointerTarget(event)) return;
-    event.preventDefault();
+    // A right-drag orbited the camera; releasing it is not also a right-click.
+    if (isSecondaryDrag(secondaryStart, localXY(event), PRIMARY_CLICK_MOVE_THRESHOLD_PX)) return;
     const hit = pointerService.worldHit();
     if (hit === null) return;
     if (pointer.contextMenu === true && (hit.entity !== null || hit.object !== null)) {

@@ -325,6 +325,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createDecayMeterSet` (function) · `import { createDecayMeterSet } from "@jgengine/core/procedural"`
 
+## default-drive-codes — stock WASD/arrow throttle, brake, steer and handbrake key codes
+
+- `DEFAULT_DRIVE_CODES` (const) · `import { DEFAULT_DRIVE_CODES } from "@jgengine/core/input/actionBindings"`
+
+## default-walk-codes — stock WASD + jump key codes for the shell walk controller
+
+- `DEFAULT_WALK_CODES` (const) · `import { DEFAULT_WALK_CODES } from "@jgengine/core/input/actionBindings"`
+
 ## difficulty-ability-gate — spend-or-hold ability decision from a scored opportunity window
 
 - `shouldUseAbility` (function) · `import { shouldUseAbility } from "@jgengine/core/ai/difficulty"`
@@ -514,6 +522,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## hold-order — stand-ground order that holds position until preempted or canceled
 
 - `defineHoldOrder` (function) · `import { defineHoldOrder } from "@jgengine/core/world"`
+
+## hotbar-slot-bindings — number-row key codes for a run of numbered actions (hotbar, build menu, tools)
+
+- `hotbarSlotBindings` (function) · `import { hotbarSlotBindings } from "@jgengine/core/input/actionBindings"`
 
 ## input-buffer — buffer early presses, coyote time, hold duration and double tap for responsive controls
 
@@ -821,7 +833,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## rigid-aircraft — force-and-torque aircraft — lifting surfaces with stall and drag polar, control surfaces, inertia, loops and rolls
 
-- `createRigidAircraft` (function) · `import { createRigidAircraft } from "@jgengine/core/physics/aircraftDynamics"`
+- `createRigidAircraft` (function) · `import { createRigidAircraft } from "@jgengine/core/world"`
 
 ## route-course — build a branching race course from track pieces: locate, wall clamp, checkpoints, hazard spans, racing lines
 

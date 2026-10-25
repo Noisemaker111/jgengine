@@ -1,3 +1,4 @@
+import { useActionBindings } from "@jgengine/react/uiKitRoot";
 import { iconForItemId } from "@jgengine/react/gameIcons";
 import { HudFade } from "@jgengine/react/hudLayout";
 import { useEntityStat, useGame, useInventory, usePlayer } from "@jgengine/react/hooks";
@@ -7,7 +8,6 @@ import { useStore } from "@jgengine/react/store";
 import { slotStore } from "../../commands";
 import { ITEM_LABELS } from "../../content";
 import { AMMO_STAT_IDS, weaponById } from "../../items/weapons/catalog";
-import { keybinds } from "../../keybinds";
 
 /**
  * What you carry, as the pockets of a courier's belt: each filled slot a small dark pouch with its
@@ -15,6 +15,7 @@ import { keybinds } from "../../keybinds";
  * belt dims while nothing changes. Tappable on touch.
  */
 export function Hotbar() {
+  const keybinds = useActionBindings();
   const { userId } = usePlayer();
   const { commands } = useGame();
   const device = useInputDevice();

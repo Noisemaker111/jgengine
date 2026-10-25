@@ -5,7 +5,7 @@ import { SceneCaptureBinding } from "@jgengine/shell/render/sceneCapture";
 import { ORBIT_SOUNDS } from "./game/audio";
 import { assets } from "./game/assets";
 import { content } from "./game/content";
-import { keybinds } from "./game/keybinds";
+import { hotbarSlotBindings } from "@jgengine/core/input/actionBindings";
 import { objectModels } from "./game/models";
 import { renderEntity } from "./game/render/renderEntity";
 import { GameUI } from "./game/ui/GameUI";
@@ -19,7 +19,12 @@ export const game = defineGame({
   name: "Odd Orbit",
   world,
   physics,
-  input: keybinds,
+  input: {
+    pauseToggle: ["Space"],
+    speedCycle: ["KeyT"],
+    ...hotbarSlotBindings(6, { action: (slot) => `buildTool${slot}` }),
+    buildCancel: ["Escape"],
+  },
   server: { mode: "solo" },
   save: "none",
   time: { scale: 1, dayLength: DAY_LENGTH, start: DAY_LENGTH * (9 / 24), speeds: [1, 2, 4] },

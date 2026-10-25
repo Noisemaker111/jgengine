@@ -6,7 +6,7 @@ import { BEACON_SOUNDS } from "./game/audio";
 import { content } from "./game/content";
 import { keep, towersStanding } from "./game/keep";
 import { currentWaveNumber, session } from "./game/session";
-import { keybinds } from "./game/keybinds";
+import { hotbarSlotBindings } from "@jgengine/core/input/actionBindings";
 import { entityModels, scatterModels } from "./game/models";
 import { systems } from "./game/systems";
 import { GameUI } from "./game/ui/GameUI";
@@ -20,7 +20,14 @@ export const game = defineGame({
   assets,
   world,
   physics,
-  input: keybinds,
+  input: {
+    ...hotbarSlotBindings(4, { action: (slot) => `buildTower${slot}` }),
+    upgradeTower: ["KeyU"],
+    sellTower: ["KeyX"],
+    cycleAim: ["KeyT"],
+    abilityFire: ["KeyQ"],
+    abilityBell: ["KeyE"],
+  },
   server: { mode: "defense" },
   content,
   // A refused build/upgrade reaches the player as a deny notice; its cue is the keep's own "denied" knock.

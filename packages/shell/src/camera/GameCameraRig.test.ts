@@ -1,7 +1,9 @@
 import { describe, expect, test } from "bun:test";
 import type { GameCameraConfig } from "@jgengine/core/game/playableGame";
 import { resolveRigKind } from "./rigResolve";
-import { createCameraShakeChannel } from "./shakeChannelMath";
+import { createCameraShake } from "@jgengine/core/vfx/cameraShake";
+
+import { rigShakeConfig } from "./shakeChannel";
 
 describe("resolveRigKind", () => {
   test("defaults to orbit with no config", () => {
@@ -43,14 +45,16 @@ describe("resolveRigKind", () => {
 
 describe("combat shake channel composition", () => {
   test("hit reaction feeds the shared channel instead of writing camera pose", () => {
-    const channel = createCameraShakeChannel(4);
+    const channel = createCameraShake(rigShakeConfig({ decayPerSecond: 4 }));
     expect(channel.trauma()).toBe(0);
-    channel.shake(0.5, 4);
+    channel.add(0.5);
     expect(channel.trauma()).toBeGreaterThan(0);
-    channel.step(0.1);
-    const offset = channel.sample();
-    expect(Number.isFinite(offset.x)).toBe(true);
-    expect(Number.isFinite(offset.y)).toBe(true);
-    expect(Number.isFinite(offset.roll)).toBe(true);
+    channel.update(0.1);
+    const offset = channel.offset();
+    expect(Math.abs(offset.x) + Math.abs(offset.y) + Math.abs(offset.roll)).toBeGreaterThan(0);
+    // A rig shake kicks position and roll only, so aim never drifts under a hit.
+    expect(Math.abs(offset.z)).toBe(0);
+    expect(Math.abs(offset.pitch)).toBe(0);
+    expect(Math.abs(offset.yaw)).toBe(0);
   });
 });
