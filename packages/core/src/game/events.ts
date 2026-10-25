@@ -339,6 +339,28 @@ export interface AudioIntensityEvent {
 export interface AudioMusicEvent {
   theme: string | null;
   transpose?: number;
+  /** Seconds into the theme's loop to start from. Default 0. */
+  offset?: number;
+}
+
+/** Say `text` through the shell's speech channel; voice fields are hints the shell matches against system voices. */
+export interface AudioSpeakEvent {
+  text: string;
+  voiceKey?: string;
+  name?: string;
+  lang?: string;
+  pitch?: number;
+  rate?: number;
+}
+
+/** Stop speech and drop queued lines. */
+export interface AudioSpeechStopEvent {}
+
+/** Hold `bus` lowered by `amount` under key `id`; 0 releases that hold. */
+export interface AudioDuckEvent {
+  id: string;
+  bus: string;
+  amount: number;
 }
 
 /**
@@ -418,6 +440,9 @@ export interface GameEventMap {
   "form.changed": FormChangedEvent;
   "audio.play": AudioPlayEvent;
   "audio.music": AudioMusicEvent;
+  "audio.speak": AudioSpeakEvent;
+  "audio.speechStop": AudioSpeechStopEvent;
+  "audio.duck": AudioDuckEvent;
   "audio.intensity": AudioIntensityEvent;
   "audio.resume": AudioResumeEvent;
   "audio.loopStart": AudioLoopStartEvent;

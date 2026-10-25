@@ -2524,7 +2524,7 @@
 - `AudioEngine` (interface): interface AudioEngine { setListenerPose(pose: ListenerPose | Vec3): void; setVoiceLimit(maxTotal: number, overflow?: VoiceAllocatorConfig["overflow"]): void; play(soundId: string, position?: Vec3): void; playOneShot(soundId: string, position?: Vec3): void; playL… — ⚠ undocumented · used by `createAudioEngine`: Game-owned sound catalog playback with bounded SFX reservations, spatial panning, and shared buses.
 - `AudioLevel` (interface): interface AudioLevel — Master-output level, `0..1`. Pooled by {@link AudioEngine.measure} - read it, don't retain it.
 - `AudioOcclusionStats` (interface): interface AudioOcclusionStats — Measured geometry-occlusion work, cumulative since the engine was created.
-- `AudioSceneConfig` (interface): interface AudioSceneConfig { sounds?: Record<string, SoundDef>; maxVoices?: number; voiceOverflow?: VoiceAllocatorConfig["overflow"]; voiceAllocator?: VoiceAllocator; buses?: Record<string, AudioBusDef>; music?: Record<string, MusicTheme>; musicBus?: string; zones?: … — ⚠ undocumented · used by `createAudioEngine`: Game-owned sound catalog playback with bounded SFX reservations, spatial panning, and shared buses.
+- `AudioSceneConfig` (interface): interface AudioSceneConfig { sounds?: Record<string, SoundDef>; maxVoices?: number; voiceOverflow?: VoiceAllocatorConfig["overflow"]; voiceAllocator?: VoiceAllocator; buses?: Record<string, AudioBusDef>; music?: Record<string, MusicTheme>; musicBus?: string; speechBu… — ⚠ undocumented · used by `createAudioEngine`: Game-owned sound catalog playback with bounded SFX reservations, spatial panning, and shared buses.
 - `AudioSpatialStats` (interface): interface AudioSpatialStats — What the spatial mix did, cumulative since the engine was created, plus the space it rings in now.
 - `DuckOptions` (interface): interface DuckOptions — How long and how far to duck buses for {@link AudioEngine.duck}.
 - `ListenerPose` (interface): interface ListenerPose — Position and orientation for a spatial-audio listener.
@@ -2602,6 +2602,16 @@
 ## @jgengine/shell/audio/reverb
 
 - `EnclosureRaycastSource` (interface): interface EnclosureRaycastSource — The narrow slice of the scene an enclosure test needs.
+
+## @jgengine/shell/audio/speech
+
+- `SpeechChannel` (interface): interface SpeechChannel — Text-to-speech on the browser's synthesiser with stable per-key voice choice and a silent fallback.
+- `SpeechStats` (interface): interface SpeechStats — What the speech channel has done, for a debug readout or capture probe.
+- `SpeechSynthesisLike` (interface): interface SpeechSynthesisLike — The slice of `window.speechSynthesis` the channel drives; inject a fake in tests.
+- `SpeechUtteranceLike` (interface): interface SpeechUtteranceLike — The slice of `SpeechSynthesisUtterance` the channel writes.
+- `SpeechVoiceLike` (interface): interface SpeechVoiceLike — The slice of `SpeechSynthesisVoice` the channel reads.
+- `createSpeechChannel` (function): function createSpeechChannel(backend: { synth: SpeechSynthesisLike; Utterance: UtteranceCtor } | null = resolveSynth()): SpeechChannel — Speech for radio DJs, callers and announcers. Lines queue on the synthesiser; `stop` cancels the queue. Without a synthesiser or a single voice (headless Chrome, tests, some Linux browsers) a line is counted as dropped and nothing throws, so the game's on-screen text is the fallback.
+- `pickSpeechVoice` (function): function pickSpeechVoice(voices: readonly SpeechVoiceLike[], options: SpeakOptions = {}): SpeechVoiceLike | null — Pick a system voice: a name hint wins, else the voice key hashes to a stable choice among the language's voices.
 
 ## @jgengine/shell/audio/synthEngine
 

@@ -3,6 +3,7 @@ import { distance3, resolveEmitterGain, type AudioBusDef, type SoundDef } from "
 import { dopplerRate } from "@jgengine/core/audio/doppler";
 import { resolveOcclusionConfig, type AudioOcclusionConfig, type ResolvedAudioOcclusionConfig } from "@jgengine/core/audio/occlusion";
 import type { MusicTheme } from "@jgengine/core/audio/music";
+import type { SpeakOptions } from "@jgengine/core/audio/radioPlayback";
 import { reverbZoneAt, type AudioReverbConfig, type ReverbPreset } from "@jgengine/core/audio/reverb";
 import { patchDuration, type SynthPatch } from "@jgengine/core/audio/synth";
 import { createVoiceAllocator, type VoiceAllocator, type VoiceAllocatorConfig } from "@jgengine/core/audio/voiceAllocator";
@@ -11,6 +12,7 @@ import { createDisposer } from "@jgengine/core/game/defineGame";
 import { clampLoopCutoff, clampLoopGain, clampLoopRate, MIN_LOOP_CUTOFF, MAX_LOOP_CUTOFF } from "./loopParams";
 import { MusicDirector, type CrossfadeOptions } from "./musicDirector";
 import { createReverbRack, type ReverbRack } from "./reverb";
+import { createSpeechChannel, type SpeechChannel, type SpeechStats } from "./speech";
 import { createNoiseBuffer, realizeSynthPatch, type SynthPlayback } from "./synthEngine";
 
 /** setTargetAtTime time constant (~20 ms) for zipper-free live rate/gain ramps on retained loops (#1051). */
@@ -56,6 +58,10 @@ export interface AudioSceneConfig {
   music?: Record<string, MusicTheme>;
   /** Bus id the procedural music director mixes through. Default "music". */
   musicBus?: string;
+  /** Bus whose level (with the master) sets spoken-line volume. Default: the music bus. */
+  speechBus?: string;
+  /** Speech channel for {@link AudioEngine.speak}. Default: the browser's `speechSynthesis`, silent when absent. */
+  speech?: SpeechChannel;
   /** World-space ambience zones; each becomes one retained looping bed driven by the listener position. */
   zones?: readonly AmbienceZoneDef[];
   /** Geometry occlusion budget/policy for retained positional loops. Unset keeps the defaults; `false` keeps distance-only. */
@@ -150,6 +156,12 @@ export interface AudioEngine {
   playLoop(soundId: string, position?: Vec3): AudioEmitterHandle | null;
   /** Crossfade the procedural soundtrack to `themeId` (null fades out). No-op when no `music` catalog is configured. */
   playMusic(themeId: string | null, options?: CrossfadeOptions): void;
+  /** Say a line on the speech channel at the speech bus's level; silently dropped with no system voice. */
+  speak(text: string, options?: SpeakOptions): void;
+  /** Cancel the line being said and any queued ones. */
+  stopSpeech(): void;
+  /** What the speech channel has done, for a probe or debug readout. */
+  speechStats(): SpeechStats;
   /**
    * Install the scene's blocking-geometry test (`from` listener, `to` emitter), or null to stop
    * testing. The engine owns the per-tick budget; tests never run outside it.
@@ -209,6 +221,9 @@ function createNoopEngine(): AudioEngine {
     playOneShot: () => undefined,
     playLoop: () => null,
     playMusic: () => undefined,
+    speak: () => undefined,
+    stopSpeech: () => undefined,
+    speechStats: () => ({ available: false, voices: 0, spoken: 0, dropped: 0, last: null }),
     setOcclusionSource: () => undefined,
     occlusionStats: () => stats,
     setReverbEnvironment: () => undefined,
@@ -504,6 +519,7 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
     return noiseBuffer;
   }
 
+  const speech = config.speech ?? createSpeechChannel();
   let director: MusicDirector | null = null;
   function musicDirector(): MusicDirector | null {
     if (config.music === undefined) return null;
@@ -1250,6 +1266,14 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
       void context.resume().catch(() => undefined);
       musicDirector()?.crossfadeTo(themeId, options);
     },
+    speak(text, options) {
+      if (disposed) return;
+      speech.speak(text, options, masterLevel() * busLevel(config.speechBus ?? config.musicBus ?? "music"));
+    },
+    stopSpeech() {
+      speech.stop();
+    },
+    speechStats: () => speech.stats(),
     setOcclusionSource(blocked) {
       if (disposed) return;
       occlusionBlocked = blocked;
@@ -1331,6 +1355,7 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
       }
       duckHolds.clear();
       director?.dispose();
+      speech.stop();
       for (const node of busGains.values()) node.disconnect();
       busGains.clear();
       for (const node of reverbSends.values()) node.disconnect();

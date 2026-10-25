@@ -1,7 +1,9 @@
 import type { AudioEmitterHandle, AudioEngine, Vec3 } from "./audioEngine";
 
 type AudioPlayPayload = { sound: string; at?: readonly [number, number, number] };
-type AudioMusicPayload = { theme: string | null; transpose?: number };
+type AudioMusicPayload = { theme: string | null; transpose?: number; offset?: number };
+type AudioSpeakPayload = { text: string; voiceKey?: string; name?: string; lang?: string; pitch?: number; rate?: number };
+type AudioDuckPayload = { id: string; bus: string; amount: number };
 type AudioLoopStartPayload = { id: string; sound: string; at?: readonly [number, number, number] };
 type AudioLoopSetPayload = {
   id: string;
@@ -19,6 +21,9 @@ export type AudioEventBus = {
   on(event: "audio.play", handler: (payload: AudioPlayPayload) => void): () => void;
   on(event: "audio.music", handler: (payload: AudioMusicPayload) => void): () => void;
   on(event: "audio.resume", handler: () => void): () => void;
+  on(event: "audio.speak", handler: (payload: AudioSpeakPayload) => void): () => void;
+  on(event: "audio.speechStop", handler: () => void): () => void;
+  on(event: "audio.duck", handler: (payload: AudioDuckPayload) => void): () => void;
   on(event: "audio.loopStart", handler: (payload: AudioLoopStartPayload) => void): () => void;
   on(event: "audio.loopSet", handler: (payload: AudioLoopSetPayload) => void): () => void;
   on(event: "audio.loopStop", handler: (payload: AudioLoopStopPayload) => void): () => void;
@@ -36,15 +41,31 @@ function toVec(at: readonly [number, number, number] | undefined): Vec3 | undefi
  */
 export function attachAudioEventWire(
   events: AudioEventBus,
-  audioEngine: Pick<AudioEngine, "playOneShot" | "playLoop" | "playMusic" | "resume">,
+  audioEngine: Pick<AudioEngine, "playOneShot" | "playLoop" | "playMusic" | "resume"> & Partial<Pick<AudioEngine, "speak" | "stopSpeech" | "duck">>,
 ): () => void {
   const loops = new Map<string, { sound: string; handle: AudioEmitterHandle }>();
 
   const offPlay = events.on("audio.play", ({ sound, at }) => {
     audioEngine.playOneShot(sound, toVec(at));
   });
-  const offMusic = events.on("audio.music", ({ theme, transpose }) => {
-    audioEngine.playMusic(theme, transpose === undefined ? undefined : { transpose });
+  const offMusic = events.on("audio.music", ({ theme, transpose, offset }) => {
+    audioEngine.playMusic(
+      theme,
+      transpose === undefined && offset === undefined
+        ? undefined
+        : { ...(transpose === undefined ? {} : { transpose }), ...(offset === undefined ? {} : { offset }) },
+    );
+  });
+  const offSpeak = events.on("audio.speak", ({ text, ...options }) => audioEngine.speak?.(text, options));
+  const offSpeechStop = events.on("audio.speechStop", () => audioEngine.stopSpeech?.());
+  // One release per (id, bus): a new amount replaces that key's hold, so the strongest key on a bus wins.
+  const ducks = new Map<string, () => void>();
+  const offDuck = events.on("audio.duck", ({ id, bus, amount }) => {
+    const key = `${bus}|${id}`;
+    ducks.get(key)?.();
+    ducks.delete(key);
+    if (audioEngine.duck === undefined || !(amount > 0)) return;
+    ducks.set(key, audioEngine.duck(bus, { amount: Math.min(1, amount) }));
   });
   const offResume = events.on("audio.resume", () => audioEngine.resume());
 
@@ -81,6 +102,12 @@ export function attachAudioEventWire(
     offPlay();
     offMusic();
     offResume();
+    offSpeak();
+    offSpeechStop();
+    offDuck();
+    for (const release of ducks.values()) release();
+    ducks.clear();
+    audioEngine.stopSpeech?.();
     offLoopStart();
     offLoopSet();
     offLoopStop();

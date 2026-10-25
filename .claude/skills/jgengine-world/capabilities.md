@@ -796,6 +796,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `evaluateQteSequence` (function) · `import { evaluateQteSequence } from "@jgengine/core/world"`
 
+## radio-stations — in-vehicle radio: stations that keep broadcasting while untuned, a dial with next/previous/off, a now-playing readout, and news/DJ bulletins fed by game events with priority, cooldown and break-in
+
+- `createRadio` (function) · `import { createRadio } from "@jgengine/core/audio/radio"`
+
 ## rapier-physics-backend — native capsules, shapecasts, rotation, CCD, joints, and collision queries
 
 - `createRapierBackend` (function) · `import { createRapierBackend } from "@jgengine/rapier"`

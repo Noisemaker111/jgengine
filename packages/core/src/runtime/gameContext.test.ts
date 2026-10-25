@@ -175,6 +175,27 @@ describe("createGameContext", () => {
     expect(resumed).toBe(1);
   });
 
+  test("game.audio routes music offsets, speech and duck holds through their events", () => {
+    const ctx = makeContext();
+    const seen: unknown[] = [];
+    ctx.game.events.on("audio.music", (event) => seen.push(event));
+    ctx.game.events.on("audio.speak", (event) => seen.push(event));
+    ctx.game.events.on("audio.speechStop", () => seen.push("hush"));
+    ctx.game.events.on("audio.duck", (event) => seen.push(event));
+    ctx.game.audio.music("song", undefined, { offset: 42 });
+    ctx.game.audio.music("song", 2);
+    ctx.game.audio.speak("Live from Mainsail", { voiceKey: "dj", pitch: 1.1 });
+    ctx.game.audio.stopSpeech();
+    ctx.game.audio.duck("engine", "radio", 0.3);
+    expect(seen).toEqual([
+      { theme: "song", offset: 42 },
+      { theme: "song", transpose: 2 },
+      { text: "Live from Mainsail", voiceKey: "dj", pitch: 1.1 },
+      "hush",
+      { id: "engine", bus: "radio", amount: 0.3 },
+    ]);
+  });
+
   test("game.audio routes retained loop start/set/stop through the audio.loop events", () => {
     const ctx = makeContext();
     const starts: unknown[] = [];

@@ -614,6 +614,7 @@
 ## @jgengine/core/game/events
 
 - `AnimationClipEvent` (interface): interface AnimationClipEvent — A named clip moment (`AnimGraph.events`) the rig just crossed — foot plant, hit frame, reload point. Audio and combat listen by `name`.
+- `AudioDuckEvent` (interface): interface AudioDuckEvent — Hold `bus` lowered by `amount` under key `id`; 0 releases that hold.
 - `AudioIntensityEvent` (interface): interface AudioIntensityEvent — Crossfade the procedural soundtrack to `theme` (null fades out), optionally transposing the incoming theme by `transpose` semitones.
 - `AudioLoopSetEvent` (interface): interface AudioLoopSetEvent — Live-update the retained loop `id`: `rate` re-pitches it (1 = authored, the shell clamps to 0.25–4), `gain` rescales its volume (0–1), and `at` repositions its emitter. Emitted every tick to track a live signal (RPM, tire slip); the shell smooths rate/gain and ignores an unknown `id` (#1051).
 - `AudioLoopStartEvent` (interface): interface AudioLoopStartEvent — Start (or idempotently keep) the retained, id-keyed audio loop `id` from catalog `sound`, optionally anchored at world `at`. Restarting with the same `sound` does not restart the source (no click); a different `sound` replaces it. Drives RPM-pitched engine loops and slip-scaled tire squeal (#1051).
@@ -621,6 +622,8 @@
 - `AudioMusicEvent` (interface): interface AudioMusicEvent — Crossfade the procedural soundtrack to `theme` (null fades out), optionally shifted `transpose` semitones.
 - `AudioPlayEvent` (interface): interface AudioPlayEvent { sound: string; at?: readonly [number, number, number] } — ⚠ undocumented
 - `AudioResumeEvent` (type): type AudioResumeEvent = Record<string, never> — Request that the shell's audio engine resume its (browser-gesture-suspended) context; carries no payload.
+- `AudioSpeakEvent` (interface): interface AudioSpeakEvent — Say `text` through the shell's speech channel; voice fields are hints the shell matches against system voices.
+- `AudioSpeechStopEvent` (interface): interface AudioSpeechStopEvent — Stop speech and drop queued lines.
 - `ChatMessageEvent` (interface): interface ChatMessageEvent { id: string; channelId: string; fromUserId: string; body: string; at: number; recipients?: readonly string[] } — ⚠ undocumented
 - `CombatHitReactionEvent` (interface): interface CombatHitReactionEvent { instanceId?: string; position: [number, number, number]; hitstopMs: number; shake?: CameraShake; trauma?: number } — ⚠ undocumented
 - `CombatRecoilEvent` (interface): interface CombatRecoilEvent — A gun's kick on its shooter's view: emit it when a shot leaves. The shell climbs the local player's look by `pitch` (radians, up is positive) and `yaw` (radians) over a few frames, then settles back at `recover`, in views that aim with the look (first person, shoulder, locked pointer). In a cursor-aimed view the look is not the aim, so a game shows recoil as spread instead.
