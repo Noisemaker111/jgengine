@@ -9,6 +9,7 @@ import {
   EXIT_WAITED,
   closeLane,
   isWaitingCall,
+  landingMode,
   auditShapeProblem,
   ordinal,
   parseArgs,
@@ -71,7 +72,7 @@ function io(script: Script = {}): LaneIo & { lines: { out: string[]; err: string
       const key = argv.join(" ");
       if (key === "git rev-parse --abbrev-ref HEAD") return { ...run([]), stdout: `${script.branch ?? "agent/x"}\n` };
       if (key === "run verify:fast --skill-api") return { ...run([]), status: script.verify ?? 0 };
-      if (key === "run land --commit") return { ...run([]), status: script.land ?? 0 };
+      if (key === "run scripts/land.ts --commit") return { ...run([]), status: script.land ?? 0 };
       if (key.startsWith("run ci:status")) {
         return { ...run([]), stdout: script.ci ?? CI_OK, status: script.ciStatus ?? 0 };
       }
@@ -211,7 +212,7 @@ describe("lane:close end to end", () => {
     expect(printed).toContain("- span 38 min, tool 34 min, waiting 0 min — 61st percentile of 193 recent lanes");
     expect(printed).toContain("- files changed: 3 files changed, 120 insertions(+), 4 deletions(-)");
     expect(fake.lines.err).toEqual([]);
-    expect(calls).toContain("run land --commit");
+    expect(calls).toContain("run scripts/land.ts --commit");
   });
 
   test("a PR that is still open and armed is named, not refused", () => {
@@ -253,7 +254,7 @@ describe("lane:close end to end", () => {
       return sh(argv, inherit);
     };
     expect(closeLane({}, fake)).toBe(EXIT_VERIFY_FAILED);
-    expect(landed).not.toContain("run land --commit");
+    expect(landed).not.toContain("run scripts/land.ts --commit");
   });
 
   test("closing pays the generated-file check, so a stale manifest or api.md never lands", () => {
@@ -417,6 +418,12 @@ describe("arguments", () => {
     expect(parseArgs(["--allow", "bun.lock"])).toEqual({ allow: ["bun.lock"] });
     expect(() => parseArgs(["--waive", "  "])).toThrow("--waive needs a reason");
     expect(() => parseArgs(["--branch", "x"])).toThrow("unknown argument");
+  });
+
+  test("--batch and --queue hand the rest to the batch and the queue", () => {
+    expect(landingMode(["--batch", "agent/a", "agent/b", "--dry-run"])).toEqual({ script: "scripts/land-batch.ts", rest: ["agent/a", "agent/b", "--dry-run"] });
+    expect(landingMode(["--queue"])).toEqual({ script: "scripts/land-queue.ts", rest: [] });
+    expect(landingMode(["--pr", "12"])).toBeNull();
   });
 });
 

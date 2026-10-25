@@ -4,7 +4,7 @@
  * pixel diff between the two states, a driven flow with its step log, and one manifest listing
  * every artefact and its numbers.
  *
- *   bun run prove harbor-heat --view boulevard --view downtown --sizes 1600x900,1024x640 \
+ *   bun run shoot --prove harbor-heat --view boulevard --view downtown --sizes 1600x900,1024x640 \
  *     --flow to-chase --state chase
  *
  * Evidence is captured by the engine's own `shoot`/`drive`, pointed at the game directory this
@@ -615,7 +615,7 @@ export function summarise(manifest: Manifest): string {
 
 function help(): string {
   return [
-    "bun run prove <game> --view <name> [--view <name>] [--sizes 1600x900,1024x640]",
+    "bun run shoot --prove <game> --view <name> [--view <name>] [--sizes 1600x900,1024x640]",
     "  [--flow <name>] [--state <capture state>] [--tier low|medium|high|ultra]",
     "  [--param k=v] [--out <dir>] [--baseline <manifest|bundle>] [--refresh]",
     "",

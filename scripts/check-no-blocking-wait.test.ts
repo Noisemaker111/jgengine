@@ -89,7 +89,7 @@ test("a changelog entry that describes a wait is prose, not a wait", () => {
         '  "0.37.0": {',
         "    changed: [",
         '      "One lane spent 10 minutes of `Start-Sleep` calls watching a capture it had started.",',
-        '      "`bun run land:queue` waits once per PR, and a lane never runs `gh run watch` or `gh pr checks --watch`.",',
+        '      "`bun run lane:close --queue` waits once per PR, and a lane never runs `gh run watch` or `gh pr checks --watch`.",',
         '      "Its body said: \'timeout /t 5\' and `sleep 30` are both banned.",',
         "    ],",
         "  },",

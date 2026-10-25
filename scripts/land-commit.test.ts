@@ -377,7 +377,7 @@ test("--commit prints every path it will commit, and refuses the whole set with 
   expect(errors).toContain(
     "land: refusing changes/agent-lane-x.md: a new changes/ fragment whose name is not part of agent/lane-one-command, so this lane did not write it",
   );
-  expect(errors.join("\n")).toContain("bun run land --commit --allow <path>");
+  expect(errors.join("\n")).toContain("bun run lane:close --allow <path>");
   expect(calls.some((call) => call[0] === "commit")).toBe(false);
   expect(calls.some((call) => call.join(" ").startsWith("push"))).toBe(false);
   expect(ghCalls.length).toBe(0);

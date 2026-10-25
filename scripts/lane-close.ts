@@ -30,8 +30,10 @@ import { printHelpIfAsked } from "./script-help";
 
 const LANE_CLOSE_USAGE = {
   summary: "verify, land, ask the checks once, and gate the lane on how it spent its own time",
-  usage: "bun run lane:close [--pr <number>] [--waive <reason>] [--session <id>]",
+  usage: "bun run lane:close [--pr <number>] [--waive <reason>] [--session <id>] | --batch <branch ...> | --queue",
   flags: [
+    { flag: "--batch <branch ...>", detail: "land several finished branches as one push instead (the rest of the arguments go to the batch; --help there lists them)" },
+    { flag: "--queue", detail: "drain the landing queue: rebase and wait once for each queued PR" },
     { flag: "--pr <number>", detail: "the PR to close; default: the open PR for this branch" },
     { flag: "--waive <reason>", detail: "record a reason and let a lane that waited through anyway" },
     { flag: "--session <id>", detail: "the session lane:audit should account for; default: this one" },
@@ -408,7 +410,7 @@ export function closeLane(args: LaneCloseArgs, io: LaneIo): number {
   }
 
   io.out("lane:close: land --commit");
-  const landArgs = ["run", "land", "--commit", ...(args.allow ?? []).flatMap((path) => ["--allow", path])];
+  const landArgs = ["run", "scripts/land.ts", "--commit", ...(args.allow ?? []).flatMap((path) => ["--allow", path])];
   const landed = io.sh(landArgs, true);
   if (landed.status !== 0) {
     io.err(`lane:close: land exited ${landed.status}; the lane is not closed`);
@@ -551,7 +553,19 @@ function filesChanged(io: LaneIo): string {
   return text.length > 0 ? text : "none against origin/beta";
 }
 
+/** The landing modes besides closing this lane: `--batch` and `--queue` hand the rest of argv to their script. */
+export function landingMode(argv: readonly string[]): { script: string; rest: string[] } | null {
+  if (argv[0] === "--batch") return { script: "scripts/land-batch.ts", rest: argv.slice(1) };
+  if (argv[0] === "--queue") return { script: "scripts/land-queue.ts", rest: argv.slice(1) };
+  return null;
+}
+
 function main(argv: readonly string[]): void {
+  const mode = landingMode(argv);
+  if (mode !== null) {
+    const run = spawnSync(process.execPath, [mode.script, ...mode.rest], { cwd: root, stdio: "inherit" });
+    process.exit(run.status ?? 1);
+  }
   if (printHelpIfAsked("lane-close", LANE_CLOSE_USAGE, argv)) process.exit(EXIT_CLOSED);
   assertCheckoutReady("lane:close", root);
   const parsed = parseOrRefuse(argv);

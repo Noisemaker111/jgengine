@@ -1,12 +1,12 @@
-// The one process that waits for CI. An author runs `bun run land`, reads three lines and leaves;
+// The one process that waits for CI. An author runs `bun run lane:close`, reads three lines and leaves;
 // this drains everything that was handed over, in the order it became ready.
 //
-//   bun run land:queue                       # land every ready PR into beta
-//   bun run land:queue --base beta --label land:queue
+//   bun run lane:close --queue                       # land every ready PR into beta
+//   bun run lane:close --queue --base beta --label land:queue
 //
-// Ready means auto-merge is armed — which is exactly what `bun run land` does at hand-off — or the
+// Ready means auto-merge is armed — which is exactly what `bun run lane:close` does at hand-off — or the
 // PR carries the `land:queue` label, which land adds where the repo will not arm auto-merge. Drafts
-// and other repositories' branches are not ready. A lane hands off by running `bun run land`; it
+// and other repositories' branches are not ready. A lane hands off by running `bun run lane:close`; it
 // never rebases, labels or waits, and the branch it pushed is merged as-is unless the base moved.
 //
 // Per PR, oldest-ready first, the queue:

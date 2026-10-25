@@ -65,7 +65,7 @@ A flow runs headless from the repository root:
 bun run drive harbor-heat --state chase --flow to-chase     # add --state when the flow needs a staged entry
 ```
 
-`bun run games:prove harbor-heat --view boulevard --view downtown --sizes 1600x900,1024x640 --flow to-chase --state chase`
+`bun run shoot --prove harbor-heat --view boulevard --view downtown --sizes 1600x900,1024x640 --flow to-chase --state chase`
 is the whole evidence set for one item in one command: captures each view at each size in play mode, a same-code
 control pair for this machine's noise floor, a pixel diff between the two states (mean-abs and >8 share), the driven
 flow with its step log, and one `.scratch/proofs/<game>/runs/<stamp>/manifest.json` listing every artefact and its

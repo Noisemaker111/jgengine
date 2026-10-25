@@ -1,10 +1,10 @@
 // One command that hands a branch to the landing queue, so landing is not a
 // hand-assembled sequence of push, open and wait:
-//   bun run land
+//   bun scripts/land.ts                    # bun run lane:close runs this; call it directly only from release.ts
 //   bun run lane:close                       # verify:fast, then the line below
-//   bun run land --commit                    # stage, commit, push, open, arm
-//   bun run land --verify "bun run ship:preflight"
-//   bun run land --title "Menus" --body-file .scratch/body.md
+//   bun scripts/land.ts --commit                    # stage, commit, push, open, arm
+//   bun scripts/land.ts --verify "bun run ship:preflight"
+//   bun scripts/land.ts --title "Menus" --body-file .scratch/body.md
 //
 // `--commit` is what lets a lane end with one command: it stages this worktree's
 // changes (tracked and new - ignored files such as `.scratch/` stay out), prints every
@@ -27,7 +27,7 @@
 // ones it skips, since a body built from a stranger's note claims work the diff
 // does not contain.
 //
-// Waiting is `bun run land:queue`'s job, and only its: a branch hands off when
+// Waiting is `bun run lane:close --queue`'s job, and only its: a branch hands off when
 // land arms auto-merge (or, where the repo cannot arm it, labels the PR
 // `land:queue`). The queue rebases a PR whose base moved, waits for its checks
 // once, merges it and prints one line per PR with that PR's wait time and run.
@@ -71,7 +71,7 @@ import type { RollupEntry } from "./ci-status";
 
 const LAND_USAGE = {
   summary: "push this branch, open or reuse its PR, verify it and hand it to the landing queue",
-  usage: "bun run land [--title <title>] [--body-file <path>] [--verify <command>] [--base <branch>] [--watch]",
+  usage: "bun scripts/land.ts [--title <title>] [--body-file <path>] [--verify <command>] [--base <branch>] [--watch]",
   flags: [
     { flag: "--title <title>", detail: "PR title when land opens a PR" },
     { flag: "--body-file <path>", detail: "PR body from this file; wins over a changes/ fragment" },
@@ -79,7 +79,7 @@ const LAND_USAGE = {
     { flag: "--base <branch>", detail: "branch to land into (default: beta)" },
     { flag: "--watch", detail: "deprecated: watch the checks here instead of leaving waiting to land:queue" },
   ],
-  example: 'bun run land --title "Menus" --body-file .scratch/body.md',
+  example: 'bun scripts/land.ts --title "Menus" --body-file .scratch/body.md',
   exits: [
     "0 handed to the landing queue",
     "1 --verify failed",
@@ -424,7 +424,7 @@ export function commitLane(options: CommitOptions): CommitOutcome {
     for (const entry of blocked) refuse(`land: refusing ${entry.path}: ${entry.why}`);
     refuse("land: nothing was committed; the files above are staged. Unstage one with");
     refuse("land:   git restore --staged <path>");
-    refuse("land: or keep it on purpose with: bun run lane:close --allow <path> (bun run land --commit --allow <path>)");
+    refuse("land: or keep it on purpose with: bun run lane:close --allow <path>");
     return { kind: "failed", code: EXIT_COULD_NOT_MERGE, why: `refused ${blocked.length} file(s) this lane did not author`, refused: blocked };
   }
 
@@ -1159,7 +1159,7 @@ export function handOffLines(pr: PrRef): string[] {
   return [
     pr.url,
     `status: bun run ci:status --pr ${pr.number}`,
-    "waiting: bun run land:queue (the queue owns the wait; this command is done)",
+    "waiting: bun run lane:close --queue (the queue owns the wait; this command is done)",
   ];
 }
 
@@ -1256,7 +1256,7 @@ function handOff(run: LandRun, waits: LockWait[]): number {
 /** The old behaviour, kept only for lanes that still pass `--watch`. */
 function watchAndMerge(run: LandRun, waits: LockWait[]): number {
   const { args, branch, io } = run;
-  io.log("--watch is deprecated: bun run land:queue owns the waiting now; land hands the PR over and exits");
+  io.log("--watch is deprecated: bun run lane:close --queue owns the waiting now; land hands the PR over and exits");
   for (let attempt = 1; attempt <= MERGE_ATTEMPTS; attempt += 1) {
     const prepared = landLocked({ path: run.lock, branch, log: io.log }, () => prepare(args, branch, io), waits);
     if (typeof prepared === "number") return prepared;
