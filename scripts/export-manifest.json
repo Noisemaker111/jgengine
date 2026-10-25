@@ -696,6 +696,7 @@
     "./world/wind",
     "./world/windZones",
     "./world/worldSolids",
+    "./worldModel/gameSpec",
     "./worldModel/worldModel"
   ],
   "@jgengine/rapier": [

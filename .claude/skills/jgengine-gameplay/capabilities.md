@@ -209,6 +209,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `gameSaveDigest` (function) · `import { gameSaveDigest } from "@jgengine/core/gameplay"`
 
+## game-spec — a whole game as one declaration the engine runs, with named code hooks for the rest
+
+- `defineGameSpec` (function) · `import { defineGameSpec } from "@jgengine/core/worldModel/gameSpec"`
+
 ## game-system — declare a composable capability with its own schedule and lifecycle
 
 - `SystemDefinition` (interface) · `import { SystemDefinition } from "@jgengine/core/gameplay"`
@@ -869,9 +873,8 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `queuedJobs` (function) · `import { queuedJobs } from "@jgengine/core/gameplay"`
 
-## world-model — declare a fact that calms back toward its resting value over time
+## world-model — one declarative world of people, places, factions, things, jobs and ripples
 
-- `calm` (function) · `import { calm } from "@jgengine/core/worldModel/worldModel"`
 - `createWorldModel` (function) · `import { createWorldModel } from "@jgengine/core/worldModel/worldModel"`
 - `defineWorldModel` (function) · `import { defineWorldModel } from "@jgengine/core/worldModel/worldModel"`
 
