@@ -9049,6 +9049,17 @@
       "intent": "the one blocking-geometry query the player resolver and NPC movers share"
     },
     {
+      "id": "solid-overhead",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/world/overhead",
+      "domain": "world",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "test whether a roof, ceiling or rock overhangs a point, from the world's solids"
+    },
+    {
       "id": "solid-route",
       "packages": [
         "@jgengine/core"
@@ -11258,6 +11269,17 @@
       "gameFacing": false,
       "probe": null,
       "intent": "Connect authored precipitation and temperature changes to spatial environment queries."
+    },
+    {
+      "id": "weather-overcast",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/sky/daylightCycle",
+      "domain": "sky",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "grey the sky, dim the sun and hide the stars while rain or snow falls"
     },
     {
       "id": "weather-surface-accumulation",

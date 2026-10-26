@@ -147,6 +147,10 @@ interface Cheat {
   kill?: boolean;
   /** ARK's admin DestroyWildDinos: every wild creature gone; their zones refill later. */
   destroyWild?: boolean;
+  /** ARK's admin settimeofday, as a whole world clock: jump to this many seconds, weather schedule and all. */
+  clock?: number;
+  /** ARK's admin SetPlayerPos: stand on the ground at this x, z. */
+  teleport?: readonly [number, number];
 }
 
 function cheat(ctx: GameContext, input: Cheat): void {
@@ -159,6 +163,11 @@ function cheat(ctx: GameContext, input: Cheat): void {
   if (input.tamingSpeed !== undefined) setTamingSpeed(ctx, input.tamingSpeed);
   if (input.kill === true) ctx.scene.entity.stats.set(ctx.player.userId, "health", { current: 0 });
   if (input.destroyWild === true) destroyWild(ctx);
+  if (input.clock !== undefined) ctx.time.hydrate({ ...ctx.time.snapshot(), now: input.clock });
+  if (input.teleport !== undefined) {
+    const [x, z] = input.teleport;
+    ctx.scene.entity.setPose(ctx.player.userId, { position: [x, ctx.world.groundHeightAt(x, z) + 0.5, z] });
+  }
   const me = ctx.scene.entity.get(ctx.player.userId);
   if (input.summon !== undefined && me !== null) {
     const distance = input.summon.distance ?? 4;

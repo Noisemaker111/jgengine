@@ -37975,5 +37975,135 @@
       "near": 220,
       "far": 1500
     }
+  },
+  "simulation": {
+    "weather": {
+      "ambient": {
+        "mode": "clear",
+        "intensity": 0
+      },
+      "profiles": [
+        {
+          "id": "clear",
+          "mode": "clear",
+          "intensity": 0
+        },
+        {
+          "id": "rain",
+          "mode": "rain",
+          "intensity": 0.8,
+          "temperatureOffset": -4
+        },
+        {
+          "id": "storm",
+          "mode": "rain",
+          "intensity": 1,
+          "temperatureOffset": -5,
+          "lightning": 0.7
+        },
+        {
+          "id": "heatwave",
+          "mode": "clear",
+          "intensity": 0,
+          "temperatureOffset": 20
+        },
+        {
+          "id": "coldsnap",
+          "mode": "clear",
+          "intensity": 0,
+          "temperatureOffset": -20
+        }
+      ],
+      "initialProfileId": "clear",
+      "schedule": [
+        {
+          "atSeconds": 2400,
+          "profileId": "rain",
+          "transitionSeconds": 120
+        },
+        {
+          "atSeconds": 3300,
+          "profileId": "clear",
+          "transitionSeconds": 180
+        },
+        {
+          "atSeconds": 5000,
+          "profileId": "storm",
+          "transitionSeconds": 240
+        },
+        {
+          "atSeconds": 6300,
+          "profileId": "rain",
+          "transitionSeconds": 120
+        },
+        {
+          "atSeconds": 6900,
+          "profileId": "clear",
+          "transitionSeconds": 240
+        },
+        {
+          "atSeconds": 8200,
+          "profileId": "heatwave",
+          "transitionSeconds": 600
+        },
+        {
+          "atSeconds": 9200,
+          "profileId": "clear",
+          "transitionSeconds": 600
+        },
+        {
+          "atSeconds": 10000,
+          "profileId": "rain",
+          "transitionSeconds": 120
+        },
+        {
+          "atSeconds": 10500,
+          "profileId": "clear",
+          "transitionSeconds": 120
+        },
+        {
+          "atSeconds": 11500,
+          "profileId": "coldsnap",
+          "transitionSeconds": 600
+        },
+        {
+          "atSeconds": 12500,
+          "profileId": "clear",
+          "transitionSeconds": 600
+        }
+      ],
+      "repeatSeconds": 14400,
+      "wind": {
+        "direction": [
+          1,
+          0.3
+        ],
+        "speed": 3,
+        "gust": 1.5,
+        "gustFrequency": 0.2
+      },
+      "zones": [
+        {
+          "id": "snow_west",
+          "center": [
+            -750,
+            -850
+          ],
+          "radius": 400,
+          "falloff": 120,
+          "precipitationAs": "snow"
+        },
+        {
+          "id": "snow_frozen_fang",
+          "center": [
+            130,
+            -800
+          ],
+          "radius": 180,
+          "falloff": 80,
+          "precipitationAs": "snow"
+        }
+      ]
+    }
   }
 }

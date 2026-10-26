@@ -70,6 +70,7 @@ export function SimulationInspector({ session, creatorPolicy }: { session: Edito
         <button type="button" onClick={() => setWeather({ ...weather, schedule: weather.schedule!.filter((_, i) => i !== index) })}>Remove transition</button>
       </div>)}
       <button type="button" disabled={!weather.profiles?.length} onClick={() => setWeather({ ...weather, schedule: [...(weather.schedule ?? []), { atSeconds: (weather.schedule?.at(-1)?.atSeconds ?? 0) + 10, profileId: weather.profiles![0]!.id, transitionSeconds: 2 }] })}>Add transition</button>
+      <NumberInput label="Repeat schedule every seconds (0 plays it once)" value={weather.repeatSeconds ?? 0} onChange={(repeatSeconds) => setWeather({ ...weather, repeatSeconds: repeatSeconds > 0 ? repeatSeconds : undefined })} />
     </fieldset>
     <fieldset hidden={!allowWeather} className="space-y-2"><legend>Local wind zones</legend>
       {(weather.zones ?? []).map((zone, index) => <div key={zone.id} className="space-y-1 border-l border-neutral-700 pl-2"><span>{zone.id}</span>
@@ -78,6 +79,7 @@ export function SimulationInspector({ session, creatorPolicy }: { session: Edito
         <NumberInput label={`${zone.id} radius metres`} value={zone.radius} onChange={(radius) => setWeather({ ...weather, zones: weather.zones!.map((row, i) => i === index ? { ...row, radius } : row) })} />
         <NumberInput label={`${zone.id} speed m/s`} value={zone.wind?.speed ?? 0} onChange={(speed) => setWeather({ ...weather, zones: weather.zones!.map((row, i) => i === index ? { ...row, wind: { ...row.wind, speed } } : row) })} />
         <label><input type="checkbox" checked={zone.radial ?? false} onChange={(event) => setWeather({ ...weather, zones: weather.zones!.map((row, i) => i === index ? { ...row, radial: event.target.checked } : row) })} /> Radial wind</label>
+        <label>Falls as <select aria-label={`${zone.id} precipitation falls as`} value={zone.precipitationAs ?? ""} onChange={(event) => setWeather({ ...weather, zones: weather.zones!.map((row, i) => i === index ? { ...row, precipitationAs: event.target.value === "" ? undefined : (event.target.value as "rain" | "snow") } : row) })}><option value="">as scheduled</option><option value="rain">rain</option><option value="snow">snow</option></select></label>
         <button type="button" onClick={() => setWeather({ ...weather, zones: weather.zones!.filter((_, i) => i !== index) })}>Remove wind zone</button>
       </div>)}
       <button type="button" onClick={() => setWeather({ ...weather, zones: [...(weather.zones ?? []), { id: id("wind", weather.zones ?? []), center: [0, 0], radius: 10, falloff: 5, wind: { direction: [1, 0], speed: 3 } }] })}>Add wind zone</button>

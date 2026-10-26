@@ -9,7 +9,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";
 import { resolveScatter } from "@jgengine/core/scatter/scatterRegion";
 import { scatterClearingOf } from "@jgengine/core/scatter/scatterClearing";
-import { ambientTemperature, bodyComfort, type BodyComfort } from "@jgengine/core/survival/bodyTemperature";
+import { bodyComfort, type BodyComfort } from "@jgengine/core/survival/bodyTemperature";
 import { createVitals, type Vitals, type VitalsState } from "@jgengine/core/survival/vitals";
 import { cancelJob, createWorkQueue, enqueue, jobProgress, tick as tickQueue, type WorkQueueConfig, type WorkQueueState } from "@jgengine/core/work/jobQueue";
 
@@ -21,6 +21,7 @@ import { command, keybind, proximityPrompt, type PositionedPrompt } from "@jgeng
 import { FIST, itemDef, itemLabel, itemTraits, PICK_UP, type ToolDef } from "./data/items";
 import { placeHeld, stations, strikeStructure } from "./base";
 import { mountCanSprint, strikeCreature } from "./creatures";
+import { climateAt, inWater, type ClimateHere } from "./climate";
 import { leaveBody } from "./deathBody";
 import { openScreen } from "./screens";
 import { COMFORT, ENGRAM_POINTS, LEVEL_STATS, MAX_LEVEL, SURVIVOR, survivorVitals, XP_TO_LEVEL, type LevelStat } from "./data/survivor";
@@ -43,6 +44,8 @@ interface Survivor {
   activeSlot: number | null;
   swingReady: number;
   comfort: BodyComfort;
+  /** The air and weather where the survivor stood last tick. */
+  climate: ClimateHere | null;
   lastGain: { text: string; at: number } | null;
   /** What sits in front of the survivor: the struck node in reach, or what E would pick. */
   aim: { strike: string | null; pick: string | null; pickAt: { x: number; z: number } | null; water: boolean };
@@ -68,6 +71,7 @@ const survivorOf = perContext((ctx: GameContext): Survivor => ({
   activeSlot: null,
   swingReady: 0,
   comfort: bodyComfort(25, COMFORT),
+  climate: null,
   lastGain: null,
   aim: { strike: null, pick: null, pickAt: null, water: false },
   dead: false,
@@ -277,11 +281,6 @@ export function use(ctx: GameContext): void {
   }
 }
 
-const WATER_LEVEL = 0;
-
-function inWater(ctx: GameContext, position: readonly [number, number, number]): boolean {
-  return ctx.world.groundHeightAt(position[0], position[2]) < WATER_LEVEL + 0.3;
-}
 
 // --- eating ------------------------------------------------------------------------------
 
@@ -416,19 +415,6 @@ export function levelStat(ctx: GameContext, stat: StatId): void {
 
 // --- the tick ------------------------------------------------------------------------------
 
-/** Ground heights to °C: a beach climate cooling with height (ARK's snow peaks are its high ground). */
-function ambientAt(ctx: GameContext, position: readonly [number, number, number]): number {
-  const calendar = ctx.time.calendar();
-  return ambientTemperature({
-    baseC: 24,
-    daySwingC: 6,
-    dayFraction: calendar.dayFraction,
-    altitude: Math.max(0, position[1]),
-    lapsePerMetre: 0.12,
-    wet: inWater(ctx, position),
-  });
-}
-
 export function tickSurvivor(ctx: GameContext, dt: number): void {
   const survivor = survivorOf(ctx);
   const id = ctx.player.userId;
@@ -445,7 +431,8 @@ export function tickSurvivor(ctx: GameContext, dt: number): void {
   const load = encumbrance(ctx, survivor);
   const moving = Math.hypot(me.velocity[0], me.velocity[2]) > 0.5;
   const running = moving && ctx.input.isDown("sprint") && mountCanSprint(ctx) === null && canRun(ctx);
-  survivor.comfort = bodyComfort(ambientAt(ctx, me.position), COMFORT, { fortitude: survivor.points.fortitude * 2 });
+  survivor.climate = climateAt(ctx, me.position);
+  survivor.comfort = bodyComfort(survivor.climate.temperature, COMFORT, { fortitude: survivor.points.fortitude * 2 });
   const extra = [
     ...(running ? [{ vital: "stamina", rate: -SURVIVOR.runStamina }, { vital: "water", rate: -0.03 }] : []),
     ...(survivor.comfort.damagePerSecond > 0 ? [{ vital: "health", rate: -survivor.comfort.damagePerSecond }] : []),
@@ -583,6 +570,8 @@ export function survivorView(ctx: GameContext) {
     flags: survivor.vitals.flags(),
     temperature: Math.round(survivor.comfort.ambientC),
     comfort: survivor.comfort.band,
+    weather: survivor.climate?.weather ?? "clear",
+    sheltered: survivor.climate?.covered ?? false,
     activeSlot: survivor.activeSlot,
     aim: survivor.aim,
     gain: survivor.lastGain !== null && now - survivor.lastGain.at < 2.5 ? survivor.lastGain.text : null,

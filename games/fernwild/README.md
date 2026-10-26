@@ -10,7 +10,7 @@ chains, Frozen Fang and Frozen Tooth in the snow, the redwoods, the swamp, the j
 rivers, with ARK's three obelisks and caves marked. Its 231 creature spawn zones carry ARK's
 species and weights per biome, and resources sit where ARK puts them: metal on the mountains,
 obsidian at the volcano, crystal on the peaks, oil on the frozen shore. Survival, creatures and
-thatch-to-stone building are in; death, weather, supply drops, breeding and the boss come next.
+thatch-to-stone building, death and weather are in; supply drops, breeding and the boss come next.
 
 ## Controls
 
@@ -51,6 +51,12 @@ are drawn.
   - [x] Bodies carve into meat and hide by tool (pick for meat, hatchet for hide), and herds refill
     out of sight.
   - [ ] Thatch, wood and stone building tiers with snap sockets (PR after).
+- **Weather and climate.** A long blue day and a short dawn and dusk on ARK's hour-long day. Each
+  biome has its own air (the south coast hottest, the redwoods cool, the snow below freezing at
+  night), colder with height and at night. Showers, storms, a heatwave and a cold snap come round on
+  a four-hour schedule; the same storm falls as rain on the lowlands and as snow in the snow biome,
+  greys the sky and dims the sun. Rain soaks and chills you under open sky; a roof keeps it off, and
+  a campfire warms whoever stands by it. The HUD shows the weather and the air above the vitals.
 - **Failure states.** Food and water drain; when either empties you lose about 1 HP every 5 seconds
   and torpor rises. Heat and cold drain them faster and hurt past the comfort band. At 0 health you
   wake back on the beach with full vitals.
@@ -70,7 +76,7 @@ are drawn.
   pachy and iguanodon the parasaur, chalicotherium a ground sloth, paraceratherium a rhino,
   gigantopithecus a yeti, and so on (`src/game/data/creatureModels.ts` lists every one). Building has
   no metal tier, foundations snap edge to edge but not to cliffs, and storage boxes cannot be placed
-  yet; no weather yet; no bolas, slingshot shots or tranq arrows yet, so a raptor is clubbed (or
+  yet; rain drops are thin streaks; no bolas, slingshot shots or tranq arrows yet, so a raptor is clubbed (or
   punched) at close range; a tame's inventory holds slots, not weight; drain and regen rates where
   ARK publishes none are approximate; trees are stylized stand-ins, not palms.
 

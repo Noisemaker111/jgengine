@@ -15,6 +15,7 @@ import {
   daylightStateAt,
   DEFAULT_DAY_AMBIENT_INTENSITY,
   DEFAULT_DAY_SUN_INTENSITY,
+  overcastDaylight,
   SKY_PRESET_DAY_FRACTION,
 } from "@jgengine/core/sky/daylightCycle";
 import { publishSkySun } from "./skySun.draw";
@@ -403,6 +404,11 @@ export interface SkyProps {
   bands?: readonly BiomeBand[];
   /** Fog range authored on the game's `backdrop.fog`, used when the sky descriptor sets none. */
   fogRange?: { near?: number; far?: number };
+  /**
+   * The world's weather (`ctx.environment`): wherever the camera is, falling rain or snow clouds the
+   * sky over, greying the dome and fog and dimming the sun. Omit for a sky that ignores the weather.
+   */
+  weather?: { sample(x: number, z: number): { precipitation: number } };
 }
 
 /** Fog range: the sky's own fields win, then the authored backdrop, then the caller's default. */
@@ -433,7 +439,7 @@ const NO_BANDS: readonly BiomeBand[] = [];
  * `modulation`. Every frame it rewrites uniforms and light values in place, never remounting.
  * @capability day-night-sky one sky for a fixed look, a day-night cycle, biome bands and authored lights
  */
-export function Sky({ sky, clock, lights = true, modulation, bands = NO_BANDS, fogRange }: SkyProps) {
+export function Sky({ sky, clock, lights = true, modulation, bands = NO_BANDS, fogRange, weather }: SkyProps) {
   const timeOfDay = sky.timeOfDay === true && clock !== undefined;
   const baseFraction = timeOfDay ? clock!.calendar().dayFraction : SKY_PRESET_DAY_FRACTION[sky.preset];
   const initial = useMemo(() => daylightStateAt(baseFraction, sky), [sky, baseFraction]);
@@ -470,11 +476,12 @@ export function Sky({ sky, clock, lights = true, modulation, bands = NO_BANDS, f
   const mountMoon = (lights || modulation !== undefined) && (timeOfDay || initial.moonIntensity > 0);
 
   useFrame((state) => {
-    if (!timeOfDay && !banded) {
+    if (!timeOfDay && !banded && weather === undefined) {
       publishSkySun(state.scene, initial.sunPosition);
       return;
     }
-    const base = timeOfDay ? daylightStateAt(clock!.calendar().dayFraction, sky) : initial;
+    const cycle = timeOfDay ? daylightStateAt(clock!.calendar().dayFraction, sky) : initial;
+    const base = weather === undefined ? cycle : overcastDaylight(cycle, weather.sample(state.camera.position.x, state.camera.position.z).precipitation);
     publishSkySun(state.scene, base.sunPosition);
     const z = state.camera.position.z;
     const fog = banded ? fogSampler(z) : null;
