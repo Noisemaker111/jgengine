@@ -718,6 +718,7 @@
     "./postfx/gradeShader.draw",
     "./postfx/postfxOverlay.draw",
     "./postfx/postfxTierPolicy",
+    "./postfx/revealFade.draw",
     "./postfx/shadowPrepass.draw",
     "./postfx/stylizePass.draw",
     "./postfx/temporalAaPass.draw",

@@ -310,6 +310,11 @@ export class JitteredRenderPass extends RenderPass {
   }
 
   override render(renderer: THREE.WebGLRenderer, writeBuffer: THREE.WebGLRenderTarget, readBuffer: THREE.WebGLRenderTarget): void {
+    // With temporal AA off (its programs still linking), nothing would resolve the jitter.
+    if (!this.taa.enabled) {
+      super.render(renderer, writeBuffer, readBuffer);
+      return;
+    }
     const camera = this.camera as THREE.PerspectiveCamera | THREE.OrthographicCamera;
     const jitter = this.taa.nextJitter();
     const width = readBuffer.width;

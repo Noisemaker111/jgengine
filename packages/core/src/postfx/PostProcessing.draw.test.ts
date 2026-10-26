@@ -1,9 +1,13 @@
-import { expect, test } from "bun:test";
+import { describe, expect, test } from "bun:test";
 import * as THREE from "three";
 import { EffectComposer } from "three-stdlib";
 import { BokehPass } from "three/examples/jsm/postprocessing/BokehPass.js";
 import { DEFAULT_AO } from "@jgengine/core/render/postProcessing";
-import { buildPostGraph, disposeGraph, planPostStages, resolveAoStage, syncSize, availablePostfxStages } from "./PostProcessing.draw";
+import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
+import { advanceRevealFade, buildPostGraph, disposeGraph, planPostStages, resolveAoStage, showEffects, startRevealFade, syncSize, availablePostfxStages } from "./PostProcessing.draw";
+import { ExposureMeterPass } from "./autoExposure.draw";
+import { RevealFadePass, RevealSnapshotPass } from "./revealFade.draw";
+import { JitteredRenderPass, TemporalAaPass } from "./temporalAaPass.draw";
 
 test("graph resizes and disposes the current Three Bokeh through its pass lifecycle", () => {
   const renderer = {
@@ -186,4 +190,107 @@ test("a lower tier builds fewer passes and renders them into a smaller target", 
     for (const graph of [low, medium, high, ultra]) disposeGraph(graph);
     globalThis.Image = originalImage;
   }
+});
+
+describe("effects after the reveal", () => {
+  const withImage = <T,>(run: () => T): T => {
+    const original = globalThis.Image;
+    globalThis.Image = class {
+      src = "";
+      width = 0;
+      height = 0;
+    } as unknown as typeof Image;
+    try {
+      return run();
+    } finally {
+      globalThis.Image = original;
+    }
+  };
+  const fullChain = () =>
+    withImage(() => buildPostGraph(stubRenderer(), new THREE.Scene(), new THREE.PerspectiveCamera(), planPostStages({ toneMapping: "aces", ao: undefined, bloom: {} }, "high"), 320, 180));
+
+  test("a chain starts with only the beauty pass, the exposure meter, the OutputPass and the grade on", () => {
+    const graph = fullChain();
+    const on = graph.composer.passes.filter((pass) => pass.enabled);
+    expect(on).toHaveLength(4);
+    expect(on[0]).toBeInstanceOf(JitteredRenderPass);
+    expect(on[1]).toBeInstanceOf(ExposureMeterPass);
+    expect(on[2]).toBeInstanceOf(OutputPass);
+    expect(on[3]).toBe(graph.grade!);
+    expect(graph.effects.length).toBe(graph.stages.length - 2);
+    expect(graph.composer.passes[1]).toBeInstanceOf(RevealSnapshotPass);
+    // The fade sits right before the grade, so the grade lands on both pictures alike.
+    expect(graph.composer.passes.at(-2)).toBeInstanceOf(RevealFadePass);
+    disposeGraph(graph);
+  });
+
+  test("the fade passes swap no buffers, so the beauty pass keeps drawing into the target whose depth the effects read", () => {
+    const graph = fullChain();
+    const swaps = () => graph.composer.passes.filter((pass) => pass.enabled && pass.needsSwap).length;
+    showEffects(graph, true);
+    const full = swaps();
+    startRevealFade(graph);
+    expect(swaps()).toBe(full);
+    disposeGraph(graph);
+  });
+
+  test("the effects fade in over about a third of a second, a slow frame included, then the fade passes switch off", () => {
+    const graph = fullChain();
+    const taa = graph.effects.find((pass): pass is TemporalAaPass => pass instanceof TemporalAaPass)!;
+    let resets = 0;
+    taa.reset = () => {
+      resets += 1;
+    };
+    startRevealFade(graph);
+    expect(graph.effects.every((pass) => pass.enabled)).toBe(true);
+    expect(resets).toBe(1);
+    const fade = graph.reveal!.fade;
+    expect(fade.enabled && graph.reveal!.snapshot.enabled).toBe(true);
+    expect(fade.progress).toBe(0);
+    // A frame that took a whole second moves the fade one step, not to its end.
+    advanceRevealFade(graph, 1);
+    expect(fade.progress).toBeGreaterThan(0.1);
+    expect(fade.progress).toBeLessThan(0.12);
+    let frames = 1;
+    while (fade.enabled && frames < 100) {
+      advanceRevealFade(graph, 1 / 60);
+      frames += 1;
+    }
+    expect(frames).toBeGreaterThanOrEqual(16);
+    expect(frames).toBeLessThanOrEqual(18);
+    expect(graph.reveal!.snapshot.enabled).toBe(false);
+    expect(graph.effects.every((pass) => pass.enabled)).toBe(true);
+    disposeGraph(graph);
+  });
+
+  test("a chain with nothing to wait for builds no fade passes", () => {
+    const graph = buildPostGraph(stubRenderer(), new THREE.Scene(), new THREE.PerspectiveCamera(), planPostStages(bare, "high", { ao: false, bloom: false, dof: false, smaa: false }), 320, 180);
+    expect(graph.reveal).toBeNull();
+    expect(graph.composer.passes.every((pass) => pass.enabled)).toBe(true);
+    disposeGraph(graph);
+  });
+
+  test("the beauty pass jitters only while temporal AA is on to resolve it", () => {
+    const graph = fullChain();
+    const beauty = graph.composer.passes[0] as JitteredRenderPass;
+    const projections: number[][] = [];
+    const renderer = {
+      autoClear: true,
+      setRenderTarget() {},
+      clear() {},
+      clearDepth() {},
+      render(_scene: THREE.Object3D, camera: THREE.Camera) {
+        projections.push([...camera.projectionMatrix.elements]);
+      },
+    } as unknown as THREE.WebGLRenderer;
+    const target = new THREE.WebGLRenderTarget(320, 180);
+    beauty.render(renderer, target, target);
+    showEffects(graph, true);
+    beauty.render(renderer, target, target);
+    const camera = (beauty as unknown as { camera: THREE.PerspectiveCamera }).camera;
+    expect(projections[0]).toEqual([...camera.projectionMatrix.elements]);
+    expect(projections[1]).not.toEqual(projections[0]);
+    target.dispose();
+    disposeGraph(graph);
+  });
 });

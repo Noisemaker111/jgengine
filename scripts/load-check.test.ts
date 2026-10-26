@@ -1,13 +1,13 @@
 import { describe, expect, test } from "bun:test";
 
 import { shootCommand, LOAD_GUARD_SECONDS } from "./shoot";
-import { bestOf, judgeLoad, parseLoadArgs, renderTable, summarizeRuns, type LoadSample } from "./load-check";
+import { bestOf, judgeLoad, parseLoadArgs, renderTable, revealSummary, summarizeRuns, type LoadSample } from "./load-check";
 import { siteGames } from "./siteGames";
 
 const known = ["apex-nights", "hold-the-line", "saltwick"];
 
 function sample(game: string, worstClick: number | null, playable: number | null): LoadSample {
-  return { game, firstPaint: 500, menuShown: 900, worstClick, sceneReady: 2000, playable, longestTaskMs: 120, blockingMs: 300, transferKb: 2048, menuLabel: "Play" };
+  return { game, firstPaint: 500, menuShown: 900, worstClick, sceneReady: 2000, playable, revealWorstFrame: 17, longestTaskMs: 120, blockingMs: 300, transferKb: 2048, menuLabel: "Play" };
 }
 
 describe("bun run shoot --load", () => {
@@ -79,5 +79,12 @@ describe("judgeLoad", () => {
     const best = bestOf(now(1200, 3000), now(700, 9000));
     expect(best.worstClick).toBe(700);
     expect(best.sceneReady).toBe(3000);
+  });
+});
+
+describe("revealSummary", () => {
+  test("counts the frames after the reveal, the worst, the median and the ones that missed 30 fps", () => {
+    expect(revealSummary([16.7, 16.6, 120, 34, 16.8])).toBe("5 frames, worst 120 ms, median 17 ms, 2 over 33 ms");
+    expect(revealSummary([])).toBe("no frames");
   });
 });

@@ -625,6 +625,70 @@ function standInGroup(proxies: readonly Object3D[]): Object3D {
   return group;
 }
 
+function materialVersions(material: unknown): string {
+  return (Array.isArray(material) ? material : [material]).map((entry: { uuid?: string; version?: number } | undefined) => `${entry?.uuid}:${entry?.version}`).join(",");
+}
+
+/** Run `work` with `target` bound (`null` is the canvas), then put back what was bound. */
+function withRenderTarget(renderer: ShaderWarmupRenderer, target: unknown, work: () => void): void {
+  const previous = renderer.getRenderTarget?.() ?? null;
+  if (renderer.setRenderTarget === undefined || previous === target) {
+    work();
+    return;
+  }
+  renderer.setRenderTarget(target);
+  try {
+    work();
+  } finally {
+    renderer.setRenderTarget(previous);
+  }
+}
+
+/** What decides the programs a held draw runs: its object, the material it held, the override and canvas or target. */
+function heldDrawKey(draw: HeldDraw): string {
+  const override = draw.override as { uuid?: string; version?: number } | null;
+  const own = isDrawable(draw.object) ? materialVersions(draw.material) : "";
+  return `${draw.object.uuid}|${own}|${override?.uuid ?? ""}:${override?.version ?? ""}|${draw.target === null ? "canvas" : "target"}`;
+}
+
+/** Link the programs a held draw runs. An override pass draws `objects` with the override material. */
+function compileHeldDraw(renderer: ShaderWarmupRenderer, scene: Object3D, objects: readonly Object3D[], draw: HeldDraw): void {
+  const override = draw.override;
+  withRenderTarget(renderer, draw.target, () => {
+    if (override !== null && draw.object === scene) {
+      renderer.compile(standInGroup(objects.filter(isDrawable).map((object) => standIn(object, override))), draw.camera, scene as Scene);
+    } else if (isDrawable(draw.object) && draw.material !== null) {
+      // A quad is linked with the material it held at the call, not whatever it holds now.
+      renderer.compile(standIn(draw.object, draw.material), draw.camera);
+    } else {
+      renderer.compile(draw.object, draw.camera);
+    }
+  });
+}
+
+/** Draw a linked held draw once into `target`, for a driver that finishes a program at its first draw. */
+function drawHeldDraw(renderer: ShaderWarmupRenderer, scene: Object3D, objects: readonly Object3D[], draw: HeldDraw, target: unknown): void {
+  const override = draw.override as Material | null;
+  if (override !== null && draw.object === scene) {
+    const keep = new Set(objects);
+    const owner = scene as Scene;
+    withRenderTarget(renderer, target, () => {
+      const previous = owner.overrideMaterial;
+      owner.overrideMaterial = override;
+      try {
+        drawSubset(renderer, owner, draw.camera, (object) => keep.has(object));
+      } finally {
+        owner.overrideMaterial = previous;
+      }
+    });
+  } else if (isDrawable(draw.object) && draw.material !== null) {
+    const quad = standIn(draw.object, draw.material);
+    quad.onBeforeRender = () => {};
+    quad.onAfterRender = () => {};
+    withRenderTarget(renderer, target, () => renderer.render?.(quad, draw.camera));
+  }
+}
+
 type ShadowSource = Material & {
   alphaMap?: unknown;
   map?: unknown;
@@ -739,6 +803,67 @@ export async function linkAhead(renderer: ShaderWarmupRenderer, compile: () => v
 }
 
 const LINK_POLL_MS = 16;
+
+/**
+ * Link the programs `draw` would run, off the frame and without drawing: every renderer draw it
+ * makes is held, then each one is linked and waited for on its own, and drawn once into a scratch
+ * target (not a canvas draw), so a frame that turns those draws on later has nothing left to link. For draws
+ * the frame loop adds after the reveal, such as post effects that waited for it. Resolves when all
+ * of them are ready or `stop` says so. @internal
+ */
+export async function linkDrawsOffFrame(
+  renderer: ShaderWarmupRenderer & { render: RenderMethod },
+  scene: Object3D,
+  draw: () => void,
+  stop: () => boolean,
+): Promise<void> {
+  const held: HeldDraw[] = [];
+  const release = holdDraws(renderer, { onHeld: (call) => held.push(call) });
+  try {
+    draw();
+  } finally {
+    release();
+  }
+  const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+  const seen = new Set<string>();
+  const due: HeldDraw[] = [];
+  for (const call of held) {
+    if (call.object === scene && call.override === null) continue;
+    const key = heldDrawKey(call);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    due.push(call);
+  }
+  const objectsFor = (call: HeldDraw): Object3D[] => (call.override === null ? [] : [...planFirstFrame(scene, call.camera).objects]);
+  let scratch: WebGLRenderTarget | null = null;
+  try {
+    // A batch per flush, as under the cover: a driver with link workers runs a batch's links side by side.
+    for (let start = 0; start < due.length; start += SHADER_WARMUP_DEFAULTS.programsPerBatch) {
+      if (stop()) return;
+      const batch = due.slice(start, start + SHADER_WARMUP_DEFAULTS.programsPerBatch).map((call) => ({ call, objects: objectsFor(call) }));
+      await linkAhead(renderer, () => {
+        for (const { call, objects } of batch) compileHeldDraw(renderer, scene, objects, call);
+      }, stop);
+      if (stop()) return;
+      scratch ??= new WebGLRenderTarget(1, 1);
+      // A draw to the canvas outside a frame would show; those are left to their first real frame.
+      for (const { call, objects } of batch) if (call.target !== null) drawHeldDraw(renderer, scene, objects, call, scratch);
+      await gpuFence(renderer.getContext?.(), sleep, stop);
+    }
+  } finally {
+    scratch?.dispose();
+  }
+}
+
+/**
+ * Resolves once the loading cover over `scene` has lifted: its warmup finished, ready or failed.
+ * A scene that nothing covers resolves at once. Waits one microtask first, so a warmup the same
+ * commit registers later is seen. @internal
+ */
+export async function sceneRevealed(scene: Object3D): Promise<void> {
+  await Promise.resolve();
+  await sceneWarmups.get(scene)?.done;
+}
 
 function markTimeline(name: string, detail: unknown): void {
   try {
@@ -914,21 +1039,7 @@ export function createShaderWarmup(options: ShaderWarmupOptions): ShaderWarmup {
   /** Compile with the frame's target bound, so the links are the programs that frame draws. */
   const withFrameTarget = (compile: () => void): void => withTarget(frameTarget(), compile);
 
-  /** Compile with `target` bound (`null` is the canvas), then put back what was bound. */
-  const withTarget = (target: unknown, compile: () => void): void => {
-    const renderer = options.renderer;
-    const previous = renderer.getRenderTarget?.() ?? null;
-    if (renderer.setRenderTarget === undefined || previous === target) {
-      compile();
-      return;
-    }
-    renderer.setRenderTarget(target);
-    try {
-      compile();
-    } finally {
-      renderer.setRenderTarget(previous);
-    }
-  };
+  const withTarget = (target: unknown, compile: () => void): void => withRenderTarget(options.renderer, target, compile);
 
   const publish = (next: Partial<ShaderWarmupState>): void => {
     const phase = state.phase;
@@ -1022,9 +1133,6 @@ export function createShaderWarmup(options: ShaderWarmupOptions): ShaderWarmup {
     ].join("|");
     return { key, lights, shadowKinds };
   };
-
-  const materialVersions = (material: unknown): string =>
-    (Array.isArray(material) ? material : [material]).map((entry: { uuid?: string; version?: number } | undefined) => `${entry?.uuid}:${entry?.version}`).join(",");
 
   /** One GPU flush: a compile that may queue a few program links. */
   type LinkJob = () => void | Promise<void>;
@@ -1224,29 +1332,7 @@ export function createShaderWarmup(options: ShaderWarmupOptions): ShaderWarmup {
         withFrameTarget(() => drawSubset(options.renderer, options.scene, options.camera, keep));
       });
     }
-    for (const draw of heldToDraw) {
-      const override = draw.override as Material | null;
-      if (override !== null && draw.object === options.scene) {
-        const scene = options.scene as Scene;
-        const keep = new Set(objects);
-        jobs.push(() =>
-          withTarget(draw.target, () => {
-            const previous = scene.overrideMaterial;
-            scene.overrideMaterial = override;
-            try {
-              drawSubset(options.renderer, scene, draw.camera, (object) => keep.has(object));
-            } finally {
-              scene.overrideMaterial = previous;
-            }
-          }),
-        );
-      } else if (isDrawable(draw.object) && draw.material !== null) {
-        const quad = standIn(draw.object, draw.material);
-        quad.onBeforeRender = () => {};
-        quad.onAfterRender = () => {};
-        jobs.push(() => withTarget(draw.target, () => options.renderer.render?.(quad, draw.camera)));
-      }
-    }
+    for (const draw of heldToDraw) jobs.push(() => drawHeldDraw(options.renderer, options.scene, objects, draw, draw.target));
     heldToDraw = [];
     return jobs;
   };
@@ -1256,22 +1342,11 @@ export function createShaderWarmup(options: ShaderWarmupOptions): ShaderWarmup {
     const jobs: LinkJob[] = [];
     for (const draw of options.takeHeldDraws?.() ?? []) {
       if (draw.object === options.scene && draw.override === null) continue;
-      const override = draw.override as { uuid?: string; version?: number } | null;
-      const own = isDrawable(draw.object) ? materialVersions(draw.material) : "";
-      const key = `${draw.object.uuid}|${own}|${override?.uuid ?? ""}:${override?.version ?? ""}|${draw.target === null ? "canvas" : "target"}`;
+      const key = heldDrawKey(draw);
       if (drawsWarmed.has(key)) continue;
       drawsWarmed.add(key);
       heldToDraw.push(draw);
-      if (override !== null && draw.object === options.scene) {
-        const proxies = objects.filter(isDrawable).map((object) => standIn(object, override));
-        jobs.push(() => withTarget(draw.target, () => options.renderer.compile(standInGroup(proxies), draw.camera, options.scene)));
-      } else if (isDrawable(draw.object) && draw.material !== null) {
-        // A quad is linked with the material it held at the call, not whatever it holds now.
-        const quad = standIn(draw.object, draw.material);
-        jobs.push(() => withTarget(draw.target, () => options.renderer.compile(quad, draw.camera)));
-      } else {
-        jobs.push(() => withTarget(draw.target, () => options.renderer.compile(draw.object, draw.camera)));
-      }
+      jobs.push(() => compileHeldDraw(options.renderer, options.scene, objects, draw));
     }
     return jobs;
   };

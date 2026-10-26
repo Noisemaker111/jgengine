@@ -11,6 +11,9 @@ import {
   firstUnlinkedDrawable,
   holdDraws,
   linkAhead,
+  linkDrawsOffFrame,
+  registerSceneWarmup,
+  sceneRevealed,
   warmupDraws,
   warmupDrawsToTarget,
   warmupWaitsFor,
@@ -1128,5 +1131,99 @@ describe("linkAhead", () => {
 
     expect(polls).toBeGreaterThan(3);
     expect(read).toBe(true);
+  });
+});
+
+describe("linkDrawsOffFrame", () => {
+  const offFrameRig = () => {
+    const programs: { polls: number; isReady(): boolean }[] = [];
+    let bound: unknown = null;
+    const compiled: { material: unknown; target: unknown }[] = [];
+    const drawn: { material: unknown; target: unknown; ready: boolean }[] = [];
+    const renderer = {
+      info: { programs },
+      getRenderTarget: () => bound,
+      setRenderTarget: (target: unknown) => {
+        bound = target;
+      },
+      compile(object: Object3D) {
+        compiled.push({ material: (object as Mesh).material, target: bound });
+        programs.push({
+          polls: 0,
+          isReady() {
+            this.polls += 1;
+            return this.polls > 2;
+          },
+        });
+      },
+      render(object: Object3D) {
+        drawn.push({ material: (object as Mesh).material, target: bound, ready: programs.every((program) => program.polls > 2) });
+      },
+    };
+    const scene = new Scene();
+    const camera = new OrthographicCamera();
+    const quad = new Mesh(new BoxGeometry(1, 1, 1), new MeshBasicMaterial());
+    const blur = new MeshBasicMaterial();
+    const finish = new MeshBasicMaterial();
+    const chainTarget = new WebGLRenderTarget(4, 4);
+    // A post chain: the scene into its buffer, a blur into a target, the same blur again, the last pass to the canvas.
+    const chain = () => {
+      renderer.setRenderTarget(chainTarget);
+      renderer.render(scene);
+      quad.material = blur;
+      renderer.render(quad);
+      renderer.render(quad);
+      renderer.setRenderTarget(null);
+      quad.material = finish;
+      renderer.render(quad);
+    };
+    return { renderer, scene, camera, chain, compiled, drawn, blur, finish, chainTarget };
+  };
+
+  test("links each distinct pass draw off the frame and draws the target ones once into a scratch target after their link", async () => {
+    const rig = offFrameRig();
+    const render = rig.renderer.render;
+    await linkDrawsOffFrame(rig.renderer, rig.scene, rig.chain, () => false);
+
+    expect(rig.compiled.map((entry) => entry.material)).toEqual([rig.blur, rig.finish]);
+    expect(rig.compiled[0]!.target).toBe(rig.chainTarget);
+    expect(rig.compiled[1]!.target).toBeNull();
+    // Only the warm draw reached the renderer: the chain itself was held.
+    expect(rig.drawn).toHaveLength(1);
+    expect(rig.drawn[0]!.material).toBe(rig.blur);
+    expect(rig.drawn[0]!.ready).toBe(true);
+    expect(rig.drawn[0]!.target).toBeInstanceOf(WebGLRenderTarget);
+    expect(rig.drawn[0]!.target).not.toBe(rig.chainTarget);
+    expect(rig.renderer.render).toBe(render);
+  });
+
+  test("links nothing once stopped", async () => {
+    const rig = offFrameRig();
+    await linkDrawsOffFrame(rig.renderer, rig.scene, rig.chain, () => true);
+    expect(rig.compiled).toHaveLength(0);
+    expect(rig.drawn).toHaveLength(0);
+  });
+});
+
+describe("sceneRevealed", () => {
+  test("waits for the scene's warmup to finish, and not at all for a scene nothing covers", async () => {
+    const scene = new Scene();
+    let finish: (state: ShaderWarmupState) => void = () => {};
+    const done = new Promise<ShaderWarmupState>((resolve) => {
+      finish = resolve;
+    });
+    let revealed = false;
+    const waiting = sceneRevealed(scene).then(() => {
+      revealed = true;
+    });
+    // Registered after the wait began, as a gate later in the same commit would be.
+    const unregister = registerSceneWarmup(scene, { done, state: () => ({}) as ShaderWarmupState, prepare: async () => {}, cancel: () => {} });
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    expect(revealed).toBe(false);
+    finish({} as ShaderWarmupState);
+    await waiting;
+    expect(revealed).toBe(true);
+    unregister();
+    await sceneRevealed(new Scene());
   });
 });
