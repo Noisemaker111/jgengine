@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { readPromotedScene, registerRootGameScript, runCreate, writeGame } from "./create";
+import { readPromotedScene, runCreate, writeGame } from "./create";
 import { diagnoseProject } from "./doctor";
 import { cliVersion, sdkVersion } from "./pkg";
 import { parseCreateName } from "./templates";
@@ -233,39 +233,29 @@ describe("writeGame from a promoted scene", () => {
   });
 });
 
-describe("registerRootGameScript", () => {
-  test("inserts games:<id> sorted among existing game scripts", () => {
+describe("runCreate in the engine monorepo", () => {
+  test("scaffolds into games/ and leaves the root package.json scripts alone", () => {
     const root = scratch();
-    writeFileSync(
-      join(root, "package.json"),
-      JSON.stringify({
-        name: "fixture-root",
-        scripts: {
-          build: "noop",
-          "games:annals": "bun run --cwd games/annals dev",
-          "games:voxel-mine": "bun run --cwd games/voxel-mine dev",
-        },
-      }),
-    );
+    mkdirSync(join(root, "packages", "core", "src"), { recursive: true });
+    mkdirSync(join(root, "games"));
+    const rootPackage = JSON.stringify({
+      name: "fixture-root",
+      workspaces: ["packages/*"],
+      scripts: { build: "noop", "games:annals": "bun run --cwd games/annals dev" },
+    });
+    writeFileSync(join(root, "package.json"), rootPackage);
 
-    expect(registerRootGameScript(root, "probe-game")).toBe(true);
-    const scripts = (JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as {
-      scripts: Record<string, string>;
-    }).scripts;
-    expect(scripts["games:probe-game"]).toBe("bun run --cwd games/probe-game dev");
-    const gameKeys = Object.keys(scripts).filter((key) => key.startsWith("games:"));
-    expect(gameKeys).toEqual(["games:annals", "games:probe-game", "games:voxel-mine"]);
-
-    expect(registerRootGameScript(root, "probe-game")).toBe(false);
-  });
-
-  test("cwd uses the folder name when it differs from the package id", () => {
-    const root = scratch();
-    writeFileSync(join(root, "package.json"), JSON.stringify({ name: "fixture-root", scripts: {} }));
-    expect(registerRootGameScript(root, "my-game-name", "My-Game-Name")).toBe(true);
-    const scripts = (JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as {
-      scripts: Record<string, string>;
-    }).scripts;
-    expect(scripts["games:my-game-name"]).toBe("bun run --cwd games/My-Game-Name dev");
+    const log = spyOn(console, "log").mockImplementation(() => {});
+    try {
+      const code = runCreate([join(root, "games", "Root Probe"), "--in-repo", "--no-install", "--no-skills"]);
+      expect(code).toBe(0);
+      expect(existsSync(join(root, "games", "Root-Probe", "package.json"))).toBe(true);
+      const lines = log.mock.calls.map((call) => String(call[0]));
+      expect(lines.some((line) => line.includes("bun --cwd=games/Root-Probe run dev"))).toBe(true);
+      expect(lines.some((line) => line.includes("registered root script"))).toBe(false);
+    } finally {
+      log.mockRestore();
+    }
+    expect(readFileSync(join(root, "package.json"), "utf8")).toBe(rootPackage);
   });
 });

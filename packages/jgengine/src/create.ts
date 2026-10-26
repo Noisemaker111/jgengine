@@ -73,23 +73,6 @@ export function readPromotedScene(pathArg: string): EditorSceneDoc {
   return { version: 1, ...scene, markers };
 }
 
-/** @internal */
-export function registerRootGameScript(rootDir: string, id: string, folderName: string = id): boolean {
-  const rootPackagePath = join(rootDir, "package.json");
-  const root = JSON.parse(readFileSync(rootPackagePath, "utf8")) as { scripts?: Record<string, string> };
-  const scripts = root.scripts ?? {};
-  const key = `games:${id}`;
-  if (scripts[key] !== undefined) return false;
-  const entries = Object.entries(scripts);
-  const games = entries.filter(([k]) => k.startsWith("games:"));
-  const rest = entries.filter(([k]) => !k.startsWith("games:"));
-  games.push([key, `bun run --cwd games/${folderName} dev`]);
-  games.sort(([a], [b]) => a.localeCompare(b));
-  root.scripts = Object.fromEntries([...rest, ...games]);
-  writeFileSync(rootPackagePath, `${JSON.stringify(root, null, 2)}\n`);
-  return true;
-}
-
 const VALUE_FLAGS = new Set(["--pm", "--shape", "--from-scene", "--player", "--ground", "--scene"]);
 const BOOLEAN_FLAGS = new Set([
   "--2d",
@@ -287,12 +270,9 @@ export function runCreate(argv: string[]): number {
     }
 
     if (variant === "in-repo" && workspaceRoot !== null) {
-      if (registerRootGameScript(workspaceRoot, id, folderName)) {
-        console.log(`registered root script "games:${id}" in ${join(workspaceRoot, "package.json")}`);
-      }
       console.log("\nnext steps:");
       console.log(`  bun install                     # from ${workspaceRoot}`);
-      console.log(`  bun run games:${id}             # play it standalone`);
+      console.log(`  bun --cwd=games/${folderName} run dev   # play it standalone`);
       console.log(`  # agent: open the project and build ${displayName} (skills live in the monorepo)`);
       return 0;
     }

@@ -20,10 +20,10 @@ describe("project commands", () => {
     ).toEqual(["bun", "packages/jgengine/src/cli/index.ts", "create", "My Game"]);
   });
 
-  test("start-game maps mount modes onto existing root scripts", () => {
+  test("start-game maps mount modes onto the game's dev script and existing root scripts", () => {
     expect(buildShellCommand({ kind: "start-game", id: "starhome", mount: "standalone" })).toEqual({
-      label: "games:starhome",
-      argv: ["bun", "run", "games:starhome"],
+      label: "games/starhome dev",
+      argv: ["bun", "--cwd=games/starhome", "run", "dev"],
       cwd: "repo",
       stream: true,
     });

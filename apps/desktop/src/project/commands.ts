@@ -24,8 +24,8 @@ export function buildShellCommand(action: ProjectAction): ShellCommand {
     case "start-game": {
       if (action.mount === "standalone") {
         return {
-          label: `games:${action.id}`,
-          argv: ["bun", "run", `games:${action.id}`],
+          label: `games/${action.id} dev`,
+          argv: ["bun", `--cwd=games/${action.id}`, "run", "dev"],
           cwd: "repo",
           stream: true,
         };
