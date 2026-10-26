@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 
-import { useAccessibilitySettings } from "@jgengine/react/accessibilitySettings";
+import { useAccessibilitySettings } from "@jgengine/react/settings/accessibilitySettings";
 
 import type { CaptionFeed } from "./captions";
 

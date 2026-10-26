@@ -7,7 +7,7 @@ import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
 
 import { InventoryGrid } from "./inventoryGrid";
-import { GameProvider } from "./provider";
+import { GameProvider } from "../provider";
 
 function makeContext(): GameContext {
   return createGameContext({

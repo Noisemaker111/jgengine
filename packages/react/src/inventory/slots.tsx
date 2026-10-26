@@ -1,7 +1,7 @@
 import { type CSSProperties, type ReactNode } from "react";
 
-import { IconTreatment, type IconSchool } from "./iconTreatment";
-import type { GameIconName } from "./gameIcons";
+import { IconTreatment, type IconSchool } from "../iconTreatment";
+import type { GameIconName } from "../gameIcons";
 
 /**
  * Atomic, purpose-named slot grids (#1033): one component per category — `EquipmentSlots`,

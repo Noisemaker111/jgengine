@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, type ReactNode } from "react";
 
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import { useAccessibilitySettings } from "@jgengine/react/accessibilitySettings";
+import { useAccessibilitySettings } from "@jgengine/react/settings/accessibilitySettings";
 
 import { cameraShake } from "../camera/shake/shakeChannel";
 import type { AudioEngine } from "./audioEngine";

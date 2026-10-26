@@ -1,8 +1,8 @@
 import { useState, type CSSProperties, type ReactNode } from "react";
 
-import { useDialogBehavior } from "@jgengine/react/dialogBehavior";
+import { useDialogBehavior } from "@jgengine/react/dialog/dialogBehavior";
 import { ScrollRail } from "@jgengine/react/scrollRail";
-import { SettingsSection } from "@jgengine/react/settingsBlocks";
+import { SettingsSection } from "@jgengine/react/settings/settingsBlocks";
 
 import type { SettingsActionView, SettingsCategoryView, SettingsController } from "./settingsController";
 

@@ -3,7 +3,7 @@ import { actionContextStack, playControlsActive, suspendPlayControls } from "@jg
 import { useGame, useGameContext, useGameStoreValue } from "@jgengine/react";
 import type { PlayableGame } from "@jgengine/shell/registry";
 import type { GameSettingDef } from "@jgengine/core/settings/settingsModel";
-import { SettingsTrigger, useSetting } from "@jgengine/react/settings";
+import { SettingsTrigger, useSetting } from "@jgengine/react/settings/settings";
 import { authorityContent, authorityDefinition, authorityLoop, type AuthorityView } from "./hostedAuthority";
 
 const buttonStyle: CSSProperties = { padding: "12px 18px", border: "1px solid #6faaa7", borderRadius: 8, background: "#193b40", color: "#e9f6ee", fontWeight: 600, cursor: "pointer" };

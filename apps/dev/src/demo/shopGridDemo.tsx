@@ -6,7 +6,7 @@ import { createEmptyWallet, grant, type WalletState } from "@jgengine/core/econo
 import type { GameContext, GameContextEntityEntry } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { environment, grass, terrain } from "@jgengine/core/world/features";
-import { ShopGrid } from "@jgengine/react/shopGrid";
+import { ShopGrid } from "@jgengine/react/inventory/shopGrid";
 import { hudThemeVars, HUD_THEME_PRESETS } from "@jgengine/react/hud/hudTheme";
 
 import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";

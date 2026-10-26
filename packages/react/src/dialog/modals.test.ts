@@ -2,9 +2,9 @@ import { describe, expect, test } from "bun:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
-import { createModalStack } from "@jgengine/core/ui/modalStack";
+import { createModalStack } from "@jgengine/core/dialog/modalStack";
 
-import { PauseMenu } from "./menu/pauseMenu";
+import { PauseMenu } from "../menu/pauseMenu";
 import { ConfirmDialog, ModalHost } from "./modals";
 
 describe("ConfirmDialog", () => {

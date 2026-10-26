@@ -2,6 +2,19 @@
 
 # jgengine-ui — exported API surface
 
+## @jgengine/core/dialog/modalStack
+
+- `MODAL_CANCEL` (const): const MODAL_CANCEL: "cancel" — Conventional cancel/dismiss result (also the default auto-dismiss and pop result).
+- `MODAL_CONFIRM` (const): const MODAL_CONFIRM: "confirm" — Conventional confirm result for a two-button dialog — a shared string, not model behavior.
+- `ModalInput` (type): type ModalInput = Omit<ModalRecord, "id"> & { id?: string } — A modal to push — {@link ModalRecord} with an optional id (auto-assigned when absent).
+- `ModalRecord` (interface): interface ModalRecord — Headless, serializable model for a stack of modal dialogs — the data layer behind a pause menu, a "quit to menu?" confirmation, a level-up popup, or any blocking overlay a game raises over its scene. It carries an ordered stack of opaque {@link ModalRecord}s (push to open, pop/resolve to close) and nothing about how they look: the model NEVER interprets a record's `kind` or a resolution's `result` string — those are free-form game vocabulary the React chrome in `@jgengine/react` renders. Observable ({@link ModalStack.subscribe}) and round-trips through a save ({@link ModalStack.snapshot}/{@link ModalStack.restore}). An injected clock powers optional per-modal auto-dismiss timers; leave those unset and the model is pure and clockless.
+- `ModalResolution` (interface): interface ModalResolution — The outcome of closing a modal via {@link ModalStack.resolve} (or an auto-dismiss) — the closed record's identity plus the free-form `result` string the caller chose. Delivered to the `onResolve` option and stashed as {@link ModalStack.lastResolution}.
+- `ModalStack` (interface): interface ModalStack — An observable, serializable stack of modal dialogs. See {@link createModalStack}.
+- `ModalStackEntry` (interface): interface ModalStackEntry — A serialized stack entry: the opaque record plus the clock time it opened (for timer restore).
+- `ModalStackOptions` (interface): interface ModalStackOptions — Options for {@link createModalStack}.
+- `ModalStackSnapshot` (interface): interface ModalStackSnapshot — Serializable state — the ordered entries (bottom-first) and the id counter. Plain JSON.
+- `createModalStack` (function): function createModalStack(options: ModalStackOptions = {}): ModalStack — A stack of modal dialogs: push opaque records to open blocking overlays (a pause menu, a confirm prompt, a reward popup), pop or resolve them with a free-form result to close, and query the top / open / depth to gate game input. The model is deliberately vocabulary-free — it never reads a record's `kind` or a resolution's `result`, so a game owns every dialog style — and fully serializable, with an optional injected clock driving per-modal auto-dismiss. A React host renders `top()`; `subscribe` re-renders it, `snapshot`/`restore` round-trip it through a save.
+
 ## @jgengine/core/format/distance
 
 - `DistanceFormat` (interface): interface DistanceFormat — Options for {@link formatDistance}.
@@ -566,19 +579,6 @@
 - `TipRotationSnapshot` (interface): interface TipRotationSnapshot — Serializable rotation state.
 - `createTipRotation` (function): function createTipRotation(config: TipRotationConfig): TipRotation — Create a {@link TipRotation} over the game's tips. Order is a seeded shuffle; `next()` walks it and wraps, so every tip is seen once per cycle instead of a random repeat.
 
-## @jgengine/core/ui/modalStack
-
-- `MODAL_CANCEL` (const): const MODAL_CANCEL: "cancel" — Conventional cancel/dismiss result (also the default auto-dismiss and pop result).
-- `MODAL_CONFIRM` (const): const MODAL_CONFIRM: "confirm" — Conventional confirm result for a two-button dialog — a shared string, not model behavior.
-- `ModalInput` (type): type ModalInput = Omit<ModalRecord, "id"> & { id?: string } — A modal to push — {@link ModalRecord} with an optional id (auto-assigned when absent).
-- `ModalRecord` (interface): interface ModalRecord — Headless, serializable model for a stack of modal dialogs — the data layer behind a pause menu, a "quit to menu?" confirmation, a level-up popup, or any blocking overlay a game raises over its scene. It carries an ordered stack of opaque {@link ModalRecord}s (push to open, pop/resolve to close) and nothing about how they look: the model NEVER interprets a record's `kind` or a resolution's `result` string — those are free-form game vocabulary the React chrome in `@jgengine/react` renders. Observable ({@link ModalStack.subscribe}) and round-trips through a save ({@link ModalStack.snapshot}/{@link ModalStack.restore}). An injected clock powers optional per-modal auto-dismiss timers; leave those unset and the model is pure and clockless.
-- `ModalResolution` (interface): interface ModalResolution — The outcome of closing a modal via {@link ModalStack.resolve} (or an auto-dismiss) — the closed record's identity plus the free-form `result` string the caller chose. Delivered to the `onResolve` option and stashed as {@link ModalStack.lastResolution}.
-- `ModalStack` (interface): interface ModalStack — An observable, serializable stack of modal dialogs. See {@link createModalStack}.
-- `ModalStackEntry` (interface): interface ModalStackEntry — A serialized stack entry: the opaque record plus the clock time it opened (for timer restore).
-- `ModalStackOptions` (interface): interface ModalStackOptions — Options for {@link createModalStack}.
-- `ModalStackSnapshot` (interface): interface ModalStackSnapshot — Serializable state — the ordered entries (bottom-first) and the id counter. Plain JSON.
-- `createModalStack` (function): function createModalStack(options: ModalStackOptions = {}): ModalStack — A stack of modal dialogs: push opaque records to open blocking overlays (a pause menu, a confirm prompt, a reward popup), pop or resolve them with a free-form result to close, and query the top / open / depth to gate game input. The model is deliberately vocabulary-free — it never reads a record's `kind` or a resolution's `result`, so a game owns every dialog style — and fully serializable, with an optional injected clock driving per-modal auto-dismiss. A React host renders `top()`; `subscribe` re-renders it, `snapshot`/`restore` round-trip it through a save.
-
 ## @jgengine/core/ui/objectiveBanner
 
 - `ObjectiveBannerAnnouncement` (interface): interface ObjectiveBannerAnnouncement — One announcement request handed to {@link ObjectiveBannerController.announce}.
@@ -966,7 +966,7 @@
 - `ModalControls` (interface): interface ModalControls — Stack-bound controls handed to a {@link ModalHost} render callback.
 - `ModalHost` (function): function ModalHost({ stack, children, showBackdrop = true, backdrop, closeOnBackdrop = true, closeOnEsc = true, zIndexBase = 80, onInteract, className, style, }: ModalHostProps): ReactNode — Full-screen modal host: watches a stack, renders only the topmost modal centered over a dimmed backdrop, and manages accessibility — the panel is a `role="dialog" aria-modal`, focus moves into it on open and is trapped with Tab/Shift+Tab cycling, Escape and (optionally) a backdrop click cancel the top modal, and focus returns to the previously focused element on close. It renders nothing when the stack is empty. Skin the panel and backdrop via `HudTheme` tokens.
 - `ModalHostProps` (interface): interface ModalHostProps — Props for {@link ModalHost}.
-- `ModalStackView` (interface): interface ModalStackView — React chrome over the headless modal stack (`@jgengine/core/ui/modalStack`) — the blocking-overlay layer a game raises over its scene: a pause menu, a "quit to menu?" confirm, a reward popup. {@link useModalStack} is the DATA/HOOK layer (subscribe + the active record), {@link ModalHost} renders the top modal with a backdrop, focus trap, and Esc-to-cancel, and {@link ConfirmDialog} / {@link PauseMenu} (`menu/pauseMenu`) are ready-to-wire, HudTheme-token-driven building blocks. All unskinned and game-owned: the model never interprets a modal's `kind`, so a game switches on it to pick which of these (or its own) content to show, and reskins everything via `HudTheme` tokens and the frame.
+- `ModalStackView` (interface): interface ModalStackView — React chrome over the headless modal stack (`@jgengine/core/dialog/modalStack`) — the blocking-overlay layer a game raises over its scene: a pause menu, a "quit to menu?" confirm, a reward popup. {@link useModalStack} is the DATA/HOOK layer (subscribe + the active record), {@link ModalHost} renders the top modal with a backdrop, focus trap, and Esc-to-cancel, and {@link ConfirmDialog} / {@link PauseMenu} (`menu/pauseMenu`) are ready-to-wire, HudTheme-token-driven building blocks. All unskinned and game-owned: the model never interprets a modal's `kind`, so a game switches on it to pick which of these (or its own) content to show, and reskins everything via `HudTheme` tokens and the frame.
 - `NewCharacterChoice` (interface): interface NewCharacterChoice — What {@link NewCharacterPane} reports when a run starts.
 - `NewCharacterPane` (function): function NewCharacterPane({ name, onNameChange, palettes, paletteId, onPaletteChange, avatars, avatarId, onAvatarChange, onStart, heading = "New run", nameLabel = "Character name", namePlaceholder = "Name your character", maxLength = 24, startLabel = "Begin", className, style, }: NewCharacterPanePro… — The New Game detail pane: a character name field, an optional palette and avatar choice, and the action that starts the run. The name field is a real form field, so menu key handling leaves typing alone (Enter inside the field starts the run).
 - `NewCharacterPaneProps` (interface): interface NewCharacterPaneProps — Props for {@link NewCharacterPane}.
@@ -1312,12 +1312,6 @@
 - `usePrefersReducedMotion` (function): function usePrefersReducedMotion(): boolean — OS "reduce motion" preference (`prefers-reduced-motion: reduce`) as a live boolean — SSR-safe (defaults false). Use it to seed an accessibility store's `reducedMotion` default.
 - `useReducedMotion` (function): function useReducedMotion(): boolean — True when motion should be skipped: the OS `prefers-reduced-motion` preference, or the nearest {@link AccessibilityProvider}'s `reducedMotion` setting. Works without a provider.
 
-## @jgengine/react/accessibilitySettings
-
-- `useAccessibilityRows` (function): function useAccessibilityRows(): AccessibilitySettingRow[] — The accessibility rows backed by the shared settings store, for a settings screen the game lays out itself: map them through `SettingsRowControl` (`@jgengine/react/settingsBlocks`). The shell's stock settings menu shows the same rows as its `accessibility` category.
-- `useAccessibilitySettings` (function): function useAccessibilitySettings(): AccessibilityState — The live accessibility preferences (reduced motion, high contrast, text scale, colorblind mode, captions) from the shared settings store. Re-renders whenever any setting changes, so a root that spreads them onto the HUD updates the moment the player picks a value.
-- `useHoldVsToggle` (function): function useHoldVsToggle(): HoldVsToggle — The live hold-versus-toggle preference for actions that support both (aim, sprint, crouch). Pair it with `holdToggleActive` (`@jgengine/core/settings/accessibilitySettings`) per frame.
-
 ## @jgengine/react/achievements
 
 - `AchievementGallery` (function): function AchievementGallery({ achievements, title = "Achievements", maskSecrets = true, renderIcon, columns = 2, emptyLabel = "No achievements yet.", className, style, }: AchievementGalleryProps): ReactNode — Achievement/trophy gallery — a responsive grid of cards showing unlocked vs. locked state, a progress bar for counter achievements, and a header summary of completion and score. Secret+locked entries mask their name/description. Feed it `useAchievements(tracker)`.
@@ -1448,10 +1442,20 @@
 - `DamageDirectionTheme` (interface): interface DamageDirectionTheme — Reskin tokens for {@link DamageDirectionOverlay}.
 - `useDamageDirection` (function): function useDamageDirection(tracker: DamageDirectionTracker): readonly DamageIndicator[] — Subscribe to a damage-direction tracker and animate. Because indicators fade continuously on a clock (not just on discrete events), this drives a `requestAnimationFrame` loop while any indicator is live and stops when the screen is clear, then wakes again on the next hit. Returns the tracker's current `active()` array (reused between frames — copy if you retain it).
 
-## @jgengine/react/dialogBehavior
+## @jgengine/react/dialog/dialogBehavior
 
 - `DialogBehaviorOptions` (interface): interface DialogBehaviorOptions — Options for controlled dialog focus behavior; callers own markup, state, and close policy.
 - `useDialogBehavior` (function): function useDialogBehavior<T extends HTMLElement = HTMLDivElement>(options: DialogBehaviorOptions): RefObject<T | null> — Focus entry, Tab trapping, Escape requests, and focus restoration for a caller-owned dialog. Attach the returned ref to the dialog root and supply `role="dialog"`, `aria-modal`, an accessible name, and `tabIndex={-1}`. The most recently opened dialog handles keys, including portal roots. Closing an inner dialog restores its opener; cleanup never steals focus from another active dialog. Replacing the root while open keeps its position and original return target.
+
+## @jgengine/react/dialog/modals
+
+- `ConfirmDialog` (function): function ConfirmDialog({ title, body, confirmLabel = "Confirm", cancelLabel = "Cancel", onConfirm, onCancel, danger = false, width = 360, className, style, }: ConfirmDialogProps): ReactNode — A generic two-button confirmation dialog — title, optional body, and Cancel / Confirm buttons over a `HudTheme`-token-driven {@link HudSurface}. Presentation-only: wire `onConfirm`/`onCancel` to a modal stack's `resolve` (typically inside a {@link ModalHost} render callback) and reskin via `HudTheme` tokens or `danger` for a destructive action. It interprets nothing — the game supplies the copy.
+- `ConfirmDialogProps` (interface): interface ConfirmDialogProps — Props for {@link ConfirmDialog}.
+- `ModalControls` (interface): interface ModalControls — Stack-bound controls handed to a {@link ModalHost} render callback.
+- `ModalHost` (function): function ModalHost({ stack, children, showBackdrop = true, backdrop, closeOnBackdrop = true, closeOnEsc = true, zIndexBase = 80, onInteract, className, style, }: ModalHostProps): ReactNode — Full-screen modal host: watches a stack, renders only the topmost modal centered over a dimmed backdrop, and manages accessibility — the panel is a `role="dialog" aria-modal`, focus moves into it on open and is trapped with Tab/Shift+Tab cycling, Escape and (optionally) a backdrop click cancel the top modal, and focus returns to the previously focused element on close. It renders nothing when the stack is empty. Skin the panel and backdrop via `HudTheme` tokens.
+- `ModalHostProps` (interface): interface ModalHostProps — Props for {@link ModalHost}.
+- `ModalStackView` (interface): interface ModalStackView — React chrome over the headless modal stack (`@jgengine/core/dialog/modalStack`) — the blocking-overlay layer a game raises over its scene: a pause menu, a "quit to menu?" confirm, a reward popup. {@link useModalStack} is the DATA/HOOK layer (subscribe + the active record), {@link ModalHost} renders the top modal with a backdrop, focus trap, and Esc-to-cancel, and {@link ConfirmDialog} / {@link PauseMenu} (`menu/pauseMenu`) are ready-to-wire, HudTheme-token-driven building blocks. All unskinned and game-owned: the model never interprets a modal's `kind`, so a game switches on it to pick which of these (or its own) content to show, and reskins everything via `HudTheme` tokens and the frame.
+- `useModalStack` (function): function useModalStack(stack: ModalStack): ModalStackView — Subscribe to a modal stack and re-render on every change, returning the active modal and depth.
 
 ## @jgengine/react/dialogueView
 
@@ -1885,22 +1889,31 @@
 - `InteractionPromptTheme` (interface): interface InteractionPromptTheme — Reskin tokens for {@link InteractionPrompt}.
 - `useInteractionPrompt` (function): function useInteractionPrompt(registry: PromptRegistry, playerPosition: PromptPoint): PositionedPrompt | null — Subscribe to a {@link PromptRegistry} and re-`resolve` it whenever the player moves, returning the prompt to draw right now — or `null` when the player is out of range of every interactable. The registry notifies only on active-prompt *changes*, so this re-renders on transitions rather than every frame the hero moves. Feed it the player's `{ x, z }` position each frame; identical positions do no work.
 
-## @jgengine/react/inventoryGrid
+## @jgengine/react/inventory/inventoryGrid
 
 - `InventoryGrid` (function): function InventoryGrid({ inventoryId, columns, size = 44, gap = 6, itemIcon, onActivate, className, style, }: InventoryGridProps): React.JSX.Element — A drop-in inventory grid with drag/swap/stack-merge/split and full keyboard control, bound to `inventoryId`.
 - `InventoryGridProps` (interface): interface InventoryGridProps — Props for {@link InventoryGrid}.
+
+## @jgengine/react/inventory/shopGrid
+
+- `ShopGrid` (function): function ShopGrid({ shop, wallet, onWalletChange, theme, currencyIcons, iconFor, showSell = false, walletCurrencies, title = "Shop", labelFor, minCardWidth = "140px", className, style, }: ShopGridProps): ReactNode — A drop-in vendor/shop grid: item cards (icon, name, price with a currency glyph, stock count or "∞") over a caller-owned wallet, plus a wallet balance readout. Each card's Buy button disables when the wallet cannot afford it (`shop.canAfford`) or the item is sold out; an optional Sell button appears for entries with a `sellPrice`. Buying/selling routes through the core shop model and hands the debited/credited wallet back via `onWalletChange` — the component never owns the wallet. Purely token-driven presentation (shared `--jg-*` HudTheme tokens, reskinnable via {@link ShopGridTheme}); `kind` and `currency` are free strings the game styles, never interpreted.
+- `ShopGridProps` (interface): interface ShopGridProps — Props for {@link ShopGrid}.
+- `ShopGridTheme` (interface): interface ShopGridTheme — Reskin tokens for {@link ShopGrid}. Falls back to shared `--jg-*` HudTheme tokens, then neutral defaults.
+- `useShopStock` (function): function useShopStock(shop: ShopStock): ShopStockEntry[] — Subscribe to a shop's stock and re-render whenever it changes (buy, sell, restock, price, add, remove, restore). Returns the current entry list — a detached snapshot safe to map over.
+
+## @jgengine/react/inventory/slots
+
+- `ArmorSlots` (function): function ArmorSlots(props: SlotGridProps): React.JSX.Element — Armor piece slots.
+- `EquipmentSlots` (function): function EquipmentSlots(props: SlotGridProps): React.JSX.Element — Worn-gear slots (head/chest/hands/…): one atomic grid, painted icons, themed from tokens.
+- `PotionSlots` (function): function PotionSlots(props: SlotGridProps): React.JSX.Element — Consumable (health/shield potion) slots.
+- `SlotGridProps` (interface): interface SlotGridProps — Props shared by every atomic slot grid.
+- `SlotItem` (interface): interface SlotItem — Atomic, purpose-named slot grids (#1033): one component per category — `EquipmentSlots`, `WeaponSlots`, `ArmorSlots`, `PotionSlots` — for paperdoll / equip layouts where each grid holds a single gear category. A full multi-category backpack that binds to a live inventory with drag/swap/stack/split is a different, supported shape: reach for `<InventoryGrid>` (`inventoryGrid.tsx`) there, and use these atomic grids for the equip slots around it. Each renders a grid of painted {@link IconTreatment} tiles (glyph + gradient + count badge) for filled slots and a themed placeholder for empty ones, all reading the shared `--jg-slot-*` / `--jg-accent` HudTheme tokens (#1034). Composition stays the game's; the engine ships the grid.
+- `WeaponSlots` (function): function WeaponSlots(props: SlotGridProps): React.JSX.Element — Weapon loadout slots.
 
 ## @jgengine/react/keyHint
 
 - `KeyHint` (function): function KeyHint({ children, className, style, }: { children: ReactNode; className?: string; style?: CSSProperties; }): React.JSX.Element | null — Wraps a keyboard/mouse control hint (a cap plus what it does). Renders nothing on coarse-pointer devices — a touchscreen has no keyboard, so the hint is noise and only fights the on-screen controls for space. The `data-jg-kbd-hint` marker is also hidden by an engine stylesheet as a hydration-safe backstop, so a hint stays hidden on touch even before this component's effect runs. Put the touch equivalent (a `TouchControls` dock, a tappable button) on the coarse branch instead.
 - `Keycap` (function): function Keycap({ children, className, style, }: { children: ReactNode; className?: string; style?: CSSProperties; }): React.JSX.Element — A single keyboard/mouse key rendered as a cap. Tagged `data-jg-kbd` so tooling can find it; on its own it stays visible (hiding a lone cap would strand its label). Wrap keys + their meaning in `KeyHint` to make the whole hint vanish on touch.
-
-## @jgengine/react/keybindingMenu
-
-- `KeybindingMenu` (function): function KeybindingMenu({ session, theme, title = "Controls", resetAllLabel = "Reset All", capturePrompt = "Press a key…", onChange, className, style, }: KeybindingMenuProps): ReactNode — A drop-in controls-settings surface for a {@link RebindSession}: one row per action showing its label and current key glyph. Clicking a row arms capture ("Press a key…") and a window `keydown` listener feeds the pressed `event.code` to `session.capture`; rows that collide with another action show a conflict badge; each row has a Reset button and the panel has a Reset-all button. Presentation only — all conflict/capture/reset logic lives in the core session, and action ids/labels are the game's free strings. Reskin via {@link KeybindingMenuTheme} or ambient HudTheme tokens. A game owns its overall settings layout; this is the reusable controls block it drops in.
-- `KeybindingMenuProps` (interface): interface KeybindingMenuProps — Props for {@link KeybindingMenu}.
-- `KeybindingMenuTheme` (interface): interface KeybindingMenuTheme — Reskin tokens for {@link KeybindingMenu}. All fall back to HudTheme `--jg-*` vars.
-- `useRebindSession` (function): function useRebindSession(session: RebindSession): RebindSession — Subscribe to a rebind session and re-render on every change (capture, reset, arm/disarm, restore). Returns the session unchanged for convenient inline use.
 
 ## @jgengine/react/killFeed
 
@@ -2066,16 +2079,6 @@
 - `RadialMenuOption` (interface): interface RadialMenuOption — One selectable entry on a radial/quick menu (weapon or emote wheel).
 - `RadialMenuProps` (interface): interface RadialMenuProps — Props for {@link RadialMenu}.
 
-## @jgengine/react/modals
-
-- `ConfirmDialog` (function): function ConfirmDialog({ title, body, confirmLabel = "Confirm", cancelLabel = "Cancel", onConfirm, onCancel, danger = false, width = 360, className, style, }: ConfirmDialogProps): ReactNode — A generic two-button confirmation dialog — title, optional body, and Cancel / Confirm buttons over a `HudTheme`-token-driven {@link HudSurface}. Presentation-only: wire `onConfirm`/`onCancel` to a modal stack's `resolve` (typically inside a {@link ModalHost} render callback) and reskin via `HudTheme` tokens or `danger` for a destructive action. It interprets nothing — the game supplies the copy.
-- `ConfirmDialogProps` (interface): interface ConfirmDialogProps — Props for {@link ConfirmDialog}.
-- `ModalControls` (interface): interface ModalControls — Stack-bound controls handed to a {@link ModalHost} render callback.
-- `ModalHost` (function): function ModalHost({ stack, children, showBackdrop = true, backdrop, closeOnBackdrop = true, closeOnEsc = true, zIndexBase = 80, onInteract, className, style, }: ModalHostProps): ReactNode — Full-screen modal host: watches a stack, renders only the topmost modal centered over a dimmed backdrop, and manages accessibility — the panel is a `role="dialog" aria-modal`, focus moves into it on open and is trapped with Tab/Shift+Tab cycling, Escape and (optionally) a backdrop click cancel the top modal, and focus returns to the previously focused element on close. It renders nothing when the stack is empty. Skin the panel and backdrop via `HudTheme` tokens.
-- `ModalHostProps` (interface): interface ModalHostProps — Props for {@link ModalHost}.
-- `ModalStackView` (interface): interface ModalStackView — React chrome over the headless modal stack (`@jgengine/core/ui/modalStack`) — the blocking-overlay layer a game raises over its scene: a pause menu, a "quit to menu?" confirm, a reward popup. {@link useModalStack} is the DATA/HOOK layer (subscribe + the active record), {@link ModalHost} renders the top modal with a backdrop, focus trap, and Esc-to-cancel, and {@link ConfirmDialog} / {@link PauseMenu} (`menu/pauseMenu`) are ready-to-wire, HudTheme-token-driven building blocks. All unskinned and game-owned: the model never interprets a modal's `kind`, so a game switches on it to pick which of these (or its own) content to show, and reskins everything via `HudTheme` tokens and the frame.
-- `useModalStack` (function): function useModalStack(stack: ModalStack): ModalStackView — Subscribe to a modal stack and re-render on every change, returning the active modal and depth.
-
 ## @jgengine/react/notifications/notices
 
 - `Notice` (interface): interface Notice — A live notice as the HUD renders it.
@@ -2184,7 +2187,20 @@
 
 - `SelectCache` (type): type SelectCache<TSnapshot, TSelected> = { ready: boolean; snapshot: TSnapshot; value: TSelected; } — ⚠ undocumented
 
-## @jgengine/react/settings
+## @jgengine/react/settings/accessibilitySettings
+
+- `useAccessibilityRows` (function): function useAccessibilityRows(): AccessibilitySettingRow[] — The accessibility rows backed by the shared settings store, for a settings screen the game lays out itself: map them through `SettingsRowControl` (`@jgengine/react/settings/settingsBlocks`). The shell's stock settings menu shows the same rows as its `accessibility` category.
+- `useAccessibilitySettings` (function): function useAccessibilitySettings(): AccessibilityState — The live accessibility preferences (reduced motion, high contrast, text scale, colorblind mode, captions) from the shared settings store. Re-renders whenever any setting changes, so a root that spreads them onto the HUD updates the moment the player picks a value.
+- `useHoldVsToggle` (function): function useHoldVsToggle(): HoldVsToggle — The live hold-versus-toggle preference for actions that support both (aim, sprint, crouch). Pair it with `holdToggleActive` (`@jgengine/core/settings/accessibilitySettings`) per frame.
+
+## @jgengine/react/settings/keybindingMenu
+
+- `KeybindingMenu` (function): function KeybindingMenu({ session, theme, title = "Controls", resetAllLabel = "Reset All", capturePrompt = "Press a key…", onChange, className, style, }: KeybindingMenuProps): ReactNode — A drop-in controls-settings surface for a {@link RebindSession}: one row per action showing its label and current key glyph. Clicking a row arms capture ("Press a key…") and a window `keydown` listener feeds the pressed `event.code` to `session.capture`; rows that collide with another action show a conflict badge; each row has a Reset button and the panel has a Reset-all button. Presentation only — all conflict/capture/reset logic lives in the core session, and action ids/labels are the game's free strings. Reskin via {@link KeybindingMenuTheme} or ambient HudTheme tokens. A game owns its overall settings layout; this is the reusable controls block it drops in.
+- `KeybindingMenuProps` (interface): interface KeybindingMenuProps — Props for {@link KeybindingMenu}.
+- `KeybindingMenuTheme` (interface): interface KeybindingMenuTheme — Reskin tokens for {@link KeybindingMenu}. All fall back to HudTheme `--jg-*` vars.
+- `useRebindSession` (function): function useRebindSession(session: RebindSession): RebindSession — Subscribe to a rebind session and re-render on every change (capture, reset, arm/disarm, restore). Returns the session unchanged for convenient inline use.
+
+## @jgengine/react/settings/settings
 
 - `SETTINGS_TRIGGER_CLASSNAME` (const): const SETTINGS_TRIGGER_CLASSNAME: "pointer-events-auto flex h-8 w-8 items-center justify-center rounded-md border border-[var(--jg-edge-bright)] bg-[var(--jg-surface)]/80 text-base text-[var(--jg-text-dim)] shadow-[0_1px_2px_rgba(0,0,0,0.6)] transition hover:bg-[var(--jg-surface-deep)] hover:text-[v… — Default HudTheme-token skin for {@link SettingsTrigger} — the 8×8 chrome button games re-authored seven times. Pass your own `className` only to override placement or brand chrome; the gear glyph already scales with `text-base` / `1em`.
 - `SettingsActionView` (interface): interface SettingsActionView — A resolved game-state action — `run` is already bound to the game context and closes the menu.
@@ -2200,7 +2216,7 @@
 - `useSettings` (function): function useSettings(): SettingsController — The engine settings controller for the current game — render your own settings UI from `categories`, or open the built-in menu with `open()`. Null-safe stub when mounted outside the shell.
 - `useSettingsStore` (function): function useSettingsStore(): SettingsStore — The shared settings store, or a standalone one when no provider is mounted (game code read outside the shell).
 
-## @jgengine/react/settingsBlocks
+## @jgengine/react/settings/settingsBlocks
 
 - `SettingsKeybindControl` (function): function SettingsKeybindControl({ row, armed = false, onArm, buttonProps, rowProps }: SettingsKeybindControlProps): ReactNode — A controls row for one action: its label, the bound key (click to rebind), a conflict/armed state and reset. The caller owns capture; this is the row's presentation.
 - `SettingsKeybindControlProps` (interface): interface SettingsKeybindControlProps — One rebindable action row: current key glyph, armed-capture state and a reset button.
@@ -2213,22 +2229,6 @@
 - `SettingsTabsProps` (interface): interface SettingsTabsProps — The live category tabs for a settings screen: a scrollable rail with pressed state.
 - `SettingsToggle` (function): function SettingsToggle({ row, itemProps }: { row: SettingsRow; itemProps?: MenuNavItemProps }): ReactNode — One on/off row from a {@link SettingsRow}.
 - `adjustSettingRow` (function): function adjustSettingRow(row: SettingsRow, delta: -1 | 1): SettingValue | undefined — One adjustment of a settings row: a slider moves by its step inside its bounds, a toggle flips, a select moves one option (wrapping at both ends). Returns the value to write, or `undefined` when the kind has nothing to step. Shared by the keyboard and the gamepad so both change a row the same way.
-
-## @jgengine/react/shopGrid
-
-- `ShopGrid` (function): function ShopGrid({ shop, wallet, onWalletChange, theme, currencyIcons, iconFor, showSell = false, walletCurrencies, title = "Shop", labelFor, minCardWidth = "140px", className, style, }: ShopGridProps): ReactNode — A drop-in vendor/shop grid: item cards (icon, name, price with a currency glyph, stock count or "∞") over a caller-owned wallet, plus a wallet balance readout. Each card's Buy button disables when the wallet cannot afford it (`shop.canAfford`) or the item is sold out; an optional Sell button appears for entries with a `sellPrice`. Buying/selling routes through the core shop model and hands the debited/credited wallet back via `onWalletChange` — the component never owns the wallet. Purely token-driven presentation (shared `--jg-*` HudTheme tokens, reskinnable via {@link ShopGridTheme}); `kind` and `currency` are free strings the game styles, never interpreted.
-- `ShopGridProps` (interface): interface ShopGridProps — Props for {@link ShopGrid}.
-- `ShopGridTheme` (interface): interface ShopGridTheme — Reskin tokens for {@link ShopGrid}. Falls back to shared `--jg-*` HudTheme tokens, then neutral defaults.
-- `useShopStock` (function): function useShopStock(shop: ShopStock): ShopStockEntry[] — Subscribe to a shop's stock and re-render whenever it changes (buy, sell, restock, price, add, remove, restore). Returns the current entry list — a detached snapshot safe to map over.
-
-## @jgengine/react/slots
-
-- `ArmorSlots` (function): function ArmorSlots(props: SlotGridProps): React.JSX.Element — Armor piece slots.
-- `EquipmentSlots` (function): function EquipmentSlots(props: SlotGridProps): React.JSX.Element — Worn-gear slots (head/chest/hands/…): one atomic grid, painted icons, themed from tokens.
-- `PotionSlots` (function): function PotionSlots(props: SlotGridProps): React.JSX.Element — Consumable (health/shield potion) slots.
-- `SlotGridProps` (interface): interface SlotGridProps — Props shared by every atomic slot grid.
-- `SlotItem` (interface): interface SlotItem — Atomic, purpose-named slot grids (#1033): one component per category — `EquipmentSlots`, `WeaponSlots`, `ArmorSlots`, `PotionSlots` — for paperdoll / equip layouts where each grid holds a single gear category. A full multi-category backpack that binds to a live inventory with drag/swap/stack/split is a different, supported shape: reach for `<InventoryGrid>` (`inventoryGrid.tsx`) there, and use these atomic grids for the equip slots around it. Each renders a grid of painted {@link IconTreatment} tiles (glyph + gradient + count badge) for filled slots and a themed placeholder for empty ones, all reading the shared `--jg-slot-*` / `--jg-accent` HudTheme tokens (#1034). Composition stays the game's; the engine ships the grid.
-- `WeaponSlots` (function): function WeaponSlots(props: SlotGridProps): React.JSX.Element — Weapon loadout slots.
 
 ## @jgengine/react/social
 

@@ -661,7 +661,7 @@ Verification:
 The CI reliability fix this lane also carried (a browser setup hook shorter than Playwright's launch default) is #2335, so either change can be reverted without the other.
 - The publish workflow's last step no longer reports a whole release as unpublished because it ran seconds after `npm publish`. `check:release-artifacts --wait <seconds>` re-checks while the only failures are absent packages (no metadata, version missing, tarball 404) and gives up when the budget runs out; a wrong version in the tarball, a missing subpath or a main entry that will not import still fails on the first check. The 0.37.0 publish run failed this step at 04:48 listing all 13 packages, then npm served every one of them. The step now passes `-- --wait 300`.
 - A Playwright test file's `beforeAll` now outlives the Chrome launch it waits on, and `browser-test-budget` rejects a file that leaves the hook at or under Playwright's 30 s launch default. On `test (g)` in #2326 the hook's 30 s budget and that default expired together, so CI reported only `(unnamed) hook timed out` beside `killed 1 dangling process` and nothing named the launch.
-- `packages/react/src/dialogBehavior.test.ts` gives its browser navigation its own 20 s deadline and one retry inside a 60 s hook.
+- `packages/react/src/dialog/dialogBehavior.test.ts` gives its browser navigation its own 20 s deadline and one retry inside a 60 s hook.
 
 Root cause: Bun prints a `beforeAll` timeout as an unnamed hook timeout, so a setup budget equal to Playwright's own 30 s launch default reports the anonymous timer instead of the launch that stalled.
 
@@ -671,7 +671,7 @@ After: a stall now surfaces as Playwright's own `Timeout ... exceeded`, and `bun
 Verification:
 - `bun scripts/browser-test-budget.ts` - pass, and the new rule names the unraised files on the previous tip
 - `bun test scripts/browser-test-budget.test.ts` - pass
-- `bun test packages/react/src/dialogBehavior.test.ts packages/react/src/scrollRail.test.ts packages/shell/src/settingsBoundary.test.ts` - pass
+- `bun test packages/react/src/dialog/dialogBehavior.test.ts packages/react/src/scrollRail.test.ts packages/shell/src/settingsBoundary.test.ts` - pass
 - `bun run verify:fast` - pass
 - A prop placed at runtime honours its model's `variants` levels. `StaticObjectModels` applied the level switch only inside its batched branch, so a prop placed with `scene.object.place` — Harbor Heat's palm line — drew its full asset at every camera distance: 15 palms at 9,134 triangles each, and pointing the far level at a dispatch booth changed nothing on screen. `IsolatedEntityModel` now mounts `SingleVariantModel`, which asks the same `createModelVariantSelector` and `lodBandIndex` authority the batched path uses, at the prop's own camera distance, and keeps only the active level mounted so both levels never draw at once. The switch carries the selector's hysteresis, warms every level at mount, measures only the near level, and reads the placement from the scene store through scratch vectors, so a frame allocates nothing. One palm past 60 m draws 4,110 triangles instead of 9,134 (5,024 saved, 45% of the full level).
 
@@ -841,7 +841,7 @@ Play scripts prove play in seconds instead of minutes of browser play, and the t
 
 - **Bump lockstep SDK packages to `^0.33.0`:** `@jgengine/{core,rapier,react,ws,node,sql,convex,shell,editor,assets,navbake}`. CLI `jgengine` is `0.30.0`; `@jgengine/github` is `0.20.0`.
 - `useSceneObjects` (`@jgengine/react/hooks`) keeps one list identity across `move` and `rotate`, so a record's `position`/`rotationY` is what it was at the last render. Read the live placement with `ctx.scene.object.get(instanceId)` (a `useFrame` loop or a rAF-ticked HUD) when a mesh or readout must follow a moving object.
-- A read of a mismatched stored value now converts losslessly where it can (a number as its digits, a boolean as `"true"`/`"false"`, those strings back) and throws where it cannot. No in-repo caller relied on the old fallback; `useSetting` (`@jgengine/react/settings`) is the generic path that could, so a game that stored a number under a key it reads with a string fallback now gets the digits.
+- A read of a mismatched stored value now converts losslessly where it can (a number as its digits, a boolean as `"true"`/`"false"`, those strings back) and throws where it cannot. No in-repo caller relied on the old fallback; `useSetting` (`@jgengine/react/settings/settings`) is the generic path that could, so a game that stored a number under a key it reads with a string fallback now gets the digits.
 
 ### Added
 
@@ -943,7 +943,7 @@ Play scripts prove play in seconds instead of minutes of browser play, and the t
 ### Added
 
 - `ColorblindFrame` (`@jgengine/react/accessibility`) wraps the 3D canvas and applies the player's colour-vision mode to that box alone, so HUD, menu and caption text keep their own contrast. `colorblindFrameFilter` (`@jgengine/core/ui/accessibility`) resolves a mode to the CSS filter, and `useColorblindMode` reads the mode from the settings store the settings rows write; the 3D shell does both for the mounted game.
-- `SettingsSection` (`@jgengine/react/settingsBlocks`) is one `useMenuNav` menu: a d-pad or left stick moves between rows and left/right steps the focused value — slider by its step, toggle flipped, select to the next option, confirm arms a keybind — through the same `onAdjust` path the arrow keys use. `onAdjust` (`@jgengine/react/menu/menuNav`) is the option that makes left/right adjust instead of move.
+- `SettingsSection` (`@jgengine/react/settings/settingsBlocks`) is one `useMenuNav` menu: a d-pad or left stick moves between rows and left/right steps the focused value — slider by its step, toggle flipped, select to the next option, confirm arms a keybind — through the same `onAdjust` path the arrow keys use. `onAdjust` (`@jgengine/react/menu/menuNav`) is the option that makes left/right adjust instead of move.
 - `createStanding` (`@jgengine/core/progression/standing`) holds per-faction or per-district standing over authored tracks and moves it from named outcomes, so an outcome that resolves to nothing throws at the call instead of silently moving nothing.
 - `createGateSet` (`@jgengine/core/progression/gates`) evaluates authored milestones against standing and money, and refuses to load when a gate's unlock id resolves to nothing.
 - `createCareerBank` (`@jgengine/core/progression/careerBank`) keeps persistent career money apart from a run's haul, so a failed run loses the haul and keeps the bank.
@@ -1048,8 +1048,8 @@ Play scripts prove play in seconds instead of minutes of browser play, and the t
 - `SaveSlotWrite.savedAt`: a save payload that knows when it was written can stamp that time instead of the index's clock.
 - `@jgengine/core/settings/accessibilitySettings`: the persisted accessibility ids (`accessibility.textScale`, `accessibility.colorblind`, `accessibility.reducedMotion`, `accessibility.highContrast`, `accessibility.captions`, `controls.holdVsToggle`), `accessibilitySettingRows(store)` for a settings surface, `readAccessibilitySettings(store)`, and `holdToggleActive(previous, { pressed, held }, mode)` for hold-or-toggle actions.
 - The shell's settings menu has an `accessibility` category (text size, colourblind palette, reduce motion, high contrast, captions, hold-or-toggle) unless a game hides it. Text size scales every `--jg-type-*` token through `--jg-text-scale`; reduce motion zeroes the engine's motion scale; high contrast, colourblind and captions are exposed as `data-*` hooks on the HUD root.
-- `SettingsSection`, `SettingsRowControl`, `SettingsSlider`, `SettingsToggle`, `SettingsSelect`, `SettingsKeybindControl` and `SettingsTabs` (`@jgengine/react/settingsBlocks`): the settings rows and click-to-capture controls as composable, HudTheme-tokenized blocks, so a game lays out its own settings screen instead of taking the stock dialog. Rebinding writes into the game's existing rebind/holdings store.
-- `useAccessibilitySettings`, `useHoldVsToggle` and `useAccessibilityRows` (`@jgengine/react/accessibilitySettings`) read the live preferences for any custom layout.
+- `SettingsSection`, `SettingsRowControl`, `SettingsSlider`, `SettingsToggle`, `SettingsSelect`, `SettingsKeybindControl` and `SettingsTabs` (`@jgengine/react/settings/settingsBlocks`): the settings rows and click-to-capture controls as composable, HudTheme-tokenized blocks, so a game lays out its own settings screen instead of taking the stock dialog. Rebinding writes into the game's existing rebind/holdings store.
+- `useAccessibilitySettings`, `useHoldVsToggle` and `useAccessibilityRows` (`@jgengine/react/settings/accessibilitySettings`) read the live preferences for any custom layout.
 - `HudThemeRoot` takes `accessibility` and applies text scale and the preference data attributes at the HUD root; the shell passes the player's stored preferences there for both the 3D and HUD-only presentation paths.
 - `MissionTickInput.events` (`@jgengine/core/gameplay`) carries the world events that happened this tick - `kill`, `collect`, `deliver` with a target, the actor, free-form `tags` and a count. An objective's `match` filter (`target`, `by`, `tags`, `withoutTags`) credits a constrained counter only from matching events, so a decoy, a wrong weapon or another killer's kill does not advance it.
 - `failOn` accepts `event` (a matching reported event ends the run) and `left-area` (the watched actor is farther than `radius` from an authored marker), completing the reachable fail states: cargo lost, time out, escort died, left the area. `validateMissionCatalog` rejects a `left-area` fail with no actor or unknown marker and a `match` on a non-counter objective instead of ignoring it.
@@ -1440,7 +1440,7 @@ Harbor Heat's shadow pass self time at `--quality full`: 2.88 → 1.37 ms per fr
 - Relay Courtyard declares a persisted compact or detailed readout through the shared HUD settings framework.
 - Core content reference and declared-source progression validators report located repair guidance across game-owned catalogs. Closed-source analysis detects unavailable prerequisites; intentional seeded cycles remain valid.
 - Native recipe catalog validation checks item/station/unlock references, quantities and duplicate inputs without imposing economic or output-benefit policy.
-- `useDialogBehavior` (`@jgengine/react/dialogBehavior`) shares dialog focus entry, Tab cycling, Escape close requests, and restoration with caller-owned screens; `ModalHost` uses the same behavior.
+- `useDialogBehavior` (`@jgengine/react/dialog/dialogBehavior`) shares dialog focus entry, Tab cycling, Escape close requests, and restoration with caller-owned screens; `ModalHost` uses the same behavior.
 - `resolvePeerShellMultiplayer` can host a playable authoritative GameContext world with injected persistence, signaling, peers and tick scheduling; `close()` awaits its save boundary.
 - `createWorldGameHost` supports a serialized `slotsPerServer` player cap while allowing existing members and spectators.
 - `bindCommandTransport` / `dispatchCommand` provide the shared UI command boundary; `possession.ownerOf` resolves unique recorded ownership.
@@ -2365,7 +2365,7 @@ Harbor Heat's shadow pass self time at `--quality full`: 2.88 → 1.37 ms per fr
   event without a genre kit. `@jgengine/react`'s `useSequenceDirector` runs the per-frame tick loop and exposes
   playhead/progress + controls, and `CutsceneLetterbox` is a reskinnable cinematic bars + caption + Skip overlay.
   See the `cutscene` dev demo.
-- **Modal / confirmation dialog system + reskinnable pause menu.** `@jgengine/core/ui/modalStack`'s
+- **Modal / confirmation dialog system + reskinnable pause menu.** `@jgengine/core/dialog/modalStack`'s
   `createModalStack` is a genre-agnostic, serializable stack of opaque modal records (`push`/`pop`/`resolve` with a
   free-form result, `top`/`isOpen`/`depth`, optional injected-clock auto-dismiss via `tick`/`timeRemaining`,
   `subscribe`, `snapshot`/`restore`) that never interprets a modal's `kind` or result. `@jgengine/react`'s `ModalHost`

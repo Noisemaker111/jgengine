@@ -9,7 +9,7 @@ import {
   useSettings,
   type SettingsActionView,
   type SettingsController,
-} from "@jgengine/react/settings";
+} from "@jgengine/react/settings/settings";
 
 import { createPlaySurfaceFocusOwnership } from "../presentationRecovery";
 

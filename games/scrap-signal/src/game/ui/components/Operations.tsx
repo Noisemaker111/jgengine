@@ -5,7 +5,7 @@ import { HudFade } from "@jgengine/react/hud/hudLayout";
 import { useGame, useGamePhase, useGameStore } from "@jgengine/react/hooks";
 import { useMenuNav } from "@jgengine/react/menu/menuNav";
 import { useGameContext } from "@jgengine/react/provider";
-import { useSettings } from "@jgengine/react/settings";
+import { useSettings } from "@jgengine/react/settings/settings";
 import { useStore } from "@jgengine/react/store";
 import { gamePhase, setGamePhase } from "@jgengine/core/game/gamePhase";
 import { RELAY, relayDistance, relayStore } from "../../relay";

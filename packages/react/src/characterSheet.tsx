@@ -1,6 +1,6 @@
 import { type CSSProperties, type ReactNode } from "react";
 
-import { EquipmentSlots, type SlotItem } from "./slots";
+import { EquipmentSlots, type SlotItem } from "./inventory/slots";
 import { HudFrame, type HudFrameVariation } from "./hud/hudFrame";
 import { hudType } from "./hud/hudTokens";
 

@@ -7,7 +7,7 @@ import { CreditsPane } from "@jgengine/react/menu/gameMenuSaves";
 import { useMenuNav } from "@jgengine/react/menu/menuNav";
 import { useGameContext } from "@jgengine/react/provider";
 import { useSaveSlots } from "@jgengine/react/save/saveSlots";
-import { useSettings } from "@jgengine/react/settings";
+import { useSettings } from "@jgengine/react/settings/settings";
 
 import { DIFFICULTIES, DIFFICULTY_IDS, setDifficulty, type DifficultyId } from "../../campaign";
 import { BEACON_CREDITS } from "../../credits";

@@ -71,7 +71,7 @@ export function useHoldVsToggle(): HoldVsToggle {
 
 /**
  * The accessibility rows backed by the shared settings store, for a settings screen the game lays
- * out itself: map them through `SettingsRowControl` (`@jgengine/react/settingsBlocks`). The shell's
+ * out itself: map them through `SettingsRowControl` (`@jgengine/react/settings/settingsBlocks`). The shell's
  * stock settings menu shows the same rows as its `accessibility` category.
  *
  * @capability use-accessibility-rows accessibility setting rows for a game-owned settings layout

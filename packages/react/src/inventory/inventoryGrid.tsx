@@ -11,10 +11,10 @@ import {
 
 import { moveGridFocus, type FocusDirection } from "@jgengine/core/ui/actionModel";
 
-import { DragGhost, DraggableCard, DropZone, useDragLayer } from "./dragLayer";
-import { iconForItemId } from "./gameIcons";
-import { IconTreatment, schoolForItem } from "./iconTreatment";
-import { useInventoryGrid } from "./hooks";
+import { DragGhost, DraggableCard, DropZone, useDragLayer } from "../dragLayer";
+import { iconForItemId } from "../gameIcons";
+import { IconTreatment, schoolForItem } from "../iconTreatment";
+import { useInventoryGrid } from "../hooks";
 
 /**
  * A drop-in NxN inventory grid bound to a live inventory: `<InventoryGrid inventoryId="bag" columns={4} />`

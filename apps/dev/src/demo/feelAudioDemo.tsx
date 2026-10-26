@@ -10,7 +10,7 @@ import { attachWaveFeedback } from "@jgengine/shell/audio/eventFeedback";
 import { environment, grass, terrain } from "@jgengine/core/world/features";
 import { useGame } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
-import { useSettingsStore } from "@jgengine/react/settings";
+import { useSettingsStore } from "@jgengine/react/settings/settings";
 
 import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
 import type { PlayableGame } from "@jgengine/shell/registry";

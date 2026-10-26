@@ -12,19 +12,19 @@ import {
   MODAL_CONFIRM,
   type ModalRecord,
   type ModalStack,
-} from "@jgengine/core/ui/modalStack";
+} from "@jgengine/core/dialog/modalStack";
 
-import { useReducedMotion } from "./accessibility";
+import { useReducedMotion } from "../accessibility";
 import { useDialogBehavior } from "./dialogBehavior";
-import { useEngineStyles } from "./engineStyles";
-import { HudButton } from "./hud/hudButton";
-import { useHudInteract, type HudInteractListener } from "./hud/hudInteract";
-import { HudSurface } from "./hud/hudSurface";
-import { hudType } from "./hud/hudTokens";
-import { useMountPresence } from "./presence";
+import { useEngineStyles } from "../engineStyles";
+import { HudButton } from "../hud/hudButton";
+import { useHudInteract, type HudInteractListener } from "../hud/hudInteract";
+import { HudSurface } from "../hud/hudSurface";
+import { hudType } from "../hud/hudTokens";
+import { useMountPresence } from "../presence";
 
 /**
- * React chrome over the headless modal stack (`@jgengine/core/ui/modalStack`) — the blocking-overlay
+ * React chrome over the headless modal stack (`@jgengine/core/dialog/modalStack`) — the blocking-overlay
  * layer a game raises over its scene: a pause menu, a "quit to menu?" confirm, a reward popup.
  * {@link useModalStack} is the DATA/HOOK layer (subscribe + the active record), {@link ModalHost}
  * renders the top modal with a backdrop, focus trap, and Esc-to-cancel, and {@link ConfirmDialog} /

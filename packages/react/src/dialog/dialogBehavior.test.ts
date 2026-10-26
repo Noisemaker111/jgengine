@@ -2,26 +2,26 @@ import { afterAll, beforeAll, beforeEach, describe, expect, setDefaultTimeout, t
 import { mkdir, rm, symlink } from "node:fs/promises";
 import { resolve } from "node:path";
 import { chromium, type Browser, type Page } from "playwright-core";
-import { buildBrowserFixture, findChromeExecutable } from "../../../scripts/browser-lib";
+import { buildBrowserFixture, findChromeExecutable } from "../../../../scripts/browser-lib";
 
 setDefaultTimeout(30_000);
 
-const scratch = resolve(import.meta.dir, "../../../.scratch/dialog-focus-test");
+const scratch = resolve(import.meta.dir, "../../../../.scratch/dialog-focus-test");
 let browser: Browser;
 let page: Page;
 let server: ReturnType<typeof Bun.serve>;
 
 beforeAll(async () => {
   await mkdir(scratch, { recursive: true });
-  await symlink(resolve(import.meta.dir, "../node_modules"), `${scratch}/node_modules`, "dir");
+  await symlink(resolve(import.meta.dir, "../../node_modules"), `${scratch}/node_modules`, "dir");
   const entry = `${scratch}/fixture.tsx`;
   await Bun.write(entry, `
     import React, { StrictMode, useState } from 'react';
     import { createRoot } from 'react-dom/client';
     import { createPortal, flushSync } from 'react-dom';
-    import { useDialogBehavior } from '../../packages/react/src/dialogBehavior';
-    import { ModalHost } from '../../packages/react/src/modals';
-    import { createModalStack } from '../../packages/core/src/ui/modalStack';
+    import { useDialogBehavior } from '../../packages/react/src/dialog/dialogBehavior';
+    import { ModalHost } from '../../packages/react/src/dialog/modals';
+    import { createModalStack } from '../../packages/core/src/dialog/modalStack';
     const stack = createModalStack();
     function Dialog({id, close, preferred, replacement, children}) {
       const ref = useDialogBehavior({open:true, onClose:close, initialFocus:preferred});

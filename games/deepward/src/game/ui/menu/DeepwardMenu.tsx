@@ -6,8 +6,8 @@ import { PauseMenu } from "@jgengine/react/menu/pauseMenu";
 import { useGameStore, useOptionalGamePhase } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
 import { useSaveSlots } from "@jgengine/react/save/saveSlots";
-import { useSettings } from "@jgengine/react/settings";
-import { SettingsSection, SettingsTabs } from "@jgengine/react/settingsBlocks";
+import { useSettings } from "@jgengine/react/settings/settings";
+import { SettingsSection, SettingsTabs } from "@jgengine/react/settings/settingsBlocks";
 import { useStore } from "@jgengine/react/store";
 import type { SaveSlotMeta } from "@jgengine/core/save/saveSlots";
 

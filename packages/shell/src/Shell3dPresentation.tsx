@@ -51,7 +51,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { GameViewportProvider } from "@jgengine/react/gameViewport";
 import { GameProvider } from "@jgengine/react/provider";
 import { ColorblindFrame, useColorblindMode } from "@jgengine/react/accessibility";
-import { SettingsProvider, type SettingsActionView } from "@jgengine/react/settings";
+import { SettingsProvider, type SettingsActionView } from "@jgengine/react/settings/settings";
 
 import { resolveWorldSky } from "./worldSky";
 import { resolveCaptureCameraConfig } from "./camera/rigResolve";
