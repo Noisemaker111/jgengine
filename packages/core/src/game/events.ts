@@ -5,6 +5,9 @@ import type { CameraShake } from "../combat/hitReaction";
 import type { ImpactClass } from "../combat/impactProfile";
 import type { FeedbackCue } from "../audio/feedbackCues";
 import type { CombatVfxInstanceEvent } from "./vfxInstance";
+import type { CosmeticsChangedEvent } from "./cosmetics";
+import type { FormChangedEvent } from "../scene/form";
+import type { PossessionSwappedEvent } from "../scene/possession";
 
 export type { DeathReason };
 
@@ -288,27 +291,11 @@ export interface WorldItemPickedUpEvent {
   count: number;
 }
 
-export interface CosmeticsChangedEvent {
-  userId: string;
-  slots: Record<string, string>;
-}
-
 export interface EmotePlayedEvent {
   from: string;
   emoteId: string;
   at: readonly [number, number, number];
   recipients: readonly string[];
-}
-
-export interface PossessionSwappedEvent {
-  userId: string;
-  entityId: string;
-  previousEntityId: string;
-}
-
-export interface FormChangedEvent {
-  instanceId: string;
-  formId: string | null;
 }
 
 export interface AudioPlayEvent {

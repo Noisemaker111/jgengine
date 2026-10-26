@@ -25,7 +25,7 @@ import {
   type GizmoMode,
   type GizmoPivot,
   type GizmoSpace,
-  type SnapMode,
+  type EditorSnapMode,
 } from "./uiStore";
 import { useStoreSelector } from "./useStoreSelector";
 
@@ -43,7 +43,7 @@ interface GizmoUiSlice {
   gizmoMode: GizmoMode;
   gizmoSpace: GizmoSpace;
   gizmoPivot: GizmoPivot;
-  snapMode: SnapMode;
+  snapMode: EditorSnapMode;
   gridSize: number;
   rotationSnapDeg: number | null;
   scaleSnap: number | null;

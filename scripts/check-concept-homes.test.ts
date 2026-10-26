@@ -8,6 +8,7 @@ import {
   duplicateFailures,
   homeFailures,
   homeFor,
+  insideTemplateLiteral,
   layerFolders,
   nameWords,
 } from "./check-concept-homes";
@@ -81,4 +82,11 @@ test("a new file named for a concept with a folder in its layer must sit in that
   const failures = homeFailures(["packages/react/src/notificationsBell.tsx", "packages/react/src/notifications/bell.tsx"], tree);
   expect(failures.map((failure) => failure.file)).toEqual(["packages/react/src/notificationsBell.tsx"]);
   expect(homeFailures(["packages/react/src/notificationsBell.tsx"], tree, () => true)).toEqual([]);
+});
+
+test("a generator's template text is not a definition", () => {
+  const source = ["const a = 1;", "const text = `", "export const generated = 1;", "`;", "export const real = 2;"].join("\n");
+  expect(insideTemplateLiteral(source, 3)).toBe(true);
+  expect(insideTemplateLiteral(source, 5)).toBe(false);
+  expect(insideTemplateLiteral('const s = "\\`";\nexport const x = 1;', 2)).toBe(false);
 });

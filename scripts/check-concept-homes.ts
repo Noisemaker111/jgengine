@@ -92,23 +92,67 @@ export function clashes(a: Definition, b: Definition): boolean {
   return left === "engine" || right === "engine";
 }
 
+/**
+ * True when 1-based `line` of `text` starts inside a template literal: a generator's `export const …`
+ * template text is output, not a definition. Counts unescaped backticks before the line.
+ */
+export function insideTemplateLiteral(text: string, line: number): boolean {
+  let open = false;
+  let row = 1;
+  for (let at = 0; at < text.length && row < line; at += 1) {
+    const char = text[at];
+    if (char === "\n") row += 1;
+    else if (char === "\\") at += 1;
+    else if (char === "`") open = !open;
+  }
+  return open;
+}
+
+interface GrepHit extends Definition {
+  line: number;
+}
+
+function grepHit(line: string): GrepHit | null {
+  const match = /^([^:]+):(\d+):(.*)$/.exec(line);
+  if (match === null || !isScannedSource(match[1]!)) return null;
+  const name = declaredExport(match[3]!);
+  return name === null ? null : { name, file: match[1]!, line: Number(match[2]) };
+}
+
+/** Drops hits that sit inside a template literal, reading each file once. */
+function realDefinitions(root: string, hits: readonly GrepHit[]): Definition[] {
+  const texts = new Map<string, string>();
+  const found: Definition[] = [];
+  for (const hit of hits) {
+    let text = texts.get(hit.file);
+    if (text === undefined) {
+      try {
+        text = readFileSync(join(root, hit.file), "utf8");
+      } catch {
+        text = "";
+      }
+      texts.set(hit.file, text);
+    }
+    if (!insideTemplateLiteral(text, hit.line)) found.push({ name: hit.name, file: hit.file });
+  }
+  return found;
+}
+
 /** Every definition of these names in the working tree (tracked and untracked), from one `git grep`. */
 export function definitionsOf(root: string, names: readonly string[]): Definition[] {
   if (names.length === 0) return [];
-  const found: Definition[] = [];
+  const hits: GrepHit[] = [];
   const unique = [...new Set(names)];
   for (let at = 0; at < unique.length; at += 200) {
     const group = unique.slice(at, at + 200).map((name) => name.replace(/\$/g, "\\$")).join("|");
     const pattern = `^export[[:space:]]+(declare[[:space:]]+)?(default[[:space:]]+)?(async[[:space:]]+)?(abstract[[:space:]]+)?(function\\*?|const|let|var|class|interface|type|enum|namespace)[[:space:]]+(${group})([^A-Za-z0-9_$]|$)`;
     const out = git(root, ["grep", "--untracked", "-I", "-n", "-E", pattern, "--", ...SCOPE], true);
     for (const line of out.split("\n")) {
-      const match = /^([^:]+):\d+:(.*)$/.exec(line);
-      if (match === null || !isScannedSource(match[1]!)) continue;
-      const name = declaredExport(match[2]!);
-      if (name !== null) found.push({ name, file: match[1]! });
+      const hit = grepHit(line);
+      if (hit !== null) hits.push(hit);
     }
   }
-  return found;
+  return realDefinitions(root, hits);
 }
 
 /** Duplicate-export failures for the names a branch added. */
@@ -251,13 +295,12 @@ export function runCheck(root: string, base: string): Failure[] {
 /** Every exported name in the repo that clashes, for a restructure worklist. */
 export function reportAll(root: string): Map<string, string[]> {
   const pattern = "^export[[:space:]]+(declare[[:space:]]+)?(default[[:space:]]+)?(async[[:space:]]+)?(abstract[[:space:]]+)?(function\\*?|const|let|var|class|interface|type|enum|namespace)[[:space:]]+[A-Za-z_$]";
-  const all: Definition[] = [];
+  const hits: GrepHit[] = [];
   for (const line of lines(git(root, ["grep", "-I", "-n", "-E", pattern, "--", ...SCOPE], true))) {
-    const match = /^([^:]+):\d+:(.*)$/.exec(line);
-    if (match === null || !isScannedSource(match[1]!)) continue;
-    const name = declaredExport(match[2]!);
-    if (name !== null) all.push({ name, file: match[1]! });
+    const hit = grepHit(line);
+    if (hit !== null) hits.push(hit);
   }
+  const all = realDefinitions(root, hits);
   const byName = new Map<string, Definition[]>();
   for (const definition of all) byName.set(definition.name, [...(byName.get(definition.name) ?? []), definition]);
   const report = new Map<string, string[]>();

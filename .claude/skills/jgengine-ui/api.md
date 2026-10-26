@@ -174,13 +174,13 @@
 
 ## @jgengine/core/render/lookMood
 
+- `LookMood` (type): type LookMood = MoodPreset | MoodConfig — A mood: a preset name, or a preset with token overrides.
 - `MOOD_PRESETS` (const): const MOOD_PRESETS: readonly MoodPreset[] — Every mood preset name, for pickers and validating a mood read from a URL or file.
-- `Mood` (type): type Mood = MoodPreset | MoodConfig — A mood: a preset name, or a preset with token overrides.
 - `MoodConfig` (interface): interface MoodConfig — A mood preset plus the few tokens a game's art direction usually moves. Unset fields keep the preset's value.
 - `MoodPreset` (type): type MoodPreset = "day" | "bright" | "golden" | "dusk" | "overcast" | "night" — Named lighting mood: one art-direction choice that sets the sun, the sky fill, the haze and the colour grade together, so they agree. `"day"` is a clear afternoon, `"bright"` a saturated high-fill cartoon day, `"golden"` a low warm late-afternoon sun with long shadows, `"dusk"` a sunset, `"overcast"` soft diffuse light under cloud, `"night"` moonlight.
 - `MoodSun` (interface): interface MoodSun — Where the key light stands and how strong it is. Angles in degrees: azimuth 0 = -Z, 90 = +X; elevation 90 = overhead.
 - `ResolvedMood` (interface): interface ResolvedMood — Concrete lighting, sky and grade a mood expands to.
-- `resolveMood` (function): function resolveMood(mood: Mood): ResolvedMood — Expand a mood into the lighting rig, sky and grade it stands for. The key light is the sun (the moon under `"night"`), casts cascaded shadows that follow the camera, and agrees with the dome's sun; a cool bounce opposite it keeps shadowed sides readable; the haze matches the horizon.
+- `resolveMood` (function): function resolveMood(mood: LookMood): ResolvedMood — Expand a mood into the lighting rig, sky and grade it stands for. The key light is the sun (the moon under `"night"`), casts cascaded shadows that follow the camera, and agrees with the dome's sun; a cool bounce opposite it keeps shadowed sides readable; the haze matches the horizon.
 
 ## @jgengine/core/render/lookPreset
 
@@ -452,9 +452,6 @@
 - `UI_SCALE_MIN` (const): const UI_SCALE_MIN: 0.5 — ⚠ undocumented
 - `UiRect` (interface): interface UiRect — A positioned rectangle (viewport/anchor space, top-left origin, pixels).
 - `UiSize` (interface): interface UiSize — A width/height pair (pixels).
-- `Waypoint` (interface): interface Waypoint — A tracked objective/waypoint the game wants a screen marker for.
-- `WaypointSnapshot` (interface): interface WaypointSnapshot — Serializable state of a {@link WaypointTracker}, for save/restore.
-- `WaypointTracker` (interface): interface WaypointTracker — An observable, serializable set of world waypoints keyed by id.
 - `actionByHotkey` (function): function actionByHotkey(actions: readonly ResolvedAction[], key: string): string | null — Find the action whose `hotkey` matches `key`, case-insensitively — the keyboard-shortcut router for an action bar. Returns the first match's id, or null. Matching by hotkey does not consider `enabled`; the caller decides whether to fire a disabled action's feedback.
 - `actionCooldown` (function): function actionCooldown(remainingMs: number, totalMs: number): ActionCooldown — Build an {@link ActionCooldown} from remaining/total milliseconds. `ready` when nothing remains.
 - `actionCooldownFromFraction` (function): function actionCooldownFromFraction(remainingMs: number, fraction: number): ActionCooldown — Build an {@link ActionCooldown} from remaining milliseconds and a known remaining fraction — the shape adapters get from sources (like an ability snapshot) that report a fraction but not a total.
@@ -473,7 +470,6 @@
 - `createPanelState` (function): function createPanelState(defs: readonly PanelDef[]): PanelState — Build the initial {@link PanelState} from the panel defs: panels flagged `initial` start open (in declaration order, respecting group exclusivity), and every def's group/closable is captured into the state so later reducers need no defs.
 - `createPhotoModeStore` (function): function createPhotoModeStore(initial: Partial<PhotoModeState> = {}): PhotoModeStore — Serializable, observable photo-mode state (active + hide-HUD). Genre-agnostic plumbing — a game engages it to free its camera and hide gameplay chrome for a clean capture, and reads `hideHud` to conditionally render its HUD. Pair with React `PhotoModeControls` and shell `captureCanvas`.
 - `createSettingsStore` (function): function createSettingsStore(storage: Pick<WebStorageLike, "getItem" | "setItem"> | null | undefined = defaultStorage()): SettingsStore — Reactive, localStorage-backed settings store shared by the shell wiring and React hooks.
-- `createWaypointTracker` (function): function createWaypointTracker(): WaypointTracker — A serializable, observable tracker of world waypoints — the objective/point-of- interest half of offscreen markers. A game `set`s waypoints by id (each an `{ id, position, kind, label? }`, where `kind` is a free string the game styles and the model never branches on), and a React host projects each to screen space and lays it out with {@link layoutScreenMarker}: an on-screen pin, or an off-screen directional arrow clamped to the viewport edge with a distance the caller computes. Purely a model — no camera, projection, or renderer here. `snapshot`/`restore` round-trips the set through a save.
 - `focusPanel` (function): function focusPanel(state: PanelState, id: string): PanelState — Raise open panel `id` to the top of the focus stack (assign it the highest z). No-op if it is closed or already on top, so a pointer-down that refocuses the top window returns the same state.
 - `formatDelta` (function): function formatDelta(seconds: number, decimals: 0 | 1 | 2 = 2): string — Format a signed time gap as `+m:ss.ff` / `-m:ss.ff`, for race deltas and split times.
 - `formatDistance` (function): function formatDistance(meters: number, options: DistanceFormat = {}): string — Format a distance given in meters as a HUD-ready string, switching to km automatically past 1000m when `unit: "auto"`.
@@ -632,10 +628,6 @@
 - `ScreenMarkerOptions` (interface): interface ScreenMarkerOptions — Options for {@link layoutScreenMarker}.
 - `ScreenMarkerViewport` (interface): interface ScreenMarkerViewport — The `{ width, height }` of the viewport the marker is laid out within (CSS px).
 - `ScreenProjection` (interface): interface ScreenProjection — A world position projected to screen space by the caller's camera. This is the minimal shape {@link layoutScreenMarker} consumes — deliberately a structural subset of `@jgengine/react`'s `EntityScreenProjection` (and what its `ProjectEntity`/`useWorldProjection` produce), mirrored here because `core` imports nothing higher. Feed it straight from a world→screen projector.
-- `Waypoint` (interface): interface Waypoint — A tracked objective/waypoint the game wants a screen marker for.
-- `WaypointSnapshot` (interface): interface WaypointSnapshot — Serializable state of a {@link WaypointTracker}, for save/restore.
-- `WaypointTracker` (interface): interface WaypointTracker — An observable, serializable set of world waypoints keyed by id.
-- `createWaypointTracker` (function): function createWaypointTracker(): WaypointTracker — A serializable, observable tracker of world waypoints — the objective/point-of- interest half of offscreen markers. A game `set`s waypoints by id (each an `{ id, position, kind, label? }`, where `kind` is a free string the game styles and the model never branches on), and a React host projects each to screen space and lays it out with {@link layoutScreenMarker}: an on-screen pin, or an off-screen directional arrow clamped to the viewport edge with a distance the caller computes. Purely a model — no camera, projection, or renderer here. `snapshot`/`restore` round-trips the set through a save.
 - `layoutScreenMarker` (function): function layoutScreenMarker(projection: ScreenProjection, viewport: ScreenMarkerViewport, options: ScreenMarkerOptions = {}): ScreenMarkerLayout — Pure, allocation-aware screen-marker math: given a projected target point, the viewport, and a `margin`, decide whether the target is on-screen and where to draw its marker. An on-screen point passes straight through (`onScreen: true`). An off-screen — or behind-camera — point is CLAMPED to the viewport edge (inset by `margin`) with `angle` set to the bearing from screen center toward the target, so a caller can pin an arrow to the frame edge and rotate it to point the way. Behind-camera projections have mirrored coordinates, so the bearing is flipped to face the true direction. This is the edge-clamp/arrow half that `layoutEntityFrames` lacks (it culls off-screen entries instead). No allocation when an `out` object is supplied — reuse one across a whole frame's waypoints.
 
 ## @jgengine/core/ui/selectionModel
@@ -1297,7 +1289,7 @@
 - `useViewportScrollLock` (function): function useViewportScrollLock(active: boolean): void — Lock the page scroll while `active`, so a fixed full-bleed surface is exactly the viewport and the document behind it never gains a scrollbar. Nested and repeated locks are counted, and the previous inline styles are restored when the last one releases.
 - `useVoice` (function): function useVoice(options?: UseVoiceOptions): VoiceState — Mic capture + push-to-talk + channel roster over the VoiceTransport signaling seam. Transmission gates the captured tracks' `enabled` flag; the media plane that actually moves audio bytes (WebRTC/SFU) stays behind the transport, host-supplied. Call once per voice channel and hand the returned state to the voice components.
 - `useWaveRunner` (function): function useWaveRunner(runner: WaveRunner): WaveView — Subscribe to a {@link WaveRunner} and re-render whenever it notifies (wave, budget, spawns, alert change). Returns the runner's pooled {@link WaveView}. The runner is driven by the game/demo (call `runner.update(dt)`), not by this hook.
-- `useWaypoints` (function): function useWaypoints(source: WaypointTracker | readonly Waypoint[]): readonly Waypoint[] — Subscribe to a {@link WaypointTracker} and re-render on every change, returning its current waypoints. Pass a plain array instead and it is returned as-is (no subscription), so a game can drive the host from a tracker or from its own derived state.
+- `useWaypoints` (function): function useWaypoints(source: WaypointStore | readonly WaypointEntry[]): readonly WaypointEntry[] — Subscribe to a {@link WaypointStore} and re-render on every change, returning its current waypoints. Pass a plain array instead and it is returned as-is (no subscription), so a game can drive the host from a store or from its own derived state.
 - `useWorldBrowser` (function): function useWorldBrowser(options: { fetchSessions: () => Promise<readonly SessionListing[]>; filter?: MatchFilter; limit?: number; refreshMs?: number; }): WorldBrowserState — Polls a host-supplied session fetcher (e.g. createWsBackend().browse) and filters through matchmaking's browseSessions. fetchSessions must be identity-stable (wrap in useCallback at the call site) or every render refetches.
 - `useWorldInvites` (function): function useWorldInvites(): WorldInvite[] — ⚠ undocumented
 - `useWorldItems` (function): function useWorldItems(): readonly WorldItemRecord[] — Live dropped-item records: the returned list keeps one identity until an item spawns, is picked up or is removed. `worldItem.list()` allocates a new array per call and the shared store signal fires on every pose write, so a raw read re-rendered every marker each frame (#2175). A marker reads its own live pose imperatively (useFrame).
@@ -2438,7 +2430,7 @@
 - `WaypointMarkerTheme` (interface): interface WaypointMarkerTheme — Reskin tokens for {@link WaypointMarkers}. Per-`kind` color layers on top via `kindColors`.
 - `WaypointMarkers` (function): function WaypointMarkers({ entries, project, viewport, distanceOf, distanceFormat, theme, kindColors, margin = 28, showPinLabels = true, className, style, }: WaypointMarkersProps): ReactNode — Off-screen objective / waypoint markers: an absolutely-positioned overlay that turns a set of world waypoints into on-screen pins and off-screen directional arrows. For each waypoint it calls the caller's `project` to get a screen point, then {@link layoutScreenMarker} to decide: an in-view target renders a pin (and optional label) at its projected spot; an off-screen or behind-camera target renders an arrow clamped to the viewport edge, rotated to point the way, with an optional distance label from `distanceOf`. Color comes from `theme` plus a per-`kind` `kindColors` map the game owns — the model never interprets `kind`. Presentation only: tracking, projection, and distance are all caller-supplied.
 - `WaypointMarkersProps` (interface): interface WaypointMarkersProps — Props for {@link WaypointMarkers}.
-- `useWaypoints` (function): function useWaypoints(source: WaypointTracker | readonly Waypoint[]): readonly Waypoint[] — Subscribe to a {@link WaypointTracker} and re-render on every change, returning its current waypoints. Pass a plain array instead and it is returned as-is (no subscription), so a game can drive the host from a tracker or from its own derived state.
+- `useWaypoints` (function): function useWaypoints(source: WaypointStore | readonly WaypointEntry[]): readonly WaypointEntry[] — Subscribe to a {@link WaypointStore} and re-render on every change, returning its current waypoints. Pass a plain array instead and it is returned as-is (no subscription), so a game can drive the host from a store or from its own derived state.
 
 ## @jgengine/shell/GamePhaseStamp
 
@@ -2484,8 +2476,8 @@
 ## @jgengine/shell/audio/audioEngine
 
 - `AudioAmbienceState` (interface): interface AudioAmbienceState — Current ambience mix, by zone id.
-- `AudioEmitterHandle` (interface): interface AudioEmitterHandle { isPlaying?(): boolean; setPosition(position: Vec3): void; setRate(rate: number): void; setGain(gain: number): void; setLowpass(hz: number): void; setHighpass(hz: number): void; setVelocity(velocity: Vec3): void; setOcclusion(amount: numbe… — ⚠ undocumented
-- `AudioEngine` (interface): interface AudioEngine { setListenerPose(pose: ListenerPose | Vec3): void; setVoiceLimit(maxTotal: number, overflow?: VoiceAllocatorConfig["overflow"]): void; play(soundId: string, position?: Vec3): void; playOneShot(soundId: string, position?: Vec3): void; playL… — ⚠ undocumented · used by `createAudioEngine`: Game-owned sound catalog playback with bounded SFX reservations, spatial panning, and shared buses.
+- `AudioEmitterHandle` (interface): interface AudioEmitterHandle { isPlaying?(): boolean; setPosition(position: Xyz): void; setRate(rate: number): void; setGain(gain: number): void; setLowpass(hz: number): void; setHighpass(hz: number): void; setVelocity(velocity: Xyz): void; setOcclusion(amount: number)… — ⚠ undocumented
+- `AudioEngine` (interface): interface AudioEngine { setListenerPose(pose: ListenerPose | Xyz): void; setVoiceLimit(maxTotal: number, overflow?: VoiceAllocatorConfig["overflow"]): void; play(soundId: string, position?: Xyz): void; playOneShot(soundId: string, position?: Xyz): void; playLoop… — ⚠ undocumented · used by `createAudioEngine`: Game-owned sound catalog playback with bounded SFX reservations, spatial panning, and shared buses.
 - `AudioLevel` (interface): interface AudioLevel — Master-output level, `0..1`. Pooled by {@link AudioEngine.measure} - read it, don't retain it.
 - `AudioOcclusionStats` (interface): interface AudioOcclusionStats — Measured geometry-occlusion work, cumulative since the engine was created.
 - `AudioSceneConfig` (interface): interface AudioSceneConfig { sounds?: Record<string, SoundDef>; maxVoices?: number; voiceOverflow?: VoiceAllocatorConfig["overflow"]; voiceAllocator?: VoiceAllocator; buses?: Record<string, AudioBusDef>; music?: Record<string, MusicTheme>; musicBus?: string; speechBu… — ⚠ undocumented · used by `createAudioEngine`: Game-owned sound catalog playback with bounded SFX reservations, spatial panning, and shared buses.
@@ -2493,7 +2485,6 @@
 - `DuckOptions` (interface): interface DuckOptions — How long and how far to duck buses for {@link AudioEngine.duck}.
 - `ListenerPose` (interface): interface ListenerPose — Position and orientation for a spatial-audio listener.
 - `MAX_PENDING_CUES` (const): const MAX_PENDING_CUES: 16 — Cues held while the browser keeps the audio context suspended, before any user gesture.
-- `Vec3` (interface): interface Vec3 { x: number; y: number; z: number } — ⚠ undocumented · used by `coverPoints` (@jgengine/core/ai/tacticalQueries): Returns boundary locations that are hidden from a threat.
 - `createAudioEngine` (function): function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine — Game-owned sound catalog playback with bounded SFX reservations, spatial panning, and shared buses.
 
 ## @jgengine/shell/audio/audioProbe
@@ -2554,7 +2545,7 @@
 ## @jgengine/shell/audio/occlusion
 
 - `BlockingRaycastSource` (interface): interface BlockingRaycastSource — The narrow slice of the scene a line-of-hearing test needs.
-- `sceneLineBlocked` (function): function sceneLineBlocked(source: BlockingRaycastSource, from: Vec3, to: Vec3): boolean — Whether blocking world geometry (objects and wall segments, never creatures or terrain) lies between the listener and an emitter. One scene query per call; the engine owns how often it runs.
+- `sceneLineBlocked` (function): function sceneLineBlocked(source: BlockingRaycastSource, from: Xyz, to: Xyz): boolean — Whether blocking world geometry (objects and wall segments, never creatures or terrain) lies between the listener and an emitter. One scene query per call; the engine owns how often it runs.
 
 ## @jgengine/shell/audio/reverb
 
@@ -2821,7 +2812,7 @@
 ## @jgengine/shell/devtools/frameSampler
 
 - `FrameReportInputs` (interface): interface FrameReportInputs — Everything the report needs, gathered by whichever producer is asking.
-- `FrameTelemetry` (interface): interface FrameTelemetry — The installed sampler: ask it for a report, reset its window, or tear it down.
+- `FrameSampler` (interface): interface FrameSampler — The installed sampler: ask it for a report, reset its window, or tear it down.
 - `FrameTelemetrySources` (interface): interface FrameTelemetrySources — What the shell hands the sampler: live getters, called only when a report is built.
 - `GlCounterTotals` (interface): interface GlCounterTotals — GPU-object creation counts, the fields the budget gate compares.
 - `REPORT_PUSH_MS` (const): const REPORT_PUSH_MS: 1000 — Cadence of the push to the dev server, in milliseconds.
@@ -3212,7 +3203,7 @@
 ## @jgengine/shell/registry
 
 - `GameRegistry` (type): type GameRegistry = Record<string, () => Promise<PlayableGame>> — ⚠ undocumented
-- `PlayableGame` (type): type PlayableGame = EnginePlayableGame< ComponentType, ComponentType, RenderEntity, RenderObject, ComponentType<ViewmodelProps>, ComponentType<WorldOverlayProps> > & { /** HUD theme the shell applies at the `GameUI` root. Unset uses `defaultHudTheme`; `false` opts out of the default theme and the en… — The concrete React-bound playable a shell `defineGame` returns and `GameHost` mounts — the one PlayableGame games handle.
+- `PlayableGame` (type): type PlayableGame = PlayableGameContract< ComponentType, ComponentType, RenderEntity, RenderObject, ComponentType<ViewmodelProps>, ComponentType<WorldOverlayProps> > & { /** HUD theme the shell applies at the `GameUI` root. Unset uses `defaultHudTheme`; `false` opts out of the default theme and the … — The concrete React-bound playable a shell `defineGame` returns and `GameHost` mounts — the one PlayableGame games handle.
 - `RenderEntity` (type): type RenderEntity = (entity: SceneEntity) => ReactNode — ⚠ undocumented
 - `RenderObject` (type): type RenderObject = (object: SceneObject) => ReactNode — ⚠ undocumented
 - `resolveGameLoader` (function): function resolveGameLoader(registry: GameRegistry, gameId: string, fallbackGameId?: string): (() => Promise<PlayableGame>) | undefined — ⚠ undocumented

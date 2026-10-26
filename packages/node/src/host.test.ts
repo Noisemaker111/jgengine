@@ -5,14 +5,14 @@ import { join } from "node:path";
 
 import type { RuntimePlayerRow } from "@jgengine/core/runtime/snapshot";
 
-import { createGameHost } from "./host";
+import { createGameServerHost } from "./host";
 import { clearFilePersistence, filePersistence, memoryPersistence } from "./persistence";
 import { createChunkTestRuntime, createTestRuntime } from "./testFixtures";
 
 test("join, command, flush, and restart round-trip through memory persistence", async () => {
   let t = 0;
   const persistence = memoryPersistence(() => t);
-  const host = createGameHost({
+  const host = createGameServerHost({
     runtimes: [createTestRuntime()],
     persistence,
     now: () => t,
@@ -65,7 +65,7 @@ test("join, command, flush, and restart round-trip through memory persistence", 
     await persistence.getLeaderboardTop({ gameId: "test-game", stat: "gold", scope: "profile" }),
   ).toEqual([{ userId: "alice", value: 5 }]);
 
-  const restarted = createGameHost({ runtimes: [createTestRuntime()], persistence, now: () => t });
+  const restarted = createGameServerHost({ runtimes: [createTestRuntime()], persistence, now: () => t });
   const afterRestart = await restarted.joinServer({
     userId: "alice",
     gameId: "test-game",
@@ -79,7 +79,7 @@ test("join, command, flush, and restart round-trip through memory persistence", 
 test("tick advances the loop and auto-saves on the save cadence", async () => {
   let t = 0;
   const persistence = memoryPersistence(() => t);
-  const host = createGameHost({
+  const host = createGameServerHost({
     runtimes: [createTestRuntime()],
     persistence,
     now: () => t,
@@ -102,7 +102,7 @@ test("tick advances the loop and auto-saves on the save cadence", async () => {
 test("leave persists, frees the slot, and hides the server from the browser list", async () => {
   const t = 0;
   const persistence = memoryPersistence(() => t);
-  const host = createGameHost({
+  const host = createGameServerHost({
     runtimes: [createTestRuntime()],
     persistence,
     now: () => t,
@@ -135,7 +135,7 @@ test("leave persists, frees the slot, and hides the server from the browser list
 
 test("feed buffers append, trim, and gate on membership", async () => {
   const persistence = memoryPersistence();
-  const host = createGameHost({
+  const host = createGameServerHost({
     runtimes: [createTestRuntime()],
     persistence,
     allowedFeedActions: ["kill"],
@@ -159,7 +159,7 @@ test("filePersistence round-trips every tier and survives a host restart", async
   try {
     let t = 0;
     const persistence = filePersistence(dir, () => t);
-    const host = createGameHost({
+    const host = createGameServerHost({
       runtimes: [createTestRuntime()],
       persistence,
       now: () => t,
@@ -187,7 +187,7 @@ test("filePersistence round-trips every tier and survives a host restart", async
       gold: 8,
     });
 
-    const restarted = createGameHost({ runtimes: [createTestRuntime()], persistence: reopened, now: () => t });
+    const restarted = createGameServerHost({ runtimes: [createTestRuntime()], persistence: reopened, now: () => t });
     const rejoined = await restarted.joinServer({ userId: "alice", gameId: "test-game", serverId });
     expect(rejoined.isNew).toBe(false);
     const view = await restarted.getPlayerView({ userId: "alice", serverId });
@@ -249,7 +249,7 @@ test("filePersistence sanitizes a \"..\" key so it cannot escape the base dir", 
 test("host flush applies deletedChunks through memory persistence", async () => {
   let t = 0;
   const persistence = memoryPersistence(() => t);
-  const host = createGameHost({
+  const host = createGameServerHost({
     runtimes: [createChunkTestRuntime()],
     persistence,
     now: () => t,
@@ -285,7 +285,7 @@ test("host flush applies deletedChunks through memory persistence", async () => 
   expect(await host.flushAll()).toBe(1);
   expect((await persistence.loadChunks(serverId)).map((chunk) => chunk.chunkKey)).toEqual(["1,0"]);
 
-  const restarted = createGameHost({
+  const restarted = createGameServerHost({
     runtimes: [createChunkTestRuntime()],
     persistence,
     now: () => t,

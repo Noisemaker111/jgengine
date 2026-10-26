@@ -1,12 +1,12 @@
 import { expect, test } from "bun:test";
 
-import { createGameHost } from "./host";
+import { createGameServerHost } from "./host";
 import { memoryPersistence } from "./persistence";
 import { createTestRuntime } from "./testFixtures";
 
 function makeHost() {
   let t = 0;
-  const host = createGameHost({
+  const host = createGameServerHost({
     runtimes: [createTestRuntime()],
     persistence: memoryPersistence(() => t),
     now: () => t,

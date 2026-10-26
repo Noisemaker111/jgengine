@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { createThresholdTracker } from "./thresholdCrossings";
+import { createThresholdTracker } from "./thresholdTracker";
 
 describe("createThresholdTracker", () => {
   test("emits a falling crossing when the source drops past a mark", () => {

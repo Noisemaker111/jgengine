@@ -9,7 +9,7 @@ import {
   probeReportRoute,
   reportGameId,
   TELEMETRY_FLAG,
-  type FrameTelemetry,
+  type FrameSampler,
   type GlCounterTotals,
 } from "./frameSampler";
 
@@ -26,7 +26,7 @@ export function FrameTelemetry({ game, quality }: { game: string; quality: PerfQ
   useEffect(() => {
     if ((readUrlParam(TELEMETRY_FLAG) ?? "").toLowerCase() === "off") return;
     let active = true;
-    let telemetry: FrameTelemetry | null = null;
+    let telemetry: FrameSampler | null = null;
     void probeReportRoute(undefined, reportGameId(game)).then((available) => {
       if (!active || !available) return;
       let counters: { totals: GlCounterTotals; attached: boolean } = {

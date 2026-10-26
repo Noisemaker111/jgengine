@@ -70,7 +70,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `gridCellsOfValue` (function) · `import { gridCellsOfValue } from "@jgengine/core/editor"`
 - `gridEmptyValue` (function) · `import { gridEmptyValue } from "@jgengine/core/editor"`
 - `gridGlyphMap` (function) · `import { gridGlyphMap } from "@jgengine/core/editor"`
-- `inGridBounds` (function) · `import { inGridBounds } from "@jgengine/core/editor"`
+- `inLayerBounds` (function) · `import { inLayerBounds } from "@jgengine/core/editor"`
 - `migrateGridLayer` (function) · `import { migrateGridLayer } from "@jgengine/core/editor"`
 - `paintGridCells` (function) · `import { paintGridCells } from "@jgengine/core/editor"`
 - `parseGridCellKey` (function) · `import { parseGridCellKey } from "@jgengine/core/editor"`

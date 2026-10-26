@@ -237,7 +237,7 @@ export {
   gridCellsOfValue,
   gridEmptyValue,
   gridGlyphMap,
-  inGridBounds,
+  inLayerBounds,
   migrateGridLayer,
   paintGridCells,
   parseGridCellKey,

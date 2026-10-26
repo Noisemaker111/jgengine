@@ -275,7 +275,8 @@ export interface TelegraphInput {
   };
 }
 
-export interface HitReactionInput {
+/** A hit reaction between two entities by id, with a config or impact preset. */
+export interface EntityHitReactionInput {
   from: string;
   to: string;
   config: HitReactionConfig | ImpactPresetName;
@@ -316,7 +317,7 @@ export interface SceneEntityContext {
    */
   vfxInstance: VfxInstanceStore;
   telegraph(input: TelegraphInput): () => void;
-  hitReaction(input: HitReactionInput): HitReaction | null;
+  hitReaction(input: EntityHitReactionInput): HitReaction | null;
   /**
    * The player's selected entities — the RTS selection the shell pointer writes (`pointer.select`
    * click / marquee) and the order command receives. Game HUDs read it to show the selected unit's

@@ -23,7 +23,7 @@ export interface TribeRankDef {
 export type AssetAction = "inventory" | "use" | "command";
 
 /** Opaque reference to a shared thing (structure, creature, container) by kind + id. */
-export interface AssetRef {
+export interface TribeAssetRef {
   kind: string;
   id: string;
 }
@@ -133,13 +133,13 @@ export interface Tribe {
   setMemberRank(actorId: string, memberId: string, rankId: string): TribeResult;
   transferFounder(actorId: string, memberId: string): TribeResult;
 
-  registerAsset(actorId: string, ref: AssetRef, ownership: AssetOwnership): TribeResult;
-  unregisterAsset(actorId: string, ref: AssetRef): TribeResult;
-  ownerOfAsset(ref: AssetRef): AssetOwnership | null;
+  registerAsset(actorId: string, ref: TribeAssetRef, ownership: AssetOwnership): TribeResult;
+  unregisterAsset(actorId: string, ref: TribeAssetRef): TribeResult;
+  ownerOfAsset(ref: TribeAssetRef): AssetOwnership | null;
   /** Personal assets a member holds inside this group (they keep these on leaving). */
-  assetsOf(memberId: string): readonly AssetRef[];
+  assetsOf(memberId: string): readonly TribeAssetRef[];
   /** Resolve access to an asset: rank permission for group assets, ownership for personal ones. */
-  canAccess(memberId: string, ref: AssetRef, action: AssetAction): boolean;
+  canAccess(memberId: string, ref: TribeAssetRef, action: AssetAction): boolean;
 
   addAlly(tribeId: string): void;
   removeAlly(tribeId: string): void;
@@ -402,7 +402,7 @@ export function createTribe(config: TribeConfig): Tribe {
     },
 
     assetsOf(memberId) {
-      const out: AssetRef[] = [];
+      const out: TribeAssetRef[] = [];
       for (const asset of assets.values()) {
         if (asset.ownerId === memberId) out.push({ kind: asset.kind, id: asset.id });
       }

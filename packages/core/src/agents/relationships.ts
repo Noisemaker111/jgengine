@@ -1,6 +1,6 @@
 import { clamp } from "../math/scalar";
 import { createPairKeyCodec } from "../relation/keyedValues";
-import { crossThresholds, type ThresholdBoundary } from "../relation/thresholds";
+import { crossThresholds, type ThresholdBoundary } from "../threshold/thresholds";
 
 /** One labelled bond level on the opinion scale. */
 export interface RelationshipMilestone {

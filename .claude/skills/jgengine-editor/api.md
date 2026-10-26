@@ -141,7 +141,7 @@
 - `gridGlyphMap` (function): function gridGlyphMap(layer: EditorGridLayer): Record<string, string> — Builds the value-id → glyph map from a layer's palette, for ASCII/glyph export.
 - `importAsciiGrid` (function): function importAsciiGrid(text: string, options: AsciiGridImportOptions): EditorGridLayer — Parses an ASCII/glyph map — one row per text line, one char per cell — into a grid layer. Each glyph is resolved to a value id via the palette/`glyphMap`; unmapped glyphs and padding become the empty value, so a mostly-open room stays sparse. The canonical representation is the returned {@link EditorGridLayer}; ASCII is just this import path into it, never the source of truth. Bounds are the row count × longest row.
 - `importCsvGrid` (function): function importCsvGrid(text: string, options: CsvGridImportOptions): EditorGridLayer — Parses a CSV grid — one row per line, one value id per comma-separated field — into a grid layer. Blank fields become the empty value. Unlike ASCII this carries multi-character value ids directly, so it suits grids whose cell values are names rather than single glyphs.
-- `inGridBounds` (function): function inGridBounds(layer: EditorGridLayer, col: number, row: number): boolean — True when `col,row` falls inside the layer's declared bounds.
+- `inLayerBounds` (function): function inLayerBounds(layer: EditorGridLayer, col: number, row: number): boolean — True when `col,row` falls inside the layer's declared bounds.
 - `installDocumentLiveSync` (function): function installDocumentLiveSync(sync: DocumentLiveSync): () => void — Publishes a live-sync bus globally so AuthoredScene / games can subscribe without prop drilling.
 - `lightProbesFromDocument` (function): function lightProbesFromDocument(doc: EditorDocument): readonly IrradianceVolume[] — The baked irradiance volumes a scene document authored, flattened for the renderer.
 - `lightingFromDocument` (function): function lightingFromDocument(doc: EditorDocument): LightingConfig | undefined — Converts authored `light` markers into the runtime lighting contract.
@@ -260,7 +260,7 @@
 - `gridCellsOfValue` (function): function gridCellsOfValue(layer: EditorGridLayer, value: string): EditorGridCell[] — Every in-bounds cell holding `value`, sorted row-major — the query gameplay uses to find all spawns, hazards, gates, etc. of one kind without touching a renderer.
 - `gridEmptyValue` (function): function gridEmptyValue(layer: EditorGridLayer): string — The value id a layer treats as empty/background (default `""`). Cells holding this value are never stored, so it is what {@link getGridCell} returns for any unset cell.
 - `gridGlyphMap` (function): function gridGlyphMap(layer: EditorGridLayer): Record<string, string> — Builds the value-id → glyph map from a layer's palette, for ASCII/glyph export.
-- `inGridBounds` (function): function inGridBounds(layer: EditorGridLayer, col: number, row: number): boolean — True when `col,row` falls inside the layer's declared bounds.
+- `inLayerBounds` (function): function inLayerBounds(layer: EditorGridLayer, col: number, row: number): boolean — True when `col,row` falls inside the layer's declared bounds.
 - `migrateGridLayer` (function): function migrateGridLayer(layer: EditorGridLayer): EditorGridLayer — Normalizes a grid layer forward to the current cell-schema version: clamps `cols`/`rows` to non-negative integers, drops out-of-bounds and empty-valued cells, and stamps `schemaVersion`. The single migration seam every loader and authoring op funnels new/old layers through, so a layer from an older document or an import adapter always lands in a valid, minimal shape.
 - `paintGridCells` (function): function paintGridCells(layer: EditorGridLayer, edits: readonly EditorGridCellEdit[]): EditorGridLayer — Applies a batch of cell edits in one pass, returning the same layer when nothing changed. The op the editor uses for a drag stroke, a paste, or any multi-cell paint/erase.
 - `parseGridCellKey` (function): function parseGridCellKey(key: string): { col: number; row: number } | null — Parses a `"col,row"` sparse-map key back into integer coordinates, or `null` when malformed.
@@ -473,8 +473,7 @@
 - `AssetBrowser` (function): function AssetBrowser({ assets, session, onPlace, }: { assets: readonly EditorAssetEntry[]; session: EditorSession; onPlace: (entry: EditorAssetEntry) => void; }): React.JSX.Element — Searchable panel for placing catalog assets or an empty marker into the scene.
 - `AssetImporter` (type): type AssetImporter = (file: File) => Promise<StandaloneAsset | null> — Persists a dropped model file through the editor host so it survives reload as a durable catalog asset, returning the host-assigned id/url (which the manifest scan re-lists on reload). Resolves `null` when no host is listening — a plain browser mount with no dev server — so the caller can fall back to a blob URL.
 - `BlankPlayableOptions` (interface): interface BlankPlayableOptions — Options for the blank, gameless world the standalone editor authors over.
-- `CreatorApp` (function): function CreatorApp({ gameId, config, onExit }: { gameId: string; config: CreatorConfig; onExit: () => void }): React.JSX.Element — Production creator catalog and embedded editor, reached through the game's menu.
-- `CreatorConfig` (type): type CreatorConfig = CoreCreatorConfig<PlayableGame> — Game-owned creator policy, durable storage and document-to-runtime composition.
+- `CreatorApp` (function): function CreatorApp({ gameId, config, onExit }: { gameId: string; config: CreatorConfig<PlayableGame>; onExit: () => void }): React.JSX.Element — Production creator catalog and embedded editor, reached through the game's menu.
 - `DEFAULT_PAINT_SETTINGS` (const): const DEFAULT_PAINT_SETTINGS: PaintSettings — The terrain tool's default paint controls.
 - `DEFAULT_SCULPT_SETTINGS` (const): const DEFAULT_SCULPT_SETTINGS: SculptSettings — The terrain tool's default brush controls.
 - `EDITOR_AGENT_KEY_ENV` (const): const EDITOR_AGENT_KEY_ENV: "JGENGINE_EDITOR_AGENT_KEY" — Env var name for the optional Bearer token (`JGENGINE_EDITOR_AGENT_KEY`).
@@ -505,6 +504,7 @@
 - `EditorPerfSample` (interface): interface EditorPerfSample — Rolling frame-rate sample published by the in-canvas PerfProbe.
 - `EditorRunMode` (type): type EditorRunMode = "edit" | "walk" | "play" | "hud" — How the editor hosts the game: frozen placement view, roamable world, the real game, or HUD-layout authoring.
 - `EditorSaveFn` (type): type EditorSaveFn = (json: string) => Promise<{ ok: boolean; path?: string; error?: string }> — Persists an exported document JSON; resolves with where it landed or why it failed.
+- `EditorSnapMode` (type): type EditorSnapMode = "ground" | "grid" | "off" — How gizmo drags land: stick to terrain height, quantize to a grid, or free.
 - `EditorTool` (type): type EditorTool = "select" | "terrain" — Which top-level editor tool is active: object placement/selection, or terrain sculpting.
 - `EditorUiState` (interface): interface EditorUiState — Transient editor UI state shared between chrome, viewport, and gizmos.
 - `EditorUiStore` (interface): interface EditorUiStore — Subscribable store for the editor's transient UI state (gizmo, snapping, placement).
@@ -515,7 +515,6 @@
 - `PlacementTool` (type): type PlacementTool = | { tool: "marker"; kind: string } | { tool: "volume"; kind: string; shape: EditorVolumeShape } | { tool: "note" } | { tool: "path"; kind: string } — The active creation tool — what a viewport click places next.
 - `SculptSettings` (interface): interface SculptSettings — Live terrain-brush controls driven by the terrain tool panel.
 - `SelectionGizmo` (const): const SelectionGizmo: React.MemoExoticComponent<({ session, ui, groundSnap, }: { session: EditorSession; ui: EditorUiStore; groundSnap?: ((x: number, z: number) => number) | undefined; }) => React.JSX.Element | null> — Drag-to-transform gizmo bound to the current selection, dispatching editor commands on release. Mounts the shared shell `TransformGizmo` and maps release poses onto editor commands (multi-select translate, volume scale, path vertex move).
-- `SnapMode` (type): type SnapMode = "ground" | "grid" | "off" — How gizmo drags land: stick to terrain height, quantize to a grid, or free.
 - `StandaloneAsset` (interface): interface StandaloneAsset — Shared model-import helpers used by the standalone editor strip and the in-game Content Browser. Host-agnostic and free of React/shell so unit tests can exercise the importer without a DOM or three.
 - `StandaloneEditor` (function): function StandaloneEditor({ sceneId = "standalone", scene, assets, world, save, importAsset = importAssetToHost, hidePickers = false, }: StandaloneEditorProps): React.JSX.Element — The scene editor, mounted over a blank gameless world instead of a game — the same `EditorApp` every jgengine game ships, usable standalone on the user's own project (CLI `jgengine editor`, desktop app, or any React host). Ships a slim strip to open a world file and pull in an asset folder; both are also settable up front through props.
 - `StandaloneEditorProps` (interface): interface StandaloneEditorProps — Props for the gameless scene editor — everything optional so it boots on a blank world with nothing wired.
@@ -556,8 +555,7 @@
 
 ## @jgengine/editor/CreatorApp
 
-- `CreatorApp` (function): function CreatorApp({ gameId, config, onExit }: { gameId: string; config: CreatorConfig; onExit: () => void }): React.JSX.Element — Production creator catalog and embedded editor, reached through the game's menu.
-- `CreatorConfig` (type): type CreatorConfig = CoreCreatorConfig<PlayableGame> — Game-owned creator policy, durable storage and document-to-runtime composition.
+- `CreatorApp` (function): function CreatorApp({ gameId, config, onExit }: { gameId: string; config: CreatorConfig<PlayableGame>; onExit: () => void }): React.JSX.Element — Production creator catalog and embedded editor, reached through the game's menu.
 
 ## @jgengine/editor/DebugDraw
 
@@ -1080,6 +1078,7 @@
 - `CameraProjectionMode` (type): type CameraProjectionMode = "perspective" | "orthographic" — Editor viewport camera projection — perspective (default) or orthographic top-down-friendly view.
 - `DEFAULT_PAINT_SETTINGS` (const): const DEFAULT_PAINT_SETTINGS: PaintSettings — The terrain tool's default paint controls.
 - `DEFAULT_SCULPT_SETTINGS` (const): const DEFAULT_SCULPT_SETTINGS: SculptSettings — The terrain tool's default brush controls.
+- `EditorSnapMode` (type): type EditorSnapMode = "ground" | "grid" | "off" — How gizmo drags land: stick to terrain height, quantize to a grid, or free.
 - `EditorTool` (type): type EditorTool = "select" | "terrain" — Which top-level editor tool is active: object placement/selection, or terrain sculpting.
 - `EditorUiState` (interface): interface EditorUiState — Transient editor UI state shared between chrome, viewport, and gizmos.
 - `EditorUiStore` (interface): interface EditorUiStore — Subscribable store for the editor's transient UI state (gizmo, snapping, placement).
@@ -1091,7 +1090,6 @@
 - `ROTATION_SNAP_CHOICES_DEG` (const): const ROTATION_SNAP_CHOICES_DEG: readonly number[] — Rotation snap increments (degrees) offered by the toolbar snap menu.
 - `SCALE_SNAP_CHOICES` (const): const SCALE_SNAP_CHOICES: readonly number[] — Scale snap increments offered by the toolbar snap menu.
 - `SculptSettings` (interface): interface SculptSettings — Live terrain-brush controls driven by the terrain tool panel.
-- `SnapMode` (type): type SnapMode = "ground" | "grid" | "off" — How gizmo drags land: stick to terrain height, quantize to a grid, or free.
 - `TERRAIN_MATERIALS` (const): const TERRAIN_MATERIALS: readonly TerrainMaterial[] — The default terrain paint palette (surface id → color) shared by the panel and the mesh.
 - `TERRAIN_MATERIAL_COLORS` (const): const TERRAIN_MATERIAL_COLORS: Record<string, string> — Maps every default material id to its render color, for the sculpt mesh's per-cell surface tint.
 - `TerrainBrushKind` (type): type TerrainBrushKind = "raise" | "lower" | "smooth" | "flatten" | "noise" | "ramp" — A heightfield sculpt brush the terrain tool can apply.

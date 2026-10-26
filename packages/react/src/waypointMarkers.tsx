@@ -1,32 +1,28 @@
 import { useReducer, useEffect, type CSSProperties, type ReactNode } from "react";
 
-import {
-  layoutScreenMarker,
-  type ScreenMarkerLayout,
-  type Waypoint,
-  type WaypointTracker,
-} from "@jgengine/core/ui/screenMarkers";
+import { layoutScreenMarker, type ScreenMarkerLayout } from "@jgengine/core/ui/screenMarkers";
+import { waypointAnchor, type WaypointEntry, type WaypointStore } from "@jgengine/core/world/waypoints";
 import { formatDistance, type DistanceFormat } from "@jgengine/core/format/distance";
 
 import type { ProjectEntity } from "./entityFrames";
 import { hudType } from "./hud/hudTokens";
 
 /**
- * Subscribe to a {@link WaypointTracker} and re-render on every change, returning
+ * Subscribe to a {@link WaypointStore} and re-render on every change, returning
  * its current waypoints. Pass a plain array instead and it is returned as-is
- * (no subscription), so a game can drive the host from a tracker or from its own
+ * (no subscription), so a game can drive the host from a store or from its own
  * derived state.
  *
- * @capability use-waypoints React binding that returns a waypoint tracker's live list (or a passthrough array)
+ * @capability use-waypoints React binding that returns a waypoint store's live list (or a passthrough array)
  */
-export function useWaypoints(source: WaypointTracker | readonly Waypoint[]): readonly Waypoint[] {
+export function useWaypoints(source: WaypointStore | readonly WaypointEntry[]): readonly WaypointEntry[] {
   const [, bump] = useReducer((n: number) => n + 1, 0);
-  const isTracker = !Array.isArray(source);
+  const isStore = !Array.isArray(source);
   useEffect(() => {
-    if (isTracker) return (source as WaypointTracker).subscribe(bump);
+    if (isStore) return (source as WaypointStore).subscribe(bump);
     return undefined;
-  }, [source, isTracker]);
-  return isTracker ? (source as WaypointTracker).all() : (source as readonly Waypoint[]);
+  }, [source, isStore]);
+  return isStore ? (source as WaypointStore).list() : (source as readonly WaypointEntry[]);
 }
 
 /** Reskin tokens for {@link WaypointMarkers}. Per-`kind` color layers on top via `kindColors`. */
@@ -55,8 +51,8 @@ function resolveTheme(theme: WaypointMarkerTheme | undefined): Required<Waypoint
 
 /** Props for {@link WaypointMarkers}. */
 export interface WaypointMarkersProps {
-  /** A live {@link WaypointTracker} or a plain waypoint array. */
-  entries: WaypointTracker | readonly Waypoint[];
+  /** A live {@link WaypointStore} or a plain waypoint array. */
+  entries: WaypointStore | readonly WaypointEntry[];
   /**
    * World→screen projector — caller-owned, so this seam never depends on a
    * specific camera. R3F games get one from `useWorldProjection` in
@@ -70,7 +66,7 @@ export interface WaypointMarkersProps {
    * off-screen arrow's distance label. Caller-owned; return `undefined` to omit
    * the label. When absent, no distance is shown.
    */
-  distanceOf?: (waypoint: Waypoint) => number | undefined;
+  distanceOf?: (waypoint: WaypointEntry) => number | undefined;
   /** How to format {@link distanceOf}'s meters. Default `{ unit: "auto" }`. */
   distanceFormat?: DistanceFormat;
   /** Base reskin tokens. */
@@ -126,7 +122,7 @@ export function WaypointMarkers({
 
   const rendered: ReactNode[] = [];
   for (const waypoint of waypoints) {
-    const projection = project(waypoint.position);
+    const projection = project(waypointAnchor(waypoint));
     if (projection === null) continue;
     const layout = layoutScreenMarker(projection, viewport, { margin, out: scratch });
     const color = kindColors?.[waypoint.kind] ?? t.color;
@@ -188,7 +184,7 @@ function chipStyle(theme: Required<WaypointMarkerTheme>, color: string): CSSProp
 }
 
 interface PinProps {
-  waypoint: Waypoint;
+  waypoint: WaypointEntry;
   x: number;
   y: number;
   color: string;
@@ -233,7 +229,7 @@ function WaypointPin({ waypoint, x, y, color, theme, label, distanceText }: PinP
 }
 
 interface ArrowProps {
-  waypoint: Waypoint;
+  waypoint: WaypointEntry;
   x: number;
   y: number;
   angle: number;

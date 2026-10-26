@@ -1,11 +1,11 @@
 /** Whether a metric must reach up to a target or stay down under it. */
-export type ThresholdDirection = "atLeast" | "atMost";
+export type ObjectiveDirection = "atLeast" | "atMost";
 
 /** A live-metric goal: hit `target` from the required `direction` (defaults to `atLeast`). */
 export interface ThresholdObjective {
   id: string;
   target: number;
-  direction?: ThresholdDirection;
+  direction?: ObjectiveDirection;
 }
 
 /** Evaluated state of one {@link ThresholdObjective} against a current metric value. */
@@ -13,7 +13,7 @@ export interface ObjectiveStatus {
   id: string;
   value: number;
   target: number;
-  direction: ThresholdDirection;
+  direction: ObjectiveDirection;
   /** True when the value satisfies the target from the required direction. */
   met: boolean;
   /** Fraction toward the target, 0..1 (1 once met). */

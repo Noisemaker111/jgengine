@@ -1,7 +1,8 @@
 import { expect, test } from "bun:test";
 import { createGameRuntime } from "@jgengine/core/runtime/gameRuntime";
 import { createEmptyPlayerRow } from "@jgengine/core/runtime/snapshot";
-import { MAX_MEMBER_SESSIONS, MAX_SESSION_ID_LENGTH, createGameServerFunctions, type JGMutationCtx } from "./server";
+import { MAX_SESSION_ID_LENGTH } from "@jgengine/core/runtime/hostPolicy";
+import { MAX_MEMBER_SESSIONS, createGameServerFunctions, type JGMutationCtx } from "./server";
 import { handlerOf, makeDb, profileDoc, serverDoc } from "./testFixtures";
 
 function setup(save: "none" | { auto: string; scope: "player+chunks" } = { auto: "60s", scope: "player+chunks" }) {

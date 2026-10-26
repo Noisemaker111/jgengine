@@ -194,7 +194,7 @@ export interface FrameTelemetrySources {
 }
 
 /** The installed sampler: ask it for a report, reset its window, or tear it down. */
-export interface FrameTelemetry {
+export interface FrameSampler {
   report(): PerfReport;
   resetWindow(): void;
   dispose(): void;
@@ -259,7 +259,7 @@ function subtract(totals: GlCounterTotals, baseline: GlCounterTotals | null): Gl
   return since;
 }
 
-let installed: FrameTelemetry | null = null;
+let installed: FrameSampler | null = null;
 
 /**
  * Reset the sampler's warmup baseline, so a fresh measurement starts from zero.
@@ -276,7 +276,7 @@ export function resetFrameTelemetry(): void {
  * {@link probeReportRoute}, so a shipped game never starts the sampler.
  * @internal
  */
-export function installFrameTelemetry(sources: FrameTelemetrySources): FrameTelemetry | null {
+export function installFrameTelemetry(sources: FrameTelemetrySources): FrameSampler | null {
   if ((readUrlParam(TELEMETRY_FLAG) ?? "").toLowerCase() === "off") return null;
   if (typeof window === "undefined") return null;
 
@@ -324,7 +324,7 @@ export function installFrameTelemetry(sources: FrameTelemetrySources): FrameTele
     return report;
   };
 
-  const telemetry: FrameTelemetry = {
+  const telemetry: FrameSampler = {
     report: buildReport,
     resetWindow() {
       baseline = null;

@@ -1,7 +1,7 @@
 import type { EditorPath } from "@jgengine/core/editor/index";
 import {
   pathFollowSeek,
-  pathLength,
+  followPathLength,
   type PathFollowConfig,
   type Waypoint,
 } from "@jgengine/core/nav/pathFollow";
@@ -37,7 +37,7 @@ export function listScrubbablePaths(paths: readonly EditorPath[]): ScrubbablePat
   return paths
     .map((path) => {
       const config = pathFollowConfigFromEditorPath(path);
-      const length = config === null ? 0 : pathLength(config);
+      const length = config === null ? 0 : followPathLength(config);
       return {
         id: path.id,
         kind: path.kind,
@@ -61,7 +61,7 @@ export function samplePathAt(
 ): { x: number; y: number; z: number; distance: number; length: number } | null {
   const config = pathFollowConfigFromEditorPath(path);
   if (config === null) return null;
-  const length = pathLength(config);
+  const length = followPathLength(config);
   const clamped = Number.isFinite(t) ? Math.max(0, Math.min(1, t)) : 0;
   const state = pathFollowSeek(config, { kind: "normalized", value: clamped });
   return {

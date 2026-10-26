@@ -1,3 +1,5 @@
+import { tierAt } from "../threshold/thresholds";
+
 export interface MeterTier {
   id: string;
   at: number;
@@ -48,14 +50,8 @@ function sortedTiers(tiers: readonly MeterTier[] | undefined): readonly MeterTie
   return [...tiers].sort((a, b) => a.at - b.at);
 }
 
-/** The highest tier id whose `at` threshold `value` has reached, or `null` below every tier — the pure lookup `createAccumulatorMeter`/`createEventMeter` call on every `add`/`tick`. */
-export function tierAt(value: number, tiers: readonly MeterTier[]): string | null {
-  let current: string | null = null;
-  for (const tier of tiers) {
-    if (value >= tier.at) current = tier.id;
-    else break;
-  }
-  return current;
+function tierIdAt(value: number, tiers: readonly MeterTier[]): string | null {
+  return tierAt(tiers, value)?.id ?? null;
 }
 
 /**
@@ -91,14 +87,14 @@ export function createAccumulatorMeter(config: AccumulatorMeterConfig): Accumula
       return config.max <= 0 ? 0 : value / config.max;
     },
     tier() {
-      return tierAt(value, tiers);
+      return tierIdAt(value, tiers);
     },
     broke() {
       return broken;
     },
     add(amount) {
       idleMs = 0;
-      const tierBefore = tierAt(value, tiers);
+      const tierBefore = tierIdAt(value, tiers);
       const raw = value + amount;
       const fired = amount > 0 && raw >= config.max && !(mode === "hold" && broken);
       if (mode === "reset" && fired) {
@@ -107,7 +103,7 @@ export function createAccumulatorMeter(config: AccumulatorMeterConfig): Accumula
         value = clamp(raw);
         if (fired && mode === "hold") broken = true;
       }
-      const tierAfter = tierAt(value, tiers);
+      const tierAfter = tierIdAt(value, tiers);
       return {
         value,
         fired,

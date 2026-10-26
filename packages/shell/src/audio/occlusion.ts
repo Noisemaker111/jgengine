@@ -1,6 +1,6 @@
 import type { SceneRaycastHit, SceneRaycastInput } from "@jgengine/core/scene/sceneRaycast";
 
-import type { Vec3 } from "./audioEngine";
+import type { Xyz } from "@jgengine/core/math/xyz";
 
 /** The narrow slice of the scene a line-of-hearing test needs. */
 export interface BlockingRaycastSource {
@@ -11,7 +11,7 @@ export interface BlockingRaycastSource {
  * Whether blocking world geometry (objects and wall segments, never creatures or terrain) lies
  * between the listener and an emitter. One scene query per call; the engine owns how often it runs.
  */
-export function sceneLineBlocked(source: BlockingRaycastSource, from: Vec3, to: Vec3): boolean {
+export function sceneLineBlocked(source: BlockingRaycastSource, from: Xyz, to: Xyz): boolean {
   const dx = to.x - from.x;
   const dy = to.y - from.y;
   const dz = to.z - from.z;

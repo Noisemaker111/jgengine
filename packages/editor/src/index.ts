@@ -1,5 +1,5 @@
 export { EditorApp, type EditorAppProps, type EditorSaveFn } from "./EditorApp";
-export { CreatorApp, type CreatorConfig } from "./CreatorApp";
+export { CreatorApp } from "./CreatorApp";
 export {
   buildEditorNetworkSnapshot,
   isNetworkMultiplayerConfigured,
@@ -39,7 +39,7 @@ export {
   type PaintSettings,
   type PlacementTool,
   type SculptSettings,
-  type SnapMode,
+  type EditorSnapMode,
   type TerrainBrushKind,
   type TerrainMaterial,
   type TerrainMode,

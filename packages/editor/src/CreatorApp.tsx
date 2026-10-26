@@ -1,16 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { importCreatorDocument, validateCreatorDocument, type CreatorDocument, type CreatorConfig as CoreCreatorConfig } from "@jgengine/core/editor/creatorStorage";
+import { importCreatorDocument, validateCreatorDocument, type CreatorDocument, type CreatorConfig } from "@jgengine/core/editor/creatorStorage";
 import type { EditorDocument } from "@jgengine/core/editor/types";
 import type { PlayableGame } from "@jgengine/shell/registry";
 import { EditorApp, type EditorSaveFn } from "./EditorApp";
 
-/** Game-owned creator policy, durable storage and document-to-runtime composition. */
-export type CreatorConfig = CoreCreatorConfig<PlayableGame>;
-
 /** Production creator catalog and embedded editor, reached through the game's menu.
  * @capability player-creator create, edit, save, playtest and reopen bounded player scenes through the production editor
  */
-export function CreatorApp({ gameId, config, onExit }: { gameId: string; config: CreatorConfig; onExit: () => void }) {
+export function CreatorApp({ gameId, config, onExit }: { gameId: string; config: CreatorConfig<PlayableGame>; onExit: () => void }) {
   const [documents, setDocuments] = useState<readonly Omit<CreatorDocument, "document">[]>([]);
   const [selected, setSelected] = useState<CreatorDocument | null>(null);
   const [name, setName] = useState("");

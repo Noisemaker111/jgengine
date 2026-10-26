@@ -3,7 +3,7 @@ import {
   crossThresholds,
   tierAt,
   type ThresholdBoundary,
-} from "@jgengine/core/relation/thresholds";
+} from "@jgengine/core/threshold/thresholds";
 
 const BANDS: ThresholdBoundary[] = [
   { id: "friends", at: 35 },

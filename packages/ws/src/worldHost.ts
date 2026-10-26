@@ -7,7 +7,7 @@ import type {
   WorldSyncFrame,
 } from "@jgengine/core/runtime/transport";
 import type { SnapshotViewer } from "@jgengine/core/runtime/worldSnapshot";
-import type { GameHost, HostChangeEvent } from "./host";
+import type { GameServerHost, HostChangeEvent } from "./host";
 
 /** Config for {@link createWorldGameHost}: how to resolve a hosted world's authoritative session per server. */
 export interface WorldGameHostOptions {
@@ -22,8 +22,8 @@ export interface WorldGameHostOptions {
   slotsPerServer?: number;
 }
 
-/** A {@link GameHost} backed by `HostedWorldSession`s; `tick` advances worlds and `unload` explicitly saves and releases idle world references. */
-export interface WorldGameHost extends GameHost {
+/** A {@link GameServerHost} backed by `HostedWorldSession`s; `tick` advances worlds and `unload` explicitly saves and releases idle world references. */
+export interface WorldGameHost extends GameServerHost {
   /** Advance every live world by `dtSeconds` and emit a `server` change for each whose revision moved. */
   tick(dtSeconds: number): void;
   /**
@@ -37,7 +37,7 @@ export interface WorldGameHost extends GameHost {
 }
 
 /**
- * The GameContext-loop counterpart of the reducer `createGameHost`: a structural {@link GameHost} that serves each
+ * The GameContext-loop counterpart of the reducer `createGameServerHost`: a structural {@link GameServerHost} that serves each
  * world's full `WorldSnapshot` as `serverState`, so the existing ws router, `createWsBackend`, and the shell's
  * `attachWorldSync` carry host-authoritative GameContext worlds with zero changes to any of them. The harness owns
  * the tick cadence (call {@link WorldGameHost.tick} on an interval); commands and joins broadcast immediately.

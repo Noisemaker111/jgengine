@@ -1,4 +1,5 @@
-import { assignFormationSlots, boxFormation, facingYaw, placeFormation, type Vec2 } from "@jgengine/core/movement/formation";
+import { assignFormationSlots, boxFormation, facingYaw, placeFormation } from "@jgengine/core/movement/formation";
+import type { Vec2 } from "@jgengine/core/world/geometry";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { defineBuildKeys, placePiece } from "@jgengine/core/worldModel/buildTool";
 import { defineSystem } from "@jgengine/shell/gameKit";

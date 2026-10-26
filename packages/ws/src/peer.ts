@@ -1,7 +1,7 @@
 import type { GameRuntime } from "@jgengine/core/runtime/gameRuntime";
 import type { HostPersistence } from "@jgengine/core/runtime/hostPersistence";
 
-import { createGameHost, memoryPersistence, type GameHost } from "./host";
+import { createGameServerHost, memoryPersistence, type GameServerHost } from "./host";
 import { createHostRouter, loopbackPipe, type HostRouter, type HostRouterOptions } from "./hostRouter";
 import { createWsBackend, type WsBackend } from "./createWsBackend";
 import type { TransportPipeFactory } from "./pipe";
@@ -99,7 +99,7 @@ function guestPipeFactory(channel: RTCDataChannel): TransportPipeFactory {
 export type PeerHostOptions = {
   userId: string;
   token?: string;
-  host?: GameHost;
+  host?: GameServerHost;
   runtimes?: GameRuntime[];
   persistence?: HostPersistence;
   tickMs?: number;
@@ -109,7 +109,7 @@ export type PeerHostOptions = {
 
 export type PeerHost = {
   backend: WsBackend;
-  host: GameHost;
+  host: GameServerHost;
   router: HostRouter;
   accept: (offerCode: string) => Promise<string>;
   close: () => void;
@@ -119,7 +119,7 @@ export function createPeerHost(options: PeerHostOptions): PeerHost {
   const ownsHost = options.host === undefined;
   const host =
     options.host ??
-    createGameHost({
+    createGameServerHost({
       runtimes: options.runtimes,
       persistence: options.persistence ?? memoryPersistence(),
       tickMs: options.tickMs,

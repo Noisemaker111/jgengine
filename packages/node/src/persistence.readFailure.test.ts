@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createGameRuntime } from "@jgengine/core/runtime/gameRuntime";
 import type { WorldChunkRecord } from "@jgengine/core/runtime/hostPersistence";
-import { createGameHost } from "./host";
+import { createGameServerHost } from "./host";
 import { filePersistence } from "./persistence";
 
 const chunk: WorldChunkRecord = {
@@ -41,7 +41,7 @@ test("host admission fails before hydration on a file chunk read error, then ret
   const initialRuntime = createGameRuntime({
     gameId, save: { auto: "5ms", scope: "player+chunks" }, commands: {},
   });
-  const initial = createGameHost({ persistence, runtimes: [initialRuntime], createServerId: () => chunk.serverId });
+  const initial = createGameServerHost({ persistence, runtimes: [initialRuntime], createServerId: () => chunk.serverId });
   try {
     await initial.joinServer({ userId: "alice", gameId });
     await initial.stop();
@@ -58,7 +58,7 @@ test("host admission fails before hydration on a file chunk read error, then ret
       gameId, save: { auto: "5ms", scope: "player+chunks" }, commands: {},
       loop: { onInit(ctx) { hydrated.push(ctx.snapshot.chunks[chunk.chunkKey]?.flags); } },
     });
-    const restored = createGameHost({ persistence, runtimes: [runtime] });
+    const restored = createGameServerHost({ persistence, runtimes: [runtime] });
     const events: unknown[] = [];
     const unsubscribe = restored.subscribe(event => events.push(event));
     try {

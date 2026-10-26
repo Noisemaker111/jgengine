@@ -5,7 +5,7 @@ import { resolveVfxPreset } from "../../combat/vfxPresets";
 import type { GameEventMap, GameEvents, VfxKind } from "../../game/events";
 import type { EntityPosition, EntityStore } from "../../scene/entityStore";
 import type { SimClock } from "../../time/simClock";
-import type { FloatTextInput, HitReactionInput, TelegraphInput, VfxInput } from "../gameContext";
+import type { FloatTextInput, EntityHitReactionInput, TelegraphInput, VfxInput } from "../gameContext";
 
 /** @internal What the combat-presentation helpers need from the live context: entity poses, the event bus, the sim clock (telegraph windups), and the raw effect application. */
 export interface CombatFxDeps {
@@ -20,7 +20,7 @@ export interface CombatFx {
   emitFloatText(input: FloatTextInput): void;
   emitVfx(input: VfxInput): void;
   fireTelegraph(input: TelegraphInput): () => void;
-  applyHitReaction(input: HitReactionInput): HitReaction | null;
+  applyHitReaction(input: EntityHitReactionInput): HitReaction | null;
   applyEffectAndFloat(input: EffectInput): EffectResult[];
 }
 
@@ -135,7 +135,7 @@ export function createCombatFx(d: CombatFxDeps): CombatFx {
     };
   }
 
-  function applyHitReaction(input: HitReactionInput): HitReaction | null {
+  function applyHitReaction(input: EntityHitReactionInput): HitReaction | null {
     const attacker = entities.get(input.from);
     const target = entities.get(input.to);
     if (target === null) return null;

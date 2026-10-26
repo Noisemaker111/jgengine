@@ -5,7 +5,7 @@ import type { WsBackend } from "@jgengine/ws/createWsBackend";
 import { createSocketIoBackend, type SocketIoLikeSocket } from "@jgengine/ws/socketIoPipe";
 import type { WsChatMessage, WsPresenceRow } from "@jgengine/ws/protocol";
 
-import { createGameHost, type GameHost } from "./host";
+import { createGameServerHost, type GameServerHost } from "./host";
 import { memoryPersistence } from "./persistence";
 import { createTestRuntime } from "./testFixtures";
 import {
@@ -137,13 +137,13 @@ function createFakeSocketIoServer(): {
 }
 
 async function startStack(): Promise<{
-  host: GameHost;
+  host: GameServerHost;
   server: GameSocketIoServer;
   backends: WsBackend[];
   connect: (userId: string) => WsBackend;
   shutdown: () => Promise<void>;
 }> {
-  const host = createGameHost({
+  const host = createGameServerHost({
     runtimes: [createTestRuntime()],
     persistence: memoryPersistence(),
     allowedFeedActions: ["kill"],

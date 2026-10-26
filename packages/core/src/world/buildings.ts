@@ -3,10 +3,9 @@
  * windows, storefronts, roof and decor — each tagged with a kit slot `world/buildingKit` binds to a
  * model. Deterministic and renderer-agnostic.
  */
-import { footprintAabb, type Aabb, type Footprint, type Vec2 } from "./geometry";
+import { footprintAabb, type Aabb, type Footprint, type Vec2, type Vec3 } from "./geometry";
 
 export type BuildingSeed = number | string;
-export type Vec3 = readonly [number, number, number];
 export type BuildingFacade = "front" | "back" | "left" | "right" | "roof";
 export type BuildingPartKind =
   | "wall"

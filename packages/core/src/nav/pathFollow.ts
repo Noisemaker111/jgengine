@@ -21,13 +21,14 @@ export interface PathFollowState {
   distanceTravelled: number;
 }
 
-export interface HeightSampler {
+/** Anything that reports ground height at an XZ point, such as a terrain heightfield. */
+export interface HeightSource {
   sampleHeight(x: number, z: number): number;
 }
 
 export function pathFromNav(
   points: readonly NavPoint[],
-  elevation: number | HeightSampler = 0,
+  elevation: number | HeightSource = 0,
   offset = 0,
 ): Waypoint[] {
   if (typeof elevation === "number") {
@@ -101,7 +102,7 @@ function distanceForProgress(target: PathProgress, total: number, segments: read
  *
  * @capability path-length total polyline distance for progress math and seeding
  */
-export function pathLength(config: PathFollowConfig): number {
+export function followPathLength(config: PathFollowConfig): number {
   return pathSegments(config.waypoints, config.loop ?? false).reduce((sum, seg) => sum + seg.len, 0);
 }
 
@@ -109,7 +110,7 @@ export function pathLength(config: PathFollowConfig): number {
  * Place a follower at a semantic {@link PathProgress} without simulating from the start — the seek
  * adapter behavior lifecycles use to seed distributed phases and restore serialized routes. Pure;
  * returns a fresh {@link PathFollowState} whose `heading` gives travel direction. Looping paths wrap
- * the distance; non-looping paths clamp to `[0, pathLength]` and report `done` at the end.
+ * the distance; non-looping paths clamp to `[0, followPathLength]` and report `done` at the end.
  *
  * @capability path-follow-seek jump a path-follower to normalized/distance/segment progress
  */

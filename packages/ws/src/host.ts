@@ -4,7 +4,7 @@ import { SERVER_ONLY_COMMAND_REASON } from "@jgengine/core/runtime/commandRunner
 import type {
   GameServerRecord,
   HostPersistence,
-  LeaderboardRow,
+  StoredLeaderboardRow,
   PlayerProfileRecord,
   ServerListing,
   SessionAttributes,
@@ -49,14 +49,14 @@ import type {
 import type { SnapshotViewer } from "@jgengine/core/runtime/worldSnapshot";
 import { unwrapOpEnvelope } from "@jgengine/core/runtime/hostedWorldSession";
 
-/** A change notification emitted by a `GameHost` for a server, player, or feed mutation. */
+/** A change notification emitted by a `GameServerHost` for a server, player, or feed mutation. */
 export type HostChangeEvent =
   | { type: "server"; serverId: string }
   | { type: "player"; serverId: string; userId: string }
   | { type: "feed"; serverId: string; action: string };
 
-/** Configuration for {@link createGameHost}, including persistence, tick rate, and game runtimes. */
-export type GameHostOptions = {
+/** Configuration for {@link createGameServerHost}, including persistence, tick rate, and game runtimes. */
+export type GameServerHostOptions = {
   runtimes?: GameRuntime[];
   persistence: HostPersistence;
   tickMs?: number;
@@ -67,7 +67,7 @@ export type GameHostOptions = {
 };
 
 /** A transport-agnostic authoritative game server host that manages sessions, ticking, and persistence. */
-export type GameHost = {
+export type GameServerHost = {
   joinServer: (args: {
     userId: string;
     gameId: string;
@@ -140,8 +140,12 @@ function opLedgerKey(serverId: string, userId: string): string {
   return `${serverId}|${userId}`;
 }
 
-/** Creates a `GameHost` that runs game servers over the given persistence and runtimes. */
-export function createGameHost(options: GameHostOptions): GameHost {
+/**
+ * Creates a `GameServerHost` that runs game servers over the given persistence and runtimes.
+ *
+ * @capability authoritative-host run authoritative game servers with sessions, ticking and persistence behind any transport
+ */
+export function createGameServerHost(options: GameServerHostOptions): GameServerHost {
   const now = options.now ?? Date.now;
   const tickMs = options.tickMs ?? 1_000;
   const defaultSlots = options.slotsPerServer ?? 16;
@@ -341,7 +345,7 @@ export function createGameHost(options: GameHostOptions): GameHost {
     }));
   };
 
-  const host: GameHost = {
+  const host: GameServerHost = {
     joinServer: (args) => {
       const joinOperation = async (): Promise<JoinServerResult> => {
         const timestamp = now();
@@ -637,7 +641,7 @@ export function memoryPersistence(now: () => number = Date.now): HostPersistence
   const profiles = new Map<string, PlayerProfileRecord>();
   const chunks = new Map<string, Map<string, WorldChunkRecord>>();
   const feeds = new Map<string, unknown[]>();
-  const leaderboard = new Map<string, LeaderboardRow>();
+  const leaderboard = new Map<string, StoredLeaderboardRow>();
 
   const clone = <T>(value: T): T => structuredClone(value);
 

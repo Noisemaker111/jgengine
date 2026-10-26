@@ -800,9 +800,8 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `ObjectiveBannerHost` (function) · `import { ObjectiveBannerHost } from "@jgengine/react"`
 
-## offscreen-markers — serializable waypoint tracker + pure edge-clamp/bearing math for on-screen pins and off-screen directional arrows with distance
+## offscreen-markers — pure edge-clamp + bearing math turning a projected point into an on-screen pin or an off-screen directional arrow clamped to the viewport edge
 
-- `createWaypointTracker` (function) · `import { createWaypointTracker } from "@jgengine/core/ui"`
 - `layoutScreenMarker` (function) · `import { layoutScreenMarker } from "@jgengine/core/ui"`
 
 ## ordinal-format — format a placement number as 1st/2nd/3rd for HUD ranks
@@ -1240,7 +1239,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `useWaveRunner` (function) · `import { useWaveRunner } from "@jgengine/react"`
 
-## use-waypoints — React binding that returns a waypoint tracker's live list (or a passthrough array)
+## use-waypoints — React binding that returns a waypoint store's live list (or a passthrough array)
 
 - `useWaypoints` (function) · `import { useWaypoints } from "@jgengine/react"`
 

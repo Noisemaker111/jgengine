@@ -13,7 +13,7 @@ export {
   type InterestState,
   type InterestTier,
 } from "./ai/interestScheduler";
-export { type Job, type JobDef, type JobReport } from "./ai/jobBoard";
+export { type JobDef, type JobReport, type StationJob } from "./ai/jobBoard";
 export {
   DEFAULT_POLICE_TIERS,
   DEFAULT_POLICE_TUNING,
@@ -284,10 +284,10 @@ export {
 export {
   advancePathFollow,
   createPathFollow,
+  followPathLength,
   pathFollowProgress,
   pathFollowSeek,
   pathFromNav,
-  pathLength,
   type PathFollowConfig,
   type PathFollowProgress,
   type PathFollowState,
@@ -1079,6 +1079,7 @@ export { createVoxelField, type VoxelFace } from "./world/voxelField";
 export { type EnclosedFootprint, type RoofPlan } from "./world/walls";
 export {
   createWaypointStore,
+  waypointAnchor,
   type WaypointEntry,
   type WaypointGuidance,
   type WaypointSnapshot,

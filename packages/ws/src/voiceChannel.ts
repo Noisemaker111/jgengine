@@ -1,4 +1,5 @@
 import { computeFalloffGain, type AudioFalloffConfig } from "@jgengine/core/audio/audioFalloff";
+import type { VoiceRoute } from "@jgengine/core/multiplayer/voiceContract";
 
 export type VoiceChannelId = string;
 export type VoiceMemberId = string;
@@ -17,12 +18,6 @@ export interface VoicePosition {
   x: number;
   y: number;
   z: number;
-}
-
-export interface VoiceRoute {
-  fromUserId: VoiceMemberId;
-  channelId: VoiceChannelId;
-  gain: number;
 }
 
 export interface VoiceChannelRouter {

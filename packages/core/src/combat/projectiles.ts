@@ -125,7 +125,8 @@ export interface EntityRaycastHit {
   blocks?: boolean;
 }
 
-export interface ObjectRaycastHit {
+/** A projectile raycast that struck a placed object rather than an entity. */
+export interface ProjectileObjectHit {
   kind: "object";
   instanceId: string;
   catalogId: string;
@@ -136,7 +137,7 @@ export interface ObjectRaycastHit {
   blocks?: boolean;
 }
 
-export type RaycastHit = EntityRaycastHit | ObjectRaycastHit;
+export type RaycastHit = EntityRaycastHit | ProjectileObjectHit;
 
 export type Raycast = (from: string, aim: Aim, range: number, originPolicy?: ShotOriginPolicy) => RaycastHit[];
 
@@ -286,7 +287,7 @@ function copyOriginPolicy(policy: ShotOriginPolicy): ShotOriginPolicy {
   }
 }
 
-function isObjectHit(hit: RaycastHit): hit is ObjectRaycastHit {
+function isObjectHit(hit: RaycastHit): hit is ProjectileObjectHit {
   return hit.kind === "object";
 }
 

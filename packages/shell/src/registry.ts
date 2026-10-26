@@ -1,5 +1,5 @@
 import type { ComponentType, ReactNode } from "react";
-import type { PlayableGame as EnginePlayableGame, WorldOverlayProps } from "@jgengine/core/game/playableGame";
+import type { PlayableGameContract, WorldOverlayProps } from "@jgengine/core/game/playableGame";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
 import type { SceneObject } from "@jgengine/core/scene/objectStore";
 import type { HudTheme } from "@jgengine/react/hud/hudTheme";
@@ -11,7 +11,7 @@ export type RenderEntity = (entity: SceneEntity) => ReactNode;
 export type RenderObject = (object: SceneObject) => ReactNode;
 
 /** The concrete React-bound playable a shell `defineGame` returns and `GameHost` mounts — the one PlayableGame games handle. */
-export type PlayableGame = EnginePlayableGame<
+export type PlayableGame = PlayableGameContract<
   ComponentType,
   ComponentType,
   RenderEntity,

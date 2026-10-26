@@ -1,7 +1,7 @@
 import type { EditorVec3 } from "@jgengine/core/editor/index";
 import type { TerrainField } from "@jgengine/core/world/terrain";
 import { editableTerrainFromSnapshot, type TerraformSnapshot } from "@jgengine/core/world/terraform";
-import type { GizmoMode, SnapMode } from "./uiStore";
+import type { GizmoMode, EditorSnapMode } from "./uiStore";
 
 /** Compose authored sculpt offsets over the same base field as the terrain preview. @internal */
 export function placementGround(terrain: TerraformSnapshot | undefined, base: TerrainField | null): TerrainField | null {
@@ -11,7 +11,7 @@ export function placementGround(terrain: TerraformSnapshot | undefined, base: Te
 /** Snap XZ and resample the shared ground field; reject a nonfinite surface height. @internal */
 export function snapPlacement(
   point: EditorVec3,
-  mode: SnapMode,
+  mode: EditorSnapMode,
   gridSize: number,
   groundHeightAt: (x: number, z: number) => number,
 ): EditorVec3 | null {

@@ -4,7 +4,7 @@ import { newDb } from "pg-mem";
 import type { RuntimePlayerRow } from "@jgengine/core/runtime/snapshot";
 import { ensureSchema, sqlPersistence, type SqlPool } from "@jgengine/sql/sqlPersistence";
 
-import { createGameHost } from "./host";
+import { createGameServerHost } from "./host";
 import { createTestRuntime } from "./testFixtures";
 
 test("host runs against sql persistence and survives a restart", async () => {
@@ -15,7 +15,7 @@ test("host runs against sql persistence and survives a restart", async () => {
 
   let t = 0;
   const persistence = sqlPersistence(pool, () => t);
-  const host = createGameHost({
+  const host = createGameServerHost({
     runtimes: [createTestRuntime()],
     persistence,
     now: () => t,
@@ -38,7 +38,7 @@ test("host runs against sql persistence and survives a restart", async () => {
     await persistence.getLeaderboardTop({ gameId: "test-game", stat: "gold", scope: "profile" }),
   ).toEqual([{ userId: "alice", value: 12 }]);
 
-  const restarted = createGameHost({
+  const restarted = createGameServerHost({
     runtimes: [createTestRuntime()],
     persistence,
     now: () => t,

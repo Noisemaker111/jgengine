@@ -43,7 +43,7 @@ export interface HostedGameRunnerOptions<TAssetRef extends ModelAssetRef, TMulti
 }
 
 /**
- * The GameContext-loop equivalent of the pure-reducer `createGameHost`: one authoritative `createGameContext`
+ * The GameContext-loop equivalent of the pure-reducer `createGameServerHost`: one authoritative `createGameContext`
  * per world, driven server-side. `onInit` runs once at construction; `onNewPlayer`/`onPlayerLeave` fire per
  * join/leave; `tick` advances `onTick` then commits a revision. Clients pull a full {@link WorldSnapshot}
  * baseline once, then per-tick {@link WorldDiff}s from their last revision. Games ship only normal GameContext

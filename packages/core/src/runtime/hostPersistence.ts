@@ -1,4 +1,5 @@
-import type { LeaderboardScope } from "../game/leaderboard";
+import type { LeaderboardRow, LeaderboardScope } from "../game/leaderboard";
+import type { SessionVisibility } from "../multiplayer/matchmaking";
 import type { NormalizedScenarioReset } from "./persistenceScope";
 import type { SaveConfig } from "../save/saveConfig";
 import {
@@ -17,7 +18,6 @@ import { createEmptyPlayerRow, splitProfilePlayer } from "./snapshot";
 
 export type GameServerStatus = "open" | "running" | "closed";
 
-export type SessionVisibility = "public" | "private";
 
 export type SessionAttributes = {
   label?: string;
@@ -115,24 +115,20 @@ export function clampLimit(value: number | undefined, fallback: number, max: num
   return Math.min(Math.max(Math.floor(candidate), 1), max);
 }
 
-export type LeaderboardRow = {
+/** A {@link LeaderboardRow} as a host stores it: keyed by game, stamped with its last write. */
+export type StoredLeaderboardRow = LeaderboardRow & {
   gameId: string;
-  stat: string;
-  scope: LeaderboardScope;
-  serverId?: string;
-  userId: string;
-  value: number;
   updatedAt: number;
 };
 
 /** @internal */
-export function leaderboardRowKey(row: Omit<LeaderboardRow, "value" | "updatedAt">): string {
+export function leaderboardRowKey(row: Omit<StoredLeaderboardRow, "value" | "updatedAt">): string {
   return [row.gameId, row.scope, row.stat, row.serverId ?? "", row.userId].join("|");
 }
 
 /** @internal */
 export function applyLeaderboardRows(
-  rows: Map<string, LeaderboardRow>,
+  rows: Map<string, StoredLeaderboardRow>,
   gameId: string,
   entries: LeaderboardIncrement[],
   now: number,
@@ -158,7 +154,7 @@ export function applyLeaderboardRows(
 
 /** @internal */
 export function topLeaderboardRows(
-  rows: Iterable<LeaderboardRow>,
+  rows: Iterable<StoredLeaderboardRow>,
   args: {
     gameId: string;
     stat: string;
@@ -183,7 +179,7 @@ export function topLeaderboardRows(
 
 /** @internal */
 export function profileLeaderboardStats(
-  rows: Iterable<LeaderboardRow>,
+  rows: Iterable<StoredLeaderboardRow>,
   gameId: string,
   userId: string,
 ): Record<string, number> {
