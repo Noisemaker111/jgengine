@@ -8068,6 +8068,17 @@
       "intent": "familiarity and opinion between agents, with a bond that changes behaviour"
     },
     {
+      "id": "remains-field",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/remains/remains",
+      "domain": "remains",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "leave what a fallen player carried where they fell, take it back stack by stack, lose it when the remains fall apart"
+    },
+    {
       "id": "render-fallback-diagnostics",
       "packages": [
         "@jgengine/core"

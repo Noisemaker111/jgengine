@@ -4,6 +4,7 @@ import { useGameStore } from "@jgengine/react/hooks";
 import { HudSlots } from "@jgengine/shell/gameKit";
 
 import { baseView } from "../base";
+import { bodyView } from "../deathBody";
 import { openScreen } from "../screens";
 import { HOTBAR } from "../bags";
 import { survivorView, type SurvivorView } from "../survivor";
@@ -51,12 +52,26 @@ function Gauge({ id, label, value, max, warn }: { id: keyof typeof COLORS; label
   );
 }
 
+/** Where your body lies after a death: how far, and how long before it falls apart with your things. */
+function BodyLine(): ReactNode {
+  const body = useGameStore((ctx) => {
+    const view = bodyView(ctx);
+    return view === null ? null : { metres: Math.round(view.distance), minutes: Math.ceil(view.secondsLeft / 60) };
+  }, same);
+  if (body === null) return null;
+  return (
+    <div data-body="" style={{ textAlign: "right", fontSize: 13, fontWeight: 700, color: "#cfe8ff", textShadow: "0 1px 2px #000", pointerEvents: "none" }}>
+      Your body: {body.metres} m · {body.minutes} min left
+    </div>
+  );
+}
+
 function Vitals(): ReactNode {
   const view = useSurvivor();
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 4, color: "#f2ead8", pointerEvents: "none" }}>
       <div style={{ textAlign: "right", fontSize: 12, opacity: 0.85, textShadow: "0 1px 2px #000" }} data-temperature="">
-        {view.temperature}°C · {view.comfort === "comfortable" ? "" : view.comfort}
+        {view.temperature}°C{view.comfort === "comfortable" ? "" : ` · ${view.comfort}`}
       </div>
       {view.torpor.value > 0 ? <Gauge id="torpor" label="Torpor" value={view.torpor.value} max={view.torpor.max} /> : null}
       <Gauge id="health" label="Health" value={view.health.value} max={view.health.max} warn={view.health.value <= 30} />
@@ -191,5 +206,5 @@ function Screens(): ReactNode {
 
 /** ARK's layout: pools bottom-right, hotbar bottom-centre, gather feed left, crosshair centre. */
 export function Hud(): ReactNode {
-  return <HudSlots storageKey="fernwild" slots={{ left: <Feed />, bottomLeft: <Mount />, bottom: <Bar />, bottomRight: <Vitals /> }} overlay={<Screens />} />;
+  return <HudSlots storageKey="fernwild" slots={{ topRight: <BodyLine />, left: <Feed />, bottomLeft: <Mount />, bottom: <Bar />, bottomRight: <Vitals /> }} overlay={<Screens />} />;
 }

@@ -52,6 +52,11 @@ export interface OrbitCameraConfig {
   dragTargetSmoothing?: number;
   /** Exponential smoothing when re-locking orbit distance. */
   distanceSmoothing?: number;
+  /**
+   * A target that lands farther than this from where the camera is following (a teleport, a respawn) is cut to at
+   * once, the camera keeping its offset, instead of glided to across the map. Default 30 world units.
+   */
+  snapDistance?: number;
   /** Vertical clamp (three.js polar angle, radians): 0 = top-down over the head, PI/2 = level, >PI/2 = look up from below the target. Widen to allow top-down or vertical aim; leave unset for the standard chase feel. */
   minPolarAngle?: number;
   maxPolarAngle?: number;
@@ -94,6 +99,7 @@ export interface ResolvedOrbitCameraConfig {
   targetSmoothing: number;
   dragTargetSmoothing: number;
   distanceSmoothing: number;
+  snapDistance: number;
   minPolarAngle: number;
   maxPolarAngle: number;
   collision: ResolvedOrbitCollision;
@@ -114,6 +120,7 @@ export const DEFAULT_ORBIT_CAMERA: ResolvedOrbitCameraConfig = {
   targetSmoothing: 8,
   dragTargetSmoothing: 11,
   distanceSmoothing: 5,
+  snapDistance: 30,
   minPolarAngle: 0.12,
   maxPolarAngle: Math.PI / 2.05,
   collision: { enabled: false, padding: 0.35, minTargetDistance: 1.2 },
@@ -276,7 +283,9 @@ export function orbitFollowStep(input: {
   const desiredTarget = followEnabled ? input.desiredTarget : target;
 
   const previousTarget = { ...target };
-  const targetBlend = smoothBlend(input.deltaSeconds, resolveTargetSmoothing(input.config, input.dragging));
+  // A jump past snapDistance is a teleport: cut straight there rather than sweep across everything between.
+  const jumped = distanceBetween(target, desiredTarget) > input.config.snapDistance;
+  const targetBlend = jumped ? 1 : smoothBlend(input.deltaSeconds, resolveTargetSmoothing(input.config, input.dragging));
   const lerpedTarget = lerpVec3(target, desiredTarget, targetBlend);
   target.x = lerpedTarget.x;
   target.y = lerpedTarget.y;

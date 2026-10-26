@@ -207,3 +207,27 @@ describe("smoothBlend", () => {
     expect(twoHalfFrames).toBeCloseTo(oneFrame, 5);
   });
 });
+describe("orbitFollowStep snapDistance", () => {
+  const state = { target: { x: 0, y: 1, z: 0 }, camera: { x: 0, y: 3, z: -6 }, lockedDistance: Math.hypot(2, 6) };
+  const step = (to: { x: number; y: number; z: number }) =>
+    orbitFollowStep({ state, desiredTarget: to, deltaSeconds: 1 / 60, config: DEFAULT_ORBIT_CAMERA, dragging: false });
+
+  test("an ordinary step is glided towards", () => {
+    const moved = step({ x: 2, y: 1, z: 0 });
+    expect(moved.target.x).toBeGreaterThan(0);
+    expect(moved.target.x).toBeLessThan(1);
+  });
+
+  test("a teleport past snapDistance is cut to at once, the camera keeping its offset", () => {
+    const moved = step({ x: 200, y: 5, z: -80 });
+    expect(moved.target).toEqual({ x: 200, y: 5, z: -80 });
+    expect(moved.camera.x - moved.target.x).toBeCloseTo(0, 5);
+    expect(moved.camera.y - moved.target.y).toBeCloseTo(2, 5);
+    expect(moved.camera.z - moved.target.z).toBeCloseTo(-6, 5);
+  });
+
+  test("the distance is a knob", () => {
+    const far = orbitFollowStep({ state, desiredTarget: { x: 200, y: 1, z: 0 }, deltaSeconds: 1 / 60, config: { ...DEFAULT_ORBIT_CAMERA, snapDistance: Infinity }, dragging: false });
+    expect(far.target.x).toBeLessThan(50);
+  });
+});
