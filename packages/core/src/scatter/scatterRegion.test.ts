@@ -1,14 +1,12 @@
 import { describe, expect, test } from "bun:test";
 
 import type { EditorPath } from "../editor/types";
-import { flatField, noiseField } from "./terrain";
+import { distanceToRing, pointInPolygon, polygonArea } from "../world/polygon";
+import { flatField, noiseField } from "../world/terrain";
 import {
   chunkScatterInstances,
   clearanceZonesFrom,
   DEFAULT_MARKER_CLEARANCE,
-  distanceToPolygonEdge,
-  pointInPolygon,
-  polygonArea,
   readScatterRules,
   resolveScatter,
   resolveScatterRegion,
@@ -52,17 +50,17 @@ function region(overrides: Partial<ScatterRegion["rules"]> = {}, id = "r1"): Sca
 
 describe("polygon geometry", () => {
   test("pointInPolygon distinguishes inside from outside", () => {
-    expect(pointInPolygon([0, 0], square)).toBe(true);
-    expect(pointInPolygon([50, 50], square)).toBe(false);
+    expect(pointInPolygon(square, 0, 0)).toBe(true);
+    expect(pointInPolygon(square, 50, 50)).toBe(false);
   });
 
   test("polygonArea matches the square", () => {
     expect(polygonArea(square)).toBeCloseTo(400);
   });
 
-  test("distanceToPolygonEdge is zero on the boundary and grows inward", () => {
-    expect(distanceToPolygonEdge([10, 0], square)).toBeCloseTo(0);
-    expect(distanceToPolygonEdge([0, 0], square)).toBeCloseTo(10);
+  test("distanceToRing is zero on the boundary and grows inward", () => {
+    expect(distanceToRing(square, 10, 0)).toBeCloseTo(0);
+    expect(distanceToRing(square, 0, 0)).toBeCloseTo(10);
   });
 });
 
@@ -72,7 +70,7 @@ describe("resolveScatterRegion", () => {
     const dense = resolveScatterRegion(region({ density: 0.5 }));
     expect(sparse.length).toBeGreaterThan(0);
     expect(dense.length).toBeGreaterThan(sparse.length);
-    for (const instance of dense) expect(pointInPolygon([instance.x, instance.z], square)).toBe(true);
+    for (const instance of dense) expect(pointInPolygon(square, instance.x, instance.z)).toBe(true);
   });
 
   test("is deterministic by seed and id", () => {

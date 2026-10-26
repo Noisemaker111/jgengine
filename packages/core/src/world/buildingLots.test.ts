@@ -3,7 +3,7 @@ import { describe, expect, test } from "bun:test";
 import { deriveBuildingLots, facingRotation, type RoadFrontage } from "./buildingLots";
 import { resolveStructureBuildings } from "./environmentSummary";
 import { building } from "./features";
-import { rectClearsPolyline, rectsSeparated } from "./cityGeometry";
+import { rectClearsPolyline, rectsSeparated } from "./polygon";
 import type { Vec2 } from "./geometry";
 
 function line(a: Vec2, b: Vec2, n = 6): Vec2[] {

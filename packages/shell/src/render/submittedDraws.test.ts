@@ -3,7 +3,7 @@ import * as THREE from "three";
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import { createObjectStore } from "@jgengine/core/scene/objectStore";
 import { createModelVariantSelector } from "@jgengine/core/lod/modelLod";
-import type { ScatterInstance } from "@jgengine/core/world/scatterRegion";
+import type { ScatterInstance } from "@jgengine/core/scatter/scatterRegion";
 import { scatterBatchInstances, type ScatterBatch } from "../scatter/InstancedScatter";
 import { buildScatterModelSources, disposeScatterModelSources } from "../scatter/scatterModels";
 import { scatterVariantTriangles, writeScatterVariantLevel } from "../scatter/scatterVariants";

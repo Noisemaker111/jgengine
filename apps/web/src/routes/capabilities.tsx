@@ -38,7 +38,7 @@ const LIVE_SPECIMENS: LiveSpec[] = [
       "The blades are placed by the real scatter() and lean, every frame, toward the real windField sample. The gust fronts rippling across the meadow are the field's own turbulence — no shader fakery, no baked animation.",
     filename: "meadow.wind.ts",
     code: `import { windField } from "@jgengine/core/world/wind";
-import { scatter } from "@jgengine/core/world/scatter";
+import { scatter } from "@jgengine/core/scatter/scatter";
 
 const blades = scatter({ area: { w: 60, d: 40 }, count: 2600, seed: "meadow" });
 const wind = windField({ speed: 2.6, gust: 1.6, turbulence: 0.6 });

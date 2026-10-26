@@ -2,7 +2,7 @@ import type { KeyValueStorage } from "../game/keyValueStore";
 import { findEffect } from "../vfx/effectLibrary";
 import { cloneEditorDocument, decodeEditorDocument, editorDocumentSize } from "./document";
 import type { EditorDocument } from "./types";
-import { isScatterPath } from "../world/scatterRegion";
+import { isScatterPath } from "../scatter/scatterRegion";
 
 /** Bounds and catalog permissions for player-authored documents. */
 export interface CreatorPolicy {

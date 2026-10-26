@@ -1,4 +1,4 @@
-import { type Aabb, type Vec2, expandAabb, pointInAabb } from "./geometry";
+import { type Aabb, type Vec2, expandAabb, pointInAabb } from "../world/geometry";
 import { seededRng } from "../random/rng";
 
 export interface ScatterArea {

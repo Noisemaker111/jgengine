@@ -7,7 +7,7 @@ import {
   type EditorDocument,
   type EditorSession,
 } from "@jgengine/core/editor/index";
-import { scatterRegionEstimate, SCATTER_PATH_KIND } from "@jgengine/core/world/scatterRegion";
+import { scatterRegionEstimate, SCATTER_PATH_KIND } from "@jgengine/core/scatter/scatterRegion";
 
 import {
   editorAssetFromImport,

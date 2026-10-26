@@ -1,6 +1,6 @@
 import type { Aabb, Vec2 } from "../world/geometry";
-import { scatter } from "../world/scatter";
-import { pointInPolygon, polygonBounds } from "../world/scatterRegion";
+import { scatter } from "../scatter/scatter";
+import { pointInPolygon, ringBounds } from "../world/polygon";
 import type {
   EditorDirective,
   EditorDirectiveKind,
@@ -70,7 +70,7 @@ export function resolveDirectiveFootprint(
   const path = doc.paths.find((p) => p.id === directive.region);
   if (path !== undefined && path.points.length >= 3) {
     const polygon = path.points.map((point) => [point.x, point.z] as Vec2);
-    const area = polygonBounds(polygon);
+    const area = polygon.length === 0 ? null : ringBounds(polygon);
     if (area === null) return null;
     return { area, polygon };
   }
@@ -125,7 +125,7 @@ export function materializeScatterDirective(
   const maxYaw = directive.maxYaw ?? Math.PI * 2;
   const out: MaterializedInstance[] = [];
   for (const point of points) {
-    if (footprint.polygon !== undefined && !pointInPolygon([point.x, point.z], footprint.polygon)) continue;
+    if (footprint.polygon !== undefined && !pointInPolygon(footprint.polygon, point.x, point.z)) continue;
     const scaleRoll = hash(`${seed}:scale:${point.index}`);
     const yawRoll = hash(`${seed}:yaw:${point.index}`);
     out.push({
@@ -174,7 +174,7 @@ export function materializePopulationDirective(
   const points = scatter({ area: footprint.area, count: total, minDistance: 0, seed });
   const out: MaterializedInstance[] = [];
   for (const point of points) {
-    if (footprint.polygon !== undefined && !pointInPolygon([point.x, point.z], footprint.polygon)) continue;
+    if (footprint.polygon !== undefined && !pointInPolygon(footprint.polygon, point.x, point.z)) continue;
     const available = directive.species.filter((s) => (remaining.get(s.id) ?? 0) > 0);
     if (available.length === 0) break;
     const picked = pickSpecies(available, hash(`${seed}:species:${point.index}`));

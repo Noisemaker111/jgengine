@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { type Aabb, pointInAabb, expandAabb } from "./geometry";
+import { type Aabb, pointInAabb, expandAabb } from "../world/geometry";
 import { type ScatterConfig, scatter, scatterAabb } from "./scatter";
 
 const areaAabb: Aabb = { minX: -50, minZ: -50, maxX: 50, maxZ: 50 };

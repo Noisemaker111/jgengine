@@ -1,4 +1,4 @@
-import { pointInPolygon } from "./scatterRegion";
+import { pointInPolygon } from "./polygon";
 import type { Vec2 } from "./geometry";
 
 /**
@@ -149,7 +149,7 @@ export function bakeMinimapImage(source: MinimapBakeSource, options: MinimapBake
         }
       }
       for (const zone of zones) {
-        if (pointInPolygon([wx, wz], zone.polygon)) {
+        if (pointInPolygon(zone.polygon, wx, wz)) {
           color = mix(color, parseHex(zone.color), zone.alpha ?? 0.5);
         }
       }

@@ -2,7 +2,7 @@ import { memo, useMemo } from "react";
 
 import type { EditorSession } from "@jgengine/core/editor/index";
 import { editableTerrainFromSnapshot } from "@jgengine/core/world/terraform";
-import { resolveScatter, type ScatterInstance, type ScatterTerrain } from "@jgengine/core/world/scatterRegion";
+import { resolveScatter, type ScatterInstance, type ScatterTerrain } from "@jgengine/core/scatter/scatterRegion";
 import { useGameContext } from "@jgengine/react/provider";
 import { InstancedScatter } from "@jgengine/shell/scatter";
 

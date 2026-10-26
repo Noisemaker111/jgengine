@@ -36,7 +36,7 @@ import {
   type CityZoneBand,
   type CityZoneProfile,
 } from "./cityContent";
-import { fitRectInPolygon, polygonArea, polygonsOverlap, rayDistanceToRing } from "./cityGeometry";
+import { fitRectInPolygon, polygonArea, polygonsOverlap, rayDistanceToRing } from "./polygon";
 import { isOnRoad, nearestOnPath } from "../roads/roads";
 import { seededStreams } from "../random/rng";
 import type { WeightedParamEntry } from "../scene/sceneKinds";

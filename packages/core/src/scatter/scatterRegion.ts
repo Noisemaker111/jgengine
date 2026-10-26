@@ -1,15 +1,16 @@
 import {
   masksInfluence,
-  type Aabb,
   type AvoidCorridor,
   type AvoidMasks,
   type AvoidZone,
   type Vec2,
-} from "./geometry";
+} from "../world/geometry";
+import { pickWeighted } from "../random/pick";
+import { distanceToRing, pointInPolygon, polygonArea, ringBounds } from "../world/polygon";
 import { scatter } from "./scatter";
 import { SCATTER_INSTANCE_BUDGET } from "./scatterCoverage";
-import type { SceneDocumentLike, ScenePathLike } from "./sceneShapes";
-import type { TerrainNormal } from "./terrain";
+import type { SceneDocumentLike, ScenePathLike } from "../world/sceneShapes";
+import type { TerrainNormal } from "../world/terrain";
 
 /** The editor path kind that marks a closed polyline as a foliage/scatter region. */
 export const SCATTER_PATH_KIND = "scatter";
@@ -124,79 +125,6 @@ function hash(text: string): number {
   return (h >>> 0) / 4294967296;
 }
 
-/** Ray-casting point-in-polygon test on the XZ plane. */
-export function pointInPolygon(point: Vec2, polygon: readonly Vec2[]): boolean {
-  let inside = false;
-  const [px, pz] = point;
-  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i, i += 1) {
-    const [xi, zi] = polygon[i]!;
-    const [xj, zj] = polygon[j]!;
-    if (zi > pz !== zj > pz && px < ((xj - xi) * (pz - zi)) / (zj - zi) + xi) inside = !inside;
-  }
-  return inside;
-}
-
-function distanceToSegment(px: number, pz: number, ax: number, az: number, bx: number, bz: number): number {
-  const dx = bx - ax;
-  const dz = bz - az;
-  const lenSq = dx * dx + dz * dz || 1;
-  let t = ((px - ax) * dx + (pz - az) * dz) / lenSq;
-  t = t < 0 ? 0 : t > 1 ? 1 : t;
-  return Math.hypot(px - (ax + dx * t), pz - (az + dz * t));
-}
-
-/** Shortest distance from a point to a polygon's boundary. */
-export function distanceToPolygonEdge(point: Vec2, polygon: readonly Vec2[]): number {
-  let best = Number.POSITIVE_INFINITY;
-  const [px, pz] = point;
-  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i, i += 1) {
-    const [xi, zi] = polygon[i]!;
-    const [xj, zj] = polygon[j]!;
-    best = Math.min(best, distanceToSegment(px, pz, xi, zi, xj, zj));
-  }
-  return best;
-}
-
-/** Axis-aligned bounds of a polygon, or null if it has no points. */
-export function polygonBounds(polygon: readonly Vec2[]): Aabb | null {
-  if (polygon.length === 0) return null;
-  let minX = Infinity;
-  let minZ = Infinity;
-  let maxX = -Infinity;
-  let maxZ = -Infinity;
-  for (const [x, z] of polygon) {
-    if (x < minX) minX = x;
-    if (x > maxX) maxX = x;
-    if (z < minZ) minZ = z;
-    if (z > maxZ) maxZ = z;
-  }
-  return { minX, minZ, maxX, maxZ };
-}
-
-/** Shoelace area of a polygon (always non-negative), in square meters. */
-export function polygonArea(polygon: readonly Vec2[]): number {
-  if (polygon.length < 3) return 0;
-  let sum = 0;
-  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i, i += 1) {
-    const [xi, zi] = polygon[i]!;
-    const [xj, zj] = polygon[j]!;
-    sum += xj * zi - xi * zj;
-  }
-  return Math.abs(sum) / 2;
-}
-
-function pickWeighted(palette: readonly ScatterPaletteEntry[], roll: number): string {
-  if (palette.length === 0) return "grass";
-  const total = palette.reduce((sum, entry) => sum + Math.max(0, entry.weight), 0);
-  if (total <= 0) return palette[0]!.item;
-  let acc = roll * total;
-  for (const entry of palette) {
-    acc -= Math.max(0, entry.weight);
-    if (acc <= 0) return entry.item;
-  }
-  return palette[palette.length - 1]!.item;
-}
-
 /**
  * Deterministic placements for one scatter region: scatter its polygon footprint at `density`
  * items/m² (respecting `minSpacing`), clip to the polygon, thin near the edge, drop placements
@@ -209,7 +137,7 @@ export function resolveScatterRegion(
   avoid?: AvoidMasks,
 ): ScatterInstance[] {
   const rules = region.rules;
-  const bounds = polygonBounds(region.polygon);
+  const bounds = region.polygon.length === 0 ? null : ringBounds(region.polygon);
   if (bounds === null || region.polygon.length < 3 || rules.density <= 0) return [];
   const ownDiscs = rules.avoid ?? [];
   const masks: AvoidMasks = {
@@ -227,7 +155,7 @@ export function resolveScatterRegion(
   const instances: ScatterInstance[] = [];
   for (const point of points) {
     const p: Vec2 = [point.x, point.z];
-    if (!pointInPolygon(p, region.polygon)) continue;
+    if (!pointInPolygon(region.polygon, p[0], p[1])) continue;
 
     // Clearance masks repel scatter: hard reject in the solid core, thin probabilistically in the feather.
     if (hasMasks) {
@@ -237,7 +165,7 @@ export function resolveScatterRegion(
     }
 
     if (rules.edgeFalloff > 0) {
-      const edge = distanceToPolygonEdge(p, region.polygon);
+      const edge = distanceToRing(region.polygon, p[0], p[1]);
       if (edge < rules.edgeFalloff && hash(`${region.id}:edge:${point.index}`) > edge / rules.edgeFalloff) continue;
     }
 
@@ -261,7 +189,7 @@ export function resolveScatterRegion(
     instances.push({
       id: `${region.id}/${point.index}`,
       regionId: region.id,
-      item: pickWeighted(rules.palette, itemRoll),
+      item: pickWeighted(() => itemRoll, rules.palette, (entry) => entry.weight)?.item ?? rules.palette[0]?.item ?? "grass",
       x: point.x,
       y,
       z: point.z,

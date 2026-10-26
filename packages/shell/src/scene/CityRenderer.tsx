@@ -30,7 +30,7 @@ import {
   type RoadRibbon,
   offsetPath,
 } from "@jgengine/core/roads/roads";
-import { triangulatePolygon, triangulateRingBand } from "@jgengine/core/world/cityGeometry";
+import { triangulatePolygon, triangulateRingBand } from "@jgengine/core/world/polygon";
 import {
   resolveCityObject,
   CITY_KIND,

@@ -9,7 +9,7 @@ import {
   sidewalkWidthFor,
   type FabricStreet,
 } from "./cityBlocks";
-import { clipHalfPlane, fitRectInPolygon, insetRing, insetRingUniform, pointInPolygon, polygonArea, polygonSignedArea, rayDistanceToRing, rectInsidePolygon, ringSelfIntersects } from "./cityGeometry";
+import { clipHalfPlane, fitRectInPolygon, insetRing, insetRingUniform, pointInPolygon, polygonArea, polygonSignedArea, rayDistanceToRing, rectInsidePolygon, ringSelfIntersects } from "./polygon";
 import type { Vec2 } from "./geometry";
 
 const PARAMS = { streetWidthBase: 7, sidewalkBase: 1.9, curbMargin: 0.35 };

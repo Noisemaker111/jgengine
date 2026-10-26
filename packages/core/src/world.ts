@@ -452,6 +452,34 @@ export {
   type ObjectSlotTransfer,
   type SceneObjectSlots,
 } from "./runtime/context/objectSlots";
+export { scatter, type ScatterPoint } from "./scatter/scatter";
+export {
+  CITY_BUILDING_BUDGET,
+  SCATTER_COVERAGE_SPECS,
+  SCATTER_INSTANCE_BUDGET,
+  budgetWarning,
+  densityCoverage,
+  describeScatterCoverage,
+  placedCoverage,
+  scatterCoverageSpec,
+  scatterFootprintArea,
+  type ScatterCoverage,
+  type ScatterCoverageKind,
+  type ScatterCoverageSpec,
+} from "./scatter/scatterCoverage";
+export {
+  SCATTER_PATH_KIND,
+  clearanceZonesFrom,
+  isScatterPath,
+  readScatterPalette,
+  readScatterRules,
+  resolveScatter,
+  resolveScatterRegion,
+  scatterRegionEstimate,
+  scatterRegionFromPath,
+  type ScatterInstance,
+  type ScatterTerrain,
+} from "./scatter/scatterRegion";
 export { createAssetCatalog, type AssetCatalog, type ModelAssetRef, type ModelDims } from "./scene/assetCatalog";
 export { partsBounds, registerAssetGenerator, type GeneratedAsset, type GeneratedPart } from "./scene/assetGenerator";
 export {
@@ -930,40 +958,9 @@ export {
   type SnapMode,
 } from "./world/placementController";
 export { POLE_LINE_SCHEMA, resolvePoleLine, type ResolvedPoleLine } from "./world/poleLineKind";
+export { pointInPolygon, polygonArea } from "./world/polygon";
 export { composeRealm } from "./world/realm";
 export { createRegionField, isRegionField, type RegionField } from "./world/regions";
-export { scatter, type ScatterPoint } from "./world/scatter";
-export {
-  CITY_BUILDING_BUDGET,
-  SCATTER_COVERAGE_SPECS,
-  SCATTER_INSTANCE_BUDGET,
-  budgetWarning,
-  densityCoverage,
-  describeScatterCoverage,
-  placedCoverage,
-  scatterCoverageSpec,
-  scatterFootprintArea,
-  type ScatterCoverage,
-  type ScatterCoverageKind,
-  type ScatterCoverageSpec,
-} from "./world/scatterCoverage";
-export { scatterItems, type ScatterInstance } from "./world/scatterItems";
-export {
-  SCATTER_PATH_KIND,
-  clearanceZonesFrom,
-  distanceToPolygonEdge,
-  isScatterPath,
-  pointInPolygon,
-  polygonArea,
-  polygonBounds,
-  readScatterPalette,
-  readScatterRules,
-  resolveScatter,
-  resolveScatterRegion,
-  scatterRegionEstimate,
-  scatterRegionFromPath,
-  type ScatterTerrain,
-} from "./world/scatterRegion";
 export {
   ANNOTATION_FEED_ACTION,
   createSharedAnnotations,
