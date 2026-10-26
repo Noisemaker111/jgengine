@@ -67,7 +67,7 @@ test("an export the branch committed and then renamed in the working tree is not
 
 test("finds every definition of a name in this checkout with one git grep", () => {
   const found = definitionsOf(ROOT, ["smoothstep"]).map((definition) => definition.file).sort();
-  expect(found).toEqual(["packages/core/src/anim/easing.ts", "packages/shell/src/camera/rigMath.ts"]);
+  expect(found).toEqual(["packages/core/src/anim/easing.ts"]);
 });
 
 test("file names split into concept words", () => {
