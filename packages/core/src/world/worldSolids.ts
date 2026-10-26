@@ -1,4 +1,4 @@
-import type { GeneratedBuilding } from "./buildings";
+import type { GeneratedBuilding } from "../buildings/buildings";
 import { resolveStructureBuildings } from "./environmentSummary";
 import type { EnvironmentWorldFeature } from "./features";
 import type { Aabb, Vec2 } from "./geometry";

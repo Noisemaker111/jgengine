@@ -2568,6 +2568,45 @@
 
 - `attachObject3D` (function): function attachObject3D<T extends Object3DBehaviour>(world: BehaviourWorld, object: Object3D, behaviour: T, nodeId: string = object.uuid): T — ⚠ undocumented
 
+## @jgengine/shell/buildings
+
+- `BuildingBlock` (function): function BuildingBlock({ part, palette }: BuildingBlockProps): React.JSX.Element — ⚠ undocumented
+- `BuildingBlockProps` (interface): interface BuildingBlockProps { part: BuildingPartPlacement; palette?: BuildingMaterialPalette } — ⚠ undocumented
+- `InstancedBuildingPlacement` (interface): interface InstancedBuildingPlacement { building: GeneratedBuildingData; position?: readonly [number, number, number]; rotationY?: number; pivot?: readonly [number, number] } — ⚠ undocumented
+- `InstancedBuildings` (function): function InstancedBuildings({ buildings, palette, kit, resolveModelUrl, visibleKinds, }: InstancedBuildingsProps): React.JSX.Element | null — ⚠ undocumented
+- `InstancedBuildingsProps` (interface): interface InstancedBuildingsProps { buildings: readonly InstancedBuildingPlacement[]; palette?: BuildingMaterialPalette; kit?: BuildingKit; resolveModelUrl?: (model: string) => string; visibleKinds?: readonly BuildingPartKind[] } — ⚠ undocumented
+
+## @jgengine/shell/buildings
+
+- `BuildingBlock` (function): function BuildingBlock({ part, palette }: BuildingBlockProps): React.JSX.Element — ⚠ undocumented
+- `BuildingBlockProps` (interface): interface BuildingBlockProps { part: BuildingPartPlacement; palette?: BuildingMaterialPalette } — ⚠ undocumented
+- `InstancedBuildingPlacement` (interface): interface InstancedBuildingPlacement { building: GeneratedBuildingData; position?: readonly [number, number, number]; rotationY?: number; pivot?: readonly [number, number] } — ⚠ undocumented
+- `InstancedBuildings` (function): function InstancedBuildings({ buildings, palette, kit, resolveModelUrl, visibleKinds, }: InstancedBuildingsProps): React.JSX.Element | null — ⚠ undocumented
+- `InstancedBuildingsProps` (interface): interface InstancedBuildingsProps { buildings: readonly InstancedBuildingPlacement[]; palette?: BuildingMaterialPalette; kit?: BuildingKit; resolveModelUrl?: (model: string) => string; visibleKinds?: readonly BuildingPartKind[] } — ⚠ undocumented
+
+## @jgengine/shell/buildings/GeneratedBuilding
+
+- `BuildingBlock` (function): function BuildingBlock({ part, palette }: BuildingBlockProps): React.JSX.Element — ⚠ undocumented
+- `BuildingBlockProps` (interface): interface BuildingBlockProps { part: BuildingPartPlacement; palette?: BuildingMaterialPalette } — ⚠ undocumented
+- `BuildingMaterialPalette` (type): type BuildingMaterialPalette = Partial<Record<BuildingPartKind, BuildingSurface>> — Per part kind: a hex colour, or a colour plus tiled PBR maps (`BuildingSurfaceMaterial`).
+- `GeneratedBuildingData` (interface): interface GeneratedBuildingData { id: string; parts: readonly BuildingPartPlacement[] } — ⚠ undocumented
+- `InstancedBuildingPlacement` (interface): interface InstancedBuildingPlacement { building: GeneratedBuildingData; position?: readonly [number, number, number]; rotationY?: number; pivot?: readonly [number, number] } — ⚠ undocumented
+- `InstancedBuildings` (function): function InstancedBuildings({ buildings, palette, kit, resolveModelUrl, visibleKinds, }: InstancedBuildingsProps): React.JSX.Element | null — ⚠ undocumented
+- `InstancedBuildingsProps` (interface): interface InstancedBuildingsProps { buildings: readonly InstancedBuildingPlacement[]; palette?: BuildingMaterialPalette; kit?: BuildingKit; resolveModelUrl?: (model: string) => string; visibleKinds?: readonly BuildingPartKind[] } — ⚠ undocumented
+
+## @jgengine/shell/buildings/buildingKitRegistry
+
+- `clearBuildingKits` (function): function clearBuildingKits(): void — Drops every registration. For tests and hot-reload teardown.
+- `getBuildingKit` (function): function getBuildingKit(id: string | undefined): BuildingKit | undefined — The kit registered under `id`, or `undefined` for an unset or unknown name (renders blocks).
+- `listBuildingKits` (function): function listBuildingKits(): string[] — Every registered kit id — the editor's kit picker and diagnostics read this.
+- `registerBuildingKit` (function): function registerBuildingKit(kit: BuildingKit): void — Registers a kit under its own `id`, replacing any kit already registered under that name.
+
+## @jgengine/shell/buildings/buildingSurface
+
+- `TexturedBuildingSurface` (type): type TexturedBuildingSurface = BuildingSurfaceMaterial & { maps: BuildingSurfaceMaps } — A surface that names at least one map URL.
+- `surfaceHasMaps` (function): function surfaceHasMaps(surface: BuildingSurfaceMaterial | undefined): surface is TexturedBuildingSurface — True when the surface names at least one map URL, so the batch needs the textured path.
+- `surfaceKey` (function): function surfaceKey(surface: BuildingSurfaceMaterial | undefined): string — A stable key for bucketing instances that share one surface (same colour, maps, tiling, and response).
+
 ## @jgengine/shell/camera
 
 - `CAMERA_TRANSPARENT_USERDATA` (const): const CAMERA_TRANSPARENT_USERDATA: { readonly jgCameraTransparent: true } — userData applied to the group wrapping author `WorldOverlay` decor so the spring-arm ignores it by default.
@@ -3087,6 +3126,41 @@
 - `randomPlayerId` (function): function randomPlayerId(): string — ⚠ undocumented
 - `resolvePeerShellMultiplayer` (function): function resolvePeerShellMultiplayer(args: ResolvePeerShellMultiplayerArgs): Promise<ShellMultiplayer & { close: () => Promise<void> }> — Opens a peer session. With `playable`, one host runs the game loop and guests mirror its shared world. Await `close()` to finish authoritative persistence. Same-origin rooms use BroadcastChannel signaling.
 - `resolveShellMultiplayer` (function): function resolveShellMultiplayer(args: ResolveShellMultiplayerArgs): ShellMultiplayer | null — ⚠ undocumented
+
+## @jgengine/shell/placement
+
+- `PlacementGhost` (function): function PlacementGhost({ preview, height = 1, validColor = "#34d399", invalidColor = "#f87171", }: PlacementGhostProps): React.JSX.Element | null — Cursor-following build ghost: valid/invalid tint from a placement controller preview.
+- `PlacementGhostProps` (interface): interface PlacementGhostProps — Props for {@link PlacementGhost}: the placement preview to draw and its valid/invalid tint.
+- `TransformGizmo` (const): const TransformGizmo: React.MemoExoticComponent<({ position, rotationY, mode, snapMode, gridSize, space, rotationSnap, scaleSnap, lift, size, groundSnap, onDraggingChange, onRelease, }: TransformGizmoProps) => React.JSX.Element> — Runtime selection/move gizmo shared by games and the editor. Wraps TransformControls; callers own selection and commit side-effects.
+- `TransformGizmoMode` (type): type TransformGizmoMode = "translate" | "rotate" | "scale" — Active TransformControls mode for the runtime selection gizmo.
+- `TransformGizmoPose` (interface): interface TransformGizmoPose — Pose reported by {@link TransformGizmo} when the user releases a drag.
+- `TransformGizmoProps` (interface): interface TransformGizmoProps — Props for the shared runtime/editor selection gizmo.
+- `TransformGizmoSnap` (type): type TransformGizmoSnap = "grid" | "free" | "ground" — Snap policy: grid quantize, free drag, or ground-height sample on release.
+
+## @jgengine/shell/placement
+
+- `PlacementGhost` (function): function PlacementGhost({ preview, height = 1, validColor = "#34d399", invalidColor = "#f87171", }: PlacementGhostProps): React.JSX.Element | null — Cursor-following build ghost: valid/invalid tint from a placement controller preview.
+- `PlacementGhostProps` (interface): interface PlacementGhostProps — Props for {@link PlacementGhost}: the placement preview to draw and its valid/invalid tint.
+- `TransformGizmo` (const): const TransformGizmo: React.MemoExoticComponent<({ position, rotationY, mode, snapMode, gridSize, space, rotationSnap, scaleSnap, lift, size, groundSnap, onDraggingChange, onRelease, }: TransformGizmoProps) => React.JSX.Element> — Runtime selection/move gizmo shared by games and the editor. Wraps TransformControls; callers own selection and commit side-effects.
+- `TransformGizmoMode` (type): type TransformGizmoMode = "translate" | "rotate" | "scale" — Active TransformControls mode for the runtime selection gizmo.
+- `TransformGizmoPose` (interface): interface TransformGizmoPose — Pose reported by {@link TransformGizmo} when the user releases a drag.
+- `TransformGizmoProps` (interface): interface TransformGizmoProps — Props for the shared runtime/editor selection gizmo.
+- `TransformGizmoSnap` (type): type TransformGizmoSnap = "grid" | "free" | "ground" — Snap policy: grid quantize, free drag, or ground-height sample on release.
+
+## @jgengine/shell/placement/PlacementGhost
+
+- `PlacementGhost` (function): function PlacementGhost({ preview, height = 1, validColor = "#34d399", invalidColor = "#f87171", }: PlacementGhostProps): React.JSX.Element | null — Cursor-following build ghost: valid/invalid tint from a placement controller preview.
+- `PlacementGhostProps` (interface): interface PlacementGhostProps — Props for {@link PlacementGhost}: the placement preview to draw and its valid/invalid tint.
+
+## @jgengine/shell/placement/TransformGizmo
+
+- `DEFAULT_ROTATION_SNAP` (const): const DEFAULT_ROTATION_SNAP: number — Default rotation snap increment (radians) when callers don't configure one.
+- `TransformGizmo` (const): const TransformGizmo: React.MemoExoticComponent<({ position, rotationY, mode, snapMode, gridSize, space, rotationSnap, scaleSnap, lift, size, groundSnap, onDraggingChange, onRelease, }: TransformGizmoProps) => React.JSX.Element> — Runtime selection/move gizmo shared by games and the editor. Wraps TransformControls; callers own selection and commit side-effects.
+- `TransformGizmoMode` (type): type TransformGizmoMode = "translate" | "rotate" | "scale" — Active TransformControls mode for the runtime selection gizmo.
+- `TransformGizmoPose` (interface): interface TransformGizmoPose — Pose reported by {@link TransformGizmo} when the user releases a drag.
+- `TransformGizmoProps` (interface): interface TransformGizmoProps — Props for the shared runtime/editor selection gizmo.
+- `TransformGizmoSnap` (type): type TransformGizmoSnap = "grid" | "free" | "ground" — Snap policy: grid quantize, free drag, or ground-height sample on release.
+- `TransformGizmoSpace` (type): type TransformGizmoSpace = "world" | "local" — Gizmo handle orientation: world axes, or the target's local (yaw-rotated) axes.
 
 ## @jgengine/shell/play
 
@@ -3646,84 +3720,6 @@
 ## @jgengine/shell/shellMovement
 
 - `SHELL_MOVEMENT_ACTIONS` (const): const SHELL_MOVEMENT_ACTIONS: readonly ["moveForward", "moveBack", "moveLeft", "moveRight", "jump"] — Movement action names the shell drives via the walk controller.
-
-## @jgengine/shell/structures
-
-- `BuildingBlock` (function): function BuildingBlock({ part, palette }: BuildingBlockProps): React.JSX.Element — ⚠ undocumented
-- `BuildingBlockProps` (interface): interface BuildingBlockProps { part: BuildingPartPlacement; palette?: BuildingMaterialPalette } — ⚠ undocumented
-- `GeneratedBuilding` (function): function GeneratedBuilding({ building, palette, partRenderer, kit, resolveModelUrl, visibleKinds, }: GeneratedBuildingProps): React.JSX.Element — ⚠ undocumented
-- `GeneratedBuildingProps` (interface): interface GeneratedBuildingProps { building: GeneratedBuildingData; palette?: BuildingMaterialPalette; partRenderer?: BuildingKitRenderer; kit?: BuildingKit; resolveModelUrl?: (model: string) => string; visibleKinds?: readonly BuildingPartKind[] } — ⚠ undocumented
-- `InstancedBuildingPlacement` (interface): interface InstancedBuildingPlacement { building: GeneratedBuildingData; position?: readonly [number, number, number]; rotationY?: number; pivot?: readonly [number, number] } — ⚠ undocumented
-- `InstancedBuildings` (function): function InstancedBuildings({ buildings, palette, kit, resolveModelUrl, visibleKinds, }: InstancedBuildingsProps): React.JSX.Element | null — ⚠ undocumented
-- `InstancedBuildingsProps` (interface): interface InstancedBuildingsProps { buildings: readonly InstancedBuildingPlacement[]; palette?: BuildingMaterialPalette; kit?: BuildingKit; resolveModelUrl?: (model: string) => string; visibleKinds?: readonly BuildingPartKind[] } — ⚠ undocumented
-- `PlacementGhost` (function): function PlacementGhost({ preview, height = 1, validColor = "#34d399", invalidColor = "#f87171", }: PlacementGhostProps): React.JSX.Element | null — Cursor-following build ghost: valid/invalid tint from a placement controller preview.
-- `PlacementGhostProps` (interface): interface PlacementGhostProps { preview: PlacementPreview | null; height?: number; validColor?: string; invalidColor?: string } — ⚠ undocumented · used by `PlacementGhost`: Cursor-following build ghost: valid/invalid tint from a placement controller preview.
-- `TransformGizmo` (const): const TransformGizmo: React.MemoExoticComponent<({ position, rotationY, mode, snapMode, gridSize, space, rotationSnap, scaleSnap, lift, size, groundSnap, onDraggingChange, onRelease, }: TransformGizmoProps) => React.JSX.Element> — Runtime selection/move gizmo shared by games and the editor. Wraps TransformControls; callers own selection and commit side-effects.
-- `TransformGizmoMode` (type): type TransformGizmoMode = "translate" | "rotate" | "scale" — Active TransformControls mode for the runtime selection gizmo.
-- `TransformGizmoPose` (interface): interface TransformGizmoPose — Pose reported by {@link TransformGizmo} when the user releases a drag.
-- `TransformGizmoProps` (interface): interface TransformGizmoProps — Props for the shared runtime/editor selection gizmo.
-- `TransformGizmoSnap` (type): type TransformGizmoSnap = "grid" | "free" | "ground" — Snap policy: grid quantize, free drag, or ground-height sample on release.
-
-## @jgengine/shell/structures
-
-- `BuildingBlock` (function): function BuildingBlock({ part, palette }: BuildingBlockProps): React.JSX.Element — ⚠ undocumented
-- `BuildingBlockProps` (interface): interface BuildingBlockProps { part: BuildingPartPlacement; palette?: BuildingMaterialPalette } — ⚠ undocumented
-- `GeneratedBuilding` (function): function GeneratedBuilding({ building, palette, partRenderer, kit, resolveModelUrl, visibleKinds, }: GeneratedBuildingProps): React.JSX.Element — ⚠ undocumented
-- `GeneratedBuildingProps` (interface): interface GeneratedBuildingProps { building: GeneratedBuildingData; palette?: BuildingMaterialPalette; partRenderer?: BuildingKitRenderer; kit?: BuildingKit; resolveModelUrl?: (model: string) => string; visibleKinds?: readonly BuildingPartKind[] } — ⚠ undocumented
-- `InstancedBuildingPlacement` (interface): interface InstancedBuildingPlacement { building: GeneratedBuildingData; position?: readonly [number, number, number]; rotationY?: number; pivot?: readonly [number, number] } — ⚠ undocumented
-- `InstancedBuildings` (function): function InstancedBuildings({ buildings, palette, kit, resolveModelUrl, visibleKinds, }: InstancedBuildingsProps): React.JSX.Element | null — ⚠ undocumented
-- `InstancedBuildingsProps` (interface): interface InstancedBuildingsProps { buildings: readonly InstancedBuildingPlacement[]; palette?: BuildingMaterialPalette; kit?: BuildingKit; resolveModelUrl?: (model: string) => string; visibleKinds?: readonly BuildingPartKind[] } — ⚠ undocumented
-- `PlacementGhost` (function): function PlacementGhost({ preview, height = 1, validColor = "#34d399", invalidColor = "#f87171", }: PlacementGhostProps): React.JSX.Element | null — Cursor-following build ghost: valid/invalid tint from a placement controller preview.
-- `PlacementGhostProps` (interface): interface PlacementGhostProps { preview: PlacementPreview | null; height?: number; validColor?: string; invalidColor?: string } — ⚠ undocumented · used by `PlacementGhost`: Cursor-following build ghost: valid/invalid tint from a placement controller preview.
-- `TransformGizmo` (const): const TransformGizmo: React.MemoExoticComponent<({ position, rotationY, mode, snapMode, gridSize, space, rotationSnap, scaleSnap, lift, size, groundSnap, onDraggingChange, onRelease, }: TransformGizmoProps) => React.JSX.Element> — Runtime selection/move gizmo shared by games and the editor. Wraps TransformControls; callers own selection and commit side-effects.
-- `TransformGizmoMode` (type): type TransformGizmoMode = "translate" | "rotate" | "scale" — Active TransformControls mode for the runtime selection gizmo.
-- `TransformGizmoPose` (interface): interface TransformGizmoPose — Pose reported by {@link TransformGizmo} when the user releases a drag.
-- `TransformGizmoProps` (interface): interface TransformGizmoProps — Props for the shared runtime/editor selection gizmo.
-- `TransformGizmoSnap` (type): type TransformGizmoSnap = "grid" | "free" | "ground" — Snap policy: grid quantize, free drag, or ground-height sample on release.
-
-## @jgengine/shell/structures/GeneratedBuilding
-
-- `BuildingBlock` (function): function BuildingBlock({ part, palette }: BuildingBlockProps): React.JSX.Element — ⚠ undocumented
-- `BuildingBlockProps` (interface): interface BuildingBlockProps { part: BuildingPartPlacement; palette?: BuildingMaterialPalette } — ⚠ undocumented
-- `BuildingFacade` (type): type BuildingFacade = "front" | "back" | "left" | "right" | "roof" — ⚠ undocumented
-- `BuildingKitRenderer` (interface): interface BuildingKitRenderer { renderPart?: (part: BuildingPartPlacement) => ReactNode | undefined } — ⚠ undocumented
-- `BuildingMaterialPalette` (type): type BuildingMaterialPalette = Partial<Record<BuildingPartKind, BuildingSurface>> — Per part kind: a hex colour, or a colour plus tiled PBR maps (`BuildingSurfaceMaterial`).
-- `BuildingPartKind` (type): type BuildingPartKind = | "wall" | "window" | "awning" | "airConditioner" | "clothesline" | "storefront" | "shutter" | "storeSign" | "roof" | "roofProp" | "guardrail" | "corner" — ⚠ undocumented · used by `resolveBuildingKitPart` (@jgengine/core/world/buildingKit): Resolves one generated part against a kit.
-- `BuildingPartPlacement` (interface): interface BuildingPartPlacement { id: string; kind: BuildingPartKind; facade: BuildingFacade; position: readonly [number, number, number]; rotationY: number; scale: readonly [number, number, number]; kit?: BuildingKitSlot } — ⚠ undocumented
-- `GeneratedBuilding` (function): function GeneratedBuilding({ building, palette, partRenderer, kit, resolveModelUrl, visibleKinds, }: GeneratedBuildingProps): React.JSX.Element — ⚠ undocumented
-- `GeneratedBuildingData` (interface): interface GeneratedBuildingData { id: string; parts: readonly BuildingPartPlacement[] } — ⚠ undocumented
-- `GeneratedBuildingProps` (interface): interface GeneratedBuildingProps { building: GeneratedBuildingData; palette?: BuildingMaterialPalette; partRenderer?: BuildingKitRenderer; kit?: BuildingKit; resolveModelUrl?: (model: string) => string; visibleKinds?: readonly BuildingPartKind[] } — ⚠ undocumented
-- `InstancedBuildingPlacement` (interface): interface InstancedBuildingPlacement { building: GeneratedBuildingData; position?: readonly [number, number, number]; rotationY?: number; pivot?: readonly [number, number] } — ⚠ undocumented
-- `InstancedBuildings` (function): function InstancedBuildings({ buildings, palette, kit, resolveModelUrl, visibleKinds, }: InstancedBuildingsProps): React.JSX.Element | null — ⚠ undocumented
-- `InstancedBuildingsProps` (interface): interface InstancedBuildingsProps { buildings: readonly InstancedBuildingPlacement[]; palette?: BuildingMaterialPalette; kit?: BuildingKit; resolveModelUrl?: (model: string) => string; visibleKinds?: readonly BuildingPartKind[] } — ⚠ undocumented
-
-## @jgengine/shell/structures/PlacementGhost
-
-- `PlacementGhost` (function): function PlacementGhost({ preview, height = 1, validColor = "#34d399", invalidColor = "#f87171", }: PlacementGhostProps): React.JSX.Element | null — Cursor-following build ghost: valid/invalid tint from a placement controller preview.
-- `PlacementGhostProps` (interface): interface PlacementGhostProps { preview: PlacementPreview | null; height?: number; validColor?: string; invalidColor?: string } — ⚠ undocumented · used by `PlacementGhost`: Cursor-following build ghost: valid/invalid tint from a placement controller preview.
-
-## @jgengine/shell/structures/TransformGizmo
-
-- `DEFAULT_ROTATION_SNAP` (const): const DEFAULT_ROTATION_SNAP: number — Default rotation snap increment (radians) when callers don't configure one.
-- `TransformGizmo` (const): const TransformGizmo: React.MemoExoticComponent<({ position, rotationY, mode, snapMode, gridSize, space, rotationSnap, scaleSnap, lift, size, groundSnap, onDraggingChange, onRelease, }: TransformGizmoProps) => React.JSX.Element> — Runtime selection/move gizmo shared by games and the editor. Wraps TransformControls; callers own selection and commit side-effects.
-- `TransformGizmoMode` (type): type TransformGizmoMode = "translate" | "rotate" | "scale" — Active TransformControls mode for the runtime selection gizmo.
-- `TransformGizmoPose` (interface): interface TransformGizmoPose — Pose reported by {@link TransformGizmo} when the user releases a drag.
-- `TransformGizmoProps` (interface): interface TransformGizmoProps — Props for the shared runtime/editor selection gizmo.
-- `TransformGizmoSnap` (type): type TransformGizmoSnap = "grid" | "free" | "ground" — Snap policy: grid quantize, free drag, or ground-height sample on release.
-- `TransformGizmoSpace` (type): type TransformGizmoSpace = "world" | "local" — Gizmo handle orientation: world axes, or the target's local (yaw-rotated) axes.
-
-## @jgengine/shell/structures/buildingKitRegistry
-
-- `clearBuildingKits` (function): function clearBuildingKits(): void — Drops every registration. For tests and hot-reload teardown.
-- `getBuildingKit` (function): function getBuildingKit(id: string | undefined): BuildingKit | undefined — The kit registered under `id`, or `undefined` for an unset or unknown name (renders blocks).
-- `listBuildingKits` (function): function listBuildingKits(): string[] — Every registered kit id — the editor's kit picker and diagnostics read this.
-- `registerBuildingKit` (function): function registerBuildingKit(kit: BuildingKit): void — Registers a kit under its own `id`, replacing any kit already registered under that name.
-
-## @jgengine/shell/structures/buildingSurface
-
-- `TexturedBuildingSurface` (type): type TexturedBuildingSurface = BuildingSurfaceMaterial & { maps: BuildingSurfaceMaps } — A surface that names at least one map URL.
-- `surfaceHasMaps` (function): function surfaceHasMaps(surface: BuildingSurfaceMaterial | undefined): surface is TexturedBuildingSurface — True when the surface names at least one map URL, so the batch needs the textured path.
-- `surfaceKey` (function): function surfaceKey(surface: BuildingSurfaceMaterial | undefined): string — A stable key for bucketing instances that share one surface (same colour, maps, tiling, and response).
 
 ## @jgengine/shell/terrain
 

@@ -234,18 +234,18 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## building-generator — generate seeded buildings as placed facade parts — bays, floors, roof, decor
 
-- `createBuildingConfig` (function) · `import { createBuildingConfig } from "@jgengine/core/world/buildings"`
-- `generateBuilding` (function) · `import { generateBuilding } from "@jgengine/core/world/buildings"`
+- `createBuildingConfig` (function) · `import { createBuildingConfig } from "@jgengine/core/buildings/buildings"`
+- `generateBuilding` (function) · `import { generateBuilding } from "@jgengine/core/buildings/buildings"`
 
 ## building-kit — bind generated facade part slots to real models instead of untextured blocks
 
-- `buildingKitVariantCounts` (function) · `import { buildingKitVariantCounts } from "@jgengine/core/world/buildingKit"`
-- `defineBuildingKit` (function) · `import { defineBuildingKit } from "@jgengine/core/world/buildingKit"`
-- `resolveBuildingKitPart` (function) · `import { resolveBuildingKitPart } from "@jgengine/core/world/buildingKit"`
+- `buildingKitVariantCounts` (function) · `import { buildingKitVariantCounts } from "@jgengine/core/buildings/buildingKit"`
+- `defineBuildingKit` (function) · `import { defineBuildingKit } from "@jgengine/core/buildings/buildingKit"`
+- `resolveBuildingKitPart` (function) · `import { resolveBuildingKitPart } from "@jgengine/core/buildings/buildingKit"`
 
 ## building-lots — derive street-facing building lots from road frontage
 
-- `deriveBuildingLots` (function) · `import { deriveBuildingLots } from "@jgengine/core/world/buildingLots"`
+- `deriveBuildingLots` (function) · `import { deriveBuildingLots } from "@jgengine/core/buildings/buildingLots"`
 
 ## camera-shake — seeded serializable trauma-based camera shake/impulse controller (hit/explosion/landing juice) with pooled per-frame translation+rotation offset and snapshot/restore
 
@@ -261,8 +261,8 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## city-district — editor-authorable procedural city district (streets, zoning, buildings, furniture)
 
-- `citySolids` (function) · `import { citySolids } from "@jgengine/core/world/cityKind"`
-- `extractGraphBlocks` (function) · `import { extractGraphBlocks } from "@jgengine/core/world/cityBlocks"`
+- `citySolids` (function) · `import { citySolids } from "@jgengine/core/city/cityKind"`
+- `extractGraphBlocks` (function) · `import { extractGraphBlocks } from "@jgengine/core/city/cityBlocks"`
 - `polygonSignedArea` (function) · `import { polygonSignedArea } from "@jgengine/core/world/polygon"`
 - `rectClearsPolyline` (function) · `import { rectClearsPolyline } from "@jgengine/core/world/polygon"`
 - `rectsSeparated` (function) · `import { rectsSeparated } from "@jgengine/core/world/polygon"`
@@ -275,15 +275,15 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## city-layout-sliders — live dev-runner sliders for every city layout number
 
-- `tuneCityLayout` (function) · `import { tuneCityLayout } from "@jgengine/core/world/cityLayout"`
+- `tuneCityLayout` (function) · `import { tuneCityLayout } from "@jgengine/core/city/cityLayout"`
 
 ## city-layout-store — a city layout a game sets once and sliders change live
 
-- `createCityLayout` (function) · `import { createCityLayout } from "@jgengine/core/world/cityLayout"`
+- `createCityLayout` (function) · `import { createCityLayout } from "@jgengine/core/city/cityLayout"`
 
 ## city-lots — lay zoned building lots, corners and driveways from one city layout
 
-- `cityLots` (function) · `import { cityLots } from "@jgengine/core/world/cityLayout"`
+- `cityLots` (function) · `import { cityLots } from "@jgengine/core/city/cityLayout"`
 
 ## companion-intent — resolve a companion's command + threat context into a per-tick follow/hold/engage/assist intent
 

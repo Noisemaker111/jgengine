@@ -1,5 +1,5 @@
 import type { Footprint, Vec2 } from "./geometry";
-import type { PlacementObstacle } from "./placement";
+import type { PlacementObstacle } from "../placement/placement";
 
 /** One integer cell address on a {@link FootprintGrid}. */
 export interface GridCell {

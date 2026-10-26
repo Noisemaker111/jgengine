@@ -609,6 +609,85 @@
 - `VoiceAllocatorStorage` (interface): interface VoiceAllocatorStorage — Caller-owned reservation storage. Reads and writes use detached state.
 - `createVoiceAllocator` (function): function createVoiceAllocator(config: VoiceAllocatorConfig = {}): VoiceAllocator — Reserve bounded sound playback before fetching or constructing a graph. Equal priorities steal the oldest reservation; lower priorities cannot interrupt higher priorities. Policy is retunable.
 
+## @jgengine/core/buildings/buildingGenerator
+
+- `BUILDING_GENERATOR_ID` (const): const BUILDING_GENERATOR_ID: "building" — The generator id a catalog entry / placed marker references.
+- `BUILDING_GENERATOR_SCHEMA` (const): const BUILDING_GENERATOR_SCHEMA: ParamSchema — The building generator's slider schema — drives the inspector via #809.
+
+## @jgengine/core/buildings/buildingIndex
+
+- `BuildingHit` (interface): interface BuildingHit { building: GeneratedBuilding; distance: number } — ⚠ undocumented
+- `BuildingIndex` (interface): interface BuildingIndex { readonly buildings: readonly GeneratedBuilding[]; at(point: Vec2): GeneratedBuilding | undefined; within(area: Aabb): GeneratedBuilding[]; nearest(point: Vec2): BuildingHit | undefined; isInside(point: Vec2): boolean; blockers(margin?: nu… — ⚠ undocumented
+- `buildingIndex` (function): function buildingIndex(buildings: readonly GeneratedBuilding[]): BuildingIndex — ⚠ undocumented
+
+## @jgengine/core/buildings/buildingKit
+
+- `BuildingKit` (interface): interface BuildingKit — Binds a building's generated part slots to models. A kit is plain serializable data — scene documents can carry one — and is deliberately unopinionated about art direction: the engine ships the seam, games ship the bindings.
+- `BuildingKitBinding` (type): type BuildingKitBinding = | { readonly type: "model"; readonly part: BuildingKitPart; readonly fit: BuildingKitFit } | { readonly type: "box" } | { readonly type: "omit" } — What a renderer should do with one generated part.
+- `BuildingKitFit` (type): type BuildingKitFit = "stretch" | "contain" | "cover" | "native" — How a kit model's native bounds are mapped onto the slot box `BuildingPartPlacement.scale` describes.
+- `BuildingKitInput` (interface): interface BuildingKitInput — The authoring shape {@link defineBuildingKit} normalizes into a {@link BuildingKit}.
+- `BuildingKitPart` (interface): interface BuildingKitPart — One bindable variant for a building part slot. `model` is an opaque reference the host resolves (an asset id, a pack-relative path, or a URL) — core never loads anything.
+- `BuildingKitPartInput` (type): type BuildingKitPartInput = string | BuildingKitPart — A variant as authored: a bare model reference, or the full {@link BuildingKitPart} when it needs fit or transform tuning.
+- `buildingKitVariantCounts` (function): function buildingKitVariantCounts(kit: BuildingKit): Partial<BuildingVariantCounts> — The variant counts a kit actually supplies, shaped for `BuildingConfigInput.variants`. Feed this into `generateBuilding` so seeded picks spread across exactly the models the kit binds instead of indexing past them and wrapping unevenly.
+- `defineBuildingKit` (function): function defineBuildingKit(input: BuildingKitInput): BuildingKit — Validates and normalizes a kit description, accepting bare model strings as single-field variants. Throws on empty variants or invalid editor material references/selectors before loading models.
+- `resolveBuildingKitPart` (function): function resolveBuildingKitPart(kit: BuildingKit | undefined, kind: BuildingPartKind, slot?: BuildingKitSlot): BuildingKitBinding — Resolves one generated part against a kit. Pass the placement's `kind` and its `kit` slot; the slot's `variant` wraps around the bound list, so a kit may carry any number of variants independent of the generator's `variants` counts.
+
+## @jgengine/core/buildings/buildingLots
+
+- `BuildingLotOptions` (interface): interface BuildingLotOptions — Options for {@link deriveBuildingLots}.
+- `FRONTAGE_FILL_REFERENCE` (const): const FRONTAGE_FILL_REFERENCE: 0.45 — Frontage-fill reference point: at this dial value the compaction is a no-op (legacy spacing/width), so callers can leave `blockFill` unset for the classic look and this value reproduces it exactly.
+- `LotArea` (interface): interface LotArea — Rectangular clip region lots must fall within (world center + half-extents).
+- `PlacedBuildingLot` (interface): interface PlacedBuildingLot — One placed building lot: where a building stands and how it is turned to face its road.
+- `PlotVariant` (interface): interface PlotVariant extends WorldBounds — One weighted plot size a frontage can mix in: `w` along the road, `d` into the block.
+- `RoadFrontage` (interface): interface RoadFrontage — One road the frontage placer lines with buildings: a centerline polyline, its width and its sidewalks.
+- `deriveBuildingLots` (function): function deriveBuildingLots(options: BuildingLotOptions): PlacedBuildingLot[] — Derive street-aligned building lots (PLOTS) from road frontage. Each side of each road walks the frontage placing plots at `plot.w + spacing` pitch — rolling the next plot size from the weighted `footprint` variants when several are given — offset outward by `width / 2 + setback + plot.d / 2` and turned to face the road. The PLOT CONTRACT is enforced here, exactly: no two plots ever overlap (true oriented-rect separation with the spacing gap, so corners and curved frontage can't stack buildings), and no plot footprint ever touches any road corridor in `roads` or `avoid` — not just its own frontage road. Deterministic: identical inputs (including seed) always yield the identical list.
+
+## @jgengine/core/buildings/buildings
+
+- `BUILDING_STYLE_PALETTES` (const): const BUILDING_STYLE_PALETTES: Record<BuildingStyle, Record<BuildingPartKind, string>> — ⚠ undocumented
+- `BUILDING_STYLE_PROBABILITIES` (const): const BUILDING_STYLE_PROBABILITIES: Record<BuildingStyle, Partial<BuildingProbabilities>> — Facade part probabilities per style, so an industrial yard, a ruined block and a coastal strip differ in shape as well as colour. Unset parts keep the generic probabilities.
+- `BUILDING_STYLE_WALL_TONES` (const): const BUILDING_STYLE_WALL_TONES: Record<BuildingStyle, readonly string[]> — Per-style facade-tone family: the wall colours a district spreads across its buildings so neighbours differ in hue and value while the block stays one palette. Index 0 is the palette's own `wall`; the rest fan warmer/cooler and lighter/darker around it.
+- `BuildingCellRef` (interface): interface BuildingCellRef { facade: BuildingFacade; level: number; bay: number } — ⚠ undocumented
+- `BuildingConfig` (interface): interface BuildingConfig { id: string; seed: BuildingSeed; center: Vec2; floors: number; baysWide: number; baysDeep: number; bayWidth: number; floorHeight: number; facadeDepth: number; roofOverhang: number; probabilities: BuildingProbabilities; variants: BuildingVa… — ⚠ undocumented · used by `createBuildingConfig`: Fill a partial building description out to a complete {@link BuildingConfig}, clamping counts and probabilities.
+- `BuildingConfigInput` (type): type BuildingConfigInput = Partial< Omit<BuildingConfig, "probabilities" | "variants"> > & { probabilities?: Partial<BuildingProbabilities>; variants?: Partial<BuildingVariantCounts>; } — ⚠ undocumented · used by `createBuildingConfig`: Fill a partial building description out to a complete {@link BuildingConfig}, clamping counts and probabilities.
+- `BuildingFacade` (type): type BuildingFacade = "front" | "back" | "left" | "right" | "roof" — ⚠ undocumented
+- `BuildingKitSlot` (interface): interface BuildingKitSlot { key: string; variant: number } — ⚠ undocumented · used by `resolveBuildingKitPart` (@jgengine/core/buildings/buildingKit): Resolves one generated part against a kit.
+- `BuildingPalette` (type): type BuildingPalette = Record<BuildingPartKind, BuildingSurface> — ⚠ undocumented
+- `BuildingPaletteOverrides` (type): type BuildingPaletteOverrides = Partial<BuildingPalette> — ⚠ undocumented
+- `BuildingPartKind` (type): type BuildingPartKind = | "wall" | "window" | "awning" | "airConditioner" | "clothesline" | "storefront" | "shutter" | "storeSign" | "roof" | "roofProp" | "guardrail" | "corner" — ⚠ undocumented · used by `resolveBuildingKitPart` (@jgengine/core/buildings/buildingKit): Resolves one generated part against a kit.
+- `BuildingPartPlacement` (interface): interface BuildingPartPlacement { id: string; buildingId: string; kind: BuildingPartKind; facade: BuildingFacade; position: Vec3; rotationY: number; scale: Vec3; kit: BuildingKitSlot; cell?: BuildingCellRef; tags?: readonly BuildingPartTag[] } — ⚠ undocumented
+- `BuildingPartTag` (type): type BuildingPartTag = "ground" | "upper" | "open" | "closed" | "decor" | "structure" — ⚠ undocumented
+- `BuildingProbabilities` (interface): interface BuildingProbabilities { window: number; openStore: number; awning: number; airConditioner: number; clothesline: number; storeSign: number; roofProp: number } — ⚠ undocumented · used by `BUILDING_STYLE_PROBABILITIES`: Facade part probabilities per style, so an industrial yard, a ruined block and a coastal strip differ in shape as well as colour.
+- `BuildingSeed` (type): type BuildingSeed = number | string — ⚠ undocumented
+- `BuildingStyle` (type): type BuildingStyle = | "generic" | "capital" | "village" | "desert" | "industrial" | "coastal" | "neon" | "ruin" | "frontier" | "aerial" — ⚠ undocumented · used by `BUILDING_STYLE_PROBABILITIES`: Facade part probabilities per style, so an industrial yard, a ruined block and a coastal strip differ in shape as well as colour.
+- `BuildingSurface` (type): type BuildingSurface = string | BuildingSurfaceMaterial — What a building part kind is painted with: a hex colour, or a colour plus tiled PBR maps.
+- `BuildingSurfaceMaps` (interface): interface BuildingSurfaceMaps — URLs of the PBR maps a building surface tiles; `buildMaterialCatalog(...).resolve(id)!.maps` fits directly.
+- `BuildingSurfaceMaterial` (interface): interface BuildingSurfaceMaterial — A textured building surface: a base colour plus optional tiled PBR maps. With `maps`, `color` multiplies the albedo (leave it light to show the map as authored); without, it is the flat colour the part has always had.
+- `BuildingVariantCounts` (interface): interface BuildingVariantCounts { wall: number; window: number; awning: number; airConditioner: number; clothesline: number; storefront: number; shutter: number; storeSign: number; roofProp: number } — ⚠ undocumented · used by `buildingKitVariantCounts` (@jgengine/core/buildings/buildingKit): The variant counts a kit actually supplies, shaped for `BuildingConfigInput.variants`.
+- `DEFAULT_BUILDING_CONFIG` (const): const DEFAULT_BUILDING_CONFIG: BuildingConfig — ⚠ undocumented
+- `DEFAULT_BUILDING_STYLE` (const): const DEFAULT_BUILDING_STYLE: BuildingStyle — ⚠ undocumented
+- `GeneratedBuilding` (interface): interface GeneratedBuilding { id: string; seed: BuildingSeed; center: Vec2; footprint: Footprint; floors: number; floorHeight: number; bounds: Aabb; parts: readonly BuildingPartPlacement[]; rotationY?: number } — ⚠ undocumented · used by `generateBuilding`: Generate one building as a flat list of placed facade parts: bays × floors per facade, a ground row, corners, and a roof, with every decorat…
+- `buildingSurfaceColor` (function): function buildingSurfaceColor(surface: BuildingSurface | undefined, fallback = "#808080"): string — The flat colour of a surface: the hex itself, or a material's `color`, else `fallback`.
+- `createBuildingConfig` (function): function createBuildingConfig(input: BuildingConfigInput = {}): BuildingConfig — Fill a partial building description out to a complete {@link BuildingConfig}, clamping counts and probabilities. Use it to inspect or adjust the resolved shape before generating.
+- `generateBuilding` (function): function generateBuilding(input: BuildingConfigInput = {}): GeneratedBuilding — Generate one building as a flat list of placed facade parts: bays × floors per facade, a ground row, corners, and a roof, with every decorative part rolled from `probabilities` and every part tagged with a `kit` slot the renderer binds to a model (see `world/buildingKit`). Deterministic from `seed`.
+- `resolveBuildingProbabilities` (function): function resolveBuildingProbabilities(style: BuildingStyle = DEFAULT_BUILDING_STYLE, overrides?: Partial<BuildingProbabilities>): Partial<BuildingProbabilities> — Style facade probabilities with explicit overrides applied on top.
+- `resolveBuildingSurface` (function): function resolveBuildingSurface(surface: BuildingSurface): BuildingSurfaceMaterial — Normalises a surface to its material form so a renderer reads one shape.
+
+## @jgengine/core/buildings/massing
+
+- `MASSING_COMPOSITIONS` (const): const MASSING_COMPOSITIONS: readonly MassingComposition[] — ⚠ undocumented
+- `MASSING_PROFILES` (const): const MASSING_PROFILES: readonly MassingProfile[] — ⚠ undocumented
+- `MassingBody` (type): type MassingBody = { x: number; y: number; z: number; w: number; h: number; d: number; ry?: number; facade?: boolean; kind?: "box" | "capsule"; role?: MassingBodyRole; branch?: boolean; crown?: boolean; } — ⚠ undocumented
+- `MassingBodyRole` (type): type MassingBodyRole = "mass" | "core" | "transfer" — ⚠ undocumented
+- `MassingComposition` (type): type MassingComposition = | "bar" | "split" | "cluster" | "stack" | "court" | "bridge" | "ring" | "capsule" | "megastructure" — ⚠ undocumented
+- `MassingProfile` (type): type MassingProfile = "straight" | "stepped" | "tapered" | "top-heavy" | "offset" | "twisted" — ⚠ undocumented
+- `MassingSpec` (type): type MassingSpec = { seed: string; width: number; height: number; depth: number; floorHeight: number; baySpacing: number; pilotis: number; podiumHeight: number; cores: number; terraces: number; cantilever: number; voids: number; taper: number; articulation: number; crown: number; moduleDensity: numb… — ⚠ undocumented
+- `composeMassing` (function): function composeMassing(b: MassingSpec): MassingBody[] — ⚠ undocumented
+- `hashMassingSeed` (const): const hashMassingSeed: (text: string) => number — ⚠ undocumented
+- `isVillageMassing` (const): const isVillageMassing: (spec: Pick<MassingSpec, "height" | "composition" | "articulation" | "moduleDensity">) => boolean — ⚠ undocumented
+- `massingBase` (const): const massingBase: (spec: Pick<MassingSpec, "pilotis" | "height">, cap?: number) => number — ⚠ undocumented
+- `massingFloorCount` (function): function massingFloorCount(spec: Pick<MassingSpec, "pilotis" | "height" | "floorHeight">): number — ⚠ undocumented
+
 ## @jgengine/core/camera/cameraConfig
 
 - `CAMERA_FRUSTUM_DEFAULTS` (const): const CAMERA_FRUSTUM_DEFAULTS: { readonly fov: 55; readonly near: 0.1; readonly far: 300; readonly zoom: 50; } — ⚠ undocumented
@@ -644,6 +723,134 @@
 - `CameraShakeOffset` (interface): interface CameraShakeOffset — A per-frame camera shake offset: three positional axes plus three rotational axes (radians).
 - `CameraShakeSnapshot` (interface): interface CameraShakeSnapshot — Serializable state for save/restore and deterministic replay.
 - `createCameraShake` (function): function createCameraShake(config: CameraShakeConfig = {}): CameraShakeController — A seeded, serializable, trauma-based camera shake / impulse controller. A game calls `add(amount, kind?)` on impacts (a hit, an explosion, a landing) to raise trauma in `[0, 1]`; `update(dt)` bleeds it off over time; and `offset()` returns a pooled `{ x, y, z, pitch, yaw, roll }` kick equal to `trauma^exponent` times per-axis maxima times deterministic seeded value-noise sampled along an internal time cursor. A shell consumer applies that offset to the active camera each frame so the view visibly shakes. Nothing here is genre-specific: `kind` is a free label the game styles, all amplitudes/decay are parameters, and `snapshot`/ `restore` round-trips the shake through a save. Deterministic from `seed`: the same seed and dt sequence reproduce the same offsets.
+
+## @jgengine/core/city/cityBlocks
+
+- `BlockRings` (interface): interface BlockRings — A block's derived rings plus the sidewalk band (outer = curb line, inner = land line).
+- `CityBlockKind` (type): type CityBlockKind = "buildable" | "park" | "plaza" | "field" | "buffer" — How a block (a face of the road graph) is used.
+- `CityBlockLocal` (interface): interface CityBlockLocal — One closed block: a face of the road network, inset to its curb and land boundaries.
+- `CityParcelFrontage` (interface): interface CityParcelFrontage — One street-frontage reference of a parcel.
+- `CityParcelKind` (type): type CityParcelKind = "built" | "vacant" | "yard" — How a parcel is used after occupancy/fitting rolls.
+- `CityParcelLocal` (interface): interface CityParcelLocal — One polygonal parcel subdivided out of a block's street frontage.
+- `FabricParams` (interface): interface FabricParams — Everything block extraction needs from the district rules.
+- `FabricStreet` (interface): interface FabricStreet — Minimal street shape the fabric needs (matches cityKind's LocalStreet).
+- `GraphBlockEdge` (interface): interface GraphBlockEdge — One street-graph edge {@link extractGraphBlocks} traces block faces through.
+- `GraphBlockNode` (interface): interface GraphBlockNode — Minimal node/edge shapes {@link extractGraphBlocks} needs (matches `StreetNetwork.nodes`/`edges`).
+- `GraphBlockRings` (interface): interface GraphBlockRings — One block from {@link extractGraphBlocks}: the face polygon and its inset land ring.
+- `GraphFace` (interface): interface GraphFace — One extracted face: closed centerline polygon + the street index along each polygon edge.
+- `ParcelCut` (interface): interface ParcelCut — Inputs for one parcel strip cut from a block ring.
+- `RingWalker` (class): class RingWalker — Arc-length station lookup along a closed ring.
+- `buildablePolygon` (function): function buildablePolygon(parcel: readonly Vec2[], frontA: Vec2, frontB: Vec2, frontSetback: number, sideGap: number, rearMargin: number, depth: number): Vec2[] — Buildable polygon for a parcel: the parcel clipped by the front setback (a half-plane pushed in from the frontage chord), side gaps along both cut lines, and a rear margin. Works on any parcel polygon — no vertex correspondence needed.
+- `carveCorridors` (function): function carveCorridors(poly: Vec2[], keep: Vec2, corridors: readonly { pts: readonly Vec2[]; width: number }[], margin: number): Vec2[] — Carve dead-end road corridors (cul-de-sac lanes pruned from the face graph) out of a polygon: for every corridor segment crossing it, keep the polygon piece on the side where `keep` lies.
+- `conformPolygonToRing` (function): function conformPolygonToRing(poly: readonly Vec2[], ring: readonly Vec2[]): Vec2[] — Conform a polygon to a containing ring: sample every edge (a straight edge can bulge across a concave notch even when its endpoints hug the boundary), then pull each escaping point to its nearest boundary point. Callers re-run this after any operation that adds mid-edge vertices.
+- `cutParcel` (function): function cutParcel(walker: RingWalker, blockRing: readonly Vec2[], cut: ParcelCut): Vec2[] | null — Cut one polygonal parcel out of a block land ring: the frontage arc between two stations, extruded inward along the station normals, clipped back to the block. Returns null when the strip collapses (over-tight corner, sliver arc).
+- `extractBlocks` (function): function extractBlocks(streets: readonly FabricStreet[], hx: number, hz: number, params: FabricParams): { blocks: BlockRings[]; deadEnds: { pts: Vec2[]; width: number }[] } — Extract closed blocks from the street network: planar faces of the graph, each inset to its curb ring (pavement edge) and land ring (behind the sidewalk band). Faces that collapse under the inset come back with an empty `land` and are the caller's slivers/buffers.
+- `extractGraphBlocks` (function): function extractGraphBlocks(nodes: readonly GraphBlockNode[], edges: readonly GraphBlockEdge[], params: { sidewalkBase: number; curbMargin: number }): { blocks: GraphBlockRings[]; deadEnds: { pts: Vec2[]; width: number; level: FabricStreet["level"]; street?: number }[] } — Extract closed blocks from an EXACT street graph — the `nodes`/`edges` a street network already carries — instead of re-deriving topology from welded polylines. Half-edges are ordered by true departure angle at each node, dangling chains are pruned first (returned as `deadEnds` for corridor carving), interior faces are traced through the rotation system, and each face is inset to its land ring by the bordering edges' half-widths (+ curb + sidewalk). Robust against wandered and arc-filleted centerlines, which defeat proximity welding. Pure bounded geometry.
+- `isSliverBlock` (function): function isSliverBlock(land: readonly Vec2[], minArea: number, minWidth: number): boolean — Deterministic sliver verdict shared by classification and tests.
+- `pointsInPolygon` (function): function pointsInPolygon(ring: readonly Vec2[], count: number, rng: () => number, margin = 1.5): Vec2[] — Sample deterministic points inside a polygon by seeded rejection over its bounds.
+- `sidewalkWidthFor` (function): function sidewalkWidthFor(level: FabricStreet["level"], base: number): number — Sidewalk band width by street hierarchy (base = the district's street-level width).
+
+## @jgengine/core/city/cityContent
+
+- `CITY_FILLER_CLASSES` (const): const CITY_FILLER_CLASSES: readonly CityFillerClass[] — All filler classes, for validation and interior-pass allow-lists.
+- `CITY_LANDMARK_CLASSES` (const): const CITY_LANDMARK_CLASSES: readonly CityLandmarkClass[] — All landmark classes, for schema hints, validation, and default allow-lists.
+- `CITY_LOT_CLASSES` (const): const CITY_LOT_CLASSES: readonly CityLotClass[] — All classes, for schema hints and validation.
+- `CITY_TREE_SPECIES` (const): const CITY_TREE_SPECIES: readonly CityTreeSpecies[] — All species, for schema hints and validation.
+- `CityFillerClass` (type): type CityFillerClass = "garage" | "depot" — Filler classes used ONLY by the block-interior fill pass (`resolveCityLotContent` at a high `blockFill`). They are deliberately kept OUT of {@link CITY_LOT_CLASSES} so a zone mix can never weight them onto street frontage — they exist to pack the backs of Manhattan-style blocks with parking structures and warehouses/depots, mixed in with ordinary zone classes.
+- `CityLandmarkClass` (type): type CityLandmarkClass = "hall" | "arena" | "market" | "campus" — A block-scale landmark class. Unlike {@link CityLotClass} these are never weighted into a zone mix — the landmark pass in `resolveCityLotContent` picks clusters of adjacent lots and stamps one of these over them. Each expresses with the same four piece shapes (box/gable/cylinder/dome) at a much larger footprint (~40–90 m).
+- `CityLotClass` (type): type CityLotClass = | "tower" | "slab" | "shop" | "rowhouse" | "house" | "mansion" | "farmhouse" | "barn" | "silo" — A building class a zone mix can weight — drives lot size, floors, setback, and massing.
+- `CityLotPiece` (interface): interface CityLotPiece — One massing piece in LOT-LOCAL space: x along frontage width, z into the block, y up from grade.
+- `CityPieceRole` (type): type CityPieceRole = "wall" | "roof" | "trim" | "accent" — Palette role a piece colors from (wall/roof/trim/accent map onto the district's style palette).
+- `CityPieceShape` (type): type CityPieceShape = "box" | "gable" | "cylinder" | "dome" — Primitive shapes massing pieces instance — the renderer keeps one InstancedMesh per shape.
+- `CityTreeSpecies` (type): type CityTreeSpecies = "broadleaf" | "conifer" | "palm" | "cypress" — Tree species a district's tree mix can weight — the renderer keeps one canopy mesh per species.
+- `CityZoneBand` (type): type CityZoneBand = "core" | "mid" | "edge" — Zone band a lot falls in: dense core, middle ring, or the district edge.
+- `CityZoneProfile` (type): type CityZoneProfile = "core-out" | "inverted" | "uniform" — How the radial zone metric maps to bands.
+
+## @jgengine/core/city/cityGenerator
+
+- `CITY_PLOT_TIERS` (const): const CITY_PLOT_TIERS: readonly CityPlotTier[] — All plot tiers, for schema hints and validation.
+- `CityContentOptions` (interface): interface CityContentOptions extends CityContentOverrides — Full options for {@link resolveCityLotContent}: the city geometry frame plus content overrides.
+- `CityContentOverrides` (interface): interface CityContentOverrides — Tunable overrides for {@link resolveCityLotContent} (seed/halfExtents/laneFrontage are supplied).
+- `CityGeneratorOptions` (interface): interface CityGeneratorOptions — Options for {@link generateCity}: a seed, street-dial overrides, and plot pass-through options.
+- `CityLevelClassBias` (type): type CityLevelClassBias = Record<StreetLevel, Partial<Record<CityLotClass, number>>> — Per-street-level class weight multipliers applied to the band mix before the class pick, so towers and slabs bias toward wide boulevard/avenue frontage while houses bias toward lanes and quiet streets. A missing class ⇒ multiplier 1. Pure data modulating the weighted mixes.
+- `CityPlot` (interface): interface CityPlot — One polygonal plot cut from a block's street frontage. Every plot fronts a street.
+- `CityPlotFrontage` (interface): interface CityPlotFrontage — The street frontage a plot faces: which street, and the frontage chord along it.
+- `CityPlotOptions` (interface): interface CityPlotOptions — Options for {@link deriveCityPlots}.
+- `CityPlotResult` (interface): interface CityPlotResult — Output of {@link deriveCityPlots}: the plots plus whole-block park polygons.
+- `CityPlotTier` (type): type CityPlotTier = "small" | "medium" | "large" | "grand" — Size tier a plot was cut at. `grand` is the block-scale tier that used to be a landmark pass.
+- `CityZoneMixes` (interface): interface CityZoneMixes — Weighted building-class mix per zone band; the radial profile decides which band a lot falls in.
+- `DEFAULT_BLOCK_FILL` (const): const DEFAULT_BLOCK_FILL: 0.45 — Default `blockFill`: gently gapped frontage — plots with breathing room, parks reserved.
+- `DEFAULT_CITY_LEVEL_BIAS` (const): const DEFAULT_CITY_LEVEL_BIAS: CityLevelClassBias — Default street-level bias — boulevards favor big massing, lanes favor small/rural massing.
+- `DEFAULT_CITY_ZONE_MIXES` (const): const DEFAULT_CITY_ZONE_MIXES: CityZoneMixes — Default zoned-metropolis mixes: towers/slabs downtown, slabs+rowhouses mid, houses at the edge.
+- `DEFAULT_LANDMARK_SHARE` (const): const DEFAULT_LANDMARK_SHARE: 0.04 — Default grand-plot share dial — a handful of block-scale parcels per default city.
+- `GeneratedCity` (interface): interface GeneratedCity — A generated city: streets, plots (with rect building lots as a compat view), and park blocks.
+- `LANDMARK_HARD_CAP` (const): const LANDMARK_HARD_CAP: 12 — Hard cap on grand plots emitted regardless of dial/city size.
+- `MassingFootprint` (interface): interface MassingFootprint — Axis-aligned massing extents (lot-local): full width along x and depth along z.
+- `ResolvedCityLot` (interface): interface ResolvedCityLot — One plot enriched with its zone/class/floors/massing — the renderer instances `pieces` at `center`.
+- `deriveCityPlots` (function): function deriveCityPlots(network: StreetNetwork, options: CityPlotOptions): CityPlotResult — Subdivide every buildable block's street frontage into size-tiered polygonal plots. Blocks come from the street network's planar faces ({@link extractBlocks}), so every plot fronts a real street; block interiors stay open (courtyards) and a seeded fraction of whole blocks becomes parks. Grand plots — the old "landmarks" — are just the biggest tier of the same pass. Deterministic per seed, bounded by `maxPlots` and per-block caps.
+- `generateCity` (function): function generateCity(options: CityGeneratorOptions, hx: number, hz: number): GeneratedCity — Grow a street network inside the `hx`/`hz` half-extents, extract its blocks, and subdivide their frontage into plots. Deterministic: identical options ⇒ identical city.
+- `resolveCityLotContent` (function): function resolveCityLotContent(city: Pick<GeneratedCity, "network" | "lots"> & Partial<Pick<GeneratedCity, "plots" | "parks">>, options: CityContentOptions): ResolvedCityLot[] — Enrich a generated city's plots into classed, massed buildings: each plot gets its zone band (radial position under a {@link CityZoneProfile}), a building class rolled from the band's weighted mix — biased by street level AND plot size, with grand plots rolling a landmark class — floors, and the deterministic massing pieces the class composes, sized to the plot's building rect. Deterministic per `seed` via {@link seededStreams}, bounded (one pass over `city.lots`), and pure. Same seed + city ⇒ identical resolved lots.
+
+## @jgengine/core/city/cityKind
+
+- `CITY_DEFAULTS` (const): const CITY_DEFAULTS: CityRules — City defaults: a zoned mixed metropolis — towers downtown, slabs mid-ring, houses at the edge.
+- `CITY_KIND` (const): const CITY_KIND: "city" — The editor volume kind marking a box as a procedural city district.
+- `CITY_SCHEMA` (const): const CITY_SCHEMA: ParamSchema — The city parameter schema — drives the inspector sliders and `meta` parse via the studio seam.
+- `CITY_ZONE_KIND` (const): const CITY_ZONE_KIND: "cityzone" — The editor volume kind that locally overrides a city's zone band/mix — a district in a district.
+- `CITY_ZONE_SCHEMA` (const): const CITY_ZONE_SCHEMA: ParamSchema — Zone-override schema for `cityzone` volumes: pin a band and optionally a bespoke class mix.
+- `CityBlock` (interface): interface CityBlock — One closed city block: a face of the road graph, inset to curb and land boundaries.
+- `CityBridge` (interface): interface CityBridge — One bridge deck spanning water: bank-to-bank polyline plus the silhouette style.
+- `CityDriveway` (interface): interface CityDriveway — One driveway ribbon from a street to a lot.
+- `CityHedge` (interface): interface CityHedge — One hedge run: a thin box strip (estate perimeter).
+- `CityIntersection` (interface): interface CityIntersection — One crossing of two through streets: patch center/radius plus crosswalk arm directions.
+- `CityLight` (interface): interface CityLight — One street light: curb position plus the yaw its arm faces (over the road).
+- `CityLot` (interface): interface CityLot — One building lot: footprint, zone band, class, seeded floors, massing pieces, street anchor.
+- `CityParcel` (interface): interface CityParcel — One polygonal parcel subdivided from a block's street frontage.
+- `CityParcelFrontageOut` (interface): interface CityParcelFrontageOut — One street-frontage edge of a parcel.
+- `CityPark` (interface): interface CityPark — One intentional open space: an unbuilt block, a block-interior courtyard, or a buffer sliver.
+- `CityParking` (interface): interface CityParking — One parking pad behind a commercial lot.
+- `CityRaceGridSlot` (interface): interface CityRaceGridSlot — One staggered spawn behind the start line.
+- `CityRaceKerb` (interface): interface CityRaceKerb — One kerb strip hugging a corner's road edge, as a world-space polyline to stripe.
+- `CityRaceSeal` (interface): interface CityRaceSeal — One street closed off where it leaves the race lap: world XZ, the yaw down the sealed street, and the width the barrier run spans.
+- `CityRaceStart` (interface): interface CityRaceStart — The start/finish line: where it is, which way cars face, and the painted line across the road.
+- `CityResolveContext` (interface): interface CityResolveContext extends SceneKindResolveContext — Extended resolve context: sibling `cityzone` volumes that override the band/mix locally.
+- `CityRules` (interface): interface CityRules — Fully-defaulted city params parsed from a volume's `meta`.
+- `CitySignal` (interface): interface CitySignal — One junction control on an approach arm: an arterial mast-arm signal, or a plain sign post.
+- `CityStreet` (interface): interface CityStreet — One synthesized street: a world-space XZ polyline with width, hierarchy level, and surface.
+- `CityTree` (interface): interface CityTree — One placed tree: world XZ, species, and seeded scale/color jitter.
+- `CityTunnel` (interface): interface CityTunnel — One tunnel bore piercing a ridge: portal-to-portal polyline held at bank height.
+- `CityVehicle` (interface): interface CityVehicle — One parked vehicle standing at a curb or nose-in inside a parking pad.
+- `CityVehicleKind` (type): type CityVehicleKind = "car" | "van" | "truck" — Silhouette class of a parked vehicle — sizes the body the renderer instances.
+- `ResolvedCity` (interface): interface ResolvedCity — A resolved city district: world-space network, zoned lots, parks, and furniture.
+- `ResolvedRace` (interface): interface ResolvedRace — An instanced street race lifted out of the district's OWN streets: a closed lap through the city, with every side street leaving it sealed off. World space, like the rest of {@link ResolvedCity}.
+- `citySolids` (function): function citySolids(city: ResolvedCity, sampleHeight: (x: number, z: number) => number = () => 0): WorldSolid[] — One solid per wall and roof piece of every lot, grounded the way the city renderer grounds it: grade at the highest lot corner, foundations down to half a metre under the lowest.
+- `resolveCityObject` (function): function resolveCityObject(object: SceneKindObject, context?: CityResolveContext): ResolvedCity | null — Synthesize the deterministic city plan for one `city` volume: streets → bridges → parks → zoned frontage lots with massing pieces → furniture, all in the volume's local frame and then rotated/translated into world space. Same volume (id, footprint, meta) over the same terrain always resolves to the identical plan. When `context` provides a ground sampler, lots respect the `maxSlope` cliff rule — hillside and canyon districts keep their steep faces open. When `context.zoneOverrides` carries sibling `cityzone` volumes, lots inside them adopt the override band/mix. Returns null without a usable footprint.
+
+## @jgengine/core/city/cityLayout
+
+- `CITY_ZONES` (const): const CITY_ZONES: readonly CityZone[] — Every zone, in slider order.
+- `CityLayout` (interface): interface CityLayout — A whole city's layout. Lengths are metres.
+- `CityLayoutDriveway` (interface): interface CityLayoutDriveway — A driveway strip from the kerb to a lot's front, beside the building.
+- `CityLayoutLot` (interface): interface CityLayoutLot extends PlacedBuildingLot — A lot with the zone it is built in and the building it gets.
+- `CityLayoutPatch` (type): type CityLayoutPatch = Partial<Omit<CityLayout, "zones">> & { zones?: Partial<Record<CityZone, Partial<CityZoneLayout>>>; } — Partial layout a game passes: any top-level number, and any zone field.
+- `CityLayoutStore` (interface): interface CityLayoutStore — A city layout that can change while the game runs.
+- `CityLotOptions` (interface): interface CityLotOptions — Options for {@link cityLots}.
+- `CityLotRoad` (interface): interface CityLotRoad — One road a city's lots line.
+- `CityRoadClass` (type): type CityRoadClass = "avenue" | "street" — Street class: an avenue carries `avenueLanes`, a street `streetLanes`.
+- `CityRoadSpec` (interface): interface CityRoadSpec extends Omit<RoadEnvironmentConfig, "width"> — A road for {@link cityRoad}: any `road()` field, plus the class that sizes it.
+- `CityZone` (type): type CityZone = "core" | "commercial" | "residential" | "industrial" — Zone a lot is built in; each carries its own setback, lot size and height range.
+- `CityZoneLayout` (interface): interface CityZoneLayout — One zone's lots and buildings. Lengths are metres.
+- `TuneCityLayoutOptions` (interface): interface TuneCityLayoutOptions — Options for {@link tuneCityLayout}.
+- `US_CITY_LAYOUT` (const): const US_CITY_LAYOUT: CityLayout — US city defaults: 3.5 m lanes, 2.5 m sidewalks, 15 cm kerbs, zone setbacks 0 / 1.5 / 6 / 4 m.
+- `cityLaneCount` (function): function cityLaneCount(layout: CityLayout, roadClass: CityRoadClass): number — Lanes a road class carries, both directions together.
+- `cityLaneOffsets` (function): function cityLaneOffsets(layout: CityLayout, roadClass: CityRoadClass): readonly number[] — Signed lane-centre offsets from a road's centreline, right-hand traffic: negative offsets run with the path, positive against it. Parking lanes are outside these.
+- `cityLots` (function): function cityLots(layout: CityLayout, options: CityLotOptions): CityLayoutLot[] — Lay a city's building lots from its layout. Each zone lines every road with its own frontage, depth and side gap, set back past the sidewalk by its own setback; lots keep `cornerClearance` from the roads they do not front, never touch asphalt or each other, and a zone with driveways gets one per lot in the side gap. Deterministic for the same inputs and seed.
+- `cityRoad` (function): function cityRoad(layout: CityLayout, spec: CityRoadSpec): RoadEnvironmentDescriptor — A `road()` sized by the layout: lane count times lane width plus parking, the layout's sidewalk and kerb.
+- `cityRoadSource` (function): function cityRoadSource(store: CityLayoutStore, specs: readonly CityRoadSpec[]): LiveRoadSource & { /** The roads for the layout at boot, for `environment({ roads })`. */ readonly initial: readonly RoadEnvironmentDescriptor[]; } — Roads that follow a layout store: `current()` is rebuilt from `specs` whenever the layout changes, so an `environment({ roadSource })` redraws streets as a slider moves.
+- `cityRoadWidth` (function): function cityRoadWidth(layout: CityLayout, roadClass: CityRoadClass): number — Kerb-to-kerb width of a road class: its lanes plus a parking lane each side.
+- `createCityLayout` (function): function createCityLayout(patch: CityLayoutPatch = {}): CityLayoutStore — Create a city layout from US defaults plus the game's patch.
+- `resolveCityLayout` (function): function resolveCityLayout(patch: CityLayoutPatch = {}, base: CityLayout = US_CITY_LAYOUT): CityLayout — Merge a patch over a full layout, clamping every number to its slider range.
+- `tuneCityLayout` (function): function tuneCityLayout(store: CityLayoutStore, options: TuneCityLayoutOptions = {}): void — Register a devtools slider for every number in the layout (and a toggle per zone's driveways); dragging one sets the store, which re-lays whatever listens to it. Registering again keeps the values already dragged, so a hot reload does not snap the sliders back.
 
 ## @jgengine/core/faction/factions
 
@@ -1647,6 +1854,72 @@
 - `WorldColliderSync` (interface): interface WorldColliderSync — Handle for synchronizing authored static world collision with a physics backend.
 - `syncWorldColliders` (function): function syncWorldColliders(backend: PhysicsBackend, ctx: GameContext): WorldColliderSync — Mirrors static scene-object physical colliders, `ctx.world.solids` and the context's ground field into a physics backend.
 
+## @jgengine/core/placement/place
+
+- `BoardGround` (interface): interface BoardGround — A 2D surface you look at — grid games, solitaire, tabletop. Physics is often zero-gravity or omitted; the game owns the face it draws on the board.
+- `BoardGroundSize` (interface): interface BoardGroundSize — Size of a `board` ground: a 2D surface you look at, in cells or layout units.
+- `FlatGround` (interface): interface FlatGround — A 3D walkable plane/slab. `Infinity` axes are unbounded; no separate "infinite" mode exists.
+- `FlatGroundSize` (interface): interface FlatGroundSize — Size of a `flat` ground: extents in world units. `Infinity` on an axis means unbounded — an endless plain needs no bounds number invented for it. `y` optionally bounds vertical play space.
+- `GroundConfig` (type): type GroundConfig = FlatGround | RoundGround | VoxelGround | BoardGround — The substrate of a place, discriminated by `mode` — TS rejects a `radius` on `flat` and `x`/`z` on `round`.
+- `GroundGenerator` (interface): interface GroundGenerator — Serializable algorithm parameters for a procedural ground generator. Never a genre kit.
+- `GroundMode` (type): type GroundMode = "flat" | "round" | "voxel" | "board" — Canonical ground modes after normalization (`stage` → `board`).
+- `PlaceConfig` (interface): interface PlaceConfig — Input to {@link world}: place identity, substrate, and the laws of this place.
+- `PlaceWorldFeature` (interface): interface PlaceWorldFeature — A declared place — the `world()` result carried on `GameDefinition.world`.
+- `ResolvedBoardGround` (type): type ResolvedBoardGround = Omit<BoardGround, "mode"> & { mode: "board" } — {@link BoardGround} with the `stage` alias resolved away.
+- `ResolvedGround` (type): type ResolvedGround = FlatGround | RoundGround | VoxelGround | ResolvedBoardGround — A place's ground after `world()` normalization.
+- `RoundGround` (interface): interface RoundGround — A planet/sphere you play on the outside of. Sized by `radius` only.
+- `RoundGroundSize` (interface): interface RoundGroundSize — Size of a `round` ground: the planet/sphere radius in world units. Nothing else.
+- `SurfaceLaws` (interface): interface SurfaceLaws — The place model: a world is the place you play in — substrate (ground) plus laws (physics, surface) — never a dressed diorama. Sky look, foliage scatter, props, and sculpt are content: they are authored in the editor (or by a content preset that writes into the scene document) and consumed through the authored-scene seams, not declared on the world.
+- `VoxelGround` (interface): interface VoxelGround — A procedural volume of blocks. `size` is the generator domain; `generator` is algorithm params only.
+- `VoxelGroundSize` (interface): interface VoxelGroundSize — Size of a `voxel` ground: the generator's domain per axis; axes may be `Infinity` for streaming volumes.
+- `isPlaceWorld` (function): function isPlaceWorld(worldFeature: { kind: string } | undefined): worldFeature is PlaceWorldFeature — Type guard for the place-model world feature.
+- `resolveWorldPhysics` (function): function resolveWorldPhysics(worldFeature: { kind: string; physics?: PhysicsConfig } | undefined, base: PhysicsConfig | undefined): PhysicsConfig | undefined — Resolves the physics laws in effect for the active world: a place world's own `physics` wins field-by-field over the game-level default. Non-place worlds (and games with no world) keep the game-level config unchanged.
+- `seedForPlace` (function): function seedForPlace(worldId: string, runSeed = ""): string — The engine-side seed derivation for a place: a stable string from the world `id` plus the save/run seed. Generators and scatter receive this — never a `seed` field in the world definition — so a save replays its world deterministically and a fresh run can vary by `runSeed` alone.
+- `world` (function): function world(config: PlaceConfig): PlaceWorldFeature — Declares the place a game is played in: substrate (`ground`) + laws (`physics`, `ground.surface`). The thin default start — `flat` with `Infinity` axes and default physics, `board` for 2D — is a complete world; dressing it (sky, foliage, props, sculpt) is editor-authored scene content. Multiple worlds per game are first-class: declare one `world()` per place, each with its own id, ground, and physics. Games that are not a spatial place (pure UI/rules) omit `world` entirely.
+
+## @jgengine/core/placement/placeAsset
+
+- `PlaceAssetFromCommitOptions` (interface): interface PlaceAssetFromCommitOptions — Optional catalog/label overrides for {@link placeAssetFromCommit}.
+- `PlaceAssetResult` (interface): interface PlaceAssetResult — Shared place-asset verb: one resolved payload for editor `place_asset` and in-game build-mode commits. Convert with {@link toStructureInput} / {@link toEditorMarker}.
+- `PlaceAssetVec3` (type): type PlaceAssetVec3 = { x: number; y: number; z: number } — World-space point shared by structure stores and editor markers.
+- `ResolvePlaceAssetInput` (interface): interface ResolvePlaceAssetInput — Inputs to {@link resolvePlaceAsset}: asset id, pose, and optional catalog/known fields.
+- `placeAssetFromCommit` (function): function placeAssetFromCommit(commit: PlacementCommit, assetId: string, options: PlaceAssetFromCommitOptions = {}): PlaceAssetResult — Bridge a {@link PlacementCommit} into the shared place-asset verb.
+- `resolvePlaceAsset` (function): function resolvePlaceAsset(input: ResolvePlaceAssetInput): PlaceAssetResult — Resolve a place-asset intent into a shared payload (editor + games, one verb).
+- `toEditorMarker` (function): function toEditorMarker(result: PlaceAssetResult): { id: string; kind: string; position: PlaceAssetVec3; rotationY: number; label: string; color: string; meta: Record<string, unknown>; } — Scene-document form: feed editor `addMarker` / `place_asset` path.
+- `toStructureInput` (function): function toStructureInput(result: PlaceAssetResult): AddStructureInput — Game-state form: feed {@link createPlacedStructureStore}.add.
+
+## @jgengine/core/placement/placedStructureStore
+
+- `AddStructureInput` (interface): interface AddStructureInput { id?: string; catalogId: string; position: StructureVec3; rotationY?: number; plotId?: string; data?: Readonly<Record<string, unknown>> } — ⚠ undocumented · used by `toStructureInput` (@jgengine/core/placement/placeAsset): Game-state form: feed {@link createPlacedStructureStore}.add.
+- `PlacedStructure` (interface): interface PlacedStructure { id: string; catalogId: string; position: StructureVec3; rotationY: number; plotId?: string; data?: Readonly<Record<string, unknown>> } — ⚠ undocumented
+- `PlacedStructureSnapshot` (interface): interface PlacedStructureSnapshot { structures: readonly PlacedStructure[] } — ⚠ undocumented
+- `PlacedStructureStore` (interface): interface PlacedStructureStore { add(input: AddStructureInput): PlacedStructure; move(id: string, position: StructureVec3): boolean; rotate(id: string, rotationY: number): boolean; remove(id: string): boolean; get(id: string): PlacedStructure | null; list(filter?: Struct… — ⚠ undocumented
+- `StructureFilter` (interface): interface StructureFilter { plotId?: string; catalogId?: string } — ⚠ undocumented
+- `StructureVec3` (type): type StructureVec3 = readonly [number, number, number] — ⚠ undocumented
+- `createPlacedStructureStore` (function): function createPlacedStructureStore(): PlacedStructureStore — ⚠ undocumented
+
+## @jgengine/core/placement/placement
+
+- `PlacementObstacle` (interface): interface PlacementObstacle { aabb: Aabb; id?: string } — ⚠ undocumented · used by `footprintObstacles` (@jgengine/core/world): Bridges live reservations into `world/placement`'s `PlacementRules.obstacles` so `validatePlacement`/`createPlacementController` see the gri…
+- `PlacementRequest` (interface): interface PlacementRequest { center: Vec2; footprint: Footprint; quarterTurns?: number } — ⚠ undocumented · used by `validatePlacement`: Footprint validity: bounds + obstacle overlap after optional grid snap.
+- `PlacementResult` (type): type PlacementResult = | { status: "ok"; center: Vec2; aabb: Aabb } | { status: "rejected"; reason: "out-of-bounds" } | { status: "rejected"; reason: "territory.blocked" } | { status: "rejected"; reason: "overlap"; obstacle: PlacementObstacle; index: number } — ⚠ undocumented · used by `validatePlacement`: Footprint validity: bounds + obstacle overlap after optional grid snap.
+- `PlacementRules` (interface): interface PlacementRules { bounds?: Aabb; obstacles?: readonly PlacementObstacle[]; snap?: number; territory?: (aabb: Aabb) => {ok: boolean} } — ⚠ undocumented · used by `validatePlacement`: Footprint validity: bounds + obstacle overlap after optional grid snap.
+- `footprintObstacle` (function): function footprintObstacle(request: PlacementRequest, id?: string): PlacementObstacle — ⚠ undocumented
+- `validatePlacement` (function): function validatePlacement(request: PlacementRequest, rules: PlacementRules = {}): PlacementResult — Footprint validity: bounds + obstacle overlap after optional grid snap.
+
+## @jgengine/core/placement/placementController
+
+- `PlacementCommit` (interface): interface PlacementCommit { center: Vec2; y: number; rotationY: number; quarterTurns: number; footprint: Footprint; aabb: Aabb; slotId?: string } — ⚠ undocumented · used by `placeAssetFromCommit` (@jgengine/core/placement/placeAsset): Bridge a {@link PlacementCommit} into the shared place-asset verb.
+- `PlacementController` (interface): interface PlacementController { hover(hit: PlacementHit): PlacementPreview; current(): PlacementPreview | null; rotate(steps?: number): PlacementPreview | null; setSnapMode(mode: SnapMode): PlacementPreview | null; cycleSnapMode(): SnapMode; setFootprint(footprint: Foot… — ⚠ undocumented · used by `createPlacementController`: Headless placement ghost: hover → valid/invalid preview, rotate, grid/free/surface snap, commit.
+- `PlacementControllerConfig` (interface): interface PlacementControllerConfig { footprint: Footprint; rules?: PlacementRules; snapMode?: SnapMode; grid?: number; quarterTurns?: number; slots?: readonly PlacementSlot[]; slotRadius?: number } — ⚠ undocumented · used by `createPlacementController`: Headless placement ghost: hover → valid/invalid preview, rotate, grid/free/surface snap, commit.
+- `PlacementHit` (interface): interface PlacementHit { point: PlacementVec3; normal: PlacementVec3 } — ⚠ undocumented
+- `PlacementPreview` (interface): interface PlacementPreview { center: Vec2; y: number; quarterTurns: number; footprint: Footprint; aabb: Aabb; valid: boolean; reason?: "out-of-bounds" | "overlap" | "no-slot" | "territory.blocked"; snapMode: SnapMode; normal: PlacementVec3; slotId?: string } — ⚠ undocumented
+- `PlacementSlot` (interface): interface PlacementSlot — A fixed buildable slot the placement controller snaps to instead of grid/free positioning.
+- `PlacementVec3` (type): type PlacementVec3 = readonly [number, number, number] — ⚠ undocumented
+- `SnapMode` (type): type SnapMode = "grid" | "free" | "surface" — ⚠ undocumented
+- `createPlacementController` (function): function createPlacementController(config: PlacementControllerConfig): PlacementController — Headless placement ghost: hover → valid/invalid preview, rotate, grid/free/surface snap, commit. Pair with `@jgengine/shell/buildings` `PlacementGhost` and {@link placeAssetFromCommit}.
+- `quarterTurnsToRotationY` (function): function quarterTurnsToRotationY(quarterTurns: number): number — Maps 0–3 quarter turns onto radians for ghost/commit rotation.
+
 ## @jgengine/core/procedural
 
 - `Moodle` (interface): interface Moodle — One survival moodle (status icon) — severity, source, and label for HUD chips.
@@ -2649,7 +2922,7 @@
 - `BuildingEnvironmentDescriptor` (type): type BuildingEnvironmentDescriptor = { kind: "building" } & Required< Pick<BuildingEnvironmentConfig, "count" | "footprint" | "stories" | "storyHeight" | "spacing" | "style"> > & Pick<BuildingEnvironmentConfig, "seed" | "position" | "palette" | "probabilities" | "along" | "kit" | "solid"> — ⚠ undocumented · used by `building`: Declares a cluster of procedurally-massed buildings for `environment()` — count, footprint, stories, style.
 - `BuildingIndex` (interface): interface BuildingIndex { readonly buildings: readonly GeneratedBuilding[]; at(point: Vec2): GeneratedBuilding | undefined; within(area: Aabb): GeneratedBuilding[]; nearest(point: Vec2): BuildingHit | undefined; isInside(point: Vec2): boolean; blockers(margin?: nu… — ⚠ undocumented
 - `BuildingPaletteOverrides` (type): type BuildingPaletteOverrides = Partial<BuildingPalette> — ⚠ undocumented
-- `BuildingStyle` (type): type BuildingStyle = | "generic" | "capital" | "village" | "desert" | "industrial" | "coastal" | "neon" | "ruin" | "frontier" | "aerial" — ⚠ undocumented · used by `BUILDING_STYLE_PROBABILITIES` (@jgengine/core/world/buildings): Facade part probabilities per style, so an industrial yard, a ruined block and a coastal strip differ in shape as well as colour.
+- `BuildingStyle` (type): type BuildingStyle = | "generic" | "capital" | "village" | "desert" | "industrial" | "coastal" | "neon" | "ruin" | "frontier" | "aerial" — ⚠ undocumented · used by `BUILDING_STYLE_PROBABILITIES` (@jgengine/core/buildings/buildings): Facade part probabilities per style, so an industrial yard, a ruined block and a coastal strip differ in shape as well as colour.
 - `CITY_BUILDING_BUDGET` (const): const CITY_BUILDING_BUDGET: 2600 — Max buildings a single `city` district generates — the block/parcel pipeline's bounded lot cap.
 - `CITY_DEFAULTS` (const): const CITY_DEFAULTS: CityRules — City defaults: a zoned mixed metropolis — towers downtown, slabs mid-ring, houses at the edge.
 - `CITY_FILLER_CLASSES` (const): const CITY_FILLER_CLASSES: readonly CityFillerClass[] — All filler classes, for validation and interior-pass allow-lists.
@@ -3261,7 +3534,7 @@
 - `WeightedParamEntry` (interface): interface WeightedParamEntry — One weighted entry in a `weightedList` param — an item id and its relative spawn weight.
 - `WeightedRegionEntry` (interface): interface WeightedRegionEntry<P extends SamplePoint = SamplePoint> — A weighted member of a {@link weightedRegion} composite.
 - `WindField` (interface): interface WindField { readonly direction: WindVector; readonly speed: number; at(time: number): WindVector; atPoint(x: number, z: number, time: number): WindVector; strengthAt(x: number, z: number, time: number): number } — ⚠ undocumented
-- `WorldFeature` (type): type WorldFeature = | PlaceWorldFeature | ({ kind: "biomes" } & BiomesWorldConfig) | ({ kind: "voxel" } & VoxelWorldConfig) | ({ kind: "plots" } & PlotsWorldConfig) | ({ kind: "tilemap" } & TilemapWorldConfig) | EnvironmentWorldFeature | { kind: "flat" } — A declared world shape passed to `defineGame`. The preferred model is the place feature from `world()` (`@jgengine/core/world/place`): substrate + laws, with all dressing authored in the editor. The remaining members — biomes, voxel grid, plots, tilemap, environment, flat — are the legacy code-declared shapes kept for existing games.
+- `WorldFeature` (type): type WorldFeature = | PlaceWorldFeature | ({ kind: "biomes" } & BiomesWorldConfig) | ({ kind: "voxel" } & VoxelWorldConfig) | ({ kind: "plots" } & PlotsWorldConfig) | ({ kind: "tilemap" } & TilemapWorldConfig) | EnvironmentWorldFeature | { kind: "flat" } — A declared world shape passed to `defineGame`. The preferred model is the place feature from `world()` (`@jgengine/core/placement/place`): substrate + laws, with all dressing authored in the editor. The remaining members — biomes, voxel grid, plots, tilemap, environment, flat — are the legacy code-declared shapes kept for existing games.
 - `WorldGridCell` (interface): interface WorldGridCell { x: number; z: number; height?: number; color?: string } — ⚠ undocumented
 - `WorldGridConfig` (interface): interface WorldGridConfig — Shared by `biomes()`/`voxel()`/`plots()`/`tilemap()` so the shell can render their declared content as instanced boxes without a hand-written renderer.
 - `WorldXZ` (type): type WorldXZ = readonly [number, number] — ⚠ undocumented · used by `compassBearing`: Compass bearing (radians, 0 = map north = −Z, increasing clockwise toward +X = east) from one world XZ point to another.
@@ -3362,7 +3635,7 @@
 - `createPathFollow` (function): function createPathFollow(config: PathFollowConfig): PathFollowState — ⚠ undocumented
 - `createPerception` (function): function createPerception(initial: PerceptionConfig): PerceptionService — Creates a deterministic sight, sound, and damage perception service with expiring target memory. Signals are judged in the order the caller supplies them, never from the wall clock.
 - `createPlacedStructureStore` (function): function createPlacedStructureStore(): PlacedStructureStore — ⚠ undocumented
-- `createPlacementController` (function): function createPlacementController(config: PlacementControllerConfig): PlacementController — Headless placement ghost: hover → valid/invalid preview, rotate, grid/free/surface snap, commit. Pair with `@jgengine/shell/structures` `PlacementGhost` and {@link placeAssetFromCommit}.
+- `createPlacementController` (function): function createPlacementController(config: PlacementControllerConfig): PlacementController — Headless placement ghost: hover → valid/invalid preview, rotate, grid/free/surface snap, commit. Pair with `@jgengine/shell/buildings` `PlacementGhost` and {@link placeAssetFromCommit}.
 - `createPlotPermissions` (function): function createPlotPermissions(config: PlotPermissionConfig): PlotPermissions — ⚠ undocumented
 - `createPoliceResponse` (function): function createPoliceResponse(config: PoliceResponseConfig): PoliceResponse — The wanted level a crime sandbox needs, over the shared heat curve: a crime raises heat only while a witness holds the suspect in view, the heat bleeds on a stated linear curve once the suspect has been out of every witness's sight for `escapeSeconds`, the tier table decides what police do (patrol → investigate → pursue → roadblock), the search area sits where the suspect was last seen and grows while the trail is cold, and a roadblock tier cordons it with authored sites off the lane graph. Heat, tiers and curves are caller policy; witness facts come from `sensor/perception` memory (`sourceId`/`sourceTick` kept), so there is no second sight path.
 - `createPoseState` (function): function createPoseState(resolveAllowed: (instanceId: string) => PoseAllowedStates | null | undefined): PoseState — Stance/pose transitions — stand, crouch, prone — that change the hitbox and movement.
@@ -3733,70 +4006,6 @@
 - `footprintCells` (function): function footprintCells(position: SocketVec3, footprint: BuildFootprint, yaw = 0, cellSize = 1): BuildCell[] — The grid cells a piece `footprint` centered on `position` (world units) covers, honoring `yaw` (snapped to the nearest quarter turn). Mirrors `world/footprintGrid`'s `cellsFor` so a game can feed the result straight into `grid.isFree`/`grid.reserve` after committing a resolved snap — without this module importing the grid.
 - `pieceSocketsFromModel` (function): function pieceSocketsFromModel(sockets: readonly ModelSocketLike[], kindOf: (name: string) => string, yawOf?: (name: string) => number): SocketDef[] — Turn a model's named attach points (from `scene/modelSockets`' `readNamedSockets`) into {@link SocketDef}s, classifying each into a connection `kind` via `kindOf` and, optionally, an outward `yaw` via `yawOf`. Lets an artist author snap sockets as empties in a GLB instead of by hand in the catalog. Pure and structural — no three.js or scene import.
 
-## @jgengine/core/world/buildingGenerator
-
-- `BUILDING_GENERATOR_ID` (const): const BUILDING_GENERATOR_ID: "building" — The generator id a catalog entry / placed marker references.
-- `BUILDING_GENERATOR_SCHEMA` (const): const BUILDING_GENERATOR_SCHEMA: ParamSchema — The building generator's slider schema — drives the inspector via #809.
-
-## @jgengine/core/world/buildingIndex
-
-- `BuildingHit` (interface): interface BuildingHit { building: GeneratedBuilding; distance: number } — ⚠ undocumented
-- `BuildingIndex` (interface): interface BuildingIndex { readonly buildings: readonly GeneratedBuilding[]; at(point: Vec2): GeneratedBuilding | undefined; within(area: Aabb): GeneratedBuilding[]; nearest(point: Vec2): BuildingHit | undefined; isInside(point: Vec2): boolean; blockers(margin?: nu… — ⚠ undocumented
-- `buildingIndex` (function): function buildingIndex(buildings: readonly GeneratedBuilding[]): BuildingIndex — ⚠ undocumented
-
-## @jgengine/core/world/buildingKit
-
-- `BuildingKit` (interface): interface BuildingKit — Binds a building's generated part slots to models. A kit is plain serializable data — scene documents can carry one — and is deliberately unopinionated about art direction: the engine ships the seam, games ship the bindings.
-- `BuildingKitBinding` (type): type BuildingKitBinding = | { readonly type: "model"; readonly part: BuildingKitPart; readonly fit: BuildingKitFit } | { readonly type: "box" } | { readonly type: "omit" } — What a renderer should do with one generated part.
-- `BuildingKitFit` (type): type BuildingKitFit = "stretch" | "contain" | "cover" | "native" — How a kit model's native bounds are mapped onto the slot box `BuildingPartPlacement.scale` describes.
-- `BuildingKitInput` (interface): interface BuildingKitInput — The authoring shape {@link defineBuildingKit} normalizes into a {@link BuildingKit}.
-- `BuildingKitPart` (interface): interface BuildingKitPart — One bindable variant for a building part slot. `model` is an opaque reference the host resolves (an asset id, a pack-relative path, or a URL) — core never loads anything.
-- `BuildingKitPartInput` (type): type BuildingKitPartInput = string | BuildingKitPart — A variant as authored: a bare model reference, or the full {@link BuildingKitPart} when it needs fit or transform tuning.
-- `buildingKitVariantCounts` (function): function buildingKitVariantCounts(kit: BuildingKit): Partial<BuildingVariantCounts> — The variant counts a kit actually supplies, shaped for `BuildingConfigInput.variants`. Feed this into `generateBuilding` so seeded picks spread across exactly the models the kit binds instead of indexing past them and wrapping unevenly.
-- `defineBuildingKit` (function): function defineBuildingKit(input: BuildingKitInput): BuildingKit — Validates and normalizes a kit description, accepting bare model strings as single-field variants. Throws on empty variants or invalid editor material references/selectors before loading models.
-- `resolveBuildingKitPart` (function): function resolveBuildingKitPart(kit: BuildingKit | undefined, kind: BuildingPartKind, slot?: BuildingKitSlot): BuildingKitBinding — Resolves one generated part against a kit. Pass the placement's `kind` and its `kit` slot; the slot's `variant` wraps around the bound list, so a kit may carry any number of variants independent of the generator's `variants` counts.
-
-## @jgengine/core/world/buildingLots
-
-- `BuildingLotOptions` (interface): interface BuildingLotOptions — Options for {@link deriveBuildingLots}.
-- `FRONTAGE_FILL_REFERENCE` (const): const FRONTAGE_FILL_REFERENCE: 0.45 — Frontage-fill reference point: at this dial value the compaction is a no-op (legacy spacing/width), so callers can leave `blockFill` unset for the classic look and this value reproduces it exactly.
-- `LotArea` (interface): interface LotArea — Rectangular clip region lots must fall within (world center + half-extents).
-- `PlacedBuildingLot` (interface): interface PlacedBuildingLot — One placed building lot: where a building stands and how it is turned to face its road.
-- `PlotVariant` (interface): interface PlotVariant extends WorldBounds — One weighted plot size a frontage can mix in: `w` along the road, `d` into the block.
-- `RoadFrontage` (interface): interface RoadFrontage — One road the frontage placer lines with buildings: a centerline polyline, its width and its sidewalks.
-- `deriveBuildingLots` (function): function deriveBuildingLots(options: BuildingLotOptions): PlacedBuildingLot[] — Derive street-aligned building lots (PLOTS) from road frontage. Each side of each road walks the frontage placing plots at `plot.w + spacing` pitch — rolling the next plot size from the weighted `footprint` variants when several are given — offset outward by `width / 2 + setback + plot.d / 2` and turned to face the road. The PLOT CONTRACT is enforced here, exactly: no two plots ever overlap (true oriented-rect separation with the spacing gap, so corners and curved frontage can't stack buildings), and no plot footprint ever touches any road corridor in `roads` or `avoid` — not just its own frontage road. Deterministic: identical inputs (including seed) always yield the identical list.
-
-## @jgengine/core/world/buildings
-
-- `BUILDING_STYLE_PALETTES` (const): const BUILDING_STYLE_PALETTES: Record<BuildingStyle, Record<BuildingPartKind, string>> — ⚠ undocumented
-- `BUILDING_STYLE_PROBABILITIES` (const): const BUILDING_STYLE_PROBABILITIES: Record<BuildingStyle, Partial<BuildingProbabilities>> — Facade part probabilities per style, so an industrial yard, a ruined block and a coastal strip differ in shape as well as colour. Unset parts keep the generic probabilities.
-- `BUILDING_STYLE_WALL_TONES` (const): const BUILDING_STYLE_WALL_TONES: Record<BuildingStyle, readonly string[]> — Per-style facade-tone family: the wall colours a district spreads across its buildings so neighbours differ in hue and value while the block stays one palette. Index 0 is the palette's own `wall`; the rest fan warmer/cooler and lighter/darker around it.
-- `BuildingCellRef` (interface): interface BuildingCellRef { facade: BuildingFacade; level: number; bay: number } — ⚠ undocumented
-- `BuildingConfig` (interface): interface BuildingConfig { id: string; seed: BuildingSeed; center: Vec2; floors: number; baysWide: number; baysDeep: number; bayWidth: number; floorHeight: number; facadeDepth: number; roofOverhang: number; probabilities: BuildingProbabilities; variants: BuildingVa… — ⚠ undocumented · used by `createBuildingConfig`: Fill a partial building description out to a complete {@link BuildingConfig}, clamping counts and probabilities.
-- `BuildingConfigInput` (type): type BuildingConfigInput = Partial< Omit<BuildingConfig, "probabilities" | "variants"> > & { probabilities?: Partial<BuildingProbabilities>; variants?: Partial<BuildingVariantCounts>; } — ⚠ undocumented · used by `createBuildingConfig`: Fill a partial building description out to a complete {@link BuildingConfig}, clamping counts and probabilities.
-- `BuildingFacade` (type): type BuildingFacade = "front" | "back" | "left" | "right" | "roof" — ⚠ undocumented
-- `BuildingKitSlot` (interface): interface BuildingKitSlot { key: string; variant: number } — ⚠ undocumented · used by `resolveBuildingKitPart` (@jgengine/core/world/buildingKit): Resolves one generated part against a kit.
-- `BuildingPalette` (type): type BuildingPalette = Record<BuildingPartKind, BuildingSurface> — ⚠ undocumented
-- `BuildingPaletteOverrides` (type): type BuildingPaletteOverrides = Partial<BuildingPalette> — ⚠ undocumented
-- `BuildingPartKind` (type): type BuildingPartKind = | "wall" | "window" | "awning" | "airConditioner" | "clothesline" | "storefront" | "shutter" | "storeSign" | "roof" | "roofProp" | "guardrail" | "corner" — ⚠ undocumented · used by `resolveBuildingKitPart` (@jgengine/core/world/buildingKit): Resolves one generated part against a kit.
-- `BuildingPartPlacement` (interface): interface BuildingPartPlacement { id: string; buildingId: string; kind: BuildingPartKind; facade: BuildingFacade; position: Vec3; rotationY: number; scale: Vec3; kit: BuildingKitSlot; cell?: BuildingCellRef; tags?: readonly BuildingPartTag[] } — ⚠ undocumented
-- `BuildingPartTag` (type): type BuildingPartTag = "ground" | "upper" | "open" | "closed" | "decor" | "structure" — ⚠ undocumented
-- `BuildingProbabilities` (interface): interface BuildingProbabilities { window: number; openStore: number; awning: number; airConditioner: number; clothesline: number; storeSign: number; roofProp: number } — ⚠ undocumented · used by `BUILDING_STYLE_PROBABILITIES`: Facade part probabilities per style, so an industrial yard, a ruined block and a coastal strip differ in shape as well as colour.
-- `BuildingSeed` (type): type BuildingSeed = number | string — ⚠ undocumented
-- `BuildingStyle` (type): type BuildingStyle = | "generic" | "capital" | "village" | "desert" | "industrial" | "coastal" | "neon" | "ruin" | "frontier" | "aerial" — ⚠ undocumented · used by `BUILDING_STYLE_PROBABILITIES`: Facade part probabilities per style, so an industrial yard, a ruined block and a coastal strip differ in shape as well as colour.
-- `BuildingSurface` (type): type BuildingSurface = string | BuildingSurfaceMaterial — What a building part kind is painted with: a hex colour, or a colour plus tiled PBR maps.
-- `BuildingSurfaceMaps` (interface): interface BuildingSurfaceMaps — URLs of the PBR maps a building surface tiles; `buildMaterialCatalog(...).resolve(id)!.maps` fits directly.
-- `BuildingSurfaceMaterial` (interface): interface BuildingSurfaceMaterial — A textured building surface: a base colour plus optional tiled PBR maps. With `maps`, `color` multiplies the albedo (leave it light to show the map as authored); without, it is the flat colour the part has always had.
-- `BuildingVariantCounts` (interface): interface BuildingVariantCounts { wall: number; window: number; awning: number; airConditioner: number; clothesline: number; storefront: number; shutter: number; storeSign: number; roofProp: number } — ⚠ undocumented · used by `buildingKitVariantCounts` (@jgengine/core/world/buildingKit): The variant counts a kit actually supplies, shaped for `BuildingConfigInput.variants`.
-- `DEFAULT_BUILDING_CONFIG` (const): const DEFAULT_BUILDING_CONFIG: BuildingConfig — ⚠ undocumented
-- `DEFAULT_BUILDING_STYLE` (const): const DEFAULT_BUILDING_STYLE: BuildingStyle — ⚠ undocumented
-- `GeneratedBuilding` (interface): interface GeneratedBuilding { id: string; seed: BuildingSeed; center: Vec2; footprint: Footprint; floors: number; floorHeight: number; bounds: Aabb; parts: readonly BuildingPartPlacement[]; rotationY?: number } — ⚠ undocumented · used by `generateBuilding`: Generate one building as a flat list of placed facade parts: bays × floors per facade, a ground row, corners, and a roof, with every decorat…
-- `buildingSurfaceColor` (function): function buildingSurfaceColor(surface: BuildingSurface | undefined, fallback = "#808080"): string — The flat colour of a surface: the hex itself, or a material's `color`, else `fallback`.
-- `createBuildingConfig` (function): function createBuildingConfig(input: BuildingConfigInput = {}): BuildingConfig — Fill a partial building description out to a complete {@link BuildingConfig}, clamping counts and probabilities. Use it to inspect or adjust the resolved shape before generating.
-- `generateBuilding` (function): function generateBuilding(input: BuildingConfigInput = {}): GeneratedBuilding — Generate one building as a flat list of placed facade parts: bays × floors per facade, a ground row, corners, and a roof, with every decorative part rolled from `probabilities` and every part tagged with a `kit` slot the renderer binds to a model (see `world/buildingKit`). Deterministic from `seed`.
-- `resolveBuildingProbabilities` (function): function resolveBuildingProbabilities(style: BuildingStyle = DEFAULT_BUILDING_STYLE, overrides?: Partial<BuildingProbabilities>): Partial<BuildingProbabilities> — Style facade probabilities with explicit overrides applied on top.
-- `resolveBuildingSurface` (function): function resolveBuildingSurface(surface: BuildingSurface): BuildingSurfaceMaterial — Normalises a surface to its material form so a renderer reads one shape.
-
 ## @jgengine/core/world/captureCamera
 
 - `CaptureCameraOverride` (interface): interface CaptureCameraOverride — Per-session capture-camera override — the harness counterpart of `?cam=`/`?look=`, and the same install-style seam as `world/spawnOverride`: the runner installs one, the shell reads it, nothing changes until one is installed.
@@ -3830,134 +4039,6 @@
 - `CellStateGrid` (interface): interface CellStateGrid<TState extends string> — A uniform world grid whose cells step through a discrete state ladder — pristine → cracked → burning → ruined — driven by whatever world events the game routes in (#284.8). Pure storage plus ladder mechanics; the game decides *when* to escalate, the grid guarantees ordered, clamped steps and cheap queries. `version()` bumps on every change for dirty-checked rendering.
 - `CellStateGridConfig` (interface): interface CellStateGridConfig<TState extends string> { cols: number; rows: number; states: readonly TState[]; origin?: readonly [number, number]; cellSize?: number } — ⚠ undocumented
 - `createCellStateGrid` (function): function createCellStateGrid<TState extends string>(config: CellStateGridConfig<TState>): CellStateGrid<TState> — ⚠ undocumented
-
-## @jgengine/core/world/cityBlocks
-
-- `BlockRings` (interface): interface BlockRings — A block's derived rings plus the sidewalk band (outer = curb line, inner = land line).
-- `CityBlockKind` (type): type CityBlockKind = "buildable" | "park" | "plaza" | "field" | "buffer" — How a block (a face of the road graph) is used.
-- `CityBlockLocal` (interface): interface CityBlockLocal — One closed block: a face of the road network, inset to its curb and land boundaries.
-- `CityParcelFrontage` (interface): interface CityParcelFrontage — One street-frontage reference of a parcel.
-- `CityParcelKind` (type): type CityParcelKind = "built" | "vacant" | "yard" — How a parcel is used after occupancy/fitting rolls.
-- `CityParcelLocal` (interface): interface CityParcelLocal — One polygonal parcel subdivided out of a block's street frontage.
-- `FabricParams` (interface): interface FabricParams — Everything block extraction needs from the district rules.
-- `FabricStreet` (interface): interface FabricStreet — Minimal street shape the fabric needs (matches cityKind's LocalStreet).
-- `GraphBlockEdge` (interface): interface GraphBlockEdge — One street-graph edge {@link extractGraphBlocks} traces block faces through.
-- `GraphBlockNode` (interface): interface GraphBlockNode — Minimal node/edge shapes {@link extractGraphBlocks} needs (matches `StreetNetwork.nodes`/`edges`).
-- `GraphBlockRings` (interface): interface GraphBlockRings — One block from {@link extractGraphBlocks}: the face polygon and its inset land ring.
-- `GraphFace` (interface): interface GraphFace — One extracted face: closed centerline polygon + the street index along each polygon edge.
-- `ParcelCut` (interface): interface ParcelCut — Inputs for one parcel strip cut from a block ring.
-- `RingWalker` (class): class RingWalker — Arc-length station lookup along a closed ring.
-- `buildablePolygon` (function): function buildablePolygon(parcel: readonly Vec2[], frontA: Vec2, frontB: Vec2, frontSetback: number, sideGap: number, rearMargin: number, depth: number): Vec2[] — Buildable polygon for a parcel: the parcel clipped by the front setback (a half-plane pushed in from the frontage chord), side gaps along both cut lines, and a rear margin. Works on any parcel polygon — no vertex correspondence needed.
-- `carveCorridors` (function): function carveCorridors(poly: Vec2[], keep: Vec2, corridors: readonly { pts: readonly Vec2[]; width: number }[], margin: number): Vec2[] — Carve dead-end road corridors (cul-de-sac lanes pruned from the face graph) out of a polygon: for every corridor segment crossing it, keep the polygon piece on the side where `keep` lies.
-- `conformPolygonToRing` (function): function conformPolygonToRing(poly: readonly Vec2[], ring: readonly Vec2[]): Vec2[] — Conform a polygon to a containing ring: sample every edge (a straight edge can bulge across a concave notch even when its endpoints hug the boundary), then pull each escaping point to its nearest boundary point. Callers re-run this after any operation that adds mid-edge vertices.
-- `cutParcel` (function): function cutParcel(walker: RingWalker, blockRing: readonly Vec2[], cut: ParcelCut): Vec2[] | null — Cut one polygonal parcel out of a block land ring: the frontage arc between two stations, extruded inward along the station normals, clipped back to the block. Returns null when the strip collapses (over-tight corner, sliver arc).
-- `extractBlocks` (function): function extractBlocks(streets: readonly FabricStreet[], hx: number, hz: number, params: FabricParams): { blocks: BlockRings[]; deadEnds: { pts: Vec2[]; width: number }[] } — Extract closed blocks from the street network: planar faces of the graph, each inset to its curb ring (pavement edge) and land ring (behind the sidewalk band). Faces that collapse under the inset come back with an empty `land` and are the caller's slivers/buffers.
-- `extractGraphBlocks` (function): function extractGraphBlocks(nodes: readonly GraphBlockNode[], edges: readonly GraphBlockEdge[], params: { sidewalkBase: number; curbMargin: number }): { blocks: GraphBlockRings[]; deadEnds: { pts: Vec2[]; width: number; level: FabricStreet["level"]; street?: number }[] } — Extract closed blocks from an EXACT street graph — the `nodes`/`edges` a street network already carries — instead of re-deriving topology from welded polylines. Half-edges are ordered by true departure angle at each node, dangling chains are pruned first (returned as `deadEnds` for corridor carving), interior faces are traced through the rotation system, and each face is inset to its land ring by the bordering edges' half-widths (+ curb + sidewalk). Robust against wandered and arc-filleted centerlines, which defeat proximity welding. Pure bounded geometry.
-- `isSliverBlock` (function): function isSliverBlock(land: readonly Vec2[], minArea: number, minWidth: number): boolean — Deterministic sliver verdict shared by classification and tests.
-- `pointsInPolygon` (function): function pointsInPolygon(ring: readonly Vec2[], count: number, rng: () => number, margin = 1.5): Vec2[] — Sample deterministic points inside a polygon by seeded rejection over its bounds.
-- `sidewalkWidthFor` (function): function sidewalkWidthFor(level: FabricStreet["level"], base: number): number — Sidewalk band width by street hierarchy (base = the district's street-level width).
-
-## @jgengine/core/world/cityContent
-
-- `CITY_FILLER_CLASSES` (const): const CITY_FILLER_CLASSES: readonly CityFillerClass[] — All filler classes, for validation and interior-pass allow-lists.
-- `CITY_LANDMARK_CLASSES` (const): const CITY_LANDMARK_CLASSES: readonly CityLandmarkClass[] — All landmark classes, for schema hints, validation, and default allow-lists.
-- `CITY_LOT_CLASSES` (const): const CITY_LOT_CLASSES: readonly CityLotClass[] — All classes, for schema hints and validation.
-- `CITY_TREE_SPECIES` (const): const CITY_TREE_SPECIES: readonly CityTreeSpecies[] — All species, for schema hints and validation.
-- `CityFillerClass` (type): type CityFillerClass = "garage" | "depot" — Filler classes used ONLY by the block-interior fill pass (`resolveCityLotContent` at a high `blockFill`). They are deliberately kept OUT of {@link CITY_LOT_CLASSES} so a zone mix can never weight them onto street frontage — they exist to pack the backs of Manhattan-style blocks with parking structures and warehouses/depots, mixed in with ordinary zone classes.
-- `CityLandmarkClass` (type): type CityLandmarkClass = "hall" | "arena" | "market" | "campus" — A block-scale landmark class. Unlike {@link CityLotClass} these are never weighted into a zone mix — the landmark pass in `resolveCityLotContent` picks clusters of adjacent lots and stamps one of these over them. Each expresses with the same four piece shapes (box/gable/cylinder/dome) at a much larger footprint (~40–90 m).
-- `CityLotClass` (type): type CityLotClass = | "tower" | "slab" | "shop" | "rowhouse" | "house" | "mansion" | "farmhouse" | "barn" | "silo" — A building class a zone mix can weight — drives lot size, floors, setback, and massing.
-- `CityLotPiece` (interface): interface CityLotPiece — One massing piece in LOT-LOCAL space: x along frontage width, z into the block, y up from grade.
-- `CityPieceRole` (type): type CityPieceRole = "wall" | "roof" | "trim" | "accent" — Palette role a piece colors from (wall/roof/trim/accent map onto the district's style palette).
-- `CityPieceShape` (type): type CityPieceShape = "box" | "gable" | "cylinder" | "dome" — Primitive shapes massing pieces instance — the renderer keeps one InstancedMesh per shape.
-- `CityTreeSpecies` (type): type CityTreeSpecies = "broadleaf" | "conifer" | "palm" | "cypress" — Tree species a district's tree mix can weight — the renderer keeps one canopy mesh per species.
-- `CityZoneBand` (type): type CityZoneBand = "core" | "mid" | "edge" — Zone band a lot falls in: dense core, middle ring, or the district edge.
-- `CityZoneProfile` (type): type CityZoneProfile = "core-out" | "inverted" | "uniform" — How the radial zone metric maps to bands.
-
-## @jgengine/core/world/cityGenerator
-
-- `CITY_PLOT_TIERS` (const): const CITY_PLOT_TIERS: readonly CityPlotTier[] — All plot tiers, for schema hints and validation.
-- `CityContentOptions` (interface): interface CityContentOptions extends CityContentOverrides — Full options for {@link resolveCityLotContent}: the city geometry frame plus content overrides.
-- `CityContentOverrides` (interface): interface CityContentOverrides — Tunable overrides for {@link resolveCityLotContent} (seed/halfExtents/laneFrontage are supplied).
-- `CityGeneratorOptions` (interface): interface CityGeneratorOptions — Options for {@link generateCity}: a seed, street-dial overrides, and plot pass-through options.
-- `CityLevelClassBias` (type): type CityLevelClassBias = Record<StreetLevel, Partial<Record<CityLotClass, number>>> — Per-street-level class weight multipliers applied to the band mix before the class pick, so towers and slabs bias toward wide boulevard/avenue frontage while houses bias toward lanes and quiet streets. A missing class ⇒ multiplier 1. Pure data modulating the weighted mixes.
-- `CityPlot` (interface): interface CityPlot — One polygonal plot cut from a block's street frontage. Every plot fronts a street.
-- `CityPlotFrontage` (interface): interface CityPlotFrontage — The street frontage a plot faces: which street, and the frontage chord along it.
-- `CityPlotOptions` (interface): interface CityPlotOptions — Options for {@link deriveCityPlots}.
-- `CityPlotResult` (interface): interface CityPlotResult — Output of {@link deriveCityPlots}: the plots plus whole-block park polygons.
-- `CityPlotTier` (type): type CityPlotTier = "small" | "medium" | "large" | "grand" — Size tier a plot was cut at. `grand` is the block-scale tier that used to be a landmark pass.
-- `CityZoneMixes` (interface): interface CityZoneMixes — Weighted building-class mix per zone band; the radial profile decides which band a lot falls in.
-- `DEFAULT_BLOCK_FILL` (const): const DEFAULT_BLOCK_FILL: 0.45 — Default `blockFill`: gently gapped frontage — plots with breathing room, parks reserved.
-- `DEFAULT_CITY_LEVEL_BIAS` (const): const DEFAULT_CITY_LEVEL_BIAS: CityLevelClassBias — Default street-level bias — boulevards favor big massing, lanes favor small/rural massing.
-- `DEFAULT_CITY_ZONE_MIXES` (const): const DEFAULT_CITY_ZONE_MIXES: CityZoneMixes — Default zoned-metropolis mixes: towers/slabs downtown, slabs+rowhouses mid, houses at the edge.
-- `DEFAULT_LANDMARK_SHARE` (const): const DEFAULT_LANDMARK_SHARE: 0.04 — Default grand-plot share dial — a handful of block-scale parcels per default city.
-- `GeneratedCity` (interface): interface GeneratedCity — A generated city: streets, plots (with rect building lots as a compat view), and park blocks.
-- `LANDMARK_HARD_CAP` (const): const LANDMARK_HARD_CAP: 12 — Hard cap on grand plots emitted regardless of dial/city size.
-- `MassingFootprint` (interface): interface MassingFootprint — Axis-aligned massing extents (lot-local): full width along x and depth along z.
-- `ResolvedCityLot` (interface): interface ResolvedCityLot — One plot enriched with its zone/class/floors/massing — the renderer instances `pieces` at `center`.
-- `deriveCityPlots` (function): function deriveCityPlots(network: StreetNetwork, options: CityPlotOptions): CityPlotResult — Subdivide every buildable block's street frontage into size-tiered polygonal plots. Blocks come from the street network's planar faces ({@link extractBlocks}), so every plot fronts a real street; block interiors stay open (courtyards) and a seeded fraction of whole blocks becomes parks. Grand plots — the old "landmarks" — are just the biggest tier of the same pass. Deterministic per seed, bounded by `maxPlots` and per-block caps.
-- `generateCity` (function): function generateCity(options: CityGeneratorOptions, hx: number, hz: number): GeneratedCity — Grow a street network inside the `hx`/`hz` half-extents, extract its blocks, and subdivide their frontage into plots. Deterministic: identical options ⇒ identical city.
-- `resolveCityLotContent` (function): function resolveCityLotContent(city: Pick<GeneratedCity, "network" | "lots"> & Partial<Pick<GeneratedCity, "plots" | "parks">>, options: CityContentOptions): ResolvedCityLot[] — Enrich a generated city's plots into classed, massed buildings: each plot gets its zone band (radial position under a {@link CityZoneProfile}), a building class rolled from the band's weighted mix — biased by street level AND plot size, with grand plots rolling a landmark class — floors, and the deterministic massing pieces the class composes, sized to the plot's building rect. Deterministic per `seed` via {@link seededStreams}, bounded (one pass over `city.lots`), and pure. Same seed + city ⇒ identical resolved lots.
-
-## @jgengine/core/world/cityKind
-
-- `CITY_DEFAULTS` (const): const CITY_DEFAULTS: CityRules — City defaults: a zoned mixed metropolis — towers downtown, slabs mid-ring, houses at the edge.
-- `CITY_KIND` (const): const CITY_KIND: "city" — The editor volume kind marking a box as a procedural city district.
-- `CITY_SCHEMA` (const): const CITY_SCHEMA: ParamSchema — The city parameter schema — drives the inspector sliders and `meta` parse via the studio seam.
-- `CITY_ZONE_KIND` (const): const CITY_ZONE_KIND: "cityzone" — The editor volume kind that locally overrides a city's zone band/mix — a district in a district.
-- `CITY_ZONE_SCHEMA` (const): const CITY_ZONE_SCHEMA: ParamSchema — Zone-override schema for `cityzone` volumes: pin a band and optionally a bespoke class mix.
-- `CityBlock` (interface): interface CityBlock — One closed city block: a face of the road graph, inset to curb and land boundaries.
-- `CityBridge` (interface): interface CityBridge — One bridge deck spanning water: bank-to-bank polyline plus the silhouette style.
-- `CityDriveway` (interface): interface CityDriveway — One driveway ribbon from a street to a lot.
-- `CityHedge` (interface): interface CityHedge — One hedge run: a thin box strip (estate perimeter).
-- `CityIntersection` (interface): interface CityIntersection — One crossing of two through streets: patch center/radius plus crosswalk arm directions.
-- `CityLight` (interface): interface CityLight — One street light: curb position plus the yaw its arm faces (over the road).
-- `CityLot` (interface): interface CityLot — One building lot: footprint, zone band, class, seeded floors, massing pieces, street anchor.
-- `CityParcel` (interface): interface CityParcel — One polygonal parcel subdivided from a block's street frontage.
-- `CityParcelFrontageOut` (interface): interface CityParcelFrontageOut — One street-frontage edge of a parcel.
-- `CityPark` (interface): interface CityPark — One intentional open space: an unbuilt block, a block-interior courtyard, or a buffer sliver.
-- `CityParking` (interface): interface CityParking — One parking pad behind a commercial lot.
-- `CityRaceGridSlot` (interface): interface CityRaceGridSlot — One staggered spawn behind the start line.
-- `CityRaceKerb` (interface): interface CityRaceKerb — One kerb strip hugging a corner's road edge, as a world-space polyline to stripe.
-- `CityRaceSeal` (interface): interface CityRaceSeal — One street closed off where it leaves the race lap: world XZ, the yaw down the sealed street, and the width the barrier run spans.
-- `CityRaceStart` (interface): interface CityRaceStart — The start/finish line: where it is, which way cars face, and the painted line across the road.
-- `CityResolveContext` (interface): interface CityResolveContext extends SceneKindResolveContext — Extended resolve context: sibling `cityzone` volumes that override the band/mix locally.
-- `CityRules` (interface): interface CityRules — Fully-defaulted city params parsed from a volume's `meta`.
-- `CitySignal` (interface): interface CitySignal — One junction control on an approach arm: an arterial mast-arm signal, or a plain sign post.
-- `CityStreet` (interface): interface CityStreet — One synthesized street: a world-space XZ polyline with width, hierarchy level, and surface.
-- `CityTree` (interface): interface CityTree — One placed tree: world XZ, species, and seeded scale/color jitter.
-- `CityTunnel` (interface): interface CityTunnel — One tunnel bore piercing a ridge: portal-to-portal polyline held at bank height.
-- `CityVehicle` (interface): interface CityVehicle — One parked vehicle standing at a curb or nose-in inside a parking pad.
-- `CityVehicleKind` (type): type CityVehicleKind = "car" | "van" | "truck" — Silhouette class of a parked vehicle — sizes the body the renderer instances.
-- `ResolvedCity` (interface): interface ResolvedCity — A resolved city district: world-space network, zoned lots, parks, and furniture.
-- `ResolvedRace` (interface): interface ResolvedRace — An instanced street race lifted out of the district's OWN streets: a closed lap through the city, with every side street leaving it sealed off. World space, like the rest of {@link ResolvedCity}.
-- `citySolids` (function): function citySolids(city: ResolvedCity, sampleHeight: (x: number, z: number) => number = () => 0): WorldSolid[] — One solid per wall and roof piece of every lot, grounded the way the city renderer grounds it: grade at the highest lot corner, foundations down to half a metre under the lowest.
-- `resolveCityObject` (function): function resolveCityObject(object: SceneKindObject, context?: CityResolveContext): ResolvedCity | null — Synthesize the deterministic city plan for one `city` volume: streets → bridges → parks → zoned frontage lots with massing pieces → furniture, all in the volume's local frame and then rotated/translated into world space. Same volume (id, footprint, meta) over the same terrain always resolves to the identical plan. When `context` provides a ground sampler, lots respect the `maxSlope` cliff rule — hillside and canyon districts keep their steep faces open. When `context.zoneOverrides` carries sibling `cityzone` volumes, lots inside them adopt the override band/mix. Returns null without a usable footprint.
-
-## @jgengine/core/world/cityLayout
-
-- `CITY_ZONES` (const): const CITY_ZONES: readonly CityZone[] — Every zone, in slider order.
-- `CityDriveway` (interface): interface CityDriveway — A driveway strip from the kerb to a lot's front, beside the building.
-- `CityLayout` (interface): interface CityLayout — A whole city's layout. Lengths are metres.
-- `CityLayoutPatch` (type): type CityLayoutPatch = Partial<Omit<CityLayout, "zones">> & { zones?: Partial<Record<CityZone, Partial<CityZoneLayout>>>; } — Partial layout a game passes: any top-level number, and any zone field.
-- `CityLayoutStore` (interface): interface CityLayoutStore — A city layout that can change while the game runs.
-- `CityLot` (interface): interface CityLot extends PlacedBuildingLot — A lot with the zone it is built in and the building it gets.
-- `CityLotOptions` (interface): interface CityLotOptions — Options for {@link cityLots}.
-- `CityLotRoad` (interface): interface CityLotRoad — One road a city's lots line.
-- `CityRoadClass` (type): type CityRoadClass = "avenue" | "street" — Street class: an avenue carries `avenueLanes`, a street `streetLanes`.
-- `CityRoadSpec` (interface): interface CityRoadSpec extends Omit<RoadEnvironmentConfig, "width"> — A road for {@link cityRoad}: any `road()` field, plus the class that sizes it.
-- `CityZone` (type): type CityZone = "core" | "commercial" | "residential" | "industrial" — Zone a lot is built in; each carries its own setback, lot size and height range.
-- `CityZoneLayout` (interface): interface CityZoneLayout — One zone's lots and buildings. Lengths are metres.
-- `TuneCityLayoutOptions` (interface): interface TuneCityLayoutOptions — Options for {@link tuneCityLayout}.
-- `US_CITY_LAYOUT` (const): const US_CITY_LAYOUT: CityLayout — US city defaults: 3.5 m lanes, 2.5 m sidewalks, 15 cm kerbs, zone setbacks 0 / 1.5 / 6 / 4 m.
-- `cityLaneCount` (function): function cityLaneCount(layout: CityLayout, roadClass: CityRoadClass): number — Lanes a road class carries, both directions together.
-- `cityLaneOffsets` (function): function cityLaneOffsets(layout: CityLayout, roadClass: CityRoadClass): readonly number[] — Signed lane-centre offsets from a road's centreline, right-hand traffic: negative offsets run with the path, positive against it. Parking lanes are outside these.
-- `cityLots` (function): function cityLots(layout: CityLayout, options: CityLotOptions): CityLot[] — Lay a city's building lots from its layout. Each zone lines every road with its own frontage, depth and side gap, set back past the sidewalk by its own setback; lots keep `cornerClearance` from the roads they do not front, never touch asphalt or each other, and a zone with driveways gets one per lot in the side gap. Deterministic for the same inputs and seed.
-- `cityRoad` (function): function cityRoad(layout: CityLayout, spec: CityRoadSpec): RoadEnvironmentDescriptor — A `road()` sized by the layout: lane count times lane width plus parking, the layout's sidewalk and kerb.
-- `cityRoadSource` (function): function cityRoadSource(store: CityLayoutStore, specs: readonly CityRoadSpec[]): LiveRoadSource & { /** The roads for the layout at boot, for `environment({ roads })`. */ readonly initial: readonly RoadEnvironmentDescriptor[]; } — Roads that follow a layout store: `current()` is rebuilt from `specs` whenever the layout changes, so an `environment({ roadSource })` redraws streets as a slider moves.
-- `cityRoadWidth` (function): function cityRoadWidth(layout: CityLayout, roadClass: CityRoadClass): number — Kerb-to-kerb width of a road class: its lanes plus a parking lane each side.
-- `createCityLayout` (function): function createCityLayout(patch: CityLayoutPatch = {}): CityLayoutStore — Create a city layout from US defaults plus the game's patch.
-- `resolveCityLayout` (function): function resolveCityLayout(patch: CityLayoutPatch = {}, base: CityLayout = US_CITY_LAYOUT): CityLayout — Merge a patch over a full layout, clamping every number to its slider range.
-- `tuneCityLayout` (function): function tuneCityLayout(store: CityLayoutStore, options: TuneCityLayoutOptions = {}): void — Register a devtools slider for every number in the layout (and a toggle per zone's driveways); dragging one sets the store, which re-lays whatever listens to it. Registering again keeps the values already dragged, so a hot reload does not snap the sliders back.
 
 ## @jgengine/core/world/decalKind
 
@@ -4067,7 +4148,7 @@
 - `WaterEnvironmentDescriptor` (type): type WaterEnvironmentDescriptor = OceanEnvironmentDescriptor — ⚠ undocumented
 - `WeatherEnvironmentDescriptor` (type): type WeatherEnvironmentDescriptor = RainEnvironmentDescriptor | SnowEnvironmentDescriptor — ⚠ undocumented
 - `WorldBounds` (interface): interface WorldBounds { w: number; d: number } — ⚠ undocumented · used by `terrainBoundsFromDocument` (@jgengine/core/editor): The origin-centered terrain footprint that covers every authored object in a document, padded and floored to `minBounds`.
-- `WorldFeature` (type): type WorldFeature = | PlaceWorldFeature | ({ kind: "biomes" } & BiomesWorldConfig) | ({ kind: "voxel" } & VoxelWorldConfig) | ({ kind: "plots" } & PlotsWorldConfig) | ({ kind: "tilemap" } & TilemapWorldConfig) | EnvironmentWorldFeature | { kind: "flat" } — A declared world shape passed to `defineGame`. The preferred model is the place feature from `world()` (`@jgengine/core/world/place`): substrate + laws, with all dressing authored in the editor. The remaining members — biomes, voxel grid, plots, tilemap, environment, flat — are the legacy code-declared shapes kept for existing games.
+- `WorldFeature` (type): type WorldFeature = | PlaceWorldFeature | ({ kind: "biomes" } & BiomesWorldConfig) | ({ kind: "voxel" } & VoxelWorldConfig) | ({ kind: "plots" } & PlotsWorldConfig) | ({ kind: "tilemap" } & TilemapWorldConfig) | EnvironmentWorldFeature | { kind: "flat" } — A declared world shape passed to `defineGame`. The preferred model is the place feature from `world()` (`@jgengine/core/placement/place`): substrate + laws, with all dressing authored in the editor. The remaining members — biomes, voxel grid, plots, tilemap, environment, flat — are the legacy code-declared shapes kept for existing games.
 - `WorldGridCell` (interface): interface WorldGridCell { x: number; z: number; height?: number; color?: string } — ⚠ undocumented
 - `WorldGridConfig` (interface): interface WorldGridConfig — Shared by `biomes()`/`voxel()`/`plots()`/`tilemap()` so the shell can render their declared content as instanced boxes without a hand-written renderer.
 - `biomes` (function): function biomes(config: BiomesWorldConfig): WorldFeature — Declares a biome-painted world — the whole-world alternative to a single `environment()` terrain.
@@ -4127,7 +4208,7 @@
 - `Ellipse` (interface): interface Ellipse — An axis-aligned ellipse: `center` with semi-axes `radiusX` and `radiusY`.
 - `Footprint` (interface): interface Footprint { w: number; d: number } — ⚠ undocumented · used by `rotatedFootprint` (@jgengine/core/scene/assetSpace): The axis-aligned footprint extent after rotating a rectangular {@link Footprint} by `headingDegrees` — footprint-aware placement: a 90-degre…
 - `MoveOptions` (interface): interface MoveOptions { bounds?: Aabb; radius?: number } — ⚠ undocumented
-- `Vec2` (type): type Vec2 = readonly [number, number] — ⚠ undocumented · used by `assignFormationSlots` (@jgengine/core/movement/formation): Match `members` to `slots` by a deterministic greedy nearest assignment: every (member, slot) pair is ranked by squared travel distance (min…
+- `Vec2` (type): type Vec2 = readonly [number, number] — ⚠ undocumented · used by `buildablePolygon` (@jgengine/core/city/cityBlocks): Buildable polygon for a parcel: the parcel clipped by the front setback (a half-plane pushed in from the frontage chord), side gaps along bo…
 - `Vec3` (type): type Vec3 = readonly [number, number, number] — A 3D point/vector as an `[x, y, z]` tuple — the engine's zero-allocation spatial primitive.
 
 ## @jgengine/core/world/grassKind
@@ -4219,21 +4300,6 @@
 - `createMarkerSource` (function): function createMarkerSource<TEntity, TMarker extends MarkerView = MarkerView>(options: MarkerSourceOptions<TEntity, TMarker>): MarkerSource<TMarker> — Adapt a caller-owned array/store to an observable marker source. Projection is cached between source changes, so React reads do not copy the collection per frame. The caller retains ownership of entities, updates, persistence, and subscription scheduling.
 - `markerKindStyle` (function): function markerKindStyle(kind: string | undefined, styles: Record<string, MarkerKindStyle> = DEFAULT_MARKER_KINDS): MarkerKindStyle — ⚠ undocumented
 
-## @jgengine/core/world/massing
-
-- `MASSING_COMPOSITIONS` (const): const MASSING_COMPOSITIONS: readonly MassingComposition[] — ⚠ undocumented
-- `MASSING_PROFILES` (const): const MASSING_PROFILES: readonly MassingProfile[] — ⚠ undocumented
-- `MassingBody` (type): type MassingBody = { x: number; y: number; z: number; w: number; h: number; d: number; ry?: number; facade?: boolean; kind?: "box" | "capsule"; role?: MassingBodyRole; branch?: boolean; crown?: boolean; } — ⚠ undocumented
-- `MassingBodyRole` (type): type MassingBodyRole = "mass" | "core" | "transfer" — ⚠ undocumented
-- `MassingComposition` (type): type MassingComposition = | "bar" | "split" | "cluster" | "stack" | "court" | "bridge" | "ring" | "capsule" | "megastructure" — ⚠ undocumented
-- `MassingProfile` (type): type MassingProfile = "straight" | "stepped" | "tapered" | "top-heavy" | "offset" | "twisted" — ⚠ undocumented
-- `MassingSpec` (type): type MassingSpec = { seed: string; width: number; height: number; depth: number; floorHeight: number; baySpacing: number; pilotis: number; podiumHeight: number; cores: number; terraces: number; cantilever: number; voids: number; taper: number; articulation: number; crown: number; moduleDensity: numb… — ⚠ undocumented
-- `composeMassing` (function): function composeMassing(b: MassingSpec): MassingBody[] — ⚠ undocumented
-- `hashMassingSeed` (const): const hashMassingSeed: (text: string) => number — ⚠ undocumented
-- `isVillageMassing` (const): const isVillageMassing: (spec: Pick<MassingSpec, "height" | "composition" | "articulation" | "moduleDensity">) => boolean — ⚠ undocumented
-- `massingBase` (const): const massingBase: (spec: Pick<MassingSpec, "pilotis" | "height">, cap?: number) => number — ⚠ undocumented
-- `massingFloorCount` (function): function massingFloorCount(spec: Pick<MassingSpec, "pilotis" | "height" | "floorHeight">): number — ⚠ undocumented
-
 ## @jgengine/core/world/minimap
 
 - `Cardinal` (type): type Cardinal = "N" | "NE" | "E" | "SE" | "S" | "SW" | "W" | "NW" — ⚠ undocumented
@@ -4279,72 +4345,6 @@
 - `PathRetaining` (interface): interface PathRetaining — Retaining behavior for a path corridor's shoulders. A wall rises only where the corridor already cuts or fills into the surrounding ground by at least `threshold` — gentle stretches stay open — so a road through a canyon gets held banks while the same profile on flat ground does not. The wall fades in smoothly across `taper` above the threshold so it never steps on or off between adjacent samples.
 - `TerrainPathProfile` (interface): interface TerrainPathProfile — A serializable path-driven terrain modifier. The `points` centerline reshapes the heightfield across a corridor of `width`, feathering back to the surrounding ground across `shoulder`. `height` sets the centerline target (sample / fixed / grade); `depth` carves a channel below it (deepest at the centerline, easing to zero at the core edge — rivers and trenches); `retaining` raises walls where the cut/fill exceeds a threshold; `maxCut`/`maxFill` cap how far the ground may move from its base height. All fields are plain data (numbers, string enums, point arrays) so a profile round-trips through the scene document and evaluates identically at author time and runtime.
 - `withPathProfiles` (function): function withPathProfiles(base: (x: number, z: number) => number, profiles: readonly TerrainPathProfile[]): (x: number, z: number) => number — Wraps a height sampler so each authored `TerrainPathProfile` reshapes it. Profiles apply in list order (later profiles compose over earlier ones, so an intersection's last profile wins its core); each reads the running height as its surrounding ground and the original `base` for `sample` centerline heights. The returned sampler is pure and deterministic. Degenerate profiles (fewer than two points, non-positive width or length) are skipped; with no usable profile the original `base` is returned unchanged.
-
-## @jgengine/core/world/place
-
-- `BoardGround` (interface): interface BoardGround — A 2D surface you look at — grid games, solitaire, tabletop. Physics is often zero-gravity or omitted; the game owns the face it draws on the board.
-- `BoardGroundSize` (interface): interface BoardGroundSize — Size of a `board` ground: a 2D surface you look at, in cells or layout units.
-- `FlatGround` (interface): interface FlatGround — A 3D walkable plane/slab. `Infinity` axes are unbounded; no separate "infinite" mode exists.
-- `FlatGroundSize` (interface): interface FlatGroundSize — Size of a `flat` ground: extents in world units. `Infinity` on an axis means unbounded — an endless plain needs no bounds number invented for it. `y` optionally bounds vertical play space.
-- `GroundConfig` (type): type GroundConfig = FlatGround | RoundGround | VoxelGround | BoardGround — The substrate of a place, discriminated by `mode` — TS rejects a `radius` on `flat` and `x`/`z` on `round`.
-- `GroundGenerator` (interface): interface GroundGenerator — Serializable algorithm parameters for a procedural ground generator. Never a genre kit.
-- `GroundMode` (type): type GroundMode = "flat" | "round" | "voxel" | "board" — Canonical ground modes after normalization (`stage` → `board`).
-- `PlaceConfig` (interface): interface PlaceConfig — Input to {@link world}: place identity, substrate, and the laws of this place.
-- `PlaceWorldFeature` (interface): interface PlaceWorldFeature — A declared place — the `world()` result carried on `GameDefinition.world`.
-- `ResolvedBoardGround` (type): type ResolvedBoardGround = Omit<BoardGround, "mode"> & { mode: "board" } — {@link BoardGround} with the `stage` alias resolved away.
-- `ResolvedGround` (type): type ResolvedGround = FlatGround | RoundGround | VoxelGround | ResolvedBoardGround — A place's ground after `world()` normalization.
-- `RoundGround` (interface): interface RoundGround — A planet/sphere you play on the outside of. Sized by `radius` only.
-- `RoundGroundSize` (interface): interface RoundGroundSize — Size of a `round` ground: the planet/sphere radius in world units. Nothing else.
-- `SurfaceLaws` (interface): interface SurfaceLaws — The place model: a world is the place you play in — substrate (ground) plus laws (physics, surface) — never a dressed diorama. Sky look, foliage scatter, props, and sculpt are content: they are authored in the editor (or by a content preset that writes into the scene document) and consumed through the authored-scene seams, not declared on the world.
-- `VoxelGround` (interface): interface VoxelGround — A procedural volume of blocks. `size` is the generator domain; `generator` is algorithm params only.
-- `VoxelGroundSize` (interface): interface VoxelGroundSize — Size of a `voxel` ground: the generator's domain per axis; axes may be `Infinity` for streaming volumes.
-- `isPlaceWorld` (function): function isPlaceWorld(worldFeature: { kind: string } | undefined): worldFeature is PlaceWorldFeature — Type guard for the place-model world feature.
-- `resolveWorldPhysics` (function): function resolveWorldPhysics(worldFeature: { kind: string; physics?: PhysicsConfig } | undefined, base: PhysicsConfig | undefined): PhysicsConfig | undefined — Resolves the physics laws in effect for the active world: a place world's own `physics` wins field-by-field over the game-level default. Non-place worlds (and games with no world) keep the game-level config unchanged.
-- `seedForPlace` (function): function seedForPlace(worldId: string, runSeed = ""): string — The engine-side seed derivation for a place: a stable string from the world `id` plus the save/run seed. Generators and scatter receive this — never a `seed` field in the world definition — so a save replays its world deterministically and a fresh run can vary by `runSeed` alone.
-- `world` (function): function world(config: PlaceConfig): PlaceWorldFeature — Declares the place a game is played in: substrate (`ground`) + laws (`physics`, `ground.surface`). The thin default start — `flat` with `Infinity` axes and default physics, `board` for 2D — is a complete world; dressing it (sky, foliage, props, sculpt) is editor-authored scene content. Multiple worlds per game are first-class: declare one `world()` per place, each with its own id, ground, and physics. Games that are not a spatial place (pure UI/rules) omit `world` entirely.
-
-## @jgengine/core/world/placeAsset
-
-- `PlaceAssetFromCommitOptions` (interface): interface PlaceAssetFromCommitOptions — Optional catalog/label overrides for {@link placeAssetFromCommit}.
-- `PlaceAssetResult` (interface): interface PlaceAssetResult — Shared place-asset verb: one resolved payload for editor `place_asset` and in-game build-mode commits. Convert with {@link toStructureInput} / {@link toEditorMarker}.
-- `PlaceAssetVec3` (type): type PlaceAssetVec3 = { x: number; y: number; z: number } — World-space point shared by structure stores and editor markers.
-- `ResolvePlaceAssetInput` (interface): interface ResolvePlaceAssetInput — Inputs to {@link resolvePlaceAsset}: asset id, pose, and optional catalog/known fields.
-- `placeAssetFromCommit` (function): function placeAssetFromCommit(commit: PlacementCommit, assetId: string, options: PlaceAssetFromCommitOptions = {}): PlaceAssetResult — Bridge a {@link PlacementCommit} into the shared place-asset verb.
-- `resolvePlaceAsset` (function): function resolvePlaceAsset(input: ResolvePlaceAssetInput): PlaceAssetResult — Resolve a place-asset intent into a shared payload (editor + games, one verb).
-- `toEditorMarker` (function): function toEditorMarker(result: PlaceAssetResult): { id: string; kind: string; position: PlaceAssetVec3; rotationY: number; label: string; color: string; meta: Record<string, unknown>; } — Scene-document form: feed editor `addMarker` / `place_asset` path.
-- `toStructureInput` (function): function toStructureInput(result: PlaceAssetResult): AddStructureInput — Game-state form: feed {@link createPlacedStructureStore}.add.
-
-## @jgengine/core/world/placedStructureStore
-
-- `AddStructureInput` (interface): interface AddStructureInput { id?: string; catalogId: string; position: StructureVec3; rotationY?: number; plotId?: string; data?: Readonly<Record<string, unknown>> } — ⚠ undocumented · used by `toStructureInput` (@jgengine/core/world): Game-state form: feed {@link createPlacedStructureStore}.add.
-- `PlacedStructure` (interface): interface PlacedStructure { id: string; catalogId: string; position: StructureVec3; rotationY: number; plotId?: string; data?: Readonly<Record<string, unknown>> } — ⚠ undocumented
-- `PlacedStructureSnapshot` (interface): interface PlacedStructureSnapshot { structures: readonly PlacedStructure[] } — ⚠ undocumented
-- `PlacedStructureStore` (interface): interface PlacedStructureStore { add(input: AddStructureInput): PlacedStructure; move(id: string, position: StructureVec3): boolean; rotate(id: string, rotationY: number): boolean; remove(id: string): boolean; get(id: string): PlacedStructure | null; list(filter?: Struct… — ⚠ undocumented
-- `StructureFilter` (interface): interface StructureFilter { plotId?: string; catalogId?: string } — ⚠ undocumented
-- `StructureVec3` (type): type StructureVec3 = readonly [number, number, number] — ⚠ undocumented
-- `createPlacedStructureStore` (function): function createPlacedStructureStore(): PlacedStructureStore — ⚠ undocumented
-
-## @jgengine/core/world/placement
-
-- `PlacementObstacle` (interface): interface PlacementObstacle { aabb: Aabb; id?: string } — ⚠ undocumented · used by `footprintObstacles` (@jgengine/core/world): Bridges live reservations into `world/placement`'s `PlacementRules.obstacles` so `validatePlacement`/`createPlacementController` see the gri…
-- `PlacementRequest` (interface): interface PlacementRequest { center: Vec2; footprint: Footprint; quarterTurns?: number } — ⚠ undocumented · used by `validatePlacement`: Footprint validity: bounds + obstacle overlap after optional grid snap.
-- `PlacementResult` (type): type PlacementResult = | { status: "ok"; center: Vec2; aabb: Aabb } | { status: "rejected"; reason: "out-of-bounds" } | { status: "rejected"; reason: "territory.blocked" } | { status: "rejected"; reason: "overlap"; obstacle: PlacementObstacle; index: number } — ⚠ undocumented · used by `validatePlacement`: Footprint validity: bounds + obstacle overlap after optional grid snap.
-- `PlacementRules` (interface): interface PlacementRules { bounds?: Aabb; obstacles?: readonly PlacementObstacle[]; snap?: number; territory?: (aabb: Aabb) => {ok: boolean} } — ⚠ undocumented · used by `validatePlacement`: Footprint validity: bounds + obstacle overlap after optional grid snap.
-- `footprintObstacle` (function): function footprintObstacle(request: PlacementRequest, id?: string): PlacementObstacle — ⚠ undocumented
-- `validatePlacement` (function): function validatePlacement(request: PlacementRequest, rules: PlacementRules = {}): PlacementResult — Footprint validity: bounds + obstacle overlap after optional grid snap.
-
-## @jgengine/core/world/placementController
-
-- `PlacementCommit` (interface): interface PlacementCommit { center: Vec2; y: number; rotationY: number; quarterTurns: number; footprint: Footprint; aabb: Aabb; slotId?: string } — ⚠ undocumented · used by `placeAssetFromCommit` (@jgengine/core/world): Bridge a {@link PlacementCommit} into the shared place-asset verb.
-- `PlacementController` (interface): interface PlacementController { hover(hit: PlacementHit): PlacementPreview; current(): PlacementPreview | null; rotate(steps?: number): PlacementPreview | null; setSnapMode(mode: SnapMode): PlacementPreview | null; cycleSnapMode(): SnapMode; setFootprint(footprint: Foot… — ⚠ undocumented · used by `createPlacementController`: Headless placement ghost: hover → valid/invalid preview, rotate, grid/free/surface snap, commit.
-- `PlacementControllerConfig` (interface): interface PlacementControllerConfig { footprint: Footprint; rules?: PlacementRules; snapMode?: SnapMode; grid?: number; quarterTurns?: number; slots?: readonly PlacementSlot[]; slotRadius?: number } — ⚠ undocumented · used by `createPlacementController`: Headless placement ghost: hover → valid/invalid preview, rotate, grid/free/surface snap, commit.
-- `PlacementHit` (interface): interface PlacementHit { point: PlacementVec3; normal: PlacementVec3 } — ⚠ undocumented
-- `PlacementPreview` (interface): interface PlacementPreview { center: Vec2; y: number; quarterTurns: number; footprint: Footprint; aabb: Aabb; valid: boolean; reason?: "out-of-bounds" | "overlap" | "no-slot" | "territory.blocked"; snapMode: SnapMode; normal: PlacementVec3; slotId?: string } — ⚠ undocumented
-- `PlacementSlot` (interface): interface PlacementSlot — A fixed buildable slot the placement controller snaps to instead of grid/free positioning.
-- `PlacementVec3` (type): type PlacementVec3 = readonly [number, number, number] — ⚠ undocumented
-- `SnapMode` (type): type SnapMode = "grid" | "free" | "surface" — ⚠ undocumented
-- `createPlacementController` (function): function createPlacementController(config: PlacementControllerConfig): PlacementController — Headless placement ghost: hover → valid/invalid preview, rotate, grid/free/surface snap, commit. Pair with `@jgengine/shell/structures` `PlacementGhost` and {@link placeAssetFromCommit}.
-- `quarterTurnsToRotationY` (function): function quarterTurnsToRotationY(quarterTurns: number): number — Maps 0–3 quarter turns onto radians for ghost/commit rotation.
 
 ## @jgengine/core/world/poleLineKind
 

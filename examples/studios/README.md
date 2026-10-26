@@ -65,7 +65,7 @@ registerAssetGenerator({
 
 `AuthoredScene` renders any marker whose `meta.assetId` names a registered generator, and the editor
 shows its slider inspector automatically. The engine registers the **building** generator the same
-way (`packages/core/src/world/buildingGenerator.ts`) — proof the seam serves engine and third parties
+way (`packages/core/src/buildings/buildingGenerator.ts`) — proof the seam serves engine and third parties
 identically.
 
 `forward` (optional, default `[0, 0, 1]`) declares which way the generated parts face — build the

@@ -121,7 +121,7 @@ frame();
 
 // …and you rewrite all of it for the next game.`;
 
-const WORLD_AFTER = `import { world } from "@jgengine/core/world/place";
+const WORLD_AFTER = `import { world } from "@jgengine/core/placement/place";
 
 // The world is the place you play in: substrate + laws.
 export const overworld = world({

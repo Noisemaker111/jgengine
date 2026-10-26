@@ -1,8 +1,8 @@
-import type { BuildingPaletteOverrides, BuildingProbabilities, BuildingStyle } from "./buildings";
-import type { BuildingKit } from "./buildingKit";
+import type { BuildingPaletteOverrides, BuildingProbabilities, BuildingStyle } from "../buildings/buildings";
+import type { BuildingKit } from "../buildings/buildingKit";
 import type { AvoidZone } from "./geometry";
 import type { TerrainPathProfile } from "./pathTerrain";
-import type { PlaceWorldFeature } from "./place";
+import type { PlaceWorldFeature } from "../placement/place";
 import type { TerraformSnapshot } from "./terraform";
 import type { SpriteAtlas } from "../assets/spriteAtlas";
 import type { VolumetricCloudsConfig } from "./volumetricClouds";
@@ -755,7 +755,7 @@ export interface TilemapWorldConfig extends WorldGridConfig {
 
 /**
  * A declared world shape passed to `defineGame`. The preferred model is the place feature from
- * `world()` (`@jgengine/core/world/place`): substrate + laws, with all dressing authored in the
+ * `world()` (`@jgengine/core/placement/place`): substrate + laws, with all dressing authored in the
  * editor. The remaining members — biomes, voxel grid, plots, tilemap, environment, flat — are the
  * legacy code-declared shapes kept for existing games.
  */

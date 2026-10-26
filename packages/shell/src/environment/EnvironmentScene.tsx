@@ -7,7 +7,7 @@ import * as THREE from "three";
 import type { Group } from "three";
 import { useGameContext } from "@jgengine/react/provider";
 
-import { resolveBuildingPalette } from "@jgengine/core/world/buildings";
+import { resolveBuildingPalette } from "@jgengine/core/buildings/buildings";
 import { resolveStructureBuildings } from "@jgengine/core/world/environmentSummary";
 import type {
   BuildingEnvironmentDescriptor,
@@ -36,7 +36,7 @@ import { createTerrainPaintColorSampler } from "../terrain/terrainPaintColor";
 import { GroundPad } from "./GroundPad";
 import { Roads } from "../roads/RoadRibbons";
 import { terrainGroundColorSampler } from "./terrainGroundColor";
-import { InstancedBuildings, type InstancedBuildingPlacement } from "../structures/GeneratedBuilding";
+import { InstancedBuildings, type InstancedBuildingPlacement } from "../buildings/GeneratedBuilding";
 import { GrassPatch } from "../grass/GrassPatch";
 import { CarvedTerrain, type CarvedTerrainProps } from "../terrain/CarvedTerrain";
 import { trackSceneWork } from "../render/modelLoad";

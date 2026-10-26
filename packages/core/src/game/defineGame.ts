@@ -18,7 +18,7 @@ import type { StoreHandle } from "../store/defineStore";
 import type { TimeConfig } from "../time/simClock";
 import type { SimulationConfig } from "../runtime/simLoop";
 import type { WorldFeature } from "../world/features";
-import { resolveWorldPhysics } from "../world/place";
+import { resolveWorldPhysics } from "../placement/place";
 import type { PhysicsBackend } from "../physics/physicsBackend";
 import type { CharacterControllerConfig } from "../movement/characterController";
 
@@ -229,7 +229,7 @@ export interface GameDefinition<
    */
   systems?: readonly SystemDefinition[];
   /**
-   * The place this game happens in — preferred shape is `world()` from `@jgengine/core/world/place`
+   * The place this game happens in — preferred shape is `world()` from `@jgengine/core/placement/place`
    * (ground + per-place laws; dressing lives in the editor's scene document). Omit entirely for
    * pure UI/rules games that are not a spatial place.
    */

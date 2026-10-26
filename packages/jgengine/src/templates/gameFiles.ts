@@ -434,7 +434,7 @@ ${fields.join("\n")}
 `;
 };
 
-const flatWorldTs = (id: string) => `import { world as place } from "@jgengine/core/world/place";
+const flatWorldTs = (id: string) => `import { world as place } from "@jgengine/core/placement/place";
 
 // The world is the place you play in: substrate + laws. Dress the place — sky look, foliage,
 // props, sculpt — in the editor (F2+E), which writes editor.scene.json; never here.

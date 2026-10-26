@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
-import { quarterTurnsToRotationY } from "../world/placementController";
-import { resolvePlaceAsset } from "../world/placeAsset";
+import { quarterTurnsToRotationY } from "../placement/placementController";
+import { resolvePlaceAsset } from "../placement/placeAsset";
 import {
   applyRotationPolicy,
   headingToRotationY,

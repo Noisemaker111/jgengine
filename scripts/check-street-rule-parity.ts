@@ -17,7 +17,7 @@ import { Project, SyntaxKind } from "ts-morph";
  */
 
 const GENERATOR = "packages/core/src/roads/streetGenerator.ts";
-const CITY_KIND = "packages/core/src/world/cityKind.ts";
+const CITY_KIND = "packages/core/src/city/cityKind.ts";
 const STREETS_HANDLER = "packages/editor/src/handlers/streets.ts";
 
 /** The dial the generator derives rather than accepts as a slider — never forwarded by a consumer. */

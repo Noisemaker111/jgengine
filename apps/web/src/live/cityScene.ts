@@ -9,14 +9,14 @@
  */
 import * as THREE from "three";
 
-import type { GeneratedCity } from "@jgengine/core/world/cityGenerator";
+import type { GeneratedCity } from "@jgengine/core/city/cityGenerator";
 import type {
   CityLotPiece,
   CityPieceRole,
   CityLotClass,
   CityFillerClass,
   CityLandmarkClass,
-} from "@jgengine/core/world/cityContent";
+} from "@jgengine/core/city/cityContent";
 import { circuitKerbs, type CircuitRoute } from "@jgengine/core/roads/raceCircuit";
 import type { Street, StreetLevel } from "@jgengine/core/roads/streetGenerator";
 import {

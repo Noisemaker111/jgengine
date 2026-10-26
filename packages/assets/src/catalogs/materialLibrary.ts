@@ -7,7 +7,7 @@ import {
   type MaterialTextureMetadata,
   type MaterialTextureRole,
 } from "@jgengine/core/material/materialAsset";
-import type { BuildingSurfaceMaps, BuildingSurfaceMaterial } from "@jgengine/core/world/buildings";
+import type { BuildingSurfaceMaps, BuildingSurfaceMaterial } from "@jgengine/core/buildings/buildings";
 import type { TerrainDetailMaterialConfig, TerrainMaterialMaps } from "@jgengine/core/world/features";
 
 import { MATERIAL_MAP_FILES } from "../materialMapFiles";

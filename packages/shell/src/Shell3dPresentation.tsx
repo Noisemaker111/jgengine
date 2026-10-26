@@ -83,7 +83,7 @@ import {
   rtsPanKeysConflict,
 } from "./camera";
 import { CullingProvider } from "./visibility/CullingProvider";
-import { BuildingRenderBudget } from "./structures/BuildingRenderBudget";
+import { BuildingRenderBudget } from "./buildings/BuildingRenderBudget";
 import { Sky } from "./environment";
 import { bearingFromDirection } from "./environment/daylightCycle";
 import type { DaylightModulation } from "./render/SceneLighting";

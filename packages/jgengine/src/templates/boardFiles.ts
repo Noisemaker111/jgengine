@@ -4,7 +4,7 @@
 export const BOARD_SIZE = { x: 10, y: 20 } as const;
 
 /** `src/world.ts` for a 2D board game. */
-export const boardWorldTs = (id: string) => `import { world as place } from "@jgengine/core/world/place";
+export const boardWorldTs = (id: string) => `import { world as place } from "@jgengine/core/placement/place";
 
 /** Board size in cells — the one law of this place. */
 export const BOARD_SIZE = { x: ${BOARD_SIZE.x}, y: ${BOARD_SIZE.y} } as const;

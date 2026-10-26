@@ -8,9 +8,9 @@ import {
   type BuildingStyle,
   type BuildingVariantCounts,
   type GeneratedBuilding,
-} from "./buildings";
-import { buildingKitVariantCounts, type BuildingKit } from "./buildingKit";
-import { deriveBuildingLots, type PlacedBuildingLot, type RoadFrontage } from "./buildingLots";
+} from "../buildings/buildings";
+import { buildingKitVariantCounts, type BuildingKit } from "../buildings/buildingKit";
+import { deriveBuildingLots, type PlacedBuildingLot, type RoadFrontage } from "../buildings/buildingLots";
 import type {
   BuildingEnvironmentDescriptor,
   EnvironmentArea,

@@ -1,7 +1,7 @@
 import { memo, useMemo } from "react";
 
 import type { EditorSession } from "@jgengine/core/editor/index";
-import { CITY_KIND } from "@jgengine/core/world/cityKind";
+import { CITY_KIND } from "@jgengine/core/city/cityKind";
 import { editableTerrainFromSnapshot } from "@jgengine/core/world/terraform";
 import type { TerrainField } from "@jgengine/core/world/terrain";
 import type { SceneKindObject } from "@jgengine/core/scene/sceneKinds";

@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 
-import type { PlaceWorldFeature } from "@jgengine/core/world/place";
+import type { PlaceWorldFeature } from "@jgengine/core/placement/place";
 
 import { DefaultSurface } from "../render/defaultSurface";
 
