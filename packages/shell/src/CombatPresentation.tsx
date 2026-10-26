@@ -1,9 +1,9 @@
 import {
-  CombatCameraShake,
   ProjectileTracers,
   WorldFloatText,
   WorldTelegraphs,
 } from "./world/WorldHud";
+import { HitReactionShake } from "./camera/shake/HitReactionShake";
 import { WorldSpellVfx } from "./world/WorldVfx";
 import { HitMarkers, MuzzleFlashes } from "./world/ShotFeedback";
 import { RetainedVfx } from "./world/RetainedVfx";
@@ -28,7 +28,7 @@ export function CombatPresentation({ effects }: { effects: ResolvedPresentationE
       ) : null}
       {effects.floatText ? <WorldFloatText /> : null}
       {effects.tracers ? <ProjectileTracers /> : null}
-      {effects.shake ? <CombatCameraShake /> : null}
+      {effects.shake ? <HitReactionShake /> : null}
       {effects.hitMarkers ? <HitMarkers /> : null}
       {effects.muzzleFlash ? <MuzzleFlashes /> : null}
       {effects.impacts !== null ? <ImpactFeedback {...effects.impacts} /> : null}

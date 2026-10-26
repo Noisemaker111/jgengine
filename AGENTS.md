@@ -30,6 +30,13 @@ Code comments default to none. Exported public API keeps tight JSDoc (it generat
 - **Never use Kenney assets.** Prefer Quaternius or KayKit (3D), game-icons.net (icons), ambientCG (PBR).
 - **Ports copy behavior and data, not implementation.** Credit sources in `CREDITS.md` and, for player-facing work, in the HUD and website.
 
+## Layout
+
+- **One concept, one folder per layer, same name in each.** `core` holds the model, `shell` draws it, `react` shows it as UI, `editor` authors it: `packages/core/src/camera/shake/`, `packages/shell/src/camera/shake/`, `packages/react/src/camera/shake/`. A layer the concept does not need has no folder. A sub-concept nests in its parent's folder in every layer.
+- **Names say what the thing is**: `notificationCenter.ts`, not `store.ts` or `utils.ts`. One exported name has one definition engine-wide.
+- **The folders are the map.** No hand-kept concept list; `bun run find <words>` reads folders, exports and doc lines and names the home folder in each layer. Moving a concept home: move its files, delete duplicates, fix every importer and game in the same PR.
+- `check:concept-homes` (in `verify:fast` and CI) fails a branch that adds an exported name already defined elsewhere, or a file named for a concept outside that concept's folder (`// home-ok: <reason>` exempts one). `--all` prints today's duplicates as a worklist.
+
 ## Game changes improve the framework
 
 1. Separate the game's rules, content and presentation from reusable behavior.
@@ -51,7 +58,7 @@ Outside users are protected by npm versions only: a breaking change gets a semve
 - Worktrees: `bun run agent:worktree -- <name>` (or `claude --worktree <name>`) under the main checkout's `.claude/worktrees/`, never nested, never under `C:\tmp`. It links dependencies, and links every game's `public/` packs from one shared store, `<main checkout>/.asset-store` (`JG_ASSET_STORE` overrides), so a worktree downloads nothing. A missing pack: `bun run games:provision [<game>]` links it, or downloads it into the store once per machine. `bun run worktree:doctor` finds broken worktrees (`--repair --only <name>`); `worktree:reap` removes merged ones. Scratch goes in `.scratch/`.
 - Windows: Git Bash has no `python3` (use `python`; set `PYTHONUTF8=1`, and pass `newline='
 '` when writing files). Scripts spawn System32 `tar.exe`, which takes `C:` paths; GNU tar in Git Bash needs `--force-local`.
-- Search with `bun run find <pattern> [--in <dir>] [--files]`, never a recursive listing; `check-recursive-walk` enforces it (`// walk-ok: <reason>`).
+- Search with `bun run find <words>` (where a concept lives) or `bun run find --text <regex> [--in <dir>] [--files]`, never a recursive listing; `check-recursive-walk` enforces it (`// walk-ok: <reason>`).
 - Before pushing: `bun run verify:fast` (exit 2: a changed runtime file reached no test; a file is covered when its package's suite runs, and pure renames and demos need none). It prints each failing file's first error and writes UTF-8 logs to `.scratch/verify-fast/`; it also runs capabilities-sync and boot-probes the games a change reaches, because CI never downloads models or boots a game. Then `bun run gen` if public API changed, `bun run ship:preflight`. Run `bun run gate` only to reproduce a CI failure.
 - Screenshots back pixel claims: `bun run shoot` or `bun run drive <game> --steps <file>` per `jgengine-verify`, never a hand-rolled Vite app. After two capture failures, report lower-rung evidence.
 

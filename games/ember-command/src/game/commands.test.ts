@@ -3,7 +3,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { EntityPosition } from "@jgengine/core/scene/entityStore";
 
 import { canTrain, orderSelection, trainUnit } from "./commands";
-import { createNoticeFeed, type Notice } from "@jgengine/core/game/notices";
+import { createNoticeFeed, type Notice } from "@jgengine/core/notifications/notices";
 import { activeJobs, queuedJobs, enqueue } from "@jgengine/core/gameplay";
 import { TRAINING_CONFIG } from "./production";
 import { resetSession, session } from "./session";

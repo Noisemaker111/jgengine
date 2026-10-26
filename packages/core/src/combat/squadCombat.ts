@@ -68,6 +68,8 @@ export interface SquadCombatOptions extends SquadCombatTunables {
   /** Role for a squad the composition does not name. Default `{ id: "member" }`. */
   defaultRole?: SquadRole;
   members: readonly SquadMemberSpec[];
+  /** Milliseconds clock the nav crowd's re-plan time cap reads. Default `performance.now`; a fixed clock makes a seeded run deterministic. */
+  clock?: () => number;
   /** Which side an id fights for, so a remembered target can be classed as hostile. */
   teamOf: (id: string) => string | null;
   /** Authoritative health fraction for a member. Default the spawn value. */
@@ -293,6 +295,7 @@ export function createSquadCombat(options: SquadCombatOptions): SquadCombat {
     waypointRadius: 0.2,
     replanBudget: 6,
     replanMs: 1.2,
+    clock: options.clock,
   });
 
   const rolesById = new Map<string, ResolvedRole>();

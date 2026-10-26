@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
 
 import { runCreate } from "../create";
-import { runFind } from "../find";
+import { runFind } from "../find/runFind";
 import { renderRecipe, renderRecipeList } from "../recipes";
 import { runDesktop } from "../desktop";
 import { runDoctor } from "../doctor";
@@ -54,10 +54,10 @@ usage: jgengine <command> [...args]
   drive [...]           play/test the current game headlessly — ordered --click/--click-at/--key/--wait/--shot
                         steps, --rpc '{"method":"agent_status"}', and --playtest --strict for a
                         softlock verdict. Same boot + capture engine as shoot. --help for all flags
-  find <intent>         search what the engine already ships by intent (e.g. "toggleable window",
-                        "inventory", "minimap") → the drop-in primitive + its import. Reach for
-                        this before hand-rolling a HUD/inventory/window/rig — most already exist.
-                        [--json] [--limit 1..100] for bounded machine-readable discovery
+  find <words>          where a concept lives: its home folder in each layer (core model, shell
+                        draw, react view, editor author) with files and exports, plus the shipped
+                        capabilities, imports and assets for it. Reach for this before hand-rolling.
+                        [--json] [--limit 1..100]; --text <regex> for a plain ripgrep search
   recipe [name]         print a vetted wired composition (imports + snippet); no name lists them
   skills -p | -g        re-install skills (recovery only — create already installs them)
   doctor [dir]          diagnose version skew, missing peers, unstyled HUD, prototype look, shape drift
@@ -195,7 +195,7 @@ switch (command) {
     process.exit(runCreate(rest));
     break;
   case "find":
-    process.exit(runFind(rest));
+    process.exit(await runFind(rest));
     break;
   case "recipe":
     process.exit(runRecipe(rest));

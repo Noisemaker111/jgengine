@@ -1,3 +1,4 @@
+import type { CameraRigShakeConfig } from "../camera/shake/cameraShake";
 import type { WeaponHandlingFrame } from "../combat/weaponHandling";
 import type { WeaponPresentationTuning } from "../combat/weaponPresentation";
 
@@ -332,19 +333,7 @@ export interface CinematicCameraConfig {
   loop?: boolean;
 }
 
-/** Camera-shake / trauma defaults (#28). Any rig reads the trauma channel; game systems feed it via `cameraShake()`. */
-export interface CameraShakeConfig {
-  /** Positional shake amplitude at full trauma (world units). Default 0.5. */
-  maxOffset?: number;
-  /** Rotational shake amplitude at full trauma (radians). Default 0.06. */
-  maxRoll?: number;
-  /** Trauma decay per second (fraction). Default 1.6. */
-  decayPerSecond?: number;
-  /** Trauma→shake exponent; 2 = quadratic falloff so small hits are subtle. Default 2. */
-  exponent?: number;
-  /** Noise frequency (Hz) of the shake oscillation. Default 24. */
-  frequency?: number;
-}
+export type { CameraRigShakeConfig };
 
 export const CAMERA_FRUSTUM_DEFAULTS = { fov: 55, near: 0.1, far: 300, zoom: 50 } as const;
 
@@ -397,7 +386,7 @@ export interface GameCameraConfig {
   /** Model-viewer / inspection tuning (#207.7); read when `rig: "inspection"`. */
   inspection?: InspectionCameraConfig;
   /** Camera-shake / trauma channel defaults (#28); read by every rig. */
-  shake?: CameraShakeConfig;
+  shake?: CameraRigShakeConfig;
   /** Scripted keyframe path (#29); when set, plays over the active rig. */
   cinematic?: CinematicCameraConfig;
   /** Seconds to cross-fade the camera when the rig changes (#29). 0 hard-cuts. Default 0.6. */

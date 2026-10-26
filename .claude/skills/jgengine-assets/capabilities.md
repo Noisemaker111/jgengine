@@ -39,6 +39,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `creditsForSources` (function) · `import { creditsForSources } from "@jgengine/assets/credits"`
 
+## describe-asset-match — print a ranked asset match as one readable line
+
+- `describeAssetMatch` (function) · `import { describeAssetMatch } from "@jgengine/assets"`
+
 ## gltf-material-inspection — inspect material slots and texture metadata directly from complete GLB bytes
 
 - `inspectGlbMaterials` (function) · `import { inspectGlbMaterials } from "@jgengine/assets/gltfMaterials"`
@@ -96,6 +100,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## model-library-rigged — pull a rigged, animated Microsoft Rocketbox human or animal into a game as one GLB
 
 - `pullRocketboxModel` (function) · `import { pullRocketboxModel } from "@jgengine/assets/rocketboxPull"`
+
+## rank-assets — find the model, pack, material, sprite, HUD component or icon for a word, best first
+
+- `rankAssets` (function) · `import { rankAssets } from "@jgengine/assets"`
 
 ## sources-for-asset-ids — resolve the asset packs behind the ids a game actually ships
 

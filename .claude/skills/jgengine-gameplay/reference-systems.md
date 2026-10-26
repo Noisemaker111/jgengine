@@ -245,7 +245,7 @@ context when rebooting systems with registered modules.
 
 ## Snapshot and restore on stateful handles
 
-These handles hand back a plain JSON `snapshot()` that later ticks do not mutate, and take it back with `restore(next)`, so a host, save file or replay can rewind them bit-exactly: `game/lootTable` `createLootRegistry` (registered tables; not JSON when an entry uses `generate`), `game/toasts` `createToastQueue`, `game/vfxInstance` `createVfxInstanceStore` (restore emits `stop` then `upsert` so the renderer follows), `session/roundState` `createRoundState` (`RoundSnapshot` now carries `pendingWinner`), `input/lookChannel` `createLookChannel`, and `input/pointer` `createDragCapture` (`state()` out, `restore(state | null)` in).
+These handles hand back a plain JSON `snapshot()` that later ticks do not mutate, and take it back with `restore(next)`, so a host, save file or replay can rewind them bit-exactly: `game/lootTable` `createLootRegistry` (registered tables; not JSON when an entry uses `generate`), `game/vfxInstance` `createVfxInstanceStore` (restore emits `stop` then `upsert` so the renderer follows), `session/roundState` `createRoundState` (`RoundSnapshot` now carries `pendingWinner`), `input/lookChannel` `createLookChannel`, and `input/pointer` `createDragCapture` (`state()` out, `restore(state | null)` in).
 
 ## Staffed production
 

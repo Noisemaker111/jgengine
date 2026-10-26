@@ -1,4 +1,4 @@
-import type { NoticeTone } from "@jgengine/core/game/notices";
+import type { NoticeTone } from "@jgengine/core/notifications/notices";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { EntityPosition } from "@jgengine/core/scene/entityStore";
 import { activeJobs, queuedJobs, enqueue } from "@jgengine/core/gameplay";

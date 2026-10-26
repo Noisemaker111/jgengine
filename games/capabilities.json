@@ -1115,8 +1115,8 @@
         "@jgengine/core",
         "@jgengine/shell"
       ],
-      "module": "@jgengine/core/vfx/cameraShake",
-      "domain": "vfx",
+      "module": "@jgengine/core/camera/shake/cameraShake",
+      "domain": "camera",
       "gameFacing": false,
       "probe": null,
       "intent": "seeded serializable trauma-based camera shake/impulse controller (hit/explosion/landing juice) with pooled per-frame translation+rotation offset and snapshot/restore"
@@ -1126,8 +1126,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/cameraShake",
-      "domain": "camera-shake-meter",
+      "module": "@jgengine/react/camera/shake/cameraShake",
+      "domain": "camera",
       "gameFacing": false,
       "probe": null,
       "intent": "HUD readout for a core camera-shake controller — a trauma meter plus current impact-kind label, reskinnable and kind-labelled"
@@ -2500,6 +2500,17 @@
       "gameFacing": false,
       "probe": null,
       "intent": "composable game behavior — pure data + hooks the engine schedules; pass via `defineGame({ systems })`"
+    },
+    {
+      "id": "describe-asset-match",
+      "packages": [
+        "@jgengine/assets"
+      ],
+      "module": "@jgengine/assets/rankAssets",
+      "domain": "describe-asset-match",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "print a ranked asset match as one readable line"
     },
     {
       "id": "detect",
@@ -3901,8 +3912,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/input/haptics",
-      "domain": "input",
+      "module": "@jgengine/core/haptics/haptics",
+      "domain": "haptics",
       "gameFacing": false,
       "probe": null,
       "intent": "Continuous gamepad rumble from named channels (engine, road, impact) mixed by priority, plus fading pulses."
@@ -3912,8 +3923,8 @@
       "packages": [
         "@jgengine/shell"
       ],
-      "module": "@jgengine/shell/audio/hapticsRoute",
-      "domain": "audio",
+      "module": "@jgengine/shell/haptics/hapticsRoute",
+      "domain": "haptics",
       "gameFacing": false,
       "probe": null,
       "intent": "send a feedback pulse to the gamepad when one is connected, else to the phone's vibration motor"
@@ -6459,19 +6470,19 @@
         "@jgengine/core",
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/notices",
-      "domain": "notice-feed",
+      "module": "@jgengine/core/game/feed",
+      "domain": "game",
       "gameFacing": false,
       "probe": null,
-      "intent": "render ctx.game.notices as an animated toned stack (enter/exit motion, ×N stacking, HUD avoidance)"
+      "intent": "serializable tone-tagged notice/event feed bounded by count and age (toasts, life events, killfeed)"
     },
     {
       "id": "notification-bell",
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/notifications",
-      "domain": "notification-bell",
+      "module": "@jgengine/react/notifications/notificationCenter",
+      "domain": "notifications",
       "gameFacing": false,
       "probe": null,
       "intent": "icon button with a live unread-count badge over a notification store"
@@ -6481,8 +6492,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/game/notifications",
-      "domain": "game",
+      "module": "@jgengine/core/notifications/notificationCenter",
+      "domain": "notifications",
       "gameFacing": false,
       "probe": null,
       "intent": "persistent, read-tracked notification log (newest-first, capped, serializable) behind an unread badge — the durable counterpart to transient toasts"
@@ -6492,8 +6503,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/notifications",
-      "domain": "notification-center-panel",
+      "module": "@jgengine/react/notifications/notificationCenter",
+      "domain": "notifications",
       "gameFacing": false,
       "probe": null,
       "intent": "scrollable notification log with kind markers, read tracking, relative time, and mark-all-read/clear"
@@ -7585,6 +7596,17 @@
       "intent": "Render bounded rain impacts on exposed terrain using the shared precipitation clock."
     },
     {
+      "id": "rank-assets",
+      "packages": [
+        "@jgengine/assets"
+      ],
+      "module": "@jgengine/assets/rankAssets",
+      "domain": "rank-assets",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "find the model, pack, material, sprite, HUD component or icon for a word, best first"
+    },
+    {
       "id": "rapier-physics-backend",
       "packages": [
         "@jgengine/rapier"
@@ -7633,8 +7655,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/game/notices",
-      "domain": "game",
+      "module": "@jgengine/core/notifications/notices",
+      "domain": "notifications",
       "gameFacing": false,
       "probe": null,
       "intent": "surface a refused command's player-facing message in the notice feed automatically"
@@ -9575,17 +9597,6 @@
       "intent": "title-screen block — wordmark, tagline, navigable verb list, footer, backdrop slot, animated over a live scene"
     },
     {
-      "id": "toast-feed",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/game/toasts",
-      "domain": "game",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "queue of transient self-expiring on-screen messages (toasts, announcer, kill-feed)"
-    },
-    {
       "id": "touch-controls",
       "packages": [
         "@jgengine/core"
@@ -10002,8 +10013,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/cameraShake",
-      "domain": "use-camera-shake",
+      "module": "@jgengine/react/camera/shake/cameraShake",
+      "domain": "camera",
       "gameFacing": false,
       "probe": null,
       "intent": "React hook reading a camera-shake controller's live trauma and kind"
@@ -10117,6 +10128,28 @@
       "gameFacing": false,
       "probe": null,
       "intent": "React hook binding a modal stack to a component — re-renders on push/pop/resolve"
+    },
+    {
+      "id": "use-notice-list",
+      "packages": [
+        "@jgengine/react"
+      ],
+      "module": "@jgengine/react/notifications/notices",
+      "domain": "notifications",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "read the live notice feed in a game's own notice view"
+    },
+    {
+      "id": "use-notifications",
+      "packages": [
+        "@jgengine/react"
+      ],
+      "module": "@jgengine/react/notifications/notificationCenter",
+      "domain": "notifications",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "read a notification store's live list in a game's own inbox view"
     },
     {
       "id": "use-objective-banner",

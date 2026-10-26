@@ -1,5 +1,5 @@
 import type { AudioBusDef, SoundDef } from "./audioFalloff";
-import type { NoticeTone } from "../game/notices";
+import type { NoticeTone } from "../notifications/notices";
 
 /** Interface sound cues every game gets: press, hover, panel open/close, confirm, refusal, notification. */
 export type UiCue = "click" | "hover" | "open" | "close" | "confirm" | "deny" | "notify";

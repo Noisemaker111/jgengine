@@ -9,7 +9,6 @@ import type { CatalogEntityRole } from "@jgengine/core/runtime/gameContext";
 import { useGameStore } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
 import type { GameContext } from "@jgengine/core/runtime/gameContextTypes";
-import { CALIBRATED_TRAUMA_DECAY_PER_SECOND, useCameraShake } from "../camera/shakeChannel";
 import { readFirstPersonMuzzle } from "../camera/GameFirstPersonCamera";
 import { readEntityMuzzle } from "../render/entityMuzzle";
 import { resolveFloatTextStyle } from "./floatTextStyle";
@@ -537,24 +536,6 @@ export function WorldTelegraphs() {
       ))}
     </>
   );
-}
-
-export function CombatCameraShake() {
-  const ctx = useGameContext();
-  const shake = useCameraShake();
-  useEffect(() => {
-    return ctx.game.events.on("combat.hitReaction", (event) => {
-      if (event.trauma !== undefined) {
-        shake.configure({ decayPerSecond: CALIBRATED_TRAUMA_DECAY_PER_SECOND });
-        shake.add(event.trauma);
-        return;
-      }
-      if (event.shake === undefined) return;
-      if (event.shake.decay !== undefined) shake.configure({ decayPerSecond: event.shake.decay });
-      shake.add(event.shake.amplitude);
-    });
-  }, [ctx, shake]);
-  return null;
 }
 
 interface Tracer {

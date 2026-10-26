@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 import type { HeadlessRunner } from "@jgengine/core/runtime/headlessRunner";
-import { attachRefusalNotices } from "@jgengine/core/game/notices";
+import { attachRefusalNotices } from "@jgengine/core/notifications/notices";
 
 import { STARTING_GOLD } from "../entities/base/catalog";
 import { TOWER_CATALOG } from "../entities/towers/catalog";

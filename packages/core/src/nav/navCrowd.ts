@@ -98,6 +98,8 @@ export interface NavCrowdOptions {
   replanBudget?: number;
   /** Milliseconds of path searching one `tick` may spend, whatever the budget. Default 1.5. */
   replanMs?: number;
+  /** Milliseconds clock the `replanMs` cap reads. Default `performance.now`; a fixed clock leaves only `replanBudget`, so a replay is deterministic. */
+  clock?: () => number;
   /** Avoidance tuning for the internal {@link RvoCrowd}. */
   avoid?: Partial<RvoTunables>;
   /** Register a devtools probe under this name so the perf overlay shows crowd counters. */
@@ -185,6 +187,7 @@ export function createNavCrowd(options: NavCrowdOptions & { nav: NavRuntime }): 
   let waypointRadius = Math.max(0, options.waypointRadius ?? 0.6);
   let replanBudget = Math.max(1, Math.floor(options.replanBudget ?? 8));
   let replanMs = Math.max(0, options.replanMs ?? 1.5);
+  const clock = options.clock ?? (() => performance.now());
   const agents: CrowdAgent[] = [];
   const agentOf = new Map<string, number>();
   const avoid: RvoCrowd = createRvoCrowd({ devtoolsName: undefined, ...options.avoid });
@@ -338,11 +341,11 @@ export function createNavCrowd(options: NavCrowdOptions & { nav: NavRuntime }): 
       if (!(dt > 0) || agents.length === 0) return;
       const started = performance.now();
       let budget = replanBudget;
-      const replanDeadline = started + replanMs;
+      const replanDeadline = clock() + replanMs;
       for (const agent of agents) {
         if (!agent.waitingForPlan) continue;
         if (budget <= 0) break;
-        if (performance.now() > replanDeadline) break;
+        if (clock() > replanDeadline) break;
         budget -= 1;
         replan(agent);
       }

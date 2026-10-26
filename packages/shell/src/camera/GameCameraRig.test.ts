@@ -1,9 +1,9 @@
 import { describe, expect, test } from "bun:test";
 import type { GameCameraConfig } from "@jgengine/core/game/playableGame";
 import { resolveRigKind } from "./rigResolve";
-import { createCameraShake } from "@jgengine/core/vfx/cameraShake";
+import { createCameraShake } from "@jgengine/core/camera/shake/cameraShake";
 
-import { rigShakeConfig } from "./shakeChannel";
+import { rigShakeConfig } from "./shake/shakeChannel";
 
 describe("resolveRigKind", () => {
   test("defaults to orbit with no config", () => {

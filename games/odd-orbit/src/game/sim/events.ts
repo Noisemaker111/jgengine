@@ -1,5 +1,5 @@
 import { createStoryteller, type StoryIncident, type StorytellerConfig } from "@jgengine/core/ai/director/storyteller";
-import type { NoticeFeed, NoticeTone } from "@jgengine/core/game/notices";
+import type { NoticeFeed, NoticeTone } from "@jgengine/core/notifications/notices";
 import { seededRng } from "@jgengine/core/random/rng";
 import type { SceneObject } from "@jgengine/core/scene/objectStore";
 

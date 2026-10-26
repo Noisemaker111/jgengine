@@ -1,6 +1,6 @@
 import type { PointerAxisState } from "../input/pointerAxis";
 import { type AxisBinding, type AxisRange, sampleAxisBindings } from "../input/axisInput";
-import { createHapticChannels, type HapticChannels } from "../input/haptics";
+import { createHapticChannels, type HapticChannels } from "../haptics/haptics";
 
 /** One discrete press, identified across retransmitted live input frames. */
 export interface InputPress {

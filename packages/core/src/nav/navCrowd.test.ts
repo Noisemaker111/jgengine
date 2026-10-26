@@ -40,6 +40,23 @@ function run(crowd: ReturnType<typeof createNavCrowd>, ticks: number, dt = 1 / 3
 }
 
 describe("createNavCrowd", () => {
+  test("the re-plan time cap reads the injected clock, so a fixed clock leaves only the count budget", () => {
+    const waiting = (clock: () => number): number => {
+      const nav = createNavRuntime({ mesh: gridMesh(10, 2) });
+      const crowd = createNavCrowd({ nav, replanBudget: 2, replanMs: 1, clock });
+      for (let i = 0; i < 5; i += 1) crowd.add(`a${i}`, { position: [0.5, 0, 0.5], goal: [9.5, 0, 1.5] });
+      for (const id of crowd.ids()) crowd.setGoal(id, [9.5, 0, 0.5]);
+      crowd.tick(1 / 30);
+      const left = crowd.ids().filter((id) => crowd.agent(id)!.waitingForPlan).length;
+      crowd.dispose();
+      nav.dispose();
+      return left;
+    };
+    expect(waiting(() => 0)).toBe(3);
+    let now = 0;
+    expect(waiting(() => (now += 10))).toBe(5);
+  });
+
   test("routes a corridor full of agents to their goals without overlapping", () => {
     const nav = createNavRuntime({ mesh: gridMesh(20, 4) });
     const crowd = createNavCrowd({ nav, speed: 2, radius: 0.4 });

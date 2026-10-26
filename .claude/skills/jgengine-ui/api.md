@@ -1084,7 +1084,7 @@
 - `TitleMenu` (function): function TitleMenu({ title, eyebrow, tagline, items, onSelect, onBack, footer, controlHint, backdrop, children, open = true, transition = "slide", scrim = "dim", coversCanvas, enterMs, exitMs, reducedMotion, onClosed, className, style, contentClassName, contentStyle, }: TitleMenuProps): ReactNode — A game front-end title screen: wordmark, tagline, the game's verbs in a keyboard/gamepad-navigable list, a footer and an optional backdrop. The engine owns navigation, focus and the enter/exit animation; the game owns the title markup, wording, verbs, art and every colour through HudTheme tokens. Pass the live scene (or artwork) as `backdrop` so the title renders over 3D instead of a blank page.
 - `TitleMenuItem` (interface): interface TitleMenuItem — One verb on a {@link TitleMenu}: New Game, Continue, Settings, Credits, Quit.
 - `TitleMenuProps` (interface): interface TitleMenuProps — Props for {@link TitleMenu}.
-- `ToastStack` (function): function ToastStack({ action, limit = 4, className, renderToast, }: { action: string; limit?: number; className?: string; renderToast?: (entry: FeedEntry, index: number) => ReactNode; }): React.JSX.Element | null — Render `ctx.game.feed`'s entries for `action` as a newest-first toast stack — the feed-backed sibling of `@jgengine/core/game/toasts`' `createToastQueue`. Reach for this when the message source is already an engine event bound onto `ctx.game.feed` (kill feed, quest updates, loot log); reach for a `createToastQueue` when the game raises ad-hoc messages that need their own TTL independent of the feed's ring buffer.
+- `ToastStack` (function): function ToastStack({ action, limit = 4, className, renderToast, }: { action: string; limit?: number; className?: string; renderToast?: (entry: FeedEntry, index: number) => ReactNode; }): React.JSX.Element | null — Render `ctx.game.feed`'s entries for `action` as a newest-first toast stack. Reach for this when the message source is already an engine event bound onto `ctx.game.feed` (kill feed, quest updates, loot log); for ad-hoc player messages push to `ctx.game.notices`, which the shell draws as a {@link NoticeStack}.
 - `Trans` (function): function Trans({ k, params }: { k: string; params?: TParams }): ReactNode — Render a translated message inline: `<Trans k="hud.score" params={{ value }} />`.
 - `UI_KITS` (const): const UI_KITS: Readonly<Record<UiKitName, UiKit>> — The eight built-in UI kits, each a complete visual language with every part: `ink` comic caper, `paper` cardboard and stickers, `parchment` painterly fantasy, `terminal` brutalist console, `holo` angular sci-fi hologram, `broadcast` sports TV graphics, `arcade` retro pixel cabinet, `signal` in-world signage and departure boards.
 - `UI_KIT_PARTS` (const): const UI_KIT_PARTS: readonly UiKitPart[] — Every part a kit must implement.
@@ -1364,7 +1364,7 @@
 - `observeBrowserSuspension` (function): function observeBrowserSuspension(onSuspend: (reason: BrowserSuspensionReason) => void, options: BrowserSuspensionOptions = {}, sources: BrowserSuspensionSources | null = typeof window === "undefined" || typeof document === "undefined" ? null : { window, document }): () => void — Observe interruption events until detached. Lock loss requires a preceding lock; SSR attaches nothing. Blur and hidden are ignored while a capture host holds play ({@link CAPTURE_HOLD_KEY}).
 - `useBrowserSuspension` (function): function useBrowserSuspension(onSuspend: (reason: BrowserSuspensionReason) => void, options: BrowserSuspensionOptions = {}): void — Observe browser interruptions while mounted, invoking the latest callback without replacing listeners.
 
-## @jgengine/react/cameraShake
+## @jgengine/react/camera/shake/cameraShake
 
 - `CameraShakeMeter` (function): function CameraShakeMeter({ controller, title = "CAMERA SHAKE", kindLabels, variation = "glass", className, style, }: CameraShakeMeterProps): ReactNode — A drop-in HUD panel that visualizes a core {@link CameraShakeController}: a trauma meter (reusing the shared {@link KitMeter}) plus a live percentage and the current impact `kind` label. Presentation only — it reads the controller and never interprets `kind`, mapping it through `kindLabels` for display. The shell camera rig applies the same controller's `offset()` to the camera; this panel is the on-screen readout of how much shake is in flight.
 - `CameraShakeMeterProps` (interface): interface CameraShakeMeterProps — Props for {@link CameraShakeMeter}.
@@ -1459,7 +1459,6 @@
 - `Screen` (function): function Screen({ id, open = true, className, children, }: { id: string; open?: boolean; className?: string; children?: ReactNode; }): React.JSX.Element | null — ⚠ undocumented
 - `SkillCheckBar` (function): function SkillCheckBar({ config, startedAt, className, trackClassName, zoneClassName, markerClassName, renderStatus, }: { config: SkillCheckConfig; startedAt: number; className?: string; trackClassName?: string; zoneClassName?: string; markerClassName?: string; renderStatus?: (result: SkillCheckResu… — ⚠ undocumented
 - `SlotGrid` (function): function SlotGrid({ inventoryId, className, renderSlot, }: { inventoryId: string; className?: string; renderSlot?: (slot: InventorySlot, index: number) => ReactNode; }): React.JSX.Element — ⚠ undocumented
-- `ToastStack` (function): function ToastStack({ action, limit = 4, className, renderToast, }: { action: string; limit?: number; className?: string; renderToast?: (entry: FeedEntry, index: number) => ReactNode; }): React.JSX.Element | null — Render `ctx.game.feed`'s entries for `action` as a newest-first toast stack — the feed-backed sibling of `@jgengine/core/game/toasts`' `createToastQueue`. Reach for this when the message source is already an engine event bound onto `ctx.game.feed` (kill feed, quest updates, loot log); reach for a `createToastQueue` when the game raises ad-hoc messages that need their own TTL independent of the feed's ring buffer.
 - `resolveDialogueInvoke` (function): function resolveDialogueInvoke(choice: DialogueChoice, result: CheckResult | null): { command: string; args?: unknown } | null — ⚠ undocumented
 - `runDialogueChoice` (function): function runDialogueChoice(commands: { run(name: string, input?: unknown): unknown }, choice: DialogueChoice, result: CheckResult | null): void — Route a {@link DialogueBox} choice through the `features.dialogue` bridge: resolve the choice's invoke (honoring a skill-check `result`), run that command, and otherwise close the dialogue — the write side that replaces a per-game `onChoice` that hand-rolls `resolveDialogueInvoke` + `dialogue.close`.
 - `useOpenDialogueId` (function): function useOpenDialogueId(): string | null — The id of the dialogue `ctx.game.dialogue` (or a `talkable(id)` prompt) currently has open, or `null`. The read side of the `features.dialogue` bridge — a panel looks the id up in its own dialogue catalog and renders {@link DialogueBox}, with no per-game open/close store.
@@ -2049,7 +2048,7 @@
 - `PauseMenuProps` (interface): interface PauseMenuProps — Props for {@link PauseMenu}.
 - `useModalStack` (function): function useModalStack(stack: ModalStack): ModalStackView — Subscribe to a modal stack and re-render on every change, returning the active modal and depth.
 
-## @jgengine/react/notices
+## @jgengine/react/notifications/notices
 
 - `Notice` (interface): interface Notice — A live notice as the HUD renders it.
 - `NoticePlacement` (type): type NoticePlacement = "top" | "center" | "bottom" — Where {@link NoticeStack} sits: below top-edge HUD bars, over the play area, or above bottom action bars.
@@ -2057,13 +2056,17 @@
 - `NoticeTone` (type): type NoticeTone = "info" | "success" | "warn" | "deny" — How a notice reads: neutral info, a win, a caution, or a refused action.
 - `useNoticeList` (function): function useNoticeList(feed: NoticeFeed | null): readonly Notice[] — Live notices of `feed`, re-rendering on change and pruning each one when it expires.
 
-## @jgengine/react/notifications
+## @jgengine/react/notifications/notificationCenter
 
 - `NotificationBell` (function): function NotificationBell({ store, onClick, icon = "🔔", className, style }: NotificationBellProps): ReactNode — Notification bell — an icon button with an unread-count badge, bound to a notification store. Toggle a {@link NotificationCenter} panel from its click.
 - `NotificationBellProps` (interface): interface NotificationBellProps — Props for {@link NotificationBell}.
 - `NotificationCenter` (function): function NotificationCenter({ store, title = "Notifications", emptyLabel = "You're all caught up.", onClose, formatTime, className, style, }: NotificationCenterProps): ReactNode — Notification center panel — the scrollable log toasts don't provide: newest notifications with a kind-colored marker, title/body, relative time, and an unread highlight; a header with the unread count, mark-all-read, and clear. Clicking an entry marks it read. Bind it to a `createNotificationCenter`.
 - `NotificationCenterProps` (interface): interface NotificationCenterProps — Props for {@link NotificationCenter}.
 - `useNotifications` (function): function useNotifications<TMeta = unknown>(store: NotificationStore<TMeta>): readonly NotificationEntry<TMeta>[] — Subscribe to a notification store's live list.
+
+## @jgengine/react/notifications/toastStack
+
+- `ToastStack` (function): function ToastStack({ action, limit = 4, className, renderToast, }: { action: string; limit?: number; className?: string; renderToast?: (entry: FeedEntry, index: number) => ReactNode; }): React.JSX.Element | null — Render `ctx.game.feed`'s entries for `action` as a newest-first toast stack. Reach for this when the message source is already an engine event bound onto `ctx.game.feed` (kill feed, quest updates, loot log); for ad-hoc player messages push to `ctx.game.notices`, which the shell draws as a {@link NoticeStack}.
 
 ## @jgengine/react/objectiveBanner
 
@@ -2550,13 +2553,6 @@
 
 - `installGestureResume` (function): function installGestureResume(engine: Pick<AudioEngine, "resume">, target: Pick<Document, "addEventListener" | "removeEventListener"> | null = typeof document === "undefined" ? null : document): () => void — Resume the audio context on the first real user gesture. Chrome keeps a freshly created `AudioContext` suspended until the page sees a trusted input, so pressing a key, tapping or clicking is the only moment sound may start; the engine then flushes any cue it held. One listener set per game, removed on unmount.
 
-## @jgengine/shell/audio/hapticsRoute
-
-- `HapticsRoute` (interface): interface HapticsRoute — Route haptic pulses to whatever the player can feel them on.
-- `HapticsRouteOptions` (interface): interface HapticsRouteOptions — The browser reach of {@link createHapticsRoute}; injected so the route runs headless.
-- `HapticsSink` (type): type HapticsSink = "gamepad" | "vibration" | "none" — Where a pulse actually landed: a gamepad, the device's own motor, or nowhere.
-- `createHapticsRoute` (function): function createHapticsRoute(pad: (pulse: HapticPulse) => void, options: HapticsRouteOptions = {}): HapticsRoute — One pulse in, whichever motor the player has: a connected gamepad takes it through the haptic channels the gamepad loop already drives, and a phone with no pad falls back to `navigator.vibrate`. Pad presence is cached and refreshed on connection events, so a hit never asks the browser for its pad list. Reduced motion does not silence this: see `eventFeedback`.
-
 ## @jgengine/shell/audio/loopParams
 
 - `MAX_LOOP_CUTOFF` (const): const MAX_LOOP_CUTOFF: 22050 — Highest live filter cutoff, Hz; the engine also caps it at the context's Nyquist frequency.
@@ -2758,7 +2754,7 @@
 - `ResolvedTopDown` (interface): interface ResolvedTopDown { height: number; pitch: number; yaw: number; offset: Vec3; followSmoothing: number } — ⚠ undocumented
 - `StaticCameraValues` (interface): interface StaticCameraValues { followEntityId?: string | null; cinematic?: CinematicCameraConfig } — ⚠ undocumented
 
-## @jgengine/shell/camera/shakeChannel
+## @jgengine/shell/camera/shake/shakeChannel
 
 - `CALIBRATED_TRAUMA_DECAY_PER_SECOND` (const): const CALIBRATED_TRAUMA_DECAY_PER_SECOND: 1.4 — Trauma decay the engine's impact presets are calibrated against, trauma/second.
 - `CameraShakeContext` (const): const CameraShakeContext: React.Context<CameraShakeController> — Override which controller the rigs below apply; defaults to {@link defaultCameraShake}.
@@ -3015,6 +3011,18 @@
 - `GrassStreamOptions` (interface): interface GrassStreamOptions — Options for {@link GrassStream}.
 - `GrassStreamStats` (interface): interface GrassStreamStats — Per-frame bookkeeping the stream reports, for tests and devtools.
 
+## @jgengine/shell/haptics/hapticsRoute
+
+- `HapticsRoute` (interface): interface HapticsRoute — Route haptic pulses to whatever the player can feel them on.
+- `HapticsRouteOptions` (interface): interface HapticsRouteOptions — The browser reach of {@link createHapticsRoute}; injected so the route runs headless.
+- `HapticsSink` (type): type HapticsSink = "gamepad" | "vibration" | "none" — Where a pulse actually landed: a gamepad, the device's own motor, or nowhere.
+- `createHapticsRoute` (function): function createHapticsRoute(pad: (pulse: HapticPulse) => void, options: HapticsRouteOptions = {}): HapticsRoute — One pulse in, whichever motor the player has: a connected gamepad takes it through the haptic channels the gamepad loop already drives, and a phone with no pad falls back to `navigator.vibrate`. Pad presence is cached and refreshed on connection events, so a hit never asks the browser for its pad list. Reduced motion does not silence this: see `eventFeedback`.
+
+## @jgengine/shell/haptics/padHaptics
+
+- `PAD_HAPTIC_EFFECT_MS` (const): const PAD_HAPTIC_EFFECT_MS: 120 — How long each rumble command lasts; refreshed before it runs out so a held level feels continuous.
+- `PadHapticState` (interface): interface PadHapticState — Last command sent to one pad.
+
 ## @jgengine/shell/input/gamepadMerge
 
 - `GamepadInputFrame` (interface): interface GamepadInputFrame — Per-frame gamepad actions and analog values ready to merge with another input source.
@@ -3044,13 +3052,6 @@
 - `MouseLookOptions` (interface): interface MouseLookOptions { sensitivity?: number; maxPitch?: number; pointerLock?: boolean; initialYaw?: number; initialPitch?: number } — ⚠ undocumented
 - `MouseLookTracker` (interface): interface MouseLookTracker — The analog mouse-look service chase/orbit-cam games hand-rolled (#282.8) — pointer-lock lifecycle plus delta accumulation into a yaw/pitch aim, decoupled from the first-person rig. Attach it to the canvas, read `aim()` from `onTick`/`useFrame`, dispose on unmount.
 - `createMouseLookTracker` (function): function createMouseLookTracker(element: HTMLElement, options: MouseLookOptions = {}): MouseLookTracker — ⚠ undocumented
-
-## @jgengine/shell/input/padHaptics
-
-- `PAD_HAPTIC_EFFECT_MS` (const): const PAD_HAPTIC_EFFECT_MS: 120 — How long each rumble command lasts; refreshed before it runs out so a held level feels continuous.
-- `PadHapticState` (interface): interface PadHapticState — Last command sent to one pad.
-- `emptyPadHapticState` (function): function emptyPadHapticState(): PadHapticState — Fresh state for {@link stepPadHaptics}.
-- `stepPadHaptics` (function): function stepPadHaptics(state: PadHapticState, level: HapticLevel, nowMs: number): "play" | "reset" | null — Decide what to send a pad this frame for a mixed level: `"play"` when the level changed or the last effect is about to run out, `"reset"` when it fell silent, `null` otherwise.
 
 ## @jgengine/shell/input/pointerLock
 
@@ -4292,7 +4293,6 @@
 
 ## @jgengine/shell/world/WorldHud
 
-- `CombatCameraShake` (function): function CombatCameraShake(): null — ⚠ undocumented
 - `NameplateSample` (interface): interface NameplateSample — Projected nameplate with optional health and distance from the render camera.
 - `ProjectileTracers` (function): function ProjectileTracers({ lifeMs = 200 }: { lifeMs?: number }): React.JSX.Element — ⚠ undocumented
 - `Reticle` (function): function Reticle({ className }: { className?: string }): React.JSX.Element — ⚠ undocumented

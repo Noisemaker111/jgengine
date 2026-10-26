@@ -8,8 +8,8 @@
 - `AssetDownload` (type): type AssetDownload = PinnedDownload | ScrapeDownload — ⚠ undocumented
 - `AssetImportKind` (type): type AssetImportKind = "model" | "texture" | "material" | "sprite" | "spriteSheet" | "audio" | "font" | "hdri" — Supported logical kinds for user-supplied assets.
 - `AssetImportSpec` (interface): interface AssetImportSpec — A game-owned import description; paths are relative POSIX paths, roles are authored labels.
-- `AssetKind` (type): type AssetKind = "model" | "pack" | "material" | "component" | "icon" | "sprite" | "spritePack" — ⚠ undocumented
-- `AssetMatch` (type): type AssetMatch = | { kind: "model"; id: string; source: string; file?: string; via: "index" | "alias" | "single" } | { kind: "pack"; source: string; title: string; categories: readonly string[] } | { kind: "material"; id: string; title: string; categories: readonly string[] } | { kind: "component";… — ⚠ undocumented · used by `findAssets`: The ranked matches for a query — models, packs, HUD components, and icons in one list.
+- `AssetKind` (type): type AssetKind = "model" | "pack" | "material" | "component" | "icon" | "sprite" | "spritePack" — What a match is: a model file, a whole pack, a material, a HUD component, an icon, or a sprite (pack).
+- `AssetMatch` (type): type AssetMatch = | { kind: "model"; id: string; source: string; file?: string; via: "index" | "alias" | "single" } | { kind: "pack"; source: string; title: string; categories: readonly string[] } | { kind: "material"; id: string; title: string; categories: readonly string[] } | { kind: "component";… — One catalog entry a query matched, shaped by its kind.
 - `AssetProvenance` (interface): interface AssetProvenance — The resolved ownership of one logical asset id — the provisioning contract for that id.
 - `AssetProvenanceKind` (type): type AssetProvenanceKind = "committed" | "provisioned" | "dangling" — How an asset id's bytes reach a clean checkout: - `committed` — resolves to a self-hosted / remote URL carried in the shipped index (a {@link SingleAsset}); no pull step, available immediately. - `provisioned` — a pack {@link IndexEntry}; the id is declared but its GLB is fetched on demand by `assets pull <source>` into the consumer's served dir. - `dangling` — nothing in the index, singles, or aliases owns the id, so no provisioning step exists and it can never resolve on a clean clone.
 - `AssetProvider` (type): type AssetProvider = | "quaternius" | "kaykit" | "polypizza" | "itch" | "ambientcg" | "gameicons" | "custom" — ⚠ undocumented
@@ -24,7 +24,6 @@
 - `ExtractedMaterialMap` (interface): interface ExtractedMaterialMap — One normalized map pulled out of a material archive by `extractMaterialMaps`.
 - `ExtractedSpriteFile` (interface): interface ExtractedSpriteFile — One SVG/PNG file pulled out of a sprite/icon-pack archive by `extractSpriteFiles`.
 - `FindLibraryModelOptions` (interface): interface FindLibraryModelOptions — Narrowing for {@link findLibraryModel}.
-- `FindOptions` (interface): interface FindOptions { kind?: AssetKind; limit?: number } — ⚠ undocumented · used by `findAssets`: The ranked matches for a query — models, packs, HUD components, and icons in one list.
 - `GeneratedModelOrigin` (interface): interface GeneratedModelOrigin — A model a game generated itself (text or image to 3D, e.g. LLMville's fal.ai diorama-assets skill). The library never runs or pays for a generator: the game generates, reviews and commits the GLB, then registers it here with the generator and terms it was made under. `assets pull` skips these; `libraryModel` serves the committed file from `generatedBasePath`.
 - `GlbMetrics` (interface): interface GlbMetrics — Stored geometry and image inventory; triangles count mesh primitives once, regardless of scene instances.
 - `GlbTextureMetrics` (interface): interface GlbTextureMetrics — Dimensions and encoded bytes for one glTF image, including images referenced by texture extensions.
@@ -53,7 +52,8 @@
 - `ModelSnippetOptions` (interface): interface ModelSnippetOptions { basePath?: string; seam?: "objectModels" | "entityModels" } — ⚠ undocumented · used by `modelWiringSnippet`: Copy-paste wiring for a pulled GLB id: resolve through the catalog, drop into a model seam.
 - `PinnedDownload` (interface): interface PinnedDownload { url: string; sha256?: string } — ⚠ undocumented
 - `PolyHavenModelOrigin` (interface): interface PolyHavenModelOrigin — A Poly Haven model (CC0), fetched from `api.polyhaven.com` at its 1k texture tier.
-- `RankedMatch` (interface): interface RankedMatch { match: AssetMatch; score: number } — ⚠ undocumented · used by `rankAssets`: Rank every catalog entry — models, packs, HUD components, icons — against one query.
+- `RankAssetsOptions` (interface): interface RankAssetsOptions — Narrowing for {@link rankAssets}.
+- `RankedMatch` (interface): interface RankedMatch — A match with its score, 0 (none) to 100 (exact).
 - `ReferenceValidation` (interface): interface ReferenceValidation — The verdict for one {@link AssetReference}.
 - `RegistryCatalog` (interface): interface RegistryCatalog { homepage: string; components: readonly RegistryComponent[]; icons: readonly string[] } — ⚠ undocumented
 - `RegistryComponent` (interface): interface RegistryComponent { name: string; title: string; description: string } — ⚠ undocumented · used by `componentWiringSnippet`: Copy-paste wiring for a HUD component: the `shadcn add` command plus import + usage.
@@ -79,11 +79,11 @@
 - `componentInstallUrl` (function): function componentInstallUrl(name: string): string — The `shadcn add` URL for a HUD component, e.g. `https://jgengine.com/r/vital-bar.json`.
 - `componentWiringSnippet` (function): function componentWiringSnippet(component: RegistryComponent): string — Copy-paste wiring for a HUD component: the `shadcn add` command plus import + usage.
 - `createStarterCatalog` (function): function createStarterCatalog(options: BuildCatalogOptions = {}): AssetCatalog<ModelAssetRef> — Catalog restricted to the curated starter packs (people/props/nature/urban). Prefer this for scaffolds and probes so `asset:person_casual` etc. resolve without pulling the whole library. Full index: {@link buildCatalog}.
+- `describeAssetMatch` (function): function describeAssetMatch(match: AssetMatch): string — One line naming a match for a terminal list: kind, id and title.
 - `entryForSpriteFile` (function): function entryForSpriteFile(source: AssetSource, file: string): IndexEntry — Builds one sprite/icon `IndexEntry` — same shape as a model entry, minus `dims`.
 - `entryUrl` (function): function entryUrl(basePath: string, entry: IndexEntry): string — ⚠ undocumented
 - `extractMaterialMaps` (function): function extractMaterialMaps(archive: Uint8Array): ExtractedMaterialMap[] — Pulls the recognized PBR maps out of a material archive (ambientCG's flat `<Asset>_<Res>_<Map>.jpg` layout) and normalizes their names so resolved URLs never depend on the provider's naming or the pulled resolution.
 - `filterLibraryMaterials` (function): function filterLibraryMaterials(query: string, group?: LibraryGroup): readonly LibraryMaterial[] — Filter the library for a picker: case-insensitive match on name, title, group or source. Empty query returns everything, so a browser can render the full library first.
-- `findAssets` (function): function findAssets(query: string, options: FindOptions = {}): AssetMatch[] — The ranked matches for a query — models, packs, HUD components, and icons in one list.
 - `findLibraryMaterial` (function): function findLibraryMaterial(name: string): LibraryMaterial | null — Resolve a library name; unknown names return `null` so a caller can report them by name.
 - `findLibraryModel` (function): function findLibraryModel(query: string, options: FindLibraryModelOptions = {}): readonly ModelLibraryMatch[] — Rank library models for a plain-words request: an exact intent wins, then intent and title word overlap; a genre filter narrows the set. An empty result with a matching `libraryModelGap` means the library knows it has nothing realistic for that request.
 - `findLibraryModelByName` (function): function findLibraryModelByName(name: string): ModelLibraryEntry | null — The entry with this exact name, or `null`.
@@ -112,7 +112,7 @@
 - `modelSources` (const): const modelSources: readonly AssetSource[] — Every source whose archive holds GLB models (Quaternius, KayKit packs).
 - `modelWiringSnippet` (function): function modelWiringSnippet(id: string, options: ModelSnippetOptions = {}): string — Copy-paste wiring for a pulled GLB id: resolve through the catalog, drop into a model seam.
 - `quaterniusSources` (const): const quaterniusSources: readonly AssetSource[] — ⚠ undocumented
-- `rankAssets` (function): function rankAssets(query: string, options: FindOptions = {}): RankedMatch[] — Rank every catalog entry — models, packs, HUD components, icons — against one query.
+- `rankAssets` (function): function rankAssets(query: string, options: RankAssetsOptions = {}): RankedMatch[] — Rank every catalog entry — models, packs, HUD components, icons — against one query.
 - `readGlbDims` (function): function readGlbDims(bytes: Uint8Array): ModelDims | null — ⚠ undocumented
 - `readGlbMetrics` (function): function readGlbMetrics(bytes: Uint8Array, readResource?: (uri: string) => Uint8Array): GlbMetrics — Inspect GLB v2 geometry accessors and image headers offline. Throws on unreadable resources, malformed geometry, or required geometry compression; never silently reports missing data as zero. External resources are supplied by the caller; this function never fetches or decompresses bytes.
 - `registryCatalog` (const): const registryCatalog: RegistryCatalog — ⚠ undocumented
@@ -264,15 +264,6 @@
 - `MAX_ARCHIVE_ENTRY_COUNT` (const): const MAX_ARCHIVE_ENTRY_COUNT: 20000 — Max number of entries this module will extract out of one archive.
 - `MAX_ARCHIVE_UNCOMPRESSED_BYTES` (const): const MAX_ARCHIVE_UNCOMPRESSED_BYTES: number — Max total uncompressed size this module will inflate out of one archive, in bytes.
 
-## @jgengine/assets/find
-
-- `AssetKind` (type): type AssetKind = "model" | "pack" | "material" | "component" | "icon" | "sprite" | "spritePack" — ⚠ undocumented
-- `AssetMatch` (type): type AssetMatch = | { kind: "model"; id: string; source: string; file?: string; via: "index" | "alias" | "single" } | { kind: "pack"; source: string; title: string; categories: readonly string[] } | { kind: "material"; id: string; title: string; categories: readonly string[] } | { kind: "component";… — ⚠ undocumented · used by `findAssets`: The ranked matches for a query — models, packs, HUD components, and icons in one list.
-- `FindOptions` (interface): interface FindOptions { kind?: AssetKind; limit?: number } — ⚠ undocumented · used by `findAssets`: The ranked matches for a query — models, packs, HUD components, and icons in one list.
-- `RankedMatch` (interface): interface RankedMatch { match: AssetMatch; score: number } — ⚠ undocumented · used by `rankAssets`: Rank every catalog entry — models, packs, HUD components, icons — against one query.
-- `findAssets` (function): function findAssets(query: string, options: FindOptions = {}): AssetMatch[] — The ranked matches for a query — models, packs, HUD components, and icons in one list.
-- `rankAssets` (function): function rankAssets(query: string, options: FindOptions = {}): RankedMatch[] — Rank every catalog entry — models, packs, HUD components, icons — against one query.
-
 ## @jgengine/assets/generated
 
 - `generatedBySource` (const): const generatedBySource: Record<string, IndexEntry[]> — ⚠ undocumented
@@ -389,6 +380,15 @@
 - `ValidateAssetReferencesResult` (interface): interface ValidateAssetReferencesResult — The aggregate result of validating a set of references against the provisioning contract.
 - `resolveProvenance` (function): function resolveProvenance(id: string, options: ResolveProvenanceOptions = {}): AssetProvenance — Resolve one logical asset id (a pack id, a single id, or an alias key) to its {@link AssetProvenance}. Aliases are followed one hop to their target. An id that matches no declared owner is `dangling` — the signal a clean-clone gate turns into a hard failure, because no provisioning step can ever satisfy it.
 - `validateAssetReferences` (function): function validateAssetReferences(references: readonly AssetReference[], options: ValidateAssetReferencesOptions = {}): ValidateAssetReferencesResult — Validate that every {@link AssetReference} resolves against the declared provisioning contract — not by grepping source text, but by resolving each logical id to its committed / provisioned / dangling owner. A `dangling` reference fails with the referencing consumer, the logical id, the (null) resolved path, and the missing provisioning step; a `provisioned` reference passes and contributes its `assets pull <source>` step to `provisioning` (unless `present` is supplied and reports the bytes absent).
+
+## @jgengine/assets/rankAssets
+
+- `AssetKind` (type): type AssetKind = "model" | "pack" | "material" | "component" | "icon" | "sprite" | "spritePack" — What a match is: a model file, a whole pack, a material, a HUD component, an icon, or a sprite (pack).
+- `AssetMatch` (type): type AssetMatch = | { kind: "model"; id: string; source: string; file?: string; via: "index" | "alias" | "single" } | { kind: "pack"; source: string; title: string; categories: readonly string[] } | { kind: "material"; id: string; title: string; categories: readonly string[] } | { kind: "component";… — One catalog entry a query matched, shaped by its kind.
+- `RankAssetsOptions` (interface): interface RankAssetsOptions — Narrowing for {@link rankAssets}.
+- `RankedMatch` (interface): interface RankedMatch — A match with its score, 0 (none) to 100 (exact).
+- `describeAssetMatch` (function): function describeAssetMatch(match: AssetMatch): string — One line naming a match for a terminal list: kind, id and title.
+- `rankAssets` (function): function rankAssets(query: string, options: RankAssetsOptions = {}): RankedMatch[] — Rank every catalog entry — models, packs, HUD components, icons — against one query.
 
 ## @jgengine/assets/registry
 
