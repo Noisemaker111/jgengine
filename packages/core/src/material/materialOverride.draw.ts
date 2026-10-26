@@ -2,7 +2,7 @@ import * as THREE from "three";
 
 import type { ModelMaterialOverride, ModelRimLight } from "@jgengine/core/game/playableGame";
 
-import { applyModelScan } from "@jgengine/shell/render/modelScan";
+import { applyModelScan } from "@jgengine/core/model/modelScan.draw";
 
 /** Options for applyMaterialOverride: clone first, textures to apply and a hook that records replaced materials. */
 export interface MaterialOverrideOptions {

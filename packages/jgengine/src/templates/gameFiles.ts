@@ -390,7 +390,7 @@ export const assets = createStarterCatalog({ basePath: "/models" });
 `;
 
 const gameModelsTs = (player = "asset:person_casual") => `import type { ModelConfig } from "@jgengine/core/game/playableGame";
-import { resolveModelPlan } from "@jgengine/shell/render/resolveModel";
+import { resolveModelPlan } from "@jgengine/core/model/resolveModel";
 
 import { assets } from "./assets";
 

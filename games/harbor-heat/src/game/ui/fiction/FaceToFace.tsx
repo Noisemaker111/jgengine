@@ -3,8 +3,8 @@ import { useDisplayProfile } from "@jgengine/core/ui/display.view";
 import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { GameCursor } from "@jgengine/core/ui/cursor.view";
 import { useMenuNav } from "@jgengine/core/menu/menuNav.view";
-import { EntityPreview } from "@jgengine/shell/render/EntityPreview";
-import { IsolatedEntityModel } from "@jgengine/shell/render/SceneModels";
+import { EntityPreview } from "@jgengine/core/render/EntityPreview.draw";
+import { IsolatedEntityModel } from "@jgengine/core/model/SceneModels.draw";
 import { entityModels } from "../../world/models";
 import { HH, KeyLegend, navItem, useMenuSound, useMoveTick, useScreenTouch } from "./kit";
 

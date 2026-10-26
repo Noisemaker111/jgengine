@@ -7,7 +7,7 @@ import { canvasCover } from "@jgengine/core/ui/canvasCover.view";
 
 import { CanvasCoverFrameloop } from "./drivers/CanvasCoverFrameloop";
 import { FrameRateLimiter } from "./drivers/FrameRateLimiter";
-import { registerSceneWarmup, type ShaderWarmup } from "./render/shaderWarmup";
+import { registerSceneWarmup, type ShaderWarmup } from "@jgengine/core/render/shaderWarmup.draw";
 
 /**
  * A covered canvas must stop drawing: Harbor Heat's pause screen left a paused world, its cascade

@@ -3,8 +3,8 @@ import * as THREE from "three";
 
 import type { ModelShadowMode } from "@jgengine/core/lod/modelLod";
 import { AuthoredSurfaceMaterial, authoredSurfaceKey, type AuthoredSurfaceConfig, type SurfaceShape } from "@jgengine/core/material/authoredSurfaceMaterial.draw";
-import { ModelFallbackBoundary } from "@jgengine/shell/render/SceneModels";
-import { useDisposable } from "@jgengine/shell/render/useDisposable";
+import { ModelFallbackBoundary } from "@jgengine/core/model/SceneModels.draw";
+import { useDisposable } from "@jgengine/core/render/useDisposable.draw";
 import { composeInstance, uploadInstances } from "./instanceUpload.draw";
 
 /** One editor-derived static primitive. A box spans one unit; a cylinder has unit radius and height before scale. */

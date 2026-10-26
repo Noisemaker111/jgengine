@@ -9,7 +9,7 @@ import type { AuthoredSurfaceConfig } from "@jgengine/core/material/authoredSurf
 import { createDecalTexture } from "@jgengine/core/scene/decalTexture";
 import { StaticShapeInstances, type StaticShapeInstance } from "@jgengine/core/instancing/staticShapeInstances.draw";
 import { uploadInstances } from "@jgengine/core/instancing/instanceUpload.draw";
-import { useDisposable } from "./useDisposable";
+import { useDisposable } from "@jgengine/core/render/useDisposable.draw";
 
 /** The surface each dressing family wears. Any family left out falls back to a plain painted default. */
 export interface InteriorDressingSurfaces {

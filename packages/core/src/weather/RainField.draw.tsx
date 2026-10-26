@@ -4,7 +4,7 @@ import * as THREE from "three";
 
 import { reportRain, reportWind } from "@jgengine/shell/render/livingWorld";
 
-import { useDisposable } from "@jgengine/shell/render/useDisposable";
+import { useDisposable } from "@jgengine/core/render/useDisposable.draw";
 import { createWeatherQuadGeometry } from "./weatherGeometry.draw";
 import { DEFAULT_RAIN_COUNT, DEFAULT_RAIN_DENSITY, resolveWeatherInstanceCount } from "./weatherMath";
 import { WEATHER_SHELTER_SHADER } from "./weatherShelter.draw";

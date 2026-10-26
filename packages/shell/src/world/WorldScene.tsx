@@ -25,10 +25,10 @@ import { useGameContext } from "@jgengine/react/provider";
 import { useSceneEntityIds, useSceneObjectIds, useGameStore, usePlayer, useTarget } from "@jgengine/react/hooks";
 
 import { DefaultSurface, detailMaps } from "@jgengine/core/material/defaultSurface.draw";
-import { useDisposable } from "../render/useDisposable";
-import { WindClock } from "../render/modelWind";
-import { MeasuredBoundsGroup } from "../render/measureBounds";
-import { EntitySprite, IsolatedEntityModel } from "../render/SceneModels";
+import { useDisposable } from "@jgengine/core/render/useDisposable.draw";
+import { WindClock } from "@jgengine/core/model/modelWind.draw";
+import { MeasuredBoundsGroup } from "@jgengine/core/model/measureBounds.draw";
+import { EntitySprite, IsolatedEntityModel } from "@jgengine/core/model/SceneModels.draw";
 import { CharacterCrowd } from "../render/CharacterCrowd";
 import {
   CharacterCrowdRegistry,
@@ -43,7 +43,7 @@ import {
   setCharacterLodTier,
   type CharacterLodTier,
 } from "@jgengine/core/lod/characterLod";
-import { resolveEntityModel, resolveObjectModel, type ObjectModelCacheEntry } from "../render/resolveModel";
+import { resolveEntityModel, resolveObjectModel, type ObjectModelCacheEntry } from "@jgengine/core/model/resolveModel";
 import { useRenderVisibility } from "@jgengine/core/visibility/CullingProvider.draw";
 import { writePoseIfChanged, writeRenderPoseIfChanged, emptyPoseMemo, type PoseMemo } from "./entityPose";
 import type { RenderPose } from "@jgengine/core/runtime/poseInterpolation";

@@ -3,7 +3,7 @@ import * as THREE from "three";
 
 import { devtools } from "@jgengine/core/devtools/devtools";
 
-import { triangleProbe } from "@jgengine/shell/render/triangleAttribution";
+import { triangleProbe } from "@jgengine/core/render/triangleAttribution.draw";
 import { DevtoolsRendererProbe } from "./DevtoolsOverlay.draw";
 
 describe("devtools renderer probe", () => {

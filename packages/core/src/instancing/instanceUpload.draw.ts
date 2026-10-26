@@ -1,6 +1,6 @@
 import * as THREE from "three";
 
-import { submitInstanceCount } from "@jgengine/shell/render/submittedDraws";
+import { submitInstanceCount } from "@jgengine/core/render/submittedDraws.draw";
 
 /** Instance transforms: a ready list of matrices, or a count plus a writer that fills each one. */
 export type InstanceSource = readonly THREE.Matrix4[] | { count: number; at(index: number, out: THREE.Matrix4): void };

@@ -1276,10 +1276,10 @@
     {
       "id": "capture-canvas",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/render/sceneCapture",
-      "domain": "render",
+      "module": "@jgengine/core/scene/sceneCapture.draw",
+      "domain": "scene",
       "gameFacing": false,
       "probe": null,
       "intent": "read the live R3F frame to a PNG data URL (needs preserveDrawingBuffer)"
@@ -2753,9 +2753,9 @@
     {
       "id": "disposable-resource",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/render/useDisposable",
+      "module": "@jgengine/core/render/useDisposable.draw",
       "domain": "render",
       "gameFacing": false,
       "probe": null,
@@ -3227,9 +3227,9 @@
     {
       "id": "entity-preview",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/render/EntityPreview",
+      "module": "@jgengine/core/render/EntityPreview.draw",
       "domain": "render",
       "gameFacing": false,
       "probe": null,
@@ -4014,10 +4014,10 @@
     {
       "id": "heavy-models",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/render/modelLoad",
-      "domain": "render",
+      "module": "@jgengine/core/model/modelLoad.draw",
+      "domain": "model",
       "gameFacing": false,
       "probe": null,
       "intent": "models over the per-model triangle budget, for perf probes and smoke assertions"
@@ -4510,10 +4510,10 @@
     {
       "id": "imported-rig-node",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/render/rigNode",
-      "domain": "render",
+      "module": "@jgengine/core/model/rigNode.draw",
+      "domain": "model",
       "gameFacing": false,
       "probe": null,
       "intent": "resolve original imported bone and slot names with ambiguity diagnostics"
@@ -6205,10 +6205,10 @@
     {
       "id": "model-fallbacks",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/render/modelLoad",
-      "domain": "render",
+      "module": "@jgengine/core/model/modelLoad.draw",
+      "domain": "model",
       "gameFacing": false,
       "probe": null,
       "intent": "models the loader replaced with a placeholder, for capture and smoke assertions"
@@ -6216,10 +6216,10 @@
     {
       "id": "model-instance",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/render/modelRender",
-      "domain": "render",
+      "module": "@jgengine/core/model/modelRender.draw",
+      "domain": "model",
       "gameFacing": false,
       "probe": null,
       "intent": "clone a loaded model for independent styling and animation"
@@ -6260,10 +6260,10 @@
     {
       "id": "model-load-idle",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/render/modelLoad",
-      "domain": "render",
+      "module": "@jgengine/core/model/modelLoad.draw",
+      "domain": "model",
       "gameFacing": false,
       "probe": null,
       "intent": "how long the shared GLB loader has been idle, for capture settle waits"
@@ -6271,13 +6271,24 @@
     {
       "id": "model-load-starts",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/render/modelLoad",
-      "domain": "render",
+      "module": "@jgengine/core/model/modelLoad.draw",
+      "domain": "model",
       "gameFacing": false,
       "probe": null,
       "intent": "count of model streaming bursts, for capture quiescence checks"
+    },
+    {
+      "id": "model-loader-paths",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/model/modelLoad.draw",
+      "domain": "model",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "Point Draco and KTX2 decoding at self-hosted decoder files"
     },
     {
       "id": "model-node-visibility",
@@ -6302,12 +6313,23 @@
       "intent": "named attachment points read from a model"
     },
     {
+      "id": "model-triangle-budget",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/model/modelLoad.draw",
+      "domain": "model",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "Raise or lower the per-model triangle budget"
+    },
+    {
       "id": "model-wind",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/render/modelWind",
-      "domain": "render",
+      "module": "@jgengine/core/model/modelWind.draw",
+      "domain": "model",
       "gameFacing": false,
       "probe": null,
       "intent": "sway a foliage model in the shared gust field"
@@ -7555,9 +7577,9 @@
     {
       "id": "projected-overdraw",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/render/projectedOverdraw",
+      "module": "@jgengine/core/render/projectedOverdraw.draw",
       "domain": "render",
       "gameFacing": false,
       "probe": null,
@@ -7918,10 +7940,10 @@
     {
       "id": "request-scene-capture",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/render/sceneCaptureRequest",
-      "domain": "render",
+      "module": "@jgengine/core/scene/sceneCaptureRequest.draw",
+      "domain": "scene",
       "gameFacing": false,
       "probe": null,
       "intent": "request the live scene frame, waiting for a late binding and the first painted frame"
@@ -7929,10 +7951,10 @@
     {
       "id": "request-scene-thumbnail",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/render/sceneCaptureRequest",
-      "domain": "render",
+      "module": "@jgengine/core/scene/sceneCaptureRequest.draw",
+      "domain": "scene",
       "gameFacing": false,
       "probe": null,
       "intent": "request a save-card thumbnail from the live scene, or a stated failure"
@@ -8355,10 +8377,10 @@
     {
       "id": "scene-capture-binding",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/render/sceneCapture",
-      "domain": "render",
+      "module": "@jgengine/core/scene/sceneCapture.draw",
+      "domain": "scene",
       "gameFacing": false,
       "probe": null,
       "intent": "expose the in-Canvas scene-capture function to outside-Canvas HUD (photo mode, save thumbnails)"
@@ -9308,10 +9330,10 @@
     {
       "id": "static-transforms",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/render/staticTransforms",
-      "domain": "render",
+      "module": "@jgengine/core/model/staticTransforms.draw",
+      "domain": "model",
       "gameFacing": false,
       "probe": null,
       "intent": ""
@@ -9945,9 +9967,9 @@
     {
       "id": "triangle-attribution",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/render/triangleAttribution",
+      "module": "@jgengine/core/render/triangleAttribution.draw",
       "domain": "render",
       "gameFacing": false,
       "probe": null,

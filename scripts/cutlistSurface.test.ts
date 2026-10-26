@@ -118,8 +118,8 @@ describe("CUTLIST surface diet", () => {
     expect(existsSync(join(root, "packages/core/src/input/shellPointer.draw.ts"))).toBe(true);
     expect(existsSync(join(root, "packages/core/src/movement/shellMovement.ts"))).toBe(true);
     expect(existsSync(join(root, "packages/core/src/audio/audioWire.view.ts"))).toBe(true);
-    expect(existsSync(join(root, "packages/shell/src/render/modelLoad.ts"))).toBe(true);
-    expect(readFileSync(join(root, "packages/shell/src/render/resolveModel.ts"), "utf8")).toMatch(
+    expect(existsSync(join(root, "packages/core/src/model/modelLoad.draw.ts"))).toBe(true);
+    expect(readFileSync(join(root, "packages/core/src/model/resolveModel.ts"), "utf8")).toMatch(
       /export function resolveEntityModel/,
     );
     expect(readFileSync(join(root, "packages/core/src/scene/entityStore.ts"), "utf8")).toMatch(

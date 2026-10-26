@@ -4,7 +4,7 @@ import * as THREE from "three";
 
 import type { PhysicsWorld } from "@jgengine/core/physics/physicsWorld";
 
-import { useDisposable } from "../render/useDisposable";
+import { useDisposable } from "@jgengine/core/render/useDisposable.draw";
 
 export interface InstancedBodiesProps {
   /** Physics world whose SoA buffers are streamed straight into the instance matrix. */

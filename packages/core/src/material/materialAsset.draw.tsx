@@ -7,12 +7,12 @@ import { MATERIAL_TEXTURE_SEMANTICS, validateMaterialAsset, validateMaterialAssi
 
 import { applyMaterialOverrideToMaterial, MATERIAL_TEXTURE_PROPERTIES, requiresPhysicalMaterial, type MaterialOverrideTextures } from "./materialOverride.draw";
 import { configureAuthoredSurface, type SurfaceShape } from "./authoredSurfaceMaterial.draw";
-import { ownModelMaterial } from "@jgengine/shell/render/modelRender";
-import { meshMatchesName } from "@jgengine/shell/render/modelMeshMerge";
-import { useDisposable } from "@jgengine/shell/render/useDisposable";
+import { ownModelMaterial } from "@jgengine/core/model/modelRender.draw";
+import { meshMatchesName } from "@jgengine/core/model/modelMeshMerge.draw";
+import { useDisposable } from "@jgengine/core/render/useDisposable.draw";
 import { ImageTextureLoader } from "./imageTexture.draw";
-import { detectKtx2Support, materialKtx2Loader } from "@jgengine/shell/render/modelLoad";
-import { resolveAssetBaseUrl } from "@jgengine/shell/render/assetBase";
+import { detectKtx2Support, materialKtx2Loader } from "@jgengine/core/model/modelLoad.draw";
+import { resolveAssetBaseUrl } from "@jgengine/core/assets/assetBase.draw";
 
 /** Shares the model transcoder and loader cache while loading native authored images normally, top row first as glTF maps expect. @internal */
 export class MaterialTextureLoader extends THREE.Loader<THREE.Texture> {

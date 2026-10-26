@@ -1,5 +1,5 @@
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
-import { resolveModelPlan, type ModelPick } from "@jgengine/shell/render/resolveModel";
+import { resolveModelPlan, type ModelPick } from "@jgengine/core/model/resolveModel";
 
 import { assets } from "./assets";
 import { DECOR, FURNITURE, STRUCTURE, type DecorDef, type FurnitureDef, type StructureDef } from "./objects/catalog";

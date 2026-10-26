@@ -588,6 +588,11 @@
 - `formatPlayTimelineEntry` (function): function formatPlayTimelineEntry(entry: PlayTimelineEntry): string — One compact timeline line: `t=120 event combat.damage to=bruiser amount=12 remaining=54`.
 - `playTimelineDigest` (function): function playTimelineDigest(timeline: readonly PlayTimelineEntry[]): string — FNV-1a over the timeline's canonical JSON. Cheap, dependency-free and stable across runs and machines, which is all a replay comparison needs.
 
+## @jgengine/core/render/EntityPreview.draw
+
+- `EntityPreview` (function): function EntityPreview({ children, model, instanceId, mood = "studio", backdrop, turntable = 0, faceCamera = false, forward, environment = true, cameraPosition = [0, 1, 3], fov = 35, dpr = [1, 2], className, style, }: EntityPreviewProps): React.JSX.Element — Drop-in live 3D preview of a single entity — the character-screen portrait, unit inspector, or loadout viewer. It owns all the plumbing a game would otherwise re-derive by hand: a nested `<Canvas>`, the {@link GameContextBridge} that carries the running `GameContext` across the R3F reconciler boundary (so the subject's `useEntityRenderCues` / `useGameContext` hooks resolve and it mirrors the live game), a {@link StudioStage} 3-point lighting rig with optional turntable / face-camera, and a capture-friendly GL surface. The game keeps ownership of its `renderEntity`: pass it as `children`, or hand a native `model` (+ `instanceId`) for an engine-composed body. Bound to a live `instanceId`, the portrait walks, flinches, and topples in lockstep with the world instead of a canned spin.
+- `EntityPreviewProps` (interface): interface EntityPreviewProps — Props for {@link EntityPreview}.
+
 ## @jgengine/core/render/ambientLife
 
 - `AmbientLifeConfig` (interface): interface AmbientLifeConfig — Small life the renderer adds around the camera, driven by the weather and the time of day. Birds circle overhead in fair daylight and leave in rain or at night; litter blows along the ground when the wind picks up; steam rises from vents, thicker when it is cold, wet or dark.
@@ -650,6 +655,22 @@
 - `StylizeConfig` (interface): interface StylizeConfig — Art-style stage that turns the same models and lighting into a different look without touching materials: ink outlines (comic / Borderlands), cel bands (cartoon), pixelation (retro). Runs after tone mapping, before the grade.
 - `ToneMappingMode` (type): type ToneMappingMode = "aces" | "agx" | "reinhard" | "cineon" | "linear" | "none" — Renderer tone-mapping curve applied by the post chain's output stage. `"agx"` is the pipeline default: it keeps hue in saturated highlights and rolls a sun-lit surface off gradually, where `"aces"` skews bright colours toward white.
 
+## @jgengine/core/render/projectedOverdraw.draw
+
+- `ProjectedOverdrawOptions` (interface): interface ProjectedOverdrawOptions — Sampling resolution; lower resolutions change thin geometry and alpha-mask raster coverage.
+- `ProjectedOverdrawReport` (interface): interface ProjectedOverdrawReport — Projected mesh-fragment overlap, with depth rejection disabled; this is not production early-Z overdraw or GPU timing.
+- `measureProjectedOverdraw` (function): function measureProjectedOverdraw(renderer: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.Camera, options: ProjectedOverdrawOptions = {}): ProjectedOverdrawReport — Opt in to a synchronous offscreen count of projected mesh fragments. Native PBR/unlit vertex transforms and alpha discard remain; depth rejection, shadow/refraction passes and postprocessing do not participate. Blended texels count equally, including zero opacity when native alphaTest/alphaHash does not discard them. Pure shader-modifying onBeforeCompile callbacks are retained; render callbacks, custom shader materials, stencil and alpha-to-coverage are rejected. The float readback stalls the GPU. Temporary materials/target are disposed and renderer draw counters/state restored; borrowed assets may become resident while measured.
+
+## @jgengine/core/render/shaderWarmup.draw
+
+- `HeldDraw` (interface): interface HeldDraw — A draw the hold swallowed: what it would have drawn, from where, into what, with what override.
+- `HoldDrawsOptions` (interface): interface HoldDrawsOptions — Options for {@link holdDraws}.
+- `SHADER_WARMUP_DEFAULTS` (const): const SHADER_WARMUP_DEFAULTS: { readonly quietMs: 250; readonly planBudgetMs: 120000; readonly stallMs: 30000; readonly planFloorMs: 1500; readonly pollMs: 100; readonly backgroundMs: 2000; readonly backgroundEveryMs: 250; readonly programsPerBatch: 12; readonly texturesPerBatch: 4; readonly prepare… — Defaults sized to cover one load: the covered wait is the driver's link time, not a guess.
+- `ShaderWarmup` (interface): interface ShaderWarmup — A warmup in flight: its promise, its latest state, and a way to stop it.
+- `ShaderWarmupOptions` (interface): interface ShaderWarmupOptions — Options for {@link createShaderWarmup}; the clock, sleep and loader signal are injectable for tests.
+- `ShaderWarmupRenderer` (interface): interface ShaderWarmupRenderer — The renderer surface the warmup needs; a real `WebGLRenderer` satisfies it.
+- `ShaderWarmupState` (interface): interface ShaderWarmupState — Where the load-time shader warmup is: waiting for the scene to stop growing, compiling a round, finished, or skipped because the renderer refused. The loading screen renders it.
+
 ## @jgengine/core/render/sprite2d
 
 - `SortingLayers` (const): const SortingLayers: readonly ["background", "world", "actors", "effects", "foreground", "ui"] — Canonical layers used by 2D presentations.
@@ -660,6 +681,17 @@
 ## @jgengine/core/render/tileLayerPreview.view
 
 - `TileLayerPreview` (function): function TileLayerPreview({ className }: { className?: string }): React.JSX.Element — Deterministic canvas-backed tile-layer fixture for textured tile presentation evidence.
+
+## @jgengine/core/render/triangleAttribution.draw
+
+- `TriangleAttribution` (interface): interface TriangleAttribution — Where one scene's triangles are, biggest line first.
+- `TriangleLine` (interface): interface TriangleLine — One line of the triangle table: the draws sharing one geometry inside one named model.
+- `attributeTriangles` (function): function attributeTriangles(root: THREE.Object3D, limit = 12): TriangleAttribution — Sum a scene's triangles by model and geometry, which is the attribution a triangle budget needs: a total says a frame is heavy, a table says which authored object made it heavy. Walks the graph once; call it on demand, never per frame.
+
+## @jgengine/core/render/useDisposable.draw
+
+- `Disposable` (interface): interface Disposable — Anything exposing dispose() — three.js geometries, materials, textures, render targets.
+- `useDisposable` (function): function useDisposable<T extends Disposable | readonly Disposable[]>(create: () => T, deps: DependencyList): T — Memoize a three.js resource (or tuple of resources) and dispose it when `deps` change or the component unmounts. Owns the useMemo + dispose-effect pair that otherwise repeats at every GPU-resource call site. The factory must return objects exposing `dispose()` (geometries, materials, textures, render targets).
 
 ## @jgengine/core/replay/recordingBuffer
 
@@ -2225,11 +2257,6 @@
 - `CharacterCrowd` (function): function CharacterCrowd({ models, registry, fps = 24, onPick }: CharacterCrowdProps): React.JSX.Element — Draws characters through the GPU batch path: one baked rig per character kind, one instanced draw per material, every member's clip, time offset and speed sampled in the vertex shader. The entity markers decide who is batched (their `lod` tiers and the batch capacity) and write poses into `registry`; this layer owns the bakes, the materials and the instance buffers. Mount it in the same canvas as the entity markers; unmount it to fall back to per-entity rigs.
 - `CharacterCrowdProps` (interface): interface CharacterCrowdProps — Props for {@link CharacterCrowd}.
 
-## @jgengine/shell/render/EntityPreview
-
-- `EntityPreview` (function): function EntityPreview({ children, model, instanceId, mood = "studio", backdrop, turntable = 0, faceCamera = false, forward, environment = true, cameraPosition = [0, 1, 3], fov = 35, dpr = [1, 2], className, style, }: EntityPreviewProps): React.JSX.Element — Drop-in live 3D preview of a single entity — the character-screen portrait, unit inspector, or loadout viewer. It owns all the plumbing a game would otherwise re-derive by hand: a nested `<Canvas>`, the {@link GameContextBridge} that carries the running `GameContext` across the R3F reconciler boundary (so the subject's `useEntityRenderCues` / `useGameContext` hooks resolve and it mirrors the live game), a {@link StudioStage} 3-point lighting rig with optional turntable / face-camera, and a capture-friendly GL surface. The game keeps ownership of its `renderEntity`: pass it as `children`, or hand a native `model` (+ `instanceId`) for an engine-composed body. Bound to a live `instanceId`, the portrait walks, flinches, and topples in lockstep with the world instead of a canned spin.
-- `EntityPreviewProps` (interface): interface EntityPreviewProps — Props for {@link EntityPreview}.
-
 ## @jgengine/shell/render/InteriorDressing
 
 - `DEFAULT_INTERIOR_SURFACES` (const): const DEFAULT_INTERIOR_SURFACES: InteriorDressingSurfaces — Plain defaults: grey paint, dull steel, a warm lens.
@@ -2243,13 +2270,6 @@
 
 - `PartMotionRig` (function): function PartMotionRig({ parts, model, instanceId, renderPart, children, }: { parts: readonly ModelPart[]; model: ModelConfig; instanceId?: string; /** Renders one part's model content (the shell passes its part renderer to avoid an import cycle). */ renderPart: (part: ModelPart, index: number) => R… — Procedural motion rig for a rig-less part-composed character (`ModelPart.role` — see `@jgengine/core/game/partAnimation`). Wraps the whole composition in a root group that bobs, breathes, flinches on `combat.hitReaction`, and topples on `entity.died`, while each role-tagged part swings around its authored transform — legs/arms counter-phase from the entity's live movement speed, head counter-sway, tail wag, wing flap. Untagged parts render as static kit pieces. Children are the base model content (primitive, attachments).
 
-## @jgengine/shell/render/SceneModels
-
-- `EntityModel` (function): function EntityModel({ model, instanceId, measure, lodLevel = 0, }: { model: ModelConfig; instanceId?: string; measure?: MeasureTarget; /** The variant level being drawn. Past the source level, a simplified asset may have dropped a selected slot. */ lodLevel?: number; }): React.JSX.Element — ⚠ undocumented
-- `EntitySprite` (function): function EntitySprite({ sprite }: { sprite: EntitySpriteConfig }): React.JSX.Element — ⚠ undocumented
-- `IsolatedEntityModel` (function): function IsolatedEntityModel({ model, instanceId, measure, fallback, }: { model: ModelConfig; instanceId?: string; measure?: MeasureTarget; fallback?: ReactNode; }): React.JSX.Element — ⚠ undocumented
-- `MeasureTarget` (interface): interface MeasureTarget — Where a measured model reports its rendered bounds: an entity kind or an object catalog id.
-
 ## @jgengine/shell/render/SkinnedInstances
 
 - `BakeSkinnedCrowdOptions` (interface): interface BakeSkinnedCrowdOptions — Options for {@link bakeSkinnedCrowd}.
@@ -2262,11 +2282,6 @@
 - `bakeSkinnedCrowd` (function): function bakeSkinnedCrowd(source: SkinnedCrowdSource, options: BakeSkinnedCrowdOptions = {}): BakedSkinnedCrowd — Bakes a rig for {@link SkinnedInstances}: merges its meshes into one geometry per material, samples every requested clip at `fps`, and writes each slot's model-space matrix into a float texture laid out by `planBoneTexture`. A skinned mesh contributes its bones as slots; a rig-less part that a clip moves contributes that node, with its vertices weighted fully to it, so a node-transform character (a walking miniature with rotating limbs) batches through the same shader. A model with no clips at all bakes to `animated: false`: one merged geometry per material and no texture. Meshes with several materials keep only the first. Exported for tests and custom crowd renderers.
 - `createCrowdUniforms` (function): function createCrowdUniforms(baked: BakedSkinnedCrowd): CrowdUniforms — Builds the uniforms a crowd material reads: the texture and per-clip start, frames, fps and loop.
 - `patchCrowdMaterial` (function): function patchCrowdMaterial<T extends THREE.Material>(material: T, uniforms: CrowdUniforms): T — Patches a material so each instance skins itself from the crowd texture: per-instance `crowdPlay` is (clip index, time offset, speed). Works on any built-in material, the depth material for shadows included.
-
-## @jgengine/shell/render/assetBase
-
-- `installAssetBase` (function): function installAssetBase(base: string): void — Installs the app base URL (pass `import.meta.env.BASE_URL`) so root-absolute asset paths load from under it. Call once at app startup, before any game loads. Bases that are not root-absolute (`/`, `./`) reset to the pass-through default. Also registers {@link resolveAssetBaseUrl} on `THREE.DefaultLoadingManager`, covering `TextureLoader`, drei's `useTexture` / `useGLTF`, and every other loader on the default manager.
-- `resolveAssetBaseUrl` (function): function resolveAssetBaseUrl(url: string): string — Resolves a root-absolute asset URL (`/models/…`, `/materials/…`) against the installed app base. Relative, protocol-relative, absolute-scheme (`https:`, `blob:`, `data:`), and already-based URLs pass through unchanged. Installed as the URL modifier on THREE loading managers so every model and texture load resolves correctly wherever the app is mounted.
 
 ## @jgengine/shell/render/characterGlance
 
@@ -2305,124 +2320,9 @@
 - `DRY_SECONDS` (const): const DRY_SECONDS: 70 — Seconds of dry weather until soaked surfaces are dry again.
 - `WET_SECONDS` (const): const WET_SECONDS: 14 — Seconds of steady rain until surfaces are soaked.
 
-## @jgengine/shell/render/measureBounds
-
-- `MEASURE_EXCLUDE_KEY` (const): const MEASURE_EXCLUDE_KEY: "jgMeasureExclude" — Subtrees flagged with this userData key are excluded from bounds measurement — debug gizmos, selection quads, effect billboards that should not inflate the hitbox. Sprites and invisible subtrees are always excluded.
-- `MeasuredBoundsGroup` (function): function MeasuredBoundsGroup({ target, measureKey, children, }: { target: "entity" | "object"; measureKey: string; children: ReactNode; }): React.JSX.Element — Wraps custom-rendered actor content (`renderEntity` / `renderObject`) and reports its measured entity-local bounds into collider resolution, so the hitbox wraps what is actually on screen instead of the fixed-size fallback box. A successful measure re-reports only when the subtree gained or lost meshes (async fill-in), not when idle animation nudges the same meshes.
-- `MeasuredLocalBounds` (interface): interface MeasuredLocalBounds — Entity-local AABB of the meshes under a measured root, plus how many meshes contributed — the count lets callers detect async subtree fill-in without diffing bounds.
-- `measureLocalBounds` (function): function measureLocalBounds(root: THREE.Object3D): MeasuredLocalBounds | null — Measure the meshes under `root` in `root`'s own frame (root's transform is the measuring frame, children compose their local matrices below it). Returns `null` when nothing measurable is mounted. Skinned meshes measure at bind pose — the standard engine approximation.
-- `reportMeasuredBounds` (function): function reportMeasuredBounds(ctx: GameContext, target: "entity" | "object", key: string, bounds: MeasuredLocalBounds): void — Forward a measured result into the context (entity kind or object catalog id), deduping repeat reports of the same shape so remounts and multi-instance kinds don't churn collider resolution.
-
-## @jgengine/shell/render/measureCollisionMesh
-
-- `MeasuredCollisionTriangles` (interface): interface MeasuredCollisionTriangles extends CollisionMeshSource — Entity-local triangle soup of the meshes under a measured root, plus the contributing mesh count (same async fill-in detection as measured bounds). Satisfies {@link CollisionMeshSource}.
-- `measureLocalCollisionTriangles` (function): function measureLocalCollisionTriangles(root: THREE.Object3D, transform?: { scale: number; offset: readonly [number, number, number] }): MeasuredCollisionTriangles | null — Collect the triangle soup of the meshes under `root` in `root`'s own frame — the mesh-accurate counterpart to `measureLocalBounds`, with the same visibility/sprite/{@link MEASURE_EXCLUDE_KEY} exclusions (skinned meshes contribute their bind pose). An optional uniform `scale` + `offset` maps the result into entity-local space when the caller mounts the root scaled/translated (the model-primitive path). Returns `null` when nothing is measurable or the soup exceeds the triangle budget — callers keep their box fallback.
-- `reportMeasuredCollisionMesh` (function): function reportMeasuredCollisionMesh(ctx: GameContext, target: "entity" | "object", key: string, triangles: MeasuredCollisionTriangles): void — Forward measured triangles into the context (entity kind or object catalog id), deduping repeat reports of the same soup so remounts and multi-instance kinds don't rebuild the BVH.
-
-## @jgengine/shell/render/modelLoad
-
-- `DEFAULT_MODEL_TRIANGLE_BUDGET` (const): const DEFAULT_MODEL_TRIANGLE_BUDGET: 100000 — Per-model triangle ceiling before the loader warns. A prop is a few thousand triangles; a hero rig tens of thousands.
-- `HeavyModelRecord` (interface): interface HeavyModelRecord — One over-budget model as {@link heavyModels} reports it: the URL the loader fetched, its triangle count, and the budget it exceeded.
-- `MissingModelRecord` (interface): interface MissingModelRecord — A model the loader could not load and replaced with a placeholder box.
-- `ModelLoaderConfig` (interface): interface ModelLoaderConfig — Where the Draco decoder and KTX2 (Basis) transcoder load from. Left out, each comes from the game's own build (`decoderFiles.ts`); a path is a folder holding three's decoder files.
-- `configureModelLoaders` (function): function configureModelLoaders(options: ModelLoaderConfig = {}): Readonly<Required<ModelLoaderConfig>> — Configures shared Draco and KTX2 loaders. Repeated calls with the same paths are no-ops.
-- `detectKtx2Support` (function): function detectKtx2Support(renderer: THREE.WebGLRenderer): void — Detects GPU support for the configured KTX2 transcoder after a renderer exists.
-- `heavyModels` (function): function heavyModels(): readonly HeavyModelRecord[] — Every model the shared loader resolved whose triangle count exceeds the budget, in load order. A heavy prop is invisible in a screenshot and only shows up as a slow frame, so the loader measures each GLB as it lands and this exposes the verdict for `debug_snapshot` probes and smoke tests to assert against.
-- `modelLoadFallbacks` (function): function modelLoadFallbacks(): readonly MissingModelRecord[] — Every model the shared loader diagnosed as broken and replaced with a magenta placeholder, in load order.
-- `modelLoadIdleMs` (function): function modelLoadIdleMs(): number — How long the shared GLB loader has been idle, in ms — `0` while any model is still in flight. A capture host reads this to wait for streaming to finish instead of guessing a settle delay: models that pop in after the shot are why an establishing capture used to come back half-empty until someone hand-tuned `--settle`.
-- `modelLoadStarts` (function): function modelLoadStarts(): number — How many times the shared GLB loader has gone from idle to busy since boot. A capture host compares two readings around a rendered frame to tell whether that frame started new model streaming, which an idle reading alone cannot show.
-- `setModelTriangleBudget` (function): function setModelTriangleBudget(triangles: number): void — Retune the per-model triangle budget (a cinematic game may raise it; a mobile target lowers it). Non-finite or non-positive values restore the default.
-
-## @jgengine/shell/render/modelRender
-
-- `MaterialCache` (interface): interface MaterialCache { materials: THREE.MeshStandardMaterial[]; seedColor: THREE.Color } — ⚠ undocumented
-- `PAINT_TEXTURE_SIZE` (const): const PAINT_TEXTURE_SIZE: 512 — ⚠ undocumented
-- `PaintCanvas` (interface): interface PaintCanvas { canvas: HTMLCanvasElement; context: CanvasRenderingContext2D; texture: THREE.CanvasTexture } — ⚠ undocumented
-- `cloneModelScene` (function): function cloneModelScene(source: THREE.Object3D, options?: { cloneMaterials?: boolean; shadows?: ModelShadowMode; surfaceDetail?: boolean }): THREE.Object3D — Clone a model with independent pose and materials, retaining shared geometry and textures.
-- `disposeModelScene` (function): function disposeModelScene(root: THREE.Object3D): void — Release materials and bone textures owned by `cloneModelScene`; shared assets and attached models remain owned by their callers.
-
-## @jgengine/shell/render/modelWind
-
-- `ResolvedModelWind` (interface): interface ResolvedModelWind — Resolved sway settings baked into one material.
-- `WindClock` (function): function WindClock(): null — Advances the shared gust clock once per frame; mount one per 3D world.
-- `applyModelWind` (function): function applyModelWind(material: THREE.MeshStandardMaterial, wind: ResolvedModelWind): THREE.MeshStandardMaterial — Compiles height-ramped wind sway into a standard material's vertex shader. Idempotent per material; the clock and direction are shared module uniforms, so the whole scene advances with one write per frame and no per-material bookkeeping.
-- `windClock` (const): const windClock: { value: number; } — Shared gust clock every foliage material reads; advanced once per frame by `WindClock`.
-- `windDirection` (const): const windDirection: Vector2 — Shared gust direction (XZ); a model may override it with its own authored direction.
-- `windGust` (const): const windGust: { value: number; } — Shared gust strength multiplier; the weather's wind raises it, so a storm bends every plant harder.
-
-## @jgengine/shell/render/projectedOverdraw
-
-- `ProjectedOverdrawOptions` (interface): interface ProjectedOverdrawOptions — Sampling resolution; lower resolutions change thin geometry and alpha-mask raster coverage.
-- `ProjectedOverdrawReport` (interface): interface ProjectedOverdrawReport — Projected mesh-fragment overlap, with depth rejection disabled; this is not production early-Z overdraw or GPU timing.
-- `measureProjectedOverdraw` (function): function measureProjectedOverdraw(renderer: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.Camera, options: ProjectedOverdrawOptions = {}): ProjectedOverdrawReport — Opt in to a synchronous offscreen count of projected mesh fragments. Native PBR/unlit vertex transforms and alpha discard remain; depth rejection, shadow/refraction passes and postprocessing do not participate. Blended texels count equally, including zero opacity when native alphaTest/alphaHash does not discard them. Pure shader-modifying onBeforeCompile callbacks are retained; render callbacks, custom shader materials, stencil and alpha-to-coverage are rejected. The float readback stalls the GPU. Temporary materials/target are disposed and renderer draw counters/state restored; borrowed assets may become resident while measured.
-
-## @jgengine/shell/render/resolveModel
-
-- `ModelPick` (type): type ModelPick = { model?: string; fallbackModel?: string; style?: Omit<ModelConfig, "url" | "dims">; } — Preferred + optional fallback catalog ids for a single entity/object slot. Soft-resolves through the catalog: when neither id is live (pack not pulled/ reindexed yet), the mapping is omitted and the shell keeps its primitive. Re-home later by fixing ids / pulling packs — no Kenney, no hard throws.
-- `ModelResolveContext` (interface): interface ModelResolveContext { seam: "entityModels" | "objectModels" | "scatterModels"; key: string } — ⚠ undocumented
-
-## @jgengine/shell/render/rigNode
-
-- `RigNodeDiagnostic` (interface): interface RigNodeDiagnostic — A missing or nonunique node reference that a rig author can repair.
-- `RigNodeResolution` (type): type RigNodeResolution = | { node: Object3D; matchedBy: "runtime" | "authored"; diagnostic?: undefined } | { node: undefined; matchedBy?: undefined; diagnostic: RigNodeDiagnostic } — A node on this model instance, or a diagnostic instead of an arbitrary attachment target.
-- `resolveRigNode` (function): function resolveRigNode(rig: Object3D, name: string): RigNodeResolution — Resolves a bone or attachment slot by its exact runtime name first, then by the original imported name preserved as `userData.name`. GLTFLoader sanitizes names such as `handslot.r` to `handslotr`; authored references remain usable without renaming the animated hierarchy. Both lookups require a unique target. Call on model load or slot changes, not each frame, and keep the result with that model instance rather than reusing a cached asset's node.
-
-## @jgengine/shell/render/sceneCapture
-
-- `CaptureRenderer` (interface): interface CaptureRenderer — The bit of a WebGL renderer scene capture needs — its backing `<canvas>`.
-- `SceneCapture` (type): type SceneCapture = () => string | null — Reads the current scene frame as an image data URL, or null when the frame cannot be read.
-- `SceneCaptureBinding` (function): function SceneCaptureBinding({ bind }: { bind?: (capture: () => string | null) => void }): null — In-`<Canvas>` binder that hands the scene-capture function out to HUD code living outside the reconciler (a photo-mode Capture button, a save slot's thumbnail). Mount it inside the game's `WorldOverlay`; the reader is registered for `requestSceneCapture`/`requestSceneThumbnail`, which wait for this mount and the first painted frame. `bind` is for code that wants the function directly and can be left out when a game only requests captures. Renders nothing.
-- `SceneCaptureFailure` (type): type SceneCaptureFailure = "no-binding" | "no-frame" | "undecodable" — Why a capture request produced no image.
-- `SceneCaptureRequestOptions` (interface): interface SceneCaptureRequestOptions — How a capture request waits and retries.
-- `SceneCaptureResult` (type): type SceneCaptureResult = | { ok: true; capture: string } | { ok: false; reason: SceneCaptureFailure } — A captured frame, or the stated reason there is none.
-- `SceneThumbnailResult` (type): type SceneThumbnailResult = | { ok: true; thumbnail: string } | { ok: false; reason: SceneCaptureFailure } — A save-card thumbnail, or the stated reason there is none.
-- `captureCanvas` (function): function captureCanvas(gl: CaptureRenderer): string | null — Read the current frame to a PNG data URL. Requires the R3F `<Canvas>` to have been created with `gl={{ preserveDrawingBuffer: true }}` (the shell's game canvas already is); returns null if the backing canvas can't be read.
-- `downloadImage` (function): function downloadImage(dataUrl: string, filename = "screenshot.png"): void — Trigger a browser download of an image data URL (the photo-mode "save" action).
-- `registerSceneCapture` (function): function registerSceneCapture(capture: SceneCapture | null): () => void — Hand the capture path a reader for the live frame, or `null` to retire it. The returned function unbinds only that reader, so a canvas that remounts cannot be unbound by its predecessor.
-- `requestSceneCapture` (function): function requestSceneCapture(options: SceneCaptureRequestOptions = {}): Promise<SceneCaptureResult> — Request the current scene frame. Resolves once a binding exists and the canvas has painted, or with the reason no frame could be read; it never polls and never rejects.
-- `requestSceneThumbnail` (function): function requestSceneThumbnail(options: SceneCaptureRequestOptions & SaveThumbnailOptions = {}): Promise<SceneThumbnailResult> — Request a save-card thumbnail from the live scene: the shared capture request, then `shrinkCapture`. Pass what the slot card stores; omit everything for a 320x180 JPEG.
-
-## @jgengine/shell/render/sceneCaptureRequest
-
-- `SceneCapture` (type): type SceneCapture = () => string | null — Reads the current scene frame as an image data URL, or null when the frame cannot be read.
-- `SceneCaptureFailure` (type): type SceneCaptureFailure = "no-binding" | "no-frame" | "undecodable" — Why a capture request produced no image.
-- `SceneCaptureRequestOptions` (interface): interface SceneCaptureRequestOptions — How a capture request waits and retries.
-- `SceneCaptureResult` (type): type SceneCaptureResult = | { ok: true; capture: string } | { ok: false; reason: SceneCaptureFailure } — A captured frame, or the stated reason there is none.
-- `SceneThumbnailResult` (type): type SceneThumbnailResult = | { ok: true; thumbnail: string } | { ok: false; reason: SceneCaptureFailure } — A save-card thumbnail, or the stated reason there is none.
-- `registerSceneCapture` (function): function registerSceneCapture(capture: SceneCapture | null): () => void — Hand the capture path a reader for the live frame, or `null` to retire it. The returned function unbinds only that reader, so a canvas that remounts cannot be unbound by its predecessor.
-- `requestSceneCapture` (function): function requestSceneCapture(options: SceneCaptureRequestOptions = {}): Promise<SceneCaptureResult> — Request the current scene frame. Resolves once a binding exists and the canvas has painted, or with the reason no frame could be read; it never polls and never rejects.
-- `requestSceneThumbnail` (function): function requestSceneThumbnail(options: SceneCaptureRequestOptions & SaveThumbnailOptions = {}): Promise<SceneThumbnailResult> — Request a save-card thumbnail from the live scene: the shared capture request, then `shrinkCapture`. Pass what the slot card stores; omit everything for a 320x180 JPEG.
-
-## @jgengine/shell/render/shaderWarmup
-
-- `HeldDraw` (interface): interface HeldDraw — A draw the hold swallowed: what it would have drawn, from where, into what, with what override.
-- `HoldDrawsOptions` (interface): interface HoldDrawsOptions — Options for {@link holdDraws}.
-- `SHADER_WARMUP_DEFAULTS` (const): const SHADER_WARMUP_DEFAULTS: { readonly quietMs: 250; readonly planBudgetMs: 120000; readonly stallMs: 30000; readonly planFloorMs: 1500; readonly pollMs: 100; readonly backgroundMs: 2000; readonly backgroundEveryMs: 250; readonly programsPerBatch: 12; readonly texturesPerBatch: 4; readonly prepare… — Defaults sized to cover one load: the covered wait is the driver's link time, not a guess.
-- `ShaderWarmup` (interface): interface ShaderWarmup — A warmup in flight: its promise, its latest state, and a way to stop it.
-- `ShaderWarmupOptions` (interface): interface ShaderWarmupOptions — Options for {@link createShaderWarmup}; the clock, sleep and loader signal are injectable for tests.
-- `ShaderWarmupRenderer` (interface): interface ShaderWarmupRenderer — The renderer surface the warmup needs; a real `WebGLRenderer` satisfies it.
-- `ShaderWarmupState` (interface): interface ShaderWarmupState — Where the load-time shader warmup is: waiting for the scene to stop growing, compiling a round, finished, or skipped because the renderer refused. The loading screen renders it.
-
-## @jgengine/shell/render/staticTransforms
-
-- `freezeStaticTransforms` (function): function freezeStaticTransforms(root: THREE.Object3D): void — Bake a subtree's world matrices from its current pose and take it out of three's per-frame `updateMatrixWorld` pass. Three recomposes every node that keeps `matrixAutoUpdate` and then forces its whole subtree to rebuild the world matrix, so authored scenery — terrain, batched props, scatter, instanced ground — pays that cost every frame for a pose it never changes (#2038).
-- `thawStaticTransforms` (function): function thawStaticTransforms(root: THREE.Object3D): void — Put a subtree back on the per-frame matrix pass after {@link freezeStaticTransforms} — for the authored seam that moves on an event rather than every frame.
-
 ## @jgengine/shell/render/testFixtures/proceduralTileLayer
 
 - `drawProceduralTileLayer` (function): function drawProceduralTileLayer(canvas: CanvasFixture): TilemapWorldConfig — Draw the deterministic tile atlas used by textured tile-layer captures and tests.
-
-## @jgengine/shell/render/triangleAttribution
-
-- `TriangleAttribution` (interface): interface TriangleAttribution — Where one scene's triangles are, biggest line first.
-- `TriangleLine` (interface): interface TriangleLine — One line of the triangle table: the draws sharing one geometry inside one named model.
-- `attributeTriangles` (function): function attributeTriangles(root: THREE.Object3D, limit = 12): TriangleAttribution — Sum a scene's triangles by model and geometry, which is the attribution a triangle budget needs: a total says a frame is heavy, a table says which authored object made it heavy. Walks the graph once; call it on demand, never per frame.
-
-## @jgengine/shell/render/useDisposable
-
-- `Disposable` (interface): interface Disposable — Anything exposing dispose() — three.js geometries, materials, textures, render targets.
-- `disposeAll` (function): function disposeAll(value: Disposable | readonly Disposable[]): void — Dispose a single resource or every resource in a tuple.
-- `useDisposable` (function): function useDisposable<T extends Disposable | readonly Disposable[]>(create: () => T, deps: DependencyList): T — Memoize a three.js resource (or tuple of resources) and dispose it when `deps` change or the component unmounts. Owns the useMemo + dispose-effect pair that otherwise repeats at every GPU-resource call site. The factory must return objects exposing `dispose()` (geometries, materials, textures, render targets).
 
 ## @jgengine/shell/render/useEntityRenderCues
 
@@ -2446,13 +2346,6 @@
 - `readModelAnimationParams` (function): function readModelAnimationParams(ctx: GameContext, instanceId: string, speed: number, out: Record<string, AnimParamValue>, step?: ModelMotionStep): Record<string, AnimParamValue> — Refreshes a caller-owned graph parameter dictionary from authored extras and known physical movement. Grounded, verticalSpeed and crouched use the shared motor's resolved state when available; custom movers retain their authored values. Speed always uses the supplied measured ground speed. Passing `step` derives the directional parameters from the character's own motion: `direction` is the motion's share along the character's right axis, `facing` its share along the facing axis, and `turnRate` its yaw change per second. Derived values override conflicting authored extras. Does not write game state.
 - `takeRootMotion` (function): function takeRootMotion(rootBone: THREE.Object3D, bind: THREE.Vector3, localDelta: readonly [number, number, number] | undefined, out: THREE.Vector3): THREE.Vector3 — For a frame where a `rootMotion` state is current: pins the root bone's horizontal translation to its bind pose, so the clip plays in place, and returns that step's root travel as a world-space horizontal delta (through the rig's parent transform, so the entity's facing and the model's scale apply). The root bone's vertical motion stays in the clip.
 - `useModelAnimation` (function): function useModelAnimation(scene: THREE.Object3D, clips: THREE.AnimationClip[], animationInput: ModelAnimationConfig | "auto" | "none" | undefined, instanceId?: string): void — The engine's model animation driver as a standalone hook — the same mixer `EntityModel` runs, for games that render a cloned scene themselves (custom materials, procedural composition). Handles `"auto"` derivation from the GLB's clip names, speed-driven idle/walk/run crossfades read from the entity's live position when `instanceId` is set, one-shots fired from `entity.animation` / `combat.hitReaction` / `entity.died`, held poses, and the death clamp. With `animation.graph` set, the headless `AnimGraph` runtime owns every clip's time and weight and the mixer only applies them; clip events surface as `animation.event`. Equivalent same-order config data retains playback across rerenders; actual data edits reset it. Entity-bound playback holds while context game time is frozen; unbound previews keep playing.
-
-## @jgengine/shell/render/useModelInstance
-
-- `ModelInstance` (interface): interface ModelInstance — Render `scene` with `position` and uniform `scale`; animate or deform `content` inside that placement frame.
-- `ModelInstanceConfig` (type): type ModelInstanceConfig = Pick<ModelConfig, "url" | "scale" | "targetHeight" | "y" | "anchor" | "dims" | "shadows" | "animation" | "hiddenNodes" | "surfaceDetail" | "wind" | "lod" > — Model loading, placement, shadows and animation for a custom renderer.
-- `ModelInstanceOptions` (interface): interface ModelInstanceOptions — Caller-owned styling runs on the isolated clone, never the loader cache.
-- `useModelInstance` (function): function useModelInstance(model: ModelInstanceConfig, options: ModelInstanceOptions = {}): ModelInstance — Load and own an isolated model instance, preserving imported transforms and measuring placement at bind pose. Apply hiddenNodes to the configured clone before measurement; equivalent name lists retain the instance. Mount `scene` with the returned position/scale. Custom materials, deformation and surrounding geometry stay caller-owned. Must run inside an R3F canvas and Suspense boundary; a game provider is optional.
 
 ## @jgengine/shell/render/useRagdoll
 

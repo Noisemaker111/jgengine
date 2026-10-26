@@ -6,7 +6,7 @@ import type { SceneKindObject } from "@jgengine/core/scene/sceneKinds";
 
 import { createDecalDrapeGeometry } from "@jgengine/core/scene/decalGeometry.draw";
 import { createDecalTexture } from "@jgengine/core/scene/decalTexture";
-import { useDisposable } from "@jgengine/shell/render/useDisposable";
+import { useDisposable } from "@jgengine/core/render/useDisposable.draw";
 import { registerSceneKindRenderer, type SceneKindRenderContext } from "./sceneKindRenderers.draw";
 
 /** Tilts at or above this stand the decal up on a wall instead of draping it on the ground. */

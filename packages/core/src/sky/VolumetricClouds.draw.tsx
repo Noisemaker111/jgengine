@@ -4,7 +4,7 @@ import * as THREE from "three";
 
 import type { VolumetricCloudsRules } from "@jgengine/core/sky/volumetricClouds";
 
-import { useDisposable } from "@jgengine/shell/render/useDisposable";
+import { useDisposable } from "@jgengine/core/render/useDisposable.draw";
 
 /** Props for {@link VolumetricClouds} — fully-resolved cloud rules plus the shared sun direction. */
 export interface VolumetricCloudsProps {

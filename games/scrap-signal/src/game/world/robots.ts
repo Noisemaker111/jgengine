@@ -1,5 +1,5 @@
 import type { ModelConfig, ModelPart } from "@jgengine/core/game/playableGame";
-import { pickModel } from "@jgengine/shell/render/resolveModel";
+import { pickModel } from "@jgengine/core/model/resolveModel";
 
 import { assets, CHASSIS, PANEL_MAPS, SCRAP_METAL_MAPS } from "../assets";
 import { MACHINE } from "../palette";

@@ -1,7 +1,7 @@
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 
-import { useDisposable } from "@jgengine/shell/render/useDisposable";
+import { useDisposable } from "@jgengine/core/render/useDisposable.draw";
 import { createWeatherQuadGeometry } from "./weatherGeometry.draw";
 import { DEFAULT_SNOW_COUNT, DEFAULT_SNOW_DENSITY, resolveWeatherInstanceCount } from "./weatherMath";
 import { WEATHER_SHELTER_SHADER } from "./weatherShelter.draw";

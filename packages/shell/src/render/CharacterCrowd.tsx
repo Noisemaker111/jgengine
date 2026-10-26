@@ -27,9 +27,9 @@ import { useRenderVisibility } from "@jgengine/core/visibility/CullingProvider.d
 import { useOptionalGameContext } from "@jgengine/react/provider";
 import { POINTER_ENTITY_INSTANCES_KEY } from "@jgengine/core/input/pointerService.draw";
 import { writeCrowdBatch, type CrowdPlayback } from "./crowdBatch";
-import { ModelFallbackBoundary } from "./SceneModels";
-import { sharedGltfLoader } from "./modelLoad";
-import { modelPlacementTransform } from "./modelRender";
+import { ModelFallbackBoundary } from "@jgengine/core/model/SceneModels.draw";
+import { sharedGltfLoader } from "@jgengine/core/model/modelLoad.draw";
+import { modelPlacementTransform } from "@jgengine/core/model/modelRender.draw";
 import {
   bakeSkinnedCrowd,
   createCrowdUniforms,

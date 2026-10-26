@@ -3,8 +3,8 @@ import { Component, Suspense, useEffect, useMemo, useRef, type ReactNode } from 
 import * as THREE from "three";
 
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
-import { sharedGltfLoader } from "@jgengine/shell/render/modelLoad";
-import { cloneModelScene, disposeClonedMaterials, modelPlacementTransform, standardMaterialsOf } from "@jgengine/shell/render/modelRender";
+import { sharedGltfLoader } from "@jgengine/core/model/modelLoad.draw";
+import { cloneModelScene, disposeClonedMaterials, modelPlacementTransform, standardMaterialsOf } from "@jgengine/core/model/modelRender.draw";
 import { useModelAnimation } from "@jgengine/shell/render/useModelAnimation";
 import { useStore } from "@jgengine/react/store";
 

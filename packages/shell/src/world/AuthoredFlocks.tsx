@@ -7,8 +7,8 @@ import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import type { AssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { useGameContext } from "@jgengine/react/provider";
 
-import { IsolatedEntityModel } from "../render/SceneModels";
-import { resolveModel } from "../render/resolveModel";
+import { IsolatedEntityModel } from "@jgengine/core/model/SceneModels.draw";
+import { resolveModel } from "@jgengine/core/model/resolveModel";
 
 /** Caller-owned species models for authored habitat agents. */
 export interface AuthoredFlocksProps {

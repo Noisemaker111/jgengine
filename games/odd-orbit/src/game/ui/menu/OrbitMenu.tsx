@@ -9,7 +9,7 @@ import { useMenuNav } from "@jgengine/core/menu/menuNav.view";
 import { useGameContext } from "@jgengine/react/provider";
 import { useSaveSlots } from "@jgengine/core/save/saveSlots.view";
 import { useStore } from "@jgengine/react/store";
-import { EntityPreview } from "@jgengine/shell/render/EntityPreview";
+import { EntityPreview } from "@jgengine/core/render/EntityPreview.draw";
 import type { SaveSlotMeta } from "@jgengine/core/save/saveSlots";
 import { creditsForSourceIds } from "@jgengine/assets/credits";
 import { mergeCredits } from "@jgengine/core/menu/credits";

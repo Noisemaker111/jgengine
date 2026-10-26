@@ -1,6 +1,6 @@
 import { createSaveSlots } from "@jgengine/core/save/saveSlots";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import { requestSceneThumbnail } from "@jgengine/shell/render/sceneCaptureRequest";
+import { requestSceneThumbnail } from "@jgengine/core/scene/sceneCaptureRequest.draw";
 
 import { campaignReadout, campaignStore, resetCampaignProgress, restoreCampaign, setCampaignMode } from "./campaign";
 import { hudStore } from "./hudStore";

@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from "react";
 
-import { modelLoadFallbacks, subscribeModelLoadFallbacks } from "@jgengine/shell/render/modelLoad";
+import { modelLoadFallbacks, subscribeModelLoadFallbacks } from "@jgengine/core/model/modelLoad.draw";
 
 /**
  * Dev-build banner naming every model the loader replaced with a placeholder box, so a missing asset

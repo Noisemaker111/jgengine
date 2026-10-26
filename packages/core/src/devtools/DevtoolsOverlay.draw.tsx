@@ -8,8 +8,8 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 import type { ShellMultiplayer } from "../multiplayer/multiplayer.draw";
 import type { PlayableGame } from "@jgengine/shell/registry";
-import { heavyModels } from "@jgengine/shell/render/modelLoad";
-import { triangleProbe } from "@jgengine/shell/render/triangleAttribution";
+import { heavyModels } from "@jgengine/core/model/modelLoad.draw";
+import { triangleProbe } from "@jgengine/core/render/triangleAttribution.draw";
 import { buildLeanReport } from "./devtoolsReports.draw";
 import { PerfPanel } from "./PerfPanel.view";
 import { LogsPanel } from "./LogsPanel.view";

@@ -2,7 +2,7 @@ import { useFrame, useLoader, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 
-import { useDisposable } from "../render/useDisposable";
+import { useDisposable } from "@jgengine/core/render/useDisposable.draw";
 
 export interface SpriteBatchInstance {
   /** World X position. */

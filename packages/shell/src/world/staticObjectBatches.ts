@@ -4,7 +4,7 @@ import { objectVisualScale, type SceneObject } from "@jgengine/core/scene/object
 import type { GameContextObjectEntry } from "@jgengine/core/runtime/gameContext";
 import type { ScatterModelSource } from "@jgengine/core/scatter/scatterModels.draw";
 import { POINTER_OBJECT_INSTANCES_KEY } from "@jgengine/core/input/pointerService.draw";
-import { submitInstanceCount, submitsDraw } from "../render/submittedDraws";
+import { submitInstanceCount, submitsDraw } from "@jgengine/core/render/submittedDraws.draw";
 
 /** @internal */
 export interface StaticObjectCandidate {

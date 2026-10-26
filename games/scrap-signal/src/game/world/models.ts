@@ -1,5 +1,5 @@
 import type { ModelConfig, ModelMaterialOverride } from "@jgengine/core/game/playableGame";
-import { pickModel, resolveModelPlan, type ModelPick } from "@jgengine/shell/render/resolveModel";
+import { pickModel, resolveModelPlan, type ModelPick } from "@jgengine/core/model/resolveModel";
 
 import { assets, CHASSIS, CLIFF_MAPS, NPC_STYLES, PANEL_MAPS, SCRAP_METAL_MAPS } from "../assets";
 import { MACHINE } from "../palette";

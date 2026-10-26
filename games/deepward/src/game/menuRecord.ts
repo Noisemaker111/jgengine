@@ -1,7 +1,7 @@
 import type { GameSaveDocument } from "@jgengine/core/save/saveDocument";
 import { refreshSaveSlots, type SaveSlotSource } from "@jgengine/core/save/saveSlotIndex";
 import { createSaveSlots } from "@jgengine/core/save/saveSlots";
-import { requestSceneThumbnail } from "@jgengine/shell/render/sceneCaptureRequest";
+import { requestSceneThumbnail } from "@jgengine/core/scene/sceneCaptureRequest.draw";
 
 import { depthAt, roomAt } from "../world";
 import { loadOf } from "./haul";

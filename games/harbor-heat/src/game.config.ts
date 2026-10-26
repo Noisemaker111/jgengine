@@ -9,7 +9,7 @@ import { prompts } from "./game/prompts";
 import { entityModels, objectModels } from "./game/world/models";
 import { GameUI } from "./game/ui/GameUI";
 import { bindHarborCapture } from "./game/menuProfile";
-import { SceneCaptureBinding } from "@jgengine/shell/render/sceneCapture";
+import { SceneCaptureBinding } from "@jgengine/core/scene/sceneCapture.draw";
 import { createElement } from "react";
 import { harborKit, harborTheme } from "./game/ui/theme";
 import { loop } from "./loop";

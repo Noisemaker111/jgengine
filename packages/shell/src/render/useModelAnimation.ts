@@ -29,7 +29,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContextTypes";
 import { useOptionalGameContext } from "@jgengine/react/provider";
 
 import { characterLodInterval, characterLodTierOf, noteAnimationPhase, noteCharacterPose } from "@jgengine/core/lod/characterLod";
-import { useFrameWhile } from "./useFrameWhile";
+import { useFrameWhile } from "@jgengine/core/render/useFrameWhile.draw";
 
 /** Wraps a yaw change into `(-pi, pi]`, so a turn across the wrap boundary is not a full spin. */
 function shortestAngle(radians: number): number {

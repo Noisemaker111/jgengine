@@ -1,7 +1,7 @@
 import { type ThreeElements } from "@react-three/fiber";
 import * as THREE from "three";
 
-import { useDisposable } from "@jgengine/shell/render/useDisposable";
+import { useDisposable } from "@jgengine/core/render/useDisposable.draw";
 import { createProceduralGroundGeometry, type ProceduralTerrainConfig, type TerrainVertexColorOptions } from "./terrainMath.draw";
 
 /** Props for {@link ProceduralGround}: noise terrain settings, height colours and material settings. */

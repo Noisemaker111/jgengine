@@ -565,3 +565,78 @@
 - `TriplanarAssetMaterial` (function): function TriplanarAssetMaterial({ asset, ...options }: { asset: MaterialAsset } & { tileMetres?: number; sharpness?: number; normalScale?: number }): React.JSX.Element — Mounts {@link useTriplanarAssetMaterial} on a mesh; the R3F renderer owns disposal.
 - `TriplanarProjectionOptions` (interface): interface TriplanarProjectionOptions — Inputs for {@link applyTriplanarProjection}.
 - `useTriplanarAssetMaterial` (function): function useTriplanarAssetMaterial(asset: MaterialAsset, options: { tileMetres?: number; sharpness?: number; normalScale?: number } = {}): THREE.MeshStandardMaterial — Render a serializable material asset — one built by `libraryMaterialAsset`, or authored in the editor — with world-space triplanar projection, so world geometry needs no UVs. Tile size defaults to the asset's own `physicalSize`, which the shared library sets per surface.
+
+## @jgengine/core/model/SceneModels.draw
+
+- `EntityModel` (function): function EntityModel({ model, instanceId, measure, lodLevel = 0, }: { model: ModelConfig; instanceId?: string; measure?: MeasureTarget; /** The variant level being drawn. Past the source level, a simplified asset may have dropped a selected slot. */ lodLevel?: number; }): React.JSX.Element — Draws an entity's model at the given LOD level, with animation, paint layer and bounds measurement.
+- `EntitySprite` (function): function EntitySprite({ sprite }: { sprite: EntitySpriteConfig }): React.JSX.Element — Draws an entity as a camera-facing sprite, playing its atlas clip when it has one.
+- `IsolatedEntityModel` (function): function IsolatedEntityModel({ model, instanceId, measure, fallback, }: { model: ModelConfig; instanceId?: string; measure?: MeasureTarget; fallback?: ReactNode; }): React.JSX.Element — Draws one entity model from its own loaded copy, for models that cannot share a batched instance.
+- `MeasureTarget` (interface): interface MeasureTarget — Where a measured model reports its rendered bounds: an entity kind or an object catalog id.
+
+## @jgengine/core/model/measureBounds.draw
+
+- `MEASURE_EXCLUDE_KEY` (const): const MEASURE_EXCLUDE_KEY: "jgMeasureExclude" — Subtrees flagged with this userData key are excluded from bounds measurement — debug gizmos, selection quads, effect billboards that should not inflate the hitbox. Sprites and invisible subtrees are always excluded.
+- `MeasuredBoundsGroup` (function): function MeasuredBoundsGroup({ target, measureKey, children, }: { target: "entity" | "object"; measureKey: string; children: ReactNode; }): React.JSX.Element — Wraps custom-rendered actor content (`renderEntity` / `renderObject`) and reports its measured entity-local bounds into collider resolution, so the hitbox wraps what is actually on screen instead of the fixed-size fallback box. A successful measure re-reports only when the subtree gained or lost meshes (async fill-in), not when idle animation nudges the same meshes.
+- `MeasuredLocalBounds` (interface): interface MeasuredLocalBounds — Entity-local AABB of the meshes under a measured root, plus how many meshes contributed — the count lets callers detect async subtree fill-in without diffing bounds.
+- `measureLocalBounds` (function): function measureLocalBounds(root: THREE.Object3D): MeasuredLocalBounds | null — Measure the meshes under `root` in `root`'s own frame (root's transform is the measuring frame, children compose their local matrices below it). Returns `null` when nothing measurable is mounted. Skinned meshes measure at bind pose — the standard engine approximation.
+- `reportMeasuredBounds` (function): function reportMeasuredBounds(ctx: GameContext, target: "entity" | "object", key: string, bounds: MeasuredLocalBounds): void — Forward a measured result into the context (entity kind or object catalog id), deduping repeat reports of the same shape so remounts and multi-instance kinds don't churn collider resolution.
+
+## @jgengine/core/model/measureCollisionMesh.draw
+
+- `MeasuredCollisionTriangles` (interface): interface MeasuredCollisionTriangles extends CollisionMeshSource — Entity-local triangle soup of the meshes under a measured root, plus the contributing mesh count (same async fill-in detection as measured bounds). Satisfies {@link CollisionMeshSource}.
+- `measureLocalCollisionTriangles` (function): function measureLocalCollisionTriangles(root: THREE.Object3D, transform?: { scale: number; offset: readonly [number, number, number] }): MeasuredCollisionTriangles | null — Collect the triangle soup of the meshes under `root` in `root`'s own frame — the mesh-accurate counterpart to `measureLocalBounds`, with the same visibility/sprite/{@link MEASURE_EXCLUDE_KEY} exclusions (skinned meshes contribute their bind pose). An optional uniform `scale` + `offset` maps the result into entity-local space when the caller mounts the root scaled/translated (the model-primitive path). Returns `null` when nothing is measurable or the soup exceeds the triangle budget — callers keep their box fallback.
+- `reportMeasuredCollisionMesh` (function): function reportMeasuredCollisionMesh(ctx: GameContext, target: "entity" | "object", key: string, triangles: MeasuredCollisionTriangles): void — Forward measured triangles into the context (entity kind or object catalog id), deduping repeat reports of the same soup so remounts and multi-instance kinds don't rebuild the BVH.
+
+## @jgengine/core/model/modelLoad.draw
+
+- `DEFAULT_MODEL_TRIANGLE_BUDGET` (const): const DEFAULT_MODEL_TRIANGLE_BUDGET: 100000 — Per-model triangle ceiling before the loader warns. A prop is a few thousand triangles; a hero rig tens of thousands.
+- `HeavyModelRecord` (interface): interface HeavyModelRecord — One over-budget model as {@link heavyModels} reports it: the URL the loader fetched, its triangle count, and the budget it exceeded.
+- `MissingModelRecord` (interface): interface MissingModelRecord — A model the loader could not load and replaced with a placeholder box.
+- `ModelLoaderConfig` (interface): interface ModelLoaderConfig — Where the Draco decoder and KTX2 (Basis) transcoder load from. Left out, each comes from the game's own build (`decoderFiles.ts`); a path is a folder holding three's decoder files.
+- `configureModelLoaders` (function): function configureModelLoaders(options: ModelLoaderConfig = {}): Readonly<Required<ModelLoaderConfig>> — Configures shared Draco and KTX2 loaders. Repeated calls with the same paths are no-ops.
+- `detectKtx2Support` (function): function detectKtx2Support(renderer: THREE.WebGLRenderer): void — Detects GPU support for the configured KTX2 transcoder after a renderer exists.
+- `heavyModels` (function): function heavyModels(): readonly HeavyModelRecord[] — Every model the shared loader resolved whose triangle count exceeds the budget, in load order. A heavy prop is invisible in a screenshot and only shows up as a slow frame, so the loader measures each GLB as it lands and this exposes the verdict for `debug_snapshot` probes and smoke tests to assert against.
+- `modelLoadFallbacks` (function): function modelLoadFallbacks(): readonly MissingModelRecord[] — Every model the shared loader diagnosed as broken and replaced with a magenta placeholder, in load order.
+- `modelLoadIdleMs` (function): function modelLoadIdleMs(): number — How long the shared GLB loader has been idle, in ms — `0` while any model is still in flight. A capture host reads this to wait for streaming to finish instead of guessing a settle delay: models that pop in after the shot are why an establishing capture used to come back half-empty until someone hand-tuned `--settle`.
+- `modelLoadStarts` (function): function modelLoadStarts(): number — How many times the shared GLB loader has gone from idle to busy since boot. A capture host compares two readings around a rendered frame to tell whether that frame started new model streaming, which an idle reading alone cannot show.
+- `setModelTriangleBudget` (function): function setModelTriangleBudget(triangles: number): void — Retune the per-model triangle budget (a cinematic game may raise it; a mobile target lowers it). Non-finite or non-positive values restore the default.
+
+## @jgengine/core/model/modelRender.draw
+
+- `MaterialCache` (interface): interface MaterialCache — A model's standard materials and the seed color they were tinted from.
+- `PAINT_TEXTURE_SIZE` (const): const PAINT_TEXTURE_SIZE: 512 — Edge length in pixels of the canvas a model's paint layer draws into.
+- `PaintCanvas` (interface): interface PaintCanvas — The canvas, 2D context and texture behind a model's paint layer.
+- `cloneModelScene` (function): function cloneModelScene(source: THREE.Object3D, options?: { cloneMaterials?: boolean; shadows?: ModelShadowMode; surfaceDetail?: boolean }): THREE.Object3D — Clone a model with independent pose and materials, retaining shared geometry and textures.
+- `disposeModelScene` (function): function disposeModelScene(root: THREE.Object3D): void — Release materials and bone textures owned by `cloneModelScene`; shared assets and attached models remain owned by their callers.
+
+## @jgengine/core/model/modelWind.draw
+
+- `ResolvedModelWind` (interface): interface ResolvedModelWind — Resolved sway settings baked into one material.
+- `WindClock` (function): function WindClock(): null — Advances the shared gust clock once per frame; mount one per 3D world.
+- `applyModelWind` (function): function applyModelWind(material: THREE.MeshStandardMaterial, wind: ResolvedModelWind): THREE.MeshStandardMaterial — Compiles height-ramped wind sway into a standard material's vertex shader. Idempotent per material; the clock and direction are shared module uniforms, so the whole scene advances with one write per frame and no per-material bookkeeping.
+- `windClock` (const): const windClock: { value: number; } — Shared gust clock every foliage material reads; advanced once per frame by `WindClock`.
+- `windDirection` (const): const windDirection: Vector2 — Shared gust direction (XZ); a model may override it with its own authored direction.
+- `windGust` (const): const windGust: { value: number; } — Shared gust strength multiplier; the weather's wind raises it, so a storm bends every plant harder.
+
+## @jgengine/core/model/resolveModel
+
+- `ModelPick` (type): type ModelPick = { model?: string; fallbackModel?: string; style?: Omit<ModelConfig, "url" | "dims">; } — Preferred + optional fallback catalog ids for a single entity/object slot. Soft-resolves through the catalog: when neither id is live (pack not pulled/ reindexed yet), the mapping is omitted and the shell keeps its primitive. Re-home later by fixing ids / pulling packs — no Kenney, no hard throws.
+- `ModelResolveContext` (interface): interface ModelResolveContext — Where a model id is being resolved (entity, object or scatter models) and under which key, for warnings.
+
+## @jgengine/core/model/rigNode.draw
+
+- `RigNodeDiagnostic` (interface): interface RigNodeDiagnostic — A missing or nonunique node reference that a rig author can repair.
+- `RigNodeResolution` (type): type RigNodeResolution = | { node: Object3D; matchedBy: "runtime" | "authored"; diagnostic?: undefined } | { node: undefined; matchedBy?: undefined; diagnostic: RigNodeDiagnostic } — A node on this model instance, or a diagnostic instead of an arbitrary attachment target.
+- `resolveRigNode` (function): function resolveRigNode(rig: Object3D, name: string): RigNodeResolution — Resolves a bone or attachment slot by its exact runtime name first, then by the original imported name preserved as `userData.name`. GLTFLoader sanitizes names such as `handslot.r` to `handslotr`; authored references remain usable without renaming the animated hierarchy. Both lookups require a unique target. Call on model load or slot changes, not each frame, and keep the result with that model instance rather than reusing a cached asset's node.
+
+## @jgengine/core/model/staticTransforms.draw
+
+- `freezeStaticTransforms` (function): function freezeStaticTransforms(root: THREE.Object3D): void — Bake a subtree's world matrices from its current pose and take it out of three's per-frame `updateMatrixWorld` pass. Three recomposes every node that keeps `matrixAutoUpdate` and then forces its whole subtree to rebuild the world matrix, so authored scenery — terrain, batched props, scatter, instanced ground — pays that cost every frame for a pose it never changes (#2038).
+- `thawStaticTransforms` (function): function thawStaticTransforms(root: THREE.Object3D): void — Put a subtree back on the per-frame matrix pass after {@link freezeStaticTransforms} — for the authored seam that moves on an event rather than every frame.
+
+## @jgengine/core/model/useModelInstance.draw
+
+- `ModelInstance` (interface): interface ModelInstance — Render `scene` with `position` and uniform `scale`; animate or deform `content` inside that placement frame.
+- `ModelInstanceConfig` (type): type ModelInstanceConfig = Pick<ModelConfig, "url" | "scale" | "targetHeight" | "y" | "anchor" | "dims" | "shadows" | "animation" | "hiddenNodes" | "surfaceDetail" | "wind" | "lod" > — Model loading, placement, shadows and animation for a custom renderer.
+- `ModelInstanceOptions` (interface): interface ModelInstanceOptions — Caller-owned styling runs on the isolated clone, never the loader cache.
+- `useModelInstance` (function): function useModelInstance(model: ModelInstanceConfig, options: ModelInstanceOptions = {}): ModelInstance — Load and own an isolated model instance, preserving imported transforms and measuring placement at bind pose. Apply hiddenNodes to the configured clone before measurement; equivalent name lists retain the instance. Mount `scene` with the returned position/scale. Custom materials, deformation and surrounding geometry stay caller-owned. Must run inside an R3F canvas and Suspense boundary; a game provider is optional.

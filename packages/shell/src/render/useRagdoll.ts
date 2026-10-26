@@ -6,7 +6,7 @@ import { ragdollBoneOrientations, ragdollConfigFromPoses, type RagdollPose } fro
 import type { SkeletonMap, SkeletonSlot } from "@jgengine/core/anim/skeletonStandard";
 import { createRagdoll, type Ragdoll } from "@jgengine/core/physics/ragdoll";
 import type { PhysicsWorld } from "@jgengine/core/physics/physicsWorld";
-import { resolveRigNode } from "./rigNode";
+import { resolveRigNode } from "@jgengine/core/model/rigNode.draw";
 
 /** What {@link useRagdoll} needs: the rig's bone names, the physics world and what arms it. */
 export interface RagdollOptions {

@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useOptionalGameContext } from "@jgengine/react/provider";
 
-import { useDisposable } from "@jgengine/shell/render/useDisposable";
+import { useDisposable } from "@jgengine/core/render/useDisposable.draw";
 import { skySunDirection } from "@jgengine/core/sky/skySun.draw";
 import { createOceanConfig, type OceanConfig, type ResolvedOceanConfig } from "./OceanConfig.draw";
 import { createOceanMaterial, syncOceanMaterial } from "./OceanMaterial.draw";

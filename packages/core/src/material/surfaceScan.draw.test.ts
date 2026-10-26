@@ -2,7 +2,7 @@ import { afterEach, describe, expect, spyOn, test } from "bun:test";
 import * as THREE from "three";
 
 import { applyMaterialOverrideToMaterial } from "./materialOverride.draw";
-import { configureModelScan } from "@jgengine/shell/render/modelScan";
+import { configureModelScan } from "@jgengine/core/model/modelScan.draw";
 import { SURFACE_SCAN_PARS_GLSL, surfaceScanDefines, surfaceScanKeyPart, surfaceScanUniforms } from "./surfaceScanShader.draw";
 import { acquireSurfaceScan, setSurfaceScanLoader, surfaceScanKey } from "./surfaceScanTextures.draw";
 

@@ -1,6 +1,6 @@
 import { defineGame } from "@jgengine/shell/defineGame";
 import { createElement } from "react";
-import { SceneCaptureBinding } from "@jgengine/shell/render/sceneCapture";
+import { SceneCaptureBinding } from "@jgengine/core/scene/sceneCapture.draw";
 
 import { ORBIT_SOUNDS } from "./game/audio";
 import { assets } from "./game/assets";

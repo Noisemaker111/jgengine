@@ -311,6 +311,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `installCaptureCamera` (function) · `import { installCaptureCamera } from "@jgengine/core/world/captureCamera"`
 
+## capture-canvas — read the live R3F frame to a PNG data URL (needs preserveDrawingBuffer)
+
+- `captureCanvas` (function) · `import { captureCanvas } from "@jgengine/core/scene/sceneCapture.draw"`
+
 ## character-controller — capsule walk over the physics backend — slide, step-up, slopes, crouch, platforms
 
 - `createCharacterController` (function) · `import { createCharacterController } from "@jgengine/core/movement/characterController"`
@@ -1000,6 +1004,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `tierForStanding` (function) · `import { tierForStanding } from "@jgengine/core/world"`
 
+## request-scene-capture — request the live scene frame, waiting for a late binding and the first painted frame
+
+- `requestSceneCapture` (function) · `import { requestSceneCapture } from "@jgengine/core/scene/sceneCapture.draw"`
+
+## request-scene-thumbnail — request a save-card thumbnail from the live scene, or a stated failure
+
+- `requestSceneThumbnail` (function) · `import { requestSceneThumbnail } from "@jgengine/core/scene/sceneCapture.draw"`
+
 ## resource-node — depletable, respawning harvest nodes with tool-dependent yields
 
 - `createResourceNodeField` (function) · `import { createResourceNodeField } from "@jgengine/core/world/resourceNode"`
@@ -1052,6 +1064,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## scatter-coverage — shared density/budget semantics for scatterable kinds
 
 - `ScatterCoverageKind` (type) · `import { ScatterCoverageKind } from "@jgengine/core/world"`
+
+## scene-capture-binding — expose the in-Canvas scene-capture function to outside-Canvas HUD (photo mode, save thumbnails)
+
+- `SceneCaptureBinding` (function) · `import { SceneCaptureBinding } from "@jgengine/core/scene/sceneCapture.draw"`
 
 ## screen-effects — serializable, pooled screen-feedback controller — transient flash/vignette and sustained low-health-style pulses with eased opacities, free-string kinds the game styles, and snapshot/restore
 

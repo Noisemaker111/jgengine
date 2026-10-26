@@ -4,9 +4,9 @@ import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import { parseModelHiddenNodes } from "@jgengine/core/editor/modelNodeVisibility";
 
 import { applyMaterialOverride } from "@jgengine/core/material/materialOverride.draw";
-import { cloneModelScene, disposeModelScene, ownModelMaterial } from "@jgengine/shell/render/modelRender";
-import { applyModelSurface } from "@jgengine/shell/render/modelSurface";
-import { applyModelWindToScene } from "@jgengine/shell/render/modelWind";
+import { cloneModelScene, disposeModelScene, ownModelMaterial } from "@jgengine/core/model/modelRender.draw";
+import { applyModelSurface } from "@jgengine/core/model/modelSurface.draw";
+import { applyModelWindToScene } from "@jgengine/core/model/modelWind.draw";
 /** One instanceable draw source harvested from a resolved GLB — geometry stays shared with the loader cache, `localMatrix` bakes the model's own transform (from its scene root) plus scale/anchor normalization. */
 export interface ScatterModelSource {
   geometry: THREE.BufferGeometry;

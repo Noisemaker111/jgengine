@@ -3,8 +3,8 @@ import * as THREE from "three";
 import type { ModelConfig, ModelVariantLodConfig } from "@jgengine/core/game/playableGame";
 import { createModelVariantSelector } from "@jgengine/core/lod/modelLod";
 
-import { attributeTriangles } from "@jgengine/shell/render/triangleAttribution";
-import { cloneModelScene } from "@jgengine/shell/render/modelRender";
+import { attributeTriangles } from "@jgengine/core/render/triangleAttribution.draw";
+import { cloneModelScene } from "@jgengine/core/model/modelRender.draw";
 import { buildScatterModelSources, disposeScatterModelSources } from "@jgengine/core/scatter/scatterModels.draw";
 import { variantLevelModel, variantLevelShadows } from "./singleVariantLod.draw";
 

@@ -70,7 +70,7 @@ describe("this checkout answers where a concept lives in one call", () => {
   const homeOf = (query: string) => new Map(locateIn(index, queryTokens(query)).map((home) => [home.layer, home.home]));
 
   test("a moved world feature answers with its one feature folder", () => {
-    for (const folder of ["grass", "sky", "water", "weather", "terrain", "instancing", "scatter", "lod", "environment", "map", "roads", "city", "vfx", "postfx", "visibility", "lighting", "material", "placement", "camera"]) {
+    for (const folder of ["grass", "sky", "water", "weather", "terrain", "instancing", "scatter", "lod", "environment", "map", "roads", "city", "vfx", "postfx", "visibility", "lighting", "material", "placement", "camera", "model"]) {
       const homes = homeOf(folder);
       expect(homes.get("core")).toBe(`packages/core/src/${folder}/`);
       expect(homes.get("shell") ?? "").not.toEndWith(`/${folder}/`);

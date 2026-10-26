@@ -7,7 +7,7 @@ import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
 import type { EnvironmentSource } from "@jgengine/core/lighting/environmentLighting";
 
 import { linkPmremBake, PMREM_BAKE_CAMERA } from "./pmremLink.draw";
-import { warmupDrawsToTarget, warmupWaitsFor } from "@jgengine/shell/render/shaderWarmup";
+import { warmupDrawsToTarget, warmupWaitsFor } from "@jgengine/core/render/shaderWarmup.draw";
 import { WorldReflectionProbe, type WorldProbeSettings } from "./reflectionProbe.draw";
 
 /** @internal Props for shell {@link EnvironmentLighting}. */

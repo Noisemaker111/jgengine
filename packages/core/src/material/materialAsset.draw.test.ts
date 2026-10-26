@@ -2,8 +2,8 @@ import { describe, expect, test } from "bun:test";
 import * as THREE from "three";
 import { type MaterialAsset } from "@jgengine/core/material/materialAsset";
 import { applyMaterialAsset, applyMaterialAssignments, configureMaterialTexture, inspectModelMaterialSlots, materialResourceMetrics, setHairCardLightExposure, validateMaterialAssignmentTargets } from "./materialAsset.draw";
-import { cloneModelScene, disposeModelScene } from "@jgengine/shell/render/modelRender";
-import { mergeModelSubMeshes } from "@jgengine/shell/render/modelMeshMerge";
+import { cloneModelScene, disposeModelScene } from "@jgengine/core/model/modelRender.draw";
+import { mergeModelSubMeshes } from "@jgengine/core/model/modelMeshMerge.draw";
 import { applyMaterialOverride } from "./materialOverride.draw";
 
 function asset(id = "test-metal"): MaterialAsset {

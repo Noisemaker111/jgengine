@@ -12,7 +12,7 @@ import {
 import type { BuildingKit } from "@jgengine/core/buildings/buildingKit";
 
 import type { MaterialOverrideTextures } from "@jgengine/core/material/materialOverride.draw";
-import { useDisposable } from "@jgengine/shell/render/useDisposable";
+import { useDisposable } from "@jgengine/core/render/useDisposable.draw";
 import { BuildingKitBatch } from "./BuildingKitBatch.draw";
 import { useBuildingChunkBudget } from "./BuildingRenderBudget.draw";
 import { partitionInstances, type InstanceChunk } from "@jgengine/core/instancing/instanceChunks.draw";

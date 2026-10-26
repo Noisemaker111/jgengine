@@ -13,7 +13,7 @@ import { GameProvider } from "@jgengine/react/provider";
 
 import { defineGame } from "@jgengine/shell/defineGame";
 import { AuthoredObjects } from "./AuthoredScene.draw";
-import { resolveObjectModel } from "@jgengine/shell/render/resolveModel";
+import { resolveObjectModel } from "@jgengine/core/model/resolveModel";
 
 function fixture() {
   const document = createEmptyEditorDocument();

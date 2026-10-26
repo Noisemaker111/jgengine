@@ -1,6 +1,6 @@
 import * as THREE from "three";
 
-import { useDisposable } from "@jgengine/shell/render/useDisposable";
+import { useDisposable } from "@jgengine/core/render/useDisposable.draw";
 import { createGrassCoverGeometry, GRASS_COVER_MAX_SEGMENTS } from "./grassCoverGeometry.draw";
 import type { TerrainHeightSampler } from "@jgengine/core/terrain/terrainMath.draw";
 

@@ -15,7 +15,7 @@ import { placementAt } from "../build/placement";
 import { GRID, snapToTile } from "../catalog";
 import { traceNative } from "../evidence";
 import { hoverRefusal, placementHintStore } from "../build/placementHint";
-import { SceneCaptureBinding } from "@jgengine/shell/render/sceneCapture";
+import { SceneCaptureBinding } from "@jgengine/core/scene/sceneCapture.draw";
 import { bindParkCapture } from "../parkProfile";
 import { tileAt, cellCentre, groundAt, isLandTool, LEVEL_HEIGHT, lineCells, raisedCells, rectCells } from "../build/terrain";
 import { landCheck, LINE_KINDS } from "../build/commands";

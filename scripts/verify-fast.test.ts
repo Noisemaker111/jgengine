@@ -753,12 +753,12 @@ describe("local boots", () => {
     expect(bootsFor(["games/scrap-signal/src/game/world.ts"])).toEqual(["scrap-signal"]);
     expect(bootsFor(["games/scrap-signal/src/game/world.test.ts"])).toEqual([]);
     expect(bootsFor(["README.md"])).toEqual([]);
-    expect(bootsFor(["packages/shell/src/render/modelLoad.ts"])).toEqual([REPRESENTATIVE_GAME]);
+    expect(bootsFor(["packages/core/src/model/modelLoad.draw.ts"])).toEqual([REPRESENTATIVE_GAME]);
     expect(bootsFor(["games/a/src/x.ts", "games/b/src/x.ts", "games/c/src/x.ts"])).toHaveLength(MAX_BOOTS);
   });
 
   test("an engine change boots a game its import graph reaches, the representative first, and none when no game imports it", () => {
-    const changed = ["packages/shell/src/render/modelLoad.ts"];
+    const changed = ["packages/core/src/model/modelLoad.draw.ts"];
     const reaches = (...files: string[]): Set<string> => new Set([...changed, ...files]);
     expect(bootsFor(changed, reaches(`games/${REPRESENTATIVE_GAME}/src/main.tsx`, "games/odd-orbit/src/main.tsx"))).toEqual([REPRESENTATIVE_GAME]);
     expect(bootsFor(changed, reaches("games/odd-orbit/src/main.tsx", "games/saltwick/src/main.tsx"))).toEqual(["odd-orbit"]);
