@@ -99,7 +99,7 @@ function startLoad(key: string, maps: TerrainMaterialMaps, entry: ScanEntry): vo
  * so the caller keeps its procedural surface. Release the handle on unmount; the last release frees
  * the GPU textures. @internal
  */
-export function acquireSurfaceScan(maps: TerrainMaterialMaps, onChange: () => void): { current: () => SurfaceScanTextures | null; settled: Promise<void>; release: () => void } {
+export function acquireSurfaceScan(maps: TerrainMaterialMaps, onChange: () => void): { current: () => SurfaceScanTextures | null; failed: () => boolean; settled: Promise<void>; release: () => void } {
   const key = surfaceScanKey(maps);
   let entry = entries.get(key);
   if (entry === undefined) {
@@ -117,6 +117,7 @@ export function acquireSurfaceScan(maps: TerrainMaterialMaps, onChange: () => vo
   let released = false;
   return {
     current: () => (held.failed ? null : held.textures),
+    failed: () => held.failed,
     settled: held.settled,
     release: () => {
       if (released) return;
@@ -131,23 +132,34 @@ export function acquireSurfaceScan(maps: TerrainMaterialMaps, onChange: () => vo
   };
 }
 
+/** A scan's maps as a component sees them. */
+export interface SurfaceScanState {
+  /** The decoded maps; `null` while loading, after a load failure, or when no scan was asked for. */
+  textures: SurfaceScanTextures | null;
+  /** True until the maps load or fail. A surface waiting on them stays hidden, so no program is linked for the look they replace. */
+  pending: boolean;
+}
+
 /**
- * React handle on a scan's maps: `null` while loading, after a load failure, or when `maps` is
- * undefined or `enabled` is false (the `low` tier). Every component naming the same URLs shares
- * one decode. The scene's shader warmup waits for the maps, so it links the scanned programs the
- * first frame draws rather than the procedural ones they replace a moment later.
+ * React handle on a scan's maps. `maps` undefined or `enabled` false (the `low` tier) asks for
+ * none and is never pending. Every component naming the same URLs shares one decode. The scene's
+ * shader warmup waits for the maps, and a caller hides its surface while `pending`, so the warmup
+ * links only the scanned programs the first frame draws, not the procedural ones they replace.
  */
-export function useSurfaceScan(maps: TerrainMaterialMaps | undefined, enabled = true): SurfaceScanTextures | null {
+export function useSurfaceScan(maps: TerrainMaterialMaps | undefined, enabled = true): SurfaceScanState {
   const key = maps === undefined || !enabled ? null : surfaceScanKey(maps);
   const scene = useThree((three) => three.scene);
-  const [state, setState] = useState<{ key: string | null; textures: SurfaceScanTextures | null }>({ key: null, textures: null });
+  const [state, setState] = useState<{ key: string | null; textures: SurfaceScanTextures | null; settled: boolean }>({ key: null, textures: null, settled: false });
   useEffect(() => {
     if (key === null || maps === undefined) return undefined;
-    const handle = acquireSurfaceScan(maps, () => setState({ key, textures: handle.current() }));
-    if (handle.current() === null) warmupWaitsFor(scene, handle.settled);
-    setState({ key, textures: handle.current() });
+    const handle = acquireSurfaceScan(maps, () => setState({ key, textures: handle.current(), settled: true }));
+    const textures = handle.current();
+    if (textures === null) warmupWaitsFor(scene, handle.settled);
+    setState({ key, textures, settled: textures !== null || handle.failed() });
     return () => handle.release();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
-  return state.key === key ? state.textures : null;
+  if (key === null) return { textures: null, pending: false };
+  if (state.key !== key) return { textures: null, pending: true };
+  return { textures: state.textures, pending: !state.settled };
 }

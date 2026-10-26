@@ -1125,6 +1125,8 @@
     "./render/crowdRegistry",
     "./render/decalGeometry",
     "./render/decalTexture",
+    "./render/decoderFiles",
+    "./render/decoderUrls",
     "./render/defaultSurface",
     "./render/displayColor",
     "./render/entityMuzzle",

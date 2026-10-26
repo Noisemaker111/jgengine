@@ -10,6 +10,8 @@ import { fileURLToPath } from "node:url";
 import { chromium, type Frame, type Page } from "playwright-core";
 
 import { gamePublicRoots, resolveGamePublicFile } from "../apps/dev/gamePublicPlugin";
+import { assetStoreRoot } from "../games/shared/assetStore";
+import { compressedVariant, textureVariantDir } from "../games/shared/textureVariants";
 import { killPid, pickDebugPort, removeProfileDir, startBrowser, waitForPidExit } from "./browser-lib";
 import { printHelpIfAsked } from "./script-help";
 
@@ -365,12 +367,15 @@ export function serveSite(clientDir = join(webRoot, "dist", "client"), entry = "
   // Game models live in each game's provisioned public/ folder, which the build does not copy;
   // the runner serves them from there, the same as `bun run drive` does.
   const gamePublic = gamePublicRoots(undefined, join(repoRoot, "games"));
+  const variantDir = textureVariantDir(assetStoreRoot(repoRoot));
   const server = Bun.serve({
     port: 0,
     hostname: "127.0.0.1",
     fetch: (request) => {
-      const { pathname } = new URL(request.url);
-      const path = resolve(pathname) ?? (pathname.startsWith("/play/") ? resolveGamePublicFile(pathname.slice("/play".length), gamePublic) : null);
+      const { pathname, search } = new URL(request.url);
+      const built = resolve(pathname);
+      // The runner's own public/ (copied into the build) holds packs too; they get their twins the same way.
+      const path = built !== null ? (compressedVariant(built, search, variantDir) ?? built) : pathname.startsWith("/play/") ? resolveGamePublicFile(pathname.slice("/play".length) + search, gamePublic, variantDir) : null;
       if (path === null) return new Response("not found", { status: 404 });
       const hashed = pathname.startsWith("/assets/") || pathname.startsWith("/play/assets/");
       return new Response(Bun.file(path), {

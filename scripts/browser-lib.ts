@@ -130,7 +130,7 @@ export function findChromeExecutable(): string {
 
 /** Build browser fixtures outside the test runner's module mocks and resolver cache. */
 export function buildBrowserFixture(entry: string): string {
-  const build = spawnSync(process.execPath, ["build", entry, "--target=browser"], {
+  const build = spawnSync(process.execPath, [join(import.meta.dir, "build-browser-fixture.ts"), entry], {
     encoding: "utf8", timeout: 25_000, maxBuffer: 16 * 1024 * 1024,
   });
   if (build.error !== undefined) throw build.error;

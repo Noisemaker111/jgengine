@@ -9,6 +9,8 @@
         "@types/bun": "^1.4.4",
         "@typescript/native-preview": "^7.0.0-dev.20260705.1",
         "gifenc": "^1.0.3",
+        "jpeg-js": "0.4.4",
+        "ktx2-encoder": "0.6.0",
         "playwright-core": "^1.50.0",
         "ts-morph": "^28.0.0",
         "typescript": "^5.9.3",
@@ -2113,6 +2115,8 @@
     "kleur": ["kleur@4.1.5", "", {}, "sha512-o+NO+8WrRiQEE4/7nwRJhN1HWpVmJm511pBHUxPLtp0BUISzlBplORYSmTclCnJvQq2tKu/sgl3xVpkc7ZWuQQ=="],
 
     "ktx-parse": ["ktx-parse@1.1.0", "", {}, "sha512-mKp3y+FaYgR7mXWAbyyzpa/r1zDWeaunH+INJO4fou3hb45XuNSwar+7llrRyvpMWafxSIi99RNFJ05MHedaJQ=="],
+
+    "ktx2-encoder": ["ktx2-encoder@0.6.0", "", { "dependencies": { "ktx-parse": "^1.1.0" } }, "sha512-gEWkw2YUlhKO4hXhqVLQQWJ+fGJObsXIwz0pGjJMclnQ4MQU3SAtN1MzutjFxO3ejWvxHyvFk5kr8+RtLmHiTA=="],
 
     "kysely": ["kysely@0.28.18", "", {}, "sha512-lf6nEHwPlaWbUDw5rycPSkEVGVC7sF7hzY7kH0OryleqK8Ym0zZ+RjI8o+RpHHlxpbKVC1d+UoQSW8GFxGQf4Q=="],
 

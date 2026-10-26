@@ -3,18 +3,18 @@
   "games": {
     "apex-nights": {
       "worstClick": 375,
-      "sceneReady": 5975
+      "sceneReady": 5464
     },
     "beacon-bastion": {
-      "worstClick": 588,
+      "worstClick": 501,
       "sceneReady": 4989
     },
     "briarcrown": {
-      "worstClick": 503,
-      "sceneReady": 5075
+      "worstClick": 489,
+      "sceneReady": 4835
     },
     "brightway-park": {
-      "worstClick": 515,
+      "worstClick": 506,
       "sceneReady": 5377
     },
     "deepward": {
@@ -22,31 +22,31 @@
       "sceneReady": 4383
     },
     "drift-foundry": {
-      "worstClick": 778,
+      "worstClick": 395,
       "sceneReady": 9255
     },
     "ember-command": {
-      "worstClick": 586,
-      "sceneReady": 5324
+      "worstClick": 578,
+      "sceneReady": 4937
     },
     "fernwild": {
-      "worstClick": 648,
-      "sceneReady": 7064
+      "worstClick": 434,
+      "sceneReady": 6486
     },
     "harbor-heat": {
-      "worstClick": 1067,
-      "sceneReady": 9812
+      "worstClick": 739,
+      "sceneReady": 9441
     },
     "hold-the-line": {
-      "worstClick": 517,
-      "sceneReady": 6057
+      "worstClick": 463,
+      "sceneReady": 6055
     },
     "odd-orbit": {
-      "worstClick": 616,
-      "sceneReady": 7156
+      "worstClick": 610,
+      "sceneReady": 6421
     },
     "orbit-watch": {
-      "worstClick": 514,
+      "worstClick": 497,
       "sceneReady": 4662
     },
     "outpost-zero": {
@@ -54,19 +54,19 @@
       "sceneReady": 4903
     },
     "red-frontier": {
-      "worstClick": 505,
-      "sceneReady": 4971
+      "worstClick": 484,
+      "sceneReady": 4547
     },
     "saltwick": {
       "worstClick": 387,
-      "sceneReady": 5744
+      "sceneReady": 5567
     },
     "scrap-signal": {
-      "worstClick": 796,
-      "sceneReady": 9120
+      "worstClick": 771,
+      "sceneReady": 8926
     },
     "the-sunken-crown": {
-      "worstClick": 491,
+      "worstClick": 481,
       "sceneReady": 6702
     }
   }

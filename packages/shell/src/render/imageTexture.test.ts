@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import * as THREE from "three";
 
-import { ImageTextureLoader } from "./imageTexture";
+import { ImageTextureLoader, isKtx2, ktx2TwinUrl } from "./imageTexture";
 
 const globals = globalThis as { createImageBitmap?: unknown; fetch: typeof fetch };
 const realFetch = globals.fetch;
@@ -52,5 +52,21 @@ describe("ImageTextureLoader", () => {
       throw new Error("not an image");
     };
     await expect(loaded(new ImageTextureLoader(), "missing.png")).rejects.toThrow("not an image");
+  });
+});
+
+describe("KTX2 twins of image textures", () => {
+  test("the twin is asked for in the row order the loader stores", () => {
+    expect(ktx2TwinUrl("/materials/rock/color.jpg", true)).toBe("/materials/rock/color.jpg?ktx2=auto,flip");
+    expect(ktx2TwinUrl("/m/a.png?v=2#x", false)).toBe("/m/a.png?v=2&ktx2=auto,top#x");
+    expect(ktx2TwinUrl("data:image/png;base64,AAAA", true)).toBe("data:image/png;base64,AAAA");
+  });
+
+  test("KTX2 bytes are told apart from the PNG the URL names", () => {
+    const ktx2 = new Uint8Array([0xab, 0x4b, 0x54, 0x58, 0x20, 0x32, 0x30, 0xbb, 0x0d, 0x0a, 0x1a, 0x0a, 0]);
+    const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0]);
+    expect(isKtx2(ktx2.buffer)).toBe(true);
+    expect(isKtx2(png.buffer)).toBe(false);
+    expect(isKtx2(new ArrayBuffer(3))).toBe(false);
   });
 });

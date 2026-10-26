@@ -22,7 +22,7 @@ function JunctionPatch({
 }) {
   const quality = useTerrainQuality();
   // The same world-XZ scan as the carriageway ribbons, so asphalt runs through the crossing unbroken.
-  const textures = useSurfaceScan(scan?.maps, surfaceDetail && quality !== "low");
+  const { textures, pending } = useSurfaceScan(scan?.maps, surfaceDetail && quality !== "low");
   const material = useSurfaceRibbonMaterial(
     surfaceDetail
       ? {
@@ -37,7 +37,7 @@ function JunctionPatch({
       : null,
   );
   return (
-    <mesh geometry={geometry} receiveShadow {...(material === null ? {} : { material })}>
+    <mesh geometry={geometry} receiveShadow visible={!pending} {...(material === null ? {} : { material })}>
       {material === null ? <meshStandardMaterial color={color} roughness={0.95} metalness={0} side={DoubleSide} /> : null}
     </mesh>
   );
@@ -57,7 +57,7 @@ function JunctionPaint({
   scan: TerrainDetailMaterialConfig | undefined;
 }) {
   const quality = useTerrainQuality();
-  const textures = useSurfaceScan(scan?.maps, surfaceDetail && quality !== "low");
+  const { textures, pending } = useSurfaceScan(scan?.maps, surfaceDetail && quality !== "low");
   const material = useSurfaceRibbonMaterial(
     surfaceDetail
       ? {
@@ -74,9 +74,9 @@ function JunctionPaint({
         }
       : null,
   );
-  if (material !== null) return <mesh geometry={geometry} renderOrder={1} receiveShadow material={material} />;
+  if (material !== null) return <mesh geometry={geometry} renderOrder={1} receiveShadow visible={!pending} material={material} />;
   return (
-    <mesh geometry={geometry} renderOrder={1}>
+    <mesh geometry={geometry} renderOrder={1} visible={!pending}>
       <meshStandardMaterial
         color={JUNCTION_PAINT}
         roughness={0.85}
