@@ -703,7 +703,7 @@ test("only a moved base, not a failing check, sends a merge back to rebase", () 
  * performs a real merge into the throwaway remote.
  */
 const HARNESS = `
-import { appendFileSync, writeFileSync } from "node:fs";
+import { appendFileSync, existsSync, writeFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 const cfg = JSON.parse(process.env.LAND_TEST_CONFIG);
 const land = await import("./scripts/land.ts");
@@ -760,11 +760,6 @@ const gh = (args) => {
   return ok;
 };
 const waits = [];
-at("SPAWNED");
-if (cfg.startAt !== null) {
-  const waitMs = cfg.startAt - Date.now();
-  if (waitMs > 0) pause(waitMs);
-}
 at("START");
 const code = land.landBranch({
   args: { base: "beta", commit: false, allow: [], verify: cfg.verify, watch: true },
@@ -777,7 +772,17 @@ const code = land.landBranch({
     verify: () => cfg.verifyOk,
     watch: () => {
       at("WATCH-START");
-      pause(cfg.watchMs);
+      if (cfg.watchPeers.length > 0) {
+        // Event, not timer: this watch ends only once every peer landing is watching too, so the
+        // watches overlap however slow the machine is, and a lock held across watching deadlocks
+        // here instead of passing by luck.
+        writeFileSync(cfg.events + ".watching", "");
+        const deadline = Date.now() + cfg.watchMs;
+        while (!cfg.watchPeers.every((peer) => existsSync(peer + ".watching"))) {
+          if (Date.now() > deadline) { at("WATCH-ALONE"); break; }
+          pause(20);
+        }
+      } else pause(cfg.watchMs);
       at("WATCH-END");
       if (partner !== null && !moved) {
         moved = true;
@@ -834,6 +839,13 @@ function landingRepo(names: readonly string[]): { bare: string; server: string; 
   return { bare, server, lanes, partner };
 }
 
+function runDir(): string {
+  const dir = join(SCRATCH, `run-${crypto.randomUUID()}`);
+  made.push(dir);
+  mkdirSync(dir, { recursive: true });
+  return dir;
+}
+
 function startLanding(options: {
   lane: Lane;
   bare: string;
@@ -846,11 +858,12 @@ function startLanding(options: {
   moveBase?: string;
   verify?: string;
   verifyOk?: boolean;
-  startAt?: number;
+  /** Event logs of landings this one's watch waits for (see the harness's watch). */
+  watchPeers?: readonly string[];
+  /** Fixes the event log path, so a peer can name it before this landing starts. */
+  dir?: string;
 }): Promise<Landing> {
-  const dir = join(SCRATCH, `run-${crypto.randomUUID()}`);
-  made.push(dir);
-  mkdirSync(dir, { recursive: true });
+  const dir = options.dir ?? runDir();
   const events = join(dir, "events.log");
   const out = join(dir, "out.json");
   const config = {
@@ -866,7 +879,7 @@ function startLanding(options: {
     moveBase: options.moveBase ?? null,
     verify: options.verify ?? undefined,
     verifyOk: options.verifyOk ?? true,
-    startAt: options.startAt ?? null,
+    watchPeers: options.watchPeers ?? [],
     events,
     out,
   };
@@ -925,49 +938,32 @@ function printLanding(label: string, landing: Landing): void {
 }
 
 test("two landings watch their checks at once and only queue for the lock", async () => {
-  const WATCH_MS = 3000;
-
-  const soloRepo = landingRepo(["solo"]);
-  const solo = await startLanding({
-    lane: soloRepo.lanes[0]!,
-    bare: soloRepo.bare,
-    server: soloRepo.server,
-    lock: join(dirname(soloRepo.lanes[0]!.clone), "land.lock"),
-    number: 1,
-    watchMs: WATCH_MS,
-  });
-  expect(solo.code).toBe(0);
-  const soloWall = solo.span.end - solo.span.start;
-
+  // Each watch ends when the other landing is watching too (the harness's barrier), so the test
+  // reads the order of events, never wall-clock spans that a loaded machine stretches. The cap only
+  // bounds a broken lock that serialises watching: that watch ends alone and the test fails.
+  const WATCH_CAP_MS = 60_000;
   const pair = landingRepo(["a", "b"]);
   const lock = join(dirname(pair.lanes[0]!.clone), "land.lock");
-  const startAt = Date.now() + 1500;
+  const [aDir, bDir] = [runDir(), runDir()];
+  const [aEvents, bEvents] = [join(aDir, "events.log"), join(bDir, "events.log")];
+  const shared = { bare: pair.bare, server: pair.server, lock, watchMs: WATCH_CAP_MS, strictBase: false };
   const [a, b] = await Promise.all([
-    startLanding({ lane: pair.lanes[0]!, bare: pair.bare, server: pair.server, lock, number: 2, watchMs: WATCH_MS, strictBase: false, startAt }),
-    startLanding({ lane: pair.lanes[1]!, bare: pair.bare, server: pair.server, lock, number: 3, watchMs: WATCH_MS, strictBase: false, startAt }),
+    startLanding({ ...shared, lane: pair.lanes[0]!, number: 2, dir: aDir, watchPeers: [bEvents] }),
+    startLanding({ ...shared, lane: pair.lanes[1]!, number: 3, dir: bDir, watchPeers: [aEvents] }),
   ]);
   printLanding("landing a", a);
   printLanding("landing b", b);
 
   expect(a.code).toBe(0);
   expect(b.code).toBe(0);
+  expect(a.events.some((event) => event.label === "WATCH-ALONE")).toBe(false);
+  expect(b.events.some((event) => event.label === "WATCH-ALONE")).toBe(false);
 
   const [aWatch, bWatch] = [windows(a.events, "WATCH-START", "WATCH-END")[0]!, windows(b.events, "WATCH-START", "WATCH-END")[0]!];
-  expect(overlap(aWatch, bWatch)).toBeGreaterThan(WATCH_MS / 3);
+  expect(overlap(aWatch, bWatch)).toBeGreaterThanOrEqual(0);
 
   const [aMerge, bMerge] = [windows(a.events, "MERGE-START", "MERGE-END")[0]!, windows(b.events, "MERGE-START", "MERGE-END")[0]!];
   expect(overlap(aMerge, bMerge)).toBeLessThanOrEqual(0);
-
-  const [aWall, bWall] = [a.span.end - a.span.start, b.span.end - b.span.start];
-  const together = Math.max(a.span.end, b.span.end) - Math.min(a.span.start, b.span.start);
-  const serialised = aWall + bWall;
-  console.log(
-    `one landing ${soloWall}ms; landing a ${aWall}ms, landing b ${bWall}ms, together ${together}ms ` +
-      `(end to end would be ${serialised}ms); watches overlapped ${overlap(aWatch, bWatch)}ms; ` +
-      `merge windows overlapped ${overlap(aMerge, bMerge)}ms`,
-  );
-  expect(serialised - together).toBeGreaterThan(WATCH_MS / 2);
-  expect(together).toBeLessThan(serialised * 0.8);
 
   expect(a.logs.some((line) => /^worked .+, waited .+ for the lock/.test(line))).toBe(true);
   expect(b.logs.some((line) => /^worked .+, waited .+ for the lock/.test(line))).toBe(true);
