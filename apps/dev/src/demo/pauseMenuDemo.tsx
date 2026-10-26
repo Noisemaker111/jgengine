@@ -5,7 +5,8 @@ import { createModalStack, MODAL_CONFIRM } from "@jgengine/core/ui/modalStack";
 import type { GameContext, GameContextEntityEntry } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { environment, grass, terrain } from "@jgengine/core/world/features";
-import { ConfirmDialog, ModalHost, PauseMenu } from "@jgengine/react/modals";
+import { PauseMenu } from "@jgengine/react/menu/pauseMenu";
+import { ConfirmDialog, ModalHost } from "@jgengine/react/modals";
 
 import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
 import type { PlayableGame } from "@jgengine/shell/registry";
@@ -76,13 +77,17 @@ function PauseMenuUI(): ReactNode {
           }
           return (
             <PauseMenu
-              title="Paused"
               onResume={() => controls.cancel()}
               items={[
-                { id: "settings", label: "Settings", onSelect: () => {} },
-                { id: "save", label: "Save Game", onSelect: () => {} },
-                { id: "quit", label: "Quit to Menu", danger: true, onSelect: () => modals.push({ kind: "confirm" }) },
+                { id: "resume", label: "Resume" },
+                { id: "settings", label: "Settings" },
+                { id: "save", label: "Save Game" },
+                { id: "quit", label: "Quit to Menu" },
               ]}
+              onSelect={(id) => {
+                if (id === "resume") controls.cancel();
+                else if (id === "quit") modals.push({ kind: "confirm" });
+              }}
             />
           );
         }}

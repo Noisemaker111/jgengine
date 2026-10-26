@@ -3,8 +3,8 @@ import { renderToStaticMarkup } from "react-dom/server";
 
 import { UI_CUES } from "@jgengine/core/audio/uiCues";
 
-import { GameMenu } from "./gameMenu";
-import { ContinuePane } from "./gameMenuSaves";
+import { GameMenu } from "./menu/gameMenu";
+import { ContinuePane } from "./menu/gameMenuSaves";
 import { actionGlyph } from "./inputDevice";
 import { deadlineStage, formatCountdown, KitObjective, KitResultScreen } from "./kitFlow";
 import { cappedShown } from "./notifications/notices";

@@ -4,7 +4,7 @@ import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import type { GameContext, GameContextEntityEntry } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { environment, grass, terrain } from "@jgengine/core/world/features";
-import { QuickMenu, type QuickMenuItem, type QuickMenuLayout } from "@jgengine/react/quickMenu";
+import { QuickMenu, type QuickMenuItem, type QuickMenuLayout } from "@jgengine/react/menu/quickMenu";
 
 import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
 import type { PlayableGame } from "@jgengine/shell/registry";

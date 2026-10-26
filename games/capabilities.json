@@ -1820,8 +1820,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/gameMenuSaves",
-      "domain": "continue-pane",
+      "module": "@jgengine/react/menu/gameMenuSaves",
+      "domain": "menu",
       "gameFacing": false,
       "probe": null,
       "intent": "continue detail pane — the save being resumed with thumbnail, character, playtime and progress"
@@ -2072,8 +2072,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/gameMenuSaves",
-      "domain": "credits-pane",
+      "module": "@jgengine/react/menu/gameMenuSaves",
+      "domain": "menu",
       "gameFacing": false,
       "probe": null,
       "intent": "credits detail pane — sections scrolled inside the pane"
@@ -3688,22 +3688,11 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/gameMenu",
-      "domain": "game-menu",
+      "module": "@jgengine/react/menu/gameMenu",
+      "domain": "menu",
       "gameFacing": false,
       "probe": null,
       "intent": "full-bleed game menu — living background, token-sized logo, animated navigable verbs, detail pane, selection sound, pause variant, no page scrollbar"
-    },
-    {
-      "id": "game-pause-menu",
-      "packages": [
-        "@jgengine/react"
-      ],
-      "module": "@jgengine/react/gameMenu",
-      "domain": "game-pause-menu",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "pause menu from the shared game-menu system — same navigation and surface, sized down"
     },
     {
       "id": "game-save",
@@ -5778,8 +5767,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/ui/menuNav",
-      "domain": "ui",
+      "module": "@jgengine/core/menu/menuNav",
+      "domain": "menu",
       "gameFacing": false,
       "probe": null,
       "intent": "resolve a keyboard code to a menu intent (move / confirm / back)"
@@ -5789,8 +5778,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/ui/menuNav",
-      "domain": "ui",
+      "module": "@jgengine/core/menu/menuNav",
+      "domain": "menu",
       "gameFacing": false,
       "probe": null,
       "intent": "move menu focus by direction over a list or grid, skipping disabled items"
@@ -5800,8 +5789,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/ui/menuNav",
-      "domain": "ui",
+      "module": "@jgengine/core/menu/menuNav",
+      "domain": "menu",
       "gameFacing": false,
       "probe": null,
       "intent": "gate held menu navigation into an initial press plus repeats"
@@ -5811,8 +5800,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/ui/menuNav",
-      "domain": "ui",
+      "module": "@jgengine/core/menu/menuNav",
+      "domain": "menu",
       "gameFacing": false,
       "probe": null,
       "intent": "resolve a standard gamepad button to a menu intent"
@@ -5822,8 +5811,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/menuRouter",
-      "domain": "menu-router",
+      "module": "@jgengine/react/menu/menuRouter",
+      "domain": "menu",
       "gameFacing": false,
       "probe": null,
       "intent": "screen stack for a game front-end — push/back/replace/reset with optional Escape-to-back"
@@ -5833,8 +5822,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/menuScreen",
-      "domain": "menu-screen",
+      "module": "@jgengine/react/menu/menuScreen",
+      "domain": "menu",
       "gameFacing": false,
       "probe": null,
       "intent": "animated enter/exit menu screen over a live scene, with translucent scrim, backdrop slot, reduced-motion support and exit unmount"
@@ -5844,8 +5833,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/gameMenuSound",
-      "domain": "menu-sound",
+      "module": "@jgengine/react/menu/gameMenuSound",
+      "domain": "menu",
       "gameFacing": false,
       "probe": null,
       "intent": "generated click for menu move/confirm/back, no audio asset"
@@ -5855,8 +5844,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/menuRouter",
-      "domain": "menu-stack-reducer",
+      "module": "@jgengine/react/menu/menuRouter",
+      "domain": "menu",
       "gameFacing": false,
       "probe": null,
       "intent": "pure push/back/replace/reset transitions for a menu screen stack"
@@ -5866,8 +5855,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/ui/menuTransition",
-      "domain": "ui",
+      "module": "@jgengine/core/menu/menuTransition",
+      "domain": "menu",
       "gameFacing": false,
       "probe": null,
       "intent": "enter/exit phase timing for an animated menu screen, with reduced-motion collapse and snapshot/restore"
@@ -6502,8 +6491,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/gameMenuSaves",
-      "domain": "new-character-pane",
+      "module": "@jgengine/react/menu/gameMenuSaves",
+      "domain": "menu",
       "gameFacing": false,
       "probe": null,
       "intent": "character creation pane — name field, palette and avatar choice, start action"
@@ -6945,11 +6934,11 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/modals",
-      "domain": "pause-menu",
+      "module": "@jgengine/react/menu/pauseMenu",
+      "domain": "menu",
       "gameFacing": false,
       "probe": null,
-      "intent": "reskinnable pause-menu building block — Resume plus a game-filled Settings/Quit slot list, HudTheme-driven"
+      "intent": "pause menu from the shared game-menu system: game-filled verbs and detail pane, same navigation and surface as the title menu, sized down"
     },
     {
       "id": "pause-scheduled-rule",
@@ -7567,8 +7556,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/quickMenu",
-      "domain": "quick-menu",
+      "module": "@jgengine/react/menu/quickMenu",
+      "domain": "menu",
       "gameFacing": false,
       "probe": null,
       "intent": "multi-form quick menu (radial / arc / list / grid) over one item model with hotkeys, badges, cooldowns, sections, and nested submenus"
@@ -7622,8 +7611,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/radialMenu",
-      "domain": "radial-menu",
+      "module": "@jgengine/react/menu/radialMenu",
+      "domain": "menu",
       "gameFacing": false,
       "probe": null,
       "intent": "pointer/stick-driven radial or arc quick menu (weapon/emote wheel) — angular slice selection with hotkeys, badges, cooldowns, and a neutral hub"
@@ -7633,8 +7622,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/ui/radialMenu",
-      "domain": "ui",
+      "module": "@jgengine/core/menu/radialMenu",
+      "domain": "menu",
       "gameFacing": false,
       "probe": null,
       "intent": "map a pointer/stick vector to a radial-menu slice index, with a neutral dead zone and optional arc bounds"
@@ -8103,8 +8092,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/gameMenuSaves",
-      "domain": "save-slot-card",
+      "module": "@jgengine/react/menu/gameMenuSaves",
+      "domain": "menu",
       "gameFacing": false,
       "probe": null,
       "intent": "save slot as a card — thumbnail, character, playtime, progress, timestamp, confirmed delete"
@@ -8147,8 +8136,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/gameMenuSaves",
-      "domain": "save-slots-pane",
+      "module": "@jgengine/react/menu/gameMenuSaves",
+      "domain": "menu",
       "gameFacing": false,
       "probe": null,
       "intent": "slot grid pane for the game menu — Continue newest, per-slot cards, keyboard navigation"
@@ -9663,17 +9652,6 @@
       "intent": "skid marks laid by sliding wheels that fade over time from a fixed pool"
     },
     {
-      "id": "title-menu",
-      "packages": [
-        "@jgengine/react"
-      ],
-      "module": "@jgengine/react/titleMenu",
-      "domain": "title-menu",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "title-screen block — wordmark, tagline, navigable verb list, footer, backdrop slot, animated over a live scene"
-    },
-    {
       "id": "touch-controls",
       "packages": [
         "@jgengine/core"
@@ -10189,8 +10167,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/menuNav",
-      "domain": "use-menu-nav",
+      "module": "@jgengine/react/menu/menuNav",
+      "domain": "menu",
       "gameFacing": false,
       "probe": null,
       "intent": "keyboard and gamepad focus navigation for a menu — roving focus order, confirm/back, disabled-item skipping, no focus trap"
@@ -10321,8 +10299,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/gameMenu",
-      "domain": "use-viewport-scroll-lock",
+      "module": "@jgengine/react/menu/gameMenu",
+      "domain": "menu",
       "gameFacing": false,
       "probe": null,
       "intent": "count-aware document scroll lock for full-bleed surfaces"

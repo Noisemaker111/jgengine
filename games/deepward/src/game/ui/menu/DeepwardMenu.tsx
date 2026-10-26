@@ -1,7 +1,8 @@
 import { type ReactNode, useCallback, useEffect, useState } from "react";
-import { ContinuePane, CreditsPane, SaveSlotsPane } from "@jgengine/react/gameMenuSaves";
+import { ContinuePane, CreditsPane, SaveSlotsPane } from "@jgengine/react/menu/gameMenuSaves";
 import { KitButton, KitPanel } from "@jgengine/react/uiKitRoot";
-import { GameMenu, GamePauseMenu } from "@jgengine/react/gameMenu";
+import { GameMenu } from "@jgengine/react/menu/gameMenu";
+import { PauseMenu } from "@jgengine/react/menu/pauseMenu";
 import { useGameStore, useOptionalGamePhase } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
 import { useSaveSlots } from "@jgengine/react/save/saveSlots";
@@ -272,7 +273,7 @@ export function DeepwardMenu(): ReactNode {
   );
 
   const pauseMenu = (
-    <GamePauseMenu
+    <PauseMenu
       open={screen === "pause"}
       label={view.dive === null ? "The home is held" : "The dive is held"}
       className="dw-console"

@@ -5,8 +5,8 @@ import type { CreditsDocument } from "@jgengine/core/game/credits";
 import { CreditsScreen } from "./creditsScreen";
 import { HudButton } from "./hud/hudButton";
 import { hudSpace, hudType } from "./hud/hudTokens";
-import { useMenuNav } from "./menuNav";
-import { MenuScreen } from "./menuScreen";
+import { useMenuNav } from "./menu/menuNav";
+import { MenuScreen } from "./menu/menuScreen";
 
 /** Props for {@link CreditsPanel}. */
 export interface CreditsPanelProps {

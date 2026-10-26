@@ -21,7 +21,6 @@ import { HudButton } from "./hud/hudButton";
 import { useHudInteract, type HudInteractListener } from "./hud/hudInteract";
 import { HudSurface } from "./hud/hudSurface";
 import { hudType } from "./hud/hudTokens";
-import { useMenuNav } from "./menuNav";
 import { usePresence } from "./presence";
 
 /**
@@ -29,7 +28,7 @@ import { usePresence } from "./presence";
  * layer a game raises over its scene: a pause menu, a "quit to menu?" confirm, a reward popup.
  * {@link useModalStack} is the DATA/HOOK layer (subscribe + the active record), {@link ModalHost}
  * renders the top modal with a backdrop, focus trap, and Esc-to-cancel, and {@link ConfirmDialog} /
- * {@link PauseMenu} are ready-to-wire, HudTheme-token-driven building blocks. All unskinned and
+ * {@link PauseMenu} (`menu/pauseMenu`) are ready-to-wire, HudTheme-token-driven building blocks. All unskinned and
  * game-owned: the model never interprets a modal's `kind`, so a game switches on it to pick which of
  * these (or its own) content to show, and reskins everything via `HudTheme` tokens and the frame.
  */
@@ -61,7 +60,7 @@ export interface ModalHostProps {
    * Render the active modal's content. Receives the record and controls bound to the stack —
    * `resolve(result)` closes it with a free-form outcome, `cancel()` is the Esc/backdrop shortcut
    * (`resolve(MODAL_CANCEL)`). Switch on `record.kind` to pick a {@link ConfirmDialog}, a
-   * {@link PauseMenu}, or your own content.
+   * {@link PauseMenu} (`menu/pauseMenu`), or your own content.
    */
   children: (record: ModalRecord, controls: ModalControls) => ReactNode;
   /** Dim the scene behind the modal. Default `true`. */
@@ -236,107 +235,6 @@ export function ConfirmDialog({
         <HudButton data-confirm-cancel="" cue="cancel" onClick={onCancel}>{cancelLabel}</HudButton>
         <HudButton data-confirm-accept="" cue="confirm" variant={danger ? "danger" : "primary"} onClick={onConfirm}>{confirmLabel}</HudButton>
       </div>
-    </HudSurface>
-  );
-}
-
-/** One selectable row in a {@link PauseMenu}'s slot list (Settings, Save, Quit, …). */
-export interface PauseMenuItem {
-  /** Stable id (also the `data-pause-item` value). */
-  id: string;
-  label: ReactNode;
-  onSelect: () => void;
-  /** Render as destructive (e.g. Quit). Default `false`. */
-  danger?: boolean;
-  /** Disable the row. Default `false`. */
-  disabled?: boolean;
-}
-
-/** Props for {@link PauseMenu}. */
-export interface PauseMenuProps {
-  /** Menu heading (default `"Paused"`). */
-  title?: ReactNode;
-  /** Resume/close-the-menu action, wired to the primary Resume button. */
-  onResume: () => void;
-  /** Resume button label (default `"Resume"`). */
-  resumeLabel?: ReactNode;
-  /** The game-filled slot list beneath Resume (Settings, Save, Quit, …). */
-  items?: readonly PauseMenuItem[];
-  /** Fixed menu width (default 300). */
-  width?: number | string;
-  className?: string;
-  style?: CSSProperties;
-}
-
-const PAUSE_TITLE: CSSProperties = {
-  margin: "0 0 14px",
-  fontSize: hudType("xs"),
-  fontWeight: 700,
-  letterSpacing: "0.18em",
-  textTransform: "uppercase",
-  textAlign: "center",
-  color: "var(--jg-accent, #38bdf8)",
-};
-
-const PAUSE_ITEM: CSSProperties = { marginTop: 8 };
-const PAUSE_DANGER_ITEM: CSSProperties = { ...PAUSE_ITEM, color: "var(--jg-danger, #e5484d)", borderColor: "rgba(229,72,77,0.45)" };
-
-/**
- * A reskinnable pause-menu building block: a primary Resume button plus a game-filled list of slot
- * items (Settings, Save, Quit, …), stacked in a `HudTheme`-token-driven {@link HudSurface}. It ships
- * the common shape every game's pause screen needs and nothing genre-specific — the game supplies the
- * title, item labels/order, and destructive styling, and reskins with `HudTheme` tokens. Drop it into
- * a {@link ModalHost} keyed on a `"pause"` modal, or render it standalone.
- *
- * @capability pause-menu reskinnable pause-menu building block — Resume plus a game-filled Settings/Quit slot list, HudTheme-driven
- */
-export function PauseMenu({
-  title = "Paused",
-  onResume,
-  resumeLabel = "Resume",
-  items = [],
-  width = 300,
-  className,
-  style,
-}: PauseMenuProps): ReactNode {
-  const nav = useMenuNav({
-    ids: ["resume", ...items.map((item) => item.id)],
-    disabled: items.filter((item) => item.disabled === true).map((item) => item.id),
-    onBack: onResume,
-    onConfirm: (id) => {
-      if (id === "resume") onResume();
-      else items.find((item) => item.id === id)?.onSelect();
-    },
-  });
-  return (
-    <HudSurface elevation="modal" width={width} padding={20} className={className} style={style} {...nav.containerProps}>
-      <div data-pause-title="" style={PAUSE_TITLE}>{title}</div>
-      <HudButton
-        {...nav.itemProps("resume")}
-        data-pause-resume=""
-        cue="resume"
-        variant="primary"
-        size="lg"
-        block
-        onClick={onResume}
-      >
-        {resumeLabel}
-      </HudButton>
-      {items.map((item) => (
-        <HudButton
-          key={item.id}
-          {...nav.itemProps(item.id)}
-          data-pause-item={item.id}
-          cue={`pause:${item.id}`}
-          size="lg"
-          block
-          onClick={item.onSelect}
-          disabled={item.disabled}
-          style={item.danger ? PAUSE_DANGER_ITEM : PAUSE_ITEM}
-        >
-          {item.label}
-        </HudButton>
-      ))}
     </HudSurface>
   );
 }

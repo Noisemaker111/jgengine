@@ -2,7 +2,7 @@ import { createElement, useMemo } from "react";
 import { useDisplayProfile } from "@jgengine/react/display";
 import { KitPanel } from "@jgengine/react/uiKitRoot";
 import { GameCursor } from "@jgengine/react/gameCursor";
-import { useMenuNav } from "@jgengine/react/menuNav";
+import { useMenuNav } from "@jgengine/react/menu/menuNav";
 import { EntityPreview } from "@jgengine/shell/render/EntityPreview";
 import { IsolatedEntityModel } from "@jgengine/shell/render/SceneModels";
 import { entityModels } from "../../world/models";

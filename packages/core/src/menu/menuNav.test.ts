@@ -8,7 +8,7 @@ import {
   menuNavIndex,
   menuNavMove,
   shouldRepeatMenuNav,
-} from "@jgengine/core/ui/menuNav";
+} from "@jgengine/core/menu/menuNav";
 
 describe("menuNavMove", () => {
   test("a vertical list moves one item and wraps", () => {

@@ -129,7 +129,7 @@ export {
   type MenuNavHold,
   type MenuNavLayout,
   type MenuNavRepeat,
-} from "./ui/menuNav";
+} from "./menu/menuNav";
 export {
   createMenuTransition,
   menuTransitionDurations,
@@ -138,7 +138,7 @@ export {
   type MenuTransitionConfig,
   type MenuTransitionPhase,
   type MenuTransitionSnapshot,
-} from "./ui/menuTransition";
+} from "./menu/menuTransition";
 export {
   MODAL_CANCEL,
   MODAL_CONFIRM,
@@ -191,7 +191,7 @@ export {
   type RadialArc,
   type RadialSlice,
   type RadialVectorOptions,
-} from "./ui/radialMenu";
+} from "./menu/radialMenu";
 export {
   createWaypointTracker,
   layoutScreenMarker,

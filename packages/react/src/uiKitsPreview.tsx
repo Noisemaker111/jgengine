@@ -2,8 +2,8 @@ import type { CSSProperties, ReactNode } from "react";
 
 import { createSaveSlots, type SaveSlotMeta } from "@jgengine/core/save/saveSlots";
 
-import { GamePauseMenu } from "./gameMenu";
-import { ContinuePane, CreditsPane, SaveSlotsPane } from "./gameMenuSaves";
+import { PauseMenu } from "./menu/pauseMenu";
+import { ContinuePane, CreditsPane, SaveSlotsPane } from "./menu/gameMenuSaves";
 import type { SettingsCategoryView } from "./settings";
 import { SettingsSection, SettingsTabs } from "./settingsBlocks";
 import type { UiKit } from "./uiKit";
@@ -180,7 +180,7 @@ export type UiKitMenuPreviewPane = "settings" | "credits" | "continue" | "saves"
 export function UiKitMenuPreview({ kit, pane = "settings", className }: { kit: UiKit; pane?: UiKitMenuPreviewPane; className?: string }): ReactNode {
   return (
     <UiKitRoot kit={kit} box className={className} style={{ ...SCENE, width: "100vw", height: "100vh" }}>
-      <GamePauseMenu
+      <PauseMenu
         items={[
           { id: "resume", label: "Resume" },
           { id: "settings", label: "Settings" },

@@ -9,7 +9,7 @@ import { mergeCredits } from "@jgengine/core/game/credits";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { environment, grass, terrain } from "@jgengine/core/world/features";
-import { ContinuePane, CreditsPane, GameMenu, GamePauseMenu, NewCharacterPane, SaveSlotsPane } from "@jgengine/react";
+import { ContinuePane, CreditsPane, GameMenu, PauseMenu, NewCharacterPane, SaveSlotsPane } from "@jgengine/react";
 import { shrinkCapture } from "@jgengine/react/save/saveThumbnail";
 import { useSettings } from "@jgengine/react/settings";
 import { SettingsSection, SettingsTabs } from "@jgengine/react/settingsBlocks";
@@ -432,7 +432,7 @@ function GameMenuDemoUI(): ReactNode {
       </div>
 
       <div style={{ position: "absolute", inset: 0, pointerEvents: screen === "paused" ? "auto" : "none" }}>
-        <GamePauseMenu
+        <PauseMenu
           open={screen === "paused"}
           logo={{ text: "Beacon Bastion", title: "Beacon Bastion" }}
           items={[

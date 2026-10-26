@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { createMenuTransition, menuTransitionDurations, menuTransitionPhaseMs } from "@jgengine/core/ui/menuTransition";
+import { createMenuTransition, menuTransitionDurations, menuTransitionPhaseMs } from "@jgengine/core/menu/menuTransition";
 
 describe("menuTransitionDurations", () => {
   test("defaults to a 220ms enter and 160ms exit", () => {

@@ -3,7 +3,7 @@ import { HudPanel, useBrowserSuspension, useDisplayProfile } from "@jgengine/rea
 import { GameIcon } from "@jgengine/react/gameIcons";
 import { HudFade } from "@jgengine/react/hud/hudLayout";
 import { useGame, useGamePhase, useGameStore } from "@jgengine/react/hooks";
-import { useMenuNav } from "@jgengine/react/menuNav";
+import { useMenuNav } from "@jgengine/react/menu/menuNav";
 import { useGameContext } from "@jgengine/react/provider";
 import { useSettings } from "@jgengine/react/settings";
 import { useStore } from "@jgengine/react/store";

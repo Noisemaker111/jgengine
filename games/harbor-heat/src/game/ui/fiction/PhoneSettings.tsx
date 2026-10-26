@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { GameCursor } from "@jgengine/react/gameCursor";
 import { GameIcon } from "@jgengine/react/gameIcons";
 import { GameSlider } from "@jgengine/react/gameSlider";
-import { useMenuNav, type MenuNavController } from "@jgengine/react/menuNav";
+import { useMenuNav, type MenuNavController } from "@jgengine/react/menu/menuNav";
 import { useSettings, type SettingsKeybindRow, type SettingsRow } from "@jgengine/react/settings";
 import { adjustSettingRow } from "@jgengine/react/settingsBlocks";
 import { HH, navItem, useMenuSound, useMoveTick } from "./kit";

@@ -369,10 +369,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `GameMenu` (function) · `import { GameMenu } from "@jgengine/react"`
 
-## game-pause-menu — pause menu from the shared game-menu system — same navigation and surface, sized down
-
-- `GamePauseMenu` (function) · `import { GamePauseMenu } from "@jgengine/react"`
-
 ## game-slider — drawn game slider (groove or pips) with keyboard, drag and screen reader support, no browser range input
 
 - `GameSlider` (function) · `import { GameSlider } from "@jgengine/react"`
@@ -696,7 +692,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## menu-router — screen stack for a game front-end — push/back/replace/reset with optional Escape-to-back
 
-- `useMenuRouter` (function) · `import { useMenuRouter } from "@jgengine/react/menuRouter"`
+- `useMenuRouter` (function) · `import { useMenuRouter } from "@jgengine/react/menu/menuRouter"`
 
 ## menu-screen — animated enter/exit menu screen over a live scene, with translucent scrim, backdrop slot, reduced-motion support and exit unmount
 
@@ -708,7 +704,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## menu-stack-reducer — pure push/back/replace/reset transitions for a menu screen stack
 
-- `menuStackReducer` (function) · `import { menuStackReducer } from "@jgengine/react/menuRouter"`
+- `menuStackReducer` (function) · `import { menuStackReducer } from "@jgengine/react/menu/menuRouter"`
 
 ## menu-transition — enter/exit phase timing for an animated menu screen, with reduced-motion collapse and snapshot/restore
 
@@ -853,7 +849,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `ParticleField` (function) · `import { ParticleField } from "@jgengine/shell/vfx/ParticleField"`
 
-## pause-menu — reskinnable pause-menu building block — Resume plus a game-filled Settings/Quit slot list, HudTheme-driven
+## pause-menu — pause menu from the shared game-menu system: game-filled verbs and detail pane, same navigation and surface as the title menu, sized down
 
 - `PauseMenu` (function) · `import { PauseMenu } from "@jgengine/react"`
 
@@ -1063,10 +1059,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## timer-ring — radial SVG charge/cooldown ring bound to a TimerSet's progress
 
 - `TimerRing` (function) · `import { TimerRing } from "@jgengine/react"`
-
-## title-menu — title-screen block — wordmark, tagline, navigable verb list, footer, backdrop slot, animated over a live scene
-
-- `TitleMenu` (function) · `import { TitleMenu } from "@jgengine/react"`
 
 ## trans — inline translated-message component bound to the active locale
 

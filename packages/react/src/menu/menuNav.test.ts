@@ -2,24 +2,24 @@ import { afterAll, beforeAll, beforeEach, describe, expect, setDefaultTimeout, t
 import { mkdir, rm, symlink } from "node:fs/promises";
 import { resolve } from "node:path";
 import { chromium, type Browser, type Page } from "playwright-core";
-import { buildBrowserFixture, findChromeExecutable } from "../../../scripts/browser-lib";
+import { buildBrowserFixture, findChromeExecutable } from "../../../../scripts/browser-lib";
 
 setDefaultTimeout(30_000);
 
-const scratch = resolve(import.meta.dir, "../../../.scratch/menu-nav-test");
+const scratch = resolve(import.meta.dir, "../../../../.scratch/menu-nav-test");
 let browser: Browser;
 let page: Page;
 let server: ReturnType<typeof Bun.serve>;
 
 beforeAll(async () => {
   await mkdir(scratch, { recursive: true });
-  await symlink(resolve(import.meta.dir, "../node_modules"), `${scratch}/node_modules`, "dir");
+  await symlink(resolve(import.meta.dir, "../../node_modules"), `${scratch}/node_modules`, "dir");
   const entry = `${scratch}/fixture.tsx`;
   await Bun.write(entry, `
     import React, { useState } from 'react';
     import { createRoot } from 'react-dom/client';
     import { flushSync } from 'react-dom';
-    import { TitleMenu } from '../../packages/react/src/titleMenu';
+    import { GameMenu } from '../../packages/react/src/menu/gameMenu';
 
     const pad = { buttons: new Set(), axes: [0, 0] };
     Object.defineProperty(navigator, 'getGamepads', {
@@ -35,10 +35,11 @@ beforeAll(async () => {
       const [picked, setPicked] = useState([]);
       const [backs, setBacks] = useState(0);
       return <>
-        <TitleMenu
-          title="Beacon Bastion"
+        <GameMenu
+          logo={{ text: "Beacon Bastion" }}
+          sound={false}
           items={[
-            { id: 'continue', label: 'Continue', primary: true },
+            { id: 'continue', label: 'Continue' },
             { id: 'new', label: 'New Game' },
             { id: 'settings', label: 'Settings' },
             { id: 'credits', label: 'Credits', disabled: true },

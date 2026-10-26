@@ -20,7 +20,7 @@ import {
   type MenuIntent,
   type MenuNavDirection,
   type MenuNavRepeat,
-} from "@jgengine/core/ui/menuNav";
+} from "@jgengine/core/menu/menuNav";
 
 /** Props a menu item needs so {@link useMenuNav} can focus it and track pointer/focus. */
 export interface MenuNavItemProps {

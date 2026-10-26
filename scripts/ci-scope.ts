@@ -3,7 +3,7 @@
 // a skip can never stand in for a pass. `scripts/ci-scope.test.ts` holds the map.
 //
 //   bun scripts/ci-scope.ts --base origin/beta
-//   bun scripts/ci-scope.ts --files packages/react/src/gameMenu.tsx
+//   bun scripts/ci-scope.ts --files packages/react/src/menu/gameMenu.tsx
 import { spawnSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";

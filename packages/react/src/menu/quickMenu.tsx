@@ -1,9 +1,9 @@
 import { useMemo, useState, type CSSProperties, type ReactNode } from "react";
 
-import type { RadialArc } from "@jgengine/core/ui/radialMenu";
+import type { RadialArc } from "@jgengine/core/menu/radialMenu";
 
 import { RadialMenu, type RadialMenuOption } from "./radialMenu";
-import { hudType } from "./hud/hudTokens";
+import { hudType } from "../hud/hudTokens";
 
 /** An entry on a {@link QuickMenu}: a leaf action, or (with `children`) a submenu. */
 export interface QuickMenuItem extends RadialMenuOption {

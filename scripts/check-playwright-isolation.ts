@@ -8,7 +8,7 @@ import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 const FILES = [
-  "packages/react/src/menuNav.test.ts",
+  "packages/react/src/menu/menuNav.test.ts",
   "packages/react/src/settingsSection.test.ts",
   "packages/shell/src/settingsBoundary.test.ts",
 ];

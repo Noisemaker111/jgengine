@@ -1,6 +1,7 @@
 import { type ReactNode, useEffect, useState } from "react";
-import { ContinuePane, CreditsPane, SaveSlotsPane } from "@jgengine/react/gameMenuSaves";
-import { GameMenu, GamePauseMenu } from "@jgengine/react/gameMenu";
+import { ContinuePane, CreditsPane, SaveSlotsPane } from "@jgengine/react/menu/gameMenuSaves";
+import { GameMenu } from "@jgengine/react/menu/gameMenu";
+import { PauseMenu } from "@jgengine/react/menu/pauseMenu";
 import { useGame, useGameClock, useGameStore } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
 import { useSaveSlots } from "@jgengine/react/save/saveSlots";
@@ -44,7 +45,7 @@ export function ParkMenu({ reducedMotion, onReducedMotion }: ParkMenuProps): Rea
   if (session.started) {
     if (!clock.paused || resultOpen(ctx)) return null;
     return (
-      <GamePauseMenu open label="The midway can wait" onResume={() => commands.run("pauseToggle", {})} eyebrow="The midway can wait" logo={LOGO} style={TOKENS}
+      <PauseMenu open label="The midway can wait" onResume={() => commands.run("pauseToggle", {})} eyebrow="The midway can wait" logo={LOGO} style={TOKENS}
         tagline="Your visitors and finances are paused." footer={<span>Brightway Park · day {day}</span>}
         items={[{ id: "resume", label: "Resume the park" }, { id: "save", label: "Save the park", hint: session.saveStatus }, { id: "settings", label: "Park settings" }, { id: "help", label: "How to play" }]}
         detail={(id) => id === "settings" ? settings : id === "help" ? <Help /> : id === "save" ? <p>{notice ?? "Saving keeps the day, the guests and the books as they stand."}</p> : null}

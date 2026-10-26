@@ -50,7 +50,7 @@ describe("findFrontEndGaps", () => {
     expect(
       scan({
         "games/probe/src/ui/menu/ProbeMenu.tsx":
-          'import { CreditsPane } from "@jgengine/react/gameMenuSaves";\nconst verbs = [{ id: "credits", label: "Credits" }];\n',
+          'import { CreditsPane } from "@jgengine/react/menu/gameMenuSaves";\nconst verbs = [{ id: "credits", label: "Credits" }];\n',
       }),
     ).toEqual(["probe#settings"]);
   });
