@@ -1,14 +1,15 @@
 import { describe, expect, test } from "bun:test";
-import { BoxGeometry, DirectionalLight, Group, InstancedMesh, Matrix4, Mesh, MeshBasicMaterial, MeshDepthMaterial, MeshNormalMaterial, Object3D, OrthographicCamera, PerspectiveCamera, Scene, WebGLRenderTarget, type Material } from "three";
+import { BoxGeometry, DataTexture, DirectionalLight, Group, InstancedMesh, Matrix4, Mesh, MeshBasicMaterial, MeshDepthMaterial, MeshNormalMaterial, Object3D, OrthographicCamera, PerspectiveCamera, PointLight, Scene, WebGLRenderTarget, type Material } from "three";
 
 import {
   batchByProgram,
-  compileSubset,
+  compileObjects,
   drawSubset,
   createShaderWarmup,
   gpuFence,
   drawsHeld,
   holdDraws,
+  warmupDraws,
   warmupDrawsToTarget,
   warmupWaitsFor,
   type HeldDraw,
@@ -160,30 +161,39 @@ describe("planFirstFrame", () => {
   });
 });
 
-describe("compileSubset", () => {
-  test("compiles only the kept drawables and puts the rest back exactly once", () => {
+describe("compileObjects", () => {
+  test("compiles only the given drawables, lit by the scene, and leaves the graph untouched", () => {
     const scene = new Scene();
     const first = meshAt(0, 0, -5);
     const second = meshAt(1, 0, -5);
     const third = meshAt(2, 0, -5);
+    // A lamp under a drawable: its light belongs to the scene's lights, not to the compiled batch.
+    const lamp = new PointLight();
+    first.add(lamp);
     scene.add(first, second, third);
     const seen: string[] = [];
+    let lightsFrom: Object3D | undefined;
+    let batchLights = 0;
     const renderer = {
-      compile(object: Object3D) {
+      compile(object: Object3D, _camera: unknown, target?: Object3D) {
+        lightsFrom = target;
         const names: string[] = [];
         object.traverse((node) => {
           if ((node as Mesh).isMesh === true) names.push(node.uuid);
+          if ((node as PointLight).isLight === true) batchLights += 1;
         });
         seen.push(names.sort().join(","));
       },
     };
-    const order = () => scene.children.map((child) => child.uuid);
+    const before = scene.children.slice();
 
-    compileSubset(renderer, scene, new PerspectiveCamera(), (object) => object !== second);
+    compileObjects(renderer, scene, new PerspectiveCamera(), [first, third]);
 
-    expect(seen).toHaveLength(1);
-    expect(seen[0]).toBe([first.uuid, third.uuid].sort().join(","));
-    expect(order()).toEqual([first.uuid, second.uuid, third.uuid]);
+    expect(seen).toEqual([[first.uuid, third.uuid].sort().join(",")]);
+    expect(lightsFrom).toBe(scene);
+    expect(batchLights).toBe(0);
+    expect(scene.children).toEqual(before);
+    expect(first.children).toEqual([lamp]);
     expect(second.parent).toBe(scene);
   });
 });
@@ -626,6 +636,49 @@ describe("createShaderWarmup links what the first frame draws outside the scene'
     expect(mesh.material).toBeInstanceOf(MeshBasicMaterial);
   });
 
+  test("a registered drawer runs with every draw held, so a chain the covered frame loop never ran is linked", async () => {
+    const scene = new Scene();
+    scene.add(meshAt(0, 0, -5));
+    const camera = new PerspectiveCamera();
+    const { renderer, compiled } = linkingRenderer();
+    const quadCamera = new OrthographicCamera();
+    const tone = new MeshBasicMaterial();
+    const quad = new Mesh(new BoxGeometry(), tone);
+    const reached: unknown[] = [];
+    const drawing = Object.assign(renderer, {
+      render(object: unknown) {
+        reached.push(object);
+      },
+    });
+    let held: HeldDraw[] = [];
+    // The gate's hold: only the frame loop's draws, and the frame loop is not running.
+    const release = holdDraws(drawing as never, { holding: () => false, onHeld: (draw) => held.push(draw) });
+    const unregister = warmupDraws(scene, () => drawing.render(quad));
+    const warmup = createShaderWarmup({
+      renderer,
+      scene,
+      camera,
+      quietMs: 0,
+      backgroundMs: 0,
+      sleep: async () => {},
+      loaderQuiet: () => true,
+      takeHeldDraws: () => {
+        const taken = held;
+        held = [];
+        return taken;
+      },
+    });
+    await warmup.done;
+    unregister();
+    release();
+
+    expect(compiled.some((entry) => Object.getPrototypeOf(entry.root) === quad && entry.materials[0] === tone)).toBe(true);
+    // Held, never drawn for real while the drawer ran.
+    expect(reached.filter((object) => object === quad).length).toBeLessThanOrEqual(1);
+    drawing.render(quad);
+    expect(reached.at(-1)).toBe(quad);
+  });
+
   test("shadow casters link the depth program the shadow pass draws them with, into a target", async () => {
     const scene = new Scene();
     const caster = meshAt(0, 0, -5);
@@ -660,6 +713,56 @@ describe("createShaderWarmup links what the first frame draws outside the scene'
     finishBake();
     await warmup.done;
     expect(compiled.length).toBeGreaterThan(0);
+  });
+});
+
+describe("texture uploads under the cover", () => {
+  function loadedTexture(): DataTexture {
+    const texture = new DataTexture(new Uint8Array(4), 1, 1);
+    texture.needsUpdate = true;
+    return texture;
+  }
+
+  test("sends what the first view samples, and only a caster's cut-out map for the shadow pass", async () => {
+    const scene = new Scene();
+    scene.add(new DirectionalLight());
+    const camera = new PerspectiveCamera(55, 16 / 9, 0.1, 200);
+    const seen = loadedTexture();
+    const inView = meshAt(0, 0, -5, new MeshBasicMaterial({ map: seen }));
+    const lit = loadedTexture();
+    const solidCaster = meshAt(0, 0, 60, new MeshBasicMaterial({ map: lit }));
+    const leaves = loadedTexture();
+    const cutOutCaster = meshAt(2, 0, 60, new MeshBasicMaterial({ map: leaves, alphaTest: 0.5 }));
+    for (const caster of [solidCaster, cutOutCaster]) caster.castShadow = true;
+    scene.add(inView, solidCaster, cutOutCaster);
+    const uploads: unknown[] = [];
+    const linked = new Set<Material>();
+    let revealed = false;
+    const renderer = {
+      info: { programs: [] as FakeProgram[] },
+      shadowMap: { enabled: true },
+      getRenderTarget: () => null,
+      setRenderTarget: () => {},
+      compile(root: Object3D) {
+        // One program per material, the way a cached link comes back.
+        root.traverse((object) => {
+          const material = (object as Mesh).material as Material | undefined;
+          if (material === undefined || linked.has(material)) return;
+          linked.add(material);
+          renderer.info.programs.push({ isReady: () => true });
+        });
+      },
+      initTexture(texture: never) {
+        if (!revealed) uploads.push(texture);
+      },
+    };
+    const warmup = createShaderWarmup({ renderer, scene, camera, quietMs: 0, backgroundMs: 0, sleep: async () => {}, loaderQuiet: () => true });
+    await warmup.done;
+    revealed = true;
+
+    expect(uploads).toContain(seen);
+    expect(uploads).toContain(leaves);
+    expect(uploads).not.toContain(lit);
   });
 });
 

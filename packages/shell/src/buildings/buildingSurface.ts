@@ -4,6 +4,7 @@ import * as THREE from "three";
 import type { BuildingSurfaceMaps, BuildingSurfaceMaterial } from "@jgengine/core/buildings/buildings";
 
 import type { MaterialOverrideTextures } from "../materialOverride";
+import { ImageTextureLoader } from "../render/imageTexture";
 
 const SURFACE_ROLES = ["color", "normal", "roughness", "ao", "metalness"] as const;
 type SurfaceRole = (typeof SURFACE_ROLES)[number];
@@ -31,7 +32,7 @@ function repeatOf(surface: BuildingSurfaceMaterial): [number, number] {
   return typeof repeat === "number" ? [repeat, repeat] : [repeat[0], repeat[1]];
 }
 
-const textureLoader = new THREE.TextureLoader();
+const textureLoader = new ImageTextureLoader();
 const loads = new Map<string, Promise<THREE.Texture | null>>();
 
 /** One shared decode per URL; a missing file (a pack without `ao.jpg`) resolves to null instead of failing the batch. */

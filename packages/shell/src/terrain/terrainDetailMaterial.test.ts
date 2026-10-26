@@ -5,6 +5,7 @@ import * as THREE from "three";
 
 import { createTerrainDetailMaterial, type TerrainDetailMaterialTextures } from "./terrainDetailMaterial";
 import { createTerrainPaintTextures, packTerrainPaintWeights } from "./terrainSurfaces";
+import { surfaceNoiseTexture } from "./terrainSurfaceShader";
 
 function fakeShader() {
   return {
@@ -44,26 +45,35 @@ function fakeTextures(): TerrainDetailMaterialTextures {
   };
 }
 
-test("terrain detail noise uses a precision-stable integer hash, not the sin hash", () => {
-  const frag = compileFragment();
-  expect(frag).toContain("jgHashUint");
-  expect(frag).toContain("ivec2(floor");
-  expect(frag).not.toContain("sin(dot");
+test("terrain detail noise reads the shared lattice texture, wrapped per cell, not a sin hash", () => {
+  const { material } = createTerrainDetailMaterial(resolveTerrainDetail({}));
+  const shader = fakeShader();
+  material.onBeforeCompile?.(shader as never, undefined as never);
+  expect(shader.fragmentShader).toContain("texelFetch(jgNoiseTex, ivec2(floor(cell)) & 255, 0)");
+  expect(shader.fragmentShader).not.toContain("sin(dot");
+  expect(shader.uniforms.jgNoiseTex?.value).toBe(surfaceNoiseTexture());
 });
 
-test("terrain detail hash stays well-distributed at large world coords", () => {
-  const hash = (n: number) => {
-    let x = Math.imul(Math.trunc(n) >>> 0, 1664525) >>> 0;
-    x = Math.imul((x ^ (x >>> 16)) >>> 0, 2246822519) >>> 0;
-    x = Math.imul((x ^ (x >>> 13)) >>> 0, 3266489917) >>> 0;
-    x = (x ^ (x >>> 16)) >>> 0;
-    return x / 4294967296;
-  };
-  const near = [0, 1, 2, 3, 4, 5, 6, 7].map(hash);
-  const far = [1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007].map(hash);
-  const spread = (xs: number[]) => Math.max(...xs) - Math.min(...xs);
-  expect(spread(far)).toBeGreaterThan(0.5);
-  expect(spread(far)).toBeCloseTo(spread(near), 0);
+test("the noise lattice is well spread, and its green channel is red one 3D slice over", () => {
+  const texture = surfaceNoiseTexture();
+  const data = texture.image.data as Uint8Array;
+  const size = texture.image.width;
+  let sum = 0;
+  let low = 0;
+  for (let index = 0; index < size * size; index += 1) {
+    sum += data[index * 4]!;
+    if (data[index * 4]! < 64) low += 1;
+  }
+  expect(sum / (size * size)).toBeGreaterThan(118);
+  expect(sum / (size * size)).toBeLessThan(137);
+  expect(low / (size * size)).toBeGreaterThan(0.2);
+  expect(low / (size * size)).toBeLessThan(0.3);
+  // A 3D noise at slice z reads cell + (37, 17) * z: green must be red at the next slice's cell.
+  for (const [x, y] of [[0, 0], [250, 3], [12, 240], [255, 255]] as const) {
+    const next = ((y + 17) % size) * size + ((x + 37) % size);
+    expect(data[(y * size + x) * 4 + 1]).toBe(data[next * 4]!);
+  }
+  expect(surfaceNoiseTexture()).toBe(texture);
 });
 
 test("without a material config, no texture uniforms or sampling code are emitted", () => {

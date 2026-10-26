@@ -29,6 +29,7 @@ import {
 } from "@jgengine/core/render/colorPipeline";
 import type { GraphicsQuality } from "@jgengine/core/settings/settingsModel";
 
+import { warmupDraws } from "../render/shaderWarmup";
 import { ExposureMeterPass } from "./autoExposure";
 import { AtmospherePass } from "./atmospherePass";
 import { ContactShadowPass } from "./contactShadowPass";
@@ -188,6 +189,23 @@ export function quantizeExposure(value: number): number {
 export function disposeGraph(built: BuiltGraph): void {
   for (const pass of built.composer.passes) pass.dispose();
   built.composer.dispose();
+}
+
+/**
+ * Run the chain once for the shader warmup, which holds every draw it makes: the passes' programs
+ * link under the loading cover instead of on the chain's first frame. The exposure meter draws but
+ * neither meters nor reads back, and temporal AA forgets the history the run did not really draw,
+ * so the first real frame starts where it would have.
+ */
+function dryRender(built: BuiltGraph): void {
+  const meters = built.composer.passes.filter((pass): pass is ExposureMeterPass => pass instanceof ExposureMeterPass);
+  for (const meter of meters) meter.dry = true;
+  try {
+    built.composer.render(0);
+  } finally {
+    for (const meter of meters) meter.dry = false;
+    for (const pass of built.composer.passes) if (pass instanceof TemporalAaPass) pass.reset();
+  }
 }
 
 /**
@@ -426,7 +444,9 @@ export function PostProcessing({ config, quality = "high", stages }: { config: P
     const graph = buildPostGraph(gl, scene, camera, planPostStages(config, quality, stages), width, height);
     syncSize(graph, width, height, gl.getPixelRatio());
     builtRef.current = graph;
+    const unwarm = warmupDraws(scene, () => dryRender(graph));
     return () => {
+      unwarm();
       disposeGraph(graph);
       releasePostfxOverlayTracking(scene);
       builtRef.current = null;

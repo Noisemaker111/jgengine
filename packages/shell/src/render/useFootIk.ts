@@ -1,4 +1,4 @@
-import { useFrame, useThree } from "@react-three/fiber";
+import { useThree } from "@react-three/fiber";
 import { useLayoutEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 
@@ -9,6 +9,7 @@ import type { ModelConfig, ModelIkConfig, ModelLookAtConfig } from "@jgengine/co
 import type { SceneRaycastHit, SceneRaycastInput } from "@jgengine/core/scene/sceneRaycast";
 import { resolveRigNode } from "./rigNode";
 import { noteCharacterMotion } from "../lod/characterLod";
+import { useFrameWhile } from "./useFrameWhile";
 
 type FootIkConfig = Exclude<NonNullable<ModelConfig["ik"]>, "none">;
 type GroundProbe = (input: SceneRaycastInput) => SceneRaycastHit | null;
@@ -359,7 +360,7 @@ export function useFootIk(
       }
     };
   }, [rig, scene, instanceId]);
-  useFrame((_three, delta) => {
+  useFrameWhile(rig !== null && ctx !== null && instanceId !== undefined, (_three, delta) => {
     if (rig === null || ctx === null || instanceId === undefined) return;
     const parent = scene.parent;
     const originY = parent === null ? scene.position.y : parent.localToWorld(scratch.a.set(0, groundOffset, 0)).y;

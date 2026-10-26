@@ -11,8 +11,14 @@ import { grassFieldColors, resolveGrassBake, type GrassExclusion } from "./grass
 import { createGrassMaterial } from "./grassMaterial";
 import { GrassStream } from "./grassStream";
 
-/** Milliseconds of tuft baking one frame may spend after the first; the first frame bakes all it sees. */
+/** Milliseconds of tuft baking one frame may spend once the patch has filled the view. */
 const BAKE_SLICE_MS = 3;
+/**
+ * Milliseconds per frame while the patch first fills the view, nearest leaves first. Baking it all
+ * in one frame held the thread for over a second on a large field (each tuft samples the ground),
+ * freezing the menu above the loading cover.
+ */
+const FILL_SLICE_MS = 8;
 
 /** Props for {@link GrassPatch}. */
 export interface GrassPatchProps extends Omit<ThreeElements["group"], "children"> {
@@ -63,16 +69,16 @@ export function GrassPatch({
   );
   const handle = useMemo(() => createGrassMaterial(look, groundColor), [look, groundColor]);
   const stream = useMemo(() => new GrassStream(bake, handle, { castShadow, receiveShadow, frustumCulled }), [bake, handle, castShadow, receiveShadow, frustumCulled]);
-  const first = useRef(true);
+  const filling = useRef(true);
   useEffect(() => {
-    first.current = true;
+    filling.current = true;
     return () => stream.dispose();
   }, [stream]);
   useEffect(() => () => handle.material.dispose(), [handle]);
   useFrame((state) => {
     handle.uniforms.uTime.value = state.clock.elapsedTime;
-    stream.update(state.camera, state.size.height, first.current ? Infinity : BAKE_SLICE_MS);
-    first.current = false;
+    stream.update(state.camera, state.size.height, filling.current ? FILL_SLICE_MS : BAKE_SLICE_MS);
+    if (filling.current && stream.stats().pending === 0) filling.current = false;
   });
 
   const colors = useMemo(() => grassFieldColors(look), [look]);

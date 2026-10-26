@@ -6,6 +6,7 @@ import type { ModelMaterialOverride } from "@jgengine/core/game/playableGame";
 import { MATERIAL_TEXTURE_SEMANTICS } from "@jgengine/core/material/materialAsset";
 
 import { applyMaterialOverrideToMaterial, requiresPhysicalMaterial, type MaterialOverrideTextures } from "../materialOverride";
+import { ImageTextureLoader } from "./imageTexture";
 import { modelMapEntries } from "./modelAssets";
 import { useDisposable } from "./useDisposable";
 
@@ -96,7 +97,7 @@ ${Object.entries({ MAP: "vMapUv", NORMALMAP: "vNormalMapUv", ROUGHNESSMAP: "vRou
 export function useAuthoredSurfaceMaterial(config: AuthoredSurfaceConfig, shape: SurfaceShape = "box"): THREE.MeshStandardMaterial {
   const key = authoredSurfaceKey(config);
   const entries = useMemo(() => modelMapEntries(config.maps ?? {}), [key]);
-  const loaded = useLoader(THREE.TextureLoader, Object.values(entries));
+  const loaded = useLoader(ImageTextureLoader, Object.values(entries));
   const resources = useDisposable(() => {
     const textures = authoredSurfaceTextures(entries, loaded, config);
     const { anisotropy: _samplerAnisotropy, surfaceAnisotropy, ...surface } = config;

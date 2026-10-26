@@ -76,6 +76,8 @@ export class ExposureMeterPass extends Pass {
   private readonly copyQuad: FullScreenQuad;
   private readonly pixels = new Uint8Array(METER_SIZE * METER_SIZE * 4);
   private readonly samples = new Float32Array(METER_SIZE * METER_SIZE);
+  /** A dry run (the shader warmup's) draws the passes without metering or queueing a readback. */
+  dry = false;
   private frames = 0;
   private taken = 0;
   private elapsed = 0;
@@ -114,13 +116,15 @@ export class ExposureMeterPass extends Pass {
     renderer.setRenderTarget(this.meterTarget);
     this.reduceQuad.render(renderer);
 
-    this.frames += 1;
-    this.elapsed += deltaTime;
-    this.collectPendingSample();
-    // The first few frames sample every frame so a load starts at its metered exposure, not at the
-    // authored one; after that a readback is queued on a schedule.
-    if (this.fence === null && (this.taken < 4 || this.frames % this.sampleInterval === 0)) {
-      this.queueReadback(renderer);
+    if (!this.dry) {
+      this.frames += 1;
+      this.elapsed += deltaTime;
+      this.collectPendingSample();
+      // The first few frames sample every frame so a load starts at its metered exposure, not at
+      // the authored one; after that a readback is queued on a schedule.
+      if (this.fence === null && (this.taken < 4 || this.frames % this.sampleInterval === 0)) {
+        this.queueReadback(renderer);
+      }
     }
 
     this.copyUniforms.tDiffuse.value = readBuffer.texture;

@@ -39,6 +39,7 @@ import { terrainGroundColorSampler } from "./terrainGroundColor";
 import { InstancedBuildings, type InstancedBuildingPlacement } from "../buildings/GeneratedBuilding";
 import { GrassPatch } from "../grass/GrassPatch";
 import { CarvedTerrain, type CarvedTerrainProps } from "../terrain/CarvedTerrain";
+import { ImageTextureLoader } from "../render/imageTexture";
 import { trackSceneWork } from "../render/modelLoad";
 import { createTerrainDetailMaterial } from "../terrain/terrainDetailMaterial";
 import { MAX_TERRAIN_LAYER_MAPS, type TerrainDetailMaterialTextures, type TerrainLayerMap } from "../terrain/terrainDetailMaterial";
@@ -148,7 +149,7 @@ function TolerantTerrainGround({
     let active = true;
     const textures: Partial<Record<keyof TerrainDetailMaterialTextures, THREE.Texture>> = {};
     let pending = roles.length;
-    const loader = new THREE.TextureLoader();
+    const loader = new ImageTextureLoader();
     // Loading until the maps answer: the textured ground is another program, which the shader
     // warmup links while the cover is up only if it knows the procedural ground is not the last.
     const done = trackSceneWork("terrain-detail-maps");

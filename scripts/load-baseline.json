@@ -2,72 +2,72 @@
   "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 3070 (0x00002484) Direct3D11 vs_5_0 ps_5_0, D3D11)",
   "games": {
     "apex-nights": {
-      "worstClick": 1196,
-      "sceneReady": 16005
+      "worstClick": 398,
+      "sceneReady": 5981
     },
     "beacon-bastion": {
-      "worstClick": 1125,
-      "sceneReady": 19153
+      "worstClick": 588,
+      "sceneReady": 4989
     },
     "briarcrown": {
-      "worstClick": 973,
-      "sceneReady": 12740
+      "worstClick": 503,
+      "sceneReady": 5075
     },
     "brightway-park": {
-      "worstClick": 569,
-      "sceneReady": 18148
+      "worstClick": 515,
+      "sceneReady": 5377
     },
     "deepward": {
-      "worstClick": 627,
-      "sceneReady": 5599
+      "worstClick": 553,
+      "sceneReady": 4383
     },
     "drift-foundry": {
-      "worstClick": 1945,
-      "sceneReady": 31243
+      "worstClick": 778,
+      "sceneReady": 9255
     },
     "ember-command": {
-      "worstClick": 849,
-      "sceneReady": 15926
+      "worstClick": 586,
+      "sceneReady": 5324
     },
     "fernwild": {
-      "worstClick": 1372,
-      "sceneReady": 9653
+      "worstClick": 648,
+      "sceneReady": 7064
     },
     "harbor-heat": {
-      "worstClick": 798,
-      "sceneReady": 17006
+      "worstClick": 1067,
+      "sceneReady": 9812
     },
     "hold-the-line": {
-      "worstClick": 1886,
-      "sceneReady": 13050
+      "worstClick": 517,
+      "sceneReady": 6057
     },
     "odd-orbit": {
-      "worstClick": 907,
-      "sceneReady": 15429
+      "worstClick": 616,
+      "sceneReady": 7156
     },
     "orbit-watch": {
-      "worstClick": 726,
-      "sceneReady": 11007
+      "worstClick": 514,
+      "sceneReady": 4662
     },
     "outpost-zero": {
-      "worstClick": 616,
-      "sceneReady": 9598
+      "worstClick": 499,
+      "sceneReady": 4903
     },
     "red-frontier": {
-      "worstClick": 926,
-      "sceneReady": 10842
+      "worstClick": 505,
+      "sceneReady": 4971
     },
     "saltwick": {
-      "worstClick": 820,
-      "sceneReady": 10425
+      "worstClick": 467,
+      "sceneReady": 5744
     },
     "scrap-signal": {
-      "worstClick": 1544,
-      "sceneReady": 21497
+      "worstClick": 796,
+      "sceneReady": 12487
     },
     "the-sunken-crown": {
-      "worstClick": 2019,
-      "sceneReady": 11295
+      "worstClick": 491,
+      "sceneReady": 6702
     }
   }
 }

@@ -1,6 +1,6 @@
 import { deathRemovesEntity } from "@jgengine/core/combat/death";
 import { useFrame, useLoader, useThree } from "@react-three/fiber";
-import { Component, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Component, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import * as THREE from "three";
 
 import type { EntitySpriteConfig, ModelConfig } from "@jgengine/core/game/playableGame";
@@ -40,6 +40,10 @@ import {
   type MaterialCache,
   type PaintCanvas,
 } from "./modelRender";
+import { useFrameWhile } from "./useFrameWhile";
+
+/** No paint layer outside a running game: nothing to subscribe to. */
+const noPaintLayer = (): (() => void) => () => {};
 
 export function EntitySprite({ sprite }: { sprite: EntitySpriteConfig }) {
   const invalidate = useThree((state) => state.invalidate);
@@ -379,7 +383,14 @@ export function EntityModel({
     [scene],
   );
 
-  useFrame(() => {
+  // Only a model whose id has been painted joins the frame loop to sync strokes; the rest (nearly
+  // every placed prop) never pay for it.
+  const paintLayer = ctx?.scene.entity.paint;
+  const painted = useSyncExternalStore(
+    paintLayer?.subscribe ?? noPaintLayer,
+    () => paintLayer !== undefined && instanceId !== undefined && paintLayer.version(instanceId) > 0,
+  );
+  useFrameWhile(painted, () => {
     if (ctx === null || instanceId === undefined) return;
     const paint = ctx.scene.entity.paint;
     const version = paint.version(instanceId);
