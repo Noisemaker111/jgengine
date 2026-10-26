@@ -1,9 +1,9 @@
 import { useMemo } from "react";
 import { useDisplayProfile } from "@jgengine/react/display";
 import { KitButton, KitPanel } from "@jgengine/react/uiKitRoot";
-import { useViewportScrollLock } from "@jgengine/react/gameMenu";
+import { useViewportScrollLock } from "@jgengine/react/menu/gameMenu";
 import { useGameStore } from "@jgengine/react/hooks";
-import { useMenuNav } from "@jgengine/react/menuNav";
+import { useMenuNav } from "@jgengine/react/menu/menuNav";
 import { clockText, HH, KeyLegend, navItem, useMenuSound, useMoveTick, useScreenTouch } from "./kit";
 
 /** A choice printed under the slip: next parcel, free roam, back to the title. */

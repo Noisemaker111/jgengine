@@ -28,8 +28,8 @@ const NO_FILTER = [
   "gameCursor.tsx",
   "gameSlider.tsx",
   "hud/hudLayout.tsx",
-  "gameMenu.tsx",
-  "gameMenuSaves.tsx",
+  "menu/gameMenu.tsx",
+  "menu/gameMenuSaves.tsx",
   "hud/actionHud.tsx",
   "hud/selectionHud.tsx",
   "notifications/notices.tsx",
@@ -37,7 +37,7 @@ const NO_FILTER = [
   "hud/hudFrame.tsx",
   "interactionPrompt.tsx",
   "map.tsx",
-  "menuScreen.tsx",
+  "menu/menuScreen.tsx",
   "waypointMarkers.tsx",
 ];
 

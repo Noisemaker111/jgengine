@@ -5,7 +5,7 @@ import {
   radialSlicePosition,
   radialSlices,
   type RadialArc,
-} from "@jgengine/core/ui/radialMenu";
+} from "@jgengine/core/menu/radialMenu";
 
 const TWO_PI = Math.PI * 2;
 

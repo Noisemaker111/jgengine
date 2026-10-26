@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, setDefaultTimeout, test } from "
 import { mkdir, rm, symlink } from "node:fs/promises";
 import { resolve } from "node:path";
 import { chromium, type Browser, type Page } from "playwright-core";
-import { buildBrowserFixture, findChromeExecutable } from "../../../scripts/browser-lib";
+import { buildBrowserFixture, findChromeExecutable } from "../../../../scripts/browser-lib";
 
 /**
  * A menu only stops the world drawing when it says it paints over the whole canvas. The default
@@ -12,20 +12,20 @@ import { buildBrowserFixture, findChromeExecutable } from "../../../scripts/brow
 
 setDefaultTimeout(30_000);
 
-const scratch = resolve(import.meta.dir, "../../../.scratch/menu-screen-cover-test");
+const scratch = resolve(import.meta.dir, "../../../../.scratch/menu-screen-cover-test");
 let browser: Browser;
 let page: Page;
 let server: ReturnType<typeof Bun.serve>;
 
 beforeAll(async () => {
   await mkdir(scratch, { recursive: true });
-  await symlink(resolve(import.meta.dir, "../node_modules"), `${scratch}/node_modules`, "dir");
+  await symlink(resolve(import.meta.dir, "../../node_modules"), `${scratch}/node_modules`, "dir");
   const entry = `${scratch}/fixture.tsx`;
   await Bun.write(entry, `
     import React, { useState } from 'react';
     import { createRoot } from 'react-dom/client';
     import { flushSync } from 'react-dom';
-    import { MenuScreen } from '../../packages/react/src/menuScreen';
+    import { MenuScreen } from '../../packages/react/src/menu/menuScreen';
     import { canvasCover } from '../../packages/react/src/canvasCover';
 
     const root = createRoot(document.getElementById('root'));

@@ -2,8 +2,8 @@ import { useEffect, useMemo, type ReactNode } from "react";
 import { useDisplayProfile } from "@jgengine/react/display";
 import { KitButton, KitPanel } from "@jgengine/react/uiKitRoot";
 import { GameCursor } from "@jgengine/react/gameCursor";
-import { useViewportScrollLock } from "@jgengine/react/gameMenu";
-import { useMenuNav } from "@jgengine/react/menuNav";
+import { useViewportScrollLock } from "@jgengine/react/menu/gameMenu";
+import { useMenuNav } from "@jgengine/react/menu/menuNav";
 import { HH, KeyLegend, money, navItem, useMenuSound, useMoveTick, useScreenTouch } from "./kit";
 
 /**

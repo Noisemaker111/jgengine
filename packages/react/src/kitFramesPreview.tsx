@@ -4,7 +4,7 @@ import { GameCursor, type GameCursorStyle } from "./gameCursor";
 import type { KitCut, KitMaterial } from "./kitFrame";
 import { KitButton, KitPanel } from "./uiKitRoot";
 import { GameSlider } from "./gameSlider";
-import { useMenuNav } from "./menuNav";
+import { useMenuNav } from "./menu/menuNav";
 
 const MATERIALS: readonly { material: KitMaterial; cut: KitCut; label: string; tint?: string }[] = [
   { material: "steel", cut: "chamfer", label: "Steel · chamfer" },

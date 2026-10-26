@@ -6,12 +6,12 @@ import {
   type ReactNode,
 } from "react";
 
-import { useReducedMotion } from "./accessibility";
+import { useReducedMotion } from "../accessibility";
 import { createGameMenuSound, type GameMenuSound } from "./gameMenuSound";
-import { useGameViewportLayout } from "./gameViewport";
-import { hudDuration, hudEase, hudFont, hudType } from "./hud/hudTokens";
+import { useGameViewportLayout } from "../gameViewport";
+import { hudDuration, hudEase, hudFont, hudType } from "../hud/hudTokens";
 import { useMenuNav } from "./menuNav";
-import { kitHudBridge, KitMenu, KitPanel, useHasUiKit } from "./uiKitRoot";
+import { kitHudBridge, KitMenu, KitPanel, useHasUiKit } from "../uiKitRoot";
 
 /**
  * A game's front-end menu: a full-bleed surface over a living background, a logo, primary verbs on
@@ -774,29 +774,3 @@ export function GameMenu({
     </div>
   );
 }
-
-/**
- * A pause menu built from {@link GameMenu}: the same surface and navigation at a smaller scale, so a
- * game composes one menu system rather than a second one. Escape (or B/Start) resumes.
- *
- * @capability game-pause-menu pause menu from the shared game-menu system — same navigation and surface, sized down
- */
-export function GamePauseMenu(
-  props: Omit<GameMenuProps, "variant"> & { onResume?: () => void },
-): ReactNode {
-  const { onResume, onBack, ...rest } = props;
-  return <GameMenu {...rest} variant="pause" onBack={onBack ?? onResume} label={rest.label ?? "Paused"} />;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-

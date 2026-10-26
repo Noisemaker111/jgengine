@@ -5,7 +5,8 @@ import { HudButton } from "./hudButton";
 import { HudFrame } from "./hudFrame";
 import { HudSurface } from "./hudSurface";
 import { HudThemeRoot } from "./hudThemeRoot";
-import { ConfirmDialog, PauseMenu } from "../modals";
+import { PauseMenu } from "../menu/pauseMenu";
+import { ConfirmDialog } from "../modals";
 import { Window } from "../panels";
 import { TweenNumber } from "../tweenNumber";
 import { KitMeter } from "../uiKitRoot";
@@ -55,7 +56,7 @@ export function HudChromePreview({ className }: { className?: string }) {
           <ConfirmDialog title="Abandon the expedition?" body="Your haul stays in the wagon, but the crew returns home." confirmLabel="Abandon" danger onConfirm={noop} onCancel={noop} />
         </div>
         <div style={{ position: "absolute", left: 1040, top: 24 }}>
-          <PauseMenu onResume={noop} items={[{ id: "settings", label: "Settings", onSelect: noop }, { id: "quit", label: "Quit to title", onSelect: noop, danger: true }]} />
+          <PauseMenu onResume={noop} sound={false} items={[{ id: "resume", label: "Resume" }, { id: "settings", label: "Settings" }, { id: "quit", label: "Quit to title" }]} onSelect={noop} />
         </div>
         <div style={{ position: "absolute", left: 340, top: 300 }}>
           <HudSurface title="Buttons" padding={14}>

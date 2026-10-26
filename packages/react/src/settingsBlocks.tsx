@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, 
 import type { SettingValue } from "@jgengine/core/settings/settingsModel";
 
 import { hudSpace, hudType, hudTransition } from "./hud/hudTokens";
-import { useMenuNav, type MenuNavItemProps } from "./menuNav";
+import { useMenuNav, type MenuNavItemProps } from "./menu/menuNav";
 import type { SettingsCategoryView, SettingsKeybindRow, SettingsRow } from "./settings";
 import { GameSlider } from "./gameSlider";
 import { ScrollRail } from "./scrollRail";

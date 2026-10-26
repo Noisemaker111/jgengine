@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { GameMenu, GamePauseMenu } from "@jgengine/react/gameMenu";
+import { GameMenu } from "@jgengine/react/menu/gameMenu";
+import { PauseMenu as EnginePauseMenu } from "@jgengine/react/menu/pauseMenu";
 import { useGameContext } from "@jgengine/react/provider";
 
 import { BRIEFING, CONTROLS, CREDITS } from "../controls";
@@ -78,7 +79,7 @@ export function TitleMenu(): ReactNode {
 export function PauseMenu(): ReactNode {
   const ctx = useGameContext();
   return (
-    <GamePauseMenu
+    <EnginePauseMenu
       style={MENU_STYLE}
       items={[
         { id: "resume", label: "Resume" },

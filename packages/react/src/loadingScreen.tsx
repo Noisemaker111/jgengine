@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
 
 import { createTipRotation, type TipRotation } from "@jgengine/core/ui/loadingTips";
-import { menuIntentForKey } from "@jgengine/core/ui/menuNav";
+import { menuIntentForKey } from "@jgengine/core/menu/menuNav";
 
 import { hudSpace, hudType } from "./hud/hudTokens";
-import { useMenuNav } from "./menuNav";
-import { MenuScreen, type MenuScreenScrim } from "./menuScreen";
+import { useMenuNav } from "./menu/menuNav";
+import { MenuScreen, type MenuScreenScrim } from "./menu/menuScreen";
 
 /** Props for {@link LoadingScreen}. */
 export interface LoadingScreenProps {

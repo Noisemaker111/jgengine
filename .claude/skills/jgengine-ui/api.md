@@ -87,6 +87,42 @@
 - `createI18n` (function): function createI18n(options: I18nOptions): I18n — Create a translator over a message catalog: active-locale lookup with a fallback-locale chain, `{param}` interpolation, and `Intl.PluralRules`-based pluralization. Observable (`subscribe`) so React re-renders on `setLocale`; the catalog is caller-owned static data, the locale is the only state.
 - `interpolate` (function): function interpolate(template: string, params?: TParams): string — Replace `{name}` placeholders in `template` with `params[name]`. Unknown placeholders are left intact. Pure and locale-independent.
 
+## @jgengine/core/menu/menuNav
+
+- `MENU_KEY_INTENTS` (const): const MENU_KEY_INTENTS: Readonly<Record<string, MenuIntent>> — Keyboard codes that drive a menu, by `KeyboardEvent.code`. Tab is deliberately absent: it stays native.
+- `MenuIntent` (type): type MenuIntent = MenuNavDirection | "confirm" | "back" — Everything a key or gamepad button can ask a menu to do.
+- `MenuNavDirection` (type): type MenuNavDirection = "up" | "down" | "left" | "right" | "first" | "last" — Headless focus-order model for a game front-end menu: a list or grid of item ids, one focused item, and the keyboard/gamepad intents that move between them. It holds no React state, no DOM and no look — `@jgengine/react/menu/menuNav` binds it to a container and real focus, and each game decides what the items are and where they sit.
+- `MenuNavHold` (interface): interface MenuNavHold — When a held direction was pressed and when it last moved the focus.
+- `MenuNavLayout` (interface): interface MenuNavLayout — The shape of the item list being navigated: how many items, how they wrap into rows.
+- `MenuNavRepeat` (interface): interface MenuNavRepeat — Hold-to-repeat timing for a held d-pad/stick: one immediate move, then repeats.
+- `menuIntentForKey` (function): function menuIntentForKey(code: string): MenuIntent | null — Resolve a `KeyboardEvent.code` to a menu intent, or `null` for keys the menu leaves alone (typing, Tab, shortcuts). Escape and Backspace both mean back; Space and Enter both mean confirm.
+- `menuIntentForPadAxis` (function): function menuIntentForPadAxis(axis: number, value: number, deadzone = 0.55): MenuNavDirection | null — Resolve a left-stick axis sample to a direction. Axis `0` is horizontal and axis `1` vertical (standard mapping, up is negative); the larger magnitude wins so a diagonal push is one move.
+- `menuIntentForPadButton` (function): function menuIntentForPadButton(button: number): MenuIntent | null — Standard-mapping gamepad buttons as menu intents: A/Cross confirms, B/Circle and Start back, the d-pad moves. Buttons with no menu meaning return `null`.
+- `menuNavIdAt` (function): function menuNavIdAt(ids: readonly string[], index: number): string | null — The id at `index`, or `null` outside the list.
+- `menuNavIndex` (function): function menuNavIndex(ids: readonly string[], id: string | null | undefined): number — The index of `id` in the focus order, or `-1` when it is not part of this menu.
+- `menuNavMove` (function): function menuNavMove(index: number, direction: MenuNavDirection, layout: MenuNavLayout): number — The next focused index for a direction, or the same index when the move is a no-op. Moves skip `disabled` indices and stop (rather than wrap) when every item in the way is disabled, so a menu can never hand focus to a dead row.
+- `shouldRepeatMenuNav` (function): function shouldRepeatMenuNav(now: number, hold: MenuNavHold, repeat: MenuNavRepeat = {}): boolean — Whether a held direction should fire a move at `now`: immediately on press, then only after `delayMs`, and no more often than `intervalMs`. Pure timing, so a gamepad poll and a keydown handler share one rule.
+
+## @jgengine/core/menu/menuTransition
+
+- `MenuTransition` (interface): interface MenuTransition — Observable enter/exit phase machine.
+- `MenuTransitionConfig` (interface): interface MenuTransitionConfig — Durations and accessibility policy for one transition.
+- `MenuTransitionPhase` (type): type MenuTransitionPhase = "closed" | "enter" | "open" | "exit" — The phase timing behind an animated menu screen: closed → entering → open → exiting → closed. Pure timing over an injected clock, so a React block can animate with CSS and still know exactly when an exit finished and the screen may unmount. Reduced motion collapses every duration to zero instead of skipping the state machine, so callers never branch on it.
+- `MenuTransitionSnapshot` (interface): interface MenuTransitionSnapshot — Serializable phase state.
+- `createMenuTransition` (function): function createMenuTransition(config: MenuTransitionConfig = {}, initial?: MenuTransitionSnapshot): MenuTransition — Create a {@link MenuTransition}. `open`/`close` start a phase; `tick` advances it once its duration has elapsed. Nothing schedules timers here — the caller ticks from its animation loop or a timeout.
+- `menuTransitionDurations` (function): function menuTransitionDurations(config: MenuTransitionConfig = {}): { enter: number; exit: number } — The enter and exit durations after reduced-motion is applied.
+- `menuTransitionPhaseMs` (function): function menuTransitionPhaseMs(phase: MenuTransitionPhase, config: MenuTransitionConfig = {}): number — How long the current phase lasts, in ms (0 for open/closed).
+
+## @jgengine/core/menu/radialMenu
+
+- `RadialArc` (interface): interface RadialArc — Arc the slices span. Omit for a full wheel (index 0 at the top). A partial `sweep` (e.g. `Math.PI` for a bottom half, `Math.PI / 2` for a quarter) packs the slices evenly inside `[startAngle, startAngle + sweep]` — the arc/quick-bar forms. Angles are radians from "up" (−Y), clockwise.
+- `RadialSlice` (interface): interface RadialSlice — One wedge of a radial menu — geometry for rendering a slice. Angles are radians from "up" (−Y), clockwise.
+- `RadialVectorOptions` (interface): interface RadialVectorOptions extends RadialArc — Options for {@link radialIndexFromVector}.
+- `radialIndexFromAngle` (function): function radialIndexFromAngle(angle: number, count: number, arc?: RadialArc): number — Map an angle to a slice index; returns -1 when the angle falls outside a partial `arc`.
+- `radialIndexFromVector` (function): function radialIndexFromVector(dx: number, dy: number, count: number, options: RadialVectorOptions = {}): number | null — Pick the slice a pointer/stick vector points at. `dx`/`dy` are screen-space (y down): up is `(0, -1)`. Returns null inside `deadZone` or (for a partial `arc`) outside the arc, so a centered stick or a click off the arc selects nothing.
+- `radialSlicePosition` (function): function radialSlicePosition(index: number, count: number, radius: number, arc?: RadialArc): { x: number; y: number } — Unit-circle position of a slice center (up = `(0, -1)`), scaled by `radius` — where to place a wedge's icon/label.
+- `radialSlices` (function): function radialSlices(count: number, arc?: RadialArc): RadialSlice[] — Divide a ring (or `arc`) into `count` wedges — the geometry a radial/quick menu (weapon wheel, emote arc, ping bar) renders. A full wheel centers index 0 at the top; a partial `arc` packs the slices inside its sweep.
+
 ## @jgengine/core/render/ambientLife
 
 - `AmbientLifeConfig` (interface): interface AmbientLifeConfig — Small life the renderer adds around the camera, driven by the weather and the time of day. Birds circle overhead in fair daylight and leave in rain or at night; litter blows along the ground when the wind picks up; steam rises from vents, thicker when it is cold, wet or dark.
@@ -335,7 +371,7 @@
 - `MODAL_CANCEL` (const): const MODAL_CANCEL: "cancel" — Conventional cancel/dismiss result (also the default auto-dismiss and pop result).
 - `MODAL_CONFIRM` (const): const MODAL_CONFIRM: "confirm" — Conventional confirm result for a two-button dialog — a shared string, not model behavior.
 - `MenuIntent` (type): type MenuIntent = MenuNavDirection | "confirm" | "back" — Everything a key or gamepad button can ask a menu to do.
-- `MenuNavDirection` (type): type MenuNavDirection = "up" | "down" | "left" | "right" | "first" | "last" — Headless focus-order model for a game front-end menu: a list or grid of item ids, one focused item, and the keyboard/gamepad intents that move between them. It holds no React state, no DOM and no look — `@jgengine/react/menuNav` binds it to a container and real focus, and each game decides what the items are and where they sit.
+- `MenuNavDirection` (type): type MenuNavDirection = "up" | "down" | "left" | "right" | "first" | "last" — Headless focus-order model for a game front-end menu: a list or grid of item ids, one focused item, and the keyboard/gamepad intents that move between them. It holds no React state, no DOM and no look — `@jgengine/react/menu/menuNav` binds it to a container and real focus, and each game decides what the items are and where they sit.
 - `MenuNavHold` (interface): interface MenuNavHold — When a held direction was pressed and when it last moved the focus.
 - `MenuNavLayout` (interface): interface MenuNavLayout — The shape of the item list being navigated: how many items, how they wrap into rows.
 - `MenuNavRepeat` (interface): interface MenuNavRepeat — Hold-to-repeat timing for a held d-pad/stick: one immediate move, then repeats.
@@ -530,32 +566,6 @@
 - `TipRotationSnapshot` (interface): interface TipRotationSnapshot — Serializable rotation state.
 - `createTipRotation` (function): function createTipRotation(config: TipRotationConfig): TipRotation — Create a {@link TipRotation} over the game's tips. Order is a seeded shuffle; `next()` walks it and wraps, so every tip is seen once per cycle instead of a random repeat.
 
-## @jgengine/core/ui/menuNav
-
-- `MENU_KEY_INTENTS` (const): const MENU_KEY_INTENTS: Readonly<Record<string, MenuIntent>> — Keyboard codes that drive a menu, by `KeyboardEvent.code`. Tab is deliberately absent: it stays native.
-- `MenuIntent` (type): type MenuIntent = MenuNavDirection | "confirm" | "back" — Everything a key or gamepad button can ask a menu to do.
-- `MenuNavDirection` (type): type MenuNavDirection = "up" | "down" | "left" | "right" | "first" | "last" — Headless focus-order model for a game front-end menu: a list or grid of item ids, one focused item, and the keyboard/gamepad intents that move between them. It holds no React state, no DOM and no look — `@jgengine/react/menuNav` binds it to a container and real focus, and each game decides what the items are and where they sit.
-- `MenuNavHold` (interface): interface MenuNavHold — When a held direction was pressed and when it last moved the focus.
-- `MenuNavLayout` (interface): interface MenuNavLayout — The shape of the item list being navigated: how many items, how they wrap into rows.
-- `MenuNavRepeat` (interface): interface MenuNavRepeat — Hold-to-repeat timing for a held d-pad/stick: one immediate move, then repeats.
-- `menuIntentForKey` (function): function menuIntentForKey(code: string): MenuIntent | null — Resolve a `KeyboardEvent.code` to a menu intent, or `null` for keys the menu leaves alone (typing, Tab, shortcuts). Escape and Backspace both mean back; Space and Enter both mean confirm.
-- `menuIntentForPadAxis` (function): function menuIntentForPadAxis(axis: number, value: number, deadzone = 0.55): MenuNavDirection | null — Resolve a left-stick axis sample to a direction. Axis `0` is horizontal and axis `1` vertical (standard mapping, up is negative); the larger magnitude wins so a diagonal push is one move.
-- `menuIntentForPadButton` (function): function menuIntentForPadButton(button: number): MenuIntent | null — Standard-mapping gamepad buttons as menu intents: A/Cross confirms, B/Circle and Start back, the d-pad moves. Buttons with no menu meaning return `null`.
-- `menuNavIdAt` (function): function menuNavIdAt(ids: readonly string[], index: number): string | null — The id at `index`, or `null` outside the list.
-- `menuNavIndex` (function): function menuNavIndex(ids: readonly string[], id: string | null | undefined): number — The index of `id` in the focus order, or `-1` when it is not part of this menu.
-- `menuNavMove` (function): function menuNavMove(index: number, direction: MenuNavDirection, layout: MenuNavLayout): number — The next focused index for a direction, or the same index when the move is a no-op. Moves skip `disabled` indices and stop (rather than wrap) when every item in the way is disabled, so a menu can never hand focus to a dead row.
-- `shouldRepeatMenuNav` (function): function shouldRepeatMenuNav(now: number, hold: MenuNavHold, repeat: MenuNavRepeat = {}): boolean — Whether a held direction should fire a move at `now`: immediately on press, then only after `delayMs`, and no more often than `intervalMs`. Pure timing, so a gamepad poll and a keydown handler share one rule.
-
-## @jgengine/core/ui/menuTransition
-
-- `MenuTransition` (interface): interface MenuTransition — Observable enter/exit phase machine.
-- `MenuTransitionConfig` (interface): interface MenuTransitionConfig — Durations and accessibility policy for one transition.
-- `MenuTransitionPhase` (type): type MenuTransitionPhase = "closed" | "enter" | "open" | "exit" — The phase timing behind an animated menu screen: closed → entering → open → exiting → closed. Pure timing over an injected clock, so a React block can animate with CSS and still know exactly when an exit finished and the screen may unmount. Reduced motion collapses every duration to zero instead of skipping the state machine, so callers never branch on it.
-- `MenuTransitionSnapshot` (interface): interface MenuTransitionSnapshot — Serializable phase state.
-- `createMenuTransition` (function): function createMenuTransition(config: MenuTransitionConfig = {}, initial?: MenuTransitionSnapshot): MenuTransition — Create a {@link MenuTransition}. `open`/`close` start a phase; `tick` advances it once its duration has elapsed. Nothing schedules timers here — the caller ticks from its animation loop or a timeout.
-- `menuTransitionDurations` (function): function menuTransitionDurations(config: MenuTransitionConfig = {}): { enter: number; exit: number } — The enter and exit durations after reduced-motion is applied.
-- `menuTransitionPhaseMs` (function): function menuTransitionPhaseMs(phase: MenuTransitionPhase, config: MenuTransitionConfig = {}): number — How long the current phase lasts, in ms (0 for open/closed).
-
 ## @jgengine/core/ui/modalStack
 
 - `MODAL_CANCEL` (const): const MODAL_CANCEL: "cancel" — Conventional cancel/dismiss result (also the default auto-dismiss and pop result).
@@ -614,16 +624,6 @@
 - `PhotoModeState` (interface): interface PhotoModeState — Serializable photo-mode preferences a game reads to compose its capture UI.
 - `PhotoModeStore` (interface): interface PhotoModeStore — Observable photo-mode store — genre-agnostic state a game binds its capture flow to.
 - `createPhotoModeStore` (function): function createPhotoModeStore(initial: Partial<PhotoModeState> = {}): PhotoModeStore — Serializable, observable photo-mode state (active + hide-HUD). Genre-agnostic plumbing — a game engages it to free its camera and hide gameplay chrome for a clean capture, and reads `hideHud` to conditionally render its HUD. Pair with React `PhotoModeControls` and shell `captureCanvas`.
-
-## @jgengine/core/ui/radialMenu
-
-- `RadialArc` (interface): interface RadialArc — Arc the slices span. Omit for a full wheel (index 0 at the top). A partial `sweep` (e.g. `Math.PI` for a bottom half, `Math.PI / 2` for a quarter) packs the slices evenly inside `[startAngle, startAngle + sweep]` — the arc/quick-bar forms. Angles are radians from "up" (−Y), clockwise.
-- `RadialSlice` (interface): interface RadialSlice — One wedge of a radial menu — geometry for rendering a slice. Angles are radians from "up" (−Y), clockwise.
-- `RadialVectorOptions` (interface): interface RadialVectorOptions extends RadialArc — Options for {@link radialIndexFromVector}.
-- `radialIndexFromAngle` (function): function radialIndexFromAngle(angle: number, count: number, arc?: RadialArc): number — Map an angle to a slice index; returns -1 when the angle falls outside a partial `arc`.
-- `radialIndexFromVector` (function): function radialIndexFromVector(dx: number, dy: number, count: number, options: RadialVectorOptions = {}): number | null — Pick the slice a pointer/stick vector points at. `dx`/`dy` are screen-space (y down): up is `(0, -1)`. Returns null inside `deadZone` or (for a partial `arc`) outside the arc, so a centered stick or a click off the arc selects nothing.
-- `radialSlicePosition` (function): function radialSlicePosition(index: number, count: number, radius: number, arc?: RadialArc): { x: number; y: number } — Unit-circle position of a slice center (up = `(0, -1)`), scaled by `radius` — where to place a wedge's icon/label.
-- `radialSlices` (function): function radialSlices(count: number, arc?: RadialArc): RadialSlice[] — Divide a ring (or `arc`) into `count` wedges — the geometry a radial/quick menu (weapon wheel, emote arc, ping bar) renders. A full wheel centers index 0 at the top; a partial `arc` packs the slices inside its sweep.
 
 ## @jgengine/core/ui/screenMarkers
 
@@ -812,7 +812,6 @@
 - `GameMenuSoundState` (interface): interface GameMenuSoundState — The sound player's readable state: on/off, gain, and whether audio is actually running.
 - `GameMenuStyle` (type): type GameMenuStyle = CSSProperties & Record<`--${string}`, string | number> — Inline style for a menu surface that also accepts `--jg-*` theme tokens, so a game sets a token with `{ "--jg-menu-radius": "12px" }` instead of casting the object to `CSSProperties`.
 - `GameMenuVariant` (type): type GameMenuVariant = "title" | "pause" — How a {@link GameMenu} is used. `pause` is the same system at a smaller scale.
-- `GamePauseMenu` (function): function GamePauseMenu(props: Omit<GameMenuProps, "variant"> & { onResume?: () => void }): ReactNode — A pause menu built from {@link GameMenu}: the same surface and navigation at a smaller scale, so a game composes one menu system rather than a second one. Escape (or B/Start) resumes.
 - `GamePreviewComponent` (type): type GamePreviewComponent = ComponentType<GamePreviewProps> — ⚠ undocumented
 - `GamePreviewProps` (type): type GamePreviewProps = { className?: string; } — ⚠ undocumented
 - `GamePreviewStates` (type): type GamePreviewStates = Record<string, GamePreviewComponent> — ⚠ undocumented
@@ -967,7 +966,7 @@
 - `ModalControls` (interface): interface ModalControls — Stack-bound controls handed to a {@link ModalHost} render callback.
 - `ModalHost` (function): function ModalHost({ stack, children, showBackdrop = true, backdrop, closeOnBackdrop = true, closeOnEsc = true, zIndexBase = 80, onInteract, className, style, }: ModalHostProps): ReactNode — Full-screen modal host: watches a stack, renders only the topmost modal centered over a dimmed backdrop, and manages accessibility — the panel is a `role="dialog" aria-modal`, focus moves into it on open and is trapped with Tab/Shift+Tab cycling, Escape and (optionally) a backdrop click cancel the top modal, and focus returns to the previously focused element on close. It renders nothing when the stack is empty. Skin the panel and backdrop via `HudTheme` tokens.
 - `ModalHostProps` (interface): interface ModalHostProps — Props for {@link ModalHost}.
-- `ModalStackView` (interface): interface ModalStackView — React chrome over the headless modal stack (`@jgengine/core/ui/modalStack`) — the blocking-overlay layer a game raises over its scene: a pause menu, a "quit to menu?" confirm, a reward popup. {@link useModalStack} is the DATA/HOOK layer (subscribe + the active record), {@link ModalHost} renders the top modal with a backdrop, focus trap, and Esc-to-cancel, and {@link ConfirmDialog} / {@link PauseMenu} are ready-to-wire, HudTheme-token-driven building blocks. All unskinned and game-owned: the model never interprets a modal's `kind`, so a game switches on it to pick which of these (or its own) content to show, and reskins everything via `HudTheme` tokens and the frame.
+- `ModalStackView` (interface): interface ModalStackView — React chrome over the headless modal stack (`@jgengine/core/ui/modalStack`) — the blocking-overlay layer a game raises over its scene: a pause menu, a "quit to menu?" confirm, a reward popup. {@link useModalStack} is the DATA/HOOK layer (subscribe + the active record), {@link ModalHost} renders the top modal with a backdrop, focus trap, and Esc-to-cancel, and {@link ConfirmDialog} / {@link PauseMenu} (`menu/pauseMenu`) are ready-to-wire, HudTheme-token-driven building blocks. All unskinned and game-owned: the model never interprets a modal's `kind`, so a game switches on it to pick which of these (or its own) content to show, and reskins everything via `HudTheme` tokens and the frame.
 - `NewCharacterChoice` (interface): interface NewCharacterChoice — What {@link NewCharacterPane} reports when a run starts.
 - `NewCharacterPane` (function): function NewCharacterPane({ name, onNameChange, palettes, paletteId, onPaletteChange, avatars, avatarId, onAvatarChange, onStart, heading = "New run", nameLabel = "Character name", namePlaceholder = "Name your character", maxLength = 24, startLabel = "Begin", className, style, }: NewCharacterPanePro… — The New Game detail pane: a character name field, an optional palette and avatar choice, and the action that starts the run. The name field is a real form field, so menu key handling leaves typing alone (Enter inside the field starts the run).
 - `NewCharacterPaneProps` (interface): interface NewCharacterPaneProps — Props for {@link NewCharacterPane}.
@@ -987,9 +986,8 @@
 - `PartyFrame` (function): function PartyFrame({ className, rowClassName, dotClassName, emptyState, renderMember, }: { className?: string; rowClassName?: string; dotClassName?: string; emptyState?: ReactNode; renderMember?: (member: PartyMemberEntry) => ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `PartyInviteToast` (function): function PartyInviteToast({ className, acceptClassName, declineClassName, renderInvite, }: { className?: string; acceptClassName?: string; declineClassName?: string; renderInvite?: (invite: PartyInviteEntry) => ReactNode; }): React.JSX.Element | null — ⚠ undocumented
 - `PartyMemberRow` (function): function PartyMemberRow({ member, className, dotClassName, children, }: { member: PartyMemberEntry; className?: string; dotClassName?: string; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
-- `PauseMenu` (function): function PauseMenu({ title = "Paused", onResume, resumeLabel = "Resume", items = [], width = 300, className, style, }: PauseMenuProps): ReactNode — A reskinnable pause-menu building block: a primary Resume button plus a game-filled list of slot items (Settings, Save, Quit, …), stacked in a `HudTheme`-token-driven {@link HudSurface}. It ships the common shape every game's pause screen needs and nothing genre-specific — the game supplies the title, item labels/order, and destructive styling, and reskins with `HudTheme` tokens. Drop it into a {@link ModalHost} keyed on a `"pause"` modal, or render it standalone.
-- `PauseMenuItem` (interface): interface PauseMenuItem — One selectable row in a {@link PauseMenu}'s slot list (Settings, Save, Quit, …).
-- `PauseMenuProps` (interface): interface PauseMenuProps — Props for {@link PauseMenu}.
+- `PauseMenu` (function): function PauseMenu(props: PauseMenuProps): ReactNode — The pause menu: {@link GameMenu} at its smaller pause scale, so a game composes one menu system for title and pause. The game fills the verbs (Resume, Save, Settings, Quit) and the detail pane, and reskins it with `--jg-*` tokens on `style`. Escape (or B/Start) resumes.
+- `PauseMenuProps` (type): type PauseMenuProps = Omit<GameMenuProps, "variant"> & { /** Resume play. Escape, B and Start call it too unless `onBack` is given. */ onResume?: () => void; } — Props for {@link PauseMenu}: every {@link GameMenu} knob except `variant`, plus `onResume`.
 - `PhotoModeControls` (function): function PhotoModeControls({ store, onCapture, className, style }: PhotoModeControlsProps): ReactNode — Photo-mode toolbar — a hide/show-HUD toggle, a capture button, and an exit button, bound to a `createPhotoModeStore`. Presentation-only: the game wires `onCapture` to shell `captureCanvas`/`downloadImage` and reads `hideHud` to drop its gameplay HUD.
 - `PhotoModeControlsProps` (interface): interface PhotoModeControlsProps — Props for {@link PhotoModeControls}.
 - `PlayingCard` (interface): interface PlayingCard — A single card in a stack: an id plus its face and orientation.
@@ -1076,9 +1074,6 @@
 - `TimerReadoutSource` (type): type TimerReadoutSource = "auto" | "remaining" | "elapsed" — Which value a readout leads with. `"auto"` follows the timer's direction — remaining for a countdown, elapsed for a countup charge.
 - `TimerRing` (function): function TimerRing({ timer, id, size = 72, thickness = 8, mode = "fill", color = "var(--jg-accent, #38bdf8)", trackColor = "var(--jg-surface-deep, rgba(148,163,184,0.25))", children, active = true, className, style, }: TimerRingProps): ReactNode — A radial charge/cooldown ring driven off a {@link TimerSet}'s `progress01`. Re-reads every frame and sweeps an SVG arc as the timer advances — ability charge, cooldown wipe, respawn ring, capture progress, all the same widget. `mode` chooses filling vs. draining; center `children` can hold a readout. HudTheme-skinned via `--jg-accent` / `--jg-surface-deep`.
 - `TimerRingProps` (interface): interface TimerRingProps — Props for {@link TimerRing}.
-- `TitleMenu` (function): function TitleMenu({ title, eyebrow, tagline, items, onSelect, onBack, footer, controlHint, backdrop, children, open = true, transition = "slide", scrim = "dim", coversCanvas, enterMs, exitMs, reducedMotion, onClosed, className, style, contentClassName, contentStyle, }: TitleMenuProps): ReactNode — A game front-end title screen: wordmark, tagline, the game's verbs in a keyboard/gamepad-navigable list, a footer and an optional backdrop. The engine owns navigation, focus and the enter/exit animation; the game owns the title markup, wording, verbs, art and every colour through HudTheme tokens. Pass the live scene (or artwork) as `backdrop` so the title renders over 3D instead of a blank page.
-- `TitleMenuItem` (interface): interface TitleMenuItem — One verb on a {@link TitleMenu}: New Game, Continue, Settings, Credits, Quit.
-- `TitleMenuProps` (interface): interface TitleMenuProps — Props for {@link TitleMenu}.
 - `ToastStack` (function): function ToastStack({ action, limit = 4, className, renderToast, }: { action: string; limit?: number; className?: string; renderToast?: (entry: FeedEntry, index: number) => ReactNode; }): React.JSX.Element | null — Render `ctx.game.feed`'s entries for `action` as a newest-first toast stack. Reach for this when the message source is already an engine event bound onto `ctx.game.feed` (kill feed, quest updates, loot log); for ad-hoc player messages push to `ctx.game.notices`, which the shell draws as a {@link NoticeStack}.
 - `Trans` (function): function Trans({ k, params }: { k: string; params?: TParams }): ReactNode — Render a translated message inline: `<Trans k="hud.score" params={{ value }} />`.
 - `UI_KITS` (const): const UI_KITS: Readonly<Record<UiKitName, UiKit>> — The eight built-in UI kits, each a complete visual language with every part: `ink` comic caper, `paper` cardboard and stickers, `parchment` painterly fantasy, `terminal` brutalist console, `holo` angular sci-fi hologram, `broadcast` sports TV graphics, `arcade` retro pixel cabinet, `signal` in-world signage and departure boards.
@@ -1549,43 +1544,6 @@
 - `iconForItemId` (function): function iconForItemId(itemId: string): GameIconName | null — ⚠ undocumented
 - `isGameIconName` (function): function isGameIconName(value: string): value is GameIconName — ⚠ undocumented
 
-## @jgengine/react/gameMenu
-
-- `GameMenu` (function): function GameMenu({ items, initialId, onSelect, onBack, onHighlight, detail, logo, eyebrow, tagline, background, art, secondary, footer, controlHint, sound = true, variant = "title", open = true, reducedMotion, label, className, style, detailClassName, detailStyle, }: GameMenuProps): ReactNode — A game front-end menu: full-bleed over a living background, with a logo, an animated primary list and a detail pane that follows the highlighted verb. One system covers the main menu and the pause menu (`variant="pause"`), keyboard and gamepad navigation come from `useMenuNav`, confirmation ticks are generated (no audio asset), and the document never scrolls while it is open.
-- `GameMenuItem` (interface): interface GameMenuItem — One primary verb in a {@link GameMenu}.
-- `GameMenuLogo` (interface): interface GameMenuLogo — The logo slot. Give it `image` for art, or `text` for a styled wordmark.
-- `GameMenuProps` (interface): interface GameMenuProps — Props for {@link GameMenu}.
-- `GameMenuStyle` (type): type GameMenuStyle = CSSProperties & Record<`--${string}`, string | number> — Inline style for a menu surface that also accepts `--jg-*` theme tokens, so a game sets a token with `{ "--jg-menu-radius": "12px" }` instead of casting the object to `CSSProperties`.
-- `GameMenuVariant` (type): type GameMenuVariant = "title" | "pause" — How a {@link GameMenu} is used. `pause` is the same system at a smaller scale.
-- `GamePauseMenu` (function): function GamePauseMenu(props: Omit<GameMenuProps, "variant"> & { onResume?: () => void }): ReactNode — A pause menu built from {@link GameMenu}: the same surface and navigation at a smaller scale, so a game composes one menu system rather than a second one. Escape (or B/Start) resumes.
-- `useViewportScrollLock` (function): function useViewportScrollLock(active: boolean): void — Lock the page scroll while `active`, so a fixed full-bleed surface is exactly the viewport and the document behind it never gains a scrollbar. Nested and repeated locks are counted, and the previous inline styles are restored when the last one releases.
-
-## @jgengine/react/gameMenuSaves
-
-- `ContinuePane` (function): function ContinuePane({ slot, onContinue, emptyMessage = "No run saved yet. Start a new game to begin one.", now = Date.now, className, style, }: ContinuePaneProps): ReactNode — The Continue detail pane: the save being continued, read big — captured thumbnail, character, time played, the game's progress summary, when it was saved, and the resume action.
-- `ContinuePaneProps` (interface): interface ContinuePaneProps — Props for {@link ContinuePane}.
-- `CreditsPane` (function): function CreditsPane({ sections, heading = "Credits", notice, className, style }: CreditsPaneProps): ReactNode — The Credits detail pane: a scroller that belongs to the pane. Wheel, arrows, PageUp/PageDown, Home and End scroll it, the native scrollbar is hidden, and the page behind never moves.
-- `CreditsPaneProps` (interface): interface CreditsPaneProps — Props for {@link CreditsPane}.
-- `GameMenuAvatar` (interface): interface GameMenuAvatar — One avatar/portrait choice in {@link NewCharacterPane}.
-- `GameMenuPalette` (interface): interface GameMenuPalette — One palette choice in {@link NewCharacterPane}.
-- `NewCharacterChoice` (interface): interface NewCharacterChoice — What {@link NewCharacterPane} reports when a run starts.
-- `NewCharacterPane` (function): function NewCharacterPane({ name, onNameChange, palettes, paletteId, onPaletteChange, avatars, avatarId, onAvatarChange, onStart, heading = "New run", nameLabel = "Character name", namePlaceholder = "Name your character", maxLength = 24, startLabel = "Begin", className, style, }: NewCharacterPanePro… — The New Game detail pane: a character name field, an optional palette and avatar choice, and the action that starts the run. The name field is a real form field, so menu key handling leaves typing alone (Enter inside the field starts the run).
-- `NewCharacterPaneProps` (interface): interface NewCharacterPaneProps — Props for {@link NewCharacterPane}.
-- `SAVE_SLOT_CHARACTER_KEY` (const): const SAVE_SLOT_CHARACTER_KEY: "character" — The character name a save card shows first, when the game supplies one as its own meta key.
-- `SAVE_SLOT_THUMBNAIL_KEY` (const): const SAVE_SLOT_THUMBNAIL_KEY: "thumbnail" — The save slot `meta` key a card reads as its thumbnail: a data URL or image URL captured when the save was written. Every other meta key is shown as a progress chip and never interpreted.
-- `SaveSlotCard` (function): function SaveSlotCard({ slot, now = Date.now, recent = false, onSelect, onDelete, loadLabel, className, style, }: SaveSlotCardProps): ReactNode — One save slot as a card: a captured thumbnail, the character name, playtime, the game's progress summary and when it was saved — or, for an empty slot, an empty slot with a New Game affordance. Deleting takes two presses: the first swaps the button for a confirm pair, so a mis-click cannot erase a run.
-- `SaveSlotCardProps` (interface): interface SaveSlotCardProps — Props for {@link SaveSlotCard}.
-- `SaveSlotsPane` (function): function SaveSlotsPane({ model, onContinue, onLoad, onNew, onDelete, heading = "Save slots", now = Date.now, columns = 2, className, style, }: SaveSlotsPaneProps): ReactNode — The slot grid for a {@link GameMenu} detail pane: Continue over the most recent save, then one card per slot. Arrow keys move between cards, Enter loads, and the grid scrolls inside its own pane rather than the page.
-- `SaveSlotsPaneProps` (interface): interface SaveSlotsPaneProps — Props for {@link SaveSlotsPane}.
-
-## @jgengine/react/gameMenuSound
-
-- `GameMenuSound` (interface): interface GameMenuSound — A menu sound player. Give it to `GameMenu`'s `sound` prop, or call its methods from your own menu.
-- `GameMenuSoundConfig` (interface): interface GameMenuSoundConfig — How {@link createGameMenuSound} is tuned.
-- `GameMenuSoundKind` (type): type GameMenuSoundKind = "move" | "confirm" | "back" — The short, quiet click a menu makes when the selection moves or is confirmed. Generated with an oscillator instead of shipped as an audio file, so a game gets menu feedback without authoring a sound and the whole thing unmounts with the screen.
-- `GameMenuSoundState` (interface): interface GameMenuSoundState — The sound player's readable state: on/off, gain, and whether audio is actually running.
-- `createGameMenuSound` (function): function createGameMenuSound(config: GameMenuSoundConfig = {}): GameMenuSound — A tiny WebAudio click generator for menu feedback: one oscillator burst per tick, created on the first play (so a browser autoplay policy does not log an error at mount) and reused after.
-
 ## @jgengine/react/gameSlider
 
 - `GameSlider` (function): function GameSlider({ value, min = 0, max = 1, step = 0.01, onChange, onCommit, label, valueText, variant = "groove", pips = 10, disabled = false, className, style, }: GameSliderProps): ReactNode — A slider drawn as part of the game (a cut groove with a knurled knob, or lit pips), never the browser's range input. Full keyboard (arrows, Page Up/Down, Home/End), pointer drag and screen reader support through `role="slider"`.
@@ -2028,7 +1986,43 @@
 - `useFog` (function): function useFog(fog: FogField): ReturnType<FogField["cells"]> — ⚠ undocumented
 - `useMarkers` (function): function useMarkers<TMeta = unknown>(markers: MarkerSet<TMeta>): readonly MapMarker<TMeta>[] — Subscribe to a native marker set or external marker source, or read a static marker array.
 
-## @jgengine/react/menuNav
+## @jgengine/react/menu/gameMenu
+
+- `GameMenu` (function): function GameMenu({ items, initialId, onSelect, onBack, onHighlight, detail, logo, eyebrow, tagline, background, art, secondary, footer, controlHint, sound = true, variant = "title", open = true, reducedMotion, label, className, style, detailClassName, detailStyle, }: GameMenuProps): ReactNode — A game front-end menu: full-bleed over a living background, with a logo, an animated primary list and a detail pane that follows the highlighted verb. One system covers the main menu and the pause menu (`variant="pause"`), keyboard and gamepad navigation come from `useMenuNav`, confirmation ticks are generated (no audio asset), and the document never scrolls while it is open.
+- `GameMenuItem` (interface): interface GameMenuItem — One primary verb in a {@link GameMenu}.
+- `GameMenuLogo` (interface): interface GameMenuLogo — The logo slot. Give it `image` for art, or `text` for a styled wordmark.
+- `GameMenuProps` (interface): interface GameMenuProps — Props for {@link GameMenu}.
+- `GameMenuStyle` (type): type GameMenuStyle = CSSProperties & Record<`--${string}`, string | number> — Inline style for a menu surface that also accepts `--jg-*` theme tokens, so a game sets a token with `{ "--jg-menu-radius": "12px" }` instead of casting the object to `CSSProperties`.
+- `GameMenuVariant` (type): type GameMenuVariant = "title" | "pause" — How a {@link GameMenu} is used. `pause` is the same system at a smaller scale.
+- `useViewportScrollLock` (function): function useViewportScrollLock(active: boolean): void — Lock the page scroll while `active`, so a fixed full-bleed surface is exactly the viewport and the document behind it never gains a scrollbar. Nested and repeated locks are counted, and the previous inline styles are restored when the last one releases.
+
+## @jgengine/react/menu/gameMenuSaves
+
+- `ContinuePane` (function): function ContinuePane({ slot, onContinue, emptyMessage = "No run saved yet. Start a new game to begin one.", now = Date.now, className, style, }: ContinuePaneProps): ReactNode — The Continue detail pane: the save being continued, read big — captured thumbnail, character, time played, the game's progress summary, when it was saved, and the resume action.
+- `ContinuePaneProps` (interface): interface ContinuePaneProps — Props for {@link ContinuePane}.
+- `CreditsPane` (function): function CreditsPane({ sections, heading = "Credits", notice, className, style }: CreditsPaneProps): ReactNode — The Credits detail pane: a scroller that belongs to the pane. Wheel, arrows, PageUp/PageDown, Home and End scroll it, the native scrollbar is hidden, and the page behind never moves.
+- `CreditsPaneProps` (interface): interface CreditsPaneProps — Props for {@link CreditsPane}.
+- `GameMenuAvatar` (interface): interface GameMenuAvatar — One avatar/portrait choice in {@link NewCharacterPane}.
+- `GameMenuPalette` (interface): interface GameMenuPalette — One palette choice in {@link NewCharacterPane}.
+- `NewCharacterChoice` (interface): interface NewCharacterChoice — What {@link NewCharacterPane} reports when a run starts.
+- `NewCharacterPane` (function): function NewCharacterPane({ name, onNameChange, palettes, paletteId, onPaletteChange, avatars, avatarId, onAvatarChange, onStart, heading = "New run", nameLabel = "Character name", namePlaceholder = "Name your character", maxLength = 24, startLabel = "Begin", className, style, }: NewCharacterPanePro… — The New Game detail pane: a character name field, an optional palette and avatar choice, and the action that starts the run. The name field is a real form field, so menu key handling leaves typing alone (Enter inside the field starts the run).
+- `NewCharacterPaneProps` (interface): interface NewCharacterPaneProps — Props for {@link NewCharacterPane}.
+- `SAVE_SLOT_CHARACTER_KEY` (const): const SAVE_SLOT_CHARACTER_KEY: "character" — The character name a save card shows first, when the game supplies one as its own meta key.
+- `SAVE_SLOT_THUMBNAIL_KEY` (const): const SAVE_SLOT_THUMBNAIL_KEY: "thumbnail" — The save slot `meta` key a card reads as its thumbnail: a data URL or image URL captured when the save was written. Every other meta key is shown as a progress chip and never interpreted.
+- `SaveSlotCard` (function): function SaveSlotCard({ slot, now = Date.now, recent = false, onSelect, onDelete, loadLabel, className, style, }: SaveSlotCardProps): ReactNode — One save slot as a card: a captured thumbnail, the character name, playtime, the game's progress summary and when it was saved — or, for an empty slot, an empty slot with a New Game affordance. Deleting takes two presses: the first swaps the button for a confirm pair, so a mis-click cannot erase a run.
+- `SaveSlotCardProps` (interface): interface SaveSlotCardProps — Props for {@link SaveSlotCard}.
+- `SaveSlotsPane` (function): function SaveSlotsPane({ model, onContinue, onLoad, onNew, onDelete, heading = "Save slots", now = Date.now, columns = 2, className, style, }: SaveSlotsPaneProps): ReactNode — The slot grid for a {@link GameMenu} detail pane: Continue over the most recent save, then one card per slot. Arrow keys move between cards, Enter loads, and the grid scrolls inside its own pane rather than the page.
+- `SaveSlotsPaneProps` (interface): interface SaveSlotsPaneProps — Props for {@link SaveSlotsPane}.
+
+## @jgengine/react/menu/gameMenuSound
+
+- `GameMenuSound` (interface): interface GameMenuSound — A menu sound player. Give it to `GameMenu`'s `sound` prop, or call its methods from your own menu.
+- `GameMenuSoundConfig` (interface): interface GameMenuSoundConfig — How {@link createGameMenuSound} is tuned.
+- `GameMenuSoundKind` (type): type GameMenuSoundKind = "move" | "confirm" | "back" — The short, quiet click a menu makes when the selection moves or is confirmed. Generated with an oscillator instead of shipped as an audio file, so a game gets menu feedback without authoring a sound and the whole thing unmounts with the screen.
+- `GameMenuSoundState` (interface): interface GameMenuSoundState — The sound player's readable state: on/off, gain, and whether audio is actually running.
+- `createGameMenuSound` (function): function createGameMenuSound(config: GameMenuSoundConfig = {}): GameMenuSound — A tiny WebAudio click generator for menu feedback: one oscillator burst per tick, created on the first play (so a browser autoplay policy does not log an error at mount) and reused after.
+
+## @jgengine/react/menu/menuNav
 
 - `MenuNavContainerProps` (interface): interface MenuNavContainerProps — The container props that make a menu navigable.
 - `MenuNavController` (interface): interface MenuNavController — The live navigation controller returned by {@link useMenuNav}.
@@ -2037,19 +2031,37 @@
 - `UseMenuNavOptions` (interface): interface UseMenuNavOptions — How {@link useMenuNav} is wired.
 - `useMenuNav` (function): function useMenuNav({ ids, columns = 1, wrap = true, disabled, initialId, enabled = true, onConfirm, onBack, onAdjust, gamepad = true, repeat, }: UseMenuNavOptions): MenuNavController — Bind a menu's focus order to the DOM: arrow keys, WASD, Home/End and a standard gamepad move a roving focus, Enter/Space/A confirm, Escape/Backspace/B/Start go back. Tab is left to the browser, so a menu never traps focus, and typing in a text field is never intercepted. The menu is pure state + listeners — it unmounts with the screen, so it costs nothing during play.
 
-## @jgengine/react/menuRouter
+## @jgengine/react/menu/menuRouter
 
 - `MenuRouter` (interface): interface MenuRouter<Id extends string> — A menu screen stack: where you are, how you got there, and how to go back.
 - `MenuStackAction` (type): type MenuStackAction<Id extends string> = | { type: "open"; id: Id } | { type: "back" } | { type: "replace"; id: Id } | { type: "reset"; id?: Id } — A screen-stack transition. `reset` without an id collapses to the router's original root.
 - `menuStackReducer` (function): function menuStackReducer<Id extends string>(path: readonly Id[], action: MenuStackAction<Id>, root: Id): readonly Id[] — The pure screen-stack transition behind {@link useMenuRouter}. Exported so a game can drive the same navigation from its own store or a replayable command log instead of React state.
 - `useMenuRouter` (function): function useMenuRouter<Id extends string>(root: Id, options: { escapeToBack?: boolean } = {}): MenuRouter<Id> — The screen stack behind a game front-end: title → save select → settings → credits, and Escape back out. Every game menu needs this and none of it is game-specific, so it ships here rather than being re-derived per game. Holds no content and imposes no look — the game decides what each screen id renders.
 
-## @jgengine/react/menuScreen
+## @jgengine/react/menu/menuScreen
 
 - `MenuScreen` (function): function MenuScreen({ open = true, transition = "fade", scrim = "dim", coversCanvas = false, enterMs = 220, exitMs = 160, reducedMotion, label, role = "dialog", backdrop, className, style, contentClassName, contentStyle, children, onClosed, }: MenuScreenProps): ReactNode — One animated screen of a game front-end: full-bleed, laid out by the game, with an enter/exit animation that runs on transform/opacity only (no layout, no frame hitch) and unmounts when the exit finishes. The scrim is translucent and the optional `backdrop` slot paints behind the content, so a live 3D scene stays visible behind a title, pause or settings screen. Durations come from the caller or collapse to zero under reduced motion.
 - `MenuScreenProps` (interface): interface MenuScreenProps — Props for {@link MenuScreen}.
 - `MenuScreenScrim` (type): type MenuScreenScrim = "none" | "dim" | "blur" — How much a {@link MenuScreen} dims the scene behind it. `none` keeps a live 3D scene fully visible.
 - `MenuScreenTransition` (type): type MenuScreenTransition = "fade" | "slide" | "scale" | "none" — Which motion a {@link MenuScreen} uses when it enters and leaves.
+
+## @jgengine/react/menu/pauseMenu
+
+- `PauseMenu` (function): function PauseMenu(props: PauseMenuProps): ReactNode — The pause menu: {@link GameMenu} at its smaller pause scale, so a game composes one menu system for title and pause. The game fills the verbs (Resume, Save, Settings, Quit) and the detail pane, and reskins it with `--jg-*` tokens on `style`. Escape (or B/Start) resumes.
+- `PauseMenuProps` (type): type PauseMenuProps = Omit<GameMenuProps, "variant"> & { /** Resume play. Escape, B and Start call it too unless `onBack` is given. */ onResume?: () => void; } — Props for {@link PauseMenu}: every {@link GameMenu} knob except `variant`, plus `onResume`.
+
+## @jgengine/react/menu/quickMenu
+
+- `QuickMenu` (function): function QuickMenu({ items, layout = "list", onSelect, onClose, title, columns = 3, arc = { startAngle: Math.PI / 2, sweep: Math.PI }, radialSize = 300, accent = "var(--jg-accent, #38bdf8)", className, style, }: QuickMenuProps): ReactNode — Versatile quick menu that takes many forms — a `radial` wheel, a partial `arc`, a vertical `list`, or a `grid` — over one item model with icons, labels, hotkeys, count badges, cooldowns, section headers, and nested submenus (drill in / back). Radial and arc forms reuse {@link RadialMenu}; list and grid render sectioned rows/tiles. The game supplies content and skin.
+- `QuickMenuItem` (interface): interface QuickMenuItem extends RadialMenuOption — An entry on a {@link QuickMenu}: a leaf action, or (with `children`) a submenu.
+- `QuickMenuLayout` (type): type QuickMenuLayout = "radial" | "arc" | "list" | "grid" — The forms a {@link QuickMenu} can take.
+- `QuickMenuProps` (interface): interface QuickMenuProps — Props for {@link QuickMenu}.
+
+## @jgengine/react/menu/radialMenu
+
+- `RadialMenu` (function): function RadialMenu({ options, open = true, onSelect, onClose, size = 300, innerRadius = 52, arc, highlightIndex, accent = "var(--jg-accent, #38bdf8)", className, style, }: RadialMenuProps): ReactNode — Radial / quick menu (weapon or emote wheel) — a ring or partial `arc` of selectable wedges the player points at with the mouse (or a stick). Pointer angle drives the highlight via core `radialIndexFromVector`; click/confirm fires `onSelect`, the neutral hub closes. Options carry optional hotkeys, count badges, cooldowns, and submenu markers. The game supplies icons/labels and skins it.
+- `RadialMenuOption` (interface): interface RadialMenuOption — One selectable entry on a radial/quick menu (weapon or emote wheel).
+- `RadialMenuProps` (interface): interface RadialMenuProps — Props for {@link RadialMenu}.
 
 ## @jgengine/react/modals
 
@@ -2058,10 +2070,7 @@
 - `ModalControls` (interface): interface ModalControls — Stack-bound controls handed to a {@link ModalHost} render callback.
 - `ModalHost` (function): function ModalHost({ stack, children, showBackdrop = true, backdrop, closeOnBackdrop = true, closeOnEsc = true, zIndexBase = 80, onInteract, className, style, }: ModalHostProps): ReactNode — Full-screen modal host: watches a stack, renders only the topmost modal centered over a dimmed backdrop, and manages accessibility — the panel is a `role="dialog" aria-modal`, focus moves into it on open and is trapped with Tab/Shift+Tab cycling, Escape and (optionally) a backdrop click cancel the top modal, and focus returns to the previously focused element on close. It renders nothing when the stack is empty. Skin the panel and backdrop via `HudTheme` tokens.
 - `ModalHostProps` (interface): interface ModalHostProps — Props for {@link ModalHost}.
-- `ModalStackView` (interface): interface ModalStackView — React chrome over the headless modal stack (`@jgengine/core/ui/modalStack`) — the blocking-overlay layer a game raises over its scene: a pause menu, a "quit to menu?" confirm, a reward popup. {@link useModalStack} is the DATA/HOOK layer (subscribe + the active record), {@link ModalHost} renders the top modal with a backdrop, focus trap, and Esc-to-cancel, and {@link ConfirmDialog} / {@link PauseMenu} are ready-to-wire, HudTheme-token-driven building blocks. All unskinned and game-owned: the model never interprets a modal's `kind`, so a game switches on it to pick which of these (or its own) content to show, and reskins everything via `HudTheme` tokens and the frame.
-- `PauseMenu` (function): function PauseMenu({ title = "Paused", onResume, resumeLabel = "Resume", items = [], width = 300, className, style, }: PauseMenuProps): ReactNode — A reskinnable pause-menu building block: a primary Resume button plus a game-filled list of slot items (Settings, Save, Quit, …), stacked in a `HudTheme`-token-driven {@link HudSurface}. It ships the common shape every game's pause screen needs and nothing genre-specific — the game supplies the title, item labels/order, and destructive styling, and reskins with `HudTheme` tokens. Drop it into a {@link ModalHost} keyed on a `"pause"` modal, or render it standalone.
-- `PauseMenuItem` (interface): interface PauseMenuItem — One selectable row in a {@link PauseMenu}'s slot list (Settings, Save, Quit, …).
-- `PauseMenuProps` (interface): interface PauseMenuProps — Props for {@link PauseMenu}.
+- `ModalStackView` (interface): interface ModalStackView — React chrome over the headless modal stack (`@jgengine/core/ui/modalStack`) — the blocking-overlay layer a game raises over its scene: a pause menu, a "quit to menu?" confirm, a reward popup. {@link useModalStack} is the DATA/HOOK layer (subscribe + the active record), {@link ModalHost} renders the top modal with a backdrop, focus trap, and Esc-to-cancel, and {@link ConfirmDialog} / {@link PauseMenu} (`menu/pauseMenu`) are ready-to-wire, HudTheme-token-driven building blocks. All unskinned and game-owned: the model never interprets a modal's `kind`, so a game switches on it to pick which of these (or its own) content to show, and reskins everything via `HudTheme` tokens and the frame.
 - `useModalStack` (function): function useModalStack(stack: ModalStack): ModalStackView — Subscribe to a modal stack and re-render on every change, returning the active modal and depth.
 
 ## @jgengine/react/notifications/notices
@@ -2136,19 +2145,6 @@
 
 - `QuestTracker` (function): function QuestTracker({ quests, title = "Quests", emptyLabel = "No active quests.", maxObjectives, accent = "var(--jg-accent, #facc15)", className, style, }: QuestTrackerProps): ReactNode — Quest / objective tracker HUD — a compact panel of active quests with a title and labelled, progress-barred objectives (checked + struck when complete). Presentation-only over `describeTrackedQuest(def, instance)` views, so it stays decoupled from the `QuestJournal` runtime.
 - `QuestTrackerProps` (interface): interface QuestTrackerProps — Props for {@link QuestTracker}.
-
-## @jgengine/react/quickMenu
-
-- `QuickMenu` (function): function QuickMenu({ items, layout = "list", onSelect, onClose, title, columns = 3, arc = { startAngle: Math.PI / 2, sweep: Math.PI }, radialSize = 300, accent = "var(--jg-accent, #38bdf8)", className, style, }: QuickMenuProps): ReactNode — Versatile quick menu that takes many forms — a `radial` wheel, a partial `arc`, a vertical `list`, or a `grid` — over one item model with icons, labels, hotkeys, count badges, cooldowns, section headers, and nested submenus (drill in / back). Radial and arc forms reuse {@link RadialMenu}; list and grid render sectioned rows/tiles. The game supplies content and skin.
-- `QuickMenuItem` (interface): interface QuickMenuItem extends RadialMenuOption — An entry on a {@link QuickMenu}: a leaf action, or (with `children`) a submenu.
-- `QuickMenuLayout` (type): type QuickMenuLayout = "radial" | "arc" | "list" | "grid" — The forms a {@link QuickMenu} can take.
-- `QuickMenuProps` (interface): interface QuickMenuProps — Props for {@link QuickMenu}.
-
-## @jgengine/react/radialMenu
-
-- `RadialMenu` (function): function RadialMenu({ options, open = true, onSelect, onClose, size = 300, innerRadius = 52, arc, highlightIndex, accent = "var(--jg-accent, #38bdf8)", className, style, }: RadialMenuProps): ReactNode — Radial / quick menu (weapon or emote wheel) — a ring or partial `arc` of selectable wedges the player points at with the mouse (or a stick). Pointer angle drives the highlight via core `radialIndexFromVector`; click/confirm fires `onSelect`, the neutral hub closes. Options carry optional hotkeys, count badges, cooldowns, and submenu markers. The game supplies icons/labels and skins it.
-- `RadialMenuOption` (interface): interface RadialMenuOption — One selectable entry on a radial/quick menu (weapon or emote wheel).
-- `RadialMenuProps` (interface): interface RadialMenuProps — Props for {@link RadialMenu}.
 
 ## @jgengine/react/rotateDevice
 
@@ -2294,12 +2290,6 @@
 - `TimerRingProps` (interface): interface TimerRingProps — Props for {@link TimerRing}.
 - `formatTimerMs` (function): function formatTimerMs(ms: number, format: TimerFormat = "mm:ss"): string — Format a millisecond duration as digital timer text — `mm:ss` (default), `m:ss.d` (with tenths), or `ss.d` (seconds + tenths). Negative inputs clamp to zero. No genre meaning: the same helper serves a round clock, a respawn countdown, or an ability charge readout.
 - `useTimerRead` (function): function useTimerRead(timer: TimerSet, id: string, active = true): TimerRead | null — Subscribe to a single timer and re-read it every animation frame while mounted, so a HUD readout stays live without the game hand-rolling interval math. Reuses one read object (allocation-aware). Returns `null` for an unknown id. Pass `active={false}` to freeze the per-frame tick (e.g. an off-screen HUD).
-
-## @jgengine/react/titleMenu
-
-- `TitleMenu` (function): function TitleMenu({ title, eyebrow, tagline, items, onSelect, onBack, footer, controlHint, backdrop, children, open = true, transition = "slide", scrim = "dim", coversCanvas, enterMs, exitMs, reducedMotion, onClosed, className, style, contentClassName, contentStyle, }: TitleMenuProps): ReactNode — A game front-end title screen: wordmark, tagline, the game's verbs in a keyboard/gamepad-navigable list, a footer and an optional backdrop. The engine owns navigation, focus and the enter/exit animation; the game owns the title markup, wording, verbs, art and every colour through HudTheme tokens. Pass the live scene (or artwork) as `backdrop` so the title renders over 3D instead of a blank page.
-- `TitleMenuItem` (interface): interface TitleMenuItem — One verb on a {@link TitleMenu}: New Game, Continue, Settings, Credits, Quit.
-- `TitleMenuProps` (interface): interface TitleMenuProps — Props for {@link TitleMenu}.
 
 ## @jgengine/react/tweenNumber
 

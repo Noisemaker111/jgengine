@@ -4,7 +4,8 @@ import { renderToStaticMarkup } from "react-dom/server";
 
 import { createModalStack } from "@jgengine/core/ui/modalStack";
 
-import { ConfirmDialog, ModalHost, PauseMenu } from "./modals";
+import { PauseMenu } from "./menu/pauseMenu";
+import { ConfirmDialog, ModalHost } from "./modals";
 
 describe("ConfirmDialog", () => {
   test("renders title, body, and both buttons", () => {
@@ -28,23 +29,24 @@ describe("ConfirmDialog", () => {
 });
 
 describe("PauseMenu", () => {
-  test("renders Resume plus the game-filled slot items", () => {
+  test("renders the game-filled verbs on the pause-scale game menu", () => {
     const html = renderToStaticMarkup(
       createElement(PauseMenu, {
-        title: "Paused",
         onResume: () => {},
+        sound: false,
         items: [
-          { id: "settings", label: "Settings", onSelect: () => {} },
-          { id: "quit", label: "Quit", danger: true, onSelect: () => {} },
+          { id: "resume", label: "Resume" },
+          { id: "settings", label: "Settings" },
+          { id: "quit", label: "Quit" },
         ],
+        onSelect: () => {},
       }),
     );
-    expect(html).toContain("Paused");
-    expect(html).toContain('data-pause-resume=""');
-    expect(html).toContain('data-pause-item="settings"');
-    expect(html).toContain('data-pause-item="quit"');
-    expect(html).toContain("Settings");
-    expect(html).toContain("Quit");
+    expect(html).toContain('aria-label="Paused"');
+    expect(html).toContain('data-jg-game-menu-item="resume"');
+    expect(html).toContain('data-jg-game-menu-item="settings"');
+    expect(html).toContain('data-jg-game-menu-item="quit"');
+    expect(html).toContain('data-variant="pause"');
   });
 });
 

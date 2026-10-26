@@ -1,10 +1,10 @@
 import { type ReactNode, useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { CreditsPane } from "@jgengine/react/gameMenuSaves";
+import { CreditsPane } from "@jgengine/react/menu/gameMenuSaves";
 import { KitButton, KitPanel } from "@jgengine/react/uiKitRoot";
 import { GameCursor } from "@jgengine/react/gameCursor";
 import { GameIcon } from "@jgengine/react/gameIcons";
 import { useGame } from "@jgengine/react/hooks";
-import { useMenuNav } from "@jgengine/react/menuNav";
+import { useMenuNav } from "@jgengine/react/menu/menuNav";
 import { useGameContext } from "@jgengine/react/provider";
 import { relativeSavedAt, useSaveSlots } from "@jgengine/react/save/saveSlots";
 import { useSettings } from "@jgengine/react/settings";

@@ -11,13 +11,13 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { environment, grass, terrain } from "@jgengine/core/world/features";
 import { CreditsPanel } from "@jgengine/react/creditsPanel";
 import { LoadingScreen } from "@jgengine/react/loadingScreen";
-import { MenuScreen } from "@jgengine/react/menuScreen";
-import { useMenuNav } from "@jgengine/react/menuNav";
-import { PauseMenu } from "@jgengine/react/modals";
-import { SaveSlotsPane } from "@jgengine/react/gameMenuSaves";
+import { MenuScreen } from "@jgengine/react/menu/menuScreen";
+import { useMenuNav } from "@jgengine/react/menu/menuNav";
+import { PauseMenu } from "@jgengine/react/menu/pauseMenu";
+import { SaveSlotsPane } from "@jgengine/react/menu/gameMenuSaves";
 import { useSettings } from "@jgengine/react/settings";
 import { SettingsSection, SettingsTabs } from "@jgengine/react/settingsBlocks";
-import { TitleMenu } from "@jgengine/react/titleMenu";
+import { GameMenu } from "@jgengine/react/menu/gameMenu";
 import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
 import type { PlayableGame } from "@jgengine/shell/registry";
 
@@ -308,16 +308,15 @@ function MenuFrameworkUI(): ReactNode {
     <div className="pointer-events-none absolute inset-0 font-sans text-white">
       <DemoLoading open={screen === "loading"} />
 
-      <TitleMenu
+      <GameMenu
         open={screen === "title"}
-        title="Menu Framework"
+        logo={{ text: "Menu Framework" }}
         eyebrow="Engine demo"
         tagline="A live 3D scene behind an animated, keyboard and gamepad navigable front-end."
         items={[
           {
             id: "continue",
             label: "Continue",
-            primary: true,
             hint: recent === null ? "No saved run yet" : `Slot ${recent.name ?? recent.id} · ${String(recent.meta.playtime ?? "")}`,
             disabled: recent === null,
           },
@@ -350,14 +349,21 @@ function MenuFrameworkUI(): ReactNode {
         style={{ pointerEvents: screen === "paused" ? "auto" : "none" }}
       >
         <PauseMenu
-          title="Paused"
           onResume={() => screenStore.set("play")}
           items={[
-            { id: "save", label: "Save game", onSelect: () => { void save.save().then(() => refreshSaveSlots(gameSaveSlotSource(save), slotIndex, slotOptions)); } },
-            { id: "saves", label: "Load / Save slot", onSelect: () => screenStore.openOver("paused", "saves") },
-            { id: "settings", label: "Settings", onSelect: () => screenStore.openSettings("paused") },
-            { id: "title", label: "Quit to title", danger: true, onSelect: () => screenStore.set("title") },
+            { id: "resume", label: "Resume" },
+            { id: "save", label: "Save game" },
+            { id: "saves", label: "Load / Save slot" },
+            { id: "settings", label: "Settings" },
+            { id: "title", label: "Quit to title" },
           ]}
+          onSelect={(id) => {
+            if (id === "resume") screenStore.set("play");
+            else if (id === "save") void save.save().then(() => refreshSaveSlots(gameSaveSlotSource(save), slotIndex, slotOptions));
+            else if (id === "saves") screenStore.openOver("paused", "saves");
+            else if (id === "settings") screenStore.openSettings("paused");
+            else if (id === "title") screenStore.set("title");
+          }}
         />
       </MenuScreen>
 

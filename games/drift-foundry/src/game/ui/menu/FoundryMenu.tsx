@@ -1,8 +1,9 @@
 import { type ReactNode, useEffect, useState } from "react";
 import { parkedRunMetres } from "../../run/progress";
-import { ContinuePane, CreditsPane } from "@jgengine/react/gameMenuSaves";
+import { ContinuePane, CreditsPane } from "@jgengine/react/menu/gameMenuSaves";
 import { KitPanel } from "@jgengine/react/uiKitRoot";
-import { GameMenu, GamePauseMenu } from "@jgengine/react/gameMenu";
+import { GameMenu } from "@jgengine/react/menu/gameMenu";
+import { PauseMenu } from "@jgengine/react/menu/pauseMenu";
 import { useGameContext } from "@jgengine/react/provider";
 import { useSettings } from "@jgengine/react/settings";
 import { SettingsSection, SettingsTabs } from "@jgengine/react/settingsBlocks";
@@ -307,7 +308,7 @@ export function FoundryMenu({ snapshot, session, publish }: { snapshot: SessionS
   );
 
   const pauseMenu = (
-    <GamePauseMenu
+    <PauseMenu
       open={paused}
       label="The run is held"
       onBack={resume}

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 
-import { useMenuNav } from "./menuNav";
+import { useMenuNav } from "./menu/menuNav";
 import { useUiCue } from "./uiCues";
 import type { KitTone } from "./uiKit";
 import { KitActionPrompt, KitButton, KitMeter, KitPanel, useKitPresence, useUiKit, type KitActionPromptProps } from "./uiKitRoot";
