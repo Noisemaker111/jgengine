@@ -3,10 +3,10 @@ import { type CSSProperties, type ReactNode, useEffect, useRef, useState } from 
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import type { GameContext, GameContextEntityEntry } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
-import { createDayNightCycle, type DayNightKeyframe } from "@jgengine/core/time/dayNightCycle";
+import { createDayNightCycle, type DayNightKeyframe } from "@jgengine/core/sky/dayNightCycle";
 import { environment, grass, sky, terrain } from "@jgengine/core/world/features";
 
-import { Sky } from "@jgengine/shell/environment/Daylight";
+import { Sky } from "@jgengine/shell/sky/Daylight";
 import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
 import type { PlayableGame } from "@jgengine/shell/registry";
 

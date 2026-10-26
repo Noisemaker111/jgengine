@@ -258,8 +258,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## day-night-sky — one sky for a fixed look, a day-night cycle, biome bands and authored lights
 
 - `Sky` (function) · `import { Sky } from "@jgengine/shell/environment"`
-- `skyNoonKeyframes` (function) · `import { skyNoonKeyframes } from "@jgengine/core/render/skyOwnedLighting"`
-- `splitSkyOwnedLighting` (function) · `import { splitSkyOwnedLighting } from "@jgengine/core/render/skyOwnedLighting"`
 
 ## debounced-commit — bind a slider/number/color control to an expensive commit path (scene-document patch, settings persist) — instant local mirror, one trailing commit per pause, flush on release/blur/unmount; no raw onChange→patch wiring
 

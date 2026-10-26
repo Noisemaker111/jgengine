@@ -8,7 +8,6 @@ import {
   sunDirectionFromBearing,
   DEFAULT_DAY_SUN_INTENSITY,
   daylightStateAt,
-  lerpHexColor,
 } from "./daylightCycle";
 
 describe("daylightStateAt", () => {
@@ -139,13 +138,6 @@ describe("sun, moon and fog through the day", () => {
     const dim = daylightStateAt(0, { sunIntensity: 1 });
     const bright = daylightStateAt(0, { sunIntensity: 2 });
     expect(bright.moonIntensity).toBeCloseTo(dim.moonIntensity * 2, 6);
-  });
-});
-
-describe("lerpHexColor", () => {  test("interpolates channel-by-channel", () => {
-    expect(lerpHexColor("#000000", "#ffffff", 0)).toBe("#000000");
-    expect(lerpHexColor("#000000", "#ffffff", 1)).toBe("#ffffff");
-    expect(lerpHexColor("#000000", "#ffffff", 0.5)).toBe("#808080");
   });
 });
 

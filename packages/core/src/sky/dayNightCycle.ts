@@ -9,6 +9,9 @@
  * interpolates between the keyframes you give it.
  */
 
+import { lerp } from "../anim/easing";
+import { mixHex } from "../render/color";
+
 /** One day-night keyframe: at a normalized day position, the phase label and target colors the game styles. */
 export interface DayNightKeyframe {
   /** Normalized day position in [0,1) where this keyframe sits; the cycle wraps past 1 back to 0. */
@@ -116,35 +119,6 @@ function wrap01(value: number): number {
   return ((value % 1) + 1) % 1;
 }
 
-/** Linear interpolation between `a` and `b` by `t`. */
-function lerp(a: number, b: number, t: number): number {
-  return a + (b - a) * t;
-}
-
-/** Parse `"#rrggbb"` (or `"rrggbb"`) into an `[r,g,b]` byte triple. */
-function hexToRgb(hex: string): [number, number, number] {
-  const clean = hex.startsWith("#") ? hex.slice(1) : hex;
-  const value = Number.parseInt(clean, 16);
-  return [(value >> 16) & 255, (value >> 8) & 255, value & 255];
-}
-
-/** Clamp and round a channel into a 0-255 byte. */
-function clampByte(value: number): number {
-  return Math.max(0, Math.min(255, Math.round(value)));
-}
-
-/** Encode an `[r,g,b]` triple back into `"#rrggbb"`. */
-function rgbToHex(rgb: readonly [number, number, number]): string {
-  return `#${rgb.map((channel) => clampByte(channel).toString(16).padStart(2, "0")).join("")}`;
-}
-
-/** Interpolate two `"#rrggbb"` colors in RGB space by `t`. */
-function lerpHex(a: string, b: string, t: number): string {
-  const [ar, ag, ab] = hexToRgb(a);
-  const [br, bg, bb] = hexToRgb(b);
-  return rgbToHex([lerp(ar, br, t), lerp(ag, bg, t), lerp(ab, bb, t)]);
-}
-
 /** Sanitize a positive finite number, falling back to `fallback`. */
 function positiveOr(value: number | undefined, fallback: number): number {
   return typeof value === "number" && Number.isFinite(value) && value > 0 ? value : fallback;
@@ -196,8 +170,8 @@ function sampleKeyframes(sorted: readonly NormalizedKeyframe[], fraction: number
   return {
     dayFraction,
     phase: from.phase,
-    color: lerpHex(from.color, to.color, localT),
-    lightColor: lerpHex(from.lightColor, to.lightColor, localT),
+    color: mixHex(from.color, to.color, localT),
+    lightColor: mixHex(from.lightColor, to.lightColor, localT),
     intensity: lerp(from.intensity, to.intensity, localT),
   };
 }

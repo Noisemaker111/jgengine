@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { resolveVolumetricClouds, VOLUMETRIC_CLOUDS_DEFAULTS } from "./volumetricClouds";
-import { sky } from "./features";
+import { sky } from "../world/features";
 
 describe("resolveVolumetricClouds", () => {
   test("defaults an empty config to the moderate drifting layer", () => {

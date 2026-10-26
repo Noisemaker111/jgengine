@@ -4,7 +4,7 @@ import * as THREE from "three";
 
 import type { BiomeBand, SkyEnvironmentDescriptor } from "@jgengine/core/world/features";
 import { createBiomeFogSampler, createBiomeSkySampler } from "@jgengine/core/world/terrain";
-import { resolveVolumetricClouds } from "@jgengine/core/world/volumetricClouds";
+import { resolveVolumetricClouds } from "@jgengine/core/sky/volumetricClouds";
 
 import { warnOnce } from "@jgengine/core/devtools/warnOnce";
 
@@ -16,7 +16,7 @@ import {
   DEFAULT_DAY_AMBIENT_INTENSITY,
   DEFAULT_DAY_SUN_INTENSITY,
   SKY_PRESET_DAY_FRACTION,
-} from "./daylightCycle";
+} from "../../../core/src/sky/daylightCycle";
 import { SUN_SHADOW, sunLightPosition, sunShadowFocus } from "./sunShadowMath";
 import { VolumetricClouds } from "./VolumetricClouds";
 

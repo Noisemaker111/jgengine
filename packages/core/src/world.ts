@@ -748,7 +748,8 @@ export {
   type DayNightKeyframe,
   type DayNightSample,
   type DayNightSnapshot,
-} from "./time/dayNightCycle";
+} from "./sky/dayNightCycle";
+export { type VolumetricCloudsConfig, type VolumetricCloudsRules } from "./sky/volumetricClouds";
 export { getCurrentGameTimestamp, sanitizeGameTimeScale } from "./time/gameClock";
 export { type ClockSnapshot, type SimClock } from "./time/simClock";
 export {
@@ -1068,7 +1069,6 @@ export {
   type VisibilityMemory,
   type VisibilityState,
 } from "./world/visibilityField";
-export { type VolumetricCloudsConfig, type VolumetricCloudsRules } from "./world/volumetricClouds";
 export { createVoxelField, type VoxelFace } from "./world/voxelField";
 export { type EnclosedFootprint, type RoofPlan } from "./world/walls";
 export {

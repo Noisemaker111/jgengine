@@ -2,7 +2,7 @@ import { useFrame } from "@react-three/fiber";
 import { useRef } from "react";
 import * as THREE from "three";
 
-import type { VolumetricCloudsRules } from "@jgengine/core/world/volumetricClouds";
+import type { VolumetricCloudsRules } from "@jgengine/core/sky/volumetricClouds";
 
 import { useDisposable } from "../render/useDisposable";
 

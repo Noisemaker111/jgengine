@@ -1,4 +1,4 @@
-import type { SkySunConfig } from "@jgengine/core/world/features";
+import type { SkySunConfig } from "../world/features";
 import {
   elevationOf,
   MOONLIGHT_COLOR,
@@ -6,7 +6,9 @@ import {
   NIGHT_FOG_COLOR,
   starOpacity,
   sunlightColor,
-} from "@jgengine/core/render/physicalSky";
+} from "./physicalSky";
+import { lerp } from "../anim/easing";
+import { mixHex } from "../render/color";
 
 export interface DaylightCycleConfig {
   horizonColor?: string;
@@ -118,31 +120,6 @@ function clamp01(value: number): number {
   return value < 0 ? 0 : value > 1 ? 1 : value;
 }
 
-function lerp(a: number, b: number, t: number): number {
-  return a + (b - a) * t;
-}
-
-function hexToRgb(hex: string): [number, number, number] {
-  const clean = hex.startsWith("#") ? hex.slice(1) : hex;
-  const value = parseInt(clean, 16);
-  return [(value >> 16) & 255, (value >> 8) & 255, value & 255];
-}
-
-function clampByte(value: number): number {
-  return Math.max(0, Math.min(255, Math.round(value)));
-}
-
-function rgbToHex(rgb: readonly [number, number, number]): string {
-  return `#${rgb.map((channel) => clampByte(channel).toString(16).padStart(2, "0")).join("")}`;
-}
-
-/** @internal */
-export function lerpHexColor(a: string, b: string, t: number): string {
-  const [ar, ag, ab] = hexToRgb(a);
-  const [br, bg, bb] = hexToRgb(b);
-  return rgbToHex([lerp(ar, br, t), lerp(ag, bg, t), lerp(ab, bb, t)]);
-}
-
 function buildKeyframes(config: DaylightCycleConfig): readonly DaylightKeyframe[] {
   const night: DaylightKeyframe = {
     t: 0,
@@ -215,9 +192,9 @@ export function daylightStateAt(dayFraction: number, config: DaylightCycleConfig
 
   const sunIntensity = lerp(from.sunIntensity, to.sunIntensity, localT);
   const ambientIntensity = lerp(from.ambientIntensity, to.ambientIntensity, localT);
-  const skyTop = lerpHexColor(from.skyTop, to.skyTop, localT);
-  const skyBottom = lerpHexColor(from.skyBottom, to.skyBottom, localT);
-  const fogColor = lerpHexColor(from.fog, to.fog, localT);
+  const skyTop = mixHex(from.skyTop, to.skyTop, localT);
+  const skyBottom = mixHex(from.skyBottom, to.skyBottom, localT);
+  const fogColor = mixHex(from.fog, to.fog, localT);
 
   const sunPosition = sunPositionAt(wrapped, config.sun);
   const moonPosition = sunPositionAt(wrapped + 0.5, config.sun);
@@ -241,10 +218,6 @@ export function daylightStateAt(dayFraction: number, config: DaylightCycleConfig
     moonColor: config.moonColor ?? MOONLIGHT_COLOR,
     starOpacity: starOpacity(elevationOf(sunPosition)),
   };
-}
-
-function mixHex(from: string, to: string, t: number): string {
-  return t <= 0 ? from : t >= 1 ? to : lerpHexColor(from, to, t);
 }
 
 /** How much of the sun's colour comes from the atmosphere rather than the authored tint: 0 with the sun high, 1 once it is on the horizon. */

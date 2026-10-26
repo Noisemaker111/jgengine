@@ -321,6 +321,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createDayNightCycle` (function) · `import { createDayNightCycle } from "@jgengine/core/world"`
 
+## day-night-sky — read authored lighting as the day cycle's noon keyframe
+
+- `skyNoonKeyframes` (function) · `import { skyNoonKeyframes } from "@jgengine/core/sky/skyOwnedLighting"`
+- `splitSkyOwnedLighting` (function) · `import { splitSkyOwnedLighting } from "@jgengine/core/sky/skyOwnedLighting"`
+
 ## default-drive-codes — stock WASD/arrow throttle, brake, steer and handbrake key codes
 
 - `DEFAULT_DRIVE_CODES` (const) · `import { DEFAULT_DRIVE_CODES } from "@jgengine/core/input/actionBindings"`
