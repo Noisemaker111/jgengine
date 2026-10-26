@@ -1,6 +1,6 @@
 # Playable browser peer worlds
 
-`resolvePeerShellMultiplayer` from `@jgengine/shell/multiplayer` accepts a
+`resolvePeerShellMultiplayer` from `@jgengine/core/multiplayer/multiplayer.draw` accepts a
 `playable` game with `p2p({ authority: "server" })`. The host constructs one
 `HostedWorldSession` and `createWorldGameHost`; host and guest command transports
 operate on that shared simulation. Passing only `gameId` retains the existing

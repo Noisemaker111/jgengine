@@ -11,7 +11,7 @@ import type {
   PresenceSync,
 } from "@jgengine/core/runtime/transport";
 import type { ChatMessage } from "@jgengine/core/chat/chat";
-import type { ChatSendOutcome, ChatSync } from "@jgengine/core/multiplayer/chatContract";
+import type { ChatSendOutcome, ChatSync } from "@jgengine/core/chat/chatContract";
 import { createPoseSyncGate, type PoseSyncTuning } from "@jgengine/core/multiplayer/poseSyncGate";
 import { chunkKeyAt } from "@jgengine/core/runtime/worldChunks";
 import type { LeaderboardScope } from "@jgengine/core/leaderboard/leaderboard";

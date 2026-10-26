@@ -59,6 +59,24 @@
 - `tilemap` (function): function tilemap(config: TilemapWorldConfig): WorldFeature — Declares a 2D tilemap world from a map string.
 - `voxel` (function): function voxel(config: VoxelWorldConfig): WorldFeature — Declares a voxel-grid world for block-based games.
 
+## @jgengine/core/commands/commandDispatch
+
+- `DispatchedCommandResult` (type): type DispatchedCommandResult = CommandResult<GameContext> | Promise<CommandResult<GameContext>> — A UI command completes locally or after its authoritative host acknowledges it.
+- `bindCommandTransport` (function): function bindCommandTransport(ctx: GameContext, route: Route): () => void — Bind UI command dispatch to the host for this context. A missing join rejects; it never mutates the local replica.
+- `dispatchCommand` (function): function dispatchCommand(ctx: GameContext, name: string, input: unknown): DispatchedCommandResult — Dispatch a player's command through the bound host, or locally for an unbound offline context. Await the result before showing success.
+
+## @jgengine/core/commands/commandInput
+
+- `QuantityResult` (type): type QuantityResult = { ok: true; quantity: number } | { ok: false; reason: "invalid-quantity" } — Validated integer quantity or a stable input rejection.
+- `isInputRecord` (function): function isInputRecord(value: unknown): value is Record<string, unknown> — Narrow an untrusted value to a plain object, rejecting arrays and null.
+- `readInputArray` (function): function readInputArray<T>(value: unknown, readItem: (item: unknown) => T | null, options: { maxItems?: number } = {}): T[] | null — Read an array of at most `maxItems` entries, each accepted by `readItem`; any rejected entry rejects the whole array.
+- `readInputNumber` (function): function readInputNumber(value: unknown, options: { min?: number; max?: number; integer?: boolean } = {}): number | null — Read a finite number inside `[min, max]`, or `null`. `NaN` and `±Infinity` are always rejected, so a coordinate can never drive an unbounded loop; `integer` also rejects fractions instead of flooring them.
+- `readInputOneOf` (function): function readInputOneOf<const T extends string | number>(value: unknown, allowed: readonly T[]): T | null — Read one of a fixed set of values, or `null`.
+- `readInputPoint2` (function): function readInputPoint2(value: unknown, options: { maxAbs?: number } = {}): { x: number; z: number } | null — Read an `{ x, z }` ground point whose axes are finite and within `maxAbs`, or `null`.
+- `readInputPoint3` (function): function readInputPoint3(value: unknown, options: { maxAbs?: number } = {}): { x: number; y: number; z: number } | null — Read an `{ x, y, z }` point whose axes are finite and within `maxAbs`, or `null`.
+- `readInputString` (function): function readInputString(value: unknown, options: { maxLength?: number } = {}): string | null — Read a non-empty string of at most `maxLength` characters, or `null`.
+- `readQuantity` (function): function readQuantity(value: unknown, options: { min?: number; max?: number } = {}): QuantityResult — Read an untrusted whole-item quantity without coercion, truncation, or clamping.
+
 ## @jgengine/core/commands/commandRegistry
 
 - `CommandDecodeResult` (type): type CommandDecodeResult<TInput> = | { ok: true; value: TInput } | { ok: false; reason: string } — ⚠ undocumented
@@ -68,6 +86,87 @@
 - `CommandRejection` (interface): interface CommandRejection — Why a command refused: `reason` is a stable machine code; `message`, when set, is shown to the player.
 - `CommandResult` (type): type CommandResult<TState> = | { status: "applied"; state: TState } | { status: "rejected"; reason: string; message?: string } | { status: "unknown-command" } — ⚠ undocumented
 - `createCommandRegistry` (function): function createCommandRegistry<TState>(): CommandRegistry<TState> — ⚠ undocumented
+
+## @jgengine/core/commands/commandRunner
+
+- `CommandAccess` (type): type CommandAccess = "client" | "server" — Who may send a command: any client through the public transport, or only trusted host code.
+- `CommandDef` (type): type CommandDef<TInput = unknown> = { /** * `"server"` when `input` carries facts only the host may decide (unlock state, prices, multipliers): * public transports then refuse it and only trusted host calls such as `helpers.runCommand` run it. * Defaults to `"client"`, so every field of `input` must… — ⚠ undocumented · used by `defineCommand`: Declare a command with a typed input: `parse` narrows the wire value once, and `scope`, `validate` and `apply` receive the parsed type.
+- `CommandScope` (type): type CommandScope = { /** Member ids to hydrate; omit for the whole roster. */ players?: readonly string[]; /** Chunk keys to hydrate; omit for every chunk of the server, `[]` for none. */ chunkKeys?: readonly string[]; } — Which slice of a server has to be hydrated before some work runs against it. Both fields default to "everything", which costs a read per member plus one per chunk — the cost that makes a large shared world unaffordable per mutation. Narrow them when the caller knows what it will touch.
+- `CommandScopeDefinition` (type): type CommandScopeDefinition = Omit<CommandScope, "players"> & { players?: readonly string[] | "actor" } — Declarative read scope; actor is resolved before host hydration.
+- `CommandValidationError` (type): type CommandValidationError = { reason: string; message?: string } — `reason` is a stable machine code; `message`, when set, is player-facing text the client shows on refusal.
+- `MALFORMED_COMMAND_INPUT_REASON` (const): const MALFORMED_COMMAND_INPUT_REASON: "Malformed command input" — Reason every host returns when a command's `parse` rejects its input.
+- `RunCommandResult` (type): type RunCommandResult = | { ok: true; snapshot: GameRuntimeSnapshot } | { ok: false; reason: string; message?: string } — ⚠ undocumented
+- `SERVER_ONLY_COMMAND_REASON` (const): const SERVER_ONLY_COMMAND_REASON: "Command is server-only" — Reason a public transport returns for a {@link CommandDef} marked `access: "server"`.
+- `defineCommand` (function): function defineCommand<TInput>(definition: CommandDef<TInput> & { parse: (input: unknown) => TInput | null }): CommandDef — Declare a command with a typed input: `parse` narrows the wire value once, and `scope`, `validate` and `apply` receive the parsed type. Returns the untyped {@link CommandDef} a runtime's command table holds.
+
+## @jgengine/core/commands/commandSink
+
+- `CommandSink` (interface): interface CommandSink — Where a gameplay command goes when the shell dispatches it — run locally, or sent to the authoritative host.
+
+## @jgengine/core/devtools/ColPanel.view
+
+- `ColPanel` (function): function ColPanel(): React.JSX.Element — ⚠ undocumented
+
+## @jgengine/core/devtools/CollisionDebugWorld.draw
+
+- `CollisionDebugWorld` (function): function CollisionDebugWorld(): React.JSX.Element | null — World-space collision debugger. Performs zero scene scans and zero raycasts when every layer is off. Mount only when shell devtools are enabled.
+
+## @jgengine/core/devtools/FpsCounter.draw
+
+- `FrameTally` (interface): interface FrameTally — Mutable frame tally shared between the in-Canvas probe and the DOM readout.
+
+## @jgengine/core/devtools/KeysPanel.view
+
+- `KeysPanel` (function): function KeysPanel({ input }: { input: ActionCodesMap | undefined }): React.JSX.Element — ⚠ undocumented
+
+## @jgengine/core/devtools/LogsPanel.view
+
+- `LogsPanel` (function): function LogsPanel(): React.JSX.Element — ⚠ undocumented
+
+## @jgengine/core/devtools/NetPanel.draw
+
+- `NetPanel` (function): function NetPanel({ multiplayer }: { multiplayer: ShellMultiplayer | null }): React.JSX.Element — ⚠ undocumented
+
+## @jgengine/core/devtools/PerfPanel.view
+
+- `PerfPanel` (function): function PerfPanel({ ctx }: { ctx: GameContext }): React.JSX.Element — ⚠ undocumented
+
+## @jgengine/core/devtools/TunePanel.view
+
+- `TunePanel` (function): function TunePanel({ gameName }: { gameName: string }): React.JSX.Element — ⚠ undocumented
+- `tuneControlLabels` (function): function tuneControlLabels(name: string): { range: string; number: string } — Accessible names for one tunable's inputs: the number field answers to the control name itself, so `drive --fill "<name>=<value>"` and a screen reader both find it; the range is `<name> slider`.
+
+## @jgengine/core/devtools/agentBridge.draw
+
+- `AgentBridgeRequest` (type): type AgentBridgeRequest = { method: string } & Record<string, unknown> — One RPC call into the agent bridge: a verb name plus its verb-specific fields.
+- `AgentBridgeResponse` (type): type AgentBridgeResponse = | { ok: true; [key: string]: unknown } | { ok: false; error: string } — Result of an agent bridge call: `ok: true` with verb payload, or `ok: false` with a reason.
+
+## @jgengine/core/devtools/collisionDebug
+
+- `AimProbeConfig` (interface): interface AimProbeConfig { from: string; aim: Aim; originPolicy?: ShotOriginPolicy; maxDistance?: number } — ⚠ undocumented
+- `COLLISION_DEBUG_LAYERS` (const): const COLLISION_DEBUG_LAYERS: readonly CollisionDebugLayer[] — ⚠ undocumented
+- `CollisionDebugController` (interface): interface CollisionDebugController { getState(): CollisionDebugState; subscribe(listener: CollisionDebugListener): () => void; setLayer(layer: CollisionDebugLayer, on: boolean): void; toggleLayer(layer: CollisionDebugLayer): void; setLayers(partial: Partial<CollisionDebugLay… — ⚠ undocumented
+- `CollisionDebugLayer` (type): type CollisionDebugLayer = | "hitboxes" | "bodies" | "projectiles" | "muzzles" | "aimLaser" — ⚠ undocumented
+- `CollisionDebugLayers` (type): type CollisionDebugLayers = Record<CollisionDebugLayer, boolean> — ⚠ undocumented
+- `CollisionDebugListener` (type): type CollisionDebugListener = () => void — ⚠ undocumented
+- `CollisionDebugState` (interface): interface CollisionDebugState { layers: CollisionDebugLayers; aimProbe: AimProbeConfig | null; projectileTraces: readonly ProjectileDebugTrace[]; maxProjectileTraces: number; projectileTraceLifeMs: number } — ⚠ undocumented
+- `ProjectileDebugTrace` (interface): interface ProjectileDebugTrace { id: number; origin: EntityPosition; at: EntityPosition; hit: boolean; bornMs: number } — ⚠ undocumented
+- `collisionDebug` (const): const collisionDebug: CollisionDebugController — ⚠ undocumented
+
+## @jgengine/core/devtools/collisionDebugMath
+
+- `AIM_DAMAGE_COLOR` (const): const AIM_DAMAGE_COLOR: "#f87171" — ⚠ undocumented
+- `AIM_LASER_COLOR` (const): const AIM_LASER_COLOR: "#a3e635" — ⚠ undocumented
+- `AIM_MISS_COLOR` (const): const AIM_MISS_COLOR: "#94a3b8" — ⚠ undocumented
+- `AIM_SOLID_COLOR` (const): const AIM_SOLID_COLOR: "#fbbf24" — ⚠ undocumented
+- `AimEndpointKind` (type): type AimEndpointKind = "damage" | "solid" | "miss" — ⚠ undocumented
+- `AimLaserDebug` (interface): interface AimLaserDebug { origin: EntityPosition; direction: EntityPosition; end: EntityPosition; maxDistance: number; kind: AimEndpointKind; nearest: SceneRaycastHit | null; firstImpact: SceneRaycastHit | null; queryCount: number } — ⚠ undocumented
+- `BODY_WIRE_COLOR` (const): const BODY_WIRE_COLOR: "#38bdf8" — ⚠ undocumented
+- `CollectDebugShapesInput` (interface): interface CollectDebugShapesInput { layers: CollisionDebugLayers; entities: readonly {id: string; position: EntityPosition; rotationY: number; name?: string;}[]; objects?: readonly {instanceId: string; catalogId: string; position: EntityPosition; rotationY: number;}[]; enti… — ⚠ undocumented
+- `ComputeAimLaserInput` (interface): interface ComputeAimLaserInput { layers: CollisionDebugLayers; sceneRaycast: SceneRaycastApi; positionOf(instanceId: string): EntityPosition | undefined; rotationYOf?(instanceId: string): number | undefined; collidersOf?(instanceId: string): EntityColliderSet | null | un… — ⚠ undocumented
+- `DebugShapeEntry` (interface): interface DebugShapeEntry { key: string; targetKind: "entity" | "object"; instanceId: string; catalogId?: string; name: string; purpose: ColliderPurpose; damageEligible: boolean; blocks: boolean; position: EntityPosition; rotationY: number; shape: | {kind: "sphere";… — ⚠ undocumented
+- `HITBOX_WIRE_COLOR` (const): const HITBOX_WIRE_COLOR: "#f472b6" — ⚠ undocumented
+- `PROJECTILE_PATH_COLOR` (const): const PROJECTILE_PATH_COLOR: "#fde68a" — ⚠ undocumented
 
 ## @jgengine/core/devtools/controls
 
@@ -134,6 +233,23 @@
 - `snapshotDevtools` (function): function snapshotDevtools(): DevtoolsSnapshot — ⚠ undocumented
 - `tunable` (function): function tunable<T>(name: string, initial: T, options?: TunableOptions<T>): Tunable<T> — ⚠ undocumented
 
+## @jgengine/core/devtools/devtoolsOverrides.view
+
+- `readStoredOverrides` (function): function readStoredOverrides(gameName: string): DevtoolsOverrides | null — ⚠ undocumented
+
+## @jgengine/core/devtools/devtoolsReports.draw
+
+- `DebugSummary` (interface): interface DebugSummary — Compact `debug_summary` payload: the numbers an agent needs to judge a run, about 1 KB.
+
+## @jgengine/core/devtools/diagnosticOverlay.view
+
+- `DiagnosticOverlay` (function): function DiagnosticOverlay({ diagnostics, gameName }: { diagnostics: RuntimeDiagnostic[]; gameName: string }): React.JSX.Element | null — ⚠ undocumented
+- `ErrorReportActions` (function): function ErrorReportActions({ report, issueTitle }: { report: string; issueTitle: string }): React.JSX.Element — "Copy error" + "File issue" buttons for any error surface. `report` is the full text to copy / prefill.
+- `GameUiErrorBoundary` (class): class GameUiErrorBoundary extends Component< { children: ReactNode; onRuntimeError: (error: unknown, phase: string, componentStack?: string) => void }, { failed: boolean } > — ⚠ undocumented
+- `RuntimeDiagnostic` (interface): interface RuntimeDiagnostic { id: number; phase: string; message: string; stack?: string; componentStack?: string; capturedAt: string } — ⚠ undocumented
+- `errorReportContext` (function): function errorReportContext(): string — Standalone error footer text (page, browser, engine) shared by every error surface.
+- `logRuntimeError` (function): function logRuntimeError(error: unknown, phase: string, componentStack?: string): Omit<RuntimeDiagnostic, "id"> — ⚠ undocumented
+
 ## @jgengine/core/devtools/discover
 
 - `DiscoverModule` (interface): interface DiscoverModule — Discovery subsystem: the public discover and probes facades plus internal record map and helpers.
@@ -158,6 +274,16 @@
 - `FrameModule` (interface): interface FrameModule — Frame subsystem exposing the frame-timing, profiling, and render-sample facades.
 - `createFrameModule` (const): const createFrameModule: (deps: { readProbes: () => Record<string, unknown>; }) => FrameModule — Create the frame subsystem that records frame/sim/phase timings, computes stats, and captures long-frame events.
 
+## @jgengine/core/devtools/frameSampler.view
+
+- `FrameReportInputs` (interface): interface FrameReportInputs — Everything the report needs, gathered by whichever producer is asking.
+- `FrameSampler` (interface): interface FrameSampler — The installed sampler: ask it for a report, reset its window, or tear it down.
+- `FrameTelemetrySources` (interface): interface FrameTelemetrySources — What the shell hands the sampler: live getters, called only when a report is built.
+- `GlCounterTotals` (interface): interface GlCounterTotals — GPU-object creation counts, the fields the budget gate compares.
+- `REPORT_PUSH_MS` (const): const REPORT_PUSH_MS: 1000 — Cadence of the push to the dev server, in milliseconds.
+- `TELEMETRY_FLAG` (const): const TELEMETRY_FLAG: "telemetry" — In-page frame telemetry: the game reports on itself instead of needing a second process to attach a profiler. Frame timings come from the devtools frame ring, renderer counts from the live renderer, GPU-object creation from wrapped GL calls, and per-system numbers from `devtools.probes` — all read on demand, so nothing here runs on the hot path.
+- `TELEMETRY_WARMUP_MS` (const): const TELEMETRY_WARMUP_MS: 5000 — How long after the sampler starts the GL counters get their post-warmup baseline.
+
 ## @jgengine/core/devtools/logBus
 
 - `LOG_BUS_CAPACITY` (const): const LOG_BUS_CAPACITY: 200 — Default measured window for the log ring; older lines are evicted, never grown.
@@ -180,6 +306,15 @@
 
 - `OverridesModule` (interface): interface OverridesModule — Overrides subsystem exposing the export/apply facade for persisting and restoring control values.
 - `createOverridesModule` (const): const createOverridesModule: (deps: { signal: ChangeSignal; controlRecords: Map<string, ControlRecord>; writeControl: (record: ControlRecord, raw: unknown) => boolean; discoveredRecords: Map<string, DiscoveredRecord>; enableDiscovered: (id: string) => void; }) => OverridesModule — Create the overrides subsystem that serializes changed control values and re-applies a saved overrides payload.
+
+## @jgengine/core/devtools/panelAtoms.view
+
+- `SectionLabel` (function): function SectionLabel({ children }: { children: string }): React.JSX.Element — ⚠ undocumented
+- `ms` (function): function ms(value: number): string — ⚠ undocumented
+
+## @jgengine/core/devtools/perfDiagnose.view
+
+- `diagnose` (function): function diagnose(frame: NonNullable<ReturnType<typeof devtools.frame.stats>>, longs: readonly LongFrameEvent[]): string | null — ⚠ undocumented
 
 ## @jgengine/core/devtools/report
 
@@ -329,36 +464,6 @@
 - `CameraRigOverride` (interface): interface CameraRigOverride — Runtime rig selection and detached data overlay over the configured camera.
 - `ChaseCameraTuning` (type): type ChaseCameraTuning = Partial< Pick< ChaseCameraConfig, | "distance" | "height" | "lookHeight" | "springDamping" | "fov" | "lead" | "bank" | "shakePerSpeed" | "velocityYaw" | "yawResponse" | "headingSource" | "distanceBySpeed" | "pitchFollow" | "fovKick" | "lookBackAction" | "collision" | "view" … — Runtime patch over the static `camera.chase` config — distance/height/fov retuning from gameplay events (#286.11), a whole driving-feel overlay applied only while a vehicle is piloted (#1299), or a `view` switch between chase and seat cameras.
 - `nextChaseView` (function): function nextChaseView(current: ChaseView, views: readonly ChaseView[] = CHASE_VIEWS): ChaseView — The view after `current` in `views`, wrapping at the end; a view missing from the list starts the cycle over. Pair with `setChaseTuning` to bind a "change camera" key: `ctx.camera.setChaseTuning({ ...ctx.camera.chaseTuning(), view: nextChaseView(view) })`.
-
-## @jgengine/core/runtime/commandDispatch
-
-- `DispatchedCommandResult` (type): type DispatchedCommandResult = CommandResult<GameContext> | Promise<CommandResult<GameContext>> — A UI command completes locally or after its authoritative host acknowledges it.
-- `bindCommandTransport` (function): function bindCommandTransport(ctx: GameContext, route: Route): () => void — Bind UI command dispatch to the host for this context. A missing join rejects; it never mutates the local replica.
-- `dispatchCommand` (function): function dispatchCommand(ctx: GameContext, name: string, input: unknown): DispatchedCommandResult — Dispatch a player's command through the bound host, or locally for an unbound offline context. Await the result before showing success.
-
-## @jgengine/core/runtime/commandInput
-
-- `QuantityResult` (type): type QuantityResult = { ok: true; quantity: number } | { ok: false; reason: "invalid-quantity" } — Validated integer quantity or a stable input rejection.
-- `isInputRecord` (function): function isInputRecord(value: unknown): value is Record<string, unknown> — Narrow an untrusted value to a plain object, rejecting arrays and null.
-- `readInputArray` (function): function readInputArray<T>(value: unknown, readItem: (item: unknown) => T | null, options: { maxItems?: number } = {}): T[] | null — Read an array of at most `maxItems` entries, each accepted by `readItem`; any rejected entry rejects the whole array.
-- `readInputNumber` (function): function readInputNumber(value: unknown, options: { min?: number; max?: number; integer?: boolean } = {}): number | null — Read a finite number inside `[min, max]`, or `null`. `NaN` and `±Infinity` are always rejected, so a coordinate can never drive an unbounded loop; `integer` also rejects fractions instead of flooring them.
-- `readInputOneOf` (function): function readInputOneOf<const T extends string | number>(value: unknown, allowed: readonly T[]): T | null — Read one of a fixed set of values, or `null`.
-- `readInputPoint2` (function): function readInputPoint2(value: unknown, options: { maxAbs?: number } = {}): { x: number; z: number } | null — Read an `{ x, z }` ground point whose axes are finite and within `maxAbs`, or `null`.
-- `readInputPoint3` (function): function readInputPoint3(value: unknown, options: { maxAbs?: number } = {}): { x: number; y: number; z: number } | null — Read an `{ x, y, z }` point whose axes are finite and within `maxAbs`, or `null`.
-- `readInputString` (function): function readInputString(value: unknown, options: { maxLength?: number } = {}): string | null — Read a non-empty string of at most `maxLength` characters, or `null`.
-- `readQuantity` (function): function readQuantity(value: unknown, options: { min?: number; max?: number } = {}): QuantityResult — Read an untrusted whole-item quantity without coercion, truncation, or clamping.
-
-## @jgengine/core/runtime/commandRunner
-
-- `CommandAccess` (type): type CommandAccess = "client" | "server" — Who may send a command: any client through the public transport, or only trusted host code.
-- `CommandDef` (type): type CommandDef<TInput = unknown> = { /** * `"server"` when `input` carries facts only the host may decide (unlock state, prices, multipliers): * public transports then refuse it and only trusted host calls such as `helpers.runCommand` run it. * Defaults to `"client"`, so every field of `input` must… — ⚠ undocumented · used by `defineCommand`: Declare a command with a typed input: `parse` narrows the wire value once, and `scope`, `validate` and `apply` receive the parsed type.
-- `CommandScope` (type): type CommandScope = { /** Member ids to hydrate; omit for the whole roster. */ players?: readonly string[]; /** Chunk keys to hydrate; omit for every chunk of the server, `[]` for none. */ chunkKeys?: readonly string[]; } — Which slice of a server has to be hydrated before some work runs against it. Both fields default to "everything", which costs a read per member plus one per chunk — the cost that makes a large shared world unaffordable per mutation. Narrow them when the caller knows what it will touch.
-- `CommandScopeDefinition` (type): type CommandScopeDefinition = Omit<CommandScope, "players"> & { players?: readonly string[] | "actor" } — Declarative read scope; actor is resolved before host hydration.
-- `CommandValidationError` (type): type CommandValidationError = { reason: string; message?: string } — `reason` is a stable machine code; `message`, when set, is player-facing text the client shows on refusal.
-- `MALFORMED_COMMAND_INPUT_REASON` (const): const MALFORMED_COMMAND_INPUT_REASON: "Malformed command input" — Reason every host returns when a command's `parse` rejects its input.
-- `RunCommandResult` (type): type RunCommandResult = | { ok: true; snapshot: GameRuntimeSnapshot } | { ok: false; reason: string; message?: string } — ⚠ undocumented
-- `SERVER_ONLY_COMMAND_REASON` (const): const SERVER_ONLY_COMMAND_REASON: "Command is server-only" — Reason a public transport returns for a {@link CommandDef} marked `access: "server"`.
-- `defineCommand` (function): function defineCommand<TInput>(definition: CommandDef<TInput> & { parse: (input: unknown) => TInput | null }): CommandDef — Declare a command with a typed input: `parse` narrows the wire value once, and `scope`, `validate` and `apply` receive the parsed type. Returns the untyped {@link CommandDef} a runtime's command table holds.
 
 ## @jgengine/core/runtime/context/objectSlots
 
@@ -516,7 +621,7 @@
 
 - `InputFrame` (interface): interface InputFrame — One client's serializable held state and discrete edges for a simulation tick.
 - `InputPress` (interface): interface InputPress — One discrete press, identified across retransmitted live input frames.
-- `InputSnapshot` (interface): interface InputSnapshot { rumble(userId: string, options: {strong: number; weak: number; ms: number}): Promise<boolean>; haptics(userId: string): HapticChannels; publish(held: readonly string[], edges?: {pressed?: readonly string[]; reset?: boolean}): void; beginS… — ⚠ undocumented · used by `GamepadSource` (@jgengine/shell/input/gamepadSource): Poll browser gamepads and feed semantic actions into the shell tracker.
+- `InputSnapshot` (interface): interface InputSnapshot { rumble(userId: string, options: {strong: number; weak: number; ms: number}): Promise<boolean>; haptics(userId: string): HapticChannels; publish(held: readonly string[], edges?: {pressed?: readonly string[]; reset?: boolean}): void; beginS… — ⚠ undocumented · used by `GamepadSource` (@jgengine/core/input/gamepadSource.draw): Poll browser gamepads and feed semantic actions into the shell tracker.
 - `createInputSnapshot` (function): function createInputSnapshot(): InputSnapshot — ⚠ undocumented
 
 ## @jgengine/core/runtime/localPlayers
@@ -631,7 +736,7 @@
 - `LiveGameBackend` (type): type LiveGameBackend<TPresenceRow = unknown, TPresenceLocation = unknown, TGameId extends string = string> = GameBackend<TPresenceRow, TPresenceLocation, TGameId> & { presenceSync: PresenceSync; pushFeedEntry: (args: { serverId: string; action: string; entry: unknown }) => Promise<void>; chatSyncFor… — ⚠ undocumented
 - `MultiplayerRole` (type): type MultiplayerRole = "player" | "spectator" — Connection role used for authoritative world access; spectators are read-only.
 - `MultiplayerSession` (type): type MultiplayerSession = { gameId: string; userId: string; backend: LiveGameBackend; feedActions: string[]; } — ⚠ undocumented
-- `PresencePoseRow` (type): type PresencePoseRow = { userId: string; /** Set when the host tracks presence per session, so one user can hold two rows. */ sessionId?: string; /** Actor class, e.g. `"player"` / `"agent"` — a host may clamp each differently. */ kind?: string; /** Display name carried on the row, so a nameplate ne… — ⚠ undocumented · used by `useShellMultiplayerSync` (@jgengine/shell/useShellMultiplayerSync): Joins the multiplayer server for the live context and wires presence, feed relay, and chat sync until teardown.
+- `PresencePoseRow` (type): type PresencePoseRow = { userId: string; /** Set when the host tracks presence per session, so one user can hold two rows. */ sessionId?: string; /** Actor class, e.g. `"player"` / `"agent"` — a host may clamp each differently. */ kind?: string; /** Display name carried on the row, so a nameplate ne… — ⚠ undocumented · used by `useShellMultiplayerSync` (@jgengine/core/multiplayer/useShellMultiplayerSync.draw): Joins the multiplayer server for the live context and wires presence, feed relay, and chat sync until teardown.
 - `PresenceSync` (type): type PresenceSync = { subscribe: (serverId: string, onChange: (rows: PresencePoseRow[]) => void) => FeedUnsubscribe; syncPose: (serverId: string, pose: PlayerPose) => void; } — ⚠ undocumented
 - `ResumeTicket` (type): type ResumeTicket = { userId: string; serverId: string; token: string; } — A short-lived credential allowing a disconnected client to reclaim one server membership.
 - `RunCommandArgs` (type): type RunCommandArgs = { serverId: string; command: string; input: unknown; } — ⚠ undocumented

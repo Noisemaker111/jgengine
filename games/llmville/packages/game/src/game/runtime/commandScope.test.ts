@@ -5,7 +5,7 @@ import {
   resolveCommandScope,
   scopeWithActor,
   type CommandScope,
-} from "@jgengine/core/runtime/commandRunner";
+} from "@jgengine/core/commands/commandRunner";
 import type { GameRuntimeSnapshot } from "@jgengine/core/runtime/snapshot";
 import { getPlacementBounds } from "@llmville/game/build/build";
 import { cellKey, cellsForBounds } from "@llmville/game/datacenter/grid";

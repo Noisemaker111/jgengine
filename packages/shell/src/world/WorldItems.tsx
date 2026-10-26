@@ -7,7 +7,7 @@ import { resolveWorldItemPresentation } from "@jgengine/core/loot/groundItem";
 import { useGameContext } from "@jgengine/react/provider";
 import { useWorldItems } from "@jgengine/react/hooks";
 import { emptyPoseMemo, writePoseIfChanged, type PoseMemo } from "./entityPose";
-import { POINTER_ENTITY_KEY } from "../pointer/pointerService";
+import { POINTER_ENTITY_KEY } from "@jgengine/core/input/pointerService.draw";
 
 const DEFAULT_BEAM_HEIGHT = 2.5;
 const FALLBACK_COLOR = "#e5e7eb";

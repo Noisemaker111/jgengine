@@ -50,6 +50,9 @@
       "triggered-rules"
     ],
     "probes": {
+      "@jgengine/core/audio/audioProbe.view": [
+        "window:__jgengineAudio"
+      ],
       "@jgengine/core/combat/damage/damageRuntime": [
         "scrap.damage"
       ],
@@ -58,9 +61,6 @@
       ],
       "@jgengine/core/save/saveDocument": [
         "scrap.save"
-      ],
-      "@jgengine/shell/audio/audioProbe": [
-        "window:__jgengineAudio"
       ]
     },
     "declines": {

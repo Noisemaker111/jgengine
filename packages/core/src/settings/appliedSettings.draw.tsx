@@ -23,8 +23,8 @@ import {
   type TouchStyle,
 } from "@jgengine/core/input/touchScheme";
 
-import type { AudioEngine } from "@jgengine/shell/audio/audioEngine";
-import { busMuteSettingId, MASTER_MUTE_SETTING_ID } from "@jgengine/shell/audio/busMix";
+import type { AudioEngine } from "@jgengine/core/audio/audioEngine.view";
+import { busMuteSettingId, MASTER_MUTE_SETTING_ID } from "@jgengine/core/audio/busMix";
 
 /** Sentinel Controls value meaning "defer to the game's suggested touch skin". */
 export const TOUCH_STYLE_AUTO = "auto";

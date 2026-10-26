@@ -12,19 +12,19 @@ import {
   DiagnosticOverlay,
   GameUiErrorBoundary,
   type RuntimeDiagnostic,
-} from "./diagnostics/RuntimeDiagnostics";
-import { DevtoolsRuntime } from "./devtools/DevtoolsRuntime";
-import { MissingModelsNotice } from "./devtools/MissingModelsNotice";
-import { FeedbackHost } from "./audio/FeedbackHost";
-import type { AudioEngine } from "./audio/audioEngine";
+} from "@jgengine/core/devtools/diagnosticOverlay.view";
+import { DevtoolsRuntime } from "@jgengine/core/devtools/DevtoolsRuntime.draw";
+import { MissingModelsNotice } from "@jgengine/core/devtools/MissingModelsNotice.draw";
+import { FeedbackHost } from "@jgengine/core/audio/FeedbackHost.view";
+import type { AudioEngine } from "@jgengine/core/audio/audioEngine.view";
 import { GamePhaseStamp } from "./GamePhaseStamp";
 import { ShellNotices, ShellUiCues } from "@jgengine/core/notifications/ShellNotices.view";
 import { SettingsPlayControlGate } from "@jgengine/core/settings/SettingsRuntime.draw";
-import type { ShellMultiplayer } from "./multiplayer";
+import type { ShellMultiplayer } from "@jgengine/core/multiplayer/multiplayer.draw";
 import type { PlayableGame } from "./registry";
 
 const DevtoolsOverlay = lazy(() =>
-  import("./devtools/DevtoolsOverlay").then((module) => ({ default: module.DevtoolsOverlay })),
+  import("@jgengine/core/devtools/DevtoolsOverlay.draw").then((module) => ({ default: module.DevtoolsOverlay })),
 );
 
 /** Mounts the game's `uiKit` (with its bindings, for prompts) around the GameUI; no kit renders children as-is. @internal */

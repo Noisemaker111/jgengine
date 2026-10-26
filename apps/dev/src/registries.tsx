@@ -10,7 +10,7 @@ import { devtools } from "@jgengine/core/devtools/devtools";
 import { resolveTerrainField } from "@jgengine/core/terrain/terrain";
 import type { CameraRigConfig } from "@jgengine/core/runtime/cameraDirector";
 import type { GameCameraConfig } from "@jgengine/core/game/playableGame";
-import { applyStoredDevtoolsOverrides } from "@jgengine/shell/devtools/DevtoolsOverlay";
+import { applyStoredDevtoolsOverrides } from "@jgengine/core/devtools/DevtoolsOverlay.draw";
 import type { UiPreviewScenario } from "@jgengine/shell/GameUiPreview";
 import type { GameRegistry, PlayableGame } from "@jgengine/shell/registry";
 

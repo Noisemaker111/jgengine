@@ -1,7 +1,7 @@
 import { createShellKeyHandlers } from "./ShellChrome";
 import { expect, test } from "bun:test";
 
-import { JoinGate } from "./JoinGate";
+import { JoinGate } from "@jgengine/core/multiplayer/JoinGate.view";
 import { TerritoryOverlay } from "./TerritoryOverlay";
 
 test("failed join blocks children and renders a retry action", () => {

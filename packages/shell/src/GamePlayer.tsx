@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 
 import { GamePlayerShell } from "./GamePlayerShell";
-import type { ShellMultiplayer } from "./multiplayer";
+import type { ShellMultiplayer } from "@jgengine/core/multiplayer/multiplayer.draw";
 import type { GameRegistry, PlayableGame } from "./registry";
 import { resolveGameLoader } from "./registry";
 

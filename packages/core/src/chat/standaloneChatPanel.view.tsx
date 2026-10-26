@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { DEFAULT_CHAT_BODY_LENGTH, type ChatMessage } from "@jgengine/core/chat/chat";
-import type { ChatSendOutcome } from "@jgengine/core/multiplayer/chatContract";
+import type { ChatSendOutcome } from "@jgengine/core/chat/chatContract";
 
 type StatefulClass = string | ((expanded: boolean) => string);
 const classFor = (value: StatefulClass | undefined, expanded: boolean) => typeof value === "function" ? value(expanded) : value;

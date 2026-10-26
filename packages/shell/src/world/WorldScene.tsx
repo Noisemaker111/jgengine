@@ -49,7 +49,7 @@ import { useRenderVisibility } from "../visibility/CullingProvider";
 import { writePoseIfChanged, writeRenderPoseIfChanged, emptyPoseMemo, type PoseMemo } from "./entityPose";
 import type { RenderPose } from "@jgengine/core/runtime/poseInterpolation";
 import { createSnapshotBuffer, type SnapshotBuffer } from "@jgengine/core/runtime/snapshotBuffer";
-import { POINTER_ENTITY_KEY, POINTER_OBJECT_KEY } from "../pointer/pointerService";
+import { POINTER_ENTITY_KEY, POINTER_OBJECT_KEY } from "@jgengine/core/input/pointerService.draw";
 
 const EMPTY_DOCUMENT = createEmptyEditorDocument();
 const GROUND_SIZE = 160;

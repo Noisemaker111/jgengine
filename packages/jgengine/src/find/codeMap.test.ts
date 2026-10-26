@@ -2,7 +2,7 @@ import { describe, expect, spyOn, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { declaredExport, engineRoot, layerOf, listRepoFiles, locate, readExports, renderLocations, type CodeFile } from "./codeMap";
+import { declaredExport, engineRoot, indexCode, layerOf, listRepoFiles, locate, locateIn, readExports, renderLocations, type CodeFile } from "./codeMap";
 import { runFind } from "./runFind";
 import { queryTokens } from "./words";
 
@@ -65,8 +65,9 @@ test("a concept folder wins its layer, files named for it elsewhere are listed, 
 describe("this checkout answers where a concept lives in one call", () => {
   const root = engineRoot(import.meta.dir)!;
   const files = listRepoFiles(root);
-  const read = (file: CodeFile) => readFileSync(join(root, file.path), "utf8");
-  const homeOf = (query: string) => new Map(locate(files, read, queryTokens(query)).map((home) => [home.layer, home.home]));
+  // One index for the whole checkout: every query below matches against it, as `find` does for one.
+  const index = indexCode(files, (file: CodeFile) => readFileSync(join(root, file.path), "utf8"));
+  const homeOf = (query: string) => new Map(locateIn(index, queryTokens(query)).map((home) => [home.layer, home.home]));
 
   test("grass and hud point at the folders that hold them", () => {
     const grass = homeOf("grass");
@@ -93,6 +94,16 @@ describe("this checkout answers where a concept lives in one call", () => {
       ["cutscene", "cutscene"],
       ["damage direction", "combat/damage"],
       ["ui kit", "ui/kit"],
+      ["audio", "audio"],
+      ["devtools", "devtools"],
+      ["input", "input"],
+      ["replay", "replay"],
+      ["play script", "play"],
+      ["placement", "placement"],
+      ["multiplayer", "multiplayer"],
+      ["behaviour", "behaviour"],
+      ["commands", "commands"],
+      ["buildings", "buildings"],
     ];
     for (const [query, folder] of features) {
       const homes = homeOf(query);

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from "react";
 
-import { dispatchBoundAction, heldActionsFor, shouldFireBoundAction } from "@jgengine/shell/boundActionDispatch";
+import { dispatchBoundAction, heldActionsFor, shouldFireBoundAction } from "@jgengine/core/input/boundActionDispatch";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { advanceBehaviors } from "@jgengine/core/scene/behaviorRuntime";
 import type { PointerAxisState } from "@jgengine/core/input/pointerAxis";
@@ -9,13 +9,13 @@ import { devtools } from "@jgengine/core/devtools/devtools";
 import type { ActionStateTracker } from "@jgengine/core/input/actionBindings";
 import { isServerAuthoritative } from "@jgengine/core/runtime/adapter";
 import type { InputFrame } from "@jgengine/core/runtime/hostedGameRunner";
-import { resolveCommandSink } from "@jgengine/shell/commandSink";
-import { inputFramesEqual, resolveInputSink } from "@jgengine/shell/inputSink";
-import type { ShellMultiplayer } from "@jgengine/shell/multiplayer";
+import { resolveCommandSink } from "@jgengine/core/commands/commandSink";
+import { inputFramesEqual, resolveInputSink } from "@jgengine/core/input/inputSink";
+import type { ShellMultiplayer } from "@jgengine/core/multiplayer/multiplayer.draw";
 
 import { EMPTY_RESERVED, NO_ACTIONS } from "@jgengine/shell/shellConstants";
 import type { PlayableGame } from "@jgengine/shell/registry";
-import { registerSimStepper } from "@jgengine/shell/devtools/simStepper";
+import { registerSimStepper } from "@jgengine/core/sim/simStepper";
 
 /**
  * Drives a HUD-only page: steps the sim with no 3D canvas so a capture can render just the game UI.

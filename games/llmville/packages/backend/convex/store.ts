@@ -1,4 +1,4 @@
-import { readQuantity } from "@jgengine/core/runtime/commandInput";
+import { readQuantity } from "@jgengine/core/commands/commandInput";
 import { v } from "convex/values";
 import { getBuildItem, getBuildItemResaleValue, isBuildItemId, normalizeBuildInventory } from "@llmville/game/build/catalog";
 import type { BuildItemId } from "@llmville/game/build/catalog";

@@ -1,4 +1,4 @@
-import type { ChatSync } from "../multiplayer/chatContract";
+import type { ChatSync } from "../chat/chatContract";
 import type { PlayerPose } from "../multiplayer/poseSyncGate";
 import type { PresenceTransport } from "../multiplayer/presenceContract";
 import type { WorldDiff } from "./worldReplication";

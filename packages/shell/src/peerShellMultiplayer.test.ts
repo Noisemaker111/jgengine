@@ -6,8 +6,8 @@ import { createWsBackend } from "@jgengine/ws/createWsBackend";
 import { loopbackPipe, type HostRouter } from "@jgengine/ws/hostRouter";
 import { broadcastChannelSignaling, createPeerHost, encodePeerSignal, type PeerSignaling } from "@jgengine/ws/peer";
 import { defineGame } from "./defineGame";
-import { resolvePeerShellMultiplayer, type PeerShellFactories } from "./multiplayer";
-import { attachWorldSync } from "./worldSync";
+import { resolvePeerShellMultiplayer, type PeerShellFactories } from "@jgengine/core/multiplayer/multiplayer.draw";
+import { attachWorldSync } from "@jgengine/core/multiplayer/authoritativeSync";
 
 interface Puzzle { weight: boolean; light: boolean; stage: number; ticks: number }
 function puzzle(ctx: GameContext): Puzzle { return ctx.game.store.get("puzzle") as Puzzle; }

@@ -517,6 +517,7 @@ export {
   type PlacementPreview,
   type SnapMode,
 } from "./placement/placementController";
+export { type RecordingBuffer, type RecordingBufferOptions } from "./replay/recordingBuffer";
 export {
   GROUND_DECAL_LAYERS,
   buildJunctionSurface,
@@ -720,7 +721,6 @@ export {
   type PerceptionStimulus,
   type PerceptionStimulusKind,
 } from "./sensor/perception";
-export { type RecordingBuffer, type RecordingBufferOptions } from "./sensor/recordingBuffer";
 export { type RevealHit, type RevealQuery } from "./sensor/revealQuery";
 export { sightLineBlocked, type SightPoint, type SightSolids } from "./sensor/sightLine";
 export {

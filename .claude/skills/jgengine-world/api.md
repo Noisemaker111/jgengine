@@ -457,6 +457,20 @@
 - `sumMagnitude` (function): function sumMagnitude<P>(memberships: readonly AreaMembership<P>[], magnitudeOf: MagnitudeOf<P>): number — Sum a numeric magnitude across memberships — additive aggregation for a total field strength (total damage per tick, total slow). A terminal reducer, not a filter, so it returns the number.
 - `uniqueByStackKey` (function): function uniqueByStackKey<P>(magnitudeOf?: MagnitudeOf<P>): AreaStackPolicy<P> — Keep at most one membership per `stackKey`. With `magnitudeOf` the strongest per key wins (ties broken by `sourceId` for determinism); without it the first-seen per key wins. Use for unique-by-key buffs where reapplying the same aura should not stack.
 
+## @jgengine/core/audio/AudioComponents.draw
+
+- `AudioListener` (function): function AudioListener({ engine, anchor = "camera" }: { engine: AudioEngine; anchor?: ListenerAnchor }): null — ⚠ undocumented
+- `EntityAudioEmitters` (function): function EntityAudioEmitters({ engine, entitySounds, }: { engine: AudioEngine; entitySounds: Record<string, string> | undefined; }): null — ⚠ undocumented
+- `ObjectAudioEmitters` (function): function ObjectAudioEmitters({ engine, objectSounds, }: { engine: AudioEngine; objectSounds: Record<string, string> | undefined; }): null — ⚠ undocumented
+
+## @jgengine/core/audio/CaptionOverlay.view
+
+- `CaptionOverlay` (function): function CaptionOverlay({ feed, max = 2, zIndex = 84, }: { feed: CaptionFeed; /** How many lines to show at once. Default 2. */ max?: number; zIndex?: number; }): ReactNode — The captions line: a bounded, bottom-centred stack that renders only while the accessibility captions setting is on. Reads HudTheme tokens, so a game's theme reskins it, and lives in the same overlay layer as the notice stack.
+
+## @jgengine/core/audio/FeedbackHost.view
+
+- `FeedbackHost` (function): function FeedbackHost({ ctx, engine }: { ctx: GameContext; engine: AudioEngine }): ReactNode — Mounts the engine's feel layer for one game: announced events become a sound, a gamepad pulse, a camera kick and a caption line; the audio context unlocks on the first gesture; and the caption stack follows the accessibility setting. Games supply sounds, never the rules.
+
 ## @jgengine/core/audio/adaptiveMusic
 
 - `ADAPTIVE_THEMES` (const): const ADAPTIVE_THEMES: Readonly<Record<string, MusicTheme>> — The built-in adaptive themes, keyed by id.
@@ -475,6 +489,21 @@
 - `ambienceWeights` (function): function ambienceWeights(zones: readonly AmbienceZoneDef[], x: number, y: number, z: number, out: AmbienceWeight[] = []): AmbienceWeight[] — Every zone's mix weight at a listener position. A zone is at full level `crossfade` units inside its boundary, at half level on the boundary and silent `crossfade` units outside, so a listener walking between two zones that share a boundary hears a constant-sum handover. Weights that would sum above 1 (overlapping zones) are normalized so total bed level never exceeds unity. Writes into `out` when given, so a per-frame caller allocates nothing.
 - `zoneSignedDistance` (function): function zoneSignedDistance(shape: AmbienceZoneShape, x: number, y: number, z: number): number — Distance from a point to a zone boundary, positive inside and negative outside. Spheres measure from the surface; boxes use the nearest face.
 
+## @jgengine/core/audio/audioEngine.view
+
+- `AudioAmbienceState` (interface): interface AudioAmbienceState — Current ambience mix, by zone id.
+- `AudioEmitterHandle` (interface): interface AudioEmitterHandle { isPlaying?(): boolean; setPosition(position: Xyz): void; setRate(rate: number): void; setGain(gain: number): void; setLowpass(hz: number): void; setHighpass(hz: number): void; setVelocity(velocity: Xyz): void; setOcclusion(amount: number)… — ⚠ undocumented
+- `AudioEngine` (interface): interface AudioEngine { setListenerPose(pose: ListenerPose | Xyz): void; setVoiceLimit(maxTotal: number, overflow?: VoiceAllocatorConfig["overflow"]): void; play(soundId: string, position?: Xyz): void; playOneShot(soundId: string, position?: Xyz): void; playLoop… — ⚠ undocumented · used by `createAudioEngine`: Game-owned sound catalog playback with bounded SFX reservations, spatial panning, and shared buses.
+- `AudioLevel` (interface): interface AudioLevel — Master-output level, `0..1`. Pooled by {@link AudioEngine.measure} - read it, don't retain it.
+- `AudioMixState` (interface): interface AudioMixState — The player's mix an {@link AudioEngine} can hand out and take back (a settings save, a resumed session).
+- `AudioOcclusionStats` (interface): interface AudioOcclusionStats — Measured geometry-occlusion work, cumulative since the engine was created.
+- `AudioSceneConfig` (interface): interface AudioSceneConfig { sounds?: Record<string, SoundDef>; maxVoices?: number; voiceOverflow?: VoiceAllocatorConfig["overflow"]; voiceAllocator?: VoiceAllocator; buses?: Record<string, AudioBusDef>; music?: Record<string, MusicTheme>; musicBus?: string; speechBu… — ⚠ undocumented · used by `createAudioEngine`: Game-owned sound catalog playback with bounded SFX reservations, spatial panning, and shared buses.
+- `AudioSpatialStats` (interface): interface AudioSpatialStats — What the spatial mix did, cumulative since the engine was created, plus the space it rings in now.
+- `DuckOptions` (interface): interface DuckOptions — How long and how far to duck buses for {@link AudioEngine.duck}.
+- `ListenerPose` (interface): interface ListenerPose — Position and orientation for a spatial-audio listener.
+- `MAX_PENDING_CUES` (const): const MAX_PENDING_CUES: 16 — Cues held while the browser keeps the audio context suspended, before any user gesture.
+- `createAudioEngine` (function): function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine — Game-owned sound catalog playback with bounded SFX reservations, spatial panning, and shared buses.
+
 ## @jgengine/core/audio/audioFalloff
 
 - `AudioBusDef` (interface): interface AudioBusDef { id: AudioBusId; gain?: number } — ⚠ undocumented · used by `withFeedbackCueSounds` (@jgengine/core/audio/feedbackCues): Merge the default feedback reactions into a game's sound catalog.
@@ -485,6 +514,23 @@
 - `computeFalloffGain` (function): function computeFalloffGain(distance: number, config: AudioFalloffConfig = {}): number — ⚠ undocumented
 - `distance3` (function): function distance3(a: { x: number; y: number; z: number }, b: { x: number; y: number; z: number }): number — ⚠ undocumented
 - `resolveEmitterGain` (function): function resolveEmitterGain(distance: number, sound: Pick<SoundDef, "gain" | "positional" | "falloff">, busGain: number): number — ⚠ undocumented
+
+## @jgengine/core/audio/audioProbe.view
+
+- `AudioProbe` (interface): interface AudioProbe — The read-only handle a capture script or devtools uses to prove the mix is producing sound.
+- `installAudioProbe` (function): function installAudioProbe(engine: AudioEngine): () => void — Publish the audio engine's own level, ambience and occlusion readouts on `window.__jgengineAudio`, so a headless capture can state measured values instead of guessing from a screenshot. Reads only; it never plays or changes a bus.
+
+## @jgengine/core/audio/busMix
+
+- `MASTER_MUTE_SETTING_ID` (const): const MASTER_MUTE_SETTING_ID: "sound.muted" — Persisted mute for the whole mix, next to `sound.master`.
+- `busMuteSettingId` (function): function busMuteSettingId(busId: string): string — Persisted mute for one bus, next to its `busVolumeSettingId(busId)` volume.
+
+## @jgengine/core/audio/captions
+
+- `Caption` (interface): interface Caption — One caption line as the overlay renders it.
+- `CaptionFeed` (interface): interface CaptionFeed — A capped, self-expiring list of caption lines that the accessibility captions setting turns on.
+- `CaptionFeedConfig` (interface): interface CaptionFeedConfig — Tunables for {@link createCaptionFeed}; all retunable at runtime.
+- `createCaptionFeed` (function): function createCaptionFeed(config: CaptionFeedConfig = {}): CaptionFeed — The caption list the feedback seam writes to and the HUD overlay reads: bounded, self-expiring, and deduped so three hits read as "Hit x3" rather than three copies. Pure state with an injected clock, so it runs headless.
 
 ## @jgengine/core/audio/doppler
 
@@ -503,6 +549,25 @@
 - `EngineLayersState` (interface): interface EngineLayersState — Serializable {@link EngineLayers} state.
 - `createEngineLayers` (function): function createEngineLayers(initial: EngineLayersConfig): EngineLayers — Layered engine sound: each set of rpm-keyed samples is equal-power crossfaded between the two samples bracketing the current rpm and pitched by `rpm / layer.rpm`; the on- and off-load sets are equal-power crossfaded by smoothed `engineLoad`. A config with only one load set plays it at every load. `play` drives `ctx.game.audio` directly, so a game needs no per-layer glue.
 
+## @jgengine/core/audio/eventFeedback
+
+- `AnyFeedbackBinding` (type): type AnyFeedbackBinding = { [Name in FeedbackEventName]: FeedbackBinding<Name> }[FeedbackEventName] — Any row of the event mapping, whichever event it binds.
+- `DEFAULT_FEEDBACK_BINDINGS` (const): const DEFAULT_FEEDBACK_BINDINGS: readonly AnyFeedbackBinding[] — The default mapping: each engine-announced gameplay event to the cue it raises. Damage to the local player reads as hurt, damage anywhere else as a hit; an event that carries a `position` (damage, death) pans and attenuates its cue, and one without still plays centred. A wave start has no event of its own, so a game announces it through `notify("wave")` or `attachWaveFeedback`.
+- `DEFAULT_FEEDBACK_REACTIONS` (const): const DEFAULT_FEEDBACK_REACTIONS: Readonly<Record<FeedbackCue, FeedbackReaction>> — The default reactions. They are data: a game overrides one through `audio.feedbackCues` (sound) or `createEventFeedback({ reactions })` (haptics, shake, caption), and replaces the mapping through `bindings` without touching the shell.
+- `EventFeedback` (interface): interface EventFeedback — The event-to-reaction seam. One instance per running world.
+- `EventFeedbackOptions` (interface): interface EventFeedbackOptions — Options a game or host may override.
+- `EventFeedbackState` (interface): interface EventFeedbackState — The cooldown clocks of an {@link EventFeedback}: when each cue last fired (ms, `now` clock) and how many triggers its cooldown folded away.
+- `FeedbackAnnouncer` (interface): interface FeedbackAnnouncer — The slice of `ctx.game.feedback` a wave runner needs, so this runs headless in a test.
+- `FeedbackBinding` (type): type FeedbackBinding<Name extends FeedbackEventName = FeedbackEventName> = { event: Name; cue: FeedbackCue; /** Default `"any"`. `"local"` only fires for the local player's own target/user/refusal. */ scope?: FeedbackScope; /** Overrides the cue's caption for this event, e.g. "You died". */ caption?… — One row of the event mapping: `event` announces, `cue` reacts.
+- `FeedbackDeps` (interface): interface FeedbackDeps — Everything the feedback seam reaches outside itself. Injected so it runs headless.
+- `FeedbackEventName` (type): type FeedbackEventName = | "combat.damage" | "entity.died" | "worldItem.picked_up" | "quest.completed" | "stat.levelUp" | "command.refused" — Event names the default mapping listens to; a game may add its own through `bindings`.
+- `FeedbackReaction` (interface): interface FeedbackReaction — One cue's reaction: what plays, what the hand feels, what the screen does, and what a caption says.
+- `FeedbackScope` (type): type FeedbackScope = "local" | "remote" | "any" — Which side of an event a binding reacts to: the local player's, someone else's, or either.
+- `ResolvedFeedback` (interface): interface ResolvedFeedback — A resolved trigger: pooled per binding, so a busy event stream allocates nothing to decide.
+- `attachEventFeedback` (function): function attachEventFeedback(events: Pick<GameEvents, "on">, feedback: EventFeedback, eventsToBind: readonly FeedbackEventName[] = Object.keys( DEFAULT_FEEDBACK_BINDINGS.reduce<Record<string, true>>((names, binding) => { names[binding.event] = true; return names; }, {}), ) as FeedbackEventName[]): (… — Subscribe the feedback seam to a game's event bus, including `feedback.cue` for moments the game announces itself. Returns the detach function; the mapping and reactions stay override-able through the seam's `retune`.
+- `attachWaveFeedback` (function): function attachWaveFeedback(runner: Pick<WaveRunner, "state" | "subscribe">, announce: FeedbackAnnouncer): () => void — Announce each new wave a {@link WaveRunner} starts as the `wave` cue, once per boundary. A wave has no event of its own, so this is the engine-side hookup for tower defense and wave survival games: `attachWaveFeedback(runner, ctx.game.feedback)`. Nothing is polled, the runner's own notification drives it, and one `update` that crosses two waves still fires once - the cue has a cooldown and the next boundary is announced by the next crossing.
+- `createEventFeedback` (function): function createEventFeedback(deps: FeedbackDeps, options: EventFeedbackOptions = {}): EventFeedback — Build the event-to-sound/haptic/shake/caption seam. The mapping is data ({@link DEFAULT_FEEDBACK_BINDINGS}), reactions are data ({@link DEFAULT_FEEDBACK_REACTIONS}), and the resolved trigger for each binding is allocated once - handling an event allocates only the caption string it actually shows, never per frame.
+
 ## @jgengine/core/audio/feedbackCues
 
 - `DEFAULT_FEEDBACK_CUE_SOUNDS` (const): const DEFAULT_FEEDBACK_CUE_SOUNDS: Readonly<Record<FeedbackCue, SoundDef>> — Short procedural reactions - no samples to load, so every game has impact feedback without authoring audio. Loud enough to read, quiet enough to sit under a weapon's own sound.
@@ -513,15 +578,31 @@
 - `feedbackCueSoundId` (function): function feedbackCueSoundId(cue: FeedbackCue): string — Catalog id a cue plays under: `feel.hit`, `feel.kill`, ... A game sound with that id replaces the default.
 - `withFeedbackCueSounds` (function): function withFeedbackCueSounds(sounds: Readonly<Record<string, SoundDef>> | undefined, buses: Readonly<Record<string, AudioBusDef>> | undefined, overrides?: FeedbackCueOverrides): { sounds: Record<string, SoundDef>; buses: Record<string, AudioBusDef> | undefined } — Merge the default feedback reactions into a game's sound catalog. A game sound already named `feel.<cue>` wins, then `overrides`, then the default. Adds the `sfx` bus (gain 0.9) when the game did not declare one, so the impact layer has its own volume and mute row.
 
+## @jgengine/core/audio/gestureResume.view
+
+- `installGestureResume` (function): function installGestureResume(engine: Pick<AudioEngine, "resume">, target: Pick<Document, "addEventListener" | "removeEventListener"> | null = typeof document === "undefined" ? null : document): () => void — Resume the audio context on the first real user gesture. Chrome keeps a freshly created `AudioContext` suspended until the page sees a trusted input, so pressing a key, tapping or clicking is the only moment sound may start; the engine then flushes any cue it held. One listener set per game, removed on unmount.
+
+## @jgengine/core/audio/loopParams
+
+- `MAX_LOOP_CUTOFF` (const): const MAX_LOOP_CUTOFF: 22050 — Highest live filter cutoff, Hz; the engine also caps it at the context's Nyquist frequency.
+- `MAX_LOOP_RATE` (const): const MAX_LOOP_RATE: 4 — Highest live playback-rate multiplier (two octaves above authored pitch).
+- `MIN_LOOP_CUTOFF` (const): const MIN_LOOP_CUTOFF: 10 — Lowest live filter cutoff, Hz.
+- `MIN_LOOP_RATE` (const): const MIN_LOOP_RATE: 0.25 — Pure clamps for retained-loop live control (#1051). Kept dependency-free so the playback-rate/gain windows are one testable source of truth the audio engine reads.
+
 ## @jgengine/core/audio/music
 
-- `MusicInstrument` (type): type MusicInstrument = | "strings" | "flute" | "harp" | "horn" | "choir" | "bell" | "timpani" | "bass" | "stacc" | "pad" | "lute" | "dulcimer" | "frameDrum" | "warDrum" | "reed" | "pipe" | "squareLead" | "woodBlock" | "tinyBell" | "piano" | "shaker" | "brassStab" | "cymSwell" | "oboe" — Named synthesised instrument. Each maps to a voice in the shell's instrument library (`@jgengine/shell/audio/musicVoices`); an unknown name falls back to a plain sine voice so a theme is never silent.
+- `MusicInstrument` (type): type MusicInstrument = | "strings" | "flute" | "harp" | "horn" | "choir" | "bell" | "timpani" | "bass" | "stacc" | "pad" | "lute" | "dulcimer" | "frameDrum" | "warDrum" | "reed" | "pipe" | "squareLead" | "woodBlock" | "tinyBell" | "piano" | "shaker" | "brassStab" | "cymSwell" | "oboe" — Named synthesised instrument. Each maps to a voice in the shell's instrument library (`@jgengine/core/audio/musicVoices.view`); an unknown name falls back to a plain sine voice so a theme is never silent.
 - `MusicTheme` (interface): interface MusicTheme — A through-composed, looping music track. `events` need not be sorted; the director schedules them ahead against a fixed anchor so loops are seamless.
 - `NoteEvent` (interface): interface NoteEvent — One scheduled note in a theme, positioned on the loop's quarter-note grid.
 - `ScheduledNote` (interface): interface ScheduledNote — A resolved note occurrence: the source note plus its absolute onset in seconds.
 - `mtof` (function): function mtof(midi: number): number — Standard equal-temperament MIDI-to-frequency (A4 = 440 Hz at MIDI 69).
 - `notesInWindow` (function): function notesInWindow(theme: MusicTheme, anchorSec: number, fromSec: number, toSec: number): ScheduledNote[] — Pure lookahead scheduler: every note occurrence of `theme` whose onset falls in the half-open window `(fromSec, toSec]`, given the theme's loop-zero at `anchorSec`. Handles any number of loop wraps, so a director calls it once per tick with a non-overlapping window and never double-schedules a note.
 - `themeLoopSeconds` (function): function themeLoopSeconds(theme: MusicTheme): number — Loop length of a theme in seconds.
+
+## @jgengine/core/audio/musicDirector.view
+
+- `CrossfadeOptions` (interface): interface CrossfadeOptions — Options for a music crossfade.
+- `MusicDirector` (class): class MusicDirector — Runs a set of looping {@link MusicTheme}s as crossfadeable layers on one shared Web Audio graph: master → compressor → destination, with a fixed convolution reverb send. `crossfadeTo` swaps the audible theme; a 110ms lookahead scheduler keeps each active layer's notes queued ahead of the clock so loops are seamless.
 
 ## @jgengine/core/audio/musicState
 
@@ -533,12 +614,21 @@
 - `createMusicState` (function): function createMusicState(): MusicStateSnapshot — Fresh state with no tier entered, so the first resolve always settles and reports `changed`.
 - `resolveMusicState` (function): function resolveMusicState(state: MusicStateSnapshot, input: MusicStateInput, config: MusicStateConfig): MusicStateResult — Pick the theme for the current intensity. Escalation is immediate; de-escalation waits for the tier's `holdMs` and needs the intensity to fall a `release` margin below the tier it is leaving.
 
+## @jgengine/core/audio/musicVoices.view
+
+- `playMusicNote` (function): function playMusicNote(ctx: Ctx, event: NoteEvent, when: number, spb: number, out: GainNode, transpose = 0): void — Play one theme note through its instrument voice into `out` (a per-layer gain node the director wires to master + reverb). `spb` is seconds-per-beat and `transpose` shifts the note in semitones for per-zone key changes. This is the engine's reusable instrument library; unknown instruments fall back to a sine.
+
 ## @jgengine/core/audio/occlusion
 
 - `AUDIO_OCCLUSION_DEFAULTS` (const): const AUDIO_OCCLUSION_DEFAULTS: { readonly maxTestsPerTick: 8; readonly intervalMs: 150; readonly attenuation: 0.55; readonly lowpassHz: 1200; readonly maxDistance: 60; } — Defaults for {@link AudioOcclusionConfig}.
 - `AudioOcclusionConfig` (interface): interface AudioOcclusionConfig — Geometry occlusion for retained positional loops: a cheap line test between the listener and an emitter behind blocking geometry, bounded so a busy scene can never turn audio into a raycast pass. The shell runs the test against the scene's blockable colliders; the engine applies the resulting attenuation and low-pass to the loop it already owns.
 - `ResolvedAudioOcclusionConfig` (interface): interface ResolvedAudioOcclusionConfig — A fully specified occlusion policy, with every unset field replaced by its default.
 - `resolveOcclusionConfig` (function): function resolveOcclusionConfig(config: AudioOcclusionConfig | false = {}): ResolvedAudioOcclusionConfig — Fill in the occlusion defaults and clamp each field to a workable range: a finite test budget, a non-negative retest interval and distance cap, and an attenuation in `0..1`.
+
+## @jgengine/core/audio/occlusionRaycast
+
+- `BlockingRaycastSource` (interface): interface BlockingRaycastSource — The narrow slice of the scene a line-of-hearing test needs.
+- `sceneLineBlocked` (function): function sceneLineBlocked(source: BlockingRaycastSource, from: Xyz, to: Xyz): boolean — Whether blocking world geometry (objects and wall segments, never creatures or terrain) lies between the listener and an emitter. One scene query per call; the engine owns how often it runs.
 
 ## @jgengine/core/audio/radio
 
@@ -578,6 +668,20 @@
 - `enclosurePreset` (function): function enclosurePreset(sample: EnclosureSample): ReverbPreset — Pick a preset from the space around the listener. A roof with walls on most sides is a room, or a hall when they are far; a roof alone (an awning, an overpass) is a room; open sky is outdoor.
 - `reverbZoneAt` (function): function reverbZoneAt(zones: readonly ReverbZoneDef[], x: number, y: number, z: number): ReverbZoneDef | null — The zone holding a point, or null. Spheres and boxes; the first listed wins where they overlap.
 
+## @jgengine/core/audio/reverbRack.view
+
+- `EnclosureRaycastSource` (interface): interface EnclosureRaycastSource — The narrow slice of the scene an enclosure test needs.
+
+## @jgengine/core/audio/speech.view
+
+- `SpeechChannel` (interface): interface SpeechChannel — Text-to-speech on the browser's synthesiser with stable per-key voice choice and a silent fallback.
+- `SpeechStats` (interface): interface SpeechStats — What the speech channel has done, for a debug readout or capture probe.
+- `SpeechSynthesisLike` (interface): interface SpeechSynthesisLike — The slice of `window.speechSynthesis` the channel drives; inject a fake in tests.
+- `SpeechUtteranceLike` (interface): interface SpeechUtteranceLike — The slice of `SpeechSynthesisUtterance` the channel writes.
+- `SpeechVoiceLike` (interface): interface SpeechVoiceLike — The slice of `SpeechSynthesisVoice` the channel reads.
+- `createSpeechChannel` (function): function createSpeechChannel(backend: { synth: SpeechSynthesisLike; Utterance: UtteranceCtor } | null = resolveSynth()): SpeechChannel — Speech for radio DJs, callers and announcers. Lines queue on the synthesiser; `stop` cancels the queue. Without a synthesiser or a single voice (headless Chrome, tests, some Linux browsers) a line is counted as dropped and nothing throws, so the game's on-screen text is the fallback.
+- `pickSpeechVoice` (function): function pickSpeechVoice(voices: readonly SpeechVoiceLike[], options: SpeakOptions = {}): SpeechVoiceLike | null — Pick a system voice: a name hint wins, else the voice key hashes to a stable choice among the language's voices.
+
 ## @jgengine/core/audio/stepCadence
 
 - `StepCadenceConfig` (interface): interface StepCadenceConfig — Distance-driven footstep cadence. Pure state-in/state-out: feed it how far a mover travelled this frame and it tells you how many steps landed, so foley stays locked to ground distance instead of a wall-clock timer that desyncs when speed changes.
@@ -597,6 +701,12 @@
 - `ToneVoice` (interface): interface ToneVoice — A pitched oscillator voice: a 12ms linear attack to `gain`, then an exponential decay to silence across `duration`, with an optional exponential pitch slide from `freq` to `slideTo`.
 - `patchDuration` (function): function patchDuration(patch: SynthPatch): number — Total wall-clock length of a patch in seconds — the latest voice end across all voices.
 
+## @jgengine/core/audio/synthEngine.view
+
+- `SynthPlayback` (interface): interface SynthPlayback — Scheduled procedural sources; stopping releases their source/filter/envelope graph.
+- `createNoiseBuffer` (function): function createNoiseBuffer(ctx: BaseAudioContext): AudioBuffer — Build the shared 1-second mono white-noise buffer every noise voice samples from.
+- `realizeSynthPatch` (function): function realizeSynthPatch(ctx: BaseAudioContext, out: AudioNode, noiseBuf: AudioBuffer, patch: SynthPatch): SynthPlayback — Realise a procedural cue on Web Audio: every voice is scheduled at `ctx.currentTime + delay` into `out`, summed into one one-shot. `noiseBuf` is the shared buffer from {@link createNoiseBuffer}.
+
 ## @jgengine/core/audio/voiceAllocator
 
 - `AudioVoice` (interface): interface AudioVoice — One reserved playback slot, including sources still loading.
@@ -606,6 +716,16 @@
 - `VoiceAllocatorSnapshot` (interface): interface VoiceAllocatorSnapshot — Detached allocator state; ids increase monotonically for deterministic oldest-first ties.
 - `VoiceAllocatorStorage` (interface): interface VoiceAllocatorStorage — Caller-owned reservation storage. Reads and writes use detached state.
 - `createVoiceAllocator` (function): function createVoiceAllocator(config: VoiceAllocatorConfig = {}): VoiceAllocator — Reserve bounded sound playback before fetching or constructing a graph. Equal priorities steal the oldest reservation; lower priorities cannot interrupt higher priorities. Policy is retunable.
+
+## @jgengine/core/buildings/GeneratedBuilding.draw
+
+- `BuildingBlock` (function): function BuildingBlock({ part, palette }: BuildingBlockProps): React.JSX.Element — ⚠ undocumented
+- `BuildingBlockProps` (interface): interface BuildingBlockProps { part: BuildingPartPlacement; palette?: BuildingMaterialPalette } — ⚠ undocumented
+- `BuildingMaterialPalette` (type): type BuildingMaterialPalette = Partial<Record<BuildingPartKind, BuildingSurface>> — Per part kind: a hex colour, or a colour plus tiled PBR maps (`BuildingSurfaceMaterial`).
+- `GeneratedBuildingData` (interface): interface GeneratedBuildingData { id: string; parts: readonly BuildingPartPlacement[] } — ⚠ undocumented
+- `InstancedBuildingPlacement` (interface): interface InstancedBuildingPlacement { building: GeneratedBuildingData; position?: readonly [number, number, number]; rotationY?: number; pivot?: readonly [number, number] } — ⚠ undocumented
+- `InstancedBuildings` (function): function InstancedBuildings({ buildings, palette, kit, resolveModelUrl, visibleKinds, }: InstancedBuildingsProps): React.JSX.Element | null — ⚠ undocumented
+- `InstancedBuildingsProps` (interface): interface InstancedBuildingsProps { buildings: readonly InstancedBuildingPlacement[]; palette?: BuildingMaterialPalette; kit?: BuildingKit; resolveModelUrl?: (model: string) => string; visibleKinds?: readonly BuildingPartKind[] } — ⚠ undocumented
 
 ## @jgengine/core/buildings/buildingGenerator
 
@@ -630,6 +750,13 @@
 - `defineBuildingKit` (function): function defineBuildingKit(input: BuildingKitInput): BuildingKit — Validates and normalizes a kit description, accepting bare model strings as single-field variants. Throws on empty variants or invalid editor material references/selectors before loading models.
 - `resolveBuildingKitPart` (function): function resolveBuildingKitPart(kit: BuildingKit | undefined, kind: BuildingPartKind, slot?: BuildingKitSlot): BuildingKitBinding — Resolves one generated part against a kit. Pass the placement's `kind` and its `kit` slot; the slot's `variant` wraps around the bound list, so a kit may carry any number of variants independent of the generator's `variants` counts.
 
+## @jgengine/core/buildings/buildingKitRegistry
+
+- `clearBuildingKits` (function): function clearBuildingKits(): void — Drops every registration. For tests and hot-reload teardown.
+- `getBuildingKit` (function): function getBuildingKit(id: string | undefined): BuildingKit | undefined — The kit registered under `id`, or `undefined` for an unset or unknown name (renders blocks).
+- `listBuildingKits` (function): function listBuildingKits(): string[] — Every registered kit id — the editor's kit picker and diagnostics read this.
+- `registerBuildingKit` (function): function registerBuildingKit(kit: BuildingKit): void — Registers a kit under its own `id`, replacing any kit already registered under that name.
+
 ## @jgengine/core/buildings/buildingLots
 
 - `BuildingLotOptions` (interface): interface BuildingLotOptions — Options for {@link deriveBuildingLots}.
@@ -639,6 +766,12 @@
 - `PlotVariant` (interface): interface PlotVariant extends WorldBounds — One weighted plot size a frontage can mix in: `w` along the road, `d` into the block.
 - `RoadFrontage` (interface): interface RoadFrontage — One road the frontage placer lines with buildings: a centerline polyline, its width and its sidewalks.
 - `deriveBuildingLots` (function): function deriveBuildingLots(options: BuildingLotOptions): PlacedBuildingLot[] — Derive street-aligned building lots (PLOTS) from road frontage. Each side of each road walks the frontage placing plots at `plot.w + spacing` pitch — rolling the next plot size from the weighted `footprint` variants when several are given — offset outward by `width / 2 + setback + plot.d / 2` and turned to face the road. The PLOT CONTRACT is enforced here, exactly: no two plots ever overlap (true oriented-rect separation with the spacing gap, so corners and curved frontage can't stack buildings), and no plot footprint ever touches any road corridor in `roads` or `avoid` — not just its own frontage road. Deterministic: identical inputs (including seed) always yield the identical list.
+
+## @jgengine/core/buildings/buildingSurface.draw
+
+- `TexturedBuildingSurface` (type): type TexturedBuildingSurface = BuildingSurfaceMaterial & { maps: BuildingSurfaceMaps } — A surface that names at least one map URL.
+- `surfaceHasMaps` (function): function surfaceHasMaps(surface: BuildingSurfaceMaterial | undefined): surface is TexturedBuildingSurface — True when the surface names at least one map URL, so the batch needs the textured path.
+- `surfaceKey` (function): function surfaceKey(surface: BuildingSurfaceMaterial | undefined): string — A stable key for bucketing instances that share one surface (same colour, maps, tiling, and response).
 
 ## @jgengine/core/buildings/buildings
 
@@ -715,12 +848,15 @@
 
 ## @jgengine/core/camera/shake/cameraShake
 
+- `CALIBRATED_TRAUMA_DECAY_PER_SECOND` (const): const CALIBRATED_TRAUMA_DECAY_PER_SECOND: 1.4 — Trauma decay the engine's impact presets are calibrated against, trauma/second.
 - `CameraRigShakeConfig` (interface): interface CameraRigShakeConfig — Camera-shake / trauma defaults (#28). Any rig reads the trauma channel; game systems feed it via `cameraShake()`.
 - `CameraShakeConfig` (interface): interface CameraShakeConfig — Configuration for {@link createCameraShake}. Every field has a game-feel default.
 - `CameraShakeController` (interface): interface CameraShakeController — A live, dt-driven, trauma-based camera shake controller.
 - `CameraShakeOffset` (interface): interface CameraShakeOffset — A per-frame camera shake offset: three positional axes plus three rotational axes (radians).
 - `CameraShakeSnapshot` (interface): interface CameraShakeSnapshot — Serializable state for save/restore and deterministic replay.
+- `cameraShake` (function): function cameraShake(amplitude: number, decayPerSecond?: number): void — Add camera trauma from anywhere. `decayPerSecond`, when given, retunes how fast it bleeds off.
 - `createCameraShake` (function): function createCameraShake(config: CameraShakeConfig = {}): CameraShakeController — A seeded, serializable, trauma-based camera shake / impulse controller. A game calls `add(amount, kind?)` on impacts (a hit, an explosion, a landing) to raise trauma in `[0, 1]`; `update(dt)` bleeds it off over time; and `offset()` returns a pooled `{ x, y, z, pitch, yaw, roll }` kick equal to `trauma^exponent` times per-axis maxima times deterministic seeded value-noise sampled along an internal time cursor. A shell consumer applies that offset to the active camera each frame so the view visibly shakes. Nothing here is genre-specific: `kind` is a free label the game styles, all amplitudes/decay are parameters, and `snapshot`/ `restore` round-trips the shake through a save. Deterministic from `seed`: the same seed and dt sequence reproduce the same offsets.
+- `defaultCameraShake` (const): const defaultCameraShake: CameraShakeController — The one camera-shake controller the rigs apply. Game systems with no React context (a `loop.onTick` reacting to `entity.died`) feed it through {@link cameraShake}; a rig reads it through {@link useCameraShake}. It is the core `createCameraShake` model, so a demo or test can drive the same controller directly.
 
 ## @jgengine/core/camera/shake/cameraShake.view
 
@@ -731,10 +867,7 @@
 
 ## @jgengine/core/camera/shake/shakeChannel.draw
 
-- `CALIBRATED_TRAUMA_DECAY_PER_SECOND` (const): const CALIBRATED_TRAUMA_DECAY_PER_SECOND: 1.4 — Trauma decay the engine's impact presets are calibrated against, trauma/second.
 - `CameraShakeContext` (const): const CameraShakeContext: React.Context<CameraShakeController> — Override which controller the rigs below apply; defaults to {@link defaultCameraShake}.
-- `cameraShake` (function): function cameraShake(amplitude: number, decayPerSecond?: number): void — Add camera trauma from anywhere. `decayPerSecond`, when given, retunes how fast it bleeds off.
-- `defaultCameraShake` (const): const defaultCameraShake: CameraShakeController — The one camera-shake controller the rigs apply. Game systems with no React context (a `loop.onTick` reacting to `entity.died`) feed it through {@link cameraShake}; a rig reads it through {@link useCameraShake}. It is the core `createCameraShake` model, so a demo or test can drive the same controller directly.
 
 ## @jgengine/core/city/cityBlocks
 
@@ -938,6 +1071,27 @@
 - `PAD_HAPTIC_EFFECT_MS` (const): const PAD_HAPTIC_EFFECT_MS: 120 — How long each rumble command lasts; refreshed before it runs out so a held level feels continuous.
 - `PadHapticState` (interface): interface PadHapticState — Last command sent to one pad.
 
+## @jgengine/core/input/OrientationHint.view
+
+- `OrientationHint` (function): function OrientationHint({ wanted }: { wanted: "landscape" | "portrait" }): React.JSX.Element | null — ⚠ undocumented
+
+## @jgengine/core/input/PointerOverlays.view
+
+- `ContextMenuView` (function): function ContextMenuView({ menu, x, y, onPick, onClose, }: { menu: ContextMenu; x: number; y: number; onPick: (verb: ContextVerb) => void; onClose: () => void; }): React.JSX.Element — ⚠ undocumented
+- `MarqueeBox` (function): function MarqueeBox({ rect }: { rect: ScreenRect }): React.JSX.Element — ⚠ undocumented
+
+## @jgengine/core/input/PointerProbe.draw
+
+- `PointerProbe` (function): function PointerProbe({ service, groundHeightAt }: { service: PointerService; groundHeightAt?: (x: number, z: number) => number }): null — Binds the pointer service to the live camera and scene; `groundHeightAt` lets clicks land on terrain.
+
+## @jgengine/core/input/TouchControlsOverlay.view
+
+- `TouchCodeSink` (interface): interface TouchCodeSink { onCodeDown(code: string): void; onCodeUp(code: string): void; onAnalog?(values: Readonly<Record<string, number>> | null): void } — ⚠ undocumented
+- `TouchControlsDock` (function): function TouchControlsDock({ scheme, sink, style, scale = 1, joystickVariant = "floating", shortSide, }: { scheme: TouchScheme; sink: TouchCodeSink; /** Player-selected skin; falls back to the scheme's game default. */ style?: TouchStyle; /** Multiplies the joystick and side-rail buttons; the thumb … — ⚠ undocumented
+- `TouchPlaySurface` (function): function TouchPlaySurface({ scheme, sink, yawRef, pitchRef, maxPitch, onPrimaryTap, }: { scheme: TouchScheme; sink: TouchCodeSink; yawRef: MutableRefObject<number>; pitchRef: MutableRefObject<number>; maxPitch: number; onPrimaryTap: () => void; }): React.JSX.Element — ⚠ undocumented
+- `TouchViewport` (interface): interface TouchViewport — Viewport size in CSS px the touch dock lays out against.
+- `touchDockClearance` (function): function touchDockClearance(scheme: TouchScheme | null, scale = 1, shortSide = DEFAULT_TOUCH_SHORT_SIDE): number — Tallest bottom-edge space the dock occupies (px, excluding device safe areas). The shell publishes it as `--jg-hud-dock-clearance`; {@link touchDockInsets} gives each bottom third its own value so HUD at bottom-centre is not pushed up by controls that only fill the corners.
+
 ## @jgengine/core/input/actionBindings
 
 - `ActionBinding` (interface): interface ActionBinding<TCode extends string = string> — Action-binding model: games bind semantic actions ("jump", "interact") to physical control codes; capture layers resolve raw events through this map so gameplay code never sees keycodes. Control codes are plain strings, so the same model serves keyboard codes, mouse buttons, touch controls, or gamepad inputs.
@@ -947,7 +1101,7 @@
 - `ActionCodes` (type): type ActionCodes<TCode extends string = string> = | readonly TCode[] | { hold?: readonly TCode[]; toggle?: readonly TCode[]; repeatMs?: number } — ⚠ undocumented
 - `ActionCodesMap` (type): type ActionCodesMap<TAction extends string = string, TCode extends string = string> = Record< TAction, ActionCodes<TCode> > — Maps each game action name to the input codes (hold/toggle keys, repeat rate) that trigger it. In a `defineGame({ input })`, pressing an action runs the same-named command with `{ yaw, pitch, aim, held }`; `repeatMs` re-fires it while held (automatic weapons), with `held: true` on those re-fires so one binding can drive a single-shot pistol (ignore `held`) and an automatic rifle (accept it).
 - `ActionStateBindingMap` (type): type ActionStateBindingMap<TAction extends string, TCode extends string = string> = Record< TAction, ActionBindingConfig<TCode> > — ⚠ undocumented
-- `ActionStateTracker` (interface): interface ActionStateTracker<TAction extends string> { handleDown(code: string): TAction | null; handleUp(code: string): TAction | null; isDown(action: TAction): boolean; wasPressed(action: TAction): boolean; endFrame(): void; reset(): void; rebind(map: ActionStateBindingMap<TAction, string>)… — ⚠ undocumented · used by `HudOnlyDriver` (@jgengine/core/hud/HudOnlyDriver.draw): Drives a HUD-only page: steps the sim with no 3D canvas so a capture can render just the game UI.
+- `ActionStateTracker` (interface): interface ActionStateTracker<TAction extends string> { handleDown(code: string): TAction | null; handleUp(code: string): TAction | null; isDown(action: TAction): boolean; wasPressed(action: TAction): boolean; endFrame(): void; reset(): void; rebind(map: ActionStateBindingMap<TAction, string>)… — ⚠ undocumented · used by `rebindGamepadPoll` (@jgengine/core/input/gamepadPoll): Swap the pad bindings mid-game (a context push) without touching keyboard state: release the codes of pad-held actions whose pad codes chang…
 - `DEFAULT_DRIVE_CODES` (const): const DEFAULT_DRIVE_CODES: { readonly throttle: readonly ["KeyW", "ArrowUp"]; readonly brake: readonly ["KeyS", "ArrowDown"]; readonly steerLeft: readonly ["KeyA", "ArrowLeft"]; readonly steerRight: readonly ["KeyD", "ArrowRight"]; readonly handbrake: readonly ["Space"]; } — Stock keyboard codes for driving a vehicle: WASD or the arrows for throttle, brake and steering, Space for the handbrake. Spread it as the base of a racing map and override what the game uses differently (`input: { ...DEFAULT_DRIVE_CODES, handbrake: ["KeyX"], hop: ["Space"] }`).
 - `DEFAULT_WALK_CODES` (const): const DEFAULT_WALK_CODES: { readonly moveForward: readonly ["KeyW"]; readonly moveBack: readonly ["KeyS"]; readonly moveLeft: readonly ["KeyA"]; readonly moveRight: readonly ["KeyD"]; readonly jump: readonly ["Space"]; } — Stock keyboard codes for the shell walk controller: WASD to move, Space to jump. Spread it as the base of a game's map (`input: { ...DEFAULT_WALK_CODES, sprint: ["ShiftLeft"], interact: ["KeyE"] }`) instead of re-typing the same five bindings in every game.
 - `ShouldDispatchActionInput` (interface): interface ShouldDispatchActionInput { pressed: boolean; down: boolean; repeatMs: number | undefined; lastFiredAt: number | null; now: number } — ⚠ undocumented
@@ -1007,6 +1161,12 @@
 - `controlGroupKey` (function): function controlGroupKey(digit: number, options: ControlGroupOptions = {}): string — The stable bookmark key for a control-group `digit` under `options.keyPrefix` — the key a caller passes to `SelectionBookmarks.bind`/`recall` to store a group without going through {@link resolveControlGroupIntent}.
 - `resolveControlGroupIntent` (function): function resolveControlGroupIntent(input: ControlGroupInput, options: ControlGroupOptions = {}): ControlGroupIntent — Resolve a control-group key press into a {@link ControlGroupIntent}: Ctrl+digit binds, a bare digit recalls, and a second recall of the same group within `doubleTapMs` focuses. Pure — the caller applies the intent against the store and its own focus hook, and records the returned recall for the next call.
 
+## @jgengine/core/input/gamepadMerge
+
+- `GamepadInputFrame` (interface): interface GamepadInputFrame — Per-frame gamepad actions and analog values ready to merge with another input source.
+- `mergeGamepadFrame` (function): function mergeGamepadFrame(base: GamepadInputFrame, gamepad: GamepadFrame): GamepadInputFrame — Merge one resolved gamepad frame with another input source's semantic state.
+- `mergeGamepadInput` (function): function mergeGamepadInput(frames: readonly GamepadFrame[], base: GamepadInputFrame = { held: [], analog: {} }): GamepadInputFrame — Pure reducer used by the shell and synthetic gamepad tests.
+
 ## @jgengine/core/input/gamepadModel
 
 - `DEFAULT_GAMEPAD_DEADZONE` (const): const DEFAULT_GAMEPAD_DEADZONE: GamepadDeadzone — Shell default stick deadzone.
@@ -1024,6 +1184,23 @@
 - `gamepadFeelOptions` (function): function gamepadFeelOptions(config: GamepadFeelConfig | undefined): ResolveGamepadFrameOptions — Resolve a {@link GamepadFeelConfig} into the options {@link resolveGamepadFrame} takes.
 - `gamepadGlyphSets` (const): const gamepadGlyphSets: Record<GamepadGlyphName, GamepadGlyphSet> — Lowercase alias for consumers that prefer data-oriented naming.
 - `resolveGamepadFrame` (function): function resolveGamepadFrame(snapshot: GamepadSample, bindings: GamepadBindings, options: ResolveGamepadFrameOptions, out: GamepadFrame = { held: [], analog: {} }): GamepadFrame — Resolve one sampled gamepad into held actions and shaped analog action values. Sticks go through the deadzone and curve; analog buttons (triggers) through `triggerDeadzone` and the same curve. Pass `out` to reuse a frame across polls; it is cleared and returned.
+
+## @jgengine/core/input/gamepadPoll
+
+- `GamepadPoll` (interface): interface GamepadPoll — Buffers one shell gamepad poll reuses across frames.
+- `GamepadRoute` (interface): interface GamepadRoute — Where each connected pad's input goes this frame; buffers are reused across frames.
+- `emptyGamepadPoll` (function): function emptyGamepadPoll(): GamepadPoll — Fresh buffers for {@link stepGamepadPoll}.
+- `emptyGamepadRoute` (function): function emptyGamepadRoute(): GamepadRoute — Fresh buffers for {@link routeGamepads}.
+- `gamepadCodes` (function): function gamepadCodes(bindings: ActionCodesMap): GamepadBindings — The pad-only slice of an action binding map, in the shape {@link resolveGamepadFrame} reads.
+- `rebindGamepadPoll` (function): function rebindGamepadPoll(poll: GamepadPoll, previous: GamepadBindings, next: GamepadBindings, tracker: ActionStateTracker<string>): void — Swap the pad bindings mid-game (a context push) without touching keyboard state: release the codes of pad-held actions whose pad codes changed (the next poll presses them under the new map), and keep the rest held.
+- `routeGamepads` (function): function routeGamepads(pads: ArrayLike<GamepadSample | null | undefined>, seats: Pick<LocalPlayers, "assign" | "slotForDevice" | "config">, route: GamepadRoute): GamepadRoute — Route pads to local seats: a claimed pad goes to its seat, an unclaimed pad hot-joins on a button press (stick drift never opens a seat), and with one seat every pad drives the primary player.
+- `stepGamepadPoll` (function): function stepGamepadPoll(poll: GamepadPoll, pads: ArrayLike<GamepadSample | null | undefined>, bindings: GamepadBindings, options: ResolveGamepadFrameOptions, tracker: ActionStateTracker<string>, analogIn: Readonly<Record<string, number>> | null): Readonly<Record<string, number>> | null — One poll: resolve every connected pad, press/release tracker codes for actions whose pad state changed, and return the analog map to publish (pad values max-merged over the other source's). Allocation-free after the first frame.
+
+## @jgengine/core/input/gamepadSource.draw
+
+- `GamepadSource` (function): function GamepadSource({ tracker, bindings, analogRef, input, feel, seats, onSeatJoin, seatsActive, }: { tracker: ActionStateTracker<string>; bindings: ActionCodesMap; analogRef: { current: Readonly<Record<string, number>> | null }; input: InputSnapshot; /** Game-level pad feel (`defineGame({ gamepa… — Poll browser gamepads and feed semantic actions into the shell tracker.
+- `mergeGamepadFrame` (function): function mergeGamepadFrame(base: GamepadInputFrame, gamepad: GamepadFrame): GamepadInputFrame — Merge one resolved gamepad frame with another input source's semantic state.
+- `mergeGamepadInput` (function): function mergeGamepadInput(frames: readonly GamepadFrame[], base: GamepadInputFrame = { held: [], analog: {} }): GamepadInputFrame — Pure reducer used by the shell and synthetic gamepad tests.
 
 ## @jgengine/core/input/gestureSurface
 
@@ -1047,6 +1224,10 @@
 - `setInputDevice` (function): function setInputDevice(device: InputDevice): void — Report the device the player just used. The shell's own input calls it; a game rarely needs to.
 - `useInputDevice` (function): function useInputDevice(): InputDevice — The device the player is using right now — keyboard/mouse, gamepad or touch — switching the moment they touch another one. Prompts use it to show `E`, `A` or a tap target.
 
+## @jgengine/core/input/inputSink
+
+- `InputSink` (interface): interface InputSink — Where the local player's per-frame input goes: discarded in single-player, sent to the authoritative host under `authority: "server"`.
+
 ## @jgengine/core/input/keyHint.view
 
 - `KeyHint` (function): function KeyHint({ children, className, style, }: { children: ReactNode; className?: string; style?: CSSProperties; }): React.JSX.Element | null — Wraps a keyboard/mouse control hint (a cap plus what it does). Renders nothing on coarse-pointer devices — a touchscreen has no keyboard, so the hint is noise and only fights the on-screen controls for space. The `data-jg-kbd-hint` marker is also hidden by an engine stylesheet as a hydration-safe backstop, so a hint stays hidden on touch even before this component's effect runs. Put the touch equivalent (a `TouchControls` dock, a tappable button) on the coarse branch instead.
@@ -1059,6 +1240,13 @@
 - `LookChannelState` (interface): interface LookChannelState — Plain JSON state of a {@link LookChannel}: the pending pixel deltas and the committed pose.
 - `LookDeltas` (interface): interface LookDeltas — Per-frame look channel shared between an event-driven capture layer (writer of raw pointer deltas) and a frame-driven controller (consumer), plus the latest committed pose for same-frame readers such as presence sync. Kept as plain mutable state on purpose: routing per-frame deltas through a reactive store would notify subscribers every frame for state no UI reads.
 - `createLookChannel` (function): function createLookChannel({ sensitivity, maxVerticalOffset = Infinity }: LookChannelOptions): LookChannel — ⚠ undocumented
+
+## @jgengine/core/input/mouseLook.draw
+
+- `MouseLookAim` (interface): interface MouseLookAim { yaw: number; pitch: number } — ⚠ undocumented
+- `MouseLookOptions` (interface): interface MouseLookOptions { sensitivity?: number; maxPitch?: number; pointerLock?: boolean; initialYaw?: number; initialPitch?: number } — ⚠ undocumented
+- `MouseLookTracker` (interface): interface MouseLookTracker — The analog mouse-look service chase/orbit-cam games hand-rolled (#282.8) — pointer-lock lifecycle plus delta accumulation into a yaw/pitch aim, decoupled from the first-person rig. Attach it to the canvas, read `state()` from `onTick`/`useFrame`, dispose on unmount; `setState` puts a saved aim back.
+- `createMouseLookTracker` (function): function createMouseLookTracker(element: HTMLElement, options: MouseLookOptions = {}): MouseLookTracker — ⚠ undocumented
 
 ## @jgengine/core/input/pointer
 
@@ -1082,6 +1270,19 @@
 - `normalizePointerToAxis` (function): function normalizePointerToAxis(clientX: number, clientY: number, rect: PointerSurfaceRect): PointerAxisState — Normalize client coordinates against a surface rect into a `PointerAxisState`, clamped to `[-1, 1]` per axis.
 - `pointerAxisValue` (function): function pointerAxisValue(binding: PointerAxisBinding, state: PointerAxisState | null | undefined): number | null — Resolve a pointer binding against the current pointer state: `null` when no pointer is active (callers fall back to their digital target), otherwise the deadzone/curve-shaped value in `[-1, 1]`.
 
+## @jgengine/core/input/pointerLock
+
+- `requestRawPointerLock` (function): function requestRawPointerLock(element: LockableElement): void — Request pointer lock with raw (unaccelerated) mouse deltas, falling back to a plain lock when the browser or OS rejects `unadjustedMovement`.
+
+## @jgengine/core/input/pointerService.draw
+
+- `POINTER_ENTITY_KEY` (const): const POINTER_ENTITY_KEY: "jgEntityId" — ⚠ undocumented
+- `POINTER_OBJECT_KEY` (const): const POINTER_OBJECT_KEY: "jgObjectId" — ⚠ undocumented
+- `PointerCursor` (interface): interface PointerCursor — Where the cursor is, in normalized device coordinates, and whether it is over the canvas at all.
+- `PointerHitFilter` (type): type PointerHitFilter = (object: THREE.Object3D) => boolean — ⚠ undocumented
+- `PointerService` (interface): interface PointerService { worldHit(): PointerHit | null; worldHitCenter(): PointerHit | null; screenOf(world: PointerVec3): {x: number; y: number} | null; cursorRay(): {origin: PointerVec3; direction: PointerVec3} | null; bind(deps: PointerDeps | null): void; stat… — ⚠ undocumented · used by `PointerProbe` (@jgengine/core/input/PointerProbe.draw): Binds the pointer service to the live camera and scene; `groundHeightAt` lets clicks land on terrain.
+- `createPointerService` (function): function createPointerService(): PointerService — ⚠ undocumented
+
 ## @jgengine/core/input/rebindSession
 
 - `RebindActionConfig` (interface): interface RebindActionConfig — One rebindable action as declared to {@link createRebindSession}. The `id` and `label` are FREE strings the session never interprets — the game owns their meaning and display text. `defaultCodes` is the authored binding the session resets back to.
@@ -1094,6 +1295,20 @@
 - `RebindSessionSnapshot` (interface): interface RebindSessionSnapshot — Serializable session state for save/restore.
 - `createRebindSession` (function): function createRebindSession(config: RebindSessionConfig): RebindSession — A conflict-aware key-remap session over the action-binding model — the missing editor behind a controls-settings menu. It takes the game's authored actions ({@link RebindActionConfig}s, or an {@link ActionCodesMap} + labels) plus the player's saved {@link BindingOverrides}, and tracks the *effective* binding per action (default merged with the override via `applyBindingOverrides`). `rows()` exposes each action's label, current key glyph (via `bindingLabel`), whether it is still the default, and which other actions it collides with; `conflicts()` groups every action pair sharing a normalized code (the value-add a raw override map can't give you). `beginCapture`/`capture`/`cancelCapture` drive a "press a key" rebind (codes normalized via `normalizeKeyCode`), `reset`/ `resetAll` return to defaults, and `overrides()`/`apply()` hand the caller the `BindingOverrides` to persist. Nothing here is genre-specific: action ids and labels are free strings the session never interprets, and hold/toggle/repeat binding shapes survive a rebind. `snapshot`/`restore` round-trips the editor (including the in-flight capture) through a save.
 
+## @jgengine/core/input/secondaryPointer
+
+- `ContextMenuEventLike` (interface): interface ContextMenuEventLike — What the shell needs from a `contextmenu` event to decide whether the browser's menu may open.
+
+## @jgengine/core/input/touchClusterLayout
+
+- `ClusterPlacement` (interface): interface ClusterPlacement — A button box's offset from the cluster's bottom-right corner, in px.
+- `DEFAULT_TOUCH_SHORT_SIDE` (const): const DEFAULT_TOUCH_SHORT_SIDE: 390 — Fallback short side when no viewport is measurable (tests, SSR): a phone held in landscape.
+- `DOCK_GEOMETRY` (const): const DOCK_GEOMETRY: { readonly joystick: 132; readonly joystickThumb: 52; readonly railButton: 64; readonly basePadding: 20; readonly edgeMargin: 12; } — Dock geometry constants shared by the renderer and the clearance math.
+- `TouchClusterLayout` (interface): interface TouchClusterLayout — Where every cluster button sits, plus the cluster box size.
+- `TouchClusterSizes` (interface): interface TouchClusterSizes — Button sizes for the thumb cluster, in CSS px, derived from the screen's short side.
+- `TouchDockInsets` (interface): interface TouchDockInsets — Bottom-edge space (px, excluding safe areas) the dock occupies in each third of the screen.
+- `UTILITY_INLINE_LIMIT` (const): const UTILITY_INLINE_LIMIT: 2 — Utility buttons past this count fold into one overflow button.
+
 ## @jgengine/core/input/touchControlsMode
 
 - `activeTouchControlsMode` (function): function activeTouchControlsMode(ctx: GameContext): string | null — The active touch control mode, `null` when the base config applies.
@@ -1105,6 +1320,11 @@
 - `TouchGestureTracker` (interface): interface TouchGestureTracker { begin(x: number, y: number, nowMs: number): void; move(x: number, y: number): {dx: number; dy: number} | null; beginHold(): boolean; end(nowMs: number): TouchGestureEnd; cancel(): TouchGestureEnd; isActive(): boolean; isHolding(): boolean… — ⚠ undocumented
 - `TouchGestureTuning` (interface): interface TouchGestureTuning — Single-finger gesture disambiguation for touch look controls: one touch stream drives look-drag, tap, and long-press-hold without fighting. Movement past the tap threshold commits the gesture to "look" and cancels tap/hold; a still finger that lifts quickly is a tap; a still finger held past the long-press delay is a hold. Timestamps are injected so the state machine stays pure; the capture layer owns timers and touch identifiers.
 - `createTouchGestureTracker` (function): function createTouchGestureTracker(tuning: TouchGestureTuning): TouchGestureTracker — ⚠ undocumented
+
+## @jgengine/core/input/touchIcons.view
+
+- `TouchButtonFace` (type): type TouchButtonFace = { kind: "glyph"; name: GameIconName | TouchGlyphName } | { kind: "text"; text: string } — What a touch button face shows: a drawn glyph, or a 1–3 character text glyph when nothing fits.
+- `TouchGlyphName` (type): type TouchGlyphName = keyof typeof TOUCH_GLYPHS — A glyph the touch dock draws itself, beyond the shared `GameIcon` catalog.
 
 ## @jgengine/core/input/touchScheme
 
@@ -1363,6 +1583,14 @@
 - `MovementReport` (interface): interface MovementReport — Deterministic walk-feel metrics. `Infinity` means the target was never reached.
 - `measureMovement` (function): function measureMovement(subject: MovementProbeSubject = {}, options: MovementProbeOptions = {}): MovementReport — Drives a walk character through fixed scenarios (standing start, release to stop, reversal, a standing jump, a tapped jump, a strafed jump) on the same integrator `stepPlayerMovement` uses, and reports the feel metrics a test can assert. Deterministic: the same subject and options always produce the same report, so a feel change shows up as a number moving. Collision, terrain and swimming are out of scope; it measures flat ground.
 
+## @jgengine/core/movement/movementSpeed
+
+- `MovementSpeedConfig` (interface): interface MovementSpeedConfig { baseSpeed: number; multiplierStat?: string; flatBonusStat?: string } — ⚠ undocumented · used by `applyStatDrivenSpeed`: Recomputes `movement.walkSpeed` for an entity from its stats and writes it back via `deps.entities.update`.
+- `MovementSpeedDeps` (interface): interface MovementSpeedDeps { stats: {get(instanceId: string, statId: string): StatValue | null}; entities: {get(id: string): {movement?: {walkSpeed?: number}} | null; update(id: string, patch: {movement: {walkSpeed: number}}): boolean;} } — ⚠ undocumented · used by `applyStatDrivenSpeed`: Recomputes `movement.walkSpeed` for an entity from its stats and writes it back via `deps.entities.update`.
+- `MovementSpeedModifiers` (interface): interface MovementSpeedModifiers { multiplier?: number; flatBonus?: number } — ⚠ undocumented · used by `deriveWalkSpeed`: `base * (multiplier ?? 1) + (flatBonus ?? 0)`, clamped to never go negative.
+- `applyStatDrivenSpeed` (function): function applyStatDrivenSpeed(deps: MovementSpeedDeps, instanceId: string, config: MovementSpeedConfig): boolean — Recomputes `movement.walkSpeed` for an entity from its stats and writes it back via `deps.entities.update`. Either stat id is optional; an omitted or unresolved stat contributes its neutral value (multiplier 1, flat bonus 0) rather than failing. Returns false only when the entity itself doesn't exist.
+- `deriveWalkSpeed` (function): function deriveWalkSpeed(base: number, modifiers: MovementSpeedModifiers): number — `base * (multiplier ?? 1) + (flatBonus ?? 0)`, clamped to never go negative.
+
 ## @jgengine/core/movement/playerMovement
 
 - `PlayerMovementSnapshot` (interface): interface PlayerMovementSnapshot — One player's serializable movement state: heading, facing, velocities, jump latch and controller capsule. The entity pose lives in the entity store.
@@ -1392,6 +1620,10 @@
 ## @jgengine/core/movement/serverStep
 
 - `serverStep` (function): function serverStep(ctx: GameContext, userId: string, frame: InputFrame, dt: number, tuning?: PlayerMovementTuning): void — Advance one authoritative player's movement using the same controller as the shell.
+
+## @jgengine/core/movement/shellMovement
+
+- `SHELL_MOVEMENT_ACTIONS` (const): const SHELL_MOVEMENT_ACTIONS: readonly ["moveForward", "moveBack", "moveLeft", "moveRight", "jump"] — Movement action names the shell drives via the walk controller.
 
 ## @jgengine/core/movement/solidObstacles
 
@@ -1894,6 +2126,21 @@
 - `WorldColliderSync` (interface): interface WorldColliderSync — Handle for synchronizing authored static world collision with a physics backend.
 - `syncWorldColliders` (function): function syncWorldColliders(backend: PhysicsBackend, ctx: GameContext): WorldColliderSync — Mirrors static scene-object physical colliders, `ctx.world.solids` and the context's ground field into a physics backend.
 
+## @jgengine/core/placement/PlacementGhost.draw
+
+- `PlacementGhost` (function): function PlacementGhost({ preview, height = 1, validColor = "#34d399", invalidColor = "#f87171", }: PlacementGhostProps): React.JSX.Element | null — Cursor-following build ghost: valid/invalid tint from a placement controller preview.
+- `PlacementGhostProps` (interface): interface PlacementGhostProps — Props for {@link PlacementGhost}: the placement preview to draw and its valid/invalid tint.
+
+## @jgengine/core/placement/TransformGizmo.draw
+
+- `DEFAULT_ROTATION_SNAP` (const): const DEFAULT_ROTATION_SNAP: number — Default rotation snap increment (radians) when callers don't configure one.
+- `TransformGizmo` (const): const TransformGizmo: React.MemoExoticComponent<({ position, rotationY, mode, snapMode, gridSize, space, rotationSnap, scaleSnap, lift, size, groundSnap, onDraggingChange, onRelease, }: TransformGizmoProps) => React.JSX.Element> — Runtime selection/move gizmo shared by games and the editor. Wraps TransformControls; callers own selection and commit side-effects.
+- `TransformGizmoMode` (type): type TransformGizmoMode = "translate" | "rotate" | "scale" — Active TransformControls mode for the runtime selection gizmo.
+- `TransformGizmoPose` (interface): interface TransformGizmoPose — Pose reported by {@link TransformGizmo} when the user releases a drag.
+- `TransformGizmoProps` (interface): interface TransformGizmoProps — Props for the shared runtime/editor selection gizmo.
+- `TransformGizmoSnap` (type): type TransformGizmoSnap = "grid" | "free" | "ground" — Snap policy: grid quantize, free drag, or ground-height sample on release.
+- `TransformGizmoSpace` (type): type TransformGizmoSpace = "world" | "local" — Gizmo handle orientation: world axes, or the target's local (yaw-rotated) axes.
+
 ## @jgengine/core/placement/place
 
 - `BoardGround` (interface): interface BoardGround — A 2D surface you look at — grid games, solitaire, tabletop. Physics is often zero-gravity or omitted; the game owns the face it draws on the board.
@@ -1957,7 +2204,7 @@
 - `PlacementSlot` (interface): interface PlacementSlot — A fixed buildable slot the placement controller snaps to instead of grid/free positioning.
 - `PlacementVec3` (type): type PlacementVec3 = readonly [number, number, number] — ⚠ undocumented
 - `SnapMode` (type): type SnapMode = "grid" | "free" | "surface" — ⚠ undocumented
-- `createPlacementController` (function): function createPlacementController(config: PlacementControllerConfig): PlacementController — Headless placement ghost: hover → valid/invalid preview, rotate, grid/free/surface snap, commit. Pair with `@jgengine/shell/buildings` `PlacementGhost` and {@link placeAssetFromCommit}.
+- `createPlacementController` (function): function createPlacementController(config: PlacementControllerConfig): PlacementController — Headless placement ghost: hover → valid/invalid preview, rotate, grid/free/surface snap, commit. Pair with `PlacementGhost` (`./PlacementGhost.draw`) and {@link placeAssetFromCommit}.
 - `quarterTurnsToRotationY` (function): function quarterTurnsToRotationY(quarterTurns: number): number — Maps 0–3 quarter turns onto radians for ghost/commit rotation.
 
 ## @jgengine/core/procedural
@@ -2358,14 +2605,6 @@
 - `SeatRef` (interface): interface SeatRef { mountId: string; seatId: string } — ⚠ undocumented
 - `createMountController` (function): function createMountController(): MountController — ⚠ undocumented
 
-## @jgengine/core/scene/movementSpeed
-
-- `MovementSpeedConfig` (interface): interface MovementSpeedConfig { baseSpeed: number; multiplierStat?: string; flatBonusStat?: string } — ⚠ undocumented · used by `applyStatDrivenSpeed`: Recomputes `movement.walkSpeed` for an entity from its stats and writes it back via `deps.entities.update`.
-- `MovementSpeedDeps` (interface): interface MovementSpeedDeps { stats: {get(instanceId: string, statId: string): StatValue | null}; entities: {get(id: string): {movement?: {walkSpeed?: number}} | null; update(id: string, patch: {movement: {walkSpeed: number}}): boolean;} } — ⚠ undocumented · used by `applyStatDrivenSpeed`: Recomputes `movement.walkSpeed` for an entity from its stats and writes it back via `deps.entities.update`.
-- `MovementSpeedModifiers` (interface): interface MovementSpeedModifiers { multiplier?: number; flatBonus?: number } — ⚠ undocumented · used by `deriveWalkSpeed`: `base * (multiplier ?? 1) + (flatBonus ?? 0)`, clamped to never go negative.
-- `applyStatDrivenSpeed` (function): function applyStatDrivenSpeed(deps: MovementSpeedDeps, instanceId: string, config: MovementSpeedConfig): boolean — Recomputes `movement.walkSpeed` for an entity from its stats and writes it back via `deps.entities.update`. Either stat id is optional; an omitted or unresolved stat contributes its neutral value (multiplier 1, flat bonus 0) rather than failing. Returns false only when the entity itself doesn't exist.
-- `deriveWalkSpeed` (function): function deriveWalkSpeed(base: number, modifiers: MovementSpeedModifiers): number — `base * (multiplier ?? 1) + (flatBonus ?? 0)`, clamped to never go negative.
-
 ## @jgengine/core/scene/objectQuery
 
 - `ObjectQueryBroadphase` (interface): interface ObjectQueryBroadphase — Optional broadphase for large object sets — typically `ObjectStore.inBox`.
@@ -2563,20 +2802,6 @@
 - `PerceptionStimulus` (interface): interface PerceptionStimulus — An event that can seed an observer's memory.
 - `PerceptionStimulusKind` (type): type PerceptionStimulusKind = "sight" | "sound" | "damage" | "scent" — The kinds of stimulus the perception service can retain. A `scent` (blood, bait, fuel) carries `scentRange × loudness` and, like a sound, needs no clear line: it seeps around corners.
 - `createPerception` (function): function createPerception(initial: PerceptionConfig): PerceptionService — Creates a deterministic sight, sound, and damage perception service with expiring target memory. Signals are judged in the order the caller supplies them, never from the wall clock.
-
-## @jgengine/core/sensor/recordingBuffer
-
-- `RecordingBuffer` (interface): interface RecordingBuffer<T> { append(t: number, data: T): void; seek(t: number): RecordingFrame<T> | null; seekPair(t: number): RecordingPair<T>; range(fromT: number, toT: number): RecordingFrame<T>[]; clear(): void; duration(): number; frames(): readonly RecordingFra… — ⚠ undocumented · used by `useSessionRecorder` (@jgengine/shell/replay/useSessionRecorder): Session-recording buffer (#120) for replay / photo mode / kill-cam: records an entity's pose on game-time every frame into a `RecordingBuffe…
-- `RecordingBufferOptions` (interface): interface RecordingBufferOptions { maxDurationSeconds?: number; maxFrames?: number } — ⚠ undocumented · used by `useSessionRecorder` (@jgengine/shell/replay/useSessionRecorder): Session-recording buffer (#120) for replay / photo mode / kill-cam: records an entity's pose on game-time every frame into a `RecordingBuffe…
-- `RecordingFrame` (interface): interface RecordingFrame<T> { t: number; data: T } — ⚠ undocumented
-- `RecordingPair` (interface): interface RecordingPair<T> { before: RecordingFrame<T> | null; after: RecordingFrame<T> | null } — ⚠ undocumented
-
-## @jgengine/core/sensor/replayLoop
-
-- `RecordedPoseLike` (interface): interface RecordedPoseLike { position: readonly [number, number, number]; rotationY?: number } — ⚠ undocumented
-- `ReplayEntityDeps` (interface): interface ReplayEntityDeps { has(id: string): boolean; spawn(id: string): void; setPose(id: string, pose: {position: readonly [number, number, number]; rotationY?: number; dt?: number}): unknown; despawn(id: string): unknown } — ⚠ undocumented
-- `ReplayLoop` (interface): interface ReplayLoop<T> — Replays a finished `RecordingBuffer` on a loop — modulo-time seek, frame interpolation, and spawn grace, the pieces every ghost-lap/echo feature hand-rolled (#286.4). `sample(t)` is a pure function of absolute time; `null` means "the ghost isn't on track right now".
-- `ReplayLoopOptions` (interface): interface ReplayLoopOptions<T> { interpolate?: (before: T, after: T, alpha: number) => T; spawnGraceSeconds?: number } — ⚠ undocumented
 
 ## @jgengine/core/sensor/revealQuery
 
@@ -3306,7 +3531,7 @@
 - `MountController` (class): class MountController — Mount / rideable control-transfer (issue #83). Registers rideables (each with one or more seats — a control seat drives, the rest ride) and tracks who is on what. It owns no camera or physics: game code reads `cameraTarget(riderId)` to point the follow camera at the mount, and `driveTarget(riderId)` to route that rider's {@link import("../input/axisInput").AxisInput}-driven input at the mount's movement kit — the same seam a horse, a truck, or a shared multi-seat ship all plug into.
 - `MoveOrderPayload` (interface): interface MoveOrderPayload — Payload for a move order: go to a point and complete on arrival.
 - `MovementPose` (type): type MovementPose = "standing" | "crouch" | "prone" | "running" — ⚠ undocumented
-- `MusicInstrument` (type): type MusicInstrument = | "strings" | "flute" | "harp" | "horn" | "choir" | "bell" | "timpani" | "bass" | "stacc" | "pad" | "lute" | "dulcimer" | "frameDrum" | "warDrum" | "reed" | "pipe" | "squareLead" | "woodBlock" | "tinyBell" | "piano" | "shaker" | "brassStab" | "cymSwell" | "oboe" — Named synthesised instrument. Each maps to a voice in the shell's instrument library (`@jgengine/shell/audio/musicVoices`); an unknown name falls back to a plain sine voice so a theme is never silent.
+- `MusicInstrument` (type): type MusicInstrument = | "strings" | "flute" | "harp" | "horn" | "choir" | "bell" | "timpani" | "bass" | "stacc" | "pad" | "lute" | "dulcimer" | "frameDrum" | "warDrum" | "reed" | "pipe" | "squareLead" | "woodBlock" | "tinyBell" | "piano" | "shaker" | "brassStab" | "cymSwell" | "oboe" — Named synthesised instrument. Each maps to a voice in the shell's instrument library (`@jgengine/core/audio/musicVoices.view`); an unknown name falls back to a plain sine voice so a theme is never silent.
 - `MusicTheme` (interface): interface MusicTheme — A through-composed, looping music track. `events` need not be sorted; the director schedules them ahead against a fixed anchor so loops are seamless.
 - `NOCLIP_FLIGHT_TUNING` (const): const NOCLIP_FLIGHT_TUNING: FreeFlightTuning — Preset for noclip — weightless, noclips, yaw-relative with independent vertical.
 - `NavCrowd` (interface): interface NavCrowd — Agents that cross an editor-baked nav mesh: each one plans a corridor with {@link NavRuntime}, walks the funnel-smoothed waypoints, and keeps its distance through reciprocal velocity obstacle avoidance. Goals, arrivals and replans are serializable; a mesh edit only re-plans the agents whose remaining route actually crossed the rebuilt region.
@@ -3431,8 +3656,8 @@
 - `RainEnvironmentDescriptor` (type): type RainEnvironmentDescriptor = { kind: "rain" } & Required< Pick<RainEnvironmentConfig, "area" | "density" | "speed" | "dropLength" | "wind" | "color" | "width" | "opacity"> > — ⚠ undocumented · used by `rain`: Declares a rainfall weather effect for `environment()` — area, density, speed, wind, and drop width/opacity.
 - `Range` (interface): interface Range — A `[min, max]` range a spawned particle draws uniformly from.
 - `RecallBookmarkOptions` (interface): interface RecallBookmarkOptions — Caller hooks for {@link recallSelectionBookmark} — kept out of the store so focus and validity stay genre-owned.
-- `RecordingBuffer` (interface): interface RecordingBuffer<T> { append(t: number, data: T): void; seek(t: number): RecordingFrame<T> | null; seekPair(t: number): RecordingPair<T>; range(fromT: number, toT: number): RecordingFrame<T>[]; clear(): void; duration(): number; frames(): readonly RecordingFra… — ⚠ undocumented · used by `useSessionRecorder` (@jgengine/shell/replay/useSessionRecorder): Session-recording buffer (#120) for replay / photo mode / kill-cam: records an entity's pose on game-time every frame into a `RecordingBuffe…
-- `RecordingBufferOptions` (interface): interface RecordingBufferOptions { maxDurationSeconds?: number; maxFrames?: number } — ⚠ undocumented · used by `useSessionRecorder` (@jgengine/shell/replay/useSessionRecorder): Session-recording buffer (#120) for replay / photo mode / kill-cam: records an entity's pose on game-time every frame into a `RecordingBuffe…
+- `RecordingBuffer` (interface): interface RecordingBuffer<T> { append(t: number, data: T): void; seek(t: number): RecordingFrame<T> | null; seekPair(t: number): RecordingPair<T>; range(fromT: number, toT: number): RecordingFrame<T>[]; clear(): void; duration(): number; frames(): readonly RecordingFra… — ⚠ undocumented · used by `useSessionRecorder` (@jgengine/core/replay/useSessionRecorder.draw): Session-recording buffer (#120) for replay / photo mode / kill-cam: records an entity's pose on game-time every frame into a `RecordingBuffe…
+- `RecordingBufferOptions` (interface): interface RecordingBufferOptions { maxDurationSeconds?: number; maxFrames?: number } — ⚠ undocumented · used by `useSessionRecorder` (@jgengine/core/replay/useSessionRecorder.draw): Session-recording buffer (#120) for replay / photo mode / kill-cam: records an entity's pose on game-time every frame into a `RecordingBuffe…
 - `RegionContribution` (interface): interface RegionContribution — Original footprint identity and capacity retained when regions pool.
 - `RegionField` (interface): interface RegionField<T = unknown> extends TerrainField { sampleRegion(x: number, z: number): RegionSample<T>; readonly regions: readonly RegionDef<T>[]; readonly seaLevel: number; readonly seed: number } — ⚠ undocumented
 - `RegionFootprint` (interface): interface RegionFootprint — Caller-owned logical footprint. Cells must be unique, safe integer addresses and cardinally connected.
@@ -3760,7 +3985,7 @@
 - `createPathFollow` (function): function createPathFollow(config: PathFollowConfig): PathFollowState — ⚠ undocumented
 - `createPerception` (function): function createPerception(initial: PerceptionConfig): PerceptionService — Creates a deterministic sight, sound, and damage perception service with expiring target memory. Signals are judged in the order the caller supplies them, never from the wall clock.
 - `createPlacedStructureStore` (function): function createPlacedStructureStore(): PlacedStructureStore — ⚠ undocumented
-- `createPlacementController` (function): function createPlacementController(config: PlacementControllerConfig): PlacementController — Headless placement ghost: hover → valid/invalid preview, rotate, grid/free/surface snap, commit. Pair with `@jgengine/shell/buildings` `PlacementGhost` and {@link placeAssetFromCommit}.
+- `createPlacementController` (function): function createPlacementController(config: PlacementControllerConfig): PlacementController — Headless placement ghost: hover → valid/invalid preview, rotate, grid/free/surface snap, commit. Pair with `PlacementGhost` (`./PlacementGhost.draw`) and {@link placeAssetFromCommit}.
 - `createPlotPermissions` (function): function createPlotPermissions(config: PlotPermissionConfig): PlotPermissions — ⚠ undocumented
 - `createPoliceResponse` (function): function createPoliceResponse(config: PoliceResponseConfig): PoliceResponse — The wanted level a crime sandbox needs, over the shared heat curve: a crime raises heat only while a witness holds the suspect in view, the heat bleeds on a stated linear curve once the suspect has been out of every witness's sight for `escapeSeconds`, the tier table decides what police do (patrol → investigate → pursue → roadblock), the search area sits where the suspect was last seen and grows while the trail is cold, and a roadblock tier cordons it with authored sites off the lane graph. Heat, tiers and curves are caller policy; witness facts come from `sensor/perception` memory (`sourceId`/`sourceTick` kept), so there is no second sight path.
 - `createPoseState` (function): function createPoseState(resolveAllowed: (instanceId: string) => PoseAllowedStates | null | undefined): PoseState — Stance/pose transitions — stand, crouch, prone — that change the hitbox and movement.

@@ -1,6 +1,6 @@
 /**
  * Named synthesised instrument. Each maps to a voice in the shell's instrument
- * library (`@jgengine/shell/audio/musicVoices`); an unknown name falls back to a
+ * library (`@jgengine/core/audio/musicVoices.view`); an unknown name falls back to a
  * plain sine voice so a theme is never silent.
  */
 export type MusicInstrument =

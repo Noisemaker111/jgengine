@@ -72,18 +72,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `readModelAnimationParams` (function) · `import { readModelAnimationParams } from "@jgengine/shell/render/useModelAnimation"`
 
-## attach-event-feedback — one call wires every announced combat/loot/objective/refusal event to its reaction
-
-- `attachEventFeedback` (function) · `import { attachEventFeedback } from "@jgengine/shell/audio/eventFeedback"`
-
-## attach-wave-feedback — fire the wave cue once whenever a wave runner crosses into a new wave
-
-- `attachWaveFeedback` (function) · `import { attachWaveFeedback } from "@jgengine/shell/audio/eventFeedback"`
-
-## audio-probe — read the live master RMS/peak, bus gains, ambience zone mix and occlusion cost from a running page for capture and diagnostics
-
-- `installAudioProbe` (function) · `import { installAudioProbe } from "@jgengine/shell/audio/audioProbe"`
-
 ## authored-flocks — render authored habitat agents through caller-selected animated species models with velocity orientation and bounded model lifetime
 
 - `AuthoredFlocks` (function) · `import { AuthoredFlocks } from "@jgengine/shell/world/AuthoredFlocks"`
@@ -108,10 +96,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## balance-ibl-lighting — trim flat ambient under IBL and add a key light to directionless lighting
 
 - `balanceLightingForIbl` (function) · `import { balanceLightingForIbl } from "@jgengine/core/render/lightingBalance"`
-
-## bounded-spatial-audio — play positional or flat cues with listener orientation, voice budgets, and per-source cleanup
-
-- `createAudioEngine` (function) · `import { createAudioEngine } from "@jgengine/shell/audio/audioEngine"`
 
 ## browser-suspension — observe blur, hidden-page and pointer-lock loss while the game owns pause and input policy
 
@@ -141,14 +125,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## canvas-cover — stop world rendering behind a full-screen surface while input, audio, the HUD and the menu keep running
 
 - `canvasCover` (const) · `import { canvasCover } from "@jgengine/react"`
-
-## caption-feed — bounded, self-expiring, deduped caption lines for the accessibility captions overlay
-
-- `createCaptionFeed` (function) · `import { createCaptionFeed } from "@jgengine/shell/audio/captions"`
-
-## caption-overlay — render the caption feed as a themed, screen-reader-announced line stack gated by the captions accessibility setting
-
-- `CaptionOverlay` (function) · `import { CaptionOverlay } from "@jgengine/shell/audio/CaptionOverlay"`
 
 ## capture-canvas — read the live R3F frame to a PNG data URL (needs preserveDrawingBuffer)
 
@@ -319,10 +295,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `useEntityRenderCues` (function) · `import { useEntityRenderCues } from "@jgengine/shell/render/useEntityRenderCues"`
 
-## event-feedback — map announced gameplay events (damage, kill, pickup, objective, wave, refusal) to a sound, gamepad pulse, camera shake and caption through one data mapping
-
-- `createEventFeedback` (function) · `import { createEventFeedback } from "@jgengine/shell/audio/eventFeedback"`
-
 ## event-meter-hud — render a core event/heat meter's live value, fraction, tier, and ready state in a HUD gauge
 
 - `useEventMeter` (function) · `import { useEventMeter } from "@jgengine/react"`
@@ -330,10 +302,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## fast-travel-menu — discovered-destinations picker grouped by region with distances, a discovery counter, and a travel callback
 
 - `FastTravelMenu` (function) · `import { FastTravelMenu } from "@jgengine/react"`
-
-## feedback-host — mount event feedback, gesture-gated audio and captions for a running game in one component
-
-- `FeedbackHost` (function) · `import { FeedbackHost } from "@jgengine/shell/audio/FeedbackHost"`
 
 ## floating-text — overlay that renders on-screen floating combat text with per-kind color, alpha, and pop-in scale
 
@@ -374,10 +342,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## game-slider — drawn game slider (groove or pips) with keyboard, drag and screen reader support, no browser range input
 
 - `GameSlider` (function) · `import { GameSlider } from "@jgengine/react"`
-
-## gesture-resume — unlock the audio context on the first pointer/key/touch gesture, so pre-gesture cues play instead of vanishing
-
-- `installGestureResume` (function) · `import { installGestureResume } from "@jgengine/shell/audio/gestureResume"`
 
 ## ground-edge-fade — fade merged ground layers into the terrain at their outer edge, keeping inner seams crisp
 
@@ -522,10 +486,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## interior-dressing — render a planned interior's trims, pipes, cables, lamps and stains in a few instanced draws
 
 - `InteriorDressing` (function) · `import { InteriorDressing } from "@jgengine/shell/render/InteriorDressing"`
-
-## join-gate — block gameplay until joined and show failures with retry
-
-- `JoinGate` (function) · `import { JoinGate } from "@jgengine/shell/JoinGate"`
 
 ## key-hint — keyboard/mouse control hint that hides itself on touch
 
@@ -777,10 +737,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `applyModelWind` (function) · `import { applyModelWind } from "@jgengine/shell/render/modelWind"`
 
-## multiplayer-p2p — bootstrap a playable authoritative world for browser peer co-op
-
-- `resolvePeerShellMultiplayer` (function) · `import { resolvePeerShellMultiplayer } from "@jgengine/shell/multiplayer"`
-
 ## nameplates — billboarded name + HP bar over nearby entities
 
 - `WorldNameplates` (function) · `import { WorldNameplates } from "@jgengine/core/hud/WorldHud.draw"`
@@ -869,14 +825,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `PhotoModeControls` (function) · `import { PhotoModeControls } from "@jgengine/react"`
 
-## placement-ghost — render valid/invalid placement preview mesh
-
-- `PlacementGhost` (function) · `import { PlacementGhost } from "@jgengine/shell/placement"`
-
 ## play-script — write a game's behaviour as a tick-based script with declarative assertions instead of playing it in a browser
 
-- `createPlayScript` (function) · `import { createPlayScript } from "@jgengine/shell/play"`
-- `runPlayScript` (function) · `import { runPlayScript } from "@jgengine/shell/play"`
+- `createPlayScript` (function) · `import { createPlayScript } from "@jgengine/core/play/script"`
+- `runPlayScript` (function) · `import { runPlayScript } from "@jgengine/core/play/playRunner.draw"`
 
 ## popover — viewport-flipping, viewport-clamped anchored popover/tooltip shell
 
@@ -1060,17 +1012,9 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `Trans` (function) · `import { Trans } from "@jgengine/react"`
 
-## transform-gizmo — in-game select/move/rotate/scale gizmo
-
-- `TransformGizmo` (const) · `import { TransformGizmo } from "@jgengine/shell/placement"`
-
 ## triangle-attribution — per-model triangle table with instance counts, for perf probes
 
 - `attributeTriangles` (function) · `import { attributeTriangles } from "@jgengine/shell/render/triangleAttribution"`
-
-## tune-control-labels — find a Tune panel field by its control name (drive --fill, screen readers)
-
-- `tuneControlLabels` (function) · `import { tuneControlLabels } from "@jgengine/shell/devtools/TunePanel"`
 
 ## ui-kit-arcade — retro 8-bit arcade UI kit: stepped pixel frames, JRPG windows, depth buttons, hearts, score popups, chiptune cues
 

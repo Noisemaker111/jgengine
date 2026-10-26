@@ -1,4 +1,4 @@
-import type { CommandDef } from "@jgengine/core/runtime/commandRunner";
+import type { CommandDef } from "@jgengine/core/commands/commandRunner";
 import { markPlayerDirty, type GameRuntimeSnapshot } from "@jgengine/core/runtime/snapshot";
 
 export const SET_SESSION_POSE_COMMAND = "session.setPose";

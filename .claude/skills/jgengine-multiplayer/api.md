@@ -210,14 +210,13 @@
 - `toRuntimeObjectRow` (function): function toRuntimeObjectRow(object: SceneObject): RuntimeObjectRow — Convert a live placed object into its persisted row — the bridge between `ctx.scene.object` and `GameRuntimeSnapshot.server.objects`/`chunks[].objects`. Per-instance `state` is carried as `flags`. Presentation overrides (`visual`, `animation`) are catalog- and authoring-resolved and deliberately stay off the persisted row — put anything a command must own in `state`.
 - `validateFeedWrite` (function): function validateFeedWrite(gate: FeedWriteGate | undefined, action: string): { ok: true } | { ok: false; reason: string } — ⚠ undocumented
 
-## @jgengine/core/multiplayer/chatContract
+## @jgengine/core/multiplayer/JoinGate.view
 
-- `ChatActions` (interface): interface ChatActions { sendMessage(args: ChatSendArgs): Promise<ChatSendOutcome> } — ⚠ undocumented
-- `ChatSendArgs` (interface): interface ChatSendArgs { channelId: string; body: string } — ⚠ undocumented
-- `ChatSendOutcome` (interface): interface ChatSendOutcome { ok: boolean; reason?: string } — ⚠ undocumented · used by `sendChatMessage` (@jgengine/convex): Write validated chat in a host transaction after the caller resolves its actor and world.
-- `ChatSync` (interface): interface ChatSync — Callback seam for backends that cannot host React hooks (e.g. the ws client): subscribe delivers the channel's recent history on every change; send resolves with the host's verdict.
-- `ChatTransport` (interface): interface ChatTransport — Backend seam for remote text chat, mirroring PresenceTransport: the use* members are called as React hooks by consumers, so a mounted transport must never change identity — remount the subtree to switch backends. useMessages returns undefined while the subscription is loading and the channel's recent history once live.
-- `createLocalChatTransport` (function): function createLocalChatTransport(options?: { userId?: string; historyLimit?: number; now?: () => number; }): { transport: ChatTransport; sync: ChatSync; actions: ChatActions; } — ⚠ undocumented
+- `JoinGate` (function): function JoinGate({ status, failureReason, retry, joiningLabel = "Joining world…", failedLabel = "Unable to join", retryLabel = "Retry", className, children, renderJoining, renderFailure }: { status: "joining" | "joined" | "failed"; failureReason?: string | null; retry: () => void; joiningLabel?: Re… — Blocking join feedback; callers may supply their own copy and classes.
+
+## @jgengine/core/multiplayer/authoritativeSync
+
+- `AuthoritativeFrameHandler` (type): type AuthoritativeFrameHandler = (revision: number) => void — Receives the revision of an authoritative world frame after it is applied locally.
 
 ## @jgengine/core/multiplayer/combatSnapshot
 
@@ -282,6 +281,17 @@
 - `normalizeJoinCode` (function): function normalizeJoinCode(code: string): string — ⚠ undocumented
 - `quickMatch` (function): function quickMatch(listings: readonly SessionListing[], filter: MatchFilter = {}): SessionListing | null — ⚠ undocumented
 
+## @jgengine/core/multiplayer/multiplayer.draw
+
+- `DEFAULT_FEED_ACTIONS` (const): const DEFAULT_FEED_ACTIONS: string[] — ⚠ undocumented
+- `PeerShellFactories` (interface): interface PeerShellFactories — Alternate peer factories for hosts that provide their own WebRTC implementation or transport pipe.
+- `ResolvePeerShellMultiplayerArgs` (interface): interface ResolvePeerShellMultiplayerArgs — Peer bootstrap options; passing a playable hosts its authoritative GameContext world.
+- `ResolveShellMultiplayerArgs` (type): type ResolveShellMultiplayerArgs = { game: GameDefinition; gameId: string; url?: string; userId?: string; force?: boolean; feedActions?: string[]; } — ⚠ undocumented
+- `ShellMultiplayer` (type): type ShellMultiplayer = MultiplayerSession — ⚠ undocumented · used by `resolvePeerShellMultiplayer`: Opens a peer session.
+- `randomPlayerId` (function): function randomPlayerId(): string — ⚠ undocumented
+- `resolvePeerShellMultiplayer` (function): function resolvePeerShellMultiplayer(args: ResolvePeerShellMultiplayerArgs): Promise<ShellMultiplayer & { close: () => Promise<void> }> — Opens a peer session. With `playable`, one host runs the game loop and guests mirror its shared world. Await `close()` to finish authoritative persistence. Same-origin rooms use BroadcastChannel signaling.
+- `resolveShellMultiplayer` (function): function resolveShellMultiplayer(args: ResolveShellMultiplayerArgs): ShellMultiplayer | null — ⚠ undocumented
+
 ## @jgengine/core/multiplayer/poseSyncGate
 
 - `DEFAULT_POSE_SYNC_TUNING` (const): const DEFAULT_POSE_SYNC_TUNING: PoseSyncTuning — Default ten-hertz client pose gate with a five-second heartbeat.
@@ -320,6 +330,10 @@
 - `CommitRoundConfig` (interface): interface CommitRoundConfig { participants: readonly string[]; allowReseal?: boolean } — ⚠ undocumented
 - `SealResult` (type): type SealResult = | { ok: true; allSealed: boolean } | { ok: false; reason: "unknown_participant" | "already_sealed" | "already_revealed" } — ⚠ undocumented
 - `SealedCommit` (interface): interface SealedCommit<TAction> { playerId: string; action: TAction; sealedAt: number } — ⚠ undocumented
+
+## @jgengine/core/multiplayer/useShellMultiplayerSync.draw
+
+- `useShellMultiplayerSync` (function): function useShellMultiplayerSync(ctx: GameContext | null, multiplayer: ShellMultiplayer | null, playable: PlayableGame, serverIdRef: { current: string | null }, setRemotePlayers: Dispatch<SetStateAction<PresencePoseRow[]>>, authoritativeFrameRef?: { current: AuthoritativeFrameHandler | null }): { st… — Joins the multiplayer server for the live context and wires presence, feed relay, and chat sync until teardown.
 
 ## @jgengine/core/multiplayer/voice.view
 

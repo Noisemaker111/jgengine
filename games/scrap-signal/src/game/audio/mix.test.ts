@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { ambienceWeights } from "@jgengine/core/audio/ambience";
-import { createAudioEngine } from "@jgengine/shell/audio/audioEngine";
+import { createAudioEngine } from "@jgengine/core/audio/audioEngine.view";
 
 import { ZONES } from "../world/zones";
 import { ambienceZones, audio, occlusion } from "./catalog";

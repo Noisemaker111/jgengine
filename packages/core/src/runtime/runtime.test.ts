@@ -2,7 +2,7 @@ import { test, expect } from "bun:test";
 import { createGameRuntime } from "./gameRuntime";
 import { parseSaveAutoMs, saveScopeIncludesPlayer } from "../save/saveConfig";
 import { createRuntimeSnapshot, markPlayerDirty } from "./snapshot";
-import { runCommand } from "./commandRunner";
+import { runCommand } from "../commands/commandRunner";
 
 test("parseSaveAutoMs", () => {
   expect(parseSaveAutoMs("5m")).toBe(300_000);

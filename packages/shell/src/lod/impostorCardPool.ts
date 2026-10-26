@@ -1,6 +1,6 @@
 import * as THREE from "three";
 
-import { POINTER_OBJECT_INSTANCES_KEY } from "../pointer/pointerService";
+import { POINTER_OBJECT_INSTANCES_KEY } from "@jgengine/core/input/pointerService.draw";
 import { submitInstanceCount } from "../render/submittedDraws";
 
 /** One user's share of a pooled card draw: its far placements this frame. @internal */

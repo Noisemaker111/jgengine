@@ -3,7 +3,7 @@ import type { GameCameraConfig } from "@jgengine/core/game/playableGame";
 import { resolveRigKind } from "./rigResolve";
 import { createCameraShake } from "@jgengine/core/camera/shake/cameraShake";
 
-import { rigShakeConfig } from "@jgengine/core/camera/shake/shakeChannel.draw";
+import { rigShakeConfig } from "@jgengine/core/camera/shake/cameraShake";
 
 describe("resolveRigKind", () => {
   test("defaults to orbit with no config", () => {

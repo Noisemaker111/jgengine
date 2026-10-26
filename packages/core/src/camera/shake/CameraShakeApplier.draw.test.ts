@@ -4,7 +4,8 @@ import { PerspectiveCamera } from "three";
 import { createCameraShake, type CameraShakeOffset } from "@jgengine/core/camera/shake/cameraShake";
 
 import { CameraShakeApplier } from "./CameraShakeApplier.draw";
-import { applyCameraShake, removeCameraShake, rigShakeConfig } from "./shakeChannel.draw";
+import { rigShakeConfig } from "./cameraShake";
+import { applyCameraShake, removeCameraShake } from "./shakeChannel.draw";
 
 describe("camera shake applier", () => {
   test("kicks the camera, then takes exactly that kick back off", () => {

@@ -1,5 +1,5 @@
-import { createRecordingBuffer, type RecordingBuffer } from "@jgengine/core/sensor/recordingBuffer";
-import { interpolateRecordedPose } from "@jgengine/core/sensor/replayLoop";
+import { createRecordingBuffer, type RecordingBuffer } from "@jgengine/core/replay/recordingBuffer";
+import { interpolateRecordedPose } from "@jgengine/core/replay/replayLoop";
 
 import type { RunStorage } from "./records";
 

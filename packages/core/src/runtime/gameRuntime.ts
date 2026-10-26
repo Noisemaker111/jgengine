@@ -1,6 +1,6 @@
 import type { SaveConfig } from "../save/saveConfig";
-import type { CommandAccess, CommandDef, CommandScope } from "./commandRunner";
-import { resolveCommandScope, runCommand } from "./commandRunner";
+import type { CommandAccess, CommandDef, CommandScope } from "../commands/commandRunner";
+import { resolveCommandScope, runCommand } from "../commands/commandRunner";
 import {
   createEmptyPlayerRow,
   createRuntimeSnapshot,

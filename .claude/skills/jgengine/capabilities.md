@@ -38,15 +38,15 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## command-number — validate finite, bounded numbers and integers at command boundaries
 
-- `readInputNumber` (function) · `import { readInputNumber } from "@jgengine/core/runtime/commandInput"`
+- `readInputNumber` (function) · `import { readInputNumber } from "@jgengine/core/commands/commandInput"`
 
 ## command-parse — parse untrusted command input once so every command stage sees typed, bounded values
 
-- `defineCommand` (function) · `import { defineCommand } from "@jgengine/core/runtime/commandRunner"`
+- `defineCommand` (function) · `import { defineCommand } from "@jgengine/core/commands/commandRunner"`
 
 ## command-quantity — validate bounded whole-item counts at command boundaries
 
-- `readQuantity` (function) · `import { readQuantity } from "@jgengine/core/runtime/commandInput"`
+- `readQuantity` (function) · `import { readQuantity } from "@jgengine/core/commands/commandInput"`
 
 ## default-drive-codes — stock WASD/arrow throttle, brake, steer and handbrake key codes
 
@@ -213,6 +213,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## sim-snapshot — capture and restore whole-simulation state for replay, rollback, and regression tests
 
 - `createSimSnapshotRegistry` (function) · `import { createSimSnapshotRegistry } from "@jgengine/core/runtime/simSnapshot"`
+
+## tune-control-labels — find a Tune panel field by its control name (drive --fill, screen readers)
+
+- `tuneControlLabels` (function) · `import { tuneControlLabels } from "@jgengine/core/devtools/TunePanel.view"`
 
 ## typed-keyed-store — a cast-free typed handle onto a per-owner keyed family of reactive game-store slots, replayable and host-authoritative
 

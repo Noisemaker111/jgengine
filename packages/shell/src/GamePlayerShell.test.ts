@@ -6,7 +6,7 @@ import {
   nearbyObstacles,
   resolvePhysicsTuning,
 } from "./GamePlayerShell";
-import { heldActionsFor, shouldFireBoundAction } from "./boundActionDispatch";
+import { heldActionsFor, shouldFireBoundAction } from "@jgengine/core/input/boundActionDispatch";
 import { resolveWorldSky } from "./worldSky";
 import { world } from "@jgengine/core/placement/place";
 import { advanceVoxelPlayer, createVoxelPlayerBody } from "@jgengine/core/movement/voxelController";

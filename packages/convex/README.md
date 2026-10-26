@@ -19,7 +19,7 @@ const session = resolveConvexMultiplayer({
 <GamePlayerShell playable={playable} multiplayer={session} />;
 ```
 
-`resolveShellMultiplayer` (`@jgengine/shell/multiplayer`) is the ws counterpart — a dev host can try both in sequence (`resolveConvexMultiplayer(...) ?? resolveShellMultiplayer(...)`, see `apps/dev/src/main.tsx`) and pass whichever resolves to the shell.
+`resolveShellMultiplayer` (`@jgengine/core/multiplayer/multiplayer.draw`) is the ws counterpart — a dev host can try both in sequence (`resolveConvexMultiplayer(...) ?? resolveShellMultiplayer(...)`, see `apps/dev/src/main.tsx`) and pass whichever resolves to the shell.
 
 Once a session resolves, `GamePlayerShell` wires it up with no game code changes: pose presence (`RemotePlayers`), `feedActions` (default `entity.died`) bridged both ways with echo suppression, and `global`-kind chat channels relayed through `chatSyncFor` (`whisper`/`party`/`proximity` stay local). Everything else in `GameContext` stays client-local unless the game also registers a server-side `GameRuntime`.
 

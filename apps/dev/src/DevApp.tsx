@@ -8,7 +8,7 @@ import {
   resolvePeerShellMultiplayer,
   resolveShellMultiplayer,
   type ShellMultiplayer,
-} from "@jgengine/shell/multiplayer";
+} from "@jgengine/core/multiplayer/multiplayer.draw";
 import type { PlayableGame } from "@jgengine/shell/registry";
 import { LOOK_PRESETS, type LookPreset } from "@jgengine/core/render/lookPreset";
 

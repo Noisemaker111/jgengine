@@ -89,7 +89,7 @@ export function quarterTurnsToRotationY(quarterTurns: number): number {
 
 /**
  * Headless placement ghost: hover → valid/invalid preview, rotate, grid/free/surface snap, commit.
- * Pair with `@jgengine/shell/buildings` `PlacementGhost` and {@link placeAssetFromCommit}.
+ * Pair with `PlacementGhost` (`./PlacementGhost.draw`) and {@link placeAssetFromCommit}.
  * @capability placement-controller interactive build-mode ghost preview and commit
  */
 export function createPlacementController(config: PlacementControllerConfig): PlacementController {

@@ -8,7 +8,7 @@ import { environment, grass, terrain } from "@jgengine/core/world/features";
 import { useGameContext } from "@jgengine/react/provider";
 
 import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
-import type { AudioProbe } from "@jgengine/shell/audio/audioProbe";
+import type { AudioProbe } from "@jgengine/core/audio/audioProbe.view";
 import type { PlayableGame } from "@jgengine/shell/registry";
 
 const HERO = "hero";

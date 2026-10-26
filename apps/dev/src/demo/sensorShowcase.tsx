@@ -8,7 +8,7 @@ import type { HiddenStateSource } from "@jgengine/core/sensor/hiddenStateProbe";
 import { localPlayerEntity, useGameStore } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
 
-import { useSessionRecorder } from "@jgengine/shell/replay/useSessionRecorder";
+import { useSessionRecorder } from "@jgengine/core/replay/useSessionRecorder.draw";
 import type { PlayableGame } from "@jgengine/shell/registry";
 import { FrustumSensorReadout } from "@jgengine/core/hud/FrustumSensorHud.draw";
 import { SensorReadoutMeter, useHiddenStateProbe } from "@jgengine/core/hud/HiddenStateProbeHud.view";

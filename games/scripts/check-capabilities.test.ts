@@ -37,7 +37,7 @@ const ledger: Ledger = {
     {
       id: "audio-probe",
       packages: ["@jgengine/shell"],
-      module: "@jgengine/shell/audio/audioProbe",
+      module: "@jgengine/core/audio/audioProbe.view",
       domain: "audio mix",
       gameFacing: true,
       probe: { kind: "window", global: "__jgengineAudio" },
@@ -313,7 +313,7 @@ describe("recording an adoption", () => {
     withProbe.capabilities.push({
       id: "audio-probe",
       packages: ["@jgengine/shell"],
-      module: "@jgengine/shell/audio/audioProbe",
+      module: "@jgengine/core/audio/audioProbe.view",
       domain: "audio mix",
       gameFacing: true,
       probe: { kind: "window", global: "__jgengineAudio" },

@@ -549,6 +549,37 @@
 - `StartScreen` (function): function StartScreen({ open = true, className, style, children, settings, settingsPlacement = "top-right", settingsClassName, settingsWrapperClassName, }: { open?: boolean; className?: string; style?: CSSProperties; children?: ReactNode; settings?: boolean | ReactNode; settingsPlacement?: StartScree… — Composable title/attract-screen scaffold: a full-bleed `data-jg-menu` overlay that positions and centers the game's own content, with an opt-in settings corner. It imposes no look — the game supplies the title, art, and buttons as children and styles the container through `className`/`style` (per the composable-chrome rule: a placement hook, not a mandated menu).
 - `StartScreenCorner` (type): type StartScreenCorner = "top-left" | "top-right" | "bottom-left" | "bottom-right" — Which corner of a `StartScreen` the opt-in settings slot is pinned to.
 
+## @jgengine/core/play/playRunner.draw
+
+- `PlayRunOptions` (interface): interface PlayRunOptions — Options for one scripted play run.
+- `runPlayScript` (function): function runPlayScript(playable: PlayableGame, spec: PlayScript | PlayScriptSpec, options: PlayRunOptions = {}): PlayRunResult — Play a real game without a browser: boot its `PlayableGame` through the headless runner, apply a tick-based {@link PlayScript}, and return what happened plus whether the script's assertions held.
+
+## @jgengine/core/play/script
+
+- `PLAY_MOVE_ACTIONS` (const): const PLAY_MOVE_ACTIONS: Readonly<Record<PlayMove, string>> — Movement action ids a {@link PlayMove} holds, so a script walks through the same controller a player does.
+- `PlayAimStep` (interface): interface PlayAimStep extends PlayStepBase — Point the walk controller and the aim payload at a yaw/pitch, in radians.
+- `PlayCommandStep` (interface): interface PlayCommandStep extends PlayStepBase — Run a registered command directly, with whatever input it declares.
+- `PlayExpectation` (interface): interface PlayExpectation — One assertion about world state. Read happens twice — right after `setup` and on the assertion's own tick — so a script can prove change ("health dropped") as well as a level ("wave is 2").
+- `PlayFireStep` (interface): interface PlayFireStep extends PlayStepBase — Hold the `fire` action: the bound `fire` command runs on the press tick, then on its repeat cadence.
+- `PlayMove` (type): type PlayMove = "forward" | "back" | "left" | "right" — Direction a scripted step walks, using the shell's own movement actions.
+- `PlayMoveStep` (interface): interface PlayMoveStep extends PlayStepBase — Hold a movement direction for `ticks` — the shell walk controller's own held actions.
+- `PlayScript` (interface): interface PlayScript — A script to play against a real game: what to do, on which tick, and what must be true afterwards.
+- `PlayScriptSpec` (interface): interface PlayScriptSpec — What {@link createPlayScript} accepts: the same script with the derived fields optional.
+- `PlayStep` (type): type PlayStep = PlayMoveStep | PlayAimStep | PlayFireStep | PlayUseStep | PlayWaitStep | PlayCommandStep — One tick-based action in a script.
+- `PlayUseStep` (interface): interface PlayUseStep extends PlayStepBase — Press one bound action id once (default one tick) — `interact`, `reload`, `useAbility`, a game's own action.
+- `PlayValue` (type): type PlayValue = number | string | boolean | null — A reading an assertion compares: a stat, a distance, a count, a phase id.
+- `PlayWaitStep` (interface): interface PlayWaitStep extends PlayStepBase — Hold nothing for `ticks`, letting the world run.
+- `createPlayScript` (function): function createPlayScript(spec: PlayScriptSpec): PlayScript — Validate and normalize a script: whole-tick timings, sorted steps, a derived run length.
+
+## @jgengine/core/play/timeline
+
+- `PlayExpectationResult` (interface): interface PlayExpectationResult — One assertion's verdict, with both readings so a failure says what changed and by how much.
+- `PlayRunResult` (interface): interface PlayRunResult — Everything a scripted run produced: the timeline, the assertion verdicts, and a digest of the timeline for replay comparison.
+- `PlayTimelineEntry` (interface): interface PlayTimelineEntry — One row of what happened, on the tick it happened.
+- `PlayTimelineKind` (type): type PlayTimelineKind = "step" | "command" | "event" | "check" — What a timeline row records: a scripted action, a command result, a world event, or an assertion reading.
+- `formatPlayTimelineEntry` (function): function formatPlayTimelineEntry(entry: PlayTimelineEntry): string — One compact timeline line: `t=120 event combat.damage to=bruiser amount=12 remaining=54`.
+- `playTimelineDigest` (function): function playTimelineDigest(timeline: readonly PlayTimelineEntry[]): string — FNV-1a over the timeline's canonical JSON. Cheap, dependency-free and stable across runs and machines, which is all a replay comparison needs.
+
 ## @jgengine/core/render/ambientLife
 
 - `AmbientLifeConfig` (interface): interface AmbientLifeConfig — Small life the renderer adds around the camera, driven by the weather and the time of day. Birds circle overhead in fair daylight and leave in rain or at night; litter blows along the ground when the wind picks up; steam rises from vents, thicker when it is cold, wet or dark.
@@ -636,6 +667,25 @@
 - `SpriteClipState` (interface): interface SpriteClipState — Serializable playback position for a named sprite animation.
 - `createSpriteClipPlayer` (function): function createSpriteClipPlayer(atlas: SpriteAtlas): { play(name: string): void; advance(dt: number): void; frame: () => { x: number; y: number; w: number; h: number; pivot?: [number, number] | undefined; } | undefined; snapshot: () => { animation: string; frameIndex: number; elapsed: number; done: … — Create a renderer-independent sprite animation player.
 - `sortingOrder` (function): function sortingOrder(layers: readonly string[], layer: string, offset = 0): number — Resolve a layer name and local offset into a stable render order.
+
+## @jgengine/core/replay/recordingBuffer
+
+- `RecordingBuffer` (interface): interface RecordingBuffer<T> { append(t: number, data: T): void; seek(t: number): RecordingFrame<T> | null; seekPair(t: number): RecordingPair<T>; range(fromT: number, toT: number): RecordingFrame<T>[]; clear(): void; duration(): number; frames(): readonly RecordingFra… — ⚠ undocumented · used by `useSessionRecorder` (@jgengine/core/replay/useSessionRecorder.draw): Session-recording buffer (#120) for replay / photo mode / kill-cam: records an entity's pose on game-time every frame into a `RecordingBuffe…
+- `RecordingBufferOptions` (interface): interface RecordingBufferOptions { maxDurationSeconds?: number; maxFrames?: number } — ⚠ undocumented · used by `useSessionRecorder` (@jgengine/core/replay/useSessionRecorder.draw): Session-recording buffer (#120) for replay / photo mode / kill-cam: records an entity's pose on game-time every frame into a `RecordingBuffe…
+- `RecordingFrame` (interface): interface RecordingFrame<T> { t: number; data: T } — ⚠ undocumented
+- `RecordingPair` (interface): interface RecordingPair<T> { before: RecordingFrame<T> | null; after: RecordingFrame<T> | null } — ⚠ undocumented
+
+## @jgengine/core/replay/replayLoop
+
+- `RecordedPoseLike` (interface): interface RecordedPoseLike { position: readonly [number, number, number]; rotationY?: number } — ⚠ undocumented
+- `ReplayEntityDeps` (interface): interface ReplayEntityDeps { has(id: string): boolean; spawn(id: string): void; setPose(id: string, pose: {position: readonly [number, number, number]; rotationY?: number; dt?: number}): unknown; despawn(id: string): unknown } — ⚠ undocumented
+- `ReplayLoop` (interface): interface ReplayLoop<T> — Replays a finished `RecordingBuffer` on a loop — modulo-time seek, frame interpolation, and spawn grace, the pieces every ghost-lap/echo feature hand-rolled (#286.4). `sample(t)` is a pure function of absolute time; `null` means "the ghost isn't on track right now".
+- `ReplayLoopOptions` (interface): interface ReplayLoopOptions<T> { interpolate?: (before: T, after: T, alpha: number) => T; spawnGraceSeconds?: number } — ⚠ undocumented
+
+## @jgengine/core/replay/useSessionRecorder.draw
+
+- `RecordedPose` (interface): interface RecordedPose { position: EntityPosition; rotationY: number } — ⚠ undocumented · used by `useSessionRecorder`: Session-recording buffer (#120) for replay / photo mode / kill-cam: records an entity's pose on game-time every frame into a `RecordingBuffe…
+- `useSessionRecorder` (function): function useSessionRecorder(entityId: string, options?: RecordingBufferOptions): RecordingBuffer<RecordedPose> — Session-recording buffer (#120) for replay / photo mode / kill-cam: records an entity's pose on game-time every frame into a `RecordingBuffer`, which a game can then `seek()` to scrub, drive an observer cam ghost, or export a kill-cam clip. Recording rides on `ctx.time.now()`, so pause/fast-forward scrub the recording exactly like the live sim.
 
 ## @jgengine/core/settings/QuickControls.draw
 
@@ -2217,169 +2267,10 @@
 - `UiPreviewScenario` (type): type UiPreviewScenario = (ctx: GameContext, playable: PlayableGame) => void — ⚠ undocumented
 - `defaultUiScenario` (const): const defaultUiScenario: UiPreviewScenario — ⚠ undocumented
 
-## @jgengine/shell/JoinGate
-
-- `JoinGate` (function): function JoinGate({ status, failureReason, retry, joiningLabel = "Joining world…", failedLabel = "Unable to join", retryLabel = "Retry", className, children, renderJoining, renderFailure }: { status: "joining" | "joined" | "failed"; failureReason?: string | null; retry: () => void; joiningLabel?: Re… — Blocking join feedback; callers may supply their own copy and classes.
-
 ## @jgengine/shell/TerritoryOverlay
 
 - `TerritoryOverlay` (function): function TerritoryOverlay({ cells, cost, affordable, formatCost = String, renderCell, className, style }: { cells: readonly TerritoryPreviewCell[]; cost: number; affordable: boolean; formatCost?: (cost: number) => ReactNode; renderCell?: (cell: TerritoryPreviewCell) => ReactNode; className?: string;… — Placement footprint feedback with inline claim cost and affordability.
 - `TerritoryPreviewCell` (type): type TerritoryPreviewCell = { key: string; x: number; z: number; status: "owned" | "claimable" | "blocked" } — A placement footprint cell and its authoritative preview status.
-
-## @jgengine/shell/audio/AudioComponents
-
-- `AudioListener` (function): function AudioListener({ engine, anchor = "camera" }: { engine: AudioEngine; anchor?: ListenerAnchor }): null — ⚠ undocumented
-- `EntityAudioEmitters` (function): function EntityAudioEmitters({ engine, entitySounds, }: { engine: AudioEngine; entitySounds: Record<string, string> | undefined; }): null — ⚠ undocumented
-- `ObjectAudioEmitters` (function): function ObjectAudioEmitters({ engine, objectSounds, }: { engine: AudioEngine; objectSounds: Record<string, string> | undefined; }): null — ⚠ undocumented
-
-## @jgengine/shell/audio/CaptionOverlay
-
-- `CaptionOverlay` (function): function CaptionOverlay({ feed, max = 2, zIndex = 84, }: { feed: CaptionFeed; /** How many lines to show at once. Default 2. */ max?: number; zIndex?: number; }): ReactNode — The captions line: a bounded, bottom-centred stack that renders only while the accessibility captions setting is on. Reads HudTheme tokens, so a game's theme reskins it, and lives in the same overlay layer as the notice stack.
-
-## @jgengine/shell/audio/FeedbackHost
-
-- `FeedbackHost` (function): function FeedbackHost({ ctx, engine }: { ctx: GameContext; engine: AudioEngine }): ReactNode — Mounts the engine's feel layer for one game: announced events become a sound, a gamepad pulse, a camera kick and a caption line; the audio context unlocks on the first gesture; and the caption stack follows the accessibility setting. Games supply sounds, never the rules.
-
-## @jgengine/shell/audio/audioEngine
-
-- `AudioAmbienceState` (interface): interface AudioAmbienceState — Current ambience mix, by zone id.
-- `AudioEmitterHandle` (interface): interface AudioEmitterHandle { isPlaying?(): boolean; setPosition(position: Xyz): void; setRate(rate: number): void; setGain(gain: number): void; setLowpass(hz: number): void; setHighpass(hz: number): void; setVelocity(velocity: Xyz): void; setOcclusion(amount: number)… — ⚠ undocumented
-- `AudioEngine` (interface): interface AudioEngine { setListenerPose(pose: ListenerPose | Xyz): void; setVoiceLimit(maxTotal: number, overflow?: VoiceAllocatorConfig["overflow"]): void; play(soundId: string, position?: Xyz): void; playOneShot(soundId: string, position?: Xyz): void; playLoop… — ⚠ undocumented · used by `createAudioEngine`: Game-owned sound catalog playback with bounded SFX reservations, spatial panning, and shared buses.
-- `AudioLevel` (interface): interface AudioLevel — Master-output level, `0..1`. Pooled by {@link AudioEngine.measure} - read it, don't retain it.
-- `AudioOcclusionStats` (interface): interface AudioOcclusionStats — Measured geometry-occlusion work, cumulative since the engine was created.
-- `AudioSceneConfig` (interface): interface AudioSceneConfig { sounds?: Record<string, SoundDef>; maxVoices?: number; voiceOverflow?: VoiceAllocatorConfig["overflow"]; voiceAllocator?: VoiceAllocator; buses?: Record<string, AudioBusDef>; music?: Record<string, MusicTheme>; musicBus?: string; speechBu… — ⚠ undocumented · used by `createAudioEngine`: Game-owned sound catalog playback with bounded SFX reservations, spatial panning, and shared buses.
-- `AudioSpatialStats` (interface): interface AudioSpatialStats — What the spatial mix did, cumulative since the engine was created, plus the space it rings in now.
-- `DuckOptions` (interface): interface DuckOptions — How long and how far to duck buses for {@link AudioEngine.duck}.
-- `ListenerPose` (interface): interface ListenerPose — Position and orientation for a spatial-audio listener.
-- `MAX_PENDING_CUES` (const): const MAX_PENDING_CUES: 16 — Cues held while the browser keeps the audio context suspended, before any user gesture.
-- `createAudioEngine` (function): function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine — Game-owned sound catalog playback with bounded SFX reservations, spatial panning, and shared buses.
-
-## @jgengine/shell/audio/audioProbe
-
-- `AudioProbe` (interface): interface AudioProbe — The read-only handle a capture script or devtools uses to prove the mix is producing sound.
-- `installAudioProbe` (function): function installAudioProbe(engine: AudioEngine): () => void — Publish the audio engine's own level, ambience and occlusion readouts on `window.__jgengineAudio`, so a headless capture can state measured values instead of guessing from a screenshot. Reads only; it never plays or changes a bus.
-
-## @jgengine/shell/audio/busMix
-
-- `MASTER_MUTE_SETTING_ID` (const): const MASTER_MUTE_SETTING_ID: "sound.muted" — Persisted mute for the whole mix, next to `sound.master`.
-- `busMuteSettingId` (function): function busMuteSettingId(busId: string): string — Persisted mute for one bus, next to its `busVolumeSettingId(busId)` volume.
-
-## @jgengine/shell/audio/captions
-
-- `Caption` (interface): interface Caption — One caption line as the overlay renders it.
-- `CaptionFeed` (interface): interface CaptionFeed — A capped, self-expiring list of caption lines that the accessibility captions setting turns on.
-- `CaptionFeedConfig` (interface): interface CaptionFeedConfig — Tunables for {@link createCaptionFeed}; all retunable at runtime.
-- `createCaptionFeed` (function): function createCaptionFeed(config: CaptionFeedConfig = {}): CaptionFeed — The caption list the feedback seam writes to and the HUD overlay reads: bounded, self-expiring, and deduped so three hits read as "Hit x3" rather than three copies. Pure state with an injected clock, so it runs headless.
-
-## @jgengine/shell/audio/eventFeedback
-
-- `AnyFeedbackBinding` (type): type AnyFeedbackBinding = { [Name in FeedbackEventName]: FeedbackBinding<Name> }[FeedbackEventName] — Any row of the event mapping, whichever event it binds.
-- `DEFAULT_FEEDBACK_BINDINGS` (const): const DEFAULT_FEEDBACK_BINDINGS: readonly AnyFeedbackBinding[] — The default mapping: each engine-announced gameplay event to the cue it raises. Damage to the local player reads as hurt, damage anywhere else as a hit; an event that carries a `position` (damage, death) pans and attenuates its cue, and one without still plays centred. A wave start has no event of its own, so a game announces it through `notify("wave")` or `attachWaveFeedback`.
-- `DEFAULT_FEEDBACK_REACTIONS` (const): const DEFAULT_FEEDBACK_REACTIONS: Readonly<Record<FeedbackCue, FeedbackReaction>> — The default reactions. They are data: a game overrides one through `audio.feedbackCues` (sound) or `createEventFeedback({ reactions })` (haptics, shake, caption), and replaces the mapping through `bindings` without touching the shell.
-- `EventFeedback` (interface): interface EventFeedback — The event-to-reaction seam. One instance per running world.
-- `EventFeedbackOptions` (interface): interface EventFeedbackOptions — Options a game or host may override.
-- `FeedbackAnnouncer` (interface): interface FeedbackAnnouncer — The slice of `ctx.game.feedback` a wave runner needs, so this runs headless in a test.
-- `FeedbackBinding` (type): type FeedbackBinding<Name extends FeedbackEventName = FeedbackEventName> = { event: Name; cue: FeedbackCue; /** Default `"any"`. `"local"` only fires for the local player's own target/user/refusal. */ scope?: FeedbackScope; /** Overrides the cue's caption for this event, e.g. "You died". */ caption?… — One row of the event mapping: `event` announces, `cue` reacts.
-- `FeedbackDeps` (interface): interface FeedbackDeps — Everything the feedback seam reaches outside itself. Injected so it runs headless.
-- `FeedbackEventName` (type): type FeedbackEventName = | "combat.damage" | "entity.died" | "worldItem.picked_up" | "quest.completed" | "stat.levelUp" | "command.refused" — Event names the default mapping listens to; a game may add its own through `bindings`.
-- `FeedbackReaction` (interface): interface FeedbackReaction — One cue's reaction: what plays, what the hand feels, what the screen does, and what a caption says.
-- `FeedbackScope` (type): type FeedbackScope = "local" | "remote" | "any" — Which side of an event a binding reacts to: the local player's, someone else's, or either.
-- `ResolvedFeedback` (interface): interface ResolvedFeedback — A resolved trigger: pooled per binding, so a busy event stream allocates nothing to decide.
-- `attachEventFeedback` (function): function attachEventFeedback(events: Pick<GameEvents, "on">, feedback: EventFeedback, eventsToBind: readonly FeedbackEventName[] = Object.keys( DEFAULT_FEEDBACK_BINDINGS.reduce<Record<string, true>>((names, binding) => { names[binding.event] = true; return names; }, {}), ) as FeedbackEventName[]): (… — Subscribe the feedback seam to a game's event bus, including `feedback.cue` for moments the game announces itself. Returns the detach function; the mapping and reactions stay override-able through the seam's `retune`.
-- `attachWaveFeedback` (function): function attachWaveFeedback(runner: Pick<WaveRunner, "state" | "subscribe">, announce: FeedbackAnnouncer): () => void — Announce each new wave a {@link WaveRunner} starts as the `wave` cue, once per boundary. A wave has no event of its own, so this is the engine-side hookup for tower defense and wave survival games: `attachWaveFeedback(runner, ctx.game.feedback)`. Nothing is polled, the runner's own notification drives it, and one `update` that crosses two waves still fires once - the cue has a cooldown and the next boundary is announced by the next crossing.
-- `createEventFeedback` (function): function createEventFeedback(deps: FeedbackDeps, options: EventFeedbackOptions = {}): EventFeedback — Build the event-to-sound/haptic/shake/caption seam. The mapping is data ({@link DEFAULT_FEEDBACK_BINDINGS}), reactions are data ({@link DEFAULT_FEEDBACK_REACTIONS}), and the resolved trigger for each binding is allocated once - handling an event allocates only the caption string it actually shows, never per frame.
-
-## @jgengine/shell/audio/gestureResume
-
-- `installGestureResume` (function): function installGestureResume(engine: Pick<AudioEngine, "resume">, target: Pick<Document, "addEventListener" | "removeEventListener"> | null = typeof document === "undefined" ? null : document): () => void — Resume the audio context on the first real user gesture. Chrome keeps a freshly created `AudioContext` suspended until the page sees a trusted input, so pressing a key, tapping or clicking is the only moment sound may start; the engine then flushes any cue it held. One listener set per game, removed on unmount.
-
-## @jgengine/shell/audio/loopParams
-
-- `MAX_LOOP_CUTOFF` (const): const MAX_LOOP_CUTOFF: 22050 — Highest live filter cutoff, Hz; the engine also caps it at the context's Nyquist frequency.
-- `MAX_LOOP_RATE` (const): const MAX_LOOP_RATE: 4 — Highest live playback-rate multiplier (two octaves above authored pitch).
-- `MIN_LOOP_CUTOFF` (const): const MIN_LOOP_CUTOFF: 10 — Lowest live filter cutoff, Hz.
-- `MIN_LOOP_RATE` (const): const MIN_LOOP_RATE: 0.25 — Pure clamps for retained-loop live control (#1051). Kept dependency-free so the playback-rate/gain windows are one testable source of truth the audio engine reads.
-
-## @jgengine/shell/audio/musicDirector
-
-- `CrossfadeOptions` (interface): interface CrossfadeOptions — Options for a music crossfade.
-- `MusicDirector` (class): class MusicDirector — Runs a set of looping {@link MusicTheme}s as crossfadeable layers on one shared Web Audio graph: master → compressor → destination, with a fixed convolution reverb send. `crossfadeTo` swaps the audible theme; a 110ms lookahead scheduler keeps each active layer's notes queued ahead of the clock so loops are seamless.
-
-## @jgengine/shell/audio/musicVoices
-
-- `playMusicNote` (function): function playMusicNote(ctx: Ctx, event: NoteEvent, when: number, spb: number, out: GainNode, transpose = 0): void — Play one theme note through its instrument voice into `out` (a per-layer gain node the director wires to master + reverb). `spb` is seconds-per-beat and `transpose` shifts the note in semitones for per-zone key changes. This is the engine's reusable instrument library; unknown instruments fall back to a sine.
-
-## @jgengine/shell/audio/occlusion
-
-- `BlockingRaycastSource` (interface): interface BlockingRaycastSource — The narrow slice of the scene a line-of-hearing test needs.
-- `sceneLineBlocked` (function): function sceneLineBlocked(source: BlockingRaycastSource, from: Xyz, to: Xyz): boolean — Whether blocking world geometry (objects and wall segments, never creatures or terrain) lies between the listener and an emitter. One scene query per call; the engine owns how often it runs.
-
-## @jgengine/shell/audio/reverb
-
-- `EnclosureRaycastSource` (interface): interface EnclosureRaycastSource — The narrow slice of the scene an enclosure test needs.
-
-## @jgengine/shell/audio/speech
-
-- `SpeechChannel` (interface): interface SpeechChannel — Text-to-speech on the browser's synthesiser with stable per-key voice choice and a silent fallback.
-- `SpeechStats` (interface): interface SpeechStats — What the speech channel has done, for a debug readout or capture probe.
-- `SpeechSynthesisLike` (interface): interface SpeechSynthesisLike — The slice of `window.speechSynthesis` the channel drives; inject a fake in tests.
-- `SpeechUtteranceLike` (interface): interface SpeechUtteranceLike — The slice of `SpeechSynthesisUtterance` the channel writes.
-- `SpeechVoiceLike` (interface): interface SpeechVoiceLike — The slice of `SpeechSynthesisVoice` the channel reads.
-- `createSpeechChannel` (function): function createSpeechChannel(backend: { synth: SpeechSynthesisLike; Utterance: UtteranceCtor } | null = resolveSynth()): SpeechChannel — Speech for radio DJs, callers and announcers. Lines queue on the synthesiser; `stop` cancels the queue. Without a synthesiser or a single voice (headless Chrome, tests, some Linux browsers) a line is counted as dropped and nothing throws, so the game's on-screen text is the fallback.
-- `pickSpeechVoice` (function): function pickSpeechVoice(voices: readonly SpeechVoiceLike[], options: SpeakOptions = {}): SpeechVoiceLike | null — Pick a system voice: a name hint wins, else the voice key hashes to a stable choice among the language's voices.
-
-## @jgengine/shell/audio/synthEngine
-
-- `SynthPlayback` (interface): interface SynthPlayback — Scheduled procedural sources; stopping releases their source/filter/envelope graph.
-- `createNoiseBuffer` (function): function createNoiseBuffer(ctx: BaseAudioContext): AudioBuffer — Build the shared 1-second mono white-noise buffer every noise voice samples from.
-- `realizeSynthPatch` (function): function realizeSynthPatch(ctx: BaseAudioContext, out: AudioNode, noiseBuf: AudioBuffer, patch: SynthPatch): SynthPlayback — Realise a procedural cue on Web Audio: every voice is scheduled at `ctx.currentTime + delay` into `out`, summed into one one-shot. `noiseBuf` is the shared buffer from {@link createNoiseBuffer}.
-
-## @jgengine/shell/behaviour
-
-- `attachObject3D` (function): function attachObject3D<T extends Object3DBehaviour>(world: BehaviourWorld, object: Object3D, behaviour: T, nodeId: string = object.uuid): T — ⚠ undocumented
-
-## @jgengine/shell/behaviourAttach
-
-- `attachObject3D` (function): function attachObject3D<T extends Object3DBehaviour>(world: BehaviourWorld, object: Object3D, behaviour: T, nodeId: string = object.uuid): T — ⚠ undocumented
-
-## @jgengine/shell/buildings
-
-- `BuildingBlock` (function): function BuildingBlock({ part, palette }: BuildingBlockProps): React.JSX.Element — ⚠ undocumented
-- `BuildingBlockProps` (interface): interface BuildingBlockProps { part: BuildingPartPlacement; palette?: BuildingMaterialPalette } — ⚠ undocumented
-- `InstancedBuildingPlacement` (interface): interface InstancedBuildingPlacement { building: GeneratedBuildingData; position?: readonly [number, number, number]; rotationY?: number; pivot?: readonly [number, number] } — ⚠ undocumented
-- `InstancedBuildings` (function): function InstancedBuildings({ buildings, palette, kit, resolveModelUrl, visibleKinds, }: InstancedBuildingsProps): React.JSX.Element | null — ⚠ undocumented
-- `InstancedBuildingsProps` (interface): interface InstancedBuildingsProps { buildings: readonly InstancedBuildingPlacement[]; palette?: BuildingMaterialPalette; kit?: BuildingKit; resolveModelUrl?: (model: string) => string; visibleKinds?: readonly BuildingPartKind[] } — ⚠ undocumented
-
-## @jgengine/shell/buildings
-
-- `BuildingBlock` (function): function BuildingBlock({ part, palette }: BuildingBlockProps): React.JSX.Element — ⚠ undocumented
-- `BuildingBlockProps` (interface): interface BuildingBlockProps { part: BuildingPartPlacement; palette?: BuildingMaterialPalette } — ⚠ undocumented
-- `InstancedBuildingPlacement` (interface): interface InstancedBuildingPlacement { building: GeneratedBuildingData; position?: readonly [number, number, number]; rotationY?: number; pivot?: readonly [number, number] } — ⚠ undocumented
-- `InstancedBuildings` (function): function InstancedBuildings({ buildings, palette, kit, resolveModelUrl, visibleKinds, }: InstancedBuildingsProps): React.JSX.Element | null — ⚠ undocumented
-- `InstancedBuildingsProps` (interface): interface InstancedBuildingsProps { buildings: readonly InstancedBuildingPlacement[]; palette?: BuildingMaterialPalette; kit?: BuildingKit; resolveModelUrl?: (model: string) => string; visibleKinds?: readonly BuildingPartKind[] } — ⚠ undocumented
-
-## @jgengine/shell/buildings/GeneratedBuilding
-
-- `BuildingBlock` (function): function BuildingBlock({ part, palette }: BuildingBlockProps): React.JSX.Element — ⚠ undocumented
-- `BuildingBlockProps` (interface): interface BuildingBlockProps { part: BuildingPartPlacement; palette?: BuildingMaterialPalette } — ⚠ undocumented
-- `BuildingMaterialPalette` (type): type BuildingMaterialPalette = Partial<Record<BuildingPartKind, BuildingSurface>> — Per part kind: a hex colour, or a colour plus tiled PBR maps (`BuildingSurfaceMaterial`).
-- `GeneratedBuildingData` (interface): interface GeneratedBuildingData { id: string; parts: readonly BuildingPartPlacement[] } — ⚠ undocumented
-- `InstancedBuildingPlacement` (interface): interface InstancedBuildingPlacement { building: GeneratedBuildingData; position?: readonly [number, number, number]; rotationY?: number; pivot?: readonly [number, number] } — ⚠ undocumented
-- `InstancedBuildings` (function): function InstancedBuildings({ buildings, palette, kit, resolveModelUrl, visibleKinds, }: InstancedBuildingsProps): React.JSX.Element | null — ⚠ undocumented
-- `InstancedBuildingsProps` (interface): interface InstancedBuildingsProps { buildings: readonly InstancedBuildingPlacement[]; palette?: BuildingMaterialPalette; kit?: BuildingKit; resolveModelUrl?: (model: string) => string; visibleKinds?: readonly BuildingPartKind[] } — ⚠ undocumented
-
-## @jgengine/shell/buildings/buildingKitRegistry
-
-- `clearBuildingKits` (function): function clearBuildingKits(): void — Drops every registration. For tests and hot-reload teardown.
-- `getBuildingKit` (function): function getBuildingKit(id: string | undefined): BuildingKit | undefined — The kit registered under `id`, or `undefined` for an unset or unknown name (renders blocks).
-- `listBuildingKits` (function): function listBuildingKits(): string[] — Every registered kit id — the editor's kit picker and diagnostics read this.
-- `registerBuildingKit` (function): function registerBuildingKit(kit: BuildingKit): void — Registers a kit under its own `id`, replacing any kit already registered under that name.
-
-## @jgengine/shell/buildings/buildingSurface
-
-- `TexturedBuildingSurface` (type): type TexturedBuildingSurface = BuildingSurfaceMaterial & { maps: BuildingSurfaceMaps } — A surface that names at least one map URL.
-- `surfaceHasMaps` (function): function surfaceHasMaps(surface: BuildingSurfaceMaterial | undefined): surface is TexturedBuildingSurface — True when the surface names at least one map URL, so the batch needs the textured path.
-- `surfaceKey` (function): function surfaceKey(surface: BuildingSurfaceMaterial | undefined): string — A stable key for bucketing instances that share one surface (same colour, maps, tiling, and response).
 
 ## @jgengine/shell/camera
 
@@ -2527,111 +2418,6 @@
 - `ResolvedTopDown` (interface): interface ResolvedTopDown { height: number; pitch: number; yaw: number; offset: Xyz; followSmoothing: number } — ⚠ undocumented
 - `StaticCameraValues` (interface): interface StaticCameraValues { followEntityId?: string | null; cinematic?: CinematicCameraConfig } — ⚠ undocumented
 
-## @jgengine/shell/commandSink
-
-- `CommandSink` (interface): interface CommandSink — Where a gameplay command goes when the shell dispatches it — run locally, or sent to the authoritative host.
-
-## @jgengine/shell/devtools/ColPanel
-
-- `ColPanel` (function): function ColPanel(): React.JSX.Element — ⚠ undocumented
-
-## @jgengine/shell/devtools/CollisionDebugWorld
-
-- `CollisionDebugWorld` (function): function CollisionDebugWorld(): React.JSX.Element | null — World-space collision debugger. Performs zero scene scans and zero raycasts when every layer is off. Mount only when shell devtools are enabled.
-
-## @jgengine/shell/devtools/KeysPanel
-
-- `KeysPanel` (function): function KeysPanel({ input }: { input: ActionCodesMap | undefined }): React.JSX.Element — ⚠ undocumented
-
-## @jgengine/shell/devtools/LogsPanel
-
-- `LogsPanel` (function): function LogsPanel(): React.JSX.Element — ⚠ undocumented
-
-## @jgengine/shell/devtools/NetPanel
-
-- `NetPanel` (function): function NetPanel({ multiplayer }: { multiplayer: ShellMultiplayer | null }): React.JSX.Element — ⚠ undocumented
-
-## @jgengine/shell/devtools/PerfPanel
-
-- `PerfPanel` (function): function PerfPanel({ ctx }: { ctx: GameContext }): React.JSX.Element — ⚠ undocumented
-
-## @jgengine/shell/devtools/TunePanel
-
-- `TunePanel` (function): function TunePanel({ gameName }: { gameName: string }): React.JSX.Element — ⚠ undocumented
-- `tuneControlLabels` (function): function tuneControlLabels(name: string): { range: string; number: string } — Accessible names for one tunable's inputs: the number field answers to the control name itself, so `drive --fill "<name>=<value>"` and a screen reader both find it; the range is `<name> slider`.
-
-## @jgengine/shell/devtools/agentBridge
-
-- `AgentBridgeRequest` (type): type AgentBridgeRequest = { method: string } & Record<string, unknown> — One RPC call into the agent bridge: a verb name plus its verb-specific fields.
-- `AgentBridgeResponse` (type): type AgentBridgeResponse = | { ok: true; [key: string]: unknown } | { ok: false; error: string } — Result of an agent bridge call: `ok: true` with verb payload, or `ok: false` with a reason.
-
-## @jgengine/shell/devtools/collisionDebug
-
-- `AimProbeConfig` (interface): interface AimProbeConfig { from: string; aim: Aim; originPolicy?: ShotOriginPolicy; maxDistance?: number } — ⚠ undocumented
-- `COLLISION_DEBUG_LAYERS` (const): const COLLISION_DEBUG_LAYERS: readonly CollisionDebugLayer[] — ⚠ undocumented
-- `CollisionDebugController` (interface): interface CollisionDebugController { getState(): CollisionDebugState; subscribe(listener: CollisionDebugListener): () => void; setLayer(layer: CollisionDebugLayer, on: boolean): void; toggleLayer(layer: CollisionDebugLayer): void; setLayers(partial: Partial<CollisionDebugLay… — ⚠ undocumented
-- `CollisionDebugLayer` (type): type CollisionDebugLayer = | "hitboxes" | "bodies" | "projectiles" | "muzzles" | "aimLaser" — ⚠ undocumented
-- `CollisionDebugLayers` (type): type CollisionDebugLayers = Record<CollisionDebugLayer, boolean> — ⚠ undocumented
-- `CollisionDebugListener` (type): type CollisionDebugListener = () => void — ⚠ undocumented
-- `CollisionDebugState` (interface): interface CollisionDebugState { layers: CollisionDebugLayers; aimProbe: AimProbeConfig | null; projectileTraces: readonly ProjectileDebugTrace[]; maxProjectileTraces: number; projectileTraceLifeMs: number } — ⚠ undocumented
-- `ProjectileDebugTrace` (interface): interface ProjectileDebugTrace { id: number; origin: EntityPosition; at: EntityPosition; hit: boolean; bornMs: number } — ⚠ undocumented
-- `collisionDebug` (const): const collisionDebug: CollisionDebugController — ⚠ undocumented
-
-## @jgengine/shell/devtools/collisionDebugMath
-
-- `AIM_DAMAGE_COLOR` (const): const AIM_DAMAGE_COLOR: "#f87171" — ⚠ undocumented
-- `AIM_LASER_COLOR` (const): const AIM_LASER_COLOR: "#a3e635" — ⚠ undocumented
-- `AIM_MISS_COLOR` (const): const AIM_MISS_COLOR: "#94a3b8" — ⚠ undocumented
-- `AIM_SOLID_COLOR` (const): const AIM_SOLID_COLOR: "#fbbf24" — ⚠ undocumented
-- `AimEndpointKind` (type): type AimEndpointKind = "damage" | "solid" | "miss" — ⚠ undocumented
-- `AimLaserDebug` (interface): interface AimLaserDebug { origin: EntityPosition; direction: EntityPosition; end: EntityPosition; maxDistance: number; kind: AimEndpointKind; nearest: SceneRaycastHit | null; firstImpact: SceneRaycastHit | null; queryCount: number } — ⚠ undocumented
-- `BODY_WIRE_COLOR` (const): const BODY_WIRE_COLOR: "#38bdf8" — ⚠ undocumented
-- `CollectDebugShapesInput` (interface): interface CollectDebugShapesInput { layers: CollisionDebugLayers; entities: readonly {id: string; position: EntityPosition; rotationY: number; name?: string;}[]; objects?: readonly {instanceId: string; catalogId: string; position: EntityPosition; rotationY: number;}[]; enti… — ⚠ undocumented
-- `ComputeAimLaserInput` (interface): interface ComputeAimLaserInput { layers: CollisionDebugLayers; sceneRaycast: SceneRaycastApi; positionOf(instanceId: string): EntityPosition | undefined; rotationYOf?(instanceId: string): number | undefined; collidersOf?(instanceId: string): EntityColliderSet | null | un… — ⚠ undocumented
-- `DebugShapeEntry` (interface): interface DebugShapeEntry { key: string; targetKind: "entity" | "object"; instanceId: string; catalogId?: string; name: string; purpose: ColliderPurpose; damageEligible: boolean; blocks: boolean; position: EntityPosition; rotationY: number; shape: | {kind: "sphere";… — ⚠ undocumented
-- `HITBOX_WIRE_COLOR` (const): const HITBOX_WIRE_COLOR: "#f472b6" — ⚠ undocumented
-- `PROJECTILE_PATH_COLOR` (const): const PROJECTILE_PATH_COLOR: "#fde68a" — ⚠ undocumented
-
-## @jgengine/shell/devtools/devtoolsOverrides
-
-- `readStoredOverrides` (function): function readStoredOverrides(gameName: string): DevtoolsOverrides | null — ⚠ undocumented
-
-## @jgengine/shell/devtools/devtoolsReports
-
-- `DebugSummary` (interface): interface DebugSummary — Compact `debug_summary` payload: the numbers an agent needs to judge a run, about 1 KB.
-
-## @jgengine/shell/devtools/frameSampler
-
-- `FrameReportInputs` (interface): interface FrameReportInputs — Everything the report needs, gathered by whichever producer is asking.
-- `FrameSampler` (interface): interface FrameSampler — The installed sampler: ask it for a report, reset its window, or tear it down.
-- `FrameTelemetrySources` (interface): interface FrameTelemetrySources — What the shell hands the sampler: live getters, called only when a report is built.
-- `GlCounterTotals` (interface): interface GlCounterTotals — GPU-object creation counts, the fields the budget gate compares.
-- `REPORT_PUSH_MS` (const): const REPORT_PUSH_MS: 1000 — Cadence of the push to the dev server, in milliseconds.
-- `TELEMETRY_FLAG` (const): const TELEMETRY_FLAG: "telemetry" — In-page frame telemetry: the game reports on itself instead of needing a second process to attach a profiler. Frame timings come from the devtools frame ring, renderer counts from the live renderer, GPU-object creation from wrapped GL calls, and per-system numbers from `devtools.probes` — all read on demand, so nothing here runs on the hot path.
-- `TELEMETRY_WARMUP_MS` (const): const TELEMETRY_WARMUP_MS: 5000 — How long after the sampler starts the GL counters get their post-warmup baseline.
-
-## @jgengine/shell/devtools/panelAtoms
-
-- `SectionLabel` (function): function SectionLabel({ children }: { children: string }): React.JSX.Element — ⚠ undocumented
-- `ms` (function): function ms(value: number): string — ⚠ undocumented
-
-## @jgengine/shell/devtools/perfDiagnose
-
-- `diagnose` (function): function diagnose(frame: NonNullable<ReturnType<typeof devtools.frame.stats>>, longs: readonly LongFrameEvent[]): string | null — ⚠ undocumented
-
-## @jgengine/shell/diagnostics/FpsCounter
-
-- `FrameTally` (interface): interface FrameTally — Mutable frame tally shared between the in-Canvas probe and the DOM readout.
-
-## @jgengine/shell/diagnostics/RuntimeDiagnostics
-
-- `DiagnosticOverlay` (function): function DiagnosticOverlay({ diagnostics, gameName }: { diagnostics: RuntimeDiagnostic[]; gameName: string }): React.JSX.Element | null — ⚠ undocumented
-- `ErrorReportActions` (function): function ErrorReportActions({ report, issueTitle }: { report: string; issueTitle: string }): React.JSX.Element — "Copy error" + "File issue" buttons for any error surface. `report` is the full text to copy / prefill.
-- `GameUiErrorBoundary` (class): class GameUiErrorBoundary extends Component< { children: ReactNode; onRuntimeError: (error: unknown, phase: string, componentStack?: string) => void }, { failed: boolean } > — ⚠ undocumented
-- `RuntimeDiagnostic` (interface): interface RuntimeDiagnostic { id: number; phase: string; message: string; stack?: string; componentStack?: string; capturedAt: string } — ⚠ undocumented
-- `errorReportContext` (function): function errorReportContext(): string — Standalone error footer text (page, browser, engine) shared by every error surface.
-- `logRuntimeError` (function): function logRuntimeError(error: unknown, phase: string, componentStack?: string): Omit<RuntimeDiagnostic, "id"> — ⚠ undocumented
-
 ## @jgengine/shell/drivers/FrameDriver
 
 - `FrameDriver` (function): function FrameDriver({ ctx, playable, tracker, yawRef, pitchRef, primaryClickRef, pointerAxisRef, analogRef, gateRef, onRuntimeError, multiplayer, serverIdRef, pointerService, pointerAim, pingCommand, poster, onPosterSettled, authoritativeFrameRef, }: { ctx: GameContext; playable: PlayableGame; trac… — ⚠ undocumented
@@ -2724,44 +2510,6 @@
 - `GrassStreamOptions` (interface): interface GrassStreamOptions — Options for {@link GrassStream}.
 - `GrassStreamStats` (interface): interface GrassStreamStats — Per-frame bookkeeping the stream reports, for tests and devtools.
 
-## @jgengine/shell/input/gamepadMerge
-
-- `GamepadInputFrame` (interface): interface GamepadInputFrame — Per-frame gamepad actions and analog values ready to merge with another input source.
-- `mergeGamepadFrame` (function): function mergeGamepadFrame(base: GamepadInputFrame, gamepad: GamepadFrame): GamepadInputFrame — Merge one resolved gamepad frame with another input source's semantic state.
-- `mergeGamepadInput` (function): function mergeGamepadInput(frames: readonly GamepadFrame[], base: GamepadInputFrame = { held: [], analog: {} }): GamepadInputFrame — Pure reducer used by the shell and synthetic gamepad tests.
-
-## @jgengine/shell/input/gamepadPoll
-
-- `GamepadPoll` (interface): interface GamepadPoll — Buffers one shell gamepad poll reuses across frames.
-- `GamepadRoute` (interface): interface GamepadRoute — Where each connected pad's input goes this frame; buffers are reused across frames.
-- `emptyGamepadPoll` (function): function emptyGamepadPoll(): GamepadPoll — Fresh buffers for {@link stepGamepadPoll}.
-- `emptyGamepadRoute` (function): function emptyGamepadRoute(): GamepadRoute — Fresh buffers for {@link routeGamepads}.
-- `gamepadCodes` (function): function gamepadCodes(bindings: ActionCodesMap): GamepadBindings — The pad-only slice of an action binding map, in the shape {@link resolveGamepadFrame} reads.
-- `rebindGamepadPoll` (function): function rebindGamepadPoll(poll: GamepadPoll, previous: GamepadBindings, next: GamepadBindings, tracker: ActionStateTracker<string>): void — Swap the pad bindings mid-game (a context push) without touching keyboard state: release the codes of pad-held actions whose pad codes changed (the next poll presses them under the new map), and keep the rest held.
-- `routeGamepads` (function): function routeGamepads(pads: ArrayLike<GamepadSample | null | undefined>, seats: Pick<LocalPlayers, "assign" | "slotForDevice" | "config">, route: GamepadRoute): GamepadRoute — Route pads to local seats: a claimed pad goes to its seat, an unclaimed pad hot-joins on a button press (stick drift never opens a seat), and with one seat every pad drives the primary player.
-- `stepGamepadPoll` (function): function stepGamepadPoll(poll: GamepadPoll, pads: ArrayLike<GamepadSample | null | undefined>, bindings: GamepadBindings, options: ResolveGamepadFrameOptions, tracker: ActionStateTracker<string>, analogIn: Readonly<Record<string, number>> | null): Readonly<Record<string, number>> | null — One poll: resolve every connected pad, press/release tracker codes for actions whose pad state changed, and return the analog map to publish (pad values max-merged over the other source's). Allocation-free after the first frame.
-
-## @jgengine/shell/input/gamepadSource
-
-- `GamepadSource` (function): function GamepadSource({ tracker, bindings, analogRef, input, feel, seats, onSeatJoin, seatsActive, }: { tracker: ActionStateTracker<string>; bindings: ActionCodesMap; analogRef: { current: Readonly<Record<string, number>> | null }; input: InputSnapshot; /** Game-level pad feel (`defineGame({ gamepa… — Poll browser gamepads and feed semantic actions into the shell tracker.
-- `mergeGamepadFrame` (function): function mergeGamepadFrame(base: GamepadInputFrame, gamepad: GamepadFrame): GamepadInputFrame — Merge one resolved gamepad frame with another input source's semantic state.
-- `mergeGamepadInput` (function): function mergeGamepadInput(frames: readonly GamepadFrame[], base: GamepadInputFrame = { held: [], analog: {} }): GamepadInputFrame — Pure reducer used by the shell and synthetic gamepad tests.
-
-## @jgengine/shell/input/mouseLook
-
-- `MouseLookAim` (interface): interface MouseLookAim { yaw: number; pitch: number } — ⚠ undocumented
-- `MouseLookOptions` (interface): interface MouseLookOptions { sensitivity?: number; maxPitch?: number; pointerLock?: boolean; initialYaw?: number; initialPitch?: number } — ⚠ undocumented
-- `MouseLookTracker` (interface): interface MouseLookTracker — The analog mouse-look service chase/orbit-cam games hand-rolled (#282.8) — pointer-lock lifecycle plus delta accumulation into a yaw/pitch aim, decoupled from the first-person rig. Attach it to the canvas, read `aim()` from `onTick`/`useFrame`, dispose on unmount.
-- `createMouseLookTracker` (function): function createMouseLookTracker(element: HTMLElement, options: MouseLookOptions = {}): MouseLookTracker — ⚠ undocumented
-
-## @jgengine/shell/input/pointerLock
-
-- `requestRawPointerLock` (function): function requestRawPointerLock(element: LockableElement): void — Request pointer lock with raw (unaccelerated) mouse deltas, falling back to a plain lock when the browser or OS rejects `unadjustedMovement`.
-
-## @jgengine/shell/inputSink
-
-- `InputSink` (interface): interface InputSink — Where the local player's per-frame input goes: discarded in single-player, sent to the authoritative host under `authority: "server"`.
-
 ## @jgengine/shell/instancing/instanceChunks
 
 - `InstanceChunk` (interface): interface InstanceChunk — A spatially bounded group of final, geometry-local instance matrices: one cullable draw.
@@ -2816,129 +2564,6 @@
 
 - `MaterialOverrideOptions` (interface): interface MaterialOverrideOptions { clone?: boolean; textures?: MaterialOverrideTextures; ownMaterial?: (material: THREE.Material) => void } — ⚠ undocumented
 - `MaterialOverrideTextures` (interface): interface MaterialOverrideTextures — Loaded PBR textures for `applyMaterialOverride`'s `textures` option — matches `ModelMaterialMaps`' roles.
-
-## @jgengine/shell/multiplayer
-
-- `DEFAULT_FEED_ACTIONS` (const): const DEFAULT_FEED_ACTIONS: string[] — ⚠ undocumented
-- `PeerShellFactories` (interface): interface PeerShellFactories — Alternate peer factories for hosts that provide their own WebRTC implementation or transport pipe.
-- `ResolvePeerShellMultiplayerArgs` (interface): interface ResolvePeerShellMultiplayerArgs — Peer bootstrap options; passing a playable hosts its authoritative GameContext world.
-- `ResolveShellMultiplayerArgs` (type): type ResolveShellMultiplayerArgs = { game: GameDefinition; gameId: string; url?: string; userId?: string; force?: boolean; feedActions?: string[]; } — ⚠ undocumented
-- `ShellMultiplayer` (type): type ShellMultiplayer = MultiplayerSession — ⚠ undocumented · used by `resolvePeerShellMultiplayer`: Opens a peer session.
-- `randomPlayerId` (function): function randomPlayerId(): string — ⚠ undocumented
-- `resolvePeerShellMultiplayer` (function): function resolvePeerShellMultiplayer(args: ResolvePeerShellMultiplayerArgs): Promise<ShellMultiplayer & { close: () => Promise<void> }> — Opens a peer session. With `playable`, one host runs the game loop and guests mirror its shared world. Await `close()` to finish authoritative persistence. Same-origin rooms use BroadcastChannel signaling.
-- `resolveShellMultiplayer` (function): function resolveShellMultiplayer(args: ResolveShellMultiplayerArgs): ShellMultiplayer | null — ⚠ undocumented
-
-## @jgengine/shell/placement
-
-- `PlacementGhost` (function): function PlacementGhost({ preview, height = 1, validColor = "#34d399", invalidColor = "#f87171", }: PlacementGhostProps): React.JSX.Element | null — Cursor-following build ghost: valid/invalid tint from a placement controller preview.
-- `PlacementGhostProps` (interface): interface PlacementGhostProps — Props for {@link PlacementGhost}: the placement preview to draw and its valid/invalid tint.
-- `TransformGizmo` (const): const TransformGizmo: React.MemoExoticComponent<({ position, rotationY, mode, snapMode, gridSize, space, rotationSnap, scaleSnap, lift, size, groundSnap, onDraggingChange, onRelease, }: TransformGizmoProps) => React.JSX.Element> — Runtime selection/move gizmo shared by games and the editor. Wraps TransformControls; callers own selection and commit side-effects.
-- `TransformGizmoMode` (type): type TransformGizmoMode = "translate" | "rotate" | "scale" — Active TransformControls mode for the runtime selection gizmo.
-- `TransformGizmoPose` (interface): interface TransformGizmoPose — Pose reported by {@link TransformGizmo} when the user releases a drag.
-- `TransformGizmoProps` (interface): interface TransformGizmoProps — Props for the shared runtime/editor selection gizmo.
-- `TransformGizmoSnap` (type): type TransformGizmoSnap = "grid" | "free" | "ground" — Snap policy: grid quantize, free drag, or ground-height sample on release.
-
-## @jgengine/shell/placement
-
-- `PlacementGhost` (function): function PlacementGhost({ preview, height = 1, validColor = "#34d399", invalidColor = "#f87171", }: PlacementGhostProps): React.JSX.Element | null — Cursor-following build ghost: valid/invalid tint from a placement controller preview.
-- `PlacementGhostProps` (interface): interface PlacementGhostProps — Props for {@link PlacementGhost}: the placement preview to draw and its valid/invalid tint.
-- `TransformGizmo` (const): const TransformGizmo: React.MemoExoticComponent<({ position, rotationY, mode, snapMode, gridSize, space, rotationSnap, scaleSnap, lift, size, groundSnap, onDraggingChange, onRelease, }: TransformGizmoProps) => React.JSX.Element> — Runtime selection/move gizmo shared by games and the editor. Wraps TransformControls; callers own selection and commit side-effects.
-- `TransformGizmoMode` (type): type TransformGizmoMode = "translate" | "rotate" | "scale" — Active TransformControls mode for the runtime selection gizmo.
-- `TransformGizmoPose` (interface): interface TransformGizmoPose — Pose reported by {@link TransformGizmo} when the user releases a drag.
-- `TransformGizmoProps` (interface): interface TransformGizmoProps — Props for the shared runtime/editor selection gizmo.
-- `TransformGizmoSnap` (type): type TransformGizmoSnap = "grid" | "free" | "ground" — Snap policy: grid quantize, free drag, or ground-height sample on release.
-
-## @jgengine/shell/placement/PlacementGhost
-
-- `PlacementGhost` (function): function PlacementGhost({ preview, height = 1, validColor = "#34d399", invalidColor = "#f87171", }: PlacementGhostProps): React.JSX.Element | null — Cursor-following build ghost: valid/invalid tint from a placement controller preview.
-- `PlacementGhostProps` (interface): interface PlacementGhostProps — Props for {@link PlacementGhost}: the placement preview to draw and its valid/invalid tint.
-
-## @jgengine/shell/placement/TransformGizmo
-
-- `DEFAULT_ROTATION_SNAP` (const): const DEFAULT_ROTATION_SNAP: number — Default rotation snap increment (radians) when callers don't configure one.
-- `TransformGizmo` (const): const TransformGizmo: React.MemoExoticComponent<({ position, rotationY, mode, snapMode, gridSize, space, rotationSnap, scaleSnap, lift, size, groundSnap, onDraggingChange, onRelease, }: TransformGizmoProps) => React.JSX.Element> — Runtime selection/move gizmo shared by games and the editor. Wraps TransformControls; callers own selection and commit side-effects.
-- `TransformGizmoMode` (type): type TransformGizmoMode = "translate" | "rotate" | "scale" — Active TransformControls mode for the runtime selection gizmo.
-- `TransformGizmoPose` (interface): interface TransformGizmoPose — Pose reported by {@link TransformGizmo} when the user releases a drag.
-- `TransformGizmoProps` (interface): interface TransformGizmoProps — Props for the shared runtime/editor selection gizmo.
-- `TransformGizmoSnap` (type): type TransformGizmoSnap = "grid" | "free" | "ground" — Snap policy: grid quantize, free drag, or ground-height sample on release.
-- `TransformGizmoSpace` (type): type TransformGizmoSpace = "world" | "local" — Gizmo handle orientation: world axes, or the target's local (yaw-rotated) axes.
-
-## @jgengine/shell/play
-
-- `PLAY_MOVE_ACTIONS` (const): const PLAY_MOVE_ACTIONS: Readonly<Record<PlayMove, string>> — Movement action ids a {@link PlayMove} holds, so a script walks through the same controller a player does.
-- `PlayAimStep` (interface): interface PlayAimStep extends PlayStepBase — Point the walk controller and the aim payload at a yaw/pitch, in radians.
-- `PlayCommandStep` (interface): interface PlayCommandStep extends PlayStepBase — Run a registered command directly, with whatever input it declares.
-- `PlayExpectation` (interface): interface PlayExpectation — One assertion about world state. Read happens twice — right after `setup` and on the assertion's own tick — so a script can prove change ("health dropped") as well as a level ("wave is 2").
-- `PlayExpectationResult` (interface): interface PlayExpectationResult — One assertion's verdict, with both readings so a failure says what changed and by how much.
-- `PlayFireStep` (interface): interface PlayFireStep extends PlayStepBase — Hold the `fire` action: the bound `fire` command runs on the press tick, then on its repeat cadence.
-- `PlayMove` (type): type PlayMove = "forward" | "back" | "left" | "right" — Direction a scripted step walks, using the shell's own movement actions.
-- `PlayMoveStep` (interface): interface PlayMoveStep extends PlayStepBase — Hold a movement direction for `ticks` — the shell walk controller's own held actions.
-- `PlayRunOptions` (interface): interface PlayRunOptions — Options for one scripted play run.
-- `PlayRunResult` (interface): interface PlayRunResult — Everything a scripted run produced: the timeline, the assertion verdicts, and a digest of the timeline for replay comparison.
-- `PlayScript` (interface): interface PlayScript — A script to play against a real game: what to do, on which tick, and what must be true afterwards.
-- `PlayScriptSpec` (interface): interface PlayScriptSpec — What {@link createPlayScript} accepts: the same script with the derived fields optional.
-- `PlayStep` (type): type PlayStep = PlayMoveStep | PlayAimStep | PlayFireStep | PlayUseStep | PlayWaitStep | PlayCommandStep — One tick-based action in a script.
-- `PlayTimelineEntry` (interface): interface PlayTimelineEntry — One row of what happened, on the tick it happened.
-- `PlayTimelineKind` (type): type PlayTimelineKind = "step" | "command" | "event" | "check" — What a timeline row records: a scripted action, a command result, a world event, or an assertion reading.
-- `PlayUseStep` (interface): interface PlayUseStep extends PlayStepBase — Press one bound action id once (default one tick) — `interact`, `reload`, `useAbility`, a game's own action.
-- `PlayValue` (type): type PlayValue = number | string | boolean | null — A reading an assertion compares: a stat, a distance, a count, a phase id.
-- `PlayWaitStep` (interface): interface PlayWaitStep extends PlayStepBase — Hold nothing for `ticks`, letting the world run.
-- `createPlayScript` (function): function createPlayScript(spec: PlayScriptSpec): PlayScript — Validate and normalize a script: whole-tick timings, sorted steps, a derived run length.
-- `formatPlayTimelineEntry` (function): function formatPlayTimelineEntry(entry: PlayTimelineEntry): string — One compact timeline line: `t=120 event combat.damage to=bruiser amount=12 remaining=54`.
-- `playTimelineDigest` (function): function playTimelineDigest(timeline: readonly PlayTimelineEntry[]): string — FNV-1a over the timeline's canonical JSON. Cheap, dependency-free and stable across runs and machines, which is all a replay comparison needs.
-- `runPlayScript` (function): function runPlayScript(playable: PlayableGame, spec: PlayScript | PlayScriptSpec, options: PlayRunOptions = {}): PlayRunResult — Play a real game without a browser: boot its `PlayableGame` through the headless runner, apply a tick-based {@link PlayScript}, and return what happened plus whether the script's assertions held.
-
-## @jgengine/shell/play/run
-
-- `PlayRunOptions` (interface): interface PlayRunOptions — Options for one scripted play run.
-- `runPlayScript` (function): function runPlayScript(playable: PlayableGame, spec: PlayScript | PlayScriptSpec, options: PlayRunOptions = {}): PlayRunResult — Play a real game without a browser: boot its `PlayableGame` through the headless runner, apply a tick-based {@link PlayScript}, and return what happened plus whether the script's assertions held.
-
-## @jgengine/shell/play/script
-
-- `PLAY_MOVE_ACTIONS` (const): const PLAY_MOVE_ACTIONS: Readonly<Record<PlayMove, string>> — Movement action ids a {@link PlayMove} holds, so a script walks through the same controller a player does.
-- `PlayAimStep` (interface): interface PlayAimStep extends PlayStepBase — Point the walk controller and the aim payload at a yaw/pitch, in radians.
-- `PlayCommandStep` (interface): interface PlayCommandStep extends PlayStepBase — Run a registered command directly, with whatever input it declares.
-- `PlayExpectation` (interface): interface PlayExpectation — One assertion about world state. Read happens twice — right after `setup` and on the assertion's own tick — so a script can prove change ("health dropped") as well as a level ("wave is 2").
-- `PlayFireStep` (interface): interface PlayFireStep extends PlayStepBase — Hold the `fire` action: the bound `fire` command runs on the press tick, then on its repeat cadence.
-- `PlayMove` (type): type PlayMove = "forward" | "back" | "left" | "right" — Direction a scripted step walks, using the shell's own movement actions.
-- `PlayMoveStep` (interface): interface PlayMoveStep extends PlayStepBase — Hold a movement direction for `ticks` — the shell walk controller's own held actions.
-- `PlayScript` (interface): interface PlayScript — A script to play against a real game: what to do, on which tick, and what must be true afterwards.
-- `PlayScriptSpec` (interface): interface PlayScriptSpec — What {@link createPlayScript} accepts: the same script with the derived fields optional.
-- `PlayStep` (type): type PlayStep = PlayMoveStep | PlayAimStep | PlayFireStep | PlayUseStep | PlayWaitStep | PlayCommandStep — One tick-based action in a script.
-- `PlayUseStep` (interface): interface PlayUseStep extends PlayStepBase — Press one bound action id once (default one tick) — `interact`, `reload`, `useAbility`, a game's own action.
-- `PlayValue` (type): type PlayValue = number | string | boolean | null — A reading an assertion compares: a stat, a distance, a count, a phase id.
-- `PlayWaitStep` (interface): interface PlayWaitStep extends PlayStepBase — Hold nothing for `ticks`, letting the world run.
-- `createPlayScript` (function): function createPlayScript(spec: PlayScriptSpec): PlayScript — Validate and normalize a script: whole-tick timings, sorted steps, a derived run length.
-
-## @jgengine/shell/play/timeline
-
-- `PlayExpectationResult` (interface): interface PlayExpectationResult — One assertion's verdict, with both readings so a failure says what changed and by how much.
-- `PlayRunResult` (interface): interface PlayRunResult — Everything a scripted run produced: the timeline, the assertion verdicts, and a digest of the timeline for replay comparison.
-- `PlayTimelineEntry` (interface): interface PlayTimelineEntry — One row of what happened, on the tick it happened.
-- `PlayTimelineKind` (type): type PlayTimelineKind = "step" | "command" | "event" | "check" — What a timeline row records: a scripted action, a command result, a world event, or an assertion reading.
-- `formatPlayTimelineEntry` (function): function formatPlayTimelineEntry(entry: PlayTimelineEntry): string — One compact timeline line: `t=120 event combat.damage to=bruiser amount=12 remaining=54`.
-- `playTimelineDigest` (function): function playTimelineDigest(timeline: readonly PlayTimelineEntry[]): string — FNV-1a over the timeline's canonical JSON. Cheap, dependency-free and stable across runs and machines, which is all a replay comparison needs.
-
-## @jgengine/shell/pointer/PointerOverlays
-
-- `ContextMenuView` (function): function ContextMenuView({ menu, x, y, onPick, onClose, }: { menu: ContextMenu; x: number; y: number; onPick: (verb: ContextVerb) => void; onClose: () => void; }): React.JSX.Element — ⚠ undocumented
-- `MarqueeBox` (function): function MarqueeBox({ rect }: { rect: ScreenRect }): React.JSX.Element — ⚠ undocumented
-
-## @jgengine/shell/pointer/PointerProbe
-
-- `PointerProbe` (function): function PointerProbe({ service, groundHeightAt }: { service: PointerService; groundHeightAt?: (x: number, z: number) => number }): null — Binds the pointer service to the live camera and scene; `groundHeightAt` lets clicks land on terrain.
-
-## @jgengine/shell/pointer/contextMenu
-
-- `ContextMenuEventLike` (interface): interface ContextMenuEventLike — What the shell needs from a `contextmenu` event to decide whether the browser's menu may open.
-
-## @jgengine/shell/pointer/pointerService
-
-- `POINTER_ENTITY_KEY` (const): const POINTER_ENTITY_KEY: "jgEntityId" — ⚠ undocumented
-- `POINTER_OBJECT_KEY` (const): const POINTER_OBJECT_KEY: "jgObjectId" — ⚠ undocumented
-- `PointerHitFilter` (type): type PointerHitFilter = (object: THREE.Object3D) => boolean — ⚠ undocumented
-- `PointerService` (interface): interface PointerService { worldHit(): PointerHit | null; worldHitCenter(): PointerHit | null; screenOf(world: PointerVec3): {x: number; y: number} | null; hasCursor(): boolean; cursorRay(): {origin: PointerVec3; direction: PointerVec3} | null; bind(deps: PointerDe… — ⚠ undocumented · used by `PointerProbe` (@jgengine/shell/pointer/PointerProbe): Binds the pointer service to the live camera and scene; `groundHeightAt` lets clicks land on terrain.
-- `createPointerService` (function): function createPointerService(): PointerService — ⚠ undocumented
 
 ## @jgengine/shell/postfx/PostProcessing
 
@@ -3292,11 +2917,6 @@
 - `RagdollOptions` (interface): interface RagdollOptions — What {@link useRagdoll} needs: the rig's bone names, the physics world and what arms it.
 - `useRagdoll` (function): function useRagdoll(scene: THREE.Object3D, options: RagdollOptions): void — Turns a rigged character into a physics ragdoll when `active` goes true: the bones' world poses at that moment become box bodies joined by distance links in `world`, and every frame after, each bone's world position and aim come from its body. The physics bodies carry translation only, so each bone is oriented by rotating its death-pose direction-to-child onto the current one, which is what gives the body a skeleton instead of a pile of boxes.
 
-## @jgengine/shell/replay/useSessionRecorder
-
-- `RecordedPose` (interface): interface RecordedPose { position: EntityPosition; rotationY: number } — ⚠ undocumented · used by `useSessionRecorder`: Session-recording buffer (#120) for replay / photo mode / kill-cam: records an entity's pose on game-time every frame into a `RecordingBuffe…
-- `useSessionRecorder` (function): function useSessionRecorder(entityId: string, options?: RecordingBufferOptions): RecordingBuffer<RecordedPose> — Session-recording buffer (#120) for replay / photo mode / kill-cam: records an entity's pose on game-time every frame into a `RecordingBuffer`, which a game can then `seek()` to scrub, drive an observer cam ghost, or export a kill-cam clip. Recording rides on `ctx.time.now()`, so pause/fast-forward scrub the recording exactly like the live sim.
-
 ## @jgengine/shell/roads/RoadRibbons
 
 - `AuthoredRoadNetwork` (interface): interface AuthoredRoadNetwork — Trimmed ribbons for every road plus the welded surfaces that fill the crossings between them.
@@ -3377,10 +2997,6 @@
 
 - `EMPTY_RESERVED` (const): const EMPTY_RESERVED: ReadonlySet<string> — No action names are reserved when no camera rig is active (hud/none presentation): games may bind `turnLeft`/`interact`/etc. as their own.
 - `NO_ACTIONS` (const): const NO_ACTIONS: string[] — Empty action list — published while the orientation gate is up to suppress all held input without touching the tracker.
-
-## @jgengine/shell/shellMovement
-
-- `SHELL_MOVEMENT_ACTIONS` (const): const SHELL_MOVEMENT_ACTIONS: readonly ["moveForward", "moveBack", "moveLeft", "moveRight", "jump"] — Movement action names the shell drives via the walk controller.
 
 ## @jgengine/shell/sky/Daylight
 
@@ -3647,37 +3263,6 @@
 - `terrainSurfaceClass` (function): function terrainSurfaceClass(surface: string): TerrainSurfaceClass — Classifies a painted surface id (e.g. `"grass"`, `"dry-grass"`, `"cobble-stone"`) into the procedural ground response the terrain shader draws for it; unknown ids get the generic `"ground"` response.
 - `terrainSurfaceClassIndex` (function): function terrainSurfaceClassIndex(cls: TerrainSurfaceClass): number — Shader index of a surface class (`jgSurface`'s `cls`); bit `1 << index` in a class mask.
 - `terrainSurfaceRoughness` (function): function terrainSurfaceRoughness(cls: TerrainSurfaceClass): number — Default roughness the terrain shades a surface class with.
-
-## @jgengine/shell/touch/OrientationHint
-
-- `OrientationHint` (function): function OrientationHint({ wanted }: { wanted: "landscape" | "portrait" }): React.JSX.Element | null — ⚠ undocumented
-
-## @jgengine/shell/touch/TouchControlsOverlay
-
-- `TouchCodeSink` (interface): interface TouchCodeSink { onCodeDown(code: string): void; onCodeUp(code: string): void; onAnalog?(values: Readonly<Record<string, number>> | null): void } — ⚠ undocumented
-- `TouchControlsDock` (function): function TouchControlsDock({ scheme, sink, style, scale = 1, joystickVariant = "floating", shortSide, }: { scheme: TouchScheme; sink: TouchCodeSink; /** Player-selected skin; falls back to the scheme's game default. */ style?: TouchStyle; /** Multiplies the joystick and side-rail buttons; the thumb … — ⚠ undocumented
-- `TouchPlaySurface` (function): function TouchPlaySurface({ scheme, sink, yawRef, pitchRef, maxPitch, onPrimaryTap, }: { scheme: TouchScheme; sink: TouchCodeSink; yawRef: MutableRefObject<number>; pitchRef: MutableRefObject<number>; maxPitch: number; onPrimaryTap: () => void; }): React.JSX.Element — ⚠ undocumented
-- `TouchViewport` (interface): interface TouchViewport — Viewport size in CSS px the touch dock lays out against.
-- `touchDockClearance` (function): function touchDockClearance(scheme: TouchScheme | null, scale = 1, shortSide = DEFAULT_TOUCH_SHORT_SIDE): number — Tallest bottom-edge space the dock occupies (px, excluding device safe areas). The shell publishes it as `--jg-hud-dock-clearance`; {@link touchDockInsets} gives each bottom third its own value so HUD at bottom-centre is not pushed up by controls that only fill the corners.
-
-## @jgengine/shell/touch/touchClusterLayout
-
-- `ClusterPlacement` (interface): interface ClusterPlacement — A button box's offset from the cluster's bottom-right corner, in px.
-- `DEFAULT_TOUCH_SHORT_SIDE` (const): const DEFAULT_TOUCH_SHORT_SIDE: 390 — Fallback short side when no viewport is measurable (tests, SSR): a phone held in landscape.
-- `DOCK_GEOMETRY` (const): const DOCK_GEOMETRY: { readonly joystick: 132; readonly joystickThumb: 52; readonly railButton: 64; readonly basePadding: 20; readonly edgeMargin: 12; } — Dock geometry constants shared by the renderer and the clearance math.
-- `TouchClusterLayout` (interface): interface TouchClusterLayout — Where every cluster button sits, plus the cluster box size.
-- `TouchClusterSizes` (interface): interface TouchClusterSizes — Button sizes for the thumb cluster, in CSS px, derived from the screen's short side.
-- `TouchDockInsets` (interface): interface TouchDockInsets — Bottom-edge space (px, excluding safe areas) the dock occupies in each third of the screen.
-- `UTILITY_INLINE_LIMIT` (const): const UTILITY_INLINE_LIMIT: 2 — Utility buttons past this count fold into one overflow button.
-
-## @jgengine/shell/touch/touchIcons
-
-- `TouchButtonFace` (type): type TouchButtonFace = { kind: "glyph"; name: GameIconName | TouchGlyphName } | { kind: "text"; text: string } — What a touch button face shows: a drawn glyph, or a 1–3 character text glyph when nothing fits.
-- `TouchGlyphName` (type): type TouchGlyphName = keyof typeof TOUCH_GLYPHS — A glyph the touch dock draws itself, beyond the shared `GameIcon` catalog.
-
-## @jgengine/shell/useShellMultiplayerSync
-
-- `useShellMultiplayerSync` (function): function useShellMultiplayerSync(ctx: GameContext | null, multiplayer: ShellMultiplayer | null, playable: PlayableGame, serverIdRef: { current: string | null }, setRemotePlayers: Dispatch<SetStateAction<PresencePoseRow[]>>, authoritativeFrameRef?: { current: AuthoritativeFrameHandler | null }): { st… — Joins the multiplayer server for the live context and wires presence, feed relay, and chat sync until teardown.
 
 ## @jgengine/shell/vfx/ParticleField
 
@@ -3965,7 +3550,3 @@
 - `WorldBarSample` (interface): interface WorldBarSample { entityId?: string; x: number; y: number; percent: number; pxPerMeter?: number } — ⚠ undocumented
 - `WorldOverlayCamera` (interface): interface WorldOverlayCamera — Render camera matrices; world translation supplies the overlay's viewpoint.
 - `WorldOverlaySampleOptions` (interface): interface WorldOverlaySampleOptions — Sampling policy shared by health bars and nameplates.
-
-## @jgengine/shell/worldSync
-
-- `AuthoritativeFrameHandler` (type): type AuthoritativeFrameHandler = (revision: number) => void — Receives the revision of an authoritative world frame after it is applied locally.

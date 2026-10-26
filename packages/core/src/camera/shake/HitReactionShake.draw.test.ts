@@ -10,7 +10,8 @@ import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { GameProvider } from "@jgengine/react/provider";
 
 import { HitReactionShake } from "./HitReactionShake.draw";
-import { CALIBRATED_TRAUMA_DECAY_PER_SECOND, CameraShakeContext } from "./shakeChannel.draw";
+import { CALIBRATED_TRAUMA_DECAY_PER_SECOND } from "./cameraShake";
+import { CameraShakeContext } from "./shakeChannel.draw";
 
 test("a hit reaction's trauma, or its raw amplitude and decay, reaches the rig's shake", async () => {
   const ctx = createGameContext({

@@ -1,6 +1,6 @@
 import type { GameRuntime } from "@jgengine/core/runtime/gameRuntime";
 import { createGameRuntime } from "@jgengine/core/runtime/gameRuntime";
-import { SERVER_ONLY_COMMAND_REASON } from "@jgengine/core/runtime/commandRunner";
+import { SERVER_ONLY_COMMAND_REASON } from "@jgengine/core/commands/commandRunner";
 import type {
   GameServerRecord,
   HostPersistence,

@@ -4,8 +4,8 @@ import * as THREE from "three";
 import type { CrowdMember } from "./crowdRegistry";
 import { CharacterCrowdRegistry } from "./crowdRegistry";
 import { poseTimeOffset, writeCrowdBatch, type CrowdPlayback } from "./crowdBatch";
-import { createPointerService } from "../pointer/pointerService";
-import { POINTER_ENTITY_INSTANCES_KEY } from "../pointer/pointerService";
+import { createPointerService } from "@jgengine/core/input/pointerService.draw";
+import { POINTER_ENTITY_INSTANCES_KEY } from "@jgengine/core/input/pointerService.draw";
 
 const placement = { scale: 1, offset: new THREE.Vector3(0, 0, 0) };
 const clips = ["Idle", "Walk", "Run"];

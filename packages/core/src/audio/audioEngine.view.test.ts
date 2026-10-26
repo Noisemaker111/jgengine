@@ -1,0 +1,768 @@
+import { afterEach, describe, expect, test } from "bun:test";
+
+import { createVoiceAllocator } from "@jgengine/core/audio/voiceAllocator";
+import type { SoundDef } from "@jgengine/core/audio/audioFalloff";
+import { feedbackCueSoundId } from "@jgengine/core/audio/feedbackCues";
+import { createGameEvents } from "@jgengine/core/game/events";
+
+import { createAudioEngine } from "./audioEngine.view";
+import { attachAudioEventWire, type AudioEventBus } from "./audioWire.view";
+import { attachEventFeedback, createEventFeedback } from "./eventFeedback";
+
+type Param = {
+  value: number;
+  /** How many times the `value` setter was written, so a test can prove a no-op frame writes nothing. */
+  writes: number;
+  target: number | null;
+  /** How many `setTargetAtTime` calls were scheduled, so a ramp proves it was scheduled once. */
+  targetCalls: number;
+  /** Time constant of the last scheduled ramp, so a fade keeps its stated time. */
+  tc: number | null;
+  setValueAtTime: () => void;
+  setTargetAtTime: (value: number, time?: number, tc?: number) => void;
+  linearRampToValueAtTime: () => void;
+  exponentialRampToValueAtTime: () => void;
+};
+
+function param(value = 0): Param {
+  let current = value;
+  const result: Param = {
+    get value() {
+      return current;
+    },
+    set value(next: number) {
+      result.writes += 1;
+      current = next;
+    },
+    writes: 0,
+    target: null,
+    targetCalls: 0,
+    tc: null,
+    setValueAtTime: () => undefined,
+    setTargetAtTime: (next, _time, tc) => {
+      result.targetCalls += 1;
+      result.target = next;
+      result.tc = tc ?? null;
+    },
+    linearRampToValueAtTime: () => undefined,
+    exponentialRampToValueAtTime: () => undefined,
+  };
+  return result;
+}
+
+function graphContext() {
+  const nodes: any[] = [];
+  const node = (kind: string) => {
+    const result = {
+      kind,
+      connections: [] as any[],
+      disconnectCount: 0,
+      connect: (target: any) => { result.connections.push(target); return target; },
+      disconnect: () => { result.disconnectCount += 1; result.connections.length = 0; },
+      gain: param(1),
+      frequency: param(440),
+      playbackRate: param(1),
+      startCount: 0,
+      stopCount: 0,
+      start: () => { result.startCount += 1; },
+      stop: () => { result.stopCount += 1; },
+      onended: null,
+      end: () => { result.onended?.(); },
+      type: "sine",
+      buffer: null,
+      loop: false,
+      positionX: param(),
+      positionY: param(),
+      positionZ: param(),
+      get position() { return [this.positionX.value, this.positionY.value, this.positionZ.value] as [number, number, number]; },
+      panningModel: "equalpower",
+      distanceModel: "inverse",
+      refDistance: 1,
+      maxDistance: 10000,
+      rolloffFactor: 1,
+      coneInnerAngle: 360,
+      coneOuterAngle: 360,
+      coneOuterGain: 0,
+      setValueAtTime: () => undefined,
+      linearRampToValueAtTime: () => undefined,
+      exponentialRampToValueAtTime: () => undefined,
+    } as any;
+    nodes.push(result);
+    return result;
+  };
+  const listener = {
+    positionX: param(), positionY: param(), positionZ: param(),
+    forwardX: param(), forwardY: param(), forwardZ: param(),
+    upX: param(), upY: param(), upZ: param(),
+  };
+  const context = {
+    currentTime: 0, sampleRate: 8000, destination: node("destination"), listener,
+    createGain: () => node("gain"), createPanner: () => node("panner"), createOscillator: () => node("oscillator"),
+    createBuffer: (_channels: number, length: number) => ({ getChannelData: () => new Float32Array(length) }),
+    createBufferSource: () => node("bufferSource"), createBiquadFilter: () => node("filter"),
+    decodeAudioData: async () => ({ duration: 1 }),
+    closeCount: 0,
+    resume: async () => undefined, close: async () => { context.closeCount += 1; },
+  };
+  return { context, nodes, listener };
+}
+
+afterEach(() => {
+  delete (globalThis as any).window;
+});
+
+describe("createAudioEngine spatial graph", () => {
+  test("sets listener orientation and places a spatial sound panner", () => {
+    const mock = graphContext();
+    class MockAudioContext { constructor() { return mock.context as any; } }
+    (globalThis as any).window = { AudioContext: MockAudioContext };
+    const engine = createAudioEngine({ sounds: {
+      ping: { id: "ping", bus: "sfx", synth: { voices: [{ kind: "tone", freq: 440, duration: 0.05 }] }, spatial: { panning: "equalpower" } },
+    } });
+
+    engine.setListenerPose({ position: { x: 1, y: 2, z: 3 }, forward: { x: -1, y: 0, z: 0 }, up: { x: 0, y: 0, z: 1 } });
+    engine.playOneShot("ping", { x: -2, y: 0, z: -4 });
+
+    expect([mock.listener.positionX.value, mock.listener.positionY.value, mock.listener.positionZ.value]).toEqual([1, 2, 3]);
+    expect([mock.listener.forwardX.value, mock.listener.forwardY.value, mock.listener.forwardZ.value]).toEqual([-1, 0, 0]);
+    expect([mock.listener.upX.value, mock.listener.upY.value, mock.listener.upZ.value]).toEqual([0, 0, 1]);
+    const panner = mock.nodes.find((entry) => entry.kind === "panner");
+    expect(panner).toBeDefined();
+    expect((panner as any).position).toEqual([-2, 0, -4]);
+    engine.dispose();
+  });
+});
+
+describe("createAudioEngine retained loop filter and doppler", () => {
+  const realFetch = globalThis.fetch;
+  afterEach(() => {
+    globalThis.fetch = realFetch;
+  });
+
+  async function loopHarness(doppler?: number) {
+    const mock = graphContext();
+    class MockAudioContext { constructor() { return mock.context as any; } }
+    (globalThis as any).window = { AudioContext: MockAudioContext };
+    globalThis.fetch = (async () => ({ arrayBuffer: async () => new ArrayBuffer(8) })) as any;
+    const engine = createAudioEngine({ sounds: {
+      engine: { id: "engine", bus: "sfx", url: "engine.ogg", loop: true, ...(doppler === undefined ? {} : { doppler }) },
+    } });
+    engine.setListenerPose({ position: { x: 0, y: 0, z: 0 }, forward: { x: 0, y: 0, z: -1 }, up: { x: 0, y: 1, z: 0 } });
+    const handle = engine.playLoop("engine", { x: 0, y: 0, z: -100 })!;
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    const source = mock.nodes.find((n) => n.kind === "bufferSource") as any;
+    const filters = mock.nodes.filter((n) => n.kind === "filter") as any[];
+    return { engine, handle, source, filters };
+  }
+
+  test("routes a loop through lowpass then highpass and ramps live cutoffs, clamped to Nyquist", async () => {
+    const { engine, handle, filters } = await loopHarness();
+    expect(filters.map((f) => f.type)).toEqual(["lowpass", "highpass"]);
+    expect(filters[0].frequency.value).toBe(4000);
+    expect(filters[1].frequency.value).toBe(10);
+    handle.setLowpass(900);
+    handle.setHighpass(120);
+    expect(filters[0].frequency.target).toBe(900);
+    expect(filters[1].frequency.target).toBe(120);
+    engine.dispose();
+  });
+
+  test("pitches a doppler loop by the emitter's closing speed and leaves others alone", async () => {
+    const shifted = await loopHarness(1);
+    shifted.handle.setRate(1.5);
+    shifted.handle.setVelocity({ x: 0, y: 0, z: 34.3 });
+    expect(shifted.source.playbackRate.target).toBeCloseTo(1.5 * (343 / (343 - 34.3)), 6);
+    shifted.engine.dispose();
+
+    const plain = await loopHarness();
+    plain.handle.setRate(1.5);
+    plain.handle.setVelocity({ x: 0, y: 0, z: 34.3 });
+    expect(plain.source.playbackRate.target).toBe(1.5);
+    plain.engine.dispose();
+  });
+
+  test("listener velocity toward the emitter pitches a doppler loop up", async () => {
+    const { engine, source } = await loopHarness(1);
+    engine.setListenerPose({
+      position: { x: 0, y: 0, z: 0 },
+      forward: { x: 0, y: 0, z: -1 },
+      up: { x: 0, y: 1, z: 0 },
+      velocity: { x: 0, y: 0, z: -34.3 },
+    });
+    expect(source.playbackRate.target).toBeCloseTo(1.1, 6);
+    engine.dispose();
+  });
+});
+
+
+const realFetch = globalThis.fetch;
+afterEach(() => { globalThis.fetch = realFetch; });
+
+const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+function installGraph() {
+  const mock = graphContext();
+  class MockAudioContext { constructor() { return mock.context as any; } }
+  (globalThis as any).window = { AudioContext: MockAudioContext };
+  globalThis.fetch = (async () => ({ arrayBuffer: async () => new ArrayBuffer(8) })) as any;
+  return mock;
+}
+
+const sample = (id: string, extra: Partial<SoundDef> = {}): SoundDef => ({ id, bus: "sfx", url: `${id}.ogg`, ...extra });
+
+/** The pre-panning, pre-reverb graph these lifecycle tests count node by node. */
+const DRY = { reverb: false, panning: "off" } as const;
+
+describe("bounded audio graph lifecycle", () => {
+  test("the event wire restarts a stolen loop on a new start request while cancelled pending sources stay absent", async () => {
+    const mock = installGraph();
+    const pending = new Map<string, (value: any) => void>();
+    globalThis.fetch = ((url: string) => new Promise((resolve) => pending.set(url, resolve))) as any;
+    const allocator = createVoiceAllocator({ maxTotal: 1 });
+    const engine = createAudioEngine({ ...DRY,  voiceAllocator: allocator, sounds: { a: sample("a"), b: sample("b", { priority: 10 }) } });
+    const handlers = new Map<string, (payload: any) => void>();
+    const events: AudioEventBus = { on(event, handler) { handlers.set(event, handler); return () => { handlers.delete(event); }; } };
+    const detach = attachAudioEventWire(events, engine);
+    const emit = (event: string, payload: any) => handlers.get(event)!(payload);
+    emit("audio.loopStart", { id: "a", sound: "a" });
+    emit("audio.loopStart", { id: "a", sound: "a" });
+    expect(allocator.snapshot().voices.map((voice) => voice.id)).toEqual([1]);
+    emit("audio.loopStart", { id: "b", sound: "b" });
+    pending.get("a.ogg")!({ arrayBuffer: async () => new ArrayBuffer(8) });
+    await flush();
+    expect(mock.nodes.filter((node) => node.kind === "bufferSource")).toHaveLength(0);
+    emit("audio.loopStop", { id: "b" });
+    emit("audio.loopStart", { id: "a", sound: "a" });
+    await flush();
+    expect(allocator.snapshot().voices.map((voice) => voice.soundId)).toEqual(["a"]);
+    expect(mock.nodes.filter((node) => node.kind === "bufferSource")).toHaveLength(1);
+    pending.get("b.ogg")!({ arrayBuffer: async () => new ArrayBuffer(8) });
+    await flush();
+    expect(mock.nodes.filter((node) => node.kind === "bufferSource")).toHaveLength(1);
+    detach();
+    expect(allocator.snapshot().voices).toHaveLength(0);
+    engine.dispose();
+  });
+
+  for (const failure of ["construction", "start"] as const) {
+    test(`procedural ${failure} failure stops earlier voices and releases partial graphs and reservations`, () => {
+      const mock = installGraph();
+      if (failure === "construction") {
+        mock.context.createBiquadFilter = () => { throw new Error("cannot allocate filter"); };
+      } else {
+        const createSource = mock.context.createBufferSource;
+        mock.context.createBufferSource = () => {
+          const source = createSource();
+          source.start = () => { throw new Error("cannot start source"); };
+          return source;
+        };
+      }
+      const allocator = createVoiceAllocator({ maxTotal: 1 });
+      const engine = createAudioEngine({ ...DRY,  voiceAllocator: allocator, sounds: { ping: {
+        id: "ping", bus: "sfx", spatial: { panning: "equalpower" },
+        synth: { voices: [{ kind: "tone", freq: 440, duration: 1 }, { kind: "noise", filterFreq: 1000, duration: 1 }] },
+      } } });
+      expect(() => engine.playOneShot("ping")).not.toThrow();
+      expect(allocator.snapshot().voices).toHaveLength(0);
+      const oscillator = mock.nodes.find((node) => node.kind === "oscillator");
+      expect(oscillator.stopCount).toBe(2);
+      expect(mock.nodes.slice(3).every((node) => node.disconnectCount === 1)).toBe(true);
+      engine.dispose();
+    });
+  }
+
+  test("empty procedural patches release their reservation and output graph immediately", () => {
+    const mock = installGraph();
+    const allocator = createVoiceAllocator({ maxTotal: 1 });
+    const engine = createAudioEngine({ ...DRY,  voiceAllocator: allocator, sounds: { empty: {
+      id: "empty", bus: "sfx", synth: { voices: [] }, spatial: { panning: "equalpower" },
+    } } });
+    engine.playOneShot("empty");
+    expect(allocator.snapshot().voices).toHaveLength(0);
+    expect(mock.nodes.slice(3).map((node) => node.disconnectCount)).toEqual([1, 1]);
+    engine.dispose();
+  });
+
+  test("sample graph construction failure releases partial nodes and reservations", async () => {
+    const mock = installGraph();
+    mock.context.createBiquadFilter = () => { throw new Error("cannot allocate filter"); };
+    const allocator = createVoiceAllocator({ maxTotal: 1 });
+    const engine = createAudioEngine({ ...DRY,  voiceAllocator: allocator, sounds: { loop: sample("loop") } });
+    engine.playLoop("loop");
+    await flush();
+    expect(allocator.snapshot().voices).toHaveLength(0);
+    expect(mock.nodes.slice(3).every((node) => node.disconnectCount === 1)).toBe(true);
+    engine.dispose();
+  });
+
+  test("reject policy and per-sound limits apply before loading or constructing sources", async () => {
+    const mock = installGraph();
+    let fetchCount = 0;
+    globalThis.fetch = (async () => { fetchCount += 1; return { arrayBuffer: async () => new ArrayBuffer(8) }; }) as any;
+    const engine = createAudioEngine({ ...DRY,  maxVoices: 2, voiceOverflow: "reject", sounds: {
+      a: sample("a", { maxVoices: 1 }), b: sample("b"), c: sample("c", { priority: 100 }),
+    } });
+    engine.playLoop("a");
+    expect(engine.playLoop("a")).toBeNull();
+    engine.playLoop("b");
+    expect(engine.playLoop("c")).toBeNull();
+    expect(fetchCount).toBe(2);
+    await flush();
+    expect(mock.nodes.filter((node) => node.kind === "bufferSource")).toHaveLength(2);
+    engine.setVoiceLimit(2, "steal-lowest");
+    engine.playLoop("c");
+    await flush();
+    expect(mock.nodes.filter((node) => node.kind === "bufferSource")[0].stopCount).toBe(1);
+    engine.dispose();
+  });
+
+  test("reserves pending loads, rejects lower priority, and cancels stolen sources before creation", async () => {
+    const mock = installGraph();
+    let resolveFetch!: (value: any) => void;
+    globalThis.fetch = (() => new Promise((resolve) => { resolveFetch = resolve; })) as any;
+    const allocator = createVoiceAllocator({ maxTotal: 1 });
+    const engine = createAudioEngine({ ...DRY,  voiceAllocator: allocator, sounds: {
+      low: sample("low"), high: sample("high", { priority: 10 }),
+    } });
+    const low = engine.playLoop("low")!;
+    expect(allocator.snapshot().voices.map((voice) => voice.soundId)).toEqual(["low"]);
+    const lowFetch = resolveFetch;
+    const high = engine.playLoop("high")!;
+    expect(engine.playLoop("low")).toBeNull();
+    lowFetch({ arrayBuffer: async () => new ArrayBuffer(8) });
+    await flush();
+    expect(mock.nodes.filter((node) => node.kind === "bufferSource")).toHaveLength(0);
+    resolveFetch({ arrayBuffer: async () => new ArrayBuffer(8) });
+    await flush();
+    expect(mock.nodes.filter((node) => node.kind === "bufferSource")).toHaveLength(1);
+    low.stop();
+    expect(allocator.snapshot().voices).toHaveLength(1);
+    high.stop();
+    expect(allocator.snapshot().voices).toHaveLength(0);
+    engine.dispose();
+  });
+
+  test("retunes live voices by priority and disconnects every per-voice stage exactly once", async () => {
+    const mock = installGraph();
+    const allocator = createVoiceAllocator({ maxTotal: 3 });
+    const engine = createAudioEngine({ ...DRY,  voiceAllocator: allocator, sounds: {
+      low: sample("low", { spatial: { panning: "hrtf" } }), high: sample("high", { priority: 10 }),
+    } });
+    const low = engine.playLoop("low")!;
+    engine.playLoop("high");
+    await flush();
+    const sources = mock.nodes.filter((node) => node.kind === "bufferSource");
+    const lowGraph = [sources[0]];
+    let next = sources[0].connections[0];
+    const bus = mock.nodes[2];
+    while (next && next !== bus) {
+      lowGraph.push(next);
+      next = next.connections[0];
+    }
+    engine.setVoiceLimit(1);
+    expect(allocator.snapshot().voices.map((voice) => voice.soundId)).toEqual(["high"]);
+    expect(sources[0].stopCount).toBe(1);
+    expect(lowGraph.every((node) => node.disconnectCount === 1)).toBe(true);
+    low.stop();
+    expect(sources[0].stopCount).toBe(1);
+    engine.setVoiceLimit(0);
+    expect(sources[1].stopCount).toBe(1);
+    expect(engine.playLoop("high")).toBeNull();
+    engine.dispose();
+    engine.dispose();
+    expect(mock.context.closeCount).toBe(1);
+  });
+
+  test("a mix snapshot restores into a fresh engine: master and bus volume, mutes and the heard space", () => {
+    installGraph();
+    const buses = { sfx: { id: "sfx", gain: 0.7 }, music: { id: "music", gain: 1 } };
+    const first = createAudioEngine({ ...DRY, buses });
+    first.setMasterGain(0.5);
+    first.setBusGain("sfx", 0.25);
+    first.setBusMute("music", true);
+    first.setReverbEnvironment("cave");
+    const saved = first.snapshot();
+    const levels = { master: first.masterLevel(), sfx: first.busLevel("sfx"), music: first.busLevel("music") };
+    first.dispose();
+    const second = createAudioEngine({ ...DRY, buses });
+    second.restore(saved);
+    expect(second.snapshot()).toEqual(saved);
+    expect({ master: second.masterLevel(), sfx: second.busLevel("sfx"), music: second.busLevel("music") }).toEqual(levels);
+    expect(levels.music).toBe(0);
+    second.dispose();
+  });
+
+  test("natural sample end releases the budget and detaches source, gain, and panner", async () => {
+    const mock = installGraph();
+    const allocator = createVoiceAllocator({ maxTotal: 1 });
+    const engine = createAudioEngine({ ...DRY,  voiceAllocator: allocator, buses: { sfx: { id: "sfx", gain: 0.7 } }, sounds: { ping: sample("ping", { gain: 0.3, spatial: { panning: "hrtf" } }) } });
+    engine.setMasterGain(0.5);
+    engine.playOneShot("ping", { x: -3, y: 2, z: -4 });
+    await flush();
+    const source = mock.nodes.find((node) => node.kind === "bufferSource");
+    const userGain = source.connections[0];
+    const baseGain = userGain.connections[0];
+    const panner = baseGain.connections[0];
+    expect(baseGain.gain.value).toBe(0.3);
+    expect(panner.kind).toBe("panner");
+    expect(panner.position).toEqual([-3, 2, -4]);
+    expect(panner.panningModel).toBe("HRTF");
+    const bus = panner.connections[0];
+    const master = bus.connections[0];
+    expect(bus.gain.value).toBe(0.7);
+    expect(master.gain.value).toBe(0.5);
+    expect(master.connections[0]).toBe(mock.context.destination);
+    source.end();
+    expect(allocator.snapshot().voices).toHaveLength(0);
+    expect([source, userGain, baseGain, panner].map((node) => node.disconnectCount)).toEqual([1, 1, 1, 1]);
+    engine.dispose();
+    expect(source.disconnectCount).toBe(1);
+    expect([bus.disconnectCount, master.disconnectCount]).toEqual([1, 1]);
+  });
+
+  test("copies caller positions and applies pending loop updates without double attenuation", async () => {
+    const mock = installGraph();
+    const engine = createAudioEngine({ ...DRY,  sounds: { loop: sample("loop", { gain: 0.4, spatial: { panning: "equalpower", rolloff: 2, refDistance: 5, maxDistance: 90 } }) } });
+    const listener = { x: 0, y: 0, z: 0 };
+    engine.setListenerPose(listener);
+    listener.x = 100;
+    const position = { x: -1, y: 2, z: -3 };
+    const handle = engine.playLoop("loop", position)!;
+    position.x = 50;
+    const next = { x: -8, y: 1, z: -9 };
+    handle.setPosition(next);
+    next.x = 70;
+    handle.setGain(0.6);
+    await flush();
+    const source = mock.nodes.find((node) => node.kind === "bufferSource");
+    const userGain = source.connections[0].connections[0].connections[0];
+    const baseGain = userGain.connections[0];
+    const panner = baseGain.connections[0];
+    expect(panner.position).toEqual([-8, 1, -9]);
+    expect(userGain.gain.value).toBe(0.6);
+    expect(baseGain.gain.value).toBe(0.4);
+    expect(panner.rolloffFactor).toBe(2);
+    expect(panner.refDistance).toBe(5);
+    expect(panner.maxDistance).toBe(90);
+    handle.setPosition({ x: 3, y: 4, z: 5 });
+    expect(panner.position).toEqual([3, 4, 5]);
+    engine.setListenerPose({ x: 5, y: 0, z: 0 });
+    expect(baseGain.gain.value).toBe(0.4);
+    expect(mock.listener.forwardZ.value).toBe(-1);
+    expect(mock.listener.upY.value).toBe(1);
+    engine.dispose();
+  });
+
+  test("keeps nonspatial UI flat and retains scalar falloff for legacy positional sounds", async () => {
+    const mock = installGraph();
+    const engine = createAudioEngine({ ...DRY,  sounds: {
+      ui: sample("ui", { positional: false, gain: 0.25, spatial: { panning: "hrtf" } }),
+      legacy: sample("legacy", { gain: 0.5, falloff: { minDistance: 0, maxDistance: 10 } }),
+    } });
+    engine.playOneShot("ui", { x: 100, y: 0, z: 0 });
+    engine.playOneShot("legacy", { x: 5, y: 0, z: 0 });
+    await flush();
+    const sources = mock.nodes.filter((node) => node.kind === "bufferSource");
+    const gains = sources.map((source) => source.connections[0].connections[0]);
+    expect(gains.map((node) => node.gain.value)).toEqual([0.25, 0.25]);
+    expect(mock.nodes.filter((node) => node.kind === "panner")).toHaveLength(0);
+    engine.setListenerPose({ x: 5, y: 0, z: 0 });
+    expect(gains.map((node) => node.gain.value)).toEqual([0.25, 0.5]);
+    engine.dispose();
+  });
+
+  test("stopped pending loops and disposed engines never start late sources", async () => {
+    const mock = installGraph();
+    let resolveFetch!: (value: any) => void;
+    globalThis.fetch = (() => new Promise((resolve) => { resolveFetch = resolve; })) as any;
+    const allocator = createVoiceAllocator();
+    const engine = createAudioEngine({ ...DRY,  voiceAllocator: allocator, sounds: { loop: sample("loop") } });
+    engine.playLoop("loop")!.stop();
+    engine.playOneShot("loop");
+    engine.dispose();
+    const nodeCount = mock.nodes.length;
+    engine.playOneShot("loop");
+    engine.setBusGain("new", 1);
+    expect(engine.playLoop("loop")).toBeNull();
+    resolveFetch({ arrayBuffer: async () => new ArrayBuffer(8) });
+    await flush();
+    expect(mock.nodes).toHaveLength(nodeCount);
+    expect(allocator.snapshot().voices).toHaveLength(0);
+  });
+
+  test("failed loads release their reservation for the next cue", async () => {
+    installGraph();
+    globalThis.fetch = (async () => { throw new Error("missing sample"); }) as any;
+    const allocator = createVoiceAllocator({ maxTotal: 1 });
+    const engine = createAudioEngine({ ...DRY,  voiceAllocator: allocator, sounds: { loop: sample("loop") } });
+    engine.playLoop("loop");
+    await flush();
+    expect(allocator.snapshot().voices).toHaveLength(0);
+    engine.dispose();
+  });
+
+  test("procedural cue keeps its reservation until all voices end and releases the whole graph", () => {
+    const mock = installGraph();
+    const allocator = createVoiceAllocator({ maxTotal: 1 });
+    const engine = createAudioEngine({ ...DRY,  voiceAllocator: allocator, sounds: { ping: {
+      id: "ping", bus: "sfx", gain: 0.2, spatial: { panning: "equalpower" },
+      synth: { voices: [{ kind: "tone", freq: 440, duration: 0.1 }, { kind: "noise", filterFreq: 1000, duration: 0.2 }] },
+    } } });
+    engine.playOneShot("ping");
+    const oscillator = mock.nodes.find((node) => node.kind === "oscillator");
+    const noise = mock.nodes.find((node) => node.kind === "bufferSource");
+    oscillator.end();
+    expect(allocator.snapshot().voices).toHaveLength(1);
+    noise.end();
+    expect(allocator.snapshot().voices).toHaveLength(0);
+    expect(mock.nodes.filter((node) => !["destination"].includes(node.kind)).slice(2).every((node) => node.disconnectCount === 1)).toBe(true);
+    engine.dispose();
+  });
+
+  test("stealing a procedural cue stops scheduled sources and releases its panner", () => {
+    const mock = installGraph();
+    const engine = createAudioEngine({ ...DRY,  maxVoices: 1, sounds: { ping: {
+      id: "ping", bus: "sfx", synth: { voices: [{ kind: "tone", freq: 440, duration: 1 }] }, spatial: { panning: "equalpower" },
+    } } });
+    engine.playOneShot("ping");
+    const first = mock.nodes.find((node) => node.kind === "oscillator");
+    const panner = mock.nodes.find((node) => node.kind === "panner");
+    engine.playOneShot("ping");
+    expect(first.stopCount).toBe(2);
+    expect(first.disconnectCount).toBe(1);
+    expect(panner.disconnectCount).toBe(1);
+    engine.dispose();
+  });
+});
+
+describe("a damage event carries its cue to the right place", () => {
+  test("a positioned hit pans and attenuates, an unpositioned one plays centred", async () => {
+    const mock = installGraph();
+    const engine = createAudioEngine({ sounds: {
+      [feedbackCueSoundId("hit")]: sample(feedbackCueSoundId("hit"), { spatial: { panning: "equalpower" } }),
+      [feedbackCueSoundId("hurt")]: sample(feedbackCueSoundId("hurt"), { falloff: { minDistance: 0, maxDistance: 10 } }),
+    } });
+    engine.setListenerPose({ position: { x: 0, y: 0, z: 0 }, forward: { x: 0, y: 0, z: -1 }, up: { x: 0, y: 1, z: 0 } });
+    const events = createGameEvents();
+    let t = 0;
+    const feedback = createEventFeedback({
+      play: (sound, at) => events.emit("audio.play", at === undefined ? { sound } : { sound, at }),
+      localUserId: () => "me",
+      localEntityId: () => "me",
+      motionScale: () => 1,
+      now: () => t,
+    });
+    const detachFeedback = attachEventFeedback(events, feedback, ["combat.damage"]);
+    const detachWire = attachAudioEventWire(events, engine);
+    const damage = (target: string, at?: readonly [number, number, number]) => {
+      events.emit("combat.damage", {
+        target,
+        type: "kinetic",
+        amount: 5,
+        absorbed: 0,
+        remaining: 50,
+        lethal: false,
+        ...(at === undefined ? {} : { position: at }),
+      });
+    };
+
+    damage("raider-1", [6, 2, -1]);
+    await flush();
+    const panning = mock.nodes.find((node) => node.kind === "panner");
+    expect(panning.position).toEqual([6, 2, -1]);
+
+    t += 200;
+    damage("raider-2");
+    await flush();
+    const sources = mock.nodes.filter((node) => node.kind === "bufferSource");
+    expect(sources).toHaveLength(2);
+    expect(sources[1].connections[0].connections[0].connections[0].position).toEqual([0, 0, 0]);
+
+    t += 200;
+    damage("me", [5, 0, 0]);
+    await flush();
+    t += 500;
+    damage("me");
+    await flush();
+    const hurlGains = mock.nodes
+      .filter((node) => node.kind === "bufferSource")
+      .slice(2)
+      .map((source) => source.connections[0].connections[0].gain.value);
+    expect(hurlGains).toEqual([0.5, 1]);
+
+    detachFeedback();
+    detachWire();
+    engine.dispose();
+  });
+});
+
+const stillPose = {
+  position: { x: 2, y: 3, z: 4 },
+  forward: { x: 0, y: 0, z: -1 },
+  up: { x: 0, y: 1, z: 0 },
+  velocity: { x: 0, y: 0, z: 0 },
+};
+
+async function spatialLoopHarness(doppler?: number) {
+  const mock = installGraph();
+  const engine = createAudioEngine({ sounds: {
+    engine: sample("engine", { loop: true, spatial: { panning: "equalpower" }, ...(doppler === undefined ? {} : { doppler }) }),
+  } });
+  engine.setListenerPose(stillPose);
+  const handle = engine.playLoop("engine", { x: 0, y: 0, z: -6 })!;
+  await flush();
+  const panner = mock.nodes.find((node) => node.kind === "panner") as any;
+  const source = mock.nodes.find((node) => node.kind === "bufferSource") as any;
+  const gainNodes = mock.nodes.filter((node) => node.kind === "gain") as any[];
+  const writes = () => {
+    const listener = mock.listener;
+    const counted = [
+      listener.positionX, listener.positionY, listener.positionZ,
+      listener.forwardX, listener.forwardY, listener.forwardZ,
+      listener.upX, listener.upY, listener.upZ,
+      panner.positionX, panner.positionY, panner.positionZ,
+      ...gainNodes.map((node) => node.gain),
+    ];
+    return counted.reduce((sum, entry) => sum + entry.writes, 0);
+  };
+  return { mock, engine, handle, panner, source, writes };
+}
+
+describe("audio params are written only when they change (#2174)", () => {
+  test("a still listener and a still spatial loop write no AudioParam on the next frame", async () => {
+    const { engine, handle, writes } = await spatialLoopHarness();
+    const before = writes();
+    engine.setListenerPose(stillPose);
+    engine.setListenerPose(stillPose);
+    handle.setPosition({ x: 0, y: 0, z: -6 });
+    expect(writes()).toBe(before);
+    engine.dispose();
+  });
+
+  test("a moved listener writes only the components that moved", async () => {
+    const { mock, engine, writes } = await spatialLoopHarness();
+    const before = mock.listener.positionX.writes;
+    engine.setListenerPose({ ...stillPose, position: { x: 2, y: 3, z: 5 } });
+    expect(mock.listener.positionX.writes).toBe(before);
+    expect(mock.listener.positionZ.writes).toBeGreaterThan(0);
+    expect(writes()).toBeGreaterThan(0);
+    engine.dispose();
+  });
+
+  test("a moved emitter writes its panner once, not once per frame", async () => {
+    const { engine, handle, panner } = await spatialLoopHarness();
+    handle.setPosition({ x: 1, y: 0, z: -6 });
+    const afterMove = panner.positionX.writes;
+    handle.setPosition({ x: 1, y: 0, z: -6 });
+    engine.setListenerPose(stillPose);
+    expect(panner.positionX.writes).toBe(afterMove);
+    handle.setPosition({ x: 2, y: 0, z: -6 });
+    expect(panner.positionX.writes).toBe(afterMove + 1);
+    engine.dispose();
+  });
+});
+
+describe("audio ramps are scheduled once (#2174)", () => {
+  test("repeating a gain target does not reschedule its ramp", async () => {
+    const { mock, engine, handle } = await spatialLoopHarness();
+    handle.setGain(0.4);
+    const userGain = mock.nodes.find((node) => node.kind === "gain" && node.gain.target !== null);
+    expect(userGain).toBeDefined();
+    expect(userGain.gain.targetCalls).toBe(1);
+    expect(userGain.gain.tc).toBeCloseTo(0.02, 6);
+    handle.setGain(0.4);
+    handle.setGain(0.4);
+    expect(userGain.gain.targetCalls).toBe(1);
+    handle.setGain(0.2);
+    expect(userGain.gain.targetCalls).toBe(2);
+    expect(userGain.gain.target).toBe(0.2);
+    engine.dispose();
+  });
+
+  test("repeating a rate target does not reschedule a doppler loop's ramp", async () => {
+    const { engine, handle, source } = await spatialLoopHarness(1);
+    handle.setRate(2);
+    const scheduled = source.playbackRate.targetCalls;
+    handle.setRate(2);
+    engine.setListenerPose(stillPose);
+    expect(source.playbackRate.targetCalls).toBe(scheduled);
+    engine.setListenerPose({ ...stillPose, velocity: { x: 0, y: 0, z: 20 } });
+    expect(source.playbackRate.targetCalls).toBeGreaterThan(scheduled);
+    engine.dispose();
+  });
+});
+
+describe("default spatial mix: panning, world reverb, muffled one-shots", () => {
+  function withConvolver(mock: ReturnType<typeof installGraph>) {
+    (mock.context as any).createConvolver = () => {
+      const made = mock.context.createGain() as any;
+      made.kind = "convolver";
+      return made;
+    };
+    return mock;
+  }
+  const tone = { voices: [{ kind: "tone" as const, freq: 440, duration: 0.05 }] };
+  const pose = { position: { x: 0, y: 0, z: 0 }, forward: { x: 0, y: 0, z: -1 }, up: { x: 0, y: 1, z: 0 } };
+
+  test("a positioned cue with no spatial block is panned around the head and keeps its own falloff", () => {
+    const mock = withConvolver(installGraph());
+    const engine = createAudioEngine({ sounds: { hit: { id: "hit", bus: "sfx", synth: tone, falloff: { kind: "linear", ref: 1, max: 20 } } } });
+    engine.setListenerPose(pose);
+    engine.playOneShot("hit", { x: 4, y: 0, z: 0 });
+    const panner = mock.nodes.find((entry) => entry.kind === "panner");
+    expect(panner?.panningModel).toBe("HRTF");
+    expect(panner?.rolloffFactor).toBe(0);
+    expect(panner?.position).toEqual([4, 0, 0]);
+    engine.playOneShot("hit");
+    expect(mock.nodes.filter((entry) => entry.kind === "panner")).toHaveLength(1);
+    expect(engine.spatialStats().panned).toBe(1);
+    engine.dispose();
+  });
+
+  test("positioned cues ring in the space around the listener; flat UI cues stay dry", () => {
+    const mock = withConvolver(installGraph());
+    const engine = createAudioEngine({ sounds: {
+      hit: { id: "hit", bus: "sfx", synth: tone },
+      click: { id: "click", bus: "ui", synth: tone, positional: false },
+    }, reverb: { zones: [{ id: "vault", preset: "hall", center: [0, 0, 0], radius: 10 }] } });
+    engine.setListenerPose(pose);
+    expect(engine.spatialStats()).toMatchObject({ reverb: "hall", reverbZone: "vault" });
+    expect(mock.nodes.some((entry) => entry.kind === "convolver")).toBe(true);
+    engine.playOneShot("hit", { x: 2, y: 0, z: 0 });
+    engine.playOneShot("click", { x: 2, y: 0, z: 0 });
+    expect(engine.spatialStats().reverbSends).toBe(1);
+
+    engine.setListenerPose({ ...pose, position: { x: 40, y: 0, z: 0 } });
+    engine.setReverbEnvironment("room");
+    expect(engine.spatialStats()).toMatchObject({ reverb: "room", reverbZone: null });
+    engine.dispose();
+  });
+
+  test("a one-shot that starts behind a wall plays quieter and darker; the budget caps the tests", () => {
+    const mock = withConvolver(installGraph());
+    const engine = createAudioEngine({ sounds: { shot: { id: "shot", bus: "sfx", synth: tone } }, reverb: false, panning: "off" });
+    engine.setListenerPose(pose);
+    let tests = 0;
+    engine.setOcclusionSource(() => {
+      tests += 1;
+      return true;
+    });
+    engine.playOneShot("shot", { x: 10, y: 0, z: 0 });
+    expect(engine.spatialStats().occludedOneShots).toBe(1);
+    const muffle = mock.nodes.find((entry) => entry.kind === "filter");
+    expect(muffle?.type).toBe("lowpass");
+    for (let i = 0; i < 20; i++) engine.playOneShot("shot", { x: 10, y: 0, z: 0 });
+    expect(tests).toBe(6);
+    engine.dispose();
+  });
+
+  test("reverb: false and panning: off keep the old dry, centred graph", () => {
+    const mock = withConvolver(installGraph());
+    const engine = createAudioEngine({ sounds: { hit: { id: "hit", bus: "sfx", synth: tone } }, reverb: false, panning: "off" });
+    engine.setListenerPose(pose);
+    engine.playOneShot("hit", { x: 3, y: 0, z: 0 });
+    expect(mock.nodes.some((entry) => entry.kind === "panner" || entry.kind === "convolver")).toBe(false);
+    expect(engine.spatialStats()).toMatchObject({ panned: 0, reverbSends: 0, reverb: "none" });
+    engine.dispose();
+  });
+});

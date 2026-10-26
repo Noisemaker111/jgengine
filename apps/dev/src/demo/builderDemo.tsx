@@ -20,11 +20,11 @@ import {
 import { placeAssetFromCommit, toStructureInput } from "@jgengine/core/placement/placeAsset";
 import type { TerraformMode } from "@jgengine/core/terrain/terraform";
 
-import { createPointerService } from "@jgengine/shell/pointer/pointerService";
+import { createPointerService } from "@jgengine/core/input/pointerService.draw";
 import { EditableGround } from "@jgengine/shell/terrain/EditableGround";
 import { TerraformBrushCursor } from "@jgengine/shell/terrain/TerraformBrushCursor";
-import { PlacementGhost } from "@jgengine/shell/placement/PlacementGhost";
-import { TransformGizmo } from "@jgengine/shell/placement/TransformGizmo";
+import { PlacementGhost } from "@jgengine/core/placement/PlacementGhost.draw";
+import { TransformGizmo } from "@jgengine/core/placement/TransformGizmo.draw";
 import type { PlayableGame } from "@jgengine/shell/registry";
 
 const BOUNDS: Aabb = { minX: -20, minZ: -20, maxX: 20, maxZ: 20 };
@@ -126,7 +126,7 @@ function BuilderScene() {
       const rect = dom.getBoundingClientRect();
       const ndcX = ((event.clientX - rect.left) / rect.width) * 2 - 1;
       const ndcY = -(((event.clientY - rect.top) / rect.height) * 2 - 1);
-      pointer.setCursor(ndcX, ndcY, true);
+      pointer.setState({ x: ndcX, y: ndcY, present: true });
       pointer.bind({ camera: three.camera, scene: three.scene, width: rect.width, height: rect.height });
       const hit = pointer.worldHit();
       if (hit === null) return;
@@ -138,7 +138,7 @@ function BuilderScene() {
         setBrushCenter([hit.point[0], hit.point[2]]);
       }
     };
-    const onLeave = () => pointer.setCursor(0, 0, false);
+    const onLeave = () => pointer.setState({ x: 0, y: 0, present: false });
     const onDown = (event: PointerEvent) => {
       if (event.button !== 0) return;
       const st = stateRef.current;
@@ -151,7 +151,7 @@ function BuilderScene() {
         const rect = dom.getBoundingClientRect();
         const ndcX = ((event.clientX - rect.left) / rect.width) * 2 - 1;
         const ndcY = -(((event.clientY - rect.top) / rect.height) * 2 - 1);
-        pointer.setCursor(ndcX, ndcY, true);
+        pointer.setState({ x: ndcX, y: ndcY, present: true });
         pointer.bind({ camera: three.camera, scene: three.scene, width: rect.width, height: rect.height });
         const id = pickStructureId(pointer.worldHit());
         setSelectedId(id);

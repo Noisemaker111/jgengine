@@ -36,6 +36,9 @@ export const CORE_DOMAIN_SKILLS: Record<string, string> = {
   social: "jgengine-gameplay",
   talents: "jgengine-gameplay",
   cutscene: "jgengine-world",
+  // Shell features gathered into core keep the shell package's skill.
+  play: "jgengine-ui",
+  replay: "jgengine-ui",
   haptics: "jgengine-world",
   gameplay: "jgengine-gameplay",
   i18n: "jgengine-ui",

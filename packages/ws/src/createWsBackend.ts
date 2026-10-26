@@ -9,7 +9,7 @@ import type {
 } from "@jgengine/core/runtime/transport";
 import type { SessionAttributes } from "@jgengine/core/runtime/hostPersistence";
 import type { MatchFilter, SessionListing } from "@jgengine/core/multiplayer/matchmaking";
-import type { ChatSendOutcome, ChatSync } from "@jgengine/core/multiplayer/chatContract";
+import type { ChatSendOutcome, ChatSync } from "@jgengine/core/chat/chatContract";
 import type { VoiceTransport } from "@jgengine/core/multiplayer/voiceContract";
 import {
   decodeWsServerMessage,

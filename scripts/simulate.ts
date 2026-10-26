@@ -4,8 +4,9 @@ import { isAbsolute, join, relative, resolve } from "node:path";
 
 import ts from "typescript";
 
-import type { PlayScriptSpec } from "@jgengine/shell/play";
-import { formatPlayTimelineEntry, runPlayScript } from "@jgengine/shell/play";
+import type { PlayScriptSpec } from "@jgengine/core/play/script";
+import { runPlayScript } from "@jgengine/core/play/playRunner.draw";
+import { formatPlayTimelineEntry } from "@jgengine/core/play/timeline";
 import type { PlayableGame } from "@jgengine/shell/registry";
 
 /**

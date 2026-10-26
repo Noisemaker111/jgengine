@@ -9,7 +9,7 @@ import { GameProvider } from "@jgengine/react/provider";
 import { useWorldItems } from "@jgengine/react/hooks";
 
 import { WorldItems } from "./WorldItems";
-import { POINTER_ENTITY_KEY } from "../pointer/pointerService";
+import { POINTER_ENTITY_KEY } from "@jgengine/core/input/pointerService.draw";
 
 interface Stage {
   scene: THREE.Scene;
