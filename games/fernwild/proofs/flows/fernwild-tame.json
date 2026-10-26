@@ -12,7 +12,7 @@
     { "shot": "fernwild-raptor", "note": "the raptor charges; its card shows level and health" },
     { "key": "mouse0", "until": { "is": "__jgProbe().aimedDown === 1", "timeoutMs": 30000 }, "note": "club it unconscious: about eighteen hits of torpor" },
     { "shot": "fernwild-knocked-out", "note": "the raptor down, torpor and taming bars under the crosshair" },
-    { "key": "KeyE", "ms": 120, "after": { "is": "__jgProbe().screen === 1", "timeoutMs": 3000 }, "note": "access its inventory" },
+    { "key": "KeyE", "until": { "is": "__jgProbe().screen === 1", "timeoutMs": 3000 }, "note": "access its inventory" },
     { "rpc": { "method": "run_command", "name": "giveCreature", "input": { "inventoryId": "inventory", "slot": 1 } }, "note": "give it the raw meat" },
     { "wait": 400 },
     { "shot": "fernwild-feeding", "note": "its inventory holds the meat; it eats on its own clock" },
@@ -21,7 +21,7 @@
     { "waitFor": "__jgProbe().saddled === 1", "timeoutMs": 3000 },
     { "shot": "fernwild-tamed", "note": "tamed and saddled, with follow and stay orders" },
     { "rpc": { "method": "run_command", "name": "closeCreature", "input": {} } },
-    { "key": "KeyE", "ms": 120, "after": { "is": "__jgProbe().riding === 1", "timeoutMs": 3000 }, "note": "climb on" },
+    { "key": "KeyE", "until": { "is": "__jgProbe().riding === 1", "timeoutMs": 3000 }, "note": "climb on" },
     { "key": "KeyW", "ms": 2500, "note": "ride inland" },
     { "shot": "fernwild-riding", "note": "on the raptor's back, the camera on the mount" }
   ]
