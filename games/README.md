@@ -47,7 +47,7 @@ bun run games:provision            # link every asset pack the games reference f
 bun --cwd=games/harbor-heat run dev # or another game id
 ```
 
-`bun run games:provision <game-id>` does one game. Packs live once per machine in the main checkout's `.asset-store/` (`JG_ASSET_STORE` overrides); each game's `public/<kind>/<id>` is a link into it, the store is seeded from any copy a checkout already pulled, and only a pack no checkout has is downloaded. CI never downloads packs or boots games; `verify:fast` boots them locally. A pack counts as referenced when its source
+`bun run games:provision <game-id>` does one game. Packs live once per machine in the main checkout's `.asset-store/` (`JG_ASSET_STORE` overrides); each game's `public/<kind>/<id>` is a link into it, the store is seeded from any copy a checkout already pulled, and only a pack no checkout has is downloaded. CI never downloads packs or boots games; `verify:fast` boots them locally. A test that reads model files from `public/` uses `assetTest` and `missingServed` from `games/shared/assetTest.ts`: it skips in CI and, on a machine without the packs, names each missing file and the fix. A pack counts as referenced when its source
 id appears in the game's `src/`. `bun run games:check-types` and `bun run games:test` check every game.
 
 ## Design checklist and loop proofs
