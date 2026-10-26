@@ -1,7 +1,7 @@
 import type { CSSProperties, ReactNode } from "react";
 import { GameIcon } from "@jgengine/react/gameIcons";
 import { KitButton, KitPanel } from "@jgengine/react/uiKitRoot";
-import { HudFade } from "@jgengine/react/hud/hudLayout";
+import { HudFade } from "@jgengine/core/hud/hudLayout.view";
 
 /*
  * The diver's helmet. Everything in a dive is read off the visor glass: the dive computer on the

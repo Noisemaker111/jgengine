@@ -4,7 +4,7 @@ import { GameMenu } from "@jgengine/react/menu/gameMenu";
 import { PauseMenu } from "@jgengine/react/menu/pauseMenu";
 import { useGame, useGameClock, useGameStore } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
-import { useSaveSlots } from "@jgengine/react/save/saveSlots";
+import { useSaveSlots } from "@jgengine/core/save/saveSlots.view";
 import { useSettings } from "@jgengine/react/settings/settings";
 import { KitButton } from "@jgengine/react/uiKitRoot";
 

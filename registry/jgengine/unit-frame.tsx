@@ -1,5 +1,5 @@
 // A copy-in portrait + vitals frame for shadcn projects. Inside a jgengine game compose `KitVitals`
-// from `@jgengine/react/hud/kitHud`.
+// from `@jgengine/core/hud/kitHud.view`.
 import type { ReactNode } from "react";
 
 import { VitalBar, type VitalTone, type VitalValue } from "@/components/ui/vital-bar";

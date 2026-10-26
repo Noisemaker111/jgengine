@@ -162,7 +162,7 @@ for (const file of new Glob("**/*.md").scanSync({ cwd: skillsRoot, absolute: tru
   const name = basename(file);
   if (name === "api.md" || name === "capabilities.md") continue;
   const raw = readFileSync(file, "utf8");
-  for (const match of raw.matchAll(/@jgengine\/(core|react|shell|ws|node|sql|convex|assets|github|jgengine)\/[A-Za-z0-9_/]+(?:\.css)?/g)) {
+  for (const match of raw.matchAll(/@jgengine\/(core|react|shell|ws|node|sql|convex|assets|github|jgengine)\/[A-Za-z0-9_/]+(?:\.(?:view|draw))?(?:\.css)?/g)) {
     const ref = match[0];
     if (seenPaths.has(ref) || allowDocRefs.has(ref)) continue;
     seenPaths.add(ref);

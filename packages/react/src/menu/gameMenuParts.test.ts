@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { createGameMenuSound } from "./gameMenuSound";
 import { ContinuePane, CreditsPane, NewCharacterPane, SAVE_SLOT_THUMBNAIL_KEY, SaveSlotCard, SaveSlotsPane } from "./gameMenuSaves";
-import { shrinkCapture } from "../save/saveThumbnail";
+import { shrinkCapture } from "@jgengine/core/save/saveThumbnail.view";
 
 describe("game menu parts", () => {
   test("the panes a game composes are exported", () => {

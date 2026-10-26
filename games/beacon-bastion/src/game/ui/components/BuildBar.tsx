@@ -3,7 +3,7 @@ import { useGame, useGameStore } from "@jgengine/react/hooks";
 import { KitButton } from "@jgengine/react/uiKitRoot";
 import { useGameContext } from "@jgengine/react/provider";
 import { GameIcon } from "@jgengine/react/gameIcons";
-import { HudFade } from "@jgengine/react/hud/hudLayout";
+import { HudFade } from "@jgengine/core/hud/hudLayout.view";
 import { actionLabel } from "@jgengine/core/input/actionBindings";
 
 import { buildPrompt } from "../../build/prompt";

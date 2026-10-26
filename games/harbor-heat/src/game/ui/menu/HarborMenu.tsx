@@ -3,7 +3,7 @@ import { createSaveSlots } from "@jgengine/core/save/saveSlots";
 import { formatSavePlaytime, gameSaveSlotSource, refreshSaveSlots } from "@jgengine/core/save/saveSlotIndex";
 import { useGame } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
-import { useSaveSlots } from "@jgengine/react/save/saveSlots";
+import { useSaveSlots } from "@jgengine/core/save/saveSlots.view";
 import { useStore } from "@jgengine/react/store";
 
 import { startedStore } from "../../commands";

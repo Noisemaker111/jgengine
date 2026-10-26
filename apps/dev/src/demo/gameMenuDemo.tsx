@@ -10,7 +10,7 @@ import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { environment, grass, terrain } from "@jgengine/core/world/features";
 import { ContinuePane, CreditsPane, GameMenu, PauseMenu, NewCharacterPane, SaveSlotsPane } from "@jgengine/react";
-import { shrinkCapture } from "@jgengine/react/save/saveThumbnail";
+import { shrinkCapture } from "@jgengine/core/save/saveThumbnail.view";
 import { useSettings } from "@jgengine/react/settings/settings";
 import { SettingsSection, SettingsTabs } from "@jgengine/react/settings/settingsBlocks";
 import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";

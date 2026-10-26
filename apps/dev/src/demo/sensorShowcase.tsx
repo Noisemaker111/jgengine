@@ -10,8 +10,8 @@ import { useGameContext } from "@jgengine/react/provider";
 
 import { useSessionRecorder } from "@jgengine/shell/replay/useSessionRecorder";
 import type { PlayableGame } from "@jgengine/shell/registry";
-import { FrustumSensorReadout } from "@jgengine/shell/hud/FrustumSensorHud";
-import { SensorReadoutMeter, useHiddenStateProbe } from "@jgengine/shell/hud/HiddenStateProbeHud";
+import { FrustumSensorReadout } from "@jgengine/core/hud/FrustumSensorHud.draw";
+import { SensorReadoutMeter, useHiddenStateProbe } from "@jgengine/core/hud/HiddenStateProbeHud.view";
 import { RevealHighlights, RevealScreenTint } from "@jgengine/shell/vision/RevealVision";
 
 const HERO = "hero";

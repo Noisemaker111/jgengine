@@ -1,5 +1,5 @@
 import { useCurrency, useGame, useGameStore } from "@jgengine/react/hooks";
-import { HudButton } from "@jgengine/react/hud/hudButton";
+import { HudButton } from "@jgengine/core/hud/hudButton.view";
 import { ScrapPanel } from "./ScrapPanel";
 import { useStore } from "@jgengine/react/store";
 import { BLACK_MARKET_UPGRADES, upgradeCost } from "../../commands";

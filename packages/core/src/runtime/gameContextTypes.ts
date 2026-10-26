@@ -213,7 +213,7 @@ export interface SceneObjectContext extends ObjectStore {
    * `ctx.scene.object.selection` instead of hand-rolling one through `WorldOverlay` against external
    * state. Mutations (`add`/`remove`/`toggle`/`replace`/`clear`) bump `ctx.version()`/notify
    * `ctx.subscribe` like every other `ctx` surface. Render it with `WorldObjectHighlights`
-   * (`@jgengine/shell/hud/WorldHud`).
+   * (`@jgengine/core/hud/WorldHud.draw`).
    */
   selection: SelectionSet;
   /**

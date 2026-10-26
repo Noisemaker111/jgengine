@@ -3,7 +3,7 @@ import { useCanvasCover } from "@jgengine/react";
 import { CreditsPanel } from "@jgengine/react/creditsPanel";
 import { useGame } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
-import { useSaveSlots } from "@jgengine/react/save/saveSlots";
+import { useSaveSlots } from "@jgengine/core/save/saveSlots.view";
 
 import { gamePhase } from "@jgengine/core/game/gamePhase";
 

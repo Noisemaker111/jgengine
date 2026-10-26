@@ -34,8 +34,8 @@ export type { GameCameraConfig } from "@jgengine/core/game/playableGame";
 export { DEFAULT_DRIVE_CODES, DEFAULT_WALK_CODES, hotbarSlotBindings } from "@jgengine/core/input/actionBindings";
 
 // HUD layout + drop-in building blocks — compose these, reskin with HudTheme; games own layout/terminology/art direction.
-export { HudCanvas, HudFade, HudPanel, HudSlots, useHudLayout } from "@jgengine/react/hud/hudLayout";
-export { Hotbar, Clock, Coins } from "@jgengine/react/hud/hudReadouts";
+export { HudCanvas, HudFade, HudPanel, HudSlots, useHudLayout } from "@jgengine/core/hud/hudLayout.view";
+export { Hotbar, Clock, Coins } from "@jgengine/core/hud/hudReadouts.view";
 
 // Deterministic randomness (inject seeds; never Math.random in game logic).
 export { seededRng } from "@jgengine/core/random/rng";

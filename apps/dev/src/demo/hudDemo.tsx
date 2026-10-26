@@ -1,5 +1,5 @@
 import { Clock, Coins, Crosshair, HudCanvas, HudPanel, Hotbar, Speedometer, useEntityStat, useHudLayout, usePlayer } from "@jgengine/react";
-import { KitWaveClock } from "@jgengine/react/hud/kitHud";
+import { KitWaveClock } from "@jgengine/core/hud/kitHud.view";
 import { KitMeter } from "@jgengine/react/uiKitRoot";
 import type { KitTone } from "@jgengine/react/uiKit";
 import type { PlayableGame } from "@jgengine/shell/registry";

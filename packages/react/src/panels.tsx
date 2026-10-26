@@ -24,11 +24,11 @@ import {
 } from "@jgengine/core/ui/panelModel";
 
 import { useReducedMotion } from "./accessibility";
-import { HudButton } from "./hud/hudButton";
-import { HudFrame, type HudFrameShape, type HudFrameVariation } from "./hud/hudFrame";
-import { useHudInteract, type HudInteractListener } from "./hud/hudInteract";
-import { HudSurface } from "./hud/hudSurface";
-import { hudType } from "./hud/hudTokens";
+import { HudButton } from "@jgengine/core/hud/hudButton.view";
+import { HudFrame, type HudFrameShape, type HudFrameVariation } from "@jgengine/core/hud/hudFrame.view";
+import { useHudInteract, type HudInteractListener } from "@jgengine/core/hud/hudInteract.view";
+import { HudSurface } from "@jgengine/core/hud/hudSurface.view";
+import { hudType } from "@jgengine/core/hud/hudTokens";
 import { observeBrowserSuspension } from "./browserLifecycle";
 import { useMountPresence } from "./presence";
 

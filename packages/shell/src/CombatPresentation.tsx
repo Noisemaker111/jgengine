@@ -2,7 +2,7 @@ import {
   ProjectileTracers,
   WorldFloatText,
   WorldTelegraphs,
-} from "./hud/WorldHud";
+} from "@jgengine/core/hud/WorldHud.draw";
 import { HitReactionShake } from "./camera/shake/HitReactionShake";
 import { WorldSpellVfx } from "./world/WorldVfx";
 import { HitMarkers, MuzzleFlashes } from "./world/ShotFeedback";

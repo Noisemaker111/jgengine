@@ -10,7 +10,10 @@ import { rowWords, tokenHits } from "./words";
  * itself (folder and file names, exported names, their doc comments), so the answer cannot go stale.
  */
 
-/** What each engine layer holds for a concept; other packages, apps and scripts are listed by name. */
+/**
+ * What each engine package holds for a concept; other packages, apps and scripts are listed by name.
+ * Core holds the feature folders, so its role is read from the files in the home: see {@link coreRole}.
+ */
 export const LAYER_ROLES: Readonly<Record<string, string>> = {
   core: "model",
   shell: "draw",
@@ -222,6 +225,17 @@ function layerRank(layer: string): number {
   return 10;
 }
 
+/** The layers a core feature folder holds, from its file names: `model + view + draw`. */
+export function coreRole(paths: readonly string[]): string {
+  const layers = new Set<string>();
+  for (const path of paths) {
+    if (/\.view(\.test)?\.tsx?$/.test(path)) layers.add("view");
+    else if (/\.draw(\.test)?\.tsx?$/.test(path)) layers.add("draw");
+    else layers.add("model");
+  }
+  return ["model", "view", "draw"].filter((layer) => layers.has(layer)).join(" + ") || "model";
+}
+
 function isUnder(dir: string, home: string): boolean {
   return home === "" || dir === home || dir.startsWith(`${home}/`);
 }
@@ -281,7 +295,7 @@ export function locate(
     const outside = ranked.filter((row) => !isUnder(row.dir, home) && (row.pathHit || row.score >= 10));
     const sample = inside[0] ?? ranked[0]!;
     const root = sample.file.path.slice(0, sample.file.path.length - sample.file.rel.length);
-    const role = LAYER_ROLES[layer];
+    const role = layer === "core" ? coreRole(inside.map((row) => row.file.path)) : LAYER_ROLES[layer];
     homes.push({
       layer,
       ...(role === undefined ? {} : { role }),
@@ -307,7 +321,7 @@ export function renderLocations(homes: readonly LayerHome[], perLayer = 6): stri
   const lines: string[] = [];
   for (const home of homes) {
     const label = home.role === undefined ? home.layer : `${home.layer} (${home.role})`;
-    lines.push(`${label.padEnd(16)} ${home.home}`);
+    lines.push(`${label.padEnd(27)} ${home.home}`);
     const shown = home.files.slice(0, perLayer);
     const width = Math.min(36, Math.max(0, ...shown.map((hit) => hit.path.length - home.home.length)));
     for (const hit of shown) lines.push(fileLine(hit, home.home, width));

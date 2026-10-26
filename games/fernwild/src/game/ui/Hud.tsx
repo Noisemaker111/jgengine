@@ -2,9 +2,9 @@ import type { ReactNode } from "react";
 import { resolveActivePrompt } from "@jgengine/core/interaction/proximityPrompt";
 import { useGameStore } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
-import { ActionBar } from "@jgengine/react/hud/actionHud";
+import { ActionBar } from "@jgengine/core/hud/actionHud.view";
 import { KitResultScreen } from "@jgengine/react/kitFlow";
-import { KitCount, KitCounts, KitVitals, KitWaveClock } from "@jgengine/react/hud/kitHud";
+import { KitCount, KitCounts, KitVitals, KitWaveClock } from "@jgengine/core/hud/kitHud.view";
 import { KitActionPrompt, KitPanel } from "@jgengine/react/uiKitRoot";
 import { HudSlots } from "@jgengine/shell/gameKit";
 

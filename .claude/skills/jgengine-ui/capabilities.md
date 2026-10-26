@@ -403,7 +403,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## hud-button — themed button with hover lift, press scale, focus ring, disabled state, and an interaction cue seam
 
-- `HudButton` (const) · `import { HudButton } from "@jgengine/react/hud/hudButton"`
+- `HudButton` (const) · `import { HudButton } from "@jgengine/core/hud/hudButton.view"`
 
 ## hud-canvas — the HUD root surface — design-resolution scaling plus live panel-placement editing (F2+C)
 
@@ -439,11 +439,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## hud-interact — one listener for hover/press/activate/open/close from every engine HUD primitive
 
-- `HudInteractProvider` (function) · `import { HudInteractProvider } from "@jgengine/react/hud/hudInteract"`
+- `HudInteractProvider` (function) · `import { HudInteractProvider } from "@jgengine/core/hud/hudInteract.view"`
 
 ## hud-lanes — two HUD blocks stacked in one lane, plus a second lane beside it
 
-- `HudLanesPreview` (function) · `import { HudLanesPreview } from "@jgengine/react/hud/hudLanesPreview"`
+- `HudLanesPreview` (function) · `import { HudLanesPreview } from "@jgengine/core/hud/hudLanesPreview.view"`
 - `resolveHudLanes` (function) · `import { resolveHudLanes } from "@jgengine/react"`
 
 ## hud-layout — persistent, live-editable HUD panel layout state for `HudCanvas`
@@ -469,7 +469,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## hud-surface — themed panel frame with elevation, header slots, landmark element, and open/close transitions
 
-- `HudSurface` (const) · `import { HudSurface } from "@jgengine/react/hud/hudSurface"`
+- `HudSurface` (const) · `import { HudSurface } from "@jgengine/core/hud/hudSurface.view"`
 
 ## hud-theme — game-authored token object covering bars, frames, slots, chrome, text, status colors, fonts, and rarity
 
@@ -485,7 +485,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## hud-theme-root — apply the default (or a game) HudTheme, the player's accessibility preferences and the engine stylesheet at the HUD root
 
-- `HudThemeRoot` (function) · `import { HudThemeRoot } from "@jgengine/react/hud/hudThemeRoot"`
+- `HudThemeRoot` (function) · `import { HudThemeRoot } from "@jgengine/core/hud/hudThemeRoot.view"`
 
 ## hud-ticker — re-render a HUD element at a steady hz for time-derived readouts (cooldowns, cast/swing bars) — no hand-rolled setInterval effects
 
@@ -493,7 +493,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## hud-tokens — inline-style accessors for the HudTheme type scale, spacing, motion, elevation, and focus ring
 
-- `HudTypeStep` (type) · `import { HudTypeStep } from "@jgengine/react/hud/hudTokens"`
+- `HudTypeStep` (type) · `import { HudTypeStep } from "@jgengine/core/hud/hudTokens"`
 
 ## i18n — translate a message catalog with fallback-locale lookup, `{param}` interpolation, and Intl pluralization; observable active-locale switching
 
@@ -553,11 +553,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## kit-count — a HUD resource readout — a number and its word, with an optional rate line
 
-- `KitCount` (function) · `import { KitCount } from "@jgengine/react/hud/kitHud"`
+- `KitCount` (function) · `import { KitCount } from "@jgengine/core/hud/kitHud.view"`
 
 ## kit-counts — a row of HUD resource counts
 
-- `KitCounts` (function) · `import { KitCounts } from "@jgengine/react/hud/kitHud"`
+- `KitCounts` (function) · `import { KitCounts } from "@jgengine/core/hud/kitHud.view"`
 
 ## kit-frame-cut — clip path for an angled or irregular frame silhouette (chamfer, banner, ticket, torn…)
 
@@ -569,7 +569,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## kit-hint — a HUD hint strip for the current tool or problem, with the phase banner
 
-- `KitHint` (function) · `import { KitHint } from "@jgengine/react/hud/kitHud"`
+- `KitHint` (function) · `import { KitHint } from "@jgengine/core/hud/kitHud.view"`
 
 ## kit-menu — a verb list drawn by the active UI kit over shared menu navigation
 
@@ -601,11 +601,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## kit-vitals — a HUD vitals card — meters that turn bad when low, extra readouts, the labeled current objective under it
 
-- `KitVitals` (function) · `import { KitVitals } from "@jgengine/react/hud/kitHud"`
+- `KitVitals` (function) · `import { KitVitals } from "@jgengine/core/hud/kitHud.view"`
 
 ## kit-wave-clock — a HUD wave clock — countdown or enemies left, a note, and the wave banner
 
-- `KitWaveClock` (function) · `import { KitWaveClock } from "@jgengine/react/hud/kitHud"`
+- `KitWaveClock` (function) · `import { KitWaveClock } from "@jgengine/core/hud/kitHud.view"`
 
 ## layout-collision-report — format the overlapping HUD/control regions for a development console
 
@@ -771,7 +771,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## nameplates — billboarded name + HP bar over nearby entities
 
-- `WorldNameplates` (function) · `import { WorldNameplates } from "@jgengine/shell/hud/WorldHud"`
+- `WorldNameplates` (function) · `import { WorldNameplates } from "@jgengine/core/hud/WorldHud.draw"`
 
 ## new-character-pane — character creation pane — name field, palette and avatar choice, start action
 
@@ -994,17 +994,13 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `ShopGrid` (function) · `import { ShopGrid } from "@jgengine/react"`
 
-## shrink-capture — downscale a captured frame to a save-card thumbnail data URL
-
-- `shrinkCapture` (function) · `import { shrinkCapture } from "@jgengine/react/save/saveThumbnail"`
-
 ## speed-format — render a m/s speed as km/h, mph, knots, or m/s for speedometers and telemetry HUDs
 
 - `formatSpeed` (function) · `import { formatSpeed } from "@jgengine/core/ui"`
 
 ## split-screen-hud — Per-seat HUD roots positioned over each split-screen viewport.
 
-- `ViewportHuds` (function) · `import { ViewportHuds } from "@jgengine/shell/hud/ViewportHuds"`
+- `ViewportHuds` (function) · `import { ViewportHuds } from "@jgengine/core/hud/ViewportHuds.draw"`
 
 ## sprite-2d — animate a sprite atlas clip from headless or rendered game code
 
@@ -1266,7 +1262,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## world-object-highlights — ground-ring highlight over every selected placed object
 
-- `WorldObjectHighlights` (function) · `import { WorldObjectHighlights } from "@jgengine/shell/hud/WorldHud"`
+- `WorldObjectHighlights` (function) · `import { WorldObjectHighlights } from "@jgengine/core/hud/WorldHud.draw"`
 
 ## world-pings — in-scene ping markers — a bobbing downward arrowhead, ground ring, and billboarded callout per marker, colored by kind and fading over the marker's lifetime
 

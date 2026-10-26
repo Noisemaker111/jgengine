@@ -1,4 +1,4 @@
-// One concept lives in one folder per layer (AGENTS.md "Layout"). This gate reads only what a branch
+// One feature lives in one folder (AGENTS.md "Layout"). This gate reads only what a branch
 // changed, so it costs a few git calls, and fails two ways a concept gets scattered again:
 //
 //   1. an exported name the branch adds is already exported somewhere else (two `pickWeighted`s);
@@ -201,7 +201,11 @@ export function duplicateFailures(added: readonly Definition[], everywhere: read
 
 /** camelCase / PascalCase / kebab words of a file's base name, lowercased: `CameraShakeApplier` → camera, shake, applier. */
 export function nameWords(path: string): string[] {
-  const base = path.slice(path.lastIndexOf("/") + 1).replace(/\.(test|spec|browser\.test)?\.?tsx?$/, "").replace(/\.tsx?$/, "");
+  const base = path
+    .slice(path.lastIndexOf("/") + 1)
+    .replace(/\.(test|spec|browser\.test)?\.?tsx?$/, "")
+    .replace(/\.tsx?$/, "")
+    .replace(/\.(view|draw)$/, "");
   return base
     .split(/[^A-Za-z0-9]+/)
     .flatMap((run) => run.split(/(?<=[a-z0-9])(?=[A-Z])/))
@@ -259,12 +263,67 @@ function exempt(root: string, path: string): boolean {
   }
 }
 
+const CORE_ROOT = "packages/core/src";
+const SPLIT_LAYER = /^packages\/(react|shell)\/src\/(.+)$/;
+
+/** Core folders that hold a view or draw file: feature folders that already gathered their layers. */
+export function featureFolders(paths: readonly string[]): Set<string> {
+  const folders = new Set<string>();
+  for (const path of paths) {
+    if (!path.startsWith(`${CORE_ROOT}/`) || !/\.(view|draw)(\.test)?\.tsx?$/.test(path)) continue;
+    const parts = path.split("/").slice(0, -1);
+    for (let depth = 4; depth <= parts.length; depth += 1) folders.add(parts.slice(0, depth).join("/"));
+  }
+  return folders;
+}
+
+/**
+ * The core feature folder a react or shell file belongs in, or null. A feature folder in core holds
+ * every layer of its feature (see {@link featureFolders}), so a react or shell file for that feature
+ * splits it again, unless that package already had the folder before the branch. `before` is
+ * {@link layerFolders} over the paths the branch did not add.
+ */
+export function featureFolderFor(path: string, features: ReadonlySet<string>, before: Map<string, Map<string, Set<string>>>): string | null {
+  const match = SPLIT_LAYER.exec(path);
+  if (match === null || /(^|\/)index\.tsx?$/.test(path)) return null;
+  const pkgRoot = `packages/${match[1]}/src`;
+  const coreHas = (rel: string) => features.has(`${CORE_ROOT}/${rel}`);
+  const hadBefore = (rel: string) => before.get(pkgRoot)?.get(rel.slice(rel.lastIndexOf("/") + 1).toLowerCase())?.has(`${pkgRoot}/${rel}`) ?? false;
+  const dirs = match[2]!.split("/").slice(0, -1);
+  for (let depth = dirs.length; depth >= 1; depth -= 1) {
+    const rel = dirs.slice(0, depth).join("/");
+    if (coreHas(rel) && !hadBefore(rel)) return `${CORE_ROOT}/${rel}`;
+  }
+  if (dirs.length > 0) return null;
+  const words = nameWords(path);
+  for (let length = words.length; length >= 1; length -= 1) {
+    const concept = words.slice(0, length).join("");
+    const home = [...features].find((folder) => folder.split("/").length === 4 && folder.slice(CORE_ROOT.length + 1).toLowerCase() === concept);
+    if (home !== undefined && !hadBefore(home.slice(CORE_ROOT.length + 1))) return home;
+  }
+  return null;
+}
+
 /** Home-folder failures for the files a branch added or moved. */
 export function homeFailures(added: readonly string[], allPaths: readonly string[], isExempt: (path: string) => boolean = () => false): Failure[] {
   const layers = layerFolders(allPaths);
+  const addedSet = new Set(added);
+  const before = layerFolders(allPaths.filter((path) => !addedSet.has(path)));
+  const features = featureFolders(allPaths);
   const failures: Failure[] = [];
   for (const path of added) {
     if (!SOURCE.test(path) || path.endsWith(".d.ts")) continue;
+    const feature = featureFolderFor(path, features, before);
+    if (feature !== null && !isExempt(path)) {
+      const suffix = path.startsWith("packages/react/") ? ".view" : ".draw";
+      const name = path.slice(path.lastIndexOf("/") + 1).replace(/((?:\.test)?\.tsx?)$/, `${suffix}$1`);
+      failures.push({
+        rule: "outside-home",
+        file: path,
+        detail: `belongs to the feature folder ${feature}/: move it there as ${name} (or add \`// ${HOME_OK} <reason>\`)`,
+      });
+      continue;
+    }
     const home = homeFor(path, layers);
     if (home === null || isExempt(path)) continue;
     failures.push({
@@ -376,7 +435,7 @@ function main(argv: readonly string[]): number {
       console.log(`concept-homes ok: no duplicate export or stray concept file against ${base}`);
       return 0;
     }
-    console.error(`check:concept-homes failed (AGENTS.md "Layout": one concept, one folder per layer):`);
+    console.error(`check:concept-homes failed (AGENTS.md "Layout": one feature, one folder):`);
     for (const failure of failures) console.error(`  ${failure.file} ${failure.detail}`);
     return 1;
   } catch (error) {

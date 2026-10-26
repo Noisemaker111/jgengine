@@ -13,6 +13,11 @@
     "src"
   ],
   "exclude": [
-    "src/**/*.test.ts"
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx",
+    "src/**/*.view.ts",
+    "src/**/*.view.tsx",
+    "src/**/*.draw.ts",
+    "src/**/*.draw.tsx"
   ]
 }

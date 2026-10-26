@@ -2,7 +2,7 @@ import { useEffect, useReducer, type CSSProperties, type ReactNode } from "react
 
 import type { FastTravelNetwork, TravelPointView } from "@jgengine/core/world/fastTravel";
 import type { WorldXZ } from "@jgengine/core/world/minimap";
-import { hudType } from "./hud/hudTokens";
+import { hudType } from "@jgengine/core/hud/hudTokens";
 
 /**
  * Subscribe a component to a fast-travel network's discovery changes. Returns the

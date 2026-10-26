@@ -6,7 +6,7 @@ import type { GameContext, GameContextEntityEntry } from "@jgengine/core/runtime
 import { localPlayers } from "@jgengine/core/runtime/localPlayers";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { useGameContext } from "@jgengine/react/provider";
-import { ViewportHuds } from "@jgengine/shell/hud/ViewportHuds";
+import { ViewportHuds } from "@jgengine/core/hud/ViewportHuds.draw";
 import type { PlayableGame } from "@jgengine/shell/registry";
 
 const HERO = "hero";

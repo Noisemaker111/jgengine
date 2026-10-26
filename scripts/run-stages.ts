@@ -86,6 +86,7 @@ export const CHECKS: readonly CheckDef[] = [
   { name: "scaffold-launch", script: "scripts/check-scaffold-launch.ts", jobs: ["quick"] },
   { name: "capture-hygiene", script: "scripts/check-capture-hygiene.ts", jobs: ["quick"] },
   { name: "concept-homes", script: "scripts/check-concept-homes.ts", jobs: ["quick"] },
+  { name: "layers", script: "scripts/check-layers.ts", jobs: ["quick"] },
   { name: "export-manifest", script: "scripts/gen-export-manifest.ts", args: ["--check"], jobs: ["quick"], needsBuild: true, generated: true },
   { name: "fix-has-test", script: "scripts/check-fix-has-test.ts", jobs: ["quick"], named: true },
   { name: "games-framework", script: "games/scripts/framework-check.ts", jobs: ["games"], games: true },

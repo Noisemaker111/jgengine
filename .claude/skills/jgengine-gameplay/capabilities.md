@@ -735,6 +735,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createShopStock` (function) · `import { createShopStock } from "@jgengine/core/gameplay"`
 
+## shrink-capture — downscale a captured frame to a save-card thumbnail data URL
+
+- `shrinkCapture` (function) · `import { shrinkCapture } from "@jgengine/core/save/saveThumbnail.view"`
+
 ## side-jobs — offer and run repeatable side jobs (fares, deliveries, races) with fare math, deadlines, tips, streaks and wagers
 
 - `createSideJobs` (function) · `import { createSideJobs } from "@jgengine/core/mission/sideJobs"`
@@ -862,6 +866,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## upgrade-tree — ranked upgrades priced by a cost curve, gated by prerequisites and standing
 
 - `createUpgradeTree` (function) · `import { createUpgradeTree } from "@jgengine/core/progression/upgrades"`
+
+## use-save-slots — React hook binding a save-slots metadata index — re-renders on change and returns the ordered slot list
+
+- `useSaveSlots` (function) · `import { useSaveSlots } from "@jgengine/core/save/saveSlots.view"`
 
 ## visitor-population — a crowd whose on-site and daily counts are the bodies the game made
 

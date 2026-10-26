@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { useGameStore } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
 import { KitBanner, KitResultScreen } from "@jgengine/react/kitFlow";
-import { KitCount, KitCounts } from "@jgengine/react/hud/kitHud";
+import { KitCount, KitCounts } from "@jgengine/core/hud/kitHud.view";
 import { HudSlots } from "@jgengine/shell/gameKit";
 import { KitButton, KitMeter, KitPanel } from "@jgengine/react/uiKitRoot";
 

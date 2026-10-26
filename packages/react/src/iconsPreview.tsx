@@ -1,6 +1,6 @@
 import { IconTreatment, type IconSchool } from "./iconTreatment";
 import type { GameIconName } from "./gameIcons";
-import { hudType } from "./hud/hudTokens";
+import { hudType } from "@jgengine/core/hud/hudTokens";
 
 /**
  * A deterministic showcase of the painted {@link IconTreatment} (#1035): a school row (one gradient

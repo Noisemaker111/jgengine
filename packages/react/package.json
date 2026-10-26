@@ -29,7 +29,7 @@
     }
   },
   "scripts": {
-    "build": "tsgo -p tsconfig.build.json && bun ../../scripts/fix-extensions.ts dist && bun scripts/styles.ts",
+    "build": "bun ../../scripts/build-engine.ts",
     "check-types": "tsgo --noEmit -p tsconfig.json",
     "test": "bun test src",
     "styles": "bun scripts/styles.ts"

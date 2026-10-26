@@ -5,7 +5,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { ACCESSIBILITY_SETTING_IDS } from "@jgengine/core/settings/accessibilitySettings";
 import { createSettingsStore } from "@jgengine/core/settings/settingsModel";
 
-import { HudThemeRoot } from "../hud/hudThemeRoot";
+import { HudThemeRoot } from "@jgengine/core/hud/hudThemeRoot.view";
 import { SettingsProvider } from "./settings";
 import { useAccessibilitySettings, useAccessibilityRows, useHoldVsToggle } from "./accessibilitySettings";
 

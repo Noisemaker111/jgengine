@@ -4,7 +4,7 @@ import { useGameStore } from "@jgengine/react/hooks";
 import { Compass } from "@jgengine/react/map";
 import { useGameContext } from "@jgengine/react/provider";
 import { KitBanner, KitResultScreen } from "@jgengine/react/kitFlow";
-import { KitCount, KitCounts, KitVitals } from "@jgengine/react/hud/kitHud";
+import { KitCount, KitCounts, KitVitals } from "@jgengine/core/hud/kitHud.view";
 import { KitActionPrompt, KitPanel } from "@jgengine/react/uiKitRoot";
 import { HudSlots } from "@jgengine/shell/gameKit";
 

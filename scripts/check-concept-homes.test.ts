@@ -79,7 +79,7 @@ test("a new file named for a concept with a folder in its layer must sit in that
   const tree = [
     "packages/react/src/camera/shake/cameraShake.tsx",
     "packages/react/src/notifications/notices.tsx",
-    "packages/react/src/hud/hudFrame.tsx",
+    "packages/core/src/hud/hudFrame.view.tsx",
     "packages/core/src/world/terrain.ts",
   ];
   const layers = layerFolders(tree);
@@ -87,7 +87,7 @@ test("a new file named for a concept with a folder in its layer must sit in that
   expect(homeFor("packages/react/src/camera/cameraFollow.tsx", layers)).toBeNull();
   expect(homeFor("packages/react/src/camera/shake/shakeMeter.tsx", layers)).toBeNull();
   expect(homeFor("packages/react/src/shakeMeter.tsx", layers)).toEqual({ concept: "shake", homes: ["packages/react/src/camera/shake"] });
-  expect(homeFor("packages/react/src/hud/hudLanes.tsx", layers)).toBeNull();
+  expect(homeFor("packages/core/src/hud/hudLanes.tsx", layers)).toBeNull();
   expect(homeFor("packages/react/src/notifications.ts", layers)).toBeNull();
   expect(homeFor("packages/react/src/camera/index.ts", layers)).toBeNull();
   // A concept folder only binds its own layer.
@@ -95,6 +95,31 @@ test("a new file named for a concept with a folder in its layer must sit in that
   const failures = homeFailures(["packages/react/src/notificationsBell.tsx", "packages/react/src/notifications/bell.tsx"], tree);
   expect(failures.map((failure) => failure.file)).toEqual(["packages/react/src/notificationsBell.tsx"]);
   expect(homeFailures(["packages/react/src/notificationsBell.tsx"], tree, () => true)).toEqual([]);
+});
+
+test("a react or shell file for a feature whose folder gathered its layers in core goes in that folder", () => {
+  const tree = [
+    "packages/core/src/hud/hudLayout.ts",
+    "packages/core/src/hud/hudFrame.view.tsx",
+    "packages/core/src/hud/WorldHud.draw.tsx",
+    "packages/core/src/sky/skyModel.ts",
+    "packages/shell/src/terrain/TerrainMesh.tsx",
+    "packages/core/src/terrain/heightfield.ts",
+  ];
+  const added = [
+    "packages/react/src/hud/hudBadge.tsx",
+    "packages/shell/src/hudGlow.tsx",
+    "packages/shell/src/sky/SkyDome.tsx",
+    "packages/shell/src/terrain/TerrainHoles.tsx",
+    "packages/core/src/hud/hudBadge.view.tsx",
+  ];
+  const failures = homeFailures(added, [...tree, ...added]);
+  expect(failures.map((failure) => [failure.file, failure.detail.split(":")[0]])).toEqual([
+    ["packages/react/src/hud/hudBadge.tsx", "belongs to the feature folder packages/core/src/hud/"],
+    ["packages/shell/src/hudGlow.tsx", "belongs to the feature folder packages/core/src/hud/"],
+  ]);
+  expect(failures[0]!.detail).toContain("as hudBadge.view.tsx");
+  expect(failures[1]!.detail).toContain("as hudGlow.draw.tsx");
 });
 
 test("a generator's template text is not a definition", () => {

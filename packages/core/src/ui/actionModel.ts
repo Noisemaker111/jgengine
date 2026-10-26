@@ -3,7 +3,7 @@
  * card, an ability action bar, a build menu, or a radial. It carries *what the buttons mean*
  * (label, hotkey, cost, cooldown, disabled reasons, toggle state) with zero rendering opinion, so a
  * game keeps layout, dimensions, hotkeys, catalog-id mapping, renderer, and chrome caller-owned. The
- * React renderers in `@jgengine/react/hud/actionHud` consume this; a game can swap either without
+ * React renderers in `@jgengine/core/hud/actionHud.view` consume this; a game can swap either without
  * forking the logic here.
  */
 

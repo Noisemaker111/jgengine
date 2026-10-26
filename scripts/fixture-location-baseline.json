@@ -28,7 +28,7 @@
   "packages/node/src/host.test.ts",
   "packages/node/src/persistence.readFailure.test.ts",
   "packages/node/src/promotedAssetCatalog.test.ts",
-  "packages/shell/src/hud/hudInputBoundary.test.ts",
+  "packages/core/src/hud/hudInputBoundary.draw.test.ts",
   "apps/desktop/project/listGames.test.ts",
   "apps/desktop/project/processManager.test.ts",
   "scripts/agent-bootstrap.test.ts",

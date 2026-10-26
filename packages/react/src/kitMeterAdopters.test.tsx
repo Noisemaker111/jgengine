@@ -9,16 +9,16 @@ import { createTimerSet } from "@jgengine/core/time/timerSet";
 import { createCameraShake } from "@jgengine/core/camera/shake/cameraShake";
 
 import { CameraShakeMeter } from "./camera/shake/cameraShake";
-import { ComboMeterHud } from "./hud/comboMeter";
+import { ComboMeterHud } from "@jgengine/core/hud/comboMeter.view";
 import { DialogueView } from "./dialogueView";
-import { Crosshair } from "./hud/hudReadouts";
-import { KitWaveClock } from "./hud/kitHud";
-import { HudChromePreview } from "./hud/hudChromePreview";
-import { HudSkinPreview } from "./hud/hudSkinPreview";
-import { StatusEffectBar } from "./hud/statusEffectBar";
+import { Crosshair } from "@jgengine/core/hud/hudReadouts.view";
+import { KitWaveClock } from "@jgengine/core/hud/kitHud.view";
+import { HudChromePreview } from "@jgengine/core/hud/hudChromePreview.view";
+import { HudSkinPreview } from "@jgengine/core/hud/hudSkinPreview.view";
+import { StatusEffectBar } from "@jgengine/core/hud/statusEffectBar.view";
 import { TalentTreePanel } from "./talentTree";
 import { TimerReadout, TimerRing } from "./timerReadout";
-import { WaveHud } from "./hud/waveHud";
+import { WaveHud } from "@jgengine/core/hud/waveHud.view";
 
 // The widgets whose bars moved onto KitMeter and whose colours moved off the retired `--jg-bar-*`
 // tokens: each still renders, draws its meter through the kit, and reads no removed token.

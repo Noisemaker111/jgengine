@@ -11,7 +11,7 @@ import { SettingsTrigger, useSettings, useSettingsStore, type SettingsController
 import { createAudioEngine } from "@jgengine/shell/audio/audioEngine";
 import type { PlayableGame } from "@jgengine/shell/registry";
 
-import { ShellHudPresentation } from "@jgengine/shell/hud/ShellHudPresentation";
+import { ShellHudPresentation } from "@jgengine/core/hud/ShellHudPresentation.draw";
 
 function renderHud(settings: GameSettingsConfig | false | undefined) {
   const store = createSettingsStore(null);

@@ -17,10 +17,10 @@ import {
 import { useReducedMotion } from "../accessibility";
 import { useDialogBehavior } from "./dialogBehavior";
 import { useEngineStyles } from "../engineStyles";
-import { HudButton } from "../hud/hudButton";
-import { useHudInteract, type HudInteractListener } from "../hud/hudInteract";
-import { HudSurface } from "../hud/hudSurface";
-import { hudType } from "../hud/hudTokens";
+import { HudButton } from "@jgengine/core/hud/hudButton.view";
+import { useHudInteract, type HudInteractListener } from "@jgengine/core/hud/hudInteract.view";
+import { HudSurface } from "@jgengine/core/hud/hudSurface.view";
+import { hudType } from "@jgengine/core/hud/hudTokens";
 import { useMountPresence } from "../presence";
 
 /**

@@ -1,5 +1,5 @@
 import { IconTreatment } from '@jgengine/react/iconTreatment';
-import { hudTheme } from '@jgengine/react/hud/hudTheme';
+import { hudTheme } from '@jgengine/core/hud/hudTheme.view';
 import { gameFontStacks } from '@jgengine/react/gameFonts';
 import { ITEMS, type ItemKind } from '../state';
 import { GAME_FONTS } from '../../art/fonts/fonts';

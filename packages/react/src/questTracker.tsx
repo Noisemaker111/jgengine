@@ -1,7 +1,7 @@
 import type { CSSProperties, ReactNode } from "react";
 
 import type { TrackedQuestView } from "@jgengine/core/mission/quest";
-import { hudType } from "./hud/hudTokens";
+import { hudType } from "@jgengine/core/hud/hudTokens";
 
 /** Props for {@link QuestTracker}. */
 export interface QuestTrackerProps {

@@ -5,10 +5,10 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
 import { ENGINE_STYLESHEET } from "./engineStyles";
-import { HudButton } from "./hud/hudButton";
-import { HudSurface } from "./hud/hudSurface";
-import { HudThemeRoot } from "./hud/hudThemeRoot";
-import { defaultHudTheme, hudTheme } from "./hud/hudTheme";
+import { HudButton } from "@jgengine/core/hud/hudButton.view";
+import { HudSurface } from "@jgengine/core/hud/hudSurface.view";
+import { HudThemeRoot } from "@jgengine/core/hud/hudThemeRoot.view";
+import { defaultHudTheme, hudTheme } from "@jgengine/core/hud/hudTheme.view";
 
 const root = join(import.meta.dir, "../../..");
 const keyframes = new Set([...ENGINE_STYLESHEET.matchAll(/@keyframes\s+([\w-]+)/g)].map((match) => match[1]));

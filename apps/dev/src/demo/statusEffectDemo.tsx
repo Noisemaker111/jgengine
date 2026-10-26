@@ -6,7 +6,7 @@ import { toStatusEffectViews } from "@jgengine/core/combat/statusEffectView";
 import type { GameContext, GameContextEntityEntry } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { environment, grass, terrain } from "@jgengine/core/world/features";
-import { StatusEffectBar, type StatusIconResolver } from "@jgengine/react/hud/statusEffectBar";
+import { StatusEffectBar, type StatusIconResolver } from "@jgengine/core/hud/statusEffectBar.view";
 
 import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
 import type { PlayableGame } from "@jgengine/shell/registry";

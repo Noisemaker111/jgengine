@@ -5,7 +5,7 @@ import { waypointAnchor, type WaypointEntry, type WaypointStore } from "@jgengin
 import { formatDistance, type DistanceFormat } from "@jgengine/core/format/distance";
 
 import type { ProjectEntity } from "./entityFrames";
-import { hudType } from "./hud/hudTokens";
+import { hudType } from "@jgengine/core/hud/hudTokens";
 
 /**
  * Subscribe to a {@link WaypointStore} and re-render on every change, returning

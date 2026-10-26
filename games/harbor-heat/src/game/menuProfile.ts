@@ -1,4 +1,4 @@
-import { shrinkCapture } from "@jgengine/react/save/saveThumbnail";
+import { shrinkCapture } from "@jgengine/core/save/saveThumbnail.view";
 import type { GameSaveSystem } from "@jgengine/core/save/saveDocument";
 
 /**

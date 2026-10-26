@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { detectLayoutCollisions, formatLayoutCollisions, hudBlockRegion } from "@jgengine/core/hud/hudPriority";
-import { resolveHudLanes, type HudLaneSlot } from "@jgengine/react/hud/hudLanes";
+import { resolveHudLanes, type HudLaneSlot } from "@jgengine/core/hud/hudLanes";
 import { HUD_PANELS, placement } from "./hudPanels";
 
 const VIEWPORTS = [

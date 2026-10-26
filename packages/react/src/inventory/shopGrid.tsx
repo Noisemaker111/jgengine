@@ -4,8 +4,8 @@ import { balance, type WalletState } from "@jgengine/core/economy/wallet";
 import type { ShopPrice, ShopStock, ShopStockEntry } from "@jgengine/core/economy/shopStock";
 
 import { GameIcon, iconForItemId, type GameIconName } from "../gameIcons";
-import { HudFrame } from "../hud/hudFrame";
-import { hudType } from "../hud/hudTokens";
+import { HudFrame } from "@jgengine/core/hud/hudFrame.view";
+import { hudType } from "@jgengine/core/hud/hudTokens";
 
 /**
  * Subscribe to a shop's stock and re-render whenever it changes (buy, sell, restock, price, add,

@@ -6,7 +6,7 @@ import type {
   GameContextItemEntry,
 } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
-import { Coins, Hotbar } from "@jgengine/react/hud/hudReadouts";
+import { Coins, Hotbar } from "@jgengine/core/hud/hudReadouts.view";
 import { useEntityStat, useFeed, useGameClock, useGameStore, usePlayer, useTarget } from "@jgengine/react/hooks";
 import type { KitTone } from "@jgengine/react/uiKit";
 import { KitMeter } from "@jgengine/react/uiKitRoot";

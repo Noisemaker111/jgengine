@@ -34,7 +34,7 @@ adoption rules live in [AGENTS.md](AGENTS.md#game-changes-improve-the-framework)
 
 | Package | What it is |
 | --- | --- |
-| [`@jgengine/core`](packages/core) | Framework core: `GameContext`, entity/object stores, commands, combat, inventory, multiplayer contracts, world features. Zero dependencies. Import by deep path. |
+| [`@jgengine/core`](packages/core) | The engine's feature folders: `GameContext`, entity/object stores, commands, combat, HUD, save, inventory, multiplayer contracts, world features. Model files have zero dependencies; a feature's `*.view` (React) and `*.draw` (three.js) files sit beside them and need the optional peers. Import by deep path. |
 | [`@jgengine/rapier`](packages/rapier) | Rapier physics adapter for `PhysicsBackend`, providing native capsules, shapecasts, rotation, CCD, and joints. |
 | [`@jgengine/react`](packages/react) | React UI layer: `GameProvider`, hooks, headless primitives. |
 | [`@jgengine/ws`](packages/ws) | Browser-safe game backend over a pluggable transport pipe (WebSocket/socket.io/WebRTC/loopback): protocol codec, `createWsBackend`, `createHttpReads`, a browser-safe authoritative host + router, and WebRTC P2P sessions. |
@@ -91,7 +91,7 @@ The games in [`games/`](games) are also playable on jgengine.com at `/games/<id>
 
 ## Layering
 
-`core` imports nothing. `ws` and `sql` import only `core`. `react` adds React, `convex` adds Convex + React, `node` adds Node builtins + `ws`, `shell` adds React + three.js (the only package that renders). `editor` sits on top of `shell`/`react`/`core`; `assets` and `github` are standalone data packages games opt into.
+Each engine feature is one folder in `core` holding all its layers, named by file: a plain `name.ts` is **model** (no React, no three.js, no view or draw file), `name.view.tsx` is **view** (React UI; no three.js, no draw file), `name.draw.tsx` is **draw** (three.js / react-three-fiber). `react` is all view and `shell` all draw. `bun run check layers` enforces this from the imports in under a second, so a server or worker importing model files never loads React or three.js. `core`, `react` and `shell` import each other through these files, so `scripts/build-engine.ts` compiles them as one program and writes each package's `dist/`. `ws` and `sql` import only `core` model files. `react` adds React, `convex` adds Convex + React, `node` adds Node builtins + `ws`, `shell` adds React + three.js (the only package that renders). `editor` sits on top of `shell`/`react`/`core`; `assets` and `github` are standalone data packages games opt into.
 
 ## Development
 

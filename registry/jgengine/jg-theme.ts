@@ -5,7 +5,7 @@ import {
   deriveHudTheme,
   hudThemeVars,
   type HudThemeSeed,
-} from "@jgengine/react/hud/hudTheme";
+} from "@jgengine/core/hud/hudTheme.view";
 
 export type JgThemeVars = CSSProperties & Record<`--jg-${string}`, string>;
 

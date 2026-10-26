@@ -319,7 +319,7 @@ export function ownTests(file: string, testFiles: readonly string[]): string[] {
  * inner loop stays under 5 s and a push still cannot ship a stale generated file.
  */
 export function gatesFor(changed: readonly string[]): string[] {
-  const gates = new Set(["artifacts", "path-portability", "concept-homes"]);
+  const gates = new Set(["artifacts", "path-portability", "concept-homes", "layers"]);
   const shippedSource = changed.filter((path) => /^packages\/[^/]+\/src\//.test(path) && !isTestFile(path));
   if (changed.some((path) => path.startsWith("scripts/")) || shippedSource.length > 0) gates.add("capture-hygiene");
   if (shippedSource.length > 0) gates.add("changelog");
