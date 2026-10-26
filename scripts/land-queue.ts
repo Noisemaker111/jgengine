@@ -205,7 +205,12 @@ export function waitForGreen(number: number, io: QueueIo): WaitResult {
     const report = checkReport(view);
     if (report.runIds.length > 0) runIds = report.runIds;
     const verdict = checkVerdict(report.checks);
-    if (verdict.failures.length > 0) {
+    // A run cancelled by a newer run on the same commit (two pull_request events at once, PR #2496 on
+    // 25 Oct) leaves its jobs cancelled before the replacement has any: while every failure is a
+    // cancellation and something still runs, the verdict is not in yet.
+    const cancelled = new Set(report.checks.filter((check) => check.bucket === "cancel" || check.state === "CANCELLED").map((check) => check.name));
+    const onlySuperseded = verdict.failures.every((failure) => cancelled.has(failure.name)) && verdict.pending.length > 0;
+    if (verdict.failures.length > 0 && !onlySuperseded) {
       return {
         verdict: "failed",
         checks: report.checks,
@@ -214,7 +219,7 @@ export function waitForGreen(number: number, io: QueueIo): WaitResult {
         detail: formatFailures(verdict.failures).join("\n").trim(),
       };
     }
-    if (verdict.pending.length === 0 && report.checks.length > 0) {
+    if (verdict.failures.length === 0 && verdict.pending.length === 0 && report.checks.length > 0) {
       return { verdict: "green", checks: report.checks, runIds, waitedMs: io.now() - startedAt, detail: "" };
     }
     if (io.now() - startedAt >= WAIT_TIMEOUT_MS) {

@@ -211,6 +211,33 @@ test("a superseded cancelled attempt does not stop the queue, and a running chec
   expect(running.detail).toContain("still running after 25 minutes: 1 of 2 (run 603): perf");
 });
 
+test("a run cancelled by its replacement on the same commit keeps the queue waiting for the replacement", () => {
+  // PR #2496 on 25 Oct: two pull_request runs on one commit; the newer cancelled the older's jobs
+  // before it had any of its own, and the queue called the cancellations failures in under a second.
+  let step = 0;
+  const answers = [
+    rollup([
+      { name: "games", conclusion: "CANCELLED", startedAt: "2026-10-26T00:54:10Z" },
+      { name: "types", status: "IN_PROGRESS", conclusion: "", startedAt: "2026-10-26T00:54:10Z" },
+    ]),
+    rollup([
+      { name: "games", conclusion: "CANCELLED", startedAt: "2026-10-26T00:54:10Z" },
+      { name: "games", conclusion: "SUCCESS", startedAt: "2026-10-26T00:55:00Z" },
+      { name: "types", conclusion: "SUCCESS", startedAt: "2026-10-26T00:55:00Z" },
+    ]),
+  ];
+  const gh: QueueIo["gh"] = (args) =>
+    args.join(" ").startsWith("pr view")
+      ? ok(JSON.stringify({ number: 27, url: "u", state: "OPEN", headRefName: "agent/27", headRefOid: "head1", statusCheckRollup: JSON.parse(answers[Math.min(step, answers.length - 1)]!) }))
+      : ok();
+  const result = waitForGreen(27, io({ gh, pause: () => (step += 1) }));
+  expect(result.verdict).toBe("green");
+  expect(step).toBe(1);
+
+  const settled = waitForGreen(28, io({ gh: () => ok(JSON.stringify({ number: 28, url: "u", state: "OPEN", headRefName: "agent/28", statusCheckRollup: JSON.parse(rollup([{ name: "games", conclusion: "CANCELLED" }, { name: "types", conclusion: "SUCCESS" }])) })) }));
+  expect(settled.verdict).toBe("failed");
+});
+
 test("a failing check ends the wait at once, and a wait that never settles gives up at the ceiling", () => {
   let paused = 0;
   const failed = waitForGreen(22, io({
