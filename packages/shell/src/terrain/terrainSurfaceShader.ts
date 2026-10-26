@@ -1,24 +1,23 @@
-/** Integer-hash value noise (`jgHashUint`, `jgVNoise`, `jgFbm`) every surface chunk builds on. */
+import * as THREE from "three";
+
+/**
+ * Value noise (`jgHash`, `jgVNoise`, `jgFbm`) every surface chunk builds on, read from
+ * {@link surfaceNoiseTexture}: a lattice of random values that the GPU's bilinear filter
+ * interpolates, so one noise sample is one texture read. An integer hash per lattice corner
+ * (four per 2D sample, eight per 3D) inlined hundreds of times made the terrain program take
+ * seconds to compile on Direct3D; the lookup compiles to a fraction of that. Lattice cells are
+ * wrapped to the 256-texel tile before the read, so far-out coordinates keep full precision.
+ * Needs the `jgNoiseTex` uniform from {@link surfaceNoiseUniforms}.
+ */
 export const NOISE_GLSL = /* glsl */ `
-uint jgHashUint(uvec2 v){
-  uint x = v.x * 1664525u + v.y * 1013904223u;
-  x = (x ^ (x >> 16u)) * 2246822519u;
-  x = (x ^ (x >> 13u)) * 3266489917u;
-  x = x ^ (x >> 16u);
-  return x;
-}
-float jgHash(vec2 p){
-  ivec2 i = ivec2(floor(p));
-  return float(jgHashUint(uvec2(i))) * (1.0 / 4294967296.0);
-}
+uniform sampler2D jgNoiseTex;
+vec4 jgLattice(vec2 cell){ return texelFetch(jgNoiseTex, ivec2(floor(cell)) & 255, 0); }
+float jgHash(vec2 p){ return jgLattice(p).r; }
 float jgVNoise(vec2 p){
   vec2 i = floor(p); vec2 f = fract(p);
   vec2 u = f * f * (3.0 - 2.0 * f);
-  float a = jgHash(i);
-  float b = jgHash(i + vec2(1.0, 0.0));
-  float c = jgHash(i + vec2(0.0, 1.0));
-  float d = jgHash(i + vec2(1.0, 1.0));
-  return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
+  i -= 256.0 * floor(i / 256.0);
+  return textureLod(jgNoiseTex, (i + u + 0.5) / 256.0, 0.0).r;
 }
 float jgFbm(vec2 p){
   float v = 0.0; float amp = 0.5;
@@ -26,6 +25,57 @@ float jgFbm(vec2 p){
   return v;
 }
 `;
+
+/** Texels per side of {@link surfaceNoiseTexture}; the noise repeats every this many lattice cells. */
+const NOISE_SIZE = 256;
+/** The lattice step between a 3D noise's z slices, which the texture's green channel bakes in. */
+const NOISE_SLICE: readonly [number, number] = [37, 17];
+
+let noiseTexture: THREE.DataTexture | null = null;
+
+/**
+ * The random lattice behind {@link NOISE_GLSL}, built once and shared by every surface material:
+ * red and blue/alpha are independent values per texel, and green is red one z slice on
+ * (`NOISE_SLICE` texels over), so a 3D noise reads both slices it blends in one fetch. Seeded,
+ * so the ground looks the same on every load.
+ * @internal
+ */
+export function surfaceNoiseTexture(): THREE.DataTexture {
+  if (noiseTexture !== null) return noiseTexture;
+  const data = new Uint8Array(NOISE_SIZE * NOISE_SIZE * 4);
+  let seed = 0x2545f491;
+  const next = (): number => {
+    seed ^= seed << 13;
+    seed ^= seed >>> 17;
+    seed ^= seed << 5;
+    return (seed >>> 0) & 255;
+  };
+  for (let index = 0; index < NOISE_SIZE * NOISE_SIZE; index += 1) {
+    data[index * 4] = next();
+    data[index * 4 + 2] = next();
+    data[index * 4 + 3] = next();
+  }
+  for (let y = 0; y < NOISE_SIZE; y += 1) {
+    for (let x = 0; x < NOISE_SIZE; x += 1) {
+      const from = ((y + NOISE_SLICE[1]) % NOISE_SIZE) * NOISE_SIZE + ((x + NOISE_SLICE[0]) % NOISE_SIZE);
+      data[(y * NOISE_SIZE + x) * 4 + 1] = data[from * 4]!;
+    }
+  }
+  const texture = new THREE.DataTexture(data, NOISE_SIZE, NOISE_SIZE, THREE.RGBAFormat, THREE.UnsignedByteType);
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.magFilter = THREE.LinearFilter;
+  texture.minFilter = THREE.LinearFilter;
+  texture.generateMipmaps = false;
+  texture.needsUpdate = true;
+  noiseTexture = texture;
+  return texture;
+}
+
+/** The uniform {@link NOISE_GLSL} reads; spread into a surface material's shader uniforms. @internal */
+export function surfaceNoiseUniforms(): { jgNoiseTex: { value: THREE.DataTexture } } {
+  return { jgNoiseTex: { value: surfaceNoiseTexture() } };
+}
 
 /**
  * GLSL for the terrain surface pass: per-surface procedural ground (grass, dirt, gravel, rock, sand,
@@ -38,24 +88,15 @@ float jgFootprint;
 float jgFbm2(vec2 p){ return jgVNoise(p) * 0.62 + jgVNoise(p * 2.03 + 17.3) * 0.38; }
 float jgFbm3o(vec2 p){ return (jgVNoise(p) * 0.5 + jgVNoise(p * 2.03 + 17.3) * 0.3 + jgVNoise(p * 4.1 + 5.9) * 0.2); }
 float jgBand(float freq){ return 1.0 - smoothstep(0.16, 0.42, freq * jgFootprint); }
-vec2 jgHash22(vec2 cell){
-  uint h = jgHashUint(uvec2(ivec2(floor(cell + 0.5))));
-  uint h2 = h * 747796405u + 2891336453u;
-  h2 = (h2 ^ (h2 >> 15u)) * 2246822519u;
-  return vec2(float(h), float(h2 ^ (h2 >> 13u))) * (1.0 / 4294967296.0);
-}
-float jgHash3(vec3 i){
-  ivec3 c = ivec3(i);
-  return float(jgHashUint(uvec2(uint(c.x) ^ (uint(c.z) * 2654435761u), uint(c.y) + uint(c.z) * 1013904223u))) * (1.0 / 4294967296.0);
-}
+vec2 jgHash22(vec2 cell){ return jgLattice(cell + 0.5).ba; }
 float jgVNoise3(vec3 p){
   vec3 i = floor(p); vec3 f = fract(p);
   vec3 u = f * f * (3.0 - 2.0 * f);
-  float a = jgHash3(i), b = jgHash3(i + vec3(1.0, 0.0, 0.0));
-  float c = jgHash3(i + vec3(0.0, 1.0, 0.0)), d = jgHash3(i + vec3(1.0, 1.0, 0.0));
-  float e = jgHash3(i + vec3(0.0, 0.0, 1.0)), g = jgHash3(i + vec3(1.0, 0.0, 1.0));
-  float h = jgHash3(i + vec3(0.0, 1.0, 1.0)), k = jgHash3(i + vec3(1.0, 1.0, 1.0));
-  return mix(mix(mix(a, b, u.x), mix(c, d, u.x), u.y), mix(mix(e, g, u.x), mix(h, k, u.x), u.y), u.z);
+  // Slice z sits 37,17 cells over in the lattice; green holds the next slice, so one read blends both.
+  vec2 cell = i.xy + vec2(37.0, 17.0) * i.z;
+  cell -= 256.0 * floor(cell / 256.0);
+  vec2 slices = textureLod(jgNoiseTex, (cell + u.xy + 0.5) / 256.0, 0.0).rg;
+  return mix(slices.x, slices.y, u.z);
 }
 float jgFbm3(vec3 p){
   float v = 0.0; float amp = 0.5;

@@ -57,6 +57,10 @@ export interface ShaderWarmupRenderer {
    * (ANGLE on Direct3D) finish a program only at its first draw, for that draw's vertex layout.
    */
   render?(scene: Object3D, camera: Camera): unknown;
+  /** Sends a texture to the GPU now, as its first draw would. */
+  initTexture?(texture: never): void;
+  /** Three's per-material record; `currentProgram` is the program the material was last linked to. */
+  readonly properties?: { get(material: object): unknown };
 }
 
 /** A renderer program's completion check, which three keeps off its public type. */
@@ -187,34 +191,51 @@ function inReach(object: Drawable, camera: Camera, frustum: Frustum, margin: num
 }
 
 /**
- * Links the programs of the drawables the predicate keeps, and nothing else: three has no
- * per-object compile, so the rest is lifted out of the graph for the length of the synchronous
- * call and put back exactly where it was. Same objects, so the programs are the ones a draw
- * would build, which a cloned stand-in scene cannot promise.
+ * Links the programs of the given drawables, and nothing else, against the scene's lights, fog and
+ * environment. Each is compiled through a {@link standIn} that reads everything off the real object
+ * and has no children, so a light parented under a drawable is counted once (from the scene) and
+ * the cost is the batch plus one walk for the scene's lights, not a walk of the whole graph.
  * @internal
  */
-export function compileSubset(renderer: ShaderWarmupRenderer, scene: Object3D, camera: Camera, keep: (object: Object3D) => boolean): void {
-  const lifted: { parent: Object3D; index: number; object: Object3D }[] = [];
+export function compileObjects(renderer: ShaderWarmupRenderer, scene: Object3D, camera: Camera, objects: Iterable<Object3D>): void {
+  const proxies: Object3D[] = [];
+  for (const object of objects) if (isDrawable(object)) proxies.push(standIn(object, object.material));
+  renderer.compile(standInGroup(proxies), camera, scene as Scene);
+}
+
+/**
+ * Takes every drawable the predicate drops out of the graph for one synchronous call, in one pass:
+ * each parent that loses a child gets a filtered children array and its own array back afterwards,
+ * so a parent of thousands of siblings costs one copy, not a search and splice per child. A child
+ * added to a filtered array meanwhile is kept. `kept` sees each drawable that stays.
+ */
+function liftAllBut(scene: Object3D, keep: (object: Object3D) => boolean, kept?: (object: Object3D) => void): () => void {
+  const swapped: { parent: Object3D; own: Object3D[]; filtered: Object3D[]; length: number }[] = [];
   const walk = (object: Object3D): void => {
-    for (const child of [...object.children]) {
+    const own = object.children;
+    let filtered: Object3D[] | null = null;
+    for (let index = 0; index < own.length; index += 1) {
+      const child = own[index]!;
       if (isDrawable(child) && !keep(child)) {
-        lifted.push({ parent: object, index: object.children.indexOf(child), object: child });
-        object.children.splice(object.children.indexOf(child), 1);
-        child.parent = null;
+        filtered ??= own.slice(0, index);
         continue;
       }
+      filtered?.push(child);
+      if (kept !== undefined && isDrawable(child)) kept(child);
       walk(child);
+    }
+    if (filtered !== null) {
+      swapped.push({ parent: object, own, filtered, length: filtered.length });
+      object.children = filtered;
     }
   };
   walk(scene);
-  try {
-    renderer.compile(scene, camera);
-  } finally {
-    for (const { parent, index, object } of lifted.sort((a, b) => a.index - b.index)) {
-      parent.children.splice(Math.min(index, parent.children.length), 0, object);
-      object.parent = parent;
+  return () => {
+    for (const { parent, own, filtered, length } of swapped) {
+      parent.children = own;
+      for (let index = length; index < filtered.length; index += 1) own.push(filtered[index]!);
     }
-  }
+  };
 }
 
 type ShadowLight = Object3D & { castShadow: boolean; shadow: { map: unknown; needsUpdate: boolean } };
@@ -229,32 +250,20 @@ function shadowLights(scene: Object3D): ShadowLight[] {
 }
 
 /**
- * Draws the drawables the predicate keeps, once, with everything else lifted out the same way as
- * {@link compileSubset}. Kept objects draw even outside the view, and the shadow pass is skipped
+ * Draws the drawables the predicate keeps, once, with everything else lifted out of the graph for
+ * the length of the call and put back exactly where it was. Kept objects draw even outside the view, and the shadow pass is skipped
  * so the scene's shadow maps keep what the real frames drew, except for a map no frame made yet. For drivers that finish a program
  * at its first draw: the draw happens here, a few programs at a time, instead of on a shown frame.
  * @internal
  */
 export function drawSubset(renderer: ShaderWarmupRenderer, scene: Object3D, camera: Camera, keep: (object: Object3D) => boolean): void {
   if (renderer.render === undefined) return;
-  const lifted: { parent: Object3D; index: number; object: Object3D }[] = [];
   const culled: Object3D[] = [];
-  const walk = (object: Object3D): void => {
-    for (const child of [...object.children]) {
-      if (isDrawable(child) && !keep(child)) {
-        lifted.push({ parent: object, index: object.children.indexOf(child), object: child });
-        object.children.splice(object.children.indexOf(child), 1);
-        child.parent = null;
-        continue;
-      }
-      if (isDrawable(child) && child.frustumCulled) {
-        child.frustumCulled = false;
-        culled.push(child);
-      }
-      walk(child);
-    }
-  };
-  walk(scene);
+  const restore = liftAllBut(scene, keep, (child) => {
+    if (!child.frustumCulled) return;
+    child.frustumCulled = false;
+    culled.push(child);
+  });
   const shadows = renderer.shadowMap;
   const autoUpdate = shadows?.autoUpdate;
   const needsUpdate = shadows?.needsUpdate;
@@ -277,10 +286,7 @@ export function drawSubset(renderer: ShaderWarmupRenderer, scene: Object3D, came
     // That pass drew only the kept casters into every map it touched: the next frame redraws them.
     if (mapless) for (const light of casters) light.shadow.needsUpdate = true;
     for (const object of culled) object.frustumCulled = true;
-    for (const { parent, index, object } of lifted.sort((a, b) => a.index - b.index)) {
-      parent.children.splice(Math.min(index, parent.children.length), 0, object);
-      object.parent = parent;
-    }
+    restore();
   }
 }
 
@@ -301,11 +307,15 @@ function layoutKey(object: Drawable): string {
 function programKey(object: Drawable): string {
   const material = object.material as { uuid?: string } | { uuid?: string }[] | undefined;
   const materials = Array.isArray(material) ? material.map((entry) => entry?.uuid).join(",") : material?.uuid;
+  return `${materials}|${objectKey(object)}`;
+}
+
+/** The object-side switches of a drawable's program: kind, instancing, skinning, shadows, attributes. */
+function objectKey(object: Drawable): string {
   const flags = object as { isInstancedMesh?: boolean; isSkinnedMesh?: boolean; isPoints?: boolean; isLine?: boolean; isSprite?: boolean; isBatchedMesh?: boolean };
   const attributes = object.geometry?.attributes ?? {};
   const morph = object.geometry?.morphAttributes ?? {};
   return [
-    materials,
     flags.isInstancedMesh === true ? "i" : "",
     flags.isSkinnedMesh === true ? "s" : "",
     flags.isBatchedMesh === true ? "b" : "",
@@ -325,14 +335,14 @@ function programKey(object: Drawable): string {
  * Duplicates of a key ride in the batch of the first one, so every drawable is in exactly one.
  * @internal
  */
-export function batchByProgram(objects: Iterable<Object3D>, perBatch: number): Set<Object3D>[] {
+export function batchByProgram(objects: Iterable<Object3D>, perBatch: number, keyOf: (object: Object3D) => string = (object) => programKey(object as Drawable)): Set<Object3D>[] {
   const batchOf = new Map<string, Set<Object3D>>();
   const batches: Set<Object3D>[] = [];
   let open: Set<Object3D> | null = null;
   let keysInOpen = 0;
   for (const object of objects) {
     if (!isDrawable(object)) continue;
-    const key = programKey(object);
+    const key = keyOf(object);
     const existing = batchOf.get(key);
     if (existing !== undefined) {
       existing.add(object);
@@ -416,6 +426,45 @@ export interface HeldDraw {
   material: unknown;
 }
 
+const warmupDrawers = new WeakMap<Object3D, Set<() => void>>();
+/** Set while the warmup runs registered drawers, so every draw they make is held. */
+let drawingForWarmup = false;
+
+/**
+ * Register a draw the frame loop makes outside the scene graph, such as a post chain's passes, for
+ * the scene's warmup to link before the first frame runs it. Each covered round calls `draw` with
+ * every renderer draw held and links what it tried to draw, the same as for a draw the frame loop
+ * makes under the cover. That covers a frame loop that does not run while the canvas is covered
+ * (an opaque menu): its first frame would otherwise link the whole chain at once. `draw` must
+ * leave nothing behind that a real frame depends on. Returns the unregister. @internal
+ */
+export function warmupDraws(scene: Object3D, draw: () => void): () => void {
+  let drawers = warmupDrawers.get(scene);
+  if (drawers === undefined) {
+    drawers = new Set();
+    warmupDrawers.set(scene, drawers);
+  }
+  drawers.add(draw);
+  return () => drawers.delete(draw);
+}
+
+function runDrawers(scene: Object3D): void {
+  const drawers = warmupDrawers.get(scene);
+  if (drawers === undefined || drawers.size === 0) return;
+  drawingForWarmup = true;
+  try {
+    for (const draw of drawers) {
+      try {
+        draw();
+      } catch {
+        /* a drawer that throws leaves its programs to its first real draw */
+      }
+    }
+  } finally {
+    drawingForWarmup = false;
+  }
+}
+
 /** Options for {@link holdDraws}. */
 export interface HoldDrawsOptions {
   /** Whether a call right now is held; default always. The gate holds only the frame loop's draws. */
@@ -471,7 +520,7 @@ export function holdDraws(renderer: { render: RenderMethod; getRenderTarget?(): 
   const holding = options.holding ?? (() => true);
   heldRenderers.set(renderer, holding);
   const held = function (this: unknown, scene: never, camera: never): unknown {
-    if (!released && (options.holding?.() ?? true)) {
+    if (!released && (drawingForWarmup || (options.holding?.() ?? true))) {
       const object = scene as Object3D & { overrideMaterial?: unknown; material?: unknown };
       options.onHeld?.({
         object,
@@ -507,6 +556,42 @@ function standIn(object: Object3D, material: unknown): Object3D {
   proxy.children = [];
   proxy.parent = null;
   return proxy;
+}
+
+interface UploadableTexture {
+  isTexture: true;
+  version: number;
+  image?: unknown;
+  isVideoTexture?: boolean;
+  isRenderTargetTexture?: boolean;
+}
+
+/** A texture that has its pixels and is not drawn into or streamed, so uploading it now is final. */
+function uploadable(value: unknown): value is UploadableTexture {
+  const texture = value as Partial<UploadableTexture> | null;
+  if (texture === null || typeof texture !== "object" || texture.isTexture !== true) return false;
+  if (texture.isVideoTexture === true || texture.isRenderTargetTexture === true || (texture.version ?? 0) === 0) return false;
+  const image = texture.image as { complete?: boolean; width?: number } | null | undefined;
+  return image !== null && image !== undefined && image.complete !== false;
+}
+
+/** Every texture a material samples: its map slots and, for a shader material, its uniforms. */
+function materialTextures(material: unknown, found: (texture: UploadableTexture) => void): void {
+  if (material === null || typeof material !== "object") return;
+  for (const value of Object.values(material)) if (uploadable(value)) found(value);
+  const uniforms = (material as { uniforms?: Record<string, { value?: unknown } | undefined> }).uniforms;
+  if (uniforms !== undefined) for (const uniform of Object.values(uniforms)) if (uploadable(uniform?.value)) found(uniform.value);
+}
+
+/**
+ * The textures a shadow pass samples drawing a caster: the cut-out and displacement maps its depth
+ * material copies, nothing it would light with.
+ */
+function depthTextures(material: unknown, found: (texture: UploadableTexture) => void): void {
+  if (material === null || typeof material !== "object") return;
+  const source = material as ShadowSource & { alphaTest?: number; alphaHash?: boolean };
+  const cutOut = (source.alphaTest ?? 0) > 0 || source.alphaHash === true;
+  for (const value of [cutOut ? source.map : undefined, source.alphaMap, source.displacementMap]) if (uploadable(value)) found(value);
 }
 
 /** A group of stand-ins that a compile can walk; built by hand so no `added` event reaches the real objects. */
@@ -667,6 +752,12 @@ export const SHADER_WARMUP_DEFAULTS = {
    * the next from piling on.
    */
   programsPerBatch: 12,
+  /**
+   * Textures sent to the GPU per flush while covered. An upload copies the image on the main
+   * thread and builds its mip chain on the GPU, so a few at a time keep the menu answering; after
+   * the reveal the background sends one per flush, which stays inside a frame.
+   */
+  texturesPerBatch: 4,
 } as const;
 
 /** Options for {@link createShaderWarmup}; the clock, sleep and loader signal are injectable for tests. */
@@ -915,7 +1006,7 @@ export function createShaderWarmup(options: ShaderWarmupOptions): ShaderWarmup {
       const due = list.filter((object) => isDrawable(object) && linked.get(object) !== stamp(object));
       for (const batch of batchByProgram(due, programsPerBatch)) {
         jobs.push(() => {
-          withTarget(target, () => compileSubset(options.renderer, options.scene, options.camera, (object) => batch.has(object)));
+          withTarget(target, () => compileObjects(options.renderer, options.scene, options.camera, batch));
           for (const object of batch) linked.set(object, stamp(object));
         });
       }
@@ -961,6 +1052,74 @@ export function createShaderWarmup(options: ShaderWarmupOptions): ShaderWarmup {
    * thread never waits on one first draw while the GPU builds another. Run after the links have
    * finished, so the draw's own link check returns at once.
    */
+  /** Textures already sent to the GPU, by the version that was sent. */
+  const uploaded = new WeakMap<object, number>();
+
+  /**
+   * Jobs that send the drawables' textures to the GPU, `perJob` per flush. The draws link and draw
+   * one object per program, which leaves the textures of every other material on that program to
+   * upload (and build mips) on the first frame that draws them: seconds of stall on a game whose
+   * props carry hundreds of large maps. The cover waits only for what the first view draws; the
+   * rest goes up in the background after the reveal.
+   */
+  /**
+   * A job per few textures the given drawables sample, not yet sent. `casters` only reach the
+   * shadow pass, so only what their depth draw samples goes with them.
+   */
+  const textureJobs = (objects: Iterable<Object3D>, perJob: number, casters: Iterable<Object3D> = []): LinkJob[] => {
+    const upload = options.renderer.initTexture;
+    if (upload === undefined) return [];
+    const due: UploadableTexture[] = [];
+    const queued = new Set<object>();
+    const add = (texture: UploadableTexture): void => {
+      if (queued.has(texture) || uploaded.get(texture) === texture.version) return;
+      queued.add(texture);
+      due.push(texture);
+    };
+    const collect = (list: Iterable<Object3D>, textures: typeof materialTextures): void => {
+      for (const object of list) {
+        if (!isDrawable(object)) continue;
+        for (const material of Array.isArray(object.material) ? object.material : [object.material]) textures(material, add);
+      }
+    };
+    collect(objects, materialTextures);
+    collect(casters, depthTextures);
+    const jobs: LinkJob[] = [];
+    for (let start = 0; start < due.length; start += perJob) {
+      const batch = due.slice(start, start + perJob);
+      jobs.push(() => {
+        for (const texture of batch) {
+          upload.call(options.renderer, texture as never);
+          uploaded.set(texture, texture.version);
+        }
+      });
+    }
+    return jobs;
+  };
+
+  /** Ids for the programs three linked, so draws are grouped by program rather than by material. */
+  const programIds = new WeakMap<object, number>();
+  /**
+   * What a draw of the object runs: the programs its materials were last linked to (many materials
+   * share one program), with the object-side switches on top since a shared material links one
+   * program per kind of object. Falls back to the materials when the renderer keeps no record.
+   */
+  const linkedKey = (drawable: Object3D): string => {
+    const object = drawable as Drawable;
+    const properties = options.renderer.properties;
+    if (properties === undefined) return programKey(object);
+    const ids: number[] = [];
+    for (const material of Array.isArray(object.material) ? object.material : [object.material]) {
+      const program = material == null ? undefined : (properties.get(material as object) as { currentProgram?: unknown } | undefined)?.currentProgram;
+      if (program == null) return programKey(object);
+      let id = programIds.get(program as object);
+      if (id === undefined) programIds.set(program as object, (id = nextProgramId++));
+      ids.push(id);
+    }
+    return `${ids.join(",")}|${objectKey(object)}`;
+  };
+  let nextProgramId = 1;
+
   const drawJobs = (objects: readonly Object3D[], context: SceneContext): LinkJob[] => {
     if (options.renderer.render === undefined) return [];
     const due: Object3D[] = [];
@@ -969,7 +1128,7 @@ export function createShaderWarmup(options: ShaderWarmupOptions): ShaderWarmup {
       const stamp = `${materialVersions(object.material)}|${context.key}`;
       if (drawn.get(object) === stamp) continue;
       drawn.set(object, stamp);
-      const pair = `${programKey(object)}#${layoutKey(object)}`;
+      const pair = `${linkedKey(object)}#${layoutKey(object)}`;
       if (drawnLayouts.has(pair)) continue;
       drawnLayouts.add(pair);
       due.push(object);
@@ -977,15 +1136,15 @@ export function createShaderWarmup(options: ShaderWarmupOptions): ShaderWarmup {
     const jobs: LinkJob[] = [];
     // Programs are linked by now, so a draw's link check returns at once; a batch per job keeps the
     // count of fences down, and a driver that still builds at first draw builds a batch at a time.
-    for (const batch of batchByProgram(due, programsPerBatch)) {
+    for (const batch of batchByProgram(due, programsPerBatch, linkedKey)) {
       const keep = (object: Object3D): boolean => batch.has(object);
       jobs.push(async () => {
         // A material can settle on another program after its link (a texture landed, a define was
         // added), so link the batch again first: a cached program costs nothing, a new one is
-        // linked and waited for off the frame instead of inside the draw.
-        runPreparers(options.scene);
+        // linked and waited for off the frame instead of inside the draw. The preparers ran once
+        // before the draws (they walk the whole scene, too much to repeat per batch).
         const known = programSet();
-        withFrameTarget(() => compileSubset(options.renderer, options.scene, options.camera, keep));
+        withFrameTarget(() => compileObjects(options.renderer, options.scene, options.camera, batch));
         if ((options.renderer.info?.programs?.length ?? 0) > known.size) {
           await gpuFence(options.renderer.getContext?.(), sleep, () => cancelled);
           // A program still building is left to its first real draw: drawing it here would hold
@@ -1056,6 +1215,7 @@ export function createShaderWarmup(options: ShaderWarmupOptions): ShaderWarmup {
    */
   const round = async (deadline: number): Promise<"ok" | "error"> => {
     runPreparers(options.scene);
+    runDrawers(options.scene);
     const plan = planFirstFrame(options.scene, options.camera);
     publish({ planned: plan.reachable, deferred: plan.deferred, programs: programs() });
     const before = programs();
@@ -1075,15 +1235,17 @@ export function createShaderWarmup(options: ShaderWarmupOptions): ShaderWarmup {
     const jobs = [...firstFrame, ...later];
     markTimeline("jg:warmup:round", { firstFrame: firstFrame.length, later: later.length, programs: before });
     // A round with nothing new still compiles once, so a renderer that refuses fails the warmup.
-    if (jobs.length === 0) jobs.push(() => withFrameTarget(() => compileSubset(options.renderer, options.scene, options.camera, () => false)));
+    if (jobs.length === 0) jobs.push(() => withFrameTarget(() => compileObjects(options.renderer, options.scene, options.camera, [])));
     if (!(await runJobs(jobs, () => cancelled || now() >= deadline))) return "error";
     const floor = now() + SHADER_WARMUP_DEFAULTS.planFloorMs;
     const settled = await settle(known, Math.max(deadline, floor));
     // Linked is not finished everywhere: draw each program once while still covered. Not while a
     // program is still building, though: its draw would hold the thread until the driver is done.
+    if (settled) runPreparers(options.scene);
+    const uploads = textureJobs(objects, SHADER_WARMUP_DEFAULTS.texturesPerBatch, casters);
     const draws = settled ? drawJobs([...objects, ...casters, ...rest], context) : [];
-    markTimeline("jg:warmup:draws", { draws: draws.length });
-    if (!(await runJobs(draws, () => cancelled || now() >= deadline, true))) return "error";
+    markTimeline("jg:warmup:draws", { draws: draws.length, uploads: uploads.length });
+    if (!(await runJobs([...uploads, ...draws], () => cancelled || now() >= deadline, true))) return "error";
     publish({ rounds: state.rounds + 1, programs: programs() });
     return "ok";
   };
@@ -1097,6 +1259,7 @@ export function createShaderWarmup(options: ShaderWarmupOptions): ShaderWarmup {
     runPreparers(options.scene);
     const context = readContext();
     await runJobs([...sceneJobs(drawables, context), ...shadowJobs(drawables, context)], () => cancelled);
+    await runJobs(textureJobs(drawables, 1), () => cancelled, true);
   };
 
   /** Compile later content in rounds that never block the cover or the frame in flight. */

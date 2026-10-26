@@ -1,9 +1,10 @@
-import { useFrame, useThree } from "@react-three/fiber";
+import { useThree } from "@react-three/fiber";
 import { useLayoutEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 
 import type { GameContext } from "@jgengine/core/runtime/gameContextTypes";
 import { noteCharacterMotion } from "../lod/characterLod";
+import { useFrameWhile } from "./useFrameWhile";
 
 /**
  * Tuning for the default head turn a rigged character makes toward the local player. Angles are
@@ -211,7 +212,7 @@ export function useCharacterGlance(
       for (const [bone, record] of rig.written) if (bone.quaternion.equals(record.written)) bone.quaternion.copy(record.animated);
     };
   }, [rig, instanceId]);
-  useFrame((_three, delta) => {
+  useFrameWhile(rig !== null && ctx !== null && instanceId !== undefined, (_three, delta) => {
     if (rig === null || ctx === null || instanceId === undefined || instanceId === ctx.player.userId) return;
     const self = ctx.scene.entity.get(instanceId);
     if (self === null || self === undefined) return;

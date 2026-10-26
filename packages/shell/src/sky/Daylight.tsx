@@ -1,5 +1,5 @@
 import { useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type MutableRefObject, type RefObject } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, type MutableRefObject, type RefObject } from "react";
 import * as THREE from "three";
 
 import type { BiomeBand, SkyEnvironmentDescriptor } from "@jgengine/core/world/features";
@@ -404,26 +404,6 @@ export interface SkyProps {
   fogRange?: { near?: number; far?: number };
 }
 
-/**
- * Mount state for the moon: it re-renders only when the moon crosses the horizon. A zero-intensity
- * directional light still costs a per-fragment loop in every lit material, so a day sky must not
- * carry it.
- * @internal
- */
-export function useMoonAboveHorizon(initialUp: boolean): [boolean, (intensity: number) => void] {
-  const [up, setUp] = useState(initialUp);
-  const upRef = useRef(up);
-  return [
-    up,
-    (intensity: number) => {
-      const next = intensity > 0;
-      if (next === upRef.current) return;
-      upRef.current = next;
-      setUp(next);
-    },
-  ];
-}
-
 /** Fog range: the sky's own fields win, then the authored backdrop, then the caller's default. */
 function skyFogRange(sky: SkyEnvironmentDescriptor, fogRange: SkyProps["fogRange"], fallback: { near: number; far: number }) {
   return { near: sky.fog?.near ?? fogRange?.near ?? fallback.near, far: sky.fog?.far ?? fogRange?.far ?? fallback.far };
@@ -483,8 +463,10 @@ export function Sky({ sky, clock, lights = true, modulation, bands = NO_BANDS, f
   const fogSampler = useMemo(() => createBiomeFogSampler(bands, fogFallback), [bands, fogFallback]);
   const skySampler = useMemo(() => createBiomeSkySampler(bands, skyFallback), [bands, skyFallback]);
   const banded = bands.some((band) => band.fog !== undefined || band.sky !== undefined);
-  const mountMoon = lights || modulation !== undefined;
-  const [moonUp, syncMoon] = useMoonAboveHorizon(initial.moonIntensity > 0);
+  // The moon's light is part of every lit program, so mounting it as it crosses the horizon would
+  // relink the whole scene: a cycling sky keeps it mounted, dark by day. A fixed day sky, whose moon
+  // never rises, does not carry it; a zero-intensity light still costs every lit fragment a loop.
+  const mountMoon = (lights || modulation !== undefined) && (timeOfDay || initial.moonIntensity > 0);
 
   useFrame((state) => {
     if (!timeOfDay && !banded) {
@@ -493,7 +475,6 @@ export function Sky({ sky, clock, lights = true, modulation, bands = NO_BANDS, f
     }
     const base = timeOfDay ? daylightStateAt(clock!.calendar().dayFraction, sky) : initial;
     publishSkySun(state.scene, base.sunPosition);
-    syncMoon(base.moonIntensity);
     const z = state.camera.position.z;
     const fog = banded ? fogSampler(z) : null;
     const skyValue = banded
@@ -566,7 +547,7 @@ export function Sky({ sky, clock, lights = true, modulation, bands = NO_BANDS, f
           />
         </>
       ) : null}
-      {mountMoon && moonUp ? (
+      {mountMoon ? (
         <MoonLight
           direction={initial.moonPosition}
           directionRef={moonDirectionRef}

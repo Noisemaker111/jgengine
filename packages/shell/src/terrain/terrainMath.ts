@@ -228,10 +228,28 @@ function* groundGeometryJob(
   const surface = resolveSurfaceColor(opts.surface);
   const shadeSlope = surface.slopeStrength > 0;
   // Neighbor spacing for the finite-difference slope estimate — one grid cell per axis.
-  const slopeStepX = shadeSlope ? Math.max(1e-3, size.width / Math.max(1, segments.x)) : 0;
-  const slopeStepZ = shadeSlope ? Math.max(1e-3, size.depth / Math.max(1, segments.z)) : 0;
+  const slopeStepX = Math.max(1e-3, size.width / Math.max(1, segments.x));
+  const slopeStepZ = Math.max(1e-3, size.depth / Math.max(1, segments.z));
   const vertexCountX = segments.x + 1;
   const vertexCountZ = segments.z + 1;
+  // Heights are sampled once per grid point (plus a one-cell ring when slope shading needs the
+  // neighbours outside the edge) — the slope's finite difference reads the grid instead of
+  // re-sampling, so a costly field (road drapes, route projection) is evaluated once per vertex.
+  const pad = shadeSlope ? 1 : 0;
+  const rowStride = vertexCountX + 2 * pad;
+  const heights = new Float64Array(rowStride * (vertexCountZ + 2 * pad));
+  let sampledRows = -pad;
+  const sampleRowsThrough = (last: number) => {
+    for (; sampledRows <= last; sampledRows += 1) {
+      const z = opts.center[1] + (sampledRows / segments.z - 0.5) * size.depth;
+      const row = (sampledRows + pad) * rowStride + pad;
+      for (let xIndex = -pad; xIndex < vertexCountX + pad; xIndex += 1) {
+        heights[row + xIndex] = sampler(opts.center[0] + (xIndex / segments.x - 0.5) * size.width, z);
+      }
+    }
+  };
+  const heightAt = (xIndex: number, zIndex: number) => heights[(zIndex + pad) * rowStride + pad + xIndex];
+  const color = new THREE.Color();
   const positions = new Float32Array(vertexCountX * vertexCountZ * 3);
   const uvs = new Float32Array(vertexCountX * vertexCountZ * 2);
   const colorValues = new Float32Array(vertexCountX * vertexCountZ * 3);
@@ -247,10 +265,11 @@ function* groundGeometryJob(
   for (let zIndex = 0; zIndex < vertexCountZ; zIndex += 1) {
     const v = zIndex / segments.z;
     const z = opts.center[1] + (v - 0.5) * size.depth;
+    sampleRowsThrough(zIndex + pad);
     for (let xIndex = 0; xIndex < vertexCountX; xIndex += 1) {
       const u = xIndex / segments.x;
       const x = opts.center[0] + (u - 0.5) * size.width;
-      const y = sampler(x, z);
+      const y = heightAt(xIndex, zIndex);
       positions[index] = x;
       positions[index + 1] = y;
       positions[index + 2] = z;
@@ -263,13 +282,13 @@ function* groundGeometryJob(
         if (waterline !== null && palette.waterline !== undefined) waterline.set(palette.waterline);
       }
       const blend = normalizeHeightBlend(y, minHeight, maxHeight);
-      const color = low.clone().lerp(high, blend);
+      color.copy(low).lerp(high, blend);
       if (waterline !== null && y <= (colors.waterlineHeight ?? 0)) color.lerp(waterline, 0.65);
       let slope01 = 0;
       if (shadeSlope) {
-        // Bounded per-vertex finite difference (4 extra samples) — build-time only, no per-frame scan.
-        const dhx = (sampler(x + slopeStepX, z) - sampler(x - slopeStepX, z)) / (2 * slopeStepX);
-        const dhz = (sampler(x, z + slopeStepZ) - sampler(x, z - slopeStepZ)) / (2 * slopeStepZ);
+        // Central difference over the neighbouring grid heights — build-time only, no per-frame scan.
+        const dhx = (heightAt(xIndex + 1, zIndex) - heightAt(xIndex - 1, zIndex)) / (2 * slopeStepX);
+        const dhz = (heightAt(xIndex, zIndex + 1) - heightAt(xIndex, zIndex - 1)) / (2 * slopeStepZ);
         const grad = Math.hypot(dhx, dhz);
         slope01 = grad / (grad + 1);
       }

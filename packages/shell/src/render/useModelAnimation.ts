@@ -1,5 +1,5 @@
 import { deathRemovesEntity } from "@jgengine/core/combat/death";
-import { useFrame, useThree } from "@react-three/fiber";
+import { useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 
@@ -29,6 +29,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContextTypes";
 import { useOptionalGameContext } from "@jgengine/react/provider";
 
 import { characterLodInterval, characterLodTierOf, noteAnimationPhase, noteCharacterPose } from "../lod/characterLod";
+import { useFrameWhile } from "./useFrameWhile";
 
 /** Wraps a yaw change into `(-pi, pi]`, so a turn across the wrap boundary is not a full spin. */
 function shortestAngle(radians: number): number {
@@ -498,7 +499,8 @@ export function useModelAnimation(
     };
   }, [ctx, instanceId, oneShots, graph, invalidate]);
 
-  useFrame((_state, delta) => {
+  // A model with nothing to play (most static props) stays out of the frame loop.
+  useFrameWhile(animation !== undefined && clips.length > 0, (_state, delta) => {
     // Checkpoint held frames too, so resuming never replays their accepted time.
     const advancedSeconds = usesGameClock ? ctx.time.advancedSeconds?.() : undefined;
     const previousSeconds = advancedSecondsRef.current;

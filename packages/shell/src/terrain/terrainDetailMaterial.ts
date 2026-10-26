@@ -3,7 +3,7 @@ import * as THREE from "three";
 import type { GraphicsQuality } from "@jgengine/core/settings/settingsModel";
 import type { ResolvedTerrainDetail } from "@jgengine/core/world/terrain";
 
-import { NOISE_GLSL, PAINT_PARS_GLSL, SURFACE_BUMP_NORMAL_GLSL, SURFACE_FUNCTIONS_GLSL } from "./terrainSurfaceShader";
+import { NOISE_GLSL, PAINT_PARS_GLSL, SURFACE_BUMP_NORMAL_GLSL, SURFACE_FUNCTIONS_GLSL, surfaceNoiseUniforms } from "./terrainSurfaceShader";
 import type { TerrainPaintTextures } from "./terrainSurfaces";
 
 /** The built procedural detail terrain material, ready to mount on the ground mesh. */
@@ -182,6 +182,7 @@ export function createTerrainDetailMaterial(
     uMacroScale: { value: Math.max(0.5, detail.macroScale) },
     uStrength: { value: detail.strength },
     uSurface: { value: detail.surfaceStrength },
+    ...surfaceNoiseUniforms(),
     uContour: contour,
     ...(paint === undefined ? {} : paint.uniforms),
     ...layerMapUniforms,

@@ -5,7 +5,7 @@ import type { GraphicsQuality } from "@jgengine/core/settings/settingsModel";
 
 import { SURFACE_SCAN_PARS_GLSL, surfaceScanDefines, surfaceScanKeyPart, surfaceScanUniforms, type SurfaceScanBlend } from "../render/surfaceScanShader";
 import type { SurfaceScanTextures } from "../render/surfaceScanTextures";
-import { NOISE_GLSL, SURFACE_BUMP_NORMAL_GLSL, SURFACE_FUNCTIONS_GLSL } from "../terrain/terrainSurfaceShader";
+import { NOISE_GLSL, SURFACE_BUMP_NORMAL_GLSL, SURFACE_FUNCTIONS_GLSL, surfaceNoiseUniforms } from "../terrain/terrainSurfaceShader";
 import { terrainSurfaceClass, terrainSurfaceClassIndex, terrainSurfaceRoughness, type TerrainSurfaceClass } from "../terrain/terrainSurfaces";
 
 /** Vertex attribute {@link ribbonSurfaceFrame} fills: metres along the ribbon, signed metres across it, metres to its far end. */
@@ -327,6 +327,7 @@ export function createSurfaceRibbonMaterial(options: SurfaceRibbonMaterialOption
     uJgWarp: { value: Math.max(0, options.warp ?? 0) },
     uJgWear: { value: wear },
     uJgSlab: { value: new THREE.Vector2(Math.max(0.1, slabs?.[0] ?? 1), Math.max(0.1, slabs?.[1] ?? 1)) },
+    ...surfaceNoiseUniforms(),
     ...(scan === undefined ? {} : surfaceScanUniforms(scan, scan.textures)),
   };
   material.defines = {

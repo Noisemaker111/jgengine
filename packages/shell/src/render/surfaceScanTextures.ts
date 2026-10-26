@@ -1,7 +1,11 @@
+import { useThree } from "@react-three/fiber";
 import { useEffect, useState } from "react";
 import * as THREE from "three";
 
 import type { TerrainMaterialMaps } from "@jgengine/core/world/features";
+
+import { ImageTextureLoader } from "./imageTexture";
+import { warmupWaitsFor } from "./shaderWarmup";
 
 /** Decoded maps of one scanned surface, shared by every material that tiles it. */
 export interface SurfaceScanTextures {
@@ -19,15 +23,18 @@ interface ScanEntry {
   failed: boolean;
   listeners: Set<() => void>;
   loaded: THREE.Texture[];
+  /** Settles once the maps have loaded or failed. */
+  settled: Promise<void>;
+  settle: () => void;
 }
 
 const entries = new Map<string, ScanEntry>();
 
-/** Loads one map; the default goes through `THREE.TextureLoader`. */
+/** Loads one map; the default goes through {@link ImageTextureLoader}. */
 export type SurfaceScanLoader = (url: string, onLoad: (texture: THREE.Texture) => void, onError: () => void) => void;
 
 const defaultLoader: SurfaceScanLoader = (url, onLoad, onError) => {
-  new THREE.TextureLoader().load(url, onLoad, undefined, onError);
+  new ImageTextureLoader().load(url, onLoad, undefined, onError);
 };
 let loadMap: SurfaceScanLoader = defaultLoader;
 
@@ -72,6 +79,7 @@ function startLoad(key: string, maps: TerrainMaterialMaps, entry: ScanEntry): vo
         if (pending === 0) {
           entry.textures = textures as SurfaceScanTextures;
           for (const listener of entry.listeners) listener();
+          entry.settle();
         }
       },
       () => {
@@ -79,6 +87,7 @@ function startLoad(key: string, maps: TerrainMaterialMaps, entry: ScanEntry): vo
         entry.failed = true;
         console.warn(`[jgengine] surface scan maps did not load (${url}) — keeping the procedural surface. Pull the game's asset packs (\`bun run provision\`) to restore them.`);
         for (const listener of entry.listeners) listener();
+        entry.settle();
       },
     );
   }
@@ -90,11 +99,15 @@ function startLoad(key: string, maps: TerrainMaterialMaps, entry: ScanEntry): vo
  * so the caller keeps its procedural surface. Release the handle on unmount; the last release frees
  * the GPU textures. @internal
  */
-export function acquireSurfaceScan(maps: TerrainMaterialMaps, onChange: () => void): { current: () => SurfaceScanTextures | null; release: () => void } {
+export function acquireSurfaceScan(maps: TerrainMaterialMaps, onChange: () => void): { current: () => SurfaceScanTextures | null; settled: Promise<void>; release: () => void } {
   const key = surfaceScanKey(maps);
   let entry = entries.get(key);
   if (entry === undefined) {
-    entry = { refs: 0, textures: null, failed: false, listeners: new Set(), loaded: [] };
+    let settle = () => {};
+    const settled = new Promise<void>((resolve) => {
+      settle = resolve;
+    });
+    entry = { refs: 0, textures: null, failed: false, listeners: new Set(), loaded: [], settled, settle };
     entries.set(key, entry);
     startLoad(key, maps, entry);
   }
@@ -104,6 +117,7 @@ export function acquireSurfaceScan(maps: TerrainMaterialMaps, onChange: () => vo
   let released = false;
   return {
     current: () => (held.failed ? null : held.textures),
+    settled: held.settled,
     release: () => {
       if (released) return;
       released = true;
@@ -111,6 +125,7 @@ export function acquireSurfaceScan(maps: TerrainMaterialMaps, onChange: () => vo
       held.refs -= 1;
       if (held.refs > 0) return;
       entries.delete(key);
+      held.settle();
       for (const texture of held.loaded) texture.dispose();
     },
   };
@@ -119,14 +134,17 @@ export function acquireSurfaceScan(maps: TerrainMaterialMaps, onChange: () => vo
 /**
  * React handle on a scan's maps: `null` while loading, after a load failure, or when `maps` is
  * undefined or `enabled` is false (the `low` tier). Every component naming the same URLs shares
- * one decode.
+ * one decode. The scene's shader warmup waits for the maps, so it links the scanned programs the
+ * first frame draws rather than the procedural ones they replace a moment later.
  */
 export function useSurfaceScan(maps: TerrainMaterialMaps | undefined, enabled = true): SurfaceScanTextures | null {
   const key = maps === undefined || !enabled ? null : surfaceScanKey(maps);
+  const scene = useThree((three) => three.scene);
   const [state, setState] = useState<{ key: string | null; textures: SurfaceScanTextures | null }>({ key: null, textures: null });
   useEffect(() => {
     if (key === null || maps === undefined) return undefined;
     const handle = acquireSurfaceScan(maps, () => setState({ key, textures: handle.current() }));
+    if (handle.current() === null) warmupWaitsFor(scene, handle.settled);
     setState({ key, textures: handle.current() });
     return () => handle.release();
     // eslint-disable-next-line react-hooks/exhaustive-deps

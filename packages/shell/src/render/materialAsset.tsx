@@ -10,15 +10,18 @@ import { configureAuthoredSurface, type SurfaceShape } from "./authoredSurfaceMa
 import { ownModelMaterial } from "./modelRender";
 import { meshMatchesName } from "./modelMeshMerge";
 import { useDisposable } from "./useDisposable";
+import { ImageTextureLoader } from "./imageTexture";
 import { detectKtx2Support, materialKtx2Loader } from "./modelLoad";
 import { resolveAssetBaseUrl } from "./assetBase";
 
-/** Shares the model transcoder and loader cache while loading native authored images normally. @internal */
+/** Shares the model transcoder and loader cache while loading native authored images normally, top row first as glTF maps expect. @internal */
 export class MaterialTextureLoader extends THREE.Loader<THREE.Texture> {
   override load(url: string, onLoad?: (texture: THREE.Texture) => void, onProgress?: (event: ProgressEvent) => void, onError?: (error: unknown) => void): void {
     const resolved = resolveAssetBaseUrl(url);
     if (/\.ktx2(?:[?#]|$)/i.test(url)) return materialKtx2Loader().load(resolved, texture => onLoad?.(texture), onProgress, onError);
-    new THREE.TextureLoader(this.manager).load(resolved, onLoad, onProgress, onError);
+    const images = new ImageTextureLoader(this.manager);
+    images.flipY = false;
+    images.load(resolved, onLoad, onProgress, onError);
   }
 }
 

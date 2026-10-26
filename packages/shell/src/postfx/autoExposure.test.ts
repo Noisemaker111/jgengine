@@ -57,6 +57,24 @@ describe("ExposureMeterPass", () => {
     pass.dispose();
   });
 
+  it("a dry run draws both quads but neither meters nor reads back", () => {
+    const samples: Float32Array[] = [];
+    const pass = new ExposureMeterPass((frame) => samples.push(Float32Array.from(frame)));
+    const { renderer, calls } = fakeRenderer(200);
+    const write = new THREE.WebGLRenderTarget(8, 8);
+    const read = new THREE.WebGLRenderTarget(8, 8);
+    pass.dry = true;
+    pass.render(renderer, write, read, 0.25);
+    expect(calls.rendered).toBe(2);
+    expect(calls.reads).toBe(0);
+    expect(samples).toEqual([]);
+    pass.dry = false;
+    pass.render(renderer, write, read, 0.25);
+    // The first real frame still meters, and counts only its own time.
+    expect(calls.reads).toBe(1);
+    pass.dispose();
+  });
+
   it("reads real samples through a WebGL2 pack buffer, not zeros", () => {
     // A fake WebGL2 context with GL's rules: readPixels into a pack buffer smaller than the read
     // fails without writing, and getBufferSubData copies whatever the buffer stores.

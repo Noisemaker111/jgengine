@@ -61,6 +61,23 @@ export function CarvedTerrain({
   );
   const material = surfaceMaterial ?? defaultMaterial;
 
-  if (geometry === null) return null;
-  return <mesh {...meshProps} geometry={geometry} material={material} receiveShadow={receiveShadow} />;
+  // Until the mesh is built, a stand-in with its vertex layout and a single zero-area triangle
+  // holds its place: the shader warmup links and draws the ground's program (one of the largest a
+  // scene has) while the build runs, instead of starting only once the mesh lands.
+  return <mesh {...meshProps} geometry={geometry ?? terrainStandIn()} material={material} receiveShadow={receiveShadow} />;
+}
+
+let standIn: THREE.BufferGeometry | null = null;
+
+/** The ground mesh's attribute layout (see `groundGeometryJob`) on one degenerate triangle; shared, never disposed. */
+function terrainStandIn(): THREE.BufferGeometry {
+  if (standIn !== null) return standIn;
+  standIn = new THREE.BufferGeometry();
+  standIn.setAttribute("position", new THREE.BufferAttribute(new Float32Array(9), 3));
+  standIn.setAttribute("uv", new THREE.BufferAttribute(new Float32Array(6), 2));
+  standIn.setAttribute("color", new THREE.BufferAttribute(new Float32Array(9).fill(1), 3));
+  standIn.setAttribute("normal", new THREE.BufferAttribute(new Float32Array([0, 1, 0, 0, 1, 0, 0, 1, 0]), 3));
+  standIn.setIndex(new THREE.BufferAttribute(new Uint32Array([0, 1, 2]), 1));
+  standIn.computeBoundingSphere();
+  return standIn;
 }

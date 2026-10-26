@@ -104,7 +104,8 @@ export class GrassStream {
 
   /**
    * Re-select and bake leaves for `camera`. `viewHeight` is the canvas height in CSS pixels;
-   * `budgetMs` caps bake time this call (`Infinity` bakes everything now, as the first frame does).
+   * `budgetMs` caps bake time this call (`Infinity` bakes everything now). The nearest leaf always
+   * bakes, so a call makes progress on any budget.
    */
   update(camera: THREE.Camera, viewHeight: number, budgetMs: number): void {
     this.group.updateWorldMatrix(true, false);
