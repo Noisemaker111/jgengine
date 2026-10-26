@@ -19,10 +19,17 @@
     { "waitFor": "__jgProbe().tamed === 1", "timeoutMs": 45000, "note": "tamed after seven meals" },
     { "rpc": { "method": "run_command", "name": "giveCreature", "input": { "inventoryId": "inventory", "slot": 2 } }, "note": "put the raptor saddle on" },
     { "waitFor": "__jgProbe().saddled === 1", "timeoutMs": 3000 },
-    { "shot": "fernwild-tamed", "note": "tamed and saddled, with follow and stay orders" },
+    { "shot": "fernwild-tamed", "note": "tamed and saddled, with follow and stay orders and its own stat sheet" },
+    { "rpc": { "method": "run_command", "name": "cheat", "input": { "tameXp": 35 } }, "note": "ARK's dino XP cheat: 35 XP is two levels on the creature curve (10, then 20)" },
+    { "assert": "__jgProbe().tamePoints", "is": 2, "note": "two points to spend" },
+    { "rpc": { "method": "run_command", "name": "levelTame", "input": { "stat": "health" } }, "note": "a point into health" },
+    { "assert": "__jgProbe().tameHealthMax", "is": 211, "note": "ARK's +5.4% of the 200 it was tamed with" },
+    { "shot": "fernwild-tame-levels", "note": "the sheet: two levels gained, one point left, health raised" },
     { "rpc": { "method": "run_command", "name": "closeCreature", "input": {} } },
     { "key": "KeyE", "until": { "is": "__jgProbe().riding === 1", "timeoutMs": 3000 }, "note": "climb on" },
     { "key": "KeyW", "ms": 2500, "note": "ride inland" },
+    { "key": "ShiftLeft+KeyW", "ms": 2000, "note": "sprint: the mount pays for it in stamina" },
+    { "assert": "__jgProbe().mountStamina < __jgProbe().mountStaminaMax - 8", "note": "about 6 stamina a second gone from the mount, none from the rider" },
     { "shot": "fernwild-riding", "note": "on the raptor's back, the camera on the mount" }
   ]
 }

@@ -4,6 +4,7 @@ import { createScatterHarvest, type ScatterHarvest, type ScatterHarvestState } f
 import { resolveEncumbrance, totalLoad } from "@jgengine/core/inventory/encumbrance";
 import type { InventoryState } from "@jgengine/core/inventory/inventoryModel";
 import { leveling } from "@jgengine/core/progression/leveling";
+import { createStatPoints, type StatPointLine } from "@jgengine/core/progression/statPoints";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";
 import { resolveScatter } from "@jgengine/core/scatter/scatterRegion";
@@ -18,7 +19,7 @@ import { ENGRAMS, engramDef, CRAFTING_RECIPES, recipeDef } from "./data/engrams"
 import { gatheredBy, HARVESTABLES } from "./data/harvestables";
 import { command, keybind, proximityPrompt, type PositionedPrompt } from "@jgengine/core/interaction/proximityPrompt";
 import { FIST, itemDef, itemLabel, itemTraits, PICK_UP, type ToolDef } from "./data/items";
-import { strikeCreature } from "./creatures";
+import { mountCanSprint, strikeCreature } from "./creatures";
 import { openScreen } from "./screens";
 import { COMFORT, ENGRAM_POINTS, LEVEL_STATS, MAX_LEVEL, SURVIVOR, survivorVitals, XP_TO_LEVEL, type LevelStat } from "./data/survivor";
 
@@ -46,13 +47,18 @@ interface Survivor {
   dead: boolean;
 }
 
-const ZERO_POINTS = (): Record<StatId, number> => Object.fromEntries(LEVEL_STATS.map((stat) => [stat.id, 0])) as Record<StatId, number>;
+/** ARK's survivor stats: pools start at the survivor's base, percentages at 100%, fortitude at 0. */
+const POINTS = createStatPoints({
+  stats: Object.fromEntries(
+    LEVEL_STATS.map((stat) => [stat.id, { base: stat.id === "melee" || stat.id === "speed" || stat.id === "crafting" ? 100 : stat.id === "fortitude" ? 0 : SURVIVOR[stat.id], perPoint: stat.per }]),
+  ) as Record<StatId, StatPointLine>,
+});
 
 const track = leveling({ xpForLevel: XP_TO_LEVEL, maxLevel: MAX_LEVEL, thresholdMode: "cumulative" });
 
 const survivorOf = perContext((ctx: GameContext): Survivor => ({
   vitals: createVitals(survivorVitals()),
-  points: ZERO_POINTS(),
+  points: POINTS.empty(),
   engrams: freshEngrams(),
   queue: createWorkQueue<CraftSpec>(),
   harvest: createScatterHarvest({ kinds: HARVESTABLES, clearing: scatterClearingOf(ctx), rng: () => ctx.rng() }),
@@ -75,9 +81,7 @@ function freshEngrams(): UnlockPoints {
 // --- stats --------------------------------------------------------------------------------
 
 function statValue(survivor: Survivor, id: StatId): number {
-  const stat = LEVEL_STATS.find((entry) => entry.id === id)!;
-  const base = id === "melee" || id === "speed" || id === "crafting" ? 100 : id === "fortitude" ? 0 : SURVIVOR[id];
-  return base + survivor.points[id] * stat.per;
+  return POINTS.value(survivor.points, id);
 }
 
 function level(ctx: GameContext): number {
@@ -85,8 +89,7 @@ function level(ctx: GameContext): number {
 }
 
 function unspentPoints(ctx: GameContext, survivor: Survivor): number {
-  const spent = Object.values(survivor.points).reduce((sum, value) => sum + value, 0);
-  return level(ctx) - 1 - spent;
+  return POINTS.unspent(survivor.points, level(ctx) - 1);
 }
 
 /** Push levelled maxes into the vitals and the entity's health pool. */
@@ -195,7 +198,7 @@ export function swing(ctx: GameContext, yaw?: number): void {
   if (struck !== null) {
     const got = grantGather(ctx, survivor, struck.granted);
     if (got.length > 0) ctx.scene.entity.floatText({ instanceId: ctx.player.userId, text: `+${got.join(", +")}`, kind: "pickup" });
-    if (struck.killed) grantXp(ctx, SURVIVOR.killXp);
+    if (struck.killed) grantXp(ctx, struck.xp);
     return;
   }
   ensurePlacements(ctx, survivor);
@@ -387,8 +390,7 @@ function finishCraft(ctx: GameContext, spec: CraftSpec): void {
 
 export function levelStat(ctx: GameContext, stat: StatId): void {
   const survivor = survivorOf(ctx);
-  if (unspentPoints(ctx, survivor) <= 0) return;
-  survivor.points[stat] += 1;
+  if (!POINTS.spend(survivor.points, stat, level(ctx) - 1)) return;
   applyMaxes(ctx, survivor, false);
   const def = LEVEL_STATS.find((entry) => entry.id === stat)!;
   if (["health", "stamina", "oxygen", "food", "water"].includes(stat)) survivor.vitals.change(stat, def.per);
@@ -419,7 +421,7 @@ export function tickSurvivor(ctx: GameContext, dt: number): void {
 
   const load = encumbrance(ctx, survivor);
   const moving = Math.hypot(me.velocity[0], me.velocity[2]) > 0.5;
-  const running = moving && ctx.input.isDown("sprint") && canRun(ctx);
+  const running = moving && ctx.input.isDown("sprint") && mountCanSprint(ctx) === null && canRun(ctx);
   survivor.comfort = bodyComfort(ambientAt(ctx, me.position), COMFORT, { fortitude: survivor.points.fortitude * 2 });
   const extra = [
     ...(running ? [{ vital: "stamina", rate: -SURVIVOR.runStamina }, { vital: "water", rate: -0.03 }] : []),
@@ -467,7 +469,10 @@ function respawn(ctx: GameContext, survivor: Survivor): void {
   survivor.dead = false;
 }
 
+/** Shift sprints while there is stamina for it: the mount's when riding, else the survivor's. */
 export function canRun(ctx: GameContext): boolean {
+  const mount = mountCanSprint(ctx);
+  if (mount !== null) return mount;
   const survivor = survivorOf(ctx);
   return survivor.vitals.value("stamina") > 1 && encumbrance(ctx, survivor).canSprint && !survivor.vitals.has("unconscious");
 }
@@ -499,7 +504,7 @@ export function survivorSave(ctx: GameContext) {
     },
     hydrate: (data: SurvivorSave) => {
       const survivor = survivorOf(ctx);
-      survivor.points = { ...ZERO_POINTS(), ...data.points };
+      survivor.points = POINTS.normalize(data.points);
       survivor.vitals.restore(data.vitals);
       survivor.engrams.hydrate(data.engrams);
       survivor.queue = data.queue;
@@ -512,7 +517,7 @@ export function survivorSave(ctx: GameContext) {
 
 export function resetSurvivor(ctx: GameContext): void {
   const survivor = survivorOf(ctx);
-  survivor.points = ZERO_POINTS();
+  survivor.points = POINTS.empty();
   survivor.vitals.reset();
   survivor.engrams = freshEngrams();
   survivor.queue = createWorkQueue<CraftSpec>();
@@ -527,6 +532,7 @@ export function survivorView(ctx: GameContext) {
   const xp = ctx.scene.entity.stats.get(ctx.player.userId, "xp");
   const lvl = level(ctx);
   const load = encumbrance(ctx, survivor);
+  const pool = ctx.scene.entity.stats.get(ctx.player.userId, "health");
   const vital = (id: string) => ({ value: Math.round(survivor.vitals.value(id) * 10) / 10, max: survivor.vitals.max(id) });
   const now = ctx.time.now();
   return {
@@ -536,7 +542,8 @@ export function survivorView(ctx: GameContext) {
     xpFrom: track.xpForLevel(lvl),
     statPoints: unspentPoints(ctx, survivor),
     engramPoints: survivor.engrams.available(),
-    health: vital("health"),
+    // Damage lands on the entity's health pool first and reaches the vitals on the next tick: read the pool.
+    health: pool === null ? vital("health") : { value: Math.round(pool.current * 10) / 10, max: pool.max },
     stamina: vital("stamina"),
     oxygen: vital("oxygen"),
     food: vital("food"),

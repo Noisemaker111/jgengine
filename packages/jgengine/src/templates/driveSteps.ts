@@ -86,18 +86,43 @@ export async function holdDriveInput(session: DriveSession, chord: string, holdM
     }
     return;
   }
-  const codes = chord.split("+");
-  const send = async (type: "keyDown" | "keyUp") => {
-    for (const code of codes) {
-      await session.send("Input.dispatchKeyEvent", { type, code, key: code.startsWith("Key") ? code.slice(3).toLowerCase() : code });
-    }
-  };
-  await send("keyDown");
+  await sendDriveChord(session, chord, "keyDown");
   try {
     await waitHold();
   } finally {
-    await send("keyUp");
+    await sendDriveChord(session, chord, "keyUp");
   }
+}
+
+/** Modifier keys as a browser reports them: key name, virtual key code, left/right, and modifier bit. */
+const MODIFIERS: Readonly<Record<string, { key: string; vk: number; location: number; bit: number }>> = {
+  ShiftLeft: { key: "Shift", vk: 16, location: 1, bit: 8 },
+  ShiftRight: { key: "Shift", vk: 16, location: 2, bit: 8 },
+  ControlLeft: { key: "Control", vk: 17, location: 1, bit: 2 },
+  ControlRight: { key: "Control", vk: 17, location: 2, bit: 2 },
+  AltLeft: { key: "Alt", vk: 18, location: 1, bit: 1 },
+  AltRight: { key: "Alt", vk: 18, location: 2, bit: 1 },
+};
+
+/**
+ * The CDP key events for a `+`-joined chord, in order, as a real keyboard sends them: a modifier gets
+ * its real key name and code, and every key pressed while it is down carries its modifier bit, so a
+ * held Shift reads as Shift to the page.
+ */
+export function driveChordEvents(chord: string, type: "keyDown" | "keyUp"): Record<string, unknown>[] {
+  const codes = chord.split("+");
+  let modifiers = type === "keyDown" ? 0 : codes.reduce((bits, code) => bits | (MODIFIERS[code]?.bit ?? 0), 0);
+  return codes.map((code) => {
+    const modifier = MODIFIERS[code];
+    if (modifier === undefined) return { type, code, key: code.startsWith("Key") ? code.slice(3).toLowerCase() : code, modifiers };
+    modifiers = type === "keyDown" ? modifiers | modifier.bit : modifiers & ~modifier.bit;
+    return { type, code, key: modifier.key, windowsVirtualKeyCode: modifier.vk, location: modifier.location, modifiers };
+  });
+}
+
+/** Press or release a chord on the page. */
+export async function sendDriveChord(session: DriveSession, chord: string, type: "keyDown" | "keyUp"): Promise<void> {
+  for (const event of driveChordEvents(chord, type)) await session.send("Input.dispatchKeyEvent", event);
 }
 
 /** A page expression a step waits for, with the value that counts as a match. */

@@ -272,3 +272,15 @@ describe("binding labels", () => {
     expect(actionLabel({}, "missing")).toBeNull();
   });
 });
+
+test("a game binding ShiftLeft holds its action while either Shift is down", () => {
+  const tracker = createActionStateTracker(toActionStateBindingMap({ sprint: ["ShiftLeft"], crouch: ["ControlLeft"] }));
+  tracker.handleDown("ShiftLeft");
+  expect(tracker.isDown("sprint")).toBe(true);
+  tracker.handleUp("ShiftLeft");
+  expect(tracker.isDown("sprint")).toBe(false);
+  tracker.handleDown("ShiftRight");
+  expect(tracker.isDown("sprint")).toBe(true);
+  tracker.handleDown("ControlLeft");
+  expect(tracker.isDown("crouch")).toBe(true);
+});

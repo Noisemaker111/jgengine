@@ -2636,6 +2636,14 @@
 - `createStatGraph` (function): function createStatGraph(def: StatGraphDef): StatGraph — A data-driven stat graph: game-owned named inputs feed caller-authored derived formulas, with contribution provenance, uncommitted previews, cycle detection, and selective recomputation. Formula semantics and numeric tables stay entirely game-defined.
 - `statModifierContributions` (function): function statModifierContributions<TStat extends string>(source: string, set: StatModifierSet<TStat>): Record<string, StatContribution[]> — Bridge the shared {@link StatModifierSet} shape (add/multiply, used by talents, items, and buffs) into stat-graph contributions, so a ranked talent tree or gear roll feeds the graph as one named source instead of a parallel store.
 
+## @jgengine/core/progression/statPoints
+
+- `StatPointLine` (interface): interface StatPointLine — Stat points: each level earns points the player puts into stats, and each point adds a fixed amount (a survivor's +10 health) or scales the stat by a fraction of itself (a tame's +5.4% health). Sheets are plain `{ stat: points }` records, so they save as they are.
+- `StatPointSheet` (type): type StatPointSheet<S extends string> = Record<S, number> — Points spent per stat. Plain data, JSON round-trips.
+- `StatPoints` (interface): interface StatPoints<S extends string> — Reads and spends stat points on plain sheets.
+- `StatPointsConfig` (interface): interface StatPointsConfig<S extends string> — Knobs: the stats, and how many points any one stat may hold (default unlimited).
+- `createStatPoints` (function): function createStatPoints<S extends string>(config: StatPointsConfig<S>): StatPoints<S> — Create a stat-point sheet reader for a set of stats.
+
 ## @jgengine/core/progression/upgrades
 
 - `UpgradeBuy` (type): type UpgradeBuy = { ok: true; nodeId: string; rank: number; cost: number } | { ok: false; reason: UpgradeRejection } — Result of {@link UpgradeTree.buy}: the rank reached and what it cost, or why it was refused.

@@ -41,6 +41,7 @@ export function CreatureReadout({ card }: { card: CreatureCard }): ReactNode {
         {card.dead ? " · Dead" : card.tamed ? " · Tamed" : taming?.unconscious === true ? " · Unconscious" : ""}
       </div>
       {card.dead ? null : <Meter label="Health" value={card.health.value} max={card.health.max} color="#d8483f" />}
+      {card.tamed && !card.dead ? <Meter label="Stamina" value={card.stamina.value} max={card.stamina.max} color="#e7c84a" testId="stamina" /> : null}
       {taming !== null && (taming.unconscious || taming.torpor > 0) ? <Meter label="Torpor" value={taming.torpor} max={taming.maxTorpor} color="#a45fd6" testId="torpor" /> : null}
       {taming !== null && taming.unconscious ? (
         <>
@@ -48,6 +49,35 @@ export function CreatureReadout({ card }: { card: CreatureCard }): ReactNode {
           <span style={{ fontSize: 11, opacity: 0.85 }}>Taming effectiveness {Math.round(taming.effectiveness * 100)}%</span>
         </>
       ) : null}
+    </div>
+  );
+}
+
+/** ARK's tame stats: level and XP to the next, then each stat with a + while points are unspent. */
+function TameSheet({ growth }: { growth: NonNullable<CreatureCard["growth"]> }): ReactNode {
+  const game = useGame();
+  return (
+    <div data-tame-sheet="" style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: 12 }}>
+      {growth.maxed ? (
+        <span style={{ opacity: 0.85 }}>Tamed at level {growth.tamedAt} · +{growth.gained} levels, the most it can gain</span>
+      ) : (
+        <Meter label={`Tamed at ${growth.tamedAt} · +${growth.gained} levels · XP`} value={growth.xp} max={growth.xpNext} color="#7ad06a" testId="tame-xp" />
+      )}
+      {growth.unspent > 0 ? <span data-tame-points={growth.unspent} style={{ color: "#9ef08a", fontWeight: 800 }}>▲ {growth.unspent} point{growth.unspent === 1 ? "" : "s"} to spend</span> : null}
+      {growth.stats.map((stat) => (
+        <div key={stat.id} data-tame-stat={stat.id} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={{ flex: 1 }}>{stat.label}</span>
+          <span style={{ fontVariantNumeric: "tabular-nums", opacity: 0.9 }}>
+            {stat.value}
+            {stat.unit}
+          </span>
+          {growth.unspent > 0 ? (
+            <button title={`+${stat.gain}${stat.unit}`} style={{ ...BUTTON, padding: "0 7px" }} onClick={() => void game.commands.run("levelTame", { stat: stat.id })}>
+              +
+            </button>
+          ) : null}
+        </div>
+      ))}
     </div>
   );
 }
@@ -106,6 +136,7 @@ export function CreaturePanel(): ReactNode {
           </button>
         </div>
       ) : null}
+      {card.growth !== null ? <TameSheet growth={card.growth} /> : null}
       <div style={{ display: "flex", flexDirection: "column", gap: 3, maxHeight: "34vh", overflowY: "auto" }}>
         {card.inventory.every((slot) => slot === null) ? <span style={{ fontSize: 12, opacity: 0.7 }}>Empty. Double-click your items to give them.</span> : null}
         {card.inventory.map((slot, index) =>

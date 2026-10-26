@@ -96,6 +96,74 @@ test("club a raptor unconscious, tame it on raw meat, saddle it and ride it", ()
   expect(runner.ctx.player.possession.active(runner.userId)).toBe(runner.userId);
 });
 
+test("a tame levels on ARK's curve from kills, spends points into its stats, and a ridden sprint costs its stamina", () => {
+  const runner = islandRunner();
+  tick(runner, 0.1);
+  runner.ui.tryInvoke("cheat", { give: { raptor_saddle: 1 }, summon: { species: "raptor", level: 1, distance: 2.5 } });
+  tick(runner, 0.1);
+  runner.ui.tryInvoke("cheat", { forceTame: true });
+  tick(runner, 0.1);
+  const raptor = creaturesView(runner.ctx).aimed!;
+  expect(raptor.tamed).toBe(true);
+  expect(raptor.growth).toMatchObject({ tamedAt: 1, gained: 0, unspent: 0, xpNext: 10 });
+  expect(raptor.stamina).toEqual({ value: 150, max: 150 });
+
+  // 10 XP for the first level, 20 for the second: 35 XP is two levels and 5 toward the third.
+  runner.ui.tryInvoke("creatureUse", {});
+  runner.ui.tryInvoke("cheat", { tameXp: 35 });
+  let sheet = creaturesView(runner.ctx).viewing!;
+  expect(sheet.level).toBe(3);
+  expect(sheet.growth).toMatchObject({ gained: 2, unspent: 2, xp: 5, xpNext: 30 });
+
+  // Each health point adds ARK's 5.4% of the 200 it was tamed with, to the max and to what it has.
+  runner.ui.tryInvoke("levelTame", { stat: "health" });
+  runner.ui.tryInvoke("levelTame", { stat: "health" });
+  runner.ui.tryInvoke("levelTame", { stat: "stamina" });
+  sheet = creaturesView(runner.ctx).viewing!;
+  expect(sheet.health).toEqual({ value: 222, max: 222 });
+  expect(sheet.growth!.unspent).toBe(0);
+  expect(sheet.growth!.stats.find((stat) => stat.id === "health")!.points).toBe(2);
+
+  // A kill by the tame gives it the kill's XP: a level-1 dodo is worth ARK's 2.
+  runner.ui.tryInvoke("giveCreature", { inventoryId: BAG, slot: bagSlot(runner, "raptor_saddle") });
+  runner.ui.tryInvoke("closeCreature", {});
+  runner.ui.tryInvoke("creatureUse", {});
+  expect(creaturesView(runner.ctx).riding?.id).toBe(raptor.id);
+  runner.ui.tryInvoke("cheat", { summon: { species: "dodo", level: 1, distance: 2.4 } });
+  const mount = runner.ctx.scene.entity.get(raptor.id)!;
+  const dodo = runner.ctx.scene.entity.list().filter((entity) => entity.name === "dodo").sort((a, b) => Math.hypot(a.position[0] - mount.position[0], a.position[2] - mount.position[2]) - Math.hypot(b.position[0] - mount.position[0], b.position[2] - mount.position[2]))[0]!;
+  runner.ctx.scene.entity.setPose(dodo.id, { position: [mount.position[0] + Math.sin(mount.rotationY) * 2.4, mount.position[1], mount.position[2] + Math.cos(mount.rotationY) * 2.4], rotationY: 0 });
+  // A hurt dodo runs; leave it one bite from death so the kill lands before it can.
+  runner.ctx.scene.entity.stats.set(dodo.id, "health", { current: 5 });
+  const xpBefore = creaturesView(runner.ctx).riding!.growth!.xp;
+  runner.ui.tryInvoke("fire", {});
+  tick(runner, 0.1);
+  expect(runner.ctx.scene.entity.stats.get(dodo.id, "health")!.current).toBeLessThanOrEqual(0);
+  expect(creaturesView(runner.ctx).riding!.growth!.xp - xpBefore).toBeCloseTo(2, 1);
+
+  // Sprinting on its back burns ARK's 6 stamina a second; walking spends none.
+  runner.aim({ heading: runner.ctx.scene.entity.get(raptor.id)!.rotationY });
+  const fresh = creaturesView(runner.ctx).riding!.stamina.value;
+  for (let t = 0; t < 2; t += 0.05) runner.step(0.05, { held: ["moveForward", "sprint"] });
+  const spent = fresh - creaturesView(runner.ctx).riding!.stamina.value;
+  expect(spent).toBeGreaterThan(10);
+  expect(spent).toBeLessThan(13);
+});
+
+test("bare fists knock out as well as hurt: a punch puts ARK's 1.75x its damage into torpor", () => {
+  const runner = islandRunner();
+  tick(runner, 0.1);
+  runner.ui.tryInvoke("cheat", { summon: { species: "phiomia", level: 1, distance: 1.2 } });
+  tick(runner, 0.1);
+  expect(creaturesView(runner.ctx).aimed?.label).toBe("Phiomia");
+  runner.ui.tryInvoke("fire", { yaw: facing(runner) });
+  tick(runner, 0.1);
+  const card = creaturesView(runner.ctx).aimed!;
+  expect(card.health.value).toBe(card.health.max - 8);
+  // 8 damage x 1.75 = 14 torpor, of which a creature takes half (the same share a club's lands).
+  expect(card.taming?.torpor).toBe(7);
+});
+
 test("a dodo runs when hit, and its body carves into meat and hide", () => {
   const runner = islandRunner();
   tick(runner, 0.1);

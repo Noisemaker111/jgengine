@@ -18,9 +18,14 @@ export type ActionBindingMap<TAction extends string, TCode extends string = stri
   ActionBinding<TCode>
 >;
 
-/** @internal */
+/**
+ * Whether a pressed code is a binding's key. Both sides fold left/right modifiers to one key, so a
+ * game binding `ShiftLeft` (as the docs show) matches the `Shift` a pressed Shift becomes.
+ * @internal
+ */
 export function bindingMatches<TCode extends string>(code: TCode, binding: ActionBinding<TCode>): boolean {
-  return code === binding.primary || code === binding.secondary;
+  const pressed = normalizeKeyCode(code);
+  return pressed === normalizeKeyCode(binding.primary) || (binding.secondary !== null && pressed === normalizeKeyCode(binding.secondary));
 }
 
 /** First action (in the map's key order) bound to the given control code, or null.

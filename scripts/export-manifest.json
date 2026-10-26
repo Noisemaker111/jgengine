@@ -728,6 +728,7 @@
     "./progression/skillTree",
     "./progression/standing",
     "./progression/statGraph",
+    "./progression/statPoints",
     "./progression/upgrades",
     "./progression/xpCurve",
     "./puzzle/cellGrid",

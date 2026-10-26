@@ -6,6 +6,8 @@ import { solidObstaclesNear } from "@jgengine/core/movement/solidObstacles";
 import type { NavPoint } from "@jgengine/core/nav/navGrid";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";
+import { leveling } from "@jgengine/core/progression/leveling";
+import { createStatPoints, type StatPointSheet } from "@jgengine/core/progression/statPoints";
 import { createCompanionRoster, type CompanionCommand, type CompanionRecord } from "@jgengine/core/scene/companion";
 import { ridingOf, type SeatOffset } from "@jgengine/core/scene/riding";
 import type { MountedRider } from "@jgengine/core/scene/mount";
@@ -16,7 +18,7 @@ import { createResourceNodeField, type ResourceGrant, type ResourceNodeState, ty
 import { editorLayers } from "../editorLayers";
 import { BAG, HOTBAR } from "./bags";
 import { itemDef, itemLabel, itemTraits } from "./data/items";
-import { SPECIES, speciesDef, statAt, temperamentOf, TORPOR_TAKEN, WILD_LEVELS, type SpeciesDef } from "./data/species";
+import { killXp, SPECIES, speciesDef, statAt, TAME_LEVELS, TAME_STATS, temperamentOf, TORPOR_TAKEN, WILD_LEVELS, type SpeciesDef, type TameStat } from "./data/species";
 import { setScreen } from "./screens";
 
 /** Slots in a creature's own inventory (ARK caps it by weight; slots are the simple stand-in). */
@@ -44,7 +46,30 @@ interface Creature {
   dead: boolean;
   /** Seconds until a body rots away. */
   rot: number;
+  /** Who last hurt it, for the kill's XP. */
+  lastHitBy: string | null;
+  /** Stamina left; a ridden sprint spends it. */
+  stamina: number;
+  /** A tame's own levels; null while wild. */
+  growth: TameGrowth | null;
 }
+
+/** ARK's tamed levelling: the level it was tamed at, levels gained since, XP into the next, points spent. */
+interface TameGrowth {
+  tamedAt: number;
+  gained: number;
+  xp: number;
+  points: StatPointSheet<TameStat>;
+}
+
+/** A tame's points scale each stat from its value when tamed; melee and speed from 100%. */
+const TAME_POINTS = createStatPoints<TameStat>({
+  stats: Object.fromEntries(TAME_STATS.map((stat) => [stat.id, { base: 1, perPoint: stat.perPoint, mode: "scale" as const }])) as Record<TameStat, { base: number; perPoint: number; mode: "scale" }>,
+});
+/** Levels gained after taming: the n-th costs 10 x n XP. */
+const TAME_TRACK = leveling({ xpForLevel: { kind: "linear", base: 0, per: TAME_LEVELS.xpStep }, maxLevel: TAME_LEVELS.max + 1 });
+/** Stamina a creature gets back each second, as a share of its max (approx). */
+const STAMINA_REGEN = 0.05;
 
 /** Things that happened this tick that the survivor's side reacts to (XP, notices). */
 export type CreatureEvent =
@@ -126,21 +151,24 @@ function defOf(creature: Creature): SpeciesDef {
   return speciesDef(creature.species)!;
 }
 
-function maxHealth(def: SpeciesDef, level: number): number {
-  return Math.round(statAt(def.health, level));
+/** A stat a creature has: a wild one's from its level, a tame's from its level when tamed and its points. */
+function statOf(creature: Creature, stat: TameStat): number {
+  const def = defOf(creature);
+  const level = creature.growth?.tamedAt ?? creature.level;
+  const wild = stat === "speed" ? 1 : stat === "melee" ? statAt(def.melee, level) / def.melee.base : statAt(def[stat], level);
+  return creature.growth === null ? wild : TAME_POINTS.value(creature.growth.points, stat, wild);
 }
 
-/** Melee multiplier at a level, ARK-style: the bite grows with the melee stat. */
-function meleeScale(def: SpeciesDef, level: number): number {
-  return statAt(def.melee, level) / def.melee.base;
+function maxHealth(creature: Creature): number {
+  return Math.round(statOf(creature, "health"));
 }
 
 function body(world: World, creature: Creature): CreatureBody {
   const def = defOf(creature);
   return {
-    walk: def.walk,
-    sprint: def.sprint,
-    attack: def.attack === null ? null : { effect: "damage", amount: def.attack.damage * meleeScale(def, creature.level), interval: def.attack.interval, reach: def.attack.reach + def.radius },
+    walk: def.walk * statOf(creature, "speed"),
+    sprint: def.sprint * statOf(creature, "speed"),
+    attack: def.attack === null ? null : { effect: "damage", amount: def.attack.damage * statOf(creature, "melee"), interval: def.attack.interval, reach: def.attack.reach + def.radius },
     wander: { radius: world.regions.get(creature.region)?.radius ?? 16 },
   };
 }
@@ -174,9 +202,11 @@ export function spawnCreature(ctx: GameContext, species: string, at: readonly [n
   const id = `${species}_${(world.seq += 1)}`;
   const level = options.level ?? rollLevel(ctx);
   ctx.scene.entity.spawn(species, { id, position, rotationY: ctx.rng() * Math.PI * 2, role: "npc" });
-  const health = maxHealth(def, level);
+  const creature: Creature = { id, species, level, region: options.region ?? "", inventory: createEmptyInventory({ slots: CREATURE_SLOTS }), tamed: false, saddled: false, dead: false, rot: 0, lastHitBy: null, stamina: 0, growth: null };
+  const health = maxHealth(creature);
+  creature.stamina = statOf(creature, "stamina");
   ctx.scene.entity.stats.set(id, "health", { max: health, current: health });
-  world.creatures.set(id, { id, species, level, region: options.region ?? "", inventory: createEmptyInventory({ slots: CREATURE_SLOTS }), tamed: false, saddled: false, dead: false, rot: 0 });
+  world.creatures.set(id, creature);
   world.driver.add(id, position);
   world.taming.track(id, species, level);
   return id;
@@ -232,6 +262,8 @@ export interface CreatureStrike {
   /** Meat and hide cut from a body. */
   granted: readonly ResourceGrant[];
   killed: boolean;
+  /** ARK's kill XP when this strike killed it, else 0. */
+  xp: number;
   knockedOut: boolean;
 }
 
@@ -247,19 +279,20 @@ export function strikeCreature(ctx: GameContext, attackerId: string, yaw: number
   if (target.dead) {
     const cut = world.carcasses.harvest(target.id, tool.gather, { multiplier: melee });
     if (cut.depleted) target.rot = Math.min(target.rot, 2);
-    return { label: `${def.label} body`, granted: cut.granted, killed: false, knockedOut: false };
+    return { label: `${def.label} body`, granted: cut.granted, killed: false, knockedOut: false, xp: 0 };
   }
   const damage = tool.damage * melee;
+  target.lastHitBy = attackerId;
   ctx.scene.entity.effect({ from: attackerId, to: target.id, effect: "damage", via: { amount: damage } });
   world.driver.hurt(ctx, target.id, attackerId);
   world.lastTarget = { id: target.id, until: ctx.time.now() + 10 };
   const wasDown = world.taming.state(target.id)?.unconscious === true;
-  if (wasDown) world.taming.damage(target.id, damage / maxHealth(def, target.level));
+  if (wasDown) world.taming.damage(target.id, damage / maxHealth(target));
   const knockedOut = !wasDown && world.taming.addTorpor(target.id, (tool.torpor ?? 0) * TORPOR_TAKEN * melee);
   if (knockedOut) knockOut(ctx, target);
   const killed = (ctx.scene.entity.stats.get(target.id, "health")?.current ?? 1) <= 0;
   if (killed) kill(ctx, target);
-  return { label: def.label, granted: [], killed, knockedOut };
+  return { label: def.label, granted: [], killed, knockedOut, xp: killed ? killXp(def, target.level) : 0 };
 }
 
 /** Left click on a mount: it bites what is in front, and cuts meat from a body for its rider. */
@@ -275,7 +308,7 @@ export function mountBite(ctx: GameContext): CreatureStrike | "riding" | null {
   if (now < world.mountReady) return "riding";
   world.mountReady = now + def.attack.interval;
   const bite = { gather: { power: 1, biases: def.diet === "carnivore" ? { raw_meat: 2, hide: 1 } : { raw_meat: 0.5, hide: 1.5 }, defaultBias: 0 }, damage: def.attack.damage, reach: def.attack.reach + def.radius };
-  const hit = strikeCreature(ctx, mountId, entity.rotationY, bite, meleeScale(def, mount.level));
+  const hit = strikeCreature(ctx, mountId, entity.rotationY, bite, statOf(mount, "melee"));
   if (hit === null) return "riding";
   for (const grant of hit.granted) {
     const whole = Math.floor(grant.amount + ctx.rng());
@@ -313,6 +346,55 @@ function kill(ctx: GameContext, creature: Creature): void {
     world.director.notifyRemoved(creature.region, creature.species);
   }
   lie(ctx, creature.id, true);
+  const killer = creature.lastHitBy === null ? undefined : world.creatures.get(creature.lastHitBy);
+  if (killer?.growth != null && !killer.dead) grantTameXp(ctx, killer, killXp(defOf(creature), creature.level));
+}
+
+/** XP for a tame: ARK levels it on its own curve and gives a point per level to spend. */
+function grantTameXp(ctx: GameContext, creature: Creature, amount: number): void {
+  const growth = creature.growth;
+  if (growth === null || amount <= 0) return;
+  const progress = TAME_TRACK.resolve(growth.gained + 1, growth.xp + amount);
+  growth.xp = progress.xp;
+  if (progress.levelsGained === 0) return;
+  growth.gained = progress.level - 1;
+  creature.level = growth.tamedAt + growth.gained;
+  ctx.game.notices.push({ text: `Your ${defOf(creature).label} reached level ${creature.level}. A point to spend in its inventory.`, tone: "success" });
+}
+
+/** A tame's second: the passive XP trickle, and stamina spent on a ridden sprint or won back at rest. */
+function tickTame(ctx: GameContext, creature: Creature, ridden: boolean, dt: number): void {
+  grantTameXp(ctx, creature, TAME_LEVELS.passivePerSecond * dt);
+  const max = statOf(creature, "stamina");
+  const entity = ctx.scene.entity.get(creature.id);
+  const moving = entity !== null && Math.hypot(entity.velocity[0], entity.velocity[2]) > 0.5;
+  const sprinting = ridden && moving && ctx.input.isDown("sprint") && creature.stamina > 1;
+  const rate = sprinting ? -defOf(creature).sprintStamina : moving ? 0 : max * STAMINA_REGEN;
+  creature.stamina = Math.max(0, Math.min(max, creature.stamina + rate * dt));
+  const walk = defOf(creature).walk * statOf(creature, "speed");
+  if (ridden && entity !== null && Math.abs((entity.movement.walkSpeed ?? 0) - walk) > 0.01) ctx.scene.entity.update(creature.id, { movement: { ...entity.movement, walkSpeed: walk } });
+}
+
+/** Whether the mount under the survivor has the stamina to sprint; null on foot. */
+export function mountCanSprint(ctx: GameContext): boolean | null {
+  const mountId = ridingOf(ctx).mountOf(ctx.player.userId);
+  const mount = mountId === null ? undefined : worldOf(ctx).creatures.get(mountId);
+  return mount === undefined ? null : mount.stamina > 1;
+}
+
+/** Spend one of the viewed tame's points: its stat grows, and a pool's current value with it, as in ARK. */
+export function levelTame(ctx: GameContext, stat: TameStat): void {
+  const creature = viewed(ctx);
+  const growth = creature?.growth ?? null;
+  if (creature === null || growth === null) return;
+  const before = { health: maxHealth(creature), stamina: statOf(creature, "stamina") };
+  if (!TAME_POINTS.spend(growth.points, stat, growth.gained)) return;
+  if (stat === "health") {
+    const health = ctx.scene.entity.stats.get(creature.id, "health");
+    const max = maxHealth(creature);
+    ctx.scene.entity.stats.set(creature.id, "health", { max, current: (health?.current ?? max) + max - before.health });
+  }
+  if (stat === "stamina") creature.stamina += statOf(creature, "stamina") - before.stamina;
 }
 
 function tame(ctx: GameContext, creature: Creature, effectiveness: number, bonus: number): void {
@@ -320,7 +402,9 @@ function tame(ctx: GameContext, creature: Creature, effectiveness: number, bonus
   const def = defOf(creature);
   creature.tamed = true;
   creature.level += bonus;
-  const health = maxHealth(def, creature.level);
+  creature.growth = { tamedAt: creature.level, gained: 0, xp: 0, points: TAME_POINTS.empty() };
+  creature.stamina = statOf(creature, "stamina");
+  const health = maxHealth(creature);
   ctx.scene.entity.stats.set(creature.id, "health", { max: health, current: health });
   lie(ctx, creature.id, false);
   const entity = ctx.scene.entity.get(creature.id);
@@ -412,7 +496,12 @@ export function tickCreatures(ctx: GameContext, dt: number): CreatureEvent[] {
         : ({ kind: "wild", temperament: temperamentOf(def) } as const);
     const step = world.driver.step(ctx, creature.id, mind, body(world, creature), dt);
     world.steps.set(creature.id, step);
-    if (step.struck && step.targetId !== null && world.creatures.has(step.targetId)) world.driver.hurt(ctx, step.targetId, creature.id);
+    const bitten = step.struck && step.targetId !== null ? world.creatures.get(step.targetId) : undefined;
+    if (bitten !== undefined) {
+      bitten.lastHitBy = creature.id;
+      world.driver.hurt(ctx, bitten.id, creature.id);
+    }
+    if (creature.growth !== null) tickTame(ctx, creature, ridden, dt);
   }
 
   for (const request of world.director.tick(dt)) {
@@ -582,6 +671,23 @@ export function setTamingSpeed(ctx: GameContext, multiplier: number): void {
   worldOf(ctx).tamingSpeed = Math.max(0, multiplier);
 }
 
+/** ARK's `forcetame`: the wild creature in front is yours at once, at full effectiveness. */
+export function forceTame(ctx: GameContext): void {
+  const world = worldOf(ctx);
+  const creature = world.aimed === null ? undefined : world.creatures.get(world.aimed);
+  if (creature === undefined || creature.dead || creature.tamed) return;
+  world.taming.forget(creature.id);
+  tame(ctx, creature, 1, 0);
+}
+
+/** ARK's dino XP cheat: XP for the mount under you, or else the tame whose inventory is open. */
+export function giveTameXp(ctx: GameContext, amount: number): void {
+  const world = worldOf(ctx);
+  const id = ridingOf(ctx).mountOf(ctx.player.userId) ?? world.viewing;
+  const creature = id === null ? undefined : world.creatures.get(id);
+  if (creature !== undefined) grantTameXp(ctx, creature, amount);
+}
+
 // --- what the HUD and screens read ------------------------------------------------------------------
 
 function tamingView(world: World, creature: Creature, state: Readonly<TamingState> | null) {
@@ -600,6 +706,26 @@ function tamingView(world: World, creature: Creature, state: Readonly<TamingStat
         eating: food,
         foods: Object.keys(def.taming.foods),
       };
+}
+
+/** ARK's tame stat sheet: level, XP to the next, points to spend, and each stat with what a point adds. */
+function growthView(creature: Creature) {
+  const growth = creature.growth;
+  if (growth === null) return null;
+  const maxed = growth.gained >= TAME_LEVELS.max;
+  return {
+    tamedAt: growth.tamedAt,
+    gained: growth.gained,
+    xp: Math.floor(growth.xp),
+    xpNext: maxed ? 0 : TAME_TRACK.xpForLevel(growth.gained + 1),
+    maxed,
+    unspent: TAME_POINTS.unspent(growth.points, growth.gained),
+    stats: TAME_STATS.map((stat) => {
+      const value = statOf(creature, stat.id);
+      const shown = (amount: number) => (stat.unit === "%" ? Math.round(amount * 1000) / 10 : Math.round(amount * 10) / 10);
+      return { id: stat.id, label: stat.label, unit: stat.unit, points: growth.points[stat.id], value: shown(value), gain: shown(value / (1 + growth.points[stat.id] * stat.perPoint) * stat.perPoint) };
+    }),
+  };
 }
 
 export function creatureCard(ctx: GameContext, id: string | null) {
@@ -621,6 +747,8 @@ export function creatureCard(ctx: GameContext, id: string | null) {
     saddle: def.saddle,
     order: creature.tamed ? (world.roster.get(creature.id)?.command ?? null) : null,
     taming: creature.tamed ? null : tamingView(world, creature, world.taming.state(creature.id)),
+    stamina: { value: Math.floor(creature.stamina), max: Math.round(statOf(creature, "stamina")) },
+    growth: growthView(creature),
     inventory: creature.inventory.slots,
   };
 }
@@ -682,7 +810,13 @@ export function creaturesSave(ctx: GameContext) {
     },
     hydrate: (data: CreaturesSave) => {
       const world = worldOf(ctx);
-      world.creatures = new Map(data.creatures.map((creature) => [creature.id, structuredClone(creature)]));
+      world.creatures = new Map(data.creatures.map((saved) => {
+        const creature = structuredClone(saved);
+        creature.lastHitBy ??= null;
+        creature.growth = creature.growth == null ? (creature.tamed ? { tamedAt: creature.level, gained: 0, xp: 0, points: TAME_POINTS.empty() } : null) : { ...creature.growth, points: TAME_POINTS.normalize(creature.growth.points) };
+        creature.stamina ??= statOf(creature, "stamina");
+        return [creature.id, creature];
+      }));
       world.seq = data.seq;
       world.populated = true;
       world.driver.restore(data.driver);
