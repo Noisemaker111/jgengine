@@ -5,6 +5,8 @@
 //   bun run release --wait           # cut, land, wait for Publish, then deploy jgengine.com from that commit
 //   bun run release --wait 0.38.4    # the same wait and deploy for a version already cut (release-await.ts)
 //
+// The cut is written on release/<version>, cut from origin/beta, whichever checkout runs the command.
+//
 // A release is a milestone, not a step after each change: publish at most about once a day,
 // or when an outside user needs a version. The games in games/ run engine source from the same
 // commit, so nothing here has to run per PR.
@@ -251,6 +253,40 @@ export function ancestorFailureLines(report: AncestorReport): string[] {
   return lines;
 }
 
+export type ReleaseStart = { ok: true; branch: string; from: string } | { ok: false; reason: string };
+
+/**
+ * The cut goes on its own `release/<version>` branch, cut from `origin/beta` whichever checkout runs
+ * the command. It used to be committed onto the branch it ran from: on `beta`, `land` refused to land
+ * `beta` into itself (exit 3) after the cut was already committed there. `from` is where the checkout
+ * was, so the release can switch back once it has landed.
+ */
+export function startReleaseBranch(input: { cwd: string; patch?: boolean; git?: GitRunner }): ReleaseStart {
+  const git = input.git ?? runGit;
+  const run = (args: string[]) => git(args, input.cwd);
+  const status = run(["status", "--porcelain"]);
+  if (status.status !== 0) return { ok: false, reason: `cannot read this checkout: ${status.stderr.trim()}` };
+  if (status.stdout.trim() !== "") {
+    return { ok: false, reason: "this checkout has uncommitted changes; commit or move them, then run again." };
+  }
+  const shown = run(["show", "origin/beta:packages/core/package.json"]);
+  if (shown.status !== 0) {
+    return { ok: false, reason: "cannot read origin/beta:packages/core/package.json; fetch origin beta, then run again." };
+  }
+  const branch = `release/${nextReleaseVersion((JSON.parse(shown.stdout) as { version: string }).version, input.patch)}`;
+  if (run(["rev-parse", "--verify", "--quiet", `refs/heads/${branch}`]).status === 0) {
+    const unique = run(["rev-list", "--count", `origin/beta..${branch}`]).stdout.trim();
+    if (unique !== "0") {
+      return { ok: false, reason: `${branch} already has ${unique} commit(s) that origin/beta does not have; move or delete it, then run again.` };
+    }
+  }
+  const named = run(["rev-parse", "--abbrev-ref", "HEAD"]).stdout.trim();
+  const from = named === "HEAD" ? run(["rev-parse", "HEAD"]).stdout.trim() : named;
+  const switched = run(["switch", "-C", branch, "origin/beta"]);
+  if (switched.status !== 0) return { ok: false, reason: `cannot start ${branch} from origin/beta: ${switched.stderr.trim()}` };
+  return { ok: true, branch, from };
+}
+
 const KNOWN_FLAGS = ["--dry-run", "--no-gen", "--patch", "--no-fetch", "--commit", "--wait", "--run", "--sha"];
 
 /** The first `--flag` this script does not take. A retired flag fails here instead of falling through to a cut. */
@@ -287,6 +323,16 @@ function main(): void {
 
   // A release cut from a stale branch is how a published version ended up missing merged work.
   if (!args.includes("--no-fetch")) spawnSync("git", ["fetch", "--quiet", "origin", "beta"], { cwd: root, stdio: "ignore", timeout: 20_000 });
+  let cutFrom: string | null = null;
+  if (!dryRun) {
+    const start = startReleaseBranch({ cwd: root, patch: patchRelease });
+    if (!start.ok) {
+      console.error(`release: ${start.reason}`);
+      process.exit(1);
+    }
+    cutFrom = start.from;
+    console.log(`release: cutting on ${start.branch}, from origin/beta`);
+  }
   const ancestor = checkReleaseAncestor({ cwd: root, target: args.includes("--commit") ? args[args.indexOf("--commit") + 1] : "HEAD" });
   if (!ancestor.ok) {
     for (const line of ancestorFailureLines(ancestor)) console.error(line);
@@ -339,7 +385,7 @@ function main(): void {
     const gen = spawnSync("bun", ["scripts/gen-skill-api-safe.ts"], { cwd: root, stdio: "inherit" });
     if (gen.status !== 0) process.exit(gen.status ?? 1);
   }
-  if (wait !== null) void landAndAwait(root, sdk);
+  if (wait !== null && cutFrom !== null) void landAndAwait(root, sdk, cutFrom);
   else console.log("release: review the diff, then commit and open the release PR.");
 }
 
@@ -404,7 +450,7 @@ function ghIn(root: string): RunGh {
  * opens it and arms auto-merge), wait for the merge, fast-forward `main`, then wait for the Publish
  * run, deploy jgengine.com from the released commit, and answer with the version. `--wait` is what keeps a lane out of `Start-Sleep 480; gh run view`.
  */
-async function landAndAwait(root: string, version: string): Promise<never> {
+async function landAndAwait(root: string, version: string, cutFrom: string): Promise<never> {
   const git = (args: readonly string[]) => spawnSync("git", [...args], { cwd: root, encoding: "utf8" });
   const commit = git(["add", "-A"]);
   if (commit.status !== 0) {
@@ -433,6 +479,8 @@ async function landAndAwait(root: string, version: string): Promise<never> {
     console.error(`release: fast-forwarding main failed: ${forward.error}`);
     process.exit(1);
   }
+  const back = git(["checkout", "--quiet", cutFrom]);
+  if (back.status !== 0) console.error(`release: published, but this checkout did not switch back to ${cutFrom}: ${back.stderr.trim()}`);
   // The site deploy runs here, not in CI, because its build needs game models.
   const code = await publishThenDeploy(
     () => awaitPublish({ version, sha: forward.sha, gh, log: (line) => console.log(line) }),
