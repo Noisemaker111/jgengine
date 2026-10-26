@@ -43,7 +43,7 @@ window.run = (chunk) => {
 let browser: Browser;
 beforeAll(async () => {
   browser = await chromium.launch({ executablePath: findChromeExecutable(), headless: true, args: ["--no-sandbox", ...chromeGraphicsArgs()] });
-});
+}, 60_000);
 afterAll(async () => {
   await browser?.close();
 });
