@@ -2114,6 +2114,24 @@ function weldOffset(raw: StreetVec2[], centerline: readonly StreetVec2[], absd: 
 }
 
 /**
+ * The road-surface elevation field {@link generateStreets} drapes a network over for these rules and
+ * half-extents, or `undefined` when the `elevation` dial is 0 (flat). It depends only on the seed, the
+ * extents and the dial, so a renderer can rebuild the same ground a resolved city's streets were laid
+ * on. Wholly separate from the `heightAt` terrain sampler that drives bridges/tunnels.
+ */
+export function streetElevationField(
+  rules: Pick<StreetNetworkRules, "seed" | "elevation">,
+  hx: number,
+  hz: number,
+): ((x: number, z: number) => number) | undefined {
+  const elevationDial = rules.elevation ?? 0;
+  if (elevationDial <= 0) return undefined;
+  const streams = seededStreams(`pathnet:${rules.seed}:${Math.round(hx)}:${Math.round(hz)}`);
+  // Dial 1 ≈ 22 m relief across a ~520 m volume, scaled to this footprint.
+  return makeElevationField(streams("elevation"), Math.max(hx, hz) * 2, elevationDial * Math.max(hx, hz) * 2 * (22 / 520));
+}
+
+/**
  * Build the seeded smooth 2-D road-surface elevation FIELD: 3 octaves of sine/cos mixtures with
  * wavelengths scaled to the volume `extent`, normalized so the peak-to-peak relief ≈ `reliefMeters`.
  * Smooth by construction (no cliffs). Pure and deterministic given `rng`. The returned sampler is the
@@ -2344,19 +2362,8 @@ export function generateStreets(
   });
 
   // --- road-surface elevation field (opt-in; flat + byte-identical when the dial is 0) ---
-  const elevationDial = rules.elevation ?? 0;
   const maxGrade = rules.maxGrade ?? 0.07;
-  // A seeded smooth field draped over the network. Wholly separate from the `context.heightAt` TERRAIN
-  // sampler that drives bridges/tunnels — this shapes the road surface, that is the world ground.
-  const elevationAt =
-    elevationDial > 0
-      ? makeElevationField(
-          streams("elevation"),
-          Math.max(hx, hz) * 2,
-          // dial 1 ≈ 22 m relief across a ~520 m volume, scaled to this footprint.
-          elevationDial * Math.max(hx, hz) * 2 * (22 / 520),
-        )
-      : undefined;
+  const elevationAt = streetElevationField(rules, hx, hz);
 
   // --- assemble atomic edges ---
   const minRad = (rules.minTurnAngle * Math.PI) / 180;

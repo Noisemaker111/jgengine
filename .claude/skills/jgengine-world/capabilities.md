@@ -268,11 +268,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `rectsSeparated` (function) · `import { rectsSeparated } from "@jgengine/core/world/polygon"`
 - `resolveCityObject` (function) · `import { resolveCityObject } from "@jgengine/core/world"`
 
-## city-generator — subdivide street blocks into size-tiered street-fronting plots
-
-- `deriveCityPlots` (function) · `import { deriveCityPlots } from "@jgengine/core/world"`
-- `resolveCityLotContent` (function) · `import { resolveCityLotContent } from "@jgengine/core/world"`
-
 ## city-layout-sliders — live dev-runner sliders for every city layout number
 
 - `tuneCityLayout` (function) · `import { tuneCityLayout } from "@jgengine/core/city/cityLayout"`

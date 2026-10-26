@@ -1,5 +1,5 @@
 /**
- * GeneratedCity → three.js. Everything rendered here is read from the real
+ * A resolved city (the `city` scene kind) → three.js. Everything rendered here is read from the real
  * `@jgengine/core` city generator output: welded street/junction surfaces from
  * `buildTrimmedIntersections`, real buildings extruded from each lot's massing
  * `pieces` (walls/roofs/trim/accent, landmarks and all), sidewalks flanking the
@@ -9,16 +9,10 @@
  */
 import * as THREE from "three";
 
-import type { GeneratedCity } from "@jgengine/core/city/cityGenerator";
-import type {
-  CityLotPiece,
-  CityPieceRole,
-  CityLotClass,
-  CityFillerClass,
-  CityLandmarkClass,
-} from "@jgengine/core/city/cityContent";
+import type { CityLotPiece, CityPieceRole, CityLotClass, CityLandmarkClass } from "@jgengine/core/city/cityContent";
+import type { CityLot } from "@jgengine/core/city/cityKind";
 import { circuitKerbs, type CircuitRoute } from "@jgengine/core/roads/raceCircuit";
-import type { Street, StreetLevel } from "@jgengine/core/roads/streetGenerator";
+import type { Street, StreetLevel, StreetNetwork } from "@jgengine/core/roads/streetGenerator";
 import {
   buildIntersectionMarkings,
   buildRoadRibbon,
@@ -30,8 +24,6 @@ import {
 import { seededStreams } from "@jgengine/core/random/rng";
 
 export interface CityPalette {
-  /** Building wall diffuse base + jitter. */
-  building: number;
   /** Street ribbon color per level. */
   streets: Record<StreetLevel, number>;
   /** Additive centerline glow on boulevards/avenues. */
@@ -128,7 +120,7 @@ interface ClassStyle {
   flood: number;
 }
 
-type AnyCityClass = CityLotClass | CityFillerClass | CityLandmarkClass;
+type AnyCityClass = CityLotClass | CityLandmarkClass;
 
 const CLASS_STYLE: Record<AnyCityClass, ClassStyle> = {
   // --- ordinary building classes -------------------------------------------------
@@ -168,15 +160,6 @@ const CLASS_STYLE: Record<AnyCityClass, ClassStyle> = {
     wall: 0x969ca4, roof: 0xa2a8b0, trim: 0xb4bac2, accent: 0xd2d8e0,
     windowTint: 0xbcd6f0, windowDensity: 0.08, windowIntensity: 0.85, storefront: false, flood: 0,
   }, // pale galvanized metal, almost no windows
-  // --- interior-only block fillers (garages + depots behind the streetwall) -------
-  garage: {
-    wall: 0x54585e, roof: 0x34383e, trim: 0x6a6e76, accent: 0x8a8f98,
-    windowTint: 0x9fb4c8, windowDensity: 0.5, windowIntensity: 0.7, storefront: false, flood: 0,
-  }, // concrete parking structure: bare grey, banded floors read as sparse cool open-deck strips
-  depot: {
-    wall: 0x3a2c24, roof: 0x1e1712, trim: 0x5a4636, accent: 0x7a5238,
-    windowTint: 0xffb060, windowDensity: 0.06, windowIntensity: 0.8, storefront: false, flood: 0,
-  }, // dark warm brick/metal warehouse: near-windowless low box
   // --- block-scale landmarks (flood-lit so they pop out of the skyline) ----------
   hall: {
     wall: 0x6c6672, roof: 0xb58a48, trim: 0xffcf70, accent: 0xffd27a,
@@ -196,7 +179,6 @@ const CLASS_STYLE: Record<AnyCityClass, ClassStyle> = {
   }, // green-lit civic campus
 };
 
-const FALLBACK_STYLE: ClassStyle = CLASS_STYLE.slab;
 
 /** Append a core `RoadRibbon` (flat xyz + Uint32 indices) into the merged street buffers. */
 function appendRibbon(
@@ -614,8 +596,14 @@ function jitterColor(
   return out;
 }
 
+/** What the model draws: a street graph and the buildings standing on its blocks. */
+export interface CityModelSource {
+  network: StreetNetwork;
+  lots: readonly CityLot[];
+}
+
 export function buildCityModel(
-  city: GeneratedCity,
+  city: CityModelSource,
   palette: CityPalette,
   options: {
     seed: string;
@@ -839,15 +827,12 @@ export function buildCityModel(
   // --- buildings (skippable for unobstructed intersection inspection) ---
   const boxWriter = makeWriter(); // windowed walls + flat boxes
   const shapeWriter = makeWriter(); // gable/cylinder/dome, DoubleSide, window-free
-  const baseWall = new THREE.Color(palette.building);
   const shades = rng("shades");
   const heightsRng = rng("heights");
-  const scratchShade = new THREE.Color();
   let tallest = 0;
   const showBuildings = options.buildings !== false;
 
-  const lotContent = city.lotContent;
-  if (showBuildings && lotContent !== undefined && lotContent.length > 0) {
+  if (showBuildings) {
     // Real massing pieces per lot, colored by the class's family identity (CLASS_STYLE), jittered
     // per building. Banded walls window per the class; roof/trim/accent take their own hues.
     const wall = new THREE.Color();
@@ -857,7 +842,7 @@ export function buildCityModel(
     const winTint = new THREE.Color();
     const flood = new THREE.Color();
     const noFlood = new THREE.Color(0, 0, 0);
-    for (const resolved of lotContent) {
+    for (const resolved of city.lots) {
       const [cx, cz] = resolved.center;
       const baseY = sampleHeight(cx, cz); // lot sits on the terrain, all its pieces share the offset
       const lotRot = resolved.rotationY;
@@ -865,7 +850,7 @@ export function buildCityModel(
       const ls = Math.sin(lotRot);
       const dist = Math.hypot(cx, cz) / Math.max(1, radius);
       const delay = dist * 1.5 + heightsRng() * 0.3;
-      const style = CLASS_STYLE[resolved.class as AnyCityClass] ?? FALLBACK_STYLE;
+      const style = CLASS_STYLE[resolved.landmark ?? resolved.class];
       // Far buildings recede gently into the fog; keep enough to still read the class color.
       const distBias = 1 - dist * 0.18;
       // One jitter seed per building drives the whole family shift so all its pieces agree — enough
@@ -913,49 +898,6 @@ export function buildCityModel(
             break;
         }
       });
-    }
-  } else if (showBuildings) {
-    // Fallback (no resolved content, e.g. the hero world): windowed boxes on bare lots. One shared
-    // window behavior tinted by the palette's warm window color — the hero scene has no class data.
-    const fallbackEmit: EmitStyle = {
-      winTint: new THREE.Color(palette.windowWarm).lerp(new THREE.Color(palette.windowCool), 0.4),
-      winDensity: 0.5,
-      winIntensity: 1.7,
-      storefront: 0,
-      flood: new THREE.Color(0, 0, 0),
-    };
-    const frontage = streets.filter((street) => street.level !== "lane");
-    const heightRange: Record<StreetLevel, readonly [number, number]> = {
-      boulevard: [18, 58],
-      avenue: [10, 30],
-      street: [5, 15],
-      lane: [4, 9],
-    };
-    for (const lot of city.lots) {
-      const level = frontage[lot.road]?.level ?? "street";
-      const [minH, maxH] = heightRange[level];
-      const centerBias = 1 - Math.min(1, Math.hypot(lot.center[0], lot.center[1]) / Math.max(1, radius)) * 0.55;
-      const h = (minH + heightsRng() * (maxH - minH)) * centerBias * heightScale + 3;
-      tallest = Math.max(tallest, h);
-      const dim = 0.82 + shades() * 0.35;
-      scratchShade.copy(baseWall).multiplyScalar(dim);
-      const delay = (Math.hypot(lot.center[0], lot.center[1]) / Math.max(1, radius)) * 1.5 + heightsRng() * 0.3;
-      const w = lot.footprint.w * 0.92;
-      const d = lot.footprint.d * 0.92;
-      const baseY = sampleHeight(lot.center[0], lot.center[1]);
-      if (h > 26 && heightsRng() < 0.7) {
-        const tiers = h > 42 && heightsRng() < 0.5 ? 3 : 2;
-        let y = baseY;
-        for (let t = 0; t < tiers; t += 1) {
-          const frac = t === tiers - 1 ? 1 : 0.45 + heightsRng() * 0.25;
-          const topY = t === tiers - 1 ? baseY + h : y + (baseY + h - y) * frac;
-          const scale = 1 - t * (0.16 + heightsRng() * 0.12);
-          pushBuildingBox(boxWriter, lot.center[0], lot.center[1], w * scale, d * scale, y, topY, lot.rotationY, scratchShade, delay + t * 0.12, true, fallbackEmit);
-          y = topY;
-        }
-      } else {
-        pushBuildingBox(boxWriter, lot.center[0], lot.center[1], w, d, baseY, baseY + h, lot.rotationY, scratchShade, delay, true, fallbackEmit);
-      }
     }
   }
 
@@ -1141,7 +1083,7 @@ export function buildCityModel(
     group,
     stats: {
       streets: city.network.streets.length,
-      lots: lotContent !== undefined ? lotContent.length : city.lots.length,
+      lots: city.lots.length,
       loops: city.network.loops,
       junctions: city.network.junctions.length,
     },

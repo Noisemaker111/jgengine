@@ -40,12 +40,16 @@ import {
 } from "../scene/sceneKinds";
 import { BUILDING_STYLE_PALETTES, DEFAULT_BUILDING_STYLE, type BuildingStyle } from "../buildings/buildings";
 import {
+  buildLandmarkPieces,
   buildLotPieces,
+  landmarkFloors,
   pickClass,
+  pickLandmarkClass,
   pickSpecies,
   rollClassPlacement,
   zoneBand,
   zoneMetric,
+  type CityLandmarkClass,
   type CityLotClass,
   type CityLotPiece,
   type CityTreeSpecies,
@@ -79,7 +83,7 @@ import {
   carveCorridors,
   conformPolygonToRing,
   cutParcel,
-  extractBlocks,
+  extractGraphBlocks,
   isSliverBlock,
   pointsInPolygon,
   RingWalker,
@@ -169,6 +173,11 @@ export interface CityRules {
   edgeMix: WeightedParamEntry[];
   /** Global lot footprint multiplier — estates want 1.5+, dense infill wants <1. */
   lotScale: number;
+  /**
+   * Share of buildable blocks given whole to one civic landmark (hall, arena, market or campus,
+   * picked by zone band), 0..1. Default 0.
+   */
+  landmarks: number;
   /** Minimum building floors (district clamp over the class ranges). */
   floorsMin: number;
   /** Maximum building floors (district clamp over the class ranges). */
@@ -281,6 +290,7 @@ export const CITY_DEFAULTS: CityRules = {
     { item: "rowhouse", weight: 1 },
   ],
   lotScale: 1,
+  landmarks: 0,
   floorsMin: 1,
   floorsMax: 30,
   floorHeight: 3,
@@ -391,6 +401,7 @@ export const CITY_SCHEMA: ParamSchema = {
     { type: "weightedList", key: "midMix", label: "mid mix", group: "zoning", itemLabel: "class", default: CITY_DEFAULTS.midMix },
     { type: "weightedList", key: "edgeMix", label: "edge mix", group: "zoning", itemLabel: "class", default: CITY_DEFAULTS.edgeMix },
     { type: "range", key: "lotScale", label: "lot scale", group: "zoning", min: 0.5, max: 2.5, step: 0.05, default: CITY_DEFAULTS.lotScale },
+    { type: "range", key: "landmarks", label: "landmarks", group: "zoning", min: 0, max: 0.5, step: 0.01, default: CITY_DEFAULTS.landmarks },
     { type: "range", key: "roadsideOccupancy", label: "roadside occupancy", group: "placement", min: 0, max: 1, step: 0.01, default: CITY_DEFAULTS.roadsideOccupancy },
     { type: "range", key: "blockDensity", label: "block density", group: "placement", min: 0, max: 1, step: 0.01, default: CITY_DEFAULTS.blockDensity },
     { type: "range", key: "buildingRoadSetback", label: "road setback", group: "placement", min: 0, max: 12, step: 0.1, default: CITY_DEFAULTS.buildingRoadSetback, unit: "m" },
@@ -801,6 +812,7 @@ export function readCityRules(meta: Record<string, unknown> | undefined): CityRu
     midMix: params["midMix"] as WeightedParamEntry[],
     edgeMix: params["edgeMix"] as WeightedParamEntry[],
     lotScale: params["lotScale"] as number,
+    landmarks: params["landmarks"] as number,
     floorsMin: Math.min(floorsMin, floorsMax),
     floorsMax: Math.max(floorsMin, floorsMax),
     floorHeight: params["floorHeight"] as number,
@@ -881,6 +893,8 @@ export interface CityLot {
   pieces: readonly CityLotPiece[];
   /** Id of the parcel this building stands on. */
   parcel?: string;
+  /** Set when the building is a civic landmark filling its whole block; `class` is then the ordinary class used for styling. */
+  landmark?: CityLandmarkClass;
 }
 
 /** One closed city block: a face of the road graph, inset to curb and land boundaries. */
@@ -1123,6 +1137,11 @@ export interface ResolvedCity {
   signals: readonly CitySignal[];
   /** The instanced street race through these streets, when `race` is on and a lap could be found. */
   race?: ResolvedRace;
+  /**
+   * The street graph the district grew from, in district-local XZ (before `center` and `rotationY`).
+   * Plain data: rebuild its road-surface field with `streetElevationField(rules, hx, hz)`.
+   */
+  network?: StreetNetwork;
 }
 
 /** Lot pieces that block: walls and roofs. Trim and accents (cornices, awnings) stay passable. */
@@ -1397,10 +1416,93 @@ interface FabricResult {
     anchor: [number, number];
     pieces: readonly CityLotPiece[];
     parcel: string;
+    landmark?: CityLandmarkClass;
   }[];
   placed: LotIndex;
   hedges: { center: [number, number]; size: [number, number]; rotationY: number }[];
   driveways: { points: [number, number][]; width: number; surface: CityDriveway["surface"] }[];
+}
+
+/** Ordinary lot class each landmark is styled as (palette and window rules). */
+const LANDMARK_STYLE_CLASS: Record<CityLandmarkClass, CityLotClass> = { hall: "slab", arena: "slab", market: "shop", campus: "slab" };
+
+/**
+ * Stamp one civic landmark over a whole buildable block: the largest rect that fits the setback
+ * land, facing the nearest street, massed by its landmark class. Returns false (leaving the block
+ * to ordinary parcels) when the block is too small, too steep or too low.
+ */
+function placeLandmark(
+  rules: CityRules,
+  rng: () => number,
+  result: FabricResult,
+  land: Vec2[],
+  bi: number,
+  blockId: number,
+  band: CityZoneBand,
+  index: StreetIndex,
+  streetCount: number,
+  slopeAt: ((x: number, z: number) => number) | null,
+  heightAt: ((x: number, z: number) => number) | null,
+): boolean {
+  const site = insetRingUniform(land, Math.max(1, rules.buildingRoadSetback));
+  if (site.length < 3) return false;
+  const [cx, cz] = polygonCentroid(site);
+  const near = index.nearest(cx, cz, streetCount);
+  if (near === null) return false;
+  const ox = near.x - cx;
+  const oz = near.z - cz;
+  const ol = Math.hypot(ox, oz) || 1;
+  const out: Vec2 = [ox / ol, oz / ol];
+  const rotationY = Math.atan2(out[0], out[1]);
+  // Extents of the site along the frontage (x) and into the block (z) set the rect's proportions.
+  let minA = Infinity;
+  let maxA = -Infinity;
+  let minB = Infinity;
+  let maxB = -Infinity;
+  for (const [px, pz] of site) {
+    const a = (px - cx) * out[1] - (pz - cz) * out[0];
+    const b = (px - cx) * out[0] + (pz - cz) * out[1];
+    minA = Math.min(minA, a);
+    maxA = Math.max(maxA, a);
+    minB = Math.min(minB, b);
+    maxB = Math.max(maxB, b);
+  }
+  const fit = fitRectInPolygon(site, cx, cz, maxA - minA, maxB - minB, rotationY, 0.3);
+  if (fit === null || fit.w < 14 || fit.d < 12) return false;
+  if (slopeAt !== null && slopeAt(fit.cx, fit.cz) > rules.maxSlope) return false;
+  if (heightAt !== null && heightAt(fit.cx, fit.cz) < rules.minElevation) return false;
+  const candidate: PlacedLot = { x: fit.cx, z: fit.cz, hw: fit.w / 2, hd: fit.d / 2, angle: rotationY };
+  if (result.placed.overlapsAny(candidate, 0.8)) return false;
+  result.placed.add(candidate);
+  const landmark = pickLandmarkClass(band, rng());
+  const floors = landmarkFloors(landmark, rng);
+  const parcelId = `parcel:${bi}:landmark`;
+  result.parcels.push({
+    id: parcelId,
+    block: blockId,
+    polygon: land,
+    buildable: site,
+    frontage: [],
+    area: polygonArea(land),
+    depth: maxB - minB,
+    isCorner: false,
+    kind: "built",
+  });
+  result.lots.push({
+    id: `lot:${bi}:${result.lots.length}`,
+    center: [fit.cx, fit.cz],
+    size: [fit.w, fit.d],
+    rotationY,
+    floors,
+    jitter: rng(),
+    cls: LANDMARK_STYLE_CLASS[landmark],
+    zone: band,
+    anchor: [near.x, near.z],
+    pieces: buildLandmarkPieces(landmark, fit.w, fit.d, floors, rules.floorHeight, rng),
+    parcel: parcelId,
+    landmark,
+  });
+  return true;
 }
 
 /**
@@ -1414,6 +1516,8 @@ function buildFabric(
   rules: CityRules,
   streams: (stream: string) => () => number,
   streets: LocalStreet[],
+  graph: Pick<StreetNetwork, "nodes" | "edges">,
+  surfaceFor: (level: StreetLevel) => CityStreet["surface"],
   index: StreetIndex,
   hx: number,
   hz: number,
@@ -1435,11 +1539,15 @@ function buildFabric(
   const commercialCore = rules.coreMix.some(
     (entry) => (entry.item === "tower" || entry.item === "slab" || entry.item === "shop") && entry.weight > 0,
   );
-  const fabric = extractBlocks(
-    streets.map((street) => ({ points: street.points, width: street.width, level: street.level, sidewalk: street.sidewalk })),
-    hx,
-    hz,
-    { streetWidthBase: rules.streetWidth, sidewalkBase: rules.sidewalkWidth, curbMargin: 0.35 },
+  // Blocks are traced from the exact street graph, so curved and filleted streets still close
+  // their faces (proximity welding of centerlines collapses on them).
+  const fabric = extractGraphBlocks(
+    graph.nodes,
+    graph.edges.map((edge) => {
+      const surface = surfaceFor(edge.level);
+      return { a: edge.a, b: edge.b, points: edge.points, width: edge.width, level: edge.level, sidewalk: rules.sidewalks && surface === "asphalt" };
+    }),
+    { sidewalkBase: rules.sidewalkWidth, curbMargin: 0.35 },
   );
   const bandAt = (x: number, z: number, roll: number): { band: CityZoneBand; mix: WeightedParamEntry[] } => {
     const override = overrideAt === null ? null : overrideAt(x, z);
@@ -1498,6 +1606,11 @@ function buildFabric(
       fieldBlock = true;
     } else {
       result.blocks.push({ id: `block:${bi}`, kind: "buildable", polygon: land, curb: rings.curb, area });
+      // Civic landmarks take a whole block. Their own stream keeps every other roll unchanged, so a
+      // city with `landmarks: 0` grows exactly as before.
+      if (rules.landmarks > 0 && result.lots.length < MAX_LOTS && streams(`landmark:${bi}`)() < rules.landmarks) {
+        if (placeLandmark(rules, streams(`landmark-lot:${bi}`), result, land, bi, blockId, band, index, streets.length, slopeAt, heightAt)) continue;
+      }
     }
 
     // --- parcel subdivision along the block's frontage ring ---
@@ -2008,6 +2121,8 @@ export function resolveCityObject(object: SceneKindObject, context?: CityResolve
     bridges: rules.bridges,
     tunnels: rules.tunnels,
   });
+  // The resolved city stays plain data: the road-surface field is rebuilt with `streetElevationField`.
+  const { elevationAt: _surface, ...networkData } = network;
   // Resolve each generated street's surface + sidewalk from its hierarchy level.
   const surfaceFor = (level: StreetLevel): CityStreet["surface"] =>
     rules.surface === "gravel" || (level === "lane" && rules.gravelLanes) ? "gravel" : "asphalt";
@@ -2056,7 +2171,7 @@ export function resolveCityObject(object: SceneKindObject, context?: CityResolve
   // so a circuit never carries forced-on plots — parcels and buildings appear only when you want it.
   const emptyFabric: FabricResult = { blocks: [], parcels: [], parks: [], lots: [], placed: new LotIndex(), hedges: [], driveways: [] };
   const lotResult = rules.fabric
-    ? buildFabric(rules, streams, local, index, hx, hz, slopeAt, heightAt, overrideAt, intersections)
+    ? buildFabric(rules, streams, local, network, surfaceFor, index, hx, hz, slopeAt, heightAt, overrideAt, intersections)
     : emptyFabric;
   const parks = lotResult.parks;
   if (rules.fabric) buildFieldRows(parks, lotResult.placed, streams);
@@ -2269,6 +2384,7 @@ export function resolveCityObject(object: SceneKindObject, context?: CityResolve
     size: [hx * 2, hz * 2],
     rotationY,
     rules,
+    network: networkData,
     streets: local.map((street, i) => ({
       id: `street:${i}`,
       points: street.points.map(([x, z]) => toWorld(x, z)),
@@ -2342,6 +2458,7 @@ export function resolveCityObject(object: SceneKindObject, context?: CityResolve
       anchor: toWorld(lot.anchor[0], lot.anchor[1]),
       pieces: lot.pieces,
       parcel: lot.parcel,
+      ...(lot.landmark === undefined ? {} : { landmark: lot.landmark }),
     })),
     parks: parks.map((park) => ({
       id: park.id,
