@@ -67,6 +67,13 @@ describe("judgeLoad", () => {
     expect(judgeLoad("saltwick", { worstClick: 600, sceneReady: null }, now(600, null))).toEqual([]);
   });
 
+  test("fails a scene that drew blank however fast it loaded", () => {
+    expect(judgeLoad("saltwick", base, { ...now(600, 3000), sceneColors: 3, glErrors: 400 })).toEqual([
+      "saltwick: the scene drew blank at scene ready (3 colours; 400 WebGL errors logged)",
+    ]);
+    expect(judgeLoad("saltwick", base, { ...now(600, 3000), sceneColors: 180 })).toEqual([]);
+  });
+
   test("a retry keeps the better of the two runs per measure", () => {
     const best = bestOf(now(1200, 3000), now(700, 9000));
     expect(best.worstClick).toBe(700);

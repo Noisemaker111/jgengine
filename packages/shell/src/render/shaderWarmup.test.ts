@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { BoxGeometry, DirectionalLight, Group, InstancedMesh, Matrix4, Mesh, MeshBasicMaterial, MeshDepthMaterial, MeshNormalMaterial, Object3D, OrthographicCamera, PerspectiveCamera, Scene, type Material } from "three";
+import { BoxGeometry, DirectionalLight, Group, InstancedMesh, Matrix4, Mesh, MeshBasicMaterial, MeshDepthMaterial, MeshNormalMaterial, Object3D, OrthographicCamera, PerspectiveCamera, Scene, WebGLRenderTarget, type Material } from "three";
 
 import {
   batchByProgram,
@@ -723,6 +723,36 @@ describe("drawing each program once while covered", () => {
     expect(seen).toEqual([{ drawables: [kept], culled: [false], shadowsLive: false }]);
     expect(scene.children).toEqual([kept, other]);
     expect(kept.frustumCulled).toBe(true);
+    expect(shadowMap).toEqual({ enabled: true, autoUpdate: true, needsUpdate: false });
+  });
+
+  test("drawSubset makes a shadow map no frame made yet, then asks the next frame to redraw it", () => {
+    const scene = new Scene();
+    const kept = meshAt(0, 0, -5);
+    const sun = new DirectionalLight();
+    sun.castShadow = true;
+    scene.add(kept, sun);
+    const shadowMap = { enabled: true, autoUpdate: true, needsUpdate: false };
+    const shadowsLive: boolean[] = [];
+    const renderer = {
+      shadowMap,
+      compile() {},
+      render() {
+        const live = shadowMap.autoUpdate || shadowMap.needsUpdate;
+        shadowsLive.push(live);
+        // three's depth pass: makes the map and clears the light's request.
+        if (live) {
+          sun.shadow.map ??= new WebGLRenderTarget(1, 1);
+          sun.shadow.needsUpdate = false;
+        }
+      },
+    };
+    drawSubset(renderer, scene, new PerspectiveCamera(), (object) => object === kept);
+    expect(sun.shadow.map).not.toBeNull();
+    expect(sun.shadow.needsUpdate).toBe(true);
+    sun.shadow.needsUpdate = false;
+    drawSubset(renderer, scene, new PerspectiveCamera(), (object) => object === kept);
+    expect(shadowsLive).toEqual([true, false]);
     expect(shadowMap).toEqual({ enabled: true, autoUpdate: true, needsUpdate: false });
   });
 

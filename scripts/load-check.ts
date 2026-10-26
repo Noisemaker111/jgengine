@@ -108,6 +108,10 @@ export interface LoadSample {
   menuLabel: string | null;
   /** The first console errors and uncaught exceptions, when there were any. */
   pageErrors?: string[];
+  /** Distinct coarse colours in the scene canvas at scene ready; a blank scene has a handful. */
+  sceneColors?: number | null;
+  /** WebGL errors the page logged (a failed draw draws nothing). */
+  glErrors?: number;
   /** The WebGL renderer string: timings are only comparable on the same GPU. */
   gpu?: string;
   error?: string;
@@ -117,7 +121,27 @@ export interface LoadSample {
 export const PAGE_PROBE = `(() => {
   if (!location.pathname.startsWith("/play")) return;
   const epoch = () => performance.timeOrigin + performance.now();
-  const s = (window.__jgLoad = { tasks: [], fcpAt: null, menuAt: null, menuBox: null, menuLabel: null, menuStall: 0, sceneReadyAt: null, pressAt: null, respondedAt: null, playableAt: null });
+  const s = (window.__jgLoad = { tasks: [], fcpAt: null, menuAt: null, menuBox: null, menuLabel: null, menuStall: 0, sceneReadyAt: null, sceneColors: null, sceneSampled: false, pressAt: null, respondedAt: null, playableAt: null });
+  // The canvas keeps its last frame, so the scene can be read back at scene ready.
+  const getContext = HTMLCanvasElement.prototype.getContext;
+  HTMLCanvasElement.prototype.getContext = function (type, options) {
+    return getContext.call(this, type, type === "webgl2" || type === "webgl" ? { ...(options || {}), preserveDrawingBuffer: true } : options);
+  };
+  // How many distinct colours the largest canvas shows, coarsely: a drawn scene has dozens, a scene
+  // whose every draw failed is one flat clear colour.
+  const sceneColors = () => {
+    const canvases = [...document.querySelectorAll("canvas")].sort((a, b) => b.width * b.height - a.width * a.height);
+    const source = canvases[0];
+    if (source === undefined || source.width === 0) return null;
+    const probe = document.createElement("canvas");
+    probe.width = 64; probe.height = 36;
+    const g = probe.getContext("2d");
+    try { g.drawImage(source, 0, 0, 64, 36); } catch { return null; }
+    const px = g.getImageData(0, 0, 64, 36).data;
+    const seen = new Set();
+    for (let i = 0; i < px.length; i += 4) seen.add((px[i] >> 4) * 256 + (px[i + 1] >> 4) * 16 + (px[i + 2] >> 4));
+    return seen.size;
+  };
   const at = (t) => performance.timeOrigin + t;
   try {
     new PerformanceObserver((list) => { for (const e of list.getEntries()) s.tasks.push([Math.round(at(e.startTime)), Math.round(e.duration)]); }).observe({ type: "longtask", buffered: true });
@@ -156,7 +180,8 @@ export const PAGE_PROBE = `(() => {
     s.pressAt = at(event.timeStamp);
     requestAnimationFrame(() => requestAnimationFrame(() => { s.respondedAt = epoch(); }));
   }, true);
-  let last = 0, smooth = 0, runStart = 0;
+  let last = 0, smooth = 0, runStart = 0, sampleTick = 0;
+  const SAMPLE_MS = 2000;
   const frame = () => {
     const now = epoch();
     findMenu();
@@ -166,6 +191,13 @@ export const PAGE_PROBE = `(() => {
     else if (++smooth >= 30) {
       if (s.pressAt === null && s.sceneReadyAt === null) s.sceneReadyAt = runStart;
       if (s.pressAt !== null && runStart >= s.pressAt && s.playableAt === null) s.playableAt = runStart;
+    }
+    // The scene is read a few times over the two seconds after scene ready, keeping the richest
+    // read, so a fade-in or a title card at that moment does not read as a blank scene.
+    if (s.sceneReadyAt !== null && !s.sceneSampled && ++sampleTick % 15 === 1) {
+      const colors = sceneColors();
+      if (colors !== null) s.sceneColors = Math.max(s.sceneColors ?? 0, colors);
+      if (now - s.sceneReadyAt >= SAMPLE_MS) s.sceneSampled = true;
     }
     last = now;
     if (s.playableAt === null) requestAnimationFrame(frame);
@@ -181,6 +213,8 @@ interface ProbeState {
   menuLabel: string | null;
   menuStall: number;
   sceneReadyAt: number | null;
+  sceneColors: number | null;
+  sceneSampled: boolean;
   pressAt: number | null;
   respondedAt: number | null;
   playableAt: number | null;
@@ -211,6 +245,8 @@ export function summarizeRuns(samples: readonly LoadSample[]): LoadSample {
     blockingMs: pick("blockingMs") ?? 0,
     transferKb: pick("transferKb") ?? 0,
     menuLabel: first.menuLabel,
+    sceneColors: median(samples.map((sample) => sample.sceneColors ?? null)),
+    glErrors: Math.max(0, ...samples.map((sample) => sample.glErrors ?? 0)),
     ...(samples.every((sample) => sample.error !== undefined) ? { error: first.error } : {}),
   };
 }
@@ -258,10 +294,16 @@ export const GUARD_LIMITS = {
   sceneReady: { ratio: 1.3, ms: 1500, label: "scene ready" },
 } as const;
 
+/** Fewer distinct coarse colours than this in the scene canvas reads as a blank scene, not a drawn one. */
+export const BLANK_SCENE_COLORS = 40;
+
 /** Each way `now` loads worse than `base`, as a sentence; empty when it holds. */
 export function judgeLoad(game: string, base: LoadBaseline["games"][string], now: LoadSample): string[] {
   if (now.error !== undefined) return [`${game}: ${now.error}`];
   const failures: string[] = [];
+  if (now.sceneColors != null && now.sceneColors < BLANK_SCENE_COLORS) {
+    failures.push(`${game}: the scene drew blank at scene ready (${now.sceneColors} colours; ${now.glErrors ?? 0} WebGL errors logged)`);
+  }
   for (const key of ["worstClick", "sceneReady"] as const) {
     const was = base[key];
     if (was === null) continue;
@@ -277,7 +319,8 @@ export function judgeLoad(game: string, base: LoadBaseline["games"][string], now
 /** The better of two runs per measure, so one noisy run cannot fail the guard. */
 export function bestOf(a: LoadSample, b: LoadSample): LoadSample {
   const min = (x: number | null, y: number | null) => (x === null ? y : y === null ? x : Math.min(x, y));
-  const best: LoadSample = { ...b, worstClick: min(a.worstClick, b.worstClick), sceneReady: min(a.sceneReady, b.sceneReady) };
+  const most = (x: number | null | undefined, y: number | null | undefined) => (x == null ? (y ?? null) : y == null ? x : Math.max(x, y));
+  const best: LoadSample = { ...b, worstClick: min(a.worstClick, b.worstClick), sceneReady: min(a.sceneReady, b.sceneReady), sceneColors: most(a.sceneColors, b.sceneColors) };
   if (a.error === undefined || b.error === undefined) delete best.error;
   return best;
 }
@@ -354,6 +397,7 @@ async function measureOnce(base: string, game: string, path: string, args: LoadA
     const pageErrors: string[] = [];
     page.on("pageerror", (error) => pageErrors.push(error.message));
     page.on("console", (message) => {
+      if (message.text().includes("GL_INVALID")) sample.glErrors = (sample.glErrors ?? 0) + 1;
       // A failed fetch is named by the response listener below, with its path.
       if (message.type() === "error" && !message.text().startsWith("Failed to load resource")) pageErrors.push(message.text());
     });
@@ -389,7 +433,7 @@ async function measureOnce(base: string, game: string, path: string, args: LoadA
       if (process.env.JG_LOAD_DEBUG === "1") console.error(`load: ${Date.now() - (deadline - args.timeoutMs)}ms ${JSON.stringify({ ...state, tasks: state?.tasks.length })}`);
       if (state?.playableAt != null) break;
       // The guard judges the menu and the scene behind it, so it stops at scene ready.
-      if ((args.guard || args.saveBaseline) && state?.sceneReadyAt != null) break;
+      if ((args.guard || args.saveBaseline) && state?.sceneReadyAt != null && state.sceneSampled) break;
       // wait-ok: samples the page's own probe while the game loads
       await new Promise((resolve) => setTimeout(resolve, 100));
     }
@@ -400,6 +444,7 @@ async function measureOnce(base: string, game: string, path: string, args: LoadA
       const press = state.pressAt !== null && state.respondedAt !== null ? state.respondedAt - state.pressAt : null;
       sample.worstClick = state.menuAt === null ? null : Math.round(Math.max(state.menuStall, press ?? 0));
       sample.sceneReady = rel(state.sceneReadyAt);
+      sample.sceneColors = state.sceneColors;
       sample.playable = rel(state.playableAt);
       sample.menuLabel = state.menuLabel;
     }
@@ -457,7 +502,7 @@ async function main(): Promise<number> {
   const allSamples: LoadSample[] = [];
   const failures: string[] = [];
   const log = (game: string, run: number, sample: LoadSample) =>
-    console.error(`load: ${game} run ${run}: paint ${cell(sample.firstPaint)} menu ${cell(sample.menuShown)} worst click ${cell(sample.worstClick)} scene ${cell(sample.sceneReady)} playable ${cell(sample.playable)} ms${sample.error === undefined ? "" : ` (${sample.error})`}`);
+    console.error(`load: ${game} run ${run}: paint ${cell(sample.firstPaint)} menu ${cell(sample.menuShown)} worst click ${cell(sample.worstClick)} scene ${cell(sample.sceneReady)} playable ${cell(sample.playable)} ms, ${sample.sceneColors ?? "-"} colours, ${sample.glErrors ?? 0} GL errors${sample.error === undefined ? "" : ` (${sample.error})`}`);
   try {
     for (const game of args.games) {
       const samples: LoadSample[] = [];
