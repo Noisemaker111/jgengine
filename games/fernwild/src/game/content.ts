@@ -10,6 +10,8 @@ const entities: Record<string, GameContextEntityEntry> = {
     role: "player",
     stats: { health: { max: SURVIVOR.health }, level: { max: MAX_LEVEL }, xp: { max: 5 } },
     receive: { damage: { order: ["health"] } },
+    // The game handles a survivor's death (body left where they fell, a wake on the beach); the entity stays.
+    onDeath: { keep: true },
     movement: { poses: ["standing", "running", "crouch"], walkSpeed: SURVIVOR.walkSpeed },
   },
   ...Object.fromEntries(

@@ -1,0 +1,23 @@
+{
+  "steps": [
+    { "waitFor": "typeof __jgProbe === 'function' && __jgProbe().pedestals === 8", "timeoutMs": 60000, "note": "arrival on the beach" },
+    { "rpc": { "method": "run_command", "name": "cheat", "input": { "give": { "stone": 20, "wood": 10, "stone_pick": 1 }, "toHotbar": ["stone_pick"] } }, "note": "ARK's admin give: stone, wood and a pick on the hotbar" },
+    { "waitFor": "__jgProbe().carrying === 3", "timeoutMs": 3000, "note": "three stacks carried" },
+    { "rpc": { "method": "run_command", "name": "cheat", "input": { "goto": { "cave": "cave_lower_south_cave", "back": 30 } } }, "note": "teleport to the hillside below the lower south cave, far from the beach" },
+    { "waitFor": "__jgProbe().z < 1050", "timeoutMs": 3000, "note": "the teleport has landed, a quarter kilometre north of the beach" },
+    { "rpc": { "method": "run_command", "name": "cheat", "input": { "summon": { "species": "raptor", "level": 30, "distance": 5 } } }, "note": "a level 30 wild raptor five metres ahead" },
+    { "waitFor": "__jgProbe().health < __jgProbe().healthMax * 0.7", "timeoutMs": 20000, "note": "it attacks: health below 70%" },
+    { "shot": "fernwild-death-raptor", "note": "the raptor on the survivor, health falling" },
+    { "waitFor": "__jgProbe().bodyDistance > 50", "timeoutMs": 60000, "note": "killed: awake back on the beach, the body far behind" },
+    { "assert": "__jgProbe().carrying", "is": 0, "note": "empty-handed" },
+    { "assert": "__jgProbe().bodyStacks", "is": 3, "note": "all three stacks lie with the body" },
+    { "shot": "fernwild-death-beach", "note": "awake on the beach; the HUD says how far the body is and how long it lasts" },
+    { "rpc": { "method": "run_command", "name": "cheat", "input": { "destroyWild": true } }, "note": "ARK's admin DestroyWildDinos, so the raptor isn't waiting" },
+    { "rpc": { "method": "run_command", "name": "cheat", "input": { "goto": { "cave": "cave_lower_south_cave", "back": 30 } } }, "note": "back where the survivor fell" },
+    { "waitFor": "__jgProbe().atBody === 1", "timeoutMs": 5000, "note": "the body is in reach" },
+    { "shot": "fernwild-death-body", "note": "the body's bundle and the beam of light over it" },
+    { "key": "KeyE", "until": { "is": "__jgProbe().bodyDistance === -1", "timeoutMs": 3000 }, "note": "E: take everything back; the body is gone" },
+    { "assert": "__jgProbe().carrying", "is": 3, "note": "all three stacks carried again" },
+    { "shot": "fernwild-death-recovered", "note": "things taken back" }
+  ]
+}

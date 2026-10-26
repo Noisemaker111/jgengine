@@ -711,6 +711,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createRelationshipBook` (function) · `import { createRelationshipBook } from "@jgengine/core/agents/relationships"`
 
+## remains-field — leave what a fallen player carried where they fell, take it back stack by stack, lose it when the remains fall apart
+
+- `createRemainsField` (function) · `import { createRemainsField } from "@jgengine/core/remains/remains"`
+
 ## resolve — the current tier/band label for a keyed or scalar value
 
 - `tierAt` (function) · `import { tierAt } from "@jgengine/core/gameplay"`

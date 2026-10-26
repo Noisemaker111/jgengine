@@ -21,6 +21,7 @@ import { command, keybind, proximityPrompt, type PositionedPrompt } from "@jgeng
 import { FIST, itemDef, itemLabel, itemTraits, PICK_UP, type ToolDef } from "./data/items";
 import { placeHeld, stations, strikeStructure } from "./base";
 import { mountCanSprint, strikeCreature } from "./creatures";
+import { leaveBody } from "./deathBody";
 import { openScreen } from "./screens";
 import { COMFORT, ENGRAM_POINTS, LEVEL_STATS, MAX_LEVEL, SURVIVOR, survivorVitals, XP_TO_LEVEL, type LevelStat } from "./data/survivor";
 
@@ -124,7 +125,7 @@ function encumbrance(ctx: GameContext, survivor: Survivor) {
   return resolveEncumbrance(totalLoad(carried(ctx), (id) => itemDef(id)?.weight ?? 0), statValue(survivor, "weight"));
 }
 
-/** Put items in the bag; whatever does not fit is lost with a notice (ARK drops a bag; that comes with death loot). */
+/** Put items in the bag; whatever does not fit is lost with a notice. */
 export function give(ctx: GameContext, itemId: string, count: number): number {
   if (count <= 0) return 0;
   const put = ctx.player.inventory.put(BAG, itemId, count);
@@ -435,6 +436,11 @@ export function tickSurvivor(ctx: GameContext, dt: number): void {
   if (me === null) return;
   const health = ctx.scene.entity.stats.get(id, "health");
   if (health !== null) survivor.vitals.change("health", health.current - survivor.vitals.value("health"));
+  // A blow that empties health kills before this step's healing can paper over it.
+  if (survivor.vitals.value("health") <= 0 && !survivor.dead) {
+    die(ctx, survivor);
+    return;
+  }
 
   const load = encumbrance(ctx, survivor);
   const moving = Math.hypot(me.velocity[0], me.velocity[2]) > 0.5;
@@ -472,10 +478,15 @@ export function tickSurvivor(ctx: GameContext, dt: number): void {
   ctx.touch();
 }
 
-/** Death before body loot lands: back on the beach with full vitals and what you carry. */
+/**
+ * Death, as in ARK: everything carried stays with the body where the survivor fell, and they wake on the beach with
+ * empty hands and full vitals, keeping their level and engrams. The body lasts an hour.
+ */
 function die(ctx: GameContext, survivor: Survivor): void {
   survivor.dead = true;
-  ctx.game.notices.push({ text: "You died. You wake on the beach.", tone: "deny" });
+  const me = ctx.scene.entity.get(ctx.player.userId);
+  const left = me === null ? 0 : leaveBody(ctx, me.position);
+  ctx.game.notices.push({ text: left > 0 ? "You died. Your things lie with your body where you fell." : "You died. You wake on the beach.", tone: "deny" });
   respawn(ctx, survivor);
 }
 

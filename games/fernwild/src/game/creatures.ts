@@ -284,14 +284,24 @@ function sleepFarHerds(ctx: GameContext, world: World, at: readonly [number, num
     if (creature.tamed || creature.dead || creature.region === "" || awake(world, creature.region, at)) continue;
     const taming = world.taming.state(creature.id);
     if (taming !== null && (taming.torpor > 0 || taming.progress > 0)) continue;
-    world.creatures.delete(creature.id);
-    world.steps.delete(creature.id);
-    world.idle.delete(creature.id);
-    world.taming.forget(creature.id);
-    world.driver.forget(creature.id);
-    ctx.scene.entity.despawn(creature.id);
-    world.director.notifyRemoved(creature.region, creature.species, creature.id, { delay: 0 });
+    removeCreature(ctx, world, creature, 0);
   }
+}
+
+function removeCreature(ctx: GameContext, world: World, creature: Creature, delay: number): void {
+  world.creatures.delete(creature.id);
+  world.steps.delete(creature.id);
+  world.idle.delete(creature.id);
+  world.taming.forget(creature.id);
+  world.driver.forget(creature.id);
+  ctx.scene.entity.despawn(creature.id);
+  if (creature.region !== "") world.director.notifyRemoved(creature.region, creature.species, creature.id, { delay });
+}
+
+/** ARK's admin DestroyWildDinos: every living wild creature is gone; their zones refill as usual later. */
+export function destroyWild(ctx: GameContext): void {
+  const world = worldOf(ctx);
+  for (const creature of [...world.creatures.values()]) if (!creature.tamed && !creature.dead) removeCreature(ctx, world, creature, RESPAWN_SECONDS);
 }
 
 // --- aiming, striking -----------------------------------------------------------------------

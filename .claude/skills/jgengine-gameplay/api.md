@@ -2771,6 +2771,15 @@
 - `setValue` (function): function setValue(record: Record<string, number>, key: string, value: number, bounds?: NumericBounds): number — Set `key` to `value` (clamped to `bounds`), writing the record in place. Returns the stored value.
 - `towardValue` (function): function towardValue(record: Record<string, number>, key: string, target: number, maxDelta: number, bounds?: NumericBounds): number — Step `key` toward `target` by at most `maxDelta` without overshooting, then clamp to `bounds`. Writes in place and returns the stored value.
 
+## @jgengine/core/remains/remains
+
+- `Remains` (interface): interface Remains — What someone left where they fell: whose it is, where, what it holds and until when it lasts.
+- `RemainsField` (interface): interface RemainsField — The remains lying in a world: left on death, taken back from, and gone when they fall apart.
+- `RemainsOptions` (interface): interface RemainsOptions — {@link createRemainsField} knobs.
+- `RemainsSnapshot` (interface): interface RemainsSnapshot — Everything a remains field holds, for a save.
+- `RemainsStack` (interface): interface RemainsStack — One stack held in remains: an item id and how many.
+- `createRemainsField` (function): function createRemainsField(options: RemainsOptions): RemainsField — Remains: when someone dies, what they carried stays where they fell in one lootable heap (ARK's body and death cache, a corpse run in any game). The owner, or anyone the game allows, walks back and takes it; after `lastsSeconds` it falls apart and its contents are lost. Pure state on the game's clock; saving is a snapshot.
+
 ## @jgengine/core/rules/predicate
 
 - `Predicate` (type): type Predicate = | { readonly all: readonly Predicate[] } | { readonly any: readonly Predicate[] } | { readonly not: Predicate } | { readonly eq: readonly [PredicatePath, PredicateValue] } | { readonly ne: readonly [PredicatePath, PredicateValue] } | { readonly gt: readonly [PredicatePath, number] }… — One node of the predicate tree. Combinators (`all`/`any`/`not`) nest; leaf comparators read a dot path from the facts and compare it. `has` passes when the path resolves to a non-nullish value.

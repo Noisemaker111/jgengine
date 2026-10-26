@@ -5,7 +5,8 @@ import { defineSystem } from "@jgengine/shell/gameKit";
 import { editorLayers } from "./editorLayers";
 import { baseSave, demolish, resetBase, rotateBuild, tickBase, useStructure } from "./game/base";
 import { cavesOf, cavesSave, resetCaves, takeArtifact } from "./game/caves";
-import { closeCreature, creaturesSave, feedNarcotic, forceTame, giveTameXp, giveToCreature, levelTame, mountBite, resetCreatures, setTamingSpeed, spawnCreature, takeFromCreature, tickCreatures, unsaddle, useCreature, whistle } from "./game/creatures";
+import { bodiesSave, recoverBody, resetBodies, tickBodies } from "./game/deathBody";
+import { closeCreature, creaturesSave, destroyWild, feedNarcotic, forceTame, giveTameXp, giveToCreature, levelTame, mountBite, resetCreatures, setTamingSpeed, spawnCreature, takeFromCreature, tickCreatures, unsaddle, useCreature, whistle } from "./game/creatures";
 import { TAME_STATS } from "./game/data/species";
 import { LEVEL_STATS, SURVIVOR } from "./game/data/survivor";
 import { BAG, HOTBAR } from "./game/bags";
@@ -114,6 +115,16 @@ export const systems = [
     save: cavesSave,
     reset: resetCaves,
   }),
+  defineSystem({
+    id: "bodies",
+    tick: { type: "fixed", rate: 2 },
+    create(ctx) {
+      ctx.game.commands.define("recoverBody", { apply: (state) => (recoverBody(state), state) });
+    },
+    update: tickBodies,
+    save: bodiesSave,
+    reset: resetBodies,
+  }),
 ];
 
 interface Cheat {
@@ -132,6 +143,10 @@ interface Cheat {
   toHotbar?: string[];
   /** Stand `back` metres outside a cave's mouth (negative: that far inside), facing in, the camera behind. */
   goto?: { cave: string; back?: number };
+  /** ARK's admin kill: the survivor dies where they stand. */
+  kill?: boolean;
+  /** ARK's admin DestroyWildDinos: every wild creature gone; their zones refill later. */
+  destroyWild?: boolean;
 }
 
 function cheat(ctx: GameContext, input: Cheat): void {
@@ -142,6 +157,8 @@ function cheat(ctx: GameContext, input: Cheat): void {
     for (let point = 0; known !== undefined && point < points; point += 1) levelStat(ctx, known.id);
   }
   if (input.tamingSpeed !== undefined) setTamingSpeed(ctx, input.tamingSpeed);
+  if (input.kill === true) ctx.scene.entity.stats.set(ctx.player.userId, "health", { current: 0 });
+  if (input.destroyWild === true) destroyWild(ctx);
   const me = ctx.scene.entity.get(ctx.player.userId);
   if (input.summon !== undefined && me !== null) {
     const distance = input.summon.distance ?? 4;

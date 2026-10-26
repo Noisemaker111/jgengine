@@ -6,6 +6,7 @@ import { editorLayers } from "./editorLayers";
 import { assets } from "./game/assets";
 import { basePrompts, baseView } from "./game/base";
 import { cavePrompts, cavesOf, cavesView } from "./game/caves";
+import { bodyPrompts, bodyView } from "./game/deathBody";
 import { creaturePrompts, creaturesView } from "./game/creatures";
 import { content } from "./game/content";
 import { itemTraits } from "./game/data/items";
@@ -64,7 +65,7 @@ export const game = defineGame({
   sceneScatterBudget: 40_000,
   persist: { mode: "manual" },
   // The camera starts behind the survivor on the authored spawn facing, so you wash up looking inland.
-  prompts: (ctx) => [...survivorPrompts(ctx), ...creaturePrompts(ctx), ...basePrompts(ctx), ...cavePrompts(ctx)],
+  prompts: (ctx) => [...survivorPrompts(ctx), ...creaturePrompts(ctx), ...basePrompts(ctx), ...cavePrompts(ctx), ...bodyPrompts(ctx)],
   camera: { perspective: "third", initialYaw: authoredSpawnRotation(editorLayers), frustum: { far: 2400 } },
   capture: {
     play: [{ name: "start", input: {} }],
@@ -73,6 +74,7 @@ export const game = defineGame({
       const creatures = creaturesView(ctx);
       const base = baseView(ctx);
       const caves = cavesView(ctx);
+      const body = bodyView(ctx);
       const me = ctx.scene.entity.get(ctx.player.userId);
       return {
         x: Math.round((me?.position[0] ?? 0) * 10) / 10,
@@ -83,6 +85,7 @@ export const game = defineGame({
         aimPick: view.aim.pick === null ? 0 : 1,
         xp: view.xp,
         health: Math.round(view.health.value),
+        healthMax: Math.round(view.health.max),
         food: Math.round(view.food.value),
         water: Math.round(view.water.value),
         stamina: Math.round(view.stamina.value),
@@ -133,6 +136,13 @@ export const game = defineGame({
         atPedestal: cavePrompts(ctx).length > 0 ? 1 : 0,
         // Hotbar slot in hand, 1-based; 0 bare-handed.
         holding: view.activeSlot === null ? 0 : view.activeSlot + 1,
+        // Metres to the survivor's own body, to a decimetre, and the stacks it holds; -1 and 0 with no body lying.
+        bodyDistance: body === null ? -1 : Math.round(body.distance * 10) / 10,
+        bodyStacks: body?.stacks ?? 0,
+        // 1 while your body is in reach, so E would take your things back.
+        atBody: bodyPrompts(ctx).length > 0 ? 1 : 0,
+        // Stacks the survivor carries in the bag and on the hotbar.
+        carrying: [BAG, HOTBAR].reduce((sum, id) => sum + ctx.player.inventory.state(id).slots.filter((slot) => slot !== null).length, 0),
       };
     },
   },
