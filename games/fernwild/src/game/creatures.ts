@@ -91,6 +91,10 @@ interface World {
   idle: Map<string, number>;
   seq: number;
   populated: boolean;
+  /** Seconds since herds were last put to sleep or refilled; they are checked every {@link HERD_CHECK}. */
+  sinceHerdCheck: number;
+  /** Where the survivor stood at that check: moving far from it (a teleport, a fast mount) checks at once. */
+  herdCheckedAt: readonly [number, number, number] | null;
   /** The creature in front of the survivor (or their mount), within reach. */
   aimed: string | null;
   /** The creature whose inventory screen is open. */
@@ -109,6 +113,10 @@ const NEAR_RANGE = 60;
 const FAR_STEP = 0.25;
 /** Herds wake when the survivor comes this close to their zone and sleep (wild ones vanish) past it. */
 const AWAKE_RANGE = 220;
+/** Herds wake, sleep and refill on this beat (seconds), not every frame: a big island queues hundreds of refills. */
+const HERD_CHECK = 0.5;
+/** ...or as soon as the survivor is this far (m) from where herds were last checked. */
+const HERD_CHECK_MOVE = 10;
 
 /** One species in a spawn zone: ARK's relative weight there. */
 interface ZoneSpecies {
@@ -130,8 +138,8 @@ function shareOut(count: number, listed: readonly ZoneSpecies[]): { species: str
 
 /**
  * Each creature_spawn marker in editor.scene.json is one of ARK's spawn zones: the species that live
- * there with their weights, how many at once, how far they roam. Species without a body yet are left
- * out and their share of the zone stays empty, so a zone holds what ARK puts there and no more.
+ * there with their weights, how many at once, how far they roam. A zone holds what ARK puts there and
+ * no more; a species with no stats would be left out (creatures.test checks none is).
  */
 function herds() {
   return markersOfKind(editorLayers, "creature_spawn").flatMap((marker) => {
@@ -164,6 +172,8 @@ const worldOf = perContext((ctx: GameContext): World => {
     idle: new Map(),
     seq: 0,
     populated: false,
+    sinceHerdCheck: 0,
+    herdCheckedAt: null,
     aimed: null,
     viewing: null,
     lastTarget: null,
@@ -249,6 +259,23 @@ function awake(world: World, region: string, at: readonly [number, number, numbe
   const zone = world.regions.get(region);
   if (zone === undefined || at === null) return false;
   return Math.hypot(zone.center[0] - at[0], zone.center[2] - at[2]) < AWAKE_RANGE + zone.radius;
+}
+
+/** Put far herds to sleep and refill the awake ones. */
+function tickHerds(ctx: GameContext, world: World, here: readonly [number, number, number] | null): void {
+  const dt = world.sinceHerdCheck;
+  world.sinceHerdCheck = 0;
+  world.herdCheckedAt = here === null ? null : [here[0], here[1], here[2]];
+  sleepFarHerds(ctx, world, here);
+  for (const request of world.director.tick(dt, { isActive: (region) => awake(world, region, here) })) {
+    const region = world.regions.get(request.region);
+    const point = request.point ?? (region === undefined ? null : ([region.center[0], region.center[2]] as const));
+    if (point === null) continue;
+    // A herd never refills in plain view (the very first fill aside): wait until the survivor has wandered off.
+    const near = world.populated && here !== null && Math.hypot(here[0] - point[0], here[2] - point[1]) < 60;
+    if (near || spawnCreature(ctx, request.species, point, { region: request.region }) === null) world.director.notifyRemoved(request.region, request.species);
+  }
+  world.populated = true;
 }
 
 /** Wild creatures nobody has touched leave when their zone falls asleep; the zone refills when it wakes. */
@@ -565,16 +592,9 @@ export function tickCreatures(ctx: GameContext, dt: number): CreatureEvent[] {
   }
 
   const here = owner?.position ?? null;
-  sleepFarHerds(ctx, world, here);
-  for (const request of world.director.tick(dt, { isActive: (region) => awake(world, region, here) })) {
-    const region = world.regions.get(request.region);
-    const point = request.point ?? (region === undefined ? null : ([region.center[0], region.center[2]] as const));
-    if (point === null) continue;
-    // A herd never refills in plain view (the very first fill aside): wait until the survivor has wandered off.
-    const near = world.populated && here !== null && Math.hypot(here[0] - point[0], here[2] - point[1]) < 60;
-    if (near || spawnCreature(ctx, request.species, point, { region: request.region }) === null) world.director.notifyRemoved(request.region, request.species);
-  }
-  world.populated = true;
+  world.sinceHerdCheck += dt;
+  const moved = here !== null && (world.herdCheckedAt === null || Math.hypot(here[0] - world.herdCheckedAt[0], here[2] - world.herdCheckedAt[2]) > HERD_CHECK_MOVE);
+  if (!world.populated || moved || world.sinceHerdCheck >= HERD_CHECK) tickHerds(ctx, world, here);
 
   world.carcasses.tick(dt);
   const me = ctx.scene.entity.get(actor(ctx));

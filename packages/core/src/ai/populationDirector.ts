@@ -52,7 +52,7 @@ export interface PopulationTickContext {
   /**
    * Whether a region is awake this tick — for a big world, the regions near a player. A sleeping
    * region keeps its due refill slots queued and spawns nothing until it wakes. Omitted, every region
-   * is awake.
+   * is awake. Asked at most once per region per tick, however many slots that region has queued.
    */
   isActive?(region: string): boolean;
 }
@@ -238,8 +238,22 @@ export function createPopulationDirector(config: PopulationDirectorConfig): Popu
       const now = state.elapsed;
       const requests: PopulationSpawnRequest[] = [];
       const remaining: PopulationRespawnSlot[] = [];
-      for (const slot of state.queue) {
-        if (requests.length >= maxSpawnsPerTick || slot.readyAt > now || ctx?.isActive?.(slot.region) === false) {
+      const awake = new Map<string, boolean>();
+      const isAwake = (region: string): boolean => {
+        if (ctx?.isActive === undefined) return true;
+        let known = awake.get(region);
+        if (known === undefined) awake.set(region, (known = ctx.isActive(region)));
+        return known;
+      };
+      const queue = state.queue;
+      const due = (slot: PopulationRespawnSlot): boolean => slot.readyAt <= now && isAwake(slot.region);
+      // Most ticks nothing is due: leave the queue as it is rather than copying every sleeping slot.
+      const first = queue.findIndex(due);
+      if (first < 0) return requests;
+      for (let index = 0; index < first; index += 1) remaining.push(queue[index]!);
+      for (let index = first; index < queue.length; index += 1) {
+        const slot = queue[index]!;
+        if (requests.length >= maxSpawnsPerTick || !due(slot)) {
           remaining.push(slot);
           continue;
         }

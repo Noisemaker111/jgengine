@@ -11,6 +11,8 @@ import { itemTraits } from "./data/items";
 import { openScreen } from "./screens";
 import { editorLayers } from "../editorLayers";
 import { markersOfKind } from "@jgengine/core/world/authoredSpawn";
+import { speciesDef } from "./data/species";
+import { entityModels } from "./models";
 
 function islandRunner(): HeadlessRunner {
   const definition = defineGameDefinition({
@@ -39,6 +41,15 @@ const farthest = (runner: HeadlessRunner) => {
   const me = runner.ctx.scene.entity.get(runner.userId)!.position;
   return Math.max(...runner.ctx.scene.entity.list().filter((entity) => entity.id !== runner.userId).map((entity) => Math.hypot(entity.position[0] - me[0], entity.position[2] - me[2])));
 };
+
+test("every species any spawn zone lists has stats and a body, so no zone stays empty", () => {
+  const listed = new Set(
+    markersOfKind(editorLayers, "creature_spawn").flatMap((marker) => ((marker.meta ?? {}) as { species?: readonly { species: string }[] }).species ?? []).map((entry) => entry.species),
+  );
+  expect(listed.size).toBeGreaterThan(40);
+  const missing = [...listed].filter((species) => speciesDef(species) === null || entityModels[species] === undefined);
+  expect(missing).toEqual([]);
+});
 
 test("only the herds near the survivor are awake, and they follow the survivor across the island", () => {
   const runner = islandRunner();

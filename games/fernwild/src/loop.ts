@@ -111,8 +111,8 @@ interface Cheat {
   /** Spend stat points: stat id → points. */
   spend?: Record<string, number>;
   tamingSpeed?: number;
-  /** Spawn a creature this many metres in front of the survivor. */
-  summon?: { species: string; level?: number; distance?: number };
+  /** Spawn a creature this many metres in front of the survivor, and `side` metres to their right. */
+  summon?: { species: string; level?: number; distance?: number; side?: number };
   /** Tame the wild creature in front at once. */
   forceTame?: boolean;
   /** XP for the mount under you, or the tame whose inventory is open. */
@@ -132,7 +132,10 @@ function cheat(ctx: GameContext, input: Cheat): void {
   const me = ctx.scene.entity.get(ctx.player.userId);
   if (input.summon !== undefined && me !== null) {
     const distance = input.summon.distance ?? 4;
-    const at = [me.position[0] + Math.sin(me.rotationY) * distance, me.position[2] + Math.cos(me.rotationY) * distance] as const;
+    const side = input.summon.side ?? 0;
+    const sin = Math.sin(me.rotationY);
+    const cos = Math.cos(me.rotationY);
+    const at = [me.position[0] + sin * distance - cos * side, me.position[2] + cos * distance + sin * side] as const;
     spawnCreature(ctx, input.summon.species, at, input.summon.level === undefined ? {} : { level: input.summon.level });
   }
   if (input.forceTame === true) forceTame(ctx);
