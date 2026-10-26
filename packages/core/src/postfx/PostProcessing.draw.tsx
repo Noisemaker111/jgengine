@@ -1,7 +1,7 @@
 import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
-import { EffectComposer, RenderPass, UnrealBloomPass, type ShaderPass } from "three-stdlib";
+import { EffectComposer, RenderPass, UnrealBloomPass, type Pass, type ShaderPass } from "three-stdlib";
 import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 import { GTAOPass } from "three/examples/jsm/postprocessing/GTAOPass.js";
 import { BokehPass } from "three/examples/jsm/postprocessing/BokehPass.js";
@@ -29,13 +29,14 @@ import {
 } from "@jgengine/core/render/colorPipeline";
 import type { GraphicsQuality } from "@jgengine/core/settings/settingsModel";
 
-import { warmupDraws } from "@jgengine/core/render/shaderWarmup.draw";
+import { linkDrawsOffFrame, sceneRevealed, warmupDraws } from "@jgengine/core/render/shaderWarmup.draw";
 import { ExposureMeterPass } from "./autoExposure.draw";
 import { AtmospherePass } from "./atmospherePass.draw";
 import { ContactShadowPass } from "./contactShadowPass.draw";
 import { createGradePass } from "./gradeShader.draw";
 import { postfxTierPolicy } from "./postfxTierPolicy";
 import { releasePostfxOverlayTracking } from "./postfxOverlay.draw";
+import { RevealFadePass, RevealSnapshotPass, stepRevealFade } from "./revealFade.draw";
 import { StylizePass } from "./stylizePass.draw";
 import { renderShadowlessPrepass } from "./shadowPrepass.draw";
 import { JitteredRenderPass, TemporalAaPass } from "./temporalAaPass.draw";
@@ -174,6 +175,44 @@ interface BuiltGraph {
   stages: readonly PostfxStage[];
   /** The plan's {@link PostfxStagePlan.resolutionScale}, kept so a resize re-applies it. */
   resolutionScale: number;
+  /**
+   * The passes that wait for their programs: every effect between the beauty pass and the grade
+   * except the exposure meter and the OutputPass. A chain is built with them off; see {@link showEffects}.
+   */
+  effects: readonly Pass[];
+  /** The passes that fade the effects in, or null for a chain with no effects. */
+  reveal: { snapshot: RevealSnapshotPass; fade: RevealFadePass } | null;
+}
+
+/**
+ * Turn the chain's effects on or off at once. Off, the chain is the beauty pass, the exposure meter,
+ * the OutputPass and the grade: the picture a game shows while its effect programs link. Temporal AA
+ * starts from a fresh history when it comes back on. @internal
+ */
+export function showEffects(built: BuiltGraph, on: boolean): void {
+  for (const pass of built.effects) {
+    if (on && !pass.enabled && pass instanceof TemporalAaPass) pass.reset();
+    pass.enabled = on;
+  }
+}
+
+/** Turn the effects on and fade them in from the frame without them (see `REVEAL_FADE_SECONDS`). @internal */
+export function startRevealFade(built: BuiltGraph): void {
+  showEffects(built, true);
+  if (built.reveal === null) return;
+  built.reveal.fade.progress = 0;
+  built.reveal.snapshot.enabled = true;
+  built.reveal.fade.enabled = true;
+}
+
+/** Move the fade on by one drawn frame; the fade passes switch off once it is through. @internal */
+export function advanceRevealFade(built: BuiltGraph, delta: number): void {
+  const reveal = built.reveal;
+  if (reveal === null || !reveal.fade.enabled) return;
+  reveal.fade.progress = stepRevealFade(reveal.fade.progress, delta);
+  if (reveal.fade.progress < 1) return;
+  reveal.snapshot.enabled = false;
+  reveal.fade.enabled = false;
 }
 
 /**
@@ -192,19 +231,25 @@ export function disposeGraph(built: BuiltGraph): void {
 }
 
 /**
- * Run the chain once for the shader warmup, which holds every draw it makes: the passes' programs
- * link under the loading cover instead of on the chain's first frame. The exposure meter draws but
+ * Run the chain once with every draw held, for whatever links its programs: the passes that are on,
+ * or with `every` all of them, the effects and their fade included. The exposure meter draws but
  * neither meters nor reads back, and temporal AA forgets the history the run did not really draw,
  * so the first real frame starts where it would have.
  */
-function dryRender(built: BuiltGraph): void {
-  const meters = built.composer.passes.filter((pass): pass is ExposureMeterPass => pass instanceof ExposureMeterPass);
+function dryRender(built: BuiltGraph, every = false): void {
+  const passes = built.composer.passes;
+  const meters = passes.filter((pass): pass is ExposureMeterPass => pass instanceof ExposureMeterPass);
+  const enabled = passes.map((pass) => pass.enabled);
   for (const meter of meters) meter.dry = true;
+  if (every) for (const pass of passes) pass.enabled = true;
   try {
     built.composer.render(0);
   } finally {
+    passes.forEach((pass, index) => {
+      pass.enabled = enabled[index]!;
+    });
     for (const meter of meters) meter.dry = false;
-    for (const pass of built.composer.passes) if (pass instanceof TemporalAaPass) pass.reset();
+    for (const pass of passes) if (pass instanceof TemporalAaPass) pass.reset();
   }
 }
 
@@ -321,6 +366,11 @@ export function buildPostGraph(
   });
   const composer = new EffectComposer(gl, target);
   const built: PostfxStage[] = [];
+  const effects: Pass[] = [];
+  const effect = (pass: Pass): void => {
+    composer.addPass(pass);
+    effects.push(pass);
+  };
   const taa = plan.taa && beautyDepth !== null ? new TemporalAaPass(camera, beautyDepth, width, height) : null;
   composer.addPass(taa === null ? new RenderPass(scene, camera) : new JitteredRenderPass(scene, camera, taa));
 
@@ -335,21 +385,21 @@ export function buildPostGraph(
       scale: plan.ao.intensity ?? 2.4,
       samples: plan.aoSamples,
     });
-    composer.addPass(ao);
+    effect(ao);
     built.push("ao");
   }
 
   if (plan.contactShadows !== null && beautyDepth !== null) {
-    composer.addPass(new ContactShadowPass(scene, camera, beautyDepth, plan.contactShadows, plan.contactShadowSteps));
+    effect(new ContactShadowPass(scene, camera, beautyDepth, plan.contactShadows, plan.contactShadowSteps));
     built.push("contactShadows");
   }
   if (plan.atmosphere !== null && beautyDepth !== null) {
-    composer.addPass(new AtmospherePass(scene, camera, beautyDepth, plan.atmosphere, plan.atmosphereSteps));
+    effect(new AtmospherePass(scene, camera, beautyDepth, plan.atmosphere, plan.atmosphereSteps));
     built.push("atmosphere");
   }
 
   if (plan.bloom !== null) {
-    composer.addPass(
+    effect(
       new UnrealBloomPass(
         new THREE.Vector2(width, height),
         plan.bloom.strength ?? 0.32,
@@ -366,17 +416,17 @@ export function buildPostGraph(
       aperture: plan.dof.aperture ?? 0.00025,
       maxblur: plan.dof.maxBlur ?? 0.01,
     });
-    composer.addPass(dof);
+    effect(dof);
     built.push("dof");
   }
 
   // SMAA must run before OutputPass (linear-sRGB). Default on for post chains.
   if (plan.smaa) {
-    composer.addPass(new SMAAPass());
+    effect(new SMAAPass());
     built.push("smaa");
   }
   if (taa !== null) {
-    composer.addPass(taa);
+    effect(taa);
     built.push("taa");
   }
 
@@ -403,8 +453,16 @@ export function buildPostGraph(
   composer.addPass(new OutputPass());
 
   if (plan.stylize !== null) {
-    composer.addPass(new StylizePass(scene, camera, plan.stylize));
+    effect(new StylizePass(scene, camera, plan.stylize));
     built.push("stylize");
+  }
+
+  let reveal: BuiltGraph["reveal"] = null;
+  if (effects.length > 0) {
+    const fade = new RevealFadePass(width, height);
+    reveal = { snapshot: new RevealSnapshotPass(fade), fade };
+    composer.addPass(fade);
+    composer.insertPass(reveal.snapshot, 1);
   }
 
   let grade: ShaderPass | null = null;
@@ -414,7 +472,13 @@ export function buildPostGraph(
     built.push("grade");
   }
 
-  return { composer, grade, stages: built, resolutionScale: plan.resolutionScale };
+  const graph: BuiltGraph = { composer, grade, stages: built, resolutionScale: plan.resolutionScale, effects, reveal };
+  showEffects(graph, false);
+  if (reveal !== null) {
+    reveal.snapshot.enabled = false;
+    reveal.fade.enabled = false;
+  }
+  return graph;
 }
 
 /**
@@ -429,8 +493,24 @@ export function buildPostGraph(
  * that is off adds no pass at all, so it costs no draw and allocates no target.
  * The tier also sets the composer's resolution scale, so the passes a lower tier
  * keeps still cover fewer pixels.
+ *
+ * The effects wait for the loading cover to lift: under it only the beauty pass, the exposure meter,
+ * the OutputPass and the grade link, so the cover lifts sooner. After it the effect programs link
+ * off the frame, and once they are ready the effects fade in over a third of a second. A rebuilt
+ * chain (a settings change) does the same. `immediate` draws every effect from the first frame,
+ * for a single still such as a poster, which has no cover and no next frame to wait for.
  */
-export function PostProcessing({ config, quality = "high", stages }: { config: PostProcessingConfig; quality?: GraphicsQuality; stages?: { ao: boolean; bloom: boolean; dof: boolean; smaa: boolean } }) {
+export function PostProcessing({
+  config,
+  quality = "high",
+  stages,
+  immediate = false,
+}: {
+  config: PostProcessingConfig;
+  quality?: GraphicsQuality;
+  stages?: { ao: boolean; bloom: boolean; dof: boolean; smaa: boolean };
+  immediate?: boolean;
+}) {
   const gl = useThree((s) => s.gl);
   const scene = useThree((s) => s.scene);
   const camera = useThree((s) => s.camera);
@@ -444,14 +524,29 @@ export function PostProcessing({ config, quality = "high", stages }: { config: P
     const graph = buildPostGraph(gl, scene, camera, planPostStages(config, quality, stages), width, height);
     syncSize(graph, width, height, gl.getPixelRatio());
     builtRef.current = graph;
+    if (immediate) showEffects(graph, true);
     const unwarm = warmupDraws(scene, () => dryRender(graph));
+    let stopped = false;
+    if (!immediate && graph.effects.length > 0) {
+      void (async () => {
+        await sceneRevealed(scene);
+        if (stopped) return;
+        // A link that throws leaves those programs to the effects' first frame, as before this wait.
+        await linkDrawsOffFrame(gl, scene, () => dryRender(graph, true), () => stopped).catch(() => {});
+        if (stopped) return;
+        startRevealFade(graph);
+        // On the performance timeline, so a load trace shows when the effects came in.
+        if (typeof performance.mark === "function") performance.mark("jg:postfx:effects");
+      })();
+    }
     return () => {
+      stopped = true;
       unwarm();
       disposeGraph(graph);
       releasePostfxOverlayTracking(scene);
       builtRef.current = null;
     };
-  }, [gl, scene, camera, config, quality, stages]);
+  }, [gl, scene, camera, config, quality, stages, immediate]);
 
   useEffect(() => {
     const prevTone = gl.toneMapping;
@@ -475,6 +570,7 @@ export function PostProcessing({ config, quality = "high", stages }: { config: P
     if (built === null) return;
     if (built.grade !== null) built.grade.uniforms.uTime.value += delta;
     built.composer.render(delta);
+    advanceRevealFade(built, delta);
   }, 1);
 
   return null;

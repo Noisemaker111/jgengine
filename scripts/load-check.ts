@@ -96,6 +96,12 @@ export interface LoadSample {
   sceneReady: number | null;
   /** The same, after Play was pressed: the player is in the game. */
   playable: number | null;
+  /** The longest gap between drawn frames in the two seconds after the loading cover lifts. */
+  revealWorstFrame: number | null;
+  /** Every gap between drawn frames in those two seconds, in order; the first is the reveal frame's own. */
+  revealFrames?: number[];
+  /** When the post chain's effects came on, in ms after the reveal; null when they did not within those two seconds. */
+  effectsAfterReveal?: number | null;
   longestTaskMs: number;
   /** Sum over main-thread tasks of the time each spent past 50 ms. */
   blockingMs: number;
@@ -117,7 +123,7 @@ export interface LoadSample {
 export const PAGE_PROBE = `(() => {
   if (!location.pathname.startsWith("/play")) return;
   const epoch = () => performance.timeOrigin + performance.now();
-  const s = (window.__jgLoad = { tasks: [], fcpAt: null, menuAt: null, menuBox: null, menuLabel: null, menuStall: 0, sceneReadyAt: null, sceneColors: null, sceneSampled: false, pressAt: null, respondedAt: null, playableAt: null });
+  const s = (window.__jgLoad = { tasks: [], fcpAt: null, menuAt: null, menuBox: null, menuLabel: null, menuStall: 0, sceneReadyAt: null, sceneColors: null, sceneSampled: false, revealAt: null, revealFrames: [], revealDone: false, effectsAfterReveal: null, pressAt: null, respondedAt: null, playableAt: null });
   // The canvas keeps its last frame, so the scene can be read back at scene ready.
   const getContext = HTMLCanvasElement.prototype.getContext;
   HTMLCanvasElement.prototype.getContext = function (type, options) {
@@ -177,12 +183,21 @@ export const PAGE_PROBE = `(() => {
     requestAnimationFrame(() => requestAnimationFrame(() => { s.respondedAt = epoch(); }));
   }, true);
   let last = 0, smooth = 0, runStart = 0, sampleTick = 0;
-  const SAMPLE_MS = 2000;
+  const SAMPLE_MS = 2000, REVEAL_MS = 2000;
   const frame = () => {
     const now = epoch();
     findMenu();
     if (s.menuAt !== null && s.pressAt === null && last !== 0) s.menuStall = Math.max(s.menuStall, now - Math.max(last, s.menuAt));
     const covered = document.querySelector("[data-shell-code-loading]") !== null || document.querySelector("canvas") === null;
+    if (!covered && last !== 0 && s.pressAt === null) {
+      if (s.revealAt === null) s.revealAt = now;
+      if (now - s.revealAt <= REVEAL_MS) s.revealFrames.push(Math.round((now - last) * 10) / 10);
+      else if (!s.revealDone) {
+        s.revealDone = true;
+        const effects = performance.getEntriesByName("jg:postfx:effects")[0];
+        s.effectsAfterReveal = effects === undefined ? null : Math.round(at(effects.startTime) - s.revealAt);
+      }
+    }
     if (covered || last === 0 || now - last >= 50) { smooth = 0; runStart = now; }
     else if (++smooth >= 30) {
       if (s.pressAt === null && s.sceneReadyAt === null) s.sceneReadyAt = runStart;
@@ -211,6 +226,11 @@ interface ProbeState {
   sceneReadyAt: number | null;
   sceneColors: number | null;
   sceneSampled: boolean;
+  revealAt: number | null;
+  revealFrames: number[];
+  revealDone: boolean;
+  /** When the post effects came on (the engine marks it), in ms after the reveal; null when not within the window. */
+  effectsAfterReveal: number | null;
   pressAt: number | null;
   respondedAt: number | null;
   playableAt: number | null;
@@ -228,7 +248,7 @@ function median(values: readonly (number | null)[]): number | null {
 /** The median of each measure over a game's runs, so one slow cold start does not decide. */
 export function summarizeRuns(samples: readonly LoadSample[]): LoadSample {
   const first = samples[0]!;
-  const pick = (key: "firstPaint" | "menuShown" | "worstClick" | "sceneReady" | "playable" | "longestTaskMs" | "blockingMs" | "transferKb") =>
+  const pick = (key: "firstPaint" | "menuShown" | "worstClick" | "sceneReady" | "playable" | "revealWorstFrame" | "longestTaskMs" | "blockingMs" | "transferKb") =>
     median(samples.map((sample) => sample[key]));
   return {
     game: first.game,
@@ -237,6 +257,7 @@ export function summarizeRuns(samples: readonly LoadSample[]): LoadSample {
     worstClick: pick("worstClick"),
     sceneReady: pick("sceneReady"),
     playable: pick("playable"),
+    revealWorstFrame: pick("revealWorstFrame"),
     longestTaskMs: pick("longestTaskMs") ?? 0,
     blockingMs: pick("blockingMs") ?? 0,
     transferKb: pick("transferKb") ?? 0,
@@ -253,12 +274,21 @@ const COLUMNS = [
   ["worst click", "worstClick"],
   ["scene ready", "sceneReady"],
   ["playable", "playable"],
+  ["worst frame after reveal", "revealWorstFrame"],
   ["longest task", "longestTaskMs"],
   ["blocking", "blockingMs"],
   ["KB", "transferKb"],
 ] as const;
 
 const cell = (value: number | null | undefined) => (value === null || value === undefined ? "-" : String(Math.round(value)));
+
+/** Frame gaps in the two seconds after the reveal: how many, the worst, the median and how many missed 30 fps. @internal */
+export function revealSummary(frames: readonly number[] | undefined): string {
+  if (frames === undefined || frames.length === 0) return "no frames";
+  const sorted = [...frames].sort((a, b) => a - b);
+  const slow = frames.filter((gap) => gap > 33.4).length;
+  return `${frames.length} frames, worst ${Math.round(sorted[sorted.length - 1]!)} ms, median ${Math.round(sorted[Math.floor(sorted.length / 2)]!)} ms, ${slow} over 33 ms`;
+}
 
 /** A markdown table, with `before -> after` cells when a previous run is given. */
 export function renderTable(rows: readonly LoadSample[], before: readonly LoadSample[] = []): string {
@@ -400,7 +430,7 @@ async function playFrame(page: Page): Promise<Frame | null> {
 async function measureOnce(base: string, game: string, path: string, args: LoadArgs, shotDir: string): Promise<LoadSample> {
   const started = await startBrowser({ debugPort: pickDebugPort(), prefix: "jg-load-", headed: !args.headless });
   const browser = await chromium.connectOverCDP(`http://127.0.0.1:${started.debugPort}`);
-  const sample: LoadSample = { game, firstPaint: null, menuShown: null, worstClick: null, sceneReady: null, playable: null, longestTaskMs: 0, blockingMs: 0, transferKb: 0, menuLabel: null };
+  const sample: LoadSample = { game, firstPaint: null, menuShown: null, worstClick: null, sceneReady: null, playable: null, revealWorstFrame: null, longestTaskMs: 0, blockingMs: 0, transferKb: 0, menuLabel: null };
   try {
     const context = browser.contexts()[0]!;
     await context.addInitScript({ content: PAGE_PROBE });
@@ -432,8 +462,9 @@ async function measureOnce(base: string, game: string, path: string, args: LoadA
     while (Date.now() < deadline) {
       const frame = await playFrame(page);
       state = frame === null ? null : await frame.evaluate(() => (window as unknown as { __jgLoad?: ProbeState }).__jgLoad ?? null).catch(() => null);
-      // Play is pressed once the scene behind the menu has settled, or after a long wait.
-      const settled = state !== null && (state.sceneReadyAt !== null || (state.menuAt !== null && Date.now() - state.menuAt > PRESS_AFTER_MENU_MS));
+      // Play is pressed once the scene behind the menu has settled and the two seconds after the
+      // reveal are timed (the press would load the level into them), or after a long wait.
+      const settled = state !== null && ((state.sceneReadyAt !== null && state.revealDone) || (state.menuAt !== null && Date.now() - state.menuAt > PRESS_AFTER_MENU_MS));
       if (state !== null && state.menuBox !== null && !pressed && settled) {
         const box = frame === page.mainFrame() ? { x: 0, y: 0 } : await (await frame!.frameElement()).boundingBox();
         if (box !== null) {
@@ -458,6 +489,9 @@ async function measureOnce(base: string, game: string, path: string, args: LoadA
       sample.sceneReady = rel(state.sceneReadyAt);
       sample.sceneColors = state.sceneColors;
       sample.playable = rel(state.playableAt);
+      sample.revealFrames = state.revealFrames;
+      sample.effectsAfterReveal = state.effectsAfterReveal;
+      sample.revealWorstFrame = state.revealFrames.length === 0 ? null : Math.max(...state.revealFrames);
       sample.menuLabel = state.menuLabel;
     }
     sample.gpu = (await page
@@ -515,7 +549,7 @@ async function main(): Promise<number> {
   const allSamples: LoadSample[] = [];
   const failures: string[] = [];
   const log = (game: string, run: number, sample: LoadSample) =>
-    console.error(`load: ${game} run ${run}: paint ${cell(sample.firstPaint)} menu ${cell(sample.menuShown)} worst click ${cell(sample.worstClick)} scene ${cell(sample.sceneReady)} playable ${cell(sample.playable)} ms, ${sample.sceneColors ?? "-"} colours, ${sample.glErrors ?? 0} GL errors${sample.error === undefined ? "" : ` (${sample.error})`}`);
+    console.error(`load: ${game} run ${run}: paint ${cell(sample.firstPaint)} menu ${cell(sample.menuShown)} worst click ${cell(sample.worstClick)} scene ${cell(sample.sceneReady)} playable ${cell(sample.playable)} ms, after reveal ${revealSummary(sample.revealFrames)}, effects on ${sample.effectsAfterReveal == null ? "-" : `+${sample.effectsAfterReveal}`} ms, ${sample.sceneColors ?? "-"} colours, ${sample.glErrors ?? 0} GL errors${sample.error === undefined ? "" : ` (${sample.error})`}`);
   try {
     for (const game of args.games) {
       const samples: LoadSample[] = [];

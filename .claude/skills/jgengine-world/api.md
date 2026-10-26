@@ -2786,7 +2786,7 @@
 
 ## @jgengine/core/postfx/PostProcessing.draw
 
-- `PostProcessing` (function): function PostProcessing({ config, quality = "high", stages }: { config: PostProcessingConfig; quality?: GraphicsQuality; stages?: { ao: boolean; bloom: boolean; dof: boolean; smaa: boolean } }): null — Mounts an `EffectComposer` inside the shell Canvas and takes over rendering (priority-1 `useFrame`, which disables R3F auto-render) to run the configured post chain: RenderPass → GTAO → UnrealBloom → SMAA → exposure meter → OutputPass → Stylize → Grade. Rendered only when `PlayableGame.postProcessing` is set, so games without it draw unchanged.
+- `PostProcessing` (function): function PostProcessing({ config, quality = "high", stages, immediate = false, }: { config: PostProcessingConfig; quality?: GraphicsQuality; stages?: { ao: boolean; bloom: boolean; dof: boolean; smaa: boolean }; immediate?: boolean; }): null — Mounts an `EffectComposer` inside the shell Canvas and takes over rendering (priority-1 `useFrame`, which disables R3F auto-render) to run the configured post chain: RenderPass → GTAO → UnrealBloom → SMAA → exposure meter → OutputPass → Stylize → Grade. Rendered only when `PlayableGame.postProcessing` is set, so games without it draw unchanged.
 
 ## @jgengine/core/postfx/ScreenEffectsOverlay.draw
 

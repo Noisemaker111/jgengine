@@ -847,7 +847,7 @@ export function Shell3dPresentation({
                     <SplitScreenRenderer ctx={ctx} viewports={seatViewports} config={playable.viewports} mainCamera={playable.camera} />
                   ) : null}
                   {!splitScreen && resolvedLook.postProcessing !== undefined && resolvedLook.postProcessing.enabled !== false ? (
-                    <PostProcessing config={resolvedLook.postProcessing} quality={graphics.quality} stages={graphics.profile.postStages} />
+                    <PostProcessing config={resolvedLook.postProcessing} quality={graphics.quality} stages={graphics.profile.postStages} immediate={poster} />
                   ) : null}
                   {poster ? null : (
                     <SceneWarmupGate
