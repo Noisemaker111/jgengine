@@ -55,21 +55,18 @@ export const MOBILE_UA =
   "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1";
 
 /**
- * Half-res mid-loop judge shots run ~1/4 the pixels of a full-res shot
- * (both dimensions halved) — cheaper to encode and cheaper for a vision
- * model to read back. Full-res stays the default for final/PR evidence.
+ * Half-res mid-loop judge shots run ~1/4 the pixels of a full-res shot — cheaper to encode and
+ * cheaper for a vision model to read back. The page keeps its full CSS viewport and only the device
+ * pixel ratio halves, so the game lays out exactly as at full size: a smaller viewport would switch
+ * the HUD into its compact layout and judge a screen the player never sees at that size.
+ * Full-res stays the default for final/PR evidence.
  */
 export function scaleProfile(profile: DeviceProfile, size: SizeMode): DeviceProfile {
   if (size === "full") return profile;
-  return {
-    width: Math.round(profile.width / 2),
-    height: Math.round(profile.height / 2),
-    deviceScaleFactor: profile.deviceScaleFactor,
-    mobile: profile.mobile,
-  };
+  return { ...profile, deviceScaleFactor: profile.deviceScaleFactor / 2 };
 }
 
-/** Viewport overrides (`--width`/`--height`) in CSS pixels, applied before `--size half` halves them. */
+/** Viewport overrides (`--width`/`--height`) in CSS pixels, kept as-is by `--size half`, which halves only the pixel ratio. */
 export interface ViewportOverride {
   width?: number;
   height?: number;

@@ -67,7 +67,7 @@ export const CAPTURE_FLAGS: readonly CaptureFlag[] = [
   { flag: "--device", tools: ["shoot", "drive"], value: "required", arg: "<desktop|mobile|mobile-landscape>", help: "viewport/touch/UA profile (shoot also takes both)" },
   { flag: "--width", tools: ["shoot", "drive"], value: "required", arg: "<px>", help: "viewport width override in CSS pixels" },
   { flag: "--height", tools: ["shoot", "drive"], value: "required", arg: "<px>", help: "viewport height override in CSS pixels" },
-  { flag: "--size", tools: ["shoot", "drive"], value: "required", arg: "<full|half>", help: "half halves both dimensions for cheap judge shots; full for final/PR shots" },
+  { flag: "--size", tools: ["shoot", "drive"], value: "required", arg: "<full|half>", help: "half keeps the layout and halves the pixel ratio (a quarter of the pixels) for cheap judge shots; full for final/PR shots" },
   { flag: "--quality", tools: ["shoot", "drive"], value: "required", arg: "<low|medium|high|ultra>", engineOnly: RUNNER + " (the tier is pinned on the page URL the runner opens)", help: "graphics tier the game renders at; the run fails if the page reports a different tier" },
   { flag: "--draft", tools: ["shoot", "drive"], value: "none", engineOnly: RUNNER + " (the iteration preset)", help: "fast iteration run: low tier and half size, -draft file names; drop --quality" },
   { flag: "--settle", tools: ["shoot", "drive"], value: "required", arg: "<ms>", help: "extra wait after the page reports an honest frame" },

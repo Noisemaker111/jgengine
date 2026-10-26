@@ -264,8 +264,14 @@ export function locate(
     list.push(scored);
     byLayer.set(file.layer, list);
   }
+  // Once a folder or file is named for the query, the query names a feature: every layer answers by
+  // the names of its folders and files, so an export that only mentions the word (`MAX_OCEAN_WAVES`
+  // for "waves") is neither a home nor a stray piece of it.
+  const named = [...byLayer.values()].some((scored) => scored.some((row) => row.pathHit));
   const homes: LayerHome[] = [];
-  for (const [layer, scored] of byLayer) {
+  for (const [layer, all] of byLayer) {
+    const scored = named ? all.filter((row) => row.pathHit) : all;
+    if (scored.length === 0) continue;
     // A doc comment that mentions the words is not a home; a layer needs a named file or export.
     if (!scored.some((row) => row.score >= 10)) continue;
     const dirScore = new Map<string, number>();
