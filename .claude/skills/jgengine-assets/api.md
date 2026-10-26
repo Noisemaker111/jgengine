@@ -470,6 +470,12 @@
 - `verifyData` (function): function verifyData(input: VerifyInput): VerifyResult — ⚠ undocumented
 - `verifyManifest` (function): function verifyManifest(): VerifyResult — ⚠ undocumented
 
+## @jgengine/core/creatureBody/autoRig
+
+- `AutoRigOptions` (interface): interface AutoRigOptions — What {@link autoRig} needs to know about a model; every share is of the model's own size.
+- `RigShape` (type): type RigShape = "quadruped" | "biped" | "flyer" | "bug" | "serpent" — How a static animal model is put together, which decides the bones {@link autoRig} gives it: - `quadruped`: four legs, a head in front and an optional tail behind. - `biped`: two legs under a level body (theropods, big birds, apes), tail optional. - `flyer`: a bird or pterosaur with spread wings and a pair of legs. - `bug`: legs splayed out sideways in pairs (spiders, scorpions, ants). - `serpent`: no legs, one long swaying body (snakes, leeches).
+- `autoRig` (function): function autoRig(source: ReadModel, options: AutoRigOptions): GlbModel — Give a static animal model a skeleton and the five gait clips: legs found under the belly and swung in a diagonal (or alternating) stride, a neck that nods and bites, a tail or serpent body that sways, wings that flap, and a trunk that bobs and falls over on death. The mesh is skinned with soft weights across each joint, so nothing tears at the hips or neck. The model is turned to face +Z, stood on y = 0 and centred; materials, textures and vertex colours carry over untouched.
+
 ## @jgengine/core/creatureBody/bodyPlan
 
 - `BodyFeatures` (interface): interface BodyFeatures — What sets a species apart. Every length is metres.
@@ -477,13 +483,29 @@
 - `bodyGlbModel` (function): function bodyGlbModel(plan: BodyPlan): GlbModel — Build a plan's node tree and its clips.
 - `bodyModel` (function): function bodyModel(plan: BodyPlan, targetHeight: number): ModelConfig — A body plan as a drawable, animated model: an embedded GLB (a `data:` URL) the engine loads, scales to `targetHeight` and animates (idle, walk, run, attack, death) like an imported creature. The GLB is built the first time its `url` is read, so a bestiary of bodies costs nothing until a species is actually drawn.
 
+## @jgengine/core/creatureBody/gait
+
+- `GaitLimb` (interface): interface GaitLimb — A leg, arm or splayed bug leg that swings through a stride.
+- `GaitRig` (interface): interface GaitRig — The moving parts of a creature rig, by node index, that {@link gaitClips} animates.
+- `gaitClips` (function): function gaitClips(rig: GaitRig): GlbClip[] — The five clips the engine's clip roles read (Idle, Walk, Run, Attack, Death) for a rig of swinging limbs, a bobbing trunk, a swaying tail, flapping wings and a nodding head. Shared by generated bodies and rigged static models, so both move the same way.
+
+## @jgengine/core/creatureBody/glbRead
+
+- `ReadImage` (interface): interface ReadImage — An image embedded in the source file, carried through untouched.
+- `ReadMaterial` (interface): interface ReadMaterial — A small binary glTF reader for static models: every triangle mesh in the default scene, baked into model space with its normals, texture coordinates, vertex colours and material. The inverse of `glbWrite`, enough to take a downloaded static animal apart and rig it ({@link autoRig}).
+- `ReadModel` (interface): interface ReadModel — Everything a static model holds.
+- `ReadPrimitive` (interface): interface ReadPrimitive — One triangle mesh in model space.
+- `readGlbModel` (function): function readGlbModel(bytes: Uint8Array): ReadModel — Read a binary glTF into model-space triangle meshes.
+
 ## @jgengine/core/creatureBody/glbWrite
 
 - `GlbClip` (interface): interface GlbClip — A named animation clip.
+- `GlbImage` (interface): interface GlbImage — An image embedded as-is (PNG or JPEG bytes).
 - `GlbMaterial` (interface): interface GlbMaterial — A flat-shaded material: base colour (sRGB hex), roughness and optional emissive glow.
 - `GlbModel` (interface): interface GlbModel — Everything a generated model holds.
 - `GlbNode` (interface): interface GlbNode — A node of the model tree: its parent, rest transform and optional mesh parts.
-- `GlbPrimitive` (interface): interface GlbPrimitive — A small glTF 2.0 binary writer for generated models: meshes of indexed triangles with smooth normals, a node tree, flat-colour materials and node animations (rotation and translation keyframes). Enough for a procedural body that the engine's normal model pipeline loads, measures and animates like any imported GLB.
+- `GlbPrimitive` (interface): interface GlbPrimitive — A small glTF 2.0 binary writer for generated models: meshes of indexed triangles with smooth normals (optionally textured, vertex-coloured and skinned), a node tree, materials and node animations (rotation and translation keyframes). Enough for a procedural body or a rigged static model that the engine's normal model pipeline loads, measures and animates like any imported GLB.
+- `GlbSkin` (interface): interface GlbSkin — A skeleton: its joint nodes and each joint's inverse bind matrix (column-major, 16 numbers).
 - `GlbTrack` (interface): interface GlbTrack — One animated property of one node: keyframe times in seconds and a value per key.
 - `encodeGlb` (function): function encodeGlb(model: GlbModel): Uint8Array — Encode a model as GLB bytes. Deterministic: the same model always gives the same bytes.
 - `glbDataUrl` (function): function glbDataUrl(bytes: Uint8Array): string — Bytes as a `data:` URL any model loader fetches like a file.

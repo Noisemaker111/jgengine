@@ -1,16 +1,22 @@
 /**
  * A small glTF 2.0 binary writer for generated models: meshes of indexed triangles with smooth
- * normals, a node tree, flat-colour materials and node animations (rotation and translation
- * keyframes). Enough for a procedural body that the engine's normal model pipeline loads, measures
- * and animates like any imported GLB.
+ * normals (optionally textured, vertex-coloured and skinned), a node tree, materials and node
+ * animations (rotation and translation keyframes). Enough for a procedural body or a rigged static
+ * model that the engine's normal model pipeline loads, measures and animates like any imported GLB.
  */
 
 /** One triangle mesh part in its node's local space, drawn with one material. */
 export interface GlbPrimitive {
-  positions: number[];
-  normals: number[];
-  indices: number[];
+  positions: ArrayLike<number>;
+  normals: ArrayLike<number>;
+  indices: ArrayLike<number>;
   material: number;
+  /** Texture coordinates, two per vertex. */
+  uvs?: ArrayLike<number>;
+  /** Linear RGBA vertex colours, four per vertex. */
+  colors?: ArrayLike<number>;
+  /** Four joint slots per vertex (indices into the node's skin joints) and their weights. */
+  skin?: { joints: ArrayLike<number>; weights: ArrayLike<number> };
 }
 
 /** A node of the model tree: its parent, rest transform and optional mesh parts. */
@@ -21,6 +27,8 @@ export interface GlbNode {
   translation: readonly [number, number, number];
   rotation?: readonly [number, number, number, number];
   primitives: GlbPrimitive[];
+  /** Index into {@link GlbModel.skins} that deforms this node's mesh. */
+  skin?: number;
 }
 
 /** A flat-shaded material: base colour (sRGB hex), roughness and optional emissive glow. */
@@ -28,7 +36,23 @@ export interface GlbMaterial {
   name: string;
   color: string;
   roughness?: number;
+  metalness?: number;
   emissive?: string;
+  doubleSided?: boolean;
+  /** Index into {@link GlbModel.images} used as the base colour texture. */
+  image?: number;
+}
+
+/** A skeleton: its joint nodes and each joint's inverse bind matrix (column-major, 16 numbers). */
+export interface GlbSkin {
+  joints: number[];
+  inverseBindMatrices: (readonly number[])[];
+}
+
+/** An image embedded as-is (PNG or JPEG bytes). */
+export interface GlbImage {
+  mimeType: string;
+  bytes: Uint8Array;
 }
 
 /** One animated property of one node: keyframe times in seconds and a value per key. */
@@ -50,8 +74,11 @@ export interface GlbModel {
   nodes: GlbNode[];
   materials: GlbMaterial[];
   clips: GlbClip[];
+  skins?: GlbSkin[];
+  images?: GlbImage[];
 }
 
+const WIDTH = { SCALAR: 1, VEC2: 2, VEC3: 3, VEC4: 4, MAT4: 16 } as const;
 const FLOAT = 5126;
 const USHORT = 5123;
 const UINT = 5125;
@@ -90,9 +117,9 @@ export function encodeGlb(model: GlbModel): Uint8Array {
     return bufferViews.length - 1;
   };
 
-  const floatAccessor = (values: readonly number[], type: "SCALAR" | "VEC3" | "VEC4", target?: number, bounds = false): number => {
-    const width = type === "SCALAR" ? 1 : type === "VEC3" ? 3 : 4;
-    const data = new Float32Array(values);
+  const floatAccessor = (values: ArrayLike<number>, type: "SCALAR" | "VEC2" | "VEC3" | "VEC4" | "MAT4", target?: number, bounds = false): number => {
+    const width = WIDTH[type];
+    const data = Float32Array.from(values);
     const view = addView(new Uint8Array(data.buffer), target);
     const accessor: Record<string, unknown> = { bufferView: view, componentType: FLOAT, count: values.length / width, type };
     if (bounds) {
@@ -111,11 +138,18 @@ export function encodeGlb(model: GlbModel): Uint8Array {
     return accessors.length - 1;
   };
 
-  const indexAccessor = (indices: readonly number[], vertexCount: number): number => {
+  const indexAccessor = (indices: ArrayLike<number>, vertexCount: number): number => {
     const wide = vertexCount > 65535;
-    const data = wide ? new Uint32Array(indices) : new Uint16Array(indices);
+    const data = wide ? Uint32Array.from(indices) : Uint16Array.from(indices);
     const view = addView(new Uint8Array(data.buffer, 0, data.byteLength), ELEMENT_ARRAY_BUFFER);
     accessors.push({ bufferView: view, componentType: wide ? UINT : USHORT, count: indices.length, type: "SCALAR" });
+    return accessors.length - 1;
+  };
+
+  const jointAccessor = (joints: ArrayLike<number>): number => {
+    const data = Uint16Array.from(joints);
+    const view = addView(new Uint8Array(data.buffer, 0, data.byteLength), ARRAY_BUFFER);
+    accessors.push({ bufferView: view, componentType: USHORT, count: data.length / 4, type: "VEC4" });
     return accessors.length - 1;
   };
 
@@ -131,6 +165,9 @@ export function encodeGlb(model: GlbModel): Uint8Array {
           attributes: {
             POSITION: floatAccessor(part.positions, "VEC3", ARRAY_BUFFER, true),
             NORMAL: floatAccessor(part.normals, "VEC3", ARRAY_BUFFER),
+            ...(part.uvs === undefined ? {} : { TEXCOORD_0: floatAccessor(part.uvs, "VEC2", ARRAY_BUFFER) }),
+            ...(part.colors === undefined ? {} : { COLOR_0: floatAccessor(part.colors, "VEC4", ARRAY_BUFFER) }),
+            ...(part.skin === undefined ? {} : { JOINTS_0: jointAccessor(part.skin.joints), WEIGHTS_0: floatAccessor(part.skin.weights, "VEC4", ARRAY_BUFFER) }),
           },
           indices: indexAccessor(part.indices, part.positions.length / 3),
           material: part.material,
@@ -138,6 +175,7 @@ export function encodeGlb(model: GlbModel): Uint8Array {
       });
       out.mesh = meshes.length - 1;
     }
+    if (node.skin !== undefined) out.skin = node.skin;
     return out;
   });
   model.nodes.forEach((node, index) => {
@@ -158,6 +196,9 @@ export function encodeGlb(model: GlbModel): Uint8Array {
     return { name: clip.name, samplers, channels };
   });
 
+  const skins = (model.skins ?? []).map((skin) => ({ joints: skin.joints, inverseBindMatrices: floatAccessor(skin.inverseBindMatrices.flat(), "MAT4") }));
+  const images = (model.images ?? []).map((image) => ({ bufferView: addView(image.bytes), mimeType: image.mimeType }));
+
   const json = {
     asset: { version: "2.0", generator: "jgengine creatureBody" },
     scene: 0,
@@ -166,9 +207,17 @@ export function encodeGlb(model: GlbModel): Uint8Array {
     meshes,
     materials: model.materials.map((material) => ({
       name: material.name,
-      pbrMetallicRoughness: { baseColorFactor: [...hexToLinear(material.color), 1], metallicFactor: 0, roughnessFactor: material.roughness ?? 0.85 },
+      pbrMetallicRoughness: {
+        baseColorFactor: [...hexToLinear(material.color), 1],
+        metallicFactor: material.metalness ?? 0,
+        roughnessFactor: material.roughness ?? 0.85,
+        ...(material.image === undefined ? {} : { baseColorTexture: { index: material.image } }),
+      },
       ...(material.emissive === undefined ? {} : { emissiveFactor: hexToLinear(material.emissive) }),
+      ...(material.doubleSided === true ? { doubleSided: true } : {}),
     })),
+    ...(skins.length === 0 ? {} : { skins }),
+    ...(images.length === 0 ? {} : { images, textures: images.map((_, source) => ({ source, sampler: 0 })), samplers: [{ magFilter: 9729, minFilter: 9987, wrapS: 10497, wrapT: 10497 }] }),
     animations,
     accessors,
     bufferViews,

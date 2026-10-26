@@ -1,3 +1,17 @@
+import { CREATURE_MODEL_SOURCES, type CreatureModelSource } from "./data/creatureModels";
+
+/** One credit line per author and licence of the creature models, naming each model. */
+function creatureCredits(): string[] {
+  const byAuthor = new Map<string, string[]>();
+  for (const source of Object.values(CREATURE_MODEL_SOURCES) as CreatureModelSource[]) {
+    const key = `${source.author}, ${source.license}`;
+    const titles = byAuthor.get(key) ?? [];
+    if (!titles.includes(source.title)) titles.push(source.title);
+    byAuthor.set(key, titles);
+  }
+  return [...byAuthor].map(([key, titles]) => `Creature models (${titles.join(", ")}): ${key} via poly.pizza.`);
+}
+
 /** Keys, as the Controls pane lists them; the bindings live in `game.config.ts`. ARK's PC layout. */
 export const CONTROLS: readonly (readonly [string, string])[] = [
   ["W A S D", "Move"],
@@ -25,6 +39,6 @@ export const CREDITS: readonly string[] = [
   "Fernwild — made with JGengine.",
   "A love letter to ARK: Survival Evolved's systems. Not affiliated with Studio Wildcard.",
   "Nature models: Quaternius (Stylized Nature MegaKit), CC0.",
-  "Raptor and boar models: Quaternius, CC0. Duck model: Microsoft Rocketbox, MIT.",
+  ...creatureCredits(),
   "Survivor model: JGengine starter pack.",
 ];

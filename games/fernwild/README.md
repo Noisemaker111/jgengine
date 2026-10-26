@@ -62,13 +62,17 @@ are drawn.
     HUD layout and inventory flow. Not affiliated with Studio Wildcard; no ARK art, audio or text.
   - *The Forest* - feel: punching and chopping a dense tree line by hand.
 - **Gap to target.** The coastline is fitted to about 230 known wiki map points, so bays and capes are
-  close to ARK's but not exact; caves are marked but not dug. Only dodos, phiomias and raptors have
-  bodies, so a spawn zone fills only their share of ARK's weights and zones with none of them stay
-  empty. Building has no metal tier, foundations snap edge to edge but not to cliffs, and storage boxes cannot be placed yet; no weather yet;
-  the dodo is a duck and the phiomia a boar until dinosaur models are approved; no bolas,
-  slingshot shots or tranq arrows yet, so a raptor is clubbed (or punched) at close range; a tame's inventory holds slots, not weight;
-  drain and regen rates where ARK publishes none are approximate; trees are stylized stand-ins, not
-  palms.
+  close to ARK's but not exact. Every species has a free model (CC0 or CC-BY), but where no free
+  model of the animal exists its nearest relative stands in at the species' size and colour: the dodo
+  is a dove, the phiomia an elephant, pteranodon an eagle, argentavis a vulture, ankylosaurus and
+  doedicurus armadillos, dimetrodon and megalania salamanders, allosaurus and baryonyx a generic
+  tyrannosaur, carnotaurus and yutyrannus the T-Rex, dilophosaur, troodon and compy the raptor,
+  pachy and iguanodon the parasaur, chalicotherium a ground sloth, paraceratherium a rhino,
+  gigantopithecus a yeti, and so on (`src/game/data/creatureModels.ts` lists every one). Building has
+  no metal tier, foundations snap edge to edge but not to cliffs, and storage boxes cannot be placed
+  yet; no weather yet; no bolas, slingshot shots or tranq arrows yet, so a raptor is clubbed (or
+  punched) at close range; a tame's inventory holds slots, not weight; drain and regen rates where
+  ARK publishes none are approximate; trees are stylized stand-ins, not palms.
 
 Loop proof: fernwild-loop, fernwild-tame, fernwild-build
 
@@ -88,7 +92,8 @@ speed +1% of its value when tamed. Punches deal ARK's 1.75x their damage as torp
 
 ## Credits
 
-Nature models: Quaternius Stylized Nature MegaKit, CC0 1.0. Raptor and boar: Quaternius animal
-models, CC0 1.0. Duck: Microsoft Rocketbox, MIT. Survivor model: the engine's starter pack. Map
+Nature models: Quaternius Stylized Nature MegaKit, CC0 1.0. Creature models: Quaternius (CC0 1.0),
+Poly by Google and madtrollstudio (CC-BY 3.0), each listed with its page in
+`src/game/data/creatureModels.ts` and in the in-game credits. Survivor model: the engine's starter pack. Map
 layout: The Island's landmark coordinates, heights and spawn regions as published on the ARK
 community wiki (ark.wiki.gg), rebuilt as our own shapes; no ARK map art. See [content provenance](../CONTENT-PROVENANCE.md).
