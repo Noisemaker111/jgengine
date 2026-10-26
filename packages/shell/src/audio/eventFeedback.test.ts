@@ -14,7 +14,7 @@ import {
   type EventFeedback,
   type FeedbackDeps,
 } from "./eventFeedback";
-import { createHapticsRoute } from "./hapticsRoute";
+import { createHapticsRoute } from "../haptics/hapticsRoute";
 
 function harness(overrides: Partial<FeedbackDeps> = {}) {
   let t = 0;

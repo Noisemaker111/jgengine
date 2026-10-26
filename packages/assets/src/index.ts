@@ -82,13 +82,13 @@ export {
   type StarterTheme,
 } from "./packs/starter";
 export {
-  findAssets,
+  describeAssetMatch,
   rankAssets,
   type AssetKind,
   type AssetMatch,
-  type FindOptions,
+  type RankAssetsOptions,
   type RankedMatch,
-} from "./find";
+} from "./rankAssets";
 export { registryCatalog, componentInstallUrl, type RegistryCatalog, type RegistryComponent } from "./registry";
 export {
   modelWiringSnippet,

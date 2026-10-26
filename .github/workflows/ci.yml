@@ -104,6 +104,14 @@ jobs:
           fi
           printf '%s' "$PR_BODY" > "$RUNNER_TEMP/pr-body.txt"
           bun run check:fix-has-test --base "$BASE_SHA" --body-file "$RUNNER_TEMP/pr-body.txt"
+      # One concept, one folder per layer: no second definition of an exported name, no concept file
+      # outside its home folder. Reads only this change's diff.
+      - name: no duplicate export or stray concept file
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if [ "$EVENT" = "pull_request" ]; then bun run check:concept-homes --base "$BASE_SHA"; else bun run check:concept-homes --base HEAD^; fi
       # Needs the `bun run build` above.
       - run: bun run check-export-manifest
 

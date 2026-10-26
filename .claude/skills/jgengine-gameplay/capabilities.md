@@ -486,7 +486,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## notice-feed — serializable tone-tagged notice/event feed bounded by count and age (toasts, life events, killfeed)
 
 - `appendFeed` (function) · `import { appendFeed } from "@jgengine/core/gameplay"`
-- `createNoticeFeed` (function) · `import { createNoticeFeed } from "@jgengine/core/game/notices"`
+- `createNoticeFeed` (function) · `import { createNoticeFeed } from "@jgengine/core/notifications/notices"`
 - `pruneFeed` (function) · `import { pruneFeed } from "@jgengine/core/gameplay"`
 
 ## notification-center — persistent, read-tracked notification log (newest-first, capped, serializable) behind an unread badge — the durable counterpart to transient toasts
@@ -602,7 +602,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## refusal-feedback — surface a refused command's player-facing message in the notice feed automatically
 
-- `attachRefusalNotices` (function) · `import { attachRefusalNotices } from "@jgengine/core/game/notices"`
+- `attachRefusalNotices` (function) · `import { attachRefusalNotices } from "@jgengine/core/notifications/notices"`
 
 ## relationships — familiarity and opinion between agents, with a bond that changes behaviour
 
@@ -766,11 +766,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## time-scaled-loot — shape loot odds by elapsed hours with caller-authored curves and pipeline provenance
 
 - `timeScaledRarity` (function) · `import { timeScaledRarity } from "@jgengine/core/gameplay"`
-
-## toast-feed — queue of transient self-expiring on-screen messages (toasts, announcer, kill-feed)
-
-- `appendToast` (function) · `import { appendToast } from "@jgengine/core/gameplay"`
-- `createToastQueue` (function) · `import { createToastQueue } from "@jgengine/core/gameplay"`
 
 ## touch-controls — switch the on-screen touch control set when gameplay context changes (enter/exit vehicle, mount, build mode)
 

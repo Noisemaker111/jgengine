@@ -10,7 +10,7 @@ import type { ModelShadowMode, ModelVariantLodConfig } from "../world/modelLod";
 export type { ModelShadowMode, ModelVariantConfig, ModelVariantLodConfig } from "../world/modelLod";
 import type { UiCueOverrides } from "../audio/uiCues";
 import type { FeedbackCueOverrides } from "../audio/feedbackCues";
-import type { NoticeFeedConfig } from "./notices";
+import type { NoticeFeedConfig } from "../notifications/notices";
 
 import type { MaterialAsset, MaterialAssignment, MaterialSurfaceParameters, MaterialTextureRole } from "../material/materialAsset";
 import type { EditorCatalogDefinition, EditorDocument } from "../editor/types";
@@ -69,7 +69,7 @@ export type {
   CameraProjection,
   CameraRigKind,
   CameraWeaponView,
-  CameraShakeConfig,
+  CameraRigShakeConfig,
   ChaseCameraConfig,
   ChaseView,
   CinematicCameraConfig,

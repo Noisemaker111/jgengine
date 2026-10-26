@@ -1,7 +1,7 @@
 import type { FeedbackCue } from "@jgengine/core/audio/feedbackCues";
 import { feedbackCueSoundId } from "@jgengine/core/audio/feedbackCues";
 import type { GameEventMap, GameEvents } from "@jgengine/core/game/events";
-import type { HapticPulse } from "@jgengine/core/input/haptics";
+import type { HapticPulse } from "@jgengine/core/haptics/haptics";
 import type { WaveRunner } from "@jgengine/core/ai/waveRunner";
 
 /** One cue's reaction: what plays, what the hand feels, what the screen does, and what a caption says. */

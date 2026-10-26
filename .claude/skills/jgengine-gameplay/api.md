@@ -443,7 +443,7 @@
 - `CameraKeyframe` (interface): interface CameraKeyframe — One stop on a scripted camera path (#29).
 - `CameraProjection` (type): type CameraProjection = "perspective" | "orthographic" — Canvas camera projection. "orthographic" renders a flat 2D-style view (side-scrollers, falling-block puzzles) — pair with `rig: "sideScroll"`; default "perspective".
 - `CameraRigKind` (type): type CameraRigKind = | "orbit" | "first" | "topDown" | "rts" | "shoulder" | "lockOn" | "chase" | "observer" | "turntable" | "sideScroll" | "inspection" | "none" — Which camera rig the shell mounts. Every rig accepts `followEntityId: null` (avatar-less games — city-builders, card games, auto-battlers — still get a camera). Rigs are tuned through their config block below, never by writing camera positions from `onTick`. - `orbit` — third-person chase (the historical default; `perspective: "third"`). - `first` — pointer-lock mouse-look (`perspective: "first"`). - `topDown` — fixed height/pitch/yaw with decoupled follow (ARPG iso, top-down). - `rts` — free-pan / edge-scroll / rotate / zoom, optional follow. - `shoulder` — over-the-shoulder with ADS transition + shoulder swap. - `lockOn` — yaw bound to the player→target vector; move axis becomes strafe. - `chase` — speed-reactive vehicle chase (speed→FOV, spring arm, shake) + cockpit/hood/rear views. - `observer` — detached spectator/photo cam bound to any entity or fixed point; never reads player input. - `turntable` — slow auto-orbit of a fixed point: a rotating display stand for a scene. The friendly, flat spelling of `observer`'s point-orbit mode; providing `camera.turntable` selects it without an explicit `rig`. - `sideScroll` — fixed lateral follow (2.5D platformer/beat-'em-up side view); reads no player input. - `inspection` — model-viewer / editor rig (#207.7, #866): middle-drag pan, right-drag orbit, scroll zoom toward a configurable anchor; orbits a fixed point, reads no player/entity input. - `none` — no camera rig is mounted; use for HUD-only presentations or a game that manages its own camera.
-- `CameraShakeConfig` (interface): interface CameraShakeConfig — Camera-shake / trauma defaults (#28). Any rig reads the trauma channel; game systems feed it via `cameraShake()`.
+- `CameraRigShakeConfig` (interface): interface CameraRigShakeConfig — Camera-shake / trauma defaults (#28). Any rig reads the trauma channel; game systems feed it via `cameraShake()`.
 - `CameraWeaponView` (interface): interface CameraWeaponView — What a camera rig reads about the held weapon each frame; see `GameCameraConfig.weapon`.
 - `ChaseCameraConfig` (interface): interface ChaseCameraConfig — Speed-reactive vehicle chase rig (#27) — speed→FOV, spring arm, procedural shake, interior views.
 - `ChaseView` (type): type ChaseView = "chase" | "cockpit" | "hood" | "rear" — Fixed interior view for the chase rig (#27).
@@ -667,7 +667,7 @@
 
 ## @jgengine/core/game/feed
 
-- `FeedEntry` (interface): interface FeedEntry<T = unknown> { at: number; data: T } — ⚠ undocumented · used by `ToastStack` (@jgengine/react): Render `ctx.game.feed`'s entries for `action` as a newest-first toast stack — the feed-backed sibling of `@jgengine/core/game/toasts`' `crea…
+- `FeedEntry` (interface): interface FeedEntry<T = unknown> { at: number; data: T } — ⚠ undocumented · used by `ToastStack` (@jgengine/react): Render `ctx.game.feed`'s entries for `action` as a newest-first toast stack.
 - `FeedWindow` (interface): interface FeedWindow — Bounds for {@link appendFeed} / {@link pruneFeed}: newest-`limit` cap and/or `ttl` age window.
 - `GameFeed` (interface): interface GameFeed { bind<TName extends keyof GameEventMap>(action: TName, events: GameEvents): () => void; push(action: string, entry: unknown): void; recent(action: string, options?: {limit?: number}): FeedEntry[]; subscribe(action: string, listener: (entry… — ⚠ undocumented · used by `createGameFeed`: A rolling per-action feed of recent gameplay events, bindable to the event bus — the HUD ticker and killfeed history.
 - `GameFeedOptions` (interface): interface GameFeedOptions { limit?: number } — ⚠ undocumented · used by `createGameFeed`: A rolling per-action feed of recent gameplay events, bindable to the event bus — the HUD ticker and killfeed history.
@@ -806,27 +806,6 @@
 - `freezeNarrativeCanon` (function): function freezeNarrativeCanon(canon: NarrativeCanon): NarrativeCanon — Detach and freeze reviewed canon before passing it to an asynchronous authoring callback. Duplicate character/event ids and an empty revision throw; facts retain exact caller values.
 - `validateNarrativeBatch` (function): function validateNarrativeBatch(canon: NarrativeCanon, batch: NarrativeBatch, limits: NarrativeBatchLimits): NarrativeIssue[] — Check a typed candidate against caller budgets, canon revision, explicit claims and graph topology. Stops at the first exceeded budget before topology work; stale revisions also stop immediately. Claims check exact fact values and the declared strict event order, never prose, speaker labels, motivations, branch consequences or story quality. O(canon + bounded nodes + choices + claims). Validate/parse external JSON before calling; this is not an untrusted JSON decoder.
 
-## @jgengine/core/game/notices
-
-- `Notice` (interface): interface Notice — A live notice as the HUD renders it.
-- `NoticeFeed` (interface): interface NoticeFeed — A capped, self-expiring, deduping notice list every game reaches through `ctx.game.notices`.
-- `NoticeFeedConfig` (interface): interface NoticeFeedConfig — Tunables for {@link createNoticeFeed}; all retunable at runtime.
-- `NoticeFeedState` (interface): interface NoticeFeedState — Plain JSON state of a {@link NoticeFeed}.
-- `NoticeInput` (interface): interface NoticeInput — What a caller pushes: plain text, or text with a tone, a dedupe key and a lifetime.
-- `NoticeTone` (type): type NoticeTone = "info" | "success" | "warn" | "deny" — How a notice reads: neutral info, a win, a caution, or a refused action.
-- `RefusalNoticeOptions` (interface): interface RefusalNoticeOptions — Options for {@link attachRefusalNotices}.
-- `attachRefusalNotices` (function): function attachRefusalNotices(events: Pick<GameEvents, "on">, notices: Pick<NoticeFeed, "push">, options: RefusalNoticeOptions = {}): () => void — Show every player-facing command refusal (`validate` returned `{ reason, message }`) as a deny notice. Refusals without a `message` stay silent: `reason` is a machine string. Returns the detach function.
-- `createNoticeFeed` (function): function createNoticeFeed(config: NoticeFeedConfig & { now?: () => number } = {}): NoticeFeed — Player-facing notice feed: info/success/warn/deny messages with stacking dedupe and TTL. Pure state with an injected clock, so it runs headless; the shell renders it and plays a UI cue per push.
-
-## @jgengine/core/game/notifications
-
-- `NotificationCenterOptions` (interface): interface NotificationCenterOptions — Options for {@link createNotificationCenter}.
-- `NotificationEntry` (interface): interface NotificationEntry<TMeta = unknown> — One persistent notification — unlike a transient toast, it stays in the log until dismissed.
-- `NotificationFilter` (interface): interface NotificationFilter — Filter for {@link NotificationStore.list}.
-- `NotificationInput` (interface): interface NotificationInput<TMeta = unknown> — Fields accepted by {@link NotificationStore.push}.
-- `NotificationStore` (interface): interface NotificationStore<TMeta = unknown> — Serializable, observable log of persistent notifications with read tracking.
-- `createNotificationCenter` (function): function createNotificationCenter<TMeta = unknown>(options: NotificationCenterOptions = {}): NotificationStore<TMeta> — A persistent notification log with read/unread tracking — the "notification center" surface toasts don't cover. Newest-first, capped, serializable, and observable; a game pushes durable events (quest updates, trades, party news) here and a HUD renders the list + an unread badge. `snapshot`/`restore` round-trip through a save.
-
 ## @jgengine/core/game/objectives
 
 - `ObjectiveStatus` (interface): interface ObjectiveStatus — Evaluated state of one {@link ThresholdObjective} against a current metric value.
@@ -898,7 +877,7 @@
 - `CameraKeyframe` (interface): interface CameraKeyframe — One stop on a scripted camera path (#29).
 - `CameraProjection` (type): type CameraProjection = "perspective" | "orthographic" — Canvas camera projection. "orthographic" renders a flat 2D-style view (side-scrollers, falling-block puzzles) — pair with `rig: "sideScroll"`; default "perspective".
 - `CameraRigKind` (type): type CameraRigKind = | "orbit" | "first" | "topDown" | "rts" | "shoulder" | "lockOn" | "chase" | "observer" | "turntable" | "sideScroll" | "inspection" | "none" — Which camera rig the shell mounts. Every rig accepts `followEntityId: null` (avatar-less games — city-builders, card games, auto-battlers — still get a camera). Rigs are tuned through their config block below, never by writing camera positions from `onTick`. - `orbit` — third-person chase (the historical default; `perspective: "third"`). - `first` — pointer-lock mouse-look (`perspective: "first"`). - `topDown` — fixed height/pitch/yaw with decoupled follow (ARPG iso, top-down). - `rts` — free-pan / edge-scroll / rotate / zoom, optional follow. - `shoulder` — over-the-shoulder with ADS transition + shoulder swap. - `lockOn` — yaw bound to the player→target vector; move axis becomes strafe. - `chase` — speed-reactive vehicle chase (speed→FOV, spring arm, shake) + cockpit/hood/rear views. - `observer` — detached spectator/photo cam bound to any entity or fixed point; never reads player input. - `turntable` — slow auto-orbit of a fixed point: a rotating display stand for a scene. The friendly, flat spelling of `observer`'s point-orbit mode; providing `camera.turntable` selects it without an explicit `rig`. - `sideScroll` — fixed lateral follow (2.5D platformer/beat-'em-up side view); reads no player input. - `inspection` — model-viewer / editor rig (#207.7, #866): middle-drag pan, right-drag orbit, scroll zoom toward a configurable anchor; orbits a fixed point, reads no player/entity input. - `none` — no camera rig is mounted; use for HUD-only presentations or a game that manages its own camera.
-- `CameraShakeConfig` (interface): interface CameraShakeConfig — Camera-shake / trauma defaults (#28). Any rig reads the trauma channel; game systems feed it via `cameraShake()`.
+- `CameraRigShakeConfig` (interface): interface CameraRigShakeConfig — Camera-shake / trauma defaults (#28). Any rig reads the trauma channel; game systems feed it via `cameraShake()`.
 - `CameraWeaponView` (interface): interface CameraWeaponView — What a camera rig reads about the held weapon each frame; see `GameCameraConfig.weapon`.
 - `ChaseCameraConfig` (interface): interface ChaseCameraConfig — Speed-reactive vehicle chase rig (#27) — speed→FOV, spring arm, procedural shake, interior views.
 - `ChaseView` (type): type ChaseView = "chase" | "cockpit" | "hood" | "rear" — Fixed interior view for the chase rig (#27).
@@ -1170,16 +1149,6 @@
 - `TalentTreeConfig` (interface): interface TalentTreeConfig<TStat extends string = string> { nodes: readonly TalentNodeDef<TStat>[]; points?: number } — ⚠ undocumented
 - `createTalentTree` (function): function createTalentTree<TStat extends string = string>(config: TalentTreeConfig<TStat>): TalentTree<TStat> — ⚠ undocumented
 
-## @jgengine/core/game/toasts
-
-- `Toast` (interface): interface Toast<T = string> — A transient HUD message that expires on its own — banner, pickup note, alert.
-- `ToastQueue` (interface): interface ToastQueue<T = string> — Stateful transient-toast list with a size cap and time-to-live eviction.
-- `ToastQueueOptions` (interface): interface ToastQueueOptions — Options for {@link createToastQueue}.
-- `ToastQueueState` (interface): interface ToastQueueState<T = string> — Plain JSON state of a {@link ToastQueue}: live toasts plus the id counter.
-- `appendToast` (function): function appendToast<T>(toasts: readonly Toast<T>[], toast: Toast<T>, cap: number): readonly Toast<T>[] — Append `toast`, keeping only the newest `cap` entries.
-- `createToastQueue` (function): function createToastQueue<T = string>(options: ToastQueueOptions = {}): ToastQueue<T> — A capped, self-expiring toast queue — the append-with-limit plus TTL-prune list every HUD hand-rolled on top of a plain array. Feed it game time: `push` raises a message, `prune(now)` drops expired ones, `list()` is what the HUD renders. Unlike the append-only event feed, toasts evict themselves.
-- `pruneToasts` (function): function pruneToasts<T>(toasts: readonly Toast<T>[], now: number): readonly Toast<T>[] — Drop every toast whose `expiresAt` is at or before `now`. Returns the same array when nothing expired.
-
 ## @jgengine/core/game/trade
 
 - `TradeField` (interface): interface TradeField { buy?: Record<string, number>; sell?: Record<string, number>; shops?: string[] } — ⚠ undocumented
@@ -1382,7 +1351,7 @@
 - `ExpeditionHazard` (interface): interface ExpeditionHazard — One encounter's mechanical effects and optional caller-authored notices.
 - `ExpeditionState` (interface): interface ExpeditionState — Plain saveable expedition data. Persist this whole value, including the RNG cursor and tick frontier.
 - `ExpeditionSupplyRule` (interface): interface ExpeditionSupplyRule — Ordered auto-consumption rule: spends one finite supply only when its declared effect changes a vital.
-- `FeedEntry` (interface): interface FeedEntry<T = unknown> { at: number; data: T } — ⚠ undocumented · used by `ToastStack` (@jgengine/react): Render `ctx.game.feed`'s entries for `action` as a newest-first toast stack — the feed-backed sibling of `@jgengine/core/game/toasts`' `crea…
+- `FeedEntry` (interface): interface FeedEntry<T = unknown> { at: number; data: T } — ⚠ undocumented · used by `ToastStack` (@jgengine/react): Render `ctx.game.feed`'s entries for `action` as a newest-first toast stack.
 - `FeedWindow` (interface): interface FeedWindow — Bounds for {@link appendFeed} / {@link pruneFeed}: newest-`limit` cap and/or `ttl` age window.
 - `FiringBlock` (type): type FiringBlock = "predicate" | "no-target" | "cooldown" | "rate-limit" | "no-charges" | "stack-ignored" — Reason a firing did not produce an effect — surfaced for debug inspection, never thrown.
 - `FirstPersonCameraConfig` (interface): interface FirstPersonCameraConfig { eyeHeight?: number; sensitivity?: number; maxPitch?: number; reticle?: boolean; viewmodel?: boolean; collision?: false | FirstPersonCollisionConfig } — ⚠ undocumented
@@ -1769,7 +1738,6 @@
 - `TieMode` (type): type TieMode = "standard" | "dense" — How equal scores share ranks: - `"standard"` (competition ranking): ties share a rank and the next distinct score skips ahead — `1, 2, 2, 4`. - `"dense"`: ties share a rank and the next distinct score is the very next integer — `1, 2, 2, 3`.
 - `TimeScaledRarityOptions` (interface): interface TimeScaledRarityOptions — Caller-authored weighting curve; item ids, quality tiers and balance never live in the modifier.
 - `TimedFeedEntry` (interface): interface TimedFeedEntry — Any feed entry carrying a game-time (or wall-clock) `at` stamp for age-based pruning.
-- `Toast` (interface): interface Toast<T = string> — A transient HUD message that expires on its own — banner, pickup note, alert.
 - `TopDownCameraConfig` (interface): interface TopDownCameraConfig — Fixed top-down / isometric rig (#23) — height/pitch/yaw + decoupled follow.
 - `TouchAnchor` (type): type TouchAnchor = | "bottom-left" | "bottom-center" | "bottom-right" | "left" | "right" | "top-left" | "top-center" | "top-right" — Screen zone a touch cluster or button docks to. The four corners plus the mid `left`/`right` rails (vertical stacks, MMO-style hotbars) and the `bottom-center` / `top-center` strips let controls use the whole viewport instead of piling into one bottom bar.
 - `TouchButton` (interface): interface TouchButton { action: string; label: string; icon: string | false | null; main?: boolean; kind: TouchButtonKind; shape: TouchButtonShape; anchor: TouchAnchor | null; image: string | null } — ⚠ undocumented
@@ -1843,7 +1811,6 @@
 - `aimToPoint` (function): function aimToPoint(origin: PointerVec3, point: PointerVec3): Aim — Build an `origin → point` aim for `item.use` / projectiles, firing toward the cursor.
 - `annotate` (function): function annotate(tag: string): ResourcePolicy — Append a provenance tag to a transaction without changing its value.
 - `appendFeed` (function): function appendFeed<T extends TimedFeedEntry>(list: readonly T[], entry: T, options?: FeedWindow): T[] — Append `entry` to a flat, serializable feed list, then bound it by age (`ttl`, relative to the appended entry's `at`) and/or count (`limit`, newest kept). Works on the game's own flat entry shape — anything with an `at` stamp — so `{ id, text, tone, at }`-style notice lists and event logs drop into serialized state with no `{ at, data }` envelope. Returns a new array.
-- `appendToast` (function): function appendToast<T>(toasts: readonly Toast<T>[], toast: Toast<T>, cap: number): readonly Toast<T>[] — Append `toast`, keeping only the newest `cap` entries.
 - `applyBindingOverrides` (function): function applyBindingOverrides<TAction extends string, TCode extends string>(input: ActionCodesMap<TAction, TCode>, overrides: BindingOverrides): ActionCodesMap<TAction, TCode> — Merge player rebinds over a game's authored `input` map. Only actions the game already declares can be overridden; unknown override keys are ignored so a stale localStorage entry can't inject phantom actions.
 - `applyMissionRewards` (function): function applyMissionRewards(rewards: MissionRewards, appliers: MissionRewardAppliers): { reason: string } | null — Apply a mission's rewards through the same appliers quests use, then roll any named loot tables. Economy, XP, items and unlocks go through {@link applyQuestRewards}; loot is a table id the game's loot registry resolves, so a mission never grows its own reward path.
 - `applySetBonuses` (function): function applySetBonuses(stats: Record<string, number>, bonuses: readonly SetBonus[]): Record<string, number> — Fold a set of active bonuses' additive stats onto a stat map, returning a new map (the input is not mutated).
@@ -1944,7 +1911,6 @@
 - `createSpawnPoints` (function): function createSpawnPoints(): SpawnPoints — Register spawn locations and choose where entities spawn or respawn.
 - `createStatGraph` (function): function createStatGraph(def: StatGraphDef): StatGraph — A data-driven stat graph: game-owned named inputs feed caller-authored derived formulas, with contribution provenance, uncommitted previews, cycle detection, and selective recomputation. Formula semantics and numeric tables stay entirely game-defined.
 - `createTalentTree` (function): function createTalentTree<TStat extends string = string>(config: TalentTreeConfig<TStat>): TalentTree<TStat> — ⚠ undocumented
-- `createToastQueue` (function): function createToastQueue<T = string>(options: ToastQueueOptions = {}): ToastQueue<T> — A capped, self-expiring toast queue — the append-with-limit plus TTL-prune list every HUD hand-rolled on top of a plain array. Feed it game time: `push` raises a message, `prune(now)` drops expired ones, `list()` is what the HUD renders. Unlike the append-only event feed, toasts evict themselves.
 - `createTouchGestureTracker` (function): function createTouchGestureTracker(tuning: TouchGestureTuning): TouchGestureTracker — ⚠ undocumented
 - `createTransactionLedger` (function): function createTransactionLedger(options: TransactionLedgerOptions = {}): TransactionLedger — The books a business keeps: per-account, per-currency balances in integer minor units with a journal that records every movement, the balance it produced and the reason it happened. {@link TransactionLedger.post} is the one money path — sales, purchases, upkeep and loan payments all go through it, so nothing moves without a reason on the record. {@link TransactionLedger.chargeDue} settles recurring charges (upkeep, rent) on their own cadence, bounded per advance; a cycle with no funds is counted as missed instead of overdrawing. Journal memory is bounded by `maxEntries`, with `totals()` keeping the per-reason summary beyond it.
 - `createTriggeredRuleEngine` (function): function createTriggeredRuleEngine(rules: readonly TriggeredRule[] = []): TriggeredRuleEngine — Create an empty triggered-rule engine. Rules are added as data; dispatching an event returns the firings the caller applies to its own effect system. Time is caller-supplied (`now` in ms), so the engine is deterministic and drives equally from a fixed-step loop or a save-restored timeline.
@@ -2040,7 +2006,6 @@
 - `proceduralLootEntry` (function): function proceduralLootEntry<TDef>(registry: ItemInstanceRegistry<TDef>, roll: (rng: () => number) => { baseId: string; def: TDef }): (rng: () => number) => string — Bridges any procedural roller into a `LootEntry.generate` callback: rolls a `{ baseId, def }` pair and registers it, returning the runtime id the loot roll hands back as the drop's `item`.
 - `productionBuilding` (function): function productionBuilding(config: ProductionBuildingConfig): ProductionBuildingDef — ⚠ undocumented
 - `pruneFeed` (function): function pruneFeed<T extends TimedFeedEntry>(list: readonly T[], now: number, ttl: number): T[] — Drop feed entries older than `ttl` game-seconds before `now`. Returns the same array reference when nothing expired, so equality checks skip a redundant state write. The tick-time counterpart to {@link appendFeed}'s age bound.
-- `pruneToasts` (function): function pruneToasts<T>(toasts: readonly Toast<T>[], now: number): readonly Toast<T>[] — Drop every toast whose `expiresAt` is at or before `now`. Returns the same array when nothing expired.
 - `queueSize` (function): function queueSize<TSpec, TReserve>(state: WorkQueueState<TSpec, TReserve>): number — Non-terminal job count (queued + active + paused).
 - `queuedJobs` (function): function queuedJobs<TSpec, TReserve>(state: WorkQueueState<TSpec, TReserve>, ordering: JobOrdering<TSpec, TReserve> = priorityOrdering): Job<TSpec, TReserve>[] — Jobs waiting for a slot, in selection order.
 - `raceOutcomeOf` (function): function raceOutcomeOf(finishOrder: readonly string[], racerId: string, options?: PlacementOptions): RaceOutcome — The win/lose verdict for one racer in a finish order — `ranking[0] === player ? "win" : "lose"`, the check every racing game hand-rolls, generalized to a `winningPlaces` cutoff. A racer absent from the order counts as a `lose`.
@@ -2512,6 +2477,27 @@
 - `createMissionTriggerBridge` (function): function createMissionTriggerBridge(options: { runtime: MissionRuntime; document: SceneDocumentLike; triggers?: readonly AuthoredTrigger[]; }): MissionTriggerBridge — Wire authored markers to a {@link MissionRuntime}: an actor entering a `mission_start` marker starts the named mission, `mission_objective` completes the named objective, and `mission_fail` lands the named fail state. Pure membership math over the document, exactly like any other authored trigger.
 - `missionMarkers` (function): function missionMarkers(document: SceneDocumentLike): Record<string, ScenePoint3> — Marker positions from an authored scene, keyed by marker id — what a positional objective reads.
 - `registerMissionTriggerActions` (function): function registerMissionTriggerActions(): void — Register {@link MISSION_TRIGGER_ACTIONS} so the editor lists them. Idempotent; call at module load next to the game's catalogs.
+
+## @jgengine/core/notifications/notices
+
+- `Notice` (interface): interface Notice — A live notice as the HUD renders it.
+- `NoticeFeed` (interface): interface NoticeFeed — A capped, self-expiring, deduping notice list every game reaches through `ctx.game.notices`.
+- `NoticeFeedConfig` (interface): interface NoticeFeedConfig — Tunables for {@link createNoticeFeed}; all retunable at runtime.
+- `NoticeFeedState` (interface): interface NoticeFeedState — Plain JSON state of a {@link NoticeFeed}.
+- `NoticeInput` (interface): interface NoticeInput — What a caller pushes: plain text, or text with a tone, a dedupe key and a lifetime.
+- `NoticeTone` (type): type NoticeTone = "info" | "success" | "warn" | "deny" — How a notice reads: neutral info, a win, a caution, or a refused action.
+- `RefusalNoticeOptions` (interface): interface RefusalNoticeOptions — Options for {@link attachRefusalNotices}.
+- `attachRefusalNotices` (function): function attachRefusalNotices(events: Pick<GameEvents, "on">, notices: Pick<NoticeFeed, "push">, options: RefusalNoticeOptions = {}): () => void — Show every player-facing command refusal (`validate` returned `{ reason, message }`) as a deny notice. Refusals without a `message` stay silent: `reason` is a machine string. Returns the detach function.
+- `createNoticeFeed` (function): function createNoticeFeed(config: NoticeFeedConfig & { now?: () => number } = {}): NoticeFeed — Player-facing notice feed: info/success/warn/deny messages with stacking dedupe and TTL. Pure state with an injected clock, so it runs headless; the shell renders it and plays a UI cue per push.
+
+## @jgengine/core/notifications/notificationCenter
+
+- `NotificationCenterOptions` (interface): interface NotificationCenterOptions — Options for {@link createNotificationCenter}.
+- `NotificationEntry` (interface): interface NotificationEntry<TMeta = unknown> — One persistent notification — unlike a transient toast, it stays in the log until dismissed.
+- `NotificationFilter` (interface): interface NotificationFilter — Filter for {@link NotificationStore.list}.
+- `NotificationInput` (interface): interface NotificationInput<TMeta = unknown> — Fields accepted by {@link NotificationStore.push}.
+- `NotificationStore` (interface): interface NotificationStore<TMeta = unknown> — Serializable, observable log of persistent notifications with read tracking.
+- `createNotificationCenter` (function): function createNotificationCenter<TMeta = unknown>(options: NotificationCenterOptions = {}): NotificationStore<TMeta> — A persistent notification log with read/unread tracking — the "notification center" surface toasts don't cover. Newest-first, capped, serializable, and observable; a game pushes durable events (quest updates, trades, party news) here and a HUD renders the list + an unread badge. `snapshot`/`restore` round-trip through a save.
 
 ## @jgengine/core/progression/careerBank
 

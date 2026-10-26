@@ -1,6 +1,6 @@
 import { createAuthoredSimulation, type AuthoredSimulationSnapshot } from "../world/authoredSimulation";
 import { createCommandRegistry, type CommandResult } from "../commands/commandRegistry";
-import { createNoticeFeed } from "../game/notices";
+import { createNoticeFeed } from "../notifications/notices";
 import { type Cosmetics } from "../game/cosmetics";
 import type { GameDefinition, GameFeatures, PersistConfig } from "../game/defineGame";
 import { groundFieldFor } from "../world/terrain";

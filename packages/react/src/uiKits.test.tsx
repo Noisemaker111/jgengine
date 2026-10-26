@@ -7,7 +7,7 @@ import { GameMenu } from "./gameMenu";
 import { ContinuePane } from "./gameMenuSaves";
 import { actionGlyph } from "./inputDevice";
 import { deadlineStage, formatCountdown, KitObjective, KitResultScreen } from "./kitFlow";
-import { cappedShown } from "./notices";
+import { cappedShown } from "./notifications/notices";
 import { customizeKit, meterFraction, meterSegmentsLit, missingKitParts, uiKitVars, type UiKit } from "./uiKit";
 import { arcadeKit } from "./uiKitArcade";
 import { broadcastKit } from "./uiKitBroadcast";

@@ -129,6 +129,13 @@ export {
   type NoteEvent,
 } from "./audio/music";
 export { type NoiseVoice, type SynthPatch, type ToneVoice } from "./audio/synth";
+export {
+  createCameraShake,
+  type CameraShakeConfig,
+  type CameraShakeController,
+  type CameraShakeOffset,
+  type CameraShakeSnapshot,
+} from "./camera/shake/cameraShake";
 export { createFactionGraph, createFactionRoster, type FactionDef } from "./faction/factions";
 export {
   DEFAULT_REPUTATION_TIERS,
@@ -611,13 +618,6 @@ export {
   type TimerSnapshot,
   type TimerStartOptions,
 } from "./time/timerSet";
-export {
-  createCameraShake,
-  type CameraShakeConfig,
-  type CameraShakeController,
-  type CameraShakeOffset,
-  type CameraShakeSnapshot,
-} from "./vfx/cameraShake";
 export {
   createDamageDirectionTracker,
   type DamageDirectionOptions,

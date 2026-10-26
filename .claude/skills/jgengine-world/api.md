@@ -679,6 +679,15 @@
 - `VoiceAllocatorStorage` (interface): interface VoiceAllocatorStorage — Caller-owned reservation storage. Reads and writes use detached state.
 - `createVoiceAllocator` (function): function createVoiceAllocator(config: VoiceAllocatorConfig = {}): VoiceAllocator — Reserve bounded sound playback before fetching or constructing a graph. Equal priorities steal the oldest reservation; lower priorities cannot interrupt higher priorities. Policy is retunable.
 
+## @jgengine/core/camera/shake/cameraShake
+
+- `CameraRigShakeConfig` (interface): interface CameraRigShakeConfig — Camera-shake / trauma defaults (#28). Any rig reads the trauma channel; game systems feed it via `cameraShake()`.
+- `CameraShakeConfig` (interface): interface CameraShakeConfig — Configuration for {@link createCameraShake}. Every field has a game-feel default.
+- `CameraShakeController` (interface): interface CameraShakeController — A live, dt-driven, trauma-based camera shake controller.
+- `CameraShakeOffset` (interface): interface CameraShakeOffset — A per-frame camera shake offset: three positional axes plus three rotational axes (radians).
+- `CameraShakeSnapshot` (interface): interface CameraShakeSnapshot — Serializable state for save/restore and deterministic replay.
+- `createCameraShake` (function): function createCameraShake(config: CameraShakeConfig = {}): CameraShakeController — A seeded, serializable, trauma-based camera shake / impulse controller. A game calls `add(amount, kind?)` on impacts (a hit, an explosion, a landing) to raise trauma in `[0, 1]`; `update(dt)` bleeds it off over time; and `offset()` returns a pooled `{ x, y, z, pitch, yaw, roll }` kick equal to `trauma^exponent` times per-axis maxima times deterministic seeded value-noise sampled along an internal time cursor. A shell consumer applies that offset to the active camera each frame so the view visibly shakes. Nothing here is genre-specific: `kind` is a free label the game styles, all amplitudes/decay are parameters, and `snapshot`/ `restore` round-trips the shake through a save. Deterministic from `seed`: the same seed and dt sequence reproduce the same offsets.
+
 ## @jgengine/core/faction/factions
 
 - `FactionDef` (interface): interface FactionDef { id: string; relations?: Readonly<Record<string, FactionRelation>>; towardSelf?: FactionRelation; towardOthers?: FactionRelation } — ⚠ undocumented
@@ -700,6 +709,15 @@
 - `createReputationLedger` (function): function createReputationLedger(config: ReputationLedgerConfig = {}): ReputationLedger — ⚠ undocumented
 - `effectiveRelation` (function): function effectiveRelation(input: EffectiveRelationInput): FactionRelation — ⚠ undocumented
 - `tierForStanding` (function): function tierForStanding(tiers: readonly ReputationTier[], standing: number): ReputationTier — Map a faction standing value to its named reputation tier.
+
+## @jgengine/core/haptics/haptics
+
+- `HapticChannels` (interface): interface HapticChannels — Named continuous rumble channels for one player, mixed by priority each frame. Game code sets levels from its own telemetry (engine rpm, road surface, impacts); the shell mixes and drives the pad.
+- `HapticChannelsOptions` (interface): interface HapticChannelsOptions — Options for {@link createHapticChannels}.
+- `HapticChannelsSnapshot` (interface): interface HapticChannelsSnapshot — Serializable channel state.
+- `HapticLevel` (interface): interface HapticLevel — Motor intensities, each `0..1`: `strong` is the low-frequency motor, `weak` the high-frequency one.
+- `HapticPulse` (interface): interface HapticPulse extends HapticLevel — A decaying one-shot on a channel: starts at `strong`/`weak` and fades to zero over `ms`.
+- `createHapticChannels` (function): function createHapticChannels(options: HapticChannelsOptions = {}): HapticChannels — Per-player haptic channels mixed by priority.
 
 ## @jgengine/core/input/actionBindings
 
@@ -794,15 +812,6 @@
 - `GestureSurfaceTracker` (interface): interface GestureSurfaceTracker { begin(x: number, y: number, nowMs: number): void; move(x: number, y: number): readonly string[]; end(x: number, y: number, nowMs: number): readonly string[]; cancel(): void; isActive(): boolean } — ⚠ undocumented
 - `GestureSurfaceTuning` (interface): interface GestureSurfaceTuning { tapMoveThresholdPx: number; tapMaxMs: number; swipeMinPx: number; swipeMinVelocity: number; dragStepPx: number } — ⚠ undocumented
 - `createGestureSurfaceTracker` (function): function createGestureSurfaceTracker(bindings: TouchGestureBindings, tuning: GestureSurfaceTuning = DEFAULT_GESTURE_TUNING): GestureSurfaceTracker — ⚠ undocumented
-
-## @jgengine/core/input/haptics
-
-- `HapticChannels` (interface): interface HapticChannels — Named continuous rumble channels for one player, mixed by priority each frame. Game code sets levels from its own telemetry (engine rpm, road surface, impacts); the shell mixes and drives the pad.
-- `HapticChannelsOptions` (interface): interface HapticChannelsOptions — Options for {@link createHapticChannels}.
-- `HapticChannelsSnapshot` (interface): interface HapticChannelsSnapshot — Serializable channel state.
-- `HapticLevel` (interface): interface HapticLevel — Motor intensities, each `0..1`: `strong` is the low-frequency motor, `weak` the high-frequency one.
-- `HapticPulse` (interface): interface HapticPulse extends HapticLevel — A decaying one-shot on a channel: starts at `strong`/`weak` and fades to zero over `ms`.
-- `createHapticChannels` (function): function createHapticChannels(options: HapticChannelsOptions = {}): HapticChannels — Per-player haptic channels mixed by priority.
 
 ## @jgengine/core/input/inputBuffer
 
@@ -2262,14 +2271,6 @@
 - `TimerSnapshot` (interface): interface TimerSnapshot — One timer's serializable state — elapsed resolved at snapshot time, ready to re-anchor on restore.
 - `TimerStartOptions` (interface): interface TimerStartOptions — Options for {@link TimerSet.start}.
 - `createTimerSet` (function): function createTimerSet(options: TimerSetOptions = {}): TimerSet — Create a serializable set of named countdown / countup timers on an injected clock — one primitive for round timers, respawn clocks, and ability cooldown/charge. Start/pause/resume/stop/reset timers by free-string id, read `{ remainingMs, elapsedMs, durationMs, progress01, running, expired }` for a mm:ss readout or a radial/bar fill, and `poll` for expiry edges. Ids and labels carry no genre meaning; `snapshot`/`restore` round-trip through a save.
-
-## @jgengine/core/vfx/cameraShake
-
-- `CameraShakeConfig` (interface): interface CameraShakeConfig — Configuration for {@link createCameraShake}. Every field has a game-feel default.
-- `CameraShakeController` (interface): interface CameraShakeController — A live, dt-driven, trauma-based camera shake controller.
-- `CameraShakeOffset` (interface): interface CameraShakeOffset — A per-frame camera shake offset: three positional axes plus three rotational axes (radians).
-- `CameraShakeSnapshot` (interface): interface CameraShakeSnapshot — Serializable state for save/restore and deterministic replay.
-- `createCameraShake` (function): function createCameraShake(config: CameraShakeConfig = {}): CameraShakeController — A seeded, serializable, trauma-based camera shake / impulse controller. A game calls `add(amount, kind?)` on impacts (a hit, an explosion, a landing) to raise trauma in `[0, 1]`; `update(dt)` bleeds it off over time; and `offset()` returns a pooled `{ x, y, z, pitch, yaw, roll }` kick equal to `trauma^exponent` times per-axis maxima times deterministic seeded value-noise sampled along an internal time cursor. A shell consumer applies that offset to the active camera each frame so the view visibly shakes. Nothing here is genre-specific: `kind` is a free label the game styles, all amplitudes/decay are parameters, and `snapshot`/ `restore` round-trips the shake through a save. Deterministic from `seed`: the same seed and dt sequence reproduce the same offsets.
 
 ## @jgengine/core/vfx/damageDirection
 

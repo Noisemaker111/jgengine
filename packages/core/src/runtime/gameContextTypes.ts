@@ -3,7 +3,7 @@ import type { AuthoredSimulationRuntime } from "../world/authoredSimulation";
 import type { Territory } from "../world/territory";
 import type { FeedbackCue } from "../audio/feedbackCues";
 import type { SpeakOptions } from "../audio/radioPlayback";
-import type { NoticeFeed } from "../game/notices";
+import type { NoticeFeed } from "../notifications/notices";
 import type { CurrencyDefinition } from "../economy/currency";
 import type { CardPile, CardPileConfig } from "../cards/cardPile";
 import type {

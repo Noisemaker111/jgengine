@@ -1,11 +1,11 @@
 import { useRef, useState } from "react";
 
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
-import { createNotificationCenter } from "@jgengine/core/game/notifications";
+import { createNotificationCenter } from "@jgengine/core/notifications/notificationCenter";
 import type { GameContext, GameContextEntityEntry } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { environment, grass, terrain } from "@jgengine/core/world/features";
-import { NotificationBell, NotificationCenter } from "@jgengine/react/notifications";
+import { NotificationBell, NotificationCenter } from "@jgengine/react/notifications/notificationCenter";
 
 import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
 import type { PlayableGame } from "@jgengine/shell/registry";

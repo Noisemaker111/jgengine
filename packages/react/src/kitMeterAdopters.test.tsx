@@ -6,9 +6,9 @@ import { createComboMeter } from "@jgengine/core/combat/comboMeter";
 import { createDialogueRun } from "@jgengine/core/game/dialogueGraph";
 import { createTalentTree } from "@jgengine/core/game/talents";
 import { createTimerSet } from "@jgengine/core/time/timerSet";
-import { createCameraShake } from "@jgengine/core/vfx/cameraShake";
+import { createCameraShake } from "@jgengine/core/camera/shake/cameraShake";
 
-import { CameraShakeMeter } from "./cameraShake";
+import { CameraShakeMeter } from "./camera/shake/cameraShake";
 import { ComboMeterHud } from "./comboMeter";
 import { DialogueView } from "./dialogueView";
 import { Crosshair, WaveBanner } from "./hud";

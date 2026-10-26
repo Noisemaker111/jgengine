@@ -1,5 +1,5 @@
 import { createPairKeyCodec } from "@jgengine/core/relation/keyedValues";
-import type { NoticeFeed, NoticeTone } from "@jgengine/core/game/notices";
+import type { NoticeFeed, NoticeTone } from "@jgengine/core/notifications/notices";
 
 import type { AlienBodyPlan } from "../creatures/bodyPlan";
 import type { ResourceLedger } from "@jgengine/core/economy/resourceLedger";

@@ -1115,7 +1115,7 @@
         "@jgengine/core",
         "@jgengine/shell"
       ],
-      "module": "@jgengine/core/vfx/cameraShake",
+      "module": "@jgengine/core/camera/shake/cameraShake",
       "domain": "vfx",
       "gameFacing": false,
       "probe": null,
@@ -1126,7 +1126,7 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/cameraShake",
+      "module": "@jgengine/react/camera/shake/cameraShake",
       "domain": "camera-shake-meter",
       "gameFacing": false,
       "probe": null,
@@ -3901,7 +3901,7 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/input/haptics",
+      "module": "@jgengine/core/haptics/haptics",
       "domain": "input",
       "gameFacing": false,
       "probe": null,
@@ -3912,7 +3912,7 @@
       "packages": [
         "@jgengine/shell"
       ],
-      "module": "@jgengine/shell/audio/hapticsRoute",
+      "module": "@jgengine/shell/haptics/hapticsRoute",
       "domain": "audio",
       "gameFacing": false,
       "probe": null,
@@ -6459,7 +6459,7 @@
         "@jgengine/core",
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/notices",
+      "module": "@jgengine/react/notifications/notices",
       "domain": "notice-feed",
       "gameFacing": false,
       "probe": null,
@@ -6470,7 +6470,7 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/notifications",
+      "module": "@jgengine/react/notifications/notificationCenter",
       "domain": "notification-bell",
       "gameFacing": false,
       "probe": null,
@@ -6481,7 +6481,7 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/game/notifications",
+      "module": "@jgengine/core/notifications/notificationCenter",
       "domain": "game",
       "gameFacing": false,
       "probe": null,
@@ -6492,7 +6492,7 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/notifications",
+      "module": "@jgengine/react/notifications/notificationCenter",
       "domain": "notification-center-panel",
       "gameFacing": false,
       "probe": null,
@@ -7633,7 +7633,7 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/game/notices",
+      "module": "@jgengine/core/notifications/notices",
       "domain": "game",
       "gameFacing": false,
       "probe": null,
@@ -10002,7 +10002,7 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/cameraShake",
+      "module": "@jgengine/react/camera/shake/cameraShake",
       "domain": "use-camera-shake",
       "gameFacing": false,
       "probe": null,

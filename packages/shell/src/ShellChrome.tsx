@@ -18,7 +18,7 @@ import { MissingModelsNotice } from "./devtools/MissingModelsNotice";
 import { FeedbackHost } from "./audio/FeedbackHost";
 import type { AudioEngine } from "./audio/audioEngine";
 import { GamePhaseStamp } from "./GamePhaseStamp";
-import { ShellNotices, ShellUiCues } from "./ShellNotices";
+import { ShellNotices, ShellUiCues } from "./notifications/ShellNotices";
 import { SettingsPlayControlGate } from "./settings/SettingsRuntime";
 import type { ShellMultiplayer } from "./multiplayer";
 import type { PlayableGame } from "./registry";

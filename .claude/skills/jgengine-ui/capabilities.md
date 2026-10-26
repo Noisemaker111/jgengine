@@ -389,7 +389,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## haptics-route — send a feedback pulse to the gamepad when one is connected, else to the phone's vibration motor
 
-- `createHapticsRoute` (function) · `import { createHapticsRoute } from "@jgengine/shell/audio/hapticsRoute"`
+- `createHapticsRoute` (function) · `import { createHapticsRoute } from "@jgengine/shell/haptics/hapticsRoute"`
 
 ## heavy-models — models over the per-model triangle budget, for perf probes and smoke assertions
 
@@ -782,7 +782,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## notice-feed — render ctx.game.notices as an animated toned stack (enter/exit motion, ×N stacking, HUD avoidance)
 
-- `NoticeStack` (function) · `import { NoticeStack } from "@jgengine/react/notices"`
+- `NoticeStack` (function) · `import { NoticeStack } from "@jgengine/react/notifications/notices"`
 
 ## notification-bell — icon button with a live unread-count badge over a notification store
 
@@ -1195,6 +1195,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## use-modal-stack — React hook binding a modal stack to a component — re-renders on push/pop/resolve
 
 - `useModalStack` (function) · `import { useModalStack } from "@jgengine/react"`
+
+## use-notice-list — read the live notice feed in a game's own notice view
+
+- `useNoticeList` (function) · `import { useNoticeList } from "@jgengine/react/notifications/notices"`
+
+## use-notifications — read a notification store's live list in a game's own inbox view
+
+- `useNotifications` (function) · `import { useNotifications } from "@jgengine/react"`
 
 ## use-objective-banner — React hook binding an objective-banner controller — advances its clock per frame and returns the current banner view
 

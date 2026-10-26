@@ -354,7 +354,7 @@ export function importers(
  * inner loop stays under 5 s and a push still cannot ship a stale generated file.
  */
 export function gatesFor(changed: readonly string[]): string[] {
-  const gates = new Set(["check-artifacts", "check:fixture-location", "check:path-portability", "check-orphan-ratchet"]);
+  const gates = new Set(["check-artifacts", "check:fixture-location", "check:path-portability", "check-orphan-ratchet", "check:concept-homes"]);
   const shippedSource = changed.filter((path) => /^packages\/[^/]+\/src\//.test(path) && !isTestFile(path));
   if (changed.some((path) => path.startsWith("scripts/")) || shippedSource.length > 0) gates.add("check:capture-hygiene");
   if (shippedSource.length > 0) gates.add("check-changelog");
@@ -594,6 +594,7 @@ export async function fullSteps(root: string, changed: readonly string[]): Promi
     { name: "build", command: ["bun", "run", "build"], cost: 10 },
     { name: "check-skill-api", command: ["bun", "run", "check-skill-api"], needs: ["build"], cost: 30, fix: GATE_FIX["check-skill-api"] },
     { name: "check-orphan-ratchet", command: ["bun", "run", "check-orphan-ratchet"] },
+    { name: "check:concept-homes", command: ["bun", "run", "check:concept-homes"] },
     { name: "check:fixture-location", command: ["bun", "run", "check:fixture-location"] },
     { name: "check:path-portability", command: ["bun", "run", "check:path-portability"] },
     { name: "check:scaffold-launch", command: ["bun", "run", "check:scaffold-launch"], exclusive: true },

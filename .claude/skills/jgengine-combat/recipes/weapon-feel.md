@@ -15,7 +15,7 @@
 - **Feedback.** `createWeaponFeedbackSignals()` from `@jgengine/core/combat/weaponFeedback`.
   - Call `signals.shot(handling.fire(stance))` on each shot and `signals.impact(damage)` when a hit lands.
   - Each tick, `mixer.update(dt, signals.read(handling.tick(dt, stance)))` on a `createFeedbackMixer` (`@jgengine/core/vfx/feedbackMixer`) the game declares.
-  - `kick`, `shot` and `impact` are one-tick pulses. Route `kick` without smoothing into a trauma target and pass it to `createCameraShake().add(...)` (`@jgengine/core/vfx/cameraShake`), so trauma lands once per shot.
+  - `kick`, `shot` and `impact` are one-tick pulses. Route `kick` without smoothing into a trauma target and pass it to `createCameraShake().add(...)` (`@jgengine/core/camera/shake/cameraShake`), so trauma lands once per shot.
   - Route `impact` with a `release` into rumble targets for `ctx.input.rumble`, rate-limited to about 10 Hz. A threshold `event` on `impact` gives a hit-confirm one-shot.
   - Play the gunshot once per `shot` count. `ads` and `spread` suit continuous targets such as a muffled gun tail or a HUD crosshair gap.
 - **Proof.** `measureWeapon(() => createWeaponHandling(tuning), { interval, burst, damage, pellets, targetHealth, range, targetRadius, damageAt, stance })` returns deterministic numbers:

@@ -1,6 +1,6 @@
 import type { TireMarks } from "@jgengine/core/physics/tireMarks";
 import { createGameFeed } from "@jgengine/core/game/feed";
-import type { NoticeFeed, NoticeTone } from "@jgengine/core/game/notices";
+import type { NoticeFeed, NoticeTone } from "@jgengine/core/notifications/notices";
 import { damagedAxis, type VehicleDamageEffectResolved, type VehicleDamageZoneState } from "@jgengine/core/physics/vehicleDamage";
 import { defineStore } from "@jgengine/core/store/defineStore";
 

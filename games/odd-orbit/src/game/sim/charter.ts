@@ -1,5 +1,5 @@
 import { evaluateObjectives, type ObjectiveSummary, type ThresholdObjective } from "@jgengine/core/game/objectives";
-import type { NoticeFeed } from "@jgengine/core/game/notices";
+import type { NoticeFeed } from "@jgengine/core/notifications/notices";
 import type { SceneObject } from "@jgengine/core/scene/objectStore";
 
 import { householdBook } from "../agents";

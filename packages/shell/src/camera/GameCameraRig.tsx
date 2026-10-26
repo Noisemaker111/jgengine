@@ -18,8 +18,8 @@ import { GameInspectionCamera } from "./GameInspectionCamera";
 import { GameOrbitCamera } from "./GameOrbitCamera";
 import { resolveDirectedCamera } from "./rigMath";
 import { resolveCaptureCameraConfig, resolveRigKind, turntableAsObserver } from "./rigResolve";
-import { CameraShakeApplier } from "./CameraShakeApplier";
-import { rigShakeConfig, useCameraShake } from "./shakeChannel";
+import { CameraShakeApplier } from "./shake/CameraShakeApplier";
+import { rigShakeConfig, useCameraShake } from "./shake/shakeChannel";
 
 export { resolveRigKind } from "./rigResolve";
 

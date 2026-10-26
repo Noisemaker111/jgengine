@@ -150,7 +150,7 @@ if (import.meta.main) {
     console.error(`    ${finding.text}`);
   }
   console.error(
-    "\nSearch instead: `bun run find <pattern> [--in <dir>] [--kind ts,tsx] [--files]` reads the tree once," +
+    "\nSearch instead: `bun run find <words>` names where a concept lives; `bun run find --text <regex> [--in <dir>] [--kind ts,tsx] [--files]` reads the tree once," +
       "\nhonours .gitignore and never enters node_modules, .git, .claude/worktrees or build output." +
       "\nIf the walk is genuinely required, name the reason on the line or the comment above it:" +
       "\n  // walk-ok: <reason>",

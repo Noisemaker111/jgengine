@@ -276,6 +276,7 @@ describe("static gates", () => {
     const gates = gatesFor(["packages/core/src/world/terrain.ts"]);
     expect(gates).toContain("check-changelog");
     expect(gates).toContain("check-artifacts");
+    expect(gates).toContain("check:concept-homes");
     expect(gates).not.toContain("check-skills");
   });
 

@@ -41,7 +41,7 @@ assets add sword                                    # icon G�� the game-icon
 - A **component / icon** match prints the one-liner to run and the import + usage G�� no bytes to pull.
 - Ambiguous query? `add` lists the top matches across kinds; narrow with `--kind model|pack|material|component|icon|sprite|spritePack` or a more specific term. `--json` emits the ranked matches for scripting.
 
-The same ranking is available programmatically: `import { findAssets } from "@jgengine/assets"`.
+The same ranking is available programmatically: `import { rankAssets } from "@jgengine/assets"`. `jgengine find <words>` shows the top asset matches next to the engine code for the same words.
 
 ## CLI
 
@@ -50,7 +50,6 @@ assets add <query> [--kind <k>] [--dir <dir>] [--mirror <baseUrl>] [--json]
                                                # unified import: models, packs, materials, sprites, components, icons
 assets list [--category <c>] [--source <s>] [--kind material|sprite|spritePack]
                                                # browse the generated model/sprite index, or the material/sprite-pack catalog
-assets search <term>                          # grep the model index
 assets pull <source-id> [--dir public] [--mirror <baseUrl>] [--offline]
                                                # download + extract a pack into <dir>/models|materials|sprites/<source>/
 assets register <path|url> --category <c> --license <l> [--author <a>]
@@ -158,7 +157,7 @@ export const game: PlayableGame = {
 };
 ```
 
-`buildCatalog({ sources: ["quaternius-stylized-nature"] })` restricts to chosen packs; `includeAliases` / `includeSingles` default true. Discover ids with `assets add <query>` (or `assets search <term>` / `assets list --category <c>`) instead of memorizing them.
+`buildCatalog({ sources: ["quaternius-stylized-nature"] })` restricts to chosen packs; `includeAliases` / `includeSingles` default true. Discover ids with `assets add <query>` (or `jgengine find <words>` / `assets list --category <c>`) instead of memorizing them.
 
 Materials resolve the same way G�� ids (or `material/GǪ` aliases) to normalized PBR map URLs:
 

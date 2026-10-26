@@ -3,7 +3,7 @@ import { fromMinorUnits, toMinorUnits, type CurrencyDefinition } from "@jgengine
 import type { SceneObject } from "@jgengine/core/scene/objectStore";
 import { DAY_LENGTH } from "../../world";
 import { FURNITURE_BY_ID } from "../objects/catalog";
-import type { NoticeFeed } from "@jgengine/core/game/notices";
+import type { NoticeFeed } from "@jgengine/core/notifications/notices";
 import { noteEvent, type HouseholdState } from "../session/types";
 
 export const CREDIT_CURRENCY: CurrencyDefinition = { id: "credits", name: "Credits", decimals: 2 };

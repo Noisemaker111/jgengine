@@ -260,14 +260,6 @@ export {
 } from "./game/lootPipeline";
 export { createLootRegistry, lootTable, type Drop, type LootTableDef } from "./game/lootTable";
 export { resolveOneShotClip } from "./game/modelAnimation";
-export {
-  createNotificationCenter,
-  type NotificationCenterOptions,
-  type NotificationEntry,
-  type NotificationFilter,
-  type NotificationInput,
-  type NotificationStore,
-} from "./game/notifications";
 export { evaluateObjective } from "./game/objectives";
 export {
   createLayerRegistry,
@@ -423,7 +415,6 @@ export {
   type TalentTreeView,
 } from "./game/talentTreeView";
 export { createTalentTree, type TalentNodeDef, type TalentTree } from "./game/talents";
-export { appendToast, createToastQueue, pruneToasts, type Toast } from "./game/toasts";
 export { createUnlockCatalog, createUnlocks, type UnlockDef } from "./game/unlocks";
 export {
   createVfxInstanceStore,
@@ -656,6 +647,14 @@ export {
   registerMissionTriggerActions,
   type MissionTriggerBridge,
 } from "./mission/triggers";
+export {
+  createNotificationCenter,
+  type NotificationCenterOptions,
+  type NotificationEntry,
+  type NotificationFilter,
+  type NotificationInput,
+  type NotificationStore,
+} from "./notifications/notificationCenter";
 export {
   compareGearSets,
   gearScore,

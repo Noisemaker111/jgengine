@@ -8,7 +8,7 @@ import { createAssetBudgetReport, type AssetBudget } from "../assetBudget";
 import { MATERIAL_LIBRARY } from "../catalogs/materialLibrary";
 import { MODEL_LIBRARY, findLibraryModelByName } from "../catalogs/modelLibrary";
 import { downloadPackArchive, extractGlbs, extractSpriteFiles } from "../download";
-import { type AssetKind, type AssetMatch, rankAssets } from "../find";
+import { type AssetKind, type AssetMatch, describeAssetMatch, rankAssets } from "../rankAssets";
 import { generatedIndex } from "../generated";
 import { generatedSpriteIndex } from "../generated-sprites";
 import { reindex } from "../indexGen";
@@ -177,21 +177,6 @@ function cmdList(argv: string[]): void {
     console.log(`${entry.id}\t[${entry.categories.join(",")}]\t${entry.file}`);
   }
   console.log(`— ${Math.min(rows.length, limit)} of ${rows.length} entries`);
-}
-
-function cmdSearch(argv: string[]): void {
-  const term = argv[0];
-  if (term === undefined) fail("usage: search <term>");
-  const needle = term.toLowerCase();
-  const limit = Number(flag(argv, "limit") ?? "50");
-  const rows = generatedIndex.filter(
-    (entry) =>
-      entry.id.toLowerCase().includes(needle) || entry.file.toLowerCase().includes(needle),
-  );
-  for (const entry of rows.slice(0, limit)) {
-    console.log(`${entry.id}\t[${entry.categories.join(",")}]\t${entry.file}`);
-  }
-  console.log(`— ${Math.min(rows.length, limit)} of ${rows.length} matches for "${term}"`);
 }
 
 /** @internal */
@@ -414,25 +399,6 @@ const KINDS: readonly AssetKind[] = [
   "spritePack",
 ];
 
-function describeMatch(match: AssetMatch): string {
-  switch (match.kind) {
-    case "model":
-      return `[model]     ${match.id}${match.via === "alias" ? "  (alias)" : match.via === "single" ? "  (single)" : ""}`;
-    case "pack":
-      return `[pack]      ${match.source} — ${match.title}`;
-    case "material":
-      return `[material]  ${match.id} — ${match.title}`;
-    case "component":
-      return `[component] ${match.name} — ${match.title}`;
-    case "icon":
-      return `[icon]      ${match.name}`;
-    case "sprite":
-      return `[sprite]    ${match.id}`;
-    case "spritePack":
-      return `[spritePack] ${match.source} — ${match.title}`;
-  }
-}
-
 async function performAdd(match: AssetMatch, argv: string[]): Promise<void> {
   if (match.kind === "component") {
     const component = registryCatalog.components.find((entry) => entry.name === match.name);
@@ -538,7 +504,7 @@ async function cmdAdd(argv: string[]): Promise<void> {
   const kind = kindFlag as AssetKind | undefined;
   const ranked = rankAssets(query, { kind, limit: Number(flag(argv, "limit") ?? "12") });
   if (ranked.length === 0) {
-    fail(`no asset matches "${query}" — try a broader term or \`assets search <term>\``);
+    fail(`no asset matches "${query}" — try a broader term, or \`jgengine find <words>\``);
   }
   if (argv.includes("--json")) {
     console.log(JSON.stringify(ranked, null, 2));
@@ -550,11 +516,11 @@ async function cmdAdd(argv: string[]): Promise<void> {
   const decisive = ranked.length === 1 || kind !== undefined || top.score - runnerUp >= 20;
   if (!decisive) {
     console.log(`several matches for "${query}" — narrow with --kind or a more specific term:\n`);
-    for (const entry of ranked.slice(0, 8)) console.log(`  ${describeMatch(entry.match)}`);
+    for (const entry of ranked.slice(0, 8)) console.log(`  ${describeAssetMatch(entry.match)}`);
     console.log(`\nthen re-run, e.g. \`assets add "${query}" --kind ${top.match.kind}\``);
     return;
   }
-  console.log(`→ ${describeMatch(top.match)}\n`);
+  console.log(`→ ${describeAssetMatch(top.match)}\n`);
   await performAdd(top.match, argv);
 }
 
@@ -661,9 +627,6 @@ if (import.meta.main) {
     case "list":
       cmdList(rest);
       break;
-    case "search":
-      cmdSearch(rest);
-      break;
     case "pull":
       await cmdPull(rest).catch((error: unknown) => fail(describeNetworkFailure(error)));
       break;
@@ -690,7 +653,7 @@ if (import.meta.main) {
       break;
     default:
       console.log(
-        "usage: assets <add|list|search|pull|register|reindex|reindex-sprites|budget|verify|provenance> [...args]\n" +
+        "usage: assets <add|list|pull|register|reindex|reindex-sprites|budget|verify|provenance> [...args]\n" +
         "  assets pull starter   # every pack the starter catalog needs, into ./public/models",
       );
       if (command !== undefined && command !== "help") process.exit(1);
