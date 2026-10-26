@@ -1,6 +1,7 @@
 {
   "name": "Harbor Heat",
   "id": "harbor-heat",
+  "template": "3d",
   "engine": [
     "assets",
     "core",
@@ -8,6 +9,10 @@
     "react",
     "shell",
     "ws"
+  ],
+  "owns": [
+    "index.html",
+    "src/index.tsx"
   ],
   "capabilities": {
     "adopts": [

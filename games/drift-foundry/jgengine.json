@@ -1,6 +1,7 @@
 {
   "name": "Drift Foundry",
   "id": "drift-foundry",
+  "template": "3d",
   "engine": [
     "assets",
     "core",
@@ -8,6 +9,9 @@
     "react",
     "shell",
     "ws"
+  ],
+  "owns": [
+    "index.html"
   ],
   "capabilities": {
     "adopts": [

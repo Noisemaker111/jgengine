@@ -341,3 +341,6 @@ button[data-jg-frame].fd-rimmed:focus-visible { background:#f2c230; }
 .fd-cal-row .fd-stamp-btn { min-width:9.2em; }
 .fd-tower-ghost { margin-top:2px; font:13px/1.1 "Saira Stencil One",sans-serif; font-weight:400; letter-spacing:.04em; color:#ff8a6a; font-variant-numeric:tabular-nums; }
 .fd-tower-ghost[data-ahead] { color:#5de0ce; }
+
+html, body, #root { width:100%; height:100%; margin:0; overflow:hidden; }
+body { background:#101e24; }

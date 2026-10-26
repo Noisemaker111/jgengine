@@ -1,12 +1,16 @@
 {
   "name": "Scrap Signal",
   "id": "scrap-signal",
+  "template": "3d",
   "engine": [
     "assets",
     "core",
     "editor",
     "react",
     "shell"
+  ],
+  "owns": [
+    "index.html"
   ],
   "capabilities": {
     "adopts": [

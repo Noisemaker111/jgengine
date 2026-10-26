@@ -5,7 +5,6 @@ import { gameSkeletonRequiredSummary, isAllowedGameSrcEntry } from "./gameShape"
 import { cliVersion, findWorkspaceRoot, readPackageJson, resolveDependencyRange, sdkVersion, type PackageJson } from "./pkg";
 import { inspectInstalledSdkGraph, installedPackageVersion, installedSdkVersions, sdkMinorNewer } from "./compatibility";
 import { assessPrototypeLook } from "./prototypeLook";
-import { IN_REPO_TSCONFIG_PATHS } from "./templates";
 import { runWorkspaceDoctor } from "./workspaceDoctor";
 
 export interface Finding {
@@ -126,14 +125,6 @@ export function diagnoseProject(dir: string): Finding[] {
     label: "tsconfig paths resolve",
     fix: `paths point into a missing engine checkout (${danglingPaths[0] ?? ""}) — outside the monorepo, drop compilerOptions.paths and rely on node_modules`,
   });
-  if (workspaceRoot !== null && usesWorkspaceProtocol) {
-    const missing = Object.entries(IN_REPO_TSCONFIG_PATHS).filter(([alias, target]) => paths[alias]?.[0] !== target[0]);
-    findings.push({
-      ok: missing.length === 0,
-      label: "in-repo tsconfig paths match the canonical game shape",
-      fix: `add compilerOptions.paths ${missing.map(([alias]) => `"${alias}"`).join(", ")} per packages/jgengine/src/gameShape.ts`,
-    });
-  }
 
   const deps = { ...pkg.dependencies, ...pkg.devDependencies, ...pkg.peerDependencies };
   const usesReactPkg = engineDeps["@jgengine/react"] !== undefined || engineDeps["@jgengine/shell"] !== undefined;

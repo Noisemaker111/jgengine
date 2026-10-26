@@ -11,7 +11,9 @@
     "dev": "vite",
     "build": "vite build",
     "check-types": "tsgo --noEmit -p tsconfig.json",
-    "test": "bun test src/game"
+    "test": "bun test src/game",
+    "drive": "jgengine drive",
+    "shoot": "jgengine shoot"
   },
   "dependencies": {
     "@jgengine/assets": "workspace:*",

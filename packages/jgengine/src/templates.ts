@@ -38,7 +38,6 @@ import { GAME_ID_PATTERN } from "./templates/names";
 import type { EditorSceneDoc, TemplateFile, TemplateOptions } from "./templates/types";
 
 export { editorScaffold } from "./templates/editorWorkspace";
-export { IN_REPO_TSCONFIG_PATHS } from "./templates/gameFiles";
 export {
   displayNameFromId,
   displayNameFromInput,
@@ -86,12 +85,17 @@ export function gameTemplate(options: TemplateOptions): TemplateFile[] {
       contents: variant === "in-repo" ? inRepoPackageJson(id) : standalonePackageJson(id, engineVersion, options.cliVersion ?? cliVersion(), editor),
     },
     { path: "tsconfig.json", contents: tsconfigJson(variant) },
-    { path: ".gitignore", contents: gitignore },
-    { path: "AGENTS.md", contents: agentsMd(name, variant) },
+    // An in-repo game lives under the monorepo's own .gitignore and AGENTS.md.
+    ...(variant === "in-repo"
+      ? []
+      : [
+          { path: ".gitignore", contents: gitignore },
+          { path: "AGENTS.md", contents: agentsMd(name, variant) },
+        ]),
     { path: "src/index.css", contents: indexCss(variant, editor) },
     { path: "src/style.css", contents: styleCss },
     { path: "src/art-direction.md", contents: artDirectionMd },
-    { path: "src/main.tsx", contents: mainTsx(editor) },
+    { path: "src/main.tsx", contents: mainTsx(editor, variant, id) },
     { path: "src/index.tsx", contents: indexTsx(editor) },
     ...(editor
       ? [

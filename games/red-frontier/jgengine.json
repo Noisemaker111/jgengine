@@ -1,6 +1,7 @@
 {
   "name": "Red Frontier",
   "id": "red-frontier",
+  "template": "3d",
   "engine": [
     "assets",
     "core",

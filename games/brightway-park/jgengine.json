@@ -1,12 +1,17 @@
 {
   "name": "Brightway Park",
   "id": "brightway-park",
+  "template": "3d",
   "engine": [
     "assets",
     "core",
     "editor",
     "react",
     "shell"
+  ],
+  "owns": [
+    "index.html",
+    "vite.config.ts"
   ],
   "capabilities": {
     "adopts": [
