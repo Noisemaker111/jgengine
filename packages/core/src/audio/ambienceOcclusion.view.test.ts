@@ -97,9 +97,12 @@ const up = { x: 0, y: 1, z: 0 };
 const meadow: AmbienceZoneDef = { id: "meadow", sound: "bed_meadow", shape: { kind: "sphere", center: [0, 0, 0], radius: 5 }, crossfade: 4 };
 const shaft: AmbienceZoneDef = { id: "shaft", sound: "bed_shaft", shape: { kind: "sphere", center: [10, 0, 0], radius: 5 }, crossfade: 4 };
 
+// The real fetch is put back afterwards, not deleted: later test files in the same run use it.
+const realFetch = globalThis.fetch;
+
 afterEach(() => {
   delete (globalThis as any).window;
-  delete (globalThis as any).fetch;
+  globalThis.fetch = realFetch;
 });
 
 describe("ambience zones", () => {
