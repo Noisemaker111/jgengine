@@ -194,8 +194,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/settingsBlocks",
-      "domain": "adjust-setting-row",
+      "module": "@jgengine/react/settings/settingsBlocks",
+      "domain": "settings",
       "gameFacing": false,
       "probe": null,
       "intent": "step a settings row value once, for keyboard and gamepad alike"
@@ -1765,8 +1765,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/modals",
-      "domain": "confirm-dialog",
+      "module": "@jgengine/react/dialog/modals",
+      "domain": "dialog",
       "gameFacing": false,
       "probe": null,
       "intent": "generic themeable confirm/cancel dialog — title, body, two buttons, danger styling"
@@ -2550,8 +2550,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/dialogBehavior",
-      "domain": "dialog-behavior",
+      "module": "@jgengine/react/dialog/dialogBehavior",
+      "domain": "dialog",
       "gameFacing": false,
       "probe": null,
       "intent": "controlled dialog focus and keyboard behavior without owning markup or screen state"
@@ -4353,11 +4353,11 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/slots",
-      "domain": "hud-slots",
+      "module": "@jgengine/react/hud/hudLayout",
+      "domain": "hud",
       "gameFacing": false,
       "probe": null,
-      "intent": "atomic themed equipment/weapon/armor/potion slot grids with painted icons"
+      "intent": "a play HUD of edge-pinned, player-movable panels in one component"
     },
     {
       "id": "hud-surface",
@@ -4651,8 +4651,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/inventoryGrid",
-      "domain": "inventory-grid-hud",
+      "module": "@jgengine/react/inventory/inventoryGrid",
+      "domain": "inventory",
       "gameFacing": false,
       "probe": null,
       "intent": "drop-in NxN inventory grid with drag/swap/stack/split bound to a live inventory"
@@ -4860,8 +4860,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/keybindingMenu",
-      "domain": "keybinding-menu",
+      "module": "@jgengine/react/settings/keybindingMenu",
+      "domain": "settings",
       "gameFacing": false,
       "probe": null,
       "intent": "drop-in controls-settings surface over a rebind session — click-to-capture rows with key glyphs, conflict badges, per-row and reset-all, HudTheme-skinnable"
@@ -6094,8 +6094,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/modals",
-      "domain": "modal-host",
+      "module": "@jgengine/react/dialog/modals",
+      "domain": "dialog",
       "gameFacing": false,
       "probe": null,
       "intent": "full-screen modal/dialog host over a modal stack — dimmed backdrop, focus trap, Esc/backdrop-to-cancel, aria-modal dialog"
@@ -6105,8 +6105,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/ui/modalStack",
-      "domain": "ui",
+      "module": "@jgengine/core/dialog/modalStack",
+      "domain": "dialog",
       "gameFacing": false,
       "probe": null,
       "intent": "serializable, observable stack of opaque modal/dialog records — push/pop/resolve blocking overlays (pause menu, confirm dialog) with optional auto-dismiss; never interprets kind or result"
@@ -8392,8 +8392,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/settingsBlocks",
-      "domain": "settings-keybind-row",
+      "module": "@jgengine/react/settings/settingsBlocks",
+      "domain": "settings",
       "gameFacing": false,
       "probe": null,
       "intent": "one rebindable controls row — key glyph, armed state and reset"
@@ -8403,8 +8403,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/settingsBlocks",
-      "domain": "settings-section",
+      "module": "@jgengine/react/settings/settingsBlocks",
+      "domain": "settings",
       "gameFacing": false,
       "probe": null,
       "intent": "settings category block — rows plus click-to-capture keybind rows, HudTheme-styled, store-backed, keyboard and gamepad navigable"
@@ -8414,8 +8414,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/settingsBlocks",
-      "domain": "settings-slider",
+      "module": "@jgengine/react/settings/settingsBlocks",
+      "domain": "settings",
       "gameFacing": false,
       "probe": null,
       "intent": "a settings slider row that mirrors locally and persists on release"
@@ -8425,8 +8425,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/settingsBlocks",
-      "domain": "settings-tabs",
+      "module": "@jgengine/react/settings/settingsBlocks",
+      "domain": "settings",
       "gameFacing": false,
       "probe": null,
       "intent": "scrollable settings category tabs with pressed state"
@@ -8491,8 +8491,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/shopGrid",
-      "domain": "shop-grid-host",
+      "module": "@jgengine/react/inventory/shopGrid",
+      "domain": "inventory",
       "gameFacing": false,
       "probe": null,
       "intent": "drop-in vendor/shop grid over a caller-owned wallet — item cards with icon/price/stock, afford-aware Buy, optional Sell, and a balance readout, token-themed"
@@ -10079,8 +10079,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/accessibilitySettings",
-      "domain": "use-accessibility-rows",
+      "module": "@jgengine/react/settings/accessibilitySettings",
+      "domain": "settings",
       "gameFacing": false,
       "probe": null,
       "intent": "accessibility setting rows for a game-owned settings layout"
@@ -10090,8 +10090,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/accessibilitySettings",
-      "domain": "use-accessibility-settings",
+      "module": "@jgengine/react/settings/accessibilitySettings",
+      "domain": "settings",
       "gameFacing": false,
       "probe": null,
       "intent": "live accessibility preferences from the shared settings store"
@@ -10178,8 +10178,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/accessibilitySettings",
-      "domain": "use-hold-vs-toggle",
+      "module": "@jgengine/react/settings/accessibilitySettings",
+      "domain": "settings",
       "gameFacing": false,
       "probe": null,
       "intent": "live hold-or-toggle preference from the shared settings store"
@@ -10211,8 +10211,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/modals",
-      "domain": "use-modal-stack",
+      "module": "@jgengine/react/dialog/modals",
+      "domain": "dialog",
       "gameFacing": false,
       "probe": null,
       "intent": "React hook binding a modal stack to a component — re-renders on push/pop/resolve"
@@ -10266,8 +10266,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/keybindingMenu",
-      "domain": "use-rebind-session",
+      "module": "@jgengine/react/settings/keybindingMenu",
+      "domain": "settings",
       "gameFacing": false,
       "probe": null,
       "intent": "React hook that re-renders a component whenever a rebind session changes"
@@ -10299,8 +10299,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/shopGrid",
-      "domain": "use-shop-stock",
+      "module": "@jgengine/react/inventory/shopGrid",
+      "domain": "inventory",
       "gameFacing": false,
       "probe": null,
       "intent": "React hook binding a shop-stock model — re-renders on any stock change and returns the entry list"

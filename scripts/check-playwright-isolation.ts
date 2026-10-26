@@ -9,7 +9,7 @@ import { fileURLToPath } from "node:url";
 
 const FILES = [
   "packages/react/src/menu/menuNav.test.ts",
-  "packages/react/src/settingsSection.test.ts",
+  "packages/react/src/settings/settingsSection.test.ts",
   "packages/shell/src/settingsBoundary.test.ts",
 ];
 /** Evidence that a browser was reaped or a test errored, even when the exit code says otherwise. */

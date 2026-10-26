@@ -2,18 +2,18 @@ import { afterAll, beforeAll, beforeEach, describe, expect, setDefaultTimeout, t
 import { mkdir, rm, symlink } from "node:fs/promises";
 import { resolve } from "node:path";
 import { chromium, type Browser, type Page } from "playwright-core";
-import { buildBrowserFixture, findChromeExecutable } from "../../../scripts/browser-lib";
+import { buildBrowserFixture, findChromeExecutable } from "../../../../scripts/browser-lib";
 
 setDefaultTimeout(30_000);
 
-const scratch = resolve(import.meta.dir, "../../../.scratch/settings-section-test");
+const scratch = resolve(import.meta.dir, "../../../../.scratch/settings-section-test");
 let browser: Browser;
 let page: Page;
 let server: ReturnType<typeof Bun.serve>;
 
 beforeAll(async () => {
   await mkdir(scratch, { recursive: true });
-  await symlink(resolve(import.meta.dir, "../node_modules"), `${scratch}/node_modules`, "dir");
+  await symlink(resolve(import.meta.dir, "../../node_modules"), `${scratch}/node_modules`, "dir");
   const entry = `${scratch}/fixture.tsx`;
   await Bun.write(entry, `
     import React from 'react';
@@ -21,9 +21,9 @@ beforeAll(async () => {
     import { flushSync } from 'react-dom';
     import { createRebindSession } from '../../packages/core/src/input/rebindSession';
     import { createSettingsStore } from '../../packages/core/src/settings/settingsModel';
-    import { SettingsSection } from '../../packages/react/src/settingsBlocks';
-    import { SettingsProvider, useSettingsStore } from '../../packages/react/src/settings';
-    import { useAccessibilitySettings } from '../../packages/react/src/accessibilitySettings';
+    import { SettingsSection } from '../../packages/react/src/settings/settingsBlocks';
+    import { SettingsProvider, useSettingsStore } from '../../packages/react/src/settings/settings';
+    import { useAccessibilitySettings } from '../../packages/react/src/settings/accessibilitySettings';
     import { HudThemeRoot } from '../../packages/react/src/hud/hudThemeRoot';
 
     const pad = { buttons: new Set(), axes: [0, 0] };

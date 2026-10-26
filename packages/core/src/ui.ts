@@ -1,3 +1,15 @@
+export {
+  MODAL_CANCEL,
+  MODAL_CONFIRM,
+  createModalStack,
+  type ModalInput,
+  type ModalRecord,
+  type ModalResolution,
+  type ModalStack,
+  type ModalStackEntry,
+  type ModalStackOptions,
+  type ModalStackSnapshot,
+} from "./dialog/modalStack";
 export { formatDistance } from "./format/distance";
 export { formatDelta, formatDuration, formatOrdinal } from "./format/duration";
 export { formatSpeed } from "./format/speed";
@@ -148,18 +160,6 @@ export {
   type CoachMarkStep,
   type CoachMarkView,
 } from "./ui/coachMarks";
-export {
-  MODAL_CANCEL,
-  MODAL_CONFIRM,
-  createModalStack,
-  type ModalInput,
-  type ModalRecord,
-  type ModalResolution,
-  type ModalStack,
-  type ModalStackEntry,
-  type ModalStackOptions,
-  type ModalStackSnapshot,
-} from "./ui/modalStack";
 export {
   createObjectiveBanner,
   type ObjectiveBannerAnnouncement,

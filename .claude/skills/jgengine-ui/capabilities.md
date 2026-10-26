@@ -62,7 +62,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## adjust-setting-row — step a settings row value once, for keyboard and gamepad alike
 
-- `adjustSettingRow` (function) · `import { adjustSettingRow } from "@jgengine/react/settingsBlocks"`
+- `adjustSettingRow` (function) · `import { adjustSettingRow } from "@jgengine/react/settings/settingsBlocks"`
 
 ## animation — turn a killed rigged character into a physics ragdoll on death
 
@@ -980,19 +980,19 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## settings-keybind-row — one rebindable controls row — key glyph, armed state and reset
 
-- `SettingsKeybindControl` (function) · `import { SettingsKeybindControl } from "@jgengine/react/settingsBlocks"`
+- `SettingsKeybindControl` (function) · `import { SettingsKeybindControl } from "@jgengine/react/settings/settingsBlocks"`
 
 ## settings-section — settings category block — rows plus click-to-capture keybind rows, HudTheme-styled, store-backed, keyboard and gamepad navigable
 
-- `SettingsSection` (function) · `import { SettingsSection } from "@jgengine/react/settingsBlocks"`
+- `SettingsSection` (function) · `import { SettingsSection } from "@jgengine/react/settings/settingsBlocks"`
 
 ## settings-slider — a settings slider row that mirrors locally and persists on release
 
-- `SettingsSlider` (function) · `import { SettingsSlider } from "@jgengine/react/settingsBlocks"`
+- `SettingsSlider` (function) · `import { SettingsSlider } from "@jgengine/react/settings/settingsBlocks"`
 
 ## settings-tabs — scrollable settings category tabs with pressed state
 
-- `SettingsTabs` (function) · `import { SettingsTabs } from "@jgengine/react/settingsBlocks"`
+- `SettingsTabs` (function) · `import { SettingsTabs } from "@jgengine/react/settings/settingsBlocks"`
 
 ## shop-grid-host — drop-in vendor/shop grid over a caller-owned wallet — item cards with icon/price/stock, afford-aware Buy, optional Sell, and a balance readout, token-themed
 
@@ -1142,11 +1142,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## use-accessibility-rows — accessibility setting rows for a game-owned settings layout
 
-- `useAccessibilityRows` (function) · `import { useAccessibilityRows } from "@jgengine/react/accessibilitySettings"`
+- `useAccessibilityRows` (function) · `import { useAccessibilityRows } from "@jgengine/react/settings/accessibilitySettings"`
 
 ## use-accessibility-settings — live accessibility preferences from the shared settings store
 
-- `useAccessibilitySettings` (function) · `import { useAccessibilitySettings } from "@jgengine/react/accessibilitySettings"`
+- `useAccessibilitySettings` (function) · `import { useAccessibilitySettings } from "@jgengine/react/settings/accessibilitySettings"`
 
 ## use-camera-shake — React hook reading a camera-shake controller's live trauma and kind
 
@@ -1178,7 +1178,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## use-hold-vs-toggle — live hold-or-toggle preference from the shared settings store
 
-- `useHoldVsToggle` (function) · `import { useHoldVsToggle } from "@jgengine/react/accessibilitySettings"`
+- `useHoldVsToggle` (function) · `import { useHoldVsToggle } from "@jgengine/react/settings/accessibilitySettings"`
 
 ## use-interaction-prompt — React hook binding a prompt registry to a moving player — resolves the nearest interactable prompt and returns the active one
 

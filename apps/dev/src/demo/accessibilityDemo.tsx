@@ -10,9 +10,9 @@ import {
   HOLD_VS_TOGGLE_OPTIONS,
   TEXT_SCALE_OPTIONS,
 } from "@jgengine/core/settings/accessibilitySettings";
-import { useAccessibilitySettings, useHoldVsToggle } from "@jgengine/react/accessibilitySettings";
+import { useAccessibilitySettings, useHoldVsToggle } from "@jgengine/react/settings/accessibilitySettings";
 import { HudThemeRoot } from "@jgengine/react/hud/hudThemeRoot";
-import { useSettingsStore } from "@jgengine/react/settings";
+import { useSettingsStore } from "@jgengine/react/settings/settings";
 
 import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
 import type { PlayableGame } from "@jgengine/shell/registry";

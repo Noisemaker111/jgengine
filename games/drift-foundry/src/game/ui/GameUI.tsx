@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef } from "react";
 import "../../style.css";
 import { SettingsTrigger, useBrowserSuspension } from "@jgengine/react";
-import { useSettings } from "@jgengine/react/settings";
+import { useSettings } from "@jgengine/react/settings/settings";
 import { useGame, useGameStore } from "@jgengine/react/hooks";
 import { useStore } from "@jgengine/react/store";
 import { GameIcon, type GameIconName } from "@jgengine/react/gameIcons";

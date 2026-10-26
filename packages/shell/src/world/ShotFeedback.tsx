@@ -5,7 +5,7 @@ import * as THREE from "three";
 import { devtools } from "@jgengine/core/devtools/devtools";
 import type { DamageAppliedEvent } from "@jgengine/core/game/events";
 import type { GameContext } from "@jgengine/core/runtime/gameContextTypes";
-import { useAccessibilitySettings } from "@jgengine/react/accessibilitySettings";
+import { useAccessibilitySettings } from "@jgengine/react/settings/accessibilitySettings";
 import { useGameContext } from "@jgengine/react/provider";
 
 import { startFromMuzzle } from "./WorldHud";

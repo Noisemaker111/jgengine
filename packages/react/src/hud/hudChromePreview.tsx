@@ -6,7 +6,7 @@ import { HudFrame } from "./hudFrame";
 import { HudSurface } from "./hudSurface";
 import { HudThemeRoot } from "./hudThemeRoot";
 import { PauseMenu } from "../menu/pauseMenu";
-import { ConfirmDialog } from "../modals";
+import { ConfirmDialog } from "../dialog/modals";
 import { Window } from "../panels";
 import { TweenNumber } from "../tweenNumber";
 import { KitMeter } from "../uiKitRoot";

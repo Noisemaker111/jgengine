@@ -4,8 +4,8 @@ import { createSaveSlots, type SaveSlotMeta } from "@jgengine/core/save/saveSlot
 
 import { PauseMenu } from "./menu/pauseMenu";
 import { ContinuePane, CreditsPane, SaveSlotsPane } from "./menu/gameMenuSaves";
-import type { SettingsCategoryView } from "./settings";
-import { SettingsSection, SettingsTabs } from "./settingsBlocks";
+import type { SettingsCategoryView } from "./settings/settings";
+import { SettingsSection, SettingsTabs } from "./settings/settingsBlocks";
 import type { UiKit } from "./uiKit";
 import { KitButton, KitMenu, KitMeter, KitMinimapFrame, KitPanel, KitPrompt, KitToast, UiKitRoot } from "./uiKitRoot";
 import { UI_KITS, type UiKitName } from "./uiKits";

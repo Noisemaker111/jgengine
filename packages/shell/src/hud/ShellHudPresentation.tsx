@@ -7,7 +7,7 @@ import { playControlsActive } from "@jgengine/core/game/controlGate";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { BindingOverrides } from "@jgengine/core/input/bindingOverrides";
 import { BUILT_IN_SETTING_CATEGORIES, type GameSettingsConfig, type SettingsStore } from "@jgengine/core/settings/settingsModel";
-import { SettingsProvider, type SettingsActionView } from "@jgengine/react/settings";
+import { SettingsProvider, type SettingsActionView } from "@jgengine/react/settings/settings";
 import { GameViewportProvider } from "@jgengine/react/gameViewport";
 import type { TouchScheme } from "@jgengine/core/input/touchScheme";
 

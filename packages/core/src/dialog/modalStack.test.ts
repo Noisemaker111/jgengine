@@ -5,7 +5,7 @@ import {
   MODAL_CONFIRM,
   createModalStack,
   type ModalResolution,
-} from "@jgengine/core/ui/modalStack";
+} from "@jgengine/core/dialog/modalStack";
 
 describe("createModalStack push / query", () => {
   test("starts empty", () => {

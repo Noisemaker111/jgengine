@@ -48,7 +48,7 @@ import {
   type SettingsCategoryView,
   type SettingsController,
   type SettingsRow,
-} from "@jgengine/react/settings";
+} from "@jgengine/react/settings/settings";
 
 import { usePlayerFov } from "../camera/PlayerFov";
 

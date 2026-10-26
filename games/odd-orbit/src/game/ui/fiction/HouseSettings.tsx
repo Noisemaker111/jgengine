@@ -3,8 +3,8 @@ import { GameCursor } from "@jgengine/react/gameCursor";
 import { GameIcon } from "@jgengine/react/gameIcons";
 import { GameSlider } from "@jgengine/react/gameSlider";
 import { useMenuNav } from "@jgengine/react/menu/menuNav";
-import { useSettings, type SettingsKeybindRow, type SettingsRow } from "@jgengine/react/settings";
-import { adjustSettingRow } from "@jgengine/react/settingsBlocks";
+import { useSettings, type SettingsKeybindRow, type SettingsRow } from "@jgengine/react/settings/settings";
+import { adjustSettingRow } from "@jgengine/react/settings/settingsBlocks";
 import { Enamel, navItem } from "./kit";
 
 export interface HousePreference {

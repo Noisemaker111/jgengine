@@ -3,9 +3,9 @@ import { useEffect, useReducer, type CSSProperties, type ReactNode } from "react
 import { balance, type WalletState } from "@jgengine/core/economy/wallet";
 import type { ShopPrice, ShopStock, ShopStockEntry } from "@jgengine/core/economy/shopStock";
 
-import { GameIcon, iconForItemId, type GameIconName } from "./gameIcons";
-import { HudFrame } from "./hud/hudFrame";
-import { hudType } from "./hud/hudTokens";
+import { GameIcon, iconForItemId, type GameIconName } from "../gameIcons";
+import { HudFrame } from "../hud/hudFrame";
+import { hudType } from "../hud/hudTokens";
 
 /**
  * Subscribe to a shop's stock and re-render whenever it changes (buy, sell, restock, price, add,

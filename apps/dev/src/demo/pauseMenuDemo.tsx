@@ -1,12 +1,12 @@
 import { type CSSProperties, type ReactNode } from "react";
 
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
-import { createModalStack, MODAL_CONFIRM } from "@jgengine/core/ui/modalStack";
+import { createModalStack, MODAL_CONFIRM } from "@jgengine/core/dialog/modalStack";
 import type { GameContext, GameContextEntityEntry } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { environment, grass, terrain } from "@jgengine/core/world/features";
 import { PauseMenu } from "@jgengine/react/menu/pauseMenu";
-import { ConfirmDialog, ModalHost } from "@jgengine/react/modals";
+import { ConfirmDialog, ModalHost } from "@jgengine/react/dialog/modals";
 
 import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
 import type { PlayableGame } from "@jgengine/shell/registry";

@@ -2,11 +2,11 @@ import { afterAll, beforeAll, beforeEach, describe, expect, setDefaultTimeout, t
 import { mkdir, rm, symlink } from "node:fs/promises";
 import { resolve } from "node:path";
 import { chromium, type Browser, type Page } from "playwright-core";
-import { buildBrowserFixture, findChromeExecutable } from "../../../scripts/browser-lib";
+import { buildBrowserFixture, findChromeExecutable } from "../../../../scripts/browser-lib";
 
 setDefaultTimeout(30_000);
 
-const scratch = resolve(import.meta.dir, "../../../.scratch/accessibility-mount-test");
+const scratch = resolve(import.meta.dir, "../../../../.scratch/accessibility-mount-test");
 let browser: Browser;
 let page: Page;
 let server: ReturnType<typeof Bun.serve>;
@@ -14,15 +14,15 @@ let server: ReturnType<typeof Bun.serve>;
 beforeAll(async () => {
   await rm(scratch, { recursive: true, force: true });
   await mkdir(scratch, { recursive: true });
-  await symlink(resolve(import.meta.dir, "../node_modules"), `${scratch}/node_modules`, "dir");
+  await symlink(resolve(import.meta.dir, "../../node_modules"), `${scratch}/node_modules`, "dir");
   const entry = `${scratch}/fixture.tsx`;
   await Bun.write(entry, `
     import React from 'react';
     import { createRoot } from 'react-dom/client';
     import { flushSync } from 'react-dom';
     import { createSettingsStore } from '../../packages/core/src/settings/settingsModel';
-    import { SettingsProvider } from '../../packages/react/src/settings';
-    import { useAccessibilitySettings } from '../../packages/react/src/accessibilitySettings';
+    import { SettingsProvider } from '../../packages/react/src/settings/settings';
+    import { useAccessibilitySettings } from '../../packages/react/src/settings/accessibilitySettings';
 
     const store = createSettingsStore({
       getItem: (key) => localStorage.getItem(key),

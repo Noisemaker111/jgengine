@@ -2,7 +2,7 @@ import { useEffect, useState, useSyncExternalStore } from "react";
 import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/react";
 import { useBrowserSuspension, useDialogBehavior } from "@jgengine/react";
 import { useOptionalGamePhase } from "@jgengine/react/hooks";
-import { useSettings } from "@jgengine/react/settings";
+import { useSettings } from "@jgengine/react/settings/settings";
 import { useGameContext } from "@jgengine/react/provider";
 import { useStore } from "@jgengine/react/store";
 import { useGameStore } from "@jgengine/react/hooks";
