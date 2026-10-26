@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef } from "react";
 import "../../style.css";
 import { SettingsTrigger, useBrowserSuspension } from "@jgengine/react";
+import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/core/hud/hudLayout.view";
 import { useSettings } from "@jgengine/core/settings/settings.view";
 import { useGame, useGameStore } from "@jgengine/react/hooks";
 import { useStore } from "@jgengine/react/store";
@@ -37,6 +38,7 @@ export function GameUI() {
   const settings = useSettings();
   const bindings = useActionBindings();
   const uiRef = useRef<HTMLDivElement>(null);
+  const layout = useHudLayout({ storageKey: "drift-foundry" });
   useLayoutEffect(() => {
     // The published shell listens on its focusable viewport. Removed menu/dialog
     // buttons otherwise leave focus on body, so keyboard driving never reaches it.
@@ -96,29 +98,37 @@ export function GameUI() {
   return <>
     <FoundryMenu snapshot={snapshot} session={session} publish={() => publishSession(ctx, session)}/>
     <div className="fd-ui" ref={uiRef}>
-    {snapshot.phase === "running" && <>
-      <TimingTower race={snapshot.race} event={snapshot.event} ghost={snapshot.ghost}/>
-      <GateSign eyebrow={`${nextGate ? `NEXT ${nextGate.requirement === "jump" ? "JUMP STACK" : "PLOW WALL"}` : "EXIT GATE"} / ${Math.ceil(Math.max(0, distance))}m`} call={call} sub={nextGate?.label ?? `${track.exitAt}m escape line`} tone={signTone}/>
-      <nav className="fd-dash-rail" aria-label="Run">
-        <DashTab icon="pause" label="Pause run" keyCap="P" onPress={togglePause}/>
-        <SettingsTrigger className="fd-gear" label="Settings"><span className="fd-gear-face"><GameIcon name="gear" size={17} color="#f2c230"/></span></SettingsTrigger>
-      </nav>
-      <BuildRack installed={snapshot.installed}/>
-      {deliberateSwap && offeredPart && replacing && decisionPickup && decisionPickup.at - run < 60 && <SalvageTag>
+    {snapshot.phase === "running" && <><HudCanvas layout={layout} editChord={false}>
+      <HudPanel id="tower" anchor="top-left" chip="standings" interactive={false}><TimingTower race={snapshot.race} event={snapshot.event} ghost={snapshot.ghost}/></HudPanel>
+      <HudPanel id="sign" anchor="top" priority="critical" interactive={false}><GateSign eyebrow={`${nextGate ? `NEXT ${nextGate.requirement === "jump" ? "JUMP STACK" : "PLOW WALL"}` : "EXIT GATE"} / ${Math.ceil(Math.max(0, distance))}m`} call={call} sub={nextGate?.label ?? `${track.exitAt}m escape line`} tone={signTone}/></HudPanel>
+      <HudPanel id="rail" anchor="top-right" priority="critical">
+        <nav className="fd-dash-rail" aria-label="Run">
+          <DashTab icon="pause" label="Pause run" keyCap="P" onPress={togglePause}/>
+          <SettingsTrigger className="fd-gear" label="Settings"><span className="fd-gear-face"><GameIcon name="gear" size={17} color="#f2c230"/></span></SettingsTrigger>
+        </nav>
+      </HudPanel>
+      <HudPanel id="rack" anchor="top-right" order={1} chip="build" interactive={false}><BuildRack installed={snapshot.installed}/></HudPanel>
+      {deliberateSwap && offeredPart && replacing && decisionPickup && decisionPickup.at - run < 60 && <HudPanel id="tag" anchor="right" priority="critical" interactive={false}><SalvageTag>
         <span className="fd-tag-head"><b>{Math.round(Math.max(0, decisionPickup.at - run))}m</b> {offeredPart.slot}</span>
         <strong>{offeredPart.label} or keep {replacing.label}?</strong>
         <p className="fd-tag-blurb">{offeredPart.blurb}</p>
         <p className="fd-tag-delta">Speed {speedDelta > 0 ? "+" : ""}{speedDelta.toFixed(0)} km/h · steering {(claimedChange(offeredPart, "turnRate") - claimedChange(replacing, "turnRate")).toFixed(1)}</p>
         {offeredPart.slot === "frame" && (offeredPart.grants?.armor ?? 0) > 0 && <p>{snapshot.armorSaveArmed ? "Crusher protection already armed: this swap adds no extra save." : "This swap restores protection against one crusher clip."}</p>}
         <b className="fd-tag-how"><kbd>E</kbd> hold to swap while passing · pass freely to keep</b>
-      </SalvageTag>}
-      <div className="fd-dash">
-        <Tach kmh={snapshot.pose.speedKmh} redline={snapshot.tuning.topSpeed * 3.6} airborne={snapshot.pose.airborne} bent={snapshot.damage.some((zone) => zone.stage > 0)} armor={snapshot.armorSaveArmed}/>
-      </div>
-      <CrusherBar gap={snapshot.compactorGap} surge={snapshot.compactorSurge !== null}/>
-      <RouteRule z={run} length={track.exitAt} gates={track.gates.filter(g => g.route === "main")} cleared={snapshot.clearedGateIds} atRisk={snapshot.salvageAtRisk} next={snapshot.hazards.length > 0 ? snapshot.hazards[0]!.label : nextPickup ? `NEXT SALVAGE · ${partById(nextPickup.partId)?.label} · ${Math.max(0, Math.round(nextPickup.at - run))}m` : "ALL SALVAGE PASSED · EXIT AHEAD"}/>
-      <div className="fd-touch"><div className="fd-touch-steer">{touch("steerLeft", "Steer left", "arrowLeft", "steer")}{touch("steerRight", "Steer right", "arrowRight", "steer")}</div><div className="fd-touch-act">{touch("jumpHop", "JUMP", "jump", "act")}{touch("salvageSwap", "SWAP", "swap", "act")}{touch("plowBrace", "BRACE", "shield", "act")}{touch("brake", "BRAKE", null, "brake")}{touch("throttle", "GO", null, "go")}</div></div>
-    </>}
+      </SalvageTag></HudPanel>}
+      <HudPanel id="dash" anchor="bottom-left" priority="critical" interactive={false}>
+        <div className="fd-dash">
+          <Tach kmh={snapshot.pose.speedKmh} redline={snapshot.tuning.topSpeed * 3.6} airborne={snapshot.pose.airborne} bent={snapshot.damage.some((zone) => zone.stage > 0)} armor={snapshot.armorSaveArmed}/>
+        </div>
+      </HudPanel>
+      <HudPanel id="crusher" anchor="bottom" priority="critical" interactive={false}><CrusherBar gap={snapshot.compactorGap} surge={snapshot.compactorSurge !== null}/></HudPanel>
+      <HudPanel id="route" anchor="bottom-right" chip="route" interactive={false}><RouteRule z={run} length={track.exitAt} gates={track.gates.filter(g => g.route === "main")} cleared={snapshot.clearedGateIds} atRisk={snapshot.salvageAtRisk} next={snapshot.hazards.length > 0 ? snapshot.hazards[0]!.label : nextPickup ? `NEXT SALVAGE · ${partById(nextPickup.partId)?.label} · ${Math.max(0, Math.round(nextPickup.at - run))}m` : "ALL SALVAGE PASSED · EXIT AHEAD"}/></HudPanel>
+    </HudCanvas>
+    {/* Touch pedals stay full size outside the scaled HUD; the dock clearance in style.css keeps panels off them. */}
+    <div className="fd-touch">
+      <div className="fd-touch-steer">{touch("steerLeft", "Steer left", "arrowLeft", "steer")}{touch("steerRight", "Steer right", "arrowRight", "steer")}</div>
+      <div className="fd-touch-act">{touch("jumpHop", "JUMP", "jump", "act")}{touch("salvageSwap", "SWAP", "swap", "act")}{touch("plowBrace", "BRACE", "shield", "act")}{touch("brake", "BRAKE", null, "brake")}{touch("throttle", "GO", null, "go")}</div>
+    </div></>}
     {(snapshot.phase === "won" || snapshot.phase === "crushed") && <RunResults snapshot={snapshot} onRestart={() => commands.run("restart", {})} onTitle={returnToTitle}/>}
     </div>
   </>;
