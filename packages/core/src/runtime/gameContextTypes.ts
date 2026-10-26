@@ -24,7 +24,7 @@ import type { GameDefinition } from "../game/defineGame";
 import type { TerrainField } from "../world/terrain";
 import type { WorldSolids } from "../world/worldSolids";
 import type { GameEventMap, GameEvents, VfxKind } from "../game/events";
-import type { VfxInstanceStore } from "../game/vfxInstance";
+import type { VfxInstanceStore } from "../vfx/vfxInstance";
 import type { GameFeed } from "../game/feed";
 import type { Leaderboard } from "../game/leaderboard";
 import type { Loadouts } from "../game/loadout";

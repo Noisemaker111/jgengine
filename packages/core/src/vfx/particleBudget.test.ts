@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { planParticleBudget } from "./particleBudget";
 
-const entry = (id: string, priority: number, requested: number) => ({ id, priority, requested });
+const entry = (id: string, priority: number, requested: number | undefined) => ({ id, priority, ...(requested === undefined ? {} : { requested }) });
 
 describe("planParticleBudget", () => {
   test("grants every effect when the request fits the cap", () => {
@@ -48,5 +48,25 @@ describe("planParticleBudget", () => {
     expect(plan.grants).toEqual([]);
     expect(plan.dropped).toEqual(["a"]);
     expect(plan.particles).toBe(0);
+  });
+
+  test("an effect cap clamps each request to the tier's per-effect cap before sharing the total", () => {
+    const plan = planParticleBudget([entry("big", 1, 2000), entry("small", 1, 40), entry("unsized", 1, undefined)], 10_000, { effectCap: 512 });
+    expect(plan.grants).toEqual([{ id: "big", particles: 512 }, { id: "small", particles: 40 }, { id: "unsized", particles: 512 }]);
+  });
+
+  test("under an effect cap a zero request still keeps one particle", () => {
+    expect(planParticleBudget([entry("tiny", 1, 0)], 100, { effectCap: 128 }).grants).toEqual([{ id: "tiny", particles: 1 }]);
+  });
+
+  test("an unlimited cap admits every request", () => {
+    const plan = planParticleBudget([entry("a", 1, 300), entry("b", 0, 900)], Infinity);
+    expect(plan.dropped).toEqual([]);
+    expect(plan.particles).toBe(1200);
+  });
+
+  test("bad sizes stay finite integer pools: a fractional request floors and a NaN one takes the effect cap", () => {
+    const plan = planParticleBudget([entry("frac", 1, 3.8), entry("nan", 1, Number.NaN)], 1000, { effectCap: 512 });
+    expect(plan.grants).toEqual([{ id: "frac", particles: 3 }, { id: "nan", particles: 512 }]);
   });
 });

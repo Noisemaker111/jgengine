@@ -7,7 +7,7 @@ import {
 import { createProjectileSystem, type ProjectileSystem, type ProjectileTravelDeps, type ProjectileTravelImpact } from "../../combat/projectiles";
 import type { PhysicsConfig } from "../../game/defineGame";
 import type { GameEvents } from "../../game/events";
-import { createVfxInstanceStore, type VfxInstanceStore } from "../../game/vfxInstance";
+import { createVfxInstanceStore, type VfxInstanceStore } from "../../vfx/vfxInstance";
 import type { LootRegistry } from "../../loot/lootTable";
 import { colliderBounds, colliderWorldCenter, defaultEntityColliders, resolveColliders, type EntityColliderSet, type ResolvedCollider } from "../../scene/colliders";
 import { raycastCollisionMesh } from "../../scene/collisionMesh";

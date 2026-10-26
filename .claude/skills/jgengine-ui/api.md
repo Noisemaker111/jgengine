@@ -4199,10 +4199,6 @@
 
 - `WorldItems` (function): function WorldItems({ config }: { config?: WorldItemRenderConfig }): React.JSX.Element — Rarity→beam/color/label render binding + loot-filter overlay (#32/#33) for every dropped `worldItem`.
 
-## @jgengine/shell/world/WorldParticles
-
-- `resolveParticleBudget` (function): function resolveParticleBudget(quality: GraphicsQuality, requested: number | undefined, particleCap?: number): number — The requested visual pool clamped to the graphics tier.
-
 ## @jgengine/shell/world/WorldPings
 
 - `WorldPings` (function): function WorldPings({ markers, kindStyles, pingsOnly = true, height = 2.4, showCallout = true, renderCallout, }: WorldPingsProps): ReactNode — World-space pings — the in-scene side of a ping/marker: a bobbing downward arrowhead pointing at the spot, a ground ring, and a billboarded callout, colored by marker kind and fading in/out over the marker's lifetime. Reads a `MarkerSet` (typically the one a `createPingSystem` writes to), a marker source, or a static array; mount through `PlayableGame.WorldOverlay`.

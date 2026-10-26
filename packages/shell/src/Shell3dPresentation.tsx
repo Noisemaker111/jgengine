@@ -124,7 +124,7 @@ import { localPlayers } from "@jgengine/core/runtime/localPlayers";
 import type { RuntimeDiagnostic } from "./diagnostics/RuntimeDiagnostics";
 import { createShellKeyHandlers, ShellDebugOverlays, ShellGameUiChrome } from "./ShellChrome";
 import { CombatPresentation } from "./CombatPresentation";
-import { WorldParticles } from "./world/WorldParticles";
+import { ParticleEmitters } from "./vfx/ParticleEmitters";
 import { WorldTireMarks } from "./world/WorldTireMarks";
 import { TerrainQualityContext } from "./terrain/terrainQuality";
 import { detectKtx2Support } from "./render/modelLoad";
@@ -801,7 +801,7 @@ export function Shell3dPresentation({
                     </CullingProvider>
                     <WorldItems config={playable.worldItem} />
                     <WorldTireMarks />
-                    <WorldParticles quality={graphics.quality} particleCap={graphics.profile.particleCap} particleBudget={graphics.profile.particleBudget} diagnostics={devtoolsEnabled} />
+                    <ParticleEmitters quality={graphics.quality} particleCap={graphics.profile.particleCap} particleBudget={graphics.profile.particleBudget} diagnostics={devtoolsEnabled} />
                     <CombatPresentation effects={effects} />
                     {devtoolsEnabled ? <CollisionDebugWorld /> : null}
                     <AudioListener engine={audioEngine} anchor={playable.camera?.rig === "rts" || playable.camera?.rig === "topDown" ? "ground" : "camera"} />

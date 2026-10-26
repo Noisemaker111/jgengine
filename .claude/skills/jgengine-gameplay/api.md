@@ -1043,18 +1043,6 @@
 - `hasUnlock` (function): function hasUnlock(granted: UnlockState, unlockId: string): boolean — ⚠ undocumented
 - `unlockTree` (function): function unlockTree(defs: readonly UnlockDef[], categoryId: string): UnlockDef[] — ⚠ undocumented
 
-## @jgengine/core/game/vfxInstance
-
-- `CombatVfxInstanceEvent` (interface): interface CombatVfxInstanceEvent — The lifecycle op a {@link VfxInstanceStore} emits to its renderer sink. `upsert`/`update` carry the full merged {@link VfxInstanceState} (the renderer applies it directly, no merge); `stop` carries the id plus a fade duration. This is the payload of the `combat.vfxInstance` game event when the store is wired to the event bus.
-- `VfxInstancePatch` (interface): interface VfxInstancePatch — A partial update to a live retained VFX instance. Only the provided fields change; `params` is shallow-merged so a caller can nudge one knob without resending the whole bag. Setting a field to `undefined` clears it. Applying a patch refreshes the instance heartbeat.
-- `VfxInstanceSpec` (interface): interface VfxInstanceSpec — The serializable specification for creating (or replacing) a retained VFX instance. Unlike a one-shot `combat.vfx` burst this describes a long-lived effect whose endpoints and parameters are updated over time. `id` is caller-stable so repeated `upsert` calls address the same effect; omit it to mint one. `from`/`to` are {@link VfxRef}s (an entity instance id or a world point) that a renderer resolves each frame, so an endpoint bound to a moving entity follows it without any per-frame command traffic.
-- `VfxInstanceState` (interface): interface VfxInstanceState — The stored, fully-resolved form of a retained VFX instance. It is a plain serializable record so hosts can replicate it and debug tooling can inspect it; renderers receive it verbatim and never merge partial state themselves. `updatedAtMs` is the last create/update time and drives TTL heartbeat eviction.
-- `VfxInstanceStopOptions` (interface): interface VfxInstanceStopOptions — Options for {@link VfxInstanceStore.stop}.
-- `VfxInstanceStore` (interface): interface VfxInstanceStore — A headless registry of retained VFX instances: create/replace, partially update, and stop long-lived effects addressed by stable id, independent of any renderer. It owns the authoritative serializable state and exposes inspection counts; wire {@link VfxInstanceStoreOptions.onOp} to a renderer (via the `combat.vfxInstance` event) to drive visuals.
-- `VfxInstanceStoreOptions` (interface): interface VfxInstanceStoreOptions — Options for {@link createVfxInstanceStore}.
-- `VfxInstanceStoreState` (interface): interface VfxInstanceStoreState — Plain JSON state of a {@link VfxInstanceStore}.
-- `createVfxInstanceStore` (function): function createVfxInstanceStore(options: VfxInstanceStoreOptions = {}): VfxInstanceStore — Build a headless retained-VFX registry. The store is the serializable source of truth for long-lived effects (beams, tethers, zones, target lines, looping emitters) that must move and mutate without one-shot re-emit flicker: `upsert` creates or replaces by stable id, `update` nudges dynamic params, `stop` disposes with an optional fade, and `tick` enforces TTL heartbeats. It stays independent of renderer availability, so simulation and tests run without a shell; a wired `onOp` sink turns each op into a `combat.vfxInstance` event the shell binds to render resources.
-
 ## @jgengine/core/game/viewports
 
 - `ViewportCameraConfig` (interface): interface ViewportCameraConfig — The follow camera an extra viewport runs; the primary seat keeps the game's main camera rig.

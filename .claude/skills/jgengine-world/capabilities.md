@@ -816,6 +816,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createResourceNodeField` (function) · `import { createResourceNodeField } from "@jgengine/core/world/resourceNode"`
 
+## retained-vfx — create/update/stop long-lived dynamic visual effects (beam, tether, zone, target line) by stable id
+
+- `createVfxInstanceStore` (function) · `import { createVfxInstanceStore } from "@jgengine/core/vfx/vfxInstance"`
+
 ## ride-metrics — measure a sprung vehicle's ride — settle time, dive, roll per g, landing bounce
 
 - `measureRide` (function) · `import { measureRide } from "@jgengine/core/physics/handlingProbe"`

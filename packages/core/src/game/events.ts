@@ -4,7 +4,7 @@ import type { TelegraphShape } from "../combat/telegraph";
 import type { CameraShake } from "../combat/hitReaction";
 import type { ImpactClass } from "../combat/impactProfile";
 import type { FeedbackCue } from "../audio/feedbackCues";
-import type { CombatVfxInstanceEvent } from "./vfxInstance";
+import type { CombatVfxInstanceEvent } from "../vfx/vfxInstance";
 import type { CosmeticsChangedEvent } from "./cosmetics";
 import type { FormChangedEvent } from "../scene/form";
 import type { PossessionSwappedEvent } from "../scene/possession";
