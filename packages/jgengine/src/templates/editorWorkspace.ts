@@ -1,3 +1,4 @@
+import { standaloneOptimizeDeps } from "./gameFiles";
 import type { TemplateFile } from "./types";
 
 const editorPackageJson = (engineVersion: string) => `${JSON.stringify(
@@ -74,6 +75,7 @@ const assetsDir = process.env.JG_EDITOR_ASSETS;
 export default defineConfig({
   plugins: [react(), tailwindcss(), editorHostPlugin({ dir, assetsDir })],
   clearScreen: false,
+${standaloneOptimizeDeps}
 });
 `;
 

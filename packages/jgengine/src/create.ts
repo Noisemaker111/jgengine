@@ -7,6 +7,7 @@ import { GAME_TEMPLATES, type GameTemplate, PROJECT_CONFIG_FILE, renderProjectCo
 import { installSkills } from "./skills";
 import { applySync, planSync, syncContext } from "./sync";
 import { type EditorSceneDoc, gameTemplate, parseCreateName, type TemplateVariant } from "./templates";
+import { ASSETS_PULL_HINT } from "./templates/gameFiles";
 
 /** @internal */
 export function writeGame(
@@ -93,7 +94,7 @@ const CREATE_USAGE = `usage: jgengine create "<Game Name>" [flags]
                              builder: a 3d world players build in together, on Convex
   --player <asset id>        starter player model (default asset:person_casual)
   --ground terrain|flat      starter ground (default terrain)
-  --scene empty|starter      empty scene, or the old starter props (default empty)
+  --scene starter|empty      starter props and a goal to walk to, or just ground and the player (default starter)
   --from-scene <folder>      promote an authored editor.scene.json into the game
   --no-editor                drop the editor scene files
   The game's jgengine.json records what it is and uses; edit it, then run jgengine sync.
@@ -148,25 +149,20 @@ function runInstall(pm: string, targetDir: string): ReturnType<typeof spawnSync>
 }
 
 /**
- * The one command that fills `public/models` for a scaffolded game. `starter` is a meta-id the
- * assets CLI resolves to every pack the starter catalog needs, so this stays a single line in
- * create's output, in AGENTS.md, and in the user's terminal.
+ * Pull the starter packs into the new game's `public/models`, running the installed
+ * `@jgengine/assets` CLI with the runtime running create, so no package-manager bin shim is involved.
+ * Returns false on any failure — offline, a blocked proxy, a missing package — so the caller can
+ * print {@link ASSETS_PULL_HINT} rather than fail a scaffold over a network condition.
+ * @internal
  */
-export const ASSETS_PULL_HINT = "npx assets pull starter";
-
-/**
- * Pull the starter packs into the new game's `public/models`. Returns false on any failure —
- * offline, a blocked proxy, a missing bin — so the caller can print {@link ASSETS_PULL_HINT}
- * rather than fail a scaffold over a network condition.
- */
-function runAssetsPull(targetDir: string): boolean {
-  const bin = join(targetDir, "node_modules", ".bin", process.platform === "win32" ? "assets.cmd" : "assets");
-  if (!existsSync(bin)) return false;
-  const result = spawnSync(bin, ["pull", "starter"], {
-    cwd: targetDir,
-    stdio: "inherit",
-    shell: process.platform === "win32",
-  });
+export function runAssetsPull(targetDir: string): boolean {
+  const pkgDir = join(targetDir, "node_modules", "@jgengine", "assets");
+  const manifestPath = join(pkgDir, "package.json");
+  if (!existsSync(manifestPath)) return false;
+  const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as { bin?: string | Record<string, string> };
+  const bin = typeof manifest.bin === "string" ? manifest.bin : manifest.bin?.assets;
+  if (bin === undefined) return false;
+  const result = spawnSync(process.execPath, [join(pkgDir, bin), "pull", "starter"], { cwd: targetDir, stdio: "inherit" });
   return result.status === 0;
 }
 
@@ -209,7 +205,7 @@ export async function runCreate(argv: string[]): Promise<number> {
     const sceneArg = flag(argv, "from-scene");
     const player = flag(argv, "player");
     const ground = flag(argv, "ground") ?? "terrain";
-    const sceneMode = flag(argv, "scene") ?? "empty";
+    const sceneMode = flag(argv, "scene") ?? "starter";
     if (ground !== "flat" && ground !== "terrain") throw new Error(`--ground must be flat or terrain (got ${ground})`);
     if (sceneMode !== "empty" && sceneMode !== "starter") throw new Error(`--scene must be empty or starter (got ${sceneMode})`);
     const dimension = template === "2d" ? "2d" : "3d";

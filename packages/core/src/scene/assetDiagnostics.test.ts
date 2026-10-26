@@ -63,7 +63,7 @@ describe("classifyAssetResponse", () => {
     // Names the file and the one command that serves its pack.
     expect(d.message).toContain("Missing file /models/kaykit-adventurers/Barbarian.glb");
     expect(d.message).toContain("bun run games:provision");
-    expect(d.message).toContain("npx assets pull kaykit-adventurers");
+    expect(d.message).toContain("npx @jgengine/assets pull kaykit-adventurers");
   });
 
   test("a library model names its model: pull target", () => {
@@ -89,7 +89,7 @@ describe("classifyAssetResponse", () => {
     expect(d.message.toLowerCase()).toContain("html page");
     expect(d.message).toContain("missing/Prop");
     expect(d.message).toContain("Missing file /models/missing/Prop.glb");
-    expect(d.message).toContain("npx assets pull missing");
+    expect(d.message).toContain("npx @jgengine/assets pull missing");
   });
 
   test("html content-type with no readable bytes still flags html", () => {

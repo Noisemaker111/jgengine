@@ -2,6 +2,7 @@ import type { TemplateFile, TemplateOptions } from "./types";
 
 /** Add a connected shared-world composition to the standard editor-backed game scaffold. */
 export function sharedBuilderFiles(files: TemplateFile[], options: TemplateOptions): TemplateFile[] {
+  const editorProp = options.editor === false ? "" : ' editor={() => import("@jgengine/editor")}';
   const packageFile = files.find(file => file.path === "package.json")!;
   const pkg = JSON.parse(packageFile.contents);
   pkg.dependencies["@jgengine/convex"] = options.variant === "in-repo" ? "workspace:*" : `^${options.engineVersion}`;
@@ -113,13 +114,20 @@ import { game } from "./game.config";
 import "./index.css";
 const root = createRoot(document.getElementById("root")!);
 const url = import.meta.env.VITE_CONVEX_URL;
-if (!url) root.render(<main className="p-8 text-white">Connect this world to continue. See README.md for setup.</main>);
-else {
+if (!url) {
+  // No backend yet: the world runs offline on this machine until VITE_CONVEX_URL is set.
+  root.render(
+    <>
+      <GameHost playable={game} multiplayer={null}${editorProp} />
+      <p className="pointer-events-none fixed right-4 top-4 rounded bg-slate-950/80 px-3 py-1 text-xs text-white">Offline: see README.md to share this world</p>
+    </>,
+  );
+} else {
   const client = new ConvexReactClient(url);
   const userId = localStorage.getItem("jg-user") ?? crypto.randomUUID();
   localStorage.setItem("jg-user", userId);
   const multiplayer = resolveConvexMultiplayer({ game: game.game, gameId: ${JSON.stringify(options.id)}, client, userId });
-  root.render(<ConvexProvider client={client}><GameHost playable={game} multiplayer={multiplayer}${options.editor === false ? "" : ' editor={() => import("@jgengine/editor")}'} /></ConvexProvider>);
+  root.render(<ConvexProvider client={client}><GameHost playable={game} multiplayer={multiplayer}${editorProp} /></ConvexProvider>);
 }
 ` },
     { path: "src/game/ui/GameUI.tsx", contents: `import { ChatPanel } from "@jgengine/core/chat/chat.view";
@@ -129,7 +137,7 @@ export function GameUI() {
 ` },
     { path: "README.md", contents: `# Shared world setup
 
-Run bun run dev:backend, select a Convex project, and copy its URL to VITE_CONVEX_URL in .env.local. Then run bun dev.
+bun dev runs the world offline on this machine. To share it, run bun run dev:backend, select a Convex project, copy its URL to VITE_CONVEX_URL in .env.local, and run bun dev again.
 The scaffold uses explicit anonymous development identities; wire production authentication before opening the world to public users.
 
 The runtime declares shared topology, scoped claim/accrue commands, fractional cash precision, and actor-only joins. Presence queries use the viewer chunk, chat is rate-limited, and the online pipeline schedules batches of 25. Claiming a cell validates and pays through the territory primitive. Author buildable objects in the editor, then use placeWithTerritory for placement.
