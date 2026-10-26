@@ -9,6 +9,7 @@ import {
   deriveLedger,
   ledgerDrift,
   namesDomain,
+  probeGivesUp,
   probeMatches,
   renderSummary,
   seedDeclaration,
@@ -237,6 +238,22 @@ describe("adoption without a probe", () => {
     // A live readout passes, with the counters the probe prints.
     expect(windowProbeVerdict("__jgengineRun", { run: 2, carried: 80, banked: 200, lost: 0, best: 200 })).toBeNull();
     expect(windowProbeVerdict("__jgengineAudio", { rms: 0, peak: 0, master: 0.8 })).toBeNull();
+  });
+
+  test("the boot probe waits on game frames after mount, not on the clock", () => {
+    const limits = { settleFrames: 300, mountMs: 300_000 };
+    // Under load the game mounts four minutes in: not given up, however long that took.
+    expect(probeGivesUp({ startedAt: 0, now: 240_000, framesSinceMount: null }, limits)).toBe(false);
+    // Mounted and slow: 90 s of wall time but only 40 frames drawn, so a late readout is still awaited.
+    expect(probeGivesUp({ startedAt: 0, now: 90_000, framesSinceMount: 40 }, limits)).toBe(false);
+    // 300 frames after mount with the readout still missing: absent, on any machine.
+    expect(probeGivesUp({ startedAt: 0, now: 20_000, framesSinceMount: 300 }, limits)).toBe(true);
+    // A page that never mounts ends at the mount limit.
+    expect(probeGivesUp({ startedAt: 0, now: 300_000, framesSinceMount: null }, limits)).toBe(true);
+    // A page that threw before mounting will not mount: it stops at once instead of waiting out the limit.
+    expect(probeGivesUp({ startedAt: 0, now: 5_000, framesSinceMount: null, crashedBeforeMount: true }, limits)).toBe(true);
+    // An error after mount does not cut the frame wait short.
+    expect(probeGivesUp({ startedAt: 0, now: 5_000, framesSinceMount: 10, crashedBeforeMount: true }, limits)).toBe(false);
   });
 
   test("an id the ledger does not carry is still refused as an adoption", () => {

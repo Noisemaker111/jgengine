@@ -1,5 +1,5 @@
 import { afterEach, expect, test } from "bun:test";
-import { existsSync, mkdirSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { awaitTask, parseAwaitArgs, EXIT_LOST, EXIT_NO_TASK } from "./bg-await";
@@ -14,8 +14,33 @@ function checkout(): string {
   made.add(dir);
   return dir;
 }
-afterEach(() => {
-  for (const dir of made) rmSync(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 }); // Windows holds an exited child's log open briefly (EBUSY under load)
+/** The task folders under `dir`: `dir` itself when it is one, else its checkout's `.scratch/bg/<id>`. */
+function taskFolders(dir: string): string[] {
+  if (existsSync(join(dir, "runner"))) return [dir];
+  const bg = join(dir, ".scratch", "bg");
+  return existsSync(bg) ? readdirSync(bg).map((id) => join(bg, id)) : [];
+}
+
+function alive(pid: number): boolean {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// The runner writes `exit` and then exits, holding `out.log` until it is gone; on Windows removing
+// the folder before then fails with EBUSY. So cleanup waits for each runner process to end.
+afterEach(async () => {
+  for (const dir of made) {
+    for (const folder of taskFolders(dir)) {
+      const pid = readRunner(folder);
+      // wait-ok: waits on the runner process ending (the event), bounded so a stuck runner cannot hang the suite
+      for (let turn = 0; pid !== null && alive(pid) && turn < 600; turn += 1) await Bun.sleep(50);
+    }
+    rmSync(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
+  }
   made.clear();
 });
 

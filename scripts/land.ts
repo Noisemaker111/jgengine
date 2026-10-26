@@ -65,6 +65,7 @@ import { basename, isAbsolute, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { bendsSection, findBends, withBends } from "./bends";
 import { FRAGMENT_PATTERN } from "./changelog-fragments";
+import { rebaseResolvingGenerated, regenerateAndCommit } from "./generated-rebase";
 import { assertCheckoutReady } from "./checkout-ready";
 import { printHelpIfAsked } from "./script-help";
 import { attemptsOf, judgeChecks, runIdFrom } from "./ci-status";
@@ -813,10 +814,26 @@ export interface SyncResult {
  * Land owns a branch only once its own push succeeds; a branch that already exists on the remote
  * with commits this checkout lacks is refused rather than overwritten.
  */
-export function syncOntoBase(options: { branch: string; base: string; git: Git }): SyncResult {
+export function syncOntoBase(options: {
+  branch: string;
+  base: string;
+  git: Git;
+  /** Runs a generator in this checkout; a rebase that resolved generated files reruns them. */
+  exec?: (command: readonly string[]) => Run;
+}): SyncResult {
   const { branch, base, git: runGit } = options;
+  const exec = options.exec ?? ((command: readonly string[]): Run => run(command[0]!, command.slice(1), 20 * 60_000));
 
-  const pushed = runGit(["push", "-u", "origin", "HEAD"]);
+  let pushed = runGit(["push", "-u", "origin", "HEAD"]);
+  if (pushed.status !== 0) {
+    // A remote tip this branch once held (an earlier land's push, before a rebase the lane then
+    // finished) is this lane's own, so it is rewritten with a lease on exactly that tip.
+    const remote = runGit(["ls-remote", "origin", `refs/heads/${branch}`]).stdout.trim().split(/\s+/)[0] ?? "";
+    const held = runGit(["reflog", "show", "--format=%H", `refs/heads/${branch}`]).stdout.split("\n").map((line) => line.trim());
+    if (/^[0-9a-f]{40}$/.test(remote) && held.includes(remote)) {
+      pushed = runGit(["push", "-u", `--force-with-lease=${branch}:${remote}`, "origin", `HEAD:${branch}`]);
+    }
+  }
   if (pushed.status !== 0) {
     return {
       rebased: false,
@@ -836,13 +853,19 @@ export function syncOntoBase(options: { branch: string; base: string; git: Git }
   }
   if (count === 0) return { rebased: false, refusal: null };
 
-  const rebased = runGit(["rebase", `origin/${base}`]);
-  if (rebased.status !== 0) {
-    runGit(["rebase", "--abort"]);
+  // Generated files (api.md, the export manifest, capabilities.json) and the lane's change note
+  // never stop a landing: they are resolved here and regenerated on the merged source.
+  const rebased = rebaseResolvingGenerated(runGit, `origin/${base}`);
+  if (!rebased.ok) {
+    const files = rebased.conflicts.length > 0 ? ` in ${rebased.conflicts.join(", ")}` : "";
     return {
       rebased: false,
-      refusal: `rebase onto origin/${base} hit a conflict: ${details(rebased)}\n   Resolve it, push, and run land again.`,
+      refusal: `rebase onto origin/${base} hit a conflict${files}: ${rebased.detail}\n   Resolve it, push, and run land again.`,
     };
+  }
+  if (rebased.regenerate.length > 0) {
+    const failed = regenerateAndCommit(runGit, exec);
+    if (failed !== null) return { rebased: true, refusal: failed };
   }
 
   const forced = runGit(forcePushArgs(branch));
