@@ -3,7 +3,7 @@ import { useEffect, useSyncExternalStore } from "react";
 
 import { devtools } from "@jgengine/core/devtools/devtools";
 
-import { createShaderWarmup, firstUnlinkedDrawable, holdDraws, registerSceneWarmup, SHADER_WARMUP_DEFAULTS, type HeldDraw, type ShaderWarmupState } from "@jgengine/core/render/shaderWarmup.draw";
+import { createShaderWarmup, deferUnlinkedDraws, firstUnlinkedDrawable, holdDraws, registerSceneWarmup, SHADER_WARMUP_DEFAULTS, type HeldDraw, type ShaderWarmupState } from "@jgengine/core/render/shaderWarmup.draw";
 
 /** Warmup state before the gate has run, so the loading screen covers the very first frame. @internal */
 export const SCENE_WARMUP_PENDING: ShaderWarmupState = { phase: "waiting", rounds: 0, programs: 0, planned: 0, deferred: 0, progress: 0, elapsedMs: 0 };
@@ -111,6 +111,8 @@ export function SceneWarmupGate({ onState, sceneDrawsToTarget }: { onState: (sta
       watch();
       let inWatchedFrame = false;
       const releaseWatchDraws = holdDraws(gl, { holding: () => inWatchedFrame && preparing });
+      // Whatever mounts later in play, or turns visible mid-frame, is left out until it is linked.
+      const undoDefer = deferUnlinkedDraws(gl, scene, () => !preparing);
       const enterWatched = addEffect(() => {
         inWatchedFrame = true;
         if (preparing || performance.now() > watchUntil) return;
@@ -120,6 +122,7 @@ export function SceneWarmupGate({ onState, sceneDrawsToTarget }: { onState: (sta
         inWatchedFrame = false;
       });
       unwatch = () => {
+        undoDefer();
         releaseWatchDraws();
         enterWatched();
         leaveWatched();
