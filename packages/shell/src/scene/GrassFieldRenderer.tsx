@@ -3,7 +3,7 @@ import { useCallback, useMemo } from "react";
 import { resolveGrassObject } from "@jgengine/core/world/grassKind";
 import type { SceneKindObject } from "@jgengine/core/scene/sceneKinds";
 import type { TerrainField } from "@jgengine/core/world/terrain";
-import { clearanceMasksFrom, DEFAULT_CLEARANCE_KINDS } from "@jgengine/core/world/scatterRegion";
+import { clearanceMasksFrom, DEFAULT_CLEARANCE_KINDS } from "@jgengine/core/scatter/scatterRegion";
 import { masksInfluence } from "@jgengine/core/world/geometry";
 
 import { GrassPatch } from "../grass/GrassPatch";

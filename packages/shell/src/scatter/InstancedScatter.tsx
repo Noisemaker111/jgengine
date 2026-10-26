@@ -5,7 +5,7 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";
 
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
-import { chunkScatterInstances, type ScatterInstance } from "@jgengine/core/world/scatterRegion";
+import { chunkScatterInstances, type ScatterInstance } from "@jgengine/core/scatter/scatterRegion";
 import { beginFallbackSeam, reportFallbackSeam } from "@jgengine/core/devtools/fallbackSeams";
 import { createModelVariantSelector, type ModelVariantSelector } from "@jgengine/core/lod/modelLod";
 

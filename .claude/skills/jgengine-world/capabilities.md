@@ -263,9 +263,9 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `citySolids` (function) · `import { citySolids } from "@jgengine/core/world/cityKind"`
 - `extractGraphBlocks` (function) · `import { extractGraphBlocks } from "@jgengine/core/world/cityBlocks"`
-- `polygonSignedArea` (function) · `import { polygonSignedArea } from "@jgengine/core/world/cityGeometry"`
-- `rectClearsPolyline` (function) · `import { rectClearsPolyline } from "@jgengine/core/world/cityGeometry"`
-- `rectsSeparated` (function) · `import { rectsSeparated } from "@jgengine/core/world/cityGeometry"`
+- `polygonSignedArea` (function) · `import { polygonSignedArea } from "@jgengine/core/world/polygon"`
+- `rectClearsPolyline` (function) · `import { rectClearsPolyline } from "@jgengine/core/world/polygon"`
+- `rectsSeparated` (function) · `import { rectsSeparated } from "@jgengine/core/world/polygon"`
 - `resolveCityObject` (function) · `import { resolveCityObject } from "@jgengine/core/world"`
 
 ## city-generator — subdivide street blocks into size-tiered street-fronting plots

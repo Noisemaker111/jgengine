@@ -1,4 +1,4 @@
-import { clearanceZonesFrom } from "@jgengine/core/world/scatterRegion";
+import { clearanceZonesFrom } from "@jgengine/core/scatter/scatterRegion";
 import { editorLayers } from "./editorLayers";
 import type { PhysicsConfig } from "@jgengine/core/game/defineGame";
 import { environment, sky, terrain, type EnvironmentWorldFeature } from "@jgengine/core/world/features";

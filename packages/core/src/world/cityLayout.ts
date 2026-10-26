@@ -11,7 +11,7 @@
 import { tunable } from "../devtools/devtools";
 import { seededStreams } from "../random/rng";
 import { deriveBuildingLots, type LotArea, type PlacedBuildingLot, type RoadFrontage } from "./buildingLots";
-import { rectsSeparated, type OrientedRect } from "./cityGeometry";
+import { rectsSeparated, type OrientedRect } from "./polygon";
 import { road, type LiveRoadSource, type RoadEnvironmentConfig, type RoadEnvironmentDescriptor } from "./features";
 import type { Vec2 } from "./geometry";
 

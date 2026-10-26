@@ -8,7 +8,7 @@
  * engine edits (see `examples/studios`). Call
  * {@link registerBuiltinSceneKinds} once at startup (idempotent).
  */
-import { SCATTER_PATH_KIND } from "../world/scatterRegion";
+import { SCATTER_PATH_KIND } from "../scatter/scatterRegion";
 import { registerWaterKind } from "../water/waterKind";
 import { registerGrassKind } from "../world/grassKind";
 import { registerSoilKind } from "../world/soilKind";
@@ -16,7 +16,7 @@ import { registerPoleLineKind } from "../world/poleLineKind";
 import { registerDecalKind } from "../world/decalKind";
 import { registerBuildingGenerator } from "../world/buildingGenerator";
 import { registerCityKind } from "../world/cityKind";
-import { describeScatterCoverage, densityCoverage } from "../world/scatterCoverage";
+import { describeScatterCoverage, densityCoverage } from "../scatter/scatterCoverage";
 import { registerSceneKind, type ParamSchema } from "./sceneKinds";
 
 /**

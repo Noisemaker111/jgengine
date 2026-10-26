@@ -13,7 +13,7 @@ import {
   scatterRegionFromPath,
   SCATTER_PATH_KIND,
   type ScatterTerrain,
-} from "@jgengine/core/world/scatterRegion";
+} from "@jgengine/core/scatter/scatterRegion";
 
 import { TERRAIN_MATERIALS } from "../uiStore";
 import { libraryMaterialAsset } from "@jgengine/assets/catalogs/materialLibrary";

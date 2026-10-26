@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { devtools } from "../devtools/devtools";
 import { deriveBuildingLots } from "./buildingLots";
-import { rectClearsPolyline, rectsSeparated } from "./cityGeometry";
+import { rectClearsPolyline, rectsSeparated } from "./polygon";
 import {
   US_CITY_LAYOUT,
   cityLaneOffsets,

@@ -11,7 +11,7 @@
  *
  * @capability world-environment lots aligned to and facing road frontage, with a setback sidewalk strip
  */
-import { rectClearsPolyline, rectsSeparated, type OrientedRect } from "./cityGeometry";
+import { rectClearsPolyline, rectsSeparated, type OrientedRect } from "./polygon";
 import type { WorldBounds } from "./features";
 import { seededStreams } from "../random/rng";
 import type { Vec2 } from "./geometry";

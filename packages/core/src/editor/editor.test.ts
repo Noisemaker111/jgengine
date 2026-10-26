@@ -33,7 +33,7 @@ import {
   migrateTerrainSnapshot,
 } from "../world/terraform";
 import { flatField } from "../world/terrain";
-import { resolveScatter, SCATTER_PATH_KIND } from "../world/scatterRegion";
+import { resolveScatter, SCATTER_PATH_KIND } from "../scatter/scatterRegion";
 
 describe("editor document", () => {
   test("normalize fills empty arrays", () => {

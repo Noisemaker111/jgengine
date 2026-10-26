@@ -1,4 +1,4 @@
-import { scatterFootprintArea } from "@jgengine/core/world/scatterCoverage";
+import { scatterFootprintArea } from "@jgengine/core/scatter/scatterCoverage";
 import type {
   ParamField,
   ParamSchema,

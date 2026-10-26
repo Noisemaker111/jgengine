@@ -1,4 +1,4 @@
-import { polygonArea } from "./cityGeometry";
+import { polygonArea } from "./polygon";
 import { footprintAabb, type Aabb, type Vec2 } from "./geometry";
 
 export type WallVec3 = readonly [number, number, number];

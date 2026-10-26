@@ -1,5 +1,5 @@
 import { type Aabb, type Vec2, pointInAabb } from "./geometry";
-import { pointInPolygon, polygonBounds } from "./scatterRegion";
+import { pointInPolygon, ringBounds } from "./polygon";
 
 /**
  * Deterministic spatial sampling — draw one or many positions from a geometric region under
@@ -440,7 +440,7 @@ export function annulusRegion(
  * @capability spatial-region-polygon sample within an arbitrary closed polygon on the XZ plane
  */
 export function polygonRegion(polygon: readonly Vec2[]): SampleRegion<Vec2> {
-  const bounds = polygonBounds(polygon);
+  const bounds = polygon.length === 0 ? null : ringBounds(polygon);
   const width = bounds === null ? 0 : bounds.maxX - bounds.minX;
   const depth = bounds === null ? 0 : bounds.maxZ - bounds.minZ;
   return {
@@ -451,7 +451,7 @@ export function polygonRegion(polygon: readonly Vec2[]): SampleRegion<Vec2> {
       return [b.minX + rng() * width, b.minZ + rng() * depth];
     },
     contains(point) {
-      return pointInPolygon(point, polygon);
+      return pointInPolygon(polygon, point[0]!, point[1]!);
     },
   };
 }

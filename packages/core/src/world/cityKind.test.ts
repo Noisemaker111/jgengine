@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { readCityRules, resolveCityObject, CITY_DEFAULTS, CITY_SCHEMA, type CityRules, type ResolvedCity } from "./cityKind";
-import { distanceToRing, pointInPolygon, polygonArea, polygonsOverlap, ringSelfIntersects } from "./cityGeometry";
+import { distanceToRing, pointInPolygon, polygonArea, polygonsOverlap, ringSelfIntersects } from "./polygon";
 import { seededRng } from "../random/rng";
 import type { StreetNetworkRules } from "../roads/streetGenerator";
 import type { SceneKindObject } from "../scene/sceneKinds";

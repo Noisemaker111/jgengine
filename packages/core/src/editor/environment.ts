@@ -1,6 +1,6 @@
 import type { SkyEnvironmentConfig, WorldBounds } from "../world/features";
 import type { AvoidZone } from "../world/geometry";
-import { clearanceZonesFrom, DEFAULT_CLEARANCE_KINDS, type ClearanceOptions } from "../world/scatterRegion";
+import { clearanceZonesFrom, DEFAULT_CLEARANCE_KINDS, type ClearanceOptions } from "../scatter/scatterRegion";
 import type { TerraformSnapshot } from "../world/terraform";
 import { editorDocumentBounds } from "./document";
 import type { EditorAutoExposure, EditorColorGrading, EditorDocument, EditorEnvironment, EditorLightProbe } from "./types";

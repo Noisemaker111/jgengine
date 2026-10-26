@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { libraryModel } from "@jgengine/assets/catalogs/modelLibrary";
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
-import type { ScatterInstance } from "@jgengine/core/world/scatterRegion";
+import type { ScatterInstance } from "@jgengine/core/scatter/scatterRegion";
 import type { AuthoredSurfaceConfig } from "@jgengine/shell/render/authoredSurfaceMaterial";
 import { InteriorDressing, PracticalLights } from "@jgengine/shell/render/InteriorDressing";
 import { StaticShapeInstances, type StaticShapeInstance } from "@jgengine/shell/render/staticShapeInstances";

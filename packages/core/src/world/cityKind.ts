@@ -61,7 +61,7 @@ import {
   type CircuitSealKind,
 } from "../roads/raceCircuit";
 import { furnitureSpots, parkingSpots } from "../roads/streets";
-import { CITY_BUILDING_BUDGET, budgetWarning, placedCoverage } from "./scatterCoverage";
+import { CITY_BUILDING_BUDGET, budgetWarning, placedCoverage } from "../scatter/scatterCoverage";
 import type { RoadEnvironmentDescriptor } from "./features";
 import type { WorldSolid } from "./worldSolids";
 import type { RoadPoint } from "../roads/roads";
@@ -85,7 +85,7 @@ import {
   RingWalker,
   type CityBlockKind,
 } from "./cityBlocks";
-import { fitRectInPolygon, rayDistanceToRing, pointInPolygon, polygonArea, polygonCentroid, polygonMeanWidth, polygonsOverlap, insetRingUniform, rectsSeparated, ringBounds } from "./cityGeometry";
+import { fitRectInPolygon, rayDistanceToRing, pointInPolygon, polygonArea, polygonCentroid, polygonMeanWidth, polygonsOverlap, insetRingUniform, rectsSeparated, ringBounds } from "./polygon";
 import type { Vec2 } from "./geometry";
 
 /** The editor volume kind marking a box as a procedural city district. */

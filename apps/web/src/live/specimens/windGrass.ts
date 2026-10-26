@@ -8,7 +8,7 @@
  */
 import * as THREE from "three";
 
-import { scatter } from "@jgengine/core/world/scatter";
+import { scatter } from "@jgengine/core/scatter/scatter";
 import { windField, type WindField } from "@jgengine/core/world/wind";
 import { mountLive } from "../mount";
 

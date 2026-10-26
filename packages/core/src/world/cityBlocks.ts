@@ -10,7 +10,7 @@
  *
  * @capability city-district road-derived block polygons, parcel subdivision, buildable footprints
  */
-import { clipHalfPlane, dedupeRing, distanceToRing, ensureCcw, extractSimpleLoop, insetRing, pointInPolygon, polygonArea, polygonMeanWidth, polygonSignedArea } from "./cityGeometry";
+import { clipHalfPlane, dedupeRing, distanceToRing, ensureCcw, extractSimpleLoop, insetRing, pointInPolygon, polygonArea, polygonMeanWidth, polygonSignedArea } from "./polygon";
 import { isProductionEnvironment } from "../devtools/saveEndpoint";
 import type { Vec2 } from "./geometry";
 

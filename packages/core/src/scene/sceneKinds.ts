@@ -178,12 +178,12 @@ export type ParsedParams = Record<string, number | boolean | string | WeightedPa
  * Marks a kind as *scatterable* — it fills an authored area with instances at one density under a
  * bounded budget — so the editor renders the shared `CoverageSection` (Area → Assets → Density slider
  * + budget note) that gives grass/scatter/city one authoring gesture. `spec` selects the unit + budget
- * from `@jgengine/core/world/scatterCoverage`; `densityKey` is the single density slider hoisted into
+ * from `@jgengine/core/scatter/scatterCoverage`; `densityKey` is the single density slider hoisted into
  * the coverage header (and hidden from the schema body below); `assetsKey` is the optional weighted
  * "what fills it" palette summarized in the header.
  */
 export interface SceneKindCoverage {
-  spec: import("../world/scatterCoverage").ScatterCoverageKind;
+  spec: import("../scatter/scatterCoverage").ScatterCoverageKind;
   densityKey: string;
   assetsKey?: string;
 }

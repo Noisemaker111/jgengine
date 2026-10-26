@@ -1424,11 +1424,11 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/world/cityKind",
+      "module": "@jgengine/core/world/polygon",
       "domain": "world",
       "gameFacing": false,
       "probe": null,
-      "intent": "editor-authorable procedural city district (streets, zoning, buildings, furniture)"
+      "intent": "polygon math for road-derived blocks, parcels, and buildable footprints"
     },
     {
       "id": "city-generator",
@@ -8191,8 +8191,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/world/scatterCoverage",
-      "domain": "world",
+      "module": "@jgengine/core/scatter/scatterCoverage",
+      "domain": "scatter",
       "gameFacing": false,
       "probe": null,
       "intent": "shared density/budget semantics for scatterable kinds"
