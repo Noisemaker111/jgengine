@@ -8,7 +8,7 @@ export const SPAWN_SEARCH_RADIUS_CELLS = 60;
 const SAMPLES_PER_RING = 128;
 const MAX_RINGS = 16;
 
-export function pickSpawnPoint(seed: number, claims: readonly DatacenterClaim[]): { x: number; z: number } {
+export function pickDatacenterSpawn(seed: number, claims: readonly DatacenterClaim[]): { x: number; z: number } {
   const claimed = new Set(claims.map((claim) => cellKey({ cx: claim.cx, cz: claim.cz })));
   const isFree = (cell: CellCoord) => !claimed.has(cellKey(cell)) && !isStructuralColumnCell(cell);
   const rng = mulberry32(seed);

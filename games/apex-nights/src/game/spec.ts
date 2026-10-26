@@ -45,7 +45,7 @@ const jobs: Record<string, WorldJobDecl> = Object.fromEntries(
 );
 
 /** The whole career as data: money, garage parts, race results and the order races open in. */
-export const world: WorldModelDecl = {
+export const campWorld: WorldModelDecl = {
   factions: {
     crew: {
       label: `${idea.name} crew`,
@@ -65,7 +65,7 @@ export const world: WorldModelDecl = {
 
 export const career = defineGameSpec({
   id: idea.spec,
-  world,
+  world: campWorld,
   autoStart: true,
   input: (ctx) => ({ actors: { player: { alive: ctx.scene.entity.get(ctx.player.userId) !== null } } }),
 });

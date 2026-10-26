@@ -17,7 +17,7 @@ import { partById, type PartIconId } from "../parts/catalog";
 import { ROUTE_GATES } from "../route/gates";
 import { EXIT_Z, RUN_SEED, SPAWN_Z } from "../run/constants";
 import { ROW_SIX_TRACK, type Track } from "../tracks/catalog";
-import { createVehicleController, type VehicleController, type VehiclePose } from "../vehicle/controller";
+import { createVehicleController, type VehicleController, type VehicleTelemetry } from "../vehicle/controller";
 
 /**
  * Three yard karts that race the same authored corridor as the player. The driving itself is the
@@ -189,7 +189,7 @@ interface Rival {
   rng: SeededRng;
   line: readonly DrivePathPoint[];
   vehicle: VehicleController;
-  pose: VehiclePose;
+  pose: VehicleTelemetry;
   recoverSeconds: number;
 }
 
@@ -222,7 +222,7 @@ function createRival(def: RivalDef, groundHeightAt: (x: number, z: number) => nu
 }
 
 /** Springs under the nose: a rival hops the ramp it is about to reach, exactly like the HUD cue tells the player to. */
-function rampAhead(pose: VehiclePose, track: Track): boolean {
+function rampAhead(pose: VehicleTelemetry, track: Track): boolean {
   const run = pose.run ?? pose.position[2];
   const route = pose.route ?? MAIN_ROUTE;
   const gate = track.gates.find((entry) => entry.requirement === "jump" && entry.route === route && entry.atZ >= run);

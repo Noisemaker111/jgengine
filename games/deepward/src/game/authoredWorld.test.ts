@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { DECOR, EXIT, GARAGE, HOME_SPAWN, PROPS, ROOMS, SALVAGE, STASH, VAULT_SPAWN, WORLD_BOUNDS, distance, editorLayers, lineOfSight, walkable, type Point } from "../world";
+import { DECOR, EXIT, GARAGE, HOME_SPAWN, PROPS, ROOMS, SALVAGE, STASH, VAULT_SPAWN, WORLD_BOUNDS, groundDistance, editorLayers, lineOfSight, walkable, type Point } from "../world";
 
 describe("official authored Deepward scene", () => {
   test("stable acquisitions and both home services belong to reachable authored floors", () => {
@@ -21,7 +21,7 @@ describe("official authored Deepward scene", () => {
       }
     }
     for (const target of [EXIT, ...SALVAGE.map(item => item.at)]) {
-      expect(reachable.some(point => distance(point, target) < 1.5 && lineOfSight(point, target))).toBe(true);
+      expect(reachable.some(point => groundDistance(point, target) < 1.5 && lineOfSight(point, target))).toBe(true);
     }
   });
   test("authored machinery blocks both movement and firing while room interiors remain navigable", () => {

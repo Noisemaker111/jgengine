@@ -14,7 +14,7 @@ import { refreshScrapSlots } from "./scrapSlots";
 import { noteEquipped } from "./feel";
 import { gunById, rollGun, startReload, reservePhase } from "./handroll";
 import { equipFieldGun, salvageFieldGun, bankFieldHaul } from "./items/fieldGear";
-import { player } from "./entities/players/catalog";
+import { playerDef } from "./entities/players/catalog";
 import { session } from "./session";
 import {
   blackMarketOpenStore,
@@ -579,7 +579,7 @@ function applyPassiveEffects(ctx: GameContext, previousHealthMult = 1): void {
     }
   }
   ctx.scene.entity.update(userId, {
-    movement: { walkSpeed: Math.round(player.walkSpeed * (1 + bonus("moveSpeed")) * 10) / 10 },
+    movement: { walkSpeed: Math.round(playerDef.walkSpeed * (1 + bonus("moveSpeed")) * 10) / 10 },
   });
 }
 

@@ -9,7 +9,7 @@ import { canResearch, registerCommands } from "./commands";
 import { content } from "./content";
 import { GOLD, LUMBER } from "./tuning";
 import { resetSession, session, type UnitRuntime } from "./session";
-import { grantResearch, RESEARCH_CONFIG, resolveDamage, upgradeRank } from "./upgrades";
+import { grantResearch, RESEARCH_CONFIG, factionDamage, upgradeRank } from "./upgrades";
 
 function boot(): GameContext {
   const definition = defineGameDefinition({ name: "EmberCommandResearchTest", multiplayer: "off" });
@@ -54,14 +54,14 @@ describe("upgrade math", () => {
     session.research.ranks.weapons = 2;
     session.research.ranks.armor = 1;
     // Player attacker: base 9 + 2×3 weapon = 15 onto an unarmoured enemy.
-    expect(resolveDamage(9, "player", "enemy")).toBe(15);
+    expect(factionDamage(9, "player", "enemy")).toBe(15);
     // Enemy attacker onto the player: base 8 − 1×2 armor = 6 (enemy has no weapon upgrade).
-    expect(resolveDamage(8, "enemy", "player")).toBe(6);
+    expect(factionDamage(8, "enemy", "player")).toBe(6);
   });
 
   test("a swing always chips at least 1 through heavy armor", () => {
     session.research.ranks.armor = 3; // −6 reduction
-    expect(resolveDamage(4, "enemy", "player")).toBe(1);
+    expect(factionDamage(4, "enemy", "player")).toBe(1);
   });
 });
 

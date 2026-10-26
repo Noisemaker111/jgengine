@@ -4,7 +4,7 @@ import { requestSceneThumbnail } from "@jgengine/shell/render/sceneCaptureReques
 
 import { bankOf, DRIVER, readCareer, standingOf } from "./career";
 import { parkedRunMetres, parkedTrack, readParkedRun, type ParkedRun } from "./run/progress";
-import { browserRecordStorage, readRecords, type RecordStorage } from "./run/records";
+import { browserRecordStorage, readRecords, type RunStorage } from "./run/records";
 import { runSessionStore } from "./run/session";
 
 /** The pit's one saved run. The corridor is one ladder, so the yard keeps one parked buggy. */
@@ -22,7 +22,7 @@ export const foundrySlots = createSaveSlots({ capacity: 1, slots: [{ id: YARD_SL
 
 const nonnegative = (value: unknown): value is number => typeof value === "number" && Number.isFinite(value) && value >= 0;
 
-export function readPitFrame(storage: RecordStorage | undefined = browserRecordStorage()): PitFrame {
+export function readPitFrame(storage: RunStorage | undefined = browserRecordStorage()): PitFrame {
   try {
     const raw = JSON.parse(storage?.getItem(PIT_FRAME_KEY) ?? "null") as Partial<PitFrame> | null;
     if (raw === null || typeof raw !== "object") return { ...pitFrame };
@@ -33,13 +33,13 @@ export function readPitFrame(storage: RecordStorage | undefined = browserRecordS
   } catch { return { ...pitFrame }; }
 }
 
-function writePitFrame(frame: PitFrame, storage: RecordStorage | undefined = browserRecordStorage()): boolean {
+function writePitFrame(frame: PitFrame, storage: RunStorage | undefined = browserRecordStorage()): boolean {
   try { storage?.setItem(PIT_FRAME_KEY, JSON.stringify(frame)); return storage !== undefined; }
   catch { return false; }
 }
 
 /** What the parked run is, in the yard's own words: where it stands, its clock, its build. */
-function cardOf(parked: ParkedRun, storage: RecordStorage | undefined): { name: string; meta: Record<string, string | number>; savedAt: number } {
+function cardOf(parked: ParkedRun, storage: RunStorage | undefined): { name: string; meta: Record<string, string | number>; savedAt: number } {
   const frame = readPitFrame(storage);
   const career = readCareer(storage);
   const records = readRecords(storage);
@@ -62,7 +62,7 @@ function cardOf(parked: ParkedRun, storage: RecordStorage | undefined): { name: 
 }
 
 /** Which run the loop had open when the buggy parked; the card names it without inventing one. */
-function readRunNumber(storage: RecordStorage | undefined): number {
+function readRunNumber(storage: RunStorage | undefined): number {
   try {
     const raw = JSON.parse(storage?.getItem("drift-foundry.run.v1") ?? "null") as { run?: unknown } | null;
     return nonnegative(raw?.run) ? Math.floor(raw.run) : 1;
@@ -70,7 +70,7 @@ function readRunNumber(storage: RecordStorage | undefined): number {
 }
 
 /** Keep the card in step with the parked run on disk. */
-export function refreshFoundrySlots(storage: RecordStorage | undefined = browserRecordStorage()): void {
+export function refreshFoundrySlots(storage: RunStorage | undefined = browserRecordStorage()): void {
   const parked = readParkedRun(storage);
   if (parked === null) {
     foundrySlots.clear(YARD_SLOT);

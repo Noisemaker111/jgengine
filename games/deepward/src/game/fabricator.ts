@@ -59,7 +59,7 @@ export const GEAR: Record<Gear, GearDef> = {
   crawler: { name: "Rail crawler", effect: "Depart to your deepest lift; ride home from any lift", permanent: true, recipe: recipe("crawler", [{ itemId: "cells", count: 2 }, { itemId: "wire", count: 2 }, { itemId: "ink", count: 1 }]) },
 };
 export const GEAR_ORDER: readonly Gear[] = ["cutter", "seal2", "drill", "lure", "o2", "seal3", "crawler"];
-export const RECIPES = createRecipeGraph(GEAR_ORDER.map(id => GEAR[id].recipe));
+export const GEAR_RECIPES = createRecipeGraph(GEAR_ORDER.map(id => GEAR[id].recipe));
 
 const inventory = (stash: readonly Item[]) => ({ slots: stash.map(item => ({ itemId: kindOf(item), count: 1 })) });
 export function gearMissing(stash: readonly Item[], id: Gear): RecipeItem[] { return missingInputs(inventory(stash), GEAR[id].recipe); }

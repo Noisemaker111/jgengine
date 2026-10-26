@@ -15,7 +15,7 @@ export interface PlayerDef {
   onDeath: OnDeathSpec;
 }
 
-export const player: PlayerDef = {
+export const playerDef: PlayerDef = {
   id: "reactor_hunter",
   name: "Reclaimer",
   walkSpeed: 5.8,
@@ -42,4 +42,4 @@ export const player: PlayerDef = {
   onDeath: { keep: true },
 };
 
-export const players: PlayerDef[] = [player];
+export const players: PlayerDef[] = [playerDef];

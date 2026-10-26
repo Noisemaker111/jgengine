@@ -9,7 +9,7 @@ import {
 /** Which axis the raw GLB mesh considers "forward" before engine correction. */
 export type SourceForwardAxis = "+Z" | "-Z" | "+X" | "-X";
 
-export type AssetAnchor =
+export type AssetFloorAnchor =
   /** Footprint center on the floor at Y=0. Default for most props. */
   | "floor-center"
   /** Center of the front footprint edge — good for vehicles parked nose-out. */
@@ -25,7 +25,7 @@ export interface AssetFrame {
   /** Raw mesh forward axis before correction. Defaults to +Z (North). */
   sourceForward?: SourceForwardAxis;
   /** Where the placement point sits on the asset. */
-  anchor?: AssetAnchor;
+  anchor?: AssetFloorAnchor;
   /** Uniformly scale mesh to fit catalog footprint using measured GLB size. */
   fitFootprint?: boolean;
   /** Extra Euler correction (radians XYZ) applied after sourceForward. */
@@ -125,7 +125,7 @@ function multiplyVec3(
 }
 
 function anchorOffset(
-  anchor: AssetAnchor | undefined,
+  anchor: AssetFloorAnchor | undefined,
   footprint: GridFootprint | undefined,
   direction: CardinalDirection,
 ): [number, number, number] {

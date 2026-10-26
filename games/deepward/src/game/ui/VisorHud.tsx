@@ -179,7 +179,7 @@ export function HoldTab({ onPause, disabled }: { onPause: () => void; disabled: 
 }
 
 /** Marrow's radio: one line of advice on the lower glass, gone when it has been said. */
-export function RadioLine({ hint, error }: { hint: string; error: string | null }): ReactNode {
+export function CommsLine({ hint, error }: { hint: string; error: string | null }): ReactNode {
   return (
     <HudFade watch={[hint, error]} hold={error !== null} idleMs={7000} dimTo={0.22}>
       <div className="dw-comms">
@@ -192,7 +192,7 @@ export function RadioLine({ hint, error }: { hint: string; error: string | null 
 }
 
 /** Crosshair etched on the glass; a hit opens it out. */
-export function Reticle({ hit }: { hit: boolean }): ReactNode {
+export function VisorReticle({ hit }: { hit: boolean }): ReactNode {
   return (
     <svg className="dw-sight" data-hit={hit ? "" : undefined} viewBox="0 0 40 40" aria-hidden="true">
       <g className="dw-sight-under"><circle cx="20" cy="20" r="1.6" /><path d={hit ? "M20 3v8M20 29v8M3 20h8M29 20h8" : "M20 9v6M20 25v6M9 20h6M25 20h6"} /></g>

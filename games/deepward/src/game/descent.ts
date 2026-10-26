@@ -1,5 +1,5 @@
 import type { PerceptionService, PerceptionStimulus } from "@jgengine/core/sensor/perception";
-import { distance, HAZARDS, inside, lineOfSight, type HazardKind, type Point } from "../world";
+import { groundDistance, HAZARDS, inside, lineOfSight, type HazardKind, type Point } from "../world";
 import { advanceRoute, createNavigator, type Navigator } from "./navigation";
 import { creatureIntent, diverVisibility, SPECIES, type Creature, type Species } from "./fauna";
 import { STRATA, type Stratum } from "./strata";
@@ -74,7 +74,7 @@ export function tickCreatures(dive: Dive, diver: DiverPose, senses: Senses, dt: 
     if (creature.mode === "winding") {
       next.windup = Math.max(0, creature.windup - dt);
       if (next.windup === 0) {
-        if (def.strike !== null && distance(creature.at, diver.at) <= def.strike.reach && lineOfSight(creature.at, diver.at, stratum)) {
+        if (def.strike !== null && groundDistance(creature.at, diver.at) <= def.strike.reach && lineOfSight(creature.at, diver.at, stratum)) {
           damage += def.strike.damage; struck = creature.id;
           hint = `${def.name} struck / ${def.strike.damage} damage.`;
         }
@@ -84,7 +84,7 @@ export function tickCreatures(dive: Dive, diver: DiverPose, senses: Senses, dt: 
       next = { ...next, mode: "winding", windup: def.strike.windup };
       windup = true;
       hint = `${def.name} rears up / get clear!`;
-    } else if (!onDiver && intent.targetId !== null && def.strike !== null && (intent.mode === "attack" || (intent.goal !== null && distance(creature.at, intent.goal) <= def.strike.reach))) {
+    } else if (!onDiver && intent.targetId !== null && def.strike !== null && (intent.mode === "attack" || (intent.goal !== null && groundDistance(creature.at, intent.goal) <= def.strike.reach))) {
       // A predator that reaches a lure eats it, and the blood stops calling.
       thrown = thrown.filter(lure => lure.id !== intent.targetId);
       service.forget(creature.id, intent.targetId);
@@ -96,7 +96,7 @@ export function tickCreatures(dive: Dive, diver: DiverPose, senses: Senses, dt: 
         const fast = intent.mode === "flee" || intent.mode === "stalk" || intent.mode === "attack";
         const speed = fast ? def.run : def.walk;
         const stop = intent.mode === "stalk" || intent.mode === "attack" ? Math.max(0, (def.strike?.reach ?? 1.5) * 0.7) : 0;
-        const budget = Math.max(0, Math.min(speed * dt, distance(creature.at, goal) - stop));
+        const budget = Math.max(0, Math.min(speed * dt, groundDistance(creature.at, goal) - stop));
         const from = creature.at;
         let at = advanceRoute(senses.route(creature.id), from, [goal[0], 0, goal[2]], budget, stratum);
         // A fleeing print backed into shelving turns along the wall instead of freezing against it.
@@ -114,12 +114,12 @@ export function tickCreatures(dive: Dive, diver: DiverPose, senses: Senses, dt: 
 function sidestep(route: Navigator, from: Point, goal: Point, budget: number, stratum: Stratum): Point {
   const dx = goal[0] - from[0], dz = goal[2] - from[2], length = Math.hypot(dx, dz) || 1, heading = Math.atan2(dx, dz);
   const threat: Point = [from[0] - dx / length * 3, 0, from[2] - dz / length * 3];
-  let best = from, gain = distance(from, threat) + 1e-3;
+  let best = from, gain = groundDistance(from, threat) + 1e-3;
   for (const turn of [0.6, -0.6, 1.2, -1.2, 1.6, -1.6, 2.2, -2.2]) {
     const aim: Point = [from[0] + Math.sin(heading + turn) * 4, 0, from[2] + Math.cos(heading + turn) * 4];
     const probe = createNavigator();
     const at = advanceRoute(probe, from, aim, budget, stratum);
-    if (distance(at, threat) > gain) { best = at; gain = distance(at, threat); }
+    if (groundDistance(at, threat) > gain) { best = at; gain = groundDistance(at, threat); }
   }
   if (best !== from) { route.goal = null; route.path = []; }
   return best;

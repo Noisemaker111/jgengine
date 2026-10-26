@@ -1,9 +1,9 @@
 import { expect, test } from "bun:test";
 import { createRunSession } from "./session";
 import { PROGRESS_KEY, readParkedRun } from "./progress";
-import type { RecordStorage } from "./records";
+import type { RunStorage } from "./records";
 
-function storage(): RecordStorage {
+function storage(): RunStorage {
   const values = new Map<string, string>();
   return { getItem: key => values.get(key) ?? null, setItem: (key, value) => { values.set(key, value); } };
 }

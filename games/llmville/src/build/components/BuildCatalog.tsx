@@ -36,7 +36,7 @@ function shopRowForItem(shopItems: readonly ShopCatalogItem[], itemId: string): 
   return shopItems.find((row) => row.id === itemId);
 }
 
-export function BuildCatalog({
+export function BuildCatalogPanel({
   money,
   dataTokens,
   researchUnlocks,

@@ -28,7 +28,7 @@ export function mainCheckoutOf(repoRoot: string): string | null {
   }
 }
 
-export function isPopulated(dir: string): boolean {
+export function dirHasEntries(dir: string): boolean {
   try {
     return readdirSync(dir).length > 0;
   } catch {
@@ -51,9 +51,9 @@ function lexists(path: string): boolean {
  * same `<kind>/<id>` folder elsewhere (another game's `public/`, the main checkout's).
  */
 export function seedStore(storeDir: string, candidates: readonly string[]): boolean {
-  if (isPopulated(storeDir)) return true;
+  if (dirHasEntries(storeDir)) return true;
   for (const candidate of candidates) {
-    if (!isPopulated(candidate)) continue;
+    if (!dirHasEntries(candidate)) continue;
     if (lstatSync(candidate).isSymbolicLink()) continue;
     mkdirSync(dirname(storeDir), { recursive: true });
     cpSync(candidate, storeDir, { recursive: true });
@@ -68,8 +68,8 @@ export function seedStore(storeDir: string, candidates: readonly string[]): bool
  * store's bytes afterwards.
  */
 export function linkFromStore(storeDir: string, publicPath: string): boolean {
-  if (!isPopulated(storeDir)) return false;
-  if (isPopulated(publicPath)) return true;
+  if (!dirHasEntries(storeDir)) return false;
+  if (dirHasEntries(publicPath)) return true;
   if (lexists(publicPath)) {
     if (lstatSync(publicPath).isSymbolicLink()) unlinkSync(publicPath);
     else rmdirSync(publicPath);

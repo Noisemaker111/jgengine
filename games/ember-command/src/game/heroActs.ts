@@ -20,7 +20,7 @@ import {
 } from "./heroPicks";
 import { session } from "./session";
 import type { Faction } from "./tuning";
-import { resolveDamage } from "./upgrades";
+import { factionDamage } from "./upgrades";
 
 /**
  * Bram's acts and the field kit he carries between battles.
@@ -236,7 +236,7 @@ function burst(ctx: GameContext, radius: number, base: number): number {
     const entity = ctx.scene.entity.get(unit.id);
     if (entity === null) continue;
     if (Math.hypot(entity.position[0] - cx, entity.position[2] - cz) > radius) continue;
-    const amount = resolveDamage(base, "player", unit.faction) * lineMultiplier("player", unit.faction);
+    const amount = factionDamage(base, "player", unit.faction) * lineMultiplier("player", unit.faction);
     ctx.scene.entity.effect({ from: HERO_ID, to: unit.id, effect: "damage", via: { amount } });
     struck += 1;
   }

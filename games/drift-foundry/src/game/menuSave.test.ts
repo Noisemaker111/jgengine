@@ -2,9 +2,9 @@ import { expect, test } from "bun:test";
 
 import { foundrySlots, PIT_FRAME_KEY, refreshFoundrySlots } from "./menuSave";
 import { PROGRESS_KEY, saveParkedRun, type ParkedRun } from "./run/progress";
-import type { RecordStorage } from "./run/records";
+import type { RunStorage } from "./run/records";
 
-function memory(): { storage: RecordStorage; values: Map<string, string> } {
+function memory(): { storage: RunStorage; values: Map<string, string> } {
   const values = new Map<string, string>();
   return { values, storage: { getItem: (key) => values.get(key) ?? null, setItem: (key, value) => { values.set(key, value); } } };
 }

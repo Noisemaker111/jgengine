@@ -2,10 +2,11 @@ import { groundFieldFor } from "@jgengine/core/world/terrain";
 import type { Waypoint } from "@jgengine/core/nav/pathFollow";
 
 import { world } from "../../world";
-import { BUILD_PLOT_XZ, FLANK_WAYPOINTS_XZ, PATH_WAYPOINTS_XZ, pathLength, type Vec2 } from "./layout";
+import { BUILD_PLOT_XZ, FLANK_WAYPOINTS_XZ, PATH_WAYPOINTS_XZ, creepPathLength } from "./layout";
+import type { Vec2 } from "@jgengine/core/world/geometry";
 
 export type { Vec2 };
-export { PATH_WAYPOINTS_XZ, BUILD_PLOT_XZ, perpendicularPoint, pathLength } from "./layout";
+export { PATH_WAYPOINTS_XZ, BUILD_PLOT_XZ, perpendicularPoint, creepPathLength as pathLength } from "./layout";
 
 const terrainField = groundFieldFor(world);
 
@@ -36,8 +37,8 @@ export const ROUTES: Readonly<Record<string, readonly Waypoint[]>> = {
 
 /** Road length of each approach, so "first on the road" means nearest the keep whichever road it is on. */
 export const ROUTE_LENGTHS: Readonly<Record<string, number>> = {
-  [SPAWN_POINT_KEY]: pathLength(PATH_WAYPOINTS_XZ),
-  [FLANK_POINT_KEY]: FLANK_WAYPOINTS_XZ.length >= 2 ? pathLength(FLANK_WAYPOINTS_XZ) : pathLength(PATH_WAYPOINTS_XZ),
+  [SPAWN_POINT_KEY]: creepPathLength(PATH_WAYPOINTS_XZ),
+  [FLANK_POINT_KEY]: FLANK_WAYPOINTS_XZ.length >= 2 ? creepPathLength(FLANK_WAYPOINTS_XZ) : creepPathLength(PATH_WAYPOINTS_XZ),
 };
 
 /** Whether the scene authors a second approach. */

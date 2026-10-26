@@ -5,7 +5,7 @@ import { advancePursuit, armPursuit } from "@jgengine/core/ai/pursuit";
 import { combatantDef, isHostile } from "../catalog";
 import { ARRIVE_RADIUS, DEPOT_RANGE, HARVEST_RANGE, HARVEST_SECONDS } from "../tuning";
 import { matchRunning, playerDepot, session, type UnitRuntime } from "../session";
-import { resolveDamage } from "../upgrades";
+import { factionDamage } from "../upgrades";
 import { heroAttackBonus } from "../hero";
 import { lineMultiplier } from "../heroActs";
 import { tacticalDamage } from "../tactics";
@@ -159,7 +159,7 @@ function tickUnit(ctx: GameContext, dt: number, u: UnitRuntime): void {
       faceToward(ctx, u.id, self.position, ent.position[0], ent.position[2]);
       if (action === "attack") {
         const base = def.damage + heroAttackBonus(ctx, u.catalogId);
-        const resolved = resolveDamage(tacticalDamage(base, u.catalogId, target.catalogId, distXZ(self.position, ent.position)), u.faction, target.faction);
+        const resolved = factionDamage(tacticalDamage(base, u.catalogId, target.catalogId, distXZ(self.position, ent.position)), u.faction, target.faction);
         // The banner and the ward scale the finished hit: research owns the damage, the line buffs scale it.
         const amount = resolved * lineMultiplier(u.faction, target.faction);
         ctx.scene.entity.effect({ from: u.id, to: target.id, effect: "damage", via: { amount } });

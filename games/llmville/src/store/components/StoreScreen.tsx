@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 
-import { BuildCatalog } from "@/build/components/BuildCatalog";
+import { BuildCatalogPanel } from "@/build/components/BuildCatalog";
 import type { PlacedBuildItem } from "@llmville/game/build/build";
 import type { PlacedRack } from "@/infrastructure/infrastructure";
 import {
@@ -83,7 +83,7 @@ export function StoreScreen({
     <div className="pb-24 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {(activeStoreTab === "infrastructure" || activeStoreTab === "decor") && (
         <div className="space-y-4">
-          <BuildCatalog
+          <BuildCatalogPanel
             money={money}
             dataTokens={dataTokens}
             researchUnlocks={researchUnlocks}

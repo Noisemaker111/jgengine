@@ -12,7 +12,7 @@ import { useStore } from "@jgengine/react/store";
 import type { SaveSlotMeta } from "@jgengine/core/save/saveSlots";
 
 import { DEEPWARD_CREDITS } from "../../credits";
-import { loadRecordSlot, beginRecordSlot, openTitle, persistRecord, recordOf, withdrawToTitle, viewStore } from "../../controls";
+import { loadRecordSlot, beginRecordSlot, openMarrowTitle, persistRecord, recordOf, withdrawToTitle, viewStore } from "../../controls";
 import { captureRecordThumb, recordLabel, recordSlots, refreshRecordSlots } from "../../menuRecord";
 import { depthAt } from "../../../world";
 import { CACHE_WEIGHT, loadOf } from "../../haul";
@@ -161,7 +161,7 @@ export function DeepwardMenu(): ReactNode {
       ctx.game.commands.run(view.mode === "home" || view.mode === "dive" ? "deepward.close" : "deepward.pause", {});
       return;
     }
-    openTitle(ctx);
+    openMarrowTitle(ctx);
   }, [ctx, phase, view.mode]);
 
   if (phase !== "menu" && phase !== "paused") return null;

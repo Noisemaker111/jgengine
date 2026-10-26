@@ -1,3 +1,4 @@
+import { openTitle } from "@jgengine/core/game/gameFlow";
 import { gamePhase, setGamePhase } from "@jgengine/core/game/gamePhase";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
@@ -5,9 +6,8 @@ import { loadSlot, newestKeep, refreshBeaconSlots, saveToSlot } from "./save";
 import { restartDefense } from "./world/setup";
 
 /** Boot into the keep with the defense already standing behind the title, and the clock stopped. */
-export function openTitle(ctx: GameContext): void {
-  ctx.time.pause();
-  setGamePhase(ctx, "menu");
+export function openKeepTitle(ctx: GameContext): void {
+  openTitle(ctx);
   void refreshBeaconSlots(ctx);
 }
 
@@ -39,7 +39,7 @@ export function resumeRun(ctx: GameContext): void {
 /** Keep the defense on disk, then stand in front of it. */
 export async function withdrawToTitle(ctx: GameContext, slot: string): Promise<void> {
   await saveToSlot(ctx, slot);
-  openTitle(ctx);
+  openKeepTitle(ctx);
 }
 
 /** Resume the newest keep from its document — the menu's Continue. */

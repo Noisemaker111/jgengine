@@ -10,25 +10,25 @@ import { DOCK_FIGHT_CENTER } from "./world/districts";
  * split-screen contexts each get their own - module-level `let` is shared by every context in the
  * process.
  */
-export interface MissionState {
+export interface MissionFlags {
   bustedHold: number;
   raceSettled: boolean;
   raceClearAt: number;
 }
 
-const FRESH_MISSION: MissionState = {
+const FRESH_MISSION: MissionFlags = {
   bustedHold: 0,
   raceSettled: false,
   raceClearAt: 0,
 };
 
-export const missionStore = defineStore<MissionState>("harbor.mission", () => ({ ...FRESH_MISSION }));
+export const missionStore = defineStore<MissionFlags>("harbor.mission", () => ({ ...FRESH_MISSION }));
 
-export function mission(ctx: GameContext): MissionState {
+export function mission(ctx: GameContext): MissionFlags {
   return missionStore.read(ctx);
 }
 
-export function patchMission(ctx: GameContext, patch: Partial<MissionState>): void {
+export function patchMission(ctx: GameContext, patch: Partial<MissionFlags>): void {
   missionStore.write(ctx, { ...mission(ctx), ...patch });
 }
 

@@ -12,7 +12,7 @@ import { ReserveOverlay, VendorPanel } from "./components/Overlays";
 import { TalentsPanel } from "./components/Talents";
 import { ScrapMenu } from "./menu/ScrapMenu";
 import { VitalsPlate } from "./components/Vitals";
-import { AmmoPlate, Hotbar, ItemCard } from "./components/Weapon";
+import { AmmoPlate, WeaponHotbar, ItemCard } from "./components/Weapon";
 import { BlackMarketPanel, EchoBox, CoresPlate, TravelPanel, ReactorEnding, ZoneBanner } from "./components/World";
 import { Operations } from "./components/Operations";
 import { FieldGearPanel } from "./components/FieldGearPanel";
@@ -104,7 +104,7 @@ export function GameUI() {
       </HudPanel>
 
       <HudPanel id="hotbar" anchor="bottom" order={0} compact="keep" interactive={false}>
-        <Hotbar combat={combat} />
+        <WeaponHotbar combat={combat} />
       </HudPanel>
 
       <HudPanel id="ammo" anchor="bottom-right" compact="keep" interactive={false}>

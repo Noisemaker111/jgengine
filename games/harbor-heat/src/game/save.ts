@@ -20,7 +20,7 @@ import {
   missionStore,
   patchMission,
   restoreConvoy,
-  type MissionState,
+  type MissionFlags,
 } from "./runState";
 
 /** The document's own format version; bump it with {@link migrateHarborSave} when a section changes shape. */
@@ -107,7 +107,7 @@ function isPursuitSave(value: unknown): value is PursuitSave {
   return isRecord(value) && isRecord(value.police) && typeof (value.police as { heat?: unknown }).heat === "object";
 }
 
-function isMissionSave(value: unknown): value is MissionState {
+function isMissionSave(value: unknown): value is MissionFlags {
   return isRecord(value) && typeof value.bustedHold === "number";
 }
 

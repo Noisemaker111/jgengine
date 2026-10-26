@@ -13,7 +13,7 @@ import {
   type GunFamily,
   type Manufacturer,
   type Rarity,
-  type RarityTier,
+  type GunRarity,
 } from "./guns";
 import { derivePerks } from "./perks";
 
@@ -107,7 +107,7 @@ function gunSelectionSchema(luck: number): GenSchema {
         id: "rarity",
         select: "weighted",
         pool: RARITY_TIERS.map((value) => ({ id: value.id, value })),
-        weightOf: (option) => (option.value as RarityTier).weight * (option.id === "common" ? 1 : luck),
+        weightOf: (option) => (option.value as GunRarity).weight * (option.id === "common" ? 1 : luck),
       },
       {
         id: "maker",
@@ -134,7 +134,7 @@ function gunSelectionSchema(luck: number): GenSchema {
 }
 
 /** The elemental proc chance a rolled gun carries: none never procs, explosive always does, otherwise the tier scales it. */
-function procChanceFor(element: GunElement, tier: RarityTier): number {
+function procChanceFor(element: GunElement, tier: GunRarity): number {
   if (element === "none") return 0;
   if (element === "explosive") return 1;
   return 0.25 + tier.elementChance * 0.4;
@@ -154,7 +154,7 @@ export function rollGun(rng: () => number, level: number, options: RollGunOption
   const rolled = generate(gunSelectionSchema(options.luck ?? 1), rng, { pin });
   if (!rolled.ok) throw new Error(`gun roll failed: ${rolled.reason}`);
   const base = rolled.result.values.family as FamilyBase;
-  const tier = rolled.result.values.rarity as RarityTier;
+  const tier = rolled.result.values.rarity as GunRarity;
   const rarity = tier.id;
   const maker = rolled.result.values.maker as { manufacturer: Manufacturer; legendaryName: string | null };
   const manufacturer = maker.manufacturer;

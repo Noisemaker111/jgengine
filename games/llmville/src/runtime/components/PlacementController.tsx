@@ -11,7 +11,7 @@ interface PlacementControllerProps {
   isTouch?: boolean;
 }
 
-export default function PlacementController({
+export default function PlacementControls({
   onRotate,
   onPlace,
   canPlace,

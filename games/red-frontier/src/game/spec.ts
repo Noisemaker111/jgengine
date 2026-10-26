@@ -58,7 +58,7 @@ const jobs: Record<string, WorldJobDecl> = Object.fromEntries(
 );
 
 /** The whole colony as data: its stores, what can be built, what farms grow, what everyone eats. */
-export const world: WorldModelDecl = {
+export const campWorld: WorldModelDecl = {
   factions: {
     colony: {
       label: idea.name,
@@ -110,7 +110,7 @@ export const world: WorldModelDecl = {
  */
 export const colony = defineGameSpec({
   id: idea.spec,
-  world,
+  world: campWorld,
   hooks: { crowned: onCrowned, fallen: onFallen, built: onBuilt },
   show: { hq: true, structure: true, crown: true },
   autoStart: true,

@@ -23,7 +23,7 @@ export interface DriveAxis {
   handbrake?: number;
 }
 
-export interface VehiclePose {
+export interface VehicleTelemetry {
   position: readonly [number, number, number];
   heading: number;
   speedKmh: number;
@@ -54,7 +54,7 @@ export interface VehicleController {
     tuning: KartTuning,
     input: { jumpPressed: boolean; plowBracing: boolean; time?: number; marks?: TireMarks; particles?: { play(name: string, request?: { position?: readonly [number, number, number]; burst?: number }): void } },
     groundHeightAt: (x: number, z: number) => number,
-  ): VehiclePose;
+  ): VehicleTelemetry;
   resetTo(position: readonly [number, number, number], heading: number): void;
   /** Displace the kart without costing it its momentum - a shove from another bumper. */
   shove(dx: number, dz: number): void;

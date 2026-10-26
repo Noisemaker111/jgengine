@@ -34,18 +34,18 @@ export function levelAt(w: WorldModel, col: number, row: number): number {
 }
 
 /** The cell under a point on the lot. */
-export function cellAt(x: number, z: number): [number, number] {
+export function tileAt(x: number, z: number): [number, number] {
   return [Math.floor((x - LOT.origin[0]) / GRID), Math.floor((z - LOT.origin[1]) / GRID)];
 }
 
 /** Ground height in metres under a point: where a guest stands or a structure sits. */
 export function groundAt(w: WorldModel, x: number, z: number): number {
-  const [col, row] = cellAt(x, z);
+  const [col, row] = tileAt(x, z);
   return levelAt(w, col, row) * LEVEL_HEIGHT;
 }
 
 /** Every cell a structure at `cell` would cover. */
-export function footprintCells(kind: string, cell: readonly [number, number]): [number, number][] {
+export function kindFootprintCells(kind: string, cell: readonly [number, number]): [number, number][] {
   const n = sizeOf(BUILDABLES[kind]!);
   const out: [number, number][] = [];
   for (let i = 0; i < n; i += 1) for (let j = 0; j < n; j += 1) out.push([cell[0] + i, cell[1] + j]);
@@ -54,7 +54,7 @@ export function footprintCells(kind: string, cell: readonly [number, number]): [
 
 /** True when every cell under the footprint is at one level. */
 export function levelUnder(w: WorldModel, kind: string, cell: readonly [number, number]): boolean {
-  const cells = footprintCells(kind, cell);
+  const cells = kindFootprintCells(kind, cell);
   const first = levelAt(w, cells[0]![0], cells[0]![1]);
   return cells.every(([col, row]) => levelAt(w, col, row) === first);
 }

@@ -148,7 +148,7 @@ export async function requestBuilderScreenshotCapture(): Promise<{ requestId: nu
   }
 }
 
-export function SceneCapture({
+export function SceneCapturePanel({
   floor,
   angles,
   requestId,

@@ -13,7 +13,7 @@ import { coasterCircuit } from "../rides";
 import { park, placeFree } from "../park";
 import { refundOf } from "../parkScene";
 import { beginScenario, endScenario, replayScenario } from "../parkReset";
-import { cellAt, cellCentre, canShape, isLandTool, LAND_COST, LAND_TOOLS, levelAt, lineCells, rectCells, shapeLand } from "./terrain";
+import { tileAt, cellCentre, canShape, isLandTool, LAND_COST, LAND_TOOLS, levelAt, lineCells, rectCells, shapeLand } from "./terrain";
 import { recordStep, undoStep } from "./undo";
 import { accessOf, connectCost, connectPark, relinkPark } from "./links";
 
@@ -55,7 +55,7 @@ function layLine(ctx: GameContext, kind: string, from: readonly [number, number]
   const ids: string[] = [];
   let cost = 0;
   let refusal: string | null = null;
-  for (const [col, row] of lineCells(cellAt(...from), cellAt(...to))) {
+  for (const [col, row] of lineCells(tileAt(...from), tileAt(...to))) {
     const [x, z] = cellCentre(col, row);
     const check = placementAt(w, kind, x, z);
     if (!check.ok) { refusal ??= check.reason; continue; }
@@ -81,7 +81,7 @@ function shapeArea(ctx: GameContext, tool: keyof typeof LAND_TOOLS, from: readon
   const step = LAND_TOOLS[tool].step;
   const cells: { col: number; row: number; level: number }[] = [];
   let refusal: string | null = null;
-  for (const [col, row] of rectCells(cellAt(...from), cellAt(...to))) {
+  for (const [col, row] of rectCells(tileAt(...from), tileAt(...to))) {
     const level = levelAt(w, col, row);
     const refused = shapeLand(w, col, row, step);
     if (refused !== null) { refusal ??= refused; continue; }
@@ -102,7 +102,7 @@ function shapeArea(ctx: GameContext, tool: keyof typeof LAND_TOOLS, from: readon
 /** Can the land tool move this cell? The overlay tints the hovered cell from this. */
 export function landCheck(ctx: GameContext, tool: string, x: number, z: number): string | null {
   if (!isLandTool(tool)) return null;
-  const [col, row] = cellAt(x, z);
+  const [col, row] = tileAt(x, z);
   const check = canShape(park.of(ctx), col, row, LAND_TOOLS[tool].step);
   return check.ok ? null : check.reason;
 }
@@ -136,7 +136,7 @@ function tryBuild(ctx: GameContext, input: PointerInput): void {
     shapeArea(ctx, kind, from ?? [x, z], [x, z]);
     return;
   }
-  if (LINE_KINDS.has(kind) && from !== null && cellAt(...from).join() !== cellAt(x, z).join()) {
+  if (LINE_KINDS.has(kind) && from !== null && tileAt(...from).join() !== tileAt(x, z).join()) {
     layLine(ctx, kind, from, [x, z]);
     return;
   }

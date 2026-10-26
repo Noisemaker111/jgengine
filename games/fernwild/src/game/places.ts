@@ -42,7 +42,7 @@ export function lairs(doc: EditorDocument): { x: number; z: number }[] {
 }
 
 /** The grid cell a world point falls in, or null outside the camp. */
-export function cellAt(grid: WorldGridDecl, x: number, z: number): [number, number] | null {
+export function gridCellAt(grid: WorldGridDecl, x: number, z: number): [number, number] | null {
   const cell = grid.cell ?? 1;
   const [ox, oz] = grid.origin ?? [0, 0];
   const col = Math.floor((x - ox) / cell);

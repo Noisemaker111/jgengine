@@ -5,7 +5,7 @@ import { ICON_SVG } from "./iconData";
  * Colour comes from the CSS `color` of the wrapper (the paths are `fill="currentColor"`), so a slot
  * tints its icon gold, blue-when-active, or dim-when-locked with a single text-colour class.
  */
-export function Icon({ name, className, shadow, shadowDy = 16 }: { name: string; className?: string; shadow?: string; shadowDy?: number }) {
+export function GlyphIcon({ name, className, shadow, shadowDy = 16 }: { name: string; className?: string; shadow?: string; shadowDy?: number }) {
   const inner = ICON_SVG[name];
   if (inner === undefined) return null;
   // `shadow` draws a darker copy `shadowDy` units (of 512) below the glyph: a drop shadow without a CSS

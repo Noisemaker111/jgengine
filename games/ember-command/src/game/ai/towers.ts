@@ -5,7 +5,7 @@ import { advancePursuit, armPursuit } from "@jgengine/core/ai/pursuit";
 
 import { combatantDef, isHostile } from "../catalog";
 import { session, type UnitRuntime } from "../session";
-import { resolveDamage } from "../upgrades";
+import { factionDamage } from "../upgrades";
 
 function distXZ(a: EntityPosition, b: EntityPosition): number {
   return Math.hypot(a[0] - b[0], a[2] - b[2]);
@@ -55,7 +55,7 @@ export function tickTowers(ctx: GameContext, dt: number): void {
     if (action !== "attack" || targetId === null) continue;
 
     const defender = session.units.get(targetId)?.faction ?? "enemy";
-    const amount = resolveDamage(def.damage, u.faction, defender);
+    const amount = factionDamage(def.damage, u.faction, defender);
     ctx.scene.entity.effect({ from: u.id, to: targetId, effect: "damage", via: { amount } });
     armPursuit(u, def.attackCooldown);
   }

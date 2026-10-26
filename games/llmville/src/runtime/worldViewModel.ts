@@ -23,7 +23,7 @@ import type { DatacenterClaim, PlacementCellPolicy } from "@llmville/game/datace
 import type { CellCoord } from "@llmville/game/datacenter/grid";
 import type { GamePlayerProfile } from "@/user/user";
 import type { Id } from "@llmville/backend/convex/_generated/dataModel";
-import type { PresenceActions } from "@/multiplayer/presenceTransport";
+import type { WorldPresenceActions } from "@/multiplayer/presenceTransport";
 
 export interface RuntimeGame {
   _id: Id<"games">;
@@ -175,7 +175,7 @@ export interface WorldViewModel {
   /** Every player's racks/items in world coordinates, for the shared scene. */
   worldRacks: readonly PlacedRack[];
   worldPlacedBuildItems: readonly PlacedBuildItem[];
-  presenceActions: PresenceActions;
+  presenceActions: WorldPresenceActions;
 }
 
 export type ReadyWorldViewModel = WorldViewModel & {

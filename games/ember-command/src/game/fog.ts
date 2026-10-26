@@ -1,4 +1,4 @@
-import { createFogField, type FogCells, type FogField } from "@jgengine/core/world/fog";
+import { createFogField, type FogBounds, type FogCells, type FogField } from "@jgengine/core/world/fog";
 
 import { SIGHT_RADIUS, SIGHT_RADIUS_BUILDING, SIGHT_RADIUS_HERO } from "./tuning";
 
@@ -15,13 +15,6 @@ import { SIGHT_RADIUS, SIGHT_RADIUS_BUILDING, SIGHT_RADIUS_HERO } from "./tuning
  * Pure data and engine primitives only; the scene glue lives in `systems.ts`.
  */
 export type FogLevel = "visible" | "explored" | "unseen";
-
-export interface FogBounds {
-  minX: number;
-  minZ: number;
-  maxX: number;
-  maxZ: number;
-}
 
 /** The battlefield the minimap frames: 96×96 centred on the origin. */
 export const FOG_BOUNDS: FogBounds = { minX: -48, minZ: -48, maxX: 48, maxZ: 48 };

@@ -124,7 +124,7 @@ function parseCoolerId(value: unknown): RackCoolingUnitId | null {
   return typeof value === "string" && isRackCoolingUnitId(value) ? value : null;
 }
 
-export function toRuntimeObjectRow(object: PlacedObject): RuntimeObjectRow {
+export function placedObjectToRow(object: PlacedObject): RuntimeObjectRow {
   const base = {
     instanceId: object.instanceId,
     position: [object.position.x, object.position.y, object.position.z] as [number, number, number],
@@ -165,7 +165,7 @@ function rackSlotsFromInventory(
   );
 }
 
-export function fromRuntimeObjectRow(row: RuntimeObjectRow): PlacedObject | null {
+export function placedObjectFromRow(row: RuntimeObjectRow): PlacedObject | null {
   if (!isBuildItemId(row.catalogId)) return null;
   const flags = row.flags ?? {};
   const ownerUserId = typeof flags[FLAG.owner] === "string" ? (flags[FLAG.owner] as string) : "";
@@ -275,7 +275,7 @@ export function listPlacedObjects(snapshot: GameRuntimeSnapshot): PlacedObject[]
   const objects: PlacedObject[] = [];
   for (const chunk of Object.values(snapshot.chunks)) {
     for (const row of chunk.objects) {
-      const object = fromRuntimeObjectRow(row);
+      const object = placedObjectFromRow(row);
       if (object !== null) objects.push(object);
     }
   }
@@ -289,7 +289,7 @@ export function findPlacedObject(
   for (const [chunkKey, chunk] of Object.entries(snapshot.chunks)) {
     for (const row of chunk.objects) {
       if (row.instanceId !== instanceId) continue;
-      const object = fromRuntimeObjectRow(row);
+      const object = placedObjectFromRow(row);
       if (object !== null) return { chunkKey, object };
     }
   }
@@ -306,7 +306,7 @@ export function insertPlacedObject(
     ...existing,
     objects: [
       ...existing.objects.filter((row) => row.instanceId !== object.instanceId),
-      toRuntimeObjectRow(object),
+      placedObjectToRow(object),
     ],
   });
 }
@@ -319,7 +319,7 @@ export function writePlacedObject(
   return updateChunk(snapshot, chunkKey, (chunk) => ({
     ...chunk,
     objects: chunk.objects.map((row) =>
-      row.instanceId === object.instanceId ? toRuntimeObjectRow(object) : row,
+      row.instanceId === object.instanceId ? placedObjectToRow(object) : row,
     ),
   }));
 }

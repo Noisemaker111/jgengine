@@ -78,7 +78,7 @@ export function styleOf(id: string): CoasterStyle {
 }
 
 /** Where the station stands and which way its trains leave. */
-export interface Station {
+export interface CoasterStation {
   /** Corner cell of the station's footprint. */
   cell: readonly [number, number];
   /** Cells a side. */
@@ -98,7 +98,7 @@ export interface LaidPiece {
 }
 
 /** The line of cells the station's platform runs along, back to front. */
-export function platformCells(station: Station): [number, number][] {
+export function platformCells(station: CoasterStation): [number, number][] {
   const [dx, dz] = HEADINGS[station.heading]!;
   const [c, r] = station.cell;
   const n = station.size;
@@ -108,7 +108,7 @@ export function platformCells(station: Station): [number, number][] {
 }
 
 /** The first cell past the station's front: where the first piece goes. */
-export function launchCell(station: Station): [number, number] {
+export function launchCell(station: CoasterStation): [number, number] {
   const cells = platformCells(station);
   const [dx, dz] = HEADINGS[station.heading]!;
   const front = cells[cells.length - 1]!;
@@ -116,7 +116,7 @@ export function launchCell(station: Station): [number, number] {
 }
 
 /** Lay the pieces out from the station: the cell, level and heading each one lands on. */
-export function walkLayout(station: Station, types: readonly PieceType[]): { pieces: LaidPiece[]; next: { cell: [number, number]; level: number; heading: number } } {
+export function walkLayout(station: CoasterStation, types: readonly PieceType[]): { pieces: LaidPiece[]; next: { cell: [number, number]; level: number; heading: number } } {
   let cell = launchCell(station);
   let level = 0;
   let heading = station.heading;
@@ -133,7 +133,7 @@ export function walkLayout(station: Station, types: readonly PieceType[]): { pie
 }
 
 /** True when the track comes back into the station's back at ground level, facing the way it leaves. */
-export function isClosed(station: Station, types: readonly PieceType[]): boolean {
+export function isClosed(station: CoasterStation, types: readonly PieceType[]): boolean {
   if (types.length < 4) return false;
   const { next } = walkLayout(station, types);
   const back = platformCells(station)[0]!;
@@ -142,7 +142,7 @@ export function isClosed(station: Station, types: readonly PieceType[]): boolean
 
 /** Why the next piece can't go on the end of the track, or null when it can. */
 export function canAppend(
-  station: Station,
+  station: CoasterStation,
   types: readonly PieceType[],
   type: PieceType,
   style: CoasterStyle,
@@ -208,7 +208,7 @@ const round1 = (value: number): number => Math.round(value * 10) / 10;
  * it, friction and corners shave a little, a chain lift never lets it drop below the chain's pace.
  * A climb or loop the train can't make is a failed test (it would roll back), and so is an open track.
  */
-export function testRun(station: Station, types: readonly PieceType[], style: CoasterStyle): TestRun {
+export function testRun(station: CoasterStation, types: readonly PieceType[], style: CoasterStyle): TestRun {
   const closed = isClosed(station, types);
   let v = LAUNCH_SPEED;
   let time = STATION_METRES / 2;
@@ -308,7 +308,7 @@ export function testRun(station: Station, types: readonly PieceType[], style: Co
 }
 
 /** Points along the track for the train to follow: through the station, then every piece, at height. */
-export function trainPath(station: Station, types: readonly PieceType[], cellCentre: (col: number, row: number) => [number, number]): [number, number, number][] {
+export function trainPath(station: CoasterStation, types: readonly PieceType[], cellCentre: (col: number, row: number) => [number, number]): [number, number, number][] {
   const points: [number, number, number][] = [];
   for (const cell of platformCells(station)) {
     const [x, z] = cellCentre(cell[0], cell[1]);

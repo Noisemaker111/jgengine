@@ -105,7 +105,7 @@ export function rewardFor(index: number): number {
   return index === idea.beats.length - 1 ? 0 : 15 + index * 15;
 }
 
-export const world: WorldModelDecl = {
+export const campWorld: WorldModelDecl = {
   factions: {
     farm: {
       label: idea.name,
@@ -139,7 +139,7 @@ export const world: WorldModelDecl = {
  */
 export const farm = defineGameSpec({
   id: idea.spec,
-  world,
+  world: campWorld,
   markers: missionMarkers(editorLayers),
   hooks: {
     festival: (ctx, call) => {

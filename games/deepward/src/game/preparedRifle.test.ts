@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { createGameContext } from "@jgengine/core/runtime/gameContext";
 import { GARAGE, physics, world } from "../world";
-import { initialize, keybinds, resumeRecord, seatPlayer, tick, viewStore, whenReady, whenWritten } from "./controls";
+import { initialize, keybinds, resumeRecord, seatPlayer, tickControls, viewStore, whenReady, whenWritten } from "./controls";
 import { RECORD_ENTRY, SAVE_KEY, validHome } from "./save";
 import { depart, newDive, newHome, recoverInterrupted, settle, takeLoot } from "./state";
 
@@ -99,7 +99,7 @@ test("a reload mid-dive resumes the run the HUD was showing, not a lost Life", a
     // now part of the record, which is what the reload must reproduce.
     first.input.publish([]);
     first.game.commands.run("deepwardFire", {});
-    for (let frame = 0; frame < 30; frame++) first.sim.advance(0.05, dt => tick(first, dt));
+    for (let frame = 0; frame < 30; frame++) first.sim.advance(0.05, dt => tickControls(first, dt));
     await whenWritten(first);
     const before = viewStore.read(first);
     expect(before.ammo!.loaded).toBe(5);

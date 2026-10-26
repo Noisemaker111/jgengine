@@ -3,7 +3,7 @@ import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { createGameContext } from "@jgengine/core/runtime/gameContext";
 import { physics, VAULT_SPAWN, world } from "../world";
 import { createDeepwardDamage, createDeepwardWeapon, sidearmDefinition } from "./combat";
-import { keybinds, registerControls, tick, viewStore } from "./controls";
+import { keybinds, registerControls, tickControls, viewStore } from "./controls";
 import { newDive, takeLoot } from "./state";
 
 function diveContext() {
@@ -28,7 +28,7 @@ function diveContext() {
 
 function advanceFrames(ctx: ReturnType<typeof diveContext>, count: number): void {
   // Fixed simulated frames, not a wall-clock wait or an input-dispatch substitute.
-  for (let frame = 0; frame < count; frame++) ctx.sim.advance(0.05, dt => tick(ctx, dt));
+  for (let frame = 0; frame < count; frame++) ctx.sim.advance(0.05, dt => tickControls(ctx, dt));
 }
 
 /** The held weapon's live rounds, as the HUD's ammo line reads them. */
@@ -60,7 +60,7 @@ test("a press fires on the press frame and a press while cooling is remembered o
   // The shared weapon remembers a pull made while its rate gate is cooling instead of dropping it.
   ctx.game.commands.run("deepward.fire", {});
   expect(loaded(ctx)).toBe(5);
-  const frame = ctx.sim.advance(0.05, dt => tick(ctx, dt));
+  const frame = ctx.sim.advance(0.05, dt => tickControls(ctx, dt));
   expect(frame.steps).toBeGreaterThan(1);
   expect(loaded(ctx)).toBe(5);
   advanceFrames(ctx, 8);
@@ -169,7 +169,7 @@ test("one cache action remains open across held-input simulation steps, with UI 
   ctx.input.publish(["deepwardCache", "deepwardFire"]);
   ctx.game.commands.run("deepwardCache", {});
   expect(viewStore.read(ctx).panel).toBe("cache");
-  const frame = ctx.sim.advance(0.05, dt => tick(ctx, dt));
+  const frame = ctx.sim.advance(0.05, dt => tickControls(ctx, dt));
   expect(frame.steps).toBeGreaterThan(1);
   expect(viewStore.read(ctx).panel).toBe("cache");
   expect(viewStore.read(ctx).dive!.elapsed).toBeGreaterThan(0);

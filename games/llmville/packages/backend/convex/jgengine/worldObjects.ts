@@ -1,7 +1,7 @@
 import { ownedClaimChunkKeys } from "../datacenter";
 import type { RuntimeChunkRow } from "@jgengine/core/runtime/snapshot";
 import {
-  fromRuntimeObjectRow,
+  placedObjectFromRow,
   placedRackAssignmentMap,
   placedRackSnapshots,
   removePlacedObject,
@@ -111,7 +111,7 @@ export function selectDecor(objects: readonly PlacedObject[]): PlacedDecorObject
 function objectsFromChunkRow(row: RuntimeChunkRow | undefined): PlacedObject[] {
   const objects: PlacedObject[] = [];
   for (const objectRow of row?.objects ?? []) {
-    const object = fromRuntimeObjectRow(objectRow);
+    const object = placedObjectFromRow(objectRow);
     if (object !== null) objects.push(object);
   }
   return objects;

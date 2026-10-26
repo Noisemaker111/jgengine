@@ -3,7 +3,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { basename, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { assetStoreRoot, linkFromStore, mainCheckoutOf, seedCandidates, seedStore } from "./assetStore";
+import { assetStoreRoot, dirHasEntries, linkFromStore, mainCheckoutOf, seedCandidates, seedStore } from "./assetStore";
 
 const assetsDir = fileURLToPath(new URL("../../packages/assets", import.meta.url));
 const provisionScript = fileURLToPath(new URL("../scripts/provision-assets.ts", import.meta.url));
@@ -33,10 +33,6 @@ function sourceText(dir: string): string {
   return text;
 }
 
-function isPopulated(dir: string): boolean {
-  return existsSync(dir) && readdirSync(dir).length > 0;
-}
-
 /**
  * The packs and library models a game's `src/` names that its `public/` lacks. A pack counts as
  * referenced when its id appears as a string literal; generated library models are committed by the
@@ -48,12 +44,12 @@ export function missingPulls(text: string, publicDir: string, catalogs: AssetCat
     if (!text.includes(`"${source.id}"`) && !text.includes(`'${source.id}'`)) continue;
     const subdir = source.kind === "material" ? "materials" : source.kind === "sprite" ? "sprites" : "models";
     const dir = join(subdir, source.id);
-    if (!isPopulated(join(publicDir, dir))) jobs.push({ target: source.id, dir });
+    if (!dirHasEntries(join(publicDir, dir))) jobs.push({ target: source.id, dir });
   }
   for (const entry of catalogs.library) {
     if (entry.origin.provider === "generated" || !text.includes(`"${entry.name}"`)) continue;
     const dir = join("models", "library", ...entry.name.split("/"));
-    if (!isPopulated(join(publicDir, dir))) jobs.push({ target: `model:${entry.name}`, dir });
+    if (!dirHasEntries(join(publicDir, dir))) jobs.push({ target: `model:${entry.name}`, dir });
   }
   return jobs;
 }

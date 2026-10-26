@@ -11,7 +11,7 @@ import {
 } from "@jgengine/core/worldModel/worldModel";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
-import { DAY_LENGTH, GRID, STARTING_CASH, snapToGrid } from "./catalog";
+import { DAY_LENGTH, GRID, STARTING_CASH, snapToTile } from "./catalog";
 import { LOT, sizeOf } from "./lot";
 import { FLAT_LAND, LAND_FACT } from "./build/terrain";
 import { BUILDABLES, BUILD_IDS, THEME_CAP, type BuildableDef } from "./objects/catalog";
@@ -43,8 +43,8 @@ const ride = (def: BuildableDef) => def.ride !== undefined;
 export function cellFor(kind: string, x: number, z: number): [number, number] {
   const n = sizeOf(BUILDABLES[kind]!);
   const start = -Math.floor((n - 1) / 2);
-  const col = (snapToGrid(x) - LOT.origin[0] - GRID / 2) / GRID + start;
-  const row = (snapToGrid(z) - LOT.origin[1] - GRID / 2) / GRID + start;
+  const col = (snapToTile(x) - LOT.origin[0] - GRID / 2) / GRID + start;
+  const row = (snapToTile(z) - LOT.origin[1] - GRID / 2) / GRID + start;
   return [col, row];
 }
 

@@ -12,8 +12,8 @@ import { FORMATIONS } from "../../formations";
 import { UPGRADES, WEAPON_DMG_PER_RANK, ARMOR_REDUCE_PER_RANK } from "../../upgrades";
 import { HERO_DMG_PER_LEVEL } from "../../hero";
 import type { HeroActView, HeroOffer } from "../../heroActs";
-import { Icon } from "../icons";
-import { Minimap } from "./Minimap";
+import { GlyphIcon } from "../icons";
+import { TacticalMinimap } from "./Minimap";
 import { ROSTER_METRICS, rosterFit, rosterPage } from "../rosterPage";
 
 const BUILD_LABELS: Record<string, string> = { barracks: "Barracks", farm: "Farm", guard_tower: "Guard Tower" };
@@ -60,7 +60,7 @@ function InkBar({ value, max, color, label, className }: { value: number; max: n
 function LedgerEntry({ icon, value, warn, label }: { icon: string; value: string; warn?: boolean; label: string }) {
   return (
     <span className="ec-ledger-entry" data-warn={warn === true ? "" : undefined} aria-label={label}>
-      <Icon name={icon} className="ec-ledger-glyph" />
+      <GlyphIcon name={icon} className="ec-ledger-glyph" />
       <b>{value}</b>
     </span>
   );
@@ -110,7 +110,7 @@ function Ledger() {
           data-warn={waveNear ? "" : undefined}
           title={`Marauder plan: ${hud.marauderPhase}, pressure tier ${hud.marauderTier} of 2`}
         >
-          <Icon name="skull" className="ec-ledger-glyph" />
+          <GlyphIcon name="skull" className="ec-ledger-glyph" />
           <span>
             <small>Wave {hud.wavesSent}</small>
             <b>{hud.nextWaveIn}s</b>
@@ -229,7 +229,7 @@ function Slot({
       aria-label={tip.title}
       className="ec-slot"
     >
-      <Icon name={icon} className="ec-slot-glyph" shadow="rgba(0, 0, 0, 0.85)" />
+      <GlyphIcon name={icon} className="ec-slot-glyph" shadow="rgba(0, 0, 0, 0.85)" />
       <span className="ec-slot-key">{hotkey}</span>
       {badge !== undefined ? <span className="ec-slot-badge">{badge}</span> : null}
       {foot !== undefined ? <span className="ec-slot-foot">{foot}</span> : null}
@@ -344,7 +344,7 @@ function CommandBoard() {
             <span className="ec-writ-chips">
               {tip.chips.map((c) => (
                 <span key={c.icon + c.text}>
-                  <Icon name={c.icon} className="ec-writ-glyph" />
+                  <GlyphIcon name={c.icon} className="ec-writ-glyph" />
                   {c.text}
                 </span>
               ))}
@@ -399,7 +399,7 @@ function HeroCard() {
   return (
     <div className="ec-hero">
       <span className="ec-medallion" data-fallen={alive ? undefined : ""} aria-hidden>
-        <Icon name={alive ? "helm" : "skull"} className="ec-medallion-glyph" shadow="rgba(0, 0, 0, 0.5)" shadowDy={13} />
+        <GlyphIcon name={alive ? "helm" : "skull"} className="ec-medallion-glyph" shadow="rgba(0, 0, 0, 0.5)" shadowDy={13} />
         <b>{hud.heroLevel}</b>
       </span>
       <span className="ec-hero-lines">
@@ -418,9 +418,9 @@ function HeroCard() {
         ) : null}
         {xp !== null && alive ? <InkBar value={xp.current} max={xp.max} color="#b0741c" label="Bram's experience" className="ec-ink-bar-thin" /> : null}
         <span className="ec-hero-stats">
-          <span aria-label={`damage ${dmg}`}><Icon name="weapons" className="ec-hero-stat-glyph" />{dmg}</span>
-          <span aria-label={`armor ${armor}`}><Icon name="shield" className="ec-hero-stat-glyph" />{armor}</span>
-          <span aria-label="walk speed"><Icon name="boots" className="ec-hero-stat-glyph" />{COMBATANTS.hero?.walkSpeed ?? 4.3}</span>
+          <span aria-label={`damage ${dmg}`}><GlyphIcon name="weapons" className="ec-hero-stat-glyph" />{dmg}</span>
+          <span aria-label={`armor ${armor}`}><GlyphIcon name="shield" className="ec-hero-stat-glyph" />{armor}</span>
+          <span aria-label="walk speed"><GlyphIcon name="boots" className="ec-hero-stat-glyph" />{COMBATANTS.hero?.walkSpeed ?? 4.3}</span>
         </span>
       </span>
     </div>
@@ -479,7 +479,7 @@ function ArmyRow() {
                   style={{ "--hp": ratio.toFixed(3) } as CSSProperties}
                 >
                   <span className="ec-token-stone">
-                    <Icon name={UNIT_ICON[u.kind] ?? "footman"} className="ec-token-glyph" shadow="rgba(0, 0, 0, 0.7)" shadowDy={26} />
+                    <GlyphIcon name={UNIT_ICON[u.kind] ?? "footman"} className="ec-token-glyph" shadow="rgba(0, 0, 0, 0.7)" shadowDy={26} />
                   </span>
                 </div>
               );
@@ -502,7 +502,7 @@ function ArmyHeader() {
     <span className="ec-army-head">
       <span>Afield · {hud.army.filter((unit) => !isWorker(unit)).length}</span>
       <span className="ec-army-workers" aria-label={`${hud.army.filter(isWorker).length} workers`}>
-        <Icon name="peasant" className="ec-hero-stat-glyph" />
+        <GlyphIcon name="peasant" className="ec-hero-stat-glyph" />
         {hud.army.filter(isWorker).length}
       </span>
       <button
@@ -570,7 +570,7 @@ function Console() {
     <div className="ec-console">
       <KitPanel material="wood" tint="#5b3b22" cut="chamfer" depth={10} padding="9px 9px 8px" className="ec-map-panel">
         <span className="ec-map-sheet">
-          <Minimap />
+          <TacticalMinimap />
           <span className="ec-map-north" aria-hidden>N</span>
         </span>
         <FormationTabs />
@@ -616,7 +616,7 @@ function LevelUpWrit({ offer }: { offer: HeroOffer }) {
               className="ec-levelup-option"
             >
               <span className="ec-slot ec-slot-static" data-tone={disabled ? "locked" : "ready"} aria-hidden>
-                <Icon name={option.icon} className="ec-slot-glyph" shadow="rgba(0, 0, 0, 0.85)" />
+                <GlyphIcon name={option.icon} className="ec-slot-glyph" shadow="rgba(0, 0, 0, 0.85)" />
                 <span className="ec-slot-key">{index + 7}</span>
               </span>
               <span className="ec-levelup-text">

@@ -3,7 +3,7 @@ import { createSessionLoop, type SessionLoop, type SessionLoopPersistence, type 
 import { RUN_SEED } from "./constants";
 import { SHIFT_TABLE, type ShiftEffect } from "./shifts";
 
-import type { RecordStorage } from "./records";
+import type { RunStorage } from "./records";
 
 /** The career's run history: how many runs are behind it, and which shift the next one drew. */
 export const RUN_STATE_KEY = "drift-foundry.run.v1";
@@ -11,7 +11,7 @@ export const RUN_STATE_KEY = "drift-foundry.run.v1";
 const count = (value: unknown): value is number => typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
 
 /** A saved run loop, or `null` when the save is missing, old or not numbers it can trust. */
-export function readRunState(storage?: RecordStorage): SessionLoopState | null {
+export function readRunState(storage?: RunStorage): SessionLoopState | null {
   try {
     const data = JSON.parse(storage?.getItem(RUN_STATE_KEY) ?? "null") as
       | (Partial<SessionLoopState> & { run?: unknown; completed?: unknown; haul?: unknown; changeId?: unknown })
@@ -30,7 +30,7 @@ export function readRunState(storage?: RecordStorage): SessionLoopState | null {
   }
 }
 
-export function saveRunState(state: SessionLoopState, storage?: RecordStorage): boolean {
+export function saveRunState(state: SessionLoopState, storage?: RunStorage): boolean {
   try {
     if (storage === undefined) return false;
     storage.setItem(RUN_STATE_KEY, JSON.stringify(state));

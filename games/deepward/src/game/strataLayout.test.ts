@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { BAYS, EXIT, FABRICATOR, GARAGE, FAUNA, FRAGMENTS, HAZARDS, HOME_SPAWN, LIFTS, NODES, PRINTER_ZERO, SALVAGE, STASH, STRATUM_SPAWNS, SUPPLIES, VAULT_SPAWN, distance, walkable, type Place, type Point } from "../world";
+import { BAYS, EXIT, FABRICATOR, GARAGE, FAUNA, FRAGMENTS, HAZARDS, HOME_SPAWN, LIFTS, NODES, PRINTER_ZERO, SALVAGE, STASH, STRATUM_SPAWNS, SUPPLIES, VAULT_SPAWN, groundDistance, walkable, type Place, type Point } from "../world";
 import { findRoute } from "./navigation";
 import { STRATUM_ORDER, type Stratum } from "./strata";
 
@@ -46,10 +46,10 @@ describe("authored strata layout", () => {
   test("Marrow's bays and fabricator keep clear of each other and the home services", () => {
     const fixed = [STASH, HOME_SPAWN, FABRICATOR];
     for (const bay of BAYS) {
-      for (const other of fixed) expect(distance(bay.at, other)).toBeGreaterThanOrEqual(2.6);
-      for (const other of BAYS) if (other !== bay) expect(distance(bay.at, other.at)).toBeGreaterThanOrEqual(2.6);
+      for (const other of fixed) expect(groundDistance(bay.at, other)).toBeGreaterThanOrEqual(2.6);
+      for (const other of BAYS) if (other !== bay) expect(groundDistance(bay.at, other.at)).toBeGreaterThanOrEqual(2.6);
     }
-    expect(distance(FABRICATOR, STASH)).toBeGreaterThanOrEqual(2.5);
+    expect(groundDistance(FABRICATOR, STASH)).toBeGreaterThanOrEqual(2.5);
     expect(findRoute(HOME_SPAWN, GARAGE, "home")).toEqual([GARAGE]);
     expect(findRoute(HOME_SPAWN, FABRICATOR, "home").length).toBeGreaterThan(0);
   });
@@ -65,9 +65,9 @@ describe("authored strata layout", () => {
   test("hazards belong to a stratum and each down lift is far from its up lift", () => {
     for (const hazard of HAZARDS) expect(STRATUM_ORDER).toContain(hazard.place);
     const pairs: [string, string][] = [["lift-cold-up", "lift-cold-down"], ["lift-wells-up", "lift-wells-down"]];
-    for (const [up, down] of pairs) expect(distance(lift(up)!.at, lift(down)!.at)).toBeGreaterThanOrEqual(20);
-    expect(distance(spawnOf("vault"), lift("lift-vault-down")!.at)).toBeLessThan(2);
-    expect(distance(VAULT_SPAWN, lift("lift-vault-down")!.at)).toBeGreaterThanOrEqual(20);
+    for (const [up, down] of pairs) expect(groundDistance(lift(up)!.at, lift(down)!.at)).toBeGreaterThanOrEqual(20);
+    expect(groundDistance(spawnOf("vault"), lift("lift-vault-down")!.at)).toBeLessThan(2);
+    expect(groundDistance(VAULT_SPAWN, lift("lift-vault-down")!.at)).toBeGreaterThanOrEqual(20);
   });
 
   test("existing receiving anchors stay walkable", () => {

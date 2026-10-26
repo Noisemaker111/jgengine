@@ -1,7 +1,7 @@
 import { createRecordingBuffer, type RecordingBuffer } from "@jgengine/core/sensor/recordingBuffer";
 import { interpolateRecordedPose } from "@jgengine/core/sensor/replayLoop";
 
-import type { RecordStorage } from "./records";
+import type { RunStorage } from "./records";
 
 /**
  * The ghost of your best run on a timed event, Trackmania-style: the kart's pose is recorded ten
@@ -28,7 +28,7 @@ const MAX_FRAMES = 1500;
 
 const round = (value: number): number => Math.round(value * 100) / 100;
 
-export function readGhosts(storage?: RecordStorage): Record<string, SavedGhost> {
+export function readGhosts(storage?: RunStorage): Record<string, SavedGhost> {
   try {
     const data = JSON.parse(storage?.getItem(GHOST_KEY) ?? "null") as Record<string, SavedGhost> | null;
     if (data === null || typeof data !== "object") return {};
@@ -44,7 +44,7 @@ export function readGhosts(storage?: RecordStorage): Record<string, SavedGhost> 
   }
 }
 
-export function saveGhost(eventId: string, ghost: SavedGhost, storage?: RecordStorage): boolean {
+export function saveGhost(eventId: string, ghost: SavedGhost, storage?: RunStorage): boolean {
   if (storage === undefined) return false;
   try {
     storage.setItem(GHOST_KEY, JSON.stringify({ ...readGhosts(storage), [eventId]: ghost }));

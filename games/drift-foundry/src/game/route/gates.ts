@@ -3,12 +3,12 @@ import { MAIN_ROUTE, type CourseFix } from "@jgengine/core/roads/routeCourse";
 import type { KartTuning } from "../parts/build";
 import { ROW_SIX_TRACK, type Track } from "../tracks/catalog";
 
-export type GateRequirement = "plow" | "jump";
+export type GateNeed = "plow" | "jump";
 
 export interface RouteGate {
   id: string;
   zoneId: string;
-  requirement: GateRequirement;
+  requirement: GateNeed;
   /** Route the barricade stands on; a shortcut's gate only stops karts that took the shortcut. */
   route: string;
   /** The band of lateral offset this barricade spans. Every barricade seals its whole road. */

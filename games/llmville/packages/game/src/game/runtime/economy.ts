@@ -34,7 +34,7 @@ export function currencyBalance(
   return playerRow(snapshot, userId)?.economy[currency] ?? 0;
 }
 
-export function canAfford(
+export function playerCanAfford(
   snapshot: GameRuntimeSnapshot,
   userId: string,
   currency: CurrencyId,
@@ -109,11 +109,11 @@ export function grantCurrency(
   return adjust(snapshot, input, "add");
 }
 
-export function hasUnlock(snapshot: GameRuntimeSnapshot, userId: string, unlockId: string): boolean {
+export function playerHasUnlock(snapshot: GameRuntimeSnapshot, userId: string, unlockId: string): boolean {
   return playerRow(snapshot, userId)?.unlocks.includes(unlockId) ?? false;
 }
 
-export function grantUnlock(
+export function grantPlayerUnlock(
   snapshot: GameRuntimeSnapshot,
   userId: string,
   unlockId: string,

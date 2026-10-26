@@ -43,7 +43,7 @@ export function canClaimCell(args: {
   cell: CellCoord; ownerGameId: string; claims: readonly DatacenterClaim[]; money: number;
 }): { ok: true; cost: number } | { ok: false; reason: ClaimRejection } {
   if (args.claims.some(claim => claim.cx === args.cell.cx && claim.cz === args.cell.cz)) return { ok: false, reason: "already_claimed" };
-  const result = planFootprintClaims({ ...args, cells: [args.cell] });
+  const result = planDatacenterClaims({ ...args, cells: [args.cell] });
   return result.ok ? { ok: true, cost: result.totalCost } : result;
 }
 
@@ -71,7 +71,7 @@ export interface FootprintClaimPlan {
 
 export type FootprintClaimResult = FootprintClaimPlan | { ok: false; reason: ClaimRejection };
 
-export function planFootprintClaims(args: {
+export function planDatacenterClaims(args: {
   cells: readonly CellCoord[]; ownerGameId: string; claims: readonly DatacenterClaim[]; money: number;
 }): FootprintClaimResult {
   const cells = [...args.cells].sort((a, b) => a.cx - b.cx || a.cz - b.cz);
@@ -100,7 +100,7 @@ export function createPlacementCellPolicy(
   ownerGameId: string,
 ): PlacementCellPolicy {
   const plan = (cells: readonly CellCoord[]): FootprintClaimResult =>
-    planFootprintClaims({ cells, ownerGameId, claims, money: Number.POSITIVE_INFINITY });
+    planDatacenterClaims({ cells, ownerGameId, claims, money: Number.POSITIVE_INFINITY });
   return {
     canUse: (cell) => plan([cell]).ok,
     quote: (cells) => {

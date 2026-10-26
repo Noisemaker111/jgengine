@@ -33,7 +33,7 @@ export {
 
 const CLOCK_TICK_MS = 500;
 
-export function useGameClock(
+export function useRuntimeClock(
   createdAt: number | undefined,
   serverNow: number | undefined,
   gameTimeScale?: number,

@@ -14,7 +14,7 @@ import { AMMO_STAT_IDS, weaponById } from "../../items/weapons/catalog";
  * item, the rounds left on an amber tab and the key that draws it. The held one sits up and glows; the
  * belt dims while nothing changes. Tappable on touch.
  */
-export function Hotbar() {
+export function BeltHotbar() {
   const keybinds = useActionBindings();
   const { userId } = usePlayer();
   const { commands } = useGame();

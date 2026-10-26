@@ -1,4 +1,4 @@
-import PlacementController from "@/runtime/components/PlacementController";
+import PlacementControls from "@/runtime/components/PlacementController";
 import type { BuildViewModel } from "@/build/buildSession";
 import type { RackHardwareViewModel } from "@/infrastructure/rackHardwareSession";
 import type { ReadyWorldViewModel } from "@/runtime/worldViewModel";
@@ -103,7 +103,7 @@ export function GameplayChrome({ world, build, rackHardware, tutorial, isTouch, 
               : "game-ui-interactive absolute right-12 top-24 z-20"
           }
         >
-          <PlacementController
+          <PlacementControls
             facingLabel={build.placementFacingLabel}
             onRotate={build.onRotatePlacement}
             onPlace={build.onConfirmPlacement}

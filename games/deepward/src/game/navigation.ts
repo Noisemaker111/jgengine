@@ -1,10 +1,10 @@
 import { createNavGrid, findPath, type NavGrid, type NavPoint } from "@jgengine/core/nav/navGrid";
-import { distance, walkable, WORLD_BOUNDS, type Place, type Point } from "../world";
+import { groundDistance, walkable, WORLD_BOUNDS, type Place, type Point } from "../world";
 
 const CELL = 0.5;
 /** Routes use the same authored footprints and actor clearance as locomotion. */
 export function traversable(from: Point, to: Point, place: Place): boolean {
-  const steps = Math.max(1, Math.ceil(distance(from, to) / 0.12));
+  const steps = Math.max(1, Math.ceil(groundDistance(from, to) / 0.12));
   for (let i = 0; i <= steps; i++) {
     const t = i / steps;
     if (!walkable(from[0] + (to[0] - from[0]) * t, from[2] + (to[2] - from[2]) * t, place)) return false;
@@ -66,12 +66,12 @@ export function createNavigator(): Navigator { return { goal: null, path: [] }; 
 export function advanceRoute(route: Navigator, from: Point, goal: Point, budget: number, place: Place): Point {
   if (!(budget > 0) || !Number.isFinite(budget)) return from;
   if (traversable(from, goal, place)) { route.goal = goal; route.path = [goal]; }
-  else if (route.goal === null || distance(route.goal, goal) > CELL || (route.path.length && !traversable(from, route.path[0]!, place))) {
+  else if (route.goal === null || groundDistance(route.goal, goal) > CELL || (route.path.length && !traversable(from, route.path[0]!, place))) {
     route.goal = goal; route.path = findRoute(from, goal, place);
   }
   let at = from, left = budget;
   while (route.path.length && left > 0) {
-    const next = route.path[0]!, remaining = distance(at, next);
+    const next = route.path[0]!, remaining = groundDistance(at, next);
     if (remaining <= left) { at = next; left -= remaining; route.path.shift(); }
     else { const f = left / remaining; at = [at[0] + (next[0] - at[0]) * f, at[1], at[2] + (next[2] - at[2]) * f]; left = 0; }
   }

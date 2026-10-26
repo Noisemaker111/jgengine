@@ -1,5 +1,5 @@
 import { v, type Infer } from "convex/values";
-import { pickSpawnPoint } from "@llmville/game/datacenter/spawn";
+import { pickDatacenterSpawn } from "@llmville/game/datacenter/spawn";
 import { hashStructuralSeed } from "@llmville/game/world/cityHash";
 import type { Doc, Id } from "../_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "../_generated/server";
@@ -72,7 +72,7 @@ async function spawnForGame(
   const game = await ctx.db.get("games", gameId);
   const saved = game?.lastWorldPosition;
   if (saved) return { x: saved.x, y: 0, z: saved.z };
-  const spawn = pickSpawnPoint(hashStructuralSeed(["spawn", gameId]), await claimsNearOrigin(ctx));
+  const spawn = pickDatacenterSpawn(hashStructuralSeed(["spawn", gameId]), await claimsNearOrigin(ctx));
   return { x: spawn.x, y: 0, z: spawn.z };
 }
 

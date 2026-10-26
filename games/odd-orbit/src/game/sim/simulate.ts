@@ -5,12 +5,12 @@ import { householdBook, memberAgent, syncBook, syncMember } from "../agents";
 
 import { DAY_LENGTH } from "../../world";
 import { FURNITURE_BY_ID, type FurnitureRole } from "../objects/catalog";
-import { clamp, lowestNeed, type NeedId } from "../needs/needs";
+import { clampNeed, lowestNeed, type NeedId } from "../needs/needs";
 import { householdStore } from "../session/store";
 import { closeShift, openShift, probeShift, shiftLoop, shiftRan } from "../session/shiftSessions";
 import { noteEvent, pairKey, type HouseholdState, type MemberState } from "../session/types";
 import { chooseDesire, isIdleish, SOCIAL_RANGE, SOCIAL_SECONDS, USE_FULL, type RoleAvailability } from "./ai";
-import { advanceIncidents, consolesOffline, dusty, isBroken, isIll, restFactor } from "./events";
+import { advanceIncidents, consolesOffline, dusty, isObjectBroken, isIll, restFactor } from "./events";
 import { charterOf, reviewCharter } from "./charter";
 import { bondFactor, harvestBonus, playRelief, stressFactor, yieldPayFactor } from "../traits";
 import { creditAmount, PANTRY_CAP, settleHouseholdDay } from "./economy";
@@ -29,7 +29,7 @@ function positionOf(ctx: GameContext, id: string): [number, number, number] | nu
 function availabilityFrom(state: HouseholdState, objects: readonly SceneObject[]): RoleAvailability {
   const avail: RoleAvailability = { hunger: false, energy: false, social: false, fun: false, work: false };
   for (const obj of objects) {
-    if (isBroken(state, obj.instanceId)) continue;
+    if (isObjectBroken(state, obj.instanceId)) continue;
     const def = FURNITURE_BY_ID[obj.catalogId];
     if (def !== undefined) avail[def.role] = true;
   }
@@ -62,7 +62,7 @@ function nearestForRole(ctx: GameContext, state: HouseholdState, member: MemberS
   let bestD = Infinity;
   for (const obj of objects) {
     const def = FURNITURE_BY_ID[obj.catalogId];
-    if (def === undefined || def.role !== role || (catalogId !== undefined && obj.catalogId !== catalogId) || isBroken(state, obj.instanceId) || !hasRoom(state, member, obj)) continue;
+    if (def === undefined || def.role !== role || (catalogId !== undefined && obj.catalogId !== catalogId) || isObjectBroken(state, obj.instanceId) || !hasRoom(state, member, obj)) continue;
     const d = (obj.position[0] - from[0]) ** 2 + (obj.position[2] - from[2]) ** 2;
     if (d < bestD) { bestD = d; best = obj; }
   }
@@ -137,7 +137,7 @@ function closeMissedShift(ctx: GameContext, state: HouseholdState, member: Membe
   member.missedShifts += 1;
   view.standing.apply(member.id, "missed");
   state.standing = view.standing.snapshot();
-  member.stress = clamp(member.stress + 12 * stressFactor(member));
+  member.stress = clampNeed(member.stress + 12 * stressFactor(member));
   concern(ctx, state, member, member.lifestyle === "yield" ? "Yield window closed; unfinished work earned only partial pay" : "Bloom window closed; no harvest today");
 }
 
@@ -158,7 +158,7 @@ export function simulateHousehold(ctx: GameContext, dt: number): void {
       memberAgent(member, ctx.rng).update({ dt: unattended, now: now - simulated });
     syncMember(member, ctx.rng);
       member.missedShifts += missedDays;
-      if (member.needs.hunger < 18 || member.needs.energy < 18) member.stress = clamp(member.stress + unattended);
+      if (member.needs.hunger < 18 || member.needs.energy < 18) member.stress = clampNeed(member.stress + unattended);
       releaseMember(member);
     }
     householdStore.write(ctx, { ...state, members: { ...state.members } });
@@ -198,7 +198,7 @@ function stepHousehold(ctx: GameContext, dt: number, now: number): void {
     if (isIll(member, now)) agent.needs.refill("energy", -0.12 * dt);
     syncMember(member, ctx.rng);
     const urgent = member.needs.hunger < 18 || member.needs.energy < 18;
-    member.stress = clamp(member.stress + (urgent ? 1.2 * stressFactor(member) : -0.035) * dt);
+    member.stress = clampNeed(member.stress + (urgent ? 1.2 * stressFactor(member) : -0.035) * dt);
     if (!member.recovering && member.stress >= 80) {
       member.recovering = true;
       releaseMember(member);
@@ -258,7 +258,7 @@ function stepMember(ctx: GameContext, state: HouseholdState, member: MemberState
   if (action.kind === "use" || action.kind === "seek") {
     const obj = objects.find((candidate) => candidate.instanceId === action.objId);
     const def = obj === undefined ? undefined : FURNITURE_BY_ID[obj.catalogId];
-    if (obj === undefined || def === undefined || def.role !== action.goal || isBroken(state, obj.instanceId)) { releaseMember(member); return; }
+    if (obj === undefined || def === undefined || def.role !== action.goal || isObjectBroken(state, obj.instanceId)) { releaseMember(member); return; }
     const isTending = obj.catalogId === "bloom_planter" && member.harvestToday === 0;
     if (action.goal === "work" || isTending) {
       const open = shiftIsOpen(member, now) && (action.goal !== "work" || member.lifestyle === "yield");
@@ -309,18 +309,18 @@ function stepMember(ctx: GameContext, state: HouseholdState, member: MemberState
       if (earned > 0) loop.carry(earned);
       agent.needs.refill("energy", -0.55 * worked);
       agent.needs.refill("hunger", -0.2 * worked);
-      member.stress = clamp(member.stress + worked * stressFactor(member));
+      member.stress = clampNeed(member.stress + worked * stressFactor(member));
       if (member.workToday >= SHIFT_SECONDS) { finishShift(ctx, state, member, now, view); releaseMember(member); }
       return;
     }
     const goal = action.goal;
     const soloRing = goal === "social";
     const cap = soloRing ? 55 : 100;
-    const next = Math.min(cap, clamp(member.needs[goal] + def.satisfyPerSecond * (goal === "energy" ? restFactor(state) : 1) * dt));
+    const next = Math.min(cap, clampNeed(member.needs[goal] + def.satisfyPerSecond * (goal === "energy" ? restFactor(state) : 1) * dt));
     member.needs[goal] = next;
     agent.needs.refill(goal, next - agent.needs.value(goal));
-    if (goal === "energy") member.stress = clamp(member.stress - 2.2 * dt);
-    if (goal === "fun") member.stress = clamp(member.stress - (isTending ? 0.6 : 1.25 + playRelief(member)) * dt);
+    if (goal === "energy") member.stress = clampNeed(member.stress - 2.2 * dt);
+    if (goal === "fun") member.stress = clampNeed(member.stress - (isTending ? 0.6 : 1.25 + playRelief(member)) * dt);
     if (isTending && member.lifestyle === "bloom" && shiftIsOpen(member, now) && !member.recovering && !isIll(member, now)) {
       member.shiftProgress = Math.min(SHIFT_SECONDS, member.shiftProgress + dt);
       if (member.shiftProgress > SHIFT_SECONDS - 1e-8) member.shiftProgress = SHIFT_SECONDS;
@@ -367,7 +367,7 @@ function stepMember(ctx: GameContext, state: HouseholdState, member: MemberState
   if (householdPhase(now) === "torpor" && member.needs.energy < 80 && availability.energy && member.needs.hunger > 35) desire = { kind: "need", goal: "energy" };
   if (member.recovering && !availability.energy && member.needs.energy < 60) {
     agent.needs.refill("energy", 1.5 * dt);
-    member.stress = clamp(member.stress - 0.65 * dt);
+    member.stress = clampNeed(member.stress - 0.65 * dt);
     concern(ctx, state, member, "Resting outside; a Torpor Pod would recover faster");
     return;
   }
@@ -477,7 +477,7 @@ function stepSocialPairs(ctx: GameContext, state: HouseholdState, now: number, d
     for (const m of [a, b]) {
       memberAgent(m, ctx.rng).needs.refill("social", (tense ? 3 : 9) * dt);
       memberAgent(m, ctx.rng).needs.refill("fun", (tense ? -2 : 3) * dt);
-      m.stress = clamp(m.stress - (tense ? 0.1 : 2) * dt);
+      m.stress = clampNeed(m.stress - (tense ? 0.1 : 2) * dt);
     }
     const warmth = (bondFactor(a) + bondFactor(b)) / 2;
     const outcome = book.socialise(a.id, b.id, { familiarity: 0.02 * dt, opinion: (tense ? -3 : 4 * warmth) * dt });

@@ -6,7 +6,7 @@ import {
   claimedCellsFor,
   createPlacementCellPolicy,
   isCellOwnedBy,
-  planFootprintClaims,
+  planDatacenterClaims,
   type DatacenterClaim,
 } from "@llmville/game/datacenter/claims";
 
@@ -77,7 +77,7 @@ describe("datacenter claims", () => {
 
 describe("planFootprintClaims", () => {
   test("charges only the unowned cells of a mixed footprint", () => {
-    const plan = planFootprintClaims({
+    const plan = planDatacenterClaims({
       cells: [
         { cx: 0, cz: 0 },
         { cx: 1, cz: 0 },
@@ -94,7 +94,7 @@ describe("planFootprintClaims", () => {
 
   test("costs nothing when the whole footprint is already owned", () => {
     expect(
-      planFootprintClaims({
+      planDatacenterClaims({
         cells: [{ cx: 3, cz: 4 }],
         ownerGameId: "me",
         claims: [claim(3, 4, "me")],
@@ -105,7 +105,7 @@ describe("planFootprintClaims", () => {
 
   test("rejects a cell owned by another game", () => {
     expect(
-      planFootprintClaims({
+      planDatacenterClaims({
         cells: [
           { cx: 40, cz: 0 },
           { cx: 41, cz: 0 },
@@ -119,7 +119,7 @@ describe("planFootprintClaims", () => {
 
   test("rejects a footprint that violates the gap to another game", () => {
     expect(
-      planFootprintClaims({
+      planDatacenterClaims({
         cells: [{ cx: 10, cz: 10 }],
         ownerGameId: "me",
         claims: [claim(12, 10, "them")],
@@ -134,13 +134,13 @@ describe("planFootprintClaims", () => {
       { cx: 1, cz: 0 },
       { cx: 2, cz: 0 },
     ];
-    const affordable = planFootprintClaims({ cells, ownerGameId: "me", claims: [], money: 10_000 });
+    const affordable = planDatacenterClaims({ cells, ownerGameId: "me", claims: [], money: 10_000 });
     expect(affordable.ok).toBe(true);
     if (!affordable.ok) return;
     expect(affordable.totalCost).toBe(claimCost(0) + claimCost(1) + claimCost(2));
 
     expect(
-      planFootprintClaims({ cells, ownerGameId: "me", claims: [], money: CLAIM_BASE_COST }),
+      planDatacenterClaims({ cells, ownerGameId: "me", claims: [], money: CLAIM_BASE_COST }),
     ).toEqual({ ok: false, reason: "insufficient_funds" });
   });
 });

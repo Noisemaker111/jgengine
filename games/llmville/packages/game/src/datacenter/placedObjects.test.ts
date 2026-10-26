@@ -5,14 +5,14 @@ import {
   createPlacedDecorObject,
   createPlacedRackObject,
   findPlacedObject,
-  fromRuntimeObjectRow,
+  placedObjectFromRow,
   insertPlacedObject,
   listPlacedObjects,
   placedObjectInstanceId,
   placedRackAssignmentMap,
   placedRackSnapshots,
   removePlacedObject,
-  toRuntimeObjectRow,
+  placedObjectToRow,
   writePlacedObject,
   type PlacedRackObject,
 } from "@llmville/game/datacenter/placedObjects";
@@ -82,7 +82,7 @@ describe("runtime object row conversion", () => {
       installedHardwareModuleIds: ["gpu_1", null, "gpu_2", null],
       assignments: [{ lane: "training" }, null, { lane: "serving", targetModelId: "model_a" }, null],
     });
-    const row = toRuntimeObjectRow(source);
+    const row = placedObjectToRow(source);
     expect(row.catalogId).toBe("air_rack_4");
     expect(row.position).toEqual([10.5, 0, 10.5]);
     expect(row.slots?.slots).toEqual([
@@ -93,7 +93,7 @@ describe("runtime object row conversion", () => {
     ]);
     expect(row.flags?.owner).toBe("user_1");
 
-    const restored = fromRuntimeObjectRow(row);
+    const restored = placedObjectFromRow(row);
     expect(restored).toEqual(source);
   });
 
@@ -105,19 +105,19 @@ describe("runtime object row conversion", () => {
       ownerUserId: "user_1",
       placedAt: 5,
     });
-    const restored = fromRuntimeObjectRow(toRuntimeObjectRow(decor));
+    const restored = placedObjectFromRow(placedObjectToRow(decor));
     expect(restored).toEqual(decor);
     expect(restored?.direction).toBe(CARDINAL.S);
   });
 
   test("rejects a row whose catalog id is not a build item", () => {
     expect(
-      fromRuntimeObjectRow({ instanceId: "obj_0_0_0", catalogId: "local-player", position: [0, 0, 0] }),
+      placedObjectFromRow({ instanceId: "obj_0_0_0", catalogId: "local-player", position: [0, 0, 0] }),
     ).toBeNull();
   });
 
   test("defaults rack flags that are missing or malformed", () => {
-    const restored = fromRuntimeObjectRow({
+    const restored = placedObjectFromRow({
       instanceId: "obj_0_0_0",
       catalogId: "starter_rack",
       position: [0, 0, 0],
@@ -133,7 +133,7 @@ describe("runtime object row conversion", () => {
   });
 
   test("drops a serving assignment with no target model", () => {
-    const restored = fromRuntimeObjectRow({
+    const restored = placedObjectFromRow({
       instanceId: "obj_0_0_0",
       catalogId: "starter_rack",
       position: [0, 0, 0],

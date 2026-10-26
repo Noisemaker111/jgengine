@@ -8,7 +8,7 @@ import { useStore } from "@jgengine/react/store";
 import { useGameStore } from "@jgengine/react/hooks";
 import { HudButton } from "@jgengine/react/hud/hudButton";
 import { HudSurface } from "@jgengine/react/hud/hudSurface";
-import { distance, EXIT, roomAt } from "../../world";
+import { groundDistance, EXIT, roomAt } from "../../world";
 import { nearby, storageChanged, viewStore } from "../controls";
 import { CACHE, footprint, ITEMS } from "../state";
 import { weaponReadout } from "../combat";
@@ -20,7 +20,7 @@ import { ItemMark } from "./ItemMark";
 import { DeepwardMenu } from "./menu/DeepwardMenu";
 import { RECORD_KEY, SAVE_KEY } from "../save";
 import { placement } from "./hudPanels";
-import { ActionPlate, DepthStrip, DiveComputer, Docket, HoldTab, KitCounter, RadioLine, Reticle, SearchBar, Visor } from "./VisorHud";
+import { ActionPlate, DepthStrip, DiveComputer, Docket, HoldTab, KitCounter, CommsLine, VisorReticle, SearchBar, Visor } from "./VisorHud";
 import { FabricatorSheet } from "./FabricatorSheet";
 import { marrowOf } from "../marrow";
 import { nextGoal, sealMark } from "../deep";
@@ -136,7 +136,7 @@ export function GameUI() {
   }}>
     <Visor low={low} hurt={dive !== null && dive.hurt > 0} />
     {dive !== null && dive.hurt > 0 && <div className="dw-hurtwash" aria-hidden="true" />}
-    {dive !== null && <Reticle hit={dive.flash > 0} />}
+    {dive !== null && <VisorReticle hit={dive.flash > 0} />}
     <HudCanvas layout={hud} editChord={false} compactScale={0.86}>
       <HudPanel {...placement("shift", portrait)} compact="keep" locked>
         <HoldTab disabled={view.mode !== "home" && view.mode !== "dive"} onPause={() => command("pause")} />
@@ -146,7 +146,7 @@ export function GameUI() {
           <DepthStrip room={depthRoom} />
         </HudPanel>
         <HudPanel {...placement("air", portrait)} compact="keep" interactive={false} locked>
-          <DiveComputer oxygen={dive.oxygen} tank={dive.tankSeconds} health={dive.health} rail={distance(at, EXIT)} sealed={dive.tankSeconds > 110} low={low} hurt={dive.hurt > 0}
+          <DiveComputer oxygen={dive.oxygen} tank={dive.tankSeconds} health={dive.health} rail={groundDistance(at, EXIT)} sealed={dive.tankSeconds > 110} low={low} hurt={dive.hurt > 0}
             body={body} seal={{ mark: sealMark(view.deep), pressure: STRATA[stratum].pressure, crushing: crushDamage(stratum, sealMark(view.deep)) > 0 }}
             belt={{ ...dive.belt, lamp: dive.lamp }} />
         </HudPanel>
@@ -165,7 +165,7 @@ export function GameUI() {
           last={view.home.last === null ? null : { kind: view.home.last.kind, reason: view.home.last.reason }} />
       </HudPanel>}
       <HudPanel {...placement("radio", portrait)} compact="keep" interactive={false} locked>
-        <RadioLine hint={view.hint} error={view.error && view.mode !== "saving" && view.mode !== "blocked" ? view.error : null} />
+        <CommsLine hint={view.hint} error={view.error && view.mode !== "saving" && view.mode !== "blocked" ? view.error : null} />
       </HudPanel>
       <HudPanel {...placement("prompt", portrait)} compact="keep" locked>
         {dive?.channel !== null && dive?.channel !== undefined ? <SearchBar remaining={dive.channel.remaining} total={dive.channel.total ?? 1.4} label={channelLabel[dive.channel.kind ?? "search"]} />
