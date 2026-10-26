@@ -65,8 +65,8 @@ test("a faster taming speed brings meals sooner without changing how much it eat
   let seconds = 0;
   let tamed = false;
   while (!tamed && seconds < 100) {
-    for (const { event } of taming.tick(1, () => pantry(stock), 10)) if (event.type === "tamed") tamed = true;
-    seconds += 1;
+    for (const { event } of taming.tick(0.1, () => pantry(stock), 10)) if (event.type === "tamed") tamed = true;
+    seconds += 0.1;
   }
   expect(tamed).toBe(true);
   expect(10 - stock.raw_meat).toBe(7);
