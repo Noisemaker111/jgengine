@@ -6,7 +6,7 @@ export {
   SKY_PRESET_DAY_FRACTION,
   type DaylightCycleConfig,
   type DaylightState,
-} from "../../../core/src/sky/daylightCycle";
+} from "@jgengine/core/sky/daylightCycle";
 export {
   resolveSkyLightOwnership,
   skyEmitsLights,

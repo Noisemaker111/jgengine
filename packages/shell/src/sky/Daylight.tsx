@@ -16,7 +16,7 @@ import {
   DEFAULT_DAY_AMBIENT_INTENSITY,
   DEFAULT_DAY_SUN_INTENSITY,
   SKY_PRESET_DAY_FRACTION,
-} from "../../../core/src/sky/daylightCycle";
+} from "@jgengine/core/sky/daylightCycle";
 import { SUN_SHADOW, sunLightPosition, sunShadowFocus } from "./sunShadowMath";
 import { VolumetricClouds } from "./VolumetricClouds";
 

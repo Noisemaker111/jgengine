@@ -85,7 +85,7 @@ import {
 import { CullingProvider } from "./visibility/CullingProvider";
 import { BuildingRenderBudget } from "./buildings/BuildingRenderBudget";
 import { Sky } from "./environment";
-import { bearingFromDirection } from "../../core/src/sky/daylightCycle";
+import { bearingFromDirection } from "@jgengine/core/sky/daylightCycle";
 import type { DaylightModulation } from "./render/SceneLighting";
 import { colorGradeFromDocument, lightProbesFromDocument } from "@jgengine/core/editor/environment";
 import { resolveSkyLightOwnership, skyEmitsLights } from "./sky/skyLightingPolicy";
