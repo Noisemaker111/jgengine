@@ -102,6 +102,8 @@ export interface LoadSample {
   revealFrames?: number[];
   /** When the post chain's effects came on, in ms after the reveal; null when they did not within those two seconds. */
   effectsAfterReveal?: number | null;
+  /** The game's own full-screen menu covered the canvas at the reveal, so the two seconds were timed from when it lifted after the Play press. */
+  revealCovered?: boolean;
   longestTaskMs: number;
   /** Sum over main-thread tasks of the time each spent past 50 ms. */
   blockingMs: number;
@@ -123,7 +125,7 @@ export interface LoadSample {
 export const PAGE_PROBE = `(() => {
   if (!location.pathname.startsWith("/play")) return;
   const epoch = () => performance.timeOrigin + performance.now();
-  const s = (window.__jgLoad = { tasks: [], fcpAt: null, menuAt: null, menuBox: null, menuLabel: null, menuStall: 0, sceneReadyAt: null, sceneColors: null, sceneSampled: false, revealAt: null, revealFrames: [], revealDone: false, effectsAfterReveal: null, pressAt: null, respondedAt: null, playableAt: null });
+  const s = (window.__jgLoad = { tasks: [], fcpAt: null, menuAt: null, menuBox: null, menuLabel: null, menuStall: 0, sceneReadyAt: null, sceneColors: null, sceneSampled: false, revealAt: null, revealFrames: [], revealDone: false, revealCovered: false, effectsAfterReveal: null, pressAt: null, respondedAt: null, playableAt: null });
   // The canvas keeps its last frame, so the scene can be read back at scene ready.
   const getContext = HTMLCanvasElement.prototype.getContext;
   HTMLCanvasElement.prototype.getContext = function (type, options) {
@@ -182,17 +184,24 @@ export const PAGE_PROBE = `(() => {
     s.pressAt = at(event.timeStamp);
     requestAnimationFrame(() => requestAnimationFrame(() => { s.respondedAt = epoch(); }));
   }, true);
-  let last = 0, smooth = 0, runStart = 0, sampleTick = 0;
+  let last = 0, smooth = 0, runStart = 0, sampleTick = 0, sampleFrom = null;
   const SAMPLE_MS = 2000, REVEAL_MS = 2000;
   const frame = () => {
     const now = epoch();
     findMenu();
     if (s.menuAt !== null && s.pressAt === null && last !== 0) s.menuStall = Math.max(s.menuStall, now - Math.max(last, s.menuAt));
     const covered = document.querySelector("[data-shell-code-loading]") !== null || document.querySelector("canvas") === null;
-    if (!covered && last !== 0 && s.pressAt === null) {
+    // A game's full-screen menu stops the world drawing under it: its frames time nothing and the
+    // canvas holds whatever was last drawn, so the window and the scene read wait for it to lift.
+    const hidden = window.__jgengineAgent?.handle({ method: "canvas_cover" })?.covered === true;
+    if (!covered && hidden && s.pressAt === null) {
+      s.revealCovered = true;
+      s.revealAt = null;
+      s.revealFrames = [];
+    } else if (!covered && !hidden && last !== 0 && !s.revealDone && (s.pressAt === null || s.revealCovered)) {
       if (s.revealAt === null) s.revealAt = now;
       if (now - s.revealAt <= REVEAL_MS) s.revealFrames.push(Math.round((now - last) * 10) / 10);
-      else if (!s.revealDone) {
+      else {
         s.revealDone = true;
         const effects = performance.getEntriesByName("jg:postfx:effects")[0];
         s.effectsAfterReveal = effects === undefined ? null : Math.round(at(effects.startTime) - s.revealAt);
@@ -205,13 +214,14 @@ export const PAGE_PROBE = `(() => {
     }
     // The scene is read a few times over the two seconds after scene ready, keeping the richest
     // read, so a fade-in or a title card at that moment does not read as a blank scene.
-    if (s.sceneReadyAt !== null && !s.sceneSampled && ++sampleTick % 15 === 1) {
+    if (s.sceneReadyAt !== null && !s.sceneSampled && !hidden && ++sampleTick % 15 === 1) {
+      sampleFrom ??= now;
       const colors = sceneColors();
       if (colors !== null) s.sceneColors = Math.max(s.sceneColors ?? 0, colors);
-      if (now - s.sceneReadyAt >= SAMPLE_MS) s.sceneSampled = true;
+      if (now - sampleFrom >= SAMPLE_MS) s.sceneSampled = true;
     }
     last = now;
-    if (s.playableAt === null) requestAnimationFrame(frame);
+    if (s.playableAt === null || !s.revealDone || !s.sceneSampled) requestAnimationFrame(frame);
   };
   requestAnimationFrame(frame);
 })();`;
@@ -229,6 +239,7 @@ interface ProbeState {
   revealAt: number | null;
   revealFrames: number[];
   revealDone: boolean;
+  revealCovered: boolean;
   /** When the post effects came on (the engine marks it), in ms after the reveal; null when not within the window. */
   effectsAfterReveal: number | null;
   pressAt: number | null;
@@ -283,11 +294,11 @@ const COLUMNS = [
 const cell = (value: number | null | undefined) => (value === null || value === undefined ? "-" : String(Math.round(value)));
 
 /** Frame gaps in the two seconds after the reveal: how many, the worst, the median and how many missed 30 fps. @internal */
-export function revealSummary(frames: readonly number[] | undefined): string {
-  if (frames === undefined || frames.length === 0) return "no frames";
+export function revealSummary(frames: readonly number[] | undefined, covered = false): string {
+  if (frames === undefined || frames.length === 0) return covered ? "no frames (the game's menu never lifted)" : "no frames";
   const sorted = [...frames].sort((a, b) => a - b);
   const slow = frames.filter((gap) => gap > 33.4).length;
-  return `${frames.length} frames, worst ${Math.round(sorted[sorted.length - 1]!)} ms, median ${Math.round(sorted[Math.floor(sorted.length / 2)]!)} ms, ${slow} over 33 ms`;
+  return `${frames.length} frames${covered ? " once the game's menu lifted" : ""}, worst ${Math.round(sorted[sorted.length - 1]!)} ms, median ${Math.round(sorted[Math.floor(sorted.length / 2)]!)} ms, ${slow} over 33 ms`;
 }
 
 /** A markdown table, with `before -> after` cells when a previous run is given. */
@@ -464,7 +475,7 @@ async function measureOnce(base: string, game: string, path: string, args: LoadA
       state = frame === null ? null : await frame.evaluate(() => (window as unknown as { __jgLoad?: ProbeState }).__jgLoad ?? null).catch(() => null);
       // Play is pressed once the scene behind the menu has settled and the two seconds after the
       // reveal are timed (the press would load the level into them), or after a long wait.
-      const settled = state !== null && ((state.sceneReadyAt !== null && state.revealDone) || (state.menuAt !== null && Date.now() - state.menuAt > PRESS_AFTER_MENU_MS));
+      const settled = state !== null && ((state.sceneReadyAt !== null && (state.revealDone || state.revealCovered)) || (state.menuAt !== null && Date.now() - state.menuAt > PRESS_AFTER_MENU_MS));
       if (state !== null && state.menuBox !== null && !pressed && settled) {
         const box = frame === page.mainFrame() ? { x: 0, y: 0 } : await (await frame!.frameElement()).boundingBox();
         if (box !== null) {
@@ -474,9 +485,9 @@ async function measureOnce(base: string, game: string, path: string, args: LoadA
         }
       }
       if (process.env.JG_LOAD_DEBUG === "1") console.error(`load: ${Date.now() - (deadline - args.timeoutMs)}ms ${JSON.stringify({ ...state, tasks: state?.tasks.length })}`);
-      if (state?.playableAt != null) break;
-      // The guard judges the menu and the scene behind it, so it stops at scene ready.
-      if ((args.guard || args.saveBaseline) && state?.sceneReadyAt != null && state.sceneSampled) break;
+      if (state?.playableAt != null && state.revealDone) break;
+      // The guard judges the menu and the scene behind it, so it stops once the scene is read and its first two seconds timed.
+      if ((args.guard || args.saveBaseline) && state?.sceneReadyAt != null && state.sceneSampled && state.revealDone) break;
       // wait-ok: samples the page's own probe while the game loads
       await new Promise((resolve) => setTimeout(resolve, 100));
     }
@@ -489,9 +500,10 @@ async function measureOnce(base: string, game: string, path: string, args: LoadA
       sample.sceneReady = rel(state.sceneReadyAt);
       sample.sceneColors = state.sceneColors;
       sample.playable = rel(state.playableAt);
+      sample.revealCovered = state.revealCovered;
       sample.revealFrames = state.revealFrames;
       sample.effectsAfterReveal = state.effectsAfterReveal;
-      sample.revealWorstFrame = state.revealFrames.length === 0 ? null : Math.max(...state.revealFrames);
+      sample.revealWorstFrame = sample.revealFrames.length === 0 ? null : Math.max(...sample.revealFrames);
       sample.menuLabel = state.menuLabel;
     }
     sample.gpu = (await page
@@ -549,7 +561,7 @@ async function main(): Promise<number> {
   const allSamples: LoadSample[] = [];
   const failures: string[] = [];
   const log = (game: string, run: number, sample: LoadSample) =>
-    console.error(`load: ${game} run ${run}: paint ${cell(sample.firstPaint)} menu ${cell(sample.menuShown)} worst click ${cell(sample.worstClick)} scene ${cell(sample.sceneReady)} playable ${cell(sample.playable)} ms, after reveal ${revealSummary(sample.revealFrames)}, effects on ${sample.effectsAfterReveal == null ? "-" : `+${sample.effectsAfterReveal}`} ms, ${sample.sceneColors ?? "-"} colours, ${sample.glErrors ?? 0} GL errors${sample.error === undefined ? "" : ` (${sample.error})`}`);
+    console.error(`load: ${game} run ${run}: paint ${cell(sample.firstPaint)} menu ${cell(sample.menuShown)} worst click ${cell(sample.worstClick)} scene ${cell(sample.sceneReady)} playable ${cell(sample.playable)} ms, after reveal ${revealSummary(sample.revealFrames, sample.revealCovered)}, effects on ${sample.effectsAfterReveal == null ? "-" : `${sample.effectsAfterReveal >= 0 ? "+" : ""}${sample.effectsAfterReveal}`} ms, ${sample.sceneColors ?? "-"} colours, ${sample.glErrors ?? 0} GL errors${sample.error === undefined ? "" : ` (${sample.error})`}`);
   try {
     for (const game of args.games) {
       const samples: LoadSample[] = [];

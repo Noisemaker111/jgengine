@@ -86,5 +86,7 @@ describe("revealSummary", () => {
   test("counts the frames after the reveal, the worst, the median and the ones that missed 30 fps", () => {
     expect(revealSummary([16.7, 16.6, 120, 34, 16.8])).toBe("5 frames, worst 120 ms, median 17 ms, 2 over 33 ms");
     expect(revealSummary([])).toBe("no frames");
+    expect(revealSummary([16.7, 50, 16.7], true)).toBe("3 frames once the game's menu lifted, worst 50 ms, median 17 ms, 1 over 33 ms");
+    expect(revealSummary([], true)).toBe("no frames (the game's menu never lifted)");
   });
 });
