@@ -8,9 +8,9 @@ import { seo } from "../lib/seo";
 export const Route = createFileRoute("/editor")({
   head: () =>
     seo({
-      title: "The JGengine editor — a 3D scene editor in the box",
+      title: "The jgengine editor — a 3D scene editor in your browser",
       description:
-        "Place spawns, sculpt terrain, scatter foliage, and lay paths in a Blender/Unity-style 3D editor — embedded in every game or standalone on any folder via npx jgengine editor.",
+        "Place spawns, sculpt terrain, scatter foliage and lay roads in a 3D scene editor that runs in your browser, ships inside every jgengine game, and opens on any folder with npx jgengine editor.",
       path: "/editor",
     }),
   component: Editor,
@@ -34,21 +34,21 @@ bun run drive scrap-signal --mode editor \\
   --rpc '{"method":"export_document"}'`;
 
 const FEATURES = [
-  ["🧭", "Gizmos & selection", "Click to select — markers, volumes, paths, notes. Move / rotate / scale with snapping, multi-select drags, an outliner, and a full inspector."],
-  ["⛰️", "Terrain sculpt & paint", "Raise, lower, smooth, flatten, ramp, and noise brushes on a live heightfield — then paint material layers with weighted blends. Every stroke is one undo step."],
-  ["🌲", "Foliage & scatter", "Lasso a region and get deterministic, GPU-instanced foliage with density, species palettes, slope/height masks, and clearance zones that keep gameplay clear."],
-  ["🧱", "Prefabs & collections", "Extract a selection into a reusable prefab, stamp fresh instances anywhere, and bookmark named selection sets with lock/color/visibility groups."],
-  ["🎬", "Edit · walk · play", "Freeze the sim and inspect, roam in the game's own camera, or drop into the real game — the F2+E chord, session preserved across every mode switch."],
-  ["🤖", "Headless agent RPC", "Every verb the UI has is scriptable. Agents author scenes, assert content, and screenshot — no user-launched server, no WebGL required for document edits."],
+  ["01", "Gizmos & selection", "Select markers, volumes, paths and notes. Move, rotate and scale with snapping, drag several at once, and edit them in the outliner and inspector."],
+  ["02", "Terrain sculpt & paint", "Raise, lower, smooth, flatten, ramp and noise brushes on a live heightfield, then paint blended material layers. Each stroke is one undo step."],
+  ["03", "Foliage & scatter", "Lasso a region for GPU-instanced foliage with density, species mixes, slope and height masks, and clear zones around gameplay spots. Same seed, same result."],
+  ["04", "Prefabs & collections", "Turn a selection into a prefab, stamp copies anywhere, and save named selection sets with lock, colour and visibility."],
+  ["05", "Edit · walk · play", "Freeze the game to inspect it, walk it in the game's own camera, or drop straight into play. Switching modes keeps your session."],
+  ["06", "Scriptable by agents", "Every action in the UI is also an RPC. Agents place things, check the scene and take screenshots without clicking."],
 ];
 
 function Editor() {
   return (
     <Page>
       <PageHero
-        eyebrow="The editor · live, in your browser"
-        title="A 3D scene editor, right here."
-        blurb="This is the real editor — not a video. It runs entirely in your browser: place spawns, sculpt terrain, scatter foliage, drop in your own .glb models, and export the scene. Nothing uploads; everything stays local to you."
+        eyebrow="Scene editor · runs in this page"
+        title="Build the world in 3D, not in code."
+        blurb="This is the same editor every jgengine game ships behind F2+E. Place spawns, sculpt terrain, scatter foliage, drop in your own .glb models and export the scene. Nothing uploads; it all stays on your machine."
       >
         <div className="flex flex-wrap items-center gap-3">
           <a
@@ -65,7 +65,7 @@ function Editor() {
 
       <section className="relative">
         <div className="mx-auto max-w-6xl px-4 pb-16 sm:px-6">
-          <div data-theme="dark" className="overflow-hidden rounded-2xl border border-line bg-sunken">
+          <div data-theme="dark" className="overflow-hidden rounded-lg border border-line bg-sunken">
             <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-2.5">
               <div className="flex items-center gap-2 font-mono text-[11px] text-muted">
                 <span className="flex gap-1.5" aria-hidden>
@@ -102,7 +102,7 @@ function Editor() {
 
       <section className="relative border-t border-line">
         <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-16">
-          <SectionHeading eyebrow="What's in it" title="A full authoring toolset, not a toy" />
+          <SectionHeading eyebrow="What's in it" title="The tools a level needs" />
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {FEATURES.map(([glyph, title, body]) => (
               <FeatureCard key={title} glyph={glyph} title={title}>
@@ -117,8 +117,8 @@ function Editor() {
         <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
           <SectionHeading
             eyebrow="Standalone"
-            title="Now outside the repo — for your own projects"
-            blurb="You don't have to be building a JGengine game to use the editor. Run it on any folder: it opens that folder's editor.scene.json, treats every .glb/.gltf under it as a placeable asset, and Ctrl+S writes the scene back. There's a desktop build too."
+            title="Use it on any folder"
+            blurb="You don't need a jgengine game. Point it at a folder: it opens that folder's editor.scene.json, lists every .glb and .gltf inside as a placeable asset, and Ctrl+S writes the scene back."
           />
           <div className="mt-10 grid gap-4 lg:grid-cols-2">
             <div className="flex flex-col gap-3">
@@ -139,18 +139,18 @@ function Editor() {
       <section className="relative border-t border-line">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
           <SectionHeading
-            eyebrow="Author once, render generically"
-            title="The scene is data — not code you hand-write"
-            blurb="Coordinates live in one document, editable in 3D like a scene in Unreal. The render and the gameplay both read it, so there are no waypoint arrays pasted into game code and no per-segment path meshes to maintain."
+            eyebrow="One document"
+            title="The scene is a file, not code"
+            blurb="Every position lives in one JSON document you edit in 3D. The renderer and the gameplay both read it, so there are no coordinate arrays pasted into game code."
           />
           <div className="mt-10 grid items-start gap-6 lg:grid-cols-2 lg:gap-10">
             <div className="space-y-4">
               <ol className="space-y-3">
                 {[
                   ["Author", "Place and shape everything in the editor viewport."],
-                  ["Save", "Ctrl+S writes editor.scene.json — plain, importable JSON."],
-                  ["Render", "<AuthoredScene> drapes paths, instances foliage, and drives collision."],
-                  ["Reuse", "Gameplay reads the same document — one source of truth."],
+                  ["Save", "Ctrl+S writes editor.scene.json, plain JSON."],
+                  ["Render", "<AuthoredScene> drapes paths on the terrain, instances foliage and builds collision."],
+                  ["Reuse", "Gameplay reads spawns, zones and triggers from the same document."],
                 ].map(([step, body], i) => (
                   <li key={step} className="flex gap-4">
                     <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-accent/35 bg-bg font-mono text-xs font-semibold text-accent-text">
@@ -176,21 +176,21 @@ function Editor() {
         <div className="pointer-events-none absolute inset-0" aria-hidden>
         </div>
         <div className="relative mx-auto max-w-3xl px-4 py-20 text-center sm:px-6 sm:py-24">
-          <h2 className="font-display text-balance text-4xl font-bold leading-none tracking-[-0.03em] text-fg sm:text-5xl">
-            Open the editor on anything.
+          <h2 className="font-display text-balance text-4xl font-extrabold leading-none text-fg sm:text-5xl">
+            Open it on any folder.
           </h2>
           <p className="mx-auto mt-4 max-w-lg text-pretty text-muted">
-            No install, no game required. One command and you're placing objects in 3D.
+            No game required. One command and you are placing objects in 3D.
           </p>
           <div className="mx-auto mt-8 max-w-md">
             <CommandBlock command="npx jgengine editor" />
           </div>
           <p className="mt-6 text-sm text-faint">
-            See what you'd build it into on the{" "}
-            <Link to="/capabilities" className="text-accent-text underline decoration-accent/50 underline-offset-2 hover:text-accent-text">
-              capabilities
+            Or see it inside a real game: open any of the{" "}
+            <Link to="/games" className="link">
+              games
             </Link>{" "}
-            page.
+            and press F2+E.
           </p>
         </div>
       </section>

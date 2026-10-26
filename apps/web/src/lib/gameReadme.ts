@@ -18,3 +18,8 @@ export function parseGameReadme(markdown: string): Record<string, GameReadmeEntr
   }
   return entries;
 }
+
+/** The one-line idea a game was first generated from (`First generated from the idea: "…"` in its README), or null. */
+export function parseGameSeed(markdown: string): string | null {
+  return /First generated from the idea:\s*"([^"]+)"/.exec(markdown)?.[1]?.trim() ?? null;
+}

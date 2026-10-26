@@ -1,4 +1,4 @@
-import { GAME_CREDITS, GAME_IDS, GAME_META, GAME_THUMBS } from "virtual:jgengine-games";
+import { GAME_CREDITS, GAME_IDS, GAME_META, GAME_SEEDS, GAME_THUMBS } from "virtual:jgengine-games";
 
 export { GAME_IDS };
 
@@ -38,3 +38,11 @@ export function gameCover(id: string): string | null {
 export function isGameId(id: string): boolean {
   return GAME_IDS.includes(id);
 }
+
+/** The one-line idea the game was first generated from, or null when it was designed by hand. */
+export function gameSeed(id: string): string | null {
+  return GAME_SEEDS[id] ?? null;
+}
+
+/** How many listed games started as a one-line idea. */
+export const SEEDED_GAME_COUNT = GAME_IDS.filter((id) => GAME_SEEDS[id] !== undefined).length;

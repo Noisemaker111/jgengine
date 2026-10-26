@@ -16,10 +16,10 @@ export function GitHubIcon({ className = "h-4 w-4" }: { className?: string }) {
 export function LogoMark({ className = "h-6 w-6" }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" className={className} aria-hidden>
-      <rect x="2" y="2" width="9" height="9" rx="2" className="fill-fg" />
-      <rect x="13" y="2" width="9" height="9" rx="2" className="fill-fg" opacity="0.55" />
-      <rect x="2" y="13" width="9" height="9" rx="2" className="fill-fg" opacity="0.55" />
-      <rect x="13" y="13" width="9" height="9" rx="2" className="fill-accent" />
+      <rect x="2" y="2" width="9" height="9" rx="1.5" className="fill-fg" />
+      <rect x="13" y="2" width="9" height="9" rx="1.5" className="fill-fg" opacity="0.5" />
+      <rect x="2" y="13" width="9" height="9" rx="1.5" className="fill-fg" opacity="0.5" />
+      <rect x="13" y="13" width="9" height="9" rx="1.5" className="fill-accent" />
     </svg>
   );
 }
@@ -28,17 +28,16 @@ function Wordmark() {
   return (
     <span className="flex items-center gap-2.5">
       <LogoMark />
-      <span className="font-display text-[1.3rem] font-extrabold tracking-[-0.06em] text-fg">jgengine<span className="text-accent-text">.</span></span>
+      <span className="font-display text-[1.2rem] font-extrabold tracking-[-0.03em] text-fg">jgengine</span>
     </span>
   );
 }
 
-/** Dot-grid backdrop used behind page heroes. */
+/** Viewport floor grid behind page heroes. */
 export function Backdrop() {
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
-      <div className="bg-dots bg-dots-fade absolute inset-0" />
-      <div className="absolute -top-40 left-1/2 h-80 w-[46rem] -translate-x-1/2 rounded-full bg-accent/10 blur-3xl" />
+      <div className="bg-grid bg-grid-fade absolute inset-0" />
     </div>
   );
 }
@@ -57,7 +56,7 @@ export function SectionHeading({
   return (
     <div className={`reveal max-w-2xl ${align === "center" ? "mx-auto text-center" : ""}`}>
       <p className="eyebrow">{eyebrow}</p>
-      <h2 className="font-display mt-4 text-balance text-3xl font-bold leading-[1.05] tracking-tight text-fg sm:text-[2.6rem]">
+      <h2 className="font-display mt-4 text-balance text-3xl font-extrabold leading-[1.02] text-fg sm:text-[2.5rem]">
         {title}
       </h2>
       {blurb && <p className="mt-4 text-pretty leading-relaxed text-muted sm:text-lg">{blurb}</p>}
@@ -79,10 +78,10 @@ export function PageHero({
   return (
     <div className="relative overflow-hidden">
       <Backdrop />
-      <div className="relative mx-auto w-full max-w-6xl px-4 pb-10 pt-14 sm:px-6 sm:pb-12 sm:pt-24">
+      <div className="relative mx-auto w-full max-w-6xl px-4 pb-10 pt-14 sm:px-6 sm:pb-14 sm:pt-20">
         <p className="eyebrow animate-fade-up">{eyebrow}</p>
         <h1
-          className="font-display animate-fade-up mt-5 max-w-4xl text-balance text-[2.6rem] font-bold leading-[0.98] tracking-[-0.03em] text-fg sm:text-6xl lg:text-7xl"
+          className="font-display animate-fade-up mt-5 max-w-4xl text-balance text-[2.4rem] font-extrabold leading-[0.98] text-fg sm:text-6xl lg:text-[4.25rem]"
           style={{ animationDelay: "60ms" }}
         >
           {title}
@@ -104,11 +103,11 @@ export function PageHero({
 }
 
 const NAV_LINKS = [
-  { to: "/games", label: "Games" },
-  { to: "/capabilities", label: "Capabilities" },
-  { to: "/why", label: "Why" },
+  { to: "/playground", label: "Playground" },
   { to: "/editor", label: "Editor" },
-  { to: "/adopt", label: "Build" },
+  { to: "/capabilities", label: "Capabilities" },
+  { to: "/games", label: "Games" },
+  { to: "/why", label: "Why" },
 ] as const;
 
 export function Header({ sticky = true }: { sticky?: boolean }) {
@@ -134,7 +133,7 @@ export function Header({ sticky = true }: { sticky?: boolean }) {
       >
         Skip to content
       </a>
-      <div className="site-header-inner mx-auto flex h-20 items-center justify-between gap-4 px-5 sm:px-8">
+      <div className="site-header-inner mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
         <Link to="/" onClick={closeMenu} className="shrink-0 rounded-md" aria-label="jgengine home">
           <Wordmark />
         </Link>
@@ -143,8 +142,8 @@ export function Header({ sticky = true }: { sticky?: boolean }) {
             <Link
               key={to}
               to={to}
-              className="rounded-lg px-3 py-2 text-muted transition-colors hover:bg-fg/[0.05] hover:text-fg"
-              activeProps={{ className: "!text-fg bg-fg/[0.06]", "aria-current": "page" }}
+              className="nav-link rounded-md px-3 py-2 text-muted transition-colors hover:text-fg"
+              activeProps={{ className: "!text-fg is-active", "aria-current": "page" }}
             >
               {label}
             </Link>
@@ -226,11 +225,11 @@ const FOOTER_COLUMNS: { title: string; links: { label: string; to?: string; href
     title: "Site",
     links: [
       { label: "Games", to: "/games" },
+      { label: "Playground", to: "/playground" },
+      { label: "Editor", to: "/editor" },
       { label: "Capabilities", to: "/capabilities" },
       { label: "Why jgengine", to: "/why" },
-      { label: "Editor", to: "/editor" },
-      { label: "Playground", to: "/playground" },
-      { label: "Adopt one system", to: "/adopt" },
+      { label: "Use one system", to: "/adopt" },
     ],
   },
   {
@@ -248,7 +247,7 @@ const FOOTER_COLUMNS: { title: string; links: { label: string; to?: string; href
       { label: "GitHub", href: REPO_URL },
       { label: "Packages", href: `${REPO_URL}/tree/main/packages` },
       { label: "npm: jgengine", href: "https://www.npmjs.com/package/jgengine" },
-      { label: "Probe games", href: "https://github.com/Noisemaker111/jgengine/tree/beta/games" },
+      { label: "Game source", href: "https://github.com/Noisemaker111/jgengine/tree/beta/games" },
       { label: "Credits", href: `${REPO_URL}/blob/main/CREDITS.md` },
     ],
   },
@@ -262,7 +261,7 @@ export function Footer() {
           <div className="max-w-sm">
             <Wordmark />
             <p className="mt-4 text-sm leading-relaxed text-muted">
-              A TypeScript game framework for coding agents. Your ideas, built on shared foundations.
+              An open-source TypeScript game engine. Deep systems built in, and the tools a coding agent needs to build on them.
             </p>
             <p className="mt-5 inline-flex max-w-full items-center gap-2 rounded-lg border border-line bg-raised px-3 py-2 font-mono text-xs text-muted">
               <span className="text-accent-text" aria-hidden>
@@ -304,12 +303,6 @@ export function Footer() {
           <p>Not related to automotive “JG Engines”.</p>
         </div>
       </div>
-      <p
-        className="font-display pointer-events-none select-none whitespace-nowrap text-center text-[21vw] font-extrabold leading-[0.72] tracking-[-0.05em] text-fg/[0.04]"
-        aria-hidden
-      >
-        jgengine
-      </p>
     </footer>
   );
 }

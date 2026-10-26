@@ -12,4 +12,7 @@ declare module "virtual:jgengine-games" {
 
   /** Game ids with a committed `public/covers/<id>.webp` cover. */
   export const GAME_THUMBS: readonly string[];
+
+  /** The one-line idea each game was first generated from, from its own README, keyed by game id. */
+  export const GAME_SEEDS: Readonly<Record<string, string>>;
 }

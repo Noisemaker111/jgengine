@@ -12,7 +12,7 @@ import { defineConfig, type Connect, type Plugin } from "vite";
 import { restoreFromCache, saveToCache } from "../../scripts/games-player-cache";
 import { devServerMarkerPlugin } from "../../scripts/devServerMarker";
 import { devReportPlugin } from "../dev/devReportPlugin";
-import { parseGameReadme } from "./src/lib/gameReadme";
+import { parseGameReadme, parseGameSeed } from "./src/lib/gameReadme";
 import { shouldRouteMdRequestToSsr } from "./src/lib/mdSsrRoute";
 
 const repoRoot = fileURLToPath(new URL("../..", import.meta.url));
@@ -73,10 +73,17 @@ const gamesIndexPlugin = (): Plugin => ({
     const readmePath = join(gamesDir, "README.md");
     const meta = existsSync(readmePath) ? parseGameReadme(readFileSync(readmePath, "utf8")) : {};
     const thumbs = ids.filter((gameId) => existsSync(join(gameThumbsDir, `${gameId}.webp`)));
+    const seeds: Record<string, string> = {};
+    for (const gameId of ids) {
+      const gameReadme = join(gamesDir, gameId, "README.md");
+      const seed = existsSync(gameReadme) ? parseGameSeed(readFileSync(gameReadme, "utf8")) : null;
+      if (seed !== null) seeds[gameId] = seed;
+    }
     return `export const GAME_IDS = ${JSON.stringify(ids)};
 export const GAME_CREDITS = ${JSON.stringify(credits)};
 export const GAME_META = ${JSON.stringify(meta)};
-export const GAME_THUMBS = ${JSON.stringify(thumbs)};`;
+export const GAME_THUMBS = ${JSON.stringify(thumbs)};
+export const GAME_SEEDS = ${JSON.stringify(seeds)};`;
   },
 });
 

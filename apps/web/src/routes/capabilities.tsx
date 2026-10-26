@@ -1,6 +1,7 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 
 import { Page, PageHero, SectionHeading } from "../components/Layout";
+import { Blueprints } from "../components/Blueprints";
 import { CapabilityBrowser } from "../components/CapabilityBrowser";
 import { LiveSpecimen, type SpecimenKey } from "../components/LiveSpecimen";
 import { CodeBlock } from "../components/marketing";
@@ -10,9 +11,9 @@ import { seo } from "../lib/seo";
 export const Route = createFileRoute("/capabilities")({
   head: () =>
     seo({
-      title: "Capabilities — every jgengine building block, searchable",
+      title: "Capabilities — search everything jgengine ships",
       description:
-        "Search the primitives jgengine ships across world, gameplay, combat, UI, multiplayer, editor and assets, each with its import line, plus live core demos.",
+        "Search every capability jgengine ships across world, gameplay, combat, UI, multiplayer, editor and assets, each with its import line, plus live demos of core functions.",
       path: "/capabilities",
     }),
   component: Capabilities,
@@ -35,9 +36,10 @@ const LIVE_SPECIMENS: LiveSpec[] = [
     domain: "world/wind · world/scatter",
     title: "Wind that moves the grass",
     blurb:
-      "The blades are placed by the real scatter() and lean, every frame, toward the real windField sample. The gust fronts rippling across the meadow are the field's own turbulence — no shader fakery, no baked animation.",
+      "The blades are placed by scatter() and lean every frame toward their windField sample. The gusts rolling across the meadow are the field's own turbulence, not a baked animation.",
     filename: "meadow.wind.ts",
-    code: `import { windField } from "@jgengine/core/world/wind";
+    code: `import { scatter } from "@jgengine/core/scatter/scatter";
+import { windField } from "@jgengine/core/world/wind";
 import { scatter } from "@jgengine/core/scatter/scatter";
 
 const blades = scatter({ area: { w: 60, d: 40 }, count: 2600, seed: "meadow" });
@@ -56,7 +58,7 @@ const [wx, wz] = wind.atPoint(blade.x, blade.z, elapsed);
     domain: "world/catenary",
     title: "A cable that actually hangs",
     blurb:
-      "Drag either pole. The festoon cord between the tips is the true hyperbolic cosh curve a uniform cable takes under gravity — not a bezier approximation — re-solved from the live anchor positions the moment you move one.",
+      "Drag either pole. The cord between the tips is the cosh curve a real cable takes under gravity, not a bezier, solved again from the anchors the moment one moves.",
     filename: "festoon.cable.ts",
     code: `import { catenaryCurve } from "@jgengine/core/world/catenary";
 
@@ -78,7 +80,7 @@ const points = catenaryCurve(
     domain: "terrain/terrain",
     title: "Terrain from a single seed",
     blurb:
-      "Every vertex height is one call into the core value-noise fractal. Turn octaves, frequency, and ridged, or reseed, and the whole field is rebuilt in place from the same function a shipped game bakes into its heightfield.",
+      "Every vertex height is one call to the engine's fractal noise. Change octaves, frequency or ridged, or reseed, and the field rebuilds from the same function a game bakes into its heightfield.",
     filename: "terrain.noise.ts",
     code: `import { fractalNoise } from "@jgengine/core/terrain/terrain";
 
@@ -99,17 +101,17 @@ function Capabilities() {
         eyebrow="Capabilities"
         title={
           <>
-            {CAPABILITIES.length} building blocks. <span className="text-accent">Search them.</span>
+            {CAPABILITIES.length} capabilities. <span className="text-accent-text">Search them.</span>
           </>
         }
-        blurb="Worlds, combat, inventory, quests, multiplayer, and interface systems. Search the capabilities your agent can use, with real imports drawn from the engine’s own skill indexes."
+        blurb="Every entry is something the engine already does, with the line that imports it. The list is generated from the engine source, the same index your coding agent reads, so it is never out of date."
       >
         <div className="flex flex-wrap gap-3">
           <a href="#index" className="btn btn-primary">
-            Browse the index <span className="arrow" aria-hidden>↓</span>
+            Search the index <span className="arrow" aria-hidden>↓</span>
           </a>
           <Link to="/adopt" className="btn btn-secondary">
-            Use one in your own game
+            Use one in your own game →
           </Link>
         </div>
       </PageHero>
@@ -118,11 +120,24 @@ function Capabilities() {
         <CapabilityBrowser />
       </section>
 
-      <section aria-labelledby="live-heading" className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-24">
+      <section aria-labelledby="blueprint-heading" className="border-t border-line">
+        <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-24">
+          <SectionHeading
+            eyebrow="From idea to parts"
+            title={<span id="blueprint-heading">A big game is mostly parts that exist.</span>}
+            blurb="Three pitches, and the capabilities an agent would reach for first. Every block below is a real row in the index above."
+          />
+          <div className="mt-10">
+            <Blueprints />
+          </div>
+        </div>
+      </section>
+
+      <section aria-labelledby="live-heading" className="mx-auto max-w-6xl border-t border-line px-4 py-20 sm:px-6 sm:py-24">
         <SectionHeading
-          eyebrow="Technical examples"
-          title={<span id="live-heading">Three functions, isolated.</span>}
-          blurb="Small interactive examples for understanding wind, cable curves, and terrain noise. These illustrate individual functions; the games show how systems work together."
+          eyebrow="Try them"
+          title={<span id="live-heading">Three functions, live.</span>}
+          blurb="Each demo runs one engine function in your browser, next to the code that drives it. The games show the systems working together."
         />
         <div className="mt-12 space-y-20">
           {LIVE_SPECIMENS.map((spec, i) => (

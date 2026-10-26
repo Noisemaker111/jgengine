@@ -34,7 +34,7 @@ export function Blueprints() {
         role="tablist"
         aria-label="Example games"
         onKeyDown={onKeyDown}
-        className="grid grid-cols-3 gap-1 rounded-xl border border-line bg-bg p-1 sm:inline-grid"
+        className="grid grid-cols-3 gap-1 rounded-md border border-line bg-bg p-1 sm:inline-grid"
       >
         {BLUEPRINTS.map((item, i) => (
           <button
@@ -73,7 +73,7 @@ export function Blueprints() {
           </p>
           <ul className="mt-3 grid gap-2 sm:grid-cols-2">
             {rows.map((row) => (
-              <li key={`${row.skill}/${row.key}`} className="rounded-xl border border-line bg-bg p-3.5">
+              <li key={`${row.skill}/${row.key}`} className="rounded-md border border-line bg-bg p-3.5">
                 <p className="flex items-center justify-between gap-2">
                   <span className="break-words font-mono text-[12px] font-semibold text-fg">{row.key}</span>
                   <span className="shrink-0 font-mono text-[10px] uppercase tracking-[0.1em] text-faint">
@@ -96,7 +96,7 @@ export function Blueprints() {
               className="card card-link flex items-center justify-between gap-3 px-4 py-3.5"
             >
               <span className="text-sm text-muted">
-                Closest probe game: <span className="font-semibold text-fg">{gameTitle(blueprint.gameId)}</span>
+                Closest game here: <span className="font-semibold text-fg">{gameTitle(blueprint.gameId)}</span>
               </span>
               <span className="text-sm font-semibold text-accent-text">
                 Play <span aria-hidden>→</span>
