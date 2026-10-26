@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import * as THREE from "three";
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import { createObjectStore } from "@jgengine/core/scene/objectStore";
-import { createModelVariantSelector } from "@jgengine/core/world/modelLod";
+import { createModelVariantSelector } from "@jgengine/core/lod/modelLod";
 import { buildScatterModelSources, disposeScatterModelSources } from "../scatter/scatterModels";
 import { countStaticBatchDraws, groupStaticObjects, STATIC_BATCH_MESH_KEY, syncStaticObjectSource, type StaticObjectBatch } from "./staticObjectBatches";
 import { LevelSingles, VariantStaticObjects } from "./StaticObjectModels";

@@ -1,6 +1,6 @@
 import type * as THREE from "three";
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
-import type { ModelVariantConfig, ModelVariantSelector } from "@jgengine/core/world/modelLod";
+import type { ModelVariantConfig, ModelVariantSelector } from "@jgengine/core/lod/modelLod";
 
 function levelOf(model: ModelConfig, level: number): ModelVariantConfig | undefined {
   const levels = model.variants?.levels;

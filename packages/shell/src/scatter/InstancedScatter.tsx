@@ -7,16 +7,16 @@ import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.j
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import { chunkScatterInstances, type ScatterInstance } from "@jgengine/core/world/scatterRegion";
 import { beginFallbackSeam, reportFallbackSeam } from "@jgengine/core/devtools/fallbackSeams";
-import { createModelVariantSelector, type ModelVariantSelector } from "@jgengine/core/world/modelLod";
+import { createModelVariantSelector, type ModelVariantSelector } from "@jgengine/core/lod/modelLod";
 
 import { CAMERA_POST_FRAME_PRIORITY } from "../camera/cameraRigs";
 import { submitInstanceCount } from "../render/submittedDraws";
-import { LEVEL_PASS_MIN_CAMERA_MOVE, levelPassNeeded } from "../render/levelPass";
-import { variantLevelModel } from "../render/singleVariantLod";
+import { LEVEL_PASS_MIN_CAMERA_MOVE, levelPassNeeded } from "../lod/levelPass";
+import { variantLevelModel } from "../lod/singleVariantLod";
 import { buildScatterProxy } from "./scatterProxies";
 import { buildScatterModelSources, disposeScatterModelSources, type ScatterModelSource } from "./scatterModels";
 import { writeScatterVariantLevel } from "./scatterVariants";
-import { IMPOSTOR_MIN_RADIUS, sourceRadius } from "../render/impostor";
+import { IMPOSTOR_MIN_RADIUS, sourceRadius } from "../lod/impostor";
 import { ScatterImpostorField } from "./ScatterImpostorField";
 
 /** Chunk edge (m): dense fields split into this-sized buckets, each frustum-culled independently. */

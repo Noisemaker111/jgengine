@@ -1,7 +1,7 @@
 import type * as THREE from "three";
 import type { SceneObject } from "@jgengine/core/scene/objectStore";
-import type { ModelVariantLodConfig, ModelVariantSelector } from "@jgengine/core/world/modelLod";
-import { DEFAULT_VARIANT_HYSTERESIS } from "@jgengine/core/world/modelLod";
+import type { ModelVariantLodConfig, ModelVariantSelector } from "@jgengine/core/lod/modelLod";
+import { DEFAULT_VARIANT_HYSTERESIS } from "@jgengine/core/lod/modelLod";
 import type { SystemProbe } from "@jgengine/core/devtools/types";
 
 /**

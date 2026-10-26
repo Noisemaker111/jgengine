@@ -954,6 +954,25 @@
 - `skillCheckMarkerPosition` (function): function skillCheckMarkerPosition(config: SkillCheckConfig, elapsedSeconds: number): number — ⚠ undocumented
 - `skillCheckZoneAt` (function): function skillCheckZoneAt(config: SkillCheckConfig, elapsedSeconds: number): SkillCheckZone — A timing-bar skill check that succeeds when the moving marker is released inside the target zone.
 
+## @jgengine/core/lod/lod
+
+- `LodBand` (interface): interface LodBand { maxDistance: number; interval: number } — ⚠ undocumented
+- `LodScheduler` (interface): interface LodScheduler { bandIndex(distance: number): number; step(id: string, distance: number, dtSeconds: number): number; remove(id: string): void; clear(): void; size(): number; snapshot(): LodSchedulerState; restore(next: LodSchedulerState): void } — ⚠ undocumented
+- `LodSchedulerConfig` (interface): interface LodSchedulerConfig { bands: readonly LodBand[]; beyondInterval?: number | null; stagger?: boolean } — ⚠ undocumented
+- `LodSchedulerState` (interface): interface LodSchedulerState — Plain JSON state of a {@link LodScheduler}: each id's accumulated seconds.
+- `createLodScheduler` (function): function createLodScheduler(config: LodSchedulerConfig): LodScheduler — ⚠ undocumented
+- `lodBandIndex` (function): function lodBandIndex(bands: readonly { maxDistance: number }[], distance: number): number — Index of the band `distance` falls in, `-1` past the last band. Bands must already be sorted near to far. The scheduler and `createModelVariantSelector` both read distances through this one function, so simulation throttling and mesh detail cannot disagree about what band an id is in.
+
+## @jgengine/core/lod/modelLod
+
+- `DEFAULT_VARIANT_HYSTERESIS` (const): const DEFAULT_VARIANT_HYSTERESIS: 6 — Metres an instance must travel past a switch boundary before it changes level unless the model declares its own.
+- `ModelShadowMode` (type): type ModelShadowMode = "cast" | "receive" | "both" | "none" — How a model, or one of its variant levels, takes part in the shadow pass.
+- `ModelVariantConfig` (interface): interface ModelVariantConfig — One mesh level of a {@link ModelVariantLodConfig}: a full or decimated GLB, how far it draws and how it shadows.
+- `ModelVariantLodConfig` (interface): interface ModelVariantLodConfig — Ordered mesh detail levels for one model, switched per instance by camera distance. The first level is the full mesh the model's own `url` names; every later level is a cheaper asset. A tree line uses this so near trees keep their full mesh while far ones draw a decimated copy of the same species.
+- `ModelVariantSelector` (interface): interface ModelVariantSelector — Per-instance distance switch over a model's detail levels: one answer per id, held across a boundary until the instance clears it.
+- `ModelVariantSelectorState` (interface): interface ModelVariantSelectorState — Plain JSON state of a {@link ModelVariantSelector}: each id's current level index.
+- `createModelVariantSelector` (function): function createModelVariantSelector(config: ModelVariantLodConfig): ModelVariantSelector — Builds the per-instance distance switch for a model's variant levels.
+
 ## @jgengine/core/material/appearanceSignals
 
 - `MaterialAppearanceBaseline` (interface): interface MaterialAppearanceBaseline — Resolved dry values from one assigned surface, after imported and instance edits. RGB is linear.
@@ -4124,15 +4143,6 @@
 - `SpaceRef` (type): type SpaceRef = { kind: "exterior" } | { kind: "interior"; id: string } — ⚠ undocumented
 - `createInteriors` (function): function createInteriors(config: InteriorsConfig = {}): Interiors — Frame conversion and bounded movement across an exterior and its interiors; holds config only, no play state.
 
-## @jgengine/core/world/lod
-
-- `LodBand` (interface): interface LodBand { maxDistance: number; interval: number } — ⚠ undocumented
-- `LodScheduler` (interface): interface LodScheduler { bandIndex(distance: number): number; step(id: string, distance: number, dtSeconds: number): number; remove(id: string): void; clear(): void; size(): number; snapshot(): LodSchedulerState; restore(next: LodSchedulerState): void } — ⚠ undocumented
-- `LodSchedulerConfig` (interface): interface LodSchedulerConfig { bands: readonly LodBand[]; beyondInterval?: number | null; stagger?: boolean } — ⚠ undocumented
-- `LodSchedulerState` (interface): interface LodSchedulerState — Plain JSON state of a {@link LodScheduler}: each id's accumulated seconds.
-- `createLodScheduler` (function): function createLodScheduler(config: LodSchedulerConfig): LodScheduler — ⚠ undocumented
-- `lodBandIndex` (function): function lodBandIndex(bands: readonly { maxDistance: number }[], distance: number): number — Index of the band `distance` falls in, `-1` past the last band. Bands must already be sorted near to far. The scheduler and `createModelVariantSelector` both read distances through this one function, so simulation throttling and mesh detail cannot disagree about what band an id is in.
-
 ## @jgengine/core/world/mapAnnotations
 
 - `AnnotationLayer` (interface): interface AnnotationLayer — Player-drawn map annotation layer — strokes, shapes, and notes over caller-owned map data.
@@ -4219,16 +4229,6 @@
 
 - `TrackAxis` (interface): interface TrackAxis — A world-space segment defining a linear "track" minimap — points are projected onto the `from`→`to` axis.
 - `trackFraction` (function): function trackFraction(point: WorldXZ | readonly [number, number, number], axis: TrackAxis): number — Project a world point onto the `from`→`to` segment of `axis` and return the clamped 0..1 fraction of how far along the track it lies (0 at `from`, 1 at `to`). The linear analogue of `projectToMinimap` — feeds a horizontal corridor/route progress rail. Accepts XZ (`[x, z]`) or XYZ (`[x, y, z]`) points (index 0 = x, index 2 when length 3 else index 1 = z). A zero-length axis returns 0.
-
-## @jgengine/core/world/modelLod
-
-- `DEFAULT_VARIANT_HYSTERESIS` (const): const DEFAULT_VARIANT_HYSTERESIS: 6 — Metres an instance must travel past a switch boundary before it changes level unless the model declares its own.
-- `ModelShadowMode` (type): type ModelShadowMode = "cast" | "receive" | "both" | "none" — How a model, or one of its variant levels, takes part in the shadow pass.
-- `ModelVariantConfig` (interface): interface ModelVariantConfig — One mesh level of a {@link ModelVariantLodConfig}: a full or decimated GLB, how far it draws and how it shadows.
-- `ModelVariantLodConfig` (interface): interface ModelVariantLodConfig — Ordered mesh detail levels for one model, switched per instance by camera distance. The first level is the full mesh the model's own `url` names; every later level is a cheaper asset. A tree line uses this so near trees keep their full mesh while far ones draw a decimated copy of the same species.
-- `ModelVariantSelector` (interface): interface ModelVariantSelector — Per-instance distance switch over a model's detail levels: one answer per id, held across a boundary until the instance clears it.
-- `ModelVariantSelectorState` (interface): interface ModelVariantSelectorState — Plain JSON state of a {@link ModelVariantSelector}: each id's current level index.
-- `createModelVariantSelector` (function): function createModelVariantSelector(config: ModelVariantLodConfig): ModelVariantSelector — Builds the per-instance distance switch for a model's variant levels.
 
 ## @jgengine/core/world/pathInstances
 

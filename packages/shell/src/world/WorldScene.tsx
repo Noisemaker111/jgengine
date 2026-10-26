@@ -43,7 +43,7 @@ import {
   clearCharacterLodTier,
   setCharacterLodTier,
   type CharacterLodTier,
-} from "../render/characterLod";
+} from "../lod/characterLod";
 import { resolveEntityModel, resolveObjectModel, type ObjectModelCacheEntry } from "../render/resolveModel";
 import { useRenderVisibility } from "../visibility/CullingProvider";
 import { writePoseIfChanged, writeRenderPoseIfChanged, emptyPoseMemo, type PoseMemo } from "./entityPose";

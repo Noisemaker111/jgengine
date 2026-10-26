@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import * as THREE from "three";
 import type { SceneObject } from "@jgengine/core/scene/objectStore";
-import { createModelVariantSelector } from "@jgengine/core/world/modelLod";
+import { createModelVariantSelector } from "@jgengine/core/lod/modelLod";
 import {
   assignVariantLevels,
   createLevelPassGate,

@@ -2,11 +2,11 @@ import { describe, expect, test } from "bun:test";
 import * as THREE from "three";
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import { createObjectStore } from "@jgengine/core/scene/objectStore";
-import { createModelVariantSelector } from "@jgengine/core/world/modelLod";
-import { lodBandIndex } from "@jgengine/core/world/lod";
-import { EntityModel, IsolatedEntityModel, SingleVariantModel } from "./SceneModels";
+import { createModelVariantSelector } from "@jgengine/core/lod/modelLod";
+import { lodBandIndex } from "@jgengine/core/lod/lod";
+import { EntityModel, IsolatedEntityModel, SingleVariantModel } from "../render/SceneModels";
 import { singleVariantLevel, variantLevelModel } from "./singleVariantLod";
-import { attributeTriangles } from "./triangleAttribution";
+import { attributeTriangles } from "../render/triangleAttribution";
 
 const FULL_TRIANGLES = 9134;
 const FAR_TRIANGLES = 4110;

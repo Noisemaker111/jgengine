@@ -3,7 +3,7 @@ import { useLayoutEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 
 import type { GameContext } from "@jgengine/core/runtime/gameContextTypes";
-import { noteCharacterMotion } from "./characterLod";
+import { noteCharacterMotion } from "../lod/characterLod";
 
 /**
  * Tuning for the default head turn a rigged character makes toward the local player. Angles are

@@ -1,5 +1,5 @@
-import type { LodBand, LodSchedulerState } from "../world/lod";
-import { createLodScheduler } from "../world/lod";
+import type { LodBand, LodSchedulerState } from "../lod/lod";
+import { createLodScheduler } from "../lod/lod";
 
 /**
  * Simulation culling is a SEPARATE, opt-in system from render culling. Render culling only
