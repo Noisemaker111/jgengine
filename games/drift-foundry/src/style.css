@@ -133,8 +133,6 @@ button[data-jg-frame].fd-rimmed:focus-visible { background:#f2c230; }
 .fd-ui .fd-pad[data-kind="go"] { grid-column:2 / 4; height:64px; color:#141414; font-size:18px; background:repeating-linear-gradient(-45deg,rgba(0,0,0,.08) 0 3px,transparent 3px 9px),linear-gradient(180deg,#f6d25a,#d8a81c); }
 @media (pointer:coarse) {
   .fd-touch { display:flex; }
-  /* The pedals' height over each bottom third, so HUD panels settle above them. */
-  .fd-ui { --jg-hud-dock-clearance-left:84px; --jg-hud-dock-clearance-right:136px; }
 }
 
 /* Narrow screens and phones. */

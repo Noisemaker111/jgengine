@@ -102,6 +102,31 @@ describe("arrangeHudPanels", () => {
     expect(rect.y + rect.height).toBeLessThanOrEqual(dock.top);
   });
 
+  test("a bottom bar squeezed between touch clusters shrinks to stay on its edge instead of lifting over the play view", () => {
+    const claims: HudPanelClaim[] = [{ id: "build", anchor: "bottom", priority: "critical", size: { width: 330, height: 40 } }];
+    const stick = { left: 20, top: 214, right: 320, bottom: 370 };
+    const buttons = { left: 600, top: 140, right: 824, bottom: 370 };
+    const layout = arrangeHudPanels(claims, { viewport: { width: 844, height: 390 }, reserved: [stick, buttons] });
+    expect(layout.scale).toBeLessThan(1);
+    expect(layout.scale).toBeGreaterThanOrEqual(0.7);
+    const rect = layout.rects.build!;
+    const onScreen = { x: rect.x * layout.scale, y: rect.y * layout.scale, width: rect.width * layout.scale, height: rect.height * layout.scale };
+    expect(onScreen.y + onScreen.height).toBeGreaterThan(stick.top);
+    for (const zone of [stick, buttons]) {
+      expect(overlaps(onScreen, { x: zone.left, y: zone.top, width: zone.right - zone.left, height: zone.bottom - zone.top })).toBe(false);
+    }
+  });
+
+  test("a bottom bar lifts off its edge only when no zoom keeps it there", () => {
+    const claims: HudPanelClaim[] = [{ id: "build", anchor: "bottom", priority: "critical", size: { width: 600, height: 40 } }];
+    const stick = { left: 20, top: 214, right: 320, bottom: 370 };
+    const buttons = { left: 600, top: 140, right: 824, bottom: 370 };
+    const layout = arrangeHudPanels(claims, { viewport: { width: 844, height: 390 }, reserved: [stick, buttons] });
+    expect(layout.scale).toBe(1);
+    expect(layout.overlapping).toEqual([]);
+    expect(layout.rects.build!.y + layout.rects.build!.height).toBeLessThanOrEqual(buttons.top);
+  });
+
   test("safe-area insets push panels in from the notch", () => {
     const claims: HudPanelClaim[] = [{ id: "clock", anchor: "top-left", size: { width: 100, height: 40 } }];
     const layout = arrangeHudPanels(claims, { viewport: { width: 844, height: 390 }, insets: { top: 0, right: 0, bottom: 0, left: 47 } });

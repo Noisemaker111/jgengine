@@ -136,6 +136,22 @@ interface Attempt {
   rects: Record<string, HudRect>;
   collapsed: string[];
   overlapping: string[];
+  /** Panels pushed off their anchored edge into the screen by more than their own depth. */
+  strayed: string[];
+}
+
+/**
+ * Whether a spot left the panel's anchored edge for the middle of the screen: a top or bottom panel
+ * moved off its row by more than its height, a side panel off its column by more than its width, a
+ * corner panel off both. Sliding along the edge or down a corner's stack is not straying.
+ */
+function strays(anchor: HudAnchor, ideal: { x: number; y: number }, spot: HudRect): boolean {
+  const { fx, fy } = HUD_ANCHOR_FRACTIONS[anchor];
+  const offRow = fy !== 0.5 && Math.abs(spot.y - ideal.y) > spot.height + EPSILON;
+  const offColumn = fx !== 0.5 && Math.abs(spot.x - ideal.x) > spot.width + EPSILON;
+  if (fx === 0.5) return offRow;
+  if (fy === 0.5) return offColumn;
+  return offRow && offColumn;
 }
 
 function attempt(claims: readonly HudPanelClaim[], bounds: Bounds, reserved: readonly HudRect[], gap: number): Attempt {
@@ -150,6 +166,7 @@ function attempt(claims: readonly HudPanelClaim[], bounds: Bounds, reserved: rea
     const obstacles: HudRect[] = [...reserved];
     const rects: Record<string, HudRect> = {};
     const overlapping: string[] = [];
+    const strayed: string[] = [];
     let folded = false;
     for (const { claim } of ranked) {
       const size = sizeOf(claim);
@@ -158,6 +175,7 @@ function attempt(claims: readonly HudPanelClaim[], bounds: Bounds, reserved: rea
       if (spot !== null) {
         rects[claim.id] = spot;
         obstacles.push(spot);
+        if (strays(claim.anchor, ideal, spot)) strayed.push(claim.id);
         continue;
       }
       if (claim.chipSize !== undefined && (claim.priority ?? "secondary") !== "critical" && !collapsed.has(claim.id)) {
@@ -170,7 +188,7 @@ function attempt(claims: readonly HudPanelClaim[], bounds: Bounds, reserved: rea
       rects[claim.id] = { x, y, width: size.width, height: size.height };
       overlapping.push(claim.id);
     }
-    if (!folded) return { rects, collapsed: claims.filter((claim) => collapsed.has(claim.id)).map((claim) => claim.id), overlapping };
+    if (!folded) return { rects, collapsed: claims.filter((claim) => collapsed.has(claim.id)).map((claim) => claim.id), overlapping, strayed };
   }
 }
 
@@ -178,8 +196,10 @@ function attempt(claims: readonly HudPanelClaim[], bounds: Bounds, reserved: rea
  * Lay out every HUD panel on one screen without overlap. Panels start stacked at their anchors; a panel
  * that would land on another slides along its edge or down its stack to the nearest free spot. When no
  * spot is free, the lowest-priority panel folds into its toggle, and when even that is not enough the
- * whole HUD shrinks a step at a time down to `minScale`. Higher priority places first, then declaration
- * order. Pure: the same claims on the same screen give the same layout.
+ * whole HUD shrinks a step at a time down to `minScale`. A panel that only fits by leaving its edge for
+ * the middle of the screen (a bottom bar lifted over the play view by a touch dock) also shrinks the HUD,
+ * and stays lifted only when no zoom down to `minScale` keeps it on its edge. Higher priority places
+ * first, then declaration order. Pure: the same claims on the same screen give the same layout.
  *
  * @capability hud-auto-layout place HUD panels by anchor and priority so none overlap at any screen size
  */
@@ -190,6 +210,7 @@ export function arrangeHudPanels(claims: readonly HudPanelClaim[], request: HudP
   const pad = request.edgePad ?? DEFAULT_EDGE_PAD;
   const gap = request.gap ?? DEFAULT_GAP;
   let best: (Attempt & { scale: number }) | null = null;
+  const settle = ({ rects, collapsed, overlapping, scale: zoom }: Attempt & { scale: number }): HudPanelLayout => ({ scale: zoom, rects, collapsed, overlapping });
   for (let step = 0; ; step += 1) {
     const zoom = Math.max(minScale, scale * (1 - SCALE_STEP * step));
     const bounds: Bounds = {
@@ -205,7 +226,9 @@ export function arrangeHudPanels(claims: readonly HudPanelClaim[], request: HudP
       height: (zone.bottom - zone.top) / zoom,
     }));
     const result = attempt(claims, bounds, reserved, gap);
-    if (best === null || result.overlapping.length < best.overlapping.length) best = { ...result, scale: zoom };
-    if (result.overlapping.length === 0 || zoom <= minScale) return best;
+    if (best === null || result.overlapping.length < best.overlapping.length || (result.overlapping.length === best.overlapping.length && result.strayed.length < best.strayed.length)) {
+      best = { ...result, scale: zoom };
+    }
+    if ((result.overlapping.length === 0 && result.strayed.length === 0) || zoom <= minScale) return settle(best);
   }
 }

@@ -1273,7 +1273,6 @@
 - `TouchControlsDock` (function): function TouchControlsDock({ scheme, sink, style, scale = 1, joystickVariant = "floating", shortSide, }: { scheme: TouchScheme; sink: TouchCodeSink; /** Player-selected skin; falls back to the scheme's game default. */ style?: TouchStyle; /** Multiplies the joystick and side-rail buttons; the thumb … — ⚠ undocumented
 - `TouchPlaySurface` (function): function TouchPlaySurface({ scheme, sink, yawRef, pitchRef, maxPitch, onPrimaryTap, }: { scheme: TouchScheme; sink: TouchCodeSink; yawRef: MutableRefObject<number>; pitchRef: MutableRefObject<number>; maxPitch: number; onPrimaryTap: () => void; }): React.JSX.Element — ⚠ undocumented
 - `TouchViewport` (interface): interface TouchViewport — Viewport size in CSS px the touch dock lays out against.
-- `touchDockClearance` (function): function touchDockClearance(scheme: TouchScheme | null, scale = 1, shortSide = DEFAULT_TOUCH_SHORT_SIDE): number — Tallest bottom-edge space the dock occupies (px, excluding device safe areas). The shell publishes it as `--jg-hud-dock-clearance`; {@link touchDockInsets} gives each bottom third its own value so HUD at bottom-centre is not pushed up by controls that only fill the corners.
 
 ## @jgengine/core/input/actionBindings
 
@@ -1486,10 +1485,9 @@
 
 - `ClusterPlacement` (interface): interface ClusterPlacement — A button box's offset from the cluster's bottom-right corner, in px.
 - `DEFAULT_TOUCH_SHORT_SIDE` (const): const DEFAULT_TOUCH_SHORT_SIDE: 390 — Fallback short side when no viewport is measurable (tests, SSR): a phone held in landscape.
-- `DOCK_GEOMETRY` (const): const DOCK_GEOMETRY: { readonly joystick: 132; readonly joystickThumb: 52; readonly railButton: 64; readonly basePadding: 20; readonly edgeMargin: 12; } — Dock geometry constants shared by the renderer and the clearance math.
+- `DOCK_GEOMETRY` (const): const DOCK_GEOMETRY: { readonly joystick: 132; readonly joystickThumb: 52; readonly railButton: 64; readonly basePadding: 20; } — Dock geometry constants the renderer sizes the stick and side rails from.
 - `TouchClusterLayout` (interface): interface TouchClusterLayout — Where every cluster button sits, plus the cluster box size.
 - `TouchClusterSizes` (interface): interface TouchClusterSizes — Button sizes for the thumb cluster, in CSS px, derived from the screen's short side.
-- `TouchDockInsets` (interface): interface TouchDockInsets — Bottom-edge space (px, excluding safe areas) the dock occupies in each third of the screen.
 - `UTILITY_INLINE_LIMIT` (const): const UTILITY_INLINE_LIMIT: 2 — Utility buttons past this count fold into one overflow button.
 
 ## @jgengine/core/input/touchControlsMode

@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, type ReactNode } from "react";
 import "../../style.css";
 import { SettingsTrigger, useBrowserSuspension } from "@jgengine/react";
 import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/core/hud/hudLayout.view";
@@ -7,6 +7,7 @@ import { useGame, useGameStore } from "@jgengine/react/hooks";
 import { useStore } from "@jgengine/react/store";
 import { GameIcon, type GameIconName } from "@jgengine/core/ui/icons/gameIcons.view";
 import { useGameFonts } from "@jgengine/core/ui/fonts.view";
+import { useRegisterLayoutRegion } from "@jgengine/core/ui/viewport.view";
 import { useActionBindings } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { setGamePhase } from "@jgengine/core/game/gamePhase";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
@@ -124,12 +125,18 @@ export function GameUI() {
       <HudPanel id="crusher" anchor="bottom" priority="critical" interactive={false}><CrusherBar gap={snapshot.compactorGap} surge={snapshot.compactorSurge !== null}/></HudPanel>
       <HudPanel id="route" anchor="bottom-right" chip="route" interactive={false}><RouteRule z={run} length={track.exitAt} gates={track.gates.filter(g => g.route === "main")} cleared={snapshot.clearedGateIds} atRisk={snapshot.salvageAtRisk} next={snapshot.hazards.length > 0 ? snapshot.hazards[0]!.label : nextPickup ? `NEXT SALVAGE · ${partById(nextPickup.partId)?.label} · ${Math.max(0, Math.round(nextPickup.at - run))}m` : "ALL SALVAGE PASSED · EXIT AHEAD"}/></HudPanel>
     </HudCanvas>
-    {/* Touch pedals stay full size outside the scaled HUD; the dock clearance in style.css keeps panels off them. */}
+    {/* Touch pedals stay full size outside the scaled HUD; as control regions they keep HUD panels off them. */}
     <div className="fd-touch">
-      <div className="fd-touch-steer">{touch("steerLeft", "Steer left", "arrowLeft", "steer")}{touch("steerRight", "Steer right", "arrowRight", "steer")}</div>
-      <div className="fd-touch-act">{touch("jumpHop", "JUMP", "jump", "act")}{touch("salvageSwap", "SWAP", "swap", "act")}{touch("plowBrace", "BRACE", "shield", "act")}{touch("brake", "BRAKE", null, "brake")}{touch("throttle", "GO", null, "go")}</div>
+      <TouchPads id="control:steer" className="fd-touch-steer">{touch("steerLeft", "Steer left", "arrowLeft", "steer")}{touch("steerRight", "Steer right", "arrowRight", "steer")}</TouchPads>
+      <TouchPads id="control:pedals" className="fd-touch-act">{touch("jumpHop", "JUMP", "jump", "act")}{touch("salvageSwap", "SWAP", "swap", "act")}{touch("plowBrace", "BRACE", "shield", "act")}{touch("brake", "BRAKE", null, "brake")}{touch("throttle", "GO", null, "go")}</TouchPads>
     </div></>}
     {(snapshot.phase === "won" || snapshot.phase === "crushed") && <RunResults snapshot={snapshot} onRestart={() => commands.run("restart", {})} onTitle={returnToTitle}/>}
     </div>
   </>;
+}
+
+function TouchPads({ id, className, children }: { id: string; className: string; children: ReactNode }) {
+  const ref = useRef<HTMLDivElement | null>(null);
+  useRegisterLayoutRegion(useMemo(() => ({ id, kind: "control", collisionPolicy: "forbid" }) as const, [id]), ref);
+  return <div ref={ref} className={className}>{children}</div>;
 }

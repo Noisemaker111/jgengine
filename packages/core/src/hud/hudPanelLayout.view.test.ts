@@ -26,18 +26,26 @@ beforeAll(async () => {
   await Bun.write(`${scratch}/fixture.tsx`, `
     import React from 'react';import {createRoot} from 'react-dom/client';
     import {HudCanvas,HudPanel,useHudLayout} from '@jgengine/core/hud/hudLayout.view';
-    import {GameViewportProvider} from '@jgengine/core/ui/viewport.view';
+    import {GameViewportProvider,useRegisterLayoutRegion} from '@jgengine/core/ui/viewport.view';
     const box=(w,h)=><div style={{width:w,height:h,background:'#345'}}/>;
+    function Control({id,style}){const ref=React.useRef(null);
+      useRegisterLayoutRegion(React.useMemo(()=>({id,kind:'control',collisionPolicy:'forbid'}),[id]),ref);
+      return <div ref={ref} data-control={id} style={{position:'absolute',background:'#a33',...style}}/>}
+    const touch=new URLSearchParams(location.search).has('touch');
     function Fixture(){const layout=useHudLayout();const [inspecting,setInspecting]=React.useState(false);
       React.useEffect(()=>{const t=setTimeout(()=>setInspecting(true),300);return ()=>clearTimeout(t)},[]);
-      return <GameViewportProvider><HudCanvas layout={layout} editChord={false}>
+      return <GameViewportProvider>{touch ? <>
+        <Control id="control:movement" style={{left:20,bottom:20,width:300,height:156}}/>
+        <Control id="control:actions" style={{right:20,bottom:20,width:236,height:230}}/>
+        <Control id="control:anchored:top-right" style={{right:20,top:20,width:64,height:64}}/>
+      </> : null}<HudCanvas layout={layout} editChord={false}>
       <HudPanel id="terminal" anchor="top-left" priority="critical">{box(190,130)}</HudPanel>
-      <HudPanel id="missions" anchor="left">{box(180,110)}</HudPanel>
-      <HudPanel id="stash" anchor="left" order={1}>{box(180,100)}</HudPanel>
+      {touch ? null : <HudPanel id="missions" anchor="left">{box(180,110)}</HudPanel>}
+      {touch ? null : <HudPanel id="stash" anchor="left" order={1}>{box(180,100)}</HudPanel>}
       <HudPanel id="vitals" anchor="bottom-left" priority="critical">{box(170,80)}</HudPanel>
       <HudPanel id="build" anchor="bottom" priority="critical">{box(460,100)}</HudPanel>
       <HudPanel id="stones" anchor="bottom-right">{box(190,70)}</HudPanel>
-      {inspecting ? <HudPanel id="tower" anchor="right" priority="critical">{box(170,200)}</HudPanel> : null}
+      {inspecting && !touch ? <HudPanel id="tower" anchor="right" priority="critical">{box(170,200)}</HudPanel> : null}
       <HudPanel id="log" anchor="right" order={1} priority="tertiary" chip="log">{box(200,160)}</HudPanel>
     </HudCanvas></GameViewportProvider>}
     createRoot(document.getElementById('root')).render(<Fixture/>);
@@ -89,10 +97,11 @@ function overlapping(placed: Record<string, Box>): string[] {
   return out;
 }
 
-async function load(width: number, height: number): Promise<Record<string, Box>> {
+async function load(width: number, height: number, query = ""): Promise<Record<string, Box>> {
   await page.setViewportSize({ width, height });
-  await gotoFixture(page, `http://127.0.0.1:${server.port}/`, () => page.locator('[data-hud-panel="tower"]').waitFor());
-  await page.waitForFunction(() => document.querySelector('[data-hud-panel="tower"]')?.getAttribute("style")?.includes("visibility") === false);
+  const last = query === "" ? "tower" : "log";
+  await gotoFixture(page, `http://127.0.0.1:${server.port}/${query}`, () => page.locator(`[data-hud-panel="${last}"]`).waitFor());
+  await page.waitForFunction((id) => document.querySelector(`[data-hud-panel="${id}"]`)?.getAttribute("style")?.includes("visibility") === false, last);
   return boxes();
 }
 
@@ -123,4 +132,22 @@ test("at full size every panel shows in full; on a phone the tertiary log folds 
   const popover = await page.locator('[data-hud-panel="log"] [data-hud-chip-popover]').boundingBox();
   expect(popover).not.toBeNull();
   expect(popover!.width).toBeCloseTo(200 * 0.85, 0);
+});
+
+test("touch controls are obstacles the solver keeps every panel clear of on a phone", async () => {
+  const placed = await load(844, 390, "?touch");
+  expect(Object.keys(placed).sort()).toEqual(["build", "log", "stones", "terminal", "vitals"]);
+  expect(overlapping(placed)).toEqual([]);
+  const controls = await page.evaluate(() =>
+    [...document.querySelectorAll("[data-control]")].map((el) => {
+      const r = el.getBoundingClientRect();
+      return { id: el.getAttribute("data-control")!, left: r.left, top: r.top, right: r.right, bottom: r.bottom, collapsed: false };
+    }),
+  );
+  expect(controls.length).toBe(3);
+  const covered = Object.entries(placed).flatMap(([id, box]) =>
+    controls.filter((c) => box.left < c.right && box.right > c.left && box.top < c.bottom && box.bottom > c.top).map((c) => `${id}∩${c.id}`),
+  );
+  expect(covered).toEqual([]);
+  expect(await page.evaluate(() => document.querySelector("[data-jg-viewport]")!.getAttribute("data-jg-layout-collision"))).toBeNull();
 });

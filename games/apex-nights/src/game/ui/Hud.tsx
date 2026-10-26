@@ -54,7 +54,7 @@ function Garage(): ReactNode {
   const ctx = useGameContext();
   const race = useRace();
   return (
-    <div style={{ width: 260 }}>
+    <div style={{ minWidth: 260 }}>
       <KitPanel variant="hud" eyebrow="Garage">
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {race.upgrades.map((upgrade, index) => {
