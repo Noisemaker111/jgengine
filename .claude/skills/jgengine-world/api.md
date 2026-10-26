@@ -495,6 +495,7 @@
 - `AudioEmitterHandle` (interface): interface AudioEmitterHandle { isPlaying?(): boolean; setPosition(position: Xyz): void; setRate(rate: number): void; setGain(gain: number): void; setLowpass(hz: number): void; setHighpass(hz: number): void; setVelocity(velocity: Xyz): void; setOcclusion(amount: number)… — ⚠ undocumented
 - `AudioEngine` (interface): interface AudioEngine { setListenerPose(pose: ListenerPose | Xyz): void; setVoiceLimit(maxTotal: number, overflow?: VoiceAllocatorConfig["overflow"]): void; play(soundId: string, position?: Xyz): void; playOneShot(soundId: string, position?: Xyz): void; playLoop… — ⚠ undocumented · used by `createAudioEngine`: Game-owned sound catalog playback with bounded SFX reservations, spatial panning, and shared buses.
 - `AudioLevel` (interface): interface AudioLevel — Master-output level, `0..1`. Pooled by {@link AudioEngine.measure} - read it, don't retain it.
+- `AudioMixState` (interface): interface AudioMixState — The player's mix an {@link AudioEngine} can hand out and take back (a settings save, a resumed session).
 - `AudioOcclusionStats` (interface): interface AudioOcclusionStats — Measured geometry-occlusion work, cumulative since the engine was created.
 - `AudioSceneConfig` (interface): interface AudioSceneConfig { sounds?: Record<string, SoundDef>; maxVoices?: number; voiceOverflow?: VoiceAllocatorConfig["overflow"]; voiceAllocator?: VoiceAllocator; buses?: Record<string, AudioBusDef>; music?: Record<string, MusicTheme>; musicBus?: string; speechBu… — ⚠ undocumented · used by `createAudioEngine`: Game-owned sound catalog playback with bounded SFX reservations, spatial panning, and shared buses.
 - `AudioSpatialStats` (interface): interface AudioSpatialStats — What the spatial mix did, cumulative since the engine was created, plus the space it rings in now.
@@ -555,6 +556,7 @@
 - `DEFAULT_FEEDBACK_REACTIONS` (const): const DEFAULT_FEEDBACK_REACTIONS: Readonly<Record<FeedbackCue, FeedbackReaction>> — The default reactions. They are data: a game overrides one through `audio.feedbackCues` (sound) or `createEventFeedback({ reactions })` (haptics, shake, caption), and replaces the mapping through `bindings` without touching the shell.
 - `EventFeedback` (interface): interface EventFeedback — The event-to-reaction seam. One instance per running world.
 - `EventFeedbackOptions` (interface): interface EventFeedbackOptions — Options a game or host may override.
+- `EventFeedbackState` (interface): interface EventFeedbackState — The cooldown clocks of an {@link EventFeedback}: when each cue last fired (ms, `now` clock) and how many triggers its cooldown folded away.
 - `FeedbackAnnouncer` (interface): interface FeedbackAnnouncer — The slice of `ctx.game.feedback` a wave runner needs, so this runs headless in a test.
 - `FeedbackBinding` (type): type FeedbackBinding<Name extends FeedbackEventName = FeedbackEventName> = { event: Name; cue: FeedbackCue; /** Default `"any"`. `"local"` only fires for the local player's own target/user/refusal. */ scope?: FeedbackScope; /** Overrides the cue's caption for this event, e.g. "You died". */ caption?… — One row of the event mapping: `event` announces, `cue` reacts.
 - `FeedbackDeps` (interface): interface FeedbackDeps — Everything the feedback seam reaches outside itself. Injected so it runs headless.
@@ -1243,7 +1245,7 @@
 
 - `MouseLookAim` (interface): interface MouseLookAim { yaw: number; pitch: number } — ⚠ undocumented
 - `MouseLookOptions` (interface): interface MouseLookOptions { sensitivity?: number; maxPitch?: number; pointerLock?: boolean; initialYaw?: number; initialPitch?: number } — ⚠ undocumented
-- `MouseLookTracker` (interface): interface MouseLookTracker — The analog mouse-look service chase/orbit-cam games hand-rolled (#282.8) — pointer-lock lifecycle plus delta accumulation into a yaw/pitch aim, decoupled from the first-person rig. Attach it to the canvas, read `aim()` from `onTick`/`useFrame`, dispose on unmount.
+- `MouseLookTracker` (interface): interface MouseLookTracker — The analog mouse-look service chase/orbit-cam games hand-rolled (#282.8) — pointer-lock lifecycle plus delta accumulation into a yaw/pitch aim, decoupled from the first-person rig. Attach it to the canvas, read `state()` from `onTick`/`useFrame`, dispose on unmount; `setState` puts a saved aim back.
 - `createMouseLookTracker` (function): function createMouseLookTracker(element: HTMLElement, options: MouseLookOptions = {}): MouseLookTracker — ⚠ undocumented
 
 ## @jgengine/core/input/pointer
@@ -1276,8 +1278,9 @@
 
 - `POINTER_ENTITY_KEY` (const): const POINTER_ENTITY_KEY: "jgEntityId" — ⚠ undocumented
 - `POINTER_OBJECT_KEY` (const): const POINTER_OBJECT_KEY: "jgObjectId" — ⚠ undocumented
+- `PointerCursor` (interface): interface PointerCursor — Where the cursor is, in normalized device coordinates, and whether it is over the canvas at all.
 - `PointerHitFilter` (type): type PointerHitFilter = (object: THREE.Object3D) => boolean — ⚠ undocumented
-- `PointerService` (interface): interface PointerService { worldHit(): PointerHit | null; worldHitCenter(): PointerHit | null; screenOf(world: PointerVec3): {x: number; y: number} | null; hasCursor(): boolean; cursorRay(): {origin: PointerVec3; direction: PointerVec3} | null; bind(deps: PointerDe… — ⚠ undocumented · used by `PointerProbe` (@jgengine/core/input/PointerProbe.draw): Binds the pointer service to the live camera and scene; `groundHeightAt` lets clicks land on terrain.
+- `PointerService` (interface): interface PointerService { worldHit(): PointerHit | null; worldHitCenter(): PointerHit | null; screenOf(world: PointerVec3): {x: number; y: number} | null; cursorRay(): {origin: PointerVec3; direction: PointerVec3} | null; bind(deps: PointerDeps | null): void; stat… — ⚠ undocumented · used by `PointerProbe` (@jgengine/core/input/PointerProbe.draw): Binds the pointer service to the live camera and scene; `groundHeightAt` lets clicks land on terrain.
 - `createPointerService` (function): function createPointerService(): PointerService — ⚠ undocumented
 
 ## @jgengine/core/input/rebindSession

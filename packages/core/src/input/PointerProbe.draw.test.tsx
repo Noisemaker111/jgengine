@@ -14,7 +14,7 @@ async function mount(groundHeightAt?: (x: number, z: number) => number): Promise
   env.document ??= new EventTarget();
   extend(THREE);
   const bound: (PointerDeps | null)[] = [];
-  const service = { bind: (deps: PointerDeps | null) => bound.push(deps), setCursor() {} } as unknown as PointerService;
+  const service = { bind: (deps: PointerDeps | null) => bound.push(deps), setState() {} } as unknown as PointerService;
   const root = createRoot({} as HTMLCanvasElement);
   await root.configure({
     frameloop: "never",

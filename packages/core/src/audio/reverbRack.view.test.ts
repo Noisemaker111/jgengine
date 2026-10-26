@@ -32,7 +32,7 @@ describe("createReverbRack", () => {
         buffer: null as unknown,
         type: "",
         frequency: { value: 0 },
-        gain: { value: 1, target: undefined as number | undefined, setTargetAtTime(value: number) { entry.gain.target = value; } },
+        gain: { value: 1, target: undefined as number | undefined, setTargetAtTime(value: number) { entry.gain.target = value; }, cancelScheduledValues() { entry.gain.target = undefined; } },
       };
       made.push(entry);
       return entry;
@@ -58,8 +58,20 @@ describe("createReverbRack", () => {
     const wets = made.filter((entry) => entry.kind === "gain").slice(1);
     expect(wets[0]!.gain!.target).toBe(0);
     expect(wets[1]!.gain!.target).toBeGreaterThan(0);
-    expect(rack.active()).toBe("hall");
+    expect(rack.state()).toBe("hall");
     rack.select("none");
     expect(wets.every((entry) => entry.gain!.target === 0)).toBe(true);
+  });
+
+  test("restore opens straight in the saved space, with no blend from the old one", () => {
+    const { context, made } = fakeContext();
+    const rack = createReverbRack(context, {} as AudioNode);
+    rack.select("room");
+    rack.restore(rack.state() === "room" ? "hall" : "room");
+    const wets = made.filter((entry) => entry.kind === "gain").slice(1);
+    expect(rack.state()).toBe("hall");
+    expect(wets[0]!.gain!.value).toBe(0);
+    expect(wets[1]!.gain!.value).toBeGreaterThan(0);
+    expect(wets.every((entry) => entry.gain!.target === undefined)).toBe(true);
   });
 });

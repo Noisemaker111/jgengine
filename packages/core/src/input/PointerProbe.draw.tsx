@@ -25,14 +25,14 @@ export function PointerProbe({ service, groundHeightAt }: { service: PointerServ
       const rect = el.getBoundingClientRect();
       const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
       const y = -(((event.clientY - rect.top) / rect.height) * 2 - 1);
-      service.setCursor(x, y, true);
+      service.setState({ x, y, present: true });
     };
     const onLeave = () => {
-      if (!locked) service.setCursor(0, 0, false);
+      if (!locked) service.setState({ x: 0, y: 0, present: false });
     };
     const onLockChange = () => {
       locked = document.pointerLockElement === el;
-      if (locked) service.setCursor(0, 0, true);
+      if (locked) service.setState({ x: 0, y: 0, present: true });
     };
     el.addEventListener("pointermove", onMove);
     el.addEventListener("pointerleave", onLeave);

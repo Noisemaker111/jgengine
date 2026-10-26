@@ -65,6 +65,13 @@ export function rayGroundHit(
   return null;
 }
 
+/** Where the cursor is, in normalized device coordinates, and whether it is over the canvas at all. */
+export interface PointerCursor {
+  x: number;
+  y: number;
+  present: boolean;
+}
+
 export interface PointerService {
   /** Cast the current cursor into the world; null when the cursor is off-canvas. */
   worldHit(): PointerHit | null;
@@ -72,11 +79,13 @@ export interface PointerService {
   worldHitCenter(): PointerHit | null;
   /** Project a world point to CSS pixels for the marquee / HUD; null before the probe binds. */
   screenOf(world: PointerVec3): { x: number; y: number } | null;
-  hasCursor(): boolean;
   /** The world ray under the cursor, with no scene test; null when the cursor is off-canvas or nothing is bound. */
   cursorRay(): { origin: PointerVec3; direction: PointerVec3 } | null;
   bind(deps: PointerDeps | null): void;
-  setCursor(ndcX: number, ndcY: number, present: boolean): void;
+  /** The cursor the casts read. */
+  state(): PointerCursor;
+  /** Move the cursor (a pointer event, a pointer-lock center, a restored session). */
+  setState(cursor: PointerCursor): void;
 }
 
 function tagOf(object: THREE.Object3D, key: string): string | null {
@@ -156,13 +165,13 @@ export function createPointerService(): PointerService {
   }
 
   return {
-    hasCursor: () => cursorPresent,
     bind: (next) => {
       deps = next;
     },
-    setCursor: (ndcX, ndcY, present) => {
-      ndc.set(ndcX, ndcY);
-      cursorPresent = present;
+    state: () => ({ x: ndc.x, y: ndc.y, present: cursorPresent }),
+    setState: (cursor) => {
+      ndc.set(cursor.x, cursor.y);
+      cursorPresent = cursor.present;
     },
     worldHit() {
       if (!cursorPresent) return null;

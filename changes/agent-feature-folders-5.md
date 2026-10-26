@@ -104,6 +104,11 @@
   - `@jgengine/shell/touch/touchIcons` → `@jgengine/core/input/touchIcons.view`
   - `@jgengine/shell/useShellMultiplayerSync` → `@jgengine/core/multiplayer/useShellMultiplayerSync.draw`
   - `@jgengine/shell/worldSync` → `@jgengine/core/multiplayer/authoritativeSync`
+- The input and audio handles that came from the shell hand their state out and take it back, like every other stateful core handle: `MouseLookTracker.aim()`/`setAim(yaw, pitch)` → `state()`/`setState({ yaw, pitch })`; `PointerService.setCursor(x, y, present)`/`hasCursor()` → `setState({ x, y, present })`/`state().present`.
+
+### Added
+
+- `AudioEngine.snapshot()`/`restore(next)` hand out and take back the player's mix (master and bus volume and mute, the heard space), and `EventFeedback.snapshot()` with `reset(next)` carries the cue cooldowns into a fresh seam.
 
 ### Fixed
 

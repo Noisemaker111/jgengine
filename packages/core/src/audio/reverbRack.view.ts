@@ -32,8 +32,12 @@ function impulse(context: BaseAudioContext, seconds: number, decay: number): Aud
 /** The send every positioned voice feeds, and which space it currently rings in. @internal */
 export interface ReverbRack {
   input: GainNode;
+  /** Blend to `preset` over the rack's time constant. */
   select(preset: ReverbPreset): void;
-  active(): ReverbPreset;
+  /** The space the rack is in (or blending to). */
+  state(): ReverbPreset;
+  /** Jump straight to `preset` with no blend, as a resumed scene should open in its room. */
+  restore(preset: ReverbPreset): void;
   dispose(): void;
 }
 
@@ -77,7 +81,15 @@ export function createReverbRack(context: BaseAudioContext, output: AudioNode): 
         entry.wet.gain.setTargetAtTime(target, context.currentTime, BLEND_TC);
       }
     },
-    active: () => current,
+    state: () => current,
+    restore(preset) {
+      current = preset;
+      if (preset !== "none") slot(preset);
+      for (const [id, entry] of slots) {
+        entry.wet.gain.cancelScheduledValues(context.currentTime);
+        entry.wet.gain.value = id === preset && id !== "none" ? PRESETS[id as Exclude<ReverbPreset, "none">].wet : 0;
+      }
+    },
     dispose() {
       input.disconnect();
       for (const entry of slots.values()) {

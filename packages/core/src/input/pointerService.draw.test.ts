@@ -19,7 +19,7 @@ function setup() {
 describe("pointerService worldHitCenter", () => {
   test("hits scene geometry at the viewport center with no cursor bound", () => {
     const { service } = setup();
-    expect(service.hasCursor()).toBe(false);
+    expect(service.state().present).toBe(false);
     const hit = service.worldHitCenter();
     expect(hit).not.toBeNull();
     expect(hit?.point[0]).toBeCloseTo(0, 5);
@@ -28,7 +28,8 @@ describe("pointerService worldHitCenter", () => {
 
   test("ignores the last cursor position recorded by pointer move", () => {
     const { service } = setup();
-    service.setCursor(0.9, 0.9, true);
+    service.setState({ x: 0.9, y: 0.9, present: true });
+    expect(service.state()).toEqual({ x: 0.9, y: 0.9, present: true });
     const cursorHit = service.worldHit();
     const centerHit = service.worldHitCenter();
     expect(centerHit).not.toBeNull();

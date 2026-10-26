@@ -116,6 +116,21 @@ describe("event feedback mapping", () => {
     expect(h.played).toHaveLength(2);
   });
 
+  test("a snapshot carries the cooldown into a fresh seam, so a resumed burst stays folded", () => {
+    const h = harness();
+    const first = createEventFeedback(h.deps);
+    first.handle("combat.damage", damage("raider-1", 3));
+    h.advance(10);
+    first.handle("combat.damage", damage("raider-1", 3));
+    const second = createEventFeedback(h.deps);
+    second.reset(first.snapshot());
+    expect(second.suppressed("hit")).toBe(1);
+    expect(second.handle("combat.damage", damage("raider-1", 3))).toBeNull();
+    expect(h.played).toHaveLength(1);
+    second.reset();
+    expect(second.snapshot().suppressed.hit).toBe(0);
+  });
+
   test("maps an event to the same pooled reaction object every time - no per-event allocation", () => {
     const h = harness();
     const feedback = createEventFeedback(h.deps);

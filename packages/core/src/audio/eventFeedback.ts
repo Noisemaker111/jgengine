@@ -161,6 +161,12 @@ export interface EventFeedbackOptions {
   captions?: boolean;
 }
 
+/** The cooldown clocks of an {@link EventFeedback}: when each cue last fired (ms, `now` clock) and how many triggers its cooldown folded away. */
+export interface EventFeedbackState {
+  lastPlayed: Record<FeedbackCue, number>;
+  suppressed: Record<FeedbackCue, number>;
+}
+
 /** The event-to-reaction seam. One instance per running world. */
 export interface EventFeedback {
   /** React to one announced event. Returns the cue fired, or null when nothing mapped or it was muted by cooldown. */
@@ -173,8 +179,10 @@ export interface EventFeedback {
   suppressed(cue: FeedbackCue): number;
   /** Replace reactions or bindings at runtime. */
   retune(options: Partial<EventFeedbackOptions>): void;
-  /** Clear cooldowns and suppressed counters. */
-  reset(): void;
+  /** A copy of the cooldown clocks. */
+  snapshot(): EventFeedbackState;
+  /** Clear cooldowns and suppressed counters, or put a {@link snapshot} back. */
+  reset(next?: EventFeedbackState): void;
 }
 
 const DEFAULT_COOLDOWN_MS = 40;
@@ -329,10 +337,13 @@ export function createEventFeedback(deps: FeedbackDeps, options: EventFeedbackOp
         rebuild();
       }
     },
-    reset() {
+    snapshot() {
+      return { lastPlayed: { ...lastPlayed }, suppressed: { ...suppressed } };
+    },
+    reset(next) {
       for (const cue of Object.keys(lastPlayed) as FeedbackCue[]) {
-        lastPlayed[cue] = -Infinity;
-        suppressed[cue] = 0;
+        lastPlayed[cue] = next?.lastPlayed[cue] ?? -Infinity;
+        suppressed[cue] = next?.suppressed[cue] ?? 0;
       }
     },
   };

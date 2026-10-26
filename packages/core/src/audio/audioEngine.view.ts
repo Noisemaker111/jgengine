@@ -136,6 +136,14 @@ export interface AudioAmbienceState {
   levels: readonly { id: string; level: number }[];
 }
 
+/** The player's mix an {@link AudioEngine} can hand out and take back (a settings save, a resumed session). */
+export interface AudioMixState {
+  master: { gain: number; muted: boolean };
+  buses: Record<string, { gain: number; muted: boolean }>;
+  /** The heard space outside authored zones; null is the config's fallback. */
+  reverbEnvironment: ReverbPreset | null;
+}
+
 export interface AudioEngine {
   /** Full listener orientation, or a legacy position using forward -Z and up +Y. */
   setListenerPose(pose: ListenerPose | Xyz): void;
@@ -184,6 +192,10 @@ export interface AudioEngine {
   setBusMute(busId: string, muted: boolean): void;
   setMasterGain(gain: number): void;
   setMasterMute(muted: boolean): void;
+  /** The player's mix: master and per-bus volume and mute, and the heard space. */
+  snapshot(): AudioMixState;
+  /** Put a {@link snapshot} back; buses it does not name keep their mix. */
+  restore(next: AudioMixState): void;
   /** Master gain after volume and mute compose (`gain × (muted ? 0 : 1)`). */
   masterLevel(): number;
   /** Effective gain of `busId` after its authored gain, the player's volume and its mute compose. */
@@ -229,6 +241,8 @@ function createNoopEngine(): AudioEngine {
     setBusMute: () => undefined,
     setMasterGain: () => undefined,
     setMasterMute: () => undefined,
+    snapshot: () => ({ master: { gain: 1, muted: false }, buses: {}, reverbEnvironment: null }),
+    restore: () => undefined,
     masterLevel: () => 0,
     busLevel: () => 0,
     measure: () => level,
@@ -1284,7 +1298,7 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
       applyReverb();
     },
     spatialStats() {
-      return { ...spatialCounts, reverb: reverbRack?.active() ?? "none", reverbZone };
+      return { ...spatialCounts, reverb: reverbRack?.state() ?? "none", reverbZone };
     },
     occlusionStats() {
       const { tests, blocked, testMs, lastTest } = occlusionStatsState;
@@ -1318,6 +1332,27 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
       if (disposed) return;
       masterMuted = muted;
       applyMaster();
+    },
+    snapshot() {
+      const buses: Record<string, { gain: number; muted: boolean }> = {};
+      for (const [busId, mix] of busMix) buses[busId] = { gain: mix.gain, muted: mix.muted };
+      return { master: { gain: masterVolume, muted: masterMuted }, buses, reverbEnvironment };
+    },
+    restore(next) {
+      if (disposed) return;
+      masterVolume = next.master.gain;
+      masterMuted = next.master.muted;
+      applyMaster();
+      for (const [busId, mix] of Object.entries(next.buses)) {
+        const own = busMixOf(busId);
+        own.gain = mix.gain;
+        own.muted = mix.muted;
+        applyBus(busId);
+      }
+      if (next.reverbEnvironment !== reverbEnvironment) {
+        reverbEnvironment = next.reverbEnvironment;
+        applyReverb();
+      }
     },
     masterLevel,
     busLevel,

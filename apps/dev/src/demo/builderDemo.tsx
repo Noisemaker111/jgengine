@@ -126,7 +126,7 @@ function BuilderScene() {
       const rect = dom.getBoundingClientRect();
       const ndcX = ((event.clientX - rect.left) / rect.width) * 2 - 1;
       const ndcY = -(((event.clientY - rect.top) / rect.height) * 2 - 1);
-      pointer.setCursor(ndcX, ndcY, true);
+      pointer.setState({ x: ndcX, y: ndcY, present: true });
       pointer.bind({ camera: three.camera, scene: three.scene, width: rect.width, height: rect.height });
       const hit = pointer.worldHit();
       if (hit === null) return;
@@ -138,7 +138,7 @@ function BuilderScene() {
         setBrushCenter([hit.point[0], hit.point[2]]);
       }
     };
-    const onLeave = () => pointer.setCursor(0, 0, false);
+    const onLeave = () => pointer.setState({ x: 0, y: 0, present: false });
     const onDown = (event: PointerEvent) => {
       if (event.button !== 0) return;
       const st = stateRef.current;
@@ -151,7 +151,7 @@ function BuilderScene() {
         const rect = dom.getBoundingClientRect();
         const ndcX = ((event.clientX - rect.left) / rect.width) * 2 - 1;
         const ndcY = -(((event.clientY - rect.top) / rect.height) * 2 - 1);
-        pointer.setCursor(ndcX, ndcY, true);
+        pointer.setState({ x: ndcX, y: ndcY, present: true });
         pointer.bind({ camera: three.camera, scene: three.scene, width: rect.width, height: rect.height });
         const id = pickStructureId(pointer.worldHit());
         setSelectedId(id);

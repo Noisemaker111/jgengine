@@ -373,6 +373,25 @@ describe("bounded audio graph lifecycle", () => {
     expect(mock.context.closeCount).toBe(1);
   });
 
+  test("a mix snapshot restores into a fresh engine: master and bus volume, mutes and the heard space", () => {
+    installGraph();
+    const buses = { sfx: { id: "sfx", gain: 0.7 }, music: { id: "music", gain: 1 } };
+    const first = createAudioEngine({ ...DRY, buses });
+    first.setMasterGain(0.5);
+    first.setBusGain("sfx", 0.25);
+    first.setBusMute("music", true);
+    first.setReverbEnvironment("cave");
+    const saved = first.snapshot();
+    const levels = { master: first.masterLevel(), sfx: first.busLevel("sfx"), music: first.busLevel("music") };
+    first.dispose();
+    const second = createAudioEngine({ ...DRY, buses });
+    second.restore(saved);
+    expect(second.snapshot()).toEqual(saved);
+    expect({ master: second.masterLevel(), sfx: second.busLevel("sfx"), music: second.busLevel("music") }).toEqual(levels);
+    expect(levels.music).toBe(0);
+    second.dispose();
+  });
+
   test("natural sample end releases the budget and detaches source, gain, and panner", async () => {
     const mock = installGraph();
     const allocator = createVoiceAllocator({ maxTotal: 1 });
