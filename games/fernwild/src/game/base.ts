@@ -1,4 +1,4 @@
-import { createBaseBuilding, type BaseBuilding, type BaseBuildingState, type BaseVec3, type PlacedStructure, type StructurePlan } from "@jgengine/core/basebuilding/baseBuilding";
+import { createBaseBuilding, type BaseBuilding, type BaseBuildingState, type BaseVec3, type BasePiece, type StructurePlan } from "@jgengine/core/basebuilding/baseBuilding";
 import type { StationInstance } from "@jgengine/core/crafting/recipe";
 import { command, keybind, proximityPrompt, type PositionedPrompt } from "@jgengine/core/interaction/proximityPrompt";
 import { playerMovementHeading } from "@jgengine/core/movement/playerMovement";
@@ -116,10 +116,10 @@ export function rotateBuild(ctx: GameContext): void {
 }
 
 /** The door in front: the aimed piece itself, or the door hung in the aimed frame. */
-function aimedDoor(base: Base): PlacedStructure | null {
+function aimedDoor(base: Base): BasePiece | null {
   const aimed = base.aimed === null ? null : base.building.get(base.aimed);
   if (aimed === null) return null;
-  const openable = (piece: PlacedStructure) => base.building.shape(piece.pieceId)?.openBoxes !== undefined;
+  const openable = (piece: BasePiece) => base.building.shape(piece.pieceId)?.openBoxes !== undefined;
   if (openable(aimed)) return aimed;
   return base.building.list().find((piece) => openable(piece) && Math.hypot(piece.position[0] - aimed.position[0], piece.position[1] - aimed.position[1], piece.position[2] - aimed.position[2]) < 0.2) ?? null;
 }
@@ -134,7 +134,7 @@ export function useStructure(ctx: GameContext): boolean {
   return open !== null;
 }
 
-function fell(ctx: GameContext, removed: readonly PlacedStructure[], refund: number): void {
+function fell(ctx: GameContext, removed: readonly BasePiece[], refund: number): void {
   if (removed.length === 0) return;
   for (const piece of removed) {
     for (const [itemId, count] of Object.entries(structureDef(piece.pieceId)?.cost ?? {})) {

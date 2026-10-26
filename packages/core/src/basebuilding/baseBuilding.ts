@@ -64,7 +64,7 @@ export interface BaseBuildingConfig {
 }
 
 /** A piece standing in the world. `rotationY` uses the engine's entity convention. */
-export interface PlacedStructure {
+export interface BasePiece {
   id: string;
   pieceId: string;
   position: BaseVec3;
@@ -115,7 +115,7 @@ export interface StructureHit {
 
 /** What a removal or a destroying blow took down: the piece itself first, then everything that lost support. */
 export interface StructureRemoval {
-  removed: readonly PlacedStructure[];
+  removed: readonly BasePiece[];
 }
 
 /** Result of {@link BaseBuilding.damage}. */
@@ -126,7 +126,7 @@ export interface StructureDamage extends StructureRemoval {
 
 /** Serializable contents of a {@link BaseBuilding}. */
 export interface BaseBuildingState {
-  pieces: readonly PlacedStructure[];
+  pieces: readonly BasePiece[];
   nextId: number;
 }
 
@@ -144,15 +144,15 @@ export interface BaseBuilding {
   /** Where `pieceId` would go for a cursor: the nearest free snap, else terrain or floor when the shape allows. */
   plan(pieceId: string, cursor: BaseVec3, options?: StructurePlanOptions): StructurePlan;
   /** Stand a valid plan up; `null` when the plan is invalid or no longer fits. */
-  place(plan: StructurePlan, options?: { owner?: string }): PlacedStructure | null;
+  place(plan: StructurePlan, options?: { owner?: string }): BasePiece | null;
   /** Take a piece down, and everything that only stood because of it. */
   remove(id: string): StructureRemoval;
   /** Hit a piece with `amount` of `damageClass`; at zero health it falls, with whatever it held up. */
   damage(id: string, amount: number, damageClass: string): StructureDamage;
   /** Swing an openable piece; returns the new open state, or `null` when it has none. */
   toggle(id: string): boolean | null;
-  get(id: string): PlacedStructure | null;
-  list(): readonly PlacedStructure[];
+  get(id: string): BasePiece | null;
+  list(): readonly BasePiece[];
   /** Nearest piece a ray hits within `maxDistance`. */
   raycast(origin: BaseVec3, direction: BaseVec3, maxDistance: number): StructureHit | null;
   /** World boxes of a placed piece (open or shut) or of a plan. */
@@ -237,7 +237,7 @@ function rayBox(origin: BaseVec3, direction: BaseVec3, box: StructureBox, maxDis
   return near;
 }
 
-function copyPlaced(piece: PlacedStructure): PlacedStructure {
+function copyPlaced(piece: BasePiece): BasePiece {
   return { ...piece, position: [piece.position[0], piece.position[1], piece.position[2]] };
 }
 
@@ -261,7 +261,7 @@ export function createBaseBuilding(config: BaseBuildingConfig): BaseBuilding {
     rules: config.rules,
   });
 
-  let placed = new Map<string, PlacedStructure>();
+  let placed = new Map<string, BasePiece>();
   let nextId = 1;
   let version = 0;
 
@@ -421,7 +421,7 @@ export function createBaseBuilding(config: BaseBuildingConfig): BaseBuilding {
   };
 
   /** Drop every piece with no path to a grounded one. */
-  const collapse = (): PlacedStructure[] => {
+  const collapse = (): BasePiece[] => {
     const links = neighbours();
     const held = new Set<string>();
     const queue = [...placed.values()].filter((piece) => piece.grounded).map((piece) => piece.id);
@@ -434,7 +434,7 @@ export function createBaseBuilding(config: BaseBuildingConfig): BaseBuilding {
         queue.push(next);
       }
     }
-    const fallen: PlacedStructure[] = [];
+    const fallen: BasePiece[] = [];
     for (const piece of [...placed.values()]) {
       if (held.has(piece.id)) continue;
       placed.delete(piece.id);
@@ -443,7 +443,7 @@ export function createBaseBuilding(config: BaseBuildingConfig): BaseBuilding {
     return fallen;
   };
 
-  const take = (id: string): PlacedStructure[] => {
+  const take = (id: string): BasePiece[] => {
     const piece = placed.get(id);
     if (piece === undefined) return [];
     placed.delete(id);
@@ -497,7 +497,7 @@ export function createBaseBuilding(config: BaseBuildingConfig): BaseBuilding {
       if (!plan.valid || !pieces.has(plan.pieceId)) return null;
       if (plan.targetId !== null && !placed.has(plan.targetId)) return null;
       if (overlaps(plan.pieceId, plan.position, plan.rotationY)) return null;
-      const piece: PlacedStructure = {
+      const piece: BasePiece = {
         id: `s${nextId}`,
         pieceId: plan.pieceId,
         position: [plan.position[0], plan.position[1], plan.position[2]],

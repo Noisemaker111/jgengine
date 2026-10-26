@@ -105,8 +105,8 @@
 - `BaseBuilding` (interface): interface BaseBuilding — Handle returned by {@link createBaseBuilding}.
 - `BaseBuildingConfig` (interface): interface BaseBuildingConfig — Everything a base-building model is made from.
 - `BaseBuildingState` (interface): interface BaseBuildingState — Serializable contents of a {@link BaseBuilding}.
+- `BasePiece` (interface): interface BasePiece — A piece standing in the world. `rotationY` uses the engine's entity convention.
 - `BaseVec3` (type): type BaseVec3 = readonly [number, number, number] — A `[x, y, z]` triple in metres.
-- `PlacedStructure` (interface): interface PlacedStructure — A piece standing in the world. `rotationY` uses the engine's entity convention.
 - `StructureBox` (interface): interface StructureBox — One solid box of a piece, in the piece's local space (origin at the piece's snap origin).
 - `StructureDamage` (interface): interface StructureDamage extends StructureRemoval — Result of {@link BaseBuilding.damage}.
 - `StructureGroundRule` (interface): interface StructureGroundRule — Where a shape may stand without snapping to another piece.
