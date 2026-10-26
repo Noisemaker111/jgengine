@@ -116,7 +116,6 @@
   "@jgengine/core/visibility/settings#mergeStreamingSettings",
   "@jgengine/core/visibility/settings#resolveOverrides",
   "@jgengine/core/visibility/simulationCulling#createSimulationCuller",
-  "@jgengine/core/visibility/spatialIndex#createSpatialIndex",
   "@jgengine/core/world/cellStates#createCellStateGrid",
   "@jgengine/core/world/features#padFlattenMasks",
   "@jgengine/core/world/gridInstances#resolveGridCells",

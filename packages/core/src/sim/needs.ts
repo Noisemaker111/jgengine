@@ -1,9 +1,14 @@
 import {
+  decayMeterMoodles,
   decayMeters,
+  decayMeterSnapshot,
+  decayMeterState,
   initDecayMeters,
   type DecayMeterConfig,
+  type DecayMeterState,
   type DecayMeterValues,
 } from "../survival/decayMeter";
+import type { Moodle } from "../survival/moodle";
 import { clamp } from "../math/scalar";
 
 /**
@@ -31,7 +36,8 @@ export interface NeedSnapshot {
 }
 
 /**
- * Named needs that drain or recover on game time — hunger, energy, hygiene, bladder, fun.
+ * Named needs that drain or recover on game time — hunger, thirst, oxygen, warmth, energy, fun —
+ * with moodles at thresholds and rate modifiers an environment drives (cold → faster warmth loss).
  * Reads are index-addressed (`indexOf` once, `fractionAt` per tick) so a thousand-agent loop
  * never re-resolves ids; the whole set round-trips through {@link NeedSnapshot}.
  */
@@ -48,6 +54,12 @@ export interface NeedSet {
   fractionAt(index: number): number;
   value(id: string): number;
   fraction(id: string): number;
+  /** One need's value, bounds and fill — a HUD bar. Throws on an unknown id. */
+  state(id: string): DecayMeterState;
+  /** Every need's {@link NeedSet.state}, keyed by id — the display view; {@link NeedSet.snapshot} is the save. */
+  states(): Record<string, DecayMeterState>;
+  /** Moodles for every crossed threshold, worst-first per need in declared order. */
+  moodles(): Moodle[];
   /** Consumable/action refill; negative drains. Throws on an unknown id. */
   refill(id: string, amount: number): void;
   /** Overwrite one need's base rate (a harsher game mode). Throws on an unknown id. */
@@ -106,6 +118,12 @@ export function createNeedSet(definitions: readonly NeedDefinition[]): NeedSet {
     fractionAt: (at) => (at >= 0 && at < defs.length ? readFraction(at) : 0),
     value: (id) => readValue(lookup(id)),
     fraction: (id) => readFraction(lookup(id)),
+    state: (id) => {
+      lookup(id);
+      return decayMeterState(values, defs, id);
+    },
+    states: () => decayMeterSnapshot(values, defs),
+    moodles: () => decayMeterMoodles(values, defs),
     refill(id, amount) {
       const at = lookup(id);
       const def = defs[at]!;

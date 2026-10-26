@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, test } from "bun:test";
-import { findPath, raycastNav } from "@jgengine/core/nav/navMesh";
+import { createNavMeshQuery, raycastNav } from "@jgengine/core/nav/navMesh";
 import { bakeNavMesh, initNavBake, navBakeReady } from "./index";
 
 function floorWithWall(): { positions: number[]; indices: number[] } {
@@ -25,7 +25,7 @@ describe("bakeNavMesh", () => {
     expect(navBakeReady()).toBe(true);
     const mesh = bakeNavMesh({ ...floorWithWall(), ...agent });
     expect(mesh.polys.length).toBeGreaterThan(0);
-    const path = findPath(mesh, [2, 0, 2], [8, 0, 2]);
+    const path = createNavMeshQuery(mesh).findPath([2, 0, 2], [8, 0, 2]);
     expect(path).not.toBeNull();
     expect(Math.max(...path!.points.map((point) => point[2]))).toBeGreaterThan(7);
     for (const point of path!.points) expect(point[0] > 4 - 0.01 && point[0] < 6 + 0.01 && point[2] < 7).toBe(false);

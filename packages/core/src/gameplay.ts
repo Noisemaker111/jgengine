@@ -661,7 +661,6 @@ export {
   type XpLevelStep,
 } from "./progression/xpCurve";
 export { type CellGrid } from "./puzzle/cellGrid";
-export { type ShapeTable } from "./puzzle/fallingPiece";
 export { createNameGenerator } from "./random/nameGen";
 export { pickUniform, pickWeighted } from "./random/pick";
 export { seededStreams } from "./random/rng";
@@ -827,14 +826,12 @@ export {
   type RoutineTimeline,
 } from "./sim/routine";
 export {
-  createDecayMeterSet,
   decayMeterMoodles,
   decayMeterSnapshot,
   decayMeterState,
   decayMeters,
   initDecayMeters,
   refillMeter,
-  type DecayMeterSet,
   type DecayMeterValues,
   type DecayModifier,
 } from "./survival/decayMeter";

@@ -1,4 +1,4 @@
-import type { AircraftAssistTuning, RigidAircraftTuning } from "@jgengine/core/physics/aircraftDynamics";
+import type { AircraftAssistTuning, RigidAircraftTuning } from "@jgengine/core/flight/aircraftDynamics";
 
 // A 950 kg aerobatic monoplane: a short-coupled tail and big ailerons, so it loops in about ten seconds
 // and rolls at a few hundred degrees a second. Wing incidence trims it level near 80 m/s at a third throttle.

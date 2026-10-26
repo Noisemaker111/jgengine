@@ -8,7 +8,7 @@
  * @internal
  */
 import type { Vec2 } from "./geometry";
-import { buildSpatialBuckets } from "./spatialBuckets";
+import { buildSpatialBuckets } from "../spatial/spatialBuckets";
 
 /** Where the polyline comes closest to the query, within the query's bound. @internal */
 export interface PolylineHit {

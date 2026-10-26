@@ -1,5 +1,5 @@
 import type { CodexSnapshot } from "@jgengine/core/game/codex";
-import type { DecayMeterSetState } from "@jgengine/core/survival/decayMeter";
+import type { NeedSnapshot } from "@jgengine/core/sim/needs";
 import type { WorldModel, WorldModelState } from "@jgengine/core/worldModel/worldModel";
 import { GEAR, type Gear } from "./fabricator";
 import { freshBody, validBody } from "./survival";
@@ -13,7 +13,7 @@ import { isStratum, type Stratum } from "./strata";
  */
 export interface Deep {
   version: 1;
-  body: DecayMeterSetState;
+  body: NeedSnapshot;
   gear: Gear[];
   /** Lures printed and waiting in Marrow; the next departure carries up to three. */
   lures: number;

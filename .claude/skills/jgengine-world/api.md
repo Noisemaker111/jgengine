@@ -641,6 +641,50 @@
 - `effectiveRelation` (function): function effectiveRelation(input: EffectiveRelationInput): FactionRelation — ⚠ undocumented
 - `tierForStanding` (function): function tierForStanding(tiers: readonly ReputationTier[], standing: number): ReputationTier — Map a faction standing value to its named reputation tier.
 
+## @jgengine/core/flight/aircraftDynamics
+
+- `AircraftAssistCommand` (interface): interface AircraftAssistCommand — Control commands, `-1..1`, that drive the actuators after the assists.
+- `AircraftAssistContext` (interface): interface AircraftAssistContext — What an assist sees each substep, derived from the integrator state so it replays deterministically.
+- `AircraftAssistTuning` (interface): interface AircraftAssistTuning — Flight assists. Each one moves the same actuators the pilot does, so a stronger assist still flies within the airframe's authority. Strengths are `0..1`; an axis the pilot is deflecting gets less help the further the stick is pushed, so full stick is always the pilot's.
+- `AircraftControlChannel` (interface): interface AircraftControlChannel — One control channel's actuator: how far the surfaces move and how fast.
+- `AircraftEngineTuning` (interface): interface AircraftEngineTuning — A thrust source fixed to the body.
+- `AircraftGearTuning` (interface): interface AircraftGearTuning — Wheels or skids: what the body rests on when it touches the ground.
+- `AircraftMotorTuning` (interface): interface AircraftMotorTuning — A rocket motor: thrust follows a curve over burn time, propellant leaves at a mass flow so the body gets lighter and easier to turn, and the nozzle gimbals on the pitch and yaw channels. Stage by `retune`-ing to the next stage's mass and motor.
+- `AircraftQuaternion` (type): type AircraftQuaternion = readonly [number, number, number, number] — Unit quaternion `[x, y, z, w]` taking body-frame vectors to world space.
+- `AircraftRotorTuning` (interface): interface AircraftRotorTuning — A main rotor. Collective sets blade pitch, throttle sets rotor speed, and cyclic (the pitch and roll channels) tilts the disc. Its drag torque yaws the body the other way unless a tail rotor, a second rotor or a pedal input cancels it.
+- `AircraftSurface` (interface): interface AircraftSurface — One lifting surface: a wing panel, a tailplane, a fin, a canard. Its lift acts at `at`, so the moments that pitch, roll and yaw the body come from where the surfaces sit, not from commanded rates.
+- `AircraftVector` (type): type AircraftVector = readonly [number, number, number] — Body-frame or world-frame vector, m or N. The body frame is `[left, up, forward]` about the centre of mass.
+- `RigidAircraft` (interface): interface RigidAircraft — A force-and-torque aircraft on the same tick/snapshot/retune contract as `VehicleDynamics`.
+- `RigidAircraftInput` (interface): interface RigidAircraftInput — Pilot input for one tick.
+- `RigidAircraftModifiers` (interface): interface RigidAircraftModifiers — Per-tick overrides layered over tuning: damage, icing, boost, gusts. Each scale defaults to `1`.
+- `RigidAircraftOptions` (interface): interface RigidAircraftOptions — World hooks for one aircraft instance.
+- `RigidAircraftState` (interface): interface RigidAircraftState — Serializable integrator state: everything `restore` needs to resume bit-for-bit.
+- `RigidAircraftStep` (interface): interface RigidAircraftStep — One aircraft tick: pose plus the telemetry HUDs, camera, sound and probes read.
+- `RigidAircraftTuning` (interface): interface RigidAircraftTuning — A rigid aircraft in physical units. There is no aircraft type: a jet, a glider and a paper plane differ only in these numbers. Rotation comes from surface forces acting on the inertia tensor, so loops, rolls, stalls and weathervaning are outcomes, not special cases.
+- `aircraftAttitudeQuaternion` (function): function aircraftAttitudeQuaternion(heading: number, pitch: number, bank: number): AircraftQuaternion — Quaternion from heading, nose-up pitch and right bank, rad — the inverse of a step's `heading`/`pitch`/`bank`. Matches three.js `Euler(-pitch, heading, bank, "YXZ")`.
+- `aircraftHeadingQuaternion` (function): function aircraftHeadingQuaternion(heading: number): AircraftQuaternion — Quaternion for a heading about world up, forward `[sin h, 0, cos h]`.
+- `createRigidAircraft` (function): function createRigidAircraft(initial: RigidAircraftTuning, options: RigidAircraftOptions = {}): RigidAircraft — Creates a {@link RigidAircraft}: a quaternion rigid body with a diagonal inertia tensor, pushed by lifting surfaces, fuselage drag, an engine and gravity. Controls deflect surfaces through rate-limited actuators; nothing commands a rotation rate, so a jet loops when its tail can push the nose around and a glider stalls when it runs out of speed. Fixed internal substeps make it deterministic for a given `dt` sequence.
+
+## @jgengine/core/flight/freeFlight
+
+- `CREATIVE_FLIGHT_TUNING` (const): const CREATIVE_FLIGHT_TUNING: FreeFlightTuning — Preset for Minecraft-like creative flight — weightless, collides, yaw-relative strafe.
+- `FreeFlightBindings` (interface): interface FreeFlightBindings — Per-axis bindings for free-flight — which actions drive each flight axis. Positive is forward/right/up.
+- `FreeFlightController` (interface): interface FreeFlightController — Stateful handle for any free-flight actor with snapshot/restore/retune.
+- `FreeFlightIntent` (interface): interface FreeFlightIntent — Intent for one free-flight tick — forward/right from WASD/analog, vertical from jump/crouch.
+- `FreeFlightMode` (type): type FreeFlightMode = "creative" | "spectator" | "noclip" | "hover" — Free-flight families — character-scale 6DOF movement, distinct from vehicle aerodynamics.
+- `FreeFlightState` (interface): interface FreeFlightState — Velocity state for a free-flight actor — serializable and ownable by the caller.
+- `FreeFlightStep` (interface): interface FreeFlightStep — World displacement produced by one free-flight tick.
+- `FreeFlightTuning` (interface): interface FreeFlightTuning — Data-first tuning for one free-flight profile.
+- `HOVER_FLIGHT_TUNING` (const): const HOVER_FLIGHT_TUNING: FreeFlightTuning — Preset for hover/jetpack — gravity + thrust, useful for short bursts.
+- `NOCLIP_FLIGHT_TUNING` (const): const NOCLIP_FLIGHT_TUNING: FreeFlightTuning — Preset for noclip — weightless, noclips, yaw-relative with independent vertical.
+- `SPECTATOR_FLIGHT_TUNING` (const): const SPECTATOR_FLIGHT_TUNING: FreeFlightTuning — Preset for spectator — weightless, noclips, flies where the camera looks.
+- `advanceFreeFlight` (function): function advanceFreeFlight(state: FreeFlightState, intent: FreeFlightIntent, yaw: number, pitch: number | undefined, dt: number, tuning: FreeFlightTuning, options?: Pick<MotionFrameOptions, "authoritativeStep">): FreeFlightStep — Advance one frame of free-flight kinematics. Horizontal uses yaw-relative strafe (A = left, D = right) — never roll/bank. Vertical is independent of pitch unless `alignWithLook` is true (spectator).
+- `createFreeFlightController` (function): function createFreeFlightController(initialTuning: FreeFlightTuning, options: { yaw?: number; pitch?: number; state?: FreeFlightState } = {}): FreeFlightController — Totally free flight for any actor — character, camera, drone, or debug rig. Horizontal is always yaw-relative strafe; vertical is jump/crouch. Use `alignWithLook` for a 6DOF spectator that flies where the camera looks.
+- `createFreeFlightState` (function): function createFreeFlightState(): FreeFlightState — Create an empty flight velocity state.
+- `resolveFlightStep` (function): function resolveFlightStep(position: readonly [number, number, number], stepX: number, stepY: number, stepZ: number, obstacles: readonly CollisionObstacle[], radius: number = DEFAULT_OBSTACLE_PLAYER_RADIUS): { stepX: number; stepY: number; stepZ: number } — Resolve a flight step against world solids (XZ slide + Y clamp).
+- `resolveFreeFlightIntent` (function): function resolveFreeFlightIntent(keys: MovementKeysState, analog: AnalogMoveIntent | null | undefined): FreeFlightIntent — Translate held keys + analog into a free-flight intent. Vertical is `space - (control|c)` so jump ascends and crouch descends — the same keys that walk/jump/crouch use, re-mapped for flight without re-binding.
+- `resolveFreeFlightIntentFromInput` (function): function resolveFreeFlightIntentFromInput(isDown: (action: string) => boolean, value: (action: string) => number, pointer: PointerAxisState | null, bindings?: FreeFlightBindings): FreeFlightIntent — Translate live input (held actions + analog + pointer) into a flight intent using per-profile axis bindings. Unlisted bindings fall back to the defaults above so existing games keep WASD/Space/Ctrl/Shift without declaring anything.
+
 ## @jgengine/core/haptics/haptics
 
 - `HapticChannels` (interface): interface HapticChannels — Named continuous rumble channels for one player, mixed by priority each frame. Game code sets levels from its own telemetry (engine rpm, road surface, impacts); the shell mixes and drives the pad.
@@ -973,30 +1017,10 @@
 - `placeFormation` (function): function placeFormation(destination: Vec2, facing: number, count: number, generator: FormationSlotGenerator): Vec2[] — Transform a generator's local slot offsets into world XZ positions around a `destination`, rotated by `facing` (engine yaw). Slot `i` in the returned array is `generator(count)[i]` mapped through the group frame, so it stays aligned with {@link assignFormationSlots}' slot indices. Pure and allocation- light: one array of `count` points, no per-call closures retained.
 - `wedgeFormation` (function): function wedgeFormation(options: WedgeFormationOptions): FormationSlotGenerator — A "V"/arrowhead with the apex at the destination and arms trailing back — a flying-wedge charge or a goose skein. Slot 0 is the tip; later slots alternate right then left, each rank stepping one `spacing` outward and backward.
 
-## @jgengine/core/movement/freeFlight
-
-- `CREATIVE_FLIGHT_TUNING` (const): const CREATIVE_FLIGHT_TUNING: FreeFlightTuning — Preset for Minecraft-like creative flight — weightless, collides, yaw-relative strafe.
-- `FreeFlightBindings` (interface): interface FreeFlightBindings — Per-axis bindings for free-flight — which actions drive each flight axis. Positive is forward/right/up.
-- `FreeFlightController` (interface): interface FreeFlightController — Stateful handle for any free-flight actor with snapshot/restore/retune.
-- `FreeFlightIntent` (interface): interface FreeFlightIntent — Intent for one free-flight tick — forward/right from WASD/analog, vertical from jump/crouch.
-- `FreeFlightMode` (type): type FreeFlightMode = "creative" | "spectator" | "noclip" | "hover" — Free-flight families — character-scale 6DOF movement, distinct from vehicle aerodynamics.
-- `FreeFlightState` (interface): interface FreeFlightState — Velocity state for a free-flight actor — serializable and ownable by the caller.
-- `FreeFlightStep` (interface): interface FreeFlightStep — World displacement produced by one free-flight tick.
-- `FreeFlightTuning` (interface): interface FreeFlightTuning — Data-first tuning for one free-flight profile.
-- `HOVER_FLIGHT_TUNING` (const): const HOVER_FLIGHT_TUNING: FreeFlightTuning — Preset for hover/jetpack — gravity + thrust, useful for short bursts.
-- `NOCLIP_FLIGHT_TUNING` (const): const NOCLIP_FLIGHT_TUNING: FreeFlightTuning — Preset for noclip — weightless, noclips, yaw-relative with independent vertical.
-- `SPECTATOR_FLIGHT_TUNING` (const): const SPECTATOR_FLIGHT_TUNING: FreeFlightTuning — Preset for spectator — weightless, noclips, flies where the camera looks.
-- `advanceFreeFlight` (function): function advanceFreeFlight(state: FreeFlightState, intent: FreeFlightIntent, yaw: number, pitch: number | undefined, dt: number, tuning: FreeFlightTuning, options?: Pick<MotionFrameOptions, "authoritativeStep">): FreeFlightStep — Advance one frame of free-flight kinematics. Horizontal uses yaw-relative strafe (A = left, D = right) — never roll/bank. Vertical is independent of pitch unless `alignWithLook` is true (spectator).
-- `createFreeFlightController` (function): function createFreeFlightController(initialTuning: FreeFlightTuning, options: { yaw?: number; pitch?: number; state?: FreeFlightState } = {}): FreeFlightController — Totally free flight for any actor — character, camera, drone, or debug rig. Horizontal is always yaw-relative strafe; vertical is jump/crouch. Use `alignWithLook` for a 6DOF spectator that flies where the camera looks.
-- `createFreeFlightState` (function): function createFreeFlightState(): FreeFlightState — Create an empty flight velocity state.
-- `resolveFlightStep` (function): function resolveFlightStep(position: readonly [number, number, number], stepX: number, stepY: number, stepZ: number, obstacles: readonly CollisionObstacle[], radius: number = DEFAULT_OBSTACLE_PLAYER_RADIUS): { stepX: number; stepY: number; stepZ: number } — Resolve a flight step against world solids (XZ slide + Y clamp).
-- `resolveFreeFlightIntent` (function): function resolveFreeFlightIntent(keys: MovementKeysState, analog: AnalogMoveIntent | null | undefined): FreeFlightIntent — Translate held keys + analog into a free-flight intent. Vertical is `space - (control|c)` so jump ascends and crouch descends — the same keys that walk/jump/crouch use, re-mapped for flight without re-binding.
-- `resolveFreeFlightIntentFromInput` (function): function resolveFreeFlightIntentFromInput(isDown: (action: string) => boolean, value: (action: string) => number, pointer: PointerAxisState | null, bindings?: FreeFlightBindings): FreeFlightIntent — Translate live input (held actions + analog + pointer) into a flight intent using per-profile axis bindings. Unlisted bindings fall back to the defaults above so existing games keep WASD/Space/Ctrl/Shift without declaring anything.
-
 ## @jgengine/core/movement/glideModel
 
 - `GlideInput` (interface): interface GlideInput { yaw?: number; throttle?: number; control?: number } — ⚠ undocumented
-- `GlideModel` (interface): interface GlideModel — A kinematic glider (#282.6) — the walk-controller-compatible sibling of `physics/traversal`'s rigid-body `Glide`, with the yaw and powered-climb authority that one lacks. External flows — `physics/flowTube` corridors, `world/windZones` schedules — compose per tick through `externalVelocity`, and turbulence degrades control through the `control` scalar.
+- `GlideModel` (interface): interface GlideModel — A kinematic glider (#282.6) for walk-controller-compatible movers: reduced gravity, cruise thrust, yaw and powered-climb authority. External flows — `physics/flowTube` corridors, `world/windZones` schedules — compose per tick through `externalVelocity`, and turbulence degrades control through the `control` scalar.
 - `GlideModelConfig` (interface): interface GlideModelConfig { gravityScale?: number; gravity?: number; thrustAccel?: number; forwardSpeed?: number; yawRate?: number; climbAccel?: number; maxFallSpeed?: number; control?: number } — ⚠ undocumented · used by `createGlideModel`: Gliding/wingsuit descent control — lift, drag, and steering from a launch.
 - `GlideStep` (interface): interface GlideStep { position: GlideVec3; velocity: GlideVec3; heading: number } — ⚠ undocumented
 - `GlideVec3` (type): type GlideVec3 = readonly [number, number, number] — ⚠ undocumented
@@ -1004,8 +1028,8 @@
 
 ## @jgengine/core/movement/grappleSwing
 
-- `GrappleSwing` (interface): interface GrappleSwing — A rope-swing constraint for kinematic controllers (#282.5) — the walk-controller-compatible sibling of `physics/traversal`'s rigid-body `Grapple`. Fire at an anchor, feed each frame's integrated position/velocity through `step`, and commit what comes back (via `beforeCommit` or `setPose`): positions beyond the rope clamp to its sphere and velocity loses its outward radial component, which is exactly a pendulum swing.
-- `GrappleSwingConfig` (interface): interface GrappleSwingConfig { reelSpeed?: number; minLength?: number; stiffness?: number; damping?: number } — ⚠ undocumented · used by `createGrappleSwing`: Grappling-hook rope swing physics with anchor, pendulum motion, and reel-in.
+- `GrappleSwing` (interface): interface GrappleSwing — A rope-swing constraint for kinematic controllers (#282.5) — the walk-controller-compatible rope for grapple, zipline and swing. Fire at an anchor, feed each frame's integrated position/velocity through `step`, and commit what comes back (via `beforeCommit` or `setPose`): positions beyond the rope clamp to its sphere and velocity loses its outward radial component, which is exactly a pendulum swing.
+- `GrappleSwingConfig` (interface): interface GrappleSwingConfig { reelSpeed?: number; minLength?: number; maxLength?: number; stiffness?: number; damping?: number } — ⚠ undocumented · used by `createGrappleSwing`: Grappling-hook rope swing physics with anchor, pendulum motion, and reel-in.
 - `GrappleSwingState` (interface): interface GrappleSwingState { attached: boolean; anchor: SwingVec3 | null; ropeLength: number } — ⚠ undocumented
 - `GrappleSwingStep` (interface): interface GrappleSwingStep { position: SwingVec3; velocity: SwingVec3 } — ⚠ undocumented
 - `SwingVec3` (type): type SwingVec3 = readonly [number, number, number] — ⚠ undocumented
@@ -1029,7 +1053,7 @@
 - `MovementFrameStep` (interface): interface MovementFrameStep — Horizontal step (world units) the avatar should commit this frame.
 - `MovementIntent` (interface): interface MovementIntent — Frame-independent description of what the player is asking the avatar to do. `forward`/`right` are in the range -1..1 in the avatar's local frame; the controller rotates them into world space against the camera each frame.
 - `MovementKey` (type): type MovementKey = "w" | "a" | "s" | "d" | "shift" | "control" | "c" | "space" — Movement core (pure model).
-- `MovementKeysState` (type): type MovementKeysState = Record<MovementKey, boolean> — ⚠ undocumented · used by `resolveFreeFlightIntent` (@jgengine/core/movement/freeFlight): Translate held keys + analog into a free-flight intent.
+- `MovementKeysState` (type): type MovementKeysState = Record<MovementKey, boolean> — ⚠ undocumented · used by `resolveFreeFlightIntent` (@jgengine/core/flight/freeFlight): Translate held keys + analog into a free-flight intent.
 - `MovementTuningOverrides` (interface): interface MovementTuningOverrides — Per-game overrides for the gravity/jump feel, sourced from `GameDefinition.physics`. Omitted fields fall back to {@link MOVEMENT_TUNING}.
 - `PlayerMotionState` (interface): interface PlayerMotionState — Mutable kinematic state carried between frames by the controller. Kept here so the velocity / jump / gravity integration is a pure function testable without a renderer — the controller just owns the ref.
 
@@ -1179,9 +1203,7 @@
 - `NavMeshQueryOptions` (interface): interface NavMeshQueryOptions — Tunable pricing and bounds for a {@link NavMeshQuery}.
 - `NavMeshQuerySnapshot` (interface): interface NavMeshQuerySnapshot — Serializable tuning of a {@link NavMeshQuery}.
 - `buildNavAdjacency` (function): function buildNavAdjacency(mesh: NavMeshData): NavMeshAdjacency[] — Build polygon adjacency from shared edges and explicit off-mesh links.
-- `closestPoint` (function): function closestPoint(mesh: NavMeshData, point: Vec3): Vec3 | null — Return the closest point on the mesh surface, or null for an empty mesh.
 - `createNavMeshQuery` (function): function createNavMeshQuery(mesh: NavMeshData, options: NavMeshQueryOptions = {}): NavMeshQuery — Create a cached query over a nav mesh: height-aware polygon lookup through a uniform grid, binary-heap A* priced by area costs and bounded by `maxNodes`, portal-funnel path straightening, and edge-walking raycasts.
-- `findPath` (function): function findPath(mesh: NavMeshData, from: Vec3, to: Vec3): NavMeshPath | null — A* over polygon portals with default area costs, straightened by a portal funnel. Use {@link createNavMeshQuery} to price areas.
 - `raycastNav` (function): function raycastNav(mesh: NavMeshData, from: Vec3, to: Vec3): boolean — True when the segment remains over walkable polygons.
 
 ## @jgengine/core/nav/navRuntime
@@ -1295,30 +1317,6 @@
 - `OrderVec3` (type): type OrderVec3 = readonly [number, number, number] — Composable entity orders: a serializable command queue with lifecycle, preemption, and pluggable order kinds (#912). Player- or AI-issued intent ("move here", "attack that", "patrol this route") becomes reusable data instead of a hard-coded RTS verb kit. The queue owns issue -> activate -> tick -> complete/cancel lifecycle and deterministic preemption policy; each order KIND owns what "running" means, composed over narrow world adapters. Engine code never branches on `move`, `attack`, or any game verb -- kinds are looked up by string in a registry, so a game adds a verb by registering data.
 - `createOrderQueue` (function): function createOrderQueue<TCtx, TPayload = unknown>(registry: OrderRegistry<TCtx>, options: OrderQueueOptions<TPayload> = {}): OrderQueue<TCtx, TPayload> — Create a per-entity order queue over a shared kind registry. The queue owns the deterministic lifecycle and preemption policy; the kinds own behavior. Nothing here is random or unbounded: id generation is injected, activation is bounded by the pending count, and a single `tick` advances at most the active order plus one activation.
 - `createOrderRegistry` (function): function createOrderRegistry<TCtx>(): OrderRegistry<TCtx> — Build an empty order-kind registry. Register the built-in compositions from `orders/orderKinds` or your own verbs, then hand it to `createOrderQueue`. One registry is shared by many per-entity queues.
-
-## @jgengine/core/physics/aircraftDynamics
-
-- `AircraftAssistCommand` (interface): interface AircraftAssistCommand — Control commands, `-1..1`, that drive the actuators after the assists.
-- `AircraftAssistContext` (interface): interface AircraftAssistContext — What an assist sees each substep, derived from the integrator state so it replays deterministically.
-- `AircraftAssistTuning` (interface): interface AircraftAssistTuning — Flight assists. Each one moves the same actuators the pilot does, so a stronger assist still flies within the airframe's authority. Strengths are `0..1`; an axis the pilot is deflecting gets less help the further the stick is pushed, so full stick is always the pilot's.
-- `AircraftControlChannel` (interface): interface AircraftControlChannel — One control channel's actuator: how far the surfaces move and how fast.
-- `AircraftEngineTuning` (interface): interface AircraftEngineTuning — A thrust source fixed to the body.
-- `AircraftGearTuning` (interface): interface AircraftGearTuning — Wheels or skids: what the body rests on when it touches the ground.
-- `AircraftMotorTuning` (interface): interface AircraftMotorTuning — A rocket motor: thrust follows a curve over burn time, propellant leaves at a mass flow so the body gets lighter and easier to turn, and the nozzle gimbals on the pitch and yaw channels. Stage by `retune`-ing to the next stage's mass and motor.
-- `AircraftQuaternion` (type): type AircraftQuaternion = readonly [number, number, number, number] — Unit quaternion `[x, y, z, w]` taking body-frame vectors to world space.
-- `AircraftRotorTuning` (interface): interface AircraftRotorTuning — A main rotor. Collective sets blade pitch, throttle sets rotor speed, and cyclic (the pitch and roll channels) tilts the disc. Its drag torque yaws the body the other way unless a tail rotor, a second rotor or a pedal input cancels it.
-- `AircraftSurface` (interface): interface AircraftSurface — One lifting surface: a wing panel, a tailplane, a fin, a canard. Its lift acts at `at`, so the moments that pitch, roll and yaw the body come from where the surfaces sit, not from commanded rates.
-- `AircraftVector` (type): type AircraftVector = readonly [number, number, number] — Body-frame or world-frame vector, m or N. The body frame is `[left, up, forward]` about the centre of mass.
-- `RigidAircraft` (interface): interface RigidAircraft — A force-and-torque aircraft on the same tick/snapshot/retune contract as `VehicleDynamics`.
-- `RigidAircraftInput` (interface): interface RigidAircraftInput — Pilot input for one tick.
-- `RigidAircraftModifiers` (interface): interface RigidAircraftModifiers — Per-tick overrides layered over tuning: damage, icing, boost, gusts. Each scale defaults to `1`.
-- `RigidAircraftOptions` (interface): interface RigidAircraftOptions — World hooks for one aircraft instance.
-- `RigidAircraftState` (interface): interface RigidAircraftState — Serializable integrator state: everything `restore` needs to resume bit-for-bit.
-- `RigidAircraftStep` (interface): interface RigidAircraftStep — One aircraft tick: pose plus the telemetry HUDs, camera, sound and probes read.
-- `RigidAircraftTuning` (interface): interface RigidAircraftTuning — A rigid aircraft in physical units. There is no aircraft type: a jet, a glider and a paper plane differ only in these numbers. Rotation comes from surface forces acting on the inertia tensor, so loops, rolls, stalls and weathervaning are outcomes, not special cases.
-- `aircraftAttitudeQuaternion` (function): function aircraftAttitudeQuaternion(heading: number, pitch: number, bank: number): AircraftQuaternion — Quaternion from heading, nose-up pitch and right bank, rad — the inverse of a step's `heading`/`pitch`/`bank`. Matches three.js `Euler(-pitch, heading, bank, "YXZ")`.
-- `aircraftHeadingQuaternion` (function): function aircraftHeadingQuaternion(heading: number): AircraftQuaternion — Quaternion for a heading about world up, forward `[sin h, 0, cos h]`.
-- `createRigidAircraft` (function): function createRigidAircraft(initial: RigidAircraftTuning, options: RigidAircraftOptions = {}): RigidAircraft — Creates a {@link RigidAircraft}: a quaternion rigid body with a diagonal inertia tensor, pushed by lifting surfaces, fuselage drag, an engine and gravity. Controls deflect surfaces through rate-limited actuators; nothing commands a rotation rate, so a jet loops when its tail can push the nose around and a glider stalls when it runs out of speed. Fixed internal substeps make it deterministic for a given `dt` sequence.
 
 ## @jgengine/core/physics/ballisticSweep
 
@@ -1510,11 +1508,6 @@
 - `RagdollLinkSpec` (interface): interface RagdollLinkSpec { a: string; b: string; kind?: "hinge" | "distance"; anchor?: readonly [number, number, number] } — ⚠ undocumented
 - `createRagdoll` (function): function createRagdoll(world: PhysicsWorld, config: RagdollConfig): Ragdoll — ⚠ undocumented
 
-## @jgengine/core/physics/spatialGrid
-
-- `SpatialGrid` (class): class SpatialGrid — A uniform-grid broad-phase over the x/z plane, separate from the rigid-body sim, for cheap same-tick proximity across hundreds–thousands of simple movers (swarm enemies). Rebuild each tick from the caller's own position arrays, then `queryCircle` (enemies hitting the player / an AoE) or `forEachPair` (mutual separation). Both are precise: no false negatives, no false positives beyond the exact distance test.
-- `SpatialGridConfig` (interface): interface SpatialGridConfig { bounds: PhysicsBounds; cellSize: number; capacity: number } — ⚠ undocumented
-
 ## @jgengine/core/physics/structure
 
 - `CollapseEvent` (interface): interface CollapseEvent { fell: readonly string[]; collapsed: boolean } — ⚠ undocumented
@@ -1531,13 +1524,6 @@
 - `TireMarks` (interface): interface TireMarks — Skid marks for every car in a game: wheels press rubber onto the ground while they slide, and old marks fade and recycle from a fixed pool, so a long drift session never grows memory. Cars feed it through `tickDrivableVehicle`'s `tires` option; the shell draws whatever is in `ctx.tireMarks`.
 - `TireMarksState` (interface): interface TireMarksState — Serializable {@link TireMarks} contents.
 - `createTireMarks` (function): function createTireMarks(options: { capacity?: number; lifetime?: number } = {}): TireMarks — Creates a {@link TireMarks} pool.
-
-## @jgengine/core/physics/traversal
-
-- `Glide` (class): class Glide — A reduced-gravity, forward-thrust glide over a physics body — wingsuit / glider / paraglider (Enshrouded, Grounded). Call `apply(dt, steerX, steerZ)` each frame *before* `world.step`: it feeds back most of the gravity the sim is about to apply (leaving `gravityScale` of it), pushes the body along the steer vector by `thrust`, and clamps descent to `maxFallSpeed`. Stop calling it to fall normally again — no attach/detach state to leak.
-- `GlideConfig` (interface): interface GlideConfig { gravityScale?: number; thrust?: number; maxFallSpeed?: number } — ⚠ undocumented
-- `Grapple` (class): class Grapple — A fired-anchor rope on the joint API — grapple (reel toward a hit point), zipline (rigid cable to a far anchor you then slide/reel along), swing (rigid rope + gravity = a pendulum). `fire` attaches a `distance`/`spring` joint from the traveller body to a fixed world point; `reel` shrinks its rest length so the constraint drags the body in; `moveAnchor` re-points it (zipline glide, grapple-to- moving-target). The pick — a raycast to find the anchor — is the caller's; core owns the constraint.
-- `GrappleConfig` (interface): interface GrappleConfig { reelSpeed?: number; minLength?: number; maxLength?: number; elastic?: boolean; stiffness?: number; damping?: number } — ⚠ undocumented
 
 ## @jgengine/core/physics/vehicleBackendLink
 
@@ -1615,13 +1601,13 @@
 
 ## @jgengine/core/procedural
 
-- `DecayMeterSet` (interface): interface DecayMeterSet — Set of named survival meters (hunger/thirst/…) that drain and refill over game time.
 - `Moodle` (interface): interface Moodle — One survival moodle (status icon) — severity, source, and label for HUD chips.
 - `MoodleStack` (interface): interface MoodleStack — Ordered stack of active moodles derived from meters/ailments/buffs.
 - `MultiRegionHealth` (interface): interface MultiRegionHealth — Per-limb / per-region health track with treat/damage/heal APIs.
-- `createDecayMeterSet` (function): function createDecayMeterSet(configs: readonly DecayMeterConfig[]): DecayMeterSet — Named decay meters — hunger, thirst, oxygen, sanity, warmth, stamina. Each drains (or recovers) on game-time `dt` at a configurable rate, refills from consumables or actions, and raises moodle statuses at thresholds. Rate modifiers let the environment drive them (colder → faster warmth loss; toxic biome → oxygen drops), so a game reads an environment field then calls `setRateModifier`.
+- `NeedSet` (interface): interface NeedSet — Named needs that drain or recover on game time — hunger, thirst, oxygen, warmth, energy, fun — with moodles at thresholds and rate modifiers an environment drives (cold → faster warmth loss). Reads are index-addressed (`indexOf` once, `fractionAt` per tick) so a thousand-agent loop never re-resolves ids; the whole set round-trips through {@link NeedSnapshot}.
 - `createMoodleStack` (function): function createMoodleStack(): MoodleStack — A stateful holder for timed status moodles (food buffs, temporary shelter, warmth). Meters and multi-region health derive their own moodles on read; combine all three through `stackMoodles(stack.list(), meterMoodles, ailmentMoodles)` for one display.
 - `createMultiRegionHealth` (function): function createMultiRegionHealth(config: MultiRegionHealthConfig): MultiRegionHealth — Per-region/limb health tracked separately, so each body part takes and heals damage on its own.
+- `createNeedSet` (function): function createNeedSet(definitions: readonly NeedDefinition[]): NeedSet — Create the needs an agent or a park guest carries. Decay reuses the survival meter formulas (`survival/decayMeter`), so moodle thresholds, clamping and rate modifiers behave exactly like every other meter; this set adds index-addressed reads and single-need retuning for hot AI loops. Score these needs into an action with `createUtilityBrain` (`@jgengine/core/world`).
 - `stackMoodles` (function): function stackMoodles(...groups: readonly (readonly Moodle[])[]): Moodle[] — Merge any number of moodle groups into one stack — meters, ailments, and buffs share this display. Same-id moodles fold together (stacks add, worst severity wins); the result is ordered worst-first so the HUD reads critical statuses at a glance.
 
 ## @jgengine/core/scene/assetCatalog
@@ -2109,6 +2095,14 @@
 - `VisionTarget` (interface): interface VisionTarget<TId extends string = string> { id: TId; at: VisionPoint } — ⚠ undocumented
 - `VisionWall` (interface): interface VisionWall — Structurally matches `world/walls` `WallSegment` — pass those straight in as occluders.
 
+## @jgengine/core/spatial/spatialIndex
+
+- `SpatialCellRange` (interface): interface SpatialCellRange — Integer cell bounds an object covers, inclusive on both ends.
+- `SpatialIndex` (interface): interface SpatialIndex — A uniform 3D spatial hash the renderer and streaming system query for potentially-visible objects instead of scanning the whole scene. Objects are keyed by their world AABB into every overlapping cell; a moving object only rewrites the cells that actually changed. Static objects are inserted once and never touched again. Oversized objects (huge terrain chunks, world bounds) are held separately so they are always considered.
+- `SpatialIndexOptions` (interface): interface SpatialIndexOptions { readonly cellSize?: number; readonly maxCellSpan?: number } — ⚠ undocumented · used by `createSpatialIndex`: A uniform 3D spatial hash over bounded ids: insert, move and remove them, then query a frustum, a box or a sphere without scanning every ent…
+- `SpatialIndexState` (interface): interface SpatialIndexState — Plain JSON state of a {@link SpatialIndex}. Cells and their ids keep insertion order, so a restored index returns query results in the same order.
+- `createSpatialIndex` (function): function createSpatialIndex(options: SpatialIndexOptions = {}): SpatialIndex — A uniform 3D spatial hash over bounded ids: insert, move and remove them, then query a frustum, a box or a sphere without scanning every entry.
+
 ## @jgengine/core/time/accrueSince
 
 - `Accrual` (interface): interface Accrual — Elapsed duration and the next anchor to persist with accrued effects.
@@ -2366,14 +2360,6 @@
 - `SimulationDecision` (interface): interface SimulationDecision { update: boolean; elapsed: number } — ⚠ undocumented
 - `createSimulationCuller` (function): function createSimulationCuller(options: SimulationCullingOptions = {}): SimulationCuller — ⚠ undocumented
 
-## @jgengine/core/visibility/spatialIndex
-
-- `SpatialCellRange` (interface): interface SpatialCellRange — Integer cell bounds an object covers, inclusive on both ends.
-- `SpatialIndex` (interface): interface SpatialIndex — A uniform 3D spatial hash the renderer and streaming system query for potentially-visible objects instead of scanning the whole scene. Objects are keyed by their world AABB into every overlapping cell; a moving object only rewrites the cells that actually changed. Static objects are inserted once and never touched again. Oversized objects (huge terrain chunks, world bounds) are held separately so they are always considered.
-- `SpatialIndexOptions` (interface): interface SpatialIndexOptions { readonly cellSize?: number; readonly maxCellSpan?: number } — ⚠ undocumented
-- `SpatialIndexState` (interface): interface SpatialIndexState — Plain JSON state of a {@link SpatialIndex}. Cells and their ids keep insertion order, so a restored index returns query results in the same order.
-- `createSpatialIndex` (function): function createSpatialIndex(options: SpatialIndexOptions = {}): SpatialIndex — ⚠ undocumented
-
 ## @jgengine/core/visibility/visibilitySystem
 
 - `Renderable` (interface): interface Renderable — A scene object the visibility system considers. A normal game object already carries a position and a version counter, so it becomes cullable automatically — no separate "cullable" component. Everything else is optional override.
@@ -2589,8 +2575,6 @@
 - `GeneratedAsset` (interface): interface GeneratedAsset — A resolved generator asset: its parts plus the overall local-space bounds (min/max corners).
 - `GeneratedCity` (interface): interface GeneratedCity — A generated city: streets, plots (with rect building lots as a compat view), and park blocks.
 - `GeneratedPart` (interface): interface GeneratedPart — One generated primitive part — a box/panel placed in the asset's local space.
-- `Glide` (class): class Glide — A reduced-gravity, forward-thrust glide over a physics body — wingsuit / glider / paraglider (Enshrouded, Grounded). Call `apply(dt, steerX, steerZ)` each frame *before* `world.step`: it feeds back most of the gravity the sim is about to apply (leaving `gravityScale` of it), pushes the body along the steer vector by `thrust`, and clamps descent to `maxFallSpeed`. Stop calling it to fall normally again — no attach/detach state to leak.
-- `Grapple` (class): class Grapple — A fired-anchor rope on the joint API — grapple (reel toward a hit point), zipline (rigid cable to a far anchor you then slide/reel along), swing (rigid rope + gravity = a pendulum). `fire` attaches a `distance`/`spring` joint from the traveller body to a fixed world point; `reel` shrinks its rest length so the constraint drags the body in; `moveAnchor` re-points it (zipline glide, grapple-to- moving-target). The pick — a raycast to find the anchor — is the caller's; core owns the constraint.
 - `GrassEnvironmentDescriptor` (interface): interface GrassEnvironmentDescriptor — A resolved grass patch: its area and the fully-defaulted {@link GrassLook} the shell draws.
 - `GravityField` (interface): interface GravityField — Position-dependent gravity source used by movement and vehicle simulations.
 - `GravityVector` (type): type GravityVector = readonly [number, number, number] — Three-dimensional acceleration vector sampled from a gravity field.
@@ -2908,7 +2892,6 @@
 - `SnowEnvironmentDescriptor` (type): type SnowEnvironmentDescriptor = { kind: "snow" } & Required< Pick<SnowEnvironmentConfig, "area" | "density" | "speed" | "flakeSize" | "drift" | "wind" | "color" | "opacity"> > — ⚠ undocumented · used by `snow`: Declares a snowfall weather effect for `environment()` — area, density, drift, wind, and flake opacity.
 - `SoilRules` (interface): interface SoilRules — Fully-defaulted soil params parsed from a volume's `meta`.
 - `SoundDef` (interface): interface SoundDef { id: string; url?: string; synth?: SynthPatch; bus: AudioBusId; gain?: number; loop?: boolean; maxVoices?: number; priority?: number; duck?: {buses?: readonly string[]; amount?: number; seconds?: number;}; positional?: boolean; falloff?: A… — ⚠ undocumented · used by `DEFAULT_FEEDBACK_CUE_SOUNDS` (@jgengine/core/audio/feedbackCues): Short procedural reactions - no samples to load, so every game has impact feedback without authoring audio.
-- `SpatialGrid` (class): class SpatialGrid — A uniform-grid broad-phase over the x/z plane, separate from the rigid-body sim, for cheap same-tick proximity across hundreds–thousands of simple movers (swarm enemies). Rebuild each tick from the caller's own position arrays, then `queryCircle` (enemies hitting the player / an AoE) or `forEachPair` (mutual separation). Both are precise: no false negatives, no false positives beyond the exact distance test.
 - `SpawnDirectorConfig` (interface): interface SpawnDirectorConfig — The whole wave plan plus the pacing knobs: alive cap, escalation, alert and per-player budget, looping and spawn points.
 - `SpawnDirectorState` (interface): interface SpawnDirectorState — Where the director is: current wave, clocks, spare budget, alert level and spawn counts. Serializable.
 - `SpawnEntry` (interface): interface SpawnEntry — One kind a wave can spend budget on: its cost, pick weight and the first wave it may appear in.
@@ -3110,7 +3093,6 @@
 - `circleFormation` (function): function circleFormation(options: CircleFormationOptions): FormationSlotGenerator — An evenly spaced ring around the destination — a guard cordon, a huddle, or a surround. Slot 0 sits `startAngle` from forward; slots advance evenly around the circle.
 - `clampToMinimapEdge` (function): function clampToMinimapEdge(point: MinimapPoint, size: number): { x: number; y: number } — Clamp a projected point to the minimap edge, preserving direction (edge markers).
 - `clearanceZonesFrom` (function): function clearanceZonesFrom(doc: SceneDocumentLike, options: ClearanceOptions = {}): AvoidZone[] — Point-pad clearance **discs** from a document's markers/volumes — the terrain-flatten set (spawns, plots, POIs get a level pad). A marker/volume contributes a disc when it carries `meta.clearance` or its kind is in `kinds`. Paths are *not* included (they render draped, never flattened — see {@link clearanceMasksFrom} for their foliage corridor). Pass `ids`/`kinds` to scope it.
-- `closestPoint` (function): function closestPoint(mesh: NavMeshData, point: Vec3): Vec3 | null — Return the closest point on the mesh surface, or null for an empty mesh.
 - `collectAuthoredTriggers` (function): function collectAuthoredTriggers(document: SceneDocumentLike): AuthoredTrigger[] — Collect every authored trigger on a document's markers and volumes. Pure — no runtime state. Action params use the live {@link registerTriggerAction} registry when present.
 - `combineGravity` (function): function combineGravity(fields: readonly GravityField[]): GravityField — Adds several gravity sources into one field.
 - `command` (function): function command(name: string, input?: unknown): PromptCommand — ⚠ undocumented

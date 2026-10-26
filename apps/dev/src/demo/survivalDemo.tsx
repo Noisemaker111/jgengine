@@ -1,10 +1,7 @@
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import type { GameContext, GameContextEntityEntry } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
-import {
-  createDecayMeterSet,
-  type DecayMeterSet,
-} from "@jgengine/core/survival/decayMeter";
+import { createNeedSet, type NeedSet } from "@jgengine/core/sim/needs";
 import {
   createMoodleStack,
   stackMoodles,
@@ -50,7 +47,7 @@ const weatherTable: WeatherModifierTable = {
 
 interface SurvivalSnapshot {
   version: number;
-  meters: ReturnType<DecayMeterSet["snapshot"]>;
+  meters: ReturnType<NeedSet["states"]>;
   moodles: readonly Moodle[];
   regions: ReturnType<MultiRegionHealth["regions"]>;
   overall: number;
@@ -72,7 +69,7 @@ interface SurvivalSim {
 }
 
 function createSurvivalSim(): SurvivalSim {
-  const meters = createDecayMeterSet([
+  const meters = createNeedSet([
     {
       id: "hunger",
       max: 100,
@@ -169,7 +166,7 @@ function createSurvivalSim(): SurvivalSim {
     const temperature = field.temperature(0, 0, currentTime, 0);
     return {
       version,
-      meters: meters.snapshot(),
+      meters: meters.states(),
       moodles: stackMoodles(buffs.list(), meters.moodles(), health.ailmentMoodles()),
       regions: health.regions(),
       overall: health.overall(),

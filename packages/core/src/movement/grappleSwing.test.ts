@@ -106,4 +106,13 @@ describe("grapple swing restore", () => {
     swing.restore(saved);
     expect(play()).toEqual(a);
   });
+
+  test("fire misses beyond maxLength, and moveAnchor keeps the rope length", () => {
+    const swing = createGrappleSwing({ maxLength: 10 });
+    expect(swing.fire([0, 20, 0], [0, 0, 0])).toBe(false);
+    expect(swing.state().attached).toBe(false);
+    expect(swing.fire([0, 6, 0], [0, 0, 0])).toBe(true);
+    swing.moveAnchor([4, 6, 0]);
+    expect(swing.state()).toEqual({ attached: true, anchor: [4, 6, 0], ropeLength: 6 });
+  });
 });

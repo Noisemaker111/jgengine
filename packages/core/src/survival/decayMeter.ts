@@ -38,48 +38,8 @@ export interface DecayMeterState {
 }
 
 /**
- * The whole persisted state of a {@link DecayMeterSet}: every meter's value plus the play-time rate
- * changes `setRate` and `setRateModifier` applied. A save that carries only values resumes a tuned
- * meter at its config rate, which is how a cold biome's faster warmth drain vanished on load.
- */
-export interface DecayMeterSetState {
-  values: DecayMeterValues;
-  /** Current base rate per meter id, including any `setRate` override. */
-  rates: Record<string, number>;
-  /** Rate multiplier per meter id from `setRateModifier`; a missing id means `1`. */
-  modifiers: Record<string, number>;
-}
-
-/** Set of named survival meters (hunger/thirst/…) that drain and refill over game time. */
-export interface DecayMeterSet {
-  /** Drain/fill every meter by `rate * rateModifier * dt`. Call once per game tick. */
-  tick(dt: number): void;
-  value(id: string): number;
-  state(id: string): DecayMeterState;
-  /** Consumable/action refill: `refill("hunger", 40)` after eating. Negative drains. */
-  refill(id: string, amount: number): void;
-  /** Overwrite the base drain rate (e.g. a game mode with harsher hunger). */
-  setRate(id: string, rate: number): void;
-  /** Multiply drain until cleared via `setRateModifier(id, 1)` — cold biome, sprint, etc. */
-  setRateModifier(id: string, multiplier: number): void;
-  /** Moodles for every crossed threshold, worst-first per meter. */
-  moodles(): Moodle[];
-  /** Every meter's numeric state for a HUD — the display view; {@link serialize} is the save pair. */
-  snapshot(): Record<string, DecayMeterState>;
-  /** Values, base rates and rate modifiers — the full state to persist; see {@link restore}. */
-  serialize(): DecayMeterSetState;
-  /**
-   * Put a {@link serialize} result back: values, base rates and rate modifiers. Meters the state
-   * omits keep their current value and rate, and a modifier it omits is cleared.
-   */
-  restore(next: DecayMeterSetState): void;
-  ids(): readonly string[];
-}
-
-/**
  * Plain-data meter values: `meter id → current value`. The value half of a save — a tuned meter
- * also needs its rate and rate modifiers, which {@link DecayMeterSetState} carries and
- * {@link createDecayMeterSet}'s `serialize`/`restore` hand back and forth.
+ * also needs its rate and rate modifiers, which `createNeedSet` (`sim/needs`) snapshots and restores.
  */
 export type DecayMeterValues = Record<string, number>;
 
@@ -133,7 +93,7 @@ function crossed(threshold: MeterThreshold, value: number): boolean {
 
 /**
  * Starting values for `defs` — each meter's `start ?? max`, clamped to its range. Seed a
- * serialized state record with this instead of holding a {@link createDecayMeterSet} closure.
+ * serialized state record with this instead of holding a `createNeedSet` closure.
  *
  * @capability decay-meter survival meters that drain/refill over game time (hunger, water, oxygen, stamina)
  */
@@ -146,7 +106,7 @@ export function initDecayMeters(defs: readonly DecayMeterConfig[]): DecayMeterVa
 /**
  * Pure per-tick decay over plain data: drain (or fill) every meter by `rate * modifier * dt`,
  * clamped to its range, returning a new `id → value` record. Returns `values` unchanged when
- * `dt <= 0`. The serializable counterpart to {@link DecayMeterSet.tick}.
+ * `dt <= 0`. The serializable counterpart to `NeedSet.tick`.
  *
  * @capability decay-meter survival meters that drain/refill over game time (hunger, water, oxygen, stamina)
  */
@@ -170,7 +130,7 @@ export function decayMeters(
 
 /**
  * Refill (or drain, if negative) one meter by `amount`, clamped to its range. Returns a new
- * record; throws on an unknown id. The pure counterpart to {@link DecayMeterSet.refill}.
+ * record; throws on an unknown id. The pure counterpart to `NeedSet.refill`.
  *
  * @capability decay-meter survival meters that drain/refill over game time (hunger, water, oxygen, stamina)
  */
@@ -199,7 +159,7 @@ export function decayMeterState(
 }
 
 /**
- * Numeric state for every meter, keyed by id — the pure counterpart to {@link DecayMeterSet.snapshot}.
+ * Numeric state for every meter, keyed by id — the pure counterpart to `NeedSet.states`.
  *
  * @capability decay-meter survival meters that drain/refill over game time (hunger, water, oxygen, stamina)
  */
@@ -238,70 +198,4 @@ export function decayMeterMoodles(
     }
   }
   return out;
-}
-
-/**
- * Named decay meters — hunger, thirst, oxygen, sanity, warmth, stamina. Each drains
- * (or recovers) on game-time `dt` at a configurable rate, refills from consumables or
- * actions, and raises moodle statuses at thresholds. Rate modifiers let the environment
- * drive them (colder → faster warmth loss; toxic biome → oxygen drops), so a game reads
- * an environment field then calls `setRateModifier`.
- *
- * @capability decay-meter survival meters that drain/refill over game time (hunger, water, oxygen, stamina)
- */
-export function createDecayMeterSet(configs: readonly DecayMeterConfig[]): DecayMeterSet {
-  // Mutable copy so setRate can override a meter's base rate without mutating the caller's defs.
-  const defs = configs.map((config) => ({ ...config }));
-  const order = defs.map((def) => def.id);
-  const modifiers: Record<string, number> = {};
-  let values = initDecayMeters(defs);
-
-  return {
-    tick(dt) {
-      values = decayMeters(values, defs, dt, modifiers);
-    },
-    value(id) {
-      return decayMeterState(values, defs, id).value;
-    },
-    state(id) {
-      return decayMeterState(values, defs, id);
-    },
-    refill(id, amount) {
-      values = refillMeter(values, defs, id, amount);
-    },
-    setRate(id, rate) {
-      findDef(defs, id).rate = rate;
-    },
-    setRateModifier(id, multiplier) {
-      findDef(defs, id);
-      modifiers[id] = multiplier;
-    },
-    moodles() {
-      return decayMeterMoodles(values, defs);
-    },
-    snapshot() {
-      return decayMeterSnapshot(values, defs);
-    },
-    serialize() {
-      const rates: Record<string, number> = {};
-      for (const def of defs) rates[def.id] = def.rate;
-      return { values: { ...values }, rates, modifiers: { ...modifiers } };
-    },
-    restore(next) {
-      const restored: DecayMeterValues = {};
-      for (const def of defs) {
-        const rate = next.rates[def.id];
-        if (rate !== undefined) def.rate = rate;
-        const modifier = next.modifiers[def.id];
-        if (modifier === undefined) delete modifiers[def.id];
-        else modifiers[def.id] = modifier;
-        const value = next.values[def.id];
-        if (value !== undefined) restored[def.id] = value;
-      }
-      values = restored;
-    },
-    ids() {
-      return order;
-    },
-  };
 }

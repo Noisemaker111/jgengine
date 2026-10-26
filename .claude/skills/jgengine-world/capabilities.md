@@ -321,10 +321,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createDayNightCycle` (function) · `import { createDayNightCycle } from "@jgengine/core/world"`
 
-## decay-meter — survival meters that drain/refill over game time (hunger, water, oxygen, stamina)
-
-- `createDecayMeterSet` (function) · `import { createDecayMeterSet } from "@jgengine/core/procedural"`
-
 ## default-drive-codes — stock WASD/arrow throttle, brake, steer and handbrake key codes
 
 - `DEFAULT_DRIVE_CODES` (const) · `import { DEFAULT_DRIVE_CODES } from "@jgengine/core/input/actionBindings"`
@@ -662,6 +658,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createNavMeshQuery` (function) · `import { createNavMeshQuery } from "@jgengine/core/world"`
 
+## needs — decaying needs an agent reads by index to decide what it wants next
+
+- `createNeedSet` (function) · `import { createNeedSet } from "@jgengine/core/procedural"`
+
 ## object-slot-inventory — placed objects hold validated per-instance container contents that replicate and save with the placement
 
 - `SceneObjectSlots` (interface) · `import { SceneObjectSlots } from "@jgengine/core/world"`
@@ -902,6 +902,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## spatial-incremental — Update one entity's spatial cell after a committed write without scanning the population
 
 - `createSpatialApi` (function) · `import { createSpatialApi } from "@jgengine/core/scene/spatial"`
+
+## spatial-index — broad-phase 3D hash for frustum, box and sphere queries over moving ids
+
+- `createSpatialIndex` (function) · `import { createSpatialIndex } from "@jgengine/core/spatial/spatialIndex"`
 
 ## spatial-region-box — sample uniformly within an axis-aligned 3D box
 

@@ -46,8 +46,8 @@ test("a second engine definition of a name fails; two scripts or two games may s
 });
 
 test("finds every definition of a name in this checkout with one git grep", () => {
-  const found = definitionsOf(ROOT, ["findPath"]).map((definition) => definition.file).sort();
-  expect(found).toEqual(["packages/core/src/nav/navGrid.ts", "packages/core/src/nav/navMesh.ts"]);
+  const found = definitionsOf(ROOT, ["smoothstep"]).map((definition) => definition.file).sort();
+  expect(found).toEqual(["packages/core/src/anim/easing.ts", "packages/shell/src/camera/rigMath.ts"]);
 });
 
 test("file names split into concept words", () => {

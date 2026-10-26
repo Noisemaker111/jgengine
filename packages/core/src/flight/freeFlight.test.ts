@@ -7,7 +7,7 @@ import {
   resolveFreeFlightIntent,
   resolveFlightStep,
 } from "./freeFlight";
-import { createEmptyMovementKeys } from "./movementModel";
+import { createEmptyMovementKeys } from "../movement/movementModel";
 
 const DT = 1 / 60;
 

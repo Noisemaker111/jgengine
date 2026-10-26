@@ -2,10 +2,15 @@ import { describe, expect, test } from "bun:test";
 
 import {
   createFallingGrid,
+  dropDistance,
   gravityIntervalMs,
+  levelForLines,
+  lineClearScore,
+  pieceFootprint,
   type FallingGridCell,
   type LockState,
-} from "@jgengine/core/tactics/fallingGrid";
+  type ShapeTable,
+} from "@jgengine/core/puzzle/fallingGrid";
 
 const O_PIECE: readonly FallingGridCell[] = [
   [0, 0],
@@ -233,5 +238,31 @@ describe("snapshot / reset", () => {
     grid.reset();
     expect(grid.snapshot().cells.every((c) => c === null)).toBe(true);
     expect(grid.fullRows()).toEqual([]);
+  });
+});
+
+describe("pieces and scoring", () => {
+  const TABLE: ShapeTable<"square" | "bar"> = {
+    square: [O_PIECE],
+    bar: [I_PIECE_HORIZONTAL, [[0, 0], [0, 1], [0, 2], [0, 3]]],
+  };
+
+  test("a footprint wraps rotation by the shape's own rotation count", () => {
+    expect(pieceFootprint(TABLE, { shape: "bar", rotation: 2, col: 0, row: 0 })).toEqual(I_PIECE_HORIZONTAL);
+    expect(pieceFootprint(TABLE, { shape: "bar", rotation: -1, col: 0, row: 0 })[3]).toEqual([0, 3]);
+  });
+
+  test("drop distance stops on the floor and on settled cells", () => {
+    const grid = createFallingGrid<string>({ cols: 6, rows: 6 });
+    expect(dropDistance(grid, O_PIECE, [0, 0])).toBe(4);
+    grid.setCell(0, 3, "x");
+    expect(dropDistance(grid, O_PIECE, [0, 0])).toBe(1);
+  });
+
+  test("level and line score follow the classic table", () => {
+    expect(levelForLines(25)).toBe(2);
+    expect(lineClearScore(4, 0)).toBe(1200);
+    expect(lineClearScore(2, 3)).toBe(400);
+    expect(lineClearScore(5, 0)).toBe(0);
   });
 });

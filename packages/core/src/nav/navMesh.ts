@@ -543,17 +543,6 @@ export function createNavMeshQuery(mesh: NavMeshData, options: NavMeshQueryOptio
   };
 }
 
-/** Return the closest point on the mesh surface, or null for an empty mesh. */
-export function closestPoint(mesh: NavMeshData, point: Vec3): Vec3 | null {
-  const out: [number, number, number] = [0, 0, 0];
-  return nearestPolygon(prepare(mesh), point, out) < 0 ? null : out;
-}
-
-/** A* over polygon portals with default area costs, straightened by a portal funnel. Use {@link createNavMeshQuery} to price areas. */
-export function findPath(mesh: NavMeshData, from: Vec3, to: Vec3): NavMeshPath | null {
-  return search(prepare(mesh), from, to, {}, DEFAULT_MAX_NODES);
-}
-
 /** True when the segment remains over walkable polygons. */
 export function raycastNav(mesh: NavMeshData, from: Vec3, to: Vec3): boolean {
   return raycastPrepared(prepare(mesh), from, to, {});
