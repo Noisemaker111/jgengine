@@ -28,7 +28,7 @@ import { seededRng } from "@jgengine/core/random/rng";
 import type { GameContext } from "@jgengine/core/runtime/gameContextTypes";
 import { useOptionalGameContext } from "@jgengine/react/provider";
 
-import { characterLodInterval, characterLodTierOf, noteAnimationPhase, noteCharacterPose } from "../lod/characterLod";
+import { characterLodInterval, characterLodTierOf, noteAnimationPhase, noteCharacterPose } from "@jgengine/core/lod/characterLod";
 import { useFrameWhile } from "./useFrameWhile";
 
 /** Wraps a yaw change into `(-pi, pi]`, so a turn across the wrap boundary is not a full spin. */

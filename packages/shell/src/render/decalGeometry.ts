@@ -1,4 +1,4 @@
-import type { TerrainHeightSampler } from "../terrain/terrainMath";
+import type { TerrainHeightSampler } from "@jgengine/core/terrain/terrainMath.draw";
 
 /** Inputs for {@link createDecalDrapeGeometry}. */
 export interface DecalDrapeOptions {

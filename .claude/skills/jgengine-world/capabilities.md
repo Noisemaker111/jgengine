@@ -545,6 +545,12 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `pointGravity` (function) · `import { pointGravity } from "@jgengine/core/world"`
 - `uniformGravity` (function) · `import { uniformGravity } from "@jgengine/core/world"`
 
+## ground-edge-fade — fade merged ground layers into the terrain at their outer edge, keeping inner seams crisp
+
+- `applyGroundEdgeFade` (function) · `import { applyGroundEdgeFade } from "@jgengine/core/terrain/groundEdgeFade.draw"`
+- `buildGroundCoverageMask` (function) · `import { buildGroundCoverageMask } from "@jgengine/core/terrain/groundEdgeFade.draw"`
+- `createGroundEdgeFade` (function) · `import { createGroundEdgeFade } from "@jgengine/core/terrain/groundEdgeFade.draw"`
+
 ## grounded — ground an XZ point onto the world surface as a pose triple
 
 - `grounded` (function) · `import { grounded } from "@jgengine/core/world"`
@@ -560,6 +566,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## haptics-route — send a feedback pulse to the gamepad when one is connected, else to the phone's vibration motor
 
 - `createHapticsRoute` (function) · `import { createHapticsRoute } from "@jgengine/core/haptics/hapticsRoute.view"`
+
+## heightfield-mesh-update — in-place partial update of a displaced ground plane mesh
+
+- `displaceHeightfieldGeometry` (function) · `import { displaceHeightfieldGeometry } from "@jgengine/core/terrain/heightfieldGeometry.draw"`
 
 ## hold-order — stand-ground order that holds position until preempted or canceled
 
@@ -580,6 +590,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## instance-cells — bucket instanced placements into cullable XZ grid cells
 
 - `InstanceCell` (interface) · `import { InstanceCell } from "@jgengine/core/instancing/instanceCells"`
+
+## instance-chunks — split a big instanced batch into spatial cells that cull as units
+
+- `partitionInstances` (function) · `import { partitionInstances } from "@jgengine/core/instancing/instanceChunks.draw"`
+
+## instance-upload — write transforms, colors, count and culling bounds into one instanced draw
+
+- `uploadInstances` (function) · `import { uploadInstances } from "@jgengine/core/instancing/instanceUpload.draw"`
 
 ## interaction-prompt — observable nearest-interactable prompt registry over the proximity-prompt resolver — register/resolve/active with priority+range and change-notified snapshot/restore
 
@@ -857,6 +875,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createMarkerSource` (function) · `import { createMarkerSource } from "@jgengine/core/world"`
 
+## procedural-ground — seeded noise-height ground mesh with low/high/waterline vertex colours for quick natural scenes
+
+- `ProceduralGround` (function) · `import { ProceduralGround } from "@jgengine/core/terrain/ProceduralGround.draw"`
+
 ## proximity-prompt — a "press E" contextual prompt shown near an interactable
 
 - `resolveActivePrompt` (function) · `import { resolveActivePrompt } from "@jgengine/core/world"`
@@ -1041,6 +1063,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `splitRegion` (function) · `import { splitRegion } from "@jgengine/core/world"`
 
+## static-shape-instances — render authored primitive transforms as static material-compatible instance batches
+
+- `StaticShapeInstances` (function) · `import { StaticShapeInstances } from "@jgengine/core/instancing/staticShapeInstances.draw"`
+
 ## stop-order — halt-and-complete order that brings a unit to an immediate standstill
 
 - `defineStopOrder` (function) · `import { defineStopOrder } from "@jgengine/core/world"`
@@ -1096,6 +1122,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## terrain-guides — one-call adaptive contours for a terrain field
 
 - `terrainContourGuides` (function) · `import { terrainContourGuides } from "@jgengine/core/terrain/terrainGuides"`
+
+## terrain-paint-color — sample authored terrain surfaces and blended layers for shared ground rendering
+
+- `createTerrainPaintColorSampler` (function) · `import { createTerrainPaintColorSampler } from "@jgengine/core/terrain/terrainPaintColor.draw"`
 
 ## terrain-raycast — pick a point on a heightfield along a camera/pointer ray
 

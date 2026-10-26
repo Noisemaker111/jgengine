@@ -227,10 +227,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `DamageDirectionOverlay` (function) · `import { DamageDirectionOverlay } from "@jgengine/react"`
 
-## day-night-sky — one sky for a fixed look, a day-night cycle, biome bands and authored lights
-
-- `Sky` (function) · `import { Sky } from "@jgengine/shell/environment"`
-
 ## debounced-commit — bind a slider/number/color control to an expensive commit path (scene-document patch, settings persist) — instant local mirror, one trailing commit per pause, flush on release/blur/unmount; no raw onChange→patch wiring
 
 - `useDebouncedCommit` (function) · `import { useDebouncedCommit } from "@jgengine/react"`
@@ -339,12 +335,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `GameSlider` (function) · `import { GameSlider } from "@jgengine/react"`
 
-## ground-edge-fade — fade merged ground layers into the terrain at their outer edge, keeping inner seams crisp
-
-- `applyGroundEdgeFade` (function) · `import { applyGroundEdgeFade } from "@jgengine/shell/terrain"`
-- `buildGroundCoverageMask` (function) · `import { buildGroundCoverageMask } from "@jgengine/shell/terrain"`
-- `createGroundEdgeFade` (function) · `import { createGroundEdgeFade } from "@jgengine/shell/terrain"`
-
 ## group-credits — turn a flat list of credited things into ordered credit sections
 
 - `groupCredits` (function) · `import { groupCredits } from "@jgengine/core/menu/credits"`
@@ -352,10 +342,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## heavy-models — models over the per-model triangle budget, for perf probes and smoke assertions
 
 - `heavyModels` (function) · `import { heavyModels } from "@jgengine/shell/render/modelLoad"`
-
-## heightfield-mesh-update — in-place partial update of a displaced ground plane mesh
-
-- `displaceHeightfieldGeometry` (function) · `import { displaceHeightfieldGeometry } from "@jgengine/shell/terrain"`
 
 ## hold-vs-toggle — resolve one action frame under a hold-or-toggle preference
 
@@ -469,14 +455,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## input-device — which device the player last used (keyboard, gamepad, touch), live, for device-correct prompts
 
 - `useInputDevice` (function) · `import { useInputDevice } from "@jgengine/react"`
-
-## instance-chunks — split a big instanced batch into spatial cells that cull as units
-
-- `partitionInstances` (function) · `import { partitionInstances } from "@jgengine/shell/instancing/instanceChunks"`
-
-## instance-upload — write transforms, colors, count and culling bounds into one instanced draw
-
-- `uploadInstances` (function) · `import { uploadInstances } from "@jgengine/shell/instancing/instanceUpload"`
 
 ## interaction-prompt-host — screen-anchored "press E to…" callout rendering a prompt registry's active interactable — keybind cap+label, gauge hold bar, or plain label, theme- and per-prompt-accent skinnable
 
@@ -962,10 +940,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `StartScreen` (function) · `import { StartScreen } from "@jgengine/react"`
 
-## static-shape-instances — render authored primitive transforms as static material-compatible instance batches
-
-- `StaticShapeInstances` (function) · `import { StaticShapeInstances } from "@jgengine/shell/instancing/staticShapeInstances"`
-
 ## static-transforms — static-transforms
 
 - `freezeStaticTransforms` (function) · `import { freezeStaticTransforms } from "@jgengine/shell/render/staticTransforms"`
@@ -982,10 +956,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## talent-tree — drop-in skill/talent/upgrade-tree widget — pass `nodes`+`tree` for point-spend or a precomputed `view` for any unlock rule; branch/tier layout, SVG prerequisite edges, learned/available/locked/maxed styling, icon + rank, onLearn
 
 - `TalentTreePanel` (function) · `import { TalentTreePanel } from "@jgengine/react"`
-
-## terrain-paint-color — sample authored terrain surfaces and blended layers for shared ground rendering
-
-- `createTerrainPaintColorSampler` (function) · `import { createTerrainPaintColorSampler } from "@jgengine/shell/terrain"`
 
 ## territory-overlay — show footprint ownership, claim cost, and affordability
 

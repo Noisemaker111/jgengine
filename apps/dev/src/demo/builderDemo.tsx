@@ -21,8 +21,8 @@ import { placeAssetFromCommit, toStructureInput } from "@jgengine/core/placement
 import type { TerraformMode } from "@jgengine/core/terrain/terraform";
 
 import { createPointerService } from "@jgengine/core/input/pointerService.draw";
-import { EditableGround } from "@jgengine/shell/terrain/EditableGround";
-import { TerraformBrushCursor } from "@jgengine/shell/terrain/TerraformBrushCursor";
+import { EditableGround } from "@jgengine/core/terrain/EditableGround.draw";
+import { TerraformBrushCursor } from "@jgengine/core/terrain/TerraformBrushCursor.draw";
 import { PlacementGhost } from "@jgengine/core/placement/PlacementGhost.draw";
 import { TransformGizmo } from "@jgengine/core/placement/TransformGizmo.draw";
 import type { PlayableGame } from "@jgengine/shell/registry";

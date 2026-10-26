@@ -10,7 +10,7 @@ import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { environment, grass, terrain } from "@jgengine/core/world/features";
 import { WaypointMarkers } from "@jgengine/react/waypointMarkers";
 
-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
+import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
 import { useWorldProjection } from "@jgengine/shell/world/WorldEntityFrames";
 import type { PlayableGame } from "@jgengine/shell/registry";
 

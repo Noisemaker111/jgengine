@@ -3,8 +3,8 @@ import * as THREE from "three";
 import { seededRng } from "@jgengine/core/random/rng";
 import { grassBladeDensity, type GrassLook } from "@jgengine/core/grass/grassKind";
 
-import { hashNoise2, seedToUint32, type TerrainSeed } from "@jgengine/shell/terrain/random";
-import { resolveTerrainSize, type TerrainArea, type TerrainHeightSampler } from "@jgengine/shell/terrain/terrainMath";
+import { hashNoise2, seedToUint32, type TerrainSeed } from "@jgengine/core/terrain/terrainSeed";
+import { resolveTerrainSize, type TerrainArea, type TerrainHeightSampler } from "@jgengine/core/terrain/terrainMath.draw";
 
 /** Side of one base grass cell in metres: the unit of seeded tuft generation. Coarser stream nodes cover power-of-two blocks of cells. */
 export const GRASS_CELL_SIZE = 8;

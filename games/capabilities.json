@@ -3885,9 +3885,9 @@
     {
       "id": "ground-edge-fade",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/terrain/groundEdgeFade",
+      "module": "@jgengine/core/terrain/groundEdgeFade.draw",
       "domain": "terrain",
       "gameFacing": false,
       "probe": null,
@@ -3984,9 +3984,9 @@
     {
       "id": "heightfield-mesh-update",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/terrain/heightfieldGeometry",
+      "module": "@jgengine/core/terrain/heightfieldGeometry.draw",
       "domain": "terrain",
       "gameFacing": false,
       "probe": null,
@@ -4568,9 +4568,9 @@
     {
       "id": "instance-chunks",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/instancing/instanceChunks",
+      "module": "@jgengine/core/instancing/instanceChunks.draw",
       "domain": "instancing",
       "gameFacing": false,
       "probe": null,
@@ -4579,9 +4579,9 @@
     {
       "id": "instance-upload",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/instancing/instanceUpload",
+      "module": "@jgengine/core/instancing/instanceUpload.draw",
       "domain": "instancing",
       "gameFacing": false,
       "probe": null,
@@ -7448,6 +7448,17 @@
       "intent": "rolling per-item sale records aggregated into market price stats"
     },
     {
+      "id": "procedural-ground",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/terrain/ProceduralGround.draw",
+      "domain": "terrain",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "seeded noise-height ground mesh with low/high/waterline vertex colours for quick natural scenes"
+    },
+    {
       "id": "production-building",
       "packages": [
         "@jgengine/core"
@@ -9170,9 +9181,9 @@
     {
       "id": "static-shape-instances",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/instancing/staticShapeInstances",
+      "module": "@jgengine/core/instancing/staticShapeInstances.draw",
       "domain": "instancing",
       "gameFacing": false,
       "probe": null,
@@ -9506,9 +9517,9 @@
     {
       "id": "terrain-paint-color",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/terrain/terrainPaintColor",
+      "module": "@jgengine/core/terrain/terrainPaintColor.draw",
       "domain": "terrain",
       "gameFacing": false,
       "probe": null,

@@ -6,7 +6,7 @@ import { environment, grass, terrain } from "@jgengine/core/world/features";
 import { QuestTracker } from "@jgengine/core/mission/questTracker.view";
 import { usePlayer, useTicker } from "@jgengine/react/hooks";
 
-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
+import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
 import type { PlayableGame } from "@jgengine/shell/registry";
 
 const SCOUT = "scout";

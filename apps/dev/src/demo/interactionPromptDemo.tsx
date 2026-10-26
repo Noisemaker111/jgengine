@@ -13,7 +13,7 @@ import { environment, grass, terrain } from "@jgengine/core/world/features";
 import { useGameStore, localPlayerEntity } from "@jgengine/react/hooks";
 import { InteractionPrompt } from "@jgengine/core/interaction/interactionPrompt.view";
 
-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
+import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
 import type { PlayableGame } from "@jgengine/shell/registry";
 
 const HERO = "hero";

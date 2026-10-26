@@ -4,8 +4,8 @@ import type * as THREE from "three";
 
 import type { GrassLook } from "@jgengine/core/grass/grassKind";
 
-import { seedToUint32, type TerrainSeed } from "@jgengine/shell/terrain/random";
-import { resolveTerrainSize, type TerrainArea, type TerrainHeightSampler } from "@jgengine/shell/terrain/terrainMath";
+import { seedToUint32, type TerrainSeed } from "@jgengine/core/terrain/terrainSeed";
+import { resolveTerrainSize, type TerrainArea, type TerrainHeightSampler } from "@jgengine/core/terrain/terrainMath.draw";
 import { GrassCover } from "./GrassCover.draw";
 import { grassFieldColors, resolveGrassBake, type GrassExclusion } from "./grassBake.draw";
 import { createGrassMaterial } from "./grassMaterial.draw";

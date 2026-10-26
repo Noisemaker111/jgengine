@@ -7,7 +7,7 @@ import { createTimerSet } from "@jgengine/core/time/timerSet";
 import { environment, grass, terrain } from "@jgengine/core/world/features";
 import { TimerReadout, TimerRing } from "@jgengine/core/time/timerReadout.view";
 
-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
+import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
 import type { PlayableGame } from "@jgengine/shell/registry";
 
 const RUNNER = "runner";

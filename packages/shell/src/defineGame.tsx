@@ -18,8 +18,8 @@ import { lightingFromDocument, skyFromDocument } from "@jgengine/core/editor/env
 import { resolveGameLook } from "@jgengine/core/render/lookPreset";
 import type { ResolveAuthoredObjectsOptions } from "@jgengine/core/world/authoredObjects";
 
-import { EnvironmentScene } from "./environment";
-import { terrainGroundColorSampler } from "./terrain/terrainGroundColor";
+import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
+import { terrainGroundColorSampler } from "@jgengine/core/terrain/terrainGroundColor.draw";
 import type { PlayableGame } from "./registry";
 import { AuthoredScene } from "./scene/AuthoredScene";
 

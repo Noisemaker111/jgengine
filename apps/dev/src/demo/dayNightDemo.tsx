@@ -7,7 +7,7 @@ import { createDayNightCycle, type DayNightKeyframe } from "@jgengine/core/sky/d
 import { environment, grass, sky, terrain } from "@jgengine/core/world/features";
 
 import { Sky } from "@jgengine/core/sky/Daylight.draw";
-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
+import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
 import type { PlayableGame } from "@jgengine/shell/registry";
 
 const WANDERER = "wanderer";

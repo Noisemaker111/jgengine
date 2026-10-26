@@ -1,6 +1,6 @@
 import { Suspense, useLayoutEffect, useMemo, useRef } from 'react';
 import { InstancedMesh } from 'three';
-import { composeInstance, uploadInstances } from '@jgengine/shell/instancing/instanceUpload';
+import { composeInstance, uploadInstances } from '@jgengine/core/instancing/instanceUpload.draw';
 import { editorLayers, type Place } from '../world';
 import { StationSurface } from './stationSurface';
 import { stationModelReplacements } from './stationModels';

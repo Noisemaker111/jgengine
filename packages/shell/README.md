@@ -66,11 +66,13 @@ The component vocabulary (windows, awnings, AC units, clotheslines, storefronts,
 
 ## Terrain primitives
 
-`@jgengine/shell/terrain` exports R3F helpers for shell-local natural scenes:
+The `.draw` files in `@jgengine/core/terrain` are R3F helpers for natural scenes:
 
 ```tsx
 import { readGrassLook } from "@jgengine/core/grass/grassKind";
-import { GrassPatch, ProceduralGround, createProceduralTerrainSampler } from "@jgengine/shell/terrain";
+import { GrassPatch } from "@jgengine/core/grass/GrassPatch.draw";
+import { ProceduralGround } from "@jgengine/core/terrain/ProceduralGround.draw";
+import { createProceduralTerrainSampler } from "@jgengine/core/terrain/terrainMath.draw";
 
 const terrain = { seed: "meadow", size: 48, height: 0.9 };
 const heightAt = createProceduralTerrainSampler(terrain);

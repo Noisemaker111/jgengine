@@ -11,7 +11,7 @@ import { useLoader } from "@react-three/fiber";
 import { useEffect, useMemo } from "react";
 import * as THREE from "three";
 
-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
+import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
 import { sharedGltfLoader } from "@jgengine/shell/render/modelLoad";
 import type { PlayableGame } from "@jgengine/shell/registry";
 import { SkinnedInstances, type CrowdInstance } from "@jgengine/shell/render/SkinnedInstances";

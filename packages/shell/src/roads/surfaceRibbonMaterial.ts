@@ -5,8 +5,8 @@ import type { GraphicsQuality } from "@jgengine/core/settings/settingsModel";
 
 import { SURFACE_SCAN_PARS_GLSL, surfaceScanDefines, surfaceScanKeyPart, surfaceScanUniforms, type SurfaceScanBlend } from "../render/surfaceScanShader";
 import type { SurfaceScanTextures } from "../render/surfaceScanTextures";
-import { NOISE_GLSL, SURFACE_BUMP_NORMAL_GLSL, SURFACE_FUNCTIONS_GLSL, surfaceNoiseUniforms } from "../terrain/terrainSurfaceShader";
-import { terrainSurfaceClass, terrainSurfaceClassIndex, terrainSurfaceRoughness, type TerrainSurfaceClass } from "../terrain/terrainSurfaces";
+import { NOISE_GLSL, SURFACE_BUMP_NORMAL_GLSL, SURFACE_FUNCTIONS_GLSL, surfaceNoiseUniforms } from "@jgengine/core/terrain/terrainSurfaceShader.draw";
+import { terrainSurfaceClass, terrainSurfaceClassIndex, terrainSurfaceRoughness, type TerrainSurfaceClass } from "@jgengine/core/terrain/terrainSurfaces.draw";
 
 /** Vertex attribute {@link ribbonSurfaceFrame} fills: metres along the ribbon, signed metres across it, metres to its far end. */
 export const RIBBON_FRAME_ATTRIBUTE = "jgRibbon";

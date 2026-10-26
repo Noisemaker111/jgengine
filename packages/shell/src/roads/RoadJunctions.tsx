@@ -4,7 +4,7 @@ import type { RoadRibbon } from "@jgengine/core/roads/roads";
 import type { TerrainDetailMaterialConfig } from "@jgengine/core/world/features";
 import { useSurfaceScan } from "../render/surfaceScanTextures";
 import { useSurfaceRibbonMaterial } from "./surfaceRibbonMaterial";
-import { useTerrainQuality } from "../terrain/terrainQuality";
+import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
 import type { JunctionSurface } from "./RoadRibbons";
 
 function JunctionPatch({

@@ -9,7 +9,7 @@ import { environment, grass, terrain } from "@jgengine/core/world/features";
 import { TalentTreePanel } from "@jgengine/core/talents/talentTree.view";
 import type { GameIconName } from "@jgengine/core/ui/icons/gameIcons.view";
 
-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
+import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
 import type { PlayableGame } from "@jgengine/shell/registry";
 
 const HERO = "hero";

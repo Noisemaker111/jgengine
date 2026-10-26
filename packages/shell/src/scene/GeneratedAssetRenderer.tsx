@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 
 import { resolveGeneratorAsset, type GeneratedAsset } from "@jgengine/core/scene/assetGenerator";
-import { StaticShapeInstances, type StaticShapeInstance } from "../instancing/staticShapeInstances";
+import { StaticShapeInstances, type StaticShapeInstance } from "@jgengine/core/instancing/staticShapeInstances.draw";
 
 const NEUTRAL = "#b8b0a4";
 

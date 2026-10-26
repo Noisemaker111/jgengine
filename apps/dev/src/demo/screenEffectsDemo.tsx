@@ -6,7 +6,7 @@ import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { createScreenEffects } from "@jgengine/core/vfx/screenEffects";
 import { environment, grass, terrain } from "@jgengine/core/world/features";
 
-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
+import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
 import { ScreenEffectsOverlay } from "@jgengine/shell/postfx/ScreenEffectsOverlay";
 import type { PlayableGame } from "@jgengine/shell/registry";
 

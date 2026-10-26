@@ -5,7 +5,7 @@ import { environment, grass, terrain } from "@jgengine/core/world/features";
 import { useGame, useGameStoreValue } from "@jgengine/react/hooks";
 import { useUiCue } from "@jgengine/core/ui/uiCues.view";
 
-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
+import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
 import type { PlayableGame } from "@jgengine/shell/registry";
 
 const SCOUT = "scout";

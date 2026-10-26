@@ -7,7 +7,7 @@ import {
   terrain,
 } from "@jgengine/core/world/features";
 
-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
+import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
 import type { PlayableGame } from "@jgengine/shell/registry";
 import { demoGame } from "./demoGame";
 

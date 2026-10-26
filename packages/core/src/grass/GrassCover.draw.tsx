@@ -2,7 +2,7 @@ import * as THREE from "three";
 
 import { useDisposable } from "@jgengine/shell/render/useDisposable";
 import { createGrassCoverGeometry, GRASS_COVER_MAX_SEGMENTS } from "./grassCoverGeometry.draw";
-import type { TerrainHeightSampler } from "@jgengine/shell/terrain/terrainMath";
+import type { TerrainHeightSampler } from "@jgengine/core/terrain/terrainMath.draw";
 
 let grainTexture: THREE.DataTexture | null = null;
 

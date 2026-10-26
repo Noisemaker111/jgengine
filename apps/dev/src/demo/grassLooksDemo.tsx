@@ -2,7 +2,7 @@ import { useMemo } from "react";
 
 import { GRASS_PRESETS, readGrassLook } from "@jgengine/core/grass/grassKind";
 import type { PlayableGame } from "@jgengine/shell/registry";
-import { GrassPatch } from "@jgengine/shell/terrain";
+import { GrassPatch } from "@jgengine/core/grass/GrassPatch.draw";
 
 import { demoGame } from "./demoGame";
 

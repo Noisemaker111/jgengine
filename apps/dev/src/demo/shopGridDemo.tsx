@@ -9,7 +9,7 @@ import { environment, grass, terrain } from "@jgengine/core/world/features";
 import { ShopGrid } from "@jgengine/core/inventory/shopGrid.view";
 import { hudThemeVars, HUD_THEME_PRESETS } from "@jgengine/core/hud/hudTheme.view";
 
-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
+import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
 import type { PlayableGame } from "@jgengine/shell/registry";
 
 const HERO = "hero";

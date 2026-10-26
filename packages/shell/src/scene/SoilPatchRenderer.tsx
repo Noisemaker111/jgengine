@@ -4,7 +4,7 @@ import * as THREE from "three";
 import { resolveSoilObject } from "@jgengine/core/world/soilKind";
 import type { SceneKindObject } from "@jgengine/core/scene/sceneKinds";
 
-import { createSoilPatchMaterial } from "../terrain/soilPatchMaterial";
+import { createSoilPatchMaterial } from "@jgengine/core/terrain/soilPatchMaterial.draw";
 import { registerSceneKindRenderer, type SceneKindRenderContext } from "./sceneKindRenderers";
 
 /** Height offset above the sampled terrain so the draped patch never z-fights the ground. */

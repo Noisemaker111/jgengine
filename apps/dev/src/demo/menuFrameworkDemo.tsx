@@ -18,7 +18,7 @@ import { SaveSlotsPane } from "@jgengine/core/menu/gameMenuSaves.view";
 import { useSettings } from "@jgengine/core/settings/settings.view";
 import { SettingsSection, SettingsTabs } from "@jgengine/core/settings/settingsBlocks.view";
 import { GameMenu } from "@jgengine/core/menu/gameMenu.view";
-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
+import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
 import type { PlayableGame } from "@jgengine/shell/registry";
 
 const terrainFeature = environment({

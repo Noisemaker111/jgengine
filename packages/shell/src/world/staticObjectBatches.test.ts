@@ -5,7 +5,7 @@ import { createObjectStore, type SceneObject } from "@jgengine/core/scene/object
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { placeAuthoredObjects, resolveAuthoredObjects } from "@jgengine/core/world/authoredObjects";
-import { buildScatterModelSources, disposeScatterModelSources } from "../scatter/scatterModels";
+import { buildScatterModelSources, disposeScatterModelSources } from "@jgengine/core/scatter/scatterModels.draw";
 import { createPointerService, POINTER_OBJECT_INSTANCES_KEY } from "@jgengine/core/input/pointerService.draw";
 import { measureLocalBounds } from "../render/measureBounds";
 import { measureLocalCollisionTriangles } from "../render/measureCollisionMesh";

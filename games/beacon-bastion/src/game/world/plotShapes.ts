@@ -1,4 +1,4 @@
-import type { StaticShapeInstance } from "@jgengine/shell/instancing/staticShapeInstances";
+import type { StaticShapeInstance } from "@jgengine/core/instancing/staticShapeInstances.draw";
 
 type Vec3 = readonly [number, number, number];
 

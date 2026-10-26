@@ -24,7 +24,6 @@ import {
 import { useGameContext } from "@jgengine/react/provider";
 import { useSceneEntityIds, useSceneObjectIds, useGameStore, usePlayer, useTarget } from "@jgengine/react/hooks";
 
-import { colorFromId } from "../worldSky";
 import { DefaultSurface, detailMaps } from "../render/defaultSurface";
 import { useDisposable } from "../render/useDisposable";
 import { WindClock } from "../render/modelWind";
@@ -43,13 +42,20 @@ import {
   clearCharacterLodTier,
   setCharacterLodTier,
   type CharacterLodTier,
-} from "../lod/characterLod";
+} from "@jgengine/core/lod/characterLod";
 import { resolveEntityModel, resolveObjectModel, type ObjectModelCacheEntry } from "../render/resolveModel";
 import { useRenderVisibility } from "../visibility/CullingProvider";
 import { writePoseIfChanged, writeRenderPoseIfChanged, emptyPoseMemo, type PoseMemo } from "./entityPose";
 import type { RenderPose } from "@jgengine/core/runtime/poseInterpolation";
 import { createSnapshotBuffer, type SnapshotBuffer } from "@jgengine/core/runtime/snapshotBuffer";
 import { POINTER_ENTITY_KEY, POINTER_OBJECT_KEY } from "@jgengine/core/input/pointerService.draw";
+
+/** Deterministic HSL color from a stable instance id (default entity/object tint). */
+function colorFromId(id: string): string {
+  let hash = 0;
+  for (let index = 0; index < id.length; index += 1) hash = (hash * 31 + id.charCodeAt(index)) >>> 0;
+  return `hsl(${hash % 360}, 65%, 55%)`;
+}
 
 const EMPTY_DOCUMENT = createEmptyEditorDocument();
 const GROUND_SIZE = 160;

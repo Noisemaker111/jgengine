@@ -6,7 +6,7 @@ import { createEditorSession } from "@jgengine/core/editor/commands";
 import { createEmptyEditorDocument, importEditorDocumentJson } from "@jgengine/core/editor/document";
 import { authoredMaterialAssignments } from "@jgengine/core/editor/materialAuthoring";
 import { generateBuilding } from "@jgengine/core/buildings/buildings";
-import { buildScatterModelSources, disposeScatterModelSources } from "@jgengine/shell/scatter/scatterModels";
+import { buildScatterModelSources, disposeScatterModelSources } from "@jgengine/core/scatter/scatterModels.draw";
 import { configureMaterialTexture } from "@jgengine/shell/render/materialAsset";
 import { bucketBuildingParts } from "./buildingKitFit.draw";
 import { buildingKitMaterialKey, buildBuildingKitSources, groupBuildingKitInstances } from "./buildingKitMaterials.draw";

@@ -5,7 +5,7 @@ import * as THREE from "three";
 import type { TilemapWorldConfig } from "@jgengine/core/world/features";
 import { sortingOrder } from "@jgengine/core/render/sprite2d";
 
-import { uploadInstances } from "../instancing/instanceUpload";
+import { uploadInstances } from "@jgengine/core/instancing/instanceUpload.draw";
 import { useDisposable } from "../render/useDisposable";
 
 import { resolveTileLayerInstances } from "./tileLayerInstances";

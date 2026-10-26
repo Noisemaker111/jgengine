@@ -8,7 +8,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContextTypes";
 import type { ModelConfig, ModelIkConfig, ModelLookAtConfig } from "@jgengine/core/game/playableGame";
 import type { SceneRaycastHit, SceneRaycastInput } from "@jgengine/core/scene/sceneRaycast";
 import { resolveRigNode } from "./rigNode";
-import { noteCharacterMotion } from "../lod/characterLod";
+import { noteCharacterMotion } from "@jgengine/core/lod/characterLod";
 import { useFrameWhile } from "./useFrameWhile";
 
 type FootIkConfig = Exclude<NonNullable<ModelConfig["ik"]>, "none">;

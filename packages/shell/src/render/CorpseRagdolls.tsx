@@ -9,7 +9,7 @@ import { mapRigToStandard, RIG_SCHEMES, type SkeletonMap } from "@jgengine/core/
 import { PhysicsWorld } from "@jgengine/core/physics/physicsWorld";
 import { useGameContext } from "@jgengine/react/provider";
 
-import { useTerrainQuality } from "../terrain/terrainQuality";
+import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
 import { useRagdoll } from "./useRagdoll";
 
 const bodies = new Map<string, THREE.Object3D>();

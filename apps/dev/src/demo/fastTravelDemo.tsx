@@ -7,7 +7,7 @@ import { createFastTravelNetwork } from "@jgengine/core/world/fastTravel";
 import { environment, grass, terrain } from "@jgengine/core/world/features";
 import { FastTravelMenu } from "@jgengine/react/fastTravel";
 
-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
+import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
 import type { PlayableGame } from "@jgengine/shell/registry";
 
 const WANDERER = "wanderer";

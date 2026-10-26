@@ -152,7 +152,7 @@ This is presentation only: projectile prediction, collision, authority, and
 registration waits for the coordinator's verified published SDK release; no
 source aliases or native verification of unpublished APIs are implied.
 
-`@jgengine/shell/terrain`'s `ProceduralGround`/`CarvedTerrain`/`GrassPatch` are the game-facing terrain surface; the height-field math underneath (`arenaField`, `flatField`, `fractalNoise`, `resolveGroundStep`, `valueNoise`, `withNormal`, re-exported from `@jgengine/core/terrain/terrain`) and `GamePlayerShell`'s physics helpers (`applyMotionImpulses`, `nearbyObstacles`, `resolvePhysicsTuning`, `hasEnvironmentTerrain`, sourced from `core/runtime/motionIntents` / `core/movement`) are internal building blocks the shell composes for you — reach for `defineGame({ movement, world })` and the ground primitives above instead of calling these directly.
+`ProceduralGround` and `CarvedTerrain` (`@jgengine/core/terrain/*.draw`) and `GrassPatch` (`@jgengine/core/grass/GrassPatch.draw`) are the game-facing terrain surface; the height-field math underneath (`arenaField`, `flatField`, `fractalNoise`, `resolveGroundStep`, `valueNoise`, `withNormal`, re-exported from `@jgengine/core/terrain/terrain`) and `GamePlayerShell`'s physics helpers (`applyMotionImpulses`, `nearbyObstacles`, `resolvePhysicsTuning`, `hasEnvironmentTerrain`, sourced from `core/runtime/motionIntents` / `core/movement`) are internal building blocks the shell composes for you — reach for `defineGame({ movement, world })` and the ground primitives above instead of calling these directly.
 
 ## 15. Compact implementation API appendix
 

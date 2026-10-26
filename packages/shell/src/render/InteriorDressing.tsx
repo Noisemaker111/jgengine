@@ -7,8 +7,8 @@ import { nearestFixtures, type InteriorDecal, type InteriorDecalStyle, type Inte
 
 import type { AuthoredSurfaceConfig } from "./authoredSurfaceMaterial";
 import { createDecalTexture } from "./decalTexture";
-import { StaticShapeInstances, type StaticShapeInstance } from "../instancing/staticShapeInstances";
-import { uploadInstances } from "../instancing/instanceUpload";
+import { StaticShapeInstances, type StaticShapeInstance } from "@jgengine/core/instancing/staticShapeInstances.draw";
+import { uploadInstances } from "@jgengine/core/instancing/instanceUpload.draw";
 import { useDisposable } from "./useDisposable";
 
 /** The surface each dressing family wears. Any family left out falls back to a plain painted default. */

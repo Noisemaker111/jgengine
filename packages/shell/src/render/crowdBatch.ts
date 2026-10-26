@@ -1,6 +1,6 @@
 import * as THREE from "three";
 
-import { animationPhaseOf } from "../lod/characterLod";
+import { animationPhaseOf } from "@jgengine/core/lod/characterLod";
 import {
   crowdClipForSpeed,
   type CrowdMember,

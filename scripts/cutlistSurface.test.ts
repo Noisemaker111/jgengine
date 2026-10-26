@@ -114,7 +114,7 @@ describe("CUTLIST surface diet", () => {
     expect(existsSync(join(root, "examples/express-host/src/server.ts"))).toBe(true);
     expect(existsSync(join(root, "packages/core/src/input/boundActionDispatch.ts"))).toBe(true);
     expect(existsSync(join(root, "packages/core/src/input/hotbarActions.ts"))).toBe(true);
-    expect(existsSync(join(root, "packages/shell/src/worldSky.ts"))).toBe(true);
+    expect(existsSync(join(root, "packages/core/src/sky/worldSky.ts"))).toBe(true);
     expect(existsSync(join(root, "packages/core/src/input/shellPointer.draw.ts"))).toBe(true);
     expect(existsSync(join(root, "packages/core/src/movement/shellMovement.ts"))).toBe(true);
     expect(existsSync(join(root, "packages/core/src/audio/audioWire.view.ts"))).toBe(true);

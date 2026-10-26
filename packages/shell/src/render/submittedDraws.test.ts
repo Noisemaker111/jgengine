@@ -4,9 +4,9 @@ import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import { createObjectStore } from "@jgengine/core/scene/objectStore";
 import { createModelVariantSelector } from "@jgengine/core/lod/modelLod";
 import type { ScatterInstance } from "@jgengine/core/scatter/scatterRegion";
-import { scatterBatchInstances, type ScatterBatch } from "../scatter/InstancedScatter";
-import { buildScatterModelSources, disposeScatterModelSources } from "../scatter/scatterModels";
-import { scatterVariantTriangles, writeScatterVariantLevel } from "../scatter/scatterVariants";
+import { scatterBatchInstances, type ScatterBatch } from "@jgengine/core/scatter/InstancedScatter.draw";
+import { buildScatterModelSources, disposeScatterModelSources } from "@jgengine/core/scatter/scatterModels.draw";
+import { scatterVariantTriangles, writeScatterVariantLevel } from "@jgengine/core/scatter/scatterVariants.draw";
 import { countStaticBatchDraws, groupStaticObjects, STATIC_BATCH_MESH_KEY, syncStaticObjectSource } from "../world/staticObjectBatches";
 import { countSubmittedDraws, submitInstanceCount } from "./submittedDraws";
 
