@@ -26,16 +26,32 @@ const GLOBAL_KEY = "__jgengineSaveEndpoint";
 
 type SaveEndpointGlobal = typeof globalThis & { [GLOBAL_KEY]?: SaveEndpointInfo };
 
-interface ImportMetaEnvLike {
+/** The bundler-provided build flags the engine reads. @internal */
+export interface BuildEnv {
   DEV?: boolean;
   PROD?: boolean;
   NODE_ENV?: string;
+  VITE_JGENGINE_DEV_PROXY?: string;
 }
 
-function readImportMetaEnv(): ImportMetaEnvLike {
+/**
+ * Read the bundler's build flags. Each member is named literally: Vite replaces exactly
+ * `import.meta.env.<NAME>`, and its server-side module runner throws on any other use of
+ * `import.meta.env` (a whole-object read breaks server rendering). Off Vite, `import.meta.env`
+ * may be missing, so the read is guarded. @internal
+ */
+export function readBuildEnv(): BuildEnv {
   try {
-    const meta = import.meta as unknown as { env?: ImportMetaEnvLike };
-    return meta.env ?? {};
+    return {
+      // @ts-ignore -- `vite/client` types are not part of this package's own tsconfig
+      DEV: import.meta.env.DEV,
+      // @ts-ignore -- `vite/client` types are not part of this package's own tsconfig
+      PROD: import.meta.env.PROD,
+      // @ts-ignore -- `vite/client` types are not part of this package's own tsconfig
+      NODE_ENV: import.meta.env.NODE_ENV,
+      // @ts-ignore -- `vite/client` types are not part of this package's own tsconfig
+      VITE_JGENGINE_DEV_PROXY: import.meta.env.VITE_JGENGINE_DEV_PROXY,
+    };
   } catch {
     return {};
   }
@@ -52,7 +68,7 @@ function readProcessNodeEnv(): string | undefined {
  * @internal
  */
 export function isProductionEnvironment(): boolean {
-  const env = readImportMetaEnv();
+  const env = readBuildEnv();
   if (env.PROD === true) return true;
   if (env.DEV === true) return false;
   return (env.NODE_ENV ?? readProcessNodeEnv()) === "production";

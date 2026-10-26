@@ -1,3 +1,5 @@
+import { readBuildEnv } from "../devtools/saveEndpoint";
+
 export interface DevProxyTable {
   readonly [routeName: string]: string;
 }
@@ -6,20 +8,6 @@ export interface ProxiedUrlOptions {
   dev?: boolean;
   table?: DevProxyTable;
   prefix?: string;
-}
-
-interface ImportMetaEnvLike {
-  DEV?: boolean;
-  VITE_JGENGINE_DEV_PROXY?: string;
-}
-
-function readImportMetaEnv(): ImportMetaEnvLike {
-  try {
-    const meta = import.meta as unknown as { env?: ImportMetaEnvLike };
-    return meta.env ?? {};
-  } catch {
-    return {};
-  }
 }
 
 export function parseDevProxyTable(raw: string | undefined): DevProxyTable {
@@ -39,7 +27,7 @@ export function parseDevProxyTable(raw: string | undefined): DevProxyTable {
 export const DEFAULT_DEV_PROXY_PREFIX = "/proxy";
 
 export function proxiedUrl(target: string, options: ProxiedUrlOptions = {}): string {
-  const env = readImportMetaEnv();
+  const env = readBuildEnv();
   const dev = options.dev ?? env.DEV === true;
   if (!dev) return target;
 
