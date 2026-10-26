@@ -1,6 +1,6 @@
 import * as THREE from "three";
 
-import { linkAhead } from "@jgengine/shell/render/shaderWarmup";
+import { linkAhead } from "@jgengine/core/render/shaderWarmup.draw";
 
 /** The generator's own materials, which three keeps private; read to link them before the bake. */
 interface PmremInternals {

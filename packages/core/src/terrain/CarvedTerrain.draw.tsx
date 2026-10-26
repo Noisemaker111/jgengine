@@ -6,8 +6,8 @@ import { runSliced, type SlicedRun } from "@jgengine/core/run/slicedWork";
 
 import type { TerrainField } from "@jgengine/core/terrain/terrain";
 
-import { useDisposable } from "@jgengine/shell/render/useDisposable";
-import { useSlicedValue } from "@jgengine/shell/render/useSlicedValue";
+import { useDisposable } from "@jgengine/core/render/useDisposable.draw";
+import { useSlicedValue } from "@jgengine/core/render/useSlicedValue.draw";
 import { CHUNKED_GROUND_MIN_VERTICES, GroundChunks } from "./terrainChunks.draw";
 import { fieldGroundGeometryJob, resolveFieldGroundGrid, type FieldGroundOptions } from "./terrainMath.draw";
 

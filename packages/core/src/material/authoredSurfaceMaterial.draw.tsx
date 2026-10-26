@@ -7,8 +7,8 @@ import { MATERIAL_TEXTURE_SEMANTICS } from "@jgengine/core/material/materialAsse
 
 import { applyMaterialOverrideToMaterial, requiresPhysicalMaterial, type MaterialOverrideTextures } from "./materialOverride.draw";
 import { ImageTextureLoader } from "./imageTexture.draw";
-import { modelMapEntries } from "@jgengine/shell/render/modelAssets";
-import { useDisposable } from "@jgengine/shell/render/useDisposable";
+import { modelMapEntries } from "@jgengine/core/model/modelAssets";
+import { useDisposable } from "@jgengine/core/render/useDisposable.draw";
 
 /** Serializable PBR settings for an authored primitive surface. Map roles use the model-material contract. */
 export interface AuthoredSurfaceConfig extends Omit<ModelMaterialOverride, "anisotropy" | "normalScale"> {

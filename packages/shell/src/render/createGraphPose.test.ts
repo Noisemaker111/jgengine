@@ -9,10 +9,10 @@ import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.j
 import { createAnimGraphRuntime } from "@jgengine/core/anim/animGraph";
 import { locomotionGraph } from "@jgengine/core/anim/locomotionGraph";
 import { createGraphPose } from "./useModelAnimation";
-import { cloneModelScene, disposeModelScene, modelPlacementTransform } from "./modelRender";
-import { measureLocalBounds } from "./measureBounds";
-import { measureLocalCollisionTriangles } from "./measureCollisionMesh";
-import { modelBindPosePositions } from "./modelBindPose";
+import { cloneModelScene, disposeModelScene, modelPlacementTransform } from "@jgengine/core/model/modelRender.draw";
+import { measureLocalBounds } from "@jgengine/core/model/measureBounds.draw";
+import { measureLocalCollisionTriangles } from "@jgengine/core/model/measureCollisionMesh.draw";
+import { modelBindPosePositions } from "@jgengine/core/model/modelBindPose.draw";
 
 async function loadModel(path: string): Promise<GLTF> {
   const file = fileURLToPath(new URL(`../../../../apps/dev/public/models/${path}`, import.meta.url));

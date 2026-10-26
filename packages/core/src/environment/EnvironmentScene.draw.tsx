@@ -30,7 +30,7 @@ import {
   type TerrainField,
 } from "@jgengine/core/terrain/terrain";
 
-import { useDisposable } from "@jgengine/shell/render/useDisposable";
+import { useDisposable } from "@jgengine/core/render/useDisposable.draw";
 import { editableTerrainFromSnapshot, type TerraformSnapshot } from "@jgengine/core/terrain/terraform";
 import { createTerrainPaintColorSampler } from "@jgengine/core/terrain/terrainPaintColor.draw";
 import { GroundPad } from "./GroundPad.draw";
@@ -40,7 +40,7 @@ import { InstancedBuildings, type InstancedBuildingPlacement } from "@jgengine/c
 import { GrassPatch } from "@jgengine/core/grass/GrassPatch.draw";
 import { CarvedTerrain, type CarvedTerrainProps } from "@jgengine/core/terrain/CarvedTerrain.draw";
 import { ImageTextureLoader } from "@jgengine/core/material/imageTexture.draw";
-import { trackSceneWork } from "@jgengine/shell/render/modelLoad";
+import { trackSceneWork } from "@jgengine/core/model/modelLoad.draw";
 import { createTerrainDetailMaterial } from "@jgengine/core/terrain/terrainDetailMaterial.draw";
 import { MAX_TERRAIN_LAYER_MAPS, type TerrainDetailMaterialTextures, type TerrainLayerMap } from "@jgengine/core/terrain/terrainDetailMaterial.draw";
 import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";

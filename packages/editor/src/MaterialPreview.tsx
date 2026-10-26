@@ -3,8 +3,8 @@ import { Component, Suspense, useEffect, useState, type ReactNode } from "react"
 import * as THREE from "three";
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import { inspectModelMaterialSlots, type ModelMaterialSlotInfo } from "@jgengine/core/material/materialAsset.draw";
-import { sharedGltfLoader } from "@jgengine/shell/render/modelLoad";
-import { EntityModel } from "@jgengine/shell/render/SceneModels";
+import { sharedGltfLoader } from "@jgengine/core/model/modelLoad.draw";
+import { EntityModel } from "@jgengine/core/model/SceneModels.draw";
 import { DEFAULT_SUN_ELEVATION_DEG, sunDirectionFromBearing } from "@jgengine/core/sky/daylightCycle";
 import type { MaterialAsset } from "@jgengine/core/material/materialAsset";
 import type { EditorEnvironment } from "@jgengine/core/editor/types";

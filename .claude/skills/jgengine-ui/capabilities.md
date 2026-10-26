@@ -96,10 +96,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `canvasCover` (const) · `import { canvasCover } from "@jgengine/react"`
 
-## capture-canvas — read the live R3F frame to a PNG data URL (needs preserveDrawingBuffer)
-
-- `captureCanvas` (function) · `import { captureCanvas } from "@jgengine/shell/render/sceneCapture"`
-
 ## character-crowd — draw animated or static characters as batched instanced draws instead of posing each skeleton
 
 - `CharacterCrowd` (function) · `import { CharacterCrowd } from "@jgengine/shell/render/CharacterCrowd"`
@@ -211,7 +207,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## disposable-resource — memoize a three.js GPU resource (or tuple) with automatic dispose on change/unmount — no hand-rolled useMemo + dispose-effect pairs
 
-- `useDisposable` (function) · `import { useDisposable } from "@jgengine/shell/render/useDisposable"`
+- `useDisposable` (function) · `import { useDisposable } from "@jgengine/core/render/useDisposable.draw"`
 
 ## distance-format — render meters as m or km for HUD stats, telemetry, and range readouts
 
@@ -247,7 +243,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## entity-preview — live 3D entity portrait — nested Canvas + context bridge + studio stage, driven by the game's own renderEntity
 
-- `EntityPreview` (function) · `import { EntityPreview } from "@jgengine/shell/render/EntityPreview"`
+- `EntityPreview` (function) · `import { EntityPreview } from "@jgengine/core/render/EntityPreview.draw"`
 
 ## entity-render-cues — live velocity/bob/fire/reload/hit/death cues for a custom renderEntity or viewmodel component
 
@@ -304,10 +300,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## group-credits — turn a flat list of credited things into ordered credit sections
 
 - `groupCredits` (function) · `import { groupCredits } from "@jgengine/core/menu/credits"`
-
-## heavy-models — models over the per-model triangle budget, for perf probes and smoke assertions
-
-- `heavyModels` (function) · `import { heavyModels } from "@jgengine/shell/render/modelLoad"`
 
 ## hold-vs-toggle — resolve one action frame under a hold-or-toggle preference
 
@@ -413,10 +405,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## i18n — translate a message catalog with fallback-locale lookup, `{param}` interpolation, and Intl pluralization; observable active-locale switching
 
 - `createI18n` (function) · `import { createI18n } from "@jgengine/core/ui"`
-
-## imported-rig-node — resolve original imported bone and slot names with ambiguity diagnostics
-
-- `resolveRigNode` (function) · `import { resolveRigNode } from "@jgengine/shell/render/rigNode"`
 
 ## input-device — which device the player last used (keyboard, gamepad, touch), live, for device-correct prompts
 
@@ -619,28 +607,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `diagnoseModelAnimation` (function) · `import { diagnoseModelAnimation } from "@jgengine/shell/render/useModelAnimation"`
 
-## model-fallbacks — models the loader replaced with a placeholder, for capture and smoke assertions
-
-- `modelLoadFallbacks` (function) · `import { modelLoadFallbacks } from "@jgengine/shell/render/modelLoad"`
-
-## model-instance — clone a loaded model for independent styling and animation
-
-- `cloneModelScene` (function) · `import { cloneModelScene } from "@jgengine/shell/render/modelRender"`
-- `disposeModelScene` (function) · `import { disposeModelScene } from "@jgengine/shell/render/modelRender"`
-- `useModelInstance` (function) · `import { useModelInstance } from "@jgengine/shell/render/useModelInstance"`
-
-## model-load-idle — how long the shared GLB loader has been idle, for capture settle waits
-
-- `modelLoadIdleMs` (function) · `import { modelLoadIdleMs } from "@jgengine/shell/render/modelLoad"`
-
-## model-load-starts — count of model streaming bursts, for capture quiescence checks
-
-- `modelLoadStarts` (function) · `import { modelLoadStarts } from "@jgengine/shell/render/modelLoad"`
-
-## model-wind — sway a foliage model in the shared gust field
-
-- `applyModelWind` (function) · `import { applyModelWind } from "@jgengine/shell/render/modelWind"`
-
 ## nameplates — billboarded name + HP bar over nearby entities
 
 - `WorldNameplates` (function) · `import { WorldNameplates } from "@jgengine/core/hud/WorldHud.draw"`
@@ -744,7 +710,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## projected-overdraw — sample actual mesh/camera fragment overlap with native coverage and explicit depth/blending/transmission limits
 
-- `measureProjectedOverdraw` (function) · `import { measureProjectedOverdraw } from "@jgengine/shell/render/projectedOverdraw"`
+- `measureProjectedOverdraw` (function) · `import { measureProjectedOverdraw } from "@jgengine/core/render/projectedOverdraw.draw"`
 
 ## quest-tracker — compact quest/objective HUD tracker — titles + labelled objective progress from describeTrackedQuest views
 
@@ -766,14 +732,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `useRafLoop` (function) · `import { useRafLoop } from "@jgengine/react"`
 
-## request-scene-capture — request the live scene frame, waiting for a late binding and the first painted frame
-
-- `requestSceneCapture` (function) · `import { requestSceneCapture } from "@jgengine/shell/render/sceneCapture"`
-
-## request-scene-thumbnail — request a save-card thumbnail from the live scene, or a stated failure
-
-- `requestSceneThumbnail` (function) · `import { requestSceneThumbnail } from "@jgengine/shell/render/sceneCapture"`
-
 ## resolve-game-look — expand a look preset and lighting mood into concrete lighting/backdrop/post knobs
 
 - `resolveGameLook` (function) · `import { resolveGameLook } from "@jgengine/core/ui"`
@@ -789,10 +747,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## scaled-object-model — stretch one placement of a catalog model with visual.scale
 
 - `drawsScaledModel` (function) · `import { drawsScaledModel } from "@jgengine/shell/world/WorldScene"`
-
-## scene-capture-binding — expose the in-Canvas scene-capture function to outside-Canvas HUD (photo mode, save thumbnails)
-
-- `SceneCaptureBinding` (function) · `import { SceneCaptureBinding } from "@jgengine/shell/render/sceneCapture"`
 
 ## scoreboard-table — reskinnable ranked-score / leaderboard table over the rankLeaderboard selector — medal-colored podium, local-row highlight, HudTheme-token driven
 
@@ -859,11 +813,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `StartScreen` (function) · `import { StartScreen } from "@jgengine/react"`
 
-## static-transforms — static-transforms
-
-- `freezeStaticTransforms` (function) · `import { freezeStaticTransforms } from "@jgengine/shell/render/staticTransforms"`
-- `thawStaticTransforms` (function) · `import { thawStaticTransforms } from "@jgengine/shell/render/staticTransforms"`
-
 ## status-effect-bar — timeline HUD row of active statuses — icon + radial countdown ring + stack badge, driven off the status model, HudTheme-skinned
 
 - `StatusEffectBar` (function) · `import { StatusEffectBar } from "@jgengine/react"`
@@ -894,7 +843,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## triangle-attribution — per-model triangle table with instance counts, for perf probes
 
-- `attributeTriangles` (function) · `import { attributeTriangles } from "@jgengine/shell/render/triangleAttribution"`
+- `attributeTriangles` (function) · `import { attributeTriangles } from "@jgengine/core/render/triangleAttribution.draw"`
 
 ## ui-kit-arcade — retro 8-bit arcade UI kit: stepped pixel frames, JRPG windows, depth buttons, hearts, score popups, chiptune cues
 

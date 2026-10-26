@@ -4,7 +4,7 @@
  * needs before any app root mounts. Every app component reads these constants
  * rather than re-parsing `location.search`.
  */
-import { installAssetBase } from "@jgengine/shell/render/assetBase";
+import { installAssetBase } from "@jgengine/core/assets/assetBase.draw";
 import { installSaveEndpoint } from "@jgengine/core/devtools/saveEndpoint";
 import { installSpawnOverride, parseSpawnOverride } from "@jgengine/core/world/spawnOverride";
 

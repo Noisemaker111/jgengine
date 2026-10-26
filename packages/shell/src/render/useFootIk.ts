@@ -7,9 +7,9 @@ import { lookAt, solveTwoBone, type MutableVec3 } from "@jgengine/core/anim/ikSo
 import type { GameContext } from "@jgengine/core/runtime/gameContextTypes";
 import type { ModelConfig, ModelIkConfig, ModelLookAtConfig } from "@jgengine/core/game/playableGame";
 import type { SceneRaycastHit, SceneRaycastInput } from "@jgengine/core/scene/sceneRaycast";
-import { resolveRigNode } from "./rigNode";
+import { resolveRigNode } from "@jgengine/core/model/rigNode.draw";
 import { noteCharacterMotion } from "@jgengine/core/lod/characterLod";
-import { useFrameWhile } from "./useFrameWhile";
+import { useFrameWhile } from "@jgengine/core/render/useFrameWhile.draw";
 
 type FootIkConfig = Exclude<NonNullable<ModelConfig["ik"]>, "none">;
 type GroundProbe = (input: SceneRaycastInput) => SceneRaycastHit | null;

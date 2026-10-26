@@ -8,7 +8,7 @@ import { createPhotoModeStore } from "@jgengine/core/ui/photoMode";
 import { PhotoModeControls, usePhotoMode } from "@jgengine/core/ui/photoMode.view";
 
 import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
-import { SceneCaptureBinding, downloadImage } from "@jgengine/shell/render/sceneCapture";
+import { SceneCaptureBinding, downloadImage } from "@jgengine/core/scene/sceneCapture.draw";
 import type { PlayableGame } from "@jgengine/shell/registry";
 
 const SCOUT = "scout";

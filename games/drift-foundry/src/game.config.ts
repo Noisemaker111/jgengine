@@ -1,6 +1,6 @@
 import { defineGame } from "@jgengine/shell/defineGame";
 import { createElement } from "react";
-import { SceneCaptureBinding } from "@jgengine/shell/render/sceneCapture";
+import { SceneCaptureBinding } from "@jgengine/core/scene/sceneCapture.draw";
 import { editorLayers } from "./editorLayers";
 
 import { DRIFT_SOUNDS } from "./game/audio";

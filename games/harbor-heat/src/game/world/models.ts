@@ -2,7 +2,7 @@ import { librarySurfaceParameters, librarySurfaceScan } from "@jgengine/assets/c
 import { libraryModel } from "@jgengine/assets/catalogs/modelLibrary";
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import type { MaterialAsset } from "@jgengine/core/material/materialAsset";
-import { resolveModelPlan, type ModelPick } from "@jgengine/shell/render/resolveModel";
+import { resolveModelPlan, type ModelPick } from "@jgengine/core/model/resolveModel";
 
 import { assets } from "../assets";
 import { BUILDING_SPECS } from "./buildings";

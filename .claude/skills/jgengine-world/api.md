@@ -3208,6 +3208,32 @@
 - `RosterEntry` (interface): interface RosterEntry { id: string; catalogId: string; capturedAt: number; equipped: boolean } — ⚠ undocumented
 - `createRoster` (function): function createRoster(deps: RosterDeps = {}): Roster — ⚠ undocumented
 
+## @jgengine/core/scene/sceneCapture.draw
+
+- `CaptureRenderer` (interface): interface CaptureRenderer — The bit of a WebGL renderer scene capture needs — its backing `<canvas>`.
+- `SceneCapture` (type): type SceneCapture = () => string | null — Reads the current scene frame as an image data URL, or null when the frame cannot be read.
+- `SceneCaptureBinding` (function): function SceneCaptureBinding({ bind }: { bind?: (capture: () => string | null) => void }): null — In-`<Canvas>` binder that hands the scene-capture function out to HUD code living outside the reconciler (a photo-mode Capture button, a save slot's thumbnail). Mount it inside the game's `WorldOverlay`; the reader is registered for `requestSceneCapture`/`requestSceneThumbnail`, which wait for this mount and the first painted frame. `bind` is for code that wants the function directly and can be left out when a game only requests captures. Renders nothing.
+- `SceneCaptureFailure` (type): type SceneCaptureFailure = "no-binding" | "no-frame" | "undecodable" — Why a capture request produced no image.
+- `SceneCaptureRequestOptions` (interface): interface SceneCaptureRequestOptions — How a capture request waits and retries.
+- `SceneCaptureResult` (type): type SceneCaptureResult = | { ok: true; capture: string } | { ok: false; reason: SceneCaptureFailure } — A captured frame, or the stated reason there is none.
+- `SceneThumbnailResult` (type): type SceneThumbnailResult = | { ok: true; thumbnail: string } | { ok: false; reason: SceneCaptureFailure } — A save-card thumbnail, or the stated reason there is none.
+- `captureCanvas` (function): function captureCanvas(gl: CaptureRenderer): string | null — Read the current frame to a PNG data URL. Requires the R3F `<Canvas>` to have been created with `gl={{ preserveDrawingBuffer: true }}` (the shell's game canvas already is); returns null if the backing canvas can't be read.
+- `downloadImage` (function): function downloadImage(dataUrl: string, filename = "screenshot.png"): void — Trigger a browser download of an image data URL (the photo-mode "save" action).
+- `registerSceneCapture` (function): function registerSceneCapture(capture: SceneCapture | null): () => void — Hand the capture path a reader for the live frame, or `null` to retire it. The returned function unbinds only that reader, so a canvas that remounts cannot be unbound by its predecessor.
+- `requestSceneCapture` (function): function requestSceneCapture(options: SceneCaptureRequestOptions = {}): Promise<SceneCaptureResult> — Request the current scene frame. Resolves once a binding exists and the canvas has painted, or with the reason no frame could be read; it never polls and never rejects.
+- `requestSceneThumbnail` (function): function requestSceneThumbnail(options: SceneCaptureRequestOptions & SaveThumbnailOptions = {}): Promise<SceneThumbnailResult> — Request a save-card thumbnail from the live scene: the shared capture request, then `shrinkCapture`. Pass what the slot card stores; omit everything for a 320x180 JPEG.
+
+## @jgengine/core/scene/sceneCaptureRequest.draw
+
+- `SceneCapture` (type): type SceneCapture = () => string | null — Reads the current scene frame as an image data URL, or null when the frame cannot be read.
+- `SceneCaptureFailure` (type): type SceneCaptureFailure = "no-binding" | "no-frame" | "undecodable" — Why a capture request produced no image.
+- `SceneCaptureRequestOptions` (interface): interface SceneCaptureRequestOptions — How a capture request waits and retries.
+- `SceneCaptureResult` (type): type SceneCaptureResult = | { ok: true; capture: string } | { ok: false; reason: SceneCaptureFailure } — A captured frame, or the stated reason there is none.
+- `SceneThumbnailResult` (type): type SceneThumbnailResult = | { ok: true; thumbnail: string } | { ok: false; reason: SceneCaptureFailure } — A save-card thumbnail, or the stated reason there is none.
+- `registerSceneCapture` (function): function registerSceneCapture(capture: SceneCapture | null): () => void — Hand the capture path a reader for the live frame, or `null` to retire it. The returned function unbinds only that reader, so a canvas that remounts cannot be unbound by its predecessor.
+- `requestSceneCapture` (function): function requestSceneCapture(options: SceneCaptureRequestOptions = {}): Promise<SceneCaptureResult> — Request the current scene frame. Resolves once a binding exists and the canvas has painted, or with the reason no frame could be read; it never polls and never rejects.
+- `requestSceneThumbnail` (function): function requestSceneThumbnail(options: SceneCaptureRequestOptions & SaveThumbnailOptions = {}): Promise<SceneThumbnailResult> — Request a save-card thumbnail from the live scene: the shared capture request, then `shrinkCapture`. Pass what the slot card stores; omit everything for a 320x180 JPEG.
+
 ## @jgengine/core/scene/sceneKindRenderers.draw
 
 - `SceneKindRenderContext` (interface): interface SceneKindRenderContext — Context a scene-kind renderer receives alongside the matching document objects.

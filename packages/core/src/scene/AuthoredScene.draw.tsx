@@ -28,7 +28,7 @@ import { useGameContext } from "@jgengine/react/provider";
 
 import { Roads } from "@jgengine/core/roads/RoadRibbons.draw";
 
-import { createModelMapResolver } from "@jgengine/shell/render/resolveModel";
+import { createModelMapResolver } from "@jgengine/core/model/resolveModel";
 import { InstancedScatter } from "@jgengine/core/scatter/InstancedScatter.draw";
 import { GeneratedAssetInstance } from "./GeneratedAssetRenderer.draw";
 import { registerBuiltinSceneKindRenderers } from "./builtinSceneKindRenderers.draw";

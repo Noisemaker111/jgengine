@@ -3,7 +3,7 @@ import { useMemo } from "react";
 import * as THREE from "three";
 
 import type { PlayableGame } from "@jgengine/shell/registry";
-import { applyModelWind, resolveModelWind, windClock } from "@jgengine/shell/render/modelWind";
+import { applyModelWind, resolveModelWind, windClock } from "@jgengine/core/model/modelWind.draw";
 
 import { demoGame } from "./demoGame";
 

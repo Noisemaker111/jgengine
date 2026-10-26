@@ -11,7 +11,7 @@ describe("game scope", () => {
 
   test("a test file runs no game: it ships nothing a game boots", () => {
     expect(gameScope(["packages/core/src/combat/damage.test.ts"]).scope).toBe("none");
-    expect(gameScope(["packages/shell/src/render/sceneWarmupCover.test.ts"]).scope).toBe("none");
+    expect(gameScope(["packages/core/src/scene/sceneWarmupCover.draw.test.ts"]).scope).toBe("none");
     expect(isInertPath("scripts/verify-fast.test.ts")).toBe(true);
   });
 
@@ -20,7 +20,7 @@ describe("game scope", () => {
       "packages/core/src/sim/population.ts",
       "packages/core/src/movement/characterController.ts",
       "packages/core/src/game/systemRuntime.ts",
-      "packages/shell/src/render/SceneModels.tsx",
+      "packages/core/src/model/SceneModels.draw.tsx",
       ".github/workflows/ci.yml",
       "scripts/perf-gate.ts",
       "CHANGELOG.md",
@@ -92,7 +92,7 @@ describe("test shards", () => {
       "AGENTS.md",
       ".claude/skills/workflow/SKILL.md",
       "packages/core/src/combat/damage.test.ts",
-      "packages/shell/src/render/SceneModels.tsx",
+      "packages/core/src/model/SceneModels.draw.tsx",
       "scripts/land.ts",
     ]) {
       expect(testsNeeded([path])).toBe("all");
@@ -130,7 +130,7 @@ describe("games in this repo", () => {
 
   test("an engine package change checks every game that declares it", () => {
     expect(gameScope(["packages/convex/src/index.ts"], workspace).gameChecks).toEqual(["llmville"]);
-    expect(gameScope(["packages/shell/src/render/SceneModels.tsx"], workspace).gameChecks).toEqual(["fernwild", "harbor-heat"]);
+    expect(gameScope(["packages/shell/src/Shell3dPresentation.tsx"], workspace).gameChecks).toEqual(["fernwild", "harbor-heat"]);
     expect(gameScope(["packages/core/src/combat/damage.test.ts"], workspace).gameChecks).toEqual([]);
   });
 

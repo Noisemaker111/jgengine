@@ -8,7 +8,7 @@ import { resolveVolumetricClouds } from "@jgengine/core/sky/volumetricClouds";
 
 import { warnOnce } from "@jgengine/core/devtools/warnOnce";
 
-import { DisplayColorWriter } from "@jgengine/shell/render/displayColor";
+import { DisplayColorWriter } from "@jgengine/core/render/displayColor.draw";
 import type { DaylightModulation } from "@jgengine/core/lighting/SceneLighting.draw";
 import {
   bandFogColor,

@@ -4,7 +4,7 @@ import * as THREE from "three";
 
 import type { GameContext } from "@jgengine/core/runtime/gameContextTypes";
 import { noteCharacterMotion } from "@jgengine/core/lod/characterLod";
-import { useFrameWhile } from "./useFrameWhile";
+import { useFrameWhile } from "@jgengine/core/render/useFrameWhile.draw";
 
 /**
  * Tuning for the default head turn a rigged character makes toward the local player. Angles are

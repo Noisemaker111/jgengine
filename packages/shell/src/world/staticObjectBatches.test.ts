@@ -7,9 +7,9 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { placeAuthoredObjects, resolveAuthoredObjects } from "@jgengine/core/world/authoredObjects";
 import { buildScatterModelSources, disposeScatterModelSources } from "@jgengine/core/scatter/scatterModels.draw";
 import { createPointerService, POINTER_OBJECT_INSTANCES_KEY } from "@jgengine/core/input/pointerService.draw";
-import { measureLocalBounds } from "../render/measureBounds";
-import { measureLocalCollisionTriangles } from "../render/measureCollisionMesh";
-import { resolveObjectModel, type ObjectModelCacheEntry } from "../render/resolveModel";
+import { measureLocalBounds } from "@jgengine/core/model/measureBounds.draw";
+import { measureLocalCollisionTriangles } from "@jgengine/core/model/measureCollisionMesh.draw";
+import { resolveObjectModel, type ObjectModelCacheEntry } from "@jgengine/core/model/resolveModel";
 import { buildCullingDriver } from "@jgengine/core/visibility/cullingDriver";
 import { canBatchStaticObject, canInstanceStaticScene, countStaticBatchDraws, groupStaticObjects, STATIC_BATCH_CELL, STATIC_BATCH_MESH_KEY, STATIC_BATCH_MIN, incompatibleStaticObjectIds, syncStaticObjectSource, type StaticObjectCandidate } from "./staticObjectBatches";
 

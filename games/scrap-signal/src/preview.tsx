@@ -1,5 +1,5 @@
 import type { GamePreviewProps } from "@jgengine/react/preview";
-import { EntityPreview } from "@jgengine/shell/render/EntityPreview";
+import { EntityPreview } from "@jgengine/core/render/EntityPreview.draw";
 
 import { entityModels } from "./game/world/models";
 

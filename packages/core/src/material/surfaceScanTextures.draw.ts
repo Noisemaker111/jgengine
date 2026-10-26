@@ -5,7 +5,7 @@ import * as THREE from "three";
 import type { TerrainMaterialMaps } from "@jgengine/core/world/features";
 
 import { ImageTextureLoader } from "./imageTexture.draw";
-import { warmupWaitsFor } from "@jgengine/shell/render/shaderWarmup";
+import { warmupWaitsFor } from "@jgengine/core/render/shaderWarmup.draw";
 
 /** Decoded maps of one scanned surface, shared by every material that tiles it. */
 export interface SurfaceScanTextures {

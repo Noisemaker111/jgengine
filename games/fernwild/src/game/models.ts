@@ -1,5 +1,5 @@
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
-import { resolveModelPlan } from "@jgengine/shell/render/resolveModel";
+import { resolveModelPlan } from "@jgengine/core/model/resolveModel";
 
 import { assets } from "./assets";
 

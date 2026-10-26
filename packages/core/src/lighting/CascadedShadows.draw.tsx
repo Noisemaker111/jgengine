@@ -5,7 +5,7 @@ import { CSM } from "three/examples/jsm/csm/CSM.js";
 
 import type { DirectionalLightingConfig } from "@jgengine/core/game/playableGame";
 import type { GraphicsProfile } from "@jgengine/core/settings/graphicsProfile";
-import { prepareBeforeWarmup } from "@jgengine/shell/render/shaderWarmup";
+import { prepareBeforeWarmup } from "@jgengine/core/render/shaderWarmup.draw";
 import { resolveCascadeCount, resolveShadowMapSize } from "./shadowTiers";
 import type { DaylightModulation } from "./SceneLighting.draw";
 

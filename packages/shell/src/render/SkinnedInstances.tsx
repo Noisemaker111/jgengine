@@ -6,8 +6,8 @@ import { clone as cloneSkinned } from "three/examples/jsm/utils/SkeletonUtils.js
 
 import { planBoneTexture, type BoneTextureLayout } from "@jgengine/core/anim/boneTexture";
 
-import { floatAttribute } from "./modelMeshMerge";
-import { sharedGltfLoader } from "./modelLoad";
+import { floatAttribute } from "@jgengine/core/model/modelMeshMerge.draw";
+import { sharedGltfLoader } from "@jgengine/core/model/modelLoad.draw";
 
 /** A rig to bake: a loaded scene with skinned meshes and its clips. */
 export interface SkinnedCrowdSource {

@@ -7,9 +7,9 @@ import { resolveAmbientLife, type AmbientLifeConfig, type ResolvedAmbientLife, t
 import { uploadInstances } from "@jgengine/core/instancing/instanceUpload.draw";
 import { findKeyLight, towardLight } from "@jgengine/core/postfx/contactShadowPass.draw";
 import { advanceLivingWorld, livingWorld, resetLivingWorld } from "./livingWorld";
-import { windDirection, windGust } from "./modelWind";
-import { useDisposable } from "./useDisposable";
-import { prepareBeforeWarmup } from "./shaderWarmup";
+import { windDirection, windGust } from "@jgengine/core/model/modelWind.draw";
+import { useDisposable } from "@jgengine/core/render/useDisposable.draw";
+import { prepareBeforeWarmup } from "@jgengine/core/render/shaderWarmup.draw";
 import { applyWetnessToScene } from "@jgengine/core/material/wetSurfaces.draw";
 
 const LIGHT_RESCAN_SECONDS = 1.5;

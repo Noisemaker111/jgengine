@@ -7,7 +7,7 @@ import { HudThemeRoot } from "@jgengine/core/hud/hudThemeRoot.view";
 import { HudViewportProvider } from "@jgengine/core/hud/hudViewport.view";
 
 import type { PlayableGame } from "./registry";
-import { contextModels } from "./render/resolveModel";
+import { contextModels } from "@jgengine/core/model/resolveModel";
 
 export type UiPreviewScenario = (ctx: GameContext, playable: PlayableGame) => void;
 

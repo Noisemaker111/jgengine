@@ -4,9 +4,9 @@ import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import { createObjectStore } from "@jgengine/core/scene/objectStore";
 import { createModelVariantSelector } from "@jgengine/core/lod/modelLod";
 import { lodBandIndex } from "@jgengine/core/lod/lod";
-import { EntityModel, IsolatedEntityModel, SingleVariantModel } from "@jgengine/shell/render/SceneModels";
+import { EntityModel, IsolatedEntityModel, SingleVariantModel } from "@jgengine/core/model/SceneModels.draw";
 import { singleVariantLevel, variantLevelModel } from "./singleVariantLod.draw";
-import { attributeTriangles } from "@jgengine/shell/render/triangleAttribution";
+import { attributeTriangles } from "@jgengine/core/render/triangleAttribution.draw";
 
 const FULL_TRIANGLES = 9134;
 const FAR_TRIANGLES = 4110;

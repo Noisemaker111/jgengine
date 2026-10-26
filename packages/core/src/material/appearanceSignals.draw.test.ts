@@ -3,7 +3,7 @@ import * as THREE from "three";
 import type { EnvironmentSample } from "@jgengine/core/world/envField";
 import { createMaterialTemplate } from "@jgengine/core/material/materialAsset";
 import { applyMaterialAsset } from "./materialAsset.draw";
-import { cloneModelScene, disposeModelScene } from "@jgengine/shell/render/modelRender";
+import { cloneModelScene, disposeModelScene } from "@jgengine/core/model/modelRender.draw";
 import { applyMaterialAppearanceSignals, captureMaterialAppearanceBaseline, restoreMaterialAppearanceBaseline } from "./appearanceSignals.draw";
 
 const sample = (wetness: number, lightExposure = 1): EnvironmentSample => ({ temperature: 20, wetness, lightExposure, ambientLight: 0.5, sheltered: false });

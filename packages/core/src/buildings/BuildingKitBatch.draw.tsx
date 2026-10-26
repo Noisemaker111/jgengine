@@ -4,7 +4,7 @@ import * as THREE from "three";
 
 import type { MaterialAsset } from "@jgengine/core/material/materialAsset";
 import { useModelMaterialTextures } from "@jgengine/core/material/materialAsset.draw";
-import { sharedGltfLoader } from "@jgengine/shell/render/modelLoad";
+import { sharedGltfLoader } from "@jgengine/core/model/modelLoad.draw";
 import {
   buildScatterModelSources,
   disposeScatterModelSources,

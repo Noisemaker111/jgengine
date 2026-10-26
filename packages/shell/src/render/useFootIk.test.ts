@@ -9,9 +9,9 @@ import { clone } from "three/examples/jsm/utils/SkeletonUtils.js";
 
 import type { SceneRaycastHit, SceneRaycastInput } from "@jgengine/core/scene/sceneRaycast";
 import { applyFootIk, resolveFootIkRig, useFootIk, type FootIkState } from "./useFootIk";
-import { modelPlacementTransform } from "./modelRender";
-import { measureLocalBounds } from "./measureBounds";
-import { measureLocalCollisionTriangles } from "./measureCollisionMesh";
+import { modelPlacementTransform } from "@jgengine/core/model/modelRender.draw";
+import { measureLocalBounds } from "@jgengine/core/model/measureBounds.draw";
+import { measureLocalCollisionTriangles } from "@jgengine/core/model/measureCollisionMesh.draw";
 
 function ground(height: (x: number, z: number) => number, normal: readonly [number, number, number] = [0, 1, 0]) {
   const calls: SceneRaycastInput[] = [];

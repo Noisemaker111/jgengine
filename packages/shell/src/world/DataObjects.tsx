@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, type ReactNode } from "react";
 import * as THREE from "three";
 
 import { uploadInstances } from "@jgengine/core/instancing/instanceUpload.draw";
-import { useDisposable } from "../render/useDisposable";
+import { useDisposable } from "@jgengine/core/render/useDisposable.draw";
 
 /**
  * Renders one placed 3D object per data item — a 3D bar chart, a heatmap, a city

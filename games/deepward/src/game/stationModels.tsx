@@ -1,5 +1,5 @@
 import type { AssetCatalog } from '@jgengine/core/scene/assetCatalog';
-import { IsolatedEntityModel } from '@jgengine/shell/render/SceneModels';
+import { IsolatedEntityModel } from '@jgengine/core/model/SceneModels.draw';
 import { editorLayers, type Place } from '../world';
 
 export function stationModelMarkers(place: Place) {

@@ -6,7 +6,7 @@ import type { LiveProjectile } from "@jgengine/core/combat/projectiles";
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import { useGameContext } from "@jgengine/react/provider";
 
-import { IsolatedEntityModel } from "@jgengine/shell/render/SceneModels";
+import { IsolatedEntityModel } from "@jgengine/core/model/SceneModels.draw";
 
 /** Explicit opt-in shaft/head geometry when a game has no projectile model. */
 export interface ProjectileShaft {

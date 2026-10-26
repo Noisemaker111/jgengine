@@ -29,7 +29,7 @@ import {
 } from "@jgengine/core/render/colorPipeline";
 import type { GraphicsQuality } from "@jgengine/core/settings/settingsModel";
 
-import { warmupDraws } from "@jgengine/shell/render/shaderWarmup";
+import { warmupDraws } from "@jgengine/core/render/shaderWarmup.draw";
 import { ExposureMeterPass } from "./autoExposure.draw";
 import { AtmospherePass } from "./atmospherePass.draw";
 import { ContactShadowPass } from "./contactShadowPass.draw";

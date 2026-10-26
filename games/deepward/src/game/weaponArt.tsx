@@ -1,4 +1,4 @@
-import { IsolatedEntityModel } from "@jgengine/shell/render/SceneModels";
+import { IsolatedEntityModel } from "@jgengine/core/model/SceneModels.draw";
 import { stationAssets } from "./assets";
 import type { Triple } from "./art";
 import { MAGAZINE } from "./combat";

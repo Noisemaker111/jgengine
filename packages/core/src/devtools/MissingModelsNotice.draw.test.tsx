@@ -2,7 +2,7 @@ import { afterEach, describe, expect, test } from "bun:test";
 import { join } from "node:path";
 import type { ReactNode } from "react";
 
-import { clearModelLoadFallbacks, handleModelLoadFailure } from "@jgengine/shell/render/modelLoad";
+import { clearModelLoadFallbacks, handleModelLoadFailure } from "@jgengine/core/model/modelLoad.draw";
 import { MissingModelsNotice } from "./MissingModelsNotice.draw";
 
 const { renderToStaticMarkup } = (await import(Bun.resolveSync("react-dom/server", join(import.meta.dir, "../../../react/src")))) as {

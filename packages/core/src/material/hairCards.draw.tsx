@@ -3,7 +3,7 @@ import * as THREE from "three";
 import { buildHairCards, type HairCardAuthoring } from "@jgengine/core/material/hairCards";
 import type { MaterialAsset } from "@jgengine/core/material/materialAsset";
 import { MaterialAssetSurface } from "./materialAsset.draw";
-import { useDisposable } from "@jgengine/shell/render/useDisposable";
+import { useDisposable } from "@jgengine/core/render/useDisposable.draw";
 
 /** Render authored guide ribbons with explicit UVs and strand tangents; motion and collision remain caller-owned. */
 export function HairCards({ cards, material }: { cards: HairCardAuthoring; material: MaterialAsset }) {

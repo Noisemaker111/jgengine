@@ -4,7 +4,7 @@ import { CSM } from "three/examples/jsm/csm/CSM.js";
 
 import { bindCsmMaterials, cascadeShadowCadence, createCascadeRefreshState, patchSceneMaterials, refreshCascadesOnTexelStep, releaseCascadedShadows, resolveShadowDistance, type CsmMaterialSetup } from "./CascadedShadows.draw";
 import { resolveGraphicsProfile } from "@jgengine/core/settings/graphicsProfile";
-import { createShaderWarmup } from "@jgengine/shell/render/shaderWarmup";
+import { createShaderWarmup } from "@jgengine/core/render/shaderWarmup.draw";
 
 function fakeCsm(calls: THREE.Material[]): CsmMaterialSetup {
   return {

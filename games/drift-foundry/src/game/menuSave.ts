@@ -1,6 +1,6 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { createSaveSlots } from "@jgengine/core/save/saveSlots";
-import { requestSceneThumbnail } from "@jgengine/shell/render/sceneCaptureRequest";
+import { requestSceneThumbnail } from "@jgengine/core/scene/sceneCaptureRequest.draw";
 
 import { bankOf, DRIVER, readCareer, standingOf } from "./career";
 import { parkedRunMetres, parkedTrack, readParkedRun, type ParkedRun } from "./run/progress";

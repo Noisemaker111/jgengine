@@ -1,4 +1,4 @@
-import { SceneCaptureBinding } from "@jgengine/shell/render/sceneCapture";
+import { SceneCaptureBinding } from "@jgengine/core/scene/sceneCapture.draw";
 import { bindScrapCapture } from "../scrapProfile";
 import { useFrame, useThree } from "@react-three/fiber";
 import { Group, Vector3 } from "three";

@@ -279,7 +279,7 @@ describe.if(built)("clean-consumer resolution of the real tarball (zero-dep pack
         "import { modelWithAuthoredMaterials } from '@jgengine/core/editor/materialAuthoring';",
         "import { inspectGltfMaterials } from '@jgengine/assets/gltfMaterials';",
         "import { applyMaterialAssignments, inspectModelMaterialSlots, materialResourceMetrics } from '@jgengine/core/material/materialAsset.draw';",
-        "import { cloneModelScene, disposeModelScene } from '@jgengine/shell/render/modelRender';",
+        "import { cloneModelScene, disposeModelScene } from '@jgengine/core/model/modelRender.draw';",
         "import { materialControlGroups } from '@jgengine/editor/materialControls';",
         "const wool = createMaterialTemplate('wool', 'game/wool', 'Original upholstery');",
         "if (validateMaterialAsset(wool).some(issue => issue.severity === 'error')) throw new Error('packaged material schema failed');",

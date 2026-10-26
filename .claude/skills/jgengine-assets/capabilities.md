@@ -57,6 +57,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `validateHairCardAuthoring` (function) · `import { validateHairCardAuthoring } from "@jgengine/core/material/hairCards"`
 
+## heavy-models — models over the per-model triangle budget, for perf probes and smoke assertions
+
+- `heavyModels` (function) · `import { heavyModels } from "@jgengine/core/model/modelLoad.draw"`
+
+## imported-rig-node — resolve original imported bone and slot names with ambiguity diagnostics
+
+- `resolveRigNode` (function) · `import { resolveRigNode } from "@jgengine/core/model/rigNode.draw"`
+
 ## library-building-surface — paint a building part from a named library material
 
 - `libraryBuildingSurface` (function) · `import { libraryBuildingSurface } from "@jgengine/assets/catalogs/materialLibrary"`
@@ -126,6 +134,16 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `useTriplanarAssetMaterial` (function) · `import { useTriplanarAssetMaterial } from "@jgengine/core/material/triplanarMaterial.draw"`
 
+## model-fallbacks — models the loader replaced with a placeholder, for capture and smoke assertions
+
+- `modelLoadFallbacks` (function) · `import { modelLoadFallbacks } from "@jgengine/core/model/modelLoad.draw"`
+
+## model-instance — clone a loaded model for independent styling and animation
+
+- `cloneModelScene` (function) · `import { cloneModelScene } from "@jgengine/core/model/modelRender.draw"`
+- `disposeModelScene` (function) · `import { disposeModelScene } from "@jgengine/core/model/modelRender.draw"`
+- `useModelInstance` (function) · `import { useModelInstance } from "@jgengine/core/model/useModelInstance.draw"`
+
 ## model-library — ask for a realistic licensed model by what it is ("street lamp", "office desk")
 
 - `findLibraryModel` (function) · `import { findLibraryModel } from "@jgengine/assets"`
@@ -137,6 +155,26 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## model-library-rigged — pull a rigged, animated Microsoft Rocketbox human or animal into a game as one GLB
 
 - `pullRocketboxModel` (function) · `import { pullRocketboxModel } from "@jgengine/assets/rocketboxPull"`
+
+## model-load-idle — how long the shared GLB loader has been idle, for capture settle waits
+
+- `modelLoadIdleMs` (function) · `import { modelLoadIdleMs } from "@jgengine/core/model/modelLoad.draw"`
+
+## model-load-starts — count of model streaming bursts, for capture quiescence checks
+
+- `modelLoadStarts` (function) · `import { modelLoadStarts } from "@jgengine/core/model/modelLoad.draw"`
+
+## model-loader-paths — Point Draco and KTX2 decoding at self-hosted decoder files
+
+- `configureModelLoaders` (function) · `import { configureModelLoaders } from "@jgengine/core/model/modelLoad.draw"`
+
+## model-triangle-budget — Raise or lower the per-model triangle budget
+
+- `setModelTriangleBudget` (function) · `import { setModelTriangleBudget } from "@jgengine/core/model/modelLoad.draw"`
+
+## model-wind — sway a foliage model in the shared gust field
+
+- `applyModelWind` (function) · `import { applyModelWind } from "@jgengine/core/model/modelWind.draw"`
 
 ## rank-assets — find the model, pack, material, sprite, HUD component or icon for a word, best first
 
@@ -157,3 +195,8 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## static-prefab-export — export editable prefab compositions with source materials and collision metadata
 
 - `bakeStaticPrefab` (function) · `import { bakeStaticPrefab } from "@jgengine/assets/staticPrefabBake"`
+
+## static-transforms — static-transforms
+
+- `freezeStaticTransforms` (function) · `import { freezeStaticTransforms } from "@jgengine/core/model/staticTransforms.draw"`
+- `thawStaticTransforms` (function) · `import { thawStaticTransforms } from "@jgengine/core/model/staticTransforms.draw"`

@@ -42,7 +42,7 @@ import {
 import { devtools } from "@jgengine/core/devtools/devtools";
 import { armFallbackSeams } from "@jgengine/core/devtools/fallbackSeams";
 import { armTextureErrors } from "@jgengine/core/devtools/textureErrors";
-import { armMissingModelLabels } from "./render/modelLoad";
+import { armMissingModelLabels } from "@jgengine/core/model/modelLoad.draw";
 import { readUrlFlag, subscribeUrlChange, writeUrlParam } from "@jgengine/core/devtools/urlFlags";
 
 import { createAudioEngine } from "@jgengine/core/audio/audioEngine.view";
@@ -54,9 +54,9 @@ import { installAgentBridge } from "@jgengine/core/devtools/agentBridge.draw";
 import { attachPlaytestProbe } from "@jgengine/core/devtools/playtestProbe";
 import { withDevtoolsLatency } from "@jgengine/core/devtools/latencyInstrumentation.draw";
 import { resolveRigKind } from "@jgengine/core/camera/rigResolve";
-import { contextModels } from "./render/resolveModel";
-import { configureModelScan } from "./render/modelScan";
-import { configureModelSurface } from "./render/modelSurface";
+import { contextModels } from "@jgengine/core/model/resolveModel";
+import { configureModelScan } from "@jgengine/core/model/modelScan.draw";
+import { configureModelSurface } from "@jgengine/core/model/modelSurface.draw";
 import type { ShellMultiplayer } from "@jgengine/core/multiplayer/multiplayer.draw";
 import type { PlayableGame } from "./registry";
 import { OrientationHint } from "@jgengine/core/input/OrientationHint.view";

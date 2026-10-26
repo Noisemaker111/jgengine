@@ -3,7 +3,7 @@ import { useEffect, useRef } from "react";
 
 import { useCanvasCovered } from "@jgengine/core/ui/canvasCover.view";
 
-import { prepareSceneView } from "../render/shaderWarmup";
+import { prepareSceneView } from "@jgengine/core/render/shaderWarmup.draw";
 
 /** The frameloop the shell asked for; the cover only ever overrides it with `"never"`. */
 type CanvasFrameloop = "always" | "demand" | "never";

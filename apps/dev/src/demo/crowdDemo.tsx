@@ -12,10 +12,10 @@ import { useEffect, useMemo } from "react";
 import * as THREE from "three";
 
 import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
-import { sharedGltfLoader } from "@jgengine/shell/render/modelLoad";
+import { sharedGltfLoader } from "@jgengine/core/model/modelLoad.draw";
 import type { PlayableGame } from "@jgengine/shell/registry";
 import { SkinnedInstances, type CrowdInstance } from "@jgengine/shell/render/SkinnedInstances";
-import { cloneModelScene, disposeModelScene } from "@jgengine/shell/render/modelRender";
+import { cloneModelScene, disposeModelScene } from "@jgengine/core/model/modelRender.draw";
 import { useModelAnimation } from "@jgengine/shell/render/useModelAnimation";
 
 const OBSERVER = "observer";

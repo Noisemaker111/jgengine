@@ -58,6 +58,8 @@ export interface Verdict {
  */
 const FULL = [
   /^packages\/core\/src\/(render|scene|sim|ai|nav|physics|movement|runtime|time)\//,
+  // Frame work moved home from shell/render, postfx, scatter and world.
+  /^packages\/core\/src\/(model|lighting|material|postfx|scatter|instancing|terrain|lod|visibility|environment|camera)\//,
   /^packages\/core\/src\/game\/system(Runtime|Schedule)\.ts/,
   /^packages\/shell\/src\/(render|postfx|scatter|world)\//,
   // Every game boots through the shared Vite engine-source resolution.

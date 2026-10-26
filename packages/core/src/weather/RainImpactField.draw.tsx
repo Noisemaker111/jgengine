@@ -1,6 +1,6 @@
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
-import { useDisposable } from "@jgengine/shell/render/useDisposable";
+import { useDisposable } from "@jgengine/core/render/useDisposable.draw";
 import { createWeatherQuadGeometry } from "./weatherGeometry.draw";
 import { useWeatherUniformSet } from "./weatherUniforms.draw";
 

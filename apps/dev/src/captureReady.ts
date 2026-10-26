@@ -4,7 +4,7 @@
  * Page.captureScreenshot — never ships PNG/base64 through the page.
  */
 
-import { modelLoadIdleMs, modelLoadStarts } from "@jgengine/shell/render/modelLoad";
+import { modelLoadIdleMs, modelLoadStarts } from "@jgengine/core/model/modelLoad.draw";
 
 import { resolvedLook } from "./appEnv";
 import { pickStartAction, waitForQuiescentView, type StartCandidate, type ViewActivity } from "./captureSettle";

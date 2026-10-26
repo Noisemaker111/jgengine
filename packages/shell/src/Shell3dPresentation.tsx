@@ -108,7 +108,7 @@ import { CanvasCoverFrameloop } from "./drivers/CanvasCoverFrameloop";
 import { FpsCounter, FpsProbe, type FrameTally } from "@jgengine/core/devtools/FpsCounter.draw";
 import { ConfiguredLighting, BackdropFog } from "@jgengine/core/lighting/SceneLighting.draw";
 import { IrradianceVolumeLighting } from "@jgengine/core/lighting/IrradianceVolumeLighting.draw";
-import { usePresentationLook } from "./render/presentationLook";
+import { usePresentationLook } from "@jgengine/core/render/presentationLook.draw";
 import type { GameLookInput } from "@jgengine/core/render/lookPreset";
 import { WorldView, RemotePlayers } from "./world/WorldScene";
 import { FrameDriver } from "./drivers/FrameDriver";
@@ -121,8 +121,8 @@ import { CombatPresentation } from "@jgengine/core/combat/CombatPresentation.dra
 import { ParticleEmitters } from "@jgengine/core/vfx/ParticleEmitters.draw";
 import { WorldTireMarks } from "./world/WorldTireMarks";
 import { TerrainQualityContext } from "@jgengine/core/terrain/terrainQuality.draw";
-import { detectKtx2Support } from "./render/modelLoad";
-import { SceneWarmupCoverLive, SceneWarmupGate, createSceneWarmupStore } from "./render/SceneWarmupGate";
+import { detectKtx2Support } from "@jgengine/core/model/modelLoad.draw";
+import { SceneWarmupCoverLive, SceneWarmupGate, createSceneWarmupStore } from "@jgengine/core/scene/SceneWarmupGate.draw";
 import {
   resolvePresentationEffects,
   resolveWorldOverlayBars,

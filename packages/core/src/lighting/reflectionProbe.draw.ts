@@ -2,9 +2,9 @@ import * as THREE from "three";
 
 import type { GraphicsQuality } from "@jgengine/core/settings/settingsModel";
 
-import { modelLoadIdleMs, modelLoadStarts } from "@jgengine/shell/render/modelLoad";
+import { modelLoadIdleMs, modelLoadStarts } from "@jgengine/core/model/modelLoad.draw";
 import { linkPmremBake } from "./pmremLink.draw";
-import { drawsHeld } from "@jgengine/shell/render/shaderWarmup";
+import { drawsHeld } from "@jgengine/core/render/shaderWarmup.draw";
 
 /** How often and how sharply the world reflection probe captures the scene. @internal */
 export interface WorldProbeSettings {

@@ -1,4 +1,4 @@
-import { IsolatedEntityModel } from '@jgengine/shell/render/SceneModels';
+import { IsolatedEntityModel } from '@jgengine/core/model/SceneModels.draw';
 import type { ModelAnimationConfig } from '@jgengine/core/game/playableGame';
 import type { Dive } from './state';
 import { PRINT_ID } from '../world';
