@@ -3,7 +3,7 @@ import type { ModelConfig, ObjectStyle } from "@jgengine/core/game/playableGame"
 import { objectVisualScale, type SceneObject } from "@jgengine/core/scene/objectStore";
 import type { GameContextObjectEntry } from "@jgengine/core/runtime/gameContext";
 import type { ScatterModelSource } from "../scatter/scatterModels";
-import { POINTER_OBJECT_INSTANCES_KEY } from "../pointer/pointerService";
+import { POINTER_OBJECT_INSTANCES_KEY } from "@jgengine/core/input/pointerService.draw";
 import { submitInstanceCount, submitsDraw } from "../render/submittedDraws";
 
 /** @internal */

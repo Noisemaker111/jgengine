@@ -19,7 +19,7 @@ import type { GenericId } from "convex/values";
 import { ConvexError, v } from "convex/values";
 import { validateChatMessage, type ChatMessage } from "@jgengine/core/chat/chat";
 import type { LeaderboardScope } from "@jgengine/core/leaderboard/leaderboard";
-import type { ChatSendOutcome } from "@jgengine/core/multiplayer/chatContract";
+import type { ChatSendOutcome } from "@jgengine/core/chat/chatContract";
 import {
   createFeedWriteGate,
   validateFeedWrite,
@@ -35,8 +35,8 @@ import {
   type PoseSyncRules,
   type PresencePoseState,
 } from "@jgengine/core/multiplayer/presenceModel";
-import type { CommandDef, CommandScope } from "@jgengine/core/runtime/commandRunner";
-import { SERVER_ONLY_COMMAND_REASON, commandScopeEscape, scopeWithActor } from "@jgengine/core/runtime/commandRunner";
+import type { CommandDef, CommandScope } from "@jgengine/core/commands/commandRunner";
+import { SERVER_ONLY_COMMAND_REASON, commandScopeEscape, scopeWithActor } from "@jgengine/core/commands/commandRunner";
 import type { GameRuntime } from "@jgengine/core/runtime/gameRuntime";
 import type { RunCommandArgs } from "@jgengine/core/runtime/transport";
 import { createGameRuntime, initialPlayerState } from "@jgengine/core/runtime/gameRuntime";

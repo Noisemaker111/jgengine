@@ -1,4 +1,4 @@
-import { ErrorReportActions, errorReportContext } from "@jgengine/shell/diagnostics/RuntimeDiagnostics";
+import { ErrorReportActions, errorReportContext } from "@jgengine/core/devtools/diagnosticOverlay.view";
 
 /** Small pieces every runner app root shares: error formatting and the two panels. */
 

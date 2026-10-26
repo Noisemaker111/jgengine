@@ -2,7 +2,7 @@ import { claimTerritory, territoryOwnerOf, territoryChunkKeys } from "@jgengine/
 import { buildPlacementReach, MAX_BUILD_PLACEMENT_REACH, getPlacementBounds } from "@llmville/game/build/build";
 import { cellsForBounds } from "@llmville/game/datacenter/grid";
 import { worldChunkKeysInRadius } from "@llmville/game/datacenter/worldChunks";
-import type { CommandDef } from "@jgengine/core/runtime/commandRunner";
+import type { CommandDef } from "@jgengine/core/commands/commandRunner";
 import type { GameRuntimeSnapshot } from "@jgengine/core/runtime/snapshot";
 import type { PlacementPreviewContext } from "@llmville/game/build/build";
 import {

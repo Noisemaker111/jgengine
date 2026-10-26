@@ -580,9 +580,9 @@
     {
       "id": "attach-event-feedback",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/audio/eventFeedback",
+      "module": "@jgengine/core/audio/eventFeedback",
       "domain": "audio",
       "gameFacing": false,
       "probe": null,
@@ -591,9 +591,9 @@
     {
       "id": "attach-wave-feedback",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/audio/eventFeedback",
+      "module": "@jgengine/core/audio/eventFeedback",
       "domain": "audio",
       "gameFacing": false,
       "probe": null,
@@ -624,9 +624,9 @@
     {
       "id": "audio-ducking",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/audio/audioEngine",
+      "module": "@jgengine/core/audio/audioEngine.view",
       "domain": "audio",
       "gameFacing": false,
       "probe": null,
@@ -646,9 +646,9 @@
     {
       "id": "audio-probe",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/audio/audioProbe",
+      "module": "@jgengine/core/audio/audioProbe.view",
       "domain": "audio mix",
       "gameFacing": true,
       "probe": {
@@ -980,9 +980,9 @@
     {
       "id": "bounded-spatial-audio",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/audio/audioEngine",
+      "module": "@jgengine/core/audio/audioEngine.view",
       "domain": "audio",
       "gameFacing": false,
       "probe": null,
@@ -1200,9 +1200,9 @@
     {
       "id": "caption-feed",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/audio/captions",
+      "module": "@jgengine/core/audio/captions",
       "domain": "audio",
       "gameFacing": false,
       "probe": null,
@@ -1211,9 +1211,9 @@
     {
       "id": "caption-overlay",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/audio/CaptionOverlay",
+      "module": "@jgengine/core/audio/CaptionOverlay.view",
       "domain": "audio",
       "gameFacing": false,
       "probe": null,
@@ -1698,8 +1698,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/runtime/commandInput",
-      "domain": "runtime",
+      "module": "@jgengine/core/commands/commandInput",
+      "domain": "commands",
       "gameFacing": false,
       "probe": null,
       "intent": "validate finite, bounded numbers and integers at command boundaries"
@@ -1709,8 +1709,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/runtime/commandRunner",
-      "domain": "runtime",
+      "module": "@jgengine/core/commands/commandRunner",
+      "domain": "commands",
       "gameFacing": false,
       "probe": null,
       "intent": "parse untrusted command input once so every command stage sees typed, bounded values"
@@ -1720,8 +1720,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/runtime/commandInput",
-      "domain": "runtime",
+      "module": "@jgengine/core/commands/commandInput",
+      "domain": "commands",
       "gameFacing": false,
       "probe": null,
       "intent": "validate bounded whole-item counts at command boundaries"
@@ -3254,9 +3254,9 @@
     {
       "id": "event-feedback",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/audio/eventFeedback",
+      "module": "@jgengine/core/audio/eventFeedback",
       "domain": "audio",
       "gameFacing": false,
       "probe": null,
@@ -3375,9 +3375,9 @@
     {
       "id": "feedback-host",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/audio/FeedbackHost",
+      "module": "@jgengine/core/audio/FeedbackHost.view",
       "domain": "audio",
       "gameFacing": false,
       "probe": null,
@@ -3798,9 +3798,9 @@
     {
       "id": "gesture-resume",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/audio/gestureResume",
+      "module": "@jgengine/core/audio/gestureResume.view",
       "domain": "audio",
       "gameFacing": false,
       "probe": null,
@@ -4845,10 +4845,10 @@
     {
       "id": "join-gate",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/JoinGate",
-      "domain": "join-gate",
+      "module": "@jgengine/core/multiplayer/JoinGate.view",
+      "domain": "multiplayer",
       "gameFacing": false,
       "probe": null,
       "intent": "block gameplay until joined and show failures with retry"
@@ -6379,14 +6379,13 @@
     {
       "id": "multiplayer-p2p",
       "packages": [
-        "@jgengine/core",
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/multiplayer",
-      "domain": "multiplayer-p2p",
+      "module": "@jgengine/core/runtime/adapter",
+      "domain": "runtime",
       "gameFacing": false,
       "probe": null,
-      "intent": "bootstrap a playable authoritative world for browser peer co-op"
+      "intent": "serverless co-op over WebRTC — `multiplayer: p2p({ room })`"
     },
     {
       "id": "multiplayer-ws",
@@ -7162,9 +7161,9 @@
     {
       "id": "placement-ghost",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/placement/PlacementGhost",
+      "module": "@jgengine/core/placement/PlacementGhost.draw",
       "domain": "placement",
       "gameFacing": false,
       "probe": null,
@@ -7206,13 +7205,13 @@
     {
       "id": "play-script",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/play/run",
+      "module": "@jgengine/core/play/script",
       "domain": "play",
       "gameFacing": false,
       "probe": null,
-      "intent": "play a real game from a deterministic script — spawn, move, aim, fire, command, and assert world state with no browser and no wall clock"
+      "intent": "write a game's behaviour as a tick-based script with declarative assertions instead of playing it in a browser"
     },
     {
       "id": "player-creator",
@@ -9765,9 +9764,9 @@
     {
       "id": "transform-gizmo",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/placement/TransformGizmo",
+      "module": "@jgengine/core/placement/TransformGizmo.draw",
       "domain": "placement",
       "gameFacing": false,
       "probe": null,
@@ -9820,9 +9819,9 @@
     {
       "id": "tune-control-labels",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/devtools/TunePanel",
+      "module": "@jgengine/core/devtools/TunePanel.view",
       "domain": "devtools",
       "gameFacing": false,
       "probe": null,

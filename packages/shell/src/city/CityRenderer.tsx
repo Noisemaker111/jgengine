@@ -52,8 +52,8 @@ import { valueNoise } from "@jgengine/core/terrain/terrain";
 import type { SceneKindObject } from "@jgengine/core/scene/sceneKinds";
 
 import { buildScatterProxy } from "../scatter/scatterProxies";
-import { InstancedBuildings, type InstancedBuildingPlacement } from "../buildings/GeneratedBuilding";
-import { getBuildingKit } from "../buildings/buildingKitRegistry";
+import { InstancedBuildings, type InstancedBuildingPlacement } from "@jgengine/core/buildings/GeneratedBuilding.draw";
+import { getBuildingKit } from "@jgengine/core/buildings/buildingKitRegistry";
 import { uploadInstances } from "../instancing/instanceUpload";
 import { createCityWindowMaterial } from "./cityWindowMaterial";
 import { createSurfaceRibbonMaterial } from "../roads/surfaceRibbonMaterial";

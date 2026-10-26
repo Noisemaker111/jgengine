@@ -1,4 +1,4 @@
-import type { CommandDef } from "@jgengine/core/runtime/commandRunner";
+import type { CommandDef } from "@jgengine/core/commands/commandRunner";
 import type { GameRuntimeSnapshot } from "@jgengine/core/runtime/snapshot";
 import {
   placedRackAssignmentMap,

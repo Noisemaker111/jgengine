@@ -33,7 +33,7 @@ import {
 import { FRAME_RATE_LIMIT_DISPLAY, FRAME_RATE_LIMIT_OPTIONS } from "@jgengine/core/settings/frameRateLimit";
 import { accessibilitySettingRows } from "@jgengine/core/settings/accessibilitySettings";
 import type { PostProcessingConfig } from "@jgengine/core/render/postProcessing";
-import { busMuteSettingId, MASTER_MUTE_SETTING_ID } from "@jgengine/shell/audio/busMix";
+import { busMuteSettingId, MASTER_MUTE_SETTING_ID } from "@jgengine/core/audio/busMix";
 import { availablePostfxStages } from "@jgengine/shell/postfx/PostProcessing";
 import {
   DEFAULT_TOUCH_JOYSTICK_VARIANT,

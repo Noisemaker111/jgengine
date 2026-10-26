@@ -49,7 +49,7 @@ import {
   captureCameraBlendFrom,
   createCameraBlendScratch,
 } from "./cameraBlendMath";
-import { requestRawPointerLock } from "../input/pointerLock";
+import { requestRawPointerLock } from "@jgengine/core/input/pointerLock";
 import { resolveChaseHeading } from "./chaseHeading";
 
 export {

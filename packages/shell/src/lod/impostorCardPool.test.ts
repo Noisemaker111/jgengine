@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 
 import * as THREE from "three";
 
-import { POINTER_OBJECT_INSTANCES_KEY } from "../pointer/pointerService";
+import { POINTER_OBJECT_INSTANCES_KEY } from "@jgengine/core/input/pointerService.draw";
 import { acquireImpostorCardPool, ImpostorCardPool, releaseImpostorCardPool } from "./impostorCardPool";
 
 const makePool = () => new ImpostorCardPool(new THREE.PlaneGeometry(2, 2), new THREE.MeshStandardMaterial(), new THREE.MeshDepthMaterial());

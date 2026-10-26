@@ -1,10 +1,10 @@
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 
-import { RESERVED_INPUT_ACTIONS, dispatchBoundAction, heldActionsFor, shouldFireBoundAction } from "../boundActionDispatch";
-import { executeHotbarSlot, findHotbarSlotActions, hotbarIdFor } from "../hotbarActions";
-import { pointerAimFor } from "../shellPointer";
-import { shellDrivesPlayerPose } from "../shellMovement";
+import { RESERVED_INPUT_ACTIONS, dispatchBoundAction, heldActionsFor, shouldFireBoundAction } from "@jgengine/core/input/boundActionDispatch";
+import { executeHotbarSlot, findHotbarSlotActions, hotbarIdFor } from "@jgengine/core/input/hotbarActions";
+import { pointerAimFor } from "@jgengine/core/input/shellPointer.draw";
+import { shellDrivesPlayerPose } from "@jgengine/core/movement/shellMovement";
 import type { Aim } from "@jgengine/core/scene/spatial";
 import { steerYaw } from "@jgengine/core/movement/steering";
 import { stepPlayerMovement, resolvePlayerMovementTuning } from "@jgengine/core/movement/playerMovement";
@@ -12,8 +12,8 @@ import { localPlayers } from "@jgengine/core/runtime/localPlayers";
 import { seatCameraYaw } from "../camera/Viewports";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { isServerAuthoritative } from "@jgengine/core/runtime/adapter";
-import { resolveCommandSink, type CommandSink } from "../commandSink";
-import { inputFramesEqual, resolveInputSink, type InputSink } from "../inputSink";
+import { resolveCommandSink, type CommandSink } from "@jgengine/core/commands/commandSink";
+import { inputFramesEqual, resolveInputSink, type InputSink } from "@jgengine/core/input/inputSink";
 import type { InputFrame } from "@jgengine/core/runtime/hostedGameRunner";
 import { advanceBehaviors } from "@jgengine/core/scene/behaviorRuntime";
 import { resolveActivePrompt } from "@jgengine/core/interaction/proximityPrompt";
@@ -23,15 +23,15 @@ import { playControlsActive } from "@jgengine/core/game/controlGate";
 import { devtools } from "@jgengine/core/devtools/devtools";
 import type { ActionStateTracker } from "@jgengine/core/input/actionBindings";
 
-import { collisionDebug } from "../devtools/collisionDebug";
+import { collisionDebug } from "@jgengine/core/devtools/collisionDebug";
 import { createAimRecoil } from "../camera/aimRecoil";
-import { registerSimStepper } from "../devtools/simStepper";
+import { registerSimStepper } from "@jgengine/core/sim/simStepper";
 import { GAME_SIM_FRAME_PRIORITY } from "../camera";
 import { NO_ACTIONS } from "../shellConstants";
-import type { PointerService } from "../pointer/pointerService";
-import type { ShellMultiplayer } from "../multiplayer";
+import type { PointerService } from "@jgengine/core/input/pointerService.draw";
+import type { ShellMultiplayer } from "@jgengine/core/multiplayer/multiplayer.draw";
 import type { PlayableGame } from "../registry";
-import type { AuthoritativeFrameHandler } from "../worldSync";
+import type { AuthoritativeFrameHandler } from "@jgengine/core/multiplayer/authoritativeSync";
 import { createPredictionBuffer } from "@jgengine/core/runtime/prediction";
 import type { EntityPosition } from "@jgengine/core/scene/entityStore";
 

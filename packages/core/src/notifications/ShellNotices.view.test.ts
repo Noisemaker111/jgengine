@@ -4,9 +4,9 @@ import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { createGameContext } from "@jgengine/core/runtime/gameContext";
 import type { LiveGameBackend } from "@jgengine/core/runtime/transport";
 
-import { remoteCommandSink } from "@jgengine/shell/commandSink";
+import { remoteCommandSink } from "@jgengine/core/commands/commandSink";
 import { attachShellNotices } from "./ShellNotices.view";
-import { resolvePlayableAudio } from "@jgengine/shell/audio/playableAudio";
+import { resolvePlayableAudio } from "@jgengine/core/audio/playableAudio.draw";
 import type { PlayableGame } from "@jgengine/shell/registry";
 
 function gameCtx() {

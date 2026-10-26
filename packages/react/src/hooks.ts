@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore
 import { AxisChannel, type AxisChannelConfig } from "@jgengine/core/input/axisInput";
 import { createMarkerSet, type MarkerSet } from "@jgengine/core/world/markers";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import { dispatchCommand, type DispatchedCommandResult } from "@jgengine/core/runtime/commandDispatch";
+import { dispatchCommand, type DispatchedCommandResult } from "@jgengine/core/commands/commandDispatch";
 import type { AbilityKit, AbilitySlotSnapshot } from "@jgengine/core/combat/abilityKit";
 import type { EventMeter } from "@jgengine/core/stats/eventMeter";
 import type { GameEvents } from "@jgengine/core/game/events";

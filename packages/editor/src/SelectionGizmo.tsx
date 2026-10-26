@@ -12,7 +12,7 @@ import {
 import {
   TransformGizmo,
   type TransformGizmoPose,
-} from "@jgengine/shell/placement/TransformGizmo";
+} from "@jgengine/core/placement/TransformGizmo.draw";
 
 import { placementGround, pathSegmentDistance, selectionGizmoMode, snapPlacement } from "./authoringPlacement";
 import { isPointerClick } from "./viewportContextMenu";

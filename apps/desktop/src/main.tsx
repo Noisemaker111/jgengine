@@ -3,7 +3,7 @@ import { createRoot } from "react-dom/client";
 
 import { GamePlayerShell } from "@jgengine/shell/GamePlayerShell";
 import { GameUiPreview } from "@jgengine/shell/GameUiPreview";
-import { resolveShellMultiplayer, type ShellMultiplayer } from "@jgengine/shell/multiplayer";
+import { resolveShellMultiplayer, type ShellMultiplayer } from "@jgengine/core/multiplayer/multiplayer.draw";
 import type { GameRegistry, PlayableGame } from "@jgengine/shell/registry";
 
 import { Launcher } from "./launcher/Launcher";

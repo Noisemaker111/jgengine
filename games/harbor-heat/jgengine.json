@@ -66,6 +66,9 @@
       "world-model"
     ],
     "probes": {
+      "@jgengine/core/audio/audioProbe.view": [
+        "window:__jgengineAudio"
+      ],
       "@jgengine/core/economy/transactionLedger": [
         "harbor.ledger"
       ],
@@ -77,9 +80,6 @@
       ],
       "@jgengine/core/sim/offScreen": [
         "harbor.residents"
-      ],
-      "@jgengine/shell/audio/audioProbe": [
-        "window:__jgengineAudio"
       ]
     },
     "declines": {

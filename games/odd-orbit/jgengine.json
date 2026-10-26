@@ -28,7 +28,7 @@
       "storyteller"
     ],
     "probes": {
-      "@jgengine/shell/audio/audioProbe": [
+      "@jgengine/core/audio/audioProbe.view": [
         "window:__jgengineAudio"
       ]
     },

@@ -4,8 +4,8 @@ import { WebGLObjects } from "three/src/renderers/webgl/WebGLObjects.js";
 import { generateBuilding } from "@jgengine/core/buildings/buildings";
 import { defineBuildingKit } from "@jgengine/core/buildings/buildingKit";
 
-import { bucketBuildingParts, composeBuildingKitMatrix, type BuildingKitInstance } from "../buildings/buildingKitFit";
-import { buildingChunkWithinBudget, resolveBuildingRenderPolicy } from "../buildings/BuildingRenderBudget";
+import { bucketBuildingParts, composeBuildingKitMatrix, type BuildingKitInstance } from "@jgengine/core/buildings/buildingKitFit.draw";
+import { buildingChunkWithinBudget, resolveBuildingRenderPolicy } from "@jgengine/core/buildings/BuildingRenderBudget.draw";
 import { partitionInstances, type InstanceChunk } from "./instanceChunks";
 import { uploadInstances } from "./instanceUpload";
 

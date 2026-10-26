@@ -193,16 +193,46 @@ function wordSet(text: string): { words: Set<string>; raw: string } {
   return { words: rowWords(text), raw: text.toLowerCase() };
 }
 
+type Words = { words: Set<string>; raw: string };
+
+/** One file's words, split once: a query only matches against them, so many queries share one index. */
+export interface IndexedFile {
+  file: CodeFile;
+  exports: CodeExport[];
+  dir: string;
+  dirWords: Words;
+  nameWords: Words;
+  exportWords: { entry: CodeExport; name: Words; doc: Words }[];
+  everything: Words[];
+}
+
+/** Read and split every file once; files that cannot be read are left out. */
+export function indexCode(files: readonly CodeFile[], read: (file: CodeFile) => string): IndexedFile[] {
+  const index: IndexedFile[] = [];
+  for (const file of files) {
+    let text: string;
+    try {
+      text = read(file);
+    } catch {
+      continue;
+    }
+    const exports = readExports(text);
+    const dir = dirOf(file.rel);
+    const dirWords = wordSet(dir.replaceAll("/", " "));
+    const nameWords = wordSet(baseName(file.rel));
+    const exportWords = exports.map((entry) => ({ entry, name: wordSet(entry.name), doc: wordSet(entry.doc ?? "") }));
+    const everything = [dirWords, nameWords, ...exportWords.flatMap((row) => [row.name, row.doc])];
+    index.push({ file, exports, dir, dirWords, nameWords, exportWords, everything });
+  }
+  return index;
+}
+
 /**
  * Score one file against the query tokens. Folder and file names weigh most, exported names next,
  * doc comments least; a file only counts when every token lands somewhere in it.
  */
-export function scoreFile(file: CodeFile, exports: readonly CodeExport[], tokens: readonly string[]): Scored | null {
-  const dir = dirOf(file.rel);
-  const dirWords = wordSet(dir.replaceAll("/", " "));
-  const nameWords = wordSet(baseName(file.rel));
-  const exportWords = exports.map((entry) => ({ entry, name: wordSet(entry.name), doc: wordSet(entry.doc ?? "") }));
-  const everything = [dirWords, nameWords, ...exportWords.flatMap((row) => [row.name, row.doc])];
+export function scoreFile(indexed: IndexedFile, tokens: readonly string[]): Scored | null {
+  const { file, exports, dir, dirWords, nameWords, exportWords, everything } = indexed;
   if (!covers(tokens, everything)) return null;
   let score = 0;
   const pathHit = covers(tokens, [dirWords, nameWords]);
@@ -241,24 +271,17 @@ function isUnder(dir: string, home: string): boolean {
 }
 
 /** The home folder per layer for a query, best layers first in core → shell → react → editor order. */
-export function locate(
-  files: readonly CodeFile[],
-  read: (file: CodeFile) => string,
-  tokens: readonly string[],
-): LayerHome[] {
+export function locate(files: readonly CodeFile[], read: (file: CodeFile) => string, tokens: readonly string[]): LayerHome[] {
+  return tokens.length === 0 ? [] : locateIn(indexCode(files, read), tokens);
+}
+
+/** {@link locate} against an index built once, for asking many queries of one checkout. */
+export function locateIn(index: readonly IndexedFile[], tokens: readonly string[]): LayerHome[] {
   if (tokens.length === 0) return [];
   const byLayer = new Map<string, Scored[]>();
-  const exportsOf = new Map<string, { file: CodeFile; exports: CodeExport[] }>();
-  for (const file of files) {
-    let text: string;
-    try {
-      text = read(file);
-    } catch {
-      continue;
-    }
-    const exports = readExports(text);
-    exportsOf.set(file.path, { file, exports });
-    const scored = scoreFile(file, exports, tokens);
+  for (const indexed of index) {
+    const { file } = indexed;
+    const scored = scoreFile(indexed, tokens);
     if (scored === null) continue;
     const list = byLayer.get(file.layer) ?? [];
     list.push(scored);
@@ -293,7 +316,7 @@ export function locate(
     // A folder named for the concept is its home: everything in it belongs, matched or not.
     if (home !== "" && covers(tokens, [wordSet(home.replaceAll("/", " "))])) {
       const listed = new Set(inside.map((row) => row.file.path));
-      for (const { file, exports } of exportsOf.values()) {
+      for (const { file, exports } of index) {
         if (file.layer !== layer || listed.has(file.path) || !isUnder(dirOf(file.rel), home)) continue;
         inside.push({ file, dir: dirOf(file.rel), score: 0, exports: exports.slice(0, 4), pathHit: false });
       }

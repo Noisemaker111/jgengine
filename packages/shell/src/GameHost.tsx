@@ -7,7 +7,7 @@ import { readUrlParam, subscribeUrlChange, writeUrlParam } from "@jgengine/core/
 import { multiplayerAdapterKind } from "@jgengine/core/runtime/adapter";
 
 import { GamePlayerShell } from "./GamePlayerShell";
-import { resolveShellMultiplayer, type ResolveShellMultiplayerArgs, type ShellMultiplayer } from "./multiplayer";
+import { resolveShellMultiplayer, type ResolveShellMultiplayerArgs, type ShellMultiplayer } from "@jgengine/core/multiplayer/multiplayer.draw";
 import type { PlayableGame } from "./registry";
 
 const warnedAdapterKinds = new Set<string>();

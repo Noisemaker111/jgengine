@@ -22,7 +22,7 @@ beforeAll(async () => {
     import {SettingsTrigger,useSettings} from '@jgengine/core/settings/settings.view';
     import {createGameContext} from '@jgengine/core/runtime/gameContext';import {createActionStateTracker} from '@jgengine/core/input/actionBindings';
     import {createSettingsStore,BUILT_IN_SETTING_CATEGORIES} from '@jgengine/core/settings/settingsModel';
-    import {playControlsActive} from '@jgengine/core/game/controlGate';import {createAudioEngine} from '@jgengine/shell/audio/audioEngine';
+    import {playControlsActive} from '@jgengine/core/game/controlGate';import {createAudioEngine} from '@jgengine/core/audio/audioEngine.view';
     const mode=new URLSearchParams(location.search).get('mode');const calls=[];const errors=[];
     const store=createSettingsStore();if(mode==='saved'&&!sessionStorage.getItem('settings-seeded')){store.set('survey.hints',false);sessionStorage.setItem('settings-seeded','true');}
     const settings=mode==='disabled'?false:mode==='default'?undefined:{variant:'sheet',surface:mode==='quick'?'quick':false,

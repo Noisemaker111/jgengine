@@ -16,7 +16,7 @@ import { useEntityRenderCues } from "../render/useEntityRenderCues";
 import { clearCameraBoom, sceneCameraQuery } from "./cameraCollision";
 import { usePlayerFov } from "./PlayerFov";
 import { GAME_SIM_FRAME_PRIORITY, ORBIT_CAMERA_FRAME_PRIORITY } from "./orbitCameraMath";
-import { requestRawPointerLock } from "../input/pointerLock";
+import { requestRawPointerLock } from "@jgengine/core/input/pointerLock";
 import { readRegisteredFirstPersonMuzzle, registerTrackedFirstPersonMuzzle } from "./customMuzzle";
 
 const DEFAULT_SENSITIVITY = 0.0025;

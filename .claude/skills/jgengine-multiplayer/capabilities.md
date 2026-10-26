@@ -49,6 +49,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `fileWorldStore` (function) · `import { fileWorldStore } from "@jgengine/node"`
 - `sqlWorldStore` (function) · `import { sqlWorldStore } from "@jgengine/sql"`
 
+## join-gate — block gameplay until joined and show failures with retry
+
+- `JoinGate` (function) · `import { JoinGate } from "@jgengine/core/multiplayer/JoinGate.view"`
+
+## multiplayer-p2p — bootstrap a playable authoritative world for browser peer co-op
+
+- `resolvePeerShellMultiplayer` (function) · `import { resolvePeerShellMultiplayer } from "@jgengine/core/multiplayer/multiplayer.draw"`
+
 ## online-player-batches — Schedule bounded active-player or home-game work in separate transactions.
 
 - `forEachOnlinePlayer` (function) · `import { forEachOnlinePlayer } from "@jgengine/convex"`

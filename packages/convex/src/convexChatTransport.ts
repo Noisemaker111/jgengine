@@ -7,7 +7,7 @@ import type {
   ChatActions,
   ChatSendOutcome,
   ChatTransport,
-} from "@jgengine/core/multiplayer/chatContract";
+} from "@jgengine/core/chat/chatContract";
 
 export interface ConvexChatFunctions {
   messages: FunctionReference<"query">;

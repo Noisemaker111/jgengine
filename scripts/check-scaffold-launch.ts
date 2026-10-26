@@ -239,9 +239,9 @@ const REMOTE_FETCH: Record<string, string> = {
   "packages/jgengine/src/desktop.ts": "the hosted page URL a desktop wrapper opens",
   "packages/jgengine/src/templates/editorWorkspace.ts": "browser-side page script, where HTTP_PROXY is the browser's",
   "packages/jgengine/src/releaseNotes.ts": "the published CHANGELOG.md",
-  "packages/shell/src/audio/audioEngine.ts": "asset URLs the page loads",
-  "packages/shell/src/devtools/agentBridge.ts": "browser-side bridge to an endpoint the page was handed",
-  "packages/shell/src/devtools/frameSampler.ts": "browser-side sampler for an endpoint the page was handed",
+  "packages/core/src/audio/audioEngine.view.ts": "asset URLs the page loads",
+  "packages/core/src/devtools/agentBridge.draw.ts": "browser-side bridge to an endpoint the page was handed",
+  "packages/core/src/devtools/frameSampler.view.ts": "browser-side sampler for an endpoint the page was handed",
 };
 
 function runtimeSources(cwd = process.cwd()): string[] {

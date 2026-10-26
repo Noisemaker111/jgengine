@@ -112,12 +112,12 @@ describe("CUTLIST surface diet", () => {
     expect(hosted).toMatch(/register|runtimes/);
     expect(hosted).toMatch(/authority:\s*"server"|authority: "server"/);
     expect(existsSync(join(root, "examples/express-host/src/server.ts"))).toBe(true);
-    expect(existsSync(join(root, "packages/shell/src/boundActionDispatch.ts"))).toBe(true);
-    expect(existsSync(join(root, "packages/shell/src/hotbarActions.ts"))).toBe(true);
+    expect(existsSync(join(root, "packages/core/src/input/boundActionDispatch.ts"))).toBe(true);
+    expect(existsSync(join(root, "packages/core/src/input/hotbarActions.ts"))).toBe(true);
     expect(existsSync(join(root, "packages/shell/src/worldSky.ts"))).toBe(true);
-    expect(existsSync(join(root, "packages/shell/src/shellPointer.ts"))).toBe(true);
-    expect(existsSync(join(root, "packages/shell/src/shellMovement.ts"))).toBe(true);
-    expect(existsSync(join(root, "packages/shell/src/audio/audioWire.ts"))).toBe(true);
+    expect(existsSync(join(root, "packages/core/src/input/shellPointer.draw.ts"))).toBe(true);
+    expect(existsSync(join(root, "packages/core/src/movement/shellMovement.ts"))).toBe(true);
+    expect(existsSync(join(root, "packages/core/src/audio/audioWire.view.ts"))).toBe(true);
     expect(existsSync(join(root, "packages/shell/src/render/modelLoad.ts"))).toBe(true);
     expect(readFileSync(join(root, "packages/shell/src/render/resolveModel.ts"), "utf8")).toMatch(
       /export function resolveEntityModel/,

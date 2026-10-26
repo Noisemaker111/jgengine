@@ -105,6 +105,14 @@
 - `RegisterField` (type): type RegisterField<TKey extends string, TFallback = unknown> = TKey extends keyof JGEngineRegister ? JGEngineRegister[TKey] : TFallback — ⚠ undocumented
 - `createBehaviourWorld` (function): function createBehaviourWorld(): BehaviourWorld — ⚠ undocumented
 
+## @jgengine/core/behaviour/behaviour.draw
+
+- `attachObject3D` (function): function attachObject3D<T extends Object3DBehaviour>(world: BehaviourWorld, object: Object3D, behaviour: T, nodeId: string = object.uuid): T — ⚠ undocumented
+
+## @jgengine/core/behaviour/behaviourAttach.draw
+
+- `attachObject3D` (function): function attachObject3D<T extends Object3DBehaviour>(world: BehaviourWorld, object: Object3D, behaviour: T, nodeId: string = object.uuid): T — ⚠ undocumented
+
 ## @jgengine/core/board/laneBoard
 
 - `LaneAggregate` (interface): interface LaneAggregate { lane: number; side: Side; subtotal: number; total: number; count: number } — ⚠ undocumented
@@ -212,6 +220,15 @@
 - `latestChatBubbles` (function): function latestChatBubbles(messages: readonly ChatMessage[], nowMs: number, ttlMs: number): ChatBubble[] — ⚠ undocumented
 - `useChatBubbles` (function): function useChatBubbles(options?: ChatBubblesOptions): readonly ChatBubble[] — ⚠ undocumented
 - `useEntityChatBubble` (function): function useEntityChatBubble(instanceId: string, options?: ChatBubblesOptions): ChatBubble | null — ⚠ undocumented
+
+## @jgengine/core/chat/chatContract
+
+- `ChatActions` (interface): interface ChatActions { sendMessage(args: ChatSendArgs): Promise<ChatSendOutcome> } — ⚠ undocumented
+- `ChatSendArgs` (interface): interface ChatSendArgs { channelId: string; body: string } — ⚠ undocumented
+- `ChatSendOutcome` (interface): interface ChatSendOutcome { ok: boolean; reason?: string } — ⚠ undocumented · used by `sendChatMessage` (@jgengine/convex): Write validated chat in a host transaction after the caller resolves its actor and world.
+- `ChatSync` (interface): interface ChatSync — Callback seam for backends that cannot host React hooks (e.g. the ws client): subscribe delivers the channel's recent history on every change; send resolves with the host's verdict.
+- `ChatTransport` (interface): interface ChatTransport — Backend seam for remote text chat, mirroring PresenceTransport: the use* members are called as React hooks by consumers, so a mounted transport must never change identity — remount the subtree to switch backends. useMessages returns undefined while the subscription is loading and the channel's recent history once live.
+- `createLocalChatTransport` (function): function createLocalChatTransport(options?: { userId?: string; historyLimit?: number; now?: () => number; }): { transport: ChatTransport; sync: ChatSync; actions: ChatActions; } — ⚠ undocumented
 
 ## @jgengine/core/chat/chatFilter
 
@@ -1040,7 +1057,7 @@
 - `AchievementView` (interface): interface AchievementView extends AchievementDef — A definition plus its live unlock/progress state — what UI renders.
 - `ActionCodes` (type): type ActionCodes<TCode extends string = string> = | readonly TCode[] | { hold?: readonly TCode[]; toggle?: readonly TCode[]; repeatMs?: number } — ⚠ undocumented
 - `ActionCodesMap` (type): type ActionCodesMap<TAction extends string = string, TCode extends string = string> = Record< TAction, ActionCodes<TCode> > — Maps each game action name to the input codes (hold/toggle keys, repeat rate) that trigger it. In a `defineGame({ input })`, pressing an action runs the same-named command with `{ yaw, pitch, aim, held }`; `repeatMs` re-fires it while held (automatic weapons), with `held: true` on those re-fires so one binding can drive a single-shot pistol (ignore `held`) and an automatic rifle (accept it).
-- `ActionStateTracker` (interface): interface ActionStateTracker<TAction extends string> { handleDown(code: string): TAction | null; handleUp(code: string): TAction | null; isDown(action: TAction): boolean; wasPressed(action: TAction): boolean; endFrame(): void; reset(): void; rebind(map: ActionStateBindingMap<TAction, string>)… — ⚠ undocumented · used by `HudOnlyDriver` (@jgengine/core/hud/HudOnlyDriver.draw): Drives a HUD-only page: steps the sim with no 3D canvas so a capture can render just the game UI.
+- `ActionStateTracker` (interface): interface ActionStateTracker<TAction extends string> { handleDown(code: string): TAction | null; handleUp(code: string): TAction | null; isDown(action: TAction): boolean; wasPressed(action: TAction): boolean; endFrame(): void; reset(): void; rebind(map: ActionStateBindingMap<TAction, string>)… — ⚠ undocumented · used by `rebindGamepadPoll` (@jgengine/core/input/gamepadPoll): Swap the pad bindings mid-game (a context push) without touching keyboard state: release the codes of pad-held actions whose pad codes chang…
 - `ActiveEffect` (interface): interface ActiveEffect — A live timed effect an engine is tracking until it expires or is cleaned up.
 - `AdvanceOptions` (interface): interface AdvanceOptions — Per-advance settings: the policy pipeline, caller context, rounding, and safety bounds.
 - `AdvanceResult` (interface): interface AdvanceResult — The outcome of {@link advanceLedger}: the new ledger plus applied transactions and events.

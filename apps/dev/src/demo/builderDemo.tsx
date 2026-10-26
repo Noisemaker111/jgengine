@@ -20,11 +20,11 @@ import {
 import { placeAssetFromCommit, toStructureInput } from "@jgengine/core/placement/placeAsset";
 import type { TerraformMode } from "@jgengine/core/terrain/terraform";
 
-import { createPointerService } from "@jgengine/shell/pointer/pointerService";
+import { createPointerService } from "@jgengine/core/input/pointerService.draw";
 import { EditableGround } from "@jgengine/shell/terrain/EditableGround";
 import { TerraformBrushCursor } from "@jgengine/shell/terrain/TerraformBrushCursor";
-import { PlacementGhost } from "@jgengine/shell/placement/PlacementGhost";
-import { TransformGizmo } from "@jgengine/shell/placement/TransformGizmo";
+import { PlacementGhost } from "@jgengine/core/placement/PlacementGhost.draw";
+import { TransformGizmo } from "@jgengine/core/placement/TransformGizmo.draw";
 import type { PlayableGame } from "@jgengine/shell/registry";
 
 const BOUNDS: Aabb = { minX: -20, minZ: -20, maxX: 20, maxZ: 20 };

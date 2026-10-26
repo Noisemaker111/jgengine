@@ -243,3 +243,39 @@ export function createCameraShake(config: CameraShakeConfig = {}): CameraShakeCo
     },
   };
 }
+
+/** Trauma decay the engine's impact presets are calibrated against, trauma/second. */
+export const CALIBRATED_TRAUMA_DECAY_PER_SECOND = 1.4;
+
+/**
+ * The core shake config a camera rig runs: positional kick on the camera's X/Y plus roll, with the
+ * game's `camera.shake` overrides. Pitch and yaw stay still so aim never drifts under a hit.
+ * @internal
+ */
+export function rigShakeConfig(config?: CameraRigShakeConfig): CameraShakeConfig {
+  const offset = config?.maxOffset ?? 0.5;
+  return {
+    decayPerSecond: config?.decayPerSecond ?? 1.6,
+    traumaExponent: config?.exponent ?? 2,
+    maxTranslation: [offset, offset, 0],
+    maxRotation: [0, 0, config?.maxRoll ?? 0.06],
+    frequency: config?.frequency ?? 24,
+  };
+}
+
+/**
+ * The one camera-shake controller the rigs apply. Game systems with no React context (a
+ * `loop.onTick` reacting to `entity.died`) feed it through {@link cameraShake}; a rig reads it through
+ * {@link useCameraShake}. It is the core `createCameraShake` model, so a demo or test can drive the
+ * same controller directly.
+ */
+export const defaultCameraShake: CameraShakeController = createCameraShake(rigShakeConfig());
+
+/**
+ * Add camera trauma from anywhere. `decayPerSecond`, when given, retunes how fast it bleeds off.
+ * @capability camera-shake add trauma to the active camera rig's shake from any game system
+ */
+export function cameraShake(amplitude: number, decayPerSecond?: number): void {
+  if (decayPerSecond !== undefined) defaultCameraShake.configure({ decayPerSecond });
+  defaultCameraShake.add(amplitude);
+}

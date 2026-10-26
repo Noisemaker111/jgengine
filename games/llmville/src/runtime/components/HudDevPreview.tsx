@@ -1,4 +1,4 @@
-import { JoinGate } from "@jgengine/shell/JoinGate";
+import { JoinGate } from "@jgengine/core/multiplayer/JoinGate.view";
 import { WorldChat } from "@/multiplayer/components/WorldChat";
 import PlacementControls from "./PlacementController";
 import { GameConnectionErrorScreen } from "./GameConnectionErrorScreen";

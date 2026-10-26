@@ -1,6 +1,6 @@
 import { useEffect, type Dispatch, type MutableRefObject, type RefObject, type SetStateAction } from "react";
 
-import { suppressBrowserContextMenu } from "@jgengine/shell/pointer/contextMenu";
+import { suppressBrowserContextMenu } from "@jgengine/core/input/secondaryPointer";
 import type { PointerAxisState } from "@jgengine/core/input/pointerAxis";
 import type { ActionStateTracker } from "@jgengine/core/input/actionBindings";
 import { playControlsActive } from "@jgengine/core/game/controlGate";
@@ -12,16 +12,16 @@ import { GameViewportProvider } from "@jgengine/core/ui/viewport.view";
 import type { TouchScheme } from "@jgengine/core/input/touchScheme";
 
 import { HudOnlyDriver } from "./HudOnlyDriver.draw";
-import type { RuntimeDiagnostic } from "@jgengine/shell/diagnostics/RuntimeDiagnostics";
-import type { ShellMultiplayer } from "@jgengine/shell/multiplayer";
+import type { RuntimeDiagnostic } from "@jgengine/core/devtools/diagnosticOverlay.view";
+import type { ShellMultiplayer } from "@jgengine/core/multiplayer/multiplayer.draw";
 import type { PlayableGame } from "@jgengine/shell/registry";
 import { createShellKeyHandlers, ShellDebugOverlays, ShellGameUiChrome } from "@jgengine/shell/ShellChrome";
-import type { AudioEngine } from "@jgengine/shell/audio/audioEngine";
-import { resolvePlayableAudio } from "@jgengine/shell/audio/playableAudio";
+import type { AudioEngine } from "@jgengine/core/audio/audioEngine.view";
+import { resolvePlayableAudio } from "@jgengine/core/audio/playableAudio.draw";
 import { AudioSettingsBridge } from "@jgengine/core/settings/appliedSettings.draw";
 import { SettingsRuntime } from "@jgengine/core/settings/SettingsRuntime.draw";
 import { SettingsChrome } from "@jgengine/core/settings/SettingsChrome.draw";
-import { TouchPlaySurface } from "@jgengine/shell/touch/TouchControlsOverlay";
+import { TouchPlaySurface } from "@jgengine/core/input/TouchControlsOverlay.view";
 
 /**
  * Marks a HUD-only page ready for capture (`data-jg-capture="ready"`) unless a capture host already

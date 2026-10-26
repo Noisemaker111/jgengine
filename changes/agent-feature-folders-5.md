@@ -1,0 +1,111 @@
+### Migrate
+
+- The shell-side features now live in `@jgengine/core` feature folders with their models (`name.ts` model, `name.view.tsx` React, `name.draw.tsx` three.js): `audio/`, `devtools/` (was `diagnostics/` too), `input/` (was `pointer/` and `touch/` too), `replay/` (with the recording buffer and replay loop from `sensor/`), `play/`, `placement/`, `buildings/`, plus the loose shell files for input, commands, multiplayer, movement, behaviour and combat presentation. Command running and dispatch moved from `runtime/` to `commands/`, movement speed from `scene/` to `movement/`, the chat transport contract from `multiplayer/` to `chat/`. Update deep imports:
+  - `@jgengine/shell/play` → `@jgengine/core/play/playRunner.draw` (`runPlayScript`) and `@jgengine/core/play/script` (`createPlayScript`, `PlayScriptSpec`)
+  - `@jgengine/shell/placement` → `@jgengine/core/placement/PlacementGhost.draw` and `@jgengine/core/placement/TransformGizmo.draw`
+  - `@jgengine/shell/buildings` → `@jgengine/core/buildings/GeneratedBuilding.draw`
+  - `cameraShake`, `defaultCameraShake`, `rigShakeConfig` and `CALIBRATED_TRAUMA_DECAY_PER_SECOND` → `@jgengine/core/camera/shake/cameraShake` (the shake model); `@jgengine/core/camera/shake/shakeChannel.draw` keeps the rig hooks and `applyCameraShake`
+  - `@jgengine/core/multiplayer/chatContract` → `@jgengine/core/chat/chatContract`
+  - `@jgengine/core/runtime/commandDispatch` → `@jgengine/core/commands/commandDispatch`
+  - `@jgengine/core/runtime/commandInput` → `@jgengine/core/commands/commandInput`
+  - `@jgengine/core/runtime/commandRunner` → `@jgengine/core/commands/commandRunner`
+  - `@jgengine/core/scene/movementSpeed` → `@jgengine/core/movement/movementSpeed`
+  - `@jgengine/core/sensor/recordingBuffer` → `@jgengine/core/replay/recordingBuffer`
+  - `@jgengine/core/sensor/replayLoop` → `@jgengine/core/replay/replayLoop`
+  - `@jgengine/shell/CombatPresentation` → `@jgengine/core/combat/CombatPresentation.draw`
+  - `@jgengine/shell/JoinGate` → `@jgengine/core/multiplayer/JoinGate.view`
+  - `@jgengine/shell/audio/AudioComponents` → `@jgengine/core/audio/AudioComponents.draw`
+  - `@jgengine/shell/audio/CaptionOverlay` → `@jgengine/core/audio/CaptionOverlay.view`
+  - `@jgengine/shell/audio/FeedbackHost` → `@jgengine/core/audio/FeedbackHost.view`
+  - `@jgengine/shell/audio/adaptiveMusicWire` → `@jgengine/core/audio/adaptiveMusicWire`
+  - `@jgengine/shell/audio/audioEngine` → `@jgengine/core/audio/audioEngine.view`
+  - `@jgengine/shell/audio/audioProbe` → `@jgengine/core/audio/audioProbe.view`
+  - `@jgengine/shell/audio/audioWire` → `@jgengine/core/audio/audioWire.view`
+  - `@jgengine/shell/audio/busMix` → `@jgengine/core/audio/busMix`
+  - `@jgengine/shell/audio/captions` → `@jgengine/core/audio/captions`
+  - `@jgengine/shell/audio/emitterTracking` → `@jgengine/core/audio/emitterTracking.view`
+  - `@jgengine/shell/audio/eventFeedback` → `@jgengine/core/audio/eventFeedback`
+  - `@jgengine/shell/audio/gestureResume` → `@jgengine/core/audio/gestureResume.view`
+  - `@jgengine/shell/audio/listenerAnchor` → `@jgengine/core/audio/listenerAnchor`
+  - `@jgengine/shell/audio/loopParams` → `@jgengine/core/audio/loopParams`
+  - `@jgengine/shell/audio/musicDirector` → `@jgengine/core/audio/musicDirector.view`
+  - `@jgengine/shell/audio/musicVoices` → `@jgengine/core/audio/musicVoices.view`
+  - `@jgengine/shell/audio/occlusion` → `@jgengine/core/audio/occlusionRaycast`
+  - `@jgengine/shell/audio/playableAudio` → `@jgengine/core/audio/playableAudio.draw`
+  - `@jgengine/shell/audio/reverb` → `@jgengine/core/audio/reverbRack.view`
+  - `@jgengine/shell/audio/speech` → `@jgengine/core/audio/speech.view`
+  - `@jgengine/shell/audio/synthEngine` → `@jgengine/core/audio/synthEngine.view`
+  - `@jgengine/shell/behaviourAttach` → `@jgengine/core/behaviour/behaviourAttach.draw`
+  - `@jgengine/shell/behaviourDriver` → `@jgengine/core/behaviour/behaviourDriver`
+  - `@jgengine/shell/behaviour` → `@jgengine/core/behaviour/behaviour.draw`
+  - `@jgengine/shell/boundActionDispatch` → `@jgengine/core/input/boundActionDispatch`
+  - `@jgengine/shell/buildings/BuildingKitBatch` → `@jgengine/core/buildings/BuildingKitBatch.draw`
+  - `@jgengine/shell/buildings/BuildingRenderBudget` → `@jgengine/core/buildings/BuildingRenderBudget.draw`
+  - `@jgengine/shell/buildings/GeneratedBuilding` → `@jgengine/core/buildings/GeneratedBuilding.draw`
+  - `@jgengine/shell/buildings/buildingKitFit` → `@jgengine/core/buildings/buildingKitFit.draw`
+  - `@jgengine/shell/buildings/buildingKitMaterials` → `@jgengine/core/buildings/buildingKitMaterials.draw`
+  - `@jgengine/shell/buildings/buildingKitRegistry` → `@jgengine/core/buildings/buildingKitRegistry`
+  - `@jgengine/shell/buildings/buildingSpatialBatch` → `@jgengine/core/buildings/buildingSpatialBatch.draw`
+  - `@jgengine/shell/buildings/buildingSurface` → `@jgengine/core/buildings/buildingSurface.draw`
+  - `@jgengine/shell/commandSink` → `@jgengine/core/commands/commandSink`
+  - `@jgengine/shell/devtools/ColPanel` → `@jgengine/core/devtools/ColPanel.view`
+  - `@jgengine/shell/devtools/CollisionDebugWorld` → `@jgengine/core/devtools/CollisionDebugWorld.draw`
+  - `@jgengine/shell/devtools/DevtoolsOverlay` → `@jgengine/core/devtools/DevtoolsOverlay.draw`
+  - `@jgengine/shell/devtools/DevtoolsRuntime` → `@jgengine/core/devtools/DevtoolsRuntime.draw`
+  - `@jgengine/shell/devtools/FrameTelemetry` → `@jgengine/core/devtools/FrameTelemetry.draw`
+  - `@jgengine/shell/devtools/KeysPanel` → `@jgengine/core/devtools/KeysPanel.view`
+  - `@jgengine/shell/devtools/LogsPanel` → `@jgengine/core/devtools/LogsPanel.view`
+  - `@jgengine/shell/devtools/MissingModelsNotice` → `@jgengine/core/devtools/MissingModelsNotice.draw`
+  - `@jgengine/shell/devtools/NetPanel` → `@jgengine/core/devtools/NetPanel.draw`
+  - `@jgengine/shell/devtools/PerfPanel` → `@jgengine/core/devtools/PerfPanel.view`
+  - `@jgengine/shell/devtools/TunePanel` → `@jgengine/core/devtools/TunePanel.view`
+  - `@jgengine/shell/devtools/agentBridge` → `@jgengine/core/devtools/agentBridge.draw`
+  - `@jgengine/shell/devtools/collisionDebugMath` → `@jgengine/core/devtools/collisionDebugMath`
+  - `@jgengine/shell/devtools/collisionDebug` → `@jgengine/core/devtools/collisionDebug`
+  - `@jgengine/shell/devtools/devtoolsOverrides` → `@jgengine/core/devtools/devtoolsOverrides.view`
+  - `@jgengine/shell/devtools/devtoolsReports` → `@jgengine/core/devtools/devtoolsReports.draw`
+  - `@jgengine/shell/devtools/frameSampler` → `@jgengine/core/devtools/frameSampler.view`
+  - `@jgengine/shell/devtools/latencyInstrumentation` → `@jgengine/core/devtools/latencyInstrumentation.draw`
+  - `@jgengine/shell/devtools/panelAtoms` → `@jgengine/core/devtools/panelAtoms.view`
+  - `@jgengine/shell/devtools/perfDiagnose` → `@jgengine/core/devtools/perfDiagnose.view`
+  - `@jgengine/shell/devtools/playtestProbe` → `@jgengine/core/devtools/playtestProbe`
+  - `@jgengine/shell/devtools/simStepper` → `@jgengine/core/sim/simStepper`
+  - `@jgengine/shell/diagnostics/FpsCounter` → `@jgengine/core/devtools/FpsCounter.draw`
+  - `@jgengine/shell/diagnostics/RuntimeDiagnostics` → `@jgengine/core/devtools/diagnosticOverlay.view`
+  - `@jgengine/shell/hotbarActions` → `@jgengine/core/input/hotbarActions`
+  - `@jgengine/shell/input/gamepadMerge` → `@jgengine/core/input/gamepadMerge`
+  - `@jgengine/shell/input/gamepadPoll` → `@jgengine/core/input/gamepadPoll`
+  - `@jgengine/shell/input/gamepadSource` → `@jgengine/core/input/gamepadSource.draw`
+  - `@jgengine/shell/input/mouseLook` → `@jgengine/core/input/mouseLook.draw`
+  - `@jgengine/shell/input/pointerLock` → `@jgengine/core/input/pointerLock`
+  - `@jgengine/shell/inputSink` → `@jgengine/core/input/inputSink`
+  - `@jgengine/shell/multiplayer` → `@jgengine/core/multiplayer/multiplayer.draw`
+  - `@jgengine/shell/placement/PlacementGhost` → `@jgengine/core/placement/PlacementGhost.draw`
+  - `@jgengine/shell/placement/TransformGizmo` → `@jgengine/core/placement/TransformGizmo.draw`
+  - `@jgengine/shell/play/run` → `@jgengine/core/play/playRunner.draw`
+  - `@jgengine/shell/play/script` → `@jgengine/core/play/script`
+  - `@jgengine/shell/play/timeline` → `@jgengine/core/play/timeline`
+  - `@jgengine/shell/playSurfaceFocus` → `@jgengine/core/input/surfaceFocus.view`
+  - `@jgengine/shell/pointer/PointerOverlays` → `@jgengine/core/input/PointerOverlays.view`
+  - `@jgengine/shell/pointer/PointerProbe` → `@jgengine/core/input/PointerProbe.draw`
+  - `@jgengine/shell/pointer/contextMenu` → `@jgengine/core/input/secondaryPointer`
+  - `@jgengine/shell/pointer/controlGroupKeys` → `@jgengine/core/input/controlGroupKeys`
+  - `@jgengine/shell/pointer/pointerService` → `@jgengine/core/input/pointerService.draw`
+  - `@jgengine/shell/pointer/selectionGesture` → `@jgengine/core/input/selectionGesture`
+  - `@jgengine/shell/replay/useSessionRecorder` → `@jgengine/core/replay/useSessionRecorder.draw`
+  - `@jgengine/shell/shellControlSuspension` → `@jgengine/core/input/shellControlSuspension`
+  - `@jgengine/shell/shellInputPublication` → `@jgengine/core/input/shellInputPublication`
+  - `@jgengine/shell/shellMovement` → `@jgengine/core/movement/shellMovement`
+  - `@jgengine/shell/shellPointerInput` → `@jgengine/core/input/shellPointerInput`
+  - `@jgengine/shell/shellPointer` → `@jgengine/core/input/shellPointer.draw`
+  - `@jgengine/shell/touch/OrientationHint` → `@jgengine/core/input/OrientationHint.view`
+  - `@jgengine/shell/touch/TouchControlsOverlay` → `@jgengine/core/input/TouchControlsOverlay.view`
+  - `@jgengine/shell/touch/touchClusterLayout` → `@jgengine/core/input/touchClusterLayout`
+  - `@jgengine/shell/touch/touchIcons` → `@jgengine/core/input/touchIcons.view`
+  - `@jgengine/shell/useShellMultiplayerSync` → `@jgengine/core/multiplayer/useShellMultiplayerSync.draw`
+  - `@jgengine/shell/worldSync` → `@jgengine/core/multiplayer/authoritativeSync`
+
+### Fixed
+
+- Web Audio and saved devtools overrides are browser code, so they sit in the view layer (`musicDirector.view`, `synthEngine.view`, `reverbRack.view`, `devtoolsOverrides.view`) and the model type-check no longer needs DOM types.
+- `jgengine find` indexes the checkout once and matches each query against that index, so asking many questions of one checkout costs one read.

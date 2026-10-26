@@ -9,7 +9,7 @@ import type { GraphicsQuality } from "@jgengine/core/settings/settingsModel";
 import { useAccessibilitySettings } from "@jgengine/core/settings/accessibilitySettings.view";
 import { useGameContext } from "@jgengine/react/provider";
 
-import { cameraShake } from "@jgengine/core/camera/shake/shakeChannel.draw";
+import { cameraShake } from "@jgengine/core/camera/shake/cameraShake";
 import { useTerrainQuality } from "../terrain/terrainQuality";
 
 /** What {@link ImpactFeedback} reacts with; every field defaults on. */

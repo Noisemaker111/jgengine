@@ -32,11 +32,11 @@
       "session-loop"
     ],
     "probes": {
+      "@jgengine/core/audio/audioProbe.view": [
+        "window:__jgengineAudio"
+      ],
       "@jgengine/core/mission/mission": [
         "ember-command campaign"
-      ],
-      "@jgengine/shell/audio/audioProbe": [
-        "window:__jgengineAudio"
       ]
     },
     "declines": {

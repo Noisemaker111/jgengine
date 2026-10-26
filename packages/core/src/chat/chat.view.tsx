@@ -1,7 +1,7 @@
 import { StandaloneChatPanel, type StandaloneChatPanelProps } from "./standaloneChatPanel.view";
 import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import type { ChatMessage, ChatSendResult } from "@jgengine/core/chat/chat";
-import type { ChatSync, ChatTransport } from "@jgengine/core/multiplayer/chatContract";
+import type { ChatSync, ChatTransport } from "@jgengine/core/chat/chatContract";
 import { useGameContext } from "@jgengine/react/provider";
 import { useChat } from "@jgengine/react/hooks";
 

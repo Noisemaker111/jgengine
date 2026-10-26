@@ -1,4 +1,4 @@
-import { JoinGate } from "@jgengine/shell/JoinGate";
+import { JoinGate } from "@jgengine/core/multiplayer/JoinGate.view";
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, type ReactNode, type RefObject } from "react";
 

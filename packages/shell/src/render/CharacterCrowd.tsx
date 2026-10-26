@@ -25,7 +25,7 @@ import {
 import { applyMaterialOverrideToMaterial } from "../materialOverride";
 import { useRenderVisibility } from "../visibility/CullingProvider";
 import { useOptionalGameContext } from "@jgengine/react/provider";
-import { POINTER_ENTITY_INSTANCES_KEY } from "../pointer/pointerService";
+import { POINTER_ENTITY_INSTANCES_KEY } from "@jgengine/core/input/pointerService.draw";
 import { writeCrowdBatch, type CrowdPlayback } from "./crowdBatch";
 import { ModelFallbackBoundary } from "./SceneModels";
 import { sharedGltfLoader } from "./modelLoad";

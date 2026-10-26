@@ -36,7 +36,7 @@ import { createTerrainPaintColorSampler } from "../terrain/terrainPaintColor";
 import { GroundPad } from "./GroundPad";
 import { Roads } from "../roads/RoadRibbons";
 import { terrainGroundColorSampler } from "../terrain/terrainGroundColor";
-import { InstancedBuildings, type InstancedBuildingPlacement } from "../buildings/GeneratedBuilding";
+import { InstancedBuildings, type InstancedBuildingPlacement } from "@jgengine/core/buildings/GeneratedBuilding.draw";
 import { GrassPatch } from "../grass/GrassPatch";
 import { CarvedTerrain, type CarvedTerrainProps } from "../terrain/CarvedTerrain";
 import { ImageTextureLoader } from "../render/imageTexture";

@@ -6,7 +6,7 @@ import { resolveAuthoredObjects } from "../packages/core/src/world/authoredObjec
 import { authoredSpawnPosition } from "../packages/core/src/world/authoredSpawn";
 import { gameTemplate } from "../packages/jgengine/src/templates";
 import { DEFAULT_WALK_CODES } from "../packages/core/src/input/actionBindings";
-import { shellDrivesPlayerPose } from "../packages/shell/src/shellMovement";
+import { shellDrivesPlayerPose } from "../packages/core/src/movement/shellMovement";
 
 /**
  * From-scratch loop, browserless: what `npx jgengine create` (also `bun run jgengine create` in-repo) scaffolds must be

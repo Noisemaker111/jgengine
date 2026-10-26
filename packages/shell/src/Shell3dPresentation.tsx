@@ -23,7 +23,7 @@ import {
   type ContextVerb,
 } from "@jgengine/core/interaction/contextMenu";
 import type { PointerAxisState } from "@jgengine/core/input/pointerAxis";
-import type { observableShellTracker } from "./shellInputPublication";
+import type { observableShellTracker } from "@jgengine/core/input/shellInputPublication";
 import type { BindingOverrides } from "@jgengine/core/input/bindingOverrides";
 import type { TouchJoystickVariant, TouchScheme, TouchStyle } from "@jgengine/core/input/touchScheme";
 import type { Aim } from "@jgengine/core/scene/spatial";
@@ -56,24 +56,24 @@ import { SettingsProvider, type SettingsActionView } from "@jgengine/core/settin
 import { resolveWorldSky } from "./worldSky";
 import { resolveCaptureCameraConfig } from "./camera/rigResolve";
 import { rtsRotateKeysConflict } from "./camera/rigMath";
-import { pointerAimFor, pointerContextMenu, resolvePointerAim } from "./shellPointer";
-import { shellPointerInput } from "./shellPointerInput";
-import { createControlGroupKeys, groupCentroid } from "./pointer/controlGroupKeys";
+import { pointerAimFor, pointerContextMenu, resolvePointerAim } from "@jgengine/core/input/shellPointer.draw";
+import { shellPointerInput } from "@jgengine/core/input/shellPointerInput";
+import { createControlGroupKeys, groupCentroid } from "@jgengine/core/input/controlGroupKeys";
 import {
   isSelectDoubleClick,
   resolveClickSelection,
   resolveMarqueeSelection,
   type SelectClickRecord,
-} from "./pointer/selectionGesture";
-import { AudioListener, EntityAudioEmitters, ObjectAudioEmitters } from "./audio/AudioComponents";
-import type { AudioEngine } from "./audio/audioEngine";
+} from "@jgengine/core/input/selectionGesture";
+import { AudioListener, EntityAudioEmitters, ObjectAudioEmitters } from "@jgengine/core/audio/AudioComponents.draw";
+import type { AudioEngine } from "@jgengine/core/audio/audioEngine.view";
 import { PostProcessing } from "./postfx/PostProcessing";
 import { EnvironmentLighting } from "./render/EnvironmentLighting";
 import { worldProbeForQuality } from "./render/worldReflectionProbe";
 import { LivingWorld } from "./render/LivingWorldLayer";
-import { CollisionDebugWorld } from "./devtools/CollisionDebugWorld";
-import { DevtoolsRendererProbe } from "./devtools/DevtoolsOverlay";
-import { FrameTelemetry } from "./devtools/FrameTelemetry";
+import { CollisionDebugWorld } from "@jgengine/core/devtools/CollisionDebugWorld.draw";
+import { DevtoolsRendererProbe } from "@jgengine/core/devtools/DevtoolsOverlay.draw";
+import { FrameTelemetry } from "@jgengine/core/devtools/FrameTelemetry.draw";
 import {
   CAMERA_TRANSPARENT_USERDATA,
   GameCameraRig,
@@ -83,47 +83,47 @@ import {
   rtsPanKeysConflict,
 } from "./camera";
 import { CullingProvider } from "./visibility/CullingProvider";
-import { BuildingRenderBudget } from "./buildings/BuildingRenderBudget";
+import { BuildingRenderBudget } from "@jgengine/core/buildings/BuildingRenderBudget.draw";
 import { Sky } from "./environment";
 import { bearingFromDirection } from "@jgengine/core/sky/daylightCycle";
 import type { DaylightModulation } from "./render/SceneLighting";
 import { colorGradeFromDocument, lightProbesFromDocument } from "@jgengine/core/editor/environment";
 import { resolveSkyLightOwnership, skyEmitsLights } from "./sky/skyLightingPolicy";
 import { EnvironmentScene } from "./environment/EnvironmentScene";
-import { PointerProbe } from "./pointer/PointerProbe";
-import { MarqueeBox, ContextMenuView } from "./pointer/PointerOverlays";
-import { createPointerService } from "./pointer/pointerService";
-import { isSecondaryDrag, suppressBrowserContextMenu } from "./pointer/contextMenu";
+import { PointerProbe } from "@jgengine/core/input/PointerProbe.draw";
+import { MarqueeBox, ContextMenuView } from "@jgengine/core/input/PointerOverlays.view";
+import { createPointerService } from "@jgengine/core/input/pointerService.draw";
+import { isSecondaryDrag, suppressBrowserContextMenu } from "@jgengine/core/input/secondaryPointer";
 import { Reticle, WorldEntityBars, WorldNameplates } from "@jgengine/core/hud/WorldHud.draw";
 import { GridWorldScene } from "./world/GridWorldScene";
 import { PlaceScene } from "./world/PlaceScene";
 import { WorldItems } from "./world/WorldItems";
-import type { ShellMultiplayer } from "./multiplayer";
+import type { ShellMultiplayer } from "@jgengine/core/multiplayer/multiplayer.draw";
 import { defaultHudTheme, hudThemeVars } from "@jgengine/core/hud/hudTheme.view";
 import type { PlayableGame } from "./registry";
-import type { AuthoritativeFrameHandler } from "./worldSync";
-import { TouchControlsDock, TouchPlaySurface, useTouchViewport, type TouchCodeSink } from "./touch/TouchControlsOverlay";
-import { floatingJoystickZoneHeight, touchDockInsets } from "./touch/touchClusterLayout";
+import type { AuthoritativeFrameHandler } from "@jgengine/core/multiplayer/authoritativeSync";
+import { TouchControlsDock, TouchPlaySurface, useTouchViewport, type TouchCodeSink } from "@jgengine/core/input/TouchControlsOverlay.view";
+import { floatingJoystickZoneHeight, touchDockInsets } from "@jgengine/core/input/touchClusterLayout";
 import { SettingsRuntime } from "@jgengine/core/settings/SettingsRuntime.draw";
 import { SettingsChrome } from "@jgengine/core/settings/SettingsChrome.draw";
-import { resolvePlayableAudio } from "./audio/playableAudio";
+import { resolvePlayableAudio } from "@jgengine/core/audio/playableAudio.draw";
 import { AudioSettingsBridge, type AppliedGraphicsSettings } from "@jgengine/core/settings/appliedSettings.draw";
 import { TextureFiltering } from "./render/TextureFiltering";
 import { FrameRateLimiter } from "./drivers/FrameRateLimiter";
 import { CanvasCoverFrameloop } from "./drivers/CanvasCoverFrameloop";
-import { FpsCounter, FpsProbe, type FrameTally } from "./diagnostics/FpsCounter";
+import { FpsCounter, FpsProbe, type FrameTally } from "@jgengine/core/devtools/FpsCounter.draw";
 import { ConfiguredLighting, BackdropFog } from "./render/SceneLighting";
 import { IrradianceVolumeLighting } from "./render/IrradianceVolumeLighting";
 import { usePresentationLook } from "./render/presentationLook";
 import type { GameLookInput } from "@jgengine/core/render/lookPreset";
 import { WorldView, RemotePlayers } from "./world/WorldScene";
 import { FrameDriver } from "./drivers/FrameDriver";
-import { GamepadSource } from "./input/gamepadSource";
+import { GamepadSource } from "@jgengine/core/input/gamepadSource.draw";
 import { SplitScreenRenderer, useSeatViewports } from "./camera/Viewports";
 import { localPlayers } from "@jgengine/core/runtime/localPlayers";
-import type { RuntimeDiagnostic } from "./diagnostics/RuntimeDiagnostics";
+import type { RuntimeDiagnostic } from "@jgengine/core/devtools/diagnosticOverlay.view";
 import { createShellKeyHandlers, ShellDebugOverlays, ShellGameUiChrome } from "./ShellChrome";
-import { CombatPresentation } from "./CombatPresentation";
+import { CombatPresentation } from "@jgengine/core/combat/CombatPresentation.draw";
 import { ParticleEmitters } from "./vfx/ParticleEmitters";
 import { WorldTireMarks } from "./world/WorldTireMarks";
 import { TerrainQualityContext } from "./terrain/terrainQuality";

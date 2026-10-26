@@ -12,7 +12,7 @@ import {
   createActionStateTracker,
   toActionStateBindingMap,
 } from "@jgengine/core/input/actionBindings";
-import { RESERVED_INPUT_ACTIONS } from "./boundActionDispatch";
+import { RESERVED_INPUT_ACTIONS } from "@jgengine/core/input/boundActionDispatch";
 import { deriveTouchScheme, withTouchCodes, DEFAULT_TOUCH_STYLE } from "@jgengine/core/input/touchScheme";
 import { activeTouchControlsMode } from "@jgengine/core/input/touchControlsMode";
 import { normalizePointerToAxis, type PointerAxisState } from "@jgengine/core/input/pointerAxis";
@@ -45,38 +45,38 @@ import { armTextureErrors } from "@jgengine/core/devtools/textureErrors";
 import { armMissingModelLabels } from "./render/modelLoad";
 import { readUrlFlag, subscribeUrlChange, writeUrlParam } from "@jgengine/core/devtools/urlFlags";
 
-import { createAudioEngine } from "./audio/audioEngine";
-import { attachAudioEventWire } from "./audio/audioWire";
-import { attachAdaptiveMusic, type AdaptiveMusicSource } from "./audio/adaptiveMusicWire";
+import { createAudioEngine } from "@jgengine/core/audio/audioEngine.view";
+import { attachAudioEventWire } from "@jgengine/core/audio/audioWire.view";
+import { attachAdaptiveMusic, type AdaptiveMusicSource } from "@jgengine/core/audio/adaptiveMusicWire";
 import { ADAPTIVE_THEMES } from "@jgengine/core/audio/adaptiveMusic";
-import { resolvePlayableAudio } from "./audio/playableAudio";
-import { installAgentBridge } from "./devtools/agentBridge";
-import { attachPlaytestProbe } from "./devtools/playtestProbe";
-import { withDevtoolsLatency } from "./devtools/latencyInstrumentation";
+import { resolvePlayableAudio } from "@jgengine/core/audio/playableAudio.draw";
+import { installAgentBridge } from "@jgengine/core/devtools/agentBridge.draw";
+import { attachPlaytestProbe } from "@jgengine/core/devtools/playtestProbe";
+import { withDevtoolsLatency } from "@jgengine/core/devtools/latencyInstrumentation.draw";
 import { resolveRigKind } from "./camera/rigResolve";
 import { contextModels } from "./render/resolveModel";
 import { configureModelScan } from "./render/modelScan";
 import { configureModelSurface } from "./render/modelSurface";
-import type { ShellMultiplayer } from "./multiplayer";
+import type { ShellMultiplayer } from "@jgengine/core/multiplayer/multiplayer.draw";
 import type { PlayableGame } from "./registry";
-import { OrientationHint } from "./touch/OrientationHint";
+import { OrientationHint } from "@jgengine/core/input/OrientationHint.view";
 import { useTouchStyle, useTouchJoystickVariant, useGraphicsSettings } from "@jgengine/core/settings/appliedSettings.draw";
 import {
   logRuntimeError,
   type RuntimeDiagnostic,
-} from "./diagnostics/RuntimeDiagnostics";
+} from "@jgengine/core/devtools/diagnosticOverlay.view";
 import { EMPTY_RESERVED } from "./shellConstants";
-import { JoinGate } from "./JoinGate";
-import { useShellMultiplayerSync } from "./useShellMultiplayerSync";
+import { JoinGate } from "@jgengine/core/multiplayer/JoinGate.view";
+import { useShellMultiplayerSync } from "@jgengine/core/multiplayer/useShellMultiplayerSync.draw";
 import { ShellHudPresentation } from "@jgengine/core/hud/ShellHudPresentation.draw";
 import { isServerAuthoritative } from "@jgengine/core/runtime/adapter";
 import { playControlsActive } from "@jgengine/core/game/controlGate";
-import { resolveInputSink } from "./inputSink";
-import { observableShellTracker, attachShellInputPublication } from "./shellInputPublication";
-import { attachShellControlSuspension } from "./shellControlSuspension";
+import { resolveInputSink } from "@jgengine/core/input/inputSink";
+import { observableShellTracker, attachShellInputPublication } from "@jgengine/core/input/shellInputPublication";
+import { attachShellControlSuspension } from "@jgengine/core/input/shellControlSuspension";
 import { LazyShell3dPresentation } from "./lazyShell3dPresentation";
 import { createPresentationDiagnosticOwnership, createPlaySurfaceFocusOwnership, PresentationRecovery, type PresentationRecoveryEvent } from "./presentationRecovery";
-import { installPlayFocusReclaim } from "./playSurfaceFocus";
+import { installPlayFocusReclaim } from "@jgengine/core/input/surfaceFocus.view";
 
 const DEV_USER_ID = "dev-player";
 
@@ -461,7 +461,7 @@ export function GamePlayerShell({
     };
   }, [playable, userId]);
 
-  const authoritativeFrameRef = useRef<import("./worldSync").AuthoritativeFrameHandler | null>(null);
+  const authoritativeFrameRef = useRef<import("@jgengine/core/multiplayer/authoritativeSync").AuthoritativeFrameHandler | null>(null);
   const join = useShellMultiplayerSync(ctx, multiplayer, playable, serverIdRef, setRemotePlayers, authoritativeFrameRef);
 
   useEffect(() => {

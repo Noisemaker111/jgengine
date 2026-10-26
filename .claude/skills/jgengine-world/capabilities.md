@@ -113,6 +113,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `toEngineUnits` (function) · `import { toEngineUnits } from "@jgengine/core/world"`
 
+## attach-event-feedback — one call wires every announced combat/loot/objective/refusal event to its reaction
+
+- `attachEventFeedback` (function) · `import { attachEventFeedback } from "@jgengine/core/audio/eventFeedback"`
+
+## attach-wave-feedback — fire the wave cue once whenever a wave runner crosses into a new wave
+
+- `attachWaveFeedback` (function) · `import { attachWaveFeedback } from "@jgengine/core/audio/eventFeedback"`
+
 ## attack-move-order — advance-and-engage order that pursues hostiles en route and completes at its destination
 
 - `defineAttackMoveOrder` (function) · `import { defineAttackMoveOrder } from "@jgengine/core/world"`
@@ -120,6 +128,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## audio-occlusion — an emitter behind blocking world geometry is attenuated and darkened by a budgeted line test, and falls back to distance-only once the tick's budget is spent.
 
 - `AudioOcclusionConfig` (interface) · `import { AudioOcclusionConfig } from "@jgengine/core/audio/occlusion"`
+
+## audio-probe — read the live master RMS/peak, bus gains, ambience zone mix and occlusion cost from a running page for capture and diagnostics
+
+- `installAudioProbe` (function) · `import { installAudioProbe } from "@jgengine/core/audio/audioProbe.view"`
 
 ## audio-voice-budget — bound simultaneous sound playback with per-sound caps, priorities, and deterministic stealing
 
@@ -220,6 +232,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `findPathResult` (function) · `import { findPathResult } from "@jgengine/core/nav/navGrid"`
 
+## bounded-spatial-audio — play positional or flat cues with listener orientation, voice budgets, and per-source cleanup
+
+- `createAudioEngine` (function) · `import { createAudioEngine } from "@jgengine/core/audio/audioEngine.view"`
+
 ## build-footprint-cells — grid cells a snapped build piece footprint covers (footprintGrid occupancy bridge)
 
 - `footprintCells` (function) · `import { footprintCells } from "@jgengine/core/world/buildSockets"`
@@ -253,12 +269,20 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## camera-shake — add trauma to the active camera rig's shake from any game system
 
-- `cameraShake` (function) · `import { cameraShake } from "@jgengine/core/camera/shake/shakeChannel.draw"`
+- `cameraShake` (function) · `import { cameraShake } from "@jgengine/core/camera/shake/cameraShake"`
 - `createCameraShake` (function) · `import { createCameraShake } from "@jgengine/core/world"`
 
 ## camera-shake-meter — HUD readout for a core camera-shake controller — a trauma meter plus current impact-kind label, reskinnable and kind-labelled
 
 - `CameraShakeMeter` (function) · `import { CameraShakeMeter } from "@jgengine/core/camera/shake/cameraShake.view"`
+
+## caption-feed — bounded, self-expiring, deduped caption lines for the accessibility captions overlay
+
+- `createCaptionFeed` (function) · `import { createCaptionFeed } from "@jgengine/core/audio/captions"`
+
+## caption-overlay — render the caption feed as a themed, screen-reader-announced line stack gated by the captions accessibility setting
+
+- `CaptionOverlay` (function) · `import { CaptionOverlay } from "@jgengine/core/audio/CaptionOverlay.view"`
 
 ## capture — force a framed capture camera over a game that owns its camera
 
@@ -406,6 +430,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `installEnvironmentMotion` (function) · `import { installEnvironmentMotion } from "@jgengine/core/world/environmentForces"`
 
+## event-feedback — map announced gameplay events (damage, kill, pickup, objective, wave, refusal) to a sound, gamepad pulse, camera shake and caption through one data mapping
+
+- `createEventFeedback` (function) · `import { createEventFeedback } from "@jgengine/core/audio/eventFeedback"`
+
 ## fast-travel — network of fast-travel destinations with discovery, distance-sorted queries, nearest lookup, a travel gate, and serializable state
 
 - `createFastTravelNetwork` (function) · `import { createFastTravelNetwork } from "@jgengine/core/world"`
@@ -413,6 +441,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## feedback-cue-sounds — default procedural hit/hurt/kill/pickup/objective/wave/deny reactions on an "sfx" bus, overridable per game
 
 - `withFeedbackCueSounds` (function) · `import { withFeedbackCueSounds } from "@jgengine/core/audio/feedbackCues"`
+
+## feedback-host — mount event feedback, gesture-gated audio and captions for a running game in one component
+
+- `FeedbackHost` (function) · `import { FeedbackHost } from "@jgengine/core/audio/FeedbackHost.view"`
 
 ## feedback-mixer — map sim telemetry to camera, audio and haptic parameters through curves, smoothing and threshold events
 
@@ -489,6 +521,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## gamepad-input — Resolve sampled gamepad input into actions with deadzones and response curves.
 
 - `resolveGamepadFrame` (function) · `import { resolveGamepadFrame } from "@jgengine/core/input/gamepadModel"`
+
+## gesture-resume — unlock the audio context on the first pointer/key/touch gesture, so pre-gesture cues play instead of vanishing
+
+- `installGestureResume` (function) · `import { installGestureResume } from "@jgengine/core/audio/gestureResume.view"`
 
 ## glide — gliding/wingsuit descent control from a launch
 
@@ -777,6 +813,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## placement-controller — interactive build-mode ghost preview and commit
 
 - `createPlacementController` (function) · `import { createPlacementController } from "@jgengine/core/world"`
+
+## placement-ghost — render valid/invalid placement preview mesh
+
+- `PlacementGhost` (function) · `import { PlacementGhost } from "@jgengine/core/placement/PlacementGhost.draw"`
 
 ## placement-math — grid/surface footprint validity for build mode
 
@@ -1101,6 +1141,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## traffic — lane-graph traffic with car following, signals, right-of-way, lane changes and parking
 
 - `createTraffic` (function) · `import { createTraffic } from "@jgengine/core/world"`
+
+## transform-gizmo — in-game select/move/rotate/scale gizmo
+
+- `TransformGizmo` (const) · `import { TransformGizmo } from "@jgengine/core/placement/TransformGizmo.draw"`
 
 ## tween-number — rolling number readout with an up/down delta flash
 

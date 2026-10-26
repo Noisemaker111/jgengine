@@ -3,7 +3,7 @@ import { Component, createContext, useContext, useId, useLayoutEffect, type Erro
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { suspendPlayControls } from "@jgengine/core/game/controlGate";
 
-import { ErrorReportActions, errorReportContext } from "./diagnostics/RuntimeDiagnostics";
+import { ErrorReportActions, errorReportContext } from "@jgengine/core/devtools/diagnosticOverlay.view";
 
 const handledPresentationErrors = new WeakSet<object>();
 const codeLoadFailures = new WeakSet<object>();

@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import { runPlayScript, type PlayScriptSpec } from "@jgengine/shell/play";
+import { runPlayScript } from "@jgengine/core/play/playRunner.draw";
+import type { PlayScriptSpec } from "@jgengine/core/play/script";
 import { game } from "../game.config";
 import { runSessionStore } from "./run/session";
 
