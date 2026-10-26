@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import type { CameraVisibilityContext } from "@jgengine/core/visibility/camera";
 import type { Renderable } from "@jgengine/core/visibility/visibilitySystem";
 import { devtools } from "@jgengine/core/devtools/devtools";
+import { createSpatialIndex } from "@jgengine/core/spatial/spatialIndex";
 import { createVisibilitySystem } from "./visibilitySystem";
 
 function mainCamera(): CameraVisibilityContext {
@@ -39,6 +40,27 @@ describe("visibilitySystem", () => {
     obj.position = [0, 0, 20];
     obj.version = 2;
     expect(sys.update().visible.has("mover")).toBe(true);
+  });
+
+  test("a still object is placed in the spatial index once, and again only when its version changes", () => {
+    const index = createSpatialIndex();
+    const inserted: string[] = [];
+    const insert = index.insert.bind(index);
+    index.insert = (id, bounds, dynamic) => {
+      inserted.push(id);
+      insert(id, bounds, dynamic);
+    };
+    const mover = { id: "mover", position: [500, 0, 20] as [number, number, number], version: 1 };
+    const objects: Renderable[] = [ahead("still", 20), mover];
+    const sys = createVisibilitySystem({ renderables: () => objects, cameras: () => [mainCamera()], index });
+    for (let frame = 0; frame < 3; frame += 1) sys.update();
+    expect(inserted).toEqual(["still", "mover"]);
+    mover.position = [0, 0, 20];
+    mover.version = 2;
+    const result = sys.update();
+    expect(inserted).toEqual(["still", "mover", "mover"]);
+    expect(result.visible.has("mover")).toBe(true);
+    expect(result.visible.has("still")).toBe(true);
   });
 
   test("always-visible objects bypass culling", () => {

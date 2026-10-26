@@ -42,16 +42,22 @@ export function buildCullingDriver(ctx: GameContext, config: VisibilityConfig | 
   let frame = 0;
   let currentView: CameraView | null = null;
 
-  /** The culling sphere: the measured model (scaled for props) once mounted, the fallback before. */
-  function sphereFor(target: "entity" | "object", key: string, scale: number | undefined, fallback: { radius: number; offsetY: number }) {
+  /** The culling sphere, written to `sphere`: the measured model (scaled for props) once mounted, the fallback before. */
+  const sphere = { radius: 0, offsetY: 0 };
+  function sphereFor(target: "entity" | "object", key: string, scale: number | undefined, fallbackRadius: number, fallbackOffsetY: number): void {
     const box = renderBoundsOf(ctx, target, key);
-    if (box === undefined) return fallback;
-    const sphere = renderSphere(box);
+    if (box === undefined) {
+      sphere.radius = fallbackRadius;
+      sphere.offsetY = fallbackOffsetY;
+      return;
+    }
+    const measured = renderSphere(box);
     const factor = scale ?? 1;
-    return { radius: sphere.radius * factor * MEASURED_MARGIN, offsetY: sphere.offsetY * factor };
+    sphere.radius = measured.radius * factor * MEASURED_MARGIN;
+    sphere.offsetY = measured.offsetY * factor;
   }
 
-  function update(id: string, position: Vec3, rotation: number, sphere: { radius: number; offsetY: number }, overrides: Renderable["overrides"], layer: string): Renderable {
+  function update(id: string, position: Vec3, rotation: number, overrides: Renderable["overrides"], layer: string): Renderable {
     const { radius, offsetY } = sphere;
     let entry = entries.get(id);
     if (entry === undefined) {
@@ -83,11 +89,13 @@ export function buildCullingDriver(ctx: GameContext, config: VisibilityConfig | 
   function* renderables(): Iterable<Renderable> {
     frame += 1;
     for (const entity of ctx.scene.entity.list()) {
-      yield update(entity.id, entity.position, entity.rotationY, sphereFor("entity", entity.name, undefined, ENTITY_FALLBACK), config?.entities?.[entity.name], "entity");
+      sphereFor("entity", entity.name, undefined, ENTITY_FALLBACK.radius, ENTITY_FALLBACK.offsetY);
+      yield update(entity.id, entity.position, entity.rotationY, config?.entities?.[entity.name], "entity");
     }
     for (const object of ctx.scene.object.list()) {
       const scale = object.visual?.scale;
-      yield update(object.instanceId, object.position, object.rotationY, sphereFor("object", object.catalogId, scaleSize(scale), { radius: objectRadius(scale), offsetY: 0.5 }), config?.objects?.[object.catalogId], "object");
+      sphereFor("object", object.catalogId, scaleSize(scale), objectRadius(scale), 0.5);
+      yield update(object.instanceId, object.position, object.rotationY, config?.objects?.[object.catalogId], "object");
     }
     for (const [id, entry] of entries) {
       if (entry.seen !== frame) entries.delete(id);

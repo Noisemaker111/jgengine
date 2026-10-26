@@ -12,7 +12,9 @@ export interface RenderSphere {
   readonly offsetY: number;
 }
 
-const boxesByContext = new WeakMap<object, Map<string, RenderBox>>();
+type MeasuredBoxes = Record<"entity" | "object", Map<string, RenderBox>>;
+
+const boxesByContext = new WeakMap<object, MeasuredBoxes>();
 const sphereByBox = new WeakMap<RenderBox, RenderSphere>();
 
 /**
@@ -21,20 +23,20 @@ const sphereByBox = new WeakMap<RenderBox, RenderSphere>();
  * index dims for its colliders. @internal
  */
 export function recordRenderBounds(ctx: GameContext, target: "entity" | "object", key: string, box: RenderBox): void {
-  let map = boxesByContext.get(ctx);
-  if (map === undefined) {
-    map = new Map();
-    boxesByContext.set(ctx, map);
+  let boxes = boxesByContext.get(ctx);
+  if (boxes === undefined) {
+    boxes = { entity: new Map(), object: new Map() };
+    boxesByContext.set(ctx, boxes);
   }
-  const id = `${target}:${key}`;
-  const previous = map.get(id);
+  const map = boxes[target];
+  const previous = map.get(key);
   // Several instances of one kind can mount at different fits: keep the union so none is cut early.
   const merged: RenderBox = previous === undefined ? box : {
     min: [Math.min(previous.min[0], box.min[0]), Math.min(previous.min[1], box.min[1]), Math.min(previous.min[2], box.min[2])],
     max: [Math.max(previous.max[0], box.max[0]), Math.max(previous.max[1], box.max[1]), Math.max(previous.max[2], box.max[2])],
   };
   if (previous !== undefined && sameBox(previous, merged)) return;
-  map.set(id, merged);
+  map.set(key, merged);
 }
 
 function sameBox(a: RenderBox, b: RenderBox): boolean {
@@ -46,7 +48,7 @@ function sameBox(a: RenderBox, b: RenderBox): boolean {
 
 /** The measured box for one entity kind / object catalog id, or `undefined` before it mounts. @internal */
 export function renderBoundsOf(ctx: GameContext, target: "entity" | "object", key: string): RenderBox | undefined {
-  return boxesByContext.get(ctx)?.get(`${target}:${key}`);
+  return boxesByContext.get(ctx)?.[target].get(key);
 }
 
 /**

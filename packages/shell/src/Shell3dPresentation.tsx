@@ -65,6 +65,7 @@ import {
   type SelectClickRecord,
 } from "@jgengine/core/input/selectionGesture";
 import { AudioListener, EntityAudioEmitters, ObjectAudioEmitters } from "@jgengine/core/audio/AudioComponents.draw";
+import { skipCulledMatrices } from "@jgengine/core/visibility/culledTransforms.draw";
 import type { AudioEngine } from "@jgengine/core/audio/audioEngine.view";
 import { PostProcessing } from "@jgengine/core/postfx/PostProcessing.draw";
 import { EnvironmentLighting } from "@jgengine/core/lighting/EnvironmentLighting.draw";
@@ -656,7 +657,8 @@ export function Shell3dPresentation({
             <GameViewportProvider platforms={playable.platforms}>
               <ColorblindFrame mode={colorblind} style={{ position: "absolute", inset: 0 }}>
                 <Canvas
-                  onCreated={({ gl }) => {
+                  onCreated={({ gl, scene }) => {
+                    skipCulledMatrices(scene);
                     if (ktx2SupportDetected.current) return;
                     ktx2SupportDetected.current = true;
                     detectKtx2Support(gl);

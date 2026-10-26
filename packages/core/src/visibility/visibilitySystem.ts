@@ -88,6 +88,8 @@ interface ObjRecord {
   dynamic: boolean;
   assets: readonly string[] | undefined;
   lastSeen: number;
+  /** The spatial index already holds this version's bounds. */
+  indexed: boolean;
 }
 
 function round2(value: number): number {
@@ -151,7 +153,7 @@ export function createVisibilitySystem(options: VisibilitySystemOptions): Visibi
     const alwaysVisible = resolved.alwaysVisible || r.alwaysVisible === true;
     const dynamic = resolved.classification !== "static";
     if (record === undefined) {
-      record = { version: r.version, resolved, alwaysVisible, dynamic, assets: r.assets, lastSeen: updateCounter };
+      record = { version: r.version, resolved, alwaysVisible, dynamic, assets: r.assets, lastSeen: updateCounter, indexed: false };
       records.set(r.id, record);
     } else {
       record.version = r.version;
@@ -160,6 +162,7 @@ export function createVisibilitySystem(options: VisibilitySystemOptions): Visibi
       record.dynamic = dynamic;
       record.assets = r.assets;
       record.lastSeen = updateCounter;
+      record.indexed = false;
     }
     return record;
   }
@@ -168,8 +171,10 @@ export function createVisibilitySystem(options: VisibilitySystemOptions): Visibi
     const alwaysVisibleList: Renderable[] = [];
     for (const r of options.renderables()) {
       const record = recordFor(r);
-      const b = bounds.get(r.id, r.version, specOf(r, record.resolved), r.position);
-      index.insert(r.id, b, record.dynamic);
+      if (!record.indexed) {
+        index.insert(r.id, bounds.get(r.id, r.version, specOf(r, record.resolved), r.position), record.dynamic);
+        record.indexed = true;
+      }
       stats.totalObjects += 1;
       if (record.alwaysVisible) alwaysVisibleList.push(r);
     }

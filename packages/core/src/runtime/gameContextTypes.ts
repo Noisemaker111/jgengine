@@ -124,9 +124,10 @@ export interface GameContextObjectEntry {
   colliders?: EntityColliderSet;
   halfExtents?: readonly [number, number, number];
   /**
-   * Placed once and left alone (trees, lamps, benches, buildings): runtime placements of this kind
-   * render through shared instanced draws like editor-authored props. Leave unset for objects that
-   * spawn and despawn often, where regrouping would rebuild instance buffers.
+   * Placed once and left standing until it is cleared away (trees, lamps, benches, buildings, a
+   * yard's clutter a run tears down): runtime placements of this kind render through shared instanced
+   * draws like editor-authored props, composed kit models included, and removing one costs no
+   * rebuild. Leave unset for objects that spawn often, where each new placement regroups its batch.
    */
   scenery?: boolean;
 }

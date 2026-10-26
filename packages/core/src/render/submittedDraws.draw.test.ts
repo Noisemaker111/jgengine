@@ -7,7 +7,7 @@ import type { ScatterInstance } from "@jgengine/core/scatter/scatterRegion";
 import { scatterBatchInstances, type ScatterBatch } from "@jgengine/core/scatter/InstancedScatter.draw";
 import { buildScatterModelSources, disposeScatterModelSources } from "@jgengine/core/scatter/scatterModels.draw";
 import { scatterVariantTriangles, writeScatterVariantLevel } from "@jgengine/core/scatter/scatterVariants.draw";
-import { countStaticBatchDraws, groupStaticObjects, STATIC_BATCH_MESH_KEY, syncStaticObjectSource } from "@jgengine/core/instancing/staticObjectBatches.draw";
+import { countStaticBatchDraws, groupStaticObjects, STATIC_BATCH_MESH_KEY, gatherStaticMembers, syncStaticObjectSource } from "@jgengine/core/instancing/staticObjectBatches.draw";
 import { countSubmittedDraws, submitInstanceCount } from "./submittedDraws.draw";
 
 const FULL_TRIANGLES = 9134;
@@ -125,10 +125,10 @@ describe("a batch with no instances issues no draw", () => {
       const mesh = new THREE.InstancedMesh(source.geometry, source.material, batch.objects.length);
       mesh.userData[STATIC_BATCH_MESH_KEY] = true;
       scene.add(mesh);
-      syncStaticObjectSource(mesh, source, batch.objects, store.get, () => true, scratch, (live) => {
+      syncStaticObjectSource(mesh, source, gatherStaticMembers(batch.objects, store.get, () => true, (live) => {
         probe.set(live.position[0]!, live.position[1]!, live.position[2]!);
         return selector.level(live.instanceId, camera.distanceTo(probe)) === index;
-      });
+      }), scratch);
       disposeScatterModelSources(harvested.root);
     });
 

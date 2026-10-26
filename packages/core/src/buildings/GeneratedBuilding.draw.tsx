@@ -17,6 +17,7 @@ import { BuildingKitBatch } from "./BuildingKitBatch.draw";
 import { useBuildingChunkBudget } from "./BuildingRenderBudget.draw";
 import { partitionInstances, type InstanceChunk } from "@jgengine/core/instancing/instanceChunks.draw";
 import { uploadInstances } from "@jgengine/core/instancing/instanceUpload.draw";
+import { freezeStaticTransforms } from "@jgengine/core/model/staticTransforms.draw";
 import { bucketBuildingParts, normalFor, outwardOffset } from "./buildingKitFit.draw";
 import { applyBuildingSurface, useBuildingSurfaceTextures } from "./buildingSurface.draw";
 
@@ -110,25 +111,34 @@ function batchMaterialFor(
   return applyBuildingSurface(base, surface, textures);
 }
 
+const GLASS_KINDS: ReadonlySet<BuildingPartKind> = new Set(["window", "storefront"]);
+
+/** Glass sits inside the full wall panel it is cut into, proud by only 2.5 cm, so where box walls draw they already cast its shadow. @internal */
+export function boxKindCastsShadow(kind: BuildingPartKind, boxKinds: { has(kind: BuildingPartKind): boolean }): boolean {
+  return !(GLASS_KINDS.has(kind) && boxKinds.has("wall"));
+}
+
 interface BuildingKindBatchProps {
   kind: BuildingPartKind;
   matrices: readonly THREE.Matrix4[];
   palette?: BuildingMaterialPalette;
   geometry: THREE.BoxGeometry;
+  castShadow: boolean;
 }
 
-function BuildingKindBatch({ kind, matrices, palette, geometry }: BuildingKindBatchProps) {
+function BuildingKindBatch({ kind, matrices, palette, geometry, castShadow }: BuildingKindBatchProps) {
   const surface = useMemo(() => surfaceFor(kind, palette), [kind, palette]);
   const textures = useBuildingSurfaceTextures(surface);
   const material = useDisposable(() => batchMaterialFor(kind, surface, textures), [kind, surface, textures]);
   const chunks = useMemo(() => partitionInstances(geometry, matrices), [geometry, matrices]);
-  return <>{chunks.map((chunk) => <BuildingChunk key={chunk.key} chunk={chunk} material={material} geometry={geometry} />)}</>;
+  return <>{chunks.map((chunk) => <BuildingChunk key={chunk.key} chunk={chunk} material={material} geometry={geometry} castShadow={castShadow} />)}</>;
 }
 
-function BuildingChunk({ chunk, material, geometry }: {
+function BuildingChunk({ chunk, material, geometry, castShadow }: {
   chunk: InstanceChunk;
   material: THREE.Material;
   geometry: THREE.BoxGeometry;
+  castShadow: boolean;
 }) {
   const meshRef = useRef<THREE.InstancedMesh>(null);
   useBuildingChunkBudget(meshRef, chunk.bounds);
@@ -136,6 +146,7 @@ function BuildingChunk({ chunk, material, geometry }: {
     const mesh = meshRef.current;
     if (mesh === null) return;
     uploadInstances(mesh, chunk.matrices, { bounds: chunk.bounds });
+    freezeStaticTransforms(mesh);
     // Release only this chunk's instance buffers; geometry and materials are shared.
     return () => {
       mesh.dispose();
@@ -146,7 +157,7 @@ function BuildingChunk({ chunk, material, geometry }: {
       key={chunk.matrices.length}
       ref={meshRef}
       args={[geometry, material, chunk.matrices.length]}
-      castShadow
+      castShadow={castShadow}
       receiveShadow
       dispose={null}
     />
@@ -169,7 +180,7 @@ export function InstancedBuildings({
   return (
     <group>
       {[...boxes.entries()].map(([kind, matrices]) => (
-        <BuildingKindBatch key={kind} kind={kind} matrices={matrices} palette={palette} geometry={geometry} />
+        <BuildingKindBatch key={kind} kind={kind} matrices={matrices} palette={palette} geometry={geometry} castShadow={boxKindCastsShadow(kind, boxes)} />
       ))}
       {[...models.entries()].map(([url, instances]) => (
         <Suspense key={url} fallback={null}>

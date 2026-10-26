@@ -14,7 +14,7 @@ export interface InstanceChunk {
 export interface PartitionInstancesOptions {
   /** Applied after each instance matrix: a model part's own transform inside its source scene. */
   localMatrix?: THREE.Matrix4;
-  /** Cell edge in meters. Default 64. */
+  /** Cell edge in meters. Default 256. */
   cellSize?: number;
 }
 
@@ -30,7 +30,7 @@ export function partitionInstances(
   matrices: readonly THREE.Matrix4[],
   options: PartitionInstancesOptions = {},
 ): InstanceChunk[] {
-  const cellSize = options.cellSize ?? 64;
+  const cellSize = options.cellSize ?? 256;
   if (!Number.isFinite(cellSize) || cellSize <= 0) throw new RangeError("Instance cell size must be positive and finite");
   if (geometry.boundingBox === null) geometry.computeBoundingBox();
   const geometryBounds = geometry.boundingBox;

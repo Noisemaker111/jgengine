@@ -11,7 +11,7 @@ import { measureLocalBounds } from "@jgengine/core/model/measureBounds.draw";
 import { measureLocalCollisionTriangles } from "@jgengine/core/model/measureCollisionMesh.draw";
 import { resolveObjectModel, type ObjectModelCacheEntry } from "@jgengine/core/model/resolveModel";
 import { buildCullingDriver } from "@jgengine/core/visibility/cullingDriver";
-import { canBatchStaticObject, canInstanceStaticScene, countStaticBatchDraws, groupStaticObjects, STATIC_BATCH_CELL, STATIC_BATCH_MESH_KEY, STATIC_BATCH_MIN, incompatibleStaticObjectIds, syncStaticObjectSource, type StaticObjectCandidate } from "./staticObjectBatches.draw";
+import { canBatchStaticObject, canInstanceStaticScene, countStaticBatchDraws, groupStaticObjects, STATIC_BATCH_CELL, STATIC_BATCH_MESH_KEY, STATIC_BATCH_MIN, incompatibleStaticObjectIds, gatherStaticMembers, harvestStaticPieces, staticModelPieces, syncStaticObjectSource, type StaticObjectCandidate } from "./staticObjectBatches.draw";
 
 function candidate(index: number, patch: Partial<StaticObjectCandidate> = {}): StaticObjectCandidate {
   return {
@@ -97,7 +97,7 @@ describe("static authored object batching", () => {
     const geometry = new THREE.BoxGeometry();
     const source = { geometry, material: new THREE.MeshStandardMaterial(), localMatrix: new THREE.Matrix4() };
     const mesh = new THREE.InstancedMesh(geometry, source.material, 2);
-    syncStaticObjectSource(mesh, source, batch.objects, store.get, (id) => visible.has(id), new THREE.Object3D());
+    syncStaticObjectSource(mesh, source, gatherStaticMembers(batch.objects, store.get, (id) => visible.has(id)), new THREE.Object3D());
     expect(mesh.count).toBe(1);
     expect(mesh.userData[POINTER_OBJECT_INSTANCES_KEY]).toEqual(["near"]);
     // One sphere per batch is only dangerous when it spans the culled instances too; this one is
@@ -121,17 +121,19 @@ describe("static authored object batching", () => {
       const mesh = new THREE.InstancedMesh(geometry, material, 2);
       mesh.userData[STATIC_BATCH_MESH_KEY] = true;
       scene.add(mesh);
-      syncStaticObjectSource(mesh, { geometry, material, localMatrix }, objects, store.get, (id) => id === "near", new THREE.Object3D());
+      syncStaticObjectSource(mesh, { geometry, material, localMatrix }, gatherStaticMembers(objects, store.get, (id) => id === "near"), new THREE.Object3D());
     }
     expect(countStaticBatchDraws(scene)).toEqual({ draws: 2, drawn: 1 });
   });
 
-  test("keeps custom, runtime, interactive, animated, textured, composed and mirrored placements independent", () => {
+  test("keeps custom, runtime, interactive, animated, textured, moving-part and mirrored placements independent", () => {
     const excluded: Partial<StaticObjectCandidate>[] = [
       { authored: false }, { custom: true }, { catalog: { verbs: [{} as never] } },
       { catalog: { proximityPrompt: {} as never } }, { catalog: { breakable: { baseBreakTime: 1 } } },
       { catalog: { slotInventory: {} as never } }, { model: { url: "a", animation: { clip: "spin" } } },
-      { model: { url: "a", ik: "auto" } }, { model: { url: "a", parts: [{ model: "b" }] } },
+      { model: { url: "a", ik: "auto" } }, { model: { url: "a", parts: [{ model: { url: "b" }, role: "leg.l" }] } },
+      { model: { url: "a", parts: [{ model: { url: "b", animation: { clip: "spin" } } }] } },
+      { model: { url: "a", variants: { levels: [{ url: "a", maxDistance: 40 }, { url: "a-far" }] }, parts: [{ model: { url: "b" } }] } },
       { model: { url: "a", attachments: [{ model: "b", slot: "hand" }] } },
       { model: { url: "a", material: { maps: { color: "a.png" } } } }, { model: { url: "a", scale: -1 } },
       { model: { url: "a", materialAssignments: [{ materialId: "cloth", selector: { slot: "Shirt" } }] } },
@@ -151,7 +153,7 @@ describe("static authored object batching", () => {
     const source = { geometry, material: new THREE.MeshStandardMaterial(), localMatrix: new THREE.Matrix4() };
     const mesh = new THREE.InstancedMesh(geometry, source.material, 4);
     const byId = new Map(batch.objects.map((object) => [object.instanceId, object]));
-    syncStaticObjectSource(mesh, source, batch.objects, (id) => byId.get(id) ?? null, () => true, new THREE.Object3D());
+    syncStaticObjectSource(mesh, source, gatherStaticMembers(batch.objects, (id) => byId.get(id) ?? null, () => true), new THREE.Object3D());
     const matrix = new THREE.Matrix4();
     mesh.getMatrixAt(0, matrix);
     const scale = new THREE.Vector3();
@@ -272,14 +274,14 @@ describe("static authored object batching", () => {
     const source = { geometry, material: new THREE.MeshStandardMaterial(), localMatrix: new THREE.Matrix4(), castShadow: true, receiveShadow: true };
     const mesh = new THREE.InstancedMesh(geometry, source.material, 2);
     const scratch = new THREE.Object3D();
-    syncStaticObjectSource(mesh, source, objects, store.get, (id) => id !== "hidden", scratch);
+    syncStaticObjectSource(mesh, source, gatherStaticMembers(objects, store.get, (id) => id !== "hidden"), scratch);
     expect(mesh.count).toBe(1);
     expect(mesh.userData[POINTER_OBJECT_INSTANCES_KEY]).toEqual(["visible"]);
     const version = mesh.instanceMatrix.version;
     let matrixWrites = 0;
     const setMatrixAt = mesh.setMatrixAt.bind(mesh);
     mesh.setMatrixAt = (index, matrix) => { matrixWrites++; setMatrixAt(index, matrix); };
-    syncStaticObjectSource(mesh, source, objects, store.get, (id) => id !== "hidden", scratch);
+    syncStaticObjectSource(mesh, source, gatherStaticMembers(objects, store.get, (id) => id !== "hidden"), scratch);
     expect(mesh.instanceMatrix.version).toBe(version); expect(matrixWrites).toBe(0);
     const scene = new THREE.Scene(); scene.add(mesh); scene.updateMatrixWorld(true);
     const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 100); camera.position.set(0, 0, 10); camera.lookAt(0, 0, 0); camera.updateMatrixWorld();
@@ -289,12 +291,12 @@ describe("static authored object batching", () => {
     expect(hit?.normal[0]).toBeCloseTo(Math.sin(0.4), 5);
     expect(hit?.normal[2]).toBeCloseTo(Math.cos(0.4), 5);
     store.move("visible", 3, 2, -5); store.rotate("visible", 1.2);
-    syncStaticObjectSource(mesh, source, objects, store.get, () => true, scratch);
+    syncStaticObjectSource(mesh, source, gatherStaticMembers(objects, store.get, () => true), scratch);
     const actual = new THREE.Matrix4(); mesh.getMatrixAt(1, actual);
     const expected = new THREE.Matrix4().makeRotationY(1.2).setPosition(3, 2, -5);
     actual.elements.forEach((value, index) => expect(value).toBeCloseTo(expected.elements[index]!, 5));
     store.remove("visible"); store.remove("hidden");
-    syncStaticObjectSource(mesh, source, objects, store.get, () => true, scratch);
+    syncStaticObjectSource(mesh, source, gatherStaticMembers(objects, store.get, () => true), scratch);
     expect(mesh.count).toBe(0); expect(mesh.visible).toBe(false); expect(mesh.userData[POINTER_OBJECT_INSTANCES_KEY]).toEqual([]);
   });
 
@@ -339,7 +341,7 @@ describe("static authored object batching", () => {
       for (const source of harvested.sources) {
         submissions += Array.isArray(source.material) ? source.geometry.groups.filter((group) => source.material instanceof Array && source.material[group.materialIndex ?? 0]?.visible).length : 1;
         const mesh = new THREE.InstancedMesh(source.geometry, source.material, batch.objects.length);
-        syncStaticObjectSource(mesh, source, batch.objects, store.get, () => true, new THREE.Object3D());
+        syncStaticObjectSource(mesh, source, gatherStaticMembers(batch.objects, store.get, () => true), new THREE.Object3D());
         expect(mesh.count).toBe(128);
         const matrix = new THREE.Matrix4(); mesh.getMatrixAt(127, matrix);
         const placed = batch.objects[127]!;
@@ -351,5 +353,52 @@ describe("static authored object batching", () => {
     }
     expect(store.list().length * 3).toBe(9216); expect(submissions).toBe(72);
     expect(JSON.stringify(document)).toBe(saved);
+  });
+
+  test("a composed kit model batches and each part keeps the offset the individual renderer gives it", () => {
+    const composed = { url: "base.glb", scale: 3, parts: [{ model: { url: "arm.glb", parts: [{ model: { url: "lamp.glb" }, position: [0, 2, 0] as [number, number, number] }] }, position: [1, 0, 0] as [number, number, number], rotation: [0, Math.PI / 2, 0] as [number, number, number], scale: 2 }, { model: "unresolved-id" }] };
+    expect(groupStaticObjects(Array.from({ length: 4 }, (_, i) => candidate(i, { model: composed }))).batches).toHaveLength(1);
+    const pieces = staticModelPieces(composed);
+    expect(pieces.map((piece) => piece.model.url)).toEqual(["base.glb", "arm.glb", "lamp.glb"]);
+    expect(pieces.every((piece) => piece.model.parts === undefined)).toBe(true);
+    expect(pieces[0]!.model.scale).toBe(3);
+    const at = (index: number) => new THREE.Vector3().applyMatrix4(pieces[index]!.matrix).toArray().map((v) => Number(v.toFixed(5)) + 0);
+    expect(at(0)).toEqual([0, 0, 0]);
+    expect(at(1)).toEqual([1, 0, 0]);
+    expect(at(2)).toEqual([1, 4, 0]);
+    const lampX = new THREE.Vector3(1, 0, 0).transformDirection(pieces[2]!.matrix).toArray().map((v) => Number(v.toFixed(5)) + 0);
+    expect(lampX).toEqual([0, 0, -1]);
+    expect(new THREE.Vector3().setFromMatrixScale(pieces[2]!.matrix).x).toBeCloseTo(2, 5);
+
+    const harvested = harvestStaticPieces(pieces, pieces.map(() => ({ scene: modelScene().root, animations: [] })))!;
+    const alone = buildScatterModelSources(modelScene().root, { url: "lamp.glb" });
+    expect(harvested.sources).toHaveLength(alone.sources.length * 3);
+    const lamp = harvested.sources[alone.sources.length * 2]!;
+    const expected = pieces[2]!.matrix.clone().multiply(alone.sources[0]!.localMatrix);
+    lamp.localMatrix.elements.forEach((value, index) => expect(value).toBeCloseTo(expected.elements[index]!, 5));
+    expect(harvestStaticPieces(pieces, pieces.map((_, index) => ({ scene: modelScene().root, animations: index === 2 ? [new THREE.AnimationClip("spin", 1, [])] : [] })))).toBeNull();
+    for (const root of harvested.roots) disposeScatterModelSources(root);
+    disposeScatterModelSources(alone.root);
+  });
+
+  test("a batch keeps its instances when members are removed, and rebuilds when one is regrouped elsewhere", () => {
+    const store = createObjectStore();
+    for (let i = 0; i < 6; i++) store.place("a", i, 0, 0, { instanceId: `a-${i}` });
+    const candidates = () => store.list().map((object) => candidate(0, { object, model: { url: "a.glb" }, catalog: { scenery: true }, authored: false }));
+    const first = groupStaticObjects(candidates()).batches[0]!;
+    const cache = new Map([[first.key, first]]);
+    store.remove("a-2"); store.remove("a-4");
+    const cleared = groupStaticObjects(candidates(), cache).batches[0]!;
+    expect(cleared).toBe(first);
+    const mesh = new THREE.InstancedMesh(new THREE.BoxGeometry(), new THREE.MeshStandardMaterial(), first.objects.length);
+    syncStaticObjectSource(mesh, { geometry: mesh.geometry, material: mesh.material, localMatrix: new THREE.Matrix4() }, gatherStaticMembers(cleared.objects, store.get, () => true), new THREE.Object3D());
+    expect(mesh.userData[POINTER_OBJECT_INSTANCES_KEY]).toEqual(["a-0", "a-1", "a-3", "a-5"]);
+    store.place("a", 2, 0, 0, { instanceId: "a-2" });
+    expect(groupStaticObjects(candidates(), cache).batches[0]).toBe(first);
+    const custom = candidates().map((entry) => entry.object.instanceId === "a-2" ? { ...entry, custom: true } : entry);
+    const regrouped = groupStaticObjects(custom, cache);
+    expect(regrouped.batches[0]).not.toBe(first);
+    expect(regrouped.singles.map((entry) => entry.object.instanceId)).toEqual(["a-2"]);
+    mesh.dispose(); mesh.geometry.dispose(); (mesh.material as THREE.Material).dispose();
   });
 });

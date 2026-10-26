@@ -38,9 +38,9 @@ function makeMesh(geometry: THREE.BufferGeometry, material: THREE.Material | THR
 describe("instance chunks", () => {
   test("partitions every instance exactly once with stable negative and positive cells", () => {
     const geometry = new THREE.BoxGeometry();
-    const matrices = [-65, -1, 0, 63, 64, 900].map((x) => translation(x));
+    const matrices = [-257, -1, 0, 255, 256, 1800].map((x) => translation(x));
     const chunks = partitionInstances(geometry, matrices);
-    expect(chunks.map((chunk) => chunk.key)).toEqual(["-2:0", "-1:0", "0:0", "1:0", "14:0"]);
+    expect(chunks.map((chunk) => chunk.key)).toEqual(["-2:0", "-1:0", "0:0", "1:0", "7:0"]);
     expect(chunks.flatMap((chunk) => chunk.matrices)).toEqual(matrices);
     expect(partitionInstances(geometry, matrices).map((chunk) => chunk.key)).toEqual(chunks.map((chunk) => chunk.key));
     for (const chunk of chunks) for (const matrix of chunk.matrices) {
@@ -90,7 +90,7 @@ describe("instance chunks", () => {
         expect(worldSphere.distanceToPoint(point)).toBeLessThanOrEqual(1e-9);
       }
       const center = new THREE.Box3().setFromPoints(vertices(geometry, expected)).getCenter(new THREE.Vector3());
-      expect(chunk!.key).toBe(`${Math.floor(center.x / 64)}:${Math.floor(center.z / 64)}`);
+      expect(chunk!.key).toBe(`${Math.floor(center.x / 256)}:${Math.floor(center.z / 256)}`);
     }
     geometry.dispose();
   });
