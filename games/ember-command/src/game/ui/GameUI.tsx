@@ -38,17 +38,22 @@ export function GameUI() {
       className={`ec-root ${prefs.largeText ? "ec-large" : ""} ${prefs.highContrast ? "ec-contrast" : ""} ${prefs.reducedMotion ? "ec-still" : ""}`}
       style={ROOT_VARS}
     >
-      {hud.phase !== "ready" && <RtsHud />}
-      {field ? (
-        <button
-          type="button"
-          className="ec-pause"
-          aria-label={hud.phase === "playing" ? "Pause battle" : "Resume battle"}
-          onClick={() => commands.run(hud.phase === "playing" ? "match.pause" : "match.resume", {})}
-        >
-          <WaxSeal size={58} emblem="pause" />
-        </button>
-      ) : null}
+      {hud.phase !== "ready" && (
+        <RtsHud
+          pause={
+            field ? (
+              <button
+                type="button"
+                className="ec-pause"
+                aria-label={hud.phase === "playing" ? "Pause battle" : "Resume battle"}
+                onClick={() => commands.run(hud.phase === "playing" ? "match.pause" : "match.resume", {})}
+              >
+                <WaxSeal size={58} emblem="pause" />
+              </button>
+            ) : null
+          }
+        />
+      )}
       <CommandMenu />
     </div>
   );
