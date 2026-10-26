@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { formatHudOverlapReport, hudBlockOverlaps, resolveHudLanes, type HudLaneSlot } from "@jgengine/react/hud/hudLanes";
+import { detectLayoutCollisions, formatLayoutCollisions, hudBlockRegion } from "@jgengine/core/hud/hudPriority";
+import { resolveHudLanes, type HudLaneSlot } from "@jgengine/react/hud/hudLanes";
 import { HUD_PANELS, placement } from "./hudPanels";
 
 const VIEWPORTS = [
@@ -16,8 +17,8 @@ function slots(size: "wide" | "compact" | "portrait", zoom: number): HudLaneSlot
 function overlapsAt(size: "wide" | "compact" | "portrait", width: number, height: number, zoom: number) {
   const frame = { width: width / zoom, height: height / zoom };
   const layout = resolveHudLanes(slots(size, zoom), frame);
-  const blocks = layout.placements.map((pl) => ({ id: pl.id, rect: pl.rect }));
-  return { layout, overlaps: hudBlockOverlaps(blocks), report: formatHudOverlapReport(hudBlockOverlaps(blocks), frame) };
+  const overlaps = detectLayoutCollisions(layout.placements.map((pl) => hudBlockRegion(pl.id, pl.rect)), { minArea: 1 });
+  return { layout, overlaps, report: formatLayoutCollisions(overlaps, frame) };
 }
 
 describe("Deepward's HUD lanes", () => {

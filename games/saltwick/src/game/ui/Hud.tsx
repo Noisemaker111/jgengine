@@ -4,8 +4,9 @@ import { SkillCheckBar } from "@jgengine/react/components";
 import { useGameStore } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
 import { HUD_CORNER_WIDTH } from "@jgengine/react/hud/hudLayout";
+import { ActionBar } from "@jgengine/react/hud/actionHud";
 import { KitBanner, KitObjective } from "@jgengine/react/kitFlow";
-import { KitActionBar, KitCount, KitCounts } from "@jgengine/react/hud/kitHud";
+import { KitCount, KitCounts } from "@jgengine/react/hud/kitHud";
 import { HudSlots } from "@jgengine/shell/gameKit";
 import { KitActionPrompt, KitButton, KitPanel } from "@jgengine/react/uiKitRoot";
 
@@ -92,19 +93,19 @@ function SeedBar(): ReactNode {
     );
   if (farm.atMarket) return <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>{prompt}</div>;
   return (
-    <KitActionBar
-      kind="seed"
+    <ActionBar
+      look="kit"
+      hotkeys={false}
       prompt={prompt}
-      actions={idea.crops.slice(0, 6).flatMap((crop, index) =>
+      defs={idea.crops.slice(0, 6).flatMap((crop, index) =>
         farm.owned[index]
           ? [
               {
                 id: crop.id,
-                label: `${crop.label} `,
-                detail: crop.seed,
-                glyph: String(index + 1),
-                variant: farm.seed === crop.id ? ("primary" as const) : ("ghost" as const),
-                onActivate: () => ctx.game.commands.run(`digit${index + 1}`, {}),
+                label: crop.label,
+                detail: String(crop.seed),
+                hotkey: String(index + 1),
+                active: farm.seed === crop.id,
               },
             ]
           : [],
@@ -114,6 +115,7 @@ function SeedBar(): ReactNode {
           {farm.planted}/{farm.plots} planted
         </span>
       }
+      onActivate={(id) => ctx.game.commands.run(`digit${idea.crops.findIndex((crop) => crop.id === id) + 1}`, {})}
     />
   );
 }

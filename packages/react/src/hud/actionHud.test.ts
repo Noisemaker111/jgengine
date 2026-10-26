@@ -91,4 +91,23 @@ describe("action renderers (SSR)", () => {
     expect(html).toContain('data-action-id="move"');
     expect(html).toContain('data-action-id="stop"');
   });
+
+  test("the kit look draws a build strip: label, detail, key, unaffordable as ghost, meters and the prompt", () => {
+    const html = renderToStaticMarkup(
+      createElement(ActionBar, {
+        look: "kit",
+        defs: [
+          { id: "wall", label: "Wall", detail: "5 Wood", hotkey: "1" },
+          { id: "tower", label: "Tower", detail: "20 Stone", hotkey: "2", disabled: true },
+        ],
+        progress: [{ id: "farm", label: "Farm", value: 0.5 }],
+        prompt: createElement("span", null, "E to open"),
+      }),
+    );
+    expect(html).toContain('data-action-id="wall"');
+    expect(html).toContain("5 Wood");
+    expect(html).toContain('data-variant="ghost"');
+    expect(html).toContain('role="meter"');
+    expect(html.indexOf("E to open")).toBeLessThan(html.indexOf("data-action-bar"));
+  });
 });

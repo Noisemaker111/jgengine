@@ -2,8 +2,9 @@ import type { ReactNode } from "react";
 import { useGameStore } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
 import { HUD_CORNER_WIDTH } from "@jgengine/react/hud/hudLayout";
+import { ActionBar } from "@jgengine/react/hud/actionHud";
 import { KitResultScreen } from "@jgengine/react/kitFlow";
-import { KitActionBar, KitCount, KitCounts, KitHint, KitVitals } from "@jgengine/react/hud/kitHud";
+import { KitCount, KitCounts, KitHint, KitVitals } from "@jgengine/react/hud/kitHud";
 import { KitButton, KitPanel } from "@jgengine/react/uiKitRoot";
 import { HudSlots } from "@jgengine/shell/gameKit";
 
@@ -76,24 +77,25 @@ function BuildBar(): ReactNode {
   const realm = useRealm();
   const have = Object.fromEntries(realm.resources.map((resource) => [resource.id, resource.amount]));
   return (
-    <KitActionBar
-      kind="build"
+    <ActionBar
+      look="kit"
+      hotkeys={false}
       wrapAt={1100}
-      actions={idea.buildings.map((building, index) => {
+      defs={idea.buildings.map((building, index) => {
         const state = realm.buildings[index]!;
         const short = Object.entries(building.cost).some(([id, amount]) => (have[id] ?? 0) < amount);
         return {
           id: building.id,
           label: building.label,
           detail: state.unlocked ? price(building.cost) : (idea.tiers[building.tier - 1]?.label ?? ""),
-          glyph: index < 9 ? String(index + 1) : undefined,
-          variant: realm.armed === building.id ? "primary" : short || !state.unlocked ? "ghost" : "secondary",
-          pressed: realm.armed === building.id,
-          title: building.blurb,
-          onActivate: () => ctx.game.commands.run(`build${index + 1}`, {}),
+          ...(index < 9 ? { hotkey: String(index + 1) } : {}),
+          active: realm.armed === building.id,
+          disabled: short || !state.unlocked,
+          description: building.blurb,
         };
       })}
       progress={realm.building.map((order) => ({ id: order.id, label: order.label, value: order.progress }))}
+      onActivate={(id) => ctx.game.commands.run(`build${idea.buildings.findIndex((building) => building.id === id) + 1}`, {})}
     />
   );
 }

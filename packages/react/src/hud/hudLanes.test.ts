@@ -1,11 +1,14 @@
 import { describe, expect, test } from "bun:test";
 
-import {
-  formatHudOverlapReport,
-  hudBlockOverlaps,
-  resolveHudLanes,
-  type HudLaneSlot,
-} from "./hudLanes";
+import { detectLayoutCollisions, formatLayoutCollisions, hudBlockRegion } from "@jgengine/core/hud/hudPriority";
+import type { HudRect } from "@jgengine/core/hud/hudLayout";
+
+import { resolveHudLanes, type HudLaneSlot } from "./hudLanes";
+
+/** HudCanvas's overlap check: rendered blocks as HUD regions through the one collision model. */
+function hudBlockOverlaps(blocks: readonly { id: string; rect: HudRect }[]) {
+  return detectLayoutCollisions(blocks.map((block) => hudBlockRegion(block.id, block.rect)), { minArea: 1 });
+}
 
 const DESKTOP = { width: 1600, height: 900 };
 const PHONE_LANDSCAPE = { width: 844, height: 390 };
@@ -97,7 +100,7 @@ describe("resolveHudLanes", () => {
   });
 });
 
-describe("hudBlockOverlaps", () => {
+describe("HUD block overlaps", () => {
   test("names both blocks when their rectangles intersect", () => {
     const overlaps = hudBlockOverlaps([
       { id: "score", rect: { x: 0, y: 0, width: 240, height: 80 } },
@@ -135,10 +138,10 @@ describe("hudBlockOverlaps", () => {
       { id: "score", rect: { x: 0, y: 0, width: 240, height: 80 } },
       { id: "quest-log", rect: { x: 0, y: 60, width: 240, height: 160 } },
     ]);
-    const report = formatHudOverlapReport(overlaps, DESKTOP);
+    const report = formatLayoutCollisions(overlaps, DESKTOP);
     expect(report).toContain("1600x900");
     expect(report).toContain("score");
     expect(report).toContain("quest-log");
-    expect(formatHudOverlapReport([], DESKTOP)).toBe("");
+    expect(formatLayoutCollisions([], DESKTOP)).toBe("");
   });
 });

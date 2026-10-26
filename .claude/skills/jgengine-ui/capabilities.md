@@ -28,7 +28,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `AchievementToast` (function) · `import { AchievementToast } from "@jgengine/react"`
 
-## action-bar — optional skinned action-bar composition over the headless model — games own chrome
+## action-bar — the HUD action bar — abilities with cooldown slots or a kit build strip with costs, progress meters and the interact prompt, over one action model
 
 - `ActionBar` (function) · `import { ActionBar } from "@jgengine/react"`
 
@@ -460,11 +460,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `useHudLayoutPersist` (function) · `import { useHudLayoutPersist } from "@jgengine/react"`
 
-## hud-overlap-report — format the intersecting HUD block pairs for a development console
-
-- `formatHudOverlapReport` (function) · `import { formatHudOverlapReport } from "@jgengine/react"`
-- `hudBlockOverlaps` (function) · `import { hudBlockOverlaps } from "@jgengine/react"`
-
 ## hud-panel — anchored HUD slot — drop any widget in a named, player-movable panel
 
 - `HudPanel` (function) · `import { HudPanel } from "@jgengine/react"`
@@ -542,10 +537,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `KillFeed` (function) · `import { KillFeed } from "@jgengine/react"`
 
-## kit-action-bar — a HUD build/action bar — keyed kit buttons with costs, affordability and the held tool, progress meters, the interact prompt
-
-- `KitActionBar` (function) · `import { KitActionBar } from "@jgengine/react/hud/kitHud"`
-
 ## kit-action-glyph — the bound key, pad button or tap label for an action, live, for any kit part
 
 - `useActionGlyph` (function) · `import { useActionGlyph } from "@jgengine/react"`
@@ -617,6 +608,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## kit-wave-clock — a HUD wave clock — countdown or enemies left, a note, and the wave banner
 
 - `KitWaveClock` (function) · `import { KitWaveClock } from "@jgengine/react/hud/kitHud"`
+
+## layout-collision-report — format the overlapping HUD/control regions for a development console
+
+- `formatLayoutCollisions` (function) · `import { formatLayoutCollisions } from "@jgengine/core/hud/hudPriority"`
+
+## layout-collisions — every overlapping pair of registered HUD, control and system regions
+
+- `detectLayoutCollisions` (function) · `import { detectLayoutCollisions } from "@jgengine/core/hud/hudPriority"`
 
 ## light-probes — bake an irradiance volume from authored sky, fill and lamp inputs
 
