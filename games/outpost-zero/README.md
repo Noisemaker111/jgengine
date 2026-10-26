@@ -1,6 +1,6 @@
 # Outpost Zero
 
-Push out from the base. Break every hive camp. Get paid. Made with `bun run games:new` from: "third person shooter clearing alien outposts". Start it with `bun --cwd=games/outpost-zero run dev` from the repository root.
+Push out from the base. Break every hive camp. Get paid. First generated from the idea: "third person shooter clearing alien outposts". Start it with `bun --cwd=games/outpost-zero run dev` from the repository root.
 
 ## Design checklist
 

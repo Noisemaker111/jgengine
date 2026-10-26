@@ -42,6 +42,7 @@
     "ci:status": "bun scripts/ci-status.ts",
     "background": "bun scripts/background.ts",
     "find": "bun packages/jgengine/src/cli/index.ts find",
+    "jgengine": "bun packages/jgengine/src/cli/index.ts",
     "check": "bun scripts/guard.ts 2400 'bun scripts/run-stages.ts check'",
     "gen": "bun scripts/guard.ts 1200 'bun scripts/run-stages.ts gen'",
     "test": "bun scripts/guard.ts 900 'bun scripts/ensure-ready.ts --install-only && bun test packages apps/dev apps/web apps/desktop scripts'",
@@ -57,7 +58,6 @@
     "host:fixture": "node scripts/authority-fixture.mjs",
     "release": "bun scripts/release.ts",
     "deploy:site": "bun scripts/deploy-site.ts",
-    "games:new": "bun games/scripts/new-game.ts",
     "games:provision": "bun games/scripts/provision-assets.ts",
     "games:capabilities": "bun games/scripts/capabilities-tools.ts"
   },

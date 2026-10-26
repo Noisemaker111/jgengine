@@ -14,6 +14,7 @@ import { runHarness } from "../harness";
 import { cliVersion, findUp, pickPackageManager, readPackageJson, sdkVersion } from "../pkg";
 import { runSkills } from "../skills";
 import { runningCli, staleCliWarnings } from "../staleCli";
+import { runSync } from "../sync";
 import { runUpgrade } from "../upgrade";
 import { editorScaffold } from "../templates";
 
@@ -27,7 +28,7 @@ HUMAN INTERFACE (what people say to you — not a shell they must run):
   Make a game that ... with jgengine
 
 AGENT RESPONSE (you run these; do not dump this as homework for the user):
-  npx jgengine create "Game Name"   # scaffold + install skills into the project
+  npx jgengine create "Game Name" --template 3d   # scaffold + install skills into the project
   cd Game-Name
   # intake → foundation + only needed domains → build (see jgengine skill)
 
@@ -38,9 +39,11 @@ games/* directory — those are private in-repo test games, not templates.
 usage: jgengine <command> [...args]
 
   create "<Game Name>"  scaffold playable base + install agent skills into the project
-                        folder My-Game-Name; name → game.config / HUD / title
+                        --template 3d|2d|builder (default 3d); writes jgengine.json, the game's config
                         --from-scene <folder> promotes an authored editor.scene.json into the game
                         --player/--ground/--scene pick the starting look · create --help for all flags
+  sync [dir...]         make a game match its jgengine.json and this engine: @jgengine deps, its
+                        template's shared files, capability answers (monorepo) · --check changes nothing
   desktop [dir]         ship a Windows NSIS installer (local project or --url https://…)
                         [--url] [--name] [--id] [--version] [--icon] [--out] [--dry-run]
                         [--allow-remote] (required for --url hosts outside jgengine.com)
@@ -192,7 +195,10 @@ if (command !== undefined && !["help", "--help", "-h", "--version", "-v"].includ
 
 switch (command) {
   case "create":
-    process.exit(runCreate(rest));
+    process.exit(await runCreate(rest));
+    break;
+  case "sync":
+    process.exit(await runSync(rest));
     break;
   case "find":
     process.exit(await runFind(rest));

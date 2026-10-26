@@ -1,6 +1,6 @@
-// `create --2d`: a board game with no 3D scene. The board is plain store data drawn by GameUI.
+// `create --template 2d`: a board game with no 3D scene. The board is plain store data drawn by GameUI.
 
-/** Default board size in cells for `create --2d`; the game's `world.ts` owns it afterward. */
+/** Default board size in cells for `create --template 2d`; the game's `world.ts` owns it afterward. */
 export const BOARD_SIZE = { x: 10, y: 20 } as const;
 
 /** `src/world.ts` for a 2D board game. */

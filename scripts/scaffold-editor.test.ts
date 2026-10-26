@@ -9,7 +9,7 @@ import { DEFAULT_WALK_CODES } from "../packages/core/src/input/actionBindings";
 import { shellDrivesPlayerPose } from "../packages/shell/src/shellMovement";
 
 /**
- * From-scratch loop, browserless: what `npx jgengine create` (also `bun run games:new` in-repo) scaffolds must be
+ * From-scratch loop, browserless: what `npx jgengine create` (also `bun run jgengine create` in-repo) scaffolds must be
  * walkable and editor-wired with zero hand-written code. Guards the create → walk → F2+E → play
  * chain the same way editor-mvp.test.ts guards authoring → AuthoredScene parity: the starter scene
  * document normalizes, carries a player_spawn the runtime honors (`authoredSpawnPosition`), resolves

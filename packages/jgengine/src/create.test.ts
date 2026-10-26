@@ -100,11 +100,11 @@ describe("writeGame", () => {
 });
 
 describe("runCreate", () => {
-  test("prints the resolved sdk version scaffolded for standalone games", () => {
+  test("prints the resolved sdk version scaffolded for standalone games", async () => {
     const target = join(scratch(), "Version Probe");
     const log = spyOn(console, "log").mockImplementation(() => {});
     try {
-      const code = runCreate([target, "--standalone", "--no-install", "--no-skills"]);
+      const code = await runCreate([target, "--standalone", "--no-install", "--no-skills"]);
       expect(code).toBe(0);
       const lines = log.mock.calls.map((call) => String(call[0]));
       expect(lines).toContain(`  scaffolding @jgengine/* ^${sdkVersion()} (jgengine CLI ${cliVersion()})`);
@@ -113,48 +113,49 @@ describe("runCreate", () => {
     }
   });
 
-  test("--help prints usage and writes nothing", () => {
+  test("--help prints usage and writes nothing", async () => {
     const parent = scratch();
     const log = spyOn(console, "log").mockImplementation(() => {});
     try {
-      expect(runCreate([join(parent, "Help Probe"), "--help"])).toBe(0);
+      expect(await runCreate([join(parent, "Help Probe"), "--help"])).toBe(0);
       expect(String(log.mock.calls[0]?.[0])).toContain("--ground terrain|flat");
-      expect(String(log.mock.calls[0]?.[0])).toContain("--2d");
+      expect(String(log.mock.calls[0]?.[0])).toContain("--template 3d|2d|builder");
       expect(existsSync(join(parent, "Help-Probe"))).toBe(false);
     } finally {
       log.mockRestore();
     }
   });
 
-  test("--2d refuses 3D-only flags instead of ignoring them", () => {
+  test("--template 2d refuses 3D-only flags instead of ignoring them", async () => {
     const parent = scratch();
     const error = spyOn(console, "error").mockImplementation(() => {});
     try {
-      expect(runCreate([join(parent, "Flat Probe"), "--2d", "--ground", "terrain", "--no-install", "--no-skills"])).toBe(1);
-      expect(error.mock.calls.map((call) => String(call[0])).join("\n")).toContain("--2d has no 3D scene; drop --ground");
+      expect(await runCreate([join(parent, "Flat Probe"), "--template", "2d", "--ground", "terrain", "--no-install", "--no-skills"])).toBe(1);
+      expect(error.mock.calls.map((call) => String(call[0])).join("\n")).toContain("--template 2d has no 3D scene; drop --ground");
       expect(existsSync(join(parent, "Flat-Probe"))).toBe(false);
     } finally {
       error.mockRestore();
     }
   });
 
-  test("--2d writes a board game without editor or model files", () => {
+  test("--template 2d writes a board game without editor or model files", async () => {
     const parent = scratch();
     const log = spyOn(console, "log").mockImplementation(() => {});
     try {
-      expect(runCreate([join(parent, "Board Probe"), "--2d", "--standalone", "--no-install", "--no-skills"])).toBe(0);
+      expect(await runCreate([join(parent, "Board Probe"), "--template", "2d", "--standalone", "--no-install", "--no-skills"])).toBe(0);
       expect(existsSync(join(parent, "Board-Probe", "src", "game", "board.ts"))).toBe(true);
       expect(existsSync(join(parent, "Board-Probe", "src", "editor.scene.json"))).toBe(false);
+      expect(JSON.parse(readFileSync(join(parent, "Board-Probe", "jgengine.json"), "utf8"))).toMatchObject({ template: "2d", engine: ["assets", "core", "react", "shell"] });
     } finally {
       log.mockRestore();
     }
   });
 
-  test("rejects an unknown flag instead of scaffolding", () => {
+  test("rejects an unknown flag instead of scaffolding", async () => {
     const parent = scratch();
     const error = spyOn(console, "error").mockImplementation(() => {});
     try {
-      expect(runCreate([join(parent, "Typo Probe"), "--no-instal"])).toBe(1);
+      expect(await runCreate([join(parent, "Typo Probe"), "--no-instal"])).toBe(1);
       expect(String(error.mock.calls[0]?.[0])).toContain("unknown flag --no-instal");
       expect(existsSync(join(parent, "Typo-Probe"))).toBe(false);
     } finally {
@@ -234,7 +235,7 @@ describe("writeGame from a promoted scene", () => {
 });
 
 describe("runCreate in the engine monorepo", () => {
-  test("scaffolds into games/ and leaves the root package.json scripts alone", () => {
+  test("scaffolds into games/ and leaves the root package.json scripts alone", async () => {
     const root = scratch();
     mkdirSync(join(root, "packages", "core", "src"), { recursive: true });
     mkdirSync(join(root, "games"));
@@ -247,7 +248,7 @@ describe("runCreate in the engine monorepo", () => {
 
     const log = spyOn(console, "log").mockImplementation(() => {});
     try {
-      const code = runCreate([join(root, "games", "Root Probe"), "--in-repo", "--no-install", "--no-skills"]);
+      const code = await runCreate([join(root, "games", "Root Probe"), "--in-repo", "--no-install", "--no-skills"]);
       expect(code).toBe(0);
       expect(existsSync(join(root, "games", "Root-Probe", "package.json"))).toBe(true);
       const lines = log.mock.calls.map((call) => String(call[0]));

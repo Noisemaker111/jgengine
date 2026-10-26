@@ -1,6 +1,6 @@
 # Apex Nights
 
-Win races. Tune the car. Own the night. Made with `bun run games:new` from: "arcade street racer: win night races, earn cash, upgrade your car". Start it with `bun --cwd=games/apex-nights run dev` from the repository root.
+Win races. Tune the car. Own the night. First generated from the idea: "arcade street racer: win night races, earn cash, upgrade your car". Start it with `bun --cwd=games/apex-nights run dev` from the repository root.
 
 ## Design checklist
 

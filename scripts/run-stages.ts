@@ -93,6 +93,7 @@ export const CHECKS: readonly CheckDef[] = [
   { name: "games-design", script: "games/scripts/check-game-design.ts", jobs: ["games"], games: true },
   { name: "games-ledger", script: "games/scripts/capabilities-sync.ts", args: ["--check"], jobs: ["games"], games: true, generated: true },
   { name: "games-capabilities", script: "games/scripts/check-capabilities.ts", jobs: ["games"], games: true },
+  { name: "games-sync", script: "packages/jgengine/src/cli/index.ts", args: ["sync", "--check"], jobs: ["games"], games: true },
   { name: "games-glb-textures", script: "games/scripts/check-glb-textures.ts", jobs: [], games: true },
   { name: "recursive-walk", script: "scripts/check-recursive-walk.ts", jobs: [] },
   { name: "version", script: "scripts/set-version.ts", args: ["--check"], jobs: [] },

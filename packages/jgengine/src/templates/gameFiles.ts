@@ -1408,7 +1408,7 @@ export const objectModels: Record<string, ModelConfig> = resolveModelPlan(assets
 `;
 
 export interface GameConfigOptions {
-  /** Ship world.ts + game/assets.ts + game/models.ts (create --world). */
+  /** Ship world.ts + game/assets.ts + game/models.ts (every 3d template). */
   world: boolean;
   /** Ship the authored scene document + editor wiring (dropped by create --no-editor). */
   editor: boolean;

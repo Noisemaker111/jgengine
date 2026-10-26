@@ -1,0 +1,184 @@
+{
+  "name": "Harbor Heat",
+  "id": "harbor-heat",
+  "engine": [
+    "assets",
+    "core",
+    "editor",
+    "react",
+    "shell",
+    "ws"
+  ],
+  "capabilities": {
+    "adopts": [
+      "action-glyph",
+      "agents",
+      "audio-probe",
+      "damage-runtime",
+      "damage-target-unknown",
+      "entity-preview",
+      "game-cursor",
+      "game-font-stacks",
+      "game-fonts",
+      "game-save",
+      "game-save-digest",
+      "game-slider",
+      "hud-fade",
+      "hud-idle",
+      "input-device",
+      "kit-button",
+      "kit-frame-cut",
+      "kit-panel",
+      "kit-result-screen",
+      "loot-comparison",
+      "loot-generation",
+      "loot-roller",
+      "loot-score",
+      "loot-validation",
+      "mission-events",
+      "mission-rewards",
+      "mission-runtime",
+      "mission-validation",
+      "mount-game",
+      "offscreen-world",
+      "perception-service",
+      "police-response",
+      "police-roads",
+      "radio-stations",
+      "session-loop",
+      "side-jobs",
+      "traffic",
+      "transaction-ledger",
+      "turf-war",
+      "ui-kit-customize",
+      "ui-kit-ink",
+      "ui-kit-root",
+      "ui-kits",
+      "ui-sound-cues",
+      "use-menu-nav",
+      "use-viewport-scroll-lock",
+      "vehicle-damage",
+      "world-model"
+    ],
+    "probes": {
+      "@jgengine/core/economy/transactionLedger": [
+        "harbor.ledger"
+      ],
+      "@jgengine/core/nav/traffic": [
+        "harbor.traffic"
+      ],
+      "@jgengine/core/save/saveDocument": [
+        "harbor.save"
+      ],
+      "@jgengine/core/sim/offScreen": [
+        "harbor.residents"
+      ],
+      "@jgengine/shell/audio/audioProbe": [
+        "window:__jgengineAudio"
+      ]
+    },
+    "declines": {
+      "cover-field": {
+        "kind": "not-applicable",
+        "reason": "Cover is not part of harbor-heat: fights happen on open streets, and nothing authors or holds cover."
+      },
+      "cover-points-from-solids": {
+        "kind": "not-applicable",
+        "reason": "Cover is not part of harbor-heat: fights happen on open streets, and nothing authors or holds cover."
+      },
+      "cover-points-near": {
+        "kind": "not-applicable",
+        "reason": "Cover is not part of harbor-heat: fights happen on open streets, and nothing authors or holds cover."
+      },
+      "cover-score": {
+        "kind": "not-applicable",
+        "reason": "Cover is not part of harbor-heat: fights happen on open streets, and nothing authors or holds cover."
+      },
+      "cover-select": {
+        "kind": "not-applicable",
+        "reason": "Cover is not part of harbor-heat: fights happen on open streets, and nothing authors or holds cover."
+      },
+      "equipment-slot-inventory": {
+        "kind": "not-applicable",
+        "reason": "Equipment slots are not part of harbor-heat: gear goes into a four-slot hotbar and a twelve-slot backpack, and a vest raises the armor stat instead of occupying a worn slot."
+      },
+      "loan-schedule": {
+        "kind": "not-applicable",
+        "reason": "Loans is not part of harbor-heat: the crew earns and spends, and no loan is drawn or serviced."
+      },
+      "loans": {
+        "kind": "not-applicable",
+        "reason": "Loans is not part of harbor-heat: the crew earns and spends, and no loan is drawn or serviced."
+      },
+      "nav-crowd": {
+        "kind": "not-applicable",
+        "reason": "Navigation is not part of harbor-heat: people walk authored streets and cars follow lanes, and no navigation mesh is baked."
+      },
+      "nav-runtime": {
+        "kind": "not-applicable",
+        "reason": "Navigation is not part of harbor-heat: people walk authored streets and cars follow lanes, and no navigation mesh is baked."
+      },
+      "navmesh-from-scene": {
+        "kind": "not-applicable",
+        "reason": "Navigation is not part of harbor-heat: people walk authored streets and cars follow lanes, and no navigation mesh is baked."
+      },
+      "near-agents": {
+        "kind": "not-applicable",
+        "reason": "Agent loop is not part of harbor-heat: residents run the shared offscreen world, and no needs, thought or mood loop is authored."
+      },
+      "ride-appeal": {
+        "kind": "not-applicable",
+        "reason": "Ride simulation is not part of harbor-heat: no ride or queue exists in an open city."
+      },
+      "ride-choice": {
+        "kind": "not-applicable",
+        "reason": "Ride simulation is not part of harbor-heat: no ride or queue exists in an open city."
+      },
+      "ride-sim": {
+        "kind": "not-applicable",
+        "reason": "Ride simulation is not part of harbor-heat: no ride or queue exists in an open city."
+      },
+      "rvo-avoidance": {
+        "kind": "not-applicable",
+        "reason": "Crowd steering is not part of harbor-heat: residents keep to authored routes without reciprocal avoidance."
+      },
+      "skill-tree": {
+        "kind": "not-applicable",
+        "reason": "Skill tree is not part of harbor-heat: standing rises through the shared career track, and there is no player skill tree."
+      },
+      "squad-combat": {
+        "kind": "not-applicable",
+        "reason": "Squad combat is not part of harbor-heat: fights are one-on-one, and no squad holds cover or suppresses."
+      },
+      "status-runtime": {
+        "kind": "not-applicable",
+        "reason": "Status effects is not part of harbor-heat: damage lands directly, and nobody is burned, shocked or slowed."
+      },
+      "status-unknown": {
+        "kind": "not-applicable",
+        "reason": "Status effects is not part of harbor-heat: damage lands directly, and nobody is burned, shocked or slowed."
+      },
+      "supply-demand-pricing": {
+        "kind": "not-applicable",
+        "reason": "Market pricing is not part of harbor-heat: vendors run on the shared shop stock rather than a demand-priced market."
+      },
+      "utility-brain": {
+        "kind": "not-applicable",
+        "reason": "Agent loop is not part of harbor-heat: residents run the shared offscreen world, and no needs, thought or mood loop is authored."
+      },
+      "visitor-population": {
+        "kind": "not-applicable",
+        "reason": "Park population is not part of harbor-heat: the city has residents, not a counted visitor population."
+      },
+      "wait-queue": {
+        "kind": "not-applicable",
+        "reason": "Queue is not part of harbor-heat: nothing measured forms a line in the city."
+      },
+      "weapon-system": {
+        "kind": "debt",
+        "reason": "items/use-handlers.ts still gates cadence and spends the ammo stat itself; the shared weapon runtime cannot take Harbor's ammo pool or present a shot.",
+        "issue": 2488
+      }
+    }
+  }
+}

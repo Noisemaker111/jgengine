@@ -1,6 +1,6 @@
 # Briarcrown
 
-Found a hamlet. Feed it, house it, grow it into a castle town. Made with `bun run games:new` from: "medieval castle builder". Start it with `bun --cwd=games/briarcrown run dev` from the repository root.
+Found a hamlet. Feed it, house it, grow it into a castle town. First generated from the idea: "medieval castle builder". Start it with `bun --cwd=games/briarcrown run dev` from the repository root.
 
 ## Design checklist
 

@@ -58,9 +58,9 @@ The building block itself (`harbor-heat/src/art/city-block.glb`) is original geo
 
 The Islander bus (`islander-bus.glb`) and the cruiser's light bar (`hhpd-lightbar.glb`) are original geometry from `harbor-heat/scripts/author-harbor.mjs`. Aircraft, signs, neon, signals and cargo are still KayKit (CC0); the engine's `MODEL_LIBRARY_GAPS` lists the route for each.
 
-## Games made by `bun run games:new`
+## Games first generated from ideas
 
-Hold the Line, Fernwild and Apex Nights were generated from one-sentence ideas by `bun run games:new` (see [docs/new-game.md](docs/new-game.md)). Their names, story text and settings are original. The generator copies the pack models each game uses from the engine's `apps/dev/public/models/` into `<game>/public/models/imported/`. Textures over 1 MB are scaled down to 1024 px. Library models (`city/...`, `vehicle/...`) come from `bun run games:provision <game>`, as with Harbor Heat above. Every copied file is CC0 1.0 and keeps its source name. Each game's Credits screen lists them.
+Hold the Line, Fernwild and Apex Nights were first generated from one-sentence ideas by a since-retired generator. Their names, story text and settings are original. The generator copied the pack models each game uses from the engine's `apps/dev/public/models/` into `<game>/public/models/imported/`. Textures over 1 MB are scaled down to 1024 px. Library models (`city/...`, `vehicle/...`) come from `bun run games:provision <game>`, as with Harbor Heat above. Every copied file is CC0 1.0 and keeps its source name. Each game's Credits screen lists them.
 
 | Game | Pack (folder under `public/models/imported/`) | Author | License |
 | --- | --- | --- | --- |
