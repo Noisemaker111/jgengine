@@ -17,12 +17,24 @@ export function parseBaseline(text: string): string[] {
   return value as string[];
 }
 
+/**
+ * `@jgengine/core/hud/hudScale#rectOverflow` → `@jgengine/core#rectOverflow`. An exported name has one
+ * definition engine-wide (check-concept-homes), so package plus name is the symbol's identity, and a
+ * file moving between folders is the same orphan, not a new one.
+ */
+export function orphanIdentity(key: string): string {
+  const hash = key.indexOf("#");
+  const module = hash < 0 ? key : key.slice(0, hash);
+  const pkg = /^(@[^/]+\/[^/]+)/.exec(module)?.[1] ?? module;
+  return hash < 0 ? pkg : `${pkg}${key.slice(hash)}`;
+}
+
 export function orphanRatchetViolations(
   reference: readonly string[],
   committed: readonly string[],
 ): OrphanRatchetResult {
-  const ref = new Set(reference);
-  const added = [...new Set(committed)].filter((key) => !ref.has(key)).sort();
+  const ref = new Set(reference.map(orphanIdentity));
+  const added = [...new Set(committed)].filter((key) => !ref.has(orphanIdentity(key))).sort();
   return { added, ok: added.length === 0 };
 }
 

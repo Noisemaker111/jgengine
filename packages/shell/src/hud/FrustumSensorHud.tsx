@@ -10,9 +10,9 @@ import {
   type FrustumTarget,
 } from "@jgengine/core/sensor/frustumSensor";
 import { useSceneEntities } from "@jgengine/react/hooks";
-import { frustumSampleDisplayEqual } from "./frustumSampleEqual";
+import { frustumSampleDisplayEqual } from "../vision/frustumSampleEqual";
 
-export { frustumSampleDisplayEqual } from "./frustumSampleEqual";
+export { frustumSampleDisplayEqual } from "../vision/frustumSampleEqual";
 
 function isPerspective(camera: Camera): camera is PerspectiveCamera {
   return (camera as PerspectiveCamera).isPerspectiveCamera === true;

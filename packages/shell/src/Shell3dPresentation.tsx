@@ -94,7 +94,7 @@ import { PointerProbe } from "./pointer/PointerProbe";
 import { MarqueeBox, ContextMenuView } from "./pointer/PointerOverlays";
 import { createPointerService } from "./pointer/pointerService";
 import { isSecondaryDrag, suppressBrowserContextMenu } from "./pointer/contextMenu";
-import { Reticle, WorldEntityBars, WorldNameplates } from "./world/WorldHud";
+import { Reticle, WorldEntityBars, WorldNameplates } from "./hud/WorldHud";
 import { GridWorldScene } from "./world/GridWorldScene";
 import { PlaceScene } from "./world/PlaceScene";
 import { WorldItems } from "./world/WorldItems";

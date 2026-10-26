@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import { extractPackageSurface, type ApiExport, type ApiPackage } from "./apiSurface";
 import { collectAdoption, hasPublicIntentEvidence } from "./apiAdoption";
 import { CORE_BARREL_SKILLS, PACKAGE_SKILLS, SKILL_DIRS, skillForModule } from "./skillRouting";
-import { runOrphanRatchet } from "./orphanRatchet";
+import { orphanIdentity, runOrphanRatchet } from "./orphanRatchet";
 
 const BASELINE_PATH = "scripts/api-doc-baseline.json";
 const ORPHAN_BASELINE_PATH = "scripts/api-orphan-baseline.json";
@@ -280,9 +280,12 @@ function main(): void {
     ? unprovenExports
     : unprovenExports.filter((key) => orphanBaseline.has(key) || !committedApiKeys.has(key));
   const orphanSet = new Set(orphans);
+  // A baselined orphan whose file moved folders keeps its entry under the new path.
+  const baselineIds = new Set([...orphanBaseline].map(orphanIdentity));
+  const inBaseline = (key: string) => orphanBaseline.has(key) || baselineIds.has(orphanIdentity(key));
 
-  const newOrphans = orphans.filter((key) => !orphanBaseline.has(key));
-  const prunedOrphanBaseline = [...orphanBaseline].filter((key) => orphanSet.has(key));
+  const newOrphans = orphans.filter((key) => !inBaseline(key));
+  const prunedOrphanBaseline = orphans.filter(inBaseline);
   const staleOrphanBaseline = orphanBaseline.size - prunedOrphanBaseline.length;
 
   if (!seed && orphanBaselineExists && newOrphans.length > 0) {
