@@ -55,6 +55,7 @@ export const CORE_DOMAIN_SKILLS: Record<string, string> = {
   random: "jgengine-gameplay",
   relation: "jgengine-gameplay",
   scatter: "jgengine-world",
+  sky: "jgengine-world",
   buildings: "jgengine-world",
   city: "jgengine-world",
   placement: "jgengine-world",

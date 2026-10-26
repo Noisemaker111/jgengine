@@ -1,8 +1,8 @@
-/** Split a `#rrggbb` hex color into its `[r, g, b]` channels (0–255).
+/** Split a `#rrggbb` (or bare `rrggbb`) hex color into its `[r, g, b]` channels (0–255).
  * @internal
  */
 export function hexToRgb(hex: string): readonly [number, number, number] {
-  const value = Number.parseInt(hex.slice(1), 16);
+  const value = Number.parseInt(hex.startsWith("#") ? hex.slice(1) : hex, 16);
   return [(value >> 16) & 0xff, (value >> 8) & 0xff, value & 0xff];
 }
 

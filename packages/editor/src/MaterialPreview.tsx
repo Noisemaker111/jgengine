@@ -5,7 +5,7 @@ import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import { inspectModelMaterialSlots, type ModelMaterialSlotInfo } from "@jgengine/shell/render/materialAsset";
 import { sharedGltfLoader } from "@jgengine/shell/render/modelLoad";
 import { EntityModel } from "@jgengine/shell/render/SceneModels";
-import { DEFAULT_SUN_ELEVATION_DEG, sunDirectionFromBearing } from "@jgengine/shell/environment/daylightCycle";
+import { DEFAULT_SUN_ELEVATION_DEG, sunDirectionFromBearing } from "@jgengine/core/sky/daylightCycle";
 import type { MaterialAsset } from "@jgengine/core/material/materialAsset";
 import type { EditorEnvironment } from "@jgengine/core/editor/types";
 import { MaterialAssetSurface } from "@jgengine/shell/render/materialAsset";

@@ -1,4 +1,4 @@
-import { biomeBandsForSky } from "./environment/skyBands";
+import { biomeBandsForSky } from "./sky/skyBands";
 import { Canvas } from "@react-three/fiber";
 import {
   useMemo,
@@ -45,7 +45,7 @@ import {
 } from "@jgengine/core/settings/settingsModel";
 import { playControlsActive } from "@jgengine/core/game/controlGate";
 import { balanceLightingForIbl } from "@jgengine/core/render/lightingBalance";
-import { skyNoonKeyframes } from "@jgengine/core/render/skyOwnedLighting";
+import { skyNoonKeyframes } from "@jgengine/core/sky/skyOwnedLighting";
 import type { PresencePoseRow } from "@jgengine/core/runtime/transport";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { GameViewportProvider } from "@jgengine/react/gameViewport";
@@ -85,10 +85,10 @@ import {
 import { CullingProvider } from "./visibility/CullingProvider";
 import { BuildingRenderBudget } from "./buildings/BuildingRenderBudget";
 import { Sky } from "./environment";
-import { bearingFromDirection } from "./environment/daylightCycle";
+import { bearingFromDirection } from "@jgengine/core/sky/daylightCycle";
 import type { DaylightModulation } from "./render/SceneLighting";
 import { colorGradeFromDocument, lightProbesFromDocument } from "@jgengine/core/editor/environment";
-import { resolveSkyLightOwnership, skyEmitsLights } from "./environment/skyLightingPolicy";
+import { resolveSkyLightOwnership, skyEmitsLights } from "./sky/skyLightingPolicy";
 import { EnvironmentScene } from "./environment/EnvironmentScene";
 import { PointerProbe } from "./pointer/PointerProbe";
 import { MarqueeBox, ContextMenuView } from "./pointer/PointerOverlays";

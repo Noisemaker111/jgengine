@@ -2569,6 +2569,50 @@
 - `VisionTarget` (interface): interface VisionTarget<TId extends string = string> { id: TId; at: VisionPoint } — ⚠ undocumented
 - `VisionWall` (interface): interface VisionWall — Structurally matches `world/walls` `WallSegment` — pass those straight in as occluders.
 
+## @jgengine/core/sky/dayNightCycle
+
+- `DayNightCycle` (interface): interface DayNightCycle — A running, observable, serializable day-night cycle. A presenter renders `sample()`.
+- `DayNightCycleOptions` (interface): interface DayNightCycleOptions — Options for {@link createDayNightCycle}.
+- `DayNightKeyframe` (interface): interface DayNightKeyframe — One day-night keyframe: at a normalized day position, the phase label and target colors the game styles.
+- `DayNightSample` (interface): interface DayNightSample — The interpolated day-night look at a moment: day fraction, active phase, and blended colors.
+- `DayNightSnapshot` (interface): interface DayNightSnapshot — Serializable day-night position — accumulated clock offset, pause state, and speed — for save/load.
+- `createDayNightCycle` (function): function createDayNightCycle(options: DayNightCycleOptions): DayNightCycle — Creates a turnkey day-night cycle: a serializable model that advances a normalized day fraction on an injected clock and blends per-keyframe phase labels and tint/light colors. Wire this one model, then drive an existing sky/daylight seam from `sample()` (or drop it straight into a `{ calendar(): { dayFraction } }` seam via `calendar()`) to get a moving day-night cycle with color grading — no hand-rolled clock or lerp. `phase` labels and colors are free-form; the model never interprets their meaning.
+
+## @jgengine/core/sky/daylightCycle
+
+- `DEFAULT_DAY_AMBIENT_INTENSITY` (const): const DEFAULT_DAY_AMBIENT_INTENSITY: 0.6 — ⚠ undocumented
+- `DEFAULT_DAY_SKY_BOTTOM` (const): const DEFAULT_DAY_SKY_BOTTOM: "#e3f4ff" — ⚠ undocumented
+- `DEFAULT_DAY_SKY_TOP` (const): const DEFAULT_DAY_SKY_TOP: "#3fa4f2" — ⚠ undocumented
+- `DEFAULT_DAY_SUN_INTENSITY` (const): const DEFAULT_DAY_SUN_INTENSITY: 1 — ⚠ undocumented
+- `DEFAULT_SUN_COLOR` (const): const DEFAULT_SUN_COLOR: "#fff1c9" — Warm-white noon sun used when the game authored no sun tint (the shell's `SUN_COLOR`).
+- `DEFAULT_SUN_ELEVATION_DEG` (const): const DEFAULT_SUN_ELEVATION_DEG: number — The engine arc's noon height: `atan(1 / SUN_DEPTH_RATIO)`, ~68 degrees.
+- `DaylightCycleConfig` (interface): interface DaylightCycleConfig { horizonColor?: string; zenithColor?: string; sunIntensity?: number; ambientIntensity?: number; sun?: SkySunConfig; sunColor?: string; fogColor?: string; moonIntensity?: number; moonColor?: string } — ⚠ undocumented
+- `DaylightState` (interface): interface DaylightState { sunPosition: [number, number, number]; sunIntensity: number; sunColor: string; ambientIntensity: number; skyTop: string; skyBottom: string; background: string; fogColor: string; moonPosition: [number, number, number]; moonIntensity: numbe… — ⚠ undocumented
+- `SKY_PRESET_DAY_FRACTION` (const): const SKY_PRESET_DAY_FRACTION: Record<"day" | "dusk" | "night", number> — ⚠ undocumented
+- `bandFogColor` (function): function bandFogColor(input: { authored: string | undefined; timeOfDay: boolean; cycle: string; band: string }): string — The fog color a biome-banded sky shows at the camera. Without a day cycle the bands own it: the sampled band color, which already falls back to the sky's authored fog between colorless bands. Under a day cycle the sky owns it (its authored fog, else the cycle's), so a fixed noon tint never hangs in a night sky.
+
+## @jgengine/core/sky/physicalSky
+
+- `MOONLIGHT_COLOR` (const): const MOONLIGHT_COLOR: "#a9c3e8" — Moonlight's colour: scattered sunlight, blue-shifted because the eye's scotopic response peaks there.
+- `MOONLIGHT_PEAK` (const): const MOONLIGHT_PEAK: 0.12 — Peak moonlight as a fraction of the authored sunlight, at the moon's highest point. Real moonlight is ~2.5e-6 of daylight; every game exaggerates it to stay readable, and this is the exaggeration, not a measurement. Games override it through `SkyEnvironmentConfig.moon`.
+- `NIGHT_FOG_COLOR` (const): const NIGHT_FOG_COLOR: "#0a0e16" — Fog color once the sun is gone: the night sky's own haze, lifted enough to keep silhouettes readable.
+- `elevationOf` (function): function elevationOf(direction: readonly [number, number, number]): number — Elevation of a world-space direction in degrees; a zero vector reads as overhead.
+- `moonIllumination` (function): function moonIllumination(moonElevationDeg: number, peak: number = MOONLIGHT_PEAK): number — Moonlight at `sunElevationDeg`'s opposite point: full at the top of the moon's arc, zero while the moon is below the horizon, scaled by `peak` (a fraction of the authored sun intensity).
+- `starOpacity` (function): function starOpacity(sunElevationDeg: number): number — How visible the stars are: none in daylight, half at the first hint of a set sun, full once it is 6° under.
+- `sunlightColor` (function): function sunlightColor(elevationDeg: number): string — The sun's colour at `elevationDeg`, normalised so its brightest channel is full: white overhead, orange at the horizon, moon-blue once it has set. Intensity stays the authored cycle's job.
+
+## @jgengine/core/sky/skyOwnedLighting
+
+- `SkyOwnedLighting` (interface): interface SkyOwnedLighting — Which half of a game's authored `lighting` a time-of-day sky takes over.
+- `skyNoonKeyframes` (function): function skyNoonKeyframes<T extends SkyEnvironmentConfig>(sky: T, lighting: LightingConfig | undefined, fogColor?: string): T — The authored `lighting` as the day cycle's **noon keyframes**, filling only the sky fields the game left unset. A game's midday sun, fill and fog therefore become the peak the cycle scales and cross-fades from, so an authored world gets a sunset and a night without re-authoring the same numbers in the sky. Authored sky fields always win over the lighting config.
+- `splitSkyOwnedLighting` (function): function splitSkyOwnedLighting(lighting: LightingConfig | undefined): SkyOwnedLighting — Splits authored lighting into the sun/ambient terms a time-of-day sky drives and the rest. Returns an empty `sky` when the game authored no lighting, so callers can keep engine defaults.
+
+## @jgengine/core/sky/volumetricClouds
+
+- `VOLUMETRIC_CLOUDS_DEFAULTS` (const): const VOLUMETRIC_CLOUDS_DEFAULTS: VolumetricCloudsRules — Volumetric cloud defaults: a moderate, drifting cumulus layer.
+- `VolumetricCloudsConfig` (interface): interface VolumetricCloudsConfig — Volumetric cloud layer config for `sky()` — a raymarched cloud slab mounted from the environment `sky` seam. Pure config + defaulting here; the raymarch shader lives in the `shell` renderer (`environment/VolumetricClouds.tsx`), mounted alongside `SkyDome` whenever a sky descriptor carries this field. Off by default — omit `volumetricClouds` on `sky({...})` and no layer mounts.
+- `VolumetricCloudsRules` (interface): interface VolumetricCloudsRules — Fully-defaulted volumetric cloud params, resolved from a `VolumetricCloudsConfig`.
+
 ## @jgengine/core/spatial/spatialIndex
 
 - `SpatialCellRange` (interface): interface SpatialCellRange — Integer cell bounds an object covers, inclusive on both ends.
@@ -2596,15 +2640,6 @@
 ## @jgengine/core/time/calendarClock
 
 - `GameTime` (interface): interface GameTime { year: number; month: number; monthName: string; monthNameFull: string; dayOfMonth: number; hour: number; minute: number; second: number; formattedDate: string; formattedDateFull: string; formattedTime: string; formatted: string } — ⚠ undocumented
-
-## @jgengine/core/time/dayNightCycle
-
-- `DayNightCycle` (interface): interface DayNightCycle — A running, observable, serializable day-night cycle. A presenter renders `sample()`.
-- `DayNightCycleOptions` (interface): interface DayNightCycleOptions — Options for {@link createDayNightCycle}.
-- `DayNightKeyframe` (interface): interface DayNightKeyframe — Turnkey day-night cycle: one serializable brain that advances a normalized day fraction on an injected clock and blends per-keyframe phase labels and tint/light colors. A game wires this one model and drives an existing sky/daylight seam from `sample()` instead of hand-rolling a clock plus a color lerp.
-- `DayNightSample` (interface): interface DayNightSample — The interpolated day-night look at a moment: day fraction, active phase, and blended colors.
-- `DayNightSnapshot` (interface): interface DayNightSnapshot — Serializable day-night position — accumulated clock offset, pause state, and speed — for save/load.
-- `createDayNightCycle` (function): function createDayNightCycle(options: DayNightCycleOptions): DayNightCycle — Creates a turnkey day-night cycle: a serializable model that advances a normalized day fraction on an injected clock and blends per-keyframe phase labels and tint/light colors. Wire this one model, then drive an existing sky/daylight seam from `sample()` (or drop it straight into a `{ calendar(): { dayFraction } }` seam via `calendar()`) to get a moving day-night cycle with color grading — no hand-rolled clock or lerp. `phase` labels and colors are free-form; the model never interprets their meaning.
 
 ## @jgengine/core/time/gameClock
 
@@ -3012,7 +3047,7 @@
 - `DamageIndicator` (interface): interface DamageIndicator — A live directional indicator with its eased, time-decayed strength, produced by {@link DamageDirectionTracker.active}. The `intensity` here is the *current* eased value (peak faded over the elapsed lifetime), ready to drive opacity/scale.
 - `DayNightCycle` (interface): interface DayNightCycle — A running, observable, serializable day-night cycle. A presenter renders `sample()`.
 - `DayNightCycleOptions` (interface): interface DayNightCycleOptions — Options for {@link createDayNightCycle}.
-- `DayNightKeyframe` (interface): interface DayNightKeyframe — Turnkey day-night cycle: one serializable brain that advances a normalized day fraction on an injected clock and blends per-keyframe phase labels and tint/light colors. A game wires this one model and drives an existing sky/daylight seam from `sample()` instead of hand-rolling a clock plus a color lerp.
+- `DayNightKeyframe` (interface): interface DayNightKeyframe — One day-night keyframe: at a normalized day position, the phase label and target colors the game styles.
 - `DayNightSample` (interface): interface DayNightSample — The interpolated day-night look at a moment: day fraction, active phase, and blended colors.
 - `DayNightSnapshot` (interface): interface DayNightSnapshot — Serializable day-night position — accumulated clock offset, pause state, and speed — for save/load.
 - `DecisionGraphBehavior` (interface): interface DecisionGraphBehavior — Decision graph behavior descriptor using a named registered action set.
@@ -3374,7 +3409,7 @@
 - `SimClock` (interface): interface SimClock { advance(realDt: number): number; now(): number; advancedSeconds?(): number; snapshot(): ClockSnapshot; hydrate(snapshot: ClockSnapshot): void; calendar(): CalendarTime; isPaused(): boolean; speed(): number; pause(): void; play(): void; to… — ⚠ undocumented · used by `createSimContext` (@jgengine/core/runtime/simContext): Build `ctx.sim` for a context; `createGameContext` calls this from `definition.simulation`.
 - `SkillCheckConfig` (interface): interface SkillCheckConfig { trackWidth: number; zone: SkillCheckZone; markerPeriod: number; window: number; zoneDriftPerSecond?: number } — ⚠ undocumented · used by `skillCheckZoneAt`: A timing-bar skill check that succeeds when the moving marker is released inside the target zone.
 - `SkillCheckResult` (interface): interface SkillCheckResult { success: boolean; timedOut: boolean; markerPosition: number; zone: SkillCheckZone } — ⚠ undocumented
-- `SkyEnvironmentDescriptor` (type): type SkyEnvironmentDescriptor = { kind: "sky" } & Required< Pick<SkyEnvironmentConfig, "preset" | "timeOfDay"> > & Omit<SkyEnvironmentConfig, "preset" | "timeOfDay"> — ⚠ undocumented · used by `biomeBandsForSky` (@jgengine/shell/environment/skyBands): The terrain biome bands a sky cross-fades through.
+- `SkyEnvironmentDescriptor` (type): type SkyEnvironmentDescriptor = { kind: "sky" } & Required< Pick<SkyEnvironmentConfig, "preset" | "timeOfDay"> > & Omit<SkyEnvironmentConfig, "preset" | "timeOfDay"> — ⚠ undocumented · used by `biomeBandsForSky` (@jgengine/shell/sky/skyBands): The terrain biome bands a sky cross-fades through.
 - `SlotAssignmentOptions` (interface): interface SlotAssignmentOptions — Tuning for {@link assignFormationSlots}' stable, low-churn matching.
 - `SnapMode` (type): type SnapMode = "grid" | "free" | "surface" — ⚠ undocumented
 - `SnowEnvironmentDescriptor` (type): type SnowEnvironmentDescriptor = { kind: "snow" } & Required< Pick<SnowEnvironmentConfig, "area" | "density" | "speed" | "flakeSize" | "drift" | "wind" | "color" | "opacity"> > — ⚠ undocumented · used by `snow`: Declares a snowfall weather effect for `environment()` — area, density, drift, wind, and flake opacity.
@@ -4121,8 +4156,8 @@
 - `RoadEnvironmentConfig` (interface): interface RoadEnvironmentConfig — Config for {@link road}: a flat asphalt ribbon draped over the terrain along a centerline.
 - `RoadEnvironmentDescriptor` (type): type RoadEnvironmentDescriptor = { kind: "road" } & Required< Pick<RoadEnvironmentConfig, "path" | "width" | "color" | "markings" | "markingColor" | "elevation"> > & { /** Resolved sidewalk band, or `false` when the road has none. `slabs` absent means the 1.5 m default, `kerb` absent the 0.14 m kerb… — Resolved road descriptor produced by {@link road} and rendered by the shell environment scene.
 - `RoadSurfaceScans` (interface): interface RoadSurfaceScans — Scanned surfaces for each layer of a {@link road}; see {@link RoadEnvironmentConfig.materials}.
-- `SkyEnvironmentConfig` (interface): interface SkyEnvironmentConfig { preset?: "day" | "dusk" | "night"; timeOfDay?: boolean; horizonColor?: string; zenithColor?: string; sunIntensity?: number; ambientIntensity?: number; sunColor?: string; fogColor?: string; moonIntensity?: number; moonColor?: string; sun?:… — ⚠ undocumented · used by `CINEMATIC_SKY` (@jgengine/core/render/lookPreset): A static day sky: a real dome plus the shell's view-following shadow-casting sun and hemisphere fill.
-- `SkyEnvironmentDescriptor` (type): type SkyEnvironmentDescriptor = { kind: "sky" } & Required< Pick<SkyEnvironmentConfig, "preset" | "timeOfDay"> > & Omit<SkyEnvironmentConfig, "preset" | "timeOfDay"> — ⚠ undocumented · used by `biomeBandsForSky` (@jgengine/shell/environment/skyBands): The terrain biome bands a sky cross-fades through.
+- `SkyEnvironmentConfig` (interface): interface SkyEnvironmentConfig { preset?: "day" | "dusk" | "night"; timeOfDay?: boolean; horizonColor?: string; zenithColor?: string; sunIntensity?: number; ambientIntensity?: number; sunColor?: string; fogColor?: string; moonIntensity?: number; moonColor?: string; sun?:… — ⚠ undocumented · used by `skyNoonKeyframes` (@jgengine/core/sky/skyOwnedLighting): The authored `lighting` as the day cycle's **noon keyframes**, filling only the sky fields the game left unset.
+- `SkyEnvironmentDescriptor` (type): type SkyEnvironmentDescriptor = { kind: "sky" } & Required< Pick<SkyEnvironmentConfig, "preset" | "timeOfDay"> > & Omit<SkyEnvironmentConfig, "preset" | "timeOfDay"> — ⚠ undocumented · used by `biomeBandsForSky` (@jgengine/shell/sky/skyBands): The terrain biome bands a sky cross-fades through.
 - `SkySunConfig` (interface): interface SkySunConfig — Where the sun sits, as a compass bearing and a height above the horizon, both in degrees. `azimuth` 0 points toward -Z (north), 90 toward +X (east); `elevation` 90 is straight overhead.
 - `SnowEnvironmentConfig` (interface): interface SnowEnvironmentConfig { area?: EnvironmentArea; position?: EnvironmentVec2; density?: number; speed?: number; flakeSize?: number; drift?: number; wind?: EnvironmentVec2; color?: string; opacity?: number } — ⚠ undocumented · used by `snow`: Declares a snowfall weather effect for `environment()` — area, density, drift, wind, and flake opacity.
 - `SnowEnvironmentDescriptor` (type): type SnowEnvironmentDescriptor = { kind: "snow" } & Required< Pick<SnowEnvironmentConfig, "area" | "density" | "speed" | "flakeSize" | "drift" | "wind" | "color" | "opacity"> > — ⚠ undocumented · used by `snow`: Declares a snowfall weather effect for `environment()` — area, density, drift, wind, and flake opacity.
@@ -4624,12 +4659,6 @@
 - `VisibilityMemory` (type): type VisibilityMemory = | { readonly kind: "permanent" } | { readonly kind: "none" } | { readonly kind: "decay"; readonly updates: number } — How a cell decays after a group stops observing it — the terrain-memory policy. `permanent` keeps last-known terrain forever (RTS explored map); `none` drops it straight back to hidden the moment it leaves view (pure line-of-sight stealth); `decay` remembers it for `updates` observe cycles, then hides it. Day/night, height, sensor, and stealth rules are NOT encoded here — the caller bakes those into which cells it reports as observed each update.
 - `VisibilityState` (type): type VisibilityState = "hidden" | "remembered" | "observed" — One viewer group's knowledge of a cell: never/forgotten, last-known, or live.
 - `createVisibilityField` (function): function createVisibilityField(config: VisibilityFieldConfig): VisibilityField — Build a per-group gameplay visibility field. First adopters: an RTS/stealth team whose scout observes terrain (which stays remembered after it leaves) while enemy units re-hide once no scout observes their cell, and any authoritative host that must filter hidden entities out of a client's replica.
-
-## @jgengine/core/world/volumetricClouds
-
-- `VOLUMETRIC_CLOUDS_DEFAULTS` (const): const VOLUMETRIC_CLOUDS_DEFAULTS: VolumetricCloudsRules — Volumetric cloud defaults: a moderate, drifting cumulus layer.
-- `VolumetricCloudsConfig` (interface): interface VolumetricCloudsConfig — Volumetric cloud layer config for `sky()` — a raymarched cloud slab mounted from the environment `sky` seam. Pure config + defaulting here; the raymarch shader lives in the `shell` renderer (`environment/VolumetricClouds.tsx`), mounted alongside `SkyDome` whenever a sky descriptor carries this field. Off by default — omit `volumetricClouds` on `sky({...})` and no layer mounts.
-- `VolumetricCloudsRules` (interface): interface VolumetricCloudsRules — Fully-defaulted volumetric cloud params, resolved from a `VolumetricCloudsConfig`.
 
 ## @jgengine/core/world/voxelField
 

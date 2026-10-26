@@ -2395,8 +2395,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/time/dayNightCycle",
-      "domain": "time",
+      "module": "@jgengine/core/sky/dayNightCycle",
+      "domain": "sky",
       "gameFacing": false,
       "probe": null,
       "intent": "one wired model gives a moving day-night cycle — running clock plus keyframed phase labels and tint/light colors a game drives an existing sky/daylight seam from"
@@ -2407,8 +2407,8 @@
         "@jgengine/core",
         "@jgengine/shell"
       ],
-      "module": "@jgengine/shell/environment/Daylight",
-      "domain": "environment",
+      "module": "@jgengine/shell/sky/Daylight",
+      "domain": "sky",
       "gameFacing": false,
       "probe": null,
       "intent": "one sky for a fixed look, a day-night cycle, biome bands and authored lights"
@@ -10525,8 +10525,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/world/volumetricClouds",
-      "domain": "world",
+      "module": "@jgengine/core/sky/volumetricClouds",
+      "domain": "sky",
       "gameFacing": false,
       "probe": null,
       "intent": "raymarched cloud layer sky option"

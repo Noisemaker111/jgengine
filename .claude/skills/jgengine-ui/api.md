@@ -201,16 +201,6 @@
 - `mergePostProcessing` (function): function mergePostProcessing(preset: PostProcessingConfig, authored: PostProcessingConfig | undefined): PostProcessingConfig — Deep-merge a game's partial post chain over a preset's. Every field the game set wins, including `false` to drop a stage; fields it left unset come from the preset, and stage objects merge field by field (tuples such as `grade.lift` replace whole).
 - `resolveGameLook` (function): function resolveGameLook(input: GameLookInput): ResolvedGameLook — Expand a game's `look` and `mood` into concrete lighting/backdrop/post. The default look is `"cinematic"`; `"flat"` passes the explicit knobs through untouched.
 
-## @jgengine/core/render/physicalSky
-
-- `MOONLIGHT_COLOR` (const): const MOONLIGHT_COLOR: "#a9c3e8" — Moonlight's colour: scattered sunlight, blue-shifted because the eye's scotopic response peaks there.
-- `MOONLIGHT_PEAK` (const): const MOONLIGHT_PEAK: 0.12 — Peak moonlight as a fraction of the authored sunlight, at the moon's highest point. Real moonlight is ~2.5e-6 of daylight; every game exaggerates it to stay readable, and this is the exaggeration, not a measurement. Games override it through `SkyEnvironmentConfig.moon`.
-- `NIGHT_FOG_COLOR` (const): const NIGHT_FOG_COLOR: "#0a0e16" — Fog color once the sun is gone: the night sky's own haze, lifted enough to keep silhouettes readable.
-- `elevationOf` (function): function elevationOf(direction: readonly [number, number, number]): number — Elevation of a world-space direction in degrees; a zero vector reads as overhead.
-- `moonIllumination` (function): function moonIllumination(moonElevationDeg: number, peak: number = MOONLIGHT_PEAK): number — Moonlight at `sunElevationDeg`'s opposite point: full at the top of the moon's arc, zero while the moon is below the horizon, scaled by `peak` (a fraction of the authored sun intensity).
-- `starOpacity` (function): function starOpacity(sunElevationDeg: number): number — How visible the stars are: none in daylight, half at the first hint of a set sun, full once it is 6° under.
-- `sunlightColor` (function): function sunlightColor(elevationDeg: number): string — The sun's colour at `elevationDeg`, normalised so its brightest channel is full: white overhead, orange at the horizon, moon-blue once it has set. Intensity stays the authored cycle's job.
-
 ## @jgengine/core/render/postProcessing
 
 - `AoConfig` (interface): interface AoConfig — Ground-truth ambient occlusion stage — darkens contact creases and cavities for depth.
@@ -230,12 +220,6 @@
 - `STUDIO_STAGE_POST` (const): const STUDIO_STAGE_POST: PostProcessingConfig — A cinematic "product shot" post preset — the full chain on (contact-AO, soft bloom, a warm film grade with vignette + a touch of grain + chromatic aberration). Meant for a `StudioStage` where a single parametric asset is framed on a backdrop, so every studio reads shipped, not intern-tier. DoF is left off by default (it needs a per-scene focus distance); set `dof` to enable it.
 - `StylizeConfig` (interface): interface StylizeConfig — Art-style stage that turns the same models and lighting into a different look without touching materials: ink outlines (comic / Borderlands), cel bands (cartoon), pixelation (retro). Runs after tone mapping, before the grade.
 - `ToneMappingMode` (type): type ToneMappingMode = "aces" | "agx" | "reinhard" | "cineon" | "linear" | "none" — Renderer tone-mapping curve applied by the post chain's output stage. `"agx"` is the pipeline default: it keeps hue in saturated highlights and rolls a sun-lit surface off gradually, where `"aces"` skews bright colours toward white.
-
-## @jgengine/core/render/skyOwnedLighting
-
-- `SkyOwnedLighting` (interface): interface SkyOwnedLighting — Which half of a game's authored `lighting` a time-of-day sky takes over.
-- `skyNoonKeyframes` (function): function skyNoonKeyframes<T extends SkyEnvironmentConfig>(sky: T, lighting: LightingConfig | undefined, fogColor?: string): T — The authored `lighting` as the day cycle's **noon keyframes**, filling only the sky fields the game left unset. A game's midday sun, fill and fog therefore become the peak the cycle scales and cross-fades from, so an authored world gets a sunset and a night without re-authoring the same numbers in the sky. Authored sky fields always win over the lighting config.
-- `splitSkyOwnedLighting` (function): function splitSkyOwnedLighting(lighting: LightingConfig | undefined): SkyOwnedLighting — Splits authored lighting into the sun/ambient terms a time-of-day sky drives and the rest. Returns an empty `sky` when the game authored no lighting, so callers can keep engine defaults.
 
 ## @jgengine/core/render/sprite2d
 
@@ -2878,8 +2862,8 @@
 
 ## @jgengine/shell/environment
 
-- `DaylightCycleConfig` (interface): interface DaylightCycleConfig { horizonColor?: string; zenithColor?: string; sunIntensity?: number; ambientIntensity?: number; sun?: SkySunConfig; sunColor?: string; fogColor?: string; moonIntensity?: number; moonColor?: string } — ⚠ undocumented
-- `DaylightState` (interface): interface DaylightState { sunPosition: [number, number, number]; sunIntensity: number; sunColor: string; ambientIntensity: number; skyTop: string; skyBottom: string; background: string; fogColor: string; moonPosition: [number, number, number]; moonIntensity: numbe… — ⚠ undocumented
+- `DaylightCycleConfig` (interface): interface DaylightCycleConfig — ⚠ undocumented
+- `DaylightState` (interface): interface DaylightState — ⚠ undocumented
 - `EnvironmentScene` (function): function EnvironmentScene({ feature }: EnvironmentSceneProps): React.JSX.Element — ⚠ undocumented
 - `EnvironmentSceneProps` (interface): interface EnvironmentSceneProps { feature: EnvironmentWorldFeature } — ⚠ undocumented
 - `SKY_PRESET_DAY_FRACTION` (const): const SKY_PRESET_DAY_FRACTION: Record<"day" | "dusk" | "night", number> — ⚠ undocumented
@@ -2891,8 +2875,8 @@
 
 ## @jgengine/shell/environment
 
-- `DaylightCycleConfig` (interface): interface DaylightCycleConfig { horizonColor?: string; zenithColor?: string; sunIntensity?: number; ambientIntensity?: number; sun?: SkySunConfig; sunColor?: string; fogColor?: string; moonIntensity?: number; moonColor?: string } — ⚠ undocumented
-- `DaylightState` (interface): interface DaylightState { sunPosition: [number, number, number]; sunIntensity: number; sunColor: string; ambientIntensity: number; skyTop: string; skyBottom: string; background: string; fogColor: string; moonPosition: [number, number, number]; moonIntensity: numbe… — ⚠ undocumented
+- `DaylightCycleConfig` (interface): interface DaylightCycleConfig — ⚠ undocumented
+- `DaylightState` (interface): interface DaylightState — ⚠ undocumented
 - `EnvironmentScene` (function): function EnvironmentScene({ feature }: EnvironmentSceneProps): React.JSX.Element — ⚠ undocumented
 - `EnvironmentSceneProps` (interface): interface EnvironmentSceneProps { feature: EnvironmentWorldFeature } — ⚠ undocumented
 - `SKY_PRESET_DAY_FRACTION` (const): const SKY_PRESET_DAY_FRACTION: Record<"day" | "dusk" | "night", number> — ⚠ undocumented
@@ -2901,12 +2885,6 @@
 - `SkyLightOwnership` (type): type SkyLightOwnership = "authored" | "sky-default" — Policy for composing sky backdrops with `PlayableGame.lighting`: - authored lighting present → sky renders dome + fog only; lights stay game-owned - no authored lighting → sky may emit its default sun/hemisphere with the dome Time-of-day never rewrites configured lights; it only drives sky colors/fog (and sky-owned lights when the game did not author lighting).
 - `SkyProps` (interface): interface SkyProps — Props for {@link Sky}: the sky descriptor, the clock that runs it, who owns the lights, and biome bands.
 - `VolumetricCloudsProps` (interface): interface VolumetricCloudsProps — Props for {@link VolumetricClouds} — fully-resolved cloud rules plus the shared sun direction.
-
-## @jgengine/shell/environment/Daylight
-
-- `Sky` (function): function Sky({ sky, clock, lights = true, modulation, bands = NO_BANDS, fogRange }: SkyProps): React.JSX.Element — The engine's one sky: a dome with sun, moon and stars, volumetric clouds when the descriptor asks, the scene fog, and (unless `lights={false}`) the sun, moon and hemisphere fill. It holds the preset's look, follows the world clock under `sky.timeOfDay`, cross-fades through terrain `biomeBands` by camera z, and can drive a game's authored lights through the day via `modulation`. Every frame it rewrites uniforms and light values in place, never remounting.
-- `SkyDomeProps` (interface): interface SkyDomeProps { topColor?: string; horizonColor?: string; radius?: number; offset?: number; exponent?: number; sunDirection?: readonly [number, number, number]; sunColor?: string; sunIntensity?: number; moonDirection?: readonly [number, number, number]; … — ⚠ undocumented
-- `SkyProps` (interface): interface SkyProps — Props for {@link Sky}: the sky descriptor, the clock that runs it, who owns the lights, and biome bands.
 
 ## @jgengine/shell/environment/EnvironmentScene
 
@@ -2918,35 +2896,10 @@
 - `GroundPad` (function): function GroundPad({ pad, field }: GroundPadProps): React.JSX.Element — ⚠ undocumented
 - `GroundPadProps` (interface): interface GroundPadProps { pad: PadEnvironmentDescriptor; field: TerrainField } — ⚠ undocumented
 
-## @jgengine/shell/environment/VolumetricClouds
-
-- `VolumetricCloudsProps` (interface): interface VolumetricCloudsProps — Props for {@link VolumetricClouds} — fully-resolved cloud rules plus the shared sun direction.
-
-## @jgengine/shell/environment/daylightCycle
-
-- `DEFAULT_DAY_AMBIENT_INTENSITY` (const): const DEFAULT_DAY_AMBIENT_INTENSITY: 0.6 — ⚠ undocumented
-- `DEFAULT_DAY_SKY_BOTTOM` (const): const DEFAULT_DAY_SKY_BOTTOM: "#e3f4ff" — ⚠ undocumented
-- `DEFAULT_DAY_SKY_TOP` (const): const DEFAULT_DAY_SKY_TOP: "#3fa4f2" — ⚠ undocumented
-- `DEFAULT_DAY_SUN_INTENSITY` (const): const DEFAULT_DAY_SUN_INTENSITY: 1 — ⚠ undocumented
-- `DEFAULT_SUN_COLOR` (const): const DEFAULT_SUN_COLOR: "#fff1c9" — Warm-white noon sun used when the game authored no sun tint (the shell's `SUN_COLOR`).
-- `DEFAULT_SUN_ELEVATION_DEG` (const): const DEFAULT_SUN_ELEVATION_DEG: number — The engine arc's noon height: `atan(1 / SUN_DEPTH_RATIO)`, ~68 degrees.
-- `DaylightCycleConfig` (interface): interface DaylightCycleConfig { horizonColor?: string; zenithColor?: string; sunIntensity?: number; ambientIntensity?: number; sun?: SkySunConfig; sunColor?: string; fogColor?: string; moonIntensity?: number; moonColor?: string } — ⚠ undocumented
-- `DaylightState` (interface): interface DaylightState { sunPosition: [number, number, number]; sunIntensity: number; sunColor: string; ambientIntensity: number; skyTop: string; skyBottom: string; background: string; fogColor: string; moonPosition: [number, number, number]; moonIntensity: numbe… — ⚠ undocumented
-- `SKY_PRESET_DAY_FRACTION` (const): const SKY_PRESET_DAY_FRACTION: Record<"day" | "dusk" | "night", number> — ⚠ undocumented
-- `bandFogColor` (function): function bandFogColor(input: { authored: string | undefined; timeOfDay: boolean; cycle: string; band: string }): string — The fog color a biome-banded sky shows at the camera. Without a day cycle the bands own it: the sampled band color, which already falls back to the sky's authored fog between colorless bands. Under a day cycle the sky owns it (its authored fog, else the cycle's), so a fixed noon tint never hangs in a night sky.
-
 ## @jgengine/shell/environment/groundPadMath
 
 - `PAD_THICKNESS` (const): const PAD_THICKNESS: 0.1 — ⚠ undocumented
 - `PadShape` (type): type PadShape = { circular: true; radius: number } | { circular: false; width: number; depth: number } — ⚠ undocumented
-
-## @jgengine/shell/environment/skyBands
-
-- `biomeBandsForSky` (function): function biomeBandsForSky(authoredSky: SkyEnvironmentDescriptor | undefined, worldSky: SkyEnvironmentDescriptor | undefined, bands: readonly BiomeBand[] | undefined): readonly BiomeBand[] | undefined — The terrain biome bands a sky cross-fades through. They belong to the world's own sky, so they apply whenever the sky in force is that sky, even after the shell derives a copy of it (a sun bearing taken from the game's lighting, noon keyframes); a look preset's backdrop sky replaces the world's sky and drops them.
-
-## @jgengine/shell/environment/skyLightingPolicy
-
-- `SkyLightOwnership` (type): type SkyLightOwnership = "authored" | "sky-default" — Policy for composing sky backdrops with `PlayableGame.lighting`: - authored lighting present → sky renders dome + fog only; lights stay game-owned - no authored lighting → sky may emit its default sun/hemisphere with the dome Time-of-day never rewrites configured lights; it only drives sky colors/fog (and sky-owned lights when the game did not author lighting).
 
 ## @jgengine/shell/grass/GrassCover
 
@@ -3720,6 +3673,24 @@
 ## @jgengine/shell/shellMovement
 
 - `SHELL_MOVEMENT_ACTIONS` (const): const SHELL_MOVEMENT_ACTIONS: readonly ["moveForward", "moveBack", "moveLeft", "moveRight", "jump"] — Movement action names the shell drives via the walk controller.
+
+## @jgengine/shell/sky/Daylight
+
+- `Sky` (function): function Sky({ sky, clock, lights = true, modulation, bands = NO_BANDS, fogRange }: SkyProps): React.JSX.Element — The engine's one sky: a dome with sun, moon and stars, volumetric clouds when the descriptor asks, the scene fog, and (unless `lights={false}`) the sun, moon and hemisphere fill. It holds the preset's look, follows the world clock under `sky.timeOfDay`, cross-fades through terrain `biomeBands` by camera z, and can drive a game's authored lights through the day via `modulation`. Every frame it rewrites uniforms and light values in place, never remounting.
+- `SkyDomeProps` (interface): interface SkyDomeProps { topColor?: string; horizonColor?: string; radius?: number; offset?: number; exponent?: number; sunDirection?: readonly [number, number, number]; sunColor?: string; sunIntensity?: number; moonDirection?: readonly [number, number, number]; … — ⚠ undocumented
+- `SkyProps` (interface): interface SkyProps — Props for {@link Sky}: the sky descriptor, the clock that runs it, who owns the lights, and biome bands.
+
+## @jgengine/shell/sky/VolumetricClouds
+
+- `VolumetricCloudsProps` (interface): interface VolumetricCloudsProps — Props for {@link VolumetricClouds} — fully-resolved cloud rules plus the shared sun direction.
+
+## @jgengine/shell/sky/skyBands
+
+- `biomeBandsForSky` (function): function biomeBandsForSky(authoredSky: SkyEnvironmentDescriptor | undefined, worldSky: SkyEnvironmentDescriptor | undefined, bands: readonly BiomeBand[] | undefined): readonly BiomeBand[] | undefined — The terrain biome bands a sky cross-fades through. They belong to the world's own sky, so they apply whenever the sky in force is that sky, even after the shell derives a copy of it (a sun bearing taken from the game's lighting, noon keyframes); a look preset's backdrop sky replaces the world's sky and drops them.
+
+## @jgengine/shell/sky/skyLightingPolicy
+
+- `SkyLightOwnership` (type): type SkyLightOwnership = "authored" | "sky-default" — Policy for composing sky backdrops with `PlayableGame.lighting`: - authored lighting present → sky renders dome + fog only; lights stay game-owned - no authored lighting → sky may emit its default sun/hemisphere with the dome Time-of-day never rewrites configured lights; it only drives sky colors/fog (and sky-owned lights when the game did not author lighting).
 
 ## @jgengine/shell/terrain
 

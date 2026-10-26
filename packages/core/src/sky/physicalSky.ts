@@ -1,4 +1,4 @@
-import { rgbToHex, hexToRgb } from "./color";
+import { rgbToHex, hexToRgb } from "../render/color";
 
 /**
  * Analytic atmosphere for the day/night sky: Rayleigh air mass, sunlight reddening, moonlight and

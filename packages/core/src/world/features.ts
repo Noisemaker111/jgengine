@@ -5,7 +5,7 @@ import type { TerrainPathProfile } from "./pathTerrain";
 import type { PlaceWorldFeature } from "../placement/place";
 import type { TerraformSnapshot } from "./terraform";
 import type { SpriteAtlas } from "../assets/spriteAtlas";
-import type { VolumetricCloudsConfig } from "./volumetricClouds";
+import type { VolumetricCloudsConfig } from "../sky/volumetricClouds";
 import { warnOnce } from "../devtools/warnOnce";
 import { readGrassLook, type GrassLook } from "./grassKind";
 
