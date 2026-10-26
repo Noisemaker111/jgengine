@@ -2369,6 +2369,25 @@
 - `VisibilitySystemOptions` (interface): interface VisibilitySystemOptions { readonly renderables: () => Iterable<Renderable>; readonly cameras: () => readonly CameraVisibilityContext[]; readonly settings?: Partial<CullingSettings>; readonly sceneOverrides?: ObjectVisibilityOverrides; readonly globalOverrides?: Ob… — ⚠ undocumented
 - `createVisibilitySystem` (function): function createVisibilitySystem(options: VisibilitySystemOptions): VisibilitySystem — ⚠ undocumented
 
+## @jgengine/core/water/waterKind
+
+- `ResolvedWater` (interface): interface ResolvedWater — A resolved water surface: world-space plane center/size (XZ) at surface height `y`, plus its params.
+- `WATER_DEFAULTS` (const): const WATER_DEFAULTS: WaterRules — Water defaults: a calm blue-green pond with a soft foam edge.
+- `WATER_SCHEMA` (const): const WATER_SCHEMA: ParamSchema — The water parameter schema — drives the inspector and `meta` parse via the studio seam.
+- `WATER_VOLUME_KIND` (const): const WATER_VOLUME_KIND: "water" — The editor volume kind marking a box as a water surface.
+- `WaterRules` (interface): interface WaterRules — Fully-defaulted water surface params parsed from a volume's `meta`.
+
+## @jgengine/core/water/waterSurface
+
+- `GerstnerWave` (interface): interface GerstnerWave { direction: readonly [number, number]; wavelength: number; amplitude: number; steepness: number; speed: number } — ⚠ undocumented · used by `synthesizeWaves`: The wave set a {@link waterSurface} with this config moves by: the CPU queries and the shell's drawn water read the same list.
+- `WaterNormal` (type): type WaterNormal = readonly [number, number, number] — ⚠ undocumented
+- `WaterSurface` (interface): interface WaterSurface { readonly level: number; readonly waves: readonly GerstnerWave[]; height(x: number, z: number, time: number): number; normal(x: number, z: number, time: number): WaterNormal; displace(x: number, z: number, time: number): readonly [number, … — ⚠ undocumented
+- `WaterSurfaceConfig` (interface): interface WaterSurfaceConfig { level?: number; levelAt?: (time: number) => number; waveHeight?: number; waveScale?: number; waveSpeed?: number; waves?: number; choppiness?: number; direction?: number; steepness?: number } — ⚠ undocumented · used by `synthesizeWaves`: The wave set a {@link waterSurface} with this config moves by: the CPU queries and the shell's drawn water read the same list.
+- `synthesizeWaves` (function): function synthesizeWaves(config: WaterSurfaceConfig = {}): GerstnerWave[] — The wave set a {@link waterSurface} with this config moves by: the CPU queries and the shell's drawn water read the same list.
+- `waterSurface` (function): function waterSurface(config: WaterSurfaceConfig = {}): WaterSurface — ⚠ undocumented
+- `waterSurfaceConfigFromDescriptor` (function): function waterSurfaceConfigFromDescriptor(descriptor: OceanEnvironmentDescriptor, waves?: number): WaterSurfaceConfig — The wave config an `ocean()` descriptor describes, for the CPU surface and the drawn water alike.
+- `waterSurfaceFromDescriptor` (function): function waterSurfaceFromDescriptor(descriptor: OceanEnvironmentDescriptor, waves?: number): WaterSurface — ⚠ undocumented
+
 ## @jgengine/core/world
 
 - `ANNOTATION_FEED_ACTION` (const): const ANNOTATION_FEED_ACTION: "map.annotation" — Feed action shared drawings ride by default (pair with the party feed, like pings).
@@ -3394,6 +3413,7 @@
 - `voxel` (function): function voxel(config: VoxelWorldConfig): WorldFeature — Declares a voxel-grid world for block-based games.
 - `wander` (function): function wander({ radius }: { radius: number }): WanderBehavior — ⚠ undocumented
 - `waterSurface` (function): function waterSurface(config: WaterSurfaceConfig = {}): WaterSurface — ⚠ undocumented
+- `waterSurfaceConfigFromDescriptor` (function): function waterSurfaceConfigFromDescriptor(descriptor: OceanEnvironmentDescriptor, waves?: number): WaterSurfaceConfig — The wave config an `ocean()` descriptor describes, for the CPU surface and the drawn water alike.
 - `waterSurfaceFromDescriptor` (function): function waterSurfaceFromDescriptor(descriptor: OceanEnvironmentDescriptor, waves?: number): WaterSurface — ⚠ undocumented
 - `wedgeFormation` (function): function wedgeFormation(options: WedgeFormationOptions): FormationSlotGenerator — A "V"/arrowhead with the apex at the destination and arms trailing back — a flying-wedge charge or a goose skein. Slot 0 is the tip; later slots alternate right then left, each rank stepping one `spacing` outward and backward.
 - `weightedRegion` (function): function weightedRegion<P extends SamplePoint>(entries: readonly WeightedRegionEntry<P>[]): SampleRegion<P> — A composite that first picks one member by weight, then delegates to its sampler — the "weighted subregions" distribution policy. `contains` is true when any member contains the point.
@@ -4641,24 +4661,6 @@
 - `WallDrawToolState` (interface): interface WallDrawToolState — Plain JSON state of a {@link WallDrawTool}: the drawn points and whether the loop is closed.
 - `WallSegment` (interface): interface WallSegment { from: Vec2; to: Vec2; length: number; angle: number } — ⚠ undocumented · used by `wallSolids` (@jgengine/core/world/worldSolids): One oriented solid per wall segment (see `wallSegments` in `world/walls`).
 - `WallVec3` (type): type WallVec3 = readonly [number, number, number] — ⚠ undocumented
-
-## @jgengine/core/world/water
-
-- `GerstnerWave` (interface): interface GerstnerWave { direction: readonly [number, number]; wavelength: number; amplitude: number; steepness: number; speed: number } — ⚠ undocumented
-- `WaterNormal` (type): type WaterNormal = readonly [number, number, number] — ⚠ undocumented
-- `WaterSurface` (interface): interface WaterSurface { readonly level: number; readonly waves: readonly GerstnerWave[]; height(x: number, z: number, time: number): number; normal(x: number, z: number, time: number): WaterNormal; displace(x: number, z: number, time: number): readonly [number, … — ⚠ undocumented
-- `WaterSurfaceConfig` (interface): interface WaterSurfaceConfig { level?: number; levelAt?: (time: number) => number; waveHeight?: number; waveScale?: number; waveSpeed?: number; waves?: number; choppiness?: number } — ⚠ undocumented
-- `synthesizeWaves` (function): function synthesizeWaves(config: WaterSurfaceConfig = {}): GerstnerWave[] — ⚠ undocumented
-- `waterSurface` (function): function waterSurface(config: WaterSurfaceConfig = {}): WaterSurface — ⚠ undocumented
-- `waterSurfaceFromDescriptor` (function): function waterSurfaceFromDescriptor(descriptor: OceanEnvironmentDescriptor, waves?: number): WaterSurface — ⚠ undocumented
-
-## @jgengine/core/world/waterKind
-
-- `ResolvedWater` (interface): interface ResolvedWater — A resolved water surface: world-space plane center/size (XZ) at surface height `y`, plus its params.
-- `WATER_DEFAULTS` (const): const WATER_DEFAULTS: WaterRules — Water defaults: a calm blue-green pond with a soft foam edge.
-- `WATER_SCHEMA` (const): const WATER_SCHEMA: ParamSchema — The water parameter schema — drives the inspector and `meta` parse via the studio seam.
-- `WATER_VOLUME_KIND` (const): const WATER_VOLUME_KIND: "water" — The editor volume kind marking a box as a water surface.
-- `WaterRules` (interface): interface WaterRules — Fully-defaulted water surface params parsed from a volume's `meta`.
 
 ## @jgengine/core/world/waypoints
 

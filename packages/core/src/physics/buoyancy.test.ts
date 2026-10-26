@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { PhysicsWorld } from "./physicsWorld";
 import { createBuoyantBody } from "./buoyancy";
-import { waterSurface } from "../world/water";
+import { waterSurface } from "../water/waterSurface";
 import { NEUTRAL_AXIS } from "../input/axisInput";
 
 const BOUNDS = { min: [-60, -30, -60] as const, max: [60, 30, 60] as const };

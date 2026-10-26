@@ -3,6 +3,7 @@ uniform float uTime;
 uniform vec2 uWaveDirections[6];
 uniform vec4 uWaveParams[6];
 uniform float uChoppiness;
+uniform float uWaveCount;
 uniform float uFoamThreshold;
 uniform float uFoamSoftness;
 uniform float uFoamCoverage;
@@ -42,7 +43,9 @@ void main() {
     float slopeTerm = horizontal * k * sine;
     tangent += vec3(-slopeTerm * direction.x * direction.x, amplitude * k * direction.x * cosine, -slopeTerm * direction.x * direction.y);
     bitangent += vec3(-slopeTerm * direction.x * direction.y, amplitude * k * direction.y * cosine, -slopeTerm * direction.y * direction.y);
-    crest = max(crest, smoothstep(uFoamThreshold, uFoamThreshold + uFoamSoftness, sine * steepness + uFoamCoverage * 0.35));
+    // Crest sharpness is Q·k·A·N (1 = the looping limit), not the per-wave Q, which saturates on gentle swells.
+    float sharpness = clamp(steepness * k * wave.y * uWaveCount, 0.0, 1.0);
+    crest = max(crest, smoothstep(uFoamThreshold, uFoamThreshold + uFoamSoftness, sine * sharpness + uFoamCoverage * 0.35));
   }
 
   vNormal = normalize(cross(bitangent, tangent));

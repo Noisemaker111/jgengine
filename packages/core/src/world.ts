@@ -630,6 +630,13 @@ export { type VisibilityConfig } from "./visibility/config";
 export { distance } from "./visibility/distance";
 export { type CameraView, type Frustum } from "./visibility/frustum";
 export { createVisibilitySystem, type Renderable, type VisibilitySystem } from "./visibility/visibilitySystem";
+export { WATER_SCHEMA, type WaterRules } from "./water/waterKind";
+export {
+  waterSurface,
+  waterSurfaceConfigFromDescriptor,
+  waterSurfaceFromDescriptor,
+  type WaterSurface,
+} from "./water/waterSurface";
 export {
   advanceSpawnDirector,
   advanceWave,
@@ -1070,8 +1077,6 @@ export {
 export { type VolumetricCloudsConfig, type VolumetricCloudsRules } from "./world/volumetricClouds";
 export { createVoxelField, type VoxelFace } from "./world/voxelField";
 export { type EnclosedFootprint, type RoofPlan } from "./world/walls";
-export { waterSurface, waterSurfaceFromDescriptor, type WaterSurface } from "./world/water";
-export { WATER_SCHEMA, type WaterRules } from "./world/waterKind";
 export {
   createWaypointStore,
   type WaypointEntry,

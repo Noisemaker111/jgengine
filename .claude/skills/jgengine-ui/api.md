@@ -2925,10 +2925,6 @@
 - `PAD_THICKNESS` (const): const PAD_THICKNESS: 0.1 — ⚠ undocumented
 - `PadShape` (type): type PadShape = { circular: true; radius: number } | { circular: false; width: number; depth: number } — ⚠ undocumented
 
-## @jgengine/shell/environment/oceanColor
-
-- `oceanColor` (function): function oceanColor(ocean: Pick<OceanEnvironmentDescriptor, "color" | "palette">): { fresnelStrength?: number | undefined; foam?: string | undefined; crest?: string | undefined; deep?: string | undefined; shallow: string; } — The descriptor's colors in the shell Ocean's terms; unset palette fields keep the Ocean default.
-
 ## @jgengine/shell/environment/skyBands
 
 - `biomeBandsForSky` (function): function biomeBandsForSky(authoredSky: SkyEnvironmentDescriptor | undefined, worldSky: SkyEnvironmentDescriptor | undefined, bands: readonly BiomeBand[] | undefined): readonly BiomeBand[] | undefined — The terrain biome bands a sky cross-fades through. They belong to the world's own sky, so they apply whenever the sky in force is that sky, even after the shell derives a copy of it (a sun bearing taken from the game's lighting, noon keyframes); a look preset's backdrop sky replaces the world's sky and drops them.
@@ -4052,48 +4048,38 @@
 ## @jgengine/shell/water
 
 - `DEFAULT_OCEAN_CONFIG` (const): const DEFAULT_OCEAN_CONFIG: ResolvedOceanConfig — ⚠ undocumented
-- `DEFAULT_OCEAN_WAVE_SCALE` (const): const DEFAULT_OCEAN_WAVE_SCALE: 18 — Shared with `@jgengine/core/world/water` — primary wavelength in world units.
-- `MAX_OCEAN_WAVES` (const): const MAX_OCEAN_WAVES: 6 — ⚠ undocumented
+- `MAX_OCEAN_WAVES` (const): const MAX_OCEAN_WAVES: 6 — Waves the ocean shader draws; a longer {@link synthesizeWaves} set keeps its first six.
 - `OCEAN_QUALITY_PRESETS` (const): const OCEAN_QUALITY_PRESETS: Record<OceanQualityPreset, { size: number; resolution: number }> — ⚠ undocumented
 - `Ocean` (function): function Ocean({ config, depthAt, ...meshProps }: OceanProps): React.JSX.Element — ⚠ undocumented
 - `OceanColorConfig` (interface): interface OceanColorConfig { shallow?: THREE.ColorRepresentation; deep?: THREE.ColorRepresentation; crest?: THREE.ColorRepresentation; foam?: THREE.ColorRepresentation; opacity?: number; fresnelStrength?: number; horizonBlend?: number; depthRange?: number; sparkle?: … — ⚠ undocumented
-- `OceanConfig` (interface): interface OceanConfig { quality?: OceanQualityPreset; size?: number; depth?: number; resolution?: number; amplitude?: number; speed?: number; direction?: OceanWaveDirection; choppiness?: number; steepness?: number; timeScale?: number; waveScale?: number; color?:… — ⚠ undocumented
-- `OceanDirectionVector` (interface): interface OceanDirectionVector { x: number; z: number } — ⚠ undocumented
+- `OceanConfig` (interface): interface OceanConfig { quality?: OceanQualityPreset; size?: number; depth?: number; resolution?: number; timeScale?: number; waves?: WaterSurfaceConfig; color?: OceanColorConfig; foam?: OceanFoamConfig } — ⚠ undocumented
 - `OceanFoamConfig` (interface): interface OceanFoamConfig { crestThreshold?: number; softness?: number; intensity?: number; coverage?: number; shoreWidth?: number } — ⚠ undocumented
-- `OceanMaterialUniforms` (interface): interface OceanMaterialUniforms { uTime: {value: number}; uWaveDirections: {value: THREE.Vector2[]}; uWaveParams: {value: THREE.Vector4[]}; uChoppiness: {value: number}; uShallowColor: {value: THREE.Color}; uDeepColor: {value: THREE.Color}; uCrestColor: {value: THREE.Colo… — ⚠ undocumented
+- `OceanMaterialUniforms` (interface): interface OceanMaterialUniforms { uTime: {value: number}; uWaveDirections: {value: THREE.Vector2[]}; uWaveParams: {value: THREE.Vector4[]}; uChoppiness: {value: number}; uWaveCount: {value: number}; uShallowColor: {value: THREE.Color}; uDeepColor: {value: THREE.Color}; uC… — ⚠ undocumented
 - `OceanProps` (interface): interface OceanProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> { config?: OceanConfig; depthAt?: (x: number, z: number) => number } — ⚠ undocumented
 - `OceanQualityPreset` (type): type OceanQualityPreset = "low" | "medium" | "high" | "ultra" — ⚠ undocumented
 - `OceanShaderMaterial` (type): type OceanShaderMaterial = THREE.ShaderMaterial & { uniforms: OceanMaterialUniforms } — ⚠ undocumented
-- `OceanWaveConfig` (interface): interface OceanWaveConfig { amplitude?: number; wavelength?: number; speed?: number; direction?: OceanWaveDirection; steepness?: number } — ⚠ undocumented
-- `OceanWaveDirection` (type): type OceanWaveDirection = number | OceanDirectionVector — ⚠ undocumented
 - `ResolvedOceanColorConfig` (interface): interface ResolvedOceanColorConfig { shallow: THREE.ColorRepresentation; deep: THREE.ColorRepresentation; crest: THREE.ColorRepresentation; foam: THREE.ColorRepresentation; opacity: number; fresnelStrength: number; horizonBlend: number; depthRange: number; sparkle: number } — ⚠ undocumented
-- `ResolvedOceanConfig` (interface): interface ResolvedOceanConfig { quality: OceanQualityPreset; size: number; depth: number; resolution: number; amplitude: number; speed: number; direction: OceanDirectionVector; choppiness: number; steepness: number; timeScale: number; waveScale: number; color: ResolvedO… — ⚠ undocumented
+- `ResolvedOceanConfig` (interface): interface ResolvedOceanConfig { quality: OceanQualityPreset; size: number; depth: number; resolution: number; choppiness: number; timeScale: number; color: ResolvedOceanColorConfig; foam: ResolvedOceanFoamConfig; waves: readonly GerstnerWave[] } — ⚠ undocumented
 - `ResolvedOceanFoamConfig` (interface): interface ResolvedOceanFoamConfig { crestThreshold: number; softness: number; intensity: number; coverage: number; shoreWidth: number } — ⚠ undocumented
-- `ResolvedOceanWaveConfig` (interface): interface ResolvedOceanWaveConfig { amplitude: number; wavelength: number; speed: number; direction: OceanDirectionVector; steepness: number } — ⚠ undocumented
 - `createOceanMaterial` (function): function createOceanMaterial(config: ResolvedOceanConfig): OceanShaderMaterial — ⚠ undocumented
 - `syncOceanMaterial` (function): function syncOceanMaterial(material: OceanShaderMaterial, config: ResolvedOceanConfig, elapsedSeconds: number): void — ⚠ undocumented
 
 ## @jgengine/shell/water
 
 - `DEFAULT_OCEAN_CONFIG` (const): const DEFAULT_OCEAN_CONFIG: ResolvedOceanConfig — ⚠ undocumented
-- `DEFAULT_OCEAN_WAVE_SCALE` (const): const DEFAULT_OCEAN_WAVE_SCALE: 18 — Shared with `@jgengine/core/world/water` — primary wavelength in world units.
-- `MAX_OCEAN_WAVES` (const): const MAX_OCEAN_WAVES: 6 — ⚠ undocumented
+- `MAX_OCEAN_WAVES` (const): const MAX_OCEAN_WAVES: 6 — Waves the ocean shader draws; a longer {@link synthesizeWaves} set keeps its first six.
 - `OCEAN_QUALITY_PRESETS` (const): const OCEAN_QUALITY_PRESETS: Record<OceanQualityPreset, { size: number; resolution: number }> — ⚠ undocumented
 - `Ocean` (function): function Ocean({ config, depthAt, ...meshProps }: OceanProps): React.JSX.Element — ⚠ undocumented
 - `OceanColorConfig` (interface): interface OceanColorConfig { shallow?: THREE.ColorRepresentation; deep?: THREE.ColorRepresentation; crest?: THREE.ColorRepresentation; foam?: THREE.ColorRepresentation; opacity?: number; fresnelStrength?: number; horizonBlend?: number; depthRange?: number; sparkle?: … — ⚠ undocumented
-- `OceanConfig` (interface): interface OceanConfig { quality?: OceanQualityPreset; size?: number; depth?: number; resolution?: number; amplitude?: number; speed?: number; direction?: OceanWaveDirection; choppiness?: number; steepness?: number; timeScale?: number; waveScale?: number; color?:… — ⚠ undocumented
-- `OceanDirectionVector` (interface): interface OceanDirectionVector { x: number; z: number } — ⚠ undocumented
+- `OceanConfig` (interface): interface OceanConfig { quality?: OceanQualityPreset; size?: number; depth?: number; resolution?: number; timeScale?: number; waves?: WaterSurfaceConfig; color?: OceanColorConfig; foam?: OceanFoamConfig } — ⚠ undocumented
 - `OceanFoamConfig` (interface): interface OceanFoamConfig { crestThreshold?: number; softness?: number; intensity?: number; coverage?: number; shoreWidth?: number } — ⚠ undocumented
-- `OceanMaterialUniforms` (interface): interface OceanMaterialUniforms { uTime: {value: number}; uWaveDirections: {value: THREE.Vector2[]}; uWaveParams: {value: THREE.Vector4[]}; uChoppiness: {value: number}; uShallowColor: {value: THREE.Color}; uDeepColor: {value: THREE.Color}; uCrestColor: {value: THREE.Colo… — ⚠ undocumented
+- `OceanMaterialUniforms` (interface): interface OceanMaterialUniforms { uTime: {value: number}; uWaveDirections: {value: THREE.Vector2[]}; uWaveParams: {value: THREE.Vector4[]}; uChoppiness: {value: number}; uWaveCount: {value: number}; uShallowColor: {value: THREE.Color}; uDeepColor: {value: THREE.Color}; uC… — ⚠ undocumented
 - `OceanProps` (interface): interface OceanProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> { config?: OceanConfig; depthAt?: (x: number, z: number) => number } — ⚠ undocumented
 - `OceanQualityPreset` (type): type OceanQualityPreset = "low" | "medium" | "high" | "ultra" — ⚠ undocumented
 - `OceanShaderMaterial` (type): type OceanShaderMaterial = THREE.ShaderMaterial & { uniforms: OceanMaterialUniforms } — ⚠ undocumented
-- `OceanWaveConfig` (interface): interface OceanWaveConfig { amplitude?: number; wavelength?: number; speed?: number; direction?: OceanWaveDirection; steepness?: number } — ⚠ undocumented
-- `OceanWaveDirection` (type): type OceanWaveDirection = number | OceanDirectionVector — ⚠ undocumented
 - `ResolvedOceanColorConfig` (interface): interface ResolvedOceanColorConfig { shallow: THREE.ColorRepresentation; deep: THREE.ColorRepresentation; crest: THREE.ColorRepresentation; foam: THREE.ColorRepresentation; opacity: number; fresnelStrength: number; horizonBlend: number; depthRange: number; sparkle: number } — ⚠ undocumented
-- `ResolvedOceanConfig` (interface): interface ResolvedOceanConfig { quality: OceanQualityPreset; size: number; depth: number; resolution: number; amplitude: number; speed: number; direction: OceanDirectionVector; choppiness: number; steepness: number; timeScale: number; waveScale: number; color: ResolvedO… — ⚠ undocumented
+- `ResolvedOceanConfig` (interface): interface ResolvedOceanConfig { quality: OceanQualityPreset; size: number; depth: number; resolution: number; choppiness: number; timeScale: number; color: ResolvedOceanColorConfig; foam: ResolvedOceanFoamConfig; waves: readonly GerstnerWave[] } — ⚠ undocumented
 - `ResolvedOceanFoamConfig` (interface): interface ResolvedOceanFoamConfig { crestThreshold: number; softness: number; intensity: number; coverage: number; shoreWidth: number } — ⚠ undocumented
-- `ResolvedOceanWaveConfig` (interface): interface ResolvedOceanWaveConfig { amplitude: number; wavelength: number; speed: number; direction: OceanDirectionVector; steepness: number } — ⚠ undocumented
 - `createOceanMaterial` (function): function createOceanMaterial(config: ResolvedOceanConfig): OceanShaderMaterial — ⚠ undocumented
 - `syncOceanMaterial` (function): function syncOceanMaterial(material: OceanShaderMaterial, config: ResolvedOceanConfig, elapsedSeconds: number): void — ⚠ undocumented
 
@@ -4105,24 +4091,19 @@
 ## @jgengine/shell/water/OceanConfig
 
 - `DEFAULT_OCEAN_CONFIG` (const): const DEFAULT_OCEAN_CONFIG: ResolvedOceanConfig — ⚠ undocumented
-- `DEFAULT_OCEAN_WAVE_SCALE` (const): const DEFAULT_OCEAN_WAVE_SCALE: 18 — Shared with `@jgengine/core/world/water` — primary wavelength in world units.
-- `MAX_OCEAN_WAVES` (const): const MAX_OCEAN_WAVES: 6 — ⚠ undocumented
+- `MAX_OCEAN_WAVES` (const): const MAX_OCEAN_WAVES: 6 — Waves the ocean shader draws; a longer {@link synthesizeWaves} set keeps its first six.
 - `OCEAN_QUALITY_PRESETS` (const): const OCEAN_QUALITY_PRESETS: Record<OceanQualityPreset, { size: number; resolution: number }> — ⚠ undocumented
 - `OceanColorConfig` (interface): interface OceanColorConfig { shallow?: THREE.ColorRepresentation; deep?: THREE.ColorRepresentation; crest?: THREE.ColorRepresentation; foam?: THREE.ColorRepresentation; opacity?: number; fresnelStrength?: number; horizonBlend?: number; depthRange?: number; sparkle?: … — ⚠ undocumented
-- `OceanConfig` (interface): interface OceanConfig { quality?: OceanQualityPreset; size?: number; depth?: number; resolution?: number; amplitude?: number; speed?: number; direction?: OceanWaveDirection; choppiness?: number; steepness?: number; timeScale?: number; waveScale?: number; color?:… — ⚠ undocumented
-- `OceanDirectionVector` (interface): interface OceanDirectionVector { x: number; z: number } — ⚠ undocumented
+- `OceanConfig` (interface): interface OceanConfig { quality?: OceanQualityPreset; size?: number; depth?: number; resolution?: number; timeScale?: number; waves?: WaterSurfaceConfig; color?: OceanColorConfig; foam?: OceanFoamConfig } — ⚠ undocumented
 - `OceanFoamConfig` (interface): interface OceanFoamConfig { crestThreshold?: number; softness?: number; intensity?: number; coverage?: number; shoreWidth?: number } — ⚠ undocumented
 - `OceanQualityPreset` (type): type OceanQualityPreset = "low" | "medium" | "high" | "ultra" — ⚠ undocumented
-- `OceanWaveConfig` (interface): interface OceanWaveConfig { amplitude?: number; wavelength?: number; speed?: number; direction?: OceanWaveDirection; steepness?: number } — ⚠ undocumented
-- `OceanWaveDirection` (type): type OceanWaveDirection = number | OceanDirectionVector — ⚠ undocumented
 - `ResolvedOceanColorConfig` (interface): interface ResolvedOceanColorConfig { shallow: THREE.ColorRepresentation; deep: THREE.ColorRepresentation; crest: THREE.ColorRepresentation; foam: THREE.ColorRepresentation; opacity: number; fresnelStrength: number; horizonBlend: number; depthRange: number; sparkle: number } — ⚠ undocumented
-- `ResolvedOceanConfig` (interface): interface ResolvedOceanConfig { quality: OceanQualityPreset; size: number; depth: number; resolution: number; amplitude: number; speed: number; direction: OceanDirectionVector; choppiness: number; steepness: number; timeScale: number; waveScale: number; color: ResolvedO… — ⚠ undocumented
+- `ResolvedOceanConfig` (interface): interface ResolvedOceanConfig { quality: OceanQualityPreset; size: number; depth: number; resolution: number; choppiness: number; timeScale: number; color: ResolvedOceanColorConfig; foam: ResolvedOceanFoamConfig; waves: readonly GerstnerWave[] } — ⚠ undocumented
 - `ResolvedOceanFoamConfig` (interface): interface ResolvedOceanFoamConfig { crestThreshold: number; softness: number; intensity: number; coverage: number; shoreWidth: number } — ⚠ undocumented
-- `ResolvedOceanWaveConfig` (interface): interface ResolvedOceanWaveConfig { amplitude: number; wavelength: number; speed: number; direction: OceanDirectionVector; steepness: number } — ⚠ undocumented
 
 ## @jgengine/shell/water/OceanMaterial
 
-- `OceanMaterialUniforms` (interface): interface OceanMaterialUniforms { uTime: {value: number}; uWaveDirections: {value: THREE.Vector2[]}; uWaveParams: {value: THREE.Vector4[]}; uChoppiness: {value: number}; uShallowColor: {value: THREE.Color}; uDeepColor: {value: THREE.Color}; uCrestColor: {value: THREE.Colo… — ⚠ undocumented
+- `OceanMaterialUniforms` (interface): interface OceanMaterialUniforms { uTime: {value: number}; uWaveDirections: {value: THREE.Vector2[]}; uWaveParams: {value: THREE.Vector4[]}; uChoppiness: {value: number}; uWaveCount: {value: number}; uShallowColor: {value: THREE.Color}; uDeepColor: {value: THREE.Color}; uC… — ⚠ undocumented
 - `OceanShaderMaterial` (type): type OceanShaderMaterial = THREE.ShaderMaterial & { uniforms: OceanMaterialUniforms } — ⚠ undocumented
 - `createOceanMaterial` (function): function createOceanMaterial(config: ResolvedOceanConfig): OceanShaderMaterial — ⚠ undocumented
 - `syncOceanMaterial` (function): function syncOceanMaterial(material: OceanShaderMaterial, config: ResolvedOceanConfig, elapsedSeconds: number): void — ⚠ undocumented
@@ -4130,7 +4111,11 @@
 ## @jgengine/shell/water/OceanShader
 
 - `oceanFragmentShader` (const): const oceanFragmentShader: "\nuniform float uTime;\nuniform vec3 uShallowColor;\nuniform vec3 uDeepColor;\nuniform vec3 uCrestColor;\nuniform vec3 uFoamColor;\nuniform float uOpacity;\nuniform float uFresnelStrength;\nuniform float uHorizonBlend;\nuniform float uFoamIntensity;\nuniform float uDepthR… — ⚠ undocumented
-- `oceanVertexShader` (const): const oceanVertexShader: "\nuniform float uTime;\nuniform vec2 uWaveDirections[6];\nuniform vec4 uWaveParams[6];\nuniform float uChoppiness;\nuniform float uFoamThreshold;\nuniform float uFoamSoftness;\nuniform float uFoamCoverage;\n\nattribute float aDepth;\n\nvarying vec3 vWorldPosition;\nvarying … — ⚠ undocumented
+- `oceanVertexShader` (const): const oceanVertexShader: "\nuniform float uTime;\nuniform vec2 uWaveDirections[6];\nuniform vec4 uWaveParams[6];\nuniform float uChoppiness;\nuniform float uWaveCount;\nuniform float uFoamThreshold;\nuniform float uFoamSoftness;\nuniform float uFoamCoverage;\n\nattribute float aDepth;\n\nvarying vec… — ⚠ undocumented
+
+## @jgengine/shell/water/oceanColor
+
+- `oceanColor` (function): function oceanColor(ocean: Pick<OceanEnvironmentDescriptor, "color" | "palette">): { fresnelStrength?: number | undefined; foam?: string | undefined; crest?: string | undefined; deep?: string | undefined; shallow: string; } — The descriptor's colors in the shell Ocean's terms; unset palette fields keep the Ocean default.
 
 ## @jgengine/shell/weather
 

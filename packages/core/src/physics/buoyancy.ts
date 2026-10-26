@@ -1,5 +1,5 @@
 import type { PhysicsWorld } from "./physicsWorld";
-import type { WaterSurface } from "../world/water";
+import type { WaterSurface } from "../water/waterSurface";
 import type { AxisInput } from "../input/axisInput";
 
 export interface BuoyantBodyConfig {

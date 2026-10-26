@@ -9,7 +9,7 @@
  * {@link registerBuiltinSceneKinds} once at startup (idempotent).
  */
 import { SCATTER_PATH_KIND } from "../world/scatterRegion";
-import { registerWaterKind } from "../world/waterKind";
+import { registerWaterKind } from "../water/waterKind";
 import { registerGrassKind } from "../world/grassKind";
 import { registerSoilKind } from "../world/soilKind";
 import { registerPoleLineKind } from "../world/poleLineKind";

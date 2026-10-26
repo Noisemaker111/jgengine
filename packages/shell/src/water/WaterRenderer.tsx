@@ -1,14 +1,14 @@
 import { useCallback, useMemo } from "react";
 
-import { resolveWaterObject, type WaterRules } from "@jgengine/core/world/waterKind";
+import { resolveWaterObject, type ResolvedWater } from "@jgengine/core/water/waterKind";
 import type { SceneKindObject } from "@jgengine/core/scene/sceneKinds";
 
-import { Ocean } from "../water/Ocean";
-import type { OceanConfig } from "../water/OceanConfig";
-import { registerSceneKindRenderer, type SceneKindRenderContext } from "./sceneKindRenderers";
+import { Ocean } from "./Ocean";
+import type { OceanConfig } from "./OceanConfig";
+import { registerSceneKindRenderer, type SceneKindRenderContext } from "../scene/sceneKindRenderers";
 
 /** Map the editor-authored water params onto the shell Ocean shader config. */
-function toOceanConfig(rules: WaterRules, size: readonly [number, number], depthRange: number): OceanConfig {
+function toOceanConfig({ rules, size, surface }: ResolvedWater, depthRange: number): OceanConfig {
   const maxSpan = Math.max(size[0], size[1]);
   return {
     size: size[0],
@@ -16,10 +16,7 @@ function toOceanConfig(rules: WaterRules, size: readonly [number, number], depth
     // ~2 vertices per meter (bounded): the old span/2 gave a 30 m lake a 15×15 grid, which waved
     // like a blanket instead of water.
     resolution: Math.min(220, Math.max(48, Math.round(maxSpan * 2))),
-    amplitude: rules.waveHeight,
-    speed: rules.waveSpeed,
-    timeScale: rules.waveSpeed,
-    waveScale: Math.min(300, Math.max(2, 6 / rules.waveScale)),
+    waves: surface,
     color: {
       deep: rules.color,
       shallow: rules.shallowColor,
@@ -56,7 +53,7 @@ function OneWater({ object, context }: { object: SceneKindObject; context: Scene
     if (resolved === null) return null;
     // Full deep color roughly where the carved bed bottoms out (box depth + undercut headroom).
     const boxDepth = Math.max(0.4, resolved.center[1] - (object.center?.y ?? resolved.center[1]) + 0.001) * 2;
-    return toOceanConfig(resolved.rules, resolved.size, Math.max(0.8, boxDepth * 0.9));
+    return toOceanConfig(resolved, Math.max(0.8, boxDepth * 0.9));
   }, [resolved, object]);
   if (resolved === null || config === null) return null;
   return <Ocean config={config} position={[centerX, surfaceY, centerZ]} depthAt={depthAt} />;
