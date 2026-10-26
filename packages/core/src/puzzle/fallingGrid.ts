@@ -215,3 +215,57 @@ export function createFallingGrid<TCell>(config: FallingGridConfig): FallingGrid
     reset,
   };
 }
+
+/** A falling piece: a shape id from a {@link ShapeTable}, its rotation index and its board offset. */
+export interface FallingPiece<TShape extends string = string> {
+  readonly shape: TShape;
+  readonly rotation: number;
+  readonly col: number;
+  readonly row: number;
+}
+
+/** Rotation states per shape: each state is the footprint cells relative to the piece offset. */
+export type ShapeTable<TShape extends string = string> = Record<TShape, readonly (readonly FallingGridCell[])[]>;
+
+/**
+ * The relative footprint of `piece` at its rotation, wrapping by that shape's own rotation count. Pass it to `canPlace`/`place` with `[piece.col, piece.row]`.
+ *
+ * @internal
+ */
+export function pieceFootprint<TShape extends string>(table: ShapeTable<TShape>, piece: FallingPiece<TShape>): readonly FallingGridCell[] {
+  const rotations = table[piece.shape];
+  const index = ((piece.rotation % rotations.length) + rotations.length) % rotations.length;
+  return rotations[index]!;
+}
+
+/**
+ * Rows a piece can fall straight down before it collides: the hard-drop distance.
+ *
+ * @internal
+ */
+export function dropDistance<TCell>(grid: FallingGrid<TCell>, cells: readonly FallingGridCell[], offset: FallingGridCell): number {
+  let distance = 0;
+  while (grid.canPlace(cells, [offset[0], offset[1] + distance + 1])) distance += 1;
+  return distance;
+}
+
+/**
+ * Level reached after `lines` cleared lines, one level per `linesPerLevel` (default 10).
+ *
+ * @internal
+ */
+export function levelForLines(lines: number, linesPerLevel = 10): number {
+  return Math.floor(lines / linesPerLevel);
+}
+
+/** Classic line-clear points for 0-4 rows at level 0. */
+export const CLASSIC_LINE_SCORE: readonly number[] = [0, 40, 100, 300, 1200];
+
+/**
+ * Points for clearing `cleared` rows at `level`: `table[cleared] * (level + 1)`.
+ *
+ * @internal
+ */
+export function lineClearScore(cleared: number, level: number, table: readonly number[] = CLASSIC_LINE_SCORE): number {
+  return (table[cleared] ?? 0) * (level + 1);
+}

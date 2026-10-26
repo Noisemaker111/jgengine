@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { buildNavAdjacency, closestPoint, createNavMeshQuery, findPath, raycastNav, type NavMeshData } from "@jgengine/core/nav/navMesh";
+import { buildNavAdjacency, createNavMeshQuery, raycastNav, type NavMeshData } from "@jgengine/core/nav/navMesh";
 import { gateTimingMs } from "../../../../scripts/timing-budget";
 
 const lMesh: NavMeshData = {
@@ -23,21 +23,21 @@ function gridMesh(cols: number, rows: number, size = 1, holes: ReadonlySet<numbe
 describe("navMesh", () => {
   test("builds adjacency and bends the route at the inner corner of an L", () => {
     expect(buildNavAdjacency(lMesh).map((entry) => entry.neighbors)).toEqual([[1], [0]]);
-    const path = findPath(lMesh, [0.5, 0, 0.5], [0.5, 0, 2.5]);
+    const path = createNavMeshQuery(lMesh).findPath([0.5, 0, 0.5], [0.5, 0, 2.5]);
     expect(path?.polys).toEqual([0, 1]);
     expect(path?.points).toEqual([[0.5, 0, 0.5], [1, 0, 1], [0.5, 0, 2.5]]);
   });
 
   test("funnels a straight corridor down to its two endpoints", () => {
     const mesh = gridMesh(8, 1);
-    const path = findPath(mesh, [0.5, 0, 0.5], [7.5, 0, 0.5]);
+    const path = createNavMeshQuery(mesh).findPath([0.5, 0, 0.5], [7.5, 0, 0.5]);
     expect(path?.polys).toEqual([0, 1, 2, 3, 4, 5, 6, 7]);
     expect(path?.points).toEqual([[0.5, 0, 0.5], [7.5, 0, 0.5]]);
   });
 
   test("routes around a hole touching only the hole's corners", () => {
     const mesh = gridMesh(3, 3, 1, new Set([4]));
-    const path = findPath(mesh, [0.5, 0, 1.5], [2.5, 0, 1.5])!;
+    const path = createNavMeshQuery(mesh).findPath([0.5, 0, 1.5], [2.5, 0, 1.5])!;
     expect(path.points.length).toBe(4);
     for (const point of path.points.slice(1, -1)) expect([1, 2]).toContain(point[0]);
     for (let i = 1; i < path.points.length; i += 1) expect(raycastNav(mesh, path.points[i - 1]!, path.points[i]!)).toBe(true);
@@ -50,10 +50,10 @@ describe("navMesh", () => {
       links: [{ from: 0, to: 1, cost: 0.25, start: [0.9, 0, 0.5], end: [3.1, 1, 0.5] }],
     };
     expect(buildNavAdjacency(islands)[0]?.neighbors).toEqual([1]);
-    const path = findPath(islands, [0.2, 0, 0.5], [3.8, 1, 0.5]);
+    const path = createNavMeshQuery(islands).findPath([0.2, 0, 0.5], [3.8, 1, 0.5]);
     expect(path?.polys).toEqual([0, 1]);
     expect(path?.points).toEqual([[0.2, 0, 0.5], [0.9, 0, 0.5], [3.1, 1, 0.5], [3.8, 1, 0.5]]);
-    expect(findPath({ ...islands, links: [] }, [0.2, 0, 0.5], [3.8, 1, 0.5])?.partial).toBe(true);
+    expect(createNavMeshQuery({ ...islands, links: [] }).findPath([0.2, 0, 0.5], [3.8, 1, 0.5])?.partial).toBe(true);
   });
 
   test("prices and blocks areas through a retunable query", () => {
@@ -92,8 +92,8 @@ describe("navMesh", () => {
   });
 
   test("finds surface points and raycasts walkable space", () => {
-    expect(closestPoint(lMesh, [1, 3, 0.5])).toEqual([1, 0, 0.5]);
-    expect(closestPoint({ verts: [], polys: [], links: [] }, [0, 0, 0])).toBeNull();
+    expect(createNavMeshQuery(lMesh).closestPoint([1, 3, 0.5])).toEqual([1, 0, 0.5]);
+    expect(createNavMeshQuery({ verts: [], polys: [], links: [] }).closestPoint([0, 0, 0])).toBeNull();
     expect(raycastNav(lMesh, [0.5, 0, 0.5], [1.5, 0, 0.5])).toBe(true);
     expect(raycastNav(lMesh, [1.5, 0, 0.5], [0.5, 0, 2.5])).toBe(true);
     expect(raycastNav(lMesh, [0.5, 0, 0.5], [0.5, 0, 2.5])).toBe(false);

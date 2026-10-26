@@ -1,4 +1,4 @@
-import { uniformGravity, type GravityField } from "./gravityField";
+import { uniformGravity, type GravityField } from "../physics/gravityField";
 
 const DEFAULT_SUBSTEP = 1 / 240;
 const SEA_LEVEL_DENSITY = 1.225;

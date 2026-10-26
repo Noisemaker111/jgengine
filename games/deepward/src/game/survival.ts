@@ -1,4 +1,5 @@
-import { createDecayMeterSet, type DecayMeterConfig, type DecayMeterSet, type DecayMeterSetState } from "@jgengine/core/survival/decayMeter";
+import { createNeedSet, type NeedSet, type NeedSnapshot } from "@jgengine/core/sim/needs";
+import type { DecayMeterConfig } from "@jgengine/core/survival/decayMeter";
 
 /**
  * The diver's body: food and water drain over play time (faster in the cold, thirstier in the ink),
@@ -19,18 +20,18 @@ export const STARVE_DAMAGE = 1.5;
 /** Time at home drains the body at this fraction of the dive rate. */
 export const HOME_DRAIN = 0.35;
 
-export function createBody(saved?: DecayMeterSetState): DecayMeterSet {
-  const body = createDecayMeterSet(BODY);
+export function createBody(saved?: NeedSnapshot): NeedSet {
+  const body = createNeedSet(BODY);
   if (saved !== undefined) body.restore(saved);
   return body;
 }
 
 /** A fresh Life wakes fed: the printer fills both meters. */
-export function freshBody(): DecayMeterSetState { return createBody().serialize(); }
+export function freshBody(): NeedSnapshot { return createBody().snapshot(); }
 
-export function validBody(value: unknown): value is DecayMeterSetState {
+export function validBody(value: unknown): value is NeedSnapshot {
   if (typeof value !== "object" || value === null) return false;
-  const state = value as DecayMeterSetState;
+  const state = value as NeedSnapshot;
   const meter = (id: string) => typeof state.values?.[id] === "number" && Number.isFinite(state.values[id]) && state.values[id]! >= 0 && state.values[id]! <= 100;
   return meter("food") && meter("water") && typeof state.rates === "object" && state.rates !== null && typeof state.modifiers === "object" && state.modifiers !== null;
 }

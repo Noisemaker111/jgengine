@@ -1,5 +1,5 @@
 import type { AxisInput } from "../input/axisInput";
-import type { AircraftVector, RigidAircraft, RigidAircraftInput, RigidAircraftStep } from "./aircraftDynamics";
+import type { AircraftVector, RigidAircraft, RigidAircraftInput, RigidAircraftStep } from "../flight/aircraftDynamics";
 
 /** The slice of a vehicle sim {@link measureHandling} drives; `VehicleDynamics` fits. */
 export interface HandlingSubject {

@@ -119,7 +119,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## decay-meter — survival meters that drain/refill over game time (hunger, water, oxygen, stamina)
 
-- `createDecayMeterSet` (function) · `import { createDecayMeterSet } from "@jgengine/core/gameplay"`
 - `decayMeterMoodles` (function) · `import { decayMeterMoodles } from "@jgengine/core/gameplay"`
 - `decayMeterSnapshot` (function) · `import { decayMeterSnapshot } from "@jgengine/core/gameplay"`
 - `decayMeterState` (function) · `import { decayMeterState } from "@jgengine/core/gameplay"`

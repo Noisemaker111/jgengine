@@ -125,6 +125,37 @@ export {
   tierForStanding,
 } from "./faction/reputation";
 export {
+  aircraftAttitudeQuaternion,
+  aircraftHeadingQuaternion,
+  createRigidAircraft,
+  type AircraftAssistTuning,
+  type RigidAircraft,
+  type RigidAircraftInput,
+  type RigidAircraftModifiers,
+  type RigidAircraftOptions,
+  type RigidAircraftStep,
+  type RigidAircraftTuning,
+} from "./flight/aircraftDynamics";
+export {
+  CREATIVE_FLIGHT_TUNING,
+  HOVER_FLIGHT_TUNING,
+  NOCLIP_FLIGHT_TUNING,
+  SPECTATOR_FLIGHT_TUNING,
+  advanceFreeFlight,
+  createFreeFlightController,
+  createFreeFlightState,
+  resolveFlightStep,
+  resolveFreeFlightIntent,
+  resolveFreeFlightIntentFromInput,
+  type FreeFlightBindings,
+  type FreeFlightController,
+  type FreeFlightIntent,
+  type FreeFlightMode,
+  type FreeFlightState,
+  type FreeFlightStep,
+  type FreeFlightTuning,
+} from "./flight/freeFlight";
+export {
   controlGroupKey,
   resolveControlGroupIntent,
   type ControlGroupInput,
@@ -190,25 +221,6 @@ export {
   type SlotAssignmentOptions,
   type WedgeFormationOptions,
 } from "./movement/formation";
-export {
-  CREATIVE_FLIGHT_TUNING,
-  HOVER_FLIGHT_TUNING,
-  NOCLIP_FLIGHT_TUNING,
-  SPECTATOR_FLIGHT_TUNING,
-  advanceFreeFlight,
-  createFreeFlightController,
-  createFreeFlightState,
-  resolveFlightStep,
-  resolveFreeFlightIntent,
-  resolveFreeFlightIntentFromInput,
-  type FreeFlightBindings,
-  type FreeFlightController,
-  type FreeFlightIntent,
-  type FreeFlightMode,
-  type FreeFlightState,
-  type FreeFlightStep,
-  type FreeFlightTuning,
-} from "./movement/freeFlight";
 export { createGlideModel } from "./movement/glideModel";
 export { createGrappleSwing } from "./movement/grappleSwing";
 export { createLeaderTrail } from "./movement/leaderTrail";
@@ -247,7 +259,6 @@ export { populateNavGridFromEnvironment } from "./nav/navFromEnvironment";
 export { createNavGrid, findPath, slopeStepCost, type NavGrid, type NavPoint } from "./nav/navGrid";
 export {
   buildNavAdjacency,
-  closestPoint,
   createNavMeshQuery,
   raycastNav,
   type NavMeshAdjacency,
@@ -336,18 +347,6 @@ export {
   type OrderTickReport,
   type OrderVec3,
 } from "./orders/orderQueue";
-export {
-  aircraftAttitudeQuaternion,
-  aircraftHeadingQuaternion,
-  createRigidAircraft,
-  type AircraftAssistTuning,
-  type RigidAircraft,
-  type RigidAircraftInput,
-  type RigidAircraftModifiers,
-  type RigidAircraftOptions,
-  type RigidAircraftStep,
-  type RigidAircraftTuning,
-} from "./physics/aircraftDynamics";
 export { createBallisticSweep, type BallisticSweep, type BallisticSweepHit } from "./physics/ballisticSweep";
 export { createBuoyantBody } from "./physics/buoyancy";
 export { Carryable, carrySpeedMultiplier } from "./physics/carryable";
@@ -372,10 +371,8 @@ export {
   type PhysicsStats,
 } from "./physics/physicsWorld";
 export { createRagdoll } from "./physics/ragdoll";
-export { SpatialGrid } from "./physics/spatialGrid";
 export { StructureGraph, type CollapseEvent, type StructureMaterial } from "./physics/structure";
 export { createTireMarks, type TireMark, type TireMarks, type TireMarksState } from "./physics/tireMarks";
-export { Glide, Grapple } from "./physics/traversal";
 export {
   createVehicleDamage,
   damagedAxis,

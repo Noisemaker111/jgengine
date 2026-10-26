@@ -35,8 +35,8 @@ export interface GlideStep {
 }
 
 /**
- * A kinematic glider (#282.6) — the walk-controller-compatible sibling of `physics/traversal`'s
- * rigid-body `Glide`, with the yaw and powered-climb authority that one lacks. External flows —
+ * A kinematic glider (#282.6) for walk-controller-compatible movers: reduced gravity, cruise
+ * thrust, yaw and powered-climb authority. External flows —
  * `physics/flowTube` corridors, `world/windZones` schedules — compose per tick through
  * `externalVelocity`, and turbulence degrades control through the `control` scalar.
  */

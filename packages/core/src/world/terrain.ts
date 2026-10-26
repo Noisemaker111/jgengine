@@ -18,7 +18,7 @@ import type {
 import type { AvoidZone } from "./geometry";
 import { type TerrainPathProfile, withPathProfiles } from "./pathTerrain";
 import { buildPolylineIndex } from "./polylineIndex";
-import { buildSpatialBuckets } from "./spatialBuckets";
+import { buildSpatialBuckets } from "../spatial/spatialBuckets";
 import type { TerraformSnapshot } from "./terraform";
 
 /** A surface normal vector at a terrain sample point. */

@@ -3600,8 +3600,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/movement/freeFlight",
-      "domain": "movement",
+      "module": "@jgengine/core/flight/freeFlight",
+      "domain": "flight",
       "gameFacing": false,
       "probe": null,
       "intent": "camera-relative creative/spectator/noclip/hover flight with correct strafe, sprint, and optional gravity"
@@ -7969,8 +7969,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/physics/aircraftDynamics",
-      "domain": "physics",
+      "module": "@jgengine/core/flight/aircraftDynamics",
+      "domain": "flight",
       "gameFacing": false,
       "probe": null,
       "intent": "force-and-torque aircraft — lifting surfaces with stall and drag polar, control surfaces, inertia, loops and rolls"
@@ -8696,6 +8696,17 @@
       "gameFacing": false,
       "probe": null,
       "intent": "Update one entity's spatial cell after a committed write without scanning the population"
+    },
+    {
+      "id": "spatial-index",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/spatial/spatialIndex",
+      "domain": "spatial",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "broad-phase 3D hash for frustum, box and sphere queries over moving ids"
     },
     {
       "id": "spatial-region-box",

@@ -100,7 +100,7 @@ describe("core domain barrels", () => {
 
   test("procedural barrel remains a static survival compatibility entrypoint", () => {
     const src = readFileSync(join(root, "packages/core/src/procedural.ts"), "utf8");
-    expect(src).toMatch(/createDecayMeterSet/);
+    expect(src).toMatch(/createNeedSet/);
     expect(src).toMatch(/from\s+["']\.\/survival\//);
     expect(pkg.exports["./procedural"]).toEqual({
       types: "./dist/procedural.d.ts",

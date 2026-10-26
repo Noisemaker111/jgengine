@@ -39,7 +39,7 @@ import {
   resolveFreeFlightIntentFromInput,
   type FreeFlightState,
   type FreeFlightTuning,
-} from "./freeFlight";
+} from "../flight/freeFlight";
 import { solidObstaclesNear } from "./solidObstacles";
 import { withPoseRollback } from "./poseState";
 import { approachYaw, steerYaw } from "./steering";

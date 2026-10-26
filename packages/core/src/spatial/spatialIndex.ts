@@ -1,7 +1,7 @@
-import type { RenderBounds } from "./bounds";
-import { aabbIntersects } from "./bounds";
-import type { Frustum } from "./frustum";
-import { aabbInFrustum } from "./frustum";
+import type { RenderBounds } from "../visibility/bounds";
+import { aabbIntersects } from "../visibility/bounds";
+import type { Frustum } from "../visibility/frustum";
+import { aabbInFrustum } from "../visibility/frustum";
 
 export interface SpatialIndexOptions {
   /** Grid cell size in world units. Default 16. Objects are hashed into every cell their AABB overlaps. */
@@ -76,6 +76,12 @@ interface CellBucket {
   ids: Set<string>;
 }
 
+/**
+ * A uniform 3D spatial hash over bounded ids: insert, move and remove them, then query a frustum, a
+ * box or a sphere without scanning every entry.
+ *
+ * @capability spatial-index broad-phase 3D hash for frustum, box and sphere queries over moving ids
+ */
 export function createSpatialIndex(options: SpatialIndexOptions = {}): SpatialIndex {
   const size = options.cellSize ?? 16;
   const maxSpan = options.maxCellSpan ?? 6;

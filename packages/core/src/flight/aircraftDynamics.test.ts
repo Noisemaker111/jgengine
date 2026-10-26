@@ -11,7 +11,7 @@ import {
   type RigidAircraftStep,
   type RigidAircraftTuning,
 } from "./aircraftDynamics";
-import { measureFlight } from "./handlingProbe";
+import { measureFlight } from "../physics/handlingProbe";
 
 const DT = 1 / 60;
 const DEG = 180 / Math.PI;

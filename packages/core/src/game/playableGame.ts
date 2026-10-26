@@ -30,7 +30,7 @@ import type { HudPlatform, HudViewportConfig } from "../ui/hudScale";
 import type { PositionedPrompt } from "../interaction/proximityPrompt";
 import type { ChaseCameraTuning } from "../runtime/cameraDirector";
 import type { CatalogEntityRole, GameContext, GameContextContent } from "../runtime/gameContext";
-import type { FreeFlightBindings } from "../movement/freeFlight";
+import type { FreeFlightBindings } from "../flight/freeFlight";
 import type { SceneEntity } from "../scene/entityStore";
 import type { ModelDims } from "../scene/assetCatalog";
 import type { PartMotionParams, PartRole } from "./partAnimation";

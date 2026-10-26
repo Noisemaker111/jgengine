@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import type { EntityPosition } from "../scene/entityStore";
-import { createSpatialIndex } from "../visibility/spatialIndex";
+import { createSpatialIndex } from "../spatial/spatialIndex";
 import { createAreaEffectField, type AreaShape } from "./areaEffectField";
 import {
   cappedStacks,

@@ -4,6 +4,8 @@ export interface GrappleSwingConfig {
   /** Rope shortens by this many units/s while `reeling`. Default `0` (fixed length). */
   reelSpeed?: number;
   minLength?: number;
+  /** Firing range: `fire` at an anchor farther than this misses and returns `false`. Default `Infinity`. */
+  maxLength?: number;
   /** Extra spring pull toward the anchor when the rope is taut (elastic feel); default `0` (hard constraint only). */
   stiffness?: number;
   /** Velocity damping per second while attached; default `0.1`. */
@@ -23,13 +25,16 @@ export interface GrappleSwingStep {
 
 /**
  * A rope-swing constraint for kinematic controllers (#282.5) — the walk-controller-compatible
- * sibling of `physics/traversal`'s rigid-body `Grapple`. Fire at an anchor, feed each frame's
+ * rope for grapple, zipline and swing. Fire at an anchor, feed each frame's
  * integrated position/velocity through `step`, and commit what comes back (via `beforeCommit`
  * or `setPose`): positions beyond the rope clamp to its sphere and velocity loses its outward
  * radial component, which is exactly a pendulum swing.
  */
 export interface GrappleSwing {
-  fire(anchor: SwingVec3, from: SwingVec3): void;
+  /** Attach to `anchor` from `from`; returns `false` (and stays detached) when the anchor is beyond `maxLength`. */
+  fire(anchor: SwingVec3, from: SwingVec3): boolean;
+  /** Re-point the attached rope, keeping its length: a zipline glide or a grapple on a moving target. No-op when detached. */
+  moveAnchor(anchor: SwingVec3): void;
   release(): void;
   state(): GrappleSwingState;
   /** Puts a {@link GrappleSwing.state} back; `anchor: null` detaches. */
@@ -46,6 +51,7 @@ export interface GrappleSwing {
 export function createGrappleSwing(config: GrappleSwingConfig = {}): GrappleSwing {
   const reelSpeed = config.reelSpeed ?? 0;
   const minLength = config.minLength ?? 1;
+  const maxLength = config.maxLength ?? Number.POSITIVE_INFINITY;
   const stiffness = config.stiffness ?? 0;
   const damping = config.damping ?? 0.1;
 
@@ -54,11 +60,14 @@ export function createGrappleSwing(config: GrappleSwingConfig = {}): GrappleSwin
 
   return {
     fire(nextAnchor, from) {
-      anchor = nextAnchor;
-      ropeLength = Math.max(
-        minLength,
-        Math.hypot(from[0] - nextAnchor[0], from[1] - nextAnchor[1], from[2] - nextAnchor[2]),
-      );
+      const reach = Math.hypot(from[0] - nextAnchor[0], from[1] - nextAnchor[1], from[2] - nextAnchor[2]);
+      if (reach > maxLength) return false;
+      anchor = [nextAnchor[0], nextAnchor[1], nextAnchor[2]];
+      ropeLength = Math.max(minLength, reach);
+      return true;
+    },
+    moveAnchor(next) {
+      if (anchor !== null) anchor = [next[0], next[1], next[2]];
     },
     release() {
       anchor = null;

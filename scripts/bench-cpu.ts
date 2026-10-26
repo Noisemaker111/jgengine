@@ -24,7 +24,7 @@ export const BENCH_FILES = [
   "packages/core/src/sensor/perception.perf.test.ts",
   "packages/core/src/sim/offScreen.perf.test.ts",
   "packages/core/src/visibility/benchmark.test.ts",
-  "packages/core/src/visibility/spatialIndex.test.ts",
+  "packages/core/src/spatial/spatialIndex.test.ts",
   "packages/core/src/world/terrain.test.ts",
 ] as const;
 

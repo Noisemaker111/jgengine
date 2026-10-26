@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { aircraftAttitudeQuaternion, createRigidAircraft } from "@jgengine/core/physics/aircraftDynamics";
+import { aircraftAttitudeQuaternion, createRigidAircraft } from "@jgengine/core/flight/aircraftDynamics";
 import { measureFlight } from "@jgengine/core/physics/handlingProbe";
 
 import { flightDemoBooster, flightDemoHelicopter, flightDemoHelicopterAssists, flightDemoHover, flightDemoPlaneAssists, flightDemoPlane, flightDemoSpawn, flightDemoUpperStage } from "./flightTuning";

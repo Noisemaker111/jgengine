@@ -1,5 +1,5 @@
-import { motionStepSeconds, type AnalogMoveIntent, type CollisionObstacle, type MovementKeysState, type MotionFrameOptions } from "./movementModel";
-import { DEFAULT_OBSTACLE_PLAYER_RADIUS } from "./movementModel";
+import { motionStepSeconds, type AnalogMoveIntent, type CollisionObstacle, type MovementKeysState, type MotionFrameOptions } from "../movement/movementModel";
+import { DEFAULT_OBSTACLE_PLAYER_RADIUS } from "../movement/movementModel";
 import { sampleAxisBindings, type AxisBinding } from "../input/axisInput";
 import type { PointerAxisState } from "../input/pointerAxis";
 import type { ChaseCameraTuning } from "../runtime/cameraDirector";

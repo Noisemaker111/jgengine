@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
+import { createNeedSet } from "../sim/needs";
 import {
-  createDecayMeterSet,
   decayMeterMoodles,
   decayMeterSnapshot,
   decayMeterState,
@@ -11,15 +11,15 @@ import {
   type DecayMeterConfig,
 } from "./decayMeter";
 
-describe("createDecayMeterSet", () => {
+describe("createNeedSet as survival meters", () => {
   test("drains at rate * dt on game time", () => {
-    const meters = createDecayMeterSet([{ id: "hunger", max: 100, rate: 2 }]);
+    const meters = createNeedSet([{ id: "hunger", max: 100, rate: 2 }]);
     meters.tick(5);
     expect(meters.value("hunger")).toBe(90);
   });
 
   test("clamps at min and max", () => {
-    const meters = createDecayMeterSet([{ id: "oxygen", max: 10, rate: 5, start: 4 }]);
+    const meters = createNeedSet([{ id: "oxygen", max: 10, rate: 5, start: 4 }]);
     meters.tick(10);
     expect(meters.value("oxygen")).toBe(0);
     meters.refill("oxygen", 999);
@@ -27,13 +27,13 @@ describe("createDecayMeterSet", () => {
   });
 
   test("refill tops up after a consumable", () => {
-    const meters = createDecayMeterSet([{ id: "thirst", max: 100, rate: 1, start: 30 }]);
+    const meters = createNeedSet([{ id: "thirst", max: 100, rate: 1, start: 30 }]);
     meters.refill("thirst", 50);
     expect(meters.value("thirst")).toBe(80);
   });
 
   test("rate modifier persists across ticks until cleared", () => {
-    const meters = createDecayMeterSet([{ id: "warmth", max: 100, rate: 1 }]);
+    const meters = createNeedSet([{ id: "warmth", max: 100, rate: 1 }]);
     meters.setRateModifier("warmth", 4);
     meters.tick(1);
     expect(meters.value("warmth")).toBe(96);
@@ -45,20 +45,20 @@ describe("createDecayMeterSet", () => {
   });
 
   test("setRate overrides the base drain", () => {
-    const meters = createDecayMeterSet([{ id: "sanity", max: 100, rate: 1 }]);
+    const meters = createNeedSet([{ id: "sanity", max: 100, rate: 1 }]);
     meters.setRate("sanity", 10);
     meters.tick(2);
     expect(meters.value("sanity")).toBe(80);
   });
 
   test("negative rate recovers toward max", () => {
-    const meters = createDecayMeterSet([{ id: "warmth", max: 100, rate: -5, start: 50 }]);
+    const meters = createNeedSet([{ id: "warmth", max: 100, rate: -5, start: 50 }]);
     meters.tick(4);
     expect(meters.value("warmth")).toBe(70);
   });
 
   test("thresholds raise moodles when crossed", () => {
-    const meters = createDecayMeterSet([
+    const meters = createNeedSet([
       {
         id: "hunger",
         max: 100,
@@ -77,7 +77,7 @@ describe("createDecayMeterSet", () => {
   });
 
   test("above thresholds fire for heat/radiation meters", () => {
-    const meters = createDecayMeterSet([
+    const meters = createNeedSet([
       {
         id: "temperature",
         max: 120,
@@ -93,7 +93,7 @@ describe("createDecayMeterSet", () => {
   });
 
   test("unknown meter id throws", () => {
-    const meters = createDecayMeterSet([{ id: "hunger", max: 100, rate: 1 }]);
+    const meters = createNeedSet([{ id: "hunger", max: 100, rate: 1 }]);
     expect(() => meters.value("nope")).toThrow();
   });
 });
@@ -180,33 +180,33 @@ describe("pure decay meters", () => {
   });
 
   test("the closure form is observably equivalent to the pure form", () => {
-    const set = createDecayMeterSet(defs);
+    const set = createNeedSet(defs);
     set.tick(5);
     set.refill("hunger", 10);
     let values = decayMeters(initDecayMeters(defs), defs, 5);
     values = refillMeter(values, defs, "hunger", 10);
-    expect(set.snapshot()).toEqual(decayMeterSnapshot(values, defs));
+    expect(set.states()).toEqual(decayMeterSnapshot(values, defs));
   });
 });
 
-describe("decay meter set save state", () => {
+describe("need set save state", () => {
   const configs: DecayMeterConfig[] = [
     { id: "warmth", max: 100, rate: 1, start: 80 },
     { id: "hunger", max: 100, rate: 2 },
   ];
 
   test("a tuned rate and modifier survive the trip through a save", () => {
-    const meters = createDecayMeterSet(configs);
+    const meters = createNeedSet(configs);
     meters.setRate("hunger", 5);
     meters.setRateModifier("warmth", 4);
     meters.tick(2); // warmth 80 - 1*4*2 = 72, hunger 100 - 5*2 = 90
 
-    const saved = JSON.parse(JSON.stringify(meters.serialize())) as ReturnType<typeof meters.serialize>;
+    const saved = JSON.parse(JSON.stringify(meters.snapshot())) as ReturnType<typeof meters.snapshot>;
     expect(saved.values).toEqual({ warmth: 72, hunger: 90 });
     expect(saved.rates).toEqual({ warmth: 1, hunger: 5 });
     expect(saved.modifiers).toEqual({ warmth: 4 });
 
-    const resumed = createDecayMeterSet(configs);
+    const resumed = createNeedSet(configs);
     resumed.restore(saved);
     meters.tick(3);
     resumed.tick(3);
@@ -215,7 +215,7 @@ describe("decay meter set save state", () => {
   });
 
   test("restore clears a modifier the saved state does not carry", () => {
-    const meters = createDecayMeterSet([{ id: "oxygen", max: 100, rate: 1 }]);
+    const meters = createNeedSet([{ id: "oxygen", max: 100, rate: 1 }]);
     meters.setRateModifier("oxygen", 5);
     meters.restore({ values: { oxygen: 100 }, rates: { oxygen: 1 }, modifiers: {} });
     meters.tick(1);

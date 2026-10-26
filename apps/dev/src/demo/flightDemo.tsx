@@ -12,7 +12,7 @@ import {
   type RigidAircraftOptions,
   type RigidAircraftStep,
   type RigidAircraftTuning,
-} from "@jgengine/core/physics/aircraftDynamics";
+} from "@jgengine/core/flight/aircraftDynamics";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";

@@ -13,7 +13,7 @@ import { colliderBounds, colliderWorldCenter, defaultEntityColliders, resolveCol
 import { raycastCollisionMesh } from "../../scene/collisionMesh";
 import { sweepMovingBounds, sweepMovingSphere } from "../../physics/ballisticSweep";
 import type { EntityPosition } from "../../scene/entityStore";
-import { createSpatialIndex } from "../../visibility/spatialIndex";
+import { createSpatialIndex } from "../../spatial/spatialIndex";
 import type { EntityStore } from "../../scene/entityStore";
 import { createEntityStatsApi } from "../../scene/entityStats";
 import type { ObjectStore } from "../../scene/objectStore";

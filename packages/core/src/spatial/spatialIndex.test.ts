@@ -3,7 +3,7 @@ import type { RenderBounds } from "@jgengine/core/visibility/bounds";
 import { resolveBounds } from "@jgengine/core/visibility/bounds";
 import type { CameraView } from "@jgengine/core/visibility/frustum";
 import { createFrustum, updateFrustum } from "@jgengine/core/visibility/frustum";
-import { createSpatialIndex } from "@jgengine/core/visibility/spatialIndex";
+import { createSpatialIndex } from "@jgengine/core/spatial/spatialIndex";
 import { gateTimingMs } from "../../../../scripts/timing-budget";
 
 function boxAt(cx: number, cy: number, cz: number, half = 1): RenderBounds {
