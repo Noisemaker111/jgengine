@@ -31,6 +31,10 @@ const SYNC_OUTPUT = `# add "ws" to engine in jgengine.json, then:
 $ npx jgengine sync
 sync Tide-Runner: updated package.json`;
 
+const DESKTOP_OUTPUT = `$ npx jgengine desktop
+.jgengine/desktop/<Name>.exe                          runs without installing
+.jgengine/desktop/<Name>_<version>_x64-setup.exe      installer`;
+
 const AGENT_TOOLS: readonly { command: string; does: string }[] = [
   { command: "jgengine create", does: "Starts a playable game and installs the engine's skills into the project, so the agent knows the API before it writes a line." },
   { command: "jgengine find <words>", does: "Names the folder, exports and capability for a concept, so the agent reuses the engine instead of writing its own." },
@@ -173,6 +177,25 @@ function Home() {
           }
         >
           <CodeBlock code={snippet("physics.ts")} filename="src/world.ts" />
+        </Feature>
+
+        <Feature
+          id="desktop"
+          alt
+          eyebrow="Windows"
+          title="Ship it as a Windows .exe."
+          body={
+            <>
+              <p>
+                Run <code className="inline-code">npx jgengine desktop</code> in a game folder, or{" "}
+                <code className="inline-code">bun run desktop</code> in a game you created. You get a{" "}
+                <code className="inline-code">.exe</code> that runs without installing, plus an installer for everyone else.
+              </p>
+              <p>Building it needs Rust and the Visual Studio C++ Build Tools on the machine that builds.</p>
+            </>
+          }
+        >
+          <CodeBlock code={DESKTOP_OUTPUT} filename="terminal" />
         </Feature>
       </div>
 
