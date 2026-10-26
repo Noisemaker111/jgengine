@@ -41,7 +41,9 @@ describe("shared drive device profiles", () => {
 
   test("landscape and half size retain shared device semantics and native URL content", () => {
     const device = parseCaptureDevice("mobile-landscape");
-    expect(scaleProfile(DEVICES[device], "half")).toEqual({ width: 422, height: 195, deviceScaleFactor: 2, mobile: true });
+    expect(scaleProfile(DEVICES[device], "half")).toEqual({ width: 844, height: 390, deviceScaleFactor: 1, mobile: true });
+    // Half size keeps the CSS viewport, so the page lays out as at full size, at a quarter of the pixels.
+    expect(scaleProfile(DEVICES.desktop, "half")).toEqual({ width: 1600, height: 900, deviceScaleFactor: 0.5, mobile: false });
     for (const target of [{ url: "http://native/room?map=courtyard" }, { site: "/playground?map=courtyard" }, {}]) {
       const url = driveTargetUrl({ game: "co-op", mode: "play", device, ...target }, "http://runner");
       expect(url.searchParams.get("device")).toBe("mobile");

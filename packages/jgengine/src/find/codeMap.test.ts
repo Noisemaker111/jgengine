@@ -42,12 +42,13 @@ test("places repository paths in their layer and leaves tests and fixtures out",
   expect(layerOf("games/odd-orbit/src/world.ts")).toBeNull();
 });
 
-test("a concept folder wins its layer, and stray pieces are listed outside it", () => {
+test("a concept folder wins its layer, files named for it elsewhere are listed, and an export that only mentions it is not a home", () => {
   const sources: Record<string, string> = {
     "packages/react/src/camera/shake/cameraShake.tsx": "/** Meter. */\nexport function CameraShakeMeter() {}\n",
     "packages/react/src/camera/shake/readout.ts": "export function useCameraShakeReadout() {}\n",
     "packages/core/src/hud/hudFrame.view.tsx": "/** Mentions camera shake in passing. */\nexport function HudFrame() {}\n",
-    "packages/react/src/stray.tsx": "export function CameraShakeLabel() {}\n",
+    "packages/react/src/cameraShakeLabel.tsx": "export function CameraShakeLabel() {}\n",
+    "packages/shell/src/water/ocean.ts": "export const MAX_CAMERA_SHAKE_WAVES = 4;\n",
     "packages/core/src/world/notes.ts": "/** Shakes nothing about the camera. */\nexport const unrelated = 1;\n",
   };
   const files = Object.keys(sources).map((path) => layerOf(path)!);
@@ -55,10 +56,10 @@ test("a concept folder wins its layer, and stray pieces are listed outside it", 
   expect(homes.map((home) => [home.layer, home.home])).toEqual([["react", "packages/react/src/camera/shake/"]]);
   expect(homes[0]!.role).toBe("view");
   expect(homes[0]!.files.map((hit) => hit.path)).toEqual(["packages/react/src/camera/shake/cameraShake.tsx", "packages/react/src/camera/shake/readout.ts"]);
-  expect(homes[0]!.elsewhere.map((hit) => hit.path)).toEqual(["packages/react/src/stray.tsx"]);
+  expect(homes[0]!.elsewhere.map((hit) => hit.path)).toEqual(["packages/react/src/cameraShakeLabel.tsx"]);
   const text = renderLocations(homes).join("\n");
   expect(text).toContain("react (view)                packages/react/src/camera/shake/");
-  expect(text).toContain("also packages/react/src/stray.tsx  CameraShakeLabel");
+  expect(text).toContain("also packages/react/src/cameraShakeLabel.tsx  CameraShakeLabel");
 });
 
 describe("this checkout answers where a concept lives in one call", () => {
@@ -89,6 +90,14 @@ describe("this checkout answers where a concept lives in one call", () => {
       expect(homes.get("core")).toBe(`packages/core/src/${folder}/`);
       expect(homes.get("shell") ?? "").not.toEndWith(`/${folder}/`);
       expect(homes.get("react") ?? "").not.toEndWith(`/${folder}/`);
+    }
+  });
+
+  test("a feature name is not matched inside an unrelated export", () => {
+    for (const query of ["waves"]) {
+      const homes = homeOf(query);
+      expect(homes.get("core")).toBe(`packages/core/src/${query}/`);
+      expect(homes.has("shell")).toBe(false);
     }
   });
 });
