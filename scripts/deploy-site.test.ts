@@ -64,6 +64,7 @@ const git = (cwd: string, args: string[]) =>
   spawnSync("git", ["-c", "user.name=test", "-c", "user.email=test@example.invalid", "-c", "commit.gpgsign=false", ...args], {
     cwd,
     encoding: "utf8",
+    timeout: 60_000,
   });
 
 /** A main checkout with one released commit, and a linked release folder whose files were emptied after the merge. */
@@ -87,7 +88,7 @@ function recordingRun(exitFor: (command: readonly string[]) => number = () => 0)
   const steps: { command: string; cwd: string; sawBuildSource: boolean }[] = [];
   const run: RunStep = (command, cwd) => {
     if (command[0] === "git") {
-      const out = spawnSync("git", command.slice(1), { cwd, encoding: "utf8" });
+      const out = spawnSync("git", command.slice(1), { cwd, encoding: "utf8", timeout: 60_000 });
       return { status: out.status ?? 1, tail: out.stderr ?? "", stdout: out.stdout ?? "" };
     }
     steps.push({ command: command.join(" "), cwd, sawBuildSource: existsSync(join(cwd, "apps", "web", "package.json")) });
