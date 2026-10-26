@@ -1,4 +1,4 @@
-import { expect, test } from "bun:test";
+import { afterEach, expect, test } from "bun:test";
 import { act, createRoot, extend } from "@react-three/fiber";
 import { createElement } from "react";
 import * as THREE from "three";
@@ -8,8 +8,17 @@ import type { PointerService } from "./pointerService.draw";
 
 type PointerDeps = NonNullable<Parameters<PointerService["bind"]>[0]>;
 
+const env = globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean; document?: unknown };
+const hadDocument = "document" in globalThis;
+
+// R3F's root reaches for `document`; the stand-in must not outlive this file, or a later test in the
+// same process that proves it runs with no DOM (the headless runner) sees one.
+afterEach(() => {
+  if (!hadDocument) delete env.document;
+  delete env.IS_REACT_ACT_ENVIRONMENT;
+});
+
 async function mount(groundHeightAt?: (x: number, z: number) => number): Promise<{ bound: (PointerDeps | null)[]; unmount: () => Promise<void> }> {
-  const env = globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean; document?: unknown };
   env.IS_REACT_ACT_ENVIRONMENT = true;
   env.document ??= new EventTarget();
   extend(THREE);
