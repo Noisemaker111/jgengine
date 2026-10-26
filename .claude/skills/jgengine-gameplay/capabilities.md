@@ -866,6 +866,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `statModifierContributions` (function) · `import { statModifierContributions } from "@jgengine/core/gameplay"`
 
+## stat-points — level-up points spent into stats, each adding an amount or scaling the stat, with per-owner bases and a per-stat cap
+
+- `createStatPoints` (function) · `import { createStatPoints } from "@jgengine/core/progression/statPoints"`
+
 ## supply-demand-pricing — price goods from finite stock and live demand on a stated curve
 
 - `createMarket` (function) · `import { createMarket } from "@jgengine/core/gameplay"`

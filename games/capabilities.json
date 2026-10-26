@@ -9337,6 +9337,17 @@
       "intent": "feed an existing StatModifierSet into a stat-graph source"
     },
     {
+      "id": "stat-points",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/progression/statPoints",
+      "domain": "progression",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "level-up points spent into stats, each adding an amount or scaling the stat, with per-owner bases and a per-stat cap"
+    },
+    {
       "id": "stat-pool",
       "packages": [
         "@jgengine/core"
