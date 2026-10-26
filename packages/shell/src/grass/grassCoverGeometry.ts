@@ -1,6 +1,6 @@
 import * as THREE from "three";
 
-import { resolveTerrainSize, type TerrainArea, type TerrainHeightSampler } from "./terrainMath";
+import { resolveTerrainSize, type TerrainArea, type TerrainHeightSampler } from "../terrain/terrainMath";
 
 /** World metres one cover-texture tile spans; the mat's own grain is sampled in world space. */
 export const GRASS_COVER_TILE_METRES = 3;

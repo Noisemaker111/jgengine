@@ -68,13 +68,14 @@ The component vocabulary (windows, awnings, AC units, clotheslines, storefronts,
 `@jgengine/shell/terrain` exports R3F helpers for shell-local natural scenes:
 
 ```tsx
-import { GrassField, ProceduralGround, createProceduralTerrainSampler } from "@jgengine/shell/terrain";
+import { readGrassLook } from "@jgengine/core/world/grassKind";
+import { GrassPatch, ProceduralGround, createProceduralTerrainSampler } from "@jgengine/shell/terrain";
 
 const terrain = { seed: "meadow", size: 48, height: 0.9 };
 const heightAt = createProceduralTerrainSampler(terrain);
 
 <>
   <ProceduralGround terrain={terrain} />
-  <GrassField area={48} heightAt={heightAt} density={0.65} />
+  <GrassPatch area={48} heightAt={heightAt} look={readGrassLook({ season: 0.4, flowerShare: 0.1 })} />
 </>;
 ```

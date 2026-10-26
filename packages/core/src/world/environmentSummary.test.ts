@@ -93,13 +93,13 @@ describe("environmentSummary", () => {
   });
 
   test("grass position surfaces on the vegetation summary as area.position", () => {
-    const centered = summarizeEnvironment(environment({ vegetation: grass({ density: 64 }) })).vegetation[0];
+    const centered = summarizeEnvironment(environment({ vegetation: grass({ density: 0.8 }) })).vegetation[0];
     const sited = summarizeEnvironment(
       environment({ vegetation: grass({ position: [200, -150] }) }),
     ).vegetation[0];
     expect(centered.area.position).toBeUndefined();
     expect(sited.area.position).toEqual([200, -150]);
-    expect(centered.density).toBe(64);
+    expect(centered.density).toBe(0.8);
   });
 
   test("top-level weather position is sugar for area.position and surfaces on the summary", () => {

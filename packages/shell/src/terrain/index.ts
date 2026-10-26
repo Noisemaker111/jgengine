@@ -1,5 +1,19 @@
 export { CarvedTerrain, type CarvedTerrainProps } from "./CarvedTerrain";
-export { GrassField, type GrassFieldProps } from "./GrassField";
+export { GrassPatch, type GrassPatchProps } from "../grass/GrassPatch";
+export {
+  bakeGrassNode,
+  createGrassTuftTemplate,
+  GRASS_CELL_SIZE,
+  grassFieldColors,
+  resolveGrassBake,
+  type GrassBakeOptions,
+  type GrassExclusion,
+  type GrassTufts,
+  type GrassTuftTemplate,
+  type ResolvedGrassBake,
+} from "../grass/grassBake";
+export { createGrassMaterial, type GrassMaterialHandle, type GrassShaderUniforms } from "../grass/grassMaterial";
+export { GRASS_SCREEN_DENSITY, GrassStream, type GrassStreamOptions, type GrassStreamStats } from "../grass/grassStream";
 export { ProceduralGround, type ProceduralGroundProps } from "./ProceduralGround";
 export { EditableGround, type EditableGroundProps } from "./EditableGround";
 export {
@@ -9,23 +23,6 @@ export {
   type HeightfieldRect,
 } from "./heightfieldGeometry";
 export { TerraformBrushCursor, type TerraformBrushCursorProps } from "./TerraformBrushCursor";
-export {
-  createGrassBladeGeometry,
-  resolveGrassBladeGeometryOptions,
-  resolveGrassRange,
-  type GrassBladeGeometryOptions,
-  type GrassRange,
-  type ResolvedGrassBladeGeometryOptions,
-} from "./grassGeometry";
-export {
-  createGrassMaterial,
-  DEFAULT_GRASS_WIND,
-  resolveGrassWind,
-  type GrassMaterialHandle,
-  type GrassMaterialOptions,
-  type GrassShaderUniforms,
-  type GrassWindOptions,
-} from "./grassMaterial";
 export { createSeededRandom, hashNoise2, seedToUint32, type TerrainSeed } from "./random";
 export {
   createFieldGroundGeometry,

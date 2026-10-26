@@ -394,9 +394,9 @@
       "label": "Meadow",
       "meta": {
         "bladeHeight": 0.14,
-        "colorBase": "#7a3e2a",
-        "colorTip": "#a8603e",
-        "windStrength": 0.18,
+        "baseColor": "#7a3e2a",
+        "tipColor": "#a8603e",
+        "windStrength": 0.36,
         "windSpeed": 1.2,
         "seed": "wild-meadow"
       }

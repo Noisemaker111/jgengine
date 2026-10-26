@@ -232,6 +232,7 @@ export const gameRegistry: GameRegistry = {
   "material-library": () => import("./demo/materialLibrary").then((module) => module.materialLibraryGame),
   "vfx-library": () => import("./demo/vfxLibrary").then((module) => module.vfxLibraryGame),
   "foliage-wind": () => import("./demo/foliageWindDemo").then((module) => module.foliageWindGame),
+  "grass-looks": () => import("./demo/grassLooksDemo").then((module) => module.grassLooksGame),
   decals: () => import("./demo/decalShowcase").then((module) => module.decalShowcaseGame),
   "terrain-layers": () => import("./demo/terrainLayersDemo").then((module) => module.terrainLayersGame),
   "terrain-macro": () => import("./demo/terrainMacroDemo").then((module) => module.terrainMacroGame),

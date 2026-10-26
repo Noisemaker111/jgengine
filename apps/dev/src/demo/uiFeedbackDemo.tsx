@@ -14,7 +14,7 @@ const POST_COST = 50;
 
 const terrainFeature = environment({
   terrain: terrain({ bounds: { w: 60, d: 60 }, height: 2, frequency: 0.03, seed: "ui-feedback" }),
-  vegetation: grass({ area: { w: 52, d: 52 }, colorBase: "#2f4f1e", colorTip: "#8fbf4a", seed: "ui-feedback" }),
+  vegetation: grass({ area: { w: 52, d: 52 }, baseColor: "#2f4f1e", tipColor: "#8fbf4a", seed: "ui-feedback" }),
 });
 
 const entityCatalog: Record<string, GameContextEntityEntry> = {

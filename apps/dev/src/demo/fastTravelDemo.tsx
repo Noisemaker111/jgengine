@@ -70,7 +70,7 @@ function FastTravelUI() {
 
 const terrainFeature = environment({
   terrain: terrain({ bounds: { w: 120, d: 120 }, height: 3, frequency: 0.02, seed: "fast-travel" }),
-  vegetation: grass({ area: { w: 110, d: 110 }, colorBase: "#2f4f1e", colorTip: "#8fbf4a", seed: "fast-travel" }),
+  vegetation: grass({ area: { w: 110, d: 110 }, baseColor: "#2f4f1e", tipColor: "#8fbf4a", seed: "fast-travel" }),
 });
 
 const entityCatalog: Record<string, GameContextEntityEntry> = {

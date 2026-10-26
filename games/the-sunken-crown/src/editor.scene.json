@@ -1294,9 +1294,9 @@
       "label": "Meadow",
       "meta": {
         "bladeHeight": 0.35,
-        "colorBase": "#4c6a2e",
-        "colorTip": "#a3b065",
-        "windStrength": 0.18,
+        "baseColor": "#4c6a2e",
+        "tipColor": "#a3b065",
+        "windStrength": 0.36,
         "windSpeed": 1.2,
         "seed": "meadow-1"
       }
@@ -1318,9 +1318,9 @@
       "label": "Meadow",
       "meta": {
         "bladeHeight": 0.35,
-        "colorBase": "#4c6a2e",
-        "colorTip": "#a3b065",
-        "windStrength": 0.18,
+        "baseColor": "#4c6a2e",
+        "tipColor": "#a3b065",
+        "windStrength": 0.36,
         "windSpeed": 1.2,
         "seed": "meadow-2"
       }
@@ -1342,9 +1342,9 @@
       "label": "Meadow",
       "meta": {
         "bladeHeight": 0.35,
-        "colorBase": "#4c6a2e",
-        "colorTip": "#a3b065",
-        "windStrength": 0.18,
+        "baseColor": "#4c6a2e",
+        "tipColor": "#a3b065",
+        "windStrength": 0.36,
         "windSpeed": 1.2,
         "seed": "meadow-3"
       }
@@ -1389,9 +1389,9 @@
       "label": "Meadow",
       "meta": {
         "bladeHeight": 0.35,
-        "colorBase": "#4c6a2e",
-        "colorTip": "#a3b065",
-        "windStrength": 0.18,
+        "baseColor": "#4c6a2e",
+        "tipColor": "#a3b065",
+        "windStrength": 0.36,
         "windSpeed": 1.2,
         "seed": "wild-meadow"
       }

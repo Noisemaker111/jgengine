@@ -19,7 +19,7 @@ import type { PlayableGame } from "@jgengine/shell/registry";
 
 const terrainFeature = environment({
   terrain: terrain({ bounds: { w: 80, d: 80 }, height: 3.2, frequency: 0.028, seed: "game-menu" }),
-  vegetation: grass({ area: { w: 72, d: 72 }, colorBase: "#1d3a2a", colorTip: "#7fae45", seed: "game-menu" }),
+  vegetation: grass({ area: { w: 72, d: 72 }, baseColor: "#1d3a2a", tipColor: "#7fae45", seed: "game-menu" }),
 });
 
 const game = defineGameDefinition({

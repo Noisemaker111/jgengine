@@ -2,7 +2,7 @@ import * as THREE from "three";
 
 import { useDisposable } from "../render/useDisposable";
 import { createGrassCoverGeometry, GRASS_COVER_MAX_SEGMENTS } from "./grassCoverGeometry";
-import type { TerrainHeightSampler } from "./terrainMath";
+import type { TerrainHeightSampler } from "../terrain/terrainMath";
 
 let grainTexture: THREE.DataTexture | null = null;
 

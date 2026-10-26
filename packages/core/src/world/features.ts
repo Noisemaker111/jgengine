@@ -7,7 +7,7 @@ import type { TerraformSnapshot } from "./terraform";
 import type { SpriteAtlas } from "../assets/spriteAtlas";
 import type { VolumetricCloudsConfig } from "./volumetricClouds";
 import { warnOnce } from "../devtools/warnOnce";
-import { readGrassRules, type GrassRules } from "./grassKind";
+import { readGrassLook, type GrassLook } from "./grassKind";
 
 export interface WorldBounds {
   w: number;
@@ -316,11 +316,11 @@ export interface SnowEnvironmentConfig {
 }
 
 /**
- * Config for {@link grass}: where the patch grows plus any {@link GrassRules} knob (species, colour,
- * height, density, wind, clumping). Unset knobs take the shared grass defaults, and density never
- * drops below `GRASS_MIN_DENSITY`.
+ * Config for {@link grass}: where the patch grows plus any {@link GrassLook} knob (blade shape, colour
+ * and season, species, flowers, masks, wind). Unset knobs take the shared grass defaults; every knob
+ * is clamped to a range that still reads as full ground cover.
  */
-export interface GrassEnvironmentConfig extends Partial<GrassRules> {
+export interface GrassEnvironmentConfig extends Partial<GrassLook> {
   area?: EnvironmentArea;
   /** World-space center `[x, z]` of the band, matching `building()`/`ocean()` — sugar for `area.position`, letting a biome zone site its own vegetation away from the origin. */
   position?: EnvironmentVec2;
@@ -518,11 +518,11 @@ export type SnowEnvironmentDescriptor = { kind: "snow" } & Required<
   Pick<SnowEnvironmentConfig, "area" | "density" | "speed" | "flakeSize" | "drift" | "wind" | "color" | "opacity">
 >;
 
-/** A resolved grass patch: its area and the fully-defaulted {@link GrassRules} the shell draws. */
+/** A resolved grass patch: its area and the fully-defaulted {@link GrassLook} the shell draws. */
 export interface GrassEnvironmentDescriptor {
   kind: "grass";
   area: EnvironmentArea;
-  rules: GrassRules;
+  look: GrassLook;
 }
 
 export type OceanEnvironmentDescriptor = { kind: "ocean" } & Required<
@@ -1057,7 +1057,7 @@ export function grass(config: GrassEnvironmentConfig = {}): GrassEnvironmentDesc
   return {
     kind: "grass" as const,
     area: withAreaPosition(area ?? { w: 128, d: 128 }, position),
-    rules: readGrassRules(knobs as Record<string, unknown>),
+    look: readGrassLook(knobs as Record<string, unknown>),
   };
 }
 

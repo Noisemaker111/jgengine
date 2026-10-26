@@ -180,7 +180,7 @@ export function meadow(layout: Layout, entry: { id: string; at: Spot; half: numb
     center: { x: entry.at.x, y: 0, z: entry.at.z },
     halfExtents: { x: entry.half, y: 0.01, z: entry.half },
     label: "Meadow",
-    meta: { ...(entry.density === undefined ? {} : { density: entry.density }), bladeHeight: grass.height, colorBase: grass.base, colorTip: grass.tip, windStrength: 0.18, windSpeed: 1.2, seed: entry.id },
+    meta: { ...(entry.density === undefined ? {} : { density: entry.density }), bladeHeight: grass.height, baseColor: grass.base, tipColor: grass.tip, windStrength: 0.36, windSpeed: 1.2, seed: entry.id },
   });
 }
 

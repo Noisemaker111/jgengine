@@ -22,7 +22,7 @@ describe("beacon-bastion world", () => {
     expect(summary.counts.vegetationFields).toBe(0);
     const grass = editorLayers.volumes.filter(volume => volume.kind === "grass_field");
     expect(grass.length).toBe(1);
-    expect(grass[0]!.meta?.bladeWidthMax).toBeGreaterThan(grass[0]!.meta?.bladeWidthMin as number);
+    expect(grass[0]!.meta?.widthVariation as number).toBeGreaterThan(0);
   });
 
   test("terrain has finite relief", () => {
