@@ -897,7 +897,9 @@ export function stepPlayerMovement(
     : { buffer: jumpBuffer, externalGrounding: true, authoritativeStep: tuning.authoritativeStep };
   const prevJumpOffset = motion.jumpOffset;
   const groundedBeforeStep = motion.grounded;
-  const step = advancePlayerMotion(motion, intent, forwardX, forwardZ, walkSpeed, dt, tuning.physics, motionOptions);
+  const ownRun = player.movement?.runMultiplier;
+  const physics = ownRun === undefined ? tuning.physics : { ...tuning.physics, runSpeedMultiplier: ownRun };
+  const step = advancePlayerMotion(motion, intent, forwardX, forwardZ, walkSpeed, dt, physics, motionOptions);
   // Airborne means "not resting on the surface below": any jump/impulse height before or after this
   // frame's integration. Grounded-only forgiveness (step-up) and airborne-only landing key off it.
   const airborne = prevJumpOffset > 0 || motion.jumpOffset > 0;

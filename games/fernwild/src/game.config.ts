@@ -4,6 +4,7 @@ import { DEFAULT_WALK_CODES, defineGame } from "@jgengine/shell/gameKit";
 
 import { editorLayers } from "./editorLayers";
 import { assets } from "./game/assets";
+import { basePrompts, baseView } from "./game/base";
 import { creaturePrompts, creaturesView } from "./game/creatures";
 import { content } from "./game/content";
 import { itemTraits } from "./game/data/items";
@@ -13,6 +14,7 @@ import { BAG, BAG_SLOTS, HOTBAR, HOTBAR_SLOTS } from "./game/bags";
 import { canRun, survivorPrompts, survivorView } from "./game/survivor";
 import { openScreen } from "./game/screens";
 import { GameUI } from "./game/ui/GameUI";
+import { BaseWorld } from "./game/ui/BaseWorld";
 import { onNewPlayer, systems } from "./loop";
 import { time, world } from "./world";
 
@@ -27,7 +29,8 @@ export const game = defineGame({
   content,
   inventories: {
     [BAG]: { slots: BAG_SLOTS, traits: itemTraits },
-    [HOTBAR]: { slots: HOTBAR_SLOTS, traits: itemTraits },
+    // The number keys use this inventory's slots.
+    [HOTBAR]: { slots: HOTBAR_SLOTS, traits: itemTraits, hud: "hotbar" },
   },
   input: {
     ...DEFAULT_WALK_CODES,
@@ -38,6 +41,9 @@ export const game = defineGame({
     whistleFollow: ["KeyT"],
     whistleStay: ["KeyU"],
     inventory: ["KeyI", "Tab"],
+    // Building: R turns the ghost, G demolishes the piece in front.
+    rotateBuild: ["KeyR"],
+    demolish: ["KeyG"],
     pause: ["Escape", "KeyP"],
     ...Object.fromEntries(Array.from({ length: HOTBAR_SLOTS }, (_, slot) => [`slot${slot + 1}`, [`Digit${(slot + 1) % 10}`]])),
   },
@@ -45,19 +51,21 @@ export const game = defineGame({
   systems: [createGameFlowSystem(), ...systems],
   loop: { onNewPlayer },
   GameUI,
+  WorldOverlay: BaseWorld,
   editorLayers,
   entityModels,
   objectModels,
   sceneScatterModels: scatterModels,
   persist: { mode: "manual" },
   // The camera starts behind the survivor on the authored spawn facing, so you wash up looking inland.
-  prompts: (ctx) => [...survivorPrompts(ctx), ...creaturePrompts(ctx)],
+  prompts: (ctx) => [...survivorPrompts(ctx), ...creaturePrompts(ctx), ...basePrompts(ctx)],
   camera: { perspective: "third", initialYaw: authoredSpawnRotation(editorLayers), frustum: { far: 2400 } },
   capture: {
     play: [{ name: "start", input: {} }],
     probe: (ctx) => {
       const view = survivorView(ctx);
       const creatures = creaturesView(ctx);
+      const base = baseView(ctx);
       const me = ctx.scene.entity.get(ctx.player.userId);
       return {
         x: Math.round((me?.position[0] ?? 0) * 10) / 10,
@@ -93,6 +101,14 @@ export const game = defineGame({
         tameHealthMax: creatures.viewing?.health.max ?? 0,
         mountStamina: creatures.riding?.stamina.value ?? 0,
         mountStaminaMax: creatures.riding?.stamina.max ?? 0,
+        structures: base.count,
+        // 1 a valid ghost, 0 a blocked one, -1 nothing in hand to build.
+        ghost: base.ghost === null ? -1 : base.ghost.valid ? 1 : 0,
+        ghostSnapped: base.ghost?.mode === "snap" ? 1 : 0,
+        aimedStructureHealth: base.aimed?.health ?? 0,
+        doorsOpen: base.open,
+        // Hotbar slot in hand, 1-based; 0 bare-handed.
+        holding: view.activeSlot === null ? 0 : view.activeSlot + 1,
       };
     },
   },

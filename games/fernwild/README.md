@@ -54,14 +54,18 @@ herds (`creature_spawn` markers) live in `src/editor.scene.json`.
   - *ARK: Survival Evolved* - systems 1:1: stats, levelling, engrams, recipes, gathering yields,
     HUD layout and inventory flow. Not affiliated with Studio Wildcard; no ARK art, audio or text.
   - *The Forest* - feel: punching and chopping a dense tree line by hand.
-- **Gap to target.** No building, caves, weather or other biomes yet; three species of ARK's dozens;
+- **Gap to target.** Building has no metal tier, foundations snap edge to edge but not to cliffs, and storage boxes cannot be placed yet; no caves, weather or other biomes yet; three species of ARK's dozens;
   the dodo is a duck and the phiomia a boar until dinosaur models are approved; no bolas,
-  slingshot shots or tranq arrows yet, so a raptor is clubbed (or punched) at close range; a mount
-  sprints at the survivor's sprint ratio, not its own; a tame's inventory holds slots, not weight;
+  slingshot shots or tranq arrows yet, so a raptor is clubbed (or punched) at close range; a tame's inventory holds slots, not weight;
   drain and regen rates where ARK publishes none are approximate; trees are stylized stand-ins, not
   palms.
 
-Loop proof: fernwild-loop, fernwild-tame
+Loop proof: fernwild-loop, fernwild-tame, fernwild-build
+
+`fernwild-build` proves building: craft a thatch foundation, doorframe, three walls, a door and a
+ceiling at ARK's prices, place them with snapping, walk inside, roof it, hang the door and open it.
+Pieces have ARK's health; wood shrugs off fists and stone tools, stone takes only metal tools and
+explosives, and a piece falls when nothing connects it to the ground.
 
 `fernwild-tame` proves the creature loop: club a raptor unconscious, feed it, saddle it, level it
 and spend a point in its stat sheet, ride it and sprint on its stamina (it uses the admin `cheat`

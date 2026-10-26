@@ -26,7 +26,8 @@ const entities: Record<string, GameContextEntityEntry> = {
   ),
 };
 
-const items: Record<string, GameContextItemEntry> = Object.fromEntries(ITEMS.map((item) => [item.id, {}]));
+/** Every item answers its hotbar key: the survivor system's "hotbar" use equips or eats it. */
+const items: Record<string, GameContextItemEntry> = Object.fromEntries(ITEMS.map((item) => [item.id, { use: "hotbar" }]));
 
 export const content = {
   entityById: (id: string) => entities[id] ?? null,

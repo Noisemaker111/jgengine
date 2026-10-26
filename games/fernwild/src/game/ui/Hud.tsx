@@ -3,6 +3,7 @@ import { Hotbar } from "@jgengine/core/hud/hudReadouts.view";
 import { useGameStore } from "@jgengine/react/hooks";
 import { HudSlots } from "@jgengine/shell/gameKit";
 
+import { baseView } from "../base";
 import { openScreen } from "../screens";
 import { HOTBAR } from "../bags";
 import { survivorView, type SurvivorView } from "../survivor";
@@ -138,11 +139,35 @@ function Mount(): ReactNode {
   );
 }
 
+/** Building: what the ghost will place and why not, or the piece in front with its health. */
+function StructureLook(): ReactNode {
+  const base = useGameStore(baseView, same);
+  if (base.ghost !== null) {
+    return (
+      <div data-build="" style={LOOK}>
+        <div style={{ color: base.ghost.valid ? "#9ef08a" : "#ff8a7a" }}>{base.ghost.valid ? `Place ${base.ghost.piece}` : base.ghost.why}</div>
+        <div style={{ opacity: 0.85, fontSize: 12 }}>Click to place · R to turn</div>
+      </div>
+    );
+  }
+  if (base.aimed === null) return null;
+  return (
+    <div data-aim-structure="" style={LOOK}>
+      <div>
+        {base.aimed.label} {base.aimed.health}/{base.aimed.max}
+      </div>
+      <div style={{ opacity: 0.85, fontSize: 12 }}>{base.aimed.door ? `E · ${base.aimed.open ? "Close" : "Open"} · ` : ""}G · Demolish</div>
+    </div>
+  );
+}
+
 /** Under the crosshair, ARK's look-at prompt: what you would hit, and what E picks up. */
 function Prompt(): ReactNode {
   const { aim } = useSurvivor();
   const { aimed, riding } = useCreatures();
+  const building = useGameStore((ctx) => { const base = baseView(ctx); return base.ghost !== null || base.aimed !== null; });
   if (aimed !== null || riding !== null) return <CreatureLook />;
+  if (building) return <StructureLook />;
   if (aim.strike === null && aim.pick === null && !aim.water) return null;
   return (
     <div data-aim="" style={LOOK}>

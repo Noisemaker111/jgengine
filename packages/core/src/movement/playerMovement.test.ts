@@ -999,6 +999,19 @@ describe("resolvePlayerMovementTuning — movement.feel", () => {
   });
 });
 
+describe("per-body sprint ratio", () => {
+  test("a body's own runMultiplier replaces the game's sprint ratio", () => {
+    const stock = context(["a"]);
+    const mount = context(["a"]);
+    mount.scene.entity.update("a", { movement: { ...mount.scene.entity.get("a")!.movement, runMultiplier: 4.5 } });
+    drive(stock, "a", ["moveForward", "sprint"], 120, 0);
+    drive(mount, "a", ["moveForward", "sprint"], 120, 0);
+    const ratio = mount.scene.entity.get("a")!.position[2] / stock.scene.entity.get("a")!.position[2];
+    expect(ratio).toBeGreaterThan(1.8);
+    expect(ratio).toBeLessThan(2.1);
+  });
+});
+
 describe("indexed movement telemetry", () => {
   test("follows physical jump and landing while reusing a live view", () => {
     const ctx = context(["a"]);

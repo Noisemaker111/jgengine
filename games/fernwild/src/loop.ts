@@ -3,11 +3,12 @@ import { authoredSpawnPosition, authoredSpawnRotation } from "@jgengine/core/wor
 import { defineSystem } from "@jgengine/shell/gameKit";
 
 import { editorLayers } from "./editorLayers";
+import { baseSave, demolish, resetBase, rotateBuild, tickBase, useStructure } from "./game/base";
 import { closeCreature, creaturesSave, feedNarcotic, forceTame, giveTameXp, giveToCreature, levelTame, mountBite, resetCreatures, setTamingSpeed, spawnCreature, takeFromCreature, tickCreatures, unsaddle, useCreature, whistle } from "./game/creatures";
 import { TAME_STATS } from "./game/data/species";
 import { LEVEL_STATS, SURVIVOR } from "./game/data/survivor";
-import { BAG, HOTBAR_SLOTS } from "./game/bags";
-import { cancelCraft, consume, grantXp, learn, levelStat, resetSurvivor, selectSlot, setUpSurvivor, shuttle, startCraft, survivorSave, swing, tickSurvivor, use } from "./game/survivor";
+import { BAG, HOTBAR } from "./game/bags";
+import { cancelCraft, consume, grantXp, heldItem, learn, levelStat, resetSurvivor, selectSlot, setUpSurvivor, shuttle, startCraft, survivorSave, swing, tickSurvivor, use } from "./game/survivor";
 import { setScreen, toggleScreen, type SurvivorScreen } from "./game/screens";
 
 const ORIGIN: [number, number, number] = [0, 0, 0];
@@ -33,9 +34,16 @@ export const systems = [
       commands.define("harvest", { apply: (state) => (use(state), state) });
       commands.define("inventory", { apply: (state) => (toggleScreen(state, "inventory"), state) });
       commands.define<{ screen: SurvivorScreen | null }>("screen", { apply: (state, input) => (setScreen(state, input.screen), state) });
-      for (let slot = 0; slot < HOTBAR_SLOTS; slot += 1) {
-        commands.define(`slot${slot + 1}`, { apply: (state) => (selectSlot(state, slot), state) });
-      }
+      // The number keys reach a game through item use: equip the tool or structure in that slot, or eat what is there.
+      ctx.item.use.register({
+        hotbar: {
+          apply(state, input) {
+            const slot = state.player.inventory.state(HOTBAR).slots.findIndex((stack) => stack?.itemId === input.itemId);
+            if (slot >= 0) selectSlot(state, slot);
+            return { state };
+          },
+        },
+      });
       commands.define<{ recipeId: string; count?: number }>("craft", { apply: (state, input) => (startCraft(state, input.recipeId, input.count ?? 1), state) });
       commands.define<{ jobId: string }>("cancelCraft", { apply: (state, input) => (cancelCraft(state, input.jobId), state) });
       commands.define<{ engramId: string }>("learn", { apply: (state, input) => (learn(state, input.engramId), state) });
@@ -82,6 +90,19 @@ export const systems = [
     save: creaturesSave,
     reset: resetCreatures,
   }),
+  defineSystem({
+    id: "base",
+    tick: { type: "fixed", rate: 30 },
+    create(ctx) {
+      const commands = ctx.game.commands;
+      commands.define("structureUse", { apply: (state) => (useStructure(state), state) });
+      commands.define("rotateBuild", { apply: (state) => (rotateBuild(state), state) });
+      commands.define("demolish", { apply: (state) => (demolish(state), state) });
+    },
+    update: (ctx) => tickBase(ctx, heldItem(ctx)),
+    save: baseSave,
+    reset: resetBase,
+  }),
 ];
 
 interface Cheat {
@@ -96,6 +117,8 @@ interface Cheat {
   forceTame?: boolean;
   /** XP for the mount under you, or the tame whose inventory is open. */
   tameXp?: number;
+  /** Move these items' stacks from the bag to the hotbar, in order (the double-click, for proofs). */
+  toHotbar?: string[];
 }
 
 function cheat(ctx: GameContext, input: Cheat): void {
@@ -114,6 +137,10 @@ function cheat(ctx: GameContext, input: Cheat): void {
   }
   if (input.forceTame === true) forceTame(ctx);
   if (input.tameXp !== undefined) giveTameXp(ctx, input.tameXp);
+  for (const itemId of input.toHotbar ?? []) {
+    const slot = ctx.player.inventory.state(BAG).slots.findIndex((stack) => stack?.itemId === itemId);
+    if (slot >= 0) shuttle(ctx, BAG, slot);
+  }
 }
 
 /** Wake on the authored beach with nothing, like a fresh survivor. */
