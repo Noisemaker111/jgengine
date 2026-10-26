@@ -609,6 +609,33 @@
 - `VoiceAllocatorStorage` (interface): interface VoiceAllocatorStorage — Caller-owned reservation storage. Reads and writes use detached state.
 - `createVoiceAllocator` (function): function createVoiceAllocator(config: VoiceAllocatorConfig = {}): VoiceAllocator — Reserve bounded sound playback before fetching or constructing a graph. Equal priorities steal the oldest reservation; lower priorities cannot interrupt higher priorities. Policy is retunable.
 
+## @jgengine/core/camera/cameraConfig
+
+- `CAMERA_FRUSTUM_DEFAULTS` (const): const CAMERA_FRUSTUM_DEFAULTS: { readonly fov: 55; readonly near: 0.1; readonly far: 300; readonly zoom: 50; } — ⚠ undocumented
+- `CameraFollowState` (interface): interface CameraFollowState { entityId: string; target: {x: number; y: number; z: number}; camera: {x: number; y: number; z: number}; distance: number } — ⚠ undocumented
+- `CameraKeyframe` (interface): interface CameraKeyframe — One stop on a scripted camera path (#29).
+- `CameraProjection` (type): type CameraProjection = "perspective" | "orthographic" — Canvas camera projection. "orthographic" renders a flat 2D-style view (side-scrollers, falling-block puzzles) — pair with `rig: "sideScroll"`; default "perspective".
+- `CameraRigKind` (type): type CameraRigKind = | "orbit" | "first" | "topDown" | "rts" | "shoulder" | "lockOn" | "chase" | "observer" | "turntable" | "sideScroll" | "inspection" | "none" — Which camera rig the shell mounts. Every rig accepts `followEntityId: null` (avatar-less games — city-builders, card games, auto-battlers — still get a camera). Rigs are tuned through their config block below, never by writing camera positions from `onTick`. - `orbit` — third-person chase (the historical default; `perspective: "third"`). - `first` — pointer-lock mouse-look (`perspective: "first"`). - `topDown` — fixed height/pitch/yaw with decoupled follow (ARPG iso, top-down). - `rts` — free-pan / edge-scroll / rotate / zoom, optional follow. - `shoulder` — over-the-shoulder with ADS transition + shoulder swap. - `lockOn` — yaw bound to the player→target vector; move axis becomes strafe. - `chase` — speed-reactive vehicle chase (speed→FOV, spring arm, shake) + cockpit/hood/rear views. - `observer` — detached spectator/photo cam bound to any entity or fixed point; never reads player input. - `turntable` — slow auto-orbit of a fixed point: a rotating display stand for a scene. The friendly, flat spelling of `observer`'s point-orbit mode; providing `camera.turntable` selects it without an explicit `rig`. - `sideScroll` — fixed lateral follow (2.5D platformer/beat-'em-up side view); reads no player input. - `inspection` — model-viewer / editor rig (#207.7, #866): middle-drag pan, right-drag orbit, scroll zoom toward a configurable anchor; orbits a fixed point, reads no player/entity input. - `none` — no camera rig is mounted; use for HUD-only presentations or a game that manages its own camera.
+- `CameraRigShakeConfig` (interface): interface CameraRigShakeConfig — Camera-shake / trauma defaults (#28). Any rig reads the trauma channel; game systems feed it via `cameraShake()`.
+- `CameraWeaponView` (interface): interface CameraWeaponView — What a camera rig reads about the held weapon each frame; see `GameCameraConfig.weapon`.
+- `ChaseCameraConfig` (interface): interface ChaseCameraConfig — Speed-reactive vehicle chase rig (#27) — speed→FOV, spring arm, procedural shake, interior views.
+- `ChaseView` (type): type ChaseView = "chase" | "cockpit" | "hood" | "rear" — Fixed interior view for the chase rig (#27).
+- `CinematicCameraConfig` (interface): interface CinematicCameraConfig — Scripted keyframe / path player (#29). When set it overrides the active rig.
+- `FirstPersonCameraConfig` (interface): interface FirstPersonCameraConfig { eyeHeight?: number; sensitivity?: number; maxPitch?: number; reticle?: boolean; viewmodel?: boolean; collision?: false | FirstPersonCollisionConfig } — ⚠ undocumented
+- `FirstPersonCollisionConfig` (interface): interface FirstPersonCollisionConfig — Clearance tuning for the first-person camera's collision pull-in.
+- `GameCameraConfig` (interface): interface GameCameraConfig — Camera tuning for the shell's rig stack: pick the rig via `rig`, then tune it through its matching config block. All fields optional — the default is the third-person orbit rig.
+- `InspectionCameraConfig` (interface): interface InspectionCameraConfig — Model-viewer / inspection rig (#207.7) — orbit + pan + anchored zoom around a fixed point, never reads player input.
+- `InspectionZoomAnchor` (type): type InspectionZoomAnchor = "target" | "cursor" | "center" — How scroll-zoom re-anchors the view for the inspection rig (#207.7): - `target` — dolly toward the orbit target (classic OrbitControls behavior). - `cursor` — dolly toward the point under the pointer. - `center` — dolly toward the viewport center; equivalent to `target` for an OrbitControls-driven rig, since the camera always faces `target` and that point already projects to the exact center of the viewport.
+- `LockOnCameraConfig` (interface): interface LockOnCameraConfig — Lock-on / strafe rig (#26) — yaw bound to player→target, move axis becomes strafe.
+- `ObserverCameraConfig` (interface): interface ObserverCameraConfig — Detached spectator/photo cam (#120) — binds to any entity or fixed point, never reads player input.
+- `PixelPerfectCameraConfig` (interface): interface PixelPerfectCameraConfig — Pixel-art orthographic camera tuning. `pixelsPerUnit` is the authored pixel density.
+- `PlayerFovConfig` (interface): interface PlayerFovConfig — Player-facing FOV preference applied across every perspective camera rig. Orthographic projections ignore it.
+- `RtsCameraConfig` (interface): interface RtsCameraConfig extends TopDownCameraConfig — Free-pan / edge-scroll RTS rig (#24) — pan/rotate/zoom independent of any avatar.
+- `ShoulderCameraConfig` (interface): interface ShoulderCameraConfig — Over-the-shoulder combat rig (#25) — offset, ADS, shoulder swap, decoupled reticle.
+- `SideScrollCameraConfig` (interface): interface SideScrollCameraConfig — Fixed lateral 2.5D follow (side-on platformer cam): the camera sits perpendicular to the travel axis, tracks the followed entity, and never reads player look input.
+- `TopDownCameraConfig` (interface): interface TopDownCameraConfig — Fixed top-down / isometric rig (#23) — height/pitch/yaw + decoupled follow.
+- `TurntableCameraConfig` (interface): interface TurntableCameraConfig — Turntable / showcase rig — slowly auto-orbits a fixed world point (no player input), the way a museum turntable rotates an object on display. A flat, self-describing spelling of `observer`'s point-orbit mode: `target` names the point directly instead of `bind: { kind: "point", position }`. Set `camera.turntable` and the rig is inferred — you don't also write `rig`.
+
 ## @jgengine/core/camera/shake/cameraShake
 
 - `CameraRigShakeConfig` (interface): interface CameraRigShakeConfig — Camera-shake / trauma defaults (#28). Any rig reads the trauma channel; game systems feed it via `cameraShake()`.
@@ -2395,7 +2422,6 @@
 - `ParticleSystem` (interface): interface ParticleSystem — A live, dt-driven particle simulation.
 - `ParticleSystemOptions` (interface): interface ParticleSystemOptions — Optional geometry adapter; queries are capped independently of rendering.
 - `Range` (interface): interface Range — A `[min, max]` range a spawned particle draws uniformly from.
-- `Vec3` (type): type Vec3 = readonly [number, number, number] — A 3D vector `[x, y, z]`.
 - `createParticleSystem` (function): function createParticleSystem(config: EmitterConfig = {}, options: ParticleSystemOptions = {}): ParticleSystem — A generic, allocation-aware particle system: one emitter, a fixed pool, and Structure-of-Arrays buffers a renderer uploads straight to the GPU. It is dt-driven (call `update(dt)` each frame) and deterministic — all randomness flows from an injected `seed`, so the same seed and dt sequence reproduce the same frames, and `snapshot`/`restore` round-trips the live pool. Nothing here is combat- or genre-specific: configure it for smoke, sparks, rain, dust, embers, magic, or confetti. Travel/gameplay stays elsewhere; this owns only the spawn-integrate-fade lifecycle.
 - `validateEmitterConfig` (function): function validateEmitterConfig(value: unknown): string[] — Validate the serializable spawn/update descriptor before authoring or loading it.
 
@@ -2428,7 +2454,6 @@
 - `BoundsSpec` (type): type BoundsSpec = | { readonly kind: "sphere"; readonly radius: number; readonly offset?: Vec3 } | { readonly kind: "aabb"; readonly half: Vec3; readonly offset?: Vec3 } | { readonly kind: "rect"; readonly halfWidth: number; readonly halfDepth: number; readonly halfHeight?: number; readonly offset?:… — How a renderable declares its extent. AABB, bounding sphere, and 2D rectangle cover the common cases; `point` is the degenerate zero-size default for objects that never override. `offset` shifts the volume from the object origin (e.g. a tall model whose pivot is at its feet).
 - `DEFAULT_BOUNDS` (const): const DEFAULT_BOUNDS: BoundsSpec — Conservative default: a unit sphere. Objects without explicit bounds cull as a small volume, never a point.
 - `RenderBounds` (interface): interface RenderBounds — World-space bounds a culler tests against. Kept as flat scalars (not tuples) so the hot culling path reads them without allocating. Carries both a bounding sphere (cheap broad reject) and a tight AABB (precise reject) — the standard "engine bounds" the frustum, distance, and spatial-index tests all consume.
-- `Vec3` (type): type Vec3 = EntityPosition — ⚠ undocumented · used by `coverPoints` (@jgengine/core/ai/tacticalQueries): Returns boundary locations that are hidden from a threat.
 
 ## @jgengine/core/visibility/camera
 
@@ -2444,7 +2469,6 @@
 
 - `VisibilityStats` (interface): interface VisibilityStats — Per-frame visibility + streaming counters. The VisibilitySystem fills the culling and timing fields; the AssetStreamingSystem fills the asset fields. Everything is a plain number so a HUD or the devtools hub can read it without adapters.
 - `createVisibilityStats` (function): function createVisibilityStats(): VisibilityStats — ⚠ undocumented
-- `nowMs` (function): function nowMs(): number — High-resolution clock that degrades to a monotonic-ish fallback when `performance` is absent.
 - `resetCullingStats` (function): function resetCullingStats(stats: VisibilityStats): void — ⚠ undocumented
 
 ## @jgengine/core/visibility/distance
@@ -3126,7 +3150,7 @@
 - `VISIBILITY_HIDDEN` (const): const VISIBILITY_HIDDEN: 0 — Numeric code for a cell no group member has seen, or has fully forgotten.
 - `VISIBILITY_OBSERVED` (const): const VISIBILITY_OBSERVED: 2 — Numeric code for a cell a group currently observes.
 - `VISIBILITY_REMEMBERED` (const): const VISIBILITY_REMEMBERED: 1 — Numeric code for a cell seen before but not currently in view (last-known).
-- `Vec3` (type): type Vec3 = EntityPosition — ⚠ undocumented · used by `catenaryCurve`: True hyperbolic catenary between two anchors — the shape a uniform cable actually takes under gravity.
+- `Vec3` (type): type Vec3 = readonly [number, number, number] — A 3D point/vector as an `[x, y, z]` tuple — the engine's zero-allocation spatial primitive.
 - `VehicleDamage` (interface): interface VehicleDamage — Fixed-zone crash damage for a vehicle: impacts accumulate into discrete stages, stages change handling and show a bounded dent, and a part can come off at a set stage. Data-driven and bounded by construction — the zone set is authored, each zone's deformation is one capped displacement, and no mesh is edited. Serializes through {@link snapshot}/{@link restore}, so a save, a replay or a host correction resumes mid-crash.
 - `VehicleDamageConfig` (interface): interface VehicleDamageConfig — Everything {@link createVehicleDamage} needs.
 - `VehicleDamageEffect` (interface): interface VehicleDamageEffect — Handling change one damage zone applies at its *last* stage. Multiplier fields read `1` = undamaged, and a zone part-way through its stages gets the fraction between; `steerPull` and `drag` are additive and reach their full value only at the last stage.
@@ -3834,7 +3858,6 @@
 ## @jgengine/core/world/cityGeometry
 
 - `OrientedRect` (interface): interface OrientedRect — A rotated rectangle: center, half-extents, and yaw in the engine rotationY convention.
-- `Vec2` (type): type Vec2 = readonly [number, number] — Deterministic 2D polygon math for the `city` studio's block/parcel pipeline: signed areas, point-in-polygon, half-plane clipping, per-edge inward insets (the curb → sidewalk → land and parcel → buildable transforms), simple-loop recovery after aggressive insets, and rotated-rect fitting inside arbitrary polygons. Pure functions over `[x, z]` tuples — no allocation-heavy classes, no rendering, no randomness — so every consumer from the resolver to the tests shares one geometric truth.
 - `clipHalfPlane` (function): function clipHalfPlane(ring: readonly Vec2[], normal: Vec2, limit: number): Vec2[] — Clip a polygon to the half-plane `dot(p, normal) <= limit` (Sutherland–Hodgman step). Returns the surviving ring, possibly empty. The subject may be concave; the output of a single half-plane clip of a simple ring is always a valid (possibly pinched) ring.
 - `dedupeRing` (function): function dedupeRing(ring: readonly Vec2[], epsilon = 1e-6): Vec2[] — Remove consecutive (near-)duplicate vertices; returns [] when fewer than 3 survive.
 - `distanceToRing` (function): function distanceToRing(ring: readonly Vec2[], x: number, z: number): number — Distance from a point to the nearest boundary segment of a ring.
@@ -3848,7 +3871,7 @@
 - `polygonCentroid` (function): function polygonCentroid(ring: readonly Vec2[]): Vec2 — Area centroid of a simple polygon (falls back to the vertex mean for degenerate rings).
 - `polygonMeanWidth` (function): function polygonMeanWidth(ring: readonly Vec2[]): number — Mean "width" proxy for sliver detection: the diameter of the largest inscribed strip is approximated by 2·area / perimeter (exact for long rectangles, conservative elsewhere).
 - `polygonPerimeter` (function): function polygonPerimeter(ring: readonly Vec2[]): number — Ring perimeter length.
-- `polygonSignedArea` (function): function polygonSignedArea(ring: readonly Vec2[]): number — Signed area of a polygon ring (positive = counter-clockwise in XZ).
+- `polygonSignedArea` (function): function polygonSignedArea(ring: readonly Vec2[]): number — Deterministic 2D polygon math for the `city` studio's block/parcel pipeline: signed areas, point-in-polygon, half-plane clipping, per-edge inward insets (the curb → sidewalk → land and parcel → buildable transforms), simple-loop recovery after aggressive insets, and rotated-rect fitting inside arbitrary polygons. Pure functions over `[x, z]` tuples — no allocation-heavy classes, no rendering, no randomness — so every consumer from the resolver to the tests shares one geometric truth.
 - `polygonsOverlap` (function): function polygonsOverlap(a: readonly Vec2[], b: readonly Vec2[], shrink = 0.05): boolean — Conservative polygon-overlap test: any vertex of one strictly inside the other, or any edges crossing.
 - `rayDistanceToRing` (function): function rayDistanceToRing(ring: readonly Vec2[], origin: Vec2, dir: Vec2, minT = 0.6): number — Distance from `origin` along `dir` to the first ring-boundary crossing (ignoring hits closer than `minT`, e.g. the edge the origin sits on). Infinity when the ray never leaves — degenerate.
 - `rectClearsPolyline` (function): function rectClearsPolyline(rect: OrientedRect, path: readonly Vec2[], clearance: number): boolean — True when a rotated rect stays at least `clearance` away from every segment of a polyline — the plot-contract test that keeps building plots off road corridors (pass the road half-width as the clearance). Exact segment-vs-expanded-rect intersection, not corner sampling.

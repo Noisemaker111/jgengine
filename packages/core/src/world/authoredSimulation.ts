@@ -7,7 +7,7 @@ import { createEmptyEditorDocument } from "../editor/document";
 import { createAuthoredWeather, createWeatherExposure, type AuthoredWeatherSample, type WeatherExposure, type WeatherExposureSnapshot, type WeatherExposureSurface } from "./authoredWeather";
 import { createFireGrid, type FireCell, type FireGrid } from "./weather";
 import type { EffectRequest, ParticleDirector } from "../vfx/particleDirector";
-import type { Vec3 } from "../vfx/particles";
+import type { Vec3 } from "./geometry";
 
 /** A watched surface is sampled in metres. Its accumulation survives runtime save/restore. */
 export interface AuthoredSurface extends WeatherExposureSurface { y?: number }

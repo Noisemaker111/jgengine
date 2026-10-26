@@ -1,8 +1,7 @@
+import type { Vec3 } from "../world/geometry";
 import { sampleForceField, validateForceField, type ForceFieldConfig } from "../physics/forceVolume";
 import { hashString, randomSeedFrom, stepRandomSeed, type RandomSeed } from "../random/rng";
 
-/** A 3D vector `[x, y, z]`. */
-export type Vec3 = readonly [number, number, number];
 
 /** A `[min, max]` range a spawned particle draws uniformly from. */
 export interface Range {

@@ -38,7 +38,7 @@ import type { CollisionMeshData } from "../scene/collisionMesh";
 import type { SkyEnvironmentConfig, TerrainDetailMaterialConfig } from "../world/features";
 import type { VisibilityConfig } from "../visibility/config";
 import type { GameDefinition, GameLoop } from "./defineGame";
-import type { GameCameraConfig } from "./cameraConfig";
+import type { GameCameraConfig } from "../camera/cameraConfig";
 import type { ViewportsConfig } from "./viewports";
 import type { LootFilterRule } from "../loot/lootFilter";
 import type { RarityStyle } from "../loot/groundItem";
@@ -86,8 +86,8 @@ export type {
   SideScrollCameraConfig,
   TopDownCameraConfig,
   TurntableCameraConfig,
-} from "./cameraConfig";
-export { CAMERA_FRUSTUM_DEFAULTS } from "./cameraConfig";
+} from "../camera/cameraConfig";
+export { CAMERA_FRUSTUM_DEFAULTS } from "../camera/cameraConfig";
 
 /**
  * Mouse/touch pointer bindings for `defineGame({ pointer })`.

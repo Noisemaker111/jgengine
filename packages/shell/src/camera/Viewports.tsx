@@ -14,7 +14,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { localPlayers, type LocalPlayerSlot } from "@jgengine/core/runtime/localPlayers";
 
 import { createChaseRigState, resolveChase, resolveTopDown, stepChase, topDownPose, type CameraPose, type ChaseRigState } from "./rigMath";
-import type { Vec3 } from "./orbitCameraMath";
+import type { Xyz } from "@jgengine/core/math/xyz";
 
 const SEAT_YAW = new WeakMap<GameContext, Map<string, number>>();
 
@@ -114,7 +114,7 @@ export function SplitScreenRenderer({
       rigs.current.set(slot.slotId, rig);
     }
     const entity = ctx.scene.entity.get(ctx.player.possession.active(slot.userId));
-    const follow: Vec3 = entity === null ? { x: 0, y: 0, z: 0 } : { x: entity.position[0], y: entity.position[1], z: entity.position[2] };
+    const follow: Xyz = entity === null ? { x: 0, y: 0, z: 0 } : { x: entity.position[0], y: entity.position[1], z: entity.position[2] };
     let pose: CameraPose;
     if (seatRigKind(cameraConfig, mainCamera) === "topDown") {
       const resolved = resolveTopDown(cameraConfig?.topDown ?? mainCamera?.topDown);

@@ -1,14 +1,14 @@
 import type { InspectionCameraConfig, InspectionZoomAnchor } from "@jgengine/core/game/playableGame";
+import type { Xyz } from "@jgengine/core/math/xyz";
 
-import type { Vec3 } from "./orbitCameraMath";
 
 export type { InspectionCameraConfig, InspectionZoomAnchor };
 
 export interface ResolvedInspectionCameraConfig {
   anchor: InspectionZoomAnchor;
-  target: Vec3;
+  target: Xyz;
   initialDistance: number;
-  initialPosition: Vec3 | null;
+  initialPosition: Xyz | null;
   minDistance: number;
   maxDistance: number;
   minPolarAngle: number;
@@ -51,7 +51,7 @@ export function resolveInspectionCameraConfig(config?: InspectionCameraConfig): 
 /** Seeds the camera/target world position before OrbitControls mounts. Falls back to `initialDistance` behind `target` on the -Z axis, raised by 40% of that distance, when `initialPosition` is unset.
  * @internal
  */
-export function seedInspectionCamera(config: ResolvedInspectionCameraConfig): { camera: Vec3; target: Vec3 } {
+export function seedInspectionCamera(config: ResolvedInspectionCameraConfig): { camera: Xyz; target: Xyz } {
   if (config.initialPosition !== null) {
     return { camera: config.initialPosition, target: config.target };
   }

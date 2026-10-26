@@ -85,19 +85,8 @@ import {
   RingWalker,
   type CityBlockKind,
 } from "./cityBlocks";
-import {
-  fitRectInPolygon,
-  rayDistanceToRing,
-  pointInPolygon,
-  polygonArea,
-  polygonCentroid,
-  polygonMeanWidth,
-  polygonsOverlap,
-  insetRingUniform,
-  rectsSeparated,
-  ringBounds,
-  type Vec2,
-} from "./cityGeometry";
+import { fitRectInPolygon, rayDistanceToRing, pointInPolygon, polygonArea, polygonCentroid, polygonMeanWidth, polygonsOverlap, insetRingUniform, rectsSeparated, ringBounds } from "./cityGeometry";
+import type { Vec2 } from "./geometry";
 
 /** The editor volume kind marking a box as a procedural city district. */
 export const CITY_KIND = "city";

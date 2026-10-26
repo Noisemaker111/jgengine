@@ -1,4 +1,4 @@
-import type { ChaseCameraConfig, TopDownCameraConfig } from "./cameraConfig";
+import type { ChaseCameraConfig, TopDownCameraConfig } from "../camera/cameraConfig";
 
 /** A screen region as fractions of the canvas, `[x, y, width, height]` in `0..1` with the origin at the top left. */
 export type ViewportRect = readonly [number, number, number, number];

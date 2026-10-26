@@ -1,7 +1,7 @@
 import type { EffectResult } from "@jgengine/core/combat/effects";
 import { createWeaponHandling, type WeaponHandling } from "@jgengine/core/combat/weaponHandling";
 import { createWeaponRuntime, type WeaponRuntime } from "@jgengine/core/combat/weaponFire";
-import type { CameraWeaponView } from "@jgengine/core/game/cameraConfig";
+import type { CameraWeaponView } from "@jgengine/core/camera/cameraConfig";
 import { gamePhase } from "@jgengine/core/game/gamePhase";
 import { seededRng } from "@jgengine/core/random/rng";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import type { Vec3 } from "@jgengine/core/visibility/bounds";
 import { distanceSquared, distance, culledByDistance } from "@jgengine/core/visibility/distance";
+import type { Vec3 } from "../world/geometry";
 
 describe("distanceSquared / distance", () => {
   test("distanceSquared sums squared per-axis deltas", () => {

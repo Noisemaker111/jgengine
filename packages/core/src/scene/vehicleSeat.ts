@@ -1,6 +1,6 @@
 import { createMountController, MountController, type MountedRider, type MountSeat, type RideableConfig } from "./mount";
 import type { GameContext } from "../runtime/gameContext";
-import type { CameraRigKind } from "../game/cameraConfig";
+import type { CameraRigKind } from "../camera/cameraConfig";
 import { validateCameraRig, validateChaseCameraTuning, type CameraRigConfig, type ChaseCameraTuning } from "../runtime/cameraDirector";
 import { forgetPlayerMovement } from "../movement/playerMovement";
 

@@ -658,7 +658,7 @@ export {
   type ScreenEffectsSnapshot,
   type StoredScreenEffect,
 } from "./vfx/screenEffects";
-export { type BoundsSpec, type Vec3 } from "./visibility/bounds";
+export { type BoundsSpec } from "./visibility/bounds";
 export { type CameraVisibilityContext } from "./visibility/camera";
 export { type VisibilityConfig } from "./visibility/config";
 export { distance } from "./visibility/distance";
@@ -832,7 +832,7 @@ export {
   type RegionSplitIds,
   type RegionWorkBudget,
 } from "./world/footprintGrid";
-export { type Aabb, type AvoidZone } from "./world/geometry";
+export { type Aabb, type AvoidZone, type Vec3 } from "./world/geometry";
 export { GRASS_SCHEMA } from "./world/grassKind";
 export { resolveGridInstances } from "./world/gridInstances";
 export { grounded } from "./world/grounded";

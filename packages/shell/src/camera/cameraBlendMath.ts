@@ -1,6 +1,6 @@
 import type { Camera, PerspectiveCamera, Quaternion, Vector3 } from "three";
 
-import { smoothstep } from "./rigMath";
+import { smoothstep } from "@jgengine/core/anim/easing";
 
 export interface CameraBlendScratch {
   fromPos: Vector3;

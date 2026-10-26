@@ -7,15 +7,15 @@ import {
   stepChase,
   type ChaseSample,
 } from "./rigMath";
-import type { Vec3 } from "./orbitCameraMath";
+import type { Xyz } from "@jgengine/core/math/xyz";
 
 const DT = 1 / 60;
 
-function sample(follow: Vec3, overrides: Partial<ChaseSample> = {}): ChaseSample {
+function sample(follow: Xyz, overrides: Partial<ChaseSample> = {}): ChaseSample {
   return { follow, yaw: 0, bodyPitch: 0, velocity: null, lookBack: false, fovKick: 0, ...overrides };
 }
 
-function planarGap(a: Vec3, b: Vec3): number {
+function planarGap(a: Xyz, b: Xyz): number {
   return Math.hypot(a.x - b.x, a.z - b.z);
 }
 
@@ -25,7 +25,7 @@ describe("stepChase", () => {
     const state = createChaseRigState();
     const speed = 62;
     let pose = stepChase(state, sample({ x: 0, y: 0, z: 0 }), resolved, DT).pose;
-    let follow: Vec3 = { x: 0, y: 0, z: 0 };
+    let follow: Xyz = { x: 0, y: 0, z: 0 };
     for (let i = 1; i <= 600; i += 1) {
       follow = { x: 0, y: 0, z: speed * DT * i };
       pose = stepChase(state, sample(follow, { velocity: { x: 0, y: 0, z: speed } }), resolved, DT).pose;
@@ -124,7 +124,7 @@ describe("stepChase", () => {
     const resolved = resolveChase({ distance: 6, height: 0, lookHeight: 0, springDamping: 6 });
     const state = createChaseRigState();
     const at = { x: 0, y: 0, z: 0 };
-    const wall = (pivot: Vec3, desired: Vec3) => clampBoomToHit(pivot, desired, 2, 0.3, 0.8);
+    const wall = (pivot: Xyz, desired: Xyz) => clampBoomToHit(pivot, desired, 2, 0.3, 0.8);
     const blocked = stepChase(state, sample(at), resolved, DT, wall).pose;
     expect(planarGap(blocked.position, at)).toBeCloseTo(1.7, 6);
     const released = stepChase(state, sample(at), resolved, DT).pose;

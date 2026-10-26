@@ -1,5 +1,6 @@
 import type { ParticleAttachOptions, ParticleBlendHint, ParticleRenderHint } from "./particleDirector";
-import type { EmitterConfig, Vec3 } from "./particles";
+import type { EmitterConfig } from "./particles";
+import type { Vec3 } from "../world/geometry";
 
 /** The family an effect belongs to; groups the library browser and the contact sheet. */
 export type EffectGroup =
